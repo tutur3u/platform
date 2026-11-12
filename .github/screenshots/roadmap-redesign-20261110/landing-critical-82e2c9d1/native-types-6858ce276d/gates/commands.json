@@ -1,0 +1,195 @@
+{
+  "frozen-install": {
+    "cmd": [
+      "bun",
+      "install",
+      "--frozen-lockfile"
+    ],
+    "cwd": "/Users/thanhpham/.t3/scratch/2026-11-11-act-as-the-implementation-sub-6455b199/platform-marketing-shell",
+    "exit": 0
+  },
+  "oxlint": {
+    "cmd": [
+      "bun",
+      "x",
+      "oxlint",
+      "apps/marketing/cloudflare/native-module-specifiers.runtime.mjs",
+      "apps/marketing/scripts/check-native.mjs",
+      "apps/marketing/scripts/landing-critical-css.mjs",
+      "apps/marketing/scripts/landing-critical-css.test.ts",
+      "apps/marketing/src/app/[locale]/(marketing)/layout.tsx",
+      "apps/marketing/src/app/[locale]/layout.tsx",
+      "apps/marketing/src/components/landing/hero/video-hero.tsx",
+      "apps/marketing/src/components/landing/hero/video-player.tsx",
+      "apps/marketing/src/components/layouts/landing-enhancements.test.tsx",
+      "apps/marketing/src/components/layouts/landing-enhancements.tsx",
+      "apps/marketing/src/lib/marketing-render-context.ts",
+      "apps/marketing/start-bridge.config.ts",
+      "apps/marketing/vite.config.mts",
+      "apps/marketing/vitest.config.ts",
+      "packages/marketing-shell/src/nav-actions.tsx",
+      "packages/marketing-shell/src/theme-toggle.tsx"
+    ],
+    "cwd": "/Users/thanhpham/.t3/scratch/2026-11-11-act-as-the-implementation-sub-6455b199/platform-marketing-shell",
+    "exit": 0
+  },
+  "format": {
+    "cmd": [
+      "bun",
+      "x",
+      "oxfmt",
+      "--check",
+      "."
+    ],
+    "cwd": "/Users/thanhpham/.t3/scratch/2026-11-11-act-as-the-implementation-sub-6455b199/platform-marketing-shell",
+    "exit": 0
+  },
+  "stylelint": {
+    "cmd": [
+      "npx",
+      "--yes",
+      "stylelint@16",
+      "--config",
+      "/tmp/landing-types-fix/stylelint.json",
+      "apps/marketing/src/app/[locale]/(marketing)/(landing)/landing.css"
+    ],
+    "cwd": "/Users/thanhpham/.t3/scratch/2026-11-11-act-as-the-implementation-sub-6455b199/platform-marketing-shell",
+    "exit": 0
+  },
+  "source-size": {
+    "cmd": [
+      "node",
+      "scripts/check-source-size.js"
+    ],
+    "cwd": "/Users/thanhpham/.t3/scratch/2026-11-11-act-as-the-implementation-sub-6455b199/platform-marketing-shell",
+    "exit": 0
+  },
+  "wrangler": {
+    "cmd": [
+      "node",
+      "scripts/ci/wrangler-usage.js"
+    ],
+    "cwd": "/Users/thanhpham/.t3/scratch/2026-11-11-act-as-the-implementation-sub-6455b199/platform-marketing-shell",
+    "exit": 0
+  },
+  "docs-inventory": {
+    "cmd": [
+      "node",
+      "scripts/generate-docs-inventory.js",
+      "--check"
+    ],
+    "cwd": "/Users/thanhpham/.t3/scratch/2026-11-11-act-as-the-implementation-sub-6455b199/platform-marketing-shell",
+    "exit": 0
+  },
+  "app-seo": {
+    "cmd": [
+      "node",
+      "scripts/generate-app-seo.js",
+      "--check"
+    ],
+    "cwd": "/Users/thanhpham/.t3/scratch/2026-11-11-act-as-the-implementation-sub-6455b199/platform-marketing-shell",
+    "exit": 0
+  },
+  "type-marketing": {
+    "cmd": [
+      "bun",
+      "run",
+      "type-check"
+    ],
+    "cwd": "/Users/thanhpham/.t3/scratch/2026-11-11-act-as-the-implementation-sub-6455b199/platform-marketing-shell/apps/marketing",
+    "exit": 0
+  },
+  "type-marketing-shell": {
+    "cmd": [
+      "bun",
+      "run",
+      "type-check"
+    ],
+    "cwd": "/Users/thanhpham/.t3/scratch/2026-11-11-act-as-the-implementation-sub-6455b199/platform-marketing-shell/packages/marketing-shell",
+    "exit": 0
+  },
+  "type-roadmap": {
+    "cmd": [
+      "bun",
+      "run",
+      "type-check"
+    ],
+    "cwd": "/Users/thanhpham/.t3/scratch/2026-11-11-act-as-the-implementation-sub-6455b199/platform-marketing-shell/apps/roadmap",
+    "exit": 0
+  },
+  "marketing-tests": {
+    "cmd": [
+      "bun",
+      "run",
+      "test"
+    ],
+    "cwd": "/Users/thanhpham/.t3/scratch/2026-11-11-act-as-the-implementation-sub-6455b199/platform-marketing-shell/apps/marketing",
+    "exit": 0
+  },
+  "shell-tests": {
+    "cmd": [
+      "bun",
+      "run",
+      "test"
+    ],
+    "cwd": "/Users/thanhpham/.t3/scratch/2026-11-11-act-as-the-implementation-sub-6455b199/platform-marketing-shell/packages/marketing-shell",
+    "exit": 0
+  },
+  "roadmap-tests": {
+    "cmd": [
+      "node",
+      "--test",
+      "--test-concurrency=2",
+      "apps/roadmap/src/roadmap-data.test.ts",
+      "apps/roadmap/src/cache-policy.test.ts",
+      "apps/roadmap/scripts/seal-artifact.test.mjs",
+      "apps/roadmap/scripts/pre-seal-doctor.test.mjs"
+    ],
+    "cwd": "/Users/thanhpham/.t3/scratch/2026-11-11-act-as-the-implementation-sub-6455b199/platform-marketing-shell",
+    "exit": 0
+  },
+  "native-ci-gate": {
+    "cmd": [
+      "bun",
+      "run",
+      "check:native"
+    ],
+    "cwd": "/Users/thanhpham/.t3/scratch/2026-11-11-act-as-the-implementation-sub-6455b199/platform-marketing-shell/apps/marketing",
+    "exit": 0
+  },
+  "check-changed": {
+    "cmd": [
+      "bun",
+      "check:changed"
+    ],
+    "cwd": "/Users/thanhpham/.t3/scratch/2026-11-11-act-as-the-implementation-sub-6455b199/platform-marketing-shell",
+    "exit": 0
+  },
+  "reserved-staging": {
+    "cmd": [
+      "node",
+      "--test",
+      "scripts/ci/reserved-staging-names.test.mjs"
+    ],
+    "cwd": "/Users/thanhpham/.t3/scratch/2026-11-11-act-as-the-implementation-sub-6455b199/platform-marketing-shell",
+    "exit": 0
+  },
+  "plain-bun-import": {
+    "cmd": [
+      "bun",
+      "--eval",
+      "await import('./apps/marketing/start-bridge.config.ts')"
+    ],
+    "cwd": "/Users/thanhpham/.t3/scratch/2026-11-11-act-as-the-implementation-sub-6455b199/platform-marketing-shell",
+    "exit": 0
+  },
+  "cloudflare-type": {
+    "cmd": [
+      "bun",
+      "run",
+      "type-check:cloudflare"
+    ],
+    "cwd": "/Users/thanhpham/.t3/scratch/2026-11-11-act-as-the-implementation-sub-6455b199/platform-marketing-shell/apps/marketing",
+    "exit": 0
+  }
+}

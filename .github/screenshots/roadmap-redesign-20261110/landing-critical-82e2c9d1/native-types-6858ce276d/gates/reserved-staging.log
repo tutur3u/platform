@@ -1,0 +1,10 @@
+✔ every staging profile and configured root host respects the zone reservation (37.96325ms)
+✔ reserved production services, apex, wildcards, nested and legacy hosts fail closed (9.4535ms)
+ℹ tests 2
+ℹ suites 0
+ℹ pass 2
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 84.625208

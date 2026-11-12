@@ -1,0 +1,32 @@
+[ttr resources] running PID 87272
+
+ ⛅️ wrangler 4.151.2 (update available 4.161.0)
+───────────────────────────────────────────────
+Generating project types...
+
+interface __BaseEnv_MarketingGeneratedEnv {
+	ASSETS: Fetcher;
+	TUTURUUU_NOINDEX: "1";
+}
+declare namespace Cloudflare {
+	interface GlobalProps {
+		mainModule: typeof import("../../Users/thanhpham/.t3/scratch/2026-11-11-act-as-the-implementation-sub-6455b199/platform-marketing-shell/apps/marketing/dist/server/index");
+	}
+	interface Env extends __BaseEnv_MarketingGeneratedEnv {}
+}
+interface MarketingGeneratedEnv extends __BaseEnv_MarketingGeneratedEnv {}
+type StringifyValues<EnvType extends Record<string, unknown>> = {
+	[Binding in keyof EnvType]: EnvType[Binding] extends string ? EnvType[Binding] : string;
+};
+declare namespace NodeJS {
+	interface ProcessEnv extends StringifyValues<Pick<Cloudflare.Env, "TUTURUUU_NOINDEX">> {}
+}
+
+
+✨ Types written to /tmp/landing-types-fix/native-env.d.ts
+
+📣 Remember to rerun 'wrangler types' after you change your wrangler.json file.
+
+Workers types: Fetcher
+apps/marketing/start-bridge.config.ts(13,31): error TS5097: An import path can only end with a '.ts' extension when 'allowImportingTsExtensions' is enabled.
+[ttr resources] finished; exit 1

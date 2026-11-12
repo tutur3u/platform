@@ -1,0 +1,1396 @@
+[ttr resources] running PID 87744
+$ node scripts/check-native.mjs
+check:native: bun run type-check
+$ node ../../scripts/run-tsc-build.js --build
+check:native: bun run build:cloudflare
+$ vp build --configLoader runner
+6:28:35 AM [void] package.json is missing `"type": "module"`. Vite's default config loader will fail with ERR_REQUIRE_ASYNC_MODULE on transitive top-level await (e.g. @cloudflare/vite-plugin). Add `"type": "module"` to package.json, or run vite build with `--configLoader runner`.
+[1/5] analyze client references...
+transforming...
+✓ 349 modules transformed.
+rendering chunks...
+✓ built in 418ms
+[2/5] analyze server references...
+transforming...
+✓ 4900 modules transformed.
+rendering chunks...
+✓ built in 853ms
+[3/5] build rsc environment...
+transforming...
+✓ 718 modules transformed.
+rendering chunks...
+computing gzip size...
+dist/server/rsc/landing-styles.json                                      0.14 kB │ gzip:   0.12 kB
+dist/server/rsc/assets/be-vietnam-pro-500-vietnamese-D3pY20Dx.woff2      5.10 kB
+dist/server/rsc/assets/be-vietnam-pro-600-vietnamese-DbGrrtCq.woff2      5.12 kB
+dist/server/rsc/assets/be-vietnam-pro-700-vietnamese-DptIoWwl.woff2      5.13 kB
+dist/server/rsc/assets/be-vietnam-pro-800-vietnamese-BEUwTqXl.woff2      5.14 kB
+dist/server/rsc/assets/product-tour-480-BWnj429r.webp                    6.34 kB
+dist/server/rsc/assets/be-vietnam-pro-800-latin-ext-CuRTcTDh.woff2       7.14 kB
+dist/server/rsc/assets/be-vietnam-pro-600-latin-ext-BKiYkgig.woff2       7.15 kB
+dist/server/rsc/assets/be-vietnam-pro-700-latin-ext-CI8xL9vt.woff2       7.16 kB
+dist/server/rsc/assets/be-vietnam-pro-500-latin-ext-D9Mxtggg.woff2       7.18 kB
+dist/server/rsc/assets/jetbrains-mono-vietnamese-BuiWsewI.woff2          8.05 kB
+dist/server/rsc/assets/product-tour-960-CZrawldg.webp                   12.52 kB
+dist/server/rsc/assets/be-vietnam-pro-500-latin-BcWytNOG.woff2          13.32 kB
+dist/server/rsc/assets/be-vietnam-pro-700-latin-CPfR8Jz_.woff2          13.34 kB
+dist/server/rsc/assets/be-vietnam-pro-800-latin-B5VTH9An.woff2          13.38 kB
+dist/server/rsc/assets/be-vietnam-pro-600-latin-xAC4kEK0.woff2          13.42 kB
+dist/server/rsc/assets/product-tour-1280-CUo-0EBs.webp                  17.11 kB
+dist/server/rsc/assets/jetbrains-mono-400-latin-DuuNxu2V.woff2          19.88 kB
+dist/server/rsc/assets/jetbrains-mono-latin-BB0eCvjd.woff2              47.19 kB
+dist/server/rsc/assets/jetbrains-mono-variable-DYhBJxHs.woff2          113.68 kB
+dist/server/rsc/assets/legal-changes-DsRE9oXq.css                        6.06 kB │ gzip:   1.75 kB
+dist/server/rsc/assets/landing-critical-18d22dc1a7b1.css                77.91 kB │ gzip:  16.63 kB
+dist/server/rsc/assets/landing-rest-2d0eadfb741d.css                   193.98 kB │ gzip:  23.18 kB
+dist/server/rsc/assets/layout-PB0o536s.css                             265.86 kB │ gzip:  35.87 kB
+dist/server/rsc/assets/constants-PPSB70Ml.mjs                            0.12 kB │ gzip:   0.12 kB
+dist/server/rsc/assets/headers-C2Flhlp8.mjs                              0.15 kB │ gzip:   0.12 kB
+dist/server/rsc/assets/common-DIvldmkv.mjs                               0.30 kB │ gzip:   0.20 kB
+dist/server/rsc/assets/configs-CZzGCO7B.mjs                              0.32 kB │ gzip:   0.23 kB
+dist/server/rsc/assets/privacy-consent-Bvh7IP9N.mjs                      0.35 kB │ gzip:   0.24 kB
+dist/server/rsc/assets/page-ZwT_-1K5.mjs                                 0.36 kB │ gzip:   0.27 kB
+dist/server/rsc/assets/page-Ghd_mTue.mjs                                 0.37 kB │ gzip:   0.27 kB
+dist/server/rsc/assets/page-2P73mU4H.mjs                                 0.37 kB │ gzip:   0.27 kB
+dist/server/rsc/assets/page-BUVx6afB.mjs                                 0.37 kB │ gzip:   0.27 kB
+dist/server/rsc/assets/page-DBx4vmet.mjs                                 0.37 kB │ gzip:   0.27 kB
+dist/server/rsc/assets/page-Darqqio2.mjs                                 0.37 kB │ gzip:   0.27 kB
+dist/server/rsc/assets/page-eSlNd1EH.mjs                                 0.37 kB │ gzip:   0.27 kB
+dist/server/rsc/assets/page-kEsoeaZB.mjs                                 0.37 kB │ gzip:   0.27 kB
+dist/server/rsc/assets/page-Q1uiU4pL.mjs                                 0.37 kB │ gzip:   0.27 kB
+dist/server/rsc/assets/page-0waqOK9c.mjs                                 0.37 kB │ gzip:   0.27 kB
+dist/server/rsc/assets/layout-B3pO4kat.mjs                               0.38 kB │ gzip:   0.25 kB
+dist/server/rsc/assets/layout-Dk-iL-O6.mjs                               0.38 kB │ gzip:   0.24 kB
+dist/server/rsc/assets/layout-594QEvv8.mjs                               0.38 kB │ gzip:   0.25 kB
+dist/server/rsc/assets/layout-CJtRSywV.mjs                               0.38 kB │ gzip:   0.25 kB
+dist/server/rsc/assets/layout-DkdRhejg.mjs                               0.38 kB │ gzip:   0.25 kB
+dist/server/rsc/assets/layout-D5YdvPAR.mjs                               0.38 kB │ gzip:   0.25 kB
+dist/server/rsc/assets/layout-DckdMnbC.mjs                               0.38 kB │ gzip:   0.25 kB
+dist/server/rsc/assets/layout-C3CafsmV.mjs                               0.39 kB │ gzip:   0.25 kB
+dist/server/rsc/assets/layout-DVo518r8.mjs                               0.39 kB │ gzip:   0.25 kB
+dist/server/rsc/assets/layout-euX709-Z.mjs                               0.39 kB │ gzip:   0.25 kB
+dist/server/rsc/assets/layout-rBGFQyrx.mjs                               0.39 kB │ gzip:   0.25 kB
+dist/server/rsc/bridge-api.js                                            0.39 kB │ gzip:   0.24 kB
+dist/server/rsc/assets/layout-pme8QuI-.mjs                               0.39 kB │ gzip:   0.25 kB
+dist/server/rsc/assets/layout-rb65p9Wv.mjs                               0.39 kB │ gzip:   0.25 kB
+dist/server/rsc/assets/layout-DeFiIhbs.mjs                               0.39 kB │ gzip:   0.25 kB
+dist/server/rsc/assets/layout-BErWz11g.mjs                               0.39 kB │ gzip:   0.25 kB
+dist/server/rsc/assets/layout-BWmKP4FZ.mjs                               0.39 kB │ gzip:   0.25 kB
+dist/server/rsc/assets/layout-CVxyn4wV.mjs                               0.39 kB │ gzip:   0.25 kB
+dist/server/rsc/assets/layout-CIOCeUNQ.mjs                               0.40 kB │ gzip:   0.25 kB
+dist/server/rsc/assets/layout-Cf0Q87kZ.mjs                               0.40 kB │ gzip:   0.25 kB
+dist/server/rsc/assets/layout-Bc-C-ZcE.mjs                               0.40 kB │ gzip:   0.25 kB
+dist/server/rsc/assets/layout-B3Z3v8kA.mjs                               0.40 kB │ gzip:   0.25 kB
+dist/server/rsc/assets/layout-CqJY8cmY.mjs                               0.40 kB │ gzip:   0.25 kB
+dist/server/rsc/assets/layout-DV6WatG8.mjs                               0.40 kB │ gzip:   0.25 kB
+dist/server/rsc/assets/layout-sUcRLLI5.mjs                               0.40 kB │ gzip:   0.25 kB
+dist/server/rsc/assets/layout-Bwb3jUmv.mjs                               0.41 kB │ gzip:   0.25 kB
+dist/server/rsc/assets/layout-at2toen0.mjs                               0.41 kB │ gzip:   0.25 kB
+dist/server/rsc/assets/layout-TRKR5Peg.mjs                               0.42 kB │ gzip:   0.26 kB
+dist/server/rsc/assets/layout-BZy25PEP.mjs                               0.42 kB │ gzip:   0.25 kB
+dist/server/rsc/assets/layout-Cot30bEQ.mjs                               0.42 kB │ gzip:   0.26 kB
+dist/server/rsc/assets/layout-DpdeCPHL.mjs                               0.42 kB │ gzip:   0.26 kB
+dist/server/rsc/assets/layout-Dnp_y-Gh.mjs                               0.42 kB │ gzip:   0.26 kB
+dist/server/rsc/assets/layout-a2ZS1Crl.mjs                               0.42 kB │ gzip:   0.26 kB
+dist/server/rsc/assets/layout-BAhlI_Oc.mjs                               0.43 kB │ gzip:   0.26 kB
+dist/server/rsc/assets/layout-DdEs1BIR.mjs                               0.43 kB │ gzip:   0.27 kB
+dist/server/rsc/assets/layout-DnI6FUK-.mjs                               0.44 kB │ gzip:   0.26 kB
+dist/server/rsc/assets/layout-EPtgjk-5.mjs                               0.44 kB │ gzip:   0.26 kB
+dist/server/rsc/assets/layout-LcSpoJLf.mjs                               0.44 kB │ gzip:   0.26 kB
+dist/server/rsc/assets/layout-CpA9Kh7b.mjs                               0.44 kB │ gzip:   0.26 kB
+dist/server/rsc/assets/layout-BSAj_uai.mjs                               0.44 kB │ gzip:   0.26 kB
+dist/server/rsc/assets/layout-CayPdmMe.mjs                               0.44 kB │ gzip:   0.26 kB
+dist/server/rsc/assets/layout-CsH5jdLr.mjs                               0.44 kB │ gzip:   0.26 kB
+dist/server/rsc/assets/layout-Cq8JFaMf.mjs                               0.45 kB │ gzip:   0.26 kB
+dist/server/rsc/assets/layout-JEhF4A-6.mjs                               0.45 kB │ gzip:   0.26 kB
+dist/server/rsc/assets/layout-DMhJojWe.mjs                               0.45 kB │ gzip:   0.27 kB
+dist/server/rsc/assets/page-B_1RUVoW.mjs                                 0.47 kB │ gzip:   0.32 kB
+dist/server/rsc/assets/page-BK23lFC3.mjs                                 0.51 kB │ gzip:   0.34 kB
+dist/server/rsc/assets/page-ILgB2FHl.mjs                                 0.66 kB │ gzip:   0.36 kB
+dist/server/rsc/assets/page-pebS0ZER.mjs                                 0.66 kB │ gzip:   0.36 kB
+dist/server/rsc/assets/page-YG0amV_N.mjs                                 0.66 kB │ gzip:   0.36 kB
+dist/server/rsc/assets/page-CfrPhbxc.mjs                                 0.67 kB │ gzip:   0.36 kB
+dist/server/rsc/assets/reveal-Dku0VNta.mjs                               0.69 kB │ gzip:   0.33 kB
+dist/server/rsc/assets/page-Cjz3vnB8.mjs                                 0.69 kB │ gzip:   0.37 kB
+dist/server/rsc/assets/page-CXM9mL47.mjs                                 0.70 kB │ gzip:   0.37 kB
+dist/server/rsc/assets/page-DxMVU95Q.mjs                                 0.72 kB │ gzip:   0.38 kB
+dist/server/rsc/assets/layout-dQdPJhls.mjs                               0.78 kB │ gzip:   0.45 kB
+dist/server/rsc/assets/page-BGz24Zq5.mjs                                 0.82 kB │ gzip:   0.43 kB
+dist/server/rsc/assets/page-BlgGJFZP.mjs                                 0.83 kB │ gzip:   0.43 kB
+dist/server/rsc/assets/layout-BMjH6E5n.mjs                               0.94 kB │ gzip:   0.45 kB
+dist/server/rsc/assets/layout-Cxuh_TBm.mjs                               1.03 kB │ gzip:   0.52 kB
+dist/server/rsc/assets/page-DqzKN_By.mjs                                 1.12 kB │ gzip:   0.54 kB
+dist/server/rsc/assets/page-wtTQ3GCw.mjs                                 1.15 kB │ gzip:   0.54 kB
+dist/server/rsc/assets/page-BrLqMurT.mjs                                 1.17 kB │ gzip:   0.56 kB
+dist/server/rsc/assets/page-B858cmMS.mjs                                 1.18 kB │ gzip:   0.56 kB
+dist/server/rsc/assets/page-D40XiLph.mjs                                 1.18 kB │ gzip:   0.56 kB
+dist/server/rsc/assets/page-D-xWTaIc.mjs                                 1.18 kB │ gzip:   0.57 kB
+dist/server/rsc/assets/page-ChmQ9p35.mjs                                 1.19 kB │ gzip:   0.56 kB
+dist/server/rsc/assets/page-DGZANItQ.mjs                                 1.19 kB │ gzip:   0.56 kB
+dist/server/rsc/assets/page-Dnn4oIjF.mjs                                 1.19 kB │ gzip:   0.57 kB
+dist/server/rsc/assets/page-Bv8svCSG.mjs                                 1.20 kB │ gzip:   0.58 kB
+dist/server/rsc/assets/page-B5urWrb-.mjs                                 1.21 kB │ gzip:   0.58 kB
+dist/server/rsc/assets/page-CSfQU1R8.mjs                                 1.21 kB │ gzip:   0.58 kB
+dist/server/rsc/assets/page-Bbllxrb6.mjs                                 1.22 kB │ gzip:   0.59 kB
+dist/server/rsc/assets/page-DI8dpprc.mjs                                 1.22 kB │ gzip:   0.58 kB
+dist/server/rsc/assets/page-Cg_60u-P.mjs                                 1.23 kB │ gzip:   0.57 kB
+dist/server/rsc/assets/public-routes-DzCynu4V.mjs                        1.23 kB │ gzip:   0.50 kB
+dist/server/rsc/assets/page-DjSqwHUa.mjs                                 1.23 kB │ gzip:   0.59 kB
+dist/server/rsc/assets/page-Cd663n_v.mjs                                 1.24 kB │ gzip:   0.58 kB
+dist/server/rsc/assets/marketing-metadata-C6Q0iSvR.mjs                   1.42 kB │ gzip:   0.71 kB
+dist/server/rsc/index.js                                                 1.85 kB │ gzip:   0.86 kB
+dist/server/rsc/assets/jsx-runtime.react-server-BfEuBjme.mjs             1.92 kB │ gzip:   0.85 kB
+dist/server/rsc/assets/route-match-DjxHqbkS.mjs                          1.98 kB │ gzip:   0.88 kB
+dist/server/rsc/assets/next-intl-D-B_1iVl.mjs                            2.07 kB │ gzip:   0.87 kB
+dist/server/rsc/assets/metadata-CRROattk.mjs                             2.20 kB │ gzip:   0.93 kB
+dist/server/rsc/assets/stat-strip-0vmnvC_m.mjs                           2.26 kB │ gzip:   0.98 kB
+dist/server/rsc/assets/page-QcTpZ0kX.mjs                                 2.69 kB │ gzip:   1.29 kB
+dist/server/rsc/assets/page-metadata-hu9KRfVK.mjs                        2.98 kB │ gzip:   1.18 kB
+dist/server/rsc/assets/layout-DXob3ikQ.mjs                               3.06 kB │ gzip:   1.19 kB
+dist/server/rsc/assets/section-shell-niZtq65L.mjs                        4.35 kB │ gzip:   1.52 kB
+dist/server/rsc/assets/surface-card-D4pemxiE.mjs                         5.04 kB │ gzip:   1.72 kB
+dist/server/rsc/assets/marketing-render-context-BMk7Xi2M.mjs             5.05 kB │ gzip:   1.56 kB
+dist/server/rsc/assets/atmosphere-DLFkFJj-.mjs                           5.10 kB │ gzip:   1.68 kB
+dist/server/rsc/assets/page-B0q_3boi.mjs                                 5.11 kB │ gzip:   1.84 kB
+dist/server/rsc/assets/layout-DSuiEmfd.mjs                               5.18 kB │ gzip:   2.16 kB
+dist/server/rsc/assets/page-hero-DS5FvtzB.mjs                            5.54 kB │ gzip:   1.86 kB
+dist/server/rsc/assets/navigation-cr096OIr.mjs                           8.96 kB │ gzip:   3.39 kB
+dist/server/rsc/assets/static-icons-G9K3ynvF.mjs                         9.61 kB │ gzip:   3.15 kB
+dist/server/rsc/assets/product-page-primitives-V94Xlt70.mjs             10.07 kB │ gzip:   2.57 kB
+dist/server/rsc/assets/page-CVu0dDma.mjs                                10.40 kB │ gzip:   3.26 kB
+dist/server/rsc/assets/react.react-server-Cmh2liXh.mjs                  13.61 kB │ gzip:   4.04 kB
+dist/server/rsc/assets/page-ZEW2IHAE.mjs                                13.94 kB │ gzip:   2.96 kB
+dist/server/rsc/assets/page-DaOwdMHy.mjs                                14.13 kB │ gzip:   4.16 kB
+dist/server/rsc/bridge-pages.js                                         14.88 kB │ gzip:   1.43 kB
+dist/server/rsc/assets/page-BuJg5fsZ.mjs                                15.54 kB │ gzip:   4.36 kB
+dist/server/rsc/assets/page-sHGihCBZ.mjs                                16.30 kB │ gzip:   4.72 kB
+dist/server/rsc/assets/page-Cp2r6cIu.mjs                                17.63 kB │ gzip:   3.18 kB
+dist/server/rsc/assets/page-CdukiANu.mjs                                18.76 kB │ gzip:   4.29 kB
+dist/server/rsc/assets/legal-page-layout-DQ4PkCbL.mjs                   19.53 kB │ gzip:   4.69 kB
+dist/server/rsc/assets/page-MqdzhVDR.mjs                                22.49 kB │ gzip:   5.81 kB
+dist/server/rsc/assets/lucide-DU3Siiaf.mjs                              22.57 kB │ gzip:   2.39 kB
+dist/server/rsc/assets/legal-changes-CbL9iFHX.mjs                       24.37 kB │ gzip:   5.64 kB
+dist/server/rsc/assets/src-lJtWNCVp.mjs                                 31.45 kB │ gzip:   7.67 kB
+dist/server/rsc/assets/page-LeS3stf8.mjs                                32.29 kB │ gzip:   7.62 kB
+dist/server/rsc/assets/browser-DqqSeZdp.mjs                             38.45 kB │ gzip:   8.61 kB
+dist/server/rsc/assets/rsc-CYrMnlWn.mjs                                 43.10 kB │ gzip:   9.65 kB
+dist/server/rsc/assets/dist-DbnqBfn-.mjs                                44.56 kB │ gzip:  13.78 kB
+dist/server/rsc/assets/page-C9lb66cE.mjs                                44.68 kB │ gzip:   7.26 kB
+dist/server/rsc/assets/next-intl-server-aGTppBvT.mjs                    91.06 kB │ gzip:  23.36 kB
+dist/server/rsc/assets/server-BuIDE4uj.mjs                             121.82 kB │ gzip:  26.13 kB
+dist/server/rsc/assets/legal-markdown-BIGkoewN.mjs                     149.61 kB │ gzip:  46.18 kB
+dist/server/rsc/assets/nodejs-CbhJbYWF.mjs                             161.50 kB │ gzip:  28.09 kB
+dist/server/rsc/assets/en-Duqmlo_a.mjs                                 279.96 kB │ gzip:  84.54 kB
+dist/server/rsc/assets/vi-BrbeqGqd.mjs                                 345.22 kB │ gzip:  93.72 kB
+dist/server/rsc/assets/page-route-DH8nrIf0.mjs                       1,370.77 kB │ gzip: 308.01 kB
+
+✓ built in 521ms
+[4/5] build client environment...
+transforming...
+✓ 4604 modules transformed.
+rendering chunks...
+computing gzip size...
+dist/client/.assetsignore                                            0.02 kB
+dist/client/landing-styles.json                                      0.14 kB │ gzip:   0.12 kB
+dist/client/assets/be-vietnam-pro-500-vietnamese-D3pY20Dx.woff2      5.10 kB
+dist/client/assets/be-vietnam-pro-600-vietnamese-DbGrrtCq.woff2      5.12 kB
+dist/client/assets/be-vietnam-pro-700-vietnamese-DptIoWwl.woff2      5.13 kB
+dist/client/assets/be-vietnam-pro-800-vietnamese-BEUwTqXl.woff2      5.14 kB
+dist/client/assets/be-vietnam-pro-800-vietnamese-BEUwTqXl.woff2      5.14 kB
+dist/client/assets/product-tour-480-BWnj429r.webp                    6.34 kB
+dist/client/assets/product-tour-480-BWnj429r.webp                    6.34 kB
+dist/client/assets/be-vietnam-pro-800-latin-ext-CuRTcTDh.woff2       7.14 kB
+dist/client/assets/be-vietnam-pro-600-latin-ext-BKiYkgig.woff2       7.15 kB
+dist/client/assets/be-vietnam-pro-700-latin-ext-CI8xL9vt.woff2       7.16 kB
+dist/client/assets/be-vietnam-pro-500-latin-ext-D9Mxtggg.woff2       7.18 kB
+dist/client/assets/jetbrains-mono-vietnamese-BuiWsewI.woff2          8.05 kB
+dist/client/assets/product-tour-960-CZrawldg.webp                   12.52 kB
+dist/client/assets/product-tour-960-CZrawldg.webp                   12.52 kB
+dist/client/assets/be-vietnam-pro-500-latin-BcWytNOG.woff2          13.32 kB
+dist/client/assets/be-vietnam-pro-700-latin-CPfR8Jz_.woff2          13.34 kB
+dist/client/assets/be-vietnam-pro-800-latin-B5VTH9An.woff2          13.38 kB
+dist/client/assets/be-vietnam-pro-800-latin-B5VTH9An.woff2          13.38 kB
+dist/client/assets/be-vietnam-pro-600-latin-xAC4kEK0.woff2          13.42 kB
+dist/client/assets/product-tour-1280-CUo-0EBs.webp                  17.11 kB
+dist/client/assets/product-tour-1280-CUo-0EBs.webp                  17.11 kB
+dist/client/assets/jetbrains-mono-400-latin-DuuNxu2V.woff2          19.88 kB
+dist/client/assets/jetbrains-mono-latin-BB0eCvjd.woff2              47.19 kB
+dist/client/assets/jetbrains-mono-variable-DYhBJxHs.woff2          113.68 kB
+dist/client/assets/legal-changes-DsRE9oXq.css                        6.06 kB │ gzip:   1.75 kB
+dist/client/assets/landing-critical-18d22dc1a7b1.css                77.91 kB │ gzip:  16.63 kB
+dist/client/assets/landing-rest-2d0eadfb741d.css                   193.98 kB │ gzip:  23.18 kB
+dist/client/assets/layout-PB0o536s.css                             265.86 kB │ gzip:  35.87 kB
+dist/client/assets/use-landing-reduced-motion-DfLrdwx3.js            0.04 kB │ gzip:   0.06 kB
+dist/client/assets/page-route-DRe6TYSq.js                            0.07 kB │ gzip:   0.07 kB
+dist/client/assets/link-BHUaaK-5.js                                  0.09 kB │ gzip:   0.09 kB
+dist/client/assets/client-provider-Cmrn9PJ0.js                       0.10 kB │ gzip:   0.11 kB
+dist/client/assets/layout-Dkr984SG.js                                0.10 kB │ gzip:   0.10 kB
+dist/client/assets/check-DgmYK3wG.js                                 0.16 kB │ gzip:   0.16 kB
+dist/client/assets/chevron-down-lFnTlfll.js                          0.16 kB │ gzip:   0.16 kB
+dist/client/assets/arrow-right-9vKV6hAt.js                           0.20 kB │ gzip:   0.18 kB
+dist/client/assets/arrow-up-right-JfdgDIdv.js                        0.20 kB │ gzip:   0.18 kB
+dist/client/assets/clock-Buyw6PBT.js                                 0.20 kB │ gzip:   0.19 kB
+dist/client/assets/nav-actions-YAFrzXtu.js                           0.20 kB │ gzip:   0.17 kB
+dist/client/assets/search-oHiVNhnD.js                                0.21 kB │ gzip:   0.19 kB
+dist/client/assets/trending-up-HcgrQ3i_.js                           0.21 kB │ gzip:   0.19 kB
+dist/client/assets/gauge-D27BZBoP.js                                 0.21 kB │ gzip:   0.19 kB
+dist/client/assets/play-CmDZkM6u.js                                  0.23 kB │ gzip:   0.20 kB
+dist/client/assets/smartphone-HCkG0OE3.js                            0.23 kB │ gzip:   0.21 kB
+dist/client/assets/lock-CBX-vKnk.js                                  0.24 kB │ gzip:   0.22 kB
+dist/client/assets/chart-line-BJL8Y9_O.js                            0.24 kB │ gzip:   0.21 kB
+dist/client/assets/resolve-elements-B77bWpQo.js                      0.24 kB │ gzip:   0.19 kB
+dist/client/assets/circle-check-CynlLLzE.js                          0.25 kB │ gzip:   0.21 kB
+dist/client/assets/mail-DkmQ8gmQ.js                                  0.25 kB │ gzip:   0.22 kB
+dist/client/assets/moon-BLQF8vux.js                                  0.25 kB │ gzip:   0.22 kB
+dist/client/assets/reveal-fMK-IWtX.js                                0.25 kB │ gzip:   0.16 kB
+dist/client/assets/dollar-sign-DmmXNBOy.js                           0.25 kB │ gzip:   0.22 kB
+dist/client/assets/folder-D6MfBw_e.js                                0.26 kB │ gzip:   0.21 kB
+dist/client/assets/git-branch-jTDUKGIp.js                            0.26 kB │ gzip:   0.22 kB
+dist/client/assets/download-cBwQK1V0.js                              0.27 kB │ gzip:   0.22 kB
+dist/client/assets/message-square-Dnyx9pWy.js                        0.27 kB │ gzip:   0.23 kB
+dist/client/assets/activity-C0EkynN7.js                              0.27 kB │ gzip:   0.22 kB
+dist/client/assets/timer-BUPqBWrP.js                                 0.27 kB │ gzip:   0.21 kB
+dist/client/assets/globe-nJ5cRYJ4.js                                 0.28 kB │ gzip:   0.21 kB
+dist/client/assets/credit-card-DFkIBxM9.js                           0.28 kB │ gzip:   0.23 kB
+dist/client/assets/database-BLWRmss8.js                              0.28 kB │ gzip:   0.22 kB
+dist/client/assets/video-h8edWZDS.js                                 0.28 kB │ gzip:   0.24 kB
+dist/client/assets/calendar-7Lqznt08.js                              0.29 kB │ gzip:   0.23 kB
+dist/client/assets/eye-CzPt2TdT.js                                   0.29 kB │ gzip:   0.23 kB
+dist/client/assets/heart-DI0_0swp.js                                 0.29 kB │ gzip:   0.24 kB
+dist/client/assets/map-pin-CjsL8nw5.js                               0.29 kB │ gzip:   0.25 kB
+dist/client/assets/key-D9IUeutr.js                                   0.30 kB │ gzip:   0.24 kB
+dist/client/assets/shield-Bo7djCqR.js                                0.31 kB │ gzip:   0.25 kB
+dist/client/assets/zap-BktIu2n9.js                                   0.31 kB │ gzip:   0.24 kB
+dist/client/assets/chart-column-B7zd7xDK.js                          0.31 kB │ gzip:   0.23 kB
+dist/client/assets/list-checks-QJapLdHc.js                           0.31 kB │ gzip:   0.21 kB
+dist/client/assets/inbox-BFmwosTP.js                                 0.32 kB │ gzip:   0.25 kB
+dist/client/assets/wallet-NXTkP0Wm.js                                0.32 kB │ gzip:   0.23 kB
+dist/client/assets/book-open-Cc7fzZSi.js                             0.32 kB │ gzip:   0.25 kB
+dist/client/assets/bell-Com7ndKK.js                                  0.33 kB │ gzip:   0.26 kB
+dist/client/assets/wrench-Dfo65ksz.js                                0.34 kB │ gzip:   0.26 kB
+dist/client/assets/coffee-hMUOJYNO.js                                0.34 kB │ gzip:   0.23 kB
+dist/client/assets/users-tUXahsxy.js                                 0.34 kB │ gzip:   0.25 kB
+dist/client/assets/box-Bce2xh7f.js                                   0.35 kB │ gzip:   0.25 kB
+dist/client/assets/shield-check-BFtTsS5m.js                          0.36 kB │ gzip:   0.27 kB
+dist/client/assets/tag-BuPQ-zEm.js                                   0.36 kB │ gzip:   0.27 kB
+dist/client/assets/bot-BoIqBbhg.js                                   0.36 kB │ gzip:   0.25 kB
+dist/client/assets/clsx-DB0hHKMi.js                                  0.36 kB │ gzip:   0.23 kB
+dist/client/assets/graduation-cap-66pSmKXG.js                        0.37 kB │ gzip:   0.27 kB
+dist/client/assets/server-JGyfeqMe.js                                0.37 kB │ gzip:   0.24 kB
+dist/client/assets/shopping-bag-IUnRTas_.js                          0.38 kB │ gzip:   0.26 kB
+dist/client/assets/gift-CixFU7KQ.js                                  0.38 kB │ gzip:   0.27 kB
+dist/client/assets/layout-dashboard-BQBdQMn4.js                      0.39 kB │ gzip:   0.23 kB
+dist/client/assets/share-2-BhuctaEN.js                               0.39 kB │ gzip:   0.26 kB
+dist/client/assets/package-BkxdGj6v.js                               0.41 kB │ gzip:   0.28 kB
+dist/client/assets/warehouse-CX1fHuBw.js                             0.41 kB │ gzip:   0.27 kB
+dist/client/assets/calendar-clock-Rtc25wvX.js                        0.42 kB │ gzip:   0.28 kB
+dist/client/assets/file-text-k8r6Rba6.js                             0.42 kB │ gzip:   0.27 kB
+dist/client/assets/shopping-cart-CMwr1Nhh.js                         0.42 kB │ gzip:   0.30 kB
+dist/client/assets/send-AAXCpBYH.js                                  0.43 kB │ gzip:   0.29 kB
+dist/client/assets/dynamic-BhhqeYHP.js                               0.43 kB │ gzip:   0.30 kB
+dist/client/assets/truck-CdML_h11.js                                 0.44 kB │ gzip:   0.29 kB
+dist/client/assets/clipboard-list-DNji_GI1.js                        0.45 kB │ gzip:   0.28 kB
+dist/client/assets/building-complex-CCT3y_CJ.js                      0.45 kB │ gzip:   0.28 kB
+dist/client/assets/layers-9d1NKm11.js                                0.48 kB │ gzip:   0.27 kB
+dist/client/assets/heart-handshake-CJatgznT.js                       0.49 kB │ gzip:   0.32 kB
+dist/client/assets/package-search-BOFXVY3P.js                        0.51 kB │ gzip:   0.33 kB
+dist/client/assets/star-DtldxQ9p.js                                  0.51 kB │ gzip:   0.32 kB
+dist/client/assets/sun-B4OKHWtc.js                                   0.51 kB │ gzip:   0.28 kB
+dist/client/assets/target-DFhD1DLE.js                                0.52 kB │ gzip:   0.31 kB
+dist/client/assets/settings-BE4da3eR.js                              0.52 kB │ gzip:   0.28 kB
+dist/client/assets/store-D1N_jsIh.js                                 0.53 kB │ gzip:   0.31 kB
+dist/client/assets/trophy-DrioC6MS.js                                0.54 kB │ gzip:   0.31 kB
+dist/client/assets/image-DD-Q5cfU.js                                 0.55 kB │ gzip:   0.36 kB
+dist/client/assets/palette-DUd1luA3.js                               0.55 kB │ gzip:   0.30 kB
+dist/client/assets/sparkles-CiKYhZ3F.js                              0.55 kB │ gzip:   0.32 kB
+dist/client/assets/use-static-motion-DvEk7L3r.js                     0.59 kB │ gzip:   0.35 kB
+dist/client/assets/building-C2npAw6G.js                              0.60 kB │ gzip:   0.30 kB
+dist/client/assets/brain-CKH5PlIx.js                                 0.61 kB │ gzip:   0.33 kB
+dist/client/assets/cpu-BFE7kvJ9.js                                   0.68 kB │ gzip:   0.31 kB
+dist/client/assets/qr-code-Byv9MYEV.js                               0.69 kB │ gzip:   0.33 kB
+dist/client/assets/rocket-DPnKaapm.js                                0.69 kB │ gzip:   0.41 kB
+dist/client/assets/receipt-BHR4bpmi.js                               0.69 kB │ gzip:   0.31 kB
+dist/client/assets/dist-D_CePz4-.js                                  0.73 kB │ gzip:   0.44 kB
+dist/client/assets/stethoscope-BEPeHdVG.js                           0.88 kB │ gzip:   0.48 kB
+dist/client/assets/boxes-CIq02l9I.js                                 0.89 kB │ gzip:   0.42 kB
+dist/client/assets/sliders-horizontal-Bgv1gwrb.js                    0.97 kB │ gzip:   0.46 kB
+dist/client/assets/page-Dv-4ZJZ9.js                                  1.19 kB │ gzip:   0.63 kB
+dist/client/assets/solution-page-primitives-C9ZPaNx1.js              1.21 kB │ gzip:   0.57 kB
+dist/client/assets/layout-DF0nW5R6.js                                1.35 kB │ gzip:   0.75 kB
+dist/client/assets/change-controls-BRRs8ZDm.js                       1.58 kB │ gzip:   0.74 kB
+dist/client/assets/page-DuMRPNG0.js                                  1.87 kB │ gzip:   0.87 kB
+dist/client/assets/count-up-Chy7LR6x.js                              2.01 kB │ gzip:   1.06 kB
+dist/client/assets/button-B7rKt4yo.js                                2.10 kB │ gzip:   0.98 kB
+dist/client/assets/section-shell-uBA-yyk7.js                         2.27 kB │ gzip:   0.95 kB
+dist/client/assets/layout-WtYC5ra-.js                                2.68 kB │ gzip:   1.40 kB
+dist/client/assets/outcomes-section-CcupcR4N.js                      2.72 kB │ gzip:   1.19 kB
+dist/client/assets/dialog-DDdC-QrF.js                                2.87 kB │ gzip:   1.03 kB
+dist/client/assets/createLucideIcon-Ck3ZprJ_.js                      3.07 kB │ gzip:   1.47 kB
+dist/client/assets/dist-pPM3Smb6.js                                  3.13 kB │ gzip:   1.40 kB
+dist/client/assets/surface-card-Jptq-NRO.js                          3.14 kB │ gzip:   1.19 kB
+dist/client/assets/dist-COSLznCi.js                                  3.27 kB │ gzip:   1.44 kB
+dist/client/assets/atmosphere-Bg9xlqWN.js                            3.43 kB │ gzip:   1.13 kB
+dist/client/assets/link-DAvKy8TY.js                                  3.51 kB │ gzip:   1.56 kB
+dist/client/assets/github-stats-ClvBHg18.js                          3.94 kB │ gzip:   1.54 kB
+dist/client/assets/AnimatePresence-Dcq0D_jh.js                       4.24 kB │ gzip:   1.97 kB
+dist/client/assets/cta-section-v4s1UKaI.js                           4.46 kB │ gzip:   1.56 kB
+dist/client/assets/dist-CURs8HG-.js                                  5.45 kB │ gzip:   2.05 kB
+dist/client/assets/products-CHUnBxTa.js                              6.09 kB │ gzip:   2.01 kB
+dist/client/assets/mobile-menu-CPBuRgLi.js                           6.23 kB │ gzip:   2.16 kB
+dist/client/assets/shared-cookie-DeXCevkS.js                         6.66 kB │ gzip:   1.57 kB
+dist/client/assets/accordion-sH9OY9v3.js                             7.54 kB │ gzip:   2.73 kB
+dist/client/assets/dist-DfoNVSHV.js                                  7.81 kB │ gzip:   3.06 kB
+dist/client/assets/nav-shell-DHnF77mm.js                             8.13 kB │ gzip:   3.15 kB
+dist/client/assets/react-CcnNsOSo.js                                 8.19 kB │ gzip:   3.16 kB
+dist/client/assets/page-vENj8ZJ8.js                                  8.66 kB │ gzip:   3.56 kB
+dist/client/assets/dist-BlEFSyZP.js                                  8.69 kB │ gzip:   3.05 kB
+dist/client/assets/dist-FYRHdeNg.js                                 10.23 kB │ gzip:   3.65 kB
+dist/client/assets/query-provider-DXiYVOyM.js                       10.44 kB │ gzip:   3.11 kB
+dist/client/assets/page-DrVJ1ONJ.js                                 10.66 kB │ gzip:   2.98 kB
+dist/client/assets/page-DaGUZuNl.js                                 10.72 kB │ gzip:   2.92 kB
+dist/client/assets/problem-section-BHAAH0ri.js                      10.77 kB │ gzip:   3.09 kB
+dist/client/assets/page-BQg811J8.js                                 10.96 kB │ gzip:   3.04 kB
+dist/client/assets/page-hFUg9A0t.js                                 11.15 kB │ gzip:   3.20 kB
+dist/client/assets/page-D0xWgGu0.js                                 11.38 kB │ gzip:   3.20 kB
+dist/client/assets/page-DJI8YC1E.js                                 11.47 kB │ gzip:   3.29 kB
+dist/client/assets/page-DWg-LxhE.js                                 11.57 kB │ gzip:   3.40 kB
+dist/client/assets/page-HeEzVROq.js                                 11.78 kB │ gzip:   3.50 kB
+dist/client/assets/page-CP56H-l6.js                                 11.93 kB │ gzip:   3.37 kB
+dist/client/assets/ai-section-CDmoruM1.js                           12.67 kB │ gzip:   3.98 kB
+dist/client/assets/es2015-DiBfiT1Z.js                               13.14 kB │ gzip:   5.07 kB
+dist/client/assets/query-C5yP4N-i.js                                14.98 kB │ gzip:   5.20 kB
+dist/client/assets/lucide-D6vLWY85.js                               16.69 kB │ gzip:   6.09 kB
+dist/client/assets/locale-preference-C5pbDLIu.js                    19.63 kB │ gzip:   5.72 kB
+dist/client/assets/features-bento-C5hWrYT1.js                       25.47 kB │ gzip:   6.05 kB
+dist/client/assets/dist-Bcow9Ss5.js                                 25.83 kB │ gzip:  10.70 kB
+dist/client/assets/page-6dt8jeVZ.js                                 30.89 kB │ gzip:   7.63 kB
+dist/client/assets/sonner-C2FstIgL.js                               34.08 kB │ gzip:   9.52 kB
+dist/client/assets/privacy-consent-DVk4wOao.js                      35.82 kB │ gzip:   6.71 kB
+dist/client/assets/react-CguiC4BF.js                                38.15 kB │ gzip:  11.46 kB
+dist/client/assets/page-f5dAQZcb.js                                 57.13 kB │ gzip:  11.34 kB
+dist/client/assets/pricing-island-PrYvYaXB.js                       79.88 kB │ gzip:  19.56 kB
+dist/client/assets/demo-section-B--U0myj.js                         82.13 kB │ gzip:  19.69 kB
+dist/client/assets/proxy-CxFkkUmD.js                               122.10 kB │ gzip:  39.80 kB
+dist/client/assets/page-DCpmI7bN.js                                153.70 kB │ gzip:  46.94 kB
+dist/client/assets/index-YOn0S7nQ.js                               350.34 kB │ gzip: 114.78 kB
+dist/client/assets/contribution-analytics-Bat2pTGV.js              367.12 kB │ gzip: 105.60 kB
+dist/client/assets/dist-CI3mxogM.js                              1,076.65 kB │ gzip: 187.72 kB
+
+[plugin builtin:vite-reporter] 
+(!) Some chunks are larger than 500 kB after minification. Consider:
+- Using dynamic import() to code-split the application
+- Use build.rolldownOptions.output.codeSplitting to improve chunking: https://rolldown.rs/reference/OutputOptions.codeSplitting
+- Adjust chunk size limit for this warning via build.chunkSizeWarningLimit.
+[33m[INEFFECTIVE_DYNAMIC_IMPORT] [0m../../node_modules/.bun/@vitejs+plugin-rsc@0.5.38+2ebe4cfe93f8ca61/node_modules/@vitejs/plugin-rsc/dist/browser.js is dynamically imported by ../../packages/start-bridge/src/start/server-actions.ts but also statically imported by \0virtual:tanstack-rsc-browser-decode, dynamic import will not move module into another chunk.
+
+[33m[FILE_NAME_CONFLICT] [0mThe emitted file assets/product-tour-960-CZrawldg.webp overwrites a previously emitted file of the same name.
+
+[33m[FILE_NAME_CONFLICT] [0mThe emitted file assets/product-tour-480-BWnj429r.webp overwrites a previously emitted file of the same name.
+
+[33m[FILE_NAME_CONFLICT] [0mThe emitted file assets/be-vietnam-pro-800-vietnamese-BEUwTqXl.woff2 overwrites a previously emitted file of the same name.
+
+[33m[FILE_NAME_CONFLICT] [0mThe emitted file assets/be-vietnam-pro-800-latin-B5VTH9An.woff2 overwrites a previously emitted file of the same name.
+
+[33m[FILE_NAME_CONFLICT] [0mThe emitted file assets/product-tour-1280-CUo-0EBs.webp overwrites a previously emitted file of the same name.
+
+✓ built in 912ms
+[5/5] build ssr environment...
+transforming...
+✓ 4847 modules transformed.
+rendering chunks...
+computing gzip size...
+dist/server/wrangler.json                                            1.72 kB │ gzip:   0.83 kB
+dist/server/assets/be-vietnam-pro-800-vietnamese-BEUwTqXl.woff2      5.14 kB
+dist/server/assets/product-tour-480-BWnj429r.webp                    6.34 kB
+dist/server/assets/product-tour-960-CZrawldg.webp                   12.52 kB
+dist/server/assets/be-vietnam-pro-800-latin-B5VTH9An.woff2          13.38 kB
+dist/server/assets/product-tour-1280-CUo-0EBs.webp                  17.11 kB
+dist/server/.vite/manifest.json                                     64.38 kB │ gzip:   7.35 kB
+dist/server/assets/use-landing-reduced-motion-vugrUp3l.mjs           0.04 kB │ gzip:   0.06 kB
+dist/server/assets/page-route-DRe6TYSq.mjs                           0.07 kB │ gzip:   0.07 kB
+dist/server/assets/link-CV9u7_fO.mjs                                 0.09 kB │ gzip:   0.09 kB
+dist/server/assets/client-provider-DBqanGVc.mjs                      0.10 kB │ gzip:   0.11 kB
+dist/server/assets/layout-BYNOIS8B.mjs                               0.10 kB │ gzip:   0.10 kB
+dist/server/assets/headers-CCfjQ7t5.mjs                              0.13 kB │ gzip:   0.11 kB
+dist/server/assets/RawStream-b1LPLOpB.mjs                            0.16 kB │ gzip:   0.15 kB │ map:     2.52 kB
+dist/server/assets/check-B1-8NGb2.mjs                                0.20 kB │ gzip:   0.20 kB │ map:     0.93 kB
+dist/server/assets/nav-actions-CQN7Xx2D.mjs                          0.21 kB │ gzip:   0.17 kB
+dist/server/assets/chevron-down-DFxjz2EV.mjs                         0.22 kB │ gzip:   0.20 kB │ map:     0.97 kB
+dist/server/assets/useRouter-Cdf9UT3Y.mjs                            0.23 kB │ gzip:   0.19 kB │ map:     1.69 kB
+dist/server/assets/clock-CM3vlet6.mjs                                0.25 kB │ gzip:   0.23 kB │ map:     1.08 kB
+dist/server/assets/arrow-right-D8-UHuWQ.mjs                          0.25 kB │ gzip:   0.22 kB │ map:     1.08 kB
+dist/server/assets/search-BU3-cGwx.mjs                               0.26 kB │ gzip:   0.23 kB │ map:     1.09 kB
+dist/server/assets/arrow-up-right-BPLgi-08.mjs                       0.26 kB │ gzip:   0.22 kB │ map:     1.10 kB
+dist/server/assets/gauge-DR3t9Hyq.mjs                                0.26 kB │ gzip:   0.23 kB │ map:     1.06 kB
+dist/server/assets/trending-up-BcDabKEg.mjs                          0.26 kB │ gzip:   0.23 kB │ map:     1.09 kB
+dist/server/assets/play-DLIKxr5l.mjs                                 0.27 kB │ gzip:   0.24 kB │ map:     1.05 kB
+dist/server/assets/smartphone-BNYDTfEB.mjs                           0.28 kB │ gzip:   0.25 kB │ map:     1.18 kB
+dist/server/assets/lock-CLw-u_DZ.mjs                                 0.29 kB │ gzip:   0.25 kB │ map:     1.15 kB
+dist/server/assets/csp-B2xcN8ro.mjs                                  0.29 kB │ gzip:   0.25 kB │ map:     1.85 kB
+dist/server/assets/chart-line-DOqlrLso.mjs                           0.29 kB │ gzip:   0.25 kB │ map:     1.15 kB
+dist/server/assets/mail-BVHjUQgw.mjs                                 0.29 kB │ gzip:   0.26 kB │ map:     1.14 kB
+dist/server/assets/moon-gJTEKzkf.mjs                                 0.30 kB │ gzip:   0.26 kB │ map:     1.07 kB
+dist/server/assets/circle-check-DEGgnOav.mjs                         0.30 kB │ gzip:   0.25 kB │ map:     1.19 kB
+dist/server/assets/resolve-elements-B77bWpQo.mjs                     0.30 kB │ gzip:   0.24 kB │ map:     1.39 kB
+dist/server/assets/reveal-BlthViCD.mjs                               0.30 kB │ gzip:   0.20 kB │ map:     1.17 kB
+dist/server/assets/dollar-sign-fMUlHcVu.mjs                          0.31 kB │ gzip:   0.25 kB │ map:     1.18 kB
+dist/server/assets/folder-Bdvv0rYa.mjs                               0.31 kB │ gzip:   0.25 kB │ map:     1.10 kB
+dist/server/assets/git-branch-fUTvKcUt.mjs                           0.31 kB │ gzip:   0.25 kB │ map:     1.26 kB
+dist/server/assets/download-Cb9w_4s5.mjs                             0.32 kB │ gzip:   0.25 kB │ map:     1.20 kB
+dist/server/assets/activity--o1op5Nh.mjs                             0.32 kB │ gzip:   0.26 kB │ map:     1.11 kB
+dist/server/assets/timer-2llHf5jF.mjs                                0.32 kB │ gzip:   0.25 kB │ map:     1.29 kB
+dist/server/assets/globe-u7KsLTiy.mjs                                0.32 kB │ gzip:   0.25 kB │ map:     1.22 kB
+dist/server/assets/message-square-YRV18RZB.mjs                       0.32 kB │ gzip:   0.26 kB │ map:     1.15 kB
+dist/server/assets/database-C_ORTsN3.mjs                             0.33 kB │ gzip:   0.26 kB │ map:     1.25 kB
+dist/server/assets/video-C7gXGL3b.mjs                                0.33 kB │ gzip:   0.28 kB │ map:     1.23 kB
+dist/server/assets/credit-card-DPJiAeJa.mjs                          0.33 kB │ gzip:   0.27 kB │ map:     1.32 kB
+dist/server/assets/eye-8_gxFFTo.mjs                                  0.33 kB │ gzip:   0.26 kB │ map:     1.20 kB
+dist/server/assets/calendar-DsbZFSWw.mjs                             0.34 kB │ gzip:   0.26 kB │ map:     1.34 kB
+dist/server/assets/heart-YVd4VuiS.mjs                                0.34 kB │ gzip:   0.28 kB │ map:     1.12 kB
+dist/server/assets/map-pin-B7L_Wf0y.mjs                              0.34 kB │ gzip:   0.28 kB │ map:     1.22 kB
+dist/server/assets/key-PE-uHKjI.mjs                                  0.34 kB │ gzip:   0.28 kB │ map:     1.25 kB
+dist/server/assets/staging-hosts-myHEn6wq.mjs                        0.35 kB │ gzip:   0.27 kB │ map:     1.35 kB
+dist/server/assets/zap-DApj7Pi6.mjs                                  0.35 kB │ gzip:   0.28 kB │ map:     1.12 kB
+dist/server/assets/shield-BEFyXnQN.mjs                               0.35 kB │ gzip:   0.29 kB │ map:     1.14 kB
+dist/server/assets/chart-column-B3-s0kn-.mjs                         0.36 kB │ gzip:   0.27 kB │ map:     1.35 kB
+dist/server/assets/list-checks-Bjd81Ilg.mjs                          0.37 kB │ gzip:   0.25 kB │ map:     1.39 kB
+dist/server/assets/inbox-CIoOwH74.mjs                                0.37 kB │ gzip:   0.29 kB │ map:     1.21 kB
+dist/server/assets/wallet-DLJPBLkg.mjs                               0.37 kB │ gzip:   0.27 kB │ map:     1.22 kB
+dist/server/assets/bell-B8Sju18Y.mjs                                 0.37 kB │ gzip:   0.30 kB │ map:     1.21 kB
+dist/server/assets/_tanstack-start-manifest_v-duDnn3mU.mjs           0.37 kB │ gzip:   0.28 kB
+dist/server/assets/book-open-Ci5LSA8x.mjs                            0.37 kB │ gzip:   0.28 kB │ map:     1.24 kB
+dist/server/assets/wrench-COfHOLGc.mjs                               0.38 kB │ gzip:   0.30 kB │ map:     1.17 kB
+dist/server/assets/coffee-HOr6HLGd.mjs                               0.39 kB │ gzip:   0.27 kB │ map:     1.36 kB
+dist/server/assets/users-DfKgFvuB.mjs                                0.39 kB │ gzip:   0.28 kB │ map:     1.35 kB
+dist/server/assets/box-BnQwD_tN.mjs                                  0.39 kB │ gzip:   0.29 kB │ map:     1.29 kB
+dist/server/assets/tag-EZ8KkY0B.mjs                                  0.40 kB │ gzip:   0.31 kB │ map:     1.28 kB
+dist/server/assets/bot-XGud8g43.mjs                                  0.41 kB │ gzip:   0.29 kB │ map:     1.51 kB
+dist/server/assets/clsx-DB0hHKMi.mjs                                 0.41 kB │ gzip:   0.27 kB │ map:     1.16 kB
+dist/server/assets/shield-check-DAibIZDU.mjs                         0.41 kB │ gzip:   0.31 kB │ map:     1.29 kB
+dist/server/assets/server-vrQj4mzW.mjs                               0.42 kB │ gzip:   0.27 kB │ map:     1.58 kB
+dist/server/assets/graduation-cap-CDXJsyHH.mjs                       0.42 kB │ gzip:   0.31 kB │ map:     1.38 kB
+dist/server/assets/shopping-bag-D2PqVP84.mjs                         0.43 kB │ gzip:   0.30 kB │ map:     1.37 kB
+dist/server/assets/gift-Cly53rZO.mjs                                 0.43 kB │ gzip:   0.31 kB │ map:     1.43 kB
+dist/server/assets/share-2-tDCWR7z5.mjs                              0.44 kB │ gzip:   0.30 kB │ map:     1.61 kB
+dist/server/assets/layout-dashboard-CjRtgk0F.mjs                     0.44 kB │ gzip:   0.27 kB │ map:     1.65 kB
+dist/server/assets/package-CIJT0wVM.mjs                              0.45 kB │ gzip:   0.32 kB │ map:     1.44 kB
+dist/server/assets/async-local-storage-BrmnkSxo.mjs                  0.46 kB │ gzip:   0.32 kB │ map:     1.54 kB
+dist/server/assets/warehouse-QdhZb0gB.mjs                            0.46 kB │ gzip:   0.31 kB │ map:     1.45 kB
+dist/server/assets/file-text-BaBE4gzS.mjs                            0.47 kB │ gzip:   0.31 kB │ map:     1.53 kB
+dist/server/assets/send-qlNz2t7h.mjs                                 0.47 kB │ gzip:   0.33 kB │ map:     2.05 kB
+dist/server/assets/calendar-clock-BNGPvpXu.mjs                       0.47 kB │ gzip:   0.32 kB │ map:     1.60 kB
+dist/server/assets/shopping-cart-DtB5Eedh.mjs                        0.48 kB │ gzip:   0.34 kB │ map:     1.59 kB
+dist/server/assets/jsx-runtime-CHUZGpk0.mjs                          0.48 kB │ gzip:   0.34 kB │ map:     2.19 kB
+dist/server/assets/base-path-Bd-cKJ9V.mjs                            0.49 kB │ gzip:   0.35 kB │ map:     2.27 kB
+dist/server/assets/truck-BT341Oaq.mjs                                0.49 kB │ gzip:   0.33 kB │ map:     1.58 kB
+dist/server/assets/clipboard-list-BY_7gkTx.mjs                       0.50 kB │ gzip:   0.32 kB │ map:     1.72 kB
+dist/server/assets/building-complex-CpRiAOjA.mjs                     0.50 kB │ gzip:   0.32 kB │ map:     1.63 kB
+dist/server/assets/layers-DS0st7E_.mjs                               0.52 kB │ gzip:   0.31 kB │ map:     1.56 kB
+dist/server/assets/dynamic-Dk4cm26K.mjs                              0.53 kB │ gzip:   0.37 kB │ map:     1.81 kB
+dist/server/assets/heart-handshake-DX-6i8yg.mjs                      0.55 kB │ gzip:   0.36 kB │ map:     1.38 kB
+dist/server/assets/sun-CyyipwoP.mjs                                  0.55 kB │ gzip:   0.32 kB │ map:     1.82 kB
+dist/server/assets/star-CPkOEBIS.mjs                                 0.55 kB │ gzip:   0.36 kB │ map:     1.33 kB
+dist/server/assets/package-search-5wc3d8Og.mjs                       0.56 kB │ gzip:   0.37 kB │ map:     1.74 kB
+dist/server/assets/target-aIOXjBkb.mjs                               0.57 kB │ gzip:   0.35 kB │ map:     2.44 kB
+dist/server/assets/settings-CI2KGLsT.mjs                             0.57 kB │ gzip:   0.32 kB │ map:     1.46 kB
+dist/server/assets/store-z1pVtdLA.mjs                                0.58 kB │ gzip:   0.35 kB │ map:     1.49 kB
+dist/server/assets/trophy-C0pDQVAr.mjs                               0.59 kB │ gzip:   0.35 kB │ map:     1.66 kB
+dist/server/assets/palette-CXWyXVlF.mjs                              0.59 kB │ gzip:   0.34 kB │ map:     1.81 kB
+dist/server/assets/sparkles-kyTXlWYp.mjs                             0.60 kB │ gzip:   0.36 kB │ map:     1.64 kB
+dist/server/assets/image-DyejtmMJ.mjs                                0.64 kB │ gzip:   0.42 kB │ map:     2.18 kB
+dist/server/assets/building-BpPUI0vS.mjs                             0.65 kB │ gzip:   0.34 kB │ map:     2.09 kB
+dist/server/assets/brain-DtYWRsvg.mjs                                0.65 kB │ gzip:   0.37 kB │ map:     1.85 kB
+dist/server/assets/start-ebtjCqPf.mjs                                0.66 kB │ gzip:   0.42 kB │ map:     2.89 kB
+dist/server/assets/use-static-motion-ZnqX8qbh.mjs                    0.69 kB │ gzip:   0.42 kB │ map:     1.95 kB
+dist/server/assets/cpu-Bbo5HGL9.mjs                                  0.72 kB │ gzip:   0.35 kB │ map:     2.39 kB
+dist/server/assets/rolldown-runtime-XKyaHtl9.mjs                     0.72 kB │ gzip:   0.42 kB
+dist/server/assets/qr-code-DOSvEyBg.mjs                              0.73 kB │ gzip:   0.37 kB │ map:     2.35 kB
+dist/server/assets/rocket-CsEPLQQu.mjs                               0.73 kB │ gzip:   0.45 kB │ map:     2.66 kB
+dist/server/assets/receipt-kk9EogYT.mjs                              0.74 kB │ gzip:   0.35 kB │ map:     1.66 kB
+dist/server/assets/dist-CCu0wNAg.mjs                                 0.82 kB │ gzip:   0.50 kB │ map:     3.07 kB
+dist/server/assets/stethoscope-eN8h5k0k.mjs                          0.93 kB │ gzip:   0.52 kB │ map:     3.64 kB
+dist/server/assets/boxes-B4fOH3FT.mjs                                0.93 kB │ gzip:   0.46 kB │ map:     2.52 kB
+dist/server/assets/page-C87dRKzd.mjs                                 1.00 kB │ gzip:   0.57 kB │ map:     2.39 kB
+dist/server/assets/sliders-horizontal-CjfB4jW9.mjs                   1.03 kB │ gzip:   0.50 kB │ map:     4.17 kB
+dist/server/assets/tslib.es6-Tae09705.mjs                            1.11 kB │ gzip:   0.57 kB │ map:    20.24 kB
+dist/server/assets/layout-DINGSkfg.mjs                               1.23 kB │ gzip:   0.73 kB │ map:     3.41 kB
+dist/server/assets/layout-DnSWArJv.mjs                               1.28 kB │ gzip:   0.75 kB │ map:    22.24 kB
+dist/server/assets/solution-page-primitives-C62phZoq.mjs             1.28 kB │ gzip:   0.63 kB │ map:     3.00 kB
+dist/server/assets/request-context-D0yZR_jY.mjs                      1.45 kB │ gzip:   0.75 kB │ map:     8.56 kB
+dist/server/assets/createCsrfMiddleware-BQ7hSoNK.mjs                 1.64 kB │ gzip:   0.78 kB │ map:     8.55 kB
+dist/server/assets/change-controls-BE37KL42.mjs                      1.69 kB │ gzip:   0.81 kB │ map:     4.78 kB
+dist/server/assets/with-selector-D2WLJoLb.mjs                        1.71 kB │ gzip:   0.78 kB │ map:     9.23 kB
+dist/server/assets/app-url-CIM7NvhN.mjs                              1.87 kB │ gzip:   0.93 kB │ map:    12.65 kB
+dist/server/assets/page-B2lQYGzE.mjs                                 1.91 kB │ gzip:   0.88 kB
+dist/server/assets/routing-DZBQwPpo.mjs                              1.91 kB │ gzip:   1.02 kB │ map:     9.32 kB
+dist/server/assets/count-up-4NDpnR9K.mjs                             2.12 kB │ gzip:   1.12 kB │ map:     8.87 kB
+dist/server/assets/button-B-4acIQa.mjs                               2.16 kB │ gzip:   1.03 kB │ map:     7.60 kB
+dist/server/assets/utils-W3PL-jNa.mjs                                2.24 kB │ gzip:   1.11 kB │ map:    16.49 kB
+dist/server/assets/section-shell-BX-CX_Ug.mjs                        2.33 kB │ gzip:   1.00 kB │ map:     6.35 kB
+dist/server/assets/outcomes-section-C081Z6HV.mjs                     2.80 kB │ gzip:   1.24 kB │ map:     7.16 kB
+dist/server/assets/dialog-BAk4HRlP.mjs                               2.92 kB │ gzip:   1.07 kB │ map:     7.47 kB
+dist/server/assets/shared-cookie-BEMK9fw4.mjs                        3.09 kB │ gzip:   1.30 kB │ map:    17.53 kB
+dist/server/assets/createLucideIcon-BbQq42O8.mjs                     3.17 kB │ gzip:   1.55 kB │ map:    18.44 kB
+dist/server/assets/surface-card-CfopuLC8.mjs                         3.20 kB │ gzip:   1.24 kB │ map:     7.96 kB
+dist/server/assets/dist-CsKCNN9E.mjs                                 3.22 kB │ gzip:   1.47 kB │ map:    13.84 kB
+dist/server/assets/client-references-wUx9oHA_.mjs                    3.26 kB │ gzip:   1.06 kB │ map:     3.23 kB
+dist/server/assets/dist-CN-0Tdl_.mjs                                 3.36 kB │ gzip:   1.51 kB │ map:     7.92 kB
+dist/server/assets/atmosphere-Br_Qm4yV.mjs                           3.49 kB │ gzip:   1.18 kB │ map:     6.63 kB
+dist/server/assets/react-dom-S6aC7fiD.mjs                            3.63 kB │ gzip:   1.39 kB │ map:    12.96 kB
+dist/server/assets/link-CIO_a-T_.mjs                                 3.68 kB │ gzip:   1.66 kB │ map:    16.29 kB
+dist/server/assets/github-stats-COD1455W.mjs                         4.01 kB │ gzip:   1.59 kB │ map:     7.68 kB
+dist/server/assets/AnimatePresence-B_qZ0dQc.mjs                      4.35 kB │ gzip:   2.04 kB │ map:    26.86 kB
+dist/server/assets/cta-section-g_qm9iCb.mjs                          4.53 kB │ gzip:   1.60 kB │ map:     7.87 kB
+dist/server/assets/navigation-Dbk_i4ZW.mjs                           5.12 kB │ gzip:   2.16 kB │ map:    26.29 kB
+dist/server/assets/page-D3pcxiKw.mjs                                 5.28 kB │ gzip:   2.14 kB │ map:    15.79 kB
+dist/server/assets/dist-iMWTxnev.mjs                                 5.56 kB │ gzip:   2.11 kB │ map:    23.85 kB
+dist/server/assets/request-context-d4cS7rcF.mjs                      5.87 kB │ gzip:   2.23 kB │ map:    22.77 kB
+dist/server/assets/products-Cw5SV26m.mjs                             6.19 kB │ gzip:   2.07 kB │ map:    23.41 kB
+dist/server/assets/mobile-menu-BUjmu6-a.mjs                          6.34 kB │ gzip:   2.21 kB │ map:    18.25 kB
+dist/server/assets/nav-shell-QxxV465H.mjs                            7.54 kB │ gzip:   2.90 kB │ map:    23.06 kB
+dist/server/assets/react-_YU6qhen.mjs                                7.57 kB │ gzip:   2.92 kB │ map:    29.34 kB
+dist/server/assets/accordion-DweIIy4l.mjs                            7.65 kB │ gzip:   2.78 kB │ map:    33.93 kB
+dist/server/assets/dist-Btttxwsx.mjs                                 7.94 kB │ gzip:   3.13 kB │ map:    36.71 kB
+dist/server/assets/dist-CFffa_Zj.mjs                                 8.78 kB │ gzip:   3.11 kB │ map:    38.84 kB
+dist/server/assets/dist-DgvA7fY7.mjs                                10.36 kB │ gzip:   3.73 kB │ map:    45.63 kB
+dist/server/assets/query-provider-mPdD1BYi.mjs                      10.54 kB │ gzip:   3.18 kB │ map:    74.49 kB
+dist/server/assets/page-B2znIQ8D.mjs                                10.73 kB │ gzip:   3.02 kB │ map:    23.46 kB
+dist/server/assets/page-CwZtns_O.mjs                                10.79 kB │ gzip:   2.97 kB │ map:    23.63 kB
+dist/server/assets/problem-section-PBW6TIPh.mjs                     10.84 kB │ gzip:   3.14 kB │ map:    28.07 kB
+dist/server/assets/page-DlSaYVCK.mjs                                11.03 kB │ gzip:   3.09 kB │ map:    23.94 kB
+dist/server/assets/page-Dded_e_v.mjs                                11.22 kB │ gzip:   3.24 kB │ map:    25.85 kB
+dist/server/assets/page-1DSfhNHS.mjs                                11.45 kB │ gzip:   3.25 kB │ map:    25.78 kB
+dist/server/assets/page-DN1JjXkx.mjs                                11.54 kB │ gzip:   3.33 kB │ map:    25.55 kB
+dist/server/assets/page-BYIrvU_e.mjs                                11.63 kB │ gzip:   3.44 kB │ map:    26.31 kB
+dist/server/assets/page-B2aCfPzt.mjs                                11.85 kB │ gzip:   3.55 kB │ map:    27.26 kB
+dist/server/assets/page-wmFdMd3Q.mjs                                11.99 kB │ gzip:   3.42 kB │ map:    28.45 kB
+dist/server/assets/es2015-IiQWflht.mjs                              12.56 kB │ gzip:   4.89 kB │ map:    62.43 kB
+dist/server/assets/ai-section-22dFStmJ.mjs                          12.80 kB │ gzip:   4.04 kB │ map:    35.66 kB
+dist/server/assets/createServerFn-DvjWksnr.mjs                      12.84 kB │ gzip:   5.18 kB │ map:    75.47 kB
+dist/server/assets/locale-preference-npz0D-3o.mjs                   14.85 kB │ gzip:   4.01 kB │ map:    54.51 kB
+dist/server/assets/query-DgAlfzQ_.mjs                               15.08 kB │ gzip:   5.26 kB │ map:    97.17 kB
+dist/server/assets/router-DSCYTI2a.mjs                              15.34 kB │ gzip:   6.05 kB │ map:   106.39 kB
+dist/server/assets/browser-DnGS5SyQ.mjs                             16.59 kB │ gzip:   5.62 kB │ map:    99.57 kB
+dist/server/assets/lucide-CqoX5KP6.mjs                              16.80 kB │ gzip:   6.15 kB │ map:    52.43 kB
+dist/server/assets/features-bento-D6zp7oqL.mjs                      25.60 kB │ gzip:   6.12 kB │ map:    67.70 kB
+dist/server/assets/dist-Bcow9Ss5.mjs                                25.87 kB │ gzip:  10.74 kB │ map:    80.00 kB
+dist/server/assets/page-CyD8lzIU.mjs                                30.99 kB │ gzip:   7.69 kB │ map:    84.36 kB
+dist/server/assets/sonner-C0-Xg_v-.mjs                              34.22 kB │ gzip:   9.60 kB │ map:    97.10 kB
+dist/server/assets/server-F5SCTcQ5.mjs                              34.89 kB │ gzip:  11.54 kB │ map:   154.28 kB
+dist/server/assets/privacy-consent-BpiTnveQ.mjs                     35.69 kB │ gzip:   6.66 kB │ map:    95.25 kB
+dist/server/assets/react-CltEXJd4.mjs                               38.25 kB │ gzip:  11.53 kB │ map:   147.03 kB
+dist/server/assets/useNavigate-DdZJohHW.mjs                         49.95 kB │ gzip:  17.34 kB │ map:   279.02 kB
+dist/server/assets/page-CDpG6cqA.mjs                                57.29 kB │ gzip:  11.42 kB │ map:   162.93 kB
+dist/server/assets/page-BBU7Y2Nk.mjs                                74.93 kB │ gzip:  24.61 kB │ map:   366.54 kB
+dist/server/assets/pricing-island-DWbWN_vq.mjs                      77.76 kB │ gzip:  19.51 kB │ map:   244.24 kB
+dist/server/assets/nodejs-ZqRNQEZM.mjs                              78.10 kB │ gzip:  17.83 kB │ map:   307.74 kB
+dist/server/assets/demo-section-CyVQWsRM.mjs                        82.25 kB │ gzip:  19.76 kB │ map:   312.56 kB
+dist/server/assets/constants-BBlXiD_A.mjs                           91.90 kB │ gzip:  26.03 kB │ map:   531.77 kB
+dist/server/assets/proxy-DbqQwNOG.mjs                              122.19 kB │ gzip:  39.86 kB │ map:   697.06 kB
+dist/server/assets/contribution-analytics-D76NNUJC.mjs             367.13 kB │ gzip: 105.59 kB │ map: 2,005.29 kB
+dist/server/index.mjs                                              771.43 kB │ gzip: 227.07 kB │ map: 3,290.59 kB
+dist/server/assets/dist-D79VIcM1.mjs                             1,066.03 kB │ gzip: 187.41 kB │ map: 3,366.82 kB
+
+[plugin rsc:inject-async-local-storage] [33m[SOURCEMAP_BROKEN] [0mSourcemap is likely to be incorrect: a plugin (rsc:inject-async-local-storage) was used to transform files, but didn't generate a sourcemap for the transformation. Consult the plugin documentation for help: https://rolldown.rs/guide/troubleshooting#warning-sourcemap-is-likely-to-be-incorrect
+
+[plugin rsc:vite-client-raw-import] [33m[SOURCEMAP_BROKEN] [0mSourcemap is likely to be incorrect: a plugin (rsc:vite-client-raw-import) was used to transform files, but didn't generate a sourcemap for the transformation. Consult the plugin documentation for help: https://rolldown.rs/guide/troubleshooting#warning-sourcemap-is-likely-to-be-incorrect
+
+[plugin rsc:virtual:vite-rsc/assets-manifest] [33m[SOURCEMAP_BROKEN] [0mSourcemap is likely to be incorrect: a plugin (rsc:virtual:vite-rsc/assets-manifest) was used to transform files, but didn't generate a sourcemap for the transformation. Consult the plugin documentation for help: https://rolldown.rs/guide/troubleshooting#warning-sourcemap-is-likely-to-be-incorrect
+
+✓ built in 903ms
+check:native: python3 scripts/ci/marketing-native-artifact.py config /Users/thanhpham/.t3/scratch/2026-11-11-act-as-the-implementation-sub-6455b199/platform-marketing-shell/apps/marketing/
+check:native: bun x --no-install wrangler types --config /Users/thanhpham/.t3/scratch/2026-11-11-act-as-the-implementation-sub-6455b199/platform-marketing-shell/apps/marketing/dist/server/wrangler.json --env-interface MarketingGeneratedEnv --include-runtime=false /var/folders/n5/vt7nd80j0gbf1lq5y2f38jn40000gy/T/marketing-native-check-55y8Ph/native-env.d.ts
+
+ ⛅️ wrangler 4.151.2 (update available 4.161.0)
+───────────────────────────────────────────────
+Generating project types...
+
+interface __BaseEnv_MarketingGeneratedEnv {
+	ASSETS: Fetcher;
+	TUTURUUU_NOINDEX: "1";
+}
+declare namespace Cloudflare {
+	interface GlobalProps {
+		mainModule: typeof import("../../../../../../Users/thanhpham/.t3/scratch/2026-11-11-act-as-the-implementation-sub-6455b199/platform-marketing-shell/apps/marketing/dist/server/index");
+	}
+	interface Env extends __BaseEnv_MarketingGeneratedEnv {}
+}
+interface MarketingGeneratedEnv extends __BaseEnv_MarketingGeneratedEnv {}
+type StringifyValues<EnvType extends Record<string, unknown>> = {
+	[Binding in keyof EnvType]: EnvType[Binding] extends string ? EnvType[Binding] : string;
+};
+declare namespace NodeJS {
+	interface ProcessEnv extends StringifyValues<Pick<Cloudflare.Env, "TUTURUUU_NOINDEX">> {}
+}
+
+
+✨ Types written to /var/folders/n5/vt7nd80j0gbf1lq5y2f38jn40000gy/T/marketing-native-check-55y8Ph/native-env.d.ts
+
+📣 Remember to rerun 'wrangler types' after you change your wrangler.json file.
+
+check:native: python3 scripts/ci/native-binding-type-harness.py --app-dir /Users/thanhpham/.t3/scratch/2026-11-11-act-as-the-implementation-sub-6455b199/platform-marketing-shell/apps/marketing/ --generated /var/folders/n5/vt7nd80j0gbf1lq5y2f38jn40000gy/T/marketing-native-check-55y8Ph/native-env.d.ts --env-interface MarketingGeneratedEnv --worker-type MarketingEnvironment --out /var/folders/n5/vt7nd80j0gbf1lq5y2f38jn40000gy/T/marketing-native-check-55y8Ph/native-env-check
+Workers types: Fetcher
+check:native: bun x --no-install tsc --project /Users/thanhpham/.t3/scratch/2026-11-11-act-as-the-implementation-sub-6455b199/platform-marketing-shell/apps/marketing/.native-env-check.tsconfig.json
+check:native: bun --eval await import('./apps/marketing/start-bridge.config.ts')
+check:native: node --input-type=module --eval await import('./apps/marketing/start-bridge.config.ts')
+(node:87976) [MODULE_TYPELESS_PACKAGE_JSON] Warning: Module type of file:///Users/thanhpham/.t3/scratch/2026-11-11-act-as-the-implementation-sub-6455b199/platform-marketing-shell/apps/marketing/start-bridge.config.ts is not specified and it doesn't parse as CommonJS.
+Reparsing as ES module because module syntax was detected. This incurs a performance overhead.
+To eliminate this warning, add "type": "module" to /Users/thanhpham/.t3/scratch/2026-11-11-act-as-the-implementation-sub-6455b199/platform-marketing-shell/apps/marketing/package.json.
+(Use `node --trace-warnings ...` to show where the warning was created)
+(node:87976) [MODULE_TYPELESS_PACKAGE_JSON] Warning: Module type of file:///Users/thanhpham/.t3/scratch/2026-11-11-act-as-the-implementation-sub-6455b199/platform-marketing-shell/packages/utils/src/framable-paths.ts is not specified and it doesn't parse as CommonJS.
+Reparsing as ES module because module syntax was detected. This incurs a performance overhead.
+To eliminate this warning, add "type": "module" to /Users/thanhpham/.t3/scratch/2026-11-11-act-as-the-implementation-sub-6455b199/platform-marketing-shell/packages/utils/package.json.
+check:native: node --test scripts/ci/reserved-staging-names.test.mjs
+✔ every staging profile and configured root host respects the zone reservation (109.92775ms)
+✔ reserved production services, apex, wildcards, nested and legacy hosts fail closed (66.64725ms)
+ℹ tests 2
+ℹ suites 0
+ℹ pass 2
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 210.380375
+check:native: bun run test:runtime
+$ node --test cloudflare/*.runtime.mjs
+(node:88045) [MODULE_TYPELESS_PACKAGE_JSON] Warning: Module type of file:///Users/thanhpham/.t3/scratch/2026-11-11-act-as-the-implementation-sub-6455b199/platform-marketing-shell/apps/marketing/start-bridge.config.ts is not specified and it doesn't parse as CommonJS.
+Reparsing as ES module because module syntax was detected. This incurs a performance overhead.
+To eliminate this warning, add "type": "module" to /Users/thanhpham/.t3/scratch/2026-11-11-act-as-the-implementation-sub-6455b199/platform-marketing-shell/apps/marketing/package.json.
+(Use `node --trace-warnings ...` to show where the warning was created)
+(node:88045) [MODULE_TYPELESS_PACKAGE_JSON] Warning: Module type of file:///Users/thanhpham/.t3/scratch/2026-11-11-act-as-the-implementation-sub-6455b199/platform-marketing-shell/packages/utils/src/framable-paths.ts is not specified and it doesn't parse as CommonJS.
+Reparsing as ES module because module syntax was detected. This incurs a performance overhead.
+To eliminate this warning, add "type": "module" to /Users/thanhpham/.t3/scratch/2026-11-11-act-as-the-implementation-sub-6455b199/platform-marketing-shell/packages/utils/package.json.
+Using secrets defined in ../../../../../../../../private/var/folders/n5/vt7nd80j0gbf1lq5y2f38jn40000gy/T/marketing-native-xFhEVv/synthetic.env
+Your Worker has access to the following bindings:
+Binding                                                      Resource                  Mode
+env.ASSETS                                                   Assets                    local
+env.TUTURUUU_NOINDEX ("1")                                   Environment Variable      local
+env.INTERNAL_WEB_API_ORIGIN ("https://central.invalid")      Environment Variable      local
+
+Attaching additional modules:
+┌──────────────────────────────────────────────────┬──────┬─────────────┐
+│ Name                                             │ Type │ Size        │
+├──────────────────────────────────────────────────┼──────┼─────────────┤
+│ __vite_rsc_assets_manifest.js                    │ esm  │ 28.52 KiB   │
+├──────────────────────────────────────────────────┼──────┼─────────────┤
+│ assets/AnimatePresence-B_qZ0dQc.mjs              │ esm  │ 4.25 KiB    │
+├──────────────────────────────────────────────────┼──────┼─────────────┤
+│ assets/RawStream-b1LPLOpB.mjs                    │ esm  │ 0.16 KiB    │
+├──────────────────────────────────────────────────┼──────┼─────────────┤
+│ assets/_tanstack-start-manifest_v-duDnn3mU.mjs   │ esm  │ 0.37 KiB    │
+├──────────────────────────────────────────────────┼──────┼─────────────┤
+│ assets/accordion-DweIIy4l.mjs                    │ esm  │ 7.47 KiB    │
+├──────────────────────────────────────────────────┼──────┼─────────────┤
+│ assets/activity--o1op5Nh.mjs                     │ esm  │ 0.31 KiB    │
+├──────────────────────────────────────────────────┼──────┼─────────────┤
+│ assets/ai-section-22dFStmJ.mjs                   │ esm  │ 12.50 KiB   │
+├──────────────────────────────────────────────────┼──────┼─────────────┤
+│ assets/app-url-CIM7NvhN.mjs                      │ esm  │ 1.83 KiB    │
+├──────────────────────────────────────────────────┼──────┼─────────────┤
+│ assets/arrow-right-D8-UHuWQ.mjs                  │ esm  │ 0.25 KiB    │
+├──────────────────────────────────────────────────┼──────┼─────────────┤
+│ assets/arrow-up-right-BPLgi-08.mjs               │ esm  │ 0.25 KiB    │
+├──────────────────────────────────────────────────┼──────┼─────────────┤
+│ assets/async-local-storage-BrmnkSxo.mjs          │ esm  │ 0.45 KiB    │
+├──────────────────────────────────────────────────┼──────┼─────────────┤
+│ assets/atmosphere-Br_Qm4yV.mjs                   │ esm  │ 3.41 KiB    │
+├──────────────────────────────────────────────────┼──────┼─────────────┤
+│ assets/base-path-Bd-cKJ9V.mjs                    │ esm  │ 0.48 KiB    │
+├──────────────────────────────────────────────────┼──────┼─────────────┤
+│ assets/bell-B8Sju18Y.mjs                         │ esm  │ 0.37 KiB    │
+├──────────────────────────────────────────────────┼──────┼─────────────┤
+│ assets/book-open-Ci5LSA8x.mjs                    │ esm  │ 0.37 KiB    │
+├──────────────────────────────────────────────────┼──────┼─────────────┤
+│ assets/bot-XGud8g43.mjs                          │ esm  │ 0.40 KiB    │
+├──────────────────────────────────────────────────┼──────┼─────────────┤
+│ assets/box-BnQwD_tN.mjs                          │ esm  │ 0.38 KiB    │
+├──────────────────────────────────────────────────┼──────┼─────────────┤
+│ assets/boxes-B4fOH3FT.mjs                        │ esm  │ 0.91 KiB    │
+├──────────────────────────────────────────────────┼──────┼─────────────┤
+│ assets/brain-DtYWRsvg.mjs                        │ esm  │ 0.64 KiB    │
+├──────────────────────────────────────────────────┼──────┼─────────────┤
+│ assets/browser-DnGS5SyQ.mjs                      │ esm  │ 16.20 KiB   │
+├──────────────────────────────────────────────────┼──────┼─────────────┤
+│ assets/building-BpPUI0vS.mjs                     │ esm  │ 0.64 KiB    │
+├──────────────────────────────────────────────────┼──────┼─────────────┤
+│ assets/building-complex-CpRiAOjA.mjs             │ esm  │ 0.50 KiB    │
+├──────────────────────────────────────────────────┼──────┼─────────────┤
+│ assets/button-B-4acIQa.mjs                       │ esm  │ 2.11 KiB    │
+├──────────────────────────────────────────────────┼──────┼─────────────┤
+│ assets/calendar-DsbZFSWw.mjs                     │ esm  │ 0.33 KiB    │
+├──────────────────────────────────────────────────┼──────┼─────────────┤
+│ assets/calendar-clock-BNGPvpXu.mjs               │ esm  │ 0.46 KiB    │
+├──────────────────────────────────────────────────┼──────┼─────────────┤
+│ assets/change-controls-BE37KL42.mjs              │ esm  │ 1.65 KiB    │
+├──────────────────────────────────────────────────┼──────┼─────────────┤
+│ assets/chart-column-B3-s0kn-.mjs                 │ esm  │ 0.36 KiB    │
+├──────────────────────────────────────────────────┼──────┼─────────────┤
+│ assets/chart-line-DOqlrLso.mjs                   │ esm  │ 0.29 KiB    │
+├──────────────────────────────────────────────────┼──────┼─────────────┤
+│ assets/check-B1-8NGb2.mjs                        │ esm  │ 0.20 KiB    │
+├──────────────────────────────────────────────────┼──────┼─────────────┤
+│ assets/chevron-down-DFxjz2EV.mjs                 │ esm  │ 0.21 KiB    │
+├──────────────────────────────────────────────────┼──────┼─────────────┤
+│ assets/circle-check-DEGgnOav.mjs                 │ esm  │ 0.29 KiB    │
+├──────────────────────────────────────────────────┼──────┼─────────────┤
+│ assets/client-provider-DBqanGVc.mjs              │ esm  │ 0.10 KiB    │
+├──────────────────────────────────────────────────┼──────┼─────────────┤
+│ assets/client-references-wUx9oHA_.mjs            │ esm  │ 3.18 KiB    │
+├──────────────────────────────────────────────────┼──────┼─────────────┤
+│ assets/clipboard-list-BY_7gkTx.mjs               │ esm  │ 0.49 KiB    │
+├──────────────────────────────────────────────────┼──────┼─────────────┤
+│ assets/clock-CM3vlet6.mjs                        │ esm  │ 0.25 KiB    │
+├──────────────────────────────────────────────────┼──────┼─────────────┤
+│ assets/clsx-DB0hHKMi.mjs                         │ esm  │ 0.40 KiB    │
+├──────────────────────────────────────────────────┼──────┼─────────────┤
+│ assets/coffee-HOr6HLGd.mjs                       │ esm  │ 0.38 KiB    │
+├──────────────────────────────────────────────────┼──────┼─────────────┤
+│ assets/constants-BBlXiD_A.mjs                    │ esm  │ 89.75 KiB   │
+├──────────────────────────────────────────────────┼──────┼─────────────┤
+│ assets/contribution-analytics-D76NNUJC.mjs       │ esm  │ 358.53 KiB  │
+├──────────────────────────────────────────────────┼──────┼─────────────┤
+│ assets/count-up-4NDpnR9K.mjs                     │ esm  │ 2.07 KiB    │
+├──────────────────────────────────────────────────┼──────┼─────────────┤
+│ assets/cpu-Bbo5HGL9.mjs                          │ esm  │ 0.71 KiB    │
+├──────────────────────────────────────────────────┼──────┼─────────────┤
+│ assets/createCsrfMiddleware-BQ7hSoNK.mjs         │ esm  │ 1.61 KiB    │
+├──────────────────────────────────────────────────┼──────┼─────────────┤
+│ assets/createLucideIcon-BbQq42O8.mjs             │ esm  │ 3.10 KiB    │
+├──────────────────────────────────────────────────┼──────┼─────────────┤
+│ assets/createServerFn-DvjWksnr.mjs               │ esm  │ 12.55 KiB   │
+├──────────────────────────────────────────────────┼──────┼─────────────┤
+│ assets/credit-card-DPJiAeJa.mjs                  │ esm  │ 0.33 KiB    │
+├──────────────────────────────────────────────────┼──────┼─────────────┤
+│ assets/csp-B2xcN8ro.mjs                          │ esm  │ 0.29 KiB    │
+├──────────────────────────────────────────────────┼──────┼─────────────┤
+│ assets/cta-section-g_qm9iCb.mjs                  │ esm  │ 4.43 KiB    │
+├──────────────────────────────────────────────────┼──────┼─────────────┤
+│ assets/database-C_ORTsN3.mjs                     │ esm  │ 0.32 KiB    │
+├──────────────────────────────────────────────────┼──────┼─────────────┤
+│ assets/demo-section-CyVQWsRM.mjs                 │ esm  │ 80.33 KiB   │
+├──────────────────────────────────────────────────┼──────┼─────────────┤
+│ assets/dialog-BAk4HRlP.mjs                       │ esm  │ 2.86 KiB    │
+├──────────────────────────────────────────────────┼──────┼─────────────┤
+│ assets/dist-Bcow9Ss5.mjs                         │ esm  │ 25.27 KiB   │
+├──────────────────────────────────────────────────┼──────┼─────────────┤
+│ assets/dist-Btttxwsx.mjs                         │ esm  │ 7.76 KiB    │
+├──────────────────────────────────────────────────┼──────┼─────────────┤
+│ assets/dist-CCu0wNAg.mjs                         │ esm  │ 0.81 KiB    │
+├──────────────────────────────────────────────────┼──────┼─────────────┤
+│ assets/dist-CFffa_Zj.mjs                         │ esm  │ 8.58 KiB    │
+├──────────────────────────────────────────────────┼──────┼─────────────┤
+│ assets/dist-CN-0Tdl_.mjs                         │ esm  │ 3.29 KiB    │
+├──────────────────────────────────────────────────┼──────┼─────────────┤
+│ assets/dist-CsKCNN9E.mjs                         │ esm  │ 3.15 KiB    │
+├──────────────────────────────────────────────────┼──────┼─────────────┤
+│ assets/dist-D79VIcM1.mjs                         │ esm  │ 1041.05 KiB │
+├──────────────────────────────────────────────────┼──────┼─────────────┤
+│ assets/dist-DgvA7fY7.mjs                         │ esm  │ 10.12 KiB   │
+├──────────────────────────────────────────────────┼──────┼─────────────┤
+│ assets/dist-iMWTxnev.mjs                         │ esm  │ 5.43 KiB    │
+├──────────────────────────────────────────────────┼──────┼─────────────┤
+│ assets/dollar-sign-fMUlHcVu.mjs                  │ esm  │ 0.30 KiB    │
+├──────────────────────────────────────────────────┼──────┼─────────────┤
+│ assets/download-Cb9w_4s5.mjs                     │ esm  │ 0.31 KiB    │
+├──────────────────────────────────────────────────┼──────┼─────────────┤
+│ assets/dynamic-Dk4cm26K.mjs                      │ esm  │ 0.52 KiB    │
+├──────────────────────────────────────────────────┼──────┼─────────────┤
+│ assets/es2015-IiQWflht.mjs                       │ esm  │ 12.27 KiB   │
+├──────────────────────────────────────────────────┼──────┼─────────────┤
+│ assets/eye-8_gxFFTo.mjs                          │ esm  │ 0.33 KiB    │
+├──────────────────────────────────────────────────┼──────┼─────────────┤
+│ assets/features-bento-D6zp7oqL.mjs               │ esm  │ 25.00 KiB   │
+├──────────────────────────────────────────────────┼──────┼─────────────┤
+│ assets/file-text-BaBE4gzS.mjs                    │ esm  │ 0.46 KiB    │
+├──────────────────────────────────────────────────┼──────┼─────────────┤
+│ assets/folder-Bdvv0rYa.mjs                       │ esm  │ 0.31 KiB    │
+├──────────────────────────────────────────────────┼──────┼─────────────┤
+│ assets/gauge-DR3t9Hyq.mjs                        │ esm  │ 0.25 KiB    │
+├──────────────────────────────────────────────────┼──────┼─────────────┤
+│ assets/gift-Cly53rZO.mjs                         │ esm  │ 0.42 KiB    │
+├──────────────────────────────────────────────────┼──────┼─────────────┤
+│ assets/git-branch-fUTvKcUt.mjs                   │ esm  │ 0.31 KiB    │
+├──────────────────────────────────────────────────┼──────┼─────────────┤
+│ assets/github-stats-COD1455W.mjs                 │ esm  │ 3.92 KiB    │
+├──────────────────────────────────────────────────┼──────┼─────────────┤
+│ assets/globe-u7KsLTiy.mjs                        │ esm  │ 0.32 KiB    │
+├──────────────────────────────────────────────────┼──────┼─────────────┤
+│ assets/graduation-cap-CDXJsyHH.mjs               │ esm  │ 0.42 KiB    │
+├──────────────────────────────────────────────────┼──────┼─────────────┤
+│ assets/headers-CCfjQ7t5.mjs                      │ esm  │ 0.13 KiB    │
+├──────────────────────────────────────────────────┼──────┼─────────────┤
+│ assets/heart-YVd4VuiS.mjs                        │ esm  │ 0.33 KiB    │
+├──────────────────────────────────────────────────┼──────┼─────────────┤
+│ assets/heart-handshake-DX-6i8yg.mjs              │ esm  │ 0.54 KiB    │
+├──────────────────────────────────────────────────┼──────┼─────────────┤
+│ assets/image-DyejtmMJ.mjs                        │ esm  │ 0.63 KiB    │
+├──────────────────────────────────────────────────┼──────┼─────────────┤
+│ assets/inbox-CIoOwH74.mjs                        │ esm  │ 0.36 KiB    │
+├──────────────────────────────────────────────────┼──────┼─────────────┤
+│ assets/jsx-runtime-CHUZGpk0.mjs                  │ esm  │ 0.47 KiB    │
+├──────────────────────────────────────────────────┼──────┼─────────────┤
+│ assets/key-PE-uHKjI.mjs                          │ esm  │ 0.34 KiB    │
+├──────────────────────────────────────────────────┼──────┼─────────────┤
+│ assets/layers-DS0st7E_.mjs                       │ esm  │ 0.52 KiB    │
+├──────────────────────────────────────────────────┼──────┼─────────────┤
+│ assets/layout-BYNOIS8B.mjs                       │ esm  │ 0.10 KiB    │
+├──────────────────────────────────────────────────┼──────┼─────────────┤
+│ assets/layout-DINGSkfg.mjs                       │ esm  │ 1.20 KiB    │
+├──────────────────────────────────────────────────┼──────┼─────────────┤
+│ assets/layout-DnSWArJv.mjs                       │ esm  │ 1.26 KiB    │
+├──────────────────────────────────────────────────┼──────┼─────────────┤
+│ assets/layout-dashboard-CjRtgk0F.mjs             │ esm  │ 0.44 KiB    │
+├──────────────────────────────────────────────────┼──────┼─────────────┤
+│ assets/link-CIO_a-T_.mjs                         │ esm  │ 3.60 KiB    │
+├──────────────────────────────────────────────────┼──────┼─────────────┤
+│ assets/link-CV9u7_fO.mjs                         │ esm  │ 0.09 KiB    │
+├──────────────────────────────────────────────────┼──────┼─────────────┤
+│ assets/list-checks-Bjd81Ilg.mjs                  │ esm  │ 0.36 KiB    │
+├──────────────────────────────────────────────────┼──────┼─────────────┤
+│ assets/locale-preference-npz0D-3o.mjs            │ esm  │ 14.51 KiB   │
+├──────────────────────────────────────────────────┼──────┼─────────────┤
+│ assets/lock-CLw-u_DZ.mjs                         │ esm  │ 0.28 KiB    │
+├──────────────────────────────────────────────────┼──────┼─────────────┤
+│ assets/lucide-CqoX5KP6.mjs                       │ esm  │ 16.41 KiB   │
+├──────────────────────────────────────────────────┼──────┼─────────────┤
+│ assets/mail-BVHjUQgw.mjs                         │ esm  │ 0.29 KiB    │
+├──────────────────────────────────────────────────┼──────┼─────────────┤
+│ assets/map-pin-B7L_Wf0y.mjs                      │ esm  │ 0.34 KiB    │
+├──────────────────────────────────────────────────┼──────┼─────────────┤
+│ assets/message-square-YRV18RZB.mjs               │ esm  │ 0.32 KiB    │
+├──────────────────────────────────────────────────┼──────┼─────────────┤
+│ assets/mobile-menu-BUjmu6-a.mjs                  │ esm  │ 6.20 KiB    │
+├──────────────────────────────────────────────────┼──────┼─────────────┤
+│ assets/moon-gJTEKzkf.mjs                         │ esm  │ 0.29 KiB    │
+├──────────────────────────────────────────────────┼──────┼─────────────┤
+│ assets/nav-actions-CQN7Xx2D.mjs                  │ esm  │ 0.21 KiB    │
+├──────────────────────────────────────────────────┼──────┼─────────────┤
+│ assets/nav-shell-QxxV465H.mjs                    │ esm  │ 7.37 KiB    │
+├──────────────────────────────────────────────────┼──────┼─────────────┤
+│ assets/navigation-Dbk_i4ZW.mjs                   │ esm  │ 5.01 KiB    │
+├──────────────────────────────────────────────────┼──────┼─────────────┤
+│ assets/nodejs-ZqRNQEZM.mjs                       │ esm  │ 76.27 KiB   │
+├──────────────────────────────────────────────────┼──────┼─────────────┤
+│ assets/outcomes-section-C081Z6HV.mjs             │ esm  │ 2.74 KiB    │
+├──────────────────────────────────────────────────┼──────┼─────────────┤
+│ assets/package-CIJT0wVM.mjs                      │ esm  │ 0.45 KiB    │
+├──────────────────────────────────────────────────┼──────┼─────────────┤
+│ assets/package-search-5wc3d8Og.mjs               │ esm  │ 0.55 KiB    │
+├──────────────────────────────────────────────────┼──────┼─────────────┤
+│ assets/page-1DSfhNHS.mjs                         │ esm  │ 11.19 KiB   │
+├──────────────────────────────────────────────────┼──────┼─────────────┤
+│ assets/page-B2aCfPzt.mjs                         │ esm  │ 11.57 KiB   │
+├──────────────────────────────────────────────────┼──────┼─────────────┤
+│ assets/page-B2lQYGzE.mjs                         │ esm  │ 1.87 KiB    │
+├──────────────────────────────────────────────────┼──────┼─────────────┤
+│ assets/page-B2znIQ8D.mjs                         │ esm  │ 10.48 KiB   │
+├──────────────────────────────────────────────────┼──────┼─────────────┤
+│ assets/page-BBU7Y2Nk.mjs                         │ esm  │ 73.17 KiB   │
+├──────────────────────────────────────────────────┼──────┼─────────────┤
+│ assets/page-BYIrvU_e.mjs                         │ esm  │ 11.37 KiB   │
+├──────────────────────────────────────────────────┼──────┼─────────────┤
+│ assets/page-C87dRKzd.mjs                         │ esm  │ 0.98 KiB    │
+├──────────────────────────────────────────────────┼──────┼─────────────┤
+│ assets/page-CDpG6cqA.mjs                         │ esm  │ 55.95 KiB   │
+├──────────────────────────────────────────────────┼──────┼─────────────┤
+│ assets/page-CwZtns_O.mjs                         │ esm  │ 10.54 KiB   │
+├──────────────────────────────────────────────────┼──────┼─────────────┤
+│ assets/page-CyD8lzIU.mjs                         │ esm  │ 30.27 KiB   │
+├──────────────────────────────────────────────────┼──────┼─────────────┤
+│ assets/page-D3pcxiKw.mjs                         │ esm  │ 5.16 KiB    │
+├──────────────────────────────────────────────────┼──────┼─────────────┤
+│ assets/page-DN1JjXkx.mjs                         │ esm  │ 11.28 KiB   │
+├──────────────────────────────────────────────────┼──────┼─────────────┤
+│ assets/page-Dded_e_v.mjs                         │ esm  │ 10.96 KiB   │
+├──────────────────────────────────────────────────┼──────┼─────────────┤
+│ assets/page-DlSaYVCK.mjs                         │ esm  │ 10.78 KiB   │
+├──────────────────────────────────────────────────┼──────┼─────────────┤
+│ assets/page-route-DRe6TYSq.mjs                   │ esm  │ 0.07 KiB    │
+├──────────────────────────────────────────────────┼──────┼─────────────┤
+│ assets/page-wmFdMd3Q.mjs                         │ esm  │ 11.71 KiB   │
+├──────────────────────────────────────────────────┼──────┼─────────────┤
+│ assets/palette-CXWyXVlF.mjs                      │ esm  │ 0.58 KiB    │
+├──────────────────────────────────────────────────┼──────┼─────────────┤
+│ assets/play-DLIKxr5l.mjs                         │ esm  │ 0.27 KiB    │
+├──────────────────────────────────────────────────┼──────┼─────────────┤
+│ assets/pricing-island-DWbWN_vq.mjs               │ esm  │ 75.95 KiB   │
+├──────────────────────────────────────────────────┼──────┼─────────────┤
+│ assets/privacy-consent-BpiTnveQ.mjs              │ esm  │ 34.86 KiB   │
+├──────────────────────────────────────────────────┼──────┼─────────────┤
+│ assets/problem-section-PBW6TIPh.mjs              │ esm  │ 10.59 KiB   │
+├──────────────────────────────────────────────────┼──────┼─────────────┤
+│ assets/products-Cw5SV26m.mjs                     │ esm  │ 6.05 KiB    │
+├──────────────────────────────────────────────────┼──────┼─────────────┤
+│ assets/proxy-DbqQwNOG.mjs                        │ esm  │ 119.33 KiB  │
+├──────────────────────────────────────────────────┼──────┼─────────────┤
+│ assets/qr-code-DOSvEyBg.mjs                      │ esm  │ 0.72 KiB    │
+├──────────────────────────────────────────────────┼──────┼─────────────┤
+│ assets/query-DgAlfzQ_.mjs                        │ esm  │ 14.73 KiB   │
+├──────────────────────────────────────────────────┼──────┼─────────────┤
+│ assets/query-provider-mPdD1BYi.mjs               │ esm  │ 10.30 KiB   │
+├──────────────────────────────────────────────────┼──────┼─────────────┤
+│ assets/react-CltEXJd4.mjs                        │ esm  │ 37.36 KiB   │
+├──────────────────────────────────────────────────┼──────┼─────────────┤
+│ assets/react-_YU6qhen.mjs                        │ esm  │ 7.40 KiB    │
+├──────────────────────────────────────────────────┼──────┼─────────────┤
+│ assets/react-dom-S6aC7fiD.mjs                    │ esm  │ 3.54 KiB    │
+├──────────────────────────────────────────────────┼──────┼─────────────┤
+│ assets/receipt-kk9EogYT.mjs                      │ esm  │ 0.72 KiB    │
+├──────────────────────────────────────────────────┼──────┼─────────────┤
+│ assets/request-context-D0yZR_jY.mjs              │ esm  │ 1.42 KiB    │
+├──────────────────────────────────────────────────┼──────┼─────────────┤
+│ assets/request-context-d4cS7rcF.mjs              │ esm  │ 5.74 KiB    │
+├──────────────────────────────────────────────────┼──────┼─────────────┤
+│ assets/resolve-elements-B77bWpQo.mjs             │ esm  │ 0.30 KiB    │
+├──────────────────────────────────────────────────┼──────┼─────────────┤
+│ assets/reveal-BlthViCD.mjs                       │ esm  │ 0.30 KiB    │
+├──────────────────────────────────────────────────┼──────┼─────────────┤
+│ assets/rocket-CsEPLQQu.mjs                       │ esm  │ 0.72 KiB    │
+├──────────────────────────────────────────────────┼──────┼─────────────┤
+│ assets/rolldown-runtime-XKyaHtl9.mjs             │ esm  │ 0.71 KiB    │
+├──────────────────────────────────────────────────┼──────┼─────────────┤
+│ assets/router-DSCYTI2a.mjs                       │ esm  │ 14.99 KiB   │
+├──────────────────────────────────────────────────┼──────┼─────────────┤
+│ assets/routing-DZBQwPpo.mjs                      │ esm  │ 1.87 KiB    │
+├──────────────────────────────────────────────────┼──────┼─────────────┤
+│ assets/search-BU3-cGwx.mjs                       │ esm  │ 0.25 KiB    │
+├──────────────────────────────────────────────────┼──────┼─────────────┤
+│ assets/section-shell-BX-CX_Ug.mjs                │ esm  │ 2.28 KiB    │
+├──────────────────────────────────────────────────┼──────┼─────────────┤
+│ assets/send-qlNz2t7h.mjs                         │ esm  │ 0.46 KiB    │
+├──────────────────────────────────────────────────┼──────┼─────────────┤
+│ assets/server-F5SCTcQ5.mjs                       │ esm  │ 34.07 KiB   │
+├──────────────────────────────────────────────────┼──────┼─────────────┤
+│ assets/server-vrQj4mzW.mjs                       │ esm  │ 0.41 KiB    │
+├──────────────────────────────────────────────────┼──────┼─────────────┤
+│ assets/settings-CI2KGLsT.mjs                     │ esm  │ 0.56 KiB    │
+├──────────────────────────────────────────────────┼──────┼─────────────┤
+│ assets/share-2-tDCWR7z5.mjs                      │ esm  │ 0.43 KiB    │
+├──────────────────────────────────────────────────┼──────┼─────────────┤
+│ assets/shared-cookie-BEMK9fw4.mjs                │ esm  │ 3.03 KiB    │
+├──────────────────────────────────────────────────┼──────┼─────────────┤
+│ assets/shield-BEFyXnQN.mjs                       │ esm  │ 0.35 KiB    │
+├──────────────────────────────────────────────────┼──────┼─────────────┤
+│ assets/shield-check-DAibIZDU.mjs                 │ esm  │ 0.40 KiB    │
+├──────────────────────────────────────────────────┼──────┼─────────────┤
+│ assets/shopping-bag-D2PqVP84.mjs                 │ esm  │ 0.42 KiB    │
+├──────────────────────────────────────────────────┼──────┼─────────────┤
+│ assets/shopping-cart-DtB5Eedh.mjs                │ esm  │ 0.47 KiB    │
+├──────────────────────────────────────────────────┼──────┼─────────────┤
+│ assets/sliders-horizontal-CjfB4jW9.mjs           │ esm  │ 1.01 KiB    │
+├──────────────────────────────────────────────────┼──────┼─────────────┤
+│ assets/smartphone-BNYDTfEB.mjs                   │ esm  │ 0.28 KiB    │
+├──────────────────────────────────────────────────┼──────┼─────────────┤
+│ assets/solution-page-primitives-C62phZoq.mjs     │ esm  │ 1.26 KiB    │
+├──────────────────────────────────────────────────┼──────┼─────────────┤
+│ assets/sonner-C0-Xg_v-.mjs                       │ esm  │ 33.42 KiB   │
+├──────────────────────────────────────────────────┼──────┼─────────────┤
+│ assets/sparkles-kyTXlWYp.mjs                     │ esm  │ 0.59 KiB    │
+├──────────────────────────────────────────────────┼──────┼─────────────┤
+│ assets/staging-hosts-myHEn6wq.mjs                │ esm  │ 0.35 KiB    │
+├──────────────────────────────────────────────────┼──────┼─────────────┤
+│ assets/star-CPkOEBIS.mjs                         │ esm  │ 0.54 KiB    │
+├──────────────────────────────────────────────────┼──────┼─────────────┤
+│ assets/start-ebtjCqPf.mjs                        │ esm  │ 0.65 KiB    │
+├──────────────────────────────────────────────────┼──────┼─────────────┤
+│ assets/stethoscope-eN8h5k0k.mjs                  │ esm  │ 0.91 KiB    │
+├──────────────────────────────────────────────────┼──────┼─────────────┤
+│ assets/store-z1pVtdLA.mjs                        │ esm  │ 0.57 KiB    │
+├──────────────────────────────────────────────────┼──────┼─────────────┤
+│ assets/sun-CyyipwoP.mjs                          │ esm  │ 0.54 KiB    │
+├──────────────────────────────────────────────────┼──────┼─────────────┤
+│ assets/surface-card-CfopuLC8.mjs                 │ esm  │ 3.13 KiB    │
+├──────────────────────────────────────────────────┼──────┼─────────────┤
+│ assets/tag-EZ8KkY0B.mjs                          │ esm  │ 0.40 KiB    │
+├──────────────────────────────────────────────────┼──────┼─────────────┤
+│ assets/target-aIOXjBkb.mjs                       │ esm  │ 0.56 KiB    │
+├──────────────────────────────────────────────────┼──────┼─────────────┤
+│ assets/timer-2llHf5jF.mjs                        │ esm  │ 0.32 KiB    │
+├──────────────────────────────────────────────────┼──────┼─────────────┤
+│ assets/trending-up-BcDabKEg.mjs                  │ esm  │ 0.26 KiB    │
+├──────────────────────────────────────────────────┼──────┼─────────────┤
+│ assets/trophy-C0pDQVAr.mjs                       │ esm  │ 0.58 KiB    │
+├──────────────────────────────────────────────────┼──────┼─────────────┤
+│ assets/truck-BT341Oaq.mjs                        │ esm  │ 0.48 KiB    │
+├──────────────────────────────────────────────────┼──────┼─────────────┤
+│ assets/tslib.es6-Tae09705.mjs                    │ esm  │ 1.09 KiB    │
+├──────────────────────────────────────────────────┼──────┼─────────────┤
+│ assets/use-landing-reduced-motion-vugrUp3l.mjs   │ esm  │ 0.04 KiB    │
+├──────────────────────────────────────────────────┼──────┼─────────────┤
+│ assets/use-static-motion-ZnqX8qbh.mjs            │ esm  │ 0.68 KiB    │
+├──────────────────────────────────────────────────┼──────┼─────────────┤
+│ assets/useNavigate-DdZJohHW.mjs                  │ esm  │ 48.79 KiB   │
+├──────────────────────────────────────────────────┼──────┼─────────────┤
+│ assets/useRouter-Cdf9UT3Y.mjs                    │ esm  │ 0.23 KiB    │
+├──────────────────────────────────────────────────┼──────┼─────────────┤
+│ assets/users-DfKgFvuB.mjs                        │ esm  │ 0.38 KiB    │
+├──────────────────────────────────────────────────┼──────┼─────────────┤
+│ assets/utils-W3PL-jNa.mjs                        │ esm  │ 2.19 KiB    │
+├──────────────────────────────────────────────────┼──────┼─────────────┤
+│ assets/video-C7gXGL3b.mjs                        │ esm  │ 0.33 KiB    │
+├──────────────────────────────────────────────────┼──────┼─────────────┤
+│ assets/wallet-DLJPBLkg.mjs                       │ esm  │ 0.36 KiB    │
+├──────────────────────────────────────────────────┼──────┼─────────────┤
+│ assets/warehouse-QdhZb0gB.mjs                    │ esm  │ 0.45 KiB    │
+├──────────────────────────────────────────────────┼──────┼─────────────┤
+│ assets/with-selector-D2WLJoLb.mjs                │ esm  │ 1.67 KiB    │
+├──────────────────────────────────────────────────┼──────┼─────────────┤
+│ assets/wrench-COfHOLGc.mjs                       │ esm  │ 0.38 KiB    │
+├──────────────────────────────────────────────────┼──────┼─────────────┤
+│ assets/zap-DApj7Pi6.mjs                          │ esm  │ 0.35 KiB    │
+├──────────────────────────────────────────────────┼──────┼─────────────┤
+│ rsc/__vite_rsc_assets_manifest.js                │ esm  │ 28.52 KiB   │
+├──────────────────────────────────────────────────┼──────┼─────────────┤
+│ rsc/assets/atmosphere-DLFkFJj-.mjs               │ esm  │ 4.99 KiB    │
+├──────────────────────────────────────────────────┼──────┼─────────────┤
+│ rsc/assets/browser-DqqSeZdp.mjs                  │ esm  │ 37.56 KiB   │
+├──────────────────────────────────────────────────┼──────┼─────────────┤
+│ rsc/assets/common-DIvldmkv.mjs                   │ esm  │ 0.29 KiB    │
+├──────────────────────────────────────────────────┼──────┼─────────────┤
+│ rsc/assets/configs-CZzGCO7B.mjs                  │ esm  │ 0.32 KiB    │
+├──────────────────────────────────────────────────┼──────┼─────────────┤
+│ rsc/assets/constants-PPSB70Ml.mjs                │ esm  │ 0.12 KiB    │
+├──────────────────────────────────────────────────┼──────┼─────────────┤
+│ rsc/assets/dist-DbnqBfn-.mjs                     │ esm  │ 43.52 KiB   │
+├──────────────────────────────────────────────────┼──────┼─────────────┤
+│ rsc/assets/en-Duqmlo_a.mjs                       │ esm  │ 273.41 KiB  │
+├──────────────────────────────────────────────────┼──────┼─────────────┤
+│ rsc/assets/headers-C2Flhlp8.mjs                  │ esm  │ 0.15 KiB    │
+├──────────────────────────────────────────────────┼──────┼─────────────┤
+│ rsc/assets/jsx-runtime.react-server-BfEuBjme.mjs │ esm  │ 1.88 KiB    │
+├──────────────────────────────────────────────────┼──────┼─────────────┤
+│ rsc/assets/layout-594QEvv8.mjs                   │ esm  │ 0.38 KiB    │
+├──────────────────────────────────────────────────┼──────┼─────────────┤
+│ rsc/assets/layout-B3Z3v8kA.mjs                   │ esm  │ 0.39 KiB    │
+├──────────────────────────────────────────────────┼──────┼─────────────┤
+│ rsc/assets/layout-B3pO4kat.mjs                   │ esm  │ 0.37 KiB    │
+├──────────────────────────────────────────────────┼──────┼─────────────┤
+│ rsc/assets/layout-BAhlI_Oc.mjs                   │ esm  │ 0.43 KiB    │
+├──────────────────────────────────────────────────┼──────┼─────────────┤
+│ rsc/assets/layout-BErWz11g.mjs                   │ esm  │ 0.39 KiB    │
+├──────────────────────────────────────────────────┼──────┼─────────────┤
+│ rsc/assets/layout-BMjH6E5n.mjs                   │ esm  │ 0.92 KiB    │
+├──────────────────────────────────────────────────┼──────┼─────────────┤
+│ rsc/assets/layout-BSAj_uai.mjs                   │ esm  │ 0.43 KiB    │
+├──────────────────────────────────────────────────┼──────┼─────────────┤
+│ rsc/assets/layout-BWmKP4FZ.mjs                   │ esm  │ 0.39 KiB    │
+├──────────────────────────────────────────────────┼──────┼─────────────┤
+│ rsc/assets/layout-BZy25PEP.mjs                   │ esm  │ 0.41 KiB    │
+├──────────────────────────────────────────────────┼──────┼─────────────┤
+│ rsc/assets/layout-Bc-C-ZcE.mjs                   │ esm  │ 0.39 KiB    │
+├──────────────────────────────────────────────────┼──────┼─────────────┤
+│ rsc/assets/layout-Bwb3jUmv.mjs                   │ esm  │ 0.40 KiB    │
+├──────────────────────────────────────────────────┼──────┼─────────────┤
+│ rsc/assets/layout-C3CafsmV.mjs                   │ esm  │ 0.38 KiB    │
+├──────────────────────────────────────────────────┼──────┼─────────────┤
+│ rsc/assets/layout-CIOCeUNQ.mjs                   │ esm  │ 0.39 KiB    │
+├──────────────────────────────────────────────────┼──────┼─────────────┤
+│ rsc/assets/layout-CJtRSywV.mjs                   │ esm  │ 0.38 KiB    │
+├──────────────────────────────────────────────────┼──────┼─────────────┤
+│ rsc/assets/layout-CVxyn4wV.mjs                   │ esm  │ 0.39 KiB    │
+├──────────────────────────────────────────────────┼──────┼─────────────┤
+│ rsc/assets/layout-CayPdmMe.mjs                   │ esm  │ 0.44 KiB    │
+├──────────────────────────────────────────────────┼──────┼─────────────┤
+│ rsc/assets/layout-Cf0Q87kZ.mjs                   │ esm  │ 0.39 KiB    │
+├──────────────────────────────────────────────────┼──────┼─────────────┤
+│ rsc/assets/layout-Cot30bEQ.mjs                   │ esm  │ 0.41 KiB    │
+├──────────────────────────────────────────────────┼──────┼─────────────┤
+│ rsc/assets/layout-CpA9Kh7b.mjs                   │ esm  │ 0.43 KiB    │
+├──────────────────────────────────────────────────┼──────┼─────────────┤
+│ rsc/assets/layout-Cq8JFaMf.mjs                   │ esm  │ 0.44 KiB    │
+├──────────────────────────────────────────────────┼──────┼─────────────┤
+│ rsc/assets/layout-CqJY8cmY.mjs                   │ esm  │ 0.39 KiB    │
+├──────────────────────────────────────────────────┼──────┼─────────────┤
+│ rsc/assets/layout-CsH5jdLr.mjs                   │ esm  │ 0.44 KiB    │
+��──────────────────────────────────────────────────┼──────┼─────────────┤
+│ rsc/assets/layout-Cxuh_TBm.mjs                   │ esm  │ 1.01 KiB    │
+├──────────────────────────────────────────────────┼──────┼─────────────┤
+│ rsc/assets/layout-D5YdvPAR.mjs                   │ esm  │ 0.38 KiB    │
+├──────────────────────────────────────────────────┼──────┼─────────────┤
+│ rsc/assets/layout-DMhJojWe.mjs                   │ esm  │ 0.45 KiB    │
+├──────────────────────────────────────────────────┼──────┼─────────────┤
+│ rsc/assets/layout-DSuiEmfd.mjs                   │ esm  │ 5.06 KiB    │
+├──────────────────────────────────────────────────┼──────┼─────────────┤
+│ rsc/assets/layout-DV6WatG8.mjs                   │ esm  │ 0.39 KiB    │
+├──────────────────────────────────────────────────┼──────┼─────────────┤
+│ rsc/assets/layout-DVo518r8.mjs                   │ esm  │ 0.38 KiB    │
+├──────────────────────────────────────────────────┼──────┼─────────────┤
+│ rsc/assets/layout-DXob3ikQ.mjs                   │ esm  │ 3.00 KiB    │
+├──────────────────────────────────────────────────┼──────┼─────────────┤
+│ rsc/assets/layout-DckdMnbC.mjs                   │ esm  │ 0.38 KiB    │
+├──────────────────────────────────────────────────┼──────┼─────────────┤
+│ rsc/assets/layout-DdEs1BIR.mjs                   │ esm  │ 0.43 KiB    │
+├──────────────────────────────────────────────────┼──────┼─────────────┤
+│ rsc/assets/layout-DeFiIhbs.mjs                   │ esm  │ 0.39 KiB    │
+├──────────────────────────────────────────────────┼──────┼─────────────┤
+│ rsc/assets/layout-Dk-iL-O6.mjs                   │ esm  │ 0.38 KiB    │
+├──────────────────────────────────────────────────┼──────┼─────────────┤
+│ rsc/assets/layout-DkdRhejg.mjs                   │ esm  │ 0.38 KiB    │
+├──────────────────────────────────────────────────┼──────┼─────────────┤
+│ rsc/assets/layout-DnI6FUK-.mjs                   │ esm  │ 0.43 KiB    │
+├──────────────────────────────────────────────────┼──────┼─────────────┤
+│ rsc/assets/layout-Dnp_y-Gh.mjs                   │ esm  │ 0.42 KiB    │
+├──────────────────────────────────────────────────┼──────┼─────────────┤
+│ rsc/assets/layout-DpdeCPHL.mjs                   │ esm  │ 0.41 KiB    │
+├──────────────────────────────────────────────────┼──────┼─────────────┤
+│ rsc/assets/layout-EPtgjk-5.mjs                   │ esm  │ 0.43 KiB    │
+├──────────────────────────────────────────────────┼──────┼─────────────┤
+│ rsc/assets/layout-JEhF4A-6.mjs                   │ esm  │ 0.45 KiB    │
+├──────────────────────────────────────────────────┼──────┼─────────────┤
+│ rsc/assets/layout-LcSpoJLf.mjs                   │ esm  │ 0.43 KiB    │
+├──────────────────────────────────────────────────┼──────┼─────────────┤
+│ rsc/assets/layout-TRKR5Peg.mjs                   │ esm  │ 0.41 KiB    │
+├──────────────────────────────────────────────────┼──────┼─────────────┤
+│ rsc/assets/layout-a2ZS1Crl.mjs                   │ esm  │ 0.42 KiB    │
+├──────────────────────────────────────────────────┼──────┼─────────────┤
+│ rsc/assets/layout-at2toen0.mjs                   │ esm  │ 0.41 KiB    │
+├──────────────────────────────────────────────────┼──────┼─────────────┤
+│ rsc/assets/layout-dQdPJhls.mjs                   │ esm  │ 0.77 KiB    │
+├──────────────────────────────────────────────────┼──────┼─────────────┤
+│ rsc/assets/layout-euX709-Z.mjs                   │ esm  │ 0.38 KiB    │
+├──────────────────────────────────────────────────┼──────┼─────────────┤
+│ rsc/assets/layout-pme8QuI-.mjs                   │ esm  │ 0.39 KiB    │
+├──────────────────────────────────────────────────┼──────┼─────────────┤
+│ rsc/assets/layout-rBGFQyrx.mjs                   │ esm  │ 0.38 KiB    │
+├──────────────────────────────────────────────────┼──────┼─────────────┤
+│ rsc/assets/layout-rb65p9Wv.mjs                   │ esm  │ 0.39 KiB    │
+├──────────────────────────────────────────────────┼──────┼─────────────┤
+│ rsc/assets/layout-sUcRLLI5.mjs                   │ esm  │ 0.39 KiB    │
+├──────────────────────────────────────────────────┼──────┼─────────────┤
+│ rsc/assets/legal-changes-CbL9iFHX.mjs            │ esm  │ 23.80 KiB   │
+├──────────────────────────────────────────────────┼──────┼─────────────┤
+│ rsc/assets/legal-markdown-BIGkoewN.mjs           │ esm  │ 146.11 KiB  │
+├──────────────────────────────────────────────────┼──────┼─────────────┤
+│ rsc/assets/legal-page-layout-DQ4PkCbL.mjs        │ esm  │ 19.08 KiB   │
+├──────────────────────────────────────────────────┼──────┼─────────────┤
+│ rsc/assets/lucide-DU3Siiaf.mjs                   │ esm  │ 22.05 KiB   │
+├──────────────────────────────────────────────────┼──────┼─────────────┤
+│ rsc/assets/marketing-metadata-C6Q0iSvR.mjs       │ esm  │ 1.39 KiB    │
+├──────────────────────────────────────────────────┼──────┼─────────────┤
+│ rsc/assets/marketing-render-context-BMk7Xi2M.mjs │ esm  │ 4.94 KiB    │
+├──────────────────────────────────────────────────┼──────┼─────────────┤
+│ rsc/assets/metadata-CRROattk.mjs                 │ esm  │ 2.15 KiB    │
+├──────────────────────────────────────────────────┼──────┼─────────────┤
+│ rsc/assets/navigation-cr096OIr.mjs               │ esm  │ 8.76 KiB    │
+├──────────────────────────────────────────────────┼──────┼─────────────┤
+│ rsc/assets/next-intl-D-B_1iVl.mjs                │ esm  │ 2.02 KiB    │
+├──────────────────────────────────────────────────┼──────┼─────────────┤
+│ rsc/assets/next-intl-server-aGTppBvT.mjs         │ esm  │ 88.93 KiB   │
+├──────────────────────────────────────────────────┼──────┼─────────────┤
+│ rsc/assets/nodejs-CbhJbYWF.mjs                   │ esm  │ 157.72 KiB  │
+├──────────────────────────────────────────────────┼──────┼─────────────┤
+│ rsc/assets/page-0waqOK9c.mjs                     │ esm  │ 0.37 KiB    │
+├──────────────────────────────────────────────────┼──────┼─────────────┤
+│ rsc/assets/page-2P73mU4H.mjs                     │ esm  │ 0.36 KiB    │
+├──────────────────────────────────────────────────┼──────┼─────────────┤
+│ rsc/assets/page-B0q_3boi.mjs                     │ esm  │ 5.00 KiB    │
+├──────────────────────────────────────────────────┼──────┼─────────────┤
+│ rsc/assets/page-B5urWrb-.mjs                     │ esm  │ 1.18 KiB    │
+├──────────────────────────────────────────────────┼──────┼─────────────┤
+│ rsc/assets/page-B858cmMS.mjs                     │ esm  │ 1.15 KiB    │
+├──────────────────────────────────────────────────┼──────┼─────────────┤
+│ rsc/assets/page-BGz24Zq5.mjs                     │ esm  │ 0.81 KiB    │
+├──────────────────────────────────────────────────┼──────┼─────────────┤
+│ rsc/assets/page-BK23lFC3.mjs                     │ esm  │ 0.50 KiB    │
+├──────────────────────────────────────────────────┼──────┼─────────────┤
+│ rsc/assets/page-BUVx6afB.mjs                     │ esm  │ 0.37 KiB    │
+├──────────────────────────────────────────────────┼──────┼─────────────┤
+│ rsc/assets/page-B_1RUVoW.mjs                     │ esm  │ 0.46 KiB    │
+├──────────────────────────────────────────────────┼──────┼─────────────┤
+│ rsc/assets/page-Bbllxrb6.mjs                     │ esm  │ 1.20 KiB    │
+├──────────────────────────────────────────────────┼──────┼─────────────┤
+│ rsc/assets/page-BlgGJFZP.mjs                     │ esm  │ 0.81 KiB    │
+├──────────────────────────────────────────────────┼──────┼─────────────┤
+│ rsc/assets/page-BrLqMurT.mjs                     │ esm  │ 1.15 KiB    │
+├──────────────────────────────────────────────────┼──────┼─────────────┤
+│ rsc/assets/page-BuJg5fsZ.mjs                     │ esm  │ 15.18 KiB   │
+├──────────────────────────────────────────────────┼──────┼─────────────┤
+│ rsc/assets/page-Bv8svCSG.mjs                     │ esm  │ 1.18 KiB    │
+├──────────────────────────────────────────────────┼──────┼─────────────┤
+│ rsc/assets/page-C9lb66cE.mjs                     │ esm  │ 43.64 KiB   │
+├──────────────────────────────────────────────────┼──────┼─────────────┤
+│ rsc/assets/page-CSfQU1R8.mjs                     │ esm  │ 1.18 KiB    │
+├──────────────────────────────────────────────────┼──────┼─────────────┤
+│ rsc/assets/page-CVu0dDma.mjs                     │ esm  │ 10.16 KiB   │
+├──────────────────────────────────────────────────┼──────┼─────────────┤
+│ rsc/assets/page-CXM9mL47.mjs                     │ esm  │ 0.68 KiB    │
+├──────────────────────────────────────────────────┼──────┼─────────────┤
+│ rsc/assets/page-Cd663n_v.mjs                     │ esm  │ 1.21 KiB    │
+├──────────────────────────────────────────────────┼──────┼─────────────┤
+│ rsc/assets/page-CdukiANu.mjs                     │ esm  │ 18.32 KiB   │
+├──────────────────────────────────────────────────┼──────┼─────────────┤
+│ rsc/assets/page-CfrPhbxc.mjs                     │ esm  │ 0.66 KiB    │
+├──────────────────────────────────────────────────┼──────┼─────────────┤
+│ rsc/assets/page-Cg_60u-P.mjs                     │ esm  │ 1.20 KiB    │
+├──────────────────────────────────────────────────┼──────┼─────────────┤
+│ rsc/assets/page-ChmQ9p35.mjs                     │ esm  │ 1.17 KiB    │
+├──────────────────────────────────────────────────┼──────┼─────────────┤
+│ rsc/assets/page-Cjz3vnB8.mjs                     │ esm  │ 0.68 KiB    │
+├──────────────────────────────────────────────────┼──────┼─────────────┤
+│ rsc/assets/page-Cp2r6cIu.mjs                     │ esm  │ 17.22 KiB   │
+├──────────────────────────────────────────────────┼──────┼─────────────┤
+│ rsc/assets/page-D-xWTaIc.mjs                     │ esm  │ 1.16 KiB    │
+├──────────────────────────────────────────────────┼──────┼─────────────┤
+│ rsc/assets/page-D40XiLph.mjs                     │ esm  │ 1.15 KiB    │
+├──────────────────────────────────────────────────┼──────┼─────────────┤
+│ rsc/assets/page-DBx4vmet.mjs                     │ esm  │ 0.37 KiB    │
+├──────────────────────────────────────────────────┼──────┼─────────────┤
+│ rsc/assets/page-DGZANItQ.mjs                     │ esm  │ 1.17 KiB    │
+├──────────────────────────────────────────────────┼──────┼─────────────┤
+│ rsc/assets/page-DI8dpprc.mjs                     │ esm  │ 1.20 KiB    │
+├──────────────────────────────────────────────────┼──────┼─────────────┤
+│ rsc/assets/page-DaOwdMHy.mjs                     │ esm  │ 13.81 KiB   │
+├──────────────────────────────────────────────────┼──────┼─────────────┤
+│ rsc/assets/page-Darqqio2.mjs                     │ esm  │ 0.37 KiB    │
+├──────────────────────────────────────────────────┼──────┼─────────────┤
+│ rsc/assets/page-DjSqwHUa.mjs                     │ esm  │ 1.21 KiB    │
+├──────────────────────────────────────────────────┼──────┼─────────────┤
+│ rsc/assets/page-Dnn4oIjF.mjs                     │ esm  │ 1.17 KiB    │
+├──────────────────────────────────────────────────┼──────┼─────────────┤
+│ rsc/assets/page-DqzKN_By.mjs                     │ esm  │ 1.10 KiB    │
+├──────────────────────────────────────────────────┼──────┼─────────────┤
+│ rsc/assets/page-DxMVU95Q.mjs                     │ esm  │ 0.70 KiB    │
+├──────────────────────────────────────────────────┼──────┼─────────────┤
+│ rsc/assets/page-Ghd_mTue.mjs                     │ esm  │ 0.36 KiB    │
+├──────────────────────────────────────────────────┼──────┼─────────────┤
+│ rsc/assets/page-ILgB2FHl.mjs                     │ esm  │ 0.65 KiB    │
+├──────────────────────────────────────────────────┼──────┼─────────────┤
+│ rsc/assets/page-LeS3stf8.mjs                     │ esm  │ 31.54 KiB   │
+├──────────────────────────────────────────────────┼──────┼─────────────┤
+│ rsc/assets/page-MqdzhVDR.mjs                     │ esm  │ 21.97 KiB   │
+├──────────────────────────────────────────────────┼──────┼─────────────┤
+│ rsc/assets/page-Q1uiU4pL.mjs                     │ esm  │ 0.37 KiB    │
+├──────────────────────────────────────────────────┼──────┼─────────────┤
+│ rsc/assets/page-QcTpZ0kX.mjs                     │ esm  │ 2.63 KiB    │
+├──────────────────────────────────────────────────┼──────┼─────────────┤
+│ rsc/assets/page-YG0amV_N.mjs                     │ esm  │ 0.65 KiB    │
+├──────────────────────────────────────────────────┼──────┼─────────────┤
+│ rsc/assets/page-ZEW2IHAE.mjs                     │ esm  │ 13.62 KiB   │
+├──────────────────────────────────────────────────┼──────┼─────────────┤
+│ rsc/assets/page-ZwT_-1K5.mjs                     │ esm  │ 0.36 KiB    │
+├──────────────────────────────────────────────────┼──────┼─────────────┤
+│ rsc/assets/page-eSlNd1EH.mjs                     │ esm  │ 0.37 KiB    │
+├──────────────────────────────────────────────────┼──────┼─────────────┤
+│ rsc/assets/page-hero-DS5FvtzB.mjs                │ esm  │ 5.42 KiB    │
+├──────────────────────────────────────────────────┼──────┼─────────────┤
+│ rsc/assets/page-kEsoeaZB.mjs                     │ esm  │ 0.37 KiB    │
+├──────────────────────────────────────────────────┼──────┼─────────────┤
+│ rsc/assets/page-metadata-hu9KRfVK.mjs            │ esm  │ 2.92 KiB    │
+├──────────────────────────────────────────────────┼──────┼─────────────┤
+│ rsc/assets/page-pebS0ZER.mjs                     │ esm  │ 0.65 KiB    │
+├──────────────────────────────────────────────────┼──────┼─────────────┤
+│ rsc/assets/page-route-DH8nrIf0.mjs               │ esm  │ 1338.64 KiB │
+├──────────────────────────────────────────────────┼──────┼─────────────┤
+│ rsc/assets/page-sHGihCBZ.mjs                     │ esm  │ 15.92 KiB   │
+├──────────────────────────────────────────────────┼──────┼─────────────┤
+│ rsc/assets/page-wtTQ3GCw.mjs                     │ esm  │ 1.13 KiB    │
+├──────────────────────────────────────────────────┼──────┼─────────────┤
+│ rsc/assets/privacy-consent-Bvh7IP9N.mjs          │ esm  │ 0.35 KiB    │
+├──────────────────────────────────────────────────┼──────┼─────────────┤
+│ rsc/assets/product-page-primitives-V94Xlt70.mjs  │ esm  │ 9.84 KiB    │
+├──────────────────────────────────────────────────┼──────┼─────────────┤
+│ rsc/assets/public-routes-DzCynu4V.mjs            │ esm  │ 1.20 KiB    │
+├──────────────────────────────────────────────────┼──────┼─────────────┤
+│ rsc/assets/react.react-server-Cmh2liXh.mjs       │ esm  │ 13.30 KiB   │
+├──────────────────────────────────────────────────┼──────┼─────────────┤
+│ rsc/assets/reveal-Dku0VNta.mjs                   │ esm  │ 0.68 KiB    │
+├──────────────────────────────────────────────────┼──────┼─────────────┤
+│ rsc/assets/route-match-DjxHqbkS.mjs              │ esm  │ 1.94 KiB    │
+├──────────────────────────────────────────────────┼──────┼─────────────┤
+│ rsc/assets/rsc-CYrMnlWn.mjs                      │ esm  │ 42.09 KiB   │
+├──────────────────────────────────────────────────┼──────┼─────────────┤
+│ rsc/assets/section-shell-niZtq65L.mjs            │ esm  │ 4.26 KiB    │
+├──────────────────────────────────────────────────┼──────┼─────────────┤
+│ rsc/assets/server-BuIDE4uj.mjs                   │ esm  │ 118.96 KiB  │
+├──────────────────────────────────────────────────┼──────┼─────────────┤
+│ rsc/assets/src-lJtWNCVp.mjs                      │ esm  │ 30.72 KiB   │
+├──────────────────────────────────────────────────┼──────┼─────────────┤
+│ rsc/assets/stat-strip-0vmnvC_m.mjs               │ esm  │ 2.21 KiB    │
+├──────────────────────────────────────────────────┼──────┼─────────────┤
+│ rsc/assets/static-icons-G9K3ynvF.mjs             │ esm  │ 9.39 KiB    │
+├──────────────────────────────────────────────────┼──────┼─────────────┤
+│ rsc/assets/surface-card-D4pemxiE.mjs             │ esm  │ 4.92 KiB    │
+├──────────────────────────────────────────────────┼──────┼─────────────┤
+│ rsc/assets/vi-BrbeqGqd.mjs                       │ esm  │ 337.13 KiB  │
+├──────────────────────────────────────────────────┼──────┼─────────────┤
+│ rsc/bridge-api.js                                │ esm  │ 0.39 KiB    │
+├──────────────────────────────────────────────────┼──────┼─────────────┤
+│ rsc/bridge-pages.js                              │ esm  │ 14.53 KiB   │
+├──────────────────────────────────────────────────┼──────┼─────────────┤
+│ rsc/index.js                                     │ esm  │ 1.81 KiB    │
+├──────────────────────────────────────────────────┼──────┼─────────────┤
+│ Total (324 modules)                              │      │ 5778.99 KiB │
+└──────────────────────────────────────────────────┴──────┴─────────────┘
+⎔ Starting local server...
+[wrangler:info] Ready on http://127.0.0.1:56993
+[wrangler:info] GET /legal/dpa 200 OK (256ms)
+[wrangler:info] GET /about 200 OK (19ms)
+[wrangler:info] GET /pricing 307 Temporary Redirect (4ms)
+[wrangler:info] GET /contact 200 OK (28ms)
+[wrangler:info] GET / 200 OK (12ms)
+[wrangler:info] GET /contributors 200 OK (11ms)
+[wrangler:info] GET /branding 200 OK (17ms)
+[wrangler:info] GET /women-in-tech 200 OK (11ms)
+[wrangler:info] GET /partners 200 OK (12ms)
+[wrangler:info] GET /careers 200 OK (10ms)
+[wrangler:info] GET /blog 200 OK (8ms)
+[wrangler:info] GET /solutions/education 200 OK (10ms)
+[wrangler:info] GET /products 200 OK (20ms)
+[wrangler:info] GET /products/tasks 200 OK (8ms)
+[wrangler:info] GET /privacy 200 OK (8ms)
+[wrangler:info] GET /security 200 OK (9ms)
+[wrangler:info] GET /security/bug-bounty 200 OK (6ms)
+[wrangler:info] GET /security/policy 200 OK (8ms)
+[wrangler:info] GET /terms 200 OK (10ms)
+▶ emitted marketing Worker serves its root, mount and unknown paths
+  ✔ public pages answer as start-bridge.routes.json expects (509.952459ms)
+[wrangler:info] GET / 200 OK (8ms)
+  ✔ every configured root host serves the root page (8.403709ms)
+[wrangler:info] GET /marketing/legal/dpa 200 OK (7ms)
+[wrangler:info] GET /marketing/about 200 OK (13ms)
+[wrangler:info] GET /marketing/pricing 307 Temporary Redirect (2ms)
+[wrangler:info] GET /marketing/contact 200 OK (8ms)
+[wrangler:info] GET /marketing 200 OK (8ms)
+[wrangler:info] GET /marketing/contributors 200 OK (6ms)
+[wrangler:info] GET /marketing/branding 200 OK (8ms)
+[wrangler:info] GET /marketing/women-in-tech 200 OK (8ms)
+[wrangler:info] GET /marketing/partners 200 OK (10ms)
+[wrangler:info] GET /marketing/careers 200 OK (7ms)
+[wrangler:info] GET /marketing/blog 200 OK (5ms)
+[wrangler:info] GET /marketing/solutions/education 200 OK (6ms)
+[wrangler:info] GET /marketing/products 200 OK (6ms)
+[wrangler:info] GET /marketing/products/tasks 200 OK (11ms)
+[wrangler:info] GET /marketing/privacy 200 OK (7ms)
+[wrangler:info] GET /marketing/security 200 OK (7ms)
+[wrangler:info] GET /marketing/security/bug-bounty 200 OK (7ms)
+[wrangler:info] GET /marketing/security/policy 200 OK (7ms)
+[wrangler:info] GET /marketing/terms 200 OK (10ms)
+  ✔ the apex mount serves every declared page alike (169.5845ms)
+[wrangler:info] GET /__native-smoke-missing__ 404 Not Found (4ms)
+  ✔ an unknown path is not a server error (5.017583ms)
+[wrangler:info] GET /legal/dpa 200 OK (7ms)
+[wrangler:info] GET /__native-smoke-missing__ 404 Not Found (2ms)
+  ✔ the response policy covers a rendered page, an API response and a 404 (10.274083ms)
+⎔ Shutting down local server...
+✔ emitted marketing Worker serves its root, mount and unknown paths (1490.174583ms)
+ℹ policy probe api skipped (no fixture): marketing owns no API routes; /api/* is served by the web app
+ℹ denied egress origins: https://api.github.com
+(node:88046) [MODULE_TYPELESS_PACKAGE_JSON] Warning: Module type of file:///Users/thanhpham/.t3/scratch/2026-11-11-act-as-the-implementation-sub-6455b199/platform-marketing-shell/apps/marketing/start-bridge.config.ts is not specified and it doesn't parse as CommonJS.
+Reparsing as ES module because module syntax was detected. This incurs a performance overhead.
+To eliminate this warning, add "type": "module" to /Users/thanhpham/.t3/scratch/2026-11-11-act-as-the-implementation-sub-6455b199/platform-marketing-shell/apps/marketing/package.json.
+(Use `node --trace-warnings ...` to show where the warning was created)
+(node:88046) [MODULE_TYPELESS_PACKAGE_JSON] Warning: Module type of file:///Users/thanhpham/.t3/scratch/2026-11-11-act-as-the-implementation-sub-6455b199/platform-marketing-shell/packages/utils/src/framable-paths.ts is not specified and it doesn't parse as CommonJS.
+Reparsing as ES module because module syntax was detected. This incurs a performance overhead.
+To eliminate this warning, add "type": "module" to /Users/thanhpham/.t3/scratch/2026-11-11-act-as-the-implementation-sub-6455b199/platform-marketing-shell/packages/utils/package.json.
+✔ native Worker modules contain no unresolved virtual import specifiers (62.023542ms)
+✔ broken static, re-export and dynamic virtual imports are rejected (0.705917ms)
+✔ native qualification can import app-owned config without Vite (33.671333ms)
+ℹ tests 9
+ℹ suites 0
+ℹ pass 9
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 1583.461625
+[ttr resources] finished; exit 0

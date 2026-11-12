@@ -1,0 +1,245 @@
+{
+  "head": "6858ce276de7db752aebd23275bbca38fbd37a06",
+  "base": "5f510d6db991bd3792e697cc2ee3ff7d543295a1",
+  "previousHead": "9581f25cc43b8e314651f6ff602ef9a71df18224",
+  "rootCause": "The regular marketing tsconfig excludes start-bridge.config.ts; the workflow binding compatibility harness imports its Worker type and therefore the config. Explicit .ts helper import is rejected by that separate program (TS5097). Inlining the same helper removes the relative TypeScript import edge and supports Node type stripping without relaxing compiler settings.",
+  "fixStat": "apps/marketing/package.json                        |   3 +-\n apps/marketing/scripts/check-native.mjs            | 111 +++++++++++++++++++++\n .../marketing/scripts/landing-critical-css.test.ts |   2 +-\n apps/marketing/src/lib/landing-styles.ts           |  23 -----\n apps/marketing/start-bridge.config.ts              |  25 ++++-\n 5 files changed, 138 insertions(+), 26 deletions(-)",
+  "prStat": "apps/docs/reference/repository/dependencies-2.mdx  |   2 +-\n apps/docs/reference/repository/dependencies-3.mdx  |   4 +-\n apps/docs/reference/repository/dependencies-4.mdx  |   3 +\n .../native-module-specifiers.runtime.mjs           |  71 ++++++++++\n apps/marketing/package.json                        |   6 +-\n apps/marketing/scripts/check-native.mjs            | 111 +++++++++++++++\n apps/marketing/scripts/landing-critical-css.mjs    | 155 +++++++++++++++++++++\n .../marketing/scripts/landing-critical-css.test.ts |  62 +++++++++\n .../app/[locale]/(marketing)/(landing)/landing.css |   4 +\n .../src/app/[locale]/(marketing)/layout.tsx        |   9 +-\n apps/marketing/src/app/[locale]/layout.tsx         |   5 +-\n .../src/components/landing/hero/video-hero.tsx     |  42 ++++--\n .../src/components/landing/hero/video-player.tsx   | 106 +++++---------\n .../layouts/landing-enhancements.test.tsx          |  21 +++\n .../components/layouts/landing-enhancements.tsx    |  37 +++++\n apps/marketing/src/lib/landing-style-map.json      |   1 +\n apps/marketing/src/lib/marketing-render-context.ts |   6 +\n apps/marketing/start-bridge.config.ts              |  60 +++++++-\n apps/marketing/vite.config.mts                     |   2 +\n apps/marketing/vitest.config.ts                    |   6 +-\n bun.lock                                           |  17 ++-\n packages/marketing-shell/src/nav-actions.tsx       |   4 +-\n packages/marketing-shell/src/theme-toggle.tsx      |  40 ++++++\n 23 files changed, 670 insertions(+), 104 deletions(-)",
+  "before": {
+    "exactBindingTypeExit": 1,
+    "error": "TS5097"
+  },
+  "after": {
+    "exactBindingTypeExit": 0,
+    "cloudflareTypeExit": 0,
+    "bunConfigImportExit": 0,
+    "nodeConfigImportExit": 0,
+    "reservedStaging": {
+      "exit": 0,
+      "pass": 2,
+      "fail": 0
+    },
+    "nativeRuntime": {
+      "exit": 0,
+      "pass": 9,
+      "fail": 0
+    }
+  },
+  "gates": {
+    "frozen-install": {
+      "cmd": [
+        "bun",
+        "install",
+        "--frozen-lockfile"
+      ],
+      "cwd": "/Users/thanhpham/.t3/scratch/2026-11-11-act-as-the-implementation-sub-6455b199/platform-marketing-shell",
+      "exit": 0
+    },
+    "oxlint": {
+      "cmd": [
+        "bun",
+        "x",
+        "oxlint",
+        "apps/marketing/cloudflare/native-module-specifiers.runtime.mjs",
+        "apps/marketing/scripts/check-native.mjs",
+        "apps/marketing/scripts/landing-critical-css.mjs",
+        "apps/marketing/scripts/landing-critical-css.test.ts",
+        "apps/marketing/src/app/[locale]/(marketing)/layout.tsx",
+        "apps/marketing/src/app/[locale]/layout.tsx",
+        "apps/marketing/src/components/landing/hero/video-hero.tsx",
+        "apps/marketing/src/components/landing/hero/video-player.tsx",
+        "apps/marketing/src/components/layouts/landing-enhancements.test.tsx",
+        "apps/marketing/src/components/layouts/landing-enhancements.tsx",
+        "apps/marketing/src/lib/marketing-render-context.ts",
+        "apps/marketing/start-bridge.config.ts",
+        "apps/marketing/vite.config.mts",
+        "apps/marketing/vitest.config.ts",
+        "packages/marketing-shell/src/nav-actions.tsx",
+        "packages/marketing-shell/src/theme-toggle.tsx"
+      ],
+      "cwd": "/Users/thanhpham/.t3/scratch/2026-11-11-act-as-the-implementation-sub-6455b199/platform-marketing-shell",
+      "exit": 0
+    },
+    "format": {
+      "cmd": [
+        "bun",
+        "x",
+        "oxfmt",
+        "--check",
+        "."
+      ],
+      "cwd": "/Users/thanhpham/.t3/scratch/2026-11-11-act-as-the-implementation-sub-6455b199/platform-marketing-shell",
+      "exit": 0
+    },
+    "stylelint": {
+      "cmd": [
+        "npx",
+        "--yes",
+        "stylelint@16",
+        "--config",
+        "/tmp/landing-types-fix/stylelint.json",
+        "apps/marketing/src/app/[locale]/(marketing)/(landing)/landing.css"
+      ],
+      "cwd": "/Users/thanhpham/.t3/scratch/2026-11-11-act-as-the-implementation-sub-6455b199/platform-marketing-shell",
+      "exit": 0
+    },
+    "source-size": {
+      "cmd": [
+        "node",
+        "scripts/check-source-size.js"
+      ],
+      "cwd": "/Users/thanhpham/.t3/scratch/2026-11-11-act-as-the-implementation-sub-6455b199/platform-marketing-shell",
+      "exit": 0
+    },
+    "wrangler": {
+      "cmd": [
+        "node",
+        "scripts/ci/wrangler-usage.js"
+      ],
+      "cwd": "/Users/thanhpham/.t3/scratch/2026-11-11-act-as-the-implementation-sub-6455b199/platform-marketing-shell",
+      "exit": 0
+    },
+    "docs-inventory": {
+      "cmd": [
+        "node",
+        "scripts/generate-docs-inventory.js",
+        "--check"
+      ],
+      "cwd": "/Users/thanhpham/.t3/scratch/2026-11-11-act-as-the-implementation-sub-6455b199/platform-marketing-shell",
+      "exit": 0
+    },
+    "app-seo": {
+      "cmd": [
+        "node",
+        "scripts/generate-app-seo.js",
+        "--check"
+      ],
+      "cwd": "/Users/thanhpham/.t3/scratch/2026-11-11-act-as-the-implementation-sub-6455b199/platform-marketing-shell",
+      "exit": 0
+    },
+    "type-marketing": {
+      "cmd": [
+        "bun",
+        "run",
+        "type-check"
+      ],
+      "cwd": "/Users/thanhpham/.t3/scratch/2026-11-11-act-as-the-implementation-sub-6455b199/platform-marketing-shell/apps/marketing",
+      "exit": 0
+    },
+    "type-marketing-shell": {
+      "cmd": [
+        "bun",
+        "run",
+        "type-check"
+      ],
+      "cwd": "/Users/thanhpham/.t3/scratch/2026-11-11-act-as-the-implementation-sub-6455b199/platform-marketing-shell/packages/marketing-shell",
+      "exit": 0
+    },
+    "type-roadmap": {
+      "cmd": [
+        "bun",
+        "run",
+        "type-check"
+      ],
+      "cwd": "/Users/thanhpham/.t3/scratch/2026-11-11-act-as-the-implementation-sub-6455b199/platform-marketing-shell/apps/roadmap",
+      "exit": 0
+    },
+    "marketing-tests": {
+      "cmd": [
+        "bun",
+        "run",
+        "test"
+      ],
+      "cwd": "/Users/thanhpham/.t3/scratch/2026-11-11-act-as-the-implementation-sub-6455b199/platform-marketing-shell/apps/marketing",
+      "exit": 0
+    },
+    "shell-tests": {
+      "cmd": [
+        "bun",
+        "run",
+        "test"
+      ],
+      "cwd": "/Users/thanhpham/.t3/scratch/2026-11-11-act-as-the-implementation-sub-6455b199/platform-marketing-shell/packages/marketing-shell",
+      "exit": 0
+    },
+    "roadmap-tests": {
+      "cmd": [
+        "node",
+        "--test",
+        "--test-concurrency=2",
+        "apps/roadmap/src/roadmap-data.test.ts",
+        "apps/roadmap/src/cache-policy.test.ts",
+        "apps/roadmap/scripts/seal-artifact.test.mjs",
+        "apps/roadmap/scripts/pre-seal-doctor.test.mjs"
+      ],
+      "cwd": "/Users/thanhpham/.t3/scratch/2026-11-11-act-as-the-implementation-sub-6455b199/platform-marketing-shell",
+      "exit": 0
+    },
+    "native-ci-gate": {
+      "cmd": [
+        "bun",
+        "run",
+        "check:native"
+      ],
+      "cwd": "/Users/thanhpham/.t3/scratch/2026-11-11-act-as-the-implementation-sub-6455b199/platform-marketing-shell/apps/marketing",
+      "exit": 0
+    },
+    "check-changed": {
+      "cmd": [
+        "bun",
+        "check:changed"
+      ],
+      "cwd": "/Users/thanhpham/.t3/scratch/2026-11-11-act-as-the-implementation-sub-6455b199/platform-marketing-shell",
+      "exit": 0
+    },
+    "reserved-staging": {
+      "cmd": [
+        "node",
+        "--test",
+        "scripts/ci/reserved-staging-names.test.mjs"
+      ],
+      "cwd": "/Users/thanhpham/.t3/scratch/2026-11-11-act-as-the-implementation-sub-6455b199/platform-marketing-shell",
+      "exit": 0
+    },
+    "plain-bun-import": {
+      "cmd": [
+        "bun",
+        "--eval",
+        "await import('./apps/marketing/start-bridge.config.ts')"
+      ],
+      "cwd": "/Users/thanhpham/.t3/scratch/2026-11-11-act-as-the-implementation-sub-6455b199/platform-marketing-shell",
+      "exit": 0
+    },
+    "cloudflare-type": {
+      "cmd": [
+        "bun",
+        "run",
+        "type-check:cloudflare"
+      ],
+      "cwd": "/Users/thanhpham/.t3/scratch/2026-11-11-act-as-the-implementation-sub-6455b199/platform-marketing-shell/apps/marketing",
+      "exit": 0
+    }
+  },
+  "roadmapBuildExit": 0,
+  "roadmapDoctorExit": 0,
+  "inlineScripts": {
+    "/roadmap": 4,
+    "/roadmap/vi": 4,
+    "/roadmap/workshops/edufest-2026": 4,
+    "/roadmap/vi/workshops/edufest-2026": 4
+  },
+  "toolchain": {
+    "node": "/Users/thanhpham/tools/pinned-24.22.3-1.4.4/bin/node",
+    "nodeVersion": "24.22.3",
+    "bun": "/Users/thanhpham/tools/pinned-24.22.3-1.4.4/bin/bun",
+    "bunVersion": "1.4.4",
+    "hooks": ".githooks"
+  },
+  "quickLighthouse": {
+    "exit": 0,
+    "score": 93.0,
+    "LCP": 2979.7697999999996,
+    "TBT": 0,
+    "CLS": 0
+  }
+}

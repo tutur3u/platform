@@ -1,0 +1,21 @@
+[ttr resources] running PID 95725
+frozen-install 0
+oxlint 0
+format 0
+stylelint 0
+source-size 0
+wrangler 0
+docs-inventory 0
+app-seo 0
+type-marketing 0
+type-marketing-shell 0
+type-roadmap 0
+marketing-tests 0
+shell-tests 0
+roadmap-tests 0
+native-ci-gate 0
+check-changed 0
+reserved-staging 0
+plain-bun-import 0
+cloudflare-type 0
+[ttr resources] finished; exit 0

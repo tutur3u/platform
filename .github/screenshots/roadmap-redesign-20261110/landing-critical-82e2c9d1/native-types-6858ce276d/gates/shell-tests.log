@@ -1,0 +1,10 @@
+$ vitest run
+
+ RUN  v5.0.5 /Users/thanhpham/.t3/scratch/2026-11-11-act-as-the-implementation-sub-6455b199/platform-marketing-shell/packages/marketing-shell
+
+
+ Test Files  1 passed (1)
+      Tests  5 passed (5)
+   Start at  06:31:21
+   Duration  518ms (environment 75%, tests 13%, import 7%, transform 4%, worker 1%)
+
