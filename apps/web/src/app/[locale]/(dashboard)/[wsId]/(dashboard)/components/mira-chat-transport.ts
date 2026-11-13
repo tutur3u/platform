@@ -10,7 +10,8 @@ type PrepareRequest = NonNullable<
 
 /** Endpoint, credential scope and body must describe the same immutable send. */
 export function createMiraRequestPreparer(
-  resolveHeaders = getMiraTempAuthHeaders
+  resolveHeaders = getMiraTempAuthHeaders,
+  onRequestStart?: () => void
 ): PrepareRequest {
   return async ({ id, messages, body, headers }) => {
     const snapshot = { ...body };
@@ -29,6 +30,7 @@ export function createMiraRequestPreparer(
       for (const [key, value] of Object.entries(authHeaders))
         requestHeaders.set(key, value);
     }
+    onRequestStart?.();
     return {
       api: subscription ? '/api/ai/chatgpt' : '/api/ai/chat',
       headers: requestHeaders,

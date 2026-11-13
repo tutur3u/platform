@@ -42,6 +42,7 @@
             "group": "User guides",
             "pages": [
               "platform/guides/getting-started",
+              "platform/guides/building-on-start-vite-void",
               "platform/guides/workflows",
               "platform/guides/troubleshooting"
             ]

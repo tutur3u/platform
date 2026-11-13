@@ -130,6 +130,7 @@ export const meetAssistantAudioSchema = z.object({
 });
 
 export const meetRealtimePresenceSchema = z.object({
+  miraPrivate: z.boolean().optional(),
   assistantAudio: meetAssistantAudioSchema.optional(),
   accountId: z.uuid().optional(),
   avatarUrl: z

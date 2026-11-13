@@ -1,7 +1,10 @@
 import { act } from 'react';
 import { createRoot, type Root } from 'react-dom/client';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { DeferredLandingSections } from './deferred-landing-sections';
+import {
+  DeferredLandingSections,
+  DeferredProblemSection,
+} from './deferred-landing-sections';
 
 vi.mock('next/dynamic', () => ({
   default: () => () => <div data-testid="interactive-section" />,
@@ -39,6 +42,17 @@ afterEach(() => {
 });
 
 describe('landing viewport islands', () => {
+  it('defers the below-fold problem and payoff sections together', () => {
+    render(<DeferredProblemSection />);
+    expect(count()).toHaveLength(0);
+    act(() =>
+      intersections[0]?.(
+        [{ isIntersecting: true }] as IntersectionObserverEntry[],
+        {} as IntersectionObserver
+      )
+    );
+    expect(count()).toHaveLength(2);
+  });
   it('keeps expensive sections unmounted until they approach the viewport', () => {
     render(<DeferredLandingSections />);
     expect(count()).toHaveLength(0);

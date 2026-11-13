@@ -1,6 +1,7 @@
 /// <reference types="@vitejs/plugin-rsc/types" />
 // Drive staging entry. Keep the environment fence before loading bridge routes.
 
+import { withHstsResponsePolicy } from '@tuturuuu/start-bridge/response-policy';
 import { missingRequiredBindings } from './required-bindings';
 
 import type { AssetsBinding } from '@tuturuuu/start-bridge/assets';
@@ -75,7 +76,11 @@ const createHandler = () =>
 let handler: ReturnType<typeof createHandler> | undefined;
 
 export default {
-  async fetch(request: Request, env: DriveEnvironment, ctx: WorkerContext) {
+  fetch: withHstsResponsePolicy(async function (
+    request: Request,
+    env: DriveEnvironment,
+    ctx: WorkerContext
+  ) {
     if (missingRequiredBindings(env)) {
       return new Response('Required configuration unavailable', {
         status: 503,
@@ -130,5 +135,5 @@ export default {
           })
         : response
     );
-  },
+  }),
 };

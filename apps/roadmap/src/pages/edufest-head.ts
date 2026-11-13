@@ -3,8 +3,8 @@ import vi from '../../messages/edufest-2026.vi.json';
 import ogImage from '../assets/og-edufest-2026.png?no-inline';
 import type { Lang } from '../components/shared';
 import { WORKSHOP_EVENT } from '../content/workshops/edufest-2026';
+import { bootScript } from '../boot';
 import { heroFontPreloads } from '../hero-fonts';
-import { liteModeScript } from '../lite-mode';
 import {
   alternateLinks,
   jsonLdScript,
@@ -26,7 +26,7 @@ export function edufestHead(lang: Lang) {
     }),
     links: [...heroFontPreloads(lang), ...alternateLinks('edufest', lang)],
     scripts: [
-      liteModeScript(),
+      bootScript(),
       ...(WORKSHOP_EVENT.isoDate
         ? [
             jsonLdScript(

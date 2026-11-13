@@ -6,6 +6,21 @@ shared-package changes.
 
 ## Web And Shared UI
 
+- Mira typed-chat activity spans queueing, creation and the Live save barrier,
+  until the SDK user message replaces the optimistic snapshot by ID. Preserve
+  immutable send configuration and cancellation checks after the Live barrier.
+  Web and Workspace copies must agree. Use focused queue/conversation tests in
+  each app; browser Performance entries separate activity, prepared request,
+  first rendered text and finish. See
+  [Mira client activity](../../../../../apps/docs/platform/features/mira-client-actions.mdx#typed-chat-response-activity).
+
+- Shared Google new-chat creation derives a bounded grapheme-safe title from the
+  first message and returns after chat/message persistence. Keep title models off
+  this path; background polishing requires a durable job and a rename fence.
+  Preserve UUID, actor, workspace checks and model FK normalization. See
+  [new conversation titles](../../../../../apps/docs/platform/features/mira-client-actions.mdx#new-conversation-titles)
+  and `packages/ai/src/chat/google/new/route.test.ts`.
+
 - Drive export links use versioned, expiring tokens plus a service-only folder
   revocation marker in the Supabase `.tuturuuu/drive-export-revocations` namespace.
   Read markers uncached on every fetch and fail closed on missing markers or
@@ -366,9 +381,11 @@ time-bound IP/CIDR trust or rate-limit uplift only when traffic is organic.
   stale content through the current route/document workspace or a server-returned
   resource workspace, not through the embedded attribute alone.
 
-## TanStack Start Migration (apps/tanstack-web)
+## Retired apps/tanstack-web Compat Layers
 
-Retained inactive reference: do not execute or update this runtime until explicitly resumed.
+Retired historical reference, unrelated to per-app native Start (which reaches
+`next/*` only through `@tuturuuu/start-bridge`). Do not execute, update, or
+revive this tree.
 
 - Shared `@tuturuuu/ui` clients import Next-only framework APIs. apps/tanstack-web
   resolves them at runtime via three compat layers so ported routes keep the
@@ -604,10 +621,12 @@ refresh generated type evidence through the owning supported CI path.
 
 ## Active runtime and paused implementations
 
-Web and satellite Next.js apps are maintained. Rust (`apps/backend`) and
-TanStack Start (`apps/tanstack-web`) are paused and not in use. Do not port
+`apps/web` (Next.js) and the satellite apps are maintained; satellites move per
+app to native TanStack Start + Void + Vite+ on Cloudflare Workers under the
+native Start migration runbook. Rust (`apps/backend`) is paused, and the
+`apps/tanstack-web` tree is retired and unrelated to per-app Start. Do not port
 changes, regenerate migration trees/manifests/version docs, run implementation
-checks/builds, or update their dependencies until explicitly resumed. Maintain
+checks/builds, or update dependencies for either inactive tree. Maintain
 live Web first-class API handlers and shared `packages/internal-api` boundaries.
 Docker setup is inactive and the Docker cron runner is retired; local docs use
 `bun dev:docs` without Docker. See `apps/docs/build/devops/active-runtime.mdx`.
@@ -1482,6 +1501,21 @@ Keep emitted-Worker acceptance behind an explicit `test:runtime` command and
 artifact. Use `.invalid` hosts for isolated runtime preview fixtures; retain
 production-like preview refusal in the source auth matrix.
 
+
+### Native Tasks navigation and diagnostics
+
+The catch-all native Tasks route pairs its resolved model with its loaded
+pathname. Hide it when the router location differs, before awaiting the next
+server function, and key board/workspace state by actor and resource identity.
+Do not use a previous board's local snapshot as a loading placeholder. See
+`apps/tasks/src/runtime/page-transition-router.test.tsx` and the Tasks
+application page for the query-only navigation exception.
+
+Native Tasks router, startup and root fallback diagnostics use fixed messages
+without raw exceptions. CSP report diagnostics retain only allowlisted directive
+and disposition classifications. See the Tasks native runbook for artifact
+inspection and diagnostic privacy.
+
 ### Workspace picker component verification
 
 The network-fenced fictional fixture and capture matrix are documented in
@@ -1490,3 +1524,55 @@ verification. Preserve cached list choices on refresh failure, explicit retry,
 and actor-scoped visibility gates when adjusting picker presentation. Verify
 A → B → A resets for search, restore mode, pins, and recent selections with
 `workspace-picker-content.test.tsx` alongside the actor lifetime hook tests.
+
+### Native Worker HSTS boundary
+
+Keep HSTS enforcement outside app-owned response wrappers and startup guards.
+Use `withHstsResponsePolicy` from `@tuturuuu/start-bridge/response-policy` at
+native Worker fetch boundaries with exactly `max-age=63072000`. Preserve
+WebSocket upgrade responses. Regenerate only the owned boundary or runtime
+assertion from the codemod template; retain app-specific startup and routing
+content. Run the policy tests and fleet enumeration, then require sealed emitted
+Worker runtime checks for delivery evidence. Source enumeration alone does not
+prove emitted runtime behavior. See `apps/docs/build/devops/start-bridge-codemod.mdx`.
+For bespoke Tasks, Drive and Shortener entries, run
+`node --test scripts/hsts-bespoke-boundaries.test.mjs`; route suppliers are
+isolated, startup guards are real, and WebSocket runtime acceptance stays separate.
+
+The Apps primary Worker applies the outer HSTS policy after its staging cookie
+wrapper, including the canonical-host refusal. Run
+`node --test scripts/hsts-apps-boundary.test.mjs` for source-boundary regression
+coverage. The staging gateway entry and asset-service bypass require separate
+ownership and runtime qualification.
+
+The handwritten Apps staging gateway finalizes HSTS after staging cookie and HEAD
+wrappers. Its source entry regression is `scripts/hsts-apps-gateway-boundary.test.mjs`;
+it covers canonical-host refusal, missing assets, redirects, binding failures and
+hostile duplicate headers. Route/framework suppliers are isolated; emitted Worker,
+WebSocket upgrade and deployment acceptance require separate execution evidence.
+
+The Mail HTTP Worker finalizes HSTS outside its handler, covering local 404,
+mounted-session 409, build-info and RUM returns. Run
+`node --test scripts/hsts-mail-boundary.test.mjs` for the source-entry regression.
+The entry and handler execute with isolated framework/service suppliers and inner
+response wrappers. Emitted Worker, real WebSocket upgrades and deployed behavior
+require separate acceptance evidence.
+
+Mail Worker type checks require the canonical declaration producer
+`bun run --cwd apps/mail type-check:boundary` before the Worker program. The full
+`type-check` script sequences app, declaration, Worker and config checks. Qualify
+binding declarations with `wrangler types --include-runtime=false` against the
+emitted `dist/server/wrangler.json`; preserve the checked-in declaration preimage
+when generating temporary qualification output. Keep Void scratch output outside
+the authored patch when running changed-file gates.
+
+### IME composition in custom keyboard submission
+
+For text controls that commit or send on Enter, inspect the native keyboard
+composition flag before acting. React handlers read `event.nativeEvent.isComposing`;
+key code 229 also catches Safari composition-confirmation ordering. Preserve the
+IME default action while composing, plus existing ordinary Enter, Shift+Enter,
+Escape and explicit button behavior. Test the actual handler with composing and
+non-composing events; a source-string assertion cannot prove the action is
+suppressed. AI Studio model policy entry has focused regression coverage in
+`apps/ai/src/components/policy/model-list-field.test.ts`.

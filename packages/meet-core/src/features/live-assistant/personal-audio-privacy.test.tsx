@@ -9,7 +9,11 @@ const calls = vi.hoisted(() => ({
   play: vi.fn(),
   interrupt: vi.fn(),
   close: vi.fn(),
-  control: vi.fn(async () => ({ sessionId: 'session', token: 'test' })),
+  control: vi.fn(async () => ({
+    sessionId: 'session',
+    token: 'test',
+    ownerId: 'synthetic-owner',
+  })),
   update: vi.fn(),
 }));
 vi.mock('@tuturuuu/internal-api', () => ({
@@ -224,7 +228,7 @@ it('uses the latest playback volume when startup finishes', async () => {
   calls.volume = 0.25;
   rerender();
   await act(async () => {
-    finish({ sessionId: 'session', token: 'test' });
+    finish({ sessionId: 'session', token: 'test', ownerId: 'synthetic-owner' });
     await starting;
   });
   expect(calls.setVolume).toHaveBeenLastCalledWith(0.25);

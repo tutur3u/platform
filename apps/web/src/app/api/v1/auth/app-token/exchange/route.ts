@@ -44,6 +44,7 @@ import { createExchangeTokenResponse } from '@/lib/auth/external-app-exchange-re
 import { authorizeExternalProjectAppTokenExchange } from '@/lib/external-projects/access';
 import { withRequestLogDrain } from '@/lib/infrastructure/log-drain';
 import type { WorkspaceInvitationRecord } from '@/lib/workspace-invitations/status';
+import { acceptIeeaiFreeInvite } from '@/lib/workspace-invitations/ieeai-free-invite';
 
 const APP_TOKEN_REFRESH_SCOPE = 'app-token:refresh';
 const APP_TOKEN_REFRESH_REPLAY_KEY_PREFIX = 'app-token:refresh:used';
@@ -562,7 +563,7 @@ async function exchangeAppToken(request: NextRequest) {
       { status: 403 }
     );
   }
-  const workspaceSessionAuthorization = requiresWorkspaceSessionAuthorization(
+  let workspaceSessionAuthorization = requiresWorkspaceSessionAuthorization(
     resolvedTarget.scopes
   )
     ? await authorizeWorkspaceSessionAppTokenExchange({
@@ -573,6 +574,34 @@ async function exchangeAppToken(request: NextRequest) {
         workspaceId,
       })
     : null;
+
+  if (
+    token &&
+    workspaceSessionAuthorization &&
+    !workspaceSessionAuthorization.ok &&
+    workspaceSessionAuthorization.status === 403 &&
+    workspaceSessionAuthorization.invitation?.type !== 'GUEST' &&
+    (await acceptIeeaiFreeInvite({
+      admin: sbAdmin,
+      appId: resolvedTarget.targetApp,
+      allowedWorkspaceIds: resolvedTarget.allowedWorkspaceIds,
+      authEmail: authIdentity.email,
+      userId,
+      workspaceId:
+        workspaceSessionAuthorization.normalizedWorkspaceId ??
+        workspaceId ??
+        '',
+    }))
+  ) {
+    workspaceSessionAuthorization =
+      await authorizeWorkspaceSessionAppTokenExchange({
+        admin: sbAdmin,
+        allowedWorkspaceIds: resolvedTarget.allowedWorkspaceIds,
+        authEmail: authIdentity.email,
+        userId,
+        workspaceId,
+      });
+  }
 
   if (workspaceSessionAuthorization && !workspaceSessionAuthorization.ok) {
     if (workspaceSessionAuthorization.code === 'PENDING_WORKSPACE_INVITE') {

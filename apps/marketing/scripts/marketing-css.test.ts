@@ -13,6 +13,8 @@ it('includes static, lazy, wildcard and transitive UI imports without unrelated 
   directories.push(root);
   const app = resolve(root, 'apps/marketing');
   const ui = resolve(root, 'packages/ui');
+  const shell = resolve(root, 'packages/marketing-shell/src');
+  mkdirSync(shell, { recursive: true });
   mkdirSync(resolve(app, 'src'), { recursive: true });
   mkdirSync(resolve(ui, 'src/custom'), { recursive: true });
   writeFileSync(
@@ -20,6 +22,7 @@ it('includes static, lazy, wildcard and transitive UI imports without unrelated 
     JSON.stringify({
       exports: {
         './button': { import: './src/button.tsx' },
+        './sheet': './src/sheet.tsx',
         './custom/*': './src/custom/*.tsx',
       },
     })
@@ -34,6 +37,14 @@ it('includes static, lazy, wildcard and transitive UI imports without unrelated 
   );
   writeFileSync(resolve(ui, 'src/dialog.tsx'), 'export const Dialog = 1;');
   writeFileSync(
+    resolve(ui, 'src/sheet.tsx'),
+    "export { Dialog } from './dialog';"
+  );
+  writeFileSync(
+    resolve(shell, 'mobile-menu.tsx'),
+    "import { Sheet } from '@tuturuuu/ui/sheet';"
+  );
+  writeFileSync(
     resolve(ui, 'src/custom/footer.tsx'),
     'export const Footer = 1;'
   );
@@ -42,8 +53,11 @@ it('includes static, lazy, wildcard and transitive UI imports without unrelated 
     'export const Chart = 1;'
   );
   expect(marketingUiSources(app, ui)).toEqual(
-    ['src/button.tsx', 'src/custom/footer.tsx', 'src/dialog.tsx'].map((path) =>
-      resolve(ui, path)
-    )
+    [
+      'src/button.tsx',
+      'src/custom/footer.tsx',
+      'src/dialog.tsx',
+      'src/sheet.tsx',
+    ].map((path) => resolve(ui, path))
   );
 });

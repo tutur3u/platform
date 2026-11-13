@@ -2,7 +2,8 @@
 
 import { ActionProvider, StateProvider } from '@json-render/react';
 import type { UIMessage } from '@tuturuuu/ai/types';
-import type { ReactNode, RefObject } from 'react';
+import { type ReactNode, type RefObject, useEffect } from 'react';
+import { getAssistantActivityStatus } from './chat-message-list';
 import ChatMessageList from './chat-message-list';
 import type { MessageFileAttachment } from './file-preview-chips';
 
@@ -23,6 +24,8 @@ interface MiraChatConversationProps {
   pendingDisplay: string | null;
   pendingPrompt: string | null;
   queuedText: string | null;
+  dispatchPending?: UIMessage | null;
+  onActivityVisible?: () => void;
   scrollContainerRef: RefObject<HTMLDivElement | null>;
   userAvatarUrl?: string | null;
   userName?: string;
@@ -41,12 +44,20 @@ export function MiraChatConversation({
   pendingDisplay,
   pendingPrompt,
   queuedText,
+  dispatchPending,
+  onActivityVisible,
   scrollContainerRef,
   userAvatarUrl,
   userName,
 }: MiraChatConversationProps) {
+  const optimistic =
+    dispatchPending &&
+    !messages.some((message) => message.id === dispatchPending.id)
+      ? dispatchPending
+      : null;
+  const baseMessages = optimistic ? [...messages, optimistic] : messages;
   const renderedMessages =
-    (pendingDisplay || hasFileOnlyPending) && messages.length === 0
+    (pendingDisplay || hasFileOnlyPending) && baseMessages.length === 0
       ? [
           {
             id: 'pending',
@@ -58,14 +69,28 @@ export function MiraChatConversation({
         ]
       : queuedText
         ? [
-            ...messages,
+            ...baseMessages,
             {
               id: 'queued',
               role: 'user' as const,
               parts: [{ type: 'text' as const, text: queuedText }],
             },
           ]
-        : messages;
+        : baseMessages;
+
+  const activity =
+    isBusy ||
+    !!pendingPrompt ||
+    !!queuedText ||
+    !!dispatchPending ||
+    hasFileOnlyPending;
+  const activityStatus = getAssistantActivityStatus({
+    isStreaming: activity,
+    lastMessage: renderedMessages.at(-1),
+  });
+  useEffect(() => {
+    if (activityStatus) onActivityVisible?.();
+  }, [activityStatus, onActivityVisible]);
 
   return (
     <div className="flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden">
@@ -75,7 +100,7 @@ export function MiraChatConversation({
             footer={liveResults}
             reserveComposerSpace={false}
             messages={renderedMessages}
-            isStreaming={isBusy || !!pendingPrompt}
+            isStreaming={activity}
             assistantName={assistantName}
             userName={userName}
             userAvatarUrl={userAvatarUrl}
