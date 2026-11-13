@@ -36,6 +36,7 @@ import { useEffect, useRef, useState } from 'react';
 import { MiraAvatar } from '../call/components/mira-profile';
 import type { MeetRoomController } from '../call/lib/room-controller';
 import { liveVoiceSchema } from './contracts';
+import { liveErrorMessageKey } from './live-errors';
 import { LiveReviewCard } from './live-review-card';
 import { useLiveAssistant } from './use-live-assistant';
 import { PrivateMiraNotice } from './private-notice';
@@ -47,6 +48,7 @@ export function MeetLivePanel({
   outputDeviceId,
   audioSuppressed = false,
   onOpenChat,
+  onLeave,
 }: {
   room: MeetRoomController;
   accountId: string;
@@ -55,6 +57,8 @@ export function MeetLivePanel({
   canManage: boolean;
   audioSuppressed?: boolean;
   onOpenChat: () => void;
+  /** Ends the call for this device through the shell, so it shows the left screen. */
+  onLeave: () => void;
 }) {
   const t = useTranslations('meet.live');
   const streams: MediaStream[] = [];
@@ -133,13 +137,17 @@ export function MeetLivePanel({
         <div className="min-h-0 space-y-4 overflow-y-auto">
           <PrivateMiraNotice
             meetingId={meetingId}
+            connected={
+              room.connectionStatus === 'open' &&
+              room.state.admission === 'admitted'
+            }
             onStop={live.stop}
-            onLeave={room.leave}
+            onLeave={() => {
+              setOpen(false);
+              onLeave();
+            }}
             onAccepted={setChoiceAccepted}
           />
-          <p role="status" className="text-muted-foreground text-sm">
-            {t('phase_room_off')}
-          </p>
           {!active && (
             <div className="space-y-2">
               <Label>{t('voice')}</Label>
@@ -296,7 +304,7 @@ export function MeetLivePanel({
               role="alert"
               className="rounded-lg bg-destructive/10 p-3 text-destructive text-sm"
             >
-              {t('session_error')}
+              {t(liveErrorMessageKey(live.error))}
             </p>
           )}
         </div>

@@ -15,6 +15,12 @@ import type {
   LiveAudience,
   LiveClientCommand,
 } from './contracts';
+import {
+  LiveStartError,
+  liveStartErrorCode,
+  microphoneErrorCode,
+  withDeadline,
+} from './live-errors';
 
 type ActiveSession = {
   sessionId: string;
@@ -35,6 +41,26 @@ type ActiveSession = {
   startup?: (ready: boolean) => void;
 };
 type Review = Extract<LiveAssistantEvent, { type: 'review' }>;
+const MICROPHONE_ERRORS = new Set([
+  'input_unavailable',
+  'microphone_blocked',
+  'microphone_missing',
+  'microphone_busy',
+]);
+async function openPrivateMicrophone(inputDeviceId: string) {
+  try {
+    return await navigator.mediaDevices.getUserMedia({
+      audio: {
+        deviceId: inputDeviceId ? { exact: inputDeviceId } : undefined,
+        echoCancellation: true,
+        noiseSuppression: true,
+      },
+      video: false,
+    });
+  } catch (error) {
+    throw new LiveStartError(microphoneErrorCode(error));
+  }
+}
 export function useLiveAssistant(
   meetingId: string,
   outputDeviceId: string,
@@ -260,16 +286,15 @@ export function useLiveAssistant(
     player.setVolume(volumeRef.current);
     let microphone: MediaStream | undefined;
     try {
-      await player.unlock(outputDeviceId);
+      await withDeadline(
+        player.unlock(outputDeviceId).catch(() => {
+          throw new LiveStartError('output_unavailable');
+        }),
+        8000,
+        () => new LiveStartError('output_unavailable')
+      );
       if (audience === 'personal')
-        microphone = await navigator.mediaDevices.getUserMedia({
-          audio: {
-            deviceId: inputDeviceId ? { exact: inputDeviceId } : undefined,
-            echoCancellation: true,
-            noiseSuppression: true,
-          },
-          video: false,
-        });
+        microphone = await openPrivateMicrophone(inputDeviceId);
       if (cancelled()) throw new Error('Cancelled');
       const session = await controlMeetLive(meetingId, {
         action: 'start',
@@ -342,13 +367,14 @@ export function useLiveAssistant(
       }
       if (!(await ready)) throw new Error('Live startup failed');
       return !current.stopped;
-    } catch {
+    } catch (error) {
       player.close();
       microphone?.getTracks().forEach((track) => {
         track.stop();
       });
       if (generation === startGeneration.current) {
-        if (!roomAudioRef.current.suppressed) setError('start_failed');
+        if (!roomAudioRef.current.suppressed)
+          setError(liveStartErrorCode(error));
         await stop();
         if (!roomAudioRef.current.suppressed) setStatus('error');
       }
@@ -366,15 +392,7 @@ export function useLiveAssistant(
     )
       return;
     let cancelled = false;
-    void navigator.mediaDevices
-      .getUserMedia({
-        audio: {
-          deviceId: inputDeviceId ? { exact: inputDeviceId } : undefined,
-          echoCancellation: true,
-          noiseSuppression: true,
-        },
-        video: false,
-      })
+    void openPrivateMicrophone(inputDeviceId)
       .then((microphone) => {
         if (cancelled || current.stopped || active.current !== current) {
           microphone.getTracks().forEach((track) => {
@@ -392,11 +410,11 @@ export function useLiveAssistant(
         current.microphone = microphone;
         current.inputDeviceId = inputDeviceId;
         setError((value) =>
-          value === 'input_unavailable' ? undefined : value
+          value && MICROPHONE_ERRORS.has(value) ? undefined : value
         );
       })
-      .catch(() => {
-        if (!cancelled) setError('input_unavailable');
+      .catch((error: unknown) => {
+        if (!cancelled) setError(liveStartErrorCode(error));
       });
     return () => {
       cancelled = true;
