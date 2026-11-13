@@ -1037,6 +1037,7 @@ function EventCardComponent({ dates, event, level = 0 }: EventCardProps) {
           ref={cardRef}
           id={`event-${id}`}
           data-testid={`calendar-event-${event._originalId || id}`}
+          data-calendar-event-id={event._originalId || id}
           className={cn(
             'pointer-events-auto absolute max-w-none select-none overflow-hidden rounded-r-md rounded-l transition-all duration-300',
             'group hover:ring-1 focus:outline-none',
@@ -1108,7 +1109,6 @@ function EventCardComponent({ dates, event, level = 0 }: EventCardProps) {
             // Only open modal if we haven't just finished dragging or resizing
             if (!wasDraggedRef.current && !wasResizedRef.current) {
               e.stopPropagation();
-              // Open the modal with the event, it will be read-only if locked
               openModal(event._originalId || id);
             }
 

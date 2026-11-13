@@ -3458,6 +3458,17 @@
       "unauthorized": "Unauthorized access",
       "unknown_error": "An unknown error occurred"
     },
+    "event_preview": {
+      "close": "Close preview",
+      "delete": "Delete event",
+      "delete_failed": "Could not delete the event",
+      "deleted": "Event deleted",
+      "edit": "Edit",
+      "locked": "Locked from auto scheduling",
+      "read_only": "Read-only",
+      "undo": "Undo",
+      "untitled": "Untitled event"
+    },
     "failed_to_add": "Failed to add calendar",
     "failed_to_disconnect": "Failed to disconnect account",
     "failed_to_fetch_calendars": "Failed to fetch calendars",

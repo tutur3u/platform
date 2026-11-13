@@ -1436,6 +1436,17 @@
       "unauthorized": "Truy cập trái phép",
       "unknown_error": "Đã xảy ra lỗi không xác định"
     },
+    "event_preview": {
+      "close": "Đóng xem nhanh",
+      "delete": "Xóa sự kiện",
+      "delete_failed": "Không thể xóa sự kiện",
+      "deleted": "Đã xóa sự kiện",
+      "edit": "Chỉnh sửa",
+      "locked": "Đã khóa, không tự động xếp lịch",
+      "read_only": "Chỉ đọc",
+      "undo": "Hoàn tác",
+      "untitled": "Sự kiện không có tiêu đề"
+    },
     "failed_to_add": "Không thể thêm lịch",
     "failed_to_disconnect": "Không thể ngắt kết nối tài khoản",
     "failed_to_fetch_calendars": "Không thể lấy danh sách lịch",
