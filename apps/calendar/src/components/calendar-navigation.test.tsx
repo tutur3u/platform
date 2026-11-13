@@ -109,10 +109,7 @@ describe('actual Calendar navigation Today surfaces', () => {
           .getAttribute('aria-current')
       ).toBe('date');
       fireEvent.click(screen.getByText('Pick January 10'));
-      fireEvent.click(screen.getAllByRole('button', { name: 'today' })[0]!);
-      expect(screen.getByTestId('selected').textContent).toBe('2026-01-01');
-      fireEvent.click(screen.getByText('Pick January 10'));
-      fireEvent.click(screen.getAllByRole('button', { name: 'today' })[1]!);
+      fireEvent.click(screen.getByRole('button', { name: 'today' }));
       expect(screen.getByTestId('selected').textContent).toBe('2026-01-01');
       fireEvent.click(screen.getByText('Pick January 10'));
       fireEvent.click(screen.getByText('Change zone'));
@@ -138,9 +135,55 @@ describe('actual Calendar navigation Today surfaces', () => {
         .getByRole('button', { name: 'Thursday, January 1st, 2026' })
         .getAttribute('aria-current')
     ).toBe('date');
-    fireEvent.click(screen.getAllByRole('button', { name: 'today' })[0]!);
+    fireEvent.click(screen.getByRole('button', { name: 'today' }));
     expect(screen.getByTestId('selected').textContent).toBe('2026-01-01');
   });
+  it('leaves Today to the toolbar: the mini-month only picks dates and pages months', () => {
+    settings.zone = 'Asia/Tokyo';
+    renderCalendar(
+      <CalendarNavigationProvider>
+        <MiniMonthCalendar />
+      </CalendarNavigationProvider>
+    );
+    expect(screen.queryByRole('button', { name: 'today' })).toBeNull();
+    expect(
+      screen.getAllByRole('button', { name: /^(previous|next)_month$/ })
+    ).toHaveLength(2);
+  });
+  // L4: at 05:25 on Sat 14 Nov in Ho Chi Minh City (2026-11-13T22:25Z, still
+  // the 13th in UTC) the mini-month selection and both today markers agree.
+  it.each([
+    ['opened that morning', '2026-11-13T22:25:00Z'],
+    ['open since the evening before', '2026-11-13T16:30:00Z'],
+  ])(
+    'selects Sat 14 Nov at 2026-11-13T22:25Z in Asia/Ho_Chi_Minh when %s',
+    (_, openedAt) => {
+      vi.stubEnv('TZ', 'UTC');
+      vi.useFakeTimers();
+      vi.setSystemTime(new Date(openedAt));
+      settings.zone = 'Asia/Ho_Chi_Minh';
+      renderCalendar(
+        <CalendarNavigationProvider>
+          <Controls />
+          <MiniMonthCalendar />
+        </CalendarNavigationProvider>
+      );
+      const target = new Date('2026-11-13T22:25:00Z').getTime();
+      act(() => vi.advanceTimersByTime(target - Date.now()));
+
+      expect(screen.getByTestId('selected').textContent).toBe('2026-11-14');
+      const saturday = screen.getByRole('button', {
+        name: 'Saturday, November 14th, 2026',
+      });
+      expect(saturday.getAttribute('aria-current')).toBe('date');
+      expect(saturday.getAttribute('aria-pressed')).toBe('true');
+      expect(
+        screen
+          .getByRole('button', { name: 'Friday, November 13th, 2026' })
+          .getAttribute('aria-pressed')
+      ).toBe('false');
+    }
+  );
   it('applies a deep link once without resetting a later selection on timezone changes', () => {
     settings.zone = 'Asia/Tokyo';
     renderCalendar(

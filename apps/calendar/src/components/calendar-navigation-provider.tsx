@@ -1,8 +1,13 @@
 'use client';
 
+import { useCalendarClock } from '@tuturuuu/ui/hooks/use-calendar-clock';
 import { CalendarDayZoneBridgeProvider } from '@tuturuuu/ui/hooks/use-calendar-day-zone';
 import type { CalendarView } from '@tuturuuu/ui/hooks/use-view-transition';
-import { calendarDay, calendarToday } from '@tuturuuu/ui/lib/calendar-day';
+import {
+  calendarDay,
+  calendarDayKey,
+  calendarToday,
+} from '@tuturuuu/ui/lib/calendar-day';
 import {
   createContext,
   type Dispatch,
@@ -61,6 +66,18 @@ export function CalendarNavigationProvider({
     setDateState(calendarToday(timezone));
   }, [timezone]);
   const [view, setView] = useState<CalendarView>('week');
+  // A date that follows today must cross local midnight with the today
+  // markers, which read the same minute clock. The clock only triggers the
+  // check; the day is read from the real time so the deterministic hydration
+  // snapshot never becomes the selection. A picked date never moves.
+  const clockMinute = useCalendarClock().getTime();
+  useEffect(() => {
+    if (!clockMinute || !followsToday.current) return;
+    const today = calendarToday(timezone);
+    setDateState((previous) =>
+      calendarDayKey(previous) === calendarDayKey(today) ? previous : today
+    );
+  }, [clockMinute, timezone]);
 
   useEffect(() => {
     const storedView = localStorage.getItem(CALENDAR_VIEW_STORAGE_KEY);
