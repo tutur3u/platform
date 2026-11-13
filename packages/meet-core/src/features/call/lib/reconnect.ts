@@ -29,17 +29,27 @@ export function computeBackoffMs(
 }
 
 /**
- * Whether another attempt is worth making. A socket the server closed with a
- * policy code is a decision, not a blip — retrying a removed participant back
- * into the room would be wrong.
+ * A socket the server closed with one of these codes is a decision, not a
+ * blip: 1000 is a clean close and 4403 is our own "removed from room".
+ * Retrying a removed participant back into the room would be wrong.
+ */
+export const TERMINAL_CLOSE_CODES: ReadonlySet<number> = new Set([1000, 4403]);
+
+export function isTerminalCloseCode(closeCode?: number): boolean {
+  return closeCode !== undefined && TERMINAL_CLOSE_CODES.has(closeCode);
+}
+
+/**
+ * Whether another attempt is worth making. Every non-terminal close is
+ * retried within the budget, including the codes a deploy produces: 1001
+ * (going away), 1012 (service restart) and 1006 (abnormal closure, what a
+ * replaced isolate looks like to the browser).
  */
 export function shouldReconnect(
   attempt: number,
   closeCode?: number,
   maxAttempts = RECONNECT_MAX_ATTEMPTS
 ): boolean {
-  if (attempt >= maxAttempts) return false;
-  // 1000 is a clean close; 4403 is our own "removed from room".
-  if (closeCode === 1000 || closeCode === 4403) return false;
-  return true;
+  if (isTerminalCloseCode(closeCode)) return false;
+  return attempt < maxAttempts;
 }
