@@ -164,7 +164,7 @@ jobs:
     name: Type Check
     permissions:
       contents: read
-    runs-on: ${{ github.event_name == 'pull_request' && github.event.pull_request.head.repo.full_name == github.repository && github.actor != 'dependabot[bot]' && github.triggering_actor != 'dependabot[bot]' && github.event.pull_request.user.login != 'dependabot[bot]' && (vars.PR_SELF_HOSTED_RUNNERS == 'true' || vars.PR_SELF_HOSTED_RUNNERS == format('pr:{0}', github.event.pull_request.number)) && fromJSON('["self-hosted","macOS","ARM64","tuturuuu-pr-ephemeral"]') || 'ubuntu-latest' }}
+    runs-on: ${{ github.event_name == 'pull_request' && github.actor != 'dependabot[bot]' && github.triggering_actor != 'dependabot[bot]' && github.event.pull_request.user.login != 'dependabot[bot]' && github.event.pull_request.head.repo.id == github.event.pull_request.base.repo.id && github.event.pull_request.head.repo.full_name == github.repository && github.event.pull_request.base.repo.full_name == github.repository && contains(fromJSON('["ttr-selfhosted-studio","ttr-selfhosted-macbook1"]'), vars.CI_VALIDATION_RUNNER) && vars.CI_VALIDATION_RUNNER || 'ubuntu-latest' }}
     steps:
       - name: Checkout code
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
@@ -235,6 +235,7 @@ jobs:
         uses: ./.github/actions/setup-bun-with-retry
         with:
           bun-version: 1.4.4
+          cache-enabled: ${{ runner.environment != 'self-hosted' }}
 
       - name: Test inline Type Check preflight
         if: steps.check_config.outputs.should_run == 'true' && steps.release_relevance.outputs.run_checks == 'true'

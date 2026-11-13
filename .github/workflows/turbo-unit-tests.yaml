@@ -83,6 +83,9 @@ jobs:
         with:
           node-version: 24
 
+      - name: Lint self-hosted runner boundaries
+        run: node scripts/ci/self-hosted-policy.js
+
       - name: Install dependencies
         run: bash scripts/ci/run-with-backoff.sh bun install --frozen-lockfile
 
@@ -253,11 +256,13 @@ jobs:
   # secret (a guarded reference is still shipped to the runner). It shares the
   # shard contexts with the variant below; exactly one of them runs.
   test-shards-pr:
+    permissions:
+      contents: read
     name: Unit test shard (${{ matrix.shard }})
     needs: [changes, check-ci, coverage-check-ci]
     if: ${{ ((github.event_name != 'pull_request' || github.event.pull_request.draft == false) && ((github.event_name == 'pull_request' && needs.changes.outputs.code == 'true' && !cancelled() && ((needs.check-ci.result == 'success' && needs.check-ci.outputs.should_run == 'true' && needs.check-ci.outputs.run_checks == 'true') || (needs.coverage-check-ci.result == 'success' && needs.coverage-check-ci.outputs.should_run == 'true' && needs.coverage-check-ci.outputs.run_checks == 'true'))))) && (github.event_name != 'pull_request' || contains(github.event.pull_request.labels.*.name, 'ready-for-ci')) }}
     timeout-minutes: 20
-    runs-on: ${{ github.event_name == 'pull_request' && github.event.pull_request.head.repo.full_name == github.repository && github.actor != 'dependabot[bot]' && github.triggering_actor != 'dependabot[bot]' && github.event.pull_request.user.login != 'dependabot[bot]' && (vars.PR_SELF_HOSTED_RUNNERS == 'true' || vars.PR_SELF_HOSTED_RUNNERS == format('pr:{0}', github.event.pull_request.number)) && fromJSON('["self-hosted","macOS","ARM64","tuturuuu-pr-ephemeral"]') || 'ubuntu-latest' }}
+    runs-on: ${{ github.event_name == 'pull_request' && github.actor != 'dependabot[bot]' && github.triggering_actor != 'dependabot[bot]' && github.event.pull_request.user.login != 'dependabot[bot]' && github.event.pull_request.head.repo.id == github.event.pull_request.base.repo.id && github.event.pull_request.head.repo.full_name == github.repository && github.event.pull_request.base.repo.full_name == github.repository && contains(fromJSON('["ttr-selfhosted-studio","ttr-selfhosted-macbook1"]'), vars.CI_VALIDATION_RUNNER) && vars.CI_VALIDATION_RUNNER || 'ubuntu-latest' }}
     strategy:
       fail-fast: false
       matrix:
@@ -288,6 +293,7 @@ jobs:
         uses: ./.github/actions/setup-bun-with-retry
         with:
           bun-version: 1.4.4
+          cache-enabled: ${{ runner.environment != 'self-hosted' }}
 
       - name: Restore Turbo fallback cache
         uses: ./.github/actions/setup-turbo-fallback-cache
