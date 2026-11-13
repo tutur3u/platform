@@ -296,7 +296,15 @@ export function MeetLivePanel({
               role="alert"
               className="rounded-lg bg-destructive/10 p-3 text-destructive text-sm"
             >
-              {t('session_error')}
+              {t(
+                live.error === 'microphone_unavailable' ||
+                  live.error === 'input_unavailable'
+                  ? 'microphone_error'
+                  : live.error === 'playback_unavailable' ||
+                      live.error === 'output_unavailable'
+                    ? 'playback_error'
+                    : 'session_error'
+              )}
             </p>
           )}
         </div>
