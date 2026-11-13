@@ -48,6 +48,10 @@ class _TimerTabState extends State<TimerTab> {
   @override
   Widget build(BuildContext context) {
     return BlocBuilder<TimeTrackerCubit, TimeTrackerState>(
+      // The per-second ticker only changes `elapsed`; the live clock is
+      // scoped to its own builder below so the rest of the tab stays idle.
+      buildWhen: (previous, current) =>
+          !previous.equalsIgnoringElapsed(current),
       builder: (context, state) {
         final l10n = context.l10n;
         final cubit = context.read<TimeTrackerCubit>();
@@ -67,12 +71,19 @@ class _TimerTabState extends State<TimerTab> {
             children: [
               const shad.Gap(AppSpacing.xxl),
               // Timer display
-              Center(
-                child: TimerDisplay(
-                  elapsed: state.elapsed,
-                  isRunning: state.isRunning,
-                  isPaused: state.isPaused,
-                  pomodoroPhase: state.pomodoroPhase,
+              BlocBuilder<TimeTrackerCubit, TimeTrackerState>(
+                buildWhen: (previous, current) =>
+                    previous.elapsed != current.elapsed ||
+                    previous.isRunning != current.isRunning ||
+                    previous.isPaused != current.isPaused ||
+                    previous.pomodoroPhase != current.pomodoroPhase,
+                builder: (context, state) => Center(
+                  child: TimerDisplay(
+                    elapsed: state.elapsed,
+                    isRunning: state.isRunning,
+                    isPaused: state.isPaused,
+                    pomodoroPhase: state.pomodoroPhase,
+                  ),
                 ),
               ),
               const shad.Gap(24),
