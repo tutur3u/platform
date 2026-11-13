@@ -4,7 +4,7 @@ import {
   normalizeWorkspaceId,
   verifyWorkspaceMembershipType,
 } from '@tuturuuu/utils/workspace-helper';
-import { consumeStream, type LanguageModel, stepCountIs, streamText } from 'ai';
+import { type LanguageModel, stepCountIs, streamText } from 'ai';
 import { type NextRequest, NextResponse } from 'next/server';
 import { normalizeStableModelId } from '../../credits/model-mapping';
 import {
@@ -64,6 +64,7 @@ import {
   buildAbortedStreamFinishResponse,
   persistAssistantResponse,
 } from './stream-finish-persistence';
+import { createPersistingSseStreamConsumer } from './stream-lifetime';
 
 export function createPOST(
   _options: {
@@ -676,13 +677,12 @@ export function createPOST(
         },
       });
 
-      // Per https://ai-sdk.dev/docs/advanced/stopping-streams: consumeSseStream ensures
-      // the stream is consumed on abort so cleanup can run; use onFinish in toUIMessageStreamResponse
-      // to handle isAborted when needed.
+      // consumeSseStream keeps consuming after a client abort so onFinish/onAbort
+      // persistence runs, and registers that work with the request's waitUntil.
       recordStage('model-start', streamStartedAt);
       return withServerTiming(
         result.toUIMessageStreamResponse({
-          consumeSseStream: consumeStream,
+          consumeSseStream: createPersistingSseStreamConsumer(),
           sendReasoning: true,
           sendSources: true,
           ...(_options.subscription
