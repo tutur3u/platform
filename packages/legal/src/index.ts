@@ -9,3 +9,4 @@ export * from './revision-changes';
 export * from './revisions';
 export * from './subprocessors';
 export * from './types';
+export * from './footer';
