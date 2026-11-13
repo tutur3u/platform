@@ -23,10 +23,16 @@ type Callbacks = {
   onclose: () => void;
 };
 const input = () => ({
-  env: {} as Parameters<typeof connectLiveProvider>[0]['env'],
-  claims: { mode: 'personal' } as Parameters<
+  env: { MEET_AI_DISABLED: 'false' } as Parameters<
     typeof connectLiveProvider
-  >[0]['claims'],
+  >[0]['env'],
+  claims: {
+    mode: 'personal',
+    inputSource: 'private-microphone',
+    consentVersion: 'synthetic-v1',
+    consentRevision: 1,
+    workspaceAuthority: 'verified-personal',
+  } as Parameters<typeof connectLiveProvider>[0]['claims'],
   timezone: 'UTC',
   sharedContext: '',
   journal: structuredClone(EMPTY_LIVE_JOURNAL),
@@ -88,4 +94,18 @@ it('closes a connection that arrives after the setup deadline', async () => {
   resolve({ close } as unknown as Session);
   await vi.advanceTimersByTimeAsync(1);
   expect(close).toHaveBeenCalledOnce();
+});
+
+it('denies room and absent-switch provider paths before SDK connection', async () => {
+  const room = input();
+  room.claims.mode = 'room';
+  await expect(connectLiveProvider(room)).rejects.toThrow(
+    'Private Mira is unavailable'
+  );
+  const absent = input();
+  delete absent.env.MEET_AI_DISABLED;
+  await expect(connectLiveProvider(absent)).rejects.toThrow(
+    'Private Mira is unavailable'
+  );
+  expect(mocks.connect).not.toHaveBeenCalled();
 });
