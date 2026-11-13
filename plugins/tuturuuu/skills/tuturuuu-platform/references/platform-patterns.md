@@ -1535,3 +1535,14 @@ binding declarations with `wrangler types --include-runtime=false` against the
 emitted `dist/server/wrangler.json`; preserve the checked-in declaration preimage
 when generating temporary qualification output. Keep Void scratch output outside
 the authored patch when running changed-file gates.
+
+### IME composition in custom keyboard submission
+
+For text controls that commit or send on Enter, inspect the native keyboard
+composition flag before acting. React handlers read `event.nativeEvent.isComposing`;
+key code 229 also catches Safari composition-confirmation ordering. Preserve the
+IME default action while composing, plus existing ordinary Enter, Shift+Enter,
+Escape and explicit button behavior. Test the actual handler with composing and
+non-composing events; a source-string assertion cannot prove the action is
+suppressed. AI Studio model policy entry has focused regression coverage in
+`apps/ai/src/components/policy/model-list-field.test.ts`.
