@@ -104,10 +104,25 @@ export function validateRegistry(endpoints: readonly Endpoint[]): void {
   }
 }
 
+export function validatePathname(pathname: string): void {
+  if (
+    /\/{2}|\\|%2f|%5c|%00/i.test(pathname) ||
+    /%(?:2d|2e|3[0-9]|4[1-9a-f]|5[0-9af]|6[1-9a-f]|7[0-9ae])/i.test(pathname)
+  )
+    throw new ApiError('bad_request', 400, 'Invalid request path');
+  try {
+    decodeURIComponent(pathname);
+  } catch {
+    throw new ApiError('bad_request', 400, 'Malformed request path');
+  }
+}
+
 export function matchPath(
   pattern: string,
   pathname: string
 ): Record<string, string> | null {
+  validatePathname(pathname);
+  if (pathname.endsWith('/')) return null;
   const expected = pattern.split('/');
   const actual = pathname.split('/');
   const catchAll = expected.at(-1)?.startsWith('{...') ?? false;
