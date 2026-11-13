@@ -250,7 +250,7 @@ async function harness(t, { count = 1, mode = 'success', serial = true, args = [
   const config = { default: { override: {
     incrementalCache: r2.NAME,
     ...(mode === 'tag' ? { tagCache: tag.NAME } : {}),
-  } };
+  } } };
   const binding = { binding: r2.BINDING_NAME, bucket_name: 'fixture-cache' };
   if (mode === 'bucket-name') delete binding.bucket_name;
   const wranglerConfig = { r2_buckets: mode === 'binding' ? [] : [binding],
