@@ -1,7 +1,7 @@
 ---
 title: "Meet"
 description: "Meeting plans, collaboration rooms, calls, transcription, assistants, and follow-up review."
-updatedAt: '2026-11-09'
+updatedAt: '2026-11-13'
 audience: users
 ---
 
@@ -429,3 +429,105 @@ Regression coverage: `packages/realtime/src/meet/ai-workspace-gate.test.ts`,
 `packages/realtime/src/meet/ai-workspace-identity.test.ts`,
 `packages/meet-core/src/features/meeting-ai/server/workspace-gate.test.ts` and
 `packages/meet-core/src/features/live-assistant/server/demo-authority.test.ts`.
+
+## Managed-WAF request contracts
+
+Meet's native Start functions use `POST /_meet/functions/*`. Their validators,
+request identity and authorization run on the server. TanStack Query and router
+cache keys stay at the call sites; POST does not make reads into mutations.
+There is no shared HTTP response cache contract for these authenticated reads.
+
+| Function | Input and transport |
+| --- | --- |
+| `loadMeetPage` | Validated `{ path }`, POST |
+| `fetchWorkspaces` | No application input; POST avoids Start query serialization, including framework context |
+| `resetGuestPasswordTransport`, `guestLoginTransport` | Credential tuples, POST |
+| `togglePlanLockTransport`, `removeUserFromPlanTransport` | Plan/user tuples, POST |
+| `createPollTransport`, `deletePollTransport` | Poll tuples, POST |
+| `addPollOptionTransport`, `deletePollOptionTransport` | Option tuples, POST |
+| `submitVoteTransport`, `toggleWherePollTransport` | Vote/plan tuples, POST |
+
+`packages/meet-core` defines no Start server functions. Its Parley admin
+`'use server'` exports are Next server actions with POST form bodies, not GET
+query transports. Only `fetchWorkspaces` requires a transport change in this
+inventory. Reads remain idempotent; no validator, handler, actor resolution,
+retry, or cache-key change accompanies the transport choice.
+
+### Cookie ownership and limits
+
+| Cookie | Scope / representation | Treatment |
+| --- | --- | --- |
+| `meet_pending_invite` | Host-only, Path `/`, HttpOnly, SameSite=Lax, 30 minutes | Compact locale/notes flags and room code, alphanumeric/hyphen only; accepts validated legacy paths during handoff |
+| `NEXT_LOCALE` | Shared `.tuturuuu.com`, Path `/`; `en` or `vi` | Small preference; retain cross-app language behavior |
+| `sidebar_state`, `sidebar-collapsed`, `sidebar-behavior`, `sidebar-behavior-updated-at`, `tuturuuu-apps-launcher-open-mode` | Host/shared Path `/`; booleans, enum or timestamp | Small layout preferences; no serialized app state needed |
+| `tuturuuu_app_session`, `tuturuuu_web_app_session`, `tuturuuu_app_session_refresh`, `tuturuuu_web_app_session_refresh` | Auth-owned, Path `/`; signed tokens | Preserve signing, refresh, propagation and deletion semantics; token punctuation may also contribute, so inspect redacted events |
+| `sb-<project-ref>-auth-token`, `.0`, `.1`, ... | Shared Supabase session, Path `/`; encoded JSON/JWT chunks | Potential restricted-character contributors; not proven offenders without redacted event evidence |
+| `ttr_mfa_mobile_approval` | Auth-owned recovery cookie | Preserve MFA recovery handling |
+
+The invite must reach the root, localized login/callback and room routes, so a
+narrower Path would break continuation. It has no Domain attribute and cannot
+be scoped away from other paths on the same host while retaining that flow.
+Shared cookies arrive at Cloudflare before application code can filter headers.
+Stripping a Cookie header in the Worker cannot fix an ingress WAF rejection.
+Do not rename, truncate, re-encode or delete shared auth cookies as a WAF remedy.
+
+### Contributor-rule exception proposal (approval required)
+
+No blocked sample identifies a cookie name yet. Before approving an exception,
+obtain the contributor rule, cookie **name only**, route and request method;
+never publish cookie values. If Supabase auth is confirmed, resolve the literal
+storage key from `getSupabaseAuthStorageKey(NEXT_PUBLIC_SUPABASE_URL)` and list
+only its actual chunk names. Do not match arbitrary `sb-*` cookies.
+
+Proposed predicate: host exactly `meet.tuturuuu.com`, method GET or POST,
+validated affected path(s) only, and presence of that literal cookie key (or
+its observed chunks) in `http.request.cookies` (Pro, Business or Enterprise). A literal-name
+condition is `any(http.request.cookies["sb-<project-ref>-auth-token"][*] ne "")`,
+OR-ed with the exact observed chunk keys; replace the placeholder before approval.
+The [cookie field reference](https://developers.cloudflare.com/ruleset-engine/rules-language/fields/reference/http.request.cookies/)
+documents the map lookup. Start with
+`starts_with(http.request.uri.path, "/_meet/functions/")`; add individual
+page/API paths only when an event proves they are affected. Scope skips to
+OWASP contributors **942420 and 942421 only**; retain 949110 and other SQLi/XSS
+rules. Cloudflare rule resource UUIDs must be resolved by the WAF owner from
+those contributor IDs; CRS IDs are not Cloudflare resource UUIDs.
+
+A cookie-presence condition skips those two rules for the matching **request**,
+not just that cookie's value. It is not a per-cookie inspection exclusion.
+Prefer a supported per-cookie exclusion if the plan exposes one; otherwise
+approve this residual exposure explicitly. If cookie-name conditions are
+unavailable, approval must specify the exact host/path/method fallback and
+expiry rather than silently widening to a host-wide skip. This is a proposal,
+not an instruction to install or extend an exception. See Cloudflare's
+[managed-rule exceptions](https://developers.cloudflare.com/waf/managed-rules/waf-exceptions/)
+and [API exception semantics](https://developers.cloudflare.com/waf/managed-rules/waf-exceptions/define-api/).
+
+### Audio uploads and acceptance evidence
+
+`useMeetingAi` attaches WAV Blobs as `audio_0`, `audio_1`, ... multipart binary
+file parts; only source metadata is JSON. `uploadMeetAiChunk` forwards FormData
+without JSON/base64 conversion. The dormant decoder retains its 480,044-byte
+per-file cap, aggregate byte/clip caps and PCM validation. The public chunks POST
+handler unconditionally returns 403 before reading audio. Removing an audio
+exception therefore needs no encoding or consent change while transcription is
+off; WAF rejection can still mask that application 403.
+
+If transcription is explicitly restored and binary multipart still produces a
+confirmed false positive, propose only 949110 with host `meet.tuturuuu.com`,
+method POST, an anchored path matching
+`^/api/meet-ai/[^/]+/[^/]+/chunks$`, and Content-Type beginning
+`multipart/form-data;` with a boundary. Approve only after contributor analysis;
+a threshold skip suppresses every contributor's aggregate block on that route.
+Do not install a speculative exception or expand it to all Meet APIs.
+
+Regression evidence: `apps/meet/src/runtime/server-function-transport.test.ts`,
+`packages/meet-core/src/features/call/lib/invite-continuation.test.ts`,
+`packages/meet-core/src/features/meeting-ai/use-meeting-ai.test.ts`,
+`packages/internal-api/src/meet-ai-upload.test.ts`,
+`packages/meet-core/src/features/meeting-ai/server/audio-input.test.ts`, and
+`packages/meet-core/src/features/live-assistant/phase-a-denial.test.ts`.
+These tests do not execute Cloudflare managed rules. Require the exact-commit
+Meet build in hosted CI and replay representative authenticated navigation,
+workspace reads, plan actions, and the denied upload through managed rules
+without the relevant skips. Record contributor IDs and redacted outcomes.
+POST bodies are still inspected; POST alone does not prove a score below 949110.

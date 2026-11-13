@@ -1617,3 +1617,14 @@ upcoming-changes line and links to `/legal/changes`; keep that route directly
 reachable and retain its own view/language controls. See
 [legal publications](../../../../../apps/docs/platform/features/legal-publications.mdx)
 and both apps' `src/components/production-legal-notices.test.tsx`.
+
+## Meet managed-WAF transport
+
+Inventory Start transports before changing them: structured Meet inputs use POST
+and the inputless workspace read also avoids GET framework-context serialization.
+Keep auth, validators and query cache keys intact. The invite continuation cookie
+is host-only and compact; shared Supabase cookies remain auth-owned. A Worker
+header filter cannot prevent an ingress cookie-rule match. WAV upload parts are
+binary multipart and the chunks route denies transcription before input reads.
+See [Meet managed-WAF contracts](../../../../../apps/docs/platform/applications/meet.mdx#managed-waf-request-contracts)
+for the inventory, contributor-only exception proposal and hosted acceptance gaps.
