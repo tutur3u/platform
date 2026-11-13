@@ -15,7 +15,8 @@ enum MobileFlag {
   offlineEditFinance('offline_edit_finance'),
   offlineEditTasks('offline_edit_tasks'),
   offlineEditCalendar('offline_edit_calendar'),
-  offlineStatusUi('offline_status_ui');
+  offlineStatusUi('offline_status_ui'),
+  tutoringParentMessageV2('tutoring_parent_message_v2');
 
   const MobileFlag(this.key);
   final String key;

@@ -92,6 +92,15 @@
       "yearly": "Hàng năm"
     }
   },
+  "calendar_category_reorder_pilot": {
+    "cancel": "Đã trả {label} về vị trí {position} trên {total}.",
+    "drop": "Đã thả {label} tại vị trí {position} trên {total}.",
+    "grab": "Đã chọn {label}, vị trí {position} trên {total}.",
+    "instructions": "Dùng phím mũi tên để di chuyển tiêu điểm. Nhấn Space để chọn hoặc thả danh mục. Dùng mũi tên để đổi vị trí; Escape để hủy.",
+    "invalid": "Tên danh mục phải duy nhất và không trống để sắp xếp.",
+    "label": "Thứ tự danh mục",
+    "move": "{label}, vị trí {position} trên {total}."
+  },
   "calendar-sidebar": {
     "ready": "Sẵn sàng"
   },
@@ -454,6 +463,34 @@
     "wallet_required": "Vui lòng chọn ví",
     "weekly": "Hàng tuần",
     "yearly": "Hàng năm"
+  },
+  "inlineAssistant": {
+    "accept": "Áp dụng",
+    "biology": "Sinh học",
+    "chemistry": "Hóa học",
+    "dismiss": "Bỏ qua",
+    "empty": "Lần xem này không có gợi ý. Điều này không xác nhận mọi câu trả lời đều đúng.",
+    "error": "Chưa thể góp ý. Kiểm tra quyền AI, tín dụng và giới hạn 12.000 ký tự, rồi thử lại.",
+    "found": "Kiểm tra từng gợi ý trước khi áp dụng.",
+    "full": "Gợi ý đầy đủ",
+    "general": "Môn khác",
+    "hints": "Chỉ gợi ý",
+    "idle": "Chọn Góp ý bản nháp để gửi nội dung đến AI của không gian làm việc. Các thay đổi sau đó được xem sau khi bạn tạm dừng gõ.",
+    "level": "Mức hỗ trợ AI",
+    "loading": "Đang chuẩn bị…",
+    "math": "Toán học",
+    "off": "Tắt — không gửi nội dung",
+    "physics": "Vật lý",
+    "remove": "Xóa đoạn này",
+    "retry": "Thử lại",
+    "review": "Góp ý bản nháp",
+    "reviewing": "Đang xem…",
+    "scope": "Góp ý bản nháp của giáo viên · AI có thể sai.",
+    "stale": "Bản nháp đã thay đổi. Gợi ý sẽ cập nhật sau khi bạn tạm dừng.",
+    "streaming": "Đang nhận gợi ý…",
+    "subject": "Môn học",
+    "title": "Trợ lý học tập",
+    "writing": "Viết và trích dẫn"
   },
   "notifications": {
     "accept": "Chấp nhận",

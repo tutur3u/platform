@@ -22,6 +22,7 @@ it('selects only Polar sandbox for the declared Pay staging profile', async () =
   const profile = JSON.parse(
     await readFile(new URL('./staging-profile.json', import.meta.url), 'utf8')
   );
+  expect(profile).toEqual(resolvePayNativeProfile('staging').vars);
   expect(profile.POLAR_SANDBOX).toBe('true');
   expect(resolvePayNativeProfile('staging').rootHost).toBe('pay.tutur3u.com');
   expect(appConfig.mounts.rootHosts).toEqual([]);

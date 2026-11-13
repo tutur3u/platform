@@ -23,10 +23,11 @@
   "packages/ai/src/meetings/transcript.ts": "bc76a6f9adfc5c5b8e2f5f07c09451d0ac26a2982ddc6929384bfd076ac67a5a",
   "packages/internal-api/src/meet-ai.ts": "2ff677f4bbf05ceda5e633a4131e4f9ee934949e2c31c9dcb142e063614fa651",
   "packages/internal-api/src/meetings.ts": "499f6ca00541fd41aa5172b5b9b2053b9ba2e5f068260af4cb63e348b0796037",
+  "packages/legal/src/meet-ai-revision-2026-11-12.ts": "0bbac7403fcfdee5d2be6a4330e3d8c01ee65adc0a40fd64d54189bea2785645",
   "packages/meet-core/src/features/meeting-ai/meeting-ai-panel.tsx": "d73b30d566aafa9c729273d084af37158d2fb221b17c97e6d09af0f25748326e",
   "packages/meet-core/src/features/meeting-ai/meeting-transcript.tsx": "fe16b83fe133934091ae91725ae1ba6528523d8e788f1c5a1d46d6002630e5f0",
   "packages/meet-core/src/features/meeting-ai/server/chunks.ts": "71b09dba6d8d634ee61156bcae7f0360f81f2cd1239c2dbe900e4092d5d34955",
-  "packages/meet-core/src/features/meeting-ai/server/sessions.ts": "b47d54721753351eed54214d6e4358ac43944ea240dd1d3b513e03049d1a59a0",
+  "packages/meet-core/src/features/meeting-ai/server/sessions.ts": "e3de509a589a8896389c83c82dbca814e77ccc5b50e30c228387e432b7432505",
   "packages/meet-core/src/features/meeting-ai/server/transcript-roster.ts": "476bcd70754ef5f7d4c6a0c7474d0a8da9c21b5e52e6772e4988c12992d30c21",
   "packages/meet-core/src/features/meeting-ai/server/transcript-speaker.ts": "9e75fbd4512f7cc2af9c159080656be67a9b6e63dff51a48775b780580018fc3",
   "packages/meet-core/src/features/meeting-ai/use-meeting-ai.ts": "5b0a424b7c083edaf679e0fc351ec6f2d544a39ef45e7ed1f125871ee90c8999"

@@ -1,12 +1,132 @@
 {
   "schema": 1,
-  "generatedAt": "2026-11-10T07:47:25.686Z",
+  "generatedAt": "2026-11-13T10:13:16.992Z",
   "source": "build",
   "main": {
-    "sha": "66b87d22735c784953560328c56f84161169009a",
-    "at": "2026-11-10T07:16:34.000Z"
+    "sha": "d315df4211ccd3990d6efb7866d4e7a329e8bd81",
+    "at": "2026-11-13T10:13:06.000Z"
   },
   "prs": [
+    {
+      "number": 8281,
+      "title": "perf(mira): create new chats without waiting for title generation",
+      "state": "merged",
+      "draft": false,
+      "approved": false,
+      "mergedAt": "2026-11-13T09:56:54.000Z"
+    },
+    {
+      "number": 8275,
+      "title": "perf(mira): send immediately and show thinking state instantly",
+      "state": "merged",
+      "draft": false,
+      "approved": false,
+      "mergedAt": "2026-11-13T09:29:28.000Z"
+    },
+    {
+      "number": 8270,
+      "title": "feat(roadmap): generate release changelogs at build time",
+      "state": "merged",
+      "draft": false,
+      "approved": false,
+      "mergedAt": "2026-11-13T09:44:29.000Z"
+    },
+    {
+      "number": 8260,
+      "title": "perf(marketing): prioritize landing CSS and server-render the poster",
+      "state": "merged",
+      "draft": false,
+      "approved": false,
+      "mergedAt": "2026-11-13T09:46:32.000Z"
+    },
+    {
+      "number": 8254,
+      "title": "feat(roadmap): build-time hosting counts and the move to tuturuuu.com",
+      "state": "merged",
+      "draft": false,
+      "approved": false,
+      "mergedAt": "2026-11-12T23:47:03.000Z"
+    },
+    {
+      "number": 8190,
+      "title": "perf(roadmap): make roadmap and EduFest fast on low-end phones",
+      "state": "merged",
+      "draft": false,
+      "approved": false,
+      "mergedAt": "2026-11-11T17:11:57.000Z"
+    },
+    {
+      "number": 8173,
+      "title": "feat(web): list the roadmap sitemap in robots.txt",
+      "state": "merged",
+      "draft": false,
+      "approved": false,
+      "mergedAt": "2026-11-11T17:23:47.000Z"
+    },
+    {
+      "number": 8163,
+      "title": "feat(roadmap): indexable Vietnamese pages, JSON-LD, sitemap, lighter assets",
+      "state": "merged",
+      "draft": false,
+      "approved": false,
+      "mergedAt": "2026-11-11T07:37:35.000Z"
+    },
+    {
+      "number": 8162,
+      "title": "feat(roadmap): calmer EduFest hero, honest AI toggle, cleaner FAQ, unclipped logos",
+      "state": "merged",
+      "draft": false,
+      "approved": false,
+      "mergedAt": "2026-11-11T07:23:30.000Z"
+    },
+    {
+      "number": 8155,
+      "title": "feat(roadmap): redesign the roadmap and EduFest pages",
+      "state": "merged",
+      "draft": false,
+      "approved": false,
+      "mergedAt": "2026-11-11T06:32:30.000Z"
+    },
+    {
+      "number": 8153,
+      "title": "feat(roadmap): richer EduFest workshop page",
+      "state": "merged",
+      "draft": false,
+      "approved": false,
+      "mergedAt": "2026-11-11T06:28:02.000Z"
+    },
+    {
+      "number": 8151,
+      "title": "feat(roadmap): EduFest 2026 workshop page",
+      "state": "merged",
+      "draft": false,
+      "approved": false,
+      "mergedAt": "2026-11-11T05:01:52.000Z"
+    },
+    {
+      "number": 8141,
+      "title": "feat(meet): enforce classroom room caps and host admission",
+      "state": "merged",
+      "draft": false,
+      "approved": false,
+      "mergedAt": "2026-11-11T01:10:22.000Z"
+    },
+    {
+      "number": 8129,
+      "title": "perf(marketing): adopt shared shell and streamline landing",
+      "state": "merged",
+      "draft": false,
+      "approved": false,
+      "mergedAt": "2026-11-12T21:38:43.000Z"
+    },
+    {
+      "number": 8094,
+      "title": "feat(roadmap): v2 timeline with full history and expanded tracks",
+      "state": "merged",
+      "draft": false,
+      "approved": false,
+      "mergedAt": "2026-11-10T08:08:23.000Z"
+    },
     {
       "number": 8083,
       "title": "feat(roadmap): gate the Mira plans card behind showPlans",
@@ -58,10 +178,10 @@
     {
       "number": 8068,
       "title": "fix(calendar): bound the stored sync diagnostics and redact secrets from error messages",
-      "state": "open",
+      "state": "merged",
       "draft": false,
       "approved": false,
-      "mergedAt": null
+      "mergedAt": "2026-11-13T09:46:46.000Z"
     },
     {
       "number": 8064,
@@ -912,14 +1032,6 @@
       "mergedAt": "2026-11-02T13:25:57.000Z"
     },
     {
-      "number": 7475,
-      "title": "feat(meet): reach the AI usage limiter through a service binding",
-      "state": "merged",
-      "draft": false,
-      "approved": false,
-      "mergedAt": "2026-11-02T08:21:40.000Z"
-    },
-    {
       "number": 7474,
       "title": "feat(mobile): prepare the Drive root list for offline reading behind offline_read_drive_list",
       "state": "open",
@@ -1016,14 +1128,6 @@
       "mergedAt": "2026-11-02T05:17:49.000Z"
     },
     {
-      "number": 7456,
-      "title": "feat(mobile): add MobileFlags reader and flag-gated offline registration",
-      "state": "merged",
-      "draft": false,
-      "approved": false,
-      "mergedAt": "2026-11-02T06:09:47.000Z"
-    },
-    {
       "number": 7455,
       "title": "perf(meet): send a verified root sign-in straight to personal meetings",
       "state": "merged",
@@ -1088,36 +1192,12 @@
       "mergedAt": "2026-11-02T05:15:51.000Z"
     },
     {
-      "number": 7443,
-      "title": "feat(mobile): Iris chat read-only unless iris_send (MONA-15)",
-      "state": "merged",
-      "draft": false,
-      "approved": false,
-      "mergedAt": "2026-11-02T03:57:18.000Z"
-    },
-    {
       "number": 7442,
       "title": "refactor: rename @tuturuuu/turnstile to @tuturuuu/cloudflare",
       "state": "merged",
       "draft": false,
       "approved": false,
       "mergedAt": "2026-11-04T03:29:41.000Z"
-    },
-    {
-      "number": 7436,
-      "title": "feat(mobile): mastermind inbox tier header design (M2b)",
-      "state": "merged",
-      "draft": false,
-      "approved": false,
-      "mergedAt": "2026-11-02T02:45:04.000Z"
-    },
-    {
-      "number": 7427,
-      "title": "feat(mobile): mastermind batch sheet v2 with risky/incomplete exclusion (Slice C)",
-      "state": "merged",
-      "draft": false,
-      "approved": false,
-      "mergedAt": "2026-11-01T19:53:37.000Z"
     },
     {
       "number": 7425,
@@ -1134,14 +1214,6 @@
       "draft": false,
       "approved": false,
       "mergedAt": "2026-11-02T02:54:58.000Z"
-    },
-    {
-      "number": 7419,
-      "title": "feat(meet): pre-join waiting room UI preview",
-      "state": "merged",
-      "draft": false,
-      "approved": false,
-      "mergedAt": "2026-11-02T02:54:09.000Z"
     },
     {
       "number": 7418,
@@ -1192,14 +1264,6 @@
       "mergedAt": "2026-11-01T18:06:14.000Z"
     },
     {
-      "number": 7410,
-      "title": "feat(meet): default-allow Meet AI with a kill switch",
-      "state": "merged",
-      "draft": false,
-      "approved": false,
-      "mergedAt": "2026-11-01T19:15:30.000Z"
-    },
-    {
       "number": 7396,
       "title": "feat(tasks): simplify sprint planning, summary and board filtering",
       "state": "merged",
@@ -1230,14 +1294,6 @@
       "draft": false,
       "approved": false,
       "mergedAt": "2026-11-01T06:20:43.000Z"
-    },
-    {
-      "number": 7364,
-      "title": "feat(mobile): hardware-backed Iris device key and signer (M0)",
-      "state": "merged",
-      "draft": false,
-      "approved": false,
-      "mergedAt": "2026-11-01T17:54:32.000Z"
     },
     {
       "number": 7351,
@@ -1310,14 +1366,6 @@
       "draft": false,
       "approved": false,
       "mergedAt": "2026-10-29T17:44:04.000Z"
-    },
-    {
-      "number": 7241,
-      "title": "perf(mobile): overlap Firebase with local reads and defer push setup past first frame",
-      "state": "merged",
-      "draft": false,
-      "approved": false,
-      "mergedAt": "2026-11-02T02:17:39.000Z"
     },
     {
       "number": 7224,
@@ -4564,16 +4612,16 @@
     {
       "app": "ai",
       "platform": "vercel",
-      "commit": "4382dd3223b7ec40782ae1f7fad3b0e5837d64bf",
-      "commitAt": "2026-11-08T23:42:45.000Z",
-      "behindBy": 194
+      "commit": "472f3498a65115aae46e3219d747242451cd38bf",
+      "commitAt": null,
+      "behindBy": null
     },
     {
       "app": "apps",
       "platform": "workers",
-      "commit": "9dafeacbfd3faa5b7ae2d1793c1ba7b960421ef8",
-      "commitAt": "2026-11-10T00:26:04.000Z",
-      "behindBy": 35
+      "commit": "9d38c271de6d42978d5748b1fc662356ca19db63",
+      "commitAt": null,
+      "behindBy": null
     },
     {
       "app": "calendar",
@@ -4584,17 +4632,17 @@
     },
     {
       "app": "chat",
-      "platform": "vercel",
-      "commit": null,
+      "platform": "workers",
+      "commit": "ff9478b15b01ea8482cade822be8e2ede6d5b12e",
       "commitAt": null,
       "behindBy": null
     },
     {
       "app": "cms",
       "platform": "workers",
-      "commit": "a71e906194eff1a5e9e23113c5443e6273b75061",
-      "commitAt": "2026-11-10T01:14:49.000Z",
-      "behindBy": 24
+      "commit": "f83e4ddf0d68a33f7b7b13c8ab3421de877a374d",
+      "commitAt": null,
+      "behindBy": null
     },
     {
       "app": "colab",
@@ -4613,23 +4661,23 @@
     {
       "app": "drive",
       "platform": "workers",
-      "commit": "9dafeacbfd3faa5b7ae2d1793c1ba7b960421ef8",
-      "commitAt": "2026-11-10T00:26:04.000Z",
-      "behindBy": 35
+      "commit": "9d38c271de6d42978d5748b1fc662356ca19db63",
+      "commitAt": null,
+      "behindBy": null
     },
     {
       "app": "finance",
       "platform": "vercel",
-      "commit": null,
+      "commit": "472f3498a65115aae46e3219d747242451cd38bf",
       "commitAt": null,
       "behindBy": null
     },
     {
       "app": "forms",
       "platform": "workers",
-      "commit": "9dafeacbfd3faa5b7ae2d1793c1ba7b960421ef8",
-      "commitAt": "2026-11-10T00:26:04.000Z",
-      "behindBy": 35
+      "commit": "f83e4ddf0d68a33f7b7b13c8ab3421de877a374d",
+      "commitAt": null,
+      "behindBy": null
     },
     {
       "app": "hive",
@@ -4641,16 +4689,16 @@
     {
       "app": "inventory",
       "platform": "vercel",
-      "commit": null,
+      "commit": "472f3498a65115aae46e3219d747242451cd38bf",
       "commitAt": null,
       "behindBy": null
     },
     {
       "app": "learn",
       "platform": "workers",
-      "commit": "9dafeacbfd3faa5b7ae2d1793c1ba7b960421ef8",
-      "commitAt": "2026-11-10T00:26:04.000Z",
-      "behindBy": 35
+      "commit": "f83e4ddf0d68a33f7b7b13c8ab3421de877a374d",
+      "commitAt": null,
+      "behindBy": null
     },
     {
       "app": "mail",
@@ -4662,21 +4710,21 @@
     {
       "app": "marketing",
       "platform": "vercel",
-      "commit": null,
+      "commit": "a8b3f52a85cb12714442bfe3e910908b82b79d5c",
       "commitAt": null,
       "behindBy": null
     },
     {
       "app": "meet",
       "platform": "workers",
-      "commit": null,
+      "commit": "061a566123e309f9004eb0793cd9a59016924c04",
       "commitAt": null,
       "behindBy": null
     },
     {
       "app": "mind",
       "platform": "vercel",
-      "commit": null,
+      "commit": "472f3498a65115aae46e3219d747242451cd38bf",
       "commitAt": null,
       "behindBy": null
     },
@@ -4698,8 +4746,8 @@
       "app": "pay",
       "platform": "vercel",
       "commit": "4382dd3223b7ec40782ae1f7fad3b0e5837d64bf",
-      "commitAt": "2026-11-08T23:42:45.000Z",
-      "behindBy": 194
+      "commitAt": null,
+      "behindBy": null
     },
     {
       "app": "playground",
@@ -4718,7 +4766,7 @@
     {
       "app": "roadmap",
       "platform": "workers",
-      "commit": "7e1813cfcba8920aa38e45bd5a16d80a1bb1230b",
+      "commit": "fe112ccb8a9e18bed946059ac634f546b7db7e1e",
       "commitAt": null,
       "behindBy": null
     },
@@ -4726,55 +4774,55 @@
       "app": "shortener",
       "platform": "workers",
       "commit": "58825f154b90e59af8ff93768f2601a758ae0f39",
-      "commitAt": "2026-11-09T16:47:40.000Z",
-      "behindBy": 94
+      "commitAt": null,
+      "behindBy": null
     },
     {
       "app": "storefront",
       "platform": "workers",
-      "commit": "9dafeacbfd3faa5b7ae2d1793c1ba7b960421ef8",
-      "commitAt": "2026-11-10T00:26:04.000Z",
-      "behindBy": 35
+      "commit": "95fad90e527fe3a2a24b3e0df12e3445901a7cbe",
+      "commitAt": null,
+      "behindBy": null
     },
     {
       "app": "tasks",
       "platform": "workers",
-      "commit": "89ebac54c0cf58e446640c617008776a20bde11d",
-      "commitAt": "2026-11-10T05:19:51.000Z",
-      "behindBy": 7
+      "commit": "9d38c271de6d42978d5748b1fc662356ca19db63",
+      "commitAt": null,
+      "behindBy": null
     },
     {
       "app": "teach",
       "platform": "workers",
-      "commit": "9dafeacbfd3faa5b7ae2d1793c1ba7b960421ef8",
-      "commitAt": "2026-11-10T00:26:04.000Z",
-      "behindBy": 35
+      "commit": "f83e4ddf0d68a33f7b7b13c8ab3421de877a374d",
+      "commitAt": null,
+      "behindBy": null
     },
     {
       "app": "tools",
       "platform": "workers",
-      "commit": "9dafeacbfd3faa5b7ae2d1793c1ba7b960421ef8",
-      "commitAt": "2026-11-10T00:26:04.000Z",
-      "behindBy": 35
+      "commit": "f83e4ddf0d68a33f7b7b13c8ab3421de877a374d",
+      "commitAt": null,
+      "behindBy": null
     },
     {
       "app": "track",
       "platform": "workers",
-      "commit": "9dafeacbfd3faa5b7ae2d1793c1ba7b960421ef8",
-      "commitAt": "2026-11-10T00:26:04.000Z",
-      "behindBy": 35
+      "commit": "f83e4ddf0d68a33f7b7b13c8ab3421de877a374d",
+      "commitAt": null,
+      "behindBy": null
     },
     {
       "app": "web",
       "platform": "vercel",
-      "commit": null,
+      "commit": "a8b3f52a85cb12714442bfe3e910908b82b79d5c",
       "commitAt": null,
       "behindBy": null
     },
     {
       "app": "workspace",
       "platform": "vercel",
-      "commit": null,
+      "commit": "a8b3f52a85cb12714442bfe3e910908b82b79d5c",
       "commitAt": null,
       "behindBy": null
     }

@@ -794,3 +794,46 @@ root-workspace `MEMBER` membership. Root guests are denied even when guest-defau
 permissions grant the corresponding read or mutation permission. This preserves
 the previous membership fence without changing other administration endpoints.
 Regression coverage: `apps/infrastructure/src/lib/entity-limit-membership.test.ts`.
+
+
+## Dedicated infrastructure cron authorization
+
+The GET jobs at `/api/cron/infrastructure/docker-recovery-alerts`,
+`sample-resources` and `sync-trust-cache` accept a single Bearer credential.
+The server compares fixed-size SHA-256 digests with Node's timingSafeEqual before
+job effects or log draining. Cookies and sessions grant no access. Missing or
+invalid credentials, including missing server configuration, return 401.
+
+`CRON_SECRET` takes precedence over `VERCEL_CRON_SECRET`; an explicitly empty
+primary secret disables authorization. Responses contain only an `ok` status,
+including job failures; caught error payloads are excluded from logs.
+Calendar cron routes remain outside this dedicated exception allowlist.
+
+Regression coverage: `apps/infrastructure/src/lib/infrastructure-cron-auth.test.ts`
+executes the actual handlers with fixture job suppliers; the colocated Docker
+recovery tests cover email delivery and persisted incident watermarks.
+
+## Build metadata access
+
+Infrastructure GET `/api/build-info` requires root workspace MEMBER eligibility
+and `view_infrastructure` on every request. Signed-out requests return 401;
+authenticated actors missing either requirement receive 403. An Authorization
+header selects bearer verification exclusively, including when a valid cookie
+session exists. Eligible requests retain the build payload and no-store headers.
+The app name and platform version make this an ADMIN diagnostic surface. This
+rule applies to Infrastructure; other apps retain their owning access contracts.
+
+Regression coverage: `apps/infrastructure/src/app/api/build-info/route.test.ts`
+executes the handler, ADMIN helper and metadata factory with fixture suppliers.
+
+## Prelogin logout
+
+Infrastructure logout accepts POST with an exact own-origin Origin header and
+absent or same-origin Fetch Metadata intent. This requirement applies with or
+without cookies and bearer headers. Rejected intent returns 403 before session
+cookie deletion; GET returns 405 with Allow POST and no cookie effects. Successful
+logout retains shared app-session and Supabase cookie deletion. Browser responses
+redirect to relative `/login`; JSON clients receive `{ success: true }`.
+Cross-app trusted origins do not grant this prelogin exception. Handler-effect
+coverage is in `apps/infrastructure/src/app/api/auth/logout/route.test.ts`;
+router dispatch and hosted runtime acceptance require separate validation.

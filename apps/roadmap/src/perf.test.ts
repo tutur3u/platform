@@ -1,3 +1,4 @@
+import { readStyles } from './style-source.ts';
 /**
  * D79 performance guards for the roadmap and EduFest pages (run via
  * src/roadmap-data.test.ts). Each guard is checked against the real source
@@ -15,19 +16,17 @@ import {
   DEFERRED_ENTRY_ATTRIBUTE,
   DEFERRED_PRELOAD_REL,
   deferHydration,
-  HYDRATION_LOADER,
 } from './defer-hydration.ts';
 import { loadHistoryWhenNear, type Observe } from './history/lazy-load.ts';
 import { periodChipName, scrubberWindow } from './history/timeline.ts';
 import { inlineScriptTexts } from './html-scripts.ts';
-import { isLiteDevice, LITE_MODE_SOURCE } from './lite-mode.ts';
 import { afterIdleAndVisible, type DeferEnv } from './live/defer.ts';
 import { fetchPullFacts } from './live/github.ts';
 import { isRateLimited, LIVE_SEARCH } from './live/use-live-data.ts';
 
 const read = (path: string) =>
   readFileSync(new URL(path, import.meta.url), 'utf8');
-const css = read('./styles.css');
+const css = readStyles();
 
 describe('perf: expensive CSS stays off phones and low-end devices', () => {
   it('runs no infinite animation outside reduced-motion on a wide, non-lite screen', () => {
@@ -99,44 +98,6 @@ describe('perf: expensive CSS stays off phones and low-end devices', () => {
       widens('.track { contain-intrinsic-size: auto 720px; }'),
       true
     );
-  });
-});
-
-describe('perf: lite mode is decided before the first paint', () => {
-  const run = (source: string, navigator: object) => {
-    const attributes = new Map<string, string>();
-    const document = {
-      documentElement: {
-        setAttribute: (name: string, value: string) =>
-          attributes.set(name, value),
-      },
-    };
-    new Function('navigator', 'document', source)(navigator, document);
-    return attributes.has('data-lite');
-  };
-  const devices = [
-    { hardwareConcurrency: 4, deviceMemory: 8 },
-    { hardwareConcurrency: 8, deviceMemory: 2 },
-    { hardwareConcurrency: 8, deviceMemory: 8, connection: { saveData: true } },
-    { hardwareConcurrency: 12, deviceMemory: 8 },
-    {},
-  ];
-
-  it('the inline script and the pure decision agree on every device', () => {
-    assert.deepEqual(
-      devices.map((device) => isLiteDevice(device)),
-      [true, true, true, false, false]
-    );
-    for (const device of devices)
-      assert.equal(run(LITE_MODE_SOURCE, device), isLiteDevice(device));
-    // Broken variant: a script with the wrong threshold disagrees.
-    const broken = LITE_MODE_SOURCE.replace('c<=4', 'c<=2');
-    assert.ok(devices.some((d) => run(broken, d) !== isLiteDevice(d)));
-  });
-
-  it('both page heads render it, ahead of everything else they add', () => {
-    for (const head of ['./pages/roadmap-head.ts', './pages/edufest-head.ts'])
-      assert.match(read(head), /scripts: \[\s*liteModeScript\(\),/, head);
   });
 });
 
@@ -274,7 +235,7 @@ describe('perf: the live GitHub refresh waits and stays bounded', () => {
   });
 });
 
-describe('perf: the client bundle starts after the first paint', () => {
+describe('perf: the served document fetches no module before paint or intent', () => {
   const html =
     '<head><link rel="modulepreload" href="/roadmap/assets/index-Abcd1234.js" fetchPriority="low"/>' +
     '<link rel="modulepreload" href="/roadmap/assets/roadmap-Abcd1234.js" fetchPriority="low"/></head>' +
@@ -295,21 +256,18 @@ describe('perf: the client bundle starts after the first paint', () => {
         `<script type="text/plain" ${DEFERRED_ENTRY_ATTRIBUTE}="" src="/roadmap/assets/index-Abcd1234.js"></script>`
       )
     );
-    assert.deepEqual(inlineScriptTexts(served), [HYDRATION_LOADER]);
+    // Attributes change; no element (and so no inline script) is added.
+    assert.deepEqual(inlineScriptTexts(served), []);
+    assert.equal(served.split('<script').length, html.split('<script').length);
     // Broken variant: an untouched document fetches modules before paint.
     assert.equal(early(html), true);
   });
 
-  it('the loader waits for a frame, never prefetches, and is static for the CSP', () => {
-    assert.match(HYDRATION_LOADER, /'largest-contentful-paint'/);
-    assert.match(HYDRATION_LOADER, /addEventListener\('load',/);
-    assert.match(
-      HYDRATION_LOADER,
-      /if\(painted&&loaded\)requestAnimationFrame\(/
-    );
-    assert.match(HYDRATION_LOADER, /requestAnimationFrame\(/);
-    assert.ok(!/prefetch|prerender|speculationrules/i.test(HYDRATION_LOADER));
-    assert.ok(!HYDRATION_LOADER.includes('/roadmap/assets/'));
+  it('adds no inline script, so the CSP keeps the four the router renders', () => {
+    const inserting = (doc: string) =>
+      deferHydration(doc).replace('</body>', '<script>boot()</script></body>');
+    // Broken variant: a transform that inserts an inline loader.
+    assert.equal(inlineScriptTexts(inserting(html)).length, 1);
     assert.match(
       read('./worker.ts'),
       /withContentSecurityPolicy\(response, deferHydration\)/
@@ -356,5 +314,43 @@ describe('perf and a11y: the timeline scrubber', () => {
     // Broken variant: the key-first name does not start with "Now".
     const old = `2026-W46: 334 ${words.changes}`;
     assert.equal(old.startsWith('Now'), false);
+  });
+});
+
+describe('perf: hydration is split into section boundaries', () => {
+  /** Components that `source` renders directly inside a <Suspense>. */
+  const wrapped = (source: string) =>
+    [...source.matchAll(/<Suspense(?: key=\{[^}]+\})?>\s*<(\w+)/g)].map(
+      (match) => match[1]
+    );
+
+  it('wraps the timeline, every track card and each EduFest section below the hero', () => {
+    assert.ok(wrapped(read('./pages/roadmap.tsx')).includes('TimelineSection'));
+    assert.ok(wrapped(read('./pages/roadmap.tsx')).includes('HostingSection'));
+    assert.deepEqual(wrapped(read('./components/tracks.tsx')), ['TrackCard']);
+    const edufest = wrapped(read('./pages/edufest.tsx'));
+    for (const section of ['WsSimulator', 'WsCapabilities', 'WsFaq'])
+      assert.ok(edufest.includes(section), section);
+    assert.ok(!edufest.includes('WsHero'), 'the hero hydrates with the shell');
+    // Broken variant: one unsplit list hydrates as a single long task.
+    assert.deepEqual(
+      wrapped('{visible.map((t) => <TrackCard key={t.id} />)}'),
+      []
+    );
+  });
+});
+
+describe('perf: the entry chunk names the hashed history asset', () => {
+  it('the roadmap head links it (no fetch), so its URL lives in the entry chunk', () => {
+    const head = read('./pages/roadmap-head.ts');
+    assert.match(head, /historyAlternateLink\(\),/);
+    const link = read('./history/history-url.ts');
+    assert.match(link, /rel: 'alternate',\s*type: 'application\/json'/);
+    assert.ok(!/prefetch|preload|prerender/.test(link));
+    // The timeline reads the same module, so both share one URL.
+    assert.match(
+      read('./history/use-history.ts'),
+      /import \{ historyUrl \} from '\.\/history-url\.ts';/
+    );
   });
 });

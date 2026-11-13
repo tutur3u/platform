@@ -98,7 +98,7 @@ export const DEPENDENCIES = {
     '@cloudflare/workers-types': '5.20261022.1',
     '@tailwindcss/vite': '4.3.3',
     '@vitejs/plugin-react': '6.1.2',
-    '@vitejs/plugin-rsc': '0.5.38',
+    '@vitejs/plugin-rsc': '0.5.39',
     vite: 'npm:@voidzero-dev/vite-plus-core@1.3.0',
     'vite-plus': '1.3.0',
     void: '1.1.12',

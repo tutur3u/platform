@@ -75,7 +75,7 @@ export interface WalletTransaction {
  * @param legacyCreator Legacy creator object (fallback source)
  * @returns Normalized creator object for Invoice type
  */
-function normalizeCreator(
+export function normalizeCreator(
   platformCreator: PlatformCreator | null,
   legacyCreator: LegacyCreator | null
 ): Invoice['creator'] {

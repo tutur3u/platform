@@ -4,7 +4,7 @@ on:
   push:
     branches: [main, production, 'release-please--branches--**']
   pull_request:
-    types: [opened, synchronize, reopened, ready_for_review, labeled]
+    types: [opened, synchronize, reopened, ready_for_review, labeled, converted_to_draft]
   workflow_dispatch:
 
 # Initial PR/main validation supersedes; reruns and manual evidence stay independent.
@@ -19,7 +19,7 @@ jobs:
   # Push, dispatch and generated-branch variant: keeps the Turbo credentials and
   # always runs on a hosted runner, never the PR pool.
   type-check:
-    if: (github.event_name != 'pull_request') && (github.event_name != 'pull_request' || contains(github.event.pull_request.labels.*.name, 'ready-for-ci'))
+    if: ${{ ((github.event_name != 'pull_request' || github.event.pull_request.draft == false) && ((github.event_name != 'pull_request'))) && (github.event_name != 'pull_request' || contains(github.event.pull_request.labels.*.name, 'ready-for-ci')) }}
     name: Type Check
     permissions:
       contents: read
@@ -160,7 +160,7 @@ jobs:
   # secret (a guarded reference is still shipped to the runner). It shares the
   # `Type Check` context with the variant below; exactly one of them runs.
   type-check-pr:
-    if: (github.event_name == 'pull_request') && (github.event_name != 'pull_request' || contains(github.event.pull_request.labels.*.name, 'ready-for-ci'))
+    if: ${{ ((github.event_name != 'pull_request' || github.event.pull_request.draft == false) && ((github.event_name == 'pull_request'))) && (github.event_name != 'pull_request' || contains(github.event.pull_request.labels.*.name, 'ready-for-ci')) }}
     name: Type Check
     permissions:
       contents: read

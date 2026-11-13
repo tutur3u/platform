@@ -24,11 +24,11 @@ export async function cleanupEndedLiveSession(
   }
   if (!saved.roomReleased) {
     try {
-      if (saved.claims.mode === 'room')
-        await liveRoomCommand(env, saved.claims, saved.identity, {
-          action: 'live.stop',
-          sessionId: saved.claims.sessionId,
-        });
+      await liveRoomCommand(env, saved.claims, saved.identity, {
+        action:
+          saved.claims.mode === 'personal' ? 'mira.private.ended' : 'live.stop',
+        sessionId: saved.claims.sessionId,
+      });
       saved.roomReleased = true;
       await persist();
     } catch {

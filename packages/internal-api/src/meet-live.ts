@@ -43,6 +43,7 @@ type LiveStart = {
   voice?: MeetLiveVoice;
 };
 type LiveConnection = {
+  ownerId: string;
   sessionId: string;
   token: string;
   mode: 'personal' | 'room';
@@ -79,6 +80,43 @@ export function reviewMeetLiveTool(
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(payload),
+    }
+  );
+}
+
+export type PrivateMiraPolicy = {
+  version: string;
+  available: boolean;
+  choice: {
+    choice: 'continue' | 'mute' | 'leave';
+    version: string;
+    meetingId: string;
+    accountId: string;
+    recordedAt: number;
+    revision: number;
+  } | null;
+};
+export function readPrivateMiraPolicy(meetingId: string) {
+  return getInternalApiClient().json<PrivateMiraPolicy>(
+    `/api/meet-live/${encodeURIComponent(meetingId)}`,
+    {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ action: 'policy' }),
+    }
+  );
+}
+export function setPrivateMiraChoice(
+  meetingId: string,
+  version: string,
+  choice: 'continue' | 'mute' | 'leave'
+) {
+  return getInternalApiClient().json<PrivateMiraPolicy>(
+    `/api/meet-live/${encodeURIComponent(meetingId)}`,
+    {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ action: 'choice', choice, version }),
     }
   );
 }

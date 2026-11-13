@@ -1,5 +1,8 @@
 // @vitest-environment jsdom
-import { getLegalDocument } from '@tuturuuu/legal';
+import {
+  stripInternalReviewSentences,
+  getLegalDocument,
+} from '@tuturuuu/legal';
 import { renderToStaticMarkup } from 'react-dom/server';
 import { describe, expect, it, vi } from 'vitest';
 import { toLegalPageConfig } from '../src/components/legal/canonical-legal-config';
@@ -184,7 +187,7 @@ describe('framework adapter renders canonical legal content', () => {
           document.summaryRows.length
         );
         expect(page.querySelector('footer')?.textContent).toContain(
-          document.footer
+          stripInternalReviewSentences(document.footer)
         );
         expect(
           page.querySelector('section[aria-labelledby="summary"] p')

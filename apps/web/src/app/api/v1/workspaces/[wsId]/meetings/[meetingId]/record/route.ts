@@ -5,10 +5,11 @@ import {
   verifyWorkspaceMembershipType,
 } from '@tuturuuu/utils/workspace-helper';
 import { type NextRequest, NextResponse } from 'next/server';
+import { legacyRecorderRetiredResponse } from '../_lib/legacy-recorder-lock';
 import { canManageLegacyRecording } from '../_lib/recording-access';
 
 export async function POST(
-  _request: NextRequest,
+  request: NextRequest,
   { params }: { params: Promise<{ wsId: string; meetingId: string }> }
 ) {
   try {
@@ -121,33 +122,11 @@ export async function POST(
         sessionId: existingSession.id,
         message: 'Recording stopped successfully',
       });
-    } else {
-      // Start a new recording session
-      const { data: newSession, error: sessionError } = await supabase
-        .from('recording_sessions')
-        .insert({
-          meeting_id: meetingId,
-          status: 'recording',
-          user_id: user.id,
-        })
-        .select()
-        .single();
-
-      if (sessionError) {
-        console.error('Error creating recording session:', sessionError);
-        return NextResponse.json(
-          { error: 'Failed to start recording' },
-          { status: 500 }
-        );
-      }
-
-      return NextResponse.json({
-        success: true,
-        action: 'started',
-        sessionId: newSession.id,
-        message: 'Recording started successfully',
-      });
     }
+
+    // The legacy recorder is retired: an already-active session can still be
+    // stopped above, but a new one is never started.
+    return legacyRecorderRetiredResponse(request);
   } catch (error) {
     console.error('Error in recording API:', error);
     return NextResponse.json(

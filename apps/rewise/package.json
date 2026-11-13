@@ -94,7 +94,7 @@
     "@types/uuid": "^11.0.0",
     "@typescript/native-preview": "7.0.0-dev.20260707.2",
     "@vitejs/plugin-react": "6.1.2",
-    "@vitejs/plugin-rsc": "0.5.38",
+    "@vitejs/plugin-rsc": "0.5.39",
     "autoprefixer": "^10.6.1",
     "babel-plugin-react-compiler": "^1.0.0",
     "jsdom": "^30.1.3",

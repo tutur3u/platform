@@ -6,6 +6,10 @@ import type {
   InventoryCheckoutSession,
   InventoryPublicStorefrontResponse,
 } from '@tuturuuu/internal-api/inventory';
+import {
+  resolveExplicitSecret,
+  resolveServerTokenSecrets,
+} from '@tuturuuu/utils/app-coordination-token';
 import type { z } from 'zod';
 import type { checkoutCreatePayloadSchema } from './schemas';
 
@@ -47,31 +51,24 @@ type SimulatedOrderTokenOptions = {
 };
 
 function getSecretCandidates(explicitSecret?: string) {
-  const candidates = explicitSecret
-    ? [explicitSecret]
-    : [
-        process.env.INVENTORY_SIMULATED_ORDER_SECRET,
-        process.env.TUTURUUU_APP_COORDINATION_SECRET,
-        process.env.SUPABASE_SECRET_KEY,
-        process.env.SUPABASE_SERVICE_ROLE_KEY,
-        process.env.SUPABASE_SERVICE_KEY,
-      ];
+  const options = {
+    localDevelopmentSecret: LOCAL_DEVELOPMENT_SECRET,
+    missingMessage:
+      'Missing INVENTORY_SIMULATED_ORDER_SECRET or Supabase service secret',
+  };
 
-  const secrets = candidates
-    .map((value) => value?.trim())
-    .filter((value): value is string => Boolean(value));
-
-  if (secrets.length === 0 && process.env.NODE_ENV !== 'production') {
-    return [LOCAL_DEVELOPMENT_SECRET];
-  }
-
-  if (secrets.length === 0) {
-    throw new Error(
-      'Missing INVENTORY_SIMULATED_ORDER_SECRET or Supabase service secret'
-    );
-  }
-
-  return [...new Set(secrets)];
+  return explicitSecret
+    ? resolveExplicitSecret(explicitSecret, options)
+    : resolveServerTokenSecrets(
+        [
+          'INVENTORY_SIMULATED_ORDER_SECRET',
+          'TUTURUUU_APP_COORDINATION_SECRET',
+          'SUPABASE_SECRET_KEY',
+          'SUPABASE_SERVICE_ROLE_KEY',
+          'SUPABASE_SERVICE_KEY',
+        ],
+        options
+      );
 }
 
 function getSigningSecret(explicitSecret?: string) {

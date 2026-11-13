@@ -855,6 +855,15 @@
     "year": "Year",
     "yesterday": "Yesterday"
   },
+  "calendar_category_reorder_pilot": {
+    "cancel": "Returned {label} to position {position} of {total}.",
+    "drop": "Dropped {label} at position {position} of {total}.",
+    "grab": "Picked up {label}, position {position} of {total}.",
+    "instructions": "Arrows navigate. Space picks up or drops a category. Arrows move it; Escape cancels.",
+    "invalid": "Category names must be unique and nonempty to reorder.",
+    "label": "Category order",
+    "move": "{label}, position {position} of {total}."
+  },
   "calendar-sidebar": {
     "ready": "Ready"
   },
@@ -9532,6 +9541,7 @@
     "end_weak_support_done": "Tutoring ended",
     "end_weak_support_failed": "Could not end tutoring. Try again.",
     "end_weak_support_title": "End weak-support tutoring?",
+    "export_choose_range": "Choose date range",
     "export_detailed_csv": "Detailed CSV",
     "export_detailed_xlsx": "Detailed XLSX",
     "export_failed": "Export failed",
@@ -9806,6 +9816,7 @@
     "tutors_only": "Tutors only",
     "unavailable_description": "Your workspace profile could not be resolved. Refresh to try again, or ask an admin to re-invite you.",
     "unavailable_title": "We couldn't load this workspace",
+    "view_content": "View full content",
     "weak_content_review_due": "Office review: content unchanged",
     "weak_support": "Weak support",
     "when": "When"

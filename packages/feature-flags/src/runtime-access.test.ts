@@ -9,6 +9,8 @@ import {
 } from './runtime-access';
 import { applyFeatureFlagMutation, emptyLedger } from './runtime-state';
 import { catalogFamilyCounts, classifyFlagKey } from './runtime-policy';
+import { featureFlagCatalog } from './catalog';
+import { registry } from './registry.generated';
 
 const actor = '11111111-1111-4111-8111-111111111111';
 
@@ -133,19 +135,58 @@ describe('admin mutation access', () => {
   });
 });
 
-describe('catalog families at the pinned base', () => {
+describe('catalog families', () => {
   it('keeps every catalog entry and only the registry runtime keys mutable', () => {
     expect(catalogFamilyCounts()).toEqual({
       'mobile-build': 2,
       'mobile-runtime': 16,
-      'workspace-secret': 33,
-      total: 51,
+      'workspace-secret': 34,
+      total: 52,
     });
+    expect(
+      featureFlagCatalog.flags
+        .filter((flag) => classifyFlagKey(flag.key).mutable)
+        .map((flag) => flag.key)
+        .sort()
+    ).toEqual(registry.map((flag) => flag.key).sort());
     expect(classifyFlagKey('mobile_offline')).toEqual({
       family: 'mobile-runtime',
       mutable: true,
     });
     expect(classifyFlagKey('cookie_consent_banner').mutable).toBe(false);
     expect(classifyFlagKey('ENABLE_CHAT').family).toBe('workspace-secret');
+  });
+
+  it('keeps journal mood tracking off by default and rejects runtime overrides', () => {
+    const flagKey = 'ENABLE_JOURNAL_MOOD_TRACKING';
+    expect(
+      featureFlagCatalog.flags.find((flag) => flag.key === flagKey)
+    ).toMatchObject({
+      family: 'workspace-secret',
+      defaults: { development: false, staging: false, production: false },
+    });
+    expect(classifyFlagKey(flagKey)).toEqual({
+      family: 'workspace-secret',
+      mutable: false,
+    });
+    const decision = assessFeatureFlagMutation({
+      authenticated: true,
+      body: { ...body, flagKey },
+      canMutate: true,
+      rootMember: true,
+      sessionActorId: actor,
+    });
+    expect(decision.kind).toBe('command');
+    if (decision.kind !== 'command') return;
+    const result = applyFeatureFlagMutation(emptyLedger(), decision.command, {
+      allowActor: () => true,
+      now: '2026-11-09T10:00:00.000Z',
+    });
+    expect(result.outcome).toMatchObject({
+      code: 'read_only_workspace_secret',
+      status: 'rejected',
+      storage: false,
+    });
+    expect(result.ledger).toEqual(emptyLedger());
   });
 });

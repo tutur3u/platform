@@ -7,12 +7,6 @@ export function liveTools(
 ): FunctionDeclaration[] {
   const tools: FunctionDeclaration[] = [
     {
-      name: 'meeting_context',
-      description:
-        'Get the current admitted participants and recent shared room chat. Use this for questions about who is here or what was just discussed in chat.',
-      parameters: { type: Type.OBJECT, properties: {} },
-    },
-    {
       name: 'recall_conversation',
       description:
         "Search earlier turns in this assistant session. Pass the previous result's nextCursor as before to search older pages.",
@@ -45,17 +39,6 @@ export function liveTools(
       parameters: { type: Type.OBJECT, properties: {} },
     },
   ];
-  if (mode === 'personal')
-    tools.push({
-      name: 'propose_room_reply',
-      description:
-        'Ask this user to approve exact text to share with everyone. This proposal is private; no room disclosure happens until approval.',
-      parameters: {
-        type: Type.OBJECT,
-        properties: { text: { type: Type.STRING } },
-        required: ['text'],
-      },
-    });
   if (mode === 'personal' && memoryEnabled)
     tools.push({
       name: 'remember',

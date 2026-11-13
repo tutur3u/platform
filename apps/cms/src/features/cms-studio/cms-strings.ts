@@ -210,6 +210,26 @@ export type CmsStrings = {
   openCollectionAction: string;
   openPreviewAction: string;
   overviewTab: string;
+  pageEditorAddSection: string;
+  pageEditorDeleteSection: string;
+  pageEditorDuplicateSection: string;
+  pageEditorEmptyOutline: string;
+  pageEditorHistoryBy: string;
+  pageEditorHistoryEmpty: string;
+  pageEditorHistoryKindPreview: string;
+  pageEditorHistoryKindPublish: string;
+  pageEditorHistoryKindUnpublish: string;
+  pageEditorHistoryTitle: string;
+  pageEditorInspectorTitle: string;
+  pageEditorMoveSectionDown: string;
+  pageEditorMoveSectionUp: string;
+  pageEditorOutlineTitle: string;
+  pageEditorRestoreVersion: string;
+  pageEditorRetrySave: string;
+  pageEditorSaveFailed: string;
+  pageEditorSaveSaving: string;
+  pageEditorSelectSection: string;
+  pageEditorUntitledSection: string;
   pairedVisualLabel: string;
   payloadLabel: string;
   previewCollectionTitle: string;
@@ -591,6 +611,26 @@ export function buildCmsStrings(t: (key: any) => string): CmsStrings {
     openCollectionAction: t('epm.open_collection_action'),
     openPreviewAction: t('epm.open_preview_action'),
     overviewTab: t('epm.overview_tab'),
+    pageEditorAddSection: t('epm.page_editor_add_section'),
+    pageEditorDeleteSection: t('epm.page_editor_delete_section'),
+    pageEditorDuplicateSection: t('epm.page_editor_duplicate_section'),
+    pageEditorEmptyOutline: t('epm.page_editor_empty_outline'),
+    pageEditorHistoryBy: t('epm.page_editor_history_by'),
+    pageEditorHistoryEmpty: t('epm.page_editor_history_empty'),
+    pageEditorHistoryKindPreview: t('epm.page_editor_history_kind_preview'),
+    pageEditorHistoryKindPublish: t('epm.page_editor_history_kind_publish'),
+    pageEditorHistoryKindUnpublish: t('epm.page_editor_history_kind_unpublish'),
+    pageEditorHistoryTitle: t('epm.page_editor_history_title'),
+    pageEditorInspectorTitle: t('epm.page_editor_inspector_title'),
+    pageEditorMoveSectionDown: t('epm.page_editor_move_section_down'),
+    pageEditorMoveSectionUp: t('epm.page_editor_move_section_up'),
+    pageEditorOutlineTitle: t('epm.page_editor_outline_title'),
+    pageEditorRestoreVersion: t('epm.page_editor_restore_version'),
+    pageEditorRetrySave: t('epm.page_editor_retry_save'),
+    pageEditorSaveFailed: t('epm.page_editor_save_failed'),
+    pageEditorSaveSaving: t('epm.page_editor_save_saving'),
+    pageEditorSelectSection: t('epm.page_editor_select_section'),
+    pageEditorUntitledSection: t('epm.page_editor_untitled_section'),
     pairedVisualLabel: t('epm.paired_visual_label'),
     payloadLabel: t('epm.payload_label'),
     previewCollectionTitle: t('epm.preview_collection_title'),
