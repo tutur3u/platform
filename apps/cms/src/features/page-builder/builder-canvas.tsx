@@ -83,7 +83,20 @@ function SortableBlock({
     id,
   });
   const preview =
-    block.type === 'TwoColumn' ? (
+    block.type === 'Section' ? (
+      <section
+        className="rounded-md border border-dashed p-3"
+        data-block="Section"
+      >
+        <BlockZone
+          blocks={block.props.children}
+          dispatch={dispatch}
+          newId={newId}
+          selectedId={selectedId}
+          zone={`${id}:children`}
+        />
+      </section>
+    ) : block.type === 'TwoColumn' ? (
       <TwoColumnLayout
         left={
           <BlockZone

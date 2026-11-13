@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import {
   computeBackoffMs,
+  isTerminalCloseCode,
   RECONNECT_MAX_ATTEMPTS,
   RECONNECT_MAX_MS,
   shouldReconnect,
@@ -42,12 +43,22 @@ describe('reconnect eligibility', () => {
     expect(shouldReconnect(3, 1006)).toBe(true);
   });
 
+  it.each([1001, 1006, 1012])(
+    'treats close code %i as a restart worth recovering from',
+    (code) => {
+      expect(shouldReconnect(0, code)).toBe(true);
+      expect(shouldReconnect(RECONNECT_MAX_ATTEMPTS - 1, code)).toBe(true);
+      expect(isTerminalCloseCode(code)).toBe(false);
+    }
+  );
+
   it('does not fight a clean close', () => {
     expect(shouldReconnect(0, 1000)).toBe(false);
   });
 
   it('does not rejoin a participant the host removed', () => {
     expect(shouldReconnect(0, 4403)).toBe(false);
+    expect(isTerminalCloseCode(4403)).toBe(true);
   });
 
   it('gives up after the attempt ceiling', () => {

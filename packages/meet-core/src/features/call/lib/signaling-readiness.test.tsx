@@ -64,7 +64,8 @@ it('bounds a hung token resolution and ignores its late result', async () => {
   });
   await vi.advanceTimersByTimeAsync(10_000);
   expect(signals[0]?.aborted).toBe(true);
-  expect(onStatusChange).toHaveBeenCalledWith('error');
+  expect(onStatusChange).toHaveBeenLastCalledWith('connecting');
+  expect(onStatusChange).not.toHaveBeenCalledWith('error');
   resolve('ws://late');
   await Promise.resolve();
   expect(Socket.instances).toHaveLength(0);
@@ -243,7 +244,7 @@ it('renews the retry budget only after thirty seconds of stable ready', async ()
     await vi.advanceTimersByTimeAsync(1);
   }
   expect(Socket.instances).toHaveLength(14);
-  expect(onStatusChange).toHaveBeenLastCalledWith('connecting');
+  expect(onStatusChange).toHaveBeenLastCalledWith('reconnecting');
   signaling.close();
 });
 

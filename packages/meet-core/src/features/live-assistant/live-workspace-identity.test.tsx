@@ -91,7 +91,14 @@ it('offers only private own-microphone start after a confirmed choice for a dist
   f.read.mockResolvedValue({
     version: 'synthetic-v1',
     available: true,
-    choice: { choice: 'continue' },
+    choice: {
+      choice: 'continue',
+      meetingId: 'synthetic-meeting',
+      accountId: 'synthetic-account',
+      version: 'synthetic-v1',
+      recordedAt: 1,
+      revision: 1,
+    },
   });
   await waitFor(() =>
     expect(
@@ -149,4 +156,88 @@ it('blocks the consent choice with a reason while the room socket is not admitte
     ).disabled
   ).toBe(true);
   expect(f.read).not.toHaveBeenCalled();
+});
+it('disables personal start until a fresh Continue after disconnect or a policy that no longer confirms it', async () => {
+  const client = new QueryClient({
+    defaultOptions: { queries: { retry: false }, mutations: { retry: false } },
+  });
+  const room = syntheticRoom();
+  const confirmed = {
+    version: 'synthetic-v1',
+    available: true,
+    choice: {
+      choice: 'continue' as const,
+      meetingId: 'synthetic-meeting',
+      accountId: 'synthetic-account',
+      version: 'synthetic-v1',
+      recordedAt: 1,
+      revision: 1,
+    },
+  };
+  f.read.mockResolvedValue({
+    version: 'synthetic-v1',
+    available: true,
+    choice: null,
+  });
+  f.choice.mockResolvedValue({});
+  const tree = () => (
+    <QueryClientProvider client={client}>
+      <NextIntlClientProvider locale="en" messages={messages}>
+        <MeetLivePanel
+          accountId="synthetic-account"
+          room={room}
+          meetingId="synthetic-meeting"
+          outputDeviceId=""
+          canManage
+          onOpenChat={vi.fn()}
+          onLeave={vi.fn()}
+        />
+      </NextIntlClientProvider>
+    </QueryClientProvider>
+  );
+  const view = render(tree());
+  fireEvent.click(
+    screen.getByRole('button', { name: messages.meet.live.title })
+  );
+  const personal = () =>
+    screen.getByRole('button', {
+      name: /Personal assistant/,
+    }) as HTMLButtonElement;
+  f.read.mockResolvedValue(confirmed);
+  await waitFor(() =>
+    expect(
+      (
+        screen.getByRole('button', {
+          name: messages.meet.live.phase_continue,
+        }) as HTMLButtonElement
+      ).disabled
+    ).toBe(false)
+  );
+  fireEvent.click(
+    screen.getByRole('button', { name: messages.meet.live.phase_continue })
+  );
+  await waitFor(() => expect(personal().disabled).toBe(false));
+  room.connectionStatus = 'closed';
+  view.rerender(tree());
+  await waitFor(() => expect(personal().disabled).toBe(true));
+  room.connectionStatus = 'open';
+  room.state.admission = 'waiting';
+  view.rerender(tree());
+  await waitFor(() => expect(personal().disabled).toBe(true));
+  room.state.admission = 'admitted';
+  view.rerender(tree());
+  await waitFor(() => expect(personal().disabled).toBe(true));
+  fireEvent.click(
+    screen.getByRole('button', { name: messages.meet.live.phase_continue })
+  );
+  await waitFor(() => expect(personal().disabled).toBe(false));
+  f.read.mockResolvedValue({
+    ...confirmed,
+    choice: { ...confirmed.choice, choice: 'mute', revision: 2 },
+  });
+  await client.refetchQueries({
+    queryKey: ['mira-private-choice', 'synthetic-meeting'],
+  });
+  await waitFor(() => expect(personal().disabled).toBe(true));
+  expect(f.start).not.toHaveBeenCalled();
 });

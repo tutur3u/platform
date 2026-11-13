@@ -1,3 +1,4 @@
+import { cmsPageSchema } from '@tuturuuu/cms-blocks/schema';
 import { NextResponse } from 'next/server';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
@@ -10,6 +11,8 @@ vi.mock('next/server', async (importOriginal) => ({
   ...(await importOriginal<typeof import('next/server')>()),
   connection: vi.fn(async () => undefined),
 }));
+
+const PAGE = { schemaVersion: 1, content: [], root: { props: {} } };
 
 const WS = '00000000-0000-4000-8000-0000000000aa';
 const ENTRY = '00000000-0000-4000-8000-000000000001';
@@ -77,7 +80,167 @@ describe('CMS page version routes', () => {
   beforeEach(() => {
     vi.clearAllMocks();
   });
+  it.each([
+    { content: [] },
+    { ...PAGE, content: [{ type: 'UnknownBlock', props: { id: 'block' } }] },
+    { ...PAGE, schemaVersion: 999 },
+  ])('rejects invalid CMS page data before insertion', async (data) => {
+    const admin = fakeAdmin([
+      { data: { id: VERSION, status: 'draft' }, error: null },
+    ]);
+    allow(admin.client);
+    const response = await (
+      await collection()
+    ).POST(post({ schemaVersion: 1, data }), context());
+    expect(response.status).toBe(400);
+    expect(admin.calls).toEqual([]);
+  });
 
+  it('rejects pages above the two MiB limit', async () => {
+    const admin = fakeAdmin([
+      { data: { id: VERSION, status: 'draft' }, error: null },
+    ]);
+    allow(admin.client);
+    const data = {
+      ...PAGE,
+      content: [
+        {
+          type: 'RichText',
+          props: {
+            id: 'body',
+            doc: {
+              type: 'doc',
+              content: [
+                {
+                  type: 'paragraph',
+                  content: [
+                    { type: 'text', text: 'x'.repeat(2 * 1024 * 1024 + 1) },
+                  ],
+                },
+              ],
+            },
+          },
+        },
+      ],
+    };
+    expect(cmsPageSchema.safeParse(data).success).toBe(true);
+    const response = await (
+      await collection()
+    ).POST(post({ schemaVersion: 1, data }), context());
+    expect(response.status).toBe(400);
+    expect(admin.calls).toEqual([]);
+  });
+
+  it('rejects an oversized declared length without reading or parsing', async () => {
+    const admin = fakeAdmin([]);
+    allow(admin.client);
+    const request = post({ data: PAGE, schemaVersion: 1 });
+    request.headers.set('content-length', String(3 * 1024 * 1024));
+    const read = vi.spyOn(request.body!, 'getReader');
+    const parse = vi.spyOn(JSON, 'parse');
+    const response = await (await collection()).POST(request, context());
+    const parsed = parse.mock.calls.length;
+    parse.mockRestore();
+    expect(response.status).toBe(413);
+    expect(read).not.toHaveBeenCalled();
+    expect(parsed).toBe(0);
+    expect(admin.calls).toEqual([]);
+  });
+
+  it.each([null, '1'])(
+    'caps the stream with Content-Length %s before parsing',
+    async (length) => {
+      const admin = fakeAdmin([]);
+      allow(admin.client);
+      const cancel = vi.fn();
+      const stream = new ReadableStream<Uint8Array>({
+        start(controller) {
+          controller.enqueue(new Uint8Array(1024 * 1024));
+          controller.enqueue(new Uint8Array(1024 * 1024));
+          controller.enqueue(new Uint8Array(1024 * 1024));
+        },
+        cancel,
+      });
+      const request = post({});
+      // A real byte stream without Request's Node-only duplex constructor option.
+      Object.defineProperty(request, 'body', { value: stream });
+      if (length !== null) request.headers.set('content-length', length);
+      const { POST } = await collection();
+      const parse = vi.spyOn(JSON, 'parse');
+      const response = await POST(request, context());
+      const parsed = parse.mock.calls.length;
+      parse.mockRestore();
+      expect(response.status).toBe(413);
+      expect(parsed).toBe(0);
+      expect(cancel).toHaveBeenCalledOnce();
+      expect(stream.locked).toBe(false);
+      expect(admin.calls).toEqual([]);
+    }
+  );
+
+  it('keeps oversized-stream cancellation failures at 413', async () => {
+    const admin = fakeAdmin([]);
+    allow(admin.client);
+    const stream = new ReadableStream<Uint8Array>({
+      start(controller) {
+        controller.enqueue(new Uint8Array(1024 * 1024));
+        controller.enqueue(new Uint8Array(1024 * 1024));
+        controller.enqueue(new Uint8Array(1024 * 1024));
+      },
+      cancel() {
+        throw new Error('cancel failed');
+      },
+    });
+    const request = post({});
+    Object.defineProperty(request, 'body', { value: stream });
+
+    const response = await (await collection()).POST(request, context());
+
+    expect(response.status).toBe(413);
+    expect(stream.locked).toBe(false);
+    expect(admin.calls).toEqual([]);
+  });
+
+  it('rejects deeply nested RichText with 400 before insertion', async () => {
+    const admin = fakeAdmin([]);
+    allow(admin.client);
+    const depth = 10000;
+    const doc =
+      '{"type":"doc","content":[' +
+      '{"type":"blockquote","content":['.repeat(depth) +
+      '{"type":"text","text":"Hello"}' +
+      ']}'.repeat(depth) +
+      ']}';
+    const request = new Request('http://localhost/x', {
+      method: 'POST',
+      body:
+        '{"schemaVersion":1,"data":{"schemaVersion":1,"root":{"props":{}},"content":[{"type":"RichText","props":{"id":"body","doc":' +
+        doc +
+        '}}]}}',
+    });
+    const response = await (await collection()).POST(request, context());
+    expect(response.status).toBe(400);
+    expect(admin.calls).toEqual([]);
+  });
+
+  it('rejects 10k-deep attributes before size serialization or insertion', async () => {
+    const admin = fakeAdmin([]);
+    allow(admin.client);
+    const nestedAttrs = `${'{"nested":'.repeat(10000)}"value"${'}'.repeat(10000)}`;
+    const body =
+      '{"schemaVersion":1,"data":{"schemaVersion":1,"root":{"props":{}},"content":[{"type":"RichText","props":{"id":"body","doc":{"type":"doc","content":[{"type":"paragraph","attrs":' +
+      nestedAttrs +
+      ',"content":[{"type":"text","text":"Hello"}]}]}}]}}';
+    const request = new Request('http://localhost/x', {
+      method: 'POST',
+      body,
+    });
+
+    const response = await (await collection()).POST(request, context());
+
+    expect(response.status).toBe(400);
+    expect(admin.calls).toEqual([]);
+  });
   it('lists versions of the entry in the caller workspace with edit access', async () => {
     const admin = fakeAdmin([{ data: [{ id: VERSION }], error: null }]);
     allow(admin.client);
@@ -113,17 +276,14 @@ describe('CMS page version routes', () => {
     allow(admin.client);
     const response = await (
       await collection()
-    ).POST(
-      post({ data: { content: [] }, note: ' first ', schemaVersion: 1 }),
-      context()
-    );
+    ).POST(post({ data: PAGE, note: ' first ', schemaVersion: 1 }), context());
 
     expect(response.status).toBe(201);
     expect(admin.calls).toContainEqual([
       'insert',
       {
         created_by: 'user-1',
-        data: { content: [] },
+        data: PAGE,
         entry_id: ENTRY,
         note: 'first',
         schema_version: 1,
@@ -146,7 +306,7 @@ describe('CMS page version routes', () => {
       params: Promise.resolve({ entryId: 'nope', wsId: 'ieeai' }),
     };
     expect(
-      (await POST(post({ data: {}, schemaVersion: 1 }), badId)).status
+      (await POST(post({ data: PAGE, schemaVersion: 1 }), badId)).status
     ).toBe(400);
     expect(admin.calls.filter(([method]) => method === 'insert')).toEqual([]);
   });
@@ -158,7 +318,7 @@ describe('CMS page version routes', () => {
     );
     const response = await (
       await collection()
-    ).POST(post({ data: {}, schemaVersion: 1 }), context());
+    ).POST(post({ data: PAGE, schemaVersion: 1 }), context());
     expect(response.status).toBe(404);
   });
 

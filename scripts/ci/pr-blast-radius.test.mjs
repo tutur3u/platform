@@ -47,11 +47,11 @@ test('a flow path list and a block path list select the same file', () => {
   );
 });
 
-test('calendar-only page avoids 75 of 83 pull_request workflows', () => {
+test('calendar-only page avoids 76 of 84 pull_request workflows', () => {
   const result = runsAvoided(inventory, [CALENDAR_FILE]);
-  assert.equal(result.total, 83);
+  assert.equal(result.total, 84);
   assert.deepEqual(result.started, CALENDAR_STARTS);
-  assert.equal(result.avoided, 75);
+  assert.equal(result.avoided, 76);
   for (const unrelated of [
     'ai-cloudflare.yaml',
     'finance-cloudflare.yaml',

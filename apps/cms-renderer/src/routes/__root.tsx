@@ -1,0 +1,31 @@
+import {
+  createRootRoute,
+  HeadContent,
+  Outlet,
+  Scripts,
+} from '@tanstack/react-router';
+import type { ReactNode } from 'react';
+import '../style.css';
+
+// The document language is the default; each published page sets its own
+// locale on the content wrapper in routes/$.tsx.
+export const Route = createRootRoute({
+  component: Outlet,
+  head: () => ({
+    meta: [
+      { charSet: 'utf-8' },
+      { name: 'viewport', content: 'width=device-width, initial-scale=1' },
+    ],
+  }),
+  shellComponent: ({ children }: { children: ReactNode }) => (
+    <html lang="en">
+      <head>
+        <HeadContent />
+      </head>
+      <body>
+        {children}
+        <Scripts />
+      </body>
+    </html>
+  ),
+});

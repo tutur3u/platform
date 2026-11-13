@@ -20,7 +20,7 @@ interface Params {
 async function diffManifest(request: NextRequest, { params }: Params) {
   const { wsId } = await params;
   const access = await requireWorkspaceExternalProjectAccess({
-    mode: 'read',
+    mode: 'publish',
     request,
     wsId,
   });

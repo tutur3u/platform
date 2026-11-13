@@ -45,12 +45,18 @@ describe('notification and invitation shell coverage', () => {
     const picker = source(
       'packages/ui/src/components/ui/custom/workspace-select-invitations.tsx'
     );
+    const invitationCache = source(
+      'packages/ui/src/components/ui/custom/workspace-invitation-cache.ts'
+    );
 
     expect(picker).toContain('listWorkspaceInvitations');
     expect(picker).toContain("action: 'accept'");
     expect(picker).toContain("action: 'decline'");
-    expect(picker).toContain("'workspace-invitations',");
-    expect(picker).toContain('...(cacheScope ? [cacheScope] : [])');
+    expect(picker).toContain('workspaceInvitationsQueryKey');
+    expect(picker).toContain("from './workspace-invitation-cache'");
+    expect(invitationCache).toContain('workspaceInvitationsQueryKey');
+    expect(invitationCache).toContain("'workspace-invitations',");
+    expect(invitationCache).toContain('...(cacheScope ? [cacheScope] : [])');
     expect(picker).toContain(
       "mutation.mutate({ action: 'accept', invitation })"
     );
