@@ -222,7 +222,11 @@ answers two hosts. `https://roadmap.tuturuuu.com` returns 301 to
 `https://tuturuuu.com/roadmap` plus the same path and query, with no trailing
 slash, in one hop (`/` becomes `/roadmap`). `https://tuturuuu.com/roadmap` (no
 slash, the Tuturuuu-wide canonical form) serves the app; `/roadmap/` and any
-`/roadmap/x/` return 301 to the no-slash form with the query kept. Internally
+`/roadmap/x/` return 301 to the no-slash form with the query kept. English is
+unprefixed (Vietnamese is `/roadmap/vi`), so old English links `/roadmap/en`
+and `/roadmap/en/<rest>` return 301 to `/roadmap` and `/roadmap/<rest>`, and
+the satellite's `/en/<rest>` goes straight there in its one hop; only an exact
+`en` segment matches (`/roadmap/english` is untouched). Internally
 the Worker hands `/roadmap` to the SSR handler as the router's basepath root
 `/roadmap/`, and the client restores `/roadmap` in the address bar after
 hydration. `GET` and `HEAD`
