@@ -153,7 +153,7 @@ export function MarketingFooter({
   ];
 
   return (
-    <footer className="relative mt-16 w-full border-foreground/10 border-t">
+    <footer className="relative mt-16 w-full border-foreground/10 border-t [content-visibility:auto] [contain-intrinsic-size:auto_800px]">
       {/* Brand wash */}
       <div
         aria-hidden
@@ -167,7 +167,7 @@ export function MarketingFooter({
             <Link
               aria-label="Tuturuuu"
               className="flex w-fit items-center gap-3 transition-opacity hover:opacity-80"
-              href={TUTURUUU_URL}
+              href={TUTURUUU_URL || '/'}
             >
               <img
                 alt=""
