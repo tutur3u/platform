@@ -10,22 +10,35 @@ function installFetchFixture() {
   const runUrl = 'https://github.com/example/platform/actions/runs/201';
   const started_at = '2026-01-01T00:00:00Z';
   const completed_at = '2026-01-01T00:01:00Z';
+  const markerPayload =
+    env.MARKER_PAYLOAD === 'empty'
+      ? {}
+      : env.MARKER_PAYLOAD === 'wrong-sha'
+        ? {
+            sha: env.UNRELATED_SHA,
+            markerKind: 'deployment',
+            workflowName: 'supabase-staging.yaml',
+          }
+        : {
+            sha:
+              env.MARKER_SHA !== env.PRODUCTION_SHA
+                ? env.MARKER_SHA
+                : env.STAGING_SHA,
+            markerKind: 'deployment',
+            workflowName: 'supabase-staging.yaml',
+            refName: 'main',
+            ref: 'refs/heads/main',
+            runId: '201',
+            runAttempt: '1',
+            runUrl,
+          };
   const marker = {
     id: 301,
     sha: target,
     ref: target,
     environment: 'supabase-staging',
     created_at: completed_at,
-    payload: {
-      sha: env.STAGING_SHA,
-      markerKind: 'deployment',
-      workflowName: 'supabase-staging.yaml',
-      refName: 'main',
-      ref: 'refs/heads/main',
-      runId: '201',
-      runAttempt: '1',
-      runUrl,
-    },
+    payload: markerPayload,
   };
   const repository = {
     id: 101,
@@ -48,7 +61,7 @@ function installFetchFixture() {
   const status = [
     {
       id: 401,
-      state: 'success',
+      state: env.MARKER_STATE || 'success',
       environment: 'supabase-staging',
       log_url: runUrl,
     },
@@ -56,92 +69,289 @@ function installFetchFixture() {
   const markersRoute = `${base}/deployments?environment=supabase-staging&sha=${target}&per_page=100&page=1`;
   const runRoute = `${base}/actions/runs/201`;
   const statusRoute = `${base}/deployments/301/statuses?per_page=1&page=1`;
-  const script = [
-    [base, repository],
-    [
-      `${base}/actions/workflows/supabase-staging.yaml`,
-      {
-        id: 102,
-        path: workflowPath,
-        name: 'Supabase Staging Migration',
-        state: 'active',
-      },
-    ],
-    [markersRoute, [marker]],
-    [runRoute, run],
-    [statusRoute, status],
-  ];
+  const calleeWorkflowPath = '.github/workflows/vercel-production-platform.yaml';
+  const callerWorkflowPath = '.github/workflows/vercel-production.yaml';
+  const callerRunId = env.PLATFORM_CALLER_RUN_ID || '301';
+  const calleeRunId = env.PLATFORM_CALLEE_RUN_ID || '501';
+  const callerRunUrl = `https://github.com/example/platform/actions/runs/${callerRunId}`;
+  const platformMarkerId = Number(env.PLATFORM_MARKER_ID || '96');
+  const trustedCreator = {
+    login: 'github-actions[bot]',
+    id: 41898282,
+    type: 'Bot',
+  };
+  const platformMarker = {
+    id: platformMarkerId,
+    sha: target,
+    ref: target,
+    environment: 'vercel-production-platform',
+    created_at: completed_at,
+    creator: env.PLATFORM_CREATOR_LOGIN
+      ? {
+          login: env.PLATFORM_CREATOR_LOGIN,
+          id: Number(env.PLATFORM_CREATOR_ID || 0),
+          type: env.PLATFORM_CREATOR_TYPE || 'User',
+        }
+      : trustedCreator,
+    payload: {
+      sha: target,
+      markerKind: 'deployment',
+      workflowName: 'vercel-production-platform.yaml',
+      refName: 'production',
+      ref: 'refs/heads/production',
+      runId: String(callerRunId),
+      runAttempt: env.PLATFORM_RUN_ATTEMPT || '1',
+      runUrl: callerRunUrl,
+    },
+  };
+  const callerRun = {
+    id: Number(callerRunId),
+    run_attempt: Number(env.PLATFORM_RUN_ATTEMPT || 1),
+    workflow_id: 137637850,
+    path: env.PLATFORM_CALLER_WORKFLOW_PATH || callerWorkflowPath,
+    head_branch: env.PLATFORM_CALLER_BRANCH || 'production',
+    head_sha: env.PLATFORM_CALLER_SHA || target,
+    event: env.PLATFORM_CALLER_EVENT || 'push',
+    status: env.PLATFORM_CALLER_STATUS || 'completed',
+    conclusion: env.PLATFORM_CALLER_CONCLUSION || 'success',
+    repository,
+    head_repository: repository,
+  };
+  const calleeRun = {
+    id: Number(calleeRunId),
+    run_attempt: Number(env.PLATFORM_CALLEE_ATTEMPT || 1),
+    workflow_id: 137637851,
+    path: env.PLATFORM_CALLEE_WORKFLOW_PATH || calleeWorkflowPath,
+    head_branch: env.PLATFORM_CALLEE_BRANCH || 'production',
+    head_sha: env.PLATFORM_CALLEE_SHA || target,
+    event: 'workflow_call',
+    status: env.PLATFORM_CALLEE_STATUS || 'completed',
+    conclusion: env.PLATFORM_CALLEE_CONCLUSION || 'success',
+    repository,
+    head_repository: repository,
+  };
+  const platformRoute = `${base}/deployments?environment=vercel-production-platform&sha=${target}&per_page=100&page=1`;
+  const platformStatusRoute = `${base}/deployments/${platformMarkerId}/statuses?per_page=1&page=1`;
+  const callerRunRoute = `${base}/actions/runs/${callerRunId}`;
+  const calleeRunsRoute = `${base}/actions/workflows/vercel-production-platform.yaml/runs?head_sha=${target}&status=completed&per_page=100&page=1`;
+  const calleeJobsRoute = `${base}/actions/runs/${calleeRunId}/attempts/${env.PLATFORM_CALLEE_ATTEMPT || 1}/jobs?per_page=100&page=1`;
+  const callerJobsRoute = `${base}/actions/runs/${callerRunId}/attempts/${env.PLATFORM_RUN_ATTEMPT || 1}/jobs?per_page=100&page=1`;
   const blobs = JSON.parse(fs.readFileSync(env.FIXTURE_BLOBS, 'utf8'));
-  for (const file of [...new Set(blobs.map((entry) => entry.path))]) {
-    const selected = [];
-    for (const revision of new Set([target, wrapper])) {
-      const kind =
-        revision === target ? env.TARGET_CONTRACT : env.WRAPPER_CONTRACT;
-      const entry = blobs.find(
-        (entry) =>
-          entry.path === file &&
-          entry.kind ===
-            (file === workflowPath && kind !== 'unknown' ? kind : 'new')
-      );
-      const chosen =
-        kind === 'unknown' ? { ...entry, sha: 'd'.repeat(40) } : entry;
-      script.push([
-        `${base}/contents/${file}?ref=${revision}`,
-        { type: 'file', path: file, sha: chosen.sha },
-      ]);
-      if (!selected.some((entry) => entry.sha === chosen.sha))
-        selected.push(chosen);
-    }
-    for (const { sha, bytes } of selected)
-      script.push([
-        `${base}/git/blobs/${sha}`,
-        {
-          sha,
-          encoding: 'base64',
-          size: Buffer.from(bytes, 'base64').length,
-          content: bytes,
-        },
-      ]);
-  }
-  // Manual classification verifies immutable source before selected status proof.
-  if (run.event === 'workflow_dispatch') script.push(script.splice(4, 1)[0]);
-  script.push(
-    [
-      `${runRoute}/attempts/1/jobs?per_page=100&page=1`,
-      {
-        total_count: 1,
-        jobs: [
+  const platformContractFiles = [
+    '.github/workflows/vercel-production.yaml',
+    '.github/workflows/vercel-production-platform.yaml',
+    'scripts/ci/record-vercel-deployment.ts',
+  ];
+  const stagingContractFiles = [
+    '.github/workflows/supabase-staging.yaml',
+    'scripts/ci/record-deployment-marker.ts',
+  ];
+  const callerHead = env.PLATFORM_CALLER_SHA || target;
+  function pushContractEntries(files, revisions) {
+    for (const file of files) {
+      const selected = [];
+      for (const revision of revisions) {
+        const kind =
+          revision === target
+            ? env.TARGET_CONTRACT
+            : revision === wrapper
+              ? env.WRAPPER_CONTRACT
+              : 'new';
+        const entry = blobs.find(
+          (blob) =>
+            blob.path === file &&
+            blob.kind ===
+              (file === workflowPath && kind !== 'unknown' ? kind : 'new')
+        );
+        const chosen =
+          kind === 'unknown' ? { ...entry, sha: 'd'.repeat(40) } : entry;
+        script.push([
+          `${base}/contents/${file}?ref=${revision}`,
+          { type: 'file', path: file, sha: chosen.sha },
+        ]);
+        if (!selected.some((item) => item.sha === chosen.sha))
+          selected.push(chosen);
+      }
+      for (const { sha, bytes } of selected)
+        script.push([
+          `${base}/git/blobs/${sha}`,
           {
-            id: 501,
-            name: 'Migrate staging database',
-            run_id: 201,
-            run_attempt: 1,
-            head_sha: wrapper,
-            status: 'completed',
-            conclusion: 'success',
-            started_at,
-            completed_at,
-            steps: [
-              'Check out migration target',
-              'Deploy migrations to staging',
-              'Record successful staging migration marker',
-            ].map((name, index) => ({
-              name,
-              number: index + 1,
+            sha,
+            encoding: 'base64',
+            size: Buffer.from(bytes, 'base64').length,
+            content: bytes,
+          },
+        ]);
+    }
+  }
+  function pushStagingTail() {
+    script.push(
+      [
+        `${runRoute}/attempts/1/jobs?per_page=100&page=1`,
+        {
+          total_count: 1,
+          jobs: [
+            {
+              id: 501,
+              name: 'Migrate staging database',
+              run_id: 201,
+              run_attempt: 1,
+              head_sha: wrapper,
               status: 'completed',
               conclusion: 'success',
               started_at,
               completed_at,
-            })),
-          },
-        ],
-      },
-    ],
-    [markersRoute, [marker]],
-    [`${base}/deployments/301`, marker],
-    [statusRoute, status],
-    [runRoute, run]
+              steps: [
+                'Check out migration target',
+                'Deploy migrations to staging',
+                'Record successful staging migration marker',
+              ].map((name, index) => ({
+                name,
+                number: index + 1,
+                status: 'completed',
+                conclusion: 'success',
+                started_at,
+                completed_at,
+              })),
+            },
+          ],
+        },
+      ],
+      [markersRoute, [marker]],
+      [`${base}/deployments/301`, marker],
+      [statusRoute, status],
+      [runRoute, run]
+    );
+  }
+  function pushStagingOpening(includeStatus) {
+    script.push(
+      [base, repository],
+      [
+        `${base}/actions/workflows/supabase-staging.yaml`,
+        {
+          id: 102,
+          path: workflowPath,
+          name: 'Supabase Staging Migration',
+          state: 'active',
+        },
+      ],
+      [markersRoute, [marker]],
+      [runRoute, run]
+    );
+    if (includeStatus) script.push([statusRoute, status]);
+  }
+  const platformStatus = [
+    {
+      id: 501,
+      state: env.PLATFORM_STATUS_STATE || 'success',
+      environment: 'vercel-production-platform',
+      log_url: env.PLATFORM_STATUS_LOG_URL || callerRunUrl,
+    },
+  ];
+  const script = [];
+  const platformProducer = process.argv.some((arg) =>
+    arg.includes('verify-github-deployment-marker-producer.mjs')
   );
+  function pushPlatformScript() {
+    script.push(
+      [base, repository],
+      [
+        `${base}/actions/workflows/vercel-production.yaml`,
+        {
+          id: 137637850,
+          path: callerWorkflowPath,
+          name: 'Production Deployment Planner',
+          state: 'active',
+        },
+      ],
+      [
+        `${base}/actions/workflows/vercel-production-platform.yaml`,
+        {
+          id: 137637851,
+          path: calleeWorkflowPath,
+          name: 'Vercel Platform Production Deployment',
+          state: 'active',
+        },
+      ],
+      [platformRoute, [platformMarker]],
+      [callerRunRoute, callerRun],
+      [platformStatusRoute, platformStatus]
+    );
+    pushContractEntries(platformContractFiles, [...new Set([target, callerHead])]);
+    script.push(
+      [
+        callerJobsRoute,
+        {
+          total_count: 1,
+          jobs: [
+            {
+              id: 601,
+              name: 'deploy-platform',
+              run_id: Number(callerRunId),
+              run_attempt: Number(env.PLATFORM_RUN_ATTEMPT || 1),
+              head_sha: callerRun.head_sha,
+              status: 'completed',
+              conclusion: 'success',
+              started_at,
+              completed_at,
+            },
+          ],
+        },
+      ],
+      [calleeRunsRoute, { total_count: 1, workflow_runs: [calleeRun] }],
+      [
+        calleeJobsRoute,
+        {
+          total_count: 1,
+          jobs: [
+            {
+              id: 701,
+              name: 'Deploy-Production',
+              run_id: Number(calleeRunId),
+              run_attempt: Number(env.PLATFORM_CALLEE_ATTEMPT || 1),
+              head_sha: calleeRun.head_sha,
+              status: 'completed',
+              conclusion: 'success',
+              started_at,
+              completed_at,
+              steps: [
+                {
+                  name: 'Record successful Vercel deployment marker',
+                  number: 1,
+                  status: 'completed',
+                  conclusion: 'success',
+                  started_at,
+                  completed_at,
+                },
+              ],
+            },
+          ],
+        },
+      ],
+      [`${base}/deployments/${platformMarkerId}`, platformMarker],
+      [platformStatusRoute, platformStatus],
+      [callerRunRoute, callerRun]
+    );
+  }
+  function pushStagingScript() {
+    pushStagingOpening(run.event !== 'workflow_dispatch');
+    pushContractEntries(stagingContractFiles, [...new Set([target, wrapper])]);
+    if (run.event === 'workflow_dispatch') script.push([statusRoute, status]);
+    pushStagingTail();
+  }
+  if (platformProducer) {
+    pushPlatformScript();
+  } else if (env.VERIFY_PLATFORM_MARKER !== 'false') {
+    pushStagingScript();
+  } else {
+    pushStagingOpening(run.event !== 'workflow_dispatch');
+    pushContractEntries(
+      [...new Set(blobs.map((entry) => entry.path))],
+      [target, wrapper]
+    );
+    if (run.event === 'workflow_dispatch') script.push([statusRoute, status]);
+    pushStagingTail();
+  }
   const laterPush = env.STAGING_LATER_PUSH === 'true';
   if (env.STAGING_LATER_MANUAL === 'true' || laterPush) {
     const laterUrl = 'https://github.com/example/platform/actions/runs/202';
