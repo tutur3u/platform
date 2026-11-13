@@ -49,7 +49,7 @@ const keys = ['STORAGE_LIMIT_BYTES', 'RATE_LIMIT_REQUESTS', 'ENABLE_AI'];
 const methods = ['POST', 'PUT', 'DELETE'] as const;
 
 function grant(
-  rootPermission?: string,
+  rootPermission?: string | string[],
   email = 'owner@example.com',
   membershipType: 'MEMBER' | 'GUEST' | null = 'MEMBER'
 ) {
@@ -58,7 +58,9 @@ function grant(
     membershipType,
     containsPermission: (permission: string) =>
       wsId === ROOT_WORKSPACE_ID
-        ? permission === rootPermission
+        ? Array.isArray(rootPermission)
+          ? rootPermission.includes(permission)
+          : permission === rootPermission
         : permission === 'manage_workspace_secrets',
   }));
 }
@@ -233,7 +235,7 @@ describe('Infrastructure workspace secrets permission boundary', () => {
   });
 
   it('allows root secret reads', async () => {
-    grant('manage_workspace_secrets');
+    grant(['view_infrastructure', 'manage_workspace_secrets']);
     expect(
       (await GET(new Request('https://infra.example.test'), context)).status
     ).toBe(200);
