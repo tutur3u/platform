@@ -61,6 +61,22 @@ beforeEach(() => {
 });
 
 describe('invoice creator options', () => {
+  it('requires invoice access even when transaction access is granted', async () => {
+    mocks.access.mockResolvedValue({
+      context: {
+        permissions: {
+          withoutPermission: (permission: string) =>
+            permission === 'view_invoices',
+        },
+        sbAdmin: { from: mocks.from },
+      },
+    });
+    const response = await request();
+    expect(response.status).toBe(403);
+    expect(await response.json()).toEqual({ message: 'Unauthorized' });
+    expect(mocks.from).not.toHaveBeenCalled();
+  });
+
   it.each([
     [
       'renamed linked creator',

@@ -49,6 +49,10 @@ export async function GET(request: Request, { params }: Params) {
   }
 
   if (type === 'invoice_creators') {
+    if (permissions.withoutPermission('view_invoices')) {
+      return NextResponse.json({ message: 'Unauthorized' }, { status: 403 });
+    }
+
     // Read the same creator relations as the invoice table. Keep legacy IDs for
     // existing userIds URLs; platform-only invoices use their platform ID.
     const users = new Map<
