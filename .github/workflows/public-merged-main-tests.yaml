@@ -51,8 +51,42 @@ jobs:
             core.setOutput('main', main);
             // admission:end
 
-  shards:
+  trust:
     needs: admit
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    permissions:
+      contents: read
+      actions: read
+    env:
+      SOURCE_SHA: ${{ needs.admit.outputs.sha }}
+      CONTROL_SHA: ${{ github.workflow_sha }}
+    steps:
+      - name: Checkout immutable workflow controls
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ github.workflow_sha }}
+          path: control
+          persist-credentials: false
+      # Attachment remains held; see scripts/ci/trusted-public-operator.md.
+      - name: Verify trusted dispatch records on the hosted runner
+        uses: actions/github-script@3a2844b7e9c422d3c10d287c895573f7108da1b3 # v9.0.0
+        with:
+          script: |
+            // trusted-public:start
+            const { execFileSync } = require('node:child_process');
+            if (execFileSync('git', ['-C', 'control', 'rev-parse', 'HEAD'], { encoding: 'utf8' }).trim() !== process.env.CONTROL_SHA) throw new Error('Control checkout identity mismatch');
+            const { admitDispatch } = require(`${process.env.GITHUB_WORKSPACE}/control/scripts/ci/trusted-public-admission.js`);
+            const decision = await admitDispatch({ github, context, sourceSha: process.env.SOURCE_SHA, controlSha: process.env.CONTROL_SHA, workflowPath: '.github/workflows/public-merged-main-tests.yaml' });
+            core.info(JSON.stringify(decision));
+            // trusted-public:end
+
+  shards:
+    needs: [admit, trust]
+    # Admitted-code execution: read-only repository token, no secrets, no cache restore or
+    # save. Results leave only as artifacts; a separate job verifies them.
+    permissions:
+      contents: read
     runs-on: ubuntu-latest
     timeout-minutes: 40
     strategy:
@@ -109,18 +143,6 @@ jobs:
           ref: ${{ github.workflow_sha }}
           path: control
           persist-credentials: false
-      # Attachment remains held; see scripts/ci/trusted-public-operator.md.
-      - name: Verify trusted dispatch records on the hosted runner
-        uses: actions/github-script@3a2844b7e9c422d3c10d287c895573f7108da1b3 # v9.0.0
-        with:
-          script: |
-            // trusted-public:start
-            const { execFileSync } = require('node:child_process');
-            if (execFileSync('git', ['-C', 'control', 'rev-parse', 'HEAD'], { encoding: 'utf8' }).trim() !== process.env.CONTROL_SHA) throw new Error('Control checkout identity mismatch');
-            const { admitDispatch } = require(`${process.env.GITHUB_WORKSPACE}/control/scripts/ci/trusted-public-admission.js`);
-            const decision = await admitDispatch({ github, context, sourceSha: process.env.SOURCE_SHA, controlSha: process.env.CONTROL_SHA, workflowPath: '.github/workflows/public-merged-main-tests.yaml' });
-            core.info(JSON.stringify(decision));
-            // trusted-public:end
       # Control-only setup runs before the admitted source exists in the workspace, so
       # no restore/save-capable action or setup script can be influenced by source files.
       - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
@@ -152,12 +174,23 @@ jobs:
           if-no-files-found: error
           retention-days: 7
 
+  # Privileged-side consumer: separate job, fresh trusted control checkout, no source
+  # checkout, no cache, no secrets, and it only reads artifacts as bounded data.
   summary:
     if: always() && github.event_name == 'workflow_dispatch'
     needs: [admit, shards]
     runs-on: ubuntu-latest
     timeout-minutes: 5
+    permissions:
+      contents: read
     steps:
+      - name: Checkout fresh immutable workflow controls
+        if: always() && needs.admit.result == 'success'
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ github.workflow_sha }}
+          path: control
+          persist-credentials: false
       - name: Always summarize admission and complete matrix outcome
         uses: actions/github-script@3a2844b7e9c422d3c10d287c895573f7108da1b3 # v9.0.0
         env:
@@ -176,19 +209,47 @@ jobs:
         with:
           pattern: public-tests-${{ needs.admit.outputs.sha }}-*-${{ github.run_attempt }}
           path: receipts
-      - name: Verify all thirteen receipts and aggregate executed counts
+      - name: Verify all thirteen receipts as bounded data and aggregate executed counts
         if: always() && needs.admit.result == 'success'
         env:
           SOURCE_SHA: ${{ needs.admit.outputs.sha }}
           CONTROL_SHA: ${{ github.workflow_sha }}
+          MAIN_SHA: ${{ needs.admit.outputs.main }}
         run: |
           node <<'NODE'
+          // consumer-verify:start
           const fs = require('node:fs');
-          const expected = ['unit','root','types'].flatMap(k => [0,1,2,3].map(i => `${k}-${i}`)).concat('lint-0');
-          const receipts = fs.existsSync('receipts') ? fs.readdirSync('receipts').map(p => JSON.parse(fs.readFileSync(`receipts/${p}/receipt.json`))) : [];
-          const keys = receipts.map(r => `${r.kind}-${r.shard}`).sort();
-          const valid = JSON.stringify(keys) === JSON.stringify(expected.sort()) && receipts.every(r => r.status === 'PASS' && r.sourceSHA === process.env.SOURCE_SHA && r.controlSHA === process.env.CONTROL_SHA && r.run === process.env.GITHUB_RUN_ID && r.attempt === process.env.GITHUB_RUN_ATTEMPT && r.commands.length > 0 && r.commands.every(c => c.qualified));
-          const tests = receipts.flatMap(r => r.commands).reduce((n,c) => n + (c.counts?.tests || 0), 0);
-          fs.appendFileSync(process.env.GITHUB_STEP_SUMMARY, `\nReceipts present: ${receipts.length}/13; reported executed tests: ${tests}; aggregate: ${valid && tests > 0 ? 'PASS' : 'NOT QUALIFIED'}.\n`);
-          if (!valid || !tests) process.exitCode = 1;
+          const path = require('node:path');
+          const { exactSha, sha256 } = require('./control/scripts/ci/public-ci.js');
+          let summary = '';
+          try {
+            const sha = exactSha(process.env.SOURCE_SHA);
+            const control = exactSha(process.env.CONTROL_SHA);
+            const main = exactSha(process.env.MAIN_SHA);
+            const expected = ['unit','root','types'].flatMap(k => [0,1,2,3].map(i => `${k}-${i}`)).concat('lint-0');
+            const names = fs.existsSync('receipts') ? fs.readdirSync('receipts').sort() : [];
+            const digests = [];
+            const receipts = names.map(name => {
+              const dir = path.join('receipts', name);
+              if (!fs.lstatSync(dir).isDirectory() || fs.readdirSync(dir).join() !== 'receipt.json') throw new Error(`Unexpected artifact contents: ${name}`);
+              const file = path.join(dir, 'receipt.json');
+              const stat = fs.lstatSync(file);
+              if (!stat.isFile() || stat.size > 4 * 1024 * 1024) throw new Error(`Unsafe receipt: ${name}`);
+              const bytes = fs.readFileSync(file);
+              const receipt = JSON.parse(bytes);
+              if (name !== `public-tests-${sha}-${receipt.kind}-${receipt.shard}-${process.env.GITHUB_RUN_ATTEMPT}`) throw new Error(`Artifact name does not match receipt: ${name}`);
+              digests.push(`${sha256(bytes)}  ${name}`);
+              return receipt;
+            });
+            const keys = receipts.map(r => `${r.kind}-${r.shard}`).sort();
+            const valid = JSON.stringify(keys) === JSON.stringify(expected.sort()) && receipts.every(r => r.status === 'PASS' && r.sourceSHA === sha && r.controlSHA === control && r.admittedMainSHA === main && r.run === process.env.GITHUB_RUN_ID && r.attempt === process.env.GITHUB_RUN_ATTEMPT && Array.isArray(r.commands) && r.commands.length > 0 && r.commands.length <= 16 && r.commands.every(c => c.qualified === true && c.exit === 0));
+            const tests = receipts.flatMap(r => r.commands).reduce((n,c) => n + (c.counts?.tests || 0), 0);
+            summary = `\nReceipts present: ${receipts.length}/13; reported executed tests: ${tests}; aggregate: ${valid && tests > 0 ? 'PASS' : 'NOT QUALIFIED'}.\n\n\`\`\`\n${digests.join('\n')}\n\`\`\`\n`;
+            if (!valid || !tests) process.exitCode = 1;
+          } catch (error) {
+            summary = `\nReceipt verification failed: ${error.message}. aggregate: NOT QUALIFIED.\n`;
+            process.exitCode = 1;
+          }
+          fs.appendFileSync(process.env.GITHUB_STEP_SUMMARY, summary);
+          // consumer-verify:end
           NODE
