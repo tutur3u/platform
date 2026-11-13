@@ -43,7 +43,10 @@ counted, never titled. The result, with per-week/month/year aggregates
 `src/generated/history.json` and emitted as a hashed, immutable asset that the
 page fetches only when the timeline comes within 600px of the viewport
 (`src/history/lazy-load.ts`); it is never prefetched. Without a token the
-committed file is kept. Curated deliverables absorb their PRs, so each shows once in its period.
+committed file is kept. `data:refresh` then runs
+`scripts/format-generated.mjs`, which rewrites `live.json` and `history.json`
+with the root-pinned oxfmt so the refreshed snapshot passes `oxfmt --check`;
+it stops when oxfmt is not installed at the pinned version. Curated deliverables absorb their PRs, so each shows once in its period.
 The Timeline offers Week, Month and Year views with a period scrubber; state
 lives in the URL (`/roadmap?view=month&period=2025-03`). Transitions use the View
 Transitions API when available; everything respects `prefers-reduced-motion`.
