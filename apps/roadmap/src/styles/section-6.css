@@ -1,0 +1,557 @@
+.ws-device .ws-step-nav {
+  padding: 0 18px 16px;
+}
+.ws-quiz {
+  display: grid;
+  gap: 8px;
+  padding: 14px;
+  border-radius: 14px;
+  border: 1px solid color-mix(in oklab, var(--rm-progress) 40%, transparent);
+  background: color-mix(in oklab, var(--rm-progress) 8%, transparent);
+}
+.ws-quiz-q {
+  margin: 0;
+  font-weight: 600;
+}
+.ws-quiz-timer {
+  height: 8px;
+  border-radius: 999px;
+  background: var(--rm-soft);
+  overflow: hidden;
+}
+.ws-quiz-timer span {
+  display: block;
+  height: 100%;
+  width: 62%;
+  border-radius: 999px;
+  background: var(--rm-progress);
+}
+.ws-quiz-meta {
+  margin: 0;
+  display: flex;
+  justify-content: space-between;
+  font-size: 13px;
+  color: var(--rm-muted);
+}
+.ws-points {
+  font-weight: 700;
+  color: var(--rm-merge-text);
+}
+.ws-upskii {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-weight: 700;
+  color: inherit;
+  text-decoration: underline;
+  text-decoration-color: color-mix(in oklab, #f97316 60%, transparent);
+  text-underline-offset: 3px;
+  white-space: nowrap;
+}
+.ws-upskii img {
+  width: 1em;
+  height: 1em;
+  object-fit: contain;
+  vertical-align: -0.12em;
+}
+.ws-brands {
+  display: grid;
+  gap: 12px;
+}
+.ws-brand {
+  display: flex;
+  gap: 14px;
+  align-items: flex-start;
+  padding: 16px;
+  border: 1px solid var(--rm-line);
+  border-radius: var(--rm-radius);
+  background: var(--rm-panel);
+  text-decoration: none;
+}
+/* Logos keep their natural shape: never rounded, masked or clipped. */
+.ws-brand img {
+  flex: none;
+  object-fit: contain;
+}
+.ws-brand strong {
+  font-size: 17px;
+}
+.ws-brand p {
+  margin: 4px 0 0;
+  color: var(--rm-muted);
+  font-size: 14px;
+  line-height: 1.5;
+}
+.ws-brand-link:hover {
+  border-color: color-mix(in oklab, #f97316 55%, transparent);
+}
+.ws-brand-cta {
+  display: inline-block;
+  margin-top: 8px;
+  font-size: 13px;
+  font-weight: 700;
+  color: #c2410c;
+}
+.dark .ws-brand-cta {
+  color: #fdba74;
+}
+@media (min-width: 720px) {
+  .ws-stage {
+    padding: 36px 32px;
+  }
+  .ws-brands {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+@media (min-width: 1024px) {
+  .ws-sim {
+    grid-template-columns: 260px minmax(0, 1fr);
+    align-items: start;
+  }
+  .ws-sim-rail {
+    flex-direction: column;
+    overflow: visible;
+  }
+  .ws-sim-rail button {
+    width: 100%;
+    white-space: normal;
+    border-radius: 14px;
+  }
+  .ws-sim-rail .ws-upskii img {
+    display: inline;
+  }
+}
+@media (prefers-reduced-motion: no-preference) {
+  .ws-sim-rail button {
+    transition:
+      border-color 160ms ease,
+      box-shadow 160ms ease;
+  }
+}
+@keyframes ws-timer {
+  from {
+    transform: scaleX(1);
+  }
+  to {
+    transform: scaleX(0);
+  }
+}
+
+/* Track glance. */
+.glance-grid {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+}
+.glance-tile {
+  display: grid;
+  grid-template-columns: 48px minmax(0, 1fr);
+  grid-template-rows: auto auto;
+  column-gap: 12px;
+  align-items: center;
+  padding: 12px;
+  border: 1px solid var(--rm-line);
+  border-radius: var(--rm-radius);
+  background: var(--rm-panel);
+  text-decoration: none;
+}
+.glance-tile:hover {
+  border-color: color-mix(in oklab, var(--rm-live) 50%, transparent);
+}
+.glance-ring {
+  grid-row: span 2;
+  width: 48px;
+  height: 48px;
+}
+.glance-ring-track {
+  fill: none;
+  stroke: var(--rm-soft);
+  stroke-width: 6;
+}
+.glance-ring-value {
+  fill: none;
+  stroke: var(--rm-live);
+  stroke-width: 6;
+  stroke-linecap: round;
+}
+.glance-ring-label {
+  font-size: 13px;
+  font-weight: 600;
+  fill: var(--rm-ink);
+  font-variant-numeric: tabular-nums;
+}
+.glance-name {
+  font-weight: 600;
+  font-size: 14.5px;
+  line-height: 1.2;
+  overflow: hidden;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+}
+.glance-count {
+  font-size: 12px;
+  color: var(--rm-muted);
+}
+@media (min-width: 720px) {
+  .glance-grid {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+}
+@media (min-width: 1024px) {
+  .glance-grid {
+    grid-template-columns: repeat(5, minmax(0, 1fr));
+  }
+}
+@media (prefers-reduced-motion: no-preference) {
+  .glance-tile {
+    transition:
+      border-color 160ms ease,
+      transform 160ms ease;
+  }
+  .glance-tile:hover {
+    transform: translateY(-2px);
+  }
+}
+
+/* Performance tiers. Phones, small screens and low-end devices
+   (html[data-lite], set before first paint by src/lite-mode.ts) get flat
+   surfaces: no backdrop-filter, no blend modes, no decorative or infinite
+   animation. Wide screens on capable devices add the richer effects below,
+   and motion only when the reader allows it. */
+@media (min-width: 1024px) {
+  :root:not([data-lite]) .sticky-bar {
+    background: color-mix(in oklab, var(--rm-bg) 92%, transparent);
+    -webkit-backdrop-filter: blur(12px);
+    backdrop-filter: blur(12px);
+  }
+  :root:not([data-lite]) .ws-stage-window {
+    background: color-mix(in oklab, var(--rm-panel) 86%, transparent);
+    -webkit-backdrop-filter: blur(10px);
+    backdrop-filter: blur(10px);
+  }
+  /* Paper grain gives the wash a painted, not digital, surface. */
+  :root:not([data-lite]) .ws-hero-wash::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    opacity: var(--ws-grain-opacity);
+    mix-blend-mode: overlay;
+    background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='220' height='220'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='3' stitchTiles='stitch'/><feColorMatrix values='0 0 0 0 0.5 0 0 0 0 0.5 0 0 0 0 0.5 0 0 0 0.9 0'/></filter><rect width='100%' height='100%' filter='url(%23n)'/></svg>");
+  }
+}
+@media (min-width: 1024px) and (prefers-reduced-motion: no-preference) {
+  :root:not([data-lite]) .ws-caret {
+    animation: ws-caret 1.1s steps(1) infinite;
+  }
+  :root:not([data-lite]) .ws-quiz-timer span {
+    width: 100%;
+    transform-origin: left center;
+    animation: ws-timer 12s linear infinite;
+  }
+}
+/* The shared navbar blurs what scrolls under it; below desktop or in lite
+   mode it is a solid surface instead. */
+@media (max-width: 1023px) {
+  .roadmap #navbar-content.backdrop-blur-xl,
+  .roadmap #navbar .backdrop-blur-xl {
+    -webkit-backdrop-filter: none;
+    backdrop-filter: none;
+    background: color-mix(in oklab, var(--background) 96%, transparent);
+  }
+}
+html[data-lite] .roadmap .backdrop-blur-xl {
+  -webkit-backdrop-filter: none;
+  backdrop-filter: none;
+  background: color-mix(in oklab, var(--background) 96%, transparent);
+}
+/* Below-the-fold sections skip style, layout and paint (and the font loads
+   they would trigger) until they near the viewport. `auto` remembers each
+   one's real height once rendered, so the scrollbar settles after a pass.
+   Only the block size gets a placeholder: a placeholder width would widen
+   the column on a phone. */
+.page > .section:not(#tracks),
+.track,
+#main-content + footer {
+  content-visibility: auto;
+  contain-intrinsic-block-size: auto 720px;
+}
+/* A tap held until hydration (src/boot/roadmap-boot.js) shows at once:
+   toggles flip their pressed state, other buttons dim until they respond. */
+button[data-roadmap-pending] {
+  cursor: progress;
+}
+button[data-roadmap-pending]:not([aria-pressed]) {
+  opacity: 0.72;
+}
+
+/* Hosting: as-of line beside Cloudflare's official web badge. The badge is
+   shown unaltered at its own aspect ratio (761:264) with clear space. */
+.hosting-meta {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px 24px;
+}
+.cf-badge {
+  display: block;
+  flex: none;
+  width: 152px;
+  height: auto;
+  margin: 4px;
+}
+.hosting-unverified {
+  color: var(--rm-progress-text);
+}
+
+/* Subdomain → tuturuuu.com/<app> migration. */
+.migration-summary {
+  display: grid;
+  gap: 10px;
+  padding: 16px;
+  border: 1px solid var(--rm-line);
+  border-radius: var(--rm-radius);
+  background: var(--rm-panel);
+}
+.migration-count {
+  margin: 0;
+  font-size: 15px;
+}
+.migration-count span {
+  color: var(--rm-muted);
+}
+.migration-bar {
+  display: flex;
+  gap: 2px;
+  height: 12px;
+  border-radius: 999px;
+  overflow: hidden;
+  background: var(--rm-soft);
+}
+.migration-seg.done,
+.migration-dot.done {
+  background: var(--rm-live);
+}
+.migration-seg.in_progress,
+.migration-dot.in_progress {
+  background: var(--rm-progress);
+}
+.migration-seg.not_started,
+.migration-dot.not_started {
+  background: var(--rm-planned);
+}
+.migration-seg.unverified,
+.migration-dot.unverified {
+  background: repeating-linear-gradient(
+    45deg,
+    var(--rm-planned) 0 3px,
+    transparent 3px 6px
+  );
+}
+.migration-legend {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px 16px;
+  font-size: 13px;
+  color: var(--rm-muted);
+}
+.migration-legend li {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+.migration-legend b {
+  color: var(--rm-ink);
+  font-variant-numeric: tabular-nums;
+}
+.migration-dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 999px;
+}
+.migration-list {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(min(100%, 300px), 1fr));
+  gap: 8px;
+}
+.migration-item {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 4px 10px;
+  align-items: center;
+  padding: 10px 12px;
+  border: 1px solid var(--rm-line);
+  border-radius: 12px;
+  background: var(--rm-panel);
+}
+.migration-name {
+  font-size: 14.5px;
+  font-weight: 600;
+}
+.migration-path {
+  grid-column: 1 / -1;
+  min-width: 0;
+  font-size: 12.5px;
+  color: var(--rm-muted);
+  overflow-wrap: anywhere;
+}
+.migration-state {
+  grid-column: 2;
+  grid-row: 1;
+  padding: 2px 8px;
+  border-radius: 999px;
+  font-size: 12px;
+  font-weight: 600;
+  white-space: nowrap;
+  background: var(--rm-soft);
+  color: var(--rm-muted);
+}
+.migration-state.done {
+  background: color-mix(in oklab, var(--rm-live) 16%, transparent);
+  color: color-mix(in oklab, var(--rm-live) 70%, var(--rm-ink));
+}
+.migration-state.in_progress {
+  background: color-mix(in oklab, var(--rm-progress) 16%, transparent);
+  color: color-mix(in oklab, var(--rm-progress) 70%, var(--rm-ink));
+}
+
+/* Navbar clearance. The shell's fixed pill ends --shell-nav-offset below
+   the viewport top; the hero starts below it at every width, and in-page
+   targets (anchors, section headings) land under it, not behind it. */
+html:has(.roadmap) {
+  scroll-padding-top: 100px;
+}
+.roadmap :is(h1, h2, h3)[id],
+.roadmap section[id] {
+  scroll-margin-top: calc(var(--shell-nav-offset, 76px) + 24px);
+}
+.roadmap .hero {
+  padding-top: max(48px, calc(var(--shell-nav-offset, 76px) - 24px));
+}
+
+/* Headline figures: four tiles with week-over-week change, then the
+   status bar. Both span the hero, so no column is left empty. Weights stay
+   at the preloaded 500/600, so no other font face loads near the fold. */
+.kpis {
+  width: 100%;
+  margin: 8px 0 0;
+  padding: 0;
+  list-style: none;
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+  text-align: left;
+}
+.kpi {
+  display: grid;
+  min-width: 0;
+}
+.kpi-body {
+  display: grid;
+  align-content: start;
+  gap: 6px;
+  padding: 16px;
+  border: 1px solid var(--rm-line);
+  border-radius: var(--rm-radius);
+  background: var(--rm-panel);
+  color: inherit;
+  text-decoration: none;
+}
+a.kpi-body:hover {
+  border-color: color-mix(in oklab, var(--rm-ink) 30%, var(--rm-line));
+}
+.kpi-label {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--rm-muted);
+}
+.kpi-value {
+  font-size: clamp(30px, 5vw, 40px);
+  font-weight: 600;
+  letter-spacing: -0.03em;
+  line-height: 1.05;
+  font-variant-numeric: tabular-nums;
+}
+.kpi-of {
+  font-size: 15px;
+  font-weight: 500;
+  letter-spacing: 0;
+  color: var(--rm-muted);
+}
+/* Stable heights: a live refresh changes figures, never the tile row's
+   height (no layout shift). The change label has its own line, and its
+   length depends only on the build's data. */
+.kpi-note {
+  display: -webkit-box;
+  min-height: 2.8em;
+  overflow: hidden;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+  line-clamp: 2;
+  font-size: 12.5px;
+  line-height: 1.4;
+  color: var(--rm-muted);
+}
+.kpi .delta-label {
+  flex-basis: 100%;
+}
+/* Icons are CSS masks (lucide shapes, ISC), not inline SVG, which keeps
+   the document small. */
+.kpi-label::before,
+.update-counts span::before {
+  content: "";
+  flex: none;
+  width: 16px;
+  height: 16px;
+  background: var(--i-tone, currentColor);
+  -webkit-mask: var(--i-glyph) center / contain no-repeat;
+  mask: var(--i-glyph) center / contain no-repeat;
+}
+.kpi-merged {
+  --i-tone: var(--rm-merge);
+  --i-glyph: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'><circle cx='18' cy='18' r='3'/><circle cx='6' cy='6' r='3'/><path d='M6 21V9a9 9 0 0 0 9 9'/></svg>");
+}
+.kpi-shipped {
+  --i-tone: var(--rm-live);
+  --i-glyph: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'><path d='M7 7h10v10'/><path d='M7 17 17 7'/></svg>");
+}
+.kpi-live,
+.count-live {
+  --i-tone: var(--rm-live);
+  --i-glyph: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'><circle cx='12' cy='12' r='10'/><path d='m16 9-5.5 5.5L8 12'/></svg>");
+}
+.kpi-waiting,
+.count-waiting {
+  --i-tone: var(--rm-sync);
+  --i-glyph: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'><path d='M12 13v8'/><path d='M4 14.899A7 7 0 1 1 15.71 8h1.79a4.5 4.5 0 0 1 2.5 8.242'/><path d='m8 17 4-4 4 4'/></svg>");
+}
+.kpi-waiting .kpi-body {
+  border-color: color-mix(in oklab, var(--rm-sync) 55%, var(--rm-line));
+  background: color-mix(in oklab, var(--rm-sync) 9%, var(--rm-panel));
+}
+.kpi-waiting .kpi-label {
+  color: var(--rm-ink);
+  font-weight: 600;
+}
+.hero .overall {
+  width: 100%;
+  gap: 12px;
+  padding: 16px;
+  border: 1px solid var(--rm-line);
+  border-radius: var(--rm-radius);
+  background: var(--rm-panel);
+  text-align: left;
+}

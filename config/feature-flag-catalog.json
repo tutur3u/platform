@@ -549,6 +549,29 @@
       "legacy": true
     },
     {
+      "key": "ENABLE_DOCUMENT_HIERARCHY",
+      "family": "workspace-secret",
+      "kind": "workspace-gate",
+      "scope": "workspace",
+      "description": "Enables nested workspace document reads and writes.",
+      "owner": "document-hierarchy",
+      "createdAt": "2026-11-09",
+      "apps": ["web"],
+      "appsComplete": true,
+      "sources": [
+        "packages/utils/src/feature-flags/data.ts",
+        "apps/web/src/app/api/v1/workspaces/[wsId]/documents/route.ts",
+        "apps/web/src/app/api/v1/workspaces/[wsId]/documents/[documentId]/route.ts"
+      ],
+      "defaults": {
+        "development": false,
+        "staging": false,
+        "production": false
+      },
+      "verifiedOnProdAt": null,
+      "legacy": false
+    },
+    {
       "key": "ENABLE_DRIVE",
       "family": "workspace-secret",
       "kind": "workspace-gate",

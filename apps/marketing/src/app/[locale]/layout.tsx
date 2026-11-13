@@ -1,7 +1,9 @@
 import { PublicSatelliteProviders } from '@tuturuuu/satellite/public';
 import '@tuturuuu/ui/globals.css';
+import '@tuturuuu/marketing-shell/fonts.css';
 import './(marketing)/(landing)/landing.css';
-import { Toaster } from '@tuturuuu/ui/sonner';
+import { isLandingRender } from '@/lib/marketing-render-context';
+import { LandingEnhancements } from '@/components/layouts/landing-enhancements';
 import { font, generateCommonMetadata } from '@tuturuuu/utils/common/nextjs';
 import { cn } from '@tuturuuu/utils/format';
 import { resolveRootLocale } from '@tuturuuu/utils/i18n-root-locale';
@@ -63,7 +65,7 @@ export default async function RootLayout({ children }: Props) {
       >
         <PublicSatelliteProviders>
           {children}
-          <Toaster />
+          <LandingEnhancements landing={isLandingRender()} />
         </PublicSatelliteProviders>
       </body>
     </html>

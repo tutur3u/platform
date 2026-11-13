@@ -31,6 +31,7 @@ import {
 import type { useTranslations } from 'next-intl';
 import { TutoringReasonBadge, TutoringStatusBadge } from './tutoring-badges';
 import { formatSessionTimeRange } from './tutoring-filters';
+import { TutoringSessionContent } from './tutoring-session-content';
 import { getDisplayName } from './tutoring-types';
 
 export interface TutoringSessionColumnActions {
@@ -283,9 +284,10 @@ export function buildTutoringSessionColumns(
         <div className="min-w-32 space-y-1">
           <TutoringReasonBadge reason={row.original.reason_type} />
           {row.original.content ? (
-            <p className="line-clamp-1 max-w-56 text-muted-foreground text-xs">
-              {row.original.content}
-            </p>
+            <TutoringSessionContent
+              content={row.original.content}
+              key={row.original.id}
+            />
           ) : null}
           {row.original.content_linked ? (
             <p className="text-muted-foreground text-xs italic">

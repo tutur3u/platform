@@ -1,11 +1,13 @@
 'use client';
 
+import type { Editor } from '@tiptap/react';
+import { ModuleWritingAssistant } from '@/components/inline-assistant/module-writing-assistant';
 import { useMutation } from '@tanstack/react-query';
 import { updateWorkspaceCourseModule } from '@tuturuuu/internal-api/education';
 import type { JSONContent } from '@tuturuuu/types/tiptap';
 import { toast } from '@tuturuuu/ui/sonner';
 import { RichTextEditor } from '@tuturuuu/ui/text-editor/editor';
-import { useTranslations } from 'next-intl';
+import { useLocale, useTranslations } from 'next-intl';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { useDebouncedCallback } from 'use-debounce';
 
@@ -33,6 +35,8 @@ export function ModuleContentEditor({
 }: Props) {
   const [post, setPost] = useState<JSONContent | null>(content || null);
   const t = useTranslations();
+  const locale = useLocale();
+  const [editor, setEditor] = useState<Editor | null>(null);
 
   const saveMutation = useMutation({
     mutationFn: async (nextContent: JSONContent | null) =>
@@ -174,14 +178,24 @@ export function ModuleContentEditor({
   const savedButtonLabel = t('common.saved');
 
   return (
-    <div className="mx-auto w-full pt-2 text-foreground">
-      <RichTextEditor
-        content={post}
-        onChange={onChange}
-        titlePlaceholder={titlePlaceholder}
-        writePlaceholder={writePlaceholder}
-        saveButtonLabel={saveButtonLabel}
-        savedButtonLabel={savedButtonLabel}
+    <div className="mx-auto grid w-full min-w-0 items-start gap-4 pt-2 text-foreground xl:grid-cols-[minmax(0,1fr)_20rem]">
+      <div className="min-w-0">
+        <RichTextEditor
+          onEditorReady={setEditor}
+          content={post}
+          onChange={onChange}
+          titlePlaceholder={titlePlaceholder}
+          writePlaceholder={writePlaceholder}
+          saveButtonLabel={saveButtonLabel}
+          savedButtonLabel={savedButtonLabel}
+        />
+      </div>
+      <ModuleWritingAssistant
+        key={`${wsId}:${courseId}:${moduleId}:${locale}`}
+        editor={editor}
+        wsId={wsId}
+        courseId={courseId}
+        moduleId={moduleId}
       />
     </div>
   );

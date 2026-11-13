@@ -67,3 +67,33 @@ Until these repository secrets exist, the poster job skips and logs "App not con
 - `CI_SUMMARY_APP_PRIVATE_KEY`: that app's PEM private key.
 
 Create the app for this repository, not as a grant of `checks: write` on the shared Actions token. Install it on `tutur3u/platform` with Actions read, Checks read and write, Contents read, Metadata read, and Pull requests read. Store the two secrets as Actions secrets. The deleted workflow id `407998590` stays deleted; this poster is a different file.
+
+### Test and Type Check draft admission
+
+Test and Type Check defer every validation job while a pull request is a draft,
+even if `ready-for-ci` remains present. `ready_for_review` admits validation once
+the readiness label is present; `converted_to_draft` cancels superseded PR work
+and starts a skipped run. Protected branch pushes retain validation. Check names
+and aggregate failure assertions remain stable. Regression coverage:
+`scripts/ci/test-type-draft-admission.test.js`.
+
+The trusted App admission path must keep `opened` and `ready_for_review`: its App
+label write generates the real `pull_request:labeled` event. Security classification
+continues on drafts and bot-authored PRs. Summary metadata events retain draft and
+label transitions so the displayed readiness state stays accurate.
+
+## Calendar owning-suite timings
+
+The `calendar-native` job in `mail-calendar-tasks-builds.yaml` reports Calendar,
+Web and shared Tasks UI tests as three sequential steps after supplier builds,
+the native Calendar build and the tracked route-tree drift guard. Each suite
+inherits the job's production profile and CI fixtures. Default success conditions
+keep emitted-config qualification, binding and consumer type checks, artifact
+sealing, runtime acceptance and restore qualification behind successful tests.
+
+Step separation has zero expected green-path saving. Measure each suite on the
+same exact-commit CI run before proposing parallelism, including supplier/build
+and artifact-transfer costs. Preserve the generated route tree used by the accepted
+build in any future handoff. OAuth tests skipped without integration credentials
+provide no integration coverage. Regression coverage is in
+`scripts/ci/calendar-suite-steps.test.mjs`, loaded by the artifact regressions.

@@ -30,7 +30,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
     title: t('contributingTitle'),
     description: t('contributingDescription'),
     alternates: {
-      canonical: `${siteConfig.url}/${normalizedLocale}/ui/contributing`,
+      canonical: `${siteConfig.url}/${normalizedLocale}/design/contributing`,
     },
   };
 }

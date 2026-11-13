@@ -24,7 +24,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
     title: t('componentsTitle'),
     description: t('componentsDescription'),
     alternates: {
-      canonical: `${siteConfig.url}/${normalizedLocale}/ui/components`,
+      canonical: `${siteConfig.url}/${normalizedLocale}/design/components`,
     },
   };
 }
@@ -35,7 +35,7 @@ export async function UiComponentsRuntime({ params }: Props) {
 
   const t = await getTranslations('ui-showcase.docs');
   const tCategories = await getTranslations('ui-showcase.categories');
-  const baseHref = `/${normalizedLocale}/ui/components`;
+  const baseHref = `/${normalizedLocale}/design/components`;
   const tocItems = componentDocsByCategory.map((group) => ({
     id: group.category,
     label: tCategories(group.category),

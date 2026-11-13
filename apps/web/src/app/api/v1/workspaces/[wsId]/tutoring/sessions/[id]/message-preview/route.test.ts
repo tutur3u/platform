@@ -1,4 +1,5 @@
 // @vitest-environment node
+import { TUTORING_PARENT_MESSAGE_CENTRE_NAME_CONFIG_ID } from '@tuturuuu/internal-api/tutoring-policy';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 const sessionId = 'f0747f37-bf6d-4263-a5df-a11c57bdc762';
@@ -20,7 +21,10 @@ vi.mock('@tuturuuu/supabase/next/server', () => ({
 vi.mock('@/lib/tutoring/route-access', () => ({
   resolveTutoringRouteAccess: mocks.resolveAccess,
 }));
-vi.mock('@tuturuuu/internal-api/tutoring-policy', () => ({
+vi.mock('@tuturuuu/internal-api/tutoring-policy', async (importOriginal) => ({
+  ...(await importOriginal<
+    typeof import('@tuturuuu/internal-api/tutoring-policy')
+  >()),
   TUTORING_POLICY_CONFIG_ID: 'tutoring_policy',
   getTutoringCampus: () => 'Cơ sở 1',
   readTutoringPolicyConfigRows: () => ({
@@ -29,6 +33,12 @@ vi.mock('@tuturuuu/internal-api/tutoring-policy', () => ({
   renderTutoringParentMessage: mocks.render,
 }));
 
+let flagError = false;
+let nameError = false;
+let overrideError = false;
+let centreOverride: string | null = null;
+let flagValue: string | null = null;
+let centreName: string | null = 'Trung tâm Fixture';
 let teacherId = 'teacher';
 let reassignOnUpdate = false;
 let template = 'Lịch học chính thức: {{class_time}}';
@@ -41,6 +51,7 @@ let calls: { args: unknown[]; method: string; table: string }[] = [];
 /** A chainable query that records every call and resolves to `result`. */
 function query(table: string, result: () => unknown) {
   const teacherFilters: unknown[] = [];
+  let configId: unknown;
   const methods: Record<string, (...args: unknown[]) => unknown> = {};
   for (const method of [
     'eq',
@@ -53,6 +64,7 @@ function query(table: string, result: () => unknown) {
   ]) {
     methods[method] = (...args: unknown[]) => {
       calls.push({ args, method, table });
+      if (method === 'eq' && args[0] === 'id') configId = args[1];
       if (method === 'update' && reassignOnUpdate) teacherId = 'other-teacher';
       if (method === 'eq' && args[0] === 'teacher_user_id')
         teacherFilters.push(args[1]);
@@ -61,10 +73,26 @@ function query(table: string, result: () => unknown) {
   }
   const chain = Object.assign(Promise.resolve(result()), methods, {
     maybeSingle: async () =>
-      table === 'workspace_tutoring_sessions' &&
-      teacherFilters.some((value) => value !== teacherId)
-        ? { data: null, error: null }
-        : result(),
+      table === 'workspace_configs'
+        ? {
+            data: {
+              value:
+                configId === TUTORING_PARENT_MESSAGE_CENTRE_NAME_CONFIG_ID
+                  ? centreOverride
+                  : flagValue,
+            },
+            error: (
+              configId === TUTORING_PARENT_MESSAGE_CENTRE_NAME_CONFIG_ID
+                ? overrideError
+                : flagError
+            )
+              ? { message: 'fixture error' }
+              : null,
+          }
+        : table === 'workspace_tutoring_sessions' &&
+            teacherFilters.some((value) => value !== teacherId)
+          ? { data: null, error: null }
+          : result(),
   });
   return chain;
 }
@@ -101,6 +129,12 @@ beforeEach(() => {
   vi.clearAllMocks();
   vi.spyOn(console, 'error').mockImplementation(() => {});
   calls = [];
+  flagValue = null;
+  flagError = false;
+  nameError = false;
+  overrideError = false;
+  centreOverride = null;
+  centreName = 'Trung tâm Fixture';
   teacherId = 'teacher';
   reassignOnUpdate = false;
   template = 'Lịch học chính thức: {{class_time}}';
@@ -122,6 +156,10 @@ beforeEach(() => {
     permissions: { withoutPermission: () => false },
   });
   const tables: Record<string, () => unknown> = {
+    workspaces: () => ({
+      data: { name: centreName },
+      error: nameError ? { message: 'fixture error' } : null,
+    }),
     workspace_configs: () => ({ data: [], error: null }),
     workspace_tutoring_sessions: () => ({
       data: { ...session, teacher_user_id: teacherId },
@@ -273,4 +311,175 @@ it('returns no preview if reassignment makes the self-scoped save miss', async (
   expect(response.status).toBe(404);
   expect(await response.json()).not.toHaveProperty('preview');
   expect(mocks.render).toHaveBeenCalled();
+});
+
+describe('workspace parent message v2', () => {
+  async function useRealRenderer() {
+    const actual = await vi.importActual<
+      typeof import('@tuturuuu/internal-api/tutoring-policy')
+    >('@tuturuuu/internal-api/tutoring-policy');
+    template = actual.EASY_CENTER_PARENT_MESSAGE_TEMPLATE;
+    mocks.render.mockImplementation(actual.renderTutoringParentMessage);
+  }
+  const legacy =
+    'Trung tâm EASY xin được xếp lịch kèm cho bạn Học sinh như sau:\n• Giờ kèm: 15:15-16:00\n• Ngày: 31/10/2026 thứ 7\n• Cơ sở: Cơ sở 1\nLịch học chính thức: 16:00-17:30\nMong phụ huynh thu xếp cho con tham gia đúng giờ. Trân trọng.';
+  const v2 =
+    'Trung tâm Fixture xin được xếp lịch kèm cho bạn Học sinh như sau:\n• Giờ kèm: 15:15-16:00\n• Ngày: 31/10/2026 thứ 7\n• Cơ sở: Cơ sở 1\nLịch học chính thức: 16:00-17:30\nMong phụ huynh thu xếp cho con tham gia đúng giờ.\nTrân trọng';
+  it.each([null, 'false', 'TRUE'])(
+    'keeps legacy bytes with flag %s',
+    async (value) => {
+      await useRealRenderer();
+      flagValue = value;
+      expect(await (await preview()).json()).toEqual({ preview: legacy });
+      centreOverride = 'Ignored override';
+      nameError = true;
+      expect(await (await preview()).json()).toEqual({ preview: legacy });
+    }
+  );
+  it.each([null, '', '  '])(
+    'falls back from blank override %s',
+    async (value) => {
+      await useRealRenderer();
+      flagValue = 'true';
+      centreOverride = value;
+      expect(await (await preview()).json()).toEqual({ preview: v2 });
+    }
+  );
+  it.each([false, true])(
+    'uses an NFC override despite workspace read error %s',
+    async (error) => {
+      await useRealRenderer();
+      flagValue = 'true';
+      nameError = error;
+      centreOverride = '  Trung tâm $& {{student}}  '.normalize('NFD');
+      expect(await (await preview()).json()).toEqual({
+        preview: v2.replace(
+          'Trung tâm Fixture',
+          () => 'Trung tâm $& {{student}}'
+        ),
+      });
+      expect(calls).toContainEqual({
+        table: 'workspace_configs',
+        method: 'eq',
+        args: ['id', TUTORING_PARENT_MESSAGE_CENTRE_NAME_CONFIG_ID],
+      });
+    }
+  );
+  it('normalizes the workspace fallback and tolerates an override read failure', async () => {
+    await useRealRenderer();
+    flagValue = 'true';
+    centreName = '  Trung tâm Fixture  '.normalize('NFD');
+    overrideError = true;
+    expect(await (await preview()).json()).toEqual({ preview: v2 });
+  });
+  it.each([
+    ['2026-10-30T23:30:00Z', '2026-10-31T00:30:00Z', '06:30-07:30'],
+    ['2026-10-31T17:30:00Z', '2026-10-31T18:30:00Z', null],
+  ])('uses the GMT+7 calendar day for %s', async (start, end, time) => {
+    await useRealRenderer();
+    flagValue = 'true';
+    classSessions.data = [
+      {
+        starts_at: start,
+        ends_at: end,
+        start_timezone: 'Asia/Ho_Chi_Minh',
+        status: 'scheduled',
+      },
+    ];
+    expect(await (await preview()).json()).toEqual({
+      preview: time
+        ? v2.replace('16:00-17:30', time)
+        : v2.replace('Lịch học chính thức: 16:00-17:30\n', ''),
+    });
+  });
+  it('keeps legacy next-class date bytes with the flag off', async () => {
+    await useRealRenderer();
+    classSessions.data = [
+      {
+        starts_at: '2026-11-03T11:00:00Z',
+        ends_at: '2026-11-03T12:30:00Z',
+        start_timezone: 'Asia/Ho_Chi_Minh',
+        status: 'scheduled',
+      },
+    ];
+    expect(await (await preview()).json()).toEqual({
+      preview: legacy.replace('16:00-17:30', '18:00-19:30 ngày 03/11/2026'),
+    });
+  });
+  it('uses the workspace name and exact Vietnamese closing', async () => {
+    await useRealRenderer();
+    flagValue = 'true';
+    expect(await (await preview()).json()).toEqual({ preview: v2 });
+    expect(calls).toContainEqual({
+      table: 'workspaces',
+      method: 'eq',
+      args: ['id', wsId],
+    });
+    expect(calls).toContainEqual({
+      table: 'workspace_configs',
+      method: 'eq',
+      args: ['id', 'tutoring_parent_message_v2'],
+    });
+    expect(calls).toContainEqual({
+      table: 'workspace_configs',
+      method: 'eq',
+      args: ['ws_id', wsId],
+    });
+  });
+  it.each([null, '', '   '])(
+    'keeps legacy bytes when centre name is %s',
+    async (name) => {
+      await useRealRenderer();
+      flagValue = 'true';
+      centreName = name;
+      expect(await (await preview()).json()).toEqual({ preview: legacy });
+    }
+  );
+  it.each(['none', 'future'])(
+    'omits the official class line with %s class',
+    async (kind) => {
+      await useRealRenderer();
+      flagValue = 'true';
+      classSessions.data =
+        kind === 'none'
+          ? []
+          : [
+              {
+                starts_at: '2026-11-01T09:00:00Z',
+                ends_at: '2026-11-01T10:30:00Z',
+                start_timezone: 'Asia/Ho_Chi_Minh',
+                end_timezone: 'Asia/Ho_Chi_Minh',
+                status: 'scheduled',
+              },
+            ];
+      expect(await (await preview()).json()).toEqual({
+        preview: v2.replace('Lịch học chính thức: 16:00-17:30\n', ''),
+      });
+    }
+  );
+
+  it('preserves a custom template byte for byte with flag off', async () => {
+    await useRealRenderer();
+    template = '  {{centre}}\n{{student}}\n{{unrecognized}}  ';
+    expect(await (await preview()).json()).toEqual({
+      preview: '  {{centre}}\nHọc sinh\n{{unrecognized}}  ',
+    });
+  });
+  it.each(['flag', 'name'])(
+    'keeps legacy output after a %s read error',
+    async (kind) => {
+      await useRealRenderer();
+      flagValue = 'true';
+      flagError = kind === 'flag';
+      nameError = kind === 'name';
+      expect(await (await preview()).json()).toEqual({ preview: legacy });
+    }
+  );
+  it('keeps the legacy missing-class fallback with flag off', async () => {
+    await useRealRenderer();
+    classSessions.data = [];
+    expect(await (await preview()).json()).toEqual({
+      preview: legacy.replace('16:00-17:30', 'Chưa xác định'),
+    });
+  });
 });

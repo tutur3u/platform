@@ -8,6 +8,12 @@ import {
 import type { ReactNode } from 'react';
 import { appBaseHeadScript } from './base-path';
 import type { BridgeHead } from './metadata';
+import {
+  type BridgeStatusOptions,
+  createBridgeStatusComponents,
+} from './status-route';
+
+export type { BridgeStatusOptions } from './status-route';
 
 /**
  * Start routes for the generic page adapter. The app's generated
@@ -67,19 +73,17 @@ export function BridgeDocument({ children }: { children: ReactNode }) {
   );
 }
 
-function BridgeNotFound() {
-  return (
-    <main style={{ padding: '2rem' }}>
-      <h1>404</h1>
-    </main>
-  );
-}
-
-export function createBridgeRootRoute() {
+/**
+ * Root route options for a bridged app. Unknown paths and uncaught render
+ * errors show the shared Tuturuuu status page (404 / 500).
+ */
+export function createBridgeRootRoute(status: BridgeStatusOptions = {}) {
+  const { BridgeNotFound, BridgeError } = createBridgeStatusComponents(status);
   return {
     // The request's mount must reach the browser before the router starts.
     head: () => ({ scripts: [appBaseHeadScript()] }),
     shellComponent: BridgeDocument,
     notFoundComponent: BridgeNotFound,
+    errorComponent: BridgeError,
   };
 }

@@ -352,21 +352,7 @@ export {
   type WorkspaceCronHttpMethod,
   type WorkspaceCronJobSummary,
 } from './cron';
-export {
-  type CreateWorkspaceDocumentPayload,
-  type CreateWorkspaceDocumentResponse,
-  createWorkspaceDocument,
-  type DeleteWorkspaceDocumentResponse,
-  deleteWorkspaceDocument,
-  type GetWorkspaceDocumentResponse,
-  getWorkspaceDocument,
-  type ListWorkspaceDocumentsParams,
-  type ListWorkspaceDocumentsResponse,
-  listAllWorkspaceDocuments,
-  listWorkspaceDocuments,
-  type WorkspaceDocumentDetail,
-  type WorkspaceDocumentSummary,
-} from './documents';
+export * from './documents';
 export type {
   CreateWorkspaceQuizPayload,
   ListAllWorkspaceCourseModulesParams,

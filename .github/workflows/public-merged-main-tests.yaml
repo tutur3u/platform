@@ -1,0 +1,177 @@
+name: Public merged-main tests
+
+on:
+  workflow_dispatch:
+    inputs:
+      source_sha:
+        description: Exact merged-main 40-hex commit SHA
+        required: true
+        type: string
+
+permissions:
+  contents: read
+
+concurrency:
+  group: public-merged-main-tests-${{ inputs.source_sha }}
+  cancel-in-progress: false
+
+jobs:
+  admit:
+    if: github.event_name == 'workflow_dispatch'
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    outputs:
+      sha: ${{ steps.admit.outputs.sha }}
+      main: ${{ steps.admit.outputs.main }}
+    steps:
+      - name: Validate input and merged-main ancestry before any checkout
+        id: admit
+        uses: actions/github-script@3a2844b7e9c422d3c10d287c895573f7108da1b3 # v9.0.0
+        env:
+          REQUEST_SHA: ${{ inputs.source_sha }}
+          CONTROL_SHA: ${{ github.workflow_sha }}
+
+        with:
+          script: |
+            // admission:start
+            const sha = process.env.REQUEST_SHA;
+            const control = process.env.CONTROL_SHA;
+            if (sha?.length !== 40 || control?.length !== 40 || !/^[a-f0-9]{40}$/.test(sha) || !/^[a-f0-9]{40}$/.test(control)) throw new Error('Invalid immutable SHA');
+            if (context.repo.owner !== 'tutur3u' || context.repo.repo !== 'platform' || context.ref !== 'refs/heads/main') throw new Error('Canonical main workflow required');
+            const app = process.env.REQUEST_APP;
+            if (app !== undefined && !['finance', 'web', 'meet'].includes(app)) throw new Error('Invalid app');
+            const { data: branch } = await github.rest.repos.getBranch({ ...context.repo, branch: 'main' });
+            const main = branch.commit.sha;
+            for (const ref of [sha, control]) {
+              const { data: comparison } = await github.rest.repos.compareCommitsWithBasehead({ ...context.repo, basehead: `${ref}...${main}` });
+              if (!['ahead', 'identical'].includes(comparison.status) || comparison.merge_base_commit.sha !== ref) throw new Error('Source/control is not merged main');
+            }
+            core.setOutput('sha', sha);
+            core.setOutput('main', main);
+            // admission:end
+
+  shards:
+    needs: admit
+    runs-on: ubuntu-latest
+    timeout-minutes: 40
+    strategy:
+      fail-fast: false
+      max-parallel: 13
+      matrix:
+        include:
+          - kind: unit
+            shard: 0
+          - kind: unit
+            shard: 1
+          - kind: unit
+            shard: 2
+          - kind: unit
+            shard: 3
+          - kind: root
+            shard: 0
+          - kind: root
+            shard: 1
+          - kind: root
+            shard: 2
+          - kind: root
+            shard: 3
+          - kind: types
+            shard: 0
+          - kind: types
+            shard: 1
+          - kind: types
+            shard: 2
+          - kind: types
+            shard: 3
+          - kind: lint
+            shard: 0
+    env:
+      SOURCE_SHA: ${{ needs.admit.outputs.sha }}
+      CONTROL_SHA: ${{ github.workflow_sha }}
+      MAIN_SHA: ${{ needs.admit.outputs.main }}
+      CI: 'true'
+      NEXT_TELEMETRY_DISABLED: '1'
+      WRANGLER_SEND_METRICS: 'false'
+      TURBO_TELEMETRY_DISABLED: '1'
+      TURBO_CACHE: 'local:rw'
+      NEXT_PUBLIC_SUPABASE_URL: https://public-ci.supabase.invalid
+      NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY: sb_publishable_public_ci_fixture
+      PROXY_API_KEY: ''
+      NEXT_PUBLIC_PROXY_API_KEY: ''
+      NODE_PATH: ${{ github.workspace }}/source/apps/web/node_modules
+      SHARD_KIND: ${{ matrix.kind }}
+      SHARD_INDEX: ${{ matrix.shard }}
+    steps:
+      - name: Checkout immutable workflow controls
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ github.workflow_sha }}
+          path: control
+          persist-credentials: false
+      - name: Checkout admitted source
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ needs.admit.outputs.sha }}
+          path: source
+          persist-credentials: false
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version: 24.22.3
+      - name: Verify both immutable checkout identities before repository commands
+        run: |
+          test "$(git -C control rev-parse HEAD)" = "$CONTROL_SHA"
+          test "$(git -C source rev-parse HEAD)" = "$SOURCE_SHA"
+      - name: Setup pinned Bun without shared caches
+        working-directory: control
+        run: bash scripts/ci/setup-bun-with-backoff.sh 1.4.4
+      - name: Run disjoint canonical shard and retain command exits/counts
+        working-directory: source
+        run: node ../control/scripts/ci/public-test-shard.js "$SHARD_KIND" "$SHARD_INDEX" "$RUNNER_TEMP/public-receipt"
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        if: always()
+        with:
+          name: public-tests-${{ needs.admit.outputs.sha }}-${{ matrix.kind }}-${{ matrix.shard }}-${{ github.run_attempt }}
+          path: ${{ runner.temp }}/public-receipt/
+          if-no-files-found: error
+          retention-days: 7
+
+  summary:
+    if: always() && github.event_name == 'workflow_dispatch'
+    needs: [admit, shards]
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Always summarize admission and complete matrix outcome
+        uses: actions/github-script@3a2844b7e9c422d3c10d287c895573f7108da1b3 # v9.0.0
+        env:
+          OUTCOMES: ${{ toJSON(needs) }}
+          SOURCE_SHA: ${{ needs.admit.outputs.sha }}
+        with:
+          script: |
+            const results = JSON.parse(process.env.OUTCOMES);
+            const url = `${context.serverUrl}/${context.repo.owner}/${context.repo.repo}/actions/runs/${context.runId}`;
+            await core.summary.addHeading('Public merged-main tests').addRaw(`Source: ${process.env.SOURCE_SHA || 'REJECTED'}; control: ${context.sha}. [Run](${url})\n`)
+              .addTable([['Job', 'Actual outcome'], ...Object.entries(results).map(([k,v]) => [k,v.result])])
+              .addRaw('13 disjoint shards requested. Counts, exact commands, exits and runtime identities are in each receipt artifact; missing/cancelled/skipped shards are not PASS.\n').write();
+            if (results.admit.result !== 'success' || results.shards.result !== 'success') core.setFailed('Incomplete or failed public qualification');
+      - uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
+        if: always() && needs.admit.result == 'success'
+        with:
+          pattern: public-tests-${{ needs.admit.outputs.sha }}-*-${{ github.run_attempt }}
+          path: receipts
+      - name: Verify all thirteen receipts and aggregate executed counts
+        if: always() && needs.admit.result == 'success'
+        env:
+          SOURCE_SHA: ${{ needs.admit.outputs.sha }}
+          CONTROL_SHA: ${{ github.workflow_sha }}
+        run: |
+          node <<'NODE'
+          const fs = require('node:fs');
+          const expected = ['unit','root','types'].flatMap(k => [0,1,2,3].map(i => `${k}-${i}`)).concat('lint-0');
+          const receipts = fs.existsSync('receipts') ? fs.readdirSync('receipts').map(p => JSON.parse(fs.readFileSync(`receipts/${p}/receipt.json`))) : [];
+          const keys = receipts.map(r => `${r.kind}-${r.shard}`).sort();
+          const valid = JSON.stringify(keys) === JSON.stringify(expected.sort()) && receipts.every(r => r.status === 'PASS' && r.sourceSHA === process.env.SOURCE_SHA && r.controlSHA === process.env.CONTROL_SHA && r.run === process.env.GITHUB_RUN_ID && r.attempt === process.env.GITHUB_RUN_ATTEMPT && r.commands.length > 0 && r.commands.every(c => c.qualified));
+          const tests = receipts.flatMap(r => r.commands).reduce((n,c) => n + (c.counts?.tests || 0), 0);
+          fs.appendFileSync(process.env.GITHUB_STEP_SUMMARY, `\nReceipts present: ${receipts.length}/13; reported executed tests: ${tests}; aggregate: ${valid && tests > 0 ? 'PASS' : 'NOT QUALIFIED'}.\n`);
+          if (!valid || !tests) process.exitCode = 1;
+          NODE

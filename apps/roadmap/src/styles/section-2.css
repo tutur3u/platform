@@ -1,0 +1,553 @@
+/* Tracks */
+.nav-sentinel {
+  height: 1px;
+  margin: 0;
+  pointer-events: none;
+}
+.sticky-bar {
+  position: sticky;
+  min-width: 0;
+  max-width: calc(100% + 48px);
+  top: var(--shell-nav-offset, 76px);
+  z-index: 40;
+  display: grid;
+  /* One column the width of the bar: the scrolling chip row and the
+     full-width filters never size it to their content. */
+  grid-template-columns: minmax(0, 1fr);
+  gap: 10px;
+  margin: 0 -24px;
+  padding: 10px 24px;
+  /* Near-opaque: a backdrop blur over a scrolling list is a full repaint
+     per frame on phones (desktop gets the blur below). */
+  background: color-mix(in oklab, var(--rm-bg) 97%, transparent);
+  border-bottom: 1px solid var(--rm-line);
+}
+.track-nav {
+  display: flex;
+  min-width: 0;
+  gap: 6px;
+  overflow-x: auto;
+  scrollbar-width: none;
+  -webkit-overflow-scrolling: touch;
+}
+.track-nav::-webkit-scrollbar {
+  display: none;
+}
+.track-nav a {
+  flex: none;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 12px;
+  border-radius: 999px;
+  border: 1px solid var(--rm-line);
+  background: var(--rm-panel);
+  font-size: 13px;
+  font-weight: 500;
+  text-decoration: none;
+  white-space: nowrap;
+}
+.track-nav a span {
+  color: var(--rm-muted);
+  font-size: 11.5px;
+  font-variant-numeric: tabular-nums;
+}
+.filters {
+  justify-self: start;
+  min-width: 0;
+  max-width: 100%;
+  overflow-x: auto;
+}
+.track-list {
+  display: grid;
+  gap: 14px;
+}
+.track {
+  scroll-margin-top: calc(var(--shell-nav-offset, 76px) + 96px);
+  padding: 16px;
+  border: 1px solid var(--rm-line);
+  border-radius: var(--rm-radius);
+  background: var(--rm-panel);
+  display: grid;
+  gap: 12px;
+}
+.track > header {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+}
+.track h3 {
+  margin: 0;
+  font-size: 19px;
+  letter-spacing: -0.01em;
+}
+.track header p {
+  margin: 4px 0 0;
+  font-size: 13.5px;
+  line-height: 1.5;
+  color: var(--rm-muted);
+}
+.track .track-count {
+  margin: 0;
+  flex: none;
+  text-align: right;
+  font-size: 13px;
+  color: var(--rm-muted);
+  font-variant-numeric: tabular-nums;
+}
+.track-count b {
+  font-size: 20px;
+  color: var(--rm-ink);
+}
+.track-count span {
+  display: block;
+  font-size: 11.5px;
+}
+.milestones {
+  display: grid;
+}
+.milestones details {
+  border-top: 1px solid var(--rm-line);
+}
+.milestones summary {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-height: 48px;
+  padding: 10px 0;
+  cursor: pointer;
+  list-style: none;
+}
+.ms-title {
+  font-size: 15px;
+  font-weight: 600;
+  line-height: 1.35;
+}
+.ms-count {
+  flex: none;
+  font-size: 12px;
+  color: var(--rm-muted);
+  font-variant-numeric: tabular-nums;
+  padding: 2px 8px;
+  border-radius: 999px;
+  background: var(--rm-soft);
+}
+.ms-summary {
+  margin: -4px 0 8px;
+  font-size: 13px;
+  color: var(--rm-muted);
+}
+.deliverables {
+  list-style: none;
+  margin: 0 0 12px;
+  padding: 0;
+  display: grid;
+  gap: 2px;
+}
+.deliverables li {
+  display: grid;
+  grid-template-columns: 18px minmax(0, 1fr);
+  column-gap: 12px;
+  row-gap: 0;
+  padding: 10px;
+  margin: 0 -10px;
+  border-radius: 10px;
+}
+.deliverables li:hover {
+  background: var(--rm-soft);
+}
+/* The status glyph is a mask on the row (lucide shapes, ISC), not an inline
+   SVG per deliverable: ~470 rows would otherwise add ~2,000 DOM nodes. */
+.deliverables li::before {
+  content: "";
+  grid-row: 1 / span 2;
+  width: 18px;
+  height: 18px;
+  margin-top: 1px;
+  background: var(--d-tone);
+  -webkit-mask: var(--d-glyph) center / contain no-repeat;
+  mask: var(--d-glyph) center / contain no-repeat;
+}
+.deliverables li > p {
+  grid-column: 2;
+}
+.deliverables li.live {
+  --d-tone: var(--rm-live);
+  --d-glyph: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'><circle cx='12' cy='12' r='10'/><path d='m16 9-5.5 5.5L8 12'/></svg>");
+}
+.deliverables li.waiting_for_prod_sync {
+  --d-tone: var(--rm-sync);
+  --d-glyph: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'><path d='M12 13v8'/><path d='M4 14.899A7 7 0 1 1 15.71 8h1.79a4.5 4.5 0 0 1 2.5 8.242'/><path d='m8 17 4-4 4 4'/></svg>");
+}
+.deliverables li.waiting_for_merge {
+  --d-tone: var(--rm-merge);
+  --d-glyph: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'><circle cx='5' cy='6' r='3'/><path d='M5 9v12'/><circle cx='19' cy='18' r='3'/><path d='m15 9-3-3 3-3'/><path d='M12 6h5a2 2 0 0 1 2 2v7'/></svg>");
+}
+.deliverables li.in_progress {
+  --d-tone: var(--rm-progress);
+  --d-glyph: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'><circle cx='12' cy='12' r='1'/><circle cx='12' cy='12' r='10'/></svg>");
+}
+.deliverables li.planned {
+  --d-tone: var(--rm-planned);
+  --d-glyph: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'><path d='M10.1 2.182a10 10 0 0 1 3.8 0'/><path d='M13.9 21.818a10 10 0 0 1-3.8 0'/><path d='M17.609 3.721a10 10 0 0 1 2.69 2.7'/><path d='M2.182 13.9a10 10 0 0 1 0-3.8'/><path d='M20.279 17.609a10 10 0 0 1-2.7 2.69'/><path d='M21.818 10.1a10 10 0 0 1 0 3.8'/><path d='M3.721 6.391a10 10 0 0 1 2.7-2.69'/><path d='M6.391 20.279a10 10 0 0 1-2.69-2.7'/></svg>");
+}
+.d-title {
+  margin: 0;
+  font-size: 14.5px;
+  line-height: 1.4;
+}
+.deliverables li.planned .d-title {
+  color: var(--rm-muted);
+}
+/* Hosting */
+.main-commit {
+  margin: 0;
+  font-size: 13px;
+  color: var(--rm-muted);
+}
+.hosts {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: 10px;
+}
+/* Hosting: summary bar, platform groups, uniform cards. Platform hues are
+   identity (Cloudflare orange, Vercel ink); every one ships with a label. */
+.host-summary {
+  display: grid;
+  gap: 10px;
+  padding: 14px 16px;
+  border: 1px solid var(--rm-line);
+  border-radius: var(--rm-radius);
+  background: var(--rm-panel);
+}
+.host-summary-bar {
+  display: flex;
+  gap: 2px;
+  height: 12px;
+}
+.host-seg {
+  border-radius: 4px;
+  min-width: 4px;
+}
+.host-legend {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px 16px;
+  font-size: 13px;
+  color: var(--rm-muted);
+}
+.host-legend li {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+.host-legend b {
+  color: var(--rm-ink);
+  font-variant-numeric: tabular-nums;
+}
+.platform-mark {
+  display: inline-block;
+  width: 10px;
+  height: 10px;
+  border-radius: 3px;
+  flex: none;
+}
+.platform-mark.vercel {
+  /* Vercel's mark is a triangle. */
+  border-radius: 0;
+  width: 0;
+  height: 0;
+  border-left: 6px solid transparent;
+  border-right: 6px solid transparent;
+  border-bottom: 10px solid var(--rm-ink);
+  background: none;
+}
+.platform-mark.workers,
+.host-seg.workers {
+  background: var(--ws-cf, #f6821f);
+}
+.host-seg.vercel {
+  background: var(--rm-ink);
+}
+.platform-mark.store,
+.host-seg.store {
+  background: var(--rm-sync);
+}
+.platform-mark.unknown,
+.host-seg.unknown {
+  background: var(--rm-planned);
+}
+.host-group {
+  display: grid;
+  gap: 10px;
+}
+.host-group-title {
+  margin: 8px 0 0;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 15px;
+  font-weight: 700;
+}
+.host-group-count {
+  padding: 1px 8px;
+  border-radius: 999px;
+  background: var(--rm-soft);
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--rm-muted);
+  font-variant-numeric: tabular-nums;
+}
+.host-card {
+  position: relative;
+  display: grid;
+  gap: 10px;
+  min-height: 92px;
+  align-content: space-between;
+  padding: 14px 14px 12px 16px;
+  border: 1px solid var(--rm-line);
+  border-radius: 14px;
+  background: var(--rm-panel);
+  min-width: 0;
+  overflow: hidden;
+}
+.host-card::before {
+  content: "";
+  position: absolute;
+  inset: 0 auto 0 0;
+  width: 3px;
+  background: var(--rm-planned);
+}
+.host-card.workers::before {
+  background: var(--ws-cf, #f6821f);
+}
+.host-card.vercel::before {
+  background: var(--rm-ink);
+}
+.host-card.store::before {
+  background: var(--rm-sync);
+}
+.host-card:hover {
+  border-color: color-mix(in oklab, var(--rm-ink) 28%, transparent);
+}
+.host-card:focus-within {
+  border-color: var(--rm-sync);
+  box-shadow: 0 0 0 3px color-mix(in oklab, var(--rm-sync) 22%, transparent);
+}
+.host-top {
+  display: grid;
+  gap: 6px;
+  font-size: 14.5px;
+}
+.host-fresh {
+  justify-self: start;
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 2px 8px;
+  border-radius: 999px;
+  font-size: 11.5px;
+  font-weight: 600;
+  line-height: 1.4;
+}
+.host-fresh::before {
+  content: "";
+  width: 6px;
+  height: 6px;
+  border-radius: 999px;
+  background: currentColor;
+}
+.host-fresh.build {
+  color: var(--rm-ink);
+  background: color-mix(in oklab, var(--rm-ink) 8%, transparent);
+}
+.host-fresh.unknown {
+  color: var(--rm-muted);
+  background: var(--rm-soft);
+}
+.host-commit {
+  justify-self: start;
+  font-size: 12px;
+  color: var(--rm-muted);
+  text-decoration: none;
+  border-radius: 6px;
+}
+.host-commit:hover code {
+  color: var(--rm-ink);
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+.host-commit.is-empty {
+  opacity: 0.35;
+}
+@media (max-width: 559px) {
+  /* Phones: one card per row, name and freshness on one line. */
+  .hosts {
+    grid-template-columns: 1fr;
+    gap: 8px;
+  }
+  .host-card {
+    min-height: 0;
+    gap: 6px;
+  }
+  .host-top {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 10px;
+  }
+  .host-fresh {
+    flex: none;
+  }
+  /* Thumb-sized filters: the four statuses share the row evenly. */
+  .filters {
+    display: flex;
+    width: 100%;
+  }
+  .filters button {
+    flex: 1 1 0;
+    min-height: 40px;
+    padding-inline: 6px;
+  }
+  .track-nav a {
+    min-height: 36px;
+  }
+  .track {
+    padding: 14px;
+  }
+  .deliverables li {
+    padding-block: 9px;
+  }
+}
+@media (min-width: 560px) {
+  .hosts {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+@media (min-width: 720px) {
+  .hosts {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+}
+@media (min-width: 1024px) {
+  .hosts {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+  }
+}
+@media (prefers-reduced-motion: no-preference) {
+  .host-card {
+    transition:
+      border-color 160ms ease,
+      box-shadow 160ms ease,
+      transform 160ms ease;
+  }
+  .host-card:hover {
+    transform: translateY(-2px);
+  }
+}
+code {
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-size: 0.92em;
+}
+/* Method */
+.method {
+  padding: 16px;
+  border-radius: var(--rm-radius);
+  background: var(--rm-soft);
+}
+.method dl {
+  margin: 0;
+  display: grid;
+  gap: 10px;
+}
+.method dl div {
+  display: grid;
+  gap: 2px;
+}
+.method dd {
+  margin: 0;
+  font-size: 13.5px;
+  line-height: 1.5;
+  color: var(--rm-muted);
+}
+@media (min-width: 720px) {
+  .page {
+    gap: 72px;
+  }
+  .hero {
+    padding-top: 56px;
+  }
+  .sticky-bar {
+    margin: 0 -24px;
+    padding: 12px 24px;
+  }
+  .track {
+    padding: 22px;
+  }
+  .method dl div {
+    grid-template-columns: 200px 1fr;
+    gap: 12px;
+  }
+  .coming-soon article {
+    padding: 28px;
+  }
+}
+@media (min-width: 1000px) {
+  .track-list {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    align-items: start;
+  }
+}
+/* Docked roadmap: the filter row shares the logo pill and only it scrolls.
+   Workshop pages are always compact and have no filter row, so they keep
+   the shell's menu, language switch and theme toggle. */
+.roadmap:not(.workshop)[data-nav-compact] #navbar-content > div:last-child,
+.roadmap:not(.workshop)[data-nav-compact]
+  #navbar-content
+  > div:nth-child(2)
+  > div {
+  display: none;
+}
+/* The brand name is the logo link's accessible name (the logo image is
+   decorative), so the docked pill hides it visually, never from screen
+   readers. */
+.roadmap:not(.workshop)[data-nav-compact] #navbar-content a > span {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  margin: -1px;
+  padding: 0;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
+  border: 0;
+}
+.roadmap[data-nav-compact] .sticky-bar {
+  position: fixed;
+  top: 12px;
+  left: max(60px, calc((100vw - 1280px) / 2 + 48px));
+  right: max(20px, calc((100vw - 1280px) / 2 + 8px));
+  height: 36px;
+  z-index: 51;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  max-width: none;
+  margin: 0;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  backdrop-filter: none;
+  overflow-x: auto;
+  scrollbar-width: none;
+}
+.roadmap[data-nav-compact] .track-nav {
+  display: flex;
+  flex: none;
+  overflow: visible;
+}

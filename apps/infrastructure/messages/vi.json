@@ -3746,6 +3746,15 @@
     "sync-dashboard": "Bảng điều khiển đồng bộ",
     "sync-history": "Đồng bộ hóa lịch sử"
   },
+  "calendar_category_reorder_pilot": {
+    "cancel": "Đã trả {label} về vị trí {position} trên {total}.",
+    "drop": "Đã thả {label} tại vị trí {position} trên {total}.",
+    "grab": "Đã chọn {label}, vị trí {position} trên {total}.",
+    "instructions": "Dùng phím mũi tên để di chuyển tiêu điểm. Nhấn Space để chọn hoặc thả danh mục. Dùng mũi tên để đổi vị trí; Escape để hủy.",
+    "invalid": "Tên danh mục phải duy nhất và không trống để sắp xếp.",
+    "label": "Thứ tự danh mục",
+    "move": "{label}, vị trí {position} trên {total}."
+  },
   "calendar_lab": {
     "baseline_captured": "Đã ghi nhận mốc so sánh. Điều chỉnh trọng số và chạy lại để so sánh.",
     "controls": "Điều khiển Lab",

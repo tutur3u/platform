@@ -75,32 +75,170 @@ export type AppCoordinationTokenVerification =
       ok: false;
     };
 
-function getSecretCandidates(explicitSecret?: string) {
-  const candidates = explicitSecret
-    ? [explicitSecret]
-    : [
-        process.env.TUTURUUU_APP_COORDINATION_SECRET,
-        process.env.APP_COORDINATION_TOKEN_SECRET,
-        process.env.SUPABASE_SECRET_KEY,
-        process.env.SUPABASE_SERVICE_ROLE_KEY,
-        process.env.SUPABASE_SERVICE_KEY,
-      ];
+/** Env names read by the default app-coordination secret chain, in signing order. */
+export const APP_COORDINATION_SECRET_ENV_NAMES = [
+  'TUTURUUU_APP_COORDINATION_SECRET',
+  'APP_COORDINATION_TOKEN_SECRET',
+  'SUPABASE_SECRET_KEY',
+  'SUPABASE_SERVICE_ROLE_KEY',
+  'SUPABASE_SERVICE_KEY',
+] as const;
 
-  const secrets = candidates
-    .map((value) => value?.trim())
-    .filter((value): value is string => Boolean(value));
+/** Accept-only slot used to stage a new signing secret across deployments. */
+export const APP_COORDINATION_NEXT_SECRET_ENV_NAME =
+  'APP_COORDINATION_TOKEN_NEXT_SECRET';
+/** `next` promotes the accept-only slot to the signer; `current` (default) keeps it accept-only. */
+export const APP_COORDINATION_SIGNER_ENV_NAME = 'APP_COORDINATION_TOKEN_SIGNER';
+/** `1`/`true` drops the Supabase key fallbacks from the chain in production. */
+export const APP_COORDINATION_DISABLE_SUPABASE_FALLBACK_ENV_NAME =
+  'APP_COORDINATION_TOKEN_DISABLE_SUPABASE_FALLBACK';
+export const APP_COORDINATION_NEXT_SECRET_MIN_LENGTH = 32;
 
-  if (secrets.length === 0 && process.env.NODE_ENV !== 'production') {
-    return [LOCAL_DEVELOPMENT_SECRET];
-  }
+const SUPABASE_FALLBACK_ENV_NAMES: ReadonlySet<string> = new Set([
+  'SUPABASE_SECRET_KEY',
+  'SUPABASE_SERVICE_ROLE_KEY',
+  'SUPABASE_SERVICE_KEY',
+]);
 
-  if (secrets.length === 0) {
+function readEnvValue(name: string) {
+  return process.env[name]?.trim() || undefined;
+}
+
+function readNextSecret() {
+  const value = readEnvValue(APP_COORDINATION_NEXT_SECRET_ENV_NAME);
+
+  if (
+    value !== undefined &&
+    value.length < APP_COORDINATION_NEXT_SECRET_MIN_LENGTH
+  ) {
     throw new Error(
-      'Missing TUTURUUU_APP_COORDINATION_SECRET or SUPABASE_SECRET_KEY'
+      `${APP_COORDINATION_NEXT_SECRET_ENV_NAME} must be at least ${APP_COORDINATION_NEXT_SECRET_MIN_LENGTH} characters`
     );
   }
 
-  return [...new Set(secrets)];
+  return value;
+}
+
+function readSignerSelection(): 'current' | 'next' {
+  const value = readEnvValue(APP_COORDINATION_SIGNER_ENV_NAME)?.toLowerCase();
+
+  if (value === undefined || value === 'current') return 'current';
+  if (value === 'next') return 'next';
+
+  throw new Error(
+    `${APP_COORDINATION_SIGNER_ENV_NAME} must be "current" or "next"`
+  );
+}
+
+function readSupabaseFallbackDisabled() {
+  const value = readEnvValue(
+    APP_COORDINATION_DISABLE_SUPABASE_FALLBACK_ENV_NAME
+  )?.toLowerCase();
+
+  if (value === undefined || value === '0' || value === 'false') return false;
+  if (value !== '1' && value !== 'true') {
+    throw new Error(
+      `${APP_COORDINATION_DISABLE_SUPABASE_FALLBACK_ENV_NAME} must be "1" or "true" when set`
+    );
+  }
+
+  // Local development and tests keep resolving the Supabase keys.
+  return process.env.NODE_ENV === 'production';
+}
+
+type ServerTokenSecretOptions = {
+  /** Used only outside production when no secret resolves. */
+  localDevelopmentSecret?: string;
+  /** Error message when no secret resolves in production. */
+  missingMessage?: string;
+};
+
+/**
+ * Resolves an ordered, de-duplicated secret list for a server token from the
+ * given env names. The first entry signs; every entry is accepted when
+ * verifying. On top of the named chain:
+ *
+ * - `APP_COORDINATION_TOKEN_NEXT_SECRET` is accepted but appended last, so it
+ *   never signs while the chain has a value.
+ * - `APP_COORDINATION_TOKEN_SIGNER=next` moves that slot first (the signer)
+ *   and keeps the chain accepted so older tokens still verify. Selecting it
+ *   without a slot value throws instead of signing with the old secret.
+ * - `APP_COORDINATION_TOKEN_DISABLE_SUPABASE_FALLBACK=1` removes the
+ *   `SUPABASE_*` names in production; an empty list then throws.
+ *
+ * With none of those names set the result is the named chain unchanged.
+ */
+export function resolveServerTokenSecrets(
+  envNames: readonly string[],
+  options: ServerTokenSecretOptions = {}
+) {
+  const nextSecret = readNextSecret();
+  const signer = readSignerSelection();
+  const fallbackDisabled = readSupabaseFallbackDisabled();
+
+  if (signer === 'next' && nextSecret === undefined) {
+    throw new Error(
+      `${APP_COORDINATION_SIGNER_ENV_NAME}=next requires ${APP_COORDINATION_NEXT_SECRET_ENV_NAME}`
+    );
+  }
+
+  const chain = envNames
+    .filter(
+      (name) => !(fallbackDisabled && SUPABASE_FALLBACK_ENV_NAMES.has(name))
+    )
+    .map(readEnvValue)
+    .filter((value): value is string => value !== undefined);
+  const ordered =
+    nextSecret === undefined
+      ? chain
+      : signer === 'next'
+        ? [nextSecret, ...chain]
+        : [...chain, nextSecret];
+  const secrets = [...new Set(ordered)];
+
+  if (secrets.length === 0 && process.env.NODE_ENV !== 'production') {
+    return [options.localDevelopmentSecret ?? LOCAL_DEVELOPMENT_SECRET];
+  }
+
+  if (secrets.length === 0) {
+    const message =
+      options.missingMessage ??
+      'Missing TUTURUUU_APP_COORDINATION_SECRET or SUPABASE_SECRET_KEY';
+
+    throw new Error(
+      fallbackDisabled
+        ? `${message} (${APP_COORDINATION_DISABLE_SUPABASE_FALLBACK_ENV_NAME} removed the Supabase key fallbacks)`
+        : message
+    );
+  }
+
+  return secrets;
+}
+
+export function resolveExplicitSecret(
+  explicitSecret: string,
+  options: ServerTokenSecretOptions = {}
+) {
+  const secret = explicitSecret.trim();
+
+  if (secret) return [secret];
+  if (process.env.NODE_ENV !== 'production') {
+    return [options.localDevelopmentSecret ?? LOCAL_DEVELOPMENT_SECRET];
+  }
+
+  throw new Error(
+    options.missingMessage ??
+      'Missing TUTURUUU_APP_COORDINATION_SECRET or SUPABASE_SECRET_KEY'
+  );
+}
+
+function getSecretCandidates(explicitSecret?: string) {
+  if (!explicitSecret) {
+    return resolveServerTokenSecrets(APP_COORDINATION_SECRET_ENV_NAMES);
+  }
+
+  // An explicit secret (tests, injected callers) bypasses the env chain.
+  return resolveExplicitSecret(explicitSecret);
 }
 
 /**

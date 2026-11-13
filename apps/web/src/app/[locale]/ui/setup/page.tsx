@@ -24,7 +24,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
     title: t('setupTitle'),
     description: t('setupDescription'),
     alternates: {
-      canonical: `${siteConfig.url}/${normalizedLocale}/ui/setup`,
+      canonical: `${siteConfig.url}/${normalizedLocale}/design/setup`,
     },
   };
 }

@@ -1,3 +1,4 @@
+import { withHstsResponsePolicy } from '@tuturuuu/start-bridge/response-policy';
 import handler from '@tanstack/react-start/server-entry';
 import { workerBuildInfo } from '@tuturuuu/utils/worker-build-info';
 import bcrypt from 'bcryptjs';
@@ -40,4 +41,4 @@ export function shortenerWorkerRequest(
   );
 }
 
-export default { fetch: shortenerWorkerRequest };
+export default { fetch: withHstsResponsePolicy(shortenerWorkerRequest) };

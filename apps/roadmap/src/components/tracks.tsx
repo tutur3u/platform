@@ -3,6 +3,7 @@ import { shellNavOffset } from '@tuturuuu/marketing-shell';
 import {
   memo,
   type ReactNode,
+  Suspense,
   useDeferredValue,
   useEffect,
   useMemo,
@@ -167,14 +168,17 @@ const TrackList = memo(function TrackList({
       {visible.length ? null : <p className="empty">{t.tracks.empty}</p>}
       <div className="track-list" aria-busy={pending || undefined}>
         {visible.map(({ track, milestones }) => (
-          <TrackCard
-            key={track.id}
-            t={t}
-            lang={lang}
-            track={track}
-            milestones={milestones}
-            expanded={filter !== 'all'}
-          />
+          // One hydration boundary per card: React hydrates the list in
+          // small, interruptible pieces, and the card a reader taps first.
+          <Suspense key={track.id}>
+            <TrackCard
+              t={t}
+              lang={lang}
+              track={track}
+              milestones={milestones}
+              expanded={filter !== 'all'}
+            />
+          </Suspense>
         ))}
       </div>
     </>

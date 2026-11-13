@@ -1669,6 +1669,15 @@
     "workspace_timezone": "Workspace Timezone",
     "workspace_timezone_desc": "Set the default timezone for this workspace. Members can override this in their personal settings."
   },
+  "calendar_category_reorder_pilot": {
+    "cancel": "Returned {label} to position {position} of {total}.",
+    "drop": "Dropped {label} at position {position} of {total}.",
+    "grab": "Picked up {label}, position {position} of {total}.",
+    "instructions": "Arrows navigate. Space picks up or drops a category. Arrows move it; Escape cancels.",
+    "invalid": "Category names must be unique and nonempty to reorder.",
+    "label": "Category order",
+    "move": "{label}, position {position} of {total}."
+  },
   "calendar_lab": {
     "baseline_captured": "Baseline captured. Adjust weights and rerun to compare.",
     "controls": "Lab Controls",

@@ -32,6 +32,7 @@ import {
 import { WEB_MIRA_CLIENT_CAPABILITIES } from './mira-open-app';
 
 interface UseMiraChatConfigParams {
+  onRequestStart?: () => void;
   wsId: string;
   taskBoardContext?: MiraTaskBoardContext;
 }
@@ -129,6 +130,7 @@ export function resolveAvailableMiraModel({
 export function useMiraChatConfig({
   wsId,
   taskBoardContext,
+  onRequestStart,
 }: UseMiraChatConfigParams) {
   const [selectedModel, setSelectedModel] = useState<AIModelUI>(INITIAL_MODEL);
   const [thinkingMode, setThinkingMode] = useState<ThinkingMode>('fast');
@@ -267,10 +269,13 @@ export function useMiraChatConfig({
       new DefaultChatTransport({
         api: '/api/ai/chat',
         credentials: 'include',
-        prepareSendMessagesRequest: createMiraRequestPreparer(),
+        prepareSendMessagesRequest: createMiraRequestPreparer(
+          undefined,
+          onRequestStart
+        ),
         body: () => chatRequestBodyRef.current,
       }),
-    []
+    [onRequestStart]
   );
 
   // Restore model from localStorage on mount

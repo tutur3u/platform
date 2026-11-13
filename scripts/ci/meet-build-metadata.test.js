@@ -11,9 +11,9 @@ const root = resolve(__dirname, '../..');
 const workflow = readWorkflow('meet-cloudflare.yaml');
 const runtimeGateCommands = {
   validate:
-    'meet_status=0\nTMPDIR="$RUNNER_TEMP" node scripts/ci/meet-native-launcher.mjs "$SOURCE_SHA" || meet_status=$?\nsdk_status=0\nGITHUB_SHA="$SOURCE_SHA" node --test --test-concurrency=1 scripts/ci/native-wrangler-runtime.test.mjs scripts/ci/native-wrangler-runtime.runtime.mjs || sdk_status=$?\ntest "$meet_status" -eq 0\ntest "$sdk_status" -eq 0\n',
+    'test -n "$MEET_FIXTURE_RECEIPT"\nGITHUB_SHA="$SOURCE_SHA" node scripts/ci/verify-meet-start-output.js verify apps/meet apps/meet/meet-artifact.json\nmeet_status=0\nTMPDIR="$RUNNER_TEMP" node scripts/ci/meet-native-launcher.mjs "$SOURCE_SHA" --fixture-receipt "$MEET_FIXTURE_RECEIPT" || meet_status=$?\nGITHUB_SHA="$SOURCE_SHA" node scripts/ci/verify-meet-start-output.js verify apps/meet apps/meet/meet-artifact.json\nsdk_status=0\nGITHUB_SHA="$SOURCE_SHA" node --test --test-concurrency=1 scripts/ci/native-wrangler-runtime.test.mjs scripts/ci/native-wrangler-runtime.runtime.mjs || sdk_status=$?\ntest "$meet_status" -eq 0\ntest "$sdk_status" -eq 0\n',
   deploy:
-    'TMPDIR="$RUNNER_TEMP" node scripts/ci/meet-native-launcher.mjs "$SOURCE_SHA"',
+    'TMPDIR="$RUNNER_TEMP" node scripts/ci/meet-native-launcher.mjs "$SOURCE_SHA" --production-receipt "$RUNNER_TEMP/meet-production-receipt.json"',
 };
 
 test('Meet generates source metadata before dependency and Worker builds', () => {
@@ -200,7 +200,7 @@ function assertMeetArtifactActors(steps) {
   assert.equal(actors[5].run, runtimeGateCommands.validate);
   assert.match(
     actors[6].run,
-    /^\(cd apps\/meet && node \.\.\/\.\.\/scripts\/ci\/meet-dry-run-scratch\.mjs "\$SOURCE_SHA"\)$/m
+    /^\s*\(cd apps\/meet && node \.\.\/\.\.\/scripts\/ci\/meet-dry-run-scratch\.mjs "\$SOURCE_SHA"\)$/m
   );
   assert.match(
     actors[6].run,
@@ -489,7 +489,7 @@ test('source-only discovery excludes the emitted runtime while both artifact gat
   try {
     await writeFile(
       join(sink, 'node'),
-      '#!/bin/sh\nprintf "%s\\n" "$1" >> "$MEET_INVOCATIONS"\ncase "$1" in scripts/ci/meet-native-launcher.mjs) exit "$MEET_EXIT" ;; --test) exit "$SDK_EXIT" ;; *) exit 99 ;; esac\n',
+      '#!/bin/sh\nprintf "%s\\n" "$1" >> "$MEET_INVOCATIONS"\ncase "$1" in scripts/ci/verify-meet-start-output.js) exit 0 ;; scripts/ci/meet-native-launcher.mjs) exit "$MEET_EXIT" ;; --test) exit "$SDK_EXIT" ;; *) exit 99 ;; esac\n',
       { mode: 0o700 }
     );
     for (const [meetExit, sdkExit] of [
@@ -510,6 +510,7 @@ test('source-only discovery excludes the emitted runtime while both artifact gat
             PATH: `${sink}:${process.env.PATH}`,
             RUNNER_TEMP: sink,
             SOURCE_SHA: 'a'.repeat(40),
+            MEET_FIXTURE_RECEIPT: join(sink, 'fixture-receipt.json'),
             MEET_INVOCATIONS: calls,
             MEET_EXIT: String(meetExit),
             SDK_EXIT: String(sdkExit),
@@ -518,7 +519,9 @@ test('source-only discovery excludes the emitted runtime while both artifact gat
       );
       assert.equal(result.status, meetExit || sdkExit ? 1 : 0, result.stderr);
       assert.deepEqual(readFileSync(calls, 'utf8').trim().split('\n'), [
+        'scripts/ci/verify-meet-start-output.js',
         launcherPath,
+        'scripts/ci/verify-meet-start-output.js',
         '--test',
       ]);
     }
@@ -646,4 +649,20 @@ test('Meet builds with production Supabase values only on the production ref', (
       key: "${{ github.ref != 'refs/heads/production' && 'sb_publishable_meet_ci_placeholder' || secrets.PRODUCTION_SUPABASE_PUBLISHABLE_KEY }}",
     }
   );
+});
+
+
+test('Meet selects the fixture graph without replacing production packaging', () => {
+  const steps = workflow.jobs.validate.steps;
+  const supplier = steps.find((step) => step.id === 'meet-fixture-supplier');
+  const seal = uniqueActor(steps, 'Seal exact-SHA frontend artifact');
+  const gate = uniqueActor(steps,
+    'Verify emitted Start SSR, auth, cookies, rewrites and Live guards');
+  assert.ok(steps.indexOf(supplier) > steps.indexOf(seal));
+  assert.equal(steps.indexOf(gate), steps.indexOf(supplier) + 1);
+  assert.equal(gate.env.MEET_FIXTURE_RECEIPT,
+    '${{ steps.meet-fixture-supplier.outputs.receipt }}');
+  assert.equal(gate.run, runtimeGateCommands.validate);
+  artifactArchiveCommand(uniqueActor(steps,
+    'Verify and pack accepted exact-SHA frontend artifact').run);
 });

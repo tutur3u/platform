@@ -10,6 +10,7 @@ import react from '@vitejs/plugin-react';
 import rsc from '@vitejs/plugin-rsc';
 import { defineConfig } from 'vite-plus';
 import { voidPlugin } from 'void';
+import { landingCriticalCss } from './scripts/landing-critical-css.mjs';
 import { marketingCssSources } from './scripts/marketing-css.mjs';
 
 const bridge = startBridgePreset({
@@ -28,6 +29,7 @@ export default defineConfig(({ command }) => ({
   define: bridge.define,
   plugins: [
     marketingCssSources(),
+    landingCriticalCss(new URL('.', import.meta.url).pathname),
     startBridgeRscPlugin({
       rscEntries: {
         'bridge-api': new URL(

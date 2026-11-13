@@ -1,0 +1,79 @@
+---
+title: "Education inline assistance contracts"
+description: "Policy and suggestion boundaries for educational editor adapters."
+---
+
+The portable `@tuturuuu/education-core/education/inline-assistant` module defines
+subject-aware prompts and validates inline suggestions. It has no network,
+storage, framework or provider dependency. It does not enable assistance on a
+classroom surface by itself.
+
+## Trusted policy
+
+An adapter must resolve workspace AI enablement and the teacher's help level from
+trusted server state after authenticating the learner and checking access to the
+classroom and document. Learner request fields cannot grant a help level.
+Unknown or missing levels resolve to `off`; workspace disablement overrides
+`full`. The supported levels are `off`, `hints` and `full`.
+
+`buildAssistanceMessages` returns null when assistance is off or text is empty.
+It bounds snapshots to 12,000 UTF-16 code units and keeps untrusted student text
+in a separate user message. Subject guidance covers writing, math, physics,
+chemistry, biology and a general fallback. Explanations can use English or
+Vietnamese. Only an authenticated adapter using the workspace's existing
+configured provider path may send these messages.
+
+Hints mode instructs the model to avoid answers, strips replacement fields from
+validated results and prohibits applying edits. These structural controls do not
+prove explanations are answer-free. Evaluate the configured model against
+answer-leakage fixtures before enabling remote hints for assessed work.
+
+## Editor adapters
+
+`validateInlineSuggestions` bounds provider output to twenty findings, rejects
+invalid, overlapping and duplicate ranges, verifies quoted original text, and
+rejects ranges splitting Unicode surrogate pairs. Treat explanation and replacement
+strings as text, never executable HTML. An empty list does not certify a correct
+answer.
+
+Offsets refer to the exact plain-text snapshot in UTF-16 code units. They are not
+ProseMirror positions. A rich-text adapter must maintain an explicit mapping and
+apply changes through its editor transaction API to preserve formatting.
+`applyInlineSuggestion` supports plain-text adapters and rejects any snapshot
+change, invalid range, disabled policy, or hint-only edit.
+
+Recheck policy when generating and applying findings. Cancel outstanding requests
+and remove visible suggestions when policy, workspace, document or learner changes.
+Use instance-local bounded caches; never share student text or findings between
+workspaces or learners. An adapter must supply accessible accept/dismiss controls,
+explanations, keyboard focus handling and stale-result recovery before enabling
+inline assistance.
+
+## Teach module-content review
+
+The Teach module-content editor provides an opt-in review panel for authenticated
+teachers with course-update permissions. Help level defaults to off. The selected
+level belongs to that teacher's current draft review; it is not persisted as a
+classroom or assessment policy. Choosing Review draft enables review after a
+900 ms typing pause. Turning assistance off or changing subject cancels pending
+work and clears the instance-local, eight-entry cache.
+
+`POST /api/ai/objects/inline-assistance` uses the existing Teach object-generation
+handler. It checks session/workspace permissions, course and module ownership,
+`ENABLE_CHAT`, and metered credits before using the existing configured Google
+SDK path. It separates coach instructions from the draft, opts out of AI memory,
+redacts provider errors, and cancels generation on disconnect. Student assessment
+routes do not use this endpoint.
+
+The panel exposes subject-specific explanations, accept/dismiss and full/hints/off
+controls in English and Vietnamese. Alt+Shift+A focuses the panel from the editor.
+Suggestions use editor decorations; edits use literal text transactions, preserve
+inline marks and participate in editor history. Cross-block, atom-spanning and
+stale ranges cannot be applied. Document content continues through the editor's
+existing serialized autosave path.
+
+The local visual harness at `apps/teach/tests/inline-assistant-visual` renders the
+actual module editor with synthetic content and responses. It supplies reproducible
+visual evidence without making provider calls or production writes. Live-provider
+quality, persistent teacher policy for learners, and the Learn/Meet adapters need
+separate validation before they are enabled.

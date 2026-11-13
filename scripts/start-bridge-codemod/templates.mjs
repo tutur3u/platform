@@ -181,6 +181,7 @@ import { createProxyMatcher } from '${BRIDGE.proxyMatcher}';
     ? 'AssetsBinding'
     : '{ fetch(request: Request): Promise<Response> }';
   return `${header(app)}/// <reference types="@vitejs/plugin-rsc/types" />
+import { withHstsResponsePolicy } from '${BRIDGE.responsePolicy}';
 ${assetsImport}import { createFunctionProxy } from '${BRIDGE.functionProxy}';
 ${matcherImports}import {
   bridgeErrorResponse,
@@ -239,7 +240,7 @@ const handler = (
 );
 
 export default {
-  async fetch(request: Request, env: ${name}, ctx: WorkerContext) {
+  fetch: withHstsResponsePolicy(async (request: Request, env: ${name}, ctx: WorkerContext) => {
     let response: Response;
     try {
       response = await (await handler)(request, env, ctx);
@@ -258,7 +259,7 @@ export default {
           seoPolicy,
         })
       : response;
-  },
+  }),
 };
 `;
 }
@@ -416,7 +417,7 @@ import {
 ${proxyImport}import { pageModules } from '${moduleFrom('./', PAGE_MODULES.slice('src/start-bridge/'.length))}';
 import { pages } from '${moduleFrom('./', PAGE_MANIFEST.slice('src/start-bridge/'.length))}';
 
-const loadPage = createServerFn({ method: 'GET' })
+const loadPage = createServerFn({ method: 'POST' })
   .validator((href: string) => href)
   .handler(async ({ data }) => {
     const page = await resolveBridgePage({
@@ -550,6 +551,7 @@ export function cloudflareTsconfig({ app }) {
         moduleResolution: 'Bundler',
         jsx: 'react-jsx',
         noEmit: true,
+        allowImportingTsExtensions: true,
         composite: false,
         declaration: false,
         declarationMap: false,

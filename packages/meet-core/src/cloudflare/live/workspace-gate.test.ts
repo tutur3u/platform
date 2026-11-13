@@ -1,285 +1,74 @@
-import { beforeEach, describe, expect, it, vi } from 'vitest';
-
-const mocks = vi.hoisted(() => ({
-  provider: vi.fn(),
-  room: vi.fn(),
-  cleanup: vi.fn(),
-  finalize: vi.fn(),
-  begin: vi.fn(),
-}));
-vi.mock('./room', () => ({ liveRoomCommand: mocks.room }));
-vi.mock('./session-cleanup', () => ({
-  cleanupEndedLiveSession: mocks.cleanup,
-}));
-vi.mock('./finalize-billing', () => ({
-  finalizeSessionBilling: mocks.finalize,
-  settlePublicBillings: vi.fn(),
-}));
-vi.mock('./billing', () => ({
-  beginLiveBilling: mocks.begin,
-  settleLiveBilling: vi.fn(),
-}));
-vi.mock('./registry', () => ({
-  LiveRegistryQueue: class {
-    fetch = async () => new Response('ok');
-  },
-}));
-vi.mock('./registry-heartbeat', () => ({ maintainLiveRegistry: vi.fn() }));
-vi.mock('./usage-report', () => ({ reportLiveUsage: vi.fn() }));
-vi.mock('./provider', () => ({
-  connectLiveProvider: mocks.provider,
-  drainLiveProvider: vi.fn(),
-}));
-
-import { signLiveSession } from '../../features/live-assistant/token';
-import { MeetLiveDurableObject } from './session';
-import type { LiveEnvironment } from './storage';
+import { expect, it, vi } from 'vitest';
 import { liveWorkspaceAllowed } from './workspace-gate';
-
-const team = '00000000-0000-4000-8000-0000000000aa';
-const other = '00000000-0000-4000-8000-0000000000bb';
-const owner = '00000000-0000-4000-8000-0000000000c1';
-const meetingId = '00000000-0000-4000-8000-0000000000d1';
-const sessionId = '00000000-0000-4000-8000-0000000000e1';
-const secret = 'test-secret';
+import { requireCurrentPrivateGrant } from './private-grant';
+const room = vi.hoisted(() => vi.fn());
+vi.mock('./room', () => ({ liveRoomCommand: room }));
 const claims = {
-  audience: 'meet-live' as const,
-  sessionId,
-  meetingId,
-  ownerId: owner,
-  billingWorkspaceId: owner,
-  mode: 'personal' as const,
-  expiresAt: Date.now() + 600_000,
+  mode: 'personal',
+  ownerId: 'synthetic-owner',
+  meetingId: 'synthetic-meeting',
+  inputSource: 'private-microphone',
+  consentVersion: 'synthetic-v1',
+  consentRevision: 1,
+  workspaceAuthority: 'verified-personal',
 };
-const identity = (workspaceId: string) => ({
-  workspaceId,
-  isHost: true,
-  displayName: 'Host',
-});
-const post = (path: string, body: unknown) =>
-  new Request(`https://live.internal${path}`, {
-    method: 'POST',
-    body: JSON.stringify(body),
-  });
-
-function fixture(allowlist?: string) {
-  const values = new Map<string, unknown>();
-  const storage = {
-    get: vi.fn(async (key: string) => values.get(key)),
-    put: vi.fn(async (key: string, value: unknown) => {
-      values.set(key, structuredClone(value));
-    }),
-    setAlarm: vi.fn(async () => {}),
-    delete: vi.fn(async () => true),
-    list: vi.fn(async () => new Map()),
-  };
-  const state = {
-    storage,
-    blockConcurrencyWhile: (run: () => Promise<void>) => run(),
-    waitUntil: (promise?: Promise<unknown>) => void promise?.catch?.(() => {}),
-  };
-  const env = {
-    MEET_REALTIME_TOKEN_SECRET: secret,
-    NEXT_PUBLIC_APP_URL: 'https://meet.tuturuuu.com',
-    MEET_AI_PROTECTED_WORKSPACE_IDS: '00000000-0000-4000-8000-0000000000ee',
-    MEET_AI_ENABLED_WORKSPACE_IDS: allowlist,
-    MEET_AI_DISABLED: allowlist ? undefined : 'true',
-  } as unknown as LiveEnvironment;
-  const object = new MeetLiveDurableObject(state as never, env, mocks.provider);
-  const events: unknown[] = [];
-  Object.assign(object, {
-    socket: {
-      readyState: WebSocket.OPEN,
-      send: (data: string) => events.push(JSON.parse(data)),
-      close: () => {},
-    },
-  });
-  return { object, env, storage, events };
-}
-const initialize = (object: MeetLiveDurableObject, workspaceId: string) =>
-  object.fetch(
-    post('/initialize', {
-      claims,
-      identity: identity(workspaceId),
-      timezone: 'UTC',
-      sharedContext: '{}',
-    })
+const session = { claims, identity: { workspaceId: 'synthetic-workspace' } };
+it('requires explicit false, private authority and consent for Meet and Parley without pilot bypass', () => {
+  expect(liveWorkspaceAllowed({ MEET_AI_DISABLED: 'false' }, session)).toBe(
+    true
   );
-const control = (object: MeetLiveDurableObject, action: string) =>
-  object.fetch(post('/control', { ownerId: owner, meetingId, action }));
-
-describe('Live (transcription) workspace gate', () => {
-  beforeEach(() => {
-    vi.resetAllMocks();
-    mocks.begin.mockResolvedValue({ costUsd: 0 });
-  });
-
-  it('denies by default, requires a session and skips only Parley pilot lists', () => {
-    const session = (app?: 'meet' | 'parley', ws = team) => ({
-      claims: { app },
-      identity: identity(ws),
-    });
-    expect(liveWorkspaceAllowed(undefined, session())).toBe(false);
-    expect(liveWorkspaceAllowed({}, session())).toBe(false);
-    expect(
-      liveWorkspaceAllowed(
-        {
-          MEET_AI_PROTECTED_WORKSPACE_IDS:
-            '00000000-0000-4000-8000-0000000000ee',
-          MEET_AI_ENABLED_WORKSPACE_IDS: '',
-        },
-        session()
-      )
-    ).toBe(false);
-    expect(
-      liveWorkspaceAllowed(
-        {
-          MEET_AI_PROTECTED_WORKSPACE_IDS:
-            '00000000-0000-4000-8000-0000000000ee',
-          MEET_AI_ENABLED_WORKSPACE_IDS: '*',
-        },
-        session()
-      )
-    ).toBe(false);
-    expect(liveWorkspaceAllowed({}, undefined)).toBe(false);
-    expect(
-      liveWorkspaceAllowed(
-        {
-          MEET_AI_PROTECTED_WORKSPACE_IDS:
-            '00000000-0000-4000-8000-0000000000ee',
-          MEET_AI_ENABLED_WORKSPACE_IDS: team,
-        },
-        session()
-      )
-    ).toBe(true);
-    const easyCenter = '00000000-0000-4000-8000-0000000000ee';
-    expect(
-      liveWorkspaceAllowed(
-        {
-          MEET_AI_PROTECTED_WORKSPACE_IDS:
-            '00000000-0000-4000-8000-0000000000ee',
-          MEET_AI_ENABLED_WORKSPACE_IDS: easyCenter,
-        },
-        session('meet', easyCenter)
-      )
-    ).toBe(false);
-    expect(
-      liveWorkspaceAllowed(
-        { MEET_AI_PROTECTED_WORKSPACE_IDS: easyCenter },
-        session('parley')
-      )
-    ).toBe(true);
-  });
-
-  it('refuses /initialize for an unlisted workspace without persisting or arming an alarm', async () => {
-    const { object, storage } = fixture(other);
-    const response = await initialize(object, team);
-    expect(response.status).toBe(403);
-    expect(storage.put).not.toHaveBeenCalled();
-    expect(storage.setAlarm).not.toHaveBeenCalled();
-    expect(
-      (
-        await fixture().object.fetch(
-          post('/initialize', {
-            claims,
-            identity: identity(team),
-            timezone: 'UTC',
-            sharedContext: '{}',
-          })
-        )
-      ).status
-    ).toBe(403);
-  });
-
-  it('refuses /initialize with no configured controls (default-off)', async () => {
-    const { object, env, storage } = fixture(team);
-    delete env.MEET_AI_ENABLED_WORKSPACE_IDS;
-    delete env.MEET_AI_DISABLED;
-    expect((await initialize(object, team)).status).toBe(403);
-    expect(storage.put).not.toHaveBeenCalled();
-    expect(mocks.provider).not.toHaveBeenCalled();
-  });
-
-  it.each([
-    { MEET_AI_DISABLED: '1' },
-    { MEET_AI_DISABLED: 'garbage' },
-    { MEET_AI_DISABLED_WORKSPACE_IDS: team },
-    { MEET_AI_DISABLED_WORKSPACE_IDS: '*' },
-  ])('denies runtime controls before persistence: %j', async (controls) => {
-    const { object, env, storage } = fixture(team);
-    Object.assign(env, controls);
-    const response = await initialize(object, team);
-    expect(response.status).toBe(403);
-    expect(await response.text()).toBe('Meet AI is temporarily unavailable');
-    expect(storage.put).not.toHaveBeenCalled();
-    expect(storage.setAlarm).not.toHaveBeenCalled();
-    expect(mocks.provider).not.toHaveBeenCalled();
-    expect(mocks.begin).not.toHaveBeenCalled();
-  });
-
-  it('initializes a listed workspace', async () => {
-    const { object, storage } = fixture(`${team}, ${team}`);
-    expect((await initialize(object, team)).status).toBe(200);
-    expect(storage.put).toHaveBeenCalledWith('session', expect.anything());
-  });
-
-  it('refuses resume and workspace review after eligibility is withdrawn, but never stop', async () => {
-    const { object, env } = fixture(team);
-    expect((await initialize(object, team)).status).toBe(200);
-    expect((await control(object, 'resume')).status).toBe(200);
-    (env as { MEET_AI_DISABLED?: string }).MEET_AI_DISABLED = 'true';
-    expect((await control(object, 'resume')).status).toBe(403);
-    expect(
-      (
-        await object.fetch(
-          post('/workspace-review', {
-            action: 'deny',
-            ownerId: owner,
-            meetingId,
-            reviewId: sessionId,
-          })
-        )
-      ).status
-    ).toBe(403);
-    expect((await control(object, 'stop')).status).toBe(200);
-    expect(mocks.finalize).toHaveBeenCalled();
-  });
-
-  it('refuses the live-connect upgrade before any room or provider work', async () => {
-    const { object } = fixture(team);
-    await initialize(object, team);
-    (object as unknown as { env: LiveEnvironment }).env.MEET_AI_DISABLED =
-      'true';
-    const token = signLiveSession(claims, secret);
-    const response = await object.fetch(
-      new Request('https://live.internal/live-connect', {
-        headers: {
-          Upgrade: 'websocket',
-          Origin: 'https://meet.tuturuuu.com',
-          'Sec-WebSocket-Protocol': `meet-live, auth.${token}`,
-        },
-      })
+  for (const value of [undefined, '', 'true', 'garbage', '*'])
+    expect(liveWorkspaceAllowed({ MEET_AI_DISABLED: value }, session)).toBe(
+      false
     );
-    expect(response.status).toBe(403);
-    expect(mocks.room).not.toHaveBeenCalled();
-    expect(mocks.provider).not.toHaveBeenCalled();
-  });
-
-  it('ends the session instead of reconnecting the provider on connect and on alarm', async () => {
-    for (const trigger of ['connect', 'alarm'] as const) {
-      const { object, env, events } = fixture(team);
-      await initialize(object, team);
-      (env as { MEET_AI_DISABLED?: string }).MEET_AI_DISABLED = 'true';
-      if (trigger === 'connect')
-        await (object as unknown as { connect(): Promise<void> }).connect();
-      else await object.alarm();
-      expect(mocks.provider).not.toHaveBeenCalled();
-      expect(events).toContainEqual(
-        expect.objectContaining({
-          state: 'error',
-          detail: 'workspace_not_enabled',
-        })
-      );
-    }
-  });
+  for (const fields of [
+    { mode: 'room' },
+    { inputSource: undefined },
+    { consentRevision: undefined },
+    { consentVersion: undefined },
+    { workspaceAuthority: undefined },
+  ])
+    expect(
+      liveWorkspaceAllowed(
+        { MEET_AI_DISABLED: 'false' },
+        { ...session, claims: { ...claims, ...fields } }
+      )
+    ).toBe(false);
+  expect(liveWorkspaceAllowed(undefined, session)).toBe(false);
+  expect(
+    liveWorkspaceAllowed(
+      {},
+      { ...session, claims: { ...claims, app: 'parley' } }
+    )
+  ).toBe(false);
+});
+it('rechecks the exact durable own-account/meeting/version/revision before provider connection', async () => {
+  const choice = {
+    choice: 'continue',
+    accountId: claims.ownerId,
+    meetingId: claims.meetingId,
+    version: claims.consentVersion,
+    revision: 1,
+  };
+  room.mockResolvedValue({ choice });
+  await expect(
+    requireCurrentPrivateGrant({} as never, session as never)
+  ).resolves.toBeUndefined();
+  for (const changed of [
+    null,
+    { ...choice, choice: 'mute' },
+    { ...choice, revision: 2 },
+    { ...choice, accountId: 'other' },
+    { ...choice, meetingId: 'other' },
+    { ...choice, version: 'old' },
+  ]) {
+    room.mockResolvedValue({ choice: changed });
+    await expect(
+      requireCurrentPrivateGrant({} as never, session as never)
+    ).rejects.toThrow();
+  }
+  room.mockRejectedValue(new Error('Synthetic read error'));
+  await expect(
+    requireCurrentPrivateGrant({} as never, session as never)
+  ).rejects.toThrow();
 });

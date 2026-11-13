@@ -1,0 +1,551 @@
+.dark .workshop {
+  --ws-blue: #3987e5;
+  --ws-orange: #d95926;
+  --ws-aqua: #199e70;
+  --ws-wash-1: color-mix(in oklab, var(--cyan) 20%, transparent);
+  --ws-wash-2: color-mix(in oklab, var(--purple) 22%, transparent);
+  --ws-wash-3: color-mix(in oklab, var(--green) 12%, transparent);
+  --ws-wash-4: color-mix(in oklab, var(--orange) 10%, transparent);
+  --ws-grain-opacity: 0.12;
+}
+.ws-highlights,
+.ws-experience {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  display: grid;
+  gap: 12px;
+}
+.ws-highlights p,
+.ws-experience p {
+  margin: 0;
+  color: var(--rm-muted);
+  line-height: 1.55;
+  font-size: 14.5px;
+}
+.ws-experience p {
+  margin-top: 10px;
+  color: var(--rm-ink);
+}
+.ws-highlight-icon {
+  display: inline-grid;
+  place-items: center;
+  width: 38px;
+  height: 38px;
+  margin-bottom: 10px;
+  border-radius: 12px;
+  color: var(--rm-merge-text);
+  background: color-mix(in oklab, var(--rm-merge) 12%, transparent);
+}
+.ws-illustration {
+  width: min(100%, 520px);
+  justify-self: center;
+  height: auto;
+}
+.ws-ill-board {
+  fill: var(--rm-ink);
+  opacity: 0.8;
+}
+.ws-ill-desk {
+  fill: var(--rm-soft);
+  stroke: var(--rm-line);
+}
+.ws-ill-desk.teacher {
+  fill: color-mix(in oklab, var(--rm-merge) 14%, transparent);
+}
+.ws-ill-person {
+  fill: color-mix(in oklab, var(--rm-ink) 30%, transparent);
+}
+.ws-ill-person.teacher {
+  fill: color-mix(in oklab, var(--rm-ink) 18%, transparent);
+  stroke: var(--rm-merge);
+  stroke-dasharray: 3 3;
+}
+.ws-ill-person.student {
+  fill: var(--rm-merge);
+}
+.ws-ill-arrow,
+.ws-ill-link {
+  fill: none;
+  stroke: var(--rm-merge);
+  stroke-width: 2;
+  stroke-linecap: round;
+}
+.ws-ill-link {
+  stroke: var(--rm-sync);
+  stroke-dasharray: 4 4;
+}
+.ws-ill-agent rect {
+  fill: color-mix(in oklab, var(--rm-sync) 16%, transparent);
+  stroke: var(--rm-sync);
+}
+.ws-ill-agent circle {
+  fill: var(--rm-sync);
+}
+.ws-readiness {
+  display: grid;
+  gap: 14px;
+}
+.ws-tiles {
+  margin: 0;
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 10px;
+}
+.ws-tile {
+  padding: 10px 12px;
+  border-radius: 12px;
+  background: var(--rm-soft);
+}
+.ws-tile dt {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 12.5px;
+  font-weight: 600;
+  color: var(--rm-muted);
+}
+.ws-tile.live dt svg {
+  color: var(--rm-live-text);
+}
+.ws-tile.in_progress dt svg {
+  color: var(--rm-progress-text);
+}
+.ws-tile dd {
+  margin: 4px 0 0;
+  font-family: var(--font-display);
+  font-size: 30px;
+  font-weight: 800;
+  font-variant-numeric: tabular-nums;
+}
+.ws-segbar,
+.ws-stack {
+  display: flex;
+  gap: 2px;
+  height: 12px;
+}
+.ws-seg,
+.ws-stack-seg {
+  border-radius: 4px;
+  min-width: 4px;
+}
+.ws-seg.live {
+  background: var(--rm-live);
+}
+.ws-seg.in_progress {
+  background: var(--rm-progress);
+}
+.ws-seg.planned {
+  background: var(--rm-planned);
+}
+.ws-source {
+  margin: 0;
+  font-size: 12.5px;
+  color: var(--rm-muted);
+}
+.ws-dashboard {
+  display: grid;
+  gap: 16px;
+}
+.ws-demo-flag {
+  margin: 0;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+  font-size: 13px;
+  color: var(--rm-muted);
+}
+.ws-demo-pill {
+  padding: 2px 10px;
+  border-radius: 999px;
+  border: 1px dashed var(--rm-ink);
+  color: var(--rm-ink);
+  font-weight: 700;
+  font-size: 12px;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+.ws-kpis {
+  margin: 0;
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 10px;
+}
+.ws-kpis > div {
+  padding: 10px 12px;
+  border-radius: 12px;
+  background: var(--rm-soft);
+}
+.ws-kpis dt {
+  font-size: 12px;
+  color: var(--rm-muted);
+}
+.ws-kpis dd {
+  margin: 4px 0 0;
+  font-family: var(--font-display);
+  font-size: 26px;
+  font-weight: 800;
+  font-variant-numeric: tabular-nums;
+}
+.ws-charts {
+  display: grid;
+  gap: 16px;
+}
+.ws-chart {
+  margin: 0;
+  display: grid;
+  gap: 10px;
+  padding: 12px;
+  border: 1px solid var(--rm-line);
+  border-radius: 12px;
+}
+.ws-chart figcaption {
+  display: grid;
+  gap: 2px;
+  font-size: 14px;
+}
+.ws-chart figcaption span {
+  font-size: 12px;
+  color: var(--rm-muted);
+}
+.ws-bars {
+  display: flex;
+  align-items: flex-end;
+  gap: 2px;
+  height: 110px;
+  border-bottom: 1px solid var(--rm-line);
+}
+.ws-bar {
+  flex: 1;
+  background: var(--ws-blue);
+  border-radius: 4px 4px 0 0;
+}
+.ws-bar:hover {
+  filter: brightness(1.15);
+}
+.ws-stack-seg.hints,
+.ws-swatch.hints {
+  background: var(--ws-blue);
+}
+.ws-stack-seg.full,
+.ws-swatch.full {
+  background: var(--ws-orange);
+}
+.ws-stack-seg.none,
+.ws-swatch.none {
+  background: var(--ws-aqua);
+}
+.ws-legend {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px 14px;
+  font-size: 13px;
+}
+.ws-legend li {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+.ws-swatch {
+  width: 10px;
+  height: 10px;
+  border-radius: 3px;
+}
+.ws-hbars {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  display: grid;
+  gap: 6px;
+}
+.ws-hbars li {
+  display: grid;
+  grid-template-columns: 3.2em 1fr 2em;
+  align-items: center;
+  gap: 8px;
+  font-size: 13px;
+}
+.ws-hbar-track {
+  height: 12px;
+}
+.ws-hbar {
+  display: block;
+  height: 100%;
+  background: var(--ws-blue);
+  border-radius: 0 4px 4px 0;
+}
+.ws-hbar-value {
+  font-variant-numeric: tabular-nums;
+  text-align: right;
+}
+.ws-stuck {
+  margin: 0;
+  padding-left: 20px;
+  display: grid;
+  gap: 6px;
+  font-size: 14px;
+}
+.ws-table summary {
+  cursor: pointer;
+  font-weight: 600;
+  font-size: 13px;
+}
+.ws-table table {
+  margin-top: 10px;
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 13px;
+}
+.ws-table th,
+.ws-table td {
+  padding: 6px 8px;
+  border-bottom: 1px solid var(--rm-line);
+  text-align: left;
+  font-weight: 400;
+}
+.ws-table td {
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+}
+/* FAQ: one light card of rows with hairline dividers and a turning chevron. */
+.ws-faq {
+  border: 1px solid var(--rm-line);
+  border-radius: calc(var(--rm-radius) + 4px);
+  background: var(--rm-panel);
+  overflow: hidden;
+}
+.ws-faq-item + .ws-faq-item {
+  border-top: 1px solid var(--rm-line);
+}
+.ws-faq-item summary {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 18px 22px;
+  cursor: pointer;
+  list-style: none;
+  font-size: 16px;
+  font-weight: 600;
+  line-height: 1.4;
+}
+.ws-faq-item summary::-webkit-details-marker {
+  display: none;
+}
+.ws-faq-item summary:hover {
+  background: var(--rm-soft);
+}
+.ws-faq-item summary:focus-visible {
+  outline: 2px solid var(--purple);
+  outline-offset: -2px;
+  border-radius: 6px;
+}
+.ws-faq-icon {
+  flex: none;
+  color: var(--rm-muted);
+}
+.ws-faq-item[open] .ws-faq-icon {
+  transform: rotate(180deg);
+  color: var(--rm-ink);
+}
+.ws-faq-answer p {
+  margin: 0;
+  padding: 0 22px 20px;
+  max-width: 68ch;
+  color: var(--rm-muted);
+  line-height: 1.6;
+}
+@media (prefers-reduced-motion: no-preference) {
+  .ws-faq-icon {
+    transition: transform 220ms cubic-bezier(0.2, 0.8, 0.2, 1);
+  }
+  /* Smooth open and close where the browser can animate details content. */
+  .ws-faq-item {
+    interpolate-size: allow-keywords;
+  }
+  .ws-faq-item::details-content {
+    block-size: 0;
+    overflow: clip;
+    transition:
+      block-size 260ms cubic-bezier(0.2, 0.8, 0.2, 1),
+      content-visibility 260ms allow-discrete;
+  }
+  .ws-faq-item[open]::details-content {
+    block-size: auto;
+  }
+}
+/* Agenda as a timeline: a rail through the numbered steps. */
+.ws-agenda::before {
+  content: "";
+  position: absolute;
+  left: 27px;
+  top: 18px;
+  bottom: 18px;
+  width: 2px;
+  background: var(--rm-line);
+}
+.ws-agenda .ws-num {
+  background: var(--rm-panel);
+  border: 2px solid var(--rm-merge);
+  color: var(--rm-merge-text);
+}
+@media (min-width: 720px) {
+  .ws-highlights {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+  .ws-experience,
+  .ws-charts {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+@media (min-width: 1024px) {
+  .ws-highlights {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+  }
+  .ws-experience {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+}
+
+/* EduFest redesign: hero art, stage band, simulator, brands. */
+.ws-stage {
+  position: relative;
+  padding: 28px 18px;
+  border-radius: calc(var(--rm-radius) + 8px);
+  background:
+    radial-gradient(
+      60% 80% at 10% 0%,
+      color-mix(in oklab, var(--cyan) 14%, transparent),
+      transparent 70%
+    ),
+    radial-gradient(
+      60% 80% at 100% 100%,
+      color-mix(in oklab, var(--purple) 16%, transparent),
+      transparent 70%
+    ),
+    color-mix(in oklab, var(--rm-ink) 4%, var(--rm-panel));
+  border: 1px solid var(--rm-line);
+}
+.ws-sim {
+  display: grid;
+  gap: 16px;
+}
+.ws-sim-rail {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  display: flex;
+  gap: 8px;
+  overflow-x: auto;
+  padding-bottom: 4px;
+}
+.ws-sim-rail button {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 40px;
+  padding: 6px 12px 6px 6px;
+  border: 1px solid var(--rm-line);
+  border-radius: 999px;
+  background: var(--rm-panel);
+  font-size: 13.5px;
+  font-weight: 600;
+  white-space: nowrap;
+  text-align: left;
+}
+.ws-sim-rail [aria-current="step"] {
+  border-color: var(--rm-merge);
+  box-shadow: 0 0 0 3px color-mix(in oklab, var(--rm-merge) 18%, transparent);
+}
+.ws-sim-dot {
+  display: inline-grid;
+  place-items: center;
+  width: 28px;
+  height: 28px;
+  border-radius: 999px;
+  background: var(--rm-soft);
+  font-variant-numeric: tabular-nums;
+}
+.ws-sim-rail [aria-current="step"] .ws-sim-dot {
+  background: var(--rm-merge);
+  color: var(--rm-bg);
+}
+.ws-upskii.is-plain {
+  text-decoration: none;
+}
+.ws-sim-rail .ws-upskii img {
+  display: none;
+}
+.ws-device {
+  display: grid;
+  gap: 0;
+  border: 1px solid var(--rm-line);
+  border-radius: 18px;
+  background: var(--rm-panel);
+  overflow: hidden;
+  box-shadow: 0 24px 60px -32px
+    color-mix(in oklab, var(--rm-ink) 45%, transparent);
+}
+.ws-device-bar {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 14px;
+  border-bottom: 1px solid var(--rm-line);
+  background: var(--rm-soft);
+}
+.ws-device-dots {
+  display: inline-flex;
+  gap: 5px;
+}
+.ws-device-dots i {
+  width: 9px;
+  height: 9px;
+  border-radius: 999px;
+  background: color-mix(in oklab, var(--rm-ink) 22%, transparent);
+}
+.ws-device-title {
+  flex: 1;
+  min-width: 0;
+  font-size: 12.5px;
+  font-weight: 600;
+  color: var(--rm-muted);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.ws-device-screen {
+  display: grid;
+  gap: 10px;
+  padding: 18px;
+  min-height: 300px;
+  align-content: start;
+}
+.ws-device-screen h3 {
+  margin: 0;
+  font-family: var(--font-display);
+  font-size: clamp(22px, 4vw, 30px);
+  letter-spacing: -0.03em;
+}
+.ws-device-body {
+  margin: 0;
+  color: var(--rm-muted);
+  line-height: 1.55;
+}
+.ws-device-foot {
+  display: grid;
+  gap: 8px;
+  padding: 14px 18px;
+  border-top: 1px solid var(--rm-line);
+}
+.ws-device-foot legend {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+}

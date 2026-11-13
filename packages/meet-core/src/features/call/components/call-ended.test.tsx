@@ -151,3 +151,22 @@ it('makes Back to Meet the primary action when the viewer cannot read notes', ()
   ).toContain('w-full');
   expect(screen.getAllByRole('link', { name: 'Back to Meet' })).toHaveLength(1);
 });
+
+it('shows a left screen with Rejoin and Back, never the connection error, after leaving a live call', () => {
+  renderEnded({ lifecycle: 'live', canReadNotes: false });
+  expect(
+    screen.getByRole('heading', { name: messages.meet.call.call_left_title })
+  ).toBeTruthy();
+  expect(
+    screen.getByRole('button', { name: messages.meet.call.rejoin_call })
+  ).toBeTruthy();
+  expect(
+    screen.getByRole('link', { name: messages.meet.call.back_to_meet })
+  ).toBeTruthy();
+  expect(screen.queryByText(messages.meet.call.join_error_title)).toBeNull();
+  expect(
+    screen.queryByRole('button', {
+      name: messages.meet.call.connection_refresh,
+    })
+  ).toBeNull();
+});

@@ -1550,3 +1550,17 @@ unchanged. Covered by `apps/tasks/cloudflare/offline-fallback.runtime.mjs` on
 the sealed native build, and by the artifact contract in
 `scripts/ci/tasks-native-artifact.test.py`, which rejects a missing or
 redirecting `html_handling`.
+
+## Navigation identity
+
+The native Tasks app hides a resolved page as soon as the URL pathname differs
+from the pathname that loaded its model. It shows a loading surface until the
+matching model arrives, including board and workspace switches and back/forward
+navigation. The URL/model boundary compares pathnames only; query-only changes
+do not invalidate the board identity. Board state remounts
+for each actor, workspace and board; workspace providers remount for each actor
+and workspace. A retained board snapshot cannot supply another board's body.
+
+Regression coverage: `apps/tasks/src/runtime/page-transition.test.tsx` and
+`page-transition-router.test.tsx` cover retained models, late responses and
+workspace navigation through the native router.

@@ -19,12 +19,16 @@ interface Props {
   }>;
   actorUserId?: string | null;
   baseUrl: string;
+  planBaseUrl?: string;
+  planReturnPath?: string;
 }
 
 export default async function MeetTogetherPlanDetailsPage({
   actorUserId,
   params,
   baseUrl,
+  planBaseUrl,
+  planReturnPath,
 }: Props) {
   const { planId } = await params;
 
@@ -54,6 +58,8 @@ export default async function MeetTogetherPlanDetailsPage({
           <MeetPlanLiveRoot
             platformUser={resolvedPlatformUser}
             baseUrl={baseUrl}
+            planBaseUrl={planBaseUrl}
+            planReturnPath={planReturnPath}
             initialSnapshot={{
               plan,
               polls,

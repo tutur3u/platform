@@ -83,6 +83,23 @@ describe('official class time', () => {
     );
   });
 
+  it('selects only a same-day class when requested', () => {
+    expect(
+      selectTutoringClassTime(
+        [nextTuesday, saturday],
+        '2026-10-31',
+        '15:15',
+        true
+      )
+    ).toBe('16:00-17:30');
+    expect(
+      selectTutoringClassTime([nextTuesday], '2026-10-31', '15:15', true)
+    ).toBe(TUTORING_VALUE_UNKNOWN);
+    expect(selectTutoringClassTime([], '2026-10-31', '15:15', true)).toBe(
+      TUTORING_VALUE_UNKNOWN
+    );
+  });
+
   it('falls to the next class, with its date, when none falls on the day', () => {
     expect(
       selectTutoringClassTime([nextTuesday, saturday], '2026-11-01', '15:15')

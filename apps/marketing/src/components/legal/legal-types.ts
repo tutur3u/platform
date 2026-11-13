@@ -27,7 +27,6 @@ export interface ThirdPartyCategory {
 
 export interface LegalPageConfig {
   locale?: 'en' | 'vi';
-  upcomingChanges?: string;
   badgeText: string;
   badgeIcon: LucideIcon;
   title: string;

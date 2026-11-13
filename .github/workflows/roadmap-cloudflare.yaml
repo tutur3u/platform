@@ -70,6 +70,11 @@ jobs:
     if: ${{ (needs.affected-gate.outputs.run == 'true' && (needs.check-ci.outputs.should_run == 'true' && (github.event_name == 'pull_request' || github.ref == 'refs/heads/main'))) && (github.event_name != 'pull_request' || contains(github.event.pull_request.labels.*.name, 'ready-for-ci')) }}
     runs-on: ubuntu-latest
     timeout-minutes: 20
+    # Read-only: the build reads public pull requests and commits from the
+    # GitHub API; the token never leaves the build step and is not emitted.
+    permissions:
+      contents: read
+      pull-requests: read
     env:
       EVENT_NAME: ${{ github.event_name }}
       EXPECTED_SOURCE_SHA: ${{ inputs.source_sha }}
@@ -100,6 +105,10 @@ jobs:
       - name: Check public roadmap data
         run: node --test apps/roadmap/src/roadmap-data.test.ts apps/roadmap/src/cache-policy.test.ts apps/roadmap/scripts/seal-artifact.test.mjs apps/roadmap/scripts/pre-seal-doctor.test.mjs
       - name: Build the exact roadmap Worker
+        env:
+          # Lifts the anonymous API limit so each build refreshes the roadmap
+          # snapshot instead of keeping the committed one.
+          GITHUB_TOKEN: ${{ github.token }}
         run: bun run --cwd apps/roadmap build:cloudflare
       - name: Check generated-route types
         run: bun run --cwd apps/roadmap type-check

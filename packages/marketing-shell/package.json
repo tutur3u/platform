@@ -9,10 +9,13 @@
     "./fonts.css": "./src/fonts.css",
     "./fonts/*": "./src/fonts/*",
     "./messages/en.json": "./src/messages/en.json",
-    "./messages/vi.json": "./src/messages/vi.json"
+    "./messages/vi.json": "./src/messages/vi.json",
+    "./static-icons": "./src/static-icons.tsx",
+    "./static-motion": "./src/use-static-motion.ts"
   },
   "scripts": {
-    "type-check": "tsc --noEmit -p tsconfig.json"
+    "type-check": "tsc --noEmit -p tsconfig.json",
+    "test": "vitest run"
   },
   "dependencies": {
     "@tuturuuu/icons": "workspace:*",
@@ -24,7 +27,13 @@
     "react": "^19.2.8"
   },
   "devDependencies": {
+    "@types/node": "26.6.5",
     "@types/react": "19.2.18",
-    "typescript": "7.0.2"
+    "@types/react-dom": "~19.2.7",
+    "@vitejs/plugin-react": "6.1.2",
+    "jsdom": "30.1.3",
+    "react-dom": "19.2.8",
+    "typescript": "7.0.2",
+    "vitest": "5.0.5"
   }
 }

@@ -92,8 +92,8 @@ export async function sharedTaskModel(shareCode: string) {
   let data: SharedTaskResponse;
   try {
     data = (await response.json()) as SharedTaskResponse;
-  } catch (error) {
-    console.error('Failed to parse shared task data:', error);
+  } catch {
+    console.error('Failed to parse shared task data');
     return { kind: 'shared-task-error' as const };
   }
   return {
