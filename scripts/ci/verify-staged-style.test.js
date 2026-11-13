@@ -19,7 +19,9 @@ const {
   proofDirectory,
   responseHeaders,
   safeEnvironment,
+  admitTransportTarget,
   scrubTransportTarget,
+  validateNextImageQuery,
   verifyCss,
   writeProof,
 } = require('./verify-staged-style');
@@ -387,6 +389,7 @@ async function transportFixture(t, responses, stamp, options = {}) {
   const cssPath = '/_next/static/chunks/site.css';
   const stylesheetRequestUrl =
     options.stylesheetRequestUrl ?? origin + cssPath;
+  const imageRequestUrl = options.imageRequestUrl;
   const cssBody = '.flex{display:flex}';
   await mkdir(join(temp, '.vercel/output/static/_next/static/chunks'), {
     recursive: true,
@@ -439,6 +442,8 @@ async function transportFixture(t, responses, stamp, options = {}) {
                 if (!result) return null;
                 if (result.status === 200) {
                   await dispatch(new URL('banner.svg', url).href, 'image');
+                  if (imageRequestUrl)
+                    await dispatch(imageRequestUrl, 'image');
                   await dispatch(stylesheetRequestUrl, 'stylesheet');
                 }
                 return { status: () => result.status };
@@ -648,8 +653,125 @@ for (const foreign of [true, false])
     assert.ok(!JSON.stringify(failure).includes('SECRET'));
   });
 
+test('transport admits built-in Next image optimizer queries for image resources', async (t) => {
+  const origin = 'https://platform-fixture.vercel.app';
+  const inner = `${origin}/_next/static/media/hero.png`;
+  const imageRequestUrl = `${origin}/_next/image?url=${encodeURIComponent(inner)}&w=640&q=75`;
+  const f = await transportFixture(t, (path) =>
+    path.startsWith('/_next/image?')
+      ? { body: 'img', type: 'image/png' }
+      : undefined
+  , undefined, { imageRequestUrl });
+  const proof = await f.run();
+  assert.equal(proof.viewports.length, 2);
+  assert.ok(f.calls.some((path) => path.startsWith('/_next/image?')));
+  assert.ok(!JSON.stringify(proof).includes('hero.png'));
+});
+
+test('admitTransportTarget bounds framework image query contracts', () => {
+  const origin = 'https://platform-fixture.vercel.app';
+  const staticPath = `${origin}/_next/static/media/hero.png`;
+  const admitted = new URL(
+    `${origin}/_next/image?url=${encodeURIComponent(staticPath)}&w=96&q=75`
+  );
+  assert.doesNotThrow(() =>
+    admitTransportTarget(admitted, origin, { resourceType: 'image' })
+  );
+  validateNextImageQuery(admitted, origin);
+
+  const remote = new URL(
+    `${origin}/_next/image?url=${encodeURIComponent('https://models.dev/logo.png')}&w=128&q=80`
+  );
+  assert.doesNotThrow(() =>
+    admitTransportTarget(remote, origin, { resourceType: 'image' })
+  );
+
+  const foreign = new URL(
+    `${origin}/_next/image?url=${encodeURIComponent('https://elsewhere.example/x.png')}&w=96&q=75`
+  );
+  assert.throws(() =>
+    admitTransportTarget(foreign, origin, { resourceType: 'image' })
+  );
+
+  const cssQuery = new URL(`${origin}/_next/static/chunks/site.css?dpl=x`);
+  assert.throws(() =>
+    admitTransportTarget(cssQuery, origin, { resourceType: 'image' })
+  );
+  assert.throws(() =>
+    admitTransportTarget(cssQuery, origin, { resourceType: 'stylesheet' })
+  );
+
+  const imageAsStylesheet = new URL(
+    `${origin}/_next/image?url=${encodeURIComponent(staticPath)}&w=96&q=75`
+  );
+  assert.throws(() =>
+    admitTransportTarget(imageAsStylesheet, origin, {
+      resourceType: 'stylesheet',
+    })
+  );
+
+  const invalidWidth = new URL(
+    `${origin}/_next/image?url=${encodeURIComponent(staticPath)}&w=0&q=75`
+  );
+  assert.throws(() =>
+    admitTransportTarget(invalidWidth, origin, { resourceType: 'image' })
+  );
+
+  const extraKey = new URL(
+    `${origin}/_next/image?url=${encodeURIComponent(staticPath)}&w=96&q=75&token=SECRET`
+  );
+  assert.throws(() =>
+    admitTransportTarget(extraKey, origin, { resourceType: 'image' })
+  );
+  assert.throws(() => validateNextImageQuery(extraKey, origin));
+
+  const credentialed = new URL(
+    `https://USER:PASS@platform-fixture.vercel.app/_next/image?url=${encodeURIComponent(staticPath)}&w=96&q=75`
+  );
+  assert.throws(() =>
+    admitTransportTarget(credentialed, origin, { resourceType: 'image' })
+  );
+
+  const hashed = new URL(
+    `${origin}/_next/image?url=${encodeURIComponent(staticPath)}&w=96&q=75#frag`
+  );
+  assert.throws(() =>
+    admitTransportTarget(hashed, origin, { resourceType: 'image' })
+  );
+
+  const neighbor = new URL(`${origin}/_next/image-extra?w=1`);
+  assert.throws(() =>
+    admitTransportTarget(neighbor, origin, { resourceType: 'image' })
+  );
+
+  const encodedPath = new URL(
+    `${origin}/%5fnext/image?url=${encodeURIComponent(staticPath)}&w=96&q=75`
+  );
+  assert.throws(() =>
+    admitTransportTarget(encodedPath, origin, { resourceType: 'image' })
+  );
+
+  const nestedQuery = new URL(
+    `${origin}/_next/image?url=${encodeURIComponent(`${staticPath}?dpl=SECRET`)}&w=96&q=75`
+  );
+  assert.throws(() =>
+    admitTransportTarget(nestedQuery, origin, { resourceType: 'image' })
+  );
+});
+
 test('scrubTransportTarget never echoes query, credential, or foreign URL material', () => {
   const origin = 'https://platform-fixture.vercel.app';
+  const frameworkImage = scrubTransportTarget(
+    new URL(
+      `${origin}/_next/image?url=${encodeURIComponent(`${origin}/_next/static/media/hero.png`)}&w=96&q=75`
+    ),
+    origin
+  );
+  assert.equal(frameworkImage.pathname, '/_next/image');
+  assert.equal(frameworkImage.classification, 'framework-image');
+  assert.equal(frameworkImage.searchKeysFrameworkImage, true);
+  assert.ok(!JSON.stringify(frameworkImage).includes('hero.png'));
+
   const built = scrubTransportTarget(
     new URL(`${origin}/_next/static/chunks/site.css?dpl=QUERY-SECRET#frag`),
     origin
