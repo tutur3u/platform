@@ -2,7 +2,6 @@
 import { useQuery } from '@tanstack/react-query';
 import {
   CalendarDays,
-  Captions,
   Circle,
   Code2,
   FileText,
@@ -45,12 +44,12 @@ import { ConnectedLobby } from './call-lobby';
 import { CallResourceNotice } from './call-resource-notice';
 import { CallSettings } from './call-settings';
 import { type CallLayout, CallStage } from './call-stage';
+import { CallTopBarConnection, CallTopBarMore } from './call-top-bar';
 import { CollaborationStageLayout } from './collaboration-stage-layout';
 import { type CallPanel, ControlBar, ControlButton } from './control-bar';
-import { CopyInvite } from './copy-invite';
 import { DocumentPanel } from './document-panel';
 import { FloatingSelfCamera } from './floating-self-camera';
-import { CallConnectionNotice, JoinOutcome } from './join-outcome';
+import { JoinOutcome } from './join-outcome';
 import { LeaveDialog } from './leave-dialog';
 import { MeetingActionHint } from './meeting-action-hint';
 import { MeetingTitle } from './meeting-title';
@@ -354,88 +353,80 @@ function CallShellContent({
           onSaved={room.renameMeeting}
         />
         {participants.length === 1 && !state.liveAssistant && (
-          <output
-            className="inline-flex items-center gap-1.5 rounded-full border bg-muted/40 px-2.5 py-1 text-muted-foreground text-xs"
-            title={t('solo_hint')}
-          >
-            <Leaf className="size-3.5" />
-            {t('solo_mode')}
-          </output>
-        )}
-        {canReadNotes && (
-          <MeetingActionHint label={aiT('title')}>
-            <Button
-              variant="outline"
-              size="sm"
-              className="h-8 max-w-full rounded-full text-xs"
-              aria-expanded={showAi}
-              onClick={() => {
-                setShowAi(!showAi);
-                setShowPersonalTools(false);
-                setPanel(null);
-              }}
+          <MeetingActionHint label={t('solo_hint')}>
+            <output
+              aria-label={t('solo_mode')}
+              className="inline-flex size-8 items-center justify-center text-muted-foreground"
             >
-              <Captions className="size-3.5" />
-              {aiT('title')}
-            </Button>
+              <Leaf className="size-4" />
+            </output>
           </MeetingActionHint>
         )}
-        <CopyInvite
-          meetingId={meetingId}
-          meetingName={room.state.title ?? meetingName}
-        />
         {state.recording.state === 'recording' && (
           <span className="flex items-center gap-1.5 rounded-full bg-dynamic-red/10 px-2 py-1 text-dynamic-red text-xs">
             <Circle className="size-2 fill-current motion-safe:animate-pulse" />
             {t('recording')}
           </span>
         )}
-        <CallConnectionNotice
+        <CallTopBarConnection
           status={room.connectionStatus}
           onRetry={retryConnection}
         />
-        <RoomAssistantAudio
-          room={room}
-          audioSuppressed={sharedAudio.shared}
-          canManage={canManage}
-          meetingId={meetingId}
-          outputDeviceId={outputDeviceId}
-        />
-        <MeetLivePanel
-          accountId={accountId}
-          key="live-assistant"
-          onOpenChat={askMira}
-          onLeave={leaveNow}
-          room={room}
-          meetingId={meetingId}
-          outputDeviceId={outputDeviceId}
-          canManage={canManage}
-          audioSuppressed={sharedAudio.microphonePaused}
-        />
-        <PlaybackVolumeControl
-          participants={participants}
-          selfUserId={state.selfUserId}
-        />
-        <SharedAudioControl
-          audio={sharedAudio}
-          busy={!!busyDevices.microphone}
-          onShare={() => void runMediaAction(sharedAudio.share, 'microphone')}
-          onUseMicrophone={() =>
-            void runMediaAction(sharedAudio.useOwnMicrophone, 'microphone')
-          }
-        />
-        <CallSettings
-          meetingId={meetingId}
-          room={room}
-          telemetry={telemetry.data}
-          ai={ai}
-          canManage={canManage}
-          sound={notifications.sound}
-          onSound={notifications.toggleSound}
-          outputDeviceId={outputDeviceId}
-          onOutput={setOutputDeviceId}
-        />
-        <RoomCountdown expiresAt={state.roomExpiresAt} />
+        <div className="ml-auto flex items-center gap-1">
+          <RoomAssistantAudio
+            room={room}
+            audioSuppressed={sharedAudio.shared}
+            canManage={canManage}
+            meetingId={meetingId}
+            outputDeviceId={outputDeviceId}
+          />
+          <MeetLivePanel
+            accountId={accountId}
+            key="live-assistant"
+            onOpenChat={askMira}
+            onLeave={leaveNow}
+            room={room}
+            meetingId={meetingId}
+            outputDeviceId={outputDeviceId}
+            canManage={canManage}
+            audioSuppressed={sharedAudio.microphonePaused}
+          />
+          <PlaybackVolumeControl
+            participants={participants}
+            selfUserId={state.selfUserId}
+          />
+          <SharedAudioControl
+            audio={sharedAudio}
+            busy={!!busyDevices.microphone}
+            onShare={() => void runMediaAction(sharedAudio.share, 'microphone')}
+            onUseMicrophone={() =>
+              void runMediaAction(sharedAudio.useOwnMicrophone, 'microphone')
+            }
+          />
+          <CallSettings
+            meetingId={meetingId}
+            room={room}
+            telemetry={telemetry.data}
+            ai={ai}
+            canManage={canManage}
+            sound={notifications.sound}
+            onSound={notifications.toggleSound}
+            outputDeviceId={outputDeviceId}
+            onOutput={setOutputDeviceId}
+          />
+          <RoomCountdown expiresAt={state.roomExpiresAt} />
+          <CallTopBarMore
+            meetingId={meetingId}
+            meetingName={room.state.title ?? meetingName}
+            canReadNotes={canReadNotes}
+            transcriptOpen={showAi}
+            onToggleTranscript={() => {
+              setShowAi(!showAi);
+              setShowPersonalTools(false);
+              setPanel(null);
+            }}
+          />
+        </div>
       </header>
       {canManage && state.waiting.length > 0 && (
         <output className="flex items-center justify-between gap-3 border-b bg-muted/40 px-3 py-2">
