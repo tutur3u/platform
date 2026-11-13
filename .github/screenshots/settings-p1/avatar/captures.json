@@ -1,0 +1,556 @@
+{
+  "kind": "real Chromium synthetic first-party component fixture; not production/full-route or real-auth acceptance",
+  "base": "c87c85785c44eb3713b16feeab0223758f74894e",
+  "cases": [
+    {
+      "image": "workspace-before-default-dark-390.png",
+      "sha256": "1921f72cce1c3f92d3409765fdfaa8b3c88b52fef5b7ef220ca818f39edc4d1c",
+      "capturedAt": "2026-11-09T06:01:45.113105+07:00",
+      "source": "c87c85785c44eb3713b16feeab0223758f74894e",
+      "fixture": {
+        "editable": true,
+        "source": "c87c85785c44eb3713b16feeab0223758f74894e",
+        "surface": "workspace",
+        "theme": "dark",
+        "version": "before"
+      },
+      "viewport": {
+        "width": 390,
+        "height": 1000
+      },
+      "nativePng": {
+        "width": 390,
+        "height": 1000
+      },
+      "horizontalOverflow": false,
+      "metrics": {
+        "dialog": false,
+        "rows": []
+      }
+    },
+    {
+      "image": "workspace-after-default-dark-390.png",
+      "sha256": "0ea0369d0ce215a6ebba76eff8bc1584b615b898b62fd74a71536ef5957f14e1",
+      "capturedAt": "2026-11-09T06:01:45.622034+07:00",
+      "source": "c101cdaae585f3283f950be359fbdab64e3f8df9",
+      "fixture": {
+        "editable": true,
+        "source": "c101cdaae585f3283f950be359fbdab64e3f8df9",
+        "surface": "workspace",
+        "theme": "dark",
+        "version": "after"
+      },
+      "viewport": {
+        "width": 390,
+        "height": 1000
+      },
+      "nativePng": {
+        "width": 390,
+        "height": 1000
+      },
+      "horizontalOverflow": false,
+      "metrics": {
+        "dialog": false,
+        "rows": []
+      }
+    },
+    {
+      "image": "workspace-before-default-light-390.png",
+      "sha256": "4b5b15cacc10b6231c2eb2abb0673f9be71211e3f7b6efc91872878ce9a59d67",
+      "capturedAt": "2026-11-09T06:01:45.897530+07:00",
+      "source": "c87c85785c44eb3713b16feeab0223758f74894e",
+      "fixture": {
+        "editable": true,
+        "source": "c87c85785c44eb3713b16feeab0223758f74894e",
+        "surface": "workspace",
+        "theme": "light",
+        "version": "before"
+      },
+      "viewport": {
+        "width": 390,
+        "height": 1000
+      },
+      "nativePng": {
+        "width": 390,
+        "height": 1000
+      },
+      "horizontalOverflow": false,
+      "metrics": {
+        "dialog": false,
+        "rows": []
+      }
+    },
+    {
+      "image": "workspace-after-default-light-390.png",
+      "sha256": "8d42e11ffebf8231265f3c91abeb07c92d227a8670901ef4f5cec34644aacd4f",
+      "capturedAt": "2026-11-09T06:01:46.624528+07:00",
+      "source": "c101cdaae585f3283f950be359fbdab64e3f8df9",
+      "fixture": {
+        "editable": true,
+        "source": "c101cdaae585f3283f950be359fbdab64e3f8df9",
+        "surface": "workspace",
+        "theme": "light",
+        "version": "after"
+      },
+      "viewport": {
+        "width": 390,
+        "height": 1000
+      },
+      "nativePng": {
+        "width": 390,
+        "height": 1000
+      },
+      "horizontalOverflow": false,
+      "metrics": {
+        "dialog": false,
+        "rows": []
+      }
+    },
+    {
+      "image": "profile-before-default-dark-390.png",
+      "sha256": "b7b462ca660e056fcbcefeda1567e51576c19bc080c7925606e61bfa24684ff2",
+      "capturedAt": "2026-11-09T06:01:46.946416+07:00",
+      "source": "c87c85785c44eb3713b16feeab0223758f74894e",
+      "fixture": {
+        "editable": true,
+        "source": "c87c85785c44eb3713b16feeab0223758f74894e",
+        "surface": "profile",
+        "theme": "dark",
+        "version": "before"
+      },
+      "viewport": {
+        "width": 390,
+        "height": 1000
+      },
+      "nativePng": {
+        "width": 390,
+        "height": 1000
+      },
+      "horizontalOverflow": false,
+      "metrics": {
+        "dialog": false,
+        "rows": []
+      }
+    },
+    {
+      "image": "profile-after-default-dark-390.png",
+      "sha256": "b7b462ca660e056fcbcefeda1567e51576c19bc080c7925606e61bfa24684ff2",
+      "capturedAt": "2026-11-09T06:01:47.160898+07:00",
+      "source": "c101cdaae585f3283f950be359fbdab64e3f8df9",
+      "fixture": {
+        "editable": true,
+        "source": "c101cdaae585f3283f950be359fbdab64e3f8df9",
+        "surface": "profile",
+        "theme": "dark",
+        "version": "after"
+      },
+      "viewport": {
+        "width": 390,
+        "height": 1000
+      },
+      "nativePng": {
+        "width": 390,
+        "height": 1000
+      },
+      "horizontalOverflow": false,
+      "metrics": {
+        "dialog": false,
+        "rows": []
+      }
+    },
+    {
+      "image": "profile-before-default-light-390.png",
+      "sha256": "d7bf13be3ba0680af42263d065276bd84556eaa188849a7dff0158fec632923b",
+      "capturedAt": "2026-11-09T06:01:47.411799+07:00",
+      "source": "c87c85785c44eb3713b16feeab0223758f74894e",
+      "fixture": {
+        "editable": true,
+        "source": "c87c85785c44eb3713b16feeab0223758f74894e",
+        "surface": "profile",
+        "theme": "light",
+        "version": "before"
+      },
+      "viewport": {
+        "width": 390,
+        "height": 1000
+      },
+      "nativePng": {
+        "width": 390,
+        "height": 1000
+      },
+      "horizontalOverflow": false,
+      "metrics": {
+        "dialog": false,
+        "rows": []
+      }
+    },
+    {
+      "image": "profile-after-default-light-390.png",
+      "sha256": "d7bf13be3ba0680af42263d065276bd84556eaa188849a7dff0158fec632923b",
+      "capturedAt": "2026-11-09T06:01:47.678880+07:00",
+      "source": "c101cdaae585f3283f950be359fbdab64e3f8df9",
+      "fixture": {
+        "editable": true,
+        "source": "c101cdaae585f3283f950be359fbdab64e3f8df9",
+        "surface": "profile",
+        "theme": "light",
+        "version": "after"
+      },
+      "viewport": {
+        "width": 390,
+        "height": 1000
+      },
+      "nativePng": {
+        "width": 390,
+        "height": 1000
+      },
+      "horizontalOverflow": false,
+      "metrics": {
+        "dialog": false,
+        "rows": []
+      }
+    },
+    {
+      "image": "workspace-after-read-only-dark-390.png",
+      "sha256": "658e2fcaf78c4c158ad748845d84f29626cdd2c73733fcd96c48e3e2c47b20f2",
+      "capturedAt": "2026-11-09T06:03:18.693959+07:00",
+      "source": "c101cdaae585f3283f950be359fbdab64e3f8df9",
+      "fixture": {
+        "editable": false,
+        "source": "c101cdaae585f3283f950be359fbdab64e3f8df9",
+        "surface": "workspace",
+        "theme": "dark",
+        "version": "after"
+      },
+      "viewport": {
+        "width": 390,
+        "height": 1000
+      },
+      "nativePng": {
+        "width": 390,
+        "height": 1000
+      },
+      "horizontalOverflow": false,
+      "metrics": {
+        "buttons": 0
+      }
+    },
+    {
+      "image": "workspace-after-read-only-light-390.png",
+      "sha256": "cb4fd818511150a0827fa844b1f46954c395ae50c2045f8b982fd94c6ea23a7e",
+      "capturedAt": "2026-11-09T06:03:19.990943+07:00",
+      "source": "c101cdaae585f3283f950be359fbdab64e3f8df9",
+      "fixture": {
+        "editable": false,
+        "source": "c101cdaae585f3283f950be359fbdab64e3f8df9",
+        "surface": "workspace",
+        "theme": "light",
+        "version": "after"
+      },
+      "viewport": {
+        "width": 390,
+        "height": 1000
+      },
+      "nativePng": {
+        "width": 390,
+        "height": 1000
+      },
+      "horizontalOverflow": false,
+      "metrics": {
+        "buttons": 0
+      }
+    },
+    {
+      "image": "workspace-before-default-dark-1440.png",
+      "sha256": "6a6ed7e17b182059a96d552e190496dfd03f422858f3a9dba870db4b2933f91d",
+      "capturedAt": "2026-11-09T06:03:21.401046+07:00",
+      "source": "c87c85785c44eb3713b16feeab0223758f74894e",
+      "fixture": {
+        "editable": true,
+        "source": "c87c85785c44eb3713b16feeab0223758f74894e",
+        "surface": "workspace",
+        "theme": "dark",
+        "version": "before"
+      },
+      "viewport": {
+        "width": 1440,
+        "height": 900
+      },
+      "nativePng": {
+        "width": 1430,
+        "height": 900
+      },
+      "horizontalOverflow": false,
+      "metrics": {}
+    },
+    {
+      "image": "workspace-after-default-dark-1440.png",
+      "sha256": "3299bd39f5ab430c46beab203f970eaa1a2363e697adb155d277e1b78f788020",
+      "capturedAt": "2026-11-09T06:03:21.649464+07:00",
+      "source": "c101cdaae585f3283f950be359fbdab64e3f8df9",
+      "fixture": {
+        "editable": true,
+        "source": "c101cdaae585f3283f950be359fbdab64e3f8df9",
+        "surface": "workspace",
+        "theme": "dark",
+        "version": "after"
+      },
+      "viewport": {
+        "width": 1440,
+        "height": 900
+      },
+      "nativePng": {
+        "width": 1430,
+        "height": 900
+      },
+      "horizontalOverflow": false,
+      "metrics": {}
+    },
+    {
+      "image": "workspace-before-default-light-1440.png",
+      "sha256": "8cffdc59a81c9af20c06301df219e68b347a149273b935671a572cc3d6b061d8",
+      "capturedAt": "2026-11-09T06:03:21.940010+07:00",
+      "source": "c87c85785c44eb3713b16feeab0223758f74894e",
+      "fixture": {
+        "editable": true,
+        "source": "c87c85785c44eb3713b16feeab0223758f74894e",
+        "surface": "workspace",
+        "theme": "light",
+        "version": "before"
+      },
+      "viewport": {
+        "width": 1440,
+        "height": 900
+      },
+      "nativePng": {
+        "width": 1430,
+        "height": 900
+      },
+      "horizontalOverflow": false,
+      "metrics": {}
+    },
+    {
+      "image": "workspace-after-default-light-1440.png",
+      "sha256": "a7ecb1cb913f44f3a0ae846db784ff808a240b04603da8a3f9519a9fd48f33ef",
+      "capturedAt": "2026-11-09T06:03:22.251271+07:00",
+      "source": "c101cdaae585f3283f950be359fbdab64e3f8df9",
+      "fixture": {
+        "editable": true,
+        "source": "c101cdaae585f3283f950be359fbdab64e3f8df9",
+        "surface": "workspace",
+        "theme": "light",
+        "version": "after"
+      },
+      "viewport": {
+        "width": 1440,
+        "height": 900
+      },
+      "nativePng": {
+        "width": 1430,
+        "height": 900
+      },
+      "horizontalOverflow": false,
+      "metrics": {}
+    },
+    {
+      "image": "profile-before-default-dark-1440.png",
+      "sha256": "ef1248781a08b2c9443c62e641607eb3050494a7908697b563da3bc6be35318f",
+      "capturedAt": "2026-11-09T06:03:22.494603+07:00",
+      "source": "c87c85785c44eb3713b16feeab0223758f74894e",
+      "fixture": {
+        "editable": true,
+        "source": "c87c85785c44eb3713b16feeab0223758f74894e",
+        "surface": "profile",
+        "theme": "dark",
+        "version": "before"
+      },
+      "viewport": {
+        "width": 1440,
+        "height": 900
+      },
+      "nativePng": {
+        "width": 1430,
+        "height": 900
+      },
+      "horizontalOverflow": false,
+      "metrics": {}
+    },
+    {
+      "image": "profile-after-default-dark-1440.png",
+      "sha256": "ef1248781a08b2c9443c62e641607eb3050494a7908697b563da3bc6be35318f",
+      "capturedAt": "2026-11-09T06:03:22.748152+07:00",
+      "source": "c101cdaae585f3283f950be359fbdab64e3f8df9",
+      "fixture": {
+        "editable": true,
+        "source": "c101cdaae585f3283f950be359fbdab64e3f8df9",
+        "surface": "profile",
+        "theme": "dark",
+        "version": "after"
+      },
+      "viewport": {
+        "width": 1440,
+        "height": 900
+      },
+      "nativePng": {
+        "width": 1430,
+        "height": 900
+      },
+      "horizontalOverflow": false,
+      "metrics": {}
+    },
+    {
+      "image": "profile-before-default-light-1440.png",
+      "sha256": "881660d4f134cb9b29ba9beee368ccb03a6b943f411b005ca06ce3aa17ec7aad",
+      "capturedAt": "2026-11-09T06:03:23.082641+07:00",
+      "source": "c87c85785c44eb3713b16feeab0223758f74894e",
+      "fixture": {
+        "editable": true,
+        "source": "c87c85785c44eb3713b16feeab0223758f74894e",
+        "surface": "profile",
+        "theme": "light",
+        "version": "before"
+      },
+      "viewport": {
+        "width": 1440,
+        "height": 900
+      },
+      "nativePng": {
+        "width": 1430,
+        "height": 900
+      },
+      "horizontalOverflow": false,
+      "metrics": {}
+    },
+    {
+      "image": "profile-after-default-light-1440.png",
+      "sha256": "881660d4f134cb9b29ba9beee368ccb03a6b943f411b005ca06ce3aa17ec7aad",
+      "capturedAt": "2026-11-09T06:03:23.413704+07:00",
+      "source": "c101cdaae585f3283f950be359fbdab64e3f8df9",
+      "fixture": {
+        "editable": true,
+        "source": "c101cdaae585f3283f950be359fbdab64e3f8df9",
+        "surface": "profile",
+        "theme": "light",
+        "version": "after"
+      },
+      "viewport": {
+        "width": 1440,
+        "height": 900
+      },
+      "nativePng": {
+        "width": 1430,
+        "height": 900
+      },
+      "horizontalOverflow": false,
+      "metrics": {}
+    },
+    {
+      "image": "workspace-after-editor-open-dark-390.png",
+      "sha256": "f8fafbbab4c114c9fb9533245941e308ee45c9b044cd4edb1e455a0a77ab5d8c",
+      "capturedAt": "2026-11-09T06:03:50.269786+07:00",
+      "source": "c101cdaae585f3283f950be359fbdab64e3f8df9",
+      "fixture": {
+        "editable": true,
+        "source": "c101cdaae585f3283f950be359fbdab64e3f8df9",
+        "surface": "workspace",
+        "theme": "dark",
+        "version": "after"
+      },
+      "viewport": {
+        "width": 390,
+        "height": 1000
+      },
+      "nativePng": {
+        "width": 390,
+        "height": 1000
+      },
+      "horizontalOverflow": false,
+      "metrics": {
+        "buttons": [
+          {
+            "disabled": false,
+            "label": "New avatar"
+          },
+          {
+            "disabled": false,
+            "label": "Remove avatar"
+          },
+          {
+            "disabled": true,
+            "label": "Save avatar"
+          },
+          {
+            "disabled": false,
+            "label": "Close"
+          }
+        ],
+        "dialogBounds": {
+          "bottom": 690,
+          "left": 16,
+          "right": 374,
+          "top": 310
+        },
+        "focus": "New avatar"
+      },
+      "keyboard": {
+        "dialogOpen": false,
+        "focusLabel": "Avatar"
+      }
+    },
+    {
+      "image": "workspace-after-editor-open-light-390.png",
+      "sha256": "d792fe80d5f227b9e01a36524c69febce5f2928ebbb7c07a8a014e2b53caced4",
+      "capturedAt": "2026-11-09T06:03:51.380019+07:00",
+      "source": "c101cdaae585f3283f950be359fbdab64e3f8df9",
+      "fixture": {
+        "editable": true,
+        "source": "c101cdaae585f3283f950be359fbdab64e3f8df9",
+        "surface": "workspace",
+        "theme": "light",
+        "version": "after"
+      },
+      "viewport": {
+        "width": 390,
+        "height": 1000
+      },
+      "nativePng": {
+        "width": 390,
+        "height": 1000
+      },
+      "horizontalOverflow": false,
+      "metrics": {
+        "buttons": [
+          {
+            "disabled": false,
+            "label": "New avatar"
+          },
+          {
+            "disabled": false,
+            "label": "Remove avatar"
+          },
+          {
+            "disabled": true,
+            "label": "Save avatar"
+          },
+          {
+            "disabled": false,
+            "label": "Close"
+          }
+        ],
+        "dialogBounds": {
+          "bottom": 690,
+          "left": 16,
+          "right": 374,
+          "top": 310
+        },
+        "focus": "New avatar"
+      },
+      "keyboard": {
+        "dialogOpen": false,
+        "focusLabel": "Avatar"
+      }
+    }
+  ],
+  "boundaries": "Actual source components, shared tokens and native dialog behavior. API/navigation boundaries use synthetic stubs; fixture avatar is generated SVG and IPs are documentation addresses. No customer production reference image/data copied. Images retain native screenshot bytes; viewport and PNG dimensions are recorded separately.",
+  "limits": "Real Safari/device auth, real upload/deletion, full page route and backend persistence not exercised. Profile banner source unchanged and outside this avatar fixture."
+}

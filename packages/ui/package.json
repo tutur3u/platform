@@ -401,6 +401,10 @@
       "types": "./src/components/ui/custom/settings-section.tsx",
       "import": "./src/components/ui/custom/settings-section.tsx"
     },
+    "./custom/avatar-editor": {
+      "types": "./src/components/ui/custom/avatar-editor.tsx",
+      "import": "./src/components/ui/custom/avatar-editor.tsx"
+    },
     "./custom/settings/*": "./src/components/ui/custom/settings/*.tsx",
     "./custom/missed-entry/*": "./src/components/ui/custom/missed-entry/*.tsx",
     "./custom/workspace-wrapper": {
