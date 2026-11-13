@@ -531,12 +531,14 @@ export function WorkspaceSelect({
               setShowJoinWorkspaceDialog(true);
             }}
             invitations={
-              <Command className="h-auto shrink-0">
-                <WorkspaceInvitationItems
-                  controller={invitationController}
-                  fallbackLogoUrl={fallbackLogoUrl}
-                />
-              </Command>
+              invitations.length > 0 || invitationController.query.isError ? (
+                <Command className="h-auto shrink-0">
+                  <WorkspaceInvitationItems
+                    controller={invitationController}
+                    fallbackLogoUrl={fallbackLogoUrl}
+                  />
+                </Command>
+              ) : null
             }
           />
         </Picker>

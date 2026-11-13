@@ -434,13 +434,17 @@ it('retains pins and recents when updates share a render and ignores retired act
   expect(result.current.recent).toEqual([]);
 });
 
-
 it('keeps the search field full width with an inset clear action', () => {
   render(
     <Popover defaultOpen>
       <PopoverTrigger>Choose workspace</PopoverTrigger>
-      <WorkspacePickerContent presentation="dropdown" workspaces={[one, other]}
-        currentId={one.id} visibility={visibility()} onSelect={vi.fn()} />
+      <WorkspacePickerContent
+        presentation="dropdown"
+        workspaces={[one, other]}
+        currentId={one.id}
+        visibility={visibility()}
+        onSelect={vi.fn()}
+      />
     </Popover>
   );
   const input = screen.getByRole('textbox');
@@ -458,8 +462,12 @@ it('keeps the search field full width with an inset clear action', () => {
   expect(document.activeElement).toBe(input);
   input.focus();
   fireEvent.keyDown(input, { key: 'ArrowDown' });
-  const row = screen.getByRole('button', { name: 'Repeated name PRO current_workspace' });
+  const row = screen.getByRole('button', {
+    name: 'Repeated name PRO current_workspace',
+  });
   expect(row.closest('.overflow-y-auto')).not.toBeNull();
   fireEvent.keyDown(document.activeElement!, { key: 'End' });
-  expect(document.activeElement).toBe(Array.from(document.querySelectorAll('[data-workspace-choice]')).at(-1));
+  expect(document.activeElement).toBe(
+    Array.from(document.querySelectorAll('[data-workspace-choice]')).at(-1)
+  );
 });
