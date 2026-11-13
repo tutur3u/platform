@@ -8,14 +8,14 @@ export const calendarPageInput = z.object({
     .refine((path) => path.startsWith('/') && !path.startsWith('//')),
 });
 
-export const loadCalendarLocale = createServerFn({ method: 'GET' })
+export const loadCalendarLocale = createServerFn({ method: 'POST' })
   .validator(calendarPageInput)
   .handler(async ({ data }) => {
     const { loadLocaleContext } = await import('./locale-context.server');
     return loadLocaleContext(data.path);
   });
 
-export const loadCalendarPage = createServerFn({ method: 'GET' })
+export const loadCalendarPage = createServerFn({ method: 'POST' })
   .validator(calendarPageInput)
   .handler(async ({ data }) => {
     const { loadPageModel } = await import('./page-model.server');
