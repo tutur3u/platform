@@ -438,8 +438,7 @@
   gap: 10px;
 }
 .ws-groups {
-  display: grid;
-  gap: 14px;
+  --masonry-gap: 14px;
 }
 .ws-filters {
   display: flex;
@@ -487,7 +486,6 @@
     grid-template-columns: minmax(0, 1.4fr) minmax(0, 1fr);
     align-items: start;
   }
-  .ws-groups,
   .ws-grid {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
@@ -504,9 +502,6 @@
     top: 50%;
     bottom: auto;
     transform: translateY(-50%);
-  }
-  .ws-groups {
-    grid-template-columns: repeat(3, minmax(0, 1fr));
   }
 }
 @media (prefers-reduced-motion: no-preference) {

@@ -98,7 +98,8 @@
     "noCommit": "Không báo commit",
     "main": "Mới nhất trên main",
     "notObserved": "Bản build này không kiểm tra được nơi chạy của ứng dụng, nên mọi ứng dụng đều hiển thị là chưa xác minh được.",
-    "badgeAlt": "Huy hiệu “Protected by Cloudflare”"
+    "logoAlt": "Cloudflare",
+    "trademark": "Cloudflare, logo Cloudflare và Cloudflare Workers là nhãn hiệu và/hoặc nhãn hiệu đã đăng ký của Cloudflare, Inc. tại Hoa Kỳ và các khu vực pháp lý khác."
   },
   "migration": {
     "title": "Chuyển ứng dụng về tuturuuu.com",

@@ -88,7 +88,7 @@ export function MigrationSection({
           </p>
         ) : null}
       </div>
-      <ul className="migration-list" aria-label={t.migration.list}>
+      <ul className="migration-list masonry" aria-label={t.migration.list}>
         {entries.map((entry) => (
           <li key={entry.app} className={`migration-item ${entry.state}`}>
             <span className="migration-name">

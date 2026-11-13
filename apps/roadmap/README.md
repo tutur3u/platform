@@ -85,8 +85,9 @@ counts as moved only when its subdomain redirects navigations to its
 `tuturuuu.com` path, and as in progress when its own Worker already answers
 there. A build that cannot observe (for example `ROADMAP_OFFLINE=1`) shows
 every value as not verifiable, with that build's time; the page never shows a
-provider or migration value from an earlier build. The hosting section shows
-Cloudflare's official web badge, unaltered (`src/assets/brands`).
+provider or migration value from an earlier build. The Cloudflare Workers
+group shows Cloudflare's official logo, unaltered, on a light plate with clear
+space (`src/assets/brands/CLOUDFLARE-LOGO.md`).
 
 `GET|HEAD /roadmap/api/hosts` probes the fixed allowlist in
 `src/live/host-probe.ts` (request input never selects a host), with manual

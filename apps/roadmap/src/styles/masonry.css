@@ -1,0 +1,34 @@
+/* Masonry: cards of different heights pack into columns with CSS
+   multi-column layout, so no script measures or positions anything. Cards
+   keep DOM order (down one column, then the next) and never split across
+   columns. Multi-column has no row gap, so item margins give the vertical
+   rhythm; each container sets --masonry-gap. Phones get normal flow (one
+   column). Equal-height rows (KPI tiles, track glance, host cards, the
+   catch-up pair) stay on grid. */
+.masonry {
+  column-gap: var(--masonry-gap, 14px);
+}
+.masonry > * {
+  break-inside: avoid;
+  margin-block: 0 var(--masonry-gap, 14px);
+}
+.masonry > :last-child {
+  margin-block-end: 0;
+}
+@media (min-width: 720px) {
+  .masonry {
+    column-count: 2;
+  }
+  /* Column balancing reads every item's height. A skipped item's
+     placeholder height would rebalance the columns once it renders and move
+     cards already in view, so items in a multi-column masonry render
+     eagerly. Phones keep skipping them (one column, nothing rebalances). */
+  .masonry > * {
+    content-visibility: visible;
+  }
+}
+@media (min-width: 1024px) {
+  .masonry {
+    column-count: 3;
+  }
+}
