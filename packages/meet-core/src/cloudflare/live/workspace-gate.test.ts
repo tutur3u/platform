@@ -35,12 +35,9 @@ it('requires explicit false, private authority and consent for Meet and Parley w
       )
     ).toBe(false);
   expect(liveWorkspaceAllowed(undefined, session)).toBe(false);
-  expect(
-    liveWorkspaceAllowed(
-      {},
-      { ...session, claims: { ...claims, app: 'parley' } }
-    )
-  ).toBe(false);
+  // The gate is app-agnostic: a Parley claim carries no pilot bypass.
+  const parley = { ...session, claims: { ...claims, app: 'parley' } };
+  expect(liveWorkspaceAllowed({}, parley)).toBe(false);
 });
 it('rechecks the exact durable own-account/meeting/version/revision before provider connection', async () => {
   const choice = {
