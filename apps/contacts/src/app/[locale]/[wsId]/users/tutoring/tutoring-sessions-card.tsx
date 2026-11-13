@@ -48,8 +48,10 @@ import {
   type TutoringExportFormat,
 } from './tutoring-export';
 import {
+  buildTutoringExportRangeSelection,
   canExportTutoringFormat,
   isTutoringSessionFiltered,
+  toIsoDate,
   type TutoringSessionFilters,
 } from './tutoring-filters';
 import { TutoringParentMessageDialog } from './tutoring-parent-message-dialog';
@@ -314,6 +316,21 @@ export function TutoringSessionsCard({
                   {t('payroll_invalid_range')}
                 </p>
               )}
+              {!canExportDetailed && filters.dateRange !== 'custom' ? (
+                <DropdownMenuItem
+                  onSelect={() =>
+                    actions.onFiltersChange(
+                      buildTutoringExportRangeSelection(
+                        filters.dateRange,
+                        toIsoDate(new Date())
+                      )
+                    )
+                  }
+                >
+                  <CalendarPlus className="h-4 w-4" />
+                  {t('export_choose_range')}
+                </DropdownMenuItem>
+              ) : null}
             </DropdownMenuContent>
           </DropdownMenu>
 

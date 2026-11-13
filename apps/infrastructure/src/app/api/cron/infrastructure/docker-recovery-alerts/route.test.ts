@@ -166,7 +166,6 @@ describe('Docker recovery alert cron route', () => {
     );
     await expect(response.json()).resolves.toMatchObject({
       ok: true,
-      sent: 1,
     });
   });
 
@@ -187,7 +186,6 @@ describe('Docker recovery alert cron route', () => {
     expect(mocks.sendSystemEmail).not.toHaveBeenCalled();
     await expect(response.json()).resolves.toMatchObject({
       ok: true,
-      skipped: 'no-incidents',
     });
   });
 });

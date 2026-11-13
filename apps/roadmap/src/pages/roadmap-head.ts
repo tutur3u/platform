@@ -3,8 +3,9 @@ import vi from '../../messages/vi.json';
 import ogImage from '../assets/og-roadmap.png?no-inline';
 import type { Lang } from '../components/shared';
 import { tracks } from '../content/tracks';
+import { bootScript } from '../boot';
 import { heroFontPreloads } from '../hero-fonts';
-import { liteModeScript } from '../lite-mode';
+import { historyAlternateLink } from '../history/history-url';
 import {
   alternateLinks,
   jsonLdScript,
@@ -24,9 +25,13 @@ export function roadmapHead(lang: Lang) {
       image: ogImage,
       imageAlt: t.meta.imageAlt,
     }),
-    links: [...heroFontPreloads(lang), ...alternateLinks('roadmap', lang)],
+    links: [
+      ...heroFontPreloads(lang),
+      ...alternateLinks('roadmap', lang),
+      historyAlternateLink(),
+    ],
     scripts: [
-      liteModeScript(),
+      bootScript(),
       jsonLdScript(
         roadmapJsonLd({
           lang,

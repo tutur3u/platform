@@ -25,6 +25,7 @@ const rowClass =
 
 /** Mobile navigation sheet (ported from apps/marketing). */
 export function MobileMenu({
+  initiallyOpen = false,
   t,
   pathname,
   siteUrl,
@@ -32,6 +33,7 @@ export function MobileMenu({
   locale,
   onLocaleChange,
 }: {
+  initiallyOpen?: boolean;
   t: Translate;
   pathname: string;
   siteUrl: string;
@@ -39,7 +41,7 @@ export function MobileMenu({
   locale: MarketingLocale;
   onLocaleChange?: (locale: MarketingLocale) => void;
 }) {
-  const [open, setOpen] = useState(false);
+  const [open, setOpen] = useState(initiallyOpen);
   const close = () => setOpen(false);
   const { categories } = navigation(t);
   const main = categories.find((c) => c.title === 'main')?.items ?? [];

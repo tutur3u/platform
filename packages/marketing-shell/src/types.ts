@@ -10,6 +10,9 @@ export type ShellImage = ComponentType<ComponentProps<'img'> & { src: string }>;
  */
 export interface MarketingShellProps {
   children: ReactNode;
+  /** Server-rendered hosts provide a small client controls island. */
+  actions?: ReactNode;
+  brandHref?: string;
   t: Translate;
   locale: MarketingLocale;
   /** Switch language; Next sets its locale cookie, the roadmap swaps state. */

@@ -1,3 +1,4 @@
+import { withHstsResponsePolicy } from '@tuturuuu/start-bridge/response-policy';
 import {
   handleTasksRequest,
   type TasksExecutionContext,
@@ -6,9 +7,13 @@ import {
 import { startupRefusal } from './startup';
 
 export default {
-  fetch(request: Request, env: TasksWorkerEnv, ctx: TasksExecutionContext) {
+  fetch: withHstsResponsePolicy(function (
+    request: Request,
+    env: TasksWorkerEnv,
+    ctx: TasksExecutionContext
+  ) {
     const refused = startupRefusal(env);
     if (refused) return Promise.resolve(refused);
     return handleTasksRequest(request, env, ctx);
-  },
+  }),
 };
