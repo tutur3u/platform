@@ -19,7 +19,7 @@ export async function generateMetadata({
           ? 'Tìm thời gian phù hợp cho mọi người với Tuturuuu Meet.'
           : 'Find a time that works for everyone with Tuturuuu Meet.',
       imageAlt: `${title} - Tuturuuu`,
-      pathname: `/meet/plans/${planId}`,
+      pathname: `/products/meet/plans/${planId}`,
     },
     locale
   );
