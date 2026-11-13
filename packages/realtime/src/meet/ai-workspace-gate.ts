@@ -7,7 +7,7 @@
  *   1. missing workspace id                          -> deny
  *   2. Easy Center (in code, whatever the env says)  -> deny
  *   3. protected config missing/invalid or id listed -> deny
- *   4. MEET_AI_DISABLED present and not 0/false      -> deny every workspace
+ *   4. MEET_AI_DISABLED not exactly 0/false          -> deny every workspace
  *   5. MEET_AI_DISABLED_WORKSPACE_IDS malformed      -> deny every workspace
  *      or listing the workspace                      -> deny
  *   6. MEET_AI_ENABLED_WORKSPACE_IDS missing, empty,
@@ -100,11 +100,7 @@ export function isMeetAiHardDenied(
     return true;
   if (protectedIds.includes(id)) return true;
   const disabled = binding(env, MEET_AI_DISABLED_ENV);
-  return (
-    disabled !== undefined &&
-    (typeof disabled !== 'string' ||
-      !['0', 'false'].includes(disabled.trim().toLowerCase()))
-  );
+  return disabled !== 'false' && disabled !== '0';
 }
 
 export function isMeetAiEnabledForWorkspace(
