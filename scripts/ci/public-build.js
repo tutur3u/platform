@@ -43,12 +43,28 @@ function collect(root, prefix) {
     if (st.isDirectory())
       for (const child of fs.readdirSync(file).sort())
         visit(name + '/' + child);
-    else
-      records.push({
-        path: name,
-        bytes: st.size,
-        sha256: sha256(fs.readFileSync(file)),
-      });
+    else {
+      let fd;
+      try {
+        fd = fs.openSync(file, fs.constants.O_RDONLY | fs.constants.O_NOFOLLOW);
+      } catch (error) {
+        if (error?.code === 'ELOOP' || error?.code === 'EINVAL')
+          throw new Error('Unsafe artifact entry');
+        throw error;
+      }
+      try {
+        const openSt = fs.fstatSync(fd);
+        if (!openSt.isFile() || openSt.isSymbolicLink())
+          throw new Error('Unsafe artifact entry');
+        records.push({
+          path: name,
+          bytes: openSt.size,
+          sha256: sha256(fs.readFileSync(fd)),
+        });
+      } finally {
+        fs.closeSync(fd);
+      }
+    }
   }
   visit(prefix);
   return records;
