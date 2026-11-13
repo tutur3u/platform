@@ -19,9 +19,9 @@ async function canonicalPolicy() {
 const policy = canonicalPolicy();
 const basePath = appConfig.mounts?.basePath;
 
-// Static files are requested both on Calendar's own host (`/assets/...`) and
-// under the shared mount (`/calendar/assets/...`). Cache classification compares
-// the path inside the app, so both forms receive the same static caching.
+// Calendar is served both on its own host (`/assets/...`) and under the shared
+// mount (`/calendar/assets/...`). Static caching and the offline document policy
+// compare the path inside the app, so both forms are treated the same.
 function appRelativePath(path: string) {
   return basePath && path.startsWith(`${basePath}/`)
     ? path.slice(basePath.length)
@@ -52,7 +52,7 @@ export async function applyCalendarResponsePolicy(
     } else headers.set(key, value);
   }
   const isOfflineDocument =
-    path === '/offline.html' &&
+    appRelativePath(path) === '/offline.html' &&
     (request.method === 'GET' || request.method === 'HEAD') &&
     response.status === 200 &&
     headers.get('Content-Type')?.toLowerCase().includes('text/html');
