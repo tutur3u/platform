@@ -19,6 +19,7 @@ import {
 import { NextResponse } from 'next/server';
 import { z } from 'zod';
 import { requireWorkspaceExternalProjectAccess } from '@/lib/external-projects/access';
+import { externalProjectSignedReadPath } from '@/lib/external-projects/signed-read-path';
 
 const SIGNED_READ_URL_TTL_SECONDS = 900;
 
@@ -404,14 +405,16 @@ export async function GET(
 
   try {
     if (filePath !== null) {
-      const sanitizedFilePath = sanitizeRelativePath(filePath);
+      const sanitizedFilePath = access.binding.adapter
+        ? externalProjectSignedReadPath(prefix, filePath)
+        : null;
       if (!sanitizedFilePath) {
-        return errorJson('Invalid file path', 400);
+        return errorJson('Invalid file path', 403);
       }
 
       const signedUrl = await createWorkspaceStorageSignedReadUrl(
         access.normalizedWorkspaceId,
-        toScopedPath(prefix, sanitizedFilePath),
+        sanitizedFilePath,
         {
           expiresIn: SIGNED_READ_URL_TTL_SECONDS,
           requireExists: true,
