@@ -222,3 +222,26 @@ it('shows stop-admission refusal without a disabled spinner', () => {
   expect(screen.getByText(copy.admission_closed)).toBeTruthy();
   expect(view.container.querySelector('[class*="animate-spin"]')).toBeNull();
 });
+
+it.each(['connecting', 'reconnecting'] as const)(
+  'keeps automatic recovery calm while signaling is %s',
+  (status) => {
+    render(
+      localized(<CallConnectionNotice status={status} onRetry={vi.fn()} />)
+    );
+    const notice = screen.getByRole('status');
+    expect(notice.textContent).toContain(copy.reconnecting);
+    expect(notice.getAttribute('aria-live')).toBe('polite');
+    expect(screen.queryByText(copy.join_error_title)).toBeNull();
+    expect(
+      screen.queryByRole('button', { name: copy.connection_refresh })
+    ).toBeNull();
+  }
+);
+
+it('renders nothing while the connection is open', () => {
+  const view = render(
+    localized(<CallConnectionNotice status="open" onRetry={vi.fn()} />)
+  );
+  expect(view.container.textContent).toBe('');
+});
