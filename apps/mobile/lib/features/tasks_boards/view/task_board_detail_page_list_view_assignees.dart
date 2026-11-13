@@ -90,6 +90,9 @@ class _ListViewAssigneeAvatar extends StatelessWidget {
           child: Image.network(
             avatarUrl,
             fit: BoxFit.cover,
+            // Decode at the 24x24 circle's device-pixel size instead of the
+            // source resolution.
+            cacheWidth: (24 * MediaQuery.devicePixelRatioOf(context)).ceil(),
             errorBuilder: (_, _, _) => ColoredBox(
               color: avatarColor,
               child: Center(
