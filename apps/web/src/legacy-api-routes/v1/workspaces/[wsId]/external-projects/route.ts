@@ -36,8 +36,10 @@ export async function GET(
   { params }: { params: Promise<{ wsId: string }> }
 ) {
   const { wsId } = await params;
+  const contentOnly =
+    new URL(request.url).searchParams.get('view') === 'content';
   const access = await requireWorkspaceExternalProjectAccess({
-    mode: 'read',
+    mode: contentOnly ? 'read' : 'manage',
     request,
     wsId,
   });
@@ -66,11 +68,14 @@ export async function GET(
     return NextResponse.json({
       binding: access.binding,
       ...studio,
+      publishEvents: contentOnly ? [] : studio.publishEvents,
       importJobs:
-        hasWorkspaceExternalProjectPermission(
+        !contentOnly &&
+        (hasWorkspaceExternalProjectPermission(
           access.workspacePermissions,
           'publish'
-        ) || hasRootExternalProjectsAdminPermission(access.rootPermissions)
+        ) ||
+          hasRootExternalProjectsAdminPermission(access.rootPermissions))
           ? studio.importJobs
           : [],
       cmsCapabilities: getExternalProjectCmsEditorCapabilities({
