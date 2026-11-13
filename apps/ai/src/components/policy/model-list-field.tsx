@@ -58,6 +58,7 @@ export function ModelListField({
           id={inputId}
           onChange={(event) => setDraft(event.target.value)}
           onKeyDown={(event) => {
+            if (event.nativeEvent.isComposing || event.keyCode === 229) return;
             if (event.key === 'Enter' || event.key === ',') {
               event.preventDefault();
               commit();
