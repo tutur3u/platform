@@ -505,14 +505,13 @@ describe('root-only Calendar handler ownership', () => {
     expect(await response.text()).toBe('worker');
     expect(suppliers.proxy).not.toHaveBeenCalled();
   });
+  // #8257 mounts production Calendar at https://tuturuuu.com/calendar, so
+  // only apex paths outside that mount stay held.
   it.each([
-    '/calendar',
-    '/calendar/serwist/sw.js',
-    '/calendar/api/build-info',
-    '/calendar/_calendar/functions/fixture',
     '/api/build-info',
     '/mail/verify-token',
     '/calendarish',
+    '/calendar-other/api/build-info',
   ])('rejects the held apex path %s without dispatch', async (path) => {
     const asset = vi.fn(async () => new Response('asset'));
     const request = new Request(`https://tuturuuu.com${path}`, {
@@ -532,5 +531,91 @@ describe('root-only Calendar handler ownership', () => {
     expect(asset).not.toHaveBeenCalled();
     expect(suppliers.proxy).not.toHaveBeenCalled();
     expect(suppliers.start).not.toHaveBeenCalled();
+  });
+});
+
+// Mounted requests are rebuilt once to set the trusted app-base header, which
+// moves (not reads) the body, so these cases assert no dispatch instead of
+// the original request's bodyUsed flag.
+describe('production apex /calendar mount ownership', () => {
+  it('serves the mounted service worker scoped to /calendar/', async () => {
+    const asset = vi.fn(async (request: Request) => {
+      expect(request.url).toBe('https://tuturuuu.com/serwist/sw.js?x=1');
+      return new Response('worker');
+    });
+    const response = await handleCalendarRequest(
+      new Request('https://tuturuuu.com/calendar/serwist/sw.js?x=1'),
+      { ASSETS: { fetch: asset } },
+      ctx,
+      telemetry
+    );
+    expect(response.headers.get('service-worker-allowed')).toBe('/calendar/');
+    expect(await response.text()).toBe('worker');
+    expect(asset).toHaveBeenCalledTimes(1);
+    expect(suppliers.proxy).not.toHaveBeenCalled();
+    expect(suppliers.start).not.toHaveBeenCalled();
+  });
+
+  it('answers mounted build-info writes without dispatch or body reads', async () => {
+    const asset = vi.fn(async () => new Response('asset'));
+    const request = new Request(
+      'https://tuturuuu.com/calendar/api/build-info',
+      { method: 'POST', body: rawBody }
+    );
+    const response = await handleCalendarRequest(
+      request,
+      { ASSETS: { fetch: asset } },
+      ctx,
+      telemetry
+    );
+    expect(response.status).toBe(405);
+    expect(response.headers.getSetCookie()).toEqual([]);
+    expect(asset).not.toHaveBeenCalled();
+    expect(suppliers.proxy).not.toHaveBeenCalled();
+    expect(suppliers.start).not.toHaveBeenCalled();
+  });
+
+  it('rejects a mounted native function write without JSON before Start', async () => {
+    const asset = vi.fn(async () => new Response('asset'));
+    const request = new Request(
+      'https://tuturuuu.com/calendar/_calendar/functions/fixture',
+      { method: 'POST', body: rawBody }
+    );
+    const response = await handleCalendarRequest(
+      request,
+      { ASSETS: { fetch: asset } },
+      ctx,
+      telemetry
+    );
+    expect(response.status).toBe(415);
+    expect(asset).not.toHaveBeenCalled();
+    expect(suppliers.proxy).not.toHaveBeenCalled();
+    expect(suppliers.start).not.toHaveBeenCalled();
+  });
+
+  it('dispatches the mount root once with the /calendar app base', async () => {
+    suppliers.proxy.mockResolvedValueOnce(NextResponse.next());
+    suppliers.start.mockImplementationOnce(async (forwarded) => {
+      expect(new URL(forwarded.url).host).toBe('tuturuuu.com');
+      expect(forwarded.headers.get('x-tuturuuu-app-base')).toBe('/calendar');
+      expect(await forwarded.text()).toBe(rawBody);
+      return new Response('page');
+    });
+    const response = await handleCalendarRequest(
+      new Request('https://tuturuuu.com/calendar', {
+        method: 'POST',
+        body: rawBody,
+        headers: {
+          'content-type': 'application/json',
+          'x-tuturuuu-app-base': '/forged',
+        },
+      }),
+      env,
+      ctx,
+      telemetry
+    );
+    expect(await response.text()).toBe('page');
+    expect(suppliers.proxy).toHaveBeenCalledTimes(1);
+    expect(suppliers.start).toHaveBeenCalledTimes(1);
   });
 });
