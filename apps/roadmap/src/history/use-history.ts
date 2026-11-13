@@ -1,7 +1,7 @@
 import { type RefObject, useEffect, useMemo, useState } from 'react';
-import historyUrl from '../generated/history.json?url';
 import type { LiveData } from '../live/model.ts';
 import type { History } from './build.ts';
+import { historyUrl } from './history-url.ts';
 import { loadHistoryWhenNear } from './lazy-load.ts';
 import { combineHistory, liveEntries } from './timeline.ts';
 
