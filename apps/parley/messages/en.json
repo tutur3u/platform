@@ -4579,6 +4579,22 @@
       "unsupported_type": "This recording format cannot be transcribed inline yet. The saved recording remains available."
     }
   },
+  "meet_ai_notice": {
+    "active_mira": "Mira Live sends call audio and text to Google Gemini for assistant replies.",
+    "active_title": "Meet AI is on in this call",
+    "active_transcription": "Call audio is sent to Google Gemini to make a transcript and notes for this meeting.",
+    "available": "When Meet AI is used in a call, audio and text are sent to Google Gemini for transcripts, notes and assistant replies.",
+    "error": "Meet AI status is unavailable.",
+    "guest": "When Meet AI is active in a call, audio and text are sent to Google Gemini for transcripts, notes and assistant replies.",
+    "indicator_mira": "Mira Live",
+    "indicator_on": "AI on",
+    "indicator_transcribing": "Transcribing",
+    "links_privacy": "Privacy",
+    "links_subprocessors": "Subprocessors",
+    "links_terms": "Terms",
+    "links_updated": "Updated {date}",
+    "off": "Meet AI is off for this workspace."
+  },
   "meet_workspace": {
     "meetings_description": "Review and manage workspace meeting rooms from the central platform.",
     "meetings_title": "Meetings",

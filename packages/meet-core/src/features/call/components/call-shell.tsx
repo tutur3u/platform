@@ -6,7 +6,6 @@ import {
   Circle,
   Code2,
   FileText,
-  Leaf,
   Users,
 } from '@tuturuuu/icons';
 import { MeetLivePanel } from '@tuturuuu/meet-core/features/live-assistant/live-panel';
@@ -14,6 +13,7 @@ import { RoomAssistantAudio } from '@tuturuuu/meet-core/features/live-assistant/
 import { meetingAudioSources } from '@tuturuuu/meet-core/features/meeting-ai/audio-sources';
 import { MeetingAiPanel } from '@tuturuuu/meet-core/features/meeting-ai/meeting-ai-panel';
 import { NotesSharingControl } from '@tuturuuu/meet-core/features/meeting-ai/notes-sharing-control';
+import { useMeetAiDisclosure } from '../../meeting-ai/use-meet-ai-disclosure';
 import { useMeetingAi } from '@tuturuuu/meet-core/features/meeting-ai/use-meeting-ai';
 import { MEETING_APP } from '@tuturuuu/meet-core/runtime';
 import { Button } from '@tuturuuu/ui/button';
@@ -39,6 +39,8 @@ import {
 } from '../lib/call-state';
 import { getMediaErrorDiagnostic, getMediaErrorKey } from '../lib/media-error';
 import { encodeRoomCode } from '../lib/room-code';
+import { AiDisclosureNotice } from './ai-disclosure-notice';
+import { AiStatusIndicator } from './ai-status-indicator';
 import { CallEnded } from './call-ended';
 import { CallExtras } from './call-extras';
 import { ConnectedLobby } from './call-lobby';
@@ -53,7 +55,7 @@ import { FloatingSelfCamera } from './floating-self-camera';
 import { CallConnectionNotice, JoinOutcome } from './join-outcome';
 import { LeaveDialog } from './leave-dialog';
 import { MeetingActionHint } from './meeting-action-hint';
-import { MeetingTitle } from './meeting-title';
+import { CallHeader } from './call-header';
 import { PersonalToolsPanel } from './personal-tools-panel';
 import {
   PlaybackVolumeControl,
@@ -190,6 +192,11 @@ function CallShellContent({
     canReadNotes,
     accountId,
     { title: state.title ?? meetingName }
+  );
+  const { disclosure, audience } = useMeetAiDisclosure(
+    ai,
+    state,
+    canReadWorkspace
   );
   const recording = useRoomRecording(room, meetingId, audioStreams);
   const telemetry = useQuery({
@@ -332,36 +339,22 @@ function CallShellContent({
         prepareJoin={sharedAudio.prepareJoin}
         room={room}
         runMediaAction={runMediaAction}
-        transcriptionNotice={
-          !canReadNotes && !canReadWorkspace
-            ? t('guest_transcription_notice')
-            : ai.data?.sessions.some(
-                  (session: { ended_at: string | null }) => !session.ended_at
-                )
-              ? aiT('join_notice')
-              : undefined
+        aiNotice={
+          <AiDisclosureNotice disclosure={disclosure} audience={audience} />
         }
       />
     );
 
   return (
     <div className="flex h-dvh flex-col bg-background">
-      <header className="flex flex-wrap items-center gap-2 border-b px-3 py-2">
-        <MeetingTitle
-          meetingId={meetingId}
-          title={room.state.title ?? meetingName}
-          canManage={canManage}
-          onSaved={room.renameMeeting}
-        />
-        {participants.length === 1 && !state.liveAssistant && (
-          <output
-            className="inline-flex items-center gap-1.5 rounded-full border bg-muted/40 px-2.5 py-1 text-muted-foreground text-xs"
-            title={t('solo_hint')}
-          >
-            <Leaf className="size-3.5" />
-            {t('solo_mode')}
-          </output>
-        )}
+      <CallHeader
+        meetingId={meetingId}
+        title={room.state.title ?? meetingName}
+        canManage={canManage}
+        onSaved={room.renameMeeting}
+        solo={participants.length === 1 && !state.liveAssistant}
+      >
+        <AiStatusIndicator disclosure={disclosure} />
         {canReadNotes && (
           <MeetingActionHint label={aiT('title')}>
             <Button
@@ -436,7 +429,7 @@ function CallShellContent({
           onOutput={setOutputDeviceId}
         />
         <RoomCountdown expiresAt={state.roomExpiresAt} />
-      </header>
+      </CallHeader>
       {canManage && state.waiting.length > 0 && (
         <output className="flex items-center justify-between gap-3 border-b bg-muted/40 px-3 py-2">
           <span className="text-sm">

@@ -9,6 +9,7 @@ import {
 import { Button } from '@tuturuuu/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@tuturuuu/ui/tabs';
 import { useTranslations } from 'next-intl';
+import { MeetAiLegalLinks } from '../call/components/meet-ai-legal-links';
 import { showMeetingAiFailure } from './failure-toast';
 import { MeetingFollowups } from './meeting-followups';
 import { MeetingTranscript } from './meeting-transcript';
@@ -22,6 +23,7 @@ export function MeetingAiPanel({
   inCall?: boolean;
 }) {
   const t = useTranslations('meet.ai');
+  const noticeT = useTranslations('meet_ai_notice');
   const run = (work: () => Promise<unknown>) =>
     void work().catch((error: unknown) => showMeetingAiFailure(t, error));
   const data = ai.data;
@@ -30,16 +32,19 @@ export function MeetingAiPanel({
     <section className="flex min-h-0 flex-col gap-3 rounded-lg border bg-card p-4">
       <h2 className="font-semibold">{t('title')}</h2>
       {ai.isLoading ? <p role="status">{t('loading')}</p> : null}
-      {ai.error ? <p role="alert">{t('unavailable')}</p> : null}
+      {ai.error ? <p role="alert">{noticeT('error')}</p> : null}
       {data ? (
         <>
-          {data.available === false ? null : (
+          {data.available === false && !active ? null : (
             <p className="text-muted-foreground text-xs">
-              {t(inCall ? 'notice' : 'review_notice')}
+              {noticeT(active ? 'active_transcription' : 'available')}
             </p>
           )}
-          {data.available === false ? (
-            <p role="status">{t('workspace_unavailable')}</p>
+          {data.available !== false || active ? <MeetAiLegalLinks /> : null}
+          {data.available === false && !active ? (
+            ai.error ? null : (
+              <p role="status">{noticeT('off')}</p>
+            )
           ) : !data.configured ? (
             <p>{t('not_configured')}</p>
           ) : null}

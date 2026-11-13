@@ -62,7 +62,7 @@ it.each(['en', 'vi'] as const)(
       localized(
         <Lobby
           {...baseProps}
-          transcriptionNotice="Live transcription is active"
+          aiNotice={<output>Live transcription is active</output>}
         />,
         locale
       )
