@@ -34,3 +34,41 @@ Regression coverage is in
 `apps/web/src/app/api/v1/workspaces/[wsId]/documents/route.test.ts`; the schema
 contract is covered by `apps/database/supabase/tests/workspace-document-hierarchy.sql`. API mocks verify the
 boundary and write arguments; database tests cover hierarchy consistency.
+
+## Web navigation and moves
+
+The gated Web documents area provides a nested sidebar, document breadcrumbs and
+child creation. The sidebar becomes a drawer on small screens. Public document
+pages and other apps retain their existing navigation. The workspace gate remains
+OFF by default; disabling it restores the flat document flow.
+
+Siblings sort by position ascending, with null positions last, followed by creation
+time descending and ID ascending. Missing-parent documents appear at the top
+level without changing storage. Traversal stops at 16 levels and never repeats an
+ID. The selected page's ancestors expand automatically and can be collapsed.
+
+Document managers can drag above a row to place a page before it, or onto the
+rest of the row to make it a child. The move handle also supports Alt+Up/Down for
+ordering and Alt+Left/Right for moving out of or into a parent. Explicit buttons
+and a parent picker provide the same operations without dragging. Read-only
+component consumers have no create or move controls; Web continues to require
+`manage_documents` for access, matching the API.
+
+Moves validate the complete loaded collection, including subtree height, before
+writing. Legacy null sibling positions receive ordered integer positions through
+serial API writes before moving. These writes are not a transaction: an interrupted
+preparation can leave some positions assigned. Refresh shows the saved order and
+no automatic write retry occurs. Exhausted integer gaps require another location.
+The database remains authoritative for hierarchy validity and permissions.
+
+Successful moves offer Undo for the moved page's prior parent and ordering
+position. An unconfirmed move retains its original and attempted locations; a
+read confirming the attempted location restores Undo without replaying the write.
+Other failed or unconfirmed moves require a successful explicit refresh before
+another move. Definite create rejections keep the draft editable. Unconfirmed
+creates retain the draft and block resubmission because the server may have
+created the document; inspect the refreshed document list before another create.
+
+Pure tree, keyboard, permission and legacy-position regressions are in
+`apps/web/src/lib/documents/hierarchy.test.ts`. Source tests do not establish
+browser or production acceptance; both themes at 390px and 1440px remain required.
