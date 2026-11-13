@@ -13,7 +13,10 @@
 //! membership/permission check here — delivery is public for enabled
 //! workspaces.
 
+use std::fmt::Write;
+
 use serde_json::{Map, Value, json};
+use sha2::Digest;
 
 use crate::{
     APPLICATION_JSON, BackendConfig, BackendRequest, BackendResponse, contact, json_response,
@@ -22,6 +25,7 @@ use crate::{
 };
 
 mod loading;
+mod page_versions;
 #[cfg(test)]
 mod tests;
 
@@ -269,7 +273,8 @@ async fn build_delivery_payload(
         .unwrap_or_else(|| Value::Object(Map::new()));
 
     let collections = list_collections(contact_data, outbound, ws_id).await?;
-    let entries = list_entries(contact_data, outbound, ws_id).await?;
+    let mut entries = list_entries(contact_data, outbound, ws_id).await?;
+    page_versions::attach(contact_data, outbound, ws_id, &mut entries).await?;
 
     let entry_ids: Vec<String> = entries
         .iter()
@@ -304,6 +309,14 @@ async fn build_delivery_payload(
         .map(digits_only)
         .filter(|value| !value.is_empty())
         .unwrap_or_else(|| "empty".to_owned());
+
+    let pointers: Vec<_> = entries.iter().map(|e| &e["published_page_version_id"]).collect();
+    let digest = sha2::Sha256::digest(serde_json::to_vec(&pointers).map_err(|_| ())?);
+    let mut pointer_hash = String::with_capacity(digest.len() * 2);
+    for byte in digest {
+        write!(&mut pointer_hash, "{byte:02x}").map_err(|_| ())?;
+    }
+    let revision = format!("{revision}-{pointer_hash}");
 
     Ok(json!({
         "adapter": adapter,
@@ -636,6 +649,7 @@ fn public_delivery_response(
             }
         }
     }
+    let (cache_control, cdn_control) = page_versions::cache_control(&payload);
     let etag = format!("W/\"{revision}\"");
     let not_modified = if_none_match.is_some_and(|value| if_none_match_matches(value, &etag));
     let mut response = if not_modified {
@@ -646,11 +660,11 @@ fn public_delivery_response(
     } else {
         json_response(200, payload)
     };
-    response.cache_control = Some(PUBLIC_DELIVERY_CACHE_CONTROL);
+    response.cache_control = Some(cache_control);
     response.headers.push(("etag", etag));
     response.headers.push((
         "vercel-cdn-cache-control",
-        "max-age=86400, stale-while-revalidate=43200".to_owned(),
+        cdn_control.to_owned(),
     ));
     response
         .headers
