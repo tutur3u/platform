@@ -8,6 +8,7 @@ import {
 import { Button } from '@tuturuuu/ui/button';
 import { Popover, PopoverContent, PopoverTrigger } from '@tuturuuu/ui/popover';
 import { useTranslations } from 'next-intl';
+import { useEffect, useRef, useState } from 'react';
 import { withDeadline } from './live-errors';
 import {
   confirmPrivateChoice,
@@ -19,14 +20,40 @@ import {
 const CHOICE_DEADLINE_MS = 20000;
 const LEAVE_RECORD_DEADLINE_MS = 4000;
 
+/** Personal input is admitted only for a live Continue bound to this meeting and account. */
+function privateContinueAdmits(
+  policy:
+    | {
+        available?: boolean;
+        choice?: {
+          choice?: string;
+          meetingId?: string;
+          accountId?: string;
+        } | null;
+      }
+    | undefined,
+  scope: { connected: boolean; meetingId: string; accountId: string }
+) {
+  const record = policy?.choice;
+  return (
+    scope.connected &&
+    policy?.available === true &&
+    record?.choice === 'continue' &&
+    record.meetingId === scope.meetingId &&
+    record.accountId === scope.accountId
+  );
+}
+
 export function PrivateMiraNotice({
   meetingId,
+  accountId,
   connected = true,
   onStop,
   onLeave,
   onAccepted,
 }: {
   meetingId: string;
+  accountId: string;
   /** The room socket is open and this device is admitted, so the server can see its presence. */
   connected?: boolean;
   onStop: () => Promise<void>;
@@ -42,6 +69,31 @@ export function PrivateMiraNotice({
     enabled: connected,
     retry: false,
   });
+  const scope = useRef({ connected, meetingId, accountId });
+  scope.current = { connected, meetingId, accountId };
+  const seenScope = useRef({ meetingId, accountId });
+  const [choiceAdmitted, setChoiceAdmitted] = useState(false);
+  const admits =
+    policy.isSuccess &&
+    privateContinueAdmits(policy.data, { connected, meetingId, accountId });
+  // A cached Continue is not admission. Drop it when the room is down or the
+  // latest read is not Continue for this meeting and account.
+  useEffect(() => {
+    if (!admits) {
+      setChoiceAdmitted(false);
+      onAccepted(false);
+    }
+  }, [admits, onAccepted]);
+  useEffect(() => {
+    if (
+      seenScope.current.meetingId === meetingId &&
+      seenScope.current.accountId === accountId
+    )
+      return;
+    seenScope.current = { meetingId, accountId };
+    setChoiceAdmitted(false);
+    onAccepted(false);
+  }, [meetingId, accountId, onAccepted]);
   const record = async (value: PrivateChoice) => {
     const current = policy.data ?? (await readPrivateMiraPolicy(meetingId));
     await setPrivateMiraChoice(meetingId, current.version, value);
@@ -62,6 +114,7 @@ export function PrivateMiraNotice({
             LEAVE_RECORD_DEADLINE_MS,
             () => new PrivateChoiceError('timeout')
           ).catch(() => undefined);
+        setChoiceAdmitted(false);
         onAccepted(false);
         await onLeave();
         return;
@@ -73,16 +126,30 @@ export function PrivateMiraNotice({
         CHOICE_DEADLINE_MS,
         () => new PrivateChoiceError('timeout')
       ).catch((error: unknown) => {
-        if (value !== 'continue') onAccepted(false);
+        if (value !== 'continue') {
+          setChoiceAdmitted(false);
+          onAccepted(false);
+        }
         throw error;
       });
       let accepted: boolean;
       try {
         accepted = confirmPrivateChoice(confirmed, value);
+        if (accepted && !privateContinueAdmits(confirmed, scope.current)) {
+          setChoiceAdmitted(false);
+          onAccepted(false);
+          throw new PrivateChoiceError(
+            scope.current.connected ? 'unconfirmed' : 'not_connected'
+          );
+        }
       } catch (error) {
-        if (value !== 'continue') onAccepted(false);
+        if (value !== 'continue') {
+          setChoiceAdmitted(false);
+          onAccepted(false);
+        }
         throw error;
       }
+      setChoiceAdmitted(accepted);
       onAccepted(accepted);
     },
   });
@@ -99,7 +166,14 @@ export function PrivateMiraNotice({
     problem && !['not_connected', 'unavailable'].includes(problem);
   const pending = choice.isPending ? choice.variables : undefined;
   const done =
-    choice.isSuccess && choice.variables !== 'leave' ? choice.variables : null;
+    choice.isSuccess &&
+    choice.variables === 'continue' &&
+    choiceAdmitted &&
+    admits
+      ? 'continue'
+      : choice.isSuccess && choice.variables === 'mute'
+        ? 'mute'
+        : null;
   const retry = () => {
     if (choice.isError && choice.variables) choice.mutate(choice.variables);
     else void policy.refetch();

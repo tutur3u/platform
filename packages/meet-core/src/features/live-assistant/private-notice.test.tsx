@@ -43,22 +43,47 @@ afterEach(() => {
   cleanup();
   vi.unstubAllGlobals();
 });
-function show({ connected = true }: { connected?: boolean } = {}) {
-  render(
-    <QueryClientProvider
-      client={
-        new QueryClient({
-          defaultOptions: {
-            queries: { retry: false },
-            mutations: { retry: false },
-          },
-        })
-      }
-    >
+function continuePolicy(overrides?: {
+  choice?: 'continue' | 'mute' | 'leave';
+  meetingId?: string;
+  accountId?: string;
+  available?: boolean;
+}) {
+  return {
+    version: 'synthetic-v1',
+    available: overrides?.available ?? true,
+    choice: {
+      choice: overrides?.choice ?? 'continue',
+      version: 'synthetic-v1',
+      meetingId: overrides?.meetingId ?? 'synthetic',
+      accountId: overrides?.accountId ?? 'synthetic-account',
+      recordedAt: 1,
+      revision: 1,
+    },
+  };
+}
+function show({
+  connected = true,
+  meetingId = 'synthetic',
+  accountId = 'synthetic-account',
+}: {
+  connected?: boolean;
+  meetingId?: string;
+  accountId?: string;
+} = {}) {
+  const client = new QueryClient({
+    defaultOptions: {
+      queries: { retry: false },
+      mutations: { retry: false },
+    },
+  });
+  const tree = (live: boolean) => (
+    <QueryClientProvider client={client}>
       <NextIntlClientProvider locale="en" timeZone="UTC" messages={messages}>
         <PrivateMiraNotice
-          meetingId="synthetic"
-          connected={connected}
+          meetingId={meetingId}
+          accountId={accountId}
+          connected={live}
           onAccepted={accepted}
           onStop={stop}
           onLeave={leave}
@@ -66,6 +91,13 @@ function show({ connected = true }: { connected?: boolean } = {}) {
       </NextIntlClientProvider>
     </QueryClientProvider>
   );
+  const view = render(tree(connected));
+  return {
+    client,
+    rerender(next: { connected?: boolean } = {}) {
+      view.rerender(tree(next.connected ?? connected));
+    },
+  };
 }
 it('focuses Continue without sending a choice or admitting input until a server-confirmed click', async () => {
   show();
@@ -76,14 +108,10 @@ it('focuses Continue without sending a choice or admitting input until a server-
     expect((button as HTMLButtonElement).disabled).toBe(false)
   );
   expect(f.write).not.toHaveBeenCalled();
-  expect(accepted).not.toHaveBeenCalled();
-  f.read.mockResolvedValue({
-    version: 'synthetic-v1',
-    available: true,
-    choice: { choice: 'continue' },
-  });
+  expect(accepted).not.toHaveBeenCalledWith(true);
+  f.read.mockResolvedValue(continuePolicy());
   fireEvent.click(button);
-  await waitFor(() => expect(accepted).toHaveBeenCalledWith(true));
+  await waitFor(() => expect(accepted).toHaveBeenLastCalledWith(true));
   expect(f.write).toHaveBeenCalledWith('synthetic', 'synthetic-v1', 'continue');
 });
 it('never admits input after a failed write and stops before persisting mute', async () => {
@@ -102,7 +130,7 @@ it('never admits input after a failed write and stops before persisting mute', a
     screen.getByRole('button', { name: messages.meet.live.phase_continue })
   );
   await screen.findByRole('alert');
-  expect(accepted).not.toHaveBeenCalled();
+  expect(accepted).not.toHaveBeenCalledWith(true);
   f.write.mockImplementation(async () => {
     expect(stop).toHaveBeenCalled();
   });
@@ -129,14 +157,10 @@ it('names a missing meeting presence and retries the same choice to a confirmed 
   expect((await screen.findByRole('alert')).textContent).toContain(
     live.choice_not_admitted
   );
-  expect(accepted).not.toHaveBeenCalled();
-  f.read.mockResolvedValue({
-    version: 'synthetic-v1',
-    available: true,
-    choice: { choice: 'continue' },
-  });
+  expect(accepted).not.toHaveBeenCalledWith(true);
+  f.read.mockResolvedValue(continuePolicy());
   fireEvent.click(screen.getByRole('button', { name: live.retry }));
-  await waitFor(() => expect(accepted).toHaveBeenCalledWith(true));
+  await waitFor(() => expect(accepted).toHaveBeenLastCalledWith(true));
   expect(f.write).toHaveBeenLastCalledWith(
     'synthetic',
     'synthetic-v1',
@@ -165,7 +189,7 @@ it('shows a reason instead of admitting when the server confirms no choice or an
       live.choice_unavailable
     )
   );
-  expect(accepted).not.toHaveBeenCalled();
+  expect(accepted).not.toHaveBeenCalledWith(true);
 });
 it('marks only the clicked choice as pending and blocks repeat clicks', async () => {
   show();
@@ -216,4 +240,64 @@ it('keeps the notice, retention and legal link behind a named details button', a
   expect(
     screen.getByRole('link', { name: live.phase_legal }).getAttribute('href')
   ).toBe('https://tuturuuu.com/privacy');
+});
+
+async function admitContinue() {
+  f.read.mockResolvedValue(continuePolicy());
+  fireEvent.click(await enabledContinue());
+  await waitFor(() => expect(accepted).toHaveBeenLastCalledWith(true));
+}
+it('drops acceptance when a later read is not Continue for this meeting and account', async () => {
+  const { client } = show();
+  const revoke = async (policy: ReturnType<typeof continuePolicy>) => {
+    await admitContinue();
+    f.read.mockResolvedValue(policy);
+    await client.refetchQueries({
+      queryKey: ['mira-private-choice', 'synthetic'],
+    });
+    await waitFor(() => expect(accepted).toHaveBeenLastCalledWith(false));
+  };
+  await revoke(continuePolicy({ choice: 'mute' }));
+  await revoke(continuePolicy({ accountId: 'other-account' }));
+  await revoke(continuePolicy({ meetingId: 'other-meeting' }));
+  await revoke(continuePolicy({ available: false }));
+});
+it('keeps acceptance when a later read still confirms Continue for this meeting and account', async () => {
+  const { client } = show();
+  await admitContinue();
+  const calls = accepted.mock.calls.length;
+  const reads = f.read.mock.calls.length;
+  await client.refetchQueries({
+    queryKey: ['mira-private-choice', 'synthetic'],
+  });
+  await waitFor(() => expect(f.read.mock.calls.length).toBeGreaterThan(reads));
+  expect(screen.getByRole('status').textContent).toBe(
+    live.choice_continue_done
+  );
+  expect(accepted.mock.calls.length).toBe(calls);
+  expect(accepted).toHaveBeenLastCalledWith(true);
+});
+it('revokes acceptance on disconnect and does not restore a cached Continue', async () => {
+  const { rerender } = show();
+  await admitContinue();
+  rerender({ connected: false });
+  await waitFor(() => expect(accepted).toHaveBeenLastCalledWith(false));
+  const calls = accepted.mock.calls.length;
+  const reads = f.read.mock.calls.length;
+  rerender({ connected: true });
+  await waitFor(() => expect(f.read.mock.calls.length).toBeGreaterThan(reads));
+  await waitFor(() =>
+    expect(
+      (
+        screen.getByRole('button', {
+          name: live.phase_continue,
+        }) as HTMLButtonElement
+      ).disabled
+    ).toBe(false)
+  );
+  expect(screen.queryByRole('status')).toBeNull();
+  expect(accepted.mock.calls.slice(calls).some((call) => call[0] === true)).toBe(
+    false
+  );
+  expect(accepted).toHaveBeenLastCalledWith(false);
 });
