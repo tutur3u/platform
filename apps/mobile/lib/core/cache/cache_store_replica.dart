@@ -2,6 +2,8 @@ part of 'cache_store.dart';
 
 const _replicaSchemaKey = '@schema-version';
 const _replicaSchemaVersion = 2;
+const _replicaSourceKeyPrefix = '@source:';
+const _replicaEntityKeyPrefix = '@entity:';
 const _replicaIdMapPrefix = '@id-map:';
 
 extension CacheStoreReplica on CacheStore {
@@ -208,10 +210,11 @@ extension CacheStoreReplica on CacheStore {
   }
 
   String _replicaSourceKey(String sourceKey) =>
-      '@source:${sha256.convert(utf8.encode(sourceKey))}';
+      '$_replicaSourceKeyPrefix${sha256.convert(utf8.encode(sourceKey))}';
 
   String _replicaEntityKey(CachedResourceRecord source, String id) =>
-      '@entity:${sha256.convert(utf8.encode('${source.key}|$id'))}';
+      _replicaEntityKeyPrefix +
+      sha256.convert(utf8.encode('${source.key}|$id')).toString();
 
   bool _replicaCanIndex(CachedResourceRecord source) =>
       source.userId != null &&

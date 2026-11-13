@@ -172,6 +172,11 @@ extension CacheStoreJournal on CacheStore {
     final intents = <String, Map<dynamic, dynamic>>{};
     final journals = <String>[];
     for (final key in _entityBox.keys.whereType<String>().toList()) {
+      // Replica rows and source indexes are never journals; skip their values.
+      if (key.startsWith(_replicaEntityKeyPrefix) ||
+          key.startsWith(_replicaSourceKeyPrefix)) {
+        continue;
+      }
       final raw = _entityBox.get(key);
       if (raw is! Map) continue;
       if (raw['kind'] == 'resource-clear') intents[key] = raw;

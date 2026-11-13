@@ -198,19 +198,21 @@ class CacheStore {
     final dir = await _resolveHiveDirectory();
     Hive.init(dir.path);
     final encryptionCipher = await _resolveEncryptionCipher();
-    _resourceBox = await _openEncryptedBox(_resourceBoxName, encryptionCipher);
-    _mutationBox = await _openEncryptedBox(_mutationBoxName, encryptionCipher);
-    _entityBox = await _openEncryptedBox(_entityBoxName, encryptionCipher);
+    // The optional size setting and the three box reads are independent;
+    // overlap their I/O instead of paying for each one in sequence.
+    final storedMaxBytes = _readStoredMaxBytes();
+    final boxes = await Future.wait([
+      _openEncryptedBox(_resourceBoxName, encryptionCipher),
+      _openEncryptedBox(_mutationBoxName, encryptionCipher),
+      _openEncryptedBox(_entityBoxName, encryptionCipher),
+    ]);
+    _resourceBox = boxes[0];
+    _mutationBox = boxes[1];
+    _entityBox = boxes[2];
     await _recoverResourceJournals();
     _entityBytes = _countReplicaBytes();
-    try {
-      final storedMaxBytes = int.tryParse(
-        await _secureStorage.read(key: _maxBytesStorageKey) ?? '',
-      );
-      if (allowedMaxBytes.contains(storedMaxBytes)) _maxBytes = storedMaxBytes!;
-    } on Object {
-      // Cache initialization should not depend on an optional size setting.
-    }
+    final maxBytes = await storedMaxBytes;
+    if (allowedMaxBytes.contains(maxBytes)) _maxBytes = maxBytes!;
     final keysToRemove = <dynamic>[];
     final consolidated = <String, CachedResourceRecord>{};
     for (final key in _resourceBox.keys) {
@@ -268,6 +270,17 @@ class CacheStore {
     );
     await _pruneResourceCache();
     _initialized = true;
+  }
+
+  Future<int?> _readStoredMaxBytes() async {
+    try {
+      return int.tryParse(
+        await _secureStorage.read(key: _maxBytesStorageKey) ?? '',
+      );
+    } on Object {
+      // Cache initialization should not depend on an optional size setting.
+      return null;
+    }
   }
 
   Future<Directory> _resolveHiveDirectory() async {
