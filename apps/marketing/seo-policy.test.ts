@@ -66,21 +66,23 @@ const privatePaths = [
 const locales = ['', '/vi', '/en'];
 const url = (path: string, host = 'tuturuuu.com') =>
   new URL(`https://${host}${path}`);
-const headers = (
+const headers = async (
   path: string,
   host = 'tuturuuu.com',
   noindex = '0',
   upstream?: string
 ) =>
-  appConfig.wrapResponse!(
-    new Response('<html></html>', {
-      headers: upstream ? { 'x-robots-tag': upstream } : {},
-    }),
-    {
-      request: new Request(url(path, host)),
-      env: { TUTURUUU_NOINDEX: noindex },
-      seoPolicy: policy,
-    }
+  (
+    await appConfig.wrapResponse!(
+      new Response('<html></html>', {
+        headers: upstream ? { 'x-robots-tag': upstream } : {},
+      }),
+      {
+        request: new Request(url(path, host)),
+        env: { TUTURUUU_NOINDEX: noindex },
+        seoPolicy: policy,
+      }
+    )
   ).headers;
 
 function assertWiring(source: string, entry: typeof policy) {
@@ -146,14 +148,16 @@ describe('marketing production indexing', () => {
     ).toThrow();
   });
 
-  it('applies the Worker header policy on public and private requests', () => {
+  it('applies the Worker header policy on public and private requests', async () => {
     for (const locale of locales) {
       for (const path of publicPaths)
-        expect(headers(`${locale}${path}`).has('x-robots-tag')).toBe(false);
-      for (const path of privatePaths)
-        expect(headers(`${locale}${path}`).get('x-robots-tag')).toContain(
-          'noindex'
+        expect((await headers(`${locale}${path}`)).has('x-robots-tag')).toBe(
+          false
         );
+      for (const path of privatePaths)
+        expect(
+          (await headers(`${locale}${path}`)).get('x-robots-tag')
+        ).toContain('noindex');
     }
     for (const host of [
       'tuturuuu-marketing.workers.dev',
@@ -162,18 +166,21 @@ describe('marketing production indexing', () => {
       'preview.example.com',
       'www.tuturuuu.com',
     ]) {
-      expect(headers('/', host).get('x-robots-tag')).toContain('noindex');
+      expect((await headers('/', host)).get('x-robots-tag')).toContain(
+        'noindex'
+      );
       expect(robotsForUrl(policy, url('/', host))).toContain('noindex');
     }
-    expect(headers('/', 'tuturuuu.com', '1').get('x-robots-tag')).toContain(
-      'noindex'
-    );
     expect(
-      headers('/', 'tuturuuu.com', '0', 'noindex').get('x-robots-tag')
+      (await headers('/', 'tuturuuu.com', '1')).get('x-robots-tag')
+    ).toContain('noindex');
+    expect(
+      (await headers('/', 'tuturuuu.com', '0', 'noindex')).get('x-robots-tag')
     ).toBe('noindex');
     // Broken header resolver: an all-private response cannot pass production.
+    const privateHeaders = await headers('/', 'tuturuuu.com', '1');
     expect(() =>
-      expect(headers('/', 'tuturuuu.com', '1').has('x-robots-tag')).toBe(false)
+      expect(privateHeaders.has('x-robots-tag')).toBe(false)
     ).toThrow();
   });
 });
