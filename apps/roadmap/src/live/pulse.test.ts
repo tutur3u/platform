@@ -1,12 +1,10 @@
-/** D79: the shipping pulse and the Upskii links. */
+/** D79: the shipping pulse copy and the Upskii links. */
 import assert from 'node:assert/strict';
 import { createHash } from 'node:crypto';
 import { readdirSync, readFileSync } from 'node:fs';
 import { describe, it } from 'node:test';
 import en from '../../messages/en.json' with { type: 'json' };
 import vi from '../../messages/vi.json' with { type: 'json' };
-import type { PrFact } from './model.ts';
-import { shippingPulse } from './pulse.ts';
 
 /** Every EduFest workshop component module (components/workshop/*), joined. */
 function workshopSource(file?: string) {
@@ -21,53 +19,27 @@ function workshopSource(file?: string) {
     .join('\n');
 }
 
-const pr = (
-  number: number,
-  mergedAt: string | null,
-  state: PrFact['state'] = 'merged'
-): PrFact => ({
-  number,
-  title: `PR ${number}`,
-  state,
-  draft: false,
-  approved: true,
-  mergedAt,
-});
-
-describe('shipping pulse', () => {
-  const now = Date.parse('2026-11-11T05:00:00Z'); // 12:00 in Vietnam
-  it('counts merged PRs per Vietnam day over the window, oldest first', () => {
-    const pulse = shippingPulse(
-      [
-        pr(1, '2026-11-11T01:00:00Z'),
-        pr(2, '2026-11-10T18:30:00Z'), // 01:30 on 11 Nov in Vietnam
-        pr(3, '2026-11-10T10:00:00Z'),
-        pr(4, '2026-10-01T10:00:00Z'), // outside the window
-        pr(5, null, 'open'),
-        pr(6, '2026-11-09T10:00:00Z', 'closed'),
-      ],
-      now,
-      3
-    );
-    assert.deepEqual(pulse, [
-      { day: '2026-11-09', merged: 0 },
-      { day: '2026-11-10', merged: 1 },
-      { day: '2026-11-11', merged: 2 },
-    ]);
-  });
-
-  it('broken variant: a merge in the future is not counted', () => {
-    const pulse = shippingPulse([pr(1, '2026-11-11T09:00:00Z')], now, 1);
-    assert.deepEqual(pulse, [{ day: '2026-11-11', merged: 0 }]);
-  });
-
-  it('has EN/VI copy for the pulse and the glance', () => {
+describe('shipping pulse copy', () => {
+  it('has EN/VI copy for the pulse, the catch-up sections and the glance', () => {
     for (const messages of [en, vi]) {
       assert.ok(
-        messages.pulse.title && messages.pulse.source && messages.pulse.table
+        messages.pulse.title && messages.pulse.all && messages.pulse.tracked
       );
+      assert.ok(messages.pulse.table && messages.pulse.chart);
+      assert.ok(messages.updates.title && messages.updates.sinceLastVisit);
+      assert.ok(messages.notes.title);
       assert.ok(messages.glance.title && messages.glance.shipped);
     }
+  });
+
+  it('broken variant: no "Show the numbers" disclosure remains', () => {
+    for (const messages of [en, vi])
+      assert.ok(!('source' in messages.pulse), 'old pulse copy');
+    const page = readFileSync(
+      new URL('../components/pulse.tsx', import.meta.url),
+      'utf8'
+    );
+    assert.ok(!page.includes('pulse-table'), 'old disclosure markup');
   });
 });
 

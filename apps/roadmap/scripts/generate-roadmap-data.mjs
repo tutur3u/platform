@@ -32,6 +32,14 @@ import { observeHosting } from '../src/live/build-probe.ts';
 import { offlineSnapshot } from '../src/live/hosting.ts';
 import { ONE_ORIGIN_APP_BASE_PATHS } from '../../../packages/utils/src/app-mounts.ts';
 import { parseLiveData, REPO } from '../src/live/model.ts';
+import {
+  builtAtFrom,
+  mergedWindow,
+  offlineActivity,
+} from '../src/insights/activity.ts';
+import { HISTORY_TRACKS } from '../src/content/track-names.ts';
+import { classifyTitle, isNoise } from '../src/history/classify.ts';
+import { localDay } from '../src/live/feed.ts';
 
 const root = dirname(dirname(fileURLToPath(import.meta.url)));
 const target = join(root, 'src/generated/live.json');
@@ -78,6 +86,47 @@ async function mobileRelease() {
 }
 
 const hostingTarget = join(root, '.generated/hosting.json');
+const activityTarget = join(root, '.generated/activity.json');
+/**
+ * The build's merged-PR search window. Anonymous search allows 10 requests a
+ * minute: 7 days (about 350 PRs, 4 pages) fits beside the open-PR searches;
+ * a token's higher limit covers 14 days. The page reads older days from the
+ * history JSON.
+ */
+const MERGED_WINDOW_DAYS = token ? 14 : 7;
+const MERGED_PAGES = token ? 10 : 5;
+
+/**
+ * Production builds and every merged PR, observed by this build only
+ * (src/insights/activity.ts). Written on every build; offline, nothing is
+ * observed and the page shows these figures as not available.
+ */
+const activity = {
+  deploys: [],
+  merged: null,
+};
+
+function writeActivity() {
+  const snapshot =
+    process.env.ROADMAP_OFFLINE === '1'
+      ? offlineActivity(now)
+      : {
+          schema: 1,
+          checkedAt: new Date(now).toISOString(),
+          mode: 'observed',
+          deploys: activity.deploys,
+          merged: activity.merged,
+        };
+  mkdirSync(dirname(activityTarget), { recursive: true });
+  writeFileSync(activityTarget, `${JSON.stringify(snapshot)}\n`);
+  log(
+    `activity ${snapshot.mode}: ${snapshot.deploys.length} production builds, ${
+      snapshot.merged
+        ? `${snapshot.merged.entries.length} merged PRs ${snapshot.merged.from}..${snapshot.merged.to}${snapshot.merged.complete ? '' : ' (capped)'}`
+        : 'merged PRs not available'
+    }`
+  );
+}
 
 async function writeHosting() {
   const snapshot =
@@ -87,7 +136,15 @@ async function writeHosting() {
           fetch,
           ONE_ORIGIN_APP_BASE_PATHS,
           now,
-          process.env.ROADMAP_SOURCE_SHA ?? null
+          process.env.ROADMAP_SOURCE_SHA ?? null,
+          (app, body) => {
+            const builtAt = builtAtFrom(body);
+            const commit = /"commit(?:Hash)?"\s*:\s*"([a-f0-9]{40})"/.exec(
+              body
+            )?.[1];
+            if (builtAt && commit)
+              activity.deploys.push({ app, commit, builtAt });
+          }
         );
   mkdirSync(dirname(hostingTarget), { recursive: true });
   writeFileSync(hostingTarget, `${JSON.stringify(snapshot, null, 2)}\n`);
@@ -108,9 +165,18 @@ async function writeHosting() {
 async function main() {
   await writeHosting();
   if (process.env.ROADMAP_OFFLINE === '1') {
+    writeActivity();
     log('ROADMAP_OFFLINE=1: keeping committed data');
     return;
   }
+  try {
+    await refreshLiveData();
+  } finally {
+    writeActivity();
+  }
+}
+
+async function refreshLiveData() {
   const old = previous();
   const referenced = [
     ...new Set(
@@ -120,9 +186,36 @@ async function main() {
     ),
   ];
   let core;
+  let searched = Promise.resolve();
   try {
+    let complete = false;
+    searched = fetchPullFacts(fetch, now, {
+      token,
+      days: MERGED_WINDOW_DAYS,
+      mergedPages: MERGED_PAGES,
+      onMergedComplete: (value) => {
+        complete = value;
+      },
+    });
+    // Counted even when the other GitHub reads fail: one observation each.
+    searched.then(
+      (recent) => {
+        activity.merged = mergedWindow(recent, {
+          searchSince: new Date(now - MERGED_WINDOW_DAYS * 86_400_000)
+            .toISOString()
+            .slice(0, 10),
+          now,
+          complete,
+          trackIds: HISTORY_TRACKS,
+          isNoise: (title) => isNoise(title, null),
+          classify: classifyTitle,
+          localDay,
+        });
+      },
+      () => {}
+    );
     const [recent, mainCommit] = await Promise.all([
-      fetchPullFacts(fetch, now, { token, days: 14 }),
+      searched,
       fetchMain(fetch, token),
     ]);
     const approved = new Set(
@@ -137,6 +230,8 @@ async function main() {
     );
     core = { recent, older, mainCommit };
   } catch (error) {
+    // The merged-PR count stands on its own search; let it settle first.
+    await searched.catch(() => {});
     log(`GitHub unavailable (${error.message}); keeping previous data`);
     return;
   }

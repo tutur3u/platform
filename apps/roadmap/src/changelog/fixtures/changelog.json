@@ -1,0 +1,56 @@
+{
+  "schema": 1,
+  "generatedAt": "2026-11-13T04:00:00.000Z",
+  "mode": "fallback",
+  "model": null,
+  "releases": [
+    {
+      "id": "fixture-2026-11-12",
+      "sha": "0000000000000000000000000000000000000002",
+      "date": "2026-11-12",
+      "title": { "en": "Test fixture release B", "vi": "Bản phát hành mẫu B" },
+      "summary": {
+        "en": "Fixture text for tests only. <b>Plain text</b>, never HTML.",
+        "vi": "Văn bản mẫu chỉ dùng cho kiểm thử. <b>Văn bản thuần</b>, không phải HTML."
+      },
+      "products": [
+        {
+          "product": "tasks",
+          "items": [
+            {
+              "text": { "en": "Fixture item one", "vi": "Mục mẫu một" },
+              "prs": [1, 2]
+            }
+          ]
+        },
+        {
+          "product": "platform",
+          "items": [
+            {
+              "text": { "en": "Fixture item two", "vi": "Mục mẫu hai" },
+              "prs": [3]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "fixture-2026-11-10",
+      "sha": "0000000000000000000000000000000000000001",
+      "date": "2026-11-10",
+      "title": { "en": "Test fixture release A", "vi": "Bản phát hành mẫu A" },
+      "summary": { "en": "Older fixture release.", "vi": "Bản mẫu cũ hơn." },
+      "products": [
+        {
+          "product": "mira",
+          "items": [
+            {
+              "text": { "en": "Fixture item three", "vi": "Mục mẫu ba" },
+              "prs": [4]
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}
