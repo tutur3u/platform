@@ -3261,9 +3261,9 @@ a.kpi-body:hover {
   letter-spacing: 0;
   color: var(--rm-muted);
 }
-/* Fixed-height lines: a live refresh changes figures, never the tile row's
-   height (no layout shift). Full words stay in the title and screen-reader
-   text. */
+/* Stable heights: a live refresh changes figures, never the tile row's
+   height (no layout shift). The change label has its own line, and its
+   length depends only on the build's data. */
 .kpi-note {
   display: -webkit-box;
   min-height: 2.8em;
@@ -3275,15 +3275,8 @@ a.kpi-body:hover {
   line-height: 1.4;
   color: var(--rm-muted);
 }
-.kpi .delta {
-  flex-wrap: nowrap;
-  min-width: 0;
-  white-space: nowrap;
-}
 .kpi .delta-label {
-  min-width: 0;
-  overflow: hidden;
-  text-overflow: ellipsis;
+  flex-basis: 100%;
 }
 /* Icons are CSS masks (lucide shapes, ISC), not inline SVG, which keeps
    the document small. */
