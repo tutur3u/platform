@@ -11,78 +11,61 @@ existing `tuturuuu-meet` Worker. It does not require a self-hosted process.
 The Worker holds the Gemini API key; browsers receive short-lived,
 purpose-bound session tokens and connect through `/live-connect`.
 
-## Audience and permissions
+## Private-only availability
 
-A personal session captures only its owner's microphone and plays replies only
-on that device. Starting it mutes the meeting microphone. If the user unmutes
-the meeting, personal capture and reply playback pause. Pausing also clears
-queued speech; incoming private audio is blocked while the room microphone is on. Use headphones:
-speaker audio can otherwise be picked up by an open physical microphone.
+Mira is off by default. The raw Worker binding `MEET_AI_DISABLED` must be
+explicitly `false` to enable the private path; absent, empty or invalid values
+remain off. The API key stays server-side in `GOOGLE_GENERATIVE_AI_API_KEY`.
 
-Only a room admin can invite the room assistant. One room assistant can be
-active at a time. Its initiating device captures the meeting audio available to
-that device, limited to microphone tracks of participants who explicitly enable **Talk to Mira**. Screen-share audio is excluded. Audio unavailable to that device
-cannot be transcribed or understood. Participants see the assistant's presence
-and may need to enable playback once because of browser autoplay restrictions.
-Room output is published through server-authenticated events. Browser tokens
-cannot impersonate Mira's audio.
+An authoritative, current Auth user is checked with
+`isVerifiedTuturuuuStaffSession`. The demo exception permits verified staff only
+in their own Personal workspace: `personal = true` and `creator_id = account id`.
+Workspace membership and current meeting participation are required independently.
+Other workspaces require an administrator's server-stored audiences-18+
+attestation. The attestation reader returns no attestation until storage and
+settings UI are implemented; it cannot be satisfied by a client value or an
+environment default. No attestation setting is available in this release.
 
-The model can inspect current public meeting context, recall earlier session
-turns, and organize its context. Personal memory is not included in room mode.
-Personal sessions can use the selected workspace through the same permission-checked
-tools as text chat. The workspace picker validates the authenticated account
-against the current workspace actor; the per-device participant ID remains
-reserved for room transport and chat attribution. Hidden workspaces, guests,
-foreign actors and stale actor leases remain unavailable. The actual nested Live
-dialog regression uses distinct account and device IDs
-(`live-workspace-identity.test.tsx`). Every workspace read or change requires an inline private
-approval before execution. Membership, current permissions, and arguments are
-validated again at execution time. Room sessions never receive these tools.
-A room admin can stop the shared assistant even when another admin invited it.
-The room presence expires automatically if its initiating session disappears.
+## Participant choice and microphone privacy
 
-## Mira in the meeting
+The notice offers **Continue with Mira**, **Mute Mira for me**, and **Leave**.
+Continue is focused but does not imply acceptance. A click records the notice
+version, choice, meeting, account, server time and revision in the room Durable
+Object before a token can be issued. Choice records remain in that room's stored
+state until that state is erased; there is no automatic expiry promise.
 
-Room chat is the default, including solo meetings. Mention **@mira**, **@ttr**,
-or **@tuturuuu** to request a text answer. While room Live is active, its
-initiating device also forwards new mentions to Live for a spoken answer.
-Mira Live posts its completed spoken answers in room chat using the room's
-existing retention setting. Private turns never enter room chat automatically.
+Private Mira receives only the requester's microphone and private typed input.
+It receives no room chat history, room roster or selected-workspace context.
+The microphone uses echo cancellation and noise suppression. Use headphones to
+avoid physical speaker audio being picked up by the microphone. Starting private
+capture mutes the meeting microphone; unmuting the meeting pauses private capture
+and playback. Replies play only on the requester's device and are never published
+as a room track. Other participants see a private-use indicator.
 
-Mira has its own tile, AI badge, speaking animation, pin control, and participant
-list entry. **Talk to Mira / Mute to Mira** controls only whether your microphone
-enters the Live mix; it does not mute you for other people. **Listen to Mira /
-Deafen Mira** independently controls local assistant playback. Listening starts automatically;
-microphones start excluded for every new Live session. Browser autoplay
-restrictions may require one click on **Listen to Mira**. Explicitly deafening
-Mira stays respected when playback reconnects.
-Participant badges expose both directions and distinguish an allowed input
-with a muted meeting microphone from an input excluded from Mira.
+Mute and Leave first stop every registered private session before recording the
+new choice. Token issuance and reconnect recheck the durable choice. Tokens last
+120 seconds and bind the account, meeting, app and private mode. Audio frames
+must identify that same account and the microphone source.
 
-The initiating browser must remain connected and receiving participants' audio.
-During recovery, new chat mentions are queued in that browser; replayed room
-history does not retrigger Live. Acoustic spill from another opted-in person's
-microphone cannot be separated from their voice, so use headphones where needed.
+## Room features deliberately unavailable
 
-Deploy the realtime protocol changes and Meet Worker together. Older clients
-without explicit microphone preferences are excluded from the new input mix.
-Older initiating clients must refresh before starting room Live; the Worker
-rejects microphone input from legacy sessions without the opt-in audio policy.
-Restart any room Live session created before this release to use voice input.
+Room Live input and output are denied on the server, independent of environment
+settings, pending an all-participant click fence for the mixed transport. Public
+AI chat, including **@mira**, **@ttr**, **@tuturuuu**, Everyone and the legacy
+Private Mira chat endpoint, is also denied. Private text inside an accepted Live
+session remains available. Meeting WAV transcription and notes are off. These
+restrictions prevent mixed input or room history from reaching a provider.
 
-## Explicit approvals
+Deploy `tuturuuu-meet-realtime` with the choice protocol and command denials before
+`tuturuuu-meet`. Enabling the private path requires an explicit runtime override
+because the source configuration retains `MEET_AI_DISABLED: 'true'`. Both Workers
+must run the qualified source. Enabling this flag does not re-enable room mode.
 
-A personal assistant may propose remembering a fact or sharing an exact reply
-with the room. The owner sees the proposed text, can edit it, and can approve or deny it.
-Workspace requests show their exact arguments. Approval claims each operation
-once before execution; an uncertain result is not automatically retried.
-Pending proposals expire after five minutes. No timeout implies approval.
-Interrupted actions are marked failed and are never silently replayed.
-
-Approved public replies use a fresh speech session containing only the approved
-text. The private session's audio, memory, context, and resumption handle are
-never forwarded to the room. If speech delivery fails after the text was posted,
-the text remains in room chat; inspect the result before approving a retry.
+Regression coverage includes `demo-admission.test.ts`,
+`server/demo-authority.test.ts`, `private-notice.test.tsx`,
+`room-mira-private.test.ts`, `route.gate.test.ts`, `route.billing.test.ts`,
+`phase-a-denial.test.ts`, and `token.test.ts`. Synthetic checks do not establish
+production key identity or successful live invitations.
 
 ## Memory and context
 

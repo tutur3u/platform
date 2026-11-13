@@ -81,3 +81,19 @@ The trusted App admission path must keep `opened` and `ready_for_review`: its Ap
 label write generates the real `pull_request:labeled` event. Security classification
 continues on drafts and bot-authored PRs. Summary metadata events retain draft and
 label transitions so the displayed readiness state stays accurate.
+
+## Calendar owning-suite timings
+
+The `calendar-native` job in `mail-calendar-tasks-builds.yaml` reports Calendar,
+Web and shared Tasks UI tests as three sequential steps after supplier builds,
+the native Calendar build and the tracked route-tree drift guard. Each suite
+inherits the job's production profile and CI fixtures. Default success conditions
+keep emitted-config qualification, binding and consumer type checks, artifact
+sealing, runtime acceptance and restore qualification behind successful tests.
+
+Step separation has zero expected green-path saving. Measure each suite on the
+same exact-commit CI run before proposing parallelism, including supplier/build
+and artifact-transfer costs. Preserve the generated route tree used by the accepted
+build in any future handoff. OAuth tests skipped without integration credentials
+provide no integration coverage. Regression coverage is in
+`scripts/ci/calendar-suite-steps.test.mjs`, loaded by the artifact regressions.

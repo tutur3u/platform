@@ -4,7 +4,9 @@ import {
   Scripts,
   useRouterState,
 } from '@tanstack/react-router';
+import { withAppBase } from '@tuturuuu/start-bridge/start/base-path';
 import { AppErrorBoundary } from '@tuturuuu/ui/custom/app-error-boundary';
+import { StatusPage } from '@tuturuuu/ui/custom/status-page';
 import type { ReactElement, ReactNode } from 'react';
 import { AppProviders } from './app-providers';
 import { reportCalendarSsrError } from './ssr-diagnostics';
@@ -51,6 +53,8 @@ export function CalendarError({
     <AppProviders locale={locale} params={{}} showVersionBadge={false}>
       <AppErrorBoundary
         appName="Calendar"
+        chrome="page"
+        homeHref={withAppBase('/')}
         locale={locale}
         error={
           error instanceof Error
@@ -60,5 +64,17 @@ export function CalendarError({
         reset={reset}
       />
     </AppProviders>
+  );
+}
+
+/** Unknown paths: the shared Tuturuuu status page (served as a 404). */
+export function CalendarNotFound(): ReactElement {
+  return (
+    <StatusPage
+      appHref={withAppBase('/')}
+      appName="Calendar"
+      locale={useResolvedLocale()}
+      variant="not-found"
+    />
   );
 }

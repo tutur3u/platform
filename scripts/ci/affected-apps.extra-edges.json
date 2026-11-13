@@ -51,6 +51,10 @@
   "packages/types/src/": ["apps/database"],
   "packages/typescript-config/": ["apps/database"],
   "packages/utils/": ["packages/internal-api"],
-  "packages/utils/src/": ["apps/coordination", "apps/meet-realtime"],
+  "packages/utils/src/": [
+    "apps/coordination",
+    "apps/meet-realtime",
+    "apps/roadmap"
+  ],
   "packages/utils/src/internal-accounts/": ["apps/database"]
 }

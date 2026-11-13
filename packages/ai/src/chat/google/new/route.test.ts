@@ -254,10 +254,7 @@ describe('chat google new route', () => {
 
     expect(response.status).toBe(200);
     expect(mocks.authorizeAiWorkspace).not.toHaveBeenCalled();
-    expect(mocks.resolveAiMemoryWorkspaceIdForUser).toHaveBeenCalledWith({
-      supabase,
-      userId: 'legacy-user',
-    });
+    expect(mocks.resolveAiMemoryWorkspaceIdForUser).not.toHaveBeenCalled();
   });
 
   it('requires a workspace at the Rewise factory boundary before downstream work', async () => {
@@ -286,57 +283,57 @@ describe('chat google new route', () => {
   it.each([
     '11111111-1111-4111-8111-111111111111',
     '22222222-2222-4222-8222-222222222222',
-  ])(
-    'attributes Rewise title and persistence work to workspace %s',
-    async (wsId) => {
-      const chatInsert = vi.fn().mockResolvedValue({ error: null });
-      const single = vi.fn().mockResolvedValue({
-        data: { id: '33333333-3333-4333-8333-333333333333' },
-        error: null,
-      });
-      const from = vi.fn((table: string) => {
-        if (table === 'ai_chats') {
-          return {
-            insert: vi.fn().mockReturnValue({
-              select: vi.fn().mockReturnValue({ single }),
-            }),
-          };
-        }
-        return { insert: chatInsert };
-      });
-      const supabase = { from };
+  ])('authorizes Rewise persistence work in workspace %s', async (wsId) => {
+    const chatInsert = vi.fn().mockResolvedValue({ error: null });
+    const single = vi.fn().mockResolvedValue({
+      data: { id: '33333333-3333-4333-8333-333333333333' },
+      error: null,
+    });
+    const from = vi.fn((table: string) => {
+      if (table === 'ai_chats') {
+        return {
+          insert: vi.fn().mockReturnValue({
+            select: vi.fn().mockReturnValue({ single }),
+          }),
+        };
+      }
+      return { insert: chatInsert };
+    });
+    const supabase = { from };
 
-      const response = await createPOST({
-        requireWorkspaceId: true,
-        resolveGatewayAuth: async () => ({
-          auth: {
-            supabase: supabase as never,
-            user: { id: 'rewise-user' } as never,
-          },
-          ok: true,
-        }),
-      })(
-        new Request('http://localhost/api/ai/chat/new', {
-          body: JSON.stringify({ message: 'hello', wsId }),
-          method: 'POST',
-        })
-      );
+    const response = await createPOST({
+      requireWorkspaceId: true,
+      resolveGatewayAuth: async () => ({
+        auth: {
+          supabase: supabase as never,
+          user: { id: 'rewise-user' } as never,
+        },
+        ok: true,
+      }),
+    })(
+      new Request('http://localhost/api/ai/chat/new', {
+        body: JSON.stringify({ message: 'hello', wsId }),
+        method: 'POST',
+      })
+    );
 
-      expect(response.status).toBe(200);
-      expect(mocks.authorizeAiWorkspace).toHaveBeenCalledWith({
-        request: expect.any(Request),
-        supabase,
-        userId: 'rewise-user',
-        wsId,
-      });
-      expect(mocks.withAiMemory).toHaveBeenCalledWith(
-        expect.objectContaining({ userId: 'rewise-user', wsId })
-      );
-      expect(chatInsert).toHaveBeenCalledWith(
-        expect.objectContaining({ creator_id: 'rewise-user' })
-      );
-    }
-  );
+    expect(response.status).toBe(200);
+    expect(mocks.authorizeAiWorkspace).toHaveBeenCalledWith({
+      request: expect.any(Request),
+      supabase,
+      userId: 'rewise-user',
+      wsId,
+    });
+    expect(mocks.withAiMemory).not.toHaveBeenCalled();
+    expect(mocks.generateText).not.toHaveBeenCalled();
+    expect(chatInsert).toHaveBeenCalledWith({
+      chat_id: '33333333-3333-4333-8333-333333333333',
+      content: 'hello',
+      creator_id: 'rewise-user',
+      role: 'USER',
+      metadata: { source: 'Rewise' },
+    });
+  });
 
   it('rejects an unauthorized selected workspace before title or persistence work', async () => {
     const from = vi.fn();
@@ -400,6 +397,142 @@ describe('chat google new route', () => {
     expect(response.status).toBe(403);
     expect(mocks.authorizeAiWorkspace).not.toHaveBeenCalled();
     expect(mocks.resolveAiMemoryWorkspaceIdForUser).not.toHaveBeenCalled();
+    expect(mocks.generateText).not.toHaveBeenCalled();
+  });
+
+  it.each([
+    ['  Xin\n chào\t Việt Nam 👩🏽‍💻  ', 'Xin chào Việt Nam 👩🏽‍💻'],
+    ['a'.repeat(60), 'a'.repeat(60)],
+    ['a'.repeat(61), `${'a'.repeat(59)}…`],
+    [`${'a '.repeat(28)}lengthy-word`, `${'a '.repeat(28).trim()}…`],
+    [`${'hello '.repeat(10)}world`, `${'hello '.repeat(10).trim()}…`],
+    ['👩🏽‍💻'.repeat(61), `${'👩🏽‍💻'.repeat(59)}…`],
+    ['a\u0301'.repeat(61), `${'a\u0301'.repeat(59)}…`],
+    ['  \n\t ', '…'],
+  ])(
+    'persists and returns a provisional title without a model call: %j',
+    async (message, title) => {
+      const id = '11111111-1111-4111-8111-111111111111';
+      const single = vi.fn().mockResolvedValue({ data: { id }, error: null });
+      const insert = vi
+        .fn()
+        .mockReturnValue({ select: vi.fn().mockReturnValue({ single }) });
+      const rpc = vi.fn().mockResolvedValue({ error: null });
+      mocks.createClient.mockResolvedValue({
+        auth: {
+          getUser: vi.fn().mockResolvedValue({
+            data: { user: { id: 'user-1' } },
+            error: null,
+          }),
+        },
+        from: vi.fn().mockReturnValue({ insert }),
+        rpc,
+      });
+      // A title provider must never be required for chat creation to succeed.
+      mocks.generateText.mockRejectedValue(
+        new Error('Title provider unavailable')
+      );
+
+      const response = await createPOST()(
+        new Request('http://localhost/api/ai/chat/new', {
+          method: 'POST',
+          body: JSON.stringify({
+            id,
+            message,
+            model: 'google/gemini-2.5-flash',
+            isMiraMode: true,
+          }),
+        })
+      );
+
+      expect(response.status).toBe(200);
+      await expect(response.json()).resolves.toEqual({ id, title });
+      expect(insert).toHaveBeenCalledWith({
+        id,
+        title,
+        creator_id: 'user-1',
+        model: 'gemini-2.5-flash',
+      });
+      expect(rpc).toHaveBeenCalledWith('insert_ai_chat_message', {
+        message,
+        chat_id: id,
+        source: 'Mira',
+      });
+      expect(mocks.generateText).not.toHaveBeenCalled();
+      expect(mocks.google).not.toHaveBeenCalled();
+      expect(mocks.withAiMemory).not.toHaveBeenCalled();
+    }
+  );
+
+  it.each(['missing-session', 'revoked-token'])(
+    'rejects %s before persistence',
+    async (failure) => {
+      const from = vi.fn();
+      mocks.createClient.mockResolvedValue({
+        auth: {
+          getUser: vi
+            .fn()
+            .mockResolvedValue({ data: { user: null }, error: null }),
+        },
+        from,
+      });
+      if (failure === 'revoked-token')
+        mocks.validateAiTempAuthRequest.mockResolvedValueOnce({
+          status: 'revoked',
+        });
+      const response = await createPOST()(
+        new Request('http://localhost/api/ai/chat/new', {
+          method: 'POST',
+          body: JSON.stringify({ message: 'hello' }),
+        })
+      );
+      expect(response.status).toBe(401);
+      expect(from).not.toHaveBeenCalled();
+      expect(mocks.generateText).not.toHaveBeenCalled();
+    }
+  );
+
+  it('waits for initial-message persistence and preserves the default model', async () => {
+    const id = '11111111-1111-4111-8111-111111111111';
+    const single = vi.fn().mockResolvedValue({ data: { id }, error: null });
+    const insert = vi
+      .fn()
+      .mockReturnValue({ select: vi.fn().mockReturnValue({ single }) });
+    let finishWrite!: (result: { error: null }) => void;
+    const rpc = vi.fn().mockReturnValue(
+      new Promise((resolve) => {
+        finishWrite = resolve;
+      })
+    );
+    mocks.createClient.mockResolvedValue({
+      auth: {
+        getUser: vi
+          .fn()
+          .mockResolvedValue({ data: { user: { id: 'user-1' } }, error: null }),
+      },
+      from: vi.fn().mockReturnValue({ insert }),
+      rpc,
+    });
+    let settled = false;
+    const response = createPOST()(
+      new Request('http://localhost/api/ai/chat/new', {
+        method: 'POST',
+        body: JSON.stringify({ message: 'hello' }),
+      })
+    ).then((result) => {
+      settled = true;
+      return result;
+    });
+    await vi.waitFor(() => expect(rpc).toHaveBeenCalled());
+    expect(settled).toBe(false);
+    expect(insert).toHaveBeenCalledWith({
+      id: undefined,
+      title: 'hello',
+      creator_id: 'user-1',
+      model: 'gemini-3.1-flash-lite',
+    });
+    finishWrite({ error: null });
+    expect((await response).status).toBe(200);
     expect(mocks.generateText).not.toHaveBeenCalled();
   });
 });

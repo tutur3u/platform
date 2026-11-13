@@ -70,14 +70,18 @@ export async function authorizeInfrastructureAdminRequest(
     ok: true as const,
     sbAdmin,
     user: session.user,
+    permissions,
   };
 }
 
-export async function authorizeInfrastructureWorkspaceSecretsRequest() {
-  return authorizeInfrastructureAdminRequest([
-    'manage_workspace_secrets',
-    'manage_workspace_roles',
-  ]);
+export async function authorizeInfrastructureWorkspaceSecretsRequest(
+  request?: Request
+) {
+  return authorizeInfrastructureAdminRequest(
+    ['manage_workspace_secrets', 'manage_workspace_roles'],
+    true,
+    request
+  );
 }
 
 export async function authorizeInfrastructureWorkspaceRequest(

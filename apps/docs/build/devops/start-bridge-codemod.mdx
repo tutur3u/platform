@@ -174,6 +174,20 @@ their `.ts` extension).
 
 ### Response policy
 
+Generated native Worker fetch boundaries use `withHstsResponsePolicy` to set exactly
+one `Strict-Transport-Security: max-age=63072000` header after app response
+wrapping, including startup refusals and caught failures. Subdomain and preload
+directives are omitted. WebSocket upgrades retain their original response.
+The shared policy and `hsts-fleet.test.mjs` cover the source contract; actual
+emitted-Worker proof requires each app's sealed build and runtime gate.
+
+Tasks, Drive and Shortener apply the same outer policy in their app-owned Worker
+entries, retaining startup guards before dispatch. The focused
+`scripts/hsts-bespoke-boundaries.test.mjs` executes those entries and real startup
+guards with isolated route suppliers; its upgrade-object check does not qualify
+a real WebSocket handshake. Asset-service bypasses and other bespoke entries
+require separate acceptance.
+
 Every app uses one tested policy instead of hand-rolled `wrapResponse` code,
 which in four separate reviews kept repeating the same three bugs:
 - caching set only as a default, so a handler's `public, max-age` survived;
@@ -382,3 +396,30 @@ on disposable fixture repositories; edits to repository files are tested
 against the real anchors. Each converted app still needs exact-commit CI:
 unit, types, lint, the real `vp build`, the sealed artifact and the
 emitted-runtime and browser acceptance.
+
+The Apps primary Worker applies the outer HSTS policy after its staging cookie
+wrapper, including the canonical-host refusal. Run
+`node --test scripts/hsts-apps-boundary.test.mjs` for source-boundary regression
+coverage. The staging gateway entry and asset-service bypass require separate
+ownership and runtime qualification.
+
+The handwritten Apps staging gateway finalizes HSTS after staging cookie and HEAD
+wrappers. Its source entry regression is `scripts/hsts-apps-gateway-boundary.test.mjs`;
+it covers canonical-host refusal, missing assets, redirects, binding failures and
+hostile duplicate headers. Route/framework suppliers are isolated; emitted Worker,
+WebSocket upgrade and deployment acceptance require separate execution evidence.
+
+The Mail HTTP Worker finalizes HSTS outside its handler, covering local 404,
+mounted-session 409, build-info and RUM returns. Run
+`node --test scripts/hsts-mail-boundary.test.mjs` for the source-entry regression.
+The entry and handler execute with isolated framework/service suppliers and inner
+response wrappers. Emitted Worker, real WebSocket upgrades and deployed behavior
+require separate acceptance evidence.
+
+Mail Worker type checks require the canonical declaration producer
+`bun run --cwd apps/mail type-check:boundary` before the Worker program. The full
+`type-check` script sequences app, declaration, Worker and config checks. Qualify
+binding declarations with `wrangler types --include-runtime=false` against the
+emitted `dist/server/wrangler.json`; preserve the checked-in declaration preimage
+when generating temporary qualification output. Keep Void scratch output outside
+the authored patch when running changed-file gates.

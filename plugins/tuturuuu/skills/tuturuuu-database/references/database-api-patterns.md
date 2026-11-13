@@ -130,6 +130,24 @@ and exclude unrelated baseline drift; never hand-edit generated declarations.
 
 ## Workspace-Scoped Writes
 
+### Free-only app invitation acceptance
+
+The IEEAI app-token proposal uses positive subscription/product evidence rather
+than the tier resolver's default FREE result. Its private RPC fences subscription
+inserts and product edits before reading entitlement; an actor advisory lock alone
+cannot fence an upgrade written by a billing webhook. Keep its transaction short
+and bounded because subscription/product table locks affect concurrent writers.
+Preserve the existing checked membership finalizer while invitation provenance
+still exists, and commit selected-invite deletion and the ids-only audit together.
+Do not use an external payment API inside those locks.
+
+Run `node apps/database/scripts/verify-ieeai-free-invite.mjs` through canonical
+resource admission. It uses a disposable full-schema replay, rollback/reapply,
+pgTAP fault injection and real competing Postgres sessions. The race harness must
+observe the competitor blocked by the holder PID; delays alone are not proof.
+Its full-chain type generation must be reviewed for unrelated baseline drift.
+No non-disposable apply is authorized by this verifier or the proposal migration.
+
 - Authenticate before normalizing workspace aliases when possible.
 - If one route in a flow accepts workspace aliases, normalize consistently in
   every companion route.

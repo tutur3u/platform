@@ -180,9 +180,11 @@ broker with shell fan-out. Revert the group to sequential children for rollback.
 
 ## Inactive runtimes until further notice
 
-Docker setup, Rust, and TanStack Start are paused; the Docker cron runner is
-retired. Keep `docker-setup-check.yaml`, Docker-backed E2E jobs, Rust/TanStack
-workflows and direct deploy jobs disabled, including manual dispatch. Retain
+Docker setup and Rust are paused; the Docker cron runner and `apps/tanstack-web`
+are retired. Per-app native TanStack Start on Cloudflare Workers is the active
+target and keeps its CI. Keep `docker-setup-check.yaml`, Docker-backed E2E jobs,
+Rust and `apps/tanstack-web` workflows and direct deploy jobs disabled,
+including manual dispatch. Retain
 policy tests but exclude inactive implementation suites from default discovery.
 Root commands fail visibly rather than starting or refreshing those runtimes.
 `bun update-all` explicitly targets maintained workspaces; Renovate ignores
@@ -1500,3 +1502,25 @@ never a binary from the PR's own lockfile. Keep checkout persistence disabled an
 push only through `scripts/ci/github-token-push.sh`, which passes the token as an
 env-config auth header so it never appears in process argv. See the GitHub
 Actions runbook's frozen-install section for the operating policy.
+
+### Native artifact profile parity
+
+Keep production config rewrites and artifact validators in agreement, including
+producer metadata, top-level Worker name, public URLs, required-secret flags and
+source-map upload policy. Test explicit profile parsing before invoking the shared
+seal CLI. Runtime fixtures compare complete canonical profile bindings, including
+cookie domains, and retain foreign-profile refusal controls. Generate real source
+metadata before emitted-runtime identity checks; see the native Start migration
+runbook's artifact profile and runtime fixture contracts.
+
+## Calendar suite timing instrumentation
+
+Keep owning Calendar, Web and Tasks UI tests sequential after the supplier/native
+build and tracked route-tree drift guard in `mail-calendar-tasks-builds.yaml`.
+Separate named steps provide per-suite timings with zero expected green-path
+saving. Preserve inherited production fixtures and default success conditions;
+artifact qualification, consumer types, sealing, runtime and restore remain
+required. Run `calendar-native-artifact.test.mjs` (including the suite-step
+negative controls) and `mail-calendar-tasks-affected.test.js` after edits. See
+[the CI runbook](../../../../../apps/docs/build/devops/github-actions-runbook.mdx#calendar-owning-suite-timings)
+before proposing a generated-output handoff or parallel suites.
