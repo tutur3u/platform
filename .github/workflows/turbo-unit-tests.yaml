@@ -4,7 +4,7 @@ on:
   push:
     branches: [main, production, 'release-please--branches--**']
   pull_request:
-    types: [opened, synchronize, reopened, ready_for_review, labeled]
+    types: [opened, synchronize, reopened, ready_for_review, labeled, converted_to_draft]
 
 permissions:
   contents: read
@@ -18,7 +18,7 @@ concurrency:
 jobs:
   changes:
     name: Classify Test changes
-    if: github.event_name != 'pull_request' || contains(github.event.pull_request.labels.*.name, 'ready-for-ci')
+    if: ${{ (github.event_name != 'pull_request' || github.event.pull_request.draft == false) && (github.event_name != 'pull_request' || contains(github.event.pull_request.labels.*.name, 'ready-for-ci')) }}
     runs-on: ubuntu-latest
     timeout-minutes: 5
     outputs:
@@ -37,7 +37,7 @@ jobs:
         run: node scripts/ci/test-docs-only-gate.js
 
   check-ci:
-    if: github.event_name != 'pull_request' || contains(github.event.pull_request.labels.*.name, 'ready-for-ci')
+    if: ${{ (github.event_name != 'pull_request' || github.event.pull_request.draft == false) && (github.event_name != 'pull_request' || contains(github.event.pull_request.labels.*.name, 'ready-for-ci')) }}
     permissions:
       contents: read
       deployments: read
@@ -47,7 +47,7 @@ jobs:
       check_release_only: true
 
   coverage-check-ci:
-    if: github.event_name != 'pull_request' || contains(github.event.pull_request.labels.*.name, 'ready-for-ci')
+    if: ${{ (github.event_name != 'pull_request' || github.event.pull_request.draft == false) && (github.event_name != 'pull_request' || contains(github.event.pull_request.labels.*.name, 'ready-for-ci')) }}
     permissions:
       contents: read
       deployments: read
@@ -59,7 +59,7 @@ jobs:
   root-script-tests:
     name: Root script tests (24)
     needs: [check-ci]
-    if: (needs.check-ci.outputs.should_run == 'true' && needs.check-ci.outputs.run_checks == 'true') && (github.event_name != 'pull_request' || contains(github.event.pull_request.labels.*.name, 'ready-for-ci'))
+    if: ${{ ((github.event_name != 'pull_request' || github.event.pull_request.draft == false) && ((needs.check-ci.outputs.should_run == 'true' && needs.check-ci.outputs.run_checks == 'true'))) && (github.event_name != 'pull_request' || contains(github.event.pull_request.labels.*.name, 'ready-for-ci')) }}
     runs-on: ubuntu-latest
     timeout-minutes: 20
     permissions:
@@ -106,7 +106,7 @@ jobs:
   backend-source-qualification:
     name: Rust source qualification (1.95)
     needs: [check-ci]
-    if: (needs.check-ci.outputs.should_run == 'true' && needs.check-ci.outputs.run_checks == 'true' && (github.ref == 'refs/heads/fix/release-5795-reconciliation' || github.ref == 'refs/heads/fix/main-production-reconciliation-20261012')) && (github.event_name != 'pull_request' || contains(github.event.pull_request.labels.*.name, 'ready-for-ci'))
+    if: ${{ ((github.event_name != 'pull_request' || github.event.pull_request.draft == false) && ((needs.check-ci.outputs.should_run == 'true' && needs.check-ci.outputs.run_checks == 'true' && (github.ref == 'refs/heads/fix/release-5795-reconciliation' || github.ref == 'refs/heads/fix/main-production-reconciliation-20261012')))) && (github.event_name != 'pull_request' || contains(github.event.pull_request.labels.*.name, 'ready-for-ci')) }}
     runs-on: ubuntu-latest
     timeout-minutes: 45
     permissions:
@@ -169,7 +169,7 @@ jobs:
   test-shards:
     name: Unit test shard (${{ matrix.shard }})
     needs: [changes, check-ci, coverage-check-ci]
-    if: ${{ (github.event_name != 'pull_request' && needs.changes.outputs.code == 'true' && !cancelled() && ((needs.check-ci.result == 'success' && needs.check-ci.outputs.should_run == 'true' && needs.check-ci.outputs.run_checks == 'true') || (needs.coverage-check-ci.result == 'success' && needs.coverage-check-ci.outputs.should_run == 'true' && needs.coverage-check-ci.outputs.run_checks == 'true'))) && (github.event_name != 'pull_request' || contains(github.event.pull_request.labels.*.name, 'ready-for-ci')) }}
+    if: ${{ ((github.event_name != 'pull_request' || github.event.pull_request.draft == false) && ((github.event_name != 'pull_request' && needs.changes.outputs.code == 'true' && !cancelled() && ((needs.check-ci.result == 'success' && needs.check-ci.outputs.should_run == 'true' && needs.check-ci.outputs.run_checks == 'true') || (needs.coverage-check-ci.result == 'success' && needs.coverage-check-ci.outputs.should_run == 'true' && needs.coverage-check-ci.outputs.run_checks == 'true'))))) && (github.event_name != 'pull_request' || contains(github.event.pull_request.labels.*.name, 'ready-for-ci')) }}
     timeout-minutes: 20
     runs-on: ubuntu-latest
     strategy:
@@ -255,7 +255,7 @@ jobs:
   test-shards-pr:
     name: Unit test shard (${{ matrix.shard }})
     needs: [changes, check-ci, coverage-check-ci]
-    if: ${{ (github.event_name == 'pull_request' && needs.changes.outputs.code == 'true' && !cancelled() && ((needs.check-ci.result == 'success' && needs.check-ci.outputs.should_run == 'true' && needs.check-ci.outputs.run_checks == 'true') || (needs.coverage-check-ci.result == 'success' && needs.coverage-check-ci.outputs.should_run == 'true' && needs.coverage-check-ci.outputs.run_checks == 'true'))) && (github.event_name != 'pull_request' || contains(github.event.pull_request.labels.*.name, 'ready-for-ci')) }}
+    if: ${{ ((github.event_name != 'pull_request' || github.event.pull_request.draft == false) && ((github.event_name == 'pull_request' && needs.changes.outputs.code == 'true' && !cancelled() && ((needs.check-ci.result == 'success' && needs.check-ci.outputs.should_run == 'true' && needs.check-ci.outputs.run_checks == 'true') || (needs.coverage-check-ci.result == 'success' && needs.coverage-check-ci.outputs.should_run == 'true' && needs.coverage-check-ci.outputs.run_checks == 'true'))))) && (github.event_name != 'pull_request' || contains(github.event.pull_request.labels.*.name, 'ready-for-ci')) }}
     timeout-minutes: 20
     runs-on: ${{ github.event_name == 'pull_request' && github.event.pull_request.head.repo.full_name == github.repository && github.actor != 'dependabot[bot]' && github.triggering_actor != 'dependabot[bot]' && github.event.pull_request.user.login != 'dependabot[bot]' && (vars.PR_SELF_HOSTED_RUNNERS == 'true' || vars.PR_SELF_HOSTED_RUNNERS == format('pr:{0}', github.event.pull_request.number)) && fromJSON('["self-hosted","macOS","ARM64","tuturuuu-pr-ephemeral"]') || 'ubuntu-latest' }}
     strategy:
@@ -333,7 +333,7 @@ jobs:
   coverage-shards:
     name: Coverage shard (${{ matrix.shard }})
     needs: [changes, coverage-check-ci, test-shards, test-shards-pr]
-    if: ${{ (needs.changes.outputs.code == 'true' && !cancelled() && needs.coverage-check-ci.result == 'success' && needs.coverage-check-ci.outputs.should_run == 'true' && needs.coverage-check-ci.outputs.run_checks == 'true') && (github.event_name != 'pull_request' || contains(github.event.pull_request.labels.*.name, 'ready-for-ci')) }}
+    if: ${{ ((github.event_name != 'pull_request' || github.event.pull_request.draft == false) && ((needs.changes.outputs.code == 'true' && !cancelled() && needs.coverage-check-ci.result == 'success' && needs.coverage-check-ci.outputs.should_run == 'true' && needs.coverage-check-ci.outputs.run_checks == 'true'))) && (github.event_name != 'pull_request' || contains(github.event.pull_request.labels.*.name, 'ready-for-ci')) }}
     runs-on: ubuntu-latest
     strategy:
       fail-fast: false
@@ -347,7 +347,7 @@ jobs:
 
   coverage-upload:
     needs: [changes, coverage-check-ci, test-shards, test-shards-pr]
-    if: ${{ (needs.changes.outputs.code == 'true' && !cancelled() && needs.coverage-check-ci.result == 'success' && needs.coverage-check-ci.outputs.should_run == 'true' && needs.coverage-check-ci.outputs.run_checks == 'true' && ((needs.test-shards.result == 'success' && needs.test-shards-pr.result == 'skipped') || (needs.test-shards-pr.result == 'success' && needs.test-shards.result == 'skipped'))) && (github.event_name != 'pull_request' || contains(github.event.pull_request.labels.*.name, 'ready-for-ci')) }}
+    if: ${{ ((github.event_name != 'pull_request' || github.event.pull_request.draft == false) && ((needs.changes.outputs.code == 'true' && !cancelled() && needs.coverage-check-ci.result == 'success' && needs.coverage-check-ci.outputs.should_run == 'true' && needs.coverage-check-ci.outputs.run_checks == 'true' && ((needs.test-shards.result == 'success' && needs.test-shards-pr.result == 'skipped') || (needs.test-shards-pr.result == 'success' && needs.test-shards.result == 'skipped'))))) && (github.event_name != 'pull_request' || contains(github.event.pull_request.labels.*.name, 'ready-for-ci')) }}
     uses: ./.github/workflows/codecov.yaml
     secrets:
       CODECOV_TOKEN: ${{ github.event_name == 'push' && (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/production' || startsWith(github.ref, 'refs/heads/release-please--branches--')) && secrets.CODECOV_TOKEN || '' }}
@@ -355,7 +355,7 @@ jobs:
   coverage-result:
     name: Run tests and collect coverage
     needs: [changes, coverage-check-ci, test-shards, test-shards-pr, coverage-shards, coverage-upload]
-    if: ${{ (!cancelled() && needs.coverage-check-ci.result == 'success' && needs.coverage-check-ci.outputs.should_run == 'true' && needs.coverage-check-ci.outputs.run_checks == 'true') && (github.event_name != 'pull_request' || contains(github.event.pull_request.labels.*.name, 'ready-for-ci')) }}
+    if: ${{ ((github.event_name != 'pull_request' || github.event.pull_request.draft == false) && ((!cancelled() && needs.coverage-check-ci.result == 'success' && needs.coverage-check-ci.outputs.should_run == 'true' && needs.coverage-check-ci.outputs.run_checks == 'true'))) && (github.event_name != 'pull_request' || contains(github.event.pull_request.labels.*.name, 'ready-for-ci')) }}
     runs-on: ubuntu-latest
     steps:
       - name: Require a valid change classification
@@ -389,7 +389,7 @@ jobs:
   build:
     name: Unit Tests (24)
     needs: [changes, check-ci, test-shards, test-shards-pr, root-script-tests, backend-source-qualification]
-    if: ${{ (!cancelled() && needs.check-ci.result == 'success' && needs.check-ci.outputs.should_run == 'true' && needs.check-ci.outputs.run_checks == 'true') && (github.event_name != 'pull_request' || contains(github.event.pull_request.labels.*.name, 'ready-for-ci')) }}
+    if: ${{ ((github.event_name != 'pull_request' || github.event.pull_request.draft == false) && ((!cancelled() && needs.check-ci.result == 'success' && needs.check-ci.outputs.should_run == 'true' && needs.check-ci.outputs.run_checks == 'true'))) && (github.event_name != 'pull_request' || contains(github.event.pull_request.labels.*.name, 'ready-for-ci')) }}
     runs-on: ubuntu-latest
     steps:
       - name: Require a valid change classification
