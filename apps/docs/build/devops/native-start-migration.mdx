@@ -228,3 +228,57 @@ and both raw and JSON-decoded source maps reject development-secret prefixes.
 Run `node --test apps/rewise/cloudflare/server-artifact-scan.test.mjs
 apps/rewise/cloudflare/central-login-redirect.test.mjs` for the build-free
 regressions. These fixtures do not replace the emitted-Worker smoke gate.
+
+### Artifact profile and runtime fixture contracts
+
+Infrastructure production qualification preserves the emitted producer metadata
+and validates the production Worker name, public app/Web URLs, production
+`NODE_ENV`, required-secret flag and disabled source-map upload. The production
+profile is explicit on config, seal and pack; staging remains the default.
+`infrastructure-native-artifact.test.py` covers profile selection and refusal.
+
+Rewise removes server maps before doctor and seal; Mind prepares server output
+as part of its native build. Client maps remain available. Their production-seal
+regressions verify that executable development defaults are still rejected.
+Mind runtime fixtures use an isolated first-party abuse-guard service with real
+SQLite Durable Objects, bounded outbound denial and disposable bindings.
+Pay runtime expectations include the canonical staging cookie domain and retain
+foreign-domain and origin refusal checks.
+
+Build identity must come from generated source metadata in the emitted Worker,
+never a test responder returning an expected SHA. Qualify only the mounts admitted
+by the selected app profile; a rejected apex host remains a negative control.
+
+### Running the artifact gate on a local build
+
+`scripts/ci/local-native-gate.sh <app> <artifact-script> <source-sha-env>
+[--profile <name>] [--out <dir>]` runs config, seal, verify and the emitted-config
+receipt on the checked-out commit's built app, writing only to a private temp
+directory. The receipt helper requires `realpath(RUNNER_TEMP)` to equal
+`RUNNER_TEMP`; on macOS the default temp directories sit under the
+`/var` to `/private/var` symlink, which reports the receipt as `unavailable`
+for a healthy build. The helper creates its temp directory under a canonical path.
+
+When an app's workflow rewrites `dist/server/wrangler.json` (for example the
+production Worker config step in `learn-cloudflare.yaml`), run that step's script
+unchanged before the gate. Retyping it by hand can leave a malformed config that
+the seal rejects. Meet uses `scripts/ci/verify-meet-start-output.js` with an
+in-tree seal and is not covered by the helper.
+
+### Finance held-profile host acceptance
+
+Finance's native staging and production qualification profiles admit only their
+selected subdomain root. `apps/finance/start-bridge.config.ts` overrides the
+generated Worker defaults with `mountHosts: []` and `unknownHost: 'reject'`.
+The shared mount resolver applies that override before dispatching any route.
+Consequently, `/api/build-info` on the selected root returns the real generated
+source identity, while both `tuturuuu.com/api/build-info` and
+`tuturuuu.com/finance/api/build-info` return 404. Other profiles' roots and
+unlisted hosts remain rejected. The original emitted-Worker runtime suite
+asserts this matrix in its raw Host subtest.
+
+The basePath readiness target above does not enable a held profile's apex mount.
+A positive mounted acceptance requires an explicitly admitted mount profile and
+its session, origin and cookie-isolation evidence. A 404 on an unadmitted apex
+host is a host-fence result, not evidence that the root build-info route is
+missing. Keep production publication held until the cutover gates are met.
