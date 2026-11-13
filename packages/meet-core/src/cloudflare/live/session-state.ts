@@ -1,3 +1,4 @@
+import type { DurableObjectStorage } from '@cloudflare/workers-types';
 import { z } from 'zod';
 import type { LiveContextJournal } from '../../features/live-assistant/context';
 import type { LiveSessionClaims } from '../../features/live-assistant/contracts';
@@ -26,6 +27,8 @@ export type SavedSession = {
   searchTurn?: { queries: string[]; counted: number };
   publicBillings?: Record<string, LiveBillingState>;
   ended?: boolean;
+  /** Absolute reconnect cutoff; resets and early alarms must not extend it. */
+  disconnectedRecoveryDeadline?: number;
   registryRemoved?: boolean;
   roomReleased?: boolean;
   contextErased?: boolean;
@@ -51,4 +54,22 @@ export function normalizeSavedLiveSession(saved: SavedSession | undefined) {
     saved.coverageGap = true;
     saved.billing.incomplete = true;
   }
+}
+
+/** Persist before arming so an early alarm or process replacement keeps the cutoff. */
+export async function armLiveRecovery(
+  saved: SavedSession,
+  storage: DurableObjectStorage
+) {
+  if (saved.ended) return;
+  saved.disconnectedRecoveryDeadline ??= Date.now() + 30_000;
+  await storage.put('session', saved);
+  await storage.setAlarm(saved.disconnectedRecoveryDeadline);
+}
+
+export function liveRecoveryExpired(saved: SavedSession, now = Date.now()) {
+  return (
+    saved.disconnectedRecoveryDeadline !== undefined &&
+    now >= saved.disconnectedRecoveryDeadline
+  );
 }
