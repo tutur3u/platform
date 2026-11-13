@@ -531,7 +531,7 @@ export function WorkspaceSelect({
               setShowJoinWorkspaceDialog(true);
             }}
             invitations={
-              <Command>
+              <Command className="h-auto shrink-0">
                 <WorkspaceInvitationItems
                   controller={invitationController}
                   fallbackLogoUrl={fallbackLogoUrl}

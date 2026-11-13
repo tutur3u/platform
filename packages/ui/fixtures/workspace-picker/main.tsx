@@ -1,3 +1,9 @@
+import { AppRouterContext } from 'next/dist/shared/lib/app-router-context.shared-runtime';
+import { PathnameContext } from 'next/dist/shared/lib/hooks-client-context.shared-runtime';
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import { listWorkspaces } from '@tuturuuu/internal-api/workspaces';
+import { WorkspaceVisibilityProvider } from '../../src/hooks/use-workspace-visibility';
+import { WorkspaceSelect } from '../../src/components/ui/custom/workspace-select';
 import { NextIntlClientProvider } from 'next-intl';
 import { useState } from 'react';
 import { createRoot } from 'react-dom/client';
@@ -28,6 +34,30 @@ const workspaces = [
   avatar_url: null,
   logo_url: null,
 }));
+const fixtureRouter = {
+  back() {}, forward() {}, refresh() {}, push() {}, replace() {},
+  prefetch: async () => {},
+};
+const p0Workspaces = Array.from({ length: 42 }, (_, index) => ({
+  ...workspaces[0]!, id: `fictional-${index}`,
+  name: `Orchard workspace ${String(index + 1).padStart(2, '0')}`,
+}));
+const client = new QueryClient({ defaultOptions: { queries: { retry: false } } });
+if (state === 'invitations-401') {
+  // This fixture is network fenced: no request can reach a live service.
+  globalThis.fetch = async (input) => {
+    const path = new URL(input instanceof Request ? input.url : String(input), location.origin).pathname;
+    if (path === '/api/v1/workspaces') return Response.json(p0Workspaces);
+    if (path === '/api/workspaces/invitations') return Response.json({ message: 'Unauthorized' }, { status: 401 });
+    throw new Error(`Unexpected fixture request: ${path}`);
+  };
+  client.setQueryData(['workspace-hidden', 'fictional-actor-a'], []);
+  client.setQueryData(['workspace-user', 'fictional-actor-a'], {
+    id: 'fictional-actor-a', default_workspace_id: null,
+  });
+  client.setQueryData(['workspace-select-current-workspace', 'fictional-actor-a', 'fictional-0'], p0Workspaces[0]);
+}
+
 function Fixture() {
   const [actor, setActor] = useState('fictional-actor-a');
   const [hiddenIds, setHiddenIds] = useState<string[]>([]);
@@ -62,7 +92,16 @@ function Fixture() {
         >
           Switch fictional actor
         </button>
-        <Popover defaultOpen>
+        {state === 'invitations-401' ? (
+          <AppRouterContext.Provider value={fixtureRouter}>
+          <PathnameContext.Provider value="/en/fictional-0/tasks">
+          <WorkspaceVisibilityProvider actorId="fictional-actor-a">
+            <WorkspaceSelect wsId="fictional-0" cacheScope="fictional-actor-a"
+              fetchWorkspaces={() => listWorkspaces()} />
+          </WorkspaceVisibilityProvider>
+          </PathnameContext.Provider>
+          </AppRouterContext.Provider>
+        ) : <Popover defaultOpen>
           <PopoverTrigger className="block rounded-md border p-2">
             {locale === 'vi' ? 'Chọn không gian làm việc' : 'Select workspace'}
           </PopoverTrigger>
@@ -84,9 +123,11 @@ function Fixture() {
             onCreate={() => {}}
             onJoin={() => {}}
           />
-        </Popover>
+        </Popover>}
       </main>
     </NextIntlClientProvider>
   );
 }
-createRoot(document.getElementById('root')!).render(<Fixture />);
+createRoot(document.getElementById('root')!).render(
+  <QueryClientProvider client={client}><Fixture /></QueryClientProvider>
+);

@@ -4,6 +4,7 @@ import { createBridgeHandler } from '@tuturuuu/start-bridge/start/handler';
 import { createBridgeStartHandler } from '@tuturuuu/start-bridge/start/server-entry';
 import { proxy } from '../proxy';
 import { endpoints } from './api-registry.bridge.gen';
+import { TASKS_CENTRAL_FIRST_API_PATTERNS } from './app-base';
 import { PUBLIC_ASSETS } from './public-assets';
 import {
   createTasksRequestHandler,
@@ -35,6 +36,7 @@ export const handleTasksRequest = createTasksRequestHandler((mounts) =>
     serverFnBase: '/_serverFn',
     proxy,
     endpoints,
+    centralFirst: TASKS_CENTRAL_FIRST_API_PATTERNS,
     functionBase: '/_serverFn',
     functionProxy: createFunctionProxy({ targetApp: 'tasks' }),
     publicAssets: PUBLIC_ASSETS,

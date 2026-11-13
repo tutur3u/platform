@@ -9,6 +9,7 @@ describe('Tasks app-API base resolver', () => {
 
   it('owns explicit Tasks routes', () => {
     for (const path of [
+      '/api/workspaces/ws-1',
       '/api/v1/workspaces/ws-1/task-boards',
       '/api/v1/workspaces/ws-1/task-boards/b-1/sprints/unplanned',
       '/api/v1/workspaces/ws-1/task-drafts',
@@ -19,6 +20,8 @@ describe('Tasks app-API base resolver', () => {
 
   it('leaves Web routes to Web', () => {
     for (const path of [
+      '/api/workspaces/invitations',
+      '/api/v1/workspaces',
       '/api/v1/users/me/profile',
       '/api/v1/auth/accounts',
       '/api/v1/workspaces/ws-1/members',
