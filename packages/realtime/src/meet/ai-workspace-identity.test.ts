@@ -18,6 +18,7 @@ const forms = (id: string) => [
   id.replaceAll('-', '').replace(/(.{4})(?=.)/g, '$1-'),
 ];
 const env = {
+  MEET_AI_DISABLED: 'false',
   MEET_AI_PROTECTED_WORKSPACE_IDS: protectedWs,
   MEET_AI_DISABLED_WORKSPACE_IDS: deniedWs,
   MEET_AI_ENABLED_WORKSPACE_IDS: `${protectedWs},${deniedWs},${allowedWs}`,

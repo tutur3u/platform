@@ -414,3 +414,18 @@ checks creator/admin deletion refusal, server erasure ordering, random pseudonym
 reuse and account anonymization; `required-account-mfa.sql` checks MFA policy.
 `meet-transcript-retention-purge.sql` checks custom deadlines,
 forever retention, edited-note deletion, ACLs and bounded restart behavior.
+
+## Meet AI kill switch
+
+The shared realtime workspace gate disables Meet AI when `MEET_AI_DISABLED` is
+absent or invalid. Only exact lowercase `false` or `0` passes the switch; all
+protected-workspace, denylist and explicit allowlist rules still apply. This
+control applies to Meet and Parley callers of the shared gate. Private Mira
+retains its separate durable participant consent and verified staff Personal
+workspace admission rules; workspace-wide AI remains disabled without adult
+audience attestation storage.
+
+Regression coverage: `packages/realtime/src/meet/ai-workspace-gate.test.ts`,
+`packages/realtime/src/meet/ai-workspace-identity.test.ts`,
+`packages/meet-core/src/features/meeting-ai/server/workspace-gate.test.ts` and
+`packages/meet-core/src/features/live-assistant/server/demo-authority.test.ts`.
