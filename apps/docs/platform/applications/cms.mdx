@@ -56,7 +56,7 @@ The previous `/{wsId}/content`, `/{wsId}/collections/...`, and `/{wsId}/admin` C
 - A workspace must still satisfy the existing external-project permissions to open CMS workspace routes.
 - CMS Games is disabled by default for every workspace. Enable it from the CMS settings dialog, which writes `ENABLE_CMS_GAMES=true` to workspace configs and reveals the `/{wsId}/games` sidebar route.
 - Only platform admins can open `/internal/projects`.
-- Workspace member and role management lives on `/{wsId}/members`. Read paths resolve through CMS workspace access so editors with CMS access can load people, invites, roles, member defaults, and guest defaults without requiring direct workspace settings-route access. Write paths still respect member and role management permissions.
+- Workspace member and role management lives on `/{wsId}/members`. Member and role reads require `manage_external_projects`; editor access alone cannot load people, invites, roles, or default permissions. Write paths still respect member and role management permissions.
 
 ### Studio enablement and canonical projects
 
@@ -206,3 +206,22 @@ Built-in projects match their registered adapter id; custom projects match the
 canonical project id. The shared `custom` adapter name grants no project access.
 This follows the same identity rule as app-token handoff. Coverage:
 `apps/web/src/lib/external-projects/app-credentials.test.ts`.
+
+## Content reads and administrative activity
+
+Workspace external-project read mode accepts the CMS editor permission. Full
+Studio responses and summaries require `manage_external_projects` because they
+include import records and publish audit events. The shared internal API client
+requests `view=content` for Studio content: this read-mode variant returns empty
+`importJobs` and `publishEvents` arrays, preserving page-builder content access.
+Member and role reads require manage access through the team access helper.
+Content assets, bound-project storage, collections, entries and field/relation
+schemas remain readable by editors. These routes return the workspace's bound
+project content; root binding inventories, secrets and binding audits retain
+their separate administrator gates.
+
+The route, method, required permission and returned-data inventory is maintained
+in `apps/web/src/lib/external-projects/read-route-table.test.ts`. Its negative
+cases execute administrative GET handlers as an editor and require 403; the
+content variant verifies that audit records are absent. This policy applies to
+the shared Web API consumed by CMS, including its native migration path.
