@@ -19,13 +19,9 @@ import { Effect, Schedule } from '@tuturuuu/utils/effect';
 import { z } from 'zod';
 import { MeetAiError, type MeetAiParams, meetAiAccess } from './access';
 import { enforceMeetAiUsage } from './usage-limit';
-import { meetAiAvailable } from './workspace-gate';
 
 export async function readMeetAi(request: Request, params: MeetAiParams) {
-  const { db, meetingId, wsId, canManage } = await meetAiAccess(
-    request,
-    params
-  );
+  const { db, meetingId, canManage } = await meetAiAccess(request, params);
   const { data: sessions, error } = await db
     .from('meet_ai_sessions')
     .select('*')
