@@ -91,10 +91,13 @@ async function getDataWithApiKey(
     apiKey: string;
   }
 ) {
+  const apiCheck = await validateWorkspaceApiKey(wsId, apiKey);
+  if (!apiCheck) {
+    return NextResponse.json({ message: 'Invalid API key' }, { status: 401 });
+  }
+
   const sbAdmin = (await createAdminClient()) as TypedSupabaseClient;
   const searchParams = req.nextUrl.searchParams;
-
-  const apiCheckQuery = validateWorkspaceApiKey(wsId, apiKey);
 
   const query = searchParams.get('q') || searchParams.get('query');
   const from = parseInt(searchParams.get('from') || '0', 10);
@@ -103,13 +106,7 @@ async function getDataWithApiKey(
   const mainQuery = buildWorkspaceUsersRpcQuery(sbAdmin, wsId, query ?? '');
   applyPagination({ query: mainQuery, from, to, limit });
 
-  const [apiCheck, response] = await Promise.all([apiCheckQuery, mainQuery]);
-
-  if (!apiCheck) {
-    return NextResponse.json({ message: 'Invalid API key' }, { status: 401 });
-  }
-
-  const { data, count, error } = response;
+  const { data, count, error } = await mainQuery;
 
   if (error) {
     console.error('Error fetching workspace users with API key:', error);

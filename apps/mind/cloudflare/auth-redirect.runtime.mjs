@@ -1,3 +1,9 @@
+import {
+  offlineEgressFence,
+  recordNativeWorker,
+  disposeNativeWorker,
+} from '../../../scripts/ci/fixtures/native-worker-receipt.mjs';
+import { startNativeAbuseGuard } from '../../../scripts/ci/fixtures/native-abuse-guard.mjs';
 import assert from 'node:assert/strict';
 import { request } from 'node:http';
 import { createRequire } from 'node:module';
@@ -23,23 +29,27 @@ test(
     const registry = join(scratch, 'registry');
     await mkdir(registry);
     const values = {
-      NODE_ENV: 'development',
       NEXT_PUBLIC_SUPABASE_URL: 'https://synthetic.supabase.invalid',
       NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY: 'sb_publishable_synthetic_only',
       SUPABASE_SECRET_KEY: 'synthetic-server-key',
       TUTURUUU_APP_COORDINATION_SECRET: 'synthetic-coordination-key',
       INTERNAL_WEB_API_ORIGIN: 'https://central.invalid',
     };
-    const worker = await require('wrangler').unstable_startWorker({
+    const sdk = require('wrangler');
+    const guardBindings = await startNativeAbuseGuard(t, sdk, registry);
+    const worker = await sdk.unstable_startWorker({
       config: configPath,
       envFiles: [envFile],
       sendMetrics: false,
-      bindings: Object.fromEntries(
-        Object.entries(values).map(([name, value]) => [
-          name,
-          { type: 'plain_text', value },
-        ])
-      ),
+      bindings: {
+        ...guardBindings,
+        ...Object.fromEntries(
+          Object.entries(values).map(([name, value]) => [
+            name,
+            { type: 'plain_text', value },
+          ])
+        ),
+      },
       build: { bundle: false, processEntrypoint: false },
       dev: {
         remote: false,
@@ -56,15 +66,12 @@ test(
         auth: () => {
           throw new Error('Provider authentication forbidden');
         },
-        outboundService: () =>
-          new Response('{"error":"synthetic denial"}', {
-            status: 401,
-            headers: { 'content-type': 'application/json' },
-          }),
+        outboundService: offlineEgressFence(),
       },
     });
-    t.after(() => worker.dispose());
+    t.after(() => disposeNativeWorker(worker));
     await worker.ready;
+    await recordNativeWorker(worker, resolve('.'));
     const origin = await worker.url;
     const get = (host, path) =>
       new Promise((resolveResponse, reject) => {

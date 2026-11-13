@@ -38,8 +38,9 @@ export function Hero({
     },
     {
       label: t.stats.cloudflare,
-      value: String(view.onWorkers),
-      sub: `/ ${view.hosts.length}`,
+      // Never a number this build did not observe.
+      value: view.hostingVerified ? String(view.onWorkers) : '—',
+      sub: view.hostingVerified ? `/ ${view.hosts.length}` : t.hosting.unknown,
       tone: 'waiting_for_prod_sync',
     },
   ];

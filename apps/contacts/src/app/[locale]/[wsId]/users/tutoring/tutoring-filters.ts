@@ -129,6 +129,18 @@ export const DEFAULT_SESSION_FILTERS: TutoringSessionFilters = {
   teacherUserId: 'all',
 };
 
+/** An editable, bounded range; choosing it does not start an export. */
+export function buildTutoringExportRangeSelection(
+  range: TutoringDateRange,
+  today: string
+): Required<TutoringDateBounds> & { dateRange: 'custom' } {
+  return {
+    dateRange: 'custom',
+    fromDate: range === 'past' ? addDaysToIsoDate(today, -30) : today,
+    toDate: addDaysToIsoDate(today, range === 'past' ? -1 : 30),
+  };
+}
+
 function optional(value: string) {
   return value === 'all' ? undefined : value;
 }

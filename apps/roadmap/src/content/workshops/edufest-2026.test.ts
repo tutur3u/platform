@@ -1,6 +1,6 @@
 /** D79 tests for the EduFest workshop page (run via src/roadmap-data.test.ts). */
 import assert from 'node:assert/strict';
-import { readFileSync } from 'node:fs';
+import { readdirSync, readFileSync } from 'node:fs';
 import { describe, it } from 'node:test';
 import en from '../../../messages/edufest-2026.en.json' with { type: 'json' };
 import vi from '../../../messages/edufest-2026.vi.json' with { type: 'json' };
@@ -30,6 +30,19 @@ import {
   USE_CASES,
   WORKSHOP_EVENT,
 } from './edufest-2026.ts';
+
+/** Every EduFest workshop component module (components/workshop/*), joined. */
+function workshopSource(file?: string) {
+  const dir = new URL('../../components/workshop/', import.meta.url);
+  const files = file
+    ? [file]
+    : readdirSync(dir)
+        .filter((name) => /\.tsx?$/.test(name))
+        .sort();
+  return files
+    .map((name) => readFileSync(new URL(name, dir), 'utf8'))
+    .join('\n');
+}
 
 const deliverables = new Map(
   tracks.flatMap((track) =>
@@ -160,10 +173,7 @@ describe('EduFest workshop: copy', () => {
         // "giá" as a whole word only: it is also inside "giáo viên".
         /[$₫]|\bVND\b|\bUSD\b|(?<!\p{L})giá(?!\p{L})/iu
       );
-    const component = readFileSync(
-      new URL('../../components/workshop.tsx', import.meta.url),
-      'utf8'
-    );
+    const component = workshopSource();
     assert.doesNotMatch(component, /<form|<input type="email"|type="text"/);
     assert.match(component, /aria-disabled="true"/);
   });
@@ -221,10 +231,7 @@ describe('EduFest workshop: richer content', () => {
     assert.equal(en.insights.demo, 'Demo data');
     assert.equal(vi.insights.demo, 'Dữ liệu mẫu');
     assert.match(en.insights.demoNote, /not from a real class/i);
-    const component = readFileSync(
-      new URL('../../components/workshop.tsx', import.meta.url),
-      'utf8'
-    );
+    const component = workshopSource();
     assert.match(component, /className="ws-demo-pill">\{t\.insights\.demo\}/);
     assert.ok(deliverables.has(INSIGHTS_DELIVERABLE));
     const { hints, full, none } = INSIGHTS_DEMO.aiHelp;
@@ -239,10 +246,7 @@ describe('EduFest workshop: richer content', () => {
   });
 
   it('readiness counts are derived, and FAQ answers stay honest', () => {
-    const component = readFileSync(
-      new URL('../../components/workshop.tsx', import.meta.url),
-      'utf8'
-    );
+    const component = workshopSource();
     assert.match(component, /counts\[statusOf\(item, statuses\)\] \+= 1/);
     assert.match(en.faq.items.ready.a, /Planned means not built yet/);
     assert.match(en.faq.items.registration.a, /not open yet/);
@@ -268,10 +272,7 @@ describe('EduFest workshop: hero', () => {
     new URL('../../styles.css', import.meta.url),
     'utf8'
   );
-  const component = readFileSync(
-    new URL('../../components/workshop.tsx', import.meta.url),
-    'utf8'
-  );
+  const component = workshopSource();
 
   it('the wash spans the whole hero instead of a fixed band that stops mid-section', () => {
     const wash = cssRule(css, '.ws-hero-wash');
@@ -310,10 +311,7 @@ describe('EduFest workshop: AI help levels', () => {
     assert.equal(isAiLevelStep('stuck'), true);
     // Broken variant: a step without level-dependent content gets no control.
     assert.equal(isAiLevelStep('arrive'), false);
-    const component = readFileSync(
-      new URL('../../components/workshop.tsx', import.meta.url),
-      'utf8'
-    );
+    const component = workshopSource('simulator.tsx');
     const gate = component.indexOf('isAiLevelStep(step.id) ?');
     assert.ok(gate > 0 && gate < component.indexOf('ws-levels'));
   });

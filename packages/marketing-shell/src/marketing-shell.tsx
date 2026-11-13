@@ -10,6 +10,8 @@ import type { MarketingShellProps } from './types';
  */
 export function MarketingShell({
   children,
+  actions,
+  brandHref,
   t,
   locale,
   onLocaleChange,
@@ -24,6 +26,8 @@ export function MarketingShell({
   return (
     <div className={cn('marketing-fonts contents')}>
       <MarketingNavbar
+        actions={actions}
+        brandHref={brandHref}
         ImageComponent={ImageComponent}
         LinkComponent={LinkComponent}
         locale={locale}

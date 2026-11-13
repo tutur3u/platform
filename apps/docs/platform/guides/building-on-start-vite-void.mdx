@@ -1,0 +1,132 @@
+---
+title: 'Building on Start, Vite+ and Void'
+description: 'Find the native app source contract, conversion tools, validation gates and Cloudflare release boundaries.'
+updatedAt: '2026-11-12'
+audience: developers
+---
+
+Use an app's checked-in native configuration and owning workflow as the starting
+point for development. TanStack Start supplies the application runtime and router,
+Vite+ supplies the `vp` development, test and build commands, and Void targets the
+emitted application at Cloudflare Workers. `@tuturuuu/start-bridge` adapts retained
+Next App Router source to that runtime.
+
+The active migration targets each satellite separately. `apps/web` continues to
+serve its existing Next.js routes; its separately scheduled candidate does not
+change that ownership. Do not use the retired `apps/tanstack-web` tree or the
+paused Rust backend as a template. See the
+[active runtime policy](/build/devops/active-runtime).
+
+## Locate the source contract
+
+Read these files together before changing an app:
+
+| Source | What to establish |
+| --- | --- |
+| `apps/<app>/package.json` | The app's actual scripts and pinned dependencies |
+| `vite.config.mts` | Start, Void and React plugins, bridge aliases and environment configuration |
+| `void.config.ts` | Worker entry, compatibility settings, assets and selected runtime profile |
+| `cloudflare/worker.ts` | Request dispatch and the app's runtime adapter |
+| `start-bridge.config.ts` and `start-bridge.routes.json`, where present | Mount configuration and generated, owned or ignored route coverage |
+| `.github/workflows/<app>-cloudflare.yaml` | Exact-source validation and artifact acceptance for that app |
+| `tuturuuu.ci.ts` | Production publication policy; source presence does not admit a release |
+
+For a concrete native example, inspect Shortener's
+[package scripts](https://github.com/tutur3u/platform/blob/main/apps/shortener/package.json),
+[Vite configuration](https://github.com/tutur3u/platform/blob/main/apps/shortener/vite.config.mts),
+[Void configuration](https://github.com/tutur3u/platform/blob/main/apps/shortener/void.config.ts)
+and [owning workflow](https://github.com/tutur3u/platform/blob/main/.github/workflows/shortener-cloudflare.yaml).
+Its Vite configuration composes `voidPlugin()`, `tanstackStart(...)`, React and
+Tailwind through the shared bridge preset. Its Void configuration selects a
+Cloudflare profile, points at `cloudflare/worker.ts`, and binds `dist/client` as
+`ASSETS`. These files are an example to read, not a universal configuration to copy.
+
+The bridge owns `next/*` compatibility. Keep portable domain logic free of
+Next, React Router and Cloudflare runtime imports; inject identity, storage,
+navigation and localization at adapters. Keep shared data access in
+`packages/internal-api` and client queries on TanStack Query. The
+[bridge contract](/build/devops/start-bridge) documents aliases, request context,
+API forwarding and mount behavior.
+
+## Start with an existing app or a conversion preview
+
+For an existing native app, read its scripts before selecting a command. From
+the repository root, Shortener exposes these finite source checks:
+
+```bash
+bun run --filter @tuturuuu/shortener test
+node scripts/start-bridge-codemod/cli.mjs shortener --report
+```
+
+Its `dev:app` script invokes `vp dev` through the repository's development banner;
+its `build` and `build:cloudflare` scripts invoke `vp build`. Development servers
+run only when needed for requested runtime verification. Release builds run in CI,
+not on the contributor machine governed by this repository's local build hold.
+
+For a Next satellite conversion, inspect the generator before writing a scaffold:
+
+```bash
+node scripts/start-bridge-codemod/cli.mjs <app>
+node scripts/start-bridge-codemod/cli.mjs <app> --report
+```
+
+The first command previews a diff and coverage without applying it. The report
+shows route coverage. The separate `--apply` operation writes generated files
+and installs pinned dependencies through the package manager; coordinate it with
+the app's single integration writer. Conversion creates a staging candidate and
+does not authorize publication. Follow the
+[conversion guide](/build/devops/start-bridge-codemod) for supported pages,
+server actions, generated registries and unsupported route exceptions.
+
+## Preserve both mounts
+
+A native satellite must support its subdomain and `tuturuuu.com/<app>`. The
+migration runbook specifies `TUTURUUU_BASE_PATH=/<app>` for the path-mounted build.
+Use bridge URL helpers and route-aware API ownership rather than hard-coding
+root-relative app paths or prefixing every central API call.
+
+The shared apex session has one writer. Mounted satellites read the session and
+must not mint, refresh or clear session cookies. Treat authentication changes as
+a separate reviewed task; conversion is not permission to replace identity or
+data adapters. See [shared session](/platform/architecture/shared-session) and
+the [mount contract](/build/devops/start-bridge).
+
+## Separate build evidence from release authority
+
+A successful `vp build` establishes that source can emit an artifact. It does
+not establish provider configuration, staging acceptance or production readiness.
+The reusable
+[native workflow](https://github.com/tutur3u/platform/blob/main/.github/workflows/native-start-app.yaml)
+validates the exact source, checks registries, tests and types, builds the app,
+validates emitted configuration, and exercises sealed and restored artifacts.
+A Wrangler `deploy --dry-run` in validation does not publish a Worker.
+
+Before cutover, the owning lane needs exact-commit CI, sealed emitted-Worker
+acceptance, staging acceptance for primary flows and both mounts, and an immutable
+rollback target with captured routing. Production publication remains governed
+by the app's explicit policy and cutover authorization. DNS, zone, canonical-route
+and staging-provider changes require release-authority approval; database
+migrations require explicit user approval. Never infer either from a green build.
+
+Use the [native migration runbook](/build/devops/native-start-migration) for the
+release gates, direct cutover, one-step rollback and post-deploy watch. Consult
+the app's own runbook for its artifact helper and provider operations; there is
+no single deploy command that is safe to apply to every app.
+
+## Validate a documentation contribution
+
+Run these build-free checks from the repository root:
+
+```bash
+node scripts/generate-docs-inventory.js --check
+node scripts/generate-app-seo.js --check
+node scripts/docs-audit.js
+node scripts/local-docs.js broken-links
+```
+
+Add the guide's route to the appropriate group in `apps/docs/docs.json`, through
+the current navigation owner when that file is shared. The docs wrapper selects
+the pinned Mintlify and Node versions; it does not depend on an app-local docs
+package. Strict Mintlify validation compiles documentation and belongs in CI.
+See [documenting](/build/development-tools/documenting) for the complete checks
+and the distinction between source validation and hosted behavior.

@@ -1,7 +1,7 @@
 ---
 title: 'Tutoring'
 description: 'Schedule make-up and remedial sessions, work the support queue, and enable the module per workspace.'
-updatedAt: '2026-10-29'
+updatedAt: '2026-11-09'
 audience: users
 ---
 
@@ -84,6 +84,22 @@ payroll.
   correct on workspaces with more sessions than one page. The schedule loads
   first; counts then load behind it. The support queue is requested when its
   tab is opened, and the client reuses recent results for two minutes.
+
+## Read lesson content
+
+Every member allowed to view tutoring sessions (`view_user_groups`) can select
+its lesson-content preview in the Contacts schedule to read the full text.
+The dialog preserves line breaks and scrolls long notes. It is read-only and
+uses only the content already returned by the authorized session list.
+Changing the displayed session closes the old dialog. Blank content has no
+preview control.
+
+Editing remains a separate manager action requiring
+`update_user_groups_scores`; viewing does not save content, mark attendance,
+send a message or change the linked-content rules. The existing page and API
+workspace/group authorization still apply. Regression coverage:
+`tutoring-session-content.test.tsx` exercises a viewer without edit permission,
+manager edit availability, literal text and session replacement.
 
 Row actions mark a session done, no-show, cancelled, or back to pending, and
 generate the parent-facing message for the session. Staff can edit each
@@ -790,6 +806,22 @@ notifications of those types fail mark-read.
 Detailed (per session) and payroll (per teacher, completed sessions and total
 minutes) exports are available as CSV and XLSX. Exports use the active filters,
 including the date range, and are generated server-side in pages of 1,000 rows.
+
+Both formats require a start and end date in order, at most 366 days inclusive.
+**Today**, **Tomorrow**, **Next 7 days**, **This month** and **Last month** use
+the preset's exact calendar bounds for the schedule and export. No manual
+custom dates are needed for these bounded presets.
+
+**Upcoming**, **Past** and **All** remain open-ended and keep the four export
+formats disabled. **Choose date range** switches to **Custom** and fills an
+editable range: today through 30 days later for Upcoming or All; the previous
+30 days through yesterday for Past. Dates follow the viewer's local calendar,
+matching the schedule presets. Choosing a range does not download anything or
+change other filters. Staff can adjust the dates before selecting CSV or XLSX.
+An invalid or over-limit custom range stays disabled and is not silently
+replaced. Export permissions and the server's 366-day cap still apply.
+Regression coverage: `tutoring-filters.test.ts` and
+`tutoring-export-range.test.tsx`.
 
 ## Troubleshooting
 
