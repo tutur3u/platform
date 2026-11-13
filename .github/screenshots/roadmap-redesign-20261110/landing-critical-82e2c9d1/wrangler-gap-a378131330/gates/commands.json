@@ -1,0 +1,51 @@
+{
+  "oxlint": {
+    "command": [
+      "bun",
+      "x",
+      "oxlint",
+      "apps/marketing/scripts/check-native.mjs"
+    ],
+    "exit": 0
+  },
+  "format": {
+    "command": [
+      "bun",
+      "x",
+      "oxfmt",
+      "--check",
+      "."
+    ],
+    "exit": 0
+  },
+  "source-size": {
+    "command": [
+      "node",
+      "scripts/check-source-size.js"
+    ],
+    "exit": 0
+  },
+  "docs-inventory": {
+    "command": [
+      "node",
+      "scripts/generate-docs-inventory.js",
+      "--check"
+    ],
+    "exit": 0
+  },
+  "app-seo": {
+    "command": [
+      "node",
+      "scripts/generate-app-seo.js",
+      "--check"
+    ],
+    "exit": 0
+  },
+  "check-changed": {
+    "command": [
+      "bun",
+      "check:changed"
+    ],
+    "exit": 0
+  }
+}

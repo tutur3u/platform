@@ -1,0 +1,47 @@
+[ttr resources] running PID 17510
+✔ scanner classifies and excludes paths deterministically (1.283625ms)
+✔ scanner covers executable paths in plugins, agent skills, tmp and docs (0.101167ms)
+✔ all command, import, argv and dependency spellings count without subcommands (0.077584ms)
+✔ existing Meet dry-run and Lettin identity argv uses cannot count as zero (0.217208ms)
+✔ multiple invocations on one line cannot hide behind a mention count (0.041583ms)
+✔ allowlist gaps record a reason, owner and removal condition (0.744167ms)
+✖ no Wrangler usage outside the allowlist, and counts ratchet down (2114.873792ms)
+✔ allowlist transitions require structured, fresh admission for expansion or changed gaps (0.378083ms)
+✔ allowlist only shrinks relative to its base (24.761916ms)
+✔ same-count comment replacement and changed arguments require admission (0.178416ms)
+ℹ tests 10
+ℹ suites 0
+ℹ pass 9
+ℹ fail 1
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 2179.972667
+
+✖ failing tests:
+
+test at scripts/ci/wrangler-usage-guard.test.js:201:1
+✖ no Wrangler usage outside the allowlist, and counts ratchet down (2114.873792ms)
+  AssertionError [ERR_ASSERTION]: Expected values to be strictly deep-equal:
+  + actual - expected
+  
+  + [
+  +   'apps/marketing/scripts/check-native.mjs: new script Wrangler usage (1 lines, 1 uses). Use cf + Void (see apps/docs/build/development-tools/cf-cli-wrangler-parity.mdx) or record an admitted gap.'
+  + ]
+  - []
+  
+      at TestContext.<anonymous> (/Users/thanhpham/.t3/scratch/2026-11-11-act-as-the-implementation-sub-6455b199/platform-marketing-shell/scripts/ci/wrangler-usage-guard.test.js:232:10)
+      at Test.runInAsyncScope (node:async_hooks:227:14)
+      at Test.run (node:internal/test_runner/test:1402:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:974:18)
+      at Test.postRun (node:internal/test_runner/test:1542:19)
+      at Test.run (node:internal/test_runner/test:1467:12)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:974:7) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: [ 'apps/marketing/scripts/check-native.mjs: new script Wrangler usage (1 lines, 1 uses). Use cf + Void (see apps/docs/build/development-tools/cf-cli-wrangler-parity.mdx) or record an admitted gap.' ],
+    expected: [],
+    operator: 'deepStrictEqual',
+    diff: 'simple'
+  }
+[ttr resources] finished; exit 1

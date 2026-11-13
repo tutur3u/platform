@@ -1,0 +1,20 @@
+[ttr resources] running PID 85340
+✔ scanner classifies and excludes paths deterministically (1.471292ms)
+✔ scanner covers executable paths in plugins, agent skills, tmp and docs (0.134291ms)
+✔ all command, import, argv and dependency spellings count without subcommands (0.097334ms)
+✔ existing Meet dry-run and Lettin identity argv uses cannot count as zero (0.247042ms)
+✔ multiple invocations on one line cannot hide behind a mention count (0.048375ms)
+✔ allowlist gaps record a reason, owner and removal condition (0.781125ms)
+✔ no Wrangler usage outside the allowlist, and counts ratchet down (1384.88725ms)
+✔ allowlist transitions require structured, fresh admission for expansion or changed gaps (0.475333ms)
+✔ allowlist only shrinks relative to its base (24.299ms)
+✔ same-count comment replacement and changed arguments require admission (0.179375ms)
+ℹ tests 10
+ℹ suites 0
+ℹ pass 10
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 1452.26
+[ttr resources] finished; exit 0

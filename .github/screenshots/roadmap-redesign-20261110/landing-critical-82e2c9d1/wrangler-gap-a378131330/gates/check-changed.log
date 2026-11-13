@@ -1,0 +1,22 @@
+$ node scripts/check-changed.js
+check:changed: 25 changed file(s) since 5f510d6db9; 17 step(s).
+  shared-config: not covered; CI only: root/shared configuration (bun.lock)
+  cold workspace declarations (@tuturuuu/devbox, @tuturuuu/editor, @tuturuuu/masonry, tuturuuu): type errors outside changed files are advisory; CI stays authoritative.
+ok   branch name perf/landing-critical-css-20261113 (0.0s)
+ok   source-size (700 LOC ceiling) (0.6s)
+ok   generated docs inventory (0.4s)
+ok   generated app SEO assets (0.1s)
+ok   docs navigation audit (2.1s)
+ok   oxfmt check (20 files) (0.1s)
+ok   oxlint (16 files) (0.2s)
+ok   server-console (0.5s)
+ok   internal-app-auth (0.5s)
+ok   satellite-cookie-auth (0.2s)
+ok   browser-session-surface (1.1s)
+ok   mobile Lucide icons match web (0.1s)
+ok   vitest apps/marketing (3 related files) (0.9s)
+ok   type-check apps/marketing (0.5s) - tsc x1
+ok   type-check apps/roadmap (0.3s) - tsc x1
+ok   type-check packages/marketing-shell (0.2s) - tsc x1
+ok   Staging cookie-domain isolation (5.4s)
+check:changed: all passed in 13.1s.
