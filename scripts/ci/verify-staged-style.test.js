@@ -11,7 +11,9 @@ const {
   writeFile,
 } = require('node:fs/promises');
 const { tmpdir } = require('node:os');
+const { readFileSync } = require('node:fs');
 const { basename, dirname, join, resolve } = require('node:path');
+const root = resolve(__dirname, '../..');
 const {
   FAILURE_REASONS,
   describeFailure,
@@ -22,6 +24,9 @@ const {
   admitTransportTarget,
   scrubTransportTarget,
   validateNextImageQuery,
+  validateRelativeImageUrlParam,
+  WEB_PLATFORM_IMAGE_QUALITIES_ALLOWLIST,
+  WEB_PLATFORM_IMAGE_WIDTHS_ALLOWLIST,
   verifyCss,
   writeProof,
 } = require('./verify-staged-style');
@@ -653,10 +658,27 @@ for (const foreign of [true, false])
     assert.ok(!JSON.stringify(failure).includes('SECRET'));
   });
 
+test('web image optimizer allowlists match apps/web unresolved Next 16 sizing', () => {
+  const configSource = readFileSync(
+    resolve(root, 'apps/web/next.config.ts'),
+    'utf8'
+  );
+  const pkg = JSON.parse(
+    readFileSync(resolve(root, 'apps/web/package.json'), 'utf8')
+  );
+  assert.match(pkg.dependencies.next, /^[\^~]?16\./);
+  assert.ok(!/\bdeviceSizes\b/u.test(configSource));
+  assert.ok(!/\bimageSizes\b/u.test(configSource));
+  assert.ok(!/\bqualities\b/u.test(configSource));
+  assert.ok(WEB_PLATFORM_IMAGE_WIDTHS_ALLOWLIST.has(96));
+  assert.ok(WEB_PLATFORM_IMAGE_WIDTHS_ALLOWLIST.has(640));
+  assert.deepEqual([...WEB_PLATFORM_IMAGE_QUALITIES_ALLOWLIST], [75]);
+});
+
 test('transport admits built-in Next image optimizer queries for image resources', async (t) => {
   const origin = 'https://platform-fixture.vercel.app';
-  const inner = `${origin}/_next/static/media/hero.png`;
-  const imageRequestUrl = `${origin}/_next/image?url=${encodeURIComponent(inner)}&w=640&q=75`;
+  const inner = '/_next/static/media/hero.png';
+  const imageRequestUrl = `${origin}/_next/image?url=${encodeURIComponent(inner)}&w=96&q=75`;
   const f = await transportFixture(t, (path) =>
     path.startsWith('/_next/image?')
       ? { body: 'img', type: 'image/png' }
@@ -668,102 +690,112 @@ test('transport admits built-in Next image optimizer queries for image resources
   assert.ok(!JSON.stringify(proof).includes('hero.png'));
 });
 
+test('transport rejects non-image optimizer bodies at the image endpoint', async (t) => {
+  const origin = 'https://platform-fixture.vercel.app';
+  const imageRequestUrl = `${origin}/_next/image?url=${encodeURIComponent('/images/logo.png')}&w=96&q=75`;
+  const f = await transportFixture(
+    t,
+    (path) =>
+      path.startsWith('/_next/image?')
+        ? { body: '.x{}', type: 'text/css' }
+        : undefined,
+    undefined,
+    { imageRequestUrl }
+  );
+  await assert.rejects(
+    f.run(),
+    (error) =>
+      error.stagedReason === 'Staged image optimizer response is not an image'
+  );
+  const failure = JSON.parse(await f.failure());
+  assert.ok(!JSON.stringify(failure).includes('logo.png'));
+});
+
 test('admitTransportTarget bounds framework image query contracts', () => {
   const origin = 'https://platform-fixture.vercel.app';
-  const staticPath = `${origin}/_next/static/media/hero.png`;
-  const admitted = new URL(
-    `${origin}/_next/image?url=${encodeURIComponent(staticPath)}&w=96&q=75`
-  );
-  assert.doesNotThrow(() =>
-    admitTransportTarget(admitted, origin, { resourceType: 'image' })
-  );
-  validateNextImageQuery(admitted, origin);
+  const staticPath = '/_next/static/media/hero.png';
+  const imagesPath = '/images/avatar.png';
+  const admit = (href, resourceType = 'image') => {
+    const target = new URL(href, origin);
+    admitTransportTarget(target, origin, { resourceType });
+    validateNextImageQuery(target);
+  };
+  const reject = (href, resourceType = 'image') => {
+    const target = new URL(href, origin);
+    assert.throws(() =>
+      admitTransportTarget(target, origin, { resourceType })
+    );
+    if (
+      resourceType === 'image' &&
+      target.pathname === '/_next/image' &&
+      !target.hash &&
+      !target.username &&
+      !target.password &&
+      target.origin === origin
+    )
+      assert.throws(() => validateNextImageQuery(target));
+  };
 
-  const remote = new URL(
-    `${origin}/_next/image?url=${encodeURIComponent('https://models.dev/logo.png')}&w=128&q=80`
+  admit(
+    `/_next/image?url=${encodeURIComponent(staticPath)}&w=96&q=75`
   );
-  assert.doesNotThrow(() =>
-    admitTransportTarget(remote, origin, { resourceType: 'image' })
-  );
-
-  const foreign = new URL(
-    `${origin}/_next/image?url=${encodeURIComponent('https://elsewhere.example/x.png')}&w=96&q=75`
-  );
-  assert.throws(() =>
-    admitTransportTarget(foreign, origin, { resourceType: 'image' })
-  );
-
-  const cssQuery = new URL(`${origin}/_next/static/chunks/site.css?dpl=x`);
-  assert.throws(() =>
-    admitTransportTarget(cssQuery, origin, { resourceType: 'image' })
-  );
-  assert.throws(() =>
-    admitTransportTarget(cssQuery, origin, { resourceType: 'stylesheet' })
-  );
-
-  const imageAsStylesheet = new URL(
-    `${origin}/_next/image?url=${encodeURIComponent(staticPath)}&w=96&q=75`
-  );
-  assert.throws(() =>
-    admitTransportTarget(imageAsStylesheet, origin, {
-      resourceType: 'stylesheet',
-    })
+  admit(
+    `/_next/image?url=${encodeURIComponent(imagesPath)}&w=128&q=75`
   );
 
-  const invalidWidth = new URL(
-    `${origin}/_next/image?url=${encodeURIComponent(staticPath)}&w=0&q=75`
+  reject(
+    `/_next/image?url=${encodeURIComponent('https://evil/x.png')}&w=96&q=75`
   );
-  assert.throws(() =>
-    admitTransportTarget(invalidWidth, origin, { resourceType: 'image' })
+  reject(
+    `/_next/image?url=${encodeURIComponent('//evil/x.png')}&w=96&q=75`
   );
-
-  const extraKey = new URL(
-    `${origin}/_next/image?url=${encodeURIComponent(staticPath)}&w=96&q=75&token=SECRET`
+  reject(
+    `/_next/image?url=${encodeURIComponent('%2F%2Fevil/x.png')}&w=96&q=75`
   );
-  assert.throws(() =>
-    admitTransportTarget(extraKey, origin, { resourceType: 'image' })
+  reject(
+    `/_next/image?url=${encodeURIComponent(`${origin}${staticPath}`)}&w=96&q=75`
   );
-  assert.throws(() => validateNextImageQuery(extraKey, origin));
-
-  const credentialed = new URL(
+  reject(
+    `/_next/image?url=${encodeURIComponent('https://models.dev/logo.png')}&w=128&q=75`
+  );
+  reject(
+    `/_next/image?url=${encodeURIComponent(staticPath)}&w=96&q=75&token=SECRET`
+  );
+  reject(`/_next/image?url=${encodeURIComponent(staticPath)}&q=75`);
+  reject(`/_next/image?url=${encodeURIComponent(staticPath)}&w=96`);
+  reject(`/_next/image?url=${encodeURIComponent(staticPath)}&w=500&q=75`);
+  reject(`/_next/image?url=${encodeURIComponent(staticPath)}&w=96&q=80`);
+  reject(`/_next/static/chunks/site.css?dpl=x`, 'stylesheet');
+  reject(
+    `/_next/image?url=${encodeURIComponent(staticPath)}&w=96&q=75`,
+    'stylesheet'
+  );
+  reject(
     `https://USER:PASS@platform-fixture.vercel.app/_next/image?url=${encodeURIComponent(staticPath)}&w=96&q=75`
   );
-  assert.throws(() =>
-    admitTransportTarget(credentialed, origin, { resourceType: 'image' })
+  reject(
+    `/_next/image?url=${encodeURIComponent(staticPath)}&w=96&q=75#frag`
   );
-
-  const hashed = new URL(
-    `${origin}/_next/image?url=${encodeURIComponent(staticPath)}&w=96&q=75#frag`
+  reject('/_next/image-extra?url=%2Fx.png&w=96&q=75');
+  reject(
+    `/%5fnext/image?url=${encodeURIComponent(staticPath)}&w=96&q=75`
   );
-  assert.throws(() =>
-    admitTransportTarget(hashed, origin, { resourceType: 'image' })
+  reject(
+    `/_next/image?url=${encodeURIComponent(`${staticPath}?dpl=SECRET`)}&w=96&q=75`
   );
-
-  const neighbor = new URL(`${origin}/_next/image-extra?w=1`);
-  assert.throws(() =>
-    admitTransportTarget(neighbor, origin, { resourceType: 'image' })
+  reject(
+    `/_next/image?url=${encodeURIComponent('/_next/static/chunks/site.css')}&w=96&q=75`
   );
-
-  const encodedPath = new URL(
-    `${origin}/%5fnext/image?url=${encodeURIComponent(staticPath)}&w=96&q=75`
-  );
-  assert.throws(() =>
-    admitTransportTarget(encodedPath, origin, { resourceType: 'image' })
-  );
-
-  const nestedQuery = new URL(
-    `${origin}/_next/image?url=${encodeURIComponent(`${staticPath}?dpl=SECRET`)}&w=96&q=75`
-  );
-  assert.throws(() =>
-    admitTransportTarget(nestedQuery, origin, { resourceType: 'image' })
-  );
+  assert.throws(() => validateRelativeImageUrlParam('https://evil'));
+  assert.throws(() => validateRelativeImageUrlParam('//evil/x'));
+  assert.throws(() => validateRelativeImageUrlParam('%2F%2Fevil/x'));
 });
 
 test('scrubTransportTarget never echoes query, credential, or foreign URL material', () => {
   const origin = 'https://platform-fixture.vercel.app';
   const frameworkImage = scrubTransportTarget(
     new URL(
-      `${origin}/_next/image?url=${encodeURIComponent(`${origin}/_next/static/media/hero.png`)}&w=96&q=75`
+      `${origin}/_next/image?url=${encodeURIComponent('/_next/static/media/hero.png')}&w=96&q=75`
     ),
     origin
   );
