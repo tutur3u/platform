@@ -28,6 +28,7 @@ const ENTRY_FIELDS = new Set([
   'verifiedOnProdAt',
   'legacy',
   'legacyRemoveBy',
+  'rollout',
 ]);
 
 const CREDENTIAL_FRAGMENTS = ['PASSWORD', 'PRIVATE', 'TOKEN', 'CERTIFICATE'];

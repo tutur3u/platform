@@ -77,3 +77,34 @@ describe('feature flag dashboard storage', () => {
     ).toBe(true);
   });
 });
+
+it('projects rollout metadata without inventing legacy stages', () => {
+  const first = featureFlagCatalog.flags[0];
+  if (!first) throw new Error('catalog fixture missing');
+  const model = buildFeatureFlagDashboardModel(now, {
+    ...featureFlagCatalog,
+    flags: [
+      {
+        ...first,
+        rollout: {
+          stage: 'internal',
+          owner: 'platform',
+          removeBy: '2026-11-11',
+        },
+      },
+      ...featureFlagCatalog.flags.slice(1),
+    ],
+  });
+  const rows = model.groups.flatMap((group) => group.rows);
+  expect(rows).toHaveLength(52);
+  expect(rows.map((row) => row.key).sort()).toEqual(
+    featureFlagCatalog.flags.map((flag) => flag.key).sort()
+  );
+  expect(rows.find((row) => row.key === first.key)).toMatchObject({
+    owner: 'platform',
+    rollout: { stage: 'internal', removeBy: '2026-11-11' },
+  });
+  expect(
+    rows.find((row) => row.key === featureFlagCatalog.flags[1]?.key)?.rollout
+  ).toBeUndefined();
+});

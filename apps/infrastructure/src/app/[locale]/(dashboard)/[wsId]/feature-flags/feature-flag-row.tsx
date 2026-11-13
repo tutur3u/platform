@@ -98,6 +98,15 @@ export function FlagRow({
         <Badge variant="secondary">{t(`kinds.${messageKey(row.kind)}`)}</Badge>
       </TableCell>
       <TableCell>
+        {row.rollout ? (
+          <Badge variant="outline">{t('stages.' + row.rollout.stage)}</Badge>
+        ) : (
+          <span className="text-muted-foreground">
+            {t('stages.unconfigured')}
+          </span>
+        )}
+      </TableCell>
+      <TableCell>
         <div className="flex flex-wrap items-center gap-1">
           {row.apps.map((app) => (
             <Badge key={app} variant="outline">
@@ -145,7 +154,9 @@ export function FlagRow({
           <Badge variant={LIFECYCLE_VARIANT[lifecycle.status]}>
             {t(`lifecycle.${messageKey(lifecycle.status)}`)}
           </Badge>
-          {lifecycle.removeBy ? (
+          {row.rollout?.removeBy ? (
+            <time dateTime={row.rollout.removeBy}>{row.rollout.removeBy}</time>
+          ) : lifecycle.removeBy ? (
             <time
               className="text-muted-foreground text-xs"
               dateTime={lifecycle.removeBy}

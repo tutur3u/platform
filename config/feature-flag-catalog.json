@@ -1177,7 +1177,12 @@
         "production": false
       },
       "verifiedOnProdAt": null,
-      "legacy": false
+      "legacy": false,
+      "rollout": {
+        "stage": "internal",
+        "owner": "platform",
+        "removeBy": "2027-02-12"
+      }
     }
   ]
 }
