@@ -12,3 +12,11 @@ paths = ['''^\.agents/skills/[^/]+/UPSTREAM\.json$''']
 description = "SQL grant guard baseline holds SHA-256 file and finding digests, not credentials"
 targetRules = ['generic-api-key']
 paths = ['''^scripts/ci/sql-grant-guard\.baseline\.json$''']
+
+[[allowlists]]
+description = "CocoaPods SPEC CHECKSUMS entries contain SHA-1 content digests"
+targetRules = ['generic-api-key']
+condition = "AND"
+regexTarget = "line"
+paths = ['''(^|/)Podfile\.lock$''']
+regexes = ['''^\s+[A-Za-z0-9_+./-]+: [0-9a-f]{40}$''']
