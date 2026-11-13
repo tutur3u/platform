@@ -366,9 +366,11 @@ time-bound IP/CIDR trust or rate-limit uplift only when traffic is organic.
   stale content through the current route/document workspace or a server-returned
   resource workspace, not through the embedded attribute alone.
 
-## TanStack Start Migration (apps/tanstack-web)
+## Retired apps/tanstack-web Compat Layers
 
-Retained inactive reference: do not execute or update this runtime until explicitly resumed.
+Retired historical reference, unrelated to per-app native Start (which reaches
+`next/*` only through `@tuturuuu/start-bridge`). Do not execute, update, or
+revive this tree.
 
 - Shared `@tuturuuu/ui` clients import Next-only framework APIs. apps/tanstack-web
   resolves them at runtime via three compat layers so ported routes keep the
@@ -604,10 +606,12 @@ refresh generated type evidence through the owning supported CI path.
 
 ## Active runtime and paused implementations
 
-Web and satellite Next.js apps are maintained. Rust (`apps/backend`) and
-TanStack Start (`apps/tanstack-web`) are paused and not in use. Do not port
+`apps/web` (Next.js) and the satellite apps are maintained; satellites move per
+app to native TanStack Start + Void + Vite+ on Cloudflare Workers under the
+native Start migration runbook. Rust (`apps/backend`) is paused, and the
+`apps/tanstack-web` tree is retired and unrelated to per-app Start. Do not port
 changes, regenerate migration trees/manifests/version docs, run implementation
-checks/builds, or update their dependencies until explicitly resumed. Maintain
+checks/builds, or update dependencies for either inactive tree. Maintain
 live Web first-class API handlers and shared `packages/internal-api` boundaries.
 Docker setup is inactive and the Docker cron runner is retired; local docs use
 `bun dev:docs` without Docker. See `apps/docs/build/devops/active-runtime.mdx`.
@@ -1531,3 +1535,14 @@ binding declarations with `wrangler types --include-runtime=false` against the
 emitted `dist/server/wrangler.json`; preserve the checked-in declaration preimage
 when generating temporary qualification output. Keep Void scratch output outside
 the authored patch when running changed-file gates.
+
+### IME composition in custom keyboard submission
+
+For text controls that commit or send on Enter, inspect the native keyboard
+composition flag before acting. React handlers read `event.nativeEvent.isComposing`;
+key code 229 also catches Safari composition-confirmation ordering. Preserve the
+IME default action while composing, plus existing ordinary Enter, Shift+Enter,
+Escape and explicit button behavior. Test the actual handler with composing and
+non-composing events; a source-string assertion cannot prove the action is
+suppressed. AI Studio model policy entry has focused regression coverage in
+`apps/ai/src/components/policy/model-list-field.test.ts`.

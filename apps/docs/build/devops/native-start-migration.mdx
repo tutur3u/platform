@@ -249,6 +249,22 @@ Build identity must come from generated source metadata in the emitted Worker,
 never a test responder returning an expected SHA. Qualify only the mounts admitted
 by the selected app profile; a rejected apex host remains a negative control.
 
+### Running the artifact gate on a local build
+
+`scripts/ci/local-native-gate.sh <app> <artifact-script> <source-sha-env>
+[--profile <name>] [--out <dir>]` runs config, seal, verify and the emitted-config
+receipt on the checked-out commit's built app, writing only to a private temp
+directory. The receipt helper requires `realpath(RUNNER_TEMP)` to equal
+`RUNNER_TEMP`; on macOS the default temp directories sit under the
+`/var` to `/private/var` symlink, which reports the receipt as `unavailable`
+for a healthy build. The helper creates its temp directory under a canonical path.
+
+When an app's workflow rewrites `dist/server/wrangler.json` (for example the
+production Worker config step in `learn-cloudflare.yaml`), run that step's script
+unchanged before the gate. Retyping it by hand can leave a malformed config that
+the seal rejects. Meet uses `scripts/ci/verify-meet-start-output.js` with an
+in-tree seal and is not covered by the helper.
+
 ### Finance held-profile host acceptance
 
 Finance's native staging and production qualification profiles admit only their
