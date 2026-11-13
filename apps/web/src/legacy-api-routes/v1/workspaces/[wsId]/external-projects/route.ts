@@ -1,9 +1,5 @@
 import { NextResponse } from 'next/server';
-import {
-  hasRootExternalProjectsAdminPermission,
-  requireWorkspaceExternalProjectAccess,
-} from '@/lib/external-projects/access';
-import { hasWorkspaceExternalProjectPermission } from '@/lib/external-projects/access-mode';
+import { requireWorkspaceExternalProjectAccess } from '@/lib/external-projects/access';
 import { getExternalProjectCmsEditorCapabilities } from '@/lib/external-projects/cms-capabilities';
 import { getWorkspaceExternalProjectStudioData } from '@/lib/external-projects/store';
 import { getWorkspaceExternalProjectScopedStudioData } from '@/lib/external-projects/store-studio-scope';
@@ -69,15 +65,7 @@ export async function GET(
       binding: access.binding,
       ...studio,
       publishEvents: contentOnly ? [] : studio.publishEvents,
-      importJobs:
-        !contentOnly &&
-        (hasWorkspaceExternalProjectPermission(
-          access.workspacePermissions,
-          'publish'
-        ) ||
-          hasRootExternalProjectsAdminPermission(access.rootPermissions))
-          ? studio.importJobs
-          : [],
+      importJobs: contentOnly ? [] : studio.importJobs,
       cmsCapabilities: getExternalProjectCmsEditorCapabilities({
         binding: access.binding,
         collections: studio.collections,
