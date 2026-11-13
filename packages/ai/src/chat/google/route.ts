@@ -4,13 +4,7 @@ import {
   normalizeWorkspaceId,
   verifyWorkspaceMembershipType,
 } from '@tuturuuu/utils/workspace-helper';
-import {
-  consumeStream,
-  type LanguageModel,
-  smoothStream,
-  stepCountIs,
-  streamText,
-} from 'ai';
+import { consumeStream, type LanguageModel, stepCountIs, streamText } from 'ai';
 import { type NextRequest, NextResponse } from 'next/server';
 import { normalizeStableModelId } from '../../credits/model-mapping';
 import {
@@ -31,6 +25,7 @@ import {
 import { ChatRequestBodySchema, mapToUIMessages } from './chat-request-schema';
 import { resolveChatTools } from './chat-tools';
 import { systemInstruction } from './default-system-instruction';
+import { miraImmediateFirstTextTransform } from './mira-first-token-stream';
 import { prepareMiraToolStep } from './mira-step-preparation';
 import { createGoogleChatProviderOptions } from './provider-options';
 import { resolveChatReasoningSettings } from './reasoning-settings';
@@ -59,6 +54,11 @@ import {
   prepareProcessedMessages,
 } from './route-message-preparation';
 import { prepareMiraRuntime } from './route-mira-runtime';
+import {
+  emptyServerTiming,
+  type ServerTimingStage,
+  withServerTiming,
+} from './server-timing';
 import { validateSubscriptionRoute } from './route-subscription-boundary';
 import {
   buildAbortedStreamFinishResponse,
@@ -93,6 +93,11 @@ export function createPOST(
 
   return async function handler(req: NextRequest): Promise<Response> {
     let releaseClaimedPersistenceLease: (() => Promise<void>) | null = null;
+    const serverTiming = emptyServerTiming();
+    const stageStartedAt = () => performance.now();
+    const recordStage = (stage: ServerTimingStage, startedAt: number) => {
+      serverTiming[stage] += Math.max(0, performance.now() - startedAt);
+    };
     try {
       const sbAdmin = await createAdminClient();
       let requestBody: unknown;
@@ -148,6 +153,7 @@ export function createPOST(
         return new Response('Missing messages', { status: 400 });
       }
 
+      const authStartedAt = stageStartedAt();
       const auth =
         (await _options.resolveAuth?.(req)) ?? (await resolveAiRouteAuth(req));
       if (!auth.ok) return auth.response;
@@ -177,7 +183,9 @@ export function createPOST(
           { status: 403 }
         );
       }
+      recordStage('auth', authStartedAt);
 
+      const scopeStartedAt = stageStartedAt();
       let normalizedWsId: string | null = null;
       let requestedCreditWsId: string | undefined;
       if (!wsId && _options.requireWorkspaceId) {
@@ -307,71 +315,87 @@ export function createPOST(
         }
       }
 
-      let resolvedModelId: string;
-      try {
-        if (subscriptionModel && model) {
-          resolvedModelId = model;
-        } else if (billingWsId) {
-          const resolvedPlanModel = await resolvePlanModel({
-            capability: 'language',
-            requestedModel: model,
-            wsId: billingWsId,
-          });
-          resolvedModelId = resolvedPlanModel.modelId;
-        } else if (model) {
-          resolvedModelId = normalizeStableModelId(
-            model.includes('/') ? model : `${defaultProvider}/${model}`
-          );
-        } else {
-          return NextResponse.json(
-            {
-              error: 'Model is required when billing workspace is unavailable.',
-            },
-            { status: 400 }
-          );
-        }
-      } catch (error) {
-        if (error instanceof PlanModelResolutionError) {
-          const status =
-            error.code === 'WORKSPACE_ID_REQUIRED'
-              ? 400
-              : error.code === 'NO_ALLOCATION'
-                ? 503
-                : 500;
-          return NextResponse.json(
-            { error: error.message, code: error.code },
-            { status }
-          );
-        }
+      const modelResolutionPromise = (async (): Promise<
+        { modelId: string } | { error: Response }
+      > => {
+        try {
+          if (subscriptionModel && model) {
+            return { modelId: model };
+          }
+          if (billingWsId) {
+            const resolvedPlanModel = await resolvePlanModel({
+              capability: 'language',
+              requestedModel: model,
+              wsId: billingWsId,
+            });
+            return { modelId: resolvedPlanModel.modelId };
+          }
+          if (model) {
+            return {
+              modelId: normalizeStableModelId(
+                model.includes('/') ? model : `${defaultProvider}/${model}`
+              ),
+            };
+          }
+          return {
+            error: NextResponse.json(
+              {
+                error:
+                  'Model is required when billing workspace is unavailable.',
+              },
+              { status: 400 }
+            ),
+          };
+        } catch (error) {
+          if (error instanceof PlanModelResolutionError) {
+            const status =
+              error.code === 'WORKSPACE_ID_REQUIRED'
+                ? 400
+                : error.code === 'NO_ALLOCATION'
+                  ? 503
+                  : 500;
+            return {
+              error: NextResponse.json(
+                { error: error.message, code: error.code },
+                { status }
+              ),
+            };
+          }
 
-        console.error('Failed to resolve chat model:', error);
-        return NextResponse.json(
-          { error: 'Failed to resolve chat model' },
-          { status: 500 }
-        );
-      }
-
-      const resolvedChatId = await resolveChatIdForUser(
-        id,
-        () =>
-          sbAdmin
-            .from('ai_chats')
-            .select('id')
-            .eq('creator_id', user.id)
-            .order('created_at', { ascending: false })
-            .limit(1)
-            .single(),
-        (chatId) =>
-          sbAdmin
-            .from('ai_chats')
-            .select('id')
-            .eq('id', chatId)
-            .eq('creator_id', user.id)
-            .maybeSingle()
-      );
-      if ('error' in resolvedChatId) {
-        return resolvedChatId.error;
-      }
+          console.error('Failed to resolve chat model:', error);
+          return {
+            error: NextResponse.json(
+              { error: 'Failed to resolve chat model' },
+              { status: 500 }
+            ),
+          };
+        }
+      })();
+      const [modelResolution, resolvedChatId] = await Promise.all([
+        modelResolutionPromise,
+        resolveChatIdForUser(
+          id,
+          () =>
+            sbAdmin
+              .from('ai_chats')
+              .select('id')
+              .eq('creator_id', user.id)
+              .order('created_at', { ascending: false })
+              .limit(1)
+              .single(),
+          (chatId) =>
+            sbAdmin
+              .from('ai_chats')
+              .select('id')
+              .eq('id', chatId)
+              .eq('creator_id', user.id)
+              .maybeSingle()
+        ),
+      ]);
+      recordStage('scope', scopeStartedAt);
+      if ('error' in modelResolution) return modelResolution.error;
+      if ('error' in resolvedChatId) return resolvedChatId.error;
+      const resolvedModelId = modelResolution.modelId;
       const chatId = resolvedChatId.chatId;
       const moveFilesError = await moveTempFilesToThread({
         listFiles: (tempStoragePath) =>
@@ -387,6 +411,7 @@ export function createPOST(
       }
 
       const normalizedMessages = mapToUIMessages(messages);
+      const historyStartedAt = stageStartedAt();
       const preparedMessages = await prepareProcessedMessages(
         normalizedMessages,
         normalizedWsId ?? undefined,
@@ -400,6 +425,7 @@ export function createPOST(
             resolvedModelId.toLowerCase().startsWith('google-vertex/'),
         }
       );
+      recordStage('history', historyStartedAt);
       if ('error' in preparedMessages) {
         return preparedMessages.error;
       }
@@ -486,6 +512,7 @@ export function createPOST(
         return persistUserMessageError;
       }
 
+      const creditsStartedAt = stageStartedAt();
       const creditPreflight = subscriptionModel
         ? { cappedMaxOutput: null }
         : await performCreditPreflight({
@@ -494,6 +521,7 @@ export function createPOST(
             userId: user.id,
             sbAdmin,
           });
+      recordStage('credits', creditsStartedAt);
       if ('error' in creditPreflight) {
         return creditPreflight.error;
       }
@@ -501,6 +529,7 @@ export function createPOST(
 
       const stepsRef: { current: unknown[] } = { current: [] };
 
+      const contextStartedAt = stageStartedAt();
       const { miraSystemPrompt, miraTools, prepareMiraDiscoveryStep } =
         await prepareMiraRuntime({
           isMiraMode,
@@ -518,9 +547,11 @@ export function createPOST(
           clientCapabilities: parsedBody.data.clientCapabilities,
           getSteps: () => stepsRef.current,
         });
+      recordStage('context', contextStartedAt);
 
       const effectiveSource = isMiraMode ? 'Mira' : 'Rewise';
 
+      const modelStartStartedAt = stageStartedAt();
       const resolvedGatewayModel =
         subscriptionModel ??
         (await withAiMemory({
@@ -532,6 +563,7 @@ export function createPOST(
           userId: user.id,
           wsId: billingWsId ?? normalizedWsId,
         }));
+      recordStage('model-start', modelStartStartedAt);
 
       const reasoningSettings = resolveChatReasoningSettings(thinkingMode);
       const forceWorkspaceArtifact =
@@ -608,9 +640,10 @@ export function createPOST(
           }),
       });
 
+      const streamStartedAt = stageStartedAt();
       const result = streamText({
         abortSignal: req.signal,
-        experimental_transform: smoothStream({ delayInMs: null }),
+        experimental_transform: miraImmediateFirstTextTransform(),
         maxRetries: 0,
         model: resolvedGatewayModel,
         messages: processedMessages,
@@ -646,14 +679,18 @@ export function createPOST(
       // Per https://ai-sdk.dev/docs/advanced/stopping-streams: consumeSseStream ensures
       // the stream is consumed on abort so cleanup can run; use onFinish in toUIMessageStreamResponse
       // to handle isAborted when needed.
-      return result.toUIMessageStreamResponse({
-        consumeSseStream: consumeStream,
-        sendReasoning: true,
-        sendSources: true,
-        ...(_options.subscription
-          ? { onError: _options.subscription.onError }
-          : {}),
-      });
+      recordStage('model-start', streamStartedAt);
+      return withServerTiming(
+        result.toUIMessageStreamResponse({
+          consumeSseStream: consumeStream,
+          sendReasoning: true,
+          sendSources: true,
+          ...(_options.subscription
+            ? { onError: _options.subscription.onError }
+            : {}),
+        }),
+        serverTiming
+      );
     } catch (error) {
       if (releaseClaimedPersistenceLease) {
         try {

@@ -1,4 +1,7 @@
-import { capMaxOutputTokensByCredits } from '@tuturuuu/ai/credits/cap-output-tokens';
+import {
+  capMaxOutputTokensByCredits,
+  readOutputPricePerToken,
+} from '@tuturuuu/ai/credits/cap-output-tokens';
 import { checkAiCredits } from '@tuturuuu/ai/credits/check-credits';
 import type { SupabaseClient } from '@tuturuuu/supabase';
 
@@ -19,9 +22,19 @@ export async function performCreditPreflight({
 }: CreditPreflightParams): Promise<
   { cappedMaxOutput: number | null } | { error: Response }
 > {
-  const creditCheck = await checkAiCredits(wsId ?? undefined, model, 'chat', {
+  // The allowance RPC remains the admission gate. Price metadata is only an
+  // output ceiling and is never used when the allowance denies the request.
+  const allowancePromise = checkAiCredits(wsId ?? undefined, model, 'chat', {
     userId,
   });
+  const pricePromise = readOutputPricePerToken(sbAdmin, model).then(
+    (price) => ({ price, error: null as unknown }),
+    (error: unknown) => ({ price: null, error })
+  );
+  const [creditCheck, priceResult] = await Promise.all([
+    allowancePromise,
+    pricePromise,
+  ]);
 
   if (creditCheck && !creditCheck.allowed) {
     return {
@@ -35,12 +48,16 @@ export async function performCreditPreflight({
     };
   }
 
+  if (priceResult.error) throw priceResult.error;
+
   const cappedMaxOutput = creditCheck
     ? await capMaxOutputTokensByCredits(
         sbAdmin,
         model,
         creditCheck.maxOutputTokens,
-        creditCheck.remainingCredits
+        creditCheck.remainingCredits,
+        1,
+        priceResult.price
       )
     : null;
 
