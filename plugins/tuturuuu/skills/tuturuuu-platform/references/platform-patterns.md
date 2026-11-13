@@ -6,6 +6,12 @@ shared-package changes.
 
 ## Web And Shared UI
 
+- Mira temporary chat credentials warm through the visibility/activity-bounded
+  query hook in both Web and Workspace. Keep token values out of query state,
+  preserve transport scope keys, share in-flight acquisition, and fence pending
+  results at revocation. Hidden or idle panels must not refresh indefinitely.
+  See [credential readiness](../../../../../apps/docs/platform/features/mira-client-actions.mdx#typed-chat-credential-readiness).
+
 - Mira typed-chat activity spans queueing, creation and the Live save barrier,
   until the SDK user message replaces the optimistic snapshot by ID. Preserve
   immutable send configuration and cancellation checks after the Live barrier.

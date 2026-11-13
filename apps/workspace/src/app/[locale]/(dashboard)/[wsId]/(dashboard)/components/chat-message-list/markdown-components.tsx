@@ -116,6 +116,7 @@ export function AssistantMarkdown({
       >
         <Streamdown
           plugins={plugins}
+          animated={false}
           caret="block"
           isAnimating={isAnimating}
           controls={{
