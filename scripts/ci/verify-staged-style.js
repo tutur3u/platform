@@ -21,6 +21,9 @@ const run = promisify(execFile);
 // text from child processes or the browser, may appear in logs or evidence.
 const FAILURE_REASONS = [
   'Missing staged response headers',
+  'Staged transport destination is not admitted',
+  'Staged transport redirect is invalid or exceeds its bound',
+  'Staged resource redirect changes its browser URL',
   'Staged stylesheet has the wrong content type',
   'Stylesheet is outside the built Next assets',
   'Stylesheet escapes the built artifact',
@@ -34,7 +37,199 @@ const FAILURE_REASONS = [
   'Candidate styles or fonts are missing',
   'Staged stylesheet rule inventory differs from built CSS',
   'Candidate utility styles are missing',
+  'Staged image optimizer response is not an image',
 ];
+
+// Default Next.js image optimization (`apps/web/next.config.ts` uses the
+// built-in loader; `apps/web/src/proxy.ts` leaves `/_next/image` unmigrated).
+const NEXT_IMAGE_PATH = '/_next/image';
+const NEXT_IMAGE_QUERY_KEYS = Object.freeze(['url', 'w', 'q']);
+const NEXT_IMAGE_INNER_PREFIXES = Object.freeze([
+  '/_next/static/media/',
+  '/images/',
+]);
+// Resolved apps/web image optimizer sizing: next.config.ts sets remotePatterns
+// only (createTuturuuuNextConfig merge in @tuturuuu/utils/next-config.ts does
+// not override deviceSizes, imageSizes, or qualities). Unset fields use Next
+// 16 imageConfigDefault (apps/web/package.json pins next ^16.4.0).
+const WEB_PLATFORM_IMAGE_DEVICE_SIZES = Object.freeze([
+  640, 750, 828, 1080, 1200, 1920, 2048, 3840,
+]);
+const WEB_PLATFORM_IMAGE_SIZES = Object.freeze([
+  32, 48, 64, 96, 128, 256, 384,
+]);
+const WEB_PLATFORM_IMAGE_QUALITIES_ALLOWLIST = Object.freeze([75]);
+const WEB_PLATFORM_IMAGE_WIDTHS_ALLOWLIST = new Set([
+  ...WEB_PLATFORM_IMAGE_DEVICE_SIZES,
+  ...WEB_PLATFORM_IMAGE_SIZES,
+]);
+
+function validateRelativeImageUrlParam(urlValue) {
+  if (!urlValue || typeof urlValue !== 'string')
+    throw new Error('Staged transport destination is not admitted');
+  if (!urlValue.startsWith('/') || urlValue.startsWith('//'))
+    throw new Error('Staged transport destination is not admitted');
+  if (/^[a-z][a-z0-9+.-]*:/iu.test(urlValue))
+    throw new Error('Staged transport destination is not admitted');
+  if (urlValue.includes('\\'))
+    throw new Error('Staged transport destination is not admitted');
+  if (urlValue.includes('?') || urlValue.includes('#'))
+    throw new Error('Staged transport destination is not admitted');
+  if (/%2f/iu.test(urlValue))
+    throw new Error('Staged transport destination is not admitted');
+  if (/%/u.test(urlValue))
+    throw new Error('Staged transport destination is not admitted');
+  if (urlValue.includes('..'))
+    throw new Error('Staged transport destination is not admitted');
+  if (
+    !NEXT_IMAGE_INNER_PREFIXES.some((prefix) => urlValue.startsWith(prefix))
+  )
+    throw new Error('Staged transport destination is not admitted');
+  for (const segment of urlValue.split('/')) {
+    if (segment === '.' || segment === '..')
+      throw new Error('Staged transport destination is not admitted');
+  }
+}
+
+function assertFrameworkImageResponse(target, resourceType, result) {
+  if (
+    target.pathname !== NEXT_IMAGE_PATH ||
+    resourceType !== 'image' ||
+    !target.search
+  )
+    return;
+  const contentType = result.headers['content-type'] || '';
+  if (!/^image\//iu.test(contentType))
+    throw new Error('Staged image optimizer response is not an image');
+}
+
+function scrubTransportTarget(target, candidateOrigin) {
+  const sameCandidateOrigin = target.origin === candidateOrigin;
+  const hasSearch = Boolean(target.search);
+  const hasHash = Boolean(target.hash);
+  const hasCredentials = Boolean(target.username || target.password);
+  let searchKeysOnlyDpl = false;
+  let searchKeysFrameworkImage = false;
+  if (hasSearch && sameCandidateOrigin) {
+    const keys = [...new URLSearchParams(target.search).keys()].slice(0, 16);
+    searchKeysOnlyDpl = keys.length === 1 && keys[0] === 'dpl';
+    searchKeysFrameworkImage =
+      keys.length === NEXT_IMAGE_QUERY_KEYS.length &&
+      keys.every((key) => NEXT_IMAGE_QUERY_KEYS.includes(key)) &&
+      new Set(keys).size === keys.length;
+  }
+  let pathname = sameCandidateOrigin ? '[redacted]' : '[foreign]';
+  let classification = sameCandidateOrigin ? 'same-origin-other' : 'off-candidate';
+  if (sameCandidateOrigin) {
+    try {
+      const decoded = decodeURIComponent(target.pathname).slice(0, 2048);
+      if (decoded === NEXT_IMAGE_PATH && !/[\\\\%]/u.test(decoded)) {
+        pathname = NEXT_IMAGE_PATH;
+        classification = 'framework-image';
+      } else if (
+        decoded.startsWith('/_next/static/') &&
+        decoded.endsWith('.css') &&
+        !decoded.startsWith('//') &&
+        !/[\\\\%]/u.test(decoded)
+      ) {
+        pathname = decoded;
+        classification = 'built-stylesheet';
+      }
+    } catch {
+      pathname = '[undecodable]';
+      classification = 'undecodable-path';
+    }
+  }
+  return {
+    sameCandidateOrigin,
+    origin: sameCandidateOrigin ? candidateOrigin : 'off-candidate',
+    pathname,
+    hasSearch,
+    hasHash,
+    hasCredentials,
+    searchKeysOnlyDpl,
+    searchKeysFrameworkImage,
+    classification,
+  };
+}
+
+function validateNextImageQuery(target) {
+  if (target.pathname !== NEXT_IMAGE_PATH)
+    throw new Error('Staged transport destination is not admitted');
+  let pathname;
+  try {
+    pathname = decodeURIComponent(target.pathname);
+  } catch {
+    throw new Error('Staged transport destination is not admitted');
+  }
+  if (pathname !== NEXT_IMAGE_PATH)
+    throw new Error('Staged transport destination is not admitted');
+  const params = new URLSearchParams(target.search);
+  const keys = [...params.keys()];
+  if (
+    keys.length !== NEXT_IMAGE_QUERY_KEYS.length ||
+    new Set(keys).size !== keys.length
+  )
+    throw new Error('Staged transport destination is not admitted');
+  for (const key of NEXT_IMAGE_QUERY_KEYS) {
+    if (!params.has(key))
+      throw new Error('Staged transport destination is not admitted');
+  }
+  validateRelativeImageUrlParam(params.get('url'));
+  for (const name of ['w', 'q']) {
+    const value = params.get(name);
+    if (!/^[0-9]+$/.test(value))
+      throw new Error('Staged transport destination is not admitted');
+    const parsed = Number(value);
+    if (!Number.isInteger(parsed))
+      throw new Error('Staged transport destination is not admitted');
+    if (name === 'w') {
+      if (!WEB_PLATFORM_IMAGE_WIDTHS_ALLOWLIST.has(parsed))
+        throw new Error('Staged transport destination is not admitted');
+    } else if (!WEB_PLATFORM_IMAGE_QUALITIES_ALLOWLIST.includes(parsed))
+      throw new Error('Staged transport destination is not admitted');
+  }
+}
+
+function admitTransportTarget(
+  target,
+  candidateOrigin,
+  { identity = false, resourceType = 'other' } = {}
+) {
+  let pathname;
+  try {
+    pathname = decodeURIComponent(target.pathname);
+  } catch {
+    throw transportError('Staged transport destination is not admitted', target);
+  }
+  if (
+    target.origin !== candidateOrigin ||
+    target.username ||
+    target.password ||
+    target.hash ||
+    pathname.startsWith('//') ||
+    /[\\\\%]/u.test(pathname) ||
+    (identity
+      ? target.pathname !== '/api/build-info'
+      : /^\/api(?:\/|$)/iu.test(pathname))
+  )
+    throw transportError('Staged transport destination is not admitted', target);
+  if (target.search) {
+    if (identity || resourceType !== 'image')
+      throw transportError('Staged transport destination is not admitted', target);
+    try {
+      validateNextImageQuery(target);
+    } catch {
+      throw transportError('Staged transport destination is not admitted', target);
+    }
+  }
+}
+
+function transportError(message, target) {
+  const error = new Error(message);
+  if (target instanceof URL) error.rejectedTarget = target;
+  return error;
+}
 
 function describeFailure(error) {
   const message = String(error?.message ?? '');
@@ -162,6 +357,7 @@ async function main({ env = process.env, runCommand = run, browserType } = {}) {
   let sequence = 0;
   let browser;
   let stage = 'identity';
+  let navigation;
   // A step killed by its timeout never reaches the catch block, so the last
   // reached stage is kept on disk next to the rest of the proof.
   const markStage = async (next) => {
@@ -174,6 +370,7 @@ async function main({ env = process.env, runCommand = run, browserType } = {}) {
   };
   await markStage('identity');
   const failures = [];
+  const blockedResources = [];
   const css = new Map();
   const cssSources = new Map();
   const cliEnv = {
@@ -182,7 +379,44 @@ async function main({ env = process.env, runCommand = run, browserType } = {}) {
     VERCEL_ORG_ID: env.VERCEL_ORG_ID,
     VERCEL_PROJECT_ID: env.VERCEL_PROJECT_ID,
   };
-  async function request(path) {
+  function admit(target, identity = false, resourceType = 'other') {
+    admitTransportTarget(target, origin, { identity, resourceType });
+  }
+  async function request(path, identity = false, resourceType = 'other') {
+    let target = new URL(path, origin);
+    const seen = new Set();
+    for (let hop = 0; hop <= 5; hop += 1) {
+      admit(target, identity, resourceType);
+      if (seen.has(target.href))
+        throw transportError(
+          'Staged transport redirect is invalid or exceeds its bound',
+          target
+        );
+      seen.add(target.href);
+      const result = await requestHop(`${target.pathname}${target.search}`);
+      if (result.status < 300 || result.status >= 400)
+        return { ...result, finalUrl: target.href };
+      if (
+        identity ||
+        hop === 5 ||
+        ![301, 302, 303, 307, 308].includes(result.status) ||
+        !result.headers.location
+      )
+        throw transportError(
+          'Staged transport redirect is invalid or exceeds its bound',
+          target
+        );
+      try {
+        target = new URL(result.headers.location, target);
+      } catch {
+        throw transportError(
+          'Staged transport redirect is invalid or exceeds its bound',
+          target
+        );
+      }
+    }
+  }
+  async function requestHop(path) {
     const id = sequence++;
     const headersFile = resolve(scratch, `${id}.headers`);
     const bodyFile = resolve(scratch, `${id}.body`);
@@ -217,7 +451,7 @@ async function main({ env = process.env, runCommand = run, browserType } = {}) {
     };
   }
   try {
-    const stamp = await request('/api/build-info');
+    const stamp = await request('/api/build-info', true);
     const identity = JSON.parse(stamp.body.toString());
     if (
       stamp.status !== 200 ||
@@ -239,16 +473,29 @@ async function main({ env = process.env, runCommand = run, browserType } = {}) {
       colorScheme: 'light',
       serviceWorkers: 'block',
     });
+    let documentResponse;
     await context.route('**/*', async (route) => {
-      const target = new URL(route.request().url());
-      if (
-        route.request().method() !== 'GET' ||
-        target.origin !== origin ||
-        target.pathname.startsWith('/api/')
-      )
-        return route.abort('blockedbyclient');
       try {
-        const result = await request(`${target.pathname}${target.search}`);
+        const target = new URL(route.request().url());
+        const resourceType = route.request().resourceType();
+        if (route.request().method() !== 'GET')
+          return route.abort('blockedbyclient');
+        admit(target, false, resourceType);
+        const cached =
+          resourceType === 'document' &&
+          documentResponse?.finalUrl === target.href
+            ? documentResponse
+            : undefined;
+        if (cached) documentResponse = undefined;
+        const { finalUrl, ...result } =
+          cached || (await request(target.href, false, resourceType));
+        // Only pre-resolved navigation can change URL: flattening redirects at
+        // another URL would give HTML and CSS the wrong relative-resource base.
+        if (finalUrl !== target.href)
+          throw transportError(
+            'Staged resource redirect changes its browser URL',
+            new URL(finalUrl)
+          );
         if (route.request().resourceType() === 'stylesheet') {
           if (result.status !== 200)
             throw new Error('Staged stylesheet request failed');
@@ -261,21 +508,47 @@ async function main({ env = process.env, runCommand = run, browserType } = {}) {
           css.set(target.pathname, record);
           cssSources.set(target.pathname, result.body.toString('utf8'));
         }
+        assertFrameworkImageResponse(target, resourceType, result);
         await route.fulfill(result);
       } catch (error) {
-        failures.push(describeFailure(error));
+        const reason = describeFailure(error);
+        failures.push(reason);
+        const rejected =
+          error?.rejectedTarget instanceof URL
+            ? error.rejectedTarget
+            : new URL(route.request().url());
+        blockedResources.push({
+          resourceType: route.request().resourceType(),
+          reason,
+          ...scrubTransportTarget(rejected, origin),
+        });
         await route.abort('failed');
       }
     });
     const viewports = [];
     for (const width of [390, 1440]) {
       await markStage(`viewport-${width}`);
+      navigation = undefined;
       const page = await context.newPage();
       await page.setViewportSize({ width, height: 900 });
-      const response = await page.goto(`${origin}/en`, {
+      documentResponse = await request('/en');
+      const response = await page.goto(documentResponse.finalUrl, {
         waitUntil: 'load',
         timeout: 60000,
       });
+      const finalUrl = URL.parse(page.url());
+      const status = response ? response.status() : null;
+      navigation = {
+        responsePresent: Boolean(response),
+        status:
+          Number.isInteger(status) && status >= 100 && status <= 599
+            ? status
+            : null,
+        finalOrigin: finalUrl?.origin.slice(0, 512) ?? null,
+        finalPath: finalUrl?.pathname.slice(0, 2048) ?? null,
+        http200: status === 200,
+        sameCandidateOrigin: finalUrl?.origin === origin,
+      };
       if (
         !response ||
         response.status() !== 200 ||
@@ -330,9 +603,11 @@ async function main({ env = process.env, runCommand = run, browserType } = {}) {
         };
       }, Object.fromEntries(cssSources));
       assert.ok(
-        !failures.length && css.size > 0,
-        'Candidate CSS did not verify against built bytes'
+        !failures.length,
+        failures.find((value) => FAILURE_REASONS.includes(value)) ||
+          'Staged stylesheet request failed'
       );
+      assert.ok(css.size > 0, 'Unverified stylesheet');
       assert.ok(
         metrics.ruleCount > 0 && metrics.fontFailures === 0,
         'Candidate styles or fonts are missing'
@@ -404,7 +679,10 @@ async function main({ env = process.env, runCommand = run, browserType } = {}) {
           deployment: url,
           stage,
           reason,
+          verifiedStylesheetCount: css.size,
           resourceFailures: [...new Set(failures)].slice(0, 10),
+          blockedResources: blockedResources.slice(0, 10),
+          ...(navigation ? { navigation } : {}),
         },
         null,
         2
@@ -425,6 +703,12 @@ module.exports = {
   proofDirectory,
   responseHeaders,
   safeEnvironment,
+  admitTransportTarget,
+  scrubTransportTarget,
+  validateNextImageQuery,
+  validateRelativeImageUrlParam,
+  WEB_PLATFORM_IMAGE_QUALITIES_ALLOWLIST,
+  WEB_PLATFORM_IMAGE_WIDTHS_ALLOWLIST,
   verifyCss,
   writeProof,
 };

@@ -1,4 +1,17 @@
 import { registry } from './registry.generated';
+export {
+  DEFAULT_FEATURE_EMAIL_DOMAINS,
+  FEATURE_ROLLOUT_STAGES,
+  isFeatureEnabled,
+  isInternalFeatureAudience,
+  validateFeatureRollout,
+} from './audience.mjs';
+export type {
+  FeatureAudienceConfiguration,
+  FeatureAudienceContext,
+  FeatureAudienceUser,
+  FeatureRollout,
+} from './audience.mjs';
 
 export * from './catalog';
 export { registry };
@@ -78,6 +91,8 @@ export interface FlagDefinition<Key extends string = string> {
   readonly key: Key;
   readonly description: string;
   readonly owner: string;
+  /** Workspace entries are inventory-only in the v0 mobile endpoint. */
+  readonly scope?: 'workspace';
   readonly class: FlagClass;
   readonly default: boolean;
   readonly removeBy: string;

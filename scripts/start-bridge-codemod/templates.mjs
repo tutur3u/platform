@@ -417,7 +417,7 @@ import {
 ${proxyImport}import { pageModules } from '${moduleFrom('./', PAGE_MODULES.slice('src/start-bridge/'.length))}';
 import { pages } from '${moduleFrom('./', PAGE_MANIFEST.slice('src/start-bridge/'.length))}';
 
-const loadPage = createServerFn({ method: 'GET' })
+const loadPage = createServerFn({ method: 'POST' })
   .validator((href: string) => href)
   .handler(async ({ data }) => {
     const page = await resolveBridgePage({
@@ -551,6 +551,7 @@ export function cloudflareTsconfig({ app }) {
         moduleResolution: 'Bundler',
         jsx: 'react-jsx',
         noEmit: true,
+        allowImportingTsExtensions: true,
         composite: false,
         declaration: false,
         declarationMap: false,

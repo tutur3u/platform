@@ -2,7 +2,6 @@ import { NextIntlClientProvider } from 'next-intl';
 import { getMessages } from 'next-intl/server';
 import type React from 'react';
 import { MarketingFrame } from '@/components/layouts/marketing-frame';
-import { PrivacyConsent } from '@/components/privacy-consent';
 import { getClientMessages } from '@/i18n/client-messages';
 import { getMarketingMessagePaths } from '@/lib/marketing-render-context';
 import { ScrollToTop } from './scroll-to-top';
@@ -19,13 +18,15 @@ export default async function Layout({ children }: LayoutProps) {
     getMarketingMessagePaths()
   );
 
+  const PrivacyConsent =
+    process.env.NEXT_PUBLIC_COOKIE_CONSENT_BANNER === 'true'
+      ? (await import('@/components/privacy-consent')).PrivacyConsent
+      : null;
   return (
     <NextIntlClientProvider messages={messages}>
       <ScrollToTop />
       <MarketingFrame>{children}</MarketingFrame>
-      {process.env.NEXT_PUBLIC_COOKIE_CONSENT_BANNER === 'true' ? (
-        <PrivacyConsent />
-      ) : null}
+      {PrivacyConsent ? <PrivacyConsent /> : null}
     </NextIntlClientProvider>
   );
 }

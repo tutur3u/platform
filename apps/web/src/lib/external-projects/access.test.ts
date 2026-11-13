@@ -424,7 +424,7 @@ describe('external project access auth dispatch', () => {
     });
 
     const access = await requireWorkspaceExternalProjectAccess({
-      mode: 'manage',
+      mode: 'read',
       request,
       wsId: workspaceId,
     });

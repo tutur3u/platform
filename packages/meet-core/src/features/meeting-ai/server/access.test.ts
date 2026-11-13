@@ -92,7 +92,7 @@ describe('Meet AI satellite authorization', () => {
     expect(response.status).toBe(403);
     expect(mocks.user).not.toHaveBeenCalled();
   });
-  describe('pilot workspace allowlist', () => {
+  describe('workspace-wide mutation denial', () => {
     const allowed = '00000000-0000-4000-8000-0000000000aa';
     const denied = '00000000-0000-4000-8000-0000000000bb';
     const forWorkspace = (wsId: string) => ({
@@ -140,10 +140,12 @@ describe('Meet AI satellite authorization', () => {
       signedInHost(allowed);
       const access = await meetAiAccess(
         request(),
-        forWorkspace(allowed.replaceAll('-', '')),
-        true
+        forWorkspace(allowed.replaceAll('-', ''))
       );
       expect(access.wsId).toBe(allowed);
+      await expect(
+        meetAiAccess(request(), forWorkspace(allowed), true)
+      ).rejects.toMatchObject({ status: 403 });
     });
     for (const stored of ['00000000-0000-4000-8000-0000000000ee', denied]) {
       it.each([
@@ -187,7 +189,7 @@ describe('Meet AI satellite authorization', () => {
         error: 'Meet AI is temporarily unavailable',
       });
     });
-    it('denies an unlisted workspace and allows a listed one', async () => {
+    it('denies mutations for both unlisted and listed workspaces while retaining canonical reads', async () => {
       bindAllowlist(allowed);
       signedInHost();
       expect(
@@ -197,8 +199,11 @@ describe('Meet AI satellite authorization', () => {
           )
         ).status
       ).toBe(403);
-      const access = await meetAiAccess(request(), forWorkspace(allowed), true);
+      const access = await meetAiAccess(request(), forWorkspace(allowed));
       expect(access.wsId).toBe(allowed);
+      await expect(
+        meetAiAccess(request(), forWorkspace(allowed), true)
+      ).rejects.toMatchObject({ status: 403 });
     });
     it('denies with the injected kill switch even if ambient process.env lists the workspace', async () => {
       vi.stubEnv('MEET_AI_ENABLED_WORKSPACE_IDS', allowed);
@@ -210,15 +215,18 @@ describe('Meet AI satellite authorization', () => {
       expect(response.status).toBe(403);
       vi.unstubAllEnvs();
     });
-    it('checks the allowlist against the resolved workspace for personal and handle lookups', async () => {
+    it('retains resolved personal identities but denies writes for personal and handle lookups', async () => {
       bindAllowlist(allowed);
       signedInHost();
       mocks.resolve.mockImplementation(async ({ wsId }) =>
         wsId === 'personal' ? allowed : denied
       );
       expect(
-        (await meetAiAccess(request(), forWorkspace('personal'), true)).wsId
+        (await meetAiAccess(request(), forWorkspace('personal'))).wsId
       ).toBe(allowed);
+      await expect(
+        meetAiAccess(request(), forWorkspace('personal'), true)
+      ).rejects.toMatchObject({ status: 403 });
       // A raw value that happens to be listed does not admit a different workspace.
       expect(
         (

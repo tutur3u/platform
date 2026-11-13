@@ -18,6 +18,7 @@ import logo from '../assets/tuturuuu-logo.png?no-inline';
 import { Footer } from '../components/chrome';
 import { ComingSoon, Hero } from '../components/hero';
 import { HostingSection, Method } from '../components/hosting';
+import { MigrationSection } from '../components/migration';
 import { TrackGlance } from '../components/pulse';
 import type { Lang } from '../components/shared';
 import { TimelineSection } from '../components/timeline';
@@ -26,7 +27,15 @@ import { initialLiveData } from '../live/initial-data';
 import type { LiveData } from '../live/model';
 import { useLiveData } from '../live/use-live-data';
 import { pagePath, ROUTE_PATHS } from '../seo';
+import { BUILD_HOSTING } from '../live/build-hosting';
 import { buildView } from '../view-model';
+import { BUILD_ACTIVITY } from '../insights/build-activity';
+import { buildInsights } from '../insights/model';
+import { useLazyHistory } from '../insights/use-lazy-history';
+import { changelog } from '../changelog/data';
+import { PulseSection } from '../components/insights/pulse-section';
+import { ProductionUpdates } from '../components/insights/updates';
+import { PatchNotes } from '../components/insights/patch-notes';
 
 export function RoadmapPage({ lang }: { lang: Lang }) {
   const navigate = useNavigate();
@@ -76,7 +85,6 @@ export function RoadmapPage({ lang }: { lang: Lang }) {
           data={live.data}
           now={live.now}
           liveCheckFailed={live.state === 'failed'}
-          hostsCheckedAt={initialData.generatedAt}
           onDock={onDock}
         />
       </MarketingShell>
@@ -94,7 +102,6 @@ const RoadmapMain = memo(function RoadmapMain({
   data,
   now,
   liveCheckFailed,
-  hostsCheckedAt,
   onDock,
 }: {
   t: typeof en;
@@ -102,15 +109,41 @@ const RoadmapMain = memo(function RoadmapMain({
   data: LiveData;
   now: number;
   liveCheckFailed: boolean;
-  hostsCheckedAt: string;
   onDock: (docked: boolean) => void;
 }) {
-  const view = useMemo(() => buildView(data, now), [data, now]);
+  const view = useMemo(
+    () => buildView(data, now, undefined, BUILD_HOSTING),
+    [data, now]
+  );
+  const lazy = useLazyHistory();
+  const insights = useMemo(
+    () => buildInsights(view, data, BUILD_ACTIVITY, now),
+    [view, data, now]
+  );
   return (
     <main className="page">
-      <Hero t={t} view={view} lang={lang} data={data} now={now} />
+      <Hero t={t} view={view} lang={lang} insights={insights} />
+      <Suspense>
+        <PulseSection
+          t={t}
+          lang={lang}
+          insights={insights}
+          activity={BUILD_ACTIVITY}
+          lazy={lazy}
+          today={view.today}
+          now={now}
+        />
+      </Suspense>
+      <Suspense>
+        <div
+          className={`catchup${changelog?.releases.length ? '' : ' catchup-single'}`}
+        >
+          <ProductionUpdates t={t} lang={lang} updates={insights.updates} />
+          <PatchNotes t={t} lang={lang} changelog={changelog} />
+        </div>
+      </Suspense>
       <TrackGlance t={t} view={view} />
-      <ComingSoon t={t} />
+      <ComingSoon t={t} lang={lang} />
       {/* Hydration boundaries (nothing suspends; the server renders all of
           it): below the hero, React hydrates section by section, yielding
           between them and starting with the one a reader interacts with. */}
@@ -124,8 +157,9 @@ const RoadmapMain = memo(function RoadmapMain({
           lang={lang}
           view={view}
           main={data.main}
-          hostsCheckedAt={hostsCheckedAt}
+          hosting={BUILD_HOSTING}
         />
+        <MigrationSection t={t} lang={lang} hosting={BUILD_HOSTING} />
         <Method t={t} />
         <Footer
           t={t}

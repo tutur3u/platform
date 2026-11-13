@@ -352,21 +352,7 @@ export {
   type WorkspaceCronHttpMethod,
   type WorkspaceCronJobSummary,
 } from './cron';
-export {
-  type CreateWorkspaceDocumentPayload,
-  type CreateWorkspaceDocumentResponse,
-  createWorkspaceDocument,
-  type DeleteWorkspaceDocumentResponse,
-  deleteWorkspaceDocument,
-  type GetWorkspaceDocumentResponse,
-  getWorkspaceDocument,
-  type ListWorkspaceDocumentsParams,
-  type ListWorkspaceDocumentsResponse,
-  listAllWorkspaceDocuments,
-  listWorkspaceDocuments,
-  type WorkspaceDocumentDetail,
-  type WorkspaceDocumentSummary,
-} from './documents';
+export * from './documents';
 export type {
   CreateWorkspaceQuizPayload,
   ListAllWorkspaceCourseModulesParams,
@@ -469,41 +455,7 @@ export {
   mutateExternalChatSync,
   updateExternalChatSettings,
 } from './external-chat';
-export {
-  addWorkspaceExternalProjectRoleMembers,
-  createWorkspaceExternalProjectRole,
-  deleteWorkspaceExternalProjectRole,
-  getWorkspaceExternalProjectDefaultRole,
-  getWorkspaceExternalProjectMembersContext,
-  getWorkspaceExternalProjectRole,
-  inviteWorkspaceExternalProjectMembers,
-  listWorkspaceExternalProjectMembers,
-  listWorkspaceExternalProjectRoles,
-  removeWorkspaceExternalProjectMember,
-  removeWorkspaceExternalProjectRoleMember,
-  updateWorkspaceExternalProjectDefaultRole,
-  updateWorkspaceExternalProjectRole,
-  type WorkspaceExternalProjectMembersContext,
-} from './external-project-team';
-export type {
-  ExternalProjectSyncManifest,
-  ListWorkspaceExternalProjectMediaQuery,
-  WorkspaceExternalProjectEntryBundleCreatePayload,
-  WorkspaceExternalProjectEntryBundleUpdatePayload,
-  WorkspaceExternalProjectMediaAttachment,
-  WorkspaceExternalProjectMediaItem,
-  WorkspaceExternalProjectMediaPage,
-  WorkspaceExternalProjectMediaType,
-  WorkspaceExternalProjectSyncApplyPayload,
-  WorkspaceExternalProjectSyncApplyResult,
-  WorkspaceExternalProjectSyncDiffPayload,
-  WorkspaceExternalProjectSyncDiffResult,
-  WorkspaceExternalProjectSyncSetupPayload,
-  WorkspaceExternalProjectSyncSetupResult,
-  WorkspaceExternalProjectSyncSnapshot,
-  WorkspaceExternalProjectWebglPackageArtifact,
-  WorkspaceExternalProjectWebglPackageFinalizeResponse,
-} from './external-projects';
+export * from './external-project-exports';
 export {
   applyWorkspaceExternalProjectSyncManifest,
   bulkUpdateWorkspaceExternalProjectEntries,

@@ -8,7 +8,7 @@ export async function GET(
 ) {
   const { wsId } = await params;
   const access = await requireWorkspaceExternalProjectAccess({
-    mode: 'read',
+    mode: 'manage',
     request,
     wsId,
   });

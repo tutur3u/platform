@@ -5,7 +5,7 @@ import type { SidebarGroup, SidebarLabels } from './ui-docs-nav-data';
 import { UiDocsSidebarNav } from './ui-docs-sidebar';
 
 vi.mock('next/navigation', () => ({
-  usePathname: () => '/en/ui/components/button',
+  usePathname: () => '/en/design/components/button',
 }));
 
 const labels: SidebarLabels = {
@@ -53,13 +53,13 @@ describe('UiDocsSidebarNav', () => {
     const primaryNav = screen.getByTestId('ui-docs-primary-nav');
     expect(
       within(primaryNav).getByRole('link', { name: /overview/i })
-    ).toHaveAttribute('href', '/en/ui');
+    ).toHaveAttribute('href', '/en/design');
     expect(
       within(primaryNav).getByRole('link', { name: /Components/i })
-    ).toHaveAttribute('href', '/en/ui/components');
+    ).toHaveAttribute('href', '/en/design/components');
     expect(screen.getByRole('link', { name: 'Button' })).toHaveAttribute(
       'href',
-      '/en/ui/components/button'
+      '/en/design/components/button'
     );
   });
 

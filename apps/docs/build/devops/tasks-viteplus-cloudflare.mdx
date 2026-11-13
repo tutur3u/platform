@@ -158,3 +158,16 @@ that selects its app audience from client input.
 Use the shared scheduling transport and notification view instead of app
 copies. The existing shared workspace invitation card remains the client
 entry for invitation rendering.
+
+### Diagnostics privacy and artifact inspection
+
+Follow `.wrangler/deploy/config.json`'s `configPath` to inspect the emitted
+Wrangler configuration. Void may retain that pointer as
+`.void/preview-deploy-config.json`; its path is still relative to
+`.wrangler/deploy`. Exactly one pointer is allowed. Inspect that target; do not infer the deployed configuration from source
+alone. Both Tasks artifact profiles validate the emitted identity, bindings and
+asset policy. The artifact tests exercise seal/pack/restore for both profiles.
+
+Router, public-model parse, root-entry fallback and startup diagnostics emit
+fixed messages without raw exception objects. Do not log request payloads,
+credentials, cookies, tokens or customer records.

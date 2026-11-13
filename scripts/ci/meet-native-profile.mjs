@@ -12,7 +12,7 @@ import {
   admitAbuseGuardStub,
 } from './meet-native-abuse-guard-stub.mjs';
 import { ASSURANCE_ORIGIN } from './meet-native-assurance.mjs';
-import { sealMeetApp } from './meet-native-inventory.mjs';
+import { admitMeetProductionInputs, PRODUCTION_PROFILE, sealMeetApp, sealMeetProductionApp } from './meet-native-inventory.mjs';
 
 const { validateOutput, verifyManifest, identity, secretNames } = createRequire(
   import.meta.url
@@ -132,10 +132,15 @@ export function appBindings(secret, abuseGuard) {
 export async function inspectMeetGraph(options) {
   closed(
     options,
-    ['appDirectory', 'sourceSHA', 'ownerPackage'],
+    ['appDirectory', 'sourceSHA', 'ownerPackage', ...(Object.hasOwn(options, 'admission') ? ['admission'] : [])],
     'Meet graph options'
   );
-  const { appDirectory, sourceSHA, ownerPackage } = options;
+  const { appDirectory, sourceSHA, ownerPackage, admission } = options;
+  if (Object.hasOwn(options, 'admission')) {
+    closed(admission, ['profile', 'productionProof'], 'Production graph admission');
+    assert.equal(admission.profile, PRODUCTION_PROFILE, 'Unsupported Meet profile');
+    admitMeetProductionInputs(admission.productionProof, { sourceSHA });
+  }
   assert.match(sourceSHA, /^[a-f0-9]{40}$/);
   const app = await realpath(appDirectory);
   assert.equal(app, appDirectory, 'App root must be canonical');
@@ -157,7 +162,10 @@ export async function inspectMeetGraph(options) {
   const root = join(app, 'dist');
   const configRelative = relative(root, artifact.configPath);
   const assetsRelative = relative(root, artifact.assets);
-  const seal = await sealMeetApp(root, { configRelative, assetsRelative });
+  if (admission) admitMeetProductionInputs(admission.productionProof, { sourceSHA,
+    ownerPackageHash: hash(await readFile(ownerPackage)),
+    lockHash: hash(await readFile(join(dirname(dirname(app)), 'bun.lock'))) });
+  const seal = await sealMeetGraph(root, { configRelative, assetsRelative, ...(admission ? { admission } : {}) });
   within(root, artifact.configPath);
   within(root, artifact.main);
   within(root, artifact.assets);
@@ -167,7 +175,8 @@ export async function inspectMeetGraph(options) {
   const lockPath = join(dirname(dirname(app)), 'bun.lock');
   assert.equal(await realpath(lockPath), lockPath);
   return freeze({
-    profile: PROFILE,
+    profile: admission?.profile ?? PROFILE,
+    ...(admission ? { admission: structuredClone(admission) } : {}),
     sourceSHA,
     ownerPackage,
     ownerPackageHash: hash(await readFile(ownerPackage)),
@@ -193,11 +202,20 @@ export async function inspectMeetGraph(options) {
   });
 }
 
+export async function sealMeetGraph(root, options) {
+  const admission = options.admission;
+  if (!Object.hasOwn(options, 'admission')) return sealMeetApp(root, options);
+  closed(admission, ['profile', 'productionProof'], 'Closed graph admission');
+  assert.equal(admission.profile, PRODUCTION_PROFILE, 'Unknown Meet graph profile');
+  return sealMeetProductionApp(root, { ...options, productionProof: admission.productionProof });
+}
+
 export async function assertMeetOriginal(plan) {
   const current = await inspectMeetGraph({
     appDirectory: plan.app,
     sourceSHA: plan.sourceSHA,
     ownerPackage: plan.ownerPackage,
+    ...(plan.admission ? { admission: plan.admission } : {}),
   });
   assert.deepEqual(current, plan, 'Original graph/config/probe/edge mutation');
 }

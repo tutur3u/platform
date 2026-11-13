@@ -33,7 +33,8 @@ it('remembers an invite across login and consumes it once', () => {
   );
   const saved = handoff.cookies.get(MEET_INVITE_COOKIE);
   expect(saved).toMatchObject({
-    value: invite,
+    value: `mn0${invite.slice(3)}`,
+    path: '/',
     httpOnly: true,
     secure: true,
     sameSite: 'lax',
@@ -47,3 +48,33 @@ it('remembers an invite across login and consumes it once', () => {
     clearMeetInvite(NextResponse.next()).cookies.get(MEET_INVITE_COOKIE)?.maxAge
   ).toBe(0);
 });
+
+it.each(['', '/en', '/vi'])(
+  'round trips a compact host-only invite for %s',
+  (locale) => {
+    const target = `${locale}${invite}?notes=1`;
+    const response = rememberMeetInvite(
+      new NextRequest(`https://meet.tuturuuu.com${target}&discard=secret`),
+      NextResponse.next()
+    );
+    const saved = response.cookies.get(MEET_INVITE_COOKIE);
+    expect(saved?.value).toMatch(/^[a-z0-9-]+$/u);
+    expect(response.headers.get('set-cookie')).not.toMatch(/Domain=/iu);
+    const request = new NextRequest('https://meet.tuturuuu.com/', {
+      headers: { cookie: `${MEET_INVITE_COOKIE}=${saved?.value}` },
+    });
+    expect(pendingMeetInvite(request)).toBe(target);
+    const cleared = clearMeetInvite(response).cookies.get(MEET_INVITE_COOKIE);
+    expect(cleared).toMatchObject({ path: '/', maxAge: 0 });
+  }
+);
+
+it.each(['mn0invalid', 'mx1anything', 'mv1//evil.test', 'mn0'])(
+  'rejects malformed compact invite %s',
+  (value) => {
+    const request = new NextRequest('https://meet.tuturuuu.com/', {
+      headers: { cookie: `${MEET_INVITE_COOKIE}=${value}` },
+    });
+    expect(pendingMeetInvite(request)).toBeNull();
+  }
+);

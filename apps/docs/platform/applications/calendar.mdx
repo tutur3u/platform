@@ -588,3 +588,29 @@ Per-calendar failure diagnostics and the pause shortcut currently cover Google i
 [Calendar views and behavior](/platform/applications/calendar-details-1)
 
 [Calendar integration and runtime](/platform/applications/calendar-details-2)
+
+## Opt-in UI SDK category ordering pilot
+
+`CategoryOrderPilot` at
+`@tuturuuu/ui/legacy/calendar/settings/category-order-pilot` is a separate,
+reorder-only companion with the existing category editor's `value`/`onChange`
+shape. No live editor or satellite enables it by default. Existing category
+editing, pointer dragging and server-backed satellite persistence stay owned by
+their current implementations; this pilot does not establish parity with them.
+
+The pilot uses `@ui-sdk/core@0.1.0-beta.1` for roving focus, keyboard draft
+ordering, cancellation, focus retention and localized live announcements.
+Arrows navigate; Space/Enter picks up and drops; arrows and Home/End move a
+picked-up item. Escape or Tab cancels the draft without calling `onChange`.
+Only a changed drop calls `onChange`; the parent owns persistence. Unique,
+nonempty category names are stable identities for this variant. Ambiguous
+names show an error and cannot reorder. English and Vietnamese messages ship
+with the shared UI consumers.
+
+Regression coverage is in
+`packages/ui/src/components/ui/legacy/calendar/settings/category-order-pilot.test.tsx`:
+roles, one tab stop, arrow/Home/End focus, draft/commit timing, cancellation,
+modified-key rejection and duplicate identity rejection, under StrictMode.
+These DOM checks do not establish browser/screen-reader, SSR/hydration or bundle
+acceptance. Exact-commit CI and manual accessibility review are required before
+any live enablement. No agent bridge, adapter package or global SDK CSS is used.

@@ -1,7 +1,7 @@
 import {
   getLegalDocument,
   type LegalLocale,
-  legalChangesCopy,
+  stripInternalReviewSentences,
 } from '@tuturuuu/legal';
 import en from '../../messages/en.json';
 import vi from '../../messages/vi.json';
@@ -54,12 +54,6 @@ export function LegalPage({
             }).format(new Date(`${document.effectiveDate}T00:00:00Z`))}
           </time>
         </p>
-        <LegalMarkdown>
-          {legalChangesCopy[locale].linkLine.replace(
-            '](/legal/changes)',
-            `](/${locale === 'vi' ? 'vi/' : ''}legal/changes)`
-          )}
-        </LegalMarkdown>
       </header>
       <section aria-labelledby="summary">
         <h2 id="summary">{document.summaryTitle}</h2>
@@ -96,7 +90,7 @@ export function LegalPage({
         </section>
       ))}
       <footer>
-        <p>{document.footer}</p>
+        <p>{stripInternalReviewSentences(document.footer)}</p>
         <a href="mailto:legal@tuturuuu.com">{copy.contact}</a>
       </footer>
     </main>

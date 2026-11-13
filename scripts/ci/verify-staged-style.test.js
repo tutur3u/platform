@@ -11,7 +11,9 @@ const {
   writeFile,
 } = require('node:fs/promises');
 const { tmpdir } = require('node:os');
+const { readFileSync } = require('node:fs');
 const { basename, dirname, join, resolve } = require('node:path');
+const root = resolve(__dirname, '../..');
 const {
   FAILURE_REASONS,
   describeFailure,
@@ -19,6 +21,12 @@ const {
   proofDirectory,
   responseHeaders,
   safeEnvironment,
+  admitTransportTarget,
+  scrubTransportTarget,
+  validateNextImageQuery,
+  validateRelativeImageUrlParam,
+  WEB_PLATFORM_IMAGE_QUALITIES_ALLOWLIST,
+  WEB_PLATFORM_IMAGE_WIDTHS_ALLOWLIST,
   verifyCss,
   writeProof,
 } = require('./verify-staged-style');
@@ -193,7 +201,9 @@ test('a failed proof logs its reason and still leaves evidence to upload', async
     deployment: 'https://platform-fixture.vercel.app',
     stage: 'identity',
     reason: 'Unclassified Error:exit-1',
+    verifiedStylesheetCount: 0,
     resourceFailures: [],
+    blockedResources: [],
   });
   assert.ok(!text.includes('SECRET-VALUE'));
 });
@@ -267,4 +277,583 @@ test('every stage change is recorded through one helper', async () => {
   assert.match(source, /await markStage\('browser'\)/u);
   assert.match(source, /await markStage\(`viewport-\$\{width\}`\)/u);
   assert.match(source, /await markStage\('receipt'\)/u);
+});
+
+for (const [name, status, host, accepted] of [
+  ['missing response', null, 'platform-fixture.vercel.app', false],
+  ['non-200 response', 503, 'platform-fixture.vercel.app', false],
+  ['off-origin response', 200, 'elsewhere.example', false],
+  ['same-origin 200', 200, 'platform-fixture.vercel.app', true],
+]) {
+  test(`navigation evidence identifies ${name} without URL secrets`, async (t) => {
+    const temp = await mkdtemp(resolve(tmpdir(), 'staged-navigation-test-'));
+    t.after(() => rm(temp, { recursive: true, force: true }));
+    const sha = 'd'.repeat(40);
+    const origin = 'https://platform-fixture.vercel.app';
+    const finalUrl = `https://USER-SECRET:PASSWORD-SECRET@${host}/en?token=QUERY-SECRET#FRAGMENT-SECRET`;
+    let evaluated = 0;
+    let closed = 0;
+    const page = {
+      setViewportSize: async (size) => {
+        assert.deepEqual(size, { width: 390, height: 900 });
+      },
+      goto: async (url, options) => {
+        assert.equal(url, `${origin}/en`);
+        assert.deepEqual(options, { waitUntil: 'load', timeout: 60000 });
+        return status === null ? null : { status: () => status };
+      },
+      url: () => finalUrl,
+      evaluate: async () => {
+        evaluated += 1;
+        return {};
+      },
+    };
+    const browserType = {
+      launch: async () => ({
+        newContext: async () => ({
+          route: async () => {},
+          newPage: async () => page,
+        }),
+        close: async () => {
+          closed += 1;
+        },
+      }),
+    };
+    const runCommand = async (command, args) => {
+      assert.equal(command, 'vercel');
+      assert.ok(['/api/build-info', '/en'].includes(args[1]));
+      await writeFile(
+        args[args.indexOf('--dump-header') + 1],
+        'HTTP/2 200\r\n\r\n'
+      );
+      await writeFile(
+        args[args.indexOf('--output') + 1],
+        JSON.stringify({
+          commitHash: sha,
+          appName: 'web',
+          environment: 'production',
+        })
+      );
+      return { stdout: '\nTTR_HTTP_STATUS:200' };
+    };
+    const reason = accepted
+      ? 'Unverified stylesheet'
+      : 'Staged public page failed or left the candidate';
+    await assert.rejects(
+      main({
+        env: {
+          VERCEL_STAGED_DEPLOYMENT_URL: origin,
+          VERCEL_STAGED_APP: 'platform',
+          VERCEL_TOKEN: 'TOKEN-SECRET',
+          GITHUB_SHA: sha,
+          RUNNER_TEMP: temp,
+        },
+        runCommand,
+        browserType,
+      }),
+      (error) => error.stagedReason === reason
+    );
+    const proof = join(temp, 'staged-style-proof', sha, 'failure.json');
+    const text = await readFile(proof, 'utf8');
+    const failure = JSON.parse(text);
+    assert.equal(failure.stage, 'viewport-390');
+    assert.equal(failure.reason, reason);
+    assert.deepEqual(failure.resourceFailures, []);
+    assert.deepEqual(failure.navigation, {
+      responsePresent: status !== null,
+      status,
+      finalOrigin: `https://${host}`,
+      finalPath: '/en',
+      http200: status === 200,
+      sameCandidateOrigin: host === 'platform-fixture.vercel.app',
+    });
+    assert.equal(evaluated, accepted ? 1 : 0);
+    assert.equal(closed, 1);
+    assert.equal(page.url(), finalUrl);
+    assert.equal((await stat(proof)).mode & 0o777, 0o600);
+    assert.ok(!text.includes('SECRET'));
+    await assert.rejects(
+      readFile(join(dirname(proof), 'receipt.json')),
+      /ENOENT/
+    );
+  });
+}
+
+// This browser seam deliberately does not re-route a fulfilled redirect, matching
+// Chromium's continuation behavior. A raw 3xx must never reach fulfill.
+async function transportFixture(t, responses, stamp, options = {}) {
+  const temp = await mkdtemp(join(tmpdir(), 'staged-transport-test-'));
+  const previous = process.cwd();
+  process.chdir(temp);
+  t.after(async () => {
+    process.chdir(previous);
+    await rm(temp, { recursive: true, force: true });
+  });
+  const origin = 'https://platform-fixture.vercel.app';
+  const sha = 'e'.repeat(40);
+  const cssPath = '/_next/static/chunks/site.css';
+  const stylesheetRequestUrl =
+    options.stylesheetRequestUrl ?? origin + cssPath;
+  const imageRequestUrl = options.imageRequestUrl;
+  const cssBody = '.flex{display:flex}';
+  await mkdir(join(temp, '.vercel/output/static/_next/static/chunks'), {
+    recursive: true,
+  });
+  await writeFile(join(temp, '.vercel/output/static', cssPath), cssBody);
+  const calls = [],
+    navigations = [],
+    fulfilled = [],
+    blocked = [];
+  let handler;
+  const dispatch = async (url, type = 'document', method = 'GET') => {
+    let result;
+    await handler({
+      request: () => ({
+        url: () => url,
+        method: () => method,
+        resourceType: () => type,
+      }),
+      abort: async () => {
+        blocked.push(url);
+      },
+      fulfill: async (value) => {
+        assert.ok(
+          value.status < 300 || value.status >= 400,
+          'unguarded browser redirect'
+        );
+        fulfilled.push(url);
+        result = value;
+      },
+    });
+    return result;
+  };
+  const browserType = {
+    launch: async (options) => {
+      assert.equal(options.env.VERCEL_TOKEN, undefined);
+      return {
+        close: async () => {},
+        newContext: async () => ({
+          route: async (_, callback) => {
+            handler = callback;
+          },
+          newPage: async () => {
+            let current;
+            return {
+              setViewportSize: async () => {},
+              goto: async (url) => {
+                current = url;
+                navigations.push(url);
+                const result = await dispatch(url);
+                if (!result) return null;
+                if (result.status === 200) {
+                  await dispatch(new URL('banner.svg', url).href, 'image');
+                  if (imageRequestUrl)
+                    await dispatch(imageRequestUrl, 'image');
+                  await dispatch(stylesheetRequestUrl, 'stylesheet');
+                }
+                return { status: () => result.status };
+              },
+              url: () => current,
+              evaluate: async () => ({
+                ruleCount: 1,
+                fontFailures: 0,
+                compared: [{ path: cssPath, expectedRules: 1, servedRules: 1 }],
+                utility: { display: 'flex', gap: 16, padding: 16, radius: 8 },
+              }),
+              screenshot: async ({ path }) => writeFile(path, 'fixture'),
+              close: async () => {},
+            };
+          },
+        }),
+      };
+    },
+  };
+  const env = {
+    VERCEL_STAGED_DEPLOYMENT_URL: origin,
+    VERCEL_STAGED_APP: 'platform',
+    VERCEL_TOKEN: 'FIXTURE-SECRET',
+    GITHUB_SHA: sha,
+    RUNNER_TEMP: temp,
+  };
+  const runCommand = async (command, args, options) => {
+    assert.equal(command, 'vercel');
+    assert.equal(args[0], 'curl');
+    assert.equal(options.env.VERCEL_TOKEN, env.VERCEL_TOKEN);
+    assert.equal(args[args.indexOf('--deployment') + 1], origin);
+    assert.ok(!args.includes('--location') && !args.includes('-L'));
+    assert.ok(!JSON.stringify(args).includes('SECRET'));
+    calls.push(args[1]);
+    const response =
+      args[1] === '/api/build-info'
+        ? (stamp ?? {
+            body: JSON.stringify({
+              commitHash: sha,
+              appName: 'web',
+              environment: 'production',
+            }),
+          })
+        : (responses(args[1]) ??
+          (args[1] === cssPath
+            ? { body: cssBody, type: 'text/css' }
+            : { body: '<html></html>' }));
+    const status = response.status ?? 200;
+    await writeFile(
+      args[args.indexOf('--dump-header') + 1],
+      `HTTP/2 ${status}\r\nContent-Type: ${response.type ?? 'text/html'}\r\n${response.location === undefined ? '' : `Location: ${response.location}\r\n`}\r\n`
+    );
+    await writeFile(args[args.indexOf('--output') + 1], response.body ?? '');
+    return { stdout: `\nTTR_HTTP_STATUS:${status}` };
+  };
+  return {
+    origin,
+    calls,
+    navigations,
+    fulfilled,
+    blocked,
+    dispatch,
+    run: () => main({ env, runCommand, browserType }),
+    failure: async () =>
+      readFile(join(temp, 'staged-style-proof', sha, 'failure.json'), 'utf8'),
+  };
+}
+
+test('exported verifier follows relative and absolute page hops through authenticated curl at the final base URL', async (t) => {
+  const f = await transportFixture(
+    t,
+    (path) =>
+      ({
+        '/en': { status: 302, location: 'welcome/' },
+        '/welcome/': {
+          status: 307,
+          location: 'https://platform-fixture.vercel.app/en/final/',
+        },
+      })[path]
+  );
+  const proof = await f.run();
+  assert.equal(proof.viewports.length, 2);
+  assert.deepEqual(f.navigations, [
+    f.origin + '/en/final/',
+    f.origin + '/en/final/',
+  ]);
+  assert.equal(f.calls.filter((p) => p === '/en').length, 2);
+  assert.equal(f.calls.filter((p) => p === '/welcome/').length, 2);
+  assert.equal(f.calls.filter((p) => p === '/en/final/').length, 2);
+  assert.equal(f.calls.filter((p) => p === '/en/final/banner.svg').length, 2);
+  assert.equal(
+    f.calls.filter((p) => p === '/_next/static/chunks/site.css').length,
+    2
+  );
+  assert.deepEqual(f.blocked, []);
+  const before = f.calls.length;
+  await f.dispatch(f.origin + '/en', 'fetch', 'POST');
+  await f.dispatch(f.origin + '/api', 'fetch');
+  await f.dispatch('https://elsewhere.example/en', 'image');
+  assert.equal(f.calls.length, before);
+  assert.equal(f.blocked.length, 3);
+});
+
+for (const [name, location] of [
+  ['foreign origin', 'https://elsewhere.example/SECRET'],
+  ['API root', '/api'],
+  ['API child', '/api/private'],
+  ['encoded API', '/%61pi/private'],
+  [
+    'credentials',
+    'https://USER-SECRET:PASS-SECRET@platform-fixture.vercel.app/en',
+  ],
+  ['query credentials', '/en?token=SECRET'],
+  ['fragment credentials', '/en#SECRET'],
+  ['missing location', undefined],
+  ['malformed URL', 'https://[invalid'],
+  ['encoded slash API', '/%2fapi/private'],
+  ['nested encoding', '/%2561pi/private'],
+])
+  test(`exported verifier refuses ${name} before a redirect transport request`, async (t) => {
+    const f = await transportFixture(t, () => ({ status: 302, location }));
+    await assert.rejects(f.run());
+    assert.deepEqual(f.calls, ['/api/build-info', '/en']);
+    assert.deepEqual(f.navigations, []);
+    assert.deepEqual(f.fulfilled, []);
+    assert.ok(!(await f.failure()).includes('SECRET'));
+  });
+
+for (const loop of [true, false])
+  test(`exported verifier bounds ${loop ? 'redirect cycles' : 'unique redirect chains'}`, async (t) => {
+    const f = await transportFixture(t, (path) => ({
+      status: 308,
+      location: loop
+        ? '/en'
+        : `/hop-${path === '/en' ? 1 : Number(path.slice(5)) + 1}`,
+    }));
+    await assert.rejects(f.run());
+    assert.equal(f.calls.length, loop ? 2 : 7);
+    assert.deepEqual(f.fulfilled, []);
+  });
+
+test('exported verifier preserves non-200 final navigation failure', async (t) => {
+  const f = await transportFixture(t, (path) =>
+    path === '/en' ? { status: 303, location: '/unavailable' } : { status: 503 }
+  );
+  await assert.rejects(
+    f.run(),
+    (error) =>
+      error.stagedReason === 'Staged public page failed or left the candidate'
+  );
+  const failure = JSON.parse(await f.failure());
+  assert.equal(failure.navigation.status, 503);
+  assert.equal(failure.navigation.finalPath, '/unavailable');
+  assert.deepEqual(f.calls, ['/api/build-info', '/en', '/unavailable']);
+});
+
+test('identity transport cannot follow redirects even to the candidate', async (t) => {
+  const f = await transportFixture(t, () => undefined, {
+    status: 301,
+    location: '/en',
+  });
+  await assert.rejects(f.run());
+  assert.deepEqual(f.calls, ['/api/build-info']);
+  assert.deepEqual(f.navigations, []);
+});
+
+for (const foreign of [true, false])
+  test(`browser resource redirects ${foreign ? 'cannot escape the candidate' : 'cannot flatten at a different base URL'}`, async (t) => {
+    const f = await transportFixture(t, (path) =>
+      path === '/_next/static/chunks/site.css'
+        ? {
+            status: 301,
+            location: foreign
+              ? 'https://elsewhere.example/site.css'
+              : '/other/site.css',
+          }
+        : undefined
+    );
+    await assert.rejects(f.run());
+    assert.ok(!f.calls.some((path) => path.includes('elsewhere')));
+    assert.ok(!f.fulfilled.some((url) => url.endsWith('site.css')));
+    assert.equal(
+      f.calls.filter((path) => path === '/other/site.css').length,
+      foreign ? 0 : 1
+    );
+    const failure = JSON.parse(await f.failure());
+    assert.ok(
+      failure.resourceFailures.includes(
+        foreign
+          ? 'Staged transport destination is not admitted'
+          : 'Staged resource redirect changes its browser URL'
+      )
+    );
+    assert.ok(Array.isArray(failure.blockedResources));
+    assert.equal(
+      failure.blockedResources[0]?.reason,
+      failure.resourceFailures[0]
+    );
+    assert.equal(
+      failure.blockedResources[0]?.origin,
+      foreign ? 'off-candidate' : f.origin
+    );
+    if (foreign) {
+      assert.equal(failure.blockedResources[0]?.classification, 'off-candidate');
+      assert.equal(failure.blockedResources[0]?.pathname, '[foreign]');
+    }
+    assert.ok(!JSON.stringify(failure).includes('SECRET'));
+  });
+
+test('web image optimizer allowlists match apps/web unresolved Next 16 sizing', () => {
+  const configSource = readFileSync(
+    resolve(root, 'apps/web/next.config.ts'),
+    'utf8'
+  );
+  const pkg = JSON.parse(
+    readFileSync(resolve(root, 'apps/web/package.json'), 'utf8')
+  );
+  assert.match(pkg.dependencies.next, /^[\^~]?16\./);
+  assert.ok(!/\bdeviceSizes\b/u.test(configSource));
+  assert.ok(!/\bimageSizes\b/u.test(configSource));
+  assert.ok(!/\bqualities\b/u.test(configSource));
+  assert.ok(WEB_PLATFORM_IMAGE_WIDTHS_ALLOWLIST.has(96));
+  assert.ok(WEB_PLATFORM_IMAGE_WIDTHS_ALLOWLIST.has(640));
+  assert.deepEqual([...WEB_PLATFORM_IMAGE_QUALITIES_ALLOWLIST], [75]);
+});
+
+test('transport admits built-in Next image optimizer queries for image resources', async (t) => {
+  const origin = 'https://platform-fixture.vercel.app';
+  const inner = '/_next/static/media/hero.png';
+  const imageRequestUrl = `${origin}/_next/image?url=${encodeURIComponent(inner)}&w=96&q=75`;
+  const f = await transportFixture(t, (path) =>
+    path.startsWith('/_next/image?')
+      ? { body: 'img', type: 'image/png' }
+      : undefined
+  , undefined, { imageRequestUrl });
+  const proof = await f.run();
+  assert.equal(proof.viewports.length, 2);
+  assert.ok(f.calls.some((path) => path.startsWith('/_next/image?')));
+  assert.ok(!JSON.stringify(proof).includes('hero.png'));
+});
+
+test('transport rejects non-image optimizer bodies at the image endpoint', async (t) => {
+  const origin = 'https://platform-fixture.vercel.app';
+  const imageRequestUrl = `${origin}/_next/image?url=${encodeURIComponent('/images/logo.png')}&w=96&q=75`;
+  const f = await transportFixture(
+    t,
+    (path) =>
+      path.startsWith('/_next/image?')
+        ? { body: '.x{}', type: 'text/css' }
+        : undefined,
+    undefined,
+    { imageRequestUrl }
+  );
+  await assert.rejects(
+    f.run(),
+    (error) =>
+      error.stagedReason === 'Staged image optimizer response is not an image'
+  );
+  const failure = JSON.parse(await f.failure());
+  assert.ok(!JSON.stringify(failure).includes('logo.png'));
+});
+
+test('admitTransportTarget bounds framework image query contracts', () => {
+  const origin = 'https://platform-fixture.vercel.app';
+  const staticPath = '/_next/static/media/hero.png';
+  const imagesPath = '/images/avatar.png';
+  const admit = (href, resourceType = 'image') => {
+    const target = new URL(href, origin);
+    admitTransportTarget(target, origin, { resourceType });
+    validateNextImageQuery(target);
+  };
+  const reject = (href, resourceType = 'image') => {
+    const target = new URL(href, origin);
+    assert.throws(() =>
+      admitTransportTarget(target, origin, { resourceType })
+    );
+    if (
+      resourceType === 'image' &&
+      target.pathname === '/_next/image' &&
+      !target.hash &&
+      !target.username &&
+      !target.password &&
+      target.origin === origin
+    )
+      assert.throws(() => validateNextImageQuery(target));
+  };
+
+  admit(
+    `/_next/image?url=${encodeURIComponent(staticPath)}&w=96&q=75`
+  );
+  admit(
+    `/_next/image?url=${encodeURIComponent(imagesPath)}&w=128&q=75`
+  );
+
+  reject(
+    `/_next/image?url=${encodeURIComponent('https://evil/x.png')}&w=96&q=75`
+  );
+  reject(
+    `/_next/image?url=${encodeURIComponent('//evil/x.png')}&w=96&q=75`
+  );
+  reject(
+    `/_next/image?url=${encodeURIComponent('%2F%2Fevil/x.png')}&w=96&q=75`
+  );
+  reject(
+    `/_next/image?url=${encodeURIComponent(`${origin}${staticPath}`)}&w=96&q=75`
+  );
+  reject(
+    `/_next/image?url=${encodeURIComponent('https://models.dev/logo.png')}&w=128&q=75`
+  );
+  reject(
+    `/_next/image?url=${encodeURIComponent(staticPath)}&w=96&q=75&token=SECRET`
+  );
+  reject(`/_next/image?url=${encodeURIComponent(staticPath)}&q=75`);
+  reject(`/_next/image?url=${encodeURIComponent(staticPath)}&w=96`);
+  reject(`/_next/image?url=${encodeURIComponent(staticPath)}&w=500&q=75`);
+  reject(`/_next/image?url=${encodeURIComponent(staticPath)}&w=96&q=80`);
+  reject(`/_next/static/chunks/site.css?dpl=x`, 'stylesheet');
+  reject(
+    `/_next/image?url=${encodeURIComponent(staticPath)}&w=96&q=75`,
+    'stylesheet'
+  );
+  reject(
+    `https://USER:PASS@platform-fixture.vercel.app/_next/image?url=${encodeURIComponent(staticPath)}&w=96&q=75`
+  );
+  reject(
+    `/_next/image?url=${encodeURIComponent(staticPath)}&w=96&q=75#frag`
+  );
+  reject('/_next/image-extra?url=%2Fx.png&w=96&q=75');
+  reject(
+    `/%5fnext/image?url=${encodeURIComponent(staticPath)}&w=96&q=75`
+  );
+  reject(
+    `/_next/image?url=${encodeURIComponent(`${staticPath}?dpl=SECRET`)}&w=96&q=75`
+  );
+  reject(
+    `/_next/image?url=${encodeURIComponent('/_next/static/chunks/site.css')}&w=96&q=75`
+  );
+  assert.throws(() => validateRelativeImageUrlParam('https://evil'));
+  assert.throws(() => validateRelativeImageUrlParam('//evil/x'));
+  assert.throws(() => validateRelativeImageUrlParam('%2F%2Fevil/x'));
+});
+
+test('scrubTransportTarget never echoes query, credential, or foreign URL material', () => {
+  const origin = 'https://platform-fixture.vercel.app';
+  const frameworkImage = scrubTransportTarget(
+    new URL(
+      `${origin}/_next/image?url=${encodeURIComponent('/_next/static/media/hero.png')}&w=96&q=75`
+    ),
+    origin
+  );
+  assert.equal(frameworkImage.pathname, '/_next/image');
+  assert.equal(frameworkImage.classification, 'framework-image');
+  assert.equal(frameworkImage.searchKeysFrameworkImage, true);
+  assert.ok(!JSON.stringify(frameworkImage).includes('hero.png'));
+
+  const built = scrubTransportTarget(
+    new URL(`${origin}/_next/static/chunks/site.css?dpl=QUERY-SECRET#frag`),
+    origin
+  );
+  assert.equal(built.pathname, '/_next/static/chunks/site.css');
+  assert.equal(built.searchKeysOnlyDpl, true);
+  assert.equal(built.hasSearch, true);
+  assert.ok(!JSON.stringify(built).includes('QUERY'));
+
+  const foreign = scrubTransportTarget(
+    new URL('https://elsewhere.example/SECRET/path.css?token=SECRET'),
+    origin
+  );
+  assert.equal(foreign.origin, 'off-candidate');
+  assert.equal(foreign.pathname, '[foreign]');
+  assert.ok(!JSON.stringify(foreign).includes('SECRET'));
+
+  const apiPath = scrubTransportTarget(
+    new URL(
+      'https://USER-SECRET:PASS-SECRET@platform-fixture.vercel.app/%61pi/private?token=QUERY-SECRET'
+    ),
+    origin
+  );
+  assert.equal(apiPath.pathname, '[redacted]');
+  assert.equal(apiPath.hasCredentials, true);
+  assert.ok(!JSON.stringify(apiPath).includes('SECRET'));
+  assert.ok(!JSON.stringify(apiPath).includes('token='));
+});
+
+test('transport admission rejects same-origin CSS with a query string before curl', async (t) => {
+  const origin = 'https://platform-fixture.vercel.app';
+  const f = await transportFixture(t, () => undefined, undefined, {
+    stylesheetRequestUrl: `${origin}/_next/static/chunks/site.css?dpl=fixture-token`,
+  });
+  await assert.rejects(
+    f.run(),
+    (error) =>
+      error.stagedReason === 'Staged transport destination is not admitted'
+  );
+  assert.ok(!f.calls.some((path) => path.includes('?')));
+  const failure = JSON.parse(await f.failure());
+  assert.equal(failure.verifiedStylesheetCount, 0);
+  assert.deepEqual(failure.resourceFailures, [
+    'Staged transport destination is not admitted',
+  ]);
+  const blocked = failure.blockedResources[0];
+  assert.equal(blocked.reason, failure.resourceFailures[0]);
+  assert.equal(blocked.resourceType, 'stylesheet');
+  assert.equal(blocked.searchKeysOnlyDpl, true);
+  assert.equal(blocked.pathname, '/_next/static/chunks/site.css');
+  assert.ok(!JSON.stringify(failure).includes('fixture-token'));
+  assert.ok(!JSON.stringify(failure).includes('token='));
 });

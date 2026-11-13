@@ -28,3 +28,9 @@ export function getMarketingMessagePaths() {
     maybeBridgeRequest()?.locals.get(PATHNAME) as string | undefined
   );
 }
+
+export function isLandingRender() {
+  return ['/', '/en', '/vi'].includes(
+    maybeBridgeRequest()?.locals.get(PATHNAME) as string
+  );
+}

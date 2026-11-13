@@ -2,9 +2,9 @@ import {
   getProposedLegalDocument,
   type LegalLocale,
   legalChangesCopy,
+  stripInternalReviewSentences,
 } from '@tuturuuu/legal';
 import { LegalMarkdown } from './legal-markdown';
-import { stripInternalReviewSentences } from './proposal-footer';
 
 const kinds = [
   'privacy',

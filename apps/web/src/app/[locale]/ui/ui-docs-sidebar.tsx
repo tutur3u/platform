@@ -66,7 +66,7 @@ export function UiDocsSidebarNav({
       .filter((group) => group.items.length > 0);
   }, [groups, normalizedQuery]);
 
-  const baseHref = `/${locale}/ui`;
+  const baseHref = `/${locale}/design`;
 
   return (
     <ScrollArea className={cn('h-full', className)}>

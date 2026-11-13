@@ -423,3 +423,18 @@ binding declarations with `wrangler types --include-runtime=false` against the
 emitted `dist/server/wrangler.json`; preserve the checked-in declaration preimage
 when generating temporary qualification output. Keep Void scratch output outside
 the authored patch when running changed-file gates.
+
+## RSC supplier qualification
+
+The bridge and generated native app manifests pin `@vitejs/plugin-rsc` to
+`0.5.39`. Update the codemod dependency contract and existing consumers together,
+then regenerate the dependency inventory with
+`node scripts/generate-docs-inventory.js`. Preserve each app's publication hold.
+
+`node --test scripts/start-bridge-codemod/rsc-supplier.test.mjs` exercises the
+installed supplier through the bridge's Vite resolution. It checks that client
+and server reference proxies exclude private imports and implementation text,
+ordinary modules retain their boundary, and async server actions are registered.
+The bridge's CSP and handler suites cover per-response nonce propagation.
+These source checks do not establish emitted Worker, browser, staging or
+production acceptance; qualify those artifacts separately before cutover.

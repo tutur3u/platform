@@ -178,3 +178,23 @@ The root Vitest project `web-e2e-fixtures` runs the employee fixture unit tests:
 `bun x vitest run --project web-e2e-fixtures --maxWorkers=1`.
 The chat bridge fixture remains an explicit SQL qualification target requiring
 its envelope; it is not an ordinary unit test.
+
+## Web API route inventories
+
+Moving a retained handler into `apps/web/src/app/api` changes its source digest
+and import graph even when the endpoint URL stays the same. Refresh each owning
+inventory after the final handler edit:
+
+```bash
+node scripts/generate-web-api-route-wrappers.js --write
+node scripts/generate-docs-inventory.js
+bun run --cwd apps/api generate
+bun apps/web/cloudflare/generate-inventory.ts
+```
+
+Run the corresponding `--check` commands before publishing. The standalone API
+uses `bun run --cwd apps/api registry:check`. The build-free changed-files gate
+checks wrappers and docs inventory; it does not cover the standalone API registry
+or Web Start census. Run these two checks explicitly for Web API route changes.
+Generated inventories locate retained handlers; they do not establish Worker
+runtime acceptance or authorize a cutover.

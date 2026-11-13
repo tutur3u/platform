@@ -1,5 +1,6 @@
 import { useTranslations } from 'next-intl';
 import { HeroVignettesLeft, HeroVignettesRight } from './hero-vignettes';
+import { poster } from './hero-assets';
 import { VideoPlayer } from './video-player';
 
 /** Browser chrome: traffic lights, an active tab, and the address pill. */
@@ -43,18 +44,33 @@ export function VideoHero() {
   const t = useTranslations('landing.hero.video');
   const privacy = useTranslations('privacy-consent');
   return (
-    <VideoPlayer
-      title={t('title')}
-      playLabel={`${t('watchNow')} — ${privacy('play_youtube')}`}
-      watchNow={t('watchNow')}
-      thumbnail={t('thumbnail')}
-      chrome={<FrameChrome tabLabel={t('tab')} />}
-      decorations={
-        <>
-          <HeroVignettesLeft />
-          <HeroVignettesRight />
-        </>
-      }
-    />
+    <div className="relative" data-video-hero>
+      <div data-video-decorations>
+        <HeroVignettesLeft />
+        <HeroVignettesRight />
+      </div>
+      <div className="relative overflow-hidden rounded-xl bg-background">
+        <FrameChrome tabLabel={t('tab')} />
+        <div className="relative aspect-video w-full">
+          <img
+            alt={t('thumbnail')}
+            className="absolute inset-0 block h-full w-full object-cover"
+            src={poster.src}
+            srcSet={poster.srcSet}
+            sizes={poster.sizes}
+            width={1280}
+            height={720}
+            loading="eager"
+            fetchPriority="high"
+            decoding="async"
+          />
+          <VideoPlayer
+            title={t('title')}
+            playLabel={`${t('watchNow')} — ${privacy('play_youtube')}`}
+            watchNow={t('watchNow')}
+          />
+        </div>
+      </div>
+    </div>
   );
 }

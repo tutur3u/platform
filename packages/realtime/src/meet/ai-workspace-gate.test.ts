@@ -11,6 +11,7 @@ const WS = '0f1a64f7-780f-4d30-9d72-5530f204e95c';
 const OTHER = '5e5217de-9bb3-4e20-8d99-526ad3e7e34f';
 const EC = '00000000-0000-4000-8000-0000000000ee';
 const allow = (ids: string) => ({
+  MEET_AI_DISABLED: 'false',
   MEET_AI_PROTECTED_WORKSPACE_IDS: '00000000-0000-4000-8000-0000000000ee',
   MEET_AI_ENABLED_WORKSPACE_IDS: ids,
 });
@@ -145,14 +146,25 @@ describe('Meet AI workspace gate (default-off, allowlist-only)', () => {
     expect(isMeetAiEnabledForWorkspace(WS, allow(`${WS},${EC}`))).toBe(true);
   });
 
-  it.each(['1', 'true', ' TRUE ', '', 'garbage', 'off', 'no'])(
-    'kill switch %j denies every listed workspace',
-    (MEET_AI_DISABLED) => {
-      const env = { ...allow(`${WS},${OTHER}`), MEET_AI_DISABLED };
-      expect(isMeetAiEnabledForWorkspace(WS, env)).toBe(false);
-      expect(isMeetAiEnabledForWorkspace(OTHER, env)).toBe(false);
-    }
-  );
+  it.each([
+    undefined,
+    '1',
+    'true',
+    ' TRUE ',
+    'FALSE',
+    'False',
+    ' false',
+    'false ',
+    ' 0',
+    '',
+    'garbage',
+    'off',
+    'no',
+  ])('kill switch %j denies every listed workspace', (MEET_AI_DISABLED) => {
+    const env = { ...allow(`${WS},${OTHER}`), MEET_AI_DISABLED };
+    expect(isMeetAiEnabledForWorkspace(WS, env)).toBe(false);
+    expect(isMeetAiEnabledForWorkspace(OTHER, env)).toBe(false);
+  });
 
   it.each([true, 1, 0, null, {}])(
     'non-string kill switch %j denies every workspace',
@@ -163,7 +175,7 @@ describe('Meet AI workspace gate (default-off, allowlist-only)', () => {
     }
   );
 
-  it.each(['0', 'false', ' FALSE '])(
+  it.each(['0', 'false'])(
     'kill switch %j is off and leaves the allowlist in charge',
     (MEET_AI_DISABLED) => {
       expect(
@@ -172,6 +184,12 @@ describe('Meet AI workspace gate (default-off, allowlist-only)', () => {
       expect(isMeetAiEnabledForWorkspace(WS, { MEET_AI_DISABLED })).toBe(false);
     }
   );
+
+  it('denies an absent switch even when every other control admits the workspace', () => {
+    const { MEET_AI_DISABLED: _disabled, ...env } = allow(WS);
+    expect(isMeetAiHardDenied(WS, env)).toBe(true);
+    expect(isMeetAiEnabledForWorkspace(WS, env)).toBe(false);
+  });
 
   it('denylist beats the allowlist and matches case and separators', () => {
     const env = {

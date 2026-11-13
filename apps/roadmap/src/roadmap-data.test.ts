@@ -1,3 +1,4 @@
+import './integration.test.ts';
 /**
  * D79 data tests for the public roadmap. Every guard has a broken variant
  * that must fail: a validator that accepts anything, a status engine that
@@ -17,6 +18,8 @@ import './seo.test.ts';
 import './perf.test.ts';
 import './hydration-loader.test.ts';
 import './a11y.test.ts';
+import './hosting.test.ts';
+import './insights/insights.test.ts';
 import { comingSoon, visibleComingSoon } from './content/coming-soon.ts';
 import { showPlans, tracks } from './content/tracks.ts';
 import {
@@ -377,7 +380,7 @@ describe('curated content', () => {
 
   it('keeps the approved plan copy verbatim', () => {
     assert.deepEqual(
-      comingSoon.map(({ title, body }) => ({ title, body })),
+      comingSoon.map(({ title, body }) => ({ title: title.en, body: body.en })),
       [
         {
           title: 'Mira subscription plans',

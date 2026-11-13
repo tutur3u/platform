@@ -46,6 +46,7 @@ import {
 } from './lib/calendar-preference-guard';
 import { getChatAppOrigin } from './lib/chat-app-url';
 import { getContactsAppOrigin } from './lib/contacts-app-url';
+import * as designPublic from './lib/design-public-redirect';
 import { getDriveAppOrigin } from './lib/drive-app-url';
 import { isVersionedExternalProjectAssetDeliveryRequest } from './lib/external-projects/asset-delivery-request';
 import { getFinanceAppOrigin } from './lib/finance-app-url';
@@ -430,6 +431,8 @@ function handleWorkspaceSatelliteRedirectRoute(
 function handlePublicMarketingRedirectRoute(
   req: NextRequest
 ): NextResponse | null {
+  const designRedirect = designPublic.designRedirectResponse(req);
+  if (designRedirect) return designRedirect;
   const { locale, pathnameWithoutLocale } = getLocaleAwarePathname(
     req.nextUrl.pathname
   );
@@ -907,15 +910,9 @@ async function blockSuspiciousAnonymousApiRequest(
   return buildProxyBlockResponse(signal.status, signal.reason, { ipAddress });
 }
 
-const authProxy = createCentralizedAuthProxy({
-  webAppUrl: WEB_APP_URL,
-  // publicPaths is a raw prefix list. `/roadmap` stays on APP_PUBLIC_PATHS
-  // for exact checks, and isAuthProxyPublicPath authorizes `/roadmap/*`
-  // so `/roadmap-private` does not become public.
-  publicPaths: PUBLIC_PATHS.filter((path) => !isRoadmapPublicPath(path)),
-  isPublicPath: isAuthProxyPublicPath,
-  skipApiRoutes: true,
-});
+const authProxy = createCentralizedAuthProxy(
+  designPublic.designAuthOptions(WEB_APP_URL, isAuthProxyPublicPath)
+);
 
 function getRootDynamicSegment(pathname: string): string | null {
   const segments = pathname.split('/').filter(Boolean);
@@ -1335,8 +1332,6 @@ async function webProxy(req: NextRequest): Promise<NextResponse> {
     }
   }
 
-  // Handle authenticated users accessing the root path, root with locale, or
-  // legacy dashboard alias.
   // Skip workspace redirect if no-redirect parameter is present (from /home redirect)
   const isRootPath = req.nextUrl.pathname === '/';
 
@@ -1373,9 +1368,14 @@ async function webProxy(req: NextRequest): Promise<NextResponse> {
     }
   }
 
-  // Continue with locale handling
   const localeRes = handleLocale({ req });
   propagateAuthCookies(authRes, localeRes);
+  if (designPublic.isDesignPublicPath(req.nextUrl.pathname)) {
+    designPublic.applyDesignDocumentCache(
+      localeRes,
+      hasSupabaseSessionCookie(req)
+    );
+  }
   return localeRes;
 }
 

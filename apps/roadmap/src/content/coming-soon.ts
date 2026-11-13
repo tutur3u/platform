@@ -5,8 +5,11 @@ export const comingSoon = [
   {
     id: 'mira-subscription-plans',
     track: 'mira',
-    title: 'Mira subscription plans',
-    body: 'Mira subscription plans at $100 and $200/month for access to Mira at the highest limits and capabilities.',
+    title: { en: 'Mira subscription plans', vi: 'Các gói đăng ký Mira' },
+    body: {
+      en: 'Mira subscription plans at $100 and $200/month for access to Mira at the highest limits and capabilities.',
+      vi: 'Các gói đăng ký Mira với giá $100 và $200/tháng, cho phép sử dụng Mira với hạn mức và khả năng cao nhất.',
+    },
   },
 ] as const;
 

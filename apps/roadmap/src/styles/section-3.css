@@ -1,0 +1,550 @@
+.roadmap[data-nav-compact] .filters {
+  flex: none;
+  overflow: visible;
+}
+
+/* Timeline (week / month / year) */
+.timeline-controls {
+  display: grid;
+  gap: 12px;
+}
+.view-switch {
+  justify-self: start;
+}
+.scrubber {
+  display: grid;
+  grid-template-columns: 36px minmax(0, 1fr) 36px;
+  align-items: center;
+  gap: 6px;
+}
+.scrubber .icon-button:disabled {
+  opacity: 0.35;
+}
+.scrubber-track {
+  display: flex;
+  gap: 4px;
+  overflow-x: auto;
+  scroll-snap-type: x proximity;
+  scrollbar-width: none;
+  -webkit-overflow-scrolling: touch;
+  padding: 4px 2px;
+  mask-image: linear-gradient(
+    90deg,
+    transparent,
+    #000 16px,
+    #000 calc(100% - 16px),
+    transparent
+  );
+}
+.scrubber-track::-webkit-scrollbar {
+  display: none;
+}
+.chip-period {
+  flex: none;
+  scroll-snap-align: center;
+  display: grid;
+  justify-items: center;
+  gap: 4px;
+  width: 44px;
+  padding: 6px 2px;
+  border: 1px solid transparent;
+  border-radius: 10px;
+  background: transparent;
+  color: var(--rm-muted);
+  font-size: 11px;
+  font-variant-numeric: tabular-nums;
+  transition:
+    background-color 0.2s ease,
+    color 0.2s ease,
+    border-color 0.2s ease,
+    transform 0.2s ease;
+}
+.chip-period:hover {
+  background: var(--rm-soft);
+}
+.chip-period:active {
+  transform: scale(0.96);
+}
+.chip-period .bar {
+  display: flex;
+  align-items: flex-end;
+  width: 10px;
+  height: 36px;
+  border-radius: 999px;
+  background: var(--rm-soft);
+  overflow: hidden;
+}
+.chip-period .bar span {
+  width: 100%;
+  border-radius: 999px;
+  background: color-mix(in oklab, var(--rm-sync) 55%, var(--rm-planned));
+}
+.chip-period[aria-current="true"] {
+  border-color: var(--rm-line);
+  background: var(--rm-panel);
+  color: var(--rm-ink);
+  font-weight: 600;
+}
+.chip-period[aria-current="true"] .bar span {
+  background: var(--rm-sync);
+}
+.chip-period.is-now .chip-label {
+  color: var(--rm-live-text);
+  font-weight: 600;
+}
+.chip-label {
+  white-space: nowrap;
+}
+.period-panel {
+  display: grid;
+  gap: 14px;
+  view-transition-name: timeline-panel;
+  animation: panel-in 0.32s cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+@keyframes panel-in {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+}
+::view-transition-old(timeline-panel) {
+  animation: 0.18s ease both vt-out;
+}
+::view-transition-new(timeline-panel) {
+  animation: 0.32s cubic-bezier(0.2, 0.8, 0.2, 1) both vt-in;
+}
+@keyframes vt-out {
+  to {
+    opacity: 0;
+    transform: translateY(-6px);
+  }
+}
+@keyframes vt-in {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+}
+.period-head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: end;
+  justify-content: space-between;
+  gap: 12px;
+}
+.period-head h3 {
+  margin: 0;
+  font-size: 20px;
+  letter-spacing: -0.02em;
+}
+.period-head p {
+  margin: 2px 0 0;
+  color: var(--rm-muted);
+  font-size: 13px;
+}
+.period-stats {
+  display: flex;
+  gap: 16px;
+  margin: 0;
+}
+.period-stats div {
+  display: grid;
+}
+.period-stats dt {
+  order: 2;
+  font-size: 11.5px;
+  color: var(--rm-muted);
+}
+.period-stats dd {
+  margin: 0;
+  font-size: 20px;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+}
+.period-groups {
+  display: grid;
+  gap: 10px;
+}
+.period-group {
+  padding: 14px;
+  border: 1px solid var(--rm-line);
+  border-radius: var(--rm-radius);
+  background: var(--rm-panel);
+}
+.period-group > header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+.period-group h4,
+.planned-next h4 {
+  margin: 0;
+  font-size: 15px;
+}
+.period-group ul,
+.planned-next ul {
+  list-style: none;
+  margin: 8px 0 0;
+  padding: 0;
+  display: grid;
+  gap: 2px;
+}
+.period-group li,
+.planned-next li {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 2px 10px;
+  padding: 7px 0;
+  border-top: 1px solid var(--rm-line);
+  font-size: 14px;
+  line-height: 1.4;
+}
+.period-group li .meta,
+.period-group li a.meta {
+  margin: 0;
+}
+.period-group li.is-deliverable .d-title {
+  font-weight: 600;
+}
+.period-group footer {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  margin-top: 8px;
+}
+.period-group footer .text-button {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 13px;
+}
+.flip {
+  transform: rotate(180deg);
+}
+.planned-next {
+  padding: 14px;
+  border-radius: var(--rm-radius);
+  border: 1px dashed var(--rm-line);
+}
+.planned-next .hint {
+  margin-top: 2px;
+  font-size: 12.5px;
+}
+
+/* Scroll reveal: content is visible without JS; JS opts elements in. */
+[data-reveal] {
+  transition:
+    opacity 0.45s ease,
+    transform 0.45s cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+.js-reveal [data-reveal]:not(.is-visible) {
+  opacity: 0;
+  transform: translateY(12px);
+}
+
+@media (min-width: 720px) {
+  .timeline-controls {
+    grid-template-columns: auto minmax(0, 1fr);
+    align-items: center;
+  }
+  .period-groups {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    align-items: start;
+  }
+  .chip-period {
+    width: 48px;
+  }
+}
+@media (min-width: 1000px) {
+  .period-groups {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .period-panel,
+  .chip-period,
+  [data-reveal] {
+    animation: none !important;
+    transition: none !important;
+  }
+  .js-reveal [data-reveal]:not(.is-visible) {
+    opacity: 1;
+    transform: none;
+  }
+  ::view-transition-old(timeline-panel),
+  ::view-transition-new(timeline-panel) {
+    animation: none;
+  }
+}
+
+/* Workshop pages (/roadmap/workshops/*). Same tokens as the roadmap; mobile
+   first; motion only when the reader allows it. */
+.ws-page {
+  gap: 56px;
+}
+/* EduFest hero: an editorial headline on a painterly wash, one quiet call to
+   action and a product stage, in the spirit of a calm product landing page.
+   No floating decoration; motion is limited to the typing caret. */
+.ws-hero {
+  position: relative;
+  isolation: isolate;
+  padding: 56px 0 0;
+  display: grid;
+  justify-items: center;
+  gap: 22px;
+  text-align: center;
+}
+/* Full-bleed wash, anchored to the hero's top and bottom so it always spans
+   the whole hero and fades into the page: no band, no hard edge. */
+.ws-hero-wash {
+  position: absolute;
+  top: -140px;
+  bottom: 22%;
+  left: calc(50% - 50vw);
+  right: calc(50% - 50vw);
+  z-index: -1;
+  pointer-events: none;
+  background:
+    radial-gradient(38% 46% at 16% 30%, var(--ws-wash-1), transparent 72%),
+    radial-gradient(34% 44% at 84% 22%, var(--ws-wash-2), transparent 72%),
+    radial-gradient(42% 40% at 30% 78%, var(--ws-wash-3), transparent 74%),
+    radial-gradient(36% 38% at 74% 74%, var(--ws-wash-4), transparent 74%);
+  -webkit-mask-image: linear-gradient(
+    to bottom,
+    transparent,
+    #000 14%,
+    #000 70%,
+    transparent
+  );
+  mask-image: linear-gradient(
+    to bottom,
+    transparent,
+    #000 14%,
+    #000 70%,
+    transparent
+  );
+}
+.ws-eyebrow {
+  margin: 0;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 13px;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: color-mix(in oklab, var(--rm-ink) 70%, transparent);
+}
+.ws-eyebrow-dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 999px;
+  background: var(--purple);
+  box-shadow: 0 0 0 4px color-mix(in oklab, var(--purple) 18%, transparent);
+}
+.ws-hero h1 {
+  margin: 0;
+  display: grid;
+  justify-items: center;
+  gap: 14px;
+  width: 100%;
+  font-family: var(--font-display);
+}
+.ws-h1-main {
+  display: block;
+  max-width: 12em;
+  text-wrap: balance;
+  font-size: clamp(42px, 7.4vw, 86px);
+  font-weight: 600;
+  line-height: 1.04;
+  letter-spacing: -0.045em;
+  color: var(--rm-ink);
+}
+/* One emphasised phrase, underlined in brand purple instead of gradient text. */
+.ws-mark {
+  text-decoration-line: underline;
+  text-decoration-color: color-mix(in oklab, var(--purple) 80%, var(--rm-ink));
+  text-decoration-thickness: 0.07em;
+  text-underline-offset: 0.16em;
+  text-decoration-skip-ink: none;
+}
+.ws-h1-sub {
+  max-width: 26ch;
+  text-wrap: balance;
+  font-size: clamp(21px, 3vw, 30px);
+  font-weight: 500;
+  line-height: 1.25;
+  letter-spacing: -0.02em;
+  color: color-mix(in oklab, var(--rm-ink) 72%, transparent);
+}
+.ws-hero .intro {
+  max-width: 40rem;
+  font-size: clamp(16.5px, 1.6vw, 19px);
+  font-weight: 500;
+  line-height: 1.5;
+  color: color-mix(in oklab, var(--rm-ink) 78%, transparent);
+}
+.ws-cta-row {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  align-items: center;
+  gap: 14px 26px;
+}
+.ws-cta {
+  display: inline-flex;
+  align-items: center;
+  min-height: 52px;
+  padding: 0 26px;
+  border: 0;
+  border-radius: 14px;
+  background: var(--rm-ink);
+  color: var(--rm-bg);
+  font: inherit;
+  font-size: 16px;
+  font-weight: 600;
+  letter-spacing: -0.01em;
+  box-shadow: 0 10px 30px -14px
+    color-mix(in oklab, var(--rm-ink) 60%, transparent);
+}
+.ws-cta[aria-disabled="true"] {
+  cursor: not-allowed;
+}
+.ws-cta:focus-visible {
+  outline: 2px solid var(--purple);
+  outline-offset: 3px;
+}
+.ws-event-links {
+  margin: 0;
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 10px 22px;
+  font-size: 15.5px;
+  font-weight: 600;
+}
+.ws-event-links a {
+  min-height: 24px;
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  color: var(--rm-ink);
+  text-decoration: none;
+}
+.ws-event-links a:hover {
+  text-decoration: underline;
+  text-underline-offset: 4px;
+}
+.ws-link-arrow {
+  opacity: 0.7;
+}
+.ws-facts {
+  margin: 0;
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 6px 22px;
+  font-size: 14px;
+}
+.ws-facts > div {
+  display: flex;
+  gap: 8px;
+  align-items: baseline;
+}
+.ws-facts dt {
+  color: var(--rm-muted);
+}
+.ws-facts dd {
+  margin: 0;
+  font-weight: 600;
+  text-align: left;
+}
+.ws-scarcity {
+  margin: -10px 0 0;
+  font-size: 13.5px;
+  color: var(--rm-muted);
+}
+.ws-seats {
+  font-weight: 700;
+  color: color-mix(in oklab, var(--purple) 78%, var(--rm-ink));
+}
+/* The product stage: one large rounded card, like a window into the room. */
+.ws-stage-card {
+  margin: 26px 0 0;
+  width: 100%;
+  max-width: 1120px;
+  padding: 0;
+}
+.ws-stage-scene {
+  position: relative;
+  min-height: 430px;
+  padding: 40px 24px 120px;
+  display: grid;
+  place-items: center;
+  border: 1px solid color-mix(in oklab, var(--rm-ink) 10%, transparent);
+  border-radius: 28px;
+  overflow: hidden;
+  text-align: left;
+  background:
+    radial-gradient(60% 70% at 18% 20%, var(--ws-wash-1), transparent 70%),
+    radial-gradient(50% 60% at 86% 30%, var(--ws-wash-2), transparent 70%),
+    radial-gradient(60% 60% at 50% 100%, var(--ws-wash-4), transparent 70%),
+    color-mix(in oklab, var(--rm-panel) 70%, var(--rm-bg));
+  box-shadow: 0 40px 80px -48px
+    color-mix(in oklab, var(--rm-ink) 45%, transparent);
+}
+.ws-stage-window {
+  width: min(100%, 720px);
+  border: 1px solid color-mix(in oklab, var(--rm-ink) 12%, transparent);
+  border-radius: 18px;
+  background: color-mix(in oklab, var(--rm-panel) 94%, transparent);
+  box-shadow: 0 24px 48px -30px
+    color-mix(in oklab, var(--rm-ink) 50%, transparent);
+}
+.ws-stage-bar {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 14px;
+  border-bottom: 1px solid var(--rm-line);
+  font-size: 12.5px;
+  font-weight: 600;
+}
+.ws-stage-dots {
+  display: inline-flex;
+  gap: 5px;
+}
+.ws-stage-dots i {
+  width: 8px;
+  height: 8px;
+  border-radius: 999px;
+  background: color-mix(in oklab, var(--rm-ink) 18%, transparent);
+}
+.ws-stage-title {
+  flex: 1;
+  color: var(--rm-muted);
+}
+.ws-stage-live {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  color: var(--rm-live-text);
+}
+.ws-stage-live::before {
+  content: "";
+  width: 7px;
+  height: 7px;
+  border-radius: 999px;
+  background: currentColor;
+}
+.ws-stage-body {
+  display: grid;
+  grid-template-columns: 1.35fr 1fr;
+  gap: 16px;
+  padding: 16px;
+}

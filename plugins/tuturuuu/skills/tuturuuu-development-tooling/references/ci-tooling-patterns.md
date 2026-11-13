@@ -180,9 +180,11 @@ broker with shell fan-out. Revert the group to sequential children for rollback.
 
 ## Inactive runtimes until further notice
 
-Docker setup, Rust, and TanStack Start are paused; the Docker cron runner is
-retired. Keep `docker-setup-check.yaml`, Docker-backed E2E jobs, Rust/TanStack
-workflows and direct deploy jobs disabled, including manual dispatch. Retain
+Docker setup and Rust are paused; the Docker cron runner and `apps/tanstack-web`
+are retired. Per-app native TanStack Start on Cloudflare Workers is the active
+target and keeps its CI. Keep `docker-setup-check.yaml`, Docker-backed E2E jobs,
+Rust and `apps/tanstack-web` workflows and direct deploy jobs disabled,
+including manual dispatch. Retain
 policy tests but exclude inactive implementation suites from default discovery.
 Root commands fail visibly rather than starting or refreshing those runtimes.
 `bun update-all` explicitly targets maintained workspaces; Renovate ignores
@@ -719,6 +721,10 @@ Preserve primary errors; receipts or observed errors alone never establish closu
   must also disable cancellation and use that isolated identity; changing only
   the cancellation flag leaves candidates vulnerable to later main pushes. Never
   combine `queue: max` with cancellation enabled.
+- Test and Type Check gate every job on non-draft status as well as label
+  admission. Keep readiness and draft-conversion triggers together; preserve
+  the App label event and required security classification. Verify with
+  `test-type-draft-admission.test.js`.
 - Defer heavy PR validation on drafts before runner allocation, while keeping
   light lint/type checks. Security jobs, including CodeQL analysis and the
   security-egress contract/preflight, remain eligible on drafts. Heavy-only

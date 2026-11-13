@@ -210,6 +210,54 @@ change has no offset. All-day values are plain `yyyy-MM-dd` dates.
 Filling fields from Mira and sending screen context with chat messages are
 separate follow-ups.
 
+## Typed chat response activity
+
+Web and Workspace dispatch an idle typed submission immediately, without a
+batching timer. Queued retries still stop and drain an active stream before the
+next send. The optimistic user bubble and response activity remain visible while
+chat creation or the required Live conversation save barrier holds dispatch.
+The SDK user message replaces the optimistic bubble by message ID; assistant
+text hides activity. Disabled models cannot dispatch, and replacing a chat or
+workspace cancels pending ownership. New composer attachments survive held sends.
+These rules apply to typed Mira chat; Live voice retains its own turn lifecycle.
+
+### New conversation titles
+
+The shared Google new-chat route used by Web and Workspace Mira and Rewise
+creates the chat and persists its initial message before returning `{ id, title }`.
+By default the title is the first message with whitespace collapsed, limited to
+60 graphemes including an ellipsis when truncated. Truncation prefers a word
+boundary and preserves emoji and Vietnamese combining marks; whitespace-only
+messages receive an ellipsis. The original message is persisted unchanged.
+The caller's UUID, creator binding, model normalization and access checks remain
+required. ChatGPT creation uses its separate route.
+
+Title generation does not invoke a model or schedule background work. The
+provisional title remains until an explicit rename; polished titles require a
+durable update with protection against overwriting user renames. This removes a
+title-provider round trip before answer dispatch but does not guarantee a
+100–500 ms response: authentication, persistence and answer generation still run.
+
+Regression coverage: `packages/ai/src/chat/google/new/route.test.ts` verifies
+creation without a title provider, exact initial-message persistence, Unicode
+truncation and authentication/workspace denial paths.
+
+Browser Performance entries expose `mira:submit-to-activity-visible`,
+`mira:submit-to-request-start`, `mira:submit-to-first-text` and
+`mira:submit-to-finish`. Activity records the committed indicator state; first text
+records the first observed rendered text, so neither is a network packet timestamp
+or a guaranteed paint deadline. Request start records prepared transport dispatch
+after temporary authentication. `mira:temp-auth-cache-hit` and
+`mira:temp-auth-cache-miss` measure authentication preparation separately.
+Entries contain stage names and elapsed time only, with no prompt, account,
+workspace, credential or response data. No client logging convention is required:
+inspect entries in browser Performance tools. Server preparation and provider
+latency remain separate from these client activity guarantees.
+
+Regression coverage: `use-mira-message-queue.test.tsx` exercises the real queue
+hook, and `mira-chat-conversation.test.tsx` mounts the real conversation and
+message list in both apps, including dispatch activity and SDK deduplication.
+
 ## Regression coverage
 
 - `packages/ai/src/tools/mira-client-capabilities.test.ts`: resolution, gating,
@@ -271,3 +319,31 @@ separate follow-ups.
   completion-order schedules, checked at the UI, cache and store.
 - `apps/mobile/test/features/assistant/assistant_live_client_action_turn_test.dart`:
   an interruption or new typed turn cancels a pending Live UI action.
+
+
+## Typed-chat credential readiness
+
+Web and Workspace warm the existing temporary chat credential when the Mira panel
+enters the visible viewport. Input focus and typing warm the same workspace and
+credit-source scope. A valid cached credential is reused by the transport; cold
+sends retain the existing authenticated request path. Subscription models skip
+this credential flow.
+
+Refresh runs five seconds before expiry only while the panel is visible and
+activity occurred within the last minute. Hidden, offscreen, unmounted and idle
+panels stop refreshing. Failed warming has no retry loop; later interaction or a
+send can try again. Concurrent requests share one in-flight acquisition, scope
+changes serialize acquisitions, and revocation fences pending results. Query
+state stores only expiry metadata; credentials remain in the existing
+module-local memory cache. Endpoint authorization, scope and TTL are unchanged.
+
+Typed text has no SDK notification throttle or Streamdown word animation. The
+first text delta renders immediately; initial stream metadata and incomplete
+server-side word chunks are not text deltas. The Google response transform in
+`packages/ai/src/chat/google/route.ts` uses word-based `smoothStream` with
+`delayInMs: null`; assessing its buffering belongs to the server response path.
+
+Regression coverage: `use-mira-temp-auth-prefetch.test.tsx` checks visible mount,
+focus, typing, warm sends, expiry, idle/hidden/offscreen bounds and revocation;
+`mira-streaming-paint.test.tsx` renders the real Markdown component without
+advancing timers. Both tests live in each app's dashboard components.

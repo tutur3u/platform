@@ -68,3 +68,34 @@ cloud Supabase configuration do not enable this exception. Production shared
 domain behavior is unchanged. Regression coverage lives in
 `packages/auth/src/app-session-local-cookies.test.ts`; the browser lifecycle spec
 covers signup, workspace creation, invitations and task CRUD.
+
+## Account switch serialization
+
+Web account switches lock the verified vault device and target session in one
+PostgreSQL transaction. Captured MVCC row identities reject state changed while
+a switch waited for admission. These tokens cover an in-flight comparison only;
+they are not durable operation identifiers. Session and active-account writes use
+the same connection and check affected-row counts. This path requires the private
+database connection configured for `platform-sql.ts`, with read/update/delete
+access to the existing private vault tables. It adds no schema or journal.
+
+The Web client shares switch admission across modal lifetimes, retains only the
+latest queued intent, and suppresses stale navigation after query invalidation.
+Web Locks serializes participating tabs on the same origin; a metadata-only
+local-storage intent token suppresses superseded callbacks across those tabs.
+Browsers without Web Locks retain per-document serialization only.
+
+**GAP-01 partial: cross-origin Set-Cookie ordering OPEN.** Satellite direct
+requests, response-cookie delivery and competing session refresh writers are
+outside this switch-only guarantee. A database commit and a stale callback check
+cannot order browser cookie application. Canonical coordination and cookie
+finalization remain a proposal; this change does not establish full session
+ordering or exactly-once provider effects.
+
+Regression coverage: `switch-intent.test.ts` covers latest-intent admission,
+asynchronous callback fencing and transport failure without replay.
+`switch-transaction.test.ts` exercises real PostgreSQL locks, stale device
+versions, credential rejection and rollback against a disposable loopback
+`gap01_fixture` database. Supply `GAP01_TEST_DATABASE_URL` for that suite; an
+unset variable skips it. Provider bookkeeping remains fixture-based in
+`vault-switch.test.ts`; it does not prove locking or deployed provider behavior.

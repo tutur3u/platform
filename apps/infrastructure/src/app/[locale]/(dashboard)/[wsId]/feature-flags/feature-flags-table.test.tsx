@@ -180,3 +180,28 @@ describe('feature flags read model and table', () => {
     ).toHaveAttribute('href', '/root/workspaces');
   });
 });
+
+it('shows configured stage, owner and removal date', () => {
+  const model = buildFeatureFlagDashboardModel(
+    new Date('2026-11-09T00:00:00Z'),
+    {
+      environments: ['development', 'staging', 'production'],
+      flags: [
+        {
+          ...base,
+          rollout: {
+            stage: 'internal',
+            owner: 'rollout-owner',
+            removeBy: '2026-11-11',
+          },
+        },
+      ],
+    }
+  );
+  const group = model.groups[0];
+  if (!group) throw new Error('missing group fixture');
+  render(<FeatureFlagsTable group={group} t={t} />);
+  expect(screen.getByText('stages.internal')).toBeInTheDocument();
+  expect(screen.getByText('rollout-owner')).toBeInTheDocument();
+  expect(screen.getByText('2026-11-11')).toBeInTheDocument();
+});

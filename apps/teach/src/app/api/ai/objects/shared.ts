@@ -8,6 +8,7 @@ import {
 import { withAiMemory } from '@tuturuuu/ai/memory';
 import { requireTeachWorkspaceAccess } from '@tuturuuu/education-core/teach/api';
 import type { TypedSupabaseClient } from '@tuturuuu/supabase/types';
+import { guardApiProxyBody } from '@tuturuuu/utils/api-proxy-body';
 import { invalidateAiCreditSnapshot } from '@tuturuuu/utils/ai-temp-auth';
 import {
   createTextStreamResponse,
@@ -41,6 +42,15 @@ const SAFETY_SETTINGS = [
 
 type ObjectGenerationConfig<TInput extends { wsId: string }> = {
   buildPrompt: (input: TInput) => string;
+  buildMessages?: (input: TInput) => { system: string; user: string };
+  validateInput?: (
+    input: TInput,
+    access: { db: TypedSupabaseClient; wsId: string }
+  ) => Promise<NextResponse | null>;
+  useMemory?: boolean;
+  redactErrors?: boolean;
+  abortOnDisconnect?: boolean;
+  requestByteLimit?: number;
   customIdPrefix: string;
   outputSchema: z.ZodType;
   requestSchema: z.ZodType<TInput>;
@@ -211,6 +221,13 @@ export function createTeachObjectGenerationHandler<
         return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
       }
 
+      if (config.requestByteLimit) {
+        const rejected = await guardApiProxyBody(
+          request,
+          config.requestByteLimit
+        );
+        if (rejected) return rejected;
+      }
       let rawBody: unknown;
       try {
         rawBody = await request.json();
@@ -238,6 +255,11 @@ export function createTeachObjectGenerationHandler<
 
       const { normalizedWsId } = access;
       const sbAdmin = access.sbAdmin as TypedSupabaseClient;
+      const validationError = await config.validateInput?.(parsedBody.data, {
+        db: sbAdmin,
+        wsId: normalizedWsId,
+      });
+      if (validationError) return validationError;
       const featureAccess = await isChatEnabled(sbAdmin, normalizedWsId);
 
       if (featureAccess === 'error') {
@@ -282,10 +304,13 @@ export function createTeachObjectGenerationHandler<
         );
       }
 
-      const prompt = config.buildPrompt(parsedBody.data);
+      const messages = config.buildMessages?.(parsedBody.data);
+      const prompt = messages?.user ?? config.buildPrompt(parsedBody.data);
       // UTF-8 bytes are a deliberately conservative upper bound for prompt
       // tokens and keep the reservation safe without provider tokenization.
-      const estimatedInputTokens = new TextEncoder().encode(prompt).length;
+      const estimatedInputTokens = new TextEncoder().encode(
+        (messages?.system ?? '') + prompt
+      ).length;
       const reservationCredits = await calculateReservationCredits(sbAdmin, {
         inputTokens: estimatedInputTokens,
         maxOutputTokens: cappedMaxOutput,
@@ -364,7 +389,7 @@ export function createTeachObjectGenerationHandler<
       try {
         const handleStreamError = async (error: unknown) => {
           console.error('Teach object-generation stream failed', {
-            error,
+            error: config.redactErrors ? 'Provider stream failed' : error,
             source: config.source,
             userId: context.user.id,
             wsId: normalizedWsId,
@@ -372,16 +397,21 @@ export function createTeachObjectGenerationHandler<
           await releaseReservation('stream_error');
         };
         const result = streamText({
-          model: await withAiMemory({
-            customId: `${config.customIdPrefix}-${Date.now()}`,
-            model: google(MODEL_NAME),
-            product: 'teach',
-            source: config.source,
-            surface: config.surface,
-            userId: context.user.id,
-            wsId: normalizedWsId,
-          }),
+          model:
+            config.useMemory === false
+              ? google(MODEL_NAME)
+              : await withAiMemory({
+                  customId: `${config.customIdPrefix}-${Date.now()}`,
+                  model: google(MODEL_NAME),
+                  product: 'teach',
+                  source: config.source,
+                  surface: config.surface,
+                  userId: context.user.id,
+                  wsId: normalizedWsId,
+                }),
           prompt,
+          ...(messages ? { system: messages.system } : {}),
+          ...(config.abortOnDisconnect ? { abortSignal: request.signal } : {}),
           output: Output.object({ schema: config.outputSchema }),
           ...(cappedMaxOutput ? { maxOutputTokens: cappedMaxOutput } : {}),
           onFinish: async ({ usage }) => {
@@ -435,7 +465,7 @@ export function createTeachObjectGenerationHandler<
       } catch (error) {
         await releaseReservation('provider_start_error');
         console.error('Failed to start Teach object generation', {
-          error,
+          error: config.redactErrors ? 'Provider start failed' : error,
           source: config.source,
           userId: context.user.id,
           wsId: normalizedWsId,

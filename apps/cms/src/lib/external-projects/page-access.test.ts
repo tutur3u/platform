@@ -1,6 +1,10 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
-const mocks = vi.hoisted(() => ({ user: vi.fn(), permissions: vi.fn() }));
+const mocks = vi.hoisted(() => ({
+  user: vi.fn(),
+  permissions: vi.fn(),
+  bindingRead: vi.fn(),
+}));
 vi.mock('@tuturuuu/satellite/auth', () => ({
   getSatelliteAppSessionUser: mocks.user,
 }));
@@ -10,23 +14,30 @@ vi.mock('@tuturuuu/utils/workspace-helper', () => ({
 }));
 vi.mock('@tuturuuu/supabase/next/server', () => ({
   createAdminClient: async () => ({
-    from: (table: string) => ({
-      select: () => ({
-        eq: () => ({
-          maybeSingle: async () => ({
-            data:
-              table === 'workspace_external_project_bindings'
-                ? {
-                    canonical_project_id: 'first-site',
-                    is_enabled: true,
-                    settings: {},
-                  }
-                : { id: 'first-site', is_active: true, allowed_features: [] },
-            error: null,
+    from: (table: string) => {
+      if (table === 'workspace_external_project_bindings') mocks.bindingRead();
+      return {
+        select: () => ({
+          eq: () => ({
+            maybeSingle: async () => ({
+              data:
+                table === 'workspace_external_project_bindings'
+                  ? {
+                      canonical_project_id: 'first-site',
+                      is_enabled: true,
+                      settings: {},
+                    }
+                  : {
+                      id: 'first-site',
+                      is_active: true,
+                      allowed_features: ['chat'],
+                    },
+              error: null,
+            }),
           }),
         }),
-      }),
-    }),
+      };
+    },
   }),
 }));
 
@@ -68,12 +79,22 @@ describe('CMS page role gates', () => {
     }
   );
 
-  it('denies a non-member', async () => {
+  it('preserves connected chat access under its existing explicit read permission', async () => {
+    grant(['view_chat']);
+    expect(await getCmsWorkspaceAccess(wsId)).toMatchObject({
+      canAccessWorkspace: false,
+      canAccessConnectedChat: true,
+      canPublishPages: false,
+    });
+  });
+
+  it('denies a non-member without reading the site binding', async () => {
     mocks.permissions.mockResolvedValue(null);
     expect(await getCmsWorkspaceAccess(wsId)).toMatchObject({
       canAccessWorkspace: false,
       canPublishPages: false,
     });
+    expect(mocks.bindingRead).not.toHaveBeenCalled();
   });
 
   it('denies an unauthenticated actor', async () => {
@@ -83,6 +104,7 @@ describe('CMS page role gates', () => {
       canPublishPages: false,
     });
     expect(mocks.permissions).not.toHaveBeenCalled();
+    expect(mocks.bindingRead).not.toHaveBeenCalled();
   });
 
   it('fails closed when permission resolution fails', async () => {
@@ -90,5 +112,6 @@ describe('CMS page role gates', () => {
     await expect(getCmsWorkspaceAccess(wsId)).rejects.toThrow(
       'permission lookup failed'
     );
+    expect(mocks.bindingRead).not.toHaveBeenCalled();
   });
 });

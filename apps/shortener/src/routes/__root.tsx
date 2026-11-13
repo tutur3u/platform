@@ -67,6 +67,7 @@ export const Route = createRootRoute({
   errorComponent: ({ error, reset }) => (
     <AppErrorBoundary
       appName="Shortener"
+      chrome="page"
       error={
         error instanceof Error
           ? error

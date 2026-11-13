@@ -136,20 +136,9 @@ async function loadVerifiedTaskBoardContext({
   };
 }
 
-async function buildTaskBoardContextInstruction({
-  resolvedWorkspaceContext,
-  supabase,
-  taskBoardContext,
-}: {
-  resolvedWorkspaceContext: MiraWorkspaceContextState;
-  supabase: SupabaseClientLike;
-  taskBoardContext?: ChatRequestTaskBoardContext;
-}) {
-  const verifiedContext = await loadVerifiedTaskBoardContext({
-    resolvedWorkspaceContext,
-    supabase,
-    taskBoardContext,
-  });
+function taskBoardInstructionFor(
+  verifiedContext: Awaited<ReturnType<typeof loadVerifiedTaskBoardContext>>
+) {
   if (!verifiedContext) return null;
 
   return `## Current Task Board
@@ -210,33 +199,41 @@ export async function prepareMiraRuntime({
     };
   }
 
-  let withoutPermission: PermissionResultLike['withoutPermission'];
   const denyPermissionByDefault = () => true;
-  withoutPermission = denyPermissionByDefault;
   const permissionCache = new Map<
     string,
     Promise<PermissionResultLike | null>
   >();
-  try {
-    const pending = getPermissions({
-      wsId: resolvedWorkspaceContext.wsId,
-      ...(user ? { user } : { request }),
-    });
-    permissionCache.set(resolvedWorkspaceContext.wsId, pending);
-    const permissionsResult = await pending;
-    if (permissionsResult?.withoutPermission) {
-      withoutPermission = permissionsResult.withoutPermission;
+  const permissionsPromise = (async () => {
+    try {
+      const pending = getPermissions({
+        wsId: resolvedWorkspaceContext.wsId,
+        ...(user ? { user } : { request }),
+      });
+      permissionCache.set(resolvedWorkspaceContext.wsId, pending);
+      const permissionsResult = await pending;
+      return permissionsResult?.withoutPermission ?? denyPermissionByDefault;
+    } catch (permErr) {
+      console.error('Failed to get permissions for Mira tools:', permErr);
+      return denyPermissionByDefault;
     }
-  } catch (permErr) {
-    console.error('Failed to get permissions for Mira tools:', permErr);
-  }
-
-  const { timezone: resolvedTimezone } = await resolveMiraTimezone({
+  })();
+  const timezonePromise = resolveMiraTimezone({
     requestTimezone: timezone,
     supabase: miraSupabase,
     userId,
     wsId: resolvedWorkspaceContext.wsId,
   });
+  const boardPromise = loadVerifiedTaskBoardContext({
+    resolvedWorkspaceContext,
+    supabase: miraSupabase,
+    taskBoardContext,
+  }).then(
+    (context) => ({ ok: true as const, context }),
+    (error: unknown) => ({ ok: false as const, error })
+  );
+  const [withoutPermission, { timezone: resolvedTimezone }, boardResult] =
+    await Promise.all([permissionsPromise, timezonePromise, boardPromise]);
 
   const ctx: MiraToolContext = {
     userId,
@@ -273,11 +270,8 @@ export async function prepareMiraRuntime({
 
   let miraSystemPrompt: string;
   try {
-    const taskBoardInstruction = await buildTaskBoardContextInstruction({
-      resolvedWorkspaceContext,
-      supabase: miraSupabase,
-      taskBoardContext,
-    });
+    if (!boardResult.ok) throw boardResult.error;
+    const taskBoardInstruction = taskBoardInstructionFor(boardResult.context);
     miraSystemPrompt = await buildMiraPrompt({
       userId,
       wsId: resolvedWorkspaceContext.wsId,

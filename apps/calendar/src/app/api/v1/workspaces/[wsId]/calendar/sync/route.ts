@@ -16,6 +16,10 @@ import {
   providerSyncSignal,
 } from '@/lib/calendar/provider-sync-budget';
 import { createProviderEvent } from '@/lib/calendar/provider-writes';
+import {
+  sanitizeSyncErrorMessage,
+  serializeSyncFailures,
+} from '@/lib/calendar/sync-diagnostics';
 import { classifyCalendarSyncError } from '@/lib/calendar/sync-errors';
 import {
   getCalendarSyncPreferences,
@@ -466,17 +470,14 @@ export async function POST(
       .update({
         status: partialFailure ? 'failed' : 'completed',
         error_type: partialFailure ? failureType : null,
-        error_stack_trace: JSON.stringify({
-          version: 1,
-          failedCalendars: [
-            ...('failedCalendars' in googleSummary
-              ? googleSummary.failedCalendars
-              : []),
-            ...('failedCalendars' in microsoftSummary
-              ? microsoftSummary.failedCalendars
-              : []),
-          ],
-        }),
+        error_stack_trace: serializeSyncFailures([
+          ...('failedCalendars' in googleSummary
+            ? googleSummary.failedCalendars
+            : []),
+          ...('failedCalendars' in microsoftSummary
+            ? microsoftSummary.failedCalendars
+            : []),
+        ]),
         error_message: partialFailure
           ? 'Some calendars or events could not be synchronized'
           : null,
@@ -525,13 +526,16 @@ export async function POST(
           status: 'failed',
           end_time: new Date().toISOString(),
           error_type: classifyCalendarSyncError(error),
-          error_message:
-            error instanceof Error ? error.message : 'Internal server error',
+          error_message: sanitizeSyncErrorMessage(
+            error instanceof Error ? error.message : 'Internal server error'
+          ),
         })
         .eq('id', dashboardRunId);
     }
     return jsonError(
-      error instanceof Error ? error.message : 'Internal server error',
+      sanitizeSyncErrorMessage(
+        error instanceof Error ? error.message : 'Internal server error'
+      ),
       error instanceof LegacyCalendarWriteError ? error.status : 500,
       { code: classifyCalendarSyncError(error) }
     );

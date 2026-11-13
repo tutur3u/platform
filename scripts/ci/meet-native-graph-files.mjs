@@ -12,13 +12,13 @@ import {
 } from 'node:fs/promises';
 import { basename, dirname, join, relative } from 'node:path';
 import { readFileSnapshot, readRegularFile } from '../safe-fs.js';
-import { sealMeetApp } from './meet-native-inventory.mjs';
 import {
   admitRegistry,
   assertMeetOriginal,
   closed,
   hash,
   within,
+  sealMeetGraph,
 } from './meet-native-profile.mjs';
 import {
   captureDiagnosticSnapshot,
@@ -41,7 +41,7 @@ async function copySealed(plan, target) {
     else await copyFile(within(root, join(root, name)), destination);
   }
   assert.deepEqual(
-    await sealMeetApp(target, plan),
+    await sealMeetGraph(target, plan),
     seal,
     'Graph copy mutation'
   );
@@ -187,7 +187,7 @@ export async function assertMeetCopy(plan, prepared, beforeLoad = false) {
   for (const [name, role] of Object.entries(prepared.roles)) {
     assert.deepEqual(
       await (name === 'app'
-        ? sealMeetApp(role.root, { ...plan, allowSdkWorkingDir: !beforeLoad })
+        ? sealMeetGraph(role.root, { ...plan, allowSdkWorkingDir: !beforeLoad })
         : beforeLoad
           ? sealArtifact(role.root)
           : inventoryRole(role)),

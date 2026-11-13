@@ -1,3 +1,5 @@
+import type { FeatureRollout } from './audience.mjs';
+
 export type FlagEnvironment = 'development' | 'staging' | 'production';
 export type FlagFamily = 'mobile-runtime' | 'workspace-secret' | 'mobile-build';
 /**
@@ -20,6 +22,7 @@ export type FlagLifecycleStatus =
 
 export interface CatalogFlag {
   readonly key: string;
+  readonly rollout?: FeatureRollout;
   readonly family: FlagFamily;
   readonly kind: FlagKind;
   readonly scope: FlagScope;

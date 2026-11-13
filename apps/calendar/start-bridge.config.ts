@@ -19,7 +19,11 @@ export default defineBridgeAppConfig({
                 '127.0.0.1:7806',
               ]
             : invalidCalendarDeploymentProfile(),
-    mountHosts: [],
+    mountHosts:
+      process.env.CALENDAR_DEPLOYMENT_PROFILE === 'production'
+        ? ['tuturuuu.com']
+        : [],
+    basePath: '/calendar',
     unknownHost: 'reject',
   },
   csp: defaultContentSecurityPolicy,

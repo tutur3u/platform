@@ -549,7 +549,6 @@ export async function listWorkspaceExternalProjectBindingAudits(
     }
   );
 }
-
 export async function getWorkspaceExternalProjectStudio(
   workspaceId: string,
   options?: InternalApiClientOptions
@@ -560,6 +559,7 @@ export async function getWorkspaceExternalProjectStudio(
       binding: WorkspaceExternalProjectBinding;
     } & ExternalProjectStudioData
   >(`/api/v1/workspaces/${encodePathSegment(workspaceId)}/external-projects`, {
+    query: { view: 'content' },
     cache: 'no-store',
   });
 }

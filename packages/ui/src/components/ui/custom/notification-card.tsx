@@ -40,6 +40,7 @@ import {
   notificationDisplayText,
 } from './notification-code-text';
 import { useNotificationRuntime } from './notification-runtime';
+import { invalidateWorkspaceInvitationCaches } from './workspace-invitation-cache';
 
 dayjs.extend(relativeTime);
 interface NotificationCardProps {
@@ -108,25 +109,19 @@ export function NotificationCard({
           await (accept
             ? acceptWorkspaceInvite(targetWsId)
             : declineWorkspaceInvite(targetWsId));
+          await invalidateWorkspaceInvitationCaches(
+            queryClient,
+            notification.user_id
+          );
           await updateNotificationMetadata(notification.id, {
             action_taken: accept ? 'accepted' : 'declined',
             action_timestamp: new Date().toISOString(),
           });
 
-          await Promise.all([
-            queryClient.invalidateQueries({
-              queryKey: ['workspaces'],
-              refetchType: 'active',
-            }),
-            queryClient.invalidateQueries({
-              queryKey: ['notifications'],
-              refetchType: 'active',
-            }),
-            queryClient.refetchQueries({
-              queryKey: ['notifications'],
-              type: 'active',
-            }),
-          ]);
+          await queryClient.refetchQueries({
+            queryKey: ['notifications'],
+            type: 'active',
+          });
 
           toast.success(accept ? acceptedText : declinedText);
 

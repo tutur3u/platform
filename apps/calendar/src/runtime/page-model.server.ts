@@ -16,7 +16,8 @@ import { workspaceModel, workspaceShellModel } from './workspace-model.server';
 
 export async function loadPageModel(path: string) {
   const current = calendarRequest();
-  const url = new URL(path, current.request.url);
+  const base = calendarBase(new URL(current.request.url));
+  const url = new URL(base?.withBase(path) ?? path, current.request.url);
   if (url.origin !== new URL(current.request.url).origin)
     throw new Error('Invalid Calendar page origin');
   return withCalendarRequest(

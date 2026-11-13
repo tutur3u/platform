@@ -1,5 +1,6 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { BASE_URL } from '@/constants/common';
+import { createVaultSqlFixture } from './vault-sql-fixture';
 
 vi.mock('@/constants/common', () => ({ BASE_URL: 'https://tuturuuu.com' }));
 
@@ -197,6 +198,20 @@ const auth = vi.hoisted(() => ({
 const encryptCalls = vi.hoisted(() => ({ n: 0 }));
 const cookieWrites = vi.hoisted(() => [] as string[]);
 const rpc = vi.hoisted(() => vi.fn());
+
+vi.mock('@/lib/database/platform-sql', () => ({ getPlatformSql: () => ({}) }));
+vi.mock('./switch-transaction', () => ({
+  StaleAccountSwitchError: class extends Error {},
+  withAccountSwitchTransaction: async (
+    _sql: unknown,
+    _device: unknown,
+    _hash: unknown,
+    _account: unknown,
+    effect: (
+      transaction: ReturnType<typeof createVaultSqlFixture>
+    ) => Promise<unknown>
+  ) => effect(createVaultSqlFixture(store)),
+}));
 
 vi.mock('next/headers', () => ({
   cookies: () =>

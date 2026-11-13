@@ -195,21 +195,22 @@ function WorkspacePickerContentInner({
         {restoring ? t('hidden_workspaces_description') : t('select_workspace')}
       </Description>
       {searchVisible && (
-        <div className="flex gap-2 px-4 pt-3">
-          <Input
-            ref={input}
-            value={search}
-            onChange={(event) => setSearch(event.target.value)}
-            placeholder={t('search_workspace')}
-            aria-label={t('search_workspace')}
-            onKeyDown={moveFocus}
-            className="h-9"
-          />
-          <div className="w-9 shrink-0">
+        <div className="px-4 pt-3">
+          <div className="relative">
+            <Input
+              ref={input}
+              value={search}
+              onChange={(event) => setSearch(event.target.value)}
+              placeholder={t('search_workspace')}
+              aria-label={t('search_workspace')}
+              onKeyDown={moveFocus}
+              className="h-9 pr-10"
+            />
             {query && (
               <Button
                 variant="ghost"
                 size="icon"
+                className="absolute inset-y-0 right-0"
                 aria-label={t('clear_search')}
                 onClick={() => {
                   setSearch('');

@@ -209,6 +209,26 @@ const staticMarketingRoutes = [
     heading: 'Setup',
   },
   {
+    path: `/${DEFAULT_LOCALE}/design`,
+    heading: 'Tuturuuu UI',
+  },
+  {
+    path: `/${DEFAULT_LOCALE}/design/components`,
+    heading: 'Components',
+  },
+  {
+    path: `/${DEFAULT_LOCALE}/design/components/button`,
+    heading: 'Button',
+  },
+  {
+    path: `/${DEFAULT_LOCALE}/design/contributing`,
+    heading: 'Contributing',
+  },
+  {
+    path: `/${DEFAULT_LOCALE}/design/setup`,
+    heading: 'Setup',
+  },
+  {
     path: `/${DEFAULT_LOCALE}/visualizations/horse-racing`,
     heading: 'Horse Racing Algorithm Visualization',
   },

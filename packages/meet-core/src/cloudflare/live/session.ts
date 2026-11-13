@@ -31,7 +31,7 @@ import {
 import { liveRoomCommand } from './room';
 import { createRoomLiveAudioBatcher } from './room-audio-batcher';
 import { cleanupEndedLiveSession } from './session-cleanup';
-import { normalizeSavedLiveSession, type SavedSession } from './session-state';
+import * as sessions from './session-state';
 import { executeLiveTool } from './session-tools';
 import { markInterruptedUsage, observeSessionUsage } from './session-usage';
 import { type LiveEnvironment, LiveTurnArchive } from './storage';
@@ -39,6 +39,7 @@ import { settleTickBilling } from './tick-billing';
 import { replayLiveToolResponses } from './tool-responses';
 import { reportLiveUsage } from './usage-report';
 import { liveWorkspaceAllowed } from './workspace-gate';
+import { requireCurrentPrivateGrant } from './private-grant';
 import {
   controlWorkspaceReview,
   expireWorkspaceReviews,
@@ -46,7 +47,7 @@ import {
 
 export class MeetLiveDurableObject {
   private publish = new LiveTranscriptPublisher();
-  private saved?: SavedSession;
+  private saved?: sessions.SavedSession;
   private socket?: WebSocket;
   private provider?: Session;
   private connecting = false;
@@ -73,8 +74,10 @@ export class MeetLiveDurableObject {
     this.archive = new LiveTurnArchive(state.storage);
     this.registryQueue = new LiveRegistryQueue(state.storage, env);
     state.blockConcurrencyWhile(async () => {
-      this.saved = await state.storage.get<SavedSession>('session');
-      normalizeSavedLiveSession(this.saved);
+      this.saved = await state.storage.get<sessions.SavedSession>('session');
+      sessions.normalizeSavedLiveSession(this.saved);
+      if (this.saved && !this.saved.ended)
+        await sessions.armLiveRecovery(this.saved, this.state.storage);
       if (
         this.saved?.reviews.some((review) => review.status === 'processing')
       ) {
@@ -138,7 +141,7 @@ export class MeetLiveDurableObject {
       if (this.saved)
         return new Response('Already initialized', { status: 409 });
       const input = (await request.json()) as Pick<
-        SavedSession,
+        sessions.SavedSession,
         | 'claims'
         | 'identity'
         | 'timezone'
@@ -153,6 +156,9 @@ export class MeetLiveDurableObject {
         });
       this.saved = {
         ...input,
+        sharedContext: '',
+        scenarioInstructions: undefined,
+        workspace: undefined,
         startedAt: Date.now(),
         journal: structuredClone(EMPTY_LIVE_JOURNAL),
         reviews: [],
@@ -197,6 +203,7 @@ export class MeetLiveDurableObject {
       !saved ||
       !claims ||
       saved.ended ||
+      this.stopping ||
       claims.sessionId !== saved.claims.sessionId ||
       claims.ownerId !== saved.claims.ownerId ||
       claims.meetingId !== saved.claims.meetingId ||
@@ -216,13 +223,13 @@ export class MeetLiveDurableObject {
       return new Response('Meet AI is temporarily unavailable', {
         status: 403,
       });
-    await liveRoomCommand(this.env, saved.claims, saved.identity, {
-      action: 'live.context',
-    });
+    await requireCurrentPrivateGrant(this.env, saved);
     const pair = new WebSocketPair();
     const [client, server] = Object.values(pair) as [WebSocket, WebSocket];
     this.socket?.close(4001, 'Session moved');
     this.socket = server;
+    saved.disconnectedRecoveryDeadline = undefined;
+    await this.persist();
     server.accept();
     server.addEventListener('message', (event) => {
       if (server !== this.socket) return;
@@ -241,7 +248,7 @@ export class MeetLiveDurableObject {
       }
       this.paused = true;
       this.provider?.sendRealtimeInput({ audioStreamEnd: true });
-      void this.state.storage.setAlarm(Date.now() + 30_000);
+      this.state.waitUntil(sessions.armLiveRecovery(saved, this.state.storage));
     });
     this.paused = false;
     this.emit({
@@ -281,6 +288,7 @@ export class MeetLiveDurableObject {
     this.connecting = true;
     const generation = ++this.generation;
     try {
+      await requireCurrentPrivateGrant(this.env, saved);
       if (!saved.billing) {
         saved.billing = await beginLiveBilling(
           this.env,
@@ -365,7 +373,8 @@ export class MeetLiveDurableObject {
   private async command(raw: string | ArrayBuffer) {
     if (typeof raw !== 'string' || raw.length > 40000) return;
     const parsed = liveClientCommandSchema.safeParse(JSON.parse(raw));
-    if (!parsed.success || !this.saved || this.saved.ended) return;
+    if (!parsed.success || !this.saved || this.saved.ended || this.stopping)
+      return;
     const message = parsed.data;
     if (message.type === 'stop') {
       await this.stop();
@@ -390,13 +399,18 @@ export class MeetLiveDurableObject {
     if (message.type === 'text')
       this.provider.sendRealtimeInput({ text: message.text });
     if (message.type === 'audio') {
+      if (
+        message.accountId !== this.saved.claims.ownerId ||
+        message.source !== 'microphone'
+      )
+        return;
       if (this.paused || !acceptsLiveAudio(this.saved.claims)) return;
       this.audioInput.send(this.provider, message.data);
     }
   }
   private async message(message: LiveServerMessage) {
     const saved = this.saved;
-    if (!saved || saved.ended) return;
+    if (!saved || saved.ended || this.stopping) return;
     if (
       message.sessionResumptionUpdate?.resumable &&
       message.sessionResumptionUpdate.newHandle
@@ -578,7 +592,8 @@ export class MeetLiveDurableObject {
       return;
     }
     if (!this.socket) {
-      await this.stop();
+      if (sessions.liveRecoveryExpired(this.saved)) await this.stop();
+      else await sessions.armLiveRecovery(this.saved, this.state.storage);
       return;
     }
     // Revoked or never eligible: end the session instead of reconnecting the
@@ -619,11 +634,7 @@ export class MeetLiveDurableObject {
     try {
       await maintainLiveRegistry(this.env, this.saved);
       if (this.saved.ended) return;
-      await liveRoomCommand(this.env, this.saved.claims, this.saved.identity, {
-        action:
-          this.saved.claims.mode === 'room' ? 'live.heartbeat' : 'live.context',
-        sessionId: this.saved.claims.sessionId,
-      });
+      await requireCurrentPrivateGrant(this.env, this.saved);
       if (
         (await settleTickBilling(
           this.env,

@@ -72,6 +72,19 @@ Data comes from public sources only, in two layers:
    the newest good data with its real observation time ("Live check
    unavailable"), never a fresher-looking label.
 
+**Hosting and the move to tuturuuu.com** are observed on every build, before
+and independent of GitHub (`src/live/build-probe.ts`, written to the untracked
+`.generated/hosting.json` and embedded by Vite). Providers come from each
+app's public build-info, probed from the build machine (outside Cloudflare).
+The migration list and paths are the repo's base-path registry
+(`ONE_ORIGIN_APP_BASE_PATHS` in `packages/utils/src/app-mounts.ts`); an app
+counts as moved only when its subdomain redirects navigations to its
+`tuturuuu.com` path, and as in progress when its own Worker already answers
+there. A build that cannot observe (for example `ROADMAP_OFFLINE=1`) shows
+every value as not verifiable, with that build's time; the page never shows a
+provider or migration value from an earlier build. The hosting section shows
+Cloudflare's official web badge, unaltered (`src/assets/brands`).
+
 `GET|HEAD /roadmap/api/hosts` probes the fixed allowlist in
 `src/live/host-probe.ts` (request input never selects a host), with manual
 redirects, a 4-second timeout and a 16 KiB body bound. It returns only
@@ -93,6 +106,46 @@ node --test apps/roadmap/src/roadmap-data.test.ts
 guards, the approved plan copy, feed safety (including a denylist and hashed
 names), freshness merging and the host probe. Each guard has a broken variant
 that must fail.
+
+## Shipping pulse, production updates and patch notes
+
+Every figure comes from the same public sources, derived at build time and in
+the page (`src/insights`); anything not observed reads "not available", never
+zero or an earlier build's value.
+
+- **Two scopes, labelled.** *All merged PRs* are every merged pull request in
+  tutur3u/platform without bots and dependency updates (the history rule).
+  *Roadmap-tracked PRs* are the ones the deliverables list. The chart nests
+  them: all, tracked, and tracked PRs production runs now, plus a 7-day
+  moving average.
+- **Build activity.** `scripts/generate-roadmap-data.mjs` writes the
+  untracked `.generated/activity.json` (embedded by Vite like
+  `hosting.json`, `src/insights/activity.ts`): each app's production build
+  (commit and `builtAt` from its public build-info) and the merged PRs from
+  the build's search window, as `[number, day, track]`. Anonymous search
+  allows 10 requests a minute, so the window is 7 days without a token and
+  14 with one; a capped search is flagged. Older days come from the history
+  JSON, fetched when the pulse nears the viewport or a reader picks 30 or 90
+  days. Offline builds observe nothing.
+- **Tiles** compare this week with last week as flows (merged, shipped,
+  newly live, newly waiting), with an icon, a signed figure and words.
+- **Merge → production** is the median and p90 from merge to the production
+  build serving a tracked PR now. Earlier deploys are not public, so it is an
+  upper bound. Waiting work shows how long it has waited so far.
+- **Recent production updates** list each app's production build, newest
+  first, with the tracked work it runs and what waits for its next deploy,
+  using the Live rule (deployed commit at or after the merge). A divider marks
+  what is new since the reader's last visit (`localStorage`, optional).
+- **Patch notes** render `.generated/changelog.json` from the changelog
+  pipeline (validated by `parseChangelog` in `src/changelog/schema.ts`, the
+  data.ts Vite glob embedding) as plain text, with PR links built from
+  numbers. Fallback output has a visible label; model output names its model.
+  Release dates use Vietnam calendar days. Release details mount when opened,
+  keeping the initial document small even for large fallback releases. A missing, invalid or empty file
+  hides the section and leaves production updates in a single column.
+- **Chart access.** Each day is a real button: hover, tap or arrow keys
+  (Home, End, PageUp, PageDown) select it, a polite live region reads the
+  day, and a visually hidden table holds every figure.
 
 ## Performance on low-end phones
 
@@ -209,7 +262,11 @@ answers two hosts. `https://roadmap.tuturuuu.com` returns 301 to
 `https://tuturuuu.com/roadmap` plus the same path and query, with no trailing
 slash, in one hop (`/` becomes `/roadmap`). `https://tuturuuu.com/roadmap` (no
 slash, the Tuturuuu-wide canonical form) serves the app; `/roadmap/` and any
-`/roadmap/x/` return 301 to the no-slash form with the query kept. Internally
+`/roadmap/x/` return 301 to the no-slash form with the query kept. English is
+unprefixed (Vietnamese is `/roadmap/vi`), so old English links `/roadmap/en`
+and `/roadmap/en/<rest>` return 301 to `/roadmap` and `/roadmap/<rest>`, and
+the satellite's `/en/<rest>` goes straight there in its one hop; only an exact
+`en` segment matches (`/roadmap/english` is untouched). Internally
 the Worker hands `/roadmap` to the SSR handler as the router's basepath root
 `/roadmap/`, and the client restores `/roadmap` in the address bar after
 hydration. `GET` and `HEAD`

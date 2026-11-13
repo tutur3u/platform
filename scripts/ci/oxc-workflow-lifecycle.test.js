@@ -143,7 +143,7 @@ test('Oxc workflow runs pinned npm Oxc CLI and prints captured output when check
   assert.match(
     lintJob,
     new RegExp(
-      `npx --yes oxlint@1\\.89\\.0 --deny-warnings --threads 2 \\. 2>&1`,
+      `npx --yes oxlint@1\\.93\\.0 --deny-warnings --threads 2 \\. 2>&1`,
       'u'
     )
   );

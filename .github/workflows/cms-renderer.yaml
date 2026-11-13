@@ -1,0 +1,96 @@
+name: CMS renderer artifact
+on:
+  workflow_dispatch:
+  pull_request:
+    types: [opened, synchronize, reopened, ready_for_review, labeled, converted_to_draft]
+    paths: ['apps/cms-renderer/**', 'packages/cms-blocks/**', 'packages/sdk/src/cms-site*', 'apps/backend/src/workspaces_external_projects_delivery*', '.github/workflows/cms-renderer.yaml', 'bun.lock']
+  push:
+    branches: [main]
+    paths: ['apps/cms-renderer/**', 'packages/cms-blocks/**', '.github/workflows/cms-renderer.yaml', 'bun.lock']
+permissions:
+  contents: read
+concurrency:
+  group: ${{ ((github.event_name == 'pull_request' || github.event_name == 'pull_request_target') && github.run_attempt == 1) && format('{0}-pr-{1}', github.workflow, github.event.pull_request.number) || format('{0}-{1}-{2}-{3}{4}', github.workflow, github.event_name, github.event.pull_request.number || github.ref, (github.run_attempt > 1 || (github.event_name != 'pull_request' && github.event_name != 'pull_request_target' && (github.event_name != 'push' || github.ref == 'refs/heads/production' || startsWith(github.ref, 'refs/heads/release-please--branches--')))) && format('{0}-{1}-{2}', github.sha, github.run_id, github.run_attempt) || 'latest', github.event_name == 'pull_request' && !contains(github.event.pull_request.labels.*.name, 'ready-for-ci') && '-unadmitted' || '') }}
+  cancel-in-progress: ${{ !(github.run_attempt > 1) && (github.event_name == 'pull_request' || github.event_name == 'pull_request_target' || (github.event_name == 'push' && github.ref != 'refs/heads/production' && !startsWith(github.ref, 'refs/heads/release-please--branches--'))) }}
+jobs:
+  artifact:
+    if: (github.event_name != 'pull_request' || github.event.pull_request.draft == false) && (github.event_name != 'pull_request' || contains(github.event.pull_request.labels.*.name, 'ready-for-ci'))
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    env:
+      SOURCE_SHA: ${{ github.event.pull_request.head.sha || github.sha }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+          persist-credentials: false
+      - uses: ./.github/actions/setup-bun-with-retry
+        with:
+          bun-version: 1.4.4
+      # Lockfile-only resolution records the new workspace without installing on M4.
+      - run: bun install --frozen-lockfile --ignore-scripts
+      - name: Build delivery test dependencies
+        uses: ./.github/actions/run-with-turbo-remote-cache
+        with:
+          command: bun run --filter @tuturuuu/types build
+          token: ''
+          team: ''
+      - name: Shared render and delivery checks
+        uses: ./.github/actions/run-with-turbo-remote-cache
+        with:
+          token: ''
+          team: ''
+          command: |
+            # bunfig.toml preloads a redirect that turns in-repo `bun test` into the full turbo suite.
+            cd "$RUNNER_TEMP"
+            bun test \
+              "$GITHUB_WORKSPACE/packages/cms-blocks/src/render" \
+              "$GITHUB_WORKSPACE/packages/sdk/src/cms-site.test.ts" \
+              "$GITHUB_WORKSPACE/apps/cms-renderer/src"
+      - name: Build Worker and generated routes
+        uses: ./.github/actions/run-with-turbo-remote-cache
+        with:
+          command: cd apps/cms-renderer && bun run build
+          token: ''
+          team: ''
+      - name: Record bounded emitted config receipt
+        if: always()
+        run: node scripts/ci/native-emitted-config-receipt.mjs apps/cms-renderer "$SOURCE_SHA" "$RUNNER_TEMP/cms-renderer-emitted-config.json"
+      - name: Retain emitted config receipt
+        if: always()
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: cms-renderer-config-${{ env.SOURCE_SHA }}-${{ github.run_id }}-${{ github.run_attempt }}
+          path: ${{ runner.temp }}/cms-renderer-emitted-config.json
+          if-no-files-found: error
+          retention-days: 7
+      - name: Enforce private Worker endpoints
+        run: |
+          node --input-type=module <<'JS'
+          import { readFileSync } from 'node:fs';
+          import { strict as assert } from 'node:assert';
+          const config = JSON.parse(readFileSync('apps/cms-renderer/dist/server/wrangler.json', 'utf8'));
+          assert.equal(config.workers_dev, false);
+          assert.equal(config.preview_urls, false);
+          JS
+      - name: Check generated app types
+        uses: ./.github/actions/run-with-turbo-remote-cache
+        with:
+          command: cd apps/cms-renderer && bun run type-check
+          token: ''
+          team: ''
+      - name: Validate emitted deployable Worker without publishing
+        run: bun x --no-install wrangler deploy --dry-run --config apps/cms-renderer/dist/server/wrangler.json --outdir /tmp/cms-renderer-dry-run
+      - name: Seal exact source and package output
+        run: |
+          git rev-parse HEAD > apps/cms-renderer/dist/source-sha.txt
+          tar -czf cms-renderer.tar.gz -C apps/cms-renderer dist
+          sha256sum cms-renderer.tar.gz > cms-renderer.sha256
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: cms-renderer-${{ github.event.pull_request.head.sha || github.sha }}
+          path: |
+            cms-renderer.tar.gz
+            cms-renderer.sha256
+          if-no-files-found: error
+          retention-days: 7

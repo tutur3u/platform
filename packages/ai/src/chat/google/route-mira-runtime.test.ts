@@ -102,6 +102,7 @@ describe('prepareMiraRuntime', () => {
     );
     expect(mocks.createMiraStreamTools).not.toHaveBeenCalled();
     expect(mocks.buildMiraContext).not.toHaveBeenCalled();
+    expect(mocks.getPermissions).not.toHaveBeenCalled();
   });
 
   it('uses the authorized tool supabase client for Mira context resolution and tools', async () => {
@@ -495,5 +496,139 @@ describe('prepareMiraRuntime', () => {
     expect([...ctx.clientCapabilities]).toEqual([]);
     expect(result.miraSystemPrompt).toContain('## Client capabilities');
     expect(result.miraSystemPrompt).toContain('answer in chat');
+  });
+
+  it('reads permissions, timezone, and the verified board together and keeps each result', async () => {
+    let releasePermissions:
+      | ((value: { withoutPermission: () => boolean }) => void)
+      | undefined;
+    let releaseTimezone:
+      | ((value: { data: { timezone: string }; error: null }) => void)
+      | undefined;
+    let releaseBoard:
+      | ((value: { data: unknown; error: null }) => void)
+      | undefined;
+    const withoutPermission = () => false;
+    const tables: string[] = [];
+    const boardFilters: Array<[string, string, unknown]> = [];
+    mocks.getPermissions.mockImplementation(
+      () =>
+        new Promise((resolve) => {
+          releasePermissions = resolve;
+        })
+    );
+    const toolSupabase = {
+      from: vi.fn((table: string) => {
+        tables.push(table);
+        const builder = {
+          eq: vi.fn((column: string, value: unknown) => {
+            if (table === 'workspace_boards') {
+              boardFilters.push(['eq', column, value]);
+            }
+            return builder;
+          }),
+          is: vi.fn((column: string, value: unknown) => {
+            if (table === 'workspace_boards') {
+              boardFilters.push(['is', column, value]);
+            }
+            return builder;
+          }),
+          maybeSingle: vi.fn(
+            () =>
+              new Promise((resolve) => {
+                if (table === 'user_private_details') releaseTimezone = resolve;
+                if (table === 'workspace_boards') releaseBoard = resolve;
+              })
+          ),
+          select: vi.fn(() => builder),
+        };
+        return builder;
+      }),
+    } as unknown as TypedSupabaseClient;
+
+    mocks.resolveWorkspaceContextState.mockResolvedValue({
+      workspaceContextId: 'workspace-2',
+      wsId: 'workspace-2',
+      name: 'Workspace Two',
+      personal: false,
+      memberCount: 4,
+    });
+    mocks.buildMiraContext.mockResolvedValue({
+      contextString: 'ctx',
+      soul: null,
+      isFirstInteraction: false,
+    });
+    mocks.buildMiraSystemInstruction.mockReturnValue('instruction');
+    mocks.createMiraStreamTools.mockReturnValue({});
+
+    const { prepareMiraRuntime } = await import('./route-mira-runtime');
+    const pending = prepareMiraRuntime({
+      isMiraMode: true,
+      wsId: 'workspace-1',
+      workspaceContextId: 'workspace-2',
+      request: new NextRequest('http://localhost/api/ai/chat'),
+      userId: 'user-1',
+      chatId: 'chat-1',
+      supabase: {} as TypedSupabaseClient,
+      toolSupabase,
+      taskBoardContext: {
+        boardId: 'board-1',
+        lists: [],
+      },
+    });
+
+    await vi.waitFor(() => {
+      expect(mocks.getPermissions).toHaveBeenCalledWith(
+        expect.objectContaining({ wsId: 'workspace-2' })
+      );
+      expect(tables).toEqual(
+        expect.arrayContaining(['user_private_details', 'workspace_boards'])
+      );
+      expect(releasePermissions).toEqual(expect.any(Function));
+      expect(releaseTimezone).toEqual(expect.any(Function));
+      expect(releaseBoard).toEqual(expect.any(Function));
+    });
+    expect(mocks.buildMiraContext).not.toHaveBeenCalled();
+    expect(boardFilters).toEqual([
+      ['eq', 'id', 'board-1'],
+      ['eq', 'ws_id', 'workspace-2'],
+      ['is', 'archived_at', null],
+      ['is', 'deleted_at', null],
+    ]);
+
+    releasePermissions?.({ withoutPermission });
+    releaseTimezone?.({
+      data: { timezone: 'Asia/Ho_Chi_Minh' },
+      error: null,
+    });
+    releaseBoard?.({
+      data: {
+        id: 'board-1',
+        name: 'Launch',
+        task_lists: [],
+        ws_id: 'workspace-2',
+      },
+      error: null,
+    });
+    const result = await pending;
+
+    expect(mocks.buildMiraContext).toHaveBeenCalledWith(
+      expect.objectContaining({
+        timezone: 'Asia/Ho_Chi_Minh',
+        userId: 'user-1',
+        withoutPermission,
+        wsId: 'workspace-2',
+      })
+    );
+    expect(result.miraSystemPrompt).toContain('"boardId": "board-1"');
+    expect(result.miraSystemPrompt).toContain('"workspaceId": "workspace-2"');
+    expect(mocks.createMiraStreamTools).toHaveBeenCalledWith(
+      expect.objectContaining({
+        timezone: 'Asia/Ho_Chi_Minh',
+        wsId: 'workspace-1',
+      }),
+      withoutPermission,
+      undefined
+    );
   });
 });
