@@ -535,7 +535,7 @@ export default function TranslationsComparison({
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
       // Cmd/Ctrl + K to focus search
-      if ((e.metaKey || e.ctrlKey) && e.key === 'k') {
+      if ((e.metaKey || e.ctrlKey) && !e.shiftKey && !e.altKey && e.key === 'k') {
         e.preventDefault();
         document.querySelector<HTMLInputElement>('input[type="text"]')?.focus();
       }
