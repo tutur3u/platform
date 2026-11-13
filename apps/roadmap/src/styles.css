@@ -3288,7 +3288,6 @@ a.kpi-body:hover {
 /* Icons are CSS masks (lucide shapes, ISC), not inline SVG, which keeps
    the document small. */
 .kpi-label::before,
-.delta::before,
 .update-counts span::before {
   content: "";
   flex: none;
@@ -3360,19 +3359,23 @@ a.kpi-body:hover {
   font-weight: 600;
   font-variant-numeric: tabular-nums;
 }
+/* Trend triangle (up; rotated for down; a bar for no change). */
 .delta::before {
-  width: 14px;
-  height: 14px;
+  content: "";
+  flex: none;
+  width: 9px;
+  height: 8px;
   background: currentColor;
+  clip-path: polygon(50% 0, 100% 100%, 0 100%);
 }
-.delta-up {
-  --i-glyph: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'><polyline points='22 7 13.5 15.5 8.5 10.5 2 17'/><polyline points='16 7 22 7 22 13'/></svg>");
+.delta-down::before {
+  transform: rotate(180deg);
 }
-.delta-down {
-  --i-glyph: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'><polyline points='22 17 13.5 8.5 8.5 13.5 2 7'/><polyline points='16 17 22 17 22 11'/></svg>");
+.delta-flat::before {
+  height: 2px;
+  clip-path: none;
 }
 .delta-flat {
-  --i-glyph: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'><path d='M5 12h14'/></svg>");
   color: var(--rm-muted);
 }
 .delta-label {
