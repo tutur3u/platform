@@ -32,7 +32,7 @@ import { buildView } from '../view-model';
 import { BUILD_ACTIVITY } from '../insights/build-activity';
 import { buildInsights } from '../insights/model';
 import { useLazyHistory } from '../insights/use-lazy-history';
-import { BUILD_CHANGELOG } from '../changelog/build-changelog';
+import { changelog } from '../changelog/data';
 import { PulseSection } from '../components/insights/pulse-section';
 import { ProductionUpdates } from '../components/insights/updates';
 import { PatchNotes } from '../components/insights/patch-notes';
@@ -135,13 +135,15 @@ const RoadmapMain = memo(function RoadmapMain({
         />
       </Suspense>
       <Suspense>
-        <div className={`catchup${BUILD_CHANGELOG ? '' : ' catchup-single'}`}>
+        <div
+          className={`catchup${changelog?.releases.length ? '' : ' catchup-single'}`}
+        >
           <ProductionUpdates t={t} lang={lang} updates={insights.updates} />
-          <PatchNotes t={t} lang={lang} changelog={BUILD_CHANGELOG} />
+          <PatchNotes t={t} lang={lang} changelog={changelog} />
         </div>
       </Suspense>
       <TrackGlance t={t} view={view} />
-      <ComingSoon t={t} />
+      <ComingSoon t={t} lang={lang} />
       {/* Hydration boundaries (nothing suspends; the server renders all of
           it): below the hero, React hydrates section by section, yielding
           between them and starting with the one a reader interacts with. */}

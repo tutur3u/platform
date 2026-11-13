@@ -83,7 +83,7 @@ export function OverallBar({
   );
 }
 
-export function ComingSoon({ t }: { t: Messages }) {
+export function ComingSoon({ t, lang }: { t: Messages; lang: Lang }) {
   const items = visibleComingSoon();
   if (!items.length) return null;
   return (
@@ -93,8 +93,8 @@ export function ComingSoon({ t }: { t: Messages }) {
           <span className="chip glow">
             <Sparkles size={14} aria-hidden /> {t.comingSoon}
           </span>
-          <h2 id="coming-soon-title">{item.title}</h2>
-          <p>{item.body}</p>
+          <h2 id="coming-soon-title">{item.title[lang]}</h2>
+          <p>{item.body[lang]}</p>
         </article>
       ))}
     </section>

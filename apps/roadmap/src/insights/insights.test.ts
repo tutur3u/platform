@@ -1,3 +1,4 @@
+import { readStyles } from '../style-source.ts';
 /** D79: pulse metrics, production updates, patch notes and chart contracts. */
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
@@ -518,8 +519,8 @@ describe('build activity', () => {
 
 describe('patch notes', async () => {
   const { parseChangelog } = await import('../changelog/schema.ts');
-  const { changelogForBuild, readChangelog } =
-    await import('../changelog/embed.ts');
+  const changelogForBuild = parseChangelog;
+  const readChangelog = parseChangelog;
   const fixture = JSON.parse(
     readFileSync(
       new URL('../changelog/fixtures/changelog.json', import.meta.url),
@@ -532,7 +533,7 @@ describe('patch notes', async () => {
     assert.ok(changelog);
     assert.deepEqual(
       changelog.releases.map((r) => r.date),
-      ['2026-11-12', '2026-11-10']
+      ['2026-11-12T18:00:00Z', '2026-11-10T18:00:00Z']
     );
   });
 
@@ -541,7 +542,7 @@ describe('patch notes', async () => {
     assert.equal(readChangelog(undefined), null);
     assert.equal(readChangelog({ ...fixture, schema: 2 }), null);
     assert.equal(readChangelog({ ...fixture, releases: [{ id: 'x' }] }), null);
-    assert.equal(readChangelog({ ...fixture, releases: [] }), null);
+    assert.deepEqual(readChangelog({ ...fixture, releases: [] })?.releases, []);
     assert.equal(parseChangelog('{"schema":1}'), null);
     const notes = readFileSync(
       new URL('../components/insights/patch-notes.tsx', import.meta.url),
@@ -554,7 +555,7 @@ describe('patch notes', async () => {
     );
     assert.match(
       page,
-      /<PatchNotes t=\{t\} lang=\{lang\} changelog=\{BUILD_CHANGELOG\} \/>/
+      /<PatchNotes t=\{t\} lang=\{lang\} changelog=\{changelog\} \/>/
     );
   });
 
@@ -566,7 +567,7 @@ describe('patch notes', async () => {
     assert.ok(!notes.includes('dangerouslySetInnerHTML'));
     assert.match(notes, /href=\{`\$\{REPO_URL\}\/pull\/\$\{number\}`\}/);
     const embed = readFileSync(
-      new URL('../changelog/embed.ts', import.meta.url),
+      new URL('../changelog/data.ts', import.meta.url),
       'utf8'
     );
     assert.match(embed, /from '\.\/schema\.ts'/);
@@ -636,7 +637,7 @@ export function heroClearsNavbar(css: string, navOffset: number) {
 describe('hero and navbar offset (CSS contract)', async () => {
   const { shellNavOffset } =
     await import('../../../../packages/marketing-shell/src/nav-metrics.ts');
-  const css = readFileSync(new URL('../styles.css', import.meta.url), 'utf8');
+  const css = readStyles();
 
   it('clears the navbar at every width and for every anchor', () => {
     assert.ok(heroClearsNavbar(css, shellNavOffset(false)));

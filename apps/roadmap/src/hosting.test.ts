@@ -1,3 +1,4 @@
+import { readStyles } from './style-source.ts';
 /**
  * D79 tests for build-time hosting: provider counts, the subdomain-to-apex
  * migration and their as-of time (via src/roadmap-data.test.ts). Each guard
@@ -252,7 +253,7 @@ describe('hosting: Cloudflare badge and copy', () => {
       '3d7b109fb7cd683025818d8c6d5224c565b0b2278099e666c15f7d2d8325067e'
     );
     assert.ok(en.hosting.badgeAlt && vi.hosting.badgeAlt);
-    const css = read('./styles.css');
+    const css = readStyles();
     const rule = css.slice(
       css.indexOf('\n.cf-badge {'),
       css.indexOf('}', css.indexOf('\n.cf-badge {'))

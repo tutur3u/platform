@@ -138,8 +138,11 @@ zero or an earlier build's value.
   what is new since the reader's last visit (`localStorage`, optional).
 - **Patch notes** render `.generated/changelog.json` from the changelog
   pipeline (validated by `parseChangelog` in `src/changelog/schema.ts`, the
-  newest releases embedded by Vite) as plain text, with PR links built from
-  numbers. A missing or invalid file hides the section.
+  data.ts Vite glob embedding) as plain text, with PR links built from
+  numbers. Fallback output has a visible label; model output names its model.
+  Release dates use Vietnam calendar days. Release details mount when opened,
+  keeping the initial document small even for large fallback releases. A missing, invalid or empty file
+  hides the section and leaves production updates in a single column.
 - **Chart access.** Each day is a real button: hover, tap or arrow keys
   (Home, End, PageUp, PageDown) select it, a polite live region reads the
   day, and a visually hidden table holds every figure.

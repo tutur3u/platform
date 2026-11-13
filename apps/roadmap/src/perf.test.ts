@@ -1,3 +1,4 @@
+import { readStyles } from './style-source.ts';
 /**
  * D79 performance guards for the roadmap and EduFest pages (run via
  * src/roadmap-data.test.ts). Each guard is checked against the real source
@@ -25,7 +26,7 @@ import { isRateLimited, LIVE_SEARCH } from './live/use-live-data.ts';
 
 const read = (path: string) =>
   readFileSync(new URL(path, import.meta.url), 'utf8');
-const css = read('./styles.css');
+const css = readStyles();
 
 describe('perf: expensive CSS stays off phones and low-end devices', () => {
   it('runs no infinite animation outside reduced-motion on a wide, non-lite screen', () => {

@@ -1,0 +1,109 @@
+.update-waiting summary {
+  cursor: pointer;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--rm-muted);
+}
+.update-waiting .update-items {
+  margin-top: 6px;
+}
+.update-rest {
+  justify-self: start;
+  margin-top: 4px;
+  padding: 8px 14px;
+  border: 1px solid var(--rm-line);
+  border-radius: 999px;
+  background: var(--rm-panel);
+  font-size: 13px;
+  font-weight: 600;
+}
+.since-marker {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 0;
+  color: color-mix(in oklab, var(--rm-merge) 60%, var(--rm-ink));
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+.since-marker::before,
+.since-marker::after {
+  content: "";
+  flex: 1;
+  border-top: 2px solid color-mix(in oklab, var(--rm-merge) 50%, transparent);
+}
+.updates-empty,
+.notes-source {
+  margin: 0;
+  font-size: 13px;
+  color: var(--rm-muted);
+}
+.release-list {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  display: grid;
+  gap: 10px;
+}
+.release details {
+  padding: 14px 16px;
+  border: 1px solid var(--rm-line);
+  border-radius: var(--rm-radius);
+  background: var(--rm-panel);
+}
+.release summary {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 4px 12px;
+  cursor: pointer;
+}
+.release summary time {
+  font-size: 12px;
+  font-variant-numeric: tabular-nums;
+  color: var(--rm-muted);
+}
+.release-title {
+  font-size: 16px;
+  font-weight: 600;
+}
+.release-summary {
+  margin: 10px 0 0;
+  font-size: 14.5px;
+  line-height: 1.55;
+}
+.release-product h3 {
+  margin: 14px 0 4px;
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  color: var(--rm-muted);
+}
+.release-product ul {
+  margin: 0;
+  padding-left: 18px;
+  display: grid;
+  gap: 4px;
+  font-size: 14px;
+  line-height: 1.5;
+}
+@media (min-width: 1024px) {
+  .catchup {
+    grid-template-columns: minmax(0, 1.25fr) minmax(0, 1fr);
+    align-items: start;
+  }
+  .catchup-single {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .catchup-single .update-list {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    column-gap: 32px;
+  }
+  .catchup-single .since-marker {
+    grid-column: 1 / -1;
+  }
+}

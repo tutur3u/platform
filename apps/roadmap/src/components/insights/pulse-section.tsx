@@ -87,7 +87,7 @@ export function PulseSection({
               key={option}
               type="button"
               aria-pressed={range === option}
-              aria-label={fill(t.pulse.rangeName, { n: option })}
+              aria-label={`${fill(t.pulse.rangeOption, { n: option })}: ${fill(t.pulse.rangeName, { n: option })}`}
               onClick={() => pick(option)}
             >
               {fill(t.pulse.rangeOption, { n: option })}

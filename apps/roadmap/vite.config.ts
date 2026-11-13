@@ -5,12 +5,10 @@ import react from '@vitejs/plugin-react';
 import { defineConfig } from 'vite-plus';
 import { snapshotForBuild } from './src/live/hosting.ts';
 import { activityForBuild } from './src/insights/activity.ts';
-import { changelogForBuild } from './src/changelog/embed.ts';
 import { voidPlugin } from 'void';
 
 const HOSTING_FILE = new URL('./.generated/hosting.json', import.meta.url);
 const ACTIVITY_FILE = new URL('./.generated/activity.json', import.meta.url);
-const CHANGELOG_FILE = new URL('./.generated/changelog.json', import.meta.url);
 
 /** A generated JSON file, or null when it is absent or unreadable. */
 function generated(file: URL): unknown {
@@ -52,11 +50,6 @@ export default defineConfig(({ command }) => {
         command === 'build'
           ? activityForBuild(generated(ACTIVITY_FILE), Date.now())
           : null
-      ),
-      // Patch notes from the changelog pipeline; null (or an invalid file)
-      // hides the section.
-      __ROADMAP_CHANGELOG__: JSON.stringify(
-        changelogForBuild(generated(CHANGELOG_FILE))
       ),
     },
     plugins: [

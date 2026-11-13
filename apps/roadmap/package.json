@@ -6,7 +6,7 @@
     "dev": "vp dev",
     "build": "node scripts/generate-roadmap-data.mjs && node scripts/generate-history.mjs && node scripts/generate-changelog.mjs && vp build && node scripts/package-assets.mjs",
     "type-check": "node scripts/generate-route-tree.cjs && tsc --noEmit",
-    "test": "node --test src/roadmap-data.test.ts src/cache-policy.test.ts src/status-page.test.ts scripts/pre-seal-doctor.test.mjs scripts/generate-changelog.test.mjs scripts/changelog-bundle.test.mjs",
+    "test": "node --test src/roadmap-data.test.ts src/cache-policy.test.ts src/status-page.test.ts scripts/pre-seal-doctor.test.mjs scripts/generate-changelog.test.mjs scripts/changelog-bundle.test.mjs scripts/patch-notes-render.test.mjs",
     "data:refresh": "node scripts/generate-roadmap-data.mjs && node scripts/generate-history.mjs",
     "deploy:cloudflare": "void deploy --platform cloudflare",
     "build:cloudflare": "node scripts/generate-roadmap-data.mjs && node scripts/generate-history.mjs && node scripts/generate-changelog.mjs && vp build && node scripts/package-assets.mjs",
