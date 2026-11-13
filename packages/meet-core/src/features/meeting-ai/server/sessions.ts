@@ -101,7 +101,7 @@ export async function readMeetAi(request: Request, params: MeetAiParams) {
       a.sequence - b.sequence
   );
   return {
-    available: await meetAiAvailable(wsId),
+    available: false,
     configured:
       MEETING_APP === 'parley'
         ? await meetingProviderTransport().then(
