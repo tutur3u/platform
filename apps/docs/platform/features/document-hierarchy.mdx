@@ -1,0 +1,36 @@
+---
+title: 'Document hierarchy'
+description: 'Workspace document hierarchy API and workspace rollout gate.'
+---
+
+## Workspace gate
+
+`ENABLE_DOCUMENT_HIERARCHY` is a workspace secret that defaults to `false` in
+all environments. Only the exact value `true` enables hierarchy reads and writes.
+The gate applies to workspace documents in Web, independently of Drive and public
+single-document pages. It does not grant document access: membership and
+`manage_documents` remain required.
+
+With the gate off, list and detail responses keep their flat projection and
+create/PATCH reject supplied `parent_id` or `position`, including null values.
+Ordinary content, name and publication edits remain available. Switching the gate
+off preserves existing hierarchy links in storage.
+
+With the gate on, list and detail include nullable `parent_id` and `position`.
+Create and PATCH accept these fields. The database enforces same-workspace parents,
+acyclic ancestry and a maximum depth of 16, with the root at depth 1. Deleting a
+parent makes its immediate children roots. Null positions support existing pages;
+the UI can choose a deterministic fallback order without a backfill.
+
+## Write boundary
+
+Create accepts `name`, `content`, `is_public`, `parent_id` and `position`.
+PATCH accepts a nonempty subset of those fields. Both reject unknown fields,
+malformed JSON and invalid field types with status 400. The server sets the create
+workspace; PATCH scopes the target by workspace and document ID. Clients cannot
+write IDs, timestamps, workspace identity or legacy content through these routes.
+
+Regression coverage is in
+`apps/web/src/app/api/v1/workspaces/[wsId]/documents/route.test.ts`; the schema
+contract is covered by `apps/database/supabase/tests/workspace-document-hierarchy.sql`. API mocks verify the
+boundary and write arguments; database tests cover hierarchy consistency.
