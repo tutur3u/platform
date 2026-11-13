@@ -7,20 +7,31 @@ import { getLocalInternalAppUrl } from '@tuturuuu/utils/internal-domains';
 import type { NextRequest } from 'next/server';
 import { NextResponse } from 'next/server';
 
+import {
+  isCalendarOwnedApiPath,
+  resolveCalendarAppUrl,
+} from '@/lib/calendar-api-rewrites';
+
 const CENTRAL_PORT = process.env.CENTRAL_PORT || 7803;
-const WEB_APP_URL = resolveInternalAppUrl({
-  appName: 'platform',
-  candidates: [
-    process.env.TTR_URL,
-    process.env.NEXT_PUBLIC_WEB_APP_URL,
-    process.env.WEB_APP_URL,
-    process.env.NEXT_PUBLIC_APP_URL,
-  ],
-  fallback:
-    process.env.NODE_ENV === 'production'
-      ? 'https://tuturuuu.com'
-      : getLocalInternalAppUrl('platform', `http://localhost:${CENTRAL_PORT}`),
-});
+
+function resolveWebAppUrl() {
+  return resolveInternalAppUrl({
+    appName: 'platform',
+    candidates: [
+      process.env.TTR_URL,
+      process.env.NEXT_PUBLIC_WEB_APP_URL,
+      process.env.WEB_APP_URL,
+      process.env.NEXT_PUBLIC_APP_URL,
+    ],
+    fallback:
+      process.env.NODE_ENV === 'production'
+        ? 'https://tuturuuu.com'
+        : getLocalInternalAppUrl(
+            'platform',
+            `http://localhost:${CENTRAL_PORT}`
+          ),
+  });
+}
 
 type RouteContext = {
   params: Promise<{
@@ -194,7 +205,13 @@ function isTaskOwnedApiPath(path: string[]) {
   return workspaceRouteSegment === 'time-tracking' && path[4] === 'tasks';
 }
 
-async function proxyToWebApi(request: NextRequest, context: RouteContext) {
+/**
+ * Forwards one unowned `/api/*` request to the app that owns it. Calendar-owned
+ * paths follow the Next `beforeFiles` rewrite contract and go to the Calendar
+ * app; every other unowned path goes to central Web. Tasks-owned paths that
+ * have no explicit route stay a local 404.
+ */
+async function proxyToOwningApp(request: NextRequest, context: RouteContext) {
   const { path = [] } = await context.params;
   if (isTaskOwnedApiPath(path)) {
     return NextResponse.json(
@@ -203,9 +220,13 @@ async function proxyToWebApi(request: NextRequest, context: RouteContext) {
     );
   }
 
+  const targetOrigin = isCalendarOwnedApiPath(path)
+    ? resolveCalendarAppUrl()
+    : resolveWebAppUrl();
+
   const targetUrl = new URL(
     `/api/${path.map((segment) => encodeURIComponent(segment)).join('/')}`,
-    WEB_APP_URL
+    targetOrigin
   );
   targetUrl.search = request.nextUrl.search;
 
@@ -234,9 +255,9 @@ async function proxyToWebApi(request: NextRequest, context: RouteContext) {
   return clearSupabaseAuthCookies(request, response);
 }
 
-export const GET = proxyToWebApi;
-export const POST = proxyToWebApi;
-export const PUT = proxyToWebApi;
-export const PATCH = proxyToWebApi;
-export const DELETE = proxyToWebApi;
-export const HEAD = proxyToWebApi;
+export const GET = proxyToOwningApp;
+export const POST = proxyToOwningApp;
+export const PUT = proxyToOwningApp;
+export const PATCH = proxyToOwningApp;
+export const DELETE = proxyToOwningApp;
+export const HEAD = proxyToOwningApp;

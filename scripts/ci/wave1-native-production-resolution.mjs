@@ -48,13 +48,15 @@ export function isResolvedFailedNoWrite(context) {
   );
 }
 
-export function assertResolvedVersionsAbsent({ app, worker, versions }) {
+/**
+ * A resolved no-write source or digest is an app-level identity: it must not be
+ * hosted by any production Worker that app publishes to, including a Worker
+ * whose name differs from the one recorded in the resolution. Only the bypass
+ * predicate above is pinned to the recorded Worker.
+ */
+export function assertResolvedVersionsAbsent({ app, versions }) {
   for (const resolution of resolutions) {
-    if (
-      resolution.outcome !== 'failed-no-write' ||
-      resolution.app !== app ||
-      resolution.worker !== worker
-    )
+    if (resolution.outcome !== 'failed-no-write' || resolution.app !== app)
       continue;
     for (const version of versions)
       assert.ok(

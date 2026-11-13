@@ -3,7 +3,13 @@ const test = require('node:test');
 const fs = require('node:fs');
 const os = require('node:os');
 const path = require('node:path');
-const { exactSha, appName, testCounts, command } = require('./public-ci');
+const {
+  exactSha,
+  appName,
+  testCounts,
+  command,
+  sha256,
+} = require('./public-ci');
 const { collect, contract, emittedWorker } = require('./public-build');
 const { plan } = require('./public-test-shard');
 const AsyncFunction = Object.getPrototypeOf(async () => {}).constructor;
@@ -185,6 +191,122 @@ test('artifact boundary includes hidden output files but refuses source, depende
   }
   fs.symlinkSync(path.join(root, 'outside'), path.join(root, base, 'link'));
   assert.throws(() => collect(root, base));
+});
+test('artifact file hashing reads only through an open descriptor, never a second path open', (t) => {
+  const root = fs.mkdtempSync(path.join(os.tmpdir(), 'public-artifact-race-'));
+  t.after(() => fs.rmSync(root, { recursive: true, force: true }));
+  const base = 'apps/meet/dist';
+  const artifact = path.join(root, base, 'asset.js');
+  fs.mkdirSync(path.dirname(artifact), { recursive: true });
+  const payload = 'fixture payload';
+  fs.writeFileSync(artifact, payload);
+  const origRead = fs.readFileSync;
+  const pathReads = [];
+  fs.readFileSync = function (target, ...args) {
+    if (typeof target === 'string' && target === artifact)
+      pathReads.push(target);
+    return origRead.call(this, target, ...args);
+  };
+  t.after(() => {
+    fs.readFileSync = origRead;
+  });
+  const files = collect(root, base);
+  assert.equal(pathReads.length, 0);
+  assert.equal(files.length, 1);
+  assert.equal(files[0].sha256, sha256(payload));
+});
+test('artifact metadata is inspected only on open descriptors', (t) => {
+  const root = fs.mkdtempSync(
+    path.join(os.tmpdir(), 'public-artifact-metadata-')
+  );
+  t.after(() => fs.rmSync(root, { recursive: true, force: true }));
+  const base = 'apps/meet/dist';
+  fs.mkdirSync(path.join(root, base), { recursive: true });
+  fs.writeFileSync(path.join(root, base, 'asset.js'), 'inside');
+  const origLstat = fs.lstatSync;
+  const origFstat = fs.fstatSync;
+  const pathChecks = [];
+  let descriptorChecks = 0;
+  fs.lstatSync = function (target, ...args) {
+    pathChecks.push(target);
+    return origLstat.call(this, target, ...args);
+  };
+  fs.fstatSync = function (fd, ...args) {
+    assert.equal(typeof fd, 'number');
+    descriptorChecks++;
+    return origFstat.call(this, fd, ...args);
+  };
+  t.after(() => {
+    fs.lstatSync = origLstat;
+    fs.fstatSync = origFstat;
+  });
+  assert.equal(collect(root, base)[0].sha256, sha256('inside'));
+  assert.deepEqual(pathChecks, []);
+  assert.equal(descriptorChecks, 2);
+});
+test('artifact descriptors close when hashing fails', (t) => {
+  const root = fs.mkdtempSync(path.join(os.tmpdir(), 'public-artifact-close-'));
+  t.after(() => fs.rmSync(root, { recursive: true, force: true }));
+  const base = 'apps/meet/dist';
+  fs.mkdirSync(path.join(root, base), { recursive: true });
+  fs.writeFileSync(path.join(root, base, 'asset.js'), 'inside');
+  const origRead = fs.readFileSync;
+  const origOpen = fs.openSync;
+  const opened = [];
+  fs.openSync = function (...args) {
+    const fd = origOpen.apply(this, args);
+    opened.push(fd);
+    return fd;
+  };
+  fs.readFileSync = function (target, ...args) {
+    if (typeof target === 'number') throw new Error('hash read failed');
+    return origRead.call(this, target, ...args);
+  };
+  t.after(() => {
+    fs.openSync = origOpen;
+    fs.readFileSync = origRead;
+  });
+  assert.throws(() => collect(root, base), /hash read failed/);
+  assert.equal(opened.length, 2);
+  for (const fd of opened)
+    assert.throws(() => fs.fstatSync(fd), { code: 'EBADF' });
+});
+test('artifact file open refuses symlink swap before hashing', (t) => {
+  const root = fs.mkdtempSync(path.join(os.tmpdir(), 'public-artifact-swap-'));
+  t.after(() => fs.rmSync(root, { recursive: true, force: true }));
+  const base = 'apps/meet/dist';
+  const dir = path.join(root, base);
+  fs.mkdirSync(dir, { recursive: true });
+  const link = path.join(dir, 'payload.js');
+  fs.writeFileSync(path.join(root, 'outside.js'), 'outside');
+  fs.writeFileSync(link, 'inside');
+  fs.unlinkSync(link);
+  fs.symlinkSync(path.join(root, 'outside.js'), link);
+  assert.throws(() => collect(root, base), /Unsafe artifact entry/);
+});
+test('artifact file open refuses symlink swap immediately before opening', (t) => {
+  const root = fs.mkdtempSync(
+    path.join(os.tmpdir(), 'public-artifact-lstat-race-')
+  );
+  t.after(() => fs.rmSync(root, { recursive: true, force: true }));
+  const base = 'apps/meet/dist';
+  const artifact = path.join(root, base, 'payload.js');
+  fs.mkdirSync(path.dirname(artifact), { recursive: true });
+  const payload = 'inside';
+  fs.writeFileSync(artifact, payload);
+  fs.writeFileSync(path.join(root, 'outside.js'), 'outside');
+  const origOpen = fs.openSync;
+  fs.openSync = function (target, ...args) {
+    if (target === artifact) {
+      fs.unlinkSync(artifact);
+      fs.symlinkSync(path.join(root, 'outside.js'), artifact);
+    }
+    return origOpen.call(this, target, ...args);
+  };
+  t.after(() => {
+    fs.openSync = origOpen;
+  });
+  assert.throws(() => collect(root, base), /Unsafe artifact entry/);
 });
 test('each Meet output requires its own emitted Worker entry inside the artifact', (t) => {
   const root = fs.mkdtempSync(path.join(os.tmpdir(), 'public-pair-'));
