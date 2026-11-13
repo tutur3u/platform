@@ -5,7 +5,7 @@ import { describe, expect, it, vi } from 'vitest';
 import { useMiraMessageQueue } from '../use-mira-message-queue';
 
 describe('useMiraMessageQueue', () => {
-  it('preserves a queued prompt when the model disconnects before the debounce flush', async () => {
+  it('preserves a queued prompt when the model disconnects while a busy stream drains', async () => {
     vi.useFakeTimers();
     try {
       const createChat = vi.fn(
@@ -13,7 +13,7 @@ describe('useMiraMessageQueue', () => {
       );
       const clearAttachedFiles = vi.fn();
       const { result, rerender } = renderHook(
-        ({ disabled }) =>
+        ({ disabled, status }) =>
           useMiraMessageQueue({
             disabled,
             attachedFiles: [],
@@ -21,29 +21,30 @@ describe('useMiraMessageQueue', () => {
             clearAttachedFiles,
             sendMessageWithCurrentConfig: vi.fn(),
             snapshotAttachmentsForMessage: vi.fn(),
-            status: 'ready',
+            status,
           }),
-        { initialProps: { disabled: false } }
+        { initialProps: { disabled: false, status: 'streaming' } }
       );
       act(() => result.current.handleSubmit('Keep this prompt'));
-      rerender({ disabled: true });
+      rerender({ disabled: true, status: 'streaming' });
       await act(async () => {
         await vi.advanceTimersByTimeAsync(1000);
       });
       expect(createChat).not.toHaveBeenCalled();
       expect(clearAttachedFiles).not.toHaveBeenCalled();
       expect(result.current.queuedText).toBe('Keep this prompt');
-      await act(async () => rerender({ disabled: false }));
+      await act(async () => rerender({ disabled: false, status: 'ready' }));
       expect(createChat).toHaveBeenCalledExactlyOnceWith(
         'Keep this prompt',
         expect.any(Function),
-        expect.any(Function)
+        expect.any(Function),
+        expect.any(String)
       );
       const current = createChat.mock.calls[0]?.[1];
       expect(current?.()).toBe(true);
       expect(clearAttachedFiles).toHaveBeenCalledOnce();
       expect(result.current.queuedText).toBeNull();
-      await act(async () => rerender({ disabled: false }));
+      await act(async () => rerender({ disabled: false, status: 'ready' }));
       expect(createChat).toHaveBeenCalledOnce();
       act(() => result.current.resetQueue());
       expect(current?.()).toBe(false);
@@ -93,7 +94,8 @@ describe('useMiraMessageQueue', () => {
       expect.objectContaining({
         role: 'user',
         parts: [{ type: 'text', text: 'hello?' }],
-      })
+      }),
+      expect.any(Function)
     );
     expect(clearAttachedFiles).toHaveBeenCalledTimes(1);
   });

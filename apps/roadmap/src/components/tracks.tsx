@@ -1,6 +1,15 @@
 import { ChevronDown } from '@tuturuuu/icons';
 import { shellNavOffset } from '@tuturuuu/marketing-shell';
-import { type ReactNode, useEffect, useRef } from 'react';
+import {
+  memo,
+  type ReactNode,
+  Suspense,
+  useDeferredValue,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+} from 'react';
 import { APP_NAMES } from '../live/host-probe';
 import { shippedShare, statuses } from '../live/status';
 import {
@@ -14,7 +23,6 @@ import {
   type Messages,
   PrLinks,
   SectionHead,
-  STATUS_ICON,
 } from './shared';
 
 export function itemNote(
@@ -32,23 +40,39 @@ export function itemNote(
   return `${t.item.awaitingDeploy} ${APP_NAMES[item.app ?? ''] ?? item.app} · ${date}`;
 }
 
+type ViewTrack = RoadmapView['tracks'][number];
+
+const FILTERS: StatusFilter[] = ['all', 'shipped', 'active', 'planned'];
+
+/** A track's milestones narrowed to deliverables matching `filter`. */
+export function filterTrack(track: ViewTrack, filter: StatusFilter) {
+  return track.milestones
+    .map((milestone) => ({
+      ...milestone,
+      shown: milestone.deliverables.filter((d) =>
+        matchesFilter(d.state.status, filter)
+      ),
+    }))
+    .filter((milestone) => milestone.shown.length);
+}
+
 export function TracksSection({
   t,
   lang,
   view,
-  filter,
-  setFilter,
   onDock,
 }: {
   t: Messages;
   lang: Lang;
   view: RoadmapView;
-  filter: StatusFilter;
-  setFilter: (filter: StatusFilter) => void;
   /** True once this section has reached the full-size navbar. */
   onDock?: (docked: boolean) => void;
 }) {
   const sentinelRef = useRef<HTMLDivElement>(null);
+  // The pressed state paints on the tap; the list follows as a deferred,
+  // interruptible render (it holds hundreds of deliverables).
+  const [filter, setFilter] = useState<StatusFilter>('all');
+  const listFilter = useDeferredValue(filter);
   useEffect(() => {
     const el = sentinelRef.current;
     if (!el || !onDock) return;
@@ -56,9 +80,13 @@ export function TracksSection({
     // crossed, so the threshold must not follow the compact offset.
     const dockLine = shellNavOffset(false);
     let frame: number | null = null;
+    let docked: boolean | null = null;
     const update = () => {
       frame = null;
-      onDock(el.getBoundingClientRect().top < dockLine);
+      const next = el.getBoundingClientRect().top < dockLine;
+      if (next === docked) return;
+      docked = next;
+      onDock(next);
     };
     const schedule = () => {
       if (frame !== null) return;
@@ -73,20 +101,6 @@ export function TracksSection({
       if (frame !== null) cancelAnimationFrame(frame);
     };
   }, [onDock]);
-  const filters: StatusFilter[] = ['all', 'shipped', 'active', 'planned'];
-  const visible = view.tracks
-    .map((track) => ({
-      ...track,
-      milestones: track.milestones
-        .map((milestone) => ({
-          ...milestone,
-          shown: milestone.deliverables.filter((d) =>
-            matchesFilter(d.state.status, filter)
-          ),
-        }))
-        .filter((milestone) => milestone.shown.length),
-    }))
-    .filter((track) => track.milestones.length);
   return (
     <section className="section" id="tracks" aria-labelledby="tracks-title">
       <SectionHead
@@ -106,7 +120,7 @@ export function TracksSection({
         </nav>
         <fieldset className="segmented filters">
           <legend className="sr-only">{t.filters.label}</legend>
-          {filters.map((item) => (
+          {FILTERS.map((item) => (
             <button
               key={item}
               type="button"
@@ -118,89 +132,155 @@ export function TracksSection({
           ))}
         </fieldset>
       </div>
+      <TrackList
+        t={t}
+        lang={lang}
+        tracks={view.tracks}
+        filter={listFilter}
+        pending={listFilter !== filter}
+      />
+    </section>
+  );
+}
+
+const TrackList = memo(function TrackList({
+  t,
+  lang,
+  tracks,
+  filter,
+  pending,
+}: {
+  t: Messages;
+  lang: Lang;
+  tracks: ViewTrack[];
+  filter: StatusFilter;
+  pending: boolean;
+}) {
+  const visible = useMemo(
+    () =>
+      tracks
+        .map((track) => ({ track, milestones: filterTrack(track, filter) }))
+        .filter((entry) => entry.milestones.length),
+    [tracks, filter]
+  );
+  return (
+    <>
       {visible.length ? null : <p className="empty">{t.tracks.empty}</p>}
-      <div className="track-list">
-        {visible.map((track) => {
-          const shipped =
-            track.counts.live + track.counts.waiting_for_prod_sync;
+      <div className="track-list" aria-busy={pending || undefined}>
+        {visible.map(({ track, milestones }) => (
+          // One hydration boundary per card: React hydrates the list in
+          // small, interruptible pieces, and the card a reader taps first.
+          <Suspense key={track.id}>
+            <TrackCard
+              t={t}
+              lang={lang}
+              track={track}
+              milestones={milestones}
+              expanded={filter !== 'all'}
+            />
+          </Suspense>
+        ))}
+      </div>
+    </>
+  );
+});
+
+const TrackCard = memo(function TrackCard({
+  t,
+  lang,
+  track,
+  milestones,
+  expanded,
+}: {
+  t: Messages;
+  lang: Lang;
+  track: ViewTrack;
+  milestones: ReturnType<typeof filterTrack>;
+  expanded: boolean;
+}) {
+  const shipped = track.counts.live + track.counts.waiting_for_prod_sync;
+  return (
+    <article className="track" id={`track-${track.id}`}>
+      <header>
+        <div>
+          <h3>{track.name}</h3>
+          <p>{track.summary}</p>
+        </div>
+        <p className="track-count">
+          <b>{shipped}</b>/{track.total} <span>{t.tracks.shippedOf}</span>
+        </p>
+      </header>
+      <div className="bar" aria-hidden>
+        {statuses.map((s) =>
+          track.counts[s] ? (
+            <span
+              key={s}
+              className={`seg ${s}`}
+              style={{
+                width: `${(track.counts[s] / track.total) * 100}%`,
+              }}
+            />
+          ) : null
+        )}
+      </div>
+      <div className="milestones">
+        {milestones.map((milestone, index) => {
+          const done =
+            milestone.counts.live + milestone.counts.waiting_for_prod_sync;
           return (
-            <article className="track" id={`track-${track.id}`} key={track.id}>
-              <header>
-                <div>
-                  <h3>{track.name}</h3>
-                  <p>{track.summary}</p>
-                </div>
-                <p className="track-count">
-                  <b>{shipped}</b>/{track.total}{' '}
-                  <span>{t.tracks.shippedOf}</span>
-                </p>
-              </header>
-              <div className="bar" aria-hidden>
-                {statuses.map((s) =>
-                  track.counts[s] ? (
-                    <span
-                      key={s}
-                      className={`seg ${s}`}
-                      style={{
-                        width: `${(track.counts[s] / track.total) * 100}%`,
-                      }}
-                    />
-                  ) : null
-                )}
-              </div>
-              <div className="milestones">
-                {track.milestones.map((milestone, index) => {
-                  const done =
-                    milestone.counts.live +
-                    milestone.counts.waiting_for_prod_sync;
-                  return (
-                    <details
-                      key={milestone.id}
-                      open={index === 0 || filter !== 'all'}
-                    >
-                      <summary>
-                        <span className="ms-title">{milestone.title}</span>
-                        <span className="ms-count">
-                          {done}/{milestone.deliverables.length}
-                        </span>
-                        <ChevronDown size={16} aria-hidden />
-                      </summary>
-                      {milestone.summary ? (
-                        <p className="ms-summary">{milestone.summary}</p>
-                      ) : null}
-                      <ul className="deliverables">
-                        {milestone.shown.map((item) => {
-                          const Icon = STATUS_ICON[item.state.status];
-                          const note = itemNote(item, t, lang);
-                          return (
-                            <li key={item.id} className={item.state.status}>
-                              <Icon size={18} aria-hidden className="d-icon" />
-                              <div>
-                                <p className="d-title">{item.title}</p>
-                                <p className="meta">
-                                  <span className="sr-only">
-                                    {t.status[item.state.status]}.{' '}
-                                  </span>
-                                  {note ? (
-                                    <span>{note}</span>
-                                  ) : (
-                                    <span>{t.status[item.state.status]}</span>
-                                  )}
-                                  <PrLinks prs={item.state.prs} />
-                                </p>
-                              </div>
-                            </li>
-                          );
-                        })}
-                      </ul>
-                    </details>
-                  );
-                })}
-              </div>
-            </article>
+            <details key={milestone.id} open={index === 0 || expanded}>
+              <summary>
+                <span className="ms-title">{milestone.title}</span>
+                <span className="ms-count">
+                  {done}/{milestone.deliverables.length}
+                </span>
+                <ChevronDown size={16} aria-hidden />
+              </summary>
+              {milestone.summary ? (
+                <p className="ms-summary">{milestone.summary}</p>
+              ) : null}
+              <ul className="deliverables">
+                {milestone.shown.map((item) => (
+                  <DeliverableRow key={item.id} t={t} lang={lang} item={item} />
+                ))}
+              </ul>
+            </details>
           );
         })}
       </div>
-    </section>
+    </article>
+  );
+});
+
+/**
+ * One deliverable in as few nodes as possible (there are ~470): the status
+ * glyph is a CSS mask on the row, not an inline SVG per item.
+ */
+function DeliverableRow({
+  t,
+  lang,
+  item,
+}: {
+  t: Messages;
+  lang: Lang;
+  item: ViewTrack['milestones'][number]['deliverables'][number];
+}) {
+  const status = item.state.status;
+  const note = itemNote(item, t, lang);
+  return (
+    <li className={status}>
+      <p className="d-title">{item.title}</p>
+      <p className="meta">
+        {note ? (
+          <>
+            <span className="sr-only">{t.status[status]}. </span>
+            {note}
+          </>
+        ) : (
+          t.status[status]
+        )}
+        <PrLinks prs={item.state.prs} />
+      </p>
+    </li>
   );
 }

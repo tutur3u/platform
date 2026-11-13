@@ -13,6 +13,13 @@ import {
   speculativeLinks,
   STAGE_LABELS,
 } from './pre-seal-doctor.mjs';
+import {
+  DOCUMENT_BUDGET,
+  documentBudgetReport,
+  scriptCoverage,
+  pendingBoundaryFailures,
+  redundantAltFailures,
+} from './doctor-markup.mjs';
 import '../../../scripts/ci/asset-smoke.test.mjs';
 import './canonical-smoke.test.mjs';
 
@@ -25,7 +32,7 @@ function passingRaw() {
     canonical: {
       status: 200,
       cacheControl: 'public,s-maxage=300,stale-while-revalidate=86400',
-      body: `<link rel="canonical" href="https://tuturuuu.com/roadmap"/><h2 id="timeline-title">Timeline</h2><meta property="og:url" content="https://tuturuuu.com/roadmap"/><meta property="og:image" content="https://tuturuuu.com/roadmap/assets/og-roadmap-Abcd1234.png"/><link rel="alternate" hreflang="x-default" href="https://tuturuuu.com/roadmap"/><header id="navbar"><a href="https://tuturuuu.com/home"><img alt="Tuturuuu" src="${LOGO}"></a><a href="https://tuturuuu.com/login">Get Started</a></header><div id="main-content"><script src="/roadmap/assets/index-CGgt8iCG.js"></script>${[...STAGE_LABELS, PLAN_LABEL].join(' ')}</div><footer></footer>`,
+      body: `<link rel="canonical" href="https://tuturuuu.com/roadmap"/><h2 id="timeline-title">Timeline</h2><meta property="og:url" content="https://tuturuuu.com/roadmap"/><meta property="og:image" content="https://tuturuuu.com/roadmap/assets/og-roadmap-Abcd1234.png"/><link rel="alternate" hreflang="x-default" href="https://tuturuuu.com/roadmap"/><header id="navbar"><a href="https://tuturuuu.com/home"><img alt="" src="${LOGO}"><span class="font-bold">Tuturuuu</span></a><a href="https://tuturuuu.com/login">Get Started</a></header><div id="main-content"><script src="/roadmap/assets/index-CGgt8iCG.js"></script>${[...STAGE_LABELS, PLAN_LABEL].join(' ')}</div><footer></footer>`,
     },
     satellite: { status: 301, location: 'https://tuturuuu.com/roadmap' },
     redirects: REDIRECT_CHAINS.map((chain) => ({
@@ -46,6 +53,8 @@ function passingRaw() {
     documents: PUBLIC_DOCUMENT_PATHS.map((path) => ({
       path,
       status: 200,
+      size: 330_000,
+      scripts: { inline: 4, uncovered: 0 },
       speculative: [],
     })),
     history: {
@@ -314,4 +323,88 @@ test('doctor runs the configured compatibility date, capped at what workerd supp
   );
   // Broken variant: a missing date must not reach workerd as undefined.
   assert.equal(doctorCompatibilityDate(undefined, '2026-07-30'), '2026-07-30');
+});
+
+test('D79: a navbar logo whose alt repeats the brand name beside it fails the doctor', () => {
+  const observation = passing();
+  assert.deepEqual(redundantAltFailures(observation.canonical.body), []);
+  observation.canonical.body = observation.canonical.body.replace(
+    '<img alt="" ',
+    '<img alt="Tuturuuu" '
+  );
+  const verdict = assessDoctor(observation);
+  assert.equal(verdict.ok, false);
+  assert.ok(
+    verdict.failures.some((failure) => failure.includes('image-redundant-alt')),
+    verdict.failures.join('\n')
+  );
+});
+
+test('D79: a public document over half the CSP size limit fails the doctor', () => {
+  const observation = passing();
+  assert.deepEqual(assessDoctor(observation).failures, []);
+  const report = documentBudgetReport(observation.documents);
+  assert.equal(report.length, PUBLIC_DOCUMENT_PATHS.length);
+  assert.match(report[0] ?? '', /% under the 2048 KiB CSP limit/);
+  // Broken variant: an oversized EduFest page (its CSP would get no hashes).
+  observation.documents[2].size = DOCUMENT_BUDGET + 1;
+  const verdict = assessDoctor(observation);
+  assert.equal(verdict.ok, false);
+  assert.ok(
+    verdict.failures.some((failure) =>
+      failure.startsWith('/roadmap/workshops/edufest-2026 is ')
+    ),
+    verdict.failures.join('\n')
+  );
+  // An unmeasured document is a failure too, never a silent pass.
+  delete observation.documents[0].size;
+  assert.ok(
+    assessDoctor(observation).failures.some((failure) =>
+      failure.includes('size was not measured')
+    )
+  );
+});
+
+test('D79: a Suspense boundary left pending on the server fails the doctor', () => {
+  const observation = passing();
+  observation.canonical.body += '<!--$--><section>done</section><!--/$-->';
+  assert.deepEqual(pendingBoundaryFailures(observation.canonical.body), []);
+  // Broken variant: a boundary streamed later (fallback now, content after).
+  observation.canonical.body +=
+    '<!--$?--><template id="B:0"></template><!--/$-->';
+  const verdict = assessDoctor(observation);
+  assert.equal(verdict.ok, false);
+  assert.ok(
+    verdict.failures.some((failure) => failure.includes('pending Suspense')),
+    verdict.failures.join('\n')
+  );
+});
+
+test('D79: every public page has exactly four inline scripts, all hashed', () => {
+  const observation = passing();
+  assert.deepEqual(assessDoctor(observation).failures, []);
+  const csp = "script-src 'self' 'sha256-a' 'sha256-b' 'sha256-c' 'sha256-d'";
+  const four = ["'sha256-a'", "'sha256-b'", "'sha256-c'", "'sha256-d'"];
+  assert.deepEqual(scriptCoverage(four, csp), { inline: 4, uncovered: 0 });
+  // Broken variants: a fifth inline script (the old hydration loader), and
+  // one the policy does not hash.
+  observation.documents[1].scripts = scriptCoverage(
+    [...four, "'sha256-loader'"],
+    `${csp} 'sha256-loader'`
+  );
+  observation.documents[3].scripts = scriptCoverage(
+    ["'sha256-a'", "'sha256-b'", "'sha256-c'", "'sha256-x'"],
+    csp
+  );
+  const failures = assessDoctor(observation).failures;
+  assert.ok(
+    failures.includes('/roadmap/vi has 5 inline scripts, expected exactly 4'),
+    failures.join('\n')
+  );
+  assert.ok(
+    failures.includes(
+      '/roadmap/vi/workshops/edufest-2026 has 1 inline scripts its CSP does not hash'
+    ),
+    failures.join('\n')
+  );
 });

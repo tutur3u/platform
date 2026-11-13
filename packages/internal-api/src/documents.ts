@@ -8,7 +8,8 @@ import {
 export type WorkspaceDocumentSummary = Pick<
   WorkspaceDocument,
   'content' | 'created_at' | 'id' | 'is_public' | 'name'
->;
+> &
+  Partial<Pick<WorkspaceDocument, 'parent_id' | 'position'>>;
 
 export type WorkspaceDocumentDetail = WorkspaceDocumentSummary;
 
@@ -31,6 +32,8 @@ export type CreateWorkspaceDocumentPayload = {
   content?: WorkspaceDocument['content'];
   is_public?: boolean;
   name: string;
+  parent_id?: WorkspaceDocument['parent_id'];
+  position?: WorkspaceDocument['position'];
 };
 
 export type CreateWorkspaceDocumentResponse = {
@@ -156,6 +159,27 @@ export function deleteWorkspaceDocument(
     {
       cache: 'no-store',
       method: 'DELETE',
+    }
+  );
+}
+
+export type UpdateWorkspaceDocumentPayload = { is_public?: boolean } & Partial<
+  Pick<WorkspaceDocument, 'name' | 'content' | 'parent_id' | 'position'>
+>;
+
+export function updateWorkspaceDocument(
+  workspaceId: string,
+  documentId: string,
+  payload: UpdateWorkspaceDocumentPayload,
+  options?: InternalApiClientOptions
+) {
+  return getInternalApiClient(options).json<{ message: string }>(
+    workspaceDocumentPath(workspaceId, documentId),
+    {
+      method: 'PATCH',
+      body: JSON.stringify(payload),
+      cache: 'no-store',
+      headers: { 'Content-Type': 'application/json' },
     }
   );
 }

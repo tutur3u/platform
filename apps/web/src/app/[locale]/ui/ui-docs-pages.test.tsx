@@ -66,10 +66,10 @@ describe('ui docs pages', () => {
 
     expect(
       screen.getByRole('link', { name: /overview.setupTitle/i })
-    ).toHaveAttribute('href', '/en/ui/setup');
+    ).toHaveAttribute('href', '/en/design/setup');
     expect(
       screen.getByRole('link', { name: /overview.componentsTitle/i })
-    ).toHaveAttribute('href', '/en/ui/components');
+    ).toHaveAttribute('href', '/en/design/components');
   });
 
   it('renders all component links on the components index', async () => {
@@ -84,11 +84,11 @@ describe('ui docs pages', () => {
     ).toBeInTheDocument();
     expect(screen.getByRole('link', { name: /Button/ })).toHaveAttribute(
       'href',
-      '/en/ui/components/button'
+      '/en/design/components/button'
     );
     expect(screen.getByRole('link', { name: /Tooltip/ })).toHaveAttribute(
       'href',
-      '/en/ui/components/tooltip'
+      '/en/design/components/tooltip'
     );
   });
 
@@ -111,7 +111,7 @@ describe('ui docs pages', () => {
     ).toBeInTheDocument();
     expect(screen.getByRole('link', { name: /Accordion/i })).toHaveAttribute(
       'href',
-      '/en/ui/components/accordion'
+      '/en/design/components/accordion'
     );
   });
 

@@ -53,7 +53,7 @@ export function indexLiveData(data: LiveData) {
 }
 export type LiveIndex = ReturnType<typeof indexLiveData>;
 
-function deployIncludes(host: HostFact | undefined, mergedAt: string) {
+export function deployIncludes(host: HostFact | undefined, mergedAt: string) {
   if (!host?.commit || !host.commitAt) return null;
   return Date.parse(host.commitAt) >= Date.parse(mergedAt);
 }

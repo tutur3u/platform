@@ -37,7 +37,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
       name: doc.name,
     }),
     alternates: {
-      canonical: `${siteConfig.url}/${normalizedLocale}/ui/components/${doc.slug}`,
+      canonical: `${siteConfig.url}/${normalizedLocale}/design/components/${doc.slug}`,
     },
   };
 }

@@ -60,7 +60,7 @@
     "@types/react": "~19.2.18",
     "@types/react-dom": "~19.2.7",
     "@vitejs/plugin-react": "6.1.2",
-    "@vitejs/plugin-rsc": "0.5.38",
+    "@vitejs/plugin-rsc": "0.5.39",
     "babel-plugin-react-compiler": "^1.0.0",
     "postcss": "^8.5.31",
     "typescript": "7.0.2",

@@ -1,0 +1,552 @@
+.hero .overall .bar {
+  height: 12px;
+}
+.hero .overall .legend {
+  font-size: 13px;
+  gap: 8px 18px;
+}
+@media (min-width: 900px) {
+  .kpis {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 12px;
+  }
+  .kpi-body {
+    padding: 18px 20px;
+  }
+}
+
+/* Change badge: icon, signed figure and words; colour only reinforces. */
+.delta {
+  display: inline-flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 4px;
+  font-size: 12.5px;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+}
+/* Trend triangle (up; rotated for down; a bar for no change). */
+.delta::before {
+  content: "";
+  flex: none;
+  width: 9px;
+  height: 8px;
+  background: currentColor;
+  clip-path: polygon(50% 0, 100% 100%, 0 100%);
+}
+.delta-down::before {
+  transform: rotate(180deg);
+}
+.delta-flat::before {
+  height: 2px;
+  clip-path: none;
+}
+.delta-flat {
+  color: var(--rm-muted);
+}
+.delta-label {
+  font-weight: 500;
+  color: var(--rm-muted);
+}
+.delta-good {
+  color: color-mix(in oklab, var(--rm-live) 62%, var(--rm-ink));
+}
+.delta-bad {
+  color: color-mix(in oklab, var(--rm-progress) 62%, var(--rm-ink));
+}
+
+/* Shipping pulse */
+.pulse-head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: end;
+  justify-content: space-between;
+  gap: 12px 24px;
+}
+.pulse-layout {
+  display: grid;
+  gap: 16px;
+  min-width: 0;
+}
+.pulse-card,
+.pulse-side {
+  margin: 0;
+  min-width: 0;
+  display: grid;
+  align-content: start;
+  gap: 14px;
+  padding: 18px;
+  border: 1px solid var(--rm-line);
+  border-radius: var(--rm-radius);
+  background: var(--rm-panel);
+}
+.pulse-legend {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px 16px;
+  font-size: 12.5px;
+  color: var(--rm-muted);
+}
+.key {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+.key i {
+  width: 10px;
+  height: 10px;
+  border-radius: 3px;
+}
+.pulse-section {
+  --pc-all: color-mix(in oklab, var(--rm-ink) 46%, transparent);
+  --pc-na: color-mix(in oklab, var(--rm-ink) 3%, transparent);
+  --pc-tracked: var(--rm-merge);
+  --pc-prod: var(--rm-live);
+}
+.key-all i {
+  background: var(--pc-all);
+}
+.key-tracked i {
+  background: var(--pc-tracked);
+}
+.key-prod i {
+  background: var(--pc-prod);
+}
+.key-ma i {
+  height: 2px;
+  border-radius: 1px;
+  background: var(--rm-ink);
+}
+.pchart {
+  display: grid;
+  gap: 6px;
+  min-width: 0;
+}
+.pchart-plot {
+  position: relative;
+  height: 180px;
+  margin-left: 34px;
+}
+.pchart-grid span {
+  position: absolute;
+  left: -34px;
+  right: 0;
+  transform: translateY(50%);
+  font-size: 11px;
+  line-height: 1;
+  color: var(--rm-muted);
+  font-variant-numeric: tabular-nums;
+}
+.pchart-grid span::after {
+  content: "";
+  position: absolute;
+  left: 34px;
+  right: 0;
+  top: 50%;
+  border-top: 1px dashed var(--rm-line);
+}
+.pchart-svg {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  overflow: visible;
+}
+.pchart-hover {
+  fill: color-mix(in oklab, var(--rm-ink) 7%, transparent);
+}
+.bar-all {
+  fill: var(--pc-all);
+}
+.bar-na {
+  fill: var(--pc-na);
+}
+.bar-tracked {
+  fill: var(--pc-tracked);
+}
+.bar-prod {
+  fill: var(--pc-prod);
+}
+.pchart-ma {
+  fill: none;
+  stroke: var(--rm-ink);
+  stroke-width: 2px;
+  stroke-linejoin: round;
+  stroke-linecap: round;
+}
+.pchart-hits {
+  position: absolute;
+  inset: 0;
+  display: flex;
+}
+.pchart-hit {
+  flex: 1;
+  min-width: 0;
+  margin: 0;
+  padding: 0;
+  border: 0;
+  border-radius: 4px;
+  background: transparent;
+  touch-action: manipulation;
+}
+.pchart-hit:focus-visible {
+  outline: 2px solid var(--rm-sync);
+  outline-offset: -2px;
+}
+.pchart-tip {
+  position: absolute;
+  top: 6px;
+  left: var(--tip-x, 50%);
+  z-index: 2;
+  width: max-content;
+  max-width: min(260px, 80vw);
+  padding: 10px 12px;
+  border: 1px solid var(--rm-line);
+  border-radius: 12px;
+  background: var(--rm-panel);
+  box-shadow: 0 8px 24px color-mix(in oklab, #000 18%, transparent);
+  font-size: 12.5px;
+  pointer-events: none;
+  transform: translateX(-50%);
+}
+.pchart-tip[data-align="start"] {
+  transform: translateX(-12%);
+}
+.pchart-tip[data-align="end"] {
+  transform: translateX(-88%);
+}
+.pchart-tip strong {
+  display: block;
+  margin-bottom: 6px;
+  font-size: 13px;
+}
+.pchart-tip dl {
+  margin: 0;
+  display: grid;
+  gap: 3px;
+}
+.pchart-tip dl div {
+  display: flex;
+  justify-content: space-between;
+  gap: 16px;
+}
+.pchart-tip dt {
+  color: var(--rm-muted);
+}
+.pchart-tip dd {
+  margin: 0;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+  text-align: right;
+}
+.tip-products dd {
+  font-weight: 500;
+  max-width: 150px;
+}
+/* The hidden table is still laid out: plain weight, so its bold default
+   never loads another font face. */
+.pchart table :is(th, caption) {
+  font-weight: 400;
+}
+.pchart-axis {
+  display: flex;
+  margin-left: 34px;
+  font-size: 11.5px;
+  color: var(--rm-muted);
+}
+.pchart-axis span {
+  flex: 1;
+  min-width: 0;
+  overflow: visible;
+  white-space: nowrap;
+  text-align: center;
+}
+.pchart-axis .is-today {
+  color: var(--rm-ink);
+  font-weight: 600;
+  direction: rtl;
+  text-align: right;
+}
+.pchart-axis span:first-child {
+  text-align: left;
+}
+@media (max-width: 719px) {
+  .pchart-axis [data-rank="1"] {
+    visibility: hidden;
+  }
+  /* Narrow screens: the tooltip spans the plot, two columns of figures. */
+  .pchart-tip,
+  .pchart-tip[data-align] {
+    left: 0;
+    right: 0;
+    width: auto;
+    max-width: none;
+    transform: none;
+  }
+  .pchart-tip dl {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    column-gap: 14px;
+  }
+  .pchart-tip dl div {
+    display: grid;
+    gap: 0;
+  }
+  .pchart-tip dd {
+    text-align: left;
+  }
+  .tip-products {
+    grid-column: 1 / -1;
+  }
+}
+.pulse-notes,
+.pulse-fine {
+  display: grid;
+  gap: 2px;
+  margin: 0;
+  font-size: 12px;
+  line-height: 1.5;
+  color: var(--rm-muted);
+}
+.pulse-notes p {
+  margin: 0;
+}
+.pulse-totals {
+  margin: 0;
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 14px 16px;
+}
+.pulse-totals div {
+  display: grid;
+  gap: 2px;
+  min-width: 0;
+}
+.pulse-totals .total-primary {
+  grid-column: 1 / -1;
+}
+.pulse-totals dt {
+  font-size: 12.5px;
+  color: var(--rm-muted);
+}
+.pulse-totals dd {
+  margin: 0;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 4px 8px;
+}
+.pulse-totals b {
+  font-size: 22px;
+  font-weight: 600;
+  letter-spacing: -0.02em;
+  font-variant-numeric: tabular-nums;
+}
+.pulse-totals .total-primary b {
+  font-size: 34px;
+}
+.pulse-totals .of {
+  font-size: 13px;
+  color: var(--rm-muted);
+}
+.pulse-totals .ttl span {
+  display: grid;
+}
+.pulse-totals .ttl small {
+  font-size: 11px;
+  color: var(--rm-muted);
+}
+.pulse-totals .ttl b {
+  font-size: 17px;
+}
+.pulse-totals .na {
+  font-size: 14px;
+  color: var(--rm-muted);
+}
+.breakdown h3 {
+  margin: 0 0 8px;
+  font-size: 14px;
+}
+.breakdown h3 span {
+  font-weight: 400;
+  color: var(--rm-muted);
+}
+.breakdown ul {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  display: grid;
+  gap: 6px;
+}
+.breakdown li {
+  display: grid;
+  grid-template-columns: minmax(0, 8.5em) minmax(0, 1fr) 2.5em;
+  align-items: center;
+  gap: 8px;
+  font-size: 13px;
+}
+.breakdown-name {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.breakdown-bar {
+  height: 8px;
+  border-radius: 999px;
+  background: var(--rm-soft);
+  overflow: hidden;
+}
+.breakdown-bar span {
+  display: block;
+  height: 100%;
+  border-radius: inherit;
+  background: color-mix(in oklab, var(--rm-ink) 55%, transparent);
+}
+.breakdown-count {
+  text-align: right;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+}
+@media (min-width: 720px) {
+  .pchart-plot {
+    height: 240px;
+  }
+}
+.pulse-breakdown {
+  min-width: 0;
+  padding: 18px;
+  border: 1px solid var(--rm-line);
+  border-radius: var(--rm-radius);
+  background: var(--rm-panel);
+}
+.breakdown-other {
+  margin: 10px 0 0;
+  font-size: 12.5px;
+  color: var(--rm-muted);
+}
+.breakdown-other b {
+  color: var(--rm-ink);
+  font-variant-numeric: tabular-nums;
+}
+@media (min-width: 1024px) {
+  .pulse-layout {
+    grid-template-columns: minmax(0, 1fr) 340px;
+    grid-template-areas:
+      "chart side"
+      "breakdown side";
+    align-items: start;
+  }
+  .pulse-card {
+    grid-area: chart;
+  }
+  .pulse-side {
+    grid-area: side;
+  }
+  .pulse-breakdown {
+    grid-area: breakdown;
+  }
+  .pulse-breakdown ul {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    column-gap: 32px;
+  }
+}
+
+/* Catch-up: production updates beside the patch notes. */
+.catchup {
+  display: grid;
+  gap: 40px;
+  min-width: 0;
+}
+.page > .catchup {
+  content-visibility: auto;
+  contain-intrinsic-block-size: auto 720px;
+}
+.update-list {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.update {
+  display: grid;
+  grid-template-columns: 84px minmax(0, 1fr);
+  gap: 14px;
+  padding: 14px 0;
+  border-top: 1px solid var(--rm-line);
+}
+.update-when {
+  display: grid;
+  align-content: start;
+  gap: 2px;
+}
+.update-when time {
+  font-size: 13px;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+}
+.update-when small {
+  font-size: 11.5px;
+  color: var(--rm-muted);
+}
+.update-body {
+  display: grid;
+  gap: 6px;
+  min-width: 0;
+}
+.update-body h3 {
+  margin: 0;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 4px 10px;
+  font-size: 16px;
+  font-weight: 600;
+}
+/* Sans tabular figures, not the mono label font: these sit near the fold,
+   and the mono subset would load with the first paint. */
+.update-commit,
+.pr-link {
+  font-size: 12px;
+  font-variant-numeric: tabular-nums;
+  font-weight: 500;
+  color: var(--rm-muted);
+}
+.pr-link {
+  margin-left: 6px;
+}
+.update-new {
+  padding: 1px 8px;
+  border-radius: 999px;
+  background: color-mix(in oklab, var(--rm-merge) 16%, transparent);
+  color: color-mix(in oklab, var(--rm-merge) 60%, var(--rm-ink));
+  font-size: 11.5px;
+  font-weight: 600;
+}
+.update-counts {
+  margin: 0;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px 14px;
+  font-size: 13px;
+  font-weight: 500;
+}
+.update-counts span {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+}
+.update-counts span::before {
+  width: 14px;
+  height: 14px;
+}
+.update-items {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  display: grid;
+  gap: 4px;
+  font-size: 14px;
+  line-height: 1.45;
+}
+.update-more {
+  color: var(--rm-muted);
+  font-size: 13px;
+}

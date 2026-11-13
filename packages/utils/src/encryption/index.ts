@@ -16,6 +16,11 @@ export {
   isEncryptionEnabled,
 } from './encryption-service';
 
+export {
+  EncryptionUnavailableError,
+  isEncryptionRequired,
+} from './encryption-required';
+
 export type {
   CalendarEventWithEncryption,
   EncryptedCalendarEventFields,

@@ -1,4 +1,8 @@
 import { createHmac, randomUUID, timingSafeEqual } from 'node:crypto';
+import {
+  resolveExplicitSecret,
+  resolveServerTokenSecrets,
+} from '@tuturuuu/utils/app-coordination-token';
 import { resolveTuturuuuWebAppUrl } from '@tuturuuu/utils/next-config';
 
 const EMAIL_UNSUBSCRIBE_TOKEN_TYPE = 'global_email_unsubscribe';
@@ -24,31 +28,25 @@ function normalizeEmail(email: string) {
 }
 
 function getSecretCandidates(explicitSecret?: string) {
-  const candidates = explicitSecret
-    ? [explicitSecret]
-    : [
-        process.env.TUTURUUU_EMAIL_UNSUBSCRIBE_SECRET,
-        process.env.EMAIL_UNSUBSCRIBE_SECRET,
-        process.env.TUTURUUU_APP_COORDINATION_SECRET,
-        process.env.NEXTAUTH_SECRET,
-        process.env.SUPABASE_SECRET_KEY,
-        process.env.SUPABASE_SERVICE_ROLE_KEY,
-        process.env.SUPABASE_SERVICE_KEY,
-      ];
+  const options = {
+    localDevelopmentSecret: LOCAL_DEVELOPMENT_SECRET,
+    missingMessage: 'Missing TUTURUUU_EMAIL_UNSUBSCRIBE_SECRET',
+  };
 
-  const secrets = candidates
-    .map((value) => value?.trim())
-    .filter((value): value is string => Boolean(value));
-
-  if (secrets.length === 0 && process.env.NODE_ENV !== 'production') {
-    return [LOCAL_DEVELOPMENT_SECRET];
-  }
-
-  if (secrets.length === 0) {
-    throw new Error('Missing TUTURUUU_EMAIL_UNSUBSCRIBE_SECRET');
-  }
-
-  return [...new Set(secrets)];
+  return explicitSecret
+    ? resolveExplicitSecret(explicitSecret, options)
+    : resolveServerTokenSecrets(
+        [
+          'TUTURUUU_EMAIL_UNSUBSCRIBE_SECRET',
+          'EMAIL_UNSUBSCRIBE_SECRET',
+          'TUTURUUU_APP_COORDINATION_SECRET',
+          'NEXTAUTH_SECRET',
+          'SUPABASE_SECRET_KEY',
+          'SUPABASE_SERVICE_ROLE_KEY',
+          'SUPABASE_SERVICE_KEY',
+        ],
+        options
+      );
 }
 
 function encodeBase64Url(value: string | Buffer) {

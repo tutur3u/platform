@@ -40,25 +40,157 @@ export function parseUploadedTree(text) {
   return match[1];
 }
 
+function zipChecksum(data) {
+  let crc = 0xffffffff;
+  for (const byte of data) {
+    crc ^= byte;
+    for (let bit = 0; bit < 8; bit++)
+      crc = (crc >>> 1) ^ (0xedb88320 & -(crc & 1));
+  }
+  return (crc ^ 0xffffffff) >>> 0;
+}
+
 export function readZipText(buffer, filename) {
   const zip = Buffer.isBuffer(buffer) ? buffer : Buffer.from(buffer);
+  const malformed = () => {
+    throw new Error('malformed or unsupported zip archive');
+  };
+  const fits = (offset, size, limit = zip.length) =>
+    offset >= 0 && size >= 0 && offset <= limit && size <= limit - offset;
+  // The central directory carries sizes when streamed local headers contain zeroes.
+  let end = -1;
+  for (
+    let i = zip.length - 22;
+    i >= Math.max(0, zip.length - 22 - 65535);
+    i--
+  ) {
+    if (
+      zip.readUInt32LE(i) === 0x06054b50 &&
+      i + 22 + zip.readUInt16LE(i + 20) === zip.length
+    ) {
+      end = i;
+      break;
+    }
+  }
+  const entries = [];
+  let dataLimit = zip.length;
+  if (end !== -1) {
+    const count = zip.readUInt16LE(end + 10);
+    const size = zip.readUInt32LE(end + 12);
+    const start = zip.readUInt32LE(end + 16);
+    if (
+      zip.readUInt16LE(end + 4) ||
+      zip.readUInt16LE(end + 6) ||
+      zip.readUInt16LE(end + 8) !== count ||
+      count === 0xffff ||
+      size === 0xffffffff ||
+      start === 0xffffffff ||
+      !fits(start, size, end) ||
+      start + size !== end
+    )
+      malformed();
+    dataLimit = start;
+    let cursor = start;
+    for (let i = 0; i < count; i++) {
+      if (!fits(cursor, 46, end) || zip.readUInt32LE(cursor) !== 0x02014b50)
+        malformed();
+      const nameLength = zip.readUInt16LE(cursor + 28);
+      const length =
+        46 +
+        nameLength +
+        zip.readUInt16LE(cursor + 30) +
+        zip.readUInt16LE(cursor + 32);
+      if (!fits(cursor, length, end) || zip.readUInt16LE(cursor + 34))
+        malformed();
+      entries.push({
+        offset: zip.readUInt32LE(cursor + 42),
+        flags: zip.readUInt16LE(cursor + 8),
+        method: zip.readUInt16LE(cursor + 10),
+        crc: zip.readUInt32LE(cursor + 16),
+        compressed: zip.readUInt32LE(cursor + 20),
+        size: zip.readUInt32LE(cursor + 24),
+        name: zip.subarray(cursor + 46, cursor + 46 + nameLength).toString(),
+      });
+      cursor += length;
+    }
+    if (cursor !== end) malformed();
+  }
   let offset = 0;
-  while (offset + 30 <= zip.length) {
-    if (zip.readUInt32LE(offset) !== 0x04034b50) break;
+  let index = 0;
+  let text;
+  while (end !== -1 ? index < entries.length : fits(offset, 30)) {
+    const entry = end !== -1 ? entries[index++] : null;
+    if (entry) offset = entry.offset;
+    if (
+      !fits(offset, 30, dataLimit) ||
+      zip.readUInt32LE(offset) !== 0x04034b50
+    ) {
+      if (entry) malformed();
+      break;
+    }
+    const flags = zip.readUInt16LE(offset + 6);
     const method = zip.readUInt16LE(offset + 8);
-    const compressedSize = zip.readUInt32LE(offset + 18);
+    const compressedSize = entry
+      ? entry.compressed
+      : zip.readUInt32LE(offset + 18);
+    const size = entry ? entry.size : zip.readUInt32LE(offset + 22);
     const nameLength = zip.readUInt16LE(offset + 26);
     const extraLength = zip.readUInt16LE(offset + 28);
-    const name = zip.subarray(offset + 30, offset + 30 + nameLength).toString();
     const dataStart = offset + 30 + nameLength + extraLength;
-    const data = zip.subarray(dataStart, dataStart + compressedSize);
+    if (
+      !fits(offset + 30, nameLength + extraLength, dataLimit) ||
+      !fits(dataStart, compressedSize, dataLimit) ||
+      compressedSize === 0xffffffff ||
+      size === 0xffffffff ||
+      flags & 0x2041
+    )
+      malformed();
+    const name = zip.subarray(offset + 30, offset + 30 + nameLength).toString();
+    if (
+      entry &&
+      (entry.name !== name || entry.flags !== flags || entry.method !== method)
+    )
+      malformed();
+    if (flags & 8) {
+      if (!entry) malformed();
+      let descriptor = dataStart + compressedSize;
+      if (!fits(descriptor, 12, dataLimit)) malformed();
+      if (zip.readUInt32LE(descriptor) === 0x08074b50) descriptor += 4;
+      if (
+        !fits(descriptor, 12, dataLimit) ||
+        zip.readUInt32LE(descriptor) !== entry.crc ||
+        zip.readUInt32LE(descriptor + 4) !== compressedSize ||
+        zip.readUInt32LE(descriptor + 8) !== size
+      )
+        malformed();
+    } else if (
+      entry &&
+      (zip.readUInt32LE(offset + 18) !== compressedSize ||
+        zip.readUInt32LE(offset + 22) !== size ||
+        zip.readUInt32LE(offset + 14) !== entry.crc)
+    )
+      malformed();
     if (name === filename || name.endsWith(`/${filename}`)) {
-      if (method === 0) return data.toString('utf8');
-      if (method === 8) return inflateRawSync(data).toString('utf8');
-      throw new Error(`unsupported zip method ${method}`);
+      const data = zip.subarray(dataStart, dataStart + compressedSize);
+      let raw;
+      if (method === 0) raw = data;
+      else if (method === 8) {
+        const inflated = inflateRawSync(data, {
+          info: true,
+          maxOutputLength: Math.max(1, size),
+        });
+        if (inflated.engine.bytesWritten !== compressedSize) malformed();
+        raw = inflated.buffer;
+      } else throw new Error(`unsupported zip method ${method}`);
+      if (raw.length !== size || (entry && zipChecksum(raw) !== entry.crc))
+        malformed();
+      if (entry) return raw.toString('utf8');
+      text ??= raw.toString('utf8');
     }
     offset = dataStart + compressedSize;
   }
+  if (end === -1 && offset !== zip.length) malformed();
+  if (text !== undefined) return text;
   throw new Error(`zip entry ${filename} is missing`);
 }
 

@@ -10,14 +10,16 @@ import ShowQRButton from './show-qr-button';
 interface UtilityButtonsProps {
   plan: MeetTogetherPlan;
   handlePNG: () => Promise<void>;
+  planBaseUrl?: string;
 }
 
 export default function UtilityButtons({
   plan,
   handlePNG,
+  planBaseUrl,
 }: UtilityButtonsProps) {
   if (!plan?.id) return null;
-  const url = generateCanonicalMeetUrl(plan.id);
+  const url = generateCanonicalMeetUrl(plan.id, planBaseUrl);
 
   return (
     <div className="flex w-full flex-col items-center justify-between gap-4 md:flex-row md:items-start">

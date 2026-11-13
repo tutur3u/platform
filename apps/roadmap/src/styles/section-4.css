@@ -1,0 +1,559 @@
+.ws-stage-slide {
+  display: grid;
+  gap: 8px;
+  align-content: start;
+  padding: 16px 18px;
+  border-radius: 12px;
+  background: color-mix(in oklab, var(--rm-ink) 4%, transparent);
+}
+.ws-stage-kicker {
+  font-size: 11.5px;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: color-mix(in oklab, var(--purple) 78%, var(--rm-ink));
+}
+.ws-stage-slide strong {
+  font-family: var(--font-display);
+  font-size: 19px;
+  line-height: 1.25;
+  letter-spacing: -0.02em;
+}
+.ws-stage-slide ol {
+  margin: 4px 0 0;
+  padding-left: 18px;
+  display: grid;
+  gap: 4px;
+  font-size: 13px;
+  color: var(--rm-muted);
+}
+.ws-stage-seats {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 8px;
+  align-content: start;
+}
+.ws-stage-seats li {
+  aspect-ratio: 4 / 3;
+  border-radius: 10px;
+  background: color-mix(in oklab, var(--rm-ink) 7%, transparent);
+  display: grid;
+  place-items: center;
+  font-size: 12px;
+  font-weight: 700;
+}
+.ws-stage-seats li.is-you {
+  background: color-mix(in oklab, var(--purple) 18%, transparent);
+  box-shadow: inset 0 0 0 2px
+    color-mix(in oklab, var(--purple) 70%, transparent);
+  color: color-mix(in oklab, var(--purple) 80%, var(--rm-ink));
+}
+/* The typed question and the agent's hint, overlapping the window's foot. */
+.ws-stage-composer {
+  position: absolute;
+  left: 50%;
+  bottom: 28px;
+  width: min(calc(100% - 32px), 560px);
+  transform: translateX(-50%);
+  display: grid;
+  gap: 10px;
+  padding: 16px 18px;
+  border: 1px solid color-mix(in oklab, var(--rm-ink) 10%, transparent);
+  border-radius: 18px;
+  background: var(--rm-panel);
+  box-shadow: 0 24px 50px -24px
+    color-mix(in oklab, var(--rm-ink) 45%, transparent);
+}
+.ws-stage-typing {
+  margin: 0;
+  font-size: 16px;
+  font-weight: 500;
+  line-height: 1.45;
+}
+.ws-caret {
+  display: inline-block;
+  width: 2px;
+  height: 1.1em;
+  margin-left: 2px;
+  vertical-align: -0.18em;
+  background: var(--orange);
+}
+.ws-stage-reply {
+  margin: 0;
+  padding-top: 10px;
+  border-top: 1px solid var(--rm-line);
+  font-size: 13.5px;
+  line-height: 1.5;
+  color: var(--rm-muted);
+}
+.ws-stage-reply b {
+  margin-right: 4px;
+  padding: 2px 8px;
+  border-radius: 999px;
+  background: color-mix(in oklab, var(--cyan) 16%, transparent);
+  color: color-mix(in oklab, var(--cyan) 60%, var(--rm-ink));
+  font-size: 12px;
+}
+@media (max-width: 719px) {
+  .ws-hero {
+    padding-top: 36px;
+    gap: 18px;
+  }
+  .ws-facts {
+    flex-direction: column;
+    align-items: center;
+  }
+  .ws-facts > div {
+    flex-direction: column;
+    align-items: center;
+    gap: 2px;
+  }
+  .ws-facts dd {
+    text-align: center;
+  }
+  .ws-stage-scene {
+    min-height: 0;
+    padding: 18px 12px 190px;
+    border-radius: 22px;
+  }
+  .ws-stage-body {
+    grid-template-columns: 1fr;
+  }
+  .ws-stage-composer {
+    bottom: 14px;
+    padding: 14px;
+  }
+  .ws-stage-typing {
+    font-size: 15px;
+  }
+}
+@keyframes ws-caret {
+  50% {
+    opacity: 0;
+  }
+}
+.ws-card {
+  padding: 18px;
+  border: 1px solid var(--rm-line);
+  border-radius: var(--rm-radius);
+  background: var(--rm-panel);
+  min-width: 0;
+}
+.ws-card h3 {
+  margin: 0 0 12px;
+  font-size: 17px;
+  letter-spacing: -0.01em;
+}
+.ws-two {
+  display: grid;
+  gap: 16px;
+}
+.ws-agenda {
+  position: relative;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  display: grid;
+  gap: 10px;
+}
+.ws-agenda li {
+  position: relative;
+  display: flex;
+  gap: 12px;
+  padding: 14px;
+  border: 1px solid var(--rm-line);
+  border-radius: var(--rm-radius);
+  background: var(--rm-panel);
+}
+.ws-agenda h3 {
+  margin: 0;
+  font-size: 16px;
+}
+.ws-agenda p {
+  margin: 4px 0 0;
+  color: var(--rm-muted);
+  font-size: 14px;
+  line-height: 1.5;
+}
+.ws-num {
+  flex: none;
+  display: inline-grid;
+  place-items: center;
+  width: 26px;
+  height: 26px;
+  border-radius: 999px;
+  background: var(--rm-soft);
+  font-size: 13px;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+}
+.ws-outcomes {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  display: grid;
+  gap: 10px;
+  font-size: 14.5px;
+  line-height: 1.5;
+}
+.ws-outcomes li {
+  display: flex;
+  gap: 8px;
+}
+.ws-outcomes svg {
+  flex: none;
+  margin-top: 3px;
+  color: var(--rm-live-text);
+}
+.ws-journey {
+  display: grid;
+  gap: 16px;
+}
+.ws-steps {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+.ws-steps button {
+  width: 36px;
+  height: 36px;
+  border-radius: 999px;
+  border: 1px solid var(--rm-line);
+  background: var(--rm-panel);
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+}
+.ws-steps [aria-current="step"] {
+  background: var(--rm-ink);
+  color: var(--rm-bg);
+  border-color: var(--rm-ink);
+}
+.ws-step h3 {
+  margin: 8px 0 6px;
+  font-size: 20px;
+}
+.ws-step p {
+  margin: 0;
+  color: var(--rm-muted);
+  line-height: 1.55;
+}
+.ws-step-count {
+  color: var(--rm-muted);
+  font-weight: 600;
+  font-size: 14px;
+}
+.ws-seat {
+  display: inline-flex;
+  padding: 3px 10px;
+  border-radius: 999px;
+  font-size: 12px;
+  font-weight: 700;
+}
+.ws-seat.student {
+  color: var(--rm-sync-text);
+  background: color-mix(in oklab, var(--rm-sync) 12%, transparent);
+}
+.ws-seat.teacher {
+  color: var(--rm-merge-text);
+  background: color-mix(in oklab, var(--rm-merge) 12%, transparent);
+}
+.ws-uses-label {
+  margin: 14px 0 6px !important;
+  font-size: 12px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+.ws-step-nav {
+  display: flex;
+  justify-content: space-between;
+  gap: 8px;
+}
+.ws-ghost {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  min-height: 40px;
+  padding: 0 14px;
+  border: 1px solid var(--rm-line);
+  border-radius: 999px;
+  background: transparent;
+  font-weight: 600;
+}
+.ws-ghost:disabled {
+  opacity: 0.4;
+  cursor: default;
+}
+.ws-uses {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  display: grid;
+  gap: 8px;
+}
+.ws-use {
+  display: grid;
+  gap: 6px;
+  padding: 10px 12px;
+  border-radius: 12px;
+  background: var(--rm-soft);
+}
+.ws-use-title {
+  font-size: 14.5px;
+  line-height: 1.4;
+}
+.ws-use-meta {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px 10px;
+}
+.ws-tool {
+  display: inline-flex;
+  padding: 1px 8px;
+  border: 1px solid var(--rm-line);
+  border-radius: 999px;
+  font-size: 11.5px;
+  color: var(--rm-muted);
+  white-space: nowrap;
+}
+/* The Upskii link in a use-case row is a 24px target (WCAG 2.5.8). */
+.ws-tool .ws-upskii {
+  min-height: 24px;
+}
+.ws-ai {
+  display: grid;
+  gap: 16px;
+}
+.ws-levels {
+  max-width: 100%;
+  overflow-x: auto;
+}
+.ws-levels label {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  padding: 6px 12px;
+  min-height: 32px;
+  border-radius: 999px;
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--rm-muted);
+  white-space: nowrap;
+  cursor: pointer;
+}
+.ws-levels input {
+  position: absolute;
+  inset: 0;
+  margin: 0;
+  opacity: 0;
+  cursor: pointer;
+}
+.ws-levels label:has(input:focus-visible) {
+  outline: 2px solid var(--rm-sync);
+  outline-offset: 2px;
+}
+.ws-levels label[data-checked] {
+  background: var(--rm-ink);
+  color: var(--rm-bg);
+}
+.ws-chat {
+  display: grid;
+  gap: 10px;
+}
+.ws-bubble {
+  margin: 0;
+  max-width: 34rem;
+  padding: 12px 14px;
+  border-radius: 16px;
+  line-height: 1.5;
+  display: grid;
+  gap: 4px;
+}
+.ws-bubble.student {
+  justify-self: end;
+  background: var(--rm-soft);
+}
+.ws-bubble.assistant {
+  border: 1px solid color-mix(in oklab, var(--rm-merge) 35%, transparent);
+  background: color-mix(in oklab, var(--rm-merge) 8%, transparent);
+}
+.ws-bubble.assistant.off {
+  border-style: dashed;
+  border-color: var(--rm-line);
+  background: transparent;
+  color: var(--rm-muted);
+}
+.ws-who {
+  font-size: 11.5px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--rm-muted);
+}
+.ws-note,
+.ws-honesty {
+  margin: 0;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+  font-size: 13px;
+  color: var(--rm-muted);
+}
+.ws-honesty {
+  padding: 10px 14px;
+  border-radius: 12px;
+  background: var(--rm-soft);
+}
+.ws-flow {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  display: grid;
+  gap: 28px;
+  counter-reset: none;
+}
+.ws-flow > li {
+  position: relative;
+}
+.ws-flow > li:not(:last-child)::after {
+  content: "↓";
+  position: absolute;
+  left: 50%;
+  bottom: -24px;
+  transform: translateX(-50%);
+  color: var(--rm-muted);
+  font-size: 18px;
+}
+.ws-flow h3 {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.ws-groups {
+  display: grid;
+  gap: 14px;
+}
+.ws-filters {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+.ws-count {
+  margin: 0;
+  font-size: 13px;
+  color: var(--rm-muted);
+}
+.ws-grid {
+  grid-template-columns: 1fr;
+}
+.ws-tools {
+  padding-top: 24px;
+  border-top: 1px solid var(--rm-line);
+}
+.ws-tools .section-head h2 {
+  font-size: clamp(20px, 3.5vw, 26px);
+}
+.ws-powered {
+  margin: 0;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+  font-size: 14px;
+  color: var(--rm-muted);
+}
+.ws-powered strong {
+  color: var(--rm-ink);
+  font-weight: 600;
+}
+.ws-tool-list {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+@media (min-width: 720px) {
+  .ws-two {
+    grid-template-columns: minmax(0, 1.4fr) minmax(0, 1fr);
+    align-items: start;
+  }
+  .ws-groups,
+  .ws-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+@media (min-width: 1024px) {
+  .ws-flow {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 32px;
+  }
+  .ws-flow > li:not(:last-child)::after {
+    content: "→";
+    left: auto;
+    right: -24px;
+    top: 50%;
+    bottom: auto;
+    transform: translateY(-50%);
+  }
+  .ws-groups {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+}
+@media (prefers-reduced-motion: no-preference) {
+  .ws-steps button,
+  .ws-levels label,
+  .ws-ghost {
+    transition:
+      background-color 160ms ease,
+      color 160ms ease;
+  }
+}
+.ws-explore {
+  display: grid;
+  gap: 10px;
+  padding: 14px;
+  border: 1px solid var(--rm-line);
+  border-radius: var(--rm-radius);
+  background: var(--rm-panel);
+}
+.ws-explore h3 {
+  margin: 0;
+  font-size: 15px;
+}
+
+/* Workshop: highlights, readiness, illustration, experience, insights, FAQ.
+   Chart hues are the validated reference slots (blue, orange, aqua), stepped
+   per mode; light aqua sits under 3:1, so every chart has direct labels and
+   a table view. */
+.workshop {
+  --ws-blue: #2a78d6;
+  --ws-orange: #eb6834;
+  --ws-aqua: #1baf7a;
+  --ws-wash-1: color-mix(in oklab, var(--cyan) 34%, transparent);
+  --ws-wash-2: color-mix(in oklab, var(--purple) 30%, transparent);
+  --ws-wash-3: color-mix(in oklab, var(--green) 22%, transparent);
+  --ws-wash-4: color-mix(in oklab, var(--orange) 20%, transparent);
+  --ws-grain-opacity: 0.22;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not(.light) .workshop {
+    --ws-blue: #3987e5;
+    --ws-orange: #d95926;
+    --ws-aqua: #199e70;
+    --ws-wash-1: color-mix(in oklab, var(--cyan) 20%, transparent);
+    --ws-wash-2: color-mix(in oklab, var(--purple) 22%, transparent);
+    --ws-wash-3: color-mix(in oklab, var(--green) 12%, transparent);
+    --ws-wash-4: color-mix(in oklab, var(--orange) 10%, transparent);
+    --ws-grain-opacity: 0.12;
+  }
+}

@@ -1,8 +1,10 @@
+import { deferHydration } from './defer-hydration';
 import handler from '@tanstack/react-start/server-entry';
 import { buildInfoResponse, isBuildInfoPath } from './build-info.ts';
 import { isHashedAssetPath, withRoadmapCachePolicy } from './cache-policy.ts';
 import { withContentSecurityPolicy } from './csp.ts';
 import { hostsResponse, isHostsPath } from './live/host-probe.ts';
+import { roadmapNotFoundResponse } from './not-found-response.tsx';
 import { SITEMAP_PATH, sitemapResponse } from './seo.ts';
 import {
   normalizeLocalHost,
@@ -43,7 +45,15 @@ export default {
     const request = normalizeLocalHost(incoming);
     const basepath = selectedBasepath(request);
     const boundary = roadmapBoundary(request, basepath);
-    if (boundary) return withRoadmapCachePolicy(request, boundary);
+    if (boundary) {
+      // Redirects and 400s pass through; a 404 becomes the branded page.
+      return withRoadmapCachePolicy(
+        request,
+        boundary.status === 404
+          ? await withContentSecurityPolicy(roadmapNotFoundResponse(request))
+          : boundary
+      );
+    }
     const url = new URL(request.url);
     if (
       isBuildInfoPath(url.pathname) &&
@@ -80,7 +90,7 @@ export default {
     );
     return withRoadmapCachePolicy(
       request,
-      await withContentSecurityPolicy(response)
+      await withContentSecurityPolicy(response, deferHydration)
     );
   },
 };

@@ -90,63 +90,37 @@ beforeEach(() => {
 afterEach(() => {
   vi.unstubAllGlobals();
 });
-it('requires a runtime context before claiming or executing a review', async () => {
-  vi.stubGlobal(Symbol.for('__cloudflare-context__'), undefined);
-  await expect(invoke()).rejects.toThrow('getCloudflareContext');
-  expect(f.fetch).not.toHaveBeenCalled();
-  expect(f.tools).not.toHaveBeenCalled();
-  expect(f.execute).not.toHaveBeenCalled();
-});
-it('executes only the claimed arguments under the authenticated requester', async () => {
-  await invoke();
-  const claim = JSON.parse(f.fetch.mock.calls[0]![1].body);
-  expect(claim.ownerId).toBe('authenticated-owner');
-  expect(f.tools).toHaveBeenCalledWith(
-    {
-      user: { id: 'authenticated-owner' },
-      meeting: { ws_id: '00000000-0000-4000-8000-0000000000a1' },
-    },
-    'selected-workspace',
-    'UTC'
-  );
-  expect(f.execute).toHaveBeenCalledExactlyOnceWith(
-    { title: 'Approved task' },
-    { toolCallId: reviewId, messages: [] }
-  );
-});
-it('denial neither resolves workspace credentials nor executes a tool', async () => {
-  await invoke(false);
-  expect(f.tools).not.toHaveBeenCalled();
-  expect(f.execute).not.toHaveBeenCalled();
-});
-it('does not execute rejected or duplicate claims', async () => {
-  f.fetch.mockResolvedValue(new Response('Already handled', { status: 409 }));
-  await expect(invoke()).rejects.toThrow('Review unavailable');
-  expect(f.tools).not.toHaveBeenCalled();
-});
-it('revoked membership fails the review without running or retrying the operation', async () => {
-  f.tools.mockRejectedValue(new Error('Membership revoked'));
-  await invoke();
-  expect(f.execute).not.toHaveBeenCalled();
-  expect(JSON.parse(f.fetch.mock.calls[1]![1].body)).toMatchObject({
-    action: 'finish',
-    failed: true,
-  });
-});
-it('does not rerun an operation when reporting its outcome fails', async () => {
-  f.fetch
-    .mockImplementationOnce(async () =>
-      Response.json({
-        workspaceId: 'selected-workspace',
-        timezone: 'UTC',
-        toolName: 'create_task',
-        args: { title: 'Approved task' },
-      })
-    )
-    .mockResolvedValue(new Response('Ended', { status: 409 }));
-  await expect(invoke()).rejects.toThrow('Action may have completed');
-  expect(f.execute).toHaveBeenCalledOnce();
-});
+it.each([
+  'absent runtime context',
+  'claimed arguments with a spoofed owner',
+  'explicit rejection',
+  'duplicate claim',
+  'revoked membership',
+  'uncertain outcome reporting',
+])(
+  'denies workspace review before %s can execute an operation',
+  async (scenario) => {
+    if (scenario === 'absent runtime context')
+      vi.stubGlobal(Symbol.for('__cloudflare-context__'), undefined);
+    if (scenario === 'duplicate claim')
+      f.fetch.mockResolvedValue(
+        new Response('Already handled', { status: 409 })
+      );
+    if (scenario === 'revoked membership')
+      f.tools.mockRejectedValue(new Error('Membership revoked'));
+    if (scenario === 'uncertain outcome reporting')
+      f.fetch.mockResolvedValue(new Response('Ended', { status: 409 }));
+    await expect(
+      invoke(scenario !== 'explicit rejection')
+    ).rejects.toMatchObject({
+      status: 403,
+      message: 'Workspace and room actions are unavailable in Private Mira.',
+    });
+    expect(f.fetch).not.toHaveBeenCalled();
+    expect(f.tools).not.toHaveBeenCalled();
+    expect(f.execute).not.toHaveBeenCalled();
+  }
+);
 it('denies review writes outside the Meet AI allowlist before any Durable Object or tool call', async () => {
   for (const MEET_AI_ENABLED_WORKSPACE_IDS of [
     undefined,

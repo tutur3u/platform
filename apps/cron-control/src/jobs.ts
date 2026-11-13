@@ -18,8 +18,10 @@ export type ProcessorTarget =
 export type OverlapClass = 'claim-fenced' | 'handover' | 'idempotent';
 
 export type WorkerProcessorId =
+  | 'ai-studio-retention'
   | 'checkout-expiry'
   | 'cron-history-retention'
+  | 'devbox-unauthorized-run-sweep'
   | 'meet-transcript-retention'
   | 'storage-access-audit-retention';
 
@@ -28,7 +30,9 @@ export type WorkerProcessorId =
 export const DATABASE_MAINTENANCE_RPCS: Partial<
   Record<WorkerProcessorId, string>
 > = {
+  'ai-studio-retention': 'cleanup_ai_studio_retention_batch',
   'cron-history-retention': 'prune_cron_history',
+  'devbox-unauthorized-run-sweep': 'cancel_unauthorized_devbox_runs',
   'meet-transcript-retention': 'purge_meet_transcripts_batch',
   'storage-access-audit-retention': 'prune_storage_access_events',
 };
@@ -95,6 +99,17 @@ export const CRON_JOBS: readonly CronJob[] = Object.freeze([
     'idempotent',
     { workerProcessor: 'storage-access-audit-retention', timeoutMs: 30_000 }
   ),
+  // Cancels queued devbox work whose owner lost root membership or an active
+  // personal grant. The RPC scans at most p_limit of the oldest queued rows,
+  // so each slot is bounded; the claim gate refuses such rows meanwhile.
+  job(
+    'database-devbox-unauthorized-run-sweep',
+    '*/10 * * * *',
+    'web',
+    '/rest/v1/rpc/cancel_unauthorized_devbox_runs',
+    'idempotent',
+    { workerProcessor: 'devbox-unauthorized-run-sweep', timeoutMs: 30_000 }
+  ),
   // Daily, sharing the media cleanup trigger. The database fence keeps it a
   // no-op (or a count-only dry run) until deletion is separately approved.
   job(
@@ -104,6 +119,16 @@ export const CRON_JOBS: readonly CronJob[] = Object.freeze([
     '/rest/v1/rpc/purge_meet_transcripts_batch',
     'idempotent',
     { workerProcessor: 'meet-transcript-retention', timeoutMs: 150_000 }
+  ),
+  // Daily at 02:43 GMT+7 (19:43 UTC), the low-traffic window. Counts only
+  // until AI_STUDIO_RETENTION_MODE is 'delete'; 'off' is the kill switch.
+  job(
+    'ai-studio-retention',
+    '43 19 * * *',
+    'web',
+    '/rest/v1/rpc/cleanup_ai_studio_retention_batch',
+    'idempotent',
+    { workerProcessor: 'ai-studio-retention', timeoutMs: 150_000 }
   ),
   job(
     'tasks-cleanup-media',

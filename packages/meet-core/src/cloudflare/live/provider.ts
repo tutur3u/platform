@@ -30,6 +30,17 @@ export async function connectLiveProvider(input: {
   onMessage: (message: LiveServerMessage) => void;
   onClose: () => void;
 }): Promise<Session> {
+  if (
+    input.claims.mode !== 'personal' ||
+    input.claims.inputSource !== 'private-microphone' ||
+    !input.claims.consentVersion ||
+    !input.claims.consentRevision ||
+    !['verified-personal', 'workspace-admin'].includes(
+      input.claims.workspaceAuthority ?? ''
+    ) ||
+    !['false', '0'].includes(input.env.MEET_AI_DISABLED ?? '')
+  )
+    throw new Error('Private Mira is unavailable');
   const memory = await readLiveMemory(input.env, input.claims);
   const client = new GoogleGenAI({
     apiKey: input.env.GOOGLE_GENERATIVE_AI_API_KEY,
@@ -79,8 +90,8 @@ export async function connectLiveProvider(input: {
             timezone: input.timezone,
             memoryEnabled: memory.enabled,
             memories: memory.memories,
-            sharedContext: input.sharedContext,
-            scenarioInstructions: input.scenarioInstructions,
+            sharedContext: '',
+            scenarioInstructions: undefined,
             journal: input.journal,
           }) +
           `\nRecent session turns (conversation data): ${serializeLiveContext(input.journal.turns.slice(-16), 16000)}`,
@@ -88,9 +99,6 @@ export async function connectLiveProvider(input: {
           {
             functionDeclarations: [
               ...liveTools(input.claims.mode, memory.enabled),
-              ...(input.claims.mode === 'personal'
-                ? (input.workspaceTools ?? [])
-                : []),
             ],
           },
           ...(input.claims.app === 'parley' ? [] : [{ googleSearch: {} }]),

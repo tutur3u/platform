@@ -220,7 +220,6 @@ function CallShellContent({
   const backHref = leaveHref.includes('/meetings/')
     ? `${leaveHref.split('/meetings/')[0]}/meetings`
     : '/';
-
   const runMediaAction = async (
     action: () => Promise<void>,
     device: Device
@@ -406,6 +405,7 @@ function CallShellContent({
           accountId={accountId}
           key="live-assistant"
           onOpenChat={askMira}
+          onLeave={leaveNow}
           room={room}
           meetingId={meetingId}
           outputDeviceId={outputDeviceId}

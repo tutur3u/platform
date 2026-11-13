@@ -32,28 +32,23 @@ import {
 } from '@tuturuuu/ui/select';
 import { Textarea } from '@tuturuuu/ui/textarea';
 import { useTranslations } from 'next-intl';
-import { useEffect, useMemo, useRef, useState } from 'react';
-import {
-  AssistantWorkspacePicker,
-  isCurrentAssistantWorkspace,
-  useAssistantWorkspaceSelection,
-} from '../call/components/assistant-workspace-picker';
+import { useEffect, useRef, useState } from 'react';
 import { MiraAvatar } from '../call/components/mira-profile';
 import type { MeetRoomController } from '../call/lib/room-controller';
 import { liveVoiceSchema } from './contracts';
-import { miraInputTracks } from './input-sources';
+import { liveErrorMessageKey } from './live-errors';
 import { LiveReviewCard } from './live-review-card';
-import { MiraMentionRelay } from './mention-relay';
 import { useLiveAssistant } from './use-live-assistant';
+import { PrivateMiraNotice } from './private-notice';
 
 export function MeetLivePanel({
   room,
   accountId,
   meetingId,
   outputDeviceId,
-  canManage,
   audioSuppressed = false,
   onOpenChat,
+  onLeave,
 }: {
   room: MeetRoomController;
   accountId: string;
@@ -62,24 +57,11 @@ export function MeetLivePanel({
   canManage: boolean;
   audioSuppressed?: boolean;
   onOpenChat: () => void;
+  /** Ends the call for this device through the shell, so it shows the left screen. */
+  onLeave: () => void;
 }) {
   const t = useTranslations('meet.live');
-  const streams = useMemo(() => {
-    const tracks = miraInputTracks(
-      room.state.participants,
-      room.state.selfUserId,
-      room.localStream,
-      room.remoteMedia,
-      room.state.liveAssistant?.sessionId
-    );
-    return tracks.length ? [new MediaStream(tracks)] : [];
-  }, [
-    room.state.participants,
-    room.state.selfUserId,
-    room.localStream,
-    room.remoteMedia,
-    room.state.liveAssistant?.sessionId,
-  ]);
+  const streams: MediaStream[] = [];
   const live = useLiveAssistant(
     meetingId,
     outputDeviceId,
@@ -92,11 +74,8 @@ export function MeetLivePanel({
   );
   const openingChat = useRef(false);
   const [open, setOpen] = useState(false);
+  const [choiceAccepted, setChoiceAccepted] = useState(false);
   const [draft, setDraft] = useState('');
-  const [workspace, setWorkspace] = useState('personal');
-  const workspaceScope = useAssistantWorkspaceSelection(workspace, accountId);
-  const currentWorkspaceScope = useRef(workspaceScope);
-  currentWorkspaceScope.current = workspaceScope;
   const [voice, setVoice] = useState<MeetLiveVoice>('Aoede');
   const active = !['idle', 'error', 'ended'].includes(live.status);
   const ready = ['listening', 'paused'].includes(live.status);
@@ -105,46 +84,25 @@ export function MeetLivePanel({
     if (active && live.mode === 'personal' && room.media.audioEnabled)
       live.send({ type: 'pause', paused: true });
   }, [active, live.mode, room.media.audioEnabled, live.send]);
-  const relay = useRef(new MiraMentionRelay());
-  useEffect(() => {
-    relay.current.observe(room.state.chat, active && live.mode === 'room');
-    if (!ready || live.mode !== 'room') return;
-    const flush = () =>
-      relay.current.flush((text) => live.send({ type: 'text', text }));
-    flush();
-    const timer = setInterval(flush, 1000);
-    return () => clearInterval(timer);
-  }, [room.state.chat, active, ready, live.mode, live.send]);
-  const currentRoom = useRef(room);
-  currentRoom.current = room;
-  const start = async (mode: 'personal' | 'room') => {
-    if (
-      audioSuppressed ||
-      !isCurrentAssistantWorkspace(workspaceScope, workspaceScope)
-    )
-      return;
-    const requestedScope = workspaceScope;
-    const restoreMicrophone = mode === 'personal' && room.media.audioEnabled;
+  const start = async () => {
+    if (!choiceAccepted || audioSuppressed || !accountId) return;
+    const restoreMicrophone = room.media.audioEnabled;
     const muteRevision = room.getSelectedDevices().microphoneRevision + 1;
     if (restoreMicrophone) await room.toggleMicrophone();
-    const current = currentWorkspaceScope.current;
-    const started =
-      isCurrentAssistantWorkspace(current, requestedScope) &&
-      (await live.start(
-        mode,
-        streams,
-        room.getSelectedDevices().audio,
-        workspace === 'personal' ? undefined : workspace,
-        voice
-      ));
+    const started = await live.start(
+      'personal',
+      [],
+      room.getSelectedDevices().audio,
+      undefined,
+      voice
+    );
     if (
       !started &&
       restoreMicrophone &&
-      !currentRoom.current.media.audioEnabled &&
-      currentRoom.current.getSelectedDevices().microphoneRevision ===
-        muteRevision
+      !room.media.audioEnabled &&
+      room.getSelectedDevices().microphoneRevision === muteRevision
     )
-      await currentRoom.current.toggleMicrophone();
+      await room.toggleMicrophone();
   };
   return (
     <Dialog open={open} onOpenChange={setOpen}>
@@ -177,13 +135,19 @@ export function MeetLivePanel({
           <DialogDescription>{t('hint')}</DialogDescription>
         </DialogHeader>
         <div className="min-h-0 space-y-4 overflow-y-auto">
-          {!active && (
-            <AssistantWorkspacePicker
-              accountId={accountId}
-              value={workspace}
-              onChange={setWorkspace}
-            />
-          )}
+          <PrivateMiraNotice
+            meetingId={meetingId}
+            connected={
+              room.connectionStatus === 'open' &&
+              room.state.admission === 'admitted'
+            }
+            onStop={live.stop}
+            onLeave={() => {
+              setOpen(false);
+              onLeave();
+            }}
+            onAccepted={setChoiceAccepted}
+          />
           {!active && (
             <div className="space-y-2">
               <Label>{t('voice')}</Label>
@@ -211,8 +175,8 @@ export function MeetLivePanel({
               <button
                 type="button"
                 className="space-y-3 rounded-xl border p-4 text-left transition-colors hover:bg-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring disabled:pointer-events-none disabled:opacity-50"
-                disabled={audioSuppressed || !workspaceScope.allowed}
-                onClick={() => void start('personal')}
+                disabled={!choiceAccepted || audioSuppressed || !accountId}
+                onClick={() => void start()}
               >
                 <Headphones className="size-6" />
                 <strong className="block">{t('personal')}</strong>
@@ -220,24 +184,6 @@ export function MeetLivePanel({
                   {t('personal_hint')}
                 </span>
               </button>
-              {canManage && (
-                <button
-                  type="button"
-                  className="order-first space-y-3 rounded-xl border border-primary/30 bg-primary/5 p-4 text-left transition-colors hover:bg-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring disabled:pointer-events-none disabled:opacity-50"
-                  disabled={
-                    audioSuppressed ||
-                    !workspaceScope.allowed ||
-                    !!room.state.liveAssistant
-                  }
-                  onClick={() => void start('room')}
-                >
-                  <Users className="size-6" />
-                  <strong className="block">{t('room')}</strong>
-                  <span className="block text-muted-foreground text-sm">
-                    {t('room_hint')}
-                  </span>
-                </button>
-              )}
             </div>
           ) : (
             <>
@@ -358,7 +304,7 @@ export function MeetLivePanel({
               role="alert"
               className="rounded-lg bg-destructive/10 p-3 text-destructive text-sm"
             >
-              {t('session_error')}
+              {t(liveErrorMessageKey(live.error))}
             </p>
           )}
         </div>

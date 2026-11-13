@@ -1,12 +1,15 @@
+import { applyMarketingRobots } from './marketing-robots';
 import {
   bypassReason,
   hasAuthCookie,
   cacheKey,
+  inspectAssetBody,
   FRESH_SECONDS,
   freshness,
   isStorable,
   localeBucket,
   STALE_SECONDS,
+  type StoreDecision,
 } from './cache-rules';
 import {
   type Manifest,
@@ -18,6 +21,8 @@ import {
 export interface Env {
   /** `passthrough` is the rollback flag: transparent proxy, no cache. */
   GATEWAY_MODE?: string;
+  /** Explicit deployment robots override, including cached Marketing pages. */
+  TUTURUUU_NOINDEX?: string;
   /** Origin of the Vercel production web deployment, e.g. https://host. */
   WEB_ORIGIN?: string;
   /** Hostname clients use; origin redirects to the origin host map to it. */
@@ -365,10 +370,11 @@ export function createHandler(deps: HandlerDeps) {
     origin: URL,
     key: string,
     options: { respectOriginCacheControl: boolean },
-    publicHost: string | undefined
+    publicHost: string | undefined,
+    isPage: boolean
   ) {
     try {
-      const response = withPublicLink(
+      let response = withPublicLink(
         await fetch(originRequest(request, origin, publicHost), NO_FOLLOW),
         origin,
         publicHost
@@ -376,6 +382,14 @@ export function createHandler(deps: HandlerDeps) {
       if (!isStorable(response, options).store) {
         await response.body?.cancel();
         return;
+      }
+      if (!isPage) {
+        const checked = await inspectAssetBody(response);
+        if (checked.problem) {
+          await checked.response.body?.cancel();
+          return;
+        }
+        response = checked.response;
       }
       await (
         await deps.cache()
@@ -385,7 +399,7 @@ export function createHandler(deps: HandlerDeps) {
     }
   }
 
-  return async function handle(request: Request, env: Env, ctx?: WaitUntil) {
+  async function handle(request: Request, env: Env, ctx?: WaitUntil) {
     if (request.headers.has(HOP_HEADER)) {
       return plain(508, 'gateway loop detected');
     }
@@ -443,7 +457,8 @@ export function createHandler(deps: HandlerDeps) {
           origin,
           key,
           options,
-          env.PUBLIC_HOST
+          env.PUBLIC_HOST,
+          isPage
         );
         if (ctx) ctx.waitUntil(revalidate);
         else await revalidate;
@@ -463,10 +478,20 @@ export function createHandler(deps: HandlerDeps) {
     } catch {
       return plain(502, 'gateway origin unreachable');
     }
-    const decision = isStorable(response, options);
+    let decision: StoreDecision = isStorable(response, options);
+    if (decision.store && !isPage) {
+      const checked = await inspectAssetBody(response);
+      response = checked.response;
+      if (checked.problem) decision = { store: false, reason: checked.problem };
+    }
     if (!decision.store) {
+      const brokenBody =
+        decision.reason === 'empty-body' ||
+        decision.reason === 'truncated-body';
       const next = withGatewayHeader(response, 'BYPASS', {
         'x-gateway-bypass': decision.reason ?? 'not-storable',
+        // A broken body must not be kept by the edge either.
+        ...(brokenBody ? { 'cache-control': 'no-store' } : {}),
       });
       rewriteLocation(next, origin, env.PUBLIC_HOST);
       rewriteLinkHeader(next, origin, env.PUBLIC_HOST);
@@ -481,6 +506,22 @@ export function createHandler(deps: HandlerDeps) {
     const out = withGatewayHeader(response, 'MISS');
     if (isPage) out.headers.set('cache-control', PAGE_CLIENT_CACHE_CONTROL);
     return out;
+  }
+
+  return async (request: Request, env: Env, ctx?: WaitUntil) => {
+    const match = matchRoute(new URL(request.url).pathname, deps.manifest);
+    const chosen = chooseOrigin(env, deps.manifest, match, request);
+    const marketingPage =
+      chosen.flagged &&
+      match.flagOrigin === 'marketing' &&
+      match.cache === 'page' &&
+      (request.method === 'GET' || request.method === 'HEAD');
+    return applyMarketingRobots(
+      await handle(request, env, ctx),
+      request,
+      marketingPage,
+      env.TUTURUUU_NOINDEX === '1'
+    );
   };
 }
 

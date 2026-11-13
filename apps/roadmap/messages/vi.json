@@ -18,10 +18,32 @@
   "liveCheckFailed": "Không thể kiểm tra trực tiếp.",
   "stats": {
     "shippedWeek": "Ra mắt tuần này",
-    "live": "Hạng mục đã chạy",
+    "live": "Hạng mục đang chạy",
     "inFlight": "Đang thực hiện",
     "planned": "Dự kiến",
-    "cloudflare": "Ứng dụng trên Cloudflare"
+    "cloudflare": "Ứng dụng trên Cloudflare",
+    "mergedWeek": "PR đã gộp tuần này",
+    "waiting": "Chờ đồng bộ production",
+    "ofTotal": "trên {n}",
+    "trackedNote": "{n} PR thuộc lộ trình",
+    "newThisWeek": "{n} mới trong tuần",
+    "waitAge": "Thời gian chờ trung vị: {median}",
+    "vsLastWeek": "so với tuần trước",
+    "up": "Tăng",
+    "down": "Giảm",
+    "flat": "Không đổi",
+    "fromZero": "từ 0",
+    "allNotAvailable": "Bản dựng này chưa có tổng số PR",
+    "trackedVsLastWeek": "PR thuộc lộ trình, so với tuần trước"
+  },
+  "calendar_category_reorder_pilot": {
+    "cancel": "Đã trả {label} về vị trí {position} trên {total}.",
+    "drop": "Đã thả {label} tại vị trí {position} trên {total}.",
+    "grab": "Đã chọn {label}, vị trí {position} trên {total}.",
+    "instructions": "Dùng phím mũi tên để di chuyển tiêu điểm. Nhấn Space để chọn hoặc thả danh mục. Dùng mũi tên để đổi vị trí; Escape để hủy.",
+    "invalid": "Tên danh mục phải duy nhất và không trống để sắp xếp.",
+    "label": "Thứ tự danh mục",
+    "move": "{label}, vị trí {position} trên {total}."
   },
   "comingSoon": "Sắp ra mắt",
   "shipped": {
@@ -66,15 +88,34 @@
   "hosting": {
     "title": "Mỗi ứng dụng đang chạy ở đâu",
     "subtitle": "Endpoint build-info công khai của từng ứng dụng, kiểm tra từ bên ngoài Cloudflare, cho biết ứng dụng đang chạy commit nào và commit đó được tạo khi nào.",
-    "checked": "Kiểm tra hosting",
-    "checkedNote": "· liên kết rút gọn và chính trang lộ trình được kiểm tra trực tiếp.",
+    "checked": "Nơi chạy ứng dụng tính đến",
+    "checkedNote": "(lúc trang này được build; mỗi lần triển khai đều kiểm tra lại)",
     "workers": "Cloudflare Workers",
     "vercel": "Vercel",
     "store": "Kho ứng dụng",
     "unknown": "Chưa xác minh được",
     "buildFrom": "Bản build ngày",
     "noCommit": "Không báo commit",
-    "main": "Mới nhất trên main"
+    "main": "Mới nhất trên main",
+    "notObserved": "Bản build này không kiểm tra được nơi chạy của ứng dụng, nên mọi ứng dụng đều hiển thị là chưa xác minh được.",
+    "badgeAlt": "Huy hiệu “Protected by Cloudflare”"
+  },
+  "migration": {
+    "title": "Chuyển ứng dụng về tuturuuu.com",
+    "subtitle": "Từng ứng dụng đang chuyển từ tên miền phụ riêng sang một đường dẫn trên tuturuuu.com.",
+    "progress": "Đã chuyển {done}/{total} ứng dụng",
+    "inProgressCount": "{n} ứng dụng đang chuyển",
+    "states": {
+      "done": "Đã chuyển",
+      "in_progress": "Đang chuyển",
+      "not_started": "Chưa bắt đầu",
+      "unverified": "Chưa xác minh được"
+    },
+    "from": "từ",
+    "to": "sang",
+    "list": "Các ứng dụng và đường dẫn mới",
+    "asOf": "Kiểm tra lúc trang này được build:",
+    "method": "Đã chuyển: tên miền phụ tự chuyển hướng sang đường dẫn trên tuturuuu.com. Đang chuyển: ứng dụng đã phản hồi tại đường dẫn trên tuturuuu.com. Chưa bắt đầu: chưa đạt điều kiện nào ở trên. Chưa xác minh được: lần kiểm tra không nhận được phản hồi."
   },
   "method": {
     "title": "Cách tính trạng thái",
@@ -121,16 +162,69 @@
     "changeOne": "thay đổi"
   },
   "titleAccent": "Ra mắt công khai.",
+  "titleMark": "công khai",
   "pulse": {
     "title": "Nhịp phát hành",
-    "merged": "pull request đã gộp",
+    "subtitle": "Số pull request được gộp mỗi ngày, và bao nhiêu phần việc của lộ trình đã chạy trên production.",
+    "range": "Khoảng thời gian",
+    "rangeOption": "{n} ngày",
+    "rangeName": "{n} ngày gần nhất",
+    "all": "Tất cả PR đã gộp",
+    "tracked": "PR thuộc lộ trình",
+    "inProd": "Thuộc lộ trình, đang chạy production",
+    "average": "Trung bình 7 ngày",
+    "deploys": "Bản dựng production",
+    "products": "Sản phẩm có thay đổi",
+    "none": "Không có",
+    "notAvailable": "Chưa có số liệu",
     "today": "Hôm nay",
-    "source": "14 ngày gần nhất, từ các pull request công khai mà lộ trình này theo dõi.",
-    "table": "Xem số liệu"
+    "allScope": "Tất cả PR đã gộp: mọi pull request được gộp vào tutur3u/platform, không tính bot và cập nhật thư viện phụ thuộc.",
+    "trackedScope": "PR thuộc lộ trình: các pull request gắn với hạng mục trên lộ trình này.",
+    "allUnavailable": "Những ngày này chưa có tổng số PR, nên biểu đồ hiển thị PR thuộc lộ trình.",
+    "asOf": "Tổng số PR tính đến {date}.",
+    "capped": "Tìm kiếm GitHub chạm giới hạn, nên tổng số PR gần đây có thể thấp hơn thực tế.",
+    "loading": "Đang tải các ngày cũ hơn…",
+    "failed": "Hiện chưa tải được các ngày cũ hơn.",
+    "deploysNote": "Bản dựng production: bản dựng mỗi ứng dụng đang chạy, theo ngày dựng.",
+    "chart": "Số pull request được gộp mỗi ngày. Dùng phím mũi tên để chuyển giữa các ngày.",
+    "table": "Số liệu theo ngày",
+    "day": "Ngày",
+    "vsPrevious": "so với {n} ngày trước đó",
+    "ttl": "Từ lúc gộp đến production",
+    "ttlNote": "Thời gian từ lúc gộp đến production được tính đến bản dựng đang phục vụ mỗi PR, nên là giới hạn trên.",
+    "median": "Trung vị",
+    "p90": "p90",
+    "waitingAge": "Đang chờ production",
+    "breakdown": "Theo sản phẩm",
+    "other": "Sản phẩm khác",
+    "minutes": "{n} phút",
+    "hours": "{n} giờ",
+    "days": "{n} ngày",
+    "otherWork": "Việc nội bộ, dự án khách hàng và thay đổi chưa phân loại"
   },
   "glance": {
     "title": "Toàn cảnh mọi sản phẩm",
     "subtitle": "Mỗi mảng đã phát hành được bao nhiêu. Chạm vào một mảng để xem chi tiết.",
     "shipped": "đã phát hành"
+  },
+  "updates": {
+    "title": "Cập nhật production mới nhất",
+    "subtitle": "Những gì đã lên production, ở ứng dụng nào và khi nào. Mới nhất ở trên.",
+    "built": "Dựng lúc",
+    "commitTime": "Commit đang chạy, tạo lúc",
+    "waiting": "Chờ lần deploy tiếp theo của ứng dụng",
+    "sinceLastVisit": "Từ lần ghé thăm trước",
+    "new": "Mới",
+    "empty": "Chưa ghi nhận bản dựng production nào cho trang này.",
+    "more": "+{n} mục nữa",
+    "liveCount": "{n} đang chạy",
+    "waitingCount": "{n} đang chờ"
+  },
+  "notes": {
+    "title": "Ghi chú phát hành",
+    "subtitle": "Những thay đổi trong từng bản phát hành, theo sản phẩm.",
+    "llm": "{model} tóm tắt từ các pull request đã gộp.",
+    "fallback": "Dự phòng (fallback) · Tổng hợp từ tiêu đề các pull request đã gộp.",
+    "pr": "Pull request #{n}"
   }
 }

@@ -515,4 +515,76 @@ describe('Teach object-generation handler', () => {
       sbAdmin
     );
   });
+  it('rejects inaccessible documents before feature checks or provider reservation', async () => {
+    const { createTeachObjectGenerationHandler } = await import('./shared');
+    const validateInput = vi.fn(async () =>
+      NextResponse.json({ error: 'Document not found' }, { status: 404 })
+    );
+    const POST = createTeachObjectGenerationHandler({
+      buildPrompt: (input) => input.context,
+      validateInput,
+      requestSchema: z.object({ wsId: z.string(), context: z.string() }),
+      outputSchema: z.object({ value: z.string() }),
+      customIdPrefix: 'test',
+      source: 'inline_assistance',
+      surface: 'module_content',
+    });
+    expect((await POST(createRequest())).status).toBe(404);
+    expect(validateInput).toHaveBeenCalledWith(
+      { context: 'Cell biology', wsId: 'submitted-ws' },
+      { db: sbAdmin, wsId: 'normalized-ws' }
+    );
+    expect(mocks.checkAiCredits).not.toHaveBeenCalled();
+    expect(mocks.reserveFixedAiCredits).not.toHaveBeenCalled();
+    expect(mocks.streamText).not.toHaveBeenCalled();
+  });
+
+  it('keeps student text separate from instructions and skips memory when disabled', async () => {
+    const { createTeachObjectGenerationHandler } = await import('./shared');
+    const POST = createTeachObjectGenerationHandler({
+      buildPrompt: (input) => input.context,
+      buildMessages: (input) => ({
+        system: 'Coach instructions',
+        user: input.context,
+      }),
+      useMemory: false,
+      abortOnDisconnect: true,
+      requestSchema: z.object({ wsId: z.string(), context: z.string() }),
+      outputSchema: z.object({ value: z.string() }),
+      customIdPrefix: 'test',
+      source: 'inline_assistance',
+      surface: 'module_content',
+    });
+    const request = createRequest();
+    expect((await POST(request)).status).toBe(200);
+    expect(mocks.streamText).toHaveBeenCalledWith(
+      expect.objectContaining({
+        system: 'Coach instructions',
+        prompt: 'Cell biology',
+        abortSignal: request.signal,
+      })
+    );
+    expect(mocks.withAiMemory).not.toHaveBeenCalled();
+  });
+  it('bounds streamed request bytes before parsing or provider access', async () => {
+    const { createTeachObjectGenerationHandler } = await import('./shared');
+    const POST = createTeachObjectGenerationHandler({
+      buildPrompt: (input) => input.context,
+      requestByteLimit: 80,
+      requestSchema: z.object({ wsId: z.string(), context: z.string() }),
+      outputSchema: z.object({ value: z.string() }),
+      customIdPrefix: 'test',
+      source: 'inline_assistance',
+      surface: 'module_content',
+    });
+    expect(
+      (
+        await POST(
+          createRequest({ context: 'a'.repeat(100), wsId: 'submitted-ws' })
+        )
+      ).status
+    ).toBe(413);
+    expect(mocks.requireTeachWorkspaceAccess).not.toHaveBeenCalled();
+    expect(mocks.streamText).not.toHaveBeenCalled();
+  });
 });

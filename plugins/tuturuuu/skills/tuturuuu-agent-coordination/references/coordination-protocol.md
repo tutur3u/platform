@@ -47,7 +47,7 @@ shared-checkout notes + window when agents must cooperate in one directory.
   and integrates back through a merge/rebase/PR, not by piling uncommitted edits
   into a hot shared checkout.
 - If unrelated dirty files already touch shared generated inputs or outputs
-  such as `apps/tanstack-web/src/routeTree.gen.ts`, migration manifests,
+  such as `apps/<app>/src/routeTree.gen.ts`, migration manifests,
   `packages/internal-api/src/index.ts`, generated DB types, message bundles, or
   `bun.lock`, new implementation work should default to an isolated worktree or
   read-only audit. Stay in the shared checkout only when the write set is clearly
@@ -232,13 +232,11 @@ that lists each lane:
 
 ```md
 Delegated lanes:
-- backend-aurora-health: apps/backend/src/aurora.rs, apps/backend/src/lib.rs
-- tanstack-drive-redirect: apps/tanstack-web/src/routes/$locale/$wsId/drive.tsx,
-  apps/tanstack-web/src/lib/platform/redirects.ts
+- drive-workspace-route: apps/drive/src/routes/$.tsx,
+  apps/drive/src/lib/workspace.ts
 - migration-audit: read-only route manifest/docs audit
 Coordinator-owned paths:
-- apps/tanstack-web/src/routeTree.gen.ts
-- apps/tanstack-web/migration/route-manifest.json
+- apps/drive/src/routeTree.gen.ts
 ```
 
 Worker prompts should say that the worker is not alone in the codebase, must run
@@ -396,11 +394,10 @@ focused owned path set.
 Generated files need explicit ownership because they often combine many workers'
 inputs. Examples include:
 
-- `apps/tanstack-web/src/routeTree.gen.ts`
-- `apps/tanstack-web/migration/route-manifest.json`
-- `apps/tanstack-web/migration/route-overrides.json` when centrally regenerated
+- `apps/<app>/src/routeTree.gen.ts` for native Start apps
+- per-app Start route manifests such as `apps/contacts/start-route-manifest.json`
 - migration progress/docs tables
-- `apps/backend/api/openapi.yaml`
+- `apps/api/generated/openapi.json`
 - `apps/docs/docs.json`
 - sorted translation bundles
 - Supabase generated DB types

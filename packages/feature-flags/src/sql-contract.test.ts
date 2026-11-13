@@ -102,15 +102,41 @@ describe('platform feature flag migration contract', () => {
     expect(sql).toContain('least(greatest(coalesce(p_limit, 50), 1), 100)');
   });
 
-  it('allowlists the pinned catalog and does not admit cookie consent', () => {
-    for (const flag of featureFlagCatalog.flags) {
+  it('pins the migration catalog and admits exactly the registry runtime keys', () => {
+    const catalogOnlyKeys = ['ENABLE_JOURNAL_MOOD_TRACKING'];
+    const migratedFlags = featureFlagCatalog.flags.filter(
+      (flag) => !catalogOnlyKeys.includes(flag.key)
+    );
+    const familyEntries = [
+      ...sql.matchAll(/when '([^']+)' then '([^']+)'/g),
+    ].map(([, key, family]) => ({ key, family }));
+    expect(familyEntries).toHaveLength(51);
+    expect(familyEntries).toEqual(
+      expect.arrayContaining(
+        migratedFlags.map(({ key, family }) => ({ key, family }))
+      )
+    );
+    expect(migratedFlags).toHaveLength(51);
+    for (const flag of migratedFlags) {
       expect(sql).toContain(`when '${flag.key}' then '${flag.family}'`);
     }
+    for (const key of catalogOnlyKeys) {
+      expect(
+        featureFlagCatalog.flags.find((flag) => flag.key === key)?.family
+      ).toBe('workspace-secret');
+      expect(sql).not.toContain(key);
+    }
     expect(sql).not.toContain('cookie_consent_banner');
+    expect(
+      familyEntries
+        .filter(({ family }) => family === 'mobile-runtime')
+        .map(({ key }) => key)
+        .sort()
+    ).toEqual(registry.map((flag) => flag.key).sort());
     for (const flag of registry) {
       expect(sql).toContain(`when '${flag.key}' then 'mobile-runtime'`);
     }
-    expect(featureFlagCatalog.flags).toHaveLength(51);
+    expect(featureFlagCatalog.flags).toHaveLength(52);
     expect(registry).toHaveLength(16);
   });
 

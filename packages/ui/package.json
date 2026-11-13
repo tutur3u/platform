@@ -117,6 +117,7 @@
     "@tuturuuu/supabase": "workspace:*",
     "@tuturuuu/utils": "workspace:*",
     "@types/debug": "^4.1.13",
+    "@ui-sdk/core": "0.1.0-beta.1",
     "browser-image-compression": "^2.0.2",
     "class-variance-authority": "^0.7.1",
     "cmdk": "^1.1.1",
@@ -376,6 +377,10 @@
       "types": "./src/components/ui/custom/app-error-boundary.tsx",
       "import": "./src/components/ui/custom/app-error-boundary.tsx"
     },
+    "./custom/status-page": {
+      "types": "./src/components/ui/custom/status-page/index.ts",
+      "import": "./src/components/ui/custom/status-page/index.ts"
+    },
     "./custom/settings-dialog-shell": {
       "types": "./src/components/ui/custom/settings-dialog-shell.tsx",
       "import": "./src/components/ui/custom/settings-dialog-shell.tsx"
@@ -395,6 +400,10 @@
     "./custom/settings-section": {
       "types": "./src/components/ui/custom/settings-section.tsx",
       "import": "./src/components/ui/custom/settings-section.tsx"
+    },
+    "./custom/avatar-editor": {
+      "types": "./src/components/ui/custom/avatar-editor.tsx",
+      "import": "./src/components/ui/custom/avatar-editor.tsx"
     },
     "./custom/settings/*": "./src/components/ui/custom/settings/*.tsx",
     "./custom/missed-entry/*": "./src/components/ui/custom/missed-entry/*.tsx",

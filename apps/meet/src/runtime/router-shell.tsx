@@ -7,6 +7,7 @@ import {
   useMatches,
 } from '@tanstack/react-router';
 import { AppErrorBoundary } from '@tuturuuu/ui/custom/app-error-boundary';
+import { StatusPage } from '@tuturuuu/ui/custom/status-page';
 import type { ReactElement } from 'react';
 import { AppProviders } from './app-providers';
 import { readLoadingLabels } from './loading-labels';
@@ -91,6 +92,8 @@ export function ErrorPage({ error, reset }: ErrorComponentProps) {
     >
       <AppErrorBoundary
         appName="Meet"
+        chrome="page"
+        locale={pathname.startsWith('/vi') ? 'vi' : 'en'}
         error={
           error instanceof Error
             ? error
@@ -107,8 +110,11 @@ export function NotFoundPage() {
   return isRoomPath(pathname) ? (
     <RoomRouteFeedback pathname={pathname} state="missing" />
   ) : (
-    <main className="grid min-h-dvh place-items-center">
-      <h1>404</h1>
-    </main>
+    <StatusPage
+      appHref="/"
+      appName="Meet"
+      locale={pathname}
+      variant="not-found"
+    />
   );
 }

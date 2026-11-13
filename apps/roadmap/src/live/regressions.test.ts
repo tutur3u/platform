@@ -1,3 +1,4 @@
+import { readStyles } from '../style-source.ts';
 /** Regression suites (run via src/roadmap-data.test.ts). */
 /**
  * D79 data tests for the public roadmap. Every guard has a broken variant
@@ -174,7 +175,7 @@ describe('plans flag', () => {
   it('hides the card with the flag off, without touching the copy', () => {
     assert.deepEqual(visibleComingSoon(false), []);
     assert.equal(
-      comingSoon[0].body,
+      comingSoon[0].body.en,
       'Mira subscription plans at $100 and $200/month for access to Mira at the highest limits and capabilities.'
     );
   });
@@ -273,7 +274,7 @@ describe('navbar clearance for the filter bar', () => {
   });
 
   it('wires the compact pill to the same offsets the page docks against', () => {
-    const css = read('../styles.css');
+    const css = readStyles();
     const sticky = css.match(/\.sticky-bar \{[^}]+\}/)?.[0] ?? '';
     assert.match(sticky, /top:\s*var\(--shell-nav-offset,\s*76px\)/);
     assert.doesNotMatch(sticky, /top:\s*0\b/);

@@ -5,7 +5,16 @@ export const REQUIRED_RUNTIME_NAMES = [
   'NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY',
 ] as const;
 
-export type RuntimeEnvironment = Partial<Record<string, unknown>>;
+type RuntimeBindingName =
+  | (typeof REQUIRED_RUNTIME_NAMES)[number]
+  | 'UPSTASH_REDIS_REST_URL'
+  | 'UPSTASH_REDIS_REST_TOKEN'
+  | 'ABUSE_GUARD'
+  | 'ABUSE_GUARD_KEY_PEPPER'
+  | 'ABUSE_GUARD_FAMILIES';
+
+// Generated binding interfaces enumerate names; they need no open index signature.
+export type RuntimeEnvironment = Partial<Record<RuntimeBindingName, unknown>>;
 
 export function assertRuntimeEnvironment(env: RuntimeEnvironment): void {
   if (process.env.NODE_ENV !== 'production') {
@@ -31,7 +40,7 @@ export function assertRuntimeEnvironment(env: RuntimeEnvironment): void {
     !!env.ABUSE_GUARD_FAMILIES.trim();
   if (!legacy && !configured) {
     const missing = binding
-      ? ['ABUSE_GUARD_KEY_PEPPER', 'ABUSE_GUARD_FAMILIES'].filter(
+      ? (['ABUSE_GUARD_KEY_PEPPER', 'ABUSE_GUARD_FAMILIES'] as const).filter(
           (name) => typeof env[name] !== 'string' || !String(env[name]).trim()
         )
       : ['UPSTASH_REDIS_REST_URL', 'UPSTASH_REDIS_REST_TOKEN'];

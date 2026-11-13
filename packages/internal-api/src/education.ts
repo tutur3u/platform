@@ -1269,3 +1269,56 @@ export async function deleteWorkspaceStorageObject(
     }
   );
 }
+
+/** Stream a teacher-authorized module review through Teach's metered AI route. */
+export async function reviewEducationDocument(
+  input: {
+    wsId: string;
+    courseId: string;
+    moduleId: string;
+    text: string;
+    subject:
+      | 'writing'
+      | 'math'
+      | 'physics'
+      | 'chemistry'
+      | 'biology'
+      | 'general';
+    locale: 'en' | 'vi';
+    level: 'hints' | 'full';
+  },
+  signal: AbortSignal,
+  onProgress?: () => void,
+  options?: InternalApiClientOptions
+): Promise<unknown> {
+  const client = getInternalApiClient(withTeachApiBaseUrl(options));
+  const response = await client.fetch('/api/ai/objects/inline-assistance', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(input),
+    signal,
+    cache: 'no-store',
+  });
+  if (!response.ok || !response.body)
+    throw new Error('Document review unavailable');
+  const reader = response.body.getReader();
+  const decoder = new TextDecoder();
+  let text = '';
+  let bytes = 0;
+  try {
+    while (true) {
+      const chunk = await reader.read();
+      if (chunk.done) break;
+      bytes += chunk.value.byteLength;
+      if (bytes > 256_000)
+        throw new Error('Document review exceeds response limit');
+      text += decoder.decode(chunk.value, { stream: true });
+      onProgress?.();
+    }
+    text += decoder.decode();
+    return JSON.parse(text) as unknown;
+  } finally {
+    await reader.cancel().catch(() => {});
+    reader.releaseLock();
+  }
+}
