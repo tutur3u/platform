@@ -26,7 +26,7 @@ test('shared map selects local checks for changed and deleted supplier paths', (
   assert.equal(selectLocalChecks(['README.md']).size, 0);
 });
 
-test('map retains the six existing CI scopes and control paths', () => {
+test('map retains CI scopes and control paths', () => {
   const filters = ciFilters();
   assert.deepEqual(Object.keys(filters), [
     'oxc',
@@ -35,6 +35,7 @@ test('map retains the six existing CI scopes and control paths', () => {
     'migrations',
     'mobile',
     'plugin',
+    'fonts',
   ]);
   for (const patterns of Object.values(filters)) {
     for (const control of [

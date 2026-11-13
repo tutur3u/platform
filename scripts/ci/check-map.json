@@ -95,6 +95,19 @@
       "AGENTS.md",
       "apps/docs/docs.json",
       "tuturuuu*.ts"
+    ],
+    "fonts": [
+      ".github/**",
+      "package.json",
+      "bun.lock",
+      "turbo.json",
+      "tsconfig*.json",
+      "scripts/fonts/**",
+      "apps/web/public/fonts/**",
+      "apps/web/src/fonts/**",
+      "apps/web/src/app/*/layout.tsx",
+      "apps/web/src/app/*/*/layout.tsx",
+      "apps/web/src/app/*/*/fonts/**"
     ]
   },
   "localChecks": {

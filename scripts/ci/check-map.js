@@ -3,7 +3,15 @@ const map = require('./check-map.json');
 
 function validateMap(value = map) {
   if (value.version !== 1) throw new Error('Unsupported check map version');
-  for (const scope of ['oxc', 'i18n', 'docs', 'migrations', 'mobile', 'plugin'])
+  for (const scope of [
+    'oxc',
+    'i18n',
+    'docs',
+    'migrations',
+    'mobile',
+    'plugin',
+    'fonts',
+  ])
     if (!Object.hasOwn(value.ciScopes, scope))
       throw new Error(`Missing CI scope: ${scope}`);
   for (const id of [
