@@ -84,13 +84,14 @@ export async function observeHosting(
   fetcher: ProbeFetch,
   registry: Readonly<Record<string, string>>,
   now: number,
-  selfCommit: string | null = null
+  selfCommit: string | null = null,
+  onBody?: (app: string, body: string) => void
 ): Promise<HostingSnapshot> {
   // The tested provider classifier (x-vercel-id, then a Worker's own
   // answer); the roadmap itself is this Worker.
-  const providers = (await probeHosts(fetcher, selfCommit)).map(
-    ({ app, platform }) => ({ app, provider: platform })
-  );
+  const providers = (
+    await probeHosts(fetcher, selfCommit, undefined, undefined, onBody)
+  ).map(({ app, platform }) => ({ app, provider: platform }));
   const migration = await limited(
     Object.entries(registry),
     async ([app, basePath]) => {

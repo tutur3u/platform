@@ -29,6 +29,13 @@ import { useLiveData } from '../live/use-live-data';
 import { pagePath, ROUTE_PATHS } from '../seo';
 import { BUILD_HOSTING } from '../live/build-hosting';
 import { buildView } from '../view-model';
+import { BUILD_ACTIVITY } from '../insights/build-activity';
+import { buildInsights } from '../insights/model';
+import { useLazyHistory } from '../insights/use-lazy-history';
+import { changelog } from '../changelog/data';
+import { PulseSection } from '../components/insights/pulse-section';
+import { ProductionUpdates } from '../components/insights/updates';
+import { PatchNotes } from '../components/insights/patch-notes';
 
 export function RoadmapPage({ lang }: { lang: Lang }) {
   const navigate = useNavigate();
@@ -108,11 +115,35 @@ const RoadmapMain = memo(function RoadmapMain({
     () => buildView(data, now, undefined, BUILD_HOSTING),
     [data, now]
   );
+  const lazy = useLazyHistory();
+  const insights = useMemo(
+    () => buildInsights(view, data, BUILD_ACTIVITY, now),
+    [view, data, now]
+  );
   return (
     <main className="page">
-      <Hero t={t} view={view} lang={lang} data={data} now={now} />
+      <Hero t={t} view={view} lang={lang} insights={insights} />
+      <Suspense>
+        <PulseSection
+          t={t}
+          lang={lang}
+          insights={insights}
+          activity={BUILD_ACTIVITY}
+          lazy={lazy}
+          today={view.today}
+          now={now}
+        />
+      </Suspense>
+      <Suspense>
+        <div
+          className={`catchup${changelog?.releases.length ? '' : ' catchup-single'}`}
+        >
+          <ProductionUpdates t={t} lang={lang} updates={insights.updates} />
+          <PatchNotes t={t} lang={lang} changelog={changelog} />
+        </div>
+      </Suspense>
       <TrackGlance t={t} view={view} />
-      <ComingSoon t={t} />
+      <ComingSoon t={t} lang={lang} />
       {/* Hydration boundaries (nothing suspends; the server renders all of
           it): below the hero, React hydrates section by section, yielding
           between them and starting with the one a reader interacts with. */}
