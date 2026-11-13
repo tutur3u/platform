@@ -4,7 +4,8 @@ import { lstat, readdir, realpath, rmdir } from 'node:fs/promises';
 import { createRequire } from 'node:module';
 import { dirname, join, relative } from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { sealMeetApp } from './meet-native-inventory.mjs';
+import { sealMeetGraph } from './meet-native-profile.mjs';
+import { readMeetProductionReceipt } from './meet-native-fixture-supplier.mjs';
 
 const { validateOutput } = createRequire(import.meta.url)(
   './verify-meet-start-output.js'
@@ -72,12 +73,16 @@ async function verifyLayout(root, seal, scratch, tmp) {
 }
 
 async function main() {
-  assert.equal(process.argv.length, 3);
+  assert.ok([3, 5].includes(process.argv.length));
+  const production = process.argv.length === 5;
+  if (production) assert.equal(process.argv[3], '--production-receipt');
   const sourceSHA = process.argv[2];
   assert.match(sourceSHA, /^[a-f0-9]{40}$/);
   const app = fileURLToPath(new URL('../../apps/meet', import.meta.url));
   const appStat = await canonicalDirectory(app);
   assert.equal(await realpath(process.cwd()), app, 'Meet cwd required');
+  const proofPlan = production ? await readMeetProductionReceipt(sourceSHA, process.argv[4]) : undefined;
+  if (proofPlan) assert.equal(proofPlan.app, app);
   const root = join(app, 'dist');
   const rootStat = await canonicalDirectory(root);
   const artifact = validateOutput(app, {
@@ -89,8 +94,9 @@ async function main() {
   const options = {
     configRelative: relative(root, artifact.configPath),
     assetsRelative: relative(root, artifact.assets),
+    ...(proofPlan ? { admission: proofPlan.admission } : {}),
   };
-  const seal = await sealMeetApp(root, options);
+  const seal = await sealMeetGraph(root, options);
   const scratch = join(configParent, '.wrangler');
   const tmp = join(scratch, 'tmp');
   // Capture preabsence before invoking Wrangler, including dangling links.
@@ -132,7 +138,7 @@ async function main() {
     assert.equal(await optionalStat(tmp), undefined);
   }
   validateOutput(app, { sha: sourceSHA, mode: 'restore-required' });
-  assert.deepEqual(await sealMeetApp(root, options), seal);
+  assert.deepEqual(await sealMeetGraph(root, options), seal);
 }
 
 try {
