@@ -245,3 +245,19 @@ it('renders nothing while the connection is open', () => {
   );
   expect(view.container.textContent).toBe('');
 });
+
+it.each(['error', 'closed'] as const)(
+  'offers a manual refresh only once recovery is exhausted (%s)',
+  (status) => {
+    const onRetry = vi.fn();
+    render(
+      localized(<CallConnectionNotice status={status} onRetry={onRetry} />)
+    );
+    expect(screen.getByRole('status').textContent).toContain(
+      copy.join_error_title
+    );
+    expect(screen.queryByText(copy.reconnecting)).toBeNull();
+    screen.getByRole('button', { name: copy.connection_refresh }).click();
+    expect(onRetry).toHaveBeenCalledOnce();
+  }
+);
