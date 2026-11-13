@@ -28,11 +28,13 @@ function getCacheKey(body: MiraTempAuthBody) {
 export async function getMiraTempAuthHeaders(
   body: MiraTempAuthBody
 ): Promise<Record<string, string>> {
+  const started = performance.now();
   const cacheKey = getCacheKey(body);
   if (
     cachedToken?.cacheKey === cacheKey &&
     cachedToken.expiresAt > Date.now() + 5_000
   ) {
+    performance.measure('mira:temp-auth-cache-hit', { start: started });
     return { [AI_TEMP_AUTH_HEADER]: cachedToken.token };
   }
 
@@ -74,6 +76,8 @@ export async function getMiraTempAuthHeaders(
   } catch {
     cachedToken = null;
     return {};
+  } finally {
+    performance.measure('mira:temp-auth-cache-miss', { start: started });
   }
 }
 

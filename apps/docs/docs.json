@@ -42,6 +42,7 @@
             "group": "User guides",
             "pages": [
               "platform/guides/getting-started",
+              "platform/guides/building-on-start-vite-void",
               "platform/guides/workflows",
               "platform/guides/troubleshooting"
             ]
@@ -508,6 +509,7 @@
                   "reference/repository/dependencies-2",
                   "reference/repository/dependencies-3",
                   "reference/repository/dependencies-4",
+                  "reference/repository/dependencies-5",
                   "reference/repository/python-dependencies-1",
                   "reference/repository/python-dependencies-2",
                   "reference/repository/dart-dependencies-1",

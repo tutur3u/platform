@@ -46,6 +46,24 @@ fallback. Root hosting has no mount prefix. A `/finance` mount stays inside
 propagation remains unchanged. Regression coverage lives in
 `apps/finance/src/proxy-base-path.test.ts`.
 
+## Invoice creator names
+
+Invoice creator options in standalone Finance and Web's shared Finance surface
+resolve profiles with the invoice table's `normalizeCreator` helper. Platform
+profile display names take precedence over legacy workspace display names; the
+remaining name/email fallbacks match the table. A missing name uses the existing
+localized unknown-user label in the filter. Pending-invoice customer filters and
+transaction creator filters retain their own sources.
+
+Options read only creator relations on invoices in the resolved workspace and
+return only an ID and the resolved label. Existing legacy `userIds` URLs retain
+their IDs. Platform-only creator names also resolve without a workspace-user row.
+The invoice-list `userIds` predicate remains based on legacy `creator_id`;
+platform-only ID filtering is a separate API/RPC compatibility limitation.
+The existing Finance route authorization and permission gate apply. Regression
+coverage is in Finance's `finance/filter-users/route.test.ts`, the shared
+`transactions/user-filter.test.tsx`, and Utils' `transform-invoice-results.test.ts`.
+
 ## Transaction workspace boundaries
 
 Transaction creation and updates in Web and standalone Finance validate wallet and

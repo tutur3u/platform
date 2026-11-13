@@ -377,6 +377,10 @@
       "types": "./src/components/ui/custom/app-error-boundary.tsx",
       "import": "./src/components/ui/custom/app-error-boundary.tsx"
     },
+    "./custom/status-page": {
+      "types": "./src/components/ui/custom/status-page/index.ts",
+      "import": "./src/components/ui/custom/status-page/index.ts"
+    },
     "./custom/settings-dialog-shell": {
       "types": "./src/components/ui/custom/settings-dialog-shell.tsx",
       "import": "./src/components/ui/custom/settings-dialog-shell.tsx"

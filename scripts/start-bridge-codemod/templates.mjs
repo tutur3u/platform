@@ -551,6 +551,7 @@ export function cloudflareTsconfig({ app }) {
         moduleResolution: 'Bundler',
         jsx: 'react-jsx',
         noEmit: true,
+        allowImportingTsExtensions: true,
         composite: false,
         declaration: false,
         declarationMap: false,

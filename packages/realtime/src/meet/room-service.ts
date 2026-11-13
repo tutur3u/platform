@@ -31,6 +31,7 @@ import { applyRoomProgramming } from './room-programming';
 import type { RoomRecording } from './room-recording';
 import { summarizeRoomUsage } from './room-usage';
 import { transcriptionClientSnapshot } from './transcription';
+import { applyPrivateMira, type MiraPrivateState } from './room-mira-private';
 
 const attachment = z.object({
   id: z.uuid(),
@@ -50,6 +51,7 @@ export type RoomChatMessage = Extract<
   { type: 'chat.message' }
 >;
 export type RoomServiceState = MeetRoomSnapshot & {
+  miraPrivate?: MiraPrivateState;
   personalChatReceipts?: PersonalChatReceipts;
   chat?: RoomChatMessage[];
   liveAssistant?: RoomLiveState;
@@ -122,6 +124,8 @@ export function roomService(
     status,
   });
   if (!token.scopes.includes('meet:server')) return fail('Forbidden');
+  const privateMira = applyPrivateMira(snapshot, token, input);
+  if (privateMira) return privateMira;
   const restored = applyRoomRestore(snapshot, token, input);
   if (restored) return restored;
   const live =

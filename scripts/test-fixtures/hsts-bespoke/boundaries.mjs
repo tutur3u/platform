@@ -41,53 +41,55 @@ async function loadWorker(app, result) {
   async function source(file) {
     file = resolve(file);
     if (cache.has(file)) return cache.get(file);
-    let text = await readFile(file, 'utf8');
-    if (file.endsWith('/drive/cloudflare/worker.ts')) {
-      text = text.replace(
-        "import.meta.viteRsc.loadModule('rsc', 'bridge-api')",
-        'Promise.resolve({ endpoints: [] })'
-      );
-    }
-    const mod = new SourceTextModule(stripTypeScriptTypes(text), {
-      identifier: file,
-    });
-    cache.set(file, mod);
-    await mod.link(async (specifier, parent) => {
-      let target;
-      if (specifier === '@tuturuuu/start-bridge/response-policy')
-        target = 'packages/start-bridge/src/core/response-policy.ts';
-      else if (specifier === '@tuturuuu/start-bridge/startup')
-        target = 'packages/start-bridge/src/server/startup.ts';
-      else if (
-        specifier.startsWith('@tuturuuu/utils/') &&
-        [
-          'framable-paths',
-          'seo-robots',
-          'staging-cookie-policy',
-          'staging-hosts',
-        ].includes(specifier.split('/').at(-1))
-      )
-        target = `packages/utils/src/${specifier.split('/').at(-1)}.ts`;
-      else if (
-        [
-          './startup',
-          './required-bindings',
-          '../src/native/required-secrets',
-        ].includes(specifier)
-      )
-        target = resolve(parent.identifier, '..', `${specifier}.ts`);
-      if (target) return source(target);
-      const values = { ...mocks };
-      if (specifier === '../start-bridge.config')
-        values.default = { mounts: {} };
-      return new SyntheticModule(Object.keys(values), function () {
-        for (const [key, value] of Object.entries(values))
-          this.setExport(key, value);
+    const pending = (async () => {
+      let text = await readFile(file, 'utf8');
+      if (file.endsWith('/drive/cloudflare/worker.ts')) {
+        text = text.replace(
+          "import.meta.viteRsc.loadModule('rsc', 'bridge-api')",
+          'Promise.resolve({ endpoints: [] })'
+        );
+      }
+      return new SourceTextModule(stripTypeScriptTypes(text), {
+        identifier: file,
       });
-    });
-    return mod;
+    })();
+    cache.set(file, pending);
+    return pending;
   }
+  const linker = async (specifier, parent) => {
+    let target;
+    if (specifier === '@tuturuuu/start-bridge/response-policy')
+      target = 'packages/start-bridge/src/core/response-policy.ts';
+    else if (specifier === '@tuturuuu/start-bridge/startup')
+      target = 'packages/start-bridge/src/server/startup.ts';
+    else if (
+      specifier.startsWith('@tuturuuu/utils/') &&
+      [
+        'framable-paths',
+        'seo-robots',
+        'staging-cookie-policy',
+        'staging-hosts',
+      ].includes(specifier.split('/').at(-1))
+    )
+      target = `packages/utils/src/${specifier.split('/').at(-1)}.ts`;
+    else if (
+      [
+        './startup',
+        './required-bindings',
+        '../src/native/required-secrets',
+      ].includes(specifier)
+    )
+      target = resolve(parent.identifier, '..', `${specifier}.ts`);
+    if (target) return source(target);
+    const values = { ...mocks };
+    if (specifier === '../start-bridge.config') values.default = { mounts: {} };
+    return new SyntheticModule(Object.keys(values), function () {
+      for (const [key, value] of Object.entries(values))
+        this.setExport(key, value);
+    });
+  };
   const entry = await source(`apps/${app}/cloudflare/worker.ts`);
+  await entry.link(linker);
   await entry.evaluate();
   return entry.namespace.default;
 }

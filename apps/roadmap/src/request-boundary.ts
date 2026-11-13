@@ -52,8 +52,20 @@ export function withoutTrailingSlash(path: string): string {
 }
 
 /**
+ * English is unprefixed: `/roadmap/en` → `/roadmap` and `/roadmap/en/<rest>`
+ * → `/roadmap/<rest>` (old English links). Only an exact `en` segment
+ * matches, so `/roadmap/english` or `/roadmap/enx` return null.
+ */
+export function withoutEnglishPrefix(path: string): string | null {
+  if (path === '/roadmap/en' || path === '/roadmap/en/') return '/roadmap';
+  if (!path.startsWith('/roadmap/en/')) return null;
+  return withoutTrailingSlash(`/roadmap/${path.slice('/roadmap/en/'.length)}`);
+}
+
+/**
  * Map a satellite URL onto the canonical public path, keeping the query.
- * The served document is `/roadmap` (no slash), so this is a single hop.
+ * The served document is `/roadmap` (no slash) and English is unprefixed,
+ * so `/en/<rest>` also lands on `/roadmap/<rest>` in a single hop.
  */
 export function canonicalRoadmapLocation(url: URL): string {
   const path = url.pathname;
@@ -63,7 +75,8 @@ export function canonicalRoadmapLocation(url: URL): string {
       : path === '/'
         ? '/roadmap'
         : `/roadmap${path}`;
-  return `${ROADMAP_CANONICAL_ORIGIN}${withoutTrailingSlash(mounted)}${url.search}`;
+  const mountedPath = withoutTrailingSlash(mounted);
+  return `${ROADMAP_CANONICAL_ORIGIN}${withoutEnglishPrefix(mountedPath) ?? mountedPath}${url.search}`;
 }
 
 export function selectedBasepath(request: Request): RoadmapBasepath {
@@ -122,6 +135,15 @@ export function roadmapBoundary(
   }
   if (!url.pathname.startsWith('/roadmap/')) {
     return new Response('Not Found', { status: 404 });
+  }
+  // Old English links (/roadmap/en, /roadmap/en/…) reach the unprefixed
+  // English page in one hop, query kept.
+  const english = withoutEnglishPrefix(url.pathname);
+  if (english) {
+    return new Response(null, {
+      status: 301,
+      headers: { Location: `${url.origin}${english}${url.search}` },
+    });
   }
   // Slash forms (/roadmap/, /roadmap/x/) collapse in one hop, query kept.
   if (!transportPath(url.pathname) && url.pathname.endsWith('/')) {

@@ -6,6 +6,21 @@ shared-package changes.
 
 ## Web And Shared UI
 
+- Mira typed-chat activity spans queueing, creation and the Live save barrier,
+  until the SDK user message replaces the optimistic snapshot by ID. Preserve
+  immutable send configuration and cancellation checks after the Live barrier.
+  Web and Workspace copies must agree. Use focused queue/conversation tests in
+  each app; browser Performance entries separate activity, prepared request,
+  first rendered text and finish. See
+  [Mira client activity](../../../../../apps/docs/platform/features/mira-client-actions.mdx#typed-chat-response-activity).
+
+- Shared Google new-chat creation derives a bounded grapheme-safe title from the
+  first message and returns after chat/message persistence. Keep title models off
+  this path; background polishing requires a durable job and a rename fence.
+  Preserve UUID, actor, workspace checks and model FK normalization. See
+  [new conversation titles](../../../../../apps/docs/platform/features/mira-client-actions.mdx#new-conversation-titles)
+  and `packages/ai/src/chat/google/new/route.test.ts`.
+
 - Drive export links use versioned, expiring tokens plus a service-only folder
   revocation marker in the Supabase `.tuturuuu/drive-export-revocations` namespace.
   Read markers uncached on every fetch and fail closed on missing markers or
@@ -366,9 +381,11 @@ time-bound IP/CIDR trust or rate-limit uplift only when traffic is organic.
   stale content through the current route/document workspace or a server-returned
   resource workspace, not through the embedded attribute alone.
 
-## TanStack Start Migration (apps/tanstack-web)
+## Retired apps/tanstack-web Compat Layers
 
-Retained inactive reference: do not execute or update this runtime until explicitly resumed.
+Retired historical reference, unrelated to per-app native Start (which reaches
+`next/*` only through `@tuturuuu/start-bridge`). Do not execute, update, or
+revive this tree.
 
 - Shared `@tuturuuu/ui` clients import Next-only framework APIs. apps/tanstack-web
   resolves them at runtime via three compat layers so ported routes keep the
@@ -604,10 +621,12 @@ refresh generated type evidence through the owning supported CI path.
 
 ## Active runtime and paused implementations
 
-Web and satellite Next.js apps are maintained. Rust (`apps/backend`) and
-TanStack Start (`apps/tanstack-web`) are paused and not in use. Do not port
+`apps/web` (Next.js) and the satellite apps are maintained; satellites move per
+app to native TanStack Start + Void + Vite+ on Cloudflare Workers under the
+native Start migration runbook. Rust (`apps/backend`) is paused, and the
+`apps/tanstack-web` tree is retired and unrelated to per-app Start. Do not port
 changes, regenerate migration trees/manifests/version docs, run implementation
-checks/builds, or update their dependencies until explicitly resumed. Maintain
+checks/builds, or update dependencies for either inactive tree. Maintain
 live Web first-class API handlers and shared `packages/internal-api` boundaries.
 Docker setup is inactive and the Docker cron runner is retired; local docs use
 `bun dev:docs` without Docker. See `apps/docs/build/devops/active-runtime.mdx`.
@@ -1541,3 +1560,14 @@ ambiguous category names, localize live announcements, and keep exactly one
 roving tab stop. Run its focused keyboard contract tests before proposing
 changes; browser accessibility, hydration and exact-commit CI remain distinct
 acceptance gates. See the Calendar application decision for scope and coverage.
+
+### IME composition in custom keyboard submission
+
+For text controls that commit or send on Enter, inspect the native keyboard
+composition flag before acting. React handlers read `event.nativeEvent.isComposing`;
+key code 229 also catches Safari composition-confirmation ordering. Preserve the
+IME default action while composing, plus existing ordinary Enter, Shift+Enter,
+Escape and explicit button behavior. Test the actual handler with composing and
+non-composing events; a source-string assertion cannot prove the action is
+suppressed. AI Studio model policy entry has focused regression coverage in
+`apps/ai/src/components/policy/model-list-field.test.ts`.

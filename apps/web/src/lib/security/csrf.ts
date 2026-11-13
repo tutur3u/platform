@@ -70,7 +70,8 @@ export function guardWebApiCsrf(
     method: req.method,
     pathname: req.nextUrl.pathname,
     requireOriginWithoutSessionCookie: WEB_SESSION_CLEARING_PATHS.has(
-      req.nextUrl.pathname
+      // `/api/auth/logout/` is the same endpoint.
+      req.nextUrl.pathname.replace(/\/+$/u, '') || '/'
     ),
   });
   if (verdict.ok) return null;

@@ -328,3 +328,13 @@ details. Authorized user-group file conversion retains its separate group-read
 check. Regression coverage lives in `metering-execution-claim.test.ts`,
 `message-file-ownership.test.ts` and `markitdown-ownership.test.ts` in
 `packages/ai/src`.
+
+## Model policy text entry
+
+The model policy identifier field accepts Enter or comma to commit typed IDs.
+During IME composition, both shortcuts leave the draft intact and do not commit
+an ID. The native composition flag and key code 229 cover composition-confirming
+Enter events, including Safari event ordering. The Add button remains available
+for explicit commitment. This rule applies to AI Studio model policy entry;
+other text fields retain their own keyboard contracts. Regression coverage:
+`apps/ai/src/components/policy/model-list-field.test.ts`.
