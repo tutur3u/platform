@@ -49,7 +49,7 @@ describe('playground route surface', () => {
     ]);
   });
 
-  it('keeps one root layout and the shared error boundaries', () => {
+  it('keeps one root layout and the shared status pages', () => {
     const special = walk(APP_DIR)
       .map((path) => toPosix(relative(APP_DIR, path)))
       .filter((path) =>
@@ -59,7 +59,12 @@ describe('playground route surface', () => {
       )
       .sort();
 
-    expect(special).toEqual(['error.tsx', 'global-error.tsx', 'layout.tsx']);
+    expect(special).toEqual([
+      'error.tsx',
+      'global-error.tsx',
+      'layout.tsx',
+      'not-found.tsx',
+    ]);
   });
 
   it('has no catch-all or dynamic segments that could shadow proxied /api paths', () => {

@@ -1,5 +1,11 @@
 import { createRootRoute, HeadContent, Outlet } from '@tanstack/react-router';
+import { createBridgeStatusComponents } from '@tuturuuu/start-bridge/start/status-route';
 import type { ReactNode } from 'react';
+
+const { BridgeNotFound, BridgeError } = createBridgeStatusComponents({
+  appName: 'Mastermind',
+});
+
 export const Route = createRootRoute({
   head: () => ({
     meta: [
@@ -18,4 +24,6 @@ export const Route = createRootRoute({
       <body>{children}</body>
     </html>
   ),
+  notFoundComponent: BridgeNotFound,
+  errorComponent: BridgeError,
 });

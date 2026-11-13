@@ -210,18 +210,26 @@ describe('actual Apps root route callbacks', () => {
   );
 
   it.each(cases)(
-    'renders the $name 404 with the translated catalogue home link',
+    'renders the $name 404 as the shared Tuturuuu status page',
     ({ input, locale }) => {
       router.setData(input);
       const Missing = router.options().notFoundComponent;
       const view = render(<Missing isNotFound routeId="__root__" />);
-      expect(view.getByRole('heading', { level: 1 }).textContent).toBe('404');
-      const title = (locale === 'vi' ? vietnamese : en).appsGateway.metadata
-        .title;
-      expect(view.getByRole('link', { name: title }).getAttribute('href')).toBe(
-        '/'
-      );
-      expect(view.getAllByRole('link')).toHaveLength(1);
+      expect(
+        view.container.querySelector('[data-status-page="not-found"]')
+      ).not.toBeNull();
+      expect(view.getAllByRole('heading', { level: 1 })).toHaveLength(1);
+      expect(view.container.querySelector('script')).toBeNull();
+      const appLink = locale === 'vi' ? 'Mở Apps' : 'Open Apps';
+      expect(
+        view.getByRole('link', { name: appLink }).getAttribute('href')
+      ).toBe('/');
+      const home = locale === 'vi' ? 'Trang chủ Tuturuuu' : 'Tuturuuu home';
+      expect(
+        view
+          .getAllByRole('link', { name: home })
+          .every((link) => link.getAttribute('href') === 'https://tuturuuu.com')
+      ).toBe(true);
     }
   );
 });

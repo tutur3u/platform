@@ -11,3 +11,5 @@ export { MarketingNavbar } from './navbar';
 export { NAV_CHROME, shellNavOffset, stickyClearsNavbar } from './nav-metrics';
 export { MARKETING_PRODUCT_GROUPS, MARKETING_PRODUCT_ICONS } from './products';
 export type { MarketingShellProps, ShellImage, ShellLink } from './types';
+
+export { MarketingActions } from './nav-actions';

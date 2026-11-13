@@ -18,6 +18,7 @@ import type {
 
 type ActiveSession = {
   sessionId: string;
+  ownerId: string;
   socket?: WebSocket;
   player: LiveAudioPlayer;
   disposeCapture?: () => Promise<void>;
@@ -287,6 +288,7 @@ export function useLiveAssistant(
       }
       const current = {
         sessionId: session.sessionId,
+        ownerId: session.ownerId,
         player,
         microphone,
         inputDeviceId,
@@ -310,7 +312,12 @@ export function useLiveAssistant(
         microphone ? [microphone] : streams,
         (data) => {
           if (active.current === current && !current.stopped)
-            send({ type: 'audio', data });
+            send({
+              type: 'audio',
+              data,
+              source: 'microphone',
+              accountId: current.ownerId,
+            });
         },
         () => {
           if (

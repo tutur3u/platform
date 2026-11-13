@@ -6,10 +6,12 @@ import {
   useLocation,
   useMatches,
 } from '@tanstack/react-router';
+import { withAppBase } from '@tuturuuu/start-bridge/start/base-path';
 import {
   AppErrorBoundary,
   type BoundaryError,
 } from '@tuturuuu/ui/custom/app-error-boundary';
+import { StatusPage } from '@tuturuuu/ui/custom/status-page';
 import type { ReactElement } from 'react';
 import { AppProviders } from './providers';
 import '@tuturuuu/ui/globals.css';
@@ -72,9 +74,25 @@ export function ErrorPage({ error, reset }: ErrorComponentProps) {
     >
       <AppErrorBoundary
         appName="Mail"
+        chrome="page"
+        homeHref={withAppBase('/')}
+        locale={pathname.startsWith('/vi') ? 'vi' : 'en'}
         error={normalizeBoundaryError(error)}
         reset={reset}
       />
     </AppProviders>
+  );
+}
+
+/** Unknown paths: the shared Tuturuuu status page (served as a 404). */
+export function NotFoundPage(): ReactElement {
+  const pathname = useLocation({ select: (location) => location.pathname });
+  return (
+    <StatusPage
+      appHref={withAppBase('/')}
+      appName="Mail"
+      locale={pathname}
+      variant="not-found"
+    />
   );
 }

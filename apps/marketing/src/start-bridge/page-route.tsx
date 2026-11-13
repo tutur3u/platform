@@ -10,18 +10,20 @@ import {
   type ServerActionCall,
 } from '@tuturuuu/start-bridge/start/server-actions';
 import { proxy } from '../proxy';
+import { setMarketingRenderPath } from '../lib/marketing-render-context';
 import { pageModules } from './page-modules.bridge.gen';
 import { pages } from './page-registry.bridge.gen';
 
 const loadPage = createServerFn({ method: 'POST' })
   .validator((href: string) => href)
   .handler(async ({ data }) => {
+    const href = await resolvePageLocation(data, {
+      proxy,
+      serverFnBase: '/_serverFn',
+    });
+    setMarketingRenderPath(href);
     const page = await resolveBridgePage({
-      // The location the app sees: proxy rewrites apply, the URL stays.
-      href: await resolvePageLocation(data, {
-        proxy,
-        serverFnBase: '/_serverFn',
-      }),
+      href,
       pages,
       modules: pageModules,
     });

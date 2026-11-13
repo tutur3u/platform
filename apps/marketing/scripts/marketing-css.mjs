@@ -31,7 +31,11 @@ export function marketingUiSources(appRoot, uiRoot) {
   ).exports;
   const seen = new Set();
   const used = new Set();
-  const pending = files(resolve(appRoot, 'src'));
+  const shellRoot = resolve(appRoot, '../../packages/marketing-shell/src');
+  const pending = [
+    ...files(resolve(appRoot, 'src')),
+    ...(existsSync(shellRoot) ? files(shellRoot) : []),
+  ];
   while (pending.length) {
     const path = pending.pop();
     if (!path || seen.has(path)) continue;
