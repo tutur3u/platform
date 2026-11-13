@@ -162,6 +162,7 @@ async function main({ env = process.env, runCommand = run, browserType } = {}) {
   let sequence = 0;
   let browser;
   let stage = 'identity';
+  let navigation;
   // A step killed by its timeout never reaches the catch block, so the last
   // reached stage is kept on disk next to the rest of the proof.
   const markStage = async (next) => {
@@ -270,12 +271,26 @@ async function main({ env = process.env, runCommand = run, browserType } = {}) {
     const viewports = [];
     for (const width of [390, 1440]) {
       await markStage(`viewport-${width}`);
+      navigation = undefined;
       const page = await context.newPage();
       await page.setViewportSize({ width, height: 900 });
       const response = await page.goto(`${origin}/en`, {
         waitUntil: 'load',
         timeout: 60000,
       });
+      const finalUrl = URL.parse(page.url());
+      const status = response ? response.status() : null;
+      navigation = {
+        responsePresent: Boolean(response),
+        status:
+          Number.isInteger(status) && status >= 100 && status <= 599
+            ? status
+            : null,
+        finalOrigin: finalUrl?.origin.slice(0, 512) ?? null,
+        finalPath: finalUrl?.pathname.slice(0, 2048) ?? null,
+        http200: status === 200,
+        sameCandidateOrigin: finalUrl?.origin === origin,
+      };
       if (
         !response ||
         response.status() !== 200 ||
@@ -405,6 +420,7 @@ async function main({ env = process.env, runCommand = run, browserType } = {}) {
           stage,
           reason,
           resourceFailures: [...new Set(failures)].slice(0, 10),
+          ...(navigation ? { navigation } : {}),
         },
         null,
         2

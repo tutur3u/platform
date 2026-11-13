@@ -268,3 +268,103 @@ test('every stage change is recorded through one helper', async () => {
   assert.match(source, /await markStage\(`viewport-\$\{width\}`\)/u);
   assert.match(source, /await markStage\('receipt'\)/u);
 });
+
+for (const [name, status, host, accepted] of [
+  ['missing response', null, 'platform-fixture.vercel.app', false],
+  ['non-200 response', 503, 'platform-fixture.vercel.app', false],
+  ['off-origin response', 200, 'elsewhere.example', false],
+  ['same-origin 200', 200, 'platform-fixture.vercel.app', true],
+]) {
+  test(`navigation evidence identifies ${name} without URL secrets`, async (t) => {
+    const temp = await mkdtemp(resolve(tmpdir(), 'staged-navigation-test-'));
+    t.after(() => rm(temp, { recursive: true, force: true }));
+    const sha = 'd'.repeat(40);
+    const origin = 'https://platform-fixture.vercel.app';
+    const finalUrl = `https://USER-SECRET:PASSWORD-SECRET@${host}/en?token=QUERY-SECRET#FRAGMENT-SECRET`;
+    let evaluated = 0;
+    let closed = 0;
+    const page = {
+      setViewportSize: async (size) => {
+        assert.deepEqual(size, { width: 390, height: 900 });
+      },
+      goto: async (url, options) => {
+        assert.equal(url, `${origin}/en`);
+        assert.deepEqual(options, { waitUntil: 'load', timeout: 60000 });
+        return status === null ? null : { status: () => status };
+      },
+      url: () => finalUrl,
+      evaluate: async () => {
+        evaluated += 1;
+        return {};
+      },
+    };
+    const browserType = {
+      launch: async () => ({
+        newContext: async () => ({
+          route: async () => {},
+          newPage: async () => page,
+        }),
+        close: async () => {
+          closed += 1;
+        },
+      }),
+    };
+    const runCommand = async (command, args) => {
+      assert.equal(command, 'vercel');
+      assert.equal(args[1], '/api/build-info');
+      await writeFile(
+        args[args.indexOf('--dump-header') + 1],
+        'HTTP/2 200\r\n\r\n'
+      );
+      await writeFile(
+        args[args.indexOf('--output') + 1],
+        JSON.stringify({
+          commitHash: sha,
+          appName: 'web',
+          environment: 'production',
+        })
+      );
+      return { stdout: '\nTTR_HTTP_STATUS:200' };
+    };
+    const reason = accepted
+      ? 'Candidate CSS did not verify against built bytes'
+      : 'Staged public page failed or left the candidate';
+    await assert.rejects(
+      main({
+        env: {
+          VERCEL_STAGED_DEPLOYMENT_URL: origin,
+          VERCEL_STAGED_APP: 'platform',
+          VERCEL_TOKEN: 'TOKEN-SECRET',
+          GITHUB_SHA: sha,
+          RUNNER_TEMP: temp,
+        },
+        runCommand,
+        browserType,
+      }),
+      (error) => error.stagedReason === reason
+    );
+    const proof = join(temp, 'staged-style-proof', sha, 'failure.json');
+    const text = await readFile(proof, 'utf8');
+    const failure = JSON.parse(text);
+    assert.equal(failure.stage, 'viewport-390');
+    assert.equal(failure.reason, reason);
+    assert.deepEqual(failure.resourceFailures, []);
+    assert.deepEqual(failure.navigation, {
+      responsePresent: status !== null,
+      status,
+      finalOrigin: `https://${host}`,
+      finalPath: '/en',
+      http200: status === 200,
+      sameCandidateOrigin: host === 'platform-fixture.vercel.app',
+    });
+    assert.equal(evaluated, accepted ? 1 : 0);
+    assert.equal(closed, 1);
+    assert.equal(page.url(), finalUrl);
+    assert.equal((await stat(proof)).mode & 0o777, 0o600);
+    assert.ok(!text.includes('SECRET'));
+    await assert.rejects(
+      readFile(join(dirname(proof), 'receipt.json')),
+      /ENOENT/
+    );
+  });
+}
