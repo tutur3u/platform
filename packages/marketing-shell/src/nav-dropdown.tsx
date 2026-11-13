@@ -1,6 +1,6 @@
 'use client';
 
-import { ChevronDownIcon } from '@tuturuuu/icons/lucide-static';
+import { useStaticMarketingMotion } from './use-static-motion';
 import { cn } from '@tuturuuu/utils/format';
 import {
   type ReactNode,
@@ -37,6 +37,7 @@ export function NavMenuBar({
   children?: ReactNode;
   ariaLabel: string;
 }) {
+  const staticMotion = useStaticMarketingMotion();
   const [openId, setOpenId] = useState<string | null>(null);
   const barRef = useRef<HTMLElement>(null);
   const triggerRefs = useRef(new Map<string, HTMLButtonElement>());
@@ -131,11 +132,9 @@ export function NavMenuBar({
             onClick={() => setOpenId(active ? null : menu.id)}
             onFocus={() => {
               cancelClose();
-              setOpenId(menu.id);
             }}
             onPointerEnter={() => {
               cancelClose();
-              setOpenId(menu.id);
             }}
             ref={(node) => {
               if (node) triggerRefs.current.set(menu.id, node);
@@ -144,12 +143,18 @@ export function NavMenuBar({
             type="button"
           >
             {menu.label}
-            <ChevronDownIcon
-              className={cn(
-                'h-3.5 w-3.5 transition-transform duration-200 motion-reduce:transition-none',
-                active && 'rotate-180'
-              )}
-            />
+            <svg
+              aria-hidden="true"
+              viewBox="0 0 24 24"
+              width="14"
+              height="14"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2"
+              className={active ? 'rotate-180' : undefined}
+            >
+              <path d="m6 9 6 6 6-6" />
+            </svg>
           </button>
         );
       })}
@@ -157,6 +162,7 @@ export function NavMenuBar({
       {children}
 
       <div
+        hidden={!isOpen}
         className={cn(
           'absolute top-full left-0 z-50 pt-2 motion-reduce:transition-none',
           isOpen ? 'pointer-events-auto' : 'pointer-events-none'
@@ -165,19 +171,22 @@ export function NavMenuBar({
           width: sheet.width || undefined,
           opacity: isOpen ? 1 : 0,
           transform: `translate(${sheet.x}px, ${isOpen ? 0 : -4}px)`,
-          transition: `transform 0.32s ${EASE}, width 0.32s ${EASE}, opacity 0.16s ease`,
+          transition: staticMotion
+            ? undefined
+            : `transform 0.32s ${EASE}, width 0.32s ${EASE}, opacity 0.16s ease`,
         }}
       >
         <div
-          className="overflow-hidden rounded-2xl border border-foreground/10 bg-popover/95 text-popover-foreground shadow-foreground/5 shadow-xl backdrop-blur-xl motion-reduce:transition-none"
+          className="overflow-hidden rounded-2xl border border-foreground/10 bg-popover text-popover-foreground shadow-foreground/5 shadow-xl motion-reduce:transition-none"
           style={{
             height: sheet.height || 'auto',
-            transition: `height 0.32s ${EASE}`,
+            transition: staticMotion ? undefined : `height 0.32s ${EASE}`,
           }}
         >
           <div className="relative">
             {menus.map((menu) => (
               <div
+                hidden={openId !== menu.id}
                 aria-hidden={openId !== menu.id}
                 className={cn(
                   'top-0 left-0 w-full transition-opacity duration-200',

@@ -12,7 +12,7 @@ import { REQUIRED_RUNTIME_NAMES } from './runtime-environment.ts';
 
 const app = fileURLToPath(new URL('../', import.meta.url));
 const require = createRequire(join(app, 'package.json'));
-const hosts = ['nova.ai.vn', 'nova.tutur3u.com'];
+const hosts = ['nova.ai.vn', 'nova.tutur3u.com', 'nova.tuturuuu.com'];
 const privateRobots = 'noindex, nofollow, nosnippet';
 
 function assertHeaders(response, { asset = false, publicPage = false } = {}) {
@@ -92,6 +92,10 @@ test(
           type: 'plain_text',
           value: 'synthetic-runtime-only',
         },
+        UPSTASH_REDIS_REST_TOKEN: {
+          type: 'secret_text',
+          value: randomBytes(32).toString('hex'),
+        },
         INTERNAL_WEB_API_ORIGIN: {
           type: 'plain_text',
           value: 'https://central.invalid',
@@ -163,7 +167,7 @@ test(
         `${host} headers cover pages, APIs and method-limited assets`,
         async () => {
           const root = await get(host, '/');
-          assert.equal(root.status, 200);
+          assert.equal(root.status, 200, root.body.toString());
           assertHeaders(root, { publicPage: host === hosts[0] });
           const info = await get(host, '/api/build-info');
           assert.equal(info.status, 200);
@@ -204,7 +208,6 @@ test(
       'tuturuuu.com',
       'nova.ai.vn.attacker.invalid',
       'unknown.invalid',
-      'nova.tuturuuu.com',
     ]) {
       const rejected = await get(host, '/nova');
       assert.equal(rejected.status, 404);

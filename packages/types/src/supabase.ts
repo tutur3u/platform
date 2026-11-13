@@ -7215,6 +7215,34 @@ export type Database = {
         };
         Relationships: [];
       };
+      ieeai_invite_acceptances: {
+        Row: {
+          accepted_at: string;
+          actor_id: string;
+          app_id: string;
+          invite_id: string;
+          role_ids: string[];
+          workspace_id: string;
+        };
+        ComputedFields: never;
+        Insert: {
+          accepted_at?: string;
+          actor_id: string;
+          app_id: string;
+          invite_id: string;
+          role_ids: string[];
+          workspace_id: string;
+        };
+        Update: {
+          accepted_at?: string;
+          actor_id?: string;
+          app_id?: string;
+          invite_id?: string;
+          role_ids?: string[];
+          workspace_id?: string;
+        };
+        Relationships: [];
+      };
       infrastructure_employees: {
         Row: {
           created_at: string;
@@ -21315,6 +21343,15 @@ export type Database = {
       abuse_trust_multiplier_for_tier: {
         Args: { p_tier: Database['public']['Enums']['abuse_risk_tier'] };
         Returns: number;
+      };
+      accept_ieeai_free_workspace_invite: {
+        Args: {
+          p_actor_id: string;
+          p_allowed_workspace_ids: string[];
+          p_app_id: string;
+          p_workspace_id: string;
+        };
+        Returns: boolean;
       };
       account_personal_workspace: {
         Args: { p_actor_id: string };

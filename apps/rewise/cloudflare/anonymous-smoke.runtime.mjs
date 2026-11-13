@@ -18,7 +18,8 @@ const EXPECTED = {
   '/': 'http://rewise.tuturuuu.com/verify-token?nextUrl=%2F',
   '/?smoke=return':
     'http://rewise.tuturuuu.com/verify-token?nextUrl=%2F%3Fsmoke%3Dreturn',
-  '/login': 'https://rewise.tuturuuu.com/',
+  // The auth proxy handles /login before the page and normalizes the loop to /.
+  '/login': 'http://rewise.tuturuuu.com/verify-token?nextUrl=%2F',
 };
 const SYNTHETIC_SECRETS = {
   ABUSE_GUARD: {},
