@@ -1,0 +1,66 @@
+name: Supabase Production Migration Only
+on:
+  workflow_dispatch:
+    inputs:
+      expected_sha:
+        description: Exact current production SHA (40 lowercase hex)
+        required: true
+        type: string
+      expected_project_ref:
+        description: Fixed production project reference
+        default: nzamlzqfdwaaxdefwraj
+        required: true
+        type: string
+      expected_pending_versions:
+        description: JSON array of the thirteen approved 14-digit version strings
+        required: true
+        type: string
+      backup_receipt_sha256:
+        description: TTR owner verified recovery/PITR receipt SHA256, receipt at most 30 minutes old
+        required: true
+        type: string
+permissions:
+  contents: read
+concurrency:
+  group: supabase-production-migration
+  cancel-in-progress: false
+  queue: max
+jobs:
+  migrate:
+    if: github.repository == 'tutur3u/platform' && github.event_name == 'workflow_dispatch' && github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    environment: supabase-production-migrations
+    env:
+      EXPECTED_SHA: ${{ inputs.expected_sha }}
+      EXPECTED_PROJECT_REF: ${{ inputs.expected_project_ref }}
+      EXPECTED_PENDING_VERSIONS: ${{ inputs.expected_pending_versions }}
+      BACKUP_RECEIPT_SHA256: ${{ inputs.backup_receipt_sha256 }}
+    steps:
+      - name: Check out reviewed workflow control
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ github.sha }}
+          persist-credentials: false
+      - name: Validate dispatch and current production before source checkout
+        env:
+          GH_TOKEN: ${{ github.token }}
+          PRODUCTION_PROJECT_ID: ${{ secrets.PRODUCTION_PROJECT_ID }}
+        run: node scripts/ci/production-migration-only.mjs preflight
+      - name: Check out immutable migration source separately
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ inputs.expected_sha }}
+          path: migration-source
+          persist-credentials: false
+      - name: Setup pinned Supabase CLI
+        uses: ./.github/actions/setup-supabase-cli-with-retry
+        with:
+          version: '2.121.0'
+      - name: Guard, apply once, verify ledger and read-only SQL
+        env:
+          GH_TOKEN: ${{ github.token }}
+          PRODUCTION_PROJECT_ID: ${{ secrets.PRODUCTION_PROJECT_ID }}
+          SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
+          SUPABASE_DB_PASSWORD: ${{ secrets.PRODUCTION_DB_PASSWORD }}
+        run: node scripts/ci/production-migration-only.mjs
