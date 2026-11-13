@@ -16,7 +16,6 @@ import type { WorkspaceTaskList } from '@tuturuuu/types';
 import type { SupportedColor } from '@tuturuuu/types/primitives/SupportedColors';
 import type { Task } from '@tuturuuu/types/primitives/Task';
 import type { TaskBoardStatus } from '@tuturuuu/types/primitives/TaskBoard';
-import { Accordion } from '@tuturuuu/ui/accordion';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -39,6 +38,7 @@ import {
 import { ScrollArea } from '@tuturuuu/ui/scroll-area';
 import { toast } from '@tuturuuu/ui/sonner';
 import { cn } from '@tuturuuu/utils/format';
+import { useTranslations } from 'next-intl';
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import {
   getActiveBroadcast,
@@ -126,16 +126,17 @@ export function BoardLayoutSettingsContent({
   scrollAreaClassName,
   translations,
 }: BoardLayoutSettingsContentProps) {
+  const common = useTranslations('common');
   const t = useMemo(
     () => ({
       boardLayoutSettings:
         translations?.boardLayoutSettings ?? 'Board Layout Settings',
       boardLayoutSettingsDescription:
         translations?.boardLayoutSettingsDescription ??
-        'Manage your board columns and organize them by status. Drag to reorder within each status group.',
-      addNewList: translations?.addNewList ?? 'Add New List',
+        'Manage your board columns and organize them by status. Drag to reorder or move between statuses.',
+      addNewList: translations?.addNewList ?? common('add_new_list'),
       noListsInStatus:
-        translations?.noListsInStatus ?? 'No lists in this status',
+        translations?.noListsInStatus ?? common('no_lists_in_status'),
       done: translations?.done ?? 'Done',
       editList: translations?.editList ?? 'Edit List',
       updateListDescription:
@@ -196,7 +197,7 @@ export function BoardLayoutSettingsContent({
       indigo: translations?.indigo ?? 'Indigo',
       cyan: translations?.cyan ?? 'Cyan',
     }),
-    [translations]
+    [translations, common]
   );
 
   const statusLabels: Record<TaskBoardStatus, string> = useMemo(
@@ -491,11 +492,7 @@ export function BoardLayoutSettingsContent({
       collisionDetection={closestCenter}
       onDragEnd={handleDragEnd}
     >
-      <Accordion
-        className="space-y-3"
-        defaultValue={BOARD_LIST_STATUSES}
-        type="multiple"
-      >
+      <div className="space-y-6">
         {BOARD_LIST_STATUSES.map((status) => {
           const statusLists = [...(groupedLists[status] || [])].sort(
             (a, b) => (a?.position || 0) - (b?.position || 0)
@@ -538,7 +535,7 @@ export function BoardLayoutSettingsContent({
             />
           );
         })}
-      </Accordion>
+      </div>
     </DndContext>
   );
 
@@ -639,7 +636,7 @@ export function BoardLayoutSettings({
   const title = translations?.boardLayoutSettings ?? 'Board Layout Settings';
   const description =
     translations?.boardLayoutSettingsDescription ??
-    'Manage your board columns and organize them by status. Drag to reorder within each status group.';
+    'Manage your board columns and organize them by status. Drag to reorder or move between statuses.';
   const done = translations?.done ?? 'Done';
 
   return (

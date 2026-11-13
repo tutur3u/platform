@@ -34,6 +34,9 @@ export function admitMountedMutation({
 
   const verdict = checkCsrf({
     allowedOrigins: [new URL(request.url).origin],
+    // Same origin as every other mounted app: a bearer string never stands in
+    // for proving the origin of a cookie-bearing mutation.
+    bearerRequiresNoSessionCookie: true,
     exemptions,
     headers: request.headers,
     method: request.method,

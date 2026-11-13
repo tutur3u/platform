@@ -156,6 +156,36 @@ describe('satellite workspace settings route handlers', () => {
     expect(updateEq).toHaveBeenCalledWith('id', 'resolved-workspace-id');
   });
 
+  it.each(['tasks', 'Calendar', 'store', 'roadmap'])(
+    'refuses the reserved app-path handle %s without writing',
+    async (handle) => {
+      const update = vi.fn();
+      createAdminClient.mockResolvedValue({
+        from: vi.fn(() => ({
+          select: vi.fn(() => ({
+            eq: vi.fn(() => ({
+              single: vi
+                .fn()
+                .mockResolvedValue({ data: { personal: false }, error: null }),
+            })),
+          })),
+          update,
+        })),
+      });
+
+      const response = await createSatelliteWorkspaceRouteHandlers('tasks').PUT(
+        new Request('https://tasks.test/api/workspaces/workspace-one', {
+          body: JSON.stringify({ handle, name: 'Next name' }),
+          method: 'PUT',
+        }),
+        context
+      );
+
+      expect(response.status).toBe(400);
+      expect(update).not.toHaveBeenCalled();
+    }
+  );
+
   it('omits an empty optional workspace handle from updates', async () => {
     const workspaceSingle = vi.fn().mockResolvedValue({
       data: { personal: false },

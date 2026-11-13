@@ -159,12 +159,20 @@ test(
           Object.entries({
             NEXT_PUBLIC_SUPABASE_URL: 'https://fixture.supabase.invalid',
             NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY: 'sb_publishable_fixture',
-            UPSTASH_REDIS_REST_URL: 'https://fixture.upstash.invalid',
-            UPSTASH_REDIS_REST_TOKEN: 'synthetic-smoke-only',
+            ABUSE_GUARD_KEY_PEPPER: 'synthetic-smoke-only',
+            ABUSE_GUARD_FAMILIES: 'proxy',
             SUPABASE_SECRET_KEY: 'synthetic-smoke-only',
             TUTURUUU_APP_COORDINATION_SECRET: 'synthetic-smoke-only',
           }).map(([name, value]) => [name, { type: 'plain_text', value }])
         ),
+        ABUSE_GUARD: {
+          type: 'fetcher',
+          fetcher: async () =>
+            new Response('{"error":"guard_unavailable"}', {
+              status: 503,
+              headers: { 'content-type': 'application/json' },
+            }),
+        },
         INTERNAL_WEB_API_ORIGIN: {
           type: 'plain_text',
           value: 'https://central.invalid',
@@ -209,14 +217,28 @@ test(
           (response) => {
             const chunks = [];
             response.on('data', (chunk) => chunks.push(chunk));
-            response.on('end', () =>
+            response.on('end', () => {
+              assert.equal(
+                response.headers['strict-transport-security'],
+                'max-age=63072000',
+                'Every emitted Worker response must enforce HSTS'
+              );
+              assert.equal(
+                response.rawHeaders.filter(
+                  (name, index) =>
+                    index % 2 === 0 &&
+                    name.toLowerCase() === 'strict-transport-security'
+                ).length,
+                1,
+                'Every emitted Worker response must have exactly one HSTS header'
+              );
               resolve({
                 status: response.statusCode ?? 0,
                 location: response.headers.location ?? null,
                 headers: response.headers,
                 body: Buffer.concat(chunks).toString('utf8'),
-              })
-            );
+              });
+            });
           }
         )
           .on('error', reject)

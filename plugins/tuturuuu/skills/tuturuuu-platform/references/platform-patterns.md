@@ -501,7 +501,12 @@ Rules:
   same code keeps working on tuturuuu.com. Opt in explicitly:
   `resolveWorkspaceRouteAccess(request, wsId, [permissions])` for workspace routes,
   or `withSessionAuth(handler, { allowAppSessionAuth: CURRENT_USER_APP_SESSION_AUTH })`,
-  then authorize on workspace permissions (the actor's app grants nothing). A
+  then authorize on workspace permissions (the actor's app grants nothing).
+  `preferSupabaseSessionAuth` keeps the browser Supabase identity ahead of a
+  stale app session. Chat forwards both that cookie and a `ttr_app_` bearer, and
+  `createClient` would ignore the Supabase cookie and answer 401. Session auth
+  removes those app-session markers before the Supabase read and still does not
+  accept the app session while the Supabase cookie is present. A
   narrow per-app allowlist such as `{ targetApp: 'teach' }` silently 401s every
   other app, so widen it when a second app starts calling the route.
   Symptom to recognise: **one action inside an otherwise-working panel fails while
@@ -1476,3 +1481,53 @@ Keep emitted-Worker acceptance behind an explicit `test:runtime` command and
 `.acceptance.mjs` filename so source-only gates cannot invoke it without an
 artifact. Use `.invalid` hosts for isolated runtime preview fixtures; retain
 production-like preview refusal in the source auth matrix.
+
+### Workspace picker component verification
+
+The network-fenced fictional fixture and capture matrix are documented in
+`apps/docs/platform/features/hidden-workspaces.mdx` under isolated component
+verification. Preserve cached list choices on refresh failure, explicit retry,
+and actor-scoped visibility gates when adjusting picker presentation. Verify
+A → B → A resets for search, restore mode, pins, and recent selections with
+`workspace-picker-content.test.tsx` alongside the actor lifetime hook tests.
+
+### Native Worker HSTS boundary
+
+Keep HSTS enforcement outside app-owned response wrappers and startup guards.
+Use `withHstsResponsePolicy` from `@tuturuuu/start-bridge/response-policy` at
+native Worker fetch boundaries with exactly `max-age=63072000`. Preserve
+WebSocket upgrade responses. Regenerate only the owned boundary or runtime
+assertion from the codemod template; retain app-specific startup and routing
+content. Run the policy tests and fleet enumeration, then require sealed emitted
+Worker runtime checks for delivery evidence. Source enumeration alone does not
+prove emitted runtime behavior. See `apps/docs/build/devops/start-bridge-codemod.mdx`.
+For bespoke Tasks, Drive and Shortener entries, run
+`node --test scripts/hsts-bespoke-boundaries.test.mjs`; route suppliers are
+isolated, startup guards are real, and WebSocket runtime acceptance stays separate.
+
+The Apps primary Worker applies the outer HSTS policy after its staging cookie
+wrapper, including the canonical-host refusal. Run
+`node --test scripts/hsts-apps-boundary.test.mjs` for source-boundary regression
+coverage. The staging gateway entry and asset-service bypass require separate
+ownership and runtime qualification.
+
+The handwritten Apps staging gateway finalizes HSTS after staging cookie and HEAD
+wrappers. Its source entry regression is `scripts/hsts-apps-gateway-boundary.test.mjs`;
+it covers canonical-host refusal, missing assets, redirects, binding failures and
+hostile duplicate headers. Route/framework suppliers are isolated; emitted Worker,
+WebSocket upgrade and deployment acceptance require separate execution evidence.
+
+The Mail HTTP Worker finalizes HSTS outside its handler, covering local 404,
+mounted-session 409, build-info and RUM returns. Run
+`node --test scripts/hsts-mail-boundary.test.mjs` for the source-entry regression.
+The entry and handler execute with isolated framework/service suppliers and inner
+response wrappers. Emitted Worker, real WebSocket upgrades and deployed behavior
+require separate acceptance evidence.
+
+Mail Worker type checks require the canonical declaration producer
+`bun run --cwd apps/mail type-check:boundary` before the Worker program. The full
+`type-check` script sequences app, declaration, Worker and config checks. Qualify
+binding declarations with `wrangler types --include-runtime=false` against the
+emitted `dist/server/wrangler.json`; preserve the checked-in declaration preimage
+when generating temporary qualification output. Keep Void scratch output outside
+the authored patch when running changed-file gates.

@@ -8,7 +8,29 @@ import { createOfflineWorker } from '../../../../packages/offline/src/worker';
  * at scope `/`, so without this it would control their pages and serve Web's
  * offline page for them. See docs: platform/architecture/one-origin-super-app.
  */
-const ONE_ORIGIN_APP_PREFIXES = ['/meet', '/mail'] as const;
+const ONE_ORIGIN_APP_PREFIXES = [
+  '/apps',
+  '/calendar',
+  '/chat',
+  '/cms',
+  '/contacts',
+  '/design',
+  '/drive',
+  '/finance',
+  '/forms',
+  '/inventory',
+  '/learn',
+  '/mail',
+  '/meet',
+  '/mind',
+  '/pay',
+  '/roadmap',
+  '/store',
+  '/tasks',
+  '/teach',
+  '/tools',
+  '/track',
+] as const;
 
 const worker = createOfflineWorker({
   // Web's original cache names; changing this orphans installed caches.

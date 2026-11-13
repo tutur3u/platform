@@ -11,7 +11,13 @@ export default defineConfig({
         inline: ['next-intl'],
       },
     },
-    exclude: ['**/.void/**', '**/dist/**', '**/node_modules/**'],
+    exclude: [
+      '**/.void/**',
+      '**/dist/**',
+      '**/node_modules/**',
+      // node:test profile check; the native job runs it with node --test.
+      'cloudflare/**',
+    ],
     environment: 'node',
     setupFiles: ['./vitest.setup.ts'],
     testTimeout: 30_000,

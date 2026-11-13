@@ -64,14 +64,27 @@ vi.mock('@tuturuuu/supabase/next/server', () => ({
       from: mocks.adminFromMock,
     })
   ),
-  createClient: vi.fn(() =>
-    Promise.resolve({
+  createClient: vi.fn((request?: Request) => {
+    const authorization = request?.headers.get('authorization') ?? '';
+    const cookie = request?.headers.get('cookie') ?? '';
+    const isolated =
+      authorization.startsWith('Bearer ttr_app_') ||
+      cookie
+        .split(';')
+        .some((part) => part.trim().startsWith('tuturuuu_app_session='));
+
+    return Promise.resolve({
       auth: {
-        getUser: mocks.authGetUserMock,
+        getUser: isolated
+          ? vi.fn().mockResolvedValue({
+              data: { user: null },
+              error: { message: 'Auth session missing' },
+            })
+          : mocks.authGetUserMock,
       },
       from: mocks.fromMock,
-    })
-  ),
+    });
+  }),
 }));
 
 vi.mock('../access', () => ({
@@ -166,5 +179,49 @@ describe('notifications unread-count route', () => {
       'ws_id',
       '841a71e7-2015-47e5-8f23-0d85f6c456eb'
     );
+  });
+
+  it('returns the unread count for a signed-in Chat session that also carries an app-session marker', async () => {
+    const previousSupabaseUrl = process.env.SUPABASE_URL;
+    process.env.SUPABASE_URL = 'https://project.supabase.co';
+    mocks.authGetUserMock.mockResolvedValue({
+      data: {
+        user: {
+          id: 'user-1',
+        },
+      },
+      error: null,
+    });
+    mocks.membershipMaybeSingleMock.mockResolvedValue({
+      data: {
+        type: 'MEMBER',
+      },
+      error: null,
+    });
+    mocks.notificationsEqWsIdMock.mockResolvedValue({
+      count: 4,
+      error: null,
+    });
+
+    try {
+      const response = await GET(
+        new NextRequest(
+          'https://chat.tuturuuu.com/api/v1/notifications/unread-count?wsId=841a71e7-2015-47e5-8f23-0d85f6c456eb',
+          {
+            headers: {
+              authorization: 'Bearer ttr_app_chat-session',
+              cookie:
+                'tuturuuu_app_session=ttr_app_chat-session; sb-project-auth-token=signed-in',
+            },
+          }
+        )
+      );
+
+      expect(response.status).toBe(200);
+      await expect(response.json()).resolves.toEqual({ count: 4 });
+    } finally {
+      if (previousSupabaseUrl === undefined) delete process.env.SUPABASE_URL;
+      else process.env.SUPABASE_URL = previousSupabaseUrl;
+    }
   });
 });

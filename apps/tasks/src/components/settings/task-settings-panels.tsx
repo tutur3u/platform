@@ -33,7 +33,6 @@ import type { Workspace } from '@tuturuuu/types';
 import type { TaskList } from '@tuturuuu/types/primitives/TaskList';
 import {
   SettingsSection,
-  SettingsSectionBlock,
   SettingsSectionMessage,
 } from '@tuturuuu/ui/custom/settings-section';
 import {
@@ -163,33 +162,31 @@ export function TaskBoardSettingsPanel({
 
       <TabsContent value="layout">
         <SettingsSection
-          description={t('settings.tasks.board_layout_description')}
+          surface="plain"
           title={t('settings.tasks.board_layout')}
         >
-          <SettingsSectionBlock>
-            <BoardLayoutSettingsContent
-              boardId={board.id}
-              disableScrollArea
-              lists={lists}
-              onUpdate={async () => {
-                await refetch();
-              }}
-              translations={{
-                failedToReorderLists: t(
-                  'ws-task-boards.layout_settings.failed_to_reorder'
-                ),
-                listsReordered: t(
-                  'ws-task-boards.layout_settings.lists_reordered'
-                ),
-                // The list fills in {status} itself, so keep it literal.
-                movedToStatus: t(
-                  'ws-task-boards.layout_settings.moved_to_status',
-                  { status: '{status}' }
-                ),
-              }}
-              wsId={wsId}
-            />
-          </SettingsSectionBlock>
+          <BoardLayoutSettingsContent
+            boardId={board.id}
+            disableScrollArea
+            lists={lists}
+            onUpdate={async () => {
+              await refetch();
+            }}
+            translations={{
+              failedToReorderLists: t(
+                'ws-task-boards.layout_settings.failed_to_reorder'
+              ),
+              listsReordered: t(
+                'ws-task-boards.layout_settings.lists_reordered'
+              ),
+              // The list fills in {status} itself, so keep it literal.
+              movedToStatus: t(
+                'ws-task-boards.layout_settings.moved_to_status',
+                { status: '{status}' }
+              ),
+            }}
+            wsId={wsId}
+          />
         </SettingsSection>
       </TabsContent>
     </BoardSettingsNavigation>

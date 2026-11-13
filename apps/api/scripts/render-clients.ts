@@ -79,7 +79,9 @@ function dartType(value: unknown): string {
   if (parsed.type === 'boolean') return 'bool';
   if (parsed.type === 'array') {
     if (parsed.items === undefined)
-      throw new Error(`Unsupported Dart field schema: ${JSON.stringify(parsed)}`);
+      throw new Error(
+        `Unsupported Dart field schema: ${JSON.stringify(parsed)}`
+      );
     return `List<${dartType(parsed.items)}>`;
   }
   if (parsed.type === 'object') return 'Map<String, dynamic>';
@@ -139,7 +141,9 @@ export function clients(input: unknown) {
       );
       const response = responseEntry?.[1].content?.['application/json']?.schema;
       if (!response)
-        throw new Error(`Missing JSON success schema: ${operation.operationId}`);
+        throw new Error(
+          `Missing JSON success schema: ${operation.operationId}`
+        );
       const modelName =
         operation.operationId[0]?.toUpperCase() +
         operation.operationId.slice(1) +
@@ -147,7 +151,8 @@ export function clients(input: unknown) {
       const responseType = isObjectSchema(response)
         ? modelName
         : dartType(response);
-      if (isObjectSchema(response)) dartModels.push(...dartModel(modelName, response));
+      if (isObjectSchema(response))
+        dartModels.push(...dartModel(modelName, response));
       const queryType = operation.parameters.length
         ? `{ ${operation.parameters.map((parameter) => `${parameter.name}: ${tsType(parameter.schema)}`).join('; ')} }`
         : 'Record<string, never>';

@@ -55,6 +55,12 @@ describe('Vite preset', () => {
       JSON.parse(preset.clientDefine('build')['process.env'] ?? '')
     ).toEqual({ NEXT_PUBLIC_A: 'a', NODE_ENV: 'production' });
     expect(preset.define['import.meta.env.VITE_TUTURUUU_BASE_PATH']).toBe('""');
+    expect(
+      preset.clientDefine('build')['import.meta.env.START_BRIDGE_CLIENT']
+    ).toBe('true');
+    expect(preset.define).not.toHaveProperty(
+      'import.meta.env.START_BRIDGE_CLIENT'
+    );
   });
 
   it('applies a basePath to assets, server functions and the router define', () => {

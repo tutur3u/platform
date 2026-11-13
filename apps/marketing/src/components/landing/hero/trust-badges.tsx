@@ -27,7 +27,7 @@ export function TrustBadges() {
             key={label}
           >
             <dt className="sr-only">{index + 1}</dt>
-            <dd className="text-center font-mono-ui text-[0.68rem] text-foreground/45 uppercase tracking-[0.16em] transition-colors duration-300 hover:text-foreground/70">
+            <dd className="text-center font-mono-ui text-[0.68rem] text-foreground/65 uppercase tracking-[0.16em] transition-colors duration-300 hover:text-foreground/70">
               {label}
             </dd>
           </div>

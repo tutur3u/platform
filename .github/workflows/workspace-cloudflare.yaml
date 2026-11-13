@@ -52,6 +52,7 @@ on:
         'packages/utils/**',
         'packages/vercel/**',
         'scripts/ci/workspace-native-artifact.py',
+        'scripts/ci/workspace-native-artifact.test.py',
         '.github/workflows/workspace-cloudflare.yaml',
         'scripts/ci/apps-native-artifact.py',
         'scripts/ci/apps-native-runtime-pointer.mjs',
@@ -126,6 +127,7 @@ on:
         'packages/utils/**',
         'packages/vercel/**',
         'scripts/ci/workspace-native-artifact.py',
+        'scripts/ci/workspace-native-artifact.test.py',
         '.github/workflows/workspace-cloudflare.yaml',
         'scripts/ci/apps-native-artifact.py',
         'scripts/ci/apps-native-runtime-pointer.mjs',
@@ -178,6 +180,8 @@ jobs:
       artifact-script: scripts/ci/workspace-native-artifact.py
       env-interface: WorkspaceGeneratedEnv
       worker-environment-type: WorkspaceEnvironment
+      helper-tests: python3 scripts/ci/workspace-native-artifact.test.py
+      unit-command: node --test cloudflare/deployment-profile.test.mjs && bun run test
       # Public staging values from repository variables for same-repository
       # events; fork pull requests (and unset variables) build with fixtures.
       public-env: |
@@ -187,4 +191,78 @@ jobs:
         NEXT_PUBLIC_WEB_APP_URL=https://tuturuuu.com
         TUTURUUU_NOINDEX=1
       format-paths: >-
-        apps/workspace/src/start-bridge apps/workspace/src/routes apps/workspace/src/router.tsx apps/workspace/src/start.ts apps/workspace/cloudflare apps/workspace/vite.config.mts apps/workspace/void.config.ts apps/workspace/tsconfig.json apps/workspace/package.json apps/workspace/start-bridge.routes.json
+        apps/workspace/src/start-bridge apps/workspace/src/routes apps/workspace/src/router.tsx apps/workspace/src/start.ts apps/workspace/cloudflare apps/workspace/vite.config.mts apps/workspace/void.config.ts apps/workspace/tsconfig.json apps/workspace/package.json apps/workspace/start-bridge.routes.json apps/workspace/cloudflare/deployment-profile.mjs apps/workspace/cloudflare/deployment-profile.test.mjs
+  # Dispatch-only production seal. It does not deploy, attach a route, or publish.
+  workspace-cutover-artifact:
+    if: ${{ (github.event_name == 'workflow_dispatch') && (github.event_name != 'pull_request' || contains(github.event.pull_request.labels.*.name, 'ready-for-ci')) }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    env:
+      SOURCE_SHA: ${{ github.sha }}
+      WORKSPACE_SOURCE_SHA: ${{ github.sha }}
+      VITE_WORKSPACE_NATIVE_PROFILE: production
+      NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY: ${{ vars.PRODUCTION_SUPABASE_PUBLISHABLE_KEY }}
+      NEXT_PUBLIC_APP_URL: https://workspace.tuturuuu.com
+      NEXT_PUBLIC_WEB_APP_URL: https://tuturuuu.com
+      TUTURUUU_NOINDEX: '0'
+      WRANGLER_SEND_METRICS: 'false'
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ env.SOURCE_SHA }}
+          persist-credentials: false
+      - uses: ./.github/actions/setup-bun-with-retry
+        with:
+          bun-version: 1.4.4
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version: 24.22.0
+      - run: bun install --frozen-lockfile --ignore-scripts
+      - name: Build owning workspace dependencies
+        uses: ./.github/actions/run-with-turbo-remote-cache
+        with:
+          command: bun turbo:local run build --filter='@tuturuuu/workspace^...' --concurrency=2
+          token: ''
+          team: ''
+      - name: Generate exact-source build identity
+        env:
+          PLATFORM_BUILD_COMMIT_HASH: ${{ env.SOURCE_SHA }}
+          PLATFORM_BUILD_REF_NAME: ${{ github.ref_name }}
+          PLATFORM_BUILD_ENVIRONMENT: production
+        run: bun run --silent scripts/ci/generate-build-metadata.ts
+      - name: Build production Start Worker
+        env:
+          NEXT_PUBLIC_SUPABASE_URL: ${{ vars.PRODUCTION_SUPABASE_URL }}
+        uses: ./.github/actions/run-with-turbo-remote-cache
+        with:
+          command: cd apps/workspace && bun run build:cloudflare
+          token: ''
+          team: ''
+      - name: Record emitted configuration receipt
+        if: always()
+        run: node scripts/ci/native-emitted-config-receipt.mjs apps/workspace "$SOURCE_SHA" "$RUNNER_TEMP/workspace-emitted-config.json"
+      - name: Upload emitted configuration receipt
+        if: always()
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: workspace-config-receipt-${{ github.sha }}-${{ github.run_id }}-${{ github.run_attempt }}
+          path: ${{ runner.temp }}/workspace-emitted-config.json
+          if-no-files-found: error
+          retention-days: 7
+      - name: Exercise the built Worker with synthetic runtime bindings
+        working-directory: apps/workspace
+        env:
+          CI: 'true'
+          CI_SOURCE_SHA: ${{ env.SOURCE_SHA }}
+        run: bun run test:runtime
+      - name: Package Worker, assets and emitted Wrangler config
+        run: |
+          python3 scripts/ci/workspace-native-artifact.py config apps/workspace
+          python3 scripts/ci/workspace-native-artifact.py seal apps/workspace --receipt "$RUNNER_TEMP/workspace-native-artifact.json"
+          python3 scripts/ci/workspace-native-artifact.py pack apps/workspace --receipt "$RUNNER_TEMP/workspace-native-artifact.json" --archive "$RUNNER_TEMP/workspace-cutover.tar.gz"
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: workspace-cutover-${{ github.sha }}
+          path: ${{ runner.temp }}/workspace-cutover.tar.gz
+          if-no-files-found: error
+          retention-days: 7

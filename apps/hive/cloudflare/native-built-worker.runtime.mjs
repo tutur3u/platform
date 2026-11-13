@@ -29,7 +29,8 @@ import { effectiveWorkerConfig } from '../../../scripts/start-bridge-codemod/wor
 
 const app = await realpath(fileURLToPath(new URL('../', import.meta.url)));
 const require = createRequire(join(app, 'package.json'));
-const WORKER = 'tuturuuu-hive-vite-staging';
+const production = process.env.VITE_HIVE_NATIVE_PROFILE === 'production';
+const WORKER = production ? 'tuturuuu-hive' : 'tuturuuu-hive-vite-staging';
 const PUBLIC_FILES = [
   'assets/hive/hive-voxel-asset-sheet.png',
   'hive-landing-reference.png',
@@ -130,7 +131,8 @@ test(
       WORKER_CONFIG.compatibilityFlags
     );
     assert.equal(config.workers_dev, WORKER_CONFIG.workersDev);
-    assert.equal(config.vars?.TUTURUUU_NOINDEX, '1');
+    assert.equal(config.preview_urls, false);
+    assert.equal(config.vars?.TUTURUUU_NOINDEX, production ? '0' : '1');
     for (const name of PUBLIC_FILES)
       assert.equal(
         await sha256(join(app, 'dist/client', name)),
@@ -190,14 +192,28 @@ test(
           (response) => {
             const chunks = [];
             response.on('data', (chunk) => chunks.push(chunk));
-            response.on('end', () =>
+            response.on('end', () => {
+              assert.equal(
+                response.headers['strict-transport-security'],
+                'max-age=63072000',
+                'Every emitted Worker response must enforce HSTS'
+              );
+              assert.equal(
+                response.rawHeaders.filter(
+                  (name, index) =>
+                    index % 2 === 0 &&
+                    name.toLowerCase() === 'strict-transport-security'
+                ).length,
+                1,
+                'Every emitted Worker response must have exactly one HSTS header'
+              );
               resolve({
                 status: response.statusCode ?? 0,
                 location: response.headers.location ?? null,
                 headers: response.headers,
                 body: Buffer.concat(chunks).toString('utf8'),
-              })
-            );
+              });
+            });
           }
         )
           .on('error', reject)

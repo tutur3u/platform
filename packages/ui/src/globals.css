@@ -1,6 +1,8 @@
 @import "tailwindcss";
 @import "slot-text/style.css";
 @source "components";
+/* The shared marketing layout renders in every app that imports this file. */
+@source "../../marketing-shell/src";
 @source "../../../node_modules/streamdown/dist/*.js";
 @source "../../../node_modules/@streamdown/math/dist/*.js";
 
@@ -525,6 +527,44 @@
   }
   50% {
     opacity: 0.75;
+  }
+}
+
+/* Hover-expand sidebar overlay. The panel's box jumps to its expanded size in
+   one frame while a paint-only clip-path wipe and an opacity fade reveal it, so
+   nothing in normal flow is resized or animated through layout. */
+@keyframes sidebar-overlay-reveal {
+  from {
+    clip-path: inset(0 calc(100% - var(--sidebar-collapsed-width, 4rem)) 0 0);
+  }
+  to {
+    clip-path: inset(0 0 0 0);
+  }
+}
+
+@keyframes sidebar-overlay-content {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@media (min-width: 48rem) {
+  .sidebar-overlay-reveal {
+    animation: sidebar-overlay-reveal 180ms ease-out both;
+  }
+
+  .sidebar-overlay-content {
+    animation: sidebar-overlay-content 180ms ease-out both;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .sidebar-overlay-reveal,
+  .sidebar-overlay-content {
+    animation: none;
   }
 }
 

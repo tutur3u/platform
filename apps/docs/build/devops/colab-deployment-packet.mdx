@@ -1,7 +1,7 @@
 ---
 title: "Colab deployment packet"
 description: "Colab's Worker, Durable Object identity, deploy path, rollback and smoke checks."
-updatedAt: "2026-11-09"
+updatedAt: "2026-11-10"
 audience: developers
 ---
 
@@ -17,10 +17,13 @@ served from `dist` through the `ASSETS` binding.
 | Worker | `tuturuuu-colab` |
 | Domain | `colab.tuturuuu.com` (custom domain) |
 | Durable Object | binding `ROOMS`, class `ColabRoom`, SQLite migration tag `v1` |
-| Other bindings | `ASSETS`, `AI` |
-| Variables | `APP_ORIGIN`, `AUTH_ORIGIN`, `COLAB_REQUIRE_SPONSORSHIP`, `COLAB_AI_MODEL` |
+| Other bindings | `ASSETS` |
+| Variables | `APP_ORIGIN`, `AUTH_ORIGIN`, `COLAB_AI_MODEL` |
 | Secret (name) | `COLAB_SESSION_SECRET` |
 | Worker-first paths | `/`, `/join`, `/host`, `/guide`, `/workshops`, `/api/*`, `/auth/*`, `/verify-token` |
+
+Inference is the AI Studio Gemini gateway, not a Worker binding. The bindings
+that remain are `ASSETS` and the `ROOMS` Durable Object.
 
 Renaming the class, changing the binding or rewriting the migration tag would
 detach existing room state. Any change to the entry bundle needs the room,

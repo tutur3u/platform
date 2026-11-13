@@ -326,13 +326,13 @@ describe('upcoming legal changes', () => {
         expect(html.match(/href="(?:\/vi)?\/legal\/changes"/gu)).toHaveLength(
           1
         );
-        expect(html.toLowerCase()).toContain(
-          'datetime="' +
-            (kind === 'acceptable-use' || kind === 'community-guidelines'
-              ? '2026-02-06'
-              : '2026-08-15') +
-            '"'
-        );
+        const effectiveDate =
+          kind === 'acceptable-use' || kind === 'community-guidelines'
+            ? '2026-02-06'
+            : kind === 'privacy' || kind === 'terms' || kind === 'subprocessors'
+              ? '2026-11-12'
+              : '2026-08-15';
+        expect(page.querySelector('time')?.dateTime).toBe(effectiveDate);
       }
     });
   }

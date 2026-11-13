@@ -17,7 +17,7 @@ import {
   Users,
   Wallet,
   Zap,
-} from '@tuturuuu/icons/lucide';
+} from '@/components/landing/shared/static-icons';
 import { useTranslations } from 'next-intl';
 import type { ComponentType } from 'react';
 
@@ -47,13 +47,7 @@ const items: Array<{
   { key: 'lms', icon: GraduationCap, accent: 'text-dynamic-orange' },
 ];
 
-/**
- * Continuously scrolling strip of every app in the suite.
- *
- * The track renders the list twice and translates by exactly -50%, so the loop
- * is seamless with no JS. Edges are masked so items dissolve rather than being
- * chopped by the viewport.
- */
+/** The suite stays manually scrollable with touch, wheel and keyboard. */
 export function ProductMarquee() {
   const t = useTranslations();
 
@@ -63,7 +57,8 @@ export function ProductMarquee() {
       className="relative overflow-hidden border-foreground/[0.08] border-y py-6"
     >
       <div
-        className="group flex overflow-hidden"
+        className="group flex overflow-x-auto"
+        tabIndex={0}
         style={{
           maskImage:
             'linear-gradient(90deg, transparent, black 12%, black 88%, transparent)',
@@ -71,20 +66,15 @@ export function ProductMarquee() {
             'linear-gradient(90deg, transparent, black 12%, black 88%, transparent)',
         }}
       >
-        <div className="flex w-max items-center gap-8 pr-8 motion-reduce:animate-none sm:animate-marquee sm:gap-12 sm:pr-12 group-hover:[animation-play-state:paused]">
-          {[0, 1].map((half) => (
-            <div className="flex items-center gap-12" key={half}>
-              {items.map((item) => (
-                <span
-                  aria-hidden={half === 1}
-                  className="flex shrink-0 items-center gap-2.5 whitespace-nowrap font-mono-ui text-[0.72rem] text-foreground/40 uppercase tracking-[0.18em] transition-colors duration-300 hover:text-foreground/80"
-                  key={`${half}-${item.key}`}
-                >
-                  <item.icon className={`h-3.5 w-3.5 ${item.accent}`} />
-                  {t(`marketing-nav.products.${item.key}.label` as never)}
-                </span>
-              ))}
-            </div>
+        <div className="flex w-max items-center gap-8 px-8 sm:gap-12">
+          {items.map((item) => (
+            <span
+              className="flex shrink-0 items-center gap-2.5 whitespace-nowrap font-mono-ui text-[0.72rem] text-foreground/65 uppercase tracking-[0.18em] transition-colors duration-300 hover:text-foreground/80"
+              key={item.key}
+            >
+              <item.icon className={`h-3.5 w-3.5 ${item.accent}`} />
+              {t(`marketing-nav.products.${item.key}.label` as never)}
+            </span>
           ))}
         </div>
       </div>

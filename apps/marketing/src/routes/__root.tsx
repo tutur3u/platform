@@ -2,4 +2,12 @@
 import { createRootRoute } from '@tanstack/react-router';
 import { createBridgeRootRoute } from '@tuturuuu/start-bridge/start/page-route';
 
-export const Route = createRootRoute(createBridgeRootRoute());
+import { landingPreloads } from '../components/landing/hero/hero-assets';
+const root = createBridgeRootRoute();
+export const Route = createRootRoute({
+  ...root,
+  head: ({ matches }) => ({
+    ...root.head(),
+    links: landingPreloads(matches.at(-1)?.pathname ?? ''),
+  }),
+});

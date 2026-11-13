@@ -1,4 +1,4 @@
-import { describe, expect, it, vi } from 'vite-plus/test';
+import { afterEach, describe, expect, it, vi } from 'vite-plus/test';
 import type { Env } from './env';
 import { reviewPrompt } from './prompt-review';
 
@@ -10,10 +10,44 @@ const sections = ['role', 'inputs', 'steps', 'output'].map((id) => ({
   explanation: 'This asks for evidence.',
   improvement: 'Ask when an event fact is missing.',
 }));
-const environment = (value: unknown) =>
-  ({
-    AI: { run: vi.fn().mockResolvedValue({ response: JSON.stringify(value) }) },
-  }) as unknown as Env;
+afterEach(() => vi.unstubAllGlobals());
+const environment = (value: unknown) => {
+  vi.stubGlobal(
+    'fetch',
+    vi.fn().mockResolvedValue(
+      Response.json(
+        {
+          id: 'request-1',
+          choices: [
+            { message: { content: { response: JSON.stringify(value) } } },
+          ],
+          tuturuuu: { run_id: 'ledger-run', billing: { billedCredits: 1 } },
+        },
+        {
+          headers: {
+            'x-colab-sponsor-workspace': '00000000-0000-0000-0000-000000000000',
+          },
+        }
+      )
+    )
+  );
+  return {
+    COLAB_AI_API_KEY: 'test-only-key',
+    sponsorship: {
+      workshopId: 'room',
+      workshopTitle: 'RISE',
+      hostId: 'host',
+      teamId: 'team-1',
+      teamName: 'Marketing',
+      participantId: 'guest:member',
+      operation: 'analyze',
+      scenarioId: 'rise-induction-post',
+      jobId: '07a13d30-0599-4572-8d1d-159860105e10',
+      sequence: 0,
+      receipts: [],
+    },
+  } as unknown as Env;
+};
 describe('AI prompt review', () => {
   it.each(['summary', 'explanation', 'improvement'])(
     'rejects blank %s',

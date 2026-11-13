@@ -136,4 +136,20 @@ describe('employee fixed RPC commit observation', () => {
     ).rejects.toMatchObject({ code: 'employee_commit_unconfirmed' });
     expect(transport).toHaveBeenCalledTimes(2);
   });
+  it('refuses a redirect response without following or parsing it', async () => {
+    const transport = vi.fn<typeof fetch>().mockResolvedValue(
+      new Response(null, {
+        status: 307,
+        headers: { Location: 'https://attacker.invalid/' },
+      })
+    );
+    const client = createEmployeeRuntimeRpc({
+      url: 'https://project.supabase.co',
+      key: 'synthetic',
+      fetch: transport,
+    });
+    await expect(client.rpc.claim(identity)).rejects.toThrow();
+    expect(transport).toHaveBeenCalledTimes(1);
+    expect(transport.mock.calls[0]?.[1]?.redirect).toBe('manual');
+  });
 });

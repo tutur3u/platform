@@ -135,6 +135,10 @@ export const PRODUCTION_INTERNAL_APP_DOMAINS = [
     name: 'mind',
     url: 'https://mind.tuturuuu.com',
   },
+  {
+    name: 'workspace',
+    url: 'https://workspace.tuturuuu.com',
+  },
 ] as const;
 
 export const PORTLESS_INTERNAL_APP_DOMAINS = [

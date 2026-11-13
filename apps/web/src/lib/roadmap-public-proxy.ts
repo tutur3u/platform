@@ -70,13 +70,13 @@ function canonicalRoadmapRedirectPath(pathname: string): string | null {
 }
 
 /**
- * Next strips the trailing slash before the proxy runs, so the mount root
- * arrives as `/roadmap`. The worker serves its root at `/roadmap/` and
- * redirects the bare form there, which would loop against Next, so the root
- * is requested with the slash directly.
+ * The canonical roadmap URL has no trailing slash (`/roadmap`). The worker
+ * serves `/roadmap` itself and 301s slash forms to it, so always request the
+ * no-slash path upstream; a slash form would bounce against Next.
  */
 function roadmapUpstreamPathname(pathname: string): string {
-  return pathname === '/roadmap' ? '/roadmap/' : pathname;
+  const trimmed = pathname.replace(/\/+$/, '');
+  return trimmed === '' ? '/' : trimmed;
 }
 
 function forwardedRequestHeaders(req: NextRequest): Headers {
@@ -104,9 +104,10 @@ function withoutSatelliteLoop(location: string): string {
     path === '/roadmap' || path.startsWith('/roadmap/')
       ? path
       : path === '/'
-        ? '/roadmap/'
+        ? '/roadmap'
         : `/roadmap${path}`;
-  return `https://tuturuuu.com${mounted}${parsed.search}`;
+  const canonical = mounted.replace(/\/+$/, '') || '/roadmap';
+  return `https://tuturuuu.com${canonical}${parsed.search}`;
 }
 
 function roadmapResponseHeaders(upstream: Headers): Headers {

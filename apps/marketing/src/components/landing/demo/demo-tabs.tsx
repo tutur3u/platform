@@ -1,5 +1,7 @@
 'use client';
 
+import { useLandingReducedMotion as useReducedMotion } from '../shared/use-landing-reduced-motion';
+
 import {
   BarChart3,
   Bot,
@@ -11,7 +13,7 @@ import {
   Wallet,
 } from '@tuturuuu/icons/lucide';
 import { cn } from '@tuturuuu/utils/format';
-import { AnimatePresence, motion, useReducedMotion } from 'framer-motion';
+import { AnimatePresence, motion } from 'framer-motion';
 import { useTranslations } from 'next-intl';
 import { useState } from 'react';
 import { AnalyticsDemo } from './analytics-demo';

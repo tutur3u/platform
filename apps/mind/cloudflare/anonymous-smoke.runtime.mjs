@@ -1,3 +1,10 @@
+import {
+  offlineEgressFence,
+  recordNativeWorker,
+  disposeNativeWorker,
+} from '../../../scripts/ci/fixtures/native-worker-receipt.mjs';
+import { SYNTHETIC_SECRETS } from './synthetic-bindings.mjs';
+import { startNativeAbuseGuard } from '../../../scripts/ci/fixtures/native-abuse-guard.mjs';
 import assert from 'node:assert/strict';
 import {
   cp,
@@ -25,12 +32,6 @@ const EXPECTED = {
   '/': { redirect: '/login' },
   '/login': { redirect: 'https://tuturuuu.com/login' },
 };
-const SYNTHETIC_SECRETS = {
-  NEXT_PUBLIC_SUPABASE_URL: 'https://mind-smoke.supabase.invalid',
-  NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY: 'sb_publishable_mind_smoke',
-  SUPABASE_SECRET_KEY: 'synthetic-smoke-only',
-  TUTURUUU_APP_COORDINATION_SECRET: 'synthetic-smoke-only',
-};
 
 async function startWorker(t, secrets) {
   const { configPath } = readNativeRuntimeConfig(app);
@@ -44,11 +45,14 @@ async function startWorker(t, secrets) {
   await writeFile(envFile, '', { flag: 'wx', mode: 0o600 });
   const registry = join(scratch, 'registry');
   await mkdir(registry, { mode: 0o700 });
-  const worker = await require('wrangler').unstable_startWorker({
+  const sdk = require('wrangler');
+  const guardBindings = await startNativeAbuseGuard(t, sdk, registry);
+  const worker = await sdk.unstable_startWorker({
     config: join(scratch, relative(app, configPath)),
     envFiles: [envFile],
     sendMetrics: false,
     bindings: {
+      ...guardBindings,
       INTERNAL_WEB_API_ORIGIN: {
         type: 'plain_text',
         value: 'https://central.invalid',
@@ -76,15 +80,12 @@ async function startWorker(t, secrets) {
       auth: () => {
         throw new Error('Provider auth forbidden in the smoke test');
       },
-      outboundService: () =>
-        new Response('{"error":"denied by the smoke test"}', {
-          status: 401,
-          headers: { 'content-type': 'application/json' },
-        }),
+      outboundService: offlineEgressFence(),
     },
   });
-  t.after(() => worker.dispose());
+  t.after(() => disposeNativeWorker(worker));
   await worker.ready;
+  await recordNativeWorker(worker, app);
   const target = await worker.url;
   return (path, host = ROOT_HOST) =>
     new Promise((resolve, reject) => {
@@ -116,30 +117,49 @@ test('the emitted server has NODE_ENV inlined', async () => {
   await assertServerArtifact(join(app, 'dist/server'));
 });
 
-test('signed-out requests answer as production does', {
-  timeout: 120000,
-}, async (t) => {
-  const call = await startWorker(t, SYNTHETIC_SECRETS);
-  for (const [path, outcome] of Object.entries(EXPECTED)) {
-    const { status, location } = await call(path);
-    if (typeof outcome === 'number') {
-      assert.equal(status, outcome, path);
-    } else {
-      assert.ok(status >= 300 && status < 400, `${path}: ${status}`);
-      const resolved = new URL(location, `https://${ROOT_HOST}`);
-      const wanted = new URL(outcome.redirect, `https://${ROOT_HOST}`);
-      assert.equal(resolved.host, wanted.host, path);
-      assert.equal(resolved.pathname, wanted.pathname, path);
+test(
+  'signed-out requests answer as production does',
+  {
+    timeout: 120000,
+  },
+  async (t) => {
+    const call = await startWorker(t, SYNTHETIC_SECRETS);
+    for (const [path, outcome] of Object.entries(EXPECTED)) {
+      const { status, location } = await call(path);
+      if (typeof outcome === 'number') {
+        assert.equal(status, outcome, path);
+      } else {
+        assert.ok(status >= 300 && status < 400, `${path}: ${status}`);
+        const resolved = new URL(location, `https://${ROOT_HOST}`);
+        const wanted = new URL(outcome.redirect, `https://${ROOT_HOST}`);
+        assert.equal(resolved.host, wanted.host, path);
+        assert.equal(resolved.pathname, wanted.pathname, path);
+      }
     }
+    assert.equal((await call('/', 'unknown.example')).status, 404);
+    assert.equal((await call('/', 'tuturuuu.com')).status, 404);
   }
-  assert.equal((await call('/', 'unknown.example')).status, 404);
-  assert.equal((await call('/', 'tuturuuu.com')).status, 404);
-});
+);
 
-test('a Worker missing a required secret refuses to serve', {
-  timeout: 120000,
-}, async (t) => {
-  const { SUPABASE_SECRET_KEY: _omitted, ...secrets } = SYNTHETIC_SECRETS;
-  const call = await startWorker(t, secrets);
-  assert.equal((await call('/')).status, 500);
-});
+test(
+  'a Worker missing a required secret refuses to serve',
+  {
+    timeout: 120000,
+  },
+  async (t) => {
+    const { SUPABASE_SECRET_KEY: _omitted, ...secrets } = SYNTHETIC_SECRETS;
+    const call = await startWorker(t, secrets);
+    assert.equal((await call('/')).status, 500);
+  }
+);
+
+for (const name of ['ABUSE_GUARD_KEY_PEPPER', 'ABUSE_GUARD_FAMILIES']) {
+  test(
+    `a Worker with blank ${name} refuses to serve`,
+    { timeout: 120000 },
+    async (t) => {
+      const call = await startWorker(t, { ...SYNTHETIC_SECRETS, [name]: '' });
+      assert.equal((await call('/')).status, 500);
+    }
+  );
+}

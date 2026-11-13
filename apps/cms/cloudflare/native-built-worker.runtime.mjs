@@ -135,6 +135,16 @@ test(
           value: fixtureSecret,
         },
         SUPABASE_SECRET_KEY: { type: 'secret_text', value: fixtureSecret },
+        ABUSE_GUARD: {
+          type: 'fetcher',
+          fetcher: async () =>
+            new Response('{"error":"guard_unavailable"}', {
+              status: 503,
+              headers: { 'content-type': 'application/json' },
+            }),
+        },
+        ABUSE_GUARD_KEY_PEPPER: { type: 'secret_text', value: fixtureSecret },
+        ABUSE_GUARD_FAMILIES: { type: 'plain_text', value: 'proxy' },
         NEXT_PUBLIC_SUPABASE_URL: {
           type: 'plain_text',
           value: 'https://cms-runtime.supabase.invalid',
@@ -187,13 +197,27 @@ test(
           (response) => {
             const chunks = [];
             response.on('data', (chunk) => chunks.push(chunk));
-            response.on('end', () =>
+            response.on('end', () => {
+              assert.equal(
+                response.headers['strict-transport-security'],
+                'max-age=63072000',
+                'Every emitted Worker response must enforce HSTS'
+              );
+              assert.equal(
+                response.rawHeaders.filter(
+                  (name, index) =>
+                    index % 2 === 0 &&
+                    name.toLowerCase() === 'strict-transport-security'
+                ).length,
+                1,
+                'Every emitted Worker response must have exactly one HSTS header'
+              );
               resolve({
                 status: response.statusCode ?? 0,
                 location: response.headers.location ?? null,
                 body: Buffer.concat(chunks).toString('utf8'),
-              })
-            );
+              });
+            });
           }
         )
           .on('error', reject)

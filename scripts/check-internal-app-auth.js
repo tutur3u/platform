@@ -584,8 +584,10 @@ const withSessionAuthSource =
 const appSessionAuthIndex = withSessionAuthSource.indexOf(
   'allowAppSessionAuth'
 );
+// The fallback may pass a Supabase-only view of the request. App-session
+// resolution still has to appear earlier in withSessionAuth.
 const fallbackSupabaseIndex = withSessionAuthSource.indexOf(
-  'const supabase = (await createClient(request))'
+  'const supabase = (await createClient('
 );
 
 if (

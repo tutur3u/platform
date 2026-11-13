@@ -45,6 +45,8 @@ import { DELETE, GET } from './[jobId]/route';
 import { POST } from './route';
 
 const auth = { user: { id: 'actor' }, supabase: {} };
+const workspaceId = '0b4ad3c4-6f51-4b1e-9a4c-0d6f7f1e2a10';
+const protectedWorkspaceId = '9a1b2c3d-4e5f-4a6b-8c7d-0e1f2a3b4c5d';
 const params = {
   wsId: 'personal',
   jobId: 'd6fb2145-ae9f-4f43-a209-6bb4c24c7a87',
@@ -61,9 +63,10 @@ const invoke = (handler: unknown) =>
 beforeEach(() => {
   vi.resetAllMocks();
   delete process.env.MEET_AI_DISABLED;
+  delete process.env.MEET_AI_PROTECTED_WORKSPACE_IDS;
   delete process.env.MEET_AI_DISABLED_WORKSPACE_IDS;
   delete process.env.MEET_AI_ENABLED_WORKSPACE_IDS;
-  mock.access.mockResolvedValue('resolved-workspace');
+  mock.access.mockResolvedValue(workspaceId);
 });
 describe('Notes voice route ownership', () => {
   it('rejects lost membership before reading audio, reserving or scheduling paid work', async () => {
@@ -79,7 +82,7 @@ describe('Notes voice route ownership', () => {
     expect(response.status).toBe(200);
     expect(response.headers.get('cache-control')).toBe('private, no-store');
     expect(mock.get).toHaveBeenCalledWith(
-      { userId: 'actor', wsId: 'resolved-workspace' },
+      { userId: 'actor', wsId: workspaceId },
       params.jobId
     );
   });
@@ -93,7 +96,7 @@ describe('Notes voice route ownership', () => {
   it('deletes only the actor-owned resolved workspace job', async () => {
     expect((await invoke(DELETE)).status).toBe(200);
     expect(mock.remove).toHaveBeenCalledWith(
-      { userId: 'actor', wsId: 'resolved-workspace' },
+      { userId: 'actor', wsId: workspaceId },
       params.jobId
     );
   });
@@ -128,6 +131,8 @@ describe('Notes voice honours MEET_AI_DISABLED', () => {
     form.set('audio', audio);
     mock.form.mockResolvedValue(form);
     mock.reserve.mockResolvedValue({ start: true, job: { status: 'queued' } });
+    process.env.MEET_AI_PROTECTED_WORKSPACE_IDS = protectedWorkspaceId;
+    process.env.MEET_AI_ENABLED_WORKSPACE_IDS = workspaceId;
     const scheduled: Array<() => unknown> = [];
     mock.after.mockImplementation((task: () => unknown) =>
       scheduled.push(task)

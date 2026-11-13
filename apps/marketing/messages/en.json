@@ -1839,6 +1839,7 @@
       "track_3": "Team time management",
       "voiceAssistant": "Voice assistant",
       "workforce": "Workforce administration",
+      "workspace-domains_0": "Workspace custom domains edge",
       "workspaces": "Workspaces created per account"
     },
     "included": "Included",
@@ -2357,6 +2358,10 @@
     "pharmacies": "Pharmacies",
     "pharmacies-description": "Streamline pharmacy management and services.",
     "pick_a_date": "Pick a date",
+    "picker_pin": "Pin workspace",
+    "picker_pinned": "Pinned",
+    "picker_recent": "Recent",
+    "picker_unpin": "Unpin workspace",
     "pink": "Pink",
     "pitch": "Pitch Deck",
     "pitch-description": "Tuturuuu's business plan pitch deck.",

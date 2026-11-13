@@ -1,0 +1,29 @@
+{
+  "staging": {
+    "workerName": "tuturuuu-pay-vite-staging",
+    "rootHost": "pay.tutur3u.com",
+    "vars": {
+      "TUTURUUU_NOINDEX": "1",
+      "NEXT_PUBLIC_TUTURUUU_SHARED_COOKIE_DOMAIN": ".staging.tutur3u.com",
+      "INTERNAL_WEB_API_ORIGIN": "https://web.tutur3u.com",
+      "NEXT_PUBLIC_WEB_APP_URL": "https://web.tutur3u.com",
+      "NEXT_PUBLIC_APP_URL": "https://pay.tutur3u.com",
+      "PAY_APP_URL": "https://pay.tutur3u.com",
+      "NEXT_PUBLIC_SUPABASE_URL": "https://fxefojytwimjiqxseqag.supabase.co",
+      "POLAR_SANDBOX": "true"
+    }
+  },
+  "production": {
+    "workerName": "tuturuuu-pay",
+    "rootHost": "pay.tuturuuu.com",
+    "vars": {
+      "TUTURUUU_NOINDEX": "0",
+      "NEXT_PUBLIC_TUTURUUU_SHARED_COOKIE_DOMAIN": ".tuturuuu.com",
+      "INTERNAL_WEB_API_ORIGIN": "https://tuturuuu.com",
+      "NEXT_PUBLIC_WEB_APP_URL": "https://tuturuuu.com",
+      "NEXT_PUBLIC_APP_URL": "https://pay.tuturuuu.com",
+      "PAY_APP_URL": "https://pay.tuturuuu.com",
+      "POLAR_SANDBOX": "false"
+    }
+  }
+}

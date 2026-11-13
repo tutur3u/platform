@@ -1,6 +1,7 @@
-import { describe, expect, it, vi } from 'vitest';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 const mocks = vi.hoisted(() => ({
+  authorizeAdmin: vi.fn(),
   apps: {
     avatar: null as string | null,
     avatarUpload: null as string | null,
@@ -17,6 +18,10 @@ const mocks = vi.hoisted(() => ({
   creditsGet: vi.fn(),
   workspaceGet: vi.fn(),
   workspacePut: vi.fn(),
+}));
+
+vi.mock('@/lib/infrastructure-admin-access', () => ({
+  authorizeInfrastructureAdminRequest: mocks.authorizeAdmin,
 }));
 
 vi.mock('@tuturuuu/satellite/workspace-settings-route-handlers', () => ({
@@ -68,11 +73,47 @@ describe('Infrastructure workspace settings routes', () => {
       workspace: 'infra',
     });
 
-    expect(getWorkspace).toBe(mocks.workspaceGet);
     expect(updateWorkspace).toBe(mocks.workspacePut);
     expect(updateAvatar).toBe(mocks.avatarPatch);
     expect(deleteAvatar).toBe(mocks.avatarDelete);
     expect(createAvatarUpload).toBe(mocks.avatarUploadPost);
     expect(getAiCredits).toBe(mocks.creditsGet);
+  });
+  beforeEach(() => {
+    vi.clearAllMocks();
+    mocks.authorizeAdmin.mockResolvedValue({
+      ok: false,
+      response: Response.json({ error: 'Forbidden' }, { status: 403 }),
+    });
+  });
+  it('denies workspace reads before invoking the shared handler', async () => {
+    const request = new Request('https://example.test');
+    const context = { params: Promise.resolve({ wsId: 'tenant' }) };
+    const response = await getWorkspace(request, context);
+    expect(response.status).toBe(403);
+    expect(await response.json()).toEqual({ error: 'Forbidden' });
+    expect(mocks.authorizeAdmin).toHaveBeenCalledExactlyOnceWith(
+      'view_infrastructure',
+      true,
+      request
+    );
+    expect(mocks.workspaceGet).not.toHaveBeenCalled();
+  });
+  it('passes the admitted request and context to the shared handler', async () => {
+    const request = new Request('https://example.test');
+    const context = { params: Promise.resolve({ wsId: 'tenant' }) };
+    const result = Response.json({ id: 'tenant' });
+    mocks.authorizeAdmin.mockResolvedValue({ ok: true });
+    mocks.workspaceGet.mockResolvedValue(result);
+    expect(await getWorkspace(request, context)).toBe(result);
+    expect(mocks.authorizeAdmin).toHaveBeenCalledExactlyOnceWith(
+      'view_infrastructure',
+      true,
+      request
+    );
+    expect(mocks.workspaceGet).toHaveBeenCalledExactlyOnceWith(
+      request,
+      context
+    );
   });
 });

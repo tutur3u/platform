@@ -24,6 +24,7 @@ import { cn } from '@tuturuuu/utils/format';
 import Link from 'next/link';
 import { useState } from 'react';
 import HabitFormDialog from '../../tu-do/habits/habit-form-dialog';
+import { tasksApiPath } from '../../tu-do/shared/tasks-paths';
 
 interface HabitWithStreak extends Habit {
   streak?: HabitStreak;
@@ -90,7 +91,7 @@ export function HabitsPanel({ wsId }: HabitsPanelProps) {
       isVisible: boolean;
     }) => {
       const response = await fetch(
-        `/api/v1/workspaces/${wsId}/habits/${habitId}`,
+        tasksApiPath(`/api/v1/workspaces/${wsId}/habits/${habitId}`),
         {
           method: 'PUT',
           headers: { 'Content-Type': 'application/json' },

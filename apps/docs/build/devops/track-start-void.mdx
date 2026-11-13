@@ -15,7 +15,7 @@ publication stays held in `tuturuuu.ci.ts` until a cutover PR admits the app.
 
 | Item | Value |
 | --- | --- |
-| Worker | Staging identity `tuturuuu-track-vite-staging` is what `void.config.ts` emits. Deploy the production artifact under `tuturuuu-track` with the deploy-time name override; the config declares no routes |
+| Worker | The staging identity is what `void.config.ts` emits. Deploy the production artifact under `tuturuuu-track` with the deploy-time name override; the config declares no routes |
 | Hosts | Root: `track.tuturuuu.com`. Mount: `tuturuuu.com/track`. `TUTURUUU_STAGING_HOSTS` (Worker var, staging only) may add `track.tutur3u.com` or reviewed `workers.dev` hosts. Every other host gets `404` |
 | Bindings | `ASSETS` (static assets, worker-first, no SPA fallback) |
 | Vars (names) | `INTERNAL_WEB_API_ORIGIN` (default `https://tuturuuu.com`), `TUTURUUU_NOINDEX` (set `1` on staging only), `TUTURUUU_STAGING_HOSTS` (staging only) |

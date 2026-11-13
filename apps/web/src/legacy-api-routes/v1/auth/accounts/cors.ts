@@ -1,17 +1,16 @@
-import { resolveTuturuuuSharedCookieDomain } from '@tuturuuu/utils/shared-cookie';
+import { getAllowedFirstPartyCorsOrigin } from '@tuturuuu/utils/first-party-cors';
 import { NextResponse } from 'next/server';
 
 const ACCOUNT_CORS_METHODS = 'GET, POST, PATCH, DELETE, OPTIONS';
 const DEFAULT_ACCOUNT_CORS_HEADERS = 'Content-Type';
 
+/**
+ * The strict first-party allowlist: https only, the apex or one label below
+ * it, default port, never the gateway origin host (and the staging domain the
+ * same way on staging). Never an echo of any *.tuturuuu.com origin.
+ */
 function getAllowedOrigin(request: Request) {
-  const origin = request.headers.get('origin');
-
-  if (!origin || !resolveTuturuuuSharedCookieDomain(origin)) {
-    return null;
-  }
-
-  return origin;
+  return getAllowedFirstPartyCorsOrigin(request.headers.get('origin'));
 }
 
 function appendVaryOrigin(response: NextResponse) {

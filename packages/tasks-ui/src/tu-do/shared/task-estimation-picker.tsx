@@ -22,6 +22,7 @@ import {
   buildEstimationIndices,
   mapEstimationPoints,
 } from './estimation-mapping';
+import { tasksApiPath } from './tasks-paths';
 
 type EstimationType = 'fibonacci' | 'linear' | 'exponential' | 't-shirt';
 
@@ -80,7 +81,7 @@ export function TaskEstimationPicker({
     if (taskId && boardConfig) {
       try {
         const response = await fetch(
-          `/api/v1/workspaces/${wsId}/tasks/${taskId}/estimation`,
+          tasksApiPath(`/api/v1/workspaces/${wsId}/tasks/${taskId}/estimation`),
           {
             method: 'PATCH',
             headers: { 'Content-Type': 'application/json' },

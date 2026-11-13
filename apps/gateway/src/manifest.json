@@ -1,8 +1,5 @@
 {
-  "locales": [
-    "en",
-    "vi"
-  ],
+  "locales": ["en", "vi"],
   "origins": {
     "web": {
       "env": "WEB_ORIGIN"
@@ -30,10 +27,7 @@
         "/community-guidelines",
         "/security"
       ],
-      "prefix": [
-        "/legal/",
-        "/security/"
-      ]
+      "prefix": ["/legal/", "/security/"]
     },
     {
       "id": "marketing-company",
@@ -60,12 +54,8 @@
       "origin": "web",
       "cache": "page",
       "localized": true,
-      "exact": [
-        "/products"
-      ],
-      "prefix": [
-        "/products/"
-      ]
+      "exact": ["/products"],
+      "prefix": ["/products/"]
     },
     {
       "id": "marketing-solutions",
@@ -75,9 +65,7 @@
       "cache": "page",
       "localized": true,
       "exact": [],
-      "prefix": [
-        "/solutions/"
-      ]
+      "prefix": ["/solutions/"]
     },
     {
       "id": "marketing-blog",
@@ -86,12 +74,8 @@
       "origin": "web",
       "cache": "page",
       "localized": true,
-      "exact": [
-        "/blog"
-      ],
-      "prefix": [
-        "/blog/"
-      ]
+      "exact": ["/blog"],
+      "prefix": ["/blog/"]
     },
     {
       "id": "marketing-home",
@@ -100,10 +84,7 @@
       "origin": "web",
       "cache": "page",
       "localized": true,
-      "exact": [
-        "/",
-        "/pricing"
-      ],
+      "exact": ["/", "/pricing"],
       "prefix": []
     },
     {
@@ -120,24 +101,15 @@
         "/portfolio",
         "/qr-generator"
       ],
-      "prefix": [
-        "/changelog/",
-        "/visualizations/"
-      ]
+      "prefix": ["/changelog/", "/visualizations/"]
     },
     {
       "id": "satellite-landings",
       "origin": "web",
       "cache": "page",
       "localized": false,
-      "exact": [
-        "/roadmap",
-        "/design"
-      ],
-      "prefix": [
-        "/roadmap/",
-        "/design/"
-      ]
+      "exact": ["/roadmap", "/design"],
+      "prefix": ["/roadmap/", "/design/"]
     },
     {
       "id": "seo-metadata",
@@ -150,9 +122,15 @@
         "/manifest.webmanifest",
         "/manifest.json"
       ],
-      "prefix": [
-        "/.well-known/"
-      ]
+      "prefix": ["/.well-known/"]
+    },
+    {
+      "id": "marketing-assets",
+      "origin": "marketing",
+      "cache": "static",
+      "localized": false,
+      "exact": [],
+      "prefix": ["/assets/"]
     },
     {
       "id": "static-assets",
@@ -172,11 +150,7 @@
         "/cover.png",
         "/wallpaper.jpg"
       ],
-      "prefix": [
-        "/_next/static/",
-        "/media/",
-        "/screenshots/"
-      ]
+      "prefix": ["/_next/static/", "/media/", "/screenshots/"]
     }
   ]
 }

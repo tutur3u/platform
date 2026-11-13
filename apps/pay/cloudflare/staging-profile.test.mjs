@@ -11,6 +11,7 @@ vi.mock('@tuturuuu/payment/polar', () => ({ Polar: mocks.polar }));
 
 import { createPolarClient } from '@tuturuuu/payment/polar/server';
 import appConfig from '../start-bridge.config';
+import { resolvePayNativeProfile } from './native-profile';
 
 afterEach(() => {
   vi.unstubAllEnvs();
@@ -21,8 +22,10 @@ it('selects only Polar sandbox for the declared Pay staging profile', async () =
   const profile = JSON.parse(
     await readFile(new URL('./staging-profile.json', import.meta.url), 'utf8')
   );
+  expect(profile).toEqual(resolvePayNativeProfile('staging').vars);
   expect(profile.POLAR_SANDBOX).toBe('true');
-  expect(appConfig.mounts.rootHosts).toEqual(['pay.tutur3u.com']);
+  expect(resolvePayNativeProfile('staging').rootHost).toBe('pay.tutur3u.com');
+  expect(appConfig.mounts.rootHosts).toEqual([]);
   expect(appConfig.mounts.unknownHost).toBe('reject');
   expect(profile.PAY_APP_URL).toBe('https://pay.tutur3u.com');
   expect(profile.INTERNAL_WEB_API_ORIGIN).toBe('https://web.tutur3u.com');

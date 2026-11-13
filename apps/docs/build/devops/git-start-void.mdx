@@ -1,7 +1,7 @@
 ---
 title: "Git on Start + Void"
 description: "Cutover packet for the native Git Worker: names, bindings, build, smoke checks and rollback to Vercel."
-updatedAt: "2026-11-09"
+updatedAt: "2026-11-10"
 audience: developers
 ---
 
@@ -11,7 +11,7 @@ keeps serving until the route is flipped.
 
 ## Worker
 
-- Worker: `tuturuuu-git` (`workers_dev` and `preview_urls` off, `TUTURUUU_NOINDEX=1` until the cutover PR sets the production value). Nothing here attaches a route.
+- Worker: `tuturuuu-git` when `VITE_GIT_NATIVE_PROFILE=production`, and the staging Worker name by default. `workers_dev` and `preview_urls` stay off. Production sets `TUTURUUU_NOINDEX=0`; the default build sets `1`. Nothing here attaches a route.
 - Entry: `apps/git/cloudflare/worker.ts`; Wrangler config is emitted by `void` into `dist`.
 - Host: `git.tuturuuu.com`. Root-only: `mountHosts` is empty and `unknownHost` is `reject`, so `tuturuuu.com/git` and any other host answer 404 before app code runs.
 - Binding: `ASSETS` (static output, `run_worker_first`).
@@ -33,8 +33,8 @@ bun run --cwd apps/git type-check:cloudflare
 CI=true CI_SOURCE_SHA=$(git rev-parse HEAD) bun run --cwd apps/git test:runtime
 ```
 
-`git-cloudflare.yaml` runs the same steps, records the emitted config receipt and packages
-`dist` with the receipt. `cloudflare/anonymous.runtime.mjs` starts the emitted Worker in
+`git-cloudflare.yaml` runs the same steps for the default build, records the emitted config receipt and packages
+`dist` with the receipt. `git-cutover-artifact` builds with `VITE_GIT_NATIVE_PROFILE=production` and seals that output with `scripts/ci/git-native-artifact.py` (`config`, `seal`, `pack`). `cloudflare/anonymous.runtime.mjs` starts the emitted Worker in
 workerd: the canonical host answers the public root (a redirect to `/tutur3u/platform`, or
 `200`), an unknown host answers `404`, and closed public ingress such as
 `/api/storage/probe` answers `403`.

@@ -71,12 +71,32 @@ describe('roadmap public proxy', () => {
     if (!invocation) return;
     const [url] = invocation;
     expect(String(url)).toBe(
-      'https://tuturuuu-roadmap.tuturuuu-e89.workers.dev/roadmap/?q=1'
+      'https://tuturuuu-roadmap.tuturuuu-e89.workers.dev/roadmap?q=1'
     );
     expect(String(url)).not.toContain('roadmap.tuturuuu.com');
     expect(response?.status).toBe(301);
     expect(response?.headers.get('location')).toBe(
-      'https://tuturuuu.com/roadmap/?q=1'
+      'https://tuturuuu.com/roadmap?q=1'
+    );
+  });
+
+  it('sends a bare satellite roadmap location to the no-slash canonical path', async () => {
+    const fetchImpl = vi.fn(
+      async () =>
+        new Response(null, {
+          headers: { location: 'https://roadmap.tuturuuu.com/roadmap?q=1' },
+          status: 301,
+        })
+    );
+
+    const response = await proxyRoadmapPublicRequest(
+      new NextRequest('https://tuturuuu.com/roadmap/?q=1'),
+      fetchImpl
+    );
+
+    expect(response?.status).toBe(301);
+    expect(response?.headers.get('location')).toBe(
+      'https://tuturuuu.com/roadmap?q=1'
     );
   });
 
@@ -94,7 +114,7 @@ describe('roadmap public proxy', () => {
     expect(response?.status).toBe(200);
     expect(response?.headers.get('location')).toBeNull();
     expect(String(fetchImpl.mock.calls[0]?.[0])).toBe(
-      'https://tuturuuu-roadmap.tuturuuu-e89.workers.dev/roadmap/?q=1'
+      'https://tuturuuu-roadmap.tuturuuu-e89.workers.dev/roadmap?q=1'
     );
   });
 

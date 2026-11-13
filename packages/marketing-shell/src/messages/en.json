@@ -1,0 +1,143 @@
+{
+  "common": {
+    "products": "Products",
+    "resources": "Resources",
+    "main_navigation": "Main navigation",
+    "pricing": "Pricing",
+    "about": "About",
+    "contact": "Contact",
+    "home": "Home",
+    "apps": "Apps",
+    "blog": "Blog",
+    "blog-description": "Read our latest articles and updates.",
+    "changelog": "Changelog",
+    "changelog-description": "Stay up to date with our latest product updates and improvements.",
+    "careers": "Careers",
+    "careers-description": "Join our team and help us build the future of Tuturuuu.",
+    "partners": "Partners",
+    "partners-description": "Explore partnership opportunities with Tuturuuu.",
+    "contributors": "Contributors",
+    "contributors-description": "Meet the people who make Tuturuuu possible.",
+    "security": "Security",
+    "security-description": "Learn about our security practices and commitments.",
+    "random_generator": "Random Generator",
+    "random_generator-description": "Generate secure IDs, tokens, API keys, and passwords locally in your browser.",
+    "branding": "Branding",
+    "branding-description": "Get Tuturuuu's branding assets and guidelines.",
+    "ui": "UI",
+    "ui-description": "Browse the Tuturuuu UI component library.",
+    "documentation": "Documentation",
+    "documentation-description": "Find detailed documentation and guides.",
+    "get-started": "Get Started",
+    "company": "Company",
+    "legal": "Legal",
+    "developers": "Developers",
+    "meet-together": "Tuturuuu Meet",
+    "qr_generator": "QR Generator",
+    "facebook_mockup": "Facebook Mockup",
+    "terms": "Terms of Service",
+    "privacy": "Privacy Policy",
+    "community-guidelines": "Community Guidelines",
+    "acceptable-use": "Acceptable Use",
+    "open-source": "Open Source",
+    "footer_tagline": "One AI-powered workspace for your tasks, calendar, documents, and team.",
+    "copyright": "Copyright © 2026 Tuturuuu, Inc. – All rights reserved."
+  },
+  "marketing-nav": {
+    "all_apps": "Explore every Tuturuuu app",
+    "groups": {
+      "create": "Create & share",
+      "operate": "Run the business",
+      "plan": "Plan & execute"
+    },
+    "index": {
+      "description": "One workspace, one login, one bill. Each app below works on its own and works better beside the others.",
+      "learn_more": "Learn more",
+      "seo": {
+        "description": "Every Tuturuuu app in one place — plan and execute, create and share, run the business.",
+        "title": "Products"
+      },
+      "title": "Every app your team needs"
+    },
+    "portfolio": "Portfolio",
+    "portfolio_description": "Products, engineering, and research collaboration.",
+    "products": {
+      "ai": {
+        "description": "Mira and the assistants powering every surface.",
+        "label": "AI"
+      },
+      "calendar": {
+        "description": "AI auto-scheduling around your real priorities.",
+        "label": "Calendar"
+      },
+      "chat": {
+        "description": "Channels, direct messages, and files in the same workspace as your work.",
+        "label": "Chat"
+      },
+      "crm": {
+        "description": "Contacts, pipelines, and customer history.",
+        "label": "CRM"
+      },
+      "documents": {
+        "description": "Collaborative docs that stay next to the work.",
+        "label": "Documents"
+      },
+      "drive": {
+        "description": "Shared storage with workspace-level permissions.",
+        "label": "Drive"
+      },
+      "finance": {
+        "description": "Track spend, budgets, invoices, and wallets.",
+        "label": "Finance"
+      },
+      "forms": {
+        "description": "Build a form, collect responses, read the results in place.",
+        "label": "Forms"
+      },
+      "hive": {
+        "description": "A lab for swarm agents: build workflows, run simulations, study the results.",
+        "label": "Agents"
+      },
+      "inventory": {
+        "description": "Products, stock, suppliers, and warehouses.",
+        "label": "Inventory"
+      },
+      "lms": {
+        "description": "Courses, quizzes, and progress tracking.",
+        "label": "Learning"
+      },
+      "mail": {
+        "description": "Team inboxes wired into tasks and calendar.",
+        "label": "Mail"
+      },
+      "meet": {
+        "description": "Find a time that works for everyone, fast.",
+        "label": "Meet"
+      },
+      "qr": {
+        "description": "Codes for links, events, menus, and payments.",
+        "label": "QR"
+      },
+      "storefront": {
+        "description": "A buyer-facing shop sitting on top of your inventory.",
+        "label": "Storefront"
+      },
+      "tasks": {
+        "description": "Boards, hierarchies, and a fast capture inbox.",
+        "label": "Tasks"
+      },
+      "track": {
+        "description": "Start a timer and see where the week actually went.",
+        "label": "Timekeeping"
+      },
+      "workflows": {
+        "description": "Automate the handoffs between your tools.",
+        "label": "Workflows"
+      }
+    }
+  },
+  "desktop_download": {
+    "badge": "Tuturuuu early access",
+    "navigation_description": "Windows, macOS, and Linux apps"
+  }
+}

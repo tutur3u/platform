@@ -63,6 +63,8 @@ export async function getMeetCallSession({
   userId: string;
   wsId: string;
 }) {
+  const { getClassroomParticipantCap } = await import('./classroom-policy');
+  const maxParticipants = await getClassroomParticipantCap(meetingId, wsId);
   const deviceUserId = deviceId
     ? await meetDeviceIdentity(userId, deviceId)
     : userId;
@@ -74,8 +76,9 @@ export async function getMeetCallSession({
     exp: Math.floor((Date.now() + TOKEN_TTL_MS) / 1000),
     limits: {
       maxRoomDurationSeconds,
-      maxPublishers: 8,
-      maxViewers: 96,
+      maxParticipants,
+      maxPublishers: maxParticipants ?? 8,
+      maxViewers: maxParticipants ?? 96,
       video: {
         defaultCameraEnabled: false,
         maxFrameRate: 24,

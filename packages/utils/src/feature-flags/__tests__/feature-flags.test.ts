@@ -73,9 +73,15 @@ describe('FEATURE_FLAGS', () => {
   });
 
   describe('flag count and structure', () => {
-    it('should have exactly 15 feature flags', () => {
+    it('should have exactly 16 feature flags', () => {
       const flags = Object.keys(FEATURE_FLAGS);
-      expect(flags).toHaveLength(15);
+      expect(flags).toHaveLength(16);
+    });
+
+    it('should have ENABLE_JOURNAL_MOOD_TRACKING flag', () => {
+      expect(FEATURE_FLAGS.ENABLE_JOURNAL_MOOD_TRACKING).toBe(
+        'ENABLE_JOURNAL_MOOD_TRACKING'
+      );
     });
 
     it('should have all unique values', () => {
@@ -203,6 +209,7 @@ describe('FeatureFlagMap type', () => {
       ENABLE_AVATAR: true,
       ENABLE_LOGO: true,
       newsletter_sending: false,
+      ENABLE_JOURNAL_MOOD_TRACKING: false,
     };
 
     expect(flagMap.ENABLE_AI).toBe(true);
@@ -239,6 +246,7 @@ describe('Feature flag usage patterns', () => {
         ENABLE_AVATAR: true,
         ENABLE_LOGO: true,
         newsletter_sending: false,
+        ENABLE_JOURNAL_MOOD_TRACKING: false,
       };
 
       const aiFeatures: FeatureFlag[] = [
@@ -267,6 +275,7 @@ describe('Feature flag usage patterns', () => {
         ENABLE_AVATAR: false,
         ENABLE_LOGO: false,
         newsletter_sending: false,
+        ENABLE_JOURNAL_MOOD_TRACKING: false,
       };
 
       const educationFeatures: FeatureFlag[] = [

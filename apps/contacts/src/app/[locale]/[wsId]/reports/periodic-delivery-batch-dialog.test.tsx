@@ -37,6 +37,7 @@ const reports = [
     id: 'synthetic-report',
     user_id: 'synthetic-user',
     title: 'Monthly report',
+    feedback: 'Synthetic teacher feedback',
     user_name: 'Synthetic recipient',
     user_email: 'recipient@example.com',
     report_approval_status: 'APPROVED',

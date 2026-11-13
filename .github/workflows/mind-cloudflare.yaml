@@ -173,6 +173,7 @@ jobs:
       artifact-script: scripts/ci/mind-native-artifact.py
       env-interface: MindGeneratedEnv
       worker-environment-type: MindEnvironment
+      unit-command: node --test cloudflare/required-secrets.test.mjs cloudflare/required-secrets.test.ts cloudflare/server-artifact-scan.test.mjs && bun run test
       # Public staging values from repository variables for same-repository
       # events; fork pull requests (and unset variables) build with fixtures.
       public-env: |
@@ -186,7 +187,7 @@ jobs:
 
   mind-cutover-artifact:
     needs: [check-ci, affected-gate]
-    if: ${{ needs.affected-gate.outputs.run == 'true' && needs.check-ci.outputs.should_run == 'true' && (github.event_name != 'pull_request' || contains(github.event.pull_request.labels.*.name, 'ready-for-ci')) }}
+    if: ${{ (needs.affected-gate.outputs.run == 'true' && needs.check-ci.outputs.should_run == 'true') && (github.event_name != 'pull_request' || contains(github.event.pull_request.labels.*.name, 'ready-for-ci')) }}
     runs-on: ubuntu-latest
     timeout-minutes: 45
     permissions:
@@ -238,11 +239,11 @@ jobs:
           import { readFileSync, writeFileSync } from 'node:fs';
           const path = 'apps/mind/dist/server/wrangler.json';
           const c = JSON.parse(readFileSync(path, 'utf8'));
-          for (const k of ['configPath', 'userConfigPath', 'topLevelName', 'definedEnvironments']) delete c[k];
           c.name = 'tuturuuu-mind';
           c.workers_dev = false;
           c.preview_urls = false;
           c.upload_source_maps = false;
+          c.topLevelName = 'tuturuuu-mind';
           c.vars = {
             TUTURUUU_NOINDEX: '0',
             NODE_ENV: 'production',
@@ -257,6 +258,10 @@ jobs:
           test "$(node -p "require('./apps/mind/dist/server/wrangler.json').preview_urls")" = false
           test -f apps/mind/dist/server/index.mjs
           test -d apps/mind/dist/client
+          # Source maps carry the original sources and are never uploaded
+          # (upload_source_maps is false); keep them out of the sealed output.
+          find apps/mind/dist/server -name '*.map' -type f -delete
+          test -z "$(find apps/mind/dist/server -name '*.map' -type f)"
       - name: Validate, seal and pack the final production output
         env:
           MIND_SOURCE_SHA: ${{ env.SOURCE_SHA }}
