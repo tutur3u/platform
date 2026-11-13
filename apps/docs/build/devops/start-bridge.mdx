@@ -92,6 +92,15 @@ another origin throws unless that origin is the configured central API origin
 (`rewriteOrigins`), which is then fetched with manual redirects and hop-by-hop
 headers removed.
 
+An app that keeps a Next-style forwarding catch-all (`/api/[...path]`) in its
+registry dispatches unowned `/api/*` there, before the bridge's central forward
+(the registry's catch-all sorts last but still wins over the central-API step,
+which only centralFirst paths reach). Cross-app API ownership must therefore be
+encoded in that catch-all, mirroring the app's Next `beforeFiles` rewrites:
+Tasks forwards Calendar-owned paths (`calendar-api-rewrites.ts`) to the Calendar
+app and everything else to central Web, while `apiOrigin` (as Storefront uses
+for Inventory) only applies in registries without such a catch-all.
+
 In the app: `start.ts` passes `serverFns: { fetch: bridgeServerFnFetch }` to
 `createStart`, `getRouter()` sets `basepath: routerBasepath()` and
 `ssr: { nonce: requestNonce() }`, and the root route lists

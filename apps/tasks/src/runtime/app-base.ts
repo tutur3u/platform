@@ -5,10 +5,11 @@ import { appApiPatterns } from './api-patterns.bridge.gen';
 
 /**
  * The `/api/[...path]` catch-all is not ownership: it 404s Tasks-owned paths
- * that have no explicit route and forwards everything else to Web. Only the
- * explicit routes are Tasks', so only they resolve under the app base
+ * that have no explicit route, forwards Calendar-owned paths to the Calendar
+ * app (the `beforeFiles` rewrite contract) and everything else to Web. Only
+ * the explicit routes are Tasks', so only they resolve under the app base
  * (`/tasks/api/...` on `tuturuuu.com/tasks`, `/api/...` on the subdomain);
- * every other `/api` path goes to Web.
+ * every other `/api` path goes to its owning app.
  */
 export const TASKS_OWNED_API_PATTERNS: readonly string[] =
   appApiPatterns.filter((pattern) => !pattern.includes('[...'));
