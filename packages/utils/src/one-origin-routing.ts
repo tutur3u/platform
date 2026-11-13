@@ -126,10 +126,11 @@ export function decideOneOriginRequest(
 
   if (config.mode === 'on' && config.basePathReady && !machine) {
     if (isNavigation(request)) {
-      // `pathname` always starts with `/`, so the root maps to `/<app>/`: the
-      // canonical mount. The bare `/<app>` is only an edge redirect, because
-      // zone routes cannot match it once a query string is present.
-      const location = `${new URL(config.sharedOrigin).origin}${basePath}${appPath}${url.search}`;
+      // Canonical URLs never end in a slash: the subdomain root maps to the
+      // bare `/<app>` and `/x/` to `/<app>/x`, in one hop. The gateway hands a
+      // bare `/<app>?query` to the app (its zone route cannot match it).
+      const trimmed = appPath.replace(/\/+$/u, '');
+      const location = `${new URL(config.sharedOrigin).origin}${basePath}${trimmed}${url.search}`;
       return {
         action: 'redirect',
         response: new Response(null, {

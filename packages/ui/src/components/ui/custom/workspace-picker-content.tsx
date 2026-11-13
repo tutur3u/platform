@@ -1,11 +1,20 @@
 'use client';
 
-import { ArrowLeft, Eye, EyeOff, Plus, Search, Star, X } from '@tuturuuu/icons';
+import {
+  ArrowLeft,
+  Eye,
+  EyeOff,
+  Pin,
+  Plus,
+  Search,
+  Star,
+  X,
+} from '@tuturuuu/icons';
 import type { InternalApiWorkspaceSummary } from '@tuturuuu/types';
 import { ROOT_WORKSPACE_ID } from '@tuturuuu/utils/constants';
 import { cn } from '@tuturuuu/utils/format';
 import { useTranslations } from 'next-intl';
-import { type ReactNode, useRef, useState } from 'react';
+import { type KeyboardEvent, type ReactNode, useRef, useState } from 'react';
 import type { useWorkspaceVisibility } from '../../../hooks/use-workspace-visibility';
 import { Button } from '../button';
 import {
@@ -16,11 +25,25 @@ import {
 } from '../dialog';
 import { Input } from '../input';
 import { PopoverClose, PopoverContent } from '../popover';
+import { Tooltip, TooltipContent, TooltipTrigger } from '../tooltip';
+import { useWorkspacePickerPreferences } from './use-workspace-picker-preferences';
 import { TUTURUUU_LOGO_URL } from './tuturuuu-logo';
 import { WorkspaceIcon } from './workspace-select-icon';
 
 type Visibility = ReturnType<typeof useWorkspaceVisibility>;
-export function WorkspacePickerContent({
+export function WorkspacePickerContent(
+  props: Parameters<typeof WorkspacePickerContentInner>[0]
+) {
+  return (
+    <WorkspacePickerContentInner
+      key={props.visibility.actorId ?? 'signed-out'}
+      {...props}
+    />
+  );
+}
+
+function WorkspacePickerContentInner({
+  preferences,
   workspaces,
   currentId,
   defaultId,
@@ -37,6 +60,7 @@ export function WorkspacePickerContent({
   presentation = 'fullscreen',
   onClose,
 }: {
+  preferences?: ReturnType<typeof useWorkspacePickerPreferences>;
   workspaces: InternalApiWorkspaceSummary[];
   currentId?: string;
   defaultId?: string | null;
@@ -57,10 +81,38 @@ export function WorkspacePickerContent({
   const Title = dropdown ? 'h2' : DialogTitle;
   const Description = dropdown ? 'p' : DialogDescription;
   const t = useTranslations('common');
+  const listT = useTranslations('command_launcher');
   const [restoring, setRestoring] = useState(restoreOnly);
-  const [searchVisible, setSearchVisible] = useState(dropdown);
+  const [searchVisible, setSearchVisible] = useState(true);
   const [search, setSearch] = useState('');
   const input = useRef<HTMLInputElement>(null);
+  const localPreferences = useWorkspacePickerPreferences(visibility.actorId);
+  const history = preferences ?? localPreferences;
+  const list = useRef<HTMLDivElement>(null);
+  function moveFocus(event: KeyboardEvent<HTMLElement>) {
+    if (!['ArrowDown', 'ArrowUp', 'Home', 'End'].includes(event.key)) return;
+    if (event.target === input.current && ['Home', 'End'].includes(event.key))
+      return;
+    const buttons = Array.from(
+      list.current?.querySelectorAll<HTMLButtonElement>(
+        '[data-workspace-choice]:not(:disabled)'
+      ) ?? []
+    );
+    if (!buttons.length) return;
+    event.preventDefault();
+    const index = buttons.findIndex(
+      (button) => button === document.activeElement
+    );
+    const next =
+      event.key === 'Home'
+        ? 0
+        : event.key === 'End'
+          ? buttons.length - 1
+          : event.key === 'ArrowDown'
+            ? (index + 1) % buttons.length
+            : (index <= 0 ? buttons.length : index) - 1;
+    buttons[next]?.focus();
+  }
   const query = search.trim().toLocaleLowerCase();
   const choices = workspaces.filter(
     (workspace) => visibility.hiddenIds.includes(workspace.id) === restoring
@@ -73,9 +125,20 @@ export function WorkspacePickerContent({
     )
     .sort((a, b) => {
       const rank = (w: InternalApiWorkspaceSummary) =>
-        w.id === ROOT_WORKSPACE_ID ? 0 : w.personal ? 1 : 2;
+        history.pinned.includes(w.id)
+          ? 0
+          : history.recent.includes(w.id)
+            ? 1
+            : w.id === ROOT_WORKSPACE_ID
+              ? 2
+              : w.personal
+                ? 3
+                : 4;
       return (
         rank(a) - rank(b) ||
+        (rank(a) === 1
+          ? history.recent.indexOf(a.id) - history.recent.indexOf(b.id)
+          : 0) ||
         (a.name ?? '').localeCompare(b.name ?? '') ||
         a.id.localeCompare(b.id)
       );
@@ -139,26 +202,34 @@ export function WorkspacePickerContent({
             onChange={(event) => setSearch(event.target.value)}
             placeholder={t('search_workspace')}
             aria-label={t('search_workspace')}
+            onKeyDown={moveFocus}
+            className="h-9"
           />
-          {query && (
-            <Button
-              variant="ghost"
-              onClick={() => {
-                setSearch('');
-                input.current?.focus();
-              }}
-            >
-              {t('clear_search')}
-            </Button>
-          )}
+          <div className="w-9 shrink-0">
+            {query && (
+              <Button
+                variant="ghost"
+                size="icon"
+                aria-label={t('clear_search')}
+                onClick={() => {
+                  setSearch('');
+                  input.current?.focus();
+                }}
+              >
+                <X />
+              </Button>
+            )}
+          </div>
         </div>
       )}
       {(visibility.isError || visibility.updateError || listError) && (
         <div role="alert" className="flex items-center gap-3 px-4 pt-3">
           <p className="flex-1">
-            {visibility.updateError
-              ? t('hidden_workspaces_update_error')
-              : t('hidden_workspaces_load_error')}
+            {listError
+              ? listT('error_workspaces')
+              : visibility.updateError
+                ? t('hidden_workspaces_update_error')
+                : t('hidden_workspaces_load_error')}
           </p>
           <Button
             variant="outline"
@@ -172,17 +243,33 @@ export function WorkspacePickerContent({
         </div>
       )}
       <div
+        ref={list}
+        onKeyDown={moveFocus}
         className={cn(
           'min-h-0 flex-1 overflow-y-auto px-4 pt-4',
           dropdown ? 'pb-3' : 'pb-28'
         )}
       >
-        {!visibility.known || listLoading || listError ? (
-          <p role="status">
-            {visibility.isError || listError
-              ? t('hidden_workspaces_load_error')
-              : t('loading')}
-          </p>
+        {!visibility.known ||
+        ((listLoading || listError) && workspaces.length === 0) ? (
+          <div role="status" className="min-h-64 space-y-3">
+            <p>
+              {listError
+                ? listT('error_workspaces')
+                : visibility.isError
+                  ? t('hidden_workspaces_load_error')
+                  : t('loading')}
+            </p>
+            {!listError &&
+              !visibility.isError &&
+              Array.from({ length: 4 }, (_, index) => (
+                <div
+                  key={index}
+                  aria-hidden="true"
+                  className="h-12 rounded-lg bg-muted motion-safe:animate-pulse"
+                />
+              ))}
+          </div>
         ) : (
           <>
             {!restoring && invitations}
@@ -191,7 +278,9 @@ export function WorkspacePickerContent({
                 key={workspace.id}
                 className={cn(
                   'flex items-center gap-2',
-                  dropdown ? 'mb-1 rounded-md' : 'mb-2 rounded-xl border p-2'
+                  'rounded-lg transition-colors duration-150 hover:bg-muted/60 motion-reduce:transition-none',
+                  workspace.id === currentId && 'bg-accent',
+                  dropdown ? 'mb-1' : 'mb-2 border p-2'
                 )}
               >
                 {restoring ? (
@@ -218,17 +307,25 @@ export function WorkspacePickerContent({
                     ]
                       .filter(Boolean)
                       .join(' ')}
-                    onClick={() => onSelect(workspace)}
+                    data-workspace-choice
+                    title={workspace.name ?? workspace.id}
+                    onClick={() => {
+                      history.record(workspace.id);
+                      onSelect(workspace);
+                    }}
                   >
                     <WorkspaceIcon
                       name={workspace.name ?? ''}
                       avatarUrl={workspace.avatar_url ?? undefined}
                     />
                     <span className="min-w-0 flex-1">
-                      <span className="block break-words">
-                        {workspace.name}
-                      </span>
-                      <span className="text-muted-foreground text-xs">
+                      <span className="block truncate">{workspace.name}</span>
+                      <span className="block truncate text-muted-foreground text-xs">
+                        {history.pinned.includes(workspace.id)
+                          ? `${t('picker_pinned')} · `
+                          : history.recent.includes(workspace.id)
+                            ? `${t('picker_recent')} · `
+                            : ''}
                         {workspace.tier ?? 'FREE'}
                         {workspace.id === currentId
                           ? ` · ${t('current_workspace')}`
@@ -240,12 +337,41 @@ export function WorkspacePickerContent({
                     </span>
                   </Button>
                 )}
+                {!restoring && visibility.actorId && (
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <Button
+                        size="icon"
+                        variant="ghost"
+                        aria-label={`${t(history.pinned.includes(workspace.id) ? 'picker_unpin' : 'picker_pin')}: ${workspace.name}`}
+                        aria-pressed={history.pinned.includes(workspace.id)}
+                        onClick={() => history.togglePin(workspace.id)}
+                      >
+                        <Pin
+                          className={
+                            history.pinned.includes(workspace.id)
+                              ? 'fill-current'
+                              : ''
+                          }
+                        />
+                      </Button>
+                    </TooltipTrigger>
+                    <TooltipContent className="motion-reduce:animate-none">
+                      {t(
+                        history.pinned.includes(workspace.id)
+                          ? 'picker_unpin'
+                          : 'picker_pin'
+                      )}
+                    </TooltipContent>
+                  </Tooltip>
+                )}
                 {!restoring &&
                   workspace.access_type !== 'guest' &&
                   onDefault && (
                     <Button
                       size="icon"
                       variant="ghost"
+                      title={t('default_workspace')}
                       aria-label={t('default_workspace')}
                       disabled={workspace.id === defaultId}
                       onClick={() => onDefault(workspace.id)}
@@ -261,6 +387,7 @@ export function WorkspacePickerContent({
                   size="icon"
                   variant="ghost"
                   aria-label={`${t(restoring ? 'restore_workspace' : 'hide_workspace')}: ${workspace.name}`}
+                  title={t(restoring ? 'restore_workspace' : 'hide_workspace')}
                   disabled={visibility.pending.has(workspace.id)}
                   onClick={() => {
                     void visibility
@@ -340,7 +467,7 @@ export function WorkspacePickerContent({
       align="start"
       aria-label={t(restoring ? 'hidden_workspaces' : 'workspaces')}
       collisionPadding={8}
-      className="flex max-h-[min(32rem,var(--radix-popover-content-available-height))] w-80 max-w-[min(calc(100vw-1rem),var(--radix-popover-content-available-width))] flex-col overflow-hidden p-0"
+      className="flex h-[32rem] max-h-[min(32rem,var(--radix-popover-content-available-height))] w-80 max-w-[min(calc(100vw-1rem),var(--radix-popover-content-available-width))] flex-col overflow-hidden p-0 motion-reduce:animate-none"
     >
       {content}
     </PopoverContent>
@@ -348,7 +475,7 @@ export function WorkspacePickerContent({
     <DialogContent
       presentation="fullscreen"
       showCloseButton={false}
-      className="flex-col"
+      className="flex-col motion-reduce:animate-none"
     >
       {content}
     </DialogContent>

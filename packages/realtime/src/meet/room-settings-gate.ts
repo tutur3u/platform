@@ -26,6 +26,14 @@ export function resolveRoomSettingsPatch(
   const patch = parseMeetRoomSettingsPatch(body, current);
   if (!patch.success) return new Response('Invalid settings', { status: 400 });
   if (
+    (patch.data.maxParticipants !== undefined ||
+      patch.data.admissionClosed !== undefined) &&
+    (token.limits.maxParticipants === undefined ||
+      (patch.data.maxParticipants !== undefined &&
+        patch.data.maxParticipants > token.limits.maxParticipants))
+  )
+    return new Response('Room capacity exceeds plan', { status: 403 });
+  if (
     enablesNoteSharing(body as Parameters<typeof enablesNoteSharing>[0]) &&
     !isMeetAiEnabledForWorkspace(token.wsId, env)
   )

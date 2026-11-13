@@ -99,3 +99,36 @@ it('shows unknown, not zero, for uncounted stages when counts are partial', () =
   expect(screen.queryByText('0')).not.toBeInTheDocument();
   expect(screen.getByText('summary_partial')).toBeInTheDocument();
 });
+
+it('shows the real total and every stage count on first render, before any card is clicked', () => {
+  // Synthetic counts: only Pending is selected, as on open.
+  const stages = Object.fromEntries(
+    PERIODIC_STAGES.map(([stage], index) => [stage, index + 1])
+  ) as Record<(typeof PERIODIC_STAGES)[number][0], number>;
+  const total = Object.values(stages).reduce((sum, count) => sum + count, 0);
+  render(
+    <PeriodicStatusSummary
+      stage="pending"
+      onChange={vi.fn()}
+      counts={{
+        total,
+        draft: 0,
+        pendingReview: 0,
+        approved: 0,
+        blocked: 0,
+        delivered: 0,
+        failed: 0,
+        stages,
+      }}
+    />
+  );
+  expect(screen.getByText(String(total))).toBeInTheDocument();
+  PERIODIC_STAGES.forEach(([stage, label]) => {
+    expect(
+      screen.getByRole('button', { name: `${label} ${stages[stage]}` })
+    ).toBeInTheDocument();
+  });
+  // No card is blank or zero just because it is not selected.
+  expect(screen.queryByRole('button', { name: /—$/ })).toBeNull();
+  expect(screen.queryByRole('button', { name: /\b0$/ })).toBeNull();
+});

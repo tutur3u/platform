@@ -317,4 +317,83 @@ module.exports = [
     reason:
       'rollback of 20261030131100_apply_creator_grant_checks_to_name_based_role_paths.sql; restores the body from 20260722111411_inventory_pos_operator_roles.sql; apply only with the matching forward fix ready',
   },
+  {
+    path: 'apps/database/supabase/migrations/20261109180000_guard_legacy_cross_app_token_uuid.sql',
+    line: 1,
+    rule: 'definer-public',
+    fileDigest:
+      '519ceb35caf61da65898895fb208cbf1e3b115a3d91263fdd9d671a331fbbc31',
+    digest: '8e56a8c131891176f26c3a880d3090cbef8212269a5694ca0c38016a8d5b1ad4',
+    class: 'fixed-forward',
+    requiredMigration:
+      'apps/database/supabase/migrations/20261109190001_harden_legacy_cross_app_token_contract.sql',
+    reason:
+      'fixed forward by apps/database/supabase/migrations/20261109190001_harden_legacy_cross_app_token_contract.sql; explicit exact-signature PUBLIC/anon revoke in reviewed same-body replacement; SOURCE https://github.com/tutur3u/platform/pull/7896#pullrequestreview-5821992165; preserve applied180000; never apply without the reviewed forward migration',
+  },
+  {
+    path: 'apps/database/supabase/migrations/20261109180000_guard_legacy_cross_app_token_uuid.sql',
+    line: 1,
+    rule: 'function-acl',
+    fileDigest:
+      '519ceb35caf61da65898895fb208cbf1e3b115a3d91263fdd9d671a331fbbc31',
+    digest: '8e56a8c131891176f26c3a880d3090cbef8212269a5694ca0c38016a8d5b1ad4',
+    class: 'fixed-forward',
+    requiredMigration:
+      'apps/database/supabase/migrations/20261109190001_harden_legacy_cross_app_token_contract.sql',
+    reason:
+      'fixed forward by apps/database/supabase/migrations/20261109190001_harden_legacy_cross_app_token_contract.sql; explicit exact-signature revoke/regrant retaining only authenticated/service_role with the reviewed client signature; SOURCE https://github.com/tutur3u/platform/pull/7896#pullrequestreview-5821992165; preserve applied180000; never apply without the reviewed forward migration',
+  },
+  {
+    path: 'apps/database/supabase/migrations/20261109180000_guard_legacy_cross_app_token_uuid.sql',
+    line: 1,
+    rule: 'definer-search-path',
+    fileDigest:
+      '519ceb35caf61da65898895fb208cbf1e3b115a3d91263fdd9d671a331fbbc31',
+    digest: '8e56a8c131891176f26c3a880d3090cbef8212269a5694ca0c38016a8d5b1ad4',
+    class: 'fixed-forward',
+    requiredMigration:
+      'apps/database/supabase/migrations/20261109190001_harden_legacy_cross_app_token_contract.sql',
+    reason:
+      'fixed forward by apps/database/supabase/migrations/20261109190001_harden_legacy_cross_app_token_contract.sql; pg_catalog first and pg_temp last, with all unchanged body references explicitly qualified; SOURCE https://github.com/tutur3u/platform/pull/7896#pullrequestreview-5821992165; preserve applied180000; never apply without the reviewed forward migration',
+  },
+  {
+    path: 'apps/database/supabase/migrations/20261109190002_platform_feature_flag_state_audit.sql',
+    line: 11,
+    rule: 'function-acl',
+    fileDigest:
+      '81c472b99da8f8427d53747a1a2ef818daf650e9867df1e31d12fd0cae1a3e9c',
+    digest: 'a77f18aa697b68ba39f7eae1696d7b3f3c8cb93a799b7afa1e406a49bf7bbd0f',
+    reason:
+      'SECURITY INVOKER immutable SQL helper private.platform_feature_flag_family(text); the REVOKE ALL at :77 removes PUBLIC, anon, authenticated and service_role and no later statement grants it, so it ends with no client or service grant; only the no-grant marker is missing; preserve merged 20261109190002 bytes',
+  },
+  {
+    path: 'apps/database/supabase/migrations/20261109190002_platform_feature_flag_state_audit.sql',
+    line: 155,
+    rule: 'function-acl',
+    fileDigest:
+      '81c472b99da8f8427d53747a1a2ef818daf650e9867df1e31d12fd0cae1a3e9c',
+    digest: 'f2e70209e358313df33a76ed285e0938e7e32d05555dd83f65a1fabb0704c536',
+    reason:
+      'SECURITY INVOKER trigger function private.platform_feature_flag_reject_direct_write(); the REVOKE ALL at :173 removes PUBLIC, anon, authenticated and service_role and no later statement grants it, so it ends with no client or service grant; only the no-grant marker is missing; preserve merged 20261109190002 bytes',
+  },
+  {
+    path: 'apps/database/supabase/migrations/20261109190002_platform_feature_flag_state_audit.sql',
+    line: 180,
+    rule: 'function-acl',
+    fileDigest:
+      '81c472b99da8f8427d53747a1a2ef818daf650e9867df1e31d12fd0cae1a3e9c',
+    digest: '3c0bd4bbadf02e0ce83605de0fd0625a622a1bb2b1bbaf00b17c649c28fc17aa',
+    reason:
+      'SECURITY INVOKER trigger function private.platform_feature_flag_reject_audit_change(); the REVOKE ALL at :190 removes PUBLIC, anon, authenticated and service_role and no later statement grants it, so it ends with no client or service grant; only the no-grant marker is missing; preserve merged 20261109190002 bytes',
+  },
+  {
+    path: 'apps/database/supabase/migrations/20261109190002_platform_feature_flag_state_audit.sql',
+    line: 197,
+    rule: 'function-acl',
+    fileDigest:
+      '81c472b99da8f8427d53747a1a2ef818daf650e9867df1e31d12fd0cae1a3e9c',
+    digest: '37a160686fff7d04b759be73b86e6f81db9e7b25d1647b0d0e901b3f6d1cac8e',
+    reason:
+      'SECURITY DEFINER internal helper with search_path pg_catalog, pg_temp, called only from the reviewed private mutate/read functions private.platform_feature_flag_require_permission(uuid,text); the REVOKE ALL at :221 removes PUBLIC, anon, authenticated and service_role and no later statement grants it, so it ends with no client or service grant; only the no-grant marker is missing; preserve merged 20261109190002 bytes',
+  },
 ];

@@ -1,0 +1,150 @@
+import { getWorkspaceStorageRolloutState } from '@tuturuuu/storage-core/workspace-storage-migration';
+import { createClient } from '@tuturuuu/supabase/next/server';
+import type { TypedSupabaseClient } from '@tuturuuu/supabase/types';
+import FeatureSummary from '@tuturuuu/ui/custom/feature-summary';
+import { CustomDataTable } from '@tuturuuu/ui/custom/tables/custom-data-table';
+import { Separator } from '@tuturuuu/ui/separator';
+import { getWorkspace, verifySecret } from '@tuturuuu/utils/workspace-helper';
+import type { Metadata } from 'next';
+import { notFound } from 'next/navigation';
+import { connection } from 'next/server';
+import { getTranslations } from 'next-intl/server';
+import { getWorkspaceSecretsAccess } from '@/legacy-api-routes/workspaces/[wsId]/secrets/access';
+import { secretColumns } from './columns';
+import SecretForm from './form';
+import { PeriodicReportDeliveryReadiness } from './periodic-report-delivery-readiness';
+import { StorageRolloutPanel } from './storage-rollout-panel';
+
+export const metadata: Metadata = {
+  title: 'Secrets',
+  description:
+    'Manage Secrets in the Workspace Settings area of your Tuturuuu workspace.',
+};
+
+interface Props {
+  params: Promise<{
+    wsId: string;
+  }>;
+  searchParams: Promise<{
+    q?: string;
+    page?: string;
+    pageSize?: string;
+  }>;
+}
+
+export default async function WorkspaceSecretsPage({
+  params,
+  searchParams,
+}: Props) {
+  await connection();
+
+  const { wsId: id } = await params;
+  const workspace = await getWorkspace(id);
+  if (!workspace) notFound();
+  const wsId = workspace?.id;
+
+  const access = await getWorkspaceSecretsAccess(wsId);
+  if (!access.allowed) notFound();
+
+  const { data: secrets, count } = await getSecrets(
+    access.db,
+    wsId,
+    await searchParams
+  );
+  const [rolloutState, globalGateEnabled, periodicGateEnabled, senderResult] =
+    await Promise.all([
+      getWorkspaceStorageRolloutState(wsId),
+      verifySecret({
+        forceAdmin: true,
+        name: 'ENABLE_EMAIL_SENDING',
+        value: 'true',
+        wsId,
+      }),
+      verifySecret({
+        forceAdmin: true,
+        name: 'ENABLE_REPORT_EMAIL_SENDING',
+        value: 'true',
+        wsId,
+      }),
+      createClient().then((client) =>
+        client
+          .from('workspace_email_credentials')
+          .select('id')
+          .eq('ws_id', wsId)
+          .maybeSingle()
+      ),
+    ]);
+  const t = await getTranslations();
+  const existingSecretNames = secrets
+    .filter((secret) => Boolean(secret.name))
+    .map((secret) => secret.name!);
+
+  return (
+    <>
+      <PeriodicReportDeliveryReadiness
+        existingSecrets={existingSecretNames}
+        globalGateEnabled={globalGateEnabled}
+        periodicGateEnabled={periodicGateEnabled}
+        senderConfigured={Boolean(senderResult.data)}
+        wsId={wsId}
+      />
+      <StorageRolloutPanel
+        wsId={wsId}
+        secrets={secrets}
+        rolloutState={rolloutState}
+      />
+      <FeatureSummary
+        pluralTitle={t('ws-secrets.plural')}
+        singularTitle={t('ws-secrets.singular')}
+        description={t('ws-secrets.description')}
+        createTitle={t('ws-secrets.create')}
+        createDescription={t('ws-secrets.create_description')}
+        form={<SecretForm wsId={wsId} existingSecrets={existingSecretNames} />}
+      />
+      <Separator className="my-4" />
+      <CustomDataTable
+        columnGenerator={secretColumns}
+        namespace="secret-data-table"
+        data={secrets}
+        count={count}
+        defaultVisibility={{
+          id: false,
+          created_at: false,
+        }}
+      />
+    </>
+  );
+}
+
+async function getSecrets(
+  supabase: TypedSupabaseClient,
+  wsId: string,
+  {
+    q,
+    page = '1',
+    pageSize = '10',
+  }: { q?: string; page?: string; pageSize?: string }
+) {
+  const queryBuilder = supabase
+    .from('workspace_secrets')
+    .select('*', {
+      count: 'exact',
+    })
+    .eq('ws_id', wsId)
+    .order('name', { ascending: false });
+
+  if (q) queryBuilder.ilike('name', `%${q}%`);
+
+  if (page && pageSize) {
+    const parsedPage = parseInt(page, 10);
+    const parsedSize = parseInt(pageSize, 10);
+    const start = (parsedPage - 1) * parsedSize;
+    const end = parsedPage * parsedSize;
+    queryBuilder.range(start, end).limit(parsedSize);
+  }
+
+  const { data, error, count } = await queryBuilder;
+  if (error) throw error;
+
+  return { data: data ?? [], count: count ?? 0 };
+}

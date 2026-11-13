@@ -1,0 +1,61 @@
+---
+title: "Teach on Start + Void"
+description: "Native Teach Worker, qualification commands, cutover packet and Vercel rollback."
+updatedAt: "2026-11-09"
+audience: developers
+---
+
+Teach (`apps/teach`) runs as a native TanStack Start app on Vite+ and Void through
+[`@tuturuuu/start-bridge`](/build/devops/start-bridge), produced by the
+[conversion codemod](/build/devops/start-bridge-codemod). All 44 App Router pages
+render unchanged through the generic RSC adapter and every route handler is served
+by the bridge API registry. `next build` (package `build`) remains the Vercel path;
+production publication stays held in `tuturuuu.ci.ts` until a cutover PR.
+
+## Cutover packet
+
+| Item | Value |
+| --- | --- |
+| Worker | `void.config.ts` emits the staging identity (`TUTURUUU_NOINDEX=1`, `workers_dev` on). The `teach-cutover-artifact` job emits a production artifact named `tuturuuu-teach`, with `workers_dev` and preview URLs off, no routes, and `TUTURUUU_NOINDEX=0`. The config declares no routes |
+| Hosts | Root: `teach.tuturuuu.com`. Mount: `tuturuuu.com/teach` |
+| Bindings | `ASSETS` (static assets, worker-first, no SPA fallback) |
+| Vars (names) | `INTERNAL_WEB_API_ORIGIN` (default `https://tuturuuu.com`), `TUTURUUU_NOINDEX` (staging only) |
+| Secrets (names) | `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY`, `SUPABASE_SECRET_KEY`, `TUTURUUU_APP_COORDINATION_SECRET`. Optional integrations keep the names in `apps/teach/env.example` |
+| Build | `bun turbo:local run build --filter=@tuturuuu/teach^...`, then `bun run --cwd apps/teach build:cloudflare`. Output: `dist/server/wrangler.json`, `dist/client` |
+| Routing | Attach only `teach.tuturuuu.com/*`. Do not attach `tuturuuu.com/*` |
+| Prior Vercel deployment | Not recorded in the repository. The release owner captures the production deployment id and DNS record before the flip |
+
+Unlike Track and Tasks, `start-bridge.config.ts` does not set
+`unknownHost: 'reject'`, so the Worker is not restricted to its two declared hosts.
+The cutover artifact keeps `workers_dev` off and declares no routes; attach only the Teach route during the production cutover.
+
+## Rollback
+
+Remove only the `teach.tuturuuu.com/*` Worker route, or restore the captured DNS
+record, so the hostname returns to the captured immutable Vercel deployment. Do not
+rebuild and do not promote the Vercel project. The Worker holds no state; Teach
+data stays in Supabase and Storage, which the rollback does not touch.
+
+## Smoke
+
+```bash
+node scripts/native-cutover/smoke.mjs --origin https://teach.tuturuuu.com --app teach --expect native
+curl -sI https://teach.tuturuuu.com/api/build-info            # 200, no-store
+curl -s -o /dev/null -w '%{http_code}\n' https://teach.tuturuuu.com/          # 200, landing page renders
+curl -s -o /dev/null -w '%{http_code}\n' https://teach.tuturuuu.com/login     # 200, login page renders
+curl -sI https://teach.tuturuuu.com/en/dashboard              # redirects when signed out, never 5xx
+```
+
+Every response carries the Teach SEO robots header and the private cache policy.
+The rollback smoke is the same command with `--expect legacy`.
+
+## Qualification
+
+`teach-cloudflare.yaml` builds the native output, rejects route-tree drift,
+type-checks (`type-check:cloudflare`), seals the emitted Worker with
+`scripts/ci/teach-native-artifact.py` and runs the emitted-Worker suite in workerd
+(`bun run --cwd apps/teach test:runtime`, 7 tests, egress denied). The 404 probe
+uses `/login/__native-smoke-missing__` because every non-public path redirects
+signed-out users to login. `/api/build-info` is public to GET and HEAD through
+`proxy.ts`, with ambient cookies and authorization removed, as in Track and Tasks.
+Heavy builds run on a remote host, not the local hub.

@@ -140,7 +140,13 @@ describe('Meet chunk limiter', () => {
   it('does not charge the limiter for an already completed chunk', async () => {
     const done = { id, status: 'completed' };
     db(openSession, { data: done, error: null });
-    expect(await transcribeMeetChunk(chunkRequest(), params)).toEqual(done);
+    expect(await transcribeMeetChunk(chunkRequest(), params)).toEqual({
+      ...done,
+      erased: false,
+      segments: [],
+      speaker: null,
+      transcript: undefined,
+    });
     expect(mocks.enforce).not.toHaveBeenCalled();
   });
 

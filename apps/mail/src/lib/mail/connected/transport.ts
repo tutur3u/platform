@@ -34,20 +34,24 @@ export async function providerRequest(
     ...init,
     headers,
     cache: 'no-store',
-    redirect: 'error',
+    redirect: 'manual',
     signal: AbortSignal.timeout(30000),
   });
+  if (response.type === 'opaqueredirect') {
+    await response.body?.cancel();
+    throw new MailProviderResponseError(response.status);
+  }
   if (response.status === 401 && (!init.method || init.method === 'GET')) {
     headers.set('Authorization', `Bearer ${await accessToken(account, true)}`);
     response = await fetch(`${base}${path}`, {
       ...init,
       headers,
       cache: 'no-store',
-      redirect: 'error',
+      redirect: 'manual',
       signal: AbortSignal.timeout(30000),
     });
   }
-  if (!response.ok) {
+  if (response.type === 'opaqueredirect' || !response.ok) {
     throw new MailProviderResponseError(response.status);
   }
   return response;

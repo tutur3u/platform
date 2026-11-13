@@ -15,6 +15,18 @@ import { retainRoomChat } from '@tuturuuu/realtime/meet';
 
 export type CallAdmission = 'connecting' | 'waiting' | 'admitted' | 'denied';
 
+/**
+ * Where a call is in its life, derived from the room state and whether this
+ * device has joined. `ended` is the room closing for everyone; leaving locally
+ * is a UI concern and does not change the lifecycle.
+ */
+export type CallLifecycle =
+  | 'preparing'
+  | 'joining'
+  | 'live'
+  | 'ended'
+  | 'error';
+
 export interface CallChatMessage {
   retained?: boolean;
   replayed?: boolean;
@@ -34,6 +46,7 @@ export interface CallState {
   liveAssistant?: { sessionId: string; ownerId: string };
   title?: string;
   roomExpiresAt?: string;
+  maxParticipants?: number;
   ended: boolean;
   settings: MeetRoomSettings;
   approved: MeetApprovedParticipant[];
@@ -126,6 +139,7 @@ export function reduceCallState(
         admission: message.admission === 'waiting' ? 'waiting' : 'admitted',
         admissionReason: undefined,
         roomExpiresAt: message.roomExpiresAt,
+        maxParticipants: message.limits?.maxParticipants,
         error: null,
         remoteTracks: message.tracks
           ? Object.fromEntries(
@@ -262,6 +276,35 @@ export function reduceCallState(
 
     default:
       return state;
+  }
+}
+
+/** The single place the lifecycle is derived from the room's flags. */
+export function selectCallLifecycle(
+  state: Pick<CallState, 'ended' | 'admission'>,
+  joined: boolean
+): CallLifecycle {
+  if (state.ended) return 'ended';
+  if (state.admission === 'denied') return 'error';
+  if (state.admission === 'waiting') return 'joining';
+  if (joined) return 'live';
+  return state.admission === 'connecting' ? 'preparing' : 'joining';
+}
+
+/** Whether a screen for this lifecycle is still waiting on something. */
+export function isCallLifecycleBusy(lifecycle: CallLifecycle): boolean {
+  switch (lifecycle) {
+    case 'preparing':
+    case 'joining':
+      return true;
+    case 'live':
+    case 'ended':
+    case 'error':
+      return false;
+    default: {
+      const unreachable: never = lifecycle;
+      return unreachable;
+    }
   }
 }
 

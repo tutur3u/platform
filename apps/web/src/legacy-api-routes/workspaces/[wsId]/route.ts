@@ -14,6 +14,7 @@ import {
   normalizeWorkspaceId,
   verifyHasSecrets,
 } from '@tuturuuu/utils/workspace-helper';
+import { isReservedWorkspaceHandle } from '@tuturuuu/utils/workspace-handle';
 import { NextResponse } from 'next/server';
 import { z } from 'zod';
 import { CURRENT_USER_APP_SESSION_AUTH } from '@/legacy-api-routes/v1/users/me/session-auth';
@@ -137,12 +138,7 @@ export const PUT = withSessionAuth<{ wsId: string }>(
       const parsedBody = UpdateWorkspaceSchema.parse(body);
       const nextHandle = parsedBody.handle?.toLowerCase();
 
-      if (
-        nextHandle &&
-        ['internal', 'onboarding', 'home', 'login', 'personal'].includes(
-          nextHandle
-        )
-      ) {
+      if (nextHandle && isReservedWorkspaceHandle(nextHandle)) {
         return NextResponse.json(
           { message: 'Workspace handle is reserved' },
           { status: 400 }

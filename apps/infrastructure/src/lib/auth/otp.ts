@@ -504,7 +504,9 @@ export async function verifyOtp(
   }
   const supabase =
     input.client === 'mobile'
-      ? createDetachedClient()
+      ? createDetachedClient({
+          userAgent: suspiciousAgentCheck.userAgent,
+        })
       : await createClient(context.request);
 
   const { data, error } = await supabase.auth.verifyOtp({

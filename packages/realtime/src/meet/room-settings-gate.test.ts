@@ -18,7 +18,10 @@ const guest = meetRealtimeTokenPayloadSchema.parse({
   ...base,
   role: 'speaker',
 });
-const listed = { MEET_AI_ENABLED_WORKSPACE_IDS: ` x, ${wsId.toUpperCase()} ` };
+const listed = {
+  MEET_AI_PROTECTED_WORKSPACE_IDS: '00000000-0000-4000-8000-0000000000ee',
+  MEET_AI_ENABLED_WORKSPACE_IDS: ` ${wsId.toUpperCase()} `,
+};
 const status = (result: unknown) =>
   result instanceof Response ? result.status : 'settings';
 
@@ -28,7 +31,24 @@ describe('room-state settings write (authoritative note-sharing gate)', () => {
       { MEET_AI_DISABLED: 'true' },
       { MEET_AI_DISABLED: 'garbage' },
       { MEET_AI_DISABLED_WORKSPACE_IDS: wsId },
-      { MEET_AI_ENABLED_WORKSPACE_IDS: 'x' },
+      {
+        MEET_AI_PROTECTED_WORKSPACE_IDS: '00000000-0000-4000-8000-0000000000ee',
+        MEET_AI_ENABLED_WORKSPACE_IDS: 'x',
+      },
+      {
+        MEET_AI_PROTECTED_WORKSPACE_IDS: '00000000-0000-4000-8000-0000000000ee',
+        MEET_AI_ENABLED_WORKSPACE_IDS: `x, ${wsId}`,
+      },
+      {
+        MEET_AI_PROTECTED_WORKSPACE_IDS: '00000000-0000-4000-8000-0000000000ee',
+        MEET_AI_ENABLED_WORKSPACE_IDS: '',
+      },
+      {
+        MEET_AI_PROTECTED_WORKSPACE_IDS: '00000000-0000-4000-8000-0000000000ee',
+        MEET_AI_ENABLED_WORKSPACE_IDS: '*',
+      },
+      {},
+      undefined,
     ]) {
       for (const body of [
         { shareNotes: true },
@@ -50,14 +70,18 @@ describe('room-state settings write (authoritative note-sharing gate)', () => {
     if (result instanceof Response)
       expect(await result.text()).toBe('Meet AI is temporarily unavailable');
   });
-  it('allows enabling with no configuration', () => {
-    const result = resolveRoomSettingsPatch(
-      { shareNotes: true },
-      undefined,
-      host,
-      undefined
-    );
-    expect(result).toMatchObject({ shareNotes: true });
+  it('allows enabling only for an explicitly listed workspace', () => {
+    expect(
+      resolveRoomSettingsPatch({ shareNotes: true }, undefined, host, listed)
+    ).toMatchObject({ shareNotes: true });
+    expect(
+      status(
+        resolveRoomSettingsPatch({ shareNotes: true }, undefined, host, {
+          ...listed,
+          MEET_AI_DISABLED: 'true',
+        })
+      )
+    ).toBe(403);
   });
   it('always allows turning sharing off and unrelated settings', () => {
     expect(
@@ -89,10 +113,13 @@ describe('room-state settings write (authoritative note-sharing gate)', () => {
   it('derives command eligibility from the injected binding only', () => {
     const message = { type: 'presence.join' as const };
     expect(roomCommand(message, host, listed).notesEligible).toBe(true);
-    expect(roomCommand(message, host, undefined).notesEligible).toBe(true);
+    expect(roomCommand(message, host, undefined).notesEligible).toBe(false);
+    expect(roomCommand(message, host, {}).notesEligible).toBe(false);
     expect(
-      roomCommand(message, host, { MEET_AI_ENABLED_WORKSPACE_IDS: 'x' })
-        .notesEligible
+      roomCommand(message, host, {
+        MEET_AI_PROTECTED_WORKSPACE_IDS: '00000000-0000-4000-8000-0000000000ee',
+        MEET_AI_ENABLED_WORKSPACE_IDS: 'x',
+      }).notesEligible
     ).toBe(false);
   });
 });

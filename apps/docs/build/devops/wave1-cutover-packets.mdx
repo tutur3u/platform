@@ -1,0 +1,131 @@
+---
+title: "Wave-1 cutover packets: Calendar, Mail, Apps, Meet, Roadmap"
+description: "Per-app Worker identity, routes, bindings, build command, Vercel rollback target and smoke commands for the wave-1 Cloudflare cutover."
+updatedAt: "2026-11-09"
+audience: developers
+---
+
+Each packet is what the release operator needs to flip one app from Vercel to its
+native Cloudflare Worker, and to flip it back. Provider writes (DNS, routes,
+custom domains, aliases, deployments) stay with the release operator; the source
+only produces the sealed Worker bytes. Secret values never appear here, only names.
+
+## Common
+
+- Build (CI parity): `bun turbo:local run build --filter=@tuturuuu/<app> --concurrency=2`, then
+  `node scripts/ci/wave1-native-artifact.mjs prepare <app> production <sha> <workers-subdomain>`,
+  `node scripts/ci/wave1-native-runtime.mjs <app> production <sha>` (needs `CI=true`) and
+  `node scripts/ci/wave1-native-publish.mjs dry-run <app> production <sha>`.
+- The production publication profile (`scripts/ci/wave1-native-profiles.json`) uploads a
+  route-free Worker (`workers_dev: false`, `routes: []`). Binding the canonical host is a
+  separate provider step, so uploading never moves traffic.
+- Production publication is gated by `productionPublicationPolicy` in `tuturuuu.ci.ts`
+  and the `wave1-native-production.yaml` dispatch, which lists `calendar`, `mail` and
+  `apps`. All three are admitted. Each run uses the protected GitHub environment
+  `wave1-<app>-production` (`publish` only succeeds when `PUBLICATION_ENVIRONMENT` equals that
+  exact name) and must be dispatched from the `production` ref.
+- Environments the release owner creates (restrict each to the `production` branch and add a
+  required reviewer): `wave1-calendar-production`,
+  `wave1-mail-production`, `wave1-apps-production`. Each holds the same four secrets,
+  by name: `PRODUCTION_SUPABASE_URL`, `PRODUCTION_SUPABASE_PUBLISHABLE_KEY` (public build
+  inputs), `WAVE1_PRODUCTION_CLOUDFLARE_READ_TOKEN` (read-only topology, used by the
+  preflight and verify steps) and `WAVE1_PRODUCTION_CLOUDFLARE_API_TOKEN` (upload only, used
+  by the upload step). The per-app Worker secrets listed below are set on the Worker, not
+  in GitHub.
+- Legacy `vercel-production-mail.yaml` and `vercel-production-apps.yaml` are disabled in
+  `tuturuuu.ci.ts`, like Calendar and Meet: Vercel can no longer build either app.
+- Tasks and Track are not wave-1 profile apps. Their `mail-calendar-tasks-builds.yaml`
+  (`tasks-cutover-artifact`) and `track-cloudflare.yaml` (`track-cutover-artifact`) jobs
+  already rewrite the emitted config to the production Worker names `tuturuuu-tasks` and
+  `tuturuuu-track` (route-free, `workers_dev` and `preview_urls` off) and upload the
+  artifact for an operator `wrangler deploy`. They need no environment and have no
+  production publisher job.
+- Rollback: Vercel can no longer redeploy `calendar`, `mail` or `apps` from `main`. Their build
+  command now emits a native Worker and Vercel fails with `NEXT_OUTPUT_DIR_MISSING`, so the
+  rollback target is the retained READY deployment below, restored by moving the alias.
+  Never delete these deployments until a full release cycle has run on the Worker.
+- Smoke, after the flip, per host `<host>`:
+
+  ```sh
+  curl -sS -o /dev/null -w '%{http_code}\n' https://<host>/            # expect 200 or the login redirect 307, never 5xx
+  curl -sS -D - -o /dev/null https://<host>/login | head -1             # expect 200 or 307 to tuturuuu.com/login
+  curl -sS https://<host>/api/build-info                                # expect the exact source sha and runtime native
+  ```
+
+  A passing smoke shows `server: cloudflare` and no `x-vercel-id` header.
+
+## Verified at `506c1ea9`
+
+The full production-profile sequence (build, seal, original-bytes workerd acceptance,
+upload-limit dry-run, final seal) passes on an isolated checkout for these apps:
+
+| App | Script bytes | Gzip bytes | Modules |
+| --- | --- | --- | --- |
+| Calendar | 23181018 | 3315032 | 221 |
+| Mail | 6123439 | 1958325 | 103 |
+| Apps | 2355083 | 567748 | 25 |
+
+Every size is inside the recorded paid-plan limits (64 MiB script). Mail and Apps runtime
+acceptance returns `200` for `GET`/`HEAD /api/build-info`, `405` for `POST`, and `307` for the
+unauthenticated workspace route. Meet and Roadmap use their own workflows and are covered above.
+
+## Calendar
+
+| Field | Value |
+| --- | --- |
+| Worker | `tuturuuu-calendar` |
+| Canonical host | `calendar.tuturuuu.com` |
+| Secrets (names) | `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY`, `SUPABASE_SECRET_KEY`, `GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET`, `GOOGLE_REDIRECT_URI`, `MICROSOFT_CLIENT_ID`, `MICROSOFT_CLIENT_SECRET`, `MICROSOFT_TENANT_ID`, `CRON_SECRET`; optional `TUTURUUU_APP_COORDINATION_SECRET` |
+| Bindings | `ASSETS` only; no database, KV, R2 or queue |
+| Publication | Admitted in `tuturuuu.ci.ts`; dispatch `wave1-native-production.yaml` with `app=calendar` from `production` (environment `wave1-calendar-production`) |
+| Vercel rollback | `dpl_EDfFFKFtpxeJ29UUmxZc1VNqLsX2` (`calendar-2zv7iqdve-tuturuuu.vercel.app`, READY, aliased to `calendar.tuturuuu.com`) |
+
+## Mail
+
+| Field | Value |
+| --- | --- |
+| Worker | `tuturuuu-mail` |
+| Canonical host | `mail.tuturuuu.com` |
+| Secrets (names) | `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY`, `SUPABASE_SECRET_KEY`, `TUTURUUU_APP_COORDINATION_SECRET`, `MAIL_CONNECTED_ACCOUNTS_KEY`, `MAIL_R2_ACCOUNT_ID`, `MAIL_R2_ACCESS_KEY_ID`, `MAIL_R2_SECRET_ACCESS_KEY`, `MAIL_CLOUDFLARE_ACCOUNT_ID`, `MAIL_CLOUDFLARE_API_TOKEN`, `MAIL_CLOUDFLARE_INGEST_SECRET` |
+| Resources | Existing R2 bucket `tuturuuu-mail` (retained); the email-routing Worker (`wrangler.email-routing.jsonc`) is a separate deployment and is not touched by this cutover |
+| Publication | Admitted in `tuturuuu.ci.ts`; dispatch `wave1-native-production.yaml` with `app=mail` from `production` (environment `wave1-mail-production`) |
+| Vercel rollback | `dpl_G7VbMYiwb9BhAm9i2FK8N3Udw3s3` (`mail-4qk3m6sdv-tuturuuu.vercel.app`, READY, aliased to `mail.tuturuuu.com`) |
+
+## Apps
+
+| Field | Value |
+| --- | --- |
+| Worker | `tuturuuu-apps` |
+| Canonical host | `apps.tuturuuu.com`; the production profile sets `APPS_CANONICAL_HOST_ENABLED=1`, without which the Worker answers 503 on that host |
+| Secrets (names) | `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY`, `SUPABASE_SECRET_KEY`, `TUTURUUU_APP_COORDINATION_SECRET` |
+| Vars | `INTERNAL_WEB_API_ORIGIN=https://tuturuuu.com`; `/api/*` proxies to Web |
+| Publication | Admitted in `tuturuuu.ci.ts`; dispatch `wave1-native-production.yaml` with `app=apps` from `production` (environment `wave1-apps-production`) |
+| Vercel rollback | `dpl_7jwSj1yvqqtjxagQqsVr8kZ97ByS` (`apps-mlvxr7mpd-tuturuuu.vercel.app`, READY, aliased to `apps.tuturuuu.com`) |
+
+## Meet
+
+`meet.tuturuuu.com` is already served by the `tuturuuu-meet` Worker (`server: cloudflare`,
+anonymous `/` answers 307 to the Web login). Source carries the custom-domain route in
+`apps/meet/void.config.ts`. Bindings: `ASSETS`, `WORKER_SELF_REFERENCE`, `ABUSE_GUARD`
+(service `tuturuuu-abuse-guard`), R2 cache bucket `tuturuuu-meet-cache`,
+`IMAGES`, and the `MEET_LIVE` Durable Object (migration tag `meet-live-v1`). Required secret
+names: `MEET_REALTIME_TOKEN_SECRET`, `NEXT_PUBLIC_SUPABASE_URL`,
+`NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY`, `SUPABASE_SECRET_KEY`, `GOOGLE_GENERATIVE_AI_API_KEY`.
+Meet is not part of the wave-1 profile set: `meet-cloudflare.yaml` validates it on every
+change (native build, emitted-config receipt, restored-artifact acceptance) and its `deploy`
+job publishes from the `production` ref with a deployment marker. Meet AI stays contained (`MEET_AI_DISABLED=true`). Migration changes follow the Meet
+migration serialization and are not part of this packet. Vercel holds no READY production
+deployment for Meet (all recent ones are canceled), so rollback for a Meet regression is the
+previous Worker version, not Vercel.
+
+## Roadmap
+
+`tuturuuu.com/roadmap` is served by the `tuturuuu-roadmap` Worker through Web's proxy
+(`apps/web/src/lib/roadmap-public-proxy.ts`), which fetches the non-redirecting worker origin
+and never forwards cookies or authorization. The Worker also owns the routes
+`tuturuuu.com/roadmap` and `tuturuuu.com/roadmap/*` in `apps/roadmap/void.config.ts`.
+
+- Rollback: remove the `isRoadmapPublicPath` branch in `proxy.ts` (Web then serves its own page)
+  or point `ROADMAP_UPSTREAM_ORIGIN` elsewhere; no Worker deletion is needed.
+- Smoke: `curl -sS -L --max-redirs 3 -o /dev/null -w '%{http_code}\n' https://tuturuuu.com/roadmap`
+  expects `200`; `https://tuturuuu.com/vi/roadmap` expects one redirect to `/roadmap`.

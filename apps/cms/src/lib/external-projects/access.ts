@@ -50,14 +50,13 @@ export function hasRootExternalProjectsAdminPermission(
   return permissions.containsPermission('manage_external_projects');
 }
 
-function hasWorkspaceExternalProjectPermission(
-  permissions: PermissionsResult | null
-) {
+export function hasCmsEditPermission(permissions: PermissionsResult | null) {
   if (!permissions) return false;
 
   return (
     permissions.containsPermission('manage_external_projects') ||
-    permissions.containsPermission('publish_external_projects')
+    permissions.containsPermission('publish_external_projects') ||
+    permissions.containsPermission('edit_external_projects')
   );
 }
 
@@ -288,8 +287,7 @@ async function resolveCmsWorkspaceAccess(rawWsId: string) {
     !isInternalWorkspace &&
     binding.enabled &&
     Boolean(binding.canonical_project) &&
-    (hasWorkspaceExternalProjectPermission(workspacePermissions) ||
-      isRootAdmin);
+    (hasCmsEditPermission(workspacePermissions) || isRootAdmin);
   const canAccessConnectedChat =
     hasConnectedChat && hasCmsConnectedChatReadPermission(workspacePermissions);
 
@@ -298,6 +296,13 @@ async function resolveCmsWorkspaceAccess(rawWsId: string) {
     canAccessAdmin: isRootAdmin && isInternalWorkspace,
     canAccessConnectedChat,
     canAccessWorkspace,
+    canPublishPages:
+      canAccessWorkspace &&
+      (isRootAdmin ||
+        hasAnyPermission(workspacePermissions, [
+          'manage_external_projects',
+          'publish_external_projects',
+        ])),
     isInternalWorkspace,
     isRootAdmin,
     normalizedWorkspaceId,

@@ -12,7 +12,7 @@
   },
   "dependencies": {
     "esbuild-wasm": "0.28.2",
-    "glob": "^13.0.6"
+    "glob": "^14.0.4"
   },
   "peerDependencies": {
     "next": ">=16.3.0",

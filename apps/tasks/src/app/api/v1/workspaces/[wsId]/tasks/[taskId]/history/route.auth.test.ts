@@ -8,7 +8,10 @@ const PERSONAL_WS_ID = '44444444-4444-4444-8444-444444444444';
 const mocks = vi.hoisted(() => ({
   authenticatedSupabase: {
     rpc: vi.fn(),
+    from: vi.fn(),
   },
+  profileSelect: vi.fn(),
+  profileIn: vi.fn(),
   normalizeWorkspaceId: vi.fn(),
   resolveSessionAuthContext: vi.fn(),
 }));
@@ -34,6 +37,14 @@ vi.mock('@/lib/api-auth', () => ({
 describe('task history API app-session auth', () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    mocks.authenticatedSupabase.from.mockReturnValue({
+      select: mocks.profileSelect,
+    });
+    mocks.profileSelect.mockReturnValue({ in: mocks.profileIn });
+    mocks.profileIn.mockResolvedValue({
+      data: [{ id: USER_ID, display_name: 'Public Task User' }],
+      error: null,
+    });
     mocks.normalizeWorkspaceId.mockImplementation(async (wsId: string) =>
       wsId === 'personal' ? PERSONAL_WS_ID : wsId
     );
@@ -55,7 +66,7 @@ describe('task history API app-session auth', () => {
           new_value: 'high',
           metadata: {},
           user_id: USER_ID,
-          user_display_name: 'Task User',
+          user_display_name: 'private@example.com',
           user_avatar_url: null,
           task_name: 'Task',
           total_count: 1,
@@ -98,9 +109,18 @@ describe('task history API app-session auth', () => {
         p_ws_id: WS_ID,
       }
     );
+    expect(mocks.authenticatedSupabase.from).toHaveBeenCalledWith('users');
+    expect(mocks.profileSelect).toHaveBeenCalledWith('id, display_name');
+    expect(mocks.profileIn).toHaveBeenCalledWith('id', [USER_ID]);
     await expect(response.json()).resolves.toMatchObject({
       count: 1,
-      history: [{ id: 'history-1', new_value: 'high' }],
+      history: [
+        {
+          id: 'history-1',
+          new_value: 'high',
+          user: { name: 'Public Task User' },
+        },
+      ],
       task: { id: TASK_ID, name: 'Task' },
     });
   });
@@ -132,5 +152,44 @@ describe('task history API app-session auth', () => {
         p_ws_id: PERSONAL_WS_ID,
       }
     );
+  });
+  it('fails closed when public profile lookup fails', async () => {
+    mocks.profileIn.mockResolvedValue({
+      data: null,
+      error: { message: 'unavailable' },
+    });
+    const { GET } = await import('./route.js');
+    const response = await GET(new Request('http://localhost/history'), {
+      params: Promise.resolve({ taskId: TASK_ID, wsId: WS_ID }),
+    });
+    expect(response.status).toBe(500);
+    expect(await response.json()).toEqual({
+      error: 'Failed to fetch history profiles',
+    });
+  });
+
+  it('uses Unknown when the public profile is unavailable', async () => {
+    mocks.profileIn.mockResolvedValue({ data: [], error: null });
+    const { GET } = await import('./route.js');
+    const response = await GET(new Request('http://localhost/history'), {
+      params: Promise.resolve({ taskId: TASK_ID, wsId: WS_ID }),
+    });
+    expect(response.status).toBe(200);
+    expect(await response.json()).toMatchObject({
+      history: [{ user: { name: 'Unknown' } }],
+    });
+  });
+
+  it('does not look up profiles when task access is denied', async () => {
+    mocks.authenticatedSupabase.rpc.mockResolvedValue({
+      data: null,
+      error: { message: 'Access denied to workspace' },
+    });
+    const { GET } = await import('./route.js');
+    const response = await GET(new Request('http://localhost/history'), {
+      params: Promise.resolve({ taskId: TASK_ID, wsId: WS_ID }),
+    });
+    expect(response.status).toBe(403);
+    expect(mocks.authenticatedSupabase.from).not.toHaveBeenCalled();
   });
 });

@@ -1,6 +1,6 @@
 import { reviseLegalDocument } from './commercial-revisions';
 import { getCommunityPolicy } from './community-policies';
-import { getLegalDocument } from './documents';
+import { getLegalDocument, LEGAL_DOCUMENTS } from './documents';
 import { mobileRevisionCopy } from './mobile-revision-copy';
 import type { LegalDocument, LegalSection } from './types';
 
@@ -88,7 +88,9 @@ export function getLegalRevision(
   const draft =
     kind === 'acceptable-use' || kind === 'community-guidelines'
       ? getCommunityPolicy(kind, locale)
-      : reviseLegalDocument(getLegalDocument(kind, locale));
+      : reviseLegalDocument(
+          LEGAL_DOCUMENTS[locale === 'vi' ? 'vi' : 'en'][kind]
+        );
   if (version === '2026-09-13-draft') return draft;
   const copy = mobileRevisionCopy[draft.locale];
   const sections = [...draft.sections];

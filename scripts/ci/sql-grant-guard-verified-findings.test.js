@@ -81,9 +81,13 @@ test('committed 100400 entries are inactive until the 030000 hardening file exis
     assert.equal(e.requiredMigration, hardening);
     assert.match(e.reason, /^fixed forward by 20261030030000_pin_time/);
   }
-  const files = [...new Set(verifiedFindings.map((e) => e.path))].filter(
-    (f) => f !== hardening
-  );
+  const files = [
+    ...new Set(
+      verifiedFindings.flatMap((e) =>
+        [e.path, e.requiredMigration].filter(Boolean)
+      )
+    ),
+  ].filter((f) => f !== hardening);
   const readFile = (f) => fs.readFileSync(f, 'utf8');
   const run = (list) =>
     evaluateSqlFiles({ files: list, readFile, verifiedFindings });
@@ -134,4 +138,62 @@ test('rollback records admit only source-bound rollback search-path diagnostics'
       .length,
     1
   );
+});
+
+test('committed O5 records require the reviewed final hardening supplier', () => {
+  const fs = require('node:fs');
+  const verifiedFindings = require('./sql-grant-guard-verified-findings');
+  const historical =
+    'apps/database/supabase/migrations/20261109180000_guard_legacy_cross_app_token_uuid.sql';
+  const hardening =
+    'apps/database/supabase/migrations/20261109190001_harden_legacy_cross_app_token_contract.sql';
+  const bound = verifiedFindings.filter((e) => e.path === historical);
+  assert.equal(bound.length, 3);
+  assert.deepEqual(bound.map((e) => e.rule).sort(), [
+    'definer-public',
+    'definer-search-path',
+    'function-acl',
+  ]);
+  for (const e of bound) {
+    assert.equal(e.line, 1);
+    assert.equal(
+      e.fileDigest,
+      '519ceb35caf61da65898895fb208cbf1e3b115a3d91263fdd9d671a331fbbc31'
+    );
+    assert.equal(
+      e.digest,
+      '8e56a8c131891176f26c3a880d3090cbef8212269a5694ca0c38016a8d5b1ad4'
+    );
+    assert.equal(e.class, 'fixed-forward');
+    assert.equal(e.requiredMigration, hardening);
+    assert.ok(e.reason.includes(hardening));
+  }
+  const files = [
+    ...new Set(
+      verifiedFindings.flatMap((e) =>
+        [e.path, e.requiredMigration].filter(Boolean)
+      )
+    ),
+  ];
+  const run = (list) =>
+    evaluateSqlFiles({
+      files: list,
+      readFile: (f) => fs.readFileSync(f, 'utf8'),
+      verifiedFindings,
+    });
+  const present = run(files);
+  assert.deepEqual(
+    present.violations.filter((f) => f.file === historical),
+    []
+  );
+  assert.equal(present.verified.length, verifiedFindings.length);
+  const missing = run(files.filter((f) => f !== hardening));
+  assert.deepEqual(
+    missing.violations
+      .filter((f) => f.file === historical)
+      .map((f) => f.rule)
+      .sort(),
+    bound.map((e) => e.rule).sort()
+  );
+  assert.equal(missing.verified.length, verifiedFindings.length - bound.length);
 });

@@ -4,6 +4,7 @@ import {
   createTasksRequestHandler,
   denyFraming,
   type TasksBridgeHandler,
+  type TasksWorkerEnv,
   tasksMounts,
 } from './worker-request';
 
@@ -40,10 +41,12 @@ function expectParityHeaders(response: Response) {
   );
 }
 
-describe('Tasks Worker request step (root-only, fail-closed)', () => {
+describe('Tasks Worker request step (subdomain root + tuturuuu.com/tasks, fail-closed)', () => {
   it.each([
-    'https://tuturuuu.com/tasks/personal/tasks',
     'https://tuturuuu.com/api/build-info',
+    'https://tuturuuu.com/personal/tasks',
+    'https://tuturuuu.com/tasks-team/x',
+    'https://tuturuuu.com/',
     'https://evil.example/personal/tasks',
     'https://tuturuuu-tasks-vite-staging.someone.workers.dev/',
   ])('answers an unlisted host with a decorated 404: %s', async (url) => {
@@ -55,6 +58,42 @@ describe('Tasks Worker request step (root-only, fail-closed)', () => {
       expectParityHeaders(response);
     }
     expect(createBridge).not.toHaveBeenCalled();
+  });
+
+  it('serves build-info under the tuturuuu.com/tasks mount', async () => {
+    const { createBridge, handle } = setup();
+    for (const url of [
+      'https://tuturuuu.com/tasks/api/build-info',
+      'https://tuturuuu.com/tasks/api/build-info?x=1',
+    ]) {
+      const response = await handle(new Request(url), {}, ctx);
+      expect(response.status).toBe(200);
+      expect(((await response.json()) as { appName: string }).appName).toBe(
+        'tasks'
+      );
+      expectParityHeaders(response);
+    }
+    expect(createBridge).not.toHaveBeenCalled();
+  });
+
+  it('hands mounted pages to the bridge with the mount config', async () => {
+    const { bridge, createBridge, handle } = setup();
+    for (const url of [
+      'https://tuturuuu.com/tasks',
+      'https://tuturuuu.com/tasks?view=board',
+      'https://tuturuuu.com/tasks/personal/tasks',
+    ]) {
+      const response = await handle(new Request(url), {}, ctx);
+      expect(response.status).toBe(200);
+    }
+    expect(createBridge).toHaveBeenCalledTimes(1);
+    expect(createBridge).toHaveBeenCalledWith(
+      expect.objectContaining({
+        mountHosts: ['tuturuuu.com'],
+        basePath: '/tasks',
+      })
+    );
+    expect(bridge).toHaveBeenCalledTimes(3);
   });
 
   it('serves build-info at the subdomain root', async () => {
@@ -295,7 +334,8 @@ describe('Tasks Worker request step (root-only, fail-closed)', () => {
         'tuturuuu-tasks-vite-staging.ops.workers.dev',
         'tasks.tutur3u.com',
       ],
-      mountHosts: [],
+      mountHosts: ['tuturuuu.com'],
+      basePath: '/tasks',
       unknownHost: 'reject',
     });
     expect(createBridge).toHaveBeenCalledTimes(1);
@@ -317,5 +357,256 @@ describe('Tasks Worker request step (root-only, fail-closed)', () => {
 
     expect(response.status).toBe(404);
     expect(createBridge).not.toHaveBeenCalled();
+  });
+});
+
+describe('Tasks document security headers (D87 per-app gate)', () => {
+  const POLICY =
+    "script-src 'nonce-n0nce' 'strict-dynamic'; object-src 'none'; base-uri 'self'; form-action 'self'; frame-ancestors 'none'";
+  const html =
+    (status = 200, csp: string | null = POLICY) =>
+    () =>
+      new Response('<!doctype html><script nonce="n0nce"></script>', {
+        status,
+        headers: {
+          'content-type': 'text/html; charset=utf-8',
+          ...(csp ? { 'content-security-policy': csp } : {}),
+        },
+      });
+  const call = async (
+    url: string,
+    env: Record<string, string> = {},
+    respond = html()
+  ) => {
+    const { handle } = setup(respond);
+    return handle(new Request(url), env as TasksWorkerEnv, ctx);
+  };
+  const enforced = (response: Response) =>
+    response.headers.get('content-security-policy') ?? '';
+  const reported = (response: Response) =>
+    response.headers.get('content-security-policy-report-only') ?? '';
+
+  it('reports the exact target policy (nonce + Trusted Types) on root, mount and 404 HTML', async () => {
+    for (const [url, status, base] of [
+      ['https://tasks.tuturuuu.com/personal', 200, ''],
+      ['https://tuturuuu.com/tasks/personal', 200, '/tasks'],
+      ['https://tuturuuu.com/tasks/missing', 404, '/tasks'],
+    ] as const) {
+      const response = await call(url, {}, html(status));
+      expect(response.status).toBe(status);
+      expect(reported(response)).toBe(
+        `${POLICY}; require-trusted-types-for 'script'; trusted-types dompurify; report-uri ${base}/api/csp-report; report-to csp`
+      );
+      expect(response.headers.get('reporting-endpoints')).toBe(
+        `csp="${base}/api/csp-report"`
+      );
+      // Report-only stage: only framing is enforced.
+      expect(enforced(response)).toBe("frame-ancestors 'none'");
+      expect(response.headers.get('x-frame-options')).toBe('DENY');
+    }
+  });
+
+  it('enforces the script policy with TTR_CSP_TASKS=enforce, still reporting Trusted Types', async () => {
+    const response = await call('https://tasks.tuturuuu.com/personal', {
+      TTR_CSP_TASKS: ' Enforce ',
+    });
+    const policy = enforced(response);
+    for (const directive of [
+      "script-src 'nonce-n0nce' 'strict-dynamic'",
+      "object-src 'none'",
+      "base-uri 'self'",
+      "form-action 'self'",
+      "frame-ancestors 'none'",
+      'report-uri /api/csp-report',
+    ])
+      expect(policy).toContain(directive);
+    expect(policy).not.toContain('require-trusted-types-for');
+    expect(reported(response)).toContain('trusted-types dompurify');
+  });
+
+  it('enforces Trusted Types only together with the script policy', async () => {
+    const both = await call('https://tasks.tuturuuu.com/personal', {
+      TTR_CSP_TASKS: 'enforce',
+      TTR_TRUSTED_TYPES_TASKS: 'ENFORCE',
+    });
+    expect(enforced(both)).toContain(
+      "require-trusted-types-for 'script'; trusted-types dompurify"
+    );
+    expect(enforced(both)).not.toContain('allow-duplicates');
+    expect(both.headers.has('content-security-policy-report-only')).toBe(false);
+
+    const ttOnly = await call('https://tasks.tuturuuu.com/personal', {
+      TTR_TRUSTED_TYPES_TASKS: 'enforce',
+    });
+    expect(enforced(ttOnly)).toBe("frame-ancestors 'none'");
+    expect(reported(ttOnly)).toContain('trusted-types dompurify');
+  });
+
+  it('treats typos as report-only', async () => {
+    for (const value of ['enforced', 'on', 'true', '1', '']) {
+      const response = await call('https://tasks.tuturuuu.com/personal', {
+        TTR_CSP_TASKS: value,
+        TTR_TRUSTED_TYPES_TASKS: value,
+      });
+      expect(enforced(response), value).toBe("frame-ancestors 'none'");
+      expect(reported(response), value).toContain('trusted-types dompurify');
+    }
+  });
+
+  it('keeps the policy of HTML forwarded through /api, and of framable paths', async () => {
+    const own = "sandbox; default-src 'none'";
+    for (const url of [
+      'https://tuturuuu.com/tasks/api/cli/auth/copy-token',
+      'https://tasks.tuturuuu.com/api/v1/unsubscribe',
+      'https://tasks.tuturuuu.com/api/v1/workspaces/ws/external-projects/assets/a/webgl/index.html',
+    ]) {
+      const response = await call(url, {}, html(200, own));
+      expect(
+        response.headers.has('content-security-policy-report-only'),
+        url
+      ).toBe(false);
+      expect(enforced(response), url).toContain(own);
+    }
+  });
+
+  it('adds no document policy to non-HTML responses', async () => {
+    const response = await call(
+      'https://tasks.tuturuuu.com/personal',
+      { TTR_CSP_TASKS: 'enforce' },
+      () => Response.json({ ok: true })
+    );
+    expect(response.headers.has('content-security-policy-report-only')).toBe(
+      false
+    );
+  });
+
+  it('serves the static offline page under a same-origin script policy', async () => {
+    const { OFFLINE_PAGE_POLICY, tasksPagePolicy } =
+      await import('./worker-handler');
+    expect(OFFLINE_PAGE_POLICY).toContain("script-src 'self'");
+    expect(OFFLINE_PAGE_POLICY).toContain("form-action 'self'");
+    for (const directive of POLICY.split('; '))
+      expect(tasksPagePolicy('n0nce')).toContain(directive);
+  });
+});
+
+describe('Tasks CSP report collector', () => {
+  it('logs sanitized violations without query strings and answers 204', async () => {
+    const warn = vi.spyOn(console, 'warn').mockImplementation(() => undefined);
+    const { createBridge, handle } = setup();
+    const response = await handle(
+      new Request('https://tuturuuu.com/tasks/api/csp-report', {
+        method: 'POST',
+        headers: { 'content-type': 'application/csp-report' },
+        body: JSON.stringify({
+          'csp-report': {
+            'document-uri':
+              'https://tuturuuu.com/tasks/verify-token?nextUrl=%2Fsecret&token=abc',
+            'blocked-uri': 'trusted-types-sink',
+            'effective-directive': 'require-trusted-types-for',
+            disposition: 'report',
+          },
+        }),
+      }),
+      {},
+      ctx
+    );
+    expect(response.status).toBe(204);
+    expect(createBridge).not.toHaveBeenCalled();
+    const logged = JSON.stringify(warn.mock.calls);
+    expect(logged).toContain('https://tuturuuu.com/tasks/verify-token');
+    expect(logged).not.toContain('token=abc');
+    expect(logged).not.toContain('nextUrl');
+    warn.mockRestore();
+  });
+
+  it('accepts Reporting API batches and ignores junk', async () => {
+    const warn = vi.spyOn(console, 'warn').mockImplementation(() => undefined);
+    const { handle } = setup();
+    const batch = await handle(
+      new Request('https://tasks.tuturuuu.com/api/csp-report', {
+        method: 'POST',
+        headers: { 'content-type': 'application/reports+json' },
+        body: JSON.stringify([
+          {
+            type: 'csp-violation',
+            body: {
+              documentURL: 'https://tasks.tuturuuu.com/p?q=1#f',
+              effectiveDirective: 'script-src-elem',
+            },
+          },
+        ]),
+      }),
+      {},
+      ctx
+    );
+    expect(batch.status).toBe(204);
+    expect(JSON.stringify(warn.mock.calls)).not.toContain('q=1');
+    const junk = await handle(
+      new Request('https://tasks.tuturuuu.com/api/csp-report', {
+        method: 'POST',
+        body: 'not json',
+      }),
+      {},
+      ctx
+    );
+    expect(junk.status).toBe(204);
+    const get = await handle(
+      new Request('https://tasks.tuturuuu.com/api/csp-report'),
+      {},
+      ctx
+    );
+    expect(get.status).toBe(405);
+    warn.mockRestore();
+  });
+});
+
+describe('Tasks CSP report collector limits', () => {
+  it('stops reading a chunked body past 16 KB and logs nothing', async () => {
+    const warn = vi.spyOn(console, 'warn').mockImplementation(() => undefined);
+    const { handle } = setup();
+    const chunk = new TextEncoder().encode('x'.repeat(8 * 1024));
+    let pulled = 0;
+    const body = new ReadableStream<Uint8Array>({
+      pull(controller) {
+        pulled += 1;
+        if (pulled > 64) controller.close();
+        else controller.enqueue(chunk);
+      },
+    });
+    const response = await handle(
+      new Request('https://tasks.tuturuuu.com/api/csp-report', {
+        method: 'POST',
+        body,
+        // Node's Request needs `duplex` for a stream body.
+        duplex: 'half',
+      } as RequestInit),
+      {},
+      ctx
+    );
+    expect(response.status).toBe(204);
+    expect(pulled).toBeLessThan(10);
+    expect(warn).not.toHaveBeenCalled();
+    warn.mockRestore();
+  });
+
+  it('never logs script samples, which can carry inline code', async () => {
+    const warn = vi.spyOn(console, 'warn').mockImplementation(() => undefined);
+    const { handle } = setup();
+    await handle(
+      new Request('https://tasks.tuturuuu.com/api/csp-report', {
+        method: 'POST',
+        body: JSON.stringify({
+          'csp-report': {
+            'document-uri': 'https://tasks.tuturuuu.com/p',
+            'script-sample': 'secretInlineCode()',
+          },
+        }),
+      }),
+      {},
+      ctx
+    );
+    expect(JSON.stringify(warn.mock.calls)).not.toContain('secretInlineCode');
+    warn.mockRestore();
   });
 });

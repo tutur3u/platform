@@ -29,6 +29,11 @@ on:
         options:
           - release
           - retry_ios_review
+      force:
+        description: Publish even when the mobile tree matches the last uploaded build
+        required: false
+        default: false
+        type: boolean
 
 permissions:
   actions: read
@@ -44,6 +49,32 @@ jobs:
     with:
       workflow_name: mobile-deploy-stores.yaml
 
+  mobile-store-publish-gate:
+    permissions:
+      actions: read
+      contents: read
+    name: Decide mobile store publish
+    needs: [check-ci]
+    if: github.ref == 'refs/heads/production' && (github.event_name == 'push' || (github.event_name == 'workflow_dispatch' && inputs.mode == 'release')) && needs.check-ci.outputs.should_run == 'true'
+    runs-on: ubuntu-latest
+    outputs:
+      publish: ${{ steps.gate.outputs.publish }}
+      tree: ${{ steps.gate.outputs.tree }}
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+
+      - name: Decide whether the mobile tree changed
+        id: gate
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+          FORCE_STORE_PUBLISH: ${{ github.event_name == 'workflow_dispatch' && inputs.force == true }}
+          HEAD_SHA: ${{ github.sha }}
+        run: node scripts/mobile-deployment/store-publish-gate.mjs
+
   mobile-credentials-preflight:
     permissions:
       actions: read
@@ -51,8 +82,8 @@ jobs:
       deployments: read
       id-token: write
     name: Check mobile deployment credentials
-    needs: [check-ci]
-    if: github.ref == 'refs/heads/production' && (github.event_name == 'push' || (github.event_name == 'workflow_dispatch' && inputs.mode == 'release')) && needs.check-ci.outputs.should_run == 'true'
+    needs: [check-ci, mobile-store-publish-gate]
+    if: github.ref == 'refs/heads/production' && (github.event_name == 'push' || (github.event_name == 'workflow_dispatch' && inputs.mode == 'release')) && needs.check-ci.outputs.should_run == 'true' && needs.mobile-store-publish-gate.outputs.publish == 'true'
     runs-on: ubuntu-latest
     environment: mobile-store-beta
     outputs:
@@ -157,8 +188,8 @@ jobs:
       deployments: read
       id-token: write
     name: Publish Android to Google Play internal
-    needs: [check-ci, mobile-credentials-preflight]
-    if: github.ref == 'refs/heads/production' && (github.event_name == 'push' || (github.event_name == 'workflow_dispatch' && inputs.mode == 'release')) && needs.check-ci.outputs.should_run == 'true' && needs.mobile-credentials-preflight.result == 'success'
+    needs: [check-ci, mobile-store-publish-gate, mobile-credentials-preflight]
+    if: github.ref == 'refs/heads/production' && (github.event_name == 'push' || (github.event_name == 'workflow_dispatch' && inputs.mode == 'release')) && needs.check-ci.outputs.should_run == 'true' && needs.mobile-store-publish-gate.outputs.publish == 'true' && needs.mobile-credentials-preflight.result == 'success'
     runs-on: ubuntu-latest
     timeout-minutes: 90
     environment: mobile-store-beta
@@ -183,7 +214,7 @@ jobs:
           bun-version: 1.4.4
 
       - name: Setup Java
-        uses: actions/setup-java@b843ebf9b913146b38da2eaa7aeddf76074ae1ad # v6.1.0
+        uses: actions/setup-java@77dd5b2ce225ea11469928ac317850245a74ae78 # v6.2.0
         with:
           distribution: temurin
           java-version: 17
@@ -305,8 +336,8 @@ jobs:
       deployments: read
       id-token: write
     name: Upload iOS to TestFlight
-    needs: [check-ci, mobile-credentials-preflight]
-    if: github.ref == 'refs/heads/production' && (github.event_name == 'push' || (github.event_name == 'workflow_dispatch' && inputs.mode == 'release')) && needs.check-ci.outputs.should_run == 'true' && needs.mobile-credentials-preflight.result == 'success'
+    needs: [check-ci, mobile-store-publish-gate, mobile-credentials-preflight]
+    if: github.ref == 'refs/heads/production' && (github.event_name == 'push' || (github.event_name == 'workflow_dispatch' && inputs.mode == 'release')) && needs.check-ci.outputs.should_run == 'true' && needs.mobile-store-publish-gate.outputs.publish == 'true' && needs.mobile-credentials-preflight.result == 'success'
     runs-on: macos-latest
     timeout-minutes: 120
     environment: mobile-store-beta
@@ -571,6 +602,36 @@ jobs:
           rm -f "$RUNNER_TEMP/mobile-deployment-ios.json"
           rm -f "$RUNNER_TEMP/mobile-deployment-ios-oidc.json"
 
+
+  record-mobile-store-tree:
+    permissions:
+      actions: read
+      contents: read
+    name: Record uploaded mobile tree
+    needs:
+      [
+        mobile-store-publish-gate,
+        publish-android-internal,
+        publish-ios-testflight,
+      ]
+    if: always() && needs.mobile-store-publish-gate.outputs.publish == 'true' && (needs.publish-ios-testflight.result == 'success' || needs.publish-android-internal.result == 'success')
+    runs-on: ubuntu-latest
+    steps:
+      - name: Write the uploaded mobile tree
+        env:
+          TREE: ${{ needs.mobile-store-publish-gate.outputs.tree }}
+        run: |
+          set -euo pipefail
+          test -n "$TREE"
+          printf 'tree %s\n' "$TREE" > "$RUNNER_TEMP/mobile-store-uploaded-tree.txt"
+
+      - name: Upload the mobile tree hash
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: mobile-store-uploaded-tree
+          path: ${{ runner.temp }}/mobile-store-uploaded-tree.txt
+          if-no-files-found: error
+          retention-days: 90
 
   retry-ios-testflight-review:
     permissions:

@@ -24,6 +24,7 @@ interface UseApprovalsOptions {
 }
 
 interface PaginatedResult<T> {
+  bulkApprovalEnabled?: boolean;
   items: T[];
   totalCount: number;
   totalPages: number;
@@ -35,6 +36,7 @@ interface SessionStats {
 }
 
 interface UseApprovalsResult {
+  bulkApprovalEnabled: boolean;
   items: ApprovalItem[];
   totalCount: number;
   totalPages: number;
@@ -315,9 +317,21 @@ export function useApprovals({
         const data = await response.json();
         throw new Error(data.message || tCommon('error'));
       }
+      const data: { approvedCount?: number; skippedEmptyCount?: number } =
+        await response.json();
+      return data;
     },
-    onSuccess: async () => {
-      toast.success(t('actions.allApproved'));
+    onSuccess: async (data) => {
+      toast.success(
+        kind === 'reports' &&
+          typeof data.approvedCount === 'number' &&
+          typeof data.skippedEmptyCount === 'number'
+          ? t('actions.reportApprovalSummary', {
+              approved: data.approvedCount,
+              skipped: data.skippedEmptyCount,
+            })
+          : t('actions.allApproved')
+      );
       setDetailItem(null);
       setApproveAllProgress(null);
       await queryClient.invalidateQueries({
@@ -457,6 +471,10 @@ export function useApprovals({
     setRejectReason,
     pendingItemIds,
     totalPendingCount: totalCount,
+    bulkApprovalEnabled:
+      kind === 'posts' ||
+      (!reportsQuery.isError &&
+        reportsQuery.data?.bulkApprovalEnabled === true),
     closeRejectDialog,
     approveItem: approveMutation.mutate,
     unapproveItem: unapproveMutation.mutate,

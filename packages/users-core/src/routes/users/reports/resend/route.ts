@@ -1,3 +1,5 @@
+import { REPORT_FEEDBACK_REQUIRED } from '../../../../features/reports/report-feedback';
+import { countReportsWithoutFeedback } from '../feedback-readiness';
 import { reserveSecurityBudget } from '@tuturuuu/storage-core/security-budget';
 import { createAdminClient } from '@tuturuuu/supabase/next/server';
 import type { TypedSupabaseClient } from '@tuturuuu/supabase/types';
@@ -299,6 +301,14 @@ export async function POST(request: Request, { params }: Params) {
       );
     if (candidates.length > RESEND_MAX_REPORTS_PER_ACTION)
       return scopeTooLarge();
+
+    const emptyCount = await countReportsWithoutFeedback(
+      sbAdmin,
+      wsId,
+      candidates.map((row) => row.id)
+    );
+    if (emptyCount)
+      return json({ ...REPORT_FEEDBACK_REQUIRED, emptyCount }, 422);
 
     try {
       await reserveResendBudget(reserveSecurityBudget, wsId, candidates.length);

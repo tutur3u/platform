@@ -1,4 +1,5 @@
 import assert from 'node:assert/strict';
+import { randomBytes } from 'node:crypto';
 import { cp, mkdir, mkdtemp, readdir, rm, writeFile } from 'node:fs/promises';
 import { request as httpRequest } from 'node:http';
 import { createRequire } from 'node:module';
@@ -7,10 +8,11 @@ import { join, relative } from 'node:path';
 import test from 'node:test';
 import { fileURLToPath } from 'node:url';
 import { readNativeRuntimeConfig } from '../../../scripts/ci/apps-native-runtime-pointer.mjs';
+import { REQUIRED_RUNTIME_NAMES } from './runtime-environment.ts';
 
 const app = fileURLToPath(new URL('../', import.meta.url));
 const require = createRequire(join(app, 'package.json'));
-const hosts = ['nova.ai.vn', 'nova.tutur3u.com'];
+const hosts = ['nova.ai.vn', 'nova.tutur3u.com', 'nova.tuturuuu.com'];
 const privateRobots = 'noindex, nofollow, nosnippet';
 
 function assertHeaders(response, { asset = false, publicPage = false } = {}) {
@@ -68,6 +70,32 @@ test(
       envFiles: [envFile],
       sendMetrics: false,
       bindings: {
+        // The Worker refuses every request unless each required runtime
+        // binding is present. The values are random per run; the Redis URL is
+        // deliberately not an absolute URL, so guard stores resolve as
+        // unavailable and the header and host checks stay free of egress.
+        ...Object.fromEntries(
+          REQUIRED_RUNTIME_NAMES.map((name) => [
+            name,
+            { type: 'secret_text', value: randomBytes(32).toString('hex') },
+          ])
+        ),
+        NEXT_PUBLIC_SUPABASE_URL: {
+          type: 'plain_text',
+          value: 'https://fixture.supabase.invalid',
+        },
+        NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY: {
+          type: 'plain_text',
+          value: 'sb_publishable_fixture',
+        },
+        UPSTASH_REDIS_REST_URL: {
+          type: 'plain_text',
+          value: 'synthetic-runtime-only',
+        },
+        UPSTASH_REDIS_REST_TOKEN: {
+          type: 'secret_text',
+          value: randomBytes(32).toString('hex'),
+        },
         INTERNAL_WEB_API_ORIGIN: {
           type: 'plain_text',
           value: 'https://central.invalid',
@@ -139,7 +167,7 @@ test(
         `${host} headers cover pages, APIs and method-limited assets`,
         async () => {
           const root = await get(host, '/');
-          assert.equal(root.status, 200);
+          assert.equal(root.status, 200, root.body.toString());
           assertHeaders(root, { publicPage: host === hosts[0] });
           const info = await get(host, '/api/build-info');
           assert.equal(info.status, 200);
@@ -180,7 +208,6 @@ test(
       'tuturuuu.com',
       'nova.ai.vn.attacker.invalid',
       'unknown.invalid',
-      'nova.tuturuuu.com',
     ]) {
       const rejected = await get(host, '/nova');
       assert.equal(rejected.status, 404);

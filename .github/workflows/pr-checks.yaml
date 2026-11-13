@@ -8,7 +8,7 @@ permissions:
   contents: read
 
 concurrency:
-  group: cheap-pr-checks-${{ github.workflow }}-${{ github.event_name }}-${{ github.event.pull_request.number || github.ref }}-${{ (github.run_attempt > 1 || (github.event_name != 'pull_request' && github.event_name != 'pull_request_target' && (github.event_name != 'push' || github.ref == 'refs/heads/production' || startsWith(github.ref, 'refs/heads/release-please--branches--')))) && format('{0}-{1}-{2}', github.sha, github.run_id, github.run_attempt) || 'latest' }}${{ (github.event_name == 'pull_request' && (github.event.action == 'labeled' || github.event.action == 'unlabeled') && github.event.label.name != 'ready-for-ci') && format('-metadata-{0}-{1}', github.run_id, github.run_attempt) || '' }}${{ github.event_name == 'pull_request' && !contains(github.event.pull_request.labels.*.name, 'ready-for-ci') && '-unadmitted' || '' }}
+  group: ${{ ((github.event_name == 'pull_request' || github.event_name == 'pull_request_target') && github.run_attempt == 1 && !(github.event_name == 'pull_request' && (github.event.action == 'labeled' || github.event.action == 'unlabeled') && github.event.label.name != 'ready-for-ci')) && format('{0}-pr-{1}', github.workflow, github.event.pull_request.number) || format('cheap-pr-checks-{0}-{1}-{2}-{3}{4}{5}', github.workflow, github.event_name, github.event.pull_request.number || github.ref, (github.run_attempt > 1 || (github.event_name != 'pull_request' && github.event_name != 'pull_request_target' && (github.event_name != 'push' || github.ref == 'refs/heads/production' || startsWith(github.ref, 'refs/heads/release-please--branches--')))) && format('{0}-{1}-{2}', github.sha, github.run_id, github.run_attempt) || 'latest', (github.event_name == 'pull_request' && (github.event.action == 'labeled' || github.event.action == 'unlabeled') && github.event.label.name != 'ready-for-ci') && format('-metadata-{0}-{1}', github.run_id, github.run_attempt) || '', github.event_name == 'pull_request' && !contains(github.event.pull_request.labels.*.name, 'ready-for-ci') && '-unadmitted' || '') }}
   cancel-in-progress: ${{ (!(github.run_attempt > 1) && (github.event_name == 'pull_request' || github.event_name == 'pull_request_target' || (github.event_name == 'push' && github.ref != 'refs/heads/production' && !startsWith(github.ref, 'refs/heads/release-please--branches--')))) && !(github.event_name == 'pull_request' && (github.event.action == 'labeled' || github.event.action == 'unlabeled') && github.event.label.name != 'ready-for-ci') }}
 
 jobs:
@@ -21,14 +21,16 @@ jobs:
       contents: read
       pull-requests: read
     outputs:
-      oxc: ${{ steps.paths.outputs.oxc }}
-      i18n: ${{ steps.paths.outputs.i18n }}
-      docs: ${{ steps.paths.outputs.docs }}
-      migrations: ${{ steps.paths.outputs.migrations }}
-      mobile: ${{ steps.paths.outputs.mobile }}
-      plugin: ${{ steps.paths.outputs.plugin }}
+      # The string false stays false. A missing result selects the check.
+      oxc: ${{ steps.paths.outputs.oxc || 'true' }}
+      i18n: ${{ steps.paths.outputs.i18n || 'true' }}
+      docs: ${{ steps.paths.outputs.docs || 'true' }}
+      migrations: ${{ steps.paths.outputs.migrations || 'true' }}
+      mobile: ${{ steps.paths.outputs.mobile || 'true' }}
+      plugin: ${{ steps.paths.outputs.plugin || 'true' }}
     steps:
       - name: Read the shared check map
+        continue-on-error: true
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           persist-credentials: false
@@ -38,9 +40,11 @@ jobs:
             /scripts/ci/check-map.json
       - name: Project the shared map for CI
         id: map
+        continue-on-error: true
         run: node scripts/ci/check-map.js --ci-filters
       - name: Select affected checks
         id: paths
+        continue-on-error: true
         uses: dorny/paths-filter@ceb8a2b8f2d89434be7ff52d3de7ec3738c5cc9d # v4.0.3
         with:
           filters: ${{ steps.map.outputs.filters }}
@@ -66,6 +70,31 @@ jobs:
           else
             echo "✅ Branch name follows convention: $BRANCH_NAME"
           fi
+
+  commit-trailers:
+    name: Check commit trailers
+    if: github.event_name != 'pull_request' || (github.event.action != 'labeled' && github.event.action != 'unlabeled') || github.event.label.name == 'ready-for-ci'
+    runs-on: ubuntu-latest
+    timeout-minutes: 3
+    permissions:
+      contents: read
+      pull-requests: read
+    steps:
+      - name: Read the trailer check
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+          fetch-depth: 1
+          sparse-checkout-cone-mode: false
+          sparse-checkout: |
+            /scripts/ci/commit-trailer-check.js
+      - name: Reject Co-authored-by trailers
+        env:
+          GH_TOKEN: ${{ github.token }}
+          PR: ${{ github.event.pull_request.number }}
+        run: |
+          set -euo pipefail
+          gh api --paginate "repos/${GITHUB_REPOSITORY}/pulls/${PR}/commits" --jq '.[] | .commit.message + "\u0000"' | node scripts/ci/commit-trailer-check.js
 
   staging-hosts:
     name: Staging cookie-domain isolation
@@ -109,7 +138,7 @@ jobs:
 
   oxc:
     needs: scope
-    if: needs.scope.outputs.oxc == 'true' && contains(github.event.pull_request.labels.*.name, 'ready-for-ci')
+    if: always() && !cancelled() && (needs.scope.result == 'failure' || needs.scope.result == 'cancelled' || needs.scope.outputs.oxc == 'true') && contains(github.event.pull_request.labels.*.name, 'ready-for-ci')
     uses: ./.github/workflows/oxc-check.yaml
     permissions:
       actions: read
@@ -119,7 +148,7 @@ jobs:
 
   i18n:
     needs: scope
-    if: needs.scope.outputs.i18n == 'true' && contains(github.event.pull_request.labels.*.name, 'ready-for-ci')
+    if: always() && !cancelled() && (needs.scope.result == 'failure' || needs.scope.result == 'cancelled' || needs.scope.outputs.i18n == 'true') && contains(github.event.pull_request.labels.*.name, 'ready-for-ci')
     uses: ./.github/workflows/i18n-check.yaml
     permissions:
       contents: read
@@ -128,7 +157,7 @@ jobs:
 
   docs:
     needs: scope
-    if: needs.scope.outputs.docs == 'true' && contains(github.event.pull_request.labels.*.name, 'ready-for-ci')
+    if: always() && !cancelled() && (needs.scope.result == 'failure' || needs.scope.result == 'cancelled' || needs.scope.outputs.docs == 'true') && contains(github.event.pull_request.labels.*.name, 'ready-for-ci')
     uses: ./.github/workflows/docs-seo-check.yaml
     permissions:
       contents: read
@@ -136,7 +165,7 @@ jobs:
 
   migration-timestamps:
     needs: scope
-    if: needs.scope.outputs.migrations == 'true'
+    if: always() && !cancelled() && (needs.scope.result == 'failure' || needs.scope.result == 'cancelled' || needs.scope.outputs.migrations == 'true')
     uses: ./.github/workflows/check-migration-timestamps.yml
     permissions:
       contents: read
@@ -144,7 +173,7 @@ jobs:
 
   migrations:
     needs: scope
-    if: needs.scope.outputs.migrations == 'true'
+    if: always() && !cancelled() && (needs.scope.result == 'failure' || needs.scope.result == 'cancelled' || needs.scope.outputs.migrations == 'true')
     uses: ./.github/workflows/check-migrations.yml
     permissions:
       contents: read
@@ -152,7 +181,7 @@ jobs:
 
   mobile:
     needs: scope
-    if: needs.scope.outputs.mobile == 'true' && github.base_ref == 'main'
+    if: always() && !cancelled() && (needs.scope.result == 'failure' || needs.scope.result == 'cancelled' || needs.scope.outputs.mobile == 'true') && github.base_ref == 'main'
     uses: ./.github/workflows/mobile-api-mappings.yaml
     permissions:
       contents: read
@@ -160,11 +189,33 @@ jobs:
 
   plugin:
     needs: scope
-    if: needs.scope.outputs.plugin == 'true'
+    if: always() && !cancelled() && (needs.scope.result == 'failure' || needs.scope.result == 'cancelled' || needs.scope.outputs.plugin == 'true')
     uses: ./.github/workflows/codex-plugin.yaml
     permissions:
       contents: read
       deployments: read
+
+  blast-radius:
+    name: Pull request blast radius
+    if: github.event_name != 'pull_request' || (github.event.action != 'labeled' && github.event.action != 'unlabeled') || github.event.label.name == 'ready-for-ci'
+    runs-on: ubuntu-latest
+    timeout-minutes: 3
+    permissions:
+      contents: read
+    steps:
+      - name: Checkout workflow path filters
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+          sparse-checkout-cone-mode: false
+          sparse-checkout: |
+            /.github/workflows
+            /scripts/ci/pr-blast-radius.mjs
+            /scripts/ci/pr-blast-radius.test.mjs
+            /scripts/ci/affected-gate.mjs
+            /scripts/ci/affected-apps.mjs
+      - name: Lock app-local workflow selection
+        run: node --test scripts/ci/pr-blast-radius.test.mjs
 
   gate:
     name: ${{ (github.event_name == 'pull_request' && (github.event.action == 'labeled' || github.event.action == 'unlabeled') && github.event.label.name != 'ready-for-ci') && 'Cheap PR Checks (label event)' || 'Cheap PR Checks' }}
@@ -173,8 +224,10 @@ jobs:
       [
         scope,
         branch-name,
+        commit-trailers,
         staging-hosts,
         feature-flag-lifecycle,
+        blast-radius,
         admitted,
         oxc,
         i18n,
@@ -202,7 +255,9 @@ jobs:
           const selected = {
             scope: full,
             'branch-name': full,
+            'commit-trailers': full,
             'staging-hosts': full,
+            'blast-radius': full,
             // Warning-only: a skip never blocks; a checker crash still fails.
             'feature-flag-lifecycle': false,
             admitted: true,

@@ -112,8 +112,43 @@ concurrency:
   group: ${{ github.workflow }}-${{ github.event_name }}-${{ github.event.pull_request.number || github.ref }}-${{ (github.run_attempt > 1 || (github.event_name != 'pull_request' && github.event_name != 'pull_request_target' && (github.event_name != 'push' || github.ref == 'refs/heads/production' || startsWith(github.ref, 'refs/heads/release-please--branches--')))) && format('{0}-{1}-{2}', github.sha, github.run_id, github.run_attempt) || 'latest' }}${{ github.event_name == 'pull_request' && !contains(github.event.pull_request.labels.*.name, 'ready-for-ci') && '-unadmitted' || '' }}
   cancel-in-progress: ${{ !(github.run_attempt > 1) && (github.event_name == 'pull_request' || github.event_name == 'pull_request_target' || (github.event_name == 'push' && github.ref != 'refs/heads/production' && !startsWith(github.ref, 'refs/heads/release-please--branches--'))) }}
 jobs:
-  check-ci:
+  affected-gate:
+    # Pull requests only: skip the heavy jobs when rewise is unaffected.
+    # Other events never check out or run the gate: they resolve to run=true, so a
+    # gate failure can never block a production deploy. Any error also resolves to run=true.
     if: github.event_name != 'pull_request' || contains(github.event.pull_request.labels.*.name, 'ready-for-ci')
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    timeout-minutes: 5
+    outputs:
+      run: ${{ github.event_name != 'pull_request' && 'true' || steps.app.outputs.run || 'true' }}
+      reason: ${{ steps.app.outputs.reason }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        if: github.event_name == 'pull_request'
+        continue-on-error: true
+        with:
+          fetch-depth: 0
+          filter: blob:none
+          persist-credentials: false
+          sparse-checkout: |
+            /.github/actions/affected-gate/
+            /scripts/ci/affected-apps.mjs
+            /scripts/ci/affected-apps.extra-edges.json
+            /scripts/ci/affected-gate.mjs
+            /apps/*/package.json
+            /packages/*/package.json
+          sparse-checkout-cone-mode: false
+      - id: app
+        if: github.event_name == 'pull_request'
+        continue-on-error: true
+        uses: ./.github/actions/affected-gate
+        with:
+          app: rewise
+  check-ci:
+    needs: affected-gate
+    if: ${{ (needs.affected-gate.outputs.run == 'true') && (github.event_name != 'pull_request' || contains(github.event.pull_request.labels.*.name, 'ready-for-ci')) }}
     uses: ./.github/workflows/ci-check.yml
     permissions:
       contents: read
@@ -123,8 +158,8 @@ jobs:
   # Staging-profile qualification runs on demand until the app declares its
   # signed-out runtime outcomes and its proxy admits /api/build-info.
   native:
-    needs: check-ci
-    if: needs.check-ci.outputs.should_run == 'true' && github.event_name == 'workflow_dispatch'
+    needs: [check-ci, affected-gate]
+    if: ${{ (needs.affected-gate.outputs.run == 'true' && (needs.check-ci.outputs.should_run == 'true' && github.event_name == 'workflow_dispatch')) && (github.event_name != 'pull_request' || contains(github.event.pull_request.labels.*.name, 'ready-for-ci')) }}
     uses: ./.github/workflows/native-start-app.yaml
     permissions:
       contents: read
@@ -147,14 +182,15 @@ jobs:
   # Production-profile Worker + assets + emitted Wrangler config. No deployment
   # and no provider credential: the sealed archive is deployed by hand at cutover.
   cutover-artifact:
-    needs: check-ci
-    if: needs.check-ci.outputs.should_run == 'true' && (github.event_name != 'pull_request' || (github.event.pull_request.head.repo.full_name == github.repository && contains(github.event.pull_request.labels.*.name, 'ready-for-ci')))
+    needs: [check-ci, affected-gate]
+    if: ${{ (needs.affected-gate.outputs.run == 'true' && (needs.check-ci.outputs.should_run == 'true' && (github.event_name != 'pull_request' || (github.event.pull_request.head.repo.full_name == github.repository && contains(github.event.pull_request.labels.*.name, 'ready-for-ci'))))) && (github.event_name != 'pull_request' || contains(github.event.pull_request.labels.*.name, 'ready-for-ci')) }}
     runs-on: ubuntu-latest
     timeout-minutes: 30
     env:
       SOURCE_SHA: ${{ github.event.pull_request.head.sha || github.sha }}
       APPS_SOURCE_SHA: ${{ github.event.pull_request.head.sha || github.sha }}
       REWISE_SOURCE_SHA: ${{ github.event.pull_request.head.sha || github.sha }}
+      TRUSTED: ${{ github.ref == 'refs/heads/main' && (github.event_name == 'push' || github.event_name == 'workflow_dispatch') }}
       VITE_REWISE_NATIVE_PROFILE: production
       NEXT_PUBLIC_SUPABASE_URL: ${{ vars.PRODUCTION_SUPABASE_URL }}
       NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY: ${{ vars.PRODUCTION_SUPABASE_PUBLISHABLE_KEY }}
@@ -192,8 +228,16 @@ jobs:
           PLATFORM_BUILD_ENVIRONMENT: production
         run: bun run --silent scripts/ci/generate-build-metadata.ts
       - name: Build the production Start Worker and assets
-        working-directory: apps/rewise
-        run: bun run build:cloudflare
+        uses: ./.github/actions/run-with-turbo-remote-cache
+        with:
+          command: cd apps/rewise && bun run build:cloudflare
+          token: ''
+          team: ''
+      - name: Remove production server source maps
+        run: find apps/rewise/dist/server -type f -name '*.map' -delete
+      - name: Pre-seal doctor on the production Host header
+        timeout-minutes: 3
+        run: node scripts/ci/pre-seal-doctor.mjs rewise apps/rewise rewise.tuturuuu.com "$SOURCE_SHA" --expect-redirect
       - name: Seal and pack Worker, assets and emitted Wrangler config
         run: |
           python3 scripts/ci/rewise-native-artifact.py config apps/rewise
@@ -215,7 +259,7 @@ jobs:
         run: node --test cloudflare/anonymous-smoke.runtime.mjs
       - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
-          name: rewise-cutover-production-${{ env.SOURCE_SHA }}
+          name: rewise-cutover-${{ env.TRUSTED == 'true' && 'production' || 'fixture' }}-${{ env.SOURCE_SHA }}
           path: ${{ runner.temp }}/rewise-cutover.tar.gz
           retention-days: 7
           if-no-files-found: error

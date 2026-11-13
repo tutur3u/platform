@@ -161,7 +161,8 @@ jobs:
         with:
           app: ${app}
   check-ci:
-    if: github.event_name != 'pull_request' || contains(github.event.pull_request.labels.*.name, 'ready-for-ci')
+    needs: affected-gate
+    if: \${{ (needs.affected-gate.outputs.run == 'true') && (github.event_name != 'pull_request' || contains(github.event.pull_request.labels.*.name, 'ready-for-ci')) }}
     uses: ./.github/workflows/ci-check.yml
     permissions:
       contents: read
@@ -440,14 +441,26 @@ test('emitted ${app} Worker serves its root, mount and unknown paths', {
         (response) => {
           const chunks = [];
           response.on('data', (chunk) => chunks.push(chunk));
-          response.on('end', () =>
+          response.on('end', () => {
+            assert.equal(
+              response.headers['strict-transport-security'],
+              'max-age=63072000',
+              'Every emitted Worker response must enforce HSTS'
+            );
+            assert.equal(
+              response.rawHeaders.filter((name, index) =>
+                index % 2 === 0 && name.toLowerCase() === 'strict-transport-security'
+              ).length,
+              1,
+              'Every emitted Worker response must have exactly one HSTS header'
+            );
             resolve({
               status: response.statusCode ?? 0,
               location: response.headers.location ?? null,
               headers: response.headers,
               body: Buffer.concat(chunks).toString('utf8'),
-            })
-          );
+            });
+          });
         }
       )
         .on('error', reject)

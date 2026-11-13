@@ -3,6 +3,7 @@ import { createHmac } from 'node:crypto';
 import { readFile } from 'node:fs/promises';
 import { chromium } from '@playwright/test';
 import { Miniflare } from 'miniflare';
+import { studioResponse } from './studio-fixture.mjs';
 import { verifyDirectory } from './verify-directory.mjs';
 import { verifyLearning } from './verify-learning.mjs';
 import { verifyShowcase } from './verify-showcase.mjs';
@@ -30,6 +31,8 @@ const mf = new Miniflare({
         AUTH_ORIGIN: 'https://tuturuuu.com',
       },
       outboundService: async (request) => {
+        const studio = await studioResponse(request);
+        if (studio) return studio;
         if (new URL(request.url).pathname === '/api/v1/users/me/profile') {
           assert.match(
             request.headers.get('cookie') ?? '',
@@ -72,7 +75,6 @@ const mf = new Miniflare({
         );
       },
       serviceBindings: {
-        AI: 'mock-ai',
         ASSETS: async (request) => {
           const pathname = new URL(request.url).pathname;
           const asset =
@@ -90,12 +92,6 @@ const mf = new Miniflare({
           });
         },
       },
-    },
-    {
-      name: 'mock-ai',
-      modules: true,
-      scriptPath: './scripts/mock-ai-worker.mjs',
-      compatibilityDate: '2026-06-20',
     },
   ],
 });

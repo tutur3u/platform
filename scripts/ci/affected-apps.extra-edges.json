@@ -5,7 +5,7 @@
   "apps/contacts/src/app/api/v1/workspaces/[wsId]/settings/approvals/pending-summary/": [
     "packages/users-core"
   ],
-  "apps/database/": ["apps/infrastructure"],
+  "apps/database/": ["apps/infrastructure", "packages/feature-flags"],
   "apps/database/scripts/": ["apps/web"],
   "apps/database/supabase/": ["packages/utils"],
   "apps/database/supabase/migrations/": ["apps/web"],
@@ -37,7 +37,7 @@
   "apps/web/e2e/helpers/": ["apps/inventory", "apps/lettin"],
   "apps/web/messages/": ["apps/contacts", "apps/tanstack-web", "packages/ui"],
   "apps/web/src/": ["packages/users-core"],
-  "apps/web/src/lib/seo/": ["packages/utils"],
+  "apps/web/src/lib/seo/": ["apps/gateway", "packages/utils"],
   "packages/internal-api/src/": ["packages/apis", "packages/education-core"],
   "packages/inventory-core/": ["apps/database"],
   "packages/inventory-core/src/lib/infrastructure/employee-sql/": [
@@ -51,6 +51,10 @@
   "packages/types/src/": ["apps/database"],
   "packages/typescript-config/": ["apps/database"],
   "packages/utils/": ["packages/internal-api"],
-  "packages/utils/src/": ["apps/coordination", "apps/meet-realtime"],
+  "packages/utils/src/": [
+    "apps/coordination",
+    "apps/meet-realtime",
+    "apps/roadmap"
+  ],
   "packages/utils/src/internal-accounts/": ["apps/database"]
 }

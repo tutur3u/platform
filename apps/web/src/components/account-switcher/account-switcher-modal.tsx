@@ -13,6 +13,7 @@ import {
 } from '@tuturuuu/ui/dialog';
 import { Input } from '@tuturuuu/ui/input';
 import { Separator } from '@tuturuuu/ui/separator';
+import { describeWebAccountSaveError } from '@tuturuuu/internal-api/auth';
 import { toast } from '@tuturuuu/ui/sonner';
 import { cn } from '@tuturuuu/utils/format';
 import { getInitials } from '@tuturuuu/utils/name-helper';
@@ -113,9 +114,13 @@ export function AccountSwitcherModal({
 
     setIsAddingAccount(true);
     try {
-      await prepareAddAccountAndNavigate({
+      const result = await prepareAddAccountAndNavigate({
         saveCurrentAccount: addAccount,
       });
+
+      if (result.errorCode === 'account_limit') {
+        toast.error(describeWebAccountSaveError(result, t));
+      }
     } catch (error) {
       toast.error(
         t('account_switcher.account_added_error') ||

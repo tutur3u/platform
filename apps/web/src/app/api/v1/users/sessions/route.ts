@@ -1,6 +1,7 @@
 import { resolveAuthenticatedSessionUser } from '@tuturuuu/supabase/next/auth-session-user';
 import { createClient } from '@tuturuuu/supabase/next/server';
 import { connection, type NextRequest, NextResponse } from 'next/server';
+import { userAgentForSessionDisplay } from '@/lib/sessions/session-user-agent';
 
 export async function GET(request: NextRequest) {
   await connection();
@@ -37,7 +38,15 @@ export async function GET(request: NextRequest) {
       );
     }
 
-    const sessions = sessionsResult.data || [];
+    const currentRequestUserAgent = request.headers.get('user-agent');
+    const sessions = (sessionsResult.data || []).map((session) => ({
+      ...session,
+      user_agent: userAgentForSessionDisplay({
+        currentRequestUserAgent,
+        isCurrent: session.is_current,
+        storedUserAgent: session.user_agent,
+      }),
+    }));
     const stats = statsResult.data?.[0] || {
       total_sessions: 0,
       active_sessions: 0,

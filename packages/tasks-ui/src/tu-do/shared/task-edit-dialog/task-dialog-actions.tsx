@@ -25,6 +25,7 @@ import { Tooltip, TooltipContent, TooltipTrigger } from '@tuturuuu/ui/tooltip';
 import { useTranslations } from 'next-intl';
 import { useState } from 'react';
 import { buildWorkspaceTaskUrl } from '../task-url';
+import { withDocumentAppBase } from '../tasks-paths';
 
 interface TaskDialogActionsProps {
   // Mode
@@ -126,7 +127,7 @@ export function TaskDialogActions({
               onClick={() => {
                 // Navigate to board view
                 const boardUrl = `/${wsId}${tasksHref(`/boards/${boardId}`)}`;
-                window.location.href = boardUrl;
+                window.location.href = withDocumentAppBase(boardUrl);
                 setIsMoreMenuOpen(false);
               }}
             >

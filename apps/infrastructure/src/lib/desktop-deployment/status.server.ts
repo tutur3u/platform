@@ -15,7 +15,8 @@ async function readPublicMetadata(path: string): Promise<unknown | null> {
           Accept: 'application/vnd.github+json',
           'X-GitHub-Api-Version': '2022-11-28',
         },
-        redirect: 'error',
+        // workerd rejects redirect: 'error'; a redirect is not ok and reads as unknown.
+        redirect: 'manual',
         signal: AbortSignal.timeout(5000),
         cache: 'no-store',
       }

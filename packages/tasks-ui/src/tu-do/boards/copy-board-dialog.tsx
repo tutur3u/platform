@@ -18,6 +18,7 @@ import { useRouter } from 'next/navigation';
 import { useTranslations } from 'next-intl';
 import { useEffect, useId, useState } from 'react';
 import { isTaskBoardNameExistsError } from '../shared/task-board-errors';
+import { tasksApiPath } from '../shared/tasks-paths';
 
 interface CopyBoardDialogProps {
   board: Pick<WorkspaceTaskBoard, 'id' | 'ws_id' | 'name'>;
@@ -54,7 +55,9 @@ export function CopyBoardDialog({
     setIsLoading(true);
     try {
       const response = await fetch(
-        `/api/v1/workspaces/${board.ws_id}/task-boards/${board.id}/copy`,
+        tasksApiPath(
+          `/api/v1/workspaces/${board.ws_id}/task-boards/${board.id}/copy`
+        ),
         {
           method: 'POST',
           headers: {

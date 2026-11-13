@@ -4,7 +4,9 @@
  * Migration Timestamp Checker
  *
  * This script validates that all Supabase migration files have timestamps
- * that are not in the future. Migration files use the format:
+ * that are not in the future. PR checks scope this rule to added/renamed
+ * paths against their merge base; inherited files still undergo parsing.
+ * Migration files use the format:
  * YYYYMMDDHHMMSS_description.sql
  *
  * The 14-digit timestamp prefix represents when the migration was created.
@@ -343,10 +345,10 @@ function checkMigrationOrder({ cwd = process.cwd(), env = process.env } = {}) {
   };
 }
 
-function reportMigrationOrder(env = process.env) {
+function reportMigrationOrder(env = process.env, suppliedResult) {
   let result;
   try {
-    result = checkMigrationOrder({ env });
+    result = suppliedResult ?? checkMigrationOrder({ env });
   } catch (error) {
     console.error(`Migration order check failed: ${error.message}`);
     return false;
@@ -413,8 +415,22 @@ function main() {
     process.exit(1);
   }
 
-  // Check for future-dated migrations
-  const futureMigrations = results.filter((r) => r.isFuture);
+  // PRs judge only introduced migration paths; inherited dates remain facts.
+  let order;
+  if (process.env.GITHUB_BASE_REF) {
+    try {
+      order = checkMigrationOrder();
+    } catch (error) {
+      console.error(`Migration base comparison failed: ${error.message}`);
+      process.exit(1);
+    }
+  }
+  const introduced = order ? new Set(order.added) : null;
+  const futureMigrations = results.filter(
+    (r) =>
+      r.isFuture &&
+      (!introduced || introduced.has(`${MIGRATIONS_DIR}/${r.filename}`))
+  );
 
   if (futureMigrations.length > 0) {
     console.error('The following migrations have future timestamps:\n');
@@ -432,7 +448,7 @@ function main() {
 
   console.log('All migration timestamps are valid (not in the future).\n');
 
-  if (!reportMigrationOrder()) {
+  if (!reportMigrationOrder(process.env, order)) {
     process.exit(1);
   }
 }

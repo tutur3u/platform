@@ -8,20 +8,25 @@ import test from 'node:test';
 import { fileURLToPath } from 'node:url';
 import { readNativeRuntimeConfig } from '../../../scripts/ci/apps-native-runtime-pointer.mjs';
 import { assertServerArtifact } from './server-artifact-scan.mjs';
+import { assertCentralLoginRedirect } from './central-login-redirect.mjs';
 
 const app = await realpath(fileURLToPath(new URL('../', import.meta.url)));
 const require = createRequire(join(app, 'package.json'));
 const ROOT_HOST = 'rewise.tuturuuu.com';
+// The local Worker receives HTTP; the native /login page has a fixed HTTPS return target.
 const EXPECTED = {
-  '/': { redirect: '/login' },
-  '/login': { redirect: 'https://tuturuuu.com/login' },
+  '/': 'http://rewise.tuturuuu.com/verify-token?nextUrl=%2F',
+  '/?smoke=return':
+    'http://rewise.tuturuuu.com/verify-token?nextUrl=%2F%3Fsmoke%3Dreturn',
+  // The auth proxy handles /login before the page and normalizes the loop to /.
+  '/login': 'http://rewise.tuturuuu.com/verify-token?nextUrl=%2F',
 };
 const SYNTHETIC_SECRETS = {
-  ABUSE_GUARD_BACKEND: 'upstash',
+  ABUSE_GUARD: {},
+  ABUSE_GUARD_KEY_PEPPER: 'synthetic-smoke-only',
+  ABUSE_GUARD_FAMILIES: 'proxy',
   NEXT_PUBLIC_SUPABASE_URL: 'https://rewise-smoke.supabase.invalid',
   NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY: 'sb_publishable_rewise_smoke',
-  UPSTASH_REDIS_REST_URL: 'https://fixture.upstash.invalid',
-  UPSTASH_REDIS_REST_TOKEN: 'synthetic-smoke-only',
   SUPABASE_SECRET_KEY: 'synthetic-smoke-only',
   TUTURUUU_APP_COORDINATION_SECRET: 'synthetic-smoke-only',
 };
@@ -50,10 +55,23 @@ async function startWorker(t, secrets) {
         value: 'https://central.invalid',
       },
       ...Object.fromEntries(
-        Object.entries(secrets).map(([name, value]) => [
-          name,
-          { type: 'plain_text', value },
-        ])
+        Object.entries(secrets).flatMap(([name, value]) =>
+          name === 'ABUSE_GUARD'
+            ? [
+                [
+                  name,
+                  {
+                    type: 'fetcher',
+                    fetcher: async () =>
+                      new Response('{"error":"guard_unavailable"}', {
+                        status: 503,
+                        headers: { 'content-type': 'application/json' },
+                      }),
+                  },
+                ],
+              ]
+            : [[name, { type: 'plain_text', value }]]
+        )
       ),
     },
     build: { bundle: false, processEntrypoint: false },
@@ -119,17 +137,8 @@ test(
   },
   async (t) => {
     const call = await startWorker(t, SYNTHETIC_SECRETS);
-    for (const [path, outcome] of Object.entries(EXPECTED)) {
-      const { status, location } = await call(path);
-      if (typeof outcome === 'number') {
-        assert.equal(status, outcome, path);
-      } else {
-        assert.ok(status >= 300 && status < 400, `${path}: ${status}`);
-        const resolved = new URL(location, `https://${ROOT_HOST}`);
-        const wanted = new URL(outcome.redirect, `https://${ROOT_HOST}`);
-        assert.equal(resolved.host, wanted.host, path);
-        assert.equal(resolved.pathname, wanted.pathname, path);
-      }
+    for (const [path, returnUrl] of Object.entries(EXPECTED)) {
+      assertCentralLoginRedirect(await call(path), returnUrl);
     }
     assert.equal((await call('/', 'unknown.example')).status, 404);
     assert.equal((await call('/', 'tuturuuu.com')).status, 404);

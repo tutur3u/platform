@@ -145,7 +145,7 @@ describe('C1: moving a sent report to another month', () => {
         table: 'external_user_monthly_reports_workspace_view',
         method: 'select',
         args: [
-          'id, user_id, group_id, generation_mode, delivery_status, delivered_at',
+          'id, user_id, group_id, generation_mode, feedback, delivery_status, delivered_at',
         ],
       });
     }

@@ -45,11 +45,19 @@ export function createSyncGraphClient(accessToken: string) {
             throw new Error('Unsafe Microsoft calendar origin');
           const headers = new Headers(context.options?.headers);
           headers.set('Authorization', `Bearer ${accessToken}`);
-          context.response = await providerSyncFetch(context.request, {
+          const response = await providerSyncFetch(context.request, {
             ...context.options,
             headers,
-            redirect: 'error',
+            redirect: 'manual',
           });
+          if (
+            response.type === 'opaqueredirect' ||
+            (response.status >= 300 && response.status < 400)
+          ) {
+            await response.body?.cancel();
+            throw new Error('Microsoft calendar redirects are forbidden');
+          }
+          context.response = response;
         },
       },
     ],

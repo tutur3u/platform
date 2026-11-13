@@ -41,10 +41,11 @@ export async function coordinate(input: CoordinationRequest) {
             },
             body: JSON.stringify(input),
             cache: 'no-store',
-            redirect: 'error',
+            redirect: 'manual',
             signal: AbortSignal.timeout(5000),
           });
-          if (!response.ok) throw new CoordinationUnavailableError();
+          if (response.type === 'opaqueredirect' || !response.ok)
+            throw new CoordinationUnavailableError();
           return coordinationResultSchema.parse(await response.json());
         },
         // Never expose URLs, request bodies, or authorization headers in errors.

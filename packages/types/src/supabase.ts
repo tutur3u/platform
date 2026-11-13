@@ -4538,6 +4538,7 @@ export type Database = {
           id: string;
           last_heartbeat_at: string | null;
           name: string;
+          pool: string;
           resource_limits: NonNullable<Json>;
           status: string;
           updated_at: string;
@@ -4554,6 +4555,7 @@ export type Database = {
           id?: string;
           last_heartbeat_at?: string | null;
           name: string;
+          pool?: string;
           resource_limits?: NonNullable<Json>;
           status?: string;
           updated_at?: string;
@@ -4569,6 +4571,7 @@ export type Database = {
           id?: string;
           last_heartbeat_at?: string | null;
           name?: string;
+          pool?: string;
           resource_limits?: NonNullable<Json>;
           status?: string;
           updated_at?: string;
@@ -7209,6 +7212,34 @@ export type Database = {
           name?: string | null;
           note?: string | null;
           ws_id?: string;
+        };
+        Relationships: [];
+      };
+      ieeai_invite_acceptances: {
+        Row: {
+          accepted_at: string;
+          actor_id: string;
+          app_id: string;
+          invite_id: string;
+          role_ids: string[];
+          workspace_id: string;
+        };
+        ComputedFields: never;
+        Insert: {
+          accepted_at?: string;
+          actor_id: string;
+          app_id: string;
+          invite_id: string;
+          role_ids: string[];
+          workspace_id: string;
+        };
+        Update: {
+          accepted_at?: string;
+          actor_id?: string;
+          app_id?: string;
+          invite_id?: string;
+          role_ids?: string[];
+          workspace_id?: string;
         };
         Relationships: [];
       };
@@ -12920,6 +12951,150 @@ export type Database = {
         };
         Relationships: [];
       };
+      meet_ai_account_fences: {
+        Row: {
+          account_id: string | null;
+          completed_at: string | null;
+          expires_at: string;
+          fenced_at: string;
+          generation: number;
+          id: string;
+          progress_cursor: string | null;
+          reason: string;
+          status: string;
+          subject_digest: string | null;
+          updated_at: string;
+        };
+        ComputedFields: never;
+        Insert: {
+          account_id?: string | null;
+          completed_at?: string | null;
+          expires_at: string;
+          fenced_at?: string;
+          generation?: number;
+          id?: string;
+          progress_cursor?: string | null;
+          reason: string;
+          status?: string;
+          subject_digest?: string | null;
+          updated_at?: string;
+        };
+        Update: {
+          account_id?: string | null;
+          completed_at?: string | null;
+          expires_at?: string;
+          fenced_at?: string;
+          generation?: number;
+          id?: string;
+          progress_cursor?: string | null;
+          reason?: string;
+          status?: string;
+          subject_digest?: string | null;
+          updated_at?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'meet_ai_account_fences_account_id_fkey';
+            columns: ['account_id'];
+            isOneToOne: true;
+            referencedRelation: 'nova_user_challenge_leaderboard';
+            referencedColumns: ['user_id'];
+          },
+          {
+            foreignKeyName: 'meet_ai_account_fences_account_id_fkey';
+            columns: ['account_id'];
+            isOneToOne: true;
+            referencedRelation: 'nova_user_leaderboard';
+            referencedColumns: ['user_id'];
+          },
+        ];
+      };
+      meet_ai_capture_streams: {
+        Row: {
+          account_id: string;
+          anchor_at: string | null;
+          anchor_id: string | null;
+          anchor_sample: number | null;
+          anchor_session_ms: number | null;
+          anchor_uncertainty_ms: number | null;
+          closed_at: string | null;
+          created_at: string;
+          device_epoch: number;
+          final_sample: number | null;
+          gap_count: number;
+          highest_sequence: number | null;
+          id: string;
+          input_processing: string;
+          lease_expires_at: string;
+          session_id: string;
+          state: string;
+          uploaded_count: number;
+        };
+        ComputedFields: never;
+        Insert: {
+          account_id: string;
+          anchor_at?: string | null;
+          anchor_id?: string | null;
+          anchor_sample?: number | null;
+          anchor_session_ms?: number | null;
+          anchor_uncertainty_ms?: number | null;
+          closed_at?: string | null;
+          created_at?: string;
+          device_epoch: number;
+          final_sample?: number | null;
+          gap_count?: number;
+          highest_sequence?: number | null;
+          id?: string;
+          input_processing: string;
+          lease_expires_at: string;
+          session_id: string;
+          state?: string;
+          uploaded_count?: number;
+        };
+        Update: {
+          account_id?: string;
+          anchor_at?: string | null;
+          anchor_id?: string | null;
+          anchor_sample?: number | null;
+          anchor_session_ms?: number | null;
+          anchor_uncertainty_ms?: number | null;
+          closed_at?: string | null;
+          created_at?: string;
+          device_epoch?: number;
+          final_sample?: number | null;
+          gap_count?: number;
+          highest_sequence?: number | null;
+          id?: string;
+          input_processing?: string;
+          lease_expires_at?: string;
+          session_id?: string;
+          state?: string;
+          uploaded_count?: number;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'meet_ai_capture_streams_account_id_fkey';
+            columns: ['account_id'];
+            isOneToOne: false;
+            referencedRelation: 'nova_user_challenge_leaderboard';
+            referencedColumns: ['user_id'];
+          },
+          {
+            foreignKeyName: 'meet_ai_capture_streams_account_id_fkey';
+            columns: ['account_id'];
+            isOneToOne: false;
+            referencedRelation: 'nova_user_leaderboard';
+            referencedColumns: ['user_id'];
+          },
+          {
+            foreignKeyName: 'meet_ai_capture_streams_session_id_account_id_fkey';
+            columns: ['session_id', 'account_id'];
+            isOneToOne: false;
+            referencedRelation: 'meet_ai_session_participants';
+            referencedColumns: ['session_id', 'account_id'];
+          },
+        ];
+      };
       meet_ai_consents: {
         Row: {
           created_at: string;
@@ -12963,6 +13138,134 @@ export type Database = {
           {
             foreignKeyName: 'meet_ai_consents_user_id_fkey';
             columns: ['user_id'];
+            isOneToOne: false;
+            referencedRelation: 'nova_user_leaderboard';
+            referencedColumns: ['user_id'];
+          },
+        ];
+      };
+      meet_ai_erasure_jobs: {
+        Row: {
+          completed_at: string | null;
+          counts: NonNullable<Json>;
+          created_at: string;
+          expires_at: string;
+          fence_generation: number;
+          id: string;
+          operation_id: string;
+          progress_cursor: string | null;
+          progress_stage: string | null;
+          requested_by: string;
+          scope: string;
+          session_id: string | null;
+          status: string;
+          subject_account_id: string | null;
+          subject_digest: string | null;
+          updated_at: string;
+        };
+        ComputedFields: never;
+        Insert: {
+          completed_at?: string | null;
+          counts?: NonNullable<Json>;
+          created_at?: string;
+          expires_at: string;
+          fence_generation: number;
+          id?: string;
+          operation_id: string;
+          progress_cursor?: string | null;
+          progress_stage?: string | null;
+          requested_by: string;
+          scope: string;
+          session_id?: string | null;
+          status?: string;
+          subject_account_id?: string | null;
+          subject_digest?: string | null;
+          updated_at?: string;
+        };
+        Update: {
+          completed_at?: string | null;
+          counts?: NonNullable<Json>;
+          created_at?: string;
+          expires_at?: string;
+          fence_generation?: number;
+          id?: string;
+          operation_id?: string;
+          progress_cursor?: string | null;
+          progress_stage?: string | null;
+          requested_by?: string;
+          scope?: string;
+          session_id?: string | null;
+          status?: string;
+          subject_account_id?: string | null;
+          subject_digest?: string | null;
+          updated_at?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'meet_ai_erasure_jobs_subject_account_id_fkey';
+            columns: ['subject_account_id'];
+            isOneToOne: false;
+            referencedRelation: 'nova_user_challenge_leaderboard';
+            referencedColumns: ['user_id'];
+          },
+          {
+            foreignKeyName: 'meet_ai_erasure_jobs_subject_account_id_fkey';
+            columns: ['subject_account_id'];
+            isOneToOne: false;
+            referencedRelation: 'nova_user_leaderboard';
+            referencedColumns: ['user_id'];
+          },
+        ];
+      };
+      meet_ai_session_participants: {
+        Row: {
+          account_id: string;
+          audio_seconds: number;
+          chunk_count: number;
+          consent_revision: number;
+          first_admitted_at: string;
+          first_admitted_generation: number;
+          last_admitted_at: string;
+          last_admitted_generation: number;
+          session_id: string;
+          upload_revoked_at: string | null;
+        };
+        ComputedFields: never;
+        Insert: {
+          account_id: string;
+          audio_seconds?: number;
+          chunk_count?: number;
+          consent_revision?: number;
+          first_admitted_at?: string;
+          first_admitted_generation: number;
+          last_admitted_at?: string;
+          last_admitted_generation: number;
+          session_id: string;
+          upload_revoked_at?: string | null;
+        };
+        Update: {
+          account_id?: string;
+          audio_seconds?: number;
+          chunk_count?: number;
+          consent_revision?: number;
+          first_admitted_at?: string;
+          first_admitted_generation?: number;
+          last_admitted_at?: string;
+          last_admitted_generation?: number;
+          session_id?: string;
+          upload_revoked_at?: string | null;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'meet_ai_session_participants_account_id_fkey';
+            columns: ['account_id'];
+            isOneToOne: false;
+            referencedRelation: 'nova_user_challenge_leaderboard';
+            referencedColumns: ['user_id'];
+          },
+          {
+            foreignKeyName: 'meet_ai_session_participants_account_id_fkey';
+            columns: ['account_id'];
             isOneToOne: false;
             referencedRelation: 'nova_user_leaderboard';
             referencedColumns: ['user_id'];
@@ -19512,6 +19815,136 @@ export type Database = {
           },
         ];
       };
+      workspace_domain_addons: {
+        Row: {
+          created_at: string;
+          current_period_end: string | null;
+          polar_product_id: string;
+          polar_subscription_id: string;
+          quantity: number;
+          status: string;
+          updated_at: string;
+          ws_id: string;
+        };
+        ComputedFields: never;
+        Insert: {
+          created_at?: string;
+          current_period_end?: string | null;
+          polar_product_id: string;
+          polar_subscription_id: string;
+          quantity: number;
+          status: string;
+          updated_at?: string;
+          ws_id: string;
+        };
+        Update: {
+          created_at?: string;
+          current_period_end?: string | null;
+          polar_product_id?: string;
+          polar_subscription_id?: string;
+          quantity?: number;
+          status?: string;
+          updated_at?: string;
+          ws_id?: string;
+        };
+        Relationships: [];
+      };
+      workspace_domain_audit: {
+        Row: {
+          action: string;
+          actor_id: string | null;
+          created_at: string;
+          detail: Json;
+          domain_id: string | null;
+          entitlement_source: string | null;
+          hostname: string;
+          id: string;
+          ws_id: string;
+        };
+        ComputedFields: never;
+        Insert: {
+          action: string;
+          actor_id?: string | null;
+          created_at?: string;
+          detail?: Json;
+          domain_id?: string | null;
+          entitlement_source?: string | null;
+          hostname: string;
+          id?: string;
+          ws_id: string;
+        };
+        Update: {
+          action?: string;
+          actor_id?: string | null;
+          created_at?: string;
+          detail?: Json;
+          domain_id?: string | null;
+          entitlement_source?: string | null;
+          hostname?: string;
+          id?: string;
+          ws_id?: string;
+        };
+        Relationships: [];
+      };
+      workspace_domain_caps: {
+        Row: {
+          domain_cap: number;
+          reason: string;
+          updated_at: string;
+          updated_by: string | null;
+          ws_id: string;
+        };
+        ComputedFields: never;
+        Insert: {
+          domain_cap: number;
+          reason: string;
+          updated_at?: string;
+          updated_by?: string | null;
+          ws_id: string;
+        };
+        Update: {
+          domain_cap?: number;
+          reason?: string;
+          updated_at?: string;
+          updated_by?: string | null;
+          ws_id?: string;
+        };
+        Relationships: [];
+      };
+      workspace_domain_settings: {
+        Row: {
+          default_domain_cap: number;
+          enabled: boolean;
+          id: boolean;
+          lapse_grace_days: number;
+          paid_addon_enabled: boolean;
+          quarantine_days: number;
+          updated_at: string;
+          updated_by: string | null;
+        };
+        ComputedFields: never;
+        Insert: {
+          default_domain_cap?: number;
+          enabled?: boolean;
+          id?: boolean;
+          lapse_grace_days?: number;
+          paid_addon_enabled?: boolean;
+          quarantine_days?: number;
+          updated_at?: string;
+          updated_by?: string | null;
+        };
+        Update: {
+          default_domain_cap?: number;
+          enabled?: boolean;
+          id?: boolean;
+          lapse_grace_days?: number;
+          paid_addon_enabled?: boolean;
+          quarantine_days?: number;
+          updated_at?: string;
+          updated_by?: string | null;
+        };
+        Relationships: [];
+      };
       workspace_education_access_requests: {
         Row: {
           admin_notes: string | null;
@@ -20911,6 +21344,15 @@ export type Database = {
         Args: { p_tier: Database['public']['Enums']['abuse_risk_tier'] };
         Returns: number;
       };
+      accept_ieeai_free_workspace_invite: {
+        Args: {
+          p_actor_id: string;
+          p_allowed_workspace_ids: string[];
+          p_app_id: string;
+          p_workspace_id: string;
+        };
+        Returns: boolean;
+      };
       account_personal_workspace: {
         Args: { p_actor_id: string };
         Returns: string;
@@ -21583,9 +22025,17 @@ export type Database = {
         Args: { p_request_id: string; p_user_id: string };
         Returns: boolean;
       };
+      cancel_devbox_revoked_work: {
+        Args: { p_actor_id: string; p_scope: string };
+        Returns: undefined;
+      };
       cancel_pending_post_email_queue_for_recipient_email: {
         Args: { p_email: string; p_reason?: string };
         Returns: number;
+      };
+      cancel_unauthorized_devbox_runs: {
+        Args: { p_limit?: number };
+        Returns: Json;
       };
       chat_actor_can_access_conversation: {
         Args: { p_actor_user_id: string; p_conversation_id: string };
@@ -21935,6 +22385,15 @@ export type Database = {
       chat_users_share_workspace: {
         Args: { p_actor_user_id: string; p_target_user_id: string };
         Returns: boolean;
+      };
+      check_devbox_write_ownership: {
+        Args: {
+          p_actor_id: string;
+          p_lease_id?: string;
+          p_runner_id?: string;
+          p_workload?: string;
+        };
+        Returns: undefined;
       };
       checkpoint_meeting_document: {
         Args: {
@@ -22536,6 +22995,14 @@ export type Database = {
       detect_wallet_interest_transactions: {
         Args: { _actor_id: string; _wallet_id: string; _ws_id: string };
         Returns: Json;
+      };
+      devbox_actor_has_active_personal_grant: {
+        Args: { p_actor_id: string };
+        Returns: boolean;
+      };
+      devbox_actor_is_root_member: {
+        Args: { p_actor_id: string };
+        Returns: boolean;
       };
       devbox_identity_grant_active: {
         Args: { p_user_id: string };
@@ -23661,6 +24128,15 @@ export type Database = {
         Args: { p_currency?: string; p_days?: number; p_ws_id: string };
         Returns: Json;
       };
+      get_meet_ai_self_v1_notes: {
+        Args: { p_reader_id: string; p_session_id: string };
+        Returns: {
+          notes: Json;
+          notes_edited: Json;
+          notes_state: string;
+          transcript_revision: number;
+        }[];
+      };
       get_periodic_report_counts: {
         Args: { p_cadence?: string; p_group_ids?: string[]; p_ws_id: string };
         Returns: {
@@ -24529,6 +25005,35 @@ export type Database = {
         Args: { p_limit?: number; p_offset?: number; p_search?: string };
         Returns: Json;
       };
+      list_meet_ai_self_v1_coverage: {
+        Args: { p_reader_id: string; p_session_id: string };
+        Returns: {
+          account_id: string;
+          coverage: string;
+        }[];
+      };
+      list_meet_ai_self_v1_segments: {
+        Args: {
+          p_after_account_id?: string;
+          p_after_sequence?: number;
+          p_after_start_ms?: number;
+          p_after_stream_id?: string;
+          p_limit?: number;
+          p_reader_id: string;
+          p_session_id: string;
+        };
+        Returns: {
+          account_id: string;
+          chunk_id: string;
+          end_ms: number;
+          is_own: boolean;
+          sequence: number;
+          start_ms: number;
+          stream_id: string;
+          timing_uncertainty_ms: number;
+          transcript: string;
+        }[];
+      };
       list_personal_journal: {
         Args: { p_actor_id: string; p_before?: string; p_ws_id: string };
         Returns: Json;
@@ -24772,6 +25277,38 @@ export type Database = {
       materialize_workspace_user_group_session_series: {
         Args: { p_series_id: string; p_until?: string };
         Returns: number;
+      };
+      meet_ai_self_v1_chunk_hidden: {
+        Args: {
+          p_account_id: string;
+          p_created_at: string;
+          p_session_id: string;
+        };
+        Returns: boolean;
+      };
+      meet_ai_self_v1_consent_state: {
+        Args: { p_account_id: string; p_session_id: string };
+        Returns: {
+          decision: string;
+          revision: number;
+        }[];
+      };
+      meet_ai_self_v1_notes_redacted: {
+        Args: { p_session_id: string };
+        Returns: boolean;
+      };
+      meet_ai_self_v1_post_call: {
+        Args: {
+          p_session: Omit<
+            Database['public']['Tables']['meet_ai_sessions']['Row'],
+            Database['public']['Tables']['meet_ai_sessions']['ComputedFields']
+          >;
+        };
+        Returns: boolean;
+      };
+      meet_ai_self_v1_reader_role: {
+        Args: { p_reader_id: string; p_session_id: string };
+        Returns: string;
       };
       meeting_programming_elevated: {
         Args: { p_meeting_id: string; p_owner_id: string };
@@ -25132,6 +25669,31 @@ export type Database = {
         };
         Returns: undefined;
       };
+      record_meet_ai_self_v1_admission: {
+        Args: {
+          p_account_id: string;
+          p_generation: number;
+          p_session_id: string;
+        };
+        Returns: {
+          account_id: string;
+          audio_seconds: number;
+          chunk_count: number;
+          consent_revision: number;
+          first_admitted_at: string;
+          first_admitted_generation: number;
+          last_admitted_at: string;
+          last_admitted_generation: number;
+          session_id: string;
+          upload_revoked_at: string | null;
+        };
+        SetofOptions: {
+          from: '*';
+          to: 'meet_ai_session_participants';
+          isOneToOne: true;
+          isSetofReturn: false;
+        };
+      };
       record_rate_limit_attempt: {
         Args: {
           p_db_role: string;
@@ -25443,6 +26005,16 @@ export type Database = {
           p_user_id: string;
         };
         Returns: undefined;
+      };
+      set_meet_ai_self_v1_sharing: {
+        Args: {
+          p_actor_id: string;
+          p_expected_revision: number;
+          p_session_id: string;
+          p_share_after: boolean;
+          p_share_live: boolean;
+        };
+        Returns: number;
       };
       set_playground_collaborator: {
         Args: {
@@ -26078,6 +26650,14 @@ export type Database = {
             };
             Returns: boolean;
           };
+      workspace_domain_entitlement: {
+        Args: { p_actor_id: string; p_ws_id: string };
+        Returns: Json;
+      };
+      workspace_domain_serving_allowed: {
+        Args: { p_domain_id: string };
+        Returns: boolean;
+      };
       workspace_role_has_creator_grant: {
         Args: { p_role_id: string };
         Returns: boolean;
@@ -31484,58 +32064,108 @@ export type Database = {
       };
       meet_ai_chunks: {
         Row: {
+          account_id: string | null;
           attempt_id: string | null;
           attempt_started_at: string;
           attempts: number;
+          capture_consent_revision: number | null;
+          content_digest: string | null;
           cost_usd: number | null;
           created_at: string;
+          dispatch_consent_revision: number | null;
           duration_seconds: number;
+          end_ms: number | null;
+          erase_generation: number | null;
           id: string;
           prior_cost_usd: number;
           sequence: number;
           session_id: string;
+          source_kind: string | null;
+          start_ms: number | null;
+          start_sample: number | null;
           start_seconds: number;
           status: string;
+          stream_id: string | null;
+          timing_uncertainty_ms: number | null;
           transcript: string | null;
+          transcript_revision: number | null;
           unpriced_attempts: number;
           usage: Json | null;
         };
         ComputedFields: never;
         Insert: {
+          account_id?: string | null;
           attempt_id?: string | null;
           attempt_started_at?: string;
           attempts?: number;
+          capture_consent_revision?: number | null;
+          content_digest?: string | null;
           cost_usd?: number | null;
           created_at?: string;
+          dispatch_consent_revision?: number | null;
           duration_seconds: number;
+          end_ms?: number | null;
+          erase_generation?: number | null;
           id: string;
           prior_cost_usd?: number;
           sequence: number;
           session_id: string;
+          source_kind?: string | null;
+          start_ms?: number | null;
+          start_sample?: number | null;
           start_seconds: number;
           status?: string;
+          stream_id?: string | null;
+          timing_uncertainty_ms?: number | null;
           transcript?: string | null;
+          transcript_revision?: number | null;
           unpriced_attempts?: number;
           usage?: Json | null;
         };
         Update: {
+          account_id?: string | null;
           attempt_id?: string | null;
           attempt_started_at?: string;
           attempts?: number;
+          capture_consent_revision?: number | null;
+          content_digest?: string | null;
           cost_usd?: number | null;
           created_at?: string;
+          dispatch_consent_revision?: number | null;
           duration_seconds?: number;
+          end_ms?: number | null;
+          erase_generation?: number | null;
           id?: string;
           prior_cost_usd?: number;
           sequence?: number;
           session_id?: string;
+          source_kind?: string | null;
+          start_ms?: number | null;
+          start_sample?: number | null;
           start_seconds?: number;
           status?: string;
+          stream_id?: string | null;
+          timing_uncertainty_ms?: number | null;
           transcript?: string | null;
+          transcript_revision?: number | null;
           unpriced_attempts?: number;
           usage?: Json | null;
         };
         Relationships: [
+          {
+            foreignKeyName: 'meet_ai_chunks_account_id_fkey';
+            columns: ['account_id'];
+            isOneToOne: false;
+            referencedRelation: 'shortened_links_creator_stats';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'meet_ai_chunks_account_id_fkey';
+            columns: ['account_id'];
+            isOneToOne: false;
+            referencedRelation: 'users';
+            referencedColumns: ['id'];
+          },
           {
             foreignKeyName: 'meet_ai_chunks_session_id_fkey';
             columns: ['session_id'];
@@ -31587,70 +32217,175 @@ export type Database = {
       };
       meet_ai_sessions: {
         Row: {
+          billing_host_id: string | null;
+          billing_ws_id: string | null;
+          capture_deadline_at: string | null;
+          capture_state: string | null;
+          cost_cap_usd: number;
+          cost_reserved_usd: number;
+          cost_settled_usd: number;
+          cost_unknown_usd: number;
           created_at: string;
+          cutoff_at: string | null;
+          drain_deadline_at: string | null;
           ended_at: string | null;
+          erase_generation: number;
+          generation: number;
           id: string;
           language_hint: string | null;
           meeting_id: string;
           notes: Json | null;
           notes_cost_usd: number | null;
+          notes_deliveries: number;
           notes_edited: Json | null;
           notes_model: string | null;
           notes_prompt_version: number | null;
+          notes_provider_attempts: number;
+          notes_redacted_at: string | null;
           notes_started_at: string | null;
           notes_status: string;
           notes_unpriced_attempts: number;
           notes_usage: Json | null;
+          protocol: string;
           purge_after: string | null;
+          share_notes_after: boolean;
+          share_notes_live: boolean;
+          share_revision: number;
           source: string;
+          stop_generation: number;
           transcript_purged_at: string | null;
-          user_id: string;
+          transcript_revision: number;
+          user_id: string | null;
           visibility: string;
         };
         ComputedFields: never;
         Insert: {
+          billing_host_id?: string | null;
+          billing_ws_id?: string | null;
+          capture_deadline_at?: string | null;
+          capture_state?: string | null;
+          cost_cap_usd?: number;
+          cost_reserved_usd?: number;
+          cost_settled_usd?: number;
+          cost_unknown_usd?: number;
           created_at?: string;
+          cutoff_at?: string | null;
+          drain_deadline_at?: string | null;
           ended_at?: string | null;
+          erase_generation?: number;
+          generation?: number;
           id?: string;
           language_hint?: string | null;
           meeting_id: string;
           notes?: Json | null;
           notes_cost_usd?: number | null;
+          notes_deliveries?: number;
           notes_edited?: Json | null;
           notes_model?: string | null;
           notes_prompt_version?: number | null;
+          notes_provider_attempts?: number;
+          notes_redacted_at?: string | null;
           notes_started_at?: string | null;
           notes_status?: string;
           notes_unpriced_attempts?: number;
           notes_usage?: Json | null;
+          protocol?: string;
           purge_after?: string | null;
+          share_notes_after?: boolean;
+          share_notes_live?: boolean;
+          share_revision?: number;
           source?: string;
+          stop_generation?: number;
           transcript_purged_at?: string | null;
-          user_id: string;
+          transcript_revision?: number;
+          user_id?: string | null;
           visibility?: string;
         };
         Update: {
+          billing_host_id?: string | null;
+          billing_ws_id?: string | null;
+          capture_deadline_at?: string | null;
+          capture_state?: string | null;
+          cost_cap_usd?: number;
+          cost_reserved_usd?: number;
+          cost_settled_usd?: number;
+          cost_unknown_usd?: number;
           created_at?: string;
+          cutoff_at?: string | null;
+          drain_deadline_at?: string | null;
           ended_at?: string | null;
+          erase_generation?: number;
+          generation?: number;
           id?: string;
           language_hint?: string | null;
           meeting_id?: string;
           notes?: Json | null;
           notes_cost_usd?: number | null;
+          notes_deliveries?: number;
           notes_edited?: Json | null;
           notes_model?: string | null;
           notes_prompt_version?: number | null;
+          notes_provider_attempts?: number;
+          notes_redacted_at?: string | null;
           notes_started_at?: string | null;
           notes_status?: string;
           notes_unpriced_attempts?: number;
           notes_usage?: Json | null;
+          protocol?: string;
           purge_after?: string | null;
+          share_notes_after?: boolean;
+          share_notes_live?: boolean;
+          share_revision?: number;
           source?: string;
+          stop_generation?: number;
           transcript_purged_at?: string | null;
-          user_id?: string;
+          transcript_revision?: number;
+          user_id?: string | null;
           visibility?: string;
         };
         Relationships: [
+          {
+            foreignKeyName: 'meet_ai_sessions_billing_host_id_fkey';
+            columns: ['billing_host_id'];
+            isOneToOne: false;
+            referencedRelation: 'shortened_links_creator_stats';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'meet_ai_sessions_billing_host_id_fkey';
+            columns: ['billing_host_id'];
+            isOneToOne: false;
+            referencedRelation: 'users';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'meet_ai_sessions_billing_ws_id_fkey';
+            columns: ['billing_ws_id'];
+            isOneToOne: false;
+            referencedRelation: 'entity_limit_source__workspaces';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'meet_ai_sessions_billing_ws_id_fkey';
+            columns: ['billing_ws_id'];
+            isOneToOne: false;
+            referencedRelation: 'entity_limit_source__workspaces';
+            referencedColumns: ['personal_ws_id'];
+          },
+          {
+            foreignKeyName: 'meet_ai_sessions_billing_ws_id_fkey';
+            columns: ['billing_ws_id'];
+            isOneToOne: false;
+            referencedRelation: 'workspace_link_counts';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'meet_ai_sessions_billing_ws_id_fkey';
+            columns: ['billing_ws_id'];
+            isOneToOne: false;
+            referencedRelation: 'workspaces';
+            referencedColumns: ['id'];
+          },
           {
             foreignKeyName: 'meet_ai_sessions_meeting_id_fkey';
             columns: ['meeting_id'];
@@ -42768,6 +43503,8 @@ export type Database = {
           is_public: boolean | null;
           legacy_content: string | null;
           name: string | null;
+          parent_id: string | null;
+          position: number | null;
           ws_id: string | null;
         };
         ComputedFields: never;
@@ -42778,6 +43515,8 @@ export type Database = {
           is_public?: boolean | null;
           legacy_content?: string | null;
           name?: string | null;
+          parent_id?: string | null;
+          position?: number | null;
           ws_id?: string | null;
         };
         Update: {
@@ -42787,9 +43526,18 @@ export type Database = {
           is_public?: boolean | null;
           legacy_content?: string | null;
           name?: string | null;
+          parent_id?: string | null;
+          position?: number | null;
           ws_id?: string | null;
         };
         Relationships: [
+          {
+            foreignKeyName: 'workspace_documents_parent_id_fkey';
+            columns: ['parent_id'];
+            isOneToOne: false;
+            referencedRelation: 'workspace_documents';
+            referencedColumns: ['id'];
+          },
           {
             foreignKeyName: 'workspace_documents_ws_id_fkey';
             columns: ['ws_id'];
@@ -42819,6 +43567,79 @@ export type Database = {
             referencedColumns: ['id'];
           },
         ];
+      };
+      workspace_domains: {
+        Row: {
+          activated_at: string | null;
+          cloudflare_custom_hostname_id: string | null;
+          cloudflare_dns_record_id: string | null;
+          cloudflare_worker_route_id: string | null;
+          created_at: string;
+          created_by: string | null;
+          dns_records: Json;
+          entitlement_source: string;
+          error: string | null;
+          hostname: string;
+          id: string;
+          kind: string;
+          last_checked_at: string | null;
+          ownership_status: string | null;
+          removed_at: string | null;
+          ssl_status: string | null;
+          status: string;
+          updated_at: string;
+          verification_txt_name: string;
+          verification_txt_value: string;
+          ws_id: string;
+        };
+        ComputedFields: never;
+        Insert: {
+          activated_at?: string | null;
+          cloudflare_custom_hostname_id?: string | null;
+          cloudflare_dns_record_id?: string | null;
+          cloudflare_worker_route_id?: string | null;
+          created_at?: string;
+          created_by?: string | null;
+          dns_records?: Json;
+          entitlement_source: string;
+          error?: string | null;
+          hostname: string;
+          id?: string;
+          kind: string;
+          last_checked_at?: string | null;
+          ownership_status?: string | null;
+          removed_at?: string | null;
+          ssl_status?: string | null;
+          status?: string;
+          updated_at?: string;
+          verification_txt_name: string;
+          verification_txt_value: string;
+          ws_id: string;
+        };
+        Update: {
+          activated_at?: string | null;
+          cloudflare_custom_hostname_id?: string | null;
+          cloudflare_dns_record_id?: string | null;
+          cloudflare_worker_route_id?: string | null;
+          created_at?: string;
+          created_by?: string | null;
+          dns_records?: Json;
+          entitlement_source?: string;
+          error?: string | null;
+          hostname?: string;
+          id?: string;
+          kind?: string;
+          last_checked_at?: string | null;
+          ownership_status?: string | null;
+          removed_at?: string | null;
+          ssl_status?: string | null;
+          status?: string;
+          updated_at?: string;
+          verification_txt_name?: string;
+          verification_txt_value?: string;
+          ws_id?: string;
+        };
+        Relationships: [];
       };
       workspace_email_credentials: {
         Row: {
@@ -53650,19 +54471,31 @@ export type Database = {
           p_start_seconds: number;
         };
         Returns: {
+          account_id: string | null;
           attempt_id: string | null;
           attempt_started_at: string;
           attempts: number;
+          capture_consent_revision: number | null;
+          content_digest: string | null;
           cost_usd: number | null;
           created_at: string;
+          dispatch_consent_revision: number | null;
           duration_seconds: number;
+          end_ms: number | null;
+          erase_generation: number | null;
           id: string;
           prior_cost_usd: number;
           sequence: number;
           session_id: string;
+          source_kind: string | null;
+          start_ms: number | null;
+          start_sample: number | null;
           start_seconds: number;
           status: string;
+          stream_id: string | null;
+          timing_uncertainty_ms: number | null;
           transcript: string | null;
+          transcript_revision: number | null;
           unpriced_attempts: number;
           usage: Json | null;
         };
@@ -56671,7 +57504,10 @@ export type Database = {
         | 'manage_git_repositories'
         | 'manage_desktop_deployment_vault'
         | 'manage_sso_clients'
-        | 'manage_mastermind';
+        | 'manage_mastermind'
+        | 'edit_external_projects'
+        | 'view_workspace_domains'
+        | 'manage_workspace_domains';
       zalopay_tier: 'standard' | 'gold' | 'diamond';
     };
     CompositeTypes: {
@@ -59506,6 +60342,9 @@ export const Constants = {
         'manage_desktop_deployment_vault',
         'manage_sso_clients',
         'manage_mastermind',
+        'edit_external_projects',
+        'view_workspace_domains',
+        'manage_workspace_domains',
       ],
       zalopay_tier: ['standard', 'gold', 'diamond'],
     },

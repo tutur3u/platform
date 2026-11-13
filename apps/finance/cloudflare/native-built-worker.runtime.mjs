@@ -3,6 +3,7 @@ import { readdir, readFile } from 'node:fs/promises';
 import { createRequire } from 'node:module';
 import { join } from 'node:path';
 import test from 'node:test';
+import './native-signed-ssr-fixture.test.mjs';
 import {
   runtimeExpectationProblems,
   runtimeOutcomeFailure,
@@ -130,6 +131,10 @@ async function qualifyMode(t, mode) {
       assert.equal(
         info.headers.get('x-robots-tag'),
         'noindex, nofollow, nosnippet'
+      );
+      assert.equal(
+        info.headers.get('strict-transport-security'),
+        'max-age=63072000'
       );
       assert.equal(info.headers.get('x-frame-options'), 'DENY');
       assert.equal(info.headers.get('x-content-type-options'), 'nosniff');
@@ -289,6 +294,7 @@ async function qualifyMode(t, mode) {
     }
     assert.ok(signedCalls.some((path) => path.startsWith('/auth/v1/')));
     assert.ok(signedCalls.includes('/rest/v1/workspaces'));
+    assert.ok(signedCalls.includes('/rest/v1/workspace_secrets'));
     assert.ok(
       signedCalls.includes(
         `/api/workspaces/${fixtureWorkspaceId}/finance/overview`
@@ -373,6 +379,7 @@ async function qualifyMode(t, mode) {
       }
       for (const origin of [
         ...foreignOrigins,
+        'https://tuturuuu.com',
         'https://tuturuuu.com/finance',
         'https://unknown.example.test',
       ]) {

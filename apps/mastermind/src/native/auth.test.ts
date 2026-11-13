@@ -208,7 +208,7 @@ test('memo expires at 60s, is per owner and per instance, and respects session e
   clock++;
   expect(memo.get(owner)).toBeUndefined();
 });
-test('org API client forwards only the user session and refuses redirects', async () => {
+test('org API client forwards only the user session and never follows redirects', async () => {
   const original = globalThis.fetch;
   let captured: Request | undefined;
   globalThis.fetch = async (input) => {
@@ -221,7 +221,48 @@ test('org API client forwards only the user session and refuses redirects', asyn
       { id: 'owner', email, token: 'user-fixture', expiresAt: now + 1000 }
     ).orgLinks('root');
     expect(captured?.headers.get('Authorization')).toBe('Bearer user-fixture');
-    expect(captured?.redirect).toBe('error');
+    expect(captured?.redirect).toBe('manual');
+  } finally {
+    globalThis.fetch = original;
+  }
+});
+test('data clients refuse redirect responses without reading the target', async () => {
+  const original = globalThis.fetch;
+  const owner = {
+    id: 'owner',
+    email,
+    token: 'user-fixture',
+    expiresAt: now + 1000,
+  };
+  const redirected = () =>
+    new Response(null, {
+      status: 307,
+      headers: { Location: 'https://attacker.invalid/' },
+    });
+  let captured: Request | undefined;
+  globalThis.fetch = async (input) => {
+    captured = new Request(input);
+    return redirected();
+  };
+  try {
+    await expect(createDataClients({}, owner).orgLinks('root')).rejects.toThrow(
+      'Upstream redirect refused'
+    );
+    expect(captured?.redirect).toBe('manual');
+    let hubRequest: Request | undefined;
+    const hub = {
+      fetch: async (input: Request) => {
+        hubRequest = input;
+        return redirected();
+      },
+    };
+    await expect(
+      createDataClients(
+        { OPS_HUB: hub } as unknown as MastermindEnvironment,
+        owner
+      ).agentSnapshot()
+    ).rejects.toThrow('Upstream redirect refused');
+    expect(hubRequest?.redirect).toBe('manual');
   } finally {
     globalThis.fetch = original;
   }
@@ -345,7 +386,7 @@ test('live permission revocation denies the next request with unchanged env and 
     expect.objectContaining({
       headers: { Authorization: expect.stringContaining('Bearer ttr_app_') },
       cache: 'no-store',
-      redirect: 'error',
+      redirect: 'manual',
       signal: expect.any(AbortSignal),
     })
   );

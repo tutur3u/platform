@@ -1,7 +1,7 @@
 ---
 title: Notes voice analysis
 description: Private, metered voice transcripts and proposals with explicit retry controls.
-updatedAt: "2026-10-10"
+updatedAt: "2026-11-09"
 audience: users
 ---
 
@@ -50,6 +50,13 @@ recommendations with evidence, and open questions. These are proposals for revie
 the API creates no Notes documents, tasks, Calendar events, or room-shared artifacts.
 Transcripts are untrusted input, including spoken instructions. Unknown owners and
 deadlines remain unspecified. Silence does not trigger a second analysis request.
+
+Notes voice follows the existing Meet AI kill switch and workspace controls
+before new requests and each paid provider step. Disabling AI after successful
+analysis does not discard the paid result or make the same job retryable.
+Publishing that result still revalidates current workspace access. Owners can read
+and delete existing jobs through the usual access checks. `jobs.test.ts` and the
+voice-jobs `route.test.ts` cover this admission and persistence boundary.
 
 Jobs and artifacts are private to the requesting actor, even in team workspaces.
 Every status read, creation, retry, and deletion verifies current workspace access.

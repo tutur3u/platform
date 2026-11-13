@@ -17,6 +17,7 @@ import { toast } from '@tuturuuu/ui/sonner';
 import { useRouter } from 'next/navigation';
 import { useTranslations } from 'next-intl';
 import { useId, useState } from 'react';
+import { tasksApiPath } from '../../shared/tasks-paths';
 
 interface UseTemplateDialogProps {
   wsId: string;
@@ -59,7 +60,7 @@ export function UseTemplateDialog({
     setIsUsing(true);
     try {
       const response = await fetch(
-        `/api/v1/workspaces/${wsId}/templates/${templateId}/use`,
+        tasksApiPath(`/api/v1/workspaces/${wsId}/templates/${templateId}/use`),
         {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },

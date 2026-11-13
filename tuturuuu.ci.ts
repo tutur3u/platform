@@ -15,6 +15,7 @@ export const ci = {
   'creator-identity-contract.yaml': true,
   'task-board-database-contract.yaml': true,
   'fee-lock-database-contract.yaml': true,
+  'external-project-page-versions-contract.yaml': true,
   'connected-mail-accounts-contract.yaml': true,
   'mail-profile-runtime-contract.yaml': true,
   'check-and-bump-versions.yaml': true,
@@ -90,7 +91,7 @@ export const ci = {
   // affected-path gating. Only the automatic platform preview belongs here.
   'vercel-preview-platform.yaml': true,
   'vercel-production-ai.yaml': true,
-  'vercel-production-apps.yaml': true,
+  'vercel-production-apps.yaml': false,
   'vercel-production-calendar.yaml': false,
   'vercel-production-chat.yaml': true,
   'vercel-production-cms.yaml': true,
@@ -109,7 +110,7 @@ export const ci = {
   'vercel-production-tasks.yaml': true,
   'vercel-production-meet.yaml': false,
   'vercel-production-learn.yaml': true,
-  'vercel-production-mail.yaml': true,
+  'vercel-production-mail.yaml': false,
   // Avoid automatic TanStack production builds while the migration is paused.
   'vercel-production-tanstack-web.yaml': false,
   'vercel-production-teach.yaml': true,
@@ -142,6 +143,14 @@ export const ci = {
   'git-cloudflare.yaml': true,
   'external-cloudflare.yaml': true,
   'rewise-cloudflare.yaml': true,
+  'hive-cloudflare.yaml': true,
+  'chat-cloudflare.yaml': true,
+  'learn-cloudflare.yaml': true,
+  'infrastructure-cloudflare.yaml': true,
+  'mind-cloudflare.yaml': true,
+  'teach-cloudflare.yaml': true,
+  'marketing-cloudflare.yaml': true,
+  'workspace-cloudflare.yaml': true,
 };
 
 // Publication only: native build and original/restored acceptance remain enabled.
@@ -169,14 +178,29 @@ export const productionPublicationPolicy = {
     state: 'held',
     reason: 'held for wave-2 cutover: Mastermind security review required',
   },
-  meet: { state: 'held', reason: 'held for wave-1 cutover' },
+  meet: {
+    state: 'admitted',
+    reason:
+      'Meet native Start + Void cutover on the tuturuuu-meet Worker with private version smoke and one-step version rollback',
+    surfaces: ['frontend', 'realtime-do'],
+  },
   calendar: {
     state: 'admitted',
     reason:
       'Calendar native root cutover with private smoke and rehearsed route rollback',
     surfaces: ['frontend'],
   },
-  mail: { state: 'held', reason: 'held for wave-1 cutover' },
-  apps: { state: 'held', reason: 'held for wave-1 cutover' },
+  mail: {
+    state: 'admitted',
+    reason:
+      'Mail native cutover with route-free upload, private smoke and Vercel alias rollback',
+    surfaces: ['frontend'],
+  },
+  apps: {
+    state: 'admitted',
+    reason:
+      'Apps native cutover with route-free upload, private smoke and Vercel alias rollback',
+    surfaces: ['frontend'],
+  },
   shortener: { state: 'held', reason: 'held for wave-2 cutover' },
 } satisfies ProductionPublicationPolicy;

@@ -25,13 +25,64 @@ function getWorkspacePackageJsonPaths() {
   });
 }
 
+function hasNextBuild(scripts, vercelCommand, workspace) {
+  const nextBuild = (script) =>
+    typeof script === 'string' && /\bnext\s+build\b/.test(script);
+  return (
+    nextBuild(scripts.build) ||
+    (nextBuild(scripts['build:legacy']) &&
+      typeof vercelCommand === 'string' &&
+      vercelCommand.endsWith(`&& bun run --cwd ${workspace} build:legacy`))
+  );
+}
+
+test('compiler eligibility includes invoked legacy Next builds and rejects unused legacy scripts', () => {
+  const scripts = {
+    build: 'vp build --configLoader runner',
+    'build:legacy': 'next build --turbopack',
+  };
+  assert.equal(
+    hasNextBuild(
+      scripts,
+      'cd ../.. && bun turbo:local run build --filter=deps && bun run --cwd apps/tools build:legacy',
+      'apps/tools'
+    ),
+    true
+  );
+  assert.equal(hasNextBuild(scripts, 'vp build', 'apps/tools'), false);
+  assert.equal(
+    hasNextBuild(
+      scripts,
+      'bun run --cwd apps/other build:legacy',
+      'apps/tools'
+    ),
+    false
+  );
+  assert.equal(
+    hasNextBuild(
+      { build: 'vp build', 'build:legacy': 'vp build' },
+      'deps && bun run --cwd apps/tools build:legacy',
+      'apps/tools'
+    ),
+    false
+  );
+});
+
 function getNextBuildPackageJsonPaths() {
   return getWorkspacePackageJsonPaths().filter((packageJsonPath) => {
     const packageJson = readJson(packageJsonPath);
-    const buildScript = packageJson.scripts?.build;
-
-    return (
-      typeof buildScript === 'string' && /\bnext\s+build\b/.test(buildScript)
+    const vercelPath = path.join(
+      repoRoot,
+      path.dirname(packageJsonPath),
+      'vercel.json'
+    );
+    const command = fs.existsSync(vercelPath)
+      ? JSON.parse(fs.readFileSync(vercelPath, 'utf8')).buildCommand
+      : '';
+    return hasNextBuild(
+      packageJson.scripts ?? {},
+      command,
+      path.dirname(packageJsonPath)
     );
   });
 }

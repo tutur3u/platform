@@ -1,0 +1,207 @@
+---
+title: "Cross-App Cutover Smoke Harness (D15)"
+description: "Universal post-cutover smoke check script for Cloudflare Workers migrations: anon 200 entry route, login rendering, redirect loop detection, and 5xx probe."
+updatedAt: '2026-11-10'
+audience: developers
+---
+
+## Overview
+
+The cross-app smoke harness (`scripts/cutover-smoke.mjs`) provides the standardized, reusable **D15** verification required for every app during cutover from Vercel to Cloudflare Workers (TanStack Start + Vite+ + Void).
+
+Under **D74** and **COMMON** migration invariants, every cutover requires a rapid, non-destructive smoke check immediately after routing or preview deployment to verify service availability before the watch window begins.
+
+### Verified Checks
+
+1. **Anonymous 200 on Entry Route**: Verifies unauthenticated visitors can access the root entry route (`/`) or resolve canonical locale redirects to HTTP 200 without authentication challenges or failures.
+2. **Login Page Renders**: Confirms the authentication entrypoint (`/login`) responds with HTTP 200 and non-empty HTML content containing interactive login/form markers.
+3. **No Redirect Loops**: Tracks the complete redirect history for every probed route and asserts that no circular redirects or excessive chain lengths occur.
+4. **No 5xx Server Errors on 5 Listed Paths**: Probes at least 5 distinct routes configured per app in `scripts/cutover-smoke-config.json` (such as landing, login, pricing/about, health, robots.txt, or manifest.json) and verifies none return a 5xx server status code (`500`-`599`).
+5. **Deterministic JSON Output**: Outputs machine-readable `PASS`/`FAIL` JSON report to stdout with detailed timings, redirect chains, and failure reasons. Exits with code `0` on `PASS` and `1` on `FAIL`.
+6. **Asset smoke, when configured**: An app may set `assetSmoke` in the route table. D15 then runs `scripts/ci/asset-smoke.mjs` for that app: it fetches each configured page, follows at most one redirect, and requires every referenced CSS, JS and font URL to return 200 with the matching MIME type on the canonical origin. A second redirect fails the check. Other apps are unchanged.
+
+---
+
+## Usage
+
+### Basic CLI Invocations
+
+Run directly with Node or Bun:
+
+```bash
+# Probing apps/web on staging or production
+node scripts/cutover-smoke.mjs web https://staging.tuturuuu.com
+
+# Probing apps/marketing on preview or edge URL
+node scripts/cutover-smoke.mjs marketing https://<preview-host>
+
+# Probing apps/shortener on custom domain
+node scripts/cutover-smoke.mjs shortener https://ttr.link
+```
+
+### CLI Flags
+
+```bash
+# Using explicit flag syntax
+node scripts/cutover-smoke.mjs --app workspace --url https://tuturuuu.com
+
+# Specifying custom timeout (default: 10,000 ms)
+node scripts/cutover-smoke.mjs --app tools --url https://tools.tuturuuu.com --timeout 5000
+
+# Using a custom route table config
+node scripts/cutover-smoke.mjs --app web --url https://tuturuuu.com --config ./custom-routes.json
+
+# Asset smoke by itself. Any gateway-routed app can pass its own pages.
+node scripts/ci/asset-smoke.mjs \
+  --canonical-origin https://tuturuuu.com \
+  --page https://tuturuuu.com/roadmap/ \
+  --page https://roadmap.tuturuuu.com/
+```
+
+---
+
+## Route Configuration Table
+
+Per-app paths and entry routes are defined in [`scripts/cutover-smoke-config.json`](file:///scripts/cutover-smoke-config.json).
+
+Each application entry specifies:
+
+```json
+{
+  "apps": {
+    "web": {
+      "name": "web",
+      "description": "Apex tuturuuu.com web platform",
+      "entryRoute": "/",
+      "loginRoute": "/login",
+      "paths": [
+        "/",
+        "/login",
+        "/pricing",
+        "/about",
+        "/robots.txt"
+      ]
+    }
+  }
+}
+```
+
+If an app is not explicitly listed, the harness falls back to `_default`, guaranteeing that any new worker service or micro-frontend can immediately be tested without code modifications.
+
+---
+
+## Output Schema
+
+The harness prints formatted JSON to stdout:
+
+```json
+{
+  "status": "PASS",
+  "pass": true,
+  "app": "web",
+  "baseUrl": "https://staging.tuturuuu.com",
+  "timestamp": "2026-11-09T14:15:00.000Z",
+  "durationMs": 342,
+  "summary": {
+    "entryRoute": {
+      "passed": true,
+      "status": 200,
+      "path": "/"
+    },
+    "loginRoute": {
+      "passed": true,
+      "status": 200,
+      "path": "/login"
+    },
+    "noRedirectLoops": {
+      "passed": true
+    },
+    "no5xxOn5Paths": {
+      "passed": true,
+      "testedCount": 5
+    }
+  },
+  "checks": {
+    "entryRoute": {
+      "name": "entry_route_anon_200",
+      "route": "/",
+      "url": "https://staging.tuturuuu.com/",
+      "finalUrl": "https://staging.tuturuuu.com/",
+      "status": 200,
+      "passed": true,
+      "durationMs": 85,
+      "chain": ["https://staging.tuturuuu.com/"],
+      "loopDetected": false,
+      "error": null
+    },
+    "loginRoute": {
+      "name": "login_page_renders",
+      "route": "/login",
+      "url": "https://staging.tuturuuu.com/login",
+      "finalUrl": "https://staging.tuturuuu.com/login",
+      "status": 200,
+      "passed": true,
+      "renders": true,
+      "durationMs": 110,
+      "bodyLength": 4820,
+      "chain": ["https://staging.tuturuuu.com/login"],
+      "loopDetected": false,
+      "error": null
+    },
+    "redirects": {
+      "name": "no_redirect_loop",
+      "passed": true,
+      "loops": []
+    },
+    "paths": {
+      "name": "no_5xx_on_5_paths",
+      "passed": true,
+      "testedCount": 5,
+      "paths": [
+        { "path": "/", "status": 200, "ok": true, "is5xx": false },
+        { "path": "/login", "status": 200, "ok": true, "is5xx": false },
+        { "path": "/pricing", "status": 200, "ok": true, "is5xx": false },
+        { "path": "/about", "status": 200, "ok": true, "is5xx": false },
+        { "path": "/robots.txt", "status": 200, "ok": true, "is5xx": false }
+      ]
+    }
+  },
+  "errors": []
+}
+```
+
+On failure, `status` is `"FAIL"`, `pass` is `false`, `errors` contains human-readable failure descriptions, and the process exits with `1`.
+
+---
+
+## Cutover Integration & Rollback Threshold
+
+During a cutover:
+1. Run smoke immediately after pointing preview/staging route:
+   ```bash
+   node scripts/cutover-smoke.mjs <app> <url>
+   ```
+2. If `status === "FAIL"`:
+   - Check `errors` array in JSON output.
+   - Any 5xx or redirect loop on entry or login triggers immediate rollback to Vercel origin per D74 invariant.
+   - Record the prior Vercel deployment ID in the lane packet.
+3. If `status === "PASS"`:
+   - Proceed to the 10-minute observation window.
+
+---
+
+## Unit Testing
+
+Run unit tests via Node test runner or Vitest:
+
+```bash
+node --test scripts/cutover-smoke.test.mjs
+```
+
+All HTTP calls are fully mocked, validating:
+- Base URL normalizer and protocol enforcement.
+- Per-app config resolution and 5-path guarantee.
+- Step-by-step redirect resolution, cycle detection, and max redirect guards.
+- Anonymous entry route assertions.
+- Login page render validation.
+- Non-5xx boundary assertions.

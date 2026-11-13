@@ -50,6 +50,7 @@ vi.mock('@tuturuuu/icons/lucide', async () => {
     'FolderSync',
     'GalleryVerticalEnd',
     'Gauge',
+    'Globe',
     'GraduationCap',
     'Group',
     'HandCoins',

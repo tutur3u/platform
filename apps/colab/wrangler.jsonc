@@ -25,11 +25,9 @@
     "bindings": [{ "name": "ROOMS", "class_name": "ColabRoom" }],
   },
   "migrations": [{ "tag": "v1", "new_sqlite_classes": ["ColabRoom"] }],
-  "ai": { "binding": "AI" },
   "vars": {
     "APP_ORIGIN": "https://colab.tuturuuu.com",
     "AUTH_ORIGIN": "https://tuturuuu.com",
-    "COLAB_REQUIRE_SPONSORSHIP": "true",
     "COLAB_AI_MODEL": "google/gemini-3.5-flash-lite",
   },
   "secrets": { "required": ["COLAB_SESSION_SECRET"] },

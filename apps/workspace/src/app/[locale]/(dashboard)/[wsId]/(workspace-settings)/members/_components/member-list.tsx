@@ -1,0 +1,259 @@
+'use client';
+
+import { Crown, User as UserIcon } from '@tuturuuu/icons';
+import { Masonry } from '@tuturuuu/masonry';
+import type { Workspace } from '@tuturuuu/types';
+import type { User } from '@tuturuuu/types/primitives/User';
+import { Avatar, AvatarFallback, AvatarImage } from '@tuturuuu/ui/avatar';
+import { Badge } from '@tuturuuu/ui/badge';
+import { getInitials } from '@tuturuuu/utils/name-helper';
+import moment from 'moment';
+import { useLocale, useTranslations } from 'next-intl';
+import InviteMemberButton from './invite-member-button';
+import { MemberPermissionBreakdown } from './member-permission-breakdown';
+import { MemberSettingsButton } from './member-settings-button';
+
+interface Props {
+  workspace?: Workspace | null;
+  members: (User & {
+    workspace_member_type?: 'MEMBER' | 'GUEST' | null;
+    direct_board_guest?: boolean;
+    guest_access_type?: 'task_board';
+    guest_board_count?: number;
+    guest_board_names?: string[];
+    guest_highest_permission?: 'view' | 'edit' | null;
+    is_creator?: boolean;
+    roles?: Array<{
+      id: string;
+      name: string;
+      permissions?: Array<{ permission: string; enabled: boolean }>;
+    }>;
+    default_permissions?: Array<{ permission: string; enabled: boolean }>;
+  })[];
+  invited?: boolean;
+  loading?: boolean;
+  canManageMembers?: boolean;
+  currentUser?: User | null;
+  filtersActive?: boolean;
+}
+
+export default function MemberList({
+  workspace,
+  members,
+  invited,
+  loading,
+  canManageMembers,
+  currentUser,
+  filtersActive,
+}: Props) {
+  const locale = useLocale();
+  const t = useTranslations('ws-members');
+  const tCommon = useTranslations('common');
+
+  if (loading && (!members || members.length === 0)) {
+    return (
+      <div className="flex items-center justify-center rounded-lg border border-border bg-background/50 p-12">
+        <div className="flex flex-col items-center gap-3">
+          <div className="h-8 w-8 animate-spin rounded-full border-4 border-foreground/20 border-t-foreground" />
+          <p className="text-foreground/60 text-sm">{tCommon('loading')}</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (!members || members.length === 0) {
+    return (
+      <div className="col-span-full flex flex-col items-center justify-center gap-2 rounded-lg border border-dashed bg-primary-foreground/20 p-8">
+        <p className="text-center text-foreground/80">
+          {filtersActive
+            ? t('no_members_match_filters')
+            : invited
+              ? t('no_invited_members_found')
+              : t('no_members_match')}
+          .
+        </p>
+
+        {!!workspace?.id && !filtersActive && (
+          <InviteMemberButton
+            wsId={workspace?.id}
+            currentUser={currentUser ?? undefined}
+            canManageMembers={canManageMembers}
+            label={t('invite_member')}
+            variant="outline"
+          />
+        )}
+      </div>
+    );
+  }
+
+  const memberCards = members.map((member) => (
+    <div
+      key={member.id || member.email}
+      className={`relative rounded-lg border p-4 transition-colors ${
+        member?.pending
+          ? 'border-dashed bg-transparent'
+          : 'bg-primary-foreground/20 hover:bg-primary-foreground/30'
+      }`}
+    >
+      <div className="flex items-center gap-2">
+        <Avatar>
+          <AvatarImage src={member?.avatar_url ?? undefined} />
+          <AvatarFallback className="font-semibold">
+            {!loading && member?.display_name ? (
+              getInitials(member.display_name)
+            ) : (
+              <UserIcon className="h-5 w-5" />
+            )}
+          </AvatarFallback>
+        </Avatar>
+
+        <div className={`flex-1 ${loading ? 'text-transparent' : ''}`}>
+          <div className="flex flex-wrap items-center gap-1.5">
+            <p className="font-semibold lg:text-lg">
+              {member?.display_name ? (
+                member.display_name
+              ) : (
+                <span className="opacity-50">Unknown</span>
+              )}
+            </p>
+            {member.is_creator && (
+              <Badge className="h-5 gap-1 border-dynamic-yellow/50 bg-dynamic-yellow/10 px-1.5 text-dynamic-yellow text-xs">
+                <Crown className="h-3 w-3" />
+                {t('creator_badge')}
+              </Badge>
+            )}
+            {member.workspace_member_type === 'GUEST' && (
+              <Badge className="h-5 border-foreground/20 bg-foreground/5 px-1.5 text-foreground/80 text-xs">
+                {member.direct_board_guest
+                  ? t('direct_board_guest_badge')
+                  : t('guest_badge')}
+              </Badge>
+            )}
+            {member.direct_board_guest && (
+              <Badge className="h-5 border-dynamic-blue/50 bg-dynamic-blue/10 px-1.5 text-dynamic-blue text-xs">
+                {member.guest_highest_permission === 'edit'
+                  ? t('board_guest_can_edit')
+                  : t('board_guest_can_view')}
+              </Badge>
+            )}
+            {member.roles?.map((role) => (
+              <Badge
+                key={role.id}
+                className="h-5 border-dynamic-purple/50 bg-dynamic-purple/10 px-1.5 text-dynamic-purple text-xs"
+              >
+                {role.name}
+              </Badge>
+            ))}
+          </div>
+          <p
+            className={`font-semibold text-sm ${
+              loading ? 'text-transparent' : 'text-foreground/60'
+            }`}
+          >
+            {member?.email ||
+              (member?.handle
+                ? `@${member.handle}`
+                : member?.id?.replace(/-/g, ''))}
+          </p>
+        </div>
+      </div>
+
+      {workspace && !member.direct_board_guest && (
+        <div className="absolute top-4 right-4 flex gap-2">
+          <MemberSettingsButton
+            workspace={workspace}
+            user={member}
+            currentUser={currentUser}
+            canManageMembers={canManageMembers}
+          />
+        </div>
+      )}
+
+      {member.direct_board_guest && (
+        <div className="mt-3 rounded-md border border-dynamic-blue/20 bg-dynamic-blue/5 p-3 text-sm">
+          <div className="font-medium text-dynamic-blue">
+            {t('direct_board_guest_scope_title')}
+          </div>
+          <p className="mt-1 text-foreground/70">
+            {t('direct_board_guest_scope_description', {
+              count: member.guest_board_count ?? 0,
+            })}
+          </p>
+          {member.guest_board_names && member.guest_board_names.length > 0 && (
+            <div className="mt-2 flex flex-wrap gap-1">
+              {member.guest_board_names.slice(0, 4).map((name) => (
+                <Badge key={name} variant="outline" className="text-xs">
+                  {name}
+                </Badge>
+              ))}
+              {member.guest_board_names.length > 4 && (
+                <Badge variant="outline" className="text-xs">
+                  +{member.guest_board_names.length - 4}
+                </Badge>
+              )}
+            </div>
+          )}
+        </div>
+      )}
+
+      <div className="mt-2 flex flex-wrap items-center justify-between gap-2 border-t pt-2 text-sm md:text-base lg:gap-4">
+        {loading || member?.created_at ? (
+          <div
+            className={`line-clamp-1 ${
+              loading ? 'text-transparent' : 'text-foreground/80'
+            }`}
+          >
+            <span className="opacity-90">
+              {t(member?.pending ? 'invited' : 'member_since')}
+            </span>{' '}
+            <span className="font-semibold">
+              {moment(member.created_at).locale(locale).fromNow()}
+            </span>
+            .
+          </div>
+        ) : null}
+
+        <div className="flex gap-2">
+          {currentUser?.id === member.id && (
+            <div
+              className={`rounded border px-2 py-0.5 text-center font-semibold ${
+                loading
+                  ? 'text-transparent'
+                  : 'bg-primary text-primary-foreground'
+              }`}
+            >
+              {t('you')}
+            </div>
+          )}
+        </div>
+      </div>
+
+      {/* Permission Breakdown - only show for non-pending members */}
+      {!member?.pending &&
+        workspace &&
+        member.id &&
+        !member.direct_board_guest && (
+          <MemberPermissionBreakdown
+            wsId={workspace.id}
+            member={member as typeof member & { id: string }}
+          />
+        )}
+    </div>
+  ));
+
+  return (
+    <Masonry
+      columns={2}
+      gap={16}
+      breakpoints={{
+        0: 1, // 1 column on mobile
+        768: 1, // 1 column on tablet
+        1024: 2, // 2 columns on desktop
+        1536: 2, // 2 columns on larger screens
+      }}
+      strategy="count"
+    >
+      {memberCards}
+    </Masonry>
+  );
+}

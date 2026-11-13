@@ -32,6 +32,7 @@ import { Textarea } from '@tuturuuu/ui/textarea';
 import { useRouter } from 'next/navigation';
 import { useTranslations } from 'next-intl';
 import { useEffect, useId, useState } from 'react';
+import { tasksApiPath } from '../../shared/tasks-paths';
 
 interface EditTemplateDialogProps {
   wsId: string;
@@ -110,7 +111,7 @@ export function EditTemplateDialog({
             ? null
             : undefined;
       const response = await fetch(
-        `/api/v1/workspaces/${wsId}/templates/${templateId}`,
+        tasksApiPath(`/api/v1/workspaces/${wsId}/templates/${templateId}`),
         {
           method: 'PATCH',
           headers: { 'Content-Type': 'application/json' },

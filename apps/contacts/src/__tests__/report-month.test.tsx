@@ -110,11 +110,13 @@ it('titles a new report written on 2 Nov for October and follows a month change'
 
 describe('report month strings', () => {
   const hub = [
-    'month_label',
+    'title_month_label',
+    'title_month_scope',
+    'title_month_scope_none',
+    'no_title_month',
     'month_option',
     'all_months',
     'custom_range',
-    'month_scope',
     'estimated_month',
     'estimated_month_hint',
     'set_month',

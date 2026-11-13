@@ -84,6 +84,33 @@ Light and dark screenshots are separate acceptance cases. A semantic token name
 alone does not prove sufficient contrast, especially for focus indicators,
 disabled values, validation messages, and selected navigation.
 
+## Hover-expand sidebar
+
+The shared `Structure` in hover mode (`overlayOnExpand`) is a pure overlay. The
+page reserves a constant collapsed rail (`md:pl-[var(--sidebar-collapsed-width)]`),
+and the expanded panel is a fixed layer above the content, so expanding it never
+resizes or moves the page. Rules for any change to it:
+
+- No width, margin, or padding transition on anything in normal flow. The panel's
+  box changes size in one frame; a paint-only `clip-path` wipe and an opacity fade
+  (`sidebar-overlay-reveal`, `sidebar-overlay-content` in `globals.css`, 180 ms,
+  disabled under `prefers-reduced-motion`) reveal it.
+- The rail and the expanded panel are separate subtrees (keyed remount), because an
+  element that exists in both states and changes position counts as a layout shift.
+- Async content inside the panel needs a fixed-size skeleton, not a pop-in.
+
+Verify with the headless harness, which mounts the real shared sidebar chrome with
+static fixtures, hovers the rail, and fails on any grid movement or on a
+Layout Instability total above 0.001:
+
+```sh
+ttr resources run -- node scripts/ci/sidebar-layout-shift.mjs
+```
+
+Set `SIDEBAR_SHIFT_SHOTS=<dir>` to also save collapsed, mid-reveal, and expanded
+screenshots. It needs the installed workspace and a Playwright Chromium; it uses no
+network and no authentication, so it does not cover signed-in data states.
+
 ## Navigation, forms, and states
 
 With expand-all enabled or search active, sidebar groups are non-collapsible and

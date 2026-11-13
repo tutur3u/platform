@@ -62,7 +62,7 @@ it('submits one explicit resume using the existing client authorization options'
   ).toBe('created');
   expect(fetch).toHaveBeenCalledTimes(1);
   const init = fetch.mock.calls[0]?.[1];
-  expect(init?.redirect).toBe('error');
+  expect(init?.redirect).toBe('manual');
   expect(new Headers(init?.headers).get('authorization')).toBe(
     'Bearer synthetic'
   );
@@ -276,3 +276,16 @@ it.each([
     expect(fetch).toHaveBeenCalledTimes(1);
   }
 );
+it('refuses a redirect response to an explicit resume without a second dispatch', async () => {
+  const fetch = vi.fn<typeof globalThis.fetch>(
+    async () =>
+      new Response(null, {
+        status: 307,
+        headers: { Location: 'https://attacker.invalid/' },
+      })
+  );
+  await expect(
+    submitEmployeeCliRecovery(id(2), resume, { fetch })
+  ).rejects.toThrow();
+  expect(fetch).toHaveBeenCalledTimes(1);
+});

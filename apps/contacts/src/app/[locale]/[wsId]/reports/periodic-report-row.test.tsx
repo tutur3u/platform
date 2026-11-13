@@ -13,7 +13,7 @@ it('labels legacy approval as pending and keeps successful tests distinct from r
     report_approval_status: null,
     cadence: 'monthly',
     content: '',
-    feedback: '',
+    feedback: 'Teacher comment',
     created_at: '2026-09-01',
     updated_at: '2026-09-01',
     delivery_status: 'draft',
@@ -74,6 +74,39 @@ it('labels legacy approval as pending and keeps successful tests distinct from r
   expect(screen.queryByText('live_delivery')).not.toBeInTheDocument();
   expect(screen.queryByText('not_sent')).not.toBeInTheDocument();
   expect(screen.getByText('test_send')).toBeInTheDocument();
+  const delivery = vi.fn();
+  const view = (status: 'PENDING' | 'APPROVED', feedback: string) => (
+    <PeriodicReportRow
+      report={{
+        ...report,
+        report_approval_status: status,
+        feedback,
+        test_delivery: undefined,
+      }}
+      wsId="workspace"
+      permissions={{ canApproveReports: true, canSendReports: true }}
+      approvalPending={false}
+      generationPending={false}
+      onApprove={approve}
+      onGenerate={vi.fn()}
+      onPreview={vi.fn()}
+      onEmailPreview={vi.fn()}
+      onDeliveryIntent={delivery}
+    />
+  );
+  rerender(view('PENDING', '  '));
+  expect(screen.getByRole('button', { name: 'approve' })).toBeDisabled();
+  expect(screen.getByRole('button', { name: 'approve' })).toHaveAttribute(
+    'title',
+    'feedback_required'
+  );
+  rerender(view('APPROVED', '  '));
+  fireEvent.click(screen.getByRole('button', { name: 'send' }));
+  expect(screen.getByRole('button', { name: 'send' })).toBeDisabled();
+  expect(delivery).not.toHaveBeenCalled();
+  rerender(view('APPROVED', 'Teacher comment'));
+  fireEvent.click(screen.getByRole('button', { name: 'send' }));
+  expect(delivery).toHaveBeenCalledWith('send');
 });
 
 it.each([

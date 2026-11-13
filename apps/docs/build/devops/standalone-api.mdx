@@ -75,6 +75,22 @@ workspace IDs in the middle of a path. Keep sharp, bcrypt, Firebase Admin and
 persistent ChatGPT filesystem graphs on their existing Node/self-hosted owner.
 Do not import their graphs into the Worker to claim registry coverage.
 
+### Workspace handler readiness
+
+The registry and generated clients include the first 26 workspace operations:
+roles, API keys, whiteboards, workforce, user profile links, programming, and
+deleted-workspace status. Their schemas and handlers are Worker-compatible at
+the contract and dispatch layers. This is not permission to route them yet:
+these operations use protected policies, and the concrete Worker security
+adapter for the web API guard is not wired in `src/worker.ts`. Protected
+operations therefore fail closed with 503 and continue to be served by the
+retained Next origin. The operations become eligible for a Worker flip only
+after the adapter preserves the origin's authentication, membership,
+authorization, abuse and rate controls and passes acceptance for the exact
+deployment. Dataset, note, storage, external-project, meeting,
+topic-announcement, tutoring, and user-group handlers remain outside this
+slice because their behavior is not a pure handler port.
+
 ## Mobile version contract
 
 The consolidated mobile endpoint is

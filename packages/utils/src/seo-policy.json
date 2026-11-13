@@ -101,6 +101,34 @@
     "publicPaths": [],
     "publicPatterns": []
   },
+  "marketing": {
+    "origin": "https://tuturuuu.com",
+    "localePrefix": "as-needed",
+    "publicPaths": [
+      "",
+      "pricing",
+      "privacy",
+      "terms",
+      "acceptable-use",
+      "community-guidelines",
+      "security",
+      "about",
+      "branding",
+      "careers",
+      "contact",
+      "contributors",
+      "partners",
+      "women-in-tech",
+      "products",
+      "blog"
+    ],
+    "publicPatterns": [
+      "legal/(?:changes(?:/full)?|dpa|sla|subprocessors)",
+      "security/(?:bug-bounty|policy)",
+      "products/(?:ai|calendar|chat|crm|documents|drive|finance|forms|hive|inventory|lms|mail|meet-together|qr|storefront|tasks|track|workflows)",
+      "solutions/(?:construction|education|healthcare|hospitality|manufacturing|pharmacies|realestate|restaurants|retail)"
+    ]
+  },
   "meet": {
     "origin": "https://meet.tuturuuu.com",
     "localePrefix": "never",
@@ -183,6 +211,12 @@
   },
   "web": {
     "origin": "https://tuturuuu.com",
+    "localePrefix": "as-needed",
+    "publicPaths": [],
+    "publicPatterns": []
+  },
+  "workspace": {
+    "origin": "https://workspace.tuturuuu.com",
     "localePrefix": "as-needed",
     "publicPaths": [],
     "publicPatterns": []

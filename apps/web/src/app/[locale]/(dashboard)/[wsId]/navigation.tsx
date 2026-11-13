@@ -613,6 +613,17 @@ export async function WorkspaceNavigationLinks({
           preferenceSectionLabel: sidebarSections.utilities,
         }
       : null,
+    !withoutPermission('view_workspace_domains') ||
+    !withoutPermission('manage_workspace_domains')
+      ? {
+          id: 'workspace-domains-settings',
+          title: t('workspace-domains.title'),
+          href: `/${personalOrWsId}/domains`,
+          aliases: [`/${resolvedWorkspaceId}/domains`],
+          icon: createDashboardNavigationIcon('Globe', 'h-5 w-5'),
+          preferenceSectionLabel: sidebarSections.utilities,
+        }
+      : null,
     createWorkspaceMembersNavigationLink({
       canManageMembers: !withoutPermission('manage_workspace_members'),
       isPersonal,

@@ -49,6 +49,8 @@ export function getWorkspaceRoutePermissionRequirements(
       return ['manage_calendar'];
     case 'documents':
       return ['manage_documents'];
+    case 'domains':
+      return ['view_workspace_domains', 'manage_workspace_domains'];
     case 'drive':
       return ['manage_drive'];
     case 'education':
@@ -57,7 +59,11 @@ export function getWorkspaceRoutePermissionRequirements(
         : EDUCATION_ROUTE_PERMISSIONS;
     case 'epm':
     case 'external-projects':
-      return ['manage_external_projects', 'publish_external_projects'];
+      return [
+        'manage_external_projects',
+        'publish_external_projects',
+        'edit_external_projects',
+      ];
     case 'finance':
       if (subSection === 'invoices') {
         if (nestedSection === 'new') {

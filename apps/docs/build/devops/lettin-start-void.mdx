@@ -1,0 +1,29 @@
+---
+title: "Lettin Start + Void migration status"
+description: "Current Lettin runtime and the work required before a native Worker cutover."
+updatedAt: "2026-11-09"
+audience: developers
+---
+
+Lettin (`apps/lettin`) remains a Next.js app using OpenNext Cloudflare scripts.
+It is not cut over tonight. Its Wrangler config names the existing
+`tuturuuu-lettin` Worker, custom domain `lettin.tuturuuu.com`, D1 binding
+`LETTIN_DB`, R2 bindings `LETTIN_MEDIA` and `NEXT_INC_CACHE_R2_BUCKET`,
+`WORKER_SELF_REFERENCE`, and `ASSETS`. Runtime secret names are
+`NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY`, and
+`SUPABASE_SECRET_KEY`.
+
+The current scripts build and deploy through OpenNext (`build:cloudflare`,
+`deploy:cloudflare`, and `preview:cloudflare`). A native migration requires
+porting the app routes and server behavior to TanStack Start, Vite+ and Void;
+integrating the start-bridge boundary and request identity; replacing the
+OpenNext-specific Worker and cache configuration with a native Worker profile;
+preserving D1/R2 usage and auth behavior; and adding emitted-Worker runtime
+fixtures, artifact acceptance, build-info smoke coverage and a cutover packet.
+The existing database migrations are not part of that work and must not be run
+as part of a source migration.
+
+No native cutover or route change is authorized by this status page. A future
+cutover needs a separately reviewed native artifact, staging acceptance,
+release approval and an immutable Vercel deployment ID captured by Rex. Rollback
+must restore the prior Vercel route without touching Lettin data.

@@ -1,0 +1,54 @@
+---
+title: "Pay Start cutover packet"
+description: "Source and operator checklist for a future Pay Worker cutover."
+updatedAt: "2026-11-09"
+audience: developers
+---
+
+Pay has a TanStack Start/Void candidate. Production publication and routing are
+held; this packet records the source target and checks required before Rex
+authorizes a cutover. It does not authorize deployment, payment activity,
+provider changes or data writes.
+
+## Worker and configuration
+
+- Worker: `tuturuuu-pay` for production; the staging Worker name for the
+  isolated staging candidate.
+- Hosts: `pay.tuturuuu.com` and the `/pay` mount on `tuturuuu.com`. Staging
+  must use the separately approved staging host and zone.
+- Build: `cd apps/pay && bun run build:cloudflare`.
+- Static asset binding: `ASSETS`. Optional internal API origin variable:
+  `INTERNAL_WEB_API_ORIGIN`.
+- Staging profile variable names: `TUTURUUU_NOINDEX`,
+  `INTERNAL_WEB_API_ORIGIN`, `NEXT_PUBLIC_WEB_APP_URL`,
+  `NEXT_PUBLIC_APP_URL`, `PAY_APP_URL`, `NEXT_PUBLIC_SUPABASE_URL`, and
+  `POLAR_SANDBOX`. Supply sandbox-only provider values through the approved
+  environment; never put credentials in this page or profile.
+- Runtime secret names: `CRON_SECRET`, `POLAR_ACCESS_TOKEN`,
+  `POLAR_WEBHOOK_SECRET`, `SUPABASE_SECRET_KEY`, and
+  `TUTURUUU_APP_COORDINATION_SECRET`. Configure them only through the protected
+  runtime secret store. This packet contains names, never values.
+
+## Smoke checks
+
+After an authorized cutover, run the public build identity probes against both
+hosts and verify the native runtime header and expected source SHA:
+
+```sh
+curl -fsS -D - https://pay.tuturuuu.com/api/build-info
+curl -fsSI https://tuturuuu.com/pay/api/build-info
+```
+
+The release operator must also run the signed-in billing and sandbox checkout
+smokes in [Pay staging acceptance](./pay-start), including webhook signature
+rejection, then watch authentication and 5xx behavior. Do not invoke billing,
+webhook, cron or migration endpoints as a smoke substitute.
+
+## Rollback
+
+Before routing changes, Rex records the immutable Vercel deployment ID and the
+exact routes, custom domains and DNS records being replaced, plus the one-step
+restore command and rollback owner. No deployment ID is recorded in this
+repository, so Rex must capture it. Restore that routing to the prior deployment
+immediately if smoke or the post-cutover watch regresses. Keep the deployment
+available for the full release cycle.
