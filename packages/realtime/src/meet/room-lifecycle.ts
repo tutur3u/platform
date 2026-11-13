@@ -144,6 +144,7 @@ export function applyRoomRestore(
       ...clean,
       ended: false,
       liveAssistant: undefined,
+      miraPrivate: undefined,
       liveShares: {},
       budget: {
         ...clean.budget!,

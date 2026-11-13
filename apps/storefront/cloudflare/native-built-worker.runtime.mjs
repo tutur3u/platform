@@ -182,13 +182,27 @@ test(
           (response) => {
             const chunks = [];
             response.on('data', (chunk) => chunks.push(chunk));
-            response.on('end', () =>
+            response.on('end', () => {
+              assert.equal(
+                response.headers['strict-transport-security'],
+                'max-age=63072000',
+                'Every emitted Worker response must enforce HSTS'
+              );
+              assert.equal(
+                response.rawHeaders.filter(
+                  (name, index) =>
+                    index % 2 === 0 &&
+                    name.toLowerCase() === 'strict-transport-security'
+                ).length,
+                1,
+                'Every emitted Worker response must have exactly one HSTS header'
+              );
               resolve({
                 status: response.statusCode ?? 0,
                 location: response.headers.location ?? null,
                 body: Buffer.concat(chunks).toString('utf8'),
-              })
-            );
+              });
+            });
           }
         )
           .on('error', reject)

@@ -18,7 +18,7 @@ describe('Infrastructure locale root page', () => {
   it('redirects to the internal root workspace', async () => {
     const Page = (await import('./page')).default;
 
-    expect(() => Page()).toThrow('redirect:/internal');
+    await expect(Page()).rejects.toThrow('redirect:/internal');
     expect(mocks.redirect).toHaveBeenCalledWith('/internal');
   });
 });

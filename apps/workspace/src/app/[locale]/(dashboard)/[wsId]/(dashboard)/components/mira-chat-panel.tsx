@@ -31,6 +31,7 @@ import { useMiraChatEffects } from './use-mira-chat-effects';
 import { useMiraChatHotkeys } from './use-mira-chat-hotkeys';
 import { useMiraChatPersistence } from './use-mira-chat-persistence';
 import { useMiraLiveConversation } from './use-mira-live-conversation';
+import { useMiraLatency } from './use-mira-latency';
 import { useMiraMessageQueue } from './use-mira-message-queue';
 import { useMiraUiActions } from './use-mira-ui-actions';
 
@@ -61,6 +62,7 @@ export default function MiraChatPanel({
   onToggleFullscreen,
   onResetPanelState,
 }: MiraChatPanelProps) {
+  const timing = useMiraLatency();
   const t = useTranslations('dashboard.mira_chat');
   const greetingT = useTranslations('dashboard.greeting');
   const router = useRouter();
@@ -139,7 +141,11 @@ export default function MiraChatPanel({
     setWorkspaceContextId,
     transport,
     workspaceCreditLocked,
-  } = useMiraChatConfig({ wsId, taskBoardContext });
+  } = useMiraChatConfig({
+    wsId,
+    taskBoardContext,
+    onRequestStart: timing.requestStart,
+  });
 
   const {
     attachedFiles,
@@ -203,7 +209,17 @@ export default function MiraChatPanel({
     generateId: () => crypto.randomUUID(),
     messages: initialMessages,
     transport,
+    onFinish: ({ message }) => {
+      if (
+        message.parts.some(
+          (part) => part.type === 'text' && part.text.length > 0
+        )
+      )
+        timing.firstText();
+      timing.finish();
+    },
     onError(error) {
+      timing.finish();
       console.error('[Mira Chat] Stream error:', error);
       toast.error(
         model.value.startsWith('chatgpt/')
@@ -212,6 +228,15 @@ export default function MiraChatPanel({
       );
     },
   });
+
+  useEffect(() => {
+    const last = messages.at(-1);
+    if (
+      last?.role === 'assistant' &&
+      last.parts.some((part) => part.type === 'text' && part.text.length > 0)
+    )
+      timing.firstText();
+  }, [messages, timing]);
 
   const { onChange: onLiveConversationChange, flush: flushLiveConversation } =
     useMiraLiveConversation({
@@ -228,17 +253,19 @@ export default function MiraChatPanel({
   useMiraUiActions(messages, status);
 
   const sendMessageWithCurrentConfig = useCallback(
-    async (message: UIMessage) => {
+    async (message: UIMessage, isCurrent?: () => boolean) => {
       if (model.disabled) return false;
       try {
         await flushLiveConversation();
       } catch {
+        if (isCurrent && !isCurrent()) return false;
         const unsent = message.parts
           .flatMap((part) => (part.type === 'text' ? [part.text] : []))
           .join('\n');
         setInput((current) => [unsent, current].filter(Boolean).join('\n'));
         return false;
       }
+      if (isCurrent && !isCurrent()) return false;
       await sendMessage(message, { body: chatRequestBody });
       return true;
     },
@@ -325,20 +352,27 @@ export default function MiraChatPanel({
       wsId,
     });
 
-  const { handleSubmit, queuedText, resetQueue } = useMiraMessageQueue({
-    attachedFiles,
-    disabled: model.disabled,
-    chatId: chat?.id,
-    clearAttachedFiles,
-    createChat,
-    sendMessageWithCurrentConfig,
-    snapshotAttachmentsForMessage,
-    status,
-    stop,
-  });
+  const { handleSubmit, queuedText, dispatchPending, resetQueue } =
+    useMiraMessageQueue({
+      attachedFiles,
+      disabled: model.disabled,
+      onSubmitTiming: timing.begin,
+      workspaceId: wsId,
+      chatId: chat?.id,
+      clearAttachedFiles,
+      createChat,
+      sendMessageWithCurrentConfig,
+      snapshotAttachmentsForMessage,
+      status,
+      stop,
+    });
   submitTextRef.current = handleSubmit;
 
-  const pendingDisplay = queuedText ?? pendingPrompt;
+  const pendingDisplay =
+    queuedText ??
+    (dispatchPending?.parts[0]?.type === 'text'
+      ? dispatchPending.parts[0].text
+      : pendingPrompt);
   const hasFileOnlyPending =
     !pendingDisplay && messageAttachments.size > 0 && messages.length === 0;
   const hasMessages =
@@ -372,6 +406,7 @@ export default function MiraChatPanel({
       stop();
     }
     resetQueue();
+    timing.cancel();
     void resetConversationState();
     setCreditSource('personal');
     onResetPanelState?.();
@@ -382,6 +417,7 @@ export default function MiraChatPanel({
     setCreditSource,
     status,
     stop,
+    timing,
   ]);
 
   const { hotkeyLabels, modelPickerHotkeySignal } = useMiraChatHotkeys({
@@ -448,6 +484,8 @@ export default function MiraChatPanel({
                 pendingDisplay={pendingDisplay}
                 pendingPrompt={pendingPrompt}
                 queuedText={queuedText}
+                dispatchPending={dispatchPending}
+                onActivityVisible={timing.activityVisible}
                 scrollContainerRef={scrollContainerRef}
                 userAvatarUrl={userAvatarUrl}
                 userName={userName}

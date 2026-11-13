@@ -66,15 +66,34 @@
   "hosting": {
     "title": "Where each app runs",
     "subtitle": "Each app’s public build-info endpoint, probed from outside Cloudflare, shows which commit it runs and when that commit was made.",
-    "checked": "Hosting checked",
-    "checkedNote": "· short links and the roadmap itself are re-checked live.",
+    "checked": "Hosting as of",
+    "checkedNote": "(when this page was built; every deploy checks again)",
     "workers": "Cloudflare Workers",
     "vercel": "Vercel",
     "store": "App stores",
     "unknown": "Not verifiable",
     "buildFrom": "Build from",
     "noCommit": "Commit not reported",
-    "main": "Latest on main"
+    "main": "Latest on main",
+    "notObserved": "This build could not check hosting, so every app shows as not verifiable.",
+    "badgeAlt": "Protected by Cloudflare"
+  },
+  "migration": {
+    "title": "Moving apps to tuturuuu.com",
+    "subtitle": "Each app is moving from its own subdomain to a path on tuturuuu.com.",
+    "progress": "{done} of {total} apps moved",
+    "inProgressCount": "{n} in progress",
+    "states": {
+      "done": "Moved",
+      "in_progress": "In progress",
+      "not_started": "Not started",
+      "unverified": "Unverified"
+    },
+    "from": "from",
+    "to": "to",
+    "list": "Apps and their new paths",
+    "asOf": "Checked when this page was built:",
+    "method": "Moved: the subdomain redirects to its tuturuuu.com path. In progress: the app already answers on its tuturuuu.com path. Not started: neither yet. Unverified: a check got no answer."
   },
   "method": {
     "title": "How statuses are computed",

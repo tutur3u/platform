@@ -15,6 +15,7 @@ export async function executeLiveDecision(
   persist: () => Promise<void>,
   retry: () => Promise<void>
 ) {
+  if (review.name === 'propose_room_reply') approved = false;
   let response: Record<string, unknown>;
   try {
     if (approved && review.name === 'remember')

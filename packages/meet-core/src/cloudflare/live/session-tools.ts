@@ -21,6 +21,7 @@ export async function executeLiveTool(
   args: Record<string, unknown>
 ) {
   const { saved, provider, env, archive, persist, emit, emitReview } = context;
+  if (name === 'meeting_context' || name === 'propose_room_reply') return;
   const respond = (response: Record<string, unknown>) =>
     provider?.sendToolResponse({
       functionResponses: [{ id: callId, name, response }],

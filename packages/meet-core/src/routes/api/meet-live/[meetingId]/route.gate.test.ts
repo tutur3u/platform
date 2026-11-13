@@ -1,146 +1,125 @@
-import { beforeEach, describe, expect, it, vi } from 'vitest';
-
-const mocks = vi.hoisted(() => ({
-  cloudflare: vi.fn(),
-  fetch: vi.fn(),
-  callRoom: vi.fn(),
-}));
-vi.mock('@opennextjs/cloudflare', () => ({
-  getCloudflareContext: mocks.cloudflare,
-}));
-vi.mock('@tuturuuu/meet-core/features/call/lib/call-access', () => ({
-  MeetCallAccessError: class extends Error {
-    constructor(
-      public status: number,
-      message: string
-    ) {
-      super(message);
-    }
-  },
-}));
-vi.mock('@tuturuuu/meet-core/features/call/server/room-service', () => ({
-  callRoomService: mocks.callRoom,
-  personalWorkspace: async () => 'personal-ws',
-  roomRoute: async (
-    _request: Request,
-    _id: string,
-    work: (access: unknown) => Promise<unknown>
-  ) => {
-    try {
-      return Response.json(
-        await work({
-          user: { id: 'actor' },
-          isHost: true,
-          displayName: 'Host',
-          meeting: {
-            ws_id: '00000000-0000-4000-8000-0000000000f1',
-            name: 'Meeting',
-          },
-        })
-      );
-    } catch (error) {
-      return Response.json(
-        { error: (error as Error).message },
-        { status: (error as { status?: number }).status ?? 500 }
-      );
-    }
-  },
-}));
-vi.mock('@tuturuuu/meet-core/features/live-assistant/token', () => ({
-  signLiveSession: () => 'signed',
-}));
-vi.mock('@tuturuuu/meet-core/features/live-assistant/workspace-tools', () => ({
-  liveWorkspaceCatalog: async () => [],
-  liveWorkspaceTools: async () => ({}),
-}));
-vi.mock('@tuturuuu/meet-core/parley/repository', () => ({
-  getScenarioPrompt: async () => undefined,
-}));
-
-import { POST as review } from './review/route';
-import { POST as live } from './route';
-
-const sessionId = '00000000-0000-4000-8000-0000000000e1';
-const call = (handler: typeof live, body: unknown) =>
-  handler(
-    new Request('https://meet.tuturuuu.com/api/meet-live/x', {
-      method: 'POST',
-      body: JSON.stringify(body),
-    }),
-    { params: Promise.resolve({ meetingId: 'meeting' }) }
+import { expect, it } from 'vitest';
+import {
+  f,
+  live,
+  review,
+  call,
+  bind,
+  sessionId,
+  version,
+  meetingId,
+} from './phase-a-fixture';
+it('denies room start before env, consent, token, or Durable Object work', async () => {
+  f.cloudflare.mockRejectedValue(new Error('Synthetic bindings unavailable'));
+  const response = await call(live, {
+    action: 'start',
+    mode: 'room',
+    timezone: 'UTC',
+    audioPolicy: 'participant-opt-in',
+  });
+  expect(response.status).toBe(403);
+  expect(await response.json()).toEqual({
+    error:
+      'Room Mira is unavailable. Use Private Mira after choosing Continue.',
+  });
+  expect(f.cloudflare).not.toHaveBeenCalled();
+  expect(f.sign).not.toHaveBeenCalled();
+  expect(f.fetch).not.toHaveBeenCalled();
+});
+it('refuses a private token before a persisted current account click', async () => {
+  for (const choice of [
+    null,
+    { ...f.choice!, choice: 'mute' },
+    { ...f.choice!, accountId: 'another' },
+    { ...f.choice!, meetingId: 'another' },
+  ]) {
+    f.choice = choice;
+    expect(
+      (await call(live, { action: 'start', mode: 'personal', timezone: 'UTC' }))
+        .status
+    ).toBe(403);
+  }
+  expect(f.sign).not.toHaveBeenCalled();
+  expect(f.fetch).not.toHaveBeenCalled();
+});
+it('keeps kill switch and absent explicit enable off for a qualified actor', async () => {
+  for (const disabled of ['true', '', undefined]) {
+    bind(disabled);
+    expect(
+      (await call(live, { action: 'start', mode: 'personal', timezone: 'UTC' }))
+        .status
+    ).toBe(403);
+  }
+  expect(f.sign).not.toHaveBeenCalled();
+});
+it('does not admit an unattested team or guest even when a choice exists', async () => {
+  f.authorized = false;
+  expect(
+    (await call(live, { action: 'start', mode: 'personal', timezone: 'UTC' }))
+      .status
+  ).toBe(403);
+  f.authorized = true;
+  f.member = false;
+  expect(
+    (await call(live, { action: 'start', mode: 'personal', timezone: 'UTC' }))
+      .status
+  ).toBe(403);
+  expect(f.fetch).not.toHaveBeenCalled();
+});
+it('records mute only after private stop succeeds, and never mints a token for a choice', async () => {
+  f.sessions = [sessionId];
+  const response = await call(live, {
+    action: 'choice',
+    choice: 'mute',
+    version,
+  });
+  expect(response.status).toBe(200);
+  expect(f.order.indexOf('stop')).toBeLessThan(
+    f.order.indexOf('mira.private.choice')
   );
-const bind = (allowlist?: string) =>
-  mocks.cloudflare.mockResolvedValue({
-    env: {
-      MEET_LIVE: {
-        idFromName: (name: string) => name,
-        get: () => ({ fetch: mocks.fetch }),
-      },
-      MEET_REALTIME_TOKEN_SECRET: 'secret',
-      GOOGLE_GENERATIVE_AI_API_KEY: 'key',
-      MEET_AI_PROTECTED_WORKSPACE_IDS: '00000000-0000-4000-8000-0000000000ee',
-      MEET_AI_ENABLED_WORKSPACE_IDS: allowlist,
-      MEET_AI_DISABLED: allowlist ? undefined : 'true',
-    },
-  });
+  expect(f.sign).not.toHaveBeenCalled();
+});
+it('does not persist mute after an uncertain stop', async () => {
+  f.sessions = [sessionId];
+  f.fetch.mockResolvedValue(new Response(null, { status: 503 }));
+  expect(
+    (await call(live, { action: 'choice', choice: 'mute', version })).status
+  ).toBe(503);
+  expect(f.order).not.toContain('mira.private.choice');
+});
+it('rejects a stale notice version and disables room/workspace review', async () => {
+  expect(
+    (
+      await call(live, {
+        action: 'choice',
+        choice: 'continue',
+        version: 'stale',
+      })
+    ).status
+  ).toBe(400);
+  expect(
+    (await call(review, { sessionId, reviewId: meetingId, approved: true }))
+      .status
+  ).toBe(403);
+  expect(f.sign).not.toHaveBeenCalled();
+});
 
-describe('meet-live routes workspace gate', () => {
-  beforeEach(() => {
-    vi.resetAllMocks();
-    mocks.fetch.mockResolvedValue(Response.json({ ok: true }));
-    mocks.callRoom.mockResolvedValue({});
-  });
-
-  it.each([
-    ['start', { action: 'start', mode: 'personal', timezone: 'UTC' }],
-    ['resume', { action: 'resume', sessionId }],
-  ])(
-    'denies %s outside the allowlist with no Durable Object or room work',
-    async (_name, body) => {
-      for (const allowlist of [
-        undefined,
-        '',
-        '*',
-        '00000000-0000-4000-8000-0000000000f2',
-      ]) {
-        bind(allowlist);
-        const response = await call(live, body);
-        expect(response.status).toBe(403);
-      }
-      expect(mocks.fetch).not.toHaveBeenCalled();
-      expect(mocks.callRoom).not.toHaveBeenCalled();
-    }
-  );
-
-  it('keeps stop open so an existing session can always end', async () => {
-    bind(undefined);
-    const response = await call(live, { action: 'stop', sessionId });
-    expect(response.status).toBe(200);
-    expect(mocks.fetch).toHaveBeenCalledWith(
-      'https://live.internal/control',
-      expect.objectContaining({ method: 'POST' })
-    );
-  });
-
-  it('admits a listed workspace to start', async () => {
-    bind('00000000-0000-4000-8000-0000000000f1');
-    const response = await call(live, {
-      action: 'start',
-      mode: 'personal',
-      timezone: 'UTC',
-    });
-    expect(response.status).not.toBe(403);
-    expect(mocks.fetch).toHaveBeenCalled();
-  });
-
-  it('denies Live review for an unlisted workspace before any Durable Object call', async () => {
-    bind(undefined);
-    const response = await call(review, {
-      sessionId,
-      reviewId: sessionId,
-      approved: false,
-    });
-    expect(response.status).toBe(403);
-    expect(mocks.fetch).not.toHaveBeenCalled();
-  });
+it('denies every public and legacy private mention without forwarding any author or history', async () => {
+  const { POST: publicChat } =
+    await import('../../meet-call/[meetingId]/assistant/route');
+  const { POST: privateChat } =
+    await import('../../meet-call/[meetingId]/assistant/personal/route');
+  for (const handler of [publicChat, privateChat])
+    for (const body of ['@Tuturuuu hello', '@ttr hello', '@mira hello'])
+      expect(
+        (
+          await call(handler, {
+            body,
+            audience: 'everyone',
+            history: [{ author: 'other', text: 'excluded' }],
+          })
+        ).status
+      ).toBe(403);
+  expect(f.fetch).not.toHaveBeenCalled();
+  expect(f.sign).not.toHaveBeenCalled();
 });
