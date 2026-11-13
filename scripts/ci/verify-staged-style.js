@@ -39,6 +39,53 @@ const FAILURE_REASONS = [
   'Candidate utility styles are missing',
 ];
 
+function scrubTransportTarget(target, candidateOrigin) {
+  const sameCandidateOrigin = target.origin === candidateOrigin;
+  const hasSearch = Boolean(target.search);
+  const hasHash = Boolean(target.hash);
+  const hasCredentials = Boolean(target.username || target.password);
+  let searchKeysOnlyDpl = false;
+  if (hasSearch && sameCandidateOrigin) {
+    const keys = [...new URLSearchParams(target.search).keys()].slice(0, 16);
+    searchKeysOnlyDpl = keys.length === 1 && keys[0] === 'dpl';
+  }
+  let pathname = sameCandidateOrigin ? '[redacted]' : '[foreign]';
+  let classification = sameCandidateOrigin ? 'same-origin-other' : 'off-candidate';
+  if (sameCandidateOrigin) {
+    try {
+      const decoded = decodeURIComponent(target.pathname).slice(0, 2048);
+      if (
+        decoded.startsWith('/_next/static/') &&
+        decoded.endsWith('.css') &&
+        !decoded.startsWith('//') &&
+        !/[\\\\%]/u.test(decoded)
+      ) {
+        pathname = decoded;
+        classification = 'built-stylesheet';
+      }
+    } catch {
+      pathname = '[undecodable]';
+      classification = 'undecodable-path';
+    }
+  }
+  return {
+    sameCandidateOrigin,
+    origin: sameCandidateOrigin ? candidateOrigin : 'off-candidate',
+    pathname,
+    hasSearch,
+    hasHash,
+    hasCredentials,
+    searchKeysOnlyDpl,
+    classification,
+  };
+}
+
+function transportError(message, target) {
+  const error = new Error(message);
+  if (target instanceof URL) error.rejectedTarget = target;
+  return error;
+}
+
 function describeFailure(error) {
   const message = String(error?.message ?? '');
   const known = FAILURE_REASONS.find((reason) => message.includes(reason));
@@ -178,6 +225,7 @@ async function main({ env = process.env, runCommand = run, browserType } = {}) {
   };
   await markStage('identity');
   const failures = [];
+  const blockedResources = [];
   const css = new Map();
   const cssSources = new Map();
   const cliEnv = {
@@ -191,7 +239,7 @@ async function main({ env = process.env, runCommand = run, browserType } = {}) {
     try {
       pathname = decodeURIComponent(target.pathname);
     } catch {
-      throw new Error('Staged transport destination is not admitted');
+      throw transportError('Staged transport destination is not admitted', target);
     }
     if (
       target.origin !== origin ||
@@ -205,7 +253,7 @@ async function main({ env = process.env, runCommand = run, browserType } = {}) {
         ? target.pathname !== '/api/build-info'
         : /^\/api(?:\/|$)/iu.test(pathname))
     )
-      throw new Error('Staged transport destination is not admitted');
+      throw transportError('Staged transport destination is not admitted', target);
   }
   async function request(path, identity = false) {
     let target = new URL(path, origin);
@@ -213,8 +261,9 @@ async function main({ env = process.env, runCommand = run, browserType } = {}) {
     for (let hop = 0; hop <= 5; hop += 1) {
       admit(target, identity);
       if (seen.has(target.href))
-        throw new Error(
-          'Staged transport redirect is invalid or exceeds its bound'
+        throw transportError(
+          'Staged transport redirect is invalid or exceeds its bound',
+          target
         );
       seen.add(target.href);
       const result = await requestHop(`${target.pathname}${target.search}`);
@@ -226,14 +275,16 @@ async function main({ env = process.env, runCommand = run, browserType } = {}) {
         ![301, 302, 303, 307, 308].includes(result.status) ||
         !result.headers.location
       )
-        throw new Error(
-          'Staged transport redirect is invalid or exceeds its bound'
+        throw transportError(
+          'Staged transport redirect is invalid or exceeds its bound',
+          target
         );
       try {
         target = new URL(result.headers.location, target);
       } catch {
-        throw new Error(
-          'Staged transport redirect is invalid or exceeds its bound'
+        throw transportError(
+          'Staged transport redirect is invalid or exceeds its bound',
+          target
         );
       }
     }
@@ -312,7 +363,10 @@ async function main({ env = process.env, runCommand = run, browserType } = {}) {
         // Only pre-resolved navigation can change URL: flattening redirects at
         // another URL would give HTML and CSS the wrong relative-resource base.
         if (finalUrl !== target.href)
-          throw new Error('Staged resource redirect changes its browser URL');
+          throw transportError(
+            'Staged resource redirect changes its browser URL',
+            new URL(finalUrl)
+          );
         if (route.request().resourceType() === 'stylesheet') {
           if (result.status !== 200)
             throw new Error('Staged stylesheet request failed');
@@ -327,7 +381,17 @@ async function main({ env = process.env, runCommand = run, browserType } = {}) {
         }
         await route.fulfill(result);
       } catch (error) {
-        failures.push(describeFailure(error));
+        const reason = describeFailure(error);
+        failures.push(reason);
+        const rejected =
+          error?.rejectedTarget instanceof URL
+            ? error.rejectedTarget
+            : new URL(route.request().url());
+        blockedResources.push({
+          resourceType: route.request().resourceType(),
+          reason,
+          ...scrubTransportTarget(rejected, origin),
+        });
         await route.abort('failed');
       }
     });
@@ -409,9 +473,11 @@ async function main({ env = process.env, runCommand = run, browserType } = {}) {
         };
       }, Object.fromEntries(cssSources));
       assert.ok(
-        !failures.length && css.size > 0,
-        'Candidate CSS did not verify against built bytes'
+        !failures.length,
+        failures.find((value) => FAILURE_REASONS.includes(value)) ||
+          'Staged stylesheet request failed'
       );
+      assert.ok(css.size > 0, 'Unverified stylesheet');
       assert.ok(
         metrics.ruleCount > 0 && metrics.fontFailures === 0,
         'Candidate styles or fonts are missing'
@@ -483,7 +549,9 @@ async function main({ env = process.env, runCommand = run, browserType } = {}) {
           deployment: url,
           stage,
           reason,
+          verifiedStylesheetCount: css.size,
           resourceFailures: [...new Set(failures)].slice(0, 10),
+          blockedResources: blockedResources.slice(0, 10),
           ...(navigation ? { navigation } : {}),
         },
         null,
@@ -505,6 +573,7 @@ module.exports = {
   proofDirectory,
   responseHeaders,
   safeEnvironment,
+  scrubTransportTarget,
   verifyCss,
   writeProof,
 };

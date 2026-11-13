@@ -19,6 +19,7 @@ const {
   proofDirectory,
   responseHeaders,
   safeEnvironment,
+  scrubTransportTarget,
   verifyCss,
   writeProof,
 } = require('./verify-staged-style');
@@ -193,7 +194,9 @@ test('a failed proof logs its reason and still leaves evidence to upload', async
     deployment: 'https://platform-fixture.vercel.app',
     stage: 'identity',
     reason: 'Unclassified Error:exit-1',
+    verifiedStylesheetCount: 0,
     resourceFailures: [],
+    blockedResources: [],
   });
   assert.ok(!text.includes('SECRET-VALUE'));
 });
@@ -327,7 +330,7 @@ for (const [name, status, host, accepted] of [
       return { stdout: '\nTTR_HTTP_STATUS:200' };
     };
     const reason = accepted
-      ? 'Candidate CSS did not verify against built bytes'
+      ? 'Unverified stylesheet'
       : 'Staged public page failed or left the candidate';
     await assert.rejects(
       main({
@@ -371,7 +374,7 @@ for (const [name, status, host, accepted] of [
 
 // This browser seam deliberately does not re-route a fulfilled redirect, matching
 // Chromium's continuation behavior. A raw 3xx must never reach fulfill.
-async function transportFixture(t, responses, stamp) {
+async function transportFixture(t, responses, stamp, options = {}) {
   const temp = await mkdtemp(join(tmpdir(), 'staged-transport-test-'));
   const previous = process.cwd();
   process.chdir(temp);
@@ -382,6 +385,8 @@ async function transportFixture(t, responses, stamp) {
   const origin = 'https://platform-fixture.vercel.app';
   const sha = 'e'.repeat(40);
   const cssPath = '/_next/static/chunks/site.css';
+  const stylesheetRequestUrl =
+    options.stylesheetRequestUrl ?? origin + cssPath;
   const cssBody = '.flex{display:flex}';
   await mkdir(join(temp, '.vercel/output/static/_next/static/chunks'), {
     recursive: true,
@@ -434,7 +439,7 @@ async function transportFixture(t, responses, stamp) {
                 if (!result) return null;
                 if (result.status === 200) {
                   await dispatch(new URL('banner.svg', url).href, 'image');
-                  await dispatch(origin + cssPath, 'stylesheet');
+                  await dispatch(stylesheetRequestUrl, 'stylesheet');
                 }
                 return { status: () => result.status };
               },
@@ -627,4 +632,74 @@ for (const foreign of [true, false])
           : 'Staged resource redirect changes its browser URL'
       )
     );
+    assert.ok(Array.isArray(failure.blockedResources));
+    assert.equal(
+      failure.blockedResources[0]?.reason,
+      failure.resourceFailures[0]
+    );
+    assert.equal(
+      failure.blockedResources[0]?.origin,
+      foreign ? 'off-candidate' : f.origin
+    );
+    if (foreign) {
+      assert.equal(failure.blockedResources[0]?.classification, 'off-candidate');
+      assert.equal(failure.blockedResources[0]?.pathname, '[foreign]');
+    }
+    assert.ok(!JSON.stringify(failure).includes('SECRET'));
   });
+
+test('scrubTransportTarget never echoes query, credential, or foreign URL material', () => {
+  const origin = 'https://platform-fixture.vercel.app';
+  const built = scrubTransportTarget(
+    new URL(`${origin}/_next/static/chunks/site.css?dpl=QUERY-SECRET#frag`),
+    origin
+  );
+  assert.equal(built.pathname, '/_next/static/chunks/site.css');
+  assert.equal(built.searchKeysOnlyDpl, true);
+  assert.equal(built.hasSearch, true);
+  assert.ok(!JSON.stringify(built).includes('QUERY'));
+
+  const foreign = scrubTransportTarget(
+    new URL('https://elsewhere.example/SECRET/path.css?token=SECRET'),
+    origin
+  );
+  assert.equal(foreign.origin, 'off-candidate');
+  assert.equal(foreign.pathname, '[foreign]');
+  assert.ok(!JSON.stringify(foreign).includes('SECRET'));
+
+  const apiPath = scrubTransportTarget(
+    new URL(
+      'https://USER-SECRET:PASS-SECRET@platform-fixture.vercel.app/%61pi/private?token=QUERY-SECRET'
+    ),
+    origin
+  );
+  assert.equal(apiPath.pathname, '[redacted]');
+  assert.equal(apiPath.hasCredentials, true);
+  assert.ok(!JSON.stringify(apiPath).includes('SECRET'));
+  assert.ok(!JSON.stringify(apiPath).includes('token='));
+});
+
+test('transport admission rejects same-origin CSS with a query string before curl', async (t) => {
+  const origin = 'https://platform-fixture.vercel.app';
+  const f = await transportFixture(t, () => undefined, undefined, {
+    stylesheetRequestUrl: `${origin}/_next/static/chunks/site.css?dpl=fixture-token`,
+  });
+  await assert.rejects(
+    f.run(),
+    (error) =>
+      error.stagedReason === 'Staged transport destination is not admitted'
+  );
+  assert.ok(!f.calls.some((path) => path.includes('?')));
+  const failure = JSON.parse(await f.failure());
+  assert.equal(failure.verifiedStylesheetCount, 0);
+  assert.deepEqual(failure.resourceFailures, [
+    'Staged transport destination is not admitted',
+  ]);
+  const blocked = failure.blockedResources[0];
+  assert.equal(blocked.reason, failure.resourceFailures[0]);
+  assert.equal(blocked.resourceType, 'stylesheet');
+  assert.equal(blocked.searchKeysOnlyDpl, true);
+  assert.equal(blocked.pathname, '/_next/static/chunks/site.css');
+  assert.ok(!JSON.stringify(failure).includes('fixture-token'));
+  assert.ok(!JSON.stringify(failure).includes('token='));
+});
