@@ -1,5 +1,6 @@
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:mobile/core/ui/icons/app_icons.dart';
 import 'package:mobile/features/chat/cubit/chat_cubit.dart';
 import 'package:mobile/features/chat/models/chat_models.dart';
@@ -13,6 +14,9 @@ import 'package:shadcn_flutter/shadcn_flutter.dart' as shad;
 part 'chat_thread_message_list.dart';
 part 'chat_thread_attachments.dart';
 
+/// Shows one conversation's messages and composer.
+///
+/// The in-progress assistant reply streams from the nearest [ChatCubit].
 class ChatThreadView extends StatelessWidget {
   const ChatThreadView({
     required this.conversation,
@@ -20,7 +24,6 @@ class ChatThreadView extends StatelessWidget {
     required this.messageStatus,
     required this.currentUserId,
     required this.pendingAttachments,
-    required this.streamingAssistantText,
     required this.isSending,
     required this.isUploadingAttachment,
     required this.onSend,
@@ -37,7 +40,6 @@ class ChatThreadView extends StatelessWidget {
   final String? currentUserId;
   final ChatMessageStatus messageStatus;
   final List<ChatAttachment> pendingAttachments;
-  final String streamingAssistantText;
   final bool isSending;
   final bool isUploadingAttachment;
   final ValueChanged<String> onSend;
@@ -85,7 +87,6 @@ class ChatThreadView extends StatelessWidget {
                       workspaceId: selected.wsId,
                       messages: messages,
                       currentUserId: currentUserId,
-                      streamingAssistantText: streamingAssistantText,
                       onReaction: onReaction,
                     ),
                   },

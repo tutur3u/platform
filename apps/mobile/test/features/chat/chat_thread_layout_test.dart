@@ -1,11 +1,23 @@
+import 'package:bloc_test/bloc_test.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mobile/features/chat/cubit/chat_cubit.dart';
 import 'package:mobile/features/chat/models/chat_models.dart';
 import 'package:mobile/features/chat/widgets/chat_composer.dart';
 import 'package:mobile/features/chat/widgets/chat_thread_view.dart';
+import 'package:mocktail/mocktail.dart';
 
 import '../../helpers/helpers.dart';
+
+class _Chat extends MockCubit<ChatState> implements ChatCubit {}
+
+/// Provides the idle cubit the thread reads its streaming reply from.
+Widget _withChat(Widget child) {
+  final chat = _Chat();
+  when(() => chat.state).thenReturn(const ChatState());
+  return BlocProvider<ChatCubit>.value(value: chat, child: child);
+}
 
 void main() {
   testWidgets('message actions stay compact and preserve reactions', (
@@ -13,37 +25,38 @@ void main() {
   ) async {
     String? reaction;
     await tester.pumpApp(
-      SizedBox(
-        height: 600,
-        child: ChatThreadView(
-          conversation: ChatConversation(
-            id: 'conversation',
-            wsId: 'workspace',
-            type: ChatConversationType.direct,
-            updatedAt: DateTime(2026),
-            title: 'Friend',
-          ),
-          messages: [
-            ChatMessage(
-              id: 'message',
-              conversationId: 'conversation',
-              content: 'Hello',
-              kind: ChatMessageKind.user,
-              createdAt: DateTime(2026),
+      _withChat(
+        SizedBox(
+          height: 600,
+          child: ChatThreadView(
+            conversation: ChatConversation(
+              id: 'conversation',
+              wsId: 'workspace',
+              type: ChatConversationType.direct,
+              updatedAt: DateTime(2026),
+              title: 'Friend',
             ),
-          ],
-          messageStatus: ChatMessageStatus.loaded,
-          currentUserId: 'user',
-          pendingAttachments: const [],
-          streamingAssistantText: '',
-          isSending: false,
-          isUploadingAttachment: false,
-          onSend: (_) {},
-          onPickAttachment: (_) async {},
-          onRemoveAttachment: (_) {},
-          onReaction: (_, value) => reaction = value,
-          onDetails: () {},
-          onPin: () {},
+            messages: [
+              ChatMessage(
+                id: 'message',
+                conversationId: 'conversation',
+                content: 'Hello',
+                kind: ChatMessageKind.user,
+                createdAt: DateTime(2026),
+              ),
+            ],
+            messageStatus: ChatMessageStatus.loaded,
+            currentUserId: 'user',
+            pendingAttachments: const [],
+            isSending: false,
+            isUploadingAttachment: false,
+            onSend: (_) {},
+            onPickAttachment: (_) async {},
+            onRemoveAttachment: (_) {},
+            onReaction: (_, value) => reaction = value,
+            onDetails: () {},
+            onPin: () {},
+          ),
         ),
       ),
     );
@@ -80,7 +93,6 @@ void main() {
                   messageStatus: ChatMessageStatus.error,
                   currentUserId: 'user',
                   pendingAttachments: const [],
-                  streamingAssistantText: '',
                   isSending: false,
                   isUploadingAttachment: false,
                   onSend: (_) {},

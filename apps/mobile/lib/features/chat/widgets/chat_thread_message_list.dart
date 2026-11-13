@@ -5,31 +5,25 @@ class _MessageList extends StatelessWidget {
     required this.workspaceId,
     required this.messages,
     required this.currentUserId,
-    required this.streamingAssistantText,
     required this.onReaction,
   });
 
   final List<ChatMessage> messages;
   final String workspaceId;
   final String? currentUserId;
-  final String streamingAssistantText;
   final void Function(ChatMessage message, String emoji) onReaction;
 
   @override
   Widget build(BuildContext context) {
-    final effectiveMessages = [
-      ...messages,
-      if (streamingAssistantText.isNotEmpty)
-        ChatMessage(
-          id: 'streaming-assistant',
-          conversationId: messages.lastOrNull?.conversationId ?? '',
-          content: streamingAssistantText,
-          kind: ChatMessageKind.assistant,
-          createdAt: DateTime.now(),
-        ),
-    ];
+    // Only the start and end of a streamed reply rebuild the list; each token
+    // rebuilds just the streaming bubble below.
+    final isStreaming = context.select<ChatCubit, bool>(
+      (cubit) => cubit.state.streamingAssistantText.isNotEmpty,
+    );
+    final streamingSlots = isStreaming ? 1 : 0;
+    final itemCount = messages.length + streamingSlots;
 
-    if (effectiveMessages.isEmpty) {
+    if (itemCount == 0) {
       return _ThreadEmpty(
         title: context.l10n.chatNoMessagesTitle,
         description: context.l10n.chatNoMessagesDescription,
@@ -39,29 +33,91 @@ class _MessageList extends StatelessWidget {
     return ListView.builder(
       reverse: true,
       padding: const EdgeInsets.fromLTRB(10, 12, 10, 16),
-      itemCount: effectiveMessages.length,
+      itemCount: itemCount,
       itemBuilder: (context, index) {
-        final message = effectiveMessages[effectiveMessages.length - 1 - index];
+        if (index < streamingSlots) {
+          return _MessageRow(
+            workspaceId: workspaceId,
+            entityId: _streamingAssistantId,
+            child: _StreamingAssistantBubble(
+              conversationId: messages.lastOrNull?.conversationId ?? '',
+              onReaction: onReaction,
+            ),
+          );
+        }
+        final message = messages[itemCount - 1 - index];
         final isMine =
             currentUserId != null &&
             message.senderId != null &&
             message.senderId == currentUserId;
-        return Padding(
-          padding: const EdgeInsets.only(bottom: 6),
-          child: PendingSyncFrame(
-            workspaceId: workspaceId,
-            feature: 'chat',
-            entityId: message.id,
-            child: _MessageBubble(
-              message: message,
-              isMine: isMine,
-              onReaction: (emoji) => onReaction(message, emoji),
-            ),
+        return _MessageRow(
+          workspaceId: workspaceId,
+          entityId: message.id,
+          child: _MessageBubble(
+            message: message,
+            isMine: isMine,
+            onReaction: (emoji) => onReaction(message, emoji),
           ),
         );
       },
     );
   }
+}
+
+const _streamingAssistantId = 'streaming-assistant';
+
+class _MessageRow extends StatelessWidget {
+  const _MessageRow({
+    required this.workspaceId,
+    required this.entityId,
+    required this.child,
+  });
+
+  final String workspaceId;
+  final String entityId;
+  final Widget child;
+
+  @override
+  Widget build(BuildContext context) => Padding(
+    padding: const EdgeInsets.only(bottom: 6),
+    child: PendingSyncFrame(
+      workspaceId: workspaceId,
+      feature: 'chat',
+      entityId: entityId,
+      child: child,
+    ),
+  );
+}
+
+/// The in-progress assistant reply, rebuilt per streamed token.
+class _StreamingAssistantBubble extends StatelessWidget {
+  const _StreamingAssistantBubble({
+    required this.conversationId,
+    required this.onReaction,
+  });
+
+  final String conversationId;
+  final void Function(ChatMessage message, String emoji) onReaction;
+
+  @override
+  Widget build(BuildContext context) =>
+      BlocSelector<ChatCubit, ChatState, String>(
+        selector: (state) => state.streamingAssistantText,
+        builder: (context, text) {
+          final message = ChatMessage(
+            id: _streamingAssistantId,
+            conversationId: conversationId,
+            content: text,
+            kind: ChatMessageKind.assistant,
+            createdAt: DateTime.now(),
+          );
+          return _MessageBubble(
+            message: message,
+            isMine: false,
+            onReaction: (emoji) => onReaction(message, emoji),
+          );
+        },
+      );
 }
 
 class _MessageBubble extends StatelessWidget {

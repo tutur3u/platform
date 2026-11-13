@@ -98,7 +98,6 @@ class _ThreadPane extends StatelessWidget {
           (cubit) => cubit.state.user?.id,
         ),
         pendingAttachments: state.pendingAttachments,
-        streamingAssistantText: state.streamingAssistantText,
         isSending: state.isSending,
         isUploadingAttachment: state.isUploadingAttachment,
         onSend: (content) => unawaited(cubit.sendMessage(content)),

@@ -27,6 +27,18 @@ import 'package:shadcn_flutter/shadcn_flutter.dart' as shad;
 part 'chat_page_surface.dart';
 part 'chat_page_filters.dart';
 
+/// Whether [current] changes anything the page-level builders render.
+///
+/// Assistant token deltas render through the streaming bubble's own selector
+/// and typing presence has no page-level rendering, so a state that changes
+/// only those fields skips the page, conversation list and message list.
+bool _rebuildsChatPage(ChatState previous, ChatState current) =>
+    previous.copyWith(
+      streamingAssistantText: current.streamingAssistantText,
+      typingUserIds: current.typingUserIds,
+    ) !=
+    current;
+
 class ChatPage extends StatefulWidget {
   const ChatPage({super.key, this.cubitFactory});
 
@@ -101,6 +113,7 @@ class _ChatPageState extends State<_ChatActorHost> {
       child: BlocProvider.value(
         value: _chatCubit,
         child: BlocConsumer<ChatCubit, ChatState>(
+          buildWhen: _rebuildsChatPage,
           listenWhen: (previous, current) =>
               previous.selectedConversationId != current.selectedConversationId,
           listener: (context, state) {
@@ -273,6 +286,7 @@ class _ChatPageState extends State<_ChatActorHost> {
     builder: (_) => BlocProvider.value(
       value: _chatCubit,
       child: BlocBuilder<ChatCubit, ChatState>(
+        buildWhen: _rebuildsChatPage,
         builder: (context, state) => AppDialogScaffold(
           title: context.l10n.commonFilters,
           child: _ChatFilters(state: state),
