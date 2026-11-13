@@ -1,5 +1,27 @@
 # Changelog
 
+## [1.7.0](https://github.com/tutur3u/platform/compare/parley-v1.6.0...parley-v1.7.0) (2026-11-13)
+
+
+### Features
+
+* branded, theme-aware not-found and error page for every app ([#8189](https://github.com/tutur3u/platform/issues/8189)) ([1239360](https://github.com/tutur3u/platform/commit/123936030549e1e275ccd2b5256c9286a9f54a32))
+* **database:** add workspace domains, entitlement and permissions ([3fa8b0d](https://github.com/tutur3u/platform/commit/3fa8b0dd8af1a3aa4bdbb7f59e97167e84d74115))
+* **meet:** floating self-preview and calmer ended screen ([#7924](https://github.com/tutur3u/platform/issues/7924)) ([eb8b552](https://github.com/tutur3u/platform/commit/eb8b5528e9e0aa3c2a89c204982378b1fbda540a))
+* **ui:** add actor-scoped workspace picker shortcuts ([#8170](https://github.com/tutur3u/platform/issues/8170)) ([d9a512c](https://github.com/tutur3u/platform/commit/d9a512cade746445f2b96535b8f50e8f7ee1d066))
+* **ui:** pilot @ui-sdk/core for category keyboard reordering ([#8250](https://github.com/tutur3u/platform/issues/8250)) ([7b0eee6](https://github.com/tutur3u/platform/commit/7b0eee600b935e394b210a4590b670947b9a606f))
+* **workspace-domains:** read the SaaS zone, apex and fallback origin from config ([8a38689](https://github.com/tutur3u/platform/commit/8a386894505308f1e4ceb3a826caa80ade76f40f))
+* **workspace-domains:** workspace custom domains (paid add-on, staff bypass, edge Worker) ([#8157](https://github.com/tutur3u/platform/issues/8157)) ([11a94f0](https://github.com/tutur3u/platform/commit/11a94f0953a2fa6632c73eadfc35182229dda48c))
+
+
+### Bug Fixes
+
+* **meet:** gate private Mira on durable participant consent ([#8274](https://github.com/tutur3u/platform/issues/8274)) ([061a566](https://github.com/tutur3u/platform/commit/061a566123e309f9004eb0793cd9a59016924c04))
+* **meet:** make Private Mira choices, leave and denials visible ([#8287](https://github.com/tutur3u/platform/issues/8287)) ([aad395d](https://github.com/tutur3u/platform/commit/aad395d94983c82d4623086e269d53f540fbae4e))
+* **meet:** prepare transcript readers for erasure markers ([#7517](https://github.com/tutur3u/platform/issues/7517)) ([f35343e](https://github.com/tutur3u/platform/commit/f35343e88998b4748ffe459a86debf26fb6bfb2c))
+* **tasks:** compose POST transport with current main ([1ff0fc7](https://github.com/tutur3u/platform/commit/1ff0fc7806853b0be9ac53d75c73d0677089ad68))
+* **ui:** compose workspace reliability with current main ([07bffbe](https://github.com/tutur3u/platform/commit/07bffbe850fc6bf345f8d863c10feae66b3ccb70))
+
 ## [1.6.0](https://github.com/tutur3u/platform/compare/parley-v1.5.0...parley-v1.6.0) (2026-11-08)
 
 

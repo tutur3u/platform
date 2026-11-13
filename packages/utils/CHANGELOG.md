@@ -1,5 +1,50 @@
 # Changelog
 
+## [0.40.0](https://github.com/tutur3u/platform/compare/utils-v0.39.0...utils-v0.40.0) (2026-11-13)
+
+
+### Features
+
+* **database:** add workspace domains, entitlement and permissions ([3fa8b0d](https://github.com/tutur3u/platform/commit/3fa8b0dd8af1a3aa4bdbb7f59e97167e84d74115))
+* **documents:** gate hierarchy API and validate writes ([325affa](https://github.com/tutur3u/platform/commit/325affa9f8fd3d570f2bfb643c7891d35e1e2274))
+* **fee-lock:** PR-09 sanitizeSpreadsheetText and export workbook ([#7559](https://github.com/tutur3u/platform/issues/7559)) ([408c319](https://github.com/tutur3u/platform/commit/408c319d5558337a1053fef0c0b92cefc2cee141))
+* **gateway,utils:** serve bare /&lt;app&gt;?query on mounts and redirect without trailing slash ([#8097](https://github.com/tutur3u/platform/issues/8097)) ([f1e9796](https://github.com/tutur3u/platform/commit/f1e9796bae7ec3396382f3ff60ee6c9fe8db6884))
+* **journal:** add a flagged mood chart and JSON export ([#7874](https://github.com/tutur3u/platform/issues/7874)) ([a230fb5](https://github.com/tutur3u/platform/commit/a230fb5f24fc511dbeb7e44a4e8960bcc3baa287))
+* **meet:** classroom room caps and host admission ([#8141](https://github.com/tutur3u/platform/issues/8141)) ([d827c7b](https://github.com/tutur3u/platform/commit/d827c7b86a29fd1b129311a84d38bc1fca62b7ff))
+* **start-bridge,cors:** enforce CSRF on mounts and tighten first-party CORS ([#8096](https://github.com/tutur3u/platform/issues/8096)) ([2abcaa0](https://github.com/tutur3u/platform/commit/2abcaa092a9ea1f50d3243c2d9f29101ac0eabf6))
+* **status-api:** rebuild the public read worker on current main ([864cefe](https://github.com/tutur3u/platform/commit/864cefe345b9ba4d2801c2cedbf3d04f9f2f6059))
+* **tutoring:** gate parent message v2 by workspace config ([#7483](https://github.com/tutur3u/platform/issues/7483)) ([27ce3f5](https://github.com/tutur3u/platform/commit/27ce3f584ef69e340f388326763525c07e13b34c))
+* **utils:** accept-only app coordination secret slot with promote and fallback-disable switches ([#7992](https://github.com/tutur3u/platform/issues/7992)) ([ac2b355](https://github.com/tutur3u/platform/commit/ac2b3552df633b7775cabeca5aee0b4da19030a9))
+* **utils:** base-path-aware app registry, one-origin P1 ([#8092](https://github.com/tutur3u/platform/issues/8092)) ([36769f4](https://github.com/tutur3u/platform/commit/36769f4d3eeb0c8d02df6fc23de5a93cff2a1146))
+* **utils:** support staged coordination-token signing secret rotation ([#8205](https://github.com/tutur3u/platform/issues/8205)) ([baaa031](https://github.com/tutur3u/platform/commit/baaa03188bc1c57b69511503efe991196bddd446))
+* **web:** add CMS page version edit, preview and publish routes ([#7591](https://github.com/tutur3u/platform/issues/7591)) ([97d33b0](https://github.com/tutur3u/platform/commit/97d33b089e9f29dcce2a08ece86632710b5f87ea))
+* **workspace-domains:** add edge Worker for workspace custom domains ([8cefbc9](https://github.com/tutur3u/platform/commit/8cefbc97ab9361a1a3ef5b7925d52dabdca5958f))
+* **workspace-domains:** read the SaaS zone, apex and fallback origin from config ([8a38689](https://github.com/tutur3u/platform/commit/8a386894505308f1e4ceb3a826caa80ade76f40f))
+* **workspace-domains:** workspace custom domains (paid add-on, staff bypass, edge Worker) ([#8157](https://github.com/tutur3u/platform/issues/8157)) ([11a94f0](https://github.com/tutur3u/platform/commit/11a94f0953a2fa6632c73eadfc35182229dda48c))
+* **workspace:** carve authenticated app out of web onto Start ([#7944](https://github.com/tutur3u/platform/issues/7944)) ([51d7454](https://github.com/tutur3u/platform/commit/51d7454b305abc360a3320e6e43dcb1e1aa64c6c))
+
+
+### Bug Fixes
+
+* **auth,cors:** mounted logout CORS fails closed ([#8102](https://github.com/tutur3u/platform/issues/8102)) ([981de50](https://github.com/tutur3u/platform/commit/981de50799a12d32afc43e1b6b3dda30cccfeb3a))
+* close [#8157](https://github.com/tutur3u/platform/issues/8157) route-registry, inventory and policy gates on main ([#8166](https://github.com/tutur3u/platform/issues/8166)) ([ab9dbab](https://github.com/tutur3u/platform/commit/ab9dbabcd592b58002ed7cb9f79dde87351b8fda))
+* **encryption:** refuse to store plaintext when no workspace key is available ([#8086](https://github.com/tutur3u/platform/issues/8086)) ([34616cf](https://github.com/tutur3u/platform/commit/34616cf49cebc206d15e9ccb4cc9813dc56e5019))
+* **fee-lock:** guard snapshot revision in suggestion route and format oxc files ([#7861](https://github.com/tutur3u/platform/issues/7861)) ([a2eaf8f](https://github.com/tutur3u/platform/commit/a2eaf8ff2b1e730b76121c50295f4dd99f0b3b89))
+* **finance:** resolve invoice creators with invoice permissions ([8993b82](https://github.com/tutur3u/platform/commit/8993b82f5337697c7b7c14c395cd51eb97c18442))
+* **internal-api,utils:** use manual redirect handling in shared infrastructure clients ([#8033](https://github.com/tutur3u/platform/issues/8033)) ([8e8a7ea](https://github.com/tutur3u/platform/commit/8e8a7eaad26a40b61e94335e9321fd3ac3855589))
+* **marketing:** serve the landing pages as indexable on tuturuuu.com ([#8178](https://github.com/tutur3u/platform/issues/8178)) ([767dc4d](https://github.com/tutur3u/platform/commit/767dc4d2ce9e77ab5e5e0c76a5fc0b7c7bbeaa1c))
+* **seo:** register the marketing app and generate the new robots.txt files ([#8038](https://github.com/tutur3u/platform/issues/8038)) ([d830cec](https://github.com/tutur3u/platform/commit/d830cec3dbcebe696713ad7b4308e85b2308cf57))
+* **tasks:** compose POST transport with current main ([1ff0fc7](https://github.com/tutur3u/platform/commit/1ff0fc7806853b0be9ac53d75c73d0677089ad68))
+* **ui:** compose workspace reliability with current main ([07bffbe](https://github.com/tutur3u/platform/commit/07bffbe850fc6bf345f8d863c10feae66b3ccb70))
+* **utils:** cover gateway, marketing, and workspace in the inventory ([#8021](https://github.com/tutur3u/platform/issues/8021)) ([f9717e6](https://github.com/tutur3u/platform/commit/f9717e622699a5e4062c9df63c49b537408b6444))
+* **utils:** deny redirects in shared edge transports ([#7910](https://github.com/tutur3u/platform/issues/7910)) ([52ef97f](https://github.com/tutur3u/platform/commit/52ef97f71ba3ecee1c3f1d5bb04d81f0c71a7684))
+* **utils:** record the workspace inquiries xwf gate ([#8022](https://github.com/tutur3u/platform/issues/8022)) ([d286f2e](https://github.com/tutur3u/platform/commit/d286f2e534e270657775982721eb6a5508b7d038))
+* **utils:** register workspace.tuturuuu.com for app-session refresh ([#8023](https://github.com/tutur3u/platform/issues/8023)) ([d478cdb](https://github.com/tutur3u/platform/commit/d478cdbf10fd873ea5ddfdbb2043d0b1f990c488))
+* **utils:** review the workspace app-coordination token consumer ([#8017](https://github.com/tutur3u/platform/issues/8017)) ([e870069](https://github.com/tutur3u/platform/commit/e870069e0e35bf3dfbcffe8b26f0bcd92fe8d0c6))
+* **web,cors:** accounts API CORS uses the strict first-party allowlist ([#8106](https://github.com/tutur3u/platform/issues/8106)) ([4e5530d](https://github.com/tutur3u/platform/commit/4e5530dc077ccfee78e4420908c4d267b7483ffe))
+* **workspace-domains:** refuse platform subdomains the zone already answers for ([76e45a8](https://github.com/tutur3u/platform/commit/76e45a8225faeb6dc3dddf55cea7c590e7646368))
+* **workspaces:** reserve app-path workspace handles ([#8088](https://github.com/tutur3u/platform/issues/8088)) ([7df0569](https://github.com/tutur3u/platform/commit/7df056971b239690bdb79b0c435ddc681cd2d0fc))
+
 ## [0.39.0](https://github.com/tutur3u/platform/compare/utils-v0.38.1...utils-v0.39.0) (2026-11-08)
 
 

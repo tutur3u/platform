@@ -1,5 +1,27 @@
 # Changelog
 
+## [1.6.0](https://github.com/tutur3u/platform/compare/meet-core-v1.5.0...meet-core-v1.6.0) (2026-11-13)
+
+
+### Features
+
+* **meet:** add erase subject HMAC primitives (V6) ([9d08bcd](https://github.com/tutur3u/platform/commit/9d08bcda39a4200c213d6f898915d1358c7b10c5))
+* **meet:** add named media scrim token for participant name bar ([#7948](https://github.com/tutur3u/platform/issues/7948)) ([dcdd4d4](https://github.com/tutur3u/platform/commit/dcdd4d41a455afa9eb364b2559b6b4389e110c2e))
+* **meet:** classroom room caps and host admission ([#8141](https://github.com/tutur3u/platform/issues/8141)) ([d827c7b](https://github.com/tutur3u/platform/commit/d827c7b86a29fd1b129311a84d38bc1fca62b7ff))
+* **meet:** floating self-preview and calmer ended screen ([#7924](https://github.com/tutur3u/platform/issues/7924)) ([eb8b552](https://github.com/tutur3u/platform/commit/eb8b5528e9e0aa3c2a89c204982378b1fbda540a))
+
+
+### Bug Fixes
+
+* **meet:** gate private Mira on durable participant consent ([#8274](https://github.com/tutur3u/platform/issues/8274)) ([061a566](https://github.com/tutur3u/platform/commit/061a566123e309f9004eb0793cd9a59016924c04))
+* **meet:** inline the Mira mark and tighten the preparing screen ([#7922](https://github.com/tutur3u/platform/issues/7922)) ([31e74be](https://github.com/tutur3u/platform/commit/31e74be24b981b1e70ab372ee3c9f7cfafd7054b))
+* **meet:** keep the name bar readable on light avatar tiles ([#7953](https://github.com/tutur3u/platform/issues/7953)) ([ce96056](https://github.com/tutur3u/platform/commit/ce96056f9b3eb0093cd282cd502ee06c25a242be))
+* **meet:** make Private Mira choices, leave and denials visible ([#8287](https://github.com/tutur3u/platform/issues/8287)) ([aad395d](https://github.com/tutur3u/platform/commit/aad395d94983c82d4623086e269d53f540fbae4e))
+* **meet:** make the Meet AI gate default-off (allowlist-only, EC denied in code) ([#7518](https://github.com/tutur3u/platform/issues/7518)) ([660fa01](https://github.com/tutur3u/platform/commit/660fa0199d80c1b332a652b4d37958a20c738ce3))
+* **meet:** prepare transcript readers for erasure markers ([#7517](https://github.com/tutur3u/platform/issues/7517)) ([f35343e](https://github.com/tutur3u/platform/commit/f35343e88998b4748ffe459a86debf26fb6bfb2c))
+* **meet:** refuse legacy transcription permanently and retire the old recorder ([#7506](https://github.com/tutur3u/platform/issues/7506)) ([5ac0f24](https://github.com/tutur3u/platform/commit/5ac0f241be51d094ca2e515015a5307a386d342e))
+* **meet:** remove unused meeting AI availability bindings ([#8276](https://github.com/tutur3u/platform/issues/8276)) ([418d59e](https://github.com/tutur3u/platform/commit/418d59ef181421761aa366bbe98a2c8cf1dc0ad9))
+
 ## [1.5.0](https://github.com/tutur3u/platform/compare/meet-core-v1.4.2...meet-core-v1.5.0) (2026-11-08)
 
 
