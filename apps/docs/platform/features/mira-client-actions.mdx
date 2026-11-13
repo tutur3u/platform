@@ -210,6 +210,33 @@ change has no offset. All-day values are plain `yyyy-MM-dd` dates.
 Filling fields from Mira and sending screen context with chat messages are
 separate follow-ups.
 
+## Typed chat response activity
+
+Web and Workspace dispatch an idle typed submission immediately, without a
+batching timer. Queued retries still stop and drain an active stream before the
+next send. The optimistic user bubble and response activity remain visible while
+chat creation or the required Live conversation save barrier holds dispatch.
+The SDK user message replaces the optimistic bubble by message ID; assistant
+text hides activity. Disabled models cannot dispatch, and replacing a chat or
+workspace cancels pending ownership. New composer attachments survive held sends.
+These rules apply to typed Mira chat; Live voice retains its own turn lifecycle.
+
+Browser Performance entries expose `mira:submit-to-activity-visible`,
+`mira:submit-to-request-start`, `mira:submit-to-first-text` and
+`mira:submit-to-finish`. Activity records the committed indicator state; first text
+records the first observed rendered text, so neither is a network packet timestamp
+or a guaranteed paint deadline. Request start records prepared transport dispatch
+after temporary authentication. `mira:temp-auth-cache-hit` and
+`mira:temp-auth-cache-miss` measure authentication preparation separately.
+Entries contain stage names and elapsed time only, with no prompt, account,
+workspace, credential or response data. No client logging convention is required:
+inspect entries in browser Performance tools. Server preparation and provider
+latency remain separate from these client activity guarantees.
+
+Regression coverage: `use-mira-message-queue.test.tsx` exercises the real queue
+hook, and `mira-chat-conversation.test.tsx` mounts the real conversation and
+message list in both apps, including dispatch activity and SDK deduplication.
+
 ## Regression coverage
 
 - `packages/ai/src/tools/mira-client-capabilities.test.ts`: resolution, gating,

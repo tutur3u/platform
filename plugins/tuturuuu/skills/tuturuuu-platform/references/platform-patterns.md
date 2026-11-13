@@ -6,6 +6,14 @@ shared-package changes.
 
 ## Web And Shared UI
 
+- Mira typed-chat activity spans queueing, creation and the Live save barrier,
+  until the SDK user message replaces the optimistic snapshot by ID. Preserve
+  immutable send configuration and cancellation checks after the Live barrier.
+  Web and Workspace copies must agree. Use focused queue/conversation tests in
+  each app; browser Performance entries separate activity, prepared request,
+  first rendered text and finish. See
+  [Mira client activity](../../../../../apps/docs/platform/features/mira-client-actions.mdx#typed-chat-response-activity).
+
 - Drive export links use versioned, expiring tokens plus a service-only folder
   revocation marker in the Supabase `.tuturuuu/drive-export-revocations` namespace.
   Read markers uncached on every fetch and fail closed on missing markers or
