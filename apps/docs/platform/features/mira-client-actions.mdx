@@ -221,6 +221,27 @@ text hides activity. Disabled models cannot dispatch, and replacing a chat or
 workspace cancels pending ownership. New composer attachments survive held sends.
 These rules apply to typed Mira chat; Live voice retains its own turn lifecycle.
 
+### New conversation titles
+
+The shared Google new-chat route used by Web and Workspace Mira and Rewise
+creates the chat and persists its initial message before returning `{ id, title }`.
+By default the title is the first message with whitespace collapsed, limited to
+60 graphemes including an ellipsis when truncated. Truncation prefers a word
+boundary and preserves emoji and Vietnamese combining marks; whitespace-only
+messages receive an ellipsis. The original message is persisted unchanged.
+The caller's UUID, creator binding, model normalization and access checks remain
+required. ChatGPT creation uses its separate route.
+
+Title generation does not invoke a model or schedule background work. The
+provisional title remains until an explicit rename; polished titles require a
+durable update with protection against overwriting user renames. This removes a
+title-provider round trip before answer dispatch but does not guarantee a
+100–500 ms response: authentication, persistence and answer generation still run.
+
+Regression coverage: `packages/ai/src/chat/google/new/route.test.ts` verifies
+creation without a title provider, exact initial-message persistence, Unicode
+truncation and authentication/workspace denial paths.
+
 Browser Performance entries expose `mira:submit-to-activity-visible`,
 `mira:submit-to-request-start`, `mira:submit-to-first-text` and
 `mira:submit-to-finish`. Activity records the committed indicator state; first text

@@ -14,6 +14,13 @@ shared-package changes.
   first rendered text and finish. See
   [Mira client activity](../../../../../apps/docs/platform/features/mira-client-actions.mdx#typed-chat-response-activity).
 
+- Shared Google new-chat creation derives a bounded grapheme-safe title from the
+  first message and returns after chat/message persistence. Keep title models off
+  this path; background polishing requires a durable job and a rename fence.
+  Preserve UUID, actor, workspace checks and model FK normalization. See
+  [new conversation titles](../../../../../apps/docs/platform/features/mira-client-actions.mdx#new-conversation-titles)
+  and `packages/ai/src/chat/google/new/route.test.ts`.
+
 - Drive export links use versioned, expiring tokens plus a service-only folder
   revocation marker in the Supabase `.tuturuuu/drive-export-revocations` namespace.
   Read markers uncached on every fetch and fail closed on missing markers or
