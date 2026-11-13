@@ -1,4 +1,9 @@
 // @vitest-environment node
+import {
+  createMemoryHistory,
+  createRootRoute,
+  createRouter,
+} from '@tanstack/react-router';
 import { NextRequest, NextResponse } from 'next/server';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
@@ -48,7 +53,7 @@ vi.mock('./workspace-model.server', () => ({
 import { proxy } from '../proxy';
 import { loadPageModel } from './page-model.server';
 import { dispatchThroughCalendarProxy } from './proxy-bridge';
-import { withCalendarRequest } from './request-context';
+import { calendarRequest, withCalendarRequest } from './request-context';
 import { resolveCalendarLocale } from './request-locale';
 import { applyCalendarResponsePolicy } from './response-policy';
 
@@ -369,3 +374,75 @@ it.each([
     expect(outbound).not.toHaveBeenCalled();
   }
 );
+
+it('retains the mount when the real router supplies an app-relative loader URL', async () => {
+  const publicUrl =
+    'https://tuturuuu.com/calendar/00000000-0000-4000-8000-000000000001?date=2026-11-13';
+  const router = createRouter({
+    routeTree: createRootRoute(),
+    basepath: '/calendar',
+    history: createMemoryHistory({
+      initialEntries: [new URL(publicUrl).pathname + new URL(publicUrl).search],
+    }),
+    origin: 'https://tuturuuu.com',
+  });
+  const loaderPath = router.state.location.href;
+  expect(loaderPath).toBe(
+    '/00000000-0000-4000-8000-000000000001?date=2026-11-13'
+  );
+  ports.actor.mockImplementation(() => {
+    expect(calendarRequest().request.url).toBe(publicUrl);
+    return null;
+  });
+  await expect(
+    withCalendarRequest(
+      {
+        request: new Request(publicUrl),
+        appBase: '/calendar',
+        responseHeaders: new Headers(),
+        waitUntil: () => {},
+      },
+      () => loadPageModel(loaderPath)
+    )
+  ).rejects.toMatchObject({
+    options: { href: '/calendar/login', statusCode: 307 },
+  });
+  expect(ports.actor).toHaveBeenCalledTimes(1);
+  expect(ports.data).not.toHaveBeenCalled();
+  expect(outbound).not.toHaveBeenCalled();
+});
+
+it.each(['https://attacker.invalid/workspace', '//attacker.invalid/workspace'])(
+  'rejects foreign loader target %s before actor resolution',
+  async (path) => {
+    await expect(
+      withCalendarRequest(
+        {
+          request: new Request('https://tuturuuu.com/calendar/personal'),
+          appBase: '/calendar',
+          responseHeaders: new Headers(),
+          waitUntil: () => {},
+        },
+        () => loadPageModel(path)
+      )
+    ).rejects.toThrow('Invalid Calendar page origin');
+    expect(ports.actor).not.toHaveBeenCalled();
+    expect(ports.data).not.toHaveBeenCalled();
+    expect(outbound).not.toHaveBeenCalled();
+  }
+);
+
+it('does not admit a loader request on an unknown host through its app-base field', async () => {
+  await expect(
+    withCalendarRequest(
+      {
+        request: new Request('https://attacker.invalid/calendar/personal'),
+        appBase: '/calendar',
+        responseHeaders: new Headers(),
+        waitUntil: () => {},
+      },
+      () => loadPageModel('/personal')
+    )
+  ).rejects.toMatchObject({ isNotFound: true });
+  expect(ports.actor).not.toHaveBeenCalled();
+});

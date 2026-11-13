@@ -93,7 +93,9 @@ export function profileFor(app, environment, subdomain) {
   const name =
     environment === 'staging'
       ? settings.stagingWorker
-      : settings.productionWorker;
+      : app === 'calendar'
+        ? 'tuturuuu-calendar-path-candidate'
+        : settings.productionWorker;
   const host =
     environment === 'staging'
       ? (settings.stagingHost ?? `${name}.${subdomain}.workers.dev`)
@@ -206,6 +208,10 @@ export function publicationConfig(base, profile, { main, assets, sourceSha }) {
   assert.ok(empty(base.env), 'Named source environments are not admitted');
   if (base.account_id) assert.equal(base.account_id, profile.accountId);
   const production = profile.environment === 'production';
+  const publicAppUrl =
+    production && profile.app === 'calendar'
+      ? 'https://tuturuuu.com/calendar'
+      : `https://${profile.host}`;
   const config = {
     name: profile.name,
     account_id: profile.accountId,
@@ -224,8 +230,8 @@ export function publicationConfig(base, profile, { main, assets, sourceSha }) {
       ...(!production
         ? { NEXT_PUBLIC_TUTURUUU_SHARED_COOKIE_DOMAIN: '.staging.tutur3u.com' }
         : {}),
-      NEXT_PUBLIC_APP_URL: `https://${profile.host}`,
-      [`NEXT_PUBLIC_${profile.app.toUpperCase()}_APP_URL`]: `https://${profile.host}`,
+      NEXT_PUBLIC_APP_URL: publicAppUrl,
+      [`NEXT_PUBLIC_${profile.app.toUpperCase()}_APP_URL`]: publicAppUrl,
       NEXT_PUBLIC_WEB_APP_URL: production
         ? 'https://tuturuuu.com'
         : 'https://web.tutur3u.com',
@@ -244,7 +250,7 @@ export function publicationConfig(base, profile, { main, assets, sourceSha }) {
                   GOOGLE_REDIRECT_URI: `https://${profile.host}/api/v1/calendar/auth/callback`,
                 }
               : {}),
-            MICROSOFT_REDIRECT_URI: `https://${profile.host}/api/v1/calendar/auth/microsoft/callback`,
+            MICROSOFT_REDIRECT_URI: `${publicAppUrl}/api/v1/calendar/auth/microsoft/callback`,
           }
         : {}),
       ...(profile.app === 'mail'

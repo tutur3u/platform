@@ -9,6 +9,10 @@
     "declaration": false,
     "declarationMap": false
   },
-  "include": ["vite.config.mts", "void.config.ts"],
+  "include": [
+    "vite.config.mts",
+    "void.config.ts",
+    "native-build-config.test.ts"
+  ],
   "exclude": ["node_modules", "dist", ".turbo", ".typecheck"]
 }

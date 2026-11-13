@@ -79,7 +79,9 @@ describe('Calendar deployment profile', () => {
       vi.stubEnv('CALENDAR_DEPLOYMENT_PROFILE', profile);
       const { default: config } = await import('../../start-bridge.config');
       expect(config.mounts?.rootHosts).toEqual(hosts);
-      expect(config.mounts?.mountHosts).toEqual([]);
+      expect(config.mounts?.mountHosts).toEqual(
+        profile === 'production' ? ['tuturuuu.com'] : []
+      );
       expect(config.mounts?.unknownHost).toBe('reject');
     }
   });
@@ -149,6 +151,51 @@ describe('Calendar deployment profile', () => {
       telemetry
     );
     expect(response.status).toBe(200);
+    expect(suppliers.verify).not.toHaveBeenCalled();
+  });
+  it('serves production mount and rollback host without an old-host redirect', async () => {
+    const { handleCalendarRequest } = await load('production');
+    for (const url of [
+      'https://tuturuuu.com/calendar/api/build-info',
+      'https://calendar.tuturuuu.com/api/build-info',
+    ]) {
+      const response = await handleCalendarRequest(
+        new Request(url),
+        env,
+        ctx,
+        telemetry
+      );
+      expect(response.status).toBe(200);
+      expect(response.headers.get('location')).toBeNull();
+    }
+  });
+
+  it.each([
+    'https://attacker.example/calendar/api/build-info',
+    'https://tuturuuu.com/api/build-info',
+    'https://tuturuuu.com/calendar-other/api/build-info',
+    'https://calendar.tutur3u.com/calendar/api/build-info',
+  ])('rejects non-production mount target %s', async (url) => {
+    const { handleCalendarRequest } = await load('production');
+    const response = await handleCalendarRequest(
+      new Request(url),
+      env,
+      ctx,
+      telemetry
+    );
+    expect(response.status).toBe(404);
+    expect(suppliers.proxy).not.toHaveBeenCalled();
+  });
+
+  it('staging rejects the production apex mount before Access', async () => {
+    const { handleCalendarRequest } = await load('staging');
+    const response = await handleCalendarRequest(
+      new Request('https://tuturuuu.com/calendar/api/build-info'),
+      env,
+      ctx,
+      telemetry
+    );
+    expect(response.status).toBe(404);
     expect(suppliers.verify).not.toHaveBeenCalled();
   });
 });

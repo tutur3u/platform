@@ -4,203 +4,310 @@ import { cp, mkdtemp, readFile, rm, writeFile } from 'node:fs/promises';
 import { createRequire } from 'node:module';
 import { tmpdir } from 'node:os';
 import { join, resolve } from 'node:path';
+import { fileURLToPath } from 'node:url';
 import { verify } from './wave1-native-artifact.mjs';
 
-// CI-only: starts workerd from sealed prebundled bytes, never builds or publishes.
-assert.equal(process.env.CI, 'true');
-const [app, environment, sha] = process.argv.slice(2);
-const appRoot = resolve('apps', app);
-const { receipt } = verify(appRoot, app, environment, sha);
-assert.ok(
-  !process.env.CLOUDFLARE_API_TOKEN,
-  'No provider credential in runtime gate'
-);
-const scratch = await mkdtemp(join(tmpdir(), 'wave1-runtime-'));
-await cp(join(appRoot, 'dist'), join(scratch, 'dist'), {
-  recursive: true,
-  errorOnExist: true,
-});
-await writeFile(join(scratch, 'empty.env'), '');
-const require = createRequire(resolve(appRoot, 'package.json'));
-const { unstable_startWorker } = require('wrangler');
-const egress = [];
-const accessCertReads = [];
-// Calendar staging verifies Access JWTs itself; serve fixture team keys only.
-const access =
-  app === 'calendar' && environment === 'staging' ? accessFixture() : null;
-// N8/N9: each Calendar artifact must 404 the other environment's host.
-const foreignHost =
-  app === 'calendar'
-    ? environment === 'production'
-      ? 'calendar.tutur3u.com'
-      : 'calendar.tuturuuu.com'
-    : null;
-let clean = false;
-try {
-  const hosts = [receipt.profile.host];
-  if (app === 'apps' && environment === 'staging')
-    hosts.push('apps.tuturuuu.com');
-  if (foreignHost) hosts.push(foreignHost);
-  for (const host of hosts) {
-    let worker;
-    try {
-      worker = await unstable_startWorker({
-        config: join(scratch, 'dist/wave1/wrangler.json'),
-        envFiles: [join(scratch, 'empty.env')],
-        sendMetrics: false,
-        bindings: Object.fromEntries(
-          receipt.profile.secrets.map((name) => [
-            name,
-            {
-              type: 'secret_text',
-              value:
-                name === 'NEXT_PUBLIC_SUPABASE_URL'
-                  ? 'https://wave1-runtime.supabase.invalid'
-                  : (access?.bindings[name] ?? 'wave1_disposable_fixture_only'),
+export function calendarProductionRuntimeTarget(profile) {
+  assert.equal(
+    profile.name,
+    'tuturuuu-calendar-path-candidate',
+    'Calendar apex acceptance requires the sealed path-candidate service'
+  );
+  return {
+    host: 'tuturuuu.com',
+    basePath: '/calendar',
+    functionProbes: [
+      {
+        path: '/_fn/path-acceptance',
+        method: 'DELETE',
+        headers: {},
+        status: 405,
+      },
+      {
+        path: '/_fn/path-acceptance',
+        method: 'POST',
+        headers: { 'content-type': 'text/plain' },
+        status: 415,
+      },
+    ],
+  };
+}
+
+async function runRuntimeAcceptance() {
+  // CI-only: starts workerd from sealed prebundled bytes, never builds or publishes.
+  assert.equal(process.env.CI, 'true');
+  const [app, environment, sha] = process.argv.slice(2);
+  const appRoot = resolve('apps', app);
+  const { receipt } = verify(appRoot, app, environment, sha);
+  assert.ok(
+    !process.env.CLOUDFLARE_API_TOKEN,
+    'No provider credential in runtime gate'
+  );
+  const scratch = await mkdtemp(join(tmpdir(), 'wave1-runtime-'));
+  await cp(join(appRoot, 'dist'), join(scratch, 'dist'), {
+    recursive: true,
+    errorOnExist: true,
+  });
+  await writeFile(join(scratch, 'empty.env'), '');
+  const require = createRequire(resolve(appRoot, 'package.json'));
+  const { unstable_startWorker } = require('wrangler');
+  const egress = [];
+  const accessCertReads = [];
+  // Calendar staging verifies Access JWTs itself; serve fixture team keys only.
+  const access =
+    app === 'calendar' && environment === 'staging' ? accessFixture() : null;
+  // N8/N9: each Calendar artifact must 404 the other environment's host.
+  const foreignHost =
+    app === 'calendar'
+      ? environment === 'production'
+        ? 'calendar.tutur3u.com'
+        : 'calendar.tuturuuu.com'
+      : null;
+  let clean = false;
+  try {
+    const hosts = [receipt.profile.host];
+    const calendarPathTarget =
+      app === 'calendar' && environment === 'production'
+        ? calendarProductionRuntimeTarget(receipt.profile)
+        : null;
+    if (calendarPathTarget) hosts.unshift(calendarPathTarget.host);
+    if (app === 'apps' && environment === 'staging')
+      hosts.push('apps.tuturuuu.com');
+    if (foreignHost) hosts.push(foreignHost);
+    for (const host of hosts) {
+      let worker;
+      try {
+        worker = await unstable_startWorker({
+          config: join(scratch, 'dist/wave1/wrangler.json'),
+          envFiles: [join(scratch, 'empty.env')],
+          sendMetrics: false,
+          bindings: Object.fromEntries(
+            receipt.profile.secrets.map((name) => [
+              name,
+              {
+                type: 'secret_text',
+                value:
+                  name === 'NEXT_PUBLIC_SUPABASE_URL'
+                    ? 'https://wave1-runtime.supabase.invalid'
+                    : (access?.bindings[name] ??
+                      'wave1_disposable_fixture_only'),
+              },
+            ])
+          ),
+          build: { bundle: false, processEntrypoint: false },
+          dev: {
+            remote: false,
+            watch: false,
+            persist: false,
+            inspector: false,
+            liveReload: false,
+            generateTypes: false,
+            enableContainers: false,
+            registry: join(scratch, 'registry'),
+            server: { hostname: '127.0.0.1', port: 0 },
+            origin: { hostname: host, secure: true },
+            inferOriginFromRoutes: false,
+            routeRequestsByRoutes: false,
+            auth: () => {
+              throw new Error('Provider auth forbidden');
             },
-          ])
-        ),
-        build: { bundle: false, processEntrypoint: false },
-        dev: {
-          remote: false,
-          watch: false,
-          persist: false,
-          inspector: false,
-          liveReload: false,
-          generateTypes: false,
-          enableContainers: false,
-          registry: join(scratch, 'registry'),
-          server: { hostname: '127.0.0.1', port: 0 },
-          origin: { hostname: host, secure: true },
-          inferOriginFromRoutes: false,
-          routeRequestsByRoutes: false,
-          auth: () => {
-            throw new Error('Provider auth forbidden');
+            outboundService: async (request) => {
+              if (access && request.url === access.certsUrl) {
+                accessCertReads.push(request.method);
+                return Response.json(access.jwks);
+              }
+              egress.push('denied');
+              return new Response('Egress denied', { status: 599 });
+            },
           },
-          outboundService: async (request) => {
-            if (access && request.url === access.certsUrl) {
-              accessCertReads.push(request.method);
-              return Response.json(access.jwks);
-            }
-            egress.push('denied');
-            return new Response('Egress denied', { status: 599 });
-          },
-        },
-      });
-      await worker.ready;
-      const fetchWorker = (path, init = {}, jwt = access?.token()) =>
-        worker.fetch(`https://${host}${path}`, {
-          ...init,
-          headers: {
-            ...(init.headers ?? {}),
-            ...(jwt ? { 'cf-access-jwt-assertion': jwt } : {}),
-          },
-          redirect: 'manual',
         });
-      if (host === foreignHost) {
-        for (const path of ['/api/build-info', '/en/personal', '/']) {
-          const refused = await fetchWorker(path);
-          assert.equal(refused.status, 404, `${host}${path} must 404`);
-          assert.deepEqual(refused.headers.getSetCookie(), []);
+        await worker.ready;
+        const basePath =
+          host === calendarPathTarget?.host ? calendarPathTarget.basePath : '';
+        const fetchWorker = (path, init = {}, jwt = access?.token()) =>
+          worker.fetch(`https://${host}${basePath}${path}`, {
+            ...init,
+            headers: {
+              ...(init.headers ?? {}),
+              ...(jwt ? { 'cf-access-jwt-assertion': jwt } : {}),
+            },
+            redirect: 'manual',
+          });
+        if (host === foreignHost) {
+          for (const path of ['/api/build-info', '/en/personal', '/']) {
+            const refused = await fetchWorker(path);
+            assert.equal(refused.status, 404, `${host}${path} must 404`);
+            assert.deepEqual(refused.headers.getSetCookie(), []);
+          }
+          continue;
         }
-        continue;
-      }
-      if (access) {
-        // N19: missing, foreign-key, wrong-AUD and expired tokens are denied.
-        for (const jwt of [
-          null,
-          access.token({ key: access.otherKey }),
-          access.token({ aud: 'wave1-other-aud' }),
-          access.token({ exp: -60 }),
-          'not.a.jwt',
-        ]) {
-          const denied = await fetchWorker('/api/build-info', {}, jwt);
-          assert.equal(denied.status, 403, 'Access JWT must be verified');
-          assert.deepEqual(denied.headers.getSetCookie(), []);
+        if (access) {
+          // N19: missing, foreign-key, wrong-AUD and expired tokens are denied.
+          for (const jwt of [
+            null,
+            access.token({ key: access.otherKey }),
+            access.token({ aud: 'wave1-other-aud' }),
+            access.token({ exp: -60 }),
+            'not.a.jwt',
+          ]) {
+            const denied = await fetchWorker('/api/build-info', {}, jwt);
+            assert.equal(denied.status, 403, 'Access JWT must be verified');
+            assert.deepEqual(denied.headers.getSetCookie(), []);
+          }
         }
-      }
-      const identity = await fetchWorker('/api/build-info');
-      if (
-        app === 'apps' &&
-        environment === 'staging' &&
-        host === 'apps.tuturuuu.com'
-      ) {
+        if (basePath) {
+          for (const path of [
+            '/api/build-info',
+            '/calendar-other/api/build-info',
+          ]) {
+            const refused = await worker.fetch(`https://${host}${path}`, {
+              redirect: 'manual',
+            });
+            assert.equal(refused.status, 404, `${host}${path} must 404`);
+            assert.deepEqual(refused.headers.getSetCookie(), []);
+          }
+          for (const probe of calendarPathTarget.functionProbes) {
+            const refused = await fetchWorker(probe.path, {
+              method: probe.method,
+              headers: probe.headers,
+            });
+            assert.equal(
+              refused.status,
+              probe.status,
+              'Mounted function boundary must reject before suppliers'
+            );
+            assert.deepEqual(refused.headers.getSetCookie(), []);
+            if (probe.method === 'DELETE')
+              assert.equal(refused.headers.get('allow'), 'GET, POST');
+          }
+        }
+        const identity = await fetchWorker('/api/build-info');
+        if (
+          app === 'apps' &&
+          environment === 'staging' &&
+          host === 'apps.tuturuuu.com'
+        ) {
+          assert.equal(
+            identity.status,
+            503,
+            'Staging canonical fence must reject'
+          );
+          continue;
+        }
         assert.equal(
           identity.status,
-          503,
-          'Staging canonical fence must reject'
+          200,
+          'Native build identity must be reachable'
         );
-        continue;
-      }
-      assert.equal(
-        identity.status,
-        200,
-        'Native build identity must be reachable'
-      );
-      const info = await identity.json();
-      assert.equal(info.appName, app);
-      assert.equal(
-        info.commitHash,
-        sha,
-        'Actual bundled source identity differs'
-      );
-      assert.equal(info.environment, environment);
-      assert.match(identity.headers.get('cache-control'), /no-store/);
-      const post = await fetchWorker('/api/build-info', { method: 'POST' });
-      assert.equal(
-        post.status,
-        405,
-        'Identity route must not accept mutations'
-      );
-      const head = await fetchWorker('/api/build-info', { method: 'HEAD' });
-      assert.equal(head.status, 200);
-      assert.equal(await head.text(), '');
-      // Actual static bytes must survive original and restored workerd execution.
-      const file = Object.keys(receipt.files).find(
-        (name) => name.startsWith('client/assets/') && name.endsWith('.js')
-      );
-      assert.ok(file, 'Native client asset missing');
-      const response = await fetchWorker(`/${file.slice('client/'.length)}`);
-      assert.equal(response.status, 200);
-      assert.deepEqual(
-        Buffer.from(await response.arrayBuffer()),
-        await readFile(join(appRoot, 'dist', file))
-      );
-      if (app === 'mail' || app === 'calendar') {
-        const page = await fetchWorker(
-          '/en/00000000-0000-4000-8000-000000000001'
-        );
+        const info = await identity.json();
+        assert.equal(info.appName, app);
         assert.equal(
-          page.status,
-          307,
-          'Anonymous native page must hand off to central login'
+          info.commitHash,
+          sha,
+          'Actual bundled source identity differs'
         );
-        const target = new URL(page.headers.get('location'));
+        assert.equal(info.environment, environment);
+        assert.match(identity.headers.get('cache-control'), /no-store/);
+        const post = await fetchWorker('/api/build-info', { method: 'POST' });
         assert.equal(
-          target.hostname,
-          environment === 'production' ? 'tuturuuu.com' : 'web.tutur3u.com'
+          post.status,
+          405,
+          'Identity route must not accept mutations'
         );
-        assert.ok(target.pathname.includes('login'));
+        const head = await fetchWorker('/api/build-info', { method: 'HEAD' });
+        assert.equal(head.status, 200);
+        assert.equal(await head.text(), '');
+        // Actual static bytes must survive original and restored workerd execution.
+        const file = Object.keys(receipt.files).find(
+          (name) => name.startsWith('client/assets/') && name.endsWith('.js')
+        );
+        assert.ok(file, 'Native client asset missing');
+        const response = await fetchWorker(`/${file.slice('client/'.length)}`);
+        assert.equal(response.status, 200);
+        assert.deepEqual(
+          Buffer.from(await response.arrayBuffer()),
+          await readFile(join(appRoot, 'dist', file))
+        );
+        if (app === 'mail' || app === 'calendar') {
+          const page = await fetchWorker(
+            '/en/00000000-0000-4000-8000-000000000001'
+          );
+          assert.equal(
+            page.status,
+            307,
+            'Anonymous native page must hand off to central login'
+          );
+          let target = new URL(page.headers.get('location'));
+          assert.equal(
+            target.hostname,
+            environment === 'production' ? 'tuturuuu.com' : 'web.tutur3u.com'
+          );
+          if (basePath && !target.pathname.includes('login')) {
+            assert.equal(
+              target.href,
+              `https://${host}${basePath}/00000000-0000-4000-8000-000000000001`,
+              'Mounted locale canonicalization must retain the exact workspace path'
+            );
+            const canonicalPage = await fetchWorker(
+              '/00000000-0000-4000-8000-000000000001'
+            );
+            assert.equal(
+              canonicalPage.status,
+              307,
+              'Canonical anonymous native page must hand off to central login'
+            );
+            target = new URL(
+              canonicalPage.headers.get('location'),
+              `https://${host}`
+            );
+            assert.equal(target.hostname, 'tuturuuu.com');
+            assert.equal(target.pathname, `${basePath}/login`);
+            const login = await fetchWorker(`/login${target.search}`);
+            assert.equal(
+              login.status,
+              307,
+              'Mounted login must hand off to Web'
+            );
+            target = new URL(login.headers.get('location'), `https://${host}`);
+            assert.equal(target.origin, 'https://tuturuuu.com');
+            assert.equal(target.pathname, '/login');
+            const returnUrl = new URL(target.searchParams.get('returnUrl'));
+            assert.equal(returnUrl.origin, 'https://tuturuuu.com');
+            assert.equal(returnUrl.pathname, '/calendar/verify-token');
+            assert.equal(returnUrl.searchParams.get('nextUrl'), '/personal');
+          }
+          assert.ok(
+            target.pathname.includes('login'),
+            `Expected login redirect, got ${target.href}`
+          );
+        }
+      } finally {
+        if (worker) await worker.dispose();
       }
-    } finally {
-      if (worker) await worker.dispose();
     }
+    assert.deepEqual(
+      egress,
+      [],
+      'Anonymous acceptance unexpectedly contacted a supplier'
+    );
+    if (access)
+      assert.ok(accessCertReads.length > 0, 'Access keys were never verified');
+    verify(appRoot, app, environment, sha);
+    clean = true;
+    console.log(
+      `Accepted original/restored ${app} ${environment} artifact ${sha}`
+    );
+  } finally {
+    // Failed evidence is retained for CI diagnostics; the job watchdog owns SDK hangs.
+    if (clean) await rm(scratch, { recursive: true });
   }
-  assert.deepEqual(
-    egress,
-    [],
-    'Anonymous acceptance unexpectedly contacted a supplier'
-  );
-  if (access)
-    assert.ok(accessCertReads.length > 0, 'Access keys were never verified');
-  verify(appRoot, app, environment, sha);
-  clean = true;
-  console.log(
-    `Accepted original/restored ${app} ${environment} artifact ${sha}`
-  );
-} finally {
-  // Failed evidence is retained for CI diagnostics; the job watchdog owns SDK hangs.
-  if (clean) await rm(scratch, { recursive: true });
+}
+
+if (
+  process.argv[1] &&
+  resolve(process.argv[1]) === fileURLToPath(import.meta.url)
+) {
+  await runRuntimeAcceptance();
 }
 
 function accessFixture() {
