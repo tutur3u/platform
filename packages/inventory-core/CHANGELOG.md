@@ -1,5 +1,18 @@
 # Changelog
 
+## [0.12.0](https://github.com/tutur3u/platform/compare/inventory-core-v0.11.2...inventory-core-v0.12.0) (2026-11-13)
+
+
+### Features
+
+* **utils:** accept-only app coordination secret slot with promote and fallback-disable switches ([#7992](https://github.com/tutur3u/platform/issues/7992)) ([ac2b355](https://github.com/tutur3u/platform/commit/ac2b3552df633b7775cabeca5aee0b4da19030a9))
+* **utils:** support staged coordination-token signing secret rotation ([#8205](https://github.com/tutur3u/platform/issues/8205)) ([baaa031](https://github.com/tutur3u/platform/commit/baaa03188bc1c57b69511503efe991196bddd446))
+
+
+### Bug Fixes
+
+* **encryption:** refuse to store plaintext when no workspace key is available ([#8086](https://github.com/tutur3u/platform/issues/8086)) ([34616cf](https://github.com/tutur3u/platform/commit/34616cf49cebc206d15e9ccb4cc9813dc56e5019))
+
 ## [0.11.2](https://github.com/tutur3u/platform/compare/inventory-core-v0.11.1...inventory-core-v0.11.2) (2026-11-08)
 
 

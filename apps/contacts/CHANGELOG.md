@@ -1,5 +1,29 @@
 # Changelog
 
+## [0.31.0](https://github.com/tutur3u/platform/compare/contacts-v0.30.0...contacts-v0.31.0) (2026-11-13)
+
+
+### Features
+
+* branded, theme-aware not-found and error page for every app ([#8189](https://github.com/tutur3u/platform/issues/8189)) ([1239360](https://github.com/tutur3u/platform/commit/123936030549e1e275ccd2b5256c9286a9f54a32))
+* **contacts:** highlight unscheduled students in Excel ([#7823](https://github.com/tutur3u/platform/issues/7823)) ([0563e8a](https://github.com/tutur3u/platform/commit/0563e8a1671539e53e0b7d2e6f98ff107ece83bd))
+* **database:** add workspace domains, entitlement and permissions ([3fa8b0d](https://github.com/tutur3u/platform/commit/3fa8b0dd8af1a3aa4bdbb7f59e97167e84d74115))
+* **ui:** add actor-scoped workspace picker shortcuts ([#8170](https://github.com/tutur3u/platform/issues/8170)) ([d9a512c](https://github.com/tutur3u/platform/commit/d9a512cade746445f2b96535b8f50e8f7ee1d066))
+* **ui:** pilot @ui-sdk/core for category keyboard reordering ([#8250](https://github.com/tutur3u/platform/issues/8250)) ([7b0eee6](https://github.com/tutur3u/platform/commit/7b0eee600b935e394b210a4590b670947b9a606f))
+* **workspace-domains:** read the SaaS zone, apex and fallback origin from config ([8a38689](https://github.com/tutur3u/platform/commit/8a386894505308f1e4ceb3a826caa80ade76f40f))
+* **workspace-domains:** workspace custom domains (paid add-on, staff bypass, edge Worker) ([#8157](https://github.com/tutur3u/platform/issues/8157)) ([11a94f0](https://github.com/tutur3u/platform/commit/11a94f0953a2fa6632c73eadfc35182229dda48c))
+
+
+### Bug Fixes
+
+* **ci:** restore reviewed main contracts and feedback fixtures ([#8211](https://github.com/tutur3u/platform/issues/8211)) ([bbbf404](https://github.com/tutur3u/platform/commit/bbbf404f9192b17bc7a831f6ff7ea4c567069cbc))
+* **contacts:** guide tutoring exports to a bounded date range ([#7891](https://github.com/tutur3u/platform/issues/7891)) ([3080742](https://github.com/tutur3u/platform/commit/30807425e0d773c5062e87c64bdcaa528b655187))
+* **contacts:** let tutoring viewers read full lesson content ([#7889](https://github.com/tutur3u/platform/issues/7889)) ([b5aa6f7](https://github.com/tutur3u/platform/commit/b5aa6f7020ebb4de7e11b425f055b4edeef2be35))
+* **reports:** block approval and sending without feedback ([#7893](https://github.com/tutur3u/platform/issues/7893)) ([e1a34a4](https://github.com/tutur3u/platform/commit/e1a34a4b38c387640a88312ce3139df30eecfefe))
+* **reports:** show report totals on open and filter by the month in the title ([#8063](https://github.com/tutur3u/platform/issues/8063)) ([69c7de8](https://github.com/tutur3u/platform/commit/69c7de89353e6d54064fa9b383fdcf39b96e8894))
+* **tasks:** compose POST transport with current main ([1ff0fc7](https://github.com/tutur3u/platform/commit/1ff0fc7806853b0be9ac53d75c73d0677089ad68))
+* **ui:** compose workspace reliability with current main ([07bffbe](https://github.com/tutur3u/platform/commit/07bffbe850fc6bf345f8d863c10feae66b3ccb70))
+
 ## [0.30.0](https://github.com/tutur3u/platform/compare/contacts-v0.29.0...contacts-v0.30.0) (2026-11-08)
 
 

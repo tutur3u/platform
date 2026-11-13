@@ -1,5 +1,19 @@
 # Changelog
 
+## [0.19.1](https://github.com/tutur3u/platform/compare/ai-v0.19.0...ai-v0.19.1) (2026-11-13)
+
+
+### Bug Fixes
+
+* **meet:** prepare transcript readers for erasure markers ([#7517](https://github.com/tutur3u/platform/issues/7517)) ([f35343e](https://github.com/tutur3u/platform/commit/f35343e88998b4748ffe459a86debf26fb6bfb2c))
+* **meet:** redact transcription provider errors (erase V0) ([#7512](https://github.com/tutur3u/platform/issues/7512)) ([421adb8](https://github.com/tutur3u/platform/commit/421adb88736c8317572d1915bf2bcaf8dc8df6ff))
+* **meet:** refuse legacy transcription permanently and retire the old recorder ([#7506](https://github.com/tutur3u/platform/issues/7506)) ([5ac0f24](https://github.com/tutur3u/platform/commit/5ac0f241be51d094ca2e515015a5307a386d342e))
+
+
+### Performance Improvements
+
+* **mira:** create new chats without waiting for title generation ([#8281](https://github.com/tutur3u/platform/issues/8281)) ([8b3431d](https://github.com/tutur3u/platform/commit/8b3431d1d3f7e8039dd395d0a4e1348f3b278b2b))
+
 ## [0.19.0](https://github.com/tutur3u/platform/compare/ai-v0.18.3...ai-v0.19.0) (2026-11-08)
 
 

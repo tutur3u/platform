@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.6.0](https://github.com/tutur3u/platform/compare/education-core-v0.5.1...education-core-v0.6.0) (2026-11-13)
+
+
+### Features
+
+* **teach:** add inline AI review to module content ([#8167](https://github.com/tutur3u/platform/issues/8167)) ([e2b31a3](https://github.com/tutur3u/platform/commit/e2b31a39798eddce41027d4431734959918b30af))
+
 ## [0.5.1](https://github.com/tutur3u/platform/compare/education-core-v0.5.0...education-core-v0.5.1) (2026-11-08)
 
 

@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.28.0](https://github.com/tutur3u/platform/compare/mobile-v0.27.0...mobile-v0.28.0) (2026-11-13)
+
+
+### Highlights
+
+* **mobile:** prepare the Drive root list for offline reading behind offline_read_drive_list ([#7474](https://github.com/tutur3u/platform/issues/7474)) ([43618a3](https://github.com/tutur3u/platform/commit/43618a314e14a9191ea3682191f9bd1dbb2e1532))
+* **tutoring:** gate parent message v2 by workspace config ([#7483](https://github.com/tutur3u/platform/issues/7483)) ([27ce3f5](https://github.com/tutur3u/platform/commit/27ce3f584ef69e340f388326763525c07e13b34c))
+
 ## [0.27.0](https://github.com/tutur3u/platform/compare/mobile-v0.26.0...mobile-v0.27.0) (2026-11-08)
 
 

@@ -1,5 +1,28 @@
 # Changelog
 
+## [0.21.0](https://github.com/tutur3u/platform/compare/ai-studio-v0.20.0...ai-studio-v0.21.0) (2026-11-13)
+
+
+### Features
+
+* branded, theme-aware not-found and error page for every app ([#8189](https://github.com/tutur3u/platform/issues/8189)) ([1239360](https://github.com/tutur3u/platform/commit/123936030549e1e275ccd2b5256c9286a9f54a32))
+* **database:** add workspace domains, entitlement and permissions ([3fa8b0d](https://github.com/tutur3u/platform/commit/3fa8b0dd8af1a3aa4bdbb7f59e97167e84d74115))
+* **ui:** add actor-scoped workspace picker shortcuts ([#8170](https://github.com/tutur3u/platform/issues/8170)) ([d9a512c](https://github.com/tutur3u/platform/commit/d9a512cade746445f2b96535b8f50e8f7ee1d066))
+* **ui:** pilot @ui-sdk/core for category keyboard reordering ([#8250](https://github.com/tutur3u/platform/issues/8250)) ([7b0eee6](https://github.com/tutur3u/platform/commit/7b0eee600b935e394b210a4590b670947b9a606f))
+* **workspace-domains:** read the SaaS zone, apex and fallback origin from config ([8a38689](https://github.com/tutur3u/platform/commit/8a386894505308f1e4ceb3a826caa80ade76f40f))
+* **workspace-domains:** workspace custom domains (paid add-on, staff bypass, edge Worker) ([#8157](https://github.com/tutur3u/platform/issues/8157)) ([11a94f0](https://github.com/tutur3u/platform/commit/11a94f0953a2fa6632c73eadfc35182229dda48c))
+
+
+### Bug Fixes
+
+* **ai:** deny redirected Colab sponsorship approvals ([#7909](https://github.com/tutur3u/platform/issues/7909)) ([ac0bd8a](https://github.com/tutur3u/platform/commit/ac0bd8a1e52ee4df8198783c0ae06e3103b68738))
+* **ai:** rebuild the native Cloudflare cutover on current main ([0f32384](https://github.com/tutur3u/platform/commit/0f3238454b5cbe1dd83e4a61a5a5e27a0b84731b))
+* **ai:** respect IME composition in model-list field ([#8249](https://github.com/tutur3u/platform/issues/8249)) ([1098d70](https://github.com/tutur3u/platform/commit/1098d7057221d4ad7c467ffc6d1285c91891f782))
+* **security:** enforce exact shared Worker HSTS boundary ([#8226](https://github.com/tutur3u/platform/issues/8226)) ([95fad90](https://github.com/tutur3u/platform/commit/95fad90e527fe3a2a24b3e0df12e3445901a7cbe))
+* **start-bridge:** send server-function payloads in POST bodies ([#8239](https://github.com/tutur3u/platform/issues/8239)) ([028d2a7](https://github.com/tutur3u/platform/commit/028d2a7c98fdd7fbd48ff8b263b65bc5007177fe))
+* **tasks:** compose POST transport with current main ([1ff0fc7](https://github.com/tutur3u/platform/commit/1ff0fc7806853b0be9ac53d75c73d0677089ad68))
+* **ui:** compose workspace reliability with current main ([07bffbe](https://github.com/tutur3u/platform/commit/07bffbe850fc6bf345f8d863c10feae66b3ccb70))
+
 ## [0.20.0](https://github.com/tutur3u/platform/compare/ai-studio-v0.19.0...ai-studio-v0.20.0) (2026-11-08)
 
 

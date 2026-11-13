@@ -1,5 +1,17 @@
 # Changelog
 
+## [0.6.0](https://github.com/tutur3u/platform/compare/finance-core-v0.5.0...finance-core-v0.6.0) (2026-11-13)
+
+
+### Features
+
+* **fee-lock:** PR-11b notice preview and HTML escaping ([f144716](https://github.com/tutur3u/platform/commit/f144716d16b17cf829dcbd836dd4b9af4def611c))
+
+
+### Bug Fixes
+
+* **fee-lock:** guard snapshot revision in suggestion route and format oxc files ([#7861](https://github.com/tutur3u/platform/issues/7861)) ([a2eaf8f](https://github.com/tutur3u/platform/commit/a2eaf8ff2b1e730b76121c50295f4dd99f0b3b89))
+
 ## [0.5.0](https://github.com/tutur3u/platform/compare/finance-core-v0.4.2...finance-core-v0.5.0) (2026-11-08)
 
 

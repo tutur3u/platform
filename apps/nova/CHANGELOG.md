@@ -1,5 +1,32 @@
 # Changelog
 
+## [0.44.0](https://github.com/tutur3u/platform/compare/nova-v0.43.0...nova-v0.44.0) (2026-11-13)
+
+
+### Features
+
+* branded, theme-aware not-found and error page for every app ([#8189](https://github.com/tutur3u/platform/issues/8189)) ([1239360](https://github.com/tutur3u/platform/commit/123936030549e1e275ccd2b5256c9286a9f54a32))
+* **database:** add workspace domains, entitlement and permissions ([3fa8b0d](https://github.com/tutur3u/platform/commit/3fa8b0dd8af1a3aa4bdbb7f59e97167e84d74115))
+* **nova:** combine native Cloudflare worker and startup guards ([907252e](https://github.com/tutur3u/platform/commit/907252e65748c1d8ce28bfdd545297dc84616744))
+* **nova:** run the abuse guard through the Cloudflare service binding ([#8002](https://github.com/tutur3u/platform/issues/8002)) ([c602004](https://github.com/tutur3u/platform/commit/c60200460f84fcf01583b390dc7532f7895fcf13))
+* **ui:** add actor-scoped workspace picker shortcuts ([#8170](https://github.com/tutur3u/platform/issues/8170)) ([d9a512c](https://github.com/tutur3u/platform/commit/d9a512cade746445f2b96535b8f50e8f7ee1d066))
+* **ui:** pilot @ui-sdk/core for category keyboard reordering ([#8250](https://github.com/tutur3u/platform/issues/8250)) ([7b0eee6](https://github.com/tutur3u/platform/commit/7b0eee600b935e394b210a4590b670947b9a606f))
+* **workspace-domains:** read the SaaS zone, apex and fallback origin from config ([8a38689](https://github.com/tutur3u/platform/commit/8a386894505308f1e4ceb3a826caa80ade76f40f))
+* **workspace-domains:** workspace custom domains (paid add-on, staff bypass, edge Worker) ([#8157](https://github.com/tutur3u/platform/issues/8157)) ([11a94f0](https://github.com/tutur3u/platform/commit/11a94f0953a2fa6632c73eadfc35182229dda48c))
+
+
+### Bug Fixes
+
+* **fee-lock:** guard snapshot revision in suggestion route and format oxc files ([#7861](https://github.com/tutur3u/platform/issues/7861)) ([a2eaf8f](https://github.com/tutur3u/platform/commit/a2eaf8ff2b1e730b76121c50295f4dd99f0b3b89))
+* **nova:** serve the production host and sweep Worker root hosts ([#8064](https://github.com/tutur3u/platform/issues/8064)) ([8c552cd](https://github.com/tutur3u/platform/commit/8c552cd31a6cb59e23b026ce2d0f963f8dcf70d5))
+* **nova:** supply required runtime bindings in the response-policy fixture ([#7926](https://github.com/tutur3u/platform/issues/7926)) ([a5feb72](https://github.com/tutur3u/platform/commit/a5feb72c84e58586ac1484e486a4a90ecf9b0526))
+* **nova:** type optional mounts and generated runtime bindings ([#8144](https://github.com/tutur3u/platform/issues/8144)) ([54504e7](https://github.com/tutur3u/platform/commit/54504e7c35bd7a52d5412d150fdb46a4813d5411))
+* **security:** enforce exact shared Worker HSTS boundary ([#8226](https://github.com/tutur3u/platform/issues/8226)) ([95fad90](https://github.com/tutur3u/platform/commit/95fad90e527fe3a2a24b3e0df12e3445901a7cbe))
+* **start-bridge:** install the request store everywhere except client builds ([#8123](https://github.com/tutur3u/platform/issues/8123)) ([1ad6d50](https://github.com/tutur3u/platform/commit/1ad6d507de5d2b4cedced558d3eb12716720c1d5))
+* **start-bridge:** send server-function payloads in POST bodies ([#8239](https://github.com/tutur3u/platform/issues/8239)) ([028d2a7](https://github.com/tutur3u/platform/commit/028d2a7c98fdd7fbd48ff8b263b65bc5007177fe))
+* **tasks:** compose POST transport with current main ([1ff0fc7](https://github.com/tutur3u/platform/commit/1ff0fc7806853b0be9ac53d75c73d0677089ad68))
+* **ui:** compose workspace reliability with current main ([07bffbe](https://github.com/tutur3u/platform/commit/07bffbe850fc6bf345f8d863c10feae66b3ccb70))
+
 ## [0.43.0](https://github.com/tutur3u/platform/compare/nova-v0.42.2...nova-v0.43.0) (2026-11-08)
 
 

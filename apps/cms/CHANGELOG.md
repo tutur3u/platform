@@ -1,5 +1,31 @@
 # Changelog
 
+## [0.40.0](https://github.com/tutur3u/platform/compare/cms-v0.39.0...cms-v0.40.0) (2026-11-13)
+
+
+### Features
+
+* branded, theme-aware not-found and error page for every app ([#8189](https://github.com/tutur3u/platform/issues/8189)) ([1239360](https://github.com/tutur3u/platform/commit/123936030549e1e275ccd2b5256c9286a9f54a32))
+* **cms:** admit editor-only members without publish access ([#7623](https://github.com/tutur3u/platform/issues/7623)) ([0588617](https://github.com/tutur3u/platform/commit/0588617737b70c92d0117a10d0ab7c15364b9e38))
+* **cms:** full-page editor layout in IEEAI styling ([#8149](https://github.com/tutur3u/platform/issues/8149)) ([1cf665b](https://github.com/tutur3u/platform/commit/1cf665b069b66af5140fb6a09c9a3dbc069b74f8))
+* **cms:** package native Cloudflare cutover artifacts ([c0bf35a](https://github.com/tutur3u/platform/commit/c0bf35ac701c1a1579465255da0f4ec6c3617ee9))
+* **database:** add workspace domains, entitlement and permissions ([3fa8b0d](https://github.com/tutur3u/platform/commit/3fa8b0dd8af1a3aa4bdbb7f59e97167e84d74115))
+* **ui:** add actor-scoped workspace picker shortcuts ([#8170](https://github.com/tutur3u/platform/issues/8170)) ([d9a512c](https://github.com/tutur3u/platform/commit/d9a512cade746445f2b96535b8f50e8f7ee1d066))
+* **ui:** pilot @ui-sdk/core for category keyboard reordering ([#8250](https://github.com/tutur3u/platform/issues/8250)) ([7b0eee6](https://github.com/tutur3u/platform/commit/7b0eee600b935e394b210a4590b670947b9a606f))
+* **web:** add CMS page version edit, preview and publish routes ([#7591](https://github.com/tutur3u/platform/issues/7591)) ([97d33b0](https://github.com/tutur3u/platform/commit/97d33b089e9f29dcce2a08ece86632710b5f87ea))
+* **workers:** bind rewise and cms to the tuturuuu-abuse-guard service ([#8035](https://github.com/tutur3u/platform/issues/8035)) ([e4ac60e](https://github.com/tutur3u/platform/commit/e4ac60ed5fdc661f95eebe3726504098256a6053))
+* **workspace-domains:** read the SaaS zone, apex and fallback origin from config ([8a38689](https://github.com/tutur3u/platform/commit/8a386894505308f1e4ceb3a826caa80ade76f40f))
+* **workspace-domains:** workspace custom domains (paid add-on, staff bypass, edge Worker) ([#8157](https://github.com/tutur3u/platform/issues/8157)) ([11a94f0](https://github.com/tutur3u/platform/commit/11a94f0953a2fa6632c73eadfc35182229dda48c))
+
+
+### Bug Fixes
+
+* **fee-lock:** guard snapshot revision in suggestion route and format oxc files ([#7861](https://github.com/tutur3u/platform/issues/7861)) ([a2eaf8f](https://github.com/tutur3u/platform/commit/a2eaf8ff2b1e730b76121c50295f4dd99f0b3b89))
+* **security:** enforce exact shared Worker HSTS boundary ([#8226](https://github.com/tutur3u/platform/issues/8226)) ([95fad90](https://github.com/tutur3u/platform/commit/95fad90e527fe3a2a24b3e0df12e3445901a7cbe))
+* **start-bridge:** send server-function payloads in POST bodies ([#8239](https://github.com/tutur3u/platform/issues/8239)) ([028d2a7](https://github.com/tutur3u/platform/commit/028d2a7c98fdd7fbd48ff8b263b65bc5007177fe))
+* **tasks:** compose POST transport with current main ([1ff0fc7](https://github.com/tutur3u/platform/commit/1ff0fc7806853b0be9ac53d75c73d0677089ad68))
+* **ui:** compose workspace reliability with current main ([07bffbe](https://github.com/tutur3u/platform/commit/07bffbe850fc6bf345f8d863c10feae66b3ccb70))
+
 ## [0.39.0](https://github.com/tutur3u/platform/compare/cms-v0.38.0...cms-v0.39.0) (2026-11-08)
 
 

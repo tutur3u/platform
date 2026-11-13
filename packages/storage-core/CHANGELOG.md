@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.3.5](https://github.com/tutur3u/platform/compare/storage-core-v0.3.4...storage-core-v0.3.5) (2026-11-13)
+
+
+### Bug Fixes
+
+* **storage-core:** deny redirects in download relay ([#7912](https://github.com/tutur3u/platform/issues/7912)) ([74d583f](https://github.com/tutur3u/platform/commit/74d583f9034c48ce6df922a79d48fbbbbb002a36))
+
 ## [0.3.4](https://github.com/tutur3u/platform/compare/storage-core-v0.3.3...storage-core-v0.3.4) (2026-11-08)
 
 

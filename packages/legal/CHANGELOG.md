@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.3.2](https://github.com/tutur3u/platform/compare/legal-v0.3.1...legal-v0.3.2) (2026-11-13)
+
+
+### Bug Fixes
+
+* **legal:** hide internal review and upcoming-changes notices on production legal pages ([#8288](https://github.com/tutur3u/platform/issues/8288)) ([9c62d49](https://github.com/tutur3u/platform/commit/9c62d49c2f4204db2b2e1beaf8baa87357aff057))
+
 ## [0.3.1](https://github.com/tutur3u/platform/compare/legal-v0.3.0...legal-v0.3.1) (2026-09-20)
 
 

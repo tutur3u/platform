@@ -1,5 +1,19 @@
 # Changelog
 
+## [0.28.0](https://github.com/tutur3u/platform/compare/satellite-v0.27.0...satellite-v0.28.0) (2026-11-13)
+
+
+### Features
+
+* **web:** move app marketing pages under products ([#6795](https://github.com/tutur3u/platform/issues/6795)) ([3fe3bdb](https://github.com/tutur3u/platform/commit/3fe3bdbc5a6426180f26fe48ade0f6927731060a))
+
+
+### Bug Fixes
+
+* **settings:** show the workspace plan name once ([#7866](https://github.com/tutur3u/platform/issues/7866)) ([8eec383](https://github.com/tutur3u/platform/commit/8eec38339dc81b0bbbfaf9702c4273b88a01a2af))
+* **ui:** make the hover-expand sidebar a layout-shift-free overlay ([#8090](https://github.com/tutur3u/platform/issues/8090)) ([a1cb136](https://github.com/tutur3u/platform/commit/a1cb1360e70798b0da26f061420f29e742411d74))
+* **workspaces:** reserve app-path workspace handles ([#8088](https://github.com/tutur3u/platform/issues/8088)) ([7df0569](https://github.com/tutur3u/platform/commit/7df056971b239690bdb79b0c435ddc681cd2d0fc))
+
 ## [0.27.0](https://github.com/tutur3u/platform/compare/satellite-v0.26.0...satellite-v0.27.0) (2026-11-08)
 
 

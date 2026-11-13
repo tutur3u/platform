@@ -1,5 +1,20 @@
 # Changelog
 
+## [0.12.0](https://github.com/tutur3u/platform/compare/realtime-v0.11.0...realtime-v0.12.0) (2026-11-13)
+
+
+### Features
+
+* **meet:** classroom room caps and host admission ([#8141](https://github.com/tutur3u/platform/issues/8141)) ([d827c7b](https://github.com/tutur3u/platform/commit/d827c7b86a29fd1b129311a84d38bc1fca62b7ff))
+
+
+### Bug Fixes
+
+* **meet:** gate private Mira on durable participant consent ([#8274](https://github.com/tutur3u/platform/issues/8274)) ([061a566](https://github.com/tutur3u/platform/commit/061a566123e309f9004eb0793cd9a59016924c04))
+* **meet:** make the Meet AI gate default-off (allowlist-only, EC denied in code) ([#7518](https://github.com/tutur3u/platform/issues/7518)) ([660fa01](https://github.com/tutur3u/platform/commit/660fa0199d80c1b332a652b4d37958a20c738ce3))
+* **notes:** follow the shared default-off Meet AI gate ([#8041](https://github.com/tutur3u/platform/issues/8041)) ([5830abd](https://github.com/tutur3u/platform/commit/5830abd62f2d202d90b7da77ce06c17d6ce46a28))
+* **realtime:** deny redirected channel broadcasts ([#7913](https://github.com/tutur3u/platform/issues/7913)) ([9a64f87](https://github.com/tutur3u/platform/commit/9a64f87ea0238bedfb3639eaa7fcdc39be93409a))
+
 ## [0.11.0](https://github.com/tutur3u/platform/compare/realtime-v0.10.2...realtime-v0.11.0) (2026-11-08)
 
 
