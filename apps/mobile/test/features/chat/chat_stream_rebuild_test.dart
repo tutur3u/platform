@@ -138,6 +138,18 @@ Future<StreamController<ChatState>> _pump(
   return states;
 }
 
+/// Emits [state] and draws its frame. A zero-duration pump flushes the
+/// stream's delivery microtask before the frame; a bare pump would draw it
+/// one pump late.
+Future<void> _emit(
+  WidgetTester tester,
+  StreamController<ChatState> states,
+  ChatState state,
+) {
+  states.add(state);
+  return tester.pump(Duration.zero);
+}
+
 T _widget<T extends Widget>(WidgetTester tester) =>
     tester.widget<T>(find.byType(T));
 
@@ -178,8 +190,11 @@ void main() {
     var messageListBuilds = 0;
     for (var i = 0; i < 20; i++) {
       text.write('w$i ');
-      states.add(_base.copyWith(streamingAssistantText: text.toString()));
-      await tester.pump();
+      await _emit(
+        tester,
+        states,
+        _base.copyWith(streamingAssistantText: text.toString()),
+      );
       if (!identical(_widget<ChatThreadView>(tester), page)) pageBuilds++;
       if (!identical(_widget<ChatConversationList>(tester), conversations)) {
         conversationListBuilds++;
@@ -193,13 +208,14 @@ void main() {
       }
       expect(find.text(text.toString()), findsOneWidget);
     }
-    states.add(
+    await _emit(
+      tester,
+      states,
       _base.copyWith(
         streamingAssistantText: text.toString(),
         typingUserIds: {'bob'},
       ),
     );
-    await tester.pump();
 
     expect(controlBuilds, 21, reason: 'a builder without buildWhen');
     expect(identical(_widget<ChatThreadView>(tester), page), isTrue);
@@ -224,8 +240,8 @@ void main() {
   testWidgets('the saved reply replaces the streaming bubble', (tester) async {
     final states = await _pump(tester);
     const reply = 'Here is the plan.';
-    states.add(_base.copyWith(streamingAssistantText: reply));
-    await tester.pump();
+    await _emit(tester, states, _base.copyWith(streamingAssistantText: reply));
+    expect(find.text(reply), findsOneWidget);
     final page = _widget<ChatThreadView>(tester);
     final saved = ChatMessage(
       id: 'reply',
@@ -234,7 +250,9 @@ void main() {
       kind: ChatMessageKind.assistant,
       createdAt: DateTime(2026),
     );
-    states.add(
+    await _emit(
+      tester,
+      states,
       _base.copyWith(
         messages: {
           ..._base.messages,
@@ -243,11 +261,12 @@ void main() {
         streamingAssistantText: reply,
       ),
     );
-    await tester.pump();
     expect(identical(_widget<ChatThreadView>(tester), page), isFalse);
     expect(find.text(reply), findsNWidgets(2));
 
-    states.add(
+    await _emit(
+      tester,
+      states,
       _base.copyWith(
         messages: {
           ..._base.messages,
@@ -257,24 +276,27 @@ void main() {
         streamingAssistantText: '',
       ),
     );
-    await tester.pump();
     expect(find.text(reply), findsOneWidget);
     expect(find.text('Hello'), findsOneWidget);
   });
 
   testWidgets('a stream error removes the partial bubble', (tester) async {
     final states = await _pump(tester);
-    states.add(_base.copyWith(streamingAssistantText: 'Partial'));
-    await tester.pump();
+    await _emit(
+      tester,
+      states,
+      _base.copyWith(streamingAssistantText: 'Partial'),
+    );
     expect(find.text('Partial'), findsOneWidget);
-    states.add(
+    await _emit(
+      tester,
+      states,
       _base.copyWith(
         error: 'stream failed',
         isSending: false,
         streamingAssistantText: '',
       ),
     );
-    await tester.pump();
     expect(find.text('Partial'), findsNothing);
     expect(find.text('Hello'), findsOneWidget);
   });
@@ -283,8 +305,12 @@ void main() {
     tester,
   ) async {
     final states = await _pump(tester);
-    states.add(_base.copyWith(streamingAssistantText: 'Partial'));
-    await tester.pump();
+    await _emit(
+      tester,
+      states,
+      _base.copyWith(streamingAssistantText: 'Partial'),
+    );
+    expect(find.text('Partial'), findsOneWidget);
     states.add(
       _base.copyWith(
         selectedConversationId: 'ai-2',
