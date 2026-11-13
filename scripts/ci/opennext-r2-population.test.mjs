@@ -2,12 +2,88 @@ import assert from 'node:assert/strict';
 import { createHash } from 'node:crypto';
 import * as fs from 'node:fs';
 import fsp from 'node:fs/promises';
+import { createRequire } from 'node:module';
 import os from 'node:os';
 import path from 'node:path';
 import { Readable } from 'node:stream';
-import test, { before } from 'node:test';
+import nodeTest, { after as nodeAfter, before as nodeBefore } from 'node:test';
 import * as url from 'node:url';
-import { createContext, SourceTextModule, SyntheticModule } from 'node:vm';
+import vm from 'node:vm';
+import { isMainThread, parentPort, Worker } from 'node:worker_threads';
+
+const { createContext, SourceTextModule, SyntheticModule } = vm;
+const cases = new Map();
+const setup = [];
+const pending = new Map();
+let worker;
+let workerFailure;
+let requestId = 0;
+
+function test(name, options, body) {
+  assert.equal(cases.has(name), false, `Duplicate case: ${name}`);
+  cases.set(name, body);
+  if (!isMainThread) return;
+  nodeTest(name, options, async () => {
+    if (workerFailure) throw workerFailure;
+    const id = ++requestId;
+    await new Promise((resolve, reject) => {
+      pending.set(id, { resolve, reject });
+      worker.postMessage({ id, name });
+    });
+  });
+}
+
+function before(body, options) {
+  if (!isMainThread) {
+    setup.push(body);
+    return;
+  }
+  nodeBefore(async () => {
+    await new Promise((resolve, reject) => {
+      const fail = (error) => {
+        workerFailure = error;
+        reject(error);
+        for (const request of pending.values()) request.reject(error);
+        pending.clear();
+      };
+      const env = Object.fromEntries([
+        'GITHUB_SHA', 'GITHUB_RUN_ID', 'GITHUB_RUN_ATTEMPT',
+      ].filter((key) => process.env[key] !== undefined)
+        .map((key) => [key, process.env[key]]));
+      worker = new Worker(new URL(import.meta.url), {
+        execArgv: ['--experimental-vm-modules'], env,
+      });
+      worker.on('error', fail);
+      worker.on('exit', (code) => {
+        fail(new Error(`Qualification worker exited ${code}`));
+      });
+      worker.on('message', (message) => {
+        if (message.type === 'ready') {
+          try {
+            assert.deepEqual(message.cases, [...cases.keys()]);
+            assert.equal(message.cases.length, 17);
+            console.log(JSON.stringify(message.identity));
+            resolve();
+          } catch (error) {
+            fail(error);
+          }
+          return;
+        }
+        const request = pending.get(message.id);
+        if (!request) return;
+        pending.delete(message.id);
+        if (message.ok) request.resolve();
+        else request.reject(new Error(message.error));
+      });
+    });
+  }, options);
+}
+
+if (isMainThread) {
+  nodeAfter(async () => {
+    await worker?.terminate();
+  });
+}
 
 const SOURCE_PINS = {
   'dist/cli/index.js':
@@ -32,10 +108,27 @@ const SOURCE_PINS = {
 const sources = new Map();
 let sourceRoot;
 let yargs;
+let identity;
+const repository = fs.realpathSync(url.fileURLToPath(new URL('../../', import.meta.url)));
 
-function supplier(variable, name, version) {
-  const root = process.env[variable];
-  assert.ok(root && path.isAbsolute(root), `${variable} requires an explicit supplier`);
+function installedRoot(entry, name) {
+  let directory = path.dirname(fs.realpathSync(entry));
+  for (;;) {
+    const metadata = path.join(directory, 'package.json');
+    if (fs.existsSync(metadata) && JSON.parse(fs.readFileSync(metadata, 'utf8')).name === name) {
+      const relative = path.relative(repository, directory);
+      assert.ok(relative && !relative.startsWith('..') && !path.isAbsolute(relative),
+        `Supplier must be installed in the workspace: ${name}`);
+      return directory;
+    }
+    const parent = path.dirname(directory);
+    assert.notEqual(parent, directory, `Missing installed supplier: ${name}`);
+    directory = parent;
+  }
+}
+
+function supplier(name, version, resolveEntry) {
+  const root = installedRoot(resolveEntry(), name);
   const metadata = JSON.parse(fs.readFileSync(path.join(root, 'package.json'), 'utf8'));
   assert.equal(metadata.name, name);
   assert.equal(metadata.version, version);
@@ -43,22 +136,38 @@ function supplier(variable, name, version) {
 }
 
 before(async () => {
-  assert.equal(Number(process.versions.node.split('.')[0]), 24, 'Use admitted Node 24');
-  sourceRoot = supplier('OPENNEXT_R2_SOURCE_ROOT', '@opennextjs/cloudflare', '1.20.6');
+  assert.equal(Number(process.versions.node.split('.')[0]), 24, 'Use Node 24');
+  assert.equal(typeof SourceTextModule, 'function');
+  const appRequire = createRequire(new URL('../../apps/lettin/package.json', import.meta.url));
+  sourceRoot = supplier('@opennextjs/cloudflare', '1.20.6',
+    () => appRequire.resolve('@opennextjs/cloudflare'));
   for (const [name, pin] of Object.entries(SOURCE_PINS)) {
     const bytes = fs.readFileSync(path.join(sourceRoot, name));
     assert.equal(createHash('sha256').update(bytes).digest('hex'), pin, name);
     sources.set(name, bytes.toString('utf8'));
   }
-  const parserRoot = supplier('OPENNEXT_R2_YARGS_ROOT', 'yargs', '18.2.0');
+  const parserRoot = supplier('yargs', '18.2.0',
+    () => createRequire(path.join(sourceRoot, 'package.json')).resolve('yargs'));
   assert.equal(
     createHash('sha256')
       .update(fs.readFileSync(path.join(parserRoot, 'index.mjs')))
       .digest('hex'),
     '02e7530ca923bf1af2d3ab28f3a0da83324cc7812e072919badd6d75c7f20462'
   );
-  // Only the explicitly supplied locked parser loads normally; Wrangler never loads.
+  // The locked parser loads normally; Wrangler remains a synthetic dependency.
   yargs = (await import(url.pathToFileURL(path.join(parserRoot, 'index.mjs')).href)).default;
+  const sha256 = (file) => createHash('sha256').update(fs.readFileSync(file)).digest('hex');
+  identity = {
+    qualification: 'opennext-r2-population', cases: 17, node: process.versions.node,
+    eventSha: process.env.GITHUB_SHA, runId: process.env.GITHUB_RUN_ID,
+    runAttempt: process.env.GITHUB_RUN_ATTEMPT,
+    testSha256: sha256(url.fileURLToPath(import.meta.url)),
+    lockSha256: sha256(path.join(repository, 'bun.lock')),
+    openNext: { version: '1.20.6', sourcePins: SOURCE_PINS,
+      packageSha256: sha256(path.join(sourceRoot, 'package.json')) },
+    yargs: { version: '18.2.0', entrySha256: sha256(path.join(parserRoot, 'index.mjs')),
+      packageSha256: sha256(path.join(parserRoot, 'package.json')) },
+  };
 }, { timeout: 10_000 });
 
 const unused = () => {
@@ -358,3 +467,28 @@ test('required Worker deployment failure remains fatal after successful populati
   assert.equal(state.events.at(-1), 'deploy');
   assert.equal(state.disposals, 1);
 });
+
+if (!isMainThread) {
+  for (const initialize of setup) await initialize();
+  assert.equal(cases.size, 17);
+  let queue = Promise.resolve();
+  parentPort.on('message', (message) => {
+    queue = queue.then(async () => {
+      const cleanup = [];
+      let error;
+      try {
+        assert.ok(cases.has(message.name), `Unknown case: ${message.name}`);
+        await cases.get(message.name)({ after: (callback) => cleanup.push(callback) });
+      } catch (failure) {
+        error = failure;
+      } finally {
+        for (const callback of cleanup.reverse()) {
+          try { await callback(); } catch (failure) { error ??= failure; }
+        }
+      }
+      parentPort.postMessage({ id: message.id, ok: error === undefined,
+        error: error ? `${error.name}: ${error.message}` : undefined });
+    });
+  });
+  parentPort.postMessage({ type: 'ready', cases: [...cases.keys()], identity });
+}
