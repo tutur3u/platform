@@ -141,9 +141,13 @@ export function assertStagingIsolation(config) {
     [],
     'Staging must have no routes or custom domains'
   );
-  const forbidden = Object.values(profiles.apps).flatMap((app) => [
+  // Forbid both the configured identities and the resolved production
+  // profile, whose Worker name can differ from `productionWorker`.
+  const forbidden = Object.entries(profiles.apps).flatMap(([name, app]) => [
     app.productionWorker,
     app.canonicalHost,
+    profileFor(name, 'production').name,
+    profileFor(name, 'production').host,
     ...Object.entries(app.ownerProvisionedResources ?? {})
       .filter(([key]) => key.startsWith('retainedProduction'))
       .map(([, value]) => value),
