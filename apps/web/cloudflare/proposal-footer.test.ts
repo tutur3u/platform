@@ -1,6 +1,6 @@
 import { getLegalDocument, getProposedLegalDocument } from '@tuturuuu/legal';
 import { describe, expect, it } from 'vitest';
-import { stripInternalReviewSentences } from '../src/components/legal/proposal-footer';
+import { stripInternalReviewSentences } from '@tuturuuu/legal';
 
 const privacy = {
   en: {

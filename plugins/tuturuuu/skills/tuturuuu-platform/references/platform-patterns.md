@@ -1586,3 +1586,13 @@ Escape and explicit button behavior. Test the actual handler with composing and
 non-composing events; a source-string assertion cannot prove the action is
 suppressed. AI Studio model policy entry has focused regression coverage in
 `apps/ai/src/components/policy/model-list-field.test.ts`.
+
+### Legal footer presentation
+
+Render legal footers through `stripInternalReviewSentences` from `@tuturuuu/legal`
+in canonical and proposal surfaces, including native adapters. Preserve stored
+legal text and public contact sentences. Canonical legal pages omit the
+upcoming-changes line and links to `/legal/changes`; keep that route directly
+reachable and retain its own view/language controls. See
+[legal publications](../../../../../apps/docs/platform/features/legal-publications.mdx)
+and both apps' `src/components/production-legal-notices.test.tsx`.
