@@ -35,6 +35,17 @@ import {
 import { ChatMessageBody } from './chat-message-body';
 import { MiraAvatar, MiraProfile } from './mira-profile';
 
+type AssistantFailureNotice = 'room_unavailable' | 'failed';
+/** Room Mira is denied server-side with 403; anything else is a failed answer. */
+export function assistantFailureNotice(error: unknown): AssistantFailureNotice {
+  return error &&
+    typeof error === 'object' &&
+    'status' in error &&
+    error.status === 403
+    ? 'room_unavailable'
+    : 'failed';
+}
+
 function ChatAttachment({ meetingId, id }: { meetingId: string; id: string }) {
   const t = useTranslations('meet.call');
   const file = useQuery({
@@ -125,7 +136,9 @@ export function ChatPanel({
   const [draft, setDraft] = useState(''),
     [files, setFiles] = useState<File[]>([]),
     [busy, setBusy] = useState(false),
-    [thinking, setThinking] = useState(false);
+    [thinking, setThinking] = useState(false),
+    [assistantNotice, setAssistantNotice] =
+      useState<AssistantFailureNotice | null>(null);
   const assistantScope = useAssistantWorkspaceSelection(
     assistantWorkspace,
     accountId,
@@ -200,6 +213,7 @@ export function ChatPanel({
       setDraft('');
       setFiles([]);
       if (hasMeetAssistantMention(body)) {
+        setAssistantNotice(null);
         setThinking(true);
         try {
           const current = currentAssistantScope.current;
@@ -211,8 +225,9 @@ export function ChatPanel({
             Intl.DateTimeFormat().resolvedOptions().timeZone,
             assistantWorkspace === 'personal' ? undefined : assistantWorkspace
           );
-        } catch {
-          toast.error(t('assistant_private_only'));
+        } catch (error) {
+          if (mounted.current)
+            setAssistantNotice(assistantFailureNotice(error));
         } finally {
           await queryClient.invalidateQueries({
             queryKey: ['meet-assistant-reviews', meetingId, selfUserId],
@@ -343,6 +358,21 @@ export function ChatPanel({
             <Loader2 className="size-3 animate-spin" />
             {t('mira_thinking')}
           </p>
+        )}
+        {assistantNotice && !thinking && (
+          <div
+            role="alert"
+            className="mt-3 flex items-start gap-2 rounded-xl border p-3 text-sm"
+          >
+            <MiraAvatar size={20} />
+            <p className="min-w-0 flex-1">
+              {t(
+                assistantNotice === 'room_unavailable'
+                  ? 'assistant_private_only'
+                  : 'assistant_failed'
+              )}
+            </p>
+          </div>
         )}
         <div ref={bottom} />
       </ScrollArea>

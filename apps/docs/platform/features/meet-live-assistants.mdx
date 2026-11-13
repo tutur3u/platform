@@ -31,7 +31,13 @@ environment default. No attestation setting is available in this release.
 The notice offers **Continue with Mira**, **Mute Mira for me**, and **Leave**.
 Continue is focused but does not imply acceptance. A click records the notice
 version, choice, meeting, account, server time and revision in the room Durable
-Object before a token can be issued. Choice records remain in that room's stored
+Object before a token can be issued. The notice text, retention line and privacy
+link sit behind an info button. Choices are offered only while this device's room
+socket is open and admitted, because the room service requires live presence.
+Every outcome is visible: the clicked button shows progress, and a missing
+presence, pending stop, timeout, unconfirmed or unavailable result shows its own
+reason with Retry where retrying can help. Only a server-confirmed Continue on an
+available policy enables the personal assistant. Choice records remain in that room's stored
 state until that state is erased; there is no automatic expiry promise.
 
 Private Mira receives only the requester's microphone and private typed input.
@@ -43,7 +49,9 @@ and playback. Replies play only on the requester's device and are never publishe
 as a room track. Other participants see a private-use indicator.
 
 Mute and Leave first stop every registered private session before recording the
-new choice. Token issuance and reconnect recheck the durable choice. Tokens last
+new choice. Leave never waits on that record: it stops Mira, records the choice
+when it can within a few seconds, then ends the call on this device and shows the
+left screen with Rejoin and Back. Token issuance and reconnect recheck the durable choice. Tokens last
 120 seconds and bind the account, meeting, app and private mode. Audio frames
 must identify that same account and the microphone source.
 
@@ -54,7 +62,10 @@ settings, pending an all-participant click fence for the mixed transport. Public
 AI chat, including **@mira**, **@ttr**, **@tuturuuu**, Everyone and the legacy
 Private Mira chat endpoint, is also denied. Private text inside an accepted Live
 session remains available. Meeting WAV transcription and notes are off. These
-restrictions prevent mixed input or room history from reaching a provider.
+restrictions prevent mixed input or room history from reaching a provider. A
+denied room chat mention shows an inline notice that Room Mira is unavailable and
+points to Private Mira. Private Mira startup reports blocked, missing or busy
+microphones and unavailable audio output with specific messages.
 
 Deploy `tuturuuu-meet-realtime` with the choice protocol and command denials before
 `tuturuuu-meet`. Enabling the private path requires an explicit runtime override
