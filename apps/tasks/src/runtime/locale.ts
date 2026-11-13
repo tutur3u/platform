@@ -1,5 +1,5 @@
 import { LOCALE_COOKIE_NAME } from '@tuturuuu/satellite/constants';
-import { bridgeRequest } from '@tuturuuu/start-bridge/request-context';
+import { bridgeRequest } from '@tuturuuu/start-bridge/request-context/reader';
 import {
   preferredRequestLocale,
   resolveRequestLocale,

@@ -7,7 +7,7 @@ import { normalizeAuthRedirectPath } from '@tuturuuu/auth/proxy';
 import { getSatelliteAppSession } from '@tuturuuu/satellite/auth';
 import { headers } from '@tuturuuu/start-bridge/next/headers';
 import { redirect } from '@tuturuuu/start-bridge/next/navigation';
-import { bridgeRequest } from '@tuturuuu/start-bridge/request-context';
+import { bridgeRequest } from '@tuturuuu/start-bridge/request-context/reader';
 import { withAppBase } from '@tuturuuu/start-bridge/start/base-path';
 import { createClient } from '@tuturuuu/supabase/next/server';
 import type { SharedTaskResponse } from '../app/api/v1/shared/tasks/[shareCode]/response';

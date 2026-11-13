@@ -1,7 +1,7 @@
 import '@tanstack/react-start/server-only';
 import { notFound, redirect } from '@tuturuuu/start-bridge/next/navigation';
 import { matchPage } from '@tuturuuu/start-bridge/pages';
-import { bridgeRequest } from '@tuturuuu/start-bridge/request-context';
+import { bridgeRequest } from '@tuturuuu/start-bridge/request-context/reader';
 import { runtimeAppBase } from '@tuturuuu/start-bridge/start/base-path';
 import { PAGE_REWRITE_HEADER } from '../lib/page-rewrite';
 import { resolvePathLocale } from './locale';
