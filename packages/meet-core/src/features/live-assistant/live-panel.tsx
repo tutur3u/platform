@@ -77,6 +77,16 @@ export function MeetLivePanel({
   const [choiceAccepted, setChoiceAccepted] = useState(false);
   const [draft, setDraft] = useState('');
   const [voice, setVoice] = useState<MeetLiveVoice>('Aoede');
+  const roomAdmitted =
+    room.connectionStatus === 'open' && room.state.admission === 'admitted';
+  // The card follows the open, admitted room. A disconnect or a new meeting
+  // or account clears it until the notice records a new Continue.
+  useEffect(() => {
+    if (!roomAdmitted) setChoiceAccepted(false);
+  }, [roomAdmitted]);
+  useEffect(() => {
+    setChoiceAccepted(false);
+  }, [meetingId, accountId]);
   const active = !['idle', 'error', 'ended'].includes(live.status);
   const ready = ['listening', 'paused'].includes(live.status);
   // If the user unmutes the meeting, stop personal capture before any further audio is sent.
@@ -137,10 +147,8 @@ export function MeetLivePanel({
         <div className="min-h-0 space-y-4 overflow-y-auto">
           <PrivateMiraNotice
             meetingId={meetingId}
-            connected={
-              room.connectionStatus === 'open' &&
-              room.state.admission === 'admitted'
-            }
+            accountId={accountId}
+            connected={roomAdmitted}
             onStop={live.stop}
             onLeave={() => {
               setOpen(false);
