@@ -1486,6 +1486,16 @@ Keep emitted-Worker acceptance behind an explicit `test:runtime` command and
 artifact. Use `.invalid` hosts for isolated runtime preview fixtures; retain
 production-like preview refusal in the source auth matrix.
 
+### External-site admin binding
+
+For an external site's `/admin` and `/admin/analytics`, reuse the existing CMS
+session/workspace gate or Web external-project authorization via the mapped
+admin adapter. See [CMS mapped administration](../../../../../apps/docs/platform/applications/cms.mdx#mapped-external-site-administration)
+for the deployment-owned origin/workspace/canonical contract and required
+server consumer. Keep automatic invitation acceptance disabled unless the normal
+product acceptance transaction proves revalidation, consumption and auditing;
+a membership-only advisory lock does not fence concurrent invitation revocation.
+
 ### Workspace picker component verification
 
 The network-fenced fictional fixture and capture matrix are documented in
