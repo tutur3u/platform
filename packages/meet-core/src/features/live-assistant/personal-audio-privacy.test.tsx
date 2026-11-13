@@ -5,6 +5,7 @@ import { useLiveAssistant } from './use-live-assistant';
 
 const calls = vi.hoisted(() => ({
   volume: 1,
+  unlock: vi.fn(async () => {}),
   setVolume: vi.fn(),
   play: vi.fn(),
   interrupt: vi.fn(),
@@ -27,7 +28,7 @@ vi.mock('../call/components/playback-volume', () => ({
 vi.mock('./audio', () => ({
   LiveAudioPlayer: class {
     setVolume = calls.setVolume;
-    unlock = async () => {};
+    unlock = calls.unlock;
     play = calls.play;
     interrupt = calls.interrupt;
     close = calls.close;
@@ -232,4 +233,36 @@ it('uses the latest playback volume when startup finishes', async () => {
     await starting;
   });
   expect(calls.setVolume).toHaveBeenLastCalledWith(0.25);
+});
+
+it('reports a rejected microphone request without posting a start or opening a socket', async () => {
+  vi.stubGlobal('navigator', {
+    mediaDevices: {
+      getUserMedia: vi
+        .fn()
+        .mockRejectedValue(
+          new DOMException('Synthetic denied', 'NotAllowedError')
+        ),
+    },
+  });
+  const { result } = renderHook(() =>
+    useLiveAssistant('meeting', '', { streams: [], microphoneEnabled: false })
+  );
+  await act(() => result.current.start('personal', [], ''));
+  expect(result.current.error).toBe('microphone_unavailable');
+  expect(result.current.status).toBe('error');
+  expect(calls.control).not.toHaveBeenCalled();
+});
+it('reports playback unlock failure before requesting microphone access or posting a start', async () => {
+  const microphone = vi.fn();
+  vi.stubGlobal('navigator', { mediaDevices: { getUserMedia: microphone } });
+  calls.unlock.mockRejectedValueOnce(new Error('Synthetic playback blocked'));
+  const { result } = renderHook(() =>
+    useLiveAssistant('meeting', '', { streams: [], microphoneEnabled: false })
+  );
+  await act(() => result.current.start('personal', [], ''));
+  expect(result.current.error).toBe('playback_unavailable');
+  expect(result.current.status).toBe('error');
+  expect(microphone).not.toHaveBeenCalled();
+  expect(calls.control).not.toHaveBeenCalled();
 });

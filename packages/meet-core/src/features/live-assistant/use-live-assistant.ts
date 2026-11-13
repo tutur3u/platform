@@ -256,11 +256,14 @@ export function useLiveAssistant(
     setReviews([]);
     setUsage({ costUsd: 0, incomplete: true });
     setOrganized(false);
-    const player = new LiveAudioPlayer();
-    player.setVolume(volumeRef.current);
+    let player: LiveAudioPlayer | undefined;
+    let stage: 'playback' | 'microphone' | 'session' = 'playback';
     let microphone: MediaStream | undefined;
     try {
+      player = new LiveAudioPlayer();
+      player.setVolume(volumeRef.current);
       await player.unlock(outputDeviceId);
+      stage = 'microphone';
       if (audience === 'personal')
         microphone = await navigator.mediaDevices.getUserMedia({
           audio: {
@@ -271,6 +274,7 @@ export function useLiveAssistant(
           video: false,
         });
       if (cancelled()) throw new Error('Cancelled');
+      stage = 'session';
       const session = await controlMeetLive(meetingId, {
         action: 'start',
         audioPolicy: 'participant-opt-in',
@@ -343,12 +347,15 @@ export function useLiveAssistant(
       if (!(await ready)) throw new Error('Live startup failed');
       return !current.stopped;
     } catch {
-      player.close();
+      player?.close();
       microphone?.getTracks().forEach((track) => {
         track.stop();
       });
       if (generation === startGeneration.current) {
-        if (!roomAudioRef.current.suppressed) setError('start_failed');
+        if (!roomAudioRef.current.suppressed)
+          setError(
+            stage === 'session' ? 'start_failed' : `${stage}_unavailable`
+          );
         await stop();
         if (!roomAudioRef.current.suppressed) setStatus('error');
       }
