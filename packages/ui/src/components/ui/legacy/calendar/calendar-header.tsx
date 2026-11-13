@@ -1,15 +1,6 @@
-import {
-  AlertTriangle,
-  CalendarIcon,
-  Check,
-  ChevronLeft,
-  ChevronRight,
-  Moon,
-  MoonStar,
-} from '@tuturuuu/icons';
+import { CalendarCheck, ChevronLeft, ChevronRight } from '@tuturuuu/icons';
 import { Button } from '@tuturuuu/ui/button';
-import { useCalendarSync } from '@tuturuuu/ui/hooks/use-calendar-sync';
-import { useUserBooleanConfig } from '@tuturuuu/ui/hooks/use-user-config';
+import { Kbd } from '@tuturuuu/ui/kbd';
 import {
   Select,
   SelectContent,
@@ -18,12 +9,79 @@ import {
   SelectValue,
 } from '@tuturuuu/ui/select';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@tuturuuu/ui/tooltip';
+import { cn } from '@tuturuuu/utils/format';
 import dayjs from 'dayjs';
+import type { ComponentType, ReactNode } from 'react';
 import { useCalendarClock } from '../../../../hooks/use-calendar-clock';
 import { useCalendarDayZone } from '../../../../hooks/use-calendar-day-zone';
 import type { CalendarView } from '../../../../hooks/use-view-transition';
 import { calendarToday } from '../../../../lib/calendar-day';
+import { CalendarHeaderDateProvider } from './calendar-header-new-event';
 import { useCalendarSettings } from './settings/settings-context';
+import { CALENDAR_VIEW_KEYS } from './use-calendar-view-shortcuts';
+
+/**
+ * Fixed toolbar height (48px). Loading skeletons reserve the same row so the
+ * header never shifts the grid when it mounts.
+ */
+export const CALENDAR_HEADER_HEIGHT_CLASS = 'h-12';
+
+type Translate = (key: string) => string;
+
+const VIEW_SHORTCUTS: Partial<Record<CalendarView, string>> = {};
+for (const [key, view] of Object.entries(CALENDAR_VIEW_KEYS)) {
+  VIEW_SHORTCUTS[view] = key.toUpperCase();
+}
+
+function toCalendarView(value: string): CalendarView | null {
+  return Object.values(CALENDAR_VIEW_KEYS).find((v) => v === value) ?? null;
+}
+
+function todayLabelKey(view: CalendarView) {
+  switch (view) {
+    case 'day':
+      return 'today';
+    case 'week':
+    case '4-days':
+    case 'agenda':
+      return 'this-week';
+    case 'month':
+      return 'this-month';
+    case 'year':
+      return 'this-year';
+    default: {
+      const unreachable: never = view;
+      return unreachable;
+    }
+  }
+}
+
+function ToolbarIconButton({
+  label,
+  icon: Icon,
+  onClick,
+}: {
+  label: string;
+  icon: ComponentType<{ className?: string }>;
+  onClick: () => void;
+}) {
+  return (
+    <Tooltip>
+      <TooltipTrigger asChild>
+        <Button
+          variant="ghost"
+          size="icon"
+          className="size-8"
+          onClick={onClick}
+          aria-label={label}
+        >
+          <Icon className="size-4" />
+        </Button>
+      </TooltipTrigger>
+      <TooltipContent>{label}</TooltipContent>
+    </Tooltip>
+  );
+}
 
 export function CalendarHeader({
   t,
@@ -36,26 +94,23 @@ export function CalendarHeader({
   onViewChange,
   extras,
 }: {
-  t: any;
+  t: Translate;
   locale: string;
   date: Date;
   setDate: React.Dispatch<React.SetStateAction<Date>>;
   view: CalendarView;
   offset: number;
   availableViews: { value: string; label: string; disabled?: boolean }[];
-
   onViewChange: (view: CalendarView) => void;
-  extras?: React.ReactNode;
+  extras?: ReactNode;
 }) {
   const { settings } = useCalendarSettings();
   const zone = settings.timezone.timezone;
   const dayZone = useCalendarDayZone();
   const today = calendarToday(zone, useCalendarClock());
-  const views = availableViews.filter((view) => view?.disabled !== true);
-  const { value: showLunar, toggle: toggleLunar } = useUserBooleanConfig(
-    'SHOW_LUNAR_CALENDAR',
-    locale.startsWith('vi')
-  );
+  // Views a device cannot show (for example week on phones) are hidden.
+  const views = availableViews.filter((item) => item?.disabled !== true);
+  const currentViewLabel = views.find((item) => item.value === view)?.label;
 
   const title =
     view === 'year'
@@ -65,160 +120,119 @@ export function CalendarHeader({
           .format(locale === 'vi' ? 'MMMM, YYYY' : 'MMMM YYYY')
           .replace(/^\w/, (c) => c.toUpperCase());
 
-  const handleNext = () =>
-    setDate((date) => {
-      const newDate = new Date(date);
-      if (view === 'year') {
-        newDate.setFullYear(newDate.getFullYear() + 1);
-      } else if (view === 'month') {
-        newDate.setMonth(newDate.getMonth() + 1);
-      } else {
-        newDate.setDate(newDate.getDate() + offset);
-      }
-      return newDate;
+  const shift = (direction: 1 | -1) =>
+    setDate((current) => {
+      const next = new Date(current);
+      if (view === 'year') next.setFullYear(next.getFullYear() + direction);
+      else if (view === 'month') next.setMonth(next.getMonth() + direction);
+      else next.setDate(next.getDate() + direction * offset);
+      return next;
     });
 
-  const handlePrev = () =>
-    setDate((date) => {
-      const newDate = new Date(date);
-      if (view === 'year') {
-        newDate.setFullYear(newDate.getFullYear() - 1);
-      } else if (view === 'month') {
-        newDate.setMonth(newDate.getMonth() - 1);
-      } else {
-        newDate.setDate(newDate.getDate() - offset);
-      }
-      return newDate;
-    });
-
-  const { syncStatus } = useCalendarSync();
   const selectToday = () =>
     dayZone?.goToToday ? dayZone.goToToday() : setDate(today);
-  const isTodaySelected = () => dayjs(date).isSame(dayjs(today), 'day');
-  const isCurrentMonth = () =>
-    view === 'month' &&
-    date.getMonth() === today.getMonth() &&
-    date.getFullYear() === today.getFullYear();
-  const isCurrentYear = () =>
-    view === 'year' && date.getFullYear() === today.getFullYear();
-
   const isCurrentPeriod =
-    isTodaySelected() || isCurrentMonth() || isCurrentYear();
-
-  const getTodayLabel = (): string => {
-    switch (view) {
-      case 'day':
-        return t('today');
-      case 'week':
-      case '4-days':
-      case 'agenda':
-        return t('this-week');
-      case 'month':
-        return t('this-month');
-      case 'year':
-        return t('this-year');
-      default:
-        return t('current');
-    }
-  };
-
-  const LunarIcon = showLunar ? MoonStar : Moon;
-  const statusLabel =
-    syncStatus.state === 'error'
-      ? t('failed_to_load_events')
-      : syncStatus.lastSyncTime
-        ? `${t('sync_completed')} ${dayjs(syncStatus.lastSyncTime)
-            .locale(locale)
-            .format('HH:mm')}`
-        : null;
+    dayjs(date).isSame(dayjs(today), 'day') ||
+    (view === 'month' &&
+      date.getMonth() === today.getMonth() &&
+      date.getFullYear() === today.getFullYear()) ||
+    (view === 'year' && date.getFullYear() === today.getFullYear());
+  const todayLabel = t(todayLabelKey(view));
 
   return (
-    <div className="mb-2 flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
-      <div className="flex items-center gap-2">
-        <CalendarIcon className="h-5 w-5 text-muted-foreground" />
-        <h2 className="font-semibold text-xl tracking-tight">{title}</h2>
-      </div>
-      <div className="flex flex-col gap-2 md:flex-row md:items-center">
-        <div className="flex items-center gap-2">
-          {statusLabel && (
-            <div
-              aria-live="polite"
-              className="hidden min-w-0 items-center gap-1.5 rounded-full border bg-background/80 px-2 py-1 text-muted-foreground text-xs shadow-xs sm:inline-flex"
-            >
-              {syncStatus.state === 'error' ? (
-                <AlertTriangle className="h-3.5 w-3.5 text-dynamic-red" />
-              ) : (
-                <Check className="h-3.5 w-3.5 text-dynamic-green" />
-              )}
-              <span className="truncate">{statusLabel}</span>
-            </div>
-          )}
-          <div className="flex flex-none items-center justify-center gap-2 md:justify-start">
-            <Button
-              variant="outline"
-              size="icon"
-              className="h-8 w-8"
-              onClick={handlePrev}
-              aria-label="Previous period"
-            >
-              <ChevronLeft className="h-4 w-4" />
-            </Button>
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={isCurrentPeriod ? undefined : selectToday}
-              disabled={isCurrentPeriod}
-            >
-              {getTodayLabel()}
-            </Button>
-            <Button
-              variant="outline"
-              size="icon"
-              className="h-8 w-8"
-              onClick={handleNext}
-              aria-label="Next period"
-            >
-              <ChevronRight className="h-4 w-4" />
-            </Button>
-          </div>
-          {views.length > 1 && (
-            <div className="w-full flex-1 md:w-auto">
-              <Select
-                value={view}
-                onValueChange={(value) => onViewChange(value as CalendarView)}
-              >
-                <SelectTrigger className="h-8 w-full">
-                  <SelectValue placeholder={t('view')} />
-                </SelectTrigger>
-                <SelectContent>
-                  {views.map((view) => (
-                    <SelectItem key={view.value} value={view.value}>
-                      {view.label}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-          )}
+    <CalendarHeaderDateProvider value={date}>
+      <div
+        data-slot="calendar-header"
+        className={cn(
+          CALENDAR_HEADER_HEIGHT_CLASS,
+          'flex min-w-0 shrink-0 items-center gap-1'
+        )}
+      >
+        <div className="flex shrink-0 items-center gap-1">
+          <ToolbarIconButton
+            label={t('toolbar.previous_period')}
+            icon={ChevronLeft}
+            onClick={() => shift(-1)}
+          />
+          <ToolbarIconButton
+            label={t('toolbar.next_period')}
+            icon={ChevronRight}
+            onClick={() => shift(1)}
+          />
           <Tooltip>
             <TooltipTrigger asChild>
               <Button
-                variant={showLunar ? 'default' : 'outline'}
-                size="icon"
-                className="h-8 w-8"
-                onClick={toggleLunar}
-                aria-label={locale === 'vi' ? 'Âm lịch' : 'Lunar calendar'}
+                variant="outline"
+                size="sm"
+                className="max-md:w-8 max-md:px-0"
+                onClick={isCurrentPeriod ? undefined : selectToday}
+                disabled={isCurrentPeriod}
+                aria-label={todayLabel}
               >
-                <LunarIcon className="h-4 w-4" />
+                <span className="md:hidden">
+                  <CalendarCheck className="size-4" />
+                </span>
+                <span className="max-md:hidden">{todayLabel}</span>
               </Button>
             </TooltipTrigger>
-            <TooltipContent>
-              {locale === 'vi' ? 'Âm lịch' : 'Lunar calendar'}
-            </TooltipContent>
+            <TooltipContent className="md:hidden">{todayLabel}</TooltipContent>
           </Tooltip>
         </div>
-        {extras}
+
+        <h2 className="min-w-0 flex-1 truncate px-1 font-semibold text-base">
+          {title}
+        </h2>
+
+        {views.length > 1 && (
+          <Select
+            value={view}
+            onValueChange={(value) => {
+              const next = toCalendarView(value);
+              if (next) onViewChange(next);
+            }}
+          >
+            <SelectTrigger
+              className="h-8 w-auto shrink-0 gap-1 px-2"
+              aria-label={t('toolbar.view')}
+            >
+              <SelectValue placeholder={t('view')}>
+                {currentViewLabel}
+              </SelectValue>
+            </SelectTrigger>
+            <SelectContent align="end">
+              {views.map((item) => {
+                const itemView = toCalendarView(item.value);
+                const shortcut = itemView ? VIEW_SHORTCUTS[itemView] : null;
+                return (
+                  <SelectItem
+                    key={item.value}
+                    value={item.value}
+                    textValue={item.label}
+                    className="*:[span]:last:flex-1"
+                  >
+                    {item.label}
+                    {shortcut && (
+                      <Kbd
+                        className="ml-auto"
+                        data-testid={`calendar-view-shortcut-${item.value}`}
+                      >
+                        {shortcut}
+                      </Kbd>
+                    )}
+                  </SelectItem>
+                );
+              })}
+            </SelectContent>
+          </Select>
+        )}
+
+        <div
+          data-slot="calendar-header-extras"
+          className="flex shrink-0 items-center gap-1 empty:hidden"
+        >
+          {extras}
+        </div>
       </div>
-    </div>
+    </CalendarHeaderDateProvider>
   );
 }

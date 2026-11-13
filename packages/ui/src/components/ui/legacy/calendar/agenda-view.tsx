@@ -337,57 +337,32 @@ export const AgendaView = ({
     settings?.timezone?.timezone,
   ]);
 
-  const uniqueEvents = new Set(
-    groupedEvents.flatMap((group) => group.events.map((event) => event.id))
-  ).size;
   return (
     <div
       className="h-full overflow-auto bg-background"
       data-calendar-view="agenda"
     >
       <div className="mx-auto max-w-4xl px-4 py-5 sm:px-8">
-        <div className="mb-6 flex flex-wrap items-end justify-between gap-4 border-b pb-5">
-          <div className="space-y-1">
-            <h2 className="font-semibold text-xl tracking-tight">
-              {t('agenda')}
-            </h2>
-            <p className="text-muted-foreground text-sm tabular-nums">
-              {startDate.toLocaleDateString(locale, {
-                month: 'short',
-                day: 'numeric',
-              })}{' '}
-              —{' '}
-              {addDays(startDate, daysToShow - 1).toLocaleDateString(locale, {
-                month: 'short',
-                day: 'numeric',
-                year: 'numeric',
-              })}
-            </p>
-            <p className="text-sm">
-              {t('agenda_event_count', { count: uniqueEvents })}
-            </p>
+        <div className="mb-6 flex items-center gap-2 border-b pb-5">
+          <div className="relative flex-1">
+            <Search className="absolute top-2.5 left-3 size-4 text-muted-foreground" />
+            <Input
+              className="pl-9"
+              value={query}
+              onChange={(event) => setQuery(event.target.value)}
+              placeholder={t('views.search_events')}
+              aria-label={t('views.search_events')}
+            />
           </div>
-          <div className="flex w-full items-center gap-2 sm:w-auto">
-            <div className="relative flex-1">
-              <Search className="absolute top-2.5 left-3 size-4 text-muted-foreground" />
-              <Input
-                className="pl-9"
-                value={query}
-                onChange={(event) => setQuery(event.target.value)}
-                placeholder={t('views.search_events')}
-                aria-label={t('views.search_events')}
-              />
-            </div>
-            <Button
-              variant="outline"
-              size="icon"
-              aria-label={t('views.create_event')}
-              disabled={cannotCreate}
-              onClick={createEvent}
-            >
-              <Plus className="size-4" />
-            </Button>
-          </div>
+          <Button
+            variant="outline"
+            size="icon"
+            aria-label={t('views.create_event')}
+            disabled={cannotCreate}
+            onClick={createEvent}
+          >
+            <Plus className="size-4" />
+          </Button>
         </div>
         {groupedEvents.length ? (
           groupedEvents.map(({ date, events }) => (

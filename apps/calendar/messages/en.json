@@ -1503,6 +1503,13 @@
     "microsoft_outlook": "Microsoft Outlook",
     "month": "Month",
     "new": "New",
+    "new_menu": {
+      "habit": "Habit",
+      "more": "More ways to create",
+      "recurring_event": "Recurring event",
+      "smart_schedule": "Smart schedule",
+      "task": "Task"
+    },
     "new-event": "New event",
     "new-habit": "New Habit",
     "new-task": "New Task",
@@ -1667,6 +1674,11 @@
     "toggle_calendars_desc": "Toggle which calendars to show",
     "toggle_failed": "Failed to toggle calendar visibility",
     "tomorrow": "Tomorrow",
+    "toolbar": {
+      "next_period": "Next period",
+      "previous_period": "Previous period",
+      "view": "Calendar view"
+    },
     "tuturuuu_calendars": "Tuturuuu Calendars",
     "two_way_sync": "Two-way sync",
     "two_way_sync_desc": "Control how Tuturuuu imports provider changes and mirrors native events outward.",

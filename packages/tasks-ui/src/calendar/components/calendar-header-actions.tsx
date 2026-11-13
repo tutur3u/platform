@@ -1,82 +1,140 @@
 'use client';
 
-import { CheckSquare, ChevronDown, PlusIcon, Repeat } from '@tuturuuu/icons';
+import { useQueryClient } from '@tanstack/react-query';
+import {
+  CheckSquare,
+  ChevronDown,
+  Flame,
+  PlusIcon,
+  Repeat,
+  Sparkles,
+} from '@tuturuuu/icons';
 import { Button } from '@tuturuuu/ui/button';
 import type { CalendarHeaderActionsProps } from '@tuturuuu/ui/calendar-app/calendar-client-page';
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
+  DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@tuturuuu/ui/dropdown-menu';
 import { useCalendar } from '@tuturuuu/ui/hooks/use-calendar';
+import { useWorkspaceActor } from '@tuturuuu/ui/hooks/use-workspace-visibility';
+import { useCreateCalendarEvent } from '@tuturuuu/ui/legacy/calendar/calendar-header-new-event';
 import { NativeRecurrenceDialog } from '@tuturuuu/ui/legacy/calendar/native-recurrence-dialog';
 import { useCalendarSettings } from '@tuturuuu/ui/legacy/calendar/settings/settings-context';
+import { Tooltip, TooltipContent, TooltipTrigger } from '@tuturuuu/ui/tooltip';
 import { useTranslations } from 'next-intl';
 import { useState } from 'react';
 import HabitFormDialog from '../../tu-do/habits/habit-form-dialog';
 import { QuickTaskDialog } from './quick-task-dialog';
-import { SmartScheduleButton } from './smart-schedule-button';
+import { SmartScheduleDialogs } from './smart-schedule-button';
+
+type CreateDialog = 'task' | 'habit' | 'recurrence' | 'smart-schedule';
 
 export function CalendarHeaderActions({
   workspaceId,
 }: CalendarHeaderActionsProps) {
   const t = useTranslations('calendar');
+  const queryClient = useQueryClient();
   const { readOnly } = useCalendar();
+  // Same assignment rule as the Plan panel's "New task" (tasks-sidebar.tsx).
+  const userId = useWorkspaceActor()?.actorId;
   const { settings } = useCalendarSettings();
-  const [recurrenceOpen, setRecurrenceOpen] = useState(false);
-  const [quickTaskOpen, setQuickTaskOpen] = useState(false);
-  const [habitFormOpen, setHabitFormOpen] = useState(false);
+  const { createEvent, disabled: eventDisabled } = useCreateCalendarEvent();
+  const [menuOpen, setMenuOpen] = useState(false);
+  const [dialog, setDialog] = useState<CreateDialog | null>(null);
+
+  const open = (next: CreateDialog) => {
+    setMenuOpen(false);
+    setDialog(next);
+  };
+  const dialogOpenChange = (target: CreateDialog) => (isOpen: boolean) =>
+    setDialog(isOpen ? target : null);
+
+  const newEventLabel = t('new-event');
 
   return (
-    <div className="grid w-full items-center gap-2 md:flex md:w-auto">
-      <DropdownMenu>
+    <div className="flex items-center">
+      <Tooltip>
+        <TooltipTrigger asChild>
+          <Button
+            size="sm"
+            className="rounded-r-none max-md:has-[>svg]:px-2"
+            onClick={createEvent}
+            disabled={eventDisabled}
+            aria-label={newEventLabel}
+          >
+            <PlusIcon className="size-4" />
+            <span className="max-md:hidden">{t('new')}</span>
+          </Button>
+        </TooltipTrigger>
+        <TooltipContent>{newEventLabel}</TooltipContent>
+      </Tooltip>
+      <DropdownMenu modal={false} open={menuOpen} onOpenChange={setMenuOpen}>
         <DropdownMenuTrigger asChild>
-          <Button variant="default" size="xs" className="gap-1.5">
-            <PlusIcon className="h-4 w-4" />
-            <span className="hidden sm:inline">{t('create')}</span>
-            <ChevronDown className="h-3 w-3 opacity-60" />
+          <Button
+            size="icon"
+            className="size-8 rounded-l-none border-primary-foreground/20 border-l"
+            aria-label={t('new_menu.more')}
+          >
+            <ChevronDown className="size-4" />
           </Button>
         </DropdownMenuTrigger>
-        <DropdownMenuContent align="end">
+        <DropdownMenuContent align="end" className="w-48">
+          <DropdownMenuItem onSelect={() => open('task')}>
+            <CheckSquare />
+            {t('new_menu.task')}
+          </DropdownMenuItem>
+          <DropdownMenuItem onSelect={() => open('habit')}>
+            <Flame />
+            {t('new_menu.habit')}
+          </DropdownMenuItem>
           <DropdownMenuItem
             disabled={readOnly}
-            onClick={() => setRecurrenceOpen(true)}
+            onSelect={() => open('recurrence')}
           >
-            <Repeat className="h-4 w-4" />
-            {t('recurrence.create')}
+            <Repeat />
+            {t('new_menu.recurring_event')}
           </DropdownMenuItem>
-          <DropdownMenuItem onClick={() => setQuickTaskOpen(true)}>
-            <CheckSquare className="h-4 w-4" />
-            {t('new-task')}
-          </DropdownMenuItem>
-          <DropdownMenuItem onClick={() => setHabitFormOpen(true)}>
-            <Repeat className="h-4 w-4" />
-            {t('new-habit')}
+          <DropdownMenuSeparator />
+          <DropdownMenuItem onSelect={() => open('smart-schedule')}>
+            <Sparkles />
+            {t('new_menu.smart_schedule')}
           </DropdownMenuItem>
         </DropdownMenuContent>
       </DropdownMenu>
 
-      <SmartScheduleButton wsId={workspaceId} />
-
       <NativeRecurrenceDialog
         wsId={workspaceId}
-        open={recurrenceOpen}
-        onOpenChange={setRecurrenceOpen}
+        open={dialog === 'recurrence'}
+        onOpenChange={dialogOpenChange('recurrence')}
         readOnly={readOnly}
         timezone={settings.timezone.timezone}
       />
       <QuickTaskDialog
         wsId={workspaceId}
-        open={quickTaskOpen}
-        onOpenChange={setQuickTaskOpen}
+        open={dialog === 'task'}
+        onOpenChange={dialogOpenChange('task')}
+        userId={userId}
+        isPersonalWorkspace={workspaceId === userId}
       />
-
       <HabitFormDialog
         wsId={workspaceId}
-        open={habitFormOpen}
-        onOpenChange={setHabitFormOpen}
-        onSuccess={() => setHabitFormOpen(false)}
+        open={dialog === 'habit'}
+        onOpenChange={dialogOpenChange('habit')}
+        onSuccess={() => {
+          setDialog(null);
+          // The calendar Plan panel lists habits from this query.
+          void queryClient.invalidateQueries({
+            queryKey: ['habits', workspaceId],
+          });
+        }}
+      />
+      <SmartScheduleDialogs
+        wsId={workspaceId}
+        requested={dialog === 'smart-schedule'}
+        onRequestEnd={() => setDialog(null)}
       />
     </div>
   );

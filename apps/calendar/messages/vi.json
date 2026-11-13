@@ -1503,6 +1503,13 @@
     "microsoft_outlook": "Microsoft Outlook",
     "month": "Tháng",
     "new": "Tạo mới",
+    "new_menu": {
+      "habit": "Thói quen",
+      "more": "Thêm cách tạo khác",
+      "recurring_event": "Sự kiện lặp lại",
+      "smart_schedule": "Lên lịch thông minh",
+      "task": "Công việc"
+    },
     "new-event": "Sự kiện mới",
     "new-habit": "Thói quen mới",
     "new-task": "Công việc mới",
@@ -1667,6 +1674,11 @@
     "toggle_calendars_desc": "Bật/tắt lịch hiển thị",
     "toggle_failed": "Không thể cập nhật trạng thái hiển thị lịch.",
     "tomorrow": "Ngày mai",
+    "toolbar": {
+      "next_period": "Kỳ sau",
+      "previous_period": "Kỳ trước",
+      "view": "Chế độ xem lịch"
+    },
     "tuturuuu_calendars": "Lịch Tuturuuu",
     "two_way_sync": "Đồng bộ hai chiều",
     "two_way_sync_desc": "Kiểm soát cách Tuturuuu nhập thay đổi từ nhà cung cấp và phản chiếu sự kiện gốc ra ngoài.",
