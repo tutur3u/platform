@@ -37,9 +37,9 @@ describe('cms block renderers', () => {
     expect(html).not.toContain('javascript:');
   });
 
-  it('renders parsed pages without coercing malformed TipTap attributes', () => {
+  it('rejects non-scalar TipTap attributes before rendering', () => {
     const malformed = { toString: 0, valueOf: 0 };
-    const page = cmsPageSchema.parse({
+    const page = cmsPageSchema.safeParse({
       ...samplePage,
       content: [
         {
@@ -75,9 +75,7 @@ describe('cms block renderers', () => {
         },
       ],
     });
-    const html = renderToStaticMarkup(<CmsPageRenderer page={page} />);
-    expect(html).toContain('<p>Paragraph</p><h2>Heading</h2><p>Unlinked</p>');
-    expect(html).not.toContain('<a');
+    expect(page.success).toBe(false);
   });
 
   it('preserves numeric headings and string link URLs', () => {
