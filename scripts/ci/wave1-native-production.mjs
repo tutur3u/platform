@@ -236,11 +236,7 @@ export async function main({
       observedVersions.push(version);
       if (matchesVersion(version, sha, digest)) matches.push(version.id);
     }
-    assertResolvedVersionsAbsent({
-      app,
-      worker: p.name,
-      versions: observedVersions,
-    });
+    assertResolvedVersionsAbsent({ app, versions: observedVersions });
     assert.ok(matches.length <= 1, 'Ambiguous matching production versions');
     if (matches.length)
       assert.deepEqual(

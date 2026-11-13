@@ -1,6 +1,6 @@
 import { readFileSync } from 'node:fs';
 import { describe, expect, it } from 'vitest';
-import { featureFlagCatalog, registry } from './index';
+import { featureFlagCatalog, registry, RUNTIME_FLAG_KEYS } from './index';
 
 const migrationPath = new URL(
   '../../../apps/database/supabase/migrations/20261109190002_platform_feature_flag_state_audit.sql',
@@ -103,7 +103,12 @@ describe('platform feature flag migration contract', () => {
   });
 
   it('pins the migration catalog and admits exactly the registry runtime keys', () => {
-    const catalogOnlyKeys = ['ENABLE_JOURNAL_MOOD_TRACKING'];
+    // Workspace-secret gates catalogued after the migration shipped; they are
+    // read-only in the dashboard and must stay out of the runtime family map.
+    const catalogOnlyKeys = [
+      'ENABLE_JOURNAL_MOOD_TRACKING',
+      'ENABLE_DOCUMENT_HIERARCHY',
+    ];
     const migratedFlags = featureFlagCatalog.flags.filter(
       (flag) => !catalogOnlyKeys.includes(flag.key)
     );
@@ -132,12 +137,18 @@ describe('platform feature flag migration contract', () => {
         .filter(({ family }) => family === 'mobile-runtime')
         .map(({ key }) => key)
         .sort()
-    ).toEqual(registry.map((flag) => flag.key).sort());
-    for (const flag of registry) {
-      expect(sql).toContain(`when '${flag.key}' then 'mobile-runtime'`);
+    ).toEqual([...RUNTIME_FLAG_KEYS].sort());
+    for (const key of RUNTIME_FLAG_KEYS) {
+      expect(sql).toContain(`when '${key}' then 'mobile-runtime'`);
     }
-    expect(featureFlagCatalog.flags).toHaveLength(52);
-    expect(registry).toHaveLength(16);
+    for (const flag of registry) {
+      if (!RUNTIME_FLAG_KEYS.some((key) => key === flag.key)) {
+        expect(sql).not.toContain(flag.key);
+      }
+    }
+    expect(featureFlagCatalog.flags).toHaveLength(53);
+    expect(RUNTIME_FLAG_KEYS).toHaveLength(16);
+    expect(registry).toHaveLength(17);
   });
 
   it('rolls back by dropping the new objects without a client grant', () => {

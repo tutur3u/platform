@@ -2,6 +2,7 @@ import { existsSync, readFileSync } from 'node:fs';
 import { describe, expect, it } from 'vitest';
 import sourceRegistry from '../../../config/feature-flags.json';
 import { featureFlagCatalog, validateCatalog } from './catalog';
+import { RUNTIME_FLAG_KEYS } from './runtime-policy';
 
 const repoFile = (path: string) =>
   readFileSync(new URL(`../../../${path}`, import.meta.url), 'utf8');
@@ -86,17 +87,30 @@ describe('feature flag catalog', () => {
         removeBy: flag.legacyRemoveBy,
       }))
     ).toEqual(
-      sourceRegistry.map((flag) => ({
-        key: flag.key,
-        description: flag.description,
-        owner: flag.owner,
-        class: flag.class === 'kill' ? 'kill' : 'release',
-        default: flag.default,
-        removeBy: flag.removeBy,
-      }))
+      sourceRegistry
+        .filter((flag) => RUNTIME_FLAG_KEYS.some((key) => key === flag.key))
+        .map((flag) => ({
+          key: flag.key,
+          description: flag.description,
+          owner: flag.owner,
+          class: flag.class === 'kill' ? 'kill' : 'release',
+          default: flag.default,
+          removeBy: flag.removeBy,
+        }))
     );
     for (const flag of flagsIn('mobile-runtime')) {
       expect(new Set(Object.values(flag.defaults)).size).toBe(1);
+    }
+    // Workspace-scoped registry entries are inventory-only: their value comes
+    // from workspace configuration, never the platform runtime store.
+    const workspaceScoped = sourceRegistry
+      .filter((flag) => 'scope' in flag && flag.scope === 'workspace')
+      .map((flag) => flag.key);
+    expect(workspaceScoped).toEqual(['tutoring_parent_message_v2']);
+    for (const key of workspaceScoped) {
+      expect(featureFlagCatalog.flags.some((flag) => flag.key === key)).toBe(
+        false
+      );
     }
   });
 

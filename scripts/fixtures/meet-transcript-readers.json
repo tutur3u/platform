@@ -30,5 +30,6 @@
   "packages/meet-core/src/features/meeting-ai/server/sessions.ts": "e3de509a589a8896389c83c82dbca814e77ccc5b50e30c228387e432b7432505",
   "packages/meet-core/src/features/meeting-ai/server/transcript-roster.ts": "476bcd70754ef5f7d4c6a0c7474d0a8da9c21b5e52e6772e4988c12992d30c21",
   "packages/meet-core/src/features/meeting-ai/server/transcript-speaker.ts": "9e75fbd4512f7cc2af9c159080656be67a9b6e63dff51a48775b780580018fc3",
-  "packages/meet-core/src/features/meeting-ai/use-meeting-ai.ts": "5b0a424b7c083edaf679e0fc351ec6f2d544a39ef45e7ed1f125871ee90c8999"
+  "packages/meet-core/src/features/meeting-ai/use-meeting-ai.ts": "5b0a424b7c083edaf679e0fc351ec6f2d544a39ef45e7ed1f125871ee90c8999",
+  "scripts/ci/production-migration-option-a-postcheck.sql": "3c94b6e95c69523d45adf155728acc4eab03f1aeba22fda229d34fc122a212c6"
 }
