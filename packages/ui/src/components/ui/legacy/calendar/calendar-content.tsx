@@ -12,7 +12,10 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import { calendarDay, calendarToday } from '../../../../lib/calendar-day';
 import { AgendaView } from './agenda-view';
 import { CalendarHeader } from './calendar-header';
-import { CalendarLoadingSkeleton } from './calendar-loading-skeleton';
+import {
+  CalendarFirstPaintSkeleton,
+  CalendarLoadingSkeleton,
+} from './calendar-loading-skeleton';
 import { calendarPeriodDates } from './calendar-period';
 import { CalendarViewWithTrail } from './calendar-view-with-trail';
 import { EventModal } from './event-modal';
@@ -339,9 +342,18 @@ export const CalendarContent = ({
       ]);
     }
 
-    // Set initial view based on settings or external state
+    const isMobile = typeof window !== 'undefined' && window.innerWidth <= 768;
+
+    // Set initial view based on settings or external state. Wide time grids
+    // resolve to Day on narrow screens here, so the first rendered view is
+    // already final instead of being corrected by the resize listener.
     if (externalState?.view) {
-      if (externalState.view === 'day') enableDayView();
+      if (
+        isMobile &&
+        (externalState.view === 'week' || externalState.view === '4-days')
+      )
+        enableDayView();
+      else if (externalState.view === 'day') enableDayView();
       else if (externalState.view === '4-days') enable4DayView();
       else if (externalState.view === 'week') enableWeekView();
       else if (externalState.view === 'month') enableMonthView();
@@ -353,9 +365,6 @@ export const CalendarContent = ({
         typeof window !== 'undefined'
           ? (localStorage.getItem(VIEW_STORAGE_KEY) as CalendarView | null)
           : null;
-
-      const isMobile =
-        typeof window !== 'undefined' && window.innerWidth <= 768;
 
       // Restore the saved view, adapting wide time grids for mobile.
       if (savedView) {
@@ -521,7 +530,10 @@ export const CalendarContent = ({
     agenda: enableAgendaView,
   });
 
-  if (!initialized || !view || !dates.length) return null;
+  // Until the view and its dates resolve, hold the calendar's space with a
+  // placeholder of the same layout instead of rendering nothing.
+  if (!initialized || !view || !dates.length)
+    return <CalendarFirstPaintSkeleton view={view} />;
 
   return (
     <div
