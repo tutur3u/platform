@@ -3,7 +3,7 @@
 import { AI_TEMP_AUTH_HEADER } from '@tuturuuu/utils/ai-temp-auth-constants';
 import type { CreditSource } from './mira-chat-constants';
 
-type MiraTempAuthBody = {
+export type MiraTempAuthBody = {
   wsId?: string;
   creditWsId?: string;
   creditSource?: CreditSource;
@@ -16,6 +16,11 @@ type CachedTempAuthToken = {
 };
 
 let cachedToken: CachedTempAuthToken | null = null;
+let generation = 0;
+let inFlight: {
+  cacheKey: string;
+  promise: Promise<Record<string, string>>;
+} | null = null;
 
 function getCacheKey(body: MiraTempAuthBody) {
   return JSON.stringify({
@@ -38,6 +43,29 @@ export async function getMiraTempAuthHeaders(
     return { [AI_TEMP_AUTH_HEADER]: cachedToken.token };
   }
 
+  if (inFlight) {
+    const pending = inFlight;
+    const headers = await pending.promise;
+    if (pending.cacheKey === cacheKey) return headers;
+    return getMiraTempAuthHeaders(body);
+  }
+
+  const requestGeneration = generation;
+  const promise = requestToken(body, cacheKey, requestGeneration, started);
+  inFlight = { cacheKey, promise };
+  try {
+    return await promise;
+  } finally {
+    if (inFlight?.promise === promise) inFlight = null;
+  }
+}
+
+async function requestToken(
+  body: MiraTempAuthBody,
+  cacheKey: string,
+  requestGeneration: number,
+  started: number
+): Promise<Record<string, string>> {
   try {
     const response = await fetch('/api/ai/temp-auth/token', {
       method: 'POST',
@@ -61,6 +89,8 @@ export async function getMiraTempAuthHeaders(
       expiresAt?: number | null;
     };
 
+    if (requestGeneration !== generation) return {};
+
     if (!payload.token || !payload.expiresAt) {
       cachedToken = null;
       return {};
@@ -81,7 +111,15 @@ export async function getMiraTempAuthHeaders(
   }
 }
 
+export async function prefetchMiraTempAuth(body: MiraTempAuthBody) {
+  await getMiraTempAuthHeaders(body);
+  return cachedToken?.cacheKey === getCacheKey(body)
+    ? cachedToken.expiresAt
+    : null;
+}
+
 export async function revokeMiraTempAuthToken() {
+  generation++;
   cachedToken = null;
   try {
     await fetch('/api/ai/temp-auth/revoke', {
