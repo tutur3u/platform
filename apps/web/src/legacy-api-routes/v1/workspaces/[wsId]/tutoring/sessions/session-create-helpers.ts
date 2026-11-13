@@ -61,6 +61,7 @@ function buildSequentialSessionSlots({
       startTime: formatMinutesAsTime(totalStartMinutes),
       teacherUserId: teacherUserId ?? null,
       content: undefined,
+      campusOverride: undefined,
     };
   });
 }
@@ -115,6 +116,10 @@ export function buildTutoringSessionRows({
     reason_type: payload.reasonType,
     reason_detail: payload.reasonDetail,
     content: slot.content ?? payload.content,
+    campus_override:
+      slot.campusOverride === undefined
+        ? (payload.campusOverride ?? null)
+        : slot.campusOverride,
     attendance_status: payload.attendanceStatus,
     source_feedback_id: payload.sourceFeedbackId ?? null,
     created_by: actorId,

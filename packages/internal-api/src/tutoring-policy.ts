@@ -565,8 +565,10 @@ export function carryTutoringShiftAssignments(
 export function getTutoringCampus(
   policy: TutoringPolicy,
   groupId: string,
-  groupName: string | null | undefined
+  groupName: string | null | undefined,
+  sessionCampus?: string | null
 ) {
+  if (sessionCampus?.trim()) return sessionCampus.trim();
   const override = policy.campusByGroupId[groupId];
   if (override) return override;
   const match = groupName?.match(
