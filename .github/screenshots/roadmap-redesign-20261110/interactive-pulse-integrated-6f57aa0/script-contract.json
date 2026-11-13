@@ -1,0 +1,26 @@
+[
+  {
+    "path": "/roadmap",
+    "inlineScripts": 4,
+    "allHashed": true,
+    "speculative": false
+  },
+  {
+    "path": "/roadmap/vi",
+    "inlineScripts": 4,
+    "allHashed": true,
+    "speculative": false
+  },
+  {
+    "path": "/roadmap/workshops/edufest-2026",
+    "inlineScripts": 4,
+    "allHashed": true,
+    "speculative": false
+  },
+  {
+    "path": "/roadmap/vi/workshops/edufest-2026",
+    "inlineScripts": 4,
+    "allHashed": true,
+    "speculative": false
+  }
+]

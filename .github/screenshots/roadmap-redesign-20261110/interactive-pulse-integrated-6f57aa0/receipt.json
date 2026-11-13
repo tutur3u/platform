@@ -1,0 +1,410 @@
+{
+  "head": "6f57aa0c6842cb8fea8f61dbbe49b208065a3c9c",
+  "base": "34616cf49cebc206d15e9ccb4cc9813dc56e5019",
+  "lighthouse": [
+    {
+      "path": "/roadmap",
+      "base": {
+        "performance": 100,
+        "lcpMs": 1746.2
+      },
+      "pr": {
+        "performance": 99.0,
+        "lcpMs": 1819.5
+      },
+      "lcpDeltaMs": 73.3
+    },
+    {
+      "path": "/roadmap/vi",
+      "base": {
+        "performance": 99.0,
+        "lcpMs": 1968.4
+      },
+      "pr": {
+        "performance": 99.0,
+        "lcpMs": 2042.3
+      },
+      "lcpDeltaMs": 73.9
+    },
+    {
+      "path": "/roadmap/workshops/edufest-2026",
+      "base": {
+        "performance": 100,
+        "lcpMs": 1740.8
+      },
+      "pr": {
+        "performance": 99.0,
+        "lcpMs": 1816.9
+      },
+      "lcpDeltaMs": 76.1
+    },
+    {
+      "path": "/roadmap/vi/workshops/edufest-2026",
+      "base": {
+        "performance": 99.0,
+        "lcpMs": 2037.1
+      },
+      "pr": {
+        "performance": 99.0,
+        "lcpMs": 2039.1
+      },
+      "lcpDeltaMs": 2.0
+    }
+  ],
+  "axe": [
+    {
+      "path": "/roadmap",
+      "width": 390,
+      "theme": "light",
+      "violations": [],
+      "contrastPass": 964,
+      "actions": [],
+      "announcement": " Coming soonMira subscription plansMira subscription plans at $100 and $200/month for access to Mira at the highest limits and capabilities.",
+      "fallback": "Fallback · Compiled from merged pull request titles.",
+      "notesInteraction": {
+        "initialProducts": 0,
+        "expandedLinks": 123,
+        "collapsedProducts": 0
+      },
+      "brokenContrast": 2
+    },
+    {
+      "path": "/roadmap",
+      "width": 390,
+      "theme": "dark",
+      "violations": [],
+      "contrastPass": 931,
+      "actions": [],
+      "announcement": " Coming soonMira subscription plansMira subscription plans at $100 and $200/month for access to Mira at the highest limits and capabilities.",
+      "fallback": "Fallback · Compiled from merged pull request titles."
+    },
+    {
+      "path": "/roadmap",
+      "width": 1440,
+      "theme": "light",
+      "violations": [
+        {
+          "id": "label-content-name-mismatch",
+          "count": 1,
+          "nodes": [
+            {
+              "html": "<button aria-label=\"Tiếng Việt\" class=\"hidden h-10 min-w-10 items-center justify-center rounded-lg border bg-background px-3 font-medium text-sm md:inline-flex\" type=\"button\">en</button>",
+              "summary": "Fix any of the following:\n  Text inside the element is not included in the accessible name"
+            }
+          ]
+        }
+      ],
+      "contrastPass": 1217,
+      "actions": [],
+      "announcement": " Coming soonMira subscription plansMira subscription plans at $100 and $200/month for access to Mira at the highest limits and capabilities.",
+      "fallback": "Fallback · Compiled from merged pull request titles."
+    },
+    {
+      "path": "/roadmap",
+      "width": 1440,
+      "theme": "dark",
+      "violations": [
+        {
+          "id": "label-content-name-mismatch",
+          "count": 1,
+          "nodes": [
+            {
+              "html": "<button aria-label=\"Tiếng Việt\" class=\"hidden h-10 min-w-10 items-center justify-center rounded-lg border bg-background px-3 font-medium text-sm md:inline-flex\" type=\"button\">en</button>",
+              "summary": "Fix any of the following:\n  Text inside the element is not included in the accessible name"
+            }
+          ]
+        }
+      ],
+      "contrastPass": 1134,
+      "actions": [],
+      "announcement": " Coming soonMira subscription plansMira subscription plans at $100 and $200/month for access to Mira at the highest limits and capabilities.",
+      "fallback": "Fallback · Compiled from merged pull request titles."
+    },
+    {
+      "path": "/roadmap/vi",
+      "width": 390,
+      "theme": "light",
+      "violations": [],
+      "contrastPass": 962,
+      "actions": [],
+      "announcement": " Sắp ra mắtCác gói đăng ký MiraCác gói đăng ký Mira với giá $100 và $200/tháng, cho phép sử dụng Mira với hạn mức và khả năng cao nhất.",
+      "fallback": "Dự phòng (fallback) · Tổng hợp từ tiêu đề các pull request đã gộp."
+    },
+    {
+      "path": "/roadmap/vi",
+      "width": 390,
+      "theme": "dark",
+      "violations": [],
+      "contrastPass": 927,
+      "actions": [],
+      "announcement": " Sắp ra mắtCác gói đăng ký MiraCác gói đăng ký Mira với giá $100 và $200/tháng, cho phép sử dụng Mira với hạn mức và khả năng cao nhất.",
+      "fallback": "Dự phòng (fallback) · Tổng hợp từ tiêu đề các pull request đã gộp."
+    },
+    {
+      "path": "/roadmap/vi",
+      "width": 1440,
+      "theme": "light",
+      "violations": [
+        {
+          "id": "label-content-name-mismatch",
+          "count": 1,
+          "nodes": [
+            {
+              "html": "<button aria-label=\"English\" class=\"hidden h-10 min-w-10 items-center justify-center rounded-lg border bg-background px-3 font-medium text-sm md:inline-flex\" type=\"button\">vi</button>",
+              "summary": "Fix any of the following:\n  Text inside the element is not included in the accessible name"
+            }
+          ]
+        }
+      ],
+      "contrastPass": 1205,
+      "actions": [],
+      "announcement": " Sắp ra mắtCác gói đăng ký MiraCác gói đăng ký Mira với giá $100 và $200/tháng, cho phép sử dụng Mira với hạn mức và khả năng cao nhất.",
+      "fallback": "Dự phòng (fallback) · Tổng hợp từ tiêu đề các pull request đã gộp."
+    },
+    {
+      "path": "/roadmap/vi",
+      "width": 1440,
+      "theme": "dark",
+      "violations": [
+        {
+          "id": "label-content-name-mismatch",
+          "count": 1,
+          "nodes": [
+            {
+              "html": "<button aria-label=\"English\" class=\"hidden h-10 min-w-10 items-center justify-center rounded-lg border bg-background px-3 font-medium text-sm md:inline-flex\" type=\"button\">vi</button>",
+              "summary": "Fix any of the following:\n  Text inside the element is not included in the accessible name"
+            }
+          ]
+        }
+      ],
+      "contrastPass": 1125,
+      "actions": [],
+      "announcement": " Sắp ra mắtCác gói đăng ký MiraCác gói đăng ký Mira với giá $100 và $200/tháng, cho phép sử dụng Mira với hạn mức và khả năng cao nhất.",
+      "fallback": "Dự phòng (fallback) · Tổng hợp từ tiêu đề các pull request đã gộp."
+    },
+    {
+      "path": "/roadmap/workshops/edufest-2026",
+      "width": 390,
+      "theme": "light",
+      "violations": [],
+      "contrastPass": 256,
+      "actions": [
+        {
+          "text": "Add to calendar",
+          "height": 24
+        },
+        {
+          "text": "Open map",
+          "height": 24
+        }
+      ]
+    },
+    {
+      "path": "/roadmap/workshops/edufest-2026",
+      "width": 390,
+      "theme": "dark",
+      "violations": [],
+      "contrastPass": 256,
+      "actions": [
+        {
+          "text": "Add to calendar",
+          "height": 24
+        },
+        {
+          "text": "Open map",
+          "height": 24
+        }
+      ]
+    },
+    {
+      "path": "/roadmap/workshops/edufest-2026",
+      "width": 1440,
+      "theme": "light",
+      "violations": [
+        {
+          "id": "label-content-name-mismatch",
+          "count": 1,
+          "nodes": [
+            {
+              "html": "<button aria-label=\"Tiếng Việt\" class=\"hidden h-10 min-w-10 items-center justify-center rounded-lg border bg-background px-3 font-medium text-sm md:inline-flex\" type=\"button\">en</button>",
+              "summary": "Fix any of the following:\n  Text inside the element is not included in the accessible name"
+            }
+          ]
+        }
+      ],
+      "contrastPass": 282,
+      "actions": [
+        {
+          "text": "Add to calendar",
+          "height": 24
+        },
+        {
+          "text": "Open map",
+          "height": 24
+        }
+      ]
+    },
+    {
+      "path": "/roadmap/workshops/edufest-2026",
+      "width": 1440,
+      "theme": "dark",
+      "violations": [
+        {
+          "id": "label-content-name-mismatch",
+          "count": 1,
+          "nodes": [
+            {
+              "html": "<button aria-label=\"Tiếng Việt\" class=\"hidden h-10 min-w-10 items-center justify-center rounded-lg border bg-background px-3 font-medium text-sm md:inline-flex\" type=\"button\">en</button>",
+              "summary": "Fix any of the following:\n  Text inside the element is not included in the accessible name"
+            }
+          ]
+        }
+      ],
+      "contrastPass": 282,
+      "actions": [
+        {
+          "text": "Add to calendar",
+          "height": 24
+        },
+        {
+          "text": "Open map",
+          "height": 24
+        }
+      ]
+    },
+    {
+      "path": "/roadmap/vi/workshops/edufest-2026",
+      "width": 390,
+      "theme": "light",
+      "violations": [],
+      "contrastPass": 248,
+      "actions": [
+        {
+          "text": "Thêm vào lịch",
+          "height": 24
+        },
+        {
+          "text": "Mở bản đồ",
+          "height": 24
+        }
+      ]
+    },
+    {
+      "path": "/roadmap/vi/workshops/edufest-2026",
+      "width": 390,
+      "theme": "dark",
+      "violations": [],
+      "contrastPass": 248,
+      "actions": [
+        {
+          "text": "Thêm vào lịch",
+          "height": 24
+        },
+        {
+          "text": "Mở bản đồ",
+          "height": 24
+        }
+      ]
+    },
+    {
+      "path": "/roadmap/vi/workshops/edufest-2026",
+      "width": 1440,
+      "theme": "light",
+      "violations": [
+        {
+          "id": "label-content-name-mismatch",
+          "count": 1,
+          "nodes": [
+            {
+              "html": "<button aria-label=\"English\" class=\"hidden h-10 min-w-10 items-center justify-center rounded-lg border bg-background px-3 font-medium text-sm md:inline-flex\" type=\"button\">vi</button>",
+              "summary": "Fix any of the following:\n  Text inside the element is not included in the accessible name"
+            }
+          ]
+        }
+      ],
+      "contrastPass": 281,
+      "actions": [
+        {
+          "text": "Thêm vào lịch",
+          "height": 24
+        },
+        {
+          "text": "Mở bản đồ",
+          "height": 24
+        }
+      ]
+    },
+    {
+      "path": "/roadmap/vi/workshops/edufest-2026",
+      "width": 1440,
+      "theme": "dark",
+      "violations": [
+        {
+          "id": "label-content-name-mismatch",
+          "count": 1,
+          "nodes": [
+            {
+              "html": "<button aria-label=\"English\" class=\"hidden h-10 min-w-10 items-center justify-center rounded-lg border bg-background px-3 font-medium text-sm md:inline-flex\" type=\"button\">vi</button>",
+              "summary": "Fix any of the following:\n  Text inside the element is not included in the accessible name"
+            }
+          ]
+        }
+      ],
+      "contrastPass": 281,
+      "actions": [
+        {
+          "text": "Thêm vào lịch",
+          "height": 24
+        },
+        {
+          "text": "Mở bản đồ",
+          "height": 24
+        }
+      ]
+    }
+  ],
+  "scripts": [
+    {
+      "path": "/roadmap",
+      "inlineScripts": 4,
+      "allHashed": true,
+      "speculative": false
+    },
+    {
+      "path": "/roadmap/vi",
+      "inlineScripts": 4,
+      "allHashed": true,
+      "speculative": false
+    },
+    {
+      "path": "/roadmap/workshops/edufest-2026",
+      "inlineScripts": 4,
+      "allHashed": true,
+      "speculative": false
+    },
+    {
+      "path": "/roadmap/vi/workshops/edufest-2026",
+      "inlineScripts": 4,
+      "allHashed": true,
+      "speculative": false
+    }
+  ],
+  "gateExits": {
+    "root-base exit": 1,
+    "docs-base exit": 1,
+    "final-offline-build": 0,
+    "final-offline-doctor": 0,
+    "final-online-build": 0,
+    "final-online-doctor": 0,
+    "exact-roadmap-tests": 0,
+    "exact-typecheck": 0,
+    "exact-oxlint": 0,
+    "exact-oxfmt": 0,
+    "exact-stylelint": 0,
+    "exact-size": 0,
+    "exact-root-focused": 1,
+    "final-runtime exit": 0,
+    "exact-root": 1,
+    "exact-check-changed": 1
+  }
+}
