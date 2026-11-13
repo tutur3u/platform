@@ -392,8 +392,7 @@ async function transportFixture(t, responses, stamp, options = {}) {
   const origin = 'https://platform-fixture.vercel.app';
   const sha = 'e'.repeat(40);
   const cssPath = '/_next/static/chunks/site.css';
-  const stylesheetRequestUrl =
-    options.stylesheetRequestUrl ?? origin + cssPath;
+  const stylesheetRequestUrl = options.stylesheetRequestUrl ?? origin + cssPath;
   const imageRequestUrl = options.imageRequestUrl;
   const cssBody = '.flex{display:flex}';
   await mkdir(join(temp, '.vercel/output/static/_next/static/chunks'), {
@@ -447,8 +446,7 @@ async function transportFixture(t, responses, stamp, options = {}) {
                 if (!result) return null;
                 if (result.status === 200) {
                   await dispatch(new URL('banner.svg', url).href, 'image');
-                  if (imageRequestUrl)
-                    await dispatch(imageRequestUrl, 'image');
+                  if (imageRequestUrl) await dispatch(imageRequestUrl, 'image');
                   await dispatch(stylesheetRequestUrl, 'stylesheet');
                 }
                 return { status: () => result.status };
@@ -652,7 +650,10 @@ for (const foreign of [true, false])
       foreign ? 'off-candidate' : f.origin
     );
     if (foreign) {
-      assert.equal(failure.blockedResources[0]?.classification, 'off-candidate');
+      assert.equal(
+        failure.blockedResources[0]?.classification,
+        'off-candidate'
+      );
       assert.equal(failure.blockedResources[0]?.pathname, '[foreign]');
     }
     assert.ok(!JSON.stringify(failure).includes('SECRET'));
@@ -679,11 +680,15 @@ test('transport admits built-in Next image optimizer queries for image resources
   const origin = 'https://platform-fixture.vercel.app';
   const inner = '/_next/static/media/hero.png';
   const imageRequestUrl = `${origin}/_next/image?url=${encodeURIComponent(inner)}&w=96&q=75`;
-  const f = await transportFixture(t, (path) =>
-    path.startsWith('/_next/image?')
-      ? { body: 'img', type: 'image/png' }
-      : undefined
-  , undefined, { imageRequestUrl });
+  const f = await transportFixture(
+    t,
+    (path) =>
+      path.startsWith('/_next/image?')
+        ? { body: 'img', type: 'image/png' }
+        : undefined,
+    undefined,
+    { imageRequestUrl }
+  );
   const proof = await f.run();
   assert.equal(proof.viewports.length, 2);
   assert.ok(f.calls.some((path) => path.startsWith('/_next/image?')));
@@ -722,9 +727,7 @@ test('admitTransportTarget bounds framework image query contracts', () => {
   };
   const reject = (href, resourceType = 'image') => {
     const target = new URL(href, origin);
-    assert.throws(() =>
-      admitTransportTarget(target, origin, { resourceType })
-    );
+    assert.throws(() => admitTransportTarget(target, origin, { resourceType }));
     if (
       resourceType === 'image' &&
       target.pathname === '/_next/image' &&
@@ -736,19 +739,13 @@ test('admitTransportTarget bounds framework image query contracts', () => {
       assert.throws(() => validateNextImageQuery(target));
   };
 
-  admit(
-    `/_next/image?url=${encodeURIComponent(staticPath)}&w=96&q=75`
-  );
-  admit(
-    `/_next/image?url=${encodeURIComponent(imagesPath)}&w=128&q=75`
-  );
+  admit(`/_next/image?url=${encodeURIComponent(staticPath)}&w=96&q=75`);
+  admit(`/_next/image?url=${encodeURIComponent(imagesPath)}&w=128&q=75`);
 
   reject(
     `/_next/image?url=${encodeURIComponent('https://evil/x.png')}&w=96&q=75`
   );
-  reject(
-    `/_next/image?url=${encodeURIComponent('//evil/x.png')}&w=96&q=75`
-  );
+  reject(`/_next/image?url=${encodeURIComponent('//evil/x.png')}&w=96&q=75`);
   reject(
     `/_next/image?url=${encodeURIComponent('%2F%2Fevil/x.png')}&w=96&q=75`
   );
@@ -773,13 +770,9 @@ test('admitTransportTarget bounds framework image query contracts', () => {
   reject(
     `https://USER:PASS@platform-fixture.vercel.app/_next/image?url=${encodeURIComponent(staticPath)}&w=96&q=75`
   );
-  reject(
-    `/_next/image?url=${encodeURIComponent(staticPath)}&w=96&q=75#frag`
-  );
+  reject(`/_next/image?url=${encodeURIComponent(staticPath)}&w=96&q=75#frag`);
   reject('/_next/image-extra?url=%2Fx.png&w=96&q=75');
-  reject(
-    `/%5fnext/image?url=${encodeURIComponent(staticPath)}&w=96&q=75`
-  );
+  reject(`/%5fnext/image?url=${encodeURIComponent(staticPath)}&w=96&q=75`);
   reject(
     `/_next/image?url=${encodeURIComponent(`${staticPath}?dpl=SECRET`)}&w=96&q=75`
   );

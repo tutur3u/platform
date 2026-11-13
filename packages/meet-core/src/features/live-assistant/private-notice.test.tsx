@@ -296,8 +296,8 @@ it('revokes acceptance on disconnect and does not restore a cached Continue', as
     ).toBe(false)
   );
   expect(screen.queryByRole('status')).toBeNull();
-  expect(accepted.mock.calls.slice(calls).some((call) => call[0] === true)).toBe(
-    false
-  );
+  expect(
+    accepted.mock.calls.slice(calls).some((call) => call[0] === true)
+  ).toBe(false);
   expect(accepted).toHaveBeenLastCalledWith(false);
 });

@@ -111,7 +111,7 @@ test('exact thirteen apply once, fresh ledger, read-only SQL, summary and manual
   assert.equal(pushes(f).length, 1);
   const keys = f.calls.map((c) => c.key);
   const fence =
-    'gh api repos/tutur3u/platform/git/ref/heads/production --jq .object | if .type == \"commit\" then .sha else \"\" end';
+    'gh api repos/tutur3u/platform/git/ref/heads/production --jq .object | if .type == "commit" then .sha else "" end';
   assert.deepEqual(keys, [
     fence,
     'git rev-parse HEAD',

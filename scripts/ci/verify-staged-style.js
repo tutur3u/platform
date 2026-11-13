@@ -55,9 +55,7 @@ const NEXT_IMAGE_INNER_PREFIXES = Object.freeze([
 const WEB_PLATFORM_IMAGE_DEVICE_SIZES = Object.freeze([
   640, 750, 828, 1080, 1200, 1920, 2048, 3840,
 ]);
-const WEB_PLATFORM_IMAGE_SIZES = Object.freeze([
-  32, 48, 64, 96, 128, 256, 384,
-]);
+const WEB_PLATFORM_IMAGE_SIZES = Object.freeze([32, 48, 64, 96, 128, 256, 384]);
 const WEB_PLATFORM_IMAGE_QUALITIES_ALLOWLIST = Object.freeze([75]);
 const WEB_PLATFORM_IMAGE_WIDTHS_ALLOWLIST = new Set([
   ...WEB_PLATFORM_IMAGE_DEVICE_SIZES,
@@ -81,9 +79,7 @@ function validateRelativeImageUrlParam(urlValue) {
     throw new Error('Staged transport destination is not admitted');
   if (urlValue.includes('..'))
     throw new Error('Staged transport destination is not admitted');
-  if (
-    !NEXT_IMAGE_INNER_PREFIXES.some((prefix) => urlValue.startsWith(prefix))
-  )
+  if (!NEXT_IMAGE_INNER_PREFIXES.some((prefix) => urlValue.startsWith(prefix)))
     throw new Error('Staged transport destination is not admitted');
   for (const segment of urlValue.split('/')) {
     if (segment === '.' || segment === '..')
@@ -119,7 +115,9 @@ function scrubTransportTarget(target, candidateOrigin) {
       new Set(keys).size === keys.length;
   }
   let pathname = sameCandidateOrigin ? '[redacted]' : '[foreign]';
-  let classification = sameCandidateOrigin ? 'same-origin-other' : 'off-candidate';
+  let classification = sameCandidateOrigin
+    ? 'same-origin-other'
+    : 'off-candidate';
   if (sameCandidateOrigin) {
     try {
       const decoded = decodeURIComponent(target.pathname).slice(0, 2048);
@@ -200,7 +198,10 @@ function admitTransportTarget(
   try {
     pathname = decodeURIComponent(target.pathname);
   } catch {
-    throw transportError('Staged transport destination is not admitted', target);
+    throw transportError(
+      'Staged transport destination is not admitted',
+      target
+    );
   }
   if (
     target.origin !== candidateOrigin ||
@@ -213,14 +214,23 @@ function admitTransportTarget(
       ? target.pathname !== '/api/build-info'
       : /^\/api(?:\/|$)/iu.test(pathname))
   )
-    throw transportError('Staged transport destination is not admitted', target);
+    throw transportError(
+      'Staged transport destination is not admitted',
+      target
+    );
   if (target.search) {
     if (identity || resourceType !== 'image')
-      throw transportError('Staged transport destination is not admitted', target);
+      throw transportError(
+        'Staged transport destination is not admitted',
+        target
+      );
     try {
       validateNextImageQuery(target);
     } catch {
-      throw transportError('Staged transport destination is not admitted', target);
+      throw transportError(
+        'Staged transport destination is not admitted',
+        target
+      );
     }
   }
 }
