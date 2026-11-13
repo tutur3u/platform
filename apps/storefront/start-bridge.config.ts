@@ -26,8 +26,12 @@ export const selectStorefrontApiOrigin: ApiOrigin = (
 export default defineBridgeAppConfig<StorefrontApiEnvironment>({
   apiOrigin: selectStorefrontApiOrigin,
   mounts: {
+    // One artifact serves the store subdomains at their root and the
+    // tuturuuu.com/storefront mount. `/storefront` without a trailing slash
+    // is the mount root; every other host is rejected.
     rootHosts: ['store.tuturuuu.com', 'storefront.tutur3u.com'],
-    mountHosts: [],
+    mountHosts: ['tuturuuu.com'],
+    basePath: '/storefront',
     unknownHost: 'reject',
   },
   wrapResponse(response, { request }) {

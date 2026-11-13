@@ -1,22 +1,39 @@
 import { describe, expect, it } from 'vitest';
 import config from '../../start-bridge.config';
 
-function decorate(path: string, headers: HeadersInit = {}, method = 'GET') {
+function decorate(
+  path: string,
+  headers: HeadersInit = {},
+  method = 'GET',
+  host = 'store.tuturuuu.com'
+) {
   const wrapResponse = config.wrapResponse;
   if (!wrapResponse) throw new Error('Native response policy is required');
   return wrapResponse(new Response('body', { headers }), {
-    request: new Request(`https://store.tuturuuu.com${path}`, { method }),
+    request: new Request(`https://${host}${path}`, { method }),
     env: {},
   });
 }
 
 describe('native root response policy', () => {
-  it('rejects apex mounts and unknown hosts in the bridge configuration', () => {
+  it('serves the apex mount at /storefront and rejects every other host', () => {
     expect(config.mounts).toEqual({
       rootHosts: ['store.tuturuuu.com', 'storefront.tutur3u.com'],
-      mountHosts: [],
+      mountHosts: ['tuturuuu.com'],
+      basePath: '/storefront',
       unknownHost: 'reject',
     });
+  });
+  it('protects the apex mount like a root host', async () => {
+    const result = await decorate('/storefront', {}, 'GET', 'tuturuuu.com');
+    expect(result.headers.get('Content-Security-Policy')).toBe(
+      "frame-ancestors 'none'"
+    );
+    expect(result.headers.get('X-Frame-Options')).toBe('DENY');
+    expect(result.headers.get('X-Robots-Tag')).toBe('noindex, nofollow');
+    expect(result.headers.get('Cache-Control')).toBe('private, no-store');
+    expect(result.headers.get('Vary')).toBe('Cookie');
+    expect(await result.text()).toBe('body');
   });
   it.each(['/', '/vi', '/api/private', '/api/file.json', '/_fn/query'])(
     'protects %s',
