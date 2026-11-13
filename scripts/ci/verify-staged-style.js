@@ -21,6 +21,9 @@ const run = promisify(execFile);
 // text from child processes or the browser, may appear in logs or evidence.
 const FAILURE_REASONS = [
   'Missing staged response headers',
+  'Staged transport destination is not admitted',
+  'Staged transport redirect is invalid or exceeds its bound',
+  'Staged resource redirect changes its browser URL',
   'Staged stylesheet has the wrong content type',
   'Stylesheet is outside the built Next assets',
   'Stylesheet escapes the built artifact',
@@ -183,7 +186,59 @@ async function main({ env = process.env, runCommand = run, browserType } = {}) {
     VERCEL_ORG_ID: env.VERCEL_ORG_ID,
     VERCEL_PROJECT_ID: env.VERCEL_PROJECT_ID,
   };
-  async function request(path) {
+  function admit(target, identity = false) {
+    let pathname;
+    try {
+      pathname = decodeURIComponent(target.pathname);
+    } catch {
+      throw new Error('Staged transport destination is not admitted');
+    }
+    if (
+      target.origin !== origin ||
+      target.username ||
+      target.password ||
+      target.search ||
+      target.hash ||
+      pathname.startsWith('//') ||
+      /[\\\\%]/u.test(pathname) ||
+      (identity
+        ? target.pathname !== '/api/build-info'
+        : /^\/api(?:\/|$)/iu.test(pathname))
+    )
+      throw new Error('Staged transport destination is not admitted');
+  }
+  async function request(path, identity = false) {
+    let target = new URL(path, origin);
+    const seen = new Set();
+    for (let hop = 0; hop <= 5; hop += 1) {
+      admit(target, identity);
+      if (seen.has(target.href))
+        throw new Error(
+          'Staged transport redirect is invalid or exceeds its bound'
+        );
+      seen.add(target.href);
+      const result = await requestHop(`${target.pathname}${target.search}`);
+      if (result.status < 300 || result.status >= 400)
+        return { ...result, finalUrl: target.href };
+      if (
+        identity ||
+        hop === 5 ||
+        ![301, 302, 303, 307, 308].includes(result.status) ||
+        !result.headers.location
+      )
+        throw new Error(
+          'Staged transport redirect is invalid or exceeds its bound'
+        );
+      try {
+        target = new URL(result.headers.location, target);
+      } catch {
+        throw new Error(
+          'Staged transport redirect is invalid or exceeds its bound'
+        );
+      }
+    }
+  }
+  async function requestHop(path) {
     const id = sequence++;
     const headersFile = resolve(scratch, `${id}.headers`);
     const bodyFile = resolve(scratch, `${id}.body`);
@@ -218,7 +273,7 @@ async function main({ env = process.env, runCommand = run, browserType } = {}) {
     };
   }
   try {
-    const stamp = await request('/api/build-info');
+    const stamp = await request('/api/build-info', true);
     const identity = JSON.parse(stamp.body.toString());
     if (
       stamp.status !== 200 ||
@@ -240,16 +295,24 @@ async function main({ env = process.env, runCommand = run, browserType } = {}) {
       colorScheme: 'light',
       serviceWorkers: 'block',
     });
+    let documentResponse;
     await context.route('**/*', async (route) => {
-      const target = new URL(route.request().url());
-      if (
-        route.request().method() !== 'GET' ||
-        target.origin !== origin ||
-        target.pathname.startsWith('/api/')
-      )
-        return route.abort('blockedbyclient');
       try {
-        const result = await request(`${target.pathname}${target.search}`);
+        const target = new URL(route.request().url());
+        if (route.request().method() !== 'GET')
+          return route.abort('blockedbyclient');
+        admit(target);
+        const cached =
+          route.request().resourceType() === 'document' &&
+          documentResponse?.finalUrl === target.href
+            ? documentResponse
+            : undefined;
+        if (cached) documentResponse = undefined;
+        const { finalUrl, ...result } = cached || (await request(target.href));
+        // Only pre-resolved navigation can change URL: flattening redirects at
+        // another URL would give HTML and CSS the wrong relative-resource base.
+        if (finalUrl !== target.href)
+          throw new Error('Staged resource redirect changes its browser URL');
         if (route.request().resourceType() === 'stylesheet') {
           if (result.status !== 200)
             throw new Error('Staged stylesheet request failed');
@@ -274,7 +337,8 @@ async function main({ env = process.env, runCommand = run, browserType } = {}) {
       navigation = undefined;
       const page = await context.newPage();
       await page.setViewportSize({ width, height: 900 });
-      const response = await page.goto(`${origin}/en`, {
+      documentResponse = await request('/en');
+      const response = await page.goto(documentResponse.finalUrl, {
         waitUntil: 'load',
         timeout: 60000,
       });
