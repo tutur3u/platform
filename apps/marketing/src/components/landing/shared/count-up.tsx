@@ -1,6 +1,8 @@
 'use client';
 
-import { useInView, useReducedMotion } from 'framer-motion';
+import { useLandingReducedMotion as useReducedMotion } from './use-landing-reduced-motion';
+
+import { useInView } from 'framer-motion';
 import { useEffect, useMemo, useRef, useState } from 'react';
 
 /**

@@ -12,6 +12,10 @@ import { useTranslations } from 'next-intl';
 import { toast } from 'sonner';
 import { Button } from '../button';
 import { CommandGroup, CommandItem } from '../command';
+import {
+  invalidateWorkspaceInvitationCaches,
+  workspaceInvitationsQueryKey,
+} from './workspace-invitation-cache';
 import { WorkspaceIcon } from './workspace-select-icon';
 
 export function useWorkspaceInvitations({
@@ -28,7 +32,7 @@ export function useWorkspaceInvitations({
   const queryClient = useQueryClient();
   const t = useTranslations();
   const query = useQuery({
-    queryKey: ['workspace-invitations', ...(cacheScope ? [cacheScope] : [])],
+    queryKey: workspaceInvitationsQueryKey(cacheScope),
     queryFn: async () => (await listWorkspaceInvitations()).invitations,
     enabled,
     gcTime: 30 * 60_000,
@@ -52,18 +56,7 @@ export function useWorkspaceInvitations({
       return { action, invitation };
     },
     onSuccess: async ({ action, invitation }) => {
-      await Promise.all([
-        queryClient.invalidateQueries({ queryKey: ['workspace-invitations'] }),
-        queryClient.invalidateQueries({ queryKey: ['workspaces'] }),
-        queryClient.invalidateQueries({
-          queryKey: ['workspace-ui-list', cacheScope],
-        }),
-        queryClient.invalidateQueries({ queryKey: ['user-workspaces'] }),
-        queryClient.invalidateQueries({ queryKey: ['workspace-user'] }),
-        queryClient.invalidateQueries({ queryKey: ['current-user'] }),
-        queryClient.invalidateQueries({ queryKey: ['user'] }),
-        queryClient.invalidateQueries({ queryKey: ['notifications'] }),
-      ]);
+      await invalidateWorkspaceInvitationCaches(queryClient, cacheScope);
 
       if (action === 'accept') {
         toast.success(t('workspace-invitation.accept-success'));
@@ -73,7 +66,8 @@ export function useWorkspaceInvitations({
         onDeclined();
       }
     },
-    onError: (error, { action }) => {
+    onError: async (error, { action }) => {
+      if (action === 'accept') await query.refetch();
       toast.error(
         t(
           action === 'accept'

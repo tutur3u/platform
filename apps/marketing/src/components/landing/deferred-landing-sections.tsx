@@ -6,7 +6,7 @@ import { type ReactNode, useEffect, useRef, useState } from 'react';
 function SectionFallback() {
   return (
     <section className="px-4 py-20 sm:px-6 sm:py-24 lg:px-8 lg:py-28">
-      <div className="mx-auto h-64 max-w-6xl animate-pulse rounded-2xl bg-foreground/[0.03]" />
+      <div className="mx-auto h-64 max-w-6xl rounded-2xl bg-foreground/[0.03]" />
     </section>
   );
 }
@@ -18,7 +18,7 @@ function hasHashTarget() {
 
 function LazyLandingSection({
   children,
-  rootMargin = '900px 0px',
+  rootMargin = '320px 0px',
 }: {
   children: ReactNode;
   rootMargin?: string;
@@ -38,6 +38,10 @@ function LazyLandingSection({
       return;
     }
 
+    const revealHash = () => {
+      if (hasHashTarget()) setShouldRender(true);
+    };
+    window.addEventListener('hashchange', revealHash);
     const node = ref.current;
     if (!node) return;
 
@@ -56,7 +60,10 @@ function LazyLandingSection({
     );
 
     observer.observe(node);
-    return () => observer.disconnect();
+    return () => {
+      observer.disconnect();
+      window.removeEventListener('hashchange', revealHash);
+    };
   }, [rootMargin, shouldRender]);
 
   return <div ref={ref}>{shouldRender ? children : <SectionFallback />}</div>;
@@ -72,6 +79,12 @@ function LazyLandingSection({
  * settles or a manual scroll takes over.
  */
 export function HashScroll() {
+  const [hash, setHash] = useState('');
+  useEffect(() => {
+    const update = () => setHash(window.location.hash);
+    window.addEventListener('hashchange', update);
+    return () => window.removeEventListener('hashchange', update);
+  }, []);
   useEffect(() => {
     const id = window.location.hash.replace(/^#/, '');
     if (!id) return;
@@ -126,9 +139,23 @@ export function HashScroll() {
     frame = requestAnimationFrame(tick);
 
     return cleanup;
-  }, []);
+  }, [hash]);
 
   return null;
+}
+
+const FeaturesBento = dynamic(
+  () =>
+    import('./features/features-bento').then((module) => module.FeaturesBento),
+  { loading: SectionFallback }
+);
+
+export function DeferredFeatures() {
+  return (
+    <LazyLandingSection>
+      <FeaturesBento />
+    </LazyLandingSection>
+  );
 }
 
 const ProblemSection = dynamic(
@@ -156,10 +183,7 @@ const DemoSection = dynamic(
 );
 
 const PricingSection = dynamic(
-  () =>
-    import('@/components/landing/pricing/pricing-section').then(
-      (module) => module.PricingSection
-    ),
+  () => import('@/components/landing/pricing/pricing-island'),
   { loading: SectionFallback }
 );
 
@@ -193,10 +217,10 @@ const CTASection = dynamic(
  */
 export function DeferredProblemSection() {
   return (
-    <>
+    <LazyLandingSection>
       <ProblemSection />
       <OutcomesSection />
-    </>
+    </LazyLandingSection>
   );
 }
 
@@ -207,12 +231,18 @@ export function DeferredLandingSections() {
       <LazyLandingSection>
         <DemoSection />
       </LazyLandingSection>
-      <AISection />
+      <LazyLandingSection>
+        <AISection />
+      </LazyLandingSection>
       <LazyLandingSection>
         <GithubStats />
       </LazyLandingSection>
-      <PricingSection />
-      <CTASection />
+      <LazyLandingSection>
+        <PricingSection />
+      </LazyLandingSection>
+      <LazyLandingSection>
+        <CTASection />
+      </LazyLandingSection>
     </>
   );
 }

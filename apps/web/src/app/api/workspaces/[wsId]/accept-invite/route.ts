@@ -230,6 +230,26 @@ export const POST = withSessionAuth<{ wsId: string }>(
     }
     let matchedWorkspaceUserId: string | null = null;
 
+    // Make acceptance idempotent for stale invites or partially completed flows.
+    const existingMember = await verifyWorkspaceMembershipType({
+      requiredType: 'ANY',
+      wsId: wsId,
+      userId: user.id,
+      supabase: sbAdmin,
+    });
+
+    if (existingMember.error === 'membership_lookup_failed') {
+      return NextResponse.json(
+        { error: 'Failed to verify workspace membership' },
+        { status: 500 }
+      );
+    }
+
+    if (existingMember.ok && !pendingInvite && !pendingEmailInvite) {
+      scheduleNotificationFinalization();
+      return NextResponse.json({ message: 'success' });
+    }
+
     if (!pendingInvite && !pendingEmailInvite) {
       let guestSelfJoinCandidate: Awaited<
         ReturnType<typeof resolveGuestSelfJoinCandidate>
@@ -280,21 +300,6 @@ export const POST = withSessionAuth<{ wsId: string }>(
 
       inviteMemberType = 'GUEST';
       matchedWorkspaceUserId = guestSelfJoinCandidate.virtualUserId;
-    }
-
-    // Make acceptance idempotent for stale invites or partially completed flows.
-    const existingMember = await verifyWorkspaceMembershipType({
-      requiredType: 'ANY',
-      wsId: wsId,
-      userId: user.id,
-      supabase: sbAdmin,
-    });
-
-    if (existingMember.error === 'membership_lookup_failed') {
-      return NextResponse.json(
-        { error: 'Failed to verify workspace membership' },
-        { status: 500 }
-      );
     }
 
     if (existingMember.ok) {

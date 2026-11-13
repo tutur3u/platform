@@ -7,6 +7,33 @@ updatedAt: "2026-11-01"
 
 Tuturuuu authenticates users before granting access to protected features. Workspace membership and permissions determine what an authenticated user may do; successful sign-in alone is not access to every workspace.
 
+## IEEAI free invitation exchange proposal
+
+The central app-token exchange proposal automatically accepts a pending MEMBER
+invitation only for `ieeai-stats` and workspace
+`a65cebd7-3a8c-4883-a3d9-82f9703d652f`, also present in the verified app's
+`allowedWorkspaceIds`. It requires a confirmed Auth identity after the existing
+app-secret, token, PKCE and MFA checks. User-id invitations match that actor;
+email invitations match only the case-normalized confirmed Auth email. Multiple
+matches, GUEST invitations and uninvited actors remain pending or denied.
+
+The default is fail closed. Positive server subscription/product records must
+prove FREE, zero-cost, non-seat entitlement; missing records, paid products,
+unknown state and read failures do not qualify. Locked billing state prevents an
+upgrade from racing acceptance. The canonical membership finalizer retains the
+invited role set, and membership, selected-invite removal and ids-only audit
+commit together. Existing members retain ordinary `workspace:session` access;
+refresh never accepts an invitation. Other apps and paid-workspace paths keep
+their existing behavior. No Polar API call is part of this proposal.
+
+Regression coverage is in `ieeai-free-invite.sql`, the database verifier and
+concurrency harness, `ieeai-free-invite.test.ts`, and the exchange integration
+tests. Run the disposable verifier through resource admission; it exercises
+rollback/reapply, audit failure rollback and competing acceptance/upgrade
+transactions. Local proof does not establish deployment readiness. Release
+requires central Web deployment and the separately approved additive migration;
+the external IEEAI server is not a deployment dependency for this platform rule.
+
 ## OAuth Sign In
 
 Customer sign-in supports configured OAuth providers. Staff sign-in has a separately restricted Microsoft entry. Provider identities and account linking must be verified; an email address or domain alone is not sufficient authority to link accounts or grant staff access.

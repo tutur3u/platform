@@ -1,6 +1,9 @@
 import { connection, NextResponse } from 'next/server';
 import { z } from 'zod';
-import { authorizeInfrastructureWorkspaceSecretsRequest } from '@/lib/infrastructure-admin-access';
+import {
+  authorizeInfrastructureAdminRequest,
+  authorizeInfrastructureWorkspaceSecretsRequest,
+} from '@/lib/infrastructure-admin-access';
 
 import { canMutateInfrastructureSecret } from '@/lib/managed-cron-secret';
 
@@ -13,13 +16,26 @@ const secretSchema = z.object({
   value: z.string().max(16_384),
 });
 
-export async function GET(_: Request, { params }: Params) {
+export async function GET(request: Request, { params }: Params) {
+  const admin = await authorizeInfrastructureAdminRequest(
+    'view_infrastructure',
+    true,
+    request
+  );
+  if (!admin.ok) return admin.response;
   await connection();
   const { wsId } = await params;
-  const auth = await authorizeInfrastructureWorkspaceSecretsRequest();
-  if (!auth.ok) return auth.response;
+  if (
+    !admin.permissions?.containsPermission('manage_workspace_secrets') &&
+    !admin.permissions?.containsPermission('manage_workspace_roles')
+  ) {
+    return NextResponse.json(
+      { error: 'Infrastructure permission required' },
+      { status: 403 }
+    );
+  }
 
-  const { data, error } = await auth.sbAdmin
+  const { data, error } = await admin.sbAdmin
     .from('workspace_secrets')
     .select('*')
     .eq('ws_id', wsId)
@@ -38,7 +54,7 @@ export async function GET(_: Request, { params }: Params) {
 
 export async function POST(req: Request, { params }: Params) {
   const { wsId } = await params;
-  const auth = await authorizeInfrastructureWorkspaceSecretsRequest();
+  const auth = await authorizeInfrastructureWorkspaceSecretsRequest(req);
   if (!auth.ok) return auth.response;
 
   const parsed = secretSchema.safeParse(await req.json().catch(() => null));

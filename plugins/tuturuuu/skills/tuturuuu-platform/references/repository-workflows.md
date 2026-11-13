@@ -11,8 +11,8 @@ Consult only the section relevant to the current task. Paths are repository-rela
   and focused proxy tests are build-free. Commit only route-level inventory;
   retain the full module census with hashes in the CI artifact documented in
   the candidate runbook. No candidate route is production-owned.
-- `apps/backend` and `apps/tanstack-web`: paused Rust/TanStack Start source,
-  not in use. Do not run, update, or refresh them during ordinary app work.
+- `apps/backend` (paused Rust) and `apps/tanstack-web` (retired, unrelated to
+  per-app native Start): not in use. Do not run, update, or refresh them during ordinary app work.
 - Docker setup is inactive and the Docker cron runner is retired. Use the local
   Mintlify CLI for docs and hosted Vercel/Cloudflare scheduler ownership; see
   `apps/docs/build/devops/active-runtime.mdx`.

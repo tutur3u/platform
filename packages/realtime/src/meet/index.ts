@@ -125,3 +125,7 @@ export {
   transcriptionStateMessageSchema,
   transcriptionStateSchema,
 } from './transcription';
+export {
+  MIRA_PRIVATE_NOTICE_VERSION,
+  MIRA_ROOM_DENIED,
+} from './room-mira-private';

@@ -5,6 +5,7 @@ import {
   redirect,
 } from '@tanstack/router-core';
 import { createElement, Fragment, type ReactNode } from 'react';
+import { preinit } from 'react-dom';
 import { renderToStaticMarkup } from 'react-dom/server';
 import { describe, expect, it } from 'vitest';
 import { withBridgeRequest } from '../server/request-context';
@@ -282,5 +283,38 @@ describe('resolveBridgePage', () => {
       expect(page?.pattern).toBe('/notes/[id]');
       expect(currentPageParams().id).toBe('5');
     });
+  });
+});
+
+describe('root RSC stylesheet identity', () => {
+  it('emits one stylesheet when Start preinitializes an RSC resource', async () => {
+    const nodes = await expandServerElements(
+      <link
+        rel="stylesheet"
+        href="/assets/landing.css"
+        crossOrigin="anonymous"
+        data-rsc-css-href="/assets/landing.css"
+      />
+    );
+    function Document() {
+      preinit('/assets/landing.css', { as: 'style', precedence: 'high' });
+      return <>{nodes}</>;
+    }
+    const html = renderToStaticMarkup(<Document />);
+    expect(html.match(/rel="stylesheet"/gu)).toHaveLength(1);
+    expect(html).not.toContain('crossorigin');
+  });
+
+  it('preserves explicitly authored stylesheet CORS settings', async () => {
+    const nodes = await expandServerElements(
+      <link
+        rel="stylesheet"
+        href="https://cdn.example.com/theme.css"
+        crossOrigin="anonymous"
+      />
+    );
+    expect(renderToStaticMarkup(<>{nodes}</>)).toContain(
+      'crossorigin="anonymous"'
+    );
   });
 });

@@ -72,6 +72,19 @@ Data comes from public sources only, in two layers:
    the newest good data with its real observation time ("Live check
    unavailable"), never a fresher-looking label.
 
+**Hosting and the move to tuturuuu.com** are observed on every build, before
+and independent of GitHub (`src/live/build-probe.ts`, written to the untracked
+`.generated/hosting.json` and embedded by Vite). Providers come from each
+app's public build-info, probed from the build machine (outside Cloudflare).
+The migration list and paths are the repo's base-path registry
+(`ONE_ORIGIN_APP_BASE_PATHS` in `packages/utils/src/app-mounts.ts`); an app
+counts as moved only when its subdomain redirects navigations to its
+`tuturuuu.com` path, and as in progress when its own Worker already answers
+there. A build that cannot observe (for example `ROADMAP_OFFLINE=1`) shows
+every value as not verifiable, with that build's time; the page never shows a
+provider or migration value from an earlier build. The hosting section shows
+Cloudflare's official web badge, unaltered (`src/assets/brands`).
+
 `GET|HEAD /roadmap/api/hosts` probes the fixed allowlist in
 `src/live/host-probe.ts` (request input never selects a host), with manual
 redirects, a 4-second timeout and a 16 KiB body bound. It returns only
@@ -100,11 +113,20 @@ Targets: Lighthouse mobile 90+, LCP under 2.5 s and interaction latency under
 200 ms at 4x CPU throttling on all four public pages.
 
 - **First paint first.** The Worker rewrites each document before hashing its
-  inline scripts (`src/defer-hydration.ts`): module preloads and the entry
-  script stay in place but inert, and one static inline script imports the
-  bundle once the first contentful paint is reported and the load event has
-  fired, a frame later (4 s at the latest). The server-rendered page is
-  complete without JavaScript.
+  inline scripts (`src/defer-hydration.ts`), changing attributes only: module
+  preloads and the entry script stay in place but inert. The boot script
+  (`src/boot/roadmap-boot.js`, an async hashed same-origin asset in `<head>`,
+  so no inline script and no render blocking) sets lite mode before first paint and imports the bundle at
+  the reader's first intent (pointerdown, touchstart, keydown or focusin) or
+  within 1 s of the largest contentful paint. A tap on a button that is not
+  hydrated yet shows as pressed at once and is replayed once React has
+  hydrated it; links and `<summary>` work natively throughout. Each public
+  page keeps exactly the router's four inline scripts (JSON-LD, theme,
+  router bootstrap, stream boundary); the doctor fails a fifth or an
+  unhashed one, and runs the canonical smoke against the built Worker.
+- **History reference.** The roadmap head links the hashed history JSON as
+  `rel="alternate" type="application/json"` (never fetched), which keeps its
+  URL in the entry chunk where the canonical smoke finds it.
 - **Small CSS.** `styles.css` excludes `packages/ui/src/components` and
   streamdown from Tailwind's class scan and lists the shell primitives it
   renders, which keeps the stylesheet near 20 KB compressed.
@@ -118,12 +140,22 @@ Targets: Lighthouse mobile 90+, LCP under 2.5 s and interaction latency under
   for `:root:not([data-lite])` at 1024px and wider (infinite animations also
   need `prefers-reduced-motion: no-preference`). Below-the-fold sections use
   `content-visibility: auto`.
+- **Split hydration.** Sections below the hero (each track card, the
+  timeline, each EduFest section) sit in `<Suspense>` boundaries. Nothing
+  suspends, so the server renders them complete (the doctor fails a pending
+  `<!--$?-->` boundary); React hydrates them one at a time, yielding between
+  them and starting with the one a reader taps.
+- **Document size.** The doctor fails any public page over half of
+  `MAX_DOCUMENT_BYTES` and prints each page's margin. Past that limit the
+  CSP cannot hash inline scripts; the Worker then serves the page as
+  rendered, without executable inline scripts (JSON-LD stays), so its
+  external module entry still loads and no unhashed script is sent.
 - **Small renders.** The status filter is local, deferred state over memoised
   track cards; the navbar dock re-renders only the shell; the timeline
   scrubber renders 24 chips around the selected period; each deliverable's
   status glyph is a CSS mask, not an inline SVG.
 
-`src/perf.test.ts` and `src/a11y.test.ts` (D79, run via
+`src/perf.test.ts`, `src/hydration-loader.test.ts` and `src/a11y.test.ts` (D79, run via
 `src/roadmap-data.test.ts`) guard each rule with a broken variant;
 `src/css-guards.ts` checks the stylesheet.
 
@@ -190,7 +222,11 @@ answers two hosts. `https://roadmap.tuturuuu.com` returns 301 to
 `https://tuturuuu.com/roadmap` plus the same path and query, with no trailing
 slash, in one hop (`/` becomes `/roadmap`). `https://tuturuuu.com/roadmap` (no
 slash, the Tuturuuu-wide canonical form) serves the app; `/roadmap/` and any
-`/roadmap/x/` return 301 to the no-slash form with the query kept. Internally
+`/roadmap/x/` return 301 to the no-slash form with the query kept. English is
+unprefixed (Vietnamese is `/roadmap/vi`), so old English links `/roadmap/en`
+and `/roadmap/en/<rest>` return 301 to `/roadmap` and `/roadmap/<rest>`, and
+the satellite's `/en/<rest>` goes straight there in its one hop; only an exact
+`en` segment matches (`/roadmap/english` is untouched). Internally
 the Worker hands `/roadmap` to the SSR handler as the router's basepath root
 `/roadmap/`, and the client restores `/roadmap` in the address bar after
 hydration. `GET` and `HEAD`

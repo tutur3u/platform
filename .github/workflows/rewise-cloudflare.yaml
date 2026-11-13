@@ -233,6 +233,8 @@ jobs:
           command: cd apps/rewise && bun run build:cloudflare
           token: ''
           team: ''
+      - name: Remove production server source maps
+        run: find apps/rewise/dist/server -type f -name '*.map' -delete
       - name: Pre-seal doctor on the production Host header
         timeout-minutes: 3
         run: node scripts/ci/pre-seal-doctor.mjs rewise apps/rewise rewise.tuturuuu.com "$SOURCE_SHA" --expect-redirect

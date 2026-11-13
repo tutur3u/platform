@@ -4,7 +4,9 @@ import {
   Scripts,
   useRouterState,
 } from '@tanstack/react-router';
+import { withAppBase } from '@tuturuuu/start-bridge/start/base-path';
 import { AppErrorBoundary } from '@tuturuuu/ui/custom/app-error-boundary';
+import { StatusPage } from '@tuturuuu/ui/custom/status-page';
 import type { ReactElement, ReactNode } from 'react';
 import { AppProviders } from './app-providers';
 
@@ -50,6 +52,8 @@ export function TasksError({
     <AppProviders locale={locale} params={{}}>
       <AppErrorBoundary
         appName="Tasks"
+        chrome="page"
+        homeHref={withAppBase('/')}
         locale={locale}
         error={
           error instanceof Error
@@ -59,5 +63,17 @@ export function TasksError({
         reset={reset}
       />
     </AppProviders>
+  );
+}
+
+/** Unknown paths: the shared Tuturuuu status page (served as a 404). */
+export function TasksNotFound(): ReactElement {
+  return (
+    <StatusPage
+      appHref={withAppBase('/')}
+      appName="Tasks"
+      locale={useRootLocale()}
+      variant="not-found"
+    />
   );
 }

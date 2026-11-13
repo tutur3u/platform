@@ -212,7 +212,7 @@ export function ChatPanel({
             assistantWorkspace === 'personal' ? undefined : assistantWorkspace
           );
         } catch {
-          toast.error(t('assistant_failed'));
+          toast.error(t('assistant_private_only'));
         } finally {
           await queryClient.invalidateQueries({
             queryKey: ['meet-assistant-reviews', meetingId, selfUserId],
