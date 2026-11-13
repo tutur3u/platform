@@ -338,6 +338,12 @@ extension _AppOfflinePreparation on _AppState {
   }
 
   void _registerWarmupTasks() {
+    CacheWarmupCoordinator.instance.bindScope(() {
+      final user = _authCubit.state.user?.id;
+      final workspace = _workspaceCubit.state.currentWorkspace?.id;
+      if (user == null || workspace == null) return null;
+      return '$user:$workspace';
+    });
     _registerInventoryWarmupTask();
     CacheWarmupCoordinator.instance.register('home_payload', ({
       forceRefresh = false,
