@@ -120,6 +120,7 @@ export function ChatPanel({
     enabled: !!selfUserId,
     retry: false,
   });
+  const [assistantDenied, setAssistantDenied] = useState(false);
   const [assistantWorkspace, setAssistantWorkspace] =
     useState<string>('personal');
   const [draft, setDraft] = useState(''),
@@ -201,6 +202,7 @@ export function ChatPanel({
       setFiles([]);
       if (hasMeetAssistantMention(body)) {
         setThinking(true);
+        setAssistantDenied(false);
         try {
           const current = currentAssistantScope.current;
           if (!isCurrentAssistantWorkspace(current, requestedScope))
@@ -211,8 +213,15 @@ export function ChatPanel({
             Intl.DateTimeFormat().resolvedOptions().timeZone,
             assistantWorkspace === 'personal' ? undefined : assistantWorkspace
           );
-        } catch {
-          toast.error(t('assistant_private_only'));
+        } catch (error) {
+          if (
+            error &&
+            typeof error === 'object' &&
+            'status' in error &&
+            error.status === 403
+          )
+            setAssistantDenied(true);
+          else toast.error(t('assistant_failed'));
         } finally {
           await queryClient.invalidateQueries({
             queryKey: ['meet-assistant-reviews', meetingId, selfUserId],
@@ -309,6 +318,11 @@ export function ChatPanel({
               </li>
             ))}
         </ol>
+        {assistantDenied && (
+          <p role="alert" className="mt-3 rounded-xl border p-3 text-sm">
+            {t('assistant_private_only')}
+          </p>
+        )}
         {reviews.isError && (
           <div
             role="alert"

@@ -4016,7 +4016,7 @@
       "assistant_failed": "Mira could not answer. Please try again.",
       "assistant_only_you": "Only you can see this",
       "assistant_personal_workspace": "Mira · Personal workspace",
-      "assistant_private_only": "Room AI chat is off. Use Private Mira after choosing Continue.",
+      "assistant_private_only": "Room Mira is unavailable; use Private Mira.",
       "assistant_private_reviews": "Private Mira reviews",
       "assistant_review_description": "Review workspace access and proposed changes here. Results stay private until you choose to share them with everyone in the meeting.",
       "assistant_review_failed": "Could not update this review. Refresh it before trying again.",
