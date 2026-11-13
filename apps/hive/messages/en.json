@@ -123,6 +123,15 @@
       "yearly": "Yearly"
     }
   },
+  "calendar_category_reorder_pilot": {
+    "cancel": "Returned {label} to position {position} of {total}.",
+    "drop": "Dropped {label} at position {position} of {total}.",
+    "grab": "Picked up {label}, position {position} of {total}.",
+    "instructions": "Arrows navigate. Space picks up or drops a category. Arrows move it; Escape cancels.",
+    "invalid": "Category names must be unique and nonempty to reorder.",
+    "label": "Category order",
+    "move": "{label}, position {position} of {total}."
+  },
   "chat": {
     "first_activity": "First activity",
     "last_activity": "Last activity",
