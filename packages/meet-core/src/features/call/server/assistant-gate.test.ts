@@ -180,7 +180,7 @@ describe('assistant mutations workspace gate', () => {
     }
   );
 
-  it('admits a listed workspace to the personal assistant write', async () => {
+  it('denies legacy personal chat even in a listed workspace', async () => {
     bind('00000000-0000-4000-8000-0000000000f1');
     mocks.personalChat.mockResolvedValue({ text: 'ok' });
     const response = await send(personal, {
@@ -190,7 +190,7 @@ describe('assistant mutations workspace gate', () => {
       history: [],
       timezone: 'UTC',
     });
-    expect(response.status).toBe(200);
-    expect(mocks.personalChat).toHaveBeenCalledOnce();
+    expect(response.status).toBe(403);
+    noAiWork();
   });
 });

@@ -38,7 +38,9 @@ it('denies all room input and output commands without consulting environment gat
     role: 'host',
     roomId: 'room',
     scopes: ['meet:server'],
-    userId: 'synthetic',
+    userId: '00000000-0000-4000-8000-000000000001',
+    meetingId: '00000000-0000-4000-8000-000000000002',
+    wsId: '00000000-0000-4000-8000-000000000003',
   });
   for (const action of [
     'ai.reserve',
