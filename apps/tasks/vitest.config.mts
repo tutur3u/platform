@@ -7,6 +7,20 @@ export default defineConfig({
   resolve: {
     alias: [
       {
+        find: /^@tuturuuu\/internal-api\/(.+)$/,
+        replacement: resolve(
+          __dirname,
+          '../../packages/internal-api/src/$1.ts'
+        ),
+      },
+      {
+        find: '@tuturuuu/supabase/next/realtime-log-provider',
+        replacement: resolve(
+          __dirname,
+          '../../packages/supabase/src/next/realtime-log-provider.tsx'
+        ),
+      },
+      {
         find: '@tuturuuu/internal-api/users',
         replacement: resolve(
           __dirname,

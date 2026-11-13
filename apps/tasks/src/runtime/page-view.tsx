@@ -55,6 +55,7 @@ function WorkspacePageView({ page }: { page: WorkspacePage }) {
     case 'board':
       return (
         <BoardClient
+          key={`${page.currentUserId}:${page.workspace.id}:${page.boardId}`}
           boardId={page.boardId}
           initialBoard={page.board}
           workspace={page.workspace}
@@ -127,7 +128,10 @@ export function PageView({ model }: { model: TasksPageModel }) {
       );
     case 'workspace':
       return (
-        <WorkspaceView model={page.shell}>
+        <WorkspaceView
+          key={`${model.actorId}:${page.shell.workspace.id}`}
+          model={page.shell}
+        >
           <WorkspacePageView page={page.page} />
         </WorkspaceView>
       );

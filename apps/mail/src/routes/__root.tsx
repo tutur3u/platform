@@ -3,7 +3,7 @@ import {
   appBaseHeadScript,
   withAppBase,
 } from '@tuturuuu/start-bridge/start/base-path';
-import { Document, ErrorPage } from '../runtime/router-shell';
+import { Document, ErrorPage, NotFoundPage } from '../runtime/router-shell';
 
 export const Route = createRootRoute({
   errorComponent: ErrorPage,
@@ -22,9 +22,5 @@ export const Route = createRootRoute({
     links: [{ rel: 'icon', href: withAppBase('/favicon.ico') }],
   }),
   component: Document,
-  notFoundComponent: () => (
-    <main className="grid min-h-dvh place-items-center">
-      <h1>404</h1>
-    </main>
-  ),
+  notFoundComponent: NotFoundPage,
 });

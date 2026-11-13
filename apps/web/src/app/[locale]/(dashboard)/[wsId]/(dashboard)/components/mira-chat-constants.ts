@@ -23,7 +23,6 @@ export const HOTKEY_THINKING_MODE = 'Mod+Alt+]';
 export const HOTKEY_VIEW_ONLY = 'Mod+Alt+V';
 export const HOTKEY_CREDIT_SOURCE = 'Mod+Alt+S';
 export const HOTKEY_EXPORT = 'Mod+Alt+E';
-export const QUEUE_DEBOUNCE_MS = 500;
 export const SCROLL_END_DELAY_MS = 700;
 
 export type ThinkingMode = 'fast' | 'thinking';

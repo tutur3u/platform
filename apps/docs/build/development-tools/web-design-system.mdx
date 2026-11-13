@@ -134,6 +134,29 @@ the existing confirmation behavior.
 | Saving | Pending action and duplicate-submission prevention. | Success and failure feedback match the existing save model. |
 | Read-only or denied | Readable values and an understandable permission state. | No misleading editable control or inaccessible copy affordance. |
 
+### Not-found and error pages
+
+Every app renders unknown paths (404) and uncaught render errors (500) with
+`StatusPage` from `@tuturuuu/ui/custom/status-page`: the Tuturuuu header and
+logo, one `h1`, Back (history with an `href` fallback), the app's start page,
+Tuturuuu home, optional search/help links and a small footer, in English or
+Vietnamese. It ships its own scoped stylesheet, so it needs no Tailwind scanning
+and no theme script: light by default, dark from `prefers-color-scheme` unless
+an ancestor has `.light`, and dark under `.dark`.
+
+- TanStack Start apps: `createBridgeRootRoute({ appName })` (or
+  `createBridgeStatusComponents`) from `@tuturuuu/start-bridge` sets the root
+  `notFoundComponent` and `errorComponent`; custom roots render `StatusPage`.
+- Next App Router: `[locale]/not-found.tsx` renders `StatusPage`,
+  `[locale]/error.tsx` uses `AppErrorBoundary` with `chrome="page"`, and
+  `global-error.tsx` uses `GlobalAppErrorBoundary`. Nested dashboard boundaries
+  keep the default inline variant inside the app shell.
+- A Worker response outside the router renders `StatusPageDocument` with
+  `react-dom/server` (see `apps/roadmap/src/not-found-response.tsx`).
+
+`node scripts/check-status-pages.js` lists each app's coverage and fails on a
+bespoke or missing page.
+
 ## Explicit state machines
 
 Steve Ruiz's tldraw prompt, "find all of the implicit state machines in my app",

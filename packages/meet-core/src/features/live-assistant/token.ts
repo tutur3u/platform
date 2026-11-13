@@ -3,6 +3,13 @@ import { type LiveSessionClaims, liveSessionClaimsSchema } from './contracts';
 
 export function signLiveSession(claims: LiveSessionClaims, secret: string) {
   if (!secret) throw new Error('Live signing is not configured');
+  if (
+    claims.mode !== 'personal' ||
+    claims.inputSource !== 'private-microphone' ||
+    !claims.consentVersion ||
+    !claims.consentRevision
+  )
+    throw new Error('Private Mira choice is required');
   const payload = Buffer.from(
     JSON.stringify(liveSessionClaimsSchema.parse(claims))
   ).toString('base64url');
@@ -31,7 +38,14 @@ export function verifyLiveSession(
     const parsed = liveSessionClaimsSchema.safeParse(
       JSON.parse(Buffer.from(payload, 'base64url').toString())
     );
-    return parsed.success && parsed.data.expiresAt > now ? parsed.data : null;
+    return parsed.success &&
+      parsed.data.expiresAt > now &&
+      parsed.data.mode === 'personal' &&
+      parsed.data.inputSource === 'private-microphone' &&
+      !!parsed.data.consentVersion &&
+      !!parsed.data.consentRevision
+      ? parsed.data
+      : null;
   } catch {
     return null;
   }

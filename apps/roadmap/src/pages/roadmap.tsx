@@ -7,6 +7,7 @@ import {
 import {
   type CSSProperties,
   memo,
+  Suspense,
   useCallback,
   useMemo,
   useState,
@@ -17,6 +18,7 @@ import logo from '../assets/tuturuuu-logo.png?no-inline';
 import { Footer } from '../components/chrome';
 import { ComingSoon, Hero } from '../components/hero';
 import { HostingSection, Method } from '../components/hosting';
+import { MigrationSection } from '../components/migration';
 import { TrackGlance } from '../components/pulse';
 import type { Lang } from '../components/shared';
 import { TimelineSection } from '../components/timeline';
@@ -25,6 +27,7 @@ import { initialLiveData } from '../live/initial-data';
 import type { LiveData } from '../live/model';
 import { useLiveData } from '../live/use-live-data';
 import { pagePath, ROUTE_PATHS } from '../seo';
+import { BUILD_HOSTING } from '../live/build-hosting';
 import { buildView } from '../view-model';
 
 export function RoadmapPage({ lang }: { lang: Lang }) {
@@ -75,7 +78,6 @@ export function RoadmapPage({ lang }: { lang: Lang }) {
           data={live.data}
           now={live.now}
           liveCheckFailed={live.state === 'failed'}
-          hostsCheckedAt={initialData.generatedAt}
           onDock={onDock}
         />
       </MarketingShell>
@@ -93,7 +95,6 @@ const RoadmapMain = memo(function RoadmapMain({
   data,
   now,
   liveCheckFailed,
-  hostsCheckedAt,
   onDock,
 }: {
   t: typeof en;
@@ -101,26 +102,41 @@ const RoadmapMain = memo(function RoadmapMain({
   data: LiveData;
   now: number;
   liveCheckFailed: boolean;
-  hostsCheckedAt: string;
   onDock: (docked: boolean) => void;
 }) {
-  const view = useMemo(() => buildView(data, now), [data, now]);
+  const view = useMemo(
+    () => buildView(data, now, undefined, BUILD_HOSTING),
+    [data, now]
+  );
   return (
     <main className="page">
       <Hero t={t} view={view} lang={lang} data={data} now={now} />
       <TrackGlance t={t} view={view} />
       <ComingSoon t={t} />
-      <TimelineSection t={t} lang={lang} view={view} live={data} now={now} />
+      {/* Hydration boundaries (nothing suspends; the server renders all of
+          it): below the hero, React hydrates section by section, yielding
+          between them and starting with the one a reader interacts with. */}
+      <Suspense>
+        <TimelineSection t={t} lang={lang} view={view} live={data} now={now} />
+      </Suspense>
       <TracksSection t={t} lang={lang} view={view} onDock={onDock} />
-      <HostingSection
-        t={t}
-        lang={lang}
-        view={view}
-        main={data.main}
-        hostsCheckedAt={hostsCheckedAt}
-      />
-      <Method t={t} />
-      <Footer t={t} lang={lang} data={data} liveCheckFailed={liveCheckFailed} />
+      <Suspense>
+        <HostingSection
+          t={t}
+          lang={lang}
+          view={view}
+          main={data.main}
+          hosting={BUILD_HOSTING}
+        />
+        <MigrationSection t={t} lang={lang} hosting={BUILD_HOSTING} />
+        <Method t={t} />
+        <Footer
+          t={t}
+          lang={lang}
+          data={data}
+          liveCheckFailed={liveCheckFailed}
+        />
+      </Suspense>
     </main>
   );
 });

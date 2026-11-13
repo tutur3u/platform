@@ -23,7 +23,7 @@
     "sb:new": "cd ../database && bun sb:new",
     "sb:up": "cd ../database && bun sb:up",
     "sb:typegen": "cd ../database && bun sb:typegen",
-    "build:cloudflare": "vp build --configLoader runner",
+    "build:cloudflare": "vp build --configLoader runner && node cloudflare/prepare-server-artifact.mjs",
     "dev:cloudflare": "vp dev --configLoader runner --host 127.0.0.1 --port ${PORT:-7816}",
     "preview:cloudflare": "vp preview --configLoader runner --host 127.0.0.1 --port ${PORT:-7816}",
     "routes:check": "bun ../../packages/start-bridge/src/codegen/cli.ts check .",

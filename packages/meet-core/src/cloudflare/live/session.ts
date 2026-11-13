@@ -39,6 +39,7 @@ import { settleTickBilling } from './tick-billing';
 import { replayLiveToolResponses } from './tool-responses';
 import { reportLiveUsage } from './usage-report';
 import { liveWorkspaceAllowed } from './workspace-gate';
+import { requireCurrentPrivateGrant } from './private-grant';
 import {
   controlWorkspaceReview,
   expireWorkspaceReviews,
@@ -153,6 +154,9 @@ export class MeetLiveDurableObject {
         });
       this.saved = {
         ...input,
+        sharedContext: '',
+        scenarioInstructions: undefined,
+        workspace: undefined,
         startedAt: Date.now(),
         journal: structuredClone(EMPTY_LIVE_JOURNAL),
         reviews: [],
@@ -197,6 +201,7 @@ export class MeetLiveDurableObject {
       !saved ||
       !claims ||
       saved.ended ||
+      this.stopping ||
       claims.sessionId !== saved.claims.sessionId ||
       claims.ownerId !== saved.claims.ownerId ||
       claims.meetingId !== saved.claims.meetingId ||
@@ -216,9 +221,7 @@ export class MeetLiveDurableObject {
       return new Response('Meet AI is temporarily unavailable', {
         status: 403,
       });
-    await liveRoomCommand(this.env, saved.claims, saved.identity, {
-      action: 'live.context',
-    });
+    await requireCurrentPrivateGrant(this.env, saved);
     const pair = new WebSocketPair();
     const [client, server] = Object.values(pair) as [WebSocket, WebSocket];
     this.socket?.close(4001, 'Session moved');
@@ -281,6 +284,7 @@ export class MeetLiveDurableObject {
     this.connecting = true;
     const generation = ++this.generation;
     try {
+      await requireCurrentPrivateGrant(this.env, saved);
       if (!saved.billing) {
         saved.billing = await beginLiveBilling(
           this.env,
@@ -365,7 +369,8 @@ export class MeetLiveDurableObject {
   private async command(raw: string | ArrayBuffer) {
     if (typeof raw !== 'string' || raw.length > 40000) return;
     const parsed = liveClientCommandSchema.safeParse(JSON.parse(raw));
-    if (!parsed.success || !this.saved || this.saved.ended) return;
+    if (!parsed.success || !this.saved || this.saved.ended || this.stopping)
+      return;
     const message = parsed.data;
     if (message.type === 'stop') {
       await this.stop();
@@ -390,13 +395,18 @@ export class MeetLiveDurableObject {
     if (message.type === 'text')
       this.provider.sendRealtimeInput({ text: message.text });
     if (message.type === 'audio') {
+      if (
+        message.accountId !== this.saved.claims.ownerId ||
+        message.source !== 'microphone'
+      )
+        return;
       if (this.paused || !acceptsLiveAudio(this.saved.claims)) return;
       this.audioInput.send(this.provider, message.data);
     }
   }
   private async message(message: LiveServerMessage) {
     const saved = this.saved;
-    if (!saved || saved.ended) return;
+    if (!saved || saved.ended || this.stopping) return;
     if (
       message.sessionResumptionUpdate?.resumable &&
       message.sessionResumptionUpdate.newHandle
@@ -619,11 +629,7 @@ export class MeetLiveDurableObject {
     try {
       await maintainLiveRegistry(this.env, this.saved);
       if (this.saved.ended) return;
-      await liveRoomCommand(this.env, this.saved.claims, this.saved.identity, {
-        action:
-          this.saved.claims.mode === 'room' ? 'live.heartbeat' : 'live.context',
-        sessionId: this.saved.claims.sessionId,
-      });
+      await requireCurrentPrivateGrant(this.env, this.saved);
       if (
         (await settleTickBilling(
           this.env,

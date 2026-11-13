@@ -1,10 +1,12 @@
 import { connection, NextResponse } from 'next/server';
 import { authorizeInfrastructureAdminRequest } from '@/lib/infrastructure-admin-access';
 
-export async function GET() {
+export async function GET(request: Request) {
   await connection();
   const auth = await authorizeInfrastructureAdminRequest(
-    'manage_workspace_roles'
+    'view_infrastructure',
+    true,
+    request
   );
   if (!auth.ok) return auth.response;
 

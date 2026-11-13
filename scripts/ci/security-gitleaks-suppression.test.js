@@ -16,6 +16,7 @@ const path = require('node:path');
 const { test } = require('node:test');
 
 const { env } = process;
+const { createHash } = require('node:crypto');
 
 const ruleId = 'ttr-synthetic-test-token';
 const token = ['TTR', 'SYNTHETIC', 'TEST', 'TOKEN', '12345678'].join('_');
@@ -24,6 +25,165 @@ id = "${ruleId}"
 description = "Synthetic token used only by the suppression regression"
 regex = '''TTR_SYNTHETIC_TEST_TOKEN_[0-9]{8}'''
 `;
+
+const podfileDescription =
+  'description = "CocoaPods SPEC CHECKSUMS entries contain SHA-1 content digests"';
+const policyPath = path.resolve(
+  __dirname,
+  '../../.github/security/gitleaks.toml'
+);
+
+test('Podfile checksum exception is rule-local and requires path AND full line', () => {
+  const config = fs.readFileSync(policyPath, 'utf8');
+  const block = config
+    .split('[[allowlists]]')
+    .find((part) => part.includes(podfileDescription));
+  assert.ok(block, 'missing Podfile checksum policy');
+  assert.match(block, /^targetRules = \['generic-api-key'\]$/mu);
+  assert.match(block, /^condition = "AND"$/mu);
+  assert.match(block, /^regexTarget = "line"$/mu);
+  assert.ok(block.includes("paths = ['''(^|/)Podfile\\.lock$''']"));
+  assert.ok(
+    block.includes("regexes = ['''^\\s+[A-Za-z0-9_+./-]+: [0-9a-f]{40}$''']")
+  );
+});
+
+test('pinned scanner suppresses only Podfile checksum lines', (t) => {
+  if (!env.GITLEAKS_BIN) {
+    t.skip('GITLEAKS_BIN is required for real pinned-scanner qualification');
+    return;
+  }
+  const binary = path.resolve(env.GITLEAKS_BIN);
+  assert.equal(
+    execFileSync(binary, ['version'], { encoding: 'utf8' }).trim(),
+    '8.30.1'
+  );
+  const root = fs.mkdtempSync(path.join(os.tmpdir(), 'gitleaks-podfile-'));
+  t.after(() => fs.rmSync(root, { recursive: true, force: true }));
+  const input = path.join(root, 'input');
+  fs.mkdirSync(input);
+  const digest = createHash('sha1')
+    .update('synthetic-pod-checksum-fixture')
+    .digest('hex');
+  const generic = createHash('sha256')
+    .update('synthetic-generic-key-fixture')
+    .digest('base64');
+  const otherRuleKey = ['AKIA', 'BCDEFGHIJKLM', '2345'].join('');
+  const checksum = `    ApiKey: ${digest}`;
+  const fixtures = {
+    'Podfile.lock': `${checksum}\n`,
+    'apps/mobile/ios/Podfile.lock': `SPEC CHECKSUMS:\n${checksum}\n`,
+    'other.lock': `${checksum}\n`,
+    'NotPodfile.lock': `${checksum}\n`,
+    'Podfile.lock.bak': `${checksum}\n`,
+    'nonmatching/Podfile.lock':
+      [
+        `ApiKey: ${digest}`,
+        `${checksum} # trailing content`,
+        `    ApiKey: "${digest}"`,
+        `    ApiKey: ${digest.toUpperCase()}`,
+        `    ApiKey: ${generic}`,
+        `    api_key = "${generic}"`,
+      ].join('\n') + '\n',
+    'other-rule/Podfile.lock': `    ${otherRuleKey}: ${digest}\n`,
+  };
+  for (const [file, content] of Object.entries(fixtures)) {
+    const target = path.join(input, file);
+    fs.mkdirSync(path.dirname(target), { recursive: true });
+    fs.writeFileSync(target, content);
+  }
+  const config = fs.readFileSync(policyPath, 'utf8');
+  const policyStart = config.lastIndexOf('[[allowlists]]');
+  assert.ok(config.slice(policyStart).includes(podfileDescription));
+  const baseline = config.slice(0, policyStart);
+  const scan = (policy, name) => {
+    const configFile = path.join(root, `${name}.toml`);
+    const report = path.join(root, `${name}.json`);
+    const ignore = path.join(root, 'empty-ignore');
+    fs.writeFileSync(configFile, policy);
+    fs.writeFileSync(ignore, '');
+    const result = spawnSync(
+      binary,
+      [
+        'dir',
+        '--config',
+        configFile,
+        '--gitleaks-ignore-path',
+        ignore,
+        '--ignore-gitleaks-allow',
+        '--redact',
+        '--no-banner',
+        '--exit-code',
+        '0',
+        '--report-format',
+        'json',
+        '--report-path',
+        report,
+        input,
+      ],
+      {
+        cwd: root,
+        encoding: 'utf8',
+        env: { PATH: env.PATH, HOME: root, GOMAXPROCS: '2' },
+      }
+    );
+    assert.equal(result.status, 0, result.stderr);
+    const findings = JSON.parse(fs.readFileSync(report, 'utf8'));
+    return new Set(
+      findings.map((finding) => {
+        const file = path.relative(input, path.resolve(root, finding.File));
+        return `${finding.RuleID}@${file}:${finding.StartLine}`;
+      })
+    );
+  };
+  const before = scan(baseline, 'baseline');
+  const after = scan(config, 'policy');
+  const accepted = new Set([
+    'generic-api-key@Podfile.lock:1',
+    'generic-api-key@apps/mobile/ios/Podfile.lock:2',
+  ]);
+  for (const finding of accepted) {
+    assert.ok(before.has(finding), `baseline did not detect ${finding}`);
+    assert.ok(!after.has(finding), `checksum was not suppressed: ${finding}`);
+  }
+  for (const file of ['other.lock', 'NotPodfile.lock', 'Podfile.lock.bak']) {
+    assert.ok(
+      before.has(`generic-api-key@${file}:1`),
+      `missing path control ${file}`
+    );
+  }
+  for (let line = 1; line <= 6; line++) {
+    assert.ok(
+      before.has(`generic-api-key@nonmatching/Podfile.lock:${line}`),
+      `missing line/key control ${line}`
+    );
+  }
+  assert.ok(
+    before.has('aws-access-token@other-rule/Podfile.lock:1'),
+    'missing other-rule control'
+  );
+  assert.deepEqual(
+    after,
+    new Set([...before].filter((finding) => !accepted.has(finding)))
+  );
+  const orPolicy =
+    config.slice(0, policyStart) +
+    config.slice(policyStart).replace('condition = "AND"', 'condition = "OR"');
+  assert.notDeepEqual(
+    scan(orPolicy, 'or-mutant'),
+    after,
+    'controls must detect OR instead of AND'
+  );
+  const secretPolicy = config.replace(
+    'regexTarget = "line"',
+    'regexTarget = "secret"'
+  );
+  assert.notDeepEqual(
+    scan(secretPolicy, 'secret-target-mutant'),
+    after,
+    'controls must detect secret instead of full-line matching'
+  );
+});
 
 // Plain-text extraction so the secrets job can run this suite with the real
 // binary without installing Bun for the YAML helper.

@@ -44,20 +44,93 @@ function fixture(
 }
 async function flush() {
   await act(async () => {
-    await vi.advanceTimersByTimeAsync(500);
+    await Promise.resolve();
   });
 }
 
 describe('Mira queued turn continuation admission', () => {
+  it('revokes a held dispatch and clears optimism on workspace replacement', async () => {
+    const held = deferred<boolean>();
+    const send = vi.fn(
+      (_message: unknown, _current?: () => boolean) => held.promise
+    );
+    const f = fixture({
+      workspaceId: 'one',
+      sendMessageWithCurrentConfig: send,
+    });
+    act(() => f.result.current.handleSubmit('hello'));
+    expect(send.mock.calls[0]?.[1]?.()).toBe(true);
+    f.rerender({ ...f.params, workspaceId: 'two' });
+    expect(send.mock.calls[0]?.[1]?.()).toBe(false);
+    expect(f.result.current.dispatchPending).toBeNull();
+    await act(async () => {
+      held.resolve(true);
+      await held.promise;
+    });
+    expect(f.params.clearAttachedFiles).not.toHaveBeenCalled();
+  });
+  it('dispatches idle input synchronously and keeps its snapshot through admission', async () => {
+    const held = deferred<boolean>();
+    const f = fixture({
+      sendMessageWithCurrentConfig: vi.fn(() => held.promise),
+    });
+    act(() => f.result.current.handleSubmit('instant'));
+    expect(f.params.sendMessageWithCurrentConfig).toHaveBeenCalledTimes(1);
+    const sent = vi.mocked(f.params.sendMessageWithCurrentConfig).mock
+      .calls[0]?.[0];
+    expect(f.result.current.dispatchPending).toEqual(sent);
+    expect(f.result.current.queuedText).toBeNull();
+    await act(async () => {
+      held.resolve(false);
+      await held.promise;
+    });
+    expect(f.result.current.dispatchPending).toBeNull();
+    expect(f.params.clearAttachedFiles).not.toHaveBeenCalled();
+  });
+  it('serializes a double submit while the first dispatch is held', async () => {
+    const held = deferred<boolean>();
+    const f = fixture({
+      sendMessageWithCurrentConfig: vi
+        .fn()
+        .mockReturnValueOnce(held.promise)
+        .mockResolvedValue(true),
+    });
+    act(() => {
+      f.result.current.handleSubmit('one');
+      f.result.current.handleSubmit('one');
+      f.result.current.handleSubmit('two');
+    });
+    expect(f.params.sendMessageWithCurrentConfig).toHaveBeenCalledTimes(1);
+    expect(f.result.current.queuedText).toBe('two');
+    await act(async () => {
+      held.resolve(true);
+      await held.promise;
+    });
+    expect(f.params.sendMessageWithCurrentConfig).toHaveBeenCalledTimes(2);
+  });
+  it('clears a rejected dispatch without swallowing an unhandled promise', async () => {
+    const f = fixture({
+      sendMessageWithCurrentConfig: vi
+        .fn()
+        .mockRejectedValue(new Error('rejected')),
+    });
+    const log = vi.spyOn(console, 'error').mockImplementation(() => {});
+    act(() => f.result.current.handleSubmit('hello'));
+    await flush();
+    expect(f.result.current.dispatchPending).toBeNull();
+    expect(f.params.clearAttachedFiles).not.toHaveBeenCalled();
+    log.mockRestore();
+  });
   beforeEach(() => vi.useFakeTimers());
   afterEach(() => vi.useRealTimers());
   it('batches ordered distinct text once and retains existing dedup behavior', async () => {
-    const f = fixture();
+    const f = fixture({ status: 'streaming' });
     act(() => {
       f.result.current.handleSubmit(' first ');
       f.result.current.handleSubmit('second');
       f.result.current.handleSubmit('first');
     });
+    f.rerender({ ...f.params, status: 'ready' });
     await flush();
     expect(f.params.sendMessageWithCurrentConfig).toHaveBeenCalledTimes(1);
     expect(
@@ -66,12 +139,12 @@ describe('Mira queued turn continuation admission', () => {
     expect(f.params.clearAttachedFiles).toHaveBeenCalledTimes(1);
   });
   it('keeps upload-only submission and disabled pause/resume semantics', async () => {
-    const f = fixture({ attachedFiles: [file('one')] });
+    const f = fixture({ attachedFiles: [file('one')], status: 'streaming' });
     act(() => f.result.current.handleSubmit(''));
     f.rerender({ ...f.params, disabled: true });
     await flush();
     expect(f.params.sendMessageWithCurrentConfig).not.toHaveBeenCalled();
-    f.rerender({ ...f.params, disabled: false });
+    f.rerender({ ...f.params, disabled: false, status: 'ready' });
     await act(async () => {});
     expect(f.params.sendMessageWithCurrentConfig).toHaveBeenCalledTimes(1);
     expect(
@@ -169,8 +242,8 @@ describe('Mira queued turn continuation admission', () => {
       });
       expect(f.params.clearAttachedFiles).not.toHaveBeenCalled();
     });
-    it(`pending debounce is dropped across chat identity ${aba ? 'ABA' : 'switch'}`, async () => {
-      const f = fixture();
+    it(`queued retry is dropped across chat identity ${aba ? 'ABA' : 'switch'}`, async () => {
+      const f = fixture({ status: 'streaming' });
       act(() => f.result.current.handleSubmit('old prompt'));
       f.rerender({ ...f.params, chatId: 'other' });
       if (aba) f.rerender(f.params);
@@ -178,6 +251,7 @@ describe('Mira queued turn continuation admission', () => {
       expect(f.params.sendMessageWithCurrentConfig).not.toHaveBeenCalled();
       expect(f.params.createChat).not.toHaveBeenCalled();
       expect(f.result.current.queuedText).toBeNull();
+      f.rerender({ ...f.params, status: 'ready' });
       act(() => f.result.current.handleSubmit('new prompt'));
       await flush();
       expect(f.params.sendMessageWithCurrentConfig).toHaveBeenCalledTimes(1);

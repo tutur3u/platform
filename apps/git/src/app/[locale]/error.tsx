@@ -1,24 +1,15 @@
 'use client';
 
-import { RotateCcw } from '@tuturuuu/icons';
-import { Button } from '@tuturuuu/ui/button';
-import { useTranslations } from 'next-intl';
+import { AppErrorBoundary } from '@tuturuuu/ui/custom/app-error-boundary';
 
-export default function ErrorPage({ reset }: { reset: () => void }) {
-  const t = useTranslations('git');
-
+export default function ErrorBoundary({
+  error,
+  reset,
+}: {
+  error: Error & { digest?: string };
+  reset: () => void;
+}) {
   return (
-    <main className="grid min-h-[70vh] place-items-center p-6">
-      <div className="max-w-md space-y-4 text-center">
-        <h1 className="font-semibold text-2xl">{t('generic_error')}</h1>
-        <p className="text-muted-foreground text-sm">
-          {t('generic_error_description')}
-        </p>
-        <Button onClick={reset} variant="outline">
-          <RotateCcw className="mr-2 h-4 w-4" />
-          {t('retry')}
-        </Button>
-      </div>
-    </main>
+    <AppErrorBoundary appName="Git" chrome="page" error={error} reset={reset} />
   );
 }

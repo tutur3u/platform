@@ -1,17 +1,27 @@
 import { createAppSessionLogoutResponse } from '@tuturuuu/auth/app-session';
-import type { NextRequest } from 'next/server';
-import { WEB_APP_URL } from '@/constants/common';
+import { type NextRequest, NextResponse } from 'next/server';
 
-function getCentralLogoutUrl() {
-  const url = new URL('/logout', WEB_APP_URL);
-  url.searchParams.set('from', 'Infra');
-  return url;
+export function GET(_request: NextRequest) {
+  return new NextResponse(null, { status: 405, headers: { Allow: 'POST' } });
 }
 
-export function GET(request: NextRequest) {
-  return createAppSessionLogoutResponse(request, {
-    redirectUrl: getCentralLogoutUrl(),
+export function POST(request: NextRequest) {
+  if (request.method !== 'POST') return GET(request);
+
+  const origin = request.headers.get('origin');
+  const fetchSite = request.headers.get('sec-fetch-site');
+  if (
+    origin !== new URL(request.url).origin ||
+    (fetchSite !== null && fetchSite !== 'same-origin')
+  ) {
+    return new NextResponse(null, { status: 403 });
+  }
+
+  const response = createAppSessionLogoutResponse(request, {
+    redirectUrl: new URL('/login', request.url),
   });
+  if (response.headers.has('location')) {
+    response.headers.set('location', '/login');
+  }
+  return response;
 }
-
-export const POST = GET;
