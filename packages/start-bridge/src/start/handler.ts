@@ -24,6 +24,11 @@ import {
 import type { BridgeRequestContext } from '../server/request-context';
 import { admitMountedMutation, type BridgeCsrfOptions } from './csrf-admission';
 import {
+  canonicalizeMountedTrailingSlash,
+  mountedTrailingSlashEnabled,
+  type MountedTrailingSlashPolicy,
+} from './mounted-navigation';
+import {
   isMountedLogoutPath,
   refuseCrossOriginMountedLogout,
   refuseMountedSessionMinting,
@@ -33,6 +38,8 @@ import {
 export type { AssetsBinding } from '../core/assets';
 
 export interface BridgeHandlerOptions<Env, Ctx> {
+  /** Opt-in mounted document slash canonicalization before proxy/router dispatch. */
+  mountedTrailingSlash?: MountedTrailingSlashPolicy<Env>;
   /** Where this artifact is served; the base is resolved per request. */
   mounts?: AppMountConfig;
   /** A fixed base (tests, single-mount apps); ignored when `mounts` is set. */
@@ -197,6 +204,13 @@ export function createBridgeHandler<
         if (refusedLogout) return refusedLogout;
       }
     }
+    const canonical = canonicalizeMountedTrailingSlash(incoming, base, {
+      enabled: mountedTrailingSlashEnabled(options.mountedTrailingSlash, env),
+      machinePathPrefixes: [options.functionBase, options.serverFnBase].filter(
+        (path): path is string => !!path
+      ),
+    });
+    if (canonical) return canonical;
     const nonce = options.csp ? createNonce() : undefined;
     let response: Response;
     if (

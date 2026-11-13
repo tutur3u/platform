@@ -1,4 +1,5 @@
 // @vitest-environment node
+import { mountedTrailingSlashEnabled } from '@tuturuuu/start-bridge/start/mounted-navigation';
 import { NextResponse } from 'next/dist/server/web/spec-extension/response';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import type { CalendarTelemetryPort } from './request-telemetry.server';
@@ -79,14 +80,31 @@ describe('Calendar deployment profile', () => {
       vi.stubEnv('CALENDAR_DEPLOYMENT_PROFILE', profile);
       const { default: config } = await import('../../start-bridge.config');
       expect(config.mounts?.rootHosts).toEqual(hosts);
-      expect(config.mounts?.mountHosts).toEqual([]);
+      expect(config.mounts?.mountHosts).toEqual(
+        profile === 'production' ? ['tuturuuu.com'] : []
+      );
       expect(config.mounts?.unknownHost).toBe('reject');
+      for (const mode of [undefined, 'off', 'shadow', 'invalid']) {
+        expect(
+          mountedTrailingSlashEnabled(config.mountedTrailingSlash, {
+            ...env,
+            TTR_ONE_ORIGIN_CALENDAR: mode,
+          })
+        ).toBe(false);
+      }
+      expect(
+        mountedTrailingSlashEnabled(config.mountedTrailingSlash, {
+          ...env,
+          TTR_ONE_ORIGIN_CALENDAR: 'on',
+        })
+      ).toBe(true);
     }
   });
 
   // N9: the staging artifact never answers production or retired hosts.
   it.each([
     'calendar.tuturuuu.com',
+    'tuturuuu.com',
     'calendar-cutover.tutur3u.com',
     'calendar-staging.tuturuuu.com',
     'tuturuuu-calendar-wave1-staging.fixture.workers.dev',
