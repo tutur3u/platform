@@ -1,18 +1,30 @@
-import { BASE_URL, DEV_MODE } from './common';
+import { runtimeAppBase } from '@tuturuuu/start-bridge/app-url';
+import { CALENDAR_ROOT_ORIGIN, WEB_ORIGIN } from './calendar-origins';
+import { BASE_URL, DEV_MODE, TTR_URL } from './common';
+import { resolveCalendarSiteUrls } from './site-urls';
 
-const APP_URL = DEV_MODE ? BASE_URL : 'https://calendar.tuturuuu.com';
-
-export const siteConfig = {
-  name: 'Tuturuuu Calendar',
-  url: APP_URL,
-  ogImage: DEV_MODE
-    ? `${APP_URL}/media/logos/og-image.png`
-    : 'https://calendar.tuturuuu.com/media/logos/og-image.png',
-  links: {
-    twitter: 'https://twitter.com/tutur3u',
-    github: 'https://github.com/tutur3u/platform',
-  },
+const SITE_NAME = 'Tuturuuu Calendar';
+const SITE_LINKS = {
+  twitter: 'https://twitter.com/tutur3u',
+  github: 'https://github.com/tutur3u/platform',
 };
+
+/**
+ * Public site URLs for an app base. The base defaults to the current
+ * request's (the document's in the browser): empty at the Calendar host root,
+ * `/calendar` when served from the web origin.
+ */
+export function getSiteConfig(basePath: string = runtimeAppBase()) {
+  const urls = resolveCalendarSiteUrls({
+    basePath,
+    rootOrigin: DEV_MODE ? BASE_URL : CALENDAR_ROOT_ORIGIN,
+    webOrigin: DEV_MODE ? TTR_URL : WEB_ORIGIN,
+  });
+  return { name: SITE_NAME, ...urls, links: SITE_LINKS };
+}
+
+/** Site configuration at the Calendar host root. */
+export const siteConfig = getSiteConfig('');
 
 export interface AppConfig {
   readonly openai: {

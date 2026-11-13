@@ -1,6 +1,7 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import type { SupportedColor } from '@tuturuuu/types/primitives/SupportedColors';
 import { toast } from '@tuturuuu/ui/sonner';
+import { calendarFetch } from '@/runtime/calendar-api-path';
 
 export interface CalendarCategory {
   id: string;
@@ -26,7 +27,7 @@ export function useCalendarCategories({
   const categoriesQuery = useQuery({
     queryKey,
     queryFn: async () => {
-      const res = await fetch(
+      const res = await calendarFetch(
         `/api/v1/workspaces/${workspaceId}/calendar/categories`,
         { cache: 'no-store' }
       );
@@ -44,7 +45,7 @@ export function useCalendarCategories({
   // Mutation for creating category
   const createMutation = useMutation({
     mutationFn: async (category: { name: string; color: string }) => {
-      const res = await fetch(
+      const res = await calendarFetch(
         `/api/v1/workspaces/${workspaceId}/calendar/categories`,
         {
           method: 'POST',
@@ -99,7 +100,7 @@ export function useCalendarCategories({
       name?: string;
       color?: string;
     }) => {
-      const res = await fetch(
+      const res = await calendarFetch(
         `/api/v1/workspaces/${workspaceId}/calendar/categories/${id}`,
         {
           method: 'PATCH',
@@ -145,7 +146,7 @@ export function useCalendarCategories({
   // Mutation for deleting category
   const deleteMutation = useMutation({
     mutationFn: async (categoryId: string) => {
-      const res = await fetch(
+      const res = await calendarFetch(
         `/api/v1/workspaces/${workspaceId}/calendar/categories/${categoryId}`,
         {
           method: 'DELETE',
@@ -180,7 +181,7 @@ export function useCalendarCategories({
   // Mutation for reordering categories
   const reorderMutation = useMutation({
     mutationFn: async (categories: Array<{ id: string; position: number }>) => {
-      const res = await fetch(
+      const res = await calendarFetch(
         `/api/v1/workspaces/${workspaceId}/calendar/categories/reorder`,
         {
           method: 'PUT',

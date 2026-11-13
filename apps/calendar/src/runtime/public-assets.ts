@@ -39,5 +39,6 @@ export const publicAssets = new Set([
   '/offline.html',
   '/offline.js',
   '/robots.txt',
+  '/site.mount.webmanifest',
   '/site.webmanifest',
 ]);

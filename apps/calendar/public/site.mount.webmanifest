@@ -1,0 +1,24 @@
+{
+  "name": "Tuturuuu Calendar",
+  "short_name": "Calendar",
+  "icons": [
+    {
+      "src": "/calendar/android-chrome-192x192.png",
+      "sizes": "192x192",
+      "type": "image/png"
+    },
+    {
+      "src": "/calendar/android-chrome-512x512.png",
+      "sizes": "512x512",
+      "type": "image/png"
+    }
+  ],
+  "theme_color": "#ffffff",
+  "background_color": "#ffffff",
+  "display": "standalone",
+  "id": "/calendar/",
+  "start_url": "/calendar/personal",
+  "scope": "/calendar/",
+  "categories": ["productivity"],
+  "prefer_related_applications": false
+}

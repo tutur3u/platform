@@ -1,3 +1,5 @@
+import { calendarFetch } from '@/runtime/calendar-api-path';
+
 /**
  * Enhanced fetch wrapper with HTTP error handling and rate-limit awareness.
  *
@@ -36,7 +38,7 @@ export async function apiFetch<T = unknown>(
   input: RequestInfo | URL,
   init?: RequestInit
 ): Promise<T> {
-  const response = await fetch(input, init);
+  const response = await calendarFetch(input, init);
 
   if (!response.ok) {
     const retryAfter =

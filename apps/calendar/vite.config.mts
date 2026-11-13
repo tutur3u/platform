@@ -6,6 +6,10 @@ import { startBridgeNodeBuiltinsPlugin } from '@tuturuuu/start-bridge/vite/rsc';
 import react from '@vitejs/plugin-react';
 import { defineConfig, type UserConfig } from 'vite-plus';
 import { voidPlugin } from 'void';
+import {
+  CALENDAR_ROOT_ORIGIN,
+  WEB_ORIGIN,
+} from './src/constants/calendar-origins';
 import { resolveCalendarDeploymentProfile } from './src/runtime/deployment-profile';
 import { CALENDAR_FUNCTION_BASE } from './src/runtime/native-function-config';
 import { createCalendarNativePortResolver } from './src/runtime/native-port-resolver';
@@ -148,10 +152,10 @@ export default defineConfig(({ command }): UserConfig => ({
       process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY
     ),
     'process.env.NEXT_PUBLIC_APP_URL': JSON.stringify(
-      process.env.NEXT_PUBLIC_APP_URL ?? 'https://calendar.tuturuuu.com'
+      process.env.NEXT_PUBLIC_APP_URL ?? CALENDAR_ROOT_ORIGIN
     ),
     'process.env.NEXT_PUBLIC_WEB_APP_URL': JSON.stringify(
-      process.env.NEXT_PUBLIC_WEB_APP_URL ?? 'https://tuturuuu.com'
+      process.env.NEXT_PUBLIC_WEB_APP_URL ?? WEB_ORIGIN
     ),
   },
   environments: {

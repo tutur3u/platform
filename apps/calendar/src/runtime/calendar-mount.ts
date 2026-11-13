@@ -4,10 +4,11 @@ import {
   resolveAppBase,
 } from '@tuturuuu/start-bridge/mounts';
 import appConfig from '../../start-bridge.config';
+import { CALENDAR_MOUNT_BASE_PATH } from '../constants/calendar-origins';
 export const calendarMounts = {
   app: 'calendar',
   rootHosts: [],
-  basePath: '/calendar',
+  basePath: CALENDAR_MOUNT_BASE_PATH,
   ...appConfig.mounts,
 } satisfies AppMountConfig;
 export function calendarBase(url: URL) {

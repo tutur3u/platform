@@ -1,3 +1,5 @@
+import { CALENDAR_ROOT_ORIGIN } from '../constants/calendar-origins';
+
 export async function cleanupLegacyCalendarCaches({
   origin,
   storage,
@@ -5,7 +7,7 @@ export async function cleanupLegacyCalendarCaches({
   origin: string;
   storage: Pick<CacheStorage, 'keys' | 'delete'>;
 }) {
-  if (origin !== 'https://calendar.tuturuuu.com') return;
+  if (origin !== CALENDAR_ROOT_ORIGIN) return;
   const names = await storage.keys();
   await Promise.all(
     names

@@ -48,6 +48,7 @@ import dayjs from 'dayjs';
 import { useLocale, useTranslations } from 'next-intl';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { generatePreview } from '@/lib/calendar/unified-scheduler/preview-engine';
+import { calendarFetch } from '@/runtime/calendar-api-path';
 import { HeatmapOverlay } from './components/heatmap-overlay';
 import { generateRealisticScenario } from './generator';
 import { PRESET_SCENARIOS } from './scenarios';
@@ -110,7 +111,7 @@ export default function CalendarLabClientPage({
   const importRealData = async () => {
     setIsImporting(true);
     try {
-      const response = await fetch(
+      const response = await calendarFetch(
         `/api/v1/workspaces/${workspace.id}/calendar/schedule/preview`,
         {
           method: 'POST',
