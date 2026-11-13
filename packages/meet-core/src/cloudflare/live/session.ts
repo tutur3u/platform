@@ -31,7 +31,7 @@ import {
 import { liveRoomCommand } from './room';
 import { createRoomLiveAudioBatcher } from './room-audio-batcher';
 import { cleanupEndedLiveSession } from './session-cleanup';
-import { normalizeSavedLiveSession, type SavedSession } from './session-state';
+import * as sessions from './session-state';
 import { executeLiveTool } from './session-tools';
 import { markInterruptedUsage, observeSessionUsage } from './session-usage';
 import { type LiveEnvironment, LiveTurnArchive } from './storage';
@@ -47,7 +47,7 @@ import {
 
 export class MeetLiveDurableObject {
   private publish = new LiveTranscriptPublisher();
-  private saved?: SavedSession;
+  private saved?: sessions.SavedSession;
   private socket?: WebSocket;
   private provider?: Session;
   private connecting = false;
@@ -74,8 +74,10 @@ export class MeetLiveDurableObject {
     this.archive = new LiveTurnArchive(state.storage);
     this.registryQueue = new LiveRegistryQueue(state.storage, env);
     state.blockConcurrencyWhile(async () => {
-      this.saved = await state.storage.get<SavedSession>('session');
-      normalizeSavedLiveSession(this.saved);
+      this.saved = await state.storage.get<sessions.SavedSession>('session');
+      sessions.normalizeSavedLiveSession(this.saved);
+      if (this.saved && !this.saved.ended)
+        await sessions.armLiveRecovery(this.saved, this.state.storage);
       if (
         this.saved?.reviews.some((review) => review.status === 'processing')
       ) {
@@ -139,7 +141,7 @@ export class MeetLiveDurableObject {
       if (this.saved)
         return new Response('Already initialized', { status: 409 });
       const input = (await request.json()) as Pick<
-        SavedSession,
+        sessions.SavedSession,
         | 'claims'
         | 'identity'
         | 'timezone'
@@ -226,6 +228,8 @@ export class MeetLiveDurableObject {
     const [client, server] = Object.values(pair) as [WebSocket, WebSocket];
     this.socket?.close(4001, 'Session moved');
     this.socket = server;
+    saved.disconnectedRecoveryDeadline = undefined;
+    await this.persist();
     server.accept();
     server.addEventListener('message', (event) => {
       if (server !== this.socket) return;
@@ -244,7 +248,7 @@ export class MeetLiveDurableObject {
       }
       this.paused = true;
       this.provider?.sendRealtimeInput({ audioStreamEnd: true });
-      void this.state.storage.setAlarm(Date.now() + 30_000);
+      this.state.waitUntil(sessions.armLiveRecovery(saved, this.state.storage));
     });
     this.paused = false;
     this.emit({
@@ -588,7 +592,8 @@ export class MeetLiveDurableObject {
       return;
     }
     if (!this.socket) {
-      await this.stop();
+      if (sessions.liveRecoveryExpired(this.saved)) await this.stop();
+      else await sessions.armLiveRecovery(this.saved, this.state.storage);
       return;
     }
     // Revoked or never eligible: end the session instead of reconnecting the
