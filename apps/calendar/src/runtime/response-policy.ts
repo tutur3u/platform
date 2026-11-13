@@ -17,6 +17,16 @@ async function canonicalPolicy() {
 }
 
 const policy = canonicalPolicy();
+const basePath = appConfig.mounts?.basePath;
+
+// Static files are requested both on Calendar's own host (`/assets/...`) and
+// under the shared mount (`/calendar/assets/...`). Cache classification compares
+// the path inside the app, so both forms receive the same static caching.
+function appRelativePath(path: string) {
+  return basePath && path.startsWith(`${basePath}/`)
+    ? path.slice(basePath.length)
+    : path;
+}
 const offlineDocumentPolicy = [
   "default-src 'none'",
   "script-src 'self'",
@@ -55,14 +65,15 @@ export async function applyCalendarResponsePolicy(
   headers.set('X-Content-Type-Options', 'nosniff');
   headers.set('Referrer-Policy', 'strict-origin-when-cross-origin');
   headers.set('X-Robots-Tag', 'noindex, nofollow');
+  const assetPath = appRelativePath(path);
   const isStatic =
     (request.method === 'GET' || request.method === 'HEAD') &&
     response.ok &&
     !headers.get('Content-Type')?.toLowerCase().includes('text/html') &&
     !headers.has('Set-Cookie') &&
-    (path.startsWith('/assets/') ||
-      path === '/serwist/sw.js' ||
-      publicAssets.has(path));
+    (assetPath.startsWith('/assets/') ||
+      assetPath === '/serwist/sw.js' ||
+      publicAssets.has(assetPath));
   if (!isStatic) {
     headers.set('Cache-Control', 'private, no-store');
     for (const name of [
