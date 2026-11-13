@@ -26,10 +26,8 @@ import {
   findBlock,
   type ZoneId,
 } from './editor-state';
-import {
-  type PageBuilderActionProps,
-  PageBuilderActions,
-} from './page-builder-actions';
+import { PageBuilderActions } from './page-builder-actions';
+import type { PageBuilderActionProps } from './page-builder-permissions';
 
 interface Props extends PageBuilderActionProps {
   entryTitle: string;

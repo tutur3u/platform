@@ -89,10 +89,9 @@ describe('CMS page version routes', () => {
       { data: { id: VERSION, status: 'draft' }, error: null },
     ]);
     allow(admin.client);
-    const response = await (await collection()).POST(
-      post({ schemaVersion: 1, data }),
-      context()
-    );
+    const response = await (
+      await collection()
+    ).POST(post({ schemaVersion: 1, data }), context());
     expect(response.status).toBe(400);
     expect(admin.calls).toEqual([]);
   });
@@ -125,10 +124,9 @@ describe('CMS page version routes', () => {
       ],
     };
     expect(cmsPageSchema.safeParse(data).success).toBe(true);
-    const response = await (await collection()).POST(
-      post({ schemaVersion: 1, data }),
-      context()
-    );
+    const response = await (
+      await collection()
+    ).POST(post({ schemaVersion: 1, data }), context());
     expect(response.status).toBe(400);
     expect(admin.calls).toEqual([]);
   });
@@ -246,10 +244,9 @@ describe('CMS page version routes', () => {
   it('lists versions of the entry in the caller workspace with edit access', async () => {
     const admin = fakeAdmin([{ data: [{ id: VERSION }], error: null }]);
     allow(admin.client);
-    const response = await (await collection()).GET(
-      new Request('http://localhost/x'),
-      context()
-    );
+    const response = await (
+      await collection()
+    ).GET(new Request('http://localhost/x'), context());
 
     expect(response.status).toBe(200);
     expect(await response.json()).toEqual([{ id: VERSION }]);
@@ -277,10 +274,9 @@ describe('CMS page version routes', () => {
       { data: { id: VERSION, status: 'draft' }, error: null },
     ]);
     allow(admin.client);
-    const response = await (await collection()).POST(
-      post({ data: PAGE, note: ' first ', schemaVersion: 1 }),
-      context()
-    );
+    const response = await (
+      await collection()
+    ).POST(post({ data: PAGE, note: ' first ', schemaVersion: 1 }), context());
 
     expect(response.status).toBe(201);
     expect(admin.calls).toContainEqual([
@@ -320,10 +316,9 @@ describe('CMS page version routes', () => {
       fakeAdmin([{ data: null, error: { code: '23503', message: 'fk' } }])
         .client
     );
-    const response = await (await collection()).POST(
-      post({ data: PAGE, schemaVersion: 1 }),
-      context()
-    );
+    const response = await (
+      await collection()
+    ).POST(post({ data: PAGE, schemaVersion: 1 }), context());
     expect(response.status).toBe(404);
   });
 
@@ -367,9 +362,8 @@ describe('CMS page version routes', () => {
   });
 
   it('delivers only the published version through the database read', async () => {
-    const { getPublishedPageVersion } = await import(
-      '@/lib/external-projects/page-versions'
-    );
+    const { getPublishedPageVersion } =
+      await import('@/lib/external-projects/page-versions');
     const admin = fakeAdmin([
       { data: [{ id: VERSION, status: 'published' }], error: null },
       { data: [], error: null },
