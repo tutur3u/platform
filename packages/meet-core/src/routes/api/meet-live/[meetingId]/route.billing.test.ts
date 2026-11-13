@@ -1,5 +1,24 @@
-import { expect, it } from 'vitest';
-import { f, live, call, actorId, meetingId, version } from './phase-a-fixture';
+import { expect, it, vi } from 'vitest';
+import { actorId, call, f, meetingId, version } from './phase-a-fixture';
+import { POST as live } from './route';
+
+vi.mock('server-only', () => ({}));
+vi.mock('@opennextjs/cloudflare', async () =>
+  (await import('./phase-a-fixture')).phaseAModules.cloudflare()
+);
+vi.mock('@tuturuuu/meet-core/features/call/lib/call-access', async () =>
+  (await import('./phase-a-fixture')).phaseAModules.callAccess()
+);
+vi.mock('@tuturuuu/meet-core/features/call/server/room-service', async () =>
+  (await import('./phase-a-fixture')).phaseAModules.roomService()
+);
+vi.mock('../../../../features/live-assistant/server/demo-authority', async () =>
+  (await import('./phase-a-fixture')).phaseAModules.demoAuthority()
+);
+vi.mock('@tuturuuu/meet-core/features/live-assistant/token', async () =>
+  (await import('./phase-a-fixture')).phaseAModules.token()
+);
+
 it('mints a private account/meeting scoped token after choice confirmation and keeps personal billing', async () => {
   const response = await call(live, {
     action: 'start',
