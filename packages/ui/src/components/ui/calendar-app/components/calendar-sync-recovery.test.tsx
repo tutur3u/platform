@@ -5,14 +5,19 @@ import {
   CalendarSyncRecovery,
   needsCalendarSyncAttention,
 } from './calendar-sync-recovery';
+import { deriveCalendarSyncStatus } from './calendar-sync-status';
 import type { CalendarConnectionsManagerState } from './use-calendar-connections-manager';
 
 vi.mock('./calendar-connections-settings-content', () => ({
   CalendarConnectionsSettingsContent: () => <div>Settings</div>,
 }));
 
+/**
+ * Mirrors the manager: `syncStatus` is derived from the fixture's current
+ * fields, so tests that change `syncHealth` in place see the new state.
+ */
 function state(overrides: Partial<CalendarConnectionsManagerState> = {}) {
-  return {
+  const value = {
     accounts: [],
     failedCalendars: [],
     pauseFailedCalendarMutation: { mutate: vi.fn(), isPending: false },
@@ -34,6 +39,21 @@ function state(overrides: Partial<CalendarConnectionsManagerState> = {}) {
     t: (key: string) => key,
     ...overrides,
   } as unknown as CalendarConnectionsManagerState;
+  return Object.defineProperty(value, 'syncStatus', {
+    get: () =>
+      deriveCalendarSyncStatus({
+        status: value.syncHealth && {
+          health: value.syncHealth,
+          failedCalendars: value.failedCalendars,
+        },
+        queryErrored: value.syncStatusError,
+        accountsLoaded: !value.syncStatusError,
+        accounts: value.accounts,
+        needsReconnectAccounts: value.needsReconnectAccounts,
+        providerAccountStatuses: value.providerAccountStatuses,
+        syncMutation: value.syncMutation,
+      }),
+  });
 }
 describe('calendar sync recovery actions', () => {
   it('shows a persistent warning with a working retry for the stalled-run case', () => {
@@ -202,4 +222,33 @@ it('keeps the status live region mounted before syncing starts', () => {
   view.rerender(<CalendarSyncAttentionButton state={value} />);
   expect(screen.getByRole('status')).toBe(liveRegion);
   expect(liveRegion).toHaveTextContent('syncing_calendars');
+});
+
+it('shows nothing while the first status response is loading', () => {
+  const value = state({
+    syncHealth: undefined,
+    needsReconnectAccounts: [
+      {
+        id: 'quarantined',
+        provider: 'microsoft',
+        account_email: null,
+        account_name: 'Owner Outlook',
+        deactivated_reason: 'microsoft_consent_revoked',
+        deactivated_at: '2026-10-26T03:00:00Z',
+      },
+    ],
+  });
+  expect(value.syncStatus.kind).toBe('loading');
+  expect(needsCalendarSyncAttention(value)).toBe(false);
+  render(<CalendarSyncRecovery state={value} />);
+  expect(screen.queryByRole('alert')).toBeNull();
+  expect(screen.queryByText('sync_recovery.status_failed')).toBeNull();
+});
+
+it('explains a failed status request instead of a sync failure', () => {
+  render(<CalendarSyncRecovery state={state({ syncStatusError: true })} />);
+  expect(screen.getByRole('alert').textContent).toContain(
+    'sync_recovery.status_failed'
+  );
+  expect(screen.queryByText('sync_recovery.stalled')).toBeNull();
 });

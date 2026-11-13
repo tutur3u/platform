@@ -33,6 +33,7 @@ import {
   CalendarSyncRecovery,
   needsCalendarSyncAttention,
 } from './calendar-sync-recovery';
+import { calendarSyncStatusLabelKey } from './calendar-sync-status';
 import type { CalendarConnectionsManagerState } from './use-calendar-connections-manager';
 
 export function CalendarConnectionsCompact({
@@ -51,7 +52,6 @@ export function CalendarConnectionsCompact({
     getCalendarColor,
     googleAuthMutation,
     handleToggle,
-    hasConnectedAccounts,
     isLoadingCalendars,
     manualSyncDisabled,
     microsoftAuthMutation,
@@ -112,7 +112,7 @@ export function CalendarConnectionsCompact({
               </Dialog>
             </div>
 
-            {!hasConnectedAccounts && (
+            {state.syncStatus.kind === 'disconnected' && (
               <div className="rounded-xl border border-border/60 bg-muted/20 p-3">
                 <div className="space-y-1">
                   <p className="font-medium text-sm">
@@ -367,20 +367,10 @@ export function CalendarConnectionsCompact({
               <div
                 className={`rounded-full px-2 py-0.5 text-xs ${syncStatusStyles}`}
               >
-                {syncHealth?.state === 'syncing' && (
+                {state.syncStatus.kind === 'syncing' && (
                   <Loader2 className="mr-1 inline h-3 w-3 animate-spin" />
                 )}
-                {syncHealth?.state === 'degraded'
-                  ? t('degraded') || 'Degraded'
-                  : syncHealth?.state === 'paused'
-                    ? t('sync_recovery.paused')
-                    : syncHealth?.state === 'healthy'
-                      ? t('healthy') || 'Healthy'
-                      : syncHealth?.state === 'disconnected'
-                        ? t('connect_accounts') || 'Connect accounts'
-                        : syncHealth?.state === 'syncing'
-                          ? t('syncing_calendars')
-                          : t('sync_recovery.unavailable')}
+                {t(calendarSyncStatusLabelKey(state.syncStatus))}
               </div>
               <Button
                 variant="outline"

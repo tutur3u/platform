@@ -2,17 +2,21 @@ import { AlertTriangle, RefreshCw } from '@tuturuuu/icons';
 import { Alert, AlertDescription, AlertTitle } from '../../alert';
 import { Button } from '../../button';
 import { reconnectCalendarProvider } from './calendar-reconnect-action';
+import {
+  type CalendarSyncStatus,
+  calendarSyncIsActive,
+  calendarSyncNeedsAttention,
+  calendarSyncReconnectProviders,
+  syncAttentionDescriptionKey,
+} from './calendar-sync-status';
 import type { CalendarConnectionsManagerState } from './use-calendar-connections-manager';
 
 type RecoveryState = Pick<
   CalendarConnectionsManagerState,
-  | 'failedCalendars'
   | 'pauseFailedCalendarMutation'
   | 'accounts'
-  | 'needsReconnectAccounts'
-  | 'providerAccountStatuses'
   | 'syncHealth'
-  | 'syncStatusError'
+  | 'syncStatus'
   | 'retrySyncStatus'
   | 'syncMutation'
   | 'manualSyncDisabled'
@@ -22,91 +26,47 @@ type RecoveryState = Pick<
 >;
 
 export function needsCalendarSyncAttention(
-  state: Pick<
-    RecoveryState,
-    | 'syncHealth'
-    | 'syncStatusError'
-    | 'providerAccountStatuses'
-    | 'syncMutation'
-  > &
-    Partial<Pick<RecoveryState, 'needsReconnectAccounts'>>
+  state: Pick<RecoveryState, 'syncStatus'>
 ) {
-  const lastSuccess = state.syncHealth?.lastSuccessAt;
-  const failedAttemptIsNewer =
-    !lastSuccess || Date.parse(lastSuccess) < state.syncMutation.submittedAt;
-  return (
-    state.syncStatusError ||
-    (failedAttemptIsNewer &&
-      (state.syncMutation.isError || state.syncMutation.data?.ok === false)) ||
-    state.syncHealth?.state === 'degraded' ||
-    !!state.needsReconnectAccounts?.length ||
-    Object.values(state.providerAccountStatuses).some(
-      (status) => status.state !== 'connected'
-    )
-  );
+  return calendarSyncNeedsAttention(state.syncStatus);
 }
 
-export function isCalendarSyncActive(
-  state: Pick<RecoveryState, 'syncMutation' | 'syncHealth'>
-) {
-  return !!(state.syncMutation.isPending || state.syncHealth?.currentlyRunning);
+export function isCalendarSyncActive(state: Pick<RecoveryState, 'syncStatus'>) {
+  return calendarSyncIsActive(state.syncStatus);
+}
+
+type VisibleRecoveryStatus = Extract<
+  CalendarSyncStatus,
+  { kind: 'syncing' | 'attention' | 'status_error' }
+>;
+
+function recoveryDescriptionKey(status: VisibleRecoveryStatus) {
+  switch (status.kind) {
+    case 'syncing':
+      return 'sync_recovery.syncing_description';
+    case 'status_error':
+      return 'sync_recovery.status_failed';
+    case 'attention':
+      return syncAttentionDescriptionKey(status.reason);
+  }
 }
 
 export function CalendarSyncRecovery({ state }: { state: RecoveryState }) {
-  const { t, syncHealth, syncStatusError, providerAccountStatuses } = state;
-  const syncing = isCalendarSyncActive(state);
-  const needsAttention = needsCalendarSyncAttention(state);
-  if (!needsAttention && !syncing) return null;
-  // Active accounts whose status says reconnect, plus accounts sync
-  // quarantined after the provider rejected their credential.
-  const reconnectAccounts = [
-    ...state.accounts.filter(
-      (account) =>
-        providerAccountStatuses[account.id]?.state === 'reconnect_required'
-    ),
-    ...(state.needsReconnectAccounts ?? []),
-  ];
-  const reason = syncStatusError
-    ? 'unavailable'
-    : reconnectAccounts.length
-      ? 'reconnect_required'
-      : Object.values(providerAccountStatuses).some(
-            (status) => status.state === 'temporarily_unavailable'
-          )
-        ? 'provider_unavailable'
-        : syncHealth?.state === 'degraded'
-          ? syncHealth.reason
-          : 'last_run_failed';
-  const description =
-    reason === 'sync_stalled'
-      ? 'sync_recovery.stalled'
-      : reason === 'sync_stale'
-        ? 'sync_recovery.stale'
-        : reason === 'not_synced'
-          ? 'sync_recovery.not_synced'
-          : reason === 'unavailable'
-            ? 'sync_recovery.status_failed'
-            : reason === 'reconnect_required' || reason === 'auth'
-              ? 'sync_recovery.reconnect_description'
-              : reason === 'configuration'
-                ? 'sync_recovery.configuration'
-                : reason === 'api_limit'
-                  ? 'sync_recovery.rate_limited'
-                  : reason === 'provider_unavailable'
-                    ? 'sync_recovery.provider_unavailable'
-                    : 'sync_recovery.failed';
-  const reconnectProviders = new Set(
-    reconnectAccounts.map((account) => account.provider)
-  );
+  const { t, syncHealth, syncStatus: status } = state;
   if (
-    !reconnectProviders.size &&
-    (reason === 'auth' || reason === 'reconnect_required')
-  ) {
-    for (const provider of state.accounts.length
-      ? state.accounts.map((account) => account.provider)
-      : (['google', 'microsoft'] as const))
-      reconnectProviders.add(provider);
-  }
+    status.kind !== 'syncing' &&
+    status.kind !== 'attention' &&
+    status.kind !== 'status_error'
+  )
+    return null;
+  const syncing = calendarSyncIsActive(status);
+  const needsAttention = status.kind !== 'syncing';
+  const syncStatusError = status.kind === 'status_error';
+  const reconnectAccounts = status.kind === 'syncing' ? [] : status.accounts;
+  const reconnectProviders = calendarSyncReconnectProviders(
+    status,
+    state.accounts
+  );
   return (
     <Alert
       role={needsAttention ? 'alert' : 'status'}
@@ -125,17 +85,13 @@ export function CalendarSyncRecovery({ state }: { state: RecoveryState }) {
         {t(needsAttention ? 'sync_recovery.attention' : 'syncing_calendars')}
       </AlertTitle>
       <AlertDescription className="space-y-3">
-        <p>
-          {t(
-            needsAttention ? description : 'sync_recovery.syncing_description'
-          )}
-        </p>
+        <p>{t(recoveryDescriptionKey(status))}</p>
         <p className="text-muted-foreground text-xs">
           {t('sync_recovery.saved_events')}
         </p>
-        {!!state.failedCalendars?.length && (
+        {!!status.failedCalendars.length && (
           <ul className="space-y-2">
-            {state.failedCalendars.map((failure) => (
+            {status.failedCalendars.map((failure) => (
               <li
                 key={failure.connectionId}
                 className="space-y-2 rounded-md border p-3"
@@ -167,10 +123,10 @@ export function CalendarSyncRecovery({ state }: { state: RecoveryState }) {
             ))}
           </ul>
         )}
-        {syncHealth?.lastSuccessAt && (
+        {status.lastSuccessAt && (
           <p className="text-xs">
             {t('last_synced_at', {
-              time: new Date(syncHealth.lastSuccessAt).toLocaleString(),
+              time: new Date(status.lastSuccessAt).toLocaleString(),
             })}
           </p>
         )}
