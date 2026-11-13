@@ -324,3 +324,10 @@ test('complete summaries accept only proven docs skips and always require fresh 
     }
   }
 });
+
+test('root script ratchets receive complete parent history', () => {
+  const checkout = workflow.jobs['root-script-tests'].steps.find((step) =>
+    step.uses?.startsWith('actions/checkout@')
+  );
+  assert.equal(checkout.with['fetch-depth'], 0);
+});
