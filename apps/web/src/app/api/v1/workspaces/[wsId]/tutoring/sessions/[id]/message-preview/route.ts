@@ -1,7 +1,10 @@
 import {
   getTutoringCampus,
+  PARENT_MESSAGE_TEMPLATE_V2,
   readTutoringPolicyConfigRows,
   renderTutoringParentMessage,
+  TUTORING_PARENT_MESSAGE_CENTRE_NAME_CONFIG_ID,
+  TUTORING_PARENT_MESSAGE_V2_CONFIG_ID,
   TUTORING_POLICY_CONFIG_ID,
 } from '@tuturuuu/internal-api/tutoring-policy';
 import { createAdminClient } from '@tuturuuu/supabase/next/server';
@@ -106,31 +109,55 @@ export async function POST(request: Request, { params }: Params) {
         ? 'hỗ trợ học lực'
         : 'phụ đạo';
 
-  const [groupResult, studentResult, teacherResult, policyResult] =
-    await Promise.all([
-      sbAdmin
-        .from('workspace_user_groups')
-        .select('name')
-        .eq('id', data.group_id)
-        .maybeSingle(),
-      sbAdmin
-        .from('workspace_users')
-        .select('full_name,display_name,email')
-        .eq('id', data.student_user_id)
-        .maybeSingle(),
-      data.teacher_user_id
-        ? sbAdmin
-            .from('workspace_users')
-            .select('full_name,display_name,email')
-            .eq('id', data.teacher_user_id)
-            .maybeSingle()
-        : Promise.resolve({ data: null, error: null }),
-      sbAdmin
-        .from('workspace_configs')
-        .select('id,value')
-        .eq('ws_id', normalizedWsId)
-        .like('id', `${TUTORING_POLICY_CONFIG_ID}%`),
-    ]);
+  const [
+    groupResult,
+    studentResult,
+    teacherResult,
+    policyResult,
+    flagResult,
+    centreResult,
+    workspaceResult,
+  ] = await Promise.all([
+    sbAdmin
+      .from('workspace_user_groups')
+      .select('name')
+      .eq('id', data.group_id)
+      .maybeSingle(),
+    sbAdmin
+      .from('workspace_users')
+      .select('full_name,display_name,email')
+      .eq('id', data.student_user_id)
+      .maybeSingle(),
+    data.teacher_user_id
+      ? sbAdmin
+          .from('workspace_users')
+          .select('full_name,display_name,email')
+          .eq('id', data.teacher_user_id)
+          .maybeSingle()
+      : Promise.resolve({ data: null, error: null }),
+    sbAdmin
+      .from('workspace_configs')
+      .select('id,value')
+      .eq('ws_id', normalizedWsId)
+      .like('id', `${TUTORING_POLICY_CONFIG_ID}%`),
+    sbAdmin
+      .from('workspace_configs')
+      .select('value')
+      .eq('ws_id', normalizedWsId)
+      .eq('id', TUTORING_PARENT_MESSAGE_V2_CONFIG_ID)
+      .maybeSingle(),
+    sbAdmin
+      .from('workspace_configs')
+      .select('value')
+      .eq('ws_id', normalizedWsId)
+      .eq('id', TUTORING_PARENT_MESSAGE_CENTRE_NAME_CONFIG_ID)
+      .maybeSingle(),
+    sbAdmin
+      .from('workspaces')
+      .select('name')
+      .eq('id', normalizedWsId)
+      .maybeSingle(),
+  ]);
 
   if (
     groupResult.error ||
@@ -159,10 +186,23 @@ export async function POST(request: Request, { params }: Params) {
   const studentName = displayName(student);
 
   const policy = readTutoringPolicyConfigRows(policyResult.data ?? []);
+  const configuredCentre = !centreResult.error
+    ? centreResult.data?.value?.trim()
+    : null;
+  const workspaceCentre = !workspaceResult.error
+    ? workspaceResult.data?.name?.trim()
+    : null;
+  const centreName =
+    !flagResult.error && flagResult.data?.value === 'true'
+      ? (configuredCentre || workspaceCentre)?.normalize('NFC') || null
+      : null;
+  const template = centreName
+    ? PARENT_MESSAGE_TEMPLATE_V2
+    : policy.parentMessageTemplate;
   // The class time is optional context: a failed read or a template without
   // the field must not stop the preview.
   let classTime = TUTORING_VALUE_UNKNOWN;
-  if (policy.parentMessageTemplate.includes('{{class_time}}')) {
+  if (template.includes('{{class_time}}')) {
     // Widen by a day for time zone offsets; the zoned local date decides.
     const classSessionsResult = await tutoringSessionsClient
       .from('workspace_user_group_sessions')
@@ -192,11 +232,16 @@ export async function POST(request: Request, { params }: Params) {
       classTime = selectTutoringClassTime(
         classSessions,
         data.session_date,
-        String(data.start_time)
+        String(data.start_time),
+        Boolean(centreName)
       );
     }
   }
-  const preview = renderTutoringParentMessage(policy.parentMessageTemplate, {
+  const messageTemplate =
+    centreName && classTime === TUTORING_VALUE_UNKNOWN
+      ? template.replace('Lịch học chính thức: {{class_time}}\n', '')
+      : template;
+  const rendered = renderTutoringParentMessage(messageTemplate, {
     campus:
       getTutoringCampus(policy, data.group_id, group?.name) ?? 'Chưa xác định',
     class_time: classTime,
@@ -213,6 +258,10 @@ export async function POST(request: Request, { params }: Params) {
     ),
     weekday: getTutoringWeekdayLabel(data.session_date),
   });
+
+  const preview = centreName
+    ? rendered.replace('{{centre}}', () => centreName ?? '')
+    : rendered;
 
   let updateQuery = tutoringSessionsClient
     .from('workspace_tutoring_sessions')
