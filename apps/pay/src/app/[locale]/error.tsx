@@ -9,5 +9,7 @@ export default function ErrorBoundary({
   error: Error & { digest?: string };
   reset: () => void;
 }) {
-  return <AppErrorBoundary appName="Pay" error={error} reset={reset} />;
+  return (
+    <AppErrorBoundary chrome="page" appName="Pay" error={error} reset={reset} />
+  );
 }

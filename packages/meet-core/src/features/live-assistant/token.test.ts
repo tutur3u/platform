@@ -8,6 +8,10 @@ const claims = {
   meetingId: '00000000-0000-4000-8000-000000009721',
   billingWorkspaceId: '00000000-0000-4000-8000-000000009711',
   mode: 'personal' as const,
+  inputSource: 'private-microphone' as const,
+  consentVersion: 'synthetic-v1',
+  consentRevision: 1,
+  workspaceAuthority: 'verified-personal' as const,
   expiresAt: 2000,
 };
 it('binds the session owner, audience, and expiry to its signature', () => {
@@ -25,4 +29,16 @@ it('binds the session owner, audience, and expiry to its signature', () => {
   expect(
     verifyLiveSession(parts.join('.'), 'test-only-secret', 1000)
   ).toBeNull();
+});
+
+it('refuses to mint a room or pre-click token', () => {
+  expect(() =>
+    signLiveSession({ ...claims, mode: 'room' }, 'test-only-secret')
+  ).toThrow();
+  expect(() =>
+    signLiveSession(
+      { ...claims, consentVersion: undefined },
+      'test-only-secret'
+    )
+  ).toThrow();
 });
