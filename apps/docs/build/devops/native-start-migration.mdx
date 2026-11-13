@@ -209,6 +209,26 @@ the gates above pass. There are no staged canaries or traffic percentages.
 
 ## Rollback
 
+### Client module provenance qualification
+
+The opt-in `packages/start-bridge/src/vite/client-provenance.ts` plugin belongs
+only in a client qualification build. It emits `client-provenance.json` with
+transformed module hashes, resolved static/dynamic edges, chunk membership and
+SHA-256 hashes of chunk code. Preserve the manifest with the exact source SHA,
+supplier lock identity and final output hashes; later output mutation requires
+fresh hash verification. It rejects request-store/bootstrap modules and
+`async_hooks` in that graph. Unresolved computed imports fail closed rather than
+counting static traversal as computed-import proof. The regression fixture is
+`client-provenance.test.ts`; it produces synthetic, nondeployable bundles.
+
+This gate is additive and does not enable Trusted Types or alter app builds.
+Keep original Next headers and intl server bootstrap edges; they need separate
+client-boundary acceptance. `page-location` is excluded from reader roots.
+Nonce acceptance additionally requires an emitted Worker/browser receipt proving
+the response CSP nonce matches every executable serialized script, concurrent
+requests retain separate nonces, hydration/navigation succeeds, and console CSP
+violations are absent. A synthetic bundler fixture cannot supply that receipt.
+
 Rolling back an app restores the captured routing to the immutable prior
 deployment in one step. Never delete the prior deployment or its routing record until the native
 runtime has served all traffic through a full release cycle.
