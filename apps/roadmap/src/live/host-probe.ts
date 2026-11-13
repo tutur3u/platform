@@ -119,7 +119,8 @@ export function classifyProbeResponse(
   return { platform: 'unknown', commit: null };
 }
 
-async function readBounded(response: Response): Promise<string> {
+/** A response body up to MAX_BODY bytes; longer bodies read as empty. */
+export async function readBounded(response: Response): Promise<string> {
   if (!response.body) return '';
   const reader = response.body.getReader();
   const chunks: Uint8Array[] = [];

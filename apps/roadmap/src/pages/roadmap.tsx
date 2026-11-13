@@ -18,6 +18,7 @@ import logo from '../assets/tuturuuu-logo.png?no-inline';
 import { Footer } from '../components/chrome';
 import { ComingSoon, Hero } from '../components/hero';
 import { HostingSection, Method } from '../components/hosting';
+import { MigrationSection } from '../components/migration';
 import { TrackGlance } from '../components/pulse';
 import type { Lang } from '../components/shared';
 import { TimelineSection } from '../components/timeline';
@@ -26,6 +27,7 @@ import { initialLiveData } from '../live/initial-data';
 import type { LiveData } from '../live/model';
 import { useLiveData } from '../live/use-live-data';
 import { pagePath, ROUTE_PATHS } from '../seo';
+import { BUILD_HOSTING } from '../live/build-hosting';
 import { buildView } from '../view-model';
 
 export function RoadmapPage({ lang }: { lang: Lang }) {
@@ -76,7 +78,6 @@ export function RoadmapPage({ lang }: { lang: Lang }) {
           data={live.data}
           now={live.now}
           liveCheckFailed={live.state === 'failed'}
-          hostsCheckedAt={initialData.generatedAt}
           onDock={onDock}
         />
       </MarketingShell>
@@ -94,7 +95,6 @@ const RoadmapMain = memo(function RoadmapMain({
   data,
   now,
   liveCheckFailed,
-  hostsCheckedAt,
   onDock,
 }: {
   t: typeof en;
@@ -102,10 +102,12 @@ const RoadmapMain = memo(function RoadmapMain({
   data: LiveData;
   now: number;
   liveCheckFailed: boolean;
-  hostsCheckedAt: string;
   onDock: (docked: boolean) => void;
 }) {
-  const view = useMemo(() => buildView(data, now), [data, now]);
+  const view = useMemo(
+    () => buildView(data, now, undefined, BUILD_HOSTING),
+    [data, now]
+  );
   return (
     <main className="page">
       <Hero t={t} view={view} lang={lang} data={data} now={now} />
@@ -124,8 +126,9 @@ const RoadmapMain = memo(function RoadmapMain({
           lang={lang}
           view={view}
           main={data.main}
-          hostsCheckedAt={hostsCheckedAt}
+          hosting={BUILD_HOSTING}
         />
+        <MigrationSection t={t} lang={lang} hosting={BUILD_HOSTING} />
         <Method t={t} />
         <Footer
           t={t}

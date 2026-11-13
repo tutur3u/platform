@@ -72,6 +72,19 @@ Data comes from public sources only, in two layers:
    the newest good data with its real observation time ("Live check
    unavailable"), never a fresher-looking label.
 
+**Hosting and the move to tuturuuu.com** are observed on every build, before
+and independent of GitHub (`src/live/build-probe.ts`, written to the untracked
+`.generated/hosting.json` and embedded by Vite). Providers come from each
+app's public build-info, probed from the build machine (outside Cloudflare).
+The migration list and paths are the repo's base-path registry
+(`ONE_ORIGIN_APP_BASE_PATHS` in `packages/utils/src/app-mounts.ts`); an app
+counts as moved only when its subdomain redirects navigations to its
+`tuturuuu.com` path, and as in progress when its own Worker already answers
+there. A build that cannot observe (for example `ROADMAP_OFFLINE=1`) shows
+every value as not verifiable, with that build's time; the page never shows a
+provider or migration value from an earlier build. The hosting section shows
+Cloudflare's official web badge, unaltered (`src/assets/brands`).
+
 `GET|HEAD /roadmap/api/hosts` probes the fixed allowlist in
 `src/live/host-probe.ts` (request input never selects a host), with manual
 redirects, a 4-second timeout and a 16 KiB body bound. It returns only
