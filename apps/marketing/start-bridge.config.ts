@@ -4,6 +4,7 @@
 import {
   appRobots,
   createRootResponsePolicy,
+  type ResponsePolicyContext,
 } from '@tuturuuu/start-bridge/response-policy';
 import { PRIVATE_ROBOTS_HEADER } from '@tuturuuu/utils/seo-robots';
 import { defineBridgeAppConfig } from '@tuturuuu/start-bridge/start/app-config';
@@ -41,6 +42,28 @@ const secure = createRootResponsePolicy({
       : PRIVATE_ROBOTS_HEADER,
 });
 
+/** Mark only restrictions introduced for the backend origin, never upstream policy. */
+function finalize(response: Response, context: ResponsePolicyContext) {
+  const upstreamRobots = response.headers.get('x-robots-tag');
+  const secured = secure(response, context);
+  if (secured.status === 101) return secured;
+  // The shared policy preserves noindex; none is its equally restrictive alias.
+  if (upstreamRobots && /\bnone\b/iu.test(upstreamRobots)) {
+    secured.headers.set('x-robots-tag', upstreamRobots);
+  }
+  secured.headers.delete('x-marketing-origin-robots');
+  if (
+    new URL(context.request.url).origin !== 'https://tuturuuu.com' &&
+    (context.env as { TUTURUUU_NOINDEX?: string } | undefined)
+      ?.TUTURUUU_NOINDEX !== '1' &&
+    upstreamRobots === null &&
+    secured.headers.get('x-robots-tag') === PRIVATE_ROBOTS_HEADER
+  ) {
+    secured.headers.set('x-marketing-origin-robots', '1');
+  }
+  return secured;
+}
+
 export default defineBridgeAppConfig({
   // Robots (the app's seo-policy.json allowlist on its canonical host),
   // framing, sniffing, referrer and private caching on every response; only
@@ -61,9 +84,9 @@ export default defineBridgeAppConfig({
       return response.text().then((html) => {
         const styled = new Response(landingStyles(html, styles), response);
         styled.headers.delete('content-length');
-        return secure(styled, context);
+        return finalize(styled, context);
       });
     }
-    return secure(response, context);
+    return finalize(response, context);
   },
 });
