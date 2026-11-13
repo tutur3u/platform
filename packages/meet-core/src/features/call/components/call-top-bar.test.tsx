@@ -122,15 +122,26 @@ it('renders nothing while the connection is open', () => {
   expect(container.firstChild).toBeNull();
 });
 
-it('shows a quiet labelled indicator while reconnecting', () => {
-  render(<CallTopBarConnection status="connecting" onRetry={vi.fn()} />);
+it.each([
+  'reconnecting',
+  'connecting',
+] as const)('shows only a quiet labelled indicator while %s', (status) => {
+  render(<CallTopBarConnection status={status} onRetry={vi.fn()} />);
   expect(screen.getByRole('status', { name: 'reconnecting' })).toBeTruthy();
   expect(screen.queryByRole('button')).toBeNull();
+  expect(screen.queryByText('reconnecting')).toBeNull();
+  expect(screen.queryByText('connection_refresh')).toBeNull();
 });
 
-it('offers one refresh action after the connection is lost', () => {
+it.each([
+  'error',
+  'closed',
+] as const)('offers one refresh action once recovery stops (%s)', (status) => {
   const onRetry = vi.fn();
-  render(<CallTopBarConnection status="closed" onRetry={onRetry} />);
-  fireEvent.click(screen.getByRole('button', { name: /connection_refresh/ }));
+  render(<CallTopBarConnection status={status} onRetry={onRetry} />);
+  expect(screen.queryByRole('status')).toBeNull();
+  // getByRole throws when more than one button renders.
+  const refresh = screen.getByRole('button', { name: /connection_refresh/ });
+  fireEvent.click(refresh);
   expect(onRetry).toHaveBeenCalledOnce();
 });

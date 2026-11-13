@@ -18,7 +18,10 @@ import {
 import { toast } from '@tuturuuu/ui/sonner';
 import { useTranslations } from 'next-intl';
 import { buildJoinUrl, encodeRoomCode } from '../lib/room-code';
-import type { MeetSignalingStatus } from '../lib/signaling';
+import {
+  getSignalingRecovery,
+  type MeetSignalingStatus,
+} from '../lib/signaling';
 import { MeetingActionHint } from './meeting-action-hint';
 
 /**
@@ -90,8 +93,10 @@ export function CallTopBarMore({
 }
 
 /**
- * Minimal signaling status: nothing while connected, a quiet icon while
- * reconnecting, and a single refresh action once the connection is lost.
+ * Minimal signaling status: nothing while connected, a quiet labelled icon
+ * while signaling is still recovering on its own (`connecting` or
+ * `reconnecting`), and a single refresh action only once recovery is
+ * exhausted (`error`) or the server ended the call (`closed`).
  */
 export function CallTopBarConnection({
   status,
@@ -102,10 +107,11 @@ export function CallTopBarConnection({
 }) {
   const t = useTranslations('meet.call');
   if (status === 'open') return null;
-  if (status === 'connecting')
+  if (getSignalingRecovery(status) !== 'exhausted')
     return (
       <output
         aria-label={t('reconnecting')}
+        aria-live="polite"
         className="inline-flex size-8 items-center justify-center text-muted-foreground"
         title={t('reconnecting')}
       >
