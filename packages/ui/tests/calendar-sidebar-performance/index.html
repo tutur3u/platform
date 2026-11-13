@@ -1,0 +1,96 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Synthetic Calendar sidebar performance</title>
+    <script>
+      window.calendarPerformance = { shifts: [], lcp: [], errors: [] };
+      for (const type of ['layout-shift', 'largest-contentful-paint']) {
+        new PerformanceObserver((list) => {
+          for (const entry of list.getEntries()) {
+            if (type === 'layout-shift') {
+              window.calendarPerformance.shifts.push({
+                value: entry.value,
+                time: entry.startTime,
+                hadRecentInput: entry.hadRecentInput,
+              });
+            } else {
+              window.calendarPerformance.lcp.push({
+                time: entry.startTime,
+                size: entry.size,
+                tag: entry.element?.tagName,
+                text: entry.element?.textContent?.slice(0, 80),
+              });
+            }
+          }
+        }).observe({ type, buffered: true });
+      }
+      addEventListener('error', (event) => {
+        window.calendarPerformance.errors.push(event.message);
+      });
+      addEventListener('unhandledrejection', (event) => {
+        window.calendarPerformance.errors.push(String(event.reason));
+      });
+      window.calendarPerformance.sample = (duration = 450) =>
+        new Promise((resolve) => {
+          const start = performance.now();
+          const frames = [];
+          const rect = (selector) => {
+            const node = document.querySelector(selector);
+            return node?.getBoundingClientRect().toJSON();
+          };
+          const tick = () => {
+            frames.push({
+              time: performance.now() - start,
+              grid: rect('[data-testid="calendar-grid"]'),
+              sidebar: rect('aside'),
+            });
+            if (performance.now() - start < duration) requestAnimationFrame(tick);
+            else resolve(frames);
+          };
+          requestAnimationFrame(tick);
+        });
+      window.calendarPerformance.report = () => {
+        let cls = 0;
+        let session = 0;
+        let sessionStart = 0;
+        let last = 0;
+        const metrics = window.calendarPerformance;
+        for (const shift of metrics.shifts) {
+          if (shift.hadRecentInput) continue;
+          if (shift.time - last < 1000 && shift.time - sessionStart < 5000) {
+            session += shift.value;
+          } else {
+            sessionStart = shift.time;
+            session = shift.value;
+          }
+          last = shift.time;
+          cls = Math.max(cls, session);
+        }
+        const resources = performance.getEntriesByType('resource').map((entry) => ({
+          name: entry.name,
+          duration: entry.duration,
+          bytes: entry.decodedBodySize,
+          transfer: entry.transferSize,
+        }));
+        return {
+          viewport: [innerWidth, innerHeight],
+          rendered: document.querySelector('h1')?.textContent === 'Synthetic Calendar week',
+          errorOverlay: Boolean(document.querySelector('vite-error-overlay')),
+          userAgent: navigator.userAgent,
+          url: location.href,
+          cls,
+          lcp: metrics.lcp.at(-1) ?? null,
+          shifts: metrics.shifts,
+          errors: metrics.errors,
+          resources,
+        };
+      };
+    </script>
+  </head>
+  <body>
+    <div id="root"></div>
+    <script type="module" src="/main.tsx"></script>
+  </body>
+</html>

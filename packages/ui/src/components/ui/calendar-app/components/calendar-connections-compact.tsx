@@ -28,7 +28,7 @@ import {
 } from '../../dialog';
 import { Popover, PopoverContent, PopoverTrigger } from '../../popover';
 import { Separator } from '../../separator';
-import { CalendarConnectionsSettingsContent } from './calendar-connections-settings-content';
+import { CalendarConnectionsSettingsContent } from './calendar-connections-settings-lazy';
 import {
   CalendarSyncRecovery,
   needsCalendarSyncAttention,

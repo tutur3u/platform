@@ -2,7 +2,7 @@
 
 import { RefreshCw, Settings } from '@tuturuuu/icons';
 import { Button } from '@tuturuuu/ui/button';
-import { CalendarConnectionsSettingsContent } from '@tuturuuu/ui/calendar-app/components/calendar-connections-settings-content';
+import { CalendarConnectionsSettingsContent } from '@tuturuuu/ui/calendar-app/components/calendar-connections-settings-lazy';
 import { useCalendarConnectionsManager } from '@tuturuuu/ui/calendar-app/components/calendar-connections-unified';
 import {
   Dialog,

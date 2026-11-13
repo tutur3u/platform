@@ -9,7 +9,7 @@ import {
   DialogTitle,
   DialogTrigger,
 } from '../../dialog';
-import { CalendarConnectionsSettingsContent } from './calendar-connections-settings-content';
+import { CalendarConnectionsSettingsContent } from './calendar-connections-settings-lazy';
 import {
   isCalendarSyncActive,
   needsCalendarSyncAttention,
