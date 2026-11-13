@@ -6,6 +6,7 @@ import {
   prepareRoadmapRequest,
   roadmapBoundary,
   selectedBasepath,
+  withoutEnglishPrefix,
 } from './request-boundary.ts';
 import {
   withRoadmapCachePolicy,
@@ -374,4 +375,73 @@ test('every public page and language shares the document cache; nothing next to 
     'https://roadmap.tuturuuu.com/vi',
   ])
     assert.equal(control(new Request(url)), PRIVATE_RESPONSE_CACHE, url);
+});
+
+test('D79: old English links reach the unprefixed English page in one 301', () => {
+  for (const [url, location] of [
+    // Canonical host.
+    ['https://tuturuuu.com/roadmap/en', 'https://tuturuuu.com/roadmap'],
+    ['https://tuturuuu.com/roadmap/en/', 'https://tuturuuu.com/roadmap'],
+    ['https://tuturuuu.com/roadmap/en?x=1', 'https://tuturuuu.com/roadmap?x=1'],
+    [
+      'https://tuturuuu.com/roadmap/en/workshops/edufest-2026',
+      'https://tuturuuu.com/roadmap/workshops/edufest-2026',
+    ],
+    [
+      'https://tuturuuu.com/roadmap/en/workshops/edufest-2026/?x=1',
+      'https://tuturuuu.com/roadmap/workshops/edufest-2026?x=1',
+    ],
+    // Legacy host: straight to the final page, never via /roadmap/en.
+    ['https://roadmap.tuturuuu.com/en', 'https://tuturuuu.com/roadmap'],
+    ['https://roadmap.tuturuuu.com/en?x=1', 'https://tuturuuu.com/roadmap?x=1'],
+    [
+      'https://roadmap.tuturuuu.com/en/workshops/edufest-2026',
+      'https://tuturuuu.com/roadmap/workshops/edufest-2026',
+    ],
+    [
+      'https://roadmap.tuturuuu.com/roadmap/en/workshops/edufest-2026',
+      'https://tuturuuu.com/roadmap/workshops/edufest-2026',
+    ],
+  ] as const) {
+    const redirect = roadmapBoundary(new Request(url));
+    assert.equal(redirect?.status, 301, url);
+    assert.equal(redirect?.headers.get('location'), location, url);
+    // One hop: the target itself is served, not redirected again.
+    assert.equal(roadmapBoundary(new Request(location)), undefined, location);
+    // Redirects never enter the public document cache.
+    assert.equal(
+      control(new Request(url), redirect as Response),
+      PRIVATE_RESPONSE_CACHE
+    );
+  }
+});
+
+test('D79: only an exact en segment redirects; other pages are untouched', () => {
+  for (const url of [
+    'https://tuturuuu.com/roadmap/english',
+    'https://tuturuuu.com/roadmap/enx',
+    'https://tuturuuu.com/roadmap/vi',
+    'https://tuturuuu.com/roadmap/vi/workshops/edufest-2026',
+    'https://tuturuuu.com/roadmap/workshops/edufest-2026',
+  ])
+    assert.equal(roadmapBoundary(new Request(url)), undefined, url);
+  assert.equal(
+    roadmapBoundary(
+      new Request('https://roadmap.tuturuuu.com/english')
+    )?.headers.get('location'),
+    'https://tuturuuu.com/roadmap/english'
+  );
+  for (const path of ['/roadmap/english', '/roadmap/enx', '/roadmap/vi'])
+    assert.equal(withoutEnglishPrefix(path), null, path);
+  // Broken variant: a plain prefix match would rewrite /roadmap/english.
+  const naive = (path: string) =>
+    path.startsWith('/roadmap/en') ? `/roadmap${path.slice(11)}` : null;
+  assert.equal(naive('/roadmap/english'), '/roadmapglish');
+  // Broken variant: the old satellite mapping kept /roadmap/en (a 404 hop).
+  assert.notEqual(
+    roadmapBoundary(
+      new Request('https://roadmap.tuturuuu.com/en')
+    )?.headers.get('location'),
+    'https://tuturuuu.com/roadmap/en'
+  );
 });
