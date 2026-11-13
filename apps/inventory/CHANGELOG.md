@@ -1,5 +1,30 @@
 # Changelog
 
+## [0.39.0](https://github.com/tutur3u/platform/compare/inventory-v0.38.0...inventory-v0.39.0) (2026-11-13)
+
+
+### Features
+
+* branded, theme-aware not-found and error page for every app ([#8189](https://github.com/tutur3u/platform/issues/8189)) ([1239360](https://github.com/tutur3u/platform/commit/123936030549e1e275ccd2b5256c9286a9f54a32))
+* **database:** add workspace domains, entitlement and permissions ([3fa8b0d](https://github.com/tutur3u/platform/commit/3fa8b0dd8af1a3aa4bdbb7f59e97167e84d74115))
+* **ui:** add actor-scoped workspace picker shortcuts ([#8170](https://github.com/tutur3u/platform/issues/8170)) ([d9a512c](https://github.com/tutur3u/platform/commit/d9a512cade746445f2b96535b8f50e8f7ee1d066))
+* **ui:** pilot @ui-sdk/core for category keyboard reordering ([#8250](https://github.com/tutur3u/platform/issues/8250)) ([7b0eee6](https://github.com/tutur3u/platform/commit/7b0eee600b935e394b210a4590b670947b9a606f))
+* **workspace-domains:** read the SaaS zone, apex and fallback origin from config ([8a38689](https://github.com/tutur3u/platform/commit/8a386894505308f1e4ceb3a826caa80ade76f40f))
+* **workspace-domains:** workspace custom domains (paid add-on, staff bypass, edge Worker) ([#8157](https://github.com/tutur3u/platform/issues/8157)) ([11a94f0](https://github.com/tutur3u/platform/commit/11a94f0953a2fa6632c73eadfc35182229dda48c))
+
+
+### Bug Fixes
+
+* **encryption:** refuse to store plaintext when no workspace key is available ([#8086](https://github.com/tutur3u/platform/issues/8086)) ([34616cf](https://github.com/tutur3u/platform/commit/34616cf49cebc206d15e9ccb4cc9813dc56e5019))
+* **fee-lock:** guard snapshot revision in suggestion route and format oxc files ([#7861](https://github.com/tutur3u/platform/issues/7861)) ([a2eaf8f](https://github.com/tutur3u/platform/commit/a2eaf8ff2b1e730b76121c50295f4dd99f0b3b89))
+* **inventory:** align offline cookie fixture with mounted session policy ([#8179](https://github.com/tutur3u/platform/issues/8179)) ([c224d55](https://github.com/tutur3u/platform/commit/c224d55f5be31bf79fc3e1379f3e6613603142c2))
+* **inventory:** rebuild the native Cloudflare cutover on current main ([04ac227](https://github.com/tutur3u/platform/commit/04ac2275249b37df5058e8ffea3784711f84b327))
+* **inventory:** supply required response-policy fixture bindings ([#7897](https://github.com/tutur3u/platform/issues/7897)) ([b646bb8](https://github.com/tutur3u/platform/commit/b646bb89f867491fdf70503c52baa42f05ff5dbd))
+* **security:** enforce exact shared Worker HSTS boundary ([#8226](https://github.com/tutur3u/platform/issues/8226)) ([95fad90](https://github.com/tutur3u/platform/commit/95fad90e527fe3a2a24b3e0df12e3445901a7cbe))
+* **start-bridge:** send server-function payloads in POST bodies ([#8239](https://github.com/tutur3u/platform/issues/8239)) ([028d2a7](https://github.com/tutur3u/platform/commit/028d2a7c98fdd7fbd48ff8b263b65bc5007177fe))
+* **tasks:** compose POST transport with current main ([1ff0fc7](https://github.com/tutur3u/platform/commit/1ff0fc7806853b0be9ac53d75c73d0677089ad68))
+* **ui:** compose workspace reliability with current main ([07bffbe](https://github.com/tutur3u/platform/commit/07bffbe850fc6bf345f8d863c10feae66b3ccb70))
+
 ## [0.38.0](https://github.com/tutur3u/platform/compare/inventory-v0.37.0...inventory-v0.38.0) (2026-11-08)
 
 

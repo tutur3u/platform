@@ -1,5 +1,27 @@
 # Changelog
 
+## [0.38.0](https://github.com/tutur3u/platform/compare/calendar-v0.37.0...calendar-v0.38.0) (2026-11-13)
+
+
+### Features
+
+* branded, theme-aware not-found and error page for every app ([#8189](https://github.com/tutur3u/platform/issues/8189)) ([1239360](https://github.com/tutur3u/platform/commit/123936030549e1e275ccd2b5256c9286a9f54a32))
+* **database:** add workspace domains, entitlement and permissions ([3fa8b0d](https://github.com/tutur3u/platform/commit/3fa8b0dd8af1a3aa4bdbb7f59e97167e84d74115))
+* **ui:** add actor-scoped workspace picker shortcuts ([#8170](https://github.com/tutur3u/platform/issues/8170)) ([d9a512c](https://github.com/tutur3u/platform/commit/d9a512cade746445f2b96535b8f50e8f7ee1d066))
+* **ui:** pilot @ui-sdk/core for category keyboard reordering ([#8250](https://github.com/tutur3u/platform/issues/8250)) ([7b0eee6](https://github.com/tutur3u/platform/commit/7b0eee600b935e394b210a4590b670947b9a606f))
+* **workspace-domains:** read the SaaS zone, apex and fallback origin from config ([8a38689](https://github.com/tutur3u/platform/commit/8a386894505308f1e4ceb3a826caa80ade76f40f))
+* **workspace-domains:** workspace custom domains (paid add-on, staff bypass, edge Worker) ([#8157](https://github.com/tutur3u/platform/issues/8157)) ([11a94f0](https://github.com/tutur3u/platform/commit/11a94f0953a2fa6632c73eadfc35182229dda48c))
+
+
+### Bug Fixes
+
+* **calendar:** bound the stored sync diagnostics and redact secrets from error messages ([#8068](https://github.com/tutur3u/platform/issues/8068)) ([c9117bc](https://github.com/tutur3u/platform/commit/c9117bc953dde3bf2456a34011cf016ad875ed89))
+* **edge:** reject Calendar and Mail provider redirects ([#7907](https://github.com/tutur3u/platform/issues/7907)) ([506c1ea](https://github.com/tutur3u/platform/commit/506c1ea9abce9c3903d977e5983e3b97d37a5a07))
+* **encryption:** refuse to store plaintext when no workspace key is available ([#8086](https://github.com/tutur3u/platform/issues/8086)) ([34616cf](https://github.com/tutur3u/platform/commit/34616cf49cebc206d15e9ccb4cc9813dc56e5019))
+* **start-bridge:** send server-function payloads in POST bodies ([#8239](https://github.com/tutur3u/platform/issues/8239)) ([028d2a7](https://github.com/tutur3u/platform/commit/028d2a7c98fdd7fbd48ff8b263b65bc5007177fe))
+* **tasks:** compose POST transport with current main ([1ff0fc7](https://github.com/tutur3u/platform/commit/1ff0fc7806853b0be9ac53d75c73d0677089ad68))
+* **ui:** compose workspace reliability with current main ([07bffbe](https://github.com/tutur3u/platform/commit/07bffbe850fc6bf345f8d863c10feae66b3ccb70))
+
 ## [0.37.0](https://github.com/tutur3u/platform/compare/calendar-v0.36.0...calendar-v0.37.0) (2026-11-08)
 
 

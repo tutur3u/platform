@@ -1,6 +1,6 @@
 {
   "name": "@tuturuuu/marketing-shell",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "private": true,
   "type": "module",
   "description": "One marketing layout (navbar, footer, fonts, tokens) for every Tuturuuu marketing page, framework-agnostic.",

@@ -1,5 +1,20 @@
 # Changelog
 
+## [0.31.0](https://github.com/tutur3u/platform/compare/sdk-v0.30.0...sdk-v0.31.0) (2026-11-13)
+
+
+### Features
+
+* **sdk:** add ttr domains commands ([c42f0a0](https://github.com/tutur3u/platform/commit/c42f0a06713956a3d9b619e574e1d564a05a27e0))
+* **workspace-domains:** read the SaaS zone, apex and fallback origin from config ([8a38689](https://github.com/tutur3u/platform/commit/8a386894505308f1e4ceb3a826caa80ade76f40f))
+* **workspace-domains:** workspace custom domains (paid add-on, staff bypass, edge Worker) ([#8157](https://github.com/tutur3u/platform/issues/8157)) ([11a94f0](https://github.com/tutur3u/platform/commit/11a94f0953a2fa6632c73eadfc35182229dda48c))
+
+
+### Bug Fixes
+
+* **tasks:** compose POST transport with current main ([1ff0fc7](https://github.com/tutur3u/platform/commit/1ff0fc7806853b0be9ac53d75c73d0677089ad68))
+* **ui:** compose workspace reliability with current main ([07bffbe](https://github.com/tutur3u/platform/commit/07bffbe850fc6bf345f8d863c10feae66b3ccb70))
+
 ## [0.30.0](https://github.com/tutur3u/platform/compare/sdk-v0.29.0...sdk-v0.30.0) (2026-11-08)
 
 

@@ -5,6 +5,13 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.7.1](https://github.com/tutur3u/platform/compare/supabase-v0.7.0...supabase-v0.7.1) (2026-11-13)
+
+
+### Bug Fixes
+
+* **auth:** keep the caller user-agent on server sessions ([#7868](https://github.com/tutur3u/platform/issues/7868)) ([eff3792](https://github.com/tutur3u/platform/commit/eff3792d6baa8f8ae4450f2aa1bef93c49d2af85))
+
 ## [0.7.0](https://github.com/tutur3u/platform/compare/supabase-v0.6.0...supabase-v0.7.0) (2026-11-08)
 
 

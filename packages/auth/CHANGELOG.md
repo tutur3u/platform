@@ -1,5 +1,20 @@
 # Changelog
 
+## [0.9.0](https://github.com/tutur3u/platform/compare/auth-v0.8.0...auth-v0.9.0) (2026-11-13)
+
+
+### Features
+
+* **auth:** same-origin sign-in return for apex-mounted apps ([#8095](https://github.com/tutur3u/platform/issues/8095)) ([966bad2](https://github.com/tutur3u/platform/commit/966bad2d958e3d529b7daa940f350e833c13c960))
+
+
+### Bug Fixes
+
+* **auth,gateway:** keep apex sign-in returns on the public host ([#8087](https://github.com/tutur3u/platform/issues/8087)) ([2c90f3b](https://github.com/tutur3u/platform/commit/2c90f3b32e62091ac988957f9d7512125ce64a9d))
+* **auth:** CSRF check no longer bypassed by a junk Bearer on mounts ([#8101](https://github.com/tutur3u/platform/issues/8101)) ([8c8d949](https://github.com/tutur3u/platform/commit/8c8d94920a43d419df8191230fdd3dd68435f8b9))
+* **start-bridge:** mounted verify never clears the session cookie ([#8100](https://github.com/tutur3u/platform/issues/8100)) ([c2c0019](https://github.com/tutur3u/platform/commit/c2c001999475e3c10dfcc2c5a06562ee1ddf945c))
+* **web,auth:** Web logout endpoints need same-origin proof without a cookie ([#8105](https://github.com/tutur3u/platform/issues/8105)) ([4275283](https://github.com/tutur3u/platform/commit/4275283548b0b4b4f7222cbf6d9baa314165492f))
+
 ## [0.8.0](https://github.com/tutur3u/platform/compare/auth-v0.7.0...auth-v0.8.0) (2026-11-08)
 
 

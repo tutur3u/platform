@@ -1,5 +1,27 @@
 # Changelog
 
+## [0.33.0](https://github.com/tutur3u/platform/compare/mail-v0.32.0...mail-v0.33.0) (2026-11-13)
+
+
+### Features
+
+* branded, theme-aware not-found and error page for every app ([#8189](https://github.com/tutur3u/platform/issues/8189)) ([1239360](https://github.com/tutur3u/platform/commit/123936030549e1e275ccd2b5256c9286a9f54a32))
+* **database:** add workspace domains, entitlement and permissions ([3fa8b0d](https://github.com/tutur3u/platform/commit/3fa8b0dd8af1a3aa4bdbb7f59e97167e84d74115))
+* **start-bridge,cors:** enforce CSRF on mounts and tighten first-party CORS ([#8096](https://github.com/tutur3u/platform/issues/8096)) ([2abcaa0](https://github.com/tutur3u/platform/commit/2abcaa092a9ea1f50d3243c2d9f29101ac0eabf6))
+* **ui:** add actor-scoped workspace picker shortcuts ([#8170](https://github.com/tutur3u/platform/issues/8170)) ([d9a512c](https://github.com/tutur3u/platform/commit/d9a512cade746445f2b96535b8f50e8f7ee1d066))
+* **ui:** pilot @ui-sdk/core for category keyboard reordering ([#8250](https://github.com/tutur3u/platform/issues/8250)) ([7b0eee6](https://github.com/tutur3u/platform/commit/7b0eee600b935e394b210a4590b670947b9a606f))
+* **workspace-domains:** read the SaaS zone, apex and fallback origin from config ([8a38689](https://github.com/tutur3u/platform/commit/8a386894505308f1e4ceb3a826caa80ade76f40f))
+* **workspace-domains:** workspace custom domains (paid add-on, staff bypass, edge Worker) ([#8157](https://github.com/tutur3u/platform/issues/8157)) ([11a94f0](https://github.com/tutur3u/platform/commit/11a94f0953a2fa6632c73eadfc35182229dda48c))
+
+
+### Bug Fixes
+
+* **cloudflare:** add HSTS to bespoke Worker responses ([#8238](https://github.com/tutur3u/platform/issues/8238)) ([9d38c27](https://github.com/tutur3u/platform/commit/9d38c271de6d42978d5748b1fc662356ca19db63))
+* **edge:** reject Calendar and Mail provider redirects ([#7907](https://github.com/tutur3u/platform/issues/7907)) ([506c1ea](https://github.com/tutur3u/platform/commit/506c1ea9abce9c3903d977e5983e3b97d37a5a07))
+* **start-bridge:** send server-function payloads in POST bodies ([#8239](https://github.com/tutur3u/platform/issues/8239)) ([028d2a7](https://github.com/tutur3u/platform/commit/028d2a7c98fdd7fbd48ff8b263b65bc5007177fe))
+* **tasks:** compose POST transport with current main ([1ff0fc7](https://github.com/tutur3u/platform/commit/1ff0fc7806853b0be9ac53d75c73d0677089ad68))
+* **ui:** compose workspace reliability with current main ([07bffbe](https://github.com/tutur3u/platform/commit/07bffbe850fc6bf345f8d863c10feae66b3ccb70))
+
 ## [0.32.0](https://github.com/tutur3u/platform/compare/mail-v0.31.0...mail-v0.32.0) (2026-11-08)
 
 

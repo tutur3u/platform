@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.7.10](https://github.com/tutur3u/platform/compare/users-ui-v0.7.9...users-ui-v0.7.10) (2026-11-13)
+
+
+### Bug Fixes
+
+* **reports:** block approval and sending without feedback ([#7893](https://github.com/tutur3u/platform/issues/7893)) ([e1a34a4](https://github.com/tutur3u/platform/commit/e1a34a4b38c387640a88312ce3139df30eecfefe))
+
 ## [0.7.9](https://github.com/tutur3u/platform/compare/users-ui-v0.7.8...users-ui-v0.7.9) (2026-10-17)
 
 

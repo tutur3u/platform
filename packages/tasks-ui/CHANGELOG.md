@@ -1,5 +1,18 @@
 # Changelog
 
+## [0.19.0](https://github.com/tutur3u/platform/compare/tasks-ui-v0.18.0...tasks-ui-v0.19.0) (2026-11-13)
+
+
+### Features
+
+* **settings:** flatten board layout and inset the settings dialog ([#7920](https://github.com/tutur3u/platform/issues/7920)) ([e1518c1](https://github.com/tutur3u/platform/commit/e1518c1194ae6a8092056a80b6d53e4824f29a04))
+* **tasks-ui:** route bare Tasks API fetches and root links through the app base (one-origin T4) ([#8113](https://github.com/tutur3u/platform/issues/8113)) ([d71e054](https://github.com/tutur3u/platform/commit/d71e054b1bf5e6d8ddfedc3179ada74c540c0be4))
+
+
+### Bug Fixes
+
+* **tasks:** scope people filters and protect private member emails ([#7914](https://github.com/tutur3u/platform/issues/7914)) ([596f18a](https://github.com/tutur3u/platform/commit/596f18afbe8756ebdb9ed13c6b1759841ad18452))
+
 ## [0.18.0](https://github.com/tutur3u/platform/compare/tasks-ui-v0.17.3...tasks-ui-v0.18.0) (2026-11-08)
 
 

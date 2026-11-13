@@ -1,5 +1,34 @@
 # Changelog
 
+## [0.37.0](https://github.com/tutur3u/platform/compare/meet-v0.36.0...meet-v0.37.0) (2026-11-13)
+
+
+### Features
+
+* branded, theme-aware not-found and error page for every app ([#8189](https://github.com/tutur3u/platform/issues/8189)) ([1239360](https://github.com/tutur3u/platform/commit/123936030549e1e275ccd2b5256c9286a9f54a32))
+* **database:** add workspace domains, entitlement and permissions ([3fa8b0d](https://github.com/tutur3u/platform/commit/3fa8b0dd8af1a3aa4bdbb7f59e97167e84d74115))
+* **meet:** add named media scrim token for participant name bar ([#7948](https://github.com/tutur3u/platform/issues/7948)) ([dcdd4d4](https://github.com/tutur3u/platform/commit/dcdd4d41a455afa9eb364b2559b6b4389e110c2e))
+* **meet:** classroom room caps and host admission ([#8141](https://github.com/tutur3u/platform/issues/8141)) ([d827c7b](https://github.com/tutur3u/platform/commit/d827c7b86a29fd1b129311a84d38bc1fca62b7ff))
+* **meet:** floating self-preview and calmer ended screen ([#7924](https://github.com/tutur3u/platform/issues/7924)) ([eb8b552](https://github.com/tutur3u/platform/commit/eb8b5528e9e0aa3c2a89c204982378b1fbda540a))
+* **ui:** add actor-scoped workspace picker shortcuts ([#8170](https://github.com/tutur3u/platform/issues/8170)) ([d9a512c](https://github.com/tutur3u/platform/commit/d9a512cade746445f2b96535b8f50e8f7ee1d066))
+* **ui:** pilot @ui-sdk/core for category keyboard reordering ([#8250](https://github.com/tutur3u/platform/issues/8250)) ([7b0eee6](https://github.com/tutur3u/platform/commit/7b0eee600b935e394b210a4590b670947b9a606f))
+* **workspace-domains:** read the SaaS zone, apex and fallback origin from config ([8a38689](https://github.com/tutur3u/platform/commit/8a386894505308f1e4ceb3a826caa80ade76f40f))
+* **workspace-domains:** workspace custom domains (paid add-on, staff bypass, edge Worker) ([#8157](https://github.com/tutur3u/platform/issues/8157)) ([11a94f0](https://github.com/tutur3u/platform/commit/11a94f0953a2fa6632c73eadfc35182229dda48c))
+
+
+### Bug Fixes
+
+* **meet:** gate private Mira on durable participant consent ([#8274](https://github.com/tutur3u/platform/issues/8274)) ([061a566](https://github.com/tutur3u/platform/commit/061a566123e309f9004eb0793cd9a59016924c04))
+* **meet:** inline the Mira mark and tighten the preparing screen ([#7922](https://github.com/tutur3u/platform/issues/7922)) ([31e74be](https://github.com/tutur3u/platform/commit/31e74be24b981b1e70ab372ee3c9f7cfafd7054b))
+* **meet:** make Private Mira choices, leave and denials visible ([#8287](https://github.com/tutur3u/platform/issues/8287)) ([aad395d](https://github.com/tutur3u/platform/commit/aad395d94983c82d4623086e269d53f540fbae4e))
+* **meet:** make the Meet AI gate default-off (allowlist-only, EC denied in code) ([#7518](https://github.com/tutur3u/platform/issues/7518)) ([660fa01](https://github.com/tutur3u/platform/commit/660fa0199d80c1b332a652b4d37958a20c738ce3))
+* **meet:** narrow erased transcript segments before rendering ([#7904](https://github.com/tutur3u/platform/issues/7904)) ([26ee21c](https://github.com/tutur3u/platform/commit/26ee21ce0869f6696aa3df76d599b0774b696ce2))
+* **meet:** prepare transcript readers for erasure markers ([#7517](https://github.com/tutur3u/platform/issues/7517)) ([f35343e](https://github.com/tutur3u/platform/commit/f35343e88998b4748ffe459a86debf26fb6bfb2c))
+* **meet:** refuse legacy transcription permanently and retire the old recorder ([#7506](https://github.com/tutur3u/platform/issues/7506)) ([5ac0f24](https://github.com/tutur3u/platform/commit/5ac0f241be51d094ca2e515015a5307a386d342e))
+* **start-bridge:** send server-function payloads in POST bodies ([#8239](https://github.com/tutur3u/platform/issues/8239)) ([028d2a7](https://github.com/tutur3u/platform/commit/028d2a7c98fdd7fbd48ff8b263b65bc5007177fe))
+* **tasks:** compose POST transport with current main ([1ff0fc7](https://github.com/tutur3u/platform/commit/1ff0fc7806853b0be9ac53d75c73d0677089ad68))
+* **ui:** compose workspace reliability with current main ([07bffbe](https://github.com/tutur3u/platform/commit/07bffbe850fc6bf345f8d863c10feae66b3ccb70))
+
 ## [0.36.0](https://github.com/tutur3u/platform/compare/meet-v0.35.0...meet-v0.36.0) (2026-11-08)
 
 

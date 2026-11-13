@@ -1,5 +1,18 @@
 # Changelog
 
+## [0.8.0](https://github.com/tutur3u/platform/compare/playground-v0.7.0...playground-v0.8.0) (2026-11-13)
+
+
+### Features
+
+* branded, theme-aware not-found and error page for every app ([#8189](https://github.com/tutur3u/platform/issues/8189)) ([1239360](https://github.com/tutur3u/platform/commit/123936030549e1e275ccd2b5256c9286a9f54a32))
+
+
+### Bug Fixes
+
+* **security:** enforce exact shared Worker HSTS boundary ([#8226](https://github.com/tutur3u/platform/issues/8226)) ([95fad90](https://github.com/tutur3u/platform/commit/95fad90e527fe3a2a24b3e0df12e3445901a7cbe))
+* **start-bridge:** send server-function payloads in POST bodies ([#8239](https://github.com/tutur3u/platform/issues/8239)) ([028d2a7](https://github.com/tutur3u/platform/commit/028d2a7c98fdd7fbd48ff8b263b65bc5007177fe))
+
 ## [0.7.0](https://github.com/tutur3u/platform/compare/playground-v0.6.1...playground-v0.7.0) (2026-11-08)
 
 

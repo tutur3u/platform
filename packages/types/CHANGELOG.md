@@ -1,5 +1,28 @@
 # Changelog
 
+## [0.39.0](https://github.com/tutur3u/platform/compare/types-v0.38.0...types-v0.39.0) (2026-11-13)
+
+
+### Features
+
+* **cron-control:** schedule bounded AI Studio retention with a dry-run default ([#7524](https://github.com/tutur3u/platform/issues/7524)) ([41b40a0](https://github.com/tutur3u/platform/commit/41b40a09dfda9d7b58b59b516e5f7a6af06eee79))
+* **database:** add workspace document parent and position ([9616c7c](https://github.com/tutur3u/platform/commit/9616c7c1759a91fbb98626a92aeb193a8dcccab6))
+* **database:** add workspace document parent and position ([#7877](https://github.com/tutur3u/platform/issues/7877)) ([9616c7c](https://github.com/tutur3u/platform/commit/9616c7c1759a91fbb98626a92aeb193a8dcccab6))
+* **database:** add workspace domains, entitlement and permissions ([3fa8b0d](https://github.com/tutur3u/platform/commit/3fa8b0dd8af1a3aa4bdbb7f59e97167e84d74115))
+* **fee-lock:** discard a new linked invoice in one transaction ([bd1b2ec](https://github.com/tutur3u/platform/commit/bd1b2eccd41e096d1a6ce6b4c0262d850a0d6078))
+* **fee-lock:** PR-12a discard a new linked invoice in one transaction (M5) ([#7561](https://github.com/tutur3u/platform/issues/7561)) ([bd1b2ec](https://github.com/tutur3u/platform/commit/bd1b2eccd41e096d1a6ce6b4c0262d850a0d6078))
+* **ieeai:** free-only auto-accept for ieeai-stats invites (v1) ([#8246](https://github.com/tutur3u/platform/issues/8246)) ([585cbd1](https://github.com/tutur3u/platform/commit/585cbd13b25372da7f29b79e5e14846568490190))
+* **meet:** add self-capture session, consent and read contracts ([#7309](https://github.com/tutur3u/platform/issues/7309)) ([52c690c](https://github.com/tutur3u/platform/commit/52c690c802e60099dd3d1df8122d2ef09f922a59))
+* **web:** add CMS page version edit, preview and publish routes ([#7591](https://github.com/tutur3u/platform/issues/7591)) ([97d33b0](https://github.com/tutur3u/platform/commit/97d33b089e9f29dcce2a08ece86632710b5f87ea))
+* **workspace-domains:** workspace custom domains (paid add-on, staff bypass, edge Worker) ([#8157](https://github.com/tutur3u/platform/issues/8157)) ([11a94f0](https://github.com/tutur3u/platform/commit/11a94f0953a2fa6632c73eadfc35182229dda48c))
+
+
+### Bug Fixes
+
+* **devbox:** bind run claims and leases to their owners ([#7130](https://github.com/tutur3u/platform/issues/7130)) ([cd92cc7](https://github.com/tutur3u/platform/commit/cd92cc7d7a6ee38069b683888ff21bd09bff0119))
+* **tasks:** compose POST transport with current main ([1ff0fc7](https://github.com/tutur3u/platform/commit/1ff0fc7806853b0be9ac53d75c73d0677089ad68))
+* **ui:** compose workspace reliability with current main ([07bffbe](https://github.com/tutur3u/platform/commit/07bffbe850fc6bf345f8d863c10feae66b3ccb70))
+
 ## [0.38.0](https://github.com/tutur3u/platform/compare/types-v0.37.0...types-v0.38.0) (2026-11-08)
 
 

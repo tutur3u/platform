@@ -1,5 +1,38 @@
 # Changelog
 
+## [0.42.0](https://github.com/tutur3u/platform/compare/ui-v0.41.0...ui-v0.42.0) (2026-11-13)
+
+
+### Features
+
+* branded, theme-aware not-found and error page for every app ([#8189](https://github.com/tutur3u/platform/issues/8189)) ([1239360](https://github.com/tutur3u/platform/commit/123936030549e1e275ccd2b5256c9286a9f54a32))
+* **fee-lock:** PR-07 (3/3) flag-gated route, nav item and pending-tab button ([#7543](https://github.com/tutur3u/platform/issues/7543)) ([f53403a](https://github.com/tutur3u/platform/commit/f53403a92a9dca661734a5c6027e073754ba6880))
+* **settings:** flatten board layout and inset the settings dialog ([#7920](https://github.com/tutur3u/platform/issues/7920)) ([e1518c1](https://github.com/tutur3u/platform/commit/e1518c1194ae6a8092056a80b6d53e4824f29a04))
+* **ui:** add actor-scoped workspace picker shortcuts ([#8170](https://github.com/tutur3u/platform/issues/8170)) ([d9a512c](https://github.com/tutur3u/platform/commit/d9a512cade746445f2b96535b8f50e8f7ee1d066))
+* **ui:** add localized experimental and beta status badges ([#7879](https://github.com/tutur3u/platform/issues/7879)) ([eb67676](https://github.com/tutur3u/platform/commit/eb6767651ddaaa7cc77c6dcbd519b7372fa2dd16))
+* **ui:** mount-aware Tasks app and API URLs (one-origin T3) ([#8111](https://github.com/tutur3u/platform/issues/8111)) ([d02d73b](https://github.com/tutur3u/platform/commit/d02d73b75838e3aba44c83e37f1e5b23a9194597))
+* **ui:** pilot @ui-sdk/core for category keyboard reordering ([#8250](https://github.com/tutur3u/platform/issues/8250)) ([7b0eee6](https://github.com/tutur3u/platform/commit/7b0eee600b935e394b210a4590b670947b9a606f))
+* **ui:** share the profile avatar editor with workspaces ([#7871](https://github.com/tutur3u/platform/issues/7871)) ([6b04c23](https://github.com/tutur3u/platform/commit/6b04c2398038a5b86dab1bf4517bb5564911fd37))
+* **web:** move app marketing pages under products ([#6795](https://github.com/tutur3u/platform/issues/6795)) ([3fe3bdb](https://github.com/tutur3u/platform/commit/3fe3bdbc5a6426180f26fe48ade0f6927731060a))
+
+
+### Bug Fixes
+
+* **auth:** keep the caller user-agent on server sessions ([#7868](https://github.com/tutur3u/platform/issues/7868)) ([eff3792](https://github.com/tutur3u/platform/commit/eff3792d6baa8f8ae4450f2aa1bef93c49d2af85))
+* **ci:** align picker fixture and Pay contract fences ([#8180](https://github.com/tutur3u/platform/issues/8180)) ([b2752ac](https://github.com/tutur3u/platform/commit/b2752acdccf6fa2372e58144d0f57b1084852e27))
+* **finance:** resolve invoice creators with invoice permissions ([8993b82](https://github.com/tutur3u/platform/commit/8993b82f5337697c7b7c14c395cd51eb97c18442))
+* **satellites:** shared workspace picker — Web invitations routing + picker layout ([#8273](https://github.com/tutur3u/platform/issues/8273)) ([38e21e3](https://github.com/tutur3u/platform/commit/38e21e33e9daeb855c707526108fb9dcee0f0522))
+* **tasks:** scope people filters and protect private member emails ([#7914](https://github.com/tutur3u/platform/issues/7914)) ([596f18a](https://github.com/tutur3u/platform/commit/596f18afbe8756ebdb9ed13c6b1759841ad18452))
+* **ui:** make the hover-expand sidebar a layout-shift-free overlay ([#8090](https://github.com/tutur3u/platform/issues/8090)) ([a1cb136](https://github.com/tutur3u/platform/commit/a1cb1360e70798b0da26f061420f29e742411d74))
+* **ui:** preserve workspace choices when discovery fails ([def3b03](https://github.com/tutur3u/platform/commit/def3b0318292c36d21d48729e0fdd2b2bb49beb2))
+* **ui:** retain workspace choices after discovery errors ([#8159](https://github.com/tutur3u/platform/issues/8159)) ([d928e7b](https://github.com/tutur3u/platform/commit/d928e7b3be35d187f9a984ffd37d257e208f3f78))
+* **workspaces:** refresh accepted invitations and handle acceptance replay ([0ad899e](https://github.com/tutur3u/platform/commit/0ad899e88085ab96be49e99dea3f6b1883f8682c))
+
+
+### Performance Improvements
+
+* **marketing:** adopt shared shell and streamline landing ([#8129](https://github.com/tutur3u/platform/issues/8129)) ([5f510d6](https://github.com/tutur3u/platform/commit/5f510d6db991bd3792e697cc2ee3ff7d543295a1))
+
 ## [0.41.0](https://github.com/tutur3u/platform/compare/ui-v0.40.0...ui-v0.41.0) (2026-11-08)
 
 

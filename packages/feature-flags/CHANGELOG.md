@@ -1,5 +1,19 @@
 # Changelog
 
+## [1.1.0](https://github.com/tutur3u/platform/compare/feature-flags-v1.0.0...feature-flags-v1.1.0) (2026-11-13)
+
+
+### Features
+
+* **feature-flags:** add runtime controls with revisioned audit ([#7852](https://github.com/tutur3u/platform/issues/7852)) ([5c46f91](https://github.com/tutur3u/platform/commit/5c46f91b5cd3c8d9df3db833f8add139e0f729ba))
+* **tutoring:** gate parent message v2 by workspace config ([#7483](https://github.com/tutur3u/platform/issues/7483)) ([27ce3f5](https://github.com/tutur3u/platform/commit/27ce3f584ef69e340f388326763525c07e13b34c))
+
+
+### Bug Fixes
+
+* **ci:** restore reviewed main contracts and feedback fixtures ([#8211](https://github.com/tutur3u/platform/issues/8211)) ([bbbf404](https://github.com/tutur3u/platform/commit/bbbf404f9192b17bc7a831f6ff7ea4c567069cbc))
+* **tooling:** compose reviewed main test recovery fixes ([2253e83](https://github.com/tutur3u/platform/commit/2253e837508958ec2724e7143f533039baf3f4f2))
+
 ## 1.0.0 (2026-11-08)
 
 

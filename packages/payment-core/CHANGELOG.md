@@ -1,5 +1,19 @@
 # Changelog
 
+## [0.7.0](https://github.com/tutur3u/platform/compare/payment-core-v0.6.2...payment-core-v0.7.0) (2026-11-13)
+
+
+### Features
+
+* **web:** add workspace domain service, API routes and add-on reconciliation ([ecea578](https://github.com/tutur3u/platform/commit/ecea57841dfeee52bc30fc2d9643923cf4d4d40d))
+* **workspace-domains:** workspace custom domains (paid add-on, staff bypass, edge Worker) ([#8157](https://github.com/tutur3u/platform/issues/8157)) ([11a94f0](https://github.com/tutur3u/platform/commit/11a94f0953a2fa6632c73eadfc35182229dda48c))
+
+
+### Bug Fixes
+
+* **tasks:** compose POST transport with current main ([1ff0fc7](https://github.com/tutur3u/platform/commit/1ff0fc7806853b0be9ac53d75c73d0677089ad68))
+* **ui:** compose workspace reliability with current main ([07bffbe](https://github.com/tutur3u/platform/commit/07bffbe850fc6bf345f8d863c10feae66b3ccb70))
+
 ## [0.6.2](https://github.com/tutur3u/platform/compare/payment-core-v0.6.1...payment-core-v0.6.2) (2026-11-08)
 
 

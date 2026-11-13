@@ -1,5 +1,30 @@
 # Changelog
 
+## [0.23.0](https://github.com/tutur3u/platform/compare/pay-v0.22.0...pay-v0.23.0) (2026-11-13)
+
+
+### Features
+
+* branded, theme-aware not-found and error page for every app ([#8189](https://github.com/tutur3u/platform/issues/8189)) ([1239360](https://github.com/tutur3u/platform/commit/123936030549e1e275ccd2b5256c9286a9f54a32))
+* **database:** add workspace domains, entitlement and permissions ([3fa8b0d](https://github.com/tutur3u/platform/commit/3fa8b0dd8af1a3aa4bdbb7f59e97167e84d74115))
+* **ui:** add actor-scoped workspace picker shortcuts ([#8170](https://github.com/tutur3u/platform/issues/8170)) ([d9a512c](https://github.com/tutur3u/platform/commit/d9a512cade746445f2b96535b8f50e8f7ee1d066))
+* **ui:** pilot @ui-sdk/core for category keyboard reordering ([#8250](https://github.com/tutur3u/platform/issues/8250)) ([7b0eee6](https://github.com/tutur3u/platform/commit/7b0eee600b935e394b210a4590b670947b9a606f))
+* **web:** add workspace domain service, API routes and add-on reconciliation ([ecea578](https://github.com/tutur3u/platform/commit/ecea57841dfeee52bc30fc2d9643923cf4d4d40d))
+* **workspace-domains:** read the SaaS zone, apex and fallback origin from config ([8a38689](https://github.com/tutur3u/platform/commit/8a386894505308f1e4ceb3a826caa80ade76f40f))
+* **workspace-domains:** workspace custom domains (paid add-on, staff bypass, edge Worker) ([#8157](https://github.com/tutur3u/platform/issues/8157)) ([11a94f0](https://github.com/tutur3u/platform/commit/11a94f0953a2fa6632c73eadfc35182229dda48c))
+
+
+### Bug Fixes
+
+* **cutover:** align native artifact contracts ([#8228](https://github.com/tutur3u/platform/issues/8228)) ([c57c7fb](https://github.com/tutur3u/platform/commit/c57c7fb525e6c65989ffe130209e08cb6e8948a4))
+* **pay:** allow the generated .ts config import in the Cloudflare type-check ([#8056](https://github.com/tutur3u/platform/issues/8056)) ([461b990](https://github.com/tutur3u/platform/commit/461b99079a62fb3edf8efbc642fd31e8448ef027))
+* **pay:** scope the production artifact guard to runtime values ([#8011](https://github.com/tutur3u/platform/issues/8011)) ([94f1d1c](https://github.com/tutur3u/platform/commit/94f1d1cba17e8c3ae36a7be45a694588e3256397))
+* **pay:** select the production host and cookie profile at build time ([#8006](https://github.com/tutur3u/platform/issues/8006)) ([0f3b228](https://github.com/tutur3u/platform/commit/0f3b228c6a98c8553615aa60e2261857b895efd6))
+* **security:** enforce exact shared Worker HSTS boundary ([#8226](https://github.com/tutur3u/platform/issues/8226)) ([95fad90](https://github.com/tutur3u/platform/commit/95fad90e527fe3a2a24b3e0df12e3445901a7cbe))
+* **start-bridge:** send server-function payloads in POST bodies ([#8239](https://github.com/tutur3u/platform/issues/8239)) ([028d2a7](https://github.com/tutur3u/platform/commit/028d2a7c98fdd7fbd48ff8b263b65bc5007177fe))
+* **tasks:** compose POST transport with current main ([1ff0fc7](https://github.com/tutur3u/platform/commit/1ff0fc7806853b0be9ac53d75c73d0677089ad68))
+* **ui:** compose workspace reliability with current main ([07bffbe](https://github.com/tutur3u/platform/commit/07bffbe850fc6bf345f8d863c10feae66b3ccb70))
+
 ## [0.22.0](https://github.com/tutur3u/platform/compare/pay-v0.21.2...pay-v0.22.0) (2026-11-08)
 
 

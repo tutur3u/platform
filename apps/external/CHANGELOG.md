@@ -1,5 +1,19 @@
 # Changelog
 
+## [0.7.0](https://github.com/tutur3u/platform/compare/external-v0.6.1...external-v0.7.0) (2026-11-13)
+
+
+### Features
+
+* branded, theme-aware not-found and error page for every app ([#8189](https://github.com/tutur3u/platform/issues/8189)) ([1239360](https://github.com/tutur3u/platform/commit/123936030549e1e275ccd2b5256c9286a9f54a32))
+* **external:** rebuild the Cloudflare cutover on current main ([08e1b65](https://github.com/tutur3u/platform/commit/08e1b651ffafb0473ce362fcf222e8e49990b3a1))
+
+
+### Bug Fixes
+
+* **fee-lock:** guard snapshot revision in suggestion route and format oxc files ([#7861](https://github.com/tutur3u/platform/issues/7861)) ([a2eaf8f](https://github.com/tutur3u/platform/commit/a2eaf8ff2b1e730b76121c50295f4dd99f0b3b89))
+* **start-bridge:** send server-function payloads in POST bodies ([#8239](https://github.com/tutur3u/platform/issues/8239)) ([028d2a7](https://github.com/tutur3u/platform/commit/028d2a7c98fdd7fbd48ff8b263b65bc5007177fe))
+
 ## [0.6.1](https://github.com/tutur3u/platform/compare/external-v0.6.0...external-v0.6.1) (2026-10-17)
 
 
