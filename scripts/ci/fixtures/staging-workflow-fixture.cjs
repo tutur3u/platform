@@ -10,22 +10,32 @@ function installFetchFixture() {
   const runUrl = 'https://github.com/example/platform/actions/runs/201';
   const started_at = '2026-01-01T00:00:00Z';
   const completed_at = '2026-01-01T00:01:00Z';
+  const markerPayload =
+    env.MARKER_PAYLOAD === 'empty'
+      ? {}
+      : env.MARKER_PAYLOAD === 'wrong-sha'
+        ? {
+            sha: env.UNRELATED_SHA,
+            markerKind: 'deployment',
+            workflowName: 'supabase-staging.yaml',
+          }
+        : {
+            sha: env.MARKER_SHA || env.STAGING_SHA,
+            markerKind: 'deployment',
+            workflowName: 'supabase-staging.yaml',
+            refName: 'main',
+            ref: 'refs/heads/main',
+            runId: '201',
+            runAttempt: '1',
+            runUrl,
+          };
   const marker = {
     id: 301,
     sha: target,
     ref: target,
     environment: 'supabase-staging',
     created_at: completed_at,
-    payload: {
-      sha: env.STAGING_SHA,
-      markerKind: 'deployment',
-      workflowName: 'supabase-staging.yaml',
-      refName: 'main',
-      ref: 'refs/heads/main',
-      runId: '201',
-      runAttempt: '1',
-      runUrl,
-    },
+    payload: markerPayload,
   };
   const repository = {
     id: 101,
@@ -48,7 +58,7 @@ function installFetchFixture() {
   const status = [
     {
       id: 401,
-      state: 'success',
+      state: env.MARKER_STATE || 'success',
       environment: 'supabase-staging',
       log_url: runUrl,
     },
@@ -56,6 +66,42 @@ function installFetchFixture() {
   const markersRoute = `${base}/deployments?environment=supabase-staging&sha=${target}&per_page=100&page=1`;
   const runRoute = `${base}/actions/runs/201`;
   const statusRoute = `${base}/deployments/301/statuses?per_page=1&page=1`;
+  const platformPath = '.github/workflows/vercel-production-platform.yaml';
+  const platformRunId = env.PLATFORM_RUN_ID || '301';
+  const platformRunUrl =
+    env.PLATFORM_RUN_URL ||
+    `https://github.com/example/platform/actions/runs/${platformRunId}`;
+  const platformMarkerId = Number(env.PLATFORM_MARKER_ID || '96');
+  const platformMarker = {
+    id: platformMarkerId,
+    sha: target,
+    ref: target,
+    environment: 'vercel-production-platform',
+    created_at: completed_at,
+    payload: {
+      sha: target,
+      markerKind: 'deployment',
+      workflowName: 'vercel-production-platform.yaml',
+      refName: 'production',
+      ref: 'refs/heads/production',
+      runId: String(platformRunId),
+      runAttempt: env.PLATFORM_RUN_ATTEMPT || '1',
+      runUrl: platformRunUrl,
+    },
+  };
+  const platformRun = {
+    id: Number(platformRunId),
+    run_attempt: Number(env.PLATFORM_RUN_ATTEMPT || 1),
+    workflow_id: 137637851,
+    path: env.PLATFORM_WORKFLOW_PATH || platformPath,
+    head_branch: env.PLATFORM_HEAD_BRANCH || 'production',
+    head_sha: env.PLATFORM_PRODUCER_SHA || target,
+    event: env.PLATFORM_RUN_EVENT || 'workflow_call',
+    status: env.PLATFORM_RUN_STATUS || 'completed',
+    conclusion: env.PLATFORM_RUN_CONCLUSION || 'success',
+    repository,
+    head_repository: repository,
+  };
   const script = [
     [base, repository],
     [
@@ -71,6 +117,65 @@ function installFetchFixture() {
     [runRoute, run],
     [statusRoute, status],
   ];
+  if (env.VERIFY_PLATFORM_MARKER !== 'false') {
+    const platformRoute = `${base}/deployments?environment=vercel-production-platform&sha=${target}&per_page=100&page=1`;
+    const platformStatusRoute = `${base}/deployments/${platformMarkerId}/statuses?per_page=1&page=1`;
+    const platformRunRoute = `${base}/actions/runs/${platformRunId}`;
+    script.unshift(
+      [
+        `${base}/actions/workflows/vercel-production-platform.yaml`,
+        {
+          id: 137637851,
+          path: platformPath,
+          name: 'Vercel Platform Production Deployment',
+          state: 'active',
+        },
+      ],
+      [platformRoute, [platformMarker]],
+      [platformRunRoute, platformRun],
+      [
+        platformStatusRoute,
+        [
+          {
+            id: 501,
+            state: env.PLATFORM_STATUS_STATE || 'success',
+            environment: 'vercel-production-platform',
+            log_url: env.PLATFORM_STATUS_LOG_URL || platformRunUrl,
+          },
+        ],
+      ],
+      [`${base}/deployments/${platformMarkerId}`, platformMarker],
+      [
+        `${platformRunRoute}/attempts/${env.PLATFORM_RUN_ATTEMPT || 1}/jobs?per_page=100&page=1`,
+        {
+          total_count: 1,
+          jobs: [
+            {
+              id: 601,
+              name: 'Deploy-Production',
+              run_id: Number(platformRunId),
+              run_attempt: Number(env.PLATFORM_RUN_ATTEMPT || 1),
+              head_sha: platformRun.head_sha,
+              status: 'completed',
+              conclusion: 'success',
+              started_at,
+              completed_at,
+              steps: [
+                {
+                  name: 'Record successful Vercel deployment marker',
+                  number: 1,
+                  status: 'completed',
+                  conclusion: 'success',
+                  started_at,
+                  completed_at,
+                },
+              ],
+            },
+          ],
+        },
+      ]
+    );
+  }
   const blobs = JSON.parse(fs.readFileSync(env.FIXTURE_BLOBS, 'utf8'));
   for (const file of [...new Set(blobs.map((entry) => entry.path))]) {
     const selected = [];
@@ -204,23 +309,23 @@ function installFetchFixture() {
     };
     return;
   }
-  let next = 0;
+  const replies = new Map(script);
+  let observed = 0;
   globalThis.fetch = async (input, options) => {
     const url = new URL(input);
     const route = url.pathname + url.search;
-    const expected = script[next++];
     if (
+      ++observed > 150 ||
       url.origin !== 'https://api.github.com' ||
       options?.method !== 'GET' ||
       options.redirect !== 'error' ||
-      !expected ||
-      route !== expected[0]
+      !replies.has(route)
     ) {
       fs.appendFileSync(env.REQUEST_LOG, 'FETCH_FIXTURE_UNEXPECTED\n');
       throw new Error('unexpected fixture request');
     }
     fs.appendFileSync(env.REQUEST_LOG, `FETCH ${route}\n`);
-    return new Response(JSON.stringify(expected[1]), {
+    return new Response(JSON.stringify(replies.get(route)), {
       status: 200,
       headers: { 'content-type': 'application/json' },
     });

@@ -324,51 +324,10 @@ jobs:
                 echo "Production deployment planner concluded '$VERCEL_CONCLUSION'; gating migration apply on the successful platform deployment marker instead of overall planner success."
               fi
               echo "Checking successful production platform deployment marker..."
-              DEPLOYMENT_MARKER_DEPLOYMENT=$(gh api \
-                "repos/${{ github.repository }}/deployments?environment=vercel-production-platform&per_page=100" \
-                | jq --arg sha "$TARGET_SHA" '
-                  def payload_obj:
-                    (.payload // {}) as $payload
-                    | if ($payload | type) == "object" then $payload
-                      elif ($payload | type) == "string" then ($payload | fromjson? // {})
-                      else {}
-                      end;
-
-                  [
-                    .[]
-                    | . as $deployment
-                    | (payload_obj) as $payload
-                    | select(
-                        ($deployment.sha == $sha and $payload.sha == $sha)
-                        and ($payload.markerKind == "deployment")
-                        and ($payload.workflowName == "vercel-production-platform.yaml")
-                      )
-                  ]
-                  | sort_by(.created_at // "")
-                  | reverse
-                  | .[0] // {}
-                  | {id: .id, sha: .sha}')
-
-              DEPLOYMENT_MARKER_DEPLOYMENT_ID=$(echo "$DEPLOYMENT_MARKER_DEPLOYMENT" | jq -r '.id // ""')
-              DEPLOYMENT_MARKER_SHA=$(echo "$DEPLOYMENT_MARKER_DEPLOYMENT" | jq -r '.sha // "missing"')
-
-              echo "Production platform deployment marker deployment ID: ${DEPLOYMENT_MARKER_DEPLOYMENT_ID:-missing}"
-              echo "Production platform deployment marker SHA: $DEPLOYMENT_MARKER_SHA"
-
-              if [ -z "$DEPLOYMENT_MARKER_DEPLOYMENT_ID" ]; then
-                echo "::notice::Skipping production migration because no production platform deployment marker was found for $TARGET_SHA."
+              if ! MARKER_VERIFY_PROFILE=production-platform TARGET_SHA="$TARGET_SHA" \
+                node scripts/ci/verify-github-deployment-marker-producer.mjs; then
+                echo "::notice::Skipping production migration because the production platform deployment marker for $TARGET_SHA failed producer verification."
               else
-                DEPLOYMENT_MARKER_STATUSES=$(gh api \
-                  "repos/${{ github.repository }}/deployments/$DEPLOYMENT_MARKER_DEPLOYMENT_ID/statuses")
-                DEPLOYMENT_MARKER_STATE=$(echo "$DEPLOYMENT_MARKER_STATUSES" | jq -r '.[0].state // "missing"')
-                DEPLOYMENT_MARKER_HAS_SUCCESS=$(echo "$DEPLOYMENT_MARKER_STATUSES" | jq -r '.[0].state == "success"')
-
-                echo "Production platform deployment marker latest state: $DEPLOYMENT_MARKER_STATE"
-                echo "Production platform deployment marker has success status: $DEPLOYMENT_MARKER_HAS_SUCCESS"
-
-                if [ "$DEPLOYMENT_MARKER_HAS_SUCCESS" != "true" ]; then
-                  echo "::notice::Skipping production migration because the production platform deployment marker for $TARGET_SHA does not have a current success status. Latest state is '$DEPLOYMENT_MARKER_STATE'."
-                else
                   node --input-type=module <<'STAGING_SOURCE_PROOF'
           // Inline Node 24 verifier; no checkout-local helpers or external packages.
           const assert = (ok, code) => { if (!ok) throw new Error(code); };
@@ -647,7 +606,6 @@ jobs:
           });
           STAGING_SOURCE_PROOF
                   SHOULD_DEPLOY=true
-                fi
               fi
             fi
           fi

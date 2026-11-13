@@ -56,6 +56,14 @@ function fixture(t, overrides = {}) {
       '35eaf73931589cfe9dd62f7456a3dbe3c48c988c',
     ],
     [
+      '.github/workflows/vercel-production-platform.yaml',
+      'b1e5dead4ac84db1b5f9e498026c21e6b2eae730',
+    ],
+    [
+      'scripts/ci/record-vercel-deployment.ts',
+      '53b07b48226b55ad967e95a85cd62e22d449b07c',
+    ],
+    [
       '.github/workflows/supabase-staging.yaml',
       'c80066e1cd038fcda3bd6c1a79c0b12993b94b49',
       true,
