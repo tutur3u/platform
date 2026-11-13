@@ -91,6 +91,6 @@
   },
   "dependencies": {
     "@tanstack/router-core": "1.171.38",
-    "@vitejs/plugin-rsc": "0.5.38"
+    "@vitejs/plugin-rsc": "0.5.39"
   }
 }

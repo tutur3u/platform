@@ -102,7 +102,7 @@
         "@types/react-dom": "~19.2.7",
         "@typescript/native-preview": "7.0.0-dev.20260707.2",
         "@vitejs/plugin-react": "6.1.2",
-        "@vitejs/plugin-rsc": "0.5.38",
+        "@vitejs/plugin-rsc": "0.5.39",
         "postcss": "^8.5.31",
         "typescript": "7.0.2",
         "vite": "npm:@voidzero-dev/vite-plus-core@1.3.0",
@@ -284,7 +284,7 @@
         "@types/react-dom": "~19.2.7",
         "@typescript/native-preview": "7.0.0-dev.20260707.2",
         "@vitejs/plugin-react": "6.1.2",
-        "@vitejs/plugin-rsc": "0.5.38",
+        "@vitejs/plugin-rsc": "0.5.39",
         "babel-plugin-react-compiler": "^1.0.0",
         "jsdom": "^30.1.3",
         "postcss": "^8.5.31",
@@ -347,7 +347,7 @@
         "@types/react-dom": "~19.2.7",
         "@typescript/native-preview": "7.0.0-dev.20260707.2",
         "@vitejs/plugin-react": "6.1.2",
-        "@vitejs/plugin-rsc": "0.5.38",
+        "@vitejs/plugin-rsc": "0.5.39",
         "babel-plugin-react-compiler": "^1.0.0",
         "jsdom": "^30.1.3",
         "postcss": "^8.5.31",
@@ -553,7 +553,7 @@
         "@types/react-dom": "~19.2.7",
         "@typescript/native-preview": "7.0.0-dev.20260707.2",
         "@vitejs/plugin-react": "6.1.2",
-        "@vitejs/plugin-rsc": "0.5.38",
+        "@vitejs/plugin-rsc": "0.5.39",
         "babel-plugin-react-compiler": "^1.0.0",
         "jsdom": "30.1.3",
         "postcss": "^8.5.31",
@@ -596,7 +596,7 @@
         "@types/react-dom": "~19.2.7",
         "@typescript/native-preview": "7.0.0-dev.20260707.2",
         "@vitejs/plugin-react": "6.1.2",
-        "@vitejs/plugin-rsc": "0.5.38",
+        "@vitejs/plugin-rsc": "0.5.39",
         "babel-plugin-react-compiler": "^1.0.0",
         "postcss": "^8.5.31",
         "typescript": "7.0.2",
@@ -658,7 +658,7 @@
         "@types/react-dom": "~19.2.7",
         "@typescript/native-preview": "7.0.0-dev.20260707.2",
         "@vitejs/plugin-react": "6.1.2",
-        "@vitejs/plugin-rsc": "0.5.38",
+        "@vitejs/plugin-rsc": "0.5.39",
         "babel-plugin-react-compiler": "^1.0.0",
         "jsdom": "^30.1.3",
         "postcss": "^8.5.31",
@@ -731,7 +731,7 @@
         "@types/sanitize-html": "^2.16.2",
         "@typescript/native-preview": "7.0.0-dev.20260707.2",
         "@vitejs/plugin-react": "6.1.2",
-        "@vitejs/plugin-rsc": "0.5.38",
+        "@vitejs/plugin-rsc": "0.5.39",
         "jsdom": "^30.1.3",
         "typescript": "7.0.2",
         "vite": "npm:@voidzero-dev/vite-plus-core@1.3.0",
@@ -796,7 +796,7 @@
         "@types/react-dom": "~19.2.7",
         "@typescript/native-preview": "7.0.0-dev.20260707.2",
         "@vitejs/plugin-react": "6.1.2",
-        "@vitejs/plugin-rsc": "0.5.38",
+        "@vitejs/plugin-rsc": "0.5.39",
         "jsdom": "^30.1.3",
         "postcss": "^8.5.31",
         "typescript": "7.0.2",
@@ -860,7 +860,7 @@
         "@types/three": "^0.186.0",
         "@typescript/native-preview": "7.0.0-dev.20260707.2",
         "@vitejs/plugin-react": "6.1.2",
-        "@vitejs/plugin-rsc": "0.5.38",
+        "@vitejs/plugin-rsc": "0.5.39",
         "babel-plugin-react-compiler": "^1.0.0",
         "jsdom": "^30.1.3",
         "postcss": "^8.5.31",
@@ -961,7 +961,7 @@
         "@types/react-dom": "~19.2.7",
         "@typescript/native-preview": "7.0.0-dev.20260707.2",
         "@vitejs/plugin-react": "6.1.2",
-        "@vitejs/plugin-rsc": "0.5.38",
+        "@vitejs/plugin-rsc": "0.5.39",
         "babel-plugin-react-compiler": "^1.0.0",
         "postcss": "^8.5.31",
         "typescript": "7.0.2",
@@ -1026,7 +1026,7 @@
         "@types/react-dom": "~19.2.7",
         "@typescript/native-preview": "7.0.0-dev.20260707.2",
         "@vitejs/plugin-react": "6.1.2",
-        "@vitejs/plugin-rsc": "0.5.38",
+        "@vitejs/plugin-rsc": "0.5.39",
         "babel-plugin-react-compiler": "^1.0.0",
         "postcss": "^8.5.31",
         "typescript": "7.0.2",
@@ -1088,7 +1088,7 @@
         "@types/react-dom": "~19.2.7",
         "@typescript/native-preview": "7.0.0-dev.20260707.2",
         "@vitejs/plugin-react": "6.1.2",
-        "@vitejs/plugin-rsc": "0.5.38",
+        "@vitejs/plugin-rsc": "0.5.39",
         "babel-plugin-react-compiler": "^1.0.0",
         "jsdom": "^30.1.3",
         "postcss": "^8.5.31",
@@ -1251,7 +1251,7 @@
         "@types/react-dom": "~19.2.7",
         "@typescript/native-preview": "7.0.0-dev.20260707.2",
         "@vitejs/plugin-react": "6.1.2",
-        "@vitejs/plugin-rsc": "0.5.38",
+        "@vitejs/plugin-rsc": "0.5.39",
         "babel-plugin-react-compiler": "^1.0.0",
         "es-module-lexer": "^3.0.4",
         "postcss": "^8.5.31",
@@ -1427,7 +1427,7 @@
         "@types/react-dom": "~19.2.7",
         "@typescript/native-preview": "7.0.0-dev.20260707.2",
         "@vitejs/plugin-react": "6.1.2",
-        "@vitejs/plugin-rsc": "0.5.38",
+        "@vitejs/plugin-rsc": "0.5.39",
         "babel-plugin-react-compiler": "^1.0.0",
         "jsdom": "^30.1.3",
         "postcss": "^8.5.31",
@@ -1505,7 +1505,7 @@
         "@types/uuid": "^11.0.0",
         "@typescript/native-preview": "7.0.0-dev.20260707.2",
         "@vitejs/plugin-react": "6.1.2",
-        "@vitejs/plugin-rsc": "0.5.38",
+        "@vitejs/plugin-rsc": "0.5.39",
         "autoprefixer": "^10.6.1",
         "babel-plugin-react-compiler": "^1.0.0",
         "jsdom": "^30.1.3",
@@ -1637,7 +1637,7 @@
         "@types/react-dom": "~19.2.7",
         "@typescript/native-preview": "7.0.0-dev.20260707.2",
         "@vitejs/plugin-react": "6.1.2",
-        "@vitejs/plugin-rsc": "0.5.38",
+        "@vitejs/plugin-rsc": "0.5.39",
         "jsdom": "^30.1.3",
         "typescript": "7.0.2",
         "vite": "npm:@voidzero-dev/vite-plus-core@1.3.0",
@@ -1678,7 +1678,7 @@
         "@types/react": "~19.2.18",
         "@types/react-dom": "~19.2.7",
         "@vitejs/plugin-react": "6.1.2",
-        "@vitejs/plugin-rsc": "0.5.38",
+        "@vitejs/plugin-rsc": "0.5.39",
         "babel-plugin-react-compiler": "^1.0.0",
         "postcss": "^8.5.31",
         "typescript": "7.0.2",
@@ -1762,7 +1762,7 @@
         "@types/uuid": "^11.0.0",
         "@typescript/native-preview": "7.0.0-dev.20260707.2",
         "@vitejs/plugin-react": "6.1.2",
-        "@vitejs/plugin-rsc": "0.5.38",
+        "@vitejs/plugin-rsc": "0.5.39",
         "autoprefixer": "^10.6.1",
         "babel-plugin-react-compiler": "^1.0.0",
         "jsdom": "^30.1.3",
@@ -1894,7 +1894,7 @@
         "@types/react-dom": "~19.2.7",
         "@typescript/native-preview": "7.0.0-dev.20260707.2",
         "@vitejs/plugin-react": "6.1.2",
-        "@vitejs/plugin-rsc": "0.5.38",
+        "@vitejs/plugin-rsc": "0.5.39",
         "babel-plugin-react-compiler": "^1.0.0",
         "postcss": "^8.5.31",
         "typescript": "7.0.2",
@@ -2088,7 +2088,7 @@
         "@types/react-dom": "~19.2.7",
         "@typescript/native-preview": "7.0.0-dev.20260707.2",
         "@vitejs/plugin-react": "6.1.2",
-        "@vitejs/plugin-rsc": "0.5.38",
+        "@vitejs/plugin-rsc": "0.5.39",
         "jsdom": "^30.1.3",
         "typescript": "7.0.2",
         "vite": "npm:@voidzero-dev/vite-plus-core@1.3.0",
@@ -2128,7 +2128,7 @@
         "@types/react-dom": "~19.2.7",
         "@typescript/native-preview": "7.0.0-dev.20260707.2",
         "@vitejs/plugin-react": "6.1.2",
-        "@vitejs/plugin-rsc": "0.5.38",
+        "@vitejs/plugin-rsc": "0.5.39",
         "babel-plugin-react-compiler": "^1.0.0",
         "jsdom": "^30.1.3",
         "postcss": "^8.5.31",
@@ -2192,7 +2192,7 @@
         "@types/react-dom": "~19.2.7",
         "@typescript/native-preview": "7.0.0-dev.20260707.2",
         "@vitejs/plugin-react": "6.1.2",
-        "@vitejs/plugin-rsc": "0.5.38",
+        "@vitejs/plugin-rsc": "0.5.39",
         "babel-plugin-react-compiler": "^1.0.0",
         "jsdom": "^30.1.3",
         "postcss": "^8.5.31",
@@ -2613,7 +2613,7 @@
         "@types/uuid": "^11.0.0",
         "@typescript/native-preview": "7.0.0-dev.20260707.2",
         "@vitejs/plugin-react": "6.1.2",
-        "@vitejs/plugin-rsc": "0.5.38",
+        "@vitejs/plugin-rsc": "0.5.39",
         "autoprefixer": "^10.6.1",
         "babel-plugin-react-compiler": "^1.0.0",
         "jsdom": "^30.1.3",
@@ -3458,7 +3458,7 @@
       },
       "dependencies": {
         "@tanstack/router-core": "1.171.38",
-        "@vitejs/plugin-rsc": "0.5.38",
+        "@vitejs/plugin-rsc": "0.5.39",
       },
       "devDependencies": {
         "@testing-library/react": "16.3.3",
@@ -6351,7 +6351,7 @@
 
     "@vitejs/plugin-react": ["@vitejs/plugin-react@6.1.2", "", { "dependencies": { "@rolldown/pluginutils": "^1.0.1" }, "peerDependencies": { "@rolldown/plugin-babel": "^0.1.7 || ^0.2.0", "babel-plugin-react-compiler": "^1.0.0", "oxc-transform-react": "^0.152.0", "vite": "^8.0.0" }, "optionalPeers": ["@rolldown/plugin-babel", "babel-plugin-react-compiler", "oxc-transform-react"] }, "sha512-fhJNGUdscQa4HkI0xFxwonWyhnVReCPDbXI7FH7jmzpnVCrFQI7PRrhWecO263610vOrs9tr2Y4xcf8uAdFxbw=="],
 
-    "@vitejs/plugin-rsc": ["@vitejs/plugin-rsc@0.5.38", "", { "dependencies": { "@rolldown/pluginutils": "^1.0.1", "es-module-lexer": "^3.0.3", "estree-walker": "^3.0.3", "magic-string": "^1.4.3", "obug": "^3.0.0", "srvx": "^1.0.5", "strip-literal": "^4.0.0", "turbo-stream": "^3.2.1", "vitefu": "^1.1.3" }, "peerDependencies": { "react": "*", "react-dom": "*", "react-server-dom-webpack": "*", "vite": "*" }, "optionalPeers": ["react-server-dom-webpack"] }, "sha512-SoiRBJBVd3Qg6Frnvdk6LwugJYlQKgee+uqySxKz5T/KsCZUgdw529Klzg4IDJuP/EOfsIJ2YiOKAFY8tnr1kg=="],
+    "@vitejs/plugin-rsc": ["@vitejs/plugin-rsc@0.5.39", "", { "dependencies": { "@rolldown/pluginutils": "^1.0.1", "es-module-lexer": "^3.0.4", "estree-walker": "^3.0.3", "magic-string": "^1.4.5", "obug": "^3.0.0", "srvx": "^1.0.8", "strip-literal": "^4.0.0", "turbo-stream": "^3.2.1", "vitefu": "^1.1.3" }, "peerDependencies": { "react": "*", "react-dom": "*", "react-server-dom-webpack": "*", "vite": "*" }, "optionalPeers": ["react-server-dom-webpack"] }, "sha512-hRa6CK119r1NkwgPWlPRiDP8e4rELCsIZwjGmQK0sOnayAkYPBkyJMip0GhYEt2ukBZaO0Uw3ICHHO9T692OFw=="],
 
     "@vitest/browser": ["@vitest/browser@5.0.5", "", { "dependencies": { "@blazediff/core": "1.10.0", "@vitest/mocker": "5.0.5", "@vitest/ui": "5.0.5", "@vitest/utils": "5.0.5", "magic-string": "^1.4.3", "pngjs": "^7.0.0", "sirv": "^3.0.2", "tinyrainbow": "^3.2.0", "ws": "^8.22.0" }, "peerDependencies": { "vitest": "5.0.5" } }, "sha512-IDMoZX/iZ8rkilw7weaSgN8tJ7iZ9hUv0wYoKXyiyjWjWFwLSWAY707DcVTgxTYOudWC1E3HA9LYn7kVa9a7uQ=="],
 
@@ -8629,7 +8629,7 @@
 
     "sql-escaper": ["sql-escaper@1.5.2", "", {}, "sha512-6CKD38c31SENivxOADeMNLdukOnUxUcflKtzVWzace7Riv1v7cAEym5Cx9Q7gYZ3ezIJI7ZpqecQq8cqNeSSFg=="],
 
-    "srvx": ["srvx@1.0.6", "", { "bin": { "srvx": "./bin/srvx.mjs" } }, "sha512-QeTKgAhk8OSsfeq60bl3wuVs9PmBftzmk7owBInA/F1YQne+TRw0UcPymNpURldAmx8hfmM2PNNGH/zgo3GpLA=="],
+    "srvx": ["srvx@1.0.8", "", { "bin": { "srvx": "./bin/srvx.mjs" } }, "sha512-ngFS/J6St4PJfHRHGjr78xkPPtbyXtdMOLNE4x/XZunEK3OhV7aGUWMHf9WTUEy6wm1U0W4okkd82ZFFWRVQTw=="],
 
     "stack-generator": ["stack-generator@2.0.10", "", { "dependencies": { "stackframe": "^1.3.4" } }, "sha512-mwnua/hkqM6pF4k8SnmZ2zfETsRUpWXREfA/goT8SLCV4iOFa4bzOX2nDipWAZFPTjLvQB82f5yaodMVhK0yJQ=="],
 
@@ -9475,6 +9475,8 @@
 
     "@tanstack/router-generator/magic-string": ["magic-string@0.30.21", "", { "dependencies": { "@jridgewell/sourcemap-codec": "^1.5.5" } }, "sha512-vd2F4YUyEXKGcLHoq+TEyCjxueSeHnFxyyjNp80yg0XV4vUhnDer/lvvlqM/arB5bXQN5K2/3oinyCRyx8T2CQ=="],
 
+    "@tanstack/start-plugin-core/srvx": ["srvx@1.0.6", "", { "bin": { "srvx": "./bin/srvx.mjs" } }, "sha512-QeTKgAhk8OSsfeq60bl3wuVs9PmBftzmk7owBInA/F1YQne+TRw0UcPymNpURldAmx8hfmM2PNNGH/zgo3GpLA=="],
+
     "@testing-library/dom/aria-query": ["aria-query@5.3.0", "", { "dependencies": { "dequal": "^2.0.3" } }, "sha512-b0P0sZPKtyu8HkeRAfCq0IfURZK+SuwMjY1UXGBU27wpAiTwQAIlq56IbIO+ytk/JjS1fMR14ee5WBBfKi5J6A=="],
 
     "@testing-library/dom/dom-accessibility-api": ["dom-accessibility-api@0.5.16", "", {}, "sha512-X7BJ2yElsnOJ30pZF4uIIDfBEVgF4XEBxL9Bxhy6dnrm5hkzqmsWHGTiHqRiITNhMyFLyAiWndIJP7Z1NTteDg=="],
@@ -9669,6 +9671,8 @@
 
     "@vercel/sandbox/undici": ["undici@7.29.1", "", {}, "sha512-RYONW2MeafgYlkVOKYKkA/Ag7BmXqgIWCa8t1m0JcxrQg9pI9lEqRhAOruOBCbAohOa/gkCF+iPi9hrgvTzu6Q=="],
 
+    "@vitejs/plugin-rsc/magic-string": ["magic-string@1.4.5", "", { "dependencies": { "@jridgewell/sourcemap-codec": "^1.6.0" } }, "sha512-oLLC2+YvQUfAa+vxoufE/yc1icb87M9iXIRqAoR/2EhE/8cb3SF/+Gi0c2By1B+5Vz2e2vQtUvHiu1+63Znh+w=="],
+
     "@vitest/browser/pngjs": ["pngjs@7.0.0", "", {}, "sha512-LKWqWJRhstyYo9pGvgor/ivk2w94eSjE3RGVuzLGlr3NmD8bf7RcYGze1mNdEHRP6TRP6rMuDHk5t44hnTRyow=="],
 
     "@vitest/browser/ws": ["ws@8.22.0", "", { "peerDependencies": { "bufferutil": "^4.0.1", "utf-8-validate": ">=5.0.2" }, "optionalPeers": ["bufferutil", "utf-8-validate"] }, "sha512-Ydggc987+RO0AnWtZ/7Wq9FtNvcrL1b/RO0ud9mWjUPgDrsAAwQSF51sm2hm1XofbU/4jkpGEsLFsZZxU+1DOg=="],
@@ -9761,6 +9765,8 @@
 
     "engine.io/ws": ["ws@8.21.3", "", { "peerDependencies": { "bufferutil": "^4.0.1", "utf-8-validate": ">=5.0.2" }, "optionalPeers": ["bufferutil", "utf-8-validate"] }, "sha512-201TZ/kPWxoPr/OKWjquZR1SWKXcvxdH+e1xrx89b3YbmzLMFCLfnaG1HFIgWzJOEWZ7MvpK++odZufgYR50Rw=="],
 
+    "env-runner/srvx": ["srvx@1.0.6", "", { "bin": { "srvx": "./bin/srvx.mjs" } }, "sha512-QeTKgAhk8OSsfeq60bl3wuVs9PmBftzmk7owBInA/F1YQne+TRw0UcPymNpURldAmx8hfmM2PNNGH/zgo3GpLA=="],
+
     "exceljs/saxes": ["saxes@5.0.1", "", { "dependencies": { "xmlchars": "^2.2.0" } }, "sha512-5LBh1Tls8c9xgGjw3QrMwETmTMVk0oFgvrFSvWx62llR2hcEInrKNZ2GZCCuuy2lvWrdl5jhbpeqc5hRYKFOcw=="],
 
     "exceljs/unzipper": ["unzipper@0.10.14", "", { "dependencies": { "big-integer": "^1.6.17", "binary": "~0.3.0", "bluebird": "~3.4.1", "buffer-indexof-polyfill": "~1.0.0", "duplexer2": "~0.1.4", "fstream": "^1.0.12", "graceful-fs": "^4.2.2", "listenercount": "~1.0.1", "readable-stream": "~2.3.6", "setimmediate": "~1.0.4" } }, "sha512-ti4wZj+0bQTiX2KmKWuwj7lhV+2n//uXEotUmGuQqrbVZSEGFMbI68+c6JCQ8aAmUWYvtHEz2A8K6wXvueR/6g=="],
@@ -9786,6 +9792,8 @@
     "google-gax/node-fetch": ["node-fetch@3.3.2", "", { "dependencies": { "data-uri-to-buffer": "^4.0.0", "fetch-blob": "^3.1.4", "formdata-polyfill": "^4.0.10" } }, "sha512-dRB78srN/l6gqWulah9SrxeYnxeddIG30+GOqK/9OlLVyLg3HPnr6SqOWTWOXKRwC2eGYCkZ59NNuSgvSrpgOA=="],
 
     "googleapis-common/gaxios": ["gaxios@8.3.1", "", { "dependencies": { "extend": "^3.0.2", "https-proxy-agent": "^7.0.1", "node-fetch": "^3.3.2" } }, "sha512-h4/R7ay7JFXU5kmAkp/Y4Y4Vmm7m83tD579GUgfQQsRRGQ4TzSedyHla6XgTWohQuVffT3ldN4FF6uCqlRGaEA=="],
+
+    "h3/srvx": ["srvx@1.0.6", "", { "bin": { "srvx": "./bin/srvx.mjs" } }, "sha512-QeTKgAhk8OSsfeq60bl3wuVs9PmBftzmk7owBInA/F1YQne+TRw0UcPymNpURldAmx8hfmM2PNNGH/zgo3GpLA=="],
 
     "h3-v2/rou3": ["rou3@0.8.1", "", {}, "sha512-ePa+XGk00/3HuCqrEnK3LxJW7I0SdNg6EFzKUJG73hMAdDcOUC/i/aSz7LSDwLrGr33kal/rqOGydzwl6U7zBA=="],
 
@@ -9870,6 +9878,8 @@
     "next-intl/@formatjs/intl-localematcher": ["@formatjs/intl-localematcher@0.8.14", "", { "dependencies": { "@formatjs/fast-memoize": "3.1.7" } }, "sha512-8O7V38QmbB11+ryJ3KM/znrzXtiqgpXzqNoqDsndHZZ5/zDKTTL+cf5F0mzXkQEwhx8IlWnqYvEovf2S5EwLTw=="],
 
     "nitro/rolldown": ["rolldown@1.2.8", "", { "dependencies": { "@oxc-project/types": "=0.149.0", "@rolldown/pluginutils": "^1.0.0" }, "optionalDependencies": { "@rolldown/binding-android-arm-eabi": "1.2.8", "@rolldown/binding-android-arm64": "1.2.8", "@rolldown/binding-darwin-arm64": "1.2.8", "@rolldown/binding-darwin-x64": "1.2.8", "@rolldown/binding-freebsd-x64": "1.2.8", "@rolldown/binding-linux-arm-gnueabihf": "1.2.8", "@rolldown/binding-linux-arm64-gnu": "1.2.8", "@rolldown/binding-linux-arm64-musl": "1.2.8", "@rolldown/binding-linux-ppc64-gnu": "1.2.8", "@rolldown/binding-linux-s390x-gnu": "1.2.8", "@rolldown/binding-linux-x64-gnu": "1.2.8", "@rolldown/binding-linux-x64-musl": "1.2.8", "@rolldown/binding-openharmony-arm64": "1.2.8", "@rolldown/binding-win32-arm64-msvc": "1.2.8", "@rolldown/binding-win32-x64-msvc": "1.2.8" }, "bin": { "rolldown": "./bin/cli.mjs" } }, "sha512-Z67nTmhZe7anqnM/EjI392w5i/ANUinjip7QYsOyN37oayduxt3ksdX0hf5OOamkAd53BiIHfbfSzfUmzKFQqQ=="],
+
+    "nitro/srvx": ["srvx@1.0.6", "", { "bin": { "srvx": "./bin/srvx.mjs" } }, "sha512-QeTKgAhk8OSsfeq60bl3wuVs9PmBftzmk7owBInA/F1YQne+TRw0UcPymNpURldAmx8hfmM2PNNGH/zgo3GpLA=="],
 
     "node-fetch/whatwg-url": ["whatwg-url@5.0.0", "", { "dependencies": { "tr46": "~0.0.3", "webidl-conversions": "^3.0.0" } }, "sha512-saE57nupxk6v3HY35+jzBwYa0rKSy0XR8JSxZPwgLr7ys0IBzhGviA1/TUGJLmSVqs8pb9AnvICXEuOHLprYTw=="],
 
