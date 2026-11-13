@@ -2150,6 +2150,16 @@
       },
       "digest": "39ea56e901d0145136a7cb3a3f03a23fb34db384262143f6fab8fecd44c02beb"
     },
+    "scripts/cf-migration/app-safety.py": {
+      "lines": 2,
+      "uses": 2,
+      "gap": "void-emitted-runtime",
+      "admitted": {
+        "decision": "https://github.com/tutur3u/platform/pull/7719",
+        "reason": "The dormant generator emits the existing Void-config acceptance fixture with literal SDK loading, disposable bindings, denied provider authentication and intercepted outbound requests. This exact two-line template use retains the qualified runtime interface; no publication or generation is admitted by the inventory entry."
+      },
+      "digest": "66f103085b57e80756d101f8e6d643838195b02c80731d24fd147f834120c634"
+    },
     "scripts/check-cloudflare-workers.js": {
       "lines": 54,
       "uses": 62,
