@@ -121,22 +121,26 @@ jobs:
             const decision = await admitDispatch({ github, context, sourceSha: process.env.SOURCE_SHA, controlSha: process.env.CONTROL_SHA, workflowPath: '.github/workflows/public-merged-main-tests.yaml' });
             core.info(JSON.stringify(decision));
             // trusted-public:end
+      # Control-only setup runs before the admitted source exists in the workspace, so
+      # no restore/save-capable action or setup script can be influenced by source files.
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version: 24.22.3
+          package-manager-cache: false
+      - name: Setup pinned Bun from immutable controls without shared caches
+        working-directory: control
+        run: bash scripts/ci/setup-bun-with-backoff.sh 1.4.4
+      # From here on, only identity checks, the shard/build command and artifact upload run.
       - name: Checkout admitted source
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           ref: ${{ needs.admit.outputs.sha }}
           path: source
           persist-credentials: false
-      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
-        with:
-          node-version: 24.22.3
       - name: Verify both immutable checkout identities before repository commands
         run: |
           test "$(git -C control rev-parse HEAD)" = "$CONTROL_SHA"
           test "$(git -C source rev-parse HEAD)" = "$SOURCE_SHA"
-      - name: Setup pinned Bun without shared caches
-        working-directory: control
-        run: bash scripts/ci/setup-bun-with-backoff.sh 1.4.4
       - name: Run disjoint canonical shard and retain command exits/counts
         working-directory: source
         run: node ../control/scripts/ci/public-test-shard.js "$SHARD_KIND" "$SHARD_INDEX" "$RUNNER_TEMP/public-receipt"
