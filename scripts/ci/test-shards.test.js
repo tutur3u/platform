@@ -176,3 +176,109 @@ test('coverage is uploaded only after all complete workspace artifacts are colle
   assert.equal(steps[download].with['merge-multiple'], true);
   assert.equal(steps[download].with.pattern, 'coverage-shard-*');
 });
+
+test('affected planner retains package tests, leaf scope and fail-safe inputs', () => {
+  const { affectedShards } = require('./test-shards');
+  const all = planShards(discoverPackages(root), 4);
+  for (const raw of [
+    undefined,
+    '{',
+    '{}',
+    '{"mode":"affected"}',
+    '{"mode":"affected","workspaces":["../bad"]}',
+  ])
+    assert.deepEqual(affectedShards(root, 4, raw), all);
+  for (const directory of ['apps/web', 'packages/utils']) {
+    const name = JSON.parse(
+      fs.readFileSync(path.join(root, directory, 'package.json'))
+    ).name;
+    const selected = affectedShards(
+      root,
+      4,
+      JSON.stringify({ mode: 'affected', workspaces: [directory] })
+    );
+    assert.deepEqual(
+      selected.flatMap((shard) => shard.packages),
+      [name]
+    );
+  }
+  const empty = affectedShards(root, 4, '{"mode":"affected","workspaces":[]}');
+  assert.deepEqual(
+    empty.flatMap((shard) => shard.packages),
+    []
+  );
+  const output = execFileSync(
+    process.execPath,
+    ['scripts/ci/run-test-shard.js', '0', '4', '--plan'],
+    {
+      cwd: root,
+      encoding: 'utf8',
+      env: {
+        ...process.env,
+        AFFECTED_SELECTION: '{"mode":"affected","workspaces":[]}',
+      },
+    }
+  );
+  assert.match(output, /not applicable; no tests executed/);
+  assert.doesNotMatch(output, /passed/);
+});
+
+test('immutable PR selector fails full on missing inputs and type filters retain dependencies', async () => {
+  const { selectPullRequest, typeCheckArgs, calculate } =
+    await import('./affected-apps.mjs');
+  for (const event of [{}, { pull_request: { base: { sha: '--bad' } } }])
+    assert.equal(
+      selectPullRequest({ eventName: 'pull_request', event, cwd: root }).mode,
+      'all'
+    );
+  assert.equal(calculate({ base: '--help', cwd: root }).mode, 'all');
+  assert.deepEqual(
+    typeCheckArgs({
+      mode: 'affected',
+      workspaces: ['packages/utils', 'apps/web'],
+    }),
+    [
+      'turbo:local',
+      'run',
+      'type-check',
+      '--concurrency=4',
+      '--filter=./packages/utils...',
+      '--filter=./apps/web...',
+      '--filter=!@tuturuuu/tanstack-web',
+    ]
+  );
+  const workflow = readWorkflow('turbo-unit-tests.yaml');
+  const classifier = workflow.jobs.changes;
+  assert.equal(
+    classifier.steps.find((step) => step.id === 'affected').run,
+    'node scripts/ci/affected-apps.mjs --ci'
+  );
+  assert.match(
+    classifier.outputs.selection,
+    /steps.affected.outputs.selection/
+  );
+  const shards = workflow.jobs['test-shards-pr'];
+  assert.match(
+    shards.env.AFFECTED_SELECTION,
+    /needs.changes.outputs.selection/
+  );
+  for (const name of [
+    'Install dependencies',
+    'Build workspace setup',
+    'Test',
+    'Preserve complete workspace coverage',
+  ])
+    assert.equal(
+      shards.steps.find((step) => step.name === name).if,
+      "steps.plan.outputs.applicable == 'true'"
+    );
+  const types = readWorkflow('type-check.yaml').jobs['type-check-pr'];
+  assert.equal(
+    types.steps.find((step) => step.name === 'Run type check').with.command,
+    'node scripts/ci/affected-apps.mjs --type-check'
+  );
+  assert.match(
+    types.steps.find((step) => step.name === 'Install dependencies').if,
+    /steps.affected.outputs.applicable/
+  );
+});

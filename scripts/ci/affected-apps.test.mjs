@@ -25,10 +25,8 @@ import {
   suggestEdges,
   undeclaredImports,
 } from './affected-apps-imports.mjs';
-
 const here = path.dirname(fileURLToPath(import.meta.url));
 const repoRoot = path.resolve(here, '../..');
-
 function fixture() {
   const cwd = mkdtempSync(path.join(os.tmpdir(), 'affected-apps-'));
   const git = (...args) => execFileSync('git', args, { cwd, stdio: 'ignore' });
@@ -85,7 +83,6 @@ function fixture() {
     close: () => rmSync(cwd, { recursive: true, force: true }),
   };
 }
-
 test('shared package changes select direct and transitive dependent apps', () => {
   const f = fixture();
   try {
@@ -95,6 +92,8 @@ test('shared package changes select direct and transitive dependent apps', () =>
       {
         mode: 'affected',
         apps: ['apps/alpha', 'apps/beta'],
+        packages: ['packages/core', 'packages/ui'],
+        workspaces: ['apps/alpha', 'apps/beta', 'packages/core', 'packages/ui'],
         reason: 'workspace and documentation changes',
       }
     );
@@ -329,11 +328,8 @@ test('base graph dependents survive renaming their shared package at head', () =
     f.close();
   }
 });
-
 const run = (f, head, extraEdges = {}, base = f.initial) =>
   calculate({ cwd: f.cwd, base, head, extraEdges });
-
-// 1. renames report both paths
 test('renaming a file out of one app into another marks both apps', () => {
   const f = fixture();
   try {
@@ -341,6 +337,8 @@ test('renaming a file out of one app into another marks both apps', () => {
     assert.deepEqual(run(f, head), {
       mode: 'affected',
       apps: ['apps/alpha', 'apps/beta'],
+      packages: [],
+      workspaces: ['apps/alpha', 'apps/beta'],
       reason: 'workspace and documentation changes',
     });
   } finally {
@@ -369,8 +367,6 @@ test('renaming a file out of a shared package still marks the package dependents
     f.close();
   }
 });
-
-// 2. undeclared cross-workspace imports
 function extraEdgeFixture() {
   const f = fixture();
   f.pkg('packages/utils', '@x/utils');
@@ -590,8 +586,6 @@ test('every undeclared cross-workspace relative import in the repo is listed in 
     `Add these to scripts/ci/affected-apps.extra-edges.json (or declare a package.json dependency):\n${JSON.stringify(suggestEdges(missing), null, 2)}`
   );
 });
-
-// 3. folders without package.json
 test('a change only in a folder without package.json selects just that folder', () => {
   const f = fixture();
   try {
@@ -599,6 +593,8 @@ test('a change only in a folder without package.json selects just that folder', 
     assert.deepEqual(run(f, docs), {
       mode: 'affected',
       apps: ['apps/docs'],
+      packages: [],
+      workspaces: ['apps/docs'],
       reason: 'workspace and documentation changes',
     });
     assert.deepEqual(
@@ -656,7 +652,6 @@ test('the real repo graph treats package.json-less app folders as standalone uni
     assert.ok(dirs.includes(dir), dir);
   assert.equal(dependents.get('apps/docs').size, 0);
 });
-
 // 4. optionalDependencies and the CLI guard
 test('optionalDependencies are graph edges', () => {
   const f = fixture();
@@ -690,8 +685,13 @@ test('the CLI runs when invoked by a path that file:// string concatenation woul
     for (const file of ['affected-apps.mjs'])
       copyFileSync(path.join(here, file), path.join(dir, file));
     writeFileSync(path.join(dir, 'affected-apps.extra-edges.json'), '{}');
+    f.change('scripts/ci/affected-apps.extra-edges.json', '{}');
+    const base = execFileSync('git', ['rev-parse', 'HEAD'], {
+      cwd: f.cwd,
+      encoding: 'utf8',
+    }).trim();
     const head = f.change('apps/beta/index.js');
-    f.git('update-ref', 'refs/heads/base', f.initial);
+    f.git('update-ref', 'refs/heads/base', base);
     const out = execFileSync(
       'node',
       [path.join(dir, 'affected-apps.mjs'), '--base', 'base', '--head', head],
@@ -700,6 +700,8 @@ test('the CLI runs when invoked by a path that file:// string concatenation woul
     assert.deepEqual(JSON.parse(out), {
       mode: 'affected',
       apps: ['apps/beta'],
+      packages: [],
+      workspaces: ['apps/beta'],
       reason: 'workspace and documentation changes',
     });
     const usage = execFileSync('node', [path.join(dir, 'affected-apps.mjs')], {
@@ -724,7 +726,6 @@ test('importing the module as a library does not run the CLI', () => {
   );
   assert.equal(out, '');
 });
-
 test('ownerless non-Markdown assets fail closed while md and mdx stay documentation', () => {
   const f = fixture();
   try {
@@ -751,7 +752,6 @@ test('ownerless non-Markdown assets fail closed while md and mdx stay documentat
     f.close();
   }
 });
-
 test('multiple merge bases fail closed for a real criss-cross history', () => {
   const f = fixture();
   try {

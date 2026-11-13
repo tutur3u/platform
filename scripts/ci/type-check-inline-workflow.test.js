@@ -57,7 +57,34 @@ test('singleton keeps the Type Check context, event surface and runner with a re
       return { ...step, with: rest };
     });
   assert.deepEqual(
-    withoutCredentials(prJob.steps),
+    withoutCredentials(
+      prJob.steps
+        .filter(
+          (step) =>
+            step.id !== 'affected' &&
+            step.name !== 'Report unaffected type check'
+        )
+        .map((step) => ({
+          ...step,
+          ...(step.if
+            ? {
+                if: step.if.replace(
+                  " && steps.affected.outputs.applicable == 'true'",
+                  ''
+                ),
+              }
+            : {}),
+          ...(step.name === 'Run type check'
+            ? {
+                with: {
+                  ...step.with,
+                  command: job.steps.find((entry) => entry.name === step.name)
+                    .with.command,
+                },
+              }
+            : {}),
+        }))
+    ),
     withoutCredentials(job.steps)
   );
   assert.equal(job.concurrency, undefined);

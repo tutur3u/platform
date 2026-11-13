@@ -23,6 +23,7 @@ jobs:
     timeout-minutes: 5
     outputs:
       code: ${{ steps.classify.outputs.code }}
+      selection: ${{ steps.affected.outputs.selection }}
     steps:
       - name: Checkout change classifier and complete history
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
@@ -30,10 +31,13 @@ jobs:
           ref: ${{ github.sha }}
           fetch-depth: 0
           persist-credentials: false
-          sparse-checkout: scripts/ci/test-docs-only-gate.js
-          sparse-checkout-cone-mode: false
+      - name: Select affected workspaces from immutable PR range
+        id: affected
+        run: node scripts/ci/affected-apps.mjs --ci
       - name: Classify complete PR diff; pushes always retain tests
         id: classify
+        env:
+          AFFECTED_SELECTION: ${{ steps.affected.outputs.selection }}
         run: node scripts/ci/test-docs-only-gate.js
 
   check-ci:
@@ -265,6 +269,7 @@ jobs:
 
     env:
       # Pull request tests use local fixtures and no credentials.
+      AFFECTED_SELECTION: ${{ needs.changes.outputs.selection }}
       NEXT_PUBLIC_SUPABASE_URL: ''
       NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY: ''
       # Unit tests run on same-repo pull requests, so they never receive the
@@ -284,33 +289,43 @@ jobs:
         if: runner.environment == 'self-hosted'
         uses: ./.github/actions/pr-runner-hygiene
 
+      - name: Plan affected shard
+        id: plan
+        run: node scripts/ci/run-test-shard.js ${{ matrix.shard }} 4 --plan
+
       - name: Setup bun
+        if: steps.plan.outputs.applicable == 'true'
         uses: ./.github/actions/setup-bun-with-retry
         with:
           bun-version: 1.4.4
 
       - name: Restore Turbo fallback cache
+        if: steps.plan.outputs.applicable == 'true'
         uses: ./.github/actions/setup-turbo-fallback-cache
         with:
           family: unit-tests-${{ matrix.shard }}
 
       - name: Use Node.js 24
+        if: steps.plan.outputs.applicable == 'true'
         uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
         with:
           node-version: 24
           package-manager-cache: ${{ runner.environment != 'self-hosted' }}
 
       - name: Install dependencies
+        if: steps.plan.outputs.applicable == 'true'
         env:
           BUN_INSTALL_FLAGS: ${{ runner.environment == 'self-hosted' && '--ignore-scripts' || '' }}
         run: bash scripts/ci/run-with-backoff.sh bun install --frozen-lockfile $BUN_INSTALL_FLAGS
 
       - name: Build workspace setup
+        if: steps.plan.outputs.applicable == 'true'
         uses: ./.github/actions/run-with-turbo-remote-cache
         with:
           command: bun turbo:local run build --concurrency=4 --filter=@tuturuuu/types --filter=@tuturuuu/supabase --filter=@tuturuuu/masonry --filter=@tuturuuu/internal-api --filter=tuturuuu
 
       - name: Test
+        if: steps.plan.outputs.applicable == 'true'
         # Cap Turbo concurrency so parallel package test suites don't
         # oversubscribe the runner's CPUs and starve the event loop, which is a
         # common source of flaky "Test timed out in 5000ms" failures in
@@ -320,6 +335,7 @@ jobs:
           command: node scripts/ci/run-test-shard.js ${{ matrix.shard }} 4 --coverage
 
       - name: Preserve complete workspace coverage
+        if: steps.plan.outputs.applicable == 'true'
         uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
           name: coverage-shard-${{ matrix.shard }}
@@ -328,6 +344,10 @@ jobs:
             packages/*/coverage/**
           if-no-files-found: error
           retention-days: 2
+
+      - name: Report empty shard
+        if: steps.plan.outputs.applicable == 'false'
+        run: echo 'Shard not applicable; no tests executed.' >> "$GITHUB_STEP_SUMMARY"
 
   # Preserve historical coverage check contexts without executing suites again.
   coverage-shards:
@@ -365,7 +385,8 @@ jobs:
         run: |
           test "$CHANGES_RESULT" = success
           test "$CODE" = true || test "$CODE" = false
-      - name: Documentation-only change; require skipped shards and upload
+          if [ "$CODE" = false ]; then echo "No affected suites; heavy tests and coverage skipped." >> "${GITHUB_STEP_SUMMARY:-/dev/null}"; fi
+      - name: Documentation-only or unaffected change; require skipped shards and upload
         if: needs.changes.outputs.code == 'false'
         env:
           TEST_RESULT: ${{ needs.test-shards.result }}
@@ -399,7 +420,8 @@ jobs:
         run: |
           test "$CHANGES_RESULT" = success
           test "$CODE" = true || test "$CODE" = false
-      - name: Documentation-only change; require skipped shards
+          if [ "$CODE" = false ]; then echo "No affected suites; heavy tests and coverage skipped." >> "${GITHUB_STEP_SUMMARY:-/dev/null}"; fi
+      - name: Documentation-only or unaffected change; require skipped shards
         if: needs.changes.outputs.code == 'false'
         env:
           TEST_RESULT: ${{ needs.test-shards.result }}

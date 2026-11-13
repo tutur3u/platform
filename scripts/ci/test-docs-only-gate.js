@@ -2,9 +2,17 @@ const { execFileSync } = require('node:child_process');
 const { appendFileSync, readFileSync } = require('node:fs');
 
 function isDocumentation(file) {
+  if (/(^|\/)(AGENTS\.md|CLAUDE\.md|CODEOWNERS)$/.test(file)) return false;
+  if (
+    /^(\.github|scripts|plugins|tooling|\.agents|\.codex|\.claude)\//.test(file)
+  )
+    return false;
   if (!/\.(md|mdx)$/.test(file)) return false;
   if (file.startsWith('apps/docs/')) return true;
-  return !file.startsWith('apps/') && !file.startsWith('packages/');
+  return (
+    file.startsWith('docs/') ||
+    /^(README|CONTRIBUTING|LICENSE|CHANGELOG)\.md$/.test(file)
+  );
 }
 
 function requiresCode({ eventName, event, root = process.cwd() }) {
@@ -46,6 +54,21 @@ if (require.main === module) {
     });
   } catch {
     // An unreadable event is not proof of a documentation-only change.
+  }
+  if (
+    process.env.AFFECTED_SELECTION &&
+    process.env.GITHUB_EVENT_NAME === 'pull_request'
+  ) {
+    try {
+      const { affectedShards } = require('./test-shards.js');
+      code = affectedShards(
+        process.cwd(),
+        4,
+        process.env.AFFECTED_SELECTION
+      ).some((shard) => shard.packages.length > 0);
+    } catch {
+      code = true;
+    }
   }
   appendFileSync(process.env.GITHUB_OUTPUT, `code=${code}\n`);
   console.log(`Test code changes: ${code}`);
