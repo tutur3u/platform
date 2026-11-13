@@ -66,7 +66,11 @@ function sheetSnapshot() {
 }
 
 function usePickerVariant(): PickerVariant {
-  const sheet = useSyncExternalStore(subscribeSheet, sheetSnapshot, () => false);
+  const sheet = useSyncExternalStore(
+    subscribeSheet,
+    sheetSnapshot,
+    () => false
+  );
   return sheet ? 'sheet' : 'dialog';
 }
 
@@ -139,8 +143,7 @@ function WorkspaceName({ name }: { name: string }) {
   useEffect(() => {
     const node = ref.current;
     if (!node) return;
-    const measure = () =>
-      setTruncated(node.scrollWidth > node.clientWidth + 1);
+    const measure = () => setTruncated(node.scrollWidth > node.clientWidth + 1);
     measure();
     if (typeof ResizeObserver === 'undefined') return;
     const observer = new ResizeObserver(measure);
@@ -247,21 +250,22 @@ export function WorkspacePickerDialog({
     history.recent.filter((id) => !history.pinned.includes(id)),
     visible
   );
-  const placed = new Set([...pinned, ...recent].map((workspace) => workspace.id));
+  const placed = new Set(
+    [...pinned, ...recent].map((workspace) => workspace.id)
+  );
   const rest = visible
     .filter((workspace) => !placed.has(workspace.id))
     .sort(
       (a, b) =>
         (a.name ?? '').localeCompare(b.name ?? '') || a.id.localeCompare(b.id)
     );
-  const rows = [
-    ...pinned,
-    ...recent,
-    ...rest,
-    ...(hiddenOpen ? hidden : []),
-  ];
+  const rows = [...pinned, ...recent, ...rest, ...(hiddenOpen ? hidden : [])];
   const firstId = rows[0]?.id ?? '';
-  if (open && !rows.some((workspace) => workspace.id === activeId)) {
+  if (
+    open &&
+    activeId !== firstId &&
+    !rows.some((workspace) => workspace.id === activeId)
+  ) {
     setActiveId(firstId);
   }
 
@@ -290,9 +294,9 @@ export function WorkspacePickerDialog({
       return;
     }
     event.preventDefault();
-    const currentChoice = (document.activeElement as HTMLElement | null)?.closest(
-      '[data-workspace-choice]'
-    );
+    const currentChoice = (
+      document.activeElement as HTMLElement | null
+    )?.closest('[data-workspace-choice]');
     const index = buttons.findIndex((button) => button === currentChoice);
     const next =
       event.key === 'Home'
@@ -339,9 +343,12 @@ export function WorkspacePickerDialog({
     moveFocus(event);
   }
 
-  const failed = Boolean(listError || visibility.isError || visibility.updateError);
+  const failed = Boolean(
+    listError || visibility.isError || visibility.updateError
+  );
   const waiting =
-    !visibility.known || ((listLoading || Boolean(listError)) && workspaces.length === 0);
+    !visibility.known ||
+    ((listLoading || Boolean(listError)) && workspaces.length === 0);
   const showSkeleton = waiting && !listError && !visibility.isError;
   const showList = !waiting;
   const shortcut =
@@ -393,7 +400,12 @@ export function WorkspacePickerDialog({
               {shortcut}
             </kbd>
             <DialogClose asChild>
-              <Button aria-label={t('close')} size="icon" type="button" variant="ghost">
+              <Button
+                aria-label={t('close')}
+                size="icon"
+                type="button"
+                variant="ghost"
+              >
                 <X />
               </Button>
             </DialogClose>
@@ -420,7 +432,10 @@ export function WorkspacePickerDialog({
             value={search}
           />
           {failed && (
-            <div className="flex items-center gap-3 border-b px-4 py-2" role="alert">
+            <div
+              className="flex items-center gap-3 border-b px-4 py-2"
+              role="alert"
+            >
               <p className="min-w-0 flex-1 text-sm">
                 {listError
                   ? listT('error_workspaces')
@@ -451,7 +466,9 @@ export function WorkspacePickerDialog({
           >
             {showSkeleton ? (
               <div className="space-y-2 p-3" role="status">
-                <p className="px-1 text-muted-foreground text-sm">{t('loading')}</p>
+                <p className="px-1 text-muted-foreground text-sm">
+                  {t('loading')}
+                </p>
                 {Array.from({ length: 4 }, (_, index) => (
                   <div
                     aria-hidden="true"
@@ -463,117 +480,120 @@ export function WorkspacePickerDialog({
             ) : null}
             {showList ? (
               <>
-              <CommandList
-                className="max-h-none overflow-visible"
-                id={listId}
-                label={t('select_workspace')}
-              >
-                <PickerSection
-                  activeId={activeId}
-                  currentId={currentId}
-                  defaultId={defaultId}
-                  heading={t('picker_pinned')}
-                  id="pinned"
-                  onChoose={choose}
-                  onDefault={onDefault}
-                  onTogglePin={history.togglePin}
-                  pinnedIds={history.pinned}
-                  rows={pinned}
-                  setHidden={visibility.setHidden}
-                  t={t}
-                  visibility={visibility}
-                />
-                <PickerSection
-                  activeId={activeId}
-                  currentId={currentId}
-                  defaultId={defaultId}
-                  heading={t('picker_recent')}
-                  id="recent"
-                  onChoose={choose}
-                  onDefault={onDefault}
-                  onTogglePin={history.togglePin}
-                  pinnedIds={history.pinned}
-                  rows={recent}
-                  setHidden={visibility.setHidden}
-                  t={t}
-                  visibility={visibility}
-                />
-                <PickerSection
-                  activeId={activeId}
-                  currentId={currentId}
-                  defaultId={defaultId}
-                  heading={t('picker_section_all')}
-                  id="all"
-                  onChoose={choose}
-                  onDefault={onDefault}
-                  onTogglePin={history.togglePin}
-                  pinnedIds={history.pinned}
-                  rows={rest}
-                  setHidden={visibility.setHidden}
-                  t={t}
-                  visibility={visibility}
-                />
-                {!pinned.length && !recent.length && !rest.length ? (
-                  <p className="px-3 py-8 text-center text-muted-foreground text-sm" role="status">
-                    {query
-                      ? t('no_workspace_found')
-                      : workspaces.length
-                        ? t('all_workspaces_hidden')
-                        : t('no_workspace_found')}
-                  </p>
-                ) : null}
-              </CommandList>
-              <div
-                className="border-t"
-                data-testid="workspace-picker-section-hidden"
-              >
-                <button
-                  aria-controls={hiddenPanelId}
-                  aria-expanded={hiddenOpen}
-                  className="flex w-full items-center gap-2 rounded-md px-3 py-2 text-left text-sm hover:bg-accent focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
-                  data-testid="workspace-picker-hidden-toggle"
-                  onClick={() => setHiddenOpen((current) => !current)}
-                  type="button"
+                <CommandList
+                  className="max-h-none overflow-visible"
+                  id={listId}
+                  label={t('select_workspace')}
                 >
-                  <ChevronRight
-                    className={cn(
-                      'size-4 transition-transform',
-                      hiddenOpen && 'rotate-90'
-                    )}
+                  <PickerSection
+                    activeId={activeId}
+                    currentId={currentId}
+                    defaultId={defaultId}
+                    heading={t('picker_pinned')}
+                    id="pinned"
+                    onChoose={choose}
+                    onDefault={onDefault}
+                    onTogglePin={history.togglePin}
+                    pinnedIds={history.pinned}
+                    rows={pinned}
+                    setHidden={visibility.setHidden}
+                    t={t}
+                    visibility={visibility}
                   />
-                  <span className="flex-1">
-                    {t('hidden_workspaces')} ({visibility.hiddenIds.length})
-                  </span>
-                </button>
-                {hiddenOpen ? (
-                  <div id={hiddenPanelId}>
-                    {hidden.length ? (
-                      <PickerSection
-                        activeId={activeId}
-                        currentId={currentId}
-                        defaultId={defaultId}
-                        hidden
-                        id="hidden-rows"
-                        onChoose={choose}
-                        onDefault={onDefault}
-                        onTogglePin={history.togglePin}
-                        pinnedIds={history.pinned}
-                        rows={hidden}
-                        setHidden={visibility.setHidden}
-                        t={t}
-                        visibility={visibility}
-                      />
-                    ) : (
-                      <p
-                        className="px-3 py-4 text-muted-foreground text-sm"
-                        role="status"
-                      >
-                        {t('hidden_workspaces_empty')}
-                      </p>
-                    )}
-                  </div>
-                ) : null}
-              </div>
+                  <PickerSection
+                    activeId={activeId}
+                    currentId={currentId}
+                    defaultId={defaultId}
+                    heading={t('picker_recent')}
+                    id="recent"
+                    onChoose={choose}
+                    onDefault={onDefault}
+                    onTogglePin={history.togglePin}
+                    pinnedIds={history.pinned}
+                    rows={recent}
+                    setHidden={visibility.setHidden}
+                    t={t}
+                    visibility={visibility}
+                  />
+                  <PickerSection
+                    activeId={activeId}
+                    currentId={currentId}
+                    defaultId={defaultId}
+                    heading={t('picker_section_all')}
+                    id="all"
+                    onChoose={choose}
+                    onDefault={onDefault}
+                    onTogglePin={history.togglePin}
+                    pinnedIds={history.pinned}
+                    rows={rest}
+                    setHidden={visibility.setHidden}
+                    t={t}
+                    visibility={visibility}
+                  />
+                  {!pinned.length && !recent.length && !rest.length ? (
+                    <p
+                      className="px-3 py-8 text-center text-muted-foreground text-sm"
+                      role="status"
+                    >
+                      {query
+                        ? t('no_workspace_found')
+                        : workspaces.length
+                          ? t('all_workspaces_hidden')
+                          : t('no_workspace_found')}
+                    </p>
+                  ) : null}
+                </CommandList>
+                <div
+                  className="border-t"
+                  data-testid="workspace-picker-section-hidden"
+                >
+                  <button
+                    aria-controls={hiddenPanelId}
+                    aria-expanded={hiddenOpen}
+                    className="flex w-full items-center gap-2 rounded-md px-3 py-2 text-left text-sm hover:bg-accent focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                    data-testid="workspace-picker-hidden-toggle"
+                    onClick={() => setHiddenOpen((current) => !current)}
+                    type="button"
+                  >
+                    <ChevronRight
+                      className={cn(
+                        'size-4 transition-transform',
+                        hiddenOpen && 'rotate-90'
+                      )}
+                    />
+                    <span className="flex-1">
+                      {t('hidden_workspaces')} ({visibility.hiddenIds.length})
+                    </span>
+                  </button>
+                  {hiddenOpen ? (
+                    <div id={hiddenPanelId}>
+                      {hidden.length ? (
+                        <PickerSection
+                          activeId={activeId}
+                          currentId={currentId}
+                          defaultId={defaultId}
+                          hidden
+                          id="hidden-rows"
+                          onChoose={choose}
+                          onDefault={onDefault}
+                          onTogglePin={history.togglePin}
+                          pinnedIds={history.pinned}
+                          rows={hidden}
+                          setHidden={visibility.setHidden}
+                          t={t}
+                          visibility={visibility}
+                        />
+                      ) : (
+                        <p
+                          className="px-3 py-4 text-muted-foreground text-sm"
+                          role="status"
+                        >
+                          {t('hidden_workspaces_empty')}
+                        </p>
+                      )}
+                    </div>
+                  ) : null}
+                </div>
               </>
             ) : null}
           </div>
@@ -652,7 +672,8 @@ function PickerSection({
   t: ReturnType<typeof useTranslations>;
 }) {
   if (!rows.length) return null;
-  const testId = id === 'hidden-rows' ? undefined : `workspace-picker-section-${id}`;
+  const testId =
+    id === 'hidden-rows' ? undefined : `workspace-picker-section-${id}`;
   return (
     <CommandGroup data-testid={testId} heading={heading}>
       {rows.map((workspace) => (
@@ -724,7 +745,10 @@ function WorkspaceRow({
     >
       <span
         aria-hidden="true"
-        className={cn('size-2 shrink-0 rounded-full', accentClass(workspace.id))}
+        className={cn(
+          'size-2 shrink-0 rounded-full',
+          accentClass(workspace.id)
+        )}
       />
       <WorkspaceIcon
         avatarUrl={workspace.avatar_url}
@@ -739,11 +763,17 @@ function WorkspaceRow({
           </span>
         ) : null}
       </span>
-      <Badge className={cn('h-5 px-1.5 font-medium text-[10px]', tierClass(tier))} variant="outline">
+      <Badge
+        className={cn('h-5 px-1.5 font-medium text-[10px]', tierClass(tier))}
+        variant="outline"
+      >
         {tier}
       </Badge>
       {current ? (
-        <Check aria-label={t('current_workspace')} className="size-4 text-primary" />
+        <Check
+          aria-label={t('current_workspace')}
+          className="size-4 text-primary"
+        />
       ) : (
         <span className="size-4" />
       )}
@@ -763,7 +793,9 @@ function WorkspaceRow({
             label={t('default_workspace')}
             onClick={() => onDefault(workspace.id)}
           >
-            <Star className={workspace.id === defaultId ? 'fill-current' : ''} />
+            <Star
+              className={workspace.id === defaultId ? 'fill-current' : ''}
+            />
           </RowAction>
         ) : null}
         <RowAction

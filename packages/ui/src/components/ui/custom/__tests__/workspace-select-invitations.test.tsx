@@ -268,7 +268,9 @@ it.each(['empty', 'error', 'loading'] as const)(
     expect(current?.closest('.overflow-y-auto')).not.toBeNull();
     const command = document.querySelector('[data-invitation-command]');
     expect(
-      document.querySelector('[data-testid="workspace-picker-section-invitations"]')
+      document.querySelector(
+        '[data-testid="workspace-picker-section-invitations"]'
+      )
     ).toBeNull();
     if (state === 'error') {
       expect(command).toHaveClass('h-auto', 'shrink-0');

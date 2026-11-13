@@ -133,7 +133,9 @@ describe('WorkspacePickerDialog', () => {
     expect(toggle).toHaveAttribute('aria-expanded', 'false');
     fireEvent.click(toggle);
     expect(toggle).toHaveAttribute('aria-expanded', 'true');
-    expect(screen.getByTestId('workspace-picker-row-hidden')).toBeInTheDocument();
+    expect(
+      screen.getByTestId('workspace-picker-row-hidden')
+    ).toBeInTheDocument();
     expect(screen.getByTestId('workspace-picker-join')).toBeInTheDocument();
     expect(screen.getByTestId('workspace-picker-create')).toBeInTheDocument();
     expect(
