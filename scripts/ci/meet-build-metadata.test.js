@@ -651,18 +651,23 @@ test('Meet builds with production Supabase values only on the production ref', (
   );
 });
 
-
 test('Meet selects the fixture graph without replacing production packaging', () => {
   const steps = workflow.jobs.validate.steps;
   const supplier = steps.find((step) => step.id === 'meet-fixture-supplier');
   const seal = uniqueActor(steps, 'Seal exact-SHA frontend artifact');
-  const gate = uniqueActor(steps,
-    'Verify emitted Start SSR, auth, cookies, rewrites and Live guards');
+  const gate = uniqueActor(
+    steps,
+    'Verify emitted Start SSR, auth, cookies, rewrites and Live guards'
+  );
   assert.ok(steps.indexOf(supplier) > steps.indexOf(seal));
   assert.equal(steps.indexOf(gate), steps.indexOf(supplier) + 1);
-  assert.equal(gate.env.MEET_FIXTURE_RECEIPT,
-    '${{ steps.meet-fixture-supplier.outputs.receipt }}');
+  assert.equal(
+    gate.env.MEET_FIXTURE_RECEIPT,
+    '${{ steps.meet-fixture-supplier.outputs.receipt }}'
+  );
   assert.equal(gate.run, runtimeGateCommands.validate);
-  artifactArchiveCommand(uniqueActor(steps,
-    'Verify and pack accepted exact-SHA frontend artifact').run);
+  artifactArchiveCommand(
+    uniqueActor(steps, 'Verify and pack accepted exact-SHA frontend artifact')
+      .run
+  );
 });

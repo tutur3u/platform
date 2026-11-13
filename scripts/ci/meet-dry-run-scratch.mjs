@@ -81,7 +81,9 @@ async function main() {
   const app = fileURLToPath(new URL('../../apps/meet', import.meta.url));
   const appStat = await canonicalDirectory(app);
   assert.equal(await realpath(process.cwd()), app, 'Meet cwd required');
-  const proofPlan = production ? await readMeetProductionReceipt(sourceSHA, process.argv[4]) : undefined;
+  const proofPlan = production
+    ? await readMeetProductionReceipt(sourceSHA, process.argv[4])
+    : undefined;
   if (proofPlan) assert.equal(proofPlan.app, app);
   const root = join(app, 'dist');
   const rootStat = await canonicalDirectory(root);
