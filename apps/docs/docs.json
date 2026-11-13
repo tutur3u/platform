@@ -98,6 +98,7 @@
               "platform/features/legal-publications",
               "platform/features/command-center-dashboard",
               "platform/features/document-hierarchy",
+              "platform/features/education-inline-assistant",
               "platform/personal-journal",
               "platform/features/assistant-live",
               "platform/features/mira-mail-tools",
