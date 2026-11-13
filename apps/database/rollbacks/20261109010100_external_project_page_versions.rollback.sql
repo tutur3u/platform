@@ -1,3 +1,4 @@
+-- PRE-LAUNCH ONLY — data loss after first publish
 -- Manual rollback only: removes CMS page versions and the entry pointer added
 -- by 20261109010100_external_project_page_versions.sql. This deletes every
 -- saved page version (publish events stay); export the table first if any
