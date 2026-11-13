@@ -104,9 +104,9 @@ stack for every edit.
   unrelated dirty files owned by a human or another agent.
 - Use Conventional Commit style if asked to commit.
 
-- Keep Docker setup, the retired Docker cron runner, Rust, and TanStack Start
-  inactive: no implementation tests, builds, migration refreshes, or dependency
-  updates until explicitly resumed. Validate the pause via policy tests only.
+- Keep Docker setup, Rust, the retired Docker cron runner, and the retired
+  `apps/tanstack-web` tree inactive: no implementation tests, builds, migration
+  refreshes, or dependency updates. Per-app native Start stays active. Validate the pause via policy tests only.
 
 ## Shared-secret KDF budgets
 
