@@ -144,6 +144,17 @@ describe('workspace invitation picker items', () => {
     await waitFor(() => expect(onAccepted).toHaveBeenCalledWith(invitation));
   });
 
+  it('refetches stale invitations after an accept error', async () => {
+    mocks.acceptWorkspaceInvite.mockRejectedValueOnce(
+      new Error('No pending invite')
+    );
+    renderHarness();
+    fireEvent.click(await screen.findByRole('option', { name: /Acme/ }));
+    await waitFor(() =>
+      expect(mocks.listWorkspaceInvitations).toHaveBeenCalledTimes(2)
+    );
+  });
+
   it('declines in place without activating the accept option', async () => {
     const onDeclined = vi.fn();
     renderHarness({ onDeclined });

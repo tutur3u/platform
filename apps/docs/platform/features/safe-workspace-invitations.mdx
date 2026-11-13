@@ -50,3 +50,23 @@ Before implementation ships, add behavior tests for concurrent limit enforcement
 ## Decisions needed
 
 Choose expiry and rate thresholds, low-trust criteria, recipient-domain policy, opt-out scope and retention, and the approval owner and renewal rules. Confirm domain entitlement and the shared suppression service contract with their owners. Decide the reply-to verification and inbound handling model. No real-recipient sends or custom client-facing sender changes are authorized by this design.
+
+## Invitation acceptance and replay
+
+Web and satellite clients that use the shared notification card and workspace
+picker refresh invitation, workspace-list and current-user caches after accepting
+an invitation. Picker invitation and workspace-list refreshes retain the recipient
+cache scope. An accept failure refetches pending invitations to remove stale rows.
+The picker membership label describes member/guest access, not custom roles.
+
+The Web accept-invite endpoint treats an authenticated existing member's replay
+with no pending direct or verified-email invitation as success. It finalizes invite
+notifications without granting roles, changing membership type or writing seats.
+Personal workspaces remain forbidden. Pending invitations still finalize their
+invited roles and membership type, including guest upgrades; new members retain
+seat and provider checks. Non-members without invitations retain guest self-join
+eligibility requirements and errors.
+
+Regression coverage: `packages/ui/src/components/ui/custom/notification-card.test.tsx`,
+`packages/ui/src/components/ui/custom/__tests__/workspace-select-invitations.test.tsx`,
+and `apps/web/src/__tests__/workspace-accept-invite-route.test.ts`.
