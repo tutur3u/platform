@@ -1,5 +1,5 @@
 import { beforeEach, vi } from 'vitest';
-export const f = vi.hoisted(() => ({
+const mocks = vi.hoisted(() => ({
   cloudflare: vi.fn(),
   fetch: vi.fn(),
   callRoom: vi.fn(),
@@ -19,7 +19,7 @@ export const f = vi.hoisted(() => ({
   order: [] as string[],
 }));
 vi.mock('@opennextjs/cloudflare', () => ({
-  getCloudflareContext: f.cloudflare,
+  getCloudflareContext: mocks.cloudflare,
 }));
 vi.mock('@tuturuuu/meet-core/features/call/lib/call-access', () => ({
   MeetCallAccessError: class extends Error {
@@ -32,7 +32,7 @@ vi.mock('@tuturuuu/meet-core/features/call/lib/call-access', () => ({
   },
 }));
 vi.mock('@tuturuuu/meet-core/features/call/server/room-service', () => ({
-  callRoomService: f.callRoom,
+  callRoomService: mocks.callRoom,
   personalWorkspace: async () => '00000000-0000-4000-8000-000000000003',
   roomRoute: async (
     _request: Request,
@@ -43,7 +43,7 @@ vi.mock('@tuturuuu/meet-core/features/call/server/room-service', () => ({
       return Response.json(
         await work({
           user: { id: '00000000-0000-4000-8000-000000000001' },
-          canReadWorkspace: f.member,
+          canReadWorkspace: mocks.member,
           isHost: true,
           displayName: 'Synthetic person',
           meeting: {
@@ -66,13 +66,16 @@ vi.mock('../../../../features/live-assistant/server/demo-authority', () => ({
     disabledBinding: unknown;
     workspaceMember: boolean;
   }) =>
-    f.authorized && input.workspaceMember && input.disabledBinding === 'false'
+    mocks.authorized &&
+    input.workspaceMember &&
+    input.disabledBinding === 'false'
       ? { allowed: true, authority: 'verified-personal' }
       : { allowed: false, reason: 'workspace' },
 }));
 vi.mock('@tuturuuu/meet-core/features/live-assistant/token', () => ({
-  signLiveSession: f.sign,
+  signLiveSession: mocks.sign,
 }));
+export const f = mocks;
 export { POST as live } from './route';
 export { POST as review } from './review/route';
 export const meetingId = '00000000-0000-4000-8000-000000000002';
@@ -94,11 +97,11 @@ export const call = (
     { params: Promise.resolve({ meetingId }) }
   );
 export const bind = (disabled: string | undefined) =>
-  f.cloudflare.mockResolvedValue({
+  mocks.cloudflare.mockResolvedValue({
     env: {
       MEET_LIVE: {
         idFromName: (id: string) => id,
-        get: () => ({ fetch: f.fetch }),
+        get: () => ({ fetch: mocks.fetch }),
       },
       GOOGLE_GENERATIVE_AI_API_KEY: 'synthetic-key',
       MEET_REALTIME_TOKEN_SECRET: 'synthetic-secret',
@@ -107,11 +110,11 @@ export const bind = (disabled: string | undefined) =>
   });
 beforeEach(() => {
   vi.resetAllMocks();
-  f.authorized = true;
-  f.member = true;
-  f.sessions = [];
-  f.order = [];
-  f.choice = {
+  mocks.authorized = true;
+  mocks.member = true;
+  mocks.sessions = [];
+  mocks.order = [];
+  mocks.choice = {
     choice: 'continue',
     version,
     meetingId,
@@ -119,46 +122,46 @@ beforeEach(() => {
     recordedAt: 1000,
     revision: 1,
   };
-  f.sign.mockImplementation((claims: Record<string, unknown>) => {
-    f.order.push('token');
-    f.claims = claims;
+  mocks.sign.mockImplementation((claims: Record<string, unknown>) => {
+    mocks.order.push('token');
+    mocks.claims = claims;
     return 'synthetic-token';
   });
-  f.fetch.mockImplementation(async (url: string, init: RequestInit) => {
+  mocks.fetch.mockImplementation(async (url: string, init: RequestInit) => {
     const body = JSON.parse(String(init.body));
-    if (url.endsWith('/initialize')) f.claims = body.claims;
-    if (body.action === 'stop') f.order.push('stop');
+    if (url.endsWith('/initialize')) mocks.claims = body.claims;
+    if (body.action === 'stop') mocks.order.push('stop');
     return Response.json(
       url.endsWith('/control') && body.action === 'resume'
-        ? f.claims
+        ? mocks.claims
         : { ok: true }
     );
   });
-  f.callRoom.mockImplementation(
+  mocks.callRoom.mockImplementation(
     async (
       _access: unknown,
       input: { action: string; sessionId?: string; choice?: string }
     ) => {
-      f.order.push(input.action);
+      mocks.order.push(input.action);
       if (input.action === 'mira.private.register')
-        f.sessions.push(input.sessionId!);
+        mocks.sessions.push(input.sessionId!);
       if (input.action === 'mira.private.ended')
-        f.sessions = f.sessions.filter((id) => id !== input.sessionId);
+        mocks.sessions = mocks.sessions.filter((id) => id !== input.sessionId);
       if (input.action === 'mira.private.choice')
-        f.choice = {
-          ...f.choice!,
+        mocks.choice = {
+          ...mocks.choice!,
           choice: input.choice!,
           version,
           meetingId,
           accountId: actorId,
           recordedAt: 1001,
-          revision: (f.choice?.revision ?? 0) + 1,
+          revision: (mocks.choice?.revision ?? 0) + 1,
         };
       return {
         version,
         admitted: true,
-        choice: f.choice,
-        sessions: f.sessions,
+        choice: mocks.choice,
+        sessions: mocks.sessions,
       };
     }
   );

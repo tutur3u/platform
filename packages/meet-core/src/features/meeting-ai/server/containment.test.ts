@@ -139,18 +139,18 @@ describe('Meet AI default-off gate on the Meet Worker', () => {
     );
   });
 
-  it('allows only an explicitly listed workspace on every gate', async () => {
+  it('keeps workspace-wide generation denied even with a listed workspace', async () => {
     const env = {
       MEET_AI_PROTECTED_WORKSPACE_IDS: '00000000-0000-4000-8000-0000000000ee',
       MEET_AI_ENABLED_WORKSPACE_IDS: `${EASY_CENTER},${OTHER}`,
     };
     mocks.context.mockResolvedValue({ env });
-    expect(await meetAiAvailable(OTHER)).toBe(true);
-    expect(isMeetAiAvailableForWorkspace(OTHER, env)).toBe(true);
-    expect(liveWorkspaceAllowed(env, live(OTHER))).toBe(true);
+    expect(await meetAiAvailable(OTHER)).toBe(false);
+    expect(isMeetAiAvailableForWorkspace(OTHER, env)).toBe(false);
+    expect(liveWorkspaceAllowed(env, live(OTHER))).toBe(false);
     await expect(
       assertMeetAiRoom({ meeting: { ws_id: OTHER } })
-    ).resolves.toBeUndefined();
+    ).rejects.toMatchObject({ status: 403 });
   });
 
   it('fails closed when the Worker context is unavailable', async () => {
