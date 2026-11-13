@@ -521,7 +521,12 @@ export const CalendarContent = ({
     agenda: enableAgendaView,
   });
 
-  if (!initialized || !view || !dates.length) return null;
+  if (!initialized || !view || !dates.length) {
+    // Reserve the late-loading calendar space with a stable skeleton instead of
+    // rendering nothing. The grid otherwise appears only after hydration sets
+    // `initialized` and `dates`, shifting the layout from blank to content.
+    return <CalendarLoadingSkeleton dates={dates} view={view ?? 'week'} />;
+  }
 
   return (
     <div

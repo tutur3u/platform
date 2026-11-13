@@ -40,7 +40,9 @@ vi.mock('./calendar-header', () => ({
 }));
 vi.mock('./agenda-view', () => ({ AgendaView: () => <div>Agenda</div> }));
 vi.mock('./calendar-loading-skeleton', () => ({
-  CalendarLoadingSkeleton: () => null,
+  CalendarLoadingSkeleton: () => (
+    <div data-testid="calendar-loading-skeleton" aria-busy="true" />
+  ),
 }));
 vi.mock('./calendar-view-with-trail', () => ({
   CalendarViewWithTrail: () => null,
@@ -191,5 +193,14 @@ describe('satellite controlled calendar views', () => {
     expect(
       dates.some((date) => date.getMonth() === 10 && date.getDate() === 30)
     ).toBe(true);
+  });
+  it('reserves the calendar space with a skeleton until the grid initializes', () => {
+    mocks.dates = [];
+    try {
+      render(<CalendarContent t={translate} locale="en" />);
+      expect(screen.getByTestId('calendar-loading-skeleton')).toBeTruthy();
+    } finally {
+      mocks.dates = [new Date(2026, 8, 7)];
+    }
   });
 });
