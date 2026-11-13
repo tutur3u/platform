@@ -84,7 +84,8 @@ export async function generateChangelog({
   if (env.ROADMAP_OFFLINE === '1') return restore();
   const signal = AbortSignal.timeout(55_000);
   let lastRequest = 0;
-  const request = async (url, options = {}) => {
+  // `kind` labels error codes; never derive it from the URL.
+  const request = async (kind, url, options = {}) => {
     const delay = Math.max(0, 250 - (Date.now() - lastRequest));
     if (delay) await new Promise((done) => setTimeout(done, delay));
     signal.throwIfAborted();
@@ -94,10 +95,7 @@ export async function generateChangelog({
       signal,
       redirect: 'error',
     });
-    if (!response.ok)
-      throw Error(
-        `${url.startsWith('https://api.github.com') ? 'GH' : 'LLM'}_HTTP_${response.status}`
-      );
+    if (!response.ok) throw Error(`${kind}_HTTP_${response.status}`);
     return response.json();
   };
   let windows;
@@ -105,7 +103,7 @@ export async function generateChangelog({
     windows =
       inputs ??
       (await fetchInputs((path) =>
-        request(`https://api.github.com${path}`, {
+        request('GH', `https://api.github.com${path}`, {
           headers: { accept: 'application/vnd.github+json' },
         })
       ));
@@ -145,6 +143,7 @@ export async function generateChangelog({
     if (allowed && items.length) {
       try {
         const response = await request(
+          'LLM',
           `https://generativelanguage.googleapis.com/v1beta/models/${MODEL}:generateContent`,
           {
             method: 'POST',
