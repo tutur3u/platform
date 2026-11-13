@@ -8,8 +8,13 @@
  * rate limit; it is never written anywhere. If the core sources fail, the
  * previous file is kept untouched, with its own honest timestamp.
  * ROADMAP_OFFLINE=1 skips the refresh entirely.
+ *
+ * Hosting (providers and the subdomain-to-apex migration) is observed on
+ * every build, before and independent of GitHub, into the untracked
+ * .generated/hosting.json that Vite embeds. Offline, every hosting value is
+ * written as unverified with this build's time: never a previous build's.
  */
-import { readFileSync, writeFileSync } from 'node:fs';
+import { mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { tracks } from '../src/content/tracks.ts';
@@ -22,7 +27,10 @@ import {
   fetchPullsByNumber,
   hostFacts,
 } from '../src/live/github.ts';
-import { probeHosts } from '../src/live/host-probe.ts';
+import { PROBED_APPS, probeHosts } from '../src/live/host-probe.ts';
+import { observeHosting } from '../src/live/build-probe.ts';
+import { offlineSnapshot } from '../src/live/hosting.ts';
+import { ONE_ORIGIN_APP_BASE_PATHS } from '../../../packages/utils/src/app-mounts.ts';
 import { parseLiveData, REPO } from '../src/live/model.ts';
 
 const root = dirname(dirname(fileURLToPath(import.meta.url)));
@@ -69,7 +77,36 @@ async function mobileRelease() {
   return { app: 'mobile', platform: 'store', commit: sha, ...compare };
 }
 
+const hostingTarget = join(root, '.generated/hosting.json');
+
+async function writeHosting() {
+  const snapshot =
+    process.env.ROADMAP_OFFLINE === '1'
+      ? offlineSnapshot(now, ONE_ORIGIN_APP_BASE_PATHS, PROBED_APPS)
+      : await observeHosting(
+          fetch,
+          ONE_ORIGIN_APP_BASE_PATHS,
+          now,
+          process.env.ROADMAP_SOURCE_SHA ?? null
+        );
+  mkdirSync(dirname(hostingTarget), { recursive: true });
+  writeFileSync(hostingTarget, `${JSON.stringify(snapshot, null, 2)}\n`);
+  const tally = (key, list) =>
+    Object.entries(
+      list.reduce(
+        (all, item) => ({ ...all, [item[key]]: (all[item[key]] ?? 0) + 1 }),
+        {}
+      )
+    )
+      .map(([name, count]) => `${name} ${count}`)
+      .join(', ');
+  log(
+    `hosting ${snapshot.mode} at ${snapshot.checkedAt}: providers ${tally('provider', snapshot.providers)}; migration ${tally('state', snapshot.migration)}`
+  );
+}
+
 async function main() {
+  await writeHosting();
   if (process.env.ROADMAP_OFFLINE === '1') {
     log('ROADMAP_OFFLINE=1: keeping committed data');
     return;

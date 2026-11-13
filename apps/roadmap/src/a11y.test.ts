@@ -104,3 +104,62 @@ describe('a11y: shared navbar logo', () => {
     assert.doesNotMatch(logo, /'hidden font-bold/);
   });
 });
+
+describe('a11y: the compact navbar keeps the logo link named', () => {
+  const css = readFileSync(new URL('./styles.css', import.meta.url), 'utf8');
+  /** Declarations of every rule whose selector list hides the brand name. */
+  const brandRules = (source: string) =>
+    [...source.matchAll(/([^{}]+)\{([^{}]*)\}/g)]
+      .filter((match) =>
+        (match[1] ?? '')
+          .split(',')
+          .some((selector) =>
+            /#navbar-content a > span\s*$/.test(selector.trim())
+          )
+      )
+      .map((match) => match[2] ?? '');
+  const removesName = (source: string) =>
+    brandRules(source).some((body) =>
+      /display:\s*none|visibility:\s*hidden/.test(body)
+    );
+
+  it('hides the brand name visually, not from the accessibility tree', () => {
+    assert.ok(brandRules(css).length >= 1);
+    assert.equal(removesName(css), false);
+    // Broken variant: display: none leaves the link with no accessible name
+    // once the logo image is decorative (axe link-name).
+    assert.equal(
+      removesName(
+        '.roadmap[data-nav-compact] #navbar-content > div:last-child,\n.roadmap[data-nav-compact] #navbar-content a > span {\n  display: none;\n}'
+      ),
+      true
+    );
+  });
+});
+
+describe('a11y: workshop pages keep the navbar controls', () => {
+  const css = readFileSync(new URL('./styles.css', import.meta.url), 'utf8');
+  /** Selectors that hide the navbar's actions group (menu, language, theme). */
+  const hidesActions = (source: string) =>
+    [...source.matchAll(/([^{}]+)\{([^{}]*)\}/g)]
+      .filter((match) => /display:\s*none/.test(match[2] ?? ''))
+      .flatMap((match) => (match[1] ?? '').split(','))
+      .map((selector) => selector.replace(/\s+/g, ' ').trim())
+      .filter((selector) =>
+        selector.endsWith('#navbar-content > div:last-child')
+      );
+
+  it('only the docked roadmap hides them, never an always-compact workshop page', () => {
+    const selectors = hidesActions(css);
+    assert.ok(selectors.length >= 1);
+    for (const selector of selectors)
+      assert.match(selector, /:not\(\.workshop\)/, selector);
+    // Broken variant: an unscoped rule also matches EduFest
+    // (class "roadmap workshop", always data-nav-compact), which then has
+    // no menu, language switch or theme toggle at any width.
+    const broken = hidesActions(
+      '.roadmap[data-nav-compact] #navbar-content > div:last-child { display: none; }'
+    );
+    assert.ok(broken.some((selector) => !/:not\(\.workshop\)/.test(selector)));
+  });
+});

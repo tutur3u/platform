@@ -1,5 +1,6 @@
 'use client';
 
+import { poster } from './hero-assets';
 import { Play } from '@tuturuuu/icons/lucide';
 import { type ReactNode, useCallback, useRef, useState } from 'react';
 const YOUTUBE_VIDEO_ID = 'JGWbvaAC24Q';
@@ -67,7 +68,9 @@ export function VideoPlayer({
             <img
               alt={thumbnail}
               className="absolute inset-0 block h-full w-full object-cover transition-transform duration-700 group-hover:scale-[1.03]"
-              src="/media/privacy/product-tour.jpg"
+              src={poster.src}
+              srcSet={poster.srcSet}
+              sizes={poster.sizes}
               width={1280}
               height={720}
               loading="eager"

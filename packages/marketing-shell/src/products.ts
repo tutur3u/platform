@@ -16,7 +16,7 @@ import {
   Users,
   Wallet,
   Zap,
-} from '@tuturuuu/icons/lucide-static';
+} from './static-icons';
 import type { ComponentType } from 'react';
 
 export interface MarketingProduct {

@@ -11,6 +11,7 @@ import { readdirSync, readFileSync } from 'node:fs';
 import { stripTypeScriptTypes } from 'node:module';
 import { after, describe, it } from 'node:test';
 import { Miniflare } from 'miniflare';
+import { MAX_DOCUMENT_BYTES } from './csp.ts';
 import { inlineScriptTexts } from './html-scripts.ts';
 
 const CSP_SOURCE = readFileSync(new URL('./csp.ts', import.meta.url), 'utf8');
@@ -24,7 +25,13 @@ export default {
     if (op === 'scripts') return Response.json(await inlineScripts(html));
     if (op === 'policy') return Response.json(await contentSecurityPolicy(html));
     const original = new Response(html, init);
-    const wrapped = await withContentSecurityPolicy(original);
+    // 'wrap-boot' adds an inline loader, as the Worker's deferHydration does.
+    const wrapped = await withContentSecurityPolicy(
+      original,
+      op === 'wrap-boot'
+        ? (text) => text.replace('</body>', '<script>boot()</script></body>')
+        : undefined
+    );
     return Response.json({
       same: wrapped === original,
       status: wrapped.status,
@@ -61,13 +68,20 @@ after(() => worker?.dispose());
 const inlineScripts = (html: string) => call<string[]>({ op: 'scripts', html });
 const contentSecurityPolicy = (html: string) =>
   call<string>({ op: 'policy', html });
+type Wrapped = {
+  same: boolean;
+  status: number;
+  headers: Record<string, string>;
+  body: string | null;
+};
 const withContentSecurityPolicy = (html: string | null, init: ResponseInit) =>
-  call<{
-    same: boolean;
-    status: number;
-    headers: Record<string, string>;
-    body: string | null;
-  }>({ op: 'wrap', html, init });
+  call<Wrapped>({ op: 'wrap', html, init });
+const withBootLoader = (html: string) =>
+  call<Wrapped>({
+    op: 'wrap-boot',
+    html,
+    init: { headers: { 'content-type': 'text/html; charset=utf-8' } },
+  });
 
 describe('content security policy', () => {
   const HTML =
@@ -247,5 +261,70 @@ describe('content security policy: only real script elements are hashed (D87 A5)
 
   it('an unclosed script at end of file is not allowed', async () => {
     assert.deepEqual(await inlineScripts('<p>x</p><script>tail()'), []);
+  });
+});
+
+describe('content security policy: oversized documents', () => {
+  const page = (filler: number) =>
+    '<!doctype html><html><head>' +
+    '<script type="application/ld+json">{"@context":"https://schema.org"}</script>' +
+    '<script>self.theme=1</script>' +
+    '<script type="module" async="" src="/roadmap/assets/index-Abcd1234.js"></script>' +
+    `</head><body>${'x'.repeat(filler)}<script>(self.$R=self.$R||{})</script></body></html>`;
+  const executableInline = (html: string) =>
+    // Case-insensitive, like browsers: <SCRIPT> and unquoted attributes count.
+    [...html.matchAll(/<script\b([^>]*)>/gi)].filter(
+      (match) =>
+        !/\bsrc\s*=/i.test(match[1] ?? '') &&
+        !/\btype\s*=\s*["']?application\/(ld\+)?json\b/i.test(match[1] ?? '')
+    ).length;
+  /** A fallback serves no unhashed executable script, but keeps the rest. */
+  const degradesSafely = (result: Wrapped) =>
+    result.headers['content-security-policy']?.startsWith(
+      "script-src 'self';"
+    ) === true &&
+    executableInline(result.body ?? '') === 0 &&
+    (result.body ?? '').includes('<script type="application/ld+json">') &&
+    (result.body ?? '').includes(
+      '<script type="module" async="" src="/roadmap/assets/index-Abcd1234.js">'
+    );
+
+  it('the inline-script counter sees any letter case and attribute quoting', () => {
+    assert.equal(
+      executableInline('<SCRIPT>x()</SCRIPT><Script >y()</Script>'),
+      2
+    );
+    assert.equal(
+      executableInline('<SCRIPT TYPE=application/ld+json>{}</SCRIPT>'),
+      0
+    );
+    assert.equal(executableInline('<script SRC=/a.js></script>'), 0);
+  });
+
+  it('a normal page keeps the transform and hashes its inline scripts', async () => {
+    const result = await withBootLoader(page(1_000));
+    assert.ok(result.body?.includes('<script>boot()</script>'));
+    const hash = createHash('sha256').update('boot()').digest('base64');
+    assert.ok(
+      result.headers['content-security-policy']?.includes(`'sha256-${hash}'`)
+    );
+  });
+
+  it('an oversized page is served as rendered, minus its executable inline scripts', async () => {
+    const original = page(MAX_DOCUMENT_BYTES + 1);
+    const result = await withBootLoader(original);
+    assert.equal(degradesSafely(result), true);
+    assert.ok(!result.body?.includes('boot()'));
+    // Broken variants: the untouched original (unhashed inline scripts
+    // served), and the transformed page (an inline loader that is blocked).
+    assert.equal(executableInline(original), 2);
+    assert.equal(degradesSafely({ ...result, body: original }), false);
+    assert.equal(
+      degradesSafely({
+        ...result,
+        body: original.replace('</body>', '<script>boot()</script></body>'),
+      }),
+      false
+    );
   });
 });

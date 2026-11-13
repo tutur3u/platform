@@ -1,4 +1,6 @@
+import cloudflareBadge from '../assets/brands/cloudflare-protected-badge.png?no-inline';
 import { hostBadge } from '../live/host-badge';
+import { type HostingSnapshot, hostingAsOf } from '../live/hosting';
 import { REPO_URL } from '../live/model';
 import { statuses } from '../live/status';
 import type { RoadmapView } from '../view-model';
@@ -66,15 +68,16 @@ export function HostingSection({
   lang,
   view,
   main,
-  hostsCheckedAt,
+  hosting,
 }: {
   t: Messages;
   lang: Lang;
   view: RoadmapView;
   main: { sha: string; at: string } | null;
-  /** Build-time probe: the only one that can see same-zone hosting. */
-  hostsCheckedAt: string;
+  /** This build's observation: providers and their as-of time. */
+  hosting: HostingSnapshot;
 }) {
+  const asOf = hostingAsOf(hosting);
   return (
     <section className="section" aria-labelledby="hosting-title">
       <SectionHead
@@ -82,22 +85,43 @@ export function HostingSection({
         title={t.hosting.title}
         subtitle={t.hosting.subtitle}
       />
-      <p className="main-commit">
-        {t.hosting.checked}{' '}
-        <time dateTime={hostsCheckedAt}>
-          {formatDate(hostsCheckedAt, lang, true)} (UTC+7)
-        </time>{' '}
-        {t.hosting.checkedNote}
-      </p>
-      {main ? (
-        <p className="main-commit">
-          {t.hosting.main}:{' '}
-          <a href={`${REPO_URL}/commit/${main.sha}`}>
-            <code>{main.sha.slice(0, 7)}</code>
-          </a>{' '}
-          · {formatDate(main.at, lang, true)}
-        </p>
-      ) : null}
+      <div className="hosting-meta">
+        <div>
+          {asOf ? (
+            <p className="main-commit">
+              {t.hosting.checked}{' '}
+              <time dateTime={asOf}>
+                {formatDate(asOf, lang, true)} (UTC+7)
+              </time>{' '}
+              {t.hosting.checkedNote}
+            </p>
+          ) : null}
+          {hosting.mode !== 'probed' ? (
+            <p className="main-commit hosting-unverified">
+              {t.hosting.notObserved}
+            </p>
+          ) : null}
+          {main ? (
+            <p className="main-commit">
+              {t.hosting.main}:{' '}
+              <a href={`${REPO_URL}/commit/${main.sha}`}>
+                <code>{main.sha.slice(0, 7)}</code>
+              </a>{' '}
+              · {formatDate(main.at, lang, true)}
+            </p>
+          ) : null}
+        </div>
+        {/* Cloudflare's official web badge, unaltered (assets/brands). */}
+        <img
+          className="cf-badge"
+          src={cloudflareBadge}
+          alt={t.hosting.badgeAlt}
+          width={152}
+          height={53}
+          loading="lazy"
+          decoding="async"
+        />
+      </div>
       <HostSummary t={t} hosts={view.hosts} />
       {PLATFORM_ORDER.map((platform) => {
         const group = view.hosts.filter((host) => host.platform === platform);
