@@ -40,6 +40,10 @@
       "name": "inventory.tuturuuu",
       "script": "dev:app"
     },
+    "apps/marketing": {
+      "name": "marketing.tuturuuu",
+      "script": "dev:app"
+    },
     "apps/storefront": {
       "name": "storefront.tuturuuu",
       "script": "dev:app"
@@ -130,6 +134,10 @@
     },
     "apps/lettin": {
       "name": "lettin.tuturuuu",
+      "script": "dev:app"
+    },
+    "apps/workspace": {
+      "name": "workspace.tuturuuu",
       "script": "dev:app"
     }
   }

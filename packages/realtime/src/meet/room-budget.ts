@@ -15,6 +15,7 @@ export interface RoomBudget {
   expiresAt: number;
   accountedAt: number;
   participantMilliseconds: number;
+  maxParticipants?: number;
   maxPublishers: number;
   maxViewers: number;
   pendingPublications?: MeetRealtimeRoomTrack[];
@@ -26,7 +27,32 @@ export function startRoomBudget(
   token: MeetRealtimeTokenPayload,
   now: number
 ): MeetRoomSnapshot {
-  if (state.budget || !Number.isFinite(now)) return state;
+  if (!Number.isFinite(now)) return state;
+  if (state.budget) {
+    if (token.limits.maxParticipants === undefined) return state;
+    return {
+      ...state,
+      budget: {
+        ...state.budget,
+        maxParticipants: Math.min(
+          state.budget.maxParticipants ?? 100,
+          token.limits.maxParticipants
+        ),
+        ...(state.budget.maxParticipants === undefined
+          ? {
+              maxPublishers: Math.min(
+                token.limits.maxParticipants,
+                token.limits.maxPublishers
+              ),
+              maxViewers: Math.min(
+                token.limits.maxParticipants,
+                token.limits.maxViewers
+              ),
+            }
+          : {}),
+      },
+    };
+  }
   return {
     ...state,
     budget: {
@@ -37,8 +63,15 @@ export function startRoomBudget(
           1000,
       accountedAt: now,
       participantMilliseconds: 0,
-      maxPublishers: Math.min(32, token.limits.maxPublishers),
-      maxViewers: Math.min(96, token.limits.maxViewers),
+      maxParticipants: token.limits.maxParticipants,
+      maxPublishers: Math.min(
+        token.limits.maxParticipants ?? 32,
+        token.limits.maxPublishers
+      ),
+      maxViewers: Math.min(
+        token.limits.maxParticipants ?? 96,
+        token.limits.maxViewers
+      ),
     },
   };
 }
@@ -84,19 +117,37 @@ export function roomCapacityError(
   userId = token.userId,
   role: MeetRealtimeRole = token.role
 ): string | null {
+  if (state.presence[userId]?.role === role) return null;
   const others = Object.values(state.presence).filter(
     (person) => person.userId !== userId
   );
   const limits = state.budget ?? token.limits;
-  if (others.length >= MEET_MAX_ROOM_PARTICIPANTS)
-    return 'participant_limit_reached';
+  const classroom =
+    state.budget?.maxParticipants !== undefined ||
+    token.limits.maxParticipants !== undefined;
+  const cap = classroom
+    ? Math.min(
+        state.budget?.maxParticipants ?? 100,
+        token.limits.maxParticipants ?? 100,
+        state.settings?.maxParticipants ?? 100
+      )
+    : MEET_MAX_ROOM_PARTICIPANTS;
+  if (
+    role !== 'host' &&
+    !state.presence[userId] &&
+    state.settings?.admissionClosed &&
+    (state.budget?.maxParticipants !== undefined ||
+      token.limits.maxParticipants !== undefined)
+  )
+    return 'admission_closed';
+  if (others.length >= cap) return 'participant_limit_reached';
   if (role === 'viewer')
     return others.filter((person) => person.role === 'viewer').length >=
-      Math.min(96, limits.maxViewers)
+      Math.min(limits.maxParticipants ?? 96, limits.maxViewers)
       ? 'participant_limit_reached'
       : null;
   return others.filter((person) => person.role !== 'viewer').length >=
-    Math.min(32, limits.maxPublishers)
+    Math.min(limits.maxParticipants ?? 32, limits.maxPublishers)
     ? 'publisher_limit_reached'
     : null;
 }

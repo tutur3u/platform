@@ -14,6 +14,7 @@ import { test } from 'node:test';
 import { manifest } from './calendar-native-artifact.mjs';
 import { sealCalendarArtifact } from './calendar-native-inventory.mjs';
 import { denyCalendarOutbound } from './calendar-native-runtime-profile.mjs';
+import { calendarProductionRuntimeTarget } from './wave1-native-runtime.mjs';
 import {
   assertArtifactUnchanged,
   createNativeFinalizer,
@@ -326,5 +327,50 @@ test('Calendar root __proto__ filename is sealed, copied and independently check
       assert.ok(result.errors.length > 0);
       assert.equal(await realpath(plan.scratch), plan.scratch);
     });
+  }
+});
+
+test('Calendar production acceptance targets the sealed apex path candidate', () => {
+  const target = calendarProductionRuntimeTarget({
+    name: 'tuturuuu-calendar-path-candidate',
+  });
+  assert.equal(target.host, 'tuturuuu.com');
+  assert.equal(target.basePath, '/calendar');
+  for (const path of [
+    '/api/build-info',
+    '/assets/client.js',
+    '/en/00000000-0000-4000-8000-000000000001',
+  ]) {
+    assert.equal(
+      new URL(`${target.basePath}${path}`, `https://${target.host}`).toString(),
+      `https://tuturuuu.com/calendar${path}`
+    );
+  }
+  assert.deepEqual(target.functionProbes, [
+    {
+      path: '/_fn/path-acceptance',
+      method: 'DELETE',
+      headers: {},
+      status: 405,
+    },
+    {
+      path: '/_fn/path-acceptance',
+      method: 'POST',
+      headers: { 'content-type': 'text/plain' },
+      status: 415,
+    },
+  ]);
+});
+
+test('Calendar apex acceptance refuses the retained root or staging service identity', () => {
+  for (const name of [
+    'tuturuuu-calendar',
+    'tuturuuu-calendar-wave1-staging',
+    undefined,
+  ]) {
+    assert.throws(
+      () => calendarProductionRuntimeTarget({ name }),
+      /sealed path-candidate service/
+    );
   }
 });

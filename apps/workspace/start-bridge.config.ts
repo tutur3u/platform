@@ -44,11 +44,14 @@ function allowedWebApiHosts(env: WorkspaceApiEnv) {
 }
 
 /**
- * The origin workspace forwards `/api/*` to. Unset keeps the production Web
- * origin; a set value must be an `https` origin (no credentials, port or
- * path) on an allowed Web host. Anything else throws, so the request fails
- * closed with the bridge's generic 500 instead of reaching a host that does
- * not run Web's API guard.
+ * The one Web origin every Worker read of `INTERNAL_WEB_API_ORIGIN` resolves
+ * through: the `/api/*` forward, the proxy rewrite allowlist and the startup
+ * gate in `cloudflare/worker.ts`. Unset keeps the production Web origin; a
+ * set value must be exactly an `https` origin (no credentials, port, path,
+ * query, fragment or surrounding text) on an allowed Web host. Anything else,
+ * including a blank value, throws, so the request fails closed with the
+ * bridge's generic 500 instead of reaching a host that does not run Web's
+ * API guard.
  */
 export function resolveWebApiOrigin(env: WorkspaceApiEnv): string {
   const configured = env.INTERNAL_WEB_API_ORIGIN;
@@ -59,6 +62,9 @@ export function resolveWebApiOrigin(env: WorkspaceApiEnv): string {
   } catch {
     throw new Error('Workspace INTERNAL_WEB_API_ORIGIN is not a valid URL');
   }
+  // `URL` drops a default port, an empty query or fragment and surrounding
+  // whitespace; the serialized origin must be the whole value.
+  const exact = configured.toLowerCase();
   if (
     url.protocol !== 'https:' ||
     url.username ||
@@ -67,6 +73,7 @@ export function resolveWebApiOrigin(env: WorkspaceApiEnv): string {
     url.pathname !== '/' ||
     url.search ||
     url.hash ||
+    (exact !== url.origin && exact !== `${url.origin}/`) ||
     !allowedWebApiHosts(env).has(url.hostname)
   )
     throw new Error(

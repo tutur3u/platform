@@ -10,7 +10,12 @@ import type {
 } from './contracts';
 import { ApiError, encodeError } from './errors';
 import { forwardToRetainedOrigin } from './forward';
-import { comparePathPatterns, matchPath, validateRegistry } from './registry';
+import {
+  comparePathPatterns,
+  matchPath,
+  validatePathname,
+  validateRegistry,
+} from './registry';
 
 export interface PipelineOptions {
   endpoints: readonly Endpoint[];
@@ -21,15 +26,11 @@ export interface PipelineOptions {
 }
 
 function canonicalPath(request: Request): string {
-  const path = new URL(request.url).pathname;
-  if (/\/{2}|\\|%2f|%5c|%00/i.test(path))
+  if (request.url.includes('\\'))
     throw new ApiError('bad_request', 400, 'Invalid request path');
-  try {
-    decodeURIComponent(path);
-  } catch {
-    throw new ApiError('bad_request', 400, 'Malformed request path');
-  }
-  return path.length > 1 ? path.replace(/\/$/, '') : path;
+  const path = new URL(request.url).pathname;
+  validatePathname(path);
+  return path;
 }
 
 function allowedOrigin(request: Request, env: ApiEnv): string | null {

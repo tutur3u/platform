@@ -18,7 +18,11 @@ describe('Calendar native type host boundaries', () => {
     const app = config('tsconfig.json');
     const sw = config('tsconfig.sw.json');
     const build = config('tsconfig.config.json');
-    expect(build.include).toEqual(['vite.config.mts', 'void.config.ts']);
+    expect(build.include).toEqual([
+      'vite.config.mts',
+      'void.config.ts',
+      'native-build-config.test.ts',
+    ]);
     expect(build.compilerOptions.types).toEqual(['node']);
     expect(build.compilerOptions.noEmit).toBe(true);
     expect(app.include).toEqual(['src', 'global.d.ts', 'messages']);

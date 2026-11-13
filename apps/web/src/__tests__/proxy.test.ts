@@ -1392,7 +1392,7 @@ describe('web proxy api handling', () => {
     if (!invocation) return;
     const [url, init] = invocation;
     expect(String(url)).toBe(
-      'https://tuturuuu-roadmap.tuturuuu-e89.workers.dev/roadmap/'
+      'https://tuturuuu-roadmap.tuturuuu-e89.workers.dev/roadmap'
     );
     expect(String(url)).not.toContain('roadmap.tuturuuu.com');
     const sent = new Headers((init as RequestInit | undefined)?.headers);
@@ -1443,7 +1443,7 @@ describe('web proxy api handling', () => {
     expect(response.headers.get('location')).toBeNull();
     expect(fetchMock).toHaveBeenCalledTimes(1);
     expect(String(fetchMock.mock.calls[0]?.[0])).toBe(
-      'https://tuturuuu-roadmap.tuturuuu-e89.workers.dev/roadmap/?view=now'
+      'https://tuturuuu-roadmap.tuturuuu-e89.workers.dev/roadmap?view=now'
     );
     expect(mocks.authProxy).not.toHaveBeenCalled();
     vi.unstubAllGlobals();

@@ -42,6 +42,7 @@ import {
   type AppSessionAuthOptions,
   verifyConfiguredAppSessionRequest,
 } from './api-auth-app-session';
+import { supabaseSessionRequest } from './supabase-session-request';
 import { setLogDrainUserContext } from './infrastructure/log-drain';
 import { checkRateLimit, type RateLimitConfig } from './rate-limit';
 
@@ -321,7 +322,6 @@ interface SessionAuthOptions {
    * explicit because the Supabase client is admin-backed.
    */
   allowAppSessionAuth?: AppSessionAuthOptions;
-  /** Prefer the current browser Supabase identity when a supported auth cookie exists. */
   preferSupabaseSessionAuth?: boolean;
   /**
    * Allows verified app-session requests to skip browser step-up challenges.
@@ -533,8 +533,6 @@ export function withSessionAuth<T = unknown>(
       }
     }
 
-    // 4. Authenticate — use Redis temp auth or app-session JWTs when present,
-    // otherwise revalidate the Supabase session with `getUser()`.
     const tempAuth = options?.allowAiTempAuth
       ? await validateAiTempAuthRequest(request)
       : { status: 'missing' as const };
@@ -718,7 +716,9 @@ export function withSessionAuth<T = unknown>(
       }
     }
 
-    const supabase = (await createClient(request)) as TypedSupabaseClient;
+    const supabase = (await createClient(
+      supabaseSessionRequest(request, options)
+    )) as TypedSupabaseClient;
     const { user, authError } = await resolveAuthenticatedUser(supabase);
 
     if (deferredApiAbuseBlock && (authError || !user)) {

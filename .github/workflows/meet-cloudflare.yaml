@@ -172,7 +172,7 @@ jobs:
           node --test scripts/check-meet-ai-containment.test.js
           node scripts/check-meet-ai-containment.js
       - name: Test build identity and workflow ordering
-        run: node --test scripts/ci/meet-build-metadata.test.js scripts/ci/verify-meet-build-info.test.js scripts/ci/generate-build-metadata.test.js scripts/ci/verify-meet-start-output.test.js scripts/ci/meet-native-source-identity.test.js scripts/ci/meet-native-admission.test.mjs scripts/ci/meet-native-abuse-guard-stub.test.mjs scripts/ci/meet-native-lifecycle.test.mjs scripts/ci/meet-native-supplier.test.mjs scripts/ci/meet-native-evidence.test.mjs scripts/ci/meet-native-hidden.test.mjs scripts/ci/meet-native-assurance.test.mjs scripts/ci/meet-native-response-diagnostics.test.mjs scripts/ci/meet-ssr-capture.test.mjs
+        run: node --test scripts/ci/meet-build-metadata.test.js scripts/ci/verify-meet-build-info.test.js scripts/ci/generate-build-metadata.test.js scripts/ci/verify-meet-start-output.test.js scripts/ci/meet-native-source-identity.test.js scripts/ci/meet-native-admission.test.mjs scripts/ci/meet-native-abuse-guard-stub.test.mjs scripts/ci/meet-native-lifecycle.test.mjs scripts/ci/meet-native-supplier.test.mjs scripts/ci/meet-native-evidence.test.mjs scripts/ci/meet-native-hidden.test.mjs scripts/ci/meet-native-fixture-supplier.test.mjs scripts/ci/meet-native-assurance.test.mjs scripts/ci/meet-native-response-diagnostics.test.mjs scripts/ci/meet-ssr-capture.test.mjs
       - name: Test Meet public callback and current account assurance
         working-directory: apps/meet
         run: bun x --no-install vitest run --config vitest.native-auth.config.ts --maxWorkers=1
@@ -264,7 +264,10 @@ jobs:
           NEXT_PUBLIC_APP_URL: https://meet.tuturuuu.com
           NEXT_PUBLIC_WEB_APP_URL: https://tuturuuu.com
         with:
-          command: cd apps/meet && bun run build:cloudflare
+          command: >-
+            if [ "$GITHUB_REF" = refs/heads/production ]; then
+              node scripts/ci/meet-native-fixture-supplier.mjs inputs "$SOURCE_SHA" "$RUNNER_TEMP/meet-production-inputs.json";
+            fi && cd apps/meet && bun run build:cloudflare
           token: ${{ github.actor != 'dependabot[bot]' && github.event_name != 'pull_request' && (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/production') && secrets.TURBO_TOKEN || '' }}
           team: ${{ vars.TURBO_TEAM || secrets.TURBO_TEAM }}
       - name: Capture generated Meet route tree evidence
@@ -341,17 +344,49 @@ jobs:
         run: |
           test "$(git rev-parse HEAD)" = "$SOURCE_SHA"
           GITHUB_SHA="$SOURCE_SHA" node scripts/ci/verify-meet-start-output.js seal apps/meet apps/meet/meet-artifact.json
+      - name: Bind production compiler inputs to emitted graph
+        if: github.ref == 'refs/heads/production'
+        run: node scripts/ci/meet-native-fixture-supplier.mjs production-receipt "$SOURCE_SHA" "$RUNNER_TEMP/meet-production-inputs.json" "$RUNNER_TEMP/meet-production-receipt.json"
+      - name: Supply exact-source Meet public fixture graph
+        id: meet-fixture-supplier
+        timeout-minutes: 25
+        run: node scripts/ci/meet-native-fixture-supplier.mjs "$SOURCE_SHA" "$RUNNER_TEMP"
       - name: Verify emitted Start SSR, auth, cookies, rewrites and Live guards
         timeout-minutes: 3
         env:
           WRANGLER_SEND_METRICS: 'false'
+          MEET_FIXTURE_RECEIPT: ${{ steps.meet-fixture-supplier.outputs.receipt }}
         run: |
+          test -n "$MEET_FIXTURE_RECEIPT"
+          GITHUB_SHA="$SOURCE_SHA" node scripts/ci/verify-meet-start-output.js verify apps/meet apps/meet/meet-artifact.json
           meet_status=0
-          TMPDIR="$RUNNER_TEMP" node scripts/ci/meet-native-launcher.mjs "$SOURCE_SHA" || meet_status=$?
+          TMPDIR="$RUNNER_TEMP" node scripts/ci/meet-native-launcher.mjs "$SOURCE_SHA" --fixture-receipt "$MEET_FIXTURE_RECEIPT" || meet_status=$?
+          GITHUB_SHA="$SOURCE_SHA" node scripts/ci/verify-meet-start-output.js verify apps/meet apps/meet/meet-artifact.json
           sdk_status=0
           GITHUB_SHA="$SOURCE_SHA" node --test --test-concurrency=1 scripts/ci/native-wrangler-runtime.test.mjs scripts/ci/native-wrangler-runtime.runtime.mjs || sdk_status=$?
           test "$meet_status" -eq 0
           test "$sdk_status" -eq 0
+      - name: Verify production emitted Start runtime
+        if: github.ref == 'refs/heads/production'
+        timeout-minutes: 3
+        env: { WRANGLER_SEND_METRICS: 'false' }
+        run: TMPDIR="$RUNNER_TEMP" node scripts/ci/meet-native-launcher.mjs "$SOURCE_SHA" --production-receipt "$RUNNER_TEMP/meet-production-receipt.json"
+      - name: Retain production input and graph provenance
+        if: ${{ always() && github.ref == 'refs/heads/production' }}
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7
+        with:
+          name: meet-production-provenance-${{ env.SOURCE_SHA }}
+          path: "${{ runner.temp }}/meet-production-inputs.json\n${{ runner.temp }}/meet-production-receipt.json"
+          retention-days: 7
+          if-no-files-found: warn
+      - name: Retain Meet fixture supplier identity and progress
+        if: ${{ always() && steps.meet-fixture-supplier.outputs.root != '' }}
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7
+        with:
+          name: meet-fixture-${{ env.SOURCE_SHA }}
+          path: "${{ steps.meet-fixture-supplier.outputs.root }}/journal.json\n${{ steps.meet-fixture-supplier.outputs.transport }}"
+          retention-days: 7
+          if-no-files-found: warn
       - name: Pack finite Meet graph evidence
         if: always()
         working-directory: ${{ runner.temp }}
@@ -370,7 +405,11 @@ jobs:
           if-no-files-found: warn
       - name: Validate both Worker bundles
         run: |
-          (cd apps/meet && node ../../scripts/ci/meet-dry-run-scratch.mjs "$SOURCE_SHA")
+          if [ "$GITHUB_REF" = refs/heads/production ]; then
+            (cd apps/meet && node ../../scripts/ci/meet-dry-run-scratch.mjs "$SOURCE_SHA" --production-receipt "$RUNNER_TEMP/meet-production-receipt.json")
+          else
+            (cd apps/meet && node ../../scripts/ci/meet-dry-run-scratch.mjs "$SOURCE_SHA")
+          fi
           bun x --no-install wrangler deploy --dry-run -c apps/meet-realtime/wrangler.jsonc
       - name: Verify and pack accepted exact-SHA frontend artifact
         run: |
@@ -449,20 +488,35 @@ jobs:
         run: |
           tar -xzf "$RUNNER_TEMP/meet-worker/meet-worker.tar.gz" -C apps/meet
           GITHUB_SHA="$SOURCE_SHA" node scripts/ci/verify-meet-start-output.js verify apps/meet apps/meet/meet-artifact.json
+      - name: Download exact-source fixture transport
+        uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8
+        with: { name: "meet-fixture-${{ env.SOURCE_SHA }}", path: "${{ runner.temp }}/meet-fixture-transport" }
+      - name: Restore and admit fixture graph
+        id: meet-restored-fixture
+        timeout-minutes: 8
+        run: node scripts/ci/meet-native-fixture-supplier.mjs restore "$SOURCE_SHA" "$RUNNER_TEMP/meet-fixture-transport/fixture-transport.tar.gz" "$RUNNER_TEMP"
+      - name: Download production provenance
+        if: github.ref == 'refs/heads/production'
+        uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8
+        with: { name: "meet-production-provenance-${{ env.SOURCE_SHA }}", path: "${{ runner.temp }}" }
       - name: Discover restored native Void Start output
         id: meet-output
         run: GITHUB_SHA="$SOURCE_SHA" node scripts/ci/verify-meet-start-output.js config-restored apps/meet
       - name: Verify restored Start runtime and finite SDK acceptance
         timeout-minutes: 3
-        env:
-          WRANGLER_SEND_METRICS: 'false'
+        env: { WRANGLER_SEND_METRICS: 'false', MEET_FIXTURE_RECEIPT: "${{ steps.meet-restored-fixture.outputs.receipt }}" }
         run: |
           meet_status=0
-          TMPDIR="$RUNNER_TEMP" node scripts/ci/meet-native-launcher.mjs "$SOURCE_SHA" || meet_status=$?
+          TMPDIR="$RUNNER_TEMP" node scripts/ci/meet-native-launcher.mjs "$SOURCE_SHA" --fixture-receipt "$MEET_FIXTURE_RECEIPT" || meet_status=$?
           sdk_status=0
           GITHUB_SHA="$SOURCE_SHA" node --test --test-concurrency=1 scripts/ci/native-wrangler-runtime.test.mjs scripts/ci/native-wrangler-runtime.runtime.mjs || sdk_status=$?
           test "$meet_status" -eq 0
           test "$sdk_status" -eq 0
+      - name: Verify restored production emitted runtime
+        if: github.ref == 'refs/heads/production'
+        timeout-minutes: 3
+        env: { WRANGLER_SEND_METRICS: 'false' }
+        run: TMPDIR="$RUNNER_TEMP" node scripts/ci/meet-native-launcher.mjs "$SOURCE_SHA" --production-receipt "$RUNNER_TEMP/meet-production-receipt.json"
       - name: Pack restored acceptance finite Meet graph evidence
         if: always()
         working-directory: ${{ runner.temp }}
@@ -534,17 +588,31 @@ jobs:
         run: |
           tar -xzf "$RUNNER_TEMP/meet-worker/meet-worker.tar.gz" -C apps/meet
           GITHUB_SHA="$SOURCE_SHA" node scripts/ci/verify-meet-start-output.js verify apps/meet apps/meet/meet-artifact.json
+      - name: Download exact-source fixture transport
+        uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8
+        with: { name: "meet-fixture-${{ env.SOURCE_SHA }}", path: "${{ runner.temp }}/meet-fixture-transport" }
+      - name: Restore and admit fixture graph
+        id: meet-restored-fixture
+        timeout-minutes: 8
+        run: node scripts/ci/meet-native-fixture-supplier.mjs restore "$SOURCE_SHA" "$RUNNER_TEMP/meet-fixture-transport/fixture-transport.tar.gz" "$RUNNER_TEMP"
+      - name: Download production provenance
+        if: github.ref == 'refs/heads/production'
+        uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8
+        with: { name: "meet-production-provenance-${{ env.SOURCE_SHA }}", path: "${{ runner.temp }}" }
       - name: Discover restored native Void Start output
         id: meet-output
         run: GITHUB_SHA="$SOURCE_SHA" node scripts/ci/verify-meet-start-output.js config-restored apps/meet
       - name: Dry-run restored frontend artifact
         working-directory: apps/meet
-        run: node ../../scripts/ci/meet-dry-run-scratch.mjs "$SOURCE_SHA"
+        run: node ../../scripts/ci/meet-dry-run-scratch.mjs "$SOURCE_SHA" --production-receipt "$RUNNER_TEMP/meet-production-receipt.json"
+      - name: Verify restored fixture semantic runtime
+        timeout-minutes: 3
+        env: { WRANGLER_SEND_METRICS: 'false', MEET_FIXTURE_RECEIPT: "${{ steps.meet-restored-fixture.outputs.receipt }}" }
+        run: TMPDIR="$RUNNER_TEMP" node scripts/ci/meet-native-launcher.mjs "$SOURCE_SHA" --fixture-receipt "$MEET_FIXTURE_RECEIPT"
       - name: Verify restored Start runtime before production writes
         timeout-minutes: 3
-        env:
-          WRANGLER_SEND_METRICS: 'false'
-        run: TMPDIR="$RUNNER_TEMP" node scripts/ci/meet-native-launcher.mjs "$SOURCE_SHA"
+        env: { WRANGLER_SEND_METRICS: 'false' }
+        run: TMPDIR="$RUNNER_TEMP" node scripts/ci/meet-native-launcher.mjs "$SOURCE_SHA" --production-receipt "$RUNNER_TEMP/meet-production-receipt.json"
       - name: Pack restored finite Meet graph evidence
         if: always()
         working-directory: ${{ runner.temp }}

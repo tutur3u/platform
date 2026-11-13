@@ -84,6 +84,15 @@
       "yearly": "Hàng năm"
     }
   },
+  "calendar_category_reorder_pilot": {
+    "cancel": "Đã trả {label} về vị trí {position} trên {total}.",
+    "drop": "Đã thả {label} tại vị trí {position} trên {total}.",
+    "grab": "Đã chọn {label}, vị trí {position} trên {total}.",
+    "instructions": "Dùng phím mũi tên để di chuyển tiêu điểm. Nhấn Space để chọn hoặc thả danh mục. Dùng mũi tên để đổi vị trí; Escape để hủy.",
+    "invalid": "Tên danh mục phải duy nhất và không trống để sắp xếp.",
+    "label": "Thứ tự danh mục",
+    "move": "{label}, vị trí {position} trên {total}."
+  },
   "chat": {
     "first_activity": "Hoạt động đầu tiên",
     "last_activity": "Hoạt động gần nhất",
@@ -681,6 +690,10 @@
     "pharmacies": "Nhà thuốc",
     "pharmacies-description": "Chuẩn hóa việc quản lý và dịch vụ nhà thuốc.",
     "pick_a_date": "Chọn một ngày",
+    "picker_pin": "Ghim không gian làm việc",
+    "picker_pinned": "Đã ghim",
+    "picker_recent": "Gần đây",
+    "picker_unpin": "Bỏ ghim không gian làm việc",
     "pink": "Hồng",
     "pitch": "Kế hoạch kinh doanh",
     "pitch-description": "Kế hoạch kinh doanh của Tuturuuu.",
@@ -5201,6 +5214,8 @@
     "manage_workspace_audit_logs_description": "Cho phép các thành viên xem tất cả các hoạt động trong không gian làm việc.",
     "manage_workspace_billing": "Quản lý thanh toán",
     "manage_workspace_billing_description": "Cho phép các thành viên xem và cập nhật thông tin thanh toán.",
+    "manage_workspace_domains": "Quản lý tên miền không gian làm việc",
+    "manage_workspace_domains_description": "Thêm, xác minh và gỡ tên miền tùy chỉnh và tên miền phụ của nền tảng phục vụ trang công khai của không gian làm việc.",
     "manage_workspace_integrations": "Quản lý tích hợp",
     "manage_workspace_integrations_description": "Cho phép thành viên xem và cập nhật các tích hợp của không gian làm việc.",
     "manage_workspace_invites": "Quản lý lời mời",
@@ -5367,6 +5382,8 @@
     "view_users_public_info_description": "Cho phép thành viên xem thông tin công khai của người dùng trong không gian làm việc.",
     "view_workforce": "Xem nhân sự",
     "view_workforce_description": "Cho phép thành viên xem hợp đồng lao động và thông tin nhân sự.",
+    "view_workspace_domains": "Xem tên miền không gian làm việc",
+    "view_workspace_domains_description": "Xem các tên miền tùy chỉnh của không gian làm việc, trạng thái xác minh và quyền sử dụng tên miền.",
     "viewing_window": "Cửa sổ Xem",
     "viewing_window_1_day": "1 Ngày",
     "viewing_window_1_month": "1 Tháng",

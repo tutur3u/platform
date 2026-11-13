@@ -94,7 +94,7 @@ jobs:
           HOST="$(node --input-type=module -e "import { profileFor } from './scripts/ci/wave1-native-profile.mjs'; console.log(profileFor(process.env.APP, 'production').host)")"
           FLAGS=()
           if [ "$APP" = calendar ] || [ "$APP" = mail ]; then FLAGS+=(--expect-redirect); fi
-          node scripts/ci/pre-seal-doctor.mjs "$APP" "apps/$APP" "$HOST" "$SOURCE_SHA" --config dist/wave1/wrangler.json "${FLAGS[@]}"
+          node scripts/ci/pre-seal-doctor.mjs "$APP" "apps/$APP" "$HOST" "$SOURCE_SHA" --wave1 "${FLAGS[@]}"
       - name: Seal and exercise the original route-free production bytes
         timeout-minutes: 5
         run: |

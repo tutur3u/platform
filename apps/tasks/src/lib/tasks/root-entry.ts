@@ -56,10 +56,9 @@ export async function resolveTasksRootEntry({
             : defaultWorkspace.id;
       }
     }
-  } catch (error) {
+  } catch {
     console.warn(
-      'Could not resolve the preferred Tasks workspace; using personal:',
-      error
+      'Could not resolve the preferred Tasks workspace; using personal'
     );
   }
 
@@ -74,10 +73,9 @@ export async function resolveTasksRootEntry({
         path: `${localePrefix}/${target}/boards/${boardId}${search}`,
       };
     }
-  } catch (error) {
+  } catch {
     console.warn(
-      'Could not resolve the Tasks board at the app root; using the task entrypoint:',
-      error
+      'Could not resolve the Tasks board at the app root; using the task entrypoint'
     );
   }
 

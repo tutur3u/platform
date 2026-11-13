@@ -4,7 +4,7 @@ import {
   withAppBase,
 } from '@tuturuuu/start-bridge/start/base-path';
 import { loadTasksLocale } from '../runtime/page-loader';
-import { Document, TasksError } from '../runtime/router-shell';
+import { Document, TasksError, TasksNotFound } from '../runtime/router-shell';
 
 export const Route = createRootRoute({
   beforeLoad: async ({ location }) => ({
@@ -31,9 +31,5 @@ export const Route = createRootRoute({
       { rel: 'manifest', href: withAppBase('/site.webmanifest') },
     ],
   }),
-  notFoundComponent: () => (
-    <main className="grid min-h-dvh place-items-center">
-      <h1>404</h1>
-    </main>
-  ),
+  notFoundComponent: TasksNotFound,
 });

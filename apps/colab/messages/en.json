@@ -114,6 +114,15 @@
       "yearly": "Yearly"
     }
   },
+  "calendar_category_reorder_pilot": {
+    "cancel": "Returned {label} to position {position} of {total}.",
+    "drop": "Dropped {label} at position {position} of {total}.",
+    "grab": "Picked up {label}, position {position} of {total}.",
+    "instructions": "Arrows navigate. Space picks up or drops a category. Arrows move it; Escape cancels.",
+    "invalid": "Category names must be unique and nonempty to reorder.",
+    "label": "Category order",
+    "move": "{label}, position {position} of {total}."
+  },
   "cancel": "Cancel",
   "capacity": "Participant limit",
   "checkConflict": "Check availability first",
@@ -229,6 +238,10 @@
       "unchecked": "To do"
     },
     "close": "Close",
+    "picker_pin": "Pin workspace",
+    "picker_pinned": "Pinned",
+    "picker_recent": "Recent",
+    "picker_unpin": "Unpin workspace",
     "public_profile": "Public profile",
     "retry": "Retry"
   },
@@ -937,7 +950,11 @@
   },
   "ws-roles": {
     "manage_desktop_deployment_vault": "Manage desktop deployment vault",
-    "manage_desktop_deployment_vault_description": "Allows root workspace members to manage private Windows/macOS signing resources and protected workflow tokens. Does not enable delivery."
+    "manage_desktop_deployment_vault_description": "Allows root workspace members to manage private Windows/macOS signing resources and protected workflow tokens. Does not enable delivery.",
+    "manage_workspace_domains": "Manage workspace domains",
+    "manage_workspace_domains_description": "Add, verify, and remove custom domains and platform subdomains that serve the workspace's public site.",
+    "view_workspace_domains": "View workspace domains",
+    "view_workspace_domains_description": "See the workspace's custom domains, their verification status, and domain entitlement."
   },
   "yourWorkspace": "Your team workspace"
 }

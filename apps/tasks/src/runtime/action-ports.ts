@@ -8,12 +8,16 @@ import { z } from 'zod';
  * unchanged.
  */
 
-export const fetchWorkspaces = createServerFn({ method: 'POST' }).handler(
-  async () => {
+const fetchWorkspaceList = createServerFn({ method: 'POST' })
+  .validator(z.object({}).strict())
+  .handler(async () => {
     const { fetchAuthorizedWorkspaces } = await import('./action-ports.server');
     return fetchAuthorizedWorkspaces();
-  }
-);
+  });
+
+export function fetchWorkspaces() {
+  return fetchWorkspaceList({ data: {} });
+}
 export const fetchSatelliteWorkspaces = fetchWorkspaces;
 
 export const listPublicBoardTemplates = createServerFn({

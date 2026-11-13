@@ -24,7 +24,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { locale } = await params;
   const normalizedLocale = locale === 'vi' ? 'vi' : 'en';
   const t = await getTranslations('ui-showcase.docs.metadata');
-  const pageUrl = `${siteConfig.url}/${normalizedLocale}/ui`;
+  const pageUrl = `${siteConfig.url}/${normalizedLocale}/design`;
 
   return {
     title: t('overviewTitle'),
@@ -32,8 +32,8 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
     alternates: {
       canonical: pageUrl,
       languages: {
-        en: `${siteConfig.url}/en/ui`,
-        vi: `${siteConfig.url}/vi/ui`,
+        en: `${siteConfig.url}/en/design`,
+        vi: `${siteConfig.url}/vi/design`,
       },
     },
     openGraph: {
@@ -59,7 +59,7 @@ export async function UiDocsOverviewRuntime({ params }: Props) {
 
   const t = await getTranslations('ui-showcase.docs');
   const tCategories = await getTranslations('ui-showcase.categories');
-  const baseHref = `/${normalizedLocale}/ui`;
+  const baseHref = `/${normalizedLocale}/design`;
 
   return (
     <div className="grid gap-4">

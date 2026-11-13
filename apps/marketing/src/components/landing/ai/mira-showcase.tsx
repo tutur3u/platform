@@ -1,5 +1,7 @@
 'use client';
 
+import { useLandingReducedMotion as useReducedMotion } from '../shared/use-landing-reduced-motion';
+
 import {
   Bot,
   Brain,
@@ -12,7 +14,7 @@ import {
   Zap,
 } from '@tuturuuu/icons/lucide';
 import { cn } from '@tuturuuu/utils/format';
-import { motion, useReducedMotion } from 'framer-motion';
+import { motion } from 'framer-motion';
 import { useTranslations } from 'next-intl';
 import { useEffect, useState } from 'react';
 import { Grain } from '../shared/atmosphere';

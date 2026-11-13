@@ -1,4 +1,7 @@
-import { ArrowRight, PlayCircle } from '@tuturuuu/icons/lucide';
+import {
+  ArrowRight,
+  PlayCircle,
+} from '@/components/landing/shared/static-icons';
 import { useTranslations } from 'next-intl';
 import { HeroAtmosphere } from '../shared/atmosphere';
 import { rise } from '../shared/rise';
@@ -33,7 +36,7 @@ export function HeroSection() {
             <span
               {...rise(
                 1,
-                'block animate-text-sheen bg-[linear-gradient(100deg,var(--purple),var(--blue)_35%,var(--cyan)_50%,var(--blue)_65%,var(--purple))] bg-[length:250%_auto] bg-clip-text text-transparent'
+                'block -mb-[0.15em] animate-text-sheen pb-[0.15em] bg-[linear-gradient(100deg,var(--purple),var(--blue)_35%,var(--cyan)_50%,var(--blue)_65%,var(--purple))] bg-[length:250%_auto] bg-clip-text text-transparent'
               )}
             >
               {t('title.line2')}
@@ -44,7 +47,7 @@ export function HeroSection() {
           <p
             {...rise(
               2,
-              'mt-8 max-w-xl text-balance text-base text-foreground/55 leading-relaxed sm:text-lg'
+              'mt-8 max-w-xl text-balance text-base text-foreground/70 leading-relaxed sm:text-lg'
             )}
           >
             {t('description')}

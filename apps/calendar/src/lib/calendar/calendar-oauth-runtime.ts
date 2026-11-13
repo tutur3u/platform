@@ -9,7 +9,7 @@ export function isCalendarOAuthProductionRuntime() {
 
 /**
  * Public origin of the Calendar satellite, which serves each workspace
- * calendar at `/{wsId}`. It comes from the app's trusted `BASE_URL` constant
+ * calendar at its configured base followed by `/{wsId}`. It comes from the app's trusted `BASE_URL` constant
  * (configured Calendar URLs, else the registered production domain), never
  * from the request URL, Host or forwarded headers.
  */
@@ -17,7 +17,7 @@ export function resolveCalendarPublicOrigin(baseUrl: string = BASE_URL) {
   try {
     const url = new URL(baseUrl);
     return url.protocol === 'https:' || url.protocol === 'http:'
-      ? url.origin
+      ? `${url.origin}${url.pathname.replace(/\/+$/u, '')}`
       : null;
   } catch {
     return null;
@@ -53,17 +53,18 @@ export function checkCalendarOAuthRuntime(
 
 /**
  * Build a post-OAuth browser redirect on the Calendar public origin. Without a
- * verified workspace the redirect falls back to the origin root.
+ * verified workspace the redirect falls back to the configured app base.
  */
 export function buildCalendarPostAuthRedirectUrl(
   publicOrigin: string,
   wsId: string | null,
   searchParams: Record<string, string>
 ) {
-  const redirectUrl = new URL(
-    wsId ? `/${encodeURIComponent(wsId)}` : '/',
-    publicOrigin
-  );
+  const workspace = wsId && wsId !== '.' && wsId !== '..' ? wsId : null;
+  const base = publicOrigin.replace(/\/+$/u, '');
+  const redirectUrl = workspace
+    ? new URL(encodeURIComponent(workspace), `${base}/`)
+    : new URL(base);
 
   for (const [key, value] of Object.entries(searchParams)) {
     redirectUrl.searchParams.set(key, value);

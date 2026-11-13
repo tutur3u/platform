@@ -235,3 +235,140 @@ test('a preview base does not fetch production satellite pages', () => {
   assert.equal(production.pages.length, 2);
   assert.equal(production.pages[1].location, 'https://tuturuuu.com/roadmap/');
 });
+
+const IMAGE_HTML = `<!doctype html>
+<link rel="icon" href="/roadmap/assets/tuturuuu-logo-Abcd1234.png">
+<link rel="stylesheet" href="/roadmap/assets/styles-Abcd1234.css">
+<a aria-label="Tuturuuu"><img src="https://tuturuuu.com/media/logos/transparent.png" alt=""></a>
+<img src="data:image/png;base64,AAAA" alt="">
+<img src="https://cdn.example.com/badge.svg" alt="">`;
+
+const PNG = new Uint8Array([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a]);
+
+function imageFetch({ logo }) {
+  return async (url) => {
+    const target = String(url);
+    if (target.endsWith('.css'))
+      return new Response('body{}', {
+        status: 200,
+        headers: { 'content-type': 'text/css' },
+      });
+    if (target.endsWith('tuturuuu-logo-Abcd1234.png'))
+      return new Response(PNG, {
+        status: 200,
+        headers: { 'content-type': 'image/png' },
+      });
+    if (target.endsWith('/media/logos/transparent.png')) return logo();
+    return okDocument(IMAGE_HTML);
+  };
+}
+
+test('extraction keeps <img> and icon links as images, not data or external hosts', async () => {
+  assert.deepEqual(
+    extractHtmlAssets(IMAGE_HTML).map((item) => item.kind),
+    ['image', 'css', 'image', 'image', 'image']
+  );
+  assert.equal(mimeMatches('image', 'image/png'), true);
+  assert.equal(mimeMatches('image', 'image/svg+xml'), true);
+  assert.equal(mimeMatches('image', 'text/html'), false);
+  const result = await smokeAssets({
+    pages: ['https://tuturuuu.com/roadmap/'],
+    canonicalOrigin: 'https://tuturuuu.com',
+    fetchImpl: imageFetch({
+      logo: () =>
+        new Response(PNG, {
+          status: 200,
+          headers: { 'content-type': 'image/png' },
+        }),
+    }),
+  });
+  assert.equal(result.ok, true, result.failures.join('\n'));
+  assert.deepEqual(
+    result.assets
+      .filter((a) => a.kind === 'image')
+      .map((a) => a.url)
+      .sort(),
+    [
+      'https://tuturuuu.com/media/logos/transparent.png',
+      'https://tuturuuu.com/roadmap/assets/tuturuuu-logo-Abcd1234.png',
+    ]
+  );
+});
+
+test('D79: a zero-byte 200 image/png logo fails the asset smoke', async () => {
+  const result = await smokeAssets({
+    pages: ['https://tuturuuu.com/roadmap/'],
+    canonicalOrigin: 'https://tuturuuu.com',
+    fetchImpl: imageFetch({
+      logo: () =>
+        new Response(new Uint8Array(), {
+          status: 200,
+          headers: { 'content-type': 'image/png', 'content-length': '0' },
+        }),
+    }),
+  });
+  assert.equal(result.ok, false);
+  assert.ok(
+    result.failures.some(
+      (failure) =>
+        failure.startsWith(
+          'image https://tuturuuu.com/media/logos/transparent.png'
+        ) && failure.includes('bytes 0')
+    ),
+    result.failures.join('\n')
+  );
+  console.error(reportAssetSmokeRejection(result));
+});
+
+test('D79: a logo outside the mount that returns 404 text/html fails', async () => {
+  const result = await smokeAssets({
+    pages: ['https://tuturuuu.com/roadmap/'],
+    canonicalOrigin: 'https://tuturuuu.com',
+    fetchImpl: imageFetch({
+      logo: () =>
+        new Response('Not Found', {
+          status: 404,
+          headers: { 'content-type': 'text/html' },
+        }),
+    }),
+  });
+  assert.equal(result.ok, false);
+  assert.ok(
+    result.failures.some((f) => f.includes('transparent.png status 404')),
+    result.failures.join('\n')
+  );
+});
+
+test('D79: an empty JSON data asset fails; a real one passes', async () => {
+  const html = `<!doctype html><link rel="stylesheet" href="/roadmap/assets/styles-Abcd1234.css"><link rel="prefetch" href="/roadmap/assets/history-Abcd1234.json" as="fetch">`;
+  const run = (body) =>
+    smokeAssets({
+      pages: ['https://tuturuuu.com/roadmap'],
+      canonicalOrigin: 'https://tuturuuu.com',
+      fetchImpl: async (url) => {
+        const target = String(url);
+        if (target.endsWith('.css'))
+          return new Response('body{}', {
+            status: 200,
+            headers: { 'content-type': 'text/css' },
+          });
+        if (target.endsWith('.json'))
+          return new Response(body, {
+            status: 200,
+            headers: { 'content-type': 'application/json' },
+          });
+        return okDocument(html);
+      },
+    });
+  const empty = await run('');
+  assert.equal(empty.ok, false);
+  assert.ok(
+    empty.failures.some(
+      (f) =>
+        f.startsWith(
+          'data https://tuturuuu.com/roadmap/assets/history-Abcd1234.json'
+        ) && f.includes('bytes 0')
+    )
+  );
+  assert.equal((await run('{"schema":1}')).ok, true);
+});

@@ -37,6 +37,7 @@ import {
   useMyTasksQuery,
 } from './use-my-tasks-query';
 import { loadCanonicalWorkspaceBoardCatalog } from './workspace-board-catalog';
+import { tasksApiPath } from '../shared/tasks-paths';
 
 interface ListLike {
   id: string;
@@ -673,7 +674,7 @@ export function useMyTasksState({
     }) => {
       const { targetWsId, ...body } = payload;
       const response = await fetch(
-        `/api/v1/workspaces/${targetWsId}/tasks/journal`,
+        tasksApiPath(`/api/v1/workspaces/${targetWsId}/tasks/journal`),
         {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },

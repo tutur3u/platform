@@ -350,6 +350,57 @@ notes while the host's sharing setting permits it. Room policy and approval
 state live in Cloudflare Durable Object storage; no self-hosted server or new
 database migration is required.
 
+### Self-capture read contract (not yet enabled)
+
+Product decision (30 October 2026): participant self-capture (`self_v1`)
+sessions, where each account uploads only its own microphone, use a durable
+read rule that never consults live room state. It is defined in the database and
+is not exposed to any client yet; legacy sessions keep the rule above.
+
+| Reader | Own speech | Other speakers and mixed notes |
+| --- | --- | --- |
+| Account that spoke | Always, including after leaving, removal or room cleanup, with sharing off | Only under one of the rows below |
+| Fixed session host | Always | Always |
+| Admin of the meeting's workspace | Always | Always, independent of sharing |
+| Account with a durable admission record for that session | Always | Only while the host's sharing flag for the current phase is on and session visibility is `participants` |
+| Approved but never admitted, invited, or generic workspace member | Never | Never |
+
+- Own speech never grants mixed notes, because notes contain other people's
+  speech.
+- The live or after-meeting flag is chosen from durable session state: the
+  session is post-call once it is closed at its 20-second drain deadline, the
+  deadline has passed, or the 3-hour capture lifetime plus drain has elapsed. A
+  missing room, or a room that ended early, cannot switch flags. Only the fixed
+  host changes sharing, through a revisioned write.
+- `workspace` visibility is rejected for `self_v1` and never grants reads.
+- Coverage reports only `contributing` or `not_contributing`, so a decline,
+  withdrawal, "decide later", unsupported device and offline participant look
+  the same. Only the host and admins see the roster; others see their own row.
+- An account deletion or erase fence hides that person's speech immediately.
+  Any erase, or any fenced contributor, redacts the whole mixed notes for every
+  reader without revealing who asked.
+- Consent is enforced in the database. `private.meet_ai_consents` is the only
+  consent source; the live room roster is never consent authority. Opening a
+  capture stream needs the account's current decision to be `allow`, and each
+  stored chunk must carry exactly the account's current consent revision (the
+  number of decisions recorded for it in that session). No decision, `deny`
+  or `withdraw` is refused. A `deny` or `withdraw` revokes the account's live
+  streams in the same transaction, and a new `allow` is the only way back.
+  Provider dispatch is recorded once, only under the current `allow` revision.
+- A revoked upload grant stays revoked: rejoining the room records admission
+  but never restores upload.
+- Deleting a session never deletes consent evidence. Workspace, meeting or
+  session deletion over consent rows is refused (`RESTRICT`, as for legacy
+  sessions) until the evidence is explicitly erased by its retention owner.
+  The host profile foreign key is `SET NULL`, so participants keep their own
+  speech.
+- Withdrawal does not hide speech captured before it; removing that speech is
+  erasure, a separate later step.
+
+Regression coverage: `apps/database/supabase/tests/meet-ai-self-v1-read-contract.sql`,
+`apps/database/supabase/tests/meet-ai-self-v1-schema.sql` and
+`apps/database/supabase/tests/meet-ai-self-v1-consent.sql`.
+
 ## Missing microphone or camera
 
 If enabling a device reports that none was found, the browser returned
@@ -1777,25 +1828,34 @@ In-room consent survives DO hibernation only under the active session UUID and i
 
 ## Recording transcription
 
-Recording transcription in Meet requires a signed-in workspace member and a
-workspace identifier and meeting ID. Personal and handle identifiers resolve on
-the server and must match the meeting row's workspace; mismatches are denied.
-Credit allowance, usage attribution and deductions use that meeting workspace.
-The default Gemini transcription model uses the existing `generate` credit
-feature and `meetings` product attribution. Guests cannot transcribe recordings.
+Legacy stored-recording transcription is **permanently refused**, and the legacy
+meeting-page recorder is **retired**. Legacy recordings carry no trusted
+speaker provenance, so speaker consent can never be verified for them, and a
+workspace settings manager's opt-in is not speaker consent. There is no flag,
+workspace config or injected option that re-enables either path; Meet and
+Meet AI are the consented recording and transcription paths.
 
-The endpoint applies the shared API proxy limiter at ten requests per minute per
-user, across workspaces. Its configured store and unavailable-store behavior
-follow the shared limiter. Missing workspace identifiers return 400; invalid
-identifiers and non-members return 403; insufficient credit allowance returns 402; rate
-limits return 429 with `Retry-After`. Admission (workspace resolution,
-membership, rate limit, and credits) happens before any provider call and before
-any audio is sent to the provider. These rules apply to recording transcription,
-independently of live-call transcription consent.
+- The web `POST /api/ai/meetings/transcription` endpoint returns 403
+  `LEGACY_MEETING_AI_DISABLED` unconditionally, before authentication, body
+  parsing, database access, usage, credits or provider work.
+- The shared stored-recording transcription handler and unused legacy call
+  recording hook are removed; neither exposes an alternate entrypoint.
+- The legacy recorder never starts a new recording session: the record toggle
+  only stops an already-active session; `PUT`/`PATCH` refuse status
+  `recording`; the chunk and complete-recording upload routes refuse every
+  authenticated caller before parsing or storing audio. Refusals are localized
+  (English and Vietnamese) with code `LEGACY_MEETING_RECORDER_RETIRED`.
+- The meeting page shows no Start Recording or Transcribe control and opens no
+  microphone; it states that the old recorder is retired and points to Meet.
+- Existing recordings, chunks and transcripts are unchanged: listing, playback,
+  transcript viewing and deletion behave as before. No data is deleted.
 
 Regression coverage:
-`packages/ai/src/meetings/transcription/route.test.ts` and
-`packages/internal-api/src/meetings.test.ts`.
+`apps/web/src/legacy-api-routes/ai/meetings/transcription/route.test.ts`
+(early unconditional refusal), the legacy record, recording
+session and upload route tests under
+`apps/web/src/app/api/v1/workspaces/[wsId]/meetings/[meetingId]/`, and the Meet
+`meeting-actions.test.tsx` and `recording-session-actions.test.tsx` suites.
 
 
 ## Meeting AI credit ownership

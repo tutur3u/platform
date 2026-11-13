@@ -92,6 +92,7 @@ export const meetVideoLimitsSchema = z
 export const meetRoomLimitsSchema = z
   .object({
     maxRoomDurationSeconds: z.number().int().min(7200).max(86400).optional(),
+    maxParticipants: z.number().int().min(1).max(100).optional(),
     maxPublishers: z.number().int().min(1).max(128).default(8),
     maxViewers: z.number().int().min(1).max(10_000).default(96),
     video: meetVideoLimitsSchema,
@@ -129,6 +130,7 @@ export const meetAssistantAudioSchema = z.object({
 });
 
 export const meetRealtimePresenceSchema = z.object({
+  miraPrivate: z.boolean().optional(),
   assistantAudio: meetAssistantAudioSchema.optional(),
   accountId: z.uuid().optional(),
   avatarUrl: z

@@ -6,6 +6,7 @@ import { ROOT_WORKSPACE_ID } from '@tuturuuu/utils/constants';
 import { useTranslations } from 'next-intl';
 import { useMemo, useState } from 'react';
 import { z } from 'zod';
+import { tasksApiPath } from '../../tasks-paths';
 
 export interface TaskShare {
   id: string;
@@ -80,7 +81,7 @@ export function useTaskSharing(
     enabled: open,
     queryFn: async (): Promise<TaskShare[]> => {
       const res = await fetch(
-        `/api/v1/workspaces/${wsId}/tasks/${taskId}/shares`
+        tasksApiPath(`/api/v1/workspaces/${wsId}/tasks/${taskId}/shares`)
       );
       if (!res.ok) throw new Error('Failed to load shares');
       const data = await res.json();
@@ -95,7 +96,7 @@ export function useTaskSharing(
     staleTime: 5 * 60 * 1000,
     queryFn: async (): Promise<TaskShareLink> => {
       const res = await fetch(
-        `/api/v1/workspaces/${wsId}/tasks/${taskId}/share-links`
+        tasksApiPath(`/api/v1/workspaces/${wsId}/tasks/${taskId}/share-links`)
       );
       if (!res.ok) throw new Error('Failed to load share links');
       const data = await res.json();
@@ -106,7 +107,7 @@ export function useTaskSharing(
   const addShareMutation = useMutation({
     mutationFn: async (payload: { email: string }) => {
       const res = await fetch(
-        `/api/v1/workspaces/${wsId}/tasks/${taskId}/shares`,
+        tasksApiPath(`/api/v1/workspaces/${wsId}/tasks/${taskId}/shares`),
         {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
@@ -137,7 +138,7 @@ export function useTaskSharing(
       permission: 'view' | 'edit';
     }) => {
       const res = await fetch(
-        `/api/v1/workspaces/${wsId}/tasks/${taskId}/shares`,
+        tasksApiPath(`/api/v1/workspaces/${wsId}/tasks/${taskId}/shares`),
         {
           method: 'PATCH',
           headers: { 'Content-Type': 'application/json' },
@@ -170,7 +171,9 @@ export function useTaskSharing(
   const removeShareMutation = useMutation({
     mutationFn: async (payload: { shareId: string }) => {
       const res = await fetch(
-        `/api/v1/workspaces/${wsId}/tasks/${taskId}/shares?id=${payload.shareId}`,
+        tasksApiPath(
+          `/api/v1/workspaces/${wsId}/tasks/${taskId}/shares?id=${payload.shareId}`
+        ),
         { method: 'DELETE' }
       );
 
@@ -197,7 +200,7 @@ export function useTaskSharing(
       requiresInvite?: boolean;
     }) => {
       const res = await fetch(
-        `/api/v1/workspaces/${wsId}/tasks/${taskId}/share-links`,
+        tasksApiPath(`/api/v1/workspaces/${wsId}/tasks/${taskId}/share-links`),
         {
           method: 'PATCH',
           headers: { 'Content-Type': 'application/json' },

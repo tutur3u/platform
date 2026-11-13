@@ -24,7 +24,7 @@ The Worker targets the following staging and production identities:
 - **Base Path:** `/marketing`
 
 On the apex domain (`tuturuuu.com`), pages are mounted under `/marketing/*` or
-routed via Cloudflare path routing rules. On the canonical subdomain
+routed via Cloudflare path routing rules. On the serving subdomain
 (`marketing.tuturuuu.com`), pages are served directly from `/`.
 
 ## Bindings and configuration
@@ -37,6 +37,28 @@ are placed on the Cloudflare Worker.
 | `ASSETS` | Asset binding | Serves static assets emitted into `dist/client`. |
 | `TUTURUUU_NOINDEX` | Environment variable (var) | Optional. Set to `"1"` on staging and preview deployments to prevent indexing. |
 | `INTERNAL_WEB_API_ORIGIN` | Environment variable (var) | Optional. Origin for central internal API forwarding (defaults to `https://tuturuuu.com`). |
+
+## Production indexing
+
+Only `https://tuturuuu.com` may index the marketing allowlist in
+`packages/utils/src/seo-policy.json`. The Worker imports the marketing entry and
+passes it to the shared `appRobots` response policy; an explicit hostname guard
+also keeps every other host private. Staging, preview, workers.dev and the
+marketing subdomain remain `noindex`, even for `/`. Keep
+`TUTURUUU_NOINDEX="1"` in staging and `"0"` or unset in production. Upstream
+`noindex`, reserved private paths and other response security guards stay enforced.
+
+The public scope covers the landing and pricing redirect; company pages;
+privacy, terms, acceptable use, community guidelines and security; the enumerated
+legal, security, product and solution pages; and the blog index. EN URLs and `/vi`
+URLs share the allowlist. Unknown descendants and web-owned pass-through routes
+are excluded. Regression coverage is in `apps/marketing/seo-policy.test.ts`,
+including broken-policy and broken-header variants.
+
+Release with rollback ready. After deployment, purge `/`, `/vi` and every public
+marketing group, including locale variants, from the edge cache using the purge
+credential. Verify `x-robots-tag` is absent on public production paths and present
+on staging/workers.dev hosts and private paths. Roll back if those checks fail.
 
 ## Route groups and ownership
 

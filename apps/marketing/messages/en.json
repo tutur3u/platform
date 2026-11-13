@@ -1191,6 +1191,15 @@
     "year": "Year",
     "yesterday": "Yesterday"
   },
+  "calendar_category_reorder_pilot": {
+    "cancel": "Returned {label} to position {position} of {total}.",
+    "drop": "Dropped {label} at position {position} of {total}.",
+    "grab": "Picked up {label}, position {position} of {total}.",
+    "instructions": "Arrows navigate. Space picks up or drops a category. Arrows move it; Escape cancels.",
+    "invalid": "Category names must be unique and nonempty to reorder.",
+    "label": "Category order",
+    "move": "{label}, position {position} of {total}."
+  },
   "capabilities": {
     "illustration": "Interactive product illustration · sample content",
     "meet": {
@@ -1839,6 +1848,7 @@
       "track_3": "Team time management",
       "voiceAssistant": "Voice assistant",
       "workforce": "Workforce administration",
+      "workspace-domains_0": "Workspace custom domains edge",
       "workspaces": "Workspaces created per account"
     },
     "included": "Included",
@@ -2357,6 +2367,10 @@
     "pharmacies": "Pharmacies",
     "pharmacies-description": "Streamline pharmacy management and services.",
     "pick_a_date": "Pick a date",
+    "picker_pin": "Pin workspace",
+    "picker_pinned": "Pinned",
+    "picker_recent": "Recent",
+    "picker_unpin": "Unpin workspace",
     "pink": "Pink",
     "pitch": "Pitch Deck",
     "pitch-description": "Tuturuuu's business plan pitch deck.",

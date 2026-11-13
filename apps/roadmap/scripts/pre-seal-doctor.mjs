@@ -1,45 +1,146 @@
 /**
  * Pre-seal doctor for the roadmap Worker.
  *
- * Serves the built worker on loopback and probes it with Host tuturuuu.com
- * and Host roadmap.tuturuuu.com. A passing live probe is not enough: the same
+ * Serves the built worker in workerd (miniflare) behind a loopback HTTP server
+ * and probes it with Host tuturuuu.com and Host roadmap.tuturuuu.com. A passing live probe is not enough: the same
  * checker must reject a broken variant (D79) before the artifact is sealed.
  */
+import { createHash } from 'node:crypto';
 import { once } from 'node:events';
-import { existsSync, realpathSync } from 'node:fs';
+import { existsSync, readdirSync, realpathSync } from 'node:fs';
 import { readFile } from 'node:fs/promises';
 import { createServer, request as httpRequest } from 'node:http';
-import { registerHooks } from 'node:module';
 import { join, sep } from 'node:path';
 import { fileURLToPath, pathToFileURL } from 'node:url';
+import { Miniflare, supportedCompatibilityDate } from 'miniflare';
+import { showPlans } from '../src/content/tracks.ts';
+import { inlineScriptTexts } from '../src/html-scripts.ts';
+import * as markup from './doctor-markup.mjs';
 import {
   reportAssetSmokeRejection,
   smokeAssets,
 } from '../../../scripts/ci/asset-smoke.mjs';
 
-const CLOUDFLARE_WORKERS_STUB = new URL(
-  './cloudflare-workers-stub.mjs',
-  import.meta.url
-);
-
-registerHooks({
-  resolve(specifier, context, nextResolve) {
-    if (specifier === 'cloudflare:workers') {
-      return { url: CLOUDFLARE_WORKERS_STUB.href, shortCircuit: true };
-    }
-    return nextResolve(specifier, context);
-  },
-});
-
 export const STAGE_LABELS = [
   'Planned',
-  'Rolling out',
+  'In progress',
   'Waiting for merge',
   'Waiting for prod sync',
   'Live',
 ];
 
-const LOGO = 'https://tuturuuu.com/media/logos/transparent.png';
+/** The plans card follows the single `showPlans` content flag. */
+export const PLAN_LABEL = 'Mira subscription plans';
+
+/** The logo ships inside the roadmap mount; the apex /media path is not ours. */
+export const MOUNTED_LOGO =
+  /<img\b[^>]*\bsrc="\/roadmap\/assets\/tuturuuu-logo-[A-Za-z0-9_-]{8,}\.png"/;
+
+/** Canonical: no trailing slash, like every Tuturuuu URL. */
+export const CANONICAL_URL = 'https://tuturuuu.com/roadmap';
+
+/** Every public page and language; each must render and load cleanly. */
+export const PUBLIC_DOCUMENT_PATHS = [
+  '/roadmap',
+  '/roadmap/vi',
+  '/roadmap/workshops/edufest-2026',
+  '/roadmap/vi/workshops/edufest-2026',
+];
+
+export const speculativeLinks = markup.speculativeLinks;
+const SPEED_BRAIN =
+  'Cloudflare Speed Brain answers Sec-Purpose: prefetch with 503 on tuturuuu.com';
+
+/** Every slash or satellite form reaches the canonical in exactly one 301. */
+export const REDIRECT_CHAINS = [
+  { host: 'tuturuuu.com', path: '/roadmap/', location: CANONICAL_URL },
+  {
+    host: 'tuturuuu.com',
+    path: '/roadmap/?q=1',
+    location: `${CANONICAL_URL}?q=1`,
+  },
+  {
+    host: 'tuturuuu.com',
+    path: '/roadmap/notes/',
+    location: `${CANONICAL_URL}/notes`,
+  },
+  { host: 'roadmap.tuturuuu.com', path: '/', location: CANONICAL_URL },
+  {
+    host: 'roadmap.tuturuuu.com',
+    path: '/roadmap/?x=1',
+    location: `${CANONICAL_URL}?x=1`,
+  },
+  {
+    host: 'roadmap.tuturuuu.com',
+    path: '/notes/?x=1',
+    location: `${CANONICAL_URL}/notes?x=1`,
+  },
+];
+
+function canonicalFailures(observation, body) {
+  const failures = [];
+  if (!body.includes(`rel="canonical" href="${CANONICAL_URL}"`))
+    failures.push(`canonical link is not ${CANONICAL_URL}`);
+  if (!body.includes(`property="og:url" content="${CANONICAL_URL}"`))
+    failures.push(`og:url is not ${CANONICAL_URL}`);
+  if (
+    !body.includes(`hrefLang="x-default" href="${CANONICAL_URL}"`) &&
+    !body.includes(`hreflang="x-default" href="${CANONICAL_URL}"`)
+  )
+    failures.push('hreflang x-default is not the canonical URL');
+  if (body.includes(`"${CANONICAL_URL}/"`))
+    failures.push('HTML still references the trailing-slash URL');
+  const seen = new Map(
+    (observation.redirects ?? []).map((r) => [`${r.host}${r.path}`, r])
+  );
+  for (const expected of REDIRECT_CHAINS) {
+    const actual = seen.get(`${expected.host}${expected.path}`);
+    if (
+      !actual ||
+      actual.status !== 301 ||
+      actual.location !== expected.location
+    )
+      failures.push(
+        `${expected.host}${expected.path} answered ${actual?.status ?? '(missing)'} ${actual?.location ?? ''}, expected one 301 to ${expected.location}`
+      );
+  }
+  return failures;
+}
+
+const REQUIRED_CSP = [
+  "object-src 'none'",
+  "base-uri 'none'",
+  "frame-ancestors 'self'",
+  "connect-src 'self' https://api.github.com",
+];
+
+/** sha256 of each real inline script (independent of the Worker's HTMLRewriter). */
+export function inlineScriptHashes(html) {
+  return inlineScriptTexts(String(html)).map(
+    (text) => `'sha256-${createHash('sha256').update(text).digest('base64')}'`
+  );
+}
+
+/** Every SSR inline script must be allowed, and nothing broader. */
+export function cspFailures(body, csp) {
+  const policy = String(csp ?? '');
+  if (!policy) return ['canonical HTML missing content-security-policy'];
+  const failures = [];
+  const scriptSrc =
+    policy
+      .split(';')
+      .map((part) => part.trim())
+      .find((part) => part.startsWith('script-src ')) ?? '';
+  if (!scriptSrc) failures.push('CSP missing script-src');
+  if (/'unsafe-inline'|'unsafe-eval'|\*|https?:/.test(scriptSrc))
+    failures.push(`CSP script-src too broad: ${scriptSrc}`);
+  for (const hash of inlineScriptHashes(body))
+    if (!scriptSrc.split(/\s+/).includes(hash))
+      failures.push(`CSP script-src does not allow inline script ${hash}`);
+  for (const directive of REQUIRED_CSP)
+    if (!policy.includes(directive)) failures.push(`CSP missing ${directive}`);
+  return failures;
+}
 
 export function assessDoctor(observation) {
   const failures = [];
@@ -48,20 +149,41 @@ export function assessDoctor(observation) {
   if (canonical.status !== 200) {
     failures.push(`canonical status ${canonical.status}, expected 200`);
   }
-  if (!body.includes('aria-label="Tuturuuu"')) {
-    failures.push('canonical HTML missing Tuturuuu branding');
-  }
-  if (!body.includes(LOGO)) {
-    failures.push('canonical HTML missing the Tuturuuu logo');
-  }
-  if (!body.includes('public-satellite-shell')) {
-    failures.push('canonical HTML missing the shared satellite shell');
-  }
+  // The shared marketing layout (@tuturuuu/marketing-shell), as on /home.
+  for (const [marker, name] of [
+    ['id="navbar"', 'the marketing navbar'],
+    ['id="main-content"', 'the marketing main frame'],
+    ['<footer', 'the marketing footer'],
+    ['>Tuturuuu</span>', 'the Tuturuuu brand name'],
+  ])
+    if (!body.includes(marker)) failures.push(`canonical HTML missing ${name}`);
+  failures.push(...markup.redundantAltFailures(body));
+  failures.push(...markup.pendingBoundaryFailures(body));
+  if (!MOUNTED_LOGO.test(body))
+    failures.push('canonical HTML missing the mounted Tuturuuu logo');
+  if (body.includes('public-satellite-shell'))
+    failures.push('canonical HTML still uses the satellite shell');
+  if (!body.includes('https://tuturuuu.com/login'))
+    failures.push('canonical HTML missing the get-started link');
+  // React marks a boundary it could not render on the server with <!--$!-->.
+  // The browser recovers, but crawlers and link previews get an empty page.
+  if (body.includes('<!--$!-->'))
+    failures.push(
+      'canonical HTML fell back to client rendering (server render failed)'
+    );
   if (
-    !body.includes('https://tuturuuu.com/login') ||
-    !body.includes('Sign in')
-  ) {
-    failures.push('canonical HTML missing the optional sign-in link');
+    !/property="og:image" content="https:\/\/tuturuuu\.com\/roadmap\/assets\/[^"]+\.png"/.test(
+      body
+    )
+  )
+    failures.push('canonical HTML missing an absolute og:image');
+  const plansShown = observation.showPlans ?? true;
+  if (plansShown !== body.includes(PLAN_LABEL)) {
+    failures.push(
+      plansShown
+        ? `canonical HTML missing "${PLAN_LABEL}" while showPlans is on`
+        : `canonical HTML shows "${PLAN_LABEL}" while showPlans is off`
+    );
   }
   for (const label of STAGE_LABELS) {
     if (!body.includes(label)) {
@@ -75,11 +197,43 @@ export function assessDoctor(observation) {
   ) {
     failures.push(`canonical HTML cache-control ${cache || '(missing)'}`);
   }
+  failures.push(...canonicalFailures(observation, body));
+  failures.push(...cspFailures(body, canonical.csp));
+  if (!body.includes('id="timeline-title"'))
+    failures.push('canonical HTML missing the timeline');
+  // The timeline fetches its history after mount: the asset must be emitted
+  // and served as JSON from the canonical host, never speculatively loaded.
+  const history = observation.history ?? {};
+  if (!history.url) {
+    failures.push('the build emitted no hashed history asset');
+  } else if (
+    history.status !== 200 ||
+    !/^application\/json\b/.test(String(history.contentType ?? '')) ||
+    !(history.bytes > 0)
+  ) {
+    failures.push(
+      `hashed history asset ${history.url} status ${history.status} content-type ${history.contentType ?? '(missing)'} bytes ${history.bytes ?? 0}, expected 200 application/json`
+    );
+  }
+  const documents = observation.documents ?? [];
+  for (const path of PUBLIC_DOCUMENT_PATHS) {
+    const document = documents.find((item) => item.path === path);
+    if (!document) {
+      failures.push(`${path} was not probed`);
+      continue;
+    }
+    if (document.status !== 200)
+      failures.push(`${path} status ${document.status}, expected 200`);
+    for (const href of document.speculative ?? [])
+      failures.push(`${path} speculatively loads ${href}: ${SPEED_BRAIN}`);
+    failures.push(...markup.documentBudgetFailures(document));
+    failures.push(...markup.inlineScriptFailures(document));
+  }
   const satellite = observation.satellite ?? {};
   if (satellite.status !== 301) {
     failures.push(`satellite status ${satellite.status}, expected 301`);
   }
-  if (satellite.location !== 'https://tuturuuu.com/roadmap/') {
+  if (satellite.location !== CANONICAL_URL) {
     failures.push(`satellite location ${satellite.location ?? '(missing)'}`);
   }
   const query = observation.satelliteQuery ?? {};
@@ -113,7 +267,30 @@ export function brokenVariant(observation) {
   return {
     ...observation,
     satellite: { status: 200, location: null },
+    redirects: [
+      { path: '/roadmap/', host: 'tuturuuu.com', status: 200, location: null },
+    ],
     buildInfo: { ...observation.buildInfo, commit: '0'.repeat(40) },
+    // The production failure of 11 Nov 2026 (#8163): a prefetched history
+    // asset that the zone answers with 503.
+    history: { ...observation.history, status: 503, bytes: 0 },
+    documents: (observation.documents ?? []).map((document) => ({
+      ...document,
+      size: markup.DOCUMENT_BUDGET + 1,
+      scripts: { inline: markup.EXPECTED_INLINE_SCRIPTS + 1, uncovered: 1 },
+      speculative: [
+        ...(document.speculative ?? []),
+        '/roadmap/assets/history-Abcd1234.json',
+      ],
+    })),
+    canonical: {
+      ...observation.canonical,
+      // The production failure of 11 Nov 2026: a client-render fallback
+      // with no preview image.
+      body: `<!--$!--><template></template><!--/$-->${String(
+        observation.canonical?.body ?? ''
+      ).replaceAll('property="og:image"', 'property="og:missing"')}`,
+    },
   };
 }
 
@@ -152,7 +329,9 @@ function probe(port, path, host) {
             status: response.statusCode ?? 0,
             location: headerValue(response.headers.location),
             cacheControl: headerValue(response.headers['cache-control']),
+            csp: headerValue(response.headers['content-security-policy']),
             contentType: headerValue(response.headers['content-type']),
+            bytes: Buffer.concat(chunks),
             body: Buffer.concat(chunks).toString('utf8'),
           });
         });
@@ -163,8 +342,46 @@ function probe(port, path, host) {
   });
 }
 
-export async function observeWorker(port, expectedCommit) {
-  const canonical = await probe(port, '/roadmap/', 'tuturuuu.com');
+/** The hashed history JSON the client build emitted, as a public path. */
+export function emittedHistoryAsset(root = appRoot()) {
+  const dir = join(root, 'dist/client/roadmap/assets');
+  if (!existsSync(dir)) return null;
+  const file = readdirSync(dir).find((name) =>
+    /^history-[A-Za-z0-9_-]{8,}\.json$/.test(name)
+  );
+  return file ? `/roadmap/assets/${file}` : null;
+}
+
+export async function observeWorker(port, expectedCommit, root = appRoot()) {
+  const canonical = await probe(port, '/roadmap', 'tuturuuu.com');
+  const documents = [];
+  for (const path of PUBLIC_DOCUMENT_PATHS) {
+    const result = await probe(port, path, 'tuturuuu.com');
+    documents.push({
+      path,
+      status: result.status,
+      size: String(result.body).length,
+      scripts: markup.scriptCoverage(
+        inlineScriptHashes(result.body),
+        result.csp
+      ),
+      speculative: speculativeLinks(result.body),
+    });
+  }
+  const historyPath = emittedHistoryAsset(root);
+  const historyResult = historyPath
+    ? await probe(port, historyPath, 'tuturuuu.com')
+    : null;
+  const redirects = [];
+  for (const expected of REDIRECT_CHAINS) {
+    const result = await probe(port, expected.path, expected.host);
+    redirects.push({
+      path: expected.path,
+      host: expected.host,
+      status: result.status,
+      location: result.location,
+    });
+  }
   const satellite = await probe(port, '/', 'roadmap.tuturuuu.com');
   const satelliteQuery = await probe(
     port,
@@ -188,9 +405,20 @@ export async function observeWorker(port, expectedCommit) {
     : { url: null };
   return {
     expectedCommit,
+    showPlans,
     canonical,
+    documents,
+    history: historyResult
+      ? {
+          url: historyPath,
+          status: historyResult.status,
+          contentType: historyResult.contentType,
+          bytes: historyResult.bytes.length,
+        }
+      : { url: null },
     satellite,
     satelliteQuery,
+    redirects,
     buildInfo: { status: buildInfoResponse.status, commit },
     asset: assetPath
       ? {
@@ -244,6 +472,13 @@ const ASSET_TYPES = {
   '.ttf': 'font/ttf',
   '.otf': 'font/otf',
   '.eot': 'application/vnd.ms-fontobject',
+  '.json': 'application/json',
+  '.png': 'image/png',
+  '.svg': 'image/svg+xml',
+  '.ico': 'image/x-icon',
+  '.webp': 'image/webp',
+  '.jpg': 'image/jpeg',
+  '.avif': 'image/avif',
 };
 
 function localAssets(root) {
@@ -263,17 +498,77 @@ function localAssets(root) {
   };
 }
 
-/** Serve dist/server/index.js. The Host header selects the public contract. */
+/** Carries the probe's intended Host past miniflare, which sends loopback. */
+const DOCTOR_HOST_HEADER = 'x-roadmap-doctor-host';
+
+/**
+ * First module: restores the Host a Cloudflare edge request would carry (or
+ * none, like the old in-process probe) before the built worker sees it.
+ */
+const DOCTOR_ENTRY = `import worker from './index.js';
+export default {
+  fetch(request, env, ctx) {
+    const headers = new Headers(request.headers);
+    const host = headers.get('${DOCTOR_HOST_HEADER}');
+    headers.delete('${DOCTOR_HOST_HEADER}');
+    if (host) headers.set('host', host);
+    else headers.delete('host');
+    return worker.fetch(new Request(request, { headers }), env, ctx);
+  },
+};`;
+
+/** Every module of the built worker; workerd needs them listed up front. */
+function builtModules(serverRoot) {
+  return [
+    {
+      type: 'ESModule',
+      path: join(serverRoot, '__doctor-entry.js'),
+      contents: DOCTOR_ENTRY,
+    },
+    ...readdirSync(serverRoot, { recursive: true })
+      .map(String)
+      .filter((file) => file.endsWith('.js'))
+      .map((file) => ({ type: 'ESModule', path: join(serverRoot, file) })),
+  ];
+}
+
+/**
+ * The worker's compatibility date, capped at what this workerd supports.
+ * HTMLRewriter (the CSP's script collection) is not date-gated.
+ */
+export function doctorCompatibilityDate(
+  configured,
+  supported = supportedCompatibilityDate
+) {
+  return configured && configured <= supported ? configured : supported;
+}
+
+/**
+ * Serve dist/server/index.js in workerd, the runtime Cloudflare runs it in
+ * (Node has no HTMLRewriter, which the CSP needs). The Host header selects
+ * the public contract.
+ */
 export async function startBuiltWorker(root = appRoot()) {
-  const bundle = join(root, 'dist/server/index.js');
+  const serverRoot = join(root, 'dist/server');
+  const bundle = join(serverRoot, 'index.js');
   const client = join(root, 'dist/client/roadmap');
   if (!existsSync(bundle) || !existsSync(client)) {
     throw new Error(
       'Built worker is missing. Run build:cloudflare before the pre-seal doctor.'
     );
   }
-  const worker = await import(pathToFileURL(bundle).href);
-  const env = { ASSETS: localAssets(root) };
+  // The deployed Worker's runtime settings, from the app's own config.
+  const { cloudflare: config } = (
+    await import(pathToFileURL(join(root, 'void.config.ts')).href)
+  ).default;
+  const assets = localAssets(root);
+  const worker = new Miniflare({
+    modulesRoot: serverRoot,
+    modules: builtModules(serverRoot),
+    compatibilityDate: doctorCompatibilityDate(config.compatibility_date),
+    compatibilityFlags: config.compatibility_flags ?? [],
+    serviceBindings: { ASSETS: (request) => assets.fetch(request) },
+  });
   const server = createServer(async (incoming, outgoing) => {
     try {
       const host = headerValue(incoming.headers.host);
@@ -284,11 +579,11 @@ export async function startBuiltWorker(root = appRoot()) {
       const target = publicHost
         ? `https://${publicHost}${incoming.url ?? '/'}`
         : `http://127.0.0.1${incoming.url ?? '/'}`;
-      const response = await worker.default.fetch(
-        new Request(target, { method: incoming.method ?? 'GET' }),
-        env,
-        { waitUntil() {}, passThroughOnException() {} }
-      );
+      const response = await worker.dispatchFetch(target, {
+        method: incoming.method ?? 'GET',
+        headers: publicHost ? { [DOCTOR_HOST_HEADER]: publicHost } : {},
+        redirect: 'manual',
+      });
       const bytes = Buffer.from(await response.arrayBuffer());
       const out = {};
       response.headers.forEach((value, name) => {
@@ -308,6 +603,7 @@ export async function startBuiltWorker(root = appRoot()) {
     async stop() {
       server.close();
       await once(server, 'close').catch(() => undefined);
+      await worker.dispose();
     },
   };
 }
@@ -317,7 +613,8 @@ function responseFromProbe(result) {
   if (result.contentType) headers.set('content-type', result.contentType);
   if (result.location) headers.set('location', result.location);
   if (result.cacheControl) headers.set('cache-control', result.cacheControl);
-  return new Response(result.body ?? '', {
+  // Keep raw bytes so binary assets (images) are checked as served.
+  return new Response(result.bytes ?? result.body ?? '', {
     status: result.status || 500,
     headers,
   });
@@ -333,20 +630,24 @@ export function doctorFetch(port) {
 }
 
 const DOCTOR_ASSET_PAGES = [
+  ...PUBLIC_DOCUMENT_PATHS.map((path) => ({
+    url: `https://tuturuuu.com${path}`,
+    status: 200,
+  })),
   {
-    url: 'https://tuturuuu.com/roadmap',
-    redirectsTo: 'https://tuturuuu.com/roadmap/',
+    url: 'https://tuturuuu.com/roadmap/',
+    status: 301,
+    location: CANONICAL_URL,
   },
-  { url: 'https://tuturuuu.com/roadmap/', status: 200 },
   {
     url: 'https://roadmap.tuturuuu.com/',
     status: 301,
-    location: 'https://tuturuuu.com/roadmap/',
+    location: CANONICAL_URL,
   },
   {
     url: 'https://roadmap.tuturuuu.com/roadmap',
     status: 301,
-    location: 'https://tuturuuu.com/roadmap/',
+    location: CANONICAL_URL,
   },
 ];
 
@@ -379,12 +680,12 @@ async function main() {
             ...observation,
             canonical: {
               status: 200,
-              body: `<div class="public-satellite-shell" aria-label="Tuturuuu">${LOGO} Sign in https://tuturuuu.com/login ${STAGE_LABELS.join(' ')} /roadmap/assets/index-CGgt8iCG.js</div>`,
+              body: `<header id="navbar"><img alt="" src="/roadmap/assets/tuturuuu-logo-Abcd1234.png"><span>Tuturuuu</span></header><div id="main-content"></div><footer></footer> https://tuturuuu.com/login ${STAGE_LABELS.join(' ')} /roadmap/assets/index-CGgt8iCG.js</div>`,
               cacheControl: 'public,s-maxage=300,stale-while-revalidate=86400',
             },
             satellite: {
               status: 301,
-              location: 'https://tuturuuu.com/roadmap/',
+              location: CANONICAL_URL,
             },
             satelliteQuery: {
               status: 301,
@@ -399,14 +700,17 @@ async function main() {
           }
     );
     for (const line of broken.lines) console.error(line);
+    for (const line of markup.documentBudgetReport(observation.documents))
+      console.log(line);
     const assetSmoke = await smokeAssets({
       pages: DOCTOR_ASSET_PAGES,
       canonicalOrigin: 'https://tuturuuu.com',
       fetchImpl: doctorFetch(running.port),
     });
     for (const failure of assetSmoke.failures) console.error(`- ${failure}`);
+    const smoke = await markup.builtWorkerSmoke(doctorFetch(running.port));
     const brokenAssets = await smokeAssets({
-      pages: ['https://tuturuuu.com/roadmap/'],
+      pages: [CANONICAL_URL],
       canonicalOrigin: 'https://tuturuuu.com',
       fetchImpl: async (url) => {
         const target = String(url);
@@ -427,7 +731,13 @@ async function main() {
     });
     const assetRejection = reportAssetSmokeRejection(brokenAssets);
     console.error(assetRejection);
-    if (!verdict.ok || !broken.ok || !assetSmoke.ok || brokenAssets.ok) {
+    if (
+      !verdict.ok ||
+      !broken.ok ||
+      !assetSmoke.ok ||
+      brokenAssets.ok ||
+      !smoke.ok
+    ) {
       process.exit(1);
     }
     console.log(

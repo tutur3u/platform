@@ -92,6 +92,15 @@
       "yearly": "Yearly"
     }
   },
+  "calendar_category_reorder_pilot": {
+    "cancel": "Returned {label} to position {position} of {total}.",
+    "drop": "Dropped {label} at position {position} of {total}.",
+    "grab": "Picked up {label}, position {position} of {total}.",
+    "instructions": "Arrows navigate. Space picks up or drops a category. Arrows move it; Escape cancels.",
+    "invalid": "Category names must be unique and nonempty to reorder.",
+    "label": "Category order",
+    "move": "{label}, position {position} of {total}."
+  },
   "calendar-sidebar": {
     "ready": "Ready"
   },
@@ -306,6 +315,10 @@
     "order": "Order",
     "page": "Page",
     "pending": "Pending",
+    "picker_pin": "Pin workspace",
+    "picker_pinned": "Pinned",
+    "picker_recent": "Recent",
+    "picker_unpin": "Unpin workspace",
     "previous": "Previous",
     "public_profile": "Public profile",
     "published": "Published",
@@ -450,6 +463,34 @@
     "wallet_required": "Wallet is required",
     "weekly": "Weekly",
     "yearly": "Yearly"
+  },
+  "inlineAssistant": {
+    "accept": "Accept",
+    "biology": "Biology",
+    "chemistry": "Chemistry",
+    "dismiss": "Dismiss",
+    "empty": "No suggestions in this review. This does not confirm every answer is correct.",
+    "error": "Review unavailable. Check AI access, credits, and the 12,000-character limit, then retry.",
+    "found": "Review each suggestion before applying it.",
+    "full": "Full suggestions",
+    "general": "Other subjects",
+    "hints": "Hints only",
+    "idle": "Choose Review draft to send this text to your workspace AI. Edits are then reviewed after a short pause.",
+    "level": "AI help level",
+    "loading": "Preparing review…",
+    "math": "Mathematics",
+    "off": "Off — nothing is sent",
+    "physics": "Physics",
+    "remove": "Remove this text",
+    "retry": "Try review again",
+    "review": "Review draft",
+    "reviewing": "Reviewing…",
+    "scope": "Teacher draft review · AI may make mistakes.",
+    "stale": "Draft changed. Refreshing suggestions after you pause.",
+    "streaming": "Receiving suggestions…",
+    "subject": "Subject",
+    "title": "Learning assistant",
+    "writing": "Writing & citations"
   },
   "notifications": {
     "accept": "Accept",
@@ -1395,8 +1436,12 @@
     "manage_git_repositories_description": "Allows platform administrators to configure the GitHub App and approve public repositories for Git.",
     "manage_user_report_automation": "Manage Report Automation",
     "manage_user_report_automation_description": "Configure periodic report schedules, generation modes, and workspace or group defaults.",
+    "manage_workspace_domains": "Manage workspace domains",
+    "manage_workspace_domains_description": "Add, verify, and remove custom domains and platform subdomains that serve the workspace's public site.",
     "send_user_group_report_emails": "Send Periodic Report Emails",
-    "send_user_group_report_emails_description": "Preview, test, queue, retry, and cancel approved periodic report email delivery."
+    "send_user_group_report_emails_description": "Preview, test, queue, retry, and cancel approved periodic report email delivery.",
+    "view_workspace_domains": "View workspace domains",
+    "view_workspace_domains_description": "See the workspace's custom domains, their verification status, and domain entitlement."
   },
   "ws-settings": {
     "copy_id": "Copy ID",

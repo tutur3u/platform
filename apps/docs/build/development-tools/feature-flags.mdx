@@ -6,9 +6,17 @@ description: Flag policy, lifecycle catalog, admin dashboard and the mobile eval
 The root `config/feature-flags.json` owns the mobile runtime flag inventory. Each
 array entry has
 `key` (unique snake_case), `description`, `owner`, `class` (`read`, `write`, `ui`,
-`kill`), `default: false`, and `removeBy` (ISO date). The initial 16 mobile flags
-belong to `mona` and retain legacy removal-date metadata of `2027-01-31`.
-Removal eligibility follows the catalog kind below.
+`kill`), `default: false`, and `removeBy` (ISO date). The optional `scope` field
+accepts `workspace`; workspace-scoped entries are inventory-only in the v0 mobile
+endpoint and return their defaults, independently of workspace configuration.
+The initial 16 mobile flags belong to `mona` and retain legacy removal-date
+metadata of `2027-01-31`. Removal eligibility follows the catalog kind below.
+
+`tutoring_parent_message_v2` belongs to `pax`, defaults OFF, and has workspace
+scope. Its runtime value comes from `workspace_configs`, independently of the
+v0 mobile evaluator. Only the exact string `true` enables it; setting it to
+`false` or removing it is the kill switch. See
+[parent message v2](/platform/applications/tutoring#parent-message-v2).
 
 ## Add a flag
 
@@ -148,3 +156,39 @@ Regression coverage lives in `packages/feature-flags/src/index.test.ts`,
 Cookie-authenticated state mutations require the Infrastructure origin and the
 `x-tuturuuu-feature-flag-action: 1` header. Bearer API requests use verified token
 authentication without a cookie fallback.
+
+## Server-side audience rules
+
+New release flags declare rollout metadata in the central catalog: stage,
+owner and a calendar-date removal deadline. Stages are internal, rollout and ga.
+Internal audiences default to the exact tuturuuu.com email domain. Subdomains,
+suffix matches, anonymous identities, missing emails and unconfirmed emails are
+denied. Server adapters pass an actor returned by verified authentication,
+including email_confirmed_at. Request JSON, query parameters, editable profile
+metadata and a badge never establish that identity.
+
+Call isFeatureEnabled(key, { user, workspace, permissionGranted }, configuration)
+on the server before rendering a surface or performing its operation.
+The enabledFlags configuration contains the owning evaluator's boolean results,
+including its kill-switch rules. The rollouts configuration contains reviewed
+catalog policies. Missing policies fail closed. The caller passes its existing
+authorization result as permissionGranted; an audience never grants access.
+Do not cache the result across actors or workspaces or trust a client suffix check.
+
+An internal policy can declare emailDomainAllowlist; an empty list admits nobody.
+Rollout policies select explicit workspace IDs or an integer percentage from
+0 to 100. Percentage assignment is deterministic for the flag, actor and workspace;
+it is a rollout decision, not a security boundary. GA retains flag and permission
+gates until the owning source unit removes the flag after production verification.
+
+The Infrastructure inventory shows configured stages, owners and removal
+deadlines. Adopted entries without rollout metadata remain explicitly unknown;
+the inventory does not invent verification or ownership. The existing mobile
+boolean evaluator and its 16-key response remain unchanged. Each surface adopts
+server-side audience enforcement in its owning source unit; a catalog policy
+does not retrofit client-only or build-time consumers. Workspace-secret and
+mobile-build entries remain read-only.
+
+Regression coverage is in packages/feature-flags/src/audience.test.ts and the
+Infrastructure read-model tests. Source-declared policies require no database
+migration or separate global badge flag.

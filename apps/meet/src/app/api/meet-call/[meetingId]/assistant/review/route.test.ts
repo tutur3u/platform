@@ -81,45 +81,31 @@ it('lists only through the requester-scoped room service', async () => {
     action: 'ai.review.list',
   });
 });
-it('passes explicit approval and revision to the protected continuation flow', async () => {
-  await POST(
-    new Request('https://meet.test/review', {
-      method: 'POST',
-      body: JSON.stringify({
-        messageId: 'message',
-        revision: 1,
-        action: 'approve',
-        body: 'forged',
-        continuation: 'forged',
-      }),
-    }),
-    params
-  );
-  expect(mocks.generate).toHaveBeenCalledWith(access, {
-    messageId: 'message',
-    timezone: 'UTC',
-    resume: { revision: 1, approved: true },
-  });
-});
-it('never accepts client-authored replacement content when sharing', async () => {
-  await POST(
-    new Request('https://meet.test/review', {
-      method: 'POST',
-      body: JSON.stringify({
-        messageId: 'message',
-        revision: 1,
-        action: 'share',
-        body: 'forged',
-      }),
-    }),
-    params
-  );
-  expect(mocks.service).toHaveBeenCalledWith(access, {
-    action: 'ai.review.share',
-    messageId: 'message',
-    revision: 1,
-  });
-});
+it.each(['approve', 'deny', 'share', 'discard'])(
+  'denies %s even with a stored review, ignoring forged replacement content',
+  async (action) => {
+    await expect(
+      POST(
+        new Request('https://meet.test/review', {
+          method: 'POST',
+          body: JSON.stringify({
+            messageId: 'message',
+            revision: 1,
+            action,
+            body: 'forged',
+            continuation: 'forged',
+          }),
+        }),
+        params
+      )
+    ).rejects.toMatchObject({
+      status: 403,
+      message: 'Meet AI is temporarily unavailable',
+    });
+    expect(mocks.generate).not.toHaveBeenCalled();
+    expect(mocks.service).not.toHaveBeenCalled();
+  }
+);
 it('rejects invalid review ids before accessing the room', async () => {
   await expect(
     GET(new Request('https://meet.test/review?messageId='), params)

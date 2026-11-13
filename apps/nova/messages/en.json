@@ -282,6 +282,15 @@
     },
     "week": "Week"
   },
+  "calendar_category_reorder_pilot": {
+    "cancel": "Returned {label} to position {position} of {total}.",
+    "drop": "Dropped {label} at position {position} of {total}.",
+    "grab": "Picked up {label}, position {position} of {total}.",
+    "instructions": "Arrows navigate. Space picks up or drops a category. Arrows move it; Escape cancels.",
+    "invalid": "Category names must be unique and nonempty to reorder.",
+    "label": "Category order",
+    "move": "{label}, position {position} of {total}."
+  },
   "calendar-tabs": {
     "calendar": "Calendar",
     "events": "Events",
@@ -1006,6 +1015,10 @@
     "personal_account": "Personal Account",
     "pharmacies": "Pharmacies",
     "pharmacies-description": "Streamline pharmacy management and services.",
+    "picker_pin": "Pin workspace",
+    "picker_pinned": "Pinned",
+    "picker_recent": "Recent",
+    "picker_unpin": "Unpin workspace",
     "pink": "Pink",
     "pitch": "Pitch Deck",
     "pitch-description": "Tuturuuu's business plan pitch deck.",
@@ -4836,6 +4849,8 @@
     "manage_workspace_audit_logs_description": "Allows members to view all activities in the workspace.",
     "manage_workspace_billing": "Manage workspace billing",
     "manage_workspace_billing_description": "Allows members to view and update billing information.",
+    "manage_workspace_domains": "Manage workspace domains",
+    "manage_workspace_domains_description": "Add, verify, and remove custom domains and platform subdomains that serve the workspace's public site.",
     "manage_workspace_invites": "Manage workspace invites",
     "manage_workspace_invites_description": "Allows members to send, revoke, and accept invites.",
     "manage_workspace_members": "Manage workspace members",
@@ -4861,6 +4876,8 @@
     "singular": "Role",
     "view_infrastructure": "View infrastructure",
     "view_infrastructure_description": "Allows members to view infrastructure statistics and settings.",
+    "view_workspace_domains": "View workspace domains",
+    "view_workspace_domains_description": "See the workspace's custom domains, their verification status, and domain entitlement.",
     "workspace": "Workspace"
   },
   "ws-secrets": {

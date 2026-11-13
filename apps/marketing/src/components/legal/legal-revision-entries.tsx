@@ -3,12 +3,12 @@ import {
   getLegalRevision,
   type LegalLocale,
   legalChangesCopy,
+  stripInternalReviewSentences,
   legalRevisionChangesCopy,
   upcomingLegalRevision,
   upcomingMobilePrivacyRevision,
 } from '@tuturuuu/legal';
 import { LegalMarkdown } from './legal-markdown';
-import { stripInternalReviewSentences } from './proposal-footer';
 
 export function LegalRevisionEntries({
   locale,

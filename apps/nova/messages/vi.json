@@ -282,6 +282,15 @@
     },
     "week": "Tuần"
   },
+  "calendar_category_reorder_pilot": {
+    "cancel": "Đã trả {label} về vị trí {position} trên {total}.",
+    "drop": "Đã thả {label} tại vị trí {position} trên {total}.",
+    "grab": "Đã chọn {label}, vị trí {position} trên {total}.",
+    "instructions": "Dùng phím mũi tên để di chuyển tiêu điểm. Nhấn Space để chọn hoặc thả danh mục. Dùng mũi tên để đổi vị trí; Escape để hủy.",
+    "invalid": "Tên danh mục phải duy nhất và không trống để sắp xếp.",
+    "label": "Thứ tự danh mục",
+    "move": "{label}, vị trí {position} trên {total}."
+  },
   "calendar-tabs": {
     "calendar": "Lịch",
     "events": "Sự kiện",
@@ -1006,6 +1015,10 @@
     "personal_account": "Tài khoản cá nhân",
     "pharmacies": "Nhà thuốc",
     "pharmacies-description": "Chuẩn hóa việc quản lý và dịch vụ nhà thuốc.",
+    "picker_pin": "Ghim không gian làm việc",
+    "picker_pinned": "Đã ghim",
+    "picker_recent": "Gần đây",
+    "picker_unpin": "Bỏ ghim không gian làm việc",
     "pink": "Hồng",
     "pitch": "Kế hoạch kinh doanh",
     "pitch-description": "Kế hoạch kinh doanh của Tuturuuu.",
@@ -4836,6 +4849,8 @@
     "manage_workspace_audit_logs_description": "Cho phép các thành viên xem tất cả các hoạt động trong không gian làm việc.",
     "manage_workspace_billing": "Quản lý thanh toán",
     "manage_workspace_billing_description": "Cho phép các thành viên xem và cập nhật thông tin thanh toán.",
+    "manage_workspace_domains": "Quản lý tên miền không gian làm việc",
+    "manage_workspace_domains_description": "Thêm, xác minh và gỡ tên miền tùy chỉnh và tên miền phụ của nền tảng phục vụ trang công khai của không gian làm việc.",
     "manage_workspace_invites": "Quản lý lời mời",
     "manage_workspace_invites_description": "Cho phép các thành viên gửi, thu hồi và chấp nhận lời mời.",
     "manage_workspace_members": "Quản lý thành viên",
@@ -4861,6 +4876,8 @@
     "singular": "Vai trò",
     "view_infrastructure": "Xem cơ sở hạ tầng",
     "view_infrastructure_description": "Cho phép thành viên xem thống kê và cài đặt cơ sở hạ tầng.",
+    "view_workspace_domains": "Xem tên miền không gian làm việc",
+    "view_workspace_domains_description": "Xem các tên miền tùy chỉnh của không gian làm việc, trạng thái xác minh và quyền sử dụng tên miền.",
     "workspace": "Không gian làm việc"
   },
   "ws-secrets": {

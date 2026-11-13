@@ -10,6 +10,11 @@ export default function ErrorBoundary({
   reset: () => void;
 }) {
   return (
-    <AppErrorBoundary appName="Infrastructure" error={error} reset={reset} />
+    <AppErrorBoundary
+      chrome="page"
+      appName="Infrastructure"
+      error={error}
+      reset={reset}
+    />
   );
 }

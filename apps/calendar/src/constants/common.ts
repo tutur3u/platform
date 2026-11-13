@@ -26,16 +26,38 @@ const DEFAULT_WEB_APP_URL =
     ? 'https://tuturuuu.com'
     : getLocalInternalAppUrl('platform', `http://localhost:${CENTRAL_PORT}`);
 
-export const BASE_URL = resolveInternalAppUrl({
-  appName: 'calendar',
-  candidates: [
-    process.env.CALENDAR_APP_URL,
-    process.env.NEXT_PUBLIC_CALENDAR_APP_URL,
-    process.env.NEXT_PUBLIC_APP_URL,
-    process.env.BASE_URL,
-  ],
-  fallback: DEFAULT_CALENDAR_APP_URL,
-});
+const calendarUrlCandidates = [
+  process.env.CALENDAR_APP_URL,
+  process.env.NEXT_PUBLIC_CALENDAR_APP_URL,
+  process.env.NEXT_PUBLIC_APP_URL,
+  process.env.BASE_URL,
+];
+function resolveCalendarAppUrl() {
+  for (const candidate of calendarUrlCandidates) {
+    if (
+      process.env.CALENDAR_DEPLOYMENT_PROFILE === 'production' &&
+      (candidate?.trim() === 'https://tuturuuu.com/calendar' ||
+        candidate?.trim() === 'https://tuturuuu.com/calendar/')
+    ) {
+      return 'https://tuturuuu.com/calendar';
+    }
+
+    const resolved = resolveInternalAppUrl({
+      appName: 'calendar',
+      candidates: [candidate],
+      fallback: '',
+    });
+    if (resolved) return resolved;
+  }
+
+  return resolveInternalAppUrl({
+    appName: 'calendar',
+    candidates: [],
+    fallback: DEFAULT_CALENDAR_APP_URL,
+  });
+}
+
+export const BASE_URL = resolveCalendarAppUrl();
 
 export const API_URL = process.env.API_URL || `${BASE_URL}/api`;
 

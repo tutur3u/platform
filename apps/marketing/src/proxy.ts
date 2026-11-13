@@ -1,3 +1,4 @@
+import { guardApiProxyRequest } from '@tuturuuu/utils/api-proxy-guard';
 import type { NextRequest } from 'next/server';
 import { NextResponse } from 'next/server';
 import createIntlMiddleware from 'next-intl/middleware';
@@ -7,10 +8,17 @@ const intlMiddleware = createIntlMiddleware(routing);
 
 /**
  * Anonymous marketing pages only: locale negotiation, no session reads, no
- * auth cookies. Everything under `/api` belongs to the web app.
+ * auth cookies. Everything under `/api` belongs to the web app; any `/api`
+ * request that still reaches this app goes through the shared API guard
+ * (payload limits, abuse and rate policies) like every other app.
  */
 export async function proxy(request: NextRequest): Promise<NextResponse> {
-  if (request.nextUrl.pathname.startsWith('/api')) return NextResponse.next();
+  if (request.nextUrl.pathname.startsWith('/api')) {
+    const guardResponse = await guardApiProxyRequest(request, {
+      prefixBase: 'proxy:marketing:api',
+    });
+    return guardResponse ?? NextResponse.next();
+  }
   return intlMiddleware(request) as NextResponse;
 }
 

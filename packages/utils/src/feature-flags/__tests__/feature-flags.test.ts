@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { FEATURE_GROUPS } from '../core';
 import { FEATURE_FLAGS } from '../data';
+import { DEFAULT_FEATURE_FLAGS } from '../default';
 import type { FeatureFlag, FeatureFlagMap } from '../types';
 
 describe('FEATURE_FLAGS', () => {
@@ -33,6 +34,12 @@ describe('FEATURE_FLAGS', () => {
   });
 
   describe('Document-related flags', () => {
+    it('keeps document hierarchy off by default', () => {
+      expect(FEATURE_FLAGS.ENABLE_DOCUMENT_HIERARCHY).toBe(
+        'ENABLE_DOCUMENT_HIERARCHY'
+      );
+      expect(DEFAULT_FEATURE_FLAGS.ENABLE_DOCUMENT_HIERARCHY).toBe(false);
+    });
     it('should have ENABLE_DOCS flag', () => {
       expect(FEATURE_FLAGS.ENABLE_DOCS).toBe('ENABLE_DOCS');
     });
@@ -73,9 +80,15 @@ describe('FEATURE_FLAGS', () => {
   });
 
   describe('flag count and structure', () => {
-    it('should have exactly 15 feature flags', () => {
+    it('should have exactly 17 feature flags', () => {
       const flags = Object.keys(FEATURE_FLAGS);
-      expect(flags).toHaveLength(15);
+      expect(flags).toHaveLength(17);
+    });
+
+    it('should have ENABLE_JOURNAL_MOOD_TRACKING flag', () => {
+      expect(FEATURE_FLAGS.ENABLE_JOURNAL_MOOD_TRACKING).toBe(
+        'ENABLE_JOURNAL_MOOD_TRACKING'
+      );
     });
 
     it('should have all unique values', () => {
@@ -196,6 +209,7 @@ describe('FeatureFlagMap type', () => {
       ENABLE_CHAT: true,
       ENABLE_TASKS: true,
       ENABLE_DOCS: false,
+      ENABLE_DOCUMENT_HIERARCHY: false,
       ENABLE_DRIVE: false,
       ENABLE_SLIDES: false,
       DISABLE_INVITE: false,
@@ -203,6 +217,7 @@ describe('FeatureFlagMap type', () => {
       ENABLE_AVATAR: true,
       ENABLE_LOGO: true,
       newsletter_sending: false,
+      ENABLE_JOURNAL_MOOD_TRACKING: false,
     };
 
     expect(flagMap.ENABLE_AI).toBe(true);
@@ -232,6 +247,7 @@ describe('Feature flag usage patterns', () => {
         ENABLE_CHAT: true,
         ENABLE_TASKS: true,
         ENABLE_DOCS: true,
+        ENABLE_DOCUMENT_HIERARCHY: false,
         ENABLE_DRIVE: true,
         ENABLE_SLIDES: true,
         DISABLE_INVITE: false,
@@ -239,6 +255,7 @@ describe('Feature flag usage patterns', () => {
         ENABLE_AVATAR: true,
         ENABLE_LOGO: true,
         newsletter_sending: false,
+        ENABLE_JOURNAL_MOOD_TRACKING: false,
       };
 
       const aiFeatures: FeatureFlag[] = [
@@ -260,6 +277,7 @@ describe('Feature flag usage patterns', () => {
         ENABLE_CHAT: false,
         ENABLE_TASKS: false,
         ENABLE_DOCS: false,
+        ENABLE_DOCUMENT_HIERARCHY: false,
         ENABLE_DRIVE: false,
         ENABLE_SLIDES: false,
         DISABLE_INVITE: false,
@@ -267,6 +285,7 @@ describe('Feature flag usage patterns', () => {
         ENABLE_AVATAR: false,
         ENABLE_LOGO: false,
         newsletter_sending: false,
+        ENABLE_JOURNAL_MOOD_TRACKING: false,
       };
 
       const educationFeatures: FeatureFlag[] = [

@@ -125,7 +125,8 @@ export const POST = Webhooks({
         sbAdmin,
         payload.data as Subscription
       );
-      if ('purchaseData' in syncResult) return;
+      if ('purchaseData' in syncResult || 'domainAddonData' in syncResult)
+        return;
       const { subscriptionData, isSeatBased } = syncResult;
 
       console.log('Webhook: Subscription created:', payload.data.id);
@@ -180,7 +181,8 @@ export const POST = Webhooks({
         sbAdmin,
         payload.data as Subscription
       );
-      if ('purchaseData' in syncResult) return;
+      if ('purchaseData' in syncResult || 'domainAddonData' in syncResult)
+        return;
       const { subscriptionData, isSeatBased } = syncResult;
 
       console.log(`Webhook: Subscription updated: ${payload.data.id}`);
@@ -289,7 +291,8 @@ export const POST = Webhooks({
         sbAdmin,
         payload.data as Subscription
       );
-      if ('purchaseData' in syncResult) return;
+      if ('purchaseData' in syncResult || 'domainAddonData' in syncResult)
+        return;
       const { subscriptionData } = syncResult;
       console.log(`Webhook: Subscription revoked: ${payload.data.id}`);
 

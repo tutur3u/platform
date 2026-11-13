@@ -3682,6 +3682,15 @@
     "year": "Year",
     "yesterday": "Yesterday"
   },
+  "calendar_category_reorder_pilot": {
+    "cancel": "Returned {label} to position {position} of {total}.",
+    "drop": "Dropped {label} at position {position} of {total}.",
+    "grab": "Picked up {label}, position {position} of {total}.",
+    "instructions": "Arrows navigate. Space picks up or drops a category. Arrows move it; Escape cancels.",
+    "invalid": "Category names must be unique and nonempty to reorder.",
+    "label": "Category order",
+    "move": "{label}, position {position} of {total}."
+  },
   "calendar_lab": {
     "baseline_captured": "Baseline captured. Adjust weights and rerun to compare.",
     "controls": "Lab Controls",
@@ -4725,6 +4734,7 @@
       "track_3": "Team time management",
       "voiceAssistant": "Voice assistant",
       "workforce": "Workforce administration",
+      "workspace-domains_0": "Workspace custom domains edge",
       "workspaces": "Workspaces created per account"
     },
     "included": "Included",
@@ -5243,6 +5253,10 @@
     "pharmacies": "Pharmacies",
     "pharmacies-description": "Streamline pharmacy management and services.",
     "pick_a_date": "Pick a date",
+    "picker_pin": "Pin workspace",
+    "picker_pinned": "Pinned",
+    "picker_recent": "Recent",
+    "picker_unpin": "Unpin workspace",
     "pink": "Pink",
     "pitch": "Pitch Deck",
     "pitch-description": "Tuturuuu's business plan pitch deck.",
@@ -24317,6 +24331,8 @@
     "manage_workspace_audit_logs_description": "Allows members to view all activities in the workspace.",
     "manage_workspace_billing": "Manage workspace billing",
     "manage_workspace_billing_description": "Allows members to view and update billing information.",
+    "manage_workspace_domains": "Manage workspace domains",
+    "manage_workspace_domains_description": "Add, verify, and remove custom domains and platform subdomains that serve the workspace's public site.",
     "manage_workspace_integrations": "Manage workspace integrations",
     "manage_workspace_integrations_description": "Allows members to view and update workspace integrations.",
     "manage_workspace_invites": "Manage workspace invites",
@@ -24483,6 +24499,8 @@
     "view_users_public_info_description": "Allows members to view public information of users in the workspace.",
     "view_workforce": "View Workforce",
     "view_workforce_description": "Allows members to view employee contracts and workforce information.",
+    "view_workspace_domains": "View workspace domains",
+    "view_workspace_domains_description": "See the workspace's custom domains, their verification status, and domain entitlement.",
     "viewing_window": "Viewing Window",
     "viewing_window_1_day": "1 Day",
     "viewing_window_1_month": "1 Month",

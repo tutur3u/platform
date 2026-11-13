@@ -1,5 +1,8 @@
 import { expect } from '@playwright/test';
-import { getLegalDocument } from '@tuturuuu/legal';
+import {
+  getLegalDocument,
+  stripInternalReviewSentences,
+} from '@tuturuuu/legal';
 import en from '../messages/en.json';
 import vi from '../messages/vi.json';
 import { config, signIn, test, visit, workspacePath } from './fixtures';
@@ -43,7 +46,10 @@ test('public native legal pages preserve EN/VI content and reload without a sess
         page.getByRole('heading', { name: section.title, exact: true })
       ).toBeVisible();
     }
-    await expect(page.locator('footer')).toContainText(document.footer);
+    await expect(page.locator('footer')).toContainText(
+      stripInternalReviewSentences(document.footer)
+    );
+    await expect(page.locator('a[href$="/legal/changes"]')).toHaveCount(0);
     await page.reload({ waitUntil: 'domcontentloaded' });
     await expect(page.getByRole('heading', { level: 1 })).toBeVisible();
   }

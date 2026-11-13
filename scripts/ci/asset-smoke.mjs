@@ -5,9 +5,10 @@ import { fileURLToPath, pathToFileURL } from 'node:url';
  * Gateway asset smoke.
  *
  * Fetch each document, follow at most one redirect, then request every CSS,
- * JS and font URL it references. Those assets must return 200 with the matching
- * MIME type on the canonical origin. A second redirect is a chain. A 404,
- * text/html, or application/octet-stream body is not an asset.
+ * JS, font, <img> and icon-link URL it references. Those assets must return
+ * 200 with the matching MIME type on the canonical origin; images must also
+ * have a non-empty body. A second redirect is a chain. A 404, text/html,
+ * application/octet-stream or zero-byte image is not an asset.
  *
  *   node scripts/ci/asset-smoke.mjs \
  *     --canonical-origin https://tuturuuu.com \
@@ -34,11 +35,19 @@ const JS_TYPES = new Set([
   'text/javascript',
 ]);
 
-const KIND_LABEL = { css: 'stylesheet', js: 'script', font: 'font' };
+const KIND_LABEL = {
+  css: 'stylesheet',
+  js: 'script',
+  font: 'font',
+  image: 'image',
+  data: 'data',
+};
 const EXPECTED_TYPE = {
   css: 'text/css',
   js: 'text/javascript or application/javascript',
   font: 'font/*',
+  image: 'non-empty image/*',
+  data: 'non-empty application/json',
 };
 
 export function contentTypeValue(header) {
@@ -57,6 +66,8 @@ export function mimeMatches(kind, header) {
   if (kind === 'js') return JS_TYPES.has(value);
   if (kind === 'font')
     return value.startsWith('font/') || FONT_TYPES.has(value);
+  if (kind === 'image') return value.startsWith('image/');
+  if (kind === 'data') return value === 'application/json';
   return false;
 }
 
@@ -65,6 +76,7 @@ function kindFromPath(reference) {
   if (path.endsWith('.css')) return 'css';
   if (/\.(?:js|mjs|cjs)$/.test(path)) return 'js';
   if (/\.(?:woff2?|ttf|otf|eot)$/.test(path)) return 'font';
+  if (path.endsWith('.json')) return 'data';
   return null;
 }
 
@@ -84,6 +96,8 @@ function kindFromLink(attrs) {
     (attrs.get('rel') ?? '').toLowerCase().split(/\s+/).filter(Boolean)
   );
   if (!attrs.get('href')) return null;
+  if (['icon', 'apple-touch-icon', 'mask-icon'].some((name) => rel.has(name)))
+    return 'image';
   const as = (attrs.get('as') ?? '').toLowerCase();
   if (rel.has('stylesheet')) return 'css';
   if (rel.has('modulepreload')) return 'js';
@@ -94,11 +108,16 @@ function kindFromLink(attrs) {
   return kindFromPath(attrs.get('href'));
 }
 
-/** CSS, JS and font references in an HTML document. External hosts stay absolute. */
+/** CSS, JS, font, <img> and icon references in an HTML document. External hosts stay absolute. */
 export function extractHtmlAssets(html) {
   const found = [];
-  for (const match of String(html).matchAll(/<(link|script)\b([^>]*)>/gi)) {
+  for (const match of String(html).matchAll(/<(link|script|img)\b([^>]*)>/gi)) {
     const attrs = readAttributes(match[2]);
+    if (match[1].toLowerCase() === 'img') {
+      const src = attrs.get('src');
+      if (src) found.push({ reference: src, kind: 'image' });
+      continue;
+    }
     if (match[1].toLowerCase() === 'script') {
       const src = attrs.get('src');
       if (src) found.push({ reference: src, kind: 'js' });
@@ -299,17 +318,24 @@ async function loadDocument(spec, fetchImpl, timeoutMs) {
   return { failures, html, hops, finalUrl: current };
 }
 
-async function readAsset(fetchImpl, url, timeoutMs) {
+async function readAsset(fetchImpl, url, timeoutMs, kind) {
   const response = await request(fetchImpl, url, timeoutMs);
   if (response.failed) {
     return { failed: true, message: response.message };
   }
   const type = header(response, 'content-type');
+  if (kind === 'image') {
+    const bytes =
+      response.status === 200 && typeof response.arrayBuffer === 'function'
+        ? (await response.arrayBuffer()).byteLength
+        : 0;
+    return { status: response.status, type, body: '', bytes };
+  }
   const body =
     response.status === 200 && typeof response.text === 'function'
       ? await response.text()
       : '';
-  return { status: response.status, type, body };
+  return { status: response.status, type, body, bytes: body.length };
 }
 
 export async function smokeAssets({
@@ -362,7 +388,7 @@ export async function smokeAssets({
 
   while (queue.length > 0) {
     const item = queue.shift();
-    const asset = await readAsset(fetchImpl, item.url, timeoutMs);
+    const asset = await readAsset(fetchImpl, item.url, timeoutMs, item.kind);
     if (asset.failed) {
       failures.push(
         `${KIND_LABEL[item.kind]} ${item.url} fetch failed: ${asset.message}`
@@ -370,7 +396,10 @@ export async function smokeAssets({
       assets.push({ url: item.url, kind: item.kind, status: 0, ok: false });
       continue;
     }
-    const ok = asset.status === 200 && mimeMatches(item.kind, asset.type);
+    const ok =
+      asset.status === 200 &&
+      mimeMatches(item.kind, asset.type) &&
+      ((item.kind !== 'image' && item.kind !== 'data') || asset.bytes > 0);
     assets.push({
       url: item.url,
       kind: item.kind,
@@ -380,7 +409,7 @@ export async function smokeAssets({
     });
     if (!ok) {
       failures.push(
-        `${KIND_LABEL[item.kind]} ${item.url} status ${asset.status} content-type ${contentTypeValue(asset.type) || '(missing)'}, expected 200 ${EXPECTED_TYPE[item.kind]}`
+        `${KIND_LABEL[item.kind]} ${item.url} status ${asset.status} content-type ${contentTypeValue(asset.type) || '(missing)'}${item.kind === 'image' || item.kind === 'data' ? ` bytes ${asset.bytes}` : ''}, expected 200 ${EXPECTED_TYPE[item.kind]}`
       );
       continue;
     }

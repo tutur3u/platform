@@ -1,0 +1,126 @@
+name: Public build artifact
+
+on:
+  workflow_dispatch:
+    inputs:
+      source_sha:
+        description: Exact merged-main 40-hex commit SHA
+        required: true
+        type: string
+      app:
+        description: Public compiler target (adapter availability is checked)
+        required: true
+        type: choice
+        options: [finance, web, meet]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: public-build-artifact-${{ inputs.source_sha }}-${{ inputs.app }}
+  cancel-in-progress: false
+
+jobs:
+  admit:
+    if: github.event_name == 'workflow_dispatch'
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    outputs:
+      sha: ${{ steps.admit.outputs.sha }}
+      main: ${{ steps.admit.outputs.main }}
+    steps:
+      - name: Validate input and merged-main ancestry before any checkout
+        id: admit
+        uses: actions/github-script@3a2844b7e9c422d3c10d287c895573f7108da1b3 # v9.0.0
+        env:
+          REQUEST_SHA: ${{ inputs.source_sha }}
+          CONTROL_SHA: ${{ github.workflow_sha }}
+          REQUEST_APP: ${{ inputs.app }}
+        with:
+          script: |
+            // admission:start
+            const sha = process.env.REQUEST_SHA;
+            const control = process.env.CONTROL_SHA;
+            if (sha?.length !== 40 || control?.length !== 40 || !/^[a-f0-9]{40}$/.test(sha) || !/^[a-f0-9]{40}$/.test(control)) throw new Error('Invalid immutable SHA');
+            if (context.repo.owner !== 'tutur3u' || context.repo.repo !== 'platform' || context.ref !== 'refs/heads/main') throw new Error('Canonical main workflow required');
+            const app = process.env.REQUEST_APP;
+            if (app !== undefined && !['finance', 'web', 'meet'].includes(app)) throw new Error('Invalid app');
+            const { data: branch } = await github.rest.repos.getBranch({ ...context.repo, branch: 'main' });
+            const main = branch.commit.sha;
+            for (const ref of [sha, control]) {
+              const { data: comparison } = await github.rest.repos.compareCommitsWithBasehead({ ...context.repo, basehead: `${ref}...${main}` });
+              if (!['ahead', 'identical'].includes(comparison.status) || comparison.merge_base_commit.sha !== ref) throw new Error('Source/control is not merged main');
+            }
+            core.setOutput('sha', sha);
+            core.setOutput('main', main);
+            // admission:end
+
+  build:
+    needs: admit
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    env:
+      SOURCE_SHA: ${{ needs.admit.outputs.sha }}
+      CONTROL_SHA: ${{ github.workflow_sha }}
+      MAIN_SHA: ${{ needs.admit.outputs.main }}
+      CI: 'true'
+      NEXT_TELEMETRY_DISABLED: '1'
+      WRANGLER_SEND_METRICS: 'false'
+      TURBO_TELEMETRY_DISABLED: '1'
+      TURBO_CACHE: 'local:rw'
+      NEXT_PUBLIC_SUPABASE_URL: https://public-ci.supabase.invalid
+      NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY: sb_publishable_public_ci_fixture
+      PROXY_API_KEY: ''
+      NEXT_PUBLIC_PROXY_API_KEY: ''
+      APP: ${{ inputs.app }}
+    steps:
+      - name: Checkout immutable workflow controls
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ github.workflow_sha }}
+          path: control
+          persist-credentials: false
+      - name: Checkout admitted source
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ needs.admit.outputs.sha }}
+          path: source
+          persist-credentials: false
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version: 24.22.3
+      - name: Verify both immutable checkout identities before repository commands
+        run: |
+          test "$(git -C control rev-parse HEAD)" = "$CONTROL_SHA"
+          test "$(git -C source rev-parse HEAD)" = "$SOURCE_SHA"
+      - name: Setup pinned Bun without shared caches
+        working-directory: control
+        run: bash scripts/ci/setup-bun-with-backoff.sh 1.4.4
+      - name: Compile public outputs or record the exact missing adapter contract
+        working-directory: source
+        run: node ../control/scripts/ci/public-build.js "$APP" "$RUNNER_TEMP/public-build"
+      - name: Retain public archive and SHA256 manifest, or explicit failure receipt
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        if: always()
+        with:
+          name: public-build-${{ needs.admit.outputs.sha }}-${{ inputs.app }}-${{ github.run_attempt }}
+          path: ${{ runner.temp }}/public-build/
+          if-no-files-found: error
+          retention-days: 7
+
+  summary:
+    if: always()
+    needs: [admit, build]
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/github-script@3a2844b7e9c422d3c10d287c895573f7108da1b3 # v9.0.0
+        env:
+          OUTCOMES: ${{ toJSON(needs) }}
+        with:
+          script: |
+            const results = JSON.parse(process.env.OUTCOMES);
+            await core.summary.addHeading('Public compiler artifact').addTable([['Job', 'Actual outcome'], ...Object.entries(results).map(([k,v]) => [k,v.result])])
+              .addLink('Run and public artifacts', `${context.serverUrl}/${context.repo.owner}/${context.repo.repo}/actions/runs/${context.runId}`)
+              .addRaw('\nA failure receipt is not a deployable artifact. Compiler success is not runtime, staging or production acceptance.\n').write();
+            if (results.admit.result !== 'success' || results.build.result !== 'success') core.setFailed('Public artifact not produced');

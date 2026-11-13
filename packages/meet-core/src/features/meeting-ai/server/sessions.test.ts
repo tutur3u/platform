@@ -332,7 +332,7 @@ describe('Meet notes finalization', () => {
   });
 });
 
-it('reports workspace availability from runtime controls', async () => {
+it('keeps workspace-wide availability false even when runtime controls list it', async () => {
   mocks.cloudflare.mockResolvedValue({
     env: { MEET_AI_DISABLED: 'true' },
   });
@@ -345,7 +345,7 @@ it('reports workspace availability from runtime controls', async () => {
     },
   });
   dbWith([result([]), result([])]);
-  expect((await readMeetAi(request(), params)).available).toBe(true);
+  expect((await readMeetAi(request(), params)).available).toBe(false);
 });
 
 it('redacts all costs and raw usage from a shared-notes reader', async () => {

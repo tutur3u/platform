@@ -2,7 +2,10 @@ import { open, readFile } from 'node:fs/promises';
 import { z } from 'zod';
 import type { TuturuuuUserClient } from '../platform';
 import { type FlagValue, getFlag, parseCsv } from './args';
+import { domainsHelp } from './domains';
 import { runExternalProjectsCommand } from './external-projects';
+
+export { runDomainsCommand } from './domains';
 
 type Options = {
   client: TuturuuuUserClient;
@@ -174,7 +177,13 @@ export async function runExternalCommand(options: Options) {
   throw new Error('Unknown external command. Run ttr external --help.');
 }
 
-export function externalAdminHelp() {
+/** `ttr domains --help` and `ttr external --help` (projects has its own). */
+export function isExternalHelp(group?: string, action?: string) {
+  return group === 'domains' || (group === 'external' && action !== 'projects');
+}
+
+export function externalAdminHelp(group?: string) {
+  if (group === 'domains') return domainsHelp();
   return `External site administration (root permissions required)
 
   ttr external apps list|get <id>

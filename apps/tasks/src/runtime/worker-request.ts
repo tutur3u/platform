@@ -4,6 +4,10 @@ import {
   resolveAppBase,
 } from '@tuturuuu/start-bridge/mounts';
 import type { AssetsBinding } from '@tuturuuu/start-bridge/start/handler';
+import {
+  buildPermissionsPolicy,
+  DEFAULT_PERMISSIONS,
+} from '@tuturuuu/utils/security-headers';
 import { PRIVATE_ROBOTS_HEADER } from '@tuturuuu/utils/seo';
 import { workerBuildInfo } from '@tuturuuu/utils/worker-build-info';
 import { withoutPageRewrite } from '../lib/page-rewrite';
@@ -31,6 +35,17 @@ export interface TasksWorkerEnv {
    * request.
    */
   TUTURUUU_STAGING_HOSTS?: string;
+  /**
+   * `enforce` enforces the bridge's script CSP. Anything else sends it
+   * report-only (the D87 window before Bea's check and 24 h of clean reports).
+   */
+  TTR_CSP_TASKS?: string;
+  /**
+   * `enforce` adds `require-trusted-types-for 'script'` to the enforced CSP
+   * (only meaningful with `TTR_CSP_TASKS=enforce`). Anything else keeps
+   * Trusted Types report-only.
+   */
+  TTR_TRUSTED_TYPES_TASKS?: string;
 }
 
 export interface TasksExecutionContext {
@@ -43,7 +58,18 @@ export type TasksBridgeHandler = (
   ctx: TasksExecutionContext
 ) => Promise<Response>;
 
-/** Root-only and fail-closed: no apex mount, unlisted hosts get 404. */
+/** The shared origin that serves Tasks under {@link TASKS_BASE_PATH}. */
+export const TASKS_MOUNT_HOSTS = ['tuturuuu.com'] as const;
+
+/** Tasks' mount on the shared origin: `https://tuturuuu.com/tasks`. */
+export const TASKS_BASE_PATH = '/tasks';
+
+/**
+ * One artifact serves the subdomain root and the `tuturuuu.com/tasks` mount
+ * (one-origin, D87). Fail-closed: unlisted hosts get 404, and the apex outside
+ * `/tasks` is not Tasks'. Whether the apex is served at all is decided by
+ * `TTR_ONE_ORIGIN_TASKS` in the bridge, and by the zone routes.
+ */
 export function tasksMounts(env: TasksWorkerEnv): AppMountConfig {
   const staging = (env.TUTURUUU_STAGING_HOSTS ?? '')
     .split(',')
@@ -52,7 +78,8 @@ export function tasksMounts(env: TasksWorkerEnv): AppMountConfig {
   return {
     app: 'tasks',
     rootHosts: [...TASKS_ROOT_HOSTS, ...staging],
-    mountHosts: [],
+    mountHosts: [...TASKS_MOUNT_HOSTS],
+    basePath: TASKS_BASE_PATH,
     unknownHost: 'reject',
   };
 }
@@ -105,8 +132,212 @@ export function denyFraming(csp: string | null) {
  * (a handler's `private, max-age` would keep it in the browser); only reads of
  * hashed assets and public files keep theirs.
  */
-function decorate(response: Response, appPath: string | null, method: string) {
-  const tagged = tagResponse(response, NATIVE);
+/**
+ * Trusted Types for the target policy: script sinks need Trusted Types, and
+ * only DOMPurify's policy may be created (no duplicates). The report-only
+ * window reveals any other policy name before enforcement.
+ */
+const TRUSTED_TYPES_DIRECTIVES =
+  "require-trusted-types-for 'script'; trusted-types dompurify";
+
+/** Same-origin CSP report collector, relative to the app base. */
+export const CSP_REPORT_PATH = '/api/csp-report';
+
+const MAX_REPORT_BYTES = 16 * 1024;
+const REPORT_LOG_BUDGET = 50;
+let reportLogWindow = { start: 0, count: 0 };
+
+const CSP_DIRECTIVES = new Set([
+  'base-uri',
+  'child-src',
+  'connect-src',
+  'default-src',
+  'font-src',
+  'form-action',
+  'frame-ancestors',
+  'frame-src',
+  'img-src',
+  'manifest-src',
+  'media-src',
+  'object-src',
+  'require-trusted-types-for',
+  'sandbox',
+  'script-src',
+  'script-src-attr',
+  'script-src-elem',
+  'style-src',
+  'style-src-attr',
+  'style-src-elem',
+  'trusted-types',
+  'upgrade-insecure-requests',
+  'worker-src',
+]);
+
+function sanitizeViolation(raw: Record<string, unknown>) {
+  const directive =
+    raw['effective-directive'] ??
+    raw.effectiveDirective ??
+    raw['violated-directive'];
+  return {
+    effectiveDirective:
+      typeof directive === 'string' && CSP_DIRECTIVES.has(directive)
+        ? directive
+        : 'unknown',
+    disposition: raw.disposition === 'enforce' ? 'enforce' : 'report',
+  };
+}
+
+/** The body as text, or `null` once it passes `cap` bytes (stream cancelled). */
+async function readCapped(
+  request: Request,
+  cap: number
+): Promise<string | null> {
+  const reader = request.body?.getReader();
+  if (!reader) return '';
+  const chunks: Uint8Array[] = [];
+  let size = 0;
+  for (;;) {
+    const { done, value } = await reader.read();
+    if (done) break;
+    size += value.byteLength;
+    if (size > cap) {
+      await reader.cancel();
+      return null;
+    }
+    chunks.push(value);
+  }
+  const bytes = new Uint8Array(size);
+  let offset = 0;
+  for (const chunk of chunks) {
+    bytes.set(chunk, offset);
+    offset += chunk.byteLength;
+  }
+  return new TextDecoder().decode(bytes);
+}
+
+/**
+ * The Tasks CSP report collector (`<base>/api/csp-report`): accepts
+ * `report-uri` and Reporting API bodies (read with a 16 KB cap), logs at most
+ * a fixed budget per
+ * minute per isolate with query strings and fragments stripped, never echoes
+ * anything, and always answers 204.
+ */
+export async function collectCspReport(request: Request): Promise<Response> {
+  const done = () => new Response(null, { status: 204 });
+  if (request.method !== 'POST') {
+    return new Response(null, { status: 405, headers: { Allow: 'POST' } });
+  }
+  const declared = Number(request.headers.get('content-length') ?? '0');
+  if (declared > MAX_REPORT_BYTES) return done();
+  let body: unknown;
+  try {
+    // Chunked bodies carry no Content-Length: stop reading past the cap.
+    const text = await readCapped(request, MAX_REPORT_BYTES);
+    if (text === null) return done();
+    body = JSON.parse(text);
+  } catch {
+    return done();
+  }
+  const entries = Array.isArray(body)
+    ? body
+        .filter((entry) => entry && typeof entry === 'object')
+        .map((entry) => (entry as { body?: unknown }).body)
+    : [(body as { 'csp-report'?: unknown } | null)?.['csp-report']];
+  const now = Date.now();
+  if (now - reportLogWindow.start > 60_000)
+    reportLogWindow = { start: now, count: 0 };
+  for (const entry of entries.slice(0, 10)) {
+    if (!entry || typeof entry !== 'object') continue;
+    if (reportLogWindow.count >= REPORT_LOG_BUDGET) break;
+    reportLogWindow.count += 1;
+    console.warn(
+      'tasks csp violation',
+      sanitizeViolation(entry as Record<string, unknown>)
+    );
+  }
+  return done();
+}
+
+function readVar(env: TasksWorkerEnv, name: keyof TasksWorkerEnv) {
+  const value =
+    env[name] ??
+    (typeof process === 'undefined' ? undefined : process.env[name]);
+  return typeof value === 'string' ? value.trim() : undefined;
+}
+
+/** `enforce` (any case, trimmed) switches a policy on; anything else is report-only. */
+function isEnforced(env: TasksWorkerEnv, name: keyof TasksWorkerEnv) {
+  return readVar(env, name)?.toLowerCase() === 'enforce';
+}
+
+function isHtml(response: Response) {
+  return (response.headers.get('content-type') ?? '')
+    .toLowerCase()
+    .startsWith('text/html');
+}
+
+/**
+ * Document security for Tasks' own HTML (pages, 404s, error and fallback
+ * pages), staged by env (D87 A1):
+ * - the report-only header always carries the exact target policy (the
+ *   bridge's nonce script policy plus Trusted Types) and reports it to
+ *   `<base>/api/csp-report`;
+ * - `TTR_CSP_TASKS=enforce` enforces the script policy, and with it
+ *   `TTR_TRUSTED_TYPES_TASKS=enforce` enforces Trusted Types too;
+ * - framing stays enforced in every stage (`decorate`).
+ * `/api` responses (including HTML forwarded from Web) and framable paths
+ * keep whatever policy they carry.
+ */
+function secureDocument(
+  response: Response,
+  appPath: string,
+  basePath: string,
+  env: TasksWorkerEnv
+): Response {
+  if (response.status === 101 || !isHtml(response)) return response;
+  if (appPath === '/api' || appPath.startsWith('/api/')) return response;
+  if (FRAMABLE.test(appPath)) return response;
+  const scriptPolicy = response.headers.get('Content-Security-Policy');
+  if (!scriptPolicy) return response;
+  const reportUri = `${basePath}${CSP_REPORT_PATH}`;
+  const target = `${scriptPolicy}; ${TRUSTED_TYPES_DIRECTIVES}`;
+  const reporting = `report-uri ${reportUri}; report-to csp`;
+  const result = new Response(response.body, response);
+  const headers = result.headers;
+  headers.set('Reporting-Endpoints', `csp="${reportUri}"`);
+  headers.set(
+    'Permissions-Policy',
+    buildPermissionsPolicy(DEFAULT_PERMISSIONS)
+  );
+  const cspEnforced = isEnforced(env, 'TTR_CSP_TASKS');
+  const ttEnforced = cspEnforced && isEnforced(env, 'TTR_TRUSTED_TYPES_TASKS');
+  if (!cspEnforced) headers.delete('Content-Security-Policy');
+  else
+    headers.set(
+      'Content-Security-Policy',
+      `${ttEnforced ? target : scriptPolicy}; ${reporting}`
+    );
+  if (!ttEnforced)
+    headers.set(
+      'Content-Security-Policy-Report-Only',
+      `${target}; ${reporting}`
+    );
+  else headers.delete('Content-Security-Policy-Report-Only');
+  return result;
+}
+
+function decorate(
+  response: Response,
+  appPath: string | null,
+  method: string,
+  document?: { basePath: string; env: TasksWorkerEnv }
+) {
+  const tagged = tagResponse(
+    document && appPath !== null
+      ? secureDocument(response, appPath, document.basePath, document.env)
+      : response,
+    NATIVE
+  );
   const { headers } = tagged;
   headers.set('X-Robots-Tag', PRIVATE_ROBOTS_HEADER);
   if (appPath === null || !FRAMABLE.test(appPath)) {
@@ -160,12 +391,21 @@ export function createTasksRequestHandler(
           )
         : null;
     if (buildInfo) return decorate(buildInfo, appPath, request.method);
-    const key = mounts.rootHosts.join(',');
+    if (appPath === CSP_REPORT_PATH)
+      return decorate(await collectCspReport(request), appPath, request.method);
+    const key = [
+      mounts.rootHosts.join(','),
+      (mounts.mountHosts ?? []).join(','),
+      mounts.basePath ?? '',
+    ].join('|');
     let bridge = bridges.get(key);
     if (!bridge) {
       bridge = createBridge(mounts);
       bridges.set(key, bridge);
     }
-    return decorate(await bridge(request, env, ctx), appPath, request.method);
+    return decorate(await bridge(request, env, ctx), appPath, request.method, {
+      basePath: mount.basePath,
+      env,
+    });
   };
 }

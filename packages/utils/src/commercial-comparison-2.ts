@@ -239,6 +239,13 @@ export const features2: ComparisonFeature[] = [
     detail: 'standard',
   },
   {
+    id: 'workspace-domains_0',
+    app: 'workspace-domains',
+    category: 'internal',
+    values: ['internal', 'internal', 'internal', 'internal'],
+    detail: 'standard',
+  },
+  {
     id: 'coordination_0',
     app: 'coordination',
     category: 'internal',

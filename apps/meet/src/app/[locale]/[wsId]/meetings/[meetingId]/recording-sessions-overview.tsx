@@ -7,6 +7,7 @@ import type { RecordingStatus, RecordingTranscript } from '@tuturuuu/types';
 import { Badge } from '@tuturuuu/ui/badge';
 import { Card, CardContent, CardHeader, CardTitle } from '@tuturuuu/ui/card';
 import { formatDistanceToNow } from 'date-fns';
+import { useTranslations } from 'next-intl';
 import { RecordingSessionActions } from './recording-session-actions';
 
 interface RecordingSession {
@@ -85,6 +86,7 @@ export function RecordingSessionsOverview({
   meetingId,
 }: RecordingSessionsOverviewProps) {
   const queryClient = useQueryClient();
+  const tRecorder = useTranslations('meet.legacy_recorder');
 
   const {
     data: sessions = [],
@@ -135,8 +137,7 @@ export function RecordingSessionsOverview({
           <Mic className="mb-4 h-12 w-12 text-muted-foreground" />
           <h3 className="mb-2 font-semibold text-lg">No Recordings Yet</h3>
           <p className="text-center text-muted-foreground">
-            Start recording this meeting to capture audio and generate
-            transcripts.
+            {tRecorder('retired')}
           </p>
         </CardContent>
       </Card>

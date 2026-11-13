@@ -207,3 +207,18 @@ it.each(['closed', 'error'] as const)(
     expect(retry).toHaveBeenCalledOnce();
   }
 );
+
+it('shows stop-admission refusal without a disabled spinner', () => {
+  const view = render(
+    localized(
+      <Lobby
+        {...lobbyProps}
+        waiting={false}
+        isJoining
+        error="admission_closed"
+      />
+    )
+  );
+  expect(screen.getByText(copy.admission_closed)).toBeTruthy();
+  expect(view.container.querySelector('[class*="animate-spin"]')).toBeNull();
+});

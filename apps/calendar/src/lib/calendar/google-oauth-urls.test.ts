@@ -68,4 +68,21 @@ describe('Google Calendar OAuth URLs', () => {
       })
     ).toBe('http://localhost:7803/api/v1/calendar/auth/callback');
   });
+  it.each(['https://tuturuuu.com/calendar', 'https://tuturuuu.com/calendar/'])(
+    'preserves the production mount in the callback for %s',
+    (base) => {
+      vi.stubEnv('NODE_ENV', 'production');
+      vi.stubEnv('GOOGLE_REDIRECT_URI', '');
+      expect(resolveGoogleCalendarOAuthRedirectUri(undefined, base)).toBe(
+        'https://tuturuuu.com/calendar/api/v1/calendar/auth/callback'
+      );
+      vi.stubEnv(
+        'GOOGLE_REDIRECT_URI',
+        'https://calendar.tuturuuu.com/api/v1/calendar/auth/callback'
+      );
+      expect(resolveGoogleCalendarOAuthRedirectUri(undefined, base)).toBe(
+        'https://calendar.tuturuuu.com/api/v1/calendar/auth/callback'
+      );
+    }
+  );
 });

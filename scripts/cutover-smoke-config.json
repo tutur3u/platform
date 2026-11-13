@@ -92,19 +92,23 @@
       "assetSmoke": {
         "canonicalOrigin": "https://tuturuuu.com",
         "pages": [
-          { "path": "/roadmap", "redirectsTo": "/roadmap/" },
-          { "path": "/roadmap/", "status": 200 }
+          { "path": "/roadmap", "status": 200 },
+          {
+            "path": "/roadmap/",
+            "status": 301,
+            "location": "https://tuturuuu.com/roadmap"
+          }
         ],
         "satellitePages": [
           {
             "url": "https://roadmap.tuturuuu.com/",
             "status": 301,
-            "location": "https://tuturuuu.com/roadmap/"
+            "location": "https://tuturuuu.com/roadmap"
           },
           {
             "url": "https://roadmap.tuturuuu.com/roadmap",
             "status": 301,
-            "location": "https://tuturuuu.com/roadmap/"
+            "location": "https://tuturuuu.com/roadmap"
           }
         ]
       }

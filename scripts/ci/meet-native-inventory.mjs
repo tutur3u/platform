@@ -187,3 +187,138 @@ export async function sealMeetApp(
   }
   return files;
 }
+
+
+export const PRODUCTION_PROFILE = 'meet-production-emitted-v1';
+const publicInputNames = [
+  'NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY', 'NEXT_PUBLIC_SUPABASE_URL',
+];
+function exactKeys(value, keys) {
+  assert.ok(value !== null && typeof value === 'object', 'Closed production input object required');
+  assert.equal(Object.getPrototypeOf(value ?? {}), Object.prototype);
+  assert.deepEqual(Object.keys(value).sort(), [...keys].sort());
+}
+export function admitMeetProductionInputs(proof, identity) {
+  exactKeys(proof, ['schema', 'profile', 'identity', 'producer', 'devVars']);
+  assert.equal(proof.schema, 1);
+  assert.equal(proof.profile, PRODUCTION_PROFILE);
+  exactKeys(proof.identity, ['sourceSHA', 'sourceTree', 'ownerPackageHash', 'lockHash']);
+  for (const name of ['sourceSHA', 'sourceTree'])
+    assert.match(proof.identity[name], /^[a-f0-9]{40}$/);
+  for (const name of ['ownerPackageHash', 'lockHash'])
+    assert.match(proof.identity[name], /^[a-f0-9]{64}$/);
+  assert.equal(proof.producer, 'meet-public-build-inputs-v1');
+  exactKeys(proof.devVars, ['names', 'bytes', 'sha256']);
+  assert.deepEqual(proof.devVars.names, publicInputNames);
+  assert.ok(Number.isSafeInteger(proof.devVars.bytes) && proof.devVars.bytes > 0 &&
+    proof.devVars.bytes <= 16384);
+  assert.match(proof.devVars.sha256, /^[a-f0-9]{64}$/);
+  if (identity) for (const name of Object.keys(identity))
+    assert.equal(proof.identity[name], identity[name], `Production identity ${name}`);
+}
+export function createMeetProductionInputs(identity, values) {
+  exactKeys(values, publicInputNames);
+  // Match the pinned compiler's lossless dotenv serialization before output exists.
+  const quote = (value) => {
+    assert.ok(typeof value === 'string' && value.length > 0 && value.length <= 8192);
+    assert.ok(!/[\r\n\0]/.test(value), 'Multiline compiler input forbidden');
+    for (const character of ["'", '`', '"'])
+      if (!value.includes(character) && (character !== '"' || !value.includes('\\')))
+        return `${character}${value}${character}`;
+    throw new Error('Unsupported public compiler input quoting');
+  };
+  const bytes = Buffer.from(publicInputNames.map((name) => `${name}=${quote(values[name])}\n`).join(''));
+  const proof = { schema: 1, profile: PRODUCTION_PROFILE, identity,
+    producer: 'meet-public-build-inputs-v1', devVars: { names: [...publicInputNames],
+      bytes: bytes.length, sha256: createHash('sha256').update(bytes).digest('hex') } };
+  admitMeetProductionInputs(proof);
+  return proof;
+}
+
+export async function sealMeetProductionApp(
+  root,
+  { configRelative, assetsRelative, allowSdkWorkingDir = false, productionProof }
+) {
+  admitMeetProductionInputs(productionProof);
+  assert.equal(configRelative, 'server/wrangler.json', 'Production emitted server layout required');
+  assert.equal(assetsRelative, 'client', 'Production emitted client layout required');
+  assert.equal(
+    await realpath(root),
+    root,
+    'Meet artifact root must be canonical'
+  );
+  const files = {},
+    hiddenBytes = new Map();
+  let hiddenSeen = false;
+  const sdk = join(dirname(configRelative), '.wrangler');
+  async function visit(directory) {
+    assert.equal(await realpath(directory), directory);
+    for (const entry of (
+      await readdir(directory, { withFileTypes: true })
+    ).sort((a, b) => a.name.localeCompare(b.name))) {
+      const path = join(directory, entry.name),
+        name = relative(root, path);
+      if (allowSdkWorkingDir && name === sdk) continue;
+      assert.ok(
+        entry.isDirectory() || entry.isFile(),
+        'Meet artifact links/special files forbidden'
+      );
+      assert.equal(
+        await realpath(path),
+        path,
+        'Meet artifact symlink forbidden'
+      );
+      if (
+        entry.name.startsWith('.') ||
+        name.split('/').some((part) => part.startsWith('.'))
+      ) {
+        hiddenSeen = true;
+        assert.equal(
+          hiddenEntries.get(name),
+          entry.isDirectory() ? 'directory' : 'file',
+          'Unsupported Meet hidden artifact entry'
+        );
+        assert.equal(
+          configRelative,
+          'server/wrangler.json',
+          'Hidden layout requires emitted server config'
+        );
+        assert.equal(
+          assetsRelative,
+          'client',
+          'Hidden layout requires emitted client assets'
+        );
+      }
+      assert.ok(
+        !credentialName.test(entry.name) || name === 'server/.dev.vars',
+        'Meet credential artifact forbidden'
+      );
+      if (entry.isDirectory()) {
+        files[`${name}/`] = null;
+        await visit(path);
+      } else {
+        const bytes = await readFile(path);
+        files[name] = createHash('sha256').update(bytes).digest('hex');
+        if (hiddenEntries.has(name)) hiddenBytes.set(name, bytes);
+      }
+    }
+  }
+  await visit(root);
+  if (hiddenSeen || configRelative === 'server/wrangler.json') {
+    assert.equal(hiddenBytes.size, 3, 'Incomplete Meet emitted hidden layout');
+    assert.equal(
+      hiddenBytes
+        .get('client/.assetsignore')
+        ?.equals(Buffer.from(assetsIgnore)),
+      true,
+      'Unexpected asset ignore content'
+    );
+    const bytes = hiddenBytes.get('server/.dev.vars');
+    assert.ok(bytes, 'Missing production public compiler inputs');
+    assert.equal(bytes.length, productionProof.devVars.bytes, 'Production input byte count');
+    assert.equal(createHash('sha256').update(bytes).digest('hex'),
+      productionProof.devVars.sha256, 'Production public input digest');
+    validateVite(hiddenBytes.get('server/.vite/manifest.json'), files);
+  }
+  return files;
+}

@@ -115,171 +115,81 @@ const request = () =>
     body: JSON.stringify({ messageId: 'message' }),
   });
 beforeEach(() => {
-  vi.clearAllMocks();
+  vi.resetAllMocks();
   allowlist('00000000-0000-4000-8000-0000000000a1');
 });
-it('charges the tagger personal quota and uses server-supplied recent chat', async () => {
-  const response = await POST(request(), {
-    params: Promise.resolve({ meetingId: 'room' }),
-  });
-  expect(response.status).toBe(200);
-  expect(mocks.personal).toHaveBeenCalledWith('tagger');
-  expect(mocks.model).toHaveBeenCalledWith('tagger-personal-workspace');
-  expect(mocks.check).toHaveBeenCalledWith(
-    'tagger-personal-workspace',
-    'google/gemini-3.5-flash-lite',
-    'chat',
-    expect.objectContaining({ userId: 'tagger' })
-  );
-  expect(mocks.cap).toHaveBeenCalledWith(
-    expect.anything(),
-    'google/gemini-3.5-flash-lite',
-    1024,
-    100
-  );
-  expect(mocks.settle).toHaveBeenCalledWith(
-    expect.objectContaining({
-      runId: 'run',
-      actualCredits: 10,
-      inputTokens: 100,
-      outputTokens: 20,
-    })
-  );
-  expect(mocks.answer).toHaveBeenCalledWith(
-    [{ body: 'Recent context', displayName: 'Guest' }],
-    1024,
-    '@Tuturuuu original question',
-    expect.objectContaining({
-      id: 'google/gemini-3.5-flash-lite',
-      providerModelId: 'gemini-3.5-flash-lite',
-    }),
-    expect.objectContaining({ timezone: 'UTC' }),
-    expect.objectContaining({ workspaceTools: {} })
-  );
-  expect(mocks.service).toHaveBeenLastCalledWith(
-    expect.anything(),
-    expect.objectContaining({
-      action: 'ai.finish',
-      costUsd: 0.001,
-      body: 'Answer',
-    })
-  );
-});
-it('does not call Gemini when quota checks deny generation', async () => {
-  mocks.check.mockResolvedValueOnce({
-    allowed: false,
-    remainingCredits: 0,
-    maxOutputTokens: 0,
-  });
-  await expect(
-    POST(request(), { params: Promise.resolve({ meetingId: 'room' }) })
-  ).rejects.toMatchObject({ status: 403 });
-  expect(mocks.answer).not.toHaveBeenCalled();
-});
-it('records provider cost even if quota deduction fails', async () => {
-  mocks.settle
-    .mockRejectedValueOnce(new Error('accounting'))
-    .mockRejectedValueOnce(new Error('accounting'))
-    .mockRejectedValueOnce(new Error('accounting'));
-  await expect(
-    POST(request(), { params: Promise.resolve({ meetingId: 'room' }) })
-  ).rejects.toMatchObject({ status: 503 });
-  expect(mocks.service).toHaveBeenLastCalledWith(expect.anything(), {
-    action: 'ai.finish',
-    messageId: 'message',
-    costUsd: 0.001,
-  });
-});
-it('retries settlement with the answer without charging or generating twice', async () => {
-  mocks.service
-    .mockResolvedValueOnce({ chat: [], prompt: '@Tuturuuu question' })
-    .mockRejectedValueOnce(new Error('Response lost'));
-  const response = await POST(request(), {
-    params: Promise.resolve({ meetingId: 'room' }),
-  });
-  expect(response.status).toBe(200);
-  expect(mocks.answer).toHaveBeenCalledOnce();
-  expect(mocks.settle).toHaveBeenCalledOnce();
-  expect(mocks.service).toHaveBeenLastCalledWith(expect.anything(), {
-    action: 'ai.finish',
-    messageId: 'message',
-    body: 'Answer',
-    costUsd: 0.001,
-  });
-});
-it('rejects malformed JSON before checking quota or generating', async () => {
-  await expect(
-    POST(
-      new Request('https://meet.test/assistant', { method: 'POST', body: '{' }),
-      { params: Promise.resolve({ meetingId: 'room' }) }
-    )
-  ).rejects.toMatchObject({ status: 400 });
-  expect(mocks.answer).not.toHaveBeenCalled();
-  expect(mocks.check).not.toHaveBeenCalled();
-});
-it.each([0, 3])(
-  'saves private previews without publishing their body after %i failed settlements',
-  async (failures) => {
-    if (failures) {
-      mocks.service.mockResolvedValueOnce({
-        chat: [],
-        prompt: '@Tuturuuu question',
+
+const noAiWork = () => {
+  for (const mock of Object.values(mocks)) expect(mock).not.toHaveBeenCalled();
+};
+it.each([
+  ['personal billing and recent room context', { messageId: 'message' }],
+  ['quota denied', { messageId: 'message' }],
+  ['settlement unavailable', { messageId: 'message' }],
+  ['duplicate settlement retry', { messageId: 'message' }],
+  ['malformed JSON', '{'],
+  [
+    'private preview with no settlement retry',
+    { messageId: 'message', privateResult: true },
+  ],
+  [
+    'private preview after three uncertain settlements',
+    { messageId: 'message', privateResult: true },
+  ],
+  ['invalid timezone', { messageId: 'message', timezone: 'bad/timezone' }],
+  ['blank model answer', { messageId: 'message' }],
+  [
+    'persisted Continue cannot enable room chat',
+    { messageId: 'message', choice: 'continue' },
+  ],
+])(
+  'denies room chat before %s can reach credits, context, provider or publication',
+  async (scenario, body) => {
+    if (scenario === 'quota denied')
+      mocks.check.mockResolvedValueOnce({
+        allowed: false,
+        remainingCredits: 0,
+        maxOutputTokens: 0,
       });
-      for (let attempt = 0; attempt < failures; attempt++)
-        mocks.service.mockRejectedValueOnce(new Error('Response lost'));
-    }
-    mocks.answer.mockResolvedValueOnce({
-      text: 'Private task',
-      costUsd: 0.001,
-      usage: { available: true, inputTokens: 100, outputTokens: 20 },
-      privateResult: true,
-      messages: [],
-      approvals: [],
-    } as never);
-    const response = await POST(request(), {
-      params: Promise.resolve({ meetingId: 'room' }),
+    if (scenario === 'settlement unavailable')
+      mocks.settle.mockRejectedValueOnce(
+        new Error('Synthetic settlement unavailable')
+      );
+    if (scenario === 'duplicate settlement retry')
+      mocks.service.mockRejectedValueOnce(new Error('Synthetic response lost'));
+    if (scenario === 'blank model answer')
+      mocks.answer.mockResolvedValueOnce({
+        text: ' ',
+        costUsd: 0,
+        usage: { available: true, inputTokens: 0, outputTokens: 0 },
+      });
+    await expect(
+      POST(
+        new Request('https://meet.test/api/meet-call/room/assistant', {
+          method: 'POST',
+          body: typeof body === 'string' ? body : JSON.stringify(body),
+        }),
+        { params: Promise.resolve({ meetingId: 'room' }) }
+      )
+    ).rejects.toMatchObject({
+      status: 403,
+      message:
+        'Room AI chat is unavailable. Use Private Mira after choosing Continue.',
     });
-    expect(await response.json()).toEqual({ ok: true, reviewId: 'message' });
-    expect(mocks.service).toHaveBeenLastCalledWith(
-      expect.anything(),
-      expect.objectContaining({
-        action: 'ai.review.save',
-        review: expect.objectContaining({ text: 'Private task' }),
-      })
-    );
-    expect(mocks.service).toHaveBeenCalledTimes(2 + failures);
+    noAiWork();
   }
 );
-it('rejects invalid timezones before generation', async () => {
-  await expect(
-    POST(
-      new Request('https://meet.test/assistant', {
-        method: 'POST',
-        body: JSON.stringify({
-          messageId: 'message',
-          timezone: 'bad/timezone',
-        }),
-      }),
-      { params: Promise.resolve({ meetingId: 'room' }) }
-    )
-  ).rejects.toMatchObject({ status: 400 });
-  expect(mocks.answer).not.toHaveBeenCalled();
-});
-
 it.each(['invalid JSON', JSON.stringify({ messages: [], context: {} })])(
-  'settles a claimed review when its saved continuation is malformed: %s',
+  'denies a saved continuation before reading or settling it: %s',
   async (continuation) => {
     const { generateMeetAssistant } =
       await import('@tuturuuu/meet-core/features/call/server/assistant-generation');
-    const review = {
+    mocks.service.mockResolvedValueOnce({
       workspaceId: 'workspace',
       continuation,
       approvals: [],
       timezone: 'UTC',
-    };
-    mocks.service
-      .mockResolvedValueOnce(review as never)
-      .mockResolvedValueOnce(review as never);
+    } as never);
     await expect(
       generateMeetAssistant(
         {
@@ -295,46 +205,24 @@ it.each(['invalid JSON', JSON.stringify({ messages: [], context: {} })])(
           resume: { revision: 1, approved: true },
         }
       )
-    ).rejects.toMatchObject({ status: 409 });
-    expect(mocks.service).toHaveBeenLastCalledWith(expect.anything(), {
-      action: 'ai.finish',
-      messageId: 'message',
-      costUsd: 0,
+    ).rejects.toMatchObject({
+      status: 403,
+      message: 'Meet AI is temporarily unavailable',
     });
-    expect(mocks.answer).not.toHaveBeenCalled();
+    noAiWork();
   }
 );
-
-it('settles usage but never publishes a blank model answer', async () => {
-  mocks.answer.mockResolvedValueOnce({
-    text: '  ',
-    costUsd: 0.001,
-    usage: { available: true, inputTokens: 100, outputTokens: 20 },
-  });
-  await expect(
-    POST(request(), { params: Promise.resolve({ meetingId: 'room' }) })
-  ).rejects.toMatchObject({ status: 503 });
-  expect(mocks.settle).toHaveBeenCalledOnce();
-  expect(mocks.service).toHaveBeenLastCalledWith(expect.anything(), {
-    action: 'ai.finish',
-    messageId: 'message',
-    costUsd: 0.001,
-  });
-});
-it('denies assistant generation outside the Meet AI allowlist before any quota, room or model work', async () => {
-  for (const env of [
-    {},
-    { MEET_AI_ENABLED_WORKSPACE_IDS: '*' },
-    { MEET_AI_DISABLED: 'true' },
-    { MEET_AI_ENABLED_WORKSPACE_IDS: '00000000-0000-4000-8000-0000000000a2' },
+it('denies room chat across every runtime allowlist and kill-switch setting', async () => {
+  for (const value of [
+    undefined,
+    '',
+    '*',
+    '00000000-0000-4000-8000-0000000000a1',
   ]) {
-    vi.stubGlobal(Symbol.for('__cloudflare-context__'), { env });
+    allowlist(value);
     await expect(
       POST(request(), { params: Promise.resolve({ meetingId: 'room' }) })
     ).rejects.toMatchObject({ status: 403 });
   }
-  expect(mocks.personal).not.toHaveBeenCalled();
-  expect(mocks.service).not.toHaveBeenCalled();
-  expect(mocks.check).not.toHaveBeenCalled();
-  expect(mocks.answer).not.toHaveBeenCalled();
+  noAiWork();
 });

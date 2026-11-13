@@ -10,10 +10,14 @@ export function MeetPlanLiveRoot({
   initialSnapshot,
   platformUser,
   baseUrl,
+  planBaseUrl,
+  planReturnPath,
 }: {
   initialSnapshot: MeetPlanSnapshot;
   platformUser: PlatformUser | null;
   baseUrl: string;
+  planBaseUrl?: string;
+  planReturnPath?: string;
 }) {
   const query = useMeetPlanQuery(initialSnapshot);
   const snapshot = query.data;
@@ -35,6 +39,8 @@ export function MeetPlanLiveRoot({
         isCreator={snapshot.viewer.isCreator}
         isRefreshing={query.isFetching}
         baseUrl={baseUrl}
+        planBaseUrl={planBaseUrl}
+        planReturnPath={planReturnPath}
       />
     </TimeBlockingProvider>
   );

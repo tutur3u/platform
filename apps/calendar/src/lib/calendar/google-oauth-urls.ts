@@ -139,5 +139,8 @@ export function resolveGoogleCalendarOAuthRedirectUri(
       ? baseUrl
       : resolveGoogleCalendarWebOrigin(request);
 
-  return new URL(GOOGLE_CALENDAR_CALLBACK_PATH, origin).toString();
+  return new URL(
+    GOOGLE_CALENDAR_CALLBACK_PATH.slice(1),
+    `${trimTrailingSlashes(origin)}/`
+  ).toString();
 }

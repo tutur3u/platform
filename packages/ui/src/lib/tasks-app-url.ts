@@ -1,3 +1,19 @@
+import {
+  getAppProductionBaseUrl,
+  joinAppUrl,
+  parseActiveAppMounts,
+} from '@tuturuuu/utils/app-mounts';
+
+/** Global the start-bridge head script sets to the document's app base. */
+const APP_BASE_GLOBAL = '__tuturuuuAppBase';
+const TASKS_BASE_PATH = '/tasks';
+
+/** The app base of the current document (`/tasks` when Tasks is mounted). */
+function documentAppBase(): string {
+  const value = (globalThis as Record<string, unknown>)[APP_BASE_GLOBAL];
+  return typeof value === 'string' ? value : '';
+}
+
 function normalizeOrigin(value?: string) {
   if (!value) {
     return null;
@@ -23,13 +39,25 @@ function normalizeOrigin(value?: string) {
   }
 }
 
+/** Inside mounted Tasks (`tuturuuu.com/tasks`), where Tasks is same-origin. */
+function isInsideMountedTasks() {
+  return (
+    typeof window !== 'undefined' &&
+    window.location.hostname.toLowerCase() === 'tuturuuu.com' &&
+    documentAppBase() === TASKS_BASE_PATH
+  );
+}
+
 function getTasksAppOriginForBrowser() {
+  if (isInsideMountedTasks()) return TASKS_BASE_PATH;
+
   const configured =
     normalizeOrigin(process.env.NEXT_PUBLIC_TASKS_APP_URL) ??
     normalizeOrigin(process.env.NEXT_PUBLIC_TUDO_APP_URL);
 
   if (configured) {
-    return configured;
+    // https://tuturuuu.com/tasks once the mount is active; unchanged otherwise.
+    return getAppProductionBaseUrl('tasks', configured, parseActiveAppMounts());
   }
 
   if (typeof window === 'undefined') {
@@ -67,7 +95,13 @@ function getTasksAppOriginForBrowser() {
     normalizedHostname === 'tuturuuu.com' ||
     normalizedHostname.endsWith('.tuturuuu.com')
   ) {
-    return 'https://tasks.tuturuuu.com';
+    // Web and sibling apps (Web, sibling apps): Tasks' production base, which is
+    // https://tuturuuu.com/tasks once the mount is active.
+    return getAppProductionBaseUrl(
+      'tasks',
+      'https://tasks.tuturuuu.com',
+      parseActiveAppMounts()
+    );
   }
 
   return null;
@@ -75,9 +109,11 @@ function getTasksAppOriginForBrowser() {
 
 export function getTasksAppUrl(path: string) {
   const normalizedPath = path.startsWith('/') ? path : `/${path}`;
-  const origin = getTasksAppOriginForBrowser();
+  const base = getTasksAppOriginForBrowser();
 
-  return origin ? new URL(normalizedPath, origin).toString() : normalizedPath;
+  if (!base) return normalizedPath;
+  // A same-origin mount base (`/tasks`) or an absolute origin/base URL.
+  return joinAppUrl(base, normalizedPath);
 }
 
 export function getTaskApiUrl(path: string) {

@@ -43,18 +43,18 @@
     }
   ],
   "summary": {
-    "total": 854,
+    "total": 861,
     "categories": {
-      "api": 660,
+      "api": 665,
       "api-rewrite": 4,
       "candidate-probe": 1,
       "metadata": 9,
-      "page": 163,
+      "page": 165,
       "route": 4,
       "satellite-bridge": 12,
       "service-worker": 1
     },
-    "dispositions": { "native-Start": 12, "Next-fallback": 842 }
+    "dispositions": { "native-Start": 12, "Next-fallback": 849 }
   },
   "routes": [
     {
@@ -220,6 +220,14 @@
     {
       "pattern": "/[locale]/[wsId]/billing/success",
       "source": "apps/web/src/app/[locale]/(dashboard)/[wsId]/(workspace-settings)/billing/success/page.tsx",
+      "category": "page",
+      "owner": "web-next",
+      "disposition": "Next-fallback",
+      "cronOwner": null
+    },
+    {
+      "pattern": "/[locale]/[wsId]/domains",
+      "source": "apps/web/src/app/[locale]/(dashboard)/[wsId]/(workspace-settings)/domains/page.tsx",
       "category": "page",
       "owner": "web-next",
       "disposition": "Next-fallback",
@@ -838,6 +846,14 @@
     {
       "pattern": "/[locale]/contributors",
       "source": "apps/web/src/app/[locale]/(marketing)/contributors/page.tsx",
+      "category": "page",
+      "owner": "web-next",
+      "disposition": "Next-fallback",
+      "cronOwner": null
+    },
+    {
+      "pattern": "/[locale]/design/[[...slug]]",
+      "source": "apps/web/src/app/[locale]/(marketing)/design/[[...slug]]/page.tsx",
       "category": "page",
       "owner": "web-next",
       "disposition": "Next-fallback",
@@ -3517,6 +3533,22 @@
       "cronOwner": null
     },
     {
+      "pattern": "/api/v1/workspace-domains/resolve",
+      "source": "apps/web/src/app/api/v1/workspace-domains/resolve/route.ts",
+      "category": "api",
+      "owner": "web-next",
+      "disposition": "Next-fallback",
+      "cronOwner": null
+    },
+    {
+      "pattern": "/api/v1/workspace-domains/site",
+      "source": "apps/web/src/app/api/v1/workspace-domains/site/route.ts",
+      "category": "api",
+      "owner": "web-next",
+      "disposition": "Next-fallback",
+      "cronOwner": null
+    },
+    {
       "pattern": "/api/v1/workspaces/[wsId]/Mention",
       "source": "apps/web/src/app/api/v1/workspaces/[wsId]/Mention/route.ts",
       "category": "api",
@@ -3999,6 +4031,30 @@
     {
       "pattern": "/api/v1/workspaces/[wsId]/documents",
       "source": "apps/web/src/app/api/v1/workspaces/[wsId]/documents/route.ts",
+      "category": "api",
+      "owner": "web-next",
+      "disposition": "Next-fallback",
+      "cronOwner": null
+    },
+    {
+      "pattern": "/api/v1/workspaces/[wsId]/domains/[domainId]",
+      "source": "apps/web/src/app/api/v1/workspaces/[wsId]/domains/[domainId]/route.ts",
+      "category": "api",
+      "owner": "web-next",
+      "disposition": "Next-fallback",
+      "cronOwner": null
+    },
+    {
+      "pattern": "/api/v1/workspaces/[wsId]/domains/[domainId]/verify",
+      "source": "apps/web/src/app/api/v1/workspaces/[wsId]/domains/[domainId]/verify/route.ts",
+      "category": "api",
+      "owner": "web-next",
+      "disposition": "Next-fallback",
+      "cronOwner": null
+    },
+    {
+      "pattern": "/api/v1/workspaces/[wsId]/domains",
+      "source": "apps/web/src/app/api/v1/workspaces/[wsId]/domains/route.ts",
       "category": "api",
       "owner": "web-next",
       "disposition": "Next-fallback",

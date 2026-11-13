@@ -84,6 +84,15 @@
       "yearly": "Yearly"
     }
   },
+  "calendar_category_reorder_pilot": {
+    "cancel": "Returned {label} to position {position} of {total}.",
+    "drop": "Dropped {label} at position {position} of {total}.",
+    "grab": "Picked up {label}, position {position} of {total}.",
+    "instructions": "Arrows navigate. Space picks up or drops a category. Arrows move it; Escape cancels.",
+    "invalid": "Category names must be unique and nonempty to reorder.",
+    "label": "Category order",
+    "move": "{label}, position {position} of {total}."
+  },
   "chat": {
     "first_activity": "First activity",
     "last_activity": "Last activity",
@@ -262,6 +271,10 @@
     "media-alt": "Media file {number}",
     "media-optional": "Media Files (Optional)",
     "personal_account": "Personal Account",
+    "picker_pin": "Pin workspace",
+    "picker_pinned": "Pinned",
+    "picker_recent": "Recent",
+    "picker_unpin": "Unpin workspace",
     "public_profile": "Public profile",
     "report-problem": "Leave a Feedback",
     "report-problem-description": "Help us improve by reporting issues you've encountered. Your feedback is valuable to us.",
@@ -911,8 +924,12 @@
     "manage_git_repositories_description": "Allows platform administrators to configure the GitHub App and approve public repositories for Git.",
     "manage_user_report_automation": "Manage Report Automation",
     "manage_user_report_automation_description": "Configure periodic report schedules, generation modes, and workspace or group defaults.",
+    "manage_workspace_domains": "Manage workspace domains",
+    "manage_workspace_domains_description": "Add, verify, and remove custom domains and platform subdomains that serve the workspace's public site.",
     "send_user_group_report_emails": "Send Periodic Report Emails",
-    "send_user_group_report_emails_description": "Preview, test, queue, retry, and cancel approved periodic report email delivery."
+    "send_user_group_report_emails_description": "Preview, test, queue, retry, and cancel approved periodic report email delivery.",
+    "view_workspace_domains": "View workspace domains",
+    "view_workspace_domains_description": "See the workspace's custom domains, their verification status, and domain entitlement."
   },
   "ws-settings": {
     "copy_id": "Copy ID",

@@ -148,95 +148,117 @@ export function Structure({
           {!sidebarHidden && (
             <aside
               className={cn(
-                'group fixed top-0 right-0 left-auto z-50 flex h-dvh flex-col overflow-hidden border-l backdrop-blur-lg transition-all duration-300 ease-in-out md:left-0 md:z-20 md:border-r md:border-l-0',
+                'group fixed top-0 right-0 left-auto z-50 flex h-dvh flex-col overflow-hidden border-l backdrop-blur-lg md:left-0 md:z-20 md:border-r md:border-l-0',
+                // The hover overlay never animates width: a width transition
+                // reflows the panel on every frame. The reveal is a paint-only
+                // clip-path/opacity animation instead (see globals.css).
+                overlayOnExpand
+                  ? 'max-md:transition-transform max-md:duration-300 max-md:ease-in-out'
+                  : 'transition-all duration-300 ease-in-out',
                 isCollapsed
                   ? 'w-[var(--sidebar-collapsed-width)] bg-background/50 max-md:w-0'
                   : 'w-[var(--sidebar-expanded-width)] bg-background max-sm:w-full',
                 isCollapsed && 'max-md:translate-x-full',
                 mobileSidebarOpen === false && 'max-md:hidden',
-                overlayOnExpand && !isCollapsed && 'md:z-40'
+                overlayOnExpand &&
+                  !isCollapsed &&
+                  'sidebar-overlay-reveal md:z-40'
               )}
               onMouseEnter={onMouseEnter}
               onMouseLeave={onMouseLeave}
               style={sidebarStyle}
             >
+              {/* In overlay mode the rail and the expanded panel are different
+                  subtrees: remounting on the state flip means no element is
+                  ever repositioned, so the swap cannot register as a layout
+                  shift, and the new subtree fades in. */}
               <div
+                key={
+                  overlayOnExpand ? (isCollapsed ? 'rail' : 'panel') : 'static'
+                }
                 className={cn(
-                  sidebarHeaderHeight
-                    ? 'flex h-[var(--sidebar-header-height)] shrink-0 items-center p-2 md:px-0'
-                    : 'flex min-h-12 items-center p-2 md:px-0',
-                  isCollapsed ? 'justify-center' : 'py-1',
-                  sidebarHeaderClassName
+                  'flex min-h-0 flex-1 flex-col',
+                  overlayOnExpand && !isCollapsed && 'sidebar-overlay-content'
                 )}
               >
                 <div
                   className={cn(
-                    'flex min-h-13 w-full items-center md:px-2',
-                    isCollapsed ? 'justify-center' : ''
+                    sidebarHeaderHeight
+                      ? 'flex h-[var(--sidebar-header-height)] shrink-0 items-center p-2 md:px-0'
+                      : 'flex min-h-12 items-center p-2 md:px-0',
+                    isCollapsed ? 'justify-center' : 'py-1',
+                    sidebarHeaderClassName
                   )}
                 >
                   <div
                     className={cn(
-                      'flex w-full items-center gap-2',
-                      isCollapsed ? 'justify-center' : 'justify-between'
+                      'flex min-h-13 w-full items-center md:px-2',
+                      isCollapsed ? 'justify-center' : ''
                     )}
                   >
-                    {sidebarHeader}
-                    {isCollapsed || (
-                      <Button
-                        size="icon"
-                        variant="outline"
-                        className="h-auto w-auto flex-none rounded-lg p-2 md:hidden"
-                        aria-label={
-                          isCollapsed
-                            ? sidebarLabels?.open
-                            : sidebarLabels?.close
-                        }
-                        onClick={() => setIsCollapsed(!isCollapsed)}
-                      >
-                        <X className="h-5 w-5" />
-                      </Button>
+                    <div
+                      className={cn(
+                        'flex w-full items-center gap-2',
+                        isCollapsed ? 'justify-center' : 'justify-between'
+                      )}
+                    >
+                      {sidebarHeader}
+                      {isCollapsed || (
+                        <Button
+                          size="icon"
+                          variant="outline"
+                          className="h-auto w-auto flex-none rounded-lg p-2 md:hidden"
+                          aria-label={
+                            isCollapsed
+                              ? sidebarLabels?.open
+                              : sidebarLabels?.close
+                          }
+                          onClick={() => setIsCollapsed(!isCollapsed)}
+                        >
+                          <X className="h-5 w-5" />
+                        </Button>
+                      )}
+                    </div>
+                  </div>
+                </div>
+                <div className="scrollbar-none flex flex-1 flex-col gap-y-1 overflow-y-auto overflow-x-hidden overscroll-contain">
+                  {sidebarContent}
+                </div>
+                {sidebarUtility && (
+                  <div
+                    className={cn(
+                      'flex border-foreground/10 border-t p-2',
+                      isCollapsed ? 'justify-center' : ''
                     )}
+                  >
+                    {sidebarUtility}
                   </div>
-                </div>
-              </div>
-              <div className="scrollbar-none flex flex-1 flex-col gap-y-1 overflow-y-auto overflow-x-hidden overscroll-contain">
-                {sidebarContent}
-              </div>
-              {sidebarUtility && (
+                )}
+                {feedbackButton && (
+                  <div
+                    className={cn(
+                      'flex border-foreground/10 border-t p-2',
+                      isCollapsed ? 'justify-center' : ''
+                    )}
+                  >
+                    {feedbackButton}
+                  </div>
+                )}
                 <div
                   className={cn(
-                    'flex border-foreground/10 border-t p-2',
+                    'mt-auto flex border-foreground/10 border-t p-2',
                     isCollapsed ? 'justify-center' : ''
                   )}
                 >
-                  {sidebarUtility}
-                </div>
-              )}
-              {feedbackButton && (
-                <div
-                  className={cn(
-                    'flex border-foreground/10 border-t p-2',
-                    isCollapsed ? 'justify-center' : ''
+                  {isCollapsed ? (
+                    <div className="flex w-full flex-col items-center gap-1">
+                      {userPopover}
+                      {notificationPopover}
+                    </div>
+                  ) : (
+                    actions
                   )}
-                >
-                  {feedbackButton}
                 </div>
-              )}
-              <div
-                className={cn(
-                  'mt-auto flex border-foreground/10 border-t p-2',
-                  isCollapsed ? 'justify-center' : ''
-                )}
-              >
-                {isCollapsed ? (
-                  <div className="flex w-full flex-col items-center gap-1">
-                    {userPopover}
-                    {notificationPopover}
-                  </div>
-                ) : (
-                  actions
-                )}
               </div>
 
               {!hideSizeToggle && (
@@ -263,7 +285,8 @@ export function Structure({
           <main
             ref={mainRef}
             className={cn(
-              'relative flex flex-col overflow-x-clip transition-all duration-300 ease-in-out',
+              'relative flex flex-col overflow-x-clip',
+              !overlayOnExpand && 'transition-all duration-300 ease-in-out',
               contentFullBleed
                 ? 'h-dvh min-h-0 overflow-y-hidden'
                 : 'h-full min-h-screen overflow-y-visible',

@@ -25,7 +25,6 @@ export default function WorkspaceAvatarSettings({
   return (
     <SettingItemTab
       className="self-start"
-      controlWidth="xl"
       description={
         allowEdit
           ? t('workspace_avatar_description')

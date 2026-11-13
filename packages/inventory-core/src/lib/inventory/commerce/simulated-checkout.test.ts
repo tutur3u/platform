@@ -1,5 +1,5 @@
 import type { InventoryPublicStorefrontResponse } from '@tuturuuu/internal-api/inventory';
-import { describe, expect, it } from 'vitest';
+import { afterEach, describe, expect, it, vi } from 'vitest';
 import {
   createSimulatedCheckoutResponse,
   createSimulatedOrderToken,
@@ -308,6 +308,37 @@ describe('simulated checkout tokens', () => {
     expect(fixedPriceListingResponse.checkout).toMatchObject({
       subtotalAmount: 250,
       totalAmount: 250,
+    });
+  });
+
+  describe('shared app coordination secret rules', () => {
+    const next = 'next-secret-'.padEnd(40, 'n');
+
+    afterEach(() => vi.unstubAllEnvs());
+
+    it('accepts the next secret without signing with it, then signs with it once promoted', () => {
+      vi.stubEnv('INVENTORY_SIMULATED_ORDER_SECRET', '');
+      vi.stubEnv('TUTURUUU_APP_COORDINATION_SECRET', 'current-secret');
+      vi.stubEnv('APP_COORDINATION_TOKEN_NEXT_SECRET', next);
+      const now = new Date('2026-06-15T00:00:00.000Z');
+      const current = createSimulatedOrderToken(tokenPayload, { now });
+
+      expect(
+        verifySimulatedOrderToken(current, { now, secret: 'current-secret' })
+      ).toMatchObject({ ok: true });
+      expect(verifySimulatedOrderToken(current, { now })).toMatchObject({
+        ok: true,
+      });
+
+      vi.stubEnv('APP_COORDINATION_TOKEN_SIGNER', 'next');
+      const promoted = createSimulatedOrderToken(tokenPayload, { now });
+
+      expect(
+        verifySimulatedOrderToken(promoted, { now, secret: next })
+      ).toMatchObject({ ok: true });
+      expect(verifySimulatedOrderToken(current, { now })).toMatchObject({
+        ok: true,
+      });
     });
   });
 });

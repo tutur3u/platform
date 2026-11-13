@@ -27,6 +27,9 @@ const code = [
   '.github/workflows/turbo-unit-tests.yaml',
   'bun.lock',
   'package.json',
+  'turbo.json',
+  'tsconfig.json',
+  'apps/web/src/widget.test.ts',
   'scripts/ci/test-docs-only-gate.js',
   'unknown',
   'docs/UPPERCASE.MD',
@@ -320,4 +323,11 @@ test('complete summaries accept only proven docs skips and always require fresh 
       }
     }
   }
+});
+
+test('root script ratchets receive complete parent history', () => {
+  const checkout = workflow.jobs['root-script-tests'].steps.find((step) =>
+    step.uses?.startsWith('actions/checkout@')
+  );
+  assert.equal(checkout.with['fetch-depth'], 0);
 });

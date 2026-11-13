@@ -29,7 +29,8 @@ interface UseMiraChatActionsParams {
   messages: UIMessage[];
   model: AIModelUI;
   sendMessageWithCurrentConfig: (
-    message: UIMessage
+    message: UIMessage,
+    isCurrent?: () => boolean
   ) => void | Promise<void> | Promise<boolean>;
   setChat: Dispatch<SetStateAction<Partial<AIChat> | undefined>>;
   setFallbackChatId: (value: string) => void;
@@ -154,7 +155,8 @@ export function useMiraChatActions({
     async (
       userInput: string,
       isCurrent?: () => boolean,
-      onChatCreated?: (chatId: string) => void
+      onChatCreated?: (chatId: string) => void,
+      messageId?: string
     ) => {
       const generation = generationRef.current;
       const live = () =>
@@ -193,11 +195,14 @@ export function useMiraChatActions({
         });
         setStoredChatId(data.id);
         localStorage.setItem(`${STORAGE_KEY_PREFIX}${wsId}`, data.id);
-        const accepted = await sendMessageWithCurrentConfig({
-          id: generateRandomUUID(),
-          role: 'user',
-          parts: [{ type: 'text', text: userInput }],
-        });
+        const accepted = await sendMessageWithCurrentConfig(
+          {
+            id: messageId ?? generateRandomUUID(),
+            role: 'user',
+            parts: [{ type: 'text', text: userInput }],
+          },
+          current
+        );
         if (!current()) return false;
         return accepted !== false;
       } catch {

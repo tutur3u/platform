@@ -14,22 +14,44 @@ const local = (path: string) => fileURLToPath(new URL(path, import.meta.url));
 
 const nativePorts = createCalendarNativePortResolver(local);
 
-const bridge = startBridgePreset({
-  appRoot: import.meta.url,
-  app: 'calendar',
-  inertVercel: true,
-  serverFnBase: CALENDAR_FUNCTION_BASE,
-  shims: [
-    'next/headers',
-    'next/cache',
-    'next/server',
-    'next/navigation',
-    'next/link',
-    'next/dynamic',
-    'next/image',
-    '@opennextjs/cloudflare',
-  ],
-});
+const productionArtifact =
+  process.env.CALENDAR_DEPLOYMENT_PROFILE === 'production';
+const artifactBasePath = productionArtifact ? '/calendar' : '';
+if (
+  process.env.TUTURUUU_BASE_PATH !== undefined &&
+  process.env.TUTURUUU_BASE_PATH !== artifactBasePath
+) {
+  throw new Error('Calendar build base must match its deployment profile');
+}
+const publicAppUrl = productionArtifact
+  ? 'https://tuturuuu.com/calendar'
+  : (process.env.NEXT_PUBLIC_CALENDAR_APP_URL ??
+    process.env.NEXT_PUBLIC_APP_URL);
+
+export const bridge = startBridgePreset(
+  {
+    basePath: artifactBasePath,
+    appRoot: import.meta.url,
+    app: 'calendar',
+    inertVercel: true,
+    serverFnBase: CALENDAR_FUNCTION_BASE,
+    shims: [
+      'next/headers',
+      'next/cache',
+      'next/server',
+      'next/navigation',
+      'next/link',
+      'next/dynamic',
+      'next/image',
+      '@opennextjs/cloudflare',
+    ],
+  },
+  {
+    ...process.env,
+    NEXT_PUBLIC_APP_URL: publicAppUrl,
+    NEXT_PUBLIC_CALENDAR_APP_URL: publicAppUrl,
+  }
+);
 // No default: build, dev and preview all fail unless the profile is explicit.
 // Only the dev server accepts `development`; builds need production/staging.
 const deploymentProfile = (command: 'build' | 'serve') =>
@@ -147,9 +169,8 @@ export default defineConfig(({ command }): UserConfig => ({
     'process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY': JSON.stringify(
       process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY
     ),
-    'process.env.NEXT_PUBLIC_APP_URL': JSON.stringify(
-      process.env.NEXT_PUBLIC_APP_URL ?? 'https://calendar.tuturuuu.com'
-    ),
+    'process.env.NEXT_PUBLIC_APP_URL': JSON.stringify(publicAppUrl),
+    'process.env.NEXT_PUBLIC_CALENDAR_APP_URL': JSON.stringify(publicAppUrl),
     'process.env.NEXT_PUBLIC_WEB_APP_URL': JSON.stringify(
       process.env.NEXT_PUBLIC_WEB_APP_URL ?? 'https://tuturuuu.com'
     ),

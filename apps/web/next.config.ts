@@ -14,6 +14,7 @@ import {
   CLI_LOGIN_START_PATH,
 } from './src/lib/auth/cli-login-page-headers';
 import { nativeIntegrityFramablePaths } from './src/lib/native-integrity/frame-policy';
+import { createProductMarketingRedirects } from './src/lib/product-marketing-redirects';
 import { createSatelliteApiRewrites } from './src/lib/satellite-api-rewrites';
 
 // Discover current indexable pages before configuring HTTP indexing boundaries.
@@ -109,6 +110,8 @@ const nextConfig = createTuturuuuNextConfig({
   experimental: {
     authInterrupts: true,
     ...(offlineConfig.experimental ?? {}),
+    // Vercel receives the gateway request on its private origin hostname.
+    serverActions: { allowedOrigins: ['tuturuuu.com'] },
     // Reuse static route stages and shared shells across similar navigations.
     // Personalized runtime stages remain request-bound unless a segment opts in.
     cachedNavigations: true,
@@ -141,6 +144,9 @@ const nextConfig = createTuturuuuNextConfig({
         hostname: 'models.dev',
       },
     ],
+  },
+  async redirects() {
+    return createProductMarketingRedirects();
   },
   async headers() {
     return [

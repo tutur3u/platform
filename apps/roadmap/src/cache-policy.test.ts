@@ -6,6 +6,7 @@ import {
   prepareRoadmapRequest,
   roadmapBoundary,
   selectedBasepath,
+  withoutEnglishPrefix,
 } from './request-boundary.ts';
 import {
   withRoadmapCachePolicy,
@@ -20,7 +21,7 @@ import {
   personalizationFindings,
   scanRoadmapSource,
 } from './public-cache-guard.ts';
-const document = 'https://tuturuuu.com/roadmap/';
+const document = 'https://tuturuuu.com/roadmap';
 const html = (headers: Record<string, string> = {}, status = 200) =>
   new Response('public', {
     status,
@@ -63,6 +64,7 @@ test('auth, variants, unknown hosts and unsuccessful responses remain private', 
     document + '_serverFn/a',
     document + 'auth',
     'https://other.example/roadmap/',
+    'https://tuturuuu.com/roadmap/',
     'http://tuturuuu.com/roadmap/',
     'https://roadmap.tuturuuu.com/roadmap/',
     'https://tuturuuu.com/',
@@ -200,19 +202,20 @@ test('failure and restart perform no storage, network, timers or cache writes', 
 });
 
 test('host-selected SSR mount and physical transport keys remain isolated', async () => {
-  const mountedRequest = new Request('https://tuturuuu.com/roadmap/');
+  const mountedRequest = new Request('https://tuturuuu.com/roadmap');
   assert.equal(selectedBasepath(mountedRequest), '/roadmap');
   assert.equal(roadmapBoundary(mountedRequest), undefined);
   const prepared = prepareRoadmapRequest(mountedRequest, '/roadmap');
+  // Internal only: the router's basepath root; the public URL stays /roadmap.
   assert.equal(new URL(prepared.url).pathname, '/roadmap/');
   assert.equal(prepared.headers.get('x-roadmap-router-base'), '/roadmap');
 
   for (const [url, location] of [
-    ['https://roadmap.tuturuuu.com/', 'https://tuturuuu.com/roadmap/'],
-    ['https://roadmap.tuturuuu.com/roadmap', 'https://tuturuuu.com/roadmap/'],
+    ['https://roadmap.tuturuuu.com/', 'https://tuturuuu.com/roadmap'],
+    ['https://roadmap.tuturuuu.com/roadmap', 'https://tuturuuu.com/roadmap'],
     [
       'https://roadmap.tuturuuu.com/roadmap?q=1',
-      'https://tuturuuu.com/roadmap/?q=1',
+      'https://tuturuuu.com/roadmap?q=1',
     ],
     [
       'https://roadmap.tuturuuu.com/roadmap/assets/app-12345678.js',
@@ -224,7 +227,7 @@ test('host-selected SSR mount and physical transport keys remain isolated', asyn
     ],
     [
       'https://roadmap.tuturuuu.com/roadmap/?q=test',
-      'https://tuturuuu.com/roadmap/?q=test',
+      'https://tuturuuu.com/roadmap?q=test',
     ],
     [
       'https://roadmap.tuturuuu.com/notes?x=1',
@@ -243,7 +246,7 @@ test('host-selected SSR mount and physical transport keys remain isolated', asyn
   }
 
   const worker = new Request(
-    'https://tuturuuu-roadmap.tuturuuu-e89.workers.dev/roadmap/'
+    'https://tuturuuu-roadmap.tuturuuu-e89.workers.dev/roadmap'
   );
   assert.equal(selectedBasepath(worker), '/roadmap');
   assert.equal(roadmapBoundary(worker), undefined);
@@ -266,11 +269,11 @@ test('host-selected SSR mount and physical transport keys remain isolated', asyn
 
 test('loopback Host selects the public host contract', () => {
   const canonical = normalizeLocalHost(
-    new Request('http://127.0.0.1:8787/roadmap/', {
+    new Request('http://127.0.0.1:8787/roadmap', {
       headers: { host: 'tuturuuu.com' },
     })
   );
-  assert.equal(canonical.url, 'https://tuturuuu.com/roadmap/');
+  assert.equal(canonical.url, 'https://tuturuuu.com/roadmap');
   assert.equal(canonical.headers.get('host'), 'tuturuuu.com');
   assert.equal(roadmapBoundary(canonical), undefined);
 
@@ -352,5 +355,93 @@ test('D79: auth, session, cookie or authorization cannot stay on the public cach
       "// import { getSession } from '@tuturuuu/auth/session'\nconst note = 'cookie'"
     ),
     []
+  );
+});
+
+test('every public page and language shares the document cache; nothing next to them does', async () => {
+  const { PUBLIC_DOCUMENTS } = await import('./cache-policy.ts');
+  for (const path of PUBLIC_DOCUMENTS)
+    assert.equal(
+      control(new Request(`https://tuturuuu.com${path}`)),
+      PUBLIC_DOCUMENT_CACHE,
+      path
+    );
+  // Broken variants: near misses, queries and other hosts stay private.
+  for (const url of [
+    'https://tuturuuu.com/roadmap/vi/x',
+    'https://tuturuuu.com/roadmap/workshops',
+    'https://tuturuuu.com/roadmap/vi/workshops/edufest-2026?lang=vi',
+    'https://tuturuuu.com/roadmap/sitemap.xml',
+    'https://roadmap.tuturuuu.com/vi',
+  ])
+    assert.equal(control(new Request(url)), PRIVATE_RESPONSE_CACHE, url);
+});
+
+test('D79: old English links reach the unprefixed English page in one 301', () => {
+  for (const [url, location] of [
+    // Canonical host.
+    ['https://tuturuuu.com/roadmap/en', 'https://tuturuuu.com/roadmap'],
+    ['https://tuturuuu.com/roadmap/en/', 'https://tuturuuu.com/roadmap'],
+    ['https://tuturuuu.com/roadmap/en?x=1', 'https://tuturuuu.com/roadmap?x=1'],
+    [
+      'https://tuturuuu.com/roadmap/en/workshops/edufest-2026',
+      'https://tuturuuu.com/roadmap/workshops/edufest-2026',
+    ],
+    [
+      'https://tuturuuu.com/roadmap/en/workshops/edufest-2026/?x=1',
+      'https://tuturuuu.com/roadmap/workshops/edufest-2026?x=1',
+    ],
+    // Legacy host: straight to the final page, never via /roadmap/en.
+    ['https://roadmap.tuturuuu.com/en', 'https://tuturuuu.com/roadmap'],
+    ['https://roadmap.tuturuuu.com/en?x=1', 'https://tuturuuu.com/roadmap?x=1'],
+    [
+      'https://roadmap.tuturuuu.com/en/workshops/edufest-2026',
+      'https://tuturuuu.com/roadmap/workshops/edufest-2026',
+    ],
+    [
+      'https://roadmap.tuturuuu.com/roadmap/en/workshops/edufest-2026',
+      'https://tuturuuu.com/roadmap/workshops/edufest-2026',
+    ],
+  ] as const) {
+    const redirect = roadmapBoundary(new Request(url));
+    assert.equal(redirect?.status, 301, url);
+    assert.equal(redirect?.headers.get('location'), location, url);
+    // One hop: the target itself is served, not redirected again.
+    assert.equal(roadmapBoundary(new Request(location)), undefined, location);
+    // Redirects never enter the public document cache.
+    assert.equal(
+      control(new Request(url), redirect as Response),
+      PRIVATE_RESPONSE_CACHE
+    );
+  }
+});
+
+test('D79: only an exact en segment redirects; other pages are untouched', () => {
+  for (const url of [
+    'https://tuturuuu.com/roadmap/english',
+    'https://tuturuuu.com/roadmap/enx',
+    'https://tuturuuu.com/roadmap/vi',
+    'https://tuturuuu.com/roadmap/vi/workshops/edufest-2026',
+    'https://tuturuuu.com/roadmap/workshops/edufest-2026',
+  ])
+    assert.equal(roadmapBoundary(new Request(url)), undefined, url);
+  assert.equal(
+    roadmapBoundary(
+      new Request('https://roadmap.tuturuuu.com/english')
+    )?.headers.get('location'),
+    'https://tuturuuu.com/roadmap/english'
+  );
+  for (const path of ['/roadmap/english', '/roadmap/enx', '/roadmap/vi'])
+    assert.equal(withoutEnglishPrefix(path), null, path);
+  // Broken variant: a plain prefix match would rewrite /roadmap/english.
+  const naive = (path: string) =>
+    path.startsWith('/roadmap/en') ? `/roadmap${path.slice(11)}` : null;
+  assert.equal(naive('/roadmap/english'), '/roadmapglish');
+  // Broken variant: the old satellite mapping kept /roadmap/en (a 404 hop).
+  assert.notEqual(
+    roadmapBoundary(
+      new Request('https://roadmap.tuturuuu.com/en')
+    )?.headers.get('location'),
+    'https://tuturuuu.com/roadmap/en'
   );
 });
