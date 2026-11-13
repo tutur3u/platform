@@ -11,7 +11,9 @@ const {
   writeFile,
 } = require('node:fs/promises');
 const { tmpdir } = require('node:os');
+const { readFileSync } = require('node:fs');
 const { basename, dirname, join, resolve } = require('node:path');
+const root = resolve(__dirname, '../..');
 const {
   FAILURE_REASONS,
   describeFailure,
@@ -19,6 +21,12 @@ const {
   proofDirectory,
   responseHeaders,
   safeEnvironment,
+  admitTransportTarget,
+  scrubTransportTarget,
+  validateNextImageQuery,
+  validateRelativeImageUrlParam,
+  WEB_PLATFORM_IMAGE_QUALITIES_ALLOWLIST,
+  WEB_PLATFORM_IMAGE_WIDTHS_ALLOWLIST,
   verifyCss,
   writeProof,
 } = require('./verify-staged-style');
@@ -193,7 +201,9 @@ test('a failed proof logs its reason and still leaves evidence to upload', async
     deployment: 'https://platform-fixture.vercel.app',
     stage: 'identity',
     reason: 'Unclassified Error:exit-1',
+    verifiedStylesheetCount: 0,
     resourceFailures: [],
+    blockedResources: [],
   });
   assert.ok(!text.includes('SECRET-VALUE'));
 });
@@ -327,7 +337,7 @@ for (const [name, status, host, accepted] of [
       return { stdout: '\nTTR_HTTP_STATUS:200' };
     };
     const reason = accepted
-      ? 'Candidate CSS did not verify against built bytes'
+      ? 'Unverified stylesheet'
       : 'Staged public page failed or left the candidate';
     await assert.rejects(
       main({
@@ -371,7 +381,7 @@ for (const [name, status, host, accepted] of [
 
 // This browser seam deliberately does not re-route a fulfilled redirect, matching
 // Chromium's continuation behavior. A raw 3xx must never reach fulfill.
-async function transportFixture(t, responses, stamp) {
+async function transportFixture(t, responses, stamp, options = {}) {
   const temp = await mkdtemp(join(tmpdir(), 'staged-transport-test-'));
   const previous = process.cwd();
   process.chdir(temp);
@@ -382,6 +392,9 @@ async function transportFixture(t, responses, stamp) {
   const origin = 'https://platform-fixture.vercel.app';
   const sha = 'e'.repeat(40);
   const cssPath = '/_next/static/chunks/site.css';
+  const stylesheetRequestUrl =
+    options.stylesheetRequestUrl ?? origin + cssPath;
+  const imageRequestUrl = options.imageRequestUrl;
   const cssBody = '.flex{display:flex}';
   await mkdir(join(temp, '.vercel/output/static/_next/static/chunks'), {
     recursive: true,
@@ -434,7 +447,9 @@ async function transportFixture(t, responses, stamp) {
                 if (!result) return null;
                 if (result.status === 200) {
                   await dispatch(new URL('banner.svg', url).href, 'image');
-                  await dispatch(origin + cssPath, 'stylesheet');
+                  if (imageRequestUrl)
+                    await dispatch(imageRequestUrl, 'image');
+                  await dispatch(stylesheetRequestUrl, 'stylesheet');
                 }
                 return { status: () => result.status };
               },
@@ -627,4 +642,218 @@ for (const foreign of [true, false])
           : 'Staged resource redirect changes its browser URL'
       )
     );
+    assert.ok(Array.isArray(failure.blockedResources));
+    assert.equal(
+      failure.blockedResources[0]?.reason,
+      failure.resourceFailures[0]
+    );
+    assert.equal(
+      failure.blockedResources[0]?.origin,
+      foreign ? 'off-candidate' : f.origin
+    );
+    if (foreign) {
+      assert.equal(failure.blockedResources[0]?.classification, 'off-candidate');
+      assert.equal(failure.blockedResources[0]?.pathname, '[foreign]');
+    }
+    assert.ok(!JSON.stringify(failure).includes('SECRET'));
   });
+
+test('web image optimizer allowlists match apps/web unresolved Next 16 sizing', () => {
+  const configSource = readFileSync(
+    resolve(root, 'apps/web/next.config.ts'),
+    'utf8'
+  );
+  const pkg = JSON.parse(
+    readFileSync(resolve(root, 'apps/web/package.json'), 'utf8')
+  );
+  assert.match(pkg.dependencies.next, /^[\^~]?16\./);
+  assert.ok(!/\bdeviceSizes\b/u.test(configSource));
+  assert.ok(!/\bimageSizes\b/u.test(configSource));
+  assert.ok(!/\bqualities\b/u.test(configSource));
+  assert.ok(WEB_PLATFORM_IMAGE_WIDTHS_ALLOWLIST.has(96));
+  assert.ok(WEB_PLATFORM_IMAGE_WIDTHS_ALLOWLIST.has(640));
+  assert.deepEqual([...WEB_PLATFORM_IMAGE_QUALITIES_ALLOWLIST], [75]);
+});
+
+test('transport admits built-in Next image optimizer queries for image resources', async (t) => {
+  const origin = 'https://platform-fixture.vercel.app';
+  const inner = '/_next/static/media/hero.png';
+  const imageRequestUrl = `${origin}/_next/image?url=${encodeURIComponent(inner)}&w=96&q=75`;
+  const f = await transportFixture(t, (path) =>
+    path.startsWith('/_next/image?')
+      ? { body: 'img', type: 'image/png' }
+      : undefined
+  , undefined, { imageRequestUrl });
+  const proof = await f.run();
+  assert.equal(proof.viewports.length, 2);
+  assert.ok(f.calls.some((path) => path.startsWith('/_next/image?')));
+  assert.ok(!JSON.stringify(proof).includes('hero.png'));
+});
+
+test('transport rejects non-image optimizer bodies at the image endpoint', async (t) => {
+  const origin = 'https://platform-fixture.vercel.app';
+  const imageRequestUrl = `${origin}/_next/image?url=${encodeURIComponent('/images/logo.png')}&w=96&q=75`;
+  const f = await transportFixture(
+    t,
+    (path) =>
+      path.startsWith('/_next/image?')
+        ? { body: '.x{}', type: 'text/css' }
+        : undefined,
+    undefined,
+    { imageRequestUrl }
+  );
+  await assert.rejects(
+    f.run(),
+    (error) =>
+      error.stagedReason === 'Staged image optimizer response is not an image'
+  );
+  const failure = JSON.parse(await f.failure());
+  assert.ok(!JSON.stringify(failure).includes('logo.png'));
+});
+
+test('admitTransportTarget bounds framework image query contracts', () => {
+  const origin = 'https://platform-fixture.vercel.app';
+  const staticPath = '/_next/static/media/hero.png';
+  const imagesPath = '/images/avatar.png';
+  const admit = (href, resourceType = 'image') => {
+    const target = new URL(href, origin);
+    admitTransportTarget(target, origin, { resourceType });
+    validateNextImageQuery(target);
+  };
+  const reject = (href, resourceType = 'image') => {
+    const target = new URL(href, origin);
+    assert.throws(() =>
+      admitTransportTarget(target, origin, { resourceType })
+    );
+    if (
+      resourceType === 'image' &&
+      target.pathname === '/_next/image' &&
+      !target.hash &&
+      !target.username &&
+      !target.password &&
+      target.origin === origin
+    )
+      assert.throws(() => validateNextImageQuery(target));
+  };
+
+  admit(
+    `/_next/image?url=${encodeURIComponent(staticPath)}&w=96&q=75`
+  );
+  admit(
+    `/_next/image?url=${encodeURIComponent(imagesPath)}&w=128&q=75`
+  );
+
+  reject(
+    `/_next/image?url=${encodeURIComponent('https://evil/x.png')}&w=96&q=75`
+  );
+  reject(
+    `/_next/image?url=${encodeURIComponent('//evil/x.png')}&w=96&q=75`
+  );
+  reject(
+    `/_next/image?url=${encodeURIComponent('%2F%2Fevil/x.png')}&w=96&q=75`
+  );
+  reject(
+    `/_next/image?url=${encodeURIComponent(`${origin}${staticPath}`)}&w=96&q=75`
+  );
+  reject(
+    `/_next/image?url=${encodeURIComponent('https://models.dev/logo.png')}&w=128&q=75`
+  );
+  reject(
+    `/_next/image?url=${encodeURIComponent(staticPath)}&w=96&q=75&token=SECRET`
+  );
+  reject(`/_next/image?url=${encodeURIComponent(staticPath)}&q=75`);
+  reject(`/_next/image?url=${encodeURIComponent(staticPath)}&w=96`);
+  reject(`/_next/image?url=${encodeURIComponent(staticPath)}&w=500&q=75`);
+  reject(`/_next/image?url=${encodeURIComponent(staticPath)}&w=96&q=80`);
+  reject(`/_next/static/chunks/site.css?dpl=x`, 'stylesheet');
+  reject(
+    `/_next/image?url=${encodeURIComponent(staticPath)}&w=96&q=75`,
+    'stylesheet'
+  );
+  reject(
+    `https://USER:PASS@platform-fixture.vercel.app/_next/image?url=${encodeURIComponent(staticPath)}&w=96&q=75`
+  );
+  reject(
+    `/_next/image?url=${encodeURIComponent(staticPath)}&w=96&q=75#frag`
+  );
+  reject('/_next/image-extra?url=%2Fx.png&w=96&q=75');
+  reject(
+    `/%5fnext/image?url=${encodeURIComponent(staticPath)}&w=96&q=75`
+  );
+  reject(
+    `/_next/image?url=${encodeURIComponent(`${staticPath}?dpl=SECRET`)}&w=96&q=75`
+  );
+  reject(
+    `/_next/image?url=${encodeURIComponent('/_next/static/chunks/site.css')}&w=96&q=75`
+  );
+  assert.throws(() => validateRelativeImageUrlParam('https://evil'));
+  assert.throws(() => validateRelativeImageUrlParam('//evil/x'));
+  assert.throws(() => validateRelativeImageUrlParam('%2F%2Fevil/x'));
+});
+
+test('scrubTransportTarget never echoes query, credential, or foreign URL material', () => {
+  const origin = 'https://platform-fixture.vercel.app';
+  const frameworkImage = scrubTransportTarget(
+    new URL(
+      `${origin}/_next/image?url=${encodeURIComponent('/_next/static/media/hero.png')}&w=96&q=75`
+    ),
+    origin
+  );
+  assert.equal(frameworkImage.pathname, '/_next/image');
+  assert.equal(frameworkImage.classification, 'framework-image');
+  assert.equal(frameworkImage.searchKeysFrameworkImage, true);
+  assert.ok(!JSON.stringify(frameworkImage).includes('hero.png'));
+
+  const built = scrubTransportTarget(
+    new URL(`${origin}/_next/static/chunks/site.css?dpl=QUERY-SECRET#frag`),
+    origin
+  );
+  assert.equal(built.pathname, '/_next/static/chunks/site.css');
+  assert.equal(built.searchKeysOnlyDpl, true);
+  assert.equal(built.hasSearch, true);
+  assert.ok(!JSON.stringify(built).includes('QUERY'));
+
+  const foreign = scrubTransportTarget(
+    new URL('https://elsewhere.example/SECRET/path.css?token=SECRET'),
+    origin
+  );
+  assert.equal(foreign.origin, 'off-candidate');
+  assert.equal(foreign.pathname, '[foreign]');
+  assert.ok(!JSON.stringify(foreign).includes('SECRET'));
+
+  const apiPath = scrubTransportTarget(
+    new URL(
+      'https://USER-SECRET:PASS-SECRET@platform-fixture.vercel.app/%61pi/private?token=QUERY-SECRET'
+    ),
+    origin
+  );
+  assert.equal(apiPath.pathname, '[redacted]');
+  assert.equal(apiPath.hasCredentials, true);
+  assert.ok(!JSON.stringify(apiPath).includes('SECRET'));
+  assert.ok(!JSON.stringify(apiPath).includes('token='));
+});
+
+test('transport admission rejects same-origin CSS with a query string before curl', async (t) => {
+  const origin = 'https://platform-fixture.vercel.app';
+  const f = await transportFixture(t, () => undefined, undefined, {
+    stylesheetRequestUrl: `${origin}/_next/static/chunks/site.css?dpl=fixture-token`,
+  });
+  await assert.rejects(
+    f.run(),
+    (error) =>
+      error.stagedReason === 'Staged transport destination is not admitted'
+  );
+  assert.ok(!f.calls.some((path) => path.includes('?')));
+  const failure = JSON.parse(await f.failure());
+  assert.equal(failure.verifiedStylesheetCount, 0);
+  assert.deepEqual(failure.resourceFailures, [
+    'Staged transport destination is not admitted',
+  ]);
+  const blocked = failure.blockedResources[0];
+  assert.equal(blocked.reason, failure.resourceFailures[0]);
+  assert.equal(blocked.resourceType, 'stylesheet');
+  assert.equal(blocked.searchKeysOnlyDpl, true);
+  assert.equal(blocked.pathname, '/_next/static/chunks/site.css');
+  assert.ok(!JSON.stringify(failure).includes('fixture-token'));
+  assert.ok(!JSON.stringify(failure).includes('token='));
+});

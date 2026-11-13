@@ -138,9 +138,9 @@ describe('server feature audience', () => {
       expect(validateFeatureRollout(value).length).toBeGreaterThan(0);
     expect(validateFeatureRollout(internal)).toEqual([]);
   });
-  it('does not mutate the 52-entry catalog or 16-key mobile evaluator', () => {
-    expect(featureFlagCatalog.flags).toHaveLength(52);
-    expect(registry).toHaveLength(16);
+  it('does not mutate the 53-entry catalog or 17-key mobile evaluator', () => {
+    expect(featureFlagCatalog.flags).toHaveLength(53);
+    expect(registry).toHaveLength(17);
     const catalogBefore = structuredClone(featureFlagCatalog);
     const before = evaluateFlags(registry, {});
     enabled(internal);

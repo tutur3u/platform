@@ -1,6 +1,4 @@
 import { getOfflineTurbopackConfig } from '@tuturuuu/offline/config';
-import { resolveInternalAppUrl } from '@tuturuuu/utils/app-url';
-import { getLocalInternalAppUrl } from '@tuturuuu/utils/internal-domains';
 import {
   createTuturuuuNextConfig,
   createTuturuuuWebWorkspaceApiRewrites,
@@ -8,22 +6,13 @@ import {
 } from '@tuturuuu/utils/next-config';
 import createNextIntlPlugin from 'next-intl/plugin';
 
-import { createCalendarApiRewrites } from './src/lib/calendar-api-rewrites';
+import {
+  createCalendarApiRewrites,
+  resolveCalendarAppUrl,
+} from './src/lib/calendar-api-rewrites';
 
 const withNextIntl = createNextIntlPlugin();
 const WEB_APP_URL = resolveTuturuuuWebAppUrl();
-
-const CALENDAR_APP_URL = resolveInternalAppUrl({
-  appName: 'calendar',
-  candidates: [
-    process.env.CALENDAR_APP_URL,
-    process.env.NEXT_PUBLIC_CALENDAR_APP_URL,
-  ],
-  fallback:
-    process.env.NODE_ENV === 'production'
-      ? 'https://calendar.tuturuuu.com'
-      : getLocalInternalAppUrl('calendar', 'http://localhost:7806'),
-});
 
 const nextConfig = createTuturuuuNextConfig({
   seoApp: 'tasks',
@@ -40,7 +29,7 @@ const nextConfig = createTuturuuuNextConfig({
   async rewrites() {
     return {
       beforeFiles: [
-        ...createCalendarApiRewrites(CALENDAR_APP_URL),
+        ...createCalendarApiRewrites(resolveCalendarAppUrl()),
         ...createTuturuuuWebWorkspaceApiRewrites(WEB_APP_URL),
       ],
       afterFiles: [],
