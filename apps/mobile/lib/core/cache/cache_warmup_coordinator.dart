@@ -27,7 +27,13 @@ class CacheWarmupCoordinator {
 
   final CacheWarmupClock _clock;
   CacheWarmupScopeKey? _scopeKey;
-  final Map<String, _GroupWarmupRecord> _recentRuns = {};
+
+  /// Scope that every entry in [_recentRuns] belongs to. Only the current
+  /// scope is remembered; observing any other scope drops every record.
+  String? _recentScope;
+
+  /// Completion time of each group that ran fully for [_recentScope].
+  final Map<String, DateTime> _recentRuns = {};
 
   final Map<String, CacheWarmupTask> _tasks = {};
   final Map<String, List<String>> _groups = {
@@ -61,12 +67,18 @@ class CacheWarmupCoordinator {
     _tasks[id] = task;
   }
 
-  /// Binds the scope (user + workspace) used to suppress repeat warm-ups.
-  /// Suppression only applies while the resolver returns a non-null scope,
-  /// so unauthenticated or workspace-less states always warm again.
+  /// Binds the scope used to suppress repeat warm-ups. The resolver should
+  /// change whenever cached data may have been dropped (account, workspace,
+  /// cache clear). A null scope disables suppression and drops every record,
+  /// so signed-out or workspace-less states never carry a record forward.
   void bindScope(CacheWarmupScopeKey resolver) {
     _scopeKey = resolver;
-    // A rebound scope starts a fresh suppression context.
+    reset();
+  }
+
+  /// Forgets every completed run so the next warm-up of each group runs.
+  void reset() {
+    _recentScope = null;
     _recentRuns.clear();
   }
 
@@ -87,6 +99,10 @@ class CacheWarmupCoordinator {
     if (ids.isEmpty) return;
 
     final scope = _scopeKey?.call();
+    if (scope != _recentScope) {
+      reset();
+      _recentScope = scope;
+    }
     if (forceRefresh) {
       _recentRuns.remove(groupId);
     } else if (scope != null && _recentlyWarmed(groupId, scope)) {
@@ -112,24 +128,21 @@ class CacheWarmupCoordinator {
         }),
       );
     }
-    if (!forceRefresh && allRan && scope != null) {
-      _recentRuns[groupId] = _GroupWarmupRecord(
-        scope: scope,
-        completedAt: _clock(),
-      );
+    // Record only if the scope held for the whole run; a scope change while
+    // the run was in flight already reset the records for the new scope.
+    if (!forceRefresh &&
+        allRan &&
+        scope != null &&
+        _scopeKey?.call() == scope &&
+        _recentScope == scope) {
+      _recentRuns[groupId] = _clock();
     }
   }
 
   bool _recentlyWarmed(String groupId, String scope) {
-    final record = _recentRuns[groupId];
-    if (record == null || record.scope != scope) return false;
-    return _clock().difference(record.completedAt) < warmupReuseWindow;
+    if (_recentScope != scope) return false;
+    final completedAt = _recentRuns[groupId];
+    if (completedAt == null) return false;
+    return _clock().difference(completedAt) < warmupReuseWindow;
   }
-}
-
-class _GroupWarmupRecord {
-  const _GroupWarmupRecord({required this.scope, required this.completedAt});
-
-  final String scope;
-  final DateTime completedAt;
 }

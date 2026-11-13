@@ -15,6 +15,7 @@ extension CacheStoreNamespaceScopes on CacheStore {
     );
     final scope = (userId, workspaceId, namespace);
     _scopeRevisions[scope] = ++_revision;
+    _clearGeneration++;
     _clearingScopes[scope] = (_clearingScopes[scope] ?? 0) + 1;
     try {
       await _serializePending(() async {
@@ -54,6 +55,7 @@ extension CacheStoreNamespaceScopes on CacheStore {
       });
     } finally {
       _scopeRevisions[scope] = ++_revision;
+      _clearGeneration++;
       final remaining = _clearingScopes[scope]! - 1;
       if (remaining == 0) {
         _clearingScopes.remove(scope);
