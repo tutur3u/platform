@@ -47,36 +47,48 @@ afterEach(() => {
   vi.restoreAllMocks();
 });
 
-describe('inventory root-only response policy', () => {
-  it.each([canonical, staging])('admits only the declared root %s', (host) => {
-    const mounts = {
-      app: 'inventory',
-      rootHosts: [canonical],
-      mountHosts: ['tuturuuu.com'],
-      basePath: '/inventory',
-      ...config.mounts,
-    };
-    expect(resolveAppBase(new URL(`https://${host}/`), mounts)).toEqual({
+// Composed exactly like the Worker: its defaults spread under the app config.
+const mounts = () => ({
+  app: 'inventory',
+  rootHosts: [canonical],
+  mountHosts: ['tuturuuu.com'],
+  basePath: '/inventory',
+  ...config.mounts,
+});
+
+describe('inventory root and apex-mount response policy', () => {
+  it.each([canonical, staging])('admits the declared root %s', (host) => {
+    expect(resolveAppBase(new URL(`https://${host}/`), mounts())).toEqual({
       mode: 'root',
       basePath: '',
     });
   });
 
+  it('serves the apex mount under exactly /inventory', () => {
+    expect(
+      resolveAppBase(new URL('https://tuturuuu.com/inventory'), mounts())
+    ).toEqual({ mode: 'mounted', basePath: '/inventory' });
+    expect(
+      resolveAppBase(new URL('https://tuturuuu.com/inventory/sales'), mounts())
+    ).toEqual({ mode: 'mounted', basePath: '/inventory' });
+  });
+
+  it.each(['/', '/other', '/inventory-team', '/inventory.js'])(
+    'refuses apex paths the mount does not own: %s',
+    (path) => {
+      expect(
+        resolveAppBase(new URL(`https://tuturuuu.com${path}`), mounts())
+      ).toBeNull();
+    }
+  );
+
   it.each([
-    'tuturuuu.com',
     'unknown.invalid',
     'inventory.tuturuuu.com.attacker.invalid',
     'tuturuuu-inventory-vite-staging.example.workers.dev',
-  ])('rejects apex and unlisted host %s', (host) => {
-    const mounts = {
-      app: 'inventory',
-      rootHosts: [canonical],
-      mountHosts: ['tuturuuu.com'],
-      basePath: '/inventory',
-      ...config.mounts,
-    };
+  ])('rejects unlisted host %s even on the mount path', (host) => {
     expect(
-      resolveAppBase(new URL(`https://${host}/inventory`), mounts)
+      resolveAppBase(new URL(`https://${host}/inventory`), mounts())
     ).toBeNull();
   });
 
