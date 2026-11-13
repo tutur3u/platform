@@ -16,14 +16,18 @@ import {
   createMeetFinalizer,
   prepareMeetGraph,
 } from './meet-native-graph-files.mjs';
-import { inspectMeetGraph } from './meet-native-profile.mjs';
+import { inspectMeetGraph, PROFILE } from './meet-native-profile.mjs';
+import { readMeetFixtureReceipt, readMeetProductionReceipt } from './meet-native-fixture-supplier.mjs';
+import { PRODUCTION_PROFILE } from './meet-native-inventory.mjs';
 import { createMeetSsrCollector } from './meet-ssr-capture.mjs';
 import { observeOwnedChild } from './native-wrangler-observable.mjs';
 
 export function meetChildEnvironment(
   env,
-  { caseRoot, tempRoot, planFile, receiptFile, sourceSHA }
+  { caseRoot, tempRoot, planFile, receiptFile, sourceSHA, profile }
 ) {
+  if (profile !== undefined)
+    assert.ok([PROFILE, PRODUCTION_PROFILE].includes(profile), 'Unknown child graph profile');
   const result = {};
   for (const name of ['PATH', 'SystemRoot', 'WINDIR'])
     if (env[name]) result[name] = env[name];
@@ -49,22 +53,30 @@ export function meetChildEnvironment(
     CI: 'true',
     GITHUB_SHA: sourceSHA,
     GITHUB_REF:
-      env.GITHUB_REF === 'refs/heads/production'
+      (profile === PRODUCTION_PROFILE || (profile === undefined && env.GITHUB_REF === 'refs/heads/production'))
         ? env.GITHUB_REF
         : 'refs/heads/ci-fixture',
   };
 }
 
-export async function launchMeet(sourceSHA) {
+export async function launchMeet(sourceSHA, fixture) {
   assert.match(sourceSHA ?? '', /^[a-f0-9]{40}$/);
-  const app = await realpath(
+  const app = fixture?.appDirectory ?? await realpath(
     fileURLToPath(new URL('../../apps/meet', import.meta.url))
   );
+  const ownerPackage = fixture?.ownerPackage ?? join(app, 'package.json');
   const plan = await inspectMeetGraph({
     appDirectory: app,
     sourceSHA,
-    ownerPackage: join(app, 'package.json'),
+    ownerPackage,
+    ...(fixture?.profile === PRODUCTION_PROFILE ? { admission: fixture.admission } : {}),
   });
+  if (fixture) {
+    const production = fixture.profile === PRODUCTION_PROFILE;
+    assert.deepEqual(Object.keys(fixture).sort(),
+      ['appDirectory', 'ownerPackage', 'receiptPath', ...(production ? ['admission', 'profile'] : [])].sort());
+    assert.deepEqual(plan, await (production ? readMeetProductionReceipt : readMeetFixtureReceipt)(sourceSHA, fixture.receiptPath));
+  }
   const programRoot = await realpath(
     await mkdtemp(join(tmpdir(), 'meet-native-run-'))
   );
@@ -122,6 +134,7 @@ export async function launchMeet(sourceSHA) {
             planFile,
             receiptFile,
             sourceSHA,
+            profile: plan.profile,
           }),
           stdio: ['ignore', 'pipe', 'pipe'],
         }
@@ -200,5 +213,18 @@ export async function launchMeet(sourceSHA) {
   }
 }
 
-if (process.argv[1] === fileURLToPath(import.meta.url))
-  await launchMeet(process.argv[2]);
+if (process.argv[1] === fileURLToPath(import.meta.url)) {
+  if (process.argv.length === 3) await launchMeet(process.argv[2]);
+  else {
+    assert.equal(process.argv.length, 5);
+    const production = process.argv[3] === '--production-receipt';
+    assert.ok(production || process.argv[3] === '--fixture-receipt', 'Unknown Meet profile selector');
+    const plan = await (production ? readMeetProductionReceipt : readMeetFixtureReceipt)(process.argv[2], process.argv[4]);
+    await launchMeet(process.argv[2], {
+      appDirectory: plan.app,
+      ownerPackage: plan.ownerPackage,
+      receiptPath: process.argv[4],
+      ...(production ? { profile: PRODUCTION_PROFILE, admission: plan.admission } : {}),
+    });
+  }
+}
