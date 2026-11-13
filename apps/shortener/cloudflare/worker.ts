@@ -1,3 +1,4 @@
+import { withHstsResponsePolicy } from '@tuturuuu/start-bridge/response-policy';
 import handler from '@tanstack/react-start/server-entry';
 import { workerBuildInfo } from '@tuturuuu/utils/worker-build-info';
 import bcrypt from 'bcryptjs';
@@ -7,6 +8,7 @@ import {
   setContextPage,
   withRequestContext,
 } from '../src/native/request-context';
+import { missingSecretsResponse } from '../src/native/required-secrets';
 import {
   type ShortenerEnvironment,
   shortenerRequest,
@@ -19,6 +21,8 @@ export function shortenerWorkerRequest(
   request: Request,
   env: ShortenerEnvironment
 ) {
+  const refused = missingSecretsResponse(env);
+  if (refused) return refused;
   return withRequestContext(request, async () =>
     appendContextCookies(
       await shortenerRequest(request, env, {
@@ -37,4 +41,4 @@ export function shortenerWorkerRequest(
   );
 }
 
-export default { fetch: shortenerWorkerRequest };
+export default { fetch: withHstsResponsePolicy(shortenerWorkerRequest) };

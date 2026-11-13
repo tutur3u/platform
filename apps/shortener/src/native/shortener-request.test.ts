@@ -130,6 +130,123 @@ describe('canonical host fence and domain aliases', () => {
   });
 });
 
+describe('unknown hosts', () => {
+  it('rejects them once canonical hosts are enabled', async () => {
+    const { call, clicks } = setup({ SHORTENER_CANONICAL_HOST_ENABLED: '1' });
+    const response = await call(`${origin}/abc123`);
+    expect(response.status).toBe(404);
+    expect(response.headers.get('location')).toBeNull();
+    expect(clicks).toEqual([]);
+  });
+});
+
+describe('platform apex mount', () => {
+  const mount = 'https://tuturuuu.com/shortener';
+  const open = { SHORTENER_CANONICAL_HOST_ENABLED: '1' };
+
+  it('stays fenced with the production hosts until enabled', async () => {
+    const { call, clicks } = setup();
+    for (const path of ['', '/', '/abc123', '/api/verify']) {
+      const response = await call(`${mount}${path}`);
+      expect(response.status).toBe(503);
+      expect(response.headers.get('cache-control')).toBe('private, no-store');
+    }
+    expect(clicks).toEqual([]);
+  });
+
+  it('rejects apex paths outside the mount even when enabled', async () => {
+    const { call, clicks } = setup(open);
+    for (const path of ['', '/', '/x', '/shortenerabc', '/shortener-extra/x'])
+      expect((await call(`https://tuturuuu.com${path}`)).status).toBe(404);
+    expect(clicks).toEqual([]);
+  });
+
+  it('serves the bare mount and strips trailing slashes with the raw query', async () => {
+    const { call, clicks } = setup(open);
+    const home = await call(mount);
+    expect(home.status).toBe(307);
+    expect(home.headers.get('location')).toBe('https://tuturuuu.com');
+    const slash = await call(`${mount}/?a=1&a=2&b=%20`);
+    expect(slash.status).toBe(308);
+    expect(slash.headers.get('location')).toBe('/shortener?a=1&a=2&b=%20');
+    const deep = await call(`${mount}/abc123/`);
+    expect(deep.status).toBe(308);
+    expect(deep.headers.get('location')).toBe('/shortener/abc123');
+    const post = await call(`${mount}/abc123`, { method: 'POST' });
+    expect(post.status).toBe(405);
+    expect(post.headers.get('allow')).toBe('GET, HEAD');
+    expect(clicks).toEqual([]);
+    const head = await call(`${mount}/abc123`, { method: 'HEAD' });
+    expect(head.status).toBe(307);
+    expect(head.body).toBeNull();
+    // HEAD resolves the document like GET, so the click is still durable.
+    expect(clicks.map((click) => click.link_id)).toEqual(['l1']);
+  });
+
+  it('resolves slugs under the mount and records the click', async () => {
+    const { call, clicks } = setup(open);
+    const response = await call(`${mount}/abc123?ref=x&ref=y`, {
+      headers: { 'cf-connecting-ip': '198.51.100.1', 'user-agent': 'UA' },
+    });
+    expect(response.status).toBe(307);
+    expect(response.headers.get('location')).toBe(
+      'https://example.com/landing?utm=a&utm=b'
+    );
+    expect(clicks.map((click) => click.link_id)).toEqual(['l1']);
+  });
+
+  it('serves assets, server functions and pages base-stripped with the base header', async () => {
+    const { call, assets, pages, deps } = setup(open);
+    expect((await call(`${mount}/assets/main-abc.js`)).status).toBe(200);
+    expect(assets).toEqual(['/assets/main-abc.js']);
+    await call(`${mount}/_serverFn/abc`);
+    expect(pages).toEqual([null]);
+    expect(
+      deps.renderPage.mock.calls.at(-1)?.[0].headers.get('x-tuturuuu-app-base')
+    ).toBe('/shortener');
+    expect((await call(`${mount}/missing`)).status).toBe(200);
+    expect(pages).toEqual([null, { kind: 'not-found' }]);
+  });
+
+  it('guards and forwards mounted API paths base-stripped', async () => {
+    const { call, deny, forwarded } = setup(open);
+    deny(new Response('limited', { status: 429 }));
+    expect(
+      (await call(`${mount}/api/v1/x`, { method: 'POST', body: '{}' })).status
+    ).toBe(429);
+    expect(forwarded).toEqual([]);
+    const verify = await call(`${mount}/api/verify`, {
+      method: 'POST',
+      body: JSON.stringify({ linkId: 'l2', slug: 'locked', password: 'pw' }),
+    });
+    expect(await verify.json()).toEqual({
+      url: 'https://locked.example',
+      success: true,
+    });
+    const response = await call(`${mount}/api/v1/links?tag=1&tag=2&x=%20`);
+    expect(response.status).toBe(200);
+    expect(forwarded).toEqual([
+      {
+        url: 'https://tuturuuu.com/api/v1/links?tag=1&tag=2&x=%20',
+        origin: 'https://central.example',
+        search: '?tag=1&tag=2&x=%20',
+      },
+    ]);
+  });
+
+  it('rewrites path-relative page Locations under the mount', async () => {
+    const fixture = setup(open);
+    fixture.deps.renderPage = async () =>
+      new Response(null, {
+        status: 307,
+        headers: { Location: '/login?next=%2Fx' },
+      });
+    const response = await fixture.call(`${mount}/missing`);
+    expect(response.status).toBe(307);
+    expect(response.headers.get('location')).toBe('/shortener/login?next=%2Fx');
+  });
+});
+
 describe('short-link documents', () => {
   it('redirects with 307 to the exact stored target and records one click', async () => {
     const { call, clicks } = setup();
