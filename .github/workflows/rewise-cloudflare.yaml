@@ -190,6 +190,7 @@ jobs:
       SOURCE_SHA: ${{ github.event.pull_request.head.sha || github.sha }}
       APPS_SOURCE_SHA: ${{ github.event.pull_request.head.sha || github.sha }}
       REWISE_SOURCE_SHA: ${{ github.event.pull_request.head.sha || github.sha }}
+      TRUSTED: ${{ github.ref == 'refs/heads/main' && (github.event_name == 'push' || github.event_name == 'workflow_dispatch') }}
       VITE_REWISE_NATIVE_PROFILE: production
       NEXT_PUBLIC_SUPABASE_URL: ${{ vars.PRODUCTION_SUPABASE_URL }}
       NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY: ${{ vars.PRODUCTION_SUPABASE_PUBLISHABLE_KEY }}
@@ -232,6 +233,11 @@ jobs:
           command: cd apps/rewise && bun run build:cloudflare
           token: ''
           team: ''
+      - name: Remove production server source maps
+        run: find apps/rewise/dist/server -type f -name '*.map' -delete
+      - name: Pre-seal doctor on the production Host header
+        timeout-minutes: 3
+        run: node scripts/ci/pre-seal-doctor.mjs rewise apps/rewise rewise.tuturuuu.com "$SOURCE_SHA" --expect-redirect
       - name: Seal and pack Worker, assets and emitted Wrangler config
         run: |
           python3 scripts/ci/rewise-native-artifact.py config apps/rewise
@@ -253,7 +259,7 @@ jobs:
         run: node --test cloudflare/anonymous-smoke.runtime.mjs
       - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
-          name: rewise-cutover-production-${{ env.SOURCE_SHA }}
+          name: rewise-cutover-${{ env.TRUSTED == 'true' && 'production' || 'fixture' }}-${{ env.SOURCE_SHA }}
           path: ${{ runner.temp }}/rewise-cutover.tar.gz
           retention-days: 7
           if-no-files-found: error

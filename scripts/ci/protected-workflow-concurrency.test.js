@@ -372,7 +372,9 @@ test('production validation and generated release evidence retain immutable atte
       !c?.group.includes('github.workflow') ||
       mainExceptions[file] ||
       serialized.includes(file) ||
-      file.startsWith('vercel-preview-')
+      file.startsWith('vercel-preview-') ||
+      // Production pushes share one group. The desktop beta test locks it.
+      file === 'desktop-beta.yaml'
     )
       continue;
     for (const ref of [
@@ -660,7 +662,10 @@ test('PR path filters never apply to CodeQL main baselines', () => {
 
 function prGroupExclusion(file) {
   if (file.includes('cloudflare')) return 'deploys to Cloudflare';
-  if (file.startsWith('vercel-preview-') || file.startsWith('vercel-production')) {
+  if (
+    file.startsWith('vercel-preview-') ||
+    file.startsWith('vercel-production')
+  ) {
     return 'deploys a Vercel preview or production app';
   }
   if (file.startsWith('release-') || file.includes('release-please')) {
@@ -768,7 +773,10 @@ test('desktop beta pull requests supersede and publication stays serialized', ()
     workflow: workflow.name,
   };
   const manualNext = { ...manual, sha: 'two', run_id: 2 };
-  assert.equal(render(workflow.concurrency['cancel-in-progress'], manual), false);
+  assert.equal(
+    render(workflow.concurrency['cancel-in-progress'], manual),
+    false
+  );
   assert.notEqual(
     render(workflow.concurrency.group, manual),
     render(workflow.concurrency.group, manualNext)
@@ -782,9 +790,17 @@ test('desktop beta pull requests supersede and publication stays serialized', ()
     render(workflow.concurrency['cancel-in-progress'], production),
     false
   );
-  assert.notEqual(
+  assert.equal(
+    render(workflow.concurrency.group, production),
+    'desktop-beta-production'
+  );
+  assert.equal(
     render(workflow.concurrency.group, production),
     render(workflow.concurrency.group, { ...production, sha: 'two', run_id: 2 })
+  );
+  assert.notEqual(
+    render(workflow.concurrency.group, production),
+    render(workflow.concurrency.group, manual)
   );
   const publish = workflow.jobs.publish.concurrency;
   assert.equal(publish.group, 'desktop-beta-production-publish');
@@ -801,7 +817,10 @@ test('security review writers share one non-cancelling group per pull request', 
     ...context('refs/heads/main', 'first', 1, 'pull_request_target', 99),
     workflow: admit.name,
   };
-  assert.equal(render(admit.concurrency.group, admitRun), `${admit.name}-pr-99`);
+  assert.equal(
+    render(admit.concurrency.group, admitRun),
+    `${admit.name}-pr-99`
+  );
   assert.equal(render(admit.concurrency['cancel-in-progress'], admitRun), true);
 
   assert.equal(
@@ -832,7 +851,10 @@ test('security review writers share one non-cancelling group per pull request', 
     workflow: recheck.name,
   };
   review.event.pull_request = { number: 99, head: { sha: 'first' } };
-  assert.equal(render(recheck.concurrency['cancel-in-progress'], review), false);
+  assert.equal(
+    render(recheck.concurrency['cancel-in-progress'], review),
+    false
+  );
 });
 
 test('main Test pushes retain separate results and never cancel prior validation', () => {

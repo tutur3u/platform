@@ -7,7 +7,7 @@ import { resourcesHelp } from './resources';
 
 export { getGlobalHelp } from './help-global';
 
-import { externalAdminHelp } from './external-admin';
+import { externalAdminHelp, isExternalHelp } from './external-admin';
 
 const helpTopics: Record<string, HelpTopic> = {
   box: boxHelp,
@@ -946,7 +946,7 @@ function normalizeHelpGroup(group: string) {
 
 export function getHelpOutput(group?: string, action?: string) {
   if (group === 'resources') return resourcesHelp();
-  if (group === 'external' && action !== 'projects') return externalAdminHelp();
+  if (isExternalHelp(group, action)) return externalAdminHelp(group);
   if (!group) {
     return getGlobalHelp();
   }

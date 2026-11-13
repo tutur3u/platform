@@ -44,6 +44,7 @@ import { useLocale, useTranslations } from 'next-intl';
 import { useCallback, useMemo, useState } from 'react';
 import { TaskRichTextEditor } from '../../text-editor/task-rich-text-editor';
 import { NoteEditDialog } from './note-edit-dialog';
+import { tasksApiPath } from '../shared/tasks-paths';
 
 interface Note {
   id: string;
@@ -127,7 +128,9 @@ export default function NoteList({ wsId }: { wsId: string }) {
     ],
     queryFn: async () => {
       const response = await fetch(
-        `/api/v1/workspaces/${wsId}/notes?archived=${showArchived ? '1' : '0'}`,
+        tasksApiPath(
+          `/api/v1/workspaces/${wsId}/notes?archived=${showArchived ? '1' : '0'}`
+        ),
         {
           method: 'GET',
           headers: {
@@ -162,7 +165,7 @@ export default function NoteList({ wsId }: { wsId: string }) {
       queryKey: ['workspace', wsId, 'boards-with-lists'],
       queryFn: async () => {
         const response = await fetch(
-          `/api/v1/workspaces/${wsId}/boards-with-lists`,
+          tasksApiPath(`/api/v1/workspaces/${wsId}/boards-with-lists`),
           {
             method: 'GET',
             headers: {
@@ -186,7 +189,7 @@ export default function NoteList({ wsId }: { wsId: string }) {
   const deleteNoteMutation = useMutation({
     mutationFn: async (noteId: string) => {
       const response = await fetch(
-        `/api/v1/workspaces/${wsId}/notes/${noteId}`,
+        tasksApiPath(`/api/v1/workspaces/${wsId}/notes/${noteId}`),
         {
           method: 'DELETE',
         }
@@ -217,7 +220,7 @@ export default function NoteList({ wsId }: { wsId: string }) {
       content?: JSONContent;
     }) => {
       const response = await fetch(
-        `/api/v1/workspaces/${wsId}/notes/${noteId}`,
+        tasksApiPath(`/api/v1/workspaces/${wsId}/notes/${noteId}`),
         {
           method: 'PUT',
           headers: {
@@ -246,7 +249,9 @@ export default function NoteList({ wsId }: { wsId: string }) {
   >({
     mutationFn: async ({ noteId, listId }) => {
       const response = await fetch(
-        `/api/v1/workspaces/${wsId}/notes/${noteId}/convert-to-task`,
+        tasksApiPath(
+          `/api/v1/workspaces/${wsId}/notes/${noteId}/convert-to-task`
+        ),
         {
           method: 'POST',
           headers: {
@@ -282,7 +287,9 @@ export default function NoteList({ wsId }: { wsId: string }) {
   >({
     mutationFn: async ({ noteId, name, description }) => {
       const response = await fetch(
-        `/api/v1/workspaces/${wsId}/notes/${noteId}/convert-to-project`,
+        tasksApiPath(
+          `/api/v1/workspaces/${wsId}/notes/${noteId}/convert-to-project`
+        ),
         {
           method: 'POST',
           headers: {

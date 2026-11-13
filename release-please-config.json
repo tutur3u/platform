@@ -251,6 +251,10 @@
       "component": "legal",
       "package-name": "@tuturuuu/legal"
     },
+    "packages/marketing-shell": {
+      "component": "marketing-shell",
+      "package-name": "@tuturuuu/marketing-shell"
+    },
     "packages/masonry": {
       "component": "masonry",
       "package-name": "@tuturuuu/masonry"

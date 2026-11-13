@@ -1,0 +1,24 @@
+{
+  "name": "@tuturuuu/workspace-domains",
+  "private": true,
+  "type": "module",
+  "packageManager": "bun@1.4.4",
+  "scripts": {
+    "test": "vitest run",
+    "type-check": "tsc --project tsconfig.json",
+    "lint": "oxlint --config .oxlintrc.json src --deny-warnings",
+    "format:check": "oxfmt --config .oxfmtrc.json src --check"
+  },
+  "devDependencies": {
+    "@types/react": "19.2.18",
+    "@types/react-dom": "19.2.7",
+    "typescript": "7.0.2",
+    "vitest": "5.0.5"
+  },
+  "dependencies": {
+    "@tuturuuu/cms-blocks": "workspace:*",
+    "@tuturuuu/utils": "workspace:*",
+    "react": "19.2.8",
+    "react-dom": "19.2.8"
+  }
+}

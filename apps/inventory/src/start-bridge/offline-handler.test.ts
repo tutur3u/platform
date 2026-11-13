@@ -27,11 +27,15 @@ const ctx = { waitUntil: (_work: Promise<unknown>) => {} };
 
 beforeEach(() => vi.clearAllMocks());
 
-it('serves both mounts through one handler and leaves the shared session cookie unchanged', async () => {
+it('forwards subdomain session cookies and blocks mounted session writes', async () => {
   const cookie = 'tuturuuu_app_session=fixture; Path=/; HttpOnly';
-  mocks.offline.mockImplementation(async () =>
-    Response.json({ id: serverId }, { headers: { 'Set-Cookie': cookie } })
-  );
+  const preference = 'inventory_view=compact; Path=/; SameSite=Lax';
+  mocks.offline.mockImplementation(async () => {
+    const response = Response.json({ id: serverId });
+    response.headers.append('Set-Cookie', cookie);
+    response.headers.append('Set-Cookie', preference);
+    return response;
+  });
   const handle = createInventoryHandler({
     start: { fetch: async () => new Response('Not Found', { status: 404 }) },
     endpoints: [
@@ -42,31 +46,52 @@ it('serves both mounts through one handler and leaves the shared session cookie 
     ],
     publicAssets: new Set(['/robots.txt']),
   });
-  for (const base of [
-    'https://inventory.tuturuuu.com',
-    'https://tuturuuu.com/inventory',
-  ]) {
+  for (const [base, expectedCookies] of [
+    ['https://inventory.tuturuuu.com', [cookie, preference]],
+    ['https://tuturuuu.com/inventory', [preference]],
+  ] as const) {
     const response = await handle(
       new Request(`${base}${path}`, { method: 'POST', body: '{}' }),
       env,
       ctx
     );
     expect(response.status).toBe(200);
-    expect(response.headers.getSetCookie()).toEqual([cookie]);
+    expect(response.headers.getSetCookie()).toEqual(expectedCookies);
+    expect(await response.json()).toEqual({ id: serverId });
     expect(mocks.offline).toHaveBeenLastCalledWith(
       expect.any(Request),
       'workspace'
     );
   }
-  expect(
-    (
-      await handle(
-        new Request(`https://tuturuuu.com/inventory-other${path}`),
-        env,
-        ctx
-      )
-    ).status
-  ).toBe(404);
+  expect(mocks.offline).toHaveBeenCalledTimes(2);
+  mocks.offline.mockClear();
+  for (const base of [
+    'https://tuturuuu.com',
+    'https://tuturuuu.com/inventory-other',
+  ]) {
+    const response = await handle(
+      new Request(`${base}${path}`, { method: 'POST', body: '{}' }),
+      env,
+      ctx
+    );
+    expect(response.status).toBe(404);
+    expect(response.headers.getSetCookie()).toEqual([]);
+  }
+  const crossOrigin = await handle(
+    new Request(`https://tuturuuu.com/inventory${path}`, {
+      method: 'POST',
+      body: '{}',
+      headers: {
+        cookie: 'tuturuuu_app_session=fixture',
+        origin: 'https://inventory.attacker.invalid',
+      },
+    }),
+    env,
+    ctx
+  );
+  expect(crossOrigin.status).toBe(403);
+  expect(crossOrigin.headers.getSetCookie()).toEqual([]);
+  expect(mocks.offline).not.toHaveBeenCalled();
 });
 
 describe.each(['', '/inventory'])(

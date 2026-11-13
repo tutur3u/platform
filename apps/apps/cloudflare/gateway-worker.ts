@@ -1,3 +1,4 @@
+import { withHstsResponsePolicy } from '@tuturuuu/start-bridge/response-policy';
 import { getLaunchableAppByTitle } from '@tuturuuu/utils/launchable-apps';
 import { enforceStagingCookiePolicy } from '@tuturuuu/utils/staging-cookie-policy';
 import { createElement } from 'react';
@@ -187,4 +188,4 @@ export async function gatewayRequest(
     : result;
 }
 
-export default { fetch: gatewayRequest };
+export default { fetch: withHstsResponsePolicy(gatewayRequest) };

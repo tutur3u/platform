@@ -77,6 +77,40 @@ test('security workflows stay selected for an app source file', () => {
   assert.equal(prose.started.includes('codeql.yml'), false);
 });
 
+const FULL_SUITE = [
+  'app-builds-affected.yaml',
+  'codeql.yml',
+  'pr-checks.yaml',
+  'security-checks.yaml',
+  'turbo-unit-tests.yaml',
+  'type-check.yaml',
+];
+
+test('lockfile, root config, workflow and test files keep the full suite', () => {
+  for (const file of [
+    'bun.lock',
+    'package.json',
+    'turbo.json',
+    'tsconfig.json',
+    '.github/workflows/pr-checks.yaml',
+    'apps/calendar/src/app/page.test.tsx',
+  ]) {
+    const started = workflowsForChanges(inventory, [file]);
+    for (const workflow of FULL_SUITE)
+      assert.equal(
+        started.includes(workflow),
+        true,
+        `${file} dropped ${workflow}`
+      );
+  }
+  const closed = { paths: ['apps/calendar/**'], ignore: [] };
+  assert.equal(fileSelectsWorkflow(closed, 'bun.lock'), false);
+  assert.equal(
+    fileSelectsWorkflow(closed, 'apps/calendar/src/app/page.test.tsx'),
+    true
+  );
+});
+
 test('a shared utils file still creates app runs the gate can skip', () => {
   const result = runsAvoided(inventory, [
     'packages/utils/src/internal-domains.ts',

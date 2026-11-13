@@ -97,27 +97,17 @@ describe('auth proxy under a Next basePath', () => {
     );
   });
 
-  it("posts the token to the mounted app's verifier, not the apex API", async () => {
-    const fetchMock = vi.fn().mockResolvedValue(
-      new Response(
-        JSON.stringify({
-          appSessionCreated: true,
-          userId: 'user-1',
-          valid: true,
-        }),
-        { headers: { 'content-type': 'application/json' }, status: 200 }
-      )
-    );
+  it('never redeems a handoff token on a mount: the shared session is the session', async () => {
+    const fetchMock = vi.fn();
     vi.stubGlobal('fetch', fetchMock);
 
     const response = await consumeVerifyTokenRequest(
       mounted('/verify-token?token=copy-token&nextUrl=%2Fpersonal')
     );
 
-    expect(fetchMock).toHaveBeenCalledWith(
-      new URL('https://tuturuuu.com/tasks/api/auth/verify-app-token'),
-      expect.objectContaining({ method: 'POST' })
-    );
+    // The mounted verify endpoint is refused (409 APP_SESSION_MOUNTED), so
+    // the verifier never calls it and only forwards to the target.
+    expect(fetchMock).not.toHaveBeenCalled();
     expect(response?.headers.get('location')).toBe(
       'https://tuturuuu.com/tasks/personal'
     );

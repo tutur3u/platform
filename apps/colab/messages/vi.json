@@ -229,6 +229,10 @@
       "unchecked": "Cần làm"
     },
     "close": "Đóng",
+    "picker_pin": "Ghim không gian làm việc",
+    "picker_pinned": "Đã ghim",
+    "picker_recent": "Gần đây",
+    "picker_unpin": "Bỏ ghim không gian làm việc",
     "public_profile": "Hồ sơ công khai",
     "retry": "Thử lại"
   },
@@ -937,7 +941,11 @@
   },
   "ws-roles": {
     "manage_desktop_deployment_vault": "Quản lý kho triển khai máy tính",
-    "manage_desktop_deployment_vault_description": "Cho phép thành viên không gian làm việc gốc quản lý thông tin ký Windows/macOS riêng tư và mã truy cập quy trình được bảo vệ. Không bật phân phối."
+    "manage_desktop_deployment_vault_description": "Cho phép thành viên không gian làm việc gốc quản lý thông tin ký Windows/macOS riêng tư và mã truy cập quy trình được bảo vệ. Không bật phân phối.",
+    "manage_workspace_domains": "Quản lý tên miền không gian làm việc",
+    "manage_workspace_domains_description": "Thêm, xác minh và gỡ tên miền tùy chỉnh và tên miền phụ của nền tảng phục vụ trang công khai của không gian làm việc.",
+    "view_workspace_domains": "Xem tên miền không gian làm việc",
+    "view_workspace_domains_description": "Xem các tên miền tùy chỉnh của không gian làm việc, trạng thái xác minh và quyền sử dụng tên miền."
   },
   "yourWorkspace": "Không gian nhóm của bạn"
 }

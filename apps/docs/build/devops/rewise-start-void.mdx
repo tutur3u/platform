@@ -39,7 +39,7 @@ Wrangler config with `scripts/ci/rewise-native-artifact.py`, records the
 emitted configuration receipt, runs
 `node --test cloudflare/anonymous-smoke.runtime.mjs` against the sealed output in
 workerd with synthetic secrets only, and uploads
-`rewise-cutover-production-<source SHA>`. It never deploys. Do not run
+`rewise-cutover-production-<source SHA>` on `main` pushes and dispatches, and `rewise-cutover-fixture-<source SHA>` for every other run (pull requests), so a PR build can never carry a production name. It never deploys. Do not run
 `build:cloudflare` on a shared development machine.
 
 ## Cutover packet

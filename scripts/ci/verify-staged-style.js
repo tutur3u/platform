@@ -1,17 +1,18 @@
 const assert = require('node:assert/strict');
 const { execFile } = require('node:child_process');
-const { createHash } = require('node:crypto');
+const { createHash, randomBytes } = require('node:crypto');
+const { chmodSync, mkdirSync, mkdtempSync } = require('node:fs');
 const {
   mkdtemp,
   readFile,
   realpath,
+  rename,
   rm,
-  mkdir,
   writeFile,
 } = require('node:fs/promises');
 const { createRequire } = require('node:module');
 const { tmpdir } = require('node:os');
-const { resolve, relative, sep } = require('node:path');
+const { join, resolve, relative, sep } = require('node:path');
 const { promisify } = require('node:util');
 const { parseCurlOutput } = require('./verify-staged-critical-app');
 
@@ -112,6 +113,36 @@ async function verifyCss({ artifactRoot, pathname, body, contentType }) {
   };
 }
 
+// RUNNER_TEMP is job-private in CI. Without it, a fixed path under tmpdir()
+// can be planted as a symlink, so the local base is a fresh 0700 directory.
+function proofDirectory({ runnerTemp, sha } = {}) {
+  if (!/^[a-f0-9]{40}$/u.test(sha || ''))
+    throw new Error(
+      'An exact staged platform deployment and source identity are required'
+    );
+  if (runnerTemp) {
+    const evidence = resolve(runnerTemp, 'staged-style-proof', sha);
+    mkdirSync(evidence, { recursive: true, mode: 0o700 });
+    chmodSync(evidence, 0o700);
+    return evidence;
+  }
+  const base = mkdtempSync(join(tmpdir(), 'staged-style-proof-'));
+  const evidence = join(base, sha);
+  mkdirSync(evidence, { mode: 0o700 });
+  chmodSync(evidence, 0o700);
+  return evidence;
+}
+
+// Rename replaces the directory entry and does not follow a symlink there.
+async function writeProof(directory, name, body) {
+  const partial = join(
+    directory,
+    `.${name}.${randomBytes(8).toString('hex')}.part`
+  );
+  await writeFile(partial, body, { mode: 0o600, flag: 'wx' });
+  await rename(partial, join(directory, name));
+}
+
 async function main({ env = process.env, runCommand = run, browserType } = {}) {
   const url = env.VERCEL_STAGED_DEPLOYMENT_URL;
   const sha = env.GITHUB_SHA;
@@ -126,16 +157,22 @@ async function main({ env = process.env, runCommand = run, browserType } = {}) {
     );
   const origin = new URL(url).origin;
   const root = process.cwd();
-  const evidence = resolve(
-    env.RUNNER_TEMP || tmpdir(),
-    'staged-style-proof',
-    sha
-  );
-  await mkdir(evidence, { recursive: true });
+  const evidence = proofDirectory({ runnerTemp: env.RUNNER_TEMP, sha });
   const scratch = await mkdtemp(resolve(tmpdir(), 'staged-style-fetch-'));
   let sequence = 0;
   let browser;
   let stage = 'identity';
+  // A step killed by its timeout never reaches the catch block, so the last
+  // reached stage is kept on disk next to the rest of the proof.
+  const markStage = async (next) => {
+    stage = next;
+    await writeProof(
+      evidence,
+      'stage.json',
+      `${JSON.stringify({ stage, at: new Date().toISOString() })}\n`
+    ).catch(() => {});
+  };
+  await markStage('identity');
   const failures = [];
   const css = new Map();
   const cssSources = new Map();
@@ -193,7 +230,7 @@ async function main({ env = process.env, runCommand = run, browserType } = {}) {
       browserType ||
       createRequire(resolve(root, 'apps/web/package.json'))('playwright')
         .chromium;
-    stage = 'browser';
+    await markStage('browser');
     browser = await chromium.launch({
       headless: true,
       env: safeEnvironment(env),
@@ -232,7 +269,7 @@ async function main({ env = process.env, runCommand = run, browserType } = {}) {
     });
     const viewports = [];
     for (const width of [390, 1440]) {
-      stage = `viewport-${width}`;
+      await markStage(`viewport-${width}`);
       const page = await context.newPage();
       await page.setViewportSize({ width, height: 900 });
       const response = await page.goto(`${origin}/en`, {
@@ -317,11 +354,16 @@ async function main({ env = process.env, runCommand = run, browserType } = {}) {
         'Candidate utility styles are missing'
       );
       const screenshot = `platform-${width}.png`;
+      const partial = join(
+        evidence,
+        `.${screenshot}.${randomBytes(8).toString('hex')}.part`
+      );
       await page.screenshot({
-        path: resolve(evidence, screenshot),
+        path: partial,
         fullPage: true,
         animations: 'disabled',
       });
+      await rename(partial, join(evidence, screenshot));
       viewports.push({
         width,
         height: 900,
@@ -331,7 +373,7 @@ async function main({ env = process.env, runCommand = run, browserType } = {}) {
       });
       await page.close();
     }
-    stage = 'receipt';
+    await markStage('receipt');
     const receipt = {
       source: sha,
       deployment: url,
@@ -342,8 +384,9 @@ async function main({ env = process.env, runCommand = run, browserType } = {}) {
       limits:
         'Anonymous public shell styles only; no authenticated feature or post-promotion acceptance.',
     };
-    await writeFile(
-      resolve(evidence, 'receipt.json'),
+    await writeProof(
+      evidence,
+      'receipt.json',
       `${JSON.stringify(receipt, null, 2)}\n`
     );
     console.log(
@@ -352,8 +395,9 @@ async function main({ env = process.env, runCommand = run, browserType } = {}) {
     return receipt;
   } catch (error) {
     const reason = describeFailure(error);
-    await writeFile(
-      resolve(evidence, 'failure.json'),
+    await writeProof(
+      evidence,
+      'failure.json',
       `${JSON.stringify(
         {
           source: sha,
@@ -378,9 +422,11 @@ module.exports = {
   FAILURE_REASONS,
   describeFailure,
   main,
+  proofDirectory,
   responseHeaders,
   safeEnvironment,
   verifyCss,
+  writeProof,
 };
 if (require.main === module)
   main().catch((error) => {

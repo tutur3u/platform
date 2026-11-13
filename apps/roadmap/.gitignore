@@ -1,6 +1,8 @@
 node_modules/
 dist/
 .void/
-.wrangler/
+.void-wrangler.jsonc
 src/routeTree.gen.ts
 roadmap-artifact.json
+# Build-time hosting observation (scripts/generate-roadmap-data.mjs); never committed.
+.generated/

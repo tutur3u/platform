@@ -36,9 +36,16 @@ test('map retains the six existing CI scopes and control paths', () => {
     'mobile',
     'plugin',
   ]);
-  for (const patterns of Object.values(filters))
-    assert.ok(patterns.includes('.github/**'));
-  assert.ok(filters.oxc.includes('bun.lock'));
+  for (const patterns of Object.values(filters)) {
+    for (const control of [
+      '.github/**',
+      'package.json',
+      'bun.lock',
+      'turbo.json',
+      'tsconfig*.json',
+    ])
+      assert.ok(patterns.includes(control), control);
+  }
   assert.ok(filters.plugin.includes('AGENTS.md'));
 });
 

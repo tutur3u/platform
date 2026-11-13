@@ -75,6 +75,7 @@ const production = defineConfig({
       // Meet AI containment (A1, 3 Nov 2026). It must match the live Worker vars,
       // because a deploy replaces vars and dropping these would turn Meet AI back on.
       // Lifting containment is a reviewed change to these two lines.
+      MEET_CLASSROOM_LIMITS_ENABLED: 'false',
       MEET_AI_DISABLED: 'true',
       MEET_AI_ENABLED_WORKSPACE_IDS: '',
     },

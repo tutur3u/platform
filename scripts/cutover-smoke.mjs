@@ -16,6 +16,7 @@
 import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { resolveAssetSmokePlan, smokeAssets } from './ci/asset-smoke.mjs';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -126,6 +127,7 @@ export function resolveAppConfig(appName, configTable) {
     entryRoute,
     loginRoute,
     paths: Array.from(pathsSet).slice(0, 5),
+    assetSmoke: found.assetSmoke ?? null,
   };
 }
 
@@ -535,11 +537,31 @@ export async function runCutoverSmoke(
     errors.push(`[RedirectLoop] Circular redirect loop detected in probe`);
   }
 
+  let assetResult = null;
+  if (appConfig.assetSmoke) {
+    try {
+      const plan = resolveAssetSmokePlan(appConfig.assetSmoke, baseUrl);
+      assetResult = await smokeAssets({ ...plan, fetchImpl, timeoutMs });
+    } catch (err) {
+      assetResult = {
+        ok: false,
+        failures: [err instanceof Error ? err.message : String(err)],
+        assets: [],
+      };
+    }
+    if (!assetResult.ok) {
+      for (const failure of assetResult.failures) {
+        errors.push(`[AssetSmoke] ${failure}`);
+      }
+    }
+  }
+
   const pass =
     entryResult.passed &&
     loginResult.passed &&
     pathsResult.passed &&
-    redirectCheck.passed;
+    redirectCheck.passed &&
+    (assetResult?.ok ?? true);
 
   return {
     status: pass ? 'PASS' : 'FAIL',
@@ -564,12 +586,21 @@ export async function runCutoverSmoke(
         passed: pathsResult.passed,
         testedCount: pathsResult.testedCount,
       },
+      ...(assetResult
+        ? {
+            assetSmoke: {
+              passed: assetResult.ok,
+              assetCount: assetResult.assets.length,
+            },
+          }
+        : {}),
     },
     checks: {
       entryRoute: entryResult,
       loginRoute: loginResult,
       redirects: redirectCheck,
       paths: pathsResult,
+      ...(assetResult ? { assetSmoke: assetResult } : {}),
     },
     errors,
   };

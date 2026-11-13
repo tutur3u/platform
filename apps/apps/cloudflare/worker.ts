@@ -1,3 +1,4 @@
+import { withHstsResponsePolicy } from '@tuturuuu/start-bridge/response-policy';
 import handler from '@tanstack/react-start/server-entry';
 import { enforceStagingCookiePolicy } from '@tuturuuu/utils/staging-cookie-policy';
 import { workerBuildInfo } from '@tuturuuu/utils/worker-build-info';
@@ -98,4 +99,4 @@ export async function appsRequest(request: Request, env: AppsEnvironment) {
   });
   return enforceStagingCookiePolicy(request, result);
 }
-export default { fetch: appsRequest };
+export default { fetch: withHstsResponsePolicy(appsRequest) };

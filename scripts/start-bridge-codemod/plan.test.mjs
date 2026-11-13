@@ -165,6 +165,10 @@ test('generated config targets the staging Worker and keeps Next build', (t) => 
     'vite/client',
     'node',
   ]);
+  assert.equal(
+    cloudflareTsconfig.compilerOptions.allowImportingTsExtensions,
+    true
+  );
   // Tests keep their Next/Vitest type-check; the build validates vite.config.
   assert.ok(cloudflareTsconfig.exclude.includes('**/*.test.tsx'));
   assert.equal(cloudflareTsconfig.include.includes('vite.config.mts'), false);

@@ -11,6 +11,8 @@ export const meetReactionSchema = z.enum([
 ]);
 export type MeetReaction = z.infer<typeof meetReactionSchema>;
 export const meetRoomSettingsPatchSchema = z.object({
+  maxParticipants: z.number().int().min(1).max(100).optional(),
+  admissionClosed: z.boolean().optional(),
   publicLinkPreview: z.boolean().optional(),
   saveChat: z.boolean().optional(),
   shareNotes: z.boolean().optional(),
@@ -20,6 +22,8 @@ export const meetRoomSettingsPatchSchema = z.object({
 });
 export const meetRoomSettingsSchema = z.object({
   programming: meetingProgrammingSchema.nullable().optional(),
+  maxParticipants: z.number().int().min(1).max(100).optional(),
+  admissionClosed: z.boolean().optional(),
   publicLinkPreview: z.boolean().optional(),
   saveChat: z.boolean().optional(),
   shareNotes: z.boolean().default(false),

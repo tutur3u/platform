@@ -24,6 +24,8 @@ function createRouteMocks() {
       error: null,
     },
     duration: vi.fn().mockResolvedValue(36000),
+    capacity: vi.fn().mockResolvedValue(undefined),
+    parley: vi.fn().mockResolvedValue(false),
     normalizeWorkspaceId: vi.fn(),
     resolveSessionAuthContext: vi.fn(),
     serverLogger: {
@@ -33,6 +35,22 @@ function createRouteMocks() {
   };
 }
 
+vi.mock('@tuturuuu/meet-core/parley/repository', () => ({
+  isParleySession: (id: string) => mocks.parley(id),
+}));
+
+vi.mock('@tuturuuu/utils/meet-classroom-policy', () => ({
+  getClassroomParticipantCap: (meetingId: string, wsId: string) =>
+    mocks.capacity(meetingId, wsId),
+  MeetClassroomPolicyError: class extends Error {
+    constructor(
+      public status: number,
+      message: string
+    ) {
+      super(message);
+    }
+  },
+}));
 vi.mock('@tuturuuu/utils/meet-duration', () => ({
   getHostMeetingDurationSeconds: (id: string) => mocks.duration(id),
 }));
@@ -106,6 +124,7 @@ describe('Meet realtime token route', () => {
   beforeEach(() => {
     globalThis.fetch = originalFetch;
     vi.clearAllMocks();
+    delete process.env.MEET_CLASSROOM_LIMITS_ENABLED;
     process.env.MEET_REALTIME_TOKEN_SECRET = TOKEN_SECRET;
     delete process.env.MEET_REALTIME_URL;
     delete process.env.NEXT_PUBLIC_MEET_REALTIME_URL;
@@ -121,6 +140,46 @@ describe('Meet realtime token route', () => {
     mocks.verifyWorkspaceMembershipType.mockResolvedValue({ ok: true });
   });
 
+  it('keeps Parley tokens outside the enabled classroom cap', async () => {
+    process.env.MEET_CLASSROOM_LIMITS_ENABLED = 'true';
+    mocks.parley.mockResolvedValueOnce(true);
+    mocks.capacity.mockRejectedValueOnce(
+      new Error('must not look up classroom tier')
+    );
+    const response = await requestToken({ mode: 'call' });
+    expect(response.status).toBe(200);
+    const payload = verifyMeetRealtimeToken(
+      (await response.json()).token,
+      TOKEN_SECRET
+    );
+    expect(payload?.limits.maxParticipants).toBeUndefined();
+    expect(mocks.capacity).not.toHaveBeenCalled();
+    expect(mocks.parley).toHaveBeenCalledWith(MEETING_ID);
+  });
+
+  it('signs the server-resolved classroom cap and ignores a client cap', async () => {
+    mocks.capacity.mockResolvedValueOnce(50);
+    const response = await requestToken({
+      mode: 'call',
+      maxParticipants: 1000,
+      role: 'host',
+    });
+    expect(response.status).toBe(200);
+    const body = await response.json();
+    const payload = verifyMeetRealtimeToken(body.token, TOKEN_SECRET);
+    expect(payload?.limits.maxParticipants).toBe(50);
+    expect(payload?.role).toBe('speaker');
+    expect(mocks.capacity).toHaveBeenCalledWith(MEETING_ID, WORKSPACE_ID);
+  });
+  it('denies token issuance when the classroom host entitlement is unavailable', async () => {
+    const { MeetClassroomPolicyError } =
+      await import('@tuturuuu/utils/meet-classroom-policy');
+    mocks.capacity.mockRejectedValueOnce(
+      new MeetClassroomPolicyError(503, 'unavailable')
+    );
+    const response = await requestToken({ mode: 'call' });
+    expect(response.status).toBe(503);
+  });
   it('preserves signed speaker permissions for workspace call participants', async () => {
     const response = await requestToken({ mode: 'call', role: 'speaker' });
 

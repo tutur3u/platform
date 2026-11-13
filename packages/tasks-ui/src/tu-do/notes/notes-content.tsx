@@ -9,6 +9,7 @@ import { useTranslations } from 'next-intl';
 import { useState } from 'react';
 import { NoteEditDialog } from './note-edit-dialog';
 import NoteList from './note-list';
+import { tasksApiPath } from '../shared/tasks-paths';
 
 // Helper to convert plain text to TipTap JSONContent
 const textToJSONContent = (text: string): JSONContent => ({
@@ -44,14 +45,17 @@ export default function NotesContent({ wsId }: NotesContentProps) {
   const createNoteMutation = useMutation({
     mutationFn: async () => {
       const emptyContent = textToJSONContent('');
-      const response = await fetch(`/api/v1/workspaces/${wsId}/notes`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          title: null, // Create with null title as per requirements
-          content: emptyContent,
-        }),
-      });
+      const response = await fetch(
+        tasksApiPath(`/api/v1/workspaces/${wsId}/notes`),
+        {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            title: null, // Create with null title as per requirements
+            content: emptyContent,
+          }),
+        }
+      );
       if (!response.ok) throw new Error(t('errors.create_note'));
       return response.json();
     },
@@ -84,7 +88,7 @@ export default function NotesContent({ wsId }: NotesContentProps) {
       content?: JSONContent;
     }) => {
       const response = await fetch(
-        `/api/v1/workspaces/${wsId}/notes/${noteId}`,
+        tasksApiPath(`/api/v1/workspaces/${wsId}/notes/${noteId}`),
         {
           method: 'PUT',
           headers: {
