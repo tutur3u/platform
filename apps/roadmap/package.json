@@ -4,12 +4,12 @@
   "type": "module",
   "scripts": {
     "dev": "vp dev",
-    "build": "node scripts/generate-roadmap-data.mjs && node scripts/generate-history.mjs && vp build && node scripts/package-assets.mjs",
+    "build": "node scripts/generate-roadmap-data.mjs && node scripts/generate-history.mjs && node scripts/generate-changelog.mjs && vp build && node scripts/package-assets.mjs",
     "type-check": "node scripts/generate-route-tree.cjs && tsc --noEmit",
-    "test": "node --test src/roadmap-data.test.ts src/cache-policy.test.ts scripts/pre-seal-doctor.test.mjs",
+    "test": "node --test src/roadmap-data.test.ts src/cache-policy.test.ts scripts/pre-seal-doctor.test.mjs scripts/generate-changelog.test.mjs scripts/changelog-bundle.test.mjs",
     "data:refresh": "node scripts/generate-roadmap-data.mjs && node scripts/generate-history.mjs",
     "deploy:cloudflare": "void deploy --platform cloudflare",
-    "build:cloudflare": "node scripts/generate-roadmap-data.mjs && node scripts/generate-history.mjs && vp build && node scripts/package-assets.mjs",
+    "build:cloudflare": "node scripts/generate-roadmap-data.mjs && node scripts/generate-history.mjs && node scripts/generate-changelog.mjs && vp build && node scripts/package-assets.mjs",
     "seal:cloudflare": "node scripts/seal-artifact.mjs"
   },
   "dependencies": {
