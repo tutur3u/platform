@@ -323,7 +323,10 @@ protocol and its explicitly in-memory regression boundary.
   `apps/web/src/app/api/**`, not `apps/web/src/legacy-api-routes/**`. Moving one
   out means `git mv` route + colocated test, deleting the legacy file (so
   `bun web:api-routes:check` stops wanting a generated wrapper), re-keying the
-  active live route references. Rust/TanStack migration manifests are frozen;
+  active live route references. Refresh the active inventories using the
+  [Web API inventory commands](../../../../../apps/docs/build/development-tools/pre-push-checks.mdx#web-api-route-inventories),
+  including the standalone API registry and Web Start census. Retired
+  Rust/TanStack migration manifests are frozen;
   do not refresh them until explicitly resumed. Validators that scan web
   API routes must cover **both** trees — `check-workspace-member-type-guard`
   scanned only the legacy tree, so a moved route would have escaped it.
