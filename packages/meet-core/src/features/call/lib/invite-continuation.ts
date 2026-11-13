@@ -18,12 +18,20 @@ export function normalizeMeetInvite(value: string | undefined): string | null {
   return `${url.pathname}${url.searchParams.get('notes') === '1' ? '?notes=1' : ''}`;
 }
 
+// A fixed prefix keeps locale and notes flags out of URL/JSON cookie syntax.
+function compactMeetInvite(invite: string) {
+  const url = new URL(invite, 'https://meet.invalid');
+  const segments = url.pathname.split('/');
+  const locale = segments[1] === 'vi' ? 'v' : segments[1] === 'en' ? 'e' : 'n';
+  return `m${locale}${url.searchParams.get('notes') === '1' ? '1' : '0'}${segments.at(-1)}`;
+}
+
 export function rememberMeetInvite(req: NextRequest, response: NextResponse) {
   const invite = normalizeMeetInvite(
     `${req.nextUrl.pathname}${req.nextUrl.search}`
   );
   if (invite)
-    response.cookies.set(MEET_INVITE_COOKIE, invite, {
+    response.cookies.set(MEET_INVITE_COOKIE, compactMeetInvite(invite), {
       httpOnly: true,
       secure: req.nextUrl.protocol === 'https:',
       sameSite: 'lax',
@@ -34,7 +42,13 @@ export function rememberMeetInvite(req: NextRequest, response: NextResponse) {
 }
 
 export function pendingMeetInvite(req: NextRequest) {
-  return normalizeMeetInvite(req.cookies.get(MEET_INVITE_COOKIE)?.value);
+  const value = req.cookies.get(MEET_INVITE_COOKIE)?.value;
+  const compact = value?.match(/^m([nev])([01])([A-Za-z0-9-]+)$/u);
+  if (!compact) return normalizeMeetInvite(value);
+  const locale = compact[1] === 'v' ? '/vi' : compact[1] === 'e' ? '/en' : '';
+  return normalizeMeetInvite(
+    `${locale}/r/${compact[3]}${compact[2] === '1' ? '?notes=1' : ''}`
+  );
 }
 
 export function clearMeetInvite(response: NextResponse) {

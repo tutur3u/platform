@@ -1,6 +1,6 @@
 import { createServerFn } from '@tanstack/react-start';
 
-export const fetchWorkspaces = createServerFn({ method: 'GET' }).handler(
+export const fetchWorkspaces = createServerFn({ method: 'POST' }).handler(
   async () => {
     const { listWorkspaces, withForwardedInternalApiAuth } =
       await import('@tuturuuu/internal-api');
