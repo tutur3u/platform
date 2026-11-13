@@ -46,3 +46,7 @@
     backdrop-filter: none;
   }
 }
+
+.landing-lite [data-video-hero]:has(iframe) [data-video-decorations] {
+  display: none;
+}
