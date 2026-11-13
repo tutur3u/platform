@@ -1,9 +1,6 @@
-'use client';
-
-import { ThemeToggle } from '@tuturuuu/ui/custom/theme-toggle';
-import { cn } from '@tuturuuu/utils/format';
 import type { MarketingLocale, Translate } from './i18n';
-import { MobileMenu } from './mobile-menu';
+import type { ReactNode } from 'react';
+import { MarketingActions } from './nav-actions';
 import { MarketingNavMenu } from './nav-menu';
 import { MarketingNavShell } from './nav-shell';
 import type { ShellImage, ShellLink } from './types';
@@ -13,6 +10,8 @@ const Img: ShellImage = ({ alt, ...props }) => <img alt={alt} {...props} />;
 
 /** The marketing pill navbar shared by every marketing page. */
 export function MarketingNavbar({
+  actions,
+  brandHref,
   t,
   locale,
   onLocaleChange,
@@ -24,6 +23,8 @@ export function MarketingNavbar({
   LinkComponent = Anchor,
   ImageComponent = Img,
 }: {
+  actions?: ReactNode;
+  brandHref?: string;
   t: Translate;
   locale: MarketingLocale;
   onLocaleChange?: (locale: MarketingLocale) => void;
@@ -35,14 +36,13 @@ export function MarketingNavbar({
   LinkComponent?: ShellLink;
   ImageComponent?: ShellImage;
 }) {
-  const onLogin = pathname === '/login';
   return (
     <MarketingNavShell
       compact={navCompact}
       logo={
         <LinkComponent
           className="flex flex-none items-center gap-2 transition-opacity hover:opacity-80"
-          href={`${siteUrl}/home`}
+          href={brandHref ?? `${siteUrl}/home`}
         >
           {/* Decorative: the brand name beside it is the link's text. */}
           <ImageComponent
@@ -72,40 +72,18 @@ export function MarketingNavbar({
       }
       menu={<MarketingNavMenu siteUrl={siteUrl} t={t} />}
       actions={
-        <>
-          {navCompact ? null : (
-            <LinkComponent
-              className={cn(
-                'inline-flex h-10 items-center rounded-lg bg-primary px-4 font-medium text-primary-foreground text-sm transition-opacity hover:opacity-90',
-                onLogin && 'pointer-events-none opacity-50'
-              )}
-              href={signInHref}
-            >
-              {t('common.get-started')}
-            </LinkComponent>
-          )}
-          {onLocaleChange ? (
-            <button
-              aria-label={locale === 'en' ? 'Tiếng Việt' : 'English'}
-              className="hidden h-10 min-w-10 items-center justify-center rounded-lg border bg-background px-3 font-medium text-sm md:inline-flex"
-              onClick={() => onLocaleChange(locale === 'en' ? 'vi' : 'en')}
-              type="button"
-            >
-              {locale}
-            </button>
-          ) : null}
-          <ThemeToggle />
-          <div className="flex md:hidden">
-            <MobileMenu
-              locale={locale}
-              onLocaleChange={onLocaleChange}
-              pathname={pathname}
-              signInHref={signInHref}
-              siteUrl={siteUrl}
-              t={t}
-            />
-          </div>
-        </>
+        actions ?? (
+          <MarketingActions
+            t={t}
+            locale={locale}
+            onLocaleChange={onLocaleChange}
+            pathname={pathname}
+            siteUrl={siteUrl}
+            signInHref={signInHref}
+            navCompact={navCompact}
+            LinkComponent={LinkComponent}
+          />
+        )
       }
     />
   );

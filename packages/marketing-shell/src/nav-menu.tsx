@@ -1,6 +1,4 @@
-'use client';
-
-import { ArrowRight } from '@tuturuuu/icons/lucide-static';
+import { ArrowRight } from './static-icons';
 import { cn } from '@tuturuuu/utils/format';
 import type { Translate } from './i18n';
 import { type NavMenu, NavMenuBar } from './nav-dropdown';

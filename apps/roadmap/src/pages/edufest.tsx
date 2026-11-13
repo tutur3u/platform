@@ -4,7 +4,7 @@ import {
   MarketingShell,
   shellNavOffset,
 } from '@tuturuuu/marketing-shell';
-import { type CSSProperties, useCallback, useMemo } from 'react';
+import { type CSSProperties, Suspense, useCallback, useMemo } from 'react';
 import en from '../../messages/edufest-2026.en.json';
 import vi from '../../messages/edufest-2026.vi.json';
 import logo from '../assets/tuturuuu-logo.png?no-inline';
@@ -70,22 +70,47 @@ export function EduFestWorkshopPage({ lang }: { lang: Lang }) {
       >
         <main className="page ws-page">
           <WsHero t={t} />
-          <WsHighlights t={t} />
-          <WsSeatSwap t={t} />
-          <WsAgenda t={t} />
-          <WsExperience t={t} />
-          <WsSimulator t={t} statuses={statuses} />
-          <WsFlow t={t} statuses={statuses} />
-          <WsInsightsDemo t={t} statuses={statuses} />
-          <WsReadiness
-            t={t}
-            statuses={statuses}
-            checkedAt={live.data.generatedAt}
-            lang={lang}
-          />
-          <WsCapabilities t={t} statuses={statuses} />
-          <WsFaq t={t} />
-          <WsTools t={t} logo={logo} />
+          {/* One hydration boundary per section below the hero (nothing
+              suspends; the server renders every section): React hydrates
+              them one by one, starting with the one a reader taps. */}
+          <Suspense>
+            <WsHighlights t={t} />
+          </Suspense>
+          <Suspense>
+            <WsSeatSwap t={t} />
+          </Suspense>
+          <Suspense>
+            <WsAgenda t={t} />
+          </Suspense>
+          <Suspense>
+            <WsExperience t={t} />
+          </Suspense>
+          <Suspense>
+            <WsSimulator t={t} statuses={statuses} />
+          </Suspense>
+          <Suspense>
+            <WsFlow t={t} statuses={statuses} />
+          </Suspense>
+          <Suspense>
+            <WsInsightsDemo t={t} statuses={statuses} />
+          </Suspense>
+          <Suspense>
+            <WsReadiness
+              t={t}
+              statuses={statuses}
+              checkedAt={live.data.generatedAt}
+              lang={lang}
+            />
+          </Suspense>
+          <Suspense>
+            <WsCapabilities t={t} statuses={statuses} />
+          </Suspense>
+          <Suspense>
+            <WsFaq t={t} />
+          </Suspense>
+          <Suspense>
+            <WsTools t={t} logo={logo} />
+          </Suspense>
         </main>
       </MarketingShell>
     </div>

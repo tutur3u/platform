@@ -1,3 +1,4 @@
+import { authorizeInfrastructureCron } from '@/lib/infrastructure-cron-auth';
 import { type NextRequest, NextResponse } from 'next/server';
 import { withCronLogDrain } from '@/lib/infrastructure/log-drain';
 import { sampleObservabilityResources } from '@/lib/infrastructure/observability';
@@ -6,45 +7,20 @@ const JOB_ID = 'infrastructure-sample-resources';
 const PATH = '/api/cron/infrastructure/sample-resources';
 
 export async function GET(request: NextRequest) {
+  const denied = authorizeInfrastructureCron(request);
+  if (denied) return denied;
   return withCronLogDrain({ jobId: JOB_ID, path: PATH, request }, () =>
-    handleGET(request)
+    handleGET()
   );
 }
 
-async function handleGET(request: NextRequest) {
-  const cronSecret =
-    process.env.CRON_SECRET ?? process.env.VERCEL_CRON_SECRET ?? '';
-
-  if (!cronSecret) {
-    return NextResponse.json(
-      { ok: false, error: 'CRON_SECRET or VERCEL_CRON_SECRET is not set' },
-      { status: 500 }
-    );
-  }
-
-  if (request.headers.get('Authorization') !== `Bearer ${cronSecret}`) {
-    return NextResponse.json(
-      { ok: false, error: 'Unauthorized' },
-      { status: 401 }
-    );
-  }
-
+async function handleGET() {
   try {
-    const sample = await sampleObservabilityResources();
-    console.info('Sampled infrastructure resources', sample);
+    await sampleObservabilityResources();
 
-    return NextResponse.json({ ok: true, sample });
-  } catch (error) {
-    console.error('Failed to sample infrastructure resources', error);
-    return NextResponse.json(
-      {
-        ok: false,
-        error:
-          error instanceof Error
-            ? error.message
-            : 'Failed to sample infrastructure resources',
-      },
-      { status: 500 }
-    );
+    return NextResponse.json({ ok: true });
+  } catch {
+    console.error('Infrastructure cron job failed');
+    return NextResponse.json({ ok: false }, { status: 500 });
   }
 }

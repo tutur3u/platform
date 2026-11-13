@@ -8,7 +8,7 @@ import { Link } from '@/i18n/routing';
 import {
   MARKETING_PRODUCT_GROUPS,
   MARKETING_PRODUCT_ICONS,
-} from '../../marketing-nav/products';
+} from '@tuturuuu/marketing-shell';
 
 /**
  * Index for `/products`.

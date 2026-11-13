@@ -217,10 +217,10 @@ const CTASection = dynamic(
  */
 export function DeferredProblemSection() {
   return (
-    <>
+    <LazyLandingSection>
       <ProblemSection />
       <OutcomesSection />
-    </>
+    </LazyLandingSection>
   );
 }
 
