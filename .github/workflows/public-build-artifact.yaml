@@ -15,6 +15,7 @@ on:
 
 permissions:
   contents: read
+  actions: read
 
 concurrency:
   group: public-build-artifact-${{ inputs.source_sha }}-${{ inputs.app }}
@@ -80,6 +81,18 @@ jobs:
           ref: ${{ github.workflow_sha }}
           path: control
           persist-credentials: false
+      # Attachment remains held; see scripts/ci/trusted-public-operator.md.
+      - name: Verify trusted dispatch records on the hosted runner
+        uses: actions/github-script@3a2844b7e9c422d3c10d287c895573f7108da1b3 # v9.0.0
+        with:
+          script: |
+            // trusted-public:start
+            const { execFileSync } = require('node:child_process');
+            if (execFileSync('git', ['-C', 'control', 'rev-parse', 'HEAD'], { encoding: 'utf8' }).trim() !== process.env.CONTROL_SHA) throw new Error('Control checkout identity mismatch');
+            const { admitDispatch } = require(`${process.env.GITHUB_WORKSPACE}/control/scripts/ci/trusted-public-admission.js`);
+            const decision = await admitDispatch({ github, context, sourceSha: process.env.SOURCE_SHA, controlSha: process.env.CONTROL_SHA, workflowPath: '.github/workflows/public-build-artifact.yaml' });
+            core.info(JSON.stringify(decision));
+            // trusted-public:end
       - name: Checkout admitted source
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
