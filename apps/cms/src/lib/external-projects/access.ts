@@ -261,13 +261,22 @@ async function resolveCmsWorkspaceAccess(rawWsId: string) {
     supabase
   );
   const isInternalWorkspace = normalizedWorkspaceId === ROOT_WORKSPACE_ID;
-  const [workspacePermissions, rootPermissions, binding] = await Promise.all([
+  const [workspacePermissions, rootPermissions] = await Promise.all([
     user
       ? getPermissions({ user, wsId: normalizedWorkspaceId })
       : Promise.resolve(null),
     user ? getPermissions({ user, wsId: ROOT_WORKSPACE_ID }) : null,
-    isInternalWorkspace
-      ? Promise.resolve({
+  ]);
+
+  const isRootAdmin = hasRootExternalProjectsAdminPermission(rootPermissions);
+  const binding =
+    isInternalWorkspace ||
+    !(
+      hasCmsEditPermission(workspacePermissions) ||
+      hasCmsConnectedChatReadPermission(workspacePermissions) ||
+      isRootAdmin
+    )
+      ? ({
           adapter: null,
           canonical_id: null,
           canonical_project: null,
@@ -275,10 +284,7 @@ async function resolveCmsWorkspaceAccess(rawWsId: string) {
           settings: null,
           workspace_id: normalizedWorkspaceId,
         } satisfies WorkspaceExternalProjectBinding)
-      : resolveWorkspaceExternalProjectBinding(normalizedWorkspaceId),
-  ]);
-
-  const isRootAdmin = hasRootExternalProjectsAdminPermission(rootPermissions);
+      : await resolveWorkspaceExternalProjectBinding(normalizedWorkspaceId);
   const hasConnectedChat =
     !isInternalWorkspace &&
     binding.enabled &&
