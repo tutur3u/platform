@@ -467,6 +467,7 @@ it('never offers the held actions without the admin permission', async () => {
 it('offers per-row and bulk resend only to admins, for resendable rows', async () => {
   const failed = {
     id: 'failed-one',
+    feedback: 'Synthetic teacher feedback',
     report_approval_status: 'APPROVED',
     generation_status: 'ready',
     delivery_status: 'failed',

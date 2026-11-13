@@ -1,4 +1,3 @@
-import { google } from '@ai-sdk/google';
 import { createClient } from '@tuturuuu/supabase/next/server';
 import type { SupabaseUser } from '@tuturuuu/supabase/next/user';
 import type { TypedSupabaseClient } from '@tuturuuu/supabase/types';
@@ -8,25 +7,17 @@ import {
   isBackendRateLimitError,
 } from '@tuturuuu/utils/abuse-protection/backend-rate-limit';
 import { validateAiTempAuthRequest } from '@tuturuuu/utils/ai-temp-auth';
-import { generateText, type UIMessage } from 'ai';
 import { NextResponse } from 'next/server';
 import { z } from 'zod';
 import { normalizeStableModelId } from '../../../credits/model-mapping';
-import {
-  resolveAiMemoryWorkspaceIdForUser,
-  withAiMemory,
-} from '../../../memory';
 import {
   authorizeAiWorkspace,
   isInternalTuturuuuAiUser,
   resolveSupabaseSessionUser,
 } from '../route-auth';
 
-const HUMAN_PROMPT = '\n\nHuman:';
-const AI_PROMPT = '\n\nAssistant:';
-
-/** Always use a lightweight model for title generation */
-const TITLE_MODEL = 'gemini-3.1-flash-lite';
+// Preserve the default model stored for callers that omit a model.
+const DEFAULT_CHAT_MODEL = 'gemini-3.1-flash-lite';
 const NewChatIdSchema = z.string().trim().pipe(z.uuid());
 const NewChatBodySchema = z.object({
   id: NewChatIdSchema.optional(),
@@ -205,7 +196,6 @@ export function createPOST(options: CreatePostOptions = {}) {
         }
       }
 
-      let selectedWsId: string;
       if (wsId) {
         const workspaceAuthorization = await authorizeAiWorkspace({
           request: req,
@@ -216,76 +206,16 @@ export function createPOST(options: CreatePostOptions = {}) {
         if (!workspaceAuthorization.ok) {
           return workspaceAuthorization.response;
         }
-        selectedWsId = workspaceAuthorization.wsId;
-      } else {
-        selectedWsId = await resolveAiMemoryWorkspaceIdForUser({
-          supabase,
-          userId: user.id,
-        });
       }
 
-      const prompt = buildPrompt([
-        {
-          id: 'initial-message',
-          parts: [{ type: 'text', text: `"${message}"` }],
-          role: 'user',
-        },
-      ]);
-
-      // Always use TITLE_MODEL for generating chat titles (cheap + fast)
-      const result = await generateText({
-        model: await withAiMemory({
-          addMemory: 'never',
-          customId: id ? `chat-title-${id}` : `chat-title-${Date.now()}`,
-          model: google(TITLE_MODEL),
-          product: isMiraMode ? 'mira' : 'ai_chat',
-          source: 'ai_chat_title',
-          surface: 'ai_chat_title',
-          userId: user.id,
-          wsId: selectedWsId,
-        }),
-        prompt,
-        providerOptions: {
-          google: {
-            safetySettings: [
-              {
-                category: 'HARM_CATEGORY_HARASSMENT',
-                threshold: 'BLOCK_NONE',
-              },
-              {
-                category: 'HARM_CATEGORY_HATE_SPEECH',
-                threshold: 'BLOCK_NONE',
-              },
-              {
-                category: 'HARM_CATEGORY_SEXUALLY_EXPLICIT',
-                threshold: 'BLOCK_NONE',
-              },
-              {
-                category: 'HARM_CATEGORY_DANGEROUS_CONTENT',
-                threshold: 'BLOCK_NONE',
-              },
-            ],
-          },
-        },
-      });
-
-      const title = result.text;
-
-      if (!title) {
-        return NextResponse.json(
-          {
-            message: 'Internal server error.',
-          },
-          { status: 500 }
-        );
-      }
+      const title = provisionalTitle(message);
 
       // Store bare model name for DB compatibility (ai_models FK)
       const resolvedModel = model
         ? normalizeStableModelId(
             model.includes('/') ? model.split('/').pop()! : model
           ).toLowerCase()
-        : TITLE_MODEL;
+        : DEFAULT_CHAT_MODEL;
 
       const { data: chat, error: chatError } = await supabase
         .from('ai_chats')
@@ -351,50 +281,22 @@ export function createPOST(options: CreatePostOptions = {}) {
   };
 }
 
-const normalize = (message: UIMessage) => {
-  const { parts, role } = message;
-  // Extract text from parts array
-  const content =
-    parts?.map((part) => (part.type === 'text' ? part.text : '')).join('') ||
-    '';
-  if (role === 'user') return `${HUMAN_PROMPT} ${content}`;
-  if (role === 'assistant') return `${AI_PROMPT} ${content}`;
-  return content;
-};
+// Segment graphemes so truncation preserves emoji and combining diacritics.
+function provisionalTitle(message: string): string {
+  const normalized = message.trim().replace(/\s+/gu, ' ');
+  if (!normalized) return '…';
 
-const normalizeMessages = (messages: UIMessage[]) =>
-  [...leadingMessages, ...messages, ...trailingMessages]
-    .map(normalize)
-    .join('')
-    .trim();
+  const segments = new Intl.Segmenter(undefined, { granularity: 'grapheme' });
+  const graphemes: string[] = [];
+  for (const { segment } of segments.segment(normalized)) {
+    graphemes.push(segment);
+    if (graphemes.length > 60) break;
+  }
+  if (graphemes.length <= 60) return normalized;
 
-function buildPrompt(messages: UIMessage[]) {
-  const normalizedMsgs = normalizeMessages(messages);
-  return normalizedMsgs + AI_PROMPT;
+  const prefix = graphemes.slice(0, 59).join('');
+  const boundary = prefix.lastIndexOf(' ');
+  const shortened =
+    graphemes[59] !== ' ' && boundary > 0 ? prefix.slice(0, boundary) : prefix;
+  return `${shortened.trimEnd()}…`;
 }
-
-const leadingMessages: UIMessage[] = [
-  {
-    id: 'initial-message',
-    role: 'assistant',
-    parts: [
-      {
-        type: 'text',
-        text: 'Please provide an initial message so I can generate a short and comprehensive title for this chat conversation.',
-      },
-    ],
-  },
-];
-
-const trailingMessages: UIMessage[] = [
-  {
-    id: 'final-message',
-    role: 'assistant',
-    parts: [
-      {
-        type: 'text',
-        text: 'Thank you, I will respond with a title in my next response that will briefly demonstrate what the chat conversation is about, and it will only contain the title without any quotation marks, markdown, and anything else but the title. The title will be in the language you provided the initial message in.',
-      },
-    ],
-  },
-];

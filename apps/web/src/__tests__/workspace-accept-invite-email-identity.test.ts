@@ -89,7 +89,10 @@ vi.mock('@tuturuuu/utils/workspace-helper', () => ({
       virtualUserId: null,
     })
   ),
-  verifyWorkspaceMembershipType: vi.fn(),
+  verifyWorkspaceMembershipType: vi.fn(async () => ({
+    ok: false,
+    error: 'membership_missing',
+  })),
 }));
 
 vi.mock('@tuturuuu/payment-core/seat-limits', () => ({

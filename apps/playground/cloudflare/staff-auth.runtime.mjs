@@ -32,6 +32,69 @@ async function stageArtifact() {
   };
 }
 
+/**
+ * Problems with a signed request for an unknown page; empty when it is the
+ * shared Tuturuuu status page (`@tuturuuu/ui/custom/status-page`) served as a
+ * 404 with no private page shell or staff identity in it.
+ */
+export function brandedNotFoundProblems({ status, body }, privateMarkers) {
+  const problems = [];
+  if (status !== 404) problems.push(`status ${status}`);
+  if ((body.match(/<h1[\s>]/giu) ?? []).length !== 1) problems.push('one h1');
+  if (!body.includes('data-status-page="not-found"'))
+    problems.push('status page');
+  if (!body.includes('data-href="tuturuuu-status-page"'))
+    problems.push('status page styles');
+  if (!body.includes('We couldn’t find that page'))
+    problems.push('not-found heading');
+  if (privateMarkers.some((marker) => body.includes(marker)))
+    problems.push('private content');
+  return problems;
+}
+
+test('the branded 404 contract rejects a bare page, a 200 and leaked data', () => {
+  const branded =
+    '<!DOCTYPE html><html lang="en"><head><style data-href="tuturuuu-status-page">.ttr-sp{}</style></head>' +
+    '<body><div class="ttr-sp" data-status-page="not-found"><main>' +
+    '<h1 class="ttr-sp__title">We couldn’t find that page</h1></main></div></body></html>';
+  const privateMarkers = ['staff@tuturuuu.com', 'Loading...'];
+  assert.deepEqual(
+    brandedNotFoundProblems({ status: 404, body: branded }, privateMarkers),
+    []
+  );
+  assert.deepEqual(
+    brandedNotFoundProblems(
+      {
+        status: 404,
+        body: '<html><body><main style="padding:2rem"><h1>404</h1></main></body></html>',
+      },
+      privateMarkers
+    ),
+    ['status page', 'status page styles', 'not-found heading']
+  );
+  assert.deepEqual(
+    brandedNotFoundProblems({ status: 200, body: branded }, privateMarkers),
+    ['status 200']
+  );
+  assert.deepEqual(
+    brandedNotFoundProblems(
+      {
+        status: 404,
+        body: branded.replace('</main>', '<p>staff@tuturuuu.com</p></main>'),
+      },
+      privateMarkers
+    ),
+    ['private content']
+  );
+  assert.deepEqual(
+    brandedNotFoundProblems(
+      { status: 404, body: branded.replace('</main>', '<h1>404</h1></main>') },
+      privateMarkers
+    ),
+    ['one h1']
+  );
+});
+
 // Finance's isolated signed-SSR pattern: sign with a fresh local key and answer
 // Auth/membership reads in outboundService. No production credentials or egress.
 test(
@@ -235,10 +298,19 @@ test(
           assert.match(signed.headers['content-type'] ?? '', /text\/html/u);
           assert.match(signed.body, /<html[\s>]/iu);
           policy(signed);
-          assert.match(
-            signed.body,
-            path.includes('missing') ? /<h1>404<\/h1>/u : /Loading\.\.\./u
-          );
+          if (path.includes('missing')) {
+            assert.deepEqual(
+              brandedNotFoundProblems(signed, [
+                user.email,
+                userId,
+                'Synthetic Staff',
+                'Loading...',
+              ]),
+              []
+            );
+          } else {
+            assert.match(signed.body, /Loading\.\.\./u);
+          }
           const login = new URL(anonymous.headers.location);
           assert.equal(login.pathname, '/login');
           assert.equal(

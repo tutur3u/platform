@@ -36,7 +36,7 @@ export function HeroSection() {
             <span
               {...rise(
                 1,
-                'block animate-text-sheen bg-[linear-gradient(100deg,var(--purple),var(--blue)_35%,var(--cyan)_50%,var(--blue)_65%,var(--purple))] bg-[length:250%_auto] bg-clip-text text-transparent'
+                'block -mb-[0.15em] animate-text-sheen pb-[0.15em] bg-[linear-gradient(100deg,var(--purple),var(--blue)_35%,var(--cyan)_50%,var(--blue)_65%,var(--purple))] bg-[length:250%_auto] bg-clip-text text-transparent'
               )}
             >
               {t('title.line2')}
