@@ -1,5 +1,6 @@
 // Production platform deployment marker producer verification for migration apply.
-// Mirrors staging marker proof contracts without accepting deployment status alone.
+// Marker payload runId/runUrl come from record-vercel-deployment.ts (GITHUB_RUN_ID of the
+// Production Deployment Planner caller); workflowName in payload is the callee workflow file.
 const assert = (ok, code) => {
   if (!ok) throw new Error(code);
 };
@@ -15,15 +16,34 @@ const snapshot = (value) =>
       : item
   );
 
+// GITHUB_TOKEN deployment creation from vercel-production-platform record steps.
+const TRUSTED_DEPLOYMENT_MARKER_CREATOR = Object.freeze({
+  login: 'github-actions[bot]',
+  id: 41898282,
+  type: 'Bot',
+});
+
 const PRODUCTION_PLATFORM = {
   environment: 'vercel-production-platform',
-  workflowName: 'vercel-production-platform.yaml',
-  workflowPath: '.github/workflows/vercel-production-platform.yaml',
-  workflowDisplayName: 'Vercel Platform Production Deployment',
+  markerWorkflowName: 'vercel-production-platform.yaml',
   refName: 'production',
   ref: 'refs/heads/production',
-  allowedEvents: ['workflow_call', 'workflow_dispatch'],
+  callerWorkflowName: 'vercel-production.yaml',
+  callerWorkflowPath: '.github/workflows/vercel-production.yaml',
+  callerWorkflowDisplayName: 'Production Deployment Planner',
+  callerAllowedEvents: Object.freeze(['push', 'workflow_dispatch']),
+  callerDeployJobName: 'deploy-platform',
+  calleeWorkflowName: 'vercel-production-platform.yaml',
+  calleeWorkflowPath: '.github/workflows/vercel-production-platform.yaml',
+  calleeWorkflowDisplayName: 'Vercel Platform Production Deployment',
+  calleeDeployJobName: 'Deploy-Production',
+  recordStep: 'Record successful Vercel deployment marker',
+  trustedDeploymentCreator: TRUSTED_DEPLOYMENT_MARKER_CREATOR,
   contracts: [
+    [
+      '.github/workflows/vercel-production.yaml',
+      ['76197c03e41dca432e53619bc384cfdd1c879576'],
+    ],
     [
       '.github/workflows/vercel-production-platform.yaml',
       [
@@ -37,8 +57,6 @@ const PRODUCTION_PLATFORM = {
       ['53b07b48226b55ad967e95a85cd62e22d449b07c'],
     ],
   ],
-  recordStep: 'Record successful Vercel deployment marker',
-  deployJob: 'Deploy-Production',
 };
 
 export function profileConfig(name) {
@@ -47,7 +65,17 @@ export function profileConfig(name) {
   return null;
 }
 
+export function checkMarkerCreator(deployment, trusted) {
+  assert(
+    deployment.creator?.login === trusted.login &&
+      deployment.creator?.id === trusted.id &&
+      deployment.creator?.type === trusted.type,
+    'marker-creator-contract'
+  );
+}
+
 export function checkMarkerPayload(d, p, profile, source) {
+  checkMarkerCreator(d, profile.trustedDeploymentCreator);
   assert(
     positive(d.id) &&
       d.sha === source &&
@@ -55,7 +83,7 @@ export function checkMarkerPayload(d, p, profile, source) {
       d.environment === profile.environment &&
       p.sha === source &&
       p.markerKind === 'deployment' &&
-      p.workflowName === profile.workflowName &&
+      p.workflowName === profile.markerWorkflowName &&
       p.refName === profile.refName &&
       p.ref === profile.ref,
     'marker-source-contract'
@@ -73,11 +101,18 @@ export function checkMarkerPayload(d, p, profile, source) {
   );
 }
 
-export function checkProducerIdentity(run, p, repository, repo, workflow, profile) {
+export function checkCallerProducerIdentity(
+  run,
+  p,
+  repository,
+  repo,
+  callerWorkflow,
+  profile
+) {
   assert(
     run.id === Number(p.runId) &&
-      run.workflow_id === workflow.id &&
-      run.path === profile.workflowPath &&
+      run.workflow_id === callerWorkflow.id &&
+      run.path === profile.callerWorkflowPath &&
       run.head_branch === profile.refName &&
       sha(run.head_sha) &&
       run.repository?.id === repository.id &&
@@ -88,15 +123,28 @@ export function checkProducerIdentity(run, p, repository, repo, workflow, profil
   );
 }
 
-export function checkProducerAttempt(run, p, profile, source) {
+export function checkCallerProducerAttempt(run, profile, source) {
   assert(
-    run.run_attempt === Number(p.runAttempt) &&
-      profile.allowedEvents.includes(run.event) &&
+    run.run_attempt >= 1 &&
+      profile.callerAllowedEvents.includes(run.event) &&
       run.status === 'completed' &&
       run.conclusion === 'success',
     'producer-current-attempt-contract'
   );
   assert(run.head_sha === source, 'direct-source');
+}
+
+export function checkCalleeProducerAttempt(run, profile, source) {
+  assert(
+    run.workflow_id > 0 &&
+      run.path === profile.calleeWorkflowPath &&
+      run.head_branch === profile.refName &&
+      run.head_sha === source &&
+      run.event === 'workflow_call' &&
+      run.status === 'completed' &&
+      run.conclusion === 'success',
+    'callee-producer-contract'
+  );
 }
 
 function payload(deployment) {
@@ -220,15 +268,25 @@ async function main() {
       repository.default_branch === 'main',
     'repository-identity'
   );
-  const { data: workflow } = await get(
-    `${base}/actions/workflows/${profile.workflowName}`
+  const { data: callerWorkflow } = await get(
+    `${base}/actions/workflows/${profile.callerWorkflowName}`
   );
   assert(
-    positive(workflow.id) &&
-      workflow.path === profile.workflowPath &&
-      workflow.name === profile.workflowDisplayName &&
-      workflow.state === 'active',
-    'workflow-identity'
+    positive(callerWorkflow.id) &&
+      callerWorkflow.path === profile.callerWorkflowPath &&
+      callerWorkflow.name === profile.callerWorkflowDisplayName &&
+      callerWorkflow.state === 'active',
+    'caller-workflow-identity'
+  );
+  const { data: calleeWorkflow } = await get(
+    `${base}/actions/workflows/${profile.calleeWorkflowName}`
+  );
+  assert(
+    positive(calleeWorkflow.id) &&
+      calleeWorkflow.path === profile.calleeWorkflowPath &&
+      calleeWorkflow.name === profile.calleeWorkflowDisplayName &&
+      calleeWorkflow.state === 'active',
+    'callee-workflow-identity'
   );
   const rows = await inventory(
     `${base}/deployments?environment=${profile.environment}&sha=${source}`
@@ -248,12 +306,12 @@ async function main() {
   );
   let marker;
   let p;
-  let run;
+  let callerRun;
   for (const candidate of rows) {
     try {
       const payloadValue = payload(candidate);
       if (payloadValue.markerKind !== 'deployment') continue;
-      if (payloadValue.workflowName !== profile.workflowName) continue;
+      if (payloadValue.workflowName !== profile.markerWorkflowName) continue;
       checkMarkerPayload(candidate, payloadValue, profile, source);
       p = payloadValue;
       assert(
@@ -263,16 +321,23 @@ async function main() {
       const { data: candidateRun } = await get(
         `${base}/actions/runs/${p.runId}`
       );
-      checkProducerIdentity(candidateRun, p, repository, repo, workflow, profile);
-      checkProducerAttempt(candidateRun, p, profile, source);
+      checkCallerProducerIdentity(
+        candidateRun,
+        p,
+        repository,
+        repo,
+        callerWorkflow,
+        profile
+      );
+      checkCallerProducerAttempt(candidateRun, profile, source);
       marker = candidate;
-      run = candidateRun;
+      callerRun = candidateRun;
       break;
     } catch {
       continue;
     }
   }
-  assert(marker && p && run, 'eligible-marker-missing');
+  assert(marker && p && callerRun, 'eligible-marker-missing');
   const { data: statusRows } = await get(
     `${base}/deployments/${marker.id}/statuses?per_page=1&page=1`
   );
@@ -300,7 +365,7 @@ async function main() {
           'unknown-producer-contract'
         );
         unique.add(entry.sha);
-        if (path === profile.workflowPath && revision === producerHead)
+        if (path === profile.calleeWorkflowPath && revision === producerHead)
           producerWorkflow = entry.sha;
       }
       for (const expected of unique) {
@@ -329,26 +394,62 @@ async function main() {
     sourceContracts.set(producerHead, producerWorkflow);
     return producerWorkflow;
   }
-  await checkContracts(run.head_sha);
-  const jobs = await inventory(
+  await checkContracts(callerRun.head_sha);
+  const callerJobs = await inventory(
     `${base}/actions/runs/${p.runId}/attempts/${p.runAttempt}/jobs`,
     'jobs'
   );
-  assert(jobs.length >= 1, 'migration-job-inventory');
-  const job = jobs.find((row) => row.name === profile.deployJob);
-  assert(
-    job &&
-      job.run_id === run.id &&
-      job.run_attempt === run.run_attempt &&
-      job.head_sha === run.head_sha &&
-      job.status === 'completed' &&
-      job.conclusion === 'success',
-    'migration-job-contract'
+  const callerJob = callerJobs.find(
+    (row) => row.name === profile.callerDeployJobName
   );
-  const steps = job.steps.filter((step) => step.name === profile.recordStep);
-  assert(steps.length === 1, 'migration-step-identity');
   assert(
-    steps[0].status === 'completed' && steps[0].conclusion === 'success',
+    callerJob &&
+      callerJob.run_id === callerRun.id &&
+      callerJob.run_attempt === callerRun.run_attempt &&
+      callerJob.head_sha === callerRun.head_sha &&
+      callerJob.status === 'completed' &&
+      callerJob.conclusion === 'success',
+    'caller-deploy-job-contract'
+  );
+  const childRuns = await inventory(
+    `${base}/actions/workflows/${profile.calleeWorkflowName}/runs?head_sha=${source}&status=completed`,
+    'workflow_runs'
+  );
+  const calleeRun = childRuns.find(
+    (row) =>
+      row.head_sha === source &&
+      row.head_branch === profile.refName &&
+      row.event === 'workflow_call' &&
+      row.conclusion === 'success' &&
+      row.status === 'completed' &&
+      row.path === profile.calleeWorkflowPath
+  );
+  assert(calleeRun, 'callee-producer-missing');
+  checkCalleeProducerAttempt(calleeRun, profile, source);
+  assert(calleeRun.workflow_id === calleeWorkflow.id, 'callee-workflow-binding');
+  const calleeJobs = await inventory(
+    `${base}/actions/runs/${calleeRun.id}/attempts/${calleeRun.run_attempt}/jobs`,
+    'jobs'
+  );
+  const calleeJob = calleeJobs.find(
+    (row) => row.name === profile.calleeDeployJobName
+  );
+  assert(
+    calleeJob &&
+      calleeJob.run_id === calleeRun.id &&
+      calleeJob.run_attempt === calleeRun.run_attempt &&
+      calleeJob.head_sha === calleeRun.head_sha &&
+      calleeJob.status === 'completed' &&
+      calleeJob.conclusion === 'success',
+    'callee-deploy-job-contract'
+  );
+  const recordSteps = calleeJob.steps.filter(
+    (step) => step.name === profile.recordStep
+  );
+  assert(recordSteps.length === 1, 'migration-step-identity');
+  assert(
+    recordSteps[0].status === 'completed' &&
+      recordSteps[0].conclusion === 'success',
     'migration-step-success'
   );
   const { data: rereadMarker } = await get(`${base}/deployments/${marker.id}`);
@@ -362,12 +463,19 @@ async function main() {
     'marker-status-changed'
   );
   const { data: rereadRun } = await get(`${base}/actions/runs/${p.runId}`);
-  checkProducerIdentity(rereadRun, p, repository, repo, workflow, profile);
-  checkProducerAttempt(rereadRun, p, profile, source);
-  assert(snapshot(rereadRun) === snapshot(run), 'producer-changed');
+  checkCallerProducerIdentity(
+    rereadRun,
+    p,
+    repository,
+    repo,
+    callerWorkflow,
+    profile
+  );
+  checkCallerProducerAttempt(rereadRun, profile, source);
+  assert(snapshot(rereadRun) === snapshot(callerRun), 'producer-changed');
   assert(Date.now() <= deadline, 'proof-deadline');
   console.log(
-    `Production platform deployment marker producer=${run.id} attempt=${run.run_attempt} deployment=${marker.id}`
+    `Production platform deployment marker caller=${callerRun.id} callee=${calleeRun.id} deployment=${marker.id}`
   );
 }
 

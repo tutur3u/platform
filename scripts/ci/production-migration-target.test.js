@@ -63,7 +63,7 @@ test('newer unpromoted staging completion resolves and gates only current produc
     .requests()
     .split('\n')
     .filter((line) => line.startsWith('FETCH '));
-  assert.equal(fetches.length, 29);
+  assert.equal(fetches.length, 34);
   assert.match(
     fetches.join('\n'),
     /deployments\?environment=vercel-production-platform/
@@ -163,8 +163,12 @@ for (const overrides of [
   test(`current production prerequisites remain required: ${JSON.stringify(overrides)}`, (t) => {
     const setup = fixture(t, overrides);
     const result = setup.run(evaluateStep, { TARGET_SHA: productionSha });
-    const stagingRejected = Object.keys(overrides).some((key) =>
-      key.startsWith('STAGING_')
+    const stagingRejected = Object.keys(overrides).some(
+      (key) =>
+        key.startsWith('STAGING_') ||
+        key === 'MARKER_STATE' ||
+        key === 'MARKER_PAYLOAD' ||
+        key === 'MARKER_SHA'
     );
     if (stagingRejected) {
       assert.notEqual(result.status, 0);
@@ -221,16 +225,24 @@ for (const [label, overrides] of [
   [
     'unfinished platform producer',
     {
-      PLATFORM_RUN_STATUS: 'in_progress',
-      PLATFORM_RUN_CONCLUSION: 'failure',
+      PLATFORM_CALLER_STATUS: 'in_progress',
+      PLATFORM_CALLER_CONCLUSION: 'failure',
     },
   ],
   [
-    'forged workflow file',
-    { PLATFORM_WORKFLOW_PATH: '.github/workflows/evil.yaml' },
+    'forged caller workflow file',
+    { PLATFORM_CALLER_WORKFLOW_PATH: '.github/workflows/evil.yaml' },
   ],
-  ['wrong producer branch', { PLATFORM_HEAD_BRANCH: 'main' }],
-  ['wrong producer SHA', { PLATFORM_PRODUCER_SHA: stagingSha }],
+  ['wrong caller branch', { PLATFORM_CALLER_BRANCH: 'main' }],
+  ['wrong caller SHA', { PLATFORM_CALLER_SHA: stagingSha }],
+  [
+    'forged deployment creator',
+    {
+      PLATFORM_CREATOR_LOGIN: 'evil',
+      PLATFORM_CREATOR_ID: '1',
+      PLATFORM_CREATOR_TYPE: 'User',
+    },
+  ],
 ]) {
   test(`production marker producer verification rejects ${label}`, (t) => {
     const setup = fixture(t, overrides);
@@ -602,7 +614,7 @@ for (const [target, wrapper] of [
           .requests()
           .split('\n')
           .filter((line) => line.startsWith('FETCH ')).length,
-        target === wrapper ? 29 : 30
+        target === wrapper ? 34 : 35
       );
     }
   });
