@@ -52,8 +52,19 @@ import type { CmsStrings } from '../../cms-strings';
 import { getCmsMediaQueryKey } from '../../media/use-cms-media-library';
 import { useCmsLivePreview } from '../../use-cms-live-preview';
 import { getCmsStudioQueryKey, useCmsStudio } from '../../use-cms-studio';
+import { pageEditorLabelsFromStrings } from '../../page-editor/page-editor-labels-from-strings';
+import {
+  historyItemsForEntry,
+  orderSectionsForEntry,
+} from '../../page-editor/page-editor-model';
+import { PageEditorShell } from '../../page-editor/page-editor-shell';
+import {
+  type PageEditorAction,
+  PageEditorTopBar,
+} from '../../page-editor/page-editor-top-bar';
+import { SectionOutline } from '../../page-editor/section-outline';
+import { VersionHistoryPanel } from '../../page-editor/version-history-panel';
 import { EntryDetailConfirmDialogs } from './entry-detail-confirm-dialogs';
-import { EntryDetailHeader } from './entry-detail-header';
 import {
   areStringArraysEqual,
   asProfileDataRecord,
@@ -86,6 +97,8 @@ import {
   buildEntryFormState,
   type FeaturedEntryEditorConfig,
   type FeaturedPlacementConfig,
+  formatDateLabel,
+  formatStatus,
   fromDateTimeLocalValue,
   getEntryDescriptionEditorContent,
   getMarkdownBlockContent,
@@ -148,6 +161,27 @@ export function EntryDetailClient({
     studio?.fieldDefinitions ?? initialStudio?.fieldDefinitions ?? [];
   const [previewOpen, setPreviewOpen] = useState(false);
   const [activeStep, setActiveStep] = useState<EntryEditorStep>('content');
+  // Full-page editor presentation: read state only. Sections and history come
+  // from data the studio already loads; selection is local UI state.
+  const pageEditorLabels = useMemo(
+    () => pageEditorLabelsFromStrings(strings),
+    [strings]
+  );
+  const pageSections = useMemo(
+    () => orderSectionsForEntry(blocks, entryId),
+    [blocks, entryId]
+  );
+  const pageHistory = useMemo(
+    () =>
+      historyItemsForEntry(
+        studio?.publishEvents ?? initialStudio?.publishEvents ?? [],
+        entryId
+      ),
+    [studio?.publishEvents, initialStudio?.publishEvents, entryId]
+  );
+  const [selectedSectionId, setSelectedSectionId] = useState<string | null>(
+    null
+  );
   const [previewRefreshToken, setPreviewRefreshToken] = useState(0);
   const [deleteEntryDialogOpen, setDeleteEntryDialogOpen] = useState(false);
   const [deleteMediaDialogOpen, setDeleteMediaDialogOpen] = useState(false);
@@ -1954,8 +1988,49 @@ export function EntryDetailClient({
     }
   };
 
+  const pageEditorPublished = activeEntry.status === 'published';
+  const pageEditorBadges = [
+    ...(coverAsset ? [{ id: 'cover', label: strings.coverBadge }] : []),
+    ...(featuredPlacementLabel && isFeaturedPlacementActive
+      ? [{ id: 'featured', label: featuredPlacementLabel }]
+      : []),
+    ...(mediaProcessing
+      ? [{ id: 'media', label: strings.mediaProcessingLabel }]
+      : []),
+  ];
+  const pageEditorActions: PageEditorAction[] = [
+    {
+      id: 'refresh',
+      label: strings.refreshAction,
+      onSelect: refreshWorkspace,
+    },
+    {
+      id: 'duplicate',
+      label: strings.duplicateAction,
+      onSelect: () => duplicateEntryMutation.mutate(),
+    },
+    ...(featuredPlacementLabel
+      ? [
+          {
+            id: 'featured',
+            label: isFeaturedPlacementActive
+              ? strings.featuredPlacementRemoveAction
+              : strings.featuredPlacementAddAction,
+            disabled: featuredPlacementProcessing,
+            onSelect: toggleFeaturedPlacement,
+          },
+        ]
+      : []),
+    {
+      id: 'delete',
+      label: strings.deleteEntryAction,
+      destructive: true,
+      onSelect: () => setDeleteEntryDialogOpen(true),
+    },
+  ];
+
   const content = (
-    <div className="mx-auto min-h-[calc(100svh-5rem)] max-w-[1580px] space-y-6 pb-10">
+    <>
       <EntryDetailUploadInputs
         coverInputRef={coverInputRef}
         mediaInputAccept={mediaInputAccept}
@@ -1966,241 +2041,283 @@ export function EntryDetailClient({
         webglInputRef={webglInputRef}
       />
 
-      <EntryDetailHeader
-        activeEntry={activeEntry}
-        activeEntryTitle={activeEntryTitle}
-        collectionTitle={collectionTitle}
-        coverVisible={Boolean(coverAsset)}
-        dirty={dirty}
-        featuredPlacementActive={isFeaturedPlacementActive}
-        featuredPlacementIndex={featuredPlacementIndex}
-        featuredPlacementLabel={featuredPlacementLabel}
-        featuredPlacementProcessing={featuredPlacementProcessing}
-        mediaProcessing={mediaProcessing}
-        onBack={() => requestExit('back')}
-        onDelete={() => setDeleteEntryDialogOpen(true)}
-        onDuplicate={() => duplicateEntryMutation.mutate()}
-        onOpenPreview={() => setPreviewOpen(true)}
-        onPublishToggle={() => void togglePublish()}
-        onRefresh={refreshWorkspace}
-        onSave={() =>
-          void saveCurrentEntry().catch((error: unknown) => {
-            toast.error(
-              error instanceof Error ? error.message : strings.saveFailedToast
-            );
-          })
-        }
-        onToggleFeaturedPlacement={toggleFeaturedPlacement}
-        publishPending={publishEntryMutation.isPending}
-        saveDisabled={!dirty || saveProcessing}
-        saveProcessing={saveProcessing}
-        strings={strings}
-        variant={variant}
-      />
-
-      <EntryDetailSteps
-        activeStep={activeStep}
-        onStepChange={setActiveStep}
-        strings={strings}
-      />
-
-      <div className="mx-auto w-full max-w-3xl space-y-6">
-        <EntryDetailMainColumn
-          activeStep={activeStep}
-          activeEntry={activeEntry}
-          assetCaptions={assetCaptions}
-          bodyMarkdown={bodyMarkdown}
-          bodyMarkdownLabel={strings.bodyMarkdownLabel}
-          bodyMarkdownPlaceholder={strings.previewEmptyDescription}
-          bodyMarkdownWriteLabel={strings.markdownWriteLabel}
-          coverAltText={coverAltText}
-          coverAsset={coverAsset}
-          coverDirty={coverDirty}
-          deleteAssetsPending={deleteAssetsMutation.isPending}
-          descriptionContent={descriptionContent}
-          mediaAssetTypes={supportedAssetTypes}
-          mediaAssets={mediaAssets}
-          mediaProcessing={mediaProcessing}
-          onBodyMarkdownChange={setBodyMarkdown}
-          onCaptionChange={(assetId, value) =>
-            setAssetCaptions((current) => ({
-              ...current,
-              [assetId]: value,
-            }))
-          }
-          onCoverAltTextChange={setCoverAltText}
-          onCoverInputClick={() => coverInputRef.current?.click()}
-          onDeleteSelectedMedia={() => setDeleteMediaDialogOpen(true)}
-          onDeleteSingleAsset={deleteSingleAsset}
-          onDescriptionChange={setDescriptionContent}
-          onMediaDrop={handleMediaFiles}
-          onMoveMediaAsset={(assetId, direction) =>
-            moveMediaAssetMutation.mutate({ assetId, direction })
-          }
-          onOpenPreview={() => setPreviewOpen(true)}
-          onSaveAssetCaption={(assetId) =>
-            saveAssetCaptionMutation.mutate(assetId)
-          }
-          onSaveCover={() => saveCoverMutation.mutate()}
-          onSelectAllMedia={() =>
-            setSelectedAssetIds((current) =>
-              current.length === mediaAssets.length
-                ? []
-                : mediaAssets.map((asset) => asset.id)
-            )
-          }
-          onSetAsCover={(assetId) => setAsCoverMutation.mutate(assetId)}
-          onSubtitleChange={(value) =>
-            setEntryForm((current) =>
-              current ? { ...current, subtitle: value } : current
-            )
-          }
-          onToggleAssetSelection={toggleAssetSelection}
-          onUploadMediaClick={() => mediaInputRef.current?.click()}
-          onUploadWebglClick={() => webglInputRef.current?.click()}
-          saveAssetCaptionPending={saveAssetCaptionMutation.isPending}
-          saveCoverPending={saveCoverMutation.isPending}
-          selectedAssetCount={selectedAssetCount}
-          selectedAssetIds={selectedAssetIds}
-          setAsCoverPending={setAsCoverMutation.isPending}
-          moveMediaPending={moveMediaAssetMutation.isPending}
-          strings={strings}
-          subtitle={entryForm.subtitle}
-          supportsMarkdownBody={supportsMarkdownBody}
-          supportsWebglPackage={supportsWebglPackage}
-          uploadCoverPending={uploadCoverMutation.isPending}
-          uploadMediaPending={uploadMediaMutation.isPending}
-          uploadProgressItems={uploadProgressItems}
-          uploadWebglPending={uploadWebglPackageMutation.isPending}
-          webglPackageAsset={webglPackageAsset}
-          webglPackagePlayerPath={webglPackagePlayerPath}
-          webglPackagePublicPlayerPath={webglPackagePublicPlayerPath}
-        />
-        {activeStep === 'content' ? (
-          <EntryDetailSchemaFieldsCard
-            fieldDefinitions={activeFieldDefinitions}
-            metadata={schemaMetadata}
-            onMetadataChange={setSchemaMetadata}
-            onProfileDataChange={setSchemaProfileData}
-            profileData={schemaProfileData}
-            strings={strings}
-          />
-        ) : null}
-
-        <EntryDetailSidebar
-          activeStep={activeStep}
-          activeCollectionDescription={activeCollection?.description}
-          activeCollectionSlug={activeCollection?.slug}
-          activeCollectionTitle={collectionTitle}
-          activeEntry={activeEntry}
-          artworkOptions={artworkOptions}
-          binding={binding}
-          categoryCreateOpen={categoryCreateOpen}
-          categoryDraft={categoryDraft}
-          categoryOptions={categoryOptions}
-          configuredCategoryOptions={configuredCategoryOptions}
-          configuredTagOptions={configuredTagOptions}
-          createFeaturedPlacementConfigPending={
-            createFeaturedPlacementConfigMutation.isPending
-          }
-          entryForm={entryForm}
-          featuredEntryConfig={featuredEntryConfig}
-          featuredEntrySlugs={featuredEntrySlugs}
-          featuredPlacementActive={isFeaturedPlacementActive}
-          featuredPlacementConfig={featuredPlacementConfig}
-          featuredPlacementIndex={featuredPlacementIndex}
-          featuredPlacementProcessing={featuredPlacementProcessing}
-          featuredPlacementSlugsLength={featuredPlacementSlugs.length}
-          isTaxonomyConfigEditor={isTaxonomyConfigEditor}
-          onAddTags={addEntryTags}
-          onApplyCategory={applyEntryCategory}
-          onCategoryCreateOpenChange={setCategoryCreateOpen}
-          onCategoryDraftChange={setCategoryDraft}
-          onCategorySelectionChange={(value) => {
-            if (isTaxonomyConfigEditor) {
-              if (Array.isArray(value)) {
-                setConfiguredCategoryOptions(normalizeTaxonomyOptions(value));
-              }
-              return;
+      <PageEditorShell
+        labels={pageEditorLabels}
+        topBar={
+          <PageEditorTopBar
+            labels={pageEditorLabels}
+            title={activeEntryTitle}
+            context={collectionTitle}
+            status={{
+              label: formatStatus(activeEntry.status, strings),
+              live: pageEditorPublished,
+            }}
+            badges={pageEditorBadges}
+            saveState={
+              saveProcessing
+                ? { kind: 'saving' }
+                : dirty
+                  ? { kind: 'unsaved' }
+                  : { kind: 'saved' }
             }
-
-            setEntryForm((current) =>
-              current && typeof value === 'string'
-                ? { ...current, category: value }
-                : current
-            );
-          }}
-          onClearCategories={
-            isTaxonomyConfigEditor
-              ? clearConfiguredCategories
-              : () =>
-                  setEntryForm((current) =>
-                    current ? { ...current, category: '' } : current
-                  )
-          }
-          onClearTags={
-            isTaxonomyConfigEditor ? clearConfiguredTags : clearEntryTags
-          }
-          onCreateFeaturedPlacementConfig={() =>
-            createFeaturedPlacementConfigMutation.mutate()
-          }
-          onFeaturedEntryMove={moveFeaturedEntry}
-          onFeaturedEntryToggle={toggleFeaturedEntrySelection}
-          onFeaturedPlacementMove={moveFeaturedPlacement}
-          onFeaturedPlacementToggle={toggleFeaturedPlacement}
-          onPairedArtworkChange={setPairedArtworkSlug}
-          onRemoveCategory={removeConfiguredCategory}
-          onRemoveTag={(tag) =>
-            isTaxonomyConfigEditor
-              ? removeConfiguredTag(tag)
-              : removeEntryTag(tag)
-          }
-          onScheduledForChange={(value) =>
-            setEntryForm((current) =>
-              current ? { ...current, scheduledFor: value } : current
-            )
-          }
-          onSlugChange={(value) =>
-            setEntryForm((current) =>
-              current ? { ...current, slug: value } : current
-            )
-          }
-          onStatusChange={(status) =>
-            setEntryForm((current) =>
-              current ? { ...current, status } : current
-            )
-          }
-          onTagCreateOpenChange={setTagCreateOpen}
-          onTagDraftChange={setTagDraft}
-          onTagSelectionChange={(value) =>
-            isTaxonomyConfigEditor
-              ? setConfiguredTagOptions(normalizeTaxonomyOptions(value))
-              : setEntryForm((current) =>
-                  current ? { ...current, tags: value } : current
+            back={
+              variant === 'page'
+                ? {
+                    label: strings.backToEpmAction,
+                    onBack: () => requestExit('back'),
+                  }
+                : undefined
+            }
+            save={{
+              label: strings.saveAction,
+              disabled: !dirty || saveProcessing,
+              onSave: () =>
+                void saveCurrentEntry().catch((error: unknown) => {
+                  toast.error(
+                    error instanceof Error
+                      ? error.message
+                      : strings.saveFailedToast
+                  );
+                }),
+            }}
+            preview={{
+              label: strings.openPreviewAction,
+              onPreview: () => setPreviewOpen(true),
+            }}
+            publish={{
+              label: pageEditorPublished
+                ? strings.unpublishAction
+                : strings.publishAction,
+              pending: publishEntryMutation.isPending || saveProcessing,
+              onPublish: () => void togglePublish(),
+            }}
+            moreActionsLabel={strings.moreActionsLabel}
+            actions={pageEditorActions}
+          />
+        }
+        outline={
+          // Selection only: section move/add/duplicate/delete wait on the
+          // atomic ordering and section suppliers, so no handlers are passed.
+          <SectionOutline
+            sections={pageSections}
+            selectedId={selectedSectionId ?? pageSections[0]?.id ?? null}
+            labels={pageEditorLabels}
+            onSelect={setSelectedSectionId}
+          />
+        }
+        canvas={
+          <div className="space-y-6">
+            <EntryDetailSteps
+              activeStep={activeStep}
+              onStepChange={setActiveStep}
+              strings={strings}
+            />
+            <EntryDetailMainColumn
+              activeStep={activeStep}
+              activeEntry={activeEntry}
+              assetCaptions={assetCaptions}
+              bodyMarkdown={bodyMarkdown}
+              bodyMarkdownLabel={strings.bodyMarkdownLabel}
+              bodyMarkdownPlaceholder={strings.previewEmptyDescription}
+              bodyMarkdownWriteLabel={strings.markdownWriteLabel}
+              coverAltText={coverAltText}
+              coverAsset={coverAsset}
+              coverDirty={coverDirty}
+              deleteAssetsPending={deleteAssetsMutation.isPending}
+              descriptionContent={descriptionContent}
+              mediaAssetTypes={supportedAssetTypes}
+              mediaAssets={mediaAssets}
+              mediaProcessing={mediaProcessing}
+              onBodyMarkdownChange={setBodyMarkdown}
+              onCaptionChange={(assetId, value) =>
+                setAssetCaptions((current) => ({
+                  ...current,
+                  [assetId]: value,
+                }))
+              }
+              onCoverAltTextChange={setCoverAltText}
+              onCoverInputClick={() => coverInputRef.current?.click()}
+              onDeleteSelectedMedia={() => setDeleteMediaDialogOpen(true)}
+              onDeleteSingleAsset={deleteSingleAsset}
+              onDescriptionChange={setDescriptionContent}
+              onMediaDrop={handleMediaFiles}
+              onMoveMediaAsset={(assetId, direction) =>
+                moveMediaAssetMutation.mutate({ assetId, direction })
+              }
+              onOpenPreview={() => setPreviewOpen(true)}
+              onSaveAssetCaption={(assetId) =>
+                saveAssetCaptionMutation.mutate(assetId)
+              }
+              onSaveCover={() => saveCoverMutation.mutate()}
+              onSelectAllMedia={() =>
+                setSelectedAssetIds((current) =>
+                  current.length === mediaAssets.length
+                    ? []
+                    : mediaAssets.map((asset) => asset.id)
                 )
-          }
-          onTitleChange={(value) =>
-            setEntryForm((current) =>
-              current ? { ...current, title: value } : current
-            )
-          }
-          pairedArtworkSlug={pairedArtworkSlug}
-          publishReadiness={publishReadiness}
-          strings={strings}
-          supportsPairedVisual={supportsPairedVisual}
-          tagCreateOpen={tagCreateOpen}
-          tagDraft={tagDraft}
-          tagOptions={tagOptions}
-          taxonomyConfigDirty={taxonomyConfigDirty}
-          taxonomyScopeLabel={taxonomySectionConfig?.sectionTitle ?? null}
-        />
+              }
+              onSetAsCover={(assetId) => setAsCoverMutation.mutate(assetId)}
+              onSubtitleChange={(value) =>
+                setEntryForm((current) =>
+                  current ? { ...current, subtitle: value } : current
+                )
+              }
+              onToggleAssetSelection={toggleAssetSelection}
+              onUploadMediaClick={() => mediaInputRef.current?.click()}
+              onUploadWebglClick={() => webglInputRef.current?.click()}
+              saveAssetCaptionPending={saveAssetCaptionMutation.isPending}
+              saveCoverPending={saveCoverMutation.isPending}
+              selectedAssetCount={selectedAssetCount}
+              selectedAssetIds={selectedAssetIds}
+              setAsCoverPending={setAsCoverMutation.isPending}
+              moveMediaPending={moveMediaAssetMutation.isPending}
+              strings={strings}
+              subtitle={entryForm.subtitle}
+              supportsMarkdownBody={supportsMarkdownBody}
+              supportsWebglPackage={supportsWebglPackage}
+              uploadCoverPending={uploadCoverMutation.isPending}
+              uploadMediaPending={uploadMediaMutation.isPending}
+              uploadProgressItems={uploadProgressItems}
+              uploadWebglPending={uploadWebglPackageMutation.isPending}
+              webglPackageAsset={webglPackageAsset}
+              webglPackagePlayerPath={webglPackagePlayerPath}
+              webglPackagePublicPlayerPath={webglPackagePublicPlayerPath}
+            />
+            {activeStep === 'content' ? (
+              <EntryDetailSchemaFieldsCard
+                fieldDefinitions={activeFieldDefinitions}
+                metadata={schemaMetadata}
+                onMetadataChange={setSchemaMetadata}
+                onProfileDataChange={setSchemaProfileData}
+                profileData={schemaProfileData}
+                strings={strings}
+              />
+            ) : null}
+            <EntryDetailStepNav
+              activeStep={activeStep}
+              onStepChange={setActiveStep}
+              strings={strings}
+            />
+          </div>
+        }
+        inspector={
+          <EntryDetailSidebar
+            activeStep={activeStep}
+            activeCollectionDescription={activeCollection?.description}
+            activeCollectionSlug={activeCollection?.slug}
+            activeCollectionTitle={collectionTitle}
+            activeEntry={activeEntry}
+            artworkOptions={artworkOptions}
+            binding={binding}
+            categoryCreateOpen={categoryCreateOpen}
+            categoryDraft={categoryDraft}
+            categoryOptions={categoryOptions}
+            configuredCategoryOptions={configuredCategoryOptions}
+            configuredTagOptions={configuredTagOptions}
+            createFeaturedPlacementConfigPending={
+              createFeaturedPlacementConfigMutation.isPending
+            }
+            entryForm={entryForm}
+            featuredEntryConfig={featuredEntryConfig}
+            featuredEntrySlugs={featuredEntrySlugs}
+            featuredPlacementActive={isFeaturedPlacementActive}
+            featuredPlacementConfig={featuredPlacementConfig}
+            featuredPlacementIndex={featuredPlacementIndex}
+            featuredPlacementProcessing={featuredPlacementProcessing}
+            featuredPlacementSlugsLength={featuredPlacementSlugs.length}
+            isTaxonomyConfigEditor={isTaxonomyConfigEditor}
+            onAddTags={addEntryTags}
+            onApplyCategory={applyEntryCategory}
+            onCategoryCreateOpenChange={setCategoryCreateOpen}
+            onCategoryDraftChange={setCategoryDraft}
+            onCategorySelectionChange={(value) => {
+              if (isTaxonomyConfigEditor) {
+                if (Array.isArray(value)) {
+                  setConfiguredCategoryOptions(normalizeTaxonomyOptions(value));
+                }
+                return;
+              }
 
-        <EntryDetailStepNav
-          activeStep={activeStep}
-          onStepChange={setActiveStep}
-          strings={strings}
-        />
-      </div>
+              setEntryForm((current) =>
+                current && typeof value === 'string'
+                  ? { ...current, category: value }
+                  : current
+              );
+            }}
+            onClearCategories={
+              isTaxonomyConfigEditor
+                ? clearConfiguredCategories
+                : () =>
+                    setEntryForm((current) =>
+                      current ? { ...current, category: '' } : current
+                    )
+            }
+            onClearTags={
+              isTaxonomyConfigEditor ? clearConfiguredTags : clearEntryTags
+            }
+            onCreateFeaturedPlacementConfig={() =>
+              createFeaturedPlacementConfigMutation.mutate()
+            }
+            onFeaturedEntryMove={moveFeaturedEntry}
+            onFeaturedEntryToggle={toggleFeaturedEntrySelection}
+            onFeaturedPlacementMove={moveFeaturedPlacement}
+            onFeaturedPlacementToggle={toggleFeaturedPlacement}
+            onPairedArtworkChange={setPairedArtworkSlug}
+            onRemoveCategory={removeConfiguredCategory}
+            onRemoveTag={(tag) =>
+              isTaxonomyConfigEditor
+                ? removeConfiguredTag(tag)
+                : removeEntryTag(tag)
+            }
+            onScheduledForChange={(value) =>
+              setEntryForm((current) =>
+                current ? { ...current, scheduledFor: value } : current
+              )
+            }
+            onSlugChange={(value) =>
+              setEntryForm((current) =>
+                current ? { ...current, slug: value } : current
+              )
+            }
+            onStatusChange={(status) =>
+              setEntryForm((current) =>
+                current ? { ...current, status } : current
+              )
+            }
+            onTagCreateOpenChange={setTagCreateOpen}
+            onTagDraftChange={setTagDraft}
+            onTagSelectionChange={(value) =>
+              isTaxonomyConfigEditor
+                ? setConfiguredTagOptions(normalizeTaxonomyOptions(value))
+                : setEntryForm((current) =>
+                    current ? { ...current, tags: value } : current
+                  )
+            }
+            onTitleChange={(value) =>
+              setEntryForm((current) =>
+                current ? { ...current, title: value } : current
+              )
+            }
+            pairedArtworkSlug={pairedArtworkSlug}
+            publishReadiness={publishReadiness}
+            strings={strings}
+            supportsPairedVisual={supportsPairedVisual}
+            tagCreateOpen={tagCreateOpen}
+            tagDraft={tagDraft}
+            tagOptions={tagOptions}
+            taxonomyConfigDirty={taxonomyConfigDirty}
+            taxonomyScopeLabel={taxonomySectionConfig?.sectionTitle ?? null}
+          />
+        }
+        history={
+          // Existing publish events only; no restore without a snapshot supplier.
+          <VersionHistoryPanel
+            items={pageHistory}
+            labels={pageEditorLabels}
+            formatDate={(iso) => formatDateLabel(iso, strings)}
+          />
+        }
+      />
 
       <EntryDetailConfirmDialogs
         discardChangesOpen={discardChangesDialogOpen}
@@ -2231,7 +2348,7 @@ export function EntryDetailClient({
         previewPending={previewQuery.isPending}
         strings={strings}
       />
-    </div>
+    </>
   );
 
   if (variant === 'dialog') {
