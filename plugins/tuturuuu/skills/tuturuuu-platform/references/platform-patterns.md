@@ -1501,6 +1501,21 @@ Keep emitted-Worker acceptance behind an explicit `test:runtime` command and
 artifact. Use `.invalid` hosts for isolated runtime preview fixtures; retain
 production-like preview refusal in the source auth matrix.
 
+
+### Native Tasks navigation and diagnostics
+
+The catch-all native Tasks route pairs its resolved model with its loaded
+pathname. Hide it when the router location differs, before awaiting the next
+server function, and key board/workspace state by actor and resource identity.
+Do not use a previous board's local snapshot as a loading placeholder. See
+`apps/tasks/src/runtime/page-transition-router.test.tsx` and the Tasks
+application page for the query-only navigation exception.
+
+Native Tasks router, startup and root fallback diagnostics use fixed messages
+without raw exceptions. CSP report diagnostics retain only allowlisted directive
+and disposition classifications. See the Tasks native runbook for artifact
+inspection and diagnostic privacy.
+
 ### Workspace picker component verification
 
 The network-fenced fictional fixture and capture matrix are documented in

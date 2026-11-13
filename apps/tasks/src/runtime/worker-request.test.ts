@@ -491,7 +491,7 @@ describe('Tasks document security headers (D87 per-app gate)', () => {
 });
 
 describe('Tasks CSP report collector', () => {
-  it('logs sanitized violations without query strings and answers 204', async () => {
+  it('logs only fixed CSP classifications and answers 204', async () => {
     const warn = vi.spyOn(console, 'warn').mockImplementation(() => undefined);
     const { createBridge, handle } = setup();
     const response = await handle(
@@ -514,7 +514,9 @@ describe('Tasks CSP report collector', () => {
     expect(response.status).toBe(204);
     expect(createBridge).not.toHaveBeenCalled();
     const logged = JSON.stringify(warn.mock.calls);
-    expect(logged).toContain('https://tuturuuu.com/tasks/verify-token');
+    expect(logged).toContain('require-trusted-types-for');
+    expect(logged).not.toContain('https://');
+    expect(logged).not.toContain('trusted-types-sink');
     expect(logged).not.toContain('token=abc');
     expect(logged).not.toContain('nextUrl');
     warn.mockRestore();

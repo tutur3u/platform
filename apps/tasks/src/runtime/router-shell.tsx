@@ -46,7 +46,7 @@ export function TasksError({
   error,
   reset,
 }: ErrorComponentProps): ReactElement {
-  if (import.meta.env.SSR) console.error('Tasks render failed', error);
+  if (import.meta.env.SSR) console.error('Tasks render failed');
   const locale = useRootLocale();
   return (
     <AppProviders locale={locale} params={{}}>
