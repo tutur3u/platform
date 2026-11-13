@@ -41,8 +41,9 @@ internal-implementation filters; everything else (including client work) is
 counted, never titled. The result, with per-week/month/year aggregates
 (`src/history/build.ts`, validated by `parseHistory`), is committed as
 `src/generated/history.json` and emitted as a hashed, immutable asset that the
-page prefetches and loads after first paint. Without a token the committed file is
-kept. Curated deliverables absorb their PRs, so each shows once in its period.
+page fetches only when the timeline comes within 600px of the viewport
+(`src/history/lazy-load.ts`); it is never prefetched. Without a token the
+committed file is kept. Curated deliverables absorb their PRs, so each shows once in its period.
 The Timeline offers Week, Month and Year views with a period scrubber; state
 lives in the URL (`/roadmap?view=month&period=2025-03`). Transitions use the View
 Transitions API when available; everything respects `prefers-reduced-motion`.
@@ -60,12 +61,29 @@ Data comes from public sources only, in two layers:
    lifts the anonymous rate limit; it is never written. If GitHub fails, the
    previous file is kept with its own timestamp. `ROADMAP_OFFLINE=1` skips the
    refresh.
-2. **In the browser.** After hydration the page refreshes from the public
-   GitHub API (unauthenticated, the viewer's own quota, about 10 calls) and
-   from `GET /roadmap/api/hosts`, then every 10 minutes while visible. The last
+2. **In the browser.** Once the page has loaded, the tab is visible and the
+   main thread is idle (`src/live/defer.ts`), the page refreshes from the
+   public GitHub API (unauthenticated, the viewer's own quota: four search
+   calls, the most recently updated PRs only, see `LIVE_SEARCH`) and from
+   `GET /roadmap/api/hosts`, then every 10 minutes while visible. A 403 or
+   429 from GitHub pauses refreshes for 30 minutes. Fresh data renders as a
+   React transition, so it never blocks input. The last
    good result is kept in `localStorage` for 10 minutes. A failed refresh shows
    the newest good data with its real observation time ("Live check
    unavailable"), never a fresher-looking label.
+
+**Hosting and the move to tuturuuu.com** are observed on every build, before
+and independent of GitHub (`src/live/build-probe.ts`, written to the untracked
+`.generated/hosting.json` and embedded by Vite). Providers come from each
+app's public build-info, probed from the build machine (outside Cloudflare).
+The migration list and paths are the repo's base-path registry
+(`ONE_ORIGIN_APP_BASE_PATHS` in `packages/utils/src/app-mounts.ts`); an app
+counts as moved only when its subdomain redirects navigations to its
+`tuturuuu.com` path, and as in progress when its own Worker already answers
+there. A build that cannot observe (for example `ROADMAP_OFFLINE=1`) shows
+every value as not verifiable, with that build's time; the page never shows a
+provider or migration value from an earlier build. The hosting section shows
+Cloudflare's official web badge, unaltered (`src/assets/brands`).
 
 `GET|HEAD /roadmap/api/hosts` probes the fixed allowlist in
 `src/live/host-probe.ts` (request input never selects a host), with manual
@@ -88,6 +106,58 @@ node --test apps/roadmap/src/roadmap-data.test.ts
 guards, the approved plan copy, feed safety (including a denylist and hashed
 names), freshness merging and the host probe. Each guard has a broken variant
 that must fail.
+
+## Performance on low-end phones
+
+Targets: Lighthouse mobile 90+, LCP under 2.5 s and interaction latency under
+200 ms at 4x CPU throttling on all four public pages.
+
+- **First paint first.** The Worker rewrites each document before hashing its
+  inline scripts (`src/defer-hydration.ts`), changing attributes only: module
+  preloads and the entry script stay in place but inert. The boot script
+  (`src/boot/roadmap-boot.js`, an async hashed same-origin asset in `<head>`,
+  so no inline script and no render blocking) sets lite mode before first paint and imports the bundle at
+  the reader's first intent (pointerdown, touchstart, keydown or focusin) or
+  within 1 s of the largest contentful paint. A tap on a button that is not
+  hydrated yet shows as pressed at once and is replayed once React has
+  hydrated it; links and `<summary>` work natively throughout. Each public
+  page keeps exactly the router's four inline scripts (JSON-LD, theme,
+  router bootstrap, stream boundary); the doctor fails a fifth or an
+  unhashed one, and runs the canonical smoke against the built Worker.
+- **History reference.** The roadmap head links the hashed history JSON as
+  `rel="alternate" type="application/json"` (never fetched), which keeps its
+  URL in the entry chunk where the canonical smoke finds it.
+- **Small CSS.** `styles.css` excludes `packages/ui/src/components` and
+  streamdown from Tailwind's class scan and lists the shell primitives it
+  renders, which keeps the stylesheet near 20 KB compressed.
+- **Fonts.** Heroes use only the preloaded 500/600 weights. The mono labels
+  use a 17 KB subset of JetBrains Mono (`src/assets/fonts`; the rebuild
+  command is in `styles.css`) instead of the 114 KB variable font.
+- **Effects by tier.** Phones, screens under 1024px and low-end devices get
+  flat surfaces. `src/lite-mode.ts` marks `html[data-lite]` before first paint
+  when a device reports four or fewer cores, 4 GB or less of memory, or Data
+  Saver. Backdrop filters, blend modes and infinite animations exist only
+  for `:root:not([data-lite])` at 1024px and wider (infinite animations also
+  need `prefers-reduced-motion: no-preference`). Below-the-fold sections use
+  `content-visibility: auto`.
+- **Split hydration.** Sections below the hero (each track card, the
+  timeline, each EduFest section) sit in `<Suspense>` boundaries. Nothing
+  suspends, so the server renders them complete (the doctor fails a pending
+  `<!--$?-->` boundary); React hydrates them one at a time, yielding between
+  them and starting with the one a reader taps.
+- **Document size.** The doctor fails any public page over half of
+  `MAX_DOCUMENT_BYTES` and prints each page's margin. Past that limit the
+  CSP cannot hash inline scripts; the Worker then serves the page as
+  rendered, without executable inline scripts (JSON-LD stays), so its
+  external module entry still loads and no unhashed script is sent.
+- **Small renders.** The status filter is local, deferred state over memoised
+  track cards; the navbar dock re-renders only the shell; the timeline
+  scrubber renders 24 chips around the selected period; each deliverable's
+  status glyph is a CSS mask, not an inline SVG.
+
+`src/perf.test.ts`, `src/hydration-loader.test.ts` and `src/a11y.test.ts` (D79, run via
+`src/roadmap-data.test.ts`) guard each rule with a broken variant;
+`src/css-guards.ts` checks the stylesheet.
 
 ## Content-Security-Policy
 

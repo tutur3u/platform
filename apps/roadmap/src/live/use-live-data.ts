@@ -1,4 +1,11 @@
-import { useCallback, useEffect, useRef, useState } from 'react';
+import {
+  startTransition,
+  useCallback,
+  useEffect,
+  useRef,
+  useState,
+} from 'react';
+import { afterIdleAndVisible } from './defer.ts';
 import {
   assembleLiveData,
   fetchMain,
@@ -12,6 +19,42 @@ import { type LiveData, mergeLiveData, parseLiveData } from './model.ts';
 const CACHE_KEY = 'tuturuuu-roadmap-live-v2';
 /** Ten minutes keeps a viewer well inside GitHub's anonymous hourly quota. */
 export const REFRESH_MS = 10 * 60_000;
+/**
+ * The browser refresh reads only the most recently updated PRs: anonymous
+ * search allows ten requests a minute, so one refresh stays at four (approved,
+ * one open page, two merged pages). Older facts come from the build snapshot.
+ */
+export const LIVE_SEARCH = { days: 8, openPages: 1, mergedPages: 2 } as const;
+/** After a 403/429 from GitHub, the browser waits this long before retrying. */
+export const RATE_LIMIT_BACKOFF_MS = 30 * 60_000;
+/** Relative times ("this week", "today") only need minute-level freshness. */
+export const CLOCK_TICK_MS = 5 * 60_000;
+const BACKOFF_KEY = 'tuturuuu-roadmap-live-backoff';
+
+export function isRateLimited(error: unknown) {
+  return /\bGitHub (403|429)\b/.test(
+    error instanceof Error ? error.message : String(error)
+  );
+}
+
+function backoffActive(now: number) {
+  try {
+    return Number(window.localStorage.getItem(BACKOFF_KEY) ?? 0) > now;
+  } catch {
+    return false;
+  }
+}
+
+function startBackoff(now: number) {
+  try {
+    window.localStorage.setItem(
+      BACKOFF_KEY,
+      String(now + RATE_LIMIT_BACKOFF_MS)
+    );
+  } catch {
+    // Without storage the poll interval still bounds retries.
+  }
+}
 
 export type LiveState = 'snapshot' | 'refreshing' | 'live' | 'failed';
 
@@ -70,26 +113,35 @@ export function useLiveData(initial: LiveData) {
   const dataRef = useRef(initial);
   const busy = useRef(false);
 
+  // Fresh data re-renders most of the page: as a transition it never blocks
+  // a tap or a scroll that happens at the same time.
   const apply = useCallback((next: LiveData) => {
     dataRef.current = next;
-    setData(next);
+    startTransition(() => setData(next));
   }, []);
 
   const refresh = useCallback(async () => {
     if (busy.current) return;
+    const started = Date.now();
+    if (backoffActive(started)) return;
     busy.current = true;
     setState('refreshing');
-    const started = Date.now();
     try {
       const base = dataRef.current;
       const fetcher = window.fetch.bind(window);
       const [prs, main, hosts] = await Promise.allSettled([
-        fetchPullFacts(fetcher, started, { days: 8, mergedPages: 4 }),
+        fetchPullFacts(fetcher, started, LIVE_SEARCH),
         fetchMain(fetcher),
         fetchHosts(base),
       ]);
-      if (prs.status === 'rejected' || main.status === 'rejected')
+      if (prs.status === 'rejected' || main.status === 'rejected') {
+        const reason =
+          prs.status === 'rejected'
+            ? prs.reason
+            : (main as PromiseRejectedResult).reason;
+        if (isRateLimited(reason)) startBackoff(started);
         throw new Error('GitHub unavailable');
+      }
       const fresh = assembleLiveData({
         now: started,
         source: 'live',
@@ -105,29 +157,37 @@ export function useLiveData(initial: LiveData) {
       setState('failed');
     } finally {
       busy.current = false;
-      setNow(Date.now());
+      startTransition(() => setNow(Date.now()));
     }
   }, [apply]);
 
   useEffect(() => {
     setMounted(true);
-    setNow(Date.now());
-    const cached = readCache();
-    let fresh = false;
-    if (
-      cached &&
-      Date.parse(cached.generatedAt) > Date.parse(initial.generatedAt)
-    ) {
-      apply(mergeLiveData(initial, cached));
-      fresh = Date.now() - Date.parse(cached.generatedAt) < REFRESH_MS;
-      if (fresh) setState('live');
-    }
-    if (!fresh) void refresh();
-    const tick = window.setInterval(() => setNow(Date.now()), 30_000);
+    // Hydration renders the snapshot as the server did; anything newer
+    // (cache, clock, network) waits until the page is idle and visible.
+    const cancel = afterIdleAndVisible(() => {
+      startTransition(() => setNow(Date.now()));
+      const cached = readCache();
+      let fresh = false;
+      if (
+        cached &&
+        Date.parse(cached.generatedAt) > Date.parse(initial.generatedAt)
+      ) {
+        apply(mergeLiveData(initial, cached));
+        fresh = Date.now() - Date.parse(cached.generatedAt) < REFRESH_MS;
+        if (fresh) setState('live');
+      }
+      if (!fresh) void refresh();
+    });
+    const tick = window.setInterval(() => {
+      if (document.visibilityState === 'visible')
+        startTransition(() => setNow(Date.now()));
+    }, CLOCK_TICK_MS);
     const poll = window.setInterval(() => {
       if (document.visibilityState === 'visible') void refresh();
     }, REFRESH_MS);
     return () => {
+      cancel();
       window.clearInterval(tick);
       window.clearInterval(poll);
     };

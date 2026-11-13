@@ -37,16 +37,26 @@ describe('SEO metadata routes', () => {
     }
   });
 
-  it('advertises the sitemap and lets crawlers read redirects and noindex directives', () => {
+  it('advertises both sitemaps and lets crawlers read redirects and noindex directives', () => {
     const metadata = robots();
     const rules = Array.isArray(metadata.rules)
       ? metadata.rules[0]
       : metadata.rules;
 
-    expect(metadata.sitemap).toMatch(/\/sitemap\.xml$/);
-    expect(metadata.sitemap).toBe(
-      new URL('/sitemap.xml', siteConfig.url).toString()
-    );
+    const expectSitemaps = (metadata: ReturnType<typeof robots>) => {
+      expect(metadata.sitemap).toEqual([
+        new URL('/sitemap.xml', siteConfig.url).toString(),
+        new URL('/roadmap/sitemap.xml', siteConfig.url).toString(),
+      ]);
+    };
+
+    expectSitemaps(metadata);
+    expect(() =>
+      expectSitemaps({
+        ...metadata,
+        sitemap: [new URL('/sitemap.xml', siteConfig.url).toString()],
+      })
+    ).toThrow();
     expect(metadata.host).toBe(siteConfig.url);
     expect(rules).toEqual({ userAgent: '*', allow: '/' });
   });

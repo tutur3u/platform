@@ -1,5 +1,6 @@
 import { createFileRoute } from '@tanstack/react-router';
-import { RoadmapPage, roadmapHead } from '../pages/roadmap';
+import { RoadmapPage } from '../pages/roadmap';
+import { roadmapHead } from '../pages/roadmap-head';
 
 export const Route = createFileRoute('/')({
   head: () => roadmapHead('en'),

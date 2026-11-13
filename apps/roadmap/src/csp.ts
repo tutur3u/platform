@@ -21,6 +21,8 @@ type HtmlRewriter = {
     handlers: {
       element?(element: {
         hasAttribute(name: string): boolean;
+        getAttribute(name: string): string | null;
+        remove(): void;
         onEndTag(handler: () => void): void;
       }): void;
       text?(chunk: { text: string }): void;
@@ -30,7 +32,11 @@ type HtmlRewriter = {
 };
 
 const MAX_INLINE_SCRIPTS = 32;
-const MAX_DOCUMENT_BYTES = 2 * 1024 * 1024;
+/**
+ * Past this size a document gets no script hashes (see below). The pre-seal
+ * doctor keeps every public page under half of it.
+ */
+export const MAX_DOCUMENT_BYTES = 2 * 1024 * 1024;
 
 /**
  * Text of every real inline (no src) script element, exactly as served.
@@ -109,21 +115,51 @@ function isHtml(response: Response) {
   return /^text\/html(?:;|$)/i.test(response.headers.get('content-type') ?? '');
 }
 
+/** Inline script types that are data, never executed. */
+const DATA_SCRIPT_TYPES = new Set(['application/ld+json', 'application/json']);
+
+/**
+ * The document without executable inline scripts (classic, module, import
+ * maps, speculation rules). Scripts with a src and data blocks stay.
+ */
+export async function withoutExecutableInlineScripts(
+  html: string
+): Promise<string> {
+  return new HTMLRewriter()
+    .on('script', {
+      element(element) {
+        if (element.hasAttribute('src')) return;
+        const type = (element.getAttribute('type') ?? '').trim().toLowerCase();
+        if (!DATA_SCRIPT_TYPES.has(type)) element.remove();
+      },
+    })
+    .transform(new Response(html))
+    .text();
+}
+
 /**
  * Attach the CSP to an HTML response from the SSR handler. Non-HTML
  * responses pass through untouched. An oversized or unexpected document
  * still gets a policy, with no inline script allowed.
  */
 export async function withContentSecurityPolicy(
-  response: Response
+  response: Response,
+  transform: (html: string) => string = (html) => html
 ): Promise<Response> {
   if (!isHtml(response)) return response;
-  const html = response.body ? await response.text() : '';
+  const original = response.body ? await response.text() : '';
+  // The transform runs first, so every inline script it adds is hashed.
+  let html = transform(original);
   let policy: string;
   try {
     if (html.length > MAX_DOCUMENT_BYTES) throw new Error('Document too large');
     policy = await contentSecurityPolicy(html);
   } catch {
+    // No hashes means no inline script may run. Serve the document as
+    // rendered (its external, same-origin module entry still loads under
+    // 'self') without its executable inline scripts, so no unhashed script
+    // is ever sent; JSON-LD data blocks stay.
+    html = await withoutExecutableInlineScripts(original);
     policy = ["script-src 'self'", ...STATIC_DIRECTIVES].join('; ');
   }
   const headers = new Headers(response.headers);

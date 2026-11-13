@@ -1,39 +1,38 @@
-import { useEffect, useMemo, useState } from 'react';
-import historyUrl from '../generated/history.json?url';
+import { type RefObject, useEffect, useMemo, useState } from 'react';
 import type { LiveData } from '../live/model.ts';
-import { type History, parseHistory } from './build.ts';
+import type { History } from './build.ts';
+import { historyUrl } from './history-url.ts';
+import { loadHistoryWhenNear } from './lazy-load.ts';
 import { combineHistory, liveEntries } from './timeline.ts';
 
 export { historyUrl };
 
-export type HistoryState = 'loading' | 'ready' | 'failed';
+export type HistoryState = 'idle' | 'loading' | 'ready' | 'failed';
 
 /**
- * Full project history ships as a hashed, immutable asset fetched after the
- * first paint, then merged with PRs from the live refresh.
+ * Full project history (~240 KB) ships as a hashed, immutable asset. It is
+ * fetched only when the timeline nears the viewport, never on load and never
+ * speculatively, then merged with PRs from the live refresh.
  */
-export function useHistory(live: LiveData) {
+export function useHistory(live: LiveData, target: RefObject<Element | null>) {
   const [history, setHistory] = useState<History | null>(null);
-  const [state, setState] = useState<HistoryState>('loading');
+  const [state, setState] = useState<HistoryState>('idle');
   useEffect(() => {
-    let cancelled = false;
-    fetch(historyUrl, { headers: { accept: 'application/json' } })
-      .then((response) => {
-        if (!response.ok) throw new Error(`history ${response.status}`);
-        return response.json();
-      })
-      .then((json) => {
-        if (cancelled) return;
-        setHistory(parseHistory(json));
-        setState('ready');
-      })
-      .catch(() => {
-        if (!cancelled) setState('failed');
-      });
-    return () => {
-      cancelled = true;
-    };
-  }, []);
+    const element = target.current;
+    if (!element) return;
+    return loadHistoryWhenNear(
+      element,
+      {
+        onLoading: () => setState('loading'),
+        onLoaded: (next) => {
+          setHistory(next);
+          setState('ready');
+        },
+        onFailed: () => setState('failed'),
+      },
+      historyUrl
+    );
+  }, [target]);
   const combined = useMemo(
     () =>
       history ? combineHistory(history, liveEntries(live.prs, history)) : null,

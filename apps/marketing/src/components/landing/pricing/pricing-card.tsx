@@ -1,9 +1,11 @@
 'use client';
 
+import { useLandingReducedMotion as useReducedMotion } from '../shared/use-landing-reduced-motion';
+
 import type { LucideIcon } from '@tuturuuu/icons/lucide';
 import { Button } from '@tuturuuu/ui/button';
 import { cn } from '@tuturuuu/utils/format';
-import { AnimatePresence, motion, useReducedMotion } from 'framer-motion';
+import { AnimatePresence, motion } from 'framer-motion';
 import Link from 'next/link';
 import { getPayBillingUrl } from '@/lib/pay-app-url';
 import { PricingFeatureList } from './pricing-feature-list';

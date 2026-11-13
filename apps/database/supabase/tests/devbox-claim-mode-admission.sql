@@ -49,6 +49,11 @@ begin
     select v_run, actor, v_lease, 'queued', p_workload,
         case when p_workload = 'judge' then array['__ttr_judge_v1__', '{}'] else array['echo', 'ok'] end
     from fx;
+    if p_workload = 'judge' then
+        insert into private.learn_coding_submissions
+            (ws_id, user_id, challenge_slug, source, run_id, kind, language)
+        select gen_random_uuid(), actor, 'two-sum', 'print(1)', v_run, 'test', 'python' from fx;
+    end if;
     select exists (
         select 1 from private.claim_next_devbox_run(p_runner) claimed
         where claimed.id = v_run

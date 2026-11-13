@@ -90,14 +90,19 @@ async function search(
 export async function fetchPullFacts(
   fetcher: Fetcher,
   now: number,
-  options: { days?: number; token?: string; mergedPages?: number } = {}
+  options: {
+    days?: number;
+    token?: string;
+    openPages?: number;
+    mergedPages?: number;
+  } = {}
 ): Promise<PrFact[]> {
   const since = new Date(now - (options.days ?? 8) * 86_400_000)
     .toISOString()
     .slice(0, 10);
   const [approvedItems, openItems, mergedItems] = await Promise.all([
     search(fetcher, 'is:open review:approved', 1, options.token),
-    search(fetcher, 'is:open', 3, options.token),
+    search(fetcher, 'is:open', options.openPages ?? 3, options.token),
     search(
       fetcher,
       `is:merged merged:>=${since}`,

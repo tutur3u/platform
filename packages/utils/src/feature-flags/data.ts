@@ -14,4 +14,5 @@ export const FEATURE_FLAGS = {
   ENABLE_AVATAR: 'ENABLE_AVATAR',
   ENABLE_LOGO: 'ENABLE_LOGO',
   newsletter_sending: 'newsletter_sending',
+  ENABLE_JOURNAL_MOOD_TRACKING: 'ENABLE_JOURNAL_MOOD_TRACKING',
 } as const;

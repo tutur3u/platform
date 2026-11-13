@@ -18,8 +18,10 @@ import {
 } from '../history/periods';
 import {
   parseTimelineQuery,
+  periodChipName,
   plannedNext,
   scrubberPeriods,
+  scrubberWindow,
   type TimelineDeliverable,
   type TimelineGroup,
   timelinePeriod,
@@ -123,25 +125,26 @@ export function TimelineSection({
   view: roadmap,
   live,
   now,
-  mounted,
 }: {
   t: Messages;
   lang: Lang;
   view: RoadmapView;
   live: LiveData;
   now: number;
-  mounted: boolean;
 }) {
   const today = localDate(now);
-  const { history, state } = useHistory(live);
+  const sectionRef = useRef<HTMLElement>(null);
+  const { history, state } = useHistory(live, sectionRef);
   const [selection, setSelection] = useState<{ view: View; period: string }>(
     () => ({
       view: 'week',
       period: periodKey(today, 'week'),
     })
   );
-  // Read the shareable URL state once on the client.
+  // Read the shareable URL state once on the client; a plain visit keeps the
+  // server-rendered selection and skips a re-render after hydration.
   useEffect(() => {
+    if (!window.location.search) return;
     setSelection(
       parseTimelineQuery(window.location.search, localDate(Date.now()))
     );
@@ -191,7 +194,11 @@ export function TimelineSection({
   const revealRef = useReveal([period.key, period.view, history]);
 
   return (
-    <section className="section timeline" aria-labelledby="timeline-title">
+    <section
+      className="section timeline"
+      aria-labelledby="timeline-title"
+      ref={sectionRef}
+    >
       <SectionHead
         id="timeline-title"
         title={t.timeline.title}
@@ -223,7 +230,7 @@ export function TimelineSection({
           onSelect={(key) => select({ view: selection.view, period: key })}
         />
       </div>
-      {state === 'loading' && mounted ? (
+      {state === 'loading' ? (
         <p className="hint" aria-live="polite">
           {t.timeline.loading}
         </p>
@@ -292,6 +299,7 @@ function Scrubber({
   const listRef = useRef<HTMLDivElement>(null);
   const max = Math.max(1, ...periods.map((p) => p.total));
   const first = periods[0]?.key;
+  const shown = scrubberWindow(periods, selected);
   // Keep the selected period centred without moving the page vertically.
   useLayoutEffect(() => {
     const list = listRef.current;
@@ -302,7 +310,7 @@ function Scrubber({
       left,
       behavior: prefersReducedMotion() ? 'auto' : 'smooth',
     });
-  }, [selected, view, periods.length]);
+  }, [selected, view, shown.length]);
   const step = (delta: number) => {
     const next = shiftPeriod(selected, view, delta);
     if ((first && next < first) || next > current) return;
@@ -335,29 +343,31 @@ function Scrubber({
         aria-label={t.timeline.periods}
         onKeyDown={onKey}
       >
-        {periods.map((p) => (
-          <button
-            key={p.key}
-            type="button"
-            className={`chip-period${p.key === current ? ' is-now' : ''}`}
-            aria-current={p.key === selected}
-            aria-label={`${p.key}: ${p.total} ${p.total === 1 ? t.timeline.changeOne : t.timeline.changes}`}
-            onClick={() => onSelect(p.key)}
-          >
-            <span className="bar" aria-hidden>
-              <span
-                style={{
-                  height: `${Math.max(6, Math.sqrt(p.total / max) * 100)}%`,
-                }}
-              />
-            </span>
-            <span className="chip-label">
-              {p.key === current
-                ? t.timeline.current
-                : chipLabel(view, p.key, lang)}
-            </span>
-          </button>
-        ))}
+        {shown.map((p) => {
+          const visible =
+            p.key === current
+              ? t.timeline.current
+              : chipLabel(view, p.key, lang);
+          return (
+            <button
+              key={p.key}
+              type="button"
+              className={`chip-period${p.key === current ? ' is-now' : ''}`}
+              aria-current={p.key === selected}
+              aria-label={periodChipName(visible, p.key, p.total, t.timeline)}
+              onClick={() => onSelect(p.key)}
+            >
+              <span className="bar" aria-hidden>
+                <span
+                  style={{
+                    height: `${Math.max(6, Math.sqrt(p.total / max) * 100)}%`,
+                  }}
+                />
+              </span>
+              <span className="chip-label">{visible}</span>
+            </button>
+          );
+        })}
       </div>
       <button
         type="button"

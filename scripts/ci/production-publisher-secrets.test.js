@@ -501,7 +501,7 @@ test('Turbo team inputs retain variables and trusted-event secret fallback', () 
       '.jobs.build-tasks.steps.5.with.team',
       '.jobs.build-web.steps.4.with.team',
       '.jobs.calendar-native.steps.6.with.team',
-      '.jobs.calendar-native.steps.19.with.team',
+      '.jobs.calendar-native.steps.21.with.team',
       '.jobs.tasks-cutover-artifact.steps.5.with.team',
       '.jobs.tasks-cutover-artifact.steps.6.with.team',
     ]

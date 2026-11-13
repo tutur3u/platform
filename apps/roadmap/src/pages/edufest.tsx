@@ -4,10 +4,9 @@ import {
   MarketingShell,
   shellNavOffset,
 } from '@tuturuuu/marketing-shell';
-import { type CSSProperties, useCallback, useMemo } from 'react';
+import { type CSSProperties, Suspense, useCallback, useMemo } from 'react';
 import en from '../../messages/edufest-2026.en.json';
 import vi from '../../messages/edufest-2026.vi.json';
-import ogImage from '../assets/og-edufest-2026.png?no-inline';
 import logo from '../assets/tuturuuu-logo.png?no-inline';
 import type { Lang } from '../components/shared';
 import {
@@ -26,48 +25,9 @@ import {
   WsTools,
 } from '../components/workshop';
 import { WORKSHOP_EVENT } from '../content/workshops/edufest-2026';
-import { heroFontPreloads } from '../hero-fonts';
 import { initialLiveData } from '../live/initial-data';
 import { useLiveData } from '../live/use-live-data';
-
-import {
-  alternateLinks,
-  jsonLdScript,
-  pagePath,
-  ROUTE_PATHS,
-  socialMeta,
-  workshopJsonLd,
-} from '../seo';
-
-/** Per-language head: title, description, previews, alternates, Event JSON-LD. */
-export function edufestHead(lang: Lang) {
-  const t = lang === 'en' ? en : vi;
-  return {
-    meta: socialMeta({
-      page: 'edufest',
-      lang,
-      title: t.meta.title,
-      description: t.meta.description,
-      image: ogImage,
-      imageAlt: t.meta.title,
-    }),
-    links: [...heroFontPreloads(lang), ...alternateLinks('edufest', lang)],
-    scripts: WORKSHOP_EVENT.isoDate
-      ? [
-          jsonLdScript(
-            workshopJsonLd({
-              lang,
-              title: t.meta.title,
-              description: t.meta.description,
-              image: ogImage,
-              facts: { isoDate: WORKSHOP_EVENT.isoDate, ...t.seo.place },
-              crumbs: { home: t.seo.crumbHome, roadmap: t.seo.crumbRoadmap },
-            })
-          ),
-        ]
-      : [],
-  };
-}
+import { pagePath, ROUTE_PATHS } from '../seo';
 
 export function EduFestWorkshopPage({ lang }: { lang: Lang }) {
   const navigate = useNavigate();
@@ -110,22 +70,47 @@ export function EduFestWorkshopPage({ lang }: { lang: Lang }) {
       >
         <main className="page ws-page">
           <WsHero t={t} />
-          <WsHighlights t={t} />
-          <WsSeatSwap t={t} />
-          <WsAgenda t={t} />
-          <WsExperience t={t} />
-          <WsSimulator t={t} statuses={statuses} />
-          <WsFlow t={t} statuses={statuses} />
-          <WsInsightsDemo t={t} statuses={statuses} />
-          <WsReadiness
-            t={t}
-            statuses={statuses}
-            checkedAt={live.data.generatedAt}
-            lang={lang}
-          />
-          <WsCapabilities t={t} statuses={statuses} />
-          <WsFaq t={t} />
-          <WsTools t={t} logo={logo} />
+          {/* One hydration boundary per section below the hero (nothing
+              suspends; the server renders every section): React hydrates
+              them one by one, starting with the one a reader taps. */}
+          <Suspense>
+            <WsHighlights t={t} />
+          </Suspense>
+          <Suspense>
+            <WsSeatSwap t={t} />
+          </Suspense>
+          <Suspense>
+            <WsAgenda t={t} />
+          </Suspense>
+          <Suspense>
+            <WsExperience t={t} />
+          </Suspense>
+          <Suspense>
+            <WsSimulator t={t} statuses={statuses} />
+          </Suspense>
+          <Suspense>
+            <WsFlow t={t} statuses={statuses} />
+          </Suspense>
+          <Suspense>
+            <WsInsightsDemo t={t} statuses={statuses} />
+          </Suspense>
+          <Suspense>
+            <WsReadiness
+              t={t}
+              statuses={statuses}
+              checkedAt={live.data.generatedAt}
+              lang={lang}
+            />
+          </Suspense>
+          <Suspense>
+            <WsCapabilities t={t} statuses={statuses} />
+          </Suspense>
+          <Suspense>
+            <WsFaq t={t} />
+          </Suspense>
+          <Suspense>
+            <WsTools t={t} logo={logo} />
+          </Suspense>
         </main>
       </MarketingShell>
     </div>

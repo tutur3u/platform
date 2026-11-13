@@ -1,10 +1,12 @@
 'use client';
 
+import { useLandingReducedMotion as useReducedMotion } from '../shared/use-landing-reduced-motion';
+
 import { Sparkles } from '@tuturuuu/icons/lucide';
 import { cn } from '@tuturuuu/utils/format';
 import { addDays, format, startOfWeek } from 'date-fns';
 import { enUS } from 'date-fns/locale';
-import { motion, useReducedMotion } from 'framer-motion';
+import { motion } from 'framer-motion';
 import { useMemo } from 'react';
 import {
   type DemoEvent,

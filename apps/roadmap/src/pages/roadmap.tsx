@@ -4,58 +4,31 @@ import {
   MarketingShell,
   shellNavOffset,
 } from '@tuturuuu/marketing-shell';
-import { type CSSProperties, useCallback, useMemo, useState } from 'react';
+import {
+  type CSSProperties,
+  memo,
+  Suspense,
+  useCallback,
+  useMemo,
+  useState,
+} from 'react';
 import en from '../../messages/en.json';
 import vi from '../../messages/vi.json';
-import ogImage from '../assets/og-roadmap.png?no-inline';
 import logo from '../assets/tuturuuu-logo.png?no-inline';
 import { Footer } from '../components/chrome';
 import { ComingSoon, Hero } from '../components/hero';
 import { HostingSection, Method } from '../components/hosting';
+import { MigrationSection } from '../components/migration';
 import { TrackGlance } from '../components/pulse';
 import type { Lang } from '../components/shared';
 import { TimelineSection } from '../components/timeline';
 import { TracksSection } from '../components/tracks';
-import { tracks } from '../content/tracks';
-import { heroFontPreloads } from '../hero-fonts';
 import { initialLiveData } from '../live/initial-data';
+import type { LiveData } from '../live/model';
 import { useLiveData } from '../live/use-live-data';
-import {
-  alternateLinks,
-  jsonLdScript,
-  pagePath,
-  ROUTE_PATHS,
-  roadmapJsonLd,
-  socialMeta,
-} from '../seo';
-import { buildView, type StatusFilter } from '../view-model';
-
-/** Per-language head: title, description, previews, alternates, JSON-LD. */
-export function roadmapHead(lang: Lang) {
-  const t = lang === 'en' ? en : vi;
-  return {
-    meta: socialMeta({
-      page: 'roadmap',
-      lang,
-      title: t.meta.title,
-      description: t.meta.description,
-      image: ogImage,
-      imageAlt: t.meta.imageAlt,
-    }),
-    links: [...heroFontPreloads(lang), ...alternateLinks('roadmap', lang)],
-    scripts: [
-      jsonLdScript(
-        roadmapJsonLd({
-          lang,
-          title: t.meta.title,
-          description: t.meta.description,
-          tracks: tracks.map((track) => ({ id: track.id, name: track.name })),
-          crumbs: { home: t.meta.crumbHome, roadmap: t.meta.crumbRoadmap },
-        })
-      ),
-    ],
-  };
-}
+import { pagePath, ROUTE_PATHS } from '../seo';
+import { BUILD_HOSTING } from '../live/build-hosting';
+import { buildView } from '../view-model';
 
 export function RoadmapPage({ lang }: { lang: Lang }) {
   const navigate = useNavigate();
@@ -66,7 +39,6 @@ export function RoadmapPage({ lang }: { lang: Lang }) {
     },
     [lang, navigate]
   );
-  const [filter, setFilter] = useState<StatusFilter>('all');
   const [navCompact, setNavCompact] = useState(false);
   const onDock = useCallback((docked: boolean) => {
     setNavCompact(docked);
@@ -74,11 +46,6 @@ export function RoadmapPage({ lang }: { lang: Lang }) {
   const t = lang === 'en' ? en : vi;
   const initialData = initialLiveData();
   const live = useLiveData(initialData);
-  const view = useMemo(
-    () => buildView(live.data, live.now),
-    [live.data, live.now]
-  );
-
   const shellT = useMemo(() => createTranslator(lang), [lang]);
 
   return (
@@ -105,42 +72,71 @@ export function RoadmapPage({ lang }: { lang: Lang }) {
         signInHref="https://tuturuuu.com/login"
         t={shellT}
       >
-        <main className="page">
-          <Hero t={t} view={view} lang={lang} data={live.data} now={live.now} />
-          <TrackGlance t={t} view={view} />
-          <ComingSoon t={t} />
-          <TimelineSection
-            t={t}
-            lang={lang}
-            view={view}
-            live={live.data}
-            now={live.now}
-            mounted={live.mounted}
-          />
-          <TracksSection
-            t={t}
-            lang={lang}
-            view={view}
-            filter={filter}
-            setFilter={setFilter}
-            onDock={onDock}
-          />
-          <HostingSection
-            t={t}
-            lang={lang}
-            view={view}
-            main={live.data.main}
-            hostsCheckedAt={initialData.generatedAt}
-          />
-          <Method t={t} />
-          <Footer
-            t={t}
-            lang={lang}
-            data={live.data}
-            liveCheckFailed={live.state === 'failed'}
-          />
-        </main>
+        <RoadmapMain
+          t={t}
+          lang={lang}
+          data={live.data}
+          now={live.now}
+          liveCheckFailed={live.state === 'failed'}
+          onDock={onDock}
+        />
       </MarketingShell>
     </div>
   );
 }
+
+/**
+ * Every section, memoised: docking the navbar (a scroll-driven state change
+ * on the page) re-renders only the shell, never the 8,000-node track list.
+ */
+const RoadmapMain = memo(function RoadmapMain({
+  t,
+  lang,
+  data,
+  now,
+  liveCheckFailed,
+  onDock,
+}: {
+  t: typeof en;
+  lang: Lang;
+  data: LiveData;
+  now: number;
+  liveCheckFailed: boolean;
+  onDock: (docked: boolean) => void;
+}) {
+  const view = useMemo(
+    () => buildView(data, now, undefined, BUILD_HOSTING),
+    [data, now]
+  );
+  return (
+    <main className="page">
+      <Hero t={t} view={view} lang={lang} data={data} now={now} />
+      <TrackGlance t={t} view={view} />
+      <ComingSoon t={t} />
+      {/* Hydration boundaries (nothing suspends; the server renders all of
+          it): below the hero, React hydrates section by section, yielding
+          between them and starting with the one a reader interacts with. */}
+      <Suspense>
+        <TimelineSection t={t} lang={lang} view={view} live={data} now={now} />
+      </Suspense>
+      <TracksSection t={t} lang={lang} view={view} onDock={onDock} />
+      <Suspense>
+        <HostingSection
+          t={t}
+          lang={lang}
+          view={view}
+          main={data.main}
+          hosting={BUILD_HOSTING}
+        />
+        <MigrationSection t={t} lang={lang} hosting={BUILD_HOSTING} />
+        <Method t={t} />
+        <Footer
+          t={t}
+          lang={lang}
+          data={data}
+          liveCheckFailed={liveCheckFailed}
+        />
+      </Suspense>
+    </main>
+  );
+});

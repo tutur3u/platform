@@ -196,7 +196,14 @@ test(
       WORKER_CONFIG.compatibilityFlags
     );
     assert.equal(config.workers_dev, WORKER_CONFIG.workersDev);
-    assert.equal(config.vars?.TUTURUUU_NOINDEX, '1');
+    if (config.name.endsWith('-staging')) {
+      assert.equal(config.vars?.TUTURUUU_NOINDEX, '1');
+    } else {
+      assert.ok(
+        config.vars?.TUTURUUU_NOINDEX === '0' ||
+          config.vars?.TUTURUUU_NOINDEX === undefined
+      );
+    }
     for (const name of PUBLIC_FILES)
       assert.equal(
         await sha256(join(app, 'dist/client', name)),
@@ -258,14 +265,28 @@ test(
           (response) => {
             const chunks = [];
             response.on('data', (chunk) => chunks.push(chunk));
-            response.on('end', () =>
+            response.on('end', () => {
+              assert.equal(
+                response.headers['strict-transport-security'],
+                'max-age=63072000',
+                'Every emitted Worker response must enforce HSTS'
+              );
+              assert.equal(
+                response.rawHeaders.filter(
+                  (name, index) =>
+                    index % 2 === 0 &&
+                    name.toLowerCase() === 'strict-transport-security'
+                ).length,
+                1,
+                'Every emitted Worker response must have exactly one HSTS header'
+              );
               resolve({
                 status: response.statusCode ?? 0,
                 location: response.headers.location ?? null,
                 headers: response.headers,
                 body: Buffer.concat(chunks).toString('utf8'),
-              })
-            );
+              });
+            });
           }
         )
           .on('error', reject)

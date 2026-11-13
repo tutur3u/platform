@@ -1,5 +1,6 @@
 'use client';
 
+import { useStaticMarketingMotion } from './use-static-motion';
 import { cn } from '@tuturuuu/utils/format';
 import { type ReactNode, useEffect, useState } from 'react';
 
@@ -31,6 +32,7 @@ export function MarketingNavShell({
   placement = 'overlay',
   compact = false,
 }: MarketingNavShellProps) {
+  const staticMotion = useStaticMarketingMotion();
   const [scrolled, setScrolled] = useState(false);
 
   useEffect(() => {
@@ -73,7 +75,10 @@ export function MarketingNavShell({
           'relative mx-auto flex max-w-7xl items-center justify-between gap-3 overflow-visible rounded-2xl px-3 transition-all duration-300 sm:px-4',
           compact ? 'h-11' : 'h-14',
           scrolled || compact || placement === 'column'
-            ? 'border border-foreground/10 bg-background/70 shadow-foreground/5 shadow-lg backdrop-blur-xl'
+            ? cn(
+                'border border-foreground/10 bg-background/95 shadow-foreground/5 shadow-lg',
+                !staticMotion && 'backdrop-blur-xl'
+              )
             : 'border border-transparent bg-transparent'
         )}
         id="navbar-content"

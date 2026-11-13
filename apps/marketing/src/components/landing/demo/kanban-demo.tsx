@@ -1,5 +1,7 @@
 'use client';
 
+import { useLandingReducedMotion as useReducedMotion } from '../shared/use-landing-reduced-motion';
+
 import {
   AlertCircle,
   ChevronUp,
@@ -7,7 +9,7 @@ import {
   MousePointer2,
 } from '@tuturuuu/icons/lucide';
 import { cn } from '@tuturuuu/utils/format';
-import { motion, useReducedMotion } from 'framer-motion';
+import { motion } from 'framer-motion';
 import { DemoLabel } from './demo-chrome';
 import {
   type DemoList,
