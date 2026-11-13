@@ -72,7 +72,8 @@ export function publicItems(prs) {
 export async function fetchInputs(get) {
   const releases = [];
   // Release-please targets production; main carries synchronized release commits.
-  for (let page = 1; page <= 5 && releases.length < 11; page++) {
+  let complete = false;
+  for (let page = 1; page <= 5; page++) {
     const rows = await get(
       `/repos/${REPO}/pulls?state=closed&base=production&sort=updated&direction=desc&per_page=100&page=${page}`
     );
@@ -85,11 +86,18 @@ export async function fetchInputs(get) {
           !pr.base.repo.private
       )
     );
-    if (rows.length < 100) break;
+    releases.sort((a, b) => b.merged_at.localeCompare(a.merged_at));
+    if (
+      rows.length < 100 ||
+      (releases.length >= 11 && rows.at(-1).updated_at < releases[10].merged_at)
+    ) {
+      complete = true;
+      break;
+    }
   }
   releases.sort((a, b) => b.merged_at.localeCompare(a.merged_at));
   const slots = releases.slice(0, 11);
-  if (slots.length < 2) throw Error('GH_INCOMPLETE');
+  if (!complete || slots.length < 2) throw Error('GH_INCOMPLETE');
   const prs = [];
   for (let page = 1; page <= 30; page++) {
     const rows = await get(
