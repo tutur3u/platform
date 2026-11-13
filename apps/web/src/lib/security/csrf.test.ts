@@ -159,8 +159,9 @@ describe('guardWebApiCsrf', () => {
 
   it.each([
     '/api/auth/logout',
+    '/api/auth/logout/',
     '/api/v1/auth/accounts/logout',
-    '/api/v1/auth/accounts/logout-all',
+    '/api/v1/auth/accounts/logout-all//',
   ])('holds %s to same-origin even without a session cookie', (path) => {
     for (const headers of <Record<string, string>[]>[
       { 'sec-fetch-site': 'cross-site' },
