@@ -35,6 +35,7 @@ test('singleton keeps the Type Check context, event surface and runner with a re
         'reopened',
         'ready_for_review',
         'labeled',
+        'converted_to_draft',
       ],
     },
     workflow_dispatch: null,
@@ -47,7 +48,8 @@ test('singleton keeps the Type Check context, event surface and runner with a re
   assert.equal(prJob.name, 'Type Check');
   assert.equal(job['runs-on'], 'ubuntu-latest');
   assert.match(prJob['runs-on'], /\|\| 'ubuntu-latest' \}\}$/);
-  assert.equal(prJob.if, "github.event_name == 'pull_request'");
+  assert.match(prJob.if, /github\.event_name == 'pull_request'/);
+  assert.match(prJob.if, /github\.event\.pull_request\.draft == false/);
   const withoutCredentials = (steps) =>
     steps.map((step) => {
       if (!step.with) return step;
@@ -62,7 +64,7 @@ test('singleton keeps the Type Check context, event surface and runner with a re
   assert.deepEqual(workflow.permissions, { contents: 'read' });
   assert.deepEqual(job.permissions, { contents: 'read' });
   assert.equal(job.needs, undefined);
-  assert.equal(job.if, "github.event_name != 'pull_request'");
+  assert.match(job.if, /github\.event_name != 'pull_request'/);
   const checkouts = job.steps.filter((step) =>
     step.uses?.startsWith('actions/checkout@')
   );

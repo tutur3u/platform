@@ -147,34 +147,43 @@ const MAX_REPORT_BYTES = 16 * 1024;
 const REPORT_LOG_BUDGET = 50;
 let reportLogWindow = { start: 0, count: 0 };
 
-/** Origin and path only: sign-in return URLs and tokens live in queries. */
-function withoutQuery(value: unknown): string | undefined {
-  if (typeof value !== 'string' || !value) return undefined;
-  try {
-    const url = new URL(value);
-    return `${url.origin}${url.pathname}`;
-  } catch {
-    // Keywords such as `inline`, `eval` or `trusted-types-sink`.
-    return value.split(/[?#]/u)[0]?.slice(0, 200);
-  }
-}
+const CSP_DIRECTIVES = new Set([
+  'base-uri',
+  'child-src',
+  'connect-src',
+  'default-src',
+  'font-src',
+  'form-action',
+  'frame-ancestors',
+  'frame-src',
+  'img-src',
+  'manifest-src',
+  'media-src',
+  'object-src',
+  'require-trusted-types-for',
+  'sandbox',
+  'script-src',
+  'script-src-attr',
+  'script-src-elem',
+  'style-src',
+  'style-src-attr',
+  'style-src-elem',
+  'trusted-types',
+  'upgrade-insecure-requests',
+  'worker-src',
+]);
 
 function sanitizeViolation(raw: Record<string, unknown>) {
-  const pick = (...keys: string[]) => {
-    for (const key of keys) if (raw[key] !== undefined) return raw[key];
-    return undefined;
-  };
-  const text = (value: unknown) =>
-    typeof value === 'string' ? value.slice(0, 200) : undefined;
+  const directive =
+    raw['effective-directive'] ??
+    raw.effectiveDirective ??
+    raw['violated-directive'];
   return {
-    documentUri: withoutQuery(pick('document-uri', 'documentURL')),
-    blockedUri: withoutQuery(pick('blocked-uri', 'blockedURL')),
-    sourceFile: withoutQuery(pick('source-file', 'sourceFile')),
-    effectiveDirective: text(
-      pick('effective-directive', 'effectiveDirective', 'violated-directive')
-    ),
-    disposition: text(pick('disposition')),
-    line: pick('line-number', 'lineNumber'),
+    effectiveDirective:
+      typeof directive === 'string' && CSP_DIRECTIVES.has(directive)
+        ? directive
+        : 'unknown',
+    disposition: raw.disposition === 'enforce' ? 'enforce' : 'report',
   };
 }
 

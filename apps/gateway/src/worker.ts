@@ -1,3 +1,4 @@
+import { applyMarketingRobots } from './marketing-robots';
 import {
   bypassReason,
   hasAuthCookie,
@@ -18,6 +19,8 @@ import {
 export interface Env {
   /** `passthrough` is the rollback flag: transparent proxy, no cache. */
   GATEWAY_MODE?: string;
+  /** Explicit deployment robots override, including cached Marketing pages. */
+  TUTURUUU_NOINDEX?: string;
   /** Origin of the Vercel production web deployment, e.g. https://host. */
   WEB_ORIGIN?: string;
   /** Hostname clients use; origin redirects to the origin host map to it. */
@@ -385,7 +388,7 @@ export function createHandler(deps: HandlerDeps) {
     }
   }
 
-  return async function handle(request: Request, env: Env, ctx?: WaitUntil) {
+  async function handle(request: Request, env: Env, ctx?: WaitUntil) {
     if (request.headers.has(HOP_HEADER)) {
       return plain(508, 'gateway loop detected');
     }
@@ -481,6 +484,22 @@ export function createHandler(deps: HandlerDeps) {
     const out = withGatewayHeader(response, 'MISS');
     if (isPage) out.headers.set('cache-control', PAGE_CLIENT_CACHE_CONTROL);
     return out;
+  }
+
+  return async (request: Request, env: Env, ctx?: WaitUntil) => {
+    const match = matchRoute(new URL(request.url).pathname, deps.manifest);
+    const chosen = chooseOrigin(env, deps.manifest, match, request);
+    const marketingPage =
+      chosen.flagged &&
+      match.flagOrigin === 'marketing' &&
+      match.cache === 'page' &&
+      (request.method === 'GET' || request.method === 'HEAD');
+    return applyMarketingRobots(
+      await handle(request, env, ctx),
+      request,
+      marketingPage,
+      env.TUTURUUU_NOINDEX === '1'
+    );
   };
 }
 

@@ -145,11 +145,16 @@ export async function readBounded(response: Response): Promise<string> {
   );
 }
 
+/**
+ * Probe every app's build-info. `onBody` (build time only) sees each
+ * answered body, for facts the public payload never carries.
+ */
 export async function probeHosts(
   fetcher: ProbeFetch,
   selfCommit: string | null,
   timeoutMs = 4000,
-  apps: readonly { app: string; url: string }[] = PROBED_APPS
+  apps: readonly { app: string; url: string }[] = PROBED_APPS,
+  onBody?: (app: string, body: string) => void
 ): Promise<ProbeResult[]> {
   const probes = apps.map(async ({ app, url }) => {
     try {
@@ -160,6 +165,7 @@ export async function probeHosts(
         signal: AbortSignal.timeout(timeoutMs),
       });
       const body = await readBounded(response);
+      if (onBody && response.status === 200) onBody(app, body);
       return {
         app,
         ...classifyProbeResponse(response.status, response.headers, body),

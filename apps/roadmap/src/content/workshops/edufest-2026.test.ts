@@ -1,3 +1,4 @@
+import { readStyles } from '../../style-source.ts';
 /** D79 tests for the EduFest workshop page (run via src/roadmap-data.test.ts). */
 import assert from 'node:assert/strict';
 import { readdirSync, readFileSync } from 'node:fs';
@@ -268,10 +269,7 @@ function cssRule(css: string, selector: string): string | null {
 }
 
 describe('EduFest workshop: hero', () => {
-  const css = readFileSync(
-    new URL('../../styles.css', import.meta.url),
-    'utf8'
-  );
+  const css = readStyles();
   const component = workshopSource();
 
   it('the wash spans the whole hero instead of a fixed band that stops mid-section', () => {
@@ -328,10 +326,7 @@ describe('EduFest workshop: AI help levels', () => {
 
 describe('Logos', () => {
   it('are never rounded, masked or clipped', () => {
-    const css = readFileSync(
-      new URL('../../styles.css', import.meta.url),
-      'utf8'
-    );
+    const css = readStyles();
     const rules = [...css.matchAll(/\n([^\n{}]*\bimg\b[^\n{}]*)\{([^}]*)\}/g)];
     assert.ok(rules.length >= 2, 'logo rules found');
     const clips = (body: string) =>

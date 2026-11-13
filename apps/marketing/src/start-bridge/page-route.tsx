@@ -14,7 +14,7 @@ import { setMarketingRenderPath } from '../lib/marketing-render-context';
 import { pageModules } from './page-modules.bridge.gen';
 import { pages } from './page-registry.bridge.gen';
 
-const loadPage = createServerFn({ method: 'GET' })
+const loadPage = createServerFn({ method: 'POST' })
   .validator((href: string) => href)
   .handler(async ({ data }) => {
     const href = await resolvePageLocation(data, {

@@ -1,12 +1,20 @@
 'use client';
-import { Button } from '@tuturuuu/ui/button';
-import { useTranslations } from 'next-intl';
-export default function ErrorPage({ reset }: { reset: () => void }) {
-  const t = useTranslations('lettin');
+
+import { AppErrorBoundary } from '@tuturuuu/ui/custom/app-error-boundary';
+
+export default function ErrorBoundary({
+  error,
+  reset,
+}: {
+  error: Error & { digest?: string };
+  reset: () => void;
+}) {
   return (
-    <main className="p-10" role="alert">
-      <h1 className="mb-4 text-3xl">{t('requestFailed')}</h1>
-      <Button onClick={reset}>{t('retry')}</Button>
-    </main>
+    <AppErrorBoundary
+      appName="Lettin"
+      chrome="page"
+      error={error}
+      reset={reset}
+    />
   );
 }

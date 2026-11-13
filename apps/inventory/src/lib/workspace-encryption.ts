@@ -16,10 +16,12 @@ import {
   decryptWorkspaceKey,
   encryptCalendarEventFields,
   encryptField,
+  EncryptionUnavailableError,
   encryptWorkspaceKey,
   generateWorkspaceKey,
   getMasterKey,
   isEncryptionEnabled,
+  isEncryptionRequired,
 } from '@tuturuuu/utils/encryption';
 import { clampWorkspaceCalendarPlaintextForEncryptedStorage } from '@/lib/calendar/sync-field-limits';
 
@@ -151,6 +153,9 @@ export async function encryptEventForStorage<
       : await getOrCreateWorkspaceKey(wsId);
 
   if (!key) {
+    // Never store plaintext where encryption is required: a missing master
+    // key, an unreadable key row or a failed key creation all land here.
+    if (isEncryptionRequired()) throw new EncryptionUnavailableError();
     return { ...event, is_encrypted: false };
   }
 

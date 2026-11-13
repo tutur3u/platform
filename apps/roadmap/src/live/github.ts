@@ -61,9 +61,11 @@ async function search(
   fetcher: Fetcher,
   query: string,
   maxPages: number,
-  token?: string
+  token?: string,
+  onTotal?: (total: number, fetched: number) => void
 ): Promise<SearchItem[]> {
   const items: SearchItem[] = [];
+  let total = 0;
   for (let page = 1; page <= maxPages; page += 1) {
     const params = new URLSearchParams({
       q: `repo:${REPO} is:pr ${query}`,
@@ -82,8 +84,10 @@ async function search(
     };
     const batch = Array.isArray(body.items) ? body.items : [];
     items.push(...batch);
-    if (batch.length < 100 || items.length >= (body.total_count ?? 0)) break;
+    total = body.total_count ?? 0;
+    if (batch.length < 100 || items.length >= total) break;
   }
+  onTotal?.(total, items.length);
   return items;
 }
 
@@ -95,6 +99,8 @@ export async function fetchPullFacts(
     token?: string;
     openPages?: number;
     mergedPages?: number;
+    /** Whether the merged search returned every match (no page cap hit). */
+    onMergedComplete?: (complete: boolean) => void;
   } = {}
 ): Promise<PrFact[]> {
   const since = new Date(now - (options.days ?? 8) * 86_400_000)
@@ -107,7 +113,8 @@ export async function fetchPullFacts(
       fetcher,
       `is:merged merged:>=${since}`,
       options.mergedPages ?? 5,
-      options.token
+      options.token,
+      (total, fetched) => options.onMergedComplete?.(fetched >= total)
     ),
   ]);
   const approved = new Set(approvedItems.map((item) => item.number));

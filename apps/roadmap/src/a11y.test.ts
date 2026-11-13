@@ -1,3 +1,4 @@
+import { readStyles } from './style-source.ts';
 /**
  * D79 accessibility guards for the shared marketing shell as the roadmap
  * renders it (run via src/roadmap-data.test.ts).
@@ -106,7 +107,7 @@ describe('a11y: shared navbar logo', () => {
 });
 
 describe('a11y: the compact navbar keeps the logo link named', () => {
-  const css = readFileSync(new URL('./styles.css', import.meta.url), 'utf8');
+  const css = readStyles();
   /** Declarations of every rule whose selector list hides the brand name. */
   const brandRules = (source: string) =>
     [...source.matchAll(/([^{}]+)\{([^{}]*)\}/g)]
@@ -138,7 +139,7 @@ describe('a11y: the compact navbar keeps the logo link named', () => {
 });
 
 describe('a11y: workshop pages keep the navbar controls', () => {
-  const css = readFileSync(new URL('./styles.css', import.meta.url), 'utf8');
+  const css = readStyles();
   /** Selectors that hide the navbar's actions group (menu, language, theme). */
   const hidesActions = (source: string) =>
     [...source.matchAll(/([^{}]+)\{([^{}]*)\}/g)]

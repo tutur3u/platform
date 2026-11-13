@@ -13,13 +13,25 @@ import {
 } from '@tuturuuu/meet-core/features/live-assistant/contracts';
 import { readLiveRequestBody } from '@tuturuuu/meet-core/features/live-assistant/request-body';
 import { signLiveSession } from '@tuturuuu/meet-core/features/live-assistant/token';
-import { liveWorkspaceCatalog } from '@tuturuuu/meet-core/features/live-assistant/workspace-tools';
-import { isMeetAiAvailableForWorkspace } from '@tuturuuu/meet-core/features/meeting-ai/server/workspace-gate';
-import { getScenarioPrompt } from '@tuturuuu/meet-core/parley/repository';
 import { MEETING_APP } from '@tuturuuu/meet-core/runtime';
 import { z } from 'zod';
+import {
+  MIRA_PRIVATE_NOTICE_VERSION,
+  MIRA_ROOM_DENIED,
+} from '@tuturuuu/realtime/meet';
+import { readMiraDemoAuthority } from '../../../../features/live-assistant/server/demo-authority';
+import {
+  readPrivateMiraChoice,
+  requirePrivateMiraChoice,
+} from '../../../../features/live-assistant/server/private-consent';
 
 const schema = z.discriminatedUnion('action', [
+  z.object({ action: z.literal('policy') }),
+  z.object({
+    action: z.literal('choice'),
+    choice: z.enum(['continue', 'mute', 'leave']),
+    version: z.literal(MIRA_PRIVATE_NOTICE_VERSION),
+  }),
   z.object({
     action: z.literal('start'),
     audioPolicy: z.literal('participant-opt-in').optional(),
@@ -42,32 +54,83 @@ export async function POST(
       throw new MeetCallAccessError(body.status, 'Invalid request body');
     const input = schema.safeParse(body.data);
     if (!input.success) throw new MeetCallAccessError(400, 'Invalid request');
+    const command = input.data;
+    if (command.action === 'start' && command.mode !== 'personal')
+      throw new MeetCallAccessError(403, MIRA_ROOM_DENIED);
     const cloudflare = await getCloudflareContext({ async: true });
     const env = cloudflare.env as unknown as {
       MEET_LIVE: DurableObjectNamespace;
       MEET_REALTIME_TOKEN_SECRET: string;
       GOOGLE_GENERATIVE_AI_API_KEY?: string;
-      MEET_AI_ENABLED_WORKSPACE_IDS?: string;
       MEET_AI_DISABLED?: string;
-      MEET_AI_DISABLED_WORKSPACE_IDS?: string;
     };
-    if (
-      !env.MEET_LIVE ||
-      (MEETING_APP === 'meet' && !env.GOOGLE_GENERATIVE_AI_API_KEY)
-    )
-      throw new MeetCallAccessError(503, 'Live assistant is unavailable');
-    const command = input.data;
-    // Live is transcription. Start and resume are default deny for workspaces
-    // outside the pilot allowlist; stop stays open so a session can always end.
-    if (
-      command.action !== 'stop' &&
-      !isMeetAiAvailableForWorkspace(access.meeting.ws_id, env)
-    )
-      throw new MeetCallAccessError(403, 'Meet AI is temporarily unavailable');
-    const sharedContext =
+    if (command.action === 'choice') {
+      const current = await readPrivateMiraChoice(access);
+      if (command.choice !== 'continue') {
+        for (const sessionId of current.sessions) {
+          if (!env.MEET_LIVE)
+            throw new MeetCallAccessError(
+              503,
+              'Private Mira stop is unavailable'
+            );
+          const response = await env.MEET_LIVE.get(
+            env.MEET_LIVE.idFromName(sessionId)
+          ).fetch('https://live.internal/control', {
+            method: 'POST',
+            body: JSON.stringify({
+              action: 'stop',
+              ownerId: access.user.id,
+              meetingId,
+            }),
+          });
+          if (!response.ok && response.status !== 410)
+            throw new MeetCallAccessError(503, 'Private Mira could not stop');
+          await callRoomService(access, {
+            action: 'mira.private.ended',
+            sessionId,
+          });
+        }
+      }
+      return callRoomService(access, {
+        action: 'mira.private.choice',
+        choice: command.choice,
+        version: command.version,
+      });
+    }
+    const currentChoice =
       command.action === 'stop'
         ? undefined
-        : await callRoomService(access, { action: 'live.context' });
+        : await readPrivateMiraChoice(access);
+    const authority =
+      command.action === 'stop'
+        ? undefined
+        : await readMiraDemoAuthority({
+            accountId: access.user.id,
+            workspaceId: access.meeting.ws_id,
+            meetingId,
+            workspaceMember: access.canReadWorkspace,
+            admitted: currentChoice?.admitted === true,
+            disabledBinding: env.MEET_AI_DISABLED,
+          });
+    if (command.action === 'policy')
+      return {
+        ...currentChoice,
+        available:
+          authority?.allowed === true &&
+          !!env.MEET_LIVE &&
+          !!env.GOOGLE_GENERATIVE_AI_API_KEY,
+      };
+    if (command.action !== 'stop' && !authority?.allowed)
+      throw new MeetCallAccessError(403, 'Meet AI is temporarily unavailable');
+    if (
+      !env.MEET_LIVE ||
+      (command.action !== 'stop' && !env.GOOGLE_GENERATIVE_AI_API_KEY)
+    )
+      throw new MeetCallAccessError(503, 'Live assistant is unavailable');
+    const consent =
+      command.action === 'stop'
+        ? undefined
+        : await requirePrivateMiraChoice(access);
     if (command.action !== 'start') {
       const object = env.MEET_LIVE.get(
         env.MEET_LIVE.idFromName(command.sessionId)
@@ -100,6 +163,17 @@ export async function POST(
         );
       if (command.action === 'stop') return { ok: true };
       const claims = (await response.json()) as LiveSessionClaims;
+      if (
+        claims.mode !== 'personal' ||
+        claims.ownerId !== access.user.id ||
+        claims.meetingId !== meetingId ||
+        claims.consentVersion !== consent?.version ||
+        claims.consentRevision !== consent?.revision
+      )
+        throw new MeetCallAccessError(
+          403,
+          'Private Mira session is unavailable'
+        );
       return {
         sessionId: claims.sessionId,
         token: signLiveSession(
@@ -107,26 +181,18 @@ export async function POST(
           env.MEET_REALTIME_TOKEN_SECRET
         ),
         mode: claims.mode,
+        ownerId: claims.ownerId,
       };
     }
-    if (command.mode === 'room' && !access.isHost)
-      throw new MeetCallAccessError(
-        403,
-        'Only a room admin can invite the room assistant'
-      );
-    if (command.mode === 'room' && command.audioPolicy !== 'participant-opt-in')
-      throw new MeetCallAccessError(
-        409,
-        'Refresh Meet before starting a room assistant'
-      );
     // Personal "Talk to Mira" stays on the actor's personal credits; only the
     // room assistant (meeting transcription/notes) bills the meeting workspace.
-    const billingWorkspaceId =
-      command.mode === 'personal'
-        ? await personalWorkspace(access.user.id)
-        : access.meeting.ws_id;
+    const billingWorkspaceId = await personalWorkspace(access.user.id);
     const claims: LiveSessionClaims = {
       audioPolicy: command.audioPolicy,
+      inputSource: 'private-microphone',
+      consentVersion: consent!.version,
+      consentRevision: consent!.revision,
+      workspaceAuthority: authority!.allowed ? authority!.authority : undefined,
       audience: 'meet-live',
       app: MEETING_APP,
       sessionId: crypto.randomUUID(),
@@ -136,18 +202,6 @@ export async function POST(
       mode: command.mode,
       expiresAt: Date.now() + 120000,
     };
-    const workspaceId = command.workspaceId ?? claims.billingWorkspaceId;
-    const workspace =
-      command.mode === 'personal'
-        ? {
-            id: workspaceId,
-            tools: await liveWorkspaceCatalog(
-              access,
-              workspaceId,
-              command.timezone
-            ),
-          }
-        : undefined;
     const object = env.MEET_LIVE.get(
       env.MEET_LIVE.idFromName(claims.sessionId)
     );
@@ -161,7 +215,6 @@ export async function POST(
           method: 'POST',
           body: JSON.stringify({
             claims,
-            workspace,
             voice: command.voice,
             identity: {
               workspaceId: access.meeting.ws_id,
@@ -169,24 +222,20 @@ export async function POST(
               displayName: access.displayName,
             },
             timezone: command.timezone,
-            scenarioInstructions:
-              MEETING_APP === 'parley'
-                ? await getScenarioPrompt(meetingId)
-                : undefined,
-            sharedContext: JSON.stringify({
-              title: access.meeting.name,
-              ...(sharedContext as object),
-            }),
+            scenarioInstructions: undefined,
+            sharedContext: '',
           }),
         }
       );
       if (!initialized.ok)
         throw new MeetCallAccessError(503, 'Assistant session unavailable');
-      if (command.mode === 'room')
-        await callRoomService(access, {
-          action: 'live.reserve',
-          sessionId: claims.sessionId,
-        });
+      await callRoomService(access, {
+        action: 'mira.private.register',
+        sessionId: claims.sessionId,
+      });
+      const confirmedConsent = await requirePrivateMiraChoice(access);
+      if (confirmedConsent.revision !== consent!.revision)
+        throw new MeetCallAccessError(403, 'Private Mira choice changed');
       const registered = await registry.fetch(
         'https://live.internal/registry/register',
         { method: 'POST', body: JSON.stringify(claims) }
@@ -206,14 +255,6 @@ export async function POST(
       });
       if (!ready.ok)
         throw new MeetCallAccessError(409, 'Assistant start cancelled');
-      if (command.mode === 'room') {
-        const context = await callRoomService<{ live?: { sessionId: string } }>(
-          access,
-          { action: 'live.context' }
-        );
-        if (context.live?.sessionId !== claims.sessionId)
-          throw new MeetCallAccessError(409, 'Assistant start cancelled');
-      }
     } catch (error) {
       await object
         .fetch('https://live.internal/control', {
@@ -225,19 +266,15 @@ export async function POST(
           }),
         })
         .catch(() => undefined);
+      await callRoomService(access, {
+        action: 'mira.private.ended',
+        sessionId: claims.sessionId,
+      }).catch(() => undefined);
       await Promise.allSettled([
         registry.fetch('https://live.internal/registry/remove', {
           method: 'POST',
           body: JSON.stringify(claims),
         }),
-        ...(command.mode === 'room'
-          ? [
-              callRoomService(access, {
-                action: 'live.stop',
-                sessionId: claims.sessionId,
-              }),
-            ]
-          : []),
       ]);
       // Initialization arms a durable alarm. If this immediate stop fails,
       // that alarm closes the unconnected session and retries both cleanups.
@@ -245,6 +282,7 @@ export async function POST(
     }
     return {
       sessionId: claims.sessionId,
+      ownerId: claims.ownerId,
       mode: claims.mode,
       token: signLiveSession(claims, env.MEET_REALTIME_TOKEN_SECRET),
     };

@@ -6,6 +6,21 @@ shared-package changes.
 
 ## Web And Shared UI
 
+- Mira typed-chat activity spans queueing, creation and the Live save barrier,
+  until the SDK user message replaces the optimistic snapshot by ID. Preserve
+  immutable send configuration and cancellation checks after the Live barrier.
+  Web and Workspace copies must agree. Use focused queue/conversation tests in
+  each app; browser Performance entries separate activity, prepared request,
+  first rendered text and finish. See
+  [Mira client activity](../../../../../apps/docs/platform/features/mira-client-actions.mdx#typed-chat-response-activity).
+
+- Shared Google new-chat creation derives a bounded grapheme-safe title from the
+  first message and returns after chat/message persistence. Keep title models off
+  this path; background polishing requires a durable job and a rename fence.
+  Preserve UUID, actor, workspace checks and model FK normalization. See
+  [new conversation titles](../../../../../apps/docs/platform/features/mira-client-actions.mdx#new-conversation-titles)
+  and `packages/ai/src/chat/google/new/route.test.ts`.
+
 - Drive export links use versioned, expiring tokens plus a service-only folder
   revocation marker in the Supabase `.tuturuuu/drive-export-revocations` namespace.
   Read markers uncached on every fetch and fail closed on missing markers or
@@ -1486,6 +1501,21 @@ Keep emitted-Worker acceptance behind an explicit `test:runtime` command and
 artifact. Use `.invalid` hosts for isolated runtime preview fixtures; retain
 production-like preview refusal in the source auth matrix.
 
+
+### Native Tasks navigation and diagnostics
+
+The catch-all native Tasks route pairs its resolved model with its loaded
+pathname. Hide it when the router location differs, before awaiting the next
+server function, and key board/workspace state by actor and resource identity.
+Do not use a previous board's local snapshot as a loading placeholder. See
+`apps/tasks/src/runtime/page-transition-router.test.tsx` and the Tasks
+application page for the query-only navigation exception.
+
+Native Tasks router, startup and root fallback diagnostics use fixed messages
+without raw exceptions. CSP report diagnostics retain only allowlisted directive
+and disposition classifications. See the Tasks native runbook for artifact
+inspection and diagnostic privacy.
+
 ### Workspace picker component verification
 
 The network-fenced fictional fixture and capture matrix are documented in
@@ -1536,6 +1566,16 @@ emitted `dist/server/wrangler.json`; preserve the checked-in declaration preimag
 when generating temporary qualification output. Keep Void scratch output outside
 the authored patch when running changed-file gates.
 
+### UI SDK category-order pilot boundary
+
+Keep `CategoryOrderPilot` explicitly opt-in and separate from the legacy editor
+and active satellite persistence. Its controlled `value`/`onChange` contract
+commits only on drop; Escape/Tab must cancel without persistence. Reject
+ambiguous category names, localize live announcements, and keep exactly one
+roving tab stop. Run its focused keyboard contract tests before proposing
+changes; browser accessibility, hydration and exact-commit CI remain distinct
+acceptance gates. See the Calendar application decision for scope and coverage.
+
 ### IME composition in custom keyboard submission
 
 For text controls that commit or send on Enter, inspect the native keyboard
@@ -1546,3 +1586,13 @@ Escape and explicit button behavior. Test the actual handler with composing and
 non-composing events; a source-string assertion cannot prove the action is
 suppressed. AI Studio model policy entry has focused regression coverage in
 `apps/ai/src/components/policy/model-list-field.test.ts`.
+
+### Legal footer presentation
+
+Render legal footers through `stripInternalReviewSentences` from `@tuturuuu/legal`
+in canonical and proposal surfaces, including native adapters. Preserve stored
+legal text and public contact sentences. Canonical legal pages omit the
+upcoming-changes line and links to `/legal/changes`; keep that route directly
+reachable and retain its own view/language controls. See
+[legal publications](../../../../../apps/docs/platform/features/legal-publications.mdx)
+and both apps' `src/components/production-legal-notices.test.tsx`.

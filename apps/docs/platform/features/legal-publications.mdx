@@ -1,15 +1,23 @@
 ---
 title: "Legal publications"
 description: "Preserve effective legal text and distinguish proposed revisions."
-updatedAt: "2026-11-04"
+updatedAt: "2026-11-13"
 audience: users
 ---
 
-Canonical legal pages preserve each in-force document in full, including its footer.
-Footer sentences mentioning draft review remain part of the published text until an
-authorized revision replaces that document. Presentation adapters must not remove or
-rewrite them. This applies to English and Vietnamese Next.js pages, the Worker/Start
-candidate, and the retained TanStack display adapter; the latter runtime stays paused.
+Canonical legal pages in `apps/web` and `apps/marketing` omit internal legal-review
+sentences from rendered footers in English and Vietnamese. The shared
+`stripInternalReviewSentences` presentation helper also covers proposal footers
+and the web Worker/Start candidate. Stored legal documents, effective dates and
+acceptance records retain their exact values. Public contact and rights-request
+sentences remain visible.
+
+Canonical pages omit the upcoming-changes notice and links to `/legal/changes`.
+The changes and full-proposal routes remain directly reachable; their own navigation
+and language/view controls retain their links. The retired TanStack app stays paused.
+Regression coverage in both apps' `src/components/production-legal-notices.test.tsx`
+renders the EN/VI Privacy, Terms, DPA, SLA, Subprocessors, Acceptable Use and
+Community Guidelines route exports.
 
 The `/legal/changes/full` page and its English and Vietnamese variants show proposals
 with no effective date and with noindex metadata. The page begins with the notice that
@@ -40,7 +48,7 @@ The notice's audience and timing list stays with it; the summary table and its
 non-binding disclaimer share one neutral aside. No summary may replace clause
 text. Internal legal-review annotations are omitted from proposal presentation;
 missing summaries render no placeholder. Proposed/not-yet-in-effect status and
-draft-revision footers remain. In-force text and footers are unchanged. Proposal routes retain
+draft-revision footers remain. Stored in-force text and footers retain their exact values. Proposal routes retain
 noindex. This PR changes neither effective agreements nor acceptance records.
 
 All source sections have stable IDs; the pure package diff matches those IDs and
@@ -75,8 +83,7 @@ re-enable after the clause-restore work lands and the legal reviewer approves th
 Publishing also requires `archiveLinks` per locale in the notice config; the
 `{ARCHIVE_LINKS}` placeholder is never rendered literally and `getLegalNotice`
 throws when the link text is unset. The legal reviewer approves the real archive URLs first.
-The in-force footer decision (remove or keep) is still open; the proposed footers
-must match it on publication day.
+Internal legal-review sentences are omitted from both in-force and proposed footer presentation.
 
 The scope uses the shared theme tokens directly (no local redefinition), so dark
 theme works; the navbar brand mark switches by theme, and client controls receive

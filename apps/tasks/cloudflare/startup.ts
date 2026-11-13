@@ -14,9 +14,8 @@ export function startupRefusal(env: object): Response | null {
       requiredSecrets: REQUIRED_SECRETS,
     });
     return null;
-  } catch (error) {
-    // The helper's message names the missing secret, never its value.
-    console.error(`tasks Worker refused to serve: ${(error as Error).message}`);
+  } catch {
+    console.error('Tasks Worker refused to serve: startup validation failed');
     return new Response('Service misconfigured', {
       status: 503,
       headers: { 'Cache-Control': 'no-store' },

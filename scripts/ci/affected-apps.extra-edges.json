@@ -16,7 +16,12 @@
   "apps/inventory/src/app/api/v1/workspaces/[wsId]/user-groups/[groupId]/linked-products/": [
     "packages/users-core"
   ],
-  "apps/meet-realtime/src/": ["apps/meet", "packages/realtime"],
+  "apps/marketing/": ["apps/gateway"],
+  "apps/meet-realtime/src/": [
+    "apps/meet",
+    "packages/meet-core",
+    "packages/realtime"
+  ],
   "apps/meet/": ["apps/meet-realtime", "packages/meet-core"],
   "apps/meet/messages/": ["packages/programming-ui"],
   "apps/mobile/lib/core/feature_flags/": ["packages/feature-flags"],
@@ -53,6 +58,7 @@
   "packages/utils/": ["packages/internal-api"],
   "packages/utils/src/": [
     "apps/coordination",
+    "apps/gateway",
     "apps/meet-realtime",
     "apps/roadmap"
   ],

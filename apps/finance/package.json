@@ -82,7 +82,7 @@
     "@types/react-dom": "~19.2.7",
     "@typescript/native-preview": "7.0.0-dev.20260707.2",
     "@vitejs/plugin-react": "6.1.2",
-    "@vitejs/plugin-rsc": "0.5.38",
+    "@vitejs/plugin-rsc": "0.5.39",
     "babel-plugin-react-compiler": "^1.0.0",
     "jsdom": "^30.1.3",
     "postcss": "^8.5.31",

@@ -5,6 +5,7 @@ import {
   getLegalDocument,
   getProposedLegalDocument,
   legalChangesCopy,
+  stripInternalReviewSentences,
   legalRevisionChangesCopy,
   upcomingLegalRevision,
   upcomingMobilePrivacyRevision,
@@ -306,7 +307,7 @@ describe('upcoming legal changes', () => {
         );
       }
     });
-    it(`${locale} canonical pages restore dates and link once to changes`, () => {
+    it(`${locale} canonical pages preserve dates and omit internal notices and changes links`, () => {
       for (const kind of [
         'privacy',
         'terms',
@@ -321,10 +322,11 @@ describe('upcoming legal changes', () => {
         );
         const page = new DOMParser().parseFromString(html, 'text/html');
         expect(page.querySelector('footer p')?.textContent).toBe(
-          getLegalDocument(kind, locale).footer
+          stripInternalReviewSentences(getLegalDocument(kind, locale).footer)
         );
-        expect(html.match(/href="(?:\/vi)?\/legal\/changes"/gu)).toHaveLength(
-          1
+        expect(page.querySelector('a[href$="/legal/changes"]')).toBeNull();
+        expect(page.body.textContent).not.toMatch(
+          /requires legal review|counsel-review draft|cần được rà soát pháp lý|chờ rà soát pháp lý/iu
         );
         const effectiveDate =
           kind === 'acceptable-use' || kind === 'community-guidelines'
