@@ -1,8 +1,14 @@
 import { type AssetsBinding, fetchAsset } from '@tuturuuu/start-bridge/assets';
+import { createBasePath } from '@tuturuuu/start-bridge/base-path';
+import {
+  APP_BASE_HEADER,
+  resolveAppBase,
+} from '@tuturuuu/start-bridge/mounts';
 import type { ClickGeolocation } from '../link/analytics';
 import { clickRecord, trackClick } from '../link/analytics';
 import { rawSearch } from '../link/destination';
 import { hostRedirect, PRODUCTION_HOSTS } from '../link/hosts';
+import { shortenerMounts } from '../link/mounts';
 import { resolveShortLink, type ShortLinkPage } from '../link/resolve';
 import type { ShortLinkStore } from '../link/store';
 import { verifyShortLinkPassword } from '../link/verify';
@@ -158,10 +164,13 @@ export async function shortenerRequest(
 ): Promise<Response> {
   const url = new URL(request.url);
   const search = rawSearch(request.url);
-  if (
-    PRODUCTION_HOSTS.has(url.hostname) &&
-    env.SHORTENER_CANONICAL_HOST_ENABLED !== '1'
-  )
+  // One compiled Worker serves both surfaces: the production hosts at their
+  // root and the platform apex under `/shortener` (see `shortenerMounts`).
+  const mount = resolveAppBase(url, shortenerMounts);
+  if (!mount) return finalize(request, plain('Unknown host', 404), false);
+  const base = createBasePath({ app: 'shortener', basePath: mount.basePath });
+  const productionSurface = !base.isRoot || PRODUCTION_HOSTS.has(url.hostname);
+  if (productionSurface && env.SHORTENER_CANONICAL_HOST_ENABLED !== '1')
     return finalize(
       request,
       plain('Staging gateway only', 503, {
@@ -169,23 +178,62 @@ export async function shortenerRequest(
       }),
       false
     );
+  if (env.SHORTENER_CANONICAL_HOST_ENABLED === '1' && !productionSurface)
+    return finalize(request, plain('Unknown host', 404), false);
   const alias = hostRedirect(url, search);
   if (alias) return finalize(request, alias, true);
-  const identity = deps.buildInfo(request);
-  if (identity) return finalize(request, identity, false);
-  if (url.pathname === '/api' || url.pathname.startsWith('/api/'))
+  // The apex mount is canonical without a trailing slash, like every path.
+  if (
+    !base.isRoot &&
+    url.pathname.length > base.basePath.length &&
+    url.pathname.endsWith('/')
+  )
     return finalize(
       request,
-      await apiRequest(request, env, deps, url, search),
+      new Response(null, {
+        status: 308,
+        headers: {
+          Location: `${url.pathname.replace(/\/+$/, '')}${search}`,
+        },
+      }),
+      true
+    );
+  // Mounted requests route on their base-stripped URL and carry the
+  // bridge-owned base header for Start; a client-sent copy is never trusted.
+  const headers = new Headers(request.headers);
+  headers.delete(APP_BASE_HEADER);
+  if (!base.isRoot) headers.set(APP_BASE_HEADER, base.basePath);
+  const appRequest = new Request(base.stripRequest(request) ?? request, {
+    headers,
+  });
+  const appUrl = new URL(appRequest.url);
+  // Start may answer a rendered page with a path-relative Location; under the
+  // mount it is finalized with the base before it reaches the client.
+  const appDeps: ShortenerDependencies = base.isRoot
+    ? deps
+    : {
+        ...deps,
+        renderPage: async (input, page) =>
+          base.finalizeResponse(await deps.renderPage(input, page)),
+      };
+  const identity = appDeps.buildInfo(appRequest);
+  if (identity) return finalize(request, identity, false);
+  if (appUrl.pathname === '/api' || appUrl.pathname.startsWith('/api/'))
+    return finalize(
+      request,
+      await apiRequest(appRequest, env, appDeps, appUrl, search),
       false
     );
-  if (url.pathname.startsWith('/assets/') || PUBLIC_FILES.has(url.pathname))
-    return finalize(request, await fetchAsset(env.ASSETS, request), false);
-  if (url.pathname.startsWith('/_serverFn/'))
-    return finalize(request, await deps.renderPage(request, null), true);
+  if (
+    appUrl.pathname.startsWith('/assets/') ||
+    PUBLIC_FILES.has(appUrl.pathname)
+  )
+    return finalize(request, await fetchAsset(env.ASSETS, appRequest), false);
+  if (appUrl.pathname.startsWith('/_serverFn/'))
+    return finalize(request, await appDeps.renderPage(appRequest, null), true);
   return finalize(
     request,
-    await documentRequest(request, env, deps, url, search),
+    await documentRequest(appRequest, env, appDeps, appUrl, search),
     true
   );
 }
