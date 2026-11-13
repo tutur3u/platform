@@ -136,7 +136,7 @@ describe('guardWebApiCsrf', () => {
   });
 
   it('does not let a bearer string exempt a cross-origin cookie mutation', () => {
-    for (const headers of <Record<string, string>[]>[
+    for (const headers of [
       {
         authorization: 'Bearer junk',
         cookie: SESSION_COOKIE,
@@ -148,7 +148,7 @@ describe('guardWebApiCsrf', () => {
         cookie: SESSION_COOKIE,
         origin: 'https://evil.tuturuuu.com',
       },
-    ]) {
+    ] as Record<string, string>[]) {
       const response = guardWebApiCsrf(
         request('/api/v1/auth/accounts/switch', headers),
         { configuredOrigin: 'https://tuturuuu.com', mode: 'enforce' }
@@ -160,13 +160,26 @@ describe('guardWebApiCsrf', () => {
   it.each([
     '/api/auth/logout',
     '/api/auth/logout/',
+    '/api/auth//logout',
+    '/api/auth/%6Cogout',
+    '/api/auth/logout%2F',
+    '/api/auth%2F%2Flogout%2f',
+    '/api/v1/auth/accounts//logout',
+    '/api/v1/auth/accounts/%6Cogout-all%2F',
     '/api/v1/auth/accounts/logout',
     '/api/v1/auth/accounts/logout-all//',
   ])('holds %s to same-origin even without a session cookie', (path) => {
-    for (const headers of <Record<string, string>[]>[
+    for (const headers of [
       { 'sec-fetch-site': 'cross-site' },
       { origin: 'https://evil.example' },
-    ]) {
+      {},
+      { 'sec-fetch-site': 'same-site' },
+      {
+        authorization: 'Bearer junk',
+        cookie: SESSION_COOKIE,
+        'sec-fetch-site': 'cross-site',
+      },
+    ] as Record<string, string>[]) {
       expect(
         guardWebApiCsrf(request(path, headers), {
           configuredOrigin: 'https://tuturuuu.com',
@@ -189,6 +202,53 @@ describe('guardWebApiCsrf', () => {
         { configuredOrigin: 'https://tuturuuu.com', mode: 'enforce' }
       )
     ).toBeNull();
+  });
+
+  it.each([
+    '/api/auth/logout-other',
+    '/api/auth/%6Cogout-other',
+    '/api/auth/logout%2Fother',
+    '/api/auth/logout%3Fignored',
+    '/api/auth/logout%23ignored',
+    '/other/api/auth/%6Cogout',
+    '/api/auth/%256Cogout',
+    '/api/auth/logout%252F',
+    '/api/auth/logout%2',
+    '/api/auth/%GGlogout',
+    '/api/auth/%FFlogout',
+  ])(
+    'does not classify unrelated or malformed %s as session clearing',
+    (path) => {
+      for (const cookie of [undefined, SESSION_COOKIE]) {
+        const headers: Record<string, string> = {
+          'sec-fetch-site': 'cross-site',
+        };
+        if (cookie) headers.cookie = cookie;
+        const response = guardWebApiCsrf(request(path, headers), {
+          configuredOrigin: 'https://tuturuuu.com',
+          mode: 'enforce',
+        });
+        if (cookie) expect(response?.status).toBe(403);
+        else expect(response).toBeNull();
+      }
+    }
+  );
+
+  it('does not widen webhook exemptions through decoding or slash normalization', () => {
+    for (const path of [
+      '/api/v1//webhooks/provider',
+      '/api/v1/%77ebhooks/provider',
+    ]) {
+      expect(
+        guardWebApiCsrf(
+          request(path, {
+            cookie: SESSION_COOKIE,
+            'sec-fetch-site': 'cross-site',
+          }),
+          { configuredOrigin: 'https://tuturuuu.com', mode: 'enforce' }
+        )?.status
+      ).toBe(403);
+    }
   });
 
   it('leaves other cookie-less cross-site mutations admitted', () => {
