@@ -39,6 +39,8 @@ import {
 // Artifact-dependent: intentionally outside root source-only .test.* discovery.
 const app = fileURLToPath(new URL('../../apps/calendar', import.meta.url));
 const name = 'calendar';
+const CALENDAR_MOUNT_HOST = 'tuturuuu.com';
+const CALENDAR_BASE_PATH = '/calendar';
 const sourceSHA = process.env.NATIVE_FIXTURE_CASE
   ? undefined
   : requireSourceSha(process.argv[2]);
@@ -56,7 +58,9 @@ async function runParent() {
     config: configPath,
     main,
     sourceSHA,
-    canonicalHost: 'calendar.tuturuuu.com',
+    // Production Calendar is served at the tuturuuu.com/calendar apex mount;
+    // the legacy calendar host only redirects there (pinned by source tests).
+    canonicalHost: CALENDAR_MOUNT_HOST,
     ownerPackage: resolve(app, 'package.json'),
     seal: await sealArtifact(root, 'calendar'),
     outbound: denyCalendarOutbound([]),
@@ -202,9 +206,14 @@ async function runChild() {
       }
     });
   }
+  // Paths are app-relative; the worker serves them under the mount base.
   const fetchWorker = (path, headers = {}) =>
-    runtime.worker.fetch(`https://calendar.tuturuuu.com${path}`, {
-      headers,
+    runtime.worker.fetch(
+      `https://${CALENDAR_MOUNT_HOST}${CALENDAR_BASE_PATH}${path}`,
+      { headers, redirect: 'manual' }
+    );
+  const fetchAbsolutePath = (path) =>
+    runtime.worker.fetch(`https://${CALENDAR_MOUNT_HOST}${path}`, {
       redirect: 'manual',
     });
   checkedTest(
@@ -224,7 +233,7 @@ async function runChild() {
           assert.equal(
             response.status,
             200,
-            `Calendar request=https://calendar.tuturuuu.com${path.slice(0, 160)} location=${(response.headers.get('location') ?? '<absent>').split(/[?#]/, 1)[0].slice(0, 240)}`
+            `Calendar request=https://${CALENDAR_MOUNT_HOST}${CALENDAR_BASE_PATH}${path.slice(0, 160)} location=${(response.headers.get('location') ?? '<absent>').split(/[?#]/, 1)[0].slice(0, 240)}`
           );
         } catch (error) {
           primary = error;
@@ -238,10 +247,12 @@ async function runChild() {
           (m) => m[1]
         );
         const module = scripts.find(
-          (src) => src.startsWith('/assets/') && /\.js(?:\?|$)/.test(src)
+          (src) =>
+            src.startsWith(`${CALENDAR_BASE_PATH}/assets/`) &&
+            /\.js(?:\?|$)/.test(src)
         );
         assert.ok(module, 'SSR hydration module missing');
-        const asset = await fetchWorker(module);
+        const asset = await fetchAbsolutePath(module);
         assert.equal(asset.status, 200);
         assert.match(asset.headers.get('content-type') ?? '', /javascript/);
       }
@@ -272,7 +283,10 @@ async function runChild() {
     async () => {
       const response = await fetchWorker('/serwist/sw.js');
       assert.equal(response.status, 200);
-      assert.equal(response.headers.get('service-worker-allowed'), '/');
+      assert.equal(
+        response.headers.get('service-worker-allowed'),
+        `${CALENDAR_BASE_PATH}/`
+      );
       const bytes = await response.text();
       assert.equal(
         bytes,
