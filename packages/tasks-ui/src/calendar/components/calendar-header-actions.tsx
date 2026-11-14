@@ -20,7 +20,7 @@ import {
 } from '@tuturuuu/ui/dropdown-menu';
 import { useCalendar } from '@tuturuuu/ui/hooks/use-calendar';
 import { useWorkspaceActor } from '@tuturuuu/ui/hooks/use-workspace-visibility';
-import { useCreateCalendarEvent } from '@tuturuuu/ui/legacy/calendar/calendar-header-new-event';
+import { useCreateCalendarEvent } from '@tuturuuu/ui/legacy/calendar/toolbar-new-event';
 import { NativeRecurrenceDialog } from '@tuturuuu/ui/legacy/calendar/native-recurrence-dialog';
 import { useCalendarSettings } from '@tuturuuu/ui/legacy/calendar/settings/settings-context';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@tuturuuu/ui/tooltip';
@@ -60,13 +60,13 @@ export function CalendarHeaderActions({
         <TooltipTrigger asChild>
           <Button
             size="sm"
-            className="rounded-r-none max-md:has-[>svg]:px-2"
+            className="rounded-r-none @max-3xl/toolbar:has-[>svg]:px-2"
             onClick={createEvent}
             disabled={eventDisabled}
             aria-label={newEventLabel}
           >
             <PlusIcon className="size-4" />
-            <span className="max-md:hidden">{t('new')}</span>
+            <span className="@max-3xl/toolbar:hidden">{t('new')}</span>
           </Button>
         </TooltipTrigger>
         <TooltipContent>{newEventLabel}</TooltipContent>

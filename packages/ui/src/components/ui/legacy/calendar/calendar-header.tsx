@@ -16,7 +16,7 @@ import { useCalendarClock } from '../../../../hooks/use-calendar-clock';
 import { useCalendarDayZone } from '../../../../hooks/use-calendar-day-zone';
 import type { CalendarView } from '../../../../hooks/use-view-transition';
 import { calendarToday } from '../../../../lib/calendar-day';
-import { CalendarHeaderDateProvider } from './calendar-header-new-event';
+import { CalendarHeaderDateProvider } from './toolbar-new-event';
 import { useCalendarSettings } from './settings/settings-context';
 import { CALENDAR_VIEW_KEYS } from './use-calendar-view-shortcuts';
 
@@ -145,7 +145,7 @@ export function CalendarHeader({
         data-slot="calendar-header"
         className={cn(
           CALENDAR_HEADER_HEIGHT_CLASS,
-          'flex min-w-0 shrink-0 items-center gap-1'
+          '@container/toolbar flex min-w-0 shrink-0 items-center gap-1'
         )}
       >
         <div className="flex shrink-0 items-center gap-1">
@@ -164,18 +164,18 @@ export function CalendarHeader({
               <Button
                 variant="outline"
                 size="sm"
-                className="max-md:w-8 max-md:px-0"
+                className="@max-3xl/toolbar:w-8 @max-3xl/toolbar:px-0"
                 onClick={isCurrentPeriod ? undefined : selectToday}
                 disabled={isCurrentPeriod}
                 aria-label={todayLabel}
               >
-                <span className="md:hidden">
+                <span className="@3xl/toolbar:hidden">
                   <CalendarCheck className="size-4" />
                 </span>
-                <span className="max-md:hidden">{todayLabel}</span>
+                <span className="@max-3xl/toolbar:hidden">{todayLabel}</span>
               </Button>
             </TooltipTrigger>
-            <TooltipContent className="md:hidden">{todayLabel}</TooltipContent>
+            <TooltipContent>{todayLabel}</TooltipContent>
           </Tooltip>
         </div>
 

@@ -83,9 +83,9 @@ export default function TasksSidebarContent({
 
   return (
     <Dialog>
-      <div className="@container slide-in-from-right-5 ml-2 flex h-full max-h-screen w-1/3 flex-col rounded-lg border border-border bg-background/60 text-foreground shadow-xl backdrop-blur-md transition-all duration-500 ease-out xl:flex">
+      <div className="@container slide-in-from-right-5 ml-2 flex h-full max-h-screen w-72 shrink-0 flex-col rounded-lg border border-border bg-background text-foreground 2xl:w-80">
         {/* Header */}
-        <div className="@container flex items-center justify-between rounded-t-lg border-border/50 border-b bg-linear-to-r from-background/80 to-background/60 px-4 py-3 backdrop-blur-sm">
+        <div className="@container flex items-center justify-between rounded-t-lg border-border/50 border-b px-3 py-2">
           <div className="flex w-full items-center justify-between gap-1">
             <div className="transition-all duration-300 hover:scale-105">
               <TimeTracker wsId={wsId} tasks={tasks} />
@@ -169,7 +169,7 @@ export default function TasksSidebarContent({
           {/* Tasks Tab Content */}
           <TabsContent
             value="tasks"
-            className="fade-in-50 m-0 flex min-h-0 flex-1 animate-in flex-col space-y-4 overflow-y-auto p-4 pb-2 duration-300"
+            className="fade-in-50 m-0 flex min-h-0 flex-1 animate-in flex-col space-y-3 overflow-y-auto p-3 pb-2 duration-300"
           >
             <div className="mx-auto w-full max-w-lg p-0">
               <PriorityView
