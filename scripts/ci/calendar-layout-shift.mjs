@@ -16,9 +16,10 @@
  * pixels (default 1) between first paint and the resolved calendar.
  *
  * Environment: CALENDAR_SHIFT_PORT (default 4193), CALENDAR_SHIFT_OUT (JSON
- * evidence path), CALENDAR_SHIFT_SHOTS (directory for first-paint and resolved
- * screenshots in light and dark), CALENDAR_SHIFT_NO_ASSERT=1 to print numbers
- * without failing.
+ * evidence path that must not exist yet; without it the evidence is kept in a
+ * private per-run directory whose path is printed), CALENDAR_SHIFT_SHOTS
+ * (directory for first-paint and resolved screenshots in light and dark),
+ * CALENDAR_SHIFT_NO_ASSERT=1 to print numbers without failing.
  */
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
@@ -34,9 +35,15 @@ const fixtures = path.join(harness, 'fixtures.tsx');
 const port = Number(process.env.CALENDAR_SHIFT_PORT ?? 4193);
 const maxCls = Number(process.env.CALENDAR_SHIFT_MAX_CLS ?? 0.01);
 const maxMove = Number(process.env.CALENDAR_SHIFT_MAX_MOVE ?? 1);
-const outPath =
-  process.env.CALENDAR_SHIFT_OUT ??
-  path.join(os.tmpdir(), `calendar-layout-shift-${process.pid}.json`);
+// A private (0700) per-run directory holds the Vite cache and the default
+// evidence file, so no output path is predictable from another account. The
+// cache is removed on exit; the default evidence stays for review.
+const workDir = fs.mkdtempSync(
+  path.join(os.tmpdir(), 'calendar-layout-shift-')
+);
+const outFromEnv = process.env.CALENDAR_SHIFT_OUT;
+const outPath = outFromEnv ?? path.join(workDir, 'results.json');
+const viteCacheDir = path.join(workDir, 'vite');
 const shots = process.env.CALENDAR_SHIFT_SHOTS;
 const noAssert = process.env.CALENDAR_SHIFT_NO_ASSERT === '1';
 /** How long to watch after navigation; covers hydration and data loading. */
@@ -358,10 +365,7 @@ try {
     root: harness,
     configFile: false,
     publicDir: path.join(repo, 'apps/calendar/public'),
-    cacheDir: path.join(
-      os.tmpdir(),
-      `calendar-layout-shift-vite-${process.pid}`
-    ),
+    cacheDir: viteCacheDir,
     plugins: [fixturePlugin, react()],
     // Shared packages read Next.js public env values; none apply here.
     define: { 'process.env.NODE_ENV': '"development"' },
@@ -412,7 +416,10 @@ try {
     }
   }
 
-  fs.writeFileSync(outPath, `${JSON.stringify(results, null, 2)}\n`);
+  fs.writeFileSync(outPath, `${JSON.stringify(results, null, 2)}\n`, {
+    flag: 'wx',
+    mode: 0o600,
+  });
   console.log(
     JSON.stringify(
       results.map(({ frames, ...summary }) => summary),
@@ -446,4 +453,7 @@ try {
 } finally {
   await browser?.close();
   await server?.close();
+  fs.rmSync(viteCacheDir, { recursive: true, force: true });
+  // Only the directory this run created is removed, never a caller path.
+  if (outFromEnv) fs.rmSync(workDir, { recursive: true, force: true });
 }
