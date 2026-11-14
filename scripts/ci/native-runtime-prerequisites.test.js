@@ -186,9 +186,7 @@ test('native build identity records the environment its caller declares', () => 
     (step) => step.name === 'Admit the native profile selector'
   );
   assert.ok(
-    admit.run.includes(
-      '[[ "$BUILD_ENVIRONMENT" =~ ^(preview|production)$ ]]'
-    )
+    admit.run.includes('[[ "$BUILD_ENVIRONMENT" =~ ^(preview|production)$ ]]')
   );
   const identity = validate.steps.find(
     (step) => step.name === 'Generate exact-checkout build identity'
