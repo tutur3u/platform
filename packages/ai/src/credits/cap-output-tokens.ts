@@ -44,6 +44,14 @@ async function getOutputPricePerToken(
   return data.output_price_per_token ?? null;
 }
 
+/** Read-only price lookup. A price is not an allowance and never admits a request. */
+export function readOutputPricePerToken(
+  sbAdmin: SupabaseClient,
+  modelId: string
+): Promise<number | null> {
+  return getOutputPricePerToken(sbAdmin, modelId);
+}
+
 /**
  * Application-level safety cap: ensure maxOutputTokens won't exceed
  * what the user can afford based on remaining credits and real gateway pricing.
@@ -59,7 +67,8 @@ export async function capMaxOutputTokensByCredits(
   modelId: string,
   maxOutputTokens: number | null,
   remainingCredits: number,
-  markupMultiplier = 1.0
+  markupMultiplier = 1.0,
+  prefetchedOutputPricePerToken?: number | null
 ): Promise<number | null> {
   if (
     !Number.isFinite(remainingCredits) ||
@@ -74,7 +83,10 @@ export async function capMaxOutputTokensByCredits(
   )
     return null;
 
-  const outputPricePerToken = await getOutputPricePerToken(sbAdmin, modelId);
+  const outputPricePerToken =
+    prefetchedOutputPricePerToken !== undefined
+      ? prefetchedOutputPricePerToken
+      : await getOutputPricePerToken(sbAdmin, modelId);
   if (
     !outputPricePerToken ||
     !Number.isFinite(outputPricePerToken) ||

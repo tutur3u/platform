@@ -24,11 +24,15 @@ function refusal(env: Record<string, string | undefined>, wsId = WS) {
   }
 }
 
-/** Protected list plus this workspace on the enabled list. Anything else denies. */
+/**
+ * Kill switch explicitly off, protected list, and this workspace on the
+ * enabled list. Anything else denies (an absent kill switch denies too).
+ */
 function enabled(
   extra: Record<string, string | undefined> = {}
 ): Record<string, string | undefined> {
   return {
+    MEET_AI_DISABLED: 'false',
     MEET_AI_PROTECTED_WORKSPACE_IDS: OTHER,
     MEET_AI_ENABLED_WORKSPACE_IDS: WS,
     ...extra,
@@ -61,6 +65,12 @@ describe('Notes voice honours the shared Meet AI gate', () => {
       expect(refusal(enabled({ MEET_AI_DISABLED: value }))).toBeNull();
     }
   );
+
+  it('denies when the kill switch is absent even if the workspace is enabled', () => {
+    const env = enabled();
+    delete env.MEET_AI_DISABLED;
+    expectDenied(refusal(env));
+  });
 
   it('denies when the workspace is denylisted', () => {
     expectDenied(refusal(enabled({ MEET_AI_DISABLED_WORKSPACE_IDS: WS })));

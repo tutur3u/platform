@@ -29,7 +29,9 @@ for (const [app, project, configs, appFile] of [
   [
     'calendar',
     'tsconfig.json',
-    ['vite.config.mts', 'void.config.ts'],
+    // native-build-config.test.ts imports vite.config.mts (#8257), so it is
+    // checked with the config program, not the app program.
+    ['vite.config.mts', 'void.config.ts', 'native-build-config.test.ts'],
     'src/lib/calendar/provider-sync-network.test.ts',
   ],
   [

@@ -17,7 +17,10 @@ import {
   prepareMeetGraph,
 } from './meet-native-graph-files.mjs';
 import { inspectMeetGraph, PROFILE } from './meet-native-profile.mjs';
-import { readMeetFixtureReceipt, readMeetProductionReceipt } from './meet-native-fixture-supplier.mjs';
+import {
+  readMeetFixtureReceipt,
+  readMeetProductionReceipt,
+} from './meet-native-fixture-supplier.mjs';
 import { PRODUCTION_PROFILE } from './meet-native-inventory.mjs';
 import { createMeetSsrCollector } from './meet-ssr-capture.mjs';
 import { observeOwnedChild } from './native-wrangler-observable.mjs';
@@ -27,7 +30,10 @@ export function meetChildEnvironment(
   { caseRoot, tempRoot, planFile, receiptFile, sourceSHA, profile }
 ) {
   if (profile !== undefined)
-    assert.ok([PROFILE, PRODUCTION_PROFILE].includes(profile), 'Unknown child graph profile');
+    assert.ok(
+      [PROFILE, PRODUCTION_PROFILE].includes(profile),
+      'Unknown child graph profile'
+    );
   const result = {};
   for (const name of ['PATH', 'SystemRoot', 'WINDIR'])
     if (env[name]) result[name] = env[name];
@@ -53,29 +59,47 @@ export function meetChildEnvironment(
     CI: 'true',
     GITHUB_SHA: sourceSHA,
     GITHUB_REF:
-      (profile === PRODUCTION_PROFILE || (profile === undefined && env.GITHUB_REF === 'refs/heads/production'))
-        ? env.GITHUB_REF
+      profile === PRODUCTION_PROFILE ||
+      (profile === undefined && env.GITHUB_REF === 'refs/heads/production')
+        ? 'refs/heads/production'
         : 'refs/heads/ci-fixture',
   };
 }
 
 export async function launchMeet(sourceSHA, fixture) {
   assert.match(sourceSHA ?? '', /^[a-f0-9]{40}$/);
-  const app = fixture?.appDirectory ?? await realpath(
-    fileURLToPath(new URL('../../apps/meet', import.meta.url))
-  );
+  const app =
+    fixture?.appDirectory ??
+    (await realpath(
+      fileURLToPath(new URL('../../apps/meet', import.meta.url))
+    ));
   const ownerPackage = fixture?.ownerPackage ?? join(app, 'package.json');
   const plan = await inspectMeetGraph({
     appDirectory: app,
     sourceSHA,
     ownerPackage,
-    ...(fixture?.profile === PRODUCTION_PROFILE ? { admission: fixture.admission } : {}),
+    ...(fixture?.profile === PRODUCTION_PROFILE
+      ? { admission: fixture.admission }
+      : {}),
   });
   if (fixture) {
     const production = fixture.profile === PRODUCTION_PROFILE;
-    assert.deepEqual(Object.keys(fixture).sort(),
-      ['appDirectory', 'ownerPackage', 'receiptPath', ...(production ? ['admission', 'profile'] : [])].sort());
-    assert.deepEqual(plan, await (production ? readMeetProductionReceipt : readMeetFixtureReceipt)(sourceSHA, fixture.receiptPath));
+    assert.deepEqual(
+      Object.keys(fixture).sort(),
+      [
+        'appDirectory',
+        'ownerPackage',
+        'receiptPath',
+        ...(production ? ['admission', 'profile'] : []),
+      ].sort()
+    );
+    assert.deepEqual(
+      plan,
+      await (production ? readMeetProductionReceipt : readMeetFixtureReceipt)(
+        sourceSHA,
+        fixture.receiptPath
+      )
+    );
   }
   const programRoot = await realpath(
     await mkdtemp(join(tmpdir(), 'meet-native-run-'))
@@ -218,13 +242,20 @@ if (process.argv[1] === fileURLToPath(import.meta.url)) {
   else {
     assert.equal(process.argv.length, 5);
     const production = process.argv[3] === '--production-receipt';
-    assert.ok(production || process.argv[3] === '--fixture-receipt', 'Unknown Meet profile selector');
-    const plan = await (production ? readMeetProductionReceipt : readMeetFixtureReceipt)(process.argv[2], process.argv[4]);
+    assert.ok(
+      production || process.argv[3] === '--fixture-receipt',
+      'Unknown Meet profile selector'
+    );
+    const plan = await (
+      production ? readMeetProductionReceipt : readMeetFixtureReceipt
+    )(process.argv[2], process.argv[4]);
     await launchMeet(process.argv[2], {
       appDirectory: plan.app,
       ownerPackage: plan.ownerPackage,
       receiptPath: process.argv[4],
-      ...(production ? { profile: PRODUCTION_PROFILE, admission: plan.admission } : {}),
+      ...(production
+        ? { profile: PRODUCTION_PROFILE, admission: plan.admission }
+        : {}),
     });
   }
 }

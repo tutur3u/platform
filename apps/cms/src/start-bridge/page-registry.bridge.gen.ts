@@ -13,6 +13,7 @@ export const pages = [
   { pattern: "/[wsId]/media", file: "src/app/[locale]/(dashboard)/[wsId]/media/page.tsx", defaults: { "locale": "en" } },
   { pattern: "/[wsId]/members", file: "src/app/[locale]/(dashboard)/[wsId]/members/page.tsx", defaults: { "locale": "en" } },
   { pattern: "/[wsId]", file: "src/app/[locale]/(dashboard)/[wsId]/page.tsx", defaults: { "locale": "en" } },
+  { pattern: "/[wsId]/pages/[entryId]/builder", file: "src/app/[locale]/(dashboard)/[wsId]/pages/[entryId]/builder/page.tsx", defaults: { "locale": "en" } },
   { pattern: "/[wsId]/pages", file: "src/app/[locale]/(dashboard)/[wsId]/pages/page.tsx", defaults: { "locale": "en" } },
   { pattern: "/[wsId]/preview", file: "src/app/[locale]/(dashboard)/[wsId]/preview/page.tsx", defaults: { "locale": "en" } },
   { pattern: "/[wsId]/products", file: "src/app/[locale]/(dashboard)/[wsId]/products/page.tsx", defaults: { "locale": "en" } },

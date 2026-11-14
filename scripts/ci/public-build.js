@@ -31,24 +31,41 @@ function collect(root, prefix) {
   function visit(name) {
     if (/[\x00-\x1f\x7f]/.test(name)) throw new Error('Unsafe artifact name');
     const file = path.join(root, name);
-    const st = fs.lstatSync(file);
-    if (st.isSymbolicLink() || (!st.isFile() && !st.isDirectory()))
-      throw new Error('Unsafe artifact entry');
     if (
       name
         .split('/')
         .some((p) => /^(?:\.env(?:\.|$)|node_modules$|\.git$)/.test(p))
     )
       throw new Error('Private or dependency artifact entry');
-    if (st.isDirectory())
-      for (const child of fs.readdirSync(file).sort())
-        visit(name + '/' + child);
-    else
-      records.push({
-        path: name,
-        bytes: st.size,
-        sha256: sha256(fs.readFileSync(file)),
-      });
+    let fd;
+    try {
+      fd = fs.openSync(
+        file,
+        fs.constants.O_RDONLY |
+          fs.constants.O_NOFOLLOW |
+          fs.constants.O_NONBLOCK
+      );
+    } catch (error) {
+      if (error?.code === 'ELOOP' || error?.code === 'EINVAL')
+        throw new Error('Unsafe artifact entry');
+      throw error;
+    }
+    try {
+      const st = fs.fstatSync(fd);
+      if (st.isDirectory()) {
+        for (const child of fs.readdirSync(file).sort())
+          visit(name + '/' + child);
+      } else {
+        if (!st.isFile()) throw new Error('Unsafe artifact entry');
+        records.push({
+          path: name,
+          bytes: st.size,
+          sha256: sha256(fs.readFileSync(fd)),
+        });
+      }
+    } finally {
+      fs.closeSync(fd);
+    }
   }
   visit(prefix);
   return records;

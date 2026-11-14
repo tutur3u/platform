@@ -33,6 +33,7 @@ import { useMiraChatPersistence } from './use-mira-chat-persistence';
 import { useMiraLiveConversation } from './use-mira-live-conversation';
 import { useMiraLatency } from './use-mira-latency';
 import { useMiraMessageQueue } from './use-mira-message-queue';
+import { useMiraTempAuthPrefetch } from './use-mira-temp-auth-prefetch';
 import { useMiraUiActions } from './use-mira-ui-actions';
 
 export interface MiraChatPanelProps {
@@ -69,6 +70,7 @@ export default function MiraChatPanel({
   const queryClient = useQueryClient();
   const [input, setInput] = useState('');
   const [viewOnly, setViewOnly] = useState(false);
+  const panelRef = useRef<HTMLDivElement>(null);
   const composerRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLTextAreaElement>(null);
   const scrollContainerRef = useRef<HTMLDivElement>(null);
@@ -147,6 +149,12 @@ export default function MiraChatPanel({
     onRequestStart: timing.requestStart,
   });
 
+  const warmTempAuth = useMiraTempAuthPrefetch(
+    chatRequestBody,
+    !model.disabled && !model.value.startsWith('chatgpt/'),
+    panelRef
+  );
+
   const {
     attachedFiles,
     clearAttachedFiles,
@@ -206,6 +214,7 @@ export default function MiraChatPanel({
     stop,
   } = useChat({
     id: stableChatId,
+    throttle: 0,
     generateId: () => crypto.randomUUID(),
     messages: initialMessages,
     transport,
@@ -439,7 +448,16 @@ export default function MiraChatPanel({
       : chatRequestBody.workspaceContextId;
 
   return (
-    <div className="flex min-h-0 min-w-0 flex-1 flex-col">
+    <div
+      ref={panelRef}
+      className="flex min-h-0 min-w-0 flex-1 flex-col"
+      onFocusCapture={() => {
+        if (document.activeElement === inputRef.current) warmTempAuth();
+      }}
+      onInputCapture={(event) => {
+        if (event.target === inputRef.current) warmTempAuth();
+      }}
+    >
       <MiraVoiceModeSwitcher
         key={stableChatId}
         initialLiveMode={thinkingMode === 'thinking' ? 'pro' : 'flash'}

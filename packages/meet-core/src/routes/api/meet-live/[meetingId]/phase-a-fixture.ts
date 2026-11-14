@@ -18,66 +18,70 @@ const mocks = vi.hoisted(() => ({
   claims: {} as Record<string, unknown>,
   order: [] as string[],
 }));
-vi.mock('@opennextjs/cloudflare', () => ({
-  getCloudflareContext: mocks.cloudflare,
-}));
-vi.mock('@tuturuuu/meet-core/features/call/lib/call-access', () => ({
-  MeetCallAccessError: class extends Error {
-    constructor(
-      public status: number,
-      message: string
-    ) {
-      super(message);
-    }
-  },
-}));
-vi.mock('@tuturuuu/meet-core/features/call/server/room-service', () => ({
-  callRoomService: mocks.callRoom,
-  personalWorkspace: async () => '00000000-0000-4000-8000-000000000003',
-  roomRoute: async (
-    _request: Request,
-    id: string,
-    work: (access: unknown) => Promise<unknown>
-  ) => {
-    try {
-      return Response.json(
-        await work({
-          user: { id: '00000000-0000-4000-8000-000000000001' },
-          canReadWorkspace: mocks.member,
-          isHost: true,
-          displayName: 'Synthetic person',
-          meeting: {
-            id,
-            ws_id: '00000000-0000-4000-8000-000000000003',
-            name: 'Synthetic room',
-          },
-        })
-      );
-    } catch (error) {
-      return Response.json(
-        { error: (error as Error).message },
-        { status: (error as { status?: number }).status ?? 500 }
-      );
-    }
-  },
-}));
-vi.mock('../../../../features/live-assistant/server/demo-authority', () => ({
-  readMiraDemoAuthority: async (input: {
-    disabledBinding: unknown;
-    workspaceMember: boolean;
-  }) =>
-    mocks.authorized &&
-    input.workspaceMember &&
-    input.disabledBinding === 'false'
-      ? { allowed: true, authority: 'verified-personal' }
-      : { allowed: false, reason: 'workspace' },
-}));
-vi.mock('@tuturuuu/meet-core/features/live-assistant/token', () => ({
-  signLiveSession: mocks.sign,
-}));
+// vi.mock only hoists from test files, so the module mocks themselves live in
+// route.billing.test.ts and route.gate.test.ts; each vi.mock there returns one
+// of these factories so both suites mock exactly the same module set.
+// private-consent and the workspace gate are intentionally NOT mocked.
+export const phaseAModules = {
+  cloudflare: () => ({
+    getCloudflareContext: mocks.cloudflare,
+  }),
+  callAccess: () => ({
+    MeetCallAccessError: class extends Error {
+      constructor(
+        public status: number,
+        message: string
+      ) {
+        super(message);
+      }
+    },
+  }),
+  roomService: () => ({
+    callRoomService: mocks.callRoom,
+    personalWorkspace: async () => '00000000-0000-4000-8000-000000000003',
+    roomRoute: async (
+      _request: Request,
+      id: string,
+      work: (access: unknown) => Promise<unknown>
+    ) => {
+      try {
+        return Response.json(
+          await work({
+            user: { id: '00000000-0000-4000-8000-000000000001' },
+            canReadWorkspace: mocks.member,
+            isHost: true,
+            displayName: 'Synthetic person',
+            meeting: {
+              id,
+              ws_id: '00000000-0000-4000-8000-000000000003',
+              name: 'Synthetic room',
+            },
+          })
+        );
+      } catch (error) {
+        return Response.json(
+          { error: (error as Error).message },
+          { status: (error as { status?: number }).status ?? 500 }
+        );
+      }
+    },
+  }),
+  demoAuthority: () => ({
+    readMiraDemoAuthority: async (input: {
+      disabledBinding: unknown;
+      workspaceMember: boolean;
+    }) =>
+      mocks.authorized &&
+      input.workspaceMember &&
+      input.disabledBinding === 'false'
+        ? { allowed: true, authority: 'verified-personal' }
+        : { allowed: false, reason: 'workspace' },
+  }),
+  token: () => ({
+    signLiveSession: mocks.sign,
+  }),
+};
 export const f = mocks;
-export { POST as live } from './route';
-export { POST as review } from './review/route';
 export const meetingId = '00000000-0000-4000-8000-000000000002';
 export const sessionId = '00000000-0000-4000-8000-000000000004';
 export const actorId = '00000000-0000-4000-8000-000000000001';
@@ -92,6 +96,8 @@ export const call = (
   handler(
     new Request(`https://meet.example.test/api/meet-live/${meetingId}`, {
       method: 'POST',
+      // Same-origin, as a real browser POST sends it.
+      headers: { Origin: 'https://meet.example.test' },
       body: JSON.stringify(body),
     }),
     { params: Promise.resolve({ meetingId }) }

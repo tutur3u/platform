@@ -22,7 +22,9 @@ describe(isMeetAiEnabledOnWeb, () => {
     meetAiWorkerEnv.mockResolvedValue(undefined);
     vi.stubEnv(ENV, '');
     vi.stubEnv('MEET_AI_PROTECTED_WORKSPACE_IDS', EASY_CENTER);
-    vi.stubEnv('MEET_AI_DISABLED', undefined);
+    // Kill switch explicitly off so allow cases exercise the allowlist; an
+    // absent switch denies (covered below).
+    vi.stubEnv('MEET_AI_DISABLED', 'false');
     vi.stubEnv('MEET_AI_DISABLED_WORKSPACE_IDS', undefined);
     vi.spyOn(console, 'warn').mockImplementation(() => {});
   });
@@ -33,6 +35,15 @@ describe(isMeetAiEnabledOnWeb, () => {
 
   it('denies when controls are unset (default-off)', async () => {
     delete process.env[ENV];
+    vi.stubEnv('MEET_AI_DISABLED', undefined);
+    await expect(isMeetAiEnabledOnWeb(WS)).resolves.toBe(false);
+  });
+
+  it('denies an allowlisted workspace when the kill switch is absent', async () => {
+    vi.stubEnv(ENV, WS);
+    vi.stubEnv('MEET_AI_DISABLED', undefined);
+    await expect(isMeetAiEnabledOnWeb(WS)).resolves.toBe(false);
+    meetAiWorkerEnv.mockResolvedValue({ [ENV]: WS });
     await expect(isMeetAiEnabledOnWeb(WS)).resolves.toBe(false);
   });
 

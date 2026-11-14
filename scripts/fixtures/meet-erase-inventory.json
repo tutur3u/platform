@@ -49,7 +49,7 @@
     "apps/database/supabase/migrations/20260930100002_user_group_activity_fast_page.sql": "d0e4f5a3b3c38f34f92f948b501fa29cf42013d1fd118301d94cb8b651c37b62",
     "apps/database/supabase/migrations/20260930110000_user_group_activity_anchor_extraction.sql": "38db0fbab057f0a3363df2aca4778fd9d8050e5a4e434fe292385e51215a90f1",
     "apps/database/supabase/migrations/20261011002100_tutoring_teacher_hours.sql": "f2a49bb8f8f0399f3c332dbe782d1c99e3c717aef25c8d0cbadcbecce5a7903b",
-    "packages/types/src/supabase.ts": "0f47e2722baaf4dc0bb9fc451af160321654b68ca158d7b46cf4bf306bcc9148",
+    "packages/types/src/supabase.ts": "7e9d4ba52fa9e8a90c18c82053c33b52355cd2cbbdf971fedaaa04f742d258c8",
     "packages/users-core/src/routes/users/reports/[reportId]/route.ts": "641924a91c0c713a117e981075b736ec12d213f7169ff831a732c78147330e91"
   },
   "publicDocumentPage": {

@@ -8,7 +8,11 @@ import {
   httpStatusForMutation,
 } from './runtime-access';
 import { applyFeatureFlagMutation, emptyLedger } from './runtime-state';
-import { catalogFamilyCounts, classifyFlagKey } from './runtime-policy';
+import {
+  catalogFamilyCounts,
+  classifyFlagKey,
+  RUNTIME_FLAG_KEYS,
+} from './runtime-policy';
 import { featureFlagCatalog } from './catalog';
 import { registry } from './registry.generated';
 
@@ -140,15 +144,25 @@ describe('catalog families', () => {
     expect(catalogFamilyCounts()).toEqual({
       'mobile-build': 2,
       'mobile-runtime': 16,
-      'workspace-secret': 34,
-      total: 52,
+      'workspace-secret': 35,
+      total: 53,
     });
     expect(
       featureFlagCatalog.flags
         .filter((flag) => classifyFlagKey(flag.key).mutable)
         .map((flag) => flag.key)
         .sort()
-    ).toEqual(registry.map((flag) => flag.key).sort());
+    ).toEqual([...RUNTIME_FLAG_KEYS].sort());
+    expect(RUNTIME_FLAG_KEYS).toHaveLength(16);
+    expect(registry).toHaveLength(17);
+    expect(classifyFlagKey('tutoring_parent_message_v2')).toEqual({
+      family: null,
+      mutable: false,
+    });
+    expect(classifyFlagKey('ENABLE_DOCUMENT_HIERARCHY')).toEqual({
+      family: 'workspace-secret',
+      mutable: false,
+    });
     expect(classifyFlagKey('mobile_offline')).toEqual({
       family: 'mobile-runtime',
       mutable: true,

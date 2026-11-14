@@ -133,6 +133,8 @@ describe('Notes voice honours MEET_AI_DISABLED', () => {
     mock.reserve.mockResolvedValue({ start: true, job: { status: 'queued' } });
     process.env.MEET_AI_PROTECTED_WORKSPACE_IDS = protectedWorkspaceId;
     process.env.MEET_AI_ENABLED_WORKSPACE_IDS = workspaceId;
+    // The shared gate denies when the kill switch is absent, so turn it off.
+    process.env.MEET_AI_DISABLED = 'false';
     const scheduled: Array<() => unknown> = [];
     mock.after.mockImplementation((task: () => unknown) =>
       scheduled.push(task)

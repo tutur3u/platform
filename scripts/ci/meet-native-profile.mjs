@@ -12,7 +12,12 @@ import {
   admitAbuseGuardStub,
 } from './meet-native-abuse-guard-stub.mjs';
 import { ASSURANCE_ORIGIN } from './meet-native-assurance.mjs';
-import { admitMeetProductionInputs, PRODUCTION_PROFILE, sealMeetApp, sealMeetProductionApp } from './meet-native-inventory.mjs';
+import {
+  admitMeetProductionInputs,
+  PRODUCTION_PROFILE,
+  sealMeetApp,
+  sealMeetProductionApp,
+} from './meet-native-inventory.mjs';
 
 const { validateOutput, verifyManifest, identity, secretNames } = createRequire(
   import.meta.url
@@ -132,13 +137,26 @@ export function appBindings(secret, abuseGuard) {
 export async function inspectMeetGraph(options) {
   closed(
     options,
-    ['appDirectory', 'sourceSHA', 'ownerPackage', ...(Object.hasOwn(options, 'admission') ? ['admission'] : [])],
+    [
+      'appDirectory',
+      'sourceSHA',
+      'ownerPackage',
+      ...(Object.hasOwn(options, 'admission') ? ['admission'] : []),
+    ],
     'Meet graph options'
   );
   const { appDirectory, sourceSHA, ownerPackage, admission } = options;
   if (Object.hasOwn(options, 'admission')) {
-    closed(admission, ['profile', 'productionProof'], 'Production graph admission');
-    assert.equal(admission.profile, PRODUCTION_PROFILE, 'Unsupported Meet profile');
+    closed(
+      admission,
+      ['profile', 'productionProof'],
+      'Production graph admission'
+    );
+    assert.equal(
+      admission.profile,
+      PRODUCTION_PROFILE,
+      'Unsupported Meet profile'
+    );
     admitMeetProductionInputs(admission.productionProof, { sourceSHA });
   }
   assert.match(sourceSHA, /^[a-f0-9]{40}$/);
@@ -162,10 +180,17 @@ export async function inspectMeetGraph(options) {
   const root = join(app, 'dist');
   const configRelative = relative(root, artifact.configPath);
   const assetsRelative = relative(root, artifact.assets);
-  if (admission) admitMeetProductionInputs(admission.productionProof, { sourceSHA,
-    ownerPackageHash: hash(await readFile(ownerPackage)),
-    lockHash: hash(await readFile(join(dirname(dirname(app)), 'bun.lock'))) });
-  const seal = await sealMeetGraph(root, { configRelative, assetsRelative, ...(admission ? { admission } : {}) });
+  if (admission)
+    admitMeetProductionInputs(admission.productionProof, {
+      sourceSHA,
+      ownerPackageHash: hash(await readFile(ownerPackage)),
+      lockHash: hash(await readFile(join(dirname(dirname(app)), 'bun.lock'))),
+    });
+  const seal = await sealMeetGraph(root, {
+    configRelative,
+    assetsRelative,
+    ...(admission ? { admission } : {}),
+  });
   within(root, artifact.configPath);
   within(root, artifact.main);
   within(root, artifact.assets);
@@ -206,8 +231,15 @@ export async function sealMeetGraph(root, options) {
   const admission = options.admission;
   if (!Object.hasOwn(options, 'admission')) return sealMeetApp(root, options);
   closed(admission, ['profile', 'productionProof'], 'Closed graph admission');
-  assert.equal(admission.profile, PRODUCTION_PROFILE, 'Unknown Meet graph profile');
-  return sealMeetProductionApp(root, { ...options, productionProof: admission.productionProof });
+  assert.equal(
+    admission.profile,
+    PRODUCTION_PROFILE,
+    'Unknown Meet graph profile'
+  );
+  return sealMeetProductionApp(root, {
+    ...options,
+    productionProof: admission.productionProof,
+  });
 }
 
 export async function assertMeetOriginal(plan) {

@@ -39,6 +39,7 @@ const HEAVY_PR_WORKFLOWS = [
   'calendar-generation-contract.yaml',
   'chat-cloudflare.yaml',
   'cms-cloudflare.yaml',
+  'cms-renderer.yaml',
   'codeql.yml',
   'colab-cloudflare.yaml',
   'connected-mail-accounts-contract.yaml',

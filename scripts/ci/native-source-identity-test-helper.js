@@ -171,7 +171,30 @@ function sourceIdentityTests({ app, workflowName, jobName, source }) {
       const runtime = step(
         'Verify emitted Start SSR, auth, cookies, rewrites and Live guards'
       );
-      assert.equal(run(runtime.run).status, 0);
+      // The step consumes the supplier's receipt output and fails closed
+      // without it.
+      assert.equal(
+        runtime.env.MEET_FIXTURE_RECEIPT,
+        '${{ steps.meet-fixture-supplier.outputs.receipt }}'
+      );
+      const supplierStep = job.steps.find(
+        (item) => item.id === 'meet-fixture-supplier'
+      );
+      assert.equal(
+        supplierStep.run,
+        'node scripts/ci/meet-native-fixture-supplier.mjs "$SOURCE_SHA" "$RUNNER_TEMP"'
+      );
+      assert.ok(
+        job.steps.indexOf(supplierStep) < job.steps.indexOf(runtime),
+        'fixture supplier must run before the runtime verifier'
+      );
+      assert.notEqual(run(runtime.run).status, 0);
+      const fixtureReceipt = join(root, 'meet-fixture-receipt.json');
+      writeFileSync(fixtureReceipt, '{}\n', { flag: 'wx', mode: 0o600 });
+      assert.equal(
+        run(runtime.run, { MEET_FIXTURE_RECEIPT: fixtureReceipt }).status,
+        0
+      );
       assert.equal(
         readFileSync(join(root, 'command-input.txt'), 'utf8').split('\n')[0],
         head

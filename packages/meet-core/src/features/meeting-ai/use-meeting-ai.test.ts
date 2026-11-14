@@ -148,6 +148,13 @@ it('counts simultaneous sources as one upload window and flushes final audio on 
   expect(mocks.upload).toHaveBeenCalledTimes(1);
   const data = mocks.upload.mock.calls[0]?.[2] as FormData;
   expect(JSON.parse(String(data.get('sources')))).toHaveLength(12);
+  for (let index = 0; index < 12; index++) {
+    const audio = data.get(`audio_${index}`);
+    expect(audio).toBeInstanceOf(File);
+    if (!(audio instanceof File)) throw new Error('Expected binary audio');
+    expect(audio.name).toBe(`source-${index}.wav`);
+    expect(audio.size).toBe(5);
+  }
   await act(async () => {
     mocks.onChunk?.(new Blob(['final']), 10);
     await hook.result.current.finish();

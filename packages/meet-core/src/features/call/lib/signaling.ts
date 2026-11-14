@@ -2,7 +2,11 @@ import type {
   MeetRealtimeClientMessage,
   MeetRealtimeServerMessage,
 } from '@tuturuuu/realtime/meet';
-import { computeBackoffMs, shouldReconnect } from './reconnect';
+import {
+  computeBackoffMs,
+  isTerminalCloseCode,
+  shouldReconnect,
+} from './reconnect';
 
 type PendingRequest = {
   reject: (error: Error) => void;
@@ -21,7 +25,34 @@ export interface MeetSignalingOptions {
   resolveUrl: (signal?: AbortSignal) => Promise<string> | string;
 }
 
-export type MeetSignalingStatus = 'connecting' | 'open' | 'closed' | 'error';
+/**
+ * - `connecting`: first connection, before the room has ever been reached.
+ * - `open`: the socket is live.
+ * - `reconnecting`: a live connection dropped and automatic recovery is in
+ *   progress. Expected during deploys; not an error.
+ * - `closed`: the server ended the connection with a terminal close code.
+ * - `error`: automatic recovery is exhausted; only a manual retry can help.
+ */
+export type MeetSignalingStatus =
+  | 'connecting'
+  | 'open'
+  | 'reconnecting'
+  | 'closed'
+  | 'error';
+
+/**
+ * Whether automatic recovery is still running, or no further automatic
+ * attempt will be made (budget exhausted or a terminal close).
+ */
+export type MeetSignalingRecovery = 'reconnecting' | 'exhausted';
+
+export function getSignalingRecovery(
+  status: MeetSignalingStatus
+): MeetSignalingRecovery | null {
+  if (status === 'reconnecting') return 'reconnecting';
+  if (status === 'closed' || status === 'error') return 'exhausted';
+  return null;
+}
 
 /**
  * Distributive so each variant of the discriminated union keeps its own fields;
@@ -77,7 +108,7 @@ export class MeetSignaling {
       this.lastAdmissionReconnectAt = performance.now();
     const attempt = new AbortController();
     this.connectionAttempt = attempt;
-    this.options.onStatusChange?.('connecting');
+    this.options.onStatusChange?.(this.recoveringStatus());
     this.readinessTimer = setTimeout(() => {
       if (this.connectionAttempt !== attempt || this.closedByUs) return;
       const socket = this.socket;
@@ -86,7 +117,6 @@ export class MeetSignaling {
       this.socket = null;
       socket?.close();
       this.failAllPending(new Error('signaling_timeout'));
-      this.options.onStatusChange?.('error');
       this.scheduleReconnect();
     }, READINESS_TIMEOUT_MS);
 
@@ -97,7 +127,6 @@ export class MeetSignaling {
       } catch {
         if (this.connectionAttempt !== attempt || this.closedByUs) return;
         this.clearReadiness();
-        this.options.onStatusChange?.('error');
         this.scheduleReconnect();
         return;
       }
@@ -108,7 +137,6 @@ export class MeetSignaling {
         socket = new WebSocket(url);
       } catch {
         this.clearReadiness();
-        this.options.onStatusChange?.('error');
         this.scheduleReconnect();
         return;
       }
@@ -126,9 +154,11 @@ export class MeetSignaling {
         this.flushTitle();
       });
       socket.addEventListener('error', () => {
+        // The close event that follows decides between recovery and a
+        // terminal state; reporting an error here would flash one mid-retry.
         if (this.socket === socket && !this.closedByUs) {
           this.clearStability();
-          this.options.onStatusChange?.('error');
+          this.options.onStatusChange?.(this.recoveringStatus());
         }
       });
       socket.addEventListener('close', (event) => {
@@ -139,6 +169,11 @@ export class MeetSignaling {
           this.handleMessage(String(event.data));
       });
     })();
+  }
+
+  /** Automatic recovery reads as a calm reconnect once the room was reached. */
+  private recoveringStatus(): MeetSignalingStatus {
+    return this.hasConnected ? 'reconnecting' : 'connecting';
   }
 
   private clearReadiness() {
@@ -166,7 +201,6 @@ export class MeetSignaling {
     this.socket = null;
     this.failAllPending(new Error('signaling_closed'));
     if (this.closedByUs) return;
-    this.options.onStatusChange?.('closed');
     this.scheduleReconnect(code);
   }
 
@@ -212,10 +246,12 @@ export class MeetSignaling {
   private scheduleReconnect(closeCode?: number) {
     if (this.closedByUs) return;
     if (!shouldReconnect(this.attempt, closeCode)) {
-      if (closeCode !== 1000 && closeCode !== 4403)
-        this.options.onStatusChange?.('error');
+      this.options.onStatusChange?.(
+        isTerminalCloseCode(closeCode) ? 'closed' : 'error'
+      );
       return;
     }
+    this.options.onStatusChange?.(this.recoveringStatus());
 
     // The server re-announces pending admission on every connection. Bound
     // repeated notifications after allowing the first recovery with normal backoff.

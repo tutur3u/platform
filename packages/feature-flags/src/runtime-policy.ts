@@ -1,7 +1,14 @@
 import { featureFlagCatalog } from './catalog';
 import { registry } from './registry.generated';
 
-export const RUNTIME_FLAG_KEYS = registry.map((flag) => flag.key);
+/**
+ * Registry keys backed by the platform runtime store. Workspace-scoped registry
+ * entries are inventory-only (their value comes from workspace configuration),
+ * so the migration's family map never admits them and they are never mutable.
+ */
+export const RUNTIME_FLAG_KEYS = registry
+  .filter((flag) => !('scope' in flag && flag.scope === 'workspace'))
+  .map((flag) => flag.key);
 
 const FAMILIES = [
   'mobile-runtime',

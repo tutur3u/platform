@@ -40,6 +40,34 @@ describe('provider output spending ceiling', () => {
       )
     ).toBe(AI_REQUEST_MAX_OUTPUT_TOKENS);
   });
+  it('uses a prefetched price without reading the model row again', async () => {
+    const db = database({ output_price_per_token: 99 });
+    expect(
+      await capMaxOutputTokensByCredits(
+        db,
+        'google/gemini-2.5-flash',
+        1000,
+        1000,
+        1,
+        0.001
+      )
+    ).toBe(100);
+    expect(db.schema).not.toHaveBeenCalled();
+  });
+  it('denies a prefetched missing price instead of treating output as free', async () => {
+    const db = database({ output_price_per_token: 0.001 });
+    expect(
+      await capMaxOutputTokensByCredits(
+        db,
+        'google/gemini-2.5-flash',
+        1000,
+        1000,
+        1,
+        null
+      )
+    ).toBeNull();
+    expect(db.schema).not.toHaveBeenCalled();
+  });
   it.each([
     null,
     { output_price_per_token: 0 },
