@@ -485,6 +485,56 @@ test('child build identity follows the admitted graph instead of ambient product
   );
 });
 
+test('admitted production child identity never echoes a conflicting ambient ref', () => {
+  const context = {
+    caseRoot: '/case',
+    tempRoot: '/case/temp',
+    planFile: '/case/plan',
+    receiptFile: '/case/receipt',
+    sourceSHA: 'a'.repeat(40),
+  };
+  // Only the explicitly admitted production profile selects production.
+  for (const ambient of [
+    undefined,
+    'refs/heads/ci-fixture',
+    'refs/heads/main',
+    'refs/pull/1/merge',
+  ]) {
+    const env = ambient === undefined ? {} : { GITHUB_REF: ambient };
+    assert.equal(
+      meetChildEnvironment(env, { ...context, profile: PRODUCTION_PROFILE })
+        .GITHUB_REF,
+      'refs/heads/production'
+    );
+    // Fixture and unselected children never inherit production identity.
+    assert.equal(
+      meetChildEnvironment(env, { ...context, profile: 'meet-emitted-v1' })
+        .GITHUB_REF,
+      'refs/heads/ci-fixture'
+    );
+    assert.equal(
+      meetChildEnvironment(env, context).GITHUB_REF,
+      'refs/heads/ci-fixture'
+    );
+  }
+  assert.equal(
+    meetChildEnvironment(
+      { GITHUB_REF: 'refs/heads/production' },
+      { ...context, profile: 'meet-emitted-v1' }
+    ).GITHUB_REF,
+    'refs/heads/ci-fixture'
+  );
+  for (const profile of ['unknown', 'production', PRODUCTION_PROFILE + ' '])
+    assert.throws(
+      () =>
+        meetChildEnvironment(
+          { GITHUB_REF: 'refs/heads/production' },
+          { ...context, profile }
+        ),
+      /Unknown child graph profile/
+    );
+});
+
 test('fixture producer observes owned child close and refuses a bounded timeout', async () => {
   const before = {
     term: process.listenerCount('SIGTERM'),
