@@ -493,29 +493,30 @@ test(
 );
 
 test(
-  'named provider execution uses app HTTP denial while invalid transport makes zero attempts',
+  'retired room provider refuses requests without provider egress',
   {
     timeout: 30000,
   },
   async () => {
-    policies.app.expectDenial(
-      'POST',
-      'https://generativelanguage.googleapis.com/v1beta/models/gemini-ci:generateContent'
-    );
+    const count = policies.app.controls.length;
+    assert.equal(count, 1);
     const response = await fetchProbe('/provider-egress-denied');
-    assert.equal(response.status, 599);
-    assert.deepEqual(await response.json(), {
-      error: { message: 'Meeting provider request failed' },
-    });
+    assert.equal(response.status, 403);
+    assert.equal(
+      await response.text(),
+      'Room meeting AI is unavailable. Use Private Mira.'
+    );
     assert.equal(policies.app.assurance.length, ASSURANCE_READS);
     assert.equal(policies.probe.assurance.length, 0);
-    policies.app.assertControls(2);
+    policies.app.assertControls(count);
     policies.probe.assertControls(PROBE_NEGATIVES);
-    const count = policies.app.controls.length;
     const invalid = await fetchProbe('/provider-invalid');
     assert.equal(invalid.status, 403);
-    await invalid.text();
-    assert.equal(policies.app.controls.length, count);
+    assert.equal(
+      await invalid.text(),
+      'Room meeting AI is unavailable. Use Private Mira.'
+    );
+    policies.app.assertControls(count);
     assert.deepEqual(unexpected, []);
   }
 );
