@@ -1,0 +1,263 @@
+{
+  "label": "base",
+  "origin": "http://127.0.0.1:8788",
+  "mode": "axe",
+  "pages": [
+    {
+      "path": "/roadmap",
+      "width": 390,
+      "theme": "light",
+      "serious": 0,
+      "critical": 0,
+      "moderate": 0,
+      "minor": 0,
+      "violations": [],
+      "logo": null
+    },
+    {
+      "path": "/roadmap",
+      "width": 390,
+      "theme": "dark",
+      "serious": 0,
+      "critical": 0,
+      "moderate": 0,
+      "minor": 0,
+      "violations": [],
+      "logo": null
+    },
+    {
+      "path": "/roadmap",
+      "width": 1440,
+      "theme": "light",
+      "serious": 1,
+      "critical": 0,
+      "moderate": 0,
+      "minor": 0,
+      "violations": [
+        {
+          "id": "label-content-name-mismatch",
+          "impact": "serious",
+          "nodes": 1,
+          "sample": [
+            ".min-w-10"
+          ]
+        }
+      ],
+      "logo": null
+    },
+    {
+      "path": "/roadmap",
+      "width": 1440,
+      "theme": "dark",
+      "serious": 1,
+      "critical": 0,
+      "moderate": 0,
+      "minor": 0,
+      "violations": [
+        {
+          "id": "label-content-name-mismatch",
+          "impact": "serious",
+          "nodes": 1,
+          "sample": [
+            ".min-w-10"
+          ]
+        }
+      ],
+      "logo": null
+    },
+    {
+      "path": "/roadmap/vi",
+      "width": 390,
+      "theme": "light",
+      "serious": 0,
+      "critical": 0,
+      "moderate": 0,
+      "minor": 0,
+      "violations": [],
+      "logo": null
+    },
+    {
+      "path": "/roadmap/vi",
+      "width": 390,
+      "theme": "dark",
+      "serious": 0,
+      "critical": 0,
+      "moderate": 0,
+      "minor": 0,
+      "violations": [],
+      "logo": null
+    },
+    {
+      "path": "/roadmap/vi",
+      "width": 1440,
+      "theme": "light",
+      "serious": 1,
+      "critical": 0,
+      "moderate": 0,
+      "minor": 0,
+      "violations": [
+        {
+          "id": "label-content-name-mismatch",
+          "impact": "serious",
+          "nodes": 1,
+          "sample": [
+            ".min-w-10"
+          ]
+        }
+      ],
+      "logo": null
+    },
+    {
+      "path": "/roadmap/vi",
+      "width": 1440,
+      "theme": "dark",
+      "serious": 1,
+      "critical": 0,
+      "moderate": 0,
+      "minor": 0,
+      "violations": [
+        {
+          "id": "label-content-name-mismatch",
+          "impact": "serious",
+          "nodes": 1,
+          "sample": [
+            ".min-w-10"
+          ]
+        }
+      ],
+      "logo": null
+    },
+    {
+      "path": "/roadmap/workshops/edufest-2026",
+      "width": 390,
+      "theme": "light",
+      "serious": 0,
+      "critical": 0,
+      "moderate": 0,
+      "minor": 0,
+      "violations": [],
+      "logo": null
+    },
+    {
+      "path": "/roadmap/workshops/edufest-2026",
+      "width": 390,
+      "theme": "dark",
+      "serious": 0,
+      "critical": 0,
+      "moderate": 0,
+      "minor": 0,
+      "violations": [],
+      "logo": null
+    },
+    {
+      "path": "/roadmap/workshops/edufest-2026",
+      "width": 1440,
+      "theme": "light",
+      "serious": 1,
+      "critical": 0,
+      "moderate": 0,
+      "minor": 0,
+      "violations": [
+        {
+          "id": "label-content-name-mismatch",
+          "impact": "serious",
+          "nodes": 1,
+          "sample": [
+            ".min-w-10"
+          ]
+        }
+      ],
+      "logo": null
+    },
+    {
+      "path": "/roadmap/workshops/edufest-2026",
+      "width": 1440,
+      "theme": "dark",
+      "serious": 1,
+      "critical": 0,
+      "moderate": 0,
+      "minor": 0,
+      "violations": [
+        {
+          "id": "label-content-name-mismatch",
+          "impact": "serious",
+          "nodes": 1,
+          "sample": [
+            ".min-w-10"
+          ]
+        }
+      ],
+      "logo": null
+    },
+    {
+      "path": "/roadmap/vi/workshops/edufest-2026",
+      "width": 390,
+      "theme": "light",
+      "serious": 0,
+      "critical": 0,
+      "moderate": 0,
+      "minor": 0,
+      "violations": [],
+      "logo": null
+    },
+    {
+      "path": "/roadmap/vi/workshops/edufest-2026",
+      "width": 390,
+      "theme": "dark",
+      "serious": 0,
+      "critical": 0,
+      "moderate": 0,
+      "minor": 0,
+      "violations": [],
+      "logo": null
+    },
+    {
+      "path": "/roadmap/vi/workshops/edufest-2026",
+      "width": 1440,
+      "theme": "light",
+      "serious": 1,
+      "critical": 0,
+      "moderate": 0,
+      "minor": 0,
+      "violations": [
+        {
+          "id": "label-content-name-mismatch",
+          "impact": "serious",
+          "nodes": 1,
+          "sample": [
+            ".min-w-10"
+          ]
+        }
+      ],
+      "logo": null
+    },
+    {
+      "path": "/roadmap/vi/workshops/edufest-2026",
+      "width": 1440,
+      "theme": "dark",
+      "serious": 1,
+      "critical": 0,
+      "moderate": 0,
+      "minor": 0,
+      "violations": [
+        {
+          "id": "label-content-name-mismatch",
+          "impact": "serious",
+          "nodes": 1,
+          "sample": [
+            ".min-w-10"
+          ]
+        }
+      ],
+      "logo": null
+    }
+  ],
+  "thirdPartyOrigins": {
+    "https://api.github.com": 7
+  },
+  "failedResponses": [
+    "403 https://api.github.com/repos/tutur3u/platform/commits/main",
+    "403 https://api.github.com/repos/tutur3u/platform/compare/58825f154b90e59af8ff93768f2601a758ae0f39...main?per_page=1",
+    "403 https://api.github.com/repos/tutur3u/platform/compare/502f6029f23a3b8b6b0c28d9bf03aea9f8c3e0e5...main?per_page=1"
+  ]
+}

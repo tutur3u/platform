@@ -1,0 +1,33 @@
+200 /roadmap
+200 /roadmap/vi
+200 /roadmap/workshops/edufest-2026
+200 /roadmap/vi/workshops/edufest-2026
+200 http://127.0.0.1:8787/roadmap/assets/styles-BSzjWoFM.css
+200 http://127.0.0.1:8787/roadmap/assets/roadmap-boot-BsZ_IJIo.js
+200 http://127.0.0.1:8787/roadmap/assets/tuturuuu-logo-eJmoZVfu.png
+200 http://127.0.0.1:8787/roadmap/assets/be-vietnam-pro-500-latin-BcWytNOG.woff2
+200 http://127.0.0.1:8787/roadmap/assets/be-vietnam-pro-600-latin-xAC4kEK0.woff2
+200 http://127.0.0.1:8787/roadmap/assets/index-BQamw-AZ.js
+200 http://127.0.0.1:8787/roadmap/assets/be-vietnam-pro-500-vietnamese-D3pY20Dx.woff2
+200 http://127.0.0.1:8787/roadmap/assets/be-vietnam-pro-600-vietnamese-DbGrrtCq.woff2
+200 http://127.0.0.1:8787/roadmap/assets/upskii-logo-96-ByyQD1Z1.png
+200 http://127.0.0.1:8787/roadmap/assets/be-vietnam-pro-500-latin-ext-D9Mxtggg.woff2
+200 http://127.0.0.1:8787/roadmap/assets/be-vietnam-pro-600-latin-ext-BKiYkgig.woff2
+200 http://127.0.0.1:8787/roadmap/assets/be-vietnam-pro-700-vietnamese-DptIoWwl.woff2
+200 http://127.0.0.1:8787/roadmap/assets/be-vietnam-pro-700-latin-ext-CI8xL9vt.woff2
+200 http://127.0.0.1:8787/roadmap/assets/be-vietnam-pro-700-latin-CPfR8Jz_.woff2
+200 http://127.0.0.1:8787/roadmap/assets/be-vietnam-pro-800-vietnamese-BEUwTqXl.woff2
+200 http://127.0.0.1:8787/roadmap/assets/be-vietnam-pro-800-latin-ext-CuRTcTDh.woff2
+200 http://127.0.0.1:8787/roadmap/assets/be-vietnam-pro-800-latin-B5VTH9An.woff2
+200 http://127.0.0.1:8787/roadmap/assets/jetbrains-mono-variable-DYhBJxHs.woff2
+200 http://127.0.0.1:8787/roadmap/assets/jetbrains-mono-latin-BB0eCvjd.woff2
+200 http://127.0.0.1:8787/roadmap/assets/jetbrains-mono-vietnamese-BuiWsewI.woff2
+200 http://127.0.0.1:8787/roadmap/assets/jetbrains-mono-400-latin-DuuNxu2V.woff2
+200 http://127.0.0.1:8787/roadmap/assets/jetbrains-mono-labels-CqXkNmBr.woff2
+200 history /roadmap/assets/history-fhCSfClG.json
+200 preload http://127.0.0.1:8787/roadmap/assets/tuturuuu-logo-eJmoZVfu.png
+200 preload http://127.0.0.1:8787/roadmap/assets/be-vietnam-pro-500-latin-BcWytNOG.woff2
+200 preload http://127.0.0.1:8787/roadmap/assets/be-vietnam-pro-600-latin-xAC4kEK0.woff2
+200 preload http://127.0.0.1:8787/roadmap/assets/be-vietnam-pro-500-vietnamese-D3pY20Dx.woff2
+200 preload http://127.0.0.1:8787/roadmap/assets/be-vietnam-pro-600-vietnamese-DbGrrtCq.woff2
+canonical smoke passed on http://127.0.0.1:8787
