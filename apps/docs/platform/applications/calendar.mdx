@@ -29,6 +29,15 @@ verifier cookies; failure retains the safe fallback and cookie cleanup. Other
 methods, protected pages, shared auth defaults and other satellite apps are
 unchanged. Web and mobile Calendar surfaces are outside this rule's scope.
 
+The `tuturuuu.com/calendar` mount renders the same tokenless completion document
+for these paths under its base. A token-bearing mounted request never consumes
+or forwards the token: GET and HEAD resume the validated same-origin next path,
+and other methods return to login, because the mount shares the apex session.
+A redirect that the production subdomain answers into `/calendar` names the apex
+absolutely (`https://tuturuuu.com/calendar/...`, query kept), so it never
+resolves against `calendar.tuturuuu.com`. `apps/calendar/src/proxy.mounted-auth.test.ts`
+and `apps/calendar/src/runtime/calendar-mount.test.ts` cover both rules.
+
 `apps/calendar/src/runtime/public-completion.test.ts` covers the real proxy,
 shared token consumer, locale resolution, anonymous page model, security policy,
 cookie cleanup and token-bearing/protected negative controls. The emitted Worker
