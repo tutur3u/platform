@@ -173,7 +173,7 @@ jobs:
       artifact-script: scripts/ci/mind-native-artifact.py
       env-interface: MindGeneratedEnv
       worker-environment-type: MindEnvironment
-      unit-command: node --test cloudflare/required-secrets.test.mjs cloudflare/required-secrets.test.ts cloudflare/server-artifact-scan.test.mjs && bun run test
+      unit-command: node --test cloudflare/deployment-profile.test.mjs cloudflare/required-secrets.test.mjs cloudflare/required-secrets.test.ts cloudflare/server-artifact-scan.test.mjs && bun run test
       # Public staging values from repository variables for same-repository
       # events; fork pull requests (and unset variables) build with fixtures.
       public-env: |
@@ -199,6 +199,7 @@ jobs:
       NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY: ${{ (github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository) && vars.PRODUCTION_SUPABASE_PUBLISHABLE_KEY || 'sb_publishable_mind_ci_placeholder' }}
       NEXT_PUBLIC_APP_URL: https://mind.tuturuuu.com
       NEXT_PUBLIC_WEB_APP_URL: https://tuturuuu.com
+      VITE_MIND_NATIVE_PROFILE: production
       WRANGLER_SEND_METRICS: 'false'
       NODE_OPTIONS: --max-old-space-size=8192
     steps:
@@ -231,8 +232,16 @@ jobs:
           command: cd apps/mind && bun run build:cloudflare
           token: ''
           team: ''
-      - name: Qualify the staging output before rewriting
-        run: python3 scripts/ci/mind-native-artifact.py config apps/mind
+      - name: Require the production profile in the emitted config
+        run: |
+          node -e "
+          const c = require('./apps/mind/dist/server/wrangler.json');
+          const ok = c.name === 'tuturuuu-mind'
+            && c.vars?.TUTURUUU_NOINDEX === '0'
+            && c.services?.some((s) => s.binding === 'WORKER_SELF_REFERENCE' && s.service === 'tuturuuu-mind')
+            && c.services?.some((s) => s.binding === 'ABUSE_GUARD' && s.service === 'tuturuuu-abuse-guard' && s.entrypoint === 'AbuseGuardEntrypoint');
+          if (!ok) { console.error('emitted wrangler.json is not the production profile'); process.exit(1); }
+          "
       - name: Write the production wrangler config
         run: |
           node --input-type=module <<'JS'
