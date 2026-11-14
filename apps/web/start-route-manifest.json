@@ -969,22 +969,6 @@
       "cronOwner": null
     },
     {
-      "pattern": "/[locale]/meet",
-      "source": "apps/web/src/app/[locale]/(marketing)/meet/page.tsx",
-      "category": "page",
-      "owner": "web-next",
-      "disposition": "Next-fallback",
-      "cronOwner": null
-    },
-    {
-      "pattern": "/[locale]/meet/plans/[planId]",
-      "source": "apps/web/src/app/[locale]/(marketing)/meet/plans/[planId]/page.tsx",
-      "category": "page",
-      "owner": "web-next",
-      "disposition": "Next-fallback",
-      "cronOwner": null
-    },
-    {
       "pattern": "/[locale]/models",
       "source": "apps/web/src/app/[locale]/(marketing)/models/page.tsx",
       "category": "page",
@@ -1132,6 +1116,22 @@
     {
       "pattern": "/[locale]/products/meet-together",
       "source": "apps/web/src/app/[locale]/(marketing)/products/meet-together/page.tsx",
+      "category": "page",
+      "owner": "web-next",
+      "disposition": "Next-fallback",
+      "cronOwner": null
+    },
+    {
+      "pattern": "/[locale]/products/meet",
+      "source": "apps/web/src/app/[locale]/(marketing)/products/meet/page.tsx",
+      "category": "page",
+      "owner": "web-next",
+      "disposition": "Next-fallback",
+      "cronOwner": null
+    },
+    {
+      "pattern": "/[locale]/products/meet/plans/[planId]",
+      "source": "apps/web/src/app/[locale]/(marketing)/products/meet/plans/[planId]/page.tsx",
       "category": "page",
       "owner": "web-next",
       "disposition": "Next-fallback",
