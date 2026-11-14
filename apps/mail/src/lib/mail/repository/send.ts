@@ -1,6 +1,7 @@
 import { EmailService, sendWorkspaceEmail } from '@tuturuuu/email-service';
 import type { SendMailMessagePayload } from '@tuturuuu/internal-api';
 import { ROOT_WORKSPACE_ID } from '@tuturuuu/utils/constants';
+import { describeMailError, MailSendError } from '../send-error';
 import type { MailRouteContext } from '../types';
 import { loadOutboundAttachments } from './attachments';
 import { requireMailboxAccess } from './bootstrap';
@@ -96,161 +97,192 @@ export async function sendMailMessage({
   if (!claimed)
     return getMailMessage({ ctx, mailboxId, messageId: message.id });
 
-  const { data: outboundJob, error: jobError } = await privateTable(
-    access.admin,
-    'mail_outbound_jobs'
-  )
-    .insert({
-      mailbox_id: mailboxId,
-      message_id: message.id,
+  let outboundJobId: string | null = null;
+  try {
+    const { data: outboundJob, error: jobError } = await privateTable(
+      access.admin,
+      'mail_outbound_jobs'
+    )
+      .insert({
+        mailbox_id: mailboxId,
+        message_id: message.id,
+        recipients: {
+          bcc: payload.bcc ?? [],
+          cc: payload.cc ?? [],
+          to: payload.to,
+        },
+        provider: outboundProvider,
+        status: 'sending',
+      })
+      .select('*')
+      .single();
+
+    if (jobError) {
+      throw new Error(`Failed to create outbound job: ${jobError.message}`);
+    }
+    outboundJobId = outboundJob.id;
+
+    const attachments = await loadOutboundAttachments(
+      access.admin,
+      mailboxId,
+      message.id
+    );
+    const outboundHtml = attachments.reduce(
+      (html, attachment) =>
+        attachment.disposition === 'inline' && attachment.contentId
+          ? html.replaceAll(
+              new RegExp(
+                `(?:https?:\\/\\/[^"']+)?\\/attachments\\/${attachment.id}(?=["'])`,
+                'gu'
+              ),
+              `cid:${attachment.contentId}`
+            )
+          : html,
+      message.sanitizedHtml || message.bodyHtml || ''
+    );
+    const replyHeaders = {
+      ...(payload.inReplyTo ? { 'In-Reply-To': payload.inReplyTo } : {}),
+      ...(payload.references?.length
+        ? { References: payload.references.join(' ') }
+        : {}),
+    };
+    const senderDomain = access.mailbox.address.split('@')[1] ?? 'tuturuuu.com';
+    const sesInternetMessageId = `<${message.id}@${senderDomain}>`;
+    if (outboundProvider === 'ses') {
+      await mailMessageTable(access, ctx)
+        .update({ internet_message_id: sesInternetMessageId })
+        .eq('id', message.id)
+        .eq('mailbox_id', mailboxId);
+    }
+    const sendParams = {
+      content: {
+        attachments,
+        // Cloudflare controls Message-ID and rejects attempts to set it. SES raw
+        // MIME accepts the deterministic ID, which lets inbound replies resolve
+        // authoritatively without relying on normalized subjects.
+        headers:
+          outboundProvider === 'ses'
+            ? { 'Message-ID': sesInternetMessageId, ...replyHeaders }
+            : replyHeaders,
+        html: outboundHtml,
+        subject: message.subject,
+        text: message.bodyText ?? undefined,
+      },
+      metadata: {
+        attachments: attachments.map((attachment) => ({
+          contentType: attachment.contentType,
+          fileName: attachment.filename,
+          sizeBytes: attachment.data.byteLength,
+        })),
+        entityId: message.id,
+        entityType: 'mail_message',
+        templateType: 'mail',
+        userId: ctx.user.id,
+      },
       recipients: {
-        bcc: payload.bcc ?? [],
-        cc: payload.cc ?? [],
+        bcc: payload.bcc,
+        cc: payload.cc,
         to: payload.to,
       },
-      provider: outboundProvider,
-      status: 'sending',
-    })
-    .select('*')
-    .single();
-
-  if (jobError) {
-    throw new Error(`Failed to create outbound job: ${jobError.message}`);
-  }
-
-  const attachments = await loadOutboundAttachments(
-    access.admin,
-    mailboxId,
-    message.id
-  );
-  const outboundHtml = attachments.reduce(
-    (html, attachment) =>
-      attachment.disposition === 'inline' && attachment.contentId
-        ? html.replaceAll(
-            new RegExp(
-              `(?:https?:\\/\\/[^"']+)?\\/attachments\\/${attachment.id}(?=["'])`,
-              'gu'
-            ),
-            `cid:${attachment.contentId}`
-          )
-        : html,
-    message.sanitizedHtml || message.bodyHtml || ''
-  );
-  const replyHeaders = {
-    ...(payload.inReplyTo ? { 'In-Reply-To': payload.inReplyTo } : {}),
-    ...(payload.references?.length
-      ? { References: payload.references.join(' ') }
-      : {}),
-  };
-  const senderDomain = access.mailbox.address.split('@')[1] ?? 'tuturuuu.com';
-  const sesInternetMessageId = `<${message.id}@${senderDomain}>`;
-  if (outboundProvider === 'ses') {
-    await mailMessageTable(access, ctx)
-      .update({ internet_message_id: sesInternetMessageId })
-      .eq('id', message.id)
-      .eq('mailbox_id', mailboxId);
-  }
-  const sendParams = {
-    content: {
-      attachments,
-      // Cloudflare controls Message-ID and rejects attempts to set it. SES raw
-      // MIME accepts the deterministic ID, which lets inbound replies resolve
-      // authoritatively without relying on normalized subjects.
-      headers:
-        outboundProvider === 'ses'
-          ? { 'Message-ID': sesInternetMessageId, ...replyHeaders }
-          : replyHeaders,
-      html: outboundHtml,
-      subject: message.subject,
-      text: message.bodyText ?? undefined,
-    },
-    metadata: {
-      attachments: attachments.map((attachment) => ({
-        contentType: attachment.contentType,
-        fileName: attachment.filename,
-        sizeBytes: attachment.data.byteLength,
-      })),
-      entityId: message.id,
-      entityType: 'mail_message',
-      templateType: 'mail',
-      userId: ctx.user.id,
-    },
-    recipients: {
-      bcc: payload.bcc,
-      cc: payload.cc,
-      to: payload.to,
-    },
-    source: {
-      email: access.mailbox.address,
-      name:
-        access.mailbox.senderName ||
-        access.mailbox.displayName ||
-        access.mailbox.address,
-    },
-  };
-  const workspaceId = ctx.normalizedWsId || ROOT_WORKSPACE_ID;
-  const result =
-    outboundProvider === 'cloudflare'
-      ? await (async () => {
-          const apiToken = process.env.MAIL_CLOUDFLARE_API_TOKEN;
-          const accountId =
-            domain.cloudflare_account_id ??
-            process.env.MAIL_CLOUDFLARE_ACCOUNT_ID;
-          if (!apiToken || !accountId) {
-            return {
-              error: 'Cloudflare mail provider is not configured',
-              success: false,
-            };
-          }
-          return EmailService.create(
-            {
-              accountId,
-              apiToken,
-              type: 'cloudflare',
-            },
-            sendParams.source
-          ).send({
-            ...sendParams,
-            metadata: { ...sendParams.metadata, wsId: workspaceId },
+      source: {
+        email: access.mailbox.address,
+        name:
+          access.mailbox.senderName ||
+          access.mailbox.displayName ||
+          access.mailbox.address,
+      },
+    };
+    const workspaceId = ctx.normalizedWsId || ROOT_WORKSPACE_ID;
+    const result =
+      outboundProvider === 'cloudflare'
+        ? await (async () => {
+            const apiToken = process.env.MAIL_CLOUDFLARE_API_TOKEN;
+            const accountId =
+              domain.cloudflare_account_id ??
+              process.env.MAIL_CLOUDFLARE_ACCOUNT_ID;
+            if (!apiToken || !accountId) {
+              return {
+                error: 'Cloudflare mail provider is not configured',
+                success: false,
+              };
+            }
+            return EmailService.create(
+              {
+                accountId,
+                apiToken,
+                type: 'cloudflare',
+              },
+              sendParams.source
+            ).send({
+              ...sendParams,
+              metadata: { ...sendParams.metadata, wsId: workspaceId },
+            });
+          })()
+        : await sendWorkspaceEmail(workspaceId, sendParams, {
+            // Managed Mail domains share the platform SES account. The service
+            // still uses workspaceId above for rate limits, audits, and abuse
+            // controls; only the credential lookup is delegated to root.
+            credentialWorkspaceId: ROOT_WORKSPACE_ID,
           });
-        })()
-      : await sendWorkspaceEmail(workspaceId, sendParams, {
-          // Managed Mail domains share the platform SES account. The service
-          // still uses workspaceId above for rate limits, audits, and abuse
-          // controls; only the credential lookup is delegated to root.
-          credentialWorkspaceId: ROOT_WORKSPACE_ID,
-        });
 
-  const nextStatus = result.success ? 'sent' : 'failed';
-  const now = new Date().toISOString();
+    const now = new Date().toISOString();
+    const nextStatus = result.success
+      ? 'sent'
+      : result.deliveryOutcome === 'rejected'
+        ? 'draft'
+        : 'failed';
 
-  await Promise.all([
-    mailMessageTable(access, ctx)
-      .update({
-        provider: outboundProvider,
-        provider_message_id: result.messageId ?? null,
-        sent_at: result.success ? now : null,
-        status: nextStatus,
-      })
-      .eq('id', message.id),
-    privateTable(access.admin, 'mail_outbound_jobs')
-      .update({
-        error_message: result.error ?? null,
-        provider_message_id: result.messageId ?? null,
-        sent_at: result.success ? now : null,
-        status: nextStatus,
-      })
-      .eq('id', outboundJob.id),
-  ]);
+    await Promise.all([
+      mailMessageTable(access, ctx)
+        .update({
+          provider: outboundProvider,
+          provider_message_id: result.messageId ?? null,
+          sent_at: result.success ? now : null,
+          status: nextStatus,
+        })
+        .eq('id', message.id),
+      privateTable(access.admin, 'mail_outbound_jobs')
+        .update({
+          error_message: result.error ?? null,
+          provider_message_id: result.messageId ?? null,
+          sent_at: result.success ? now : null,
+          status: result.success ? 'sent' : 'failed',
+        })
+        .eq('id', outboundJob.id),
+    ]);
 
-  if (!result.success) {
-    console.warn('[mail] outbound send failed', {
-      error: result.error,
+    if (!result.success) {
+      console.warn('[mail] outbound send failed', {
+        error: result.error,
+        mailboxId,
+        messageId: message.id,
+        wsId: ctx.normalizedWsId,
+      });
+      throw new MailSendError(
+        result.error ?? 'Mail provider rejected the send'
+      );
+    }
+
+    return getMailMessage({ ctx, mailboxId, messageId: message.id });
+  } catch (error) {
+    if (error instanceof MailSendError) throw error;
+    const reason = describeMailError(error);
+    console.error('[mail] outbound send threw', {
+      error: reason,
       mailboxId,
       messageId: message.id,
-      wsId: ctx.normalizedWsId,
+      stack: error instanceof Error ? error.stack : undefined,
     });
+    await Promise.allSettled([
+      mailMessageTable(access, ctx)
+        .update({ status: 'failed' })
+        .eq('id', message.id),
+      outboundJobId
+        ? privateTable(access.admin, 'mail_outbound_jobs')
+            .update({ error_message: reason, status: 'failed' })
+            .eq('id', outboundJobId)
+        : Promise.resolve(),
+    ]);
+    throw new MailSendError(reason, { cause: error });
   }
-
-  return getMailMessage({ ctx, mailboxId, messageId: message.id });
 }

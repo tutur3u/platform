@@ -2,6 +2,7 @@ import type { NextRequest } from 'next/server';
 import { NextResponse } from 'next/server';
 import type { z } from 'zod';
 import { resolveMailRouteContext } from './auth';
+import { describeMailError, MailSendError } from './send-error';
 import type { MailRouteContext } from './types';
 
 export async function parseJsonBody<T extends z.ZodType>(
@@ -50,9 +51,20 @@ export async function withMailContext(
     return await handler(resolved.context);
   } catch (error) {
     console.error('[mail] route failed', {
-      error,
+      error: describeMailError(error),
+      stack: error instanceof Error ? error.stack : undefined,
       wsId,
     });
+
+    if (error instanceof MailSendError) {
+      return NextResponse.json(
+        {
+          error: 'Mail delivery could not be confirmed',
+          code: 'MAIL_SEND_UNCONFIRMED',
+        },
+        { status: 502 }
+      );
+    }
 
     return NextResponse.json(
       { error: 'Internal server error' },

@@ -30,94 +30,118 @@ vi.mock('./shared', () => ({
 
 import { sendMailMessage } from './send';
 
-it('only the atomic draft claim winner creates a job and invokes the provider', async () => {
-  let status = 'draft';
-  let jobs = 0;
-  const filters: [string, unknown][][] = [];
-  const message = { id: 'reply', status: 'draft', subject: 'Synthetic reply' };
-  mocks.access.mockResolvedValue({
-    admin: {},
-    mailbox: { address: 'guest@example.test' },
-  });
-  // Both callers deliberately read the same draft before either claims it.
-  mocks.get.mockImplementation(async () => ({ ...message, status }));
-  mocks.draft.mockResolvedValue(message);
-  mocks.attachments.mockResolvedValue([]);
-  mocks.send.mockResolvedValue({ success: true, messageId: 'synthetic' });
-  mocks.rows.mockImplementation(() => {
-    let update: { status?: string } = {};
-    const eq: [string, unknown][] = [];
-    const b = {
-      update(value: typeof update) {
-        update = value;
-        return b;
-      },
-      eq(key: string, value: unknown) {
-        eq.push([key, value]);
-        return b;
-      },
-      select() {
-        return b;
-      },
-      async maybeSingle() {
-        filters.push(eq);
-        const won = status === 'draft';
-        if (won) status = 'sending';
-        return { data: won ? { id: 'reply' } : null, error: null };
-      },
-      then(resolve: (value: unknown) => void) {
-        if (update.status) status = update.status;
-        resolve({ error: null });
-      },
-    };
-    return b;
-  });
-  mocks.privateRows.mockImplementation((_admin, table) => {
-    const b = {
-      select() {
-        return b;
-      },
-      eq() {
-        return b;
-      },
-      insert() {
-        jobs++;
-        return b;
-      },
-      update() {
-        return b;
-      },
-      async single() {
-        return {
-          data:
-            table === 'mail_mailboxes'
-              ? { domain_id: 'domain' }
-              : table === 'mail_domains'
-                ? { status: 'active', outbound_provider: 'ses' }
-                : { id: 'job' },
-          error: null,
-        };
-      },
-      then(resolve: (value: unknown) => void) {
-        resolve({ error: null });
-      },
-    };
-    return b;
-  });
-  const payload = {
-    ctx: { normalizedWsId: 'ws', user: { id: 'actor' } } as MailRouteContext,
-    mailboxId: 'box',
-    payload: {
-      draftId: 'reply',
-      to: ['host@example.test'],
+it.each(['accepted', 'unknown', 'exception', 'rejected'])(
+  'blocks duplicate dispatch after %s outcome',
+  async (outcome) => {
+    let status = 'draft';
+    let jobs = 0;
+    const filters: [string, unknown][][] = [];
+    const message = {
+      id: 'reply',
+      status: 'draft',
       subject: 'Synthetic reply',
-      bodyText: 'Accepted',
-    },
-  };
-  await Promise.all([sendMailMessage(payload), sendMailMessage(payload)]);
-  expect(filters).toHaveLength(2);
-  for (const filter of filters)
-    expect(filter).toContainEqual(['status', 'draft']);
-  expect(jobs).toBe(1);
-  expect(mocks.send).toHaveBeenCalledTimes(1);
-});
+    };
+    mocks.access.mockResolvedValue({
+      admin: {},
+      mailbox: { address: 'guest@example.test' },
+    });
+    // Both callers deliberately read the same draft before either claims it.
+    mocks.get.mockImplementation(async () => ({ ...message, status }));
+    mocks.draft.mockResolvedValue(message);
+    mocks.attachments.mockResolvedValue([]);
+    mocks.send.mockReset();
+    if (outcome === 'exception')
+      mocks.send.mockRejectedValue(new Error('canary internal credential'));
+    else
+      mocks.send.mockResolvedValue({
+        success: outcome === 'accepted',
+        deliveryOutcome: outcome,
+        error: 'canary internal credential',
+        messageId: 'synthetic',
+      });
+    mocks.rows.mockImplementation(() => {
+      let update: { status?: string } = {};
+      const eq: [string, unknown][] = [];
+      const b = {
+        update(value: typeof update) {
+          update = value;
+          return b;
+        },
+        eq(key: string, value: unknown) {
+          eq.push([key, value]);
+          return b;
+        },
+        select() {
+          return b;
+        },
+        async maybeSingle() {
+          filters.push(eq);
+          const won = status === 'draft';
+          if (won) status = 'sending';
+          return { data: won ? { id: 'reply' } : null, error: null };
+        },
+        then(resolve: (value: unknown) => void) {
+          if (update.status) status = update.status;
+          resolve({ error: null });
+        },
+      };
+      return b;
+    });
+    mocks.privateRows.mockImplementation((_admin, table) => {
+      const b = {
+        select() {
+          return b;
+        },
+        eq() {
+          return b;
+        },
+        insert() {
+          jobs++;
+          return b;
+        },
+        update() {
+          return b;
+        },
+        async single() {
+          return {
+            data:
+              table === 'mail_mailboxes'
+                ? { domain_id: 'domain' }
+                : table === 'mail_domains'
+                  ? { status: 'active', outbound_provider: 'ses' }
+                  : { id: 'job' },
+            error: null,
+          };
+        },
+        then(resolve: (value: unknown) => void) {
+          resolve({ error: null });
+        },
+      };
+      return b;
+    });
+    const payload = {
+      ctx: { normalizedWsId: 'ws', user: { id: 'actor' } } as MailRouteContext,
+      mailboxId: 'box',
+      payload: {
+        draftId: 'reply',
+        to: ['host@example.test'],
+        subject: 'Synthetic reply',
+        bodyText: 'Accepted',
+      },
+    };
+    await Promise.allSettled([
+      sendMailMessage(payload),
+      sendMailMessage(payload),
+    ]);
+    expect(filters).toHaveLength(2);
+    for (const filter of filters)
+      expect(filter).toContainEqual(['status', 'draft']);
+    expect(jobs).toBe(1);
+    expect(mocks.send).toHaveBeenCalledTimes(1);
+    if (outcome !== 'rejected') {
+      await sendMailMessage(payload);
+      expect(mocks.send).toHaveBeenCalledTimes(1);
+      expect(status).toBe(outcome === 'accepted' ? 'sent' : 'failed');
+    } else expect(status).toBe('draft');
+  }
+);
