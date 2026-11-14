@@ -1,5 +1,6 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import {
+  type CalendarSyncResult,
   getGoogleCalendarAuthUrl,
   getWorkspaceCalendarDefaultSource,
   getWorkspaceCalendarSyncPreferences,
@@ -23,6 +24,10 @@ import {
   type WorkspaceCalendarsResponse,
 } from './calendar-connections-manager-helpers';
 import type { AuthResponse } from './calendar-types';
+import {
+  calendarSyncStatusStyles,
+  deriveCalendarSyncStatus,
+} from './calendar-sync-status';
 import { mergeProviderCalendarsByAccount } from './merge-provider-calendars';
 import { calendarSyncStatusQueryOptions } from './refresh-calendar-sync-status';
 
@@ -61,7 +66,7 @@ export function useCalendarConnectionsManager(wsId: string) {
     isSyncing,
   } = useCalendarSync();
 
-  const syncMutation = useMutation({
+  const syncMutation = useMutation<CalendarSyncResult>({
     mutationKey: ['calendar-provider-sync', wsId],
     mutationFn: () => runCalendarProviderSync(queryClient, wsId),
     onSuccess: (result) => {
@@ -108,7 +113,6 @@ export function useCalendarConnectionsManager(wsId: string) {
     onError: () => toast.error(t('sync_recovery.pause_failed')),
   });
 
-  // Fetch connected accounts
   const accountsQuery = useQuery({
     queryKey: ['calendar-accounts', wsId],
     queryFn: () => listCalendarAccounts(wsId) as Promise<AccountsResponse>,
@@ -564,18 +568,6 @@ export function useCalendarConnectionsManager(wsId: string) {
     syncHealth?.retryAfterSeconds,
     syncMutation.isPending,
   ]);
-  const syncStatusStyles =
-    syncHealth?.state === 'syncing'
-      ? 'bg-dynamic-blue/10 text-dynamic-blue'
-      : syncHealth?.state === 'healthy'
-        ? 'bg-dynamic-green/10 text-dynamic-green'
-        : syncHealth?.state === 'disconnected' || syncHealth?.state === 'paused'
-          ? 'bg-muted text-muted-foreground'
-          : syncHealth?.state === 'degraded'
-            ? 'bg-dynamic-orange/10 text-dynamic-orange'
-            : 'bg-dynamic-red/10 text-dynamic-red';
-
-  // Fetch Google calendars from API (must be before any conditional returns)
   const providerCalendarsQuery = useQuery({
     queryKey: ['provider-calendar-list', wsId],
     enabled: hasConnectedAccounts,
@@ -598,6 +590,15 @@ export function useCalendarConnectionsManager(wsId: string) {
       syncStatusQuery.refetch(),
       providerCalendarsQuery.refetch(),
     ]);
+  const syncStatus = deriveCalendarSyncStatus({
+    status: syncStatusData,
+    queryErrored: syncStatusError,
+    accountsLoaded: accountsQuery.isSuccess,
+    accounts,
+    needsReconnectAccounts,
+    providerAccountStatuses,
+    syncMutation,
+  });
 
   const calendarsByAccount = mergeProviderCalendarsByAccount({
     accounts,
@@ -605,8 +606,6 @@ export function useCalendarConnectionsManager(wsId: string) {
     liveCalendarsByAccount: calendarsByAccountFromAPI,
     wsId,
   });
-
-  // Note: Removed early return - we always show the full UI now so Tuturuuu calendars are visible
 
   return {
     accounts,
@@ -646,7 +645,8 @@ export function useCalendarConnectionsManager(wsId: string) {
     syncMutation,
     syncPreferencesData,
     syncPreferencesMutation,
-    syncStatusStyles,
+    syncStatus,
+    syncStatusStyles: calendarSyncStatusStyles(syncStatus),
     syncToTuturuuu,
     systemCalendars,
     t,
