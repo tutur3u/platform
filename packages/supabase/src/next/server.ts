@@ -10,6 +10,7 @@ import {
   getSupabaseCookieOptions,
   type SupabaseCookie,
 } from './common';
+import { checkSecretEnvVariables } from '#secret-env';
 import {
   wrapDirectClientForProxyOnlyTables,
   wrapRequestClientForProxyOnlyTables,
@@ -141,7 +142,9 @@ async function createGenericClient<T = Database>(
   requestUrl?: string | URL | null,
   headerStore?: { get(name: string): string | null }
 ): Promise<SupabaseClient<T>> {
-  const { url, key } = checkEnvVariables({ useSecretKey: isAdmin });
+  const { url, key } = isAdmin
+    ? checkSecretEnvVariables()
+    : checkEnvVariables();
   // Lazy `next/headers` import — see getRequestUrlFromHeaders above. Keeps the
   // static module graph clean so middleware/proxy consumers build under Turbopack.
   const { cookies } = await import('next/headers');
@@ -167,7 +170,7 @@ async function createGenericClient<T = Database>(
 }
 
 function createRequestAdminProxyClient<T = Database>(): SupabaseClient<T> {
-  const { url, key } = checkEnvVariables({ useSecretKey: true });
+  const { url, key } = checkSecretEnvVariables();
 
   return createBrowserClient<T>(url, key, {
     auth: {
@@ -253,7 +256,7 @@ export function createAdminClient<T = Database>({
     ) {
       throw new Error('Invalid audit actor id');
     }
-    const { url, key } = checkEnvVariables({ useSecretKey: true });
+    const { url, key } = checkSecretEnvVariables();
     return createBrowserClient<T>(url, key, {
       isSingleton: false,
       global: {
@@ -268,7 +271,7 @@ export function createAdminClient<T = Database>({
     });
   }
   if (fetch !== undefined) {
-    const { url, key } = checkEnvVariables({ useSecretKey: true });
+    const { url, key } = checkSecretEnvVariables();
     return createBrowserClient<T>(url, key, {
       isSingleton: false,
       global: { fetch },
@@ -280,7 +283,7 @@ export function createAdminClient<T = Database>({
     });
   }
   if (noCookie) {
-    const { url, key } = checkEnvVariables({ useSecretKey: true });
+    const { url, key } = checkSecretEnvVariables();
     return createBrowserClient<T>(url, key);
   }
 
@@ -450,7 +453,7 @@ export function createDetachedClient<T = Database>(options?: {
 }
 
 export async function createDynamicAdminClient(): Promise<SupabaseClient<any>> {
-  const { url, key } = checkEnvVariables({ useSecretKey: true });
+  const { url, key } = checkSecretEnvVariables();
   return createServerClient(url, key, {
     cookieOptions: getSupabaseCookieOptions(url),
     cookies: {

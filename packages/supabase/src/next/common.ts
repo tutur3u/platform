@@ -324,22 +324,31 @@ export function getSupabaseCookieOptions(
   return options;
 }
 
-export function checkEnvVariables({
-  useSecretKey = false,
-}: {
-  useSecretKey?: boolean;
-}): {
+/**
+ * Server-side Supabase URL: the private server URL when set, otherwise the
+ * runtime public URL. Shared with the server-only secret config.
+ */
+export function getServerSupabaseUrl(): string | undefined {
+  return (
+    process.env.SUPABASE_SERVER_URL ?? getRuntimePublicEnvValue('SUPABASE_URL')
+  );
+}
+
+/**
+ * Public Supabase URL and publishable key. This module is reachable from
+ * browser bundles, so it never reads the secret key; secret configuration is
+ * server-only in `@tuturuuu/supabase/next/secret-env`.
+ */
+export function checkEnvVariables(_options: { useSecretKey?: false } = {}): {
   url: string;
   key: string;
 } {
   const url =
     typeof window === 'undefined'
-      ? (process.env.SUPABASE_SERVER_URL ??
-        getRuntimePublicEnvValue('SUPABASE_URL'))
+      ? getServerSupabaseUrl()
       : process.env.NEXT_PUBLIC_SUPABASE_URL;
-  const key = useSecretKey
-    ? process.env.SUPABASE_SECRET_KEY
-    : typeof window === 'undefined'
+  const key =
+    typeof window === 'undefined'
       ? getRuntimePublicEnvValue('SUPABASE_PUBLISHABLE_KEY')
       : process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY;
 

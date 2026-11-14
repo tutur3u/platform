@@ -22,9 +22,9 @@ vi.mock('next/headers', () => ({
 }));
 
 vi.mock('../common', () => ({
-  checkEnvVariables: ({ useSecretKey }: { useSecretKey: boolean }) => ({
+  checkEnvVariables: () => ({
     url: 'https://test.supabase.co',
-    key: useSecretKey ? 'test-secret-key' : 'test-publishable-key',
+    key: 'test-publishable-key',
   }),
   getSupabaseCookieOptions: (url: string, requestUrl?: string | URL | null) => {
     const hostname = requestUrl ? new URL(requestUrl).hostname : '';
@@ -45,6 +45,13 @@ vi.mock('../common', () => ({
   getSupabaseAuthCookieUrls: vi.fn((url: string) => [url]),
   getSupabaseAuthStorageKey: (url: string) =>
     `sb-${new URL(url).hostname.split('.')[0]}-auth-token`,
+}));
+
+vi.mock('#secret-env', () => ({
+  checkSecretEnvVariables: () => ({
+    url: 'https://test.supabase.co',
+    key: 'test-secret-key',
+  }),
 }));
 
 describe('Supabase Server Client', () => {

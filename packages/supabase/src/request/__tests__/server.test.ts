@@ -9,8 +9,8 @@ vi.mock('@supabase/ssr', () => ({
 }));
 
 vi.mock('../../next/common', () => ({
-  checkEnvVariables: ({ useSecretKey }: { useSecretKey: boolean }) => ({
-    key: useSecretKey ? 'test-secret-key' : 'test-publishable-key',
+  checkEnvVariables: () => ({
+    key: 'test-publishable-key',
     url: 'https://test.supabase.co',
   }),
   getSupabaseAuthCookieUrls: vi.fn((url: string) => [url]),
@@ -28,6 +28,13 @@ vi.mock('../../next/common', () => ({
       sameSite: 'lax',
     };
   },
+}));
+
+vi.mock('#secret-env', () => ({
+  checkSecretEnvVariables: () => ({
+    key: 'test-secret-key',
+    url: 'https://test.supabase.co',
+  }),
 }));
 
 function encodeSupabaseSession(payload = { access_token: 'jwt' }) {

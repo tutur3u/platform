@@ -1,5 +1,5 @@
 import 'server-only';
-import { checkEnvVariables } from '@tuturuuu/supabase/next/common';
+import { checkSecretEnvVariables } from '@tuturuuu/supabase/next/secret-env';
 import { createAdminClient } from '@tuturuuu/supabase/next/server';
 import { z } from 'zod';
 import { authorizeEmployeeCreation } from './employee-creation-authorization';
@@ -145,9 +145,7 @@ export function makeEmployeeCreationObservation(deps: {
 export const observeEmployeeCreation = makeEmployeeCreationObservation({
   authorize: authorizeEmployeeCreation,
   async connect() {
-    const transport = createEmployeeRuntimeRpc(
-      checkEnvVariables({ useSecretKey: true })
-    );
+    const transport = createEmployeeRuntimeRpc(checkSecretEnvVariables());
     const admin = await createAdminClient({ noCookie: true });
     return {
       async inspect(actorId, operationId) {

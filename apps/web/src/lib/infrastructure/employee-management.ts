@@ -1,5 +1,5 @@
 import 'server-only';
-import { checkEnvVariables } from '@tuturuuu/supabase/next/common';
+import { checkSecretEnvVariables } from '@tuturuuu/supabase/next/secret-env';
 import { createAdminClient } from '@tuturuuu/supabase/next/server';
 import {
   assertEmployeeServiceActor,
@@ -49,7 +49,7 @@ export async function readInternalEmployeeManagement(
     }
     const admin = await createAdminClient({ noCookie: true });
     const operations = createEmployeeManagementReader({
-      ...checkEnvVariables({ useSecretKey: true }),
+      ...checkSecretEnvVariables(),
       authorize: stillAuthorized,
     });
     const input = {
