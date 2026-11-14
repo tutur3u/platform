@@ -1,5 +1,5 @@
 import 'server-only';
-import { checkEnvVariables } from '@tuturuuu/supabase/next/common';
+import { checkSecretEnvVariables } from '@tuturuuu/supabase/next/secret-env';
 import { updateManagedEmployeeProfile } from '@tuturuuu/utils/internal-accounts/employee-managed-profile';
 import { InternalAccountAdminError } from './errors';
 
@@ -14,7 +14,7 @@ export async function updateManagedInternalAccountProfile(input: {
     throw new InternalAccountAdminError('A display name is required', 400);
   try {
     return await updateManagedEmployeeProfile({
-      ...checkEnvVariables({ useSecretKey: true }),
+      ...checkSecretEnvVariables(),
       ...input,
       displayName: input.displayName.trim(),
       username: input.username?.trim().toLowerCase() || null,

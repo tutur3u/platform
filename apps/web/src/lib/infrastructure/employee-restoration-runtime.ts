@@ -1,6 +1,6 @@
 import { employeeRequestOrigin } from './employee-request-origin';
 import 'server-only';
-import { checkEnvVariables } from '@tuturuuu/supabase/next/common';
+import { checkSecretEnvVariables } from '@tuturuuu/supabase/next/secret-env';
 import { createAdminClient } from '@tuturuuu/supabase/next/server';
 import {
   EmployeeManagementError,
@@ -132,7 +132,7 @@ export function createEmployeeRestorationRequestHandlers(deps: {
 export const employeeRestorationHandlers =
   createEmployeeRestorationRequestHandlers({
     authorize: authorizeEmployeeCreation,
-    configuration: () => checkEnvVariables({ useSecretKey: true }),
+    configuration: () => checkSecretEnvVariables(),
     async provider() {
       return (await createAdminClient({ noCookie: true })).auth.admin;
     },

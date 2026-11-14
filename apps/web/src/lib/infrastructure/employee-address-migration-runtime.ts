@@ -1,6 +1,6 @@
 import { employeeRequestOrigin } from './employee-request-origin';
 import 'server-only';
-import { checkEnvVariables } from '@tuturuuu/supabase/next/common';
+import { checkSecretEnvVariables } from '@tuturuuu/supabase/next/secret-env';
 import { createAdminClient } from '@tuturuuu/supabase/next/server';
 import { createEmployeeAddressMigrationHandler } from './employee-address-migration-handler';
 import { authorizeEmployeeCreation } from './employee-creation-authorization';
@@ -37,7 +37,7 @@ export function createEmployeeAddressMigrationRequestHandlers(
 export const employeeAddressMigrationHandlers =
   createEmployeeAddressMigrationRequestHandlers({
     authorize: authorizeEmployeeCreation,
-    configuration: () => checkEnvVariables({ useSecretKey: true }),
+    configuration: () => checkSecretEnvVariables(),
     async admin() {
       return (await createAdminClient({ noCookie: true })).auth.admin;
     },

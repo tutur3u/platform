@@ -13,8 +13,11 @@ vi.mock('@/lib/infrastructure/employee-creation-authorization', () => ({
 vi.mock('@tuturuuu/supabase/next/server', () => ({
   createAdminClient: mocks.createAdmin,
 }));
-vi.mock('@tuturuuu/supabase/next/common', () => ({
-  checkEnvVariables: () => ({ url: 'https://project.test', key: 'synthetic' }),
+vi.mock('@tuturuuu/supabase/next/secret-env', () => ({
+  checkSecretEnvVariables: () => ({
+    url: 'https://project.test',
+    key: 'synthetic',
+  }),
 }));
 vi.mock('next/server', () => ({ connection: vi.fn() }));
 

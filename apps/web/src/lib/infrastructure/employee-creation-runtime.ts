@@ -1,5 +1,5 @@
 import 'server-only';
-import { checkEnvVariables } from '@tuturuuu/supabase/next/common';
+import { checkSecretEnvVariables } from '@tuturuuu/supabase/next/secret-env';
 import { createAdminClient } from '@tuturuuu/supabase/next/server';
 import { authorizeEmployeeCreation } from './employee-creation-authorization';
 import type {
@@ -18,7 +18,7 @@ export async function createEmployeeRuntimeJournal(
   ) => Promise<EmployeeCreationAuthorization> = authorizeEmployeeCreation
 ): Promise<EmployeeCreationJournal | undefined> {
   try {
-    const config = checkEnvVariables({ useSecretKey: true });
+    const config = checkSecretEnvVariables();
     const transport = createEmployeeRuntimeRpc(config);
     const admin = await createAdminClient({ noCookie: true });
     async function authorize(actorUserId: string) {

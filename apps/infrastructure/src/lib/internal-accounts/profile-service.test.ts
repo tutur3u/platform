@@ -1,12 +1,12 @@
-import { checkEnvVariables } from '@tuturuuu/supabase/next/common';
+import { checkSecretEnvVariables } from '@tuturuuu/supabase/next/secret-env';
 import type { TypedSupabaseClient } from '@tuturuuu/supabase/types';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { updateInternalAccountProfile } from './profile-service';
 import { mutateInternalAccount } from './service';
 
 vi.mock('server-only', () => ({}));
-vi.mock('@tuturuuu/supabase/next/common', () => ({
-  checkEnvVariables: vi.fn(() => ({
+vi.mock('@tuturuuu/supabase/next/secret-env', () => ({
+  checkSecretEnvVariables: vi.fn(() => ({
     url: 'https://synthetic.supabase.co',
     key: 'synthetic-key',
   })),
@@ -110,7 +110,7 @@ describe('legacy profile server wrapper with real shared transport/helper', () =
     expect(f.readProfile.mock.invocationCallOrder[0]).toBeLessThan(
       f.fetcher.mock.invocationCallOrder[0]!
     );
-    expect(checkEnvVariables).toHaveBeenCalledWith({ useSecretKey: true });
+    expect(checkSecretEnvVariables).toHaveBeenCalledWith();
     expect(
       JSON.parse(String(f.fetcher.mock.calls[0]?.[1]?.body))
     ).toMatchObject({
@@ -266,7 +266,7 @@ describe('legacy profile server wrapper with real shared transport/helper', () =
       status: 503,
       message: 'Unable to verify the profile update',
     });
-    vi.mocked(checkEnvVariables).mockImplementationOnce(() => {
+    vi.mocked(checkSecretEnvVariables).mockImplementationOnce(() => {
       throw new Error('PRIVATE secret');
     });
     await expect(

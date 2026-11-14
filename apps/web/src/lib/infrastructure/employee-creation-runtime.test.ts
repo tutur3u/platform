@@ -7,8 +7,8 @@ const mock = vi.hoisted(() => ({
 }));
 vi.mock('server-only', () => ({}));
 vi.mock('next/server', () => ({ connection: vi.fn() }));
-vi.mock('@tuturuuu/supabase/next/common', () => ({
-  checkEnvVariables: mock.configuration,
+vi.mock('@tuturuuu/supabase/next/secret-env', () => ({
+  checkSecretEnvVariables: mock.configuration,
 }));
 vi.mock('@tuturuuu/supabase/next/server', () => ({
   createAdminClient: mock.admin,
@@ -81,7 +81,7 @@ it.each([undefined, 'false'])(
     const journal = await createEmployeeRuntimeJournal(request());
     expect(journal).toBeDefined();
     expect(await journal?.available(actor)).toBe(true);
-    expect(mock.configuration).toHaveBeenCalledWith({ useSecretKey: true });
+    expect(mock.configuration).toHaveBeenCalledWith();
     expect(mock.admin).toHaveBeenCalledWith({ noCookie: true });
     expect(identity).toHaveBeenCalledExactlyOnceWith(actor);
     expect(transport).toHaveBeenCalledTimes(2);

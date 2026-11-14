@@ -29,6 +29,14 @@ export default defineConfig({
   },
   resolve: {
     alias: [
+      // Tests exercise the real server reader, never the browser stub.
+      {
+        find: '@tuturuuu/supabase/next/secret-env',
+        replacement: resolve(
+          __dirname,
+          '../../packages/supabase/src/next/secret-env.ts'
+        ),
+      },
       {
         find: '@tuturuuu/supabase/next/user',
         replacement: resolve(
