@@ -2,6 +2,7 @@
 export const appApiPatterns = [
   "/api/ai/course",
   "/api/ai/objects/flashcards",
+  "/api/ai/objects/inline-assistance",
   "/api/ai/objects/quizzes",
   "/api/ai/objects/quizzes/explanation",
   "/api/ai/quiz",

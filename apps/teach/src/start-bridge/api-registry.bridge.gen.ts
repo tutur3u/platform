@@ -8,6 +8,7 @@ import {
 export const endpoints: readonly BridgeEndpoint[] = sortEndpoints([
   { pattern: "/api/ai/course", module: lazyRouteModule(() => import('../app/api/ai/course/route'), ["POST"]) },
   { pattern: "/api/ai/objects/flashcards", module: lazyRouteModule(() => import('../app/api/ai/objects/flashcards/route'), ["POST"]) },
+  { pattern: "/api/ai/objects/inline-assistance", module: lazyRouteModule(() => import('../app/api/ai/objects/inline-assistance/route'), ["POST"]) },
   { pattern: "/api/ai/objects/quizzes/explanation", module: lazyRouteModule(() => import('../app/api/ai/objects/quizzes/explanation/route'), ["POST"]) },
   { pattern: "/api/ai/objects/quizzes", module: lazyRouteModule(() => import('../app/api/ai/objects/quizzes/route'), ["POST"]) },
   { pattern: "/api/ai/quiz", module: lazyRouteModule(() => import('../app/api/ai/quiz/route'), ["POST"]) },
