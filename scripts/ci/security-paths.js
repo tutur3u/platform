@@ -42,7 +42,17 @@ const reviewCategories = [
     patterns: [
       /^apps\/database\//u,
       /^packages\/supabase\//u,
-      /(?:^|\/)[^/]*(?:rls|polic(?:y|ies))[^/]*$/iu,
+      // An RLS filename token. The letters rls inside "urls" are not RLS.
+      // A filename that only contains "policy" is security-policy, below.
+      /(?:^|\/)(?:[^/]*[^A-Za-z0-9])?rls(?:[^A-Za-z0-9][^/]*)?$/iu,
+    ],
+  },
+  {
+    category: 'security-policy',
+    owner: 'platform-auth',
+    patterns: [
+      // Keeps policy files in review without calling them database RLS.
+      /(?:^|\/)[^/]*polic(?:y|ies)[^/]*$/iu,
     ],
   },
   {
