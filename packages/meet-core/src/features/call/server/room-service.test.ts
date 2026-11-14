@@ -27,7 +27,8 @@ vi.mock('../lib/call-access', () => ({
 }));
 vi.mock('../lib/call-session', () => ({ getMeetCallSession: vi.fn() }));
 
-import { personalWorkspace } from './room-service';
+import { getMeetCallAccess } from '../lib/call-access';
+import { personalWorkspace, roomRoute } from './room-service';
 
 beforeEach(() => vi.clearAllMocks());
 
@@ -55,4 +56,36 @@ it.each([
   await expect(personalWorkspace('creator')).rejects.toMatchObject({
     status: 503,
   });
+});
+
+it('enforces the real same-origin check on room actions', async () => {
+  // Meet's real origin: apps/meet/cloudflare/one-origin.ts (subdomainOrigin).
+  const url = 'https://meet.tuturuuu.com/api/meet-live/meeting';
+  const run = vi.fn(async () => ({ ok: true }));
+  vi.mocked(getMeetCallAccess).mockResolvedValue({} as never);
+  for (const headers of [
+    { Origin: 'https://attacker.example' },
+    {} as Record<string, string>,
+  ]) {
+    const response = await roomRoute(
+      new Request(url, { method: 'POST', headers }),
+      'meeting',
+      run
+    );
+    expect(response.status).toBe(403);
+    expect(await response.json()).toEqual({ error: 'Invalid origin' });
+  }
+  expect(getMeetCallAccess).not.toHaveBeenCalled();
+  expect(run).not.toHaveBeenCalled();
+  const trusted = await roomRoute(
+    new Request(url, {
+      method: 'POST',
+      headers: { Origin: 'https://meet.tuturuuu.com' },
+    }),
+    'meeting',
+    run
+  );
+  expect(trusted.status).toBe(200);
+  expect(await trusted.json()).toEqual({ ok: true });
+  expect(run).toHaveBeenCalledTimes(1);
 });
