@@ -12,13 +12,19 @@ import {
   fetchPullFacts,
   hostFacts,
 } from './github.ts';
-import { parseHostsPayload } from './host-probe.ts';
-import { type LiveData, mergeLiveData, parseLiveData } from './model.ts';
+import { parseHostsPayload, RUNTIME_PROBED_APPS } from './host-probe.ts';
+import type { LiveData } from './model.ts';
+import {
+  forgetRuntimeSnapshot,
+  freshRuntime,
+  readRuntimeSnapshot,
+  REFRESH_MS,
+  refreshRuntime,
+  requireCompleteHosts,
+  writeRuntimeSnapshot,
+} from './runtime-refresh.ts';
+export { REFRESH_MS } from './runtime-refresh.ts';
 
-// v2: v1 caches may hold same-zone probes misread as Vercel; never reuse them.
-const CACHE_KEY = 'tuturuuu-roadmap-live-v2';
-/** Ten minutes keeps a viewer well inside GitHub's anonymous hourly quota. */
-export const REFRESH_MS = 10 * 60_000;
 /**
  * The browser refresh reads only the most recently updated PRs: anonymous
  * search allows ten requests a minute, so one refresh stays at four (approved,
@@ -58,23 +64,6 @@ function startBackoff(now: number) {
 
 export type LiveState = 'snapshot' | 'refreshing' | 'live' | 'failed';
 
-function readCache(): LiveData | null {
-  try {
-    const raw = window.localStorage.getItem(CACHE_KEY);
-    return raw ? parseLiveData(JSON.parse(raw)) : null;
-  } catch {
-    return null;
-  }
-}
-
-function writeCache(data: LiveData) {
-  try {
-    window.localStorage.setItem(CACHE_KEY, JSON.stringify(data));
-  } catch {
-    // Private mode or full storage: the page still works without a cache.
-  }
-}
-
 async function fetchHosts(base: LiveData) {
   const response = await fetch('/roadmap/api/hosts', {
     headers: { accept: 'application/json' },
@@ -82,6 +71,11 @@ async function fetchHosts(base: LiveData) {
   });
   if (!response.ok) throw new Error(`hosts ${response.status}`);
   const payload = parseHostsPayload(await response.json());
+  requireCompleteHosts(
+    payload,
+    [...RUNTIME_PROBED_APPS.map(({ app }) => app), 'roadmap'],
+    Date.now()
+  );
   // Reuse compares for commits we already know to save GitHub calls.
   const known = new Map(base.hosts.map((host) => [host.commit, host]));
   const unknown = payload.hosts.filter(
@@ -90,7 +84,11 @@ async function fetchHosts(base: LiveData) {
   const compared = await hostFacts(window.fetch.bind(window), unknown);
   return payload.hosts.map((probe) => {
     const fresh = compared.find((host) => host.app === probe.app);
-    if (fresh) return fresh;
+    if (fresh) {
+      if (fresh.commit && !fresh.commitAt)
+        throw new Error('Incomplete host compare');
+      return fresh;
+    }
     const reuse = probe.commit ? known.get(probe.commit) : undefined;
     return {
       ...probe,
@@ -102,8 +100,8 @@ async function fetchHosts(base: LiveData) {
 
 /**
  * Start from the data generated with the deploy, then refresh from public
- * sources in the browser. A failed refresh keeps the newest good data and
- * its real observation time; nothing is shown as fresher than it is.
+ * sources in the browser. A failed or expired refresh restores this
+ * deployment's build snapshot and its real observation time.
  */
 export function useLiveData(initial: LiveData) {
   const [data, setData] = useState(initial);
@@ -111,7 +109,8 @@ export function useLiveData(initial: LiveData) {
   const [now, setNow] = useState(() => Date.parse(initial.generatedAt));
   const [mounted, setMounted] = useState(false);
   const dataRef = useRef(initial);
-  const busy = useRef(false);
+  const busy = useRef<number | null>(null);
+  const generation = useRef(0);
 
   // Fresh data re-renders most of the page: as a transition it never blocks
   // a tap or a scroll that happens at the same time.
@@ -121,72 +120,116 @@ export function useLiveData(initial: LiveData) {
   }, []);
 
   const refresh = useCallback(async () => {
-    if (busy.current) return;
+    if (busy.current === generation.current) return;
     const started = Date.now();
-    if (backoffActive(started)) return;
-    busy.current = true;
+    if (backoffActive(started)) {
+      apply(initial);
+      setState('failed');
+      return;
+    }
+    const version = generation.current;
+    busy.current = version;
     setState('refreshing');
     try {
-      const base = dataRef.current;
-      const fetcher = window.fetch.bind(window);
-      const [prs, main, hosts] = await Promise.allSettled([
-        fetchPullFacts(fetcher, started, LIVE_SEARCH),
-        fetchMain(fetcher),
-        fetchHosts(base),
-      ]);
-      if (prs.status === 'rejected' || main.status === 'rejected') {
-        const reason =
-          prs.status === 'rejected'
-            ? prs.reason
-            : (main as PromiseRejectedResult).reason;
-        if (isRateLimited(reason)) startBackoff(started);
-        throw new Error('GitHub unavailable');
-      }
-      const fresh = assembleLiveData({
-        now: started,
-        source: 'live',
-        main: main.value,
-        prs: prs.value,
-        hosts: hosts.status === 'fulfilled' ? hosts.value : [],
-      });
-      const next = parseLiveData(mergeLiveData(base, fresh));
+      const result = await refreshRuntime(
+        initial,
+        async () => {
+          const fetcher = window.fetch.bind(window);
+          const [prs, main, hosts] = await Promise.allSettled([
+            fetchPullFacts(fetcher, started, LIVE_SEARCH),
+            fetchMain(fetcher),
+            fetchHosts(initial),
+          ]);
+          for (const outcome of [prs, main, hosts]) {
+            if (outcome.status === 'rejected') {
+              if (isRateLimited(outcome.reason)) startBackoff(started);
+            }
+          }
+          if (
+            prs.status !== 'fulfilled' ||
+            main.status !== 'fulfilled' ||
+            hosts.status !== 'fulfilled'
+          ) {
+            throw new Error('Incomplete public observation');
+          }
+          return assembleLiveData({
+            now: started,
+            source: 'live',
+            main: main.value,
+            prs: prs.value,
+            hosts: hosts.value,
+          });
+        },
+        Date.now
+      );
+      if (version !== generation.current) return;
+      if (result.state === 'failed') throw new Error('Refresh unavailable');
+      const next = result.data;
       apply(next);
-      writeCache(next);
+      try {
+        writeRuntimeSnapshot(window.localStorage, next, __ROADMAP_BUILD_SHA__);
+      } catch {
+        // Storage access itself can be denied.
+      }
       setState('live');
     } catch {
+      if (version !== generation.current) return;
+      apply(initial);
+      try {
+        forgetRuntimeSnapshot(window.localStorage);
+      } catch {
+        // The build snapshot does not depend on storage access.
+      }
       setState('failed');
     } finally {
-      busy.current = false;
-      startTransition(() => setNow(Date.now()));
+      if (busy.current === version) busy.current = null;
+      if (version === generation.current)
+        startTransition(() => setNow(Date.now()));
     }
-  }, [apply]);
+  }, [apply, initial]);
 
   useEffect(() => {
+    generation.current += 1;
     setMounted(true);
     // Hydration renders the snapshot as the server did; anything newer
     // (cache, clock, network) waits until the page is idle and visible.
     const cancel = afterIdleAndVisible(() => {
       startTransition(() => setNow(Date.now()));
-      const cached = readCache();
-      let fresh = false;
-      if (
-        cached &&
-        Date.parse(cached.generatedAt) > Date.parse(initial.generatedAt)
-      ) {
-        apply(mergeLiveData(initial, cached));
-        fresh = Date.now() - Date.parse(cached.generatedAt) < REFRESH_MS;
-        if (fresh) setState('live');
+      let cached = initial;
+      try {
+        cached = readRuntimeSnapshot(
+          window.localStorage,
+          initial,
+          __ROADMAP_BUILD_SHA__,
+          Date.now()
+        );
+      } catch {
+        // Storage is optional.
+      }
+      const fresh = freshRuntime(cached, initial, Date.now());
+      if (fresh) {
+        apply(cached);
+        setState('live');
       }
       if (!fresh) void refresh();
     });
     const tick = window.setInterval(() => {
+      const at = Date.now();
+      if (
+        dataRef.current !== initial &&
+        !freshRuntime(dataRef.current, initial, at)
+      ) {
+        apply(initial);
+        setState('snapshot');
+      }
       if (document.visibilityState === 'visible')
-        startTransition(() => setNow(Date.now()));
+        startTransition(() => setNow(at));
     }, CLOCK_TICK_MS);
     const poll = window.setInterval(() => {
       if (document.visibilityState === 'visible') void refresh();
     }, REFRESH_MS);
     return () => {
+      generation.current += 1;
       cancel();
       window.clearInterval(tick);
       window.clearInterval(poll);

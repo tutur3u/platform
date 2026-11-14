@@ -68,12 +68,25 @@ Data comes from public sources only, in two layers:
    main thread is idle (`src/live/defer.ts`), the page refreshes from the
    public GitHub API (unauthenticated, the viewer's own quota: four search
    calls, the most recently updated PRs only, see `LIVE_SEARCH`) and from
-   `GET /roadmap/api/hosts`, then every 10 minutes while visible. A 403 or
+   `GET /roadmap/api/hosts`, then every 30 minutes while visible. A 403 or
    429 from GitHub pauses refreshes for 30 minutes. Fresh data renders as a
-   React transition, so it never blocks input. The last
-   good result is kept in `localStorage` for 10 minutes. A failed refresh shows
-   the newest good data with its real observation time ("Live check
-   unavailable"), never a fresher-looking label.
+   React transition, so it never blocks input. One validated snapshot, bounded
+   to 1,000,000 characters and keyed by this deployment's source SHA, is stored
+   in `localStorage` with its observation timestamp. At thirty minutes, a
+   future timestamp, a different build, missing/malformed storage or a failed
+   refresh, the page uses the current build snapshot and its timestamp. A
+   failed network refresh displays "Live check unavailable". Runtime data is
+   merged only against this build; older runtime facts cannot accumulate.
+   Failed, missing, unknown or incomplete runtime host probes fail the entire
+   refresh; retained build host facts never acquire a new observation time.
+   The existing five-minute clock checks expiration, and the existing poll
+   performs refreshes; no additional timer or endpoint is required. Hidden
+   tabs do not poll, so this is a visible-page cadence, not a scheduled job.
+   Hosting classifications, migration observations, activity history and patch
+   notes retain their build-owned provenance: the Workers and Vercel provider
+   counts come from `BUILD_HOSTING` (`src/live/build-hosting.ts`) and change
+   only with a new build. `src/live/runtime-refresh.test.ts` covers clock
+   boundaries, storage bounds, malformed data and build fallback.
 
 **Hosting and the move to tuturuuu.com** are observed on every build, before
 and independent of GitHub (`src/live/build-probe.ts`, written to the untracked
