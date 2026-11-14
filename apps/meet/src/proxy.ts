@@ -168,6 +168,16 @@ function getLegacyPathRedirect(pathname: string): string | null {
   return null;
 }
 
+/**
+ * Redirects that depend on the visitor's session (signed-in login bounce,
+ * pending invite resume, home to personal meetings) must never be cached.
+ */
+function sessionRedirect(url: URL): NextResponse {
+  const response = NextResponse.redirect(url);
+  response.headers.set('Cache-Control', 'private, no-store');
+  return response;
+}
+
 export async function proxy(req: NextRequest): Promise<NextResponse> {
   // Launcher workspace context is implicit. Explicit Meet workspace links and
   // room/plan invitations retain their destinations.
@@ -293,7 +303,7 @@ export async function proxy(req: NextRequest): Promise<NextResponse> {
     );
     const loginRedirect = clearSupabaseAuthCookies(
       req,
-      NextResponse.redirect(new URL(nextPath, req.nextUrl))
+      sessionRedirect(new URL(nextPath, req.nextUrl))
     );
     propagateAuthCookies(authRes, loginRedirect);
     return loginRedirect;
@@ -306,7 +316,7 @@ export async function proxy(req: NextRequest): Promise<NextResponse> {
     isRootPathOrLocaleRoot(req.nextUrl.pathname)
   ) {
     const response = clearMeetInvite(
-      NextResponse.redirect(new URL(pendingInvite, req.nextUrl))
+      sessionRedirect(new URL(pendingInvite, req.nextUrl))
     );
     propagateAuthCookies(authRes, response);
     return response;
@@ -314,7 +324,7 @@ export async function proxy(req: NextRequest): Promise<NextResponse> {
 
   if (isRootPathOrLocaleRoot(req.nextUrl.pathname) && hasSatelliteSession) {
     const locale = getPathSegments(req.nextUrl.pathname)[0];
-    const wsRedirect = NextResponse.redirect(
+    const wsRedirect = sessionRedirect(
       new URL(
         `${isLocaleSegment(locale) ? `/${locale}` : ''}/personal/meetings`,
         req.nextUrl

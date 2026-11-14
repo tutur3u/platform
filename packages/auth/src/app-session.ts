@@ -1,6 +1,9 @@
 import type { SupabaseUser } from '@tuturuuu/supabase/next/user';
 import type { TypedSupabaseClient } from '@tuturuuu/supabase/types';
-import { getTuturuuuSharedCookieDomains } from '@tuturuuu/utils/shared-cookie';
+import {
+  getTuturuuuSharedCookieDomains,
+  resolveTrustedForwardedHostname,
+} from '@tuturuuu/utils/shared-cookie';
 import type { ResponseCookie } from 'next/dist/compiled/@edge-runtime/cookies';
 import { NextResponse } from 'next/server';
 import {
@@ -175,11 +178,22 @@ function getRequestHostnames(request: RequestLike) {
     }
   }
 
-  for (const headerName of ['host', 'x-forwarded-host']) {
-    const hostname = getHostnameFromHostHeader(request.headers.get(headerName));
-    if (hostname) {
-      hostnames.add(hostname);
-    }
+  const hostHeaderHostname = getHostnameFromHostHeader(
+    request.headers.get('host')
+  );
+  if (hostHeaderHostname) {
+    hostnames.add(hostHeaderHostname);
+  }
+
+  // A client-supplied X-Forwarded-Host must not decide whether shared Supabase
+  // cookies are kept: honour it only for a configured origin or with a
+  // verified gateway origin proof.
+  const forwardedHostname = resolveTrustedForwardedHostname(
+    request.headers.get('x-forwarded-host'),
+    request.headers
+  );
+  if (forwardedHostname) {
+    hostnames.add(forwardedHostname);
   }
 
   return [...hostnames];
