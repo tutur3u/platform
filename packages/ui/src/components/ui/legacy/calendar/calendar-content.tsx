@@ -4,6 +4,7 @@ import type {
 } from '@tuturuuu/types';
 import {
   CALENDAR_LAST_VIEW_STORAGE_KEY,
+  CALENDAR_MOBILE_MAX_WIDTH,
   readInitialCalendarView,
 } from '@tuturuuu/ui/hooks/calendar-default-view';
 import { useCalendarDayZone } from '@tuturuuu/ui/hooks/use-calendar-day-zone';
@@ -315,12 +316,12 @@ export const CalendarContent = ({
         {
           value: '4-days',
           label: t('4-days'),
-          disabled: window.innerWidth <= 768,
+          disabled: window.innerWidth <= CALENDAR_MOBILE_MAX_WIDTH,
         },
         {
           value: 'week',
           label: t('week'),
-          disabled: window.innerWidth <= 768,
+          disabled: window.innerWidth <= CALENDAR_MOBILE_MAX_WIDTH,
         },
         {
           value: 'month',
@@ -468,23 +469,22 @@ export const CalendarContent = ({
     setDates,
   ]);
 
-  // Set initial view based on screen size
+  // Multi-day time grids do not fit a phone; agenda carries the same days.
   useEffect(() => {
     const handleResize = () => {
+      const isPhone = window.innerWidth <= CALENDAR_MOBILE_MAX_WIDTH;
       if (!view) {
-        // Only set default view if there isn't one already
-        if (window.innerWidth <= 768) enableDayView();
+        if (isPhone) enableAgendaView();
         else enableWeekView();
-      } else if (view === '4-days' || view === 'week') {
-        // If the current view is 4-days or week and the screen is small, switch to day view
-        if (window.innerWidth <= 768) enableDayView();
+      } else if ((view === '4-days' || view === 'week') && isPhone) {
+        enableAgendaView();
       }
     };
 
     handleResize();
     window.addEventListener('resize', handleResize);
     return () => window.removeEventListener('resize', handleResize);
-  }, [enableDayView, enableWeekView, view]);
+  }, [enableAgendaView, enableWeekView, view]);
 
   useCalendarViewShortcuts({
     enabled: !disabled,
