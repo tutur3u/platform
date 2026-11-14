@@ -20,7 +20,7 @@ import {
 } from '@tuturuuu/ui/dropdown-menu';
 import { useCalendar } from '@tuturuuu/ui/hooks/use-calendar';
 import { useWorkspaceActor } from '@tuturuuu/ui/hooks/use-workspace-visibility';
-import { useCreateCalendarEvent } from '@tuturuuu/ui/legacy/calendar/toolbar-new-event';
+import { useCreateCalendarEvent } from '@tuturuuu/ui/legacy/calendar/calendar-header-new-event';
 import { NativeRecurrenceDialog } from '@tuturuuu/ui/legacy/calendar/native-recurrence-dialog';
 import { useCalendarSettings } from '@tuturuuu/ui/legacy/calendar/settings/settings-context';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@tuturuuu/ui/tooltip';

@@ -16,7 +16,7 @@ import { useCalendarClock } from '../../../../hooks/use-calendar-clock';
 import { useCalendarDayZone } from '../../../../hooks/use-calendar-day-zone';
 import type { CalendarView } from '../../../../hooks/use-view-transition';
 import { calendarToday } from '../../../../lib/calendar-day';
-import { CalendarHeaderDateProvider } from './toolbar-new-event';
+import { CalendarHeaderDateProvider } from './calendar-header-new-event';
 import { useCalendarSettings } from './settings/settings-context';
 import { CALENDAR_VIEW_KEYS } from './use-calendar-view-shortcuts';
 
