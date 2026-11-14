@@ -90,8 +90,9 @@ export function secureLocaleCookie<TResponse>(
   let scope: CookieOptionsLike = { secure: true };
 
   if (cookieOrigin) {
-    const shared = domain
-      ? (getTuturuuuSharedCookieOptions({}, cookieOrigin) ?? {})
+    const shared: CookieOptionsLike = domain
+      ? (getTuturuuuSharedCookieOptions<CookieOptionsLike>({}, cookieOrigin) ??
+        {})
       : {};
     scope = {
       ...(shared.domain ? { domain: shared.domain } : {}),
@@ -117,7 +118,7 @@ export function withSecureLocaleCookie<
   cookieName = DEFAULT_LOCALE_COOKIE_NAME
 ): (request: TRequest, ...args: TArgs) => Promise<Awaited<TResponse>> {
   return async (request, ...args) =>
-    secureLocaleCookie(
+    secureLocaleCookie<Awaited<TResponse>>(
       await handler(request, ...args),
       resolveCookieOrigin(request),
       cookieName
