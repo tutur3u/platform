@@ -1,0 +1,187 @@
+[
+  {
+    "name": "en-light-390: tap opens the statuses popover",
+    "ok": true,
+    "detail": ""
+  },
+  {
+    "name": "en-light-390: aria-expanded follows",
+    "ok": true,
+    "detail": ""
+  },
+  {
+    "name": "en-light-390: tooltip shows",
+    "ok": true,
+    "detail": ""
+  },
+  {
+    "name": "en-light-1440: tap opens the statuses popover",
+    "ok": true,
+    "detail": ""
+  },
+  {
+    "name": "en-light-1440: aria-expanded follows",
+    "ok": true,
+    "detail": ""
+  },
+  {
+    "name": "en-light-1440: tooltip shows",
+    "ok": true,
+    "detail": ""
+  },
+  {
+    "name": "en-dark-390: tap opens the statuses popover",
+    "ok": true,
+    "detail": ""
+  },
+  {
+    "name": "en-dark-390: aria-expanded follows",
+    "ok": true,
+    "detail": ""
+  },
+  {
+    "name": "en-dark-390: tooltip shows",
+    "ok": true,
+    "detail": ""
+  },
+  {
+    "name": "en-dark-1440: tap opens the statuses popover",
+    "ok": true,
+    "detail": ""
+  },
+  {
+    "name": "en-dark-1440: aria-expanded follows",
+    "ok": true,
+    "detail": ""
+  },
+  {
+    "name": "en-dark-1440: tooltip shows",
+    "ok": true,
+    "detail": ""
+  },
+  {
+    "name": "vi-light-390: tap opens the statuses popover",
+    "ok": true,
+    "detail": ""
+  },
+  {
+    "name": "vi-light-390: aria-expanded follows",
+    "ok": true,
+    "detail": ""
+  },
+  {
+    "name": "vi-light-390: tooltip shows",
+    "ok": true,
+    "detail": ""
+  },
+  {
+    "name": "vi-light-1440: tap opens the statuses popover",
+    "ok": true,
+    "detail": ""
+  },
+  {
+    "name": "vi-light-1440: aria-expanded follows",
+    "ok": true,
+    "detail": ""
+  },
+  {
+    "name": "vi-light-1440: tooltip shows",
+    "ok": true,
+    "detail": ""
+  },
+  {
+    "name": "vi-dark-390: tap opens the statuses popover",
+    "ok": true,
+    "detail": ""
+  },
+  {
+    "name": "vi-dark-390: aria-expanded follows",
+    "ok": true,
+    "detail": ""
+  },
+  {
+    "name": "vi-dark-390: tooltip shows",
+    "ok": true,
+    "detail": ""
+  },
+  {
+    "name": "vi-dark-1440: tap opens the statuses popover",
+    "ok": true,
+    "detail": ""
+  },
+  {
+    "name": "vi-dark-1440: aria-expanded follows",
+    "ok": true,
+    "detail": ""
+  },
+  {
+    "name": "vi-dark-1440: tooltip shows",
+    "ok": true,
+    "detail": ""
+  },
+  {
+    "name": "Enter opens the popover",
+    "ok": true,
+    "detail": "{\"open\":true,\"expanded\":\"true\",\"focus\":\"status-method\"}"
+  },
+  {
+    "name": "Tab moves into the open popover",
+    "ok": true,
+    "detail": ""
+  },
+  {
+    "name": "Escape closes it and focus returns to the trigger",
+    "ok": true,
+    "detail": "{\"open\":false,\"expanded\":\"false\",\"focus\":\"status-method\"}"
+  },
+  {
+    "name": "Space opens it",
+    "ok": true,
+    "detail": "{\"open\":true,\"expanded\":\"true\",\"focus\":\"status-method\"}"
+  },
+  {
+    "name": "tooltip opens on keyboard focus",
+    "ok": true,
+    "detail": ""
+  },
+  {
+    "name": "Escape hides the tooltip, focus stays on its trigger",
+    "ok": true,
+    "detail": ""
+  },
+  {
+    "name": "tooltip text is the Live definition",
+    "ok": true,
+    "detail": "Every pull request is merged and the app’s production deploy is at or after the merge."
+  },
+  {
+    "name": "opening a popover and a tooltip moves no content",
+    "ok": true,
+    "detail": ""
+  },
+  {
+    "name": "no layout shift while popovers open",
+    "ok": true,
+    "detail": "0"
+  },
+  {
+    "name": "no-JS: a tap opens the statuses popover",
+    "ok": true,
+    "detail": ""
+  },
+  {
+    "name": "no-JS: Escape closes it",
+    "ok": true,
+    "detail": ""
+  },
+  {
+    "name": "no-JS: a tap shows a tooltip",
+    "ok": true,
+    "detail": ""
+  },
+  {
+    "name": "first tap before hydration opens it and it stays open after hydration",
+    "ok": true,
+    "detail": "{\"hydratedAtTap\":false,\"openedNow\":true,\"open\":true,\"expanded\":\"true\"}"
+  }
+]
