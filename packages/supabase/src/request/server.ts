@@ -9,6 +9,7 @@ import {
   getSupabaseCookieOptions,
   type SupabaseCookie,
 } from '../next/common';
+import { checkSecretEnvVariables } from '#secret-env';
 import { wrapRequestClientForProxyOnlyTables } from '../next/protected-tables';
 
 const APP_SESSION_COOKIE_NAME = 'tuturuuu_app_session';
@@ -56,7 +57,7 @@ function resolveRequestUrlFromRequest(request: RequestLike) {
 }
 
 function createRequestAdminProxyClient<T = Database>(): SupabaseClient<T> {
-  const { url, key } = checkEnvVariables({ useSecretKey: true });
+  const { url, key } = checkSecretEnvVariables();
 
   return createBrowserClient<T>(url, key, {
     auth: {

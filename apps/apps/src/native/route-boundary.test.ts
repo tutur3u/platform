@@ -157,14 +157,18 @@ describe('locale cookie policy', () => {
   );
 
   it('uses the canonical forwarded and Portless domain resolution', () => {
-    expect(
-      localeCookie(
-        new Request('http://127.0.0.1:3000', {
-          headers: { 'x-forwarded-host': 'apps.tuturuuu.com' },
-        }),
-        'en'
-      )
-    ).toContain('; Domain=.tuturuuu.com; Secure');
+    const forwarded = () =>
+      new Request('http://127.0.0.1:3000', {
+        headers: { 'x-forwarded-host': 'apps.tuturuuu.com' },
+      });
+    // An unproven client X-Forwarded-Host never picks the shared domain.
+    vi.stubEnv('PORTLESS_URL', '');
+    expect(localeCookie(forwarded(), 'en')).not.toContain('Domain=');
+    // The deployment's configured origin makes the forwarded host trusted.
+    vi.stubEnv('APPS_APP_URL', 'https://apps.tuturuuu.com');
+    expect(localeCookie(forwarded(), 'en')).toContain(
+      '; Domain=.tuturuuu.com; Secure'
+    );
     vi.stubEnv('PORTLESS_URL', 'http://apps.tuturuuu.localhost');
     vi.stubEnv('PORT', '3000');
     expect(localeCookie(new Request('http://127.0.0.1:3000'), 'en')).toBe(

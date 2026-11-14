@@ -186,6 +186,7 @@ describe('Meet proxy auth handoff', () => {
     expect(response.headers.get('location')).toBe(
       `https://meet.tuturuuu.com${invite}`
     );
+    expect(response.headers.get('cache-control')).toBe('private, no-store');
     expect(response.cookies.get('meet_pending_invite')?.maxAge).toBe(0);
     expect(mocks.getCurrentUserDefaultWorkspace).not.toHaveBeenCalled();
   });
@@ -344,6 +345,7 @@ describe('Meet proxy auth handoff', () => {
     expect(response.headers.get('Location')).toBe(
       'https://meet.tuturuuu.localhost/personal/meetings'
     );
+    expect(response.headers.get('cache-control')).toBe('private, no-store');
     expect(mocks.getCurrentUserDefaultWorkspace).not.toHaveBeenCalled();
     expect(mocks.propagateAuthCookies).toHaveBeenCalled();
   });
@@ -377,6 +379,7 @@ describe('Meet proxy auth handoff', () => {
     expect(response.headers.get('Location')).toBe(
       'https://meet.tuturuuu.localhost/personal/plans'
     );
+    expect(response.headers.get('cache-control')).toBe('private, no-store');
     expect(mocks.normalizeAuthRedirectPath).toHaveBeenCalledWith(
       '/personal/plans',
       'https://meet.tuturuuu.localhost',

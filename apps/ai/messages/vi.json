@@ -3214,5 +3214,11 @@
     "security_linked_identities": "Phương thức đăng nhập đã liên kết",
     "sessions_devices": "Xem mọi thiết bị đang đăng nhập vào tài khoản của bạn",
     "sessions_revoke": "Đăng xuất khỏi các thiết bị khác"
+  },
+  "experimental-ui": {
+    "badge": "Beta",
+    "setting_description": "Dùng thử Sorbet, giao diện mới của Tuturuuu, trên mọi ứng dụng. Lưu vào tài khoản của bạn.",
+    "setting_title": "Giao diện thử nghiệm",
+    "setting_toggle_label": "Dùng giao diện thử nghiệm Sorbet"
   }
 }

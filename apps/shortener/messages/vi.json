@@ -1013,6 +1013,12 @@
     "yellow": "Vàng",
     "yesterday": "Hôm qua"
   },
+  "experimental-ui": {
+    "badge": "Beta",
+    "setting_description": "Dùng thử Sorbet, giao diện mới của Tuturuuu, trên mọi ứng dụng. Lưu vào tài khoản của bạn.",
+    "setting_title": "Giao diện thử nghiệm",
+    "setting_toggle_label": "Dùng giao diện thử nghiệm Sorbet"
+  },
   "onboarding_guide": {
     "close": "Đóng hướng dẫn",
     "confirmation_note": "Gửi, xuất bản, thay đổi nhà cung cấp, thanh toán và thao tác AI có phí luôn yêu cầu xác nhận rõ ràng.",

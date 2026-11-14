@@ -1307,6 +1307,14 @@
     "calendar": {
       "colors": "Category Colors",
       "colors_description": "Customize colors for different event categories",
+      "default_view": "Default view",
+      "default_view_agenda": "Agenda",
+      "default_view_auto": "Week (Agenda on phones)",
+      "default_view_day": "Day",
+      "default_view_description": "The view a calendar opens with.",
+      "default_view_last": "Last used",
+      "default_view_month": "Month",
+      "default_view_week": "Week",
       "general": "General",
       "general_description": "Calendar display and scheduling preferences",
       "hours": "Hours & Timezone",
@@ -2040,5 +2048,11 @@
     "security_linked_identities": "Linked sign-in methods",
     "sessions_devices": "See every device signed in to your account",
     "sessions_revoke": "Sign out other devices"
+  },
+  "experimental-ui": {
+    "badge": "Beta",
+    "setting_description": "Try Sorbet, the new Tuturuuu look, in every app. Saved to your account.",
+    "setting_title": "Experimental design",
+    "setting_toggle_label": "Use the experimental Sorbet design"
   }
 }

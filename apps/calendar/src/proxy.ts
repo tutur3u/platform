@@ -4,6 +4,7 @@ import {
   hasSupportedSupabaseAuthCookie,
   hasWebAppSessionTokenFromRequest,
 } from '@tuturuuu/auth/app-session';
+import { withCanonicalLocaleCookie } from '@tuturuuu/auth/locale-cookie';
 import {
   appSessionFailureResponse,
   consumeVerifyTokenRequest,
@@ -68,7 +69,7 @@ const authProxy = createCentralizedAuthProxy({
 });
 const LOCAL_AUTH_API_PREFIX = '/api/auth/';
 
-export async function proxy(req: NextRequest): Promise<NextResponse> {
+async function handleProxy(req: NextRequest): Promise<NextResponse> {
   const mounted = Boolean(req.nextUrl.basePath);
   if (req.nextUrl.pathname.startsWith('/api')) {
     const isLocalAuthApi = req.nextUrl.pathname.startsWith(
@@ -127,15 +128,21 @@ export async function proxy(req: NextRequest): Promise<NextResponse> {
     );
   }
 
+  const isDocumentRequest = req.method === 'GET' || req.method === 'HEAD';
+  const publicCompletion =
+    isDocumentRequest &&
+    PUBLIC_PATHS.includes(req.nextUrl.pathname) &&
+    !req.nextUrl.searchParams.has('token');
   if (
     mounted &&
+    !publicCompletion &&
     /^\/(?:en\/|vi\/)?verify-token\/?$/u.test(req.nextUrl.pathname)
   ) {
     // The mount shares the apex session that Web already set, so it never
     // consumes, verifies or forwards `token`: GET/HEAD only resume the
     // same-origin validated next path; every other method returns to login.
-    const isNavigation = req.method === 'GET' || req.method === 'HEAD';
-    const target = isNavigation
+    // A tokenless completion document renders like the subdomain's.
+    const target = isDocumentRequest
       ? normalizeAuthRedirectPath(
           req.nextUrl.searchParams.get('nextUrl') ??
             req.nextUrl.searchParams.get('next'),
@@ -147,10 +154,6 @@ export async function proxy(req: NextRequest): Promise<NextResponse> {
       new URL(withAppBase(target, req.nextUrl.basePath), req.nextUrl.origin)
     );
   }
-  const publicCompletion =
-    (req.method === 'GET' || req.method === 'HEAD') &&
-    PUBLIC_PATHS.includes(req.nextUrl.pathname) &&
-    !req.nextUrl.searchParams.has('token');
   const verifyTokenResponse =
     mounted || publicCompletion
       ? null
@@ -170,10 +173,15 @@ export async function proxy(req: NextRequest): Promise<NextResponse> {
 
   const authRequestHeaders = getRequestHeadersWithResponseCookies(req, authRes);
   if (publicCompletion) {
-    authRequestHeaders.set('x-next-intl-locale', resolveCalendarLocale(req));
-    const completionResponse = NextResponse.next({
-      request: { headers: authRequestHeaders },
-    });
+    const completionLocale = resolveCalendarLocale(req);
+    authRequestHeaders.set('x-next-intl-locale', completionLocale);
+    // Only `/[locale]/verify-token` exists as a route, so an unprefixed
+    // completion path is served from its resolved-locale route in place.
+    const completionResponse = hasLocalePrefix(req.nextUrl.pathname)
+      ? NextResponse.next({ request: { headers: authRequestHeaders } })
+      : NextResponse.rewrite(withLocalePrefix(req.nextUrl, completionLocale), {
+          request: { headers: authRequestHeaders },
+        });
     const completion = mounted
       ? completionResponse
       : clearSupabaseAuthCookies(req, completionResponse);
@@ -381,6 +389,16 @@ export async function proxy(req: NextRequest): Promise<NextResponse> {
   return localeRes;
 }
 
+const LOCALE_COOKIE_ORIGINS = {
+  canonicalOrigins: [BASE_URL],
+  webAppUrl: TTR_URL,
+};
+
+export const proxy = withCanonicalLocaleCookie(
+  handleProxy,
+  LOCALE_COOKIE_ORIGINS
+);
+
 export const config = {
   matcher: [
     /*
@@ -404,6 +422,15 @@ export const config = {
 
     '/((?!_next/static|_next/image|favicon.ico|robots.txt|sitemap.xml|site.webmanifest|offline\\.(?:html|css|js)$|serwist/sw\\.js(?:\\.map)?$|monitoring|.*\\.(?:svg|png|jpg|jpeg|pdf|gif|webp)$).*)',
   ],
+};
+
+const hasLocalePrefix = (pathname: string) =>
+  getSupportedLocale(pathname.split('/')[1] ?? '') !== null;
+
+const withLocalePrefix = (url: NextRequest['nextUrl'], locale: Locale) => {
+  const target = url.clone();
+  target.pathname = `/${locale}${url.pathname}`;
+  return target;
 };
 
 const getSupportedLocale = (locale: string): Locale | null => {

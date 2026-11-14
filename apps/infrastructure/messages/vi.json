@@ -24119,5 +24119,11 @@
     "approval_revocable": "Có thể gỡ phê duyệt vì chưa có email nào được gửi.",
     "check_all": "Đã kiểm tra tất cả",
     "completed": "Hoàn thành"
+  },
+  "experimental-ui": {
+    "badge": "Beta",
+    "setting_description": "Dùng thử Sorbet, giao diện mới của Tuturuuu, trên mọi ứng dụng. Lưu vào tài khoản của bạn.",
+    "setting_title": "Giao diện thử nghiệm",
+    "setting_toggle_label": "Dùng giao diện thử nghiệm Sorbet"
   }
 }

@@ -1013,6 +1013,12 @@
     "yellow": "Yellow",
     "yesterday": "Yesterday"
   },
+  "experimental-ui": {
+    "badge": "Beta",
+    "setting_description": "Try Sorbet, the new Tuturuuu look, in every app. Saved to your account.",
+    "setting_title": "Experimental design",
+    "setting_toggle_label": "Use the experimental Sorbet design"
+  },
   "onboarding_guide": {
     "close": "Close guide",
     "confirmation_note": "Sending, publishing, provider changes, billing, and paid AI actions always require an explicit confirmation.",

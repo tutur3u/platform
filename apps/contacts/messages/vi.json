@@ -3946,6 +3946,14 @@
     },
     "back_to_app": "Quay lại ứng dụng",
     "calendar": {
+      "default_view": "Chế độ xem mặc định",
+      "default_view_agenda": "Lịch trình",
+      "default_view_auto": "Tuần (Lịch trình trên điện thoại)",
+      "default_view_day": "Ngày",
+      "default_view_description": "Chế độ xem khi mở lịch.",
+      "default_view_last": "Lần dùng gần nhất",
+      "default_view_month": "Tháng",
+      "default_view_week": "Tuần",
       "show_lunar_calendar": "Hiển thị Âm lịch",
       "show_lunar_calendar_description": "Hiển thị ngày âm lịch trên lịch. Tự động bật cho người dùng Việt Nam."
     },
@@ -10752,5 +10760,11 @@
     "try_different_search_term": "Thử từ khóa tìm kiếm khác",
     "wallet": "Phương thức thanh toán",
     "wallet_deleted": "Đã xóa ví thành công"
+  },
+  "experimental-ui": {
+    "badge": "Beta",
+    "setting_description": "Dùng thử Sorbet, giao diện mới của Tuturuuu, trên mọi ứng dụng. Lưu vào tài khoản của bạn.",
+    "setting_title": "Giao diện thử nghiệm",
+    "setting_toggle_label": "Dùng giao diện thử nghiệm Sorbet"
   }
 }

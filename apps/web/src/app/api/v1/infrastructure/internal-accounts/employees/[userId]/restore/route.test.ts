@@ -13,8 +13,8 @@ const mock = vi.hoisted(() => ({
 }));
 vi.mock('server-only', () => ({}));
 vi.mock('next/server', () => ({ connection: vi.fn() }));
-vi.mock('@tuturuuu/supabase/next/common', () => ({
-  checkEnvVariables: mock.configuration,
+vi.mock('@tuturuuu/supabase/next/secret-env', () => ({
+  checkSecretEnvVariables: mock.configuration,
 }));
 vi.mock('@tuturuuu/supabase/next/server', () => ({
   createAdminClient: mock.admin,
@@ -67,7 +67,7 @@ it.each([undefined, 'false'])(
       target,
       { ban_duration: 'none' }
     );
-    expect(mock.configuration).toHaveBeenCalledWith({ useSecretKey: true });
+    expect(mock.configuration).toHaveBeenCalledWith();
     expect(mock.admin).toHaveBeenCalledWith({ noCookie: true });
     expect(response.headers.get('cache-control')).toContain('no-store');
   }
