@@ -96,6 +96,13 @@ opens it as a sheet over the grid so the week keeps its width. Phones show no
 rail. `packages/tasks-ui/src/calendar/components/sidebar/calendar-sidebar.test.tsx`
 covers the rail, inline and sheet states.
 
+Tasks appear as single-line rows under priority headers that name the priority
+in text. Each group shows ten rows before **Show more**, and the medium and low
+groups start collapsed. A row takes keyboard focus; Enter opens it and Space
+marks it done, and its actions menu schedules it without dragging. Only an
+overdue due date uses the danger colour. The time tracker is a header chip that
+states a running session in text beside the elapsed time.
+
 ## Tasks and Calendar planning
 
 Calendar and Tasks keep cross-product API calls on the active browser origin so

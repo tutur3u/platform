@@ -1543,6 +1543,8 @@
       "open": "Mở bảng kế hoạch",
       "show_more": "Xem thêm {count}",
       "tasks": "Công việc",
+      "timer": "Hẹn giờ",
+      "timer_running": "Đang chạy",
       "title": "Kế hoạch"
     },
     "please_reconnect": "Vui lòng kết nối lại Google Calendar",

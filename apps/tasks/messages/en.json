@@ -1607,6 +1607,8 @@
       "open": "Open plan panel",
       "show_more": "Show {count} more",
       "tasks": "Tasks",
+      "timer": "Timer",
+      "timer_running": "Running",
       "title": "Plan"
     },
     "please_reconnect": "Please reconnect your Google Calendar",

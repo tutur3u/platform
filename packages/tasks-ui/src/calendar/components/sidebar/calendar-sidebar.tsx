@@ -89,13 +89,18 @@ function PlanPanelHeader({
   action?: ReactNode;
   className?: string;
 }) {
+  const t = useTranslations('calendar.plan_panel');
   return (
     <div
       className={cn('flex h-10 shrink-0 items-center gap-2 px-3', className)}
     >
       {title}
       <div className="ml-auto flex min-w-0 items-center gap-1">
-        <TimeTracker wsId={wsId} tasks={tasks} />
+        <TimeTracker
+          wsId={wsId}
+          tasks={tasks}
+          triggerLabels={{ idle: t('timer'), running: t('timer_running') }}
+        />
         {action}
       </div>
     </div>

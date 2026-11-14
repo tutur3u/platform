@@ -54,15 +54,24 @@ import {
 } from './dialogs';
 import { useSessions, useTimeTracker } from './hooks';
 import { HistoryTab, RecentSessionsTab } from './tabs';
-import { TimeTrackerTrigger } from './time-tracker-trigger';
+import {
+  TimeTrackerTrigger,
+  type TimeTrackerTriggerLabels,
+} from './time-tracker-trigger';
 import type { NewSessionFormProps, TaskBoard } from './types';
 
 interface TimeTrackerProps {
   wsId: string;
   tasks?: ExtendedWorkspaceTask[];
+  /** Translated chip labels from the host surface. */
+  triggerLabels?: TimeTrackerTriggerLabels;
 }
 
-export default function TimeTracker({ wsId, tasks = [] }: TimeTrackerProps) {
+export default function TimeTracker({
+  wsId,
+  tasks = [],
+  triggerLabels,
+}: TimeTrackerProps) {
   const { modKey } = usePlatform();
   const tracker = useTimeTracker({ wsId, tasks });
   const sessions = useSessions({ wsId, onSuccess: tracker.fetchData });
@@ -301,6 +310,7 @@ export default function TimeTracker({ wsId, tasks = [] }: TimeTrackerProps) {
             isRunning={tracker.isRunning}
             elapsedTime={tracker.elapsedTime}
             onClick={() => tracker.setIsOpen(true)}
+            labels={triggerLabels}
           />
         </DialogTrigger>
         <DialogContent className="@container max-h-[95vh] max-w-7xl overflow-y-auto">

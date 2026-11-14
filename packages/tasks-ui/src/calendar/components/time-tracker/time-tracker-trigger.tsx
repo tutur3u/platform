@@ -3,48 +3,65 @@
 import { Square, Timer } from '@tuturuuu/icons';
 import { Button } from '@tuturuuu/ui/button';
 import { cn } from '@tuturuuu/utils/format';
+import { forwardRef } from 'react';
 import { formatTime } from './utils';
+
+export interface TimeTrackerTriggerLabels {
+  idle: string;
+  running: string;
+}
 
 interface TimeTrackerTriggerProps {
   isRunning: boolean;
   elapsedTime: number;
   onClick: () => void;
+  labels?: TimeTrackerTriggerLabels;
 }
 
-export function TimeTrackerTrigger({
-  isRunning,
-  elapsedTime,
-  onClick,
-}: TimeTrackerTriggerProps) {
+const DEFAULT_LABELS: TimeTrackerTriggerLabels = {
+  idle: 'Time tracker',
+  running: 'Running',
+};
+
+/**
+ * A compact chip that opens the time tracker. While a session runs it
+ * states that in text next to the elapsed time, not only through colour.
+ */
+export const TimeTrackerTrigger = forwardRef<
+  HTMLButtonElement,
+  TimeTrackerTriggerProps
+>(function TimeTrackerTrigger(
+  { isRunning, elapsedTime, onClick, labels = DEFAULT_LABELS, ...props },
+  ref
+) {
+  const elapsed = formatTime(elapsedTime);
   return (
     <Button
-      variant={isRunning ? 'destructive' : 'outline'}
+      ref={ref}
+      {...props}
+      variant="outline"
       size="sm"
-      className={cn('gap-2', 'relative w-full')}
-      onClick={onClick}
-    >
-      {isRunning && (
-        <div className="absolute inset-0 animate-pulse bg-linear-to-r from-dynamic-red/20 to-transparent" />
+      className={cn(
+        'h-7 gap-1.5 px-2 text-xs',
+        isRunning && 'border-dynamic-red/40 text-dynamic-red'
       )}
-      <div className="relative flex items-center gap-2">
-        {isRunning ? (
-          <>
-            <Square className="h-3 w-3 animate-pulse" />
-            <span className="@[100px]:inline hidden font-mono">
-              {formatTime(elapsedTime)}
-            </span>
-            <span className="@[100px]:hidden font-mono">
-              {Math.floor(elapsedTime / 60)}m
-            </span>
-          </>
-        ) : (
-          <>
-            <Timer className="h-3 w-3" />
-            <span className="@[100px]:inline hidden">Time Tracker</span>
-            <span className="@[100px]:hidden">Timer</span>
-          </>
-        )}
-      </div>
+      onClick={onClick}
+      aria-label={
+        isRunning ? `${labels.idle}: ${labels.running} ${elapsed}` : labels.idle
+      }
+    >
+      {isRunning ? (
+        <>
+          <Square className="size-3" />
+          <span className="font-mono tabular-nums">{elapsed}</span>
+          <span>{labels.running}</span>
+        </>
+      ) : (
+        <>
+          <Timer className="size-3" />
+          <span>{labels.idle}</span>
+        </>
+      )}
     </Button>
   );
-}
+});
