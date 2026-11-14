@@ -3,7 +3,9 @@ import { readFile } from 'node:fs/promises';
 import test from 'node:test';
 import { runtimeOutcomeFailure } from '../../../scripts/start-bridge-codemod/runtime-outcome.mjs';
 
-test('root runtime expectations require the login redirect', async () => {
+const CENTRAL_LOGIN = 'https://tuturuuu.com/login';
+
+test('the root runtime expectation is the central login redirect', async () => {
   const routes = JSON.parse(
     await readFile(
       new URL('../start-bridge.routes.json', import.meta.url),
@@ -15,10 +17,10 @@ test('root runtime expectations require the login redirect', async () => {
     'utf8'
   );
   const expected = routes.runtime['/'];
-  assert.deepEqual(expected, { redirect: '/login' });
+  assert.deepEqual(expected, { redirect: CENTRAL_LOGIN });
   assert.match(
     source,
-    /const EXPECTED = \{ ['"]\/['"]: \{ redirect: ['"]\/login['"] \} \};/u
+    /const EXPECTED = \{ ['"]\/['"]: \{ redirect: ['"]https:\/\/tuturuuu\.com\/login['"] \} \};/u
   );
   const outcome = {
     path: '/',
@@ -26,17 +28,21 @@ test('root runtime expectations require the login redirect', async () => {
     origin: 'https://rewise.tuturuuu.com',
   };
   assert.equal(
-    runtimeOutcomeFailure({ ...outcome, status: 302, location: '/login' }),
+    runtimeOutcomeFailure({
+      ...outcome,
+      status: 307,
+      location: `${CENTRAL_LOGIN}?returnUrl=https%3A%2F%2Frewise.tuturuuu.com%2Fverify-token%3FnextUrl%3D%252F`,
+    }),
     null
   );
   assert.ok(runtimeOutcomeFailure({ ...outcome, status: 200 }));
   assert.ok(
-    runtimeOutcomeFailure({ ...outcome, status: 302, location: '/wrong' })
+    runtimeOutcomeFailure({ ...outcome, status: 307, location: '/login' })
   );
   assert.ok(
     runtimeOutcomeFailure({
       ...outcome,
-      status: 302,
+      status: 307,
       location: 'https://unknown.invalid/login',
     })
   );

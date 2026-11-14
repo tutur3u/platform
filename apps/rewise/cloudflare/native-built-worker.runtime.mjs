@@ -51,7 +51,7 @@ const PUBLIC_FILES = [
   'site.webmanifest',
 ];
 // From start-bridge.routes.json `runtime`: a status, or a redirect prefix.
-const EXPECTED = { '/': { redirect: '/login' } };
+const EXPECTED = { '/': { redirect: 'https://tuturuuu.com/login' } };
 // Response-policy probes (start-bridge.routes.json `runtimeProbes`).
 const POLICY_PROBES = [
   { kind: 'page', path: '/' },
