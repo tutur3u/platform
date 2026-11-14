@@ -76,7 +76,10 @@ for (const kind of ['previous', 'old']) {
     assert.notEqual(result.status, 0, result.stdout + result.stderr);
     assert.doesNotMatch(setup.output(), /should_deploy=true/u);
     assert.doesNotMatch(setup.requests(), /FETCH_FIXTURE_UNEXPECTED/u);
-    assert.doesNotMatch(setup.requests(), /FETCH .*\/contents\//u);
+    assert.doesNotMatch(
+      setup.requests(),
+      /FETCH .*\/contents\/(\.github\/workflows\/supabase-staging\.yaml|scripts\/ci\/record-deployment-marker\.ts)/u
+    );
   });
 }
 

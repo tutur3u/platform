@@ -361,11 +361,16 @@ test('rule 4: platform marker, checkout and production marker stay bound to the 
     0,
     workflow.indexOf("<<'STAGING_SOURCE_PROOF'")
   );
-  assert.match(evaluate, /jq --arg sha "\$TARGET_SHA"/);
   assert.match(
     evaluate,
-    /\$deployment\.sha == \$sha and \$payload\.sha == \$sha/
+    /MARKER_VERIFY_PROFILE=production-platform TARGET_SHA="\$TARGET_SHA"/
   );
+  const markerVerifier = fs.readFileSync(
+    path.join(__dirname, 'verify-github-deployment-marker-producer.mjs'),
+    'utf8'
+  );
+  assert.match(markerVerifier, /d\.sha === source &&\s+d\.ref === source/);
+  assert.match(markerVerifier, /p\.sha === source/);
   const after = workflow.slice(
     workflow.indexOf('          STAGING_SOURCE_PROOF\n')
   );
