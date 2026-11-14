@@ -45,18 +45,13 @@ export default function WorkspacePage({
     case 'meetings':
       return (
         <WorkspaceView workspace={model.workspace} locale={model.locale}>
-          <div className="container mx-auto max-w-7xl p-6">
-            <div className="mb-8">
-              <h1 className="font-bold text-3xl tracking-tight">
-                {t('meetings_title')}
-              </h1>
-              <p className="text-muted-foreground">
-                {t('meetings_description')}
-              </p>
-            </div>
+          <div className="container mx-auto max-w-5xl space-y-6 p-4 md:p-6">
+            <h1 className="font-semibold text-2xl tracking-tight">
+              {t('meetings_title')}
+            </h1>
             {!model.hosting.canCreate && (
               <p
-                className="mb-6 rounded-xl border bg-muted/30 p-4 text-muted-foreground text-sm"
+                className="rounded-xl border bg-muted/30 p-4 text-muted-foreground text-sm"
                 role={model.hosting.unavailable ? 'alert' : undefined}
               >
                 {t(
@@ -68,9 +63,9 @@ export default function WorkspacePage({
             )}
             <MeetingsContent
               accountId={model.workspace.user.id}
-              wsId={model.workspace.wsId}
-              {...model.paging}
               canCreate={model.hosting.canCreate}
+              search={model.paging.search}
+              wsId={model.workspace.wsId}
             />
           </div>
         </WorkspaceView>
