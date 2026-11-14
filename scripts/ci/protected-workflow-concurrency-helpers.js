@@ -100,8 +100,10 @@ const mainExceptions = {
     'Main-push baselines queue so PR new-alert gates compare against a completed scan',
 };
 // Main pushes of these workflows queue (one running, newest pending) instead of
-// cancelling; every other qualification assertion still applies.
-const queuedMainBaselines = new Set(['codeql.yml', 'turbo-unit-tests.yaml']);
+// cancelling; every other qualification assertion still applies. Test
+// (turbo-unit-tests.yaml) left this set in #8350: first-attempt main pushes now
+// supersede, while reruns and dispatch keep immutable slots.
+const queuedMainBaselines = new Set(['codeql.yml']);
 const workflows = Object.fromEntries(
   fs
     .readdirSync(workflowRoot)
