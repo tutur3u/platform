@@ -61,7 +61,7 @@ function appSessionCookie(secret) {
   const claims = base64Url(
     JSON.stringify({
       aud: 'tuturuuu-api',
-      email: 'route-fixture@example.invalid',
+      email: USER.email,
       exp: now + 3600,
       iat: now,
       iss: 'tuturuuu',
@@ -78,6 +78,40 @@ function appSessionCookie(secret) {
     .update(unsigned)
     .digest('base64url');
   return `tuturuuu_app_session=ttr_app_${unsigned}.${signature}`;
+}
+
+// The fixture user: confirmed, not banned, and with no required-MFA policy
+// in app_metadata, so the signed app session needs no MFA proof.
+const USER = {
+  id: USER_ID,
+  aud: 'authenticated',
+  role: 'authenticated',
+  email: 'route-fixture@example.invalid',
+  email_confirmed_at: '2025-01-01T00:00:00Z',
+  app_metadata: {},
+  user_metadata: {},
+  created_at: '2025-01-01T00:00:00Z',
+};
+
+// The markup outside <script> elements: what the page renders, without the
+// serialized payloads that can carry other pages' strings.
+function visibleMarkup(body) {
+  const lower = body.toLowerCase();
+  const parts = [];
+  let at = 0;
+  for (;;) {
+    const open = lower.indexOf('<script', at);
+    if (open === -1) {
+      parts.push(body.slice(at));
+      break;
+    }
+    parts.push(body.slice(at, open));
+    const close = lower.indexOf('</script', open);
+    const end = close === -1 ? -1 : lower.indexOf('>', close);
+    if (end === -1) break;
+    at = end + 1;
+  }
+  return parts.join('');
 }
 
 const json = (body) =>
@@ -183,6 +217,12 @@ test(
             return json(accept.includes('vnd.pgrst.object') ? role : [role]);
           }
           if (url.pathname.startsWith('/rest/v1/')) return json([]);
+          // Account-assurance and session lookups read the fixture user.
+          if (
+            url.pathname === `/auth/v1/admin/users/${USER_ID}` ||
+            url.pathname === '/auth/v1/user'
+          )
+            return json(USER);
           return json({});
         },
       },
@@ -221,8 +261,6 @@ test(
       });
     const signedIn = (host, path) =>
       get(host, path, { cookie, 'accept-language': 'en' });
-    const visibleMarkup = (body) =>
-      body.replace(/<script\b[\s\S]*?<\/script>/giu, '');
     const redirectTarget = (host, location) =>
       new URL(location ?? '', `http://${host}`);
 
