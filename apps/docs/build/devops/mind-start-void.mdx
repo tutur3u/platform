@@ -12,7 +12,9 @@ the route is flipped. `vercel-production-mind.yaml` still deploys the Next app.
 
 ## Worker
 
-- Staging candidate: the staging Worker name (`workers_dev` off, `TUTURUUU_NOINDEX=1`). A production Worker (`tuturuuu-mind`, `workers_dev` and `preview_urls` off, `TUTURUUU_NOINDEX=0`) is created by the cutover PR; nothing here attaches a route.
+- Profiles: `VITE_MIND_NATIVE_PROFILE` selects the Worker in `apps/mind/cloudflare/deployment-profile.ts`. Staging (default) is `tuturuuu-mind-vite-staging` with `TUTURUUU_NOINDEX=1`; production is `tuturuuu-mind` with `TUTURUUU_NOINDEX=0`. Both keep `workers_dev` and `preview_urls` off, and nothing here attaches a route. The qualification job builds and seals both profiles.
+- Service bindings: `WORKER_SELF_REFERENCE` targets the profile's own Worker, so a staging artifact binds no production Mind Worker. `ABUSE_GUARD` targets `tuturuuu-abuse-guard` in both profiles because no staging guard Worker exists; the seal allows that one shared target in a staging artifact and rejects any other.
+- Publication: `mind` is a protected app in `productionPublicationPolicy` (`tuturuuu.ci.ts`) and `vercel-production-mind.yaml` runs the shared `production-policy` gate before its deploy job. No workflow publishes the Cloudflare Worker.
 - Entry: `apps/mind/cloudflare/worker.ts`; Wrangler config is emitted by `void` into `dist`.
 - Host: `mind.tuturuuu.com`. Root-only: `mountHosts` is empty and `unknownHost` is `reject`, so `tuturuuu.com/mind` and any other host answer 404 before app code runs.
 - Binding: `ASSETS` (static output, `run_worker_first`).

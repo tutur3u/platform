@@ -18,17 +18,7 @@ export default defineConfig({
     workers_dev: false,
     preview_urls: false,
     vars: profile.vars,
-    services: [
-      {
-        binding: 'WORKER_SELF_REFERENCE',
-        service: 'tuturuuu-mind',
-      },
-      {
-        binding: 'ABUSE_GUARD',
-        service: 'tuturuuu-abuse-guard',
-        entrypoint: 'AbuseGuardEntrypoint',
-      },
-    ],
+    services: profile.services,
     assets: {
       binding: 'ASSETS',
       directory: './dist/client',
