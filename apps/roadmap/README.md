@@ -177,7 +177,18 @@ Targets: Lighthouse mobile 90+, LCP under 2.5 s and interaction latency under
   the reader's first intent (pointerdown, touchstart, keydown or focusin) or
   within 1 s of the largest contentful paint. A tap on a button that is not
   hydrated yet shows as pressed at once and is replayed once React has
-  hydrated it; links and `<summary>` work natively throughout. Each public
+  hydrated it; links, `<summary>` and popover buttons work natively
+  throughout.
+- **Explanations on demand.** Long explanations (how statuses are computed,
+  section intros, migration rules, pulse scopes) sit behind (i) buttons, and
+  status and metric labels carry definition tooltips (`src/components/info.tsx`).
+  Both are native HTML popovers (`popovertarget`): their text is in the server
+  HTML, a tap, Enter or Space opens them before hydration and without
+  JavaScript, Escape or a tap elsewhere closes them, and they open in the top
+  layer, so nothing moves. (i) buttons are named disclosures
+  (`aria-expanded`, `aria-controls`); tooltip triggers are buttons described by
+  their tooltip (`aria-describedby`) that also open on hover and focus. The
+  doctor checks this markup on the built page (`infoPopoverFailures`). Each public
   page keeps exactly the router's four inline scripts (JSON-LD, theme,
   router bootstrap, stream boundary); the doctor fails a fifth or an
   unhashed one, and runs the canonical smoke against the built Worker.

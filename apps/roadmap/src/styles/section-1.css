@@ -384,8 +384,7 @@
   /* In-page links land below the fixed navbar, not under it. */
   scroll-margin-top: calc(var(--shell-nav-offset, 76px) + 16px);
 }
-.section-head h2,
-.method h2 {
+.section-head h2 {
   margin: 0;
   font-family: var(--font-display);
   font-size: clamp(26px, 5vw, 40px);
@@ -421,12 +420,17 @@
 .prs a {
   font-variant-numeric: tabular-nums;
 }
+/* One pill shape with the migration and host badges. */
 .badge {
   display: inline-flex;
   align-items: center;
   gap: 4px;
+  padding: 2px 8px;
+  border-radius: 999px;
+  background: color-mix(in oklab, currentColor 10%, transparent);
   font-size: 12px;
   font-weight: 600;
+  line-height: 1.4;
   white-space: nowrap;
 }
 .badge.live {

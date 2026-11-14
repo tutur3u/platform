@@ -5,7 +5,8 @@ import { allMerged, buildPulse } from '../../insights/pulse-model';
 import type { LazyHistory } from '../../insights/use-lazy-history';
 import { DEFAULT_RANGE, type Range, RANGES } from '../../insights/series';
 import { timeToLive } from '../../insights/production';
-import type { Lang, Messages } from '../shared';
+import { Tooltip } from '../info';
+import { type Lang, type Messages, SectionTitle } from '../shared';
 import { Breakdown } from './breakdown';
 import { Delta } from './delta';
 import { fill, formatDuration, formatNumber, shortDay } from './format';
@@ -76,10 +77,12 @@ export function PulseSection({
       ref={lazy.nearRef}
     >
       <header className="section-head pulse-head">
-        <div>
-          <h2 id="pulse-title">{t.pulse.title}</h2>
-          <p>{t.pulse.subtitle}</p>
-        </div>
+        <SectionTitle
+          id="pulse-title"
+          title={t.pulse.title}
+          t={t}
+          info={<p>{t.pulse.subtitle}</p>}
+        />
         <fieldset className="segmented range-switch">
           <legend className="sr-only">{t.pulse.range}</legend>
           {RANGES.map((option) => (
@@ -98,14 +101,22 @@ export function PulseSection({
       <div className="pulse-layout">
         <figure className="pulse-card">
           <figcaption className="pulse-legend">
-            <span className="key key-all">
+            <Tooltip
+              id="tip-pulse-all"
+              tip={t.pulse.allScope}
+              className="key key-all"
+            >
               <i aria-hidden />
-              {t.pulse.all}
-            </span>
-            <span className="key key-tracked">
+              <span className="tip-label">{t.pulse.all}</span>
+            </Tooltip>
+            <Tooltip
+              id="tip-pulse-tracked"
+              tip={t.pulse.trackedScope}
+              className="key key-tracked"
+            >
               <i aria-hidden />
-              {t.pulse.tracked}
-            </span>
+              <span className="tip-label">{t.pulse.tracked}</span>
+            </Tooltip>
             <span className="key key-prod">
               <i aria-hidden />
               {t.pulse.inProd}
@@ -117,8 +128,6 @@ export function PulseSection({
           </figcaption>
           <PulseChart points={pulse.points} t={t} lang={lang} today={today} />
           <div className="pulse-notes">
-            <p>{t.pulse.allScope}</p>
-            <p>{t.pulse.trackedScope}</p>
             {pulse.lastDay ? (
               <p>
                 {fill(t.pulse.asOf, { date: shortDay(pulse.lastDay, lang) })}
@@ -176,7 +185,11 @@ export function PulseSection({
               </dd>
             </div>
             <div>
-              <dt>{t.pulse.ttl}</dt>
+              <dt>
+                <Tooltip id="tip-pulse-ttl" tip={t.pulse.ttlNote}>
+                  <span className="tip-label">{t.pulse.ttl}</span>
+                </Tooltip>
+              </dt>
               <dd className="ttl">
                 {ttl.medianMs !== null && ttl.p90Ms !== null ? (
                   <>
@@ -217,15 +230,16 @@ export function PulseSection({
               </dd>
             </div>
             <div>
-              <dt>{t.pulse.deploys}</dt>
+              <dt>
+                <Tooltip id="tip-pulse-deploys" tip={t.pulse.deploysNote}>
+                  <span className="tip-label">{t.pulse.deploys}</span>
+                </Tooltip>
+              </dt>
               <dd>
                 <b>{n(pulse.totals.deploys)}</b>
               </dd>
             </div>
           </dl>
-          <p className="pulse-fine">
-            {t.pulse.ttlNote} {t.pulse.deploysNote}
-          </p>
         </aside>
         <div className="pulse-breakdown">
           <Breakdown

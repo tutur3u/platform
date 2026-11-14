@@ -210,6 +210,35 @@ describe('perf: the bundle loads at the first intent or just after the LCP', () 
     assert.equal(await replaysFirstClick(noReplay), false);
   });
 
+  it('a popover button (an (i) or a tooltip) opens natively on the first tap', () => {
+    /** True when the boot script neither holds nor replays the tap. */
+    const native = (source: string) => {
+      const page = boot(source);
+      const button = fakeButton();
+      button.setAttribute('popovertarget', 'status-method');
+      let stopped = false;
+      page.fire('click', {
+        target: button,
+        stopImmediatePropagation: () => {
+          stopped = true;
+        },
+      });
+      button.hydrate();
+      page.runFrames();
+      return (
+        !stopped &&
+        button.clicks === 0 &&
+        !button.attrs.has('data-roadmap-pending')
+      );
+    };
+    assert.equal(native(BOOT), true);
+    // Broken variant: held and replayed, the replayed click toggles the
+    // popover the native tap opened shut again.
+    const held = BOOT.replace("button.hasAttribute('popovertarget') || ", '');
+    assert.notEqual(held, BOOT);
+    assert.equal(native(held), false);
+  });
+
   it('links and other elements are left to the browser', () => {
     const page = boot(BOOT);
     let stopped = false;

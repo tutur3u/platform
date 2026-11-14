@@ -17,6 +17,7 @@ import {
   DOCUMENT_BUDGET,
   documentBudgetReport,
   scriptCoverage,
+  infoPopoverFailures,
   pendingBoundaryFailures,
   redundantAltFailures,
 } from './doctor-markup.mjs';
@@ -24,6 +25,22 @@ import '../../../scripts/ci/asset-smoke.test.mjs';
 import './canonical-smoke.test.mjs';
 
 const LOGO = '/roadmap/assets/tuturuuu-logo-Abcd1234.png';
+const STATUSES = [
+  'live',
+  'waiting_for_prod_sync',
+  'waiting_for_merge',
+  'in_progress',
+  'planned',
+];
+/** The server HTML of the status legend, its tooltips and the (i) popover. */
+const INFO = `<ul class="legend">${STATUSES.map(
+  (s) =>
+    `<li><span class="tip-wrap"><button type="button" class="tip-btn" popovertarget="tip-status-${s}" popovertargetaction="show" aria-describedby="tip-status-${s}">${s}</button><span id="tip-status-${s}" role="tooltip" popover="auto" class="tip-pop">${s} defined</span></span></li>`
+).join(
+  ''
+)}</ul><button type="button" class="info-btn" popovertarget="status-method" aria-controls="status-method" aria-expanded="false" aria-label="How statuses are computed"></button><div id="status-method" popover="auto" class="info-pop" aria-labelledby="status-method-title"><dl class="method-list">${STATUSES.map(
+  (s) => `<div><dt>${s}</dt><dd>${s} rule</dd></div>`
+).join('')}</dl></div>`;
 const COMMIT = 'a'.repeat(40);
 
 function passingRaw() {
@@ -32,7 +49,7 @@ function passingRaw() {
     canonical: {
       status: 200,
       cacheControl: 'public,s-maxage=300,stale-while-revalidate=86400',
-      body: `<link rel="canonical" href="https://tuturuuu.com/roadmap"/><h2 id="timeline-title">Timeline</h2><meta property="og:url" content="https://tuturuuu.com/roadmap"/><meta property="og:image" content="https://tuturuuu.com/roadmap/assets/og-roadmap-Abcd1234.png"/><link rel="alternate" hreflang="x-default" href="https://tuturuuu.com/roadmap"/><header id="navbar"><a href="https://tuturuuu.com/home"><img alt="" src="${LOGO}"><span class="font-bold">Tuturuuu</span></a><a href="https://tuturuuu.com/login">Get Started</a></header><div id="main-content"><script src="/roadmap/assets/index-CGgt8iCG.js"></script>${[...STAGE_LABELS, PLAN_LABEL].join(' ')}</div><footer></footer>`,
+      body: `<link rel="canonical" href="https://tuturuuu.com/roadmap"/><h2 id="timeline-title">Timeline</h2><meta property="og:url" content="https://tuturuuu.com/roadmap"/><meta property="og:image" content="https://tuturuuu.com/roadmap/assets/og-roadmap-Abcd1234.png"/><link rel="alternate" hreflang="x-default" href="https://tuturuuu.com/roadmap"/><header id="navbar"><a href="https://tuturuuu.com/home"><img alt="" src="${LOGO}"><span class="font-bold">Tuturuuu</span></a><a href="https://tuturuuu.com/login">Get Started</a></header><div id="main-content"><script src="/roadmap/assets/index-CGgt8iCG.js"></script>${[...STAGE_LABELS, PLAN_LABEL].join(' ')}${INFO}</div><footer></footer>`,
     },
     satellite: { status: 301, location: 'https://tuturuuu.com/roadmap' },
     redirects: REDIRECT_CHAINS.map((chain) => ({
@@ -406,5 +423,64 @@ test('D79: every public page has exactly four inline scripts, all hashed', () =>
       '/roadmap/vi/workshops/edufest-2026 has 1 inline scripts its CSP does not hash'
     ),
     failures.join('\n')
+  );
+});
+
+test('D79: statuses popover, (i) buttons and tooltips keep their server markup', () => {
+  const observation = passing();
+  const body = observation.canonical.body;
+  assert.deepEqual(infoPopoverFailures(body), []);
+  // React renders the attribute as popoverTarget; HTML ignores the case.
+  assert.deepEqual(
+    infoPopoverFailures(body.replaceAll('popovertarget=', 'popoverTarget=')),
+    []
+  );
+  const fails = (html, text) => {
+    const verdict = assessDoctor({
+      ...observation,
+      canonical: { ...observation.canonical, body: html },
+    });
+    assert.equal(verdict.ok, false, text);
+    assert.ok(
+      verdict.failures.some((failure) => failure.includes(text)),
+      verdict.failures.join('\n')
+    );
+  };
+  // Broken variants. The statuses block back in the page flow.
+  fails(
+    `${body}<section class="section method" aria-labelledby="method-title"></section>`,
+    'still a page section'
+  );
+  // Its definitions missing from the server HTML (rendered on open only).
+  fails(body.replaceAll(/<dd>[^<]*<\/dd>/g, ''), 'holds 0 definitions');
+  fails(
+    body.replace('id="status-method" popover="auto"', 'id="status-method"'),
+    'is not a popover'
+  );
+  // An (i) button without a name, or without its expanded state.
+  fails(
+    body.replace(' aria-label="How statuses are computed"', ''),
+    'lacks its popover semantics'
+  );
+  fails(
+    body.replace(' aria-expanded="false"', ''),
+    'lacks its popover semantics'
+  );
+  // A tooltip trigger that is not described by its tooltip.
+  fails(
+    body.replace(' aria-describedby="tip-status-live"', ''),
+    'lacks aria-describedby'
+  );
+  fails(
+    body.replace(
+      'id="tip-status-planned" role="tooltip"',
+      'id="tip-status-planned"'
+    ),
+    'lacks aria-describedby'
+  );
+  // A status in the legend without a tooltip.
+  fails(
+    body.replace('popovertarget="tip-status-live"', 'data-x="1"'),
+    'has 4 tooltips'
   );
 });

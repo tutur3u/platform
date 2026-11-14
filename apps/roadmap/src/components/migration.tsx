@@ -5,6 +5,7 @@ import {
   MIGRATION_STATES,
   migrationSummary,
 } from '../live/hosting';
+import { InfoPopover } from './info';
 import { formatDate, type Lang, type Messages, SectionHead } from './shared';
 
 const NAMES: Record<string, string> = { ...APP_NAMES, storefront: 'Store' };
@@ -42,6 +43,7 @@ export function MigrationSection({
         id="migration-title"
         title={t.migration.title}
         subtitle={t.migration.subtitle}
+        t={t}
       />
       <div className="migration-summary">
         <p className="migration-count">
@@ -73,14 +75,33 @@ export function MigrationSection({
             ) : null
           )}
         </div>
-        <ul className="migration-legend">
-          {MIGRATION_STATES.map((state) => (
-            <li key={state}>
-              <span className={`migration-dot ${state}`} aria-hidden />
-              {t.migration.states[state]} <b>{counts[state]}</b>
-            </li>
-          ))}
-        </ul>
+        <div className="legend-row">
+          <ul className="migration-legend">
+            {MIGRATION_STATES.map((state) => (
+              <li key={state}>
+                <span className={`migration-dot ${state}`} aria-hidden />
+                {t.migration.states[state]} <b>{counts[state]}</b>
+              </li>
+            ))}
+          </ul>
+          <InfoPopover
+            id="migration-method"
+            label={t.migration.methodTitle}
+            closeLabel={t.info.close}
+          >
+            <dl className="method-list">
+              {MIGRATION_STATES.map((state) => (
+                <div key={state}>
+                  <dt>
+                    <span className={`migration-dot ${state}`} aria-hidden />
+                    {t.migration.states[state]}
+                  </dt>
+                  <dd>{t.migration.rules[state]}</dd>
+                </div>
+              ))}
+            </dl>
+          </InfoPopover>
+        </div>
         {asOf ? (
           <p className="hint">
             {t.migration.asOf}{' '}
@@ -107,7 +128,6 @@ export function MigrationSection({
           </li>
         ))}
       </ul>
-      <p className="hint">{t.migration.method}</p>
     </section>
   );
 }

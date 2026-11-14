@@ -1,0 +1,211 @@
+/* Explanations behind (i) buttons and tooltips (components/info.tsx). Both
+   are native popovers: they open in the top layer, so they overlay the page
+   and never move it. An (i) button and its panel share --rm-anchor (an
+   inline custom property); a tooltip and its trigger share --rm-tip, scoped
+   to their wrapper. Where CSS anchor positioning exists the popover sits
+   beside its trigger; elsewhere, and on phones, it is a sheet along the
+   bottom edge. */
+
+/* The trigger rule lives in the base layer so a trigger keeps its own look
+   (.badge, .key) while it gains the 24px minimum target. */
+@layer base {
+  .tip-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    min-height: 24px;
+    padding: 0;
+    border: 0;
+    background: none;
+    text-align: left;
+    cursor: help;
+    anchor-name: --rm-tip;
+  }
+}
+
+/* Heading rows: the h2 and its (i) button share a centre line. */
+.section-title {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-width: 0;
+}
+.legend-row {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 8px 16px;
+}
+.legend-row > ul {
+  flex: 1;
+  min-width: 0;
+}
+
+.info-btn {
+  display: inline-grid;
+  place-items: center;
+  flex: none;
+  width: 28px;
+  height: 28px;
+  padding: 0;
+  border: 1px solid var(--rm-line);
+  border-radius: 999px;
+  background: var(--rm-panel);
+  color: var(--rm-muted);
+  anchor-name: var(--rm-anchor);
+}
+.info-btn:hover,
+.info-btn[aria-expanded="true"] {
+  color: var(--rm-ink);
+  background: var(--rm-soft);
+}
+
+.tip-wrap {
+  display: inline-flex;
+  anchor-scope: --rm-tip;
+}
+/* A dotted underline marks a label that has a definition. */
+.tip-label {
+  text-decoration-line: underline;
+  text-decoration-style: dotted;
+  text-decoration-thickness: 1px;
+  text-decoration-color: color-mix(in oklab, currentColor 50%, transparent);
+  text-underline-offset: 3px;
+}
+.tip-btn:hover .tip-label,
+.tip-btn:focus-visible .tip-label {
+  text-decoration-color: currentColor;
+}
+
+/* Popovers: a sheet along the bottom edge by default. */
+.info-pop,
+.tip-pop {
+  inset: auto 16px 16px;
+  width: auto;
+  max-height: min(70dvh, 480px);
+  margin: 0;
+  overflow: auto;
+  border-radius: 12px;
+  font-size: 13.5px;
+  font-weight: 400;
+  line-height: 1.5;
+  letter-spacing: normal;
+  text-align: left;
+  text-transform: none;
+  white-space: normal;
+}
+.info-pop {
+  padding: 14px 16px 16px;
+  border: 1px solid var(--rm-line);
+  background: var(--rm-panel);
+  color: var(--rm-ink);
+  box-shadow: 0 16px 40px -16px
+    color-mix(in oklab, var(--rm-ink) 35%, transparent);
+}
+.tip-pop {
+  padding: 8px 12px;
+  border: 0;
+  background: var(--rm-ink);
+  color: var(--rm-bg);
+  font-size: 12.5px;
+}
+@media (min-width: 720px) {
+  @supports (anchor-name: --rm-a) {
+    .info-pop {
+      position-anchor: var(--rm-anchor);
+      inset: auto;
+      width: max-content;
+      margin-block: 8px;
+      max-width: min(380px, calc(100vw - 32px));
+      position-area: bottom span-right;
+      position-try-fallbacks:
+        bottom span-left,
+        top span-right,
+        top span-left;
+    }
+  }
+  /* Tooltips share one anchor name, scoped to each trigger's wrapper. */
+  @supports (anchor-scope: --rm-a) {
+    .tip-pop {
+      position-anchor: --rm-tip;
+      inset: auto;
+      width: max-content;
+      max-width: min(300px, calc(100vw - 32px));
+      margin-block: 8px;
+      position-area: top span-right;
+      position-try-fallbacks:
+        top span-left,
+        bottom span-right,
+        bottom span-left;
+    }
+  }
+}
+
+.info-pop-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 8px;
+}
+.info-pop .info-pop-title {
+  margin: 0;
+  font-size: 14px;
+  font-weight: 600;
+}
+.info-close {
+  display: inline-grid;
+  place-items: center;
+  flex: none;
+  width: 28px;
+  height: 28px;
+  margin: -4px -6px -4px 0;
+  padding: 0;
+  border: 0;
+  border-radius: 999px;
+  background: none;
+  color: var(--rm-muted);
+}
+.info-close:hover {
+  color: var(--rm-ink);
+  background: var(--rm-soft);
+}
+.info-pop p {
+  margin: 0;
+  color: var(--rm-muted);
+}
+.info-pop p + p {
+  margin-top: 8px;
+}
+.method-list {
+  display: grid;
+  gap: 10px;
+  margin: 0;
+}
+.method-list div {
+  display: grid;
+  gap: 2px;
+}
+.method-list dt {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12.5px;
+  font-weight: 600;
+}
+.method-list dd {
+  margin: 0;
+  font-size: 13px;
+  color: var(--rm-muted);
+}
+.info-pop .info-fine {
+  margin-top: 12px;
+  padding-top: 10px;
+  border-top: 1px solid var(--rm-line);
+  font-size: 12px;
+}
+
+.fine-print {
+  font-size: 12px;
+  line-height: 1.5;
+}

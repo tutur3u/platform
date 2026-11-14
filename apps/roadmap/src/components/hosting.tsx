@@ -2,7 +2,6 @@ import cloudflareLogo from '../assets/brands/cloudflare-logo.png?no-inline';
 import { hostBadge } from '../live/host-badge';
 import { type HostingSnapshot, hostingAsOf } from '../live/hosting';
 import { REPO_URL } from '../live/model';
-import { statuses } from '../live/status';
 import type { RoadmapView } from '../view-model';
 
 const PLATFORM_ORDER = ['workers', 'vercel', 'store', 'unknown'] as const;
@@ -77,13 +76,7 @@ function HostSummary({
     </div>
   );
 }
-import {
-  formatDate,
-  type Lang,
-  type Messages,
-  SectionHead,
-  StatusBadge,
-} from './shared';
+import { formatDate, type Lang, type Messages, SectionHead } from './shared';
 
 export function HostingSection({
   t,
@@ -105,14 +98,19 @@ export function HostingSection({
       <SectionHead
         id="hosting-title"
         title={t.hosting.title}
-        subtitle={t.hosting.subtitle}
+        t={t}
+        info={
+          <>
+            <p>{t.hosting.subtitle}</p>
+            <p>{t.hosting.checkedNote}</p>
+          </>
+        }
       />
       <div>
         {asOf ? (
           <p className="main-commit">
             {t.hosting.checked}{' '}
-            <time dateTime={asOf}>{formatDate(asOf, lang, true)} (UTC+7)</time>{' '}
-            {t.hosting.checkedNote}
+            <time dateTime={asOf}>{formatDate(asOf, lang, true)} (UTC+7)</time>
           </p>
         ) : null}
         {hosting.mode !== 'probed' ? (
@@ -186,27 +184,8 @@ export function HostingSection({
         );
       })}
       {view.hosts.some((host) => host.platform === 'workers') ? (
-        <p className="hint">{t.hosting.trademark}</p>
+        <p className="hint fine-print">{t.hosting.trademark}</p>
       ) : null}
-    </section>
-  );
-}
-
-export function Method({ t }: { t: Messages }) {
-  return (
-    <section className="section method" aria-labelledby="method-title">
-      <h2 id="method-title">{t.method.title}</h2>
-      <dl className="masonry">
-        {statuses.map((s) => (
-          <div key={s}>
-            <dt>
-              <StatusBadge status={s} t={t} />
-            </dt>
-            <dd>{t.method[s]}</dd>
-          </div>
-        ))}
-      </dl>
-      <p className="hint">{t.method.sources}</p>
     </section>
   );
 }
