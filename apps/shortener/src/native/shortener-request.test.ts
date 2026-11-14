@@ -242,9 +242,7 @@ describe('short-link documents', () => {
       const location = response.headers.get('location');
       if (location === null) continue;
       expect(location).toMatch(/^\/(?![/\\])/);
-      expect(new URL(location, 'https://ttr.gg').origin).toBe(
-        'https://ttr.gg'
-      );
+      expect(new URL(location, 'https://ttr.gg').origin).toBe('https://ttr.gg');
     }
     const nested = await call(`${origin}//evil.example/x/`);
     expect(nested.status).toBe(308);
