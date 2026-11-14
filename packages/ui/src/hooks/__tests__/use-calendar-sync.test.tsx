@@ -166,27 +166,26 @@ describe('CalendarSyncProvider optimistic visible events', () => {
       result.current.setTimezone('America/New_York');
       result.current.setDates([new Date(2026, 2, 8, 18)]);
     });
+    // Neighbouring days are prefetched, so match the visible range's request.
+    const hasRange = (path: string, start: string, end: string) =>
+      requestsFor(path).some(
+        (url) =>
+          url.searchParams.get('start_at') === start &&
+          url.searchParams.get('end_at') === end
+      );
     await waitFor(() => {
       for (const path of ['/calendar/events', '/calendar/habit-events']) {
-        const url = requestsFor(path).at(-1);
-        expect(url?.searchParams.get('start_at')).toBe(
-          '2026-03-08T05:00:00.000Z'
-        );
-        expect(url?.searchParams.get('end_at')).toBe(
-          '2026-03-09T04:00:00.000Z'
-        );
+        expect(
+          hasRange(path, '2026-03-08T05:00:00.000Z', '2026-03-09T04:00:00.000Z')
+        ).toBe(true);
       }
     });
     act(() => result.current.setTimezone('Asia/Tokyo'));
     await waitFor(() => {
       for (const path of ['/calendar/events', '/calendar/habit-events']) {
-        const url = requestsFor(path).at(-1);
-        expect(url?.searchParams.get('start_at')).toBe(
-          '2026-03-07T15:00:00.000Z'
-        );
-        expect(url?.searchParams.get('end_at')).toBe(
-          '2026-03-08T15:00:00.000Z'
-        );
+        expect(
+          hasRange(path, '2026-03-07T15:00:00.000Z', '2026-03-08T15:00:00.000Z')
+        ).toBe(true);
       }
     });
     const keys = queryClient
@@ -226,6 +225,7 @@ describe('CalendarSyncProvider optimistic visible events', () => {
   it('keeps last successful events visible while a refetch is pending', async () => {
     const initialEvent = createEvent('event-1');
     let databaseCalls = 0;
+    let visibleStart: string | null = null;
     let resolveRefetch:
       | ((response: Pick<Response, 'json' | 'ok'>) => void)
       | undefined;
@@ -243,6 +243,12 @@ describe('CalendarSyncProvider optimistic visible events', () => {
       }
 
       if (url.includes('/calendar/events')) {
+        // The visible range is requested first; neighbour prefetches differ.
+        const start = new URL(url, 'http://localhost').searchParams.get(
+          'start_at'
+        );
+        visibleStart ??= start;
+        if (start !== visibleStart) return new Promise(() => {});
         databaseCalls += 1;
 
         if (databaseCalls === 1) {

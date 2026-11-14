@@ -14,10 +14,15 @@ import {
   calendarDayKey,
 } from '../../../../lib/calendar-day';
 import {
+  ALL_DAY_BAR_MIN_HEIGHT_REM,
   calculateAllDayEventLayout,
   type EventSpan,
   MAX_EVENTS_DISPLAY,
 } from './all-day-event-layout';
+import {
+  AllDayReservedRow,
+  useStableAllDayBarHeight,
+} from './all-day-reserved-row';
 import { MIN_COLUMN_WIDTH } from './config';
 import { CalendarEventProviderIcon } from './event-provider-display';
 import { LocationTimeline } from './location-timeline';
@@ -62,7 +67,7 @@ export const AllDayEventBar = ({ dates }: { dates: Date[] }) => {
     deleteEvent,
     preservePastEventOpacity,
   } = useCalendar();
-  const { allDayEvents } = useCalendarSync();
+  const { allDayEvents, isPlaceholderData } = useCalendarSync();
   const now = useCalendarClock();
   const { settings } = useCalendarSettings();
   const showWeekends = settings.appearance.showWeekends;
@@ -309,8 +314,21 @@ export const AllDayEventBar = ({ dates }: { dates: Date[] }) => {
     return eventLayout.eventsByDay[dateIndex] ?? [];
   };
 
+  const locationTopOffset =
+    locationSpans.length > 0 ? LOCATION_TIMELINE_HEIGHT_REM : 0;
+  const regularRowsHeight =
+    eventLayout.maxVisibleEventsPerDay > 0
+      ? eventLayout.maxVisibleEventsPerDay * 1.75
+      : 0;
+  const barHeight = useStableAllDayBarHeight(
+    Math.max(ALL_DAY_BAR_MIN_HEIGHT_REM, locationTopOffset + regularRowsHeight),
+    !!isPlaceholderData
+  );
+
   if (eventLayout.spans.length === 0) {
-    return null;
+    return (
+      <AllDayReservedRow columns={visibleDates.length} heightRem={barHeight} />
+    );
   }
 
   const toggleDateExpansion = (dateKey: string) => {
@@ -320,14 +338,6 @@ export const AllDayEventBar = ({ dates }: { dates: Date[] }) => {
         : [...prev, dateKey]
     );
   };
-
-  const locationTopOffset =
-    locationSpans.length > 0 ? LOCATION_TIMELINE_HEIGHT_REM : 0;
-  const regularRowsHeight =
-    eventLayout.maxVisibleEventsPerDay > 0
-      ? eventLayout.maxVisibleEventsPerDay * 1.75
-      : 0;
-  const barHeight = Math.max(1.9, locationTopOffset + regularRowsHeight);
 
   const handleEventMouseDown = (e: React.MouseEvent, eventSpan: EventSpan) => {
     if (visibleDates.length <= 1 || eventSpan.event.seriesId) return;
