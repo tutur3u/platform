@@ -2,6 +2,13 @@ import type { SupabaseClient } from '@tuturuuu/supabase';
 import type { PermissionId } from '@tuturuuu/types';
 import type { MiraSoulConfig } from '../chat/mira-system-instruction';
 import { buildAiMemoryContext, resolveAiMemoryScope } from '../memory';
+import { resolveMiraContextNeeds } from './context-builder-policy';
+
+export {
+  type MiraContextNeeds,
+  type MiraOptionalContextSection,
+  resolveMiraContextNeeds,
+} from './context-builder-policy';
 
 /**
  * Token budget for context injection (~4K tokens ≈ 16K chars).
@@ -23,7 +30,17 @@ type ContextOptions = {
   supabase: SupabaseClient;
   timezone?: string;
   withoutPermission?: (permission: PermissionId) => boolean;
+  /**
+   * Text of the user's latest message. When present, task, calendar, finance
+   * and memory context load only when the turn plausibly needs them (see
+   * `resolveMiraContextNeeds`). When absent, as for a Live session prompt that
+   * serves many turns, every authorized section loads.
+   */
+  latestUserMessage?: string | null;
 };
+
+/** Wall-clock duration of one context stage, for Server-Timing. */
+export type MiraContextStageTiming = { name: string; ms: number };
 
 export type MiraContextResult = {
   /** Combined context string for injection into the prompt. */
@@ -32,11 +49,31 @@ export type MiraContextResult = {
   soul: MiraSoulConfig | null;
   /** True when no soul config row exists (brand-new user). */
   isFirstInteraction: boolean;
+  /** Durations of the stages that ran, ending with `total`. */
+  timings: MiraContextStageTiming[];
 };
+
+async function timeStage<T>(
+  timings: MiraContextStageTiming[],
+  name: string,
+  run: () => PromiseLike<T>
+): Promise<T> {
+  const startedAt = performance.now();
+  const result = await run();
+  timings.push({ name, ms: elapsedMs(startedAt) });
+  return result;
+}
+
+function elapsedMs(startedAt: number): number {
+  return Math.round((performance.now() - startedAt) * 10) / 10;
+}
+
+const SKIPPED = Promise.resolve({ data: null, error: null });
 
 /**
  * Builds a dynamic context string injected into Mira's system prompt.
- * All data sources are fetched in parallel for performance.
+ * Every needed source is fetched concurrently; sections the turn does not
+ * need are skipped without any query, embedding or metering.
  *
  * Returns the context string alongside the raw soul config so the
  * caller can pass it to `buildMiraSystemInstruction()`.
@@ -44,10 +81,20 @@ export type MiraContextResult = {
 export async function buildMiraContext(
   opts: ContextOptions
 ): Promise<MiraContextResult> {
-  const { userId, wsId, supabase, timezone = 'UTC', withoutPermission } = opts;
+  const builderStartedAt = performance.now();
+  const {
+    userId,
+    wsId,
+    supabase,
+    timezone = 'UTC',
+    withoutPermission,
+    latestUserMessage,
+  } = opts;
   const canReadCalendar = !withoutPermission?.('manage_calendar');
   const canReadFinance = !withoutPermission?.('manage_finance');
-
+  const needs = resolveMiraContextNeeds(latestUserMessage);
+  const loadCalendar = canReadCalendar && needs.calendar;
+  const loadFinance = canReadFinance && needs.finance;
   let now = new Date();
   try {
     // If a valid timezone is provided, try to shift our "now" perspective
@@ -91,7 +138,9 @@ export async function buildMiraContext(
   const weekAhead = new Date(now);
   weekAhead.setDate(weekAhead.getDate() + 7);
 
-  // Fetch all context sources in parallel
+  const timings: MiraContextStageTiming[] = [];
+
+  // Fetch every needed context source concurrently
   const [
     soulResult,
     tasksResult,
@@ -99,55 +148,70 @@ export async function buildMiraContext(
     walletsResult,
     memoriesResult,
   ] = await Promise.all([
-    // Soul config
-    supabase
-      .from('mira_soul')
-      .select('name, tone, personality, boundaries, vibe, chat_tone')
-      .eq('user_id', userId)
-      .maybeSingle(),
+    // Soul config: identity and explicit boundaries load on every turn
+    timeStage(timings, 'soul', () =>
+      supabase
+        .from('mira_soul')
+        .select('name, tone, personality, boundaries, vibe, chat_tone')
+        .eq('user_id', userId)
+        .maybeSingle()
+    ),
 
     // Tasks: overdue + due today (via RPC)
-    supabase.rpc('get_user_accessible_tasks', {
-      p_user_id: userId,
-      p_ws_id: wsId,
-      p_include_deleted: false,
-      p_list_statuses: ['not_started', 'active'],
-    }),
+    needs.tasks
+      ? timeStage(timings, 'tasks', () =>
+          supabase.rpc('get_user_accessible_tasks', {
+            p_user_id: userId,
+            p_ws_id: wsId,
+            p_include_deleted: false,
+            p_list_statuses: ['not_started', 'active'],
+          })
+        )
+      : SKIPPED,
 
     // Calendar: next 7 days
-    canReadCalendar
-      ? supabase
-          .from('workspace_calendar_events')
-          .select('title, start_at, end_at, location')
-          .eq('ws_id', wsId)
-          .gte('start_at', now.toISOString())
-          .lte('start_at', weekAhead.toISOString())
-          .order('start_at', { ascending: true })
-          .limit(15)
-      : Promise.resolve({ data: null, error: null }),
+    loadCalendar
+      ? timeStage(timings, 'calendar', () =>
+          supabase
+            .from('workspace_calendar_events')
+            .select('title, start_at, end_at, location')
+            .eq('ws_id', wsId)
+            .gte('start_at', now.toISOString())
+            .lte('start_at', weekAhead.toISOString())
+            .order('start_at', { ascending: true })
+            .limit(15)
+        )
+      : SKIPPED,
 
     // Wallets with balances
-    canReadFinance
-      ? supabase
-          .schema('private')
-          .from('workspace_wallets')
-          .select('name, currency, balance')
-          .eq('ws_id', wsId)
-          .limit(10)
-      : Promise.resolve({ data: null, error: null }),
+    loadFinance
+      ? timeStage(timings, 'finance', () =>
+          supabase
+            .schema('private')
+            .from('workspace_wallets')
+            .select('name, currency, balance')
+            .eq('ws_id', wsId)
+            .limit(10)
+        )
+      : SKIPPED,
 
-    // Mira AI memories, scoped to the current user + workspace.
-    buildAiMemoryContext({
-      limit: 15,
-      scope: resolveAiMemoryScope({
-        customId: `mira-context-${wsId}`,
-        product: 'mira',
-        source: 'mira_context',
-        surface: 'mira_context',
-        userId,
-        wsId,
-      }),
-    }).then((context) => ({ data: context, error: null })),
+    // Mira AI memories, scoped to the current user + workspace. The memory
+    // service applies consent settings and embedding metering when it runs.
+    needs.memories
+      ? timeStage(timings, 'memories', () =>
+          buildAiMemoryContext({
+            limit: 15,
+            scope: resolveAiMemoryScope({
+              customId: `mira-context-${wsId}`,
+              product: 'mira',
+              source: 'mira_context',
+              surface: 'mira_context',
+              userId,
+              wsId,
+            }),
+          }).then((context) => ({ data: context, error: null }))
+        )
+      : SKIPPED,
   ]);
 
   const sections: string[] = [];
@@ -343,6 +407,19 @@ export async function buildMiraContext(
     sections.push(truncateSection(memories, SECTION_CHAR_LIMITS.memories));
   }
 
+  // ── Deferred ── so an absent section never reads as "nothing exists"
+  const deferred = [
+    !needs.tasks && 'tasks',
+    canReadCalendar && !needs.calendar && 'calendar events',
+    canReadFinance && !needs.finance && 'wallets',
+    !needs.memories && 'saved memories (use recall)',
+  ].filter(Boolean);
+  if (deferred.length) {
+    sections.push(
+      `## Not Preloaded\n${deferred.join(', ')}. Fetch with tools when the request needs them.`
+    );
+  }
+
   // Combine all sections, respecting total budget
   let combined = sections.join('\n\n');
   if (combined.length > MAX_CONTEXT_CHARS) {
@@ -362,6 +439,7 @@ export async function buildMiraContext(
         }
       : null,
     isFirstInteraction: !soul,
+    timings: [...timings, { name: 'total', ms: elapsedMs(builderStartedAt) }],
   };
 }
 
