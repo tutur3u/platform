@@ -1,4 +1,7 @@
 import { isStagingSharedCookieDeployment } from '@tuturuuu/supabase/shared-cookie-domains';
+import { resolveTrustedForwardedHostname } from './forwarded-host-trust';
+
+export { resolveTrustedForwardedHostname } from './forwarded-host-trust';
 
 export interface TuturuuuSharedCookieDomain {
   cookieDomain: string;
@@ -201,15 +204,22 @@ function configuredAppUrl() {
 function resolveUrlFromRequestLike(
   source: Extract<CookieSource, { headers?: HeaderReader; url?: string }>
 ) {
+  // A client-supplied X-Forwarded-Host must not pick the cookie domain: only a
+  // configured origin or a gateway-proven forwarded host is honoured.
+  const rawForwardedHost = extractForwardedValue(
+    readHeader(source.headers, 'x-forwarded-host')
+  );
   const forwardedHost =
-    extractForwardedValue(readHeader(source.headers, 'x-forwarded-host')) ??
-    extractForwardedValue(readHeader(source.headers, 'host'));
+    rawForwardedHost &&
+    resolveTrustedForwardedHostname(rawForwardedHost, source.headers)
+      ? rawForwardedHost
+      : null;
+  const fallbackProtocol = normalizeUrlLike(source.url)?.protocol ?? 'https:';
 
-  if (forwardedHost && !/[\r\n]/u.test(forwardedHost)) {
+  if (forwardedHost) {
     const forwardedProto = extractForwardedValue(
       readHeader(source.headers, 'x-forwarded-proto')
     );
-    const fallbackProtocol = normalizeUrlLike(source.url)?.protocol ?? 'https:';
     const protocol =
       forwardedProto?.replace(/:$/u, '') === 'http'
         ? 'http:'
@@ -218,6 +228,13 @@ function resolveUrlFromRequestLike(
           : 'https:';
 
     return normalizeUrlLike(`${protocol}//${forwardedHost}`);
+  }
+
+  const host = extractForwardedValue(readHeader(source.headers, 'host'));
+  if (host && !/[\r\n]/u.test(host)) {
+    return normalizeUrlLike(
+      `${fallbackProtocol === 'http:' ? 'http:' : 'https:'}//${host}`
+    );
   }
 
   return normalizeUrlLike(source.url);
