@@ -114,6 +114,8 @@ Read only the section relevant to the current feature; paths are repository-rela
 
 ## 4. Flutter Tooling & Platform Details
 
+- **macOS OAuth Keychain**: Keep the app-specific prefixed bundle group in both DebugProfile and Release entitlements. Default macOS secure storage selects it without an explicit group override. Run `tool/check_macos_keychain_entitlements.py --app <built-app>` from `apps/mobile` to verify all configurations and the emitted signature; entitlement presence alone does not prove a provisioned write or provider login.
+
 - **Android compileSdk Floor for Plugin Bumps**: When upgrading Flutter plugins that pull newer AndroidX AARs, do not rely blindly on `flutter.compileSdkVersion` in `apps/mobile/android/app/build.gradle.kts`. Keep `compileSdk` pinned to `maxOf(flutter.compileSdkVersion, <required floor>)` so plugin metadata requirements (for example API 34+) do not break release builds when the inherited Flutter default lags behind.
 - **Vendored Flutter Dependency Hygiene**: If a Flutter package must be patched locally under `apps/mobile/vendor`, point `dependency_overrides` at that path and exclude `vendor/**` from `apps/mobile/analysis_options.yaml` so `flutter analyze` / `bun check:mobile` validate first-party app code without turning third-party package lints into repo failures.
 - **iOS Lockstep**: After bumping FlutterFire or other iOS-backed Flutter dependencies in `apps/mobile/pubspec.yaml` or `apps/mobile/pubspec.lock`, refresh and commit `apps/mobile/ios/Podfile.lock`.
