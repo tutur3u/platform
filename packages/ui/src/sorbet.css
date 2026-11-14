@@ -1,0 +1,186 @@
+/*
+  Sorbet: the experimental Tuturuuu design, opted into per account
+  (Settings → Appearance → Experimental design). ExperimentalUiSync sets
+  data-ui="sorbet" on <html>; these rules remap the shared semantic tokens, so
+  every component that uses them follows without code changes.
+
+  Values come from the Tuturuuu design system (Sorbet tokens): warm white ground,
+  white surfaces, ink primary, pastel fills with matching inks, pill controls,
+  18px cards, soft shadows and Nunito. Every text pair meets 4.5:1 in both themes.
+*/
+
+:root[data-ui="sorbet"] {
+  --root-background: #fff1ee;
+  --background: #fffbfa;
+  --foreground: #26212b;
+  --card: #ffffff;
+  --card-foreground: #26212b;
+  --popover: #ffffff;
+  --popover-foreground: #26212b;
+  --primary: #26212b;
+  --primary-foreground: #fffbfa;
+  --secondary: #fff1ee;
+  --secondary-foreground: #26212b;
+  --muted: #fff1ee;
+  --muted-foreground: #6b6170;
+  --accent: #ffe9e4;
+  --accent-foreground: #26212b;
+  --destructive: #a8302e;
+  --destructive-foreground: #ffffff;
+  --border: #f0e1dd;
+  --input: #dcc8c3;
+  --ring: #2a55a8;
+
+  --chart-1: #2a55a8;
+  --chart-2: #2b6e22;
+  --chart-3: #94480a;
+  --chart-4: #6236b0;
+  --chart-5: #a2286a;
+
+  --sidebar-background: #fff1ee;
+  --sidebar-foreground: #26212b;
+  --sidebar-primary: #26212b;
+  --sidebar-primary-foreground: #fffbfa;
+  --sidebar-accent: #ffe6e0;
+  --sidebar-accent-foreground: #26212b;
+  --sidebar-border: #f0e1dd;
+  --sidebar-ring: #2a55a8;
+
+  /* Dynamic palette: Sorbet inks for text and icons; /10 and /20 tints stay pastel. */
+  --blue: #2a55a8;
+  --green: #2b6e22;
+  --orange: #94480a;
+  --red: #a8302e;
+  --yellow: #7a5800;
+  --purple: #6236b0;
+  --pink: #a2286a;
+  --teal: #17675e;
+  --gray: #5a535c;
+
+  --calendar-bg-blue: #dce7ff;
+  --calendar-bg-red: #ffdddb;
+  --calendar-bg-green: #dcf3d6;
+  --calendar-bg-yellow: #fff2c2;
+  --calendar-bg-purple: #ece1ff;
+  --calendar-bg-pink: #ffdeee;
+  --calendar-bg-orange: #ffe4ca;
+  --calendar-bg-indigo: #e6e0ff;
+  --calendar-bg-cyan: #d4f2ee;
+  --calendar-bg-gray: #efebee;
+
+  /* Shape: 12px controls base, 18px cards, 24px panels. */
+  --radius: 0.75rem;
+  --radius-xl: 1.125rem;
+  --radius-2xl: 1.5rem;
+
+  --sorbet-shadow-sm:
+    0 1px 2px rgb(38 33 43 / 0.06), 0 2px 8px -4px rgb(38 33 43 / 0.12);
+  --sorbet-shadow-md: 0 10px 30px -18px rgb(38 33 43 / 0.35);
+}
+
+:root[data-ui="sorbet"].dark {
+  --root-background: #1d1a22;
+  --background: #18151c;
+  --foreground: #f6eff4;
+  --card: #211d26;
+  --card-foreground: #f6eff4;
+  --popover: #211d26;
+  --popover-foreground: #f6eff4;
+  --primary: #f6eff4;
+  --primary-foreground: #18151c;
+  --secondary: #2a2530;
+  --secondary-foreground: #f6eff4;
+  --muted: #2a2530;
+  --muted-foreground: #b3a8b5;
+  --accent: #2f2935;
+  --accent-foreground: #f6eff4;
+  --destructive: #ffb3ae;
+  --destructive-foreground: #18151c;
+  --border: #3a3241;
+  --input: #544a5c;
+  --ring: #b5cdff;
+
+  --chart-1: #b5cdff;
+  --chart-2: #aee6a4;
+  --chart-3: #ffc996;
+  --chart-4: #d3bcff;
+  --chart-5: #ffb4d6;
+
+  --sidebar-background: #1d1a22;
+  --sidebar-foreground: #f6eff4;
+  --sidebar-primary: #f6eff4;
+  --sidebar-primary-foreground: #18151c;
+  --sidebar-accent: #2a2530;
+  --sidebar-accent-foreground: #f6eff4;
+  --sidebar-border: #3a3241;
+  --sidebar-ring: #b5cdff;
+
+  --blue: #b5cdff;
+  --green: #aee6a4;
+  --orange: #ffc996;
+  --red: #ffb3ae;
+  --yellow: #f5d97a;
+  --purple: #d3bcff;
+  --pink: #ffb4d6;
+  --teal: #93e0d5;
+  --gray: #c9c0ca;
+
+  --calendar-bg-blue: #22304f;
+  --calendar-bg-red: #432121;
+  --calendar-bg-green: #1f3a22;
+  --calendar-bg-yellow: #3a3115;
+  --calendar-bg-purple: #2f2347;
+  --calendar-bg-pink: #422033;
+  --calendar-bg-orange: #3f2a17;
+  --calendar-bg-indigo: #2a2747;
+  --calendar-bg-cyan: #17332f;
+  --calendar-bg-gray: #2c2830;
+
+  --sorbet-shadow-sm: 0 1px 2px rgb(0 0 0 / 0.4);
+  --sorbet-shadow-md: 0 10px 30px -18px rgb(0 0 0 / 0.7);
+}
+
+/* Typeface: Nunito, self-hosted through the shared next/font loader. */
+:root[data-ui="sorbet"] .ttr-sorbet-font {
+  /* Start apps receive inert next/font objects, so fall back by family name. */
+  font-family:
+    var(--font-sorbet-sans, "Nunito"), "Noto Sans", ui-rounded, system-ui,
+    sans-serif;
+}
+
+/* Pill controls. :where keeps the selectors light so local overrides still win. */
+:root[data-ui="sorbet"]
+  :where(
+    [data-slot="button"]:not([data-sorbet-shape="keep"]),
+    [data-slot="input"],
+    [data-slot="select-trigger"],
+    [data-slot="badge"]
+  ) {
+  border-radius: 9999px;
+}
+
+/* Surfaces float on soft shadows; borders recede. */
+:root[data-ui="sorbet"] :where([data-slot="card"]) {
+  border-color: color-mix(in oklab, var(--border) 70%, transparent);
+  box-shadow: var(--sorbet-shadow-md);
+}
+
+:root[data-ui="sorbet"]
+  :where(
+    [data-slot="popover-content"],
+    [data-slot="dropdown-menu-content"],
+    [data-slot="dialog-content"]
+  ) {
+  border-radius: var(--radius-xl);
+}
+
+/* Focus: a solid ring that meets 3:1 on every surface. */
+:root[data-ui="sorbet"]
+  :where(
+    [data-slot="button"],
+    [data-slot="input"],
+    [data-slot="select-trigger"]
+  ):focus-visible {
+  outline: 2px solid var(--ring);
+  outline-offset: 2px;
+}

@@ -4,6 +4,7 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { persistLocalePreference } from '@tuturuuu/ui/custom/locale-preference';
 import { SettingItemTab } from '@tuturuuu/ui/custom/settings-item-tab';
 import { SettingsSection } from '@tuturuuu/ui/custom/settings-section';
+import { ExperimentalUiSetting } from '@tuturuuu/ui/custom/settings/experimental-ui-setting';
 import { VersionBadgeSetting } from '@tuturuuu/ui/custom/version-badge';
 import { Label } from '@tuturuuu/ui/label';
 import { RadioGroup, RadioGroupItem } from '@tuturuuu/ui/radio-group';
@@ -162,6 +163,8 @@ export default function AppearanceSettings({
             </div>
           </RadioGroup>
         </SettingItemTab>
+
+        <ExperimentalUiSetting />
 
         {canManageVersionBadge ? (
           <VersionBadgeSetting canManage={canManageVersionBadge} />

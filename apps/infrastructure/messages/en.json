@@ -24119,5 +24119,11 @@
     "approval_revocable": "Approval can still be removed because no email has been sent yet.",
     "check_all": "Check all",
     "completed": "Completed"
+  },
+  "experimental-ui": {
+    "badge": "Beta",
+    "setting_description": "Try Sorbet, the new Tuturuuu look, in every app. Saved to your account.",
+    "setting_title": "Experimental design",
+    "setting_toggle_label": "Use the experimental Sorbet design"
   }
 }
