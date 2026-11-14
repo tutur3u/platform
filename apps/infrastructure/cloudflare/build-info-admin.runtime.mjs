@@ -378,7 +378,7 @@ test(
     }
     await probe(eligible, { headers: { cookie } }, 200);
     // The Workers runtime drops an empty Authorization header before the
-    // Worker sees it (pinned wrangler/workerd; Node unit tests still pin the
+    // Worker sees it (pinned local workerd; Node unit tests still pin the
     // present-but-empty header to 401). Here it must behave exactly like an
     // absent header: anonymous is denied, and it is never a credential.
     await probe(null, { headers: { authorization: '' } }, 401);
