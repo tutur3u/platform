@@ -1,9 +1,9 @@
 /**
  * Post-deploy smoke for the live roadmap on its canonical host.
  *
- * The pre-seal doctor runs the built Worker on loopback, and previews run on
- * workers.dev: neither sees what the tuturuuu.com zone does in front of the
- * Worker. On 11 Nov 2026 the zone's Speed Brain answered the browser's
+ * The pre-seal doctor runs the built Worker on loopback, which cannot see
+ * what the tuturuuu.com zone does in front of the Worker. On 11 Nov 2026
+ * the zone's Speed Brain answered the browser's
  * `Sec-Purpose: prefetch` request for the history asset with 503 while every
  * plain fetch passed. This smoke therefore:
  *   1. loads every public page and requires 200 HTML without a prefetch or
@@ -127,14 +127,41 @@ async function checkHistory(path, origin, fetchImpl) {
   };
 }
 
+/**
+ * A disabled workers.dev origin returns Cloudflare error 1042.
+ * Redirects expose a live origin and must never be followed.
+ */
+export async function workersDevSmoke({ url, fetchImpl = globalThis.fetch }) {
+  const response = await fetchImpl(url, { redirect: 'manual' });
+  const body = await response.text();
+  const ok = response.status === 404 && /\b1042\b/.test(body);
+  return {
+    ok,
+    checked: [
+      `${response.status} workers.dev ${url} (1042: ${/\b1042\b/.test(body)})`,
+    ],
+    failures: ok
+      ? []
+      : [
+          `workers.dev ${url} status ${response.status}, expected 404 with Cloudflare error 1042; location ${response.headers.get('location') ?? '(none)'}`,
+        ],
+  };
+}
+
 export async function canonicalSmoke({
   origin = 'https://tuturuuu.com',
   fetchImpl = globalThis.fetch,
   /** The exact history path from the build artifact; discovered if omitted. */
   historyPath = null,
+  workersDevUrl = null,
 } = {}) {
   const failures = [];
   const checked = [];
+  if (workersDevUrl) {
+    const result = await workersDevSmoke({ url: workersDevUrl, fetchImpl });
+    checked.push(...result.checked);
+    failures.push(...result.failures);
+  }
   const hints = new Map();
   for (const path of CANONICAL_PAGES) {
     const url = `${origin}${path}`;
@@ -200,7 +227,11 @@ async function main() {
   const origin = (process.argv[2] ?? 'https://tuturuuu.com').replace(/\/$/, '');
   // Optional: the exact history path from the sealed artifact.
   const historyPath = process.argv[3] ?? null;
-  const result = await canonicalSmoke({ origin, historyPath });
+  const result = await canonicalSmoke({
+    origin,
+    historyPath,
+    workersDevUrl: process.env.ROADMAP_WORKERS_DEV_URL,
+  });
   for (const line of result.checked) console.log(line);
   for (const failure of result.failures) console.error(`- ${failure}`);
   console.log(

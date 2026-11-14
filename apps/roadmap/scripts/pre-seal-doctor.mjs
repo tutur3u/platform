@@ -12,7 +12,16 @@ import { readFile } from 'node:fs/promises';
 import { createServer, request as httpRequest } from 'node:http';
 import { join, sep } from 'node:path';
 import { fileURLToPath, pathToFileURL } from 'node:url';
-import { Miniflare, supportedCompatibilityDate } from 'miniflare';
+import { Miniflare } from 'miniflare';
+import {
+  assertWorkerOrigins,
+  doctorCompatibilityDate,
+  readBuiltWorkerConfig,
+} from './doctor-config.mjs';
+export {
+  assertWorkerOrigins,
+  doctorCompatibilityDate,
+} from './doctor-config.mjs';
 import { showPlans } from '../src/content/tracks.ts';
 import { inlineScriptTexts } from '../src/html-scripts.ts';
 import * as markup from './doctor-markup.mjs';
@@ -533,17 +542,6 @@ function builtModules(serverRoot) {
 }
 
 /**
- * The worker's compatibility date, capped at what this workerd supports.
- * HTMLRewriter (the CSP's script collection) is not date-gated.
- */
-export function doctorCompatibilityDate(
-  configured,
-  supported = supportedCompatibilityDate
-) {
-  return configured && configured <= supported ? configured : supported;
-}
-
-/**
  * Serve dist/server/index.js in workerd, the runtime Cloudflare runs it in
  * (Node has no HTMLRewriter, which the CSP needs). The Host header selects
  * the public contract.
@@ -557,10 +555,9 @@ export async function startBuiltWorker(root = appRoot()) {
       'Built worker is missing. Run build:cloudflare before the pre-seal doctor.'
     );
   }
-  // The deployed Worker's runtime settings, from the app's own config.
-  const { cloudflare: config } = (
-    await import(pathToFileURL(join(root, 'void.config.ts')).href)
-  ).default;
+  // Validate the deployed artifact, including its public origin exposure.
+  const config = await readBuiltWorkerConfig(serverRoot);
+  assertWorkerOrigins(config);
   const assets = localAssets(root);
   const worker = new Miniflare({
     modulesRoot: serverRoot,
