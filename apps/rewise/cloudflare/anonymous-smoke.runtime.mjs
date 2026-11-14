@@ -15,11 +15,11 @@ const require = createRequire(join(app, 'package.json'));
 const ROOT_HOST = 'rewise.tuturuuu.com';
 // The local Worker receives HTTP; the native /login page has a fixed HTTPS return target.
 const EXPECTED = {
-  '/': 'http://rewise.tuturuuu.com/verify-token?nextUrl=%2F',
+  '/': 'https://rewise.tuturuuu.com/verify-token?nextUrl=%2F',
   '/?smoke=return':
-    'http://rewise.tuturuuu.com/verify-token?nextUrl=%2F%3Fsmoke%3Dreturn',
+    'https://rewise.tuturuuu.com/verify-token?nextUrl=%2F%3Fsmoke%3Dreturn',
   // The auth proxy handles /login before the page and normalizes the loop to /.
-  '/login': 'http://rewise.tuturuuu.com/verify-token?nextUrl=%2F',
+  '/login': 'https://rewise.tuturuuu.com/verify-token?nextUrl=%2F',
 };
 const SYNTHETIC_SECRETS = {
   ABUSE_GUARD: {},

@@ -104,6 +104,7 @@ describe('refresh outage authority and cookie boundaries', () => {
     );
     vi.stubGlobal('fetch', fetchMock);
     const response = await createCentralizedAuthProxy({
+      canonicalOrigins: ['https://learn.example.test'],
       webAppUrl: 'https://central.example.test',
       appSession: { targetApp: 'learn', now: expired },
     })(request());
@@ -216,6 +217,7 @@ describe('refresh outage authority and cookie boundaries', () => {
       const req = request(path);
       const originalCookie = req.headers.get('cookie');
       const proxy = createCentralizedAuthProxy({
+        canonicalOrigins: ['https://learn.example.test'],
         webAppUrl: 'https://central.example.test',
         appSession: { targetApp: 'learn', now: expired },
       });

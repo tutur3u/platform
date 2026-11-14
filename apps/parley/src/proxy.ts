@@ -4,7 +4,7 @@ import {
   propagateAuthCookies,
 } from '@tuturuuu/auth/proxy';
 import { resolveSupabaseSessionRequest } from '@tuturuuu/auth/supabase-session-user';
-import { TTR_URL } from '@tuturuuu/meet-core/constants/common';
+import { BASE_URL, TTR_URL } from '@tuturuuu/meet-core/constants/common';
 import { hasParleyAccess } from '@tuturuuu/meet-core/parley-access';
 import { guardApiProxyRequest } from '@tuturuuu/utils/api-proxy-guard';
 import { NextRequest, NextResponse } from 'next/server';
@@ -12,6 +12,7 @@ import createIntlMiddleware from 'next-intl/middleware';
 import { routing } from './i18n/routing';
 
 const auth = createCentralizedAuthProxy({
+  canonicalOrigins: [BASE_URL],
   webAppUrl: TTR_URL,
   publicPaths: [
     '/login',

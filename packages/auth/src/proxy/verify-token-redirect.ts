@@ -5,6 +5,12 @@ import { withRequestBasePath } from './redirect-path';
 
 /** Redirects for the satellite `verify-token` handshake; all stay in the app's basePath. */
 
+function uncachedRedirect(url: URL) {
+  const response = NextResponse.redirect(url);
+  response.headers.set('Cache-Control', 'private, no-store');
+  return response;
+}
+
 export async function readVerifyTokenResponse(response: Response) {
   return response.json().catch(() => null) as Promise<{
     appSessionCreated?: unknown;
@@ -17,7 +23,7 @@ export function redirectToNormalizedVerifyTarget(
   req: NextRequest,
   nextPath: string
 ) {
-  return NextResponse.redirect(
+  return uncachedRedirect(
     new URL(withRequestBasePath(req, nextPath), req.nextUrl)
   );
 }
@@ -30,7 +36,7 @@ export function redirectToVerifyFallback(
   return clearSupabaseAuthCookies(
     req,
     response ??
-      NextResponse.redirect(
+      uncachedRedirect(
         new URL(withRequestBasePath(req, fallbackPath), req.nextUrl)
       )
   );

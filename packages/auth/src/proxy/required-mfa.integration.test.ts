@@ -87,6 +87,7 @@ describe('satellite app session required MFA integration', () => {
 });
 
 const proxy = createCentralizedAuthProxy({
+  canonicalOrigins: ['https://infra.tuturuuu.com'],
   webAppUrl: 'https://tuturuuu.com',
   appSession: { targetApp: 'infra' },
 });

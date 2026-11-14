@@ -20,7 +20,6 @@ import {
   normalizeAuthRedirectPath,
   propagateAuthCookies,
   refreshAppSessionForRequest,
-  resolveCanonicalRequestOrigin,
 } from './index';
 
 const getMiddlewareRequestHeader = (
@@ -167,81 +166,6 @@ describe('auth proxy redirect helpers', () => {
     const headers = getRequestHeadersWithResponseCookies(request, response);
     expect(headers.get('authorization')).toBe('Bearer app-session-token');
     expect(headers.get('cookie')).toBe('theme=light');
-  });
-
-  it('resolves the canonical public origin from forwarded headers', () => {
-    const request = new NextRequest('http://0.0.0.0:7803/dashboard', {
-      headers: {
-        'x-forwarded-host': 'tuturuuu.com',
-        'x-forwarded-proto': 'https',
-      },
-    });
-    expect(resolveCanonicalRequestOrigin(request, 'https://tuturuuu.com')).toBe(
-      'https://tuturuuu.com'
-    );
-  });
-
-  it('maps the gateway origin alias host to the central origin', () => {
-    const forwarded = new NextRequest('https://origin.tuturuuu.com/personal', {
-      headers: {
-        'x-forwarded-host': 'origin.tuturuuu.com',
-        'x-forwarded-proto': 'https',
-      },
-    });
-    expect(
-      resolveCanonicalRequestOrigin(forwarded, 'https://tuturuuu.com')
-    ).toBe('https://tuturuuu.com');
-
-    const direct = new NextRequest('https://ORIGIN.tuturuuu.com/personal');
-    expect(resolveCanonicalRequestOrigin(direct, 'https://tuturuuu.com')).toBe(
-      'https://tuturuuu.com'
-    );
-  });
-
-  it('maps configured extra gateway origin aliases to the central origin', () => {
-    vi.stubEnv('TUTURUUU_GATEWAY_ORIGIN_HOSTS', 'edge-origin.example.com');
-    try {
-      const request = new NextRequest('https://edge-origin.example.com/x', {
-        headers: { 'x-forwarded-host': 'edge-origin.example.com' },
-      });
-      expect(
-        resolveCanonicalRequestOrigin(request, 'https://tuturuuu.com')
-      ).toBe('https://tuturuuu.com');
-    } finally {
-      vi.unstubAllEnvs();
-    }
-  });
-
-  it('keeps satellite public hosts as their own origin', () => {
-    const request = new NextRequest('https://tasks.tuturuuu.com/personal', {
-      headers: { 'x-forwarded-host': 'tasks.tuturuuu.com' },
-    });
-    expect(resolveCanonicalRequestOrigin(request, 'https://tuturuuu.com')).toBe(
-      'https://tasks.tuturuuu.com'
-    );
-  });
-
-  it('preserves explicit loopback ports for local satellite auth returns', () => {
-    const request = new NextRequest(
-      'http://localhost:7809/workspace/tasks?source=sidebar-apps',
-      {
-        headers: {
-          'x-forwarded-host': 'localhost:7809',
-          'x-forwarded-proto': 'http',
-        },
-      }
-    );
-    expect(
-      resolveCanonicalRequestOrigin(request, 'http://localhost:7803')
-    ).toBe('http://localhost:7809');
-  });
-
-  it('keeps using the configured fallback for non-browser internal hosts', () => {
-    const request = new NextRequest('http://0.0.0.0:7809/workspace/tasks');
-
-    expect(
-      resolveCanonicalRequestOrigin(request, 'http://localhost:7803')
-    ).toBe('http://localhost:7803');
   });
 
   it('flattens nested login and verify-token redirect chains', () => {
@@ -475,6 +399,7 @@ describe('auth proxy redirect helpers', () => {
 
   it('redirects unauthenticated users through the public origin instead of the internal bind host', async () => {
     const authProxy = createCentralizedAuthProxy({
+      canonicalOrigins: ['https://tuturuuu.com'],
       skipApiRoutes: true,
       webAppUrl: 'https://tuturuuu.com',
     });
@@ -535,6 +460,7 @@ describe('auth proxy redirect helpers', () => {
     mocks.createAdminClient.mockResolvedValue(adminClient);
 
     const authProxy = createCentralizedAuthProxy({
+      canonicalOrigins: ['https://tuturuuu.com'],
       skipApiRoutes: true,
       webAppUrl: 'https://tuturuuu.com',
     });
@@ -587,6 +513,7 @@ describe('auth proxy redirect helpers', () => {
     });
 
     const authProxy = createCentralizedAuthProxy({
+      canonicalOrigins: ['https://tuturuuu.com'],
       skipApiRoutes: true,
       webAppUrl: 'https://tuturuuu.com',
     });
@@ -612,6 +539,7 @@ describe('auth proxy redirect helpers', () => {
       userId: 'user-1',
     });
     const authProxy = createCentralizedAuthProxy({
+      canonicalOrigins: ['https://learn.tuturuuu.com'],
       appSession: { sessionMode: 'supabase-first', targetApp: 'learn' },
       skipApiRoutes: true,
       webAppUrl: 'https://tuturuuu.com',
@@ -649,6 +577,7 @@ describe('auth proxy redirect helpers', () => {
       res: NextResponse.next(),
     });
     const authProxy = createCentralizedAuthProxy({
+      canonicalOrigins: ['https://learn.tuturuuu.com'],
       appSession: { sessionMode: 'supabase-first', targetApp: 'learn' },
       skipApiRoutes: true,
       webAppUrl: 'https://tuturuuu.com',
@@ -690,6 +619,7 @@ describe('auth proxy redirect helpers', () => {
       res: NextResponse.next(),
     });
     const authProxy = createCentralizedAuthProxy({
+      canonicalOrigins: ['https://learn.tuturuuu.com'],
       appSession: { sessionMode: 'supabase-first', targetApp: 'learn' },
       skipApiRoutes: true,
       webAppUrl: 'https://tuturuuu.com',
@@ -750,6 +680,7 @@ describe('auth proxy redirect helpers', () => {
     vi.stubGlobal('fetch', fetchMock);
 
     const authProxy = createCentralizedAuthProxy({
+      canonicalOrigins: ['https://learn.tuturuuu.com'],
       appSession: {
         now: new Date('2026-01-01T00:08:30.000Z'),
         targetApp: 'learn',
@@ -1197,6 +1128,7 @@ describe('auth proxy redirect helpers', () => {
     );
 
     const authProxy = createCentralizedAuthProxy({
+      canonicalOrigins: ['https://learn.tuturuuu.com'],
       appSession: {
         now: new Date('2026-01-01T00:00:02.000Z'),
         targetApp: 'learn',
@@ -1230,6 +1162,7 @@ describe('auth proxy redirect helpers', () => {
         .mockResolvedValue(Response.json({ error: 'nope' }, { status: 401 }))
     );
     const authProxy = createCentralizedAuthProxy({
+      canonicalOrigins: ['https://learn.tuturuuu.com'],
       appSession: {
         now: new Date('2026-01-01T00:00:02.000Z'),
         targetApp: 'learn',
@@ -1255,6 +1188,7 @@ describe('auth proxy redirect helpers', () => {
       'https://nzamlzqfdwaaxdefwraj.supabase.co'
     );
     const authProxy = createCentralizedAuthProxy({
+      canonicalOrigins: ['https://learn.tuturuuu.com'],
       appSession: { targetApp: 'learn' },
       skipApiRoutes: true,
       webAppUrl: 'https://tuturuuu.com',
@@ -1299,6 +1233,7 @@ describe('auth proxy redirect helpers', () => {
       res: NextResponse.next(),
     });
     const authProxy = createCentralizedAuthProxy({
+      canonicalOrigins: ['https://mail.tuturuuu.com'],
       appSession: { sessionMode: 'supabase-first', targetApp: 'mail' },
       mfa: { enabled: false },
       skipApiRoutes: true,
@@ -1326,6 +1261,7 @@ describe('auth proxy redirect helpers', () => {
       userId: 'user-1',
     });
     const authProxy = createCentralizedAuthProxy({
+      canonicalOrigins: ['https://learn.tuturuuu.com'],
       appSession: { targetApp: 'learn' },
       skipApiRoutes: true,
       webAppUrl: 'https://tuturuuu.com',
@@ -1352,6 +1288,7 @@ describe('auth proxy redirect helpers', () => {
 
   it('redirects registered app requests without an app-session cookie through web login', async () => {
     const authProxy = createCentralizedAuthProxy({
+      canonicalOrigins: ['https://learn.tuturuuu.com'],
       appSession: { targetApp: 'learn' },
       skipApiRoutes: true,
       webAppUrl: 'https://tuturuuu.com',
@@ -1370,8 +1307,84 @@ describe('auth proxy redirect helpers', () => {
     expect(mocks.updateSession).not.toHaveBeenCalled();
   });
 
+  it('never reflects a client X-Forwarded-Host into the login return URL (SR-XFH-RETURN)', async () => {
+    const authProxy = createCentralizedAuthProxy({
+      canonicalOrigins: ['https://rewise.tuturuuu.com'],
+      appSession: { targetApp: 'learn' },
+      skipApiRoutes: true,
+      webAppUrl: 'https://tuturuuu.com',
+    });
+
+    const cases: Array<[string, Record<string, string>]> = [
+      // Hostile forwarded host and protocol on the real app host.
+      [
+        'https://rewise.tuturuuu.com/personal?view=week',
+        { 'x-forwarded-host': 'evil.example', 'x-forwarded-proto': 'http' },
+      ],
+      // Hostile forwarded host from a Worker that passes it through.
+      [
+        'https://rewise.example.workers.dev/personal?view=week',
+        { 'x-forwarded-host': 'evil.example' },
+      ],
+      // Hostile Host with no forwarded headers.
+      ['https://evil.example/personal?view=week', {}],
+    ];
+
+    for (const [url, headers] of cases) {
+      const response = await authProxy(new NextRequest(url, { headers }));
+      const location = new URL(response.headers.get('location') ?? '');
+
+      expect(response.status).toBe(307);
+      expect(response.headers.get('cache-control')).toBe('private, no-store');
+      expect(`${location.origin}${location.pathname}`).toBe(
+        'https://tuturuuu.com/login'
+      );
+      expect(location.searchParams.get('returnUrl')).toBe(
+        'https://rewise.tuturuuu.com/verify-token?nextUrl=%2Fpersonal%3Fview%3Dweek'
+      );
+      expect(location.toString()).not.toContain('evil.example');
+    }
+  });
+
+  it('omits the return URL instead of reflecting headers when no canonical origin is valid', async () => {
+    const authProxy = createCentralizedAuthProxy({
+      canonicalOrigins: ['not a url'],
+      appSession: { targetApp: 'learn' },
+      skipApiRoutes: true,
+      webAppUrl: 'https://tuturuuu.com',
+    });
+
+    const response = await authProxy(
+      new NextRequest('https://evil.example/personal', {
+        headers: { 'x-forwarded-host': 'evil.example' },
+      })
+    );
+
+    expect(response.headers.get('location')).toBe('https://tuturuuu.com/login');
+    expect(response.headers.get('cache-control')).toBe('private, no-store');
+  });
+
+  it('marks the shared-session login redirect private and uncached', async () => {
+    const authProxy = createCentralizedAuthProxy({
+      canonicalOrigins: ['https://meet.tuturuuu.com'],
+      skipApiRoutes: true,
+      webAppUrl: 'https://tuturuuu.com',
+    });
+
+    const response = await authProxy(
+      new NextRequest('https://meet.tuturuuu.com/personal/meetings')
+    );
+
+    expect(response.status).toBe(307);
+    expect(response.headers.get('cache-control')).toBe('private, no-store');
+    expect(response.headers.get('location')).toContain(
+      encodeURIComponent('https://meet.tuturuuu.com/verify-token?nextUrl=')
+    );
+  });
+
   it('preserves the central session cookie across localhost app ports', async () => {
     const authProxy = createCentralizedAuthProxy({
+      canonicalOrigins: ['http://localhost:7809'],
       appSession: { targetApp: 'tasks' },
       skipApiRoutes: true,
       webAppUrl: 'http://localhost:7803',
@@ -1398,6 +1411,7 @@ describe('auth proxy redirect helpers', () => {
 
   it('keeps Portless app requests under the Tuturuuu localhost namespace', async () => {
     const authProxy = createCentralizedAuthProxy({
+      canonicalOrigins: ['https://tasks.tuturuuu.localhost'],
       appSession: { targetApp: 'tasks' },
       skipApiRoutes: true,
       webAppUrl: 'https://tuturuuu.localhost',
@@ -1421,6 +1435,7 @@ describe('auth proxy redirect helpers', () => {
 
   it('builds registered app return URLs from forwarded public app hosts', async () => {
     const authProxy = createCentralizedAuthProxy({
+      canonicalOrigins: ['https://learn.tuturuuu.com'],
       appSession: { targetApp: 'learn' },
       skipApiRoutes: true,
       webAppUrl: 'https://tuturuuu.com',
@@ -1452,6 +1467,7 @@ describe('auth proxy redirect helpers', () => {
       userId: 'user-1',
     });
     const authProxy = createCentralizedAuthProxy({
+      canonicalOrigins: ['https://learn.tuturuuu.com'],
       appSession: { targetApp: 'learn' },
       skipApiRoutes: true,
       webAppUrl: 'https://tuturuuu.com',
@@ -1480,6 +1496,7 @@ describe('auth proxy redirect helpers', () => {
       { now: new Date('2026-01-01T00:00:00.000Z') }
     );
     const authProxy = createCentralizedAuthProxy({
+      canonicalOrigins: ['https://learn.tuturuuu.com'],
       appSession: {
         now: new Date('2026-01-01T00:00:02.000Z'),
         targetApp: 'learn',
