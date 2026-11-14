@@ -1,3 +1,4 @@
+export * from './classroom-revision';
 export * from './changes';
 export * from './diff';
 export * from './documents';
