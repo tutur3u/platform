@@ -61,7 +61,7 @@ export function meetChildEnvironment(
     GITHUB_REF:
       profile === PRODUCTION_PROFILE ||
       (profile === undefined && env.GITHUB_REF === 'refs/heads/production')
-        ? env.GITHUB_REF
+        ? 'refs/heads/production'
         : 'refs/heads/ci-fixture',
   };
 }
