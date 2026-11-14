@@ -1,3 +1,4 @@
+import { createHash, timingSafeEqual } from 'node:crypto';
 import { type NextRequest, NextResponse } from 'next/server';
 import { runHiveSimulationTick } from '@/lib/hive/simulation';
 import { withCronLogDrain } from '@/lib/infrastructure/log-drain';
@@ -22,7 +23,14 @@ async function handleGET(request: NextRequest) {
     );
   }
 
-  if (request.headers.get('Authorization') !== `Bearer ${cronSecret}`) {
+  const expectedAuthorization = createHash('sha256')
+    .update(`Bearer ${cronSecret}`)
+    .digest();
+  const providedAuthorization = createHash('sha256')
+    .update(request.headers.get('Authorization') ?? '')
+    .digest();
+
+  if (!timingSafeEqual(providedAuthorization, expectedAuthorization)) {
     return NextResponse.json(
       { ok: false, error: 'Unauthorized' },
       { status: 401 }
