@@ -29,12 +29,24 @@ import { isPersonalWorkspace } from '@tuturuuu/utils/workspace-helper';
 import type { NextRequest } from 'next/server';
 import { NextResponse } from 'next/server';
 import createIntlMiddleware from 'next-intl/middleware';
-import { LOCALE_COOKIE_NAME, PUBLIC_PATHS, TTR_URL } from './constants/common';
+import {
+  BASE_URL,
+  LOCALE_COOKIE_NAME,
+  PUBLIC_PATHS,
+  TTR_URL,
+} from './constants/common';
 import { type Locale, supportedLocales } from './i18n/routing';
+import { centralCalendarLoginUrl } from './lib/central-login';
 import {
   preferredCalendarLocale,
   resolveCalendarLocale,
 } from './runtime/request-locale';
+
+// Exact login documents (optionally locale-prefixed, optional trailing slash).
+const LOGIN_DOCUMENT_PATH = new RegExp(
+  `^/(?:(?:${supportedLocales.join('|')})/)?login/?$`,
+  'u'
+);
 
 const AUTH_PUBLIC_PATHS = [
   ...PUBLIC_PATHS,
@@ -46,6 +58,7 @@ const AUTH_PUBLIC_PATHS = [
 // MFA is disabled because satellite apps delegate auth to the web app.
 // Sessions here are created via cross-app tokens that already require aal2 on web.
 const authProxy = createCentralizedAuthProxy({
+  canonicalOrigins: [BASE_URL],
   appSession: { sessionMode: 'supabase-first', targetApp: 'calendar' },
   webAppUrl: TTR_URL,
   publicPaths: AUTH_PUBLIC_PATHS,
@@ -157,10 +170,15 @@ export async function proxy(req: NextRequest): Promise<NextResponse> {
 
   const authRequestHeaders = getRequestHeadersWithResponseCookies(req, authRes);
   if (publicCompletion) {
-    authRequestHeaders.set('x-next-intl-locale', resolveCalendarLocale(req));
-    const completionResponse = NextResponse.next({
-      request: { headers: authRequestHeaders },
-    });
+    const completionLocale = resolveCalendarLocale(req);
+    authRequestHeaders.set('x-next-intl-locale', completionLocale);
+    // Only `/[locale]/verify-token` exists as a route, so an unprefixed
+    // completion path is served from its resolved-locale route in place.
+    const completionResponse = hasLocalePrefix(req.nextUrl.pathname)
+      ? NextResponse.next({ request: { headers: authRequestHeaders } })
+      : NextResponse.rewrite(withLocalePrefix(req.nextUrl, completionLocale), {
+          request: { headers: authRequestHeaders },
+        });
     const completion = mounted
       ? completionResponse
       : clearSupabaseAuthCookies(req, completionResponse);
@@ -192,11 +210,14 @@ export async function proxy(req: NextRequest): Promise<NextResponse> {
       ? 1
       : 0;
   const isLoginPath = pathSegments[loginSegmentIndex] === 'login';
+  // Only signature-verified app-session claims prove a live session here; a
+  // Supabase or Web session cookie name alone may be stale.
+  const hasVerifiedSession = Boolean(appSession);
 
   // A cookie name alone does not prove a live session. On the mount the login
   // page verifies the shared session itself, so a stale cookie reaches the Web
   // handoff instead of bouncing between login and a protected page.
-  if (isLoginPath && hasSatelliteSession && !mounted) {
+  if (isLoginPath && hasVerifiedSession && !mounted) {
     const nextPath = normalizeAuthRedirectPath(
       req.nextUrl.searchParams.get('next') ??
         req.nextUrl.searchParams.get('nextUrl'),
@@ -211,6 +232,32 @@ export async function proxy(req: NextRequest): Promise<NextResponse> {
     );
     propagateAuthCookies(authRes, loginRedirect);
     return loginRedirect;
+  }
+
+  // The login document is prerendered under Cache Components, so a signed-out
+  // visitor would receive the cached 200 shell before the page's redirect()
+  // runs. Answer the central sign-in handoff here as an uncached 307 that
+  // mirrors the login page: config-pinned BASE_URL return target, normalized
+  // same-origin next path, and no handoff token.
+  if (
+    !mounted &&
+    !hasVerifiedSession &&
+    (req.method === 'GET' || req.method === 'HEAD') &&
+    LOGIN_DOCUMENT_PATH.test(req.nextUrl.pathname)
+  ) {
+    const handoff = NextResponse.redirect(
+      centralCalendarLoginUrl(
+        req.nextUrl.searchParams.get('next') ??
+          req.nextUrl.searchParams.get('nextUrl')
+      ),
+      307
+    );
+    handoff.headers.set('Cache-Control', 'private, no-store');
+    // A stale Supabase cookie is the only cookie this response clears, so it
+    // cannot re-enter the signed-in branch above.
+    return hasSupabaseSession
+      ? clearSupabaseAuthCookies(req, handoff)
+      : handoff;
   }
 
   if (pathSegments.length >= 1) {
@@ -362,6 +409,15 @@ export const config = {
 
     '/((?!_next/static|_next/image|favicon.ico|robots.txt|sitemap.xml|site.webmanifest|offline\\.(?:html|css|js)$|serwist/sw\\.js(?:\\.map)?$|monitoring|.*\\.(?:svg|png|jpg|jpeg|pdf|gif|webp)$).*)',
   ],
+};
+
+const hasLocalePrefix = (pathname: string) =>
+  getSupportedLocale(pathname.split('/')[1] ?? '') !== null;
+
+const withLocalePrefix = (url: NextRequest['nextUrl'], locale: Locale) => {
+  const target = url.clone();
+  target.pathname = `/${locale}${url.pathname}`;
+  return target;
 };
 
 const getSupportedLocale = (locale: string): Locale | null => {

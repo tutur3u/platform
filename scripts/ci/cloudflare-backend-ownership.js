@@ -14,6 +14,15 @@ const {
 } = require('./cloudflare-backend-ownership-allowlist');
 
 const ROOT_DIR = path.resolve(__dirname, '..', '..');
+// Request continuations finish the same response; they do not own scheduled work.
+const REQUEST_SCOPED_CONTINUATIONS = Object.freeze({
+  'packages/ai/src/chat/google/stream-lifetime.ts': Object.freeze({
+    target: TARGETS.workerWaitUntil,
+    rationale:
+      "Request-scoped persistence of the same response stream, bounded by the stream's 120 s timeout, no detached or durable work.",
+  }),
+});
+
 const MIGRATIONS_DIR = 'apps/database/supabase/migrations/';
 const SELF_FILES = new Set([
   'scripts/ci/cloudflare-backend-ownership.js',
@@ -333,6 +342,11 @@ function evaluateOwnership({
   const violations = [];
 
   for (const owner of owners) {
+    if (
+      kindOf(owner.id) === 'next-after' &&
+      Object.hasOwn(REQUEST_SCOPED_CONTINUATIONS, owner.file)
+    )
+      continue;
     if (allowed.has(owner.id)) continue;
     violations.push(
       `New ${kindOf(owner.id)} owner outside Cloudflare: ${owner.id} (${owner.file}). ` +
@@ -408,6 +422,7 @@ if (require.main === module) {
 
 module.exports = {
   MIGRATION_CUTOFF,
+  REQUEST_SCOPED_CONTINUATIONS,
   checkRepository,
   evaluateOwnership,
   parsePgCronCalls,

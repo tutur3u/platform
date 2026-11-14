@@ -1,7 +1,16 @@
 import 'package:flutter/material.dart';
 import 'package:mobile/core/observability/mobile_observability.dart';
 
+/// Decode bound for avatars that omit [NetworkAvatar.radius]: the circle then
+/// sizes itself to its child, so this radius keeps decoding bounded without
+/// guessing the laid-out size.
+const double _kRadiusDecodeFallback = 20;
+
 /// Displays a network avatar over its fallback, including while offline.
+///
+/// The avatar decodes at its displayed size — its radius doubled and scaled by
+/// the device pixel ratio, rounded up — instead of its source resolution, so
+/// long lists of avatars keep the decoded-image cache small.
 class NetworkAvatar extends StatelessWidget {
   const NetworkAvatar({
     required this.child,
@@ -19,7 +28,9 @@ class NetworkAvatar extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final url = avatarUrl?.trim();
-    final image = url == null || url.isEmpty ? null : _AvatarImage(url);
+    final image = url == null || url.isEmpty
+        ? null
+        : _AvatarImage(url, _decodeWidth(context));
     return CircleAvatar(
       radius: radius,
       backgroundColor: backgroundColor,
@@ -28,6 +39,12 @@ class NetworkAvatar extends StatelessWidget {
       onForegroundImageError: image == null ? null : _recordAvatarError,
       child: child,
     );
+  }
+
+  int _decodeWidth(BuildContext context) {
+    final diameter = (radius ?? _kRadiusDecodeFallback) * 2;
+    final width = (diameter * MediaQuery.devicePixelRatioOf(context)).ceil();
+    return width < 1 ? 1 : width;
   }
 }
 
@@ -39,37 +56,45 @@ void _recordAvatarError(Object error, StackTrace? stackTrace) {
   );
 }
 
-/// Keeps pending image errors handled after a decoration stops listening.
+/// Keeps pending image errors handled after a decoration stops listening, and
+/// decodes the avatar at its displayed width instead of full resolution.
 @immutable
-class _AvatarImage extends ImageProvider<NetworkImage> {
-  const _AvatarImage(this.url);
+class _AvatarImage extends ImageProvider<ResizeImageKey> {
+  _AvatarImage(this.url, this.decodeWidth)
+    : _resized = ResizeImage(NetworkImage(url), width: decodeWidth);
 
   final String url;
+
+  /// Device-pixel width the avatar decodes at; smaller sources are untouched.
+  final int decodeWidth;
+
+  final ResizeImage _resized;
 
   @override
   bool operator ==(Object other) =>
       other.runtimeType == runtimeType &&
       other is _AvatarImage &&
-      other.url == url;
+      other.url == url &&
+      other.decodeWidth == decodeWidth;
 
   @override
-  int get hashCode => Object.hash(runtimeType, url);
+  int get hashCode => Object.hash(runtimeType, url, decodeWidth);
 
   @override
-  Future<NetworkImage> obtainKey(ImageConfiguration configuration) =>
-      NetworkImage(url).obtainKey(configuration);
+  Future<ResizeImageKey> obtainKey(ImageConfiguration configuration) =>
+      _resized.obtainKey(configuration);
 
   @override
   ImageStreamCompleter loadImage(
-    NetworkImage key,
+    ResizeImageKey key,
     ImageDecoderCallback decode,
-  ) => key.loadImage(key, decode);
+  ) => _resized.loadImage(key, decode);
 
   @override
   void resolveStreamForKey(
     ImageConfiguration configuration,
     ImageStream stream,
-    NetworkImage key,
+    ResizeImageKey key,
     ImageErrorListener handleError,
   ) {
     super.resolveStreamForKey(configuration, stream, key, handleError);

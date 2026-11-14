@@ -1,5 +1,6 @@
 'use client';
 
+import { readInitialCalendarView } from '@tuturuuu/ui/hooks/calendar-default-view';
 import { useCalendarClock } from '@tuturuuu/ui/hooks/use-calendar-clock';
 import { CalendarDayZoneBridgeProvider } from '@tuturuuu/ui/hooks/use-calendar-day-zone';
 import type { CalendarView } from '@tuturuuu/ui/hooks/use-view-transition';
@@ -33,15 +34,6 @@ interface CalendarNavigationState {
 const CalendarNavigationContext = createContext<CalendarNavigationState | null>(
   null
 );
-const CALENDAR_VIEW_STORAGE_KEY = 'calendar-view-mode';
-const CALENDAR_VIEWS: CalendarView[] = [
-  'day',
-  '4-days',
-  'week',
-  'month',
-  'year',
-  'agenda',
-];
 
 export function CalendarNavigationProvider({
   children,
@@ -80,22 +72,7 @@ export function CalendarNavigationProvider({
   }, [clockMinute, timezone]);
 
   useEffect(() => {
-    const storedView = localStorage.getItem(CALENDAR_VIEW_STORAGE_KEY);
-    const savedView = CALENDAR_VIEWS.find((item) => item === storedView);
-    const isMobile = window.innerWidth <= 768;
-
-    if (
-      isMobile &&
-      (!savedView ||
-        savedView === 'week' ||
-        savedView === '4-days' ||
-        savedView === 'month')
-    ) {
-      setView('day');
-      return;
-    }
-
-    if (savedView) setView(savedView);
+    setView(readInitialCalendarView());
   }, []);
   const value = useMemo(
     () => ({ date, setDate, setView, view, timezone, goToToday }),

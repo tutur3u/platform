@@ -72,6 +72,10 @@ class _HistoryTabState extends State<HistoryTab> {
   @override
   Widget build(BuildContext context) {
     return BlocBuilder<TimeTrackerCubit, TimeTrackerState>(
+      // The per-second ticker only changes `elapsed`, which completed
+      // history rows never display; skip those rebuilds (and _groupByDay).
+      buildWhen: (previous, current) =>
+          current.historyViewChangedFrom(previous),
       builder: (context, state) {
         final l10n = context.l10n;
         final sessions = state.historySessions;

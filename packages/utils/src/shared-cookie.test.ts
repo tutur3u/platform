@@ -41,18 +41,60 @@ describe('shared Tuturuuu cookie helpers', () => {
     });
   });
 
-  it('uses forwarded host headers for server requests', () => {
-    const request = new Request('http://internal.localhost/api', {
-      headers: {
-        'x-forwarded-host': 'calendar.tuturuuu.com',
-        'x-forwarded-proto': 'https',
-      },
-    });
+  it('uses a configured forwarded host for server requests', () => {
+    vi.stubEnv('CALENDAR_APP_URL', 'https://calendar.tuturuuu.com');
+    try {
+      const request = new Request('http://internal.localhost/api', {
+        headers: {
+          'x-forwarded-host': 'calendar.tuturuuu.com',
+          'x-forwarded-proto': 'https',
+        },
+      });
 
-    expect(resolveTuturuuuSharedCookieDomain(request)).toMatchObject({
-      cookieDomain: '.tuturuuu.com',
-      secure: true,
-    });
+      expect(resolveTuturuuuSharedCookieDomain(request)).toMatchObject({
+        cookieDomain: '.tuturuuu.com',
+        secure: true,
+      });
+    } finally {
+      vi.unstubAllEnvs();
+    }
+  });
+
+  it('ignores an unproven client forwarded host (SR-XFH-RETURN)', () => {
+    vi.stubEnv('CALENDAR_APP_URL', 'https://calendar.tuturuuu.com');
+    vi.stubEnv('TRUSTED_PROXY', 'cloudflare-origin');
+    vi.stubEnv(
+      'TRUSTED_PROXY_ORIGIN_SECRET',
+      'origin-secret-for-tests-0123456789abcdef'
+    );
+    try {
+      const forwarded = (headers: Record<string, string>) =>
+        new Request('http://internal.localhost/api', {
+          headers: { 'x-forwarded-host': 'attacker.tuturuuu.com', ...headers },
+        });
+
+      expect(resolveTuturuuuSharedCookieDomain(forwarded({}))).toBe(null);
+      expect(
+        resolveTuturuuuSharedCookieDomain(
+          forwarded({ 'x-tuturuuu-origin-auth': 'forged' })
+        )
+      ).toBe(null);
+      expect(
+        getTuturuuuSharedCookieOptions({ path: '/' }, forwarded({}))
+      ).toEqual({ path: '/' });
+
+      // A gateway-proven forwarded host is honoured.
+      expect(
+        resolveTuturuuuSharedCookieDomain(
+          forwarded({
+            'x-tuturuuu-origin-auth':
+              'origin-secret-for-tests-0123456789abcdef',
+          })
+        )
+      ).toMatchObject({ cookieDomain: '.tuturuuu.com' });
+    } finally {
+      vi.unstubAllEnvs();
+    }
   });
 
   it('does not share cookies on preview, localhost, or custom domains', () => {

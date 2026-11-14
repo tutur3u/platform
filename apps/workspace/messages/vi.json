@@ -27423,5 +27423,11 @@
     "unnamed_wallet": "Ví không tên",
     "wallet": "Phương thức thanh toán",
     "wallet_deleted": "Đã xóa ví thành công"
+  },
+  "experimental-ui": {
+    "badge": "Beta",
+    "setting_description": "Dùng thử Sorbet, giao diện mới của Tuturuuu, trên mọi ứng dụng. Lưu vào tài khoản của bạn.",
+    "setting_title": "Giao diện thử nghiệm",
+    "setting_toggle_label": "Dùng giao diện thử nghiệm Sorbet"
   }
 }

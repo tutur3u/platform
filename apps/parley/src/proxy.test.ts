@@ -22,6 +22,7 @@ vi.mock('@tuturuuu/auth/proxy', () => ({
   propagateAuthCookies: f.propagate,
 }));
 vi.mock('@tuturuuu/meet-core/constants/common', () => ({
+  BASE_URL: 'http://localhost:7834',
   TTR_URL: 'http://localhost:7803',
 }));
 vi.mock('@tuturuuu/meet-core/parley-access', () => ({

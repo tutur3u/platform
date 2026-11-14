@@ -64,6 +64,11 @@ on:
         type: string
         required: false
         default: ""
+      strip-server-source-maps:
+        description: Delete emitted dist/server source maps and their references before the deploy dry run and seal (scripts/ci/strip-server-source-maps.sh)
+        type: boolean
+        required: false
+        default: false
 permissions:
   contents: read
 jobs:
@@ -170,6 +175,9 @@ jobs:
           command: cd "$APP_DIR" && bun run build:cloudflare
           token: ""
           team: ""
+      - name: Remove server source maps
+        if: inputs.strip-server-source-maps
+        run: scripts/ci/strip-server-source-maps.sh "$APP_DIR/dist/server"
       - name: Reject tracked route tree drift
         if: always()
         run: |

@@ -84,9 +84,11 @@ export function applyDesignDocumentCache(
 
 export function designAuthOptions(
   webAppUrl: string,
-  isPublicPath: (pathname: string) => boolean
+  isPublicPath: (pathname: string) => boolean,
+  canonicalOrigins: readonly string[]
 ) {
   return {
+    canonicalOrigins,
     webAppUrl,
     publicPaths: PUBLIC_PATHS.filter(
       (path) => !isRoadmapPublicPath(path) && !isDesignPublicPath(path)

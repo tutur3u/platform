@@ -39,6 +39,10 @@ class _TimeTrackerGoalsSectionState extends State<TimeTrackerGoalsSection> {
     final l10n = context.l10n;
 
     return BlocBuilder<TimeTrackerCubit, TimeTrackerState>(
+      // The per-second ticker only changes `elapsed`; goal progress is
+      // summed from history durations, so skip ticks unless a row is open.
+      buildWhen: (previous, current) =>
+          current.historyViewChangedFrom(previous),
       builder: (context, state) {
         _ensureCompleteHistoryLoaded(state);
         final goals = state.goalsWorkspaceId == widget.wsId

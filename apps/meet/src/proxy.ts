@@ -19,7 +19,12 @@ import { guardApiProxyRequest } from '@tuturuuu/utils/api-proxy-guard';
 import Negotiator from 'negotiator';
 import { NextRequest, NextResponse } from 'next/server';
 import createIntlMiddleware from 'next-intl/middleware';
-import { LOCALE_COOKIE_NAME, PUBLIC_PATHS, TTR_URL } from './constants/common';
+import {
+  BASE_URL,
+  LOCALE_COOKIE_NAME,
+  PUBLIC_PATHS,
+  TTR_URL,
+} from './constants/common';
 import {
   clearMeetInvite,
   normalizeMeetInvite,
@@ -116,6 +121,7 @@ function withDirectVerifyTarget(req: NextRequest) {
 // MFA is disabled because satellite apps delegate auth to the web app.
 // Sessions here are created via cross-app tokens that already require aal2 on web.
 const authProxy = createCentralizedAuthProxy({
+  canonicalOrigins: [BASE_URL],
   appSession: { sessionMode: 'supabase-first', targetApp: 'meet' },
   webAppUrl: TTR_URL,
   publicPaths: AUTH_PUBLIC_PATHS,
@@ -160,6 +166,16 @@ function getLegacyPathRedirect(pathname: string): string | null {
     return `${prefix}/plans/${rest[0]}`;
   }
   return null;
+}
+
+/**
+ * Redirects that depend on the visitor's session (signed-in login bounce,
+ * pending invite resume, home to personal meetings) must never be cached.
+ */
+function sessionRedirect(url: URL): NextResponse {
+  const response = NextResponse.redirect(url);
+  response.headers.set('Cache-Control', 'private, no-store');
+  return response;
 }
 
 export async function proxy(req: NextRequest): Promise<NextResponse> {
@@ -287,7 +303,7 @@ export async function proxy(req: NextRequest): Promise<NextResponse> {
     );
     const loginRedirect = clearSupabaseAuthCookies(
       req,
-      NextResponse.redirect(new URL(nextPath, req.nextUrl))
+      sessionRedirect(new URL(nextPath, req.nextUrl))
     );
     propagateAuthCookies(authRes, loginRedirect);
     return loginRedirect;
@@ -300,7 +316,7 @@ export async function proxy(req: NextRequest): Promise<NextResponse> {
     isRootPathOrLocaleRoot(req.nextUrl.pathname)
   ) {
     const response = clearMeetInvite(
-      NextResponse.redirect(new URL(pendingInvite, req.nextUrl))
+      sessionRedirect(new URL(pendingInvite, req.nextUrl))
     );
     propagateAuthCookies(authRes, response);
     return response;
@@ -308,7 +324,7 @@ export async function proxy(req: NextRequest): Promise<NextResponse> {
 
   if (isRootPathOrLocaleRoot(req.nextUrl.pathname) && hasSatelliteSession) {
     const locale = getPathSegments(req.nextUrl.pathname)[0];
-    const wsRedirect = NextResponse.redirect(
+    const wsRedirect = sessionRedirect(
       new URL(
         `${isLocaleSegment(locale) ? `/${locale}` : ''}/personal/meetings`,
         req.nextUrl

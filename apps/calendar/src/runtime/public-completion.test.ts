@@ -50,6 +50,7 @@ vi.mock('./workspace-model.server', () => ({
   workspaceShellModel: ports.data,
 }));
 
+import { centralCalendarLoginUrl } from '../lib/central-login';
 import { proxy } from '../proxy';
 import { loadPageModel } from './page-model.server';
 import { dispatchThroughCalendarProxy } from './proxy-bridge';
@@ -335,23 +336,86 @@ it.each([
   ['en_US,vi-VN;q=0.8', 'vi'],
   ['vi;q=0,*;q=0', 'en'],
 ])(
-  'keeps real login locale middleware safe for browser preference %s',
-  async (language, locale) => {
+  'hands a signed-out real login to central sign-in for browser preference %s',
+  async (language) => {
+    // The login document shell is prerendered, so the proxy answers the
+    // signed-out handoff before locale rendering, whatever the preference.
     const request = new Request(`${origin}/login`, {
       headers: { 'accept-language': language },
     });
     const response = await proxy(new NextRequest(request));
-    expect(response.headers.has('location')).toBe(false);
-    expect(response.headers.get('x-middleware-rewrite')).toBe(
-      `${origin}/${locale}/login`
+    expect(response.status).toBe(307);
+    expect(response.headers.get('location')).toBe(
+      centralCalendarLoginUrl(null).toString()
     );
-    expect(
-      response.headers.get('x-middleware-request-x-next-intl-locale')
-    ).toBe(locale);
+    expect(response.headers.get('cache-control')).toBe('private, no-store');
+    expect(response.headers.has('x-middleware-rewrite')).toBe(false);
     expect(outbound).not.toHaveBeenCalled();
     expect(ports.data).not.toHaveBeenCalled();
   }
 );
+
+describe('public completion routes on the Next `[locale]` route tree', () => {
+  for (const method of ['GET', 'HEAD']) {
+    it.each([
+      ['/verify-token', {}, 'en'],
+      ['/verify-token', { cookie: 'NEXT_LOCALE=vi' }, 'vi'],
+      ['/verify-token', { 'accept-language': 'vi,en;q=0.5' }, 'vi'],
+    ])(
+      `${method} unprefixed %s rewrites in place to the resolved-locale route`,
+      async (path, headers, locale) => {
+        const response = await proxy(
+          new NextRequest(`${origin}${path}?nextUrl=%2Fpersonal`, {
+            method,
+            headers,
+          })
+        );
+        expect(response.status).toBe(200);
+        expect(response.headers.has('location')).toBe(false);
+        expect(response.headers.get('x-middleware-rewrite')).toBe(
+          `${origin}/${locale}/verify-token?nextUrl=%2Fpersonal`
+        );
+        expect(
+          response.headers.get('x-middleware-request-x-next-intl-locale')
+        ).toBe(locale);
+        expect(outbound).not.toHaveBeenCalled();
+        expect(ports.actor).not.toHaveBeenCalled();
+      }
+    );
+
+    it.each([
+      ['/en/verify-token', 'en'],
+      ['/vi/verify-token', 'vi'],
+    ])(
+      `${method} prefixed %s continues to its existing route`,
+      async (path, locale) => {
+        const response = await proxy(
+          new NextRequest(`${origin}${path}`, { method })
+        );
+        expect(response.status).toBe(200);
+        expect(response.headers.has('location')).toBe(false);
+        expect(response.headers.has('x-middleware-rewrite')).toBe(false);
+        expect(response.headers.get('x-middleware-next')).toBe('1');
+        expect(
+          response.headers.get('x-middleware-request-x-next-intl-locale')
+        ).toBe(locale);
+        expect(outbound).not.toHaveBeenCalled();
+      }
+    );
+  }
+
+  it('keeps an unprefixed token request on the shared token consumer', async () => {
+    outbound.mockImplementation(async () =>
+      Response.json({ valid: false }, { status: 401 })
+    );
+    const response = await proxy(
+      new NextRequest(`${origin}/verify-token?token=invalid`)
+    );
+    expect(response.status).toBe(307);
+    expect(response.headers.has('x-middleware-rewrite')).toBe(false);
+    expect(outbound).toHaveBeenCalledTimes(1);
+  });
+});
 
 it.each([
   ['/verify-token', 'NEXT_LOCALE=vi', '*', 'vi'],

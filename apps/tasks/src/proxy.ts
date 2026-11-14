@@ -26,7 +26,12 @@ import { isPersonalWorkspace } from '@tuturuuu/utils/workspace-helper';
 import type { NextRequest } from 'next/server';
 import { NextResponse } from 'next/server';
 import createIntlMiddleware from 'next-intl/middleware';
-import { LOCALE_COOKIE_NAME, PUBLIC_PATHS, TTR_URL } from './constants/common';
+import {
+  BASE_URL,
+  LOCALE_COOKIE_NAME,
+  PUBLIC_PATHS,
+  TTR_URL,
+} from './constants/common';
 import { defaultLocale, type Locale, supportedLocales } from './i18n/routing';
 import { PAGE_REWRITE_HEADER } from './lib/page-rewrite';
 import { proxyAppUrl } from './lib/proxy-app-url';
@@ -45,6 +50,7 @@ const AUTH_PUBLIC_PATHS = [
 // MFA is disabled because satellite apps delegate auth to the web app.
 // Sessions here are created via cross-app tokens that already require aal2 on web.
 const authProxy = createCentralizedAuthProxy({
+  canonicalOrigins: [BASE_URL],
   appSession: { sessionMode: 'supabase-first', targetApp: 'tasks' },
   webAppUrl: TTR_URL,
   publicPaths: AUTH_PUBLIC_PATHS,

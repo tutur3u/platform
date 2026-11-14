@@ -178,13 +178,19 @@ describe('satellite controlled calendar views', () => {
     fireEvent.click(screen.getByText('Open September 22'));
     expect(screen.getByText('day:9:22')).toBeVisible();
   });
-  it('the menu enters month and an uncontrolled calendar restores the saved month', () => {
+  it('the menu enters month and a last-used default reopens the saved month', () => {
     const mounted = render(<ControlledCalendar />);
     fireEvent.click(screen.getByText('Header week'));
     expect(screen.getByText('month:9:1')).toBeVisible();
     mounted.unmount();
+    localStorage.setItem('calendar-default-view', 'last');
     render(<CalendarContent t={translate} locale="en" />);
     expect(screen.getByText('Header month')).toBeVisible();
+  });
+  it('an uncontrolled calendar opens week by default on wide screens', () => {
+    localStorage.setItem('calendar-view-mode', 'month');
+    render(<CalendarContent t={translate} locale="en" />);
+    expect(screen.getByText('Header week')).toBeVisible();
   });
   it('year drill-down opens the chosen month', () => {
     render(<ControlledCalendar initialView="year" />);
@@ -207,7 +213,7 @@ describe('satellite controlled calendar views', () => {
       mocks.dates = [new Date(2026, 8, 7)];
     }
   });
-  it('resolves a controlled week view to day on narrow screens at initialization', () => {
+  it('resolves a controlled week view to agenda on phones at initialization', () => {
     const width = window.innerWidth;
     Object.defineProperty(window, 'innerWidth', {
       configurable: true,
@@ -215,8 +221,8 @@ describe('satellite controlled calendar views', () => {
     });
     try {
       render(<ControlledCalendar initialView="week" />);
-      expect(screen.getByText(/^day:/)).toBeVisible();
-      expect(screen.getByText('Header day')).toBeVisible();
+      expect(screen.getByText(/^agenda:/)).toBeVisible();
+      expect(screen.getByText('Header agenda')).toBeVisible();
     } finally {
       Object.defineProperty(window, 'innerWidth', {
         configurable: true,

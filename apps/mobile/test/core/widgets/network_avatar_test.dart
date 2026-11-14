@@ -4,6 +4,7 @@ import 'dart:io';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:image/image.dart' as img;
 import 'package:mobile/core/widgets/network_avatar.dart';
 import 'package:mocktail/mocktail.dart';
 
@@ -12,10 +13,21 @@ class _Client extends Mock implements HttpClient {}
 class _Request extends Mock implements HttpClientRequest {}
 
 class _Response extends Stream<List<int>> implements HttpClientResponse {
-  final List<int> bytes = base64Decode(
+  _Response(this.bytes);
+
+  /// A 512x512 PNG: full-resolution avatar sources decode in tests the same
+  /// way as on a device.
+  static final List<int> big = img.encodePng(
+    img.Image(width: 512, height: 512),
+  );
+
+  /// A 1x1 PNG.
+  static final List<int> small = base64Decode(
     'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR4nGP4z8Dw'
     'HwAFAAH/iZk9HQAAAABJRU5ErkJggg==',
   );
+
+  final List<int> bytes;
 
   @override
   int get statusCode => HttpStatus.ok;
@@ -59,7 +71,10 @@ class _ImageRequests {
         throw const SocketException('Synthetic offline avatar');
       }
       final request = _Request();
-      when(request.close).thenAnswer((_) async => _Response());
+      when(request.close).thenAnswer(
+        (_) async =>
+            _Response(uri.path == '/big' ? _Response.big : _Response.small),
+      );
       return request;
     });
     return client;
@@ -114,6 +129,38 @@ void main() {
       expect(tester.takeException(), isNull);
     });
   }
+
+  _imageTest('avatar decodes at its displayed size, not its source size', (
+    tester,
+    images,
+  ) async {
+    tester.view.devicePixelRatio = 3;
+    addTearDown(tester.view.resetDevicePixelRatio);
+    await tester.pumpWidget(_avatar('https://example.invalid/big'));
+    await tester.pumpAndSettle();
+    expect(images.requested.single.path, '/big');
+    await tester.runAsync(() async {
+      final image = tester
+          .widget<CircleAvatar>(find.byType(CircleAvatar))
+          .foregroundImage!;
+      final loaded = Completer<ImageInfo>();
+      final listener = ImageStreamListener(
+        (info, synchronousCall) => loaded.complete(info),
+        onError: loaded.completeError,
+      );
+      final stream = image.resolve(ImageConfiguration.empty)
+        ..addListener(listener);
+      final info = await loaded.future;
+      // radius 18 × 2 × dpr 3 = 108 device px, rounded up; the 512px source
+      // decodes to 108×108 instead of 512×512.
+      expect(info.image.width, 108);
+      expect(info.image.height, 108);
+      info.dispose();
+      stream.removeListener(listener);
+    });
+    await tester.pumpAndSettle();
+    expect(tester.takeException(), isNull);
+  });
 
   _imageTest('offline image retains fallback without a framework error', (
     tester,

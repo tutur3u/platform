@@ -126,4 +126,45 @@ describe('shared Supabase auth cookie hosts', () => {
       ).toBe(shared);
     }
   });
+
+  it('ignores an unproven client X-Forwarded-Host when deciding shared cookies (SR-XFH-RETURN)', () => {
+    const forwarded = (headers: Record<string, string> = {}) =>
+      new NextRequest('https://nova.ai.vn/personal', {
+        headers: {
+          cookie: `${SUPABASE_COOKIE}=session`,
+          'x-forwarded-host': 'tasks.tuturuuu.com',
+          ...headers,
+        },
+      });
+
+    expect(hasSupportedSupabaseAuthCookie(forwarded())).toBe(false);
+    expect(
+      clearSupabaseAuthCookies(
+        forwarded(),
+        NextResponse.json({ ok: true })
+      ).headers.get('set-cookie') ?? ''
+    ).toContain(`${SUPABASE_COOKIE}=;`);
+
+    vi.stubEnv('TRUSTED_PROXY', 'cloudflare-origin');
+    vi.stubEnv(
+      'TRUSTED_PROXY_ORIGIN_SECRET',
+      'origin-secret-for-tests-0123456789abcdef'
+    );
+    expect(
+      hasSupportedSupabaseAuthCookie(
+        forwarded({ 'x-tuturuuu-origin-auth': 'forged' })
+      )
+    ).toBe(false);
+    expect(
+      hasSupportedSupabaseAuthCookie(
+        forwarded({
+          'x-tuturuuu-origin-auth': 'origin-secret-for-tests-0123456789abcdef',
+        })
+      )
+    ).toBe(true);
+
+    vi.stubEnv('TRUSTED_PROXY', '');
+    vi.stubEnv('TASKS_APP_URL', 'https://tasks.tuturuuu.com');
+    expect(hasSupportedSupabaseAuthCookie(forwarded())).toBe(true);
+  });
 });

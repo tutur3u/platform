@@ -1706,5 +1706,11 @@
     "user-id-description": "Mã định danh duy nhất cho tài khoản của bạn. Cài đặt này được quản lý tự động bởi Tuturuuu, và không thể thay thế.",
     "verified": "Đã xác minh",
     "language-description": "Thay đổi ngôn ngữ của trang web."
+  },
+  "experimental-ui": {
+    "badge": "Beta",
+    "setting_description": "Dùng thử Sorbet, giao diện mới của Tuturuuu, trên mọi ứng dụng. Lưu vào tài khoản của bạn.",
+    "setting_title": "Giao diện thử nghiệm",
+    "setting_toggle_label": "Dùng giao diện thử nghiệm Sorbet"
   }
 }
