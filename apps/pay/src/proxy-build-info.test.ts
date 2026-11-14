@@ -8,7 +8,12 @@ vi.mock('@tuturuuu/auth/app-session', () => ({
   hasSupportedSupabaseAuthCookie: () => false,
   hasWebAppSessionTokenFromRequest: () => false,
 }));
-vi.mock('@tuturuuu/auth/proxy', () => ({
+vi.mock('@tuturuuu/auth/proxy', async () => ({
+  resolveCanonicalRequestOrigin: (
+    await vi.importActual<typeof import('@tuturuuu/auth/proxy')>(
+      '@tuturuuu/auth/proxy'
+    )
+  ).resolveCanonicalRequestOrigin,
   refreshAppSessionForRequest: mocks.refresh,
   guardApiProxyRequest: mocks.guard,
   appSessionFailureResponse: vi.fn(),

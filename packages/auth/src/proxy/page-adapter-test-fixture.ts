@@ -15,6 +15,7 @@ const mocks = vi.hoisted(() => ({
   factor: vi.fn(),
 }));
 vi.mock('@tuturuuu/auth/proxy', async () => ({
+  ...(await vi.importActual('./canonical-origin')),
   ...(await vi.importActual('./mfa-failure')),
   ...(await vi.importActual('./redirect-path')),
   refreshAppSessionForRequest: mocks.refresh,
