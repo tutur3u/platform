@@ -56,6 +56,11 @@
       "owner": "cf/Void Wrangler-exit lane",
       "removal": "Delete when no other allowlist entry needs the Wrangler CLI and @cloudflare/vite-plugin 2.x (no wrangler dependency) is adopted."
     },
+    "void-emitted-artifact-seal": {
+      "reason": "Public merged-main qualification seals the Meet build exactly as Void emits it: dist/server/wrangler.json and the hidden .wrangler/deploy/config.json pointer, plus a digest of the checked-in apps/meet-realtime/wrangler.jsonc. The workflows only set WRANGLER_SEND_METRICS=false. No Wrangler CLI or SDK is invoked and nothing is published.",
+      "owner": "Public merged-main qualification (public dispatch) owner and cf/Void Wrangler-exit lane",
+      "removal": "Delete when Void emits a cf Build Output for Meet and Meet Realtime moves to cloudflare.config.ts, so the seal no longer names Wrangler-format files."
+    },
     "void-emitted-binding-types": {
       "reason": "Void-emitted JSON binding qualification requires an explicit config, temporary declaration output and env-interface name; cf workers types only discovers typed configuration and has no equivalents for these controls. The same script runs the conservative usage guard; no publication is admitted.",
       "owner": "Marketing native qualification and cf/Void migration maintainers",
@@ -342,6 +347,26 @@
         "reason": "PR7647 references the legacy metrics opt-out and the existing Void-emitted-config packaging label. This source record authorizes neither CLI publication nor provider credentials or deployment."
       },
       "digest": "1beb88e2772be3324b55b9f33dcfe4b0c818fa7898de666878c61b1d0080214f"
+    },
+    ".github/workflows/public-build-artifact.yaml": {
+      "lines": 1,
+      "uses": 1,
+      "gap": "void-emitted-artifact-seal",
+      "admitted": {
+        "decision": "https://github.com/tutur3u/platform/pull/8285",
+        "reason": "REV-8285: the public artifact build job sets WRANGLER_SEND_METRICS false. It does not invoke wrangler. The void-emitted-artifact-seal gap and its removal condition remain."
+      },
+      "digest": "21b728d557b8a474e2fc8b23403773fe19ea5135689d950499755feef54151b7"
+    },
+    ".github/workflows/public-merged-main-tests.yaml": {
+      "lines": 1,
+      "uses": 1,
+      "gap": "void-emitted-artifact-seal",
+      "admitted": {
+        "decision": "https://github.com/tutur3u/platform/pull/8285",
+        "reason": "REV-8285: the public merged-main tests job sets WRANGLER_SEND_METRICS false. It does not invoke wrangler. The void-emitted-artifact-seal gap and its removal condition remain."
+      },
+      "digest": "21b728d557b8a474e2fc8b23403773fe19ea5135689d950499755feef54151b7"
     },
     ".github/workflows/rewise-cloudflare.yaml": {
       "lines": 3,
@@ -3021,6 +3046,26 @@
         "reason": "REV-6485-1..7: reviewed token/digest scanner, explicit settings, and fixture harness corrections."
       },
       "digest": "7902b728885910d8a84d66eb479e4e73fa343225b451cdce29599cb5f45001aa"
+    },
+    "scripts/ci/public-build.js": {
+      "lines": 4,
+      "uses": 4,
+      "gap": "void-emitted-artifact-seal",
+      "admitted": {
+        "decision": "https://github.com/tutur3u/platform/pull/8285",
+        "reason": "REV-8285: reads the Void-emitted wrangler.json main entry, digests apps/meet-realtime/wrangler.jsonc as a public input, and seals or excludes the .wrangler/deploy/config.json pointer. File reads and hashing only; no CLI, SDK or publication. The descriptor-race fix 41a2920797 (#8314) left these lines unchanged."
+      },
+      "digest": "14c5233d3ac8d161b55f7c2cc319cf418933972482b7ced01d464ad57390adc1"
+    },
+    "scripts/ci/public-dispatch.test.js": {
+      "lines": 1,
+      "uses": 1,
+      "gap": "void-emitted-artifact-seal",
+      "admitted": {
+        "decision": "https://github.com/tutur3u/platform/pull/8285",
+        "reason": "REV-8285: the fixture writes a synthetic emitted wrangler.json for public-build.js to read. No CLI, SDK or publication."
+      },
+      "digest": "d7e9568a52ee88a7168bc7179839796832c1be85fa9a0a0b72ecea9e1ccb380b"
     },
     "scripts/ci/replay-parley-worker.py": {
       "lines": 16,
