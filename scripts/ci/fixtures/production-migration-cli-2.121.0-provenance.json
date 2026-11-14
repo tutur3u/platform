@@ -1,0 +1,162 @@
+{
+  "schemaVersion": 1,
+  "captureType": "real Supabase CLI --local against an isolated, owned same-host Docker stack",
+  "cliVersion": "2.121.0",
+  "cliRelease": "https://github.com/supabase/cli/releases/tag/v2.121.0",
+  "cliArchiveURL": "https://github.com/supabase/cli/releases/download/v2.121.0/supabase_2.121.0_darwin_amd64.tar.gz",
+  "cliArchiveSHA256": "8e6696259bc187e48ef2732669e1e45539a630a6486e91484dd60dc50b2a676f",
+  "cliBinarySHA256": "ec1685e80fc71df8b4e085832183bc6fbdfca00543b4539cc025efbbabe5f372",
+  "officialChecksumSHA256": "c27eacc52029b5d83d2848db32441fefd013148df7d898c8500e3bbd778862ad",
+  "runtime": {
+    "platform": "darwin",
+    "architecture": "x64",
+    "DockerServerVersion": "29.9.3",
+    "DockerConnection": "same-host Unix socket; explicit local endpoint, no remote context"
+  },
+  "source": {
+    "repository": "tutur3u/platform",
+    "commit": "9a29730f24e11ba043f74f62621395c37168667e",
+    "migrationPath": "apps/database/supabase/migrations",
+    "migrationTree": "a8cd8de75c015c161ec1ff107cddcc29b52f3b1f",
+    "migrationCount": 1575,
+    "manifestSHA256": "78497cbe21463924dc94d79c6a9e3711a280395fe6446a71bba0d20eff7d4794"
+  },
+  "preparation": {
+    "argv": [
+      "supabase",
+      "db",
+      "reset",
+      "--local",
+      "--no-seed",
+      "--workdir",
+      "<isolated-local-project>"
+    ],
+    "start": "2026-11-14T05:27:21.041490+07:00",
+    "end": "2026-11-14T05:30:47.643654+07:00",
+    "exit": 0,
+    "description": "All repository migrations copied without alteration and applied to the owned local stack. No production link or database connection."
+  },
+  "environment": {
+    "allowlistedKeys": [
+      "HOME",
+      "TMPDIR",
+      "PATH",
+      "DOCKER_HOST",
+      "DOCKER_CONFIG",
+      "CI",
+      "DO_NOT_TRACK"
+    ],
+    "productionCredentials": "not passed",
+    "credentials": "CLI isolated local fixture defaults only"
+  },
+  "holeOperation": {
+    "scope": "ONLY the owned local supabase_migrations.schema_migrations ledger",
+    "rowsProvenAppliedBefore": 13,
+    "rowsDeleted": 13,
+    "versions": [
+      "20261111120000",
+      "20261111120100",
+      "20261111120200",
+      "20261111120201",
+      "20261111120202",
+      "20261111120203",
+      "20261111120204",
+      "20261111120205",
+      "20261111120206",
+      "20261111120207",
+      "20261111120208",
+      "20261111120310",
+      "20261112133000"
+    ],
+    "appliedWatermarkRemaining": "20261111120300",
+    "pendingBelowWatermark": 11,
+    "pendingAboveWatermark": 2,
+    "beforeRowsProofSHA256": "76b3a6dd9a1b75cdca51585b3e70a4090e2eef0a21c5995de29442336363f5af",
+    "deletionProofSHA256": "08f24868597f7d4cb923cbc3d0f8a7bf82dd2b1d4d48f03d066caf89db0b99c5",
+    "deletionSQLSHA256": "c434b9173cd1a704364fab0de9e554a13cbde1fd0bd9cf799d6e97a2a23a69a3"
+  },
+  "fixtures": [
+    {
+      "file": "production-migration-cli-2.121.0-all-applied.stdout",
+      "kind": "real pinned CLI stdout, not synthetic",
+      "argv": [
+        "supabase",
+        "migration",
+        "list",
+        "--local",
+        "--workdir",
+        "<isolated-local-project>"
+      ],
+      "start": "2026-11-14T05:30:47.655630+07:00",
+      "end": "2026-11-14T05:30:52.592108+07:00",
+      "exit": 0,
+      "bytes": 100933,
+      "stdoutSHA256": "5022268a3559cfd56af73567b8147925e28de0440cf65356ce52876fb45acef8",
+      "stderrSHA256": "6fb96db99d3af347082525070d3ec3f379b9ee39c248b6476dd1d1bfe9a2e307",
+      "expectedPendingCount": 0,
+      "stdoutSanitization": "none required; version/date table only, retained byte-exact",
+      "argvSanitization": "owned absolute binary/project paths replaced with command name and <isolated-local-project>"
+    },
+    {
+      "file": "production-migration-cli-2.121.0-thirteen-holes.stdout",
+      "kind": "real pinned CLI stdout, not synthetic",
+      "argv": [
+        "supabase",
+        "migration",
+        "list",
+        "--local",
+        "--workdir",
+        "<isolated-local-project>"
+      ],
+      "start": "2026-11-14T05:30:55.032254+07:00",
+      "end": "2026-11-14T05:30:58.888021+07:00",
+      "exit": 0,
+      "bytes": 100933,
+      "stdoutSHA256": "a592cff8c9d344426247b97618326ce675ca22c8a640fb3a9daa6470972363b4",
+      "stderrSHA256": "6fb96db99d3af347082525070d3ec3f379b9ee39c248b6476dd1d1bfe9a2e307",
+      "expectedPendingCount": 13,
+      "stdoutSanitization": "none required; version/date table only, retained byte-exact",
+      "argvSanitization": "owned absolute binary/project paths replaced with command name and <isolated-local-project>"
+    }
+  ],
+  "cleanup": {
+    "argv": [
+      "supabase",
+      "stop",
+      "--project-id",
+      "<owned-local-project-id>",
+      "--no-backup",
+      "--workdir",
+      "<isolated-local-project>"
+    ],
+    "end": "2026-11-14T05:31:26.705312+07:00",
+    "exit": 0,
+    "ownedContainersRemaining": 0,
+    "verifiedAt": "2026-11-14T05:31:27.282498+07:00"
+  },
+  "limitations": [
+    "Local output is the explicitly accepted variant; it is not claimed as a linked production capture.",
+    "The ledger holes were deliberately created only in the already-applied local fixture. They are not a production ledger receipt.",
+    "Local indexes remain independent of ledger holes. Index-absence/invalid-index application controls use injected runner tests, not a production query.",
+    "No application retry, repair, production apply, runtime smoke or retention dry_run was performed."
+  ],
+  "linkedMetadataSourceEvidence": [
+    {
+      "url": "https://github.com/supabase/cli/blob/v2.121.0/apps/cli-go/internal/utils/misc.go",
+      "SHA256": "11fe021d9a13bdf15b21b457547ca00a2fd495ab40330a030955bdd0e43433aa",
+      "evidence": "Defines .temp/project-ref and .temp/pooler-url constants."
+    },
+    {
+      "url": "https://github.com/supabase/cli/blob/v2.121.0/apps/cli/src/command-internal/temp-paths.ts",
+      "SHA256": "358eb484d88d1792d8bb00818a92e2f6877678cc1968489f4b992a0a4167c93b",
+      "evidence": "Builds the same linked metadata paths."
+    },
+    {
+      "url": "https://github.com/supabase/cli/blob/v2.121.0/apps/cli/src/command-internal/link-services-core.ts",
+      "SHA256": "9d6329ceb87d21afc63c692cd42e19fa8638f2567234fd66a19a4a83c3e06b7d",
+      "evidence": "Pooler URL write is best-effort: selects PRIMARY, removes the password placeholder, and selects session port5432. A missing pooler URL is not proof that link failed."
+    }
+  ],
+  "upstreamSourceTag": "v2.121.0",
+  "upstreamSourceTreeSHA": "8a549dffa6bc5c88069c61c1f55ef55ad9b82ae2"
+}
