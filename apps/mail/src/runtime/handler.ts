@@ -51,10 +51,12 @@ const dispatch = createBridgeHandler<MailRuntimeEnv, MailExecutionContext>({
       return Promise.resolve(new Response('Not Found', { status: 404 }));
     // Web auth callbacks use the original serving host; overwrite client-supplied forwarding headers.
     const url = new URL(request.url);
-    const headers = new Headers(request.headers);
-    headers.set('x-forwarded-host', url.host);
-    headers.set('x-forwarded-proto', url.protocol.slice(0, -1));
-    return forwardToCentralApi(new Request(request, { headers }), origin);
+    return forwardToCentralApi(request, origin, {
+      setHeaders: {
+        'x-forwarded-host': url.host,
+        'x-forwarded-proto': url.protocol.slice(0, -1),
+      },
+    });
   },
   matches: proxyMatches,
 });
