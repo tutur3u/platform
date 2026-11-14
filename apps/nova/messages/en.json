@@ -186,6 +186,17 @@
     "creation_recovery_unavailable": "Creation is unconfirmed and automatic recovery is unavailable for this source. Check the calendar before starting another creation; your edits are preserved.",
     "current": "Current",
     "day": "Day",
+    "event_preview": {
+      "close": "Close preview",
+      "delete": "Delete event",
+      "delete_failed": "Could not delete the event",
+      "deleted": "Event deleted",
+      "edit": "Edit",
+      "locked": "Locked from auto scheduling",
+      "read_only": "Read-only",
+      "undo": "Undo",
+      "untitled": "Untitled event"
+    },
     "google_event_color": "Google color {id}",
     "inherit_calendar_color": "Use calendar color",
     "provider_color_label": "Google event color",

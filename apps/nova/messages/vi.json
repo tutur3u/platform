@@ -186,6 +186,17 @@
     "creation_recovery_unavailable": "Lần tạo chưa được xác nhận và nguồn này không hỗ trợ tự động khôi phục. Hãy kiểm tra lịch trước khi tạo lại; các chỉnh sửa vẫn được giữ.",
     "current": "Hiện tại",
     "day": "Ngày",
+    "event_preview": {
+      "close": "Đóng xem nhanh",
+      "delete": "Xóa sự kiện",
+      "delete_failed": "Không thể xóa sự kiện",
+      "deleted": "Đã xóa sự kiện",
+      "edit": "Chỉnh sửa",
+      "locked": "Đã khóa, không tự động xếp lịch",
+      "read_only": "Chỉ đọc",
+      "undo": "Hoàn tác",
+      "untitled": "Sự kiện không có tiêu đề"
+    },
     "google_event_color": "Màu Google {id}",
     "inherit_calendar_color": "Dùng màu lịch",
     "provider_color_label": "Màu sự kiện Google",
