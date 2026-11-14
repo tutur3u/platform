@@ -30,6 +30,7 @@ on:
         'packages/vercel/**',
         'scripts/ci/rewise-native-artifact.py',
         '.github/workflows/rewise-cloudflare.yaml',
+        'scripts/ci/strip-server-source-maps.sh',
         'scripts/ci/apps-native-artifact.py',
         'scripts/ci/apps-native-runtime-pointer.mjs',
         'scripts/ci/native-emitted-config-receipt.mjs',
@@ -82,6 +83,7 @@ on:
         'packages/vercel/**',
         'scripts/ci/rewise-native-artifact.py',
         '.github/workflows/rewise-cloudflare.yaml',
+        'scripts/ci/strip-server-source-maps.sh',
         'scripts/ci/apps-native-artifact.py',
         'scripts/ci/apps-native-runtime-pointer.mjs',
         'scripts/ci/native-emitted-config-receipt.mjs',
@@ -169,6 +171,7 @@ jobs:
       artifact-script: scripts/ci/rewise-native-artifact.py
       env-interface: RewiseGeneratedEnv
       worker-environment-type: RewiseEnvironment
+      strip-server-source-maps: true
       # Public staging values from repository variables for same-repository
       # events; fork pull requests (and unset variables) build with fixtures.
       public-env: |
@@ -234,7 +237,7 @@ jobs:
           token: ''
           team: ''
       - name: Remove production server source maps
-        run: find apps/rewise/dist/server -type f -name '*.map' -delete
+        run: scripts/ci/strip-server-source-maps.sh apps/rewise/dist/server
       - name: Pre-seal doctor on the production Host header
         timeout-minutes: 3
         run: node scripts/ci/pre-seal-doctor.mjs rewise apps/rewise rewise.tuturuuu.com "$SOURCE_SHA" --expect-redirect

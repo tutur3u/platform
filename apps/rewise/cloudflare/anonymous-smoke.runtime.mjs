@@ -20,7 +20,12 @@ const EXPECTED = {
     'https://rewise.tuturuuu.com/verify-token?nextUrl=%2F%3Fsmoke%3Dreturn',
   // The auth proxy handles /login before the page and normalizes the loop to /.
   '/login': 'https://rewise.tuturuuu.com/verify-token?nextUrl=%2F',
+  // The generated gate's notFound probe: the proxy redirects an unknown path
+  // before the router can answer 404.
+  '/__native-smoke-missing__':
+    'https://rewise.tuturuuu.com/verify-token?nextUrl=%2F__native-smoke-missing__',
 };
+const HOSTILE_HOST = 'evil.example';
 const SYNTHETIC_SECRETS = {
   ABUSE_GUARD: {},
   ABUSE_GUARD_KEY_PEPPER: 'synthetic-smoke-only',
@@ -30,6 +35,11 @@ const SYNTHETIC_SECRETS = {
   SUPABASE_SECRET_KEY: 'synthetic-smoke-only',
   TUTURUUU_APP_COORDINATION_SECRET: 'synthetic-smoke-only',
 };
+
+function assertUncacheableWithoutCookies({ headers }, path) {
+  assert.match(headers['cache-control'] ?? '', /\bno-store\b/u, path);
+  assert.equal(headers['set-cookie'], undefined, `${path}: Set-Cookie`);
+}
 
 async function startWorker(t, secrets) {
   const { configPath } = readNativeRuntimeConfig(app);
@@ -100,16 +110,22 @@ async function startWorker(t, secrets) {
   t.after(() => worker.dispose());
   await worker.ready;
   const target = await worker.url;
-  return (path, host = ROOT_HOST) =>
+  return (path, host = ROOT_HOST, headers = {}) =>
     new Promise((resolve, reject) => {
       httpRequest(
-        { host: target.hostname, port: target.port, path, headers: { host } },
+        {
+          host: target.hostname,
+          port: target.port,
+          path,
+          headers: { ...headers, host },
+        },
         (response) => {
           response.resume();
           response.on('end', () =>
             resolve({
               status: response.statusCode ?? 0,
               location: response.headers.location ?? '',
+              headers: response.headers,
             })
           );
         }
@@ -138,10 +154,39 @@ test(
   async (t) => {
     const call = await startWorker(t, SYNTHETIC_SECRETS);
     for (const [path, returnUrl] of Object.entries(EXPECTED)) {
-      assertCentralLoginRedirect(await call(path), returnUrl);
+      const response = await call(path);
+      assertCentralLoginRedirect(response, returnUrl);
+      assertUncacheableWithoutCookies(response, path);
     }
     assert.equal((await call('/', 'unknown.example')).status, 404);
     assert.equal((await call('/', 'tuturuuu.com')).status, 404);
+  }
+);
+
+test(
+  'a client-sent forwarded host never reaches the login return target',
+  {
+    timeout: 120000,
+  },
+  async (t) => {
+    const call = await startWorker(t, SYNTHETIC_SECRETS);
+    // Cloudflare forwards a client-sent X-Forwarded-Host unchanged.
+    for (const headers of [
+      { 'x-forwarded-host': HOSTILE_HOST },
+      { 'x-forwarded-host': HOSTILE_HOST, 'x-forwarded-proto': 'https' },
+      { 'x-forwarded-host': `${HOSTILE_HOST}, ${ROOT_HOST}` },
+    ]) {
+      const response = await call('/', ROOT_HOST, headers);
+      assertCentralLoginRedirect(response, EXPECTED['/']);
+      assert.ok(!response.location.includes(HOSTILE_HOST), response.location);
+      assertUncacheableWithoutCookies(response, '/');
+    }
+    // A hostile Host is not a configured host: the bridge rejects it.
+    const hostile = await call('/', HOSTILE_HOST, {
+      'x-forwarded-host': ROOT_HOST,
+    });
+    assert.equal(hostile.status, 404);
+    assert.equal(hostile.location, '');
   }
 );
 
