@@ -65,7 +65,7 @@ on:
         required: false
         default: ""
       strip-server-source-maps:
-        description: Delete emitted dist/server source maps and their references before the Wrangler dry run and seal (scripts/ci/strip-server-source-maps.sh)
+        description: Delete emitted dist/server source maps and their references before the deploy dry run and seal (scripts/ci/strip-server-source-maps.sh)
         type: boolean
         required: false
         default: false

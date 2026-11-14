@@ -63,7 +63,7 @@ test('production removes server source maps before doctor/seal and keeps executa
   await assert.rejects(assertServerArtifact(server), /\.map/u);
   execFileSync(join(repo, STRIP), [server]);
   await assertServerArtifact(server);
-  // Wrangler resolves every remaining reference when it bundles the Worker.
+  // The deploy bundler resolves every remaining reference.
   for (const name of ['index.mjs', 'assets/chunk.mjs'])
     assert.doesNotMatch(
       await readFile(join(server, name), 'utf8'),

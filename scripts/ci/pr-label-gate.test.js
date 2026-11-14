@@ -29,7 +29,7 @@ const PAUSED_JOB = /^(\$\{\{ )?false( \}\})?$/u;
 // Trigger digests on origin/main when the gate landed. Update a digest only
 // with a reviewed push, schedule or manual trigger change.
 const PROTECTED_TRIGGERS = {
-  'rewise-cloudflare.yaml': 'fe6b54462e91b1bf',
+  'rewise-cloudflare.yaml': '45c4db71ea52982a',
   'git-cloudflare.yaml': '518ca2530d7a63ef',
   'external-cloudflare.yaml': '0a3cc2c97958f5cd',
   'ai-cloudflare.yaml': '2b1f1ae8795d0216',

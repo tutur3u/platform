@@ -2,9 +2,9 @@
 # Remove emitted server source maps and their sourceMappingURL references.
 #
 # Their original sources keep development-only branches the bundle drops, so a
-# sealed Worker must not ship them. The reference comments go too: Wrangler
-# resolves every sourceMappingURL when it bundles the Worker, and a reference
-# to a deleted map fails the dry run and the deploy.
+# sealed Worker must not ship them. The reference comments go too: the deploy
+# bundler resolves every sourceMappingURL, and a reference to a deleted map
+# fails the dry run and the deploy.
 #
 # Usage: scripts/ci/strip-server-source-maps.sh <dist/server directory>
 set -euo pipefail
