@@ -61,6 +61,9 @@ class WorkspaceAvatar extends StatelessWidget {
       content = Image.network(
         url,
         fit: BoxFit.cover,
+        // Decode at the tile's displayed size instead of the source
+        // resolution.
+        cacheWidth: (size * MediaQuery.devicePixelRatioOf(context)).ceil(),
         errorBuilder: (_, _, _) => fallback,
         loadingBuilder: (_, child, progress) =>
             progress == null ? child : fallback,
