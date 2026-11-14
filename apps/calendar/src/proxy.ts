@@ -117,10 +117,23 @@ export async function proxy(req: NextRequest): Promise<NextResponse> {
   if (
     mounted &&
     /^\/(?:en\/|vi\/)?verify-token\/?$/u.test(req.nextUrl.pathname)
-  )
+  ) {
+    // The mount shares the apex session that Web already set, so it never
+    // consumes, verifies or forwards `token`: GET/HEAD only resume the
+    // same-origin validated next path; every other method returns to login.
+    const isNavigation = req.method === 'GET' || req.method === 'HEAD';
+    const target = isNavigation
+      ? normalizeAuthRedirectPath(
+          req.nextUrl.searchParams.get('nextUrl') ??
+            req.nextUrl.searchParams.get('next'),
+          req.nextUrl.origin,
+          '/personal'
+        )
+      : '/login';
     return NextResponse.redirect(
-      new URL(withAppBase('/login', req.nextUrl.basePath), req.nextUrl.origin)
+      new URL(withAppBase(target, req.nextUrl.basePath), req.nextUrl.origin)
     );
+  }
   const publicCompletion =
     (req.method === 'GET' || req.method === 'HEAD') &&
     PUBLIC_PATHS.includes(req.nextUrl.pathname) &&
@@ -180,19 +193,22 @@ export async function proxy(req: NextRequest): Promise<NextResponse> {
       : 0;
   const isLoginPath = pathSegments[loginSegmentIndex] === 'login';
 
-  if (isLoginPath && hasSatelliteSession) {
+  // A cookie name alone does not prove a live session. On the mount the login
+  // page verifies the shared session itself, so a stale cookie reaches the Web
+  // handoff instead of bouncing between login and a protected page.
+  if (isLoginPath && hasSatelliteSession && !mounted) {
     const nextPath = normalizeAuthRedirectPath(
       req.nextUrl.searchParams.get('next') ??
         req.nextUrl.searchParams.get('nextUrl'),
       req.nextUrl.origin,
       '/personal'
     );
-    const loginResponse = NextResponse.redirect(
-      new URL(withAppBase(nextPath, req.nextUrl.basePath), req.nextUrl)
+    const loginRedirect = clearSupabaseAuthCookies(
+      req,
+      NextResponse.redirect(
+        new URL(withAppBase(nextPath, req.nextUrl.basePath), req.nextUrl)
+      )
     );
-    const loginRedirect = mounted
-      ? loginResponse
-      : clearSupabaseAuthCookies(req, loginResponse);
     propagateAuthCookies(authRes, loginRedirect);
     return loginRedirect;
   }
