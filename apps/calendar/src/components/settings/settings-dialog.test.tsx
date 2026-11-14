@@ -64,6 +64,10 @@ vi.mock('@tuturuuu/ui/custom/settings/lunar-calendar-settings', () => ({
   LunarCalendarSettings: () => <div>lunar calendar</div>,
 }));
 
+vi.mock('@tuturuuu/ui/custom/settings/calendar-default-view-settings', () => ({
+  CalendarDefaultViewSettings: () => <div>default view</div>,
+}));
+
 vi.mock('@tuturuuu/ui/custom/settings/sidebar-settings', () => ({
   default: () => <div>sidebar settings</div>,
 }));
@@ -185,6 +189,7 @@ describe('Calendar settings dialog', () => {
 
     renderSettingsDialog();
 
+    expect(screen.getByText('default view')).toBeTruthy();
     expect(screen.getByText('lunar calendar')).toBeTruthy();
     expect(
       screen.getByRole('button', {

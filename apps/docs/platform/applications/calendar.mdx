@@ -74,6 +74,19 @@ provider read-back evidence. The current Google write mapper uses `dateTime`
 fields and does not provide native Google date-only all-day writes. Native
 Tuturuuu all-day events do not require that provider path.
 
+## Default calendar view
+
+Standalone Calendar and the Tasks calendar open in week view on tablet and
+desktop and in agenda view on phones (viewports narrower than 768px). The
+**Default view** setting under Settings › Calendar › General can instead pick
+day, week, month or agenda, or reopen the last view used. A multi-day time grid
+chosen for a phone opens as agenda. The choice is saved to the account
+(`CALENDAR_DEFAULT_VIEW` user config) and mirrored in the browser whenever the
+setting is saved or opened there, so a calendar opens without waiting for a
+request. A browser that has not yet opened the setting uses the device default.
+`packages/ui/src/hooks/calendar-default-view.test.ts` covers the resolution
+rules.
+
 ## Tasks and Calendar planning
 
 Calendar and Tasks keep cross-product API calls on the active browser origin so
