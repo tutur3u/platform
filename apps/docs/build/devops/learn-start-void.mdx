@@ -1,7 +1,7 @@
 ---
 title: "Learn on Start + Void"
 description: "Cutover packet for the native Learn Worker: names, build, smoke checks and rollback to Vercel."
-updatedAt: "2026-11-09"
+updatedAt: "2026-11-11"
 audience: developers
 ---
 
@@ -26,7 +26,6 @@ Vercel deployment keeps serving until the route is flipped.
 ## Build and qualification
 
 ```bash
-bun turbo:local run build --filter=@tuturuuu/learn^... --concurrency=2
 bun scripts/ci/generate-build-metadata.ts
 bun run --cwd apps/learn routes:check
 bun run --cwd apps/learn type-check:cloudflare
@@ -34,7 +33,13 @@ bun run --cwd apps/learn build:cloudflare
 CI=true CI_SOURCE_SHA=$(git rev-parse HEAD) bun run --cwd apps/learn test:runtime
 ```
 
-`learn-cloudflare.yaml` runs the same steps in CI. `test:runtime` starts the emitted Worker in
+`build:cloudflare` runs the `prebuild:cloudflare` hook first:
+`turbo run build --filter=@tuturuuu/learn^... --concurrency=2`. Workspace packages such as
+`@tuturuuu/internal-api` export `dist/` files, which the Worker bundler can only resolve once
+they are built, so a fresh clone needs no prebuilt output. `learn-cloudflare.yaml` runs the same
+turbo command as its own step before `build:cloudflare`, so the hook is a cache hit there.
+`test:runtime` needs Node 24 (it loads `start-bridge.config.ts` through type stripping) and the
+build metadata from the first command. `test:runtime` starts the emitted Worker in
 workerd with synthetic secrets and no network egress; the gate is native-built-worker.runtime.mjs (8 checks, including the signed-out redirect fixture).
 
 ## Smoke checks after the route is attached
@@ -47,6 +52,23 @@ curl -sI https://learn.tuturuuu.com/robots.txt          # 200
 ```
 
 Entry route: `GET https://learn.tuturuuu.com/` answers `200`. No smoke request may return `5xx`.
+
+Mount smoke on `https://tuturuuu.com/learn` (no trailing slash is canonical):
+
+```bash
+curl -sI https://tuturuuu.com/learn                       # 200 text/html
+curl -sI https://tuturuuu.com/learn/                      # redirect to /learn
+curl -sI https://tuturuuu.com/learn/robots.txt            # 200 text/plain
+curl -sI https://tuturuuu.com/learn/api/build-info        # 200 application/json, no-store
+# built assets under /learn/assets/ (take the names from the page's <link>/<script> tags):
+#   a .css file -> 200 text/css; a .js file -> 200 text/javascript; the codicon .ttf -> 200 font/ttf
+curl -si -X POST https://tuturuuu.com/learn/_serverFn/x \
+  -H 'content-type: application/json' -H 'origin: https://tuturuuu.com' -d '{}'   # reaches Start, not 403/415
+```
+
+With `TTR_ONE_ORIGIN_LEARN=on` and `TTR_ONE_ORIGIN_LEARN_REDIRECT_STATUS=301`, a navigation to
+`https://learn.tuturuuu.com/x/` answers one `301` to `https://tuturuuu.com/learn/x`; the variable
+defaults to `307` and is set by the release owner at deploy.
 
 ## Rollback
 
