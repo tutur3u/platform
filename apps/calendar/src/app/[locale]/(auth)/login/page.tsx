@@ -14,7 +14,13 @@ const DEFAULT_CALENDAR_PATH = '/personal';
 
 function normalizeNextPath(value: string | string[] | undefined) {
   const rawValue = Array.isArray(value) ? value[0] : value;
-  return normalizeAuthRedirectPath(rawValue, BASE_URL, DEFAULT_CALENDAR_PATH);
+  // The same-origin check compares URL origins, and the apex mount's BASE_URL
+  // carries the `/calendar` path, so compare against its origin only.
+  return normalizeAuthRedirectPath(
+    rawValue,
+    new URL(BASE_URL).origin,
+    DEFAULT_CALENDAR_PATH
+  );
 }
 
 export default async function LoginPage({
