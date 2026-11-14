@@ -15,6 +15,7 @@ on:
 
 permissions:
   contents: read
+  actions: read
 
 concurrency:
   group: public-build-artifact-${{ inputs.source_sha }}-${{ inputs.app }}
@@ -55,8 +56,42 @@ jobs:
             core.setOutput('main', main);
             // admission:end
 
-  build:
+  trust:
     needs: admit
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    permissions:
+      contents: read
+      actions: read
+    env:
+      SOURCE_SHA: ${{ needs.admit.outputs.sha }}
+      CONTROL_SHA: ${{ github.workflow_sha }}
+    steps:
+      - name: Checkout immutable workflow controls
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ github.workflow_sha }}
+          path: control
+          persist-credentials: false
+      # Attachment remains held; see scripts/ci/trusted-public-operator.md.
+      - name: Verify trusted dispatch records on the hosted runner
+        uses: actions/github-script@3a2844b7e9c422d3c10d287c895573f7108da1b3 # v9.0.0
+        with:
+          script: |
+            // trusted-public:start
+            const { execFileSync } = require('node:child_process');
+            if (execFileSync('git', ['-C', 'control', 'rev-parse', 'HEAD'], { encoding: 'utf8' }).trim() !== process.env.CONTROL_SHA) throw new Error('Control checkout identity mismatch');
+            const { admitDispatch } = require(`${process.env.GITHUB_WORKSPACE}/control/scripts/ci/trusted-public-admission.js`);
+            const decision = await admitDispatch({ github, context, sourceSha: process.env.SOURCE_SHA, controlSha: process.env.CONTROL_SHA, workflowPath: '.github/workflows/public-build-artifact.yaml' });
+            core.info(JSON.stringify(decision));
+            // trusted-public:end
+
+  build:
+    needs: [admit, trust]
+    # Admitted-code execution: read-only repository token, no secrets, no cache restore or
+    # save. Results leave only as artifacts; a separate job verifies them.
+    permissions:
+      contents: read
     runs-on: ubuntu-latest
     timeout-minutes: 45
     env:
@@ -80,22 +115,26 @@ jobs:
           ref: ${{ github.workflow_sha }}
           path: control
           persist-credentials: false
+      # Control-only setup runs before the admitted source exists in the workspace, so
+      # no restore/save-capable action or setup script can be influenced by source files.
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version: 24.22.3
+          package-manager-cache: false
+      - name: Setup pinned Bun from immutable controls without shared caches
+        working-directory: control
+        run: bash scripts/ci/setup-bun-with-backoff.sh 1.4.4
+      # From here on, only identity checks, the shard/build command and artifact upload run.
       - name: Checkout admitted source
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           ref: ${{ needs.admit.outputs.sha }}
           path: source
           persist-credentials: false
-      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
-        with:
-          node-version: 24.22.3
       - name: Verify both immutable checkout identities before repository commands
         run: |
           test "$(git -C control rev-parse HEAD)" = "$CONTROL_SHA"
           test "$(git -C source rev-parse HEAD)" = "$SOURCE_SHA"
-      - name: Setup pinned Bun without shared caches
-        working-directory: control
-        run: bash scripts/ci/setup-bun-with-backoff.sh 1.4.4
       - name: Compile public outputs or record the exact missing adapter contract
         working-directory: source
         run: node ../control/scripts/ci/public-build.js "$APP" "$RUNNER_TEMP/public-build"
@@ -108,13 +147,108 @@ jobs:
           if-no-files-found: error
           retention-days: 7
 
+  # Privileged-side consumer: separate job, fresh trusted control checkout, no source
+  # checkout, no cache, no secret material. The archive is listed, never extracted or executed.
   summary:
     if: always()
     needs: [admit, build]
     runs-on: ubuntu-latest
     timeout-minutes: 5
+    permissions:
+      contents: read
     steps:
+      - name: Checkout fresh immutable workflow controls
+        if: always() && needs.admit.result == 'success' && needs.build.result == 'success'
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ github.workflow_sha }}
+          path: control
+          persist-credentials: false
+      - uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
+        if: always() && needs.admit.result == 'success' && needs.build.result == 'success'
+        with:
+          name: public-build-${{ needs.admit.outputs.sha }}-${{ inputs.app }}-${{ github.run_attempt }}
+          path: artifact
+      - name: Verify the public pair manifest, hashes and archive as bounded data
+        if: always() && needs.admit.result == 'success' && needs.build.result == 'success'
+        env:
+          SOURCE_SHA: ${{ needs.admit.outputs.sha }}
+          CONTROL_SHA: ${{ github.workflow_sha }}
+          MAIN_SHA: ${{ needs.admit.outputs.main }}
+          APP: ${{ inputs.app }}
+        run: |
+          node <<'NODE'
+          // consumer-verify:start
+          const fs = require('node:fs');
+          const path = require('node:path');
+          const zlib = require('node:zlib');
+          const { spawnSync } = require('node:child_process');
+          const { exactSha, appName, sha256 } = require('./control/scripts/ci/public-ci.js');
+          const MAX_FILES = 20000, MAX_BYTES = 1024 ** 3, MAX_ARCHIVE = 512 * 1024 ** 2, MAX_RECEIPT = 16 * 1024 ** 2;
+          const root = /^apps\/meet(?:-realtime)?\/(?:dist|\.wrangler\/deploy\/config\.json|\.void\/preview-deploy-config\.json)(?:\/|$)/;
+          const fail = (message) => { throw new Error(message); };
+          const tar = (flags, archive) => {
+            const r = spawnSync('tar', [flags, archive], { encoding: 'utf8', maxBuffer: 64 * 1024 ** 2, timeout: 120000 });
+            if (r.status !== 0) fail(`tar listing failed: ${r.stderr}`);
+            return r.stdout.split('\n').filter(Boolean);
+          };
+          const inflated = (archive) => new Promise((resolve, reject) => {
+            let n = 0;
+            const gunzip = zlib.createGunzip();
+            gunzip.on('data', (chunk) => { n += chunk.length; if (n > 2 * MAX_BYTES) { gunzip.destroy(); reject(new Error('Archive expands past the bound')); } });
+            gunzip.on('end', () => resolve(n)).on('error', reject);
+            fs.createReadStream(archive).pipe(gunzip);
+          });
+          async function verify() {
+            const sha = exactSha(process.env.SOURCE_SHA);
+            const control = exactSha(process.env.CONTROL_SHA);
+            const main = exactSha(process.env.MAIN_SHA);
+            const app = appName(process.env.APP);
+            if (app !== 'meet') fail('Only the meet pair has a public artifact contract');
+            const dir = 'artifact';
+            const entries = fs.readdirSync(dir).sort();
+            if (entries.join() !== ['SHA256SUMS', 'archive-members.txt', 'public-compiler.tar.gz', 'receipt.json'].join()) fail(`Unexpected artifact contents: ${entries.join(',')}`);
+            for (const name of entries) if (!fs.lstatSync(path.join(dir, name)).isFile()) fail(`Unsafe artifact entry: ${name}`);
+            const receiptBytes = fs.readFileSync(path.join(dir, 'receipt.json'));
+            if (receiptBytes.length > MAX_RECEIPT) fail('Receipt too large');
+            const receipt = JSON.parse(receiptBytes);
+            const archive = path.join(dir, 'public-compiler.tar.gz');
+            const archiveBytes = fs.statSync(archive).size;
+            if (archiveBytes > MAX_ARCHIVE) fail('Archive too large');
+            const sums = new Map(fs.readFileSync(path.join(dir, 'SHA256SUMS'), 'utf8').trim().split('\n').map((line) => { const m = line.match(/^([a-f0-9]{64})  ([\w.-]+)$/); if (!m) fail('Malformed SHA256SUMS'); return [m[2], m[1]]; }));
+            if (sums.size !== 2 || sums.get('receipt.json') !== sha256(receiptBytes) || sums.get('public-compiler.tar.gz') !== sha256(fs.readFileSync(archive))) fail('SHA256SUMS mismatch');
+            const identity = receipt.status === 'PASS' && receipt.kind === 'public-build' && receipt.app === app && receipt.sourceSHA === sha && receipt.controlSHA === control && receipt.admittedMainSHA === main && receipt.run === process.env.GITHUB_RUN_ID && receipt.attempt === process.env.GITHUB_RUN_ATTEMPT && receipt.artifactKind === 'public-compiler-meet-pair' && receipt.deployAcceptance === false;
+            if (!identity) fail('Receipt identity does not match this run');
+            if (receipt.archiveSHA256 !== sums.get('public-compiler.tar.gz') || receipt.archiveBytes !== archiveBytes) fail('Receipt archive digest mismatch');
+            const files = receipt.files;
+            if (!Array.isArray(files) || !files.length || files.length > MAX_FILES || receipt.fileCount !== files.length) fail('File manifest out of bounds');
+            let total = 0;
+            const seen = new Set();
+            for (const f of files) {
+              if (typeof f.path !== 'string' || !root.test(f.path) || f.path.startsWith('/') || f.path.split('/').some((p) => p === '..' || p === '.' || /^(?:\.env(?:\.|$)|node_modules$|\.git$)/.test(p)) || /[\x00-\x1f\x7f]/.test(f.path)) fail(`Unsafe manifest path: ${JSON.stringify(f.path)}`);
+              if (seen.has(f.path) || !Number.isSafeInteger(f.bytes) || f.bytes < 0 || !/^[a-f0-9]{64}$/.test(f.sha256)) fail(`Invalid manifest record: ${f.path}`);
+              seen.add(f.path);
+              total += f.bytes;
+            }
+            if (total > MAX_BYTES || receipt.byteCount !== total) fail('Byte manifest out of bounds');
+            const pair = receipt.entries;
+            if (!Array.isArray(pair) || pair.length !== 2 || !/^apps\/meet\/dist\/ssr\//.test(pair[0]) || !/^apps\/meet-realtime\/dist\/worker\//.test(pair[1]) || !pair.every((p) => files.some((f) => f.path === p && f.bytes > 0))) fail('Pair members missing');
+            if (!files.some((f) => f.path.startsWith('apps/meet/dist/client/') && /\.(?:js|css|html|wasm)$/.test(f.path) && f.bytes > 0)) fail('Missing frontend assets');
+            const members = files.map((f) => f.path);
+            if (fs.readFileSync(path.join(dir, 'archive-members.txt'), 'utf8') !== members.join('\n') + '\n') fail('Member list mismatch');
+            if (tar('-tzf', archive).join('\n') !== members.join('\n')) fail('Archive members differ from manifest');
+            if (!tar('-tvzf', archive).every((line) => line[0] === '-')) fail('Archive contains a non-regular member');
+            if (await inflated(archive) < total) fail('Archive is smaller than the manifest');
+            return `\nPublic pair verified as data: ${files.length} files, ${total} bytes, archive ${sums.get('public-compiler.tar.gz')}. Not runtime, staging or production acceptance.\n`;
+          }
+          verify().then((text) => fs.appendFileSync(process.env.GITHUB_STEP_SUMMARY, text), (error) => {
+            fs.appendFileSync(process.env.GITHUB_STEP_SUMMARY, `\nPublic artifact verification failed: ${error.message}\n`);
+            process.exitCode = 1;
+          });
+          // consumer-verify:end
+          NODE
       - uses: actions/github-script@3a2844b7e9c422d3c10d287c895573f7108da1b3 # v9.0.0
+        if: always()
         env:
           OUTCOMES: ${{ toJSON(needs) }}
         with:
