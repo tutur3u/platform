@@ -15,7 +15,7 @@ jobs:
   Deploy-Production:
     if: github.ref == 'refs/heads/production'
     environment: vercel-production-cms
-    runs-on: ubuntu-latest
+    runs-on: ${{ vars.PRODUCTION_RUNNER_LABELS && fromJSON(vars.PRODUCTION_RUNNER_LABELS) || 'ubuntu-latest' }}
     permissions:
       contents: read
       deployments: write
