@@ -3,14 +3,16 @@
   "apps/web": [
     "certificates",
     "inventory-finance-reconciliation",
-    "satellite-account-settings"
+    "satellite-account-settings",
+    "calendar-list"
   ],
   "apps/tasks": [
     "invoice-subscriptions",
     "certificates",
     "finance-command-center",
     "inventory-finance-reconciliation",
-    "wallet-checkpoints"
+    "wallet-checkpoints",
+    "calendar-list"
   ],
   "apps/calendar": [
     "invoice-subscriptions",
@@ -25,22 +27,29 @@
     "certificates",
     "finance-command-center",
     "inventory-finance-reconciliation",
-    "wallet-checkpoints"
+    "wallet-checkpoints",
+    "calendar-list"
   ],
-  "apps/contacts": ["certificates", "inventory-finance-reconciliation"],
+  "apps/contacts": [
+    "certificates",
+    "inventory-finance-reconciliation",
+    "calendar-list"
+  ],
   "apps/forms": [
     "invoice-subscriptions",
     "certificates",
-    "inventory-finance-reconciliation"
+    "inventory-finance-reconciliation",
+    "calendar-list"
   ],
   "apps/drive": [
     "invoice-subscriptions",
     "certificates",
     "finance-command-center",
     "inventory-finance-reconciliation",
-    "wallet-checkpoints"
+    "wallet-checkpoints",
+    "calendar-list"
   ],
-  "apps/finance": ["certificates", "ws-board-templates"],
+  "apps/finance": ["certificates", "ws-board-templates", "calendar-list"],
   "apps/meet": [
     "invoice-subscriptions",
     "certificates",
@@ -61,7 +70,8 @@
     "ws-board-templates",
     "ws-debt-loan",
     "ws-presence",
-    "ws-tasks-labels"
+    "ws-tasks-labels",
+    "calendar-list"
   ],
   "apps/track": [
     "invoice-subscriptions",
@@ -69,7 +79,8 @@
     "finance-command-center",
     "inventory-finance-reconciliation",
     "wallet-checkpoints",
-    "ws-board-templates"
+    "ws-board-templates",
+    "calendar-list"
   ],
   "apps/nova": [
     "invoice-subscriptions",
@@ -96,7 +107,8 @@
     "ws-presence",
     "ws-tasks",
     "ws-tasks-labels",
-    "satellite-account-settings"
+    "satellite-account-settings",
+    "calendar-list"
   ],
   "apps/rewise": [
     "invoice-subscriptions",
@@ -104,17 +116,19 @@
     "finance-command-center",
     "inventory-finance-reconciliation",
     "wallet-checkpoints",
-    "ws-board-templates"
+    "ws-board-templates",
+    "calendar-list"
   ],
   "apps/workspace": [
     "certificates",
     "inventory-finance-reconciliation",
-    "satellite-account-settings"
+    "satellite-account-settings",
+    "calendar-list"
   ],
   "$keyExceptionsComment": "Key-level exceptions for shared package translation keys that specific apps do not need. Supports wildcards: 'namespace.*' skips all keys under a namespace. Remove entries as apps add the missing keys.",
   "keyExceptions": {
     "apps/web": ["settings.calendar.*", "ws-polls.*"],
-    "apps/workspace": ["ws-polls.*"],
+    "apps/workspace": ["ws-polls.*", "calendar.new_menu.*"],
     "apps/tasks": ["ws-polls.*"],
     "apps/calendar": [
       "settings.tasks.*",
@@ -227,7 +241,8 @@
     "ws-debt-loan",
     "ws-members",
     "ws-polls",
-    "ws-settings"
+    "ws-settings",
+    "calendar-list"
   ],
   "apps/parley": [
     "invoice-subscriptions",
@@ -249,6 +264,7 @@
     "ws-board-templates",
     "ws-debt-loan",
     "ws-presence",
-    "ws-tasks-labels"
+    "ws-tasks-labels",
+    "calendar-list"
   ]
 }
