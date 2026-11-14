@@ -28,7 +28,11 @@ export function GatewayProviders({
         locale={data.locale}
         messages={data.locale === 'vi' ? vi : en}
       >
-        <ClientProviders actorId={data.actorId ?? undefined} currentApp="apps">
+        <ClientProviders
+          actorId={data.actorId ?? undefined}
+          accountSync={Boolean(data.actorId)}
+          currentApp="apps"
+        >
           {children}
           {data.release && <VersionBadge release={data.release} />}
           <TailwindIndicator />

@@ -15,16 +15,19 @@ export function ClientProviders({
   children,
   currentApp,
   actorId,
+  accountSync = true,
 }: {
   children: ReactNode;
   actorId?: string;
   currentApp?: LaunchableAppSlug;
+  /** False when the page knows nobody is signed in: skip account reads. */
+  accountSync?: boolean;
 }) {
   const [queryClient] = useState(createSatelliteQueryClient);
   const content = (
     <>
       <AccountAssuranceRefresh />
-      <ExperimentalUiSync />
+      <ExperimentalUiSync account={accountSync} />
       <TooltipProvider>
         {children}
         {currentApp && (
