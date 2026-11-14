@@ -5,8 +5,8 @@
     "accountId": "e8912e2867beecc673d171907bf09649",
     "compatibilityDate": "2026-09-28",
     "compatibilityFlags": [],
-    "workersDev": true,
-    "previewUrls": true,
+    "workersDev": false,
+    "previewUrls": false,
     "observability": {
       "enabled": true,
       "headSamplingRate": 0.05,
@@ -65,8 +65,8 @@
     "accountId": "e8912e2867beecc673d171907bf09649",
     "compatibilityDate": "2026-09-28",
     "compatibilityFlags": [],
-    "workersDev": true,
-    "previewUrls": true,
+    "workersDev": false,
+    "previewUrls": false,
     "observability": {
       "enabled": true,
       "headSamplingRate": 0.05,
