@@ -44,7 +44,12 @@ export function getMountedAppVerifyTokenMatch(
   activeMounts: ReadonlySet<string> = getActiveAppMounts()
 ): MountedAppVerifyTokenMatch | null {
   const platform = getAppDomainByUrl(value);
-  if (platform?.kind !== 'internal' || platform.name !== 'platform')
+  // With a mount registered, the registry resolves the apex URL to that app
+  // (longest base path) instead of the platform; both are the apex origin.
+  if (
+    platform?.kind !== 'internal' ||
+    (platform.name !== 'platform' && !platform.basePath)
+  )
     return null;
 
   const url = new URL(platform.canonicalUrl);
