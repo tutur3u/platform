@@ -103,7 +103,10 @@ function healthy(live) {
         })),
       ],
     }),
-    subdomain: ok({ enabled: true, previews_enabled: true }),
+    subdomain: ok({
+      enabled: live.workersDev,
+      previews_enabled: live.previewUrls,
+    }),
     schedules: ok({ schedules: live.crons.map((cron) => ({ cron })) }),
     secrets: ok(live.secrets.map((name) => ({ name }))),
     domains: ok([]),
@@ -169,6 +172,30 @@ test('the CLI accepts the live identity (harness control)', () => {
   assert.match(output, /before snapshot verified/);
   assertNoToken(output);
 });
+
+for (const [field, expected] of [
+  ['enabled', previousIdentity.workersDev],
+  ['previews_enabled', previousIdentity.previewUrls],
+]) {
+  test(`the CLI rejects live subdomain drift in ${field}`, () => {
+    const routes = healthy(previousIdentity);
+    routes.subdomain = {
+      status: 200,
+      body: JSON.stringify({
+        success: true,
+        result: {
+          enabled: previousIdentity.workersDev,
+          previews_enabled: previousIdentity.previewUrls,
+          [field]: !expected,
+        },
+      }),
+    };
+    const { status, output } = runCli(routes, `subdomain-${field}`);
+    assert.equal(status, 1);
+    assert.match(output, /live settings match no recorded transition stage/);
+    assertNoToken(output);
+  });
+}
 
 const live = healthy(previousIdentity);
 const settingsResult = () => JSON.parse(live.settings.body).result;

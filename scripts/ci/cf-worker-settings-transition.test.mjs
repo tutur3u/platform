@@ -74,7 +74,10 @@ function liveWorker(identity, { settings = {}, ...overrides } = {}) {
       bindings: bindingsFor(identity),
       ...settings,
     },
-    subdomain: { enabled: true, previews_enabled: true },
+    subdomain: {
+      enabled: identity.workersDev,
+      previews_enabled: identity.previewUrls,
+    },
     schedules: { schedules: identity.crons.map((cron) => ({ cron })) },
     secrets: identity.secrets.map((name) => ({ name })),
     domains: [],
@@ -144,6 +147,26 @@ test('the live Worker without CRON_CONTROL_WEB_MODE passes the before check', as
     )
   );
 });
+
+for (const [label, field, expected] of [
+  ['workers.dev', 'enabled', plan.previous.workersDev],
+  ['preview URLs', 'previews_enabled', plan.previous.previewUrls],
+]) {
+  test(`live ${label} drift fails the before check`, async () => {
+    const subdomain = {
+      enabled: plan.previous.workersDev,
+      previews_enabled: plan.previous.previewUrls,
+      [field]: !expected,
+    };
+    await assert.rejects(
+      captureBefore({
+        plan,
+        ...credentials(liveWorker(plan.previous, { subdomain })),
+      }),
+      /match no recorded transition stage/
+    );
+  });
+}
 
 for (const mode of ['active', 'shadow', '']) {
   test(`a live CRON_CONTROL_WEB_MODE of '${mode}' fails the before check`, async () => {
@@ -261,7 +284,13 @@ test('first publication still blocks changes outside the transition', async () =
   for (const overrides of [
     { settings: { usage_model: 'unbound' } },
     { secrets: [...plan.target.secrets, 'EXTRA'].map((name) => ({ name })) },
-    { subdomain: { enabled: true, previews_enabled: true, extra: true } },
+    {
+      subdomain: {
+        enabled: plan.target.workersDev,
+        previews_enabled: plan.target.previewUrls,
+        extra: true,
+      },
+    },
   ]) {
     const after = await captureAfter({
       plan,
