@@ -18,6 +18,23 @@ const {
 const resolveStep = 'Resolve immutable production migration target';
 const evaluateStep = 'Evaluate prerequisite status';
 
+test('failed planner with successful platform marker still deploys', (t) => {
+  const setup = fixture(t, {
+    PLANNER_RESULT: 'failure',
+    TRIGGER_WORKFLOW: 'Production Deployment Planner',
+    TRIGGER_BRANCH: 'production',
+    TRIGGER_CONCLUSION: 'failure',
+    TRIGGER_SHA: productionSha,
+  });
+  const result = setup.run(evaluateStep, { TARGET_SHA: productionSha });
+  assert.equal(result.status, 0);
+  assert.match(setup.output(), /should_deploy=true/);
+  assert.match(
+    result.stdout,
+    /gating migration apply on the successful platform deployment marker/
+  );
+});
+
 test('newer unpromoted staging completion resolves and gates only current production', (t) => {
   const setup = fixture(t, { CURRENT_SHA: workflowSha });
   assert.equal(setup.run(resolveStep).status, 0);
@@ -74,6 +91,15 @@ for (const [label, overrides, target] of [
     stagingSha,
   ],
   [
+    'failed planner still pins its production commit for post-promotion re-evaluation',
+    {
+      TRIGGER_WORKFLOW: 'Production Deployment Planner',
+      TRIGGER_BRANCH: 'production',
+      TRIGGER_CONCLUSION: 'failure',
+    },
+    stagingSha,
+  ],
+  [
     'planner from main stays prohibited',
     { TRIGGER_WORKFLOW: 'Production Deployment Planner' },
     '',
@@ -124,7 +150,11 @@ for (const overrides of [
   { MARKER_PAYLOAD: 'empty' },
   { MARKER_PAYLOAD: 'wrong-sha' },
   { DATABASE_AFFECTED: 'false' },
-  { PLANNER_RESULT: 'failure' },
+  { PLANNER_RESULT: 'failure', MARKER_STATE: 'failure' },
+  { PLANNER_RESULT: 'cancelled' },
+  { PLANNER_RESULT: 'timed_out' },
+  { PLANNER_RESULT: 'neutral' },
+  { PLANNER_RESULT: 'unknown' },
   { PLANNER_SHA: stagingSha },
   { PLANNER_BRANCH: 'main' },
   { STAGING_SHA: stagingSha },
@@ -180,6 +210,14 @@ test('resolved immutable target precedes checkout and pending-range configuratio
   );
   assert.doesNotMatch(stepScript(evaluateStep), /TARGET_SHA=""/);
   assert.match(workflow, /cancel-in-progress: false/);
+  assert.match(
+    workflow,
+    /vercel-production\.yaml 317228637 production push,workflow_dispatch success,failure/
+  );
+  assert.doesNotMatch(
+    stepScript(evaluateStep),
+    /PRE_PROMOTION|pre_promotion|pre-promotion-migration-allowlist/
+  );
 });
 
 function expressionValue(expression, github) {
@@ -216,13 +254,23 @@ for (const conclusion of [
   'timed_out',
   'skipped',
   'neutral',
+  'unknown',
   null,
 ]) {
   test(`ignored ${conclusion} callback cannot replace a pending migration`, () => {
     const event = {
       event_name: 'workflow_run',
       run_id: 41,
-      event: { workflow_run: { conclusion } },
+      repository: 'example/platform',
+      event: {
+        workflow_run: {
+          conclusion,
+          name: 'Other workflow',
+          head_branch: 'production',
+          event: 'push',
+          head_repository: { full_name: 'example/platform' },
+        },
+      },
     };
     assert.equal(expressionValue(admissionExpression, event), false);
     assert.equal(
@@ -262,6 +310,22 @@ for (const [label, event] of [
     },
   ],
   [
+    'failed production planner',
+    {
+      event_name: 'workflow_run',
+      repository: 'example/platform',
+      event: {
+        workflow_run: {
+          conclusion: 'failure',
+          name: 'Production Deployment Planner',
+          head_branch: 'production',
+          event: 'push',
+          head_repository: { full_name: 'example/platform' },
+        },
+      },
+    },
+  ],
+  [
     'main staging',
     {
       event_name: 'workflow_run',
@@ -288,6 +352,28 @@ for (const [label, event] of [
     assert.match(workflow, /cancel-in-progress: false/);
   });
 }
+
+test('failed staging workflow_run stays outside the migration lock group', () => {
+  const context = {
+    event_name: 'workflow_run',
+    repository: 'example/platform',
+    run_id: 44,
+    event: {
+      workflow_run: {
+        conclusion: 'failure',
+        name: 'Supabase Staging Migration',
+        head_branch: 'main',
+        event: 'workflow_run',
+        head_repository: { full_name: 'example/platform' },
+      },
+    },
+  };
+  assert.equal(expressionValue(admissionExpression, context), false);
+  assert.equal(
+    expressionValue(concurrencyExpression, context),
+    'supabase-production-migration-ignored-44'
+  );
+});
 
 for (const [label, event] of [
   [
