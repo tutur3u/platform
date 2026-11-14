@@ -41,11 +41,13 @@ jobs:
           fetch-depth: 2
           persist-credentials: false
 
-      - name: Keep native Calendar outside Vercel publication
+      - name: Block Vercel publication after native Calendar cutover
         shell: bash
+        env:
+          CALENDAR_NATIVE_CUTOVER: ${{ vars.CALENDAR_NATIVE_CUTOVER }}
         run: |
-          if [ -f apps/calendar/void.config.ts ]; then
-            echo 'Native Calendar publication is disabled. Retain the previous Vercel deployment for rollback; require separately admitted Cloudflare identity and acceptance before cutover.' >&2
+          if [ "$CALENDAR_NATIVE_CUTOVER" = "active" ]; then
+            echo 'Native Calendar cutover is active (CALENDAR_NATIVE_CUTOVER=active). Vercel publication is disabled; Calendar is served by the native Cloudflare deployment.' >&2
             exit 1
           fi
 
