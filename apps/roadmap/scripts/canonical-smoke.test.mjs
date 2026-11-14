@@ -7,6 +7,7 @@ import {
   CANONICAL_PAGES,
   canonicalSmoke,
   resourceHints,
+  workersDevSmoke,
 } from './canonical-smoke.mjs';
 import { PUBLIC_DOCUMENT_PATHS } from './pre-seal-doctor.mjs';
 
@@ -230,4 +231,43 @@ test('D79: the smoke finds the history asset in the entry the page names, with h
     ),
     broken.failures.join('\n')
   );
+});
+
+const WORKERS_DEV = 'https://tuturuuu-roadmap.tuturuuu-e89.workers.dev/';
+
+for (const [status, body, expected] of [
+  [404, 'error code: 1042', true],
+  [301, 'error code: 1042', false],
+  [200, 'error code: 1042', false],
+  [404, 'Not found', false],
+  [404, 'error code: 10420', false],
+]) {
+  test(`workers.dev probe: ${status} ${body} passes=${expected}`, async () => {
+    let calls = 0;
+    const result = await workersDevSmoke({
+      url: WORKERS_DEV,
+      fetchImpl: async (url, init) => {
+        calls += 1;
+        assert.equal(url, WORKERS_DEV);
+        assert.equal(init.redirect, 'manual');
+        return new Response(body, { status });
+      },
+    });
+    assert.equal(calls, 1);
+    assert.equal(result.ok, expected);
+    assert.equal(result.failures.length, expected ? 0 : 1);
+  });
+}
+
+test('canonical smoke includes the opt-in workers.dev rejection', async () => {
+  const canonicalFetch = zone();
+  const result = await canonicalSmoke({
+    workersDevUrl: WORKERS_DEV,
+    fetchImpl: async (url, init) =>
+      url === WORKERS_DEV
+        ? new Response('', { status: 301, headers: { location: '/roadmap' } })
+        : canonicalFetch(url, init),
+  });
+  assert.equal(result.ok, false);
+  assert.match(result.failures.join(' '), /workers.dev/);
 });

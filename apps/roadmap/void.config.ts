@@ -16,7 +16,8 @@ export default defineConfig({
       { pattern: 'tuturuuu.com/roadmap', zone_name: 'tuturuuu.com' },
       { pattern: 'tuturuuu.com/roadmap/*', zone_name: 'tuturuuu.com' },
     ],
-    workers_dev: true,
+    workers_dev: false,
+    preview_urls: false,
     assets: {
       directory: './dist/client',
       binding: 'ASSETS',

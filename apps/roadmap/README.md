@@ -348,6 +348,23 @@ any app whose cutover entry sets `assetSmoke` (`node scripts/ci/asset-smoke.mjs`
 or `node scripts/cutover-smoke.mjs roadmap https://tuturuuu.com`). Verify that
 local result against the hosted routes after publication.
 
+The emitted `dist/server/wrangler.json` must disable `workers_dev` and
+`preview_urls` and contain only the two `tuturuuu.com/roadmap` route patterns;
+the pre-seal doctor rejects any drift. Public pages retain exactly four hashed
+inline scripts.
+
+After deployment, run the canonical smoke with the optional origin probe:
+
+```sh
+ROADMAP_WORKERS_DEV_URL=https://tuturuuu-roadmap.tuturuuu-e89.workers.dev/ \
+  node apps/roadmap/scripts/canonical-smoke.mjs
+```
+
+The workers.dev probe makes one request with redirects disabled and requires
+HTTP 404 with Cloudflare error code `1042` in the body. A 200 or 301 fails:
+the origin remains reachable outside the `tuturuuu.com` zone WAF. Without
+`ROADMAP_WORKERS_DEV_URL`, the smoke checks only the canonical site.
+
 Capture the existing route mapping and immutable Worker version before a write.
 For a regression, the release owner restores those exact route mappings and the
 prior Worker version, then checks that unrelated apex paths still reach their

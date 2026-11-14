@@ -1,6 +1,11 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
+import { mkdtemp, rm, writeFile } from 'node:fs/promises';
+import { tmpdir } from 'node:os';
+import { join } from 'node:path';
+import { readBuiltWorkerConfig } from './doctor-config.mjs';
 import {
+  assertWorkerOrigins,
   assessDoctor,
   inlineScriptHashes,
   CANONICAL_URL,
@@ -407,4 +412,88 @@ test('D79: every public page has exactly four inline scripts, all hashed', () =>
     ),
     failures.join('\n')
   );
+});
+
+function emittedConfig() {
+  return {
+    workers_dev: false,
+    preview_urls: false,
+    routes: [
+      { pattern: 'tuturuuu.com/roadmap', zone_name: 'tuturuuu.com' },
+      { pattern: 'tuturuuu.com/roadmap/*', zone_name: 'tuturuuu.com' },
+    ],
+  };
+}
+
+test('emitted Worker config restricts origins to the canonical routes', () => {
+  assert.doesNotThrow(() => assertWorkerOrigins(emittedConfig()));
+});
+
+for (const [name, mutate] of [
+  [
+    'workers.dev enabled',
+    (config) => {
+      config.workers_dev = true;
+    },
+  ],
+  [
+    'workers.dev missing',
+    (config) => {
+      delete config.workers_dev;
+    },
+  ],
+  [
+    'preview URLs missing',
+    (config) => {
+      delete config.preview_urls;
+    },
+  ],
+  [
+    'preview URLs enabled',
+    (config) => {
+      config.preview_urls = true;
+    },
+  ],
+  [
+    'extra route',
+    (config) => {
+      config.routes.push({
+        pattern: 'tuturuuu.com/*',
+        zone_name: 'tuturuuu.com',
+      });
+    },
+  ],
+  [
+    'missing route',
+    (config) => {
+      config.routes.pop();
+    },
+  ],
+  [
+    'wrong zone',
+    (config) => {
+      config.routes[0].zone_name = 'example.com';
+    },
+  ],
+]) {
+  test(`D79: emitted Worker config rejects ${name}`, () => {
+    const config = emittedConfig();
+    mutate(config);
+    assert.throws(() => assertWorkerOrigins(config));
+  });
+}
+
+test('doctor reads the emitted JSON config, rejecting missing or ambiguous output', async (t) => {
+  const root = await mkdtemp(join(tmpdir(), 'roadmap-doctor-config-'));
+  t.after(() => rm(root, { recursive: true, force: true }));
+  await assert.rejects(readBuiltWorkerConfig(root), /Require one emitted/);
+  const config = {
+    ...emittedConfig(),
+    name: 'tuturuuu-roadmap',
+    main: 'index.js',
+  };
+  await writeFile(join(root, 'worker.json'), JSON.stringify(config));
+  assert.deepEqual(await readBuiltWorkerConfig(root), config);
+  await writeFile(join(root, 'extra.json'), '{}');
+  await assert.rejects(readBuiltWorkerConfig(root), /Require one emitted/);
 });
