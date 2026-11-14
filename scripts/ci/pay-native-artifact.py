@@ -91,16 +91,13 @@ def load():
     }
     module.NORMALIZED_DEFAULTS = {**module.NORMALIZED_DEFAULTS, "topLevelName": WORKER}
     if PRODUCTION:
+        native_profiles = json.loads((PROFILE.parent / "native-profiles.json").read_text())
         module.IDENTITY["vars"] = {
-            "TUTURUUU_NOINDEX": "0", "NODE_ENV": "production",
+            **native_profiles["production"]["vars"],
+            "NODE_ENV": "production",
             "TUTURUUU_REQUIRE_SECRETS": "1",
-            "NEXT_PUBLIC_TUTURUUU_SHARED_COOKIE_DOMAIN": ".tuturuuu.com",
-            "INTERNAL_WEB_API_ORIGIN": "https://tuturuuu.com",
-            "NEXT_PUBLIC_APP_URL": "https://pay.tuturuuu.com",
-            "NEXT_PUBLIC_WEB_APP_URL": "https://tuturuuu.com",
             "NEXT_PUBLIC_SUPABASE_URL": os.environ.get("NEXT_PUBLIC_SUPABASE_URL", "https://production-placeholder.supabase.co"),
             "NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY": os.environ.get("NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY", "sb_publishable_production_placeholder"),
-            "POLAR_SANDBOX": "false",
         }
     module.RECEIPT = "pay-native-artifact.json"
     module.PUBLIC_FILES = PUBLIC_FILES

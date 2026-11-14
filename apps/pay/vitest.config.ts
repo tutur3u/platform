@@ -7,7 +7,7 @@ export default defineConfig({
   test: {
     server: {
       deps: {
-        inline: ['next-intl'],
+        inline: ['next-intl', '@polar-sh/nextjs'],
       },
     },
     environment: 'jsdom',

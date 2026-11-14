@@ -34,6 +34,16 @@ Use [Commercial controls](/platform/features/commercial-controls) and
 [Account benefits](/platform/features/account-benefits) for entitlement and
 commercial rules. An app directory link does not grant billing administration.
 
+## Worker URL contract
+
+The production Worker candidate uses `tuturuuu.com/pay` without a trailing slash.
+Legacy subdomain browser navigations return 301s to the corresponding mounted
+path; API/webhook deliveries retain their handlers and do not follow this browser
+redirect rule. Staging remains isolated on its staging host. Publication and
+provider routing stay held until the [Pay cutover gates](/build/devops/pay-start-void)
+pass. Billing permissions and payment confirmation rules are unchanged.
+Regression coverage: `apps/pay/cloudflare/mounted-routing.test.ts`.
+
 ## Read payment evidence correctly
 
 A browser return or success URL is part of navigation. Provider state,

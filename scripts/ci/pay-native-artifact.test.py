@@ -85,6 +85,15 @@ class PayArtifactTest(unittest.TestCase):
         self.assertEqual(base.IDENTITY["name"], "tuturuuu-apps-vite-staging")
         self.assertEqual(base.PUBLIC_FILES, ("robots.txt", "sitemap.xml"))
 
+    def test_production_identity_uses_the_canonical_mount_profile(self):
+        wrapper.PRODUCTION = True
+        identity = wrapper.load().IDENTITY["vars"]
+        self.assertEqual(identity["PAY_APP_URL"], "https://tuturuuu.com/pay")
+        self.assertEqual(identity["NEXT_PUBLIC_APP_URL"], identity["PAY_APP_URL"])
+        self.assertEqual(identity["TUTURUUU_BASE_PATH"], "/pay")
+        self.assertEqual(identity["TTR_ONE_ORIGIN_PAY"], "on")
+        self.assertEqual(identity["TTR_ONE_ORIGIN_PAY_REDIRECT_STATUS"], "301")
+
     def test_staging_helper_refuses_live_provider_mode(self):
         with tempfile.TemporaryDirectory() as temporary:
             profile = Path(temporary) / 'profile.json'

@@ -52,3 +52,115 @@ restore command and rollback owner. No deployment ID is recorded in this
 repository, so Rex must capture it. Restore that routing to the prior deployment
 immediately if smoke or the post-cutover watch regresses. Keep the deployment
 available for the full release cycle.
+
+## Credential-free local verification
+
+Pay has two build paths: retained Next.js (`next.config.ts`, `vercel.json`) and
+native TanStack Start with Vite+, Void and the shared Start bridge. Use the native
+path for Worker acceptance; adding OpenNext creates a second adapter to maintain.
+Vercel Deployment Protection is a hosting-level gate in front of pages, API
+responses and static assets. It is not Pay session authentication. The source
+cannot establish the live Vercel project's protection settings; owner readback
+must capture the protected deployment and observed challenge. No bypass token or
+application-auth exception is required for loopback Worker smoke.
+
+The staging profile remains root-only on its exact staging host and keeps
+Cloudflare Access and sandbox isolation. The production profile builds assets
+under `/pay/`, admits `tuturuuu.com/pay` and the legacy root host, and selects
+`TTR_ONE_ORIGIN_PAY=on` with `TTR_ONE_ORIGIN_PAY_REDIRECT_STATUS=301`. Its
+`NEXT_PUBLIC_APP_URL` and `PAY_APP_URL` have the canonical `/pay` suffix with no
+trailing slash. Browser GET/HEAD navigations on the legacy host preserve the
+path/query in a 301; `/pay/` canonicalizes to `/pay`. APIs, assets, server functions
+and non-navigation requests are not redirected. Provider deliveries must never
+rely on a browser redirect preserving a POST body.
+
+Run commands from the repository root, using the pinned Bun version. Local
+builds require an explicitly authorized build host; ordinary validation uses CI.
+No command below deploys or authenticates to a provider:
+
+```sh
+bun install --frozen-lockfile --ignore-scripts
+ttr resources run -- bun turbo run build --filter='@tuturuuu/pay^...' --concurrency=1
+ttr resources run -- bun run --cwd apps/pay test --maxWorkers=2
+python3 scripts/ci/pay-native-artifact.test.py
+ttr resources run -- bun run --cwd apps/pay type-check:cloudflare
+ttr resources run -- bun run --cwd apps/pay build:cloudflare
+```
+
+The default build is staging. Select `VITE_PAY_NATIVE_PROFILE=production` for a
+separate production candidate; do not reuse staging output. `TUTURUUU_BASE_PATH`
+is checked against the profile at build time. Keep all real provider credentials
+out of the build and smoke environment. Owner-supplied public build settings are
+`NEXT_PUBLIC_SUPABASE_URL` and `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY`; runtime
+secret names are listed above. Optional `PLATFORM_LOG_DRAIN_DATABASE_URL`,
+`PLATFORM_LOG_DRAIN_ENABLED`, and `PLATFORM_LOG_DRAIN_PROJECT_ID` control the
+existing log drain. Never print or store their values in receipts.
+
+The plain-JavaScript local harness requires an emitted artifact and runs on Node
+22 without a TypeScript loader:
+
+```sh
+cd apps/pay
+WRANGLER_LOG=error node --test cloudflare/local-worker-smoke.mjs
+# After a separate production-profile build:
+VITE_PAY_NATIVE_PROFILE=production WRANGLER_LOG=error node --test cloudflare/local-worker-smoke.mjs
+```
+
+Wrangler rewrites same-host redirect schemes to its local listener protocol;
+source policy tests require the HTTPS production target. CI retains the generated
+`native-built-worker.runtime.mjs` acceptance suite with its build identity channel.
+
+The harness copies output to disposable storage, binds loopback only, forbids
+provider auth and denies outbound requests. A passing source test or staging
+artifact does not establish production mount hydration. Before cutover, seal and
+exercise a production-profile artifact at the apex with the same egress fence;
+require exact-commit CI, independent security review and hosted sandbox acceptance.
+
+The local harness uses a disposable signing secret and a synthetic
+`customer.created` event with no Pay business callback to exercise the actual
+webhook route; it requires acceptance before rejecting unsigned/tampered bodies
+on both production paths. This does not establish payment side effects or deduplication.
+It checks every emitted JS/CSS/font file, MIME types and the RSC
+manifest asset URL prefixes, plus public `robots.txt`, root/build identity, mount
+neighbours and host rejection. It does not drive signed-in browser hydration.
+Browser asset smoke must additionally check generated module imports, font URLs, public
+`robots.txt`, favicon/manifest if emitted, lazy chunks, the base head script,
+client navigation, server-function requests and app-owned API URLs under `/pay`.
+Require correct MIME types, no HTML fallback for missing files, no requests to
+apex `/assets` or `/pay/pay`, no external provider traffic, and security headers.
+Repeat with a raw Host header: unknown hosts and `/pay-extra` must reject.
+The apex gateway must route bare `/pay` (including query strings) as well as
+`/pay/*`; a wildcard route alone is insufficient. Rex owns those route/DNS changes.
+
+## Security review gate (D87)
+
+- **Auth:** no proxy/session/MFA/permission or API guard changes. Production gains
+  apex route admission; unknown hosts still fail closed. Mounted session mint and
+  refresh endpoints remain refused by the shared bridge.
+- **Cookies:** no cookie-name/domain/SameSite/Secure changes. Production retains
+  the shared root session; staging remains host-only. The bridge strips mounted
+  app session writes. Review signed-in billing and central logout before release.
+- **CSRF:** no exemptions or bypass added. Mounted cookie mutations enforce the
+  shared same-origin check before dispatch. Cookie-less provider deliveries still
+  authenticate via their signature handler.
+- **Webhooks:** POST `/pay/api/payment/webhooks` strips `/pay` once and dispatches
+  the existing Polar `Webhooks` handler. It reads raw `request.text()` and verifies
+  `webhook-id`, `webhook-timestamp`, and `webhook-signature` with
+  `POLAR_WEBHOOK_SECRET` before callbacks. The signature implementation, payload,
+  replay policy and business callbacks are unchanged. Both legacy and mounted
+  paths retain invalid/missing-signature rejection; the synthetic signed fixture
+  verifies raw bytes and rejects tampering/stale timestamps; no redirect or parse/reencode
+  is added. Valid signed delivery, timestamp rejection, replay/idempotency and
+  provider retry behavior remain mandatory sandbox evidence before switching the
+  registered endpoint. Keep legacy delivery routing available through rollback.
+- **CORS/CSP/headers:** no CORS permission changes. Existing nonce CSP, noindex,
+  no-store and framing policy remain. Asset and WebGL path classification strips
+  the mounted prefix so existing cache/sandbox rules apply at the apex too.
+- **Operations:** no cron, queue, database migration, payment-provider setting,
+  deployment or DNS mutation. The Vercel cron declaration is retained; Rex must
+  select one scheduler and prevent duplicate execution at cutover.
+
+Source regression coverage is `cloudflare/mounted-routing.test.ts`, existing Pay
+proxy/response tests, and `scripts/ci/pay-native-artifact.test.py`. Independent
+security review and real signed sandbox deliveries are release gates, not claims
+made by these local tests. Production publication remains held in `tuturuuu.ci.ts`.

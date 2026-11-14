@@ -13,8 +13,9 @@ A source build is not payment-provider acceptance or production cutover.
 The staging candidate admits only the exact Pay staging host on the separate
 staging zone, behind Cloudflare Access, never a `*.tuturuuu.com` name. It rejects
 `pay.tuturuuu.com`, apex mounts and unknown hosts before app code.
-The cutover-prep PR must add `pay.tuturuuu.com` together with its separately
-reviewed production profile; apex hosting remains held by the shared auth guard.
+The separate production profile admits `pay.tuturuuu.com` and the `/pay` apex
+mount. Production publication stays held; see the [cutover packet](./pay-start-void)
+for canonical routing, security review and production artifact acceptance.
 
 Staging cookies are host-only. Pay staging sends only `__Host-` session cookies
 with no `Domain` attribute, and the Worker exit applies the shared staging
