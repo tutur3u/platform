@@ -106,7 +106,7 @@ async function handleProxy(req: NextRequest): Promise<NextResponse> {
 }
 
 const LOCALE_COOKIE_ORIGINS = {
-  canonicalOrigins: [BASE_URL],
+  canonicalOrigins: AUTH_CANONICAL_ORIGINS,
   webAppUrl: TTR_URL,
 };
 
