@@ -1,7 +1,7 @@
 ---
 title: "Calendar"
 description: "Calendar behavior across Web, standalone Calendar, and mobile."
-updatedAt: "2026-10-22"
+updatedAt: "2026-11-14"
 audience: users
 ---
 
@@ -15,6 +15,9 @@ requests with no `token` query parameter. The default is English; an explicit
 supported locale prefix, then `NEXT_LOCALE`, then browser language resolves the
 document language. These documents do not redirect solely to canonicalize the
 locale prefix, and their page model does not resolve an actor or workspace data.
+On the Next route tree, which has only `/[locale]/verify-token`, the unprefixed
+path is served in place from its resolved-locale route; the browser URL stays
+`/verify-token`.
 The normal Calendar auth proxy, auth-cookie cleanup and response security policy
 still apply. Rendering this screen does not create or prove an authenticated
 session; the existing client completion flow normalizes its next destination.

@@ -170,10 +170,15 @@ export async function proxy(req: NextRequest): Promise<NextResponse> {
 
   const authRequestHeaders = getRequestHeadersWithResponseCookies(req, authRes);
   if (publicCompletion) {
-    authRequestHeaders.set('x-next-intl-locale', resolveCalendarLocale(req));
-    const completionResponse = NextResponse.next({
-      request: { headers: authRequestHeaders },
-    });
+    const completionLocale = resolveCalendarLocale(req);
+    authRequestHeaders.set('x-next-intl-locale', completionLocale);
+    // Only `/[locale]/verify-token` exists as a route, so an unprefixed
+    // completion path is served from its resolved-locale route in place.
+    const completionResponse = hasLocalePrefix(req.nextUrl.pathname)
+      ? NextResponse.next({ request: { headers: authRequestHeaders } })
+      : NextResponse.rewrite(withLocalePrefix(req.nextUrl, completionLocale), {
+          request: { headers: authRequestHeaders },
+        });
     const completion = mounted
       ? completionResponse
       : clearSupabaseAuthCookies(req, completionResponse);
@@ -404,6 +409,15 @@ export const config = {
 
     '/((?!_next/static|_next/image|favicon.ico|robots.txt|sitemap.xml|site.webmanifest|offline\\.(?:html|css|js)$|serwist/sw\\.js(?:\\.map)?$|monitoring|.*\\.(?:svg|png|jpg|jpeg|pdf|gif|webp)$).*)',
   ],
+};
+
+const hasLocalePrefix = (pathname: string) =>
+  getSupportedLocale(pathname.split('/')[1] ?? '') !== null;
+
+const withLocalePrefix = (url: NextRequest['nextUrl'], locale: Locale) => {
+  const target = url.clone();
+  target.pathname = `/${locale}${url.pathname}`;
+  return target;
 };
 
 const getSupportedLocale = (locale: string): Locale | null => {
