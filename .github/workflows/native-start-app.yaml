@@ -59,6 +59,11 @@ on:
         type: string
         required: false
         default: ""
+      build-environment:
+        description: Environment recorded in the generated build identity (/api/build-info); production-profile callers pass production
+        type: string
+        required: false
+        default: preview
       artifact-suffix:
         description: Optional suffix that keeps artifacts apart when an app qualifies several profiles
         type: string
@@ -89,6 +94,7 @@ jobs:
       RUNTIME_COMMAND: ${{ inputs.runtime-command }}
       RUNTIME_SETUP_COMMAND: ${{ inputs.runtime-setup-command }}
       PROFILE_ENV: ${{ inputs.profile-env }}
+      BUILD_ENVIRONMENT: ${{ inputs.build-environment }}
       ARTIFACT_SUFFIX: ${{ inputs.artifact-suffix && format('-{0}', inputs.artifact-suffix) || '' }}
       SOURCE_SHA: ${{ github.event.pull_request.head.sha || github.sha }}
       APPS_SOURCE_SHA: ${{ github.event.pull_request.head.sha || github.sha }}
@@ -128,6 +134,7 @@ jobs:
       - name: Admit the native profile selector
         run: |
           [[ "$ARTIFACT_SUFFIX" =~ ^(-[a-z][a-z0-9-]*)?$ ]]
+          [[ "$BUILD_ENVIRONMENT" =~ ^(preview|production)$ ]]
           if [ -n "$PROFILE_ENV" ]; then
             [[ "$PROFILE_ENV" =~ ^VITE_[A-Z0-9_]+_NATIVE_PROFILE=[a-z]+$ ]]
             echo "$PROFILE_ENV" >> "$GITHUB_ENV"
@@ -158,7 +165,7 @@ jobs:
         env:
           PLATFORM_BUILD_COMMIT_HASH: ${{ env.SOURCE_SHA }}
           PLATFORM_BUILD_REF_NAME: ${{ github.head_ref || github.ref_name }}
-          PLATFORM_BUILD_ENVIRONMENT: preview
+          PLATFORM_BUILD_ENVIRONMENT: ${{ env.BUILD_ENVIRONMENT }}
         run: bun run --silent scripts/ci/generate-build-metadata.ts
       - name: Reject unregistered App Router routes and pages
         run: bun packages/start-bridge/src/codegen/cli.ts check "$APP_DIR"
