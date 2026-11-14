@@ -721,6 +721,10 @@ Preserve primary errors; receipts or observed errors alone never establish closu
   must also disable cancellation and use that isolated identity; changing only
   the cancellation flag leaves candidates vulnerable to later main pushes. Never
   combine `queue: max` with cancellation enabled.
+- Test PR shards and PR Type Check accept only allowlisted `CI_VALIDATION_RUNNER`
+  host labels after same-repository ID/name checks. Unset or invalid values and
+  forks stay hosted. Run `self-hosted-policy.js` and its negative controls;
+  registration, variable activation and runtime qualification remain separate.
 - Test and Type Check gate every job on non-draft status as well as label
   admission. Keep readiness and draft-conversion triggers together; preserve
   the App label event and required security classification. Verify with
