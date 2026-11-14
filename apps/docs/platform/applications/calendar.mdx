@@ -87,6 +87,15 @@ request. A browser that has not yet opened the setting uses the device default.
 `packages/ui/src/hooks/calendar-default-view.test.ts` covers the resolution
 rules.
 
+## Plan panel
+
+The calendar's plan panel holds the task list and habits in two tabs, with the
+time tracker in its header. From 1280px wide it sits beside the grid at 280px
+(320px from 1536px) and remembers whether it was open; below 1280px its rail
+opens it as a sheet over the grid so the week keeps its width. Phones show no
+rail. `packages/tasks-ui/src/calendar/components/sidebar/calendar-sidebar.test.tsx`
+covers the rail, inline and sheet states.
+
 ## Tasks and Calendar planning
 
 Calendar and Tasks keep cross-product API calls on the active browser origin so

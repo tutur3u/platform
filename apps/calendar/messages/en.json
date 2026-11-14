@@ -1536,6 +1536,13 @@
     "overridden_by_settings": "Overridden by your settings",
     "personal_first_day_override_desc": "You have set your personal first day of week to <bold>{firstDay}</bold>, which overrides this workspace setting. Your effective first day is <bold>{effectiveFirstDay}</bold>. Change it in Appearance & Theme settings.",
     "personal_timezone_override_desc": "You have set your personal timezone to <bold>{timezone}</bold>, which overrides this workspace setting. Your effective timezone is <bold>{effectiveTimezone}</bold>. Change it in Appearance & Theme settings.",
+    "plan_panel": {
+      "collapse": "Collapse plan panel",
+      "habits": "Habits",
+      "open": "Open plan panel",
+      "tasks": "Tasks",
+      "title": "Plan"
+    },
     "please_reconnect": "Please reconnect your Google Calendar",
     "primary": "Primary",
     "provider_color_label": "Google event color",
