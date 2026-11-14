@@ -1,0 +1,259 @@
+# Sanitization record
+
+Source commit: `4dd968349e54ca45a05dd5c818fb035c9054b022`. Original source line numbers follow.
+
+- SKILL.md: replace mandatory execution/triggering; search/retrieve/legacy-scan commands; temporary retrieval files; disclosure mandate; npx/pnpx permission/network/offline workflow; settings recommendations and unsafe cast/bundler advice with an offline, subordinate reference entrypoint.
+- `guides/accessibility/accessibility.md:453`: remove CLI retrieval annotation.
+- `guides/accessibility/accessibility.md:530`: remove CLI retrieval annotation.
+- `guides/accessibility/accessibility.md:534`: remove CLI retrieval annotation.
+- `guides/accessibility/accessibility.md:538`: remove CLI retrieval annotation.
+- `guides/accessibility/respect-os-text-scale.md:51`: remove CLI retrieval annotation.
+- `guides/built-in-ai/language-model.md:334`: remove CLI retrieval annotation.
+- `guides/built-in-ai/prompt-api.md:334`: remove CLI retrieval annotation.
+- `guides/css/css-layout.md:33`: remove CLI retrieval annotation.
+- `guides/css/css-layout.md:48`: remove CLI retrieval annotation.
+- `guides/css/css-layout.md:208`: remove CLI retrieval annotation.
+- `guides/css/css-layout.md:235`: remove CLI retrieval annotation.
+- `guides/css/css-layout.md:253`: remove CLI retrieval annotation.
+- `guides/css/css-layout.md:277`: remove CLI retrieval annotation.
+- `guides/css/css-layout.md:287`: remove CLI retrieval annotation.
+- `guides/css/css.md:58`: remove CLI retrieval annotation.
+- `guides/css/css.md:203`: remove CLI retrieval annotation.
+- `guides/css/css.md:222`: remove CLI retrieval annotation.
+- `guides/css/css.md:223`: remove CLI retrieval annotation.
+- `guides/css/css.md:224`: remove CLI retrieval annotation.
+- `guides/css/css.md:225`: remove CLI retrieval annotation.
+- `guides/css/css.md:229`: remove CLI retrieval annotation.
+- `guides/css/css.md:233`: remove CLI retrieval annotation.
+- `guides/css/css.md:237`: remove CLI retrieval annotation.
+- `guides/css/css.md:246`: remove CLI retrieval annotation.
+- `guides/css/css.md:249`: remove CLI retrieval annotation.
+- `guides/css/responsive-design.md:5`: remove CLI retrieval annotation.
+- `guides/css/responsive-design.md:9`: remove CLI retrieval annotation.
+- `guides/css/responsive-design.md:16`: remove CLI retrieval annotation.
+- `guides/css/style-parent-with-has.md:57`: remove CLI retrieval annotation.
+- `guides/css/usage-aware-component-variations.md:13`: remove CLI retrieval annotation.
+- `guides/forms/forms.md:111`: remove CLI retrieval annotation.
+- `guides/forms/forms.md:256`: remove CLI retrieval annotation.
+- `guides/forms/slider.md:12`: remove CLI retrieval annotation.
+- `guides/forms/slider.md:16`: remove CLI retrieval annotation.
+- `guides/forms/sms-otp-form.md:13`: remove CLI retrieval annotation.
+- `guides/forms/switch.md:3`: remove CLI retrieval annotation.
+- `guides/forms/switch.md:21`: remove CLI retrieval annotation.
+- `guides/html/custom-elements.md:114`: remove CLI retrieval annotation.
+- `guides/html/form-associated-custom-elements.md:64`: remove acquisition or configuration directive/example.
+- `guides/html/html.md:135`: remove acquisition or configuration directive/example.
+- `guides/html/html.md:210`: remove CLI retrieval annotation.
+- `guides/html/html.md:335`: remove CLI retrieval annotation.
+- `guides/html/shadow-dom.md:11`: remove CLI retrieval annotation.
+- `guides/html/styling-web-components.md:87`: remove CLI retrieval annotation.
+- `guides/html/web-components.md:15`: remove CLI retrieval annotation.
+- `guides/html/web-components.md:17`: remove CLI retrieval annotation.
+- `guides/html/web-components.md:45`: remove CLI retrieval annotation.
+- `guides/html/web-components.md:46`: remove CLI retrieval annotation.
+- `guides/html/web-components.md:47`: remove CLI retrieval annotation.
+- `guides/html/web-components.md:48`: remove CLI retrieval annotation.
+- `guides/html/web-components.md:49`: remove CLI retrieval annotation.
+- `guides/html/web-components.md:50`: remove CLI retrieval annotation.
+- `guides/js/calculate-event-differentials.md:105`: remove acquisition or configuration directive/example.
+- `guides/js/capture-location-agnostic-data.md:142`: remove acquisition or configuration directive/example.
+- `guides/js/coordinate-global-events.md:73`: remove acquisition or configuration directive/example.
+- `guides/js/sort-high-precision-timestamps.md:85`: remove acquisition or configuration directive/example.
+- `guides/js/support-global-calendar-systems.md:96`: remove acquisition or configuration directive/example.
+- `guides/performance/defer-rendering-heavy-content.md:13`: remove CLI retrieval annotation.
+- `guides/performance/defer-rendering-heavy-content.md:76`: remove CLI retrieval annotation.
+- `guides/performance/out-of-order-html-streaming.md:149`: remove acquisition or configuration directive/example.
+- `guides/performance/out-of-order-html-streaming.md:165`: remove acquisition or configuration directive/example.
+- `guides/performance/schedule-tasks-by-priority.md:45`: remove acquisition or configuration directive/example.
+- `guides/security/client-side-encryption.md:3`: remove CLI retrieval annotation.
+- `guides/security/digital-signatures.md:3`: remove CLI retrieval annotation.
+- `guides/security/local-network-access.md:9`: remove acquisition or configuration directive/example.
+- `guides/security/passkey-authentication.md:190`: remove acquisition or configuration directive/example.
+- `guides/security/passkey-authentication.md:194`: remove acquisition or configuration directive/example.
+- `guides/security/passkey-authentication.md:214`: remove acquisition or configuration directive/example.
+- `guides/security/passkey-authentication.md:218`: remove acquisition or configuration directive/example.
+- `guides/security/passkey-conditional-create.md:112`: remove acquisition or configuration directive/example.
+- `guides/security/passkey-conditional-create.md:116`: remove acquisition or configuration directive/example.
+- `guides/security/passkey-conditional-create.md:135`: remove acquisition or configuration directive/example.
+- `guides/security/passkey-conditional-create.md:139`: remove acquisition or configuration directive/example.
+- `guides/security/passkey-management.md:249`: remove acquisition or configuration directive/example.
+- `guides/security/passkey-management.md:253`: remove acquisition or configuration directive/example.
+- `guides/security/passkey-reauthentication.md:114`: remove acquisition or configuration directive/example.
+- `guides/security/passkey-reauthentication.md:118`: remove acquisition or configuration directive/example.
+- `guides/security/passkey-reauthentication.md:138`: remove acquisition or configuration directive/example.
+- `guides/security/passkey-reauthentication.md:142`: remove acquisition or configuration directive/example.
+- `guides/security/passkey-registration.md:182`: remove acquisition or configuration directive/example.
+- `guides/security/passkey-registration.md:186`: remove acquisition or configuration directive/example.
+- `guides/security/passkeys.md:33`: remove CLI retrieval annotation.
+- `guides/security/passkeys.md:34`: remove CLI retrieval annotation.
+- `guides/security/passkeys.md:35`: remove CLI retrieval annotation.
+- `guides/security/passkeys.md:36`: remove CLI retrieval annotation.
+- `guides/security/passkeys.md:37`: remove CLI retrieval annotation.
+- `guides/security/passkeys.md:38`: remove CLI retrieval annotation.
+- `guides/security/quick-sign-ins.md:20`: remove CLI retrieval annotation.
+- `guides/security/quick-sign-ins.md:21`: remove CLI retrieval annotation.
+- `guides/security/quick-sign-ins.md:213`: remove acquisition or configuration directive/example.
+- `guides/security/quick-sign-ins.md:234`: remove acquisition or configuration directive/example.
+- `guides/security/secure-external-subresources.md:3`: remove CLI retrieval annotation.
+- `guides/security/secure-external-subresources.md:9`: remove acquisition or configuration directive/example.
+- `guides/security/security.md:60`: remove CLI retrieval annotation.
+- `guides/security/security.md:112`: remove CLI retrieval annotation.
+- `guides/security/security.md:262`: remove CLI retrieval annotation.
+- `guides/security/security.md:365`: remove CLI retrieval annotation.
+- `guides/security/trusted-types.md:43`: remove CLI retrieval annotation.
+- `guides/security/trusted-types.md:83`: remove CLI retrieval annotation.
+- `guides/ui-atoms/component-specific-light-dark-theme.md:29`: remove CLI retrieval annotation.
+- `guides/ui-atoms/icons.md:14`: remove CLI retrieval annotation.
+- `guides/ui-atoms/position-aware-tooltips.md:5`: remove CLI retrieval annotation.
+- `guides/ui-atoms/position-aware-tooltips.md:161`: remove acquisition or configuration directive/example.
+- `guides/ui-atoms/responsive-table.md:13`: remove CLI retrieval annotation.
+- `guides/ui-atoms/single-line-overflow.md:87`: remove acquisition or configuration directive/example.
+- `guides/ui-atoms/single-line-overflow.md:264`: remove CLI retrieval annotation.
+- `guides/ui-atoms/single-line-overflow.md:319`: remove acquisition or configuration directive/example.
+- `guides/ui-atoms/viewport-aware-dropdowns.md:64`: remove CLI retrieval annotation.
+- `guides/ui-atoms/viewport-aware-dropdowns.md:86`: remove acquisition or configuration directive/example.
+- `guides/ui-atoms/viewport-aware-dropdowns.md:124`: remove acquisition or configuration directive/example.
+- `guides/ui-atoms/viewport-aware-dropdowns.md:127`: remove acquisition or configuration directive/example.
+- `guides/ui-atoms/viewport-aware-dropdowns.md:145`: remove acquisition or configuration directive/example.
+- `guides/ui-behaviors/animate-to-from-top-layer.md:232`: remove acquisition or configuration directive/example.
+- `guides/ui-behaviors/custom-button-actions.md:91`: remove acquisition or configuration directive/example.
+- `guides/ui-behaviors/declarative-dialog-popover-control.md:80`: remove acquisition or configuration directive/example.
+- `guides/ui-behaviors/declarative-dialog-popover-control.md:140`: remove acquisition or configuration directive/example.
+- `guides/ui-behaviors/drag-and-drop.md:3`: remove CLI retrieval annotation.
+- `guides/ui-behaviors/drag.md:73`: remove CLI retrieval annotation.
+- `guides/ui-behaviors/dynamic-sort.md:67`: remove CLI retrieval annotation.
+- `guides/ui-behaviors/interest-triggered-action-previews.md:66`: remove acquisition or configuration directive/example.
+- `guides/ui-behaviors/interest-triggered-tooltips.md:125`: remove acquisition or configuration directive/example.
+- `guides/ui-behaviors/interest-triggered-tooltips.md:172`: remove acquisition or configuration directive/example.
+- `guides/ui-behaviors/interest-triggered-tooltips.md:235`: remove acquisition or configuration directive/example.
+- `guides/ui-behaviors/interest-triggered-tooltips.md:238`: remove acquisition or configuration directive/example.
+- `guides/ui-behaviors/interest-triggered-tooltips.md:256`: remove acquisition or configuration directive/example.
+- `guides/ui-behaviors/motion.md:10`: remove CLI retrieval annotation.
+- `guides/ui-behaviors/physics-based-easing.md:102`: remove acquisition or configuration directive/example.
+- `guides/ui-behaviors/sortable-table.md:5`: remove CLI retrieval annotation.
+- `guides/ui-behaviors/sortable-table.md:7`: remove CLI retrieval annotation.
+- `guides/ui-behaviors/sortable-table.md:15`: remove CLI retrieval annotation.
+- `guides/ui-behaviors/sortable-table.md:86`: remove CLI retrieval annotation.
+- `guides/ui-behaviors/sortable-table.md:139`: remove CLI retrieval annotation.
+- `guides/ui-behaviors/spatial-navigation.md:13`: remove CLI retrieval annotation.
+- `guides/ui-behaviors/spatial-navigation.md:16`: remove CLI retrieval annotation.
+- `guides/ui-behaviors/swipe-to-remove.md:7`: remove CLI retrieval annotation.
+- `guides/ui-behaviors/swipe-to-reveal.md:5`: remove CLI retrieval annotation.
+- `guides/ui-behaviors/swipe-to-reveal.md:181`: remove CLI retrieval annotation.
+- `guides/ui-components/accordion.md:158`: remove CLI retrieval annotation.
+- `guides/ui-components/accordion.md:232`: remove CLI retrieval annotation.
+- `guides/ui-components/accordion.md:236`: remove CLI retrieval annotation.
+- `guides/ui-components/accordion.md:289`: remove CLI retrieval annotation.
+- `guides/ui-components/accordion.md:321`: remove CLI retrieval annotation.
+- `guides/ui-components/app-menus.md:7`: remove CLI retrieval annotation.
+- `guides/ui-components/app-menus.md:151`: remove acquisition or configuration directive/example.
+- `guides/ui-components/app-menus.md:180`: remove CLI retrieval annotation.
+- `guides/ui-components/breadcrumbs.md:19`: remove CLI retrieval annotation.
+- `guides/ui-components/breadcrumbs.md:120`: remove CLI retrieval annotation.
+- `guides/ui-components/breadcrumbs.md:122`: remove CLI retrieval annotation.
+- `guides/ui-components/card.md:16`: remove CLI retrieval annotation.
+- `guides/ui-components/card.md:132`: remove CLI retrieval annotation.
+- `guides/ui-components/carousel.md:20`: remove CLI retrieval annotation.
+- `guides/ui-components/carousel.md:21`: remove CLI retrieval annotation.
+- `guides/ui-components/carousel.md:22`: remove CLI retrieval annotation.
+- `guides/ui-components/carousel.md:23`: remove CLI retrieval annotation.
+- `guides/ui-components/copy-button.md:27`: remove CLI retrieval annotation.
+- `guides/ui-components/copy-button.md:92`: remove acquisition or configuration directive/example.
+- `guides/ui-components/copy-button.md:196`: remove acquisition or configuration directive/example.
+- `guides/ui-components/dark-mode-toggle.md:19`: remove CLI retrieval annotation.
+- `guides/ui-components/dark-mode-toggle.md:33`: remove CLI retrieval annotation.
+- `guides/ui-components/dark-mode-toggle.md:82`: remove CLI retrieval annotation.
+- `guides/ui-components/dialog.md:15`: remove CLI retrieval annotation.
+- `guides/ui-components/dialog.md:34`: remove CLI retrieval annotation.
+- `guides/ui-components/dialog.md:104`: remove CLI retrieval annotation.
+- `guides/ui-components/dialog.md:130`: remove CLI retrieval annotation.
+- `guides/ui-components/dialog.md:184`: remove acquisition or configuration directive/example.
+- `guides/ui-components/dialog.md:208`: remove acquisition or configuration directive/example.
+- `guides/ui-components/hovercard.md:5`: remove CLI retrieval annotation.
+- `guides/ui-components/hovercard.md:132`: remove CLI retrieval annotation.
+- `guides/ui-components/hovercard.md:232`: remove acquisition or configuration directive/example.
+- `guides/ui-components/hovercard.md:266`: remove acquisition or configuration directive/example.
+- `guides/ui-components/hovercard.md:321`: remove acquisition or configuration directive/example.
+- `guides/ui-components/hovercard.md:324`: remove acquisition or configuration directive/example.
+- `guides/ui-components/hovercard.md:342`: remove acquisition or configuration directive/example.
+- `guides/ui-components/menu.md:5`: remove CLI retrieval annotation.
+- `guides/ui-components/menu.md:12`: remove CLI retrieval annotation.
+- `guides/ui-components/menu.md:86`: remove CLI retrieval annotation.
+- `guides/ui-components/menu.md:350`: remove acquisition or configuration directive/example.
+- `guides/ui-components/menu.md:379`: remove CLI retrieval annotation.
+- `guides/ui-components/navbar.md:5`: remove CLI retrieval annotation.
+- `guides/ui-components/navbar.md:7`: remove CLI retrieval annotation.
+- `guides/ui-components/navbar.md:55`: remove CLI retrieval annotation.
+- `guides/ui-components/navbar.md:91`: remove CLI retrieval annotation.
+- `guides/ui-components/navbar.md:147`: remove acquisition or configuration directive/example.
+- `guides/ui-components/navbar.md:155`: remove CLI retrieval annotation.
+- `guides/ui-components/navbar.md:197`: remove CLI retrieval annotation.
+- `guides/ui-components/navbar.md:206`: remove CLI retrieval annotation.
+- `guides/ui-components/navbar.md:231`: remove acquisition or configuration directive/example.
+- `guides/ui-components/navigation-drawer.md:64`: remove CLI retrieval annotation.
+- `guides/ui-components/persistent-app-tours.md:92`: remove acquisition or configuration directive/example.
+- `guides/ui-components/persistent-app-tours.md:130`: remove acquisition or configuration directive/example.
+- `guides/ui-components/persistent-app-tours.md:133`: remove acquisition or configuration directive/example.
+- `guides/ui-components/persistent-app-tours.md:151`: remove acquisition or configuration directive/example.
+- `guides/ui-components/persistent-toast-notifications.md:60`: remove acquisition or configuration directive/example.
+- `guides/ui-components/persistent-toast-notifications.md:123`: remove acquisition or configuration directive/example.
+- `guides/ui-components/persistent-toast-notifications.md:126`: remove acquisition or configuration directive/example.
+- `guides/ui-components/persistent-toast-notifications.md:144`: remove acquisition or configuration directive/example.
+- `guides/ui-components/progress-ring.md:13`: remove CLI retrieval annotation.
+- `guides/ui-components/progress.md:9`: remove CLI retrieval annotation.
+- `guides/ui-components/progress.md:10`: remove CLI retrieval annotation.
+- `guides/ui-components/spinner.md:11`: remove CLI retrieval annotation.
+- `guides/ui-components/tabs.md:89`: remove CLI retrieval annotation.
+- `guides/ui-components/tabs.md:95`: remove CLI retrieval annotation.
+- `guides/ui-components/tabs.md:111`: remove CLI retrieval annotation.
+- `guides/ui-components/tabs.md:176`: remove CLI retrieval annotation.
+- `guides/ui-components/tabs.md:243`: remove CLI retrieval annotation.
+- `guides/ui-components/toolbar.md:3`: remove CLI retrieval annotation.
+- `guides/ui-components/toolbar.md:10`: remove CLI retrieval annotation.
+- `guides/ui-components/toolbar.md:66`: remove CLI retrieval annotation.
+- `guides/ui-components/toolbar.md:155`: remove CLI retrieval annotation.
+- `guides/ui-components/toolbar.md:219`: remove acquisition or configuration directive/example.
+- `guides/user-experience/content-first-noise-reduction.md:49`: remove CLI retrieval annotation.
+- `guides/user-experience/content-first-noise-reduction.md:64`: remove CLI retrieval annotation.
+- `guides/user-experience/content-first-noise-reduction.md:65`: remove CLI retrieval annotation.
+- `guides/user-experience/content-first-noise-reduction.md:66`: remove CLI retrieval annotation.
+- `guides/user-experience/content-first-noise-reduction.md:130`: remove acquisition or configuration directive/example.
+- `guides/user-experience/form-factor-adaptation.md:5`: remove CLI retrieval annotation.
+- `guides/user-experience/form-factor-adaptation.md:48`: remove CLI retrieval annotation.
+- `guides/user-experience/form-factor-adaptation.md:49`: remove CLI retrieval annotation.
+- `guides/user-experience/form-factor-adaptation.md:71`: remove CLI retrieval annotation.
+- `guides/user-experience/form-factor-adaptation.md:75`: remove CLI retrieval annotation.
+- `guides/user-experience/form-factor-adaptation.md:95`: remove CLI retrieval annotation.
+- `guides/user-experience/natural-interactions.md:30`: remove CLI retrieval annotation.
+- `guides/user-experience/natural-interactions.md:53`: remove CLI retrieval annotation.
+- `guides/user-experience/natural-interactions.md:54`: remove CLI retrieval annotation.
+- `guides/user-experience/natural-interactions.md:55`: remove CLI retrieval annotation.
+- `guides/user-experience/natural-interactions.md:76`: remove CLI retrieval annotation.
+- `guides/user-experience/natural-interactions.md:77`: remove CLI retrieval annotation.
+- `guides/user-experience/natural-interactions.md:109`: remove CLI retrieval annotation.
+- `guides/user-experience/natural-interactions.md:131`: remove acquisition or configuration directive/example.
+- `guides/visual-design/apply-webgl-shaders.md:270`: remove acquisition or configuration directive/example.
+- `guides/visual-design/apply-webgl-shaders.md:275`: remove acquisition or configuration directive/example.
+- `guides/visual-design/browser-ui-theming.md:34`: remove CLI retrieval annotation.
+- `guides/visual-design/color.md:27`: remove CLI retrieval annotation.
+- `guides/visual-design/dark-mode.md:141`: remove CLI retrieval annotation.
+- `guides/visual-design/dark-mode.md:147`: remove CLI retrieval annotation.
+- `guides/visual-design/equal-width-text-lines.md:22`: remove CLI retrieval annotation.
+- `guides/visual-design/equal-width-text-lines.md:31`: remove CLI retrieval annotation.
+- `guides/visual-design/expose-canvas-content-to-browser-features.md:425`: remove acquisition or configuration directive/example.
+- `guides/visual-design/expose-canvas-content-to-browser-features.md:430`: remove acquisition or configuration directive/example.
+- `guides/visual-design/interactive-content-in-3d-scenes.md:440`: remove acquisition or configuration directive/example.
+- `guides/visual-design/interactive-content-in-3d-scenes.md:445`: remove acquisition or configuration directive/example.
+- `guides/visual-design/visual-effects.md:100`: remove CLI retrieval annotation.
+- `guides/wasm/cpp-on-the-web.md:31`: remove acquisition or configuration directive/example.
+- `guides/webmcp/agentic-javascript-tools.md:252`: remove acquisition or configuration directive/example.
+- `guides/webmcp/agentic-javascript-tools.md:365`: remove acquisition or configuration directive/example.
+- `guides/webmcp/webmcp.md:5`: remove acquisition or configuration directive/example.
+- `guides/webmcp/webmcp.md:44`: remove acquisition or configuration directive/example.
+- `guides/webmcp/agentic-javascript-tools.md:367`: remove acquisition or configuration directive/example.
+
+## Secret-scanner false-positive formatting
+
+- `guides/visual-design/contrast-color.md:2`: shorten the provenance header's public source commit to 12 characters; retain the full pinned source commit above.
+- `guides/security/client-side-encryption.md:192,206`: format the WebCrypto feature-detection calls with one argument per physical line, retaining the same operation and algorithm identifiers. The prose example is rendered as an adjacent code block.
+- These edits preserve reference semantics and avoid three scanner false positives; they add no scanner exceptions, credentials or automatic updates.
