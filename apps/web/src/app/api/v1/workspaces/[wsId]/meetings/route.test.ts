@@ -1,7 +1,7 @@
 vi.mock('server-only', () => ({}));
 
 import { NextRequest } from 'next/server';
-import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 const mocks = vi.hoisted(() => ({
   tier: vi.fn(),
@@ -77,6 +77,10 @@ function authenticatedContext(...args: [email?: string]) {
     supabase: { from: mocks.from, rpc: mocks.rpc },
   };
 }
+
+afterEach(() => {
+  vi.unstubAllEnvs();
+});
 
 beforeEach(() => {
   vi.clearAllMocks();
@@ -313,6 +317,7 @@ describe('Calendar scheduling', () => {
 it.each(['PLUS', 'PRO', 'ENTERPRISE'])(
   'allows a verified external %s host using current identity',
   async (tier) => {
+    vi.stubEnv('MEET_PAID_TIER_HOSTING_ENABLED', 'true');
     mocks.auth.mockResolvedValue(authenticatedContext('stale@example.test'));
     mocks.identity.mockResolvedValue({
       data: {
@@ -331,6 +336,7 @@ it.each(['PLUS', 'PRO', 'ENTERPRISE'])(
   }
 );
 it('does not bypass workspace membership for paid hosts', async () => {
+  vi.stubEnv('MEET_PAID_TIER_HOSTING_ENABLED', 'true');
   mocks.auth.mockResolvedValue(authenticatedContext('paid@example.test'));
   mocks.identity.mockResolvedValue({
     data: {
@@ -345,6 +351,7 @@ it('does not bypass workspace membership for paid hosts', async () => {
 });
 
 it('fails closed with retryable status when paid entitlement is unavailable', async () => {
+  vi.stubEnv('MEET_PAID_TIER_HOSTING_ENABLED', 'true');
   mocks.auth.mockResolvedValue(authenticatedContext('paid@example.test'));
   mocks.identity.mockResolvedValue({
     data: {
@@ -354,5 +361,20 @@ it('fails closed with retryable status when paid entitlement is unavailable', as
   });
   mocks.tier.mockRejectedValueOnce(new Error('Unavailable'));
   expect((await POST(request(), params)).status).toBe(503);
+  expect(mocks.insert).not.toHaveBeenCalled();
+});
+
+it('denies a verified paid host while paid-tier hosting is off', async () => {
+  vi.stubEnv('MEET_PAID_TIER_HOSTING_ENABLED', 'false');
+  mocks.auth.mockResolvedValue(authenticatedContext('paid@example.test'));
+  mocks.identity.mockResolvedValue({
+    data: {
+      user: { email: 'paid@example.test', email_confirmed_at: '2026-01-01' },
+    },
+    error: null,
+  });
+  mocks.tier.mockResolvedValue('PRO');
+  expect((await POST(request(), params)).status).toBe(403);
+  expect(mocks.tier).not.toHaveBeenCalled();
   expect(mocks.insert).not.toHaveBeenCalled();
 });

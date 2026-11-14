@@ -1,4 +1,4 @@
-import { beforeEach, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, expect, it, vi } from 'vitest';
 
 const mocks = vi.hoisted(() => ({
   app: 'meet' as 'meet' | 'parley',
@@ -40,6 +40,10 @@ vi.mock('@tuturuuu/utils/workspace-helper', () => ({
 import { getMeetCallAccess } from './call-access';
 
 const meetingId = '00000000-0000-4000-8000-000000000001';
+afterEach(() => {
+  vi.unstubAllEnvs();
+});
+
 beforeEach(() => {
   mocks.app = 'meet';
   vi.resetAllMocks();
@@ -258,6 +262,7 @@ it('suggests an account name but saves a preferred display name before future jo
 it.each(['PLUS', 'PRO', 'ENTERPRISE'])(
   'admits invitees of a verified external %s host without workspace access',
   async (tier) => {
+    vi.stubEnv('MEET_PAID_TIER_HOSTING_ENABLED', 'true');
     mocks.host.mockResolvedValue({
       data: {
         user: {
@@ -277,6 +282,7 @@ it.each(['PLUS', 'PRO', 'ENTERPRISE'])(
   }
 );
 it('rejects an unverified paid host', async () => {
+  vi.stubEnv('MEET_PAID_TIER_HOSTING_ENABLED', 'true');
   mocks.host.mockResolvedValue({
     data: { user: { email: 'paid@example.test', email_confirmed_at: null } },
     error: null,
@@ -289,6 +295,7 @@ it('rejects an unverified paid host', async () => {
 });
 
 it('fails closed with retryable status when host entitlement is unavailable', async () => {
+  vi.stubEnv('MEET_PAID_TIER_HOSTING_ENABLED', 'true');
   mocks.host.mockResolvedValue({
     data: {
       user: {
