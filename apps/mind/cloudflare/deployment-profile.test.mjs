@@ -14,6 +14,27 @@ test('staging and production use isolated route-free Worker identities', () => {
   assert.throws(() => deploymentProfile('prod'), /Expected/);
 });
 
+test('each profile binds its own Worker and the shared abuse guard', () => {
+  const guard = {
+    binding: 'ABUSE_GUARD',
+    service: 'tuturuuu-abuse-guard',
+    entrypoint: 'AbuseGuardEntrypoint',
+  };
+  assert.deepEqual(deploymentProfile('staging').services, [
+    { binding: 'WORKER_SELF_REFERENCE', service: 'tuturuuu-mind-vite-staging' },
+    guard,
+  ]);
+  assert.deepEqual(deploymentProfile('production').services, [
+    { binding: 'WORKER_SELF_REFERENCE', service: 'tuturuuu-mind' },
+    guard,
+  ]);
+});
+
+test('staging binds no production Worker', () => {
+  const targets = deploymentProfile('staging').services.map((s) => s.service);
+  assert.ok(!targets.includes('tuturuuu-mind'));
+});
+
 test('void config stays route-free and derives identity from the profile', () => {
   const source = readFileSync(
     new URL('../void.config.ts', import.meta.url),
@@ -21,15 +42,7 @@ test('void config stays route-free and derives identity from the profile', () =>
   );
   assert.match(source, /name: profile\.name/);
   assert.match(source, /vars: profile\.vars/);
-  // Both profiles carry the same two service bindings, declared literally.
-  assert.match(
-    source,
-    /binding: 'WORKER_SELF_REFERENCE',\s+service: 'tuturuuu-mind'/
-  );
-  assert.match(
-    source,
-    /binding: 'ABUSE_GUARD',\s+service: 'tuturuuu-abuse-guard',\s+entrypoint: 'AbuseGuardEntrypoint'/
-  );
+  assert.match(source, /services: profile\.services/);
   assert.match(source, /workers_dev: false/);
   assert.match(source, /preview_urls: false/);
   assert.doesNotMatch(source, /\broutes?\s*:/);
@@ -50,13 +63,6 @@ test('artifact seal enforces the selected Worker identity and services', () => {
     const expected = deploymentProfile(profile);
     assert.equal(result.name, expected.name);
     assert.equal(result.noindex, expected.vars.TUTURUUU_NOINDEX);
-    assert.deepEqual(result.services, [
-      { binding: 'WORKER_SELF_REFERENCE', service: 'tuturuuu-mind' },
-      {
-        binding: 'ABUSE_GUARD',
-        service: 'tuturuuu-abuse-guard',
-        entrypoint: 'AbuseGuardEntrypoint',
-      },
-    ]);
+    assert.deepEqual(result.services, expected.services);
   }
 });

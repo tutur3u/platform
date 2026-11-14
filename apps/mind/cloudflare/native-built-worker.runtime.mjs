@@ -36,7 +36,9 @@ import { effectiveWorkerConfig } from '../../../scripts/start-bridge-codemod/wor
 
 const app = await realpath(fileURLToPath(new URL('../', import.meta.url)));
 const require = createRequire(join(app, 'package.json'));
-const WORKER = 'tuturuuu-mind-vite-staging';
+const { deploymentProfile } = await import('./deployment-profile.ts');
+const PROFILE = deploymentProfile();
+const WORKER = PROFILE.name;
 const PUBLIC_FILES = ['robots.txt'];
 // From start-bridge.routes.json `runtime`: a status, or a redirect prefix.
 const EXPECTED = { '/': { redirect: '/login' } };
@@ -133,7 +135,8 @@ test(
       WORKER_CONFIG.compatibilityFlags
     );
     assert.equal(config.workers_dev, WORKER_CONFIG.workersDev);
-    assert.equal(config.vars?.TUTURUUU_NOINDEX, '1');
+    assert.equal(config.vars?.TUTURUUU_NOINDEX, PROFILE.vars.TUTURUUU_NOINDEX);
+    assert.deepEqual(config.services, PROFILE.services);
     for (const name of PUBLIC_FILES)
       assert.equal(
         await sha256(join(app, 'dist/client', name)),

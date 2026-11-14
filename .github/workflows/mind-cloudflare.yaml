@@ -160,15 +160,20 @@ jobs:
       deployments: read
     with:
       workflow_name: mind-cloudflare.yaml
-  # Qualification only: no staging or production publisher.
+  # Qualify both route-free identities; no staging or production publisher.
   native:
     needs: [check-ci, affected-gate]
     if: ${{ (needs.affected-gate.outputs.run == 'true' && (needs.check-ci.outputs.should_run == 'true')) && (github.event_name != 'pull_request' || contains(github.event.pull_request.labels.*.name, 'ready-for-ci')) }}
+    strategy:
+      matrix:
+        profile: [staging, production]
     uses: ./.github/workflows/native-start-app.yaml
     permissions:
       contents: read
     with:
       app: mind
+      profile-env: VITE_MIND_NATIVE_PROFILE=${{ matrix.profile }}
+      artifact-suffix: ${{ matrix.profile }}
       package: '@tuturuuu/mind'
       artifact-script: scripts/ci/mind-native-artifact.py
       env-interface: MindGeneratedEnv
@@ -232,16 +237,6 @@ jobs:
           command: cd apps/mind && bun run build:cloudflare
           token: ''
           team: ''
-      - name: Require the production profile in the emitted config
-        run: |
-          node -e "
-          const c = require('./apps/mind/dist/server/wrangler.json');
-          const ok = c.name === 'tuturuuu-mind'
-            && c.vars?.TUTURUUU_NOINDEX === '0'
-            && c.services?.some((s) => s.binding === 'WORKER_SELF_REFERENCE' && s.service === 'tuturuuu-mind')
-            && c.services?.some((s) => s.binding === 'ABUSE_GUARD' && s.service === 'tuturuuu-abuse-guard' && s.entrypoint === 'AbuseGuardEntrypoint');
-          if (!ok) { console.error('emitted wrangler.json is not the production profile'); process.exit(1); }
-          "
       - name: Write the production wrangler config
         run: |
           node --input-type=module <<'JS'

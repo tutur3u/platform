@@ -19,6 +19,7 @@ const apps = [
   'forms',
   'inventory',
   'nova',
+  'mind',
   'meet',
   'calendar',
   'mail',

@@ -9,6 +9,7 @@ const protectedSurfaces = {
   forms: ['frontend'],
   inventory: ['frontend'],
   nova: ['frontend'],
+  mind: ['frontend'],
   mastermind: ['frontend'],
   meet: ['frontend', 'realtime-do'],
   calendar: ['frontend'],
