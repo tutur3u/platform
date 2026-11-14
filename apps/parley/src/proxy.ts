@@ -1,3 +1,4 @@
+import { withCanonicalLocaleCookie } from '@tuturuuu/auth/locale-cookie';
 import {
   createCentralizedAuthProxy,
   getRequestHeadersWithResponseCookies,
@@ -30,7 +31,7 @@ const auth = createCentralizedAuthProxy({
   mfa: { enabled: true, excludedPaths: ['/login'] },
 });
 const intl = createIntlMiddleware(routing);
-export default async function proxy(request: NextRequest) {
+async function handleProxy(request: NextRequest) {
   if (request.nextUrl.pathname.startsWith('/api/')) {
     const denied = await guardApiProxyRequest(request, {
       prefixBase: 'proxy:parley:api',
@@ -108,6 +109,15 @@ export default async function proxy(request: NextRequest) {
 
   return finish(result);
 }
+
+const LOCALE_COOKIE_ORIGINS = {
+  canonicalOrigins: [BASE_URL],
+  webAppUrl: TTR_URL,
+};
+
+const proxy = withCanonicalLocaleCookie(handleProxy, LOCALE_COOKIE_ORIGINS);
+export default proxy;
+
 export const config = {
   matcher: [
     '/((?!_next/static|_next/image|favicon.ico|meet-live-processor.js|.*\\.(?:svg|png|jpg|jpeg|gif|webp)$).*)',

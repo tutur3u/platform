@@ -477,6 +477,27 @@ panel. The source scanner also follows typed shared helpers such as
 conditional product-only branches covered with an explicit key exception
 rather than weakening the whole consumer scope.
 
+### Locale cookie scope
+
+next-intl's middleware writes `NEXT_LOCALE` itself, for example when a request
+has no `Accept-Language` or carries an invalid locale cookie. That cookie is
+host-only and not `Secure`. Every page proxy that runs next-intl therefore
+exports a wrapped proxy:
+
+- With `@tuturuuu/auth`: `withCanonicalLocaleCookie(handleProxy, { canonicalOrigins: [BASE_URL], webAppUrl })`
+  from `@tuturuuu/auth/locale-cookie`.
+- Without it (tools, marketing): `withSecureLocaleCookie(handleProxy, () => BASE_URL)`
+  from `@tuturuuu/utils/locale-cookie`.
+
+The wrapper re-derives `Domain` and `Secure` for every `NEXT_LOCALE` cookie
+from the canonical origin, never from `Host` or an unproven `X-Forwarded-Host`.
+A host-only cookie stays host-only. A cookie written with a `Domain` keeps the
+shared-cookie scope of the canonical origin. Both are `Secure` on an `https`
+origin. Value, `Path`, `Max-Age` and `SameSite` are unchanged. Cookies the
+proxy writes itself use `getCanonicalLocaleCookieOptions`.
+`packages/auth/src/locale-cookie-adoption.test.ts` fails for a next-intl proxy
+that is not wrapped.
+
 ## Moving a feature from web to a satellite
 
 Resolve every import to an **absolute path** before moving anything. A
