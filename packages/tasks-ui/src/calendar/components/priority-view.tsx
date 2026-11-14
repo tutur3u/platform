@@ -1,26 +1,7 @@
 'use client';
 
 import { useQuery } from '@tanstack/react-query';
-import type { LucideIcon } from '@tuturuuu/icons';
-import {
-  Briefcase,
-  Calendar,
-  CheckCircle,
-  CheckIcon,
-  ChevronDown,
-  Clock,
-  horseHead,
-  Icon,
-  Loader2,
-  Plus,
-  Rabbit,
-  Scissors,
-  Search,
-  Sparkles,
-  Turtle,
-  User,
-  unicornHead,
-} from '@tuturuuu/icons';
+import { Loader2, Plus, Search } from '@tuturuuu/icons';
 import {
   listWorkspaceTaskLists,
   listWorkspaceTasks,
@@ -31,17 +12,15 @@ import type { TaskPriority } from '@tuturuuu/types/primitives/Priority';
 import { useCalendar } from '@tuturuuu/ui/hooks/use-calendar';
 import { useWorkspaceActor } from '@tuturuuu/ui/hooks/use-workspace-visibility';
 import { getTaskApiUrl } from '@tuturuuu/ui/lib/tasks-app-url';
-import { Progress } from '@tuturuuu/ui/progress';
 import { toast } from '@tuturuuu/ui/sonner';
 import type { ExtendedWorkspaceTask } from '@tuturuuu/ui/time-tracker/types';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@tuturuuu/ui/tooltip';
-import { cn } from '@tuturuuu/utils/format';
 import { useRouter } from 'next/navigation';
 import React, { useEffect, useMemo, useState } from 'react';
 import { useDebouncedCallback } from 'use-debounce';
 import { useTaskDialog } from '../../tu-do/hooks/useTaskDialog';
-import ActionsDropdown from './actions-dropdown';
-import PriorityDropdown from './priority-dropdown';
+import { PlanTaskGroup } from './plan-task-group';
+import type { PlanTaskHandlers, PlanTaskSchedule } from './plan-task-row';
 import { QuickTaskDialog } from './quick-task-dialog';
 import { SchedulingDialog } from './scheduling-dialog';
 import { visibleTaskScheduleSnapshot } from './task-schedule-snapshot';
@@ -54,53 +33,8 @@ const PRIORITY_LABELS: Record<TaskPriority, string> = {
   low: 'Low',
 };
 
-// Priority icons (matching taskPriorityUtils.tsx)
-const PRIORITY_ICONS: Record<TaskPriority, React.ReactElement> = {
-  critical: <Icon iconNode={unicornHead} />,
-  high: <Icon iconNode={horseHead} />,
-  normal: <Rabbit />,
-  low: <Turtle />,
-};
-
-function getPriorityIcon(
-  priority: TaskPriority | null | undefined,
-  className?: string
-): React.ReactNode {
-  if (!priority) return null;
-  const icon = PRIORITY_ICONS[priority];
-  return icon ? React.cloneElement(icon, { className } as any) : null;
-}
-
 // Priority order for grouping (highest to lowest)
 const PRIORITY_ORDER = ['critical', 'high', 'normal', 'low'] as const;
-
-// Priority group styling
-const PRIORITY_GROUP_COLORS: Record<string, string> = {
-  critical: 'from-dynamic-red/20 to-dynamic-red/30 border-dynamic-red/30',
-  high: 'from-dynamic-orange/20 to-dynamic-orange/30 border-dynamic-orange/30',
-  normal:
-    'from-dynamic-yellow/20 to-dynamic-yellow/30 border-dynamic-yellow/30',
-  low: 'from-dynamic-blue/20 to-dynamic-blue/30 border-dynamic-blue/30',
-};
-
-// Calendar hours type icons
-const CALENDAR_HOURS_ICONS: Record<
-  string,
-  { icon: LucideIcon; label: string }
-> = {
-  work_hours: { icon: Briefcase, label: 'Work Hours' },
-  meeting_hours: { icon: Calendar, label: 'Meeting Hours' },
-  personal_hours: { icon: User, label: 'Personal Hours' },
-};
-
-// Format duration helper
-function formatDuration(totalMinutes: number): string {
-  const hours = Math.floor(totalMinutes / 60);
-  const minutes = Math.round(totalMinutes % 60);
-  if (hours === 0) return `${minutes}m`;
-  if (minutes === 0) return `${hours}h`;
-  return `${hours}h ${minutes}m`;
-}
 
 export default function PriorityView({
   wsId,
@@ -158,14 +92,14 @@ export default function PriorityView({
     return groups;
   }, [combinedTasks]);
 
-  // Initialize collapsed state - collapse empty groups by default
+  // Empty groups and the lower priorities start collapsed.
   const [collapsedGroups, setCollapsedGroups] = useState<Set<string>>(() => {
     const emptyGroups = new Set<string>();
     PRIORITY_ORDER.forEach((key) => {
       const taskCount = allTasks.filter(
         (t) => (t.priority || 'normal') === key
       ).length;
-      if (taskCount === 0) {
+      if (taskCount === 0 || key === 'normal' || key === 'low') {
         emptyGroups.add(key);
       }
     });
@@ -526,6 +460,31 @@ export default function PriorityView({
     setQuickTaskDialogOpen(true);
   };
 
+  const scheduleFor = (task: ExtendedWorkspaceTask): PlanTaskSchedule => {
+    const loaded = Object.hasOwn(scheduleSettingsByTaskId, task.id);
+    const settings = loaded ? scheduleSettingsByTaskId[task.id] : null;
+    const totalHours = settings?.total_duration ?? task.total_duration ?? 0;
+    const calendarHours = settings?.calendar_hours ?? task.calendar_hours;
+    return {
+      totalMinutes: calendarHours ? (totalHours || 0) * 60 : 0,
+      scheduledMinutes: scheduledMinutesMap[task.id] ?? 0,
+      loading: (isLoadingScheduleBatch || isFetchingScheduleBatch) && !loaded,
+    };
+  };
+  const rowHandlers: PlanTaskHandlers = {
+    onOpen: handleTaskClick,
+    onEdit: handleEdit,
+    onScheduling: handleScheduling,
+    onStartDateChange: handleStartDateChange,
+    onDueDateChange: handleDueDateChange,
+    onMarkDone: handleMarkDone,
+    onDelete: handleDelete,
+    onPriorityChange: handlePriorityChange,
+    onDragStart: handleDragStart,
+    onDragEnd: handleDragEnd,
+  };
+  const now = new Date();
+
   return (
     <div className="w-full space-y-3 overflow-hidden">
       {/* Header with Search and Add Task */}
@@ -583,307 +542,20 @@ export default function PriorityView({
           </TooltipContent>
         </Tooltip>
       </div>
-      {/* Priority Groups */}
-      <div className="w-full space-y-3 overflow-hidden">
-        {PRIORITY_ORDER.map((priorityKey, index) => {
-          const tasks = grouped[priorityKey] || [];
-          const colorClasses = PRIORITY_GROUP_COLORS[priorityKey];
-          const label = PRIORITY_LABELS[priorityKey];
-          const isCollapsed = collapsedGroups.has(priorityKey);
-
-          return (
-            <div
-              key={priorityKey}
-              className="group slide-in-from-bottom-2 w-full animate-in overflow-hidden duration-200"
-              style={{ animationDelay: `${index * 50}ms` }}
-            >
-              {/* Collapsible Header */}
-              <button
-                type="button"
-                onClick={() => toggleGroup(priorityKey)}
-                className="mb-1.5 flex w-full items-center gap-1.5 rounded-md px-1 py-0.5 text-left transition-colors hover:bg-muted/50"
-              >
-                <ChevronDown
-                  className={cn(
-                    'h-3.5 w-3.5 shrink-0 text-muted-foreground transition-transform duration-200',
-                    isCollapsed && '-rotate-90'
-                  )}
-                />
-                {getPriorityIcon(priorityKey, 'h-4 w-4 shrink-0')}
-                <h3 className="font-medium text-foreground text-sm">{label}</h3>
-                <span className="rounded-full bg-muted px-1.5 py-0.5 text-muted-foreground text-xs">
-                  {tasks.length}
-                </span>
-              </button>
-
-              {/* Collapsible Content */}
-              {!isCollapsed && tasks.length > 0 && (
-                <div
-                  className={`w-full overflow-hidden rounded-lg border bg-linear-to-br ${colorClasses} transition-all duration-200`}
-                >
-                  <div className="w-full space-y-1.5 overflow-hidden bg-background/80 p-2 backdrop-blur-sm">
-                    {tasks.map((task) => {
-                      // Calculate total and scheduled minutes for progress display
-                      const hasLoadedScheduleSettings = Object.hasOwn(
-                        scheduleSettingsByTaskId,
-                        task.id
-                      );
-
-                      const scheduleSettings = hasLoadedScheduleSettings
-                        ? scheduleSettingsByTaskId[task.id]
-                        : null;
-
-                      const totalMinutes =
-                        ((scheduleSettings?.total_duration ??
-                          task.total_duration ??
-                          0) ||
-                          0) * 60;
-                      // Get scheduled minutes from the fetched data
-                      const scheduledMinutes =
-                        scheduledMinutesMap[task.id] ?? 0;
-                      const progress =
-                        totalMinutes > 0
-                          ? Math.min(
-                              100,
-                              (scheduledMinutes / totalMinutes) * 100
-                            )
-                          : 0;
-                      const isFullyScheduled =
-                        scheduledMinutes >= totalMinutes && totalMinutes > 0;
-                      const calendarHours =
-                        scheduleSettings?.calendar_hours ?? task.calendar_hours;
-                      const hasScheduleSettings =
-                        totalMinutes > 0 && !!calendarHours;
-                      const CalendarHoursIcon = calendarHours
-                        ? CALENDAR_HOURS_ICONS[calendarHours]?.icon
-                        : null;
-                      const isSplittable =
-                        scheduleSettings?.is_splittable ?? task.is_splittable;
-                      const minSplitDurationMinutes =
-                        scheduleSettings?.min_split_duration_minutes ??
-                        task.min_split_duration_minutes;
-                      const maxSplitDurationMinutes =
-                        scheduleSettings?.max_split_duration_minutes ??
-                        task.max_split_duration_minutes;
-                      const autoSchedule =
-                        scheduleSettings?.auto_schedule ?? task.auto_schedule;
-                      const isScheduleInfoLoading =
-                        (isLoadingScheduleBatch || isFetchingScheduleBatch) &&
-                        !hasLoadedScheduleSettings;
-                      // Use task completion status for visual styling
-                      const isCompleted = !!task.closed_at;
-
-                      return (
-                        <div
-                          key={task.id}
-                          draggable={!isCompleted}
-                          onDragStart={(e) => handleDragStart(e, task)}
-                          onDragEnd={handleDragEnd}
-                          onClick={() => handleTaskClick(task.id)}
-                          className={cn(
-                            'group/task relative w-full overflow-hidden rounded-md border bg-background/60 p-2 transition-all duration-150',
-                            isCompleted
-                              ? 'border-dynamic-green/30 bg-dynamic-green/5'
-                              : 'cursor-grab border-border/50 hover:border-border hover:bg-background/80 active:cursor-grabbing'
-                          )}
-                        >
-                          <div className="flex w-full items-start gap-2 overflow-hidden">
-                            <div className="min-w-0 flex-1 overflow-hidden">
-                              {/* Task Name */}
-                              <div
-                                className={cn(
-                                  'wrap-break-word line-clamp-2 cursor-pointer font-medium text-sm transition-colors hover:text-primary',
-                                  isCompleted && 'text-muted-foreground'
-                                )}
-                              >
-                                {task.name || (
-                                  <span className="text-muted-foreground italic">
-                                    Untitled task
-                                  </span>
-                                )}
-                              </div>
-
-                              {/* Task Metadata Badges */}
-                              <div className="mt-1 flex flex-wrap items-center gap-1">
-                                {/* Due Date */}
-                                {task.due_date && (
-                                  <Tooltip>
-                                    <TooltipTrigger asChild>
-                                      <div className="inline-flex shrink-0 items-center gap-0.5 rounded bg-dynamic-red/10 px-1 py-0.5 text-[10px] text-dynamic-red">
-                                        <Calendar className="h-2.5 w-2.5" />
-                                        {formatDueDate(task.due_date)}
-                                      </div>
-                                    </TooltipTrigger>
-                                    <TooltipContent>Due date</TooltipContent>
-                                  </Tooltip>
-                                )}
-
-                                {/* Duration */}
-                                {isScheduleInfoLoading && (
-                                  <Tooltip>
-                                    <TooltipTrigger asChild>
-                                      <div className="inline-flex shrink-0 items-center gap-0.5 rounded bg-muted/40 px-1 py-0.5 text-[10px] text-muted-foreground">
-                                        <Loader2 className="h-2.5 w-2.5 animate-spin" />
-                                        Loading
-                                      </div>
-                                    </TooltipTrigger>
-                                    <TooltipContent>
-                                      Loading scheduling settings
-                                    </TooltipContent>
-                                  </Tooltip>
-                                )}
-
-                                {hasScheduleSettings && (
-                                  <Tooltip>
-                                    <TooltipTrigger asChild>
-                                      <div className="inline-flex shrink-0 items-center gap-0.5 rounded bg-dynamic-blue/10 px-1 py-0.5 text-[10px] text-dynamic-blue">
-                                        <Clock className="h-2.5 w-2.5" />
-                                        {formatDuration(totalMinutes)}
-                                      </div>
-                                    </TooltipTrigger>
-                                    <TooltipContent>
-                                      Allocated duration
-                                    </TooltipContent>
-                                  </Tooltip>
-                                )}
-
-                                {/* Calendar Hours Type */}
-                                {CalendarHoursIcon && (
-                                  <Tooltip>
-                                    <TooltipTrigger asChild>
-                                      <div className="inline-flex shrink-0 items-center rounded bg-dynamic-purple/10 px-1 py-0.5 text-[10px] text-dynamic-purple">
-                                        <CalendarHoursIcon className="h-2.5 w-2.5" />
-                                      </div>
-                                    </TooltipTrigger>
-                                    <TooltipContent>
-                                      {CALENDAR_HOURS_ICONS[calendarHours!]
-                                        ?.label ?? 'Schedule type'}
-                                    </TooltipContent>
-                                  </Tooltip>
-                                )}
-
-                                {/* Splittable Indicator */}
-                                {isSplittable && (
-                                  <Tooltip>
-                                    <TooltipTrigger asChild>
-                                      <div className="inline-flex shrink-0 items-center rounded bg-dynamic-orange/10 px-1 py-0.5 text-[10px] text-dynamic-orange">
-                                        <Scissors className="h-2.5 w-2.5" />
-                                      </div>
-                                    </TooltipTrigger>
-                                    <TooltipContent>
-                                      Splittable (
-                                      {formatDuration(
-                                        minSplitDurationMinutes ?? 30
-                                      )}{' '}
-                                      -{' '}
-                                      {formatDuration(
-                                        maxSplitDurationMinutes ?? 120
-                                      )}
-                                      )
-                                    </TooltipContent>
-                                  </Tooltip>
-                                )}
-
-                                {/* Auto-schedule Indicator */}
-                                {autoSchedule && (
-                                  <Tooltip>
-                                    <TooltipTrigger asChild>
-                                      <div className="inline-flex shrink-0 items-center rounded bg-dynamic-sky/10 px-1 py-0.5 text-[10px] text-dynamic-sky">
-                                        <Sparkles className="h-2.5 w-2.5" />
-                                      </div>
-                                    </TooltipTrigger>
-                                    <TooltipContent>
-                                      Auto-schedule enabled
-                                    </TooltipContent>
-                                  </Tooltip>
-                                )}
-
-                                {/* Completed Indicator */}
-                                {isCompleted && (
-                                  <Tooltip>
-                                    <TooltipTrigger asChild>
-                                      <div className="inline-flex shrink-0 items-center gap-0.5 rounded bg-dynamic-green/10 px-1 py-0.5 text-[10px] text-dynamic-green">
-                                        <CheckCircle className="h-2.5 w-2.5" />
-                                      </div>
-                                    </TooltipTrigger>
-                                    <TooltipContent>
-                                      Task completed
-                                    </TooltipContent>
-                                  </Tooltip>
-                                )}
-                              </div>
-
-                              {/* Progress/Duration Display */}
-                              {hasScheduleSettings && (
-                                <div className="mt-1.5 w-full space-y-0.5">
-                                  <div className="flex items-center justify-between text-[9px] text-muted-foreground">
-                                    <span>
-                                      {formatDuration(scheduledMinutes)} /{' '}
-                                      {formatDuration(totalMinutes)}
-                                    </span>
-                                    {isFullyScheduled && (
-                                      <span className="flex items-center gap-0.5 text-dynamic-green">
-                                        <CheckIcon className="h-2.5 w-2.5" />
-                                        Scheduled
-                                      </span>
-                                    )}
-                                  </div>
-                                  <Progress
-                                    value={progress}
-                                    className={cn(
-                                      'h-1',
-                                      isFullyScheduled
-                                        ? '[&>div]:bg-dynamic-green'
-                                        : '[&>div]:bg-dynamic-blue'
-                                    )}
-                                  />
-                                </div>
-                              )}
-                            </div>
-
-                            {/* Actions - Stop propagation to prevent task click */}
-                            <div
-                              className="flex shrink-0 items-center gap-0.5"
-                              onClick={(e) => e.stopPropagation()}
-                            >
-                              {/* Three-dots menu - hidden by default, appears on hover (opacity only, no width change) */}
-                              <div className="opacity-0 transition-opacity duration-150 focus-within:opacity-100 group-hover/task:opacity-100">
-                                <ActionsDropdown
-                                  taskId={task.id}
-                                  taskName={task.name || 'Untitled'}
-                                  startDate={task.start_date}
-                                  endDate={task.end_date}
-                                  onEdit={handleEdit}
-                                  onScheduling={handleScheduling}
-                                  onStartDateChange={handleStartDateChange}
-                                  onDueDateChange={handleDueDateChange}
-                                  onMarkDone={handleMarkDone}
-                                  onDelete={handleDelete}
-                                />
-                              </div>
-                              <PriorityDropdown
-                                taskId={task.id}
-                                currentPriority={task.priority || 'normal'}
-                                onPriorityChange={handlePriorityChange}
-                              />
-                            </div>
-                          </div>
-                        </div>
-                      );
-                    })}
-                  </div>
-                </div>
-              )}
-
-              {/* Empty state when expanded but no tasks */}
-              {!isCollapsed && tasks.length === 0 && (
-                <div className="rounded-md border border-border/50 border-dashed p-2 text-center">
-                  <div className="text-muted-foreground text-xs">No tasks</div>
-                </div>
-              )}
-            </div>
-          );
-        })}
+      <div className="w-full space-y-2">
+        {PRIORITY_ORDER.map((priorityKey) => (
+          <PlanTaskGroup
+            key={priorityKey}
+            priority={priorityKey}
+            label={PRIORITY_LABELS[priorityKey]}
+            tasks={grouped[priorityKey] || []}
+            collapsed={collapsedGroups.has(priorityKey)}
+            onToggle={() => toggleGroup(priorityKey)}
+            scheduleFor={scheduleFor}
+            handlers={rowHandlers}
+            now={now}
+          />
+        ))}
       </div>
       <SchedulingDialog
         wsId={wsId}
@@ -902,10 +574,4 @@ export default function PriorityView({
       />
     </div>
   );
-}
-
-function formatDueDate(date: string | Date) {
-  // expects date as string or Date, returns MM/DD or DD/MM as you prefer
-  const d = new Date(date);
-  return `${d.getMonth() + 1}/${d.getDate()}`;
 }

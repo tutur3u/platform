@@ -1603,7 +1603,9 @@
     "plan_panel": {
       "collapse": "Thu gọn bảng kế hoạch",
       "habits": "Thói quen",
+      "no_tasks": "Không có công việc",
       "open": "Mở bảng kế hoạch",
+      "show_more": "Xem thêm {count}",
       "tasks": "Công việc",
       "title": "Kế hoạch"
     },

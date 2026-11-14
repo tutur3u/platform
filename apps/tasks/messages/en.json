@@ -1603,7 +1603,9 @@
     "plan_panel": {
       "collapse": "Collapse plan panel",
       "habits": "Habits",
+      "no_tasks": "No tasks",
       "open": "Open plan panel",
+      "show_more": "Show {count} more",
       "tasks": "Tasks",
       "title": "Plan"
     },
