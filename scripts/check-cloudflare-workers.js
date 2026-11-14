@@ -689,9 +689,9 @@ function validateTanstackWebWranglerConfig(config) {
     }
   );
 
-  if (config.workers_dev !== true) {
+  if (config.workers_dev !== false || config.preview_urls !== false) {
     errors.push(
-      'apps/tanstack-web/wrangler.jsonc must keep workers_dev enabled for preview deployments.'
+      'apps/tanstack-web/wrangler.jsonc must keep workers_dev and preview_urls disabled.'
     );
   }
 

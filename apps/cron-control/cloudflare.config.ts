@@ -11,8 +11,8 @@ export default defineConfig({
     name: 'tuturuuu-cron-control',
     compatibilityDate: '2026-09-28',
     entrypoint: 'src/worker.ts',
-    workersDev: true,
-    previewUrls: true,
+    workersDev: false,
+    previewUrls: false,
     observability: {
       enabled: true,
       headSamplingRate: 0.05,

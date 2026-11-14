@@ -3,6 +3,8 @@
   "name": "tuturuuu-mail-email-routing",
   "main": "src/email-worker/index.ts",
   "compatibility_date": "2026-07-10",
+  "workers_dev": false,
+  "preview_urls": false,
   "r2_buckets": [
     {
       "binding": "MAIL_R2_BUCKET",

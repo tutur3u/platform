@@ -49,7 +49,8 @@ const production = defineConfig({
       enabled: true,
       head_sampling_rate: 0.05,
     },
-    workers_dev: true,
+    workers_dev: false,
+    preview_urls: false,
     routes: [
       {
         pattern: 'meet.tuturuuu.com',
