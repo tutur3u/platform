@@ -113,6 +113,12 @@ class CacheStore {
   final Map<String, Future<void>> _replicaWrites = {};
   final Map<(String?, String?, String?), int> _scopeRevisions = {};
   final Map<(String?, String?, String?), int> _clearingScopes = {};
+  int _clearGeneration = 0;
+
+  /// Advances when any scope clear starts and again when it finishes, so
+  /// callers can tell that cached data may have been dropped since they last
+  /// looked (logout, account switch, offline storage reset).
+  int get clearGeneration => _clearGeneration;
 
   void _putRecord(CachedResourceRecord record) {
     final previous = _memory[record.key];
