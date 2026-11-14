@@ -1,8 +1,8 @@
 import { beforeEach, expect, it, vi } from 'vitest';
 
 vi.mock('server-only', () => ({}));
-vi.mock('@tuturuuu/supabase/next/common', () => ({
-  checkEnvVariables: vi.fn(),
+vi.mock('@tuturuuu/supabase/next/secret-env', () => ({
+  checkSecretEnvVariables: vi.fn(),
 }));
 vi.mock('./employee-creation-authorization', () => ({
   authorizeEmployeeCreation: vi.fn(),

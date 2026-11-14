@@ -12,8 +12,8 @@ import {
 } from './service';
 
 vi.mock('server-only', () => ({}));
-vi.mock('@tuturuuu/supabase/next/common', () => ({
-  checkEnvVariables: () => ({
+vi.mock('@tuturuuu/supabase/next/secret-env', () => ({
+  checkSecretEnvVariables: () => ({
     url: 'https://synthetic.supabase.co',
     key: 'synthetic-key',
   }),

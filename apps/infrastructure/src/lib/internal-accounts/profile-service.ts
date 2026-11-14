@@ -1,5 +1,5 @@
 import 'server-only';
-import { checkEnvVariables } from '@tuturuuu/supabase/next/common';
+import { checkSecretEnvVariables } from '@tuturuuu/supabase/next/secret-env';
 import type { SupabaseClient } from '@tuturuuu/supabase/types';
 import type { Database } from '@tuturuuu/types';
 import { isValidAdminProfileHandle } from '@tuturuuu/utils/internal-accounts/employee-profile-handle';
@@ -46,7 +46,7 @@ export async function updateInternalAccountProfile(input: {
     )
       throw new InternalAccountAdminError('The username is invalid', 400);
     return await updateUnmanagedEmployeeProfile({
-      ...checkEnvVariables({ useSecretKey: true }),
+      ...checkSecretEnvVariables(),
       actorUserId: input.actorUserId,
       targetUserId: input.targetUserId,
       email: input.email,

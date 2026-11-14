@@ -6,8 +6,8 @@ const runtime = vi.hoisted(() => ({
   authorize: vi.fn(),
 }));
 vi.mock('server-only', () => ({}));
-vi.mock('@tuturuuu/supabase/next/common', () => ({
-  checkEnvVariables: runtime.config,
+vi.mock('@tuturuuu/supabase/next/secret-env', () => ({
+  checkSecretEnvVariables: runtime.config,
 }));
 vi.mock('@tuturuuu/supabase/next/server', () => ({
   createAdminClient: runtime.admin,
