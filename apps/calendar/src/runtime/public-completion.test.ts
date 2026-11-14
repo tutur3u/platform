@@ -353,6 +353,68 @@ it.each([
   }
 );
 
+describe('public completion routes on the Next `[locale]` route tree', () => {
+  for (const method of ['GET', 'HEAD']) {
+    it.each([
+      ['/verify-token', {}, 'en'],
+      ['/verify-token', { cookie: 'NEXT_LOCALE=vi' }, 'vi'],
+      ['/verify-token', { 'accept-language': 'vi,en;q=0.5' }, 'vi'],
+    ])(
+      `${method} unprefixed %s rewrites in place to the resolved-locale route`,
+      async (path, headers, locale) => {
+        const response = await proxy(
+          new NextRequest(`${origin}${path}?nextUrl=%2Fpersonal`, {
+            method,
+            headers,
+          })
+        );
+        expect(response.status).toBe(200);
+        expect(response.headers.has('location')).toBe(false);
+        expect(response.headers.get('x-middleware-rewrite')).toBe(
+          `${origin}/${locale}/verify-token?nextUrl=%2Fpersonal`
+        );
+        expect(
+          response.headers.get('x-middleware-request-x-next-intl-locale')
+        ).toBe(locale);
+        expect(outbound).not.toHaveBeenCalled();
+        expect(ports.actor).not.toHaveBeenCalled();
+      }
+    );
+
+    it.each([
+      ['/en/verify-token', 'en'],
+      ['/vi/verify-token', 'vi'],
+    ])(
+      `${method} prefixed %s continues to its existing route`,
+      async (path, locale) => {
+        const response = await proxy(
+          new NextRequest(`${origin}${path}`, { method })
+        );
+        expect(response.status).toBe(200);
+        expect(response.headers.has('location')).toBe(false);
+        expect(response.headers.has('x-middleware-rewrite')).toBe(false);
+        expect(response.headers.get('x-middleware-next')).toBe('1');
+        expect(
+          response.headers.get('x-middleware-request-x-next-intl-locale')
+        ).toBe(locale);
+        expect(outbound).not.toHaveBeenCalled();
+      }
+    );
+  }
+
+  it('keeps an unprefixed token request on the shared token consumer', async () => {
+    outbound.mockImplementation(async () =>
+      Response.json({ valid: false }, { status: 401 })
+    );
+    const response = await proxy(
+      new NextRequest(`${origin}/verify-token?token=invalid`)
+    );
+    expect(response.status).toBe(307);
+    expect(response.headers.has('x-middleware-rewrite')).toBe(false);
+    expect(outbound).toHaveBeenCalledTimes(1);
+  });
+});
+
 it.each([
   ['/verify-token', 'NEXT_LOCALE=vi', '*', 'vi'],
   ['/en/verify-token', 'NEXT_LOCALE=vi', '*', 'en'],
