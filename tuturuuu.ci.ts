@@ -202,5 +202,13 @@ export const productionPublicationPolicy = {
       'Apps native cutover with route-free upload, private smoke and Vercel alias rollback',
     surfaces: ['frontend'],
   },
+  // Admission opens the route-free upload only; a release owner attaches the
+  // host after smoke.
+  workspace: {
+    state: 'admitted',
+    reason:
+      'Workspace native Start route-free upload with smoke and no gateway routes; host attach only after smoke',
+    surfaces: ['frontend'],
+  },
   shortener: { state: 'held', reason: 'held for wave-2 cutover' },
 } satisfies ProductionPublicationPolicy;

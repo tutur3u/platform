@@ -15,9 +15,10 @@ Next ports, request context, proxy and central API forwarding (see
 Qualification stays on the staging Worker name. A dispatch-only job,
 `workspace-cutover-artifact`, seals a route-free production artifact named
 `tuturuuu-workspace` (`workers_dev: false`, `preview_urls: false`, no `routes`).
-`productionPublicationPolicy` in `tuturuuu.ci.ts` does not admit the app, and
-`apps/web` on Vercel keeps serving every live path until a release owner
-attaches a host. The job does not deploy.
+`productionPublicationPolicy` in `tuturuuu.ci.ts` admits `workspace` for the
+`frontend` surface only: a route-free upload, no gateway routes, and no Vercel
+publisher. `apps/web` on Vercel keeps serving every live path until a release
+owner attaches a host after smoke. The job does not deploy.
 
 ## Route groups
 
