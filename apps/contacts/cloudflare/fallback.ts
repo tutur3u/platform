@@ -2,6 +2,7 @@ import {
   type ForwardOptions,
   forwardToCentralApi,
   HOP_BY_HOP_HEADERS,
+  STRIPPED_REQUEST_HEADERS,
 } from '@tuturuuu/start-bridge/api-forward';
 import { createOriginClientIpProof } from '@tuturuuu/utils/abuse-protection/origin-ip-proof';
 import { stagingProfile } from './profile';
@@ -28,7 +29,7 @@ export async function proxyNext(
   stripConnectionHeaders(headers);
   for (const name of [...headers.keys()]) {
     if (
-      ['forwarded', 'true-client-ip', 'cf-connecting-ip'].includes(name) ||
+      (STRIPPED_REQUEST_HEADERS as readonly string[]).includes(name) ||
       name.startsWith('x-vercel-')
     )
       headers.delete(name);

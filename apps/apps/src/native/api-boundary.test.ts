@@ -183,7 +183,11 @@ describe('Apps Web Request boundary', () => {
           'https://tuturuuu.com/api/v1/workspaces/other?tag=1&tag=2'
         );
         expect(forwarded.method).toBe(method);
-        expect([...forwarded.headers]).toEqual([...headers]);
+        // The guard sees client-IP claims; the central hop never receives them.
+        const centralHeaders = new Headers(headers);
+        for (const name of ['x-forwarded-for', 'x-real-ip', 'cf-connecting-ip'])
+          centralHeaders.delete(name);
+        expect([...forwarded.headers]).toEqual([...centralHeaders]);
         expect(await forwarded.text()).toBe(hasBody ? payload : '');
         return new Response(null, { status: 204 });
       });
