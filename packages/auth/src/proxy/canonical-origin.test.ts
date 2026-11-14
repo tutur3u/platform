@@ -189,27 +189,30 @@ describe('resolveCanonicalRequestOrigin (SR-XFH-RETURN)', () => {
   });
 
   describe('local development is unchanged', () => {
+    // The configured origin uses a different port, so these prove the
+    // request's own loopback port is kept rather than the fallback.
     it('keeps an explicit loopback port', () => {
       expect(
         resolve(
           'http://localhost:7809/workspace/tasks',
           { 'x-forwarded-host': 'localhost:7809', 'x-forwarded-proto': 'http' },
-          ['http://localhost:7809']
+          ['http://localhost:7803']
         )
       ).toBe('http://localhost:7809');
+      // NextURL normalises a 127.0.0.1 host to localhost.
       expect(
         resolve('http://127.0.0.1:7812/dashboard', {}, [
-          'http://localhost:7812',
+          'http://localhost:7803',
         ])
-      ).toBe('http://127.0.0.1:7812');
+      ).toBe('http://localhost:7812');
     });
 
-    it('uses the app origin for internal hosts without a loopback port', () => {
+    it('uses the app origin for non-loopback internal hosts', () => {
       expect(
         resolve('http://0.0.0.0:7809/workspace/tasks', {}, [
-          'http://localhost:7809',
+          'http://localhost:7803',
         ])
-      ).toBe('http://localhost:7809');
+      ).toBe('http://localhost:7803');
     });
   });
 
