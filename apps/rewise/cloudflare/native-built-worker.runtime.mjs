@@ -56,7 +56,11 @@ const EXPECTED = { '/': { redirect: 'https://tuturuuu.com/login' } };
 const POLICY_PROBES = [
   { kind: 'page', path: '/' },
   { kind: 'api', path: '/api/build-info' },
-  { kind: 'notFound', path: '/__native-smoke-missing__' },
+  {
+    kind: 'notFound',
+    skip: 'unknown paths redirect signed-out users to login',
+    fixture: 'cloudflare/anonymous-smoke.runtime.mjs',
+  },
 ];
 // The Worker's mounts: the generated defaults plus the app-owned
 // start-bridge.config.ts overrides, exactly as cloudflare/worker.ts spreads

@@ -20,6 +20,10 @@ const EXPECTED = {
     'https://rewise.tuturuuu.com/verify-token?nextUrl=%2F%3Fsmoke%3Dreturn',
   // The auth proxy handles /login before the page and normalizes the loop to /.
   '/login': 'https://rewise.tuturuuu.com/verify-token?nextUrl=%2F',
+  // The generated gate's notFound probe: the proxy redirects an unknown path
+  // before the router can answer 404.
+  '/__native-smoke-missing__':
+    'https://rewise.tuturuuu.com/verify-token?nextUrl=%2F__native-smoke-missing__',
 };
 const HOSTILE_HOST = 'evil.example';
 const SYNTHETIC_SECRETS = {
