@@ -41,6 +41,9 @@ vi.mock('./calendar-header', () => ({
 vi.mock('./agenda-view', () => ({ AgendaView: () => <div>Agenda</div> }));
 vi.mock('./calendar-loading-skeleton', () => ({
   CalendarLoadingSkeleton: () => null,
+  CalendarFirstPaintSkeleton: ({ view }: { view: string }) => (
+    <div data-testid="first-paint-skeleton">{view}</div>
+  ),
 }));
 vi.mock('./calendar-view-with-trail', () => ({
   CalendarViewWithTrail: () => null,
@@ -191,5 +194,34 @@ describe('satellite controlled calendar views', () => {
     expect(
       dates.some((date) => date.getMonth() === 10 && date.getDate() === 30)
     ).toBe(true);
+  });
+  it('holds the calendar space with a placeholder until dates resolve', () => {
+    mocks.dates = [];
+    try {
+      render(<ControlledCalendar initialView="month" />);
+      expect(screen.getByTestId('first-paint-skeleton')).toHaveTextContent(
+        'month'
+      );
+      expect(screen.queryByText(/^Header /)).toBeNull();
+    } finally {
+      mocks.dates = [new Date(2026, 8, 7)];
+    }
+  });
+  it('resolves a controlled week view to day on narrow screens at initialization', () => {
+    const width = window.innerWidth;
+    Object.defineProperty(window, 'innerWidth', {
+      configurable: true,
+      value: 390,
+    });
+    try {
+      render(<ControlledCalendar initialView="week" />);
+      expect(screen.getByText(/^day:/)).toBeVisible();
+      expect(screen.getByText('Header day')).toBeVisible();
+    } finally {
+      Object.defineProperty(window, 'innerWidth', {
+        configurable: true,
+        value: width,
+      });
+    }
   });
 });

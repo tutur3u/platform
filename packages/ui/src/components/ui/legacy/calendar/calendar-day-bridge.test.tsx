@@ -40,6 +40,7 @@ vi.mock('./calendar-header', () => ({
 vi.mock('./agenda-view', () => ({ AgendaView: () => null }));
 vi.mock('./calendar-loading-skeleton', () => ({
   CalendarLoadingSkeleton: () => null,
+  CalendarFirstPaintSkeleton: () => null,
 }));
 vi.mock('./calendar-view-with-trail', () => ({
   CalendarViewWithTrail: () => null,
