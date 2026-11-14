@@ -238,3 +238,123 @@ describe('Infrastructure Bearer session authorization', () => {
     }
   );
 });
+
+describe('protected build-info route authorization', () => {
+  const user = { id: '33333333-3333-4333-8333-333333333333' };
+  const getUser = vi.fn();
+
+  beforeEach(() => {
+    vi.resetAllMocks();
+    getUser.mockResolvedValue({ data: { user }, error: null });
+    mocks.createAdminClient.mockResolvedValue({ auth: { getUser } });
+    mocks.getSatelliteAppSessionUser.mockResolvedValue(user);
+    mocks.getPermissions.mockResolvedValue({
+      membershipType: 'MEMBER',
+      containsPermission: vi.fn(
+        (permission: string) => permission === 'view_infrastructure'
+      ),
+    });
+  });
+
+  async function buildInfo(authorization?: string) {
+    const { GET } = await import('../app/api/build-info/route');
+    const headers = new Headers({ cookie: 'eligible=synthetic-session' });
+    if (authorization !== undefined)
+      headers.set('authorization', authorization);
+    return GET(
+      new Request('https://infrastructure.tuturuuu.com/api/build-info', {
+        headers,
+      })
+    );
+  }
+
+  it('admits a root MEMBER with view_infrastructure without writing cookies', async () => {
+    const response = await buildInfo('Bearer eyJbuildInfo');
+    expect(response.status).toBe(200);
+    expect(response.headers.getSetCookie()).toEqual([]);
+    expect(response.headers.get('cache-control')).toContain('no-store');
+    expect(await response.json()).toMatchObject({ appName: 'infrastructure' });
+    expect(getUser).toHaveBeenCalledExactlyOnceWith('eyJbuildInfo');
+    expect(mocks.getPermissions).toHaveBeenCalledExactlyOnceWith({
+      user,
+      wsId: ROOT_WORKSPACE_ID,
+    });
+    expect(mocks.getSatelliteAppSessionUser).not.toHaveBeenCalled();
+  });
+
+  it('admits the eligible cookie without Authorization as a fallback control', async () => {
+    const response = await buildInfo();
+    expect(response.status).toBe(200);
+    expect(response.headers.getSetCookie()).toEqual([]);
+    expect(mocks.getSatelliteAppSessionUser).toHaveBeenCalledExactlyOnceWith(
+      'infra'
+    );
+    expect(getUser).not.toHaveBeenCalled();
+  });
+
+  it('denies anonymous access without exposing build identity', async () => {
+    mocks.getSatelliteAppSessionUser.mockResolvedValue(null);
+    const { GET } = await import('../app/api/build-info/route');
+    const response = await GET(
+      new Request('https://infrastructure.tuturuuu.com/api/build-info')
+    );
+    expect(response.status).toBe(401);
+    expect(await response.json()).toEqual({ error: 'Unauthorized' });
+    expect(response.headers.getSetCookie()).toEqual([]);
+    expect(mocks.getPermissions).not.toHaveBeenCalled();
+  });
+
+  it.each([
+    '',
+    'Basic invalid',
+    'Bearer',
+    'Bearer  invalid',
+    'Bearer invalid extra',
+    'Bearer invalid',
+  ])(
+    'rejects Authorization %j despite an eligible cookie',
+    async (authorization) => {
+      getUser.mockResolvedValue({
+        data: { user: null },
+        error: { status: 401 },
+      });
+      const response = await buildInfo(authorization);
+      expect(response.status).toBe(401);
+      expect(await response.json()).toEqual({ error: 'Unauthorized' });
+      expect(response.headers.getSetCookie()).toEqual([]);
+      expect(mocks.getSatelliteAppSessionUser).not.toHaveBeenCalled();
+      expect(mocks.getPermissions).not.toHaveBeenCalled();
+    }
+  );
+
+  it.each([
+    ['MEMBER', false],
+    ['GUEST', true],
+    [undefined, true],
+  ] as const)(
+    'denies membership=%s permission=%s',
+    async (membershipType, permitted) => {
+      mocks.getPermissions.mockResolvedValue({
+        membershipType,
+        containsPermission: vi.fn(() => permitted),
+      });
+      const response = await buildInfo('Bearer eyJbuildInfo');
+      expect(response.status).toBe(403);
+      expect(await response.json()).toEqual({
+        error: 'Infrastructure permission required',
+      });
+      expect(response.headers.getSetCookie()).toEqual([]);
+      expect(mocks.getPermissions).toHaveBeenCalledExactlyOnceWith({
+        user,
+        wsId: ROOT_WORKSPACE_ID,
+      });
+    }
+  );
+
+  it('denies a missing root permission result', async () => {
+    mocks.getPermissions.mockResolvedValue(null);
+    const response = await buildInfo('Bearer eyJbuildInfo');
+    expect(response.status).toBe(403);
+    expect(response.headers.getSetCookie()).toEqual([]);
+  });
+});

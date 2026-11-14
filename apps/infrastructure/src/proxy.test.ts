@@ -91,6 +91,104 @@ describe('Infra proxy', () => {
     vi.clearAllMocks();
   });
 
+  describe('protected build-info reads', () => {
+    it.each(['GET', 'HEAD'])(
+      'preserves credentials for %s without refreshing or writing cookies',
+      async (method) => {
+        const request = new NextRequest(
+          'https://infrastructure.tuturuuu.com/api/build-info',
+          {
+            method,
+            headers: {
+              authorization: 'Bearer eyJbuildInfo',
+              cookie: 'sb-project-auth-token=synthetic-session',
+            },
+          }
+        );
+        const response = await proxy(request);
+        expect(response.status).toBe(200);
+        expect(response.headers.get('x-middleware-next')).toBe('1');
+        expect(response.headers.getSetCookie()).toEqual([]);
+        expect(request.headers.get('authorization')).toBe(
+          'Bearer eyJbuildInfo'
+        );
+        expect(request.headers.get('cookie')).toContain('synthetic-session');
+        expect(request.cookies.get('sb-project-auth-token')?.value).toBe(
+          'synthetic-session'
+        );
+        expect(mocks.guardApiProxyRequest).toHaveBeenCalledExactlyOnceWith(
+          request,
+          { prefixBase: 'proxy:infra:api' }
+        );
+        expect(mocks.refreshAppSessionForRequest).not.toHaveBeenCalled();
+        expect(mocks.clearSupabaseAuthCookies).not.toHaveBeenCalled();
+        expect(mocks.propagateAuthCookies).not.toHaveBeenCalled();
+      }
+    );
+
+    it.each([
+      [401, 'UNAUTHENTICATED'],
+      [403, 'FORBIDDEN'],
+      [403, 'MFA_REQUIRED'],
+      [429, 'RATE_LIMITED'],
+    ] as const)(
+      'preserves the %s %s guard denial without cookie mutation',
+      async (status, code) => {
+        for (const method of ['GET', 'HEAD']) {
+          const request = new NextRequest(
+            'https://infrastructure.tuturuuu.com/api/build-info',
+            {
+              method,
+              headers: { cookie: 'sb-project-auth-token=synthetic-session' },
+            }
+          );
+          const rejected = NextResponse.json(
+            { code },
+            { status, headers: { 'cache-control': 'no-store' } }
+          );
+          if (code === 'MFA_REQUIRED')
+            rejected.headers.set('X-Tuturuuu-Auth-Assurance', 'required');
+          if (status === 429) rejected.headers.set('retry-after', '30');
+          mocks.guardApiProxyRequest.mockResolvedValueOnce(rejected);
+          const response = await proxy(request);
+          expect(response).toBe(rejected);
+          expect(response.status).toBe(status);
+          expect(response.headers.getSetCookie()).toEqual([]);
+          expect(response.headers.get('cache-control')).toBe('no-store');
+          expect(await response.json()).toEqual({ code });
+          if (status === 429)
+            expect(response.headers.get('retry-after')).toBe('30');
+        }
+        expect(mocks.guardApiProxyRequest).toHaveBeenCalledTimes(2);
+        expect(mocks.refreshAppSessionForRequest).not.toHaveBeenCalled();
+        expect(mocks.clearSupabaseAuthCookies).not.toHaveBeenCalled();
+        expect(mocks.propagateAuthCookies).not.toHaveBeenCalled();
+      }
+    );
+
+    it.each([
+      ['POST', '/api/build-info'],
+      ['GET', '/api/build-info/neighbor'],
+      ['GET', '/api/build-info-other'],
+      ['GET', '/api/%62uild-info'],
+      ['HEAD', '/api/build%2Dinfo'],
+    ])('keeps %s %s outside the exact read exception', async (method, path) => {
+      mocks.refreshAppSessionForRequest.mockResolvedValueOnce({
+        ok: false,
+        error: 'Invalid app session',
+      });
+      const response = await proxy(
+        new NextRequest(`https://infrastructure.tuturuuu.com${path}`, {
+          method,
+        })
+      );
+      expect(response.status).toBe(401);
+      expect(response.headers.get('x-middleware-next')).toBeNull();
+      expect(mocks.refreshAppSessionForRequest).toHaveBeenCalledOnce();
+      expect(mocks.guardApiProxyRequest).not.toHaveBeenCalled();
+    });
+  });
+
   it('returns MFA_REQUIRED while retaining the provider recovery session', async () => {
     const rotated = NextResponse.next();
     rotated.cookies.set('sb-project-auth-token', 'rotated');

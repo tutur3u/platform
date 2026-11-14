@@ -101,12 +101,6 @@ export async function proxy(request: NextRequest): Promise<NextResponse> {
     const isBuildInfoRead =
       request.nextUrl.pathname === '/api/build-info' &&
       (request.method === 'GET' || request.method === 'HEAD');
-    if (isBuildInfoRead) {
-      for (const cookie of request.cookies.getAll())
-        request.cookies.delete(cookie.name);
-      request.headers.delete('cookie');
-      request.headers.delete('authorization');
-    }
     const hasBearerApiSession = hasAuthenticatedBearerToken(request.headers);
     // Scheduler credentials authenticate independently of browser sessions.
     // Keep the shared guard and route-level secret checks in place.
@@ -154,8 +148,12 @@ export async function proxy(request: NextRequest): Promise<NextResponse> {
         propagateAuthCookies(appSessionRefresh.response, guardResponse);
       }
 
-      return preserveMfaRecoveryCookies(request, guardResponse);
+      return isBuildInfoRead
+        ? guardResponse
+        : preserveMfaRecoveryCookies(request, guardResponse);
     }
+
+    if (isBuildInfoRead) return NextResponse.next();
 
     return appSessionRefresh?.ok
       ? appSessionRefresh.response

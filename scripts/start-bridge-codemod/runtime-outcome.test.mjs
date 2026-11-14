@@ -290,3 +290,45 @@ test('skipped probes name a real replacement and one probe always runs', () => {
   );
   assert.match(allSkipped.problems.join('\n'), /at least one probe must run/);
 });
+
+test('protected build-info is an executed 401 probe with a mandatory fixture', () => {
+  const fixture = 'cloudflare/build-info-admin.runtime.mjs';
+  const api = { path: '/api/build-info', anonymousStatus: 401, fixture };
+  const context = {
+    expectations: { '/': 200 },
+    hasBuildInfo: true,
+    fixtureExists: (file) => file === fixture,
+  };
+  const result = resolveRuntimeProbes({ api }, context);
+  assert.deepEqual(result.problems, []);
+  assert.deepEqual(
+    result.probes.find((probe) => probe.kind === 'api'),
+    { kind: 'api', ...api }
+  );
+  for (const bad of [
+    { ...api, anonymousStatus: 200 },
+    { ...api, anonymousStatus: 403 },
+    { ...api, anonymousStatus: '401' },
+    { path: api.path, anonymousStatus: 401 },
+    { ...api, path: '/api/other' },
+    { ...api, skip: 'protected' },
+    { ...api, fixture: 'cloudflare/native-built-worker.runtime.mjs' },
+    { ...api, fixture: 'cloudflare/.hidden.runtime.mjs' },
+    { ...api, fixture: 'cloudflare/missing.runtime.mjs' },
+    { ...api, fixture: '../outside.runtime.mjs' },
+  ])
+    assert.notDeepEqual(
+      resolveRuntimeProbes({ api: bad }, context).problems,
+      [],
+      JSON.stringify(bad)
+    );
+  assert.notDeepEqual(
+    resolveRuntimeProbes({ api }, { ...context, hasBuildInfo: false }).problems,
+    []
+  );
+  for (const kind of ['page', 'notFound'])
+    assert.notDeepEqual(
+      resolveRuntimeProbes({ [kind]: api }, context).problems,
+      []
+    );
+});
