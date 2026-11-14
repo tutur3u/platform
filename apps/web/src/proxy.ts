@@ -911,7 +911,7 @@ async function blockSuspiciousAnonymousApiRequest(
 }
 
 const authProxy = createCentralizedAuthProxy(
-  designPublic.designAuthOptions(WEB_APP_URL, isAuthProxyPublicPath)
+  designPublic.designAuthOptions(WEB_APP_URL, isAuthProxyPublicPath, [BASE_URL])
 );
 
 function getRootDynamicSegment(pathname: string): string | null {

@@ -21,6 +21,11 @@ import {
   MFA_MOBILE_APPROVAL_KIND,
   parseMfaMobileApprovalCookie,
 } from '../mfa-mobile-approval';
+import {
+  extractForwardedHeaderValue,
+  isLoopbackBrowserHostname,
+  resolveCanonicalRequestOrigin,
+} from './canonical-origin';
 import { appSessionFailureResponse } from './mfa-failure';
 import {
   decodeURIComponentSafely,
@@ -48,6 +53,10 @@ import {
 } from './verify-token-redirect';
 
 export {
+  normalizeCanonicalOrigins,
+  resolveCanonicalRequestOrigin,
+} from './canonical-origin';
+export {
   appSessionFailureResponse,
   preserveMfaRecoveryCookies,
 } from './mfa-failure';
@@ -57,59 +66,7 @@ export {
 } from './redirect-path';
 export { getRequestHeadersWithResponseCookies } from './response-cookies';
 
-const INTERNAL_HOSTNAME_PATTERN =
-  /^(?:0\.0\.0\.0|127(?:\.\d+){0,3}|localhost|::1|\[::1\]|host\.docker\.internal)$/u;
-
-function extractForwardedHeaderValue(value: string | null): string | null {
-  if (!value) {
-    return null;
-  }
-
-  const [firstValue] = value
-    .split(',')
-    .map((entry) => entry.trim())
-    .filter(Boolean);
-  return firstValue || null;
-}
-
-function isInternalHostname(hostname: string): boolean {
-  return INTERNAL_HOSTNAME_PATTERN.test(hostname);
-}
-
-/**
- * Hostnames that serve the central web app only behind the tuturuuu.com
- * gateway Worker (its WEB_ORIGIN). The hosting platform overwrites
- * X-Forwarded-Host with this hostname, so a public URL built from it would send
- * browsers to a host they cannot use. Such requests resolve to the configured
- * central origin instead. Extra aliases come from TUTURUUU_GATEWAY_ORIGIN_HOSTS
- * (comma-separated hostnames).
- */
-const GATEWAY_ORIGIN_ALIAS_HOSTNAMES = ['origin.tuturuuu.com'] as const;
-
-function isGatewayOriginAliasHostname(hostname: string): boolean {
-  const normalized = hostname.toLowerCase();
-  if (
-    (GATEWAY_ORIGIN_ALIAS_HOSTNAMES as readonly string[]).includes(normalized)
-  ) {
-    return true;
-  }
-  const extra = process.env.TUTURUUU_GATEWAY_ORIGIN_HOSTS;
-  if (!extra) return false;
-  return extra
-    .split(',')
-    .map((entry) => entry.trim().toLowerCase())
-    .filter(Boolean)
-    .includes(normalized);
-}
-
-function isLoopbackBrowserHostname(hostname: string): boolean {
-  return (
-    hostname === 'localhost' ||
-    hostname === '::1' ||
-    hostname === '[::1]' ||
-    /^127(?:\.\d+){0,3}$/u.test(hostname)
-  );
-}
+const AUTH_REDIRECT_CACHE_CONTROL = 'private, no-store';
 
 function shouldPreserveCentralLoopbackCookies(
   req: NextRequest,
@@ -130,62 +87,20 @@ function shouldPreserveCentralLoopbackCookies(
   }
 }
 
-export function resolveCanonicalRequestOrigin(
-  req: NextRequest,
-  webAppUrl: string
-): string {
-  const fallbackOrigin = new URL(webAppUrl).origin;
-  const forwardedHost = extractForwardedHeaderValue(
-    req.headers.get('x-forwarded-host')
-  );
-  const forwardedProto =
-    extractForwardedHeaderValue(req.headers.get('x-forwarded-proto')) ??
-    req.nextUrl.protocol.replace(/:$/u, '');
-
-  if (forwardedHost) {
-    try {
-      const forwardedOrigin = new URL(
-        `${forwardedProto || 'https'}://${forwardedHost}`
-      ).origin;
-      const forwardedHostname = new URL(forwardedOrigin).hostname;
-      if (isGatewayOriginAliasHostname(forwardedHostname)) {
-        return fallbackOrigin;
-      }
-      if (!isInternalHostname(forwardedHostname)) {
-        return forwardedOrigin;
-      }
-    } catch {
-      // Ignore malformed forwarded headers and fall back to safer origins.
-    }
-  }
-
-  if (isGatewayOriginAliasHostname(req.nextUrl.hostname)) {
-    return fallbackOrigin;
-  }
-
-  if (!isInternalHostname(req.nextUrl.hostname)) {
-    return req.nextUrl.origin;
-  }
-
-  // Local development runs each first-party app on a distinct loopback port.
-  // Preserve that explicit browser-facing origin so a satellite returns to its
-  // own verifier instead of the central app's verifier. Internal/container
-  // hosts without this loopback shape still use the configured safe fallback.
-  if (
-    isLoopbackBrowserHostname(req.nextUrl.hostname) &&
-    req.nextUrl.port.length > 0
-  ) {
-    return req.nextUrl.origin;
-  }
-  return fallbackOrigin;
-}
-
 function buildCentralizedReturnUrl(
   req: NextRequest,
   webAppUrl: string,
+  canonicalOrigins: readonly string[],
   rawTargetPath?: string | null
-): string {
-  const publicOrigin = resolveCanonicalRequestOrigin(req, webAppUrl);
+): string | null {
+  const publicOrigin = resolveCanonicalRequestOrigin(
+    req,
+    webAppUrl,
+    canonicalOrigins
+  );
+  if (!publicOrigin) {
+    return null;
+  }
   const normalizedTargetPath = normalizeAuthRedirectPath(
     rawTargetPath ?? `${req.nextUrl.pathname}${req.nextUrl.search}`,
     publicOrigin,
@@ -197,6 +112,30 @@ function buildCentralizedReturnUrl(
   );
   verifyUrl.searchParams.set('nextUrl', normalizedTargetPath);
   return verifyUrl.toString();
+}
+
+/**
+ * Central login URL for a signed-out request. The return URL is omitted when
+ * the app has no valid canonical origin, so a header value is never reflected.
+ */
+function buildCentralLoginUrl(
+  req: NextRequest,
+  webAppUrl: string,
+  canonicalOrigins: readonly string[]
+): URL {
+  const loginUrl = new URL('/login', webAppUrl);
+  const returnUrl = buildCentralizedReturnUrl(req, webAppUrl, canonicalOrigins);
+  if (returnUrl) {
+    loginUrl.searchParams.set('returnUrl', returnUrl);
+  }
+  return loginUrl;
+}
+
+/** Auth redirects carry per-user state; never let a shared cache keep them. */
+function authRedirect(url: URL): NextResponse {
+  const response = NextResponse.redirect(url);
+  response.headers.set('Cache-Control', AUTH_REDIRECT_CACHE_CONTROL);
+  return response;
 }
 
 /**
@@ -595,6 +534,7 @@ async function handleMFACheck(
   userId: string | null | undefined,
   sessionId: string | null | undefined,
   webAppUrl: string,
+  canonicalOrigins: readonly string[],
   protectedPaths: string[],
   excludedPaths: string[],
   enforceForAll: boolean
@@ -614,7 +554,11 @@ async function handleMFACheck(
 
   try {
     if (await requiresMfaVerification(req, aal, userId, sessionId)) {
-      const publicOrigin = resolveCanonicalRequestOrigin(req, webAppUrl);
+      const publicOrigin = resolveCanonicalRequestOrigin(
+        req,
+        webAppUrl,
+        canonicalOrigins
+      );
       const centralOrigin = new URL(webAppUrl).origin;
 
       const isCentralWebApp = publicOrigin === centralOrigin;
@@ -623,7 +567,7 @@ async function handleMFACheck(
         const nextUrl = normalizeAuthRedirectPath(
           req.nextUrl.searchParams.get('nextUrl') ??
             `${req.nextUrl.pathname}${req.nextUrl.search}`,
-          publicOrigin,
+          centralOrigin,
           '/'
         );
 
@@ -631,13 +575,14 @@ async function handleMFACheck(
         loginUrl.searchParams.set('nextUrl', nextUrl);
         loginUrl.searchParams.set('mfa', 'required');
 
-        const redirectResponse = NextResponse.redirect(loginUrl);
+        const redirectResponse = authRedirect(loginUrl);
         clearMfaMobileApprovalCookie(redirectResponse);
         return redirectResponse;
       } else {
         const existingReturnUrl = req.nextUrl.searchParams.get('returnUrl');
         const returnUrl =
           existingReturnUrl &&
+          publicOrigin &&
           (() => {
             const decodedValue = decodeURIComponentSafely(existingReturnUrl);
 
@@ -653,17 +598,23 @@ async function handleMFACheck(
               // Fall back to a rebuilt centralized return URL below.
             }
 
-            return buildCentralizedReturnUrl(req, webAppUrl, decodedValue);
+            return buildCentralizedReturnUrl(
+              req,
+              webAppUrl,
+              canonicalOrigins,
+              decodedValue
+            );
           })();
 
-        const loginUrl = new URL('/login', webAppUrl);
-        loginUrl.searchParams.set(
-          'returnUrl',
-          returnUrl ?? buildCentralizedReturnUrl(req, webAppUrl)
-        );
+        const loginUrl = returnUrl
+          ? new URL('/login', webAppUrl)
+          : buildCentralLoginUrl(req, webAppUrl, canonicalOrigins);
+        if (returnUrl) {
+          loginUrl.searchParams.set('returnUrl', returnUrl);
+        }
         loginUrl.searchParams.set('mfa', 'required');
 
-        const redirectResponse = NextResponse.redirect(loginUrl);
+        const redirectResponse = authRedirect(loginUrl);
         clearMfaMobileApprovalCookie(redirectResponse);
         return redirectResponse;
       }
@@ -684,6 +635,17 @@ interface CentralizedAuthOptions {
    * The URL of the central authentication web app (without trailing slash)
    */
   webAppUrl: string;
+
+  /**
+   * This app's own canonical public origin(s), normally `[BASE_URL]`.
+   *
+   * Required. Auth return URLs use a request's `X-Forwarded-Host` or `Host`
+   * only when it names one of these origins (or the central `webAppUrl`), or
+   * when the request carries a verified gateway origin proof. Anything else
+   * falls back to the first valid origin here; with none, central login gets
+   * no return URL. Header values are never reflected otherwise.
+   */
+  canonicalOrigins: readonly string[];
 
   /**
    * Public paths that don't require authentication
@@ -748,6 +710,7 @@ interface CentralizedAuthOptions {
 export function createCentralizedAuthProxy(options: CentralizedAuthOptions) {
   const {
     webAppUrl,
+    canonicalOrigins,
     publicPaths = [],
     excludeRootPath = false,
     isPublicPath,
@@ -801,6 +764,7 @@ export function createCentralizedAuthProxy(options: CentralizedAuthOptions) {
               userId,
               sessionIdFromClaims(claims),
               webAppUrl,
+              canonicalOrigins,
               mfaProtectedPaths,
               mfaExcludedPaths,
               mfaEnforceForAll
@@ -832,7 +796,7 @@ export function createCentralizedAuthProxy(options: CentralizedAuthOptions) {
               ).response;
             }
 
-            const required = NextResponse.redirect(
+            const required = authRedirect(
               new URL('/login?mfa=required', webAppUrl)
             );
             propagateAuthCookies(res, required);
@@ -859,16 +823,16 @@ export function createCentralizedAuthProxy(options: CentralizedAuthOptions) {
             );
           }
 
-          const loginUrl = new URL('/login', webAppUrl);
-          loginUrl.searchParams.set(
-            'returnUrl',
-            buildCentralizedReturnUrl(req, webAppUrl)
+          const loginUrl = buildCentralLoginUrl(
+            req,
+            webAppUrl,
+            canonicalOrigins
           );
 
-          const redirectResponse = NextResponse.redirect(loginUrl);
+          const redirectResponse = authRedirect(loginUrl);
           if (appSessionVerification.error === 'MFA required') {
             loginUrl.searchParams.set('mfa', 'required');
-            const required = NextResponse.redirect(loginUrl);
+            const required = authRedirect(loginUrl);
             for (const cookie of appSessionVerification.response?.headers.getSetCookie() ??
               [])
               required.headers.append('set-cookie', cookie);
@@ -898,13 +862,9 @@ export function createCentralizedAuthProxy(options: CentralizedAuthOptions) {
       }
 
       if (!claims && !isPublic) {
-        const loginUrl = new URL('/login', webAppUrl);
-        loginUrl.searchParams.set(
-          'returnUrl',
-          buildCentralizedReturnUrl(req, webAppUrl)
-        );
+        const loginUrl = buildCentralLoginUrl(req, webAppUrl, canonicalOrigins);
 
-        const redirectResponse = NextResponse.redirect(loginUrl);
+        const redirectResponse = authRedirect(loginUrl);
         propagateAuthCookies(res, redirectResponse);
 
         return redirectResponse;
@@ -917,6 +877,7 @@ export function createCentralizedAuthProxy(options: CentralizedAuthOptions) {
           claims.sub,
           sessionIdFromClaims(claims),
           webAppUrl,
+          canonicalOrigins,
           mfaProtectedPaths,
           mfaExcludedPaths,
           mfaEnforceForAll

@@ -19,7 +19,12 @@ import { guardApiProxyRequest } from '@tuturuuu/utils/api-proxy-guard';
 import Negotiator from 'negotiator';
 import { NextRequest, NextResponse } from 'next/server';
 import createIntlMiddleware from 'next-intl/middleware';
-import { LOCALE_COOKIE_NAME, PUBLIC_PATHS, TTR_URL } from './constants/common';
+import {
+  BASE_URL,
+  LOCALE_COOKIE_NAME,
+  PUBLIC_PATHS,
+  TTR_URL,
+} from './constants/common';
 import {
   clearMeetInvite,
   normalizeMeetInvite,
@@ -116,6 +121,7 @@ function withDirectVerifyTarget(req: NextRequest) {
 // MFA is disabled because satellite apps delegate auth to the web app.
 // Sessions here are created via cross-app tokens that already require aal2 on web.
 const authProxy = createCentralizedAuthProxy({
+  canonicalOrigins: [BASE_URL],
   appSession: { sessionMode: 'supabase-first', targetApp: 'meet' },
   webAppUrl: TTR_URL,
   publicPaths: AUTH_PUBLIC_PATHS,
