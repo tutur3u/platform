@@ -43,9 +43,13 @@ for (const app of ['calendar', 'mail', 'apps']) {
         );
       }
       if (app === 'calendar')
+        // Production Calendar is served from the apex /calendar mount (#8257);
+        // p.host keeps the rollback host identity.
         assert.equal(
           emitted.vars.MICROSOFT_REDIRECT_URI,
-          `https://${p.host}/api/v1/calendar/auth/microsoft/callback`
+          env === 'production'
+            ? 'https://tuturuuu.com/calendar/api/v1/calendar/auth/microsoft/callback'
+            : `https://${p.host}/api/v1/calendar/auth/microsoft/callback`
         );
       if (app === 'apps')
         assert.equal(
