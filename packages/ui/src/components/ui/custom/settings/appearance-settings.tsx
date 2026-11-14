@@ -17,6 +17,7 @@ import { useTheme } from 'next-themes';
 import { useTransition } from 'react';
 import { persistLocalePreference } from '../locale-preference';
 import { VersionBadgeSetting } from '../version-badge';
+import { ExperimentalUiSetting } from './experimental-ui-setting';
 
 /**
  * Shared appearance settings with theme and language.
@@ -113,6 +114,8 @@ export function AppearanceSettings({
             </SelectContent>
           </Select>
         </SettingItemTab>
+
+        <ExperimentalUiSetting />
 
         {canManageVersionBadge ? (
           <VersionBadgeSetting canManage={canManageVersionBadge} />

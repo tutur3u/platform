@@ -1,3 +1,4 @@
+import { ExperimentalUiSync } from '@tuturuuu/ui/custom/experimental-ui-sync';
 import { Toaster } from '@tuturuuu/ui/sonner';
 import { ThemeProvider } from 'next-themes';
 import type { ReactNode } from 'react';
@@ -11,6 +12,7 @@ export function Providers({ children }: { children: ReactNode }) {
       themes={['system', 'light', 'dark']}
       enableSystem
     >
+      <ExperimentalUiSync />
       <ClientProviders>{children}</ClientProviders>
       <Toaster />
     </ThemeProvider>

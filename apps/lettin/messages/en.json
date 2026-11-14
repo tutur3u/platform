@@ -1730,5 +1730,11 @@
     "title": "Version details",
     "trigger_label": "Open version details",
     "version": "Version"
+  },
+  "experimental-ui": {
+    "badge": "Beta",
+    "setting_description": "Try Sorbet, the new Tuturuuu look, in every app. Saved to your account.",
+    "setting_title": "Experimental design",
+    "setting_toggle_label": "Use the experimental Sorbet design"
   }
 }

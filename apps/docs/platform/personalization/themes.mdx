@@ -1,7 +1,7 @@
 ---
 title: 'Themes'
 description: 'Enhance your experience with themes.'
-updatedAt: "2026-10-30"
+updatedAt: "2026-11-14"
 audience: users
 ---
 
@@ -40,6 +40,34 @@ Available variants:
 - **Orange**
 - **Green**
 - **Blue**
+
+## Experimental design (Sorbet)
+
+Sorbet is the next Tuturuuu design: a warm white ground, white surfaces, an ink
+primary colour, pastel fills with matching inks, pill-shaped controls, 18px cards,
+soft shadows and the Nunito typeface. You can try it before it becomes the default.
+
+- **Where:** Settings → Appearance → **Experimental design**, in every web app that
+  ships the shared settings dialog (Tuturuuu web and workspace, and the satellite
+  apps such as Calendar, Tasks, Finance and Drive).
+- **Default:** off. The switch is saved to your account (user config
+  `EXPERIMENTAL_SORBET_UI`), so turning it on in one app turns it on in every app
+  you use with that account. Other apps pick up the change when you return to
+  them; other tabs of the same app follow at once.
+- **Light and dark:** Sorbet has both, and still follows your mode choice above.
+  Every text colour keeps at least 4.5:1 contrast in both.
+- **Signed out:** public pages keep the last choice made on that device.
+- **Not covered:** the mobile app, Colab, and web apps without a theme provider
+  (Hive, Tulletin, the link shortener and external embeds) keep their current
+  design.
+
+The switch only changes appearance. Pages, permissions and data stay the same.
+How it works for engineers: `ExperimentalUiSync` (in `@tuturuuu/ui`) sets
+`data-ui="sorbet"` on `<html>`, and `packages/ui/src/sorbet.css` remaps the
+shared semantic tokens under that attribute. Regression coverage lives in
+`sorbet-ui.test.ts`, `experimental-ui-sync.test.tsx` and
+`settings/experimental-ui-setting.test.tsx` under
+`packages/ui/src/components/ui/custom/`.
 
 ## Mobile app
 
