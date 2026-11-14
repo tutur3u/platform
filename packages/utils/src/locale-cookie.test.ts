@@ -6,6 +6,7 @@ import {
   secureLocaleCookie,
   withSecureLocaleCookie,
 } from './locale-cookie';
+import type { CookieOptionsLike } from './shared-cookie';
 
 const OPTIONS = {
   maxAge: 31536000,
@@ -49,7 +50,10 @@ describe('getLocaleCookieOptions', () => {
   });
 
   it('stays non-secure for a local http origin', () => {
-    const options = getLocaleCookieOptions(OPTIONS, 'http://localhost:7816');
+    const options: CookieOptionsLike = getLocaleCookieOptions(
+      OPTIONS,
+      'http://localhost:7816'
+    );
     expect(options.secure).toBeFalsy();
     expect(options.domain).toBeUndefined();
   });
