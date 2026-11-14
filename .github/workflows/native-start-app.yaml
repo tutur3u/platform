@@ -65,7 +65,7 @@ on:
         required: false
         default: ""
       strip-server-source-maps:
-        description: Delete emitted dist/server source maps before sealing, as the app's cutover artifact does; their original sources keep development-only branches
+        description: Delete emitted dist/server source maps and their sourceMappingURL comments before the Wrangler dry run and seal; their original sources keep development-only branches
         type: boolean
         required: false
         default: false
@@ -175,9 +175,17 @@ jobs:
           command: cd "$APP_DIR" && bun run build:cloudflare
           token: ""
           team: ""
+      # Their references go too: Wrangler resolves every sourceMappingURL when
+      # it bundles the Worker, here and on the restored artifact.
       - name: Remove server source maps
         if: inputs.strip-server-source-maps
-        run: find "$APP_DIR/dist/server" -type f -name '*.map' -delete
+        run: |
+          server="$APP_DIR/dist/server"
+          find "$server" -type f -name '*.map' -delete
+          find "$server" -type f \( -name '*.js' -o -name '*.mjs' -o -name '*.cjs' \) \
+            -exec sed -i -E '/^\/\/# sourceMappingURL=[^[:space:]]+\.map[[:space:]]*$/d' {} +
+          ! grep -rlE --include='*.js' --include='*.mjs' --include='*.cjs' \
+            '^//# sourceMappingURL=[^[:space:]]+\.map[[:space:]]*$' "$server"
       - name: Reject tracked route tree drift
         if: always()
         run: |
