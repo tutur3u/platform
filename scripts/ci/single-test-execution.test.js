@@ -9,6 +9,8 @@ const enabled = () => ({
   result: 'success',
   outputs: { should_run: 'true', run_checks: 'true' },
 });
+// readWorkflow strips the ready-for-ci label gate; the draft gate remains, so
+// pull_request events model a ready (non-draft) pull request.
 function admitted(job, needs, cancelled = false, event = 'push') {
   const code = job.if
     .replace(/^\$\{\{\s*|\s*\}\}$/g, '')
@@ -18,7 +20,10 @@ function admitted(job, needs, cancelled = false, event = 'push') {
     'cancelled',
     'github',
     `return (${code});`
-  )(needs, () => cancelled, { event_name: event });
+  )(needs, () => cancelled, {
+    event_name: event,
+    event: event === 'pull_request' ? { pull_request: { draft: false } } : {},
+  });
 }
 function gate(job, env) {
   return runWorkflowGate(job, {
