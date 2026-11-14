@@ -46,9 +46,7 @@ export function CalendarDefaultViewSettings() {
 
   return (
     <SettingItemTab
-      title={
-        <Label htmlFor="calendar-default-view">{t('default_view')}</Label>
-      }
+      title={<Label htmlFor="calendar-default-view">{t('default_view')}</Label>}
       description={t('default_view_description')}
     >
       <Select
