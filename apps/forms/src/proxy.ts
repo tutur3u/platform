@@ -1,5 +1,9 @@
 import { match } from '@formatjs/intl-localematcher';
 import {
+  getCanonicalLocaleCookieOptions,
+  withCanonicalLocaleCookie,
+} from '@tuturuuu/auth/locale-cookie';
+import {
   APP_SESSION_COOKIE_NAME,
   APP_SESSION_REFRESH_COOKIE_NAME,
   clearSupabaseAuthCookies,
@@ -17,12 +21,11 @@ import {
 } from '@tuturuuu/auth/proxy';
 import { withAppBase } from '@tuturuuu/start-bridge/app-url';
 import { guardApiProxyRequest } from '@tuturuuu/utils/api-proxy-guard';
-import { getTuturuuuSharedCookieOptions } from '@tuturuuu/utils/shared-cookie';
 import Negotiator from 'negotiator';
 import type { NextRequest } from 'next/server';
 import { NextResponse } from 'next/server';
 import createIntlMiddleware from 'next-intl/middleware';
-import { LOCALE_COOKIE_NAME } from './constants/common';
+import { BASE_URL, LOCALE_COOKIE_NAME, WEB_APP_URL } from './constants/common';
 import {
   defaultLocale,
   type Locale,
@@ -37,6 +40,10 @@ const LOCALE_COOKIE_OPTIONS = {
   path: '/',
   sameSite: 'lax',
 } as const;
+const LOCALE_COOKIE_ORIGINS = {
+  canonicalOrigins: [BASE_URL],
+  webAppUrl: WEB_APP_URL,
+};
 
 // Anonymous respondents fill and submit shared forms with no Tuturuuu session
 // at all. `refreshAppSessionForRequest` returns `ok: false` for a request with
@@ -56,7 +63,11 @@ function setLocaleCookie(
   response.cookies.set(
     LOCALE_COOKIE_NAME,
     locale,
-    getTuturuuuSharedCookieOptions(LOCALE_COOKIE_OPTIONS, request)
+    getCanonicalLocaleCookieOptions(
+      request,
+      LOCALE_COOKIE_ORIGINS,
+      LOCALE_COOKIE_OPTIONS
+    )
   );
 }
 
@@ -211,7 +222,7 @@ function getCanonicalLocaleRedirect(request: NextRequest) {
   return response;
 }
 
-export async function proxy(request: NextRequest): Promise<NextResponse> {
+async function handleProxy(request: NextRequest): Promise<NextResponse> {
   const mounted = Boolean(request.nextUrl.basePath);
   if (
     mounted &&
@@ -377,6 +388,11 @@ export async function proxy(request: NextRequest): Promise<NextResponse> {
   setLocaleCookie(response, request, getPreferredLocale(request));
   return clearSupabaseAuthCookies(request, response);
 }
+
+export const proxy = withCanonicalLocaleCookie(
+  handleProxy,
+  LOCALE_COOKIE_ORIGINS
+);
 
 export const config = {
   matcher: ['/((?!_next|.*\\..*).*)'],

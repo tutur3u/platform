@@ -5,6 +5,7 @@ import {
   hasSupportedSupabaseAuthCookie,
   hasWebAppSessionTokenFromRequest,
 } from '@tuturuuu/auth/app-session';
+import { withCanonicalLocaleCookie } from '@tuturuuu/auth/locale-cookie';
 import {
   appSessionFailureResponse,
   consumeVerifyTokenRequest,
@@ -178,7 +179,7 @@ function sessionRedirect(url: URL): NextResponse {
   return response;
 }
 
-export async function proxy(req: NextRequest): Promise<NextResponse> {
+async function handleProxy(req: NextRequest): Promise<NextResponse> {
   // Launcher workspace context is implicit. Explicit Meet workspace links and
   // room/plan invitations retain their destinations.
   const entry = getPathSegmentsWithoutLocale(req.nextUrl.pathname);
@@ -342,6 +343,16 @@ export async function proxy(req: NextRequest): Promise<NextResponse> {
   if (!hasSatelliteSession) rememberMeetInvite(req, localeRes);
   return localeRes;
 }
+
+const LOCALE_COOKIE_ORIGINS = {
+  canonicalOrigins: [BASE_URL],
+  webAppUrl: TTR_URL,
+};
+
+export const proxy = withCanonicalLocaleCookie(
+  handleProxy,
+  LOCALE_COOKIE_ORIGINS
+);
 
 export const config = {
   matcher: [

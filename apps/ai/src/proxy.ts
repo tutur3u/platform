@@ -1,4 +1,8 @@
 import {
+  getCanonicalLocaleCookieOptions,
+  withCanonicalLocaleCookie,
+} from '@tuturuuu/auth/locale-cookie';
+import {
   clearSupabaseAuthCookies,
   hasSupportedSupabaseAuthCookie,
   hasWebAppSessionTokenFromRequest,
@@ -11,11 +15,10 @@ import {
   refreshAppSessionForRequest,
 } from '@tuturuuu/auth/proxy';
 import { guardApiProxyRequest } from '@tuturuuu/utils/api-proxy-guard';
-import { getTuturuuuSharedCookieOptions } from '@tuturuuu/utils/shared-cookie';
 import type { NextRequest } from 'next/server';
 import { NextResponse } from 'next/server';
 import createIntlMiddleware from 'next-intl/middleware';
-import { LOCALE_COOKIE_NAME } from './constants/common';
+import { BASE_URL, LOCALE_COOKIE_NAME, WEB_APP_URL } from './constants/common';
 import { type Locale, routing, supportedLocales } from './i18n/routing';
 import { createAiPublicUrl } from './lib/ai-public-url';
 
@@ -30,6 +33,10 @@ const LOCALE_COOKIE_OPTIONS = {
   path: '/',
   sameSite: 'lax',
 } as const;
+const LOCALE_COOKIE_ORIGINS = {
+  canonicalOrigins: [BASE_URL],
+  webAppUrl: WEB_APP_URL,
+};
 
 function stripLocale(pathname: string) {
   const segments = pathname.split('/').filter(Boolean);
@@ -47,7 +54,11 @@ function setLocaleCookie(
   response.cookies.set(
     LOCALE_COOKIE_NAME,
     locale,
-    getTuturuuuSharedCookieOptions(LOCALE_COOKIE_OPTIONS, request)
+    getCanonicalLocaleCookieOptions(
+      request,
+      LOCALE_COOKIE_ORIGINS,
+      LOCALE_COOKIE_OPTIONS
+    )
   );
 }
 
@@ -66,7 +77,7 @@ function getCanonicalLocaleRedirect(request: NextRequest) {
   return response;
 }
 
-export async function proxy(request: NextRequest): Promise<NextResponse> {
+async function handleProxy(request: NextRequest): Promise<NextResponse> {
   // Public AI endpoints authenticate exclusively with hash-only ttr_ai_ keys
   // or scoped, registered external-app tokens. They never inherit or refresh a
   // human browser session, but still pass the shared API abuse guard before
@@ -192,6 +203,11 @@ export async function proxy(request: NextRequest): Promise<NextResponse> {
   }
   return clearSupabaseAuthCookies(request, response);
 }
+
+export const proxy = withCanonicalLocaleCookie(
+  handleProxy,
+  LOCALE_COOKIE_ORIGINS
+);
 
 export const config = {
   matcher: ['/((?!_next|.*\\..*).*)'],

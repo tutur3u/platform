@@ -1,9 +1,12 @@
 import { guardApiProxyRequest } from '@tuturuuu/utils/api-proxy-guard';
-import { getTuturuuuSharedCookieOptions } from '@tuturuuu/utils/shared-cookie';
+import {
+  getLocaleCookieOptions,
+  withSecureLocaleCookie,
+} from '@tuturuuu/utils/locale-cookie';
 import type { NextRequest } from 'next/server';
 import { NextResponse } from 'next/server';
 import createIntlMiddleware from 'next-intl/middleware';
-import { LOCALE_COOKIE_NAME } from './constants/common';
+import { BASE_URL, LOCALE_COOKIE_NAME } from './constants/common';
 import { type Locale, routing, supportedLocales } from './i18n/routing';
 
 const intlMiddleware = createIntlMiddleware(routing);
@@ -13,15 +16,11 @@ const LOCALE_COOKIE_OPTIONS = {
   sameSite: 'lax',
 } as const;
 
-function setLocaleCookie(
-  response: NextResponse,
-  request: NextRequest,
-  locale: string
-) {
+function setLocaleCookie(response: NextResponse, locale: string) {
   response.cookies.set(
     LOCALE_COOKIE_NAME,
     locale,
-    getTuturuuuSharedCookieOptions(LOCALE_COOKIE_OPTIONS, request)
+    getLocaleCookieOptions(LOCALE_COOKIE_OPTIONS, BASE_URL)
   );
 }
 
@@ -52,11 +51,11 @@ function getCanonicalLocaleRedirect(request: NextRequest) {
     request.url
   );
   const response = NextResponse.redirect(url);
-  setLocaleCookie(response, request, pathLocale);
+  setLocaleCookie(response, pathLocale);
   return response;
 }
 
-export async function proxy(request: NextRequest): Promise<NextResponse> {
+async function handleProxy(request: NextRequest): Promise<NextResponse> {
   if (request.nextUrl.pathname.startsWith('/api')) {
     const guardResponse = await guardApiProxyRequest(request, {
       prefixBase: 'proxy:tools:api',
@@ -73,6 +72,8 @@ export async function proxy(request: NextRequest): Promise<NextResponse> {
 
   return intlMiddleware(request);
 }
+
+export const proxy = withSecureLocaleCookie(handleProxy, () => BASE_URL);
 
 export const config = {
   matcher: ['/((?!_next|.*\\..*).*)'],

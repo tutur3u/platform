@@ -1,5 +1,9 @@
 import { match } from '@formatjs/intl-localematcher';
 import {
+  getCanonicalLocaleCookieOptions,
+  withCanonicalLocaleCookie,
+} from '@tuturuuu/auth/locale-cookie';
+import {
   clearSupabaseAuthCookies,
   hasSupportedSupabaseAuthCookie,
   hasWebAppSessionTokenFromRequest,
@@ -10,10 +14,8 @@ import {
   preserveMfaRecoveryCookies,
   propagateAuthCookies,
   refreshAppSessionForRequest,
-  resolveCanonicalRequestOrigin,
 } from '@tuturuuu/auth/proxy';
 import { guardApiProxyRequest } from '@tuturuuu/utils/api-proxy-guard';
-import { getTuturuuuSharedCookieOptions } from '@tuturuuu/utils/shared-cookie';
 import Negotiator from 'negotiator';
 import type { NextRequest } from 'next/server';
 import { NextResponse } from 'next/server';
@@ -33,24 +35,24 @@ const LOCALE_COOKIE_OPTIONS = {
   path: '/',
   sameSite: 'lax',
 } as const;
+const LOCALE_COOKIE_ORIGINS = {
+  canonicalOrigins: [BASE_URL],
+  webAppUrl: WEB_APP_URL,
+};
 
-/**
- * The locale cookie's shared `Domain` and `Secure` come from pay's canonical
- * origin, never from the raw `Host` or an unproven `X-Forwarded-Host` header,
- * so a hostile host header cannot downgrade it to a host-only, non-secure
- * cookie.
- */
 function setLocaleCookie(
   response: NextResponse,
   request: NextRequest,
   locale: string
 ) {
-  const cookieOrigin =
-    resolveCanonicalRequestOrigin(request, WEB_APP_URL, [BASE_URL]) ?? BASE_URL;
   response.cookies.set(
     LOCALE_COOKIE_NAME,
     locale,
-    getTuturuuuSharedCookieOptions(LOCALE_COOKIE_OPTIONS, cookieOrigin)
+    getCanonicalLocaleCookieOptions(
+      request,
+      LOCALE_COOKIE_ORIGINS,
+      LOCALE_COOKIE_OPTIONS
+    )
   );
 }
 
@@ -148,7 +150,7 @@ function getCanonicalLocaleRedirect(request: NextRequest) {
   return response;
 }
 
-export async function proxy(request: NextRequest): Promise<NextResponse> {
+async function handleProxy(request: NextRequest): Promise<NextResponse> {
   if (request.nextUrl.pathname.startsWith('/api')) {
     const isLocalAuthApi = request.nextUrl.pathname.startsWith(
       LOCAL_AUTH_API_PREFIX
@@ -284,6 +286,11 @@ export async function proxy(request: NextRequest): Promise<NextResponse> {
   setLocaleCookie(response, request, getPreferredLocale(request));
   return clearSupabaseAuthCookies(request, response);
 }
+
+export const proxy = withCanonicalLocaleCookie(
+  handleProxy,
+  LOCALE_COOKIE_ORIGINS
+);
 
 export const config = {
   matcher: ['/((?!_next|.*\\..*).*)'],
