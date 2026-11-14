@@ -97,4 +97,42 @@ function commandForShard(shards, index, coverage = false) {
   ];
 }
 
-module.exports = { commandForShard, discoverPackages, planShards, testWeight };
+function affectedShards(root, total, raw) {
+  const packages = discoverPackages(root);
+  const shards = planShards(packages, total);
+  if (!raw) return shards;
+  let selection;
+  try {
+    selection = JSON.parse(raw);
+  } catch {
+    return shards;
+  }
+  if (
+    selection?.mode !== 'affected' ||
+    !Array.isArray(selection.workspaces) ||
+    selection.workspaces.some(
+      (dir) =>
+        typeof dir !== 'string' ||
+        !/^(apps|packages)\/[a-zA-Z0-9_-]+$/.test(dir)
+    )
+  )
+    return shards;
+  const names = new Set();
+  for (const dir of selection.workspaces) {
+    const manifest = path.join(root, dir, 'package.json');
+    if (!fs.existsSync(manifest)) continue;
+    names.add(JSON.parse(fs.readFileSync(manifest, 'utf8')).name);
+  }
+  return shards.map((shard) => ({
+    ...shard,
+    packages: shard.packages.filter((name) => names.has(name)),
+  }));
+}
+
+module.exports = {
+  affectedShards,
+  commandForShard,
+  discoverPackages,
+  planShards,
+  testWeight,
+};

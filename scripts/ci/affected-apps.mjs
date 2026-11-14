@@ -16,7 +16,13 @@
 // - Anything unexpected (bad ref, unreadable graph, root/CI/config files) fails safe to mode "all".
 
 import { execFileSync } from 'node:child_process';
-import { existsSync, readFileSync, readdirSync, statSync } from 'node:fs';
+import {
+  appendFileSync,
+  existsSync,
+  readFileSync,
+  readdirSync,
+  statSync,
+} from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath, pathToFileURL } from 'node:url';
 
@@ -55,11 +61,13 @@ export function verdict({ mode, apps, codeChanged, results }) {
 
 function failSafePath(file) {
   return (
+    /(^|\/)(AGENTS\.md|CLAUDE\.md|CODEOWNERS)$/.test(file) ||
+    /^(plugins|tooling|\.agents|\.codex|\.claude)\//.test(file) ||
     file === 'bun.lock' ||
     file === 'package.json' ||
     file === 'turbo.json' ||
     file.startsWith('.github/') ||
-    /^tsconfig[^/]*$/.test(file) ||
+    /(^|\/)tsconfig[^/]*$/.test(file) ||
     /^(\.oxfmtrc|\.oxlintrc|eslint)[^/]*$/.test(file) ||
     /(^|\/)Dockerfile[^/]*$/.test(file) ||
     file.startsWith('.env') ||
@@ -143,6 +151,7 @@ export function loadGraph(cwd, ref) {
     }
     const pkg = JSON.parse(readFileSync(manifest, 'utf8'));
     if (!pkg.name) throw new Error(`workspace missing name: ${dir}`);
+    if (byName.has(pkg.name)) throw new Error('duplicate workspace name');
     byName.set(pkg.name, dir);
     dependencies.set(
       dir,
@@ -196,6 +205,7 @@ function loadGraphAtTree(cwd, ref) {
       })
     );
     if (!pkg.name) throw new Error(`workspace missing name: ${dir}`);
+    if (names.has(pkg.name)) throw new Error('duplicate workspace name');
     names.set(pkg.name, dir);
     dependencies.set(
       dir,
@@ -222,15 +232,25 @@ function loadGraphAtTree(cwd, ref) {
 
 const DOC_EXTENSIONS = new Set(['.md', '.mdx']);
 const isDocumentation = (file) =>
-  DOC_EXTENSIONS.has(path.posix.extname(file).toLowerCase());
+  DOC_EXTENSIONS.has(path.posix.extname(file).toLowerCase()) &&
+  (file.startsWith('docs/') ||
+    file.startsWith('apps/docs/') ||
+    /^(README|CONTRIBUTING|LICENSE|CHANGELOG)\.md$/.test(file));
 
 export function calculate({
   base,
   head = 'HEAD',
   cwd = process.cwd(),
   extraEdges,
+  skipDocumentation = false,
 }) {
   try {
+    if (
+      ![base, head].every(
+        (ref) => typeof ref === 'string' && /^(?!-)[a-zA-Z0-9_./-]+$/.test(ref)
+      )
+    )
+      throw new Error('invalid ref');
     const mergeBases = runGit(
       '-C',
       cwd,
@@ -274,16 +294,34 @@ export function calculate({
         reason: 'changed path requires all apps',
       };
 
-    const edges = extraEdges ?? loadExtraEdges();
+    let edges = extraEdges;
+    if (!edges) {
+      const file = 'scripts/ci/affected-apps.extra-edges.json';
+      const atBase = runGit('-C', cwd, 'show', `${base}:${file}`);
+      const atAncestor = runGit('-C', cwd, 'show', `${mergeBase}:${file}`);
+      const atHead = runGit('-C', cwd, 'show', `${head}:${file}`);
+      if (atBase !== atHead || atAncestor !== atHead)
+        throw new Error('extra edges changed');
+      edges = JSON.parse(atHead);
+      if (!edges || typeof edges !== 'object' || Array.isArray(edges))
+        throw new Error('invalid extra edges');
+      for (const list of Object.values(edges))
+        if (!Array.isArray(list) || list.some((dep) => typeof dep !== 'string'))
+          throw new Error('invalid extra edge');
+    }
     const headGraph = loadGraph(cwd, head);
-    const baseGraph = loadGraphAtTree(cwd, mergeBase);
-    const dirs = [...new Set([...headGraph.dirs, ...baseGraph.dirs])];
+    const baseGraph = loadGraphAtTree(cwd, base);
+    const ancestorGraph = loadGraphAtTree(cwd, mergeBase);
+    const dirs = [
+      ...new Set([...headGraph.dirs, ...baseGraph.dirs, ...ancestorGraph.dirs]),
+    ];
     const dependents = new Map(
       dirs.map((dir) => [
         dir,
         new Set([
           ...(headGraph.dependents.get(dir) ?? []),
           ...(baseGraph.dependents.get(dir) ?? []),
+          ...(ancestorGraph.dependents.get(dir) ?? []),
         ]),
       ])
     );
@@ -301,6 +339,7 @@ export function calculate({
         .sort((a, b) => b.length - a.length)[0];
     const seeds = new Set();
     for (const file of files) {
+      if (skipDocumentation && isDocumentation(file)) continue;
       const owner = owners(file);
       if (owner) seeds.add(owner);
       else if (!isDocumentation(file))
@@ -323,6 +362,10 @@ export function calculate({
     return {
       mode: 'affected',
       apps: [...affected].filter((dir) => dir.startsWith('apps/')).sort(),
+      packages: [...affected]
+        .filter((dir) => dir.startsWith('packages/'))
+        .sort(),
+      workspaces: [...affected].sort(),
       reason: files.length
         ? 'workspace and documentation changes'
         : 'no changed files',
@@ -332,29 +375,96 @@ export function calculate({
   }
 }
 
+export function selectPullRequest({ eventName, event, cwd = process.cwd() }) {
+  const full = { mode: 'all', apps: [], reason: 'full validation' };
+  if (eventName !== 'pull_request') return full;
+  const base = event?.pull_request?.base?.sha;
+  const head = event?.pull_request?.head?.sha;
+  if (![base, head].every((sha) => /^[a-f0-9]{40}$/.test(sha ?? '')))
+    return full;
+  return calculate({ base, head, cwd, skipDocumentation: true });
+}
+
+export function typeCheckArgs(selection) {
+  const filters =
+    selection.mode === 'affected'
+      ? selection.workspaces.map((dir) => {
+          if (!/^(apps|packages)\/[a-zA-Z0-9_-]+$/.test(dir))
+            throw new Error('invalid workspace');
+          return `--filter=./${dir}...`;
+        })
+      : [];
+  return [
+    'turbo:local',
+    'run',
+    'type-check',
+    '--concurrency=4',
+    ...filters,
+    '--filter=!@tuturuuu/tanstack-web',
+  ];
+}
+
 if (
   process.argv[1] &&
   import.meta.url === pathToFileURL(process.argv[1]).href
 ) {
   const args = process.argv.slice(2);
-  const baseIndex = args.indexOf('--base');
-  const headIndex = args.indexOf('--head');
-  if (baseIndex < 0 || !args[baseIndex + 1]) {
+  if (args.length === 1 && ['--ci', '--type-check'].includes(args[0])) {
+    let selection = { mode: 'all', apps: [], reason: 'unreadable event' };
+    try {
+      selection = selectPullRequest({
+        eventName: process.env.GITHUB_EVENT_NAME,
+        event: JSON.parse(readFileSync(process.env.GITHUB_EVENT_PATH, 'utf8')),
+      });
+    } catch {}
+    if (selection.mode === 'affected' && selection.workspaces.length) {
+      try {
+        const { scanCrossWorkspaceImports, undeclaredImports } =
+          await import('./affected-apps-imports.mjs');
+        const edges = loadExtraEdges();
+        const missing = undeclaredImports(
+          scanCrossWorkspaceImports(process.cwd()),
+          loadGraph(process.cwd()).declares
+        ).filter(
+          ({ importer, target }) =>
+            !coveredByExtraEdges(edges, target, importer)
+        );
+        if (missing.length) throw new Error('uncovered cross-workspace import');
+      } catch (error) {
+        selection = {
+          mode: 'all',
+          apps: [],
+          reason: `graph guard: ${error.message}`,
+        };
+      }
+    }
+    const selected =
+      selection.mode !== 'affected' || selection.workspaces.length > 0;
+    if (args[0] === '--type-check') {
+      if (selected) {
+        const { spawnSync } = await import('node:child_process');
+        const result = spawnSync('bun', typeCheckArgs(selection), {
+          stdio: 'inherit',
+        });
+        if (result.error) throw result.error;
+        process.exitCode = result.status ?? 1;
+      } else
+        console.log('Type Check not applicable; no compilation performed.');
+    } else {
+      appendFileSync(
+        process.env.GITHUB_OUTPUT,
+        `selection=${JSON.stringify(selection)}\napplicable=${selected}\n`
+      );
+    }
+  } else if (
+    (args.length === 2 && args[0] === '--base') ||
+    (args.length === 4 && args[0] === '--base' && args[2] === '--head')
+  ) {
     console.log(
-      JSON.stringify({
-        mode: 'all',
-        apps: [],
-        reason: 'usage: --base <ref> [--head HEAD]',
-      })
+      JSON.stringify(calculate({ base: args[1], head: args[3] ?? 'HEAD' }))
     );
-  } else {
+  } else
     console.log(
-      JSON.stringify(
-        calculate({
-          base: args[baseIndex + 1],
-          head: headIndex >= 0 ? args[headIndex + 1] : 'HEAD',
-        })
-      )
+      JSON.stringify({ mode: 'all', apps: [], reason: 'invalid options' })
     );
-  }
 }

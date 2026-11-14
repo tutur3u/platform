@@ -11,14 +11,16 @@ const { runWorkflowGate } = require('./workflow-gate-test-helper');
 
 const docs = [
   'README.md',
-  'AGENTS.md',
   'apps/docs/platform/overview.mdx',
   'apps/docs/build/development-tools/oxc-cloudflare-adoption.mdx',
   'docs/guide.mdx',
   'apps/docs/page.mdx',
-  'plugins/tuturuuu/skills/example/SKILL.md',
 ];
 const code = [
+  'AGENTS.md',
+  'apps/web/CLAUDE.md',
+  '.github/CODEOWNERS',
+  'plugins/tuturuuu/skills/example/SKILL.md',
   'apps/web/src/help.md',
   'packages/ui/README.md',
   'apps/docs/docs.json',
@@ -32,6 +34,7 @@ const code = [
   'apps/web/src/widget.test.ts',
   'scripts/ci/test-docs-only-gate.js',
   'unknown',
+  'unknown.md',
   'docs/UPPERCASE.MD',
 ];
 

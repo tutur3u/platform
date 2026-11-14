@@ -230,25 +230,29 @@ jobs:
           result="$(node scripts/ci/release-only-changes.js "$BEFORE_SHA" "$GITHUB_SHA")"
           echo "run_checks=$result" >> "$GITHUB_OUTPUT"
 
+      - name: Select affected workspaces from immutable PR range
+        id: affected
+        run: node scripts/ci/affected-apps.mjs --ci
+
       - name: Setup Bun
-        if: steps.check_config.outputs.should_run == 'true' && steps.release_relevance.outputs.run_checks == 'true'
+        if: steps.check_config.outputs.should_run == 'true' && steps.release_relevance.outputs.run_checks == 'true' && steps.affected.outputs.applicable == 'true'
         uses: ./.github/actions/setup-bun-with-retry
         with:
           bun-version: 1.4.4
 
       - name: Test inline Type Check preflight
-        if: steps.check_config.outputs.should_run == 'true' && steps.release_relevance.outputs.run_checks == 'true'
+        if: steps.check_config.outputs.should_run == 'true' && steps.release_relevance.outputs.run_checks == 'true' && steps.affected.outputs.applicable == 'true'
         run: node --test --test-reporter=tap scripts/ci/type-check-inline-workflow.test.js
 
       - name: Restore Turbo fallback cache
-        if: steps.check_config.outputs.should_run == 'true' && steps.release_relevance.outputs.run_checks == 'true'
+        if: steps.check_config.outputs.should_run == 'true' && steps.release_relevance.outputs.run_checks == 'true' && steps.affected.outputs.applicable == 'true'
         uses: ./.github/actions/setup-turbo-fallback-cache
         with:
           family: type-check
           cross-lock-restore: 'true'
 
       - name: Install dependencies
-        if: steps.check_config.outputs.should_run == 'true' && steps.release_relevance.outputs.run_checks == 'true'
+        if: steps.check_config.outputs.should_run == 'true' && steps.release_relevance.outputs.run_checks == 'true' && steps.affected.outputs.applicable == 'true'
         env:
           BUN_INSTALL_FLAGS: ${{ runner.environment == 'self-hosted' && '--ignore-scripts' || '' }}
         run: bash scripts/ci/run-with-backoff.sh bun install --frozen-lockfile $BUN_INSTALL_FLAGS
@@ -256,7 +260,7 @@ jobs:
       # --frozen-lockfile accepts orphan entries that a plain install prunes,
       # so every fresh worktree's setup rewrote bun.lock. Keep main canonical.
       - name: Verify bun.lock is canonical
-        if: steps.check_config.outputs.should_run == 'true' && steps.release_relevance.outputs.run_checks == 'true'
+        if: steps.check_config.outputs.should_run == 'true' && steps.release_relevance.outputs.run_checks == 'true' && steps.affected.outputs.applicable == 'true'
         shell: bash
         run: |
           # A missing lockfile would be regenerated as an untracked file that
@@ -276,19 +280,23 @@ jobs:
           fi
 
       - name: Build workspace dependencies
-        if: steps.check_config.outputs.should_run == 'true' && steps.release_relevance.outputs.run_checks == 'true'
+        if: steps.check_config.outputs.should_run == 'true' && steps.release_relevance.outputs.run_checks == 'true' && steps.affected.outputs.applicable == 'true'
         uses: ./.github/actions/run-with-turbo-remote-cache
         with:
           command: bun turbo:local run build --concurrency=4 --filter=@tuturuuu/types --filter=@tuturuuu/supabase --filter=@tuturuuu/internal-api --filter=@tuturuuu/masonry
 
       - name: Run type check
-        if: steps.check_config.outputs.should_run == 'true' && steps.release_relevance.outputs.run_checks == 'true'
+        if: steps.check_config.outputs.should_run == 'true' && steps.release_relevance.outputs.run_checks == 'true' && steps.affected.outputs.applicable == 'true'
         uses: ./.github/actions/run-with-turbo-remote-cache
         with:
           # The TanStack Start migration is paused; keep maintained workspace
           # type checks active without scheduling its package.
-          command: bun turbo:local run type-check --concurrency=4 --filter='!@tuturuuu/tanstack-web'
+          command: node scripts/ci/affected-apps.mjs --type-check
 
       - name: Report skipped type check
         if: steps.check_config.outputs.should_run != 'true' || steps.release_relevance.outputs.run_checks != 'true'
         run: echo "Type Check heavy steps skipped by CI configuration or release-only detection; no compilation was performed and inline preflight regression tests were not run." >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Report unaffected type check
+        if: steps.affected.outputs.applicable == 'false'
+        run: echo 'Type Check not applicable; no compilation performed.' >> "$GITHUB_STEP_SUMMARY"
