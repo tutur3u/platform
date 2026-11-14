@@ -16,6 +16,10 @@
   "skip": "Skip to tracks",
   "footerChecked": "Public data from",
   "liveCheckFailed": "Live check unavailable.",
+  "info": {
+    "about": "About {title}",
+    "close": "Close"
+  },
   "stats": {
     "shippedWeek": "Shipped this week",
     "live": "Live deliverables",
@@ -89,7 +93,7 @@
     "title": "Where each app runs",
     "subtitle": "Each app’s public build-info endpoint, probed from outside Cloudflare, shows which commit it runs and when that commit was made.",
     "checked": "Hosting as of",
-    "checkedNote": "(when this page was built; every deploy checks again)",
+    "checkedNote": "Checked when this page was built; every deploy checks again.",
     "workers": "Cloudflare Workers",
     "vercel": "Vercel",
     "store": "App stores",
@@ -116,7 +120,13 @@
     "to": "to",
     "list": "Apps and their new paths",
     "asOf": "Checked when this page was built:",
-    "method": "Moved: the subdomain redirects to its tuturuuu.com path. In progress: the app already answers on its tuturuuu.com path. Not started: neither yet. Unverified: a check got no answer."
+    "methodTitle": "How each state is checked",
+    "rules": {
+      "done": "The subdomain redirects to its tuturuuu.com path.",
+      "in_progress": "The app already answers on its tuturuuu.com path.",
+      "not_started": "Neither yet.",
+      "unverified": "A check got no answer."
+    }
   },
   "method": {
     "title": "How statuses are computed",
@@ -125,7 +135,7 @@
     "waiting_for_merge": "The pull request is open, ready for review and approved.",
     "in_progress": "An open pull request, or work we have started without a public PR yet.",
     "planned": "On the plan. No claims until there is public evidence.",
-    "sources": "Sources: public GitHub pull requests in tutur3u/platform and each app’s public /api/build-info. The page refreshes in your browser every 10 minutes."
+    "sources": "Sources: public GitHub pull requests in tutur3u/platform and each app’s public /api/build-info. While this tab is open, the page refreshes every 30 minutes."
   },
   "footer": "Public roadmap. No private operational data. Dates are in Vietnam time (UTC+7).",
   "build": "Build",
@@ -179,20 +189,20 @@
     "none": "None",
     "notAvailable": "Not available",
     "today": "Today",
-    "allScope": "All merged PRs: every pull request merged in tutur3u/platform, without bots and dependency updates.",
-    "trackedScope": "Roadmap-tracked PRs: the pull requests listed on this roadmap’s deliverables.",
+    "allScope": "Every pull request merged in tutur3u/platform, without bots and dependency updates.",
+    "trackedScope": "The pull requests listed on this roadmap’s deliverables.",
     "allUnavailable": "All-PR counts aren’t available for these days, so the chart leads with roadmap-tracked PRs.",
     "asOf": "All-PR counts as of {date}.",
     "capped": "GitHub search hit its limit, so recent all-PR counts may be low.",
     "loading": "Loading older days…",
     "failed": "Older days are unavailable right now.",
-    "deploysNote": "Production builds: the build each app serves now, by build day.",
+    "deploysNote": "The build each app serves now, by build day.",
     "chart": "Daily merged pull requests. Use the arrow keys to move between days.",
     "table": "Daily figures",
     "day": "Day",
     "vsPrevious": "vs previous {n} days",
     "ttl": "Merge → production",
-    "ttlNote": "Merge → production is measured to the build serving each PR now, so it is an upper bound.",
+    "ttlNote": "Measured to the build serving each PR now, so it is an upper bound.",
     "median": "Median",
     "p90": "p90",
     "waitingAge": "Waiting for production",

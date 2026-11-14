@@ -157,8 +157,7 @@ export function assessDoctor(observation) {
     ['>Tuturuuu</span>', 'the Tuturuuu brand name'],
   ])
     if (!body.includes(marker)) failures.push(`canonical HTML missing ${name}`);
-  failures.push(...markup.redundantAltFailures(body));
-  failures.push(...markup.pendingBoundaryFailures(body));
+  failures.push(...markup.markupFailures(body));
   if (!MOUNTED_LOGO.test(body))
     failures.push('canonical HTML missing the mounted Tuturuuu logo');
   if (body.includes('public-satellite-shell'))

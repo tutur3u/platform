@@ -202,7 +202,8 @@ export function TimelineSection({
       <SectionHead
         id="timeline-title"
         title={t.timeline.title}
-        subtitle={t.timeline.subtitle}
+        t={t}
+        info={<p>{t.timeline.subtitle}</p>}
       />
       <div className="timeline-controls">
         <fieldset className="segmented view-switch">
@@ -414,7 +415,11 @@ function PeriodGroup({ t, group }: { t: Messages; group: TimelineGroup }) {
               <li key={`d-${row.d.id}`} className="is-deliverable">
                 <span className="d-title">{row.d.title}</span>
                 <span className="meta">
-                  <StatusBadge status={row.d.state.status} t={t} />
+                  <StatusBadge
+                    status={row.d.state.status}
+                    t={t}
+                    tipId={`tip-tl-${row.d.id}`}
+                  />
                   <PrLinks prs={row.d.prs.map((number) => ({ number }))} />
                 </span>
               </li>
@@ -476,7 +481,11 @@ function PlannedNext({
         {items.map((item) => (
           <li key={item.id}>
             <span className="d-title">{item.title}</span>
-            <StatusBadge status={item.state.status} t={t} />
+            <StatusBadge
+              status={item.state.status}
+              t={t}
+              tipId={`tip-next-${item.id}`}
+            />
           </li>
         ))}
       </ul>
