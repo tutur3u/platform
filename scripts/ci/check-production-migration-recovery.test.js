@@ -259,7 +259,15 @@ test('workflow keeps default-off manual opt-in and full normal marker/staging/ap
     yaml,
     /node --experimental-strip-types scripts\/ci\/check-production-migration-recovery.ts/
   );
-  assert.match(yaml, /DEPLOYMENT_MARKER_HAS_SUCCESS.*!= "true"/);
+  assert.match(
+    yaml,
+    /MARKER_VERIFY_PROFILE=production-platform TARGET_SHA="\$TARGET_SHA"[\s\S]*verify-github-deployment-marker-producer\.mjs/
+  );
+  const markerVerifier = readFileSync(
+    join(__dirname, 'verify-github-deployment-marker-producer.mjs'),
+    'utf8'
+  );
+  assert.match(markerVerifier, /statusRows\[0\]\.state === 'success'/);
   assert.match(
     yaml,
     /d\.sha === source && d\.ref === source &&[\s\S]*p\.sha === source/

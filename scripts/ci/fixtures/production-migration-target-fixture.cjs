@@ -56,6 +56,18 @@ function fixture(t, overrides = {}) {
       '35eaf73931589cfe9dd62f7456a3dbe3c48c988c',
     ],
     [
+      '.github/workflows/vercel-production.yaml',
+      '76197c03e41dca432e53619bc384cfdd1c879576',
+    ],
+    [
+      '.github/workflows/vercel-production-platform.yaml',
+      'b1e5dead4ac84db1b5f9e498026c21e6b2eae730',
+    ],
+    [
+      'scripts/ci/record-vercel-deployment.ts',
+      '53b07b48226b55ad967e95a85cd62e22d449b07c',
+    ],
+    [
       '.github/workflows/supabase-staging.yaml',
       'c80066e1cd038fcda3bd6c1a79c0b12993b94b49',
       true,
@@ -105,6 +117,8 @@ if (request.endsWith('/git/ref/heads/production')) {
   if (!request.includes('head_sha=' + sha)) process.exit(9);
   const staging = request.includes('supabase-staging');
   response = {workflow_runs: [{
+    id: Number(process.env.PLANNER_RUN_ID || 301),
+    run_attempt: Number(process.env.PLANNER_RUN_ATTEMPT || 1),
     head_sha: staging ? process.env.STAGING_SHA : process.env.PLANNER_SHA,
     head_branch: staging ? process.env.STAGING_BRANCH : process.env.PLANNER_BRANCH,
     conclusion: staging ? process.env.STAGING_RESULT : process.env.PLANNER_RESULT,

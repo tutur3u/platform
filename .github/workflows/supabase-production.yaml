@@ -24,7 +24,7 @@ on:
         type: string
         default: ""
 concurrency:
-  group: ${{ ((github.event_name == 'workflow_dispatch' && github.ref == 'refs/heads/production') || (github.event_name == 'workflow_run' && github.event.workflow_run.conclusion == 'success' && github.event.workflow_run.head_repository.full_name == github.repository && ((github.event.workflow_run.name == 'Production Deployment Planner' && github.event.workflow_run.head_branch == 'production' && (github.event.workflow_run.event == 'push' || github.event.workflow_run.event == 'workflow_dispatch')) || (github.event.workflow_run.name == 'Supabase Staging Migration' && github.event.workflow_run.head_branch == 'main' && (github.event.workflow_run.event == 'push' || github.event.workflow_run.event == 'workflow_run' || github.event.workflow_run.event == 'workflow_dispatch'))))) && 'supabase-production-migration' || format('supabase-production-migration-ignored-{0}', github.run_id) }}
+  group: ${{ ((github.event_name == 'workflow_dispatch' && github.ref == 'refs/heads/production') || (github.event_name == 'workflow_run' && github.event.workflow_run.head_repository.full_name == github.repository && ((github.event.workflow_run.name == 'Production Deployment Planner' && github.event.workflow_run.head_branch == 'production' && (github.event.workflow_run.event == 'push' || github.event.workflow_run.event == 'workflow_dispatch') && (github.event.workflow_run.conclusion == 'success' || github.event.workflow_run.conclusion == 'failure')) || (github.event.workflow_run.name == 'Supabase Staging Migration' && github.event.workflow_run.head_branch == 'main' && (github.event.workflow_run.event == 'push' || github.event.workflow_run.event == 'workflow_run' || github.event.workflow_run.event == 'workflow_dispatch') && github.event.workflow_run.conclusion == 'success')))) && 'supabase-production-migration' || format('supabase-production-migration-ignored-{0}', github.run_id) }}
   cancel-in-progress: false
   queue: max
 permissions:
@@ -32,7 +32,7 @@ permissions:
 jobs:
   evaluate-prerequisites:
     name: Evaluate production prerequisites
-    if: ${{ (github.event_name == 'workflow_dispatch' && github.ref == 'refs/heads/production') || (github.event_name == 'workflow_run' && github.event.workflow_run.conclusion == 'success' && github.event.workflow_run.head_repository.full_name == github.repository && ((github.event.workflow_run.name == 'Production Deployment Planner' && github.event.workflow_run.head_branch == 'production' && (github.event.workflow_run.event == 'push' || github.event.workflow_run.event == 'workflow_dispatch')) || (github.event.workflow_run.name == 'Supabase Staging Migration' && github.event.workflow_run.head_branch == 'main' && (github.event.workflow_run.event == 'push' || github.event.workflow_run.event == 'workflow_run' || github.event.workflow_run.event == 'workflow_dispatch')))) }}
+    if: ${{ (github.event_name == 'workflow_dispatch' && github.ref == 'refs/heads/production') || (github.event_name == 'workflow_run' && github.event.workflow_run.head_repository.full_name == github.repository && ((github.event.workflow_run.name == 'Production Deployment Planner' && github.event.workflow_run.head_branch == 'production' && (github.event.workflow_run.event == 'push' || github.event.workflow_run.event == 'workflow_dispatch') && (github.event.workflow_run.conclusion == 'success' || github.event.workflow_run.conclusion == 'failure')) || (github.event.workflow_run.name == 'Supabase Staging Migration' && github.event.workflow_run.head_branch == 'main' && (github.event.workflow_run.event == 'push' || github.event.workflow_run.event == 'workflow_run' || github.event.workflow_run.event == 'workflow_dispatch') && github.event.workflow_run.conclusion == 'success'))) }}
     timeout-minutes: 15
     runs-on: ubuntu-latest
     permissions:
@@ -43,6 +43,8 @@ jobs:
       should_deploy: ${{ steps.evaluate.outputs.should_deploy }}
       target_sha: ${{ steps.resolve_target.outputs.target_sha }}
       trusted_trigger: ${{ steps.trigger.outputs.trusted }}
+      planner_run_id: ${{ steps.evaluate.outputs.planner_run_id }}
+      planner_run_attempt: ${{ steps.evaluate.outputs.planner_run_attempt }}
     steps:
       - name: Verify trusted trigger
         id: trigger
@@ -51,7 +53,7 @@ jobs:
           TRUSTED_DISPATCH_REF: refs/heads/production
           # One producer per line: <workflow file> <workflow ID> <exact branch> <events> <conclusions>
           TRUSTED_PRODUCERS: |
-            vercel-production.yaml 317228637 production push,workflow_dispatch success
+            vercel-production.yaml 317228637 production push,workflow_dispatch success,failure
             supabase-staging.yaml 47180097 main push,workflow_run,workflow_dispatch success
         run: |
           set -euo pipefail
@@ -179,11 +181,11 @@ jobs:
           elif [ "$TRIGGER_WORKFLOW" = "Production Deployment Planner" ]; then
             if [ "$TRIGGER_BRANCH" != "production" ]; then
               echo "::notice::Skipping production migration because the production deployment planner ran on '$TRIGGER_BRANCH' instead of production."
-            elif [ "$TRIGGER_CONCLUSION" != "success" ]; then
+            elif [ "$TRIGGER_CONCLUSION" != "success" ] && [ "$TRIGGER_CONCLUSION" != "failure" ]; then
               echo "::notice::Skipping production migration because the production deployment planner concluded with '$TRIGGER_CONCLUSION'."
             else
               TARGET_SHA="$TRIGGER_SHA"
-              echo "Production deployment planner completed. Checking prerequisites for production migration at $TARGET_SHA..."
+              echo "Production deployment planner completed with conclusion '$TRIGGER_CONCLUSION'. Checking prerequisites for production migration at $TARGET_SHA..."
             fi
           elif [ "$TRIGGER_WORKFLOW" = "Supabase Staging Migration" ]; then
             if [ "$TRIGGER_BRANCH" != "main" ]; then
@@ -315,55 +317,22 @@ jobs:
               echo "::notice::Skipping production migration because no production deployment planner run was found for $TARGET_SHA."
             elif [ "$VERCEL_BRANCH" != "production" ]; then
               echo "::notice::Skipping production migration because the matching production deployment planner ran on '$VERCEL_BRANCH'."
-            elif [ "$VERCEL_CONCLUSION" != "success" ] && [ "$RECOVERY_ALLOWED" != "true" ]; then
+            elif [ "$VERCEL_STATUS" != "completed" ]; then
+              echo "::notice::Skipping production migration because the production deployment planner for $TARGET_SHA has status '$VERCEL_STATUS'."
+            elif [ "$VERCEL_CONCLUSION" != "success" ] && [ "$VERCEL_CONCLUSION" != "failure" ]; then
               echo "::notice::Skipping production migration because the production deployment planner for $TARGET_SHA has conclusion '$VERCEL_CONCLUSION'."
             else
+              if [ "$VERCEL_CONCLUSION" != "success" ] && [ "$RECOVERY_ALLOWED" != "true" ]; then
+                echo "Production deployment planner concluded '$VERCEL_CONCLUSION'; gating migration apply on the successful platform deployment marker instead of overall planner success."
+              fi
               echo "Checking successful production platform deployment marker..."
-              DEPLOYMENT_MARKER_DEPLOYMENT=$(gh api \
-                "repos/${{ github.repository }}/deployments?environment=vercel-production-platform&per_page=100" \
-                | jq --arg sha "$TARGET_SHA" '
-                  def payload_obj:
-                    (.payload // {}) as $payload
-                    | if ($payload | type) == "object" then $payload
-                      elif ($payload | type) == "string" then ($payload | fromjson? // {})
-                      else {}
-                      end;
-
-                  [
-                    .[]
-                    | . as $deployment
-                    | (payload_obj) as $payload
-                    | select(
-                        ($deployment.sha == $sha and $payload.sha == $sha)
-                        and ($payload.markerKind == "deployment")
-                        and ($payload.workflowName == "vercel-production-platform.yaml")
-                      )
-                  ]
-                  | sort_by(.created_at // "")
-                  | reverse
-                  | .[0] // {}
-                  | {id: .id, sha: .sha}')
-
-              DEPLOYMENT_MARKER_DEPLOYMENT_ID=$(echo "$DEPLOYMENT_MARKER_DEPLOYMENT" | jq -r '.id // ""')
-              DEPLOYMENT_MARKER_SHA=$(echo "$DEPLOYMENT_MARKER_DEPLOYMENT" | jq -r '.sha // "missing"')
-
-              echo "Production platform deployment marker deployment ID: ${DEPLOYMENT_MARKER_DEPLOYMENT_ID:-missing}"
-              echo "Production platform deployment marker SHA: $DEPLOYMENT_MARKER_SHA"
-
-              if [ -z "$DEPLOYMENT_MARKER_DEPLOYMENT_ID" ]; then
-                echo "::notice::Skipping production migration because no production platform deployment marker was found for $TARGET_SHA."
+              PLANNER_RUN_ID=$(echo "$VERCEL_RUN" | jq -r '.id')
+              PLANNER_RUN_ATTEMPT=$(echo "$VERCEL_RUN" | jq -r '.run_attempt')
+              if ! MARKER_VERIFY_PROFILE=production-platform TARGET_SHA="$TARGET_SHA" \
+                PLANNER_RUN_ID="$PLANNER_RUN_ID" PLANNER_RUN_ATTEMPT="$PLANNER_RUN_ATTEMPT" \
+                node scripts/ci/verify-github-deployment-marker-producer.mjs; then
+                echo "::notice::Skipping production migration because the production platform deployment marker for $TARGET_SHA failed producer verification."
               else
-                DEPLOYMENT_MARKER_STATUSES=$(gh api \
-                  "repos/${{ github.repository }}/deployments/$DEPLOYMENT_MARKER_DEPLOYMENT_ID/statuses")
-                DEPLOYMENT_MARKER_STATE=$(echo "$DEPLOYMENT_MARKER_STATUSES" | jq -r '.[0].state // "missing"')
-                DEPLOYMENT_MARKER_HAS_SUCCESS=$(echo "$DEPLOYMENT_MARKER_STATUSES" | jq -r '.[0].state == "success"')
-
-                echo "Production platform deployment marker latest state: $DEPLOYMENT_MARKER_STATE"
-                echo "Production platform deployment marker has success status: $DEPLOYMENT_MARKER_HAS_SUCCESS"
-
-                if [ "$DEPLOYMENT_MARKER_HAS_SUCCESS" != "true" ]; then
-                  echo "::notice::Skipping production migration because the production platform deployment marker for $TARGET_SHA does not have a current success status. Latest state is '$DEPLOYMENT_MARKER_STATE'."
-                else
                   node --input-type=module <<'STAGING_SOURCE_PROOF'
           // Inline Node 24 verifier; no checkout-local helpers or external packages.
           const assert = (ok, code) => { if (!ok) throw new Error(code); };
@@ -642,7 +611,8 @@ jobs:
           });
           STAGING_SOURCE_PROOF
                   SHOULD_DEPLOY=true
-                fi
+                  echo "planner_run_id=$PLANNER_RUN_ID" >> "$GITHUB_OUTPUT"
+                  echo "planner_run_attempt=$PLANNER_RUN_ATTEMPT" >> "$GITHUB_OUTPUT"
               fi
             fi
           fi
@@ -667,6 +637,29 @@ jobs:
         with:
           ref: ${{ needs.evaluate-prerequisites.outputs.target_sha }}
           persist-credentials: false
+
+      - name: Confirm planner attempt is still current before apply
+        env:
+          GH_TOKEN: ${{ github.token }}
+          PLANNER_RUN_ID: ${{ needs.evaluate-prerequisites.outputs.planner_run_id }}
+          PLANNER_RUN_ATTEMPT: ${{ needs.evaluate-prerequisites.outputs.planner_run_attempt }}
+          TARGET_SHA: ${{ needs.evaluate-prerequisites.outputs.target_sha }}
+        run: |
+          set -euo pipefail
+          [[ "$PLANNER_RUN_ID" =~ ^[1-9][0-9]*$ ]] && [[ "$PLANNER_RUN_ATTEMPT" =~ ^[1-9][0-9]*$ ]] || {
+            echo "::error::The evaluated planner run identity is missing; refusing production migration."
+            exit 1
+          }
+          CURRENT=$(gh api "repos/${{ github.repository }}/actions/runs/$PLANNER_RUN_ID" \
+            --jq '[.run_attempt, .status, .conclusion, .head_sha, .head_branch, .path] | @tsv')
+          IFS=$'\t' read -r ATTEMPT RUN_STATUS RUN_CONCLUSION RUN_SHA RUN_BRANCH RUN_PATH <<< "$CURRENT"
+          if [ "$ATTEMPT" != "$PLANNER_RUN_ATTEMPT" ] || [ "$RUN_STATUS" != "completed" ] || \
+             { [ "$RUN_CONCLUSION" != "success" ] && [ "$RUN_CONCLUSION" != "failure" ]; } || \
+             [ "$RUN_SHA" != "$TARGET_SHA" ] || [ "$RUN_BRANCH" != "production" ] || \
+             [ "$RUN_PATH" != ".github/workflows/vercel-production.yaml" ]; then
+            echo "::error::The evaluated planner attempt changed before apply; refusing production migration."
+            exit 1
+          fi
 
       - name: Setup Supabase CLI
         uses: ./.github/actions/setup-supabase-cli-with-retry

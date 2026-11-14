@@ -18,6 +18,23 @@ const {
 const resolveStep = 'Resolve immutable production migration target';
 const evaluateStep = 'Evaluate prerequisite status';
 
+test('failed planner with successful platform marker still deploys', (t) => {
+  const setup = fixture(t, {
+    PLANNER_RESULT: 'failure',
+    TRIGGER_WORKFLOW: 'Production Deployment Planner',
+    TRIGGER_BRANCH: 'production',
+    TRIGGER_CONCLUSION: 'failure',
+    TRIGGER_SHA: productionSha,
+  });
+  const result = setup.run(evaluateStep, { TARGET_SHA: productionSha });
+  assert.equal(result.status, 0);
+  assert.match(setup.output(), /should_deploy=true/);
+  assert.match(
+    result.stdout,
+    /gating migration apply on the successful platform deployment marker/
+  );
+});
+
 test('newer unpromoted staging completion resolves and gates only current production', (t) => {
   const setup = fixture(t, { CURRENT_SHA: workflowSha });
   assert.equal(setup.run(resolveStep).status, 0);
@@ -46,16 +63,15 @@ test('newer unpromoted staging completion resolves and gates only current produc
     .requests()
     .split('\n')
     .filter((line) => line.startsWith('FETCH '));
-  assert.equal(fetches.length, 16);
-  assert.match(fetches[6], new RegExp(`ref=${workflowSha}$`));
-  assert.match(fetches[9], new RegExp(`ref=${workflowSha}$`));
-  assert.match(fetches[11], /attempts\/1\/jobs\?per_page=100&page=1$/);
-  assert.deepEqual(fetches.slice(-4), [
-    fetches[2],
-    'FETCH /repos/example/platform/deployments/301',
-    fetches[4],
-    fetches[3],
-  ]);
+  assert.equal(fetches.length, 34);
+  assert.match(
+    fetches.join('\n'),
+    /deployments\?environment=vercel-production-platform/
+  );
+  assert.match(
+    fetches.join('\n'),
+    /deployments\?environment=supabase-staging/
+  );
 });
 
 for (const [label, overrides, target] of [
@@ -70,6 +86,15 @@ for (const [label, overrides, target] of [
     {
       TRIGGER_WORKFLOW: 'Production Deployment Planner',
       TRIGGER_BRANCH: 'production',
+    },
+    stagingSha,
+  ],
+  [
+    'failed planner still pins its production commit for post-promotion re-evaluation',
+    {
+      TRIGGER_WORKFLOW: 'Production Deployment Planner',
+      TRIGGER_BRANCH: 'production',
+      TRIGGER_CONCLUSION: 'failure',
     },
     stagingSha,
   ],
@@ -124,7 +149,11 @@ for (const overrides of [
   { MARKER_PAYLOAD: 'empty' },
   { MARKER_PAYLOAD: 'wrong-sha' },
   { DATABASE_AFFECTED: 'false' },
-  { PLANNER_RESULT: 'failure' },
+  { PLANNER_RESULT: 'failure', MARKER_STATE: 'failure' },
+  { PLANNER_RESULT: 'cancelled' },
+  { PLANNER_RESULT: 'timed_out' },
+  { PLANNER_RESULT: 'neutral' },
+  { PLANNER_RESULT: 'unknown' },
   { PLANNER_SHA: stagingSha },
   { PLANNER_BRANCH: 'main' },
   { STAGING_SHA: stagingSha },
@@ -134,8 +163,12 @@ for (const overrides of [
   test(`current production prerequisites remain required: ${JSON.stringify(overrides)}`, (t) => {
     const setup = fixture(t, overrides);
     const result = setup.run(evaluateStep, { TARGET_SHA: productionSha });
-    const stagingRejected = Object.keys(overrides).some((key) =>
-      key.startsWith('STAGING_')
+    const stagingRejected = Object.keys(overrides).some(
+      (key) =>
+        key.startsWith('STAGING_') ||
+        key === 'MARKER_STATE' ||
+        key === 'MARKER_PAYLOAD' ||
+        key === 'MARKER_SHA'
     );
     if (stagingRejected) {
       assert.notEqual(result.status, 0);
@@ -144,21 +177,11 @@ for (const overrides of [
         /Exact-source staging proof unavailable or changed/
       );
       assert.equal(setup.output(), '');
-      assert.doesNotMatch(setup.requests(), /FETCH_FIXTURE_UNEXPECTED/);
-      const fetches = setup
-        .requests()
-        .split('\n')
-        .filter((line) => line.startsWith('FETCH '));
-      assert.equal(fetches.length, overrides.STAGING_SHA ? 3 : 4);
-      assert.match(
-        fetches.at(-1),
-        overrides.STAGING_SHA ? /deployments\?/ : /actions\/runs\/201$/
-      );
     } else {
       assert.equal(result.status, 0);
       assert.equal(setup.output(), 'should_deploy=false\n');
-      assert.doesNotMatch(setup.requests(), /FETCH /);
     }
+    assert.doesNotMatch(setup.requests(), /FETCH_FIXTURE_UNEXPECTED/);
     assert.doesNotMatch(setup.output(), /should_deploy=true/);
   });
 }
@@ -180,7 +203,58 @@ test('resolved immutable target precedes checkout and pending-range configuratio
   );
   assert.doesNotMatch(stepScript(evaluateStep), /TARGET_SHA=""/);
   assert.match(workflow, /cancel-in-progress: false/);
+  assert.match(
+    workflow,
+    /vercel-production\.yaml 317228637 production push,workflow_dispatch success,failure/
+  );
+  assert.doesNotMatch(
+    stepScript(evaluateStep),
+    /PRE_PROMOTION|pre_promotion|pre-promotion-migration-allowlist/
+  );
+  assert.match(
+    stepScript(evaluateStep),
+    /verify-github-deployment-marker-producer\.mjs/
+  );
 });
+
+for (const [label, overrides] of [
+  [
+    'mismatched status log_url',
+    { PLATFORM_STATUS_LOG_URL: 'https://evil.example/evil/run' },
+  ],
+  [
+    'unfinished platform producer',
+    {
+      PLATFORM_CALLER_STATUS: 'in_progress',
+      PLATFORM_CALLER_CONCLUSION: 'failure',
+    },
+  ],
+  [
+    'forged caller workflow file',
+    { PLATFORM_CALLER_WORKFLOW_PATH: '.github/workflows/evil.yaml' },
+  ],
+  ['wrong caller branch', { PLATFORM_CALLER_BRANCH: 'main' }],
+  ['wrong caller SHA', { PLATFORM_CALLER_SHA: stagingSha }],
+  [
+    'forged deployment creator',
+    {
+      PLATFORM_CREATOR_LOGIN: 'evil',
+      PLATFORM_CREATOR_ID: '1',
+      PLATFORM_CREATOR_TYPE: 'User',
+    },
+  ],
+]) {
+  test(`production marker producer verification rejects ${label}`, (t) => {
+    const setup = fixture(t, overrides);
+    const result = setup.run(evaluateStep, { TARGET_SHA: productionSha });
+    assert.equal(result.status, 0);
+    assert.equal(setup.output(), 'should_deploy=false\n');
+    assert.match(
+      `${result.stdout}${result.stderr}`,
+      /failed producer verification/
+    );
+  });
+}
 
 function expressionValue(expression, github) {
   // These actual workflow expressions use the shared JS/GHA boolean/string
@@ -216,13 +290,23 @@ for (const conclusion of [
   'timed_out',
   'skipped',
   'neutral',
+  'unknown',
   null,
 ]) {
   test(`ignored ${conclusion} callback cannot replace a pending migration`, () => {
     const event = {
       event_name: 'workflow_run',
       run_id: 41,
-      event: { workflow_run: { conclusion } },
+      repository: 'example/platform',
+      event: {
+        workflow_run: {
+          conclusion,
+          name: 'Other workflow',
+          head_branch: 'production',
+          event: 'push',
+          head_repository: { full_name: 'example/platform' },
+        },
+      },
     };
     assert.equal(expressionValue(admissionExpression, event), false);
     assert.equal(
@@ -262,6 +346,22 @@ for (const [label, event] of [
     },
   ],
   [
+    'failed production planner',
+    {
+      event_name: 'workflow_run',
+      repository: 'example/platform',
+      event: {
+        workflow_run: {
+          conclusion: 'failure',
+          name: 'Production Deployment Planner',
+          head_branch: 'production',
+          event: 'push',
+          head_repository: { full_name: 'example/platform' },
+        },
+      },
+    },
+  ],
+  [
     'main staging',
     {
       event_name: 'workflow_run',
@@ -288,6 +388,28 @@ for (const [label, event] of [
     assert.match(workflow, /cancel-in-progress: false/);
   });
 }
+
+test('failed staging workflow_run stays outside the migration lock group', () => {
+  const context = {
+    event_name: 'workflow_run',
+    repository: 'example/platform',
+    run_id: 44,
+    event: {
+      workflow_run: {
+        conclusion: 'failure',
+        name: 'Supabase Staging Migration',
+        head_branch: 'main',
+        event: 'workflow_run',
+        head_repository: { full_name: 'example/platform' },
+      },
+    },
+  };
+  assert.equal(expressionValue(admissionExpression, context), false);
+  assert.equal(
+    expressionValue(concurrencyExpression, context),
+    'supabase-production-migration-ignored-44'
+  );
+});
 
 for (const [label, event] of [
   [
@@ -468,22 +590,36 @@ for (const [target, wrapper] of [
     });
     const result = setup.run(evaluateStep, { TARGET_SHA: productionSha });
     const denied = [target, wrapper].includes('unknown') || wrapper === 'new';
-    assert.equal(result.status === 0, !denied);
-    assert.equal(setup.output(), denied ? '' : 'should_deploy=true\n');
     assert.doesNotMatch(setup.requests(), /FETCH_FIXTURE_UNEXPECTED/);
-    if (denied)
-      assert.match(
-        result.stderr,
-        /Exact-source staging proof unavailable or changed/
+    if (denied) {
+      assert.notEqual(setup.output(), 'should_deploy=true\n');
+      if (result.status === 0) {
+        assert.equal(setup.output(), 'should_deploy=false\n');
+        assert.match(
+          `${result.stdout}${result.stderr}`,
+          /failed producer verification|Skipping production migration/
+        );
+      } else {
+        assert.equal(setup.output(), '');
+        assert.match(
+          result.stderr,
+          /Exact-source staging proof unavailable or changed/
+        );
+      }
+    } else {
+      assert.equal(result.status, 0);
+      assert.equal(
+        setup.output(),
+        'planner_run_id=301\nplanner_run_attempt=1\nshould_deploy=true\n'
       );
-    else
       assert.equal(
         setup
           .requests()
           .split('\n')
           .filter((line) => line.startsWith('FETCH ')).length,
-        target === wrapper ? 16 : 17
+        target === wrapper ? 34 : 35
       );
+    }
   });
 }
 
