@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from 'vitest';
-import { forwardToCentralApi } from './api-forward';
+import { type ForwardOptions, forwardToCentralApi } from './api-forward';
 
 describe('central API forwarding', () => {
   it('preserves method, body, raw query, cookies and every Set-Cookie', async () => {
@@ -97,5 +97,122 @@ describe('loop prevention by ownership', () => {
     );
     expect(owned.status).toBe(503);
     expect(fetcher).toHaveBeenCalledOnce();
+  });
+});
+
+describe('request header allowlist', () => {
+  const spoofed = {
+    'x-forwarded-for': '192.0.2.99',
+    'x-real-ip': '192.0.2.99',
+    'true-client-ip': '192.0.2.99',
+    'cf-connecting-ip': '192.0.2.99',
+    forwarded: 'for=192.0.2.99',
+    'x-client-ip': '192.0.2.99',
+    'x-cluster-client-ip': '192.0.2.99',
+    'x-vercel-forwarded-for': '192.0.2.99',
+    'x-tuturuuu-origin-auth': `hmac-v1;1999999999;192.0.2.99;${'0'.repeat(64)}`,
+    'x-forwarded-host': 'evil.test',
+    'x-tuturuuu-app-base': '/evil',
+    'x-vercel-protection-bypass': 'client-guess',
+    'x-webhook-secret': 'client-guess',
+  };
+  const allowed = {
+    accept: 'application/json',
+    'accept-language': 'vi',
+    'content-type': 'application/json',
+    authorization: 'Bearer disposable-test-token',
+    cookie: 'sb-auth=fixture; tuturuuu_app_session=fixture',
+    origin: 'https://apps.tuturuuu.com',
+    referer: 'https://apps.tuturuuu.com/ws',
+    'user-agent': 'fixture-agent/1.0',
+    'sec-fetch-site': 'same-origin',
+    'idempotency-key': 'fixture-key',
+    'x-tuturuuu-account-action': 'delete',
+    'x-tuturuuu-turnstile-token': 'fixture-token',
+  };
+
+  async function forwardedRequest(options: ForwardOptions = {}) {
+    let captured: Request | undefined;
+    let body = '';
+    const fetcher = vi.fn(async (request: Request) => {
+      captured = request;
+      body = await request.text();
+      return new Response(null, { status: 204 });
+    });
+    await forwardToCentralApi(
+      new Request('https://apps.tuturuuu.com/api/v1/x?y=1', {
+        method: 'POST',
+        headers: { ...spoofed, ...allowed },
+        body: '{"exact":true}',
+      }),
+      'https://central.example',
+      { fetcher: fetcher as unknown as typeof fetch, ...options }
+    );
+    if (!captured) throw new Error('not forwarded');
+    return { request: captured, body };
+  }
+
+  it('drops client-IP assertions, the origin proof and unlisted headers', async () => {
+    const { request } = await forwardedRequest();
+    for (const name of Object.keys(spoofed))
+      expect(request.headers.get(name)).toBeNull();
+  });
+
+  it('forwards allowlisted headers unchanged with method, body and query', async () => {
+    const { request, body } = await forwardedRequest();
+    for (const [name, value] of Object.entries(allowed))
+      expect(request.headers.get(name)).toBe(value);
+    expect(request.method).toBe('POST');
+    expect(request.url).toBe('https://central.example/api/v1/x?y=1');
+    expect(body).toBe('{"exact":true}');
+  });
+
+  it('sets caller-produced values after the allowlist', async () => {
+    const { request } = await forwardedRequest({
+      setHeaders: { 'x-forwarded-host': 'mail.tuturuuu.com' },
+    });
+    expect(request.headers.get('x-forwarded-host')).toBe('mail.tuturuuu.com');
+    expect(request.headers.get('x-forwarded-for')).toBeNull();
+  });
+
+  it('uses a caller-sanitized header set verbatim except hop-by-hop', async () => {
+    const { request } = await forwardedRequest({
+      callerSanitizedHeaders: new Headers({
+        'next-action': 'action-id',
+        'x-forwarded-for': '203.0.113.10',
+        connection: 'keep-alive',
+      }),
+    });
+    expect(request.headers.get('next-action')).toBe('action-id');
+    expect(request.headers.get('x-forwarded-for')).toBe('203.0.113.10');
+    expect(request.headers.get('connection')).toBeNull();
+    expect(request.headers.get('cookie')).toBeNull();
+  });
+
+  it('streams a request body without buffering', async () => {
+    const encoder = new TextEncoder();
+    const stream = new ReadableStream<Uint8Array>({
+      start(controller) {
+        controller.enqueue(encoder.encode('part-1,'));
+        controller.enqueue(encoder.encode('part-2'));
+        controller.close();
+      },
+    });
+    let body = '';
+    await forwardToCentralApi(
+      new Request('https://apps.tuturuuu.com/api/upload', {
+        method: 'PUT',
+        body: stream,
+        duplex: 'half',
+      } as RequestInit),
+      'https://central.example',
+      {
+        fetcher: (async (request: Request) => {
+          body = await request.text();
+          return new Response(null, { status: 204 });
+        }) as unknown as typeof fetch,
+      }
+    );
+    expect(body).toBe('part-1,part-2');
   });
 });

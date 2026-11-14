@@ -43,6 +43,7 @@ export async function proxyNext(
   headers.set('x-vercel-protection-bypass', bypassSecret);
   const forwarded = new Request(request, { headers });
   const upstream = await forwardToCentralApi(forwarded, origin, {
+    callerSanitizedHeaders: headers,
     search: sanitizedSearch(new URL(request.url)),
     fetcher: async (input, init) => {
       const response = await fetcher(input, init);

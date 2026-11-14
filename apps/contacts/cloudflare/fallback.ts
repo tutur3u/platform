@@ -40,6 +40,7 @@ export async function proxyNext(
   headers.set('x-forwarded-proto', 'https');
   const forwarded = new Request(request, { headers });
   const upstream = await forwardToCentralApi(forwarded, origin, {
+    callerSanitizedHeaders: headers,
     fetcher: async (input, init) => {
       const response = await fetcher(input, init);
       const headers = new Headers(response.headers);
