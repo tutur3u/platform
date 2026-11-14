@@ -227,6 +227,33 @@ describe('short-link documents', () => {
     expect(deps.renderPage.mock.calls.at(-1)?.[0].method).toBe('GET');
   });
 
+  it('keeps trailing-slash redirects on the same origin', async () => {
+    const { call } = setup();
+    for (const path of [
+      '//evil.example/',
+      '///evil.example/',
+      '/\\evil.example/',
+      '/\\/evil.example/',
+      '/%2F%2Fevil.example/',
+      '//evil.example/x/',
+      '///',
+    ]) {
+      const response = await call(`${origin}${path}?a=1`);
+      const location = response.headers.get('location');
+      if (location === null) continue;
+      expect(location).toMatch(/^\/(?![/\\])/);
+      expect(new URL(location, 'https://ttr.gg').origin).toBe(
+        'https://ttr.gg'
+      );
+    }
+    const nested = await call(`${origin}//evil.example/x/`);
+    expect(nested.status).toBe(308);
+    expect(nested.headers.get('location')).toBe('/evil.example/x');
+    const slug = await call(`${origin}/abc/`);
+    expect(slug.status).toBe(308);
+    expect(slug.headers.get('location')).toBe('/abc');
+  });
+
   it('serves owned static files before any slug lookup', async () => {
     const { call, assets, clicks } = setup();
     for (const path of [...PUBLIC_FILES, '/assets/main-abc.js'])

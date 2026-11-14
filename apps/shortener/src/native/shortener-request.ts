@@ -52,6 +52,16 @@ function plain(body: string, status: number, headers: HeadersInit = {}) {
   });
 }
 
+/**
+ * Same-origin path for the trailing-slash redirect. Leading `/` and `\` runs
+ * collapse to one `/`, so the Location can never be protocol-relative
+ * (`//host`) or backslash-relative (`/\host`), which browsers resolve to
+ * another origin.
+ */
+export function trailingSlashPath(pathname: string): string {
+  return `/${pathname.replace(/^[/\\]+/, '').replace(/[/\\]+$/, '')}`;
+}
+
 function geolocation(request: Request): ClickGeolocation | undefined {
   return (request as Request & { cf?: ClickGeolocation }).cf;
 }
@@ -109,7 +119,7 @@ async function documentRequest(
   if (url.pathname.length > 1 && url.pathname.endsWith('/'))
     return new Response(null, {
       status: 308,
-      headers: { Location: `${url.pathname.replace(/\/+$/, '')}${search}` },
+      headers: { Location: `${trailingSlashPath(url.pathname)}${search}` },
     });
   let segments: string[];
   try {
