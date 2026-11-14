@@ -1,6 +1,7 @@
 import { cn } from '@tuturuuu/utils/format';
 import type { CalendarView } from '../../../../hooks/use-view-transition';
 import { Skeleton } from '../../skeleton';
+import { CALENDAR_HEADER_HEIGHT_CLASS } from './calendar-header';
 import { DAY_HEIGHT, HOUR_HEIGHT, MIN_COLUMN_WIDTH } from './config';
 
 // Placeholder events are drawn inside their own column so that columns hidden
@@ -130,32 +131,34 @@ function AgendaCalendarSkeleton() {
 }
 
 /**
- * Text-free stand-in for `CalendarHeader`. It uses the same flex structure and
- * control heights so the header row keeps its height at every breakpoint. It
- * renders no dates, because the server and the browser can disagree about the
- * current day.
+ * Text-free stand-in for `CalendarHeader`: the same fixed-height row with the
+ * same control slots (previous, next, Today, title, view picker and the
+ * "+ New" split button), so the grid below starts where the resolved header
+ * leaves it. It renders no dates, because the server and the browser can
+ * disagree about the current day.
  */
 export function CalendarHeaderSkeleton() {
   return (
     <div
       aria-hidden="true"
       data-testid="calendar-header-skeleton"
-      className="mb-2 flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between"
+      className={cn(
+        CALENDAR_HEADER_HEIGHT_CLASS,
+        'flex min-w-0 shrink-0 items-center gap-1'
+      )}
     >
-      <div className="flex items-center gap-2">
-        <Skeleton className="size-5 rounded-sm" />
-        <Skeleton className="h-7 w-40 rounded-sm" />
+      <div className="flex shrink-0 items-center gap-1">
+        <Skeleton className="size-8 rounded-md" />
+        <Skeleton className="size-8 rounded-md" />
+        <Skeleton className="h-8 w-8 rounded-md md:w-20" />
       </div>
-      <div className="flex flex-col gap-2 md:flex-row md:items-center">
-        <div className="flex items-center gap-2">
-          <div className="flex flex-none items-center gap-2">
-            <Skeleton className="size-8 rounded-md" />
-            <Skeleton className="h-8 w-24 rounded-md" />
-            <Skeleton className="size-8 rounded-md" />
-          </div>
-          <Skeleton className="h-8 w-full flex-1 rounded-md md:w-28" />
-          <Skeleton className="size-8 rounded-md" />
-        </div>
+      <div className="min-w-0 flex-1 px-1">
+        <Skeleton className="h-5 w-32 max-w-full rounded-sm" />
+      </div>
+      <Skeleton className="h-8 w-20 shrink-0 rounded-md" />
+      <div className="flex shrink-0 items-center">
+        <Skeleton className="h-8 w-8 rounded-r-none rounded-l-md md:w-16" />
+        <Skeleton className="size-8 rounded-r-md rounded-l-none border-background border-l" />
       </div>
     </div>
   );
@@ -197,19 +200,69 @@ export function CalendarLoadingSkeleton({
 }
 
 /**
- * The calendar before its view and dates are resolved: a header placeholder
- * and a body placeholder in the same grid the resolved calendar uses, so the
- * area never renders empty and the header row keeps its height.
+ * Text-free stand-in for `WeekdayBar` without all-day events: the same borders
+ * and padding around a 20px day chip, so the time grid below starts at the
+ * same height. Columns past the first hide below `md`, like the time grid.
+ */
+function WeekdayBarSkeleton({ columns }: { columns: number }) {
+  const responsiveColumns = RESPONSIVE_COLUMNS[columns];
+  return (
+    <div
+      aria-hidden="true"
+      data-testid="calendar-weekday-bar-skeleton"
+      className="flex rounded-t-lg bg-background/50"
+    >
+      <div className="flex w-16 items-center justify-center rounded-tl-lg border border-r-0 bg-muted/30 p-2">
+        <Skeleton className="size-4 rounded-sm" />
+      </div>
+      <div
+        className={cn(
+          'grid flex-1 rounded-tr-lg border-t border-r',
+          responsiveColumns
+        )}
+      >
+        {Array.from({ length: columns }).map((_, index) => (
+          <div
+            key={index}
+            className={cn(
+              'border-b border-l p-1.5',
+              index > 0 && 'max-md:hidden'
+            )}
+          >
+            <Skeleton className="mx-auto h-5 w-12 rounded-full" />
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+/**
+ * The calendar before its view and dates are resolved: header, weekday bar
+ * (time grids only) and body placeholders in the same grid the resolved
+ * calendar uses, so the area never renders empty and the grid starts where
+ * the resolved calendar puts it.
  */
 export function CalendarFirstPaintSkeleton({ view }: { view: CalendarView }) {
+  const timed = view !== 'month' && view !== 'year' && view !== 'agenda';
   return (
     <div
       aria-busy="true"
       data-testid="calendar-first-paint-skeleton"
-      className="grid h-full min-h-0 w-full grid-rows-[auto_1fr]"
+      className={cn(
+        'grid h-full min-h-0 w-full',
+        timed ? 'grid-rows-[auto_auto_1fr]' : 'grid-rows-[auto_1fr]'
+      )}
     >
       <CalendarHeaderSkeleton />
-      <div className="min-h-0 overflow-hidden rounded-lg">
+      {timed && <WeekdayBarSkeleton columns={timedColumns(view, 0)} />}
+      <div
+        data-slot="calendar-body"
+        className={cn(
+          'min-h-0 overflow-hidden rounded-lg',
+          timed && 'rounded-t-none'
+        )}
+      >
         <CalendarLoadingSkeleton dates={[]} view={view} responsive />
       </div>
     </div>

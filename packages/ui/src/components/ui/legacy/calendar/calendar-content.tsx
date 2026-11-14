@@ -580,6 +580,7 @@ export const CalendarContent = ({
       )}
 
       <div
+        data-slot="calendar-body"
         className={cn(
           'scrollbar-none relative min-h-0 flex-1 overflow-auto rounded-lg focus:outline-none',
           view === 'agenda' ||
