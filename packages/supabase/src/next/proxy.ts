@@ -2,6 +2,7 @@ import { createServerClient } from '@supabase/ssr';
 import type { Database } from '@tuturuuu/types';
 import type { NextRequest } from 'next/server';
 import { NextResponse } from 'next/server';
+import { resolveTrustedForwardedHost } from '../forwarded-host';
 import {
   getMalformedSupabaseAuthCookieNames,
   getNonCanonicalSupabaseAuthCookieNames,
@@ -34,7 +35,9 @@ function extractForwardedHeaderValue(value: string | null) {
 function resolveRequestUrlFromRequest(
   request: Pick<NextRequest, 'headers' | 'url'>
 ) {
-  const forwardedHost = extractForwardedHeaderValue(
+  // A client-supplied X-Forwarded-Host must not pick the auth cookie domain:
+  // honour it only for a configured origin, otherwise use the request Host.
+  const forwardedHost = resolveTrustedForwardedHost(
     request.headers.get('x-forwarded-host')
   );
   const host =
@@ -44,9 +47,9 @@ function resolveRequestUrlFromRequest(
     return request.url;
   }
 
-  const forwardedProto = extractForwardedHeaderValue(
-    request.headers.get('x-forwarded-proto')
-  );
+  const forwardedProto = forwardedHost
+    ? extractForwardedHeaderValue(request.headers.get('x-forwarded-proto'))
+    : null;
   const fallbackProtocol = (() => {
     try {
       return new URL(request.url).protocol.replace(/:$/u, '');
