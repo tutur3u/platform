@@ -13,6 +13,8 @@ const path = require('node:path');
 const EXEMPT = {
   colab: 'Vite SPA routed by query string; every path renders the app',
   'workspace-domains': 'customer custom domains stay unbranded',
+  'cms-renderer':
+    'published tenant sites on customer hosts stay unbranded; the Worker fails closed with 404/409',
   mobile: 'Flutter app',
   docs: 'Mintlify site',
   'tanstack-web': 'retired runtime',
