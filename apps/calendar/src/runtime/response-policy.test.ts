@@ -119,3 +119,52 @@ describe('Calendar static offline document policy', () => {
     }
   );
 });
+
+describe('Calendar static caching under its base path', () => {
+  const staticResponse = (init: Record<string, string> = {}) =>
+    new Response('asset', {
+      status: 200,
+      headers: {
+        'Content-Type': 'application/javascript',
+        'Cache-Control': 'public, max-age=31536000, immutable',
+        ...init,
+      },
+    });
+
+  it.each([
+    '/assets/index-abc123.js',
+    '/serwist/sw.js',
+    '/favicon.ico',
+    '/calendar/assets/index-abc123.js',
+    '/calendar/serwist/sw.js',
+    '/calendar/favicon.ico',
+  ])('keeps the origin cache policy for static %s', async (path) => {
+    const response = await applyCalendarResponsePolicy(
+      request(path),
+      staticResponse()
+    );
+    expect(response.headers.get('cache-control')).toBe(
+      'public, max-age=31536000, immutable'
+    );
+  });
+
+  it.each([
+    '/calendar/personal',
+    '/calendarx/assets/index-abc123.js',
+    '/calendar/api/v1/calendar/connections',
+  ])('keeps dynamic paths private for %s', async (path) => {
+    const response = await applyCalendarResponsePolicy(
+      request(path),
+      staticResponse()
+    );
+    expect(response.headers.get('cache-control')).toBe('private, no-store');
+  });
+
+  it('keeps a static path private when the response sets a cookie', async () => {
+    const response = await applyCalendarResponsePolicy(
+      request('/calendar/assets/index-abc123.js'),
+      staticResponse({ 'Set-Cookie': 'session=1; HttpOnly' })
+    );
+    expect(response.headers.get('cache-control')).toBe('private, no-store');
+  });
+});
