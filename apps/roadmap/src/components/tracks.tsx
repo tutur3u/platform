@@ -166,7 +166,7 @@ const TrackList = memo(function TrackList({
   return (
     <>
       {visible.length ? null : <p className="empty">{t.tracks.empty}</p>}
-      <div className="track-list" aria-busy={pending || undefined}>
+      <div className="track-list masonry" aria-busy={pending || undefined}>
         {visible.map(({ track, milestones }) => (
           // One hydration boundary per card: React hydrates the list in
           // small, interruptible pieces, and the card a reader taps first.

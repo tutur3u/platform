@@ -288,21 +288,34 @@ button[data-roadmap-pending]:not([aria-pressed]) {
   opacity: 0.72;
 }
 
-/* Hosting: as-of line beside Cloudflare's official web badge. The badge is
-   shown unaltered at its own aspect ratio (761:264) with clear space. */
-.hosting-meta {
+/* Hosting: the Cloudflare Workers group shows Cloudflare's official logo,
+   unaltered at its own aspect ratio (512:173), on a plate that gives it
+   12px of clear space and keeps it apart from the heading text. The plate
+   stays light in both themes, so the logo is never recoloured. */
+.host-group-head {
   display: flex;
   flex-wrap: wrap;
   align-items: center;
   justify-content: space-between;
   gap: 12px 24px;
 }
-.cf-badge {
-  display: block;
+.cf-logo-plate {
+  --rm-logo-plate: var(--rm-panel);
+  display: inline-flex;
   flex: none;
-  width: 152px;
-  height: auto;
-  margin: 4px;
+  padding: 12px;
+  border: 1px solid var(--rm-line);
+  border-radius: 12px;
+  background: var(--rm-logo-plate);
+}
+.dark .cf-logo-plate {
+  --rm-logo-plate: var(--rm-ink);
+}
+.cf-logo {
+  display: block;
+  width: auto;
+  height: 48px;
+  aspect-ratio: 512 / 173;
 }
 .hosting-unverified {
   color: var(--rm-progress-text);
@@ -377,12 +390,10 @@ button[data-roadmap-pending]:not([aria-pressed]) {
   border-radius: 999px;
 }
 .migration-list {
+  --masonry-gap: 8px;
   margin: 0;
   padding: 0;
   list-style: none;
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(min(100%, 300px), 1fr));
-  gap: 8px;
 }
 .migration-item {
   display: grid;

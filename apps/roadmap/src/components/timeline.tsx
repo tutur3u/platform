@@ -263,7 +263,7 @@ export function TimelineSection({
           </dl>
         </header>
         {period.groups.length ? (
-          <div className="period-groups">
+          <div className="period-groups masonry">
             {period.groups.map((group) => (
               <PeriodGroup key={group.track} t={t} group={group} />
             ))}

@@ -87,7 +87,7 @@ export function WsCapabilities({
         </p>
       </div>
       {groups.length ? (
-        <div className="ws-groups">
+        <div className="ws-groups masonry">
           {groups.map(({ group, items }) => (
             <div key={group} className="ws-card">
               <h3>{t.capabilities.groups[group]}</h3>

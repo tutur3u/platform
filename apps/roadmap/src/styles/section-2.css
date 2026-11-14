@@ -59,8 +59,7 @@
   overflow-x: auto;
 }
 .track-list {
-  display: grid;
-  gap: 14px;
+  --masonry-gap: 14px;
 }
 .track {
   scroll-margin-top: calc(var(--shell-nav-offset, 76px) + 96px);
@@ -286,8 +285,11 @@
   display: grid;
   gap: 10px;
 }
+.host-group-head {
+  margin-top: 8px;
+}
 .host-group-title {
-  margin: 8px 0 0;
+  margin: 0;
   display: flex;
   align-items: center;
   gap: 8px;
@@ -461,9 +463,8 @@ code {
   background: var(--rm-soft);
 }
 .method dl {
+  --masonry-gap: 10px;
   margin: 0;
-  display: grid;
-  gap: 10px;
 }
 .method dl div {
   display: grid;
@@ -489,18 +490,8 @@ code {
   .track {
     padding: 22px;
   }
-  .method dl div {
-    grid-template-columns: 200px 1fr;
-    gap: 12px;
-  }
   .coming-soon article {
     padding: 28px;
-  }
-}
-@media (min-width: 1000px) {
-  .track-list {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-    align-items: start;
   }
 }
 /* Docked roadmap: the filter row shares the logo pill and only it scrolls.

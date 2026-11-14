@@ -98,7 +98,8 @@
     "noCommit": "Commit not reported",
     "main": "Latest on main",
     "notObserved": "This build could not check hosting, so every app shows as not verifiable.",
-    "badgeAlt": "Protected by Cloudflare"
+    "logoAlt": "Cloudflare",
+    "trademark": "Cloudflare, the Cloudflare logo and Cloudflare Workers are trademarks and/or registered trademarks of Cloudflare, Inc. in the United States and other jurisdictions."
   },
   "migration": {
     "title": "Moving apps to tuturuuu.com",

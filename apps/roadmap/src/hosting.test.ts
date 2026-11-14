@@ -6,7 +6,7 @@ import { readStyles } from './style-source.ts';
  */
 import assert from 'node:assert/strict';
 import { createHash } from 'node:crypto';
-import { readFileSync } from 'node:fs';
+import { existsSync, readFileSync } from 'node:fs';
 import { describe, it } from 'node:test';
 import en from '../messages/en.json' with { type: 'json' };
 import vi from '../messages/vi.json' with { type: 'json' };
@@ -27,6 +27,7 @@ import {
 } from './live/hosting.ts';
 import { parseLiveData } from './live/model.ts';
 import { buildView } from './view-model.ts';
+import { cssDeclarations } from './css-guards.ts';
 
 const read = (path: string) =>
   readFileSync(new URL(path, import.meta.url), 'utf8');
@@ -243,27 +244,148 @@ describe('hosting: subdomain-to-apex migration states', () => {
   });
 });
 
-describe('hosting: Cloudflare badge and copy', () => {
-  it('serves Cloudflare’s official web badge unaltered, with alt text', () => {
-    const badge = readFileSync(
-      new URL('./assets/brands/cloudflare-protected-badge.png', import.meta.url)
+const LOGO_SHA256 =
+  '400b70b8bb7db80da137ef8e8fcb835a692410a3083598964da08ed1756df145';
+const sha256 = (bytes: Buffer) =>
+  createHash('sha256').update(bytes).digest('hex');
+/** Declarations of one exact selector (outside media unless asked). */
+const ruleOf = (css: string, selector: string, media = '') =>
+  Object.fromEntries(
+    cssDeclarations(css)
+      .filter(
+        (d) =>
+          d.selector.split(/\s*,\s*/).includes(selector) &&
+          d.media.join(' ') === media
+      )
+      .map((d) => [d.property, d.value])
+  );
+/** The ways an image gets altered rather than shown as published. */
+const ALTERS =
+  /^(filter|opacity|mix-blend-mode|border-radius|clip-path|mask|transform|object-fit|background|color)/;
+const alters = (css: string, selector: string) =>
+  cssDeclarations(css).filter(
+    (d) =>
+      d.selector.split(/\s*,\s*/).some((s) => s.trim().endsWith(selector)) &&
+      ALTERS.test(d.property)
+  );
+
+describe('hosting: Cloudflare logo', () => {
+  const component = read('./components/hosting.tsx');
+  const css = readStyles();
+
+  it('ships Cloudflare’s official logo byte-for-byte, served by this Worker', () => {
+    const logo = readFileSync(
+      new URL('./assets/brands/cloudflare-logo.png', import.meta.url)
     );
-    assert.equal(
-      createHash('sha256').update(badge).digest('hex'),
-      '3d7b109fb7cd683025818d8c6d5224c565b0b2278099e666c15f7d2d8325067e'
+    assert.equal(sha256(logo), LOGO_SHA256);
+    // 512×173 straight from the PNG header.
+    assert.deepEqual(
+      [logo.readUInt32BE(16), logo.readUInt32BE(20)],
+      [512, 173]
     );
-    assert.ok(en.hosting.badgeAlt && vi.hosting.badgeAlt);
-    const css = readStyles();
-    const rule = css.slice(
-      css.indexOf('\n.cf-badge {'),
-      css.indexOf('}', css.indexOf('\n.cf-badge {'))
+    assert.match(
+      component,
+      /import cloudflareLogo from '\.\.\/assets\/brands\/cloudflare-logo\.png\?no-inline';/
     );
-    // Its own aspect ratio only: a fixed width with automatic height.
-    assert.match(rule, /width: 152px;/);
-    assert.match(rule, /height: auto;/);
-    assert.ok(!/filter|border-radius|object-fit/.test(rule));
+    assert.match(
+      read('./assets/brands/CLOUDFLARE-LOGO.md'),
+      new RegExp(LOGO_SHA256)
+    );
+    // The badge it replaces is gone, with its copy.
+    assert.ok(
+      !existsSync(
+        new URL(
+          './assets/brands/cloudflare-protected-badge.png',
+          import.meta.url
+        )
+      )
+    );
+    assert.ok(!('badgeAlt' in en.hosting) && !('badgeAlt' in vi.hosting));
+    // Broken variants: one changed byte, or a hotlinked copy.
+    const edited = Buffer.from(logo);
+    edited[edited.length - 1] ^= 1;
+    assert.notEqual(sha256(edited), LOGO_SHA256);
+    assert.ok(!/src=["{]['"`]?https?:/.test(component));
+    assert.ok(
+      /src=["{]['"`]?https?:/.test(
+        '<img src="https://cf-assets.www.cloudflare.com/l.png" />'
+      )
+    );
   });
 
+  it('renders once, with alt text and fixed dimensions, apart from the heading text', () => {
+    const tag = /<img\s+className="cf-logo"[^>]*\/>/.exec(component)?.[0] ?? '';
+    assert.match(tag, /src=\{cloudflareLogo\}/);
+    assert.match(tag, /alt=\{t\.hosting\.logoAlt\}/);
+    assert.match(tag, /width=\{512\}/);
+    assert.match(tag, /height=\{173\}/);
+    assert.equal(en.hosting.logoAlt, 'Cloudflare');
+    assert.equal(vi.hosting.logoAlt, 'Cloudflare');
+    assert.ok(en.hosting.trademark.includes('Cloudflare, Inc.'));
+    assert.ok(vi.hosting.trademark.includes('Cloudflare, Inc.'));
+    // One placement: the Workers group head, after the heading closes.
+    const uses = component.match(/<CloudflareLogo\b/g) ?? [];
+    assert.equal(uses.length, 1);
+    const head = component.slice(
+      component.indexOf('<div className="host-group-head">'),
+      component.indexOf('<ul className="hosts">')
+    );
+    assert.ok(head.indexOf('</h3>') < head.indexOf('<CloudflareLogo'));
+    assert.match(head, /platform === 'workers' \? <CloudflareLogo/);
+    // Broken variant: the logo inside the heading, run into its words.
+    const inline = '<h3>Cloudflare Workers <CloudflareLogo t={t} /></h3>';
+    assert.ok(inline.indexOf('</h3>') > inline.indexOf('<CloudflareLogo'));
+  });
+
+  it('keeps its own aspect ratio, unaltered, on a plate with clear space', () => {
+    const logo = ruleOf(css, '.cf-logo');
+    assert.equal(logo['aspect-ratio'], '512 / 173');
+    assert.equal(logo.height, '48px');
+    assert.equal(logo.width, 'auto');
+    assert.deepEqual(alters(css, '.cf-logo'), []);
+    const plate = ruleOf(css, '.cf-logo-plate');
+    assert.ok(Number.parseInt(plate.padding ?? '0', 10) >= 12);
+    assert.equal(plate.background, 'var(--rm-logo-plate)');
+    // Broken variants: a stretched or effected logo is caught.
+    assert.equal(
+      alters(
+        '.cf-logo { filter: grayscale(1); border-radius: 8px; }',
+        '.cf-logo'
+      ).length,
+      2
+    );
+    assert.notEqual(
+      ruleOf('.cf-logo { width: 152px; height: 48px; }', '.cf-logo')[
+        'aspect-ratio'
+      ],
+      '512 / 173'
+    );
+  });
+
+  it('dark theme lightens the plate and never recolours the logo', () => {
+    const dark = ruleOf(css, '.dark .cf-logo-plate');
+    assert.equal(dark['--rm-logo-plate'], 'var(--rm-ink)');
+    assert.equal(
+      ruleOf(css, '.cf-logo-plate')['--rm-logo-plate'],
+      'var(--rm-panel)'
+    );
+    // No theme or media rule touches the image itself.
+    const themed = cssDeclarations(css).filter(
+      (d) => /\.cf-logo\b(?!-)/.test(d.selector) && d.selector !== '.cf-logo'
+    );
+    assert.deepEqual(themed, []);
+    // Broken variants: an inverted logo, or a plate that stays dark.
+    const inverted = '.dark .cf-logo { filter: invert(1); }';
+    assert.equal(alters(inverted, '.cf-logo').length, 1);
+    const unplated = '.cf-logo-plate { padding: 12px; }';
+    assert.equal(
+      ruleOf(unplated, '.dark .cf-logo-plate')['--rm-logo-plate'],
+      undefined
+    );
+  });
+});
+
+describe('hosting: copy', () => {
   it('has migration copy in EN and VI with the same keys', () => {
     const keys = (value: object): string[] =>
       Object.entries(value).flatMap(([key, child]) =>

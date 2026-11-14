@@ -1,4 +1,4 @@
-import cloudflareBadge from '../assets/brands/cloudflare-protected-badge.png?no-inline';
+import cloudflareLogo from '../assets/brands/cloudflare-logo.png?no-inline';
 import { hostBadge } from '../live/host-badge';
 import { type HostingSnapshot, hostingAsOf } from '../live/hosting';
 import { REPO_URL } from '../live/model';
@@ -11,6 +11,28 @@ type Platform = (typeof PLATFORM_ORDER)[number];
 /** A small glyph per platform; the label next to it carries the meaning. */
 function PlatformMark({ platform }: { platform: Platform }) {
   return <span className={`platform-mark ${platform}`} aria-hidden />;
+}
+
+/**
+ * Cloudflare's official logo, byte-for-byte from its press kit
+ * (assets/brands/CLOUDFLARE-LOGO.md). It stands on its own plate beside the
+ * heading, never inside a line of text, and is never recoloured: the plate
+ * keeps a light ground in both themes.
+ */
+function CloudflareLogo({ t }: { t: Messages }) {
+  return (
+    <span className="cf-logo-plate">
+      <img
+        className="cf-logo"
+        src={cloudflareLogo}
+        alt={t.hosting.logoAlt}
+        width={512}
+        height={173}
+        loading="lazy"
+        decoding="async"
+      />
+    </span>
+  );
 }
 
 /** How many apps run on each platform, as one segmented bar with a legend. */
@@ -85,42 +107,28 @@ export function HostingSection({
         title={t.hosting.title}
         subtitle={t.hosting.subtitle}
       />
-      <div className="hosting-meta">
-        <div>
-          {asOf ? (
-            <p className="main-commit">
-              {t.hosting.checked}{' '}
-              <time dateTime={asOf}>
-                {formatDate(asOf, lang, true)} (UTC+7)
-              </time>{' '}
-              {t.hosting.checkedNote}
-            </p>
-          ) : null}
-          {hosting.mode !== 'probed' ? (
-            <p className="main-commit hosting-unverified">
-              {t.hosting.notObserved}
-            </p>
-          ) : null}
-          {main ? (
-            <p className="main-commit">
-              {t.hosting.main}:{' '}
-              <a href={`${REPO_URL}/commit/${main.sha}`}>
-                <code>{main.sha.slice(0, 7)}</code>
-              </a>{' '}
-              · {formatDate(main.at, lang, true)}
-            </p>
-          ) : null}
-        </div>
-        {/* Cloudflare's official web badge, unaltered (assets/brands). */}
-        <img
-          className="cf-badge"
-          src={cloudflareBadge}
-          alt={t.hosting.badgeAlt}
-          width={152}
-          height={53}
-          loading="lazy"
-          decoding="async"
-        />
+      <div>
+        {asOf ? (
+          <p className="main-commit">
+            {t.hosting.checked}{' '}
+            <time dateTime={asOf}>{formatDate(asOf, lang, true)} (UTC+7)</time>{' '}
+            {t.hosting.checkedNote}
+          </p>
+        ) : null}
+        {hosting.mode !== 'probed' ? (
+          <p className="main-commit hosting-unverified">
+            {t.hosting.notObserved}
+          </p>
+        ) : null}
+        {main ? (
+          <p className="main-commit">
+            {t.hosting.main}:{' '}
+            <a href={`${REPO_URL}/commit/${main.sha}`}>
+              <code>{main.sha.slice(0, 7)}</code>
+            </a>{' '}
+            · {formatDate(main.at, lang, true)}
+          </p>
+        ) : null}
       </div>
       <HostSummary t={t} hosts={view.hosts} />
       {PLATFORM_ORDER.map((platform) => {
@@ -128,11 +136,14 @@ export function HostingSection({
         if (!group.length) return null;
         return (
           <div key={platform} className="host-group">
-            <h3 className={`host-group-title ${platform}`}>
-              <PlatformMark platform={platform} />
-              {t.hosting[platform]}
-              <span className="host-group-count">{group.length}</span>
-            </h3>
+            <div className="host-group-head">
+              <h3 className={`host-group-title ${platform}`}>
+                <PlatformMark platform={platform} />
+                {t.hosting[platform]}
+                <span className="host-group-count">{group.length}</span>
+              </h3>
+              {platform === 'workers' ? <CloudflareLogo t={t} /> : null}
+            </div>
             <ul className="hosts">
               {group.map((host) => {
                 const badge = hostBadge(host);
@@ -174,6 +185,9 @@ export function HostingSection({
           </div>
         );
       })}
+      {view.hosts.some((host) => host.platform === 'workers') ? (
+        <p className="hint">{t.hosting.trademark}</p>
+      ) : null}
     </section>
   );
 }
@@ -182,7 +196,7 @@ export function Method({ t }: { t: Messages }) {
   return (
     <section className="section method" aria-labelledby="method-title">
       <h2 id="method-title">{t.method.title}</h2>
-      <dl>
+      <dl className="masonry">
         {statuses.map((s) => (
           <div key={s}>
             <dt>
