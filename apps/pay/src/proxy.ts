@@ -18,11 +18,7 @@ import Negotiator from 'negotiator';
 import type { NextRequest } from 'next/server';
 import { NextResponse } from 'next/server';
 import createIntlMiddleware from 'next-intl/middleware';
-import {
-  BASE_URL,
-  LOCALE_COOKIE_NAME,
-  WEB_APP_URL,
-} from './constants/common';
+import { BASE_URL, LOCALE_COOKIE_NAME, WEB_APP_URL } from './constants/common';
 import {
   defaultLocale,
   type Locale,
@@ -50,8 +46,7 @@ function setLocaleCookie(
   locale: string
 ) {
   const cookieOrigin =
-    resolveCanonicalRequestOrigin(request, WEB_APP_URL, [BASE_URL]) ??
-    BASE_URL;
+    resolveCanonicalRequestOrigin(request, WEB_APP_URL, [BASE_URL]) ?? BASE_URL;
   response.cookies.set(
     LOCALE_COOKIE_NAME,
     locale,
