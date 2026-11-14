@@ -75,13 +75,23 @@ describe('managed Tuturuuu return URLs', () => {
       ).toBe('https://vercel.tuturuuu.com/');
     });
 
-    it('resolves the current host from forwarded request headers', () => {
+    it('resolves the current host from configured forwarded request headers', () => {
+      vi.stubEnv('WEB_APP_URL', 'https://web.tuturuuu.com');
       const request = {
         headers: new Headers({ 'x-forwarded-host': 'web.tuturuuu.com' }),
         url: 'http://localhost:3000/api/auth/callback',
       };
 
       expect(isManagedTuturuuuHostname('vc.tuturuuu.com', request)).toBe(true);
+    });
+
+    it('ignores an unproven client forwarded host (SR-XFH-RETURN)', () => {
+      const request = {
+        headers: new Headers({ 'x-forwarded-host': 'web.tuturuuu.com' }),
+        url: 'http://localhost:3000/api/auth/callback',
+      };
+
+      expect(isManagedTuturuuuHostname('vc.tuturuuu.com', request)).toBe(false);
     });
 
     it.each([
