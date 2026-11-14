@@ -172,3 +172,52 @@ test('Pay keeps browser setup outside runtime acceptance', () => {
     );
   }
 });
+
+test('native build identity records the environment its caller declares', () => {
+  const workflow = readWorkflow('native-start-app.yaml');
+  const input = workflow.on.workflow_call.inputs['build-environment'];
+  assert.equal(input.default, 'preview');
+  const validate = workflow.jobs.validate;
+  assert.equal(
+    validate.env.BUILD_ENVIRONMENT,
+    '${{ inputs.build-environment }}'
+  );
+  const admit = validate.steps.find(
+    (step) => step.name === 'Admit the native profile selector'
+  );
+  assert.ok(
+    admit.run.includes('[[ "$BUILD_ENVIRONMENT" =~ ^(preview|production)$ ]]')
+  );
+  const identity = validate.steps.find(
+    (step) => step.name === 'Generate exact-checkout build identity'
+  );
+  assert.equal(
+    identity.env.PLATFORM_BUILD_ENVIRONMENT,
+    '${{ env.BUILD_ENVIRONMENT }}'
+  );
+
+  // A caller that pins the production native profile records production in
+  // /api/build-info, and only a production profile may claim production.
+  const workflowsDir = path.resolve(__dirname, '../../.github/workflows');
+  const callers = [];
+  for (const name of fs.readdirSync(workflowsDir)) {
+    if (!/\.ya?ml$/.test(name) || name === 'native-start-app.yaml') continue;
+    const caller = readWorkflow(name);
+    for (const [jobName, job] of Object.entries(caller.jobs ?? {})) {
+      if (!job.uses?.endsWith('/native-start-app.yaml')) continue;
+      const profile = job.with?.['profile-env'] ?? '';
+      const environment = job.with?.['build-environment'];
+      const label = `${name}:${jobName}`;
+      if (/_NATIVE_PROFILE=production$/.test(profile)) {
+        callers.push(label);
+        assert.equal(environment, 'production', label);
+      } else {
+        assert.notEqual(environment, 'production', label);
+      }
+    }
+  }
+  assert.deepEqual(callers.sort(), [
+    'finance-cloudflare.yaml:native-production',
+    'shortener-cloudflare.yaml:native-production',
+  ]);
+});
