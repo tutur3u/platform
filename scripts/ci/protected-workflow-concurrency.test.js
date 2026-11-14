@@ -645,21 +645,39 @@ test('security review writers share one non-cancelling group per pull request', 
   );
 });
 
-test('main Test pushes retain separate results and never cancel prior validation', () => {
+test('first-attempt main Test pushes supersede; reruns, dispatch and production keep immutable results', () => {
+  // Reviewed policy from #8350: only first-attempt main pushes cancel superseded
+  // Test runs. Reruns, dispatch and production retain their own slots.
   const workflow = workflows['turbo-unit-tests.yaml'];
   assert.ok(events(workflow).push.branches.includes('main'));
   const first = { ...context('refs/heads/main'), workflow: workflow.name };
   const later = { ...first, sha: 'later', run_id: 2 };
-  assert.equal(
-    render(workflow.concurrency['cancel-in-progress'], first),
-    false
-  );
-  assert.equal(
-    render(workflow.concurrency['cancel-in-progress'], later),
-    false
-  );
+  const shared = assertSupersedes(workflow, first, later);
+  for (const extra of [
+    { run_attempt: 2 },
+    { event_name: 'workflow_dispatch' },
+    { ref: 'refs/heads/production' },
+    { ref: 'refs/heads/production', sha: 'later', run_id: 2 },
+  ]) {
+    const candidate = { ...first, ...extra };
+    assert.equal(
+      render(workflow.concurrency['cancel-in-progress'], candidate),
+      false,
+      JSON.stringify(extra)
+    );
+    assert.notEqual(
+      render(workflow.concurrency.group, candidate),
+      shared,
+      JSON.stringify(extra)
+    );
+  }
+  const production = { ...first, ref: 'refs/heads/production' };
   assert.notEqual(
-    render(workflow.concurrency.group, first),
-    render(workflow.concurrency.group, later)
+    render(workflow.concurrency.group, production),
+    render(workflow.concurrency.group, {
+      ...production,
+      sha: 'later',
+      run_id: 2,
+    })
   );
 });
