@@ -127,15 +127,21 @@ export async function proxy(req: NextRequest): Promise<NextResponse> {
     );
   }
 
+  const isDocumentRequest = req.method === 'GET' || req.method === 'HEAD';
+  const publicCompletion =
+    isDocumentRequest &&
+    PUBLIC_PATHS.includes(req.nextUrl.pathname) &&
+    !req.nextUrl.searchParams.has('token');
   if (
     mounted &&
+    !publicCompletion &&
     /^\/(?:en\/|vi\/)?verify-token\/?$/u.test(req.nextUrl.pathname)
   ) {
     // The mount shares the apex session that Web already set, so it never
     // consumes, verifies or forwards `token`: GET/HEAD only resume the
     // same-origin validated next path; every other method returns to login.
-    const isNavigation = req.method === 'GET' || req.method === 'HEAD';
-    const target = isNavigation
+    // A tokenless completion document renders like the subdomain's.
+    const target = isDocumentRequest
       ? normalizeAuthRedirectPath(
           req.nextUrl.searchParams.get('nextUrl') ??
             req.nextUrl.searchParams.get('next'),
@@ -147,10 +153,6 @@ export async function proxy(req: NextRequest): Promise<NextResponse> {
       new URL(withAppBase(target, req.nextUrl.basePath), req.nextUrl.origin)
     );
   }
-  const publicCompletion =
-    (req.method === 'GET' || req.method === 'HEAD') &&
-    PUBLIC_PATHS.includes(req.nextUrl.pathname) &&
-    !req.nextUrl.searchParams.has('token');
   const verifyTokenResponse =
     mounted || publicCompletion
       ? null
