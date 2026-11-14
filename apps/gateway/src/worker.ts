@@ -34,12 +34,9 @@ export interface Env {
   /** `true` honours origin `no-store`/`private` on cacheable routes. */
   GATEWAY_RESPECT_ORIGIN_CACHE_CONTROL?: string;
   /**
-   * Comma-separated mount paths of apps served at `tuturuuu.com/<app>` (for
-   * example `/learn,/tasks`). Their zone routes cannot match the bare path
-   * once a query string is present, so the gateway hands exactly `/<app>`
-   * (any query) to the app Worker through the service binding
-   * `MOUNT_<SEGMENT>` (`MOUNT_LEARN`). Unlisted or unbound paths keep going to
-   * WEB_ORIGIN. Clearing an entry is part of that app's one-step rollback.
+   * Comma-separated exact mounts (`/calendar`) and explicit subtree mounts
+   * (`/calendar/*`). Prefixes and queries reach MOUNT_<SEGMENT> unchanged.
+   * Unlisted or unbound paths retain the Web route manifest behavior.
    */
   GATEWAY_MOUNTED_PATHS?: string;
   [name: string]: string | undefined;
@@ -50,21 +47,28 @@ export interface ServiceBinding {
   fetch(request: Request): Promise<Response>;
 }
 
+const MOUNTABLE_APP_PATHS = new Set(['/calendar']);
+
 const MOUNT_PATH_PATTERN = /^\/[a-z][a-z0-9-]*$/u;
 
-/** The service binding serving this exact bare mount path, if any. */
+/** Resolve explicitly admitted mounts on the configured public host. */
 export function mountedAppBinding(
   request: Request,
   env: Env
 ): ServiceBinding | null {
-  const { pathname } = new URL(request.url);
-  if (!MOUNT_PATH_PATTERN.test(pathname)) return null;
+  const url = new URL(request.url);
+  if (env.PUBLIC_HOST && url.host !== env.PUBLIC_HOST) return null;
+  const { pathname } = url;
+  const mount = `/${pathname.split('/')[1] ?? ''}`;
+  if (!MOUNT_PATH_PATTERN.test(mount) || !MOUNTABLE_APP_PATHS.has(mount))
+    return null;
   const listed = (env.GATEWAY_MOUNTED_PATHS ?? '')
     .split(',')
-    .map((entry) => entry.trim())
-    .filter((entry) => MOUNT_PATH_PATTERN.test(entry));
-  if (!listed.includes(pathname)) return null;
-  const name = `MOUNT_${pathname.slice(1).replace(/-/gu, '_').toUpperCase()}`;
+    .map((entry) => entry.trim());
+  const admitted =
+    pathname === mount ? listed.includes(mount) : listed.includes(`${mount}/*`);
+  if (!admitted) return null;
+  const name = `MOUNT_${mount.slice(1).replace(/-/gu, '_').toUpperCase()}`;
   const binding = (env as unknown as Record<string, unknown>)[name];
   return binding &&
     typeof (binding as Partial<ServiceBinding>).fetch === 'function'
@@ -88,6 +92,24 @@ export interface HandlerDeps {
 }
 
 const HOP_HEADER = 'x-gateway-hop';
+function mountedAppRequest(request: Request) {
+  const headers = new Headers(request.headers);
+  for (const name of [...headers.keys()]) {
+    if (
+      name.startsWith('x-forwarded-') ||
+      name.startsWith('x-original-') ||
+      name.startsWith('cf-connecting-') ||
+      name === 'x-real-ip' ||
+      name === 'forwarded' ||
+      name === 'x-tuturuuu-app-base'
+    ) {
+      headers.delete(name);
+    }
+  }
+  headers.set(HOP_HEADER, '1');
+  return new Request(request, { headers });
+}
+
 const STORED_AT = 'x-gateway-stored-at';
 const PAGE_CLIENT_CACHE_CONTROL = 'public, max-age=0, must-revalidate';
 
@@ -403,11 +425,14 @@ export function createHandler(deps: HandlerDeps) {
     if (request.headers.has(HOP_HEADER)) {
       return plain(508, 'gateway loop detected');
     }
-    // A mounted app owns its bare path; only a query string brings it here.
+    // Explicit mounts take precedence over Web routing, including auth requests.
     const mounted = mountedAppBinding(request, env);
     if (mounted) {
       try {
-        return withGatewayHeader(await mounted.fetch(request), 'MOUNT');
+        return withGatewayHeader(
+          await mounted.fetch(mountedAppRequest(request)),
+          'MOUNT'
+        );
       } catch {
         return plain(502, 'gateway mounted app unreachable');
       }
