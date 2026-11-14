@@ -1,5 +1,8 @@
 import { resolveInternalAppUrl } from '@tuturuuu/utils/app-url';
-import { getLocalInternalAppUrl } from '@tuturuuu/utils/internal-domains';
+import {
+  getLocalInternalAppUrl,
+  PRODUCTION_INTERNAL_APP_DOMAINS,
+} from '@tuturuuu/utils/internal-domains';
 import { supportedLocales } from '@/i18n/routing';
 
 export const DEV_MODE = process.env.NODE_ENV === 'development';
@@ -25,6 +28,17 @@ export const BASE_URL = resolveInternalAppUrl({
   ],
   fallback: DEFAULT_NOVA_APP_URL,
 });
+
+/** Registered production Nova origins (`nova.tuturuuu.com`, `nova.ai.vn`). */
+export const NOVA_PUBLIC_ORIGINS = PRODUCTION_INTERNAL_APP_DOMAINS.filter(
+  (domain) => domain.name === 'nova'
+).map((domain) => domain.url);
+
+/**
+ * Origins the auth proxy may use for login return URLs. `BASE_URL` stays
+ * first so it remains the fallback for unmatched or untrusted hosts.
+ */
+export const AUTH_CANONICAL_ORIGINS = [BASE_URL, ...NOVA_PUBLIC_ORIGINS];
 
 export const API_URL = process.env.API_URL || `${BASE_URL}/api`;
 

@@ -13,7 +13,7 @@ import type { NextRequest } from 'next/server';
 import { NextResponse } from 'next/server';
 import createIntlMiddleware from 'next-intl/middleware';
 import {
-  BASE_URL,
+  AUTH_CANONICAL_ORIGINS,
   LOCALE_COOKIE_NAME,
   PUBLIC_PATHS,
   TTR_URL,
@@ -24,7 +24,7 @@ import { defaultLocale, type Locale, supportedLocales } from './i18n/routing';
 // MFA is disabled because satellite apps delegate auth to the web app.
 // Sessions here are created via cross-app tokens that already require aal2 on web.
 const authProxy = createCentralizedAuthProxy({
-  canonicalOrigins: [BASE_URL],
+  canonicalOrigins: AUTH_CANONICAL_ORIGINS,
   appSession: { sessionMode: 'supabase-first', targetApp: 'nova' },
   webAppUrl: TTR_URL,
   publicPaths: PUBLIC_PATHS,
