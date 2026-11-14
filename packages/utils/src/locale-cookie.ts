@@ -117,10 +117,8 @@ export function withSecureLocaleCookie<
   resolveCookieOrigin: (request: TRequest) => string | null,
   cookieName = DEFAULT_LOCALE_COOKIE_NAME
 ): (request: TRequest, ...args: TArgs) => Promise<Awaited<TResponse>> {
-  return async (request, ...args) =>
-    secureLocaleCookie<Awaited<TResponse>>(
-      await handler(request, ...args),
-      resolveCookieOrigin(request),
-      cookieName
+  return (request, ...args) =>
+    Promise.resolve(handler(request, ...args)).then((response) =>
+      secureLocaleCookie(response, resolveCookieOrigin(request), cookieName)
     );
 }
