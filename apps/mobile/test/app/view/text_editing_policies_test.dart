@@ -148,11 +148,7 @@ void main() {
     ) async {
       final h = TextEditingHarness(tester);
       await h.mount(platform: platform, locale: const Locale('vi'));
-      // shadcn 0.0.54 lacks vi; native Flutter editing delegates support it.
-      expect(
-        tester.takeException(),
-        contains("This application's locale, vi, is not supported by all"),
-      );
+      expect(tester.takeException(), isNull);
       await h.focusField();
       await h.menu();
       await h.tapMenu('Dán');

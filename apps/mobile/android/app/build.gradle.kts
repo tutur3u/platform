@@ -24,8 +24,8 @@ val productionReleaseRequested = gradle.startParameter.taskNames.any {
 
 android {
     namespace = "com.tuturuuu.app.mobile"
-    // flutter_pcm_sound pulls AndroidX artifacts that require compileSdk 34+.
-    compileSdk = maxOf(flutter.compileSdkVersion, 34)
+    // permission_handler_android requires Android SDK 37.
+    compileSdk = maxOf(flutter.compileSdkVersion, 37)
     ndkVersion = flutter.ndkVersion
 
     compileOptions {
