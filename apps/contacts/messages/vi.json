@@ -826,6 +826,11 @@
     "toggle_calendars_desc": "Bật/tắt lịch hiển thị",
     "toggle_failed": "Không thể cập nhật trạng thái hiển thị lịch.",
     "tomorrow": "Ngày mai",
+    "toolbar": {
+      "next_period": "Kỳ sau",
+      "previous_period": "Kỳ trước",
+      "view": "Chế độ xem lịch"
+    },
     "tuturuuu_calendars": "Lịch Tuturuuu",
     "two_way_sync": "Đồng bộ hai chiều",
     "two_way_sync_desc": "Kiểm soát cách Tuturuuu nhập thay đổi từ nhà cung cấp và phản chiếu sự kiện gốc ra ngoài.",
