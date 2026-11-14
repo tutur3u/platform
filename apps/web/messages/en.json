@@ -13836,6 +13836,30 @@
     "view": "View",
     "view-screenshot": "View private screenshot"
   },
+  "productFeedback": {
+    "bug": "Bug",
+    "category": "Type",
+    "check": "Check submission status",
+    "checking": "Checking…",
+    "details": "Details",
+    "feature": "Feature request",
+    "feedback": "Feedback",
+    "forbidden": "Submission is not permitted. Check your account and verification before returning.",
+    "heading": "Send feedback",
+    "improvement": "Improvement",
+    "invalid": "Check the title and details, then complete verification again.",
+    "limited": "Too many submissions. Wait before trying again.",
+    "login": "Your session has ended. Sign in to continue.",
+    "retry": "No receipt was found. Complete verification to retry the same submission.",
+    "send": "Submit feedback",
+    "sending": "Submitting…",
+    "signIn": "Sign in",
+    "stored": "Your feedback is saved privately for staff review.",
+    "success": "Feedback received",
+    "title": "Title",
+    "unavailable": "Feedback is unavailable. Please try again later.",
+    "uncertain": "Receipt not confirmed. Check submission status before trying again."
+  },
   "products": {
     "ai": {
       "closing": {

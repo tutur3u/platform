@@ -837,3 +837,33 @@ redirect to relative `/login`; JSON clients receive `{ success: true }`.
 Cross-app trusted origins do not grant this prelogin exception. Handler-effect
 coverage is in `apps/infrastructure/src/app/api/auth/logout/route.test.ts`;
 router dispatch and hosted runtime acceptance require separate validation.
+
+### Web feedback intake
+
+`/feedback` on Web requires a signed-in account and retains the existing
+`PRODUCT_FEEDBACK_SUBMISSION_ENABLED` default-off gate. The form also requires
+a configured public Turnstile site key and a fresh challenge. Bugs, feedback,
+feature requests and improvements use the existing account-scoped
+`POST /api/v1/product-feedback` contract. The category is a plain-text prefix in
+the report body; no actor, workspace, approval, priority or webhook destination
+is accepted from the form.
+
+A confirmed receipt means the private report is stored for the existing staff
+inbox at `/{workspace}/feedback`. It does not mean approval, public roadmap
+publication, priority-user promotion or webhook delivery. Those operations retain
+their separate owner and authorization contracts; this entry does not add them
+or enable any runtime flag. Staff still require current canonical eligibility,
+and reporters receive only their own content-free receipt.
+
+The form prevents concurrent submits and does not automatically retry writes.
+After an uncertain response, it freezes the submitted text and offers an
+owner-only receipt check. A null receipt permits an explicit retry with the same
+payload and idempotency key plus a fresh challenge. Rate-limit responses retain
+the server's bounded retry delay. Session or access denial removes the form.
+Text remains plain text throughout the staff-review path.
+
+Regression coverage lives beside the Web feedback page in `page.test.tsx`,
+`feedback-form.test.tsx` and `submission.test.ts`; the existing
+`product-feedback-handlers.test.ts` and `product-feedback-service.test.ts` cover
+the server's actor, abuse, persistence and receipt boundaries. These tests do not
+establish hosted schema, Turnstile, approval or webhook acceptance.

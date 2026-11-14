@@ -13843,6 +13843,30 @@
     "view": "Chế độ xem",
     "view-screenshot": "Xem ảnh riêng tư"
   },
+  "productFeedback": {
+    "bug": "Lỗi",
+    "category": "Loại",
+    "check": "Kiểm tra trạng thái gửi",
+    "checking": "Đang kiểm tra…",
+    "details": "Chi tiết",
+    "feature": "Yêu cầu tính năng",
+    "feedback": "Phản hồi",
+    "forbidden": "Không được phép gửi. Kiểm tra tài khoản và xác minh trước khi quay lại.",
+    "heading": "Gửi phản hồi",
+    "improvement": "Cải tiến",
+    "invalid": "Kiểm tra tiêu đề và chi tiết, rồi xác minh lại.",
+    "limited": "Bạn đã gửi quá nhiều lần. Vui lòng đợi trước khi thử lại.",
+    "login": "Phiên đăng nhập đã kết thúc. Đăng nhập để tiếp tục.",
+    "retry": "Không tìm thấy biên nhận. Hoàn tất xác minh để gửi lại cùng phản hồi.",
+    "send": "Gửi phản hồi",
+    "sending": "Đang gửi…",
+    "signIn": "Đăng nhập",
+    "stored": "Phản hồi được lưu riêng tư để nhân viên xem xét.",
+    "success": "Đã nhận phản hồi",
+    "title": "Tiêu đề",
+    "unavailable": "Tính năng phản hồi không khả dụng. Vui lòng thử lại sau.",
+    "uncertain": "Chưa xác nhận được biên nhận. Kiểm tra trạng thái trước khi thử lại."
+  },
   "products": {
     "ai": {
       "closing": {
