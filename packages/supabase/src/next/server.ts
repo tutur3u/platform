@@ -3,6 +3,7 @@ import type { SupabaseClient } from '@supabase/supabase-js';
 import type { Database } from '@tuturuuu/types';
 import type { RequestCookie } from 'next/dist/compiled/@edge-runtime/cookies';
 import type { ReadonlyRequestCookies } from 'next/dist/server/web/spec-extension/adapters/request-cookies';
+import { resolveTrustedForwardedHost } from '../forwarded-host';
 import { sanitizeSupabaseAuthCookies } from './auth-cookie-sanitizer';
 import {
   checkEnvVariables,
@@ -89,7 +90,9 @@ function extractForwardedHeaderValue(value: string | null) {
 function resolveRequestUrlFromHeaders(
   headerStore: Pick<Headers, 'get'>
 ): string | null {
-  const forwardedHost = extractForwardedHeaderValue(
+  // A client-supplied X-Forwarded-Host must not pick the auth cookie domain:
+  // honour it only for a configured origin, otherwise use the request Host.
+  const forwardedHost = resolveTrustedForwardedHost(
     headerStore.get('x-forwarded-host')
   );
   const host =
@@ -100,8 +103,9 @@ function resolveRequestUrlFromHeaders(
   }
 
   const forwardedProto =
-    extractForwardedHeaderValue(headerStore.get('x-forwarded-proto')) ??
-    'https';
+    (forwardedHost
+      ? extractForwardedHeaderValue(headerStore.get('x-forwarded-proto'))
+      : null) ?? 'https';
   const protocol = forwardedProto.replace(/:$/u, '').toLowerCase();
 
   return `${protocol === 'http' ? 'http' : 'https'}://${host}`;
