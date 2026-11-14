@@ -31,7 +31,12 @@ export function UiDocsCommandMenu({
 
   useEffect(() => {
     function onKeyDown(event: KeyboardEvent) {
-      if ((event.metaKey || event.ctrlKey) && event.key.toLowerCase() === 'k') {
+      if (
+        (event.metaKey || event.ctrlKey) &&
+        !event.shiftKey &&
+        !event.altKey &&
+        event.key.toLowerCase() === 'k'
+      ) {
         event.preventDefault();
         onOpenChange(!open);
       }
