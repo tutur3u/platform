@@ -163,6 +163,39 @@ function chooseOrigin(
 
 const FORWARDED_HOST = 'x-forwarded-host';
 const FORWARDED_PROTO = 'x-forwarded-proto';
+const FORWARDED = 'forwarded';
+
+/**
+ * Replaces client X-Forwarded-Host/-Proto with the gateway's own values: the
+ * public host over https, or neither header when no public host is known.
+ */
+function stateForwardedHeaders(
+  headers: Headers,
+  publicHost: string | undefined
+) {
+  headers.delete(FORWARDED_HOST);
+  headers.delete(FORWARDED_PROTO);
+  if (publicHost) {
+    headers.set(FORWARDED_HOST, publicHost);
+    headers.set(FORWARDED_PROTO, 'https');
+  }
+}
+
+/**
+ * The mounted-app request. Service-binding calls skip zone Transform Rules, so
+ * the gateway states the forwarded host and protocol itself (PUBLIC_HOST, else
+ * the host it was reached on) and drops any client `Forwarded` header; client
+ * values never reach the mounted Worker.
+ */
+export function mountRequest(request: Request, publicHost: string | undefined) {
+  const outgoing = new Request(request);
+  stateForwardedHeaders(
+    outgoing.headers,
+    publicHost || new URL(request.url).host
+  );
+  outgoing.headers.delete(FORWARDED);
+  return outgoing;
+}
 
 /**
  * The origin request. Client-supplied X-Forwarded-Host/-Proto never reach the
@@ -178,12 +211,7 @@ function originRequest(
   const target = new URL(`${incoming.pathname}${incoming.search}`, origin);
   const outgoing = new Request(target, request);
   outgoing.headers.set(HOP_HEADER, '1');
-  outgoing.headers.delete(FORWARDED_HOST);
-  outgoing.headers.delete(FORWARDED_PROTO);
-  if (publicHost) {
-    outgoing.headers.set(FORWARDED_HOST, publicHost);
-    outgoing.headers.set(FORWARDED_PROTO, 'https');
-  }
+  stateForwardedHeaders(outgoing.headers, publicHost);
   return outgoing;
 }
 
@@ -407,7 +435,10 @@ export function createHandler(deps: HandlerDeps) {
     const mounted = mountedAppBinding(request, env);
     if (mounted) {
       try {
-        return withGatewayHeader(await mounted.fetch(request), 'MOUNT');
+        return withGatewayHeader(
+          await mounted.fetch(mountRequest(request, env.PUBLIC_HOST)),
+          'MOUNT'
+        );
       } catch {
         return plain(502, 'gateway mounted app unreachable');
       }

@@ -479,6 +479,62 @@ describe('bare mount paths', () => {
     expect(fetch).not.toHaveBeenCalled();
   });
 
+  it('replaces client forwarding headers on mounted requests', async () => {
+    const t = setup(() => new Response('web'));
+    const { env, fetch } = mountEnv('/learn');
+    await t.call(
+      '/learn?x=1',
+      {
+        headers: {
+          'x-forwarded-host': 'evil.example.com',
+          'x-forwarded-proto': 'http',
+          forwarded: 'host=evil.example.com;proto=http',
+          'x-keep': 'yes',
+        },
+      },
+      env
+    );
+    const sent = fetch.mock.calls[0]?.[0] as Request;
+    expect(sent.url).toBe('https://tuturuuu.com/learn?x=1');
+    expect(sent.headers.get('x-forwarded-host')).toBe('tuturuuu.com');
+    expect(sent.headers.get('x-forwarded-proto')).toBe('https');
+    expect(sent.headers.has('forwarded')).toBe(false);
+    expect(sent.headers.get('x-keep')).toBe('yes');
+    expect(sent.headers.has('x-gateway-hop')).toBe(false);
+  });
+
+  it('states the served host on mounted requests without PUBLIC_HOST', async () => {
+    const t = setup(() => new Response('web'));
+    const { env, fetch } = mountEnv('/learn');
+    await t.call(
+      '/learn?x=1',
+      { headers: { 'x-forwarded-host': 'evil.example.com' } },
+      { ...env, PUBLIC_HOST: undefined }
+    );
+    const sent = fetch.mock.calls[0]?.[0] as Request;
+    expect(sent.headers.get('x-forwarded-host')).toBe('tuturuuu.com');
+    expect(sent.headers.get('x-forwarded-proto')).toBe('https');
+  });
+
+  it('leaves unmounted paths on the origin forwarding contract', async () => {
+    const t = setup(() => new Response('web'));
+    const { env, fetch } = mountEnv('/learn');
+    await t.call(
+      '/learn/courses',
+      {
+        headers: {
+          'x-forwarded-host': 'evil.example.com',
+          forwarded: 'host=evil.example.com',
+        },
+      },
+      env
+    );
+    expect(fetch).not.toHaveBeenCalled();
+    const sent = t.fetchMock.mock.calls[0]?.[0] as Request;
+    expect(sent.headers.get('x-forwarded-host')).toBe('tuturuuu.com');
+    expect(sent.headers.get('x-forwarded-proto')).toBe('https');
+  });
+
   it('answers 502 when the mounted app throws', async () => {
     const t = setup(() => new Response('web'));
     const { env } = mountEnv(
