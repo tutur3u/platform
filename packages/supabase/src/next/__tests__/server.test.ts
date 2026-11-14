@@ -1,6 +1,6 @@
 import { createBrowserClient, createServerClient } from '@supabase/ssr';
 import { cookies, headers } from 'next/headers';
-import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import {
   createAdminClient,
   createAnonClient,
@@ -46,6 +46,10 @@ vi.mock('../common', () => ({
   getSupabaseAuthStorageKey: (url: string) =>
     `sb-${new URL(url).hostname.split('.')[0]}-auth-token`,
 }));
+
+afterEach(() => {
+  vi.unstubAllEnvs();
+});
 
 describe('Supabase Server Client', () => {
   const mockCookieStore = {
@@ -129,6 +133,8 @@ describe('Supabase Server Client', () => {
     });
 
     it('infers shared-domain cookie options from forwarded headers without an explicit request', async () => {
+      // The forwarded host is honoured because it is a configured origin.
+      vi.stubEnv('TASKS_APP_URL', 'https://tasks.tuturuuu.com');
       (headers as any).mockReturnValue(
         new Headers({
           'x-forwarded-host': 'tasks.tuturuuu.com',
@@ -151,6 +157,7 @@ describe('Supabase Server Client', () => {
     });
 
     it('uses forwarded request headers for request-bound cookie auth', async () => {
+      vi.stubEnv('PORTLESS_URL', 'https://tuturuuu.localhost:1355');
       const mockRequest = {
         headers: new Headers({
           'x-forwarded-host': 'tuturuuu.localhost:1355',
@@ -171,6 +178,24 @@ describe('Supabase Server Client', () => {
           }),
         })
       );
+    });
+
+    it('ignores an unconfigured client forwarded host for the cookie domain (SR-XFH-RETURN)', async () => {
+      const mockRequest = {
+        headers: new Headers({
+          host: 'nova.ai.vn',
+          'x-forwarded-host': 'tasks.tuturuuu.com',
+          'x-forwarded-proto': 'https',
+        }),
+        url: 'https://nova.ai.vn/personal',
+      };
+
+      await createClient(mockRequest);
+
+      const options = (createServerClient as any).mock.calls[0][2]
+        .cookieOptions;
+      expect(options.domain).toBeUndefined();
+      expect(options.secure).toBeUndefined();
     });
 
     it('should clear malformed Supabase auth cookies before SSR parsing', async () => {
@@ -269,6 +294,7 @@ describe('Supabase Server Client', () => {
     });
 
     it('expires mirrored noncanonical auth cookies with shared-domain attributes', async () => {
+      vi.stubEnv('TASKS_APP_URL', 'https://tasks.tuturuuu.com');
       const common = await import('../common');
       vi.mocked(common.getSupabaseAuthCookieUrls).mockReturnValueOnce([
         'http://127.0.0.1:8001',
@@ -648,6 +674,7 @@ describe('Supabase Server Client', () => {
     });
 
     it('uses forwarded request headers for request-bound dynamic cookie auth', async () => {
+      vi.stubEnv('PORTLESS_URL', 'https://tuturuuu.localhost:1355');
       const mockRequest = {
         headers: new Headers({
           'x-forwarded-host': 'tuturuuu.localhost:1355',

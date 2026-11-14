@@ -1,6 +1,6 @@
 import { readFileSync } from 'node:fs';
 import { createBrowserClient, createServerClient } from '@supabase/ssr';
-import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { createRequestClient } from '../server';
 
 vi.mock('@supabase/ssr', () => ({
@@ -33,6 +33,10 @@ vi.mock('../../next/common', () => ({
 function encodeSupabaseSession(payload = { access_token: 'jwt' }) {
   return `base64-${Buffer.from(JSON.stringify(payload)).toString('base64url')}`;
 }
+
+afterEach(() => {
+  vi.unstubAllEnvs();
+});
 
 describe('framework-neutral Supabase request client', () => {
   const mockUserSchemaFrom = vi.fn((schema: string, table: string) => ({
@@ -236,6 +240,8 @@ describe('framework-neutral Supabase request client', () => {
   );
 
   it('passes scoped fetch to SSR while preserving sanitization and no-op writes', async () => {
+    // The forwarded host is honoured because it is a configured origin.
+    vi.stubEnv('NEXT_PUBLIC_APP_URL', 'https://tanstack.tuturuuu.localhost');
     const fetch = vi.fn<typeof globalThis.fetch>();
     const headers = new Headers({
       cookie: 'theme=dark; sb-test-auth-token=malformed',
