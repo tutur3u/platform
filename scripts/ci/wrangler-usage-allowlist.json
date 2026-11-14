@@ -289,14 +289,14 @@
       "digest": "92cbc96ca3d93aded1b58d7f77789bd16aa4dc5c73601747c4bd8678125be5aa"
     },
     ".github/workflows/mind-cloudflare.yaml": {
-      "lines": 8,
-      "uses": 8,
+      "lines": 6,
+      "uses": 6,
       "gap": "void-wave1-publication",
       "admitted": {
-        "decision": "https://github.com/tutur3u/platform/pull/8394",
-        "reason": "#8340 selects and seals the Mind production Worker profile (2 more Wrangler lines naming the emitted config)."
+        "decision": "https://github.com/tutur3u/platform/pull/8405",
+        "reason": "#8372 binds each Mind profile to its own Worker and removed 2 Wrangler lines reading the emitted config (8 -> 6); remaining lines unchanged."
       },
-      "digest": "de1081ea0b08d55c4d54fae63744fe5e15ceb915dd5f5e074f2cffda67740cda"
+      "digest": "ac57299d58f8b899f5324ea68f80f6b1908a6b10f3d096bf2e10aa94f7388093"
     },
     ".github/workflows/native-start-app.yaml": {
       "lines": 8,
