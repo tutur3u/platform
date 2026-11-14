@@ -184,6 +184,14 @@ describe('event preview popover', () => {
     expect(screen.queryByRole('button', { name: 't:delete' })).toBeNull();
   });
 
+  it('names the lock and keeps it with the calendar name', () => {
+    renderOpen({ locked: true });
+    const lock = screen.getByRole('img', { name: 't:locked' });
+    expect(lock.parentElement).toContainElement(
+      screen.getByTestId('event-preview-swatch')
+    );
+  });
+
   it('shows the provider once', () => {
     renderOpen({ provider: 'google', google_calendar_id: 'team@example.com' });
     expect(screen.getAllByTestId('google-calendar-logo')).toHaveLength(1);

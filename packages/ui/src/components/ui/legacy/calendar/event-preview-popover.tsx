@@ -142,8 +142,22 @@ export function EventPreviewPopover() {
             {showProviderIcon && (
               <CalendarEventProviderIcon
                 event={previewEvent}
-                className="size-3.5"
+                className="size-3.5 shrink-0"
               />
+            )}
+            {!readOnly && previewEvent.locked && (
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <span
+                    role="img"
+                    aria-label={t('locked')}
+                    className="flex shrink-0 items-center"
+                  >
+                    <Lock className="size-3.5" aria-hidden />
+                  </span>
+                </TooltipTrigger>
+                <TooltipContent>{t('locked')}</TooltipContent>
+              </Tooltip>
             )}
           </span>
           {readOnly && (
@@ -151,9 +165,6 @@ export function EventPreviewPopover() {
               <span aria-hidden>·</span>
               <span>{t('read_only')}</span>
             </>
-          )}
-          {!readOnly && previewEvent.locked && (
-            <Lock className="size-3.5" aria-label={t('locked')} role="img" />
           )}
         </div>
 
