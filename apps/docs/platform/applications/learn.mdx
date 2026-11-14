@@ -68,6 +68,44 @@ Learn-local logout clears the host-only app-session cookies and stale Supabase A
 
 Learn also exposes a learner-focused AI Chat surface at `/[wsId]/ai-chat`. The UI stays inside `apps/learn`, while its unmatched `/api/ai/*` requests use the Web fallback so model routing, credits, logging, and chat persistence remain centralized.
 
+## Draft review for writing and science
+
+The AI Chat composer includes a draft-review panel for writing and essays, math,
+physics, biology, chemistry, and other subjects. The panel works on the existing
+unsent text; it never submits a chat message or saves a learner answer when an edit
+is accepted. It does not attach to practice, graded tests, or the Programming editor.
+
+AI review is **unavailable by default**. The current entrypoint has unknown
+eligibility and no bound review provider. A future approved host must confirm
+workspace eligibility, the applicable learning-assistance policy and consent, and
+provide an existing actor-owned review conversation separate from ordinary chat.
+Unknown or denied eligibility prevents review calls. The client gate does not
+authorize a request: the existing Web AI route remains responsible for identity,
+workspace access, plan models and credit budgets. No free-tier entitlement, model
+quota, provider credential or production AI activation is implied by this panel.
+
+The prepared adapter uses the existing `/api/ai/chat` SDK transport with workspace
+credits and the server-selected plan model. It sends only an explicitly selected
+passage, or the full draft when no passage is selected, on a review button press.
+The input is bounded to 8,000 UTF-16 code units, the response to 32,000, and a review
+to twelve non-overlapping edits. There is no per-keystroke request or automatic
+retry. The prompt asks for reasoned corrections without completing unfinished
+exercises; that instruction is not an enforcement substitute for teacher policy.
+
+Streamed output is buffered without rendering partial provider payloads. Edits require a completed, validated
+response and explicit acceptance or dismissal. Acceptance checks the entire draft
+against the reviewed snapshot, applies one edit and restores focus and selection;
+remaining edits require a fresh review. Editing, cancellation, workspace changes
+and unmount invalidate in-flight results. Failures and retries preserve unsaved
+text. A review is guidance, not grading or a correctness guarantee.
+
+Regression evidence is colocated in
+`apps/learn/src/components/draft-assistance/*.test.ts*`: bounded selection and
+untrusted response parsing, workspace transport metadata, premature termination,
+stream failure, unknown eligibility, draft conflicts, accept/dismiss and retry.
+Provider-backed runtime acceptance and responsive theme screenshots remain required
+before enabling the host integration.
+
 ## Workspace access
 
 Every Learn workspace API requires both:
