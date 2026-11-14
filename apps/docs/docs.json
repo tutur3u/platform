@@ -133,6 +133,7 @@
               "platform/features/native-calendar-preferences",
               "platform/features/notes-voice-analysis",
               "platform/features/programming-playgrounds",
+              "platform/features/education-inline-assistant",
               "platform/features/account-benefits",
               "platform/features/meet-followups",
               "platform/features/meet-live-assistants",
