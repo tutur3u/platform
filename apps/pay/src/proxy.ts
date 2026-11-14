@@ -10,6 +10,7 @@ import {
   preserveMfaRecoveryCookies,
   propagateAuthCookies,
   refreshAppSessionForRequest,
+  resolveCanonicalRequestOrigin,
 } from '@tuturuuu/auth/proxy';
 import { guardApiProxyRequest } from '@tuturuuu/utils/api-proxy-guard';
 import { getTuturuuuSharedCookieOptions } from '@tuturuuu/utils/shared-cookie';
@@ -17,7 +18,11 @@ import Negotiator from 'negotiator';
 import type { NextRequest } from 'next/server';
 import { NextResponse } from 'next/server';
 import createIntlMiddleware from 'next-intl/middleware';
-import { LOCALE_COOKIE_NAME } from './constants/common';
+import {
+  BASE_URL,
+  LOCALE_COOKIE_NAME,
+  WEB_APP_URL,
+} from './constants/common';
 import {
   defaultLocale,
   type Locale,
@@ -33,15 +38,24 @@ const LOCALE_COOKIE_OPTIONS = {
   sameSite: 'lax',
 } as const;
 
+/**
+ * The locale cookie's shared `Domain` and `Secure` come from pay's canonical
+ * origin, never from the raw `Host` or an unproven `X-Forwarded-Host` header,
+ * so a hostile host header cannot downgrade it to a host-only, non-secure
+ * cookie.
+ */
 function setLocaleCookie(
   response: NextResponse,
   request: NextRequest,
   locale: string
 ) {
+  const cookieOrigin =
+    resolveCanonicalRequestOrigin(request, WEB_APP_URL, [BASE_URL]) ??
+    BASE_URL;
   response.cookies.set(
     LOCALE_COOKIE_NAME,
     locale,
-    getTuturuuuSharedCookieOptions(LOCALE_COOKIE_OPTIONS, request)
+    getTuturuuuSharedCookieOptions(LOCALE_COOKIE_OPTIONS, cookieOrigin)
   );
 }
 
