@@ -28,6 +28,11 @@
     "notFound": {
       "skip": "unknown paths redirect signed-out users to login",
       "fixture": "cloudflare/auth-redirect.runtime.mjs"
+    },
+    "api": {
+      "path": "/api/build-info",
+      "anonymousStatus": 401,
+      "fixture": "cloudflare/build-info-admin.runtime.mjs"
     }
   }
 }

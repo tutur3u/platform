@@ -150,7 +150,26 @@ export function resolveRuntimeProbes(
     const value = declared?.[kind] ?? defaults[kind];
     if (typeof value === 'string' && /^\/(?!\/)/u.test(value))
       probes.push({ kind, path: value });
-    else if (isSkip(value, kind)) {
+    else if (
+      kind === 'api' &&
+      hasBuildInfo &&
+      value &&
+      typeof value === 'object' &&
+      !Array.isArray(value) &&
+      Object.keys(value).sort().join(',') === 'anonymousStatus,fixture,path' &&
+      value.path === '/api/build-info' &&
+      value.anonymousStatus === 401 &&
+      FIXTURE.test(value.fixture ?? '') &&
+      value.fixture !== RUNTIME_GATE &&
+      fixtureExists(value.fixture)
+    ) {
+      probes.push({
+        kind,
+        path: value.path,
+        anonymousStatus: 401,
+        fixture: value.fixture,
+      });
+    } else if (isSkip(value, kind)) {
       // A skipped page or 404 probe names the app's own runtime test that
       // covers it (e.g. its isolated-auth fixture), which test:runtime runs.
       if (FIXTURE_KINDS.has(kind) && value.fixture === RUNTIME_GATE)

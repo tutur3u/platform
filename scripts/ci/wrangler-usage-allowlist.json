@@ -1049,6 +1049,16 @@
       },
       "digest": "e139bd3b3961b60527b5aa98419fb40cde9679450f4c651769242014bfec1e29"
     },
+    "apps/infrastructure/cloudflare/build-info-admin.runtime.mjs": {
+      "lines": 1,
+      "uses": 1,
+      "gap": "void-wave1-publication",
+      "admitted": {
+        "decision": "https://github.com/tutur3u/platform/pull/8359",
+        "reason": "Infrastructure build-info admin runtime harness (#8359) uses the pinned Wrangler adapter (unstable_startWorker, remote false) for the local native check, same as auth-redirect.runtime.mjs. Publication stays on the void-wave1 gap until cf deploy --prebuilt parity is proven."
+      },
+      "digest": "e139bd3b3961b60527b5aa98419fb40cde9679450f4c651769242014bfec1e29"
+    },
     "apps/infrastructure/cloudflare/native-built-worker.runtime.mjs": {
       "lines": 1,
       "uses": 1,

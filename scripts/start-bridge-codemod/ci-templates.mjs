@@ -275,8 +275,27 @@ export function runtimeTest({
   ],
   worker = { workersDev: true, compatibilityFlags: RUNTIME.compatibilityFlags },
 }) {
+  const protectedBuildInfo = probes.find(
+    (probe) =>
+      probe.kind === 'api' &&
+      probe.path === '/api/build-info' &&
+      probe.anonymousStatus === 401
+  );
   const buildInfo = hasBuildInfo
-    ? `
+    ? protectedBuildInfo
+      ? `
+  await t.test('protected build identity denies anonymous access', async () => {
+    const response = await get('/api/build-info');
+    assert.equal(response.status, 401);
+    const denial = JSON.parse(response.body);
+    assert.equal(Object.hasOwn(denial, 'appName'), false);
+    assert.equal(Object.hasOwn(denial, 'commitHash'), false);
+    assert.match(${js(protectedBuildInfo.fixture)}, FIXTURE);
+    assert.notEqual(${js(protectedBuildInfo.fixture)}, RUNTIME_GATE);
+    assert.ok(existsSync(join(app, ${js(protectedBuildInfo.fixture)})));
+  });
+`
+      : `
   await t.test('build identity is the exact compiled source', async () => {
     // A public deploy-verification endpoint, read anonymously as production
     // smoke does (packages/utils/src/build-info-route.ts).
@@ -558,7 +577,12 @@ ${buildInfo}
       const type = headers['content-type'] ?? '';
       const where = \`\${probe.kind} \${probe.path} (\${status} \${type})\`;
       if (probe.kind === 'api') {
-        assert.equal(status, 200, where);
+        assert.equal(status, probe.anonymousStatus ?? 200, where);
+        if (probe.anonymousStatus === 401) {
+          assert.match(probe.fixture, FIXTURE, where);
+          assert.notEqual(probe.fixture, RUNTIME_GATE, where);
+          assert.ok(existsSync(join(app, probe.fixture)), where);
+        }
         assert.match(type, /application\\/json/u, where);
         assert.doesNotThrow(() => JSON.parse(body), where);
       } else {

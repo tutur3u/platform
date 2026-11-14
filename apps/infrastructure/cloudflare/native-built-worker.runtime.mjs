@@ -40,7 +40,12 @@ const POLICY_PROBES = [
     skip: 'every page redirects signed-out users to login',
     fixture: 'cloudflare/auth-redirect.runtime.mjs',
   },
-  { kind: 'api', path: '/api/build-info' },
+  {
+    kind: 'api',
+    path: '/api/build-info',
+    anonymousStatus: 401,
+    fixture: 'cloudflare/build-info-admin.runtime.mjs',
+  },
   {
     kind: 'notFound',
     skip: 'unknown paths redirect signed-out users to login',
@@ -220,20 +225,24 @@ test(
     const ROOT_HOST = MOUNTS.rootHosts[0];
     const get = (path) => call(path, ROOT_HOST);
 
-    await t.test('build identity is the exact compiled source', async () => {
-      // A public deploy-verification endpoint, read anonymously as production
-      // smoke does (packages/utils/src/build-info-route.ts).
-      const response = await get('/api/build-info');
-      assert.notEqual(
-        response.status,
-        401,
-        'app proxy must admit GET /api/build-info (public deploy verification)'
-      );
-      assert.equal(response.status, 200, `/api/build-info: ${response.status}`);
-      const info = JSON.parse(response.body);
-      assert.equal(info.appName, 'infrastructure');
-      assert.equal(info.commitHash, source);
-    });
+    await t.test(
+      'protected build identity denies anonymous access',
+      async () => {
+        const response = await get('/api/build-info');
+        assert.equal(response.status, 401);
+        const denial = JSON.parse(response.body);
+        assert.equal(Object.hasOwn(denial, 'appName'), false);
+        assert.equal(Object.hasOwn(denial, 'commitHash'), false);
+        assert.match('cloudflare/build-info-admin.runtime.mjs', FIXTURE);
+        assert.notEqual(
+          'cloudflare/build-info-admin.runtime.mjs',
+          RUNTIME_GATE
+        );
+        assert.ok(
+          existsSync(join(app, 'cloudflare/build-info-admin.runtime.mjs'))
+        );
+      }
+    );
 
     await t.test(
       'public pages answer as start-bridge.routes.json expects',
@@ -361,7 +370,12 @@ test(
           const type = headers['content-type'] ?? '';
           const where = `${probe.kind} ${probe.path} (${status} ${type})`;
           if (probe.kind === 'api') {
-            assert.equal(status, 200, where);
+            assert.equal(status, probe.anonymousStatus ?? 200, where);
+            if (probe.anonymousStatus === 401) {
+              assert.match(probe.fixture, FIXTURE, where);
+              assert.notEqual(probe.fixture, RUNTIME_GATE, where);
+              assert.ok(existsSync(join(app, probe.fixture)), where);
+            }
             assert.match(type, /application\/json/u, where);
             assert.doesNotThrow(() => JSON.parse(body), where);
           } else {

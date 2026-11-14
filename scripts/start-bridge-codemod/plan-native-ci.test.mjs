@@ -5,6 +5,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 import test from 'node:test';
 import { applyPlan } from './cli.mjs';
+import { runtimeTest } from './ci-templates.mjs';
 import { createFixtureRepo, fakeCodegen, writeTree } from './fixture-repo.mjs';
 import { pendingWrites, planConversion } from './plan.mjs';
 
@@ -375,7 +376,7 @@ test('the generated Worker states its effective mounts and fails safely', (t) =>
     /^const POLICY_PROBES = \[\{"kind":"page","path":"\/"\},\{"kind":"api","path":"\/api\/build-info"\},\{"kind":"notFound","path":"\/__native-smoke-missing__"\}\];$/m
   );
   for (const check of [
-    /assert\.equal\(status, 200, where\);\s*assert\.match\(type, \/application\\\/json\/u, where\);/,
+    /assert\.equal\(status, probe\.anonymousStatus \?\? 200, where\);\s*if \(probe\.anonymousStatus === 401\) \{[\s\S]*?\}\s*assert\.match\(type, \/application\\\/json\/u, where\);/,
     /assert\.equal\(status, probe\.kind === 'page' \? 200 : 404, where\);\s*assert\.match\(type, \/text\\\/html\/u, where\);\s*assert\.match\(body, \/<html\[\\s>\]\/iu/,
     /assert\.ok\(executed > 0, 'no response-policy probe ran'\);/,
     /assert\.ok\(existsSync\(join\(app, probe\.fixture\)\)/,
@@ -468,4 +469,46 @@ test('policy probes are real pages, never a redirect standing in', (t) => {
     }).problems.join('\n'),
     /at least one probe must run/
   );
+});
+
+test('protected build identity keeps the anonymous policy probe and app fixture', () => {
+  const api = {
+    kind: 'api',
+    path: '/api/build-info',
+    anonymousStatus: 401,
+    fixture: 'cloudflare/build-info-admin.runtime.mjs',
+  };
+  const input = {
+    app: 'demo',
+    workerName: 'demo',
+    publicFiles: [],
+    hasBuildInfo: true,
+  };
+  const protectedGate = runtimeTest({ ...input, probes: [api] });
+  assert.match(
+    protectedGate,
+    /protected build identity denies anonymous access/
+  );
+  assert.match(
+    protectedGate,
+    /const response = await get\('\/api\/build-info'\)/
+  );
+  assert.match(protectedGate, /assert.equal\(response.status, 401\)/);
+  assert.doesNotMatch(protectedGate, /app proxy must admit GET/);
+  for (const marker of [
+    'cloudflare/build-info-admin.runtime.mjs',
+    'probe.anonymousStatus ?? 200',
+    'JSON.parse(body)',
+    'Cache-Control no-store',
+    'X-Robots-Tag',
+    'X-Frame-Options',
+    "frame-ancestors 'none'",
+    'exactly one HSTS header',
+    'assert.ok(executed > 0',
+  ])
+    assert.ok(protectedGate.includes(marker), marker);
+  const publicGate = runtimeTest(input);
+  assert.match(publicGate, /app proxy must admit GET/);
+  assert.match(publicGate, /assert.equal\(info.commitHash, source\)/);
+  assert.equal(runtimeTest({ ...input, probes: [api] }), protectedGate);
 });
