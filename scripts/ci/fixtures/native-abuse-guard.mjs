@@ -13,6 +13,19 @@ const guardRoot = fileURLToPath(
 const require = createRequire(join(guardRoot, 'package.json'));
 
 // The first-party SQLite backend runs in an isolated registry, never a remote service.
+const QUOTA_WINDOW_MS = 60_000;
+// Margin before a window boundary inside which the quota pair waits for the
+// next window. The pair takes milliseconds; the margin absorbs CI stalls.
+const QUOTA_WINDOW_MARGIN_MS = 15_000;
+
+async function enterQuotaWindow(now = Date.now()) {
+  const elapsed = now % QUOTA_WINDOW_MS;
+  if (elapsed <= QUOTA_WINDOW_MS - QUOTA_WINDOW_MARGIN_MS) return;
+  await new Promise((resolve) =>
+    setTimeout(resolve, QUOTA_WINDOW_MS - elapsed + 250)
+  );
+}
+
 export async function startNativeAbuseGuard(t, sdk, registry) {
   const scratch = await mkdtemp(join(tmpdir(), 'native-guard-'));
   t.after(() => rm(scratch, { recursive: true, force: true }));
@@ -137,7 +150,9 @@ export async function startNativeAbuseGuard(t, sdk, registry) {
         cmds: [
           {
             op: 'win.hit',
-            windows: [{ k, limit: 1, windowMs: 60000, algo: 'fixed' }],
+            windows: [
+              { k, limit: 1, windowMs: QUOTA_WINDOW_MS, algo: 'fixed' },
+            ],
           },
         ],
       },
@@ -148,6 +163,11 @@ export async function startNativeAbuseGuard(t, sdk, registry) {
     401,
     'foreign caller denied'
   );
+  // The admitted and refused hits must share one fixed window: the guard
+  // buckets by wall-clock window index, so hits straddling a boundary would
+  // both be admitted. Start the pair well inside a window, then prove it.
+  await enterQuotaWindow();
+  const quotaWindow = Math.floor(Date.now() / QUOTA_WINDOW_MS);
   const first = await rpc(request());
   assert.equal(first.status, 200);
   assert.equal(
@@ -157,6 +177,11 @@ export async function startNativeAbuseGuard(t, sdk, registry) {
   );
   const second = await rpc(request());
   assert.equal(second.status, 200);
+  assert.equal(
+    Math.floor(Date.now() / QUOTA_WINDOW_MS),
+    quotaWindow,
+    'quota pair stayed inside one fixed window'
+  );
   assert.equal(
     (await second.json()).steps[0].results[0].ok,
     false,
