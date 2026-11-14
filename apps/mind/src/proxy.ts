@@ -9,13 +9,14 @@ import {
   preserveMfaRecoveryCookies,
   propagateAuthCookies,
   refreshAppSessionForRequest,
+  resolveCanonicalRequestOrigin,
 } from '@tuturuuu/auth/proxy';
 import { guardApiProxyRequest } from '@tuturuuu/utils/api-proxy-guard';
 import { getTuturuuuSharedCookieOptions } from '@tuturuuu/utils/shared-cookie';
 import type { NextRequest } from 'next/server';
 import { NextResponse } from 'next/server';
 import createIntlMiddleware from 'next-intl/middleware';
-import { LOCALE_COOKIE_NAME } from './constants/common';
+import { BASE_URL, LOCALE_COOKIE_NAME, WEB_APP_URL } from './constants/common';
 import { type Locale, routing, supportedLocales } from './i18n/routing';
 import { createMindPublicUrl } from './lib/mind-public-url';
 
@@ -31,16 +32,59 @@ const LOCALE_COOKIE_OPTIONS = {
   sameSite: 'lax',
 } as const;
 
+/**
+ * Mind's canonical origin for locale cookies, never the raw `Host` or an
+ * unproven `X-Forwarded-Host` header, so a hostile host header cannot pick the
+ * cookie's scope or downgrade it to a non-secure cookie.
+ */
+function getLocaleCookieOrigin(request: NextRequest) {
+  return (
+    resolveCanonicalRequestOrigin(request, WEB_APP_URL, [BASE_URL]) ?? BASE_URL
+  );
+}
+
+function isSecureOrigin(origin: string) {
+  return origin.startsWith('https:');
+}
+
+/**
+ * The locale redirect cookie keeps the shared-cookie helper's scope for mind's
+ * canonical origin and is `Secure` whenever that origin is `https`.
+ */
 function setLocaleCookie(
   response: NextResponse,
   request: NextRequest,
   locale: string
 ) {
-  response.cookies.set(
-    LOCALE_COOKIE_NAME,
-    locale,
-    getTuturuuuSharedCookieOptions(LOCALE_COOKIE_OPTIONS, request)
+  const cookieOrigin = getLocaleCookieOrigin(request);
+  const cookieOptions = getTuturuuuSharedCookieOptions(
+    LOCALE_COOKIE_OPTIONS,
+    cookieOrigin
   );
+  response.cookies.set(LOCALE_COOKIE_NAME, locale, {
+    ...cookieOptions,
+    ...(isSecureOrigin(cookieOrigin) ? { secure: true } : {}),
+  });
+}
+
+/**
+ * next-intl's middleware writes `NEXT_LOCALE` itself (for example when the
+ * request has no `Accept-Language` or an invalid locale cookie). That cookie
+ * stays host-only with next-intl's value, `Path`, `Max-Age`/`Expires` and
+ * `SameSite`; `Secure` follows mind's canonical origin.
+ */
+function runIntlMiddleware(request: NextRequest) {
+  const response = intlMiddleware(request);
+  const localeCookie = response.cookies.get(LOCALE_COOKIE_NAME);
+  if (!localeCookie) return response;
+
+  const { domain: _domain, name: _name, ...cookieOptions } = localeCookie;
+  response.cookies.set({
+    ...cookieOptions,
+    name: LOCALE_COOKIE_NAME,
+    secure: isSecureOrigin(getLocaleCookieOrigin(request)),
+  });
+  return response;
 }
 
 function stripLocale(pathname: string) {
@@ -179,14 +223,14 @@ export async function proxy(request: NextRequest): Promise<NextResponse> {
       return clearSupabaseAuthCookies(request, NextResponse.redirect(url));
     }
 
-    const response = intlMiddleware(request);
+    const response = runIntlMiddleware(request);
     if (appSessionRefresh.ok) {
       propagateAuthCookies(appSessionRefresh.response, response);
     }
     return clearSupabaseAuthCookies(request, response);
   }
 
-  return clearSupabaseAuthCookies(request, intlMiddleware(request));
+  return clearSupabaseAuthCookies(request, runIntlMiddleware(request));
 }
 
 export const config = {
