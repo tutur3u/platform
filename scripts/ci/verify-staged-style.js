@@ -44,9 +44,12 @@ const FAILURE_REASONS = [
 // built-in loader; `apps/web/src/proxy.ts` leaves `/_next/image` unmigrated).
 const NEXT_IMAGE_PATH = '/_next/image';
 const NEXT_IMAGE_QUERY_KEYS = Object.freeze(['url', 'w', 'q']);
+// `/media/` is apps/web/public/media: the marketing navbar and footer render
+// the local logo (`/media/logos/transparent.png`) through `next/image`.
 const NEXT_IMAGE_INNER_PREFIXES = Object.freeze([
   '/_next/static/media/',
   '/images/',
+  '/media/',
 ]);
 // Resolved apps/web image optimizer sizing: next.config.ts sets remotePatterns
 // only (createTuturuuuNextConfig merge in @tuturuuu/utils/next-config.ts does

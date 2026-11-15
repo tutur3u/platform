@@ -720,6 +720,7 @@ test('admitTransportTarget bounds framework image query contracts', () => {
   const origin = 'https://platform-fixture.vercel.app';
   const staticPath = '/_next/static/media/hero.png';
   const imagesPath = '/images/avatar.png';
+  const mediaPath = '/media/logos/transparent.png';
   const admit = (href, resourceType = 'image') => {
     const target = new URL(href, origin);
     admitTransportTarget(target, origin, { resourceType });
@@ -741,6 +742,25 @@ test('admitTransportTarget bounds framework image query contracts', () => {
 
   admit(`/_next/image?url=${encodeURIComponent(staticPath)}&w=96&q=75`);
   admit(`/_next/image?url=${encodeURIComponent(imagesPath)}&w=128&q=75`);
+  // The Web marketing navbar (32 px) and footer (48 px) logo at 1x and 2x.
+  for (const w of [32, 48, 64, 96])
+    admit(`/_next/image?url=${encodeURIComponent(mediaPath)}&w=${w}&q=75`);
+
+  // The public media prefix keeps every other bound.
+  reject(`/_next/image?url=${encodeURIComponent('/mediax/x.png')}&w=32&q=75`);
+  reject(`/_next/image?url=${encodeURIComponent('/media')}&w=32&q=75`);
+  reject(
+    `/_next/image?url=${encodeURIComponent('/media/../api/x.png')}&w=32&q=75`
+  );
+  reject(
+    `/_next/image?url=${encodeURIComponent('/media/%2e%2e/x.png')}&w=32&q=75`
+  );
+  reject(`/_next/image?url=${encodeURIComponent(mediaPath)}&w=33&q=75`);
+  reject(`/_next/image?url=${encodeURIComponent(mediaPath)}&w=32&q=90`);
+  reject(
+    `/_next/image?url=${encodeURIComponent(mediaPath)}&w=32&q=75`,
+    'stylesheet'
+  );
 
   reject(
     `/_next/image?url=${encodeURIComponent('https://evil/x.png')}&w=96&q=75`
