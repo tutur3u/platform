@@ -16,6 +16,29 @@ type RuntimeBindingName =
 // Generated binding interfaces enumerate names; they need no open index signature.
 export type RuntimeEnvironment = Partial<Record<RuntimeBindingName, unknown>>;
 
+// Names that configure an abuse guard. The `ABUSE_GUARD` service binding is
+// declared in the Worker configuration, so it alone is not configuration.
+// With no other name set the guard is off, as on Vercel; once any other name
+// is set the configuration must be complete.
+const ABUSE_GUARD_NAMES = [
+  'ABUSE_GUARD',
+  'ABUSE_GUARD_KEY_PEPPER',
+  'ABUSE_GUARD_FAMILIES',
+  'UPSTASH_REDIS_REST_URL',
+  'UPSTASH_REDIS_REST_TOKEN',
+] as const;
+
+// The check runs on every request; log the notice once per isolate.
+let guardOffNoticeLogged = false;
+
+function isAbuseGuardUnconfigured(env: RuntimeEnvironment) {
+  return ABUSE_GUARD_NAMES.every((name) => {
+    if (name === 'ABUSE_GUARD') return true;
+    const value = env[name];
+    return typeof value !== 'string' || value.trim() === '';
+  });
+}
+
 export function assertRuntimeEnvironment(env: RuntimeEnvironment): void {
   if (process.env.NODE_ENV !== 'production') {
     throw new Error('Worker requires NODE_ENV=production');
@@ -38,7 +61,14 @@ export function assertRuntimeEnvironment(env: RuntimeEnvironment): void {
     !!env.ABUSE_GUARD_KEY_PEPPER.trim() &&
     typeof env.ABUSE_GUARD_FAMILIES === 'string' &&
     !!env.ABUSE_GUARD_FAMILIES.trim();
-  if (!legacy && !configured) {
+  const guardOff = !legacy && !configured && isAbuseGuardUnconfigured(env);
+  if (guardOff && !guardOffNoticeLogged) {
+    guardOffNoticeLogged = true;
+    console.warn(
+      `[abuse-guard] not configured; guard skipped. Names: ${ABUSE_GUARD_NAMES.join(', ')}`
+    );
+  }
+  if (!legacy && !configured && !guardOff) {
     const missing = binding
       ? (['ABUSE_GUARD_KEY_PEPPER', 'ABUSE_GUARD_FAMILIES'] as const).filter(
           (name) => typeof env[name] !== 'string' || !String(env[name]).trim()
