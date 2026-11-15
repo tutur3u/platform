@@ -288,6 +288,7 @@ const ruleOf = (css: string, selector: string, media = '') =>
       )
       .map((d) => [d.property, d.value])
   );
+const escapeRegExp = (s: string) => s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 /** The ways an image gets altered rather than shown as published. */
 const ALTERS =
   /^(filter|opacity|mix-blend-mode|clip-path|mask|transform|object-fit|background|color|fill)/;
@@ -296,9 +297,8 @@ const alters = (css: string, selector: string) =>
     (d) =>
       d.selector
         .split(/\s*,\s*/)
-        .some((s) =>
-          new RegExp(`${selector.replace(/\./g, '\\.')}$`).test(s.trim())
-        ) && ALTERS.test(d.property)
+        .some((s) => new RegExp(`${escapeRegExp(selector)}$`).test(s.trim())) &&
+      ALTERS.test(d.property)
   );
 
 describe('hosting: Cloudflare mark', () => {
