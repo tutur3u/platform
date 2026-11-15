@@ -27,6 +27,11 @@ export interface StatusPageProps {
   backHref?: string;
   /** Tuturuuu home; defaults to https://tuturuuu.com. */
   homeHref?: string;
+  /**
+   * Sign-in link for a signed-out visitor on the not-found variant (a page
+   * that may exist behind sign-in). The caller passes a validated local URL.
+   */
+  signInHref?: string;
   /** The framework's reset/retry. Shown as "Try again" on the error variant. */
   onRetry?: () => void;
   /** Safe error reference (Next `digest`). */
@@ -88,6 +93,7 @@ export function StatusPage({
   helpHref,
   backHref,
   homeHref = TUTURUUU_HOME_URL,
+  signInHref,
   onRetry,
   reference,
   details,
@@ -101,6 +107,7 @@ export function StatusPage({
     ? copy.openApp.replace('{app}', appName)
     : copy.appHome;
   const showAppLink = Boolean(appHref && appHref !== homeHref);
+  const showSignIn = variant === 'not-found' && Boolean(signInHref);
 
   const message: ReactNode = (
     <div className="ttr-sp__panel">
@@ -122,11 +129,23 @@ export function StatusPage({
           <ArrowLeftIcon />
           {copy.back}
         </StatusBackLink>
+        {showSignIn ? (
+          <a
+            className="ttr-sp__btn"
+            data-action="sign-in"
+            data-primary=""
+            href={signInHref}
+          >
+            {copy.signIn}
+          </a>
+        ) : null}
         {showAppLink ? (
           <a
             className="ttr-sp__btn"
             data-action="app"
-            data-primary={variant === 'not-found' ? '' : undefined}
+            data-primary={
+              variant === 'not-found' && !showSignIn ? '' : undefined
+            }
             href={appHref}
           >
             {appLabel}
@@ -136,7 +155,9 @@ export function StatusPage({
           className="ttr-sp__btn"
           data-action="home"
           data-primary={
-            variant === 'not-found' && !showAppLink ? '' : undefined
+            variant === 'not-found' && !showAppLink && !showSignIn
+              ? ''
+              : undefined
           }
           href={homeHref}
         >

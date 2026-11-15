@@ -65,6 +65,7 @@ import { isVerifiedStaffCliSession } from './lib/staff-cli-session';
 import { withStagingOriginProof } from './lib/staging-origin-proof';
 import { getToolsAppOrigin } from './lib/tools-app-url';
 import { getTrackAppOrigin } from './lib/track-app-url';
+import { isUnknownRouteShape } from './lib/route-shape';
 import { workspaceHomeRedirectUrl } from './lib/workspace-home-redirect';
 import {
   getWorkspaceRoutePermissionRequirements,
@@ -225,6 +226,14 @@ function isAuthProxyPublicPath(pathname: string): boolean {
   }
 
   if (isRoadmapPublicPath(pathname)) {
+    return true;
+  }
+
+  // USER M-6: a path that matches no known route shape renders the not-found
+  // page for signed-out visitors instead of a login redirect. Known shapes
+  // (static routes, workspace UUID/personal/internal, /<x>/<workspace child>)
+  // keep the redirect; see lib/route-shape.ts.
+  if (isUnknownRouteShape(pathnameWithoutLocale.split('/').filter(Boolean))) {
     return true;
   }
 

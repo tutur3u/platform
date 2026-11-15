@@ -3,9 +3,21 @@ import { renderToStaticMarkup } from 'react-dom/server';
 import { describe, expect, it, vi } from 'vitest';
 
 const intl = vi.hoisted(() => ({ locale: 'en' }));
+const session = vi.hoisted(() => ({
+  pathname: '/acme-handle' as string | null,
+  user: null as { id: string } | null,
+}));
 vi.mock('next-intl', async (load) => ({
   ...(await load<typeof import('next-intl')>()),
   useLocale: () => intl.locale,
+}));
+vi.mock('next-intl/server', () => ({ getLocale: async () => intl.locale }));
+vi.mock('next/navigation', () => ({ usePathname: () => session.pathname }));
+vi.mock('@tuturuuu/supabase/next/server', () => ({
+  createClient: async () => ({}),
+}));
+vi.mock('@tuturuuu/supabase/next/auth-session-user', () => ({
+  resolveAuthenticatedSessionUser: async () => ({ user: session.user }),
 }));
 
 import ErrorBoundary from '../app/[locale]/error';
@@ -31,12 +43,44 @@ const error = Object.assign(new Error('sensitive-provider-detail'), {
 });
 
 describe('web status pages', () => {
-  it.each(['en', 'vi'])('not-found renders the shared page (%s)', (locale) => {
-    intl.locale = locale;
-    const html = render(<NotFound />);
+  it.each(['en', 'vi'])(
+    'not-found renders the shared page (%s)',
+    async (locale) => {
+      intl.locale = locale;
+      const html = render(await NotFound());
+      expect(statusProblems(html, 'not-found')).toEqual([]);
+      expect(html).toContain(`lang="${locale}"`);
+      expect(html).toContain('href="/contact"');
+    }
+  );
+
+  it('offers signed-out visitors sign-in back to the same path', async () => {
+    intl.locale = 'en';
+    session.user = null;
+    session.pathname = '/vi/acme-handle';
+    const html = render(await NotFound());
     expect(statusProblems(html, 'not-found')).toEqual([]);
-    expect(html).toContain(`lang="${locale}"`);
-    expect(html).toContain('href="/contact"');
+    expect(html).toContain('href="/login?returnUrl=%2Fvi%2Facme-handle"');
+    expect(html).toContain('data-action="sign-in"');
+  });
+
+  it('never carries a non-local return path into the sign-in link', async () => {
+    session.user = null;
+    for (const pathname of ['//evil.example', '/\\evil.example', null]) {
+      session.pathname = pathname;
+      const html = render(await NotFound());
+      expect(html).toContain('href="/login"');
+      expect(html).not.toContain('returnUrl');
+    }
+  });
+
+  it('shows no sign-in link to a signed-in visitor', async () => {
+    session.user = { id: 'user-1' };
+    session.pathname = '/acme-handle';
+    const html = render(await NotFound());
+    expect(statusProblems(html, 'not-found')).toEqual([]);
+    expect(html).not.toContain('data-action="sign-in"');
+    session.user = null;
   });
 
   it('locale error renders the shared page with Try again', () => {

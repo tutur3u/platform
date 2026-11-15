@@ -19,6 +19,7 @@ import {
 } from '@/constants/sidebar';
 import type { SidebarBehavior } from '@/context/sidebar-context';
 import { isPolarWorkspaceSetupEnabled } from '@/lib/polar-config';
+import { isUnknownRouteShape } from '@/lib/route-shape';
 import {
   type DashboardLayoutWorkspace,
   getDashboardLayoutData,
@@ -155,7 +156,13 @@ export default async function Layout({ children, params }: LayoutProps) {
 
   const { user, workspace } = await getDashboardLayoutData(id);
 
-  if (!user?.id) redirect('/login');
+  if (!user?.id) {
+    // USER M-6: the proxy already sent known-shaped signed-out requests to
+    // login; an unknown-shaped id (for example a bare handle) renders the
+    // not-found page, which offers sign-in back to this path.
+    if (isUnknownRouteShape([id])) notFound();
+    redirect('/login');
+  }
   if (!workspace) notFound();
 
   // Auto-assign free subscription if workspace has no active subscription. Skip
