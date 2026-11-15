@@ -83,3 +83,48 @@ describe('upstash-rest', () => {
     expect(mocks.fromEnv).toHaveBeenCalledTimes(2);
   });
 });
+
+describe('SR-951 missing-store report', () => {
+  afterEach(() => {
+    vi.unstubAllEnvs();
+    vi.restoreAllMocks();
+  });
+
+  it('reports a missing Upstash pair loudly once per production instance', async () => {
+    const { hasUpstashRestEnv, resetMissingUpstashEnvReportForTests } =
+      await import('../upstash-rest.js');
+    resetMissingUpstashEnvReportForTests();
+    vi.stubEnv('NODE_ENV', 'production');
+    vi.stubEnv('UPSTASH_REDIS_REST_URL', '');
+    vi.stubEnv('UPSTASH_REDIS_REST_TOKEN', 'secret-token-value');
+    const error = vi.spyOn(console, 'error').mockImplementation(() => {});
+
+    expect(hasUpstashRestEnv()).toBe(false);
+    expect(hasUpstashRestEnv()).toBe(false);
+
+    expect(error).toHaveBeenCalledOnce();
+    const [message] = error.mock.calls[0] ?? [];
+    expect(message).toContain('[abuse-guard] SR-951');
+    // Fixed text only: never a configured value.
+    expect(String(message)).not.toContain('secret-token-value');
+  });
+
+  it('stays quiet outside production and when the pair is configured', async () => {
+    const { hasUpstashRestEnv, resetMissingUpstashEnvReportForTests } =
+      await import('../upstash-rest.js');
+    const error = vi.spyOn(console, 'error').mockImplementation(() => {});
+
+    resetMissingUpstashEnvReportForTests();
+    vi.stubEnv('NODE_ENV', 'test');
+    vi.stubEnv('UPSTASH_REDIS_REST_URL', '');
+    expect(hasUpstashRestEnv()).toBe(false);
+
+    resetMissingUpstashEnvReportForTests();
+    vi.stubEnv('NODE_ENV', 'production');
+    vi.stubEnv('UPSTASH_REDIS_REST_URL', 'https://redis.test');
+    vi.stubEnv('UPSTASH_REDIS_REST_TOKEN', 'token');
+    expect(hasUpstashRestEnv()).toBe(true);
+
+    expect(error).not.toHaveBeenCalled();
+  });
+});

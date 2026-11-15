@@ -75,6 +75,12 @@ jobs:
           VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PLATFORM_PROJECT_ID }}
         run: vercel pull --yes --environment=production --token=${{ secrets.VERCEL_TOKEN }}
 
+      # SR-951: without a covering abuse-guard store, fail-open guards stop
+      # enforcing and replay-protected refresh returns 503. Prints names only.
+      - name: Require a covering abuse-guard store
+        if: steps.package_release_gate.outputs.packages_ready == 'true'
+        run: bun run --silent scripts/ci/verify-abuse-store-env.ts .vercel/.env.production.local
+
       - name: Generate shared build metadata
         if: steps.package_release_gate.outputs.packages_ready == 'true'
         env:

@@ -22,10 +22,35 @@ export type UpstashRatelimitRedisClient = Pick<
   'eval' | 'evalsha' | 'get' | 'set'
 >;
 
+let missingStoreReported = false;
+
+/**
+ * SR-951: a production instance without the legacy store makes every
+ * fail-open guard (route rate limits, MFA/password budgets, edge controls)
+ * stop enforcing, and fail-closed paths such as refresh replay return 503.
+ * Report that loudly, once per instance, with a fixed message (no values).
+ * The deployment gate (scripts/ci/verify-abuse-store-env.ts) refuses to build
+ * Web production without a covering store; this is the runtime backstop.
+ */
+function reportMissingUpstashEnv() {
+  if (missingStoreReported || process.env.NODE_ENV !== 'production') return;
+  missingStoreReported = true;
+  console.error(
+    '[abuse-guard] SR-951 UPSTASH_REDIS_REST_URL/UPSTASH_REDIS_REST_TOKEN are not configured: fail-open guards are not enforcing and replay-protected refresh is unavailable'
+  );
+}
+
+/** Test-only reset of the once-per-instance report. */
+export function resetMissingUpstashEnvReportForTests() {
+  missingStoreReported = false;
+}
+
 export function hasUpstashRestEnv(): boolean {
   const url = process.env.UPSTASH_REDIS_REST_URL?.trim();
   const token = process.env.UPSTASH_REDIS_REST_TOKEN?.trim();
-  return Boolean(url && token);
+  const configured = Boolean(url && token);
+  if (!configured) reportMissingUpstashEnv();
+  return configured;
 }
 
 /**
