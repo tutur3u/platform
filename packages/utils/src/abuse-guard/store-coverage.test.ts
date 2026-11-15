@@ -1,6 +1,9 @@
 import { describe, expect, it } from 'vitest';
 import { ABUSE_GUARD_FAMILIES } from './protocol';
-import { abuseStoreCoverage } from './store-coverage';
+import {
+  abuseStoreCoverage,
+  FAIL_CLOSED_GUARD_FAMILIES,
+} from './store-coverage';
 
 const UPSTASH = {
   UPSTASH_REDIS_REST_URL: 'https://fixture.upstash.invalid',
@@ -144,5 +147,13 @@ describe('abuseStoreCoverage (SR-951)', () => {
       expect(entry.store).toBe('upstash');
       expect(entry.presenceOnly).toBe(true);
     }
+  });
+
+  it('requires a store only for fail-closed families', () => {
+    const coverage = abuseStoreCoverage({}, NOW);
+    expect(
+      coverage.filter((entry) => entry.required).map((entry) => entry.family)
+    ).toEqual(['replay']);
+    expect([...FAIL_CLOSED_GUARD_FAMILIES]).toEqual(['replay']);
   });
 });

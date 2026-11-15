@@ -92,6 +92,37 @@ test('still refuses a visible weak guard secret next to redacted values', () => 
   assert.match(result.out, /family proxy: none/);
 });
 
+test('passes the D186 production shape: replay covered, fail-open families warned', () => {
+  // D186: guard trio Sensitive, replay/proxy/offline assigned, no Upstash.
+  const result = gate([
+    'ABUSE_GUARD_URL="[SENSITIVE]"',
+    'ABUSE_GUARD_SECRET="[SENSITIVE]"',
+    'ABUSE_GUARD_KEY_PEPPER="[SENSITIVE]"',
+    'ABUSE_GUARD_FAMILIES="replay,proxy,offline"',
+  ]);
+  assert.equal(result.code, 0, result.out);
+  assert.match(
+    result.out,
+    /family replay: durable-object \(Sensitive values: presence only\)\n/
+  );
+  assert.match(result.out, /family password: none \[fail-open\]/);
+  assert.match(result.out, /family meet: none \[fail-open\]/);
+  assert.match(result.out, /::warning::Fail-open abuse-guard family password/);
+  assert.doesNotMatch(result.out, /::error::/);
+});
+
+test('refuses when only the fail-closed replay family lacks a store', () => {
+  const result = gate([
+    'ABUSE_GUARD_URL="[SENSITIVE]"',
+    'ABUSE_GUARD_SECRET="[SENSITIVE]"',
+    'ABUSE_GUARD_KEY_PEPPER="[SENSITIVE]"',
+    'ABUSE_GUARD_FAMILIES="proxy,offline,password,meet"',
+  ]);
+  assert.equal(result.code, 1, result.out);
+  assert.match(result.out, /family replay: none\n/);
+  assert.match(result.out, /::error::Fail-closed abuse-guard family replay/);
+});
+
 test('refuses when the pulled env file is missing', () => {
   const result = spawnSync(
     'bun',

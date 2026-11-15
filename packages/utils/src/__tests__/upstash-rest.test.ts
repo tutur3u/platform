@@ -119,8 +119,12 @@ describe('SR-951 legacy-family store report', () => {
     expect(payload).toMatchObject({
       alert: 'abuse-guard-store-missing',
       family: 'replay',
+      reason: 'legacy-without-pair',
       severity: 'critical',
     });
+    expect(Object.keys(payload).sort()).toEqual(
+      ['alert', 'app', 'family', 'reason', 'severity'].sort()
+    );
     expect(messages.join('\n')).not.toContain('secret-token-value');
   });
 
@@ -146,5 +150,56 @@ describe('SR-951 legacy-family store report', () => {
     ).resolves.toBeNull();
 
     expect(error).not.toHaveBeenCalled();
+  });
+
+  it('alerts with a fixed reason when an assigned family is switched off or invalid', async () => {
+    const { getUpstashRestRedisClient, resetLegacyFamilyReportsForTests } =
+      await import('../upstash-rest.js');
+    const error = vi.spyOn(console, 'error').mockImplementation(() => {});
+    resetLegacyFamilyReportsForTests();
+    vi.stubEnv('NODE_ENV', 'production');
+    vi.stubEnv('ABUSE_GUARD_FAMILIES', 'replay');
+    vi.stubEnv('ABUSE_GUARD_URL', 'https://guard.fixture.invalid');
+    vi.stubEnv('ABUSE_GUARD_SECRET', 'short-secret-value');
+    vi.stubEnv('ABUSE_GUARD_KEY_PEPPER', 'p'.repeat(32));
+
+    vi.stubEnv('ABUSE_GUARD_BACKEND', '');
+    await expect(
+      getUpstashRestRedisClient({ family: 'replay' })
+    ).resolves.toBeNull();
+    vi.stubEnv('ABUSE_GUARD_BACKEND', 'off');
+    await expect(
+      getUpstashRestRedisClient({ family: 'replay' })
+    ).resolves.toBeNull();
+
+    const payloads = error.mock.calls.map(([message]) =>
+      JSON.parse(String(message).replace(/^[^{]*/, ''))
+    );
+    expect(payloads.map((entry) => entry.reason)).toEqual([
+      'invalid-guard-config',
+      'selector-off',
+    ]);
+    // Never a value, length or partial of the weak secret.
+    expect(JSON.stringify(payloads)).not.toMatch(
+      /short-secret|18|guard\.fixture/
+    );
+  });
+
+  it('takes the app field from static configuration only, never request data', async () => {
+    const { guardAlertServiceName } = await import('../upstash-rest.js');
+    expect(guardAlertServiceName({ TUTURUUU_SERVICE_NAME: 'web' })).toBe('web');
+    expect(
+      guardAlertServiceName({ VERCEL_PROJECT_PRODUCTION_URL: 'tuturuuu.com' })
+    ).toBe('tuturuuu.com');
+    expect(
+      guardAlertServiceName({
+        VERCEL_PROJECT_PRODUCTION_URL: 'https://Tuturuuu.com/path',
+      })
+    ).toBe('tuturuuu.com');
+    for (const value of ['evil host', '<script>', 'a'.repeat(80), ''])
+      expect(guardAlertServiceName({ TUTURUUU_SERVICE_NAME: value })).toBe(
+        'unknown'
+      );
+    expect(guardAlertServiceName({})).toBe('unknown');
   });
 });

@@ -11,9 +11,19 @@ export type AbuseStoreCoverageEnv = AbuseGuardEnv &
     >
   >;
 
+/**
+ * Families whose callers FAIL CLOSED without a store (D186-FP): a missing
+ * store makes the feature unavailable, so the deployment gate requires one.
+ * Every other family fails open with the runtime SR-951 alert instead.
+ */
+export const FAIL_CLOSED_GUARD_FAMILIES: ReadonlySet<AbuseGuardFamily> =
+  new Set(['replay']);
+
 export type AbuseStoreFamilyCoverage = {
   family: AbuseGuardFamily;
   store: 'durable-object' | 'upstash' | 'none';
+  /** True for fail-closed families, which the deployment gate requires. */
+  required: boolean;
   /** Fixed, value-free explanation when `store` is `none`. */
   reason?: string;
   /**
@@ -73,9 +83,14 @@ export function abuseStoreCoverage(
     'UPSTASH_REDIS_REST_URL',
     'UPSTASH_REDIS_REST_TOKEN',
   ].some((key) => redactedKeys.has(key));
-  return ABUSE_GUARD_FAMILIES.map((family) => coverFamily(family));
+  return ABUSE_GUARD_FAMILIES.map((family) => ({
+    ...coverFamily(family),
+    required: FAIL_CLOSED_GUARD_FAMILIES.has(family),
+  }));
 
-  function coverFamily(family: AbuseGuardFamily): AbuseStoreFamilyCoverage {
+  function coverFamily(
+    family: AbuseGuardFamily
+  ): Omit<AbuseStoreFamilyCoverage, 'required'> {
     const selection = selectAbuseGuard(family, env);
     if (selection.kind === 'legacy') {
       return upstash

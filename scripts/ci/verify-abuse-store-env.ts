@@ -1,6 +1,8 @@
-// SR-951 deployment gate: refuse to build Web production unless every
-// abuse-guard family has a usable store (the Upstash pair, or a complete
-// ABUSE_GUARD_* Durable Object configuration). Reads the env file that
+// SR-951 deployment gate (D186-FP): refuse to build Web production unless
+// every FAIL-CLOSED abuse-guard family (today `replay`) has a usable store
+// (the Upstash pair, or a complete ABUSE_GUARD_* Durable Object
+// configuration). Fail-open families without a store are reported, not
+// refused: they raise the runtime SR-951 alert instead. Reads the env file that
 // `vercel pull --environment=production` wrote; prints family names and store
 // kinds only, never a value.
 //
@@ -66,16 +68,26 @@ function main(argv: string[]) {
   }
   const { env, redacted } = parseEnvFile(text);
   const coverage = abuseStoreCoverage(env, Date.now(), redacted);
-  for (const { family, store, presenceOnly } of coverage)
+  for (const { family, store, presenceOnly, required } of coverage)
     console.log(
-      `abuse-guard family ${family}: ${store}${presenceOnly ? ' (Sensitive values: presence only)' : ''}`
+      `abuse-guard family ${family}: ${store}${presenceOnly ? ' (Sensitive values: presence only)' : ''}${required ? '' : ' [fail-open]'}`
     );
-  const uncovered = coverage.filter((entry) => entry.store === 'none');
+  for (const { family, reason } of coverage.filter(
+    (entry) => entry.store === 'none' && !entry.required
+  ))
+    console.log(
+      `::warning::Fail-open abuse-guard family ${family} ${reason}; it raises the runtime SR-951 alert instead of enforcing.`
+    );
+  const uncovered = coverage.filter(
+    (entry) => entry.store === 'none' && entry.required
+  );
   for (const { family, reason } of uncovered)
-    console.error(`::error::Abuse-guard family ${family} ${reason}.`);
+    console.error(
+      `::error::Fail-closed abuse-guard family ${family} ${reason}.`
+    );
   if (uncovered.length > 0) {
     console.error(
-      '::error::Refusing to build (SR-951): every abuse-guard family needs a store on the Web production environment, either ABUSE_GUARD_URL, ABUSE_GUARD_SECRET and ABUSE_GUARD_KEY_PEPPER with the family listed in ABUSE_GUARD_FAMILIES, or UPSTASH_REDIS_REST_URL and UPSTASH_REDIS_REST_TOKEN for families left on the legacy store.'
+      '::error::Refusing to build (SR-951): every fail-closed abuse-guard family needs a store on the Web production environment, either ABUSE_GUARD_URL, ABUSE_GUARD_SECRET and ABUSE_GUARD_KEY_PEPPER with the family listed in ABUSE_GUARD_FAMILIES, or UPSTASH_REDIS_REST_URL and UPSTASH_REDIS_REST_TOKEN for families left on the legacy store.'
     );
     return 1;
   }
