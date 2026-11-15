@@ -16,6 +16,17 @@ import {
   webpackAppEnvironment,
 } from './mail-profile-runtime.mjs';
 
+const preparation = {
+  version: 1,
+  scope: 'preparation-only',
+  outcome: 'passed',
+  reason: 'html-complete',
+  elapsedMs: 1,
+  bodyBytes: 20,
+  responseComplete: true,
+  responseDisposed: true,
+};
+
 const hosted = {
   GITHUB_ACTIONS: 'true',
   RUNNER_ENVIRONMENT: 'github-hosted',
@@ -31,7 +42,17 @@ const results = (status = 'passed') => ({
         tests: [
           {
             expectedStatus: 'passed',
-            results: [{ status }],
+            results: [
+              {
+                status,
+                retry: 0,
+                stdout: [
+                  {
+                    text: `[mail-profile-prewarm] ${JSON.stringify(preparation)}\n`,
+                  },
+                ],
+              },
+            ],
           },
         ],
       })),
@@ -63,6 +84,18 @@ test('real results require both named contracts without skip, retry or empty PAS
   const setupFailure = results();
   setupFailure.errors.push({ message: 'afterAll failed' });
   assert.throws(() => assertBrowserResults(setupFailure));
+});
+
+test('profile result needs a complete successful pre-warm receipt', () => {
+  for (const stdout of [
+    undefined,
+    [],
+    [{ text: '[mail-profile-prewarm] {}\n' }],
+  ]) {
+    const report = results();
+    report.suites[0].specs[0].tests[0].results[0].stdout = stdout;
+    assert.throws(() => assertBrowserResults(report));
+  }
 });
 
 test('private config preserves sandbox and certificate verification without unrelated setup', () => {

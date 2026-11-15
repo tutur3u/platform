@@ -1,5 +1,6 @@
 import { constants } from 'node:fs';
 import fs from 'node:fs/promises';
+import { profilePrewarmDiagnostics } from './mail-profile-prewarm.mjs';
 
 const statuses = new Set([
   'passed',
@@ -267,6 +268,11 @@ export function summarizeBrowserResults(report, titles) {
         return [];
       const result = results[0];
       const summary = { title: spec.title, status: result.status };
+      if (spec.title === titles[0]) {
+        const preparation = profilePrewarmDiagnostics(result);
+        if (preparation.reason !== 'absent')
+          summary.profilePreparation = preparation;
+      }
       if (
         spec.title === titles[0] &&
         ['failed', 'timedOut', 'interrupted'].includes(result.status)

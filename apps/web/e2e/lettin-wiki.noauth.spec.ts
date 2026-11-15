@@ -3,11 +3,15 @@ import path from 'node:path';
 import { expect, test } from '@playwright/test';
 import { createAppSessionToken } from '@tuturuuu/auth/app-session';
 import { startRuntimeHeartbeat } from '../../../scripts/ci/e2e-runtime-heartbeat';
+import { prewarmProfileRoute } from '../../../scripts/ci/mail-profile-prewarm.mjs';
 import {
   assertSafeE2EEnvironment,
   LOCAL_E2E_APP_COORDINATION_SECRET,
 } from './helpers/environment';
-import { runLettinBrowserPhase as phase } from './helpers/lettin-browser-phase';
+import {
+  LETTIN_BROWSER_PHASE_TIMEOUT_MS,
+  runLettinBrowserPhase as phase,
+} from './helpers/lettin-browser-phase';
 import { withLettinContextCleanup } from './helpers/lettin-context-cleanup';
 import {
   lettinFixturePhase,
@@ -364,6 +368,13 @@ test.describe.serial('Tulletin authenticated wiki and guest publishing', () => {
     await withLettinContextCleanup(
       context,
       async () => {
+        if (process.env.TUTURUUU_LETTIN_PROFILE_PREWARM === '1') {
+          await test.step(
+            'pre-warm profile route',
+            () => prewarmProfileRoute(context.request, origin!, workspaceId),
+            { timeout: LETTIN_BROWSER_PHASE_TIMEOUT_MS }
+          );
+        }
         const page = await phase('create profile page', () =>
           context.newPage()
         );
