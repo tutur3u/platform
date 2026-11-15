@@ -34,6 +34,7 @@ vi.mock('../abuse-protection/edge-trust', () => ({
 vi.mock('../upstash-rest', () => ({
   getUpstashRestRedisClient: mocks.redis,
   getUpstashRatelimitRedisClient: mocks.limiterRedis,
+  reportGuardFamilyOff: () => undefined,
 }));
 vi.mock('../api-proxy-guard', () => ({
   buildProxySessionSubjectKey: (name: string, value: string) =>

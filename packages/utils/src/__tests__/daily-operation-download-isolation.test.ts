@@ -27,6 +27,7 @@ vi.mock('../abuse-protection/edge-trust', () => ({
 vi.mock('../upstash-rest', () => ({
   getUpstashRestRedisClient: mocks.rest,
   getUpstashRatelimitRedisClient: mocks.limiter,
+  reportGuardFamilyOff: () => undefined,
 }));
 vi.mock('@tuturuuu/cloudflare/turnstile/server', () => ({
   verifyTurnstileToken: mocks.verify,

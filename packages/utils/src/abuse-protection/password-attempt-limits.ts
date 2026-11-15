@@ -18,6 +18,8 @@ import {
   getUpstashRatelimitRedisClient,
   hasUpstashRestEnv,
   type UpstashRatelimitRedisClient,
+  reportGuardFamilyOff,
+  reportLegacyFamilyWithoutStore,
 } from '../upstash-rest';
 import type { AbuseCheckResult } from './types';
 
@@ -72,7 +74,10 @@ export function normalizePasswordAttemptName(name: string) {
 }
 
 async function defaultRedis(): Promise<CounterClient | null> {
-  if (!hasUpstashRestEnv()) return null;
+  if (!hasUpstashRestEnv()) {
+    reportLegacyFamilyWithoutStore('password');
+    return null;
+  }
   return getUpstashRatelimitRedisClient();
 }
 
@@ -216,6 +221,7 @@ export function createPasswordAttemptLimiter(
     // closed: exhausting its budget must not switch the limit off.
     const selection = selectStore();
     if (selection.kind === 'off') {
+      reportGuardFamilyOff('password');
       failOpen('Password attempt store disabled:', undefined);
       return storeUnavailable();
     }

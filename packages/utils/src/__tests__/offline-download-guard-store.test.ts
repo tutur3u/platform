@@ -15,6 +15,7 @@ const mocks = vi.hoisted(() => ({
   trust: vi.fn(),
   redis: vi.fn(),
   limiterRedis: vi.fn(),
+  reportOff: vi.fn(),
   ip: vi.fn(() => '192.0.2.1'),
 }));
 vi.mock('../abuse-guard/select', () => ({ selectAbuseGuard: mocks.select }));
@@ -30,6 +31,7 @@ vi.mock('../abuse-protection/edge-trust', () => ({
 vi.mock('../upstash-rest', () => ({
   getUpstashRestRedisClient: mocks.redis,
   getUpstashRatelimitRedisClient: mocks.limiterRedis,
+  reportGuardFamilyOff: mocks.reportOff,
 }));
 vi.mock('../api-proxy-guard', () => ({
   buildProxySessionSubjectKey: (name: string, value: string) =>
@@ -226,5 +228,7 @@ describe('offline download guard on the Durable Object store', () => {
     const response = await guard(request());
     expect(response?.status).toBe(503);
     expect(mocks.redis).not.toHaveBeenCalled();
+    // SR-951-B: an assigned family switched off raises the runtime alert.
+    expect(mocks.reportOff).toHaveBeenCalledWith('offline');
   });
 });

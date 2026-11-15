@@ -22,6 +22,88 @@ export type UpstashRatelimitRedisClient = Pick<
   'eval' | 'evalsha' | 'get' | 'set'
 >;
 
+/** Fixed, value-free reasons a guard family is not enforcing as configured. */
+export type GuardStoreProblem =
+  | 'legacy-without-pair'
+  | 'selector-off'
+  | 'invalid-guard-config'
+  | 'invalid-cutover';
+
+const reportedGuardProblems = new Set<string>();
+
+/**
+ * Static service identity for the alert: a configured TUTURUUU_SERVICE_NAME,
+ * else the platform's per-deployment production host. Never request data
+ * (Host or X-Forwarded-Host), so a spoofed header can't steer or suppress
+ * paging. Anything not matching the fixed shape becomes `unknown`.
+ */
+type GuardAlertServiceEnv = Partial<
+  Record<'TUTURUUU_SERVICE_NAME' | 'VERCEL_PROJECT_PRODUCTION_URL', string>
+>;
+
+export function guardAlertServiceName(
+  env: GuardAlertServiceEnv = {
+    TUTURUUU_SERVICE_NAME: process.env.TUTURUUU_SERVICE_NAME,
+    VERCEL_PROJECT_PRODUCTION_URL: process.env.VERCEL_PROJECT_PRODUCTION_URL,
+  }
+) {
+  const configured = env.TUTURUUU_SERVICE_NAME?.trim().toLowerCase();
+  const host = env.VERCEL_PROJECT_PRODUCTION_URL?.trim()
+    .toLowerCase()
+    .replace(/^https?:\/\//u, '')
+    .split('/')[0];
+  const name = configured || host || '';
+  return /^[a-z0-9][a-z0-9.-]{0,63}$/u.test(name) ? name : 'unknown';
+}
+
+/**
+ * SR-951 (D186-FP): a guard family that is not enforcing as configured.
+ * Fail-open families (password, MFA, OTP, proxy, offline) silently stop
+ * enforcing; fail-closed `replay` becomes unavailable. Emit one structured,
+ * pageable error per family and reason per production instance, with fixed
+ * fields only and never a value, length or partial secret. Plain
+ * `hasUpstashRestEnv()` callers (per-app rate limiters) never alert.
+ */
+export function reportGuardFamilyProblem(
+  family: string,
+  reason: GuardStoreProblem
+) {
+  if (process.env.NODE_ENV !== 'production') return;
+  const key = `${family}:${reason}`;
+  if (reportedGuardProblems.has(key)) return;
+  reportedGuardProblems.add(key);
+  console.error(
+    `[ALERT][abuse-guard] SR-951 ${JSON.stringify({
+      alert: 'abuse-guard-store-missing',
+      severity: 'critical',
+      app: guardAlertServiceName(),
+      family,
+      reason,
+    })}`
+  );
+}
+
+/** Legacy-store miss; kept for the existing call sites. */
+export function reportLegacyFamilyWithoutStore(family: string) {
+  reportGuardFamilyProblem(family, 'legacy-without-pair');
+}
+
+/** The selector returned `off`: an explicit backend switch or a guard
+ * configuration that is incomplete or too weak to use. */
+export function reportGuardFamilyOff(family: string) {
+  reportGuardFamilyProblem(
+    family,
+    process.env.ABUSE_GUARD_BACKEND?.trim().toLowerCase() === 'off'
+      ? 'selector-off'
+      : 'invalid-guard-config'
+  );
+}
+
+/** Test-only reset of the once-per-family report. */
+export function resetLegacyFamilyReportsForTests() {
+  reportedGuardProblems.clear();
+}
+
 export function hasUpstashRestEnv(): boolean {
   const url = process.env.UPSTASH_REDIS_REST_URL?.trim();
   const token = process.env.UPSTASH_REDIS_REST_TOKEN?.trim();
@@ -102,7 +184,10 @@ export async function getUpstashRestRedisClient(options?: {
 }): Promise<UpstashRestRedisClient | null> {
   if (options?.family) {
     const selection = selectAbuseGuard(options.family);
-    if (selection.kind === 'off') return null;
+    if (selection.kind === 'off') {
+      reportGuardFamilyOff(options.family);
+      return null;
+    }
     if (selection.kind === 'durable-object') {
       // Covers GET/MGET/SET/DEL/INCR/DECR/EXPIRE/TTL; SCAN throws.
       const view = createGuardRedisView(
@@ -120,14 +205,23 @@ export async function getUpstashRestRedisClient(options?: {
       // An active cutover needs a usable legacy client; anything else is
       // unavailable, so the replay routes fail closed instead of skipping it.
       const legacy = migration === 'active' ? await legacyRestClient() : null;
-      if (!legacy) return null;
+      if (!legacy) {
+        reportGuardFamilyProblem(
+          options.family,
+          migration === 'invalid' ? 'invalid-cutover' : 'legacy-without-pair'
+        );
+        return null;
+      }
       return withLegacyReplayReads(
         view,
         legacy
       ) as unknown as UpstashRestRedisClient;
     }
   }
-  return legacyRestClient();
+  const client = await legacyRestClient();
+  if (!client && options?.family)
+    reportLegacyFamilyWithoutStore(options.family);
+  return client;
 }
 
 async function legacyRestClient(): Promise<UpstashRestRedisClient | null> {

@@ -15,6 +15,7 @@ import { type GuardRejectionReason, guardRejection } from './guard-rejection';
 import {
   getUpstashRatelimitRedisClient,
   getUpstashRestRedisClient,
+  reportGuardFamilyOff,
 } from './upstash-rest';
 
 export const OFFLINE_DOWNLOAD_HEADER = 'x-tuturuuu-offline-download';
@@ -216,7 +217,10 @@ export async function guardOfflineDownloadRequest(
   }
   try {
     const selection = selectAbuseGuard('offline');
-    if (selection.kind === 'off') return unavailable(request);
+    if (selection.kind === 'off') {
+      reportGuardFamilyOff('offline');
+      return unavailable(request);
+    }
     const store =
       selection.kind === 'durable-object'
         ? durableObjectStore(selection.client)

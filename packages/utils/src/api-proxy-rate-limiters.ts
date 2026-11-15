@@ -18,6 +18,8 @@ import type {
 import {
   getUpstashRatelimitRedisClient,
   type UpstashRatelimitRedisClient,
+  reportGuardFamilyOff,
+  reportLegacyFamilyWithoutStore,
 } from './upstash-rest';
 
 type RateLimitBucket = {
@@ -227,6 +229,7 @@ export async function getRateLimiters(
   }
 
   const selection = selectAbuseGuard('proxy');
+  if (selection.kind === 'off') reportGuardFamilyOff('proxy');
   if (selection.kind !== 'legacy') {
     const client =
       selection.kind === 'durable-object' ? selection.client : null;
@@ -245,6 +248,7 @@ export async function getRateLimiters(
 
   const redis = await getUpstashRatelimitRedisClient().catch(() => null);
   if (!redis) {
+    reportLegacyFamilyWithoutStore('proxy');
     return null;
   }
 
