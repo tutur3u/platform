@@ -3,6 +3,7 @@
   "version": "0.32.0",
   "private": true,
   "scripts": {
+    "test": "vitest run",
     "type-check": "bun run type-check:app && bun run type-check:boundary && bun run type-check:worker && bun run type-check:config",
     "dev": "node ../../scripts/portless-safe-dev.js",
     "dev:app": "node ../../scripts/portless-dev-banner.js -- vp dev --host 127.0.0.1 --port 7820",
