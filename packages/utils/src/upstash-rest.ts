@@ -41,7 +41,12 @@ type GuardAlertServiceEnv = Partial<
   Record<'TUTURUUU_SERVICE_NAME' | 'VERCEL_PROJECT_PRODUCTION_URL', string>
 >;
 
-export function guardAlertServiceName(env: GuardAlertServiceEnv = process.env) {
+export function guardAlertServiceName(
+  env: GuardAlertServiceEnv = {
+    TUTURUUU_SERVICE_NAME: process.env.TUTURUUU_SERVICE_NAME,
+    VERCEL_PROJECT_PRODUCTION_URL: process.env.VERCEL_PROJECT_PRODUCTION_URL,
+  }
+) {
   const configured = env.TUTURUUU_SERVICE_NAME?.trim().toLowerCase();
   const host = env.VERCEL_PROJECT_PRODUCTION_URL?.trim()
     .toLowerCase()
