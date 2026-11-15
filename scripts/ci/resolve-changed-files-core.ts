@@ -42,7 +42,15 @@ type PullRequestPayload = {
   };
 };
 
+type MergeGroupPayload = {
+  merge_group?: {
+    base_sha?: string;
+    head_sha?: string;
+  };
+};
+
 const ZERO_SHA = /^0+$/;
+const FULL_SHA = /^[0-9a-f]{40}$/;
 
 function normalizeChangedPath(filePath: string): string {
   return filePath.replace(/\\/g, '/').replace(/^\.\//, '').trim();
@@ -276,6 +284,53 @@ function getPullRequestRange({
   });
 }
 
+// A merge queue run tests the candidate merge commit M (the payload head_sha,
+// which is also GITHUB_SHA) against the base branch tip B it was built on.
+// Unlike unknown events, which fail open to every check, a merge group must
+// report its exact B..M range: a missing, malformed or inconsistent SHA throws
+// so the queue check fails closed instead of selecting empty work.
+function getMergeGroupRange({
+  eventPath,
+  headSha: currentSha,
+  rootDir,
+}: {
+  eventPath?: string;
+  headSha?: string;
+  rootDir: string;
+}): ChangedFilesResult {
+  const payload = readEventPayload<MergeGroupPayload>(eventPath);
+  const baseSha = payload?.merge_group?.base_sha;
+  const headSha = payload?.merge_group?.head_sha;
+
+  if (!baseSha || !FULL_SHA.test(baseSha) || ZERO_SHA.test(baseSha)) {
+    throw new Error('merge_group base_sha is missing or not a full SHA');
+  }
+  if (!headSha || !FULL_SHA.test(headSha) || ZERO_SHA.test(headSha)) {
+    throw new Error('merge_group head_sha is missing or not a full SHA');
+  }
+  if (currentSha && currentSha !== headSha) {
+    throw new Error(
+      'merge_group head_sha does not match the checked-out commit'
+    );
+  }
+
+  const range = getChangedFilesFromRange({
+    baseSha,
+    headSha,
+    requireAncestor: true,
+    rootDir,
+    source: 'merge-group-range',
+  });
+  if (
+    !range.available &&
+    commitExists(rootDir, baseSha) &&
+    commitExists(rootDir, headSha)
+  ) {
+    throw new Error('merge_group base_sha is not an ancestor of head_sha');
+  }
+  return range;
+}
+
 function isVercelWorkflow(workflowName?: string): workflowName is string {
   return /^vercel-(preview|production)-.+\.ya?ml$/.test(workflowName ?? '');
 }
@@ -366,6 +421,14 @@ export async function resolveChangedFiles({
   if (eventName === 'pull_request') {
     return getPullRequestRange({
       eventPath,
+      rootDir,
+    });
+  }
+
+  if (eventName === 'merge_group') {
+    return getMergeGroupRange({
+      eventPath,
+      headSha,
       rootDir,
     });
   }

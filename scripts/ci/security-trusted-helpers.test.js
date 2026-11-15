@@ -222,7 +222,7 @@ test('dependency audit ignores checkout bun, config and differ', (t) => {
 
 test('CodeQL gate fails closed when the base lacks the gate script', (t) => {
   const box = sandbox(t);
-  commit(box.repo, { 'README.md': 'base\n' }, 'base without gate');
+  const base = commit(box.repo, { 'README.md': 'base\n' }, 'base without gate');
   commit(
     box.repo,
     { 'scripts/ci/codeql-new-alerts.js': hostileHelper },
@@ -234,7 +234,7 @@ test('CodeQL gate fails closed when the base lacks the gate script', (t) => {
     'Fail on new high or critical results'
   );
   const shared = JSON.parse(fs.readFileSync(severityCases.fixture, 'utf8'));
-  const gate = (ruleId) => {
+  const gate = (ruleId, env = {}) => {
     fs.rmSync(sarifDir, { force: true, recursive: true });
     fs.mkdirSync(sarifDir);
     if (ruleId) {
@@ -245,7 +245,11 @@ test('CodeQL gate fails closed when the base lacks the gate script', (t) => {
         JSON.stringify(sarif)
       );
     }
-    return run(script, box, { CATEGORY: '/language:javascript' });
+    return run(script, box, {
+      CATEGORY: '/language:javascript',
+      EVENT_NAME: 'pull_request',
+      ...env,
+    });
   };
 
   // REV-6456-12/14: the shared fixture's expectations hold for the bootstrap
@@ -266,6 +270,23 @@ test('CodeQL gate fails closed when the base lacks the gate script', (t) => {
     /1 high\/critical CodeQL result\(s\) \(0 critical, 1 high\)/u
   );
   assert.doesNotMatch(all.stdout + all.stderr, /js\/|file=|\.sarif/u);
+
+  // A merge group loads the gate from the queue base B, never from HEAD^1:
+  // in a multi-entry queue HEAD^1 is an earlier queued (untrusted) entry,
+  // here the one carrying the hostile gate.
+  commit(box.repo, { 'README.md': 'second queued entry\n' }, 'queued entry');
+  const queued = gate('js/string-high', {
+    EVENT_NAME: 'merge_group',
+    QUEUE_BASE_SHA: base,
+  });
+  assert.notEqual(queued.status, 0, queued.stdout + queued.stderr);
+  assert.match(queued.stdout, /the trusted gate is unavailable/u);
+  // A missing or malformed queue base refuses to gate at all.
+  for (const QUEUE_BASE_SHA of ['', 'main', 'f'.repeat(40)]) {
+    const refused = gate(null, { EVENT_NAME: 'merge_group', QUEUE_BASE_SHA });
+    assert.notEqual(refused.status, 0, QUEUE_BASE_SHA);
+    assert.match(refused.stdout, /refusing to gate/u, QUEUE_BASE_SHA);
+  }
 });
 
 function outputs(temp) {

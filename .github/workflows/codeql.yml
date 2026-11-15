@@ -4,6 +4,11 @@ name: CodeQL Manual Fallback
 # it alongside this workflow (code scanning rejects advanced-setup uploads while
 # default setup is on). Pull requests and main pushes scan the languages their
 # diff touches; security-checks.yaml calls this workflow on its daily schedule.
+# Merge queue (merge_group) runs scan the candidate merge commit M and gate it
+# against the default-branch baseline. They are untrusted candidate code: scope
+# and gate scripts load from the queue base B, every job stays on GitHub-hosted
+# ubuntu-latest (the fork pull request pool) and only analyze holds
+# security-events: write (scripts/ci/merge-group-workflow-policy.test.js).
 on:
   pull_request:
     types: [opened, synchronize, reopened, ready_for_review, labeled, converted_to_draft]
@@ -16,6 +21,8 @@ on:
   push:
     branches:
       - main
+  merge_group:
+    types: [checks_requested]
   workflow_call:
   workflow_dispatch:
 
@@ -70,12 +77,12 @@ jobs:
       - name: Load trusted scope scripts
         id: trusted_scope
         env:
-          BASE_SHA: ${{ github.event.pull_request.base.sha || github.event.before }}
+          BASE_SHA: ${{ github.event.pull_request.base.sha || github.event.merge_group.base_sha || github.event.before }}
           EVENT_NAME: ${{ github.event_name }}
         run: |
           set -euo pipefail
           trusted="$GITHUB_SHA"
-          if [ "$EVENT_NAME" = pull_request ] || [ "$EVENT_NAME" = push ]; then
+          if [ "$EVENT_NAME" = pull_request ] || [ "$EVENT_NAME" = push ] || [ "$EVENT_NAME" = merge_group ]; then
             trusted=""
             if [[ "$BASE_SHA" =~ ^[0-9a-f]{40}$ ]] && git cat-file -e "$BASE_SHA^{commit}" 2>/dev/null; then
               trusted="$BASE_SHA"
@@ -97,7 +104,7 @@ jobs:
 
       - name: Compute changed files
         id: changed_files
-        if: steps.trusted_scope.outputs.available == 'true' && (github.event_name == 'pull_request' || github.event_name == 'push')
+        if: steps.trusted_scope.outputs.available == 'true' && (github.event_name == 'pull_request' || github.event_name == 'push' || github.event_name == 'merge_group')
         env:
           GITHUB_TOKEN: ${{ github.token }}
           TRUSTED_SCOPE: ${{ steps.trusted_scope.outputs.dir }}
@@ -138,7 +145,9 @@ jobs:
       - name: Check out repository
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
-          fetch-depth: 2
+          # A merge group's base B can sit several queued commits below M; the
+          # new-alert gate loads from B, so queue runs fetch full history.
+          fetch-depth: ${{ github.event_name == 'merge_group' && 0 || 2 }}
           persist-credentials: false
 
       - name: Initialize CodeQL
@@ -158,22 +167,34 @@ jobs:
           upload: ${{ (github.event_name == 'pull_request' && github.event.pull_request.head.repo.full_name != github.repository) && 'never' || 'always' }}
 
       # Pre-existing alerts are tracked by the findings register; a pull request
-      # fails only for high/critical results absent from the default-branch
-      # baseline. The gate runs from the base commit so a PR cannot edit it.
+      # or merge group fails only for high/critical results absent from the
+      # default-branch baseline. The gate runs from the base commit (the PR
+      # merge commit's first parent, or the queue base B, never an earlier
+      # queued entry) so the candidate cannot edit it.
       - name: Fail on new high or critical results
-        if: github.event_name == 'pull_request'
+        if: github.event_name == 'pull_request' || github.event_name == 'merge_group'
         env:
           BASELINE_REF: refs/heads/${{ github.event.repository.default_branch }}
           CATEGORY: /language:${{ matrix.language }}
+          EVENT_NAME: ${{ github.event_name }}
           GITHUB_TOKEN: ${{ github.token }}
+          QUEUE_BASE_SHA: ${{ github.event.merge_group.base_sha }}
         run: |
           set -euo pipefail
+          trusted="HEAD^1"
+          if [ "$EVENT_NAME" = merge_group ]; then
+            if ! [[ "$QUEUE_BASE_SHA" =~ ^[0-9a-f]{40}$ ]] || ! git cat-file -e "$QUEUE_BASE_SHA^{commit}" 2>/dev/null; then
+              echo "::error::The merge group base commit is missing or invalid; refusing to gate."
+              exit 1
+            fi
+            trusted="$QUEUE_BASE_SHA"
+          fi
           # Never the checkout's copy: without the trusted gate (bootstrap)
           # every high/critical result fails, and a result whose rule or rule
           # severity is missing or not numeric counts as high.
-          if git cat-file -e "HEAD^1:scripts/ci/codeql-new-alerts.js" 2>/dev/null; then
+          if git cat-file -e "$trusted:scripts/ci/codeql-new-alerts.js" 2>/dev/null; then
             gate="$RUNNER_TEMP/codeql-new-alerts.js"
-            git show "HEAD^1:scripts/ci/codeql-new-alerts.js" > "$gate"
+            git show "$trusted:scripts/ci/codeql-new-alerts.js" > "$gate"
             node "$gate" "$RUNNER_TEMP/codeql-sarif" "$CATEGORY"
           else
             shopt -s nullglob

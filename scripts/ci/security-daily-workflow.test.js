@@ -79,7 +79,9 @@ test('PR guard trusts base source and baseline, never PR baseline additions', ()
     run,
     /git show "\$BASE_SHA:scripts\/ci\/security-definer-admission\.js"/
   );
+  // merge_group: see scripts/ci/merge-group-workflow-policy.test.js.
   assert.deepEqual(Object.keys(checks.on).sort(), [
+    'merge_group',
     'pull_request',
     'push',
     'schedule',
