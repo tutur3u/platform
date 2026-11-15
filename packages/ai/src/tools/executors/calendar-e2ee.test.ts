@@ -84,17 +84,22 @@ const encryptedRow = {
   locked: false,
 };
 
-const withKeyRow = () =>
+// Block bodies: a function returned from a beforeEach hook runs as its
+// teardown, so these helpers must not return the configured mock.
+const withKeyRow = () => {
   mocks.keyLookup.mockResolvedValue({
     data: { encrypted_key: 'wrapped' },
     error: null,
   });
-const withoutKeyRow = () =>
+};
+const withoutKeyRow = () => {
   mocks.keyLookup.mockResolvedValue({ data: null, error: null });
-const missingMasterKey = () =>
+};
+const missingMasterKey = () => {
   mocks.master.mockImplementation(() => {
     throw new Error('missing master key');
   });
+};
 
 beforeEach(() => {
   vi.resetAllMocks();
