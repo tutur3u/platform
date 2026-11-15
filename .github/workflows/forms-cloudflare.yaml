@@ -168,6 +168,7 @@ jobs:
       app: forms
       profile-env: VITE_FORMS_NATIVE_PROFILE=${{ matrix.profile }}
       artifact-suffix: ${{ matrix.profile }}
+      build-environment: ${{ matrix.profile == 'production' && 'production' || 'preview' }}
       package: '@tuturuuu/forms'
       artifact-script: scripts/ci/forms-native-artifact.py
       env-interface: FormsGeneratedEnv

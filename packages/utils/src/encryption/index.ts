@@ -21,6 +21,14 @@ export {
   isEncryptionRequired,
 } from './encryption-required';
 
+export {
+  resolveWorkspaceKeyState,
+  type WorkspaceKeyRowLookup,
+  type WorkspaceKeyState,
+  type WorkspaceKeyUnavailableReason,
+  workspaceKeyForWrite,
+} from './workspace-key-state';
+
 export type {
   CalendarEventWithEncryption,
   EncryptedCalendarEventFields,

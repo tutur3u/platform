@@ -1,9 +1,9 @@
-import { checkEnvVariables } from '@tuturuuu/supabase/next/common';
+import { checkSecretEnvVariables } from '@tuturuuu/supabase/next/secret-env';
 import { afterEach, beforeEach, expect, it, vi } from 'vitest';
 
 vi.mock('server-only', () => ({}));
-vi.mock('@tuturuuu/supabase/next/common', () => ({
-  checkEnvVariables: vi.fn(),
+vi.mock('@tuturuuu/supabase/next/secret-env', () => ({
+  checkSecretEnvVariables: vi.fn(),
 }));
 vi.mock('./employee-creation-authorization', () => ({
   authorizeEmployeeCreation: vi.fn(),
@@ -39,7 +39,7 @@ const cli = vi.fn();
 const request = () => new Request('https://web.test/rejection');
 beforeEach(() => {
   vi.resetAllMocks();
-  vi.mocked(checkEnvVariables).mockReturnValue({
+  vi.mocked(checkSecretEnvVariables).mockReturnValue({
     url: 'https://synthetic.supabase.co',
     key: 'synthetic-test-only',
   });
@@ -59,7 +59,7 @@ it('keeps ordinary rejection on the Infra authorizer and denies before connectin
   expect(authorizeEmployeeCreation).toHaveBeenCalledExactlyOnceWith(
     expect.any(Request)
   );
-  expect(checkEnvVariables).not.toHaveBeenCalled();
+  expect(checkSecretEnvVariables).not.toHaveBeenCalled();
   expect(transport).not.toHaveBeenCalled();
   expect(cli).not.toHaveBeenCalled();
 });
@@ -81,9 +81,7 @@ it.each(['infra', 'cli'])(
     expect(response.status).toBe(200);
     expect(await response.json()).toEqual(ready);
     expect(response.headers.get('cache-control')).toContain('no-store');
-    expect(checkEnvVariables).toHaveBeenCalledExactlyOnceWith({
-      useSecretKey: true,
-    });
+    expect(checkSecretEnvVariables).toHaveBeenCalledExactlyOnceWith();
     expect(transport).toHaveBeenCalledTimes(1);
     const [url, init] = transport.mock.calls[0]!;
     expect(String(url)).toBe(
@@ -184,7 +182,7 @@ it.each(['http-error', 'rollback', 'oversize', 'malformed'])(
   }
 );
 it('returns unavailable without network dispatch if server configuration fails', async () => {
-  vi.mocked(checkEnvVariables).mockImplementationOnce(() => {
+  vi.mocked(checkSecretEnvVariables).mockImplementationOnce(() => {
     throw new Error('unavailable');
   });
   const response = await makeEmployeeRejectionBoundary({

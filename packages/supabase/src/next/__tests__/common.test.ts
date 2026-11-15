@@ -1,3 +1,5 @@
+import { readFileSync } from 'node:fs';
+import { fileURLToPath } from 'node:url';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { resetProductionOverrideErrorLogForTests } from '../../shared-cookie-domains';
 import {
@@ -41,41 +43,45 @@ describe('common', () => {
       });
     });
 
-    it('should return the URL and secret key when useSecretKey is true', () => {
+    it('never returns the secret key, even when SUPABASE_SECRET_KEY is set', () => {
       process.env.NEXT_PUBLIC_SUPABASE_URL = 'https://test.supabase.co';
+      process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY = 'test-publishable-key';
       process.env.SUPABASE_SECRET_KEY = 'test-secret-key';
 
-      const result = checkEnvVariables({ useSecretKey: true });
-
-      expect(result).toEqual({
+      expect(checkEnvVariables()).toEqual({
         url: 'https://test.supabase.co',
-        key: 'test-secret-key',
+        key: 'test-publishable-key',
       });
+    });
+
+    it('keeps the secret key name out of the client-reachable module', () => {
+      const source = readFileSync(
+        fileURLToPath(new URL('../common.ts', import.meta.url)),
+        'utf8'
+      );
+
+      expect(source).not.toContain('SUPABASE_SECRET_KEY');
     });
 
     it('should prefer SUPABASE_SERVER_URL on the server when present', () => {
       process.env.NEXT_PUBLIC_SUPABASE_URL = 'http://localhost:8001';
       process.env.SUPABASE_SERVER_URL = 'http://host.docker.internal:8001';
-      process.env.SUPABASE_SECRET_KEY = 'test-secret-key';
+      process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY = 'test-publishable-key';
 
-      const result = checkEnvVariables({ useSecretKey: true });
-
-      expect(result).toEqual({
+      expect(checkEnvVariables()).toEqual({
         url: 'http://host.docker.internal:8001',
-        key: 'test-secret-key',
+        key: 'test-publishable-key',
       });
     });
 
     it('should preserve a trailing slash on SUPABASE_SERVER_URL on the server', () => {
       process.env.NEXT_PUBLIC_SUPABASE_URL = 'http://localhost:8001';
       process.env.SUPABASE_SERVER_URL = 'http://host.docker.internal:8001/';
-      process.env.SUPABASE_SECRET_KEY = 'test-secret-key';
+      process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY = 'test-publishable-key';
 
-      const result = checkEnvVariables({ useSecretKey: true });
-
-      expect(result).toEqual({
+      expect(checkEnvVariables()).toEqual({
         url: 'http://host.docker.internal:8001/',
-        key: 'test-secret-key',
+        key: 'test-publishable-key',
       });
     });
 
@@ -107,15 +113,6 @@ describe('common', () => {
       process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY = '';
 
       expect(() => checkEnvVariables({ useSecretKey: false })).toThrow(
-        'Missing Supabase key'
-      );
-    });
-
-    it('should throw an error if secret key is missing', () => {
-      process.env.NEXT_PUBLIC_SUPABASE_URL = 'https://test.supabase.co';
-      process.env.SUPABASE_SECRET_KEY = '';
-
-      expect(() => checkEnvVariables({ useSecretKey: true })).toThrow(
         'Missing Supabase key'
       );
     });

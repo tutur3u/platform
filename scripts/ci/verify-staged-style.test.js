@@ -394,6 +394,11 @@ async function transportFixture(t, responses, stamp, options = {}) {
   const cssPath = '/_next/static/chunks/site.css';
   const stylesheetRequestUrl = options.stylesheetRequestUrl ?? origin + cssPath;
   const imageRequestUrl = options.imageRequestUrl;
+  // `launch` below shadows `options`, so keep the page seams under their own name.
+  const pageSeams = {
+    evaluate: options.evaluate,
+    screenshot: options.screenshot,
+  };
   const cssBody = '.flex{display:flex}';
   await mkdir(join(temp, '.vercel/output/static/_next/static/chunks'), {
     recursive: true,
@@ -452,13 +457,20 @@ async function transportFixture(t, responses, stamp, options = {}) {
                 return { status: () => result.status };
               },
               url: () => current,
-              evaluate: async () => ({
-                ruleCount: 1,
-                fontFailures: 0,
-                compared: [{ path: cssPath, expectedRules: 1, servedRules: 1 }],
-                utility: { display: 'flex', gap: 16, padding: 16, radius: 8 },
-              }),
-              screenshot: async ({ path }) => writeFile(path, 'fixture'),
+              evaluate:
+                pageSeams.evaluate ??
+                (async () => ({
+                  ruleCount: 1,
+                  fontFailures: 0,
+                  compared: [
+                    { path: cssPath, expectedRules: 1, servedRules: 1 },
+                  ],
+                  utility: { display: 'flex', gap: 16, padding: 16, radius: 8 },
+                  scrollHeight: 1800,
+                })),
+              screenshot:
+                pageSeams.screenshot ??
+                (async ({ path }) => writeFile(path, 'fixture')),
               close: async () => {},
             };
           },
@@ -548,6 +560,151 @@ test('exported verifier follows relative and absolute page hops through authenti
   await f.dispatch('https://elsewhere.example/en', 'image');
   assert.equal(f.calls.length, before);
   assert.equal(f.blocked.length, 3);
+});
+
+test('a viewport screenshot failure keeps a fixed reason and only scrubbed scalars', async (t) => {
+  const f = await transportFixture(t, () => undefined, undefined, {
+    evaluate: async () => ({
+      ruleCount: 1,
+      fontFailures: 0,
+      compared: [
+        {
+          path: '/_next/static/chunks/site.css',
+          expectedRules: 1,
+          servedRules: 1,
+        },
+      ],
+      utility: { display: 'flex', gap: 16, padding: 16, radius: 8 },
+      scrollHeight: 24000,
+    }),
+    screenshot: async () => {
+      throw new Error(
+        'page.screenshot: Protocol error (Page.captureScreenshot): SECRET-RAW'
+      );
+    },
+  });
+  await assert.rejects(f.run());
+  const failure = JSON.parse(await f.failure());
+  assert.equal(failure.stage, 'viewport-390');
+  assert.equal(failure.reason, 'Staged viewport screenshot failed');
+  assert.deepEqual(failure.viewport, {
+    width: 390,
+    scrollHeight: 24000,
+    captureMode: 'clipped',
+    tileCount: 1,
+    clipHeight: 8000,
+  });
+  assert.ok(!JSON.stringify(failure).includes('SECRET'));
+  assert.ok(!JSON.stringify(failure).includes('Protocol error'));
+});
+
+test('a page evaluation failure keeps a fixed reason without raw page text', async (t) => {
+  const f = await transportFixture(t, () => undefined, undefined, {
+    evaluate: async () => {
+      throw new Error(
+        'page.evaluate: Execution context was destroyed SECRET-RAW'
+      );
+    },
+  });
+  await assert.rejects(f.run());
+  const failure = JSON.parse(await f.failure());
+  assert.equal(failure.reason, 'Staged page evaluation failed');
+  assert.deepEqual(failure.viewport, { width: 390, scrollHeight: null });
+  assert.ok(!JSON.stringify(failure).includes('SECRET'));
+});
+
+test('a page evaluation that names a known reason keeps that reason', async (t) => {
+  const f = await transportFixture(t, () => undefined, undefined, {
+    evaluate: async () => {
+      throw new Error('page.evaluate: Error: Unverified stylesheet');
+    },
+  });
+  await assert.rejects(f.run());
+  assert.equal(JSON.parse(await f.failure()).reason, 'Unverified stylesheet');
+});
+
+test('an out-of-range page height is recorded as null', async (t) => {
+  const f = await transportFixture(t, () => undefined, undefined, {
+    evaluate: async () => ({
+      ruleCount: 1,
+      fontFailures: 0,
+      compared: [
+        {
+          path: '/_next/static/chunks/site.css',
+          expectedRules: 1,
+          servedRules: 1,
+        },
+      ],
+      utility: { display: 'flex', gap: 16, padding: 16, radius: 8 },
+      scrollHeight: 'tall',
+    }),
+    screenshot: async () => {
+      throw new Error('capture failed');
+    },
+  });
+  await assert.rejects(f.run());
+  assert.deepEqual(JSON.parse(await f.failure()).viewport, {
+    width: 390,
+    scrollHeight: null,
+    captureMode: 'clipped',
+    tileCount: 1,
+    clipHeight: 8000,
+  });
+});
+
+const pageMetrics = (scrollHeight) => async () => ({
+  ruleCount: 1,
+  fontFailures: 0,
+  compared: [
+    { path: '/_next/static/chunks/site.css', expectedRules: 1, servedRules: 1 },
+  ],
+  utility: { display: 'flex', gap: 16, padding: 16, radius: 8 },
+  scrollHeight,
+});
+
+test('a page within the capture bound is screenshotted in full', async (t) => {
+  const clips = [];
+  const f = await transportFixture(t, () => undefined, undefined, {
+    evaluate: pageMetrics(1800),
+    screenshot: async ({ path, clip, fullPage }) => {
+      clips.push({ clip, fullPage });
+      await writeFile(path, 'fixture');
+    },
+  });
+  const proof = await f.run();
+  assert.deepEqual(clips, [
+    { clip: { x: 0, y: 0, width: 390, height: 1800 }, fullPage: true },
+    { clip: { x: 0, y: 0, width: 1440, height: 1800 }, fullPage: true },
+  ]);
+  for (const view of proof.viewports) {
+    assert.equal(view.scrollHeight, 1800);
+    assert.equal(view.captureMode, 'full');
+    assert.equal(view.tileCount, 1);
+    assert.equal(view.clipHeight, 1800);
+  }
+});
+
+test('a page taller than the bound passes with one clipped capture', async (t) => {
+  const clips = [];
+  const f = await transportFixture(t, () => undefined, undefined, {
+    evaluate: pageMetrics(24000),
+    screenshot: async ({ path, clip }) => {
+      clips.push(clip);
+      await writeFile(path, 'fixture');
+    },
+  });
+  const proof = await f.run();
+  assert.equal(proof.viewports.length, 2);
+  for (const clip of clips) assert.equal(clip.height, 8000);
+  for (const view of proof.viewports) {
+    assert.equal(view.scrollHeight, 24000);
+    assert.equal(view.captureMode, 'clipped');
+    assert.equal(view.tileCount, 1);
+    assert.equal(view.clipHeight, 8000);
+    // The style checks still ran in full before the capture.
+    assert.equal(view.ruleCount, 1);
+    assert.equal(view.utility.display, 'flex');
+  }
 });
 
 for (const [name, location] of [
@@ -720,6 +877,7 @@ test('admitTransportTarget bounds framework image query contracts', () => {
   const origin = 'https://platform-fixture.vercel.app';
   const staticPath = '/_next/static/media/hero.png';
   const imagesPath = '/images/avatar.png';
+  const mediaPath = '/media/logos/transparent.png';
   const admit = (href, resourceType = 'image') => {
     const target = new URL(href, origin);
     admitTransportTarget(target, origin, { resourceType });
@@ -741,6 +899,25 @@ test('admitTransportTarget bounds framework image query contracts', () => {
 
   admit(`/_next/image?url=${encodeURIComponent(staticPath)}&w=96&q=75`);
   admit(`/_next/image?url=${encodeURIComponent(imagesPath)}&w=128&q=75`);
+  // The Web marketing navbar (32 px) and footer (48 px) logo at 1x and 2x.
+  for (const w of [32, 48, 64, 96])
+    admit(`/_next/image?url=${encodeURIComponent(mediaPath)}&w=${w}&q=75`);
+
+  // The public media prefix keeps every other bound.
+  reject(`/_next/image?url=${encodeURIComponent('/mediax/x.png')}&w=32&q=75`);
+  reject(`/_next/image?url=${encodeURIComponent('/media')}&w=32&q=75`);
+  reject(
+    `/_next/image?url=${encodeURIComponent('/media/../api/x.png')}&w=32&q=75`
+  );
+  reject(
+    `/_next/image?url=${encodeURIComponent('/media/%2e%2e/x.png')}&w=32&q=75`
+  );
+  reject(`/_next/image?url=${encodeURIComponent(mediaPath)}&w=33&q=75`);
+  reject(`/_next/image?url=${encodeURIComponent(mediaPath)}&w=32&q=90`);
+  reject(
+    `/_next/image?url=${encodeURIComponent(mediaPath)}&w=32&q=75`,
+    'stylesheet'
+  );
 
   reject(
     `/_next/image?url=${encodeURIComponent('https://evil/x.png')}&w=96&q=75`

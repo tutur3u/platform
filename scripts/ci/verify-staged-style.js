@@ -38,15 +38,27 @@ const FAILURE_REASONS = [
   'Staged stylesheet rule inventory differs from built CSS',
   'Candidate utility styles are missing',
   'Staged image optimizer response is not an image',
+  'Staged page evaluation failed',
+  'Staged viewport screenshot failed',
 ];
+
+// Only a bounded integer reaches evidence; anything else is recorded as null.
+const scrubbedHeight = (value) =>
+  Number.isInteger(value) && value >= 0 && value <= 10_000_000 ? value : null;
+// A tall mobile page can exceed what Chromium captures in one full-page image,
+// so the screenshot covers at most this many CSS pixels from the top.
+const MAX_CAPTURE_HEIGHT = 8000;
 
 // Default Next.js image optimization (`apps/web/next.config.ts` uses the
 // built-in loader; `apps/web/src/proxy.ts` leaves `/_next/image` unmigrated).
 const NEXT_IMAGE_PATH = '/_next/image';
 const NEXT_IMAGE_QUERY_KEYS = Object.freeze(['url', 'w', 'q']);
+// `/media/` is apps/web/public/media: the marketing navbar and footer render
+// the local logo (`/media/logos/transparent.png`) through `next/image`.
 const NEXT_IMAGE_INNER_PREFIXES = Object.freeze([
   '/_next/static/media/',
   '/images/',
+  '/media/',
 ]);
 // Resolved apps/web image optimizer sizing: next.config.ts sets remotePatterns
 // only (createTuturuuuNextConfig merge in @tuturuuu/utils/next-config.ts does
@@ -368,6 +380,7 @@ async function main({ env = process.env, runCommand = run, browserType } = {}) {
   let browser;
   let stage = 'identity';
   let navigation;
+  let viewport;
   // A step killed by its timeout never reaches the catch block, so the last
   // reached stage is kept on disk next to the rest of the proof.
   const markStage = async (next) => {
@@ -539,6 +552,7 @@ async function main({ env = process.env, runCommand = run, browserType } = {}) {
     for (const width of [390, 1440]) {
       await markStage(`viewport-${width}`);
       navigation = undefined;
+      viewport = { width, scrollHeight: null };
       const page = await context.newPage();
       await page.setViewportSize({ width, height: 900 });
       documentResponse = await request('/en');
@@ -565,53 +579,65 @@ async function main({ env = process.env, runCommand = run, browserType } = {}) {
         new URL(page.url()).origin !== origin
       )
         throw new Error('Staged public page failed or left the candidate');
-      const metrics = await page.evaluate(async (expected) => {
-        await document.fonts.ready;
-        const sheets = [...document.styleSheets];
-        const rules = (list) =>
-          [...list].reduce(
-            (n, rule) => n + 1 + (rule.cssRules ? rules(rule.cssRules) : 0),
+      let metrics;
+      try {
+        metrics = await page.evaluate(async (expected) => {
+          await document.fonts.ready;
+          const sheets = [...document.styleSheets];
+          const rules = (list) =>
+            [...list].reduce(
+              (n, rule) => n + 1 + (rule.cssRules ? rules(rule.cssRules) : 0),
+              0
+            );
+          const ruleCount = sheets.reduce(
+            (n, sheet) => n + rules(sheet.cssRules),
             0
           );
-        const ruleCount = sheets.reduce(
-          (n, sheet) => n + rules(sheet.cssRules),
-          0
-        );
-        const compared = sheets
-          .filter((sheet) => sheet.href)
-          .map((sheet) => {
-            const path = new URL(sheet.href).pathname;
-            if (!Object.hasOwn(expected, path))
-              throw new Error('Unverified stylesheet');
-            const built = new CSSStyleSheet();
-            built.replaceSync(expected[path]);
-            return {
-              path,
-              expectedRules: rules(built.cssRules),
-              servedRules: rules(sheet.cssRules),
-            };
-          });
-        const probe = document.createElement('div');
-        probe.className = 'flex gap-4 rounded-lg p-4';
-        probe.style.visibility = 'hidden';
-        document.body.append(probe);
-        const style = getComputedStyle(probe);
-        const utility = {
-          display: style.display,
-          gap: parseFloat(style.gap),
-          padding: parseFloat(style.paddingTop),
-          radius: parseFloat(style.borderTopLeftRadius),
-        };
-        probe.remove();
-        return {
-          ruleCount,
-          compared,
-          utility,
-          fontFailures: [...document.fonts].filter(
-            (font) => font.status === 'error'
-          ).length,
-        };
-      }, Object.fromEntries(cssSources));
+          const compared = sheets
+            .filter((sheet) => sheet.href)
+            .map((sheet) => {
+              const path = new URL(sheet.href).pathname;
+              if (!Object.hasOwn(expected, path))
+                throw new Error('Unverified stylesheet');
+              const built = new CSSStyleSheet();
+              built.replaceSync(expected[path]);
+              return {
+                path,
+                expectedRules: rules(built.cssRules),
+                servedRules: rules(sheet.cssRules),
+              };
+            });
+          const probe = document.createElement('div');
+          probe.className = 'flex gap-4 rounded-lg p-4';
+          probe.style.visibility = 'hidden';
+          document.body.append(probe);
+          const style = getComputedStyle(probe);
+          const utility = {
+            display: style.display,
+            gap: parseFloat(style.gap),
+            padding: parseFloat(style.paddingTop),
+            radius: parseFloat(style.borderTopLeftRadius),
+          };
+          probe.remove();
+          return {
+            ruleCount,
+            compared,
+            utility,
+            fontFailures: [...document.fonts].filter(
+              (font) => font.status === 'error'
+            ).length,
+            scrollHeight: document.documentElement.scrollHeight,
+          };
+        }, Object.fromEntries(cssSources));
+      } catch (error) {
+        // An in-page check that already names its reason keeps it.
+        const message = String(error?.message ?? '');
+        if (FAILURE_REASONS.some((reason) => message.includes(reason)))
+          throw error;
+        throw new Error('Staged page evaluation failed');
+      }
+      const { scrollHeight, ...pageMetrics } = metrics;
+      viewport.scrollHeight = scrubbedHeight(scrollHeight);
       assert.ok(
         !failures.length,
         failures.find((value) => FAILURE_REASONS.includes(value)) ||
@@ -643,18 +669,39 @@ async function main({ env = process.env, runCommand = run, browserType } = {}) {
         evidence,
         `.${screenshot}.${randomBytes(8).toString('hex')}.part`
       );
-      await page.screenshot({
-        path: partial,
-        fullPage: true,
-        animations: 'disabled',
+      const fullHeight = viewport.scrollHeight;
+      const capturedHeight = Math.max(
+        1,
+        Math.min(fullHeight ?? MAX_CAPTURE_HEIGHT, MAX_CAPTURE_HEIGHT)
+      );
+      const truncated = fullHeight === null || fullHeight > capturedHeight;
+      // One clipped image, never tiles; an unknown height counts as clipped.
+      Object.assign(viewport, {
+        captureMode: truncated ? 'clipped' : 'full',
+        tileCount: 1,
+        clipHeight: capturedHeight,
       });
+      try {
+        await page.screenshot({
+          path: partial,
+          fullPage: true,
+          clip: { x: 0, y: 0, width, height: capturedHeight },
+          animations: 'disabled',
+        });
+      } catch {
+        throw new Error('Staged viewport screenshot failed');
+      }
       await rename(partial, join(evidence, screenshot));
       viewports.push({
         width,
         height: 900,
         path: '/en',
         screenshot,
-        ...metrics,
+        scrollHeight: viewport.scrollHeight,
+        captureMode: viewport.captureMode,
+        tileCount: viewport.tileCount,
+        clipHeight: viewport.clipHeight,
+        ...pageMetrics,
       });
       await page.close();
     }
@@ -693,6 +740,7 @@ async function main({ env = process.env, runCommand = run, browserType } = {}) {
           resourceFailures: [...new Set(failures)].slice(0, 10),
           blockedResources: blockedResources.slice(0, 10),
           ...(navigation ? { navigation } : {}),
+          ...(viewport ? { viewport } : {}),
         },
         null,
         2

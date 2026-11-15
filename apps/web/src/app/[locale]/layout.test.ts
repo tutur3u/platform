@@ -26,4 +26,21 @@ describe('Web root layout', () => {
       /export async function Providers[\s\S]*<QueryProvider>/
     );
   });
+
+  it('syncs the Sorbet account setting only for a signed-in session', () => {
+    const providersSource = readFileSync(
+      resolve(process.cwd(), 'src/components/providers.tsx'),
+      'utf8'
+    );
+    const themeProvider = providersSource.slice(
+      providersSource.indexOf('export function AppThemeProvider'),
+      providersSource.indexOf('export async function Providers')
+    );
+
+    // The theme shell wraps anonymous pages too, so it must not read the account.
+    expect(themeProvider).not.toContain('<ExperimentalUiSync');
+    expect(providersSource).toMatch(
+      /export async function Providers[\s\S]*const user = await getSupabaseSessionUser\(\)[\s\S]*<ExperimentalUiSync account=\{Boolean\(user\?\.id\)\} \/>/
+    );
+  });
 });

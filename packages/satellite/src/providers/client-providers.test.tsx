@@ -7,9 +7,10 @@ import {
 import { afterEach, expect, it, vi } from 'vitest';
 import { ClientProviders } from './client-providers';
 
-const mocks = vi.hoisted(() => ({ hidden: vi.fn() }));
+const mocks = vi.hoisted(() => ({ hidden: vi.fn(), config: vi.fn() }));
 vi.mock('@tuturuuu/internal-api/users', () => ({
   getCurrentUserHiddenWorkspaces: mocks.hidden,
+  getUserConfig: mocks.config,
   updateCurrentUserHiddenWorkspace: vi.fn(),
 }));
 vi.mock('@tuturuuu/ui/custom/account-assurance-refresh', () => ({
@@ -65,4 +66,16 @@ it('provides the global launcher with verified identity and replaces the private
     </ClientProviders>
   );
   expect(screen.getByRole('status').textContent).toContain('"known":false');
+});
+
+it('makes no account config request when the page has no signed-in account', async () => {
+  mocks.config.mockReset();
+  render(
+    <ClientProviders accountSync={false} currentApp="tasks">
+      <div>Anonymous</div>
+    </ClientProviders>
+  );
+  await screen.findByRole('status');
+  await new Promise((resolve) => setTimeout(resolve, 0));
+  expect(mocks.config).not.toHaveBeenCalled();
 });

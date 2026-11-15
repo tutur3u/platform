@@ -5,6 +5,7 @@ import {
   hasSupportedSupabaseAuthCookie,
   hasWebAppSessionTokenFromRequest,
 } from '@tuturuuu/auth/app-session';
+import { withCanonicalLocaleCookie } from '@tuturuuu/auth/locale-cookie';
 import {
   appSessionFailureResponse,
   consumeVerifyTokenRequest,
@@ -27,7 +28,12 @@ import Negotiator from 'negotiator';
 import type { NextRequest } from 'next/server';
 import { NextResponse } from 'next/server';
 import createIntlMiddleware from 'next-intl/middleware';
-import { LOCALE_COOKIE_NAME, PUBLIC_PATHS, TTR_URL } from './constants/common';
+import {
+  BASE_URL,
+  LOCALE_COOKIE_NAME,
+  PUBLIC_PATHS,
+  TTR_URL,
+} from './constants/common';
 import { defaultLocale, type Locale, supportedLocales } from './i18n/routing';
 
 const AUTH_PUBLIC_PATHS = [
@@ -39,6 +45,7 @@ const AUTH_PUBLIC_PATHS = [
 ];
 
 const authProxy = createCentralizedAuthProxy({
+  canonicalOrigins: [BASE_URL],
   appSession: { sessionMode: 'supabase-first', targetApp: 'mail' },
   excludeRootPath: true,
   mfa: { enabled: false },
@@ -81,7 +88,7 @@ function withMailApiCors(request: NextRequest, response: NextResponse) {
   return response;
 }
 
-export async function proxy(req: NextRequest): Promise<NextResponse> {
+async function handleProxy(req: NextRequest): Promise<NextResponse> {
   const mounted = Boolean(req.nextUrl.basePath);
   if (req.nextUrl.pathname.startsWith('/api')) {
     if (req.method === 'OPTIONS') {
@@ -304,6 +311,16 @@ export async function proxy(req: NextRequest): Promise<NextResponse> {
   propagateAuthCookies(authRes, localeRes);
   return localeRes;
 }
+
+const LOCALE_COOKIE_ORIGINS = {
+  canonicalOrigins: [BASE_URL],
+  webAppUrl: TTR_URL,
+};
+
+export const proxy = withCanonicalLocaleCookie(
+  handleProxy,
+  LOCALE_COOKIE_ORIGINS
+);
 
 export const config = {
   matcher: [

@@ -4,6 +4,7 @@ import {
   hasSupportedSupabaseAuthCookie,
   hasWebAppSessionTokenFromRequest,
 } from '@tuturuuu/auth/app-session';
+import { withCanonicalLocaleCookie } from '@tuturuuu/auth/locale-cookie';
 import {
   appSessionFailureResponse,
   consumeVerifyTokenRequest,
@@ -24,13 +25,19 @@ import { isPersonalWorkspace } from '@tuturuuu/utils/workspace-helper';
 import type { NextRequest } from 'next/server';
 import { NextResponse } from 'next/server';
 import createIntlMiddleware from 'next-intl/middleware';
-import { LOCALE_COOKIE_NAME, PUBLIC_PATHS, TTR_URL } from './constants/common';
+import {
+  BASE_URL,
+  LOCALE_COOKIE_NAME,
+  PUBLIC_PATHS,
+  TTR_URL,
+} from './constants/common';
 import { defaultLocale, type Locale, supportedLocales } from './i18n/routing';
 
 // Create the centralized auth middleware
 // MFA is disabled because satellite apps delegate auth to the web app.
 // Sessions here are created via cross-app tokens that already require aal2 on web.
 const authProxy = createCentralizedAuthProxy({
+  canonicalOrigins: [BASE_URL],
   appSession: { sessionMode: 'supabase-first', targetApp: 'drive' },
   webAppUrl: TTR_URL,
   publicPaths: PUBLIC_PATHS,
@@ -40,7 +47,7 @@ const authProxy = createCentralizedAuthProxy({
 });
 const LOCAL_AUTH_API_PREFIX = '/api/auth/';
 
-export async function proxy(req: NextRequest): Promise<NextResponse> {
+async function handleProxy(req: NextRequest): Promise<NextResponse> {
   if (req.nextUrl.pathname.startsWith('/api')) {
     const isLocalAuthApi = req.nextUrl.pathname.startsWith(
       LOCAL_AUTH_API_PREFIX
@@ -248,6 +255,16 @@ export async function proxy(req: NextRequest): Promise<NextResponse> {
   propagateAuthCookies(authRes, localeRes);
   return localeRes;
 }
+
+const LOCALE_COOKIE_ORIGINS = {
+  canonicalOrigins: [BASE_URL],
+  webAppUrl: TTR_URL,
+};
+
+export const proxy = withCanonicalLocaleCookie(
+  handleProxy,
+  LOCALE_COOKIE_ORIGINS
+);
 
 export const config = {
   matcher: [

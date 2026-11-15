@@ -60,13 +60,13 @@ export function CalendarHeaderActions({
         <TooltipTrigger asChild>
           <Button
             size="sm"
-            className="rounded-r-none max-md:has-[>svg]:px-2"
+            className="rounded-r-none @max-3xl/toolbar:has-[>svg]:px-2"
             onClick={createEvent}
             disabled={eventDisabled}
             aria-label={newEventLabel}
           >
             <PlusIcon className="size-4" />
-            <span className="max-md:hidden">{t('new')}</span>
+            <span className="@max-3xl/toolbar:hidden">{t('new')}</span>
           </Button>
         </TooltipTrigger>
         <TooltipContent>{newEventLabel}</TooltipContent>

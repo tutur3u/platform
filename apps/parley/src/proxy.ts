@@ -1,10 +1,11 @@
+import { withCanonicalLocaleCookie } from '@tuturuuu/auth/locale-cookie';
 import {
   createCentralizedAuthProxy,
   getRequestHeadersWithResponseCookies,
   propagateAuthCookies,
 } from '@tuturuuu/auth/proxy';
 import { resolveSupabaseSessionRequest } from '@tuturuuu/auth/supabase-session-user';
-import { TTR_URL } from '@tuturuuu/meet-core/constants/common';
+import { BASE_URL, TTR_URL } from '@tuturuuu/meet-core/constants/common';
 import { hasParleyAccess } from '@tuturuuu/meet-core/parley-access';
 import { guardApiProxyRequest } from '@tuturuuu/utils/api-proxy-guard';
 import { NextRequest, NextResponse } from 'next/server';
@@ -12,6 +13,7 @@ import createIntlMiddleware from 'next-intl/middleware';
 import { routing } from './i18n/routing';
 
 const auth = createCentralizedAuthProxy({
+  canonicalOrigins: [BASE_URL],
   webAppUrl: TTR_URL,
   publicPaths: [
     '/login',
@@ -29,7 +31,7 @@ const auth = createCentralizedAuthProxy({
   mfa: { enabled: true, excludedPaths: ['/login'] },
 });
 const intl = createIntlMiddleware(routing);
-export default async function proxy(request: NextRequest) {
+async function handleProxy(request: NextRequest) {
   if (request.nextUrl.pathname.startsWith('/api/')) {
     const denied = await guardApiProxyRequest(request, {
       prefixBase: 'proxy:parley:api',
@@ -107,6 +109,15 @@ export default async function proxy(request: NextRequest) {
 
   return finish(result);
 }
+
+const LOCALE_COOKIE_ORIGINS = {
+  canonicalOrigins: [BASE_URL],
+  webAppUrl: TTR_URL,
+};
+
+const proxy = withCanonicalLocaleCookie(handleProxy, LOCALE_COOKIE_ORIGINS);
+export default proxy;
+
 export const config = {
   matcher: [
     '/((?!_next/static|_next/image|favicon.ico|meet-live-processor.js|.*\\.(?:svg|png|jpg|jpeg|gif|webp)$).*)',

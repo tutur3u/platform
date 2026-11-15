@@ -12,6 +12,9 @@ import {
 const runtime = vi.hoisted(() => {
   vi.stubEnv('TTR_URL', 'https://web.tutur3u.com');
   vi.stubEnv('NEXT_PUBLIC_WEB_APP_URL', 'https://web.tutur3u.com');
+  // Staging exposes its own origin (stagingVars.DRIVE_APP_URL); the proxy's
+  // canonical origin is read from it at module load.
+  vi.stubEnv('DRIVE_APP_URL', 'https://drive.tutur3u.com');
   vi.stubEnv(
     'TUTURUUU_APP_COORDINATION_SECRET',
     'disposable-drive-test-signing-key'

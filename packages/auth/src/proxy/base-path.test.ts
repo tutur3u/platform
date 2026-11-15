@@ -47,6 +47,7 @@ describe('auth proxy under a Next basePath', () => {
 
   it('returns unauthenticated users to the mounted verify-token page', async () => {
     const authProxy = createCentralizedAuthProxy({
+      canonicalOrigins: ['https://tasks.tuturuuu.com'],
       skipApiRoutes: true,
       webAppUrl: 'https://tuturuuu.com',
     });

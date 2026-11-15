@@ -722,6 +722,12 @@
     "workspace_slug_placeholder": "your-team",
     "workspaces": "Workspaces"
   },
+  "experimental-ui": {
+    "badge": "Beta",
+    "setting_description": "Try Sorbet, the new Tuturuuu look, in every app. Saved to your account.",
+    "setting_title": "Experimental design",
+    "setting_toggle_label": "Use the experimental Sorbet design"
+  },
   "nav-upgrade-dialog": {
     "contact_support": "If you require immediate access to this feature, please contact our support team.",
     "description": "The {feature} feature requires a {tier} plan or higher.",

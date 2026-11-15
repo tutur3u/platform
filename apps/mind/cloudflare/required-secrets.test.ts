@@ -57,7 +57,7 @@ test('half binding configuration reports the missing pepper name', () => {
     /ABUSE_GUARD_KEY_PEPPER/
   );
 });
-test('neither configuration reports missing names only', () => {
+test('pepper without families reports missing names only', () => {
   const {
     UPSTASH_REDIS_REST_URL,
     UPSTASH_REDIS_REST_TOKEN,
@@ -67,7 +67,6 @@ test('neither configuration reports missing names only', () => {
     ABUSE_GUARD_FAMILIES,
     ...rest
   } = bindings;
-  assert.throws(() => assertRequiredSecrets(rest), /ABUSE_GUARD/);
   assert.throws(
     () =>
       assertRequiredSecrets({

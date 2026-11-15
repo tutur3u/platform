@@ -38,6 +38,7 @@ import type { Workspace } from '@tuturuuu/types';
 import type { WorkspaceUser } from '@tuturuuu/types/primitives/WorkspaceUser';
 import { AppearanceSettings } from '@tuturuuu/ui/custom/settings/appearance-settings';
 import { KeyboardShortcutsSettings } from '@tuturuuu/ui/custom/settings/keyboard-shortcuts-settings';
+import { CalendarDefaultViewSettings } from '@tuturuuu/ui/custom/settings/calendar-default-view-settings';
 import { LunarCalendarSettings } from '@tuturuuu/ui/custom/settings/lunar-calendar-settings';
 import SharedSidebarSettings from '@tuturuuu/ui/custom/settings/sidebar-settings';
 import { SettingsDialogShell } from '@tuturuuu/ui/custom/settings-dialog-shell';
@@ -238,7 +239,7 @@ export function SettingsDialog({
             label: t('settings.calendar.general'),
             icon: CalendarDays,
             description: t('settings.calendar.general_description'),
-            keywords: ['Calendar', 'General', 'Lunar'],
+            keywords: ['Calendar', 'General', 'Default view', 'Lunar'],
           },
         ],
       },
@@ -308,7 +309,8 @@ export function SettingsDialog({
         wsId={wsId}
       />
       {activeTab === 'calendar_general' && (
-        <div className="h-full">
+        <div className="h-full space-y-4">
+          <CalendarDefaultViewSettings />
           <LunarCalendarSettings />
         </div>
       )}

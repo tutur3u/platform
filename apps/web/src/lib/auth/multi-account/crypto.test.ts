@@ -152,6 +152,8 @@ describe('web multi-account crypto', () => {
   });
 
   it('uses the shared device cookie on first-party HTTPS requests', () => {
+    // The forwarded host is honoured because it is a configured origin.
+    vi.stubEnv('WEB_APP_URL', 'https://app.tuturuuu.com');
     const request = new Request('http://internal.localhost/login', {
       headers: {
         'x-forwarded-host': 'app.tuturuuu.com',
@@ -210,7 +212,9 @@ describe('web multi-account crypto', () => {
   it('uses a non-secure shared cookie for HTTPS tuturuuu.localhost dev/E2E hosts', () => {
     // portless serves local dev and E2E over HTTPS with an untrusted cert, so
     // Chromium drops Secure/__Host- cookies. The first-party localhost domain
-    // still needs the shared cookie name/scope, but without Secure.
+    // still needs the shared cookie name/scope, but without Secure. portless
+    // configures PORTLESS_URL, so the forwarded host is a configured origin.
+    vi.stubEnv('PORTLESS_URL', 'https://tuturuuu.localhost:1355');
     const request = new Request('http://internal.localhost/login', {
       headers: {
         'x-forwarded-host': 'tuturuuu.localhost:1355',

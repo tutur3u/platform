@@ -128,6 +128,25 @@ export async function getWorkspaceKey(wsId: string): Promise<Buffer | null> {
   }
 }
 
+/**
+ * Whether the workspace has, or may have, an encryption key row.
+ * A failed check counts as present so callers refuse rather than store
+ * plaintext for a workspace that may be end-to-end encrypted.
+ */
+async function workspaceKeyRowMayExist(wsId: string): Promise<boolean> {
+  try {
+    const supabase = await createAdminClient({ noCookie: true });
+    const { data, error } = await supabase
+      .from('workspace_encryption_keys')
+      .select('ws_id')
+      .eq('ws_id', wsId)
+      .maybeSingle();
+    return Boolean(error) || data !== null;
+  } catch {
+    return true;
+  }
+}
+
 // Helper type to allow nulls for optional fields (since DB allows nulls)
 type LooseEncryptedCalendarEventFields = {
   [K in keyof EncryptedCalendarEventFields]?:
@@ -153,9 +172,12 @@ export async function encryptEventForStorage<
       : await getOrCreateWorkspaceKey(wsId);
 
   if (!key) {
-    // Never store plaintext where encryption is required: a missing master
-    // key, an unreadable key row or a failed key creation all land here.
-    if (isEncryptionRequired()) throw new EncryptionUnavailableError();
+    // A workspace without a key row is not end-to-end encrypted, so its
+    // events are stored as plaintext. Where encryption is required, a
+    // workspace that has a key row (or whose key row cannot be checked) but
+    // no usable key refuses the write instead of storing plaintext.
+    if (isEncryptionRequired() && (await workspaceKeyRowMayExist(wsId)))
+      throw new EncryptionUnavailableError();
     return { ...event, is_encrypted: false };
   }
 

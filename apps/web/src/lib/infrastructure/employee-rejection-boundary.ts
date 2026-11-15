@@ -3,7 +3,7 @@ import {
   EmployeeRejectionRecoverySchema,
   EmployeeRejectionRequestSchema,
 } from '@tuturuuu/internal-api/infrastructure/employee-rejection-recovery';
-import { checkEnvVariables } from '@tuturuuu/supabase/next/common';
+import { checkSecretEnvVariables } from '@tuturuuu/supabase/next/secret-env';
 import { hasEmployeeRequestOrigin } from '@tuturuuu/utils/internal-accounts/employee-request-origin';
 import { z } from 'zod';
 import { authorizeEmployeeCreation } from './employee-creation-authorization';
@@ -118,7 +118,7 @@ export const handleEmployeeRejection = makeEmployeeRejectionBoundary({
 });
 
 export async function connectEmployeeRejection(): Promise<Port> {
-  const { url, key } = checkEnvVariables({ useSecretKey: true });
+  const { url, key } = checkSecretEnvVariables();
   const call = async (
     name:
       | 'inspect_employee_creation_rejection'
