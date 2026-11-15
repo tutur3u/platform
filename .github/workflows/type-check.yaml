@@ -1,10 +1,16 @@
 name: TypeScript Type Check
 
+# Merge queue (merge_group) runs are untrusted candidate code: they receive no
+# secrets or remote-cache tokens, take their range from the queue base B,
+# and every job stays on GitHub-hosted ubuntu-latest (the fork pull request
+# pool) with read-only permissions (scripts/ci/merge-group-workflow-policy.test.js).
 on:
   push:
     branches: [main, production, 'release-please--branches--**']
   pull_request:
     types: [opened, synchronize, reopened, ready_for_review, labeled, converted_to_draft]
+  merge_group:
+    types: [checks_requested]
   workflow_dispatch:
 
 # Initial PR/main validation supersedes; reruns and manual evidence stay independent.
@@ -19,7 +25,7 @@ jobs:
   # Push, dispatch and generated-branch variant: keeps the Turbo credentials and
   # always runs on a hosted runner, never the PR pool.
   type-check:
-    if: ${{ ((github.event_name != 'pull_request' || github.event.pull_request.draft == false) && ((github.event_name != 'pull_request'))) && (github.event_name != 'pull_request' || contains(github.event.pull_request.labels.*.name, 'ready-for-ci')) }}
+    if: ${{ ((github.event_name != 'pull_request' || github.event.pull_request.draft == false) && ((github.event_name != 'pull_request' && github.event_name != 'merge_group'))) && (github.event_name != 'pull_request' || contains(github.event.pull_request.labels.*.name, 'ready-for-ci')) }}
     name: Type Check
     permissions:
       contents: read
@@ -84,7 +90,8 @@ jobs:
         id: release_relevance
         shell: bash
         env:
-          BEFORE_SHA: ${{ github.event.before }}
+          # A merge group has no event.before; its queue base B is the range start.
+          BEFORE_SHA: ${{ github.event.before || github.event.merge_group.base_sha }}
         run: |
           result="$(node scripts/ci/release-only-changes.js "$BEFORE_SHA" "$GITHUB_SHA")"
           echo "run_checks=$result" >> "$GITHUB_OUTPUT"
@@ -139,8 +146,8 @@ jobs:
         uses: ./.github/actions/run-with-turbo-remote-cache
         with:
           command: bun turbo:local run build --concurrency=4 --filter=@tuturuuu/types --filter=@tuturuuu/supabase --filter=@tuturuuu/internal-api --filter=@tuturuuu/masonry
-          token: ${{ github.event_name != 'pull_request' && github.actor != 'dependabot[bot]' && (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/production') && secrets.TURBO_TOKEN || '' }}
-          team: ${{ github.event_name != 'pull_request' && github.actor != 'dependabot[bot]' && (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/production') && (vars.TURBO_TEAM || secrets.TURBO_TEAM) || '' }}
+          token: ${{ github.event_name != 'pull_request' && github.event_name != 'merge_group' && github.actor != 'dependabot[bot]' && (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/production') && secrets.TURBO_TOKEN || '' }}
+          team: ${{ github.event_name != 'pull_request' && github.event_name != 'merge_group' && github.actor != 'dependabot[bot]' && (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/production') && (vars.TURBO_TEAM || secrets.TURBO_TEAM) || '' }}
 
       - name: Run type check
         if: steps.check_config.outputs.should_run == 'true' && steps.release_relevance.outputs.run_checks == 'true'
@@ -149,8 +156,8 @@ jobs:
           # The TanStack Start migration is paused; keep maintained workspace
           # type checks active without scheduling its package.
           command: bun turbo:local run type-check --concurrency=4 --filter='!@tuturuuu/tanstack-web'
-          token: ${{ github.event_name != 'pull_request' && github.actor != 'dependabot[bot]' && (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/production') && secrets.TURBO_TOKEN || '' }}
-          team: ${{ github.event_name != 'pull_request' && github.actor != 'dependabot[bot]' && (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/production') && (vars.TURBO_TEAM || secrets.TURBO_TEAM) || '' }}
+          token: ${{ github.event_name != 'pull_request' && github.event_name != 'merge_group' && github.actor != 'dependabot[bot]' && (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/production') && secrets.TURBO_TOKEN || '' }}
+          team: ${{ github.event_name != 'pull_request' && github.event_name != 'merge_group' && github.actor != 'dependabot[bot]' && (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/production') && (vars.TURBO_TEAM || secrets.TURBO_TEAM) || '' }}
 
       - name: Report skipped type check
         if: steps.check_config.outputs.should_run != 'true' || steps.release_relevance.outputs.run_checks != 'true'
@@ -160,7 +167,7 @@ jobs:
   # secret (a guarded reference is still shipped to the runner). It shares the
   # `Type Check` context with the variant below; exactly one of them runs.
   type-check-pr:
-    if: ${{ ((github.event_name != 'pull_request' || github.event.pull_request.draft == false) && ((github.event_name == 'pull_request'))) && (github.event_name != 'pull_request' || contains(github.event.pull_request.labels.*.name, 'ready-for-ci')) }}
+    if: ${{ ((github.event_name != 'pull_request' || github.event.pull_request.draft == false) && ((github.event_name == 'pull_request' || github.event_name == 'merge_group'))) && (github.event_name != 'pull_request' || contains(github.event.pull_request.labels.*.name, 'ready-for-ci')) }}
     name: Type Check
     permissions:
       contents: read
@@ -225,7 +232,8 @@ jobs:
         id: release_relevance
         shell: bash
         env:
-          BEFORE_SHA: ${{ github.event.before }}
+          # A merge group has no event.before; its queue base B is the range start.
+          BEFORE_SHA: ${{ github.event.before || github.event.merge_group.base_sha }}
         run: |
           result="$(node scripts/ci/release-only-changes.js "$BEFORE_SHA" "$GITHUB_SHA")"
           echo "run_checks=$result" >> "$GITHUB_OUTPUT"
