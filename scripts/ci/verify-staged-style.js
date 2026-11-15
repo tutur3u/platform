@@ -682,12 +682,11 @@ async function main({ env = process.env, runCommand = run, browserType } = {}) {
         clipHeight: capturedHeight,
       });
       try {
-        await page.screenshot({
-          path: partial,
-          fullPage: true,
-          clip: { x: 0, y: 0, width, height: capturedHeight },
-          animations: 'disabled',
-        });
+        // Size the viewport to the capture and take a plain viewport image:
+        // fullPage asks Chromium to render beyond the viewport (the whole
+        // document), which fails on very tall pages even with a small clip.
+        await page.setViewportSize({ width, height: capturedHeight });
+        await page.screenshot({ path: partial, animations: 'disabled' });
       } catch {
         throw new Error('Staged viewport screenshot failed');
       }

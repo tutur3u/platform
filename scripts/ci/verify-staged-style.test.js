@@ -398,6 +398,7 @@ async function transportFixture(t, responses, stamp, options = {}) {
   const pageSeams = {
     evaluate: options.evaluate,
     screenshot: options.screenshot,
+    setViewportSize: options.setViewportSize,
   };
   const cssBody = '.flex{display:flex}';
   await mkdir(join(temp, '.vercel/output/static/_next/static/chunks'), {
@@ -443,7 +444,7 @@ async function transportFixture(t, responses, stamp, options = {}) {
           newPage: async () => {
             let current;
             return {
-              setViewportSize: async () => {},
+              setViewportSize: pageSeams.setViewportSize ?? (async () => {}),
               goto: async (url) => {
                 current = url;
                 navigations.push(url);
@@ -662,20 +663,40 @@ const pageMetrics = (scrollHeight) => async () => ({
   scrollHeight,
 });
 
-test('a page within the capture bound is screenshotted in full', async (t) => {
-  const clips = [];
-  const f = await transportFixture(t, () => undefined, undefined, {
-    evaluate: pageMetrics(1800),
-    screenshot: async ({ path, clip, fullPage }) => {
-      clips.push({ clip, fullPage });
+const recordCapture = () => {
+  const sizes = [];
+  const shots = [];
+  return {
+    sizes,
+    shots,
+    setViewportSize: async (size) => {
+      sizes.push(size);
+    },
+    screenshot: async ({ path, ...rest }) => {
+      shots.push(rest);
       await writeFile(path, 'fixture');
     },
+  };
+};
+
+test('a page within the capture bound is screenshotted in full', async (t) => {
+  const capture = recordCapture();
+  const f = await transportFixture(t, () => undefined, undefined, {
+    evaluate: pageMetrics(1800),
+    setViewportSize: capture.setViewportSize,
+    screenshot: capture.screenshot,
   });
   const proof = await f.run();
-  assert.deepEqual(clips, [
-    { clip: { x: 0, y: 0, width: 390, height: 1800 }, fullPage: true },
-    { clip: { x: 0, y: 0, width: 1440, height: 1800 }, fullPage: true },
+  // Each viewport loads at 900 px tall, then is sized to the capture height.
+  assert.deepEqual(capture.sizes, [
+    { width: 390, height: 900 },
+    { width: 390, height: 1800 },
+    { width: 1440, height: 900 },
+    { width: 1440, height: 1800 },
   ]);
+  // A plain viewport image: never fullPage or a clip beyond the viewport.
+  for (const shot of capture.shots)
+    assert.deepEqual(shot, { animations: 'disabled' });
   for (const view of proof.viewports) {
     assert.equal(view.scrollHeight, 1800);
     assert.equal(view.captureMode, 'full');
@@ -685,17 +706,23 @@ test('a page within the capture bound is screenshotted in full', async (t) => {
 });
 
 test('a page taller than the bound passes with one clipped capture', async (t) => {
-  const clips = [];
+  const capture = recordCapture();
   const f = await transportFixture(t, () => undefined, undefined, {
     evaluate: pageMetrics(24000),
-    screenshot: async ({ path, clip }) => {
-      clips.push(clip);
-      await writeFile(path, 'fixture');
-    },
+    setViewportSize: capture.setViewportSize,
+    screenshot: capture.screenshot,
   });
   const proof = await f.run();
   assert.equal(proof.viewports.length, 2);
-  for (const clip of clips) assert.equal(clip.height, 8000);
+  assert.deepEqual(
+    capture.sizes.filter((size) => size.height !== 900),
+    [
+      { width: 390, height: 8000 },
+      { width: 1440, height: 8000 },
+    ]
+  );
+  for (const shot of capture.shots)
+    assert.deepEqual(shot, { animations: 'disabled' });
   for (const view of proof.viewports) {
     assert.equal(view.scrollHeight, 24000);
     assert.equal(view.captureMode, 'clipped');
