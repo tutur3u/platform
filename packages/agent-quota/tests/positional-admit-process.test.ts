@@ -63,9 +63,17 @@ await runPositionalAdmit([account.instanceId, account.models[0]], () => '', {
           )
       )
     );
-    expect(results.map((result) => result.code).sort()).toEqual([
-      0, 3, 3, 3, 3, 3, 3, 3,
-    ]);
+    // On mismatch, print every child's decision to explain the failure.
+    expect(
+      results.map((result) => result.code).sort(),
+      JSON.stringify(
+        results.map(({ code, stdout, stderr }) => ({
+          code,
+          stdout: stdout.trim().slice(0, 500),
+          stderr: stderr.trim().slice(0, 500),
+        }))
+      )
+    ).toEqual([0, 3, 3, 3, 3, 3, 3, 3]);
     const decisions = results.map((result) => JSON.parse(result.stdout.trim()));
     expect(
       decisions.filter((result) => result.status === 'ADMIT')
