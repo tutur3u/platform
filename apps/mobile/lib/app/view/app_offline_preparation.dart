@@ -338,6 +338,14 @@ extension _AppOfflinePreparation on _AppState {
   }
 
   void _registerWarmupTasks() {
+    CacheWarmupCoordinator.instance.bindScope(() {
+      final user = _authCubit.state.user?.id;
+      final workspace = _workspaceCubit.state.currentWorkspace?.id;
+      if (user == null || workspace == null) return null;
+      // Any cache clear (logout, account switch, storage reset) changes the
+      // scope, so a warm-up is never skipped after its data was dropped.
+      return '$user:$workspace:${CacheStore.instance.clearGeneration}';
+    });
     _registerInventoryWarmupTask();
     CacheWarmupCoordinator.instance.register('home_payload', ({
       forceRefresh = false,
