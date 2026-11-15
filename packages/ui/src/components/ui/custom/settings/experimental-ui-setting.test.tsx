@@ -96,9 +96,9 @@ describe('ExperimentalUiSetting', () => {
 
     fireEvent.click(screen.getByRole('radio', { name: 'presets.matcha' }));
 
-    expect(
-      document.documentElement.getAttribute('data-sorbet-preset')
-    ).toBe('matcha');
+    expect(document.documentElement.getAttribute('data-sorbet-preset')).toBe(
+      'matcha'
+    );
     expect(mockMutate).toHaveBeenCalledWith({
       configId: 'SORBET_THEME',
       value: JSON.stringify({

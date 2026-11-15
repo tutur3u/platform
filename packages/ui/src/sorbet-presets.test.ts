@@ -60,40 +60,43 @@ const cases = SORBET_PRESETS.flatMap((preset) =>
 );
 
 describe('Sorbet presets', () => {
-  it.each(cases)('$preset ($mode) meets the contrast targets', ({
-    preset,
-    mode,
-  }) => {
-    const selector =
-      mode === 'dark'
-        ? `[data-sorbet-preview="${preset}"][data-sorbet-preview-mode="dark"] {`
-        : `[data-sorbet-preview="${preset}"] {`;
-    const own = declarations(presetsCss, selector);
-    const tokens: Tokens = { ...(mode === 'dark' ? baseDark : baseLight), ...own };
-    const text = preset === 'high-contrast' ? 7 : 4.5;
+  it.each(cases)(
+    '$preset ($mode) meets the contrast targets',
+    ({ preset, mode }) => {
+      const selector =
+        mode === 'dark'
+          ? `[data-sorbet-preview="${preset}"][data-sorbet-preview-mode="dark"] {`
+          : `[data-sorbet-preview="${preset}"] {`;
+      const own = declarations(presetsCss, selector);
+      const tokens: Tokens = {
+        ...(mode === 'dark' ? baseDark : baseLight),
+        ...own,
+      };
+      const text = preset === 'high-contrast' ? 7 : 4.5;
 
-    const surfaces = ['sorbet-ground', 'sorbet-surface', 'sorbet-card'];
-    const failures: string[] = [];
-    const check = (fg: string, bg: string, minimum: number) => {
-      const ratio = contrast(tokens[fg]!, tokens[bg]!);
-      if (ratio < minimum) {
-        failures.push(`${fg} on ${bg}: ${ratio.toFixed(2)} < ${minimum}`);
+      const surfaces = ['sorbet-ground', 'sorbet-surface', 'sorbet-card'];
+      const failures: string[] = [];
+      const check = (fg: string, bg: string, minimum: number) => {
+        const ratio = contrast(tokens[fg]!, tokens[bg]!);
+        if (ratio < minimum) {
+          failures.push(`${fg} on ${bg}: ${ratio.toFixed(2)} < ${minimum}`);
+        }
+      };
+
+      for (const surface of [...surfaces, 'sorbet-accent-soft']) {
+        check('sorbet-ink', surface, text);
       }
-    };
+      for (const surface of surfaces) {
+        check('sorbet-muted-ink', surface, text);
+        check('sorbet-ring', surface, 3);
+        check('sorbet-accent', surface, 3);
+        for (const ink of STATUS_INKS) check(ink, surface, text);
+      }
+      check('sorbet-accent-ink', 'sorbet-accent', text);
 
-    for (const surface of [...surfaces, 'sorbet-accent-soft']) {
-      check('sorbet-ink', surface, text);
+      expect(failures).toEqual([]);
     }
-    for (const surface of surfaces) {
-      check('sorbet-muted-ink', surface, text);
-      check('sorbet-ring', surface, 3);
-      check('sorbet-accent', surface, 3);
-      for (const ink of STATUS_INKS) check(ink, surface, text);
-    }
-    check('sorbet-accent-ink', 'sorbet-accent', text);
-
-    expect(failures).toEqual([]);
-  });
+  );
 
   it('applies to <html> only through the preset attribute, leaving default Sorbet unchanged', () => {
     for (const preset of SORBET_PRESETS) {

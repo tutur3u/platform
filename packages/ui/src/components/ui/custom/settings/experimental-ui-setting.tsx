@@ -31,21 +31,21 @@ export function ExperimentalUiSetting() {
   return (
     <>
       <SettingItemTab
-      title={
-        <span className="inline-flex items-center gap-2">
-          {t('setting_title')}
-          <Badge variant="outline">{t('badge')}</Badge>
-        </span>
-      }
-      description={t('setting_description')}
-    >
-      <Switch
-        aria-label={t('setting_toggle_label')}
-        checked={value}
-        disabled={isLoading || isPending}
-        onCheckedChange={onChange}
-      />
-    </SettingItemTab>
+        title={
+          <span className="inline-flex items-center gap-2">
+            {t('setting_title')}
+            <Badge variant="outline">{t('badge')}</Badge>
+          </span>
+        }
+        description={t('setting_description')}
+      >
+        <Switch
+          aria-label={t('setting_toggle_label')}
+          checked={value}
+          disabled={isLoading || isPending}
+          onCheckedChange={onChange}
+        />
+      </SettingItemTab>
       {value && <SorbetThemeSetting />}
     </>
   );

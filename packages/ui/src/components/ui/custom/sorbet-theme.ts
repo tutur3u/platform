@@ -71,7 +71,8 @@ function pick<T extends string>(
   value: unknown,
   fallback: T
 ): T {
-  return typeof value === 'string' && (allowed as readonly string[]).includes(value)
+  return typeof value === 'string' &&
+    (allowed as readonly string[]).includes(value)
     ? (value as T)
     : fallback;
 }
