@@ -3,8 +3,9 @@ import { visibleComingSoon } from '../content/coming-soon';
 import { type Status, statuses } from '../live/status';
 import type { Insights } from '../insights/model';
 import type { RoadmapView } from '../view-model';
+import { InfoPopover, Tooltip } from './info';
 import { KpiTiles } from './insights/kpis';
-import type { Lang, Messages } from './shared';
+import { type Lang, type Messages, StatusBadge } from './shared';
 
 export function Hero({
   t,
@@ -71,15 +72,47 @@ export function OverallBar({
           ) : null
         )}
       </div>
-      <ul className="legend">
-        {statuses.map((s) => (
-          <li key={s}>
-            <span className={`dot ${s}`} aria-hidden />
-            {t.status[s]} <b>{totals[s]}</b>
-          </li>
-        ))}
-      </ul>
+      <div className="legend-row">
+        <ul className="legend">
+          {statuses.map((s) => (
+            <li key={s}>
+              <Tooltip id={`tip-status-${s}`} tip={t.method[s]}>
+                <span className={`dot ${s}`} aria-hidden />
+                <span className="tip-label">{t.status[s]}</span>{' '}
+                <b>{totals[s]}</b>
+              </Tooltip>
+            </li>
+          ))}
+        </ul>
+        <StatusMethod t={t} />
+      </div>
     </div>
+  );
+}
+
+/**
+ * How statuses are computed: every definition and the sources, behind the
+ * (i) button beside the status legend.
+ */
+export function StatusMethod({ t }: { t: Messages }) {
+  return (
+    <InfoPopover
+      id="status-method"
+      label={t.method.title}
+      closeLabel={t.info.close}
+    >
+      <dl className="method-list">
+        {statuses.map((s) => (
+          <div key={s}>
+            <dt>
+              <StatusBadge status={s} t={t} />
+            </dt>
+            <dd>{t.method[s]}</dd>
+          </div>
+        ))}
+      </dl>
+      <p className="info-fine">{t.method.sources}</p>
+    </InfoPopover>
   );
 }
 

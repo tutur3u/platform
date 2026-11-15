@@ -9,6 +9,8 @@ on:
       - 'tuturuuu.ci.ts'
       - 'scripts/generate-tanstack-route-tree.js'
       - '.github/actions/setup-bun-with-retry/**'
+      - '.github/actions/run-with-turbo-remote-cache/action.yml'
+      - 'turbo.json'
       - '.github/workflows/roadmap-cloudflare.yaml'
   workflow_dispatch:
     inputs:
@@ -102,6 +104,12 @@ jobs:
           node-version: 24
           package-manager-cache: false
       - run: bun install --frozen-lockfile
+      - name: Build shared dependencies
+        uses: ./.github/actions/run-with-turbo-remote-cache
+        with:
+          command: bun turbo:local run build --filter="@tuturuuu/roadmap^..." --concurrency=2
+          token: ''
+          team: ''
       - name: Check public roadmap data
         run: node --test apps/roadmap/src/roadmap-data.test.ts apps/roadmap/src/cache-policy.test.ts apps/roadmap/scripts/seal-artifact.test.mjs apps/roadmap/scripts/pre-seal-doctor.test.mjs
       - name: Build the exact roadmap Worker

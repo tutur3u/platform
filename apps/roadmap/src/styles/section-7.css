@@ -298,8 +298,7 @@
     grid-column: 1 / -1;
   }
 }
-.pulse-notes,
-.pulse-fine {
+.pulse-notes {
   display: grid;
   gap: 2px;
   margin: 0;

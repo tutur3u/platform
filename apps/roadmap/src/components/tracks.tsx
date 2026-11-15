@@ -106,7 +106,8 @@ export function TracksSection({
       <SectionHead
         id="tracks-title"
         title={t.tracks.title}
-        subtitle={t.tracks.subtitle}
+        t={t}
+        info={<p>{t.tracks.subtitle}</p>}
       />
       <div ref={sentinelRef} className="nav-sentinel" aria-hidden />
       <div className="sticky-bar">

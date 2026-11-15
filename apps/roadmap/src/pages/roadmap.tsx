@@ -17,7 +17,7 @@ import vi from '../../messages/vi.json';
 import logo from '../assets/tuturuuu-logo.png?no-inline';
 import { Footer } from '../components/chrome';
 import { ComingSoon, Hero } from '../components/hero';
-import { HostingSection, Method } from '../components/hosting';
+import { HostingSection } from '../components/hosting';
 import { MigrationSection } from '../components/migration';
 import { TrackGlance } from '../components/pulse';
 import type { Lang } from '../components/shared';
@@ -160,7 +160,6 @@ const RoadmapMain = memo(function RoadmapMain({
           hosting={BUILD_HOSTING}
         />
         <MigrationSection t={t} lang={lang} hosting={BUILD_HOSTING} />
-        <Method t={t} />
         <Footer
           t={t}
           lang={lang}

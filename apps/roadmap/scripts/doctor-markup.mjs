@@ -126,3 +126,87 @@ export async function builtWorkerSmoke(fetchImpl) {
   if (smoke.ok) console.log('canonical smoke passed on the built Worker');
   return smoke;
 }
+
+function attr(tag, name) {
+  const match = new RegExp(`\\s${name}="([^"]*)"`, 'i').exec(tag);
+  return match ? match[1] : null;
+}
+
+/** Opening tags carrying `id="…"`, by id. */
+function tagsById(html) {
+  const tags = new Map();
+  for (const match of html.matchAll(/<[a-z][^>]*\sid="([^"]+)"[^>]*>/gi))
+    tags.set(match[1], match[0]);
+  return tags;
+}
+
+/**
+ * Explanations behind (i) buttons and tooltips (components/info.tsx). In
+ * the server HTML: "How statuses are computed" is a popover holding all
+ * five definitions and is not a section of the page; every (i) button is a
+ * named button that opens a popover it controls; every tooltip trigger is a
+ * button described by the tooltip it opens; each status in the hero legend
+ * has one. Native popovers need no script, so this is all the markup the
+ * no-JS page and screen readers rely on.
+ */
+export function infoPopoverFailures(html) {
+  const body = String(html);
+  const failures = [];
+  const ids = tagsById(body);
+  const method = ids.get('status-method') ?? '';
+  if (!/\spopover="(auto|manual)"/.test(method))
+    failures.push('"How statuses are computed" is not a popover');
+  const start = body.indexOf(method);
+  const definitions = method
+    ? body.slice(start, body.indexOf('</dl>', start)).split('<dd').length - 1
+    : 0;
+  if (definitions !== 5)
+    failures.push(
+      `the statuses popover holds ${definitions} definitions, expected 5`
+    );
+  if (/id="method-title"|class="section method"/.test(body))
+    failures.push('"How statuses are computed" is still a page section');
+  const buttons = [...body.matchAll(/<button\b[^>]*>/gi)].map((m) => m[0]);
+  const infos = buttons.filter((tag) => /\sclass="info-btn"/.test(tag));
+  if (!infos.length) failures.push('no (i) buttons');
+  for (const tag of infos) {
+    const target = attr(tag, 'popovertarget');
+    if (
+      attr(tag, 'type') !== 'button' ||
+      !attr(tag, 'aria-label') ||
+      attr(tag, 'aria-controls') !== target ||
+      !/^(true|false)$/.test(attr(tag, 'aria-expanded') ?? '') ||
+      !/\spopover="/.test(ids.get(target ?? '') ?? '')
+    )
+      failures.push(`(i) button for ${target} lacks its popover semantics`);
+  }
+  const tips = buttons.filter((tag) => /\sclass="tip-btn\b/.test(tag));
+  for (const tag of tips) {
+    const target = attr(tag, 'popovertarget');
+    const tip = ids.get(target ?? '') ?? '';
+    if (
+      attr(tag, 'type') !== 'button' ||
+      attr(tag, 'aria-describedby') !== target ||
+      !/\srole="tooltip"/.test(tip) ||
+      !/\spopover="/.test(tip)
+    )
+      failures.push(`tooltip trigger for ${target} lacks aria-describedby`);
+  }
+  const statusTips = tips.filter((tag) =>
+    /popovertarget="tip-status-/i.test(tag)
+  );
+  if (statusTips.length !== 5)
+    failures.push(
+      `the status legend has ${statusTips.length} tooltips, expected 5`
+    );
+  return failures;
+}
+
+/** Every markup check the doctor runs on the canonical document. */
+export function markupFailures(html) {
+  return [
+    ...redundantAltFailures(html),
+    ...pendingBoundaryFailures(html),
+    ...infoPopoverFailures(html),
+  ];
+}

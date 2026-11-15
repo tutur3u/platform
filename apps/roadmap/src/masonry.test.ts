@@ -67,11 +67,6 @@ const MASONRY = [
     tag: /<div className="period-groups masonry">/,
   },
   {
-    file: './components/hosting.tsx',
-    container: '.method dl',
-    tag: /<dl className="masonry">/,
-  },
-  {
     file: './components/migration.tsx',
     container: '.migration-list',
     tag: /<ul className="migration-list masonry"/,
@@ -140,7 +135,7 @@ const masonryUses = (sources: string[]) =>
   );
 
 describe('masonry: which sections use it', () => {
-  it('the five card lists carry the class and lost their grid rules', () => {
+  it('the four card lists carry the class and lost their grid rules', () => {
     for (const { file, container, tag } of MASONRY) {
       assert.match(read(file), tag, file);
       const grid = declarationsFor(css, container).filter((d) =>

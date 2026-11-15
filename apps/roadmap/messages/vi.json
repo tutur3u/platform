@@ -16,6 +16,10 @@
   "skip": "Tới các hạng mục",
   "footerChecked": "Dữ liệu công khai từ",
   "liveCheckFailed": "Không thể kiểm tra trực tiếp.",
+  "info": {
+    "about": "Giải thích về {title}",
+    "close": "Đóng"
+  },
   "stats": {
     "shippedWeek": "Ra mắt tuần này",
     "live": "Hạng mục đang chạy",
@@ -89,7 +93,7 @@
     "title": "Mỗi ứng dụng đang chạy ở đâu",
     "subtitle": "Endpoint build-info công khai của từng ứng dụng, kiểm tra từ bên ngoài Cloudflare, cho biết ứng dụng đang chạy commit nào và commit đó được tạo khi nào.",
     "checked": "Nơi chạy ứng dụng tính đến",
-    "checkedNote": "(lúc trang này được build; mỗi lần triển khai đều kiểm tra lại)",
+    "checkedNote": "Kiểm tra lúc trang này được build; mỗi lần triển khai đều kiểm tra lại.",
     "workers": "Cloudflare Workers",
     "vercel": "Vercel",
     "store": "Kho ứng dụng",
@@ -116,7 +120,13 @@
     "to": "sang",
     "list": "Các ứng dụng và đường dẫn mới",
     "asOf": "Kiểm tra lúc trang này được build:",
-    "method": "Đã chuyển: tên miền phụ tự chuyển hướng sang đường dẫn trên tuturuuu.com. Đang chuyển: ứng dụng đã phản hồi tại đường dẫn trên tuturuuu.com. Chưa bắt đầu: chưa đạt điều kiện nào ở trên. Chưa xác minh được: lần kiểm tra không nhận được phản hồi."
+    "methodTitle": "Cách xác định từng trạng thái",
+    "rules": {
+      "done": "Tên miền phụ tự chuyển hướng sang đường dẫn trên tuturuuu.com.",
+      "in_progress": "Ứng dụng đã phản hồi tại đường dẫn trên tuturuuu.com.",
+      "not_started": "Chưa đạt điều kiện nào ở trên.",
+      "unverified": "Lần kiểm tra không nhận được phản hồi."
+    }
   },
   "method": {
     "title": "Cách tính trạng thái",
@@ -125,7 +135,7 @@
     "waiting_for_merge": "Pull request đang mở, sẵn sàng và đã được duyệt.",
     "in_progress": "Có pull request đang mở, hoặc việc đã bắt đầu nhưng chưa có PR công khai.",
     "planned": "Có trong kế hoạch. Không khẳng định gì khi chưa có bằng chứng công khai.",
-    "sources": "Nguồn: pull request công khai trong tutur3u/platform và /api/build-info công khai của từng ứng dụng. Trang tự làm mới trong trình duyệt mỗi 10 phút."
+    "sources": "Nguồn: pull request công khai trong tutur3u/platform và /api/build-info công khai của từng ứng dụng. Khi tab này đang mở, trang tự làm mới mỗi 30 phút."
   },
   "footer": "Lộ trình công khai. Không có dữ liệu vận hành nội bộ. Ngày theo giờ Việt Nam (UTC+7).",
   "build": "Bản dựng",
@@ -179,20 +189,20 @@
     "none": "Không có",
     "notAvailable": "Chưa có số liệu",
     "today": "Hôm nay",
-    "allScope": "Tất cả PR đã gộp: mọi pull request được gộp vào tutur3u/platform, không tính bot và cập nhật thư viện phụ thuộc.",
-    "trackedScope": "PR thuộc lộ trình: các pull request gắn với hạng mục trên lộ trình này.",
+    "allScope": "Mọi pull request được gộp vào tutur3u/platform, không tính bot và cập nhật thư viện phụ thuộc.",
+    "trackedScope": "Các pull request gắn với hạng mục trên lộ trình này.",
     "allUnavailable": "Những ngày này chưa có tổng số PR, nên biểu đồ hiển thị PR thuộc lộ trình.",
     "asOf": "Tổng số PR tính đến {date}.",
     "capped": "Tìm kiếm GitHub chạm giới hạn, nên tổng số PR gần đây có thể thấp hơn thực tế.",
     "loading": "Đang tải các ngày cũ hơn…",
     "failed": "Hiện chưa tải được các ngày cũ hơn.",
-    "deploysNote": "Bản dựng production: bản dựng mỗi ứng dụng đang chạy, theo ngày dựng.",
+    "deploysNote": "Bản dựng mỗi ứng dụng đang chạy, theo ngày dựng.",
     "chart": "Số pull request được gộp mỗi ngày. Dùng phím mũi tên để chuyển giữa các ngày.",
     "table": "Số liệu theo ngày",
     "day": "Ngày",
     "vsPrevious": "so với {n} ngày trước đó",
     "ttl": "Từ lúc gộp đến production",
-    "ttlNote": "Thời gian từ lúc gộp đến production được tính đến bản dựng đang phục vụ mỗi PR, nên là giới hạn trên.",
+    "ttlNote": "Tính đến bản dựng đang phục vụ mỗi PR, nên là giới hạn trên.",
     "median": "Trung vị",
     "p90": "p90",
     "waitingAge": "Đang chờ production",

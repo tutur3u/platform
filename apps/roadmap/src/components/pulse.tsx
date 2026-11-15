@@ -1,6 +1,6 @@
 import { shippedShare } from '../live/status';
 import type { RoadmapView } from '../view-model';
-import type { Messages } from './shared';
+import { type Messages, SectionTitle } from './shared';
 
 /** Every track as a tile with a progress ring (shipped share), linking down. */
 export function TrackGlance({ t, view }: { t: Messages; view: RoadmapView }) {
@@ -9,8 +9,12 @@ export function TrackGlance({ t, view }: { t: Messages; view: RoadmapView }) {
   return (
     <section className="section glance" aria-labelledby="glance-title">
       <header className="section-head">
-        <h2 id="glance-title">{t.glance.title}</h2>
-        <p>{t.glance.subtitle}</p>
+        <SectionTitle
+          id="glance-title"
+          title={t.glance.title}
+          t={t}
+          info={<p>{t.glance.subtitle}</p>}
+        />
       </header>
       <ul className="glance-grid">
         {view.tracks.map((track) => {

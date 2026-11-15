@@ -13,8 +13,9 @@
  *    frame later so the tap that started it paints first.
  * 3. First tap: a click on a button that React has not hydrated yet is held
  *    (stopped, so React never sees it twice), shown as pressed at once, and
- *    clicked again as soon as React has attached that button's props. Links
- *    and <summary> keep their native behaviour.
+ *    clicked again as soon as React has attached that button's props. Links,
+ *    <summary> and popover buttons (popovertarget: the (i) explanations and
+ *    tooltips) keep their native behaviour, so their first tap opens them.
  */
 (function () {
   var root = document.documentElement;
@@ -112,7 +113,8 @@
     function (event) {
       var target = event.target;
       var button = target && target.closest ? target.closest('button') : null;
-      if (!button || hydrated(button)) return;
+      if (!button || button.hasAttribute('popovertarget') || hydrated(button))
+        return;
       hold(button);
       event.stopImmediatePropagation();
       start();
