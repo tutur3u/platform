@@ -16,6 +16,8 @@ export function useUserConfig(
   defaultValue: string = '',
   options?: {
     enabled?: boolean;
+    refetchOnWindowFocus?: boolean;
+    retry?: boolean;
     staleTime?: number;
   }
 ) {
@@ -27,6 +29,10 @@ export function useUserConfig(
     },
     enabled: options?.enabled !== false && Boolean(configId),
     staleTime: options?.staleTime ?? 5 * 60 * 1000, // 5 minutes
+    ...(options?.refetchOnWindowFocus === undefined
+      ? {}
+      : { refetchOnWindowFocus: options.refetchOnWindowFocus }),
+    ...(options?.retry === undefined ? {} : { retry: options.retry }),
   });
 }
 

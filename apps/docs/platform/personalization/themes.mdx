@@ -1,7 +1,7 @@
 ---
 title: 'Themes'
 description: 'Enhance your experience with themes.'
-updatedAt: "2026-11-14"
+updatedAt: "2026-11-15"
 audience: users
 ---
 
@@ -56,7 +56,14 @@ soft shadows and the Nunito typeface. You can try it before it becomes the defau
   them; other tabs of the same app follow at once.
 - **Light and dark:** Sorbet has both, and still follows your mode choice above.
   Every text colour keeps at least 4.5:1 contrast in both.
-- **Signed out:** public pages keep the last choice made on that device.
+- **Palettes:** while Sorbet is on, **Palette** under the switch offers Sorbet
+  (the default), Matcha, Blueberry, Mango, Lavender, Lagoon, Rosé, Graphite,
+  Midnight and High contrast. Each has a light and a dark side. The choice is
+  saved to your account (user config `SORBET_THEME`) and follows you across apps
+  like the switch. High contrast keeps every text colour at 7:1 or more, with
+  solid borders and a wider focus ring.
+- **Signed out:** public pages keep the last choices made on that device and
+  never read the account.
 - **Not covered:** the mobile app, Colab, and web apps without a theme provider
   (Hive, Tulletin, the link shortener and external embeds) keep their current
   design.
@@ -64,10 +71,20 @@ soft shadows and the Nunito typeface. You can try it before it becomes the defau
 The switch only changes appearance. Pages, permissions and data stay the same.
 How it works for engineers: `ExperimentalUiSync` (in `@tuturuuu/ui`) sets
 `data-ui="sorbet"` on `<html>`, and `packages/ui/src/sorbet.css` remaps the
-shared semantic tokens under that attribute. Regression coverage lives in
-`sorbet-ui.test.ts`, `experimental-ui-sync.test.tsx` and
+shared semantic tokens under that attribute. A palette other than Sorbet adds
+`data-sorbet-preset`; `packages/ui/src/sorbet-presets.css` defines eleven source
+colours per palette and mode and maps them onto the same tokens, so the default
+palette renders exactly as `sorbet.css` alone. The stored theme is parsed
+against an allowlist (`sorbet-theme.ts`), and any other value falls back to the
+default. The sync reads both account values through the shared `user-config`
+queries, so it mounts inside each app's `QueryClientProvider` and does not
+retry a failed read. Where the provider knows nobody is signed in it passes
+`account={false}`: the device values still apply, no query client is needed and
+no account value is requested. Regression coverage lives in
+`sorbet-ui.test.ts`, `sorbet-theme.test.ts`, `experimental-ui-sync.test.tsx` and
 `settings/experimental-ui-setting.test.tsx` under
-`packages/ui/src/components/ui/custom/`.
+`packages/ui/src/components/ui/custom/`, and `packages/ui/src/sorbet-presets.test.ts`
+checks every palette's contrast in both modes.
 
 ## Mobile app
 

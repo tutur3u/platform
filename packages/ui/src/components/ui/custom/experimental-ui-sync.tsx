@@ -1,7 +1,15 @@
 'use client';
 
-import { getUserConfig } from '@tuturuuu/internal-api/users';
+import { useUserConfig } from '@tuturuuu/ui/hooks/use-user-config';
 import { useEffect, useLayoutEffect } from 'react';
+import {
+  applySorbetTheme,
+  parseSorbetTheme,
+  readStoredSorbetTheme,
+  SORBET_THEME_CHANGE_EVENT,
+  SORBET_THEME_CONFIG_ID,
+  SORBET_THEME_STORAGE_KEY,
+} from './sorbet-theme';
 import {
   applySorbetUi,
   EXPERIMENTAL_SORBET_UI_CONFIG_ID,
@@ -14,67 +22,101 @@ import {
 const useIsomorphicLayoutEffect =
   typeof window === 'undefined' ? useEffect : useLayoutEffect;
 
-/** Re-reads the account value at most this often when the window regains focus. */
-const REFRESH_INTERVAL_MS = 60_000;
+/** The account values are re-read on window focus once they are this old. */
+const ACCOUNT_VALUE_STALE_MS = 60_000;
 
 /**
- * Keeps `<html data-ui>` in step with the account's experimental Sorbet setting.
- *
- * Mount once per app, next to the theme provider. It needs no query client: it
- * applies the device's last known value first, then the account value, and
- * follows changes made in this tab, in other tabs, and in other apps (on focus).
- * Signed-out visitors keep the device value; a failed read changes nothing.
- *
- * Pass `account={false}` where the page knows there is no signed-in account
- * (for example an anonymous catalogue): the device value and cross-tab changes
- * still apply, but the account value is never requested, so the page makes no
- * user-config request at all.
+ * Applies the device's last known values, then follows changes made in this
+ * tab and in other tabs.
  */
-export function ExperimentalUiSync({ account = true }: { account?: boolean }) {
+function DeviceSync() {
   useIsomorphicLayoutEffect(() => {
     const stored = readStoredSorbetUi();
     if (stored !== null) applySorbetUi(stored);
+    const storedTheme = readStoredSorbetTheme();
+    if (storedTheme !== null) applySorbetTheme(storedTheme);
   }, []);
 
   useEffect(() => {
-    let cancelled = false;
-    let lastFetch = 0;
-
-    const refresh = async () => {
-      lastFetch = Date.now();
-      try {
-        const { value } = await getUserConfig(EXPERIMENTAL_SORBET_UI_CONFIG_ID);
-        if (!cancelled) applySorbetUi(parseSorbetUiValue(value));
-      } catch {
-        // Not signed in, offline, or the read failed: keep the current value.
-      }
-    };
-
-    const onFocus = () => {
-      if (account && Date.now() - lastFetch >= REFRESH_INTERVAL_MS)
-        void refresh();
-    };
     const onLocalChange = (event: Event) => {
       applySorbetUi(Boolean((event as CustomEvent<boolean>).detail));
     };
+    const onLocalThemeChange = (event: Event) => {
+      applySorbetTheme(
+        parseSorbetTheme((event as CustomEvent<unknown>).detail)
+      );
+    };
     const onStorage = (event: StorageEvent) => {
-      if (event.key === SORBET_UI_STORAGE_KEY && event.newValue !== null) {
+      if (event.newValue === null) return;
+      if (event.key === SORBET_UI_STORAGE_KEY) {
         applySorbetUi(event.newValue === 'true');
+      } else if (event.key === SORBET_THEME_STORAGE_KEY) {
+        applySorbetTheme(parseSorbetTheme(event.newValue));
       }
     };
 
-    if (account) void refresh();
-    window.addEventListener('focus', onFocus);
     window.addEventListener(SORBET_UI_CHANGE_EVENT, onLocalChange);
+    window.addEventListener(SORBET_THEME_CHANGE_EVENT, onLocalThemeChange);
     window.addEventListener('storage', onStorage);
-
     return () => {
-      cancelled = true;
-      window.removeEventListener('focus', onFocus);
       window.removeEventListener(SORBET_UI_CHANGE_EVENT, onLocalChange);
+      window.removeEventListener(SORBET_THEME_CHANGE_EVENT, onLocalThemeChange);
       window.removeEventListener('storage', onStorage);
     };
-  }, [account]);
+  }, []);
 
   return null;
+}
+
+const ACCOUNT_QUERY_OPTIONS = {
+  refetchOnWindowFocus: true,
+  retry: false,
+  staleTime: ACCOUNT_VALUE_STALE_MS,
+} as const;
+
+/** Reads the account values through the shared user-config queries. */
+function AccountSync() {
+  const { data: enabled } = useUserConfig(
+    EXPERIMENTAL_SORBET_UI_CONFIG_ID,
+    '',
+    ACCOUNT_QUERY_OPTIONS
+  );
+  const { data: theme } = useUserConfig(
+    SORBET_THEME_CONFIG_ID,
+    '',
+    ACCOUNT_QUERY_OPTIONS
+  );
+
+  useEffect(() => {
+    if (enabled !== undefined) applySorbetUi(parseSorbetUiValue(enabled));
+  }, [enabled]);
+
+  useEffect(() => {
+    if (theme !== undefined) applySorbetTheme(parseSorbetTheme(theme));
+  }, [theme]);
+
+  return null;
+}
+
+/**
+ * Keeps `<html>` in step with the account's experimental Sorbet setting and
+ * Sorbet theme.
+ *
+ * It applies the device's last known values first, then the account values,
+ * which it shares through the query cache with the Appearance settings and
+ * re-reads on focus once stale, so changes made in other apps follow. A failed
+ * read changes nothing and is not retried.
+ *
+ * With `account` (the default) it must be mounted inside a
+ * `QueryClientProvider`. Pass `account={false}` where the page knows there is
+ * no signed-in account: the device values and cross-tab changes still apply,
+ * no account value is requested, and no query client is needed.
+ */
+export function ExperimentalUiSync({ account = true }: { account?: boolean }) {
+  return (
+    <>
+      <DeviceSync />
+      {account && <AccountSync />}
+    </>
+  );
 }

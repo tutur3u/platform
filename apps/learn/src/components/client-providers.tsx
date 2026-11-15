@@ -27,8 +27,8 @@ export function ClientProviders({
 
   return (
     <ThemeProvider attribute="class" defaultTheme="system" enableSystem>
-      <ExperimentalUiSync />
       <QueryClientProvider client={queryClient}>
+        <ExperimentalUiSync account={Boolean(actorId)} />
         {actorId ? (
           <WorkspaceVisibilityProvider actorId={actorId}>
             {children}

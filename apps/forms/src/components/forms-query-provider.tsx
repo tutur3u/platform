@@ -1,6 +1,7 @@
 'use client';
 
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import { ExperimentalUiSync } from '@tuturuuu/ui/custom/experimental-ui-sync';
 import { type ReactNode, useState } from 'react';
 
 export function FormsQueryProvider({ children }: { children: ReactNode }) {
@@ -16,6 +17,9 @@ export function FormsQueryProvider({ children }: { children: ReactNode }) {
   );
 
   return (
-    <QueryClientProvider client={queryClient}>{children}</QueryClientProvider>
+    <QueryClientProvider client={queryClient}>
+      <ExperimentalUiSync />
+      {children}
+    </QueryClientProvider>
   );
 }
