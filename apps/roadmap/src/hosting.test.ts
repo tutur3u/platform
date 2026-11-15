@@ -244,10 +244,39 @@ describe('hosting: subdomain-to-apex migration states', () => {
   });
 });
 
-const LOGO_SHA256 =
-  '400b70b8bb7db80da137ef8e8fcb835a692410a3083598964da08ed1756df145';
-const sha256 = (bytes: Buffer) =>
+/** cloudflare-mark.svg as committed (assets/brands/CLOUDFLARE-MARK.md). */
+const MARK_SHA256 =
+  '4812db5be0468fb53d92a6647c69b0b7930da8ed46289b505166a7352bbb8c5d';
+/** https://www.cloudflare.com/logo.svg as retrieved, before optimisation. */
+const SOURCE_SHA256 =
+  'c9ec1d5d5e4b0924666756a70179395c26b010372f8d7eec3539575281cebf1b';
+/** The official mark's two paths, `d` hashed, with their published fills. */
+const OFFICIAL_PATHS = [
+  {
+    d: '2065d87928d463b013228483fcef313db2e1712a1bf6ef9322c4427de97dc085',
+    fill: '#FAAE40',
+  },
+  {
+    d: '6adf438c428e4b32c41274778c2d9a9a4e5ca5d2b2bb7b2b3fac6bec01d020c3',
+    fill: '#F38020',
+  },
+];
+const sha256 = (bytes: Buffer | string) =>
   createHash('sha256').update(bytes).digest('hex');
+/** The shapes in an SVG, as `d` hash and fill; anything else is listed raw. */
+const shapesOf = (svg: string) =>
+  [
+    ...svg.matchAll(
+      /<(path|text|tspan|image|use|rect|circle|ellipse|polygon|polyline|line|g|style|foreignObject)\b[^>]*>/g
+    ),
+  ].map(([tag, name]) =>
+    name === 'path'
+      ? {
+          d: sha256(/\bd="([^"]+)"/.exec(tag)?.[1] ?? ''),
+          fill: /\bfill="([^"]+)"/.exec(tag)?.[1],
+        }
+      : { other: name }
+  );
 /** Declarations of one exact selector (outside media unless asked). */
 const ruleOf = (css: string, selector: string, media = '') =>
   Object.fromEntries(
@@ -261,126 +290,176 @@ const ruleOf = (css: string, selector: string, media = '') =>
   );
 /** The ways an image gets altered rather than shown as published. */
 const ALTERS =
-  /^(filter|opacity|mix-blend-mode|border-radius|clip-path|mask|transform|object-fit|background|color)/;
+  /^(filter|opacity|mix-blend-mode|clip-path|mask|transform|object-fit|background|color|fill)/;
 const alters = (css: string, selector: string) =>
   cssDeclarations(css).filter(
     (d) =>
-      d.selector.split(/\s*,\s*/).some((s) => s.trim().endsWith(selector)) &&
-      ALTERS.test(d.property)
+      d.selector
+        .split(/\s*,\s*/)
+        .some((s) =>
+          new RegExp(`${selector.replace(/\./g, '\\.')}$`).test(s.trim())
+        ) && ALTERS.test(d.property)
   );
 
-describe('hosting: Cloudflare logo', () => {
+describe('hosting: Cloudflare mark', () => {
   const component = read('./components/hosting.tsx');
   const css = readStyles();
+  const mark = readFileSync(
+    new URL('./assets/brands/cloudflare-mark.svg', import.meta.url)
+  );
+  const svg = mark.toString('utf8');
 
-  it('ships Cloudflare’s official logo byte-for-byte, served by this Worker', () => {
-    const logo = readFileSync(
-      new URL('./assets/brands/cloudflare-logo.png', import.meta.url)
-    );
-    assert.equal(sha256(logo), LOGO_SHA256);
-    // 512×173 straight from the PNG header.
-    assert.deepEqual(
-      [logo.readUInt32BE(16), logo.readUInt32BE(20)],
-      [512, 173]
-    );
+  it('ships Cloudflare’s official mark, served by this Worker', () => {
+    assert.equal(sha256(mark), MARK_SHA256);
+    const doc = read('./assets/brands/CLOUDFLARE-MARK.md');
+    assert.ok(doc.includes(MARK_SHA256) && doc.includes(SOURCE_SHA256));
+    assert.ok(doc.includes('https://www.cloudflare.com/logo.svg'));
     assert.match(
       component,
-      /import cloudflareLogo from '\.\.\/assets\/brands\/cloudflare-logo\.png\?no-inline';/
+      /import cloudflareMark from '\.\.\/assets\/brands\/cloudflare-mark\.svg\?no-inline';/
     );
-    assert.match(
-      read('./assets/brands/CLOUDFLARE-LOGO.md'),
-      new RegExp(LOGO_SHA256)
-    );
-    // The badge it replaces is gone, with its copy.
-    assert.ok(
-      !existsSync(
-        new URL(
-          './assets/brands/cloudflare-protected-badge.png',
-          import.meta.url
-        )
-      )
-    );
-    assert.ok(!('badgeAlt' in en.hosting) && !('badgeAlt' in vi.hosting));
     // Broken variants: one changed byte, or a hotlinked copy.
-    const edited = Buffer.from(logo);
-    edited[edited.length - 1] ^= 1;
-    assert.notEqual(sha256(edited), LOGO_SHA256);
-    assert.ok(!/src=["{]['"`]?https?:/.test(component));
+    const edited = Buffer.from(mark);
+    edited[edited.length - 2] ^= 1;
+    assert.notEqual(sha256(edited), MARK_SHA256);
+    assert.ok(!/src=["{]['"`]?(https?|data):/.test(component));
     assert.ok(
-      /src=["{]['"`]?https?:/.test(
-        '<img src="https://cf-assets.www.cloudflare.com/l.png" />'
+      /src=["{]['"`]?(https?|data):/.test(
+        '<img src="https://www.cloudflare.com/logo.svg" />'
       )
     );
   });
 
-  it('renders once, with alt text and fixed dimensions, apart from the heading text', () => {
-    const tag = /<img\s+className="cf-logo"[^>]*\/>/.exec(component)?.[0] ?? '';
-    assert.match(tag, /src=\{cloudflareLogo\}/);
-    assert.match(tag, /alt=\{t\.hosting\.logoAlt\}/);
-    assert.match(tag, /width=\{512\}/);
-    assert.match(tag, /height=\{173\}/);
-    assert.equal(en.hosting.logoAlt, 'Cloudflare');
-    assert.equal(vi.hosting.logoAlt, 'Cloudflare');
+  it('is the cloud alone: the official paths and colours, no wordmark', () => {
+    assert.match(
+      svg,
+      /^<svg xmlns="http:\/\/www\.w3\.org\/2000\/svg" viewBox="0 0 341 156" fill="none">/
+    );
+    assert.deepEqual(shapesOf(svg), OFFICIAL_PATHS);
+    // Nothing that could carry letters, styles or an embedded raster.
+    assert.ok(!/<(text|image|style|script)\b|data:|xlink/.test(svg));
+    // Broken variants: the full logo adds wordmark paths; a recolour or a
+    // redrawn path no longer matches.
+    const wordmark = svg.replace(
+      '</svg>',
+      '<path d="M0 0h9v9z" fill="#000"/></svg>'
+    );
+    assert.notDeepEqual(shapesOf(wordmark), OFFICIAL_PATHS);
+    assert.notDeepEqual(
+      shapesOf(svg.replace('#F38020', '#F6821F')),
+      OFFICIAL_PATHS
+    );
+    assert.notDeepEqual(
+      shapesOf(svg.replace('275.125', '275.12')),
+      OFFICIAL_PATHS
+    );
+  });
+
+  it('replaces the wordmark plate and the badge, with their copy', () => {
+    for (const gone of [
+      'cloudflare-logo.png',
+      'cloudflare-protected-badge.png',
+      'CLOUDFLARE-LOGO.md',
+    ]) {
+      assert.ok(
+        !existsSync(new URL(`./assets/brands/${gone}`, import.meta.url)),
+        gone
+      );
+    }
+    assert.ok(!/CloudflareLogo|cf-logo|logoAlt/.test(component));
+    assert.ok(!/\.cf-logo/.test(css));
+    for (const key of ['logoAlt', 'badgeAlt']) {
+      assert.ok(!(key in en.hosting) && !(key in vi.hosting), key);
+    }
     assert.ok(en.hosting.trademark.includes('Cloudflare, Inc.'));
     assert.ok(vi.hosting.trademark.includes('Cloudflare, Inc.'));
-    // One placement: the Workers group head, after the heading closes.
-    const uses = component.match(/<CloudflareLogo\b/g) ?? [];
-    assert.equal(uses.length, 1);
-    const head = component.slice(
-      component.indexOf('<div className="host-group-head">'),
-      component.indexOf('<ul className="hosts">')
-    );
-    assert.ok(head.indexOf('</h3>') < head.indexOf('<CloudflareLogo'));
-    assert.match(head, /platform === 'workers' \? <CloudflareLogo/);
-    // Broken variant: the logo inside the heading, run into its words.
-    const inline = '<h3>Cloudflare Workers <CloudflareLogo t={t} /></h3>';
-    assert.ok(inline.indexOf('</h3>') > inline.indexOf('<CloudflareLogo'));
   });
 
-  it('keeps its own aspect ratio, unaltered, on a plate with clear space', () => {
-    const logo = ruleOf(css, '.cf-logo');
-    assert.equal(logo['aspect-ratio'], '512 / 173');
-    assert.equal(logo.height, '48px');
-    assert.equal(logo.width, 'auto');
-    assert.deepEqual(alters(css, '.cf-logo'), []);
-    const plate = ruleOf(css, '.cf-logo-plate');
-    assert.ok(Number.parseInt(plate.padding ?? '0', 10) >= 12);
-    assert.equal(plate.background, 'var(--rm-logo-plate)');
-    // Broken variants: a stretched or effected logo is caught.
-    assert.equal(
-      alters(
-        '.cf-logo { filter: grayscale(1); border-radius: 8px; }',
-        '.cf-logo'
-      ).length,
-      2
+  it('is the decorative Workers glyph, wherever the Vercel triangle is', () => {
+    const fn = component.slice(
+      component.indexOf('function PlatformMark('),
+      component.indexOf('/** How many apps run on each platform')
     );
-    assert.notEqual(
-      ruleOf('.cf-logo { width: 152px; height: 48px; }', '.cf-logo')[
-        'aspect-ratio'
-      ],
-      '512 / 173'
-    );
+    const tag = /<img\b[^>]*\/>/.exec(fn)?.[0] ?? '';
+    assert.match(fn, /if \(platform === 'workers'\) \{\s*return \(\s*<img\b/);
+    assert.match(tag, /className="platform-mark workers"/);
+    assert.match(tag, /src=\{cloudflareMark\}/);
+    assert.match(tag, /alt=""/);
+    assert.match(tag, /aria-hidden\b/);
+    assert.match(tag, /width=\{341\}/);
+    assert.match(tag, /height=\{156\}/);
+    // One glyph component for every platform, so the mark appears in exactly
+    // the places the Vercel triangle does: the legend and the group heading.
+    const uses = component.match(/<PlatformMark platform=\{[^}]+\} \/>/g) ?? [];
+    assert.deepEqual(uses, [
+      '<PlatformMark platform={entry.platform} />',
+      '<PlatformMark platform={platform} />',
+    ]);
+    assert.equal((component.match(/cloudflareMark/g) ?? []).length, 2);
+    // Broken variant: an alt text would read "Cloudflare" twice.
+    assert.doesNotMatch('<img alt="Cloudflare" />', /alt=""/);
   });
 
-  it('dark theme lightens the plate and never recolours the logo', () => {
-    const dark = ruleOf(css, '.dark .cf-logo-plate');
-    assert.equal(dark['--rm-logo-plate'], 'var(--rm-ink)');
-    assert.equal(
-      ruleOf(css, '.cf-logo-plate')['--rm-logo-plate'],
-      'var(--rm-panel)'
+  it('appears only when a Workers host exists', () => {
+    // Legend entries are platforms with at least one host…
+    const summary = component.slice(
+      component.indexOf('function HostSummary('),
+      component.indexOf('export function HostingSection(')
     );
-    // No theme or media rule touches the image itself.
+    assert.match(summary, /\.filter\(\(entry\) => entry\.count > 0\)/);
+    assert.ok(
+      summary.indexOf('entry.count > 0') < summary.indexOf('<PlatformMark')
+    );
+    // …and each group heading renders only for a non-empty group.
+    const section = component.slice(
+      component.indexOf('export function HostingSection(')
+    );
+    const empty = section.indexOf('if (!group.length) return null;');
+    assert.ok(empty > 0 && empty < section.indexOf('<PlatformMark'));
+  });
+
+  it('keeps the triangle’s height at its own ratio, unaltered in both themes', () => {
+    const rule = ruleOf(css, '.platform-mark.workers');
+    assert.equal(rule.height, ruleOf(css, '.platform-mark').height);
+    assert.equal(rule.height, '10px');
+    assert.equal(rule.width, 'auto');
+    assert.equal(rule['aspect-ratio'], '341 / 156');
+    assert.equal(rule['border-radius'], '0');
+    assert.deepEqual(alters(css, '.platform-mark.workers'), []);
+    // The Workers bar segment keeps its colour, apart from the mark.
+    assert.equal(
+      ruleOf(css, '.host-seg.workers').background,
+      'var(--ws-cf, #f6821f)'
+    );
+    // No theme or media rule touches the mark.
     const themed = cssDeclarations(css).filter(
-      (d) => /\.cf-logo\b(?!-)/.test(d.selector) && d.selector !== '.cf-logo'
+      (d) =>
+        /\.platform-mark\.workers\b/.test(d.selector) &&
+        (d.selector !== '.platform-mark.workers' || d.media.length > 0)
     );
     assert.deepEqual(themed, []);
-    // Broken variants: an inverted logo, or a plate that stays dark.
-    const inverted = '.dark .cf-logo { filter: invert(1); }';
-    assert.equal(alters(inverted, '.cf-logo').length, 1);
-    const unplated = '.cf-logo-plate { padding: 12px; }';
+    // Broken variants: a filled box behind the cloud, an inverted dark-theme
+    // mark, or a stretched one.
     assert.equal(
-      ruleOf(unplated, '.dark .cf-logo-plate')['--rm-logo-plate'],
-      undefined
+      alters(
+        '.platform-mark.workers, .host-seg.workers { background: #f6821f; }',
+        '.platform-mark.workers'
+      ).length,
+      1
+    );
+    assert.equal(
+      alters(
+        '.dark .platform-mark.workers { filter: invert(1); }',
+        '.platform-mark.workers'
+      ).length,
+      1
+    );
+    assert.notEqual(
+      ruleOf(
+        '.platform-mark.workers { width: 12px; height: 10px; }',
+        '.platform-mark.workers'
+      )['aspect-ratio'],
+      '341 / 156'
     );
   });
 });

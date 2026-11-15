@@ -266,7 +266,15 @@
   border-bottom: 10px solid var(--rm-ink);
   background: none;
 }
-.platform-mark.workers,
+.platform-mark.workers {
+  /* Cloudflare's cloud mark (assets/brands/CLOUDFLARE-MARK.md): as tall as
+     the Vercel triangle, at its own 341:156 ratio, never filled, clipped or
+     recoloured, in both themes. */
+  width: auto;
+  height: 10px;
+  aspect-ratio: 341 / 156;
+  border-radius: 0;
+}
 .host-seg.workers {
   background: var(--ws-cf, #f6821f);
 }

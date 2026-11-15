@@ -1,4 +1,4 @@
-import cloudflareLogo from '../assets/brands/cloudflare-logo.png?no-inline';
+import cloudflareMark from '../assets/brands/cloudflare-mark.svg?no-inline';
 import { hostBadge } from '../live/host-badge';
 import { type HostingSnapshot, hostingAsOf } from '../live/hosting';
 import { REPO_URL } from '../live/model';
@@ -7,31 +7,27 @@ import type { RoadmapView } from '../view-model';
 const PLATFORM_ORDER = ['workers', 'vercel', 'store', 'unknown'] as const;
 type Platform = (typeof PLATFORM_ORDER)[number];
 
-/** A small glyph per platform; the label next to it carries the meaning. */
-function PlatformMark({ platform }: { platform: Platform }) {
-  return <span className={`platform-mark ${platform}`} aria-hidden />;
-}
-
 /**
- * Cloudflare's official logo, byte-for-byte from its press kit
- * (assets/brands/CLOUDFLARE-LOGO.md). It stands on its own plate beside the
- * heading, never inside a line of text, and is never recoloured: the plate
- * keeps a light ground in both themes.
+ * A small glyph per platform; the label next to it carries the meaning, so
+ * every glyph is hidden from assistive tech. Workers shows Cloudflare's
+ * official cloud mark, unaltered and served by this Worker
+ * (assets/brands/CLOUDFLARE-MARK.md), where Vercel shows its triangle.
  */
-function CloudflareLogo({ t }: { t: Messages }) {
-  return (
-    <span className="cf-logo-plate">
+function PlatformMark({ platform }: { platform: Platform }) {
+  if (platform === 'workers') {
+    return (
       <img
-        className="cf-logo"
-        src={cloudflareLogo}
-        alt={t.hosting.logoAlt}
-        width={512}
-        height={173}
-        loading="lazy"
+        className="platform-mark workers"
+        src={cloudflareMark}
+        alt=""
+        aria-hidden
+        width={341}
+        height={156}
         decoding="async"
       />
-    </span>
-  );
+    );
+  }
+  return <span className={`platform-mark ${platform}`} aria-hidden />;
 }
 
 /** How many apps run on each platform, as one segmented bar with a legend. */
@@ -140,7 +136,6 @@ export function HostingSection({
                 {t.hosting[platform]}
                 <span className="host-group-count">{group.length}</span>
               </h3>
-              {platform === 'workers' ? <CloudflareLogo t={t} /> : null}
             </div>
             <ul className="hosts">
               {group.map((host) => {
