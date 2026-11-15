@@ -1,21 +1,22 @@
 'use client';
 
-import {
-  LayoutDashboard,
-  PanelLeftClose,
-  PanelRightClose,
-  Repeat,
-} from '@tuturuuu/icons';
+import { PanelLeftClose, PanelRightClose } from '@tuturuuu/icons';
 import { Button } from '@tuturuuu/ui/button';
 import { ScrollArea } from '@tuturuuu/ui/scroll-area';
+import { Sheet, SheetContent, SheetTitle } from '@tuturuuu/ui/sheet';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@tuturuuu/ui/tabs';
 import type { ExtendedWorkspaceTask } from '@tuturuuu/ui/time-tracker/types';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@tuturuuu/ui/tooltip';
-import { useEffect, useState } from 'react';
+import { cn } from '@tuturuuu/utils/format';
+import { useTranslations } from 'next-intl';
+import { type ReactNode, useEffect, useState } from 'react';
 import { HabitsPanel } from '../habits-panel';
 import PriorityView from '../priority-view';
 import TimeTracker from '../time-tracker';
 
 const SIDEBAR_COLLAPSED_KEY = 'calendar-sidebar-collapsed';
+/** The plan panel sits beside the grid from this width; below it, a sheet. */
+const INLINE_PANEL_QUERY = '(min-width: 1280px)';
 
 interface CalendarSidebarProps {
   wsId: string;
@@ -27,79 +28,34 @@ interface CalendarSidebarProps {
   isPersonalWorkspace?: boolean;
 }
 
-export function CalendarSidebar({
+type PanelBodyProps = Omit<CalendarSidebarProps, 'locale'>;
+
+function PlanPanelBody({
   wsId,
   assigneeId,
   tasks = [],
   onEventCreated,
   isPersonalWorkspace = false,
-}: CalendarSidebarProps) {
-  const [isCollapsed, setIsCollapsed] = useState(() => {
-    if (typeof window === 'undefined') return true;
-    const saved = localStorage.getItem(SIDEBAR_COLLAPSED_KEY);
-    return saved === null ? true : saved === 'true';
-  });
-
-  useEffect(() => {
-    localStorage.setItem(SIDEBAR_COLLAPSED_KEY, String(isCollapsed));
-  }, [isCollapsed]);
-
-  if (isCollapsed) {
-    return (
-      <div className="ml-2 hidden h-full flex-col items-center rounded-lg border border-border/40 bg-background/80 p-2 backdrop-blur-xl transition-all duration-300 xl:flex">
-        <Tooltip>
-          <TooltipTrigger asChild>
-            <Button
-              variant="ghost"
-              size="icon"
-              onClick={() => setIsCollapsed(false)}
-              aria-label="Expand sidebar"
-              className="h-8 w-8 rounded-lg text-muted-foreground transition-colors hover:bg-accent/80 hover:text-foreground"
-            >
-              <PanelLeftClose className="h-4 w-4" />
-            </Button>
-          </TooltipTrigger>
-          <TooltipContent side="left">Expand sidebar</TooltipContent>
-        </Tooltip>
-      </div>
-    );
-  }
-
+}: PanelBodyProps) {
+  const t = useTranslations('calendar.plan_panel');
   return (
-    <div className="ml-2 hidden h-full w-80 shrink-0 flex-col rounded-lg border border-border/40 bg-background/80 backdrop-blur-xl xl:flex">
-      {/* Header */}
-      <div className="flex items-center justify-between px-3 pt-3 pb-2">
-        <TimeTracker wsId={wsId} tasks={tasks} />
-        <Button
-          variant="ghost"
-          size="icon"
-          onClick={() => setIsCollapsed(true)}
-          aria-label="Collapse sidebar"
-          className="h-8 w-8 rounded-lg text-muted-foreground transition-colors hover:bg-accent/80 hover:text-foreground"
-        >
-          <PanelRightClose className="h-4 w-4" />
-        </Button>
-      </div>
-
-      {/* Divider */}
-      <div className="mx-3 h-px bg-border/60" />
-
-      {/* Scrollable Content */}
-      <div className="min-h-0 flex-1 overflow-hidden">
+    <Tabs defaultValue="tasks" className="flex min-h-0 flex-1 flex-col gap-2">
+      <TabsList className="mx-3 grid h-8 grid-cols-2">
+        <TabsTrigger value="tasks" className="gap-1.5 text-xs">
+          {t('tasks')}
+          {tasks.length > 0 && (
+            <span className="text-muted-foreground tabular-nums">
+              {tasks.length}
+            </span>
+          )}
+        </TabsTrigger>
+        <TabsTrigger value="habits" className="text-xs">
+          {t('habits')}
+        </TabsTrigger>
+      </TabsList>
+      <TabsContent value="tasks" className="mt-0 min-h-0 flex-1">
         <ScrollArea className="h-full">
-          {/* Tasks Section */}
-          <div className="px-3 pt-3 pb-1">
-            <div className="mb-2 flex items-center gap-2">
-              <LayoutDashboard className="h-3.5 w-3.5 text-muted-foreground" />
-              <span className="font-medium text-muted-foreground text-xs uppercase tracking-wider">
-                Tasks
-              </span>
-              {tasks.length > 0 && (
-                <span className="rounded-full bg-foreground/10 px-1.5 py-px font-medium text-[10px] text-foreground/60">
-                  {tasks.length}
-                </span>
-              )}
-            </div>
+          <div className="px-3 pb-3">
             <PriorityView
               wsId={wsId}
               allTasks={tasks}
@@ -107,22 +63,149 @@ export function CalendarSidebar({
               isPersonalWorkspace={isPersonalWorkspace}
             />
           </div>
-
-          {/* Section Divider */}
-          <div className="mx-3 my-2 h-px bg-border/60" />
-
-          {/* Habits Section */}
-          <div className="px-3 pt-1 pb-3">
-            <div className="mb-2 flex items-center gap-2">
-              <Repeat className="h-3.5 w-3.5 text-muted-foreground" />
-              <span className="font-medium text-muted-foreground text-xs uppercase tracking-wider">
-                Habits
-              </span>
-            </div>
+        </ScrollArea>
+      </TabsContent>
+      <TabsContent value="habits" className="mt-0 min-h-0 flex-1">
+        <ScrollArea className="h-full">
+          <div className="px-3 pb-3">
             <HabitsPanel wsId={wsId} onEventCreated={onEventCreated} />
           </div>
         </ScrollArea>
+      </TabsContent>
+    </Tabs>
+  );
+}
+
+function PlanPanelHeader({
+  title,
+  wsId,
+  tasks,
+  action,
+  className,
+}: {
+  title: ReactNode;
+  wsId: string;
+  tasks: ExtendedWorkspaceTask[];
+  action?: ReactNode;
+  className?: string;
+}) {
+  return (
+    <div
+      className={cn('flex h-10 shrink-0 items-center gap-2 px-3', className)}
+    >
+      {title}
+      <div className="ml-auto flex min-w-0 items-center gap-1">
+        <TimeTracker wsId={wsId} tasks={tasks} />
+        {action}
       </div>
     </div>
+  );
+}
+
+/**
+ * The calendar's plan panel: tasks and habits beside the grid on wide
+ * screens, a sheet over it on narrower ones, and a slim rail when closed.
+ */
+export function CalendarSidebar({
+  wsId,
+  assigneeId,
+  tasks = [],
+  onEventCreated,
+  isPersonalWorkspace = false,
+}: CalendarSidebarProps) {
+  const t = useTranslations('calendar.plan_panel');
+  const [isCollapsed, setIsCollapsed] = useState(() => {
+    if (typeof window === 'undefined') return true;
+    const saved = localStorage.getItem(SIDEBAR_COLLAPSED_KEY);
+    return saved === null ? true : saved === 'true';
+  });
+  const [sheetOpen, setSheetOpen] = useState(false);
+
+  useEffect(() => {
+    localStorage.setItem(SIDEBAR_COLLAPSED_KEY, String(isCollapsed));
+  }, [isCollapsed]);
+
+  const openPanel = () => {
+    if (window.matchMedia(INLINE_PANEL_QUERY).matches) setIsCollapsed(false);
+    else setSheetOpen(true);
+  };
+  const body = (
+    <PlanPanelBody
+      wsId={wsId}
+      assigneeId={assigneeId}
+      tasks={tasks}
+      onEventCreated={onEventCreated}
+      isPersonalWorkspace={isPersonalWorkspace}
+    />
+  );
+
+  return (
+    <>
+      <div
+        className={cn(
+          'ml-2 hidden h-full shrink-0 flex-col items-center border-border border-l pt-1 pl-1 md:flex',
+          !isCollapsed && 'xl:hidden'
+        )}
+      >
+        <Tooltip>
+          <TooltipTrigger asChild>
+            <Button
+              variant="ghost"
+              size="icon"
+              className="size-8 text-muted-foreground"
+              onClick={openPanel}
+              aria-label={t('open')}
+            >
+              <PanelLeftClose className="size-4" />
+            </Button>
+          </TooltipTrigger>
+          <TooltipContent side="left">{t('open')}</TooltipContent>
+        </Tooltip>
+      </div>
+
+      {!isCollapsed && (
+        <aside
+          aria-label={t('title')}
+          className="ml-2 hidden h-full w-70 shrink-0 flex-col border-border border-l bg-background xl:flex 2xl:w-80"
+        >
+          <PlanPanelHeader
+            title={<h2 className="font-medium text-sm">{t('title')}</h2>}
+            wsId={wsId}
+            tasks={tasks}
+            action={
+              <Button
+                variant="ghost"
+                size="icon"
+                className="size-8 text-muted-foreground"
+                onClick={() => setIsCollapsed(true)}
+                aria-label={t('collapse')}
+              >
+                <PanelRightClose className="size-4" />
+              </Button>
+            }
+          />
+          {body}
+        </aside>
+      )}
+
+      <Sheet open={sheetOpen} onOpenChange={setSheetOpen}>
+        <SheetContent
+          side="right"
+          className="flex w-80 flex-col gap-0 p-0 sm:max-w-80"
+        >
+          <PlanPanelHeader
+            title={
+              <SheetTitle className="font-medium text-sm">
+                {t('title')}
+              </SheetTitle>
+            }
+            wsId={wsId}
+            tasks={tasks}
+            className="pr-12"
+          />
+          {body}
+        </SheetContent>
+      </Sheet>
+    </>
   );
 }
