@@ -394,6 +394,11 @@ async function transportFixture(t, responses, stamp, options = {}) {
   const cssPath = '/_next/static/chunks/site.css';
   const stylesheetRequestUrl = options.stylesheetRequestUrl ?? origin + cssPath;
   const imageRequestUrl = options.imageRequestUrl;
+  // `launch` below shadows `options`, so keep the page seams under their own name.
+  const pageSeams = {
+    evaluate: options.evaluate,
+    screenshot: options.screenshot,
+  };
   const cssBody = '.flex{display:flex}';
   await mkdir(join(temp, '.vercel/output/static/_next/static/chunks'), {
     recursive: true,
@@ -452,13 +457,20 @@ async function transportFixture(t, responses, stamp, options = {}) {
                 return { status: () => result.status };
               },
               url: () => current,
-              evaluate: async () => ({
-                ruleCount: 1,
-                fontFailures: 0,
-                compared: [{ path: cssPath, expectedRules: 1, servedRules: 1 }],
-                utility: { display: 'flex', gap: 16, padding: 16, radius: 8 },
-              }),
-              screenshot: async ({ path }) => writeFile(path, 'fixture'),
+              evaluate:
+                pageSeams.evaluate ??
+                (async () => ({
+                  ruleCount: 1,
+                  fontFailures: 0,
+                  compared: [
+                    { path: cssPath, expectedRules: 1, servedRules: 1 },
+                  ],
+                  utility: { display: 'flex', gap: 16, padding: 16, radius: 8 },
+                  scrollHeight: 1800,
+                })),
+              screenshot:
+                pageSeams.screenshot ??
+                (async ({ path }) => writeFile(path, 'fixture')),
               close: async () => {},
             };
           },
@@ -548,6 +560,95 @@ test('exported verifier follows relative and absolute page hops through authenti
   await f.dispatch('https://elsewhere.example/en', 'image');
   assert.equal(f.calls.length, before);
   assert.equal(f.blocked.length, 3);
+});
+
+test('a viewport screenshot failure keeps a fixed reason and only scrubbed scalars', async (t) => {
+  const f = await transportFixture(t, () => undefined, undefined, {
+    evaluate: async () => ({
+      ruleCount: 1,
+      fontFailures: 0,
+      compared: [
+        {
+          path: '/_next/static/chunks/site.css',
+          expectedRules: 1,
+          servedRules: 1,
+        },
+      ],
+      utility: { display: 'flex', gap: 16, padding: 16, radius: 8 },
+      scrollHeight: 24000,
+    }),
+    screenshot: async () => {
+      throw new Error(
+        'page.screenshot: Protocol error (Page.captureScreenshot): SECRET-RAW'
+      );
+    },
+  });
+  await assert.rejects(f.run());
+  const failure = JSON.parse(await f.failure());
+  assert.equal(failure.stage, 'viewport-390');
+  assert.equal(failure.reason, 'Staged viewport screenshot failed');
+  assert.deepEqual(failure.viewport, { width: 390, scrollHeight: 24000 });
+  assert.ok(!JSON.stringify(failure).includes('SECRET'));
+  assert.ok(!JSON.stringify(failure).includes('Protocol error'));
+});
+
+test('a page evaluation failure keeps a fixed reason without raw page text', async (t) => {
+  const f = await transportFixture(t, () => undefined, undefined, {
+    evaluate: async () => {
+      throw new Error(
+        'page.evaluate: Execution context was destroyed SECRET-RAW'
+      );
+    },
+  });
+  await assert.rejects(f.run());
+  const failure = JSON.parse(await f.failure());
+  assert.equal(failure.reason, 'Staged page evaluation failed');
+  assert.deepEqual(failure.viewport, { width: 390, scrollHeight: null });
+  assert.ok(!JSON.stringify(failure).includes('SECRET'));
+});
+
+test('a page evaluation that names a known reason keeps that reason', async (t) => {
+  const f = await transportFixture(t, () => undefined, undefined, {
+    evaluate: async () => {
+      throw new Error('page.evaluate: Error: Unverified stylesheet');
+    },
+  });
+  await assert.rejects(f.run());
+  assert.equal(JSON.parse(await f.failure()).reason, 'Unverified stylesheet');
+});
+
+test('an out-of-range page height is recorded as null', async (t) => {
+  const f = await transportFixture(t, () => undefined, undefined, {
+    evaluate: async () => ({
+      ruleCount: 1,
+      fontFailures: 0,
+      compared: [
+        {
+          path: '/_next/static/chunks/site.css',
+          expectedRules: 1,
+          servedRules: 1,
+        },
+      ],
+      utility: { display: 'flex', gap: 16, padding: 16, radius: 8 },
+      scrollHeight: 'tall',
+    }),
+    screenshot: async () => {
+      throw new Error('capture failed');
+    },
+  });
+  await assert.rejects(f.run());
+  assert.deepEqual(JSON.parse(await f.failure()).viewport, {
+    width: 390,
+    scrollHeight: null,
+  });
+});
+
+test('a passing proof keeps its receipt shape without the page height', async (t) => {
+  const f = await transportFixture(t, () => undefined);
+  const proof = await f.run();
+  assert.equal(proof.viewports.length, 2);
+  for (const view of proof.viewports)
+    assert.ok(!Object.hasOwn(view, 'scrollHeight'));
 });
 
 for (const [name, location] of [
