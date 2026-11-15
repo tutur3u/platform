@@ -103,6 +103,7 @@ export const ROOT_CLIENT_MESSAGE_PATHS = [
   'common.qr_generator',
   'common.resources',
   'common.security',
+  'common.switch_language_to',
   'common.terms',
   'common.ui',
   ...RATE_LIMIT_COMMON_MESSAGE_KEYS.map((key) => `common.${key}`),

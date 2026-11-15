@@ -76,12 +76,17 @@ export function MarketingActions({
       )}
       {onLocaleChange ? (
         <button
-          aria-label={locale === 'en' ? 'Tiếng Việt' : 'English'}
           className="hidden h-10 min-w-10 items-center justify-center rounded-lg border bg-background px-3 font-medium text-sm md:inline-flex"
           onClick={() => onLocaleChange(locale === 'en' ? 'vi' : 'en')}
           type="button"
         >
           {locale}
+          <span className="sr-only">
+            {` – ${t('common.switch_language_to')} `}
+            <span lang={locale === 'en' ? 'vi' : 'en'}>
+              {locale === 'en' ? 'Tiếng Việt' : 'English'}
+            </span>
+          </span>
         </button>
       ) : null}
       <MarketingThemeToggle />

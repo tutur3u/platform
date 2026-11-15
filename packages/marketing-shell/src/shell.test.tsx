@@ -112,3 +112,43 @@ it('ships small normal-weight EN/VI fonts with their licence', async () => {
     )
   ).toContain('SIL OPEN FONT LICENSE');
 });
+
+for (const locale of ['en', 'vi'] as const) {
+  it(`includes the visible locale in the language button name (${locale})`, () => {
+    const onLocaleChange = vi.fn();
+    act(() =>
+      root.render(
+        <MarketingActions
+          t={createTranslator(locale)}
+          locale={locale}
+          pathname="/"
+          onLocaleChange={onLocaleChange}
+        />
+      )
+    );
+    const button = container.querySelector('button.min-w-10')!;
+    const destination = locale === 'en' ? 'Tiếng Việt' : 'English';
+    const expected =
+      locale === 'en'
+        ? 'en – switch to Tiếng Việt'
+        : 'vi – chuyển sang English';
+    // This button takes its accessible name from its contents, with no ARIA override.
+    expect(button.hasAttribute('aria-label')).toBe(false);
+    expect(button.hasAttribute('aria-labelledby')).toBe(false);
+    const name = button.textContent!.replace(/\s+/g, ' ').trim();
+    expect(button.firstChild?.textContent).toBe(locale);
+    expect(name).toBe(expected);
+    expect(name.startsWith(locale)).toBe(true);
+    expect(button.querySelector('[lang]')?.getAttribute('lang')).toBe(
+      locale === 'en' ? 'vi' : 'en'
+    );
+    expect(button.querySelector('[lang]')?.textContent).toBe(destination);
+    act(() => (button as HTMLButtonElement).click());
+    expect(onLocaleChange).toHaveBeenCalledWith(locale === 'en' ? 'vi' : 'en');
+    // The destination-only ARIA override must fail the same label-in-name assertion.
+    button.setAttribute('aria-label', destination);
+    expect(() =>
+      expect(button.getAttribute('aria-label')).toContain(locale)
+    ).toThrow();
+  });
+}
