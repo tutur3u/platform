@@ -1,6 +1,10 @@
 import '@testing-library/jest-dom/vitest';
 import { vi } from 'vitest';
 
+if (typeof Element !== 'undefined' && !Element.prototype.scrollIntoView) {
+  Element.prototype.scrollIntoView = () => {};
+}
+
 // Set up mock Supabase environment variables for tests using vi.stubEnv
 // This ensures proper isolation and automatic cleanup between tests
 vi.stubEnv('NEXT_PUBLIC_SUPABASE_URL', 'https://test.supabase.co');

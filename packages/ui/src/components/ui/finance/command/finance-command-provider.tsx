@@ -74,7 +74,8 @@ export function FinanceCommandProvider({
       if (
         event.key.toLowerCase() === 'k' &&
         (event.metaKey || event.ctrlKey) &&
-        !event.altKey
+        !event.altKey &&
+        !event.shiftKey
       ) {
         event.preventDefault();
         event.stopPropagation();

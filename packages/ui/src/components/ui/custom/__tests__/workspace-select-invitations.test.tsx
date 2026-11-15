@@ -253,7 +253,7 @@ it.each(['empty', 'error', 'loading'] as const)(
           ).toBe('error'),
         { timeout: 5000 }
       );
-    const input = screen.getByRole('textbox');
+    const input = screen.getByTestId('workspace-picker-search');
     input.focus();
     fireEvent.keyDown(input, { key: 'ArrowDown' });
     const first = document.querySelector('[data-workspace-choice]');
@@ -266,7 +266,12 @@ it.each(['empty', 'error', 'loading'] as const)(
       '[data-workspace-choice][title="Orchard 0"]'
     );
     expect(current?.closest('.overflow-y-auto')).not.toBeNull();
-    const command = document.querySelector('[cmdk-root]');
+    const command = document.querySelector('[data-invitation-command]');
+    expect(
+      document.querySelector(
+        '[data-testid="workspace-picker-section-invitations"]'
+      )
+    ).toBeNull();
     if (state === 'error') {
       expect(command).toHaveClass('h-auto', 'shrink-0');
       expect(command).not.toHaveClass('h-full');

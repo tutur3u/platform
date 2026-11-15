@@ -53,7 +53,9 @@ export function CommandPalette(props: CommandPaletteProps & LegacyProps) {
       if (
         !e.repeat &&
         e.key.toLowerCase() === 'k' &&
-        (e.metaKey || e.ctrlKey)
+        (e.metaKey || e.ctrlKey) &&
+        !e.shiftKey &&
+        !e.altKey
       ) {
         e.preventDefault();
         e.stopPropagation();

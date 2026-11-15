@@ -23,7 +23,7 @@ import { WORKSPACE_LIMIT_ERROR_CODE } from '@tuturuuu/utils/workspace-limits';
 import { usePathname, useRouter } from 'next/navigation';
 import { useLocale, useTranslations } from 'next-intl';
 import type { ReactNode } from 'react';
-import { useState } from 'react';
+import { useCallback, useState } from 'react';
 import { toast } from 'sonner';
 import { z } from 'zod';
 import { useForm } from '../../../hooks/use-form';
@@ -43,7 +43,6 @@ import {
   DialogFooter,
   DialogHeader,
   DialogTitle,
-  DialogTrigger,
 } from '../dialog';
 import {
   Form,
@@ -54,10 +53,12 @@ import {
   FormMessage,
 } from '../form';
 import { Input } from '../input';
-import { Popover, PopoverTrigger } from '../popover';
 import { TUTURUUU_LOGO_URL } from './tuturuuu-logo';
+import {
+  useWorkspacePickerShortcut,
+  WorkspacePickerDialog,
+} from './workspace-picker-dialog';
 import { useWorkspacePickerPreferences } from './use-workspace-picker-preferences';
-import { WorkspacePickerContent } from './workspace-picker-content';
 import {
   buildWorkspaceSetupHandoffUrl,
   mergeWorkspaceSelectWorkspaces,
@@ -118,9 +119,6 @@ export function WorkspaceSelect({
   cacheScope?: string;
   presentation?: 'fullscreen' | 'dropdown';
 }) {
-  const Picker = presentation === 'dropdown' ? Popover : Dialog;
-  const PickerTrigger =
-    presentation === 'dropdown' ? PopoverTrigger : DialogTrigger;
   const t = useTranslations();
   const locale = useLocale();
   const router = useRouter();
@@ -306,6 +304,11 @@ export function WorkspaceSelect({
   const hasSelectableWorkspaces =
     workspaces.length > 0 || invitations.length > 0;
   useOpenWorkspaceSelectWhenRevealed(hasSelectableWorkspaces, setOpen);
+  const openPicker = useCallback(() => {
+    if (!hasSelectableWorkspaces) return;
+    setOpen(true);
+  }, [hasSelectableWorkspaces]);
+  useWorkspacePickerShortcut(openPicker);
   const onValueChange = (selected: InternalApiWorkspaceSummary) => {
     const nextSlug = toWorkspaceSlug(selected.id, {
       personal: selected.personal,
@@ -430,118 +433,6 @@ export function WorkspaceSelect({
           setShowNewWorkspaceDialog(open);
         }}
       >
-        <Picker open={open} onOpenChange={setOpen}>
-          <PickerTrigger asChild disabled={!hasSelectableWorkspaces}>
-            <Button
-              size="xs"
-              variant="outline"
-              aria-expanded={open}
-              aria-label={t('common.select_workspace')}
-              className={cn(
-                hideLeading ? 'justify-center p-0' : 'justify-start',
-                'w-full whitespace-normal text-start',
-                triggerClassName
-              )}
-              disabled={!hasSelectableWorkspaces}
-            >
-              <WorkspaceIcon
-                fallbackLogoUrl={fallbackLogoUrl}
-                name={workspace?.name}
-                avatarUrl={
-                  resolveWorkspaceAvatarUrl(workspace?.avatar_url, {
-                    rootWorkspaceLogoUrl:
-                      workspace?.id === ROOT_WORKSPACE_ID
-                        ? TUTURUUU_LOGO_URL
-                        : undefined,
-                  }) ?? undefined
-                }
-              />
-              <div
-                className={cn(
-                  hideLeading
-                    ? 'hidden'
-                    : 'flex min-w-0 flex-1 items-center gap-1.5'
-                )}
-              >
-                <span className="line-clamp-1 min-w-0 flex-1 break-all text-xs">
-                  {workspace?.name || `${t('common.loading')}...`}
-                </span>
-                {showTierBadges && workspace?.tier !== undefined && (
-                  <Badge
-                    variant="outline"
-                    className={cn(
-                      'h-4 shrink-0 px-1 py-0 font-medium text-[10px]',
-                      (!workspace?.tier || workspace?.tier === 'FREE') &&
-                        'border-muted-foreground/30 bg-muted/50 text-muted-foreground',
-                      workspace?.tier === 'PLUS' &&
-                        'border-dynamic-blue/50 bg-dynamic-blue/10 text-dynamic-blue',
-                      workspace?.tier === 'PRO' &&
-                        'border-dynamic-purple/50 bg-dynamic-purple/10 text-dynamic-purple',
-                      workspace?.tier === 'ENTERPRISE' &&
-                        'border-dynamic-amber/50 bg-dynamic-amber/10 text-dynamic-amber'
-                    )}
-                  >
-                    {workspace?.tier || 'FREE'}
-                  </Badge>
-                )}
-              </div>
-              {invitations.length > 0 && (
-                <Badge
-                  aria-label={`${invitations.length} ${t('workspace-invitation.list-eyebrow')}`}
-                  className="h-5 min-w-5 justify-center px-1 text-[10px]"
-                  variant="destructive"
-                >
-                  {invitations.length > 99 ? '99+' : invitations.length}
-                </Badge>
-              )}
-              {hideLeading || (
-                <ChevronDown className="ml-1 h-4 w-4 shrink-0 opacity-50" />
-              )}
-            </Button>
-          </PickerTrigger>
-          <WorkspacePickerContent
-            key={actorId ?? 'signed-out'}
-            preferences={pickerPreferences}
-            presentation={presentation}
-            onClose={() => setOpen(false)}
-            workspaces={workspaces ?? []}
-            listLoading={listLoading}
-            listError={listError}
-            onRetryList={() => {
-              void retryWorkspaceList();
-            }}
-            currentId={workspace?.id}
-            defaultId={defaultWorkspaceId}
-            visibility={visibility}
-            onSelect={(selected) => {
-              onValueChange(selected);
-              setOpen(false);
-            }}
-            onDefault={(id) => updateDefaultWorkspaceMutation.mutate(id)}
-            onCreate={
-              disableCreateNewWorkspace
-                ? undefined
-                : () => {
-                    setOpen(false);
-                    setShowNewWorkspaceDialog(true);
-                  }
-            }
-            onJoin={() => {
-              setOpen(false);
-              setShowJoinWorkspaceDialog(true);
-            }}
-            invitations={
-              invitations.length > 0 || invitationController.query.isError ? (
-                <Command className="h-auto shrink-0">
-                  <WorkspaceInvitationItems
-                    controller={invitationController}
-                    fallbackLogoUrl={fallbackLogoUrl}
-                  />
-                </Command>
-              ) : null
-            }
-          />
-        </Picker>
         <DialogContent>
           <DialogHeader>
             <DialogTitle>{t('common.create_workspace')}</DialogTitle>
@@ -593,6 +484,119 @@ export function WorkspaceSelect({
           </Form>
         </DialogContent>
       </Dialog>
+      <WorkspacePickerDialog
+        currentId={workspace?.id}
+        defaultId={defaultWorkspaceId}
+        invitationCount={invitations.length}
+        invitations={
+          invitations.length > 0 || invitationController.query.isError ? (
+            <Command className="h-auto shrink-0" data-invitation-command="">
+              <WorkspaceInvitationItems
+                controller={invitationController}
+                fallbackLogoUrl={fallbackLogoUrl}
+              />
+            </Command>
+          ) : null
+        }
+        listError={listError}
+        listLoading={listLoading}
+        onCreate={
+          disableCreateNewWorkspace
+            ? undefined
+            : () => {
+                setOpen(false);
+                setShowNewWorkspaceDialog(true);
+              }
+        }
+        onDefault={(id) => updateDefaultWorkspaceMutation.mutate(id)}
+        onJoin={() => {
+          setOpen(false);
+          setShowJoinWorkspaceDialog(true);
+        }}
+        onOpenChange={setOpen}
+        onRetryList={() => {
+          void retryWorkspaceList();
+        }}
+        onSelect={(selected) => {
+          onValueChange(selected);
+          setOpen(false);
+        }}
+        open={open}
+        preferences={pickerPreferences}
+        presentation={presentation}
+        trigger={
+          <Button
+            aria-expanded={open}
+            aria-keyshortcuts="Meta+Shift+K Control+Shift+K"
+            aria-label={t('common.select_workspace')}
+            className={cn(
+              hideLeading ? 'justify-center p-0' : 'justify-start',
+              'w-full whitespace-normal text-start',
+              triggerClassName
+            )}
+            disabled={!hasSelectableWorkspaces}
+            size="xs"
+            type="button"
+            variant="outline"
+          >
+            <WorkspaceIcon
+              avatarUrl={
+                resolveWorkspaceAvatarUrl(workspace?.avatar_url, {
+                  rootWorkspaceLogoUrl:
+                    workspace?.id === ROOT_WORKSPACE_ID
+                      ? TUTURUUU_LOGO_URL
+                      : undefined,
+                }) ?? undefined
+              }
+              fallbackLogoUrl={fallbackLogoUrl}
+              name={workspace?.name}
+            />
+            <div
+              className={cn(
+                hideLeading
+                  ? 'hidden'
+                  : 'flex min-w-0 flex-1 items-center gap-1.5'
+              )}
+            >
+              <span className="line-clamp-1 min-w-0 flex-1 break-all text-xs">
+                {workspace?.name || `${t('common.loading')}...`}
+              </span>
+              {showTierBadges && workspace?.tier !== undefined && (
+                <Badge
+                  className={cn(
+                    'h-4 shrink-0 px-1 py-0 font-medium text-[10px]',
+                    (!workspace?.tier || workspace?.tier === 'FREE') &&
+                      'border-muted-foreground/30 bg-muted/50 text-muted-foreground',
+                    workspace?.tier === 'PLUS' &&
+                      'border-dynamic-blue/50 bg-dynamic-blue/10 text-dynamic-blue',
+                    workspace?.tier === 'PRO' &&
+                      'border-dynamic-purple/50 bg-dynamic-purple/10 text-dynamic-purple',
+                    workspace?.tier === 'ENTERPRISE' &&
+                      'border-dynamic-amber/50 bg-dynamic-amber/10 text-dynamic-amber'
+                  )}
+                  variant="outline"
+                >
+                  {workspace?.tier || 'FREE'}
+                </Badge>
+              )}
+            </div>
+            {invitations.length > 0 && (
+              <Badge
+                aria-label={`${invitations.length} ${t('workspace-invitation.list-eyebrow')}`}
+                className="h-5 min-w-5 justify-center px-1 text-[10px]"
+                variant="destructive"
+              >
+                {invitations.length > 99 ? '99+' : invitations.length}
+              </Badge>
+            )}
+            {hideLeading || (
+              <ChevronDown className="ml-1 h-4 w-4 shrink-0 opacity-50" />
+            )}
+          </Button>
+        }
+        visibility={visibility}
+        workspaces={workspaces ?? []}
+      />
     </>
   );
 }
