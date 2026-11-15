@@ -170,6 +170,7 @@ jobs:
       app: nova
       profile-env: VITE_NOVA_NATIVE_PROFILE=${{ matrix.profile }}
       artifact-suffix: ${{ matrix.profile }}
+      build-environment: ${{ matrix.profile == 'production' && 'production' || 'preview' }}
       package: '@tuturuuu/nova'
       artifact-script: scripts/ci/nova-native-artifact.py
       env-interface: NovaGeneratedEnv
