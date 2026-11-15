@@ -1,7 +1,7 @@
 import { Buffer } from 'node:buffer';
-import sharp from 'sharp';
 import { z } from 'zod';
 import type { StaffOperationContext } from '@/app/api/v1/product-feedback/staff-operation';
+import { getImageTransformer, type ImageTransformer } from './image-transform';
 import { FEEDBACK_REQUEST_BYTES } from './product-feedback-limits';
 
 export class FeedbackInputError extends Error {
@@ -70,7 +70,8 @@ export async function readFeedbackInput(
   }
 }
 export async function normalizeFeedbackMedia(
-  media: NonNullable<FeedbackInput['media']>
+  media: NonNullable<FeedbackInput['media']>,
+  transformer?: ImageTransformer
 ) {
   if (!/^[A-Za-z0-9+/]+={0,2}$/.test(media.data))
     throw new FeedbackInputError(400);
@@ -93,22 +94,20 @@ export async function normalizeFeedbackMedia(
         : bytes.subarray(0, 4).toString() === 'RIFF' &&
           bytes.subarray(8, 12).toString() === 'WEBP';
   if (!signature) throw new FeedbackInputError(400);
-  const image = sharp(bytes, { limitInputPixels: 10000000, failOn: 'warning' });
+  const image = (await getImageTransformer(transformer)).decode(bytes, {
+    limitInputPixels: 10000000,
+    failOn: 'warning',
+  });
   try {
     const metadata = await image.metadata();
     if (metadata.format !== expected || (metadata.pages ?? 1) !== 1)
       throw new FeedbackInputError(400);
-    const output = await image
-      .rotate()
-      .resize({
-        width: 1920,
-        height: 1920,
-        fit: 'inside',
-        withoutEnlargement: true,
-      })
-      .webp({ quality: 75, effort: 2 })
-      .timeout({ seconds: 3 })
-      .toBuffer();
+    const output = await image.webp({
+      width: 1920,
+      height: 1920,
+      quality: 75,
+      effort: 2,
+    });
     if (output.length > 524288) throw new FeedbackInputError(413);
     return output.toString('base64');
   } catch (error) {

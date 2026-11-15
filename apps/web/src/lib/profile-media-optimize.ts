@@ -1,8 +1,6 @@
-import {
-  type ProfileMediaKind,
-  ProfileUploadError,
-} from '@tuturuuu/storage-core/profile-upload-budget';
-import sharp from 'sharp';
+import { ProfileUploadError } from '@tuturuuu/storage-core/profile-upload-error';
+import type { ProfileMediaKind } from '@tuturuuu/storage-core/profile-upload-limits';
+import { getImageTransformer, type ImageTransformer } from './image-transform';
 
 export const PROFILE_MEDIA_OUTPUT_BYTES = {
   avatar: 1_000_000,
@@ -27,11 +25,12 @@ function isRasterImage(input: Buffer) {
 /** Static, oriented, metadata-free artwork. Never persist the original bytes. */
 export async function optimizeProfileMedia(
   input: Buffer,
-  kind: ProfileMediaKind
+  kind: ProfileMediaKind,
+  transformer?: ImageTransformer
 ) {
   if (!isRasterImage(input))
     throw new ProfileUploadError('Invalid profile image', 400);
-  const image = sharp(input, {
+  const image = (await getImageTransformer(transformer)).decode(input, {
     limitInputPixels: 20_000_000,
     failOn: 'warning',
     pages: 1,
@@ -43,18 +42,12 @@ export async function optimizeProfileMedia(
     const [width, height] = dimensions[kind];
     for (const scale of [1, 0.7]) {
       for (const quality of [85, 72, 60]) {
-        const output = await image
-          .clone()
-          .rotate()
-          .resize({
-            width: Math.round(width * scale),
-            height: Math.round(height * scale),
-            fit: 'inside',
-            withoutEnlargement: true,
-          })
-          .webp({ quality, effort: 4 })
-          .timeout({ seconds: 3 })
-          .toBuffer();
+        const output = await image.webp({
+          width: Math.round(width * scale),
+          height: Math.round(height * scale),
+          quality,
+          effort: 4,
+        });
         if (output.length <= PROFILE_MEDIA_OUTPUT_BYTES[kind]) return output;
       }
     }

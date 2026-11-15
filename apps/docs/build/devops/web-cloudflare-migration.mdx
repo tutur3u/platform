@@ -176,3 +176,50 @@ harness now repeats lease, stop, owner and duplicate checks across real workerd
 restarts backed by local SQLite. Web's `web-cron-fence.test.ts` covers admission,
 authentication, network/completion failure and work-budget boundaries. Run Worker
 types, focused tests and `bun check:changed` on an admitted validation host.
+
+## Web native dependency boundaries
+
+Web's Vercel runtime keeps synchronous image and browser results. The source
+boundaries below prepare alternate Worker adapters; they do not enable a Worker,
+queue, Images binding, or provider call.
+
+| Dependency | Application call sites | Node behavior | Worker path |
+| --- | --- | --- | --- |
+| bcrypt | `src/legacy-api-routes/v1/link-shortener/shorten/route.ts` and `src/legacy-api-routes/v1/link-shortener/[linkId]/password/route.ts` | `bcryptjs` hashes and compares at cost 10; native bcrypt is a development-only fixture oracle | Pure JavaScript, with existing `$2a$`, `$2b$`, and `$2y$` verification |
+| sharp | `src/lib/profile-media-optimize.ts` and `src/lib/product-feedback-input.ts` | `ImageTransformer` delegates to `image-transform.node.ts`, preserving limits, orientation, inside fit, WebP settings and metadata removal | Supply a Cloudflare Images adapter at the resolver boundary |
+| Playwright | `src/lib/ai-agents/zalo-personal-web-sync.node.ts`, called through `zalo-personal-web-sync.ts` by `zalo-personal-listeners.ts` | The queue interface executes the browser runner inline and awaits its existing result | Enqueue an identifier-only job for an authorized off-Worker browser runner and await the stored result |
+
+Shared packages have no production imports of these dependencies in the source
+inventory. Test and E2E sharp/Playwright imports remain development tooling.
+Next's built-in image optimizer is separate from `ImageTransformer`:
+`next.config.ts` retains its existing image settings and Vercel optimization.
+Worker qualification must choose an Images binding integration for the optimizer
+or a custom `next/image` loader with equivalent source allowlisting and image
+limits. OG image routes use `next/og` `ImageResponse`, not application sharp.
+
+`WebSocketPair` detects Workers even with Node compatibility enabled. An
+unconfigured Worker fails before loading native modules. The source runtime
+check alone does **not** exclude dynamic Node imports from emitted bundles.
+Before emission, the Worker build must replace the image resolver and Zalo sync
+facade with binding-backed implementations (retaining their exported contracts),
+and exclude `.node.ts` modules and native dependencies from the Worker graph.
+Application call sites stay unchanged. Optional explicit adapters support focused
+source testing; request-global mutable adapter registration is unnecessary.
+
+The browser job contains only agent/channel identifiers and a timeout. The
+runner must resolve current session secrets and reauthorize access to that
+agent/channel; cookies, device identifiers, and browser profiles must not enter
+queue messages or logs. `runZaloWebSyncJob` checks resolved identity before the
+Node runner executes. A future queue adapter needs durable idempotency, bounded
+admission/retention, a durable stop fence, and result reconciliation. An unknown
+outcome must not automatically retry a browser sync. No queue delivery or retry
+policy is enabled by these source interfaces.
+
+Regression coverage lives in `bcrypt-compatibility.test.ts` (runtime-generated
+native fixtures, identical salted output, UTF-8/truncation and wrong-password
+cases), `image-transform.test.ts` and the profile/feedback image suites (decoder,
+render and upload limits), and `zalo-personal-web-sync.test.ts` (inline parity,
+secret-free job payload, Worker fail-closed and unknown-outcome handling).
+Native image output and browser execution still need exact-commit CI and the
+Worker's emitted-artifact acceptance before cutover. Authentication changes need
+independent security review; image and browser boundaries need peer review.

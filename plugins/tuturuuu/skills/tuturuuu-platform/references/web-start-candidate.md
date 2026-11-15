@@ -52,3 +52,15 @@ rollback. Add native and rollback hosted cases under the existing prod-host and
 egress fences; `WAVE1_STAGING_SECURITY_ROLLBACK=confirmed` selects the separate
 rollback pass after the owner disables only the security flag. No artifact from
 an older slice proves current-source runtime acceptance.
+
+## Native dependency adapters
+
+Web's image transforms use `src/lib/image-transform.ts`; the sharp implementation
+is isolated in `image-transform.node.ts`. Zalo browser sync uses an identifier-only
+queue contract in `zalo-personal-web-sync.ts` and a separate Node runner. Preserve
+Vercel's inline result behavior. Worker adapters must replace the resolver/facade
+before bundling, exclude native Node modules from emitted artifacts, and fail
+closed when bindings are missing. Runtime guards alone do not prove bundle
+exclusion. Keep session secrets out of browser queue payloads; runners resolve
+and authorize them by agent/channel. See the native dependency section in
+`apps/docs/build/devops/web-cloudflare-migration.mdx` for call sites and gates.
