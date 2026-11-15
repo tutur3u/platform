@@ -176,6 +176,7 @@ jobs:
       app: inventory
       profile-env: VITE_INVENTORY_NATIVE_PROFILE=${{ matrix.profile }}
       artifact-suffix: ${{ matrix.profile }}
+      build-environment: ${{ matrix.profile == 'production' && 'production' || 'preview' }}
       package: '@tuturuuu/inventory'
       artifact-script: scripts/ci/inventory-native-artifact.py
       env-interface: InventoryGeneratedEnv
