@@ -587,7 +587,13 @@ test('a viewport screenshot failure keeps a fixed reason and only scrubbed scala
   const failure = JSON.parse(await f.failure());
   assert.equal(failure.stage, 'viewport-390');
   assert.equal(failure.reason, 'Staged viewport screenshot failed');
-  assert.deepEqual(failure.viewport, { width: 390, scrollHeight: 24000 });
+  assert.deepEqual(failure.viewport, {
+    width: 390,
+    scrollHeight: 24000,
+    captureMode: 'clipped',
+    tileCount: 1,
+    clipHeight: 8000,
+  });
   assert.ok(!JSON.stringify(failure).includes('SECRET'));
   assert.ok(!JSON.stringify(failure).includes('Protocol error'));
 });
@@ -640,15 +646,65 @@ test('an out-of-range page height is recorded as null', async (t) => {
   assert.deepEqual(JSON.parse(await f.failure()).viewport, {
     width: 390,
     scrollHeight: null,
+    captureMode: 'clipped',
+    tileCount: 1,
+    clipHeight: 8000,
   });
 });
 
-test('a passing proof keeps its receipt shape without the page height', async (t) => {
-  const f = await transportFixture(t, () => undefined);
+const pageMetrics = (scrollHeight) => async () => ({
+  ruleCount: 1,
+  fontFailures: 0,
+  compared: [
+    { path: '/_next/static/chunks/site.css', expectedRules: 1, servedRules: 1 },
+  ],
+  utility: { display: 'flex', gap: 16, padding: 16, radius: 8 },
+  scrollHeight,
+});
+
+test('a page within the capture bound is screenshotted in full', async (t) => {
+  const clips = [];
+  const f = await transportFixture(t, () => undefined, undefined, {
+    evaluate: pageMetrics(1800),
+    screenshot: async ({ path, clip, fullPage }) => {
+      clips.push({ clip, fullPage });
+      await writeFile(path, 'fixture');
+    },
+  });
+  const proof = await f.run();
+  assert.deepEqual(clips, [
+    { clip: { x: 0, y: 0, width: 390, height: 1800 }, fullPage: true },
+    { clip: { x: 0, y: 0, width: 1440, height: 1800 }, fullPage: true },
+  ]);
+  for (const view of proof.viewports) {
+    assert.equal(view.scrollHeight, 1800);
+    assert.equal(view.captureMode, 'full');
+    assert.equal(view.tileCount, 1);
+    assert.equal(view.clipHeight, 1800);
+  }
+});
+
+test('a page taller than the bound passes with one clipped capture', async (t) => {
+  const clips = [];
+  const f = await transportFixture(t, () => undefined, undefined, {
+    evaluate: pageMetrics(24000),
+    screenshot: async ({ path, clip }) => {
+      clips.push(clip);
+      await writeFile(path, 'fixture');
+    },
+  });
   const proof = await f.run();
   assert.equal(proof.viewports.length, 2);
-  for (const view of proof.viewports)
-    assert.ok(!Object.hasOwn(view, 'scrollHeight'));
+  for (const clip of clips) assert.equal(clip.height, 8000);
+  for (const view of proof.viewports) {
+    assert.equal(view.scrollHeight, 24000);
+    assert.equal(view.captureMode, 'clipped');
+    assert.equal(view.tileCount, 1);
+    assert.equal(view.clipHeight, 8000);
+    // The style checks still ran in full before the capture.
+    assert.equal(view.ruleCount, 1);
+    assert.equal(view.utility.display, 'flex');
+  }
 });
 
 for (const [name, location] of [
