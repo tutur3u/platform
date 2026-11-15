@@ -20,6 +20,12 @@ it('projects descendant metadata and structured errors without reading message c
   const path = join(dir, 'state.sqlite');
   try {
     const db = new DatabaseSync(path);
+    // Fixture writes need no durability. synchronous=OFF on the test's own
+    // connections skips the fsync behind each autocommit INSERT (about 15
+    // here), which slows sharply on a contended runner. collectChildren reads
+    // through its own connection, so the code under test and its latency
+    // check are unchanged.
+    db.exec('PRAGMA synchronous=OFF');
     db.exec(`
  CREATE TABLE orchestration_v2_projection_threads(thread_id TEXT,payload_json TEXT);
  CREATE TABLE orchestration_v2_projection_subagents(subagent_id TEXT,thread_id TEXT,child_thread_id TEXT,status TEXT,origin TEXT,provider_instance_id TEXT,payload_json TEXT);
@@ -172,6 +178,7 @@ it('projects descendant metadata and structured errors without reading message c
       'writer-not-drained'
     );
     const activeDb = new DatabaseSync(path);
+    activeDb.exec('PRAGMA synchronous=OFF');
     activeDb
       .prepare(
         'INSERT INTO orchestration_v2_projection_runs VALUES (?,?,?,?,?,?,?)'
@@ -220,6 +227,7 @@ it('projects descendant metadata and structured errors without reading message c
       disposition: 'auto-resume-already-queued-do-not-duplicate',
     });
     const completed = new DatabaseSync(path);
+    completed.exec('PRAGMA synchronous=OFF');
     completed
       .prepare(
         'INSERT INTO orchestration_v2_projection_runs VALUES (?,?,?,?,?,?,?)'
