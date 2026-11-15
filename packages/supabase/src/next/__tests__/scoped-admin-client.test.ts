@@ -42,6 +42,9 @@ vi.mock('../common', () => ({
   getSupabaseAuthCookieUrls: vi.fn(),
   getSupabaseAuthStorageKey: vi.fn(),
 }));
+vi.mock('#secret-env', () => ({
+  checkSecretEnvVariables: mocks.env,
+}));
 
 const url = 'https://test.supabase.co';
 const key = 'test-secret-key';
@@ -86,8 +89,8 @@ describe('scoped no-cookie admin construction', () => {
       global: { fetch: secondFetch },
       auth: backgroundAuth,
     });
-    expect(mocks.env).toHaveBeenNthCalledWith(1, { useSecretKey: true });
-    expect(mocks.env).toHaveBeenNthCalledWith(2, { useSecretKey: true });
+    expect(mocks.env).toHaveBeenNthCalledWith(1);
+    expect(mocks.env).toHaveBeenNthCalledWith(2);
     expect(firstFetch).not.toHaveBeenCalled();
     expect(secondFetch).not.toHaveBeenCalled();
     expect(mocks.server).not.toHaveBeenCalled();
@@ -106,7 +109,7 @@ describe('scoped no-cookie admin construction', () => {
       global: { headers: { 'x-ttr-audit-actor-id': auditActorId }, fetch },
       auth: backgroundAuth,
     });
-    expect(mocks.env).toHaveBeenCalledExactlyOnceWith({ useSecretKey: true });
+    expect(mocks.env).toHaveBeenCalledExactlyOnceWith();
     expect(fetch).not.toHaveBeenCalled();
     expect(mocks.server).not.toHaveBeenCalled();
     expect(mocks.cookies).not.toHaveBeenCalled();
@@ -193,7 +196,7 @@ describe('unscoped admin controls', () => {
     async (options) => {
       const client = await createAdminClient(options);
       expect(client).toBe(mocks.server.mock.results[0]?.value);
-      expect(mocks.env).toHaveBeenCalledExactlyOnceWith({ useSecretKey: true });
+      expect(mocks.env).toHaveBeenCalledExactlyOnceWith();
       expect(mocks.browser).not.toHaveBeenCalled();
       expect(mocks.cookies).toHaveBeenCalledTimes(1);
       expect(mocks.headers).toHaveBeenCalledTimes(1);

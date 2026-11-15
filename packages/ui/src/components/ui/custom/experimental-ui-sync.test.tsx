@@ -47,6 +47,24 @@ describe('ExperimentalUiSync', () => {
     await waitFor(() => expect(root().hasAttribute('data-ui')).toBe(false));
   });
 
+  it('never requests the account value without an account', async () => {
+    window.localStorage.setItem(SORBET_UI_STORAGE_KEY, 'true');
+    render(<ExperimentalUiSync account={false} />);
+
+    expect(root().getAttribute('data-ui')).toBe('sorbet');
+    act(() => {
+      window.dispatchEvent(new Event('focus'));
+    });
+    act(() => {
+      window.dispatchEvent(
+        new CustomEvent(SORBET_UI_CHANGE_EVENT, { detail: false })
+      );
+    });
+    expect(root().hasAttribute('data-ui')).toBe(false);
+    await new Promise((resolve) => setTimeout(resolve, 0));
+    expect(mockGetUserConfig).not.toHaveBeenCalled();
+  });
+
   it('follows changes announced in this tab and in other tabs', async () => {
     mockGetUserConfig.mockResolvedValue({ value: 'false' });
     render(<ExperimentalUiSync />);

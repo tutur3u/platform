@@ -217,6 +217,7 @@ jobs:
       runtime-setup-command: cd ../web && bun x --no-install playwright install --with-deps chromium
       runtime-command: node --test --test-concurrency=1 cloudflare/native-built-worker.runtime.mjs
       profile-env: VITE_FINANCE_NATIVE_PROFILE=production
+      build-environment: production
       artifact-suffix: production
       public-env: |
         NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY=${{ vars.PRODUCTION_SUPABASE_PUBLISHABLE_KEY }}

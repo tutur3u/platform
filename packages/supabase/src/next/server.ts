@@ -3,6 +3,7 @@ import type { SupabaseClient } from '@supabase/supabase-js';
 import type { Database } from '@tuturuuu/types';
 import type { RequestCookie } from 'next/dist/compiled/@edge-runtime/cookies';
 import type { ReadonlyRequestCookies } from 'next/dist/server/web/spec-extension/adapters/request-cookies';
+import { resolveTrustedForwardedHost } from '../forwarded-host';
 import { sanitizeSupabaseAuthCookies } from './auth-cookie-sanitizer';
 import {
   checkEnvVariables,
@@ -10,6 +11,7 @@ import {
   getSupabaseCookieOptions,
   type SupabaseCookie,
 } from './common';
+import { checkSecretEnvVariables } from '#secret-env';
 import {
   wrapDirectClientForProxyOnlyTables,
   wrapRequestClientForProxyOnlyTables,
@@ -89,7 +91,9 @@ function extractForwardedHeaderValue(value: string | null) {
 function resolveRequestUrlFromHeaders(
   headerStore: Pick<Headers, 'get'>
 ): string | null {
-  const forwardedHost = extractForwardedHeaderValue(
+  // A client-supplied X-Forwarded-Host must not pick the auth cookie domain:
+  // honour it only for a configured origin, otherwise use the request Host.
+  const forwardedHost = resolveTrustedForwardedHost(
     headerStore.get('x-forwarded-host')
   );
   const host =
@@ -100,8 +104,9 @@ function resolveRequestUrlFromHeaders(
   }
 
   const forwardedProto =
-    extractForwardedHeaderValue(headerStore.get('x-forwarded-proto')) ??
-    'https';
+    (forwardedHost
+      ? extractForwardedHeaderValue(headerStore.get('x-forwarded-proto'))
+      : null) ?? 'https';
   const protocol = forwardedProto.replace(/:$/u, '').toLowerCase();
 
   return `${protocol === 'http' ? 'http' : 'https'}://${host}`;
@@ -141,7 +146,9 @@ async function createGenericClient<T = Database>(
   requestUrl?: string | URL | null,
   headerStore?: { get(name: string): string | null }
 ): Promise<SupabaseClient<T>> {
-  const { url, key } = checkEnvVariables({ useSecretKey: isAdmin });
+  const { url, key } = isAdmin
+    ? checkSecretEnvVariables()
+    : checkEnvVariables();
   // Lazy `next/headers` import — see getRequestUrlFromHeaders above. Keeps the
   // static module graph clean so middleware/proxy consumers build under Turbopack.
   const { cookies } = await import('next/headers');
@@ -167,7 +174,7 @@ async function createGenericClient<T = Database>(
 }
 
 function createRequestAdminProxyClient<T = Database>(): SupabaseClient<T> {
-  const { url, key } = checkEnvVariables({ useSecretKey: true });
+  const { url, key } = checkSecretEnvVariables();
 
   return createBrowserClient<T>(url, key, {
     auth: {
@@ -253,7 +260,7 @@ export function createAdminClient<T = Database>({
     ) {
       throw new Error('Invalid audit actor id');
     }
-    const { url, key } = checkEnvVariables({ useSecretKey: true });
+    const { url, key } = checkSecretEnvVariables();
     return createBrowserClient<T>(url, key, {
       isSingleton: false,
       global: {
@@ -268,7 +275,7 @@ export function createAdminClient<T = Database>({
     });
   }
   if (fetch !== undefined) {
-    const { url, key } = checkEnvVariables({ useSecretKey: true });
+    const { url, key } = checkSecretEnvVariables();
     return createBrowserClient<T>(url, key, {
       isSingleton: false,
       global: { fetch },
@@ -280,7 +287,7 @@ export function createAdminClient<T = Database>({
     });
   }
   if (noCookie) {
-    const { url, key } = checkEnvVariables({ useSecretKey: true });
+    const { url, key } = checkSecretEnvVariables();
     return createBrowserClient<T>(url, key);
   }
 
@@ -450,7 +457,7 @@ export function createDetachedClient<T = Database>(options?: {
 }
 
 export async function createDynamicAdminClient(): Promise<SupabaseClient<any>> {
-  const { url, key } = checkEnvVariables({ useSecretKey: true });
+  const { url, key } = checkSecretEnvVariables();
   return createServerClient(url, key, {
     cookieOptions: getSupabaseCookieOptions(url),
     cookies: {

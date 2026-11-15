@@ -33,6 +33,19 @@
     "README.md",
     "LICENSE"
   ],
+  "imports": {
+    "#secret-env": {
+      "types": "./src/next/secret-env.ts",
+      "bun": "./src/next/secret-env.ts",
+      "workerd": "./dist/next/secret-env.js",
+      "worker": "./dist/next/secret-env.js",
+      "edge-light": "./dist/next/secret-env.js",
+      "react-server": "./dist/next/secret-env.js",
+      "node": "./dist/next/secret-env.js",
+      "browser": "./dist/next/secret-env.browser.js",
+      "default": "./dist/next/secret-env.js"
+    }
+  },
   "exports": {
     ".": {
       "types": "./dist/index.d.ts",
@@ -67,6 +80,17 @@
       "types": "./dist/next/common.d.ts",
       "bun": "./src/next/common.ts",
       "default": "./dist/next/common.js"
+    },
+    "./next/secret-env": {
+      "types": "./dist/next/secret-env.d.ts",
+      "bun": "./src/next/secret-env.ts",
+      "workerd": "./dist/next/secret-env.js",
+      "worker": "./dist/next/secret-env.js",
+      "edge-light": "./dist/next/secret-env.js",
+      "react-server": "./dist/next/secret-env.js",
+      "node": "./dist/next/secret-env.js",
+      "browser": "./dist/next/secret-env.browser.js",
+      "default": "./dist/next/secret-env.js"
     },
     "./next/proxy": {
       "types": "./dist/next/proxy.d.ts",

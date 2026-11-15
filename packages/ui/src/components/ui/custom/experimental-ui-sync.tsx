@@ -24,8 +24,13 @@ const REFRESH_INTERVAL_MS = 60_000;
  * applies the device's last known value first, then the account value, and
  * follows changes made in this tab, in other tabs, and in other apps (on focus).
  * Signed-out visitors keep the device value; a failed read changes nothing.
+ *
+ * Pass `account={false}` where the page knows there is no signed-in account
+ * (for example an anonymous catalogue): the device value and cross-tab changes
+ * still apply, but the account value is never requested, so the page makes no
+ * user-config request at all.
  */
-export function ExperimentalUiSync() {
+export function ExperimentalUiSync({ account = true }: { account?: boolean }) {
   useIsomorphicLayoutEffect(() => {
     const stored = readStoredSorbetUi();
     if (stored !== null) applySorbetUi(stored);
@@ -46,7 +51,8 @@ export function ExperimentalUiSync() {
     };
 
     const onFocus = () => {
-      if (Date.now() - lastFetch >= REFRESH_INTERVAL_MS) void refresh();
+      if (account && Date.now() - lastFetch >= REFRESH_INTERVAL_MS)
+        void refresh();
     };
     const onLocalChange = (event: Event) => {
       applySorbetUi(Boolean((event as CustomEvent<boolean>).detail));
@@ -57,7 +63,7 @@ export function ExperimentalUiSync() {
       }
     };
 
-    void refresh();
+    if (account) void refresh();
     window.addEventListener('focus', onFocus);
     window.addEventListener(SORBET_UI_CHANGE_EVENT, onLocalChange);
     window.addEventListener('storage', onStorage);
@@ -68,7 +74,7 @@ export function ExperimentalUiSync() {
       window.removeEventListener(SORBET_UI_CHANGE_EVENT, onLocalChange);
       window.removeEventListener('storage', onStorage);
     };
-  }, []);
+  }, [account]);
 
   return null;
 }

@@ -53,6 +53,7 @@ workerd with synthetic secrets only, and uploads
 | Binding | `ABUSE_GUARD` → service `tuturuuu-abuse-guard` |
 | Secrets (names) | `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY`, `SUPABASE_SECRET_KEY`, `TUTURUUU_APP_COORDINATION_SECRET`, `ABUSE_GUARD_KEY_PEPPER` |
 | Vars | `ABUSE_GUARD_FAMILIES=proxy`, optional `ABUSE_GUARD_TIMEOUT_MS`, `NEXT_PUBLIC_APP_URL=https://rewise.tuturuuu.com`, `NEXT_PUBLIC_WEB_APP_URL=https://tuturuuu.com` |
+| Abuse guard | The abuse guard is optional, as on Vercel: with none of `ABUSE_GUARD_KEY_PEPPER`, `ABUSE_GUARD_FAMILIES`, `ABUSE_GUARD_BACKEND` and the Upstash names set, the Worker skips the guard and logs the names once per isolate. Setting any of them requires a complete configuration, and the Worker refuses to serve otherwise. |
 | Optional AI keys | the provider keys listed in `env.example`, as secrets on the Worker |
 | Prior Vercel deployment | record the immutable deployment ID and URL of the `rewise` Vercel project before the switch |
 | Data | no database writes and no migrations; reuse the existing Upstash database, provision nothing new |

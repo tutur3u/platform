@@ -25,7 +25,6 @@ export function AppThemeProvider({ children }: { children: ReactNode }) {
       // see https://github.com/pacocoursey/next-themes?tab=readme-ov-file#using-with-cloudflare-rocket-loader
       // for more details
     >
-      <ExperimentalUiSync />
       {children}
     </NextThemesProvider>
   );
@@ -42,6 +41,8 @@ export async function Providers({
   const content = <ClientProviders>{children}</ClientProviders>;
   return (
     <QueryProvider>
+      {/* Signed-out pages keep the device value and make no account read. */}
+      <ExperimentalUiSync account={Boolean(user?.id)} />
       <MiraSoulScopeProvider
         key={`${user?.id ?? 'signed-out'}:${user?.last_sign_in_at ?? 'unknown-session'}`}
         actorId={user?.id ?? null}

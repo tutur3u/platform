@@ -12,6 +12,13 @@ vi.mock('../common', () => ({
   }),
 }));
 
+vi.mock('#secret-env', () => ({
+  checkSecretEnvVariables: () => ({
+    url: 'https://example.supabase.co',
+    key: 'test-key',
+  }),
+}));
+
 import { createAdminClient } from '../server';
 
 describe('trusted audit actor admin clients', () => {
