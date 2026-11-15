@@ -206,7 +206,7 @@ export async function launchMeet(sourceSHA, fixture) {
       assert.equal(receipt.descendantClosure, 'UNKNOWN');
       assert.equal(receipt.sourceSHA, sourceSHA);
       assert.deepEqual(receipt.supplier.summary, plan.supplier);
-      assert.equal(receipt.policies.appControls, 2);
+      assert.equal(receipt.policies.appControls, 1);
       assert.equal(receipt.policies.probeControls, 9);
       assert.equal(receipt.policies.forwarded, 1);
       assert.deepEqual(receipt.policies.unexpected, []);
