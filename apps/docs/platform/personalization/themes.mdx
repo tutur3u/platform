@@ -74,7 +74,13 @@ How it works for engineers: `ExperimentalUiSync` (in `@tuturuuu/ui`) sets
 shared semantic tokens under that attribute. A palette other than Sorbet adds
 `data-sorbet-preset`; `packages/ui/src/sorbet-presets.css` defines eleven source
 colours per palette and mode and maps them onto the same tokens, so the default
-palette renders exactly as `sorbet.css` alone. The stored theme is parsed
+palette renders exactly as `sorbet.css` alone. `packages/ui/src/sorbet-surfaces.css`
+adds the Sorbet hierarchy to shared shells: inside the settings dialog the
+palette replaces the classic contrast overrides, navigation sits on the ground
+colour with the current page filled and edged in the accent, sections are
+raised, row titles are firmer, tabs get a raised thumb, and navigation, tabs and
+switches share the focus ring. Transitions stop when reduced motion is
+requested. Every rule is scoped to `data-ui="sorbet"`. The stored theme is parsed
 against an allowlist (`sorbet-theme.ts`), and any other value falls back to the
 default. The sync reads both account values through the shared `user-config`
 queries, so it mounts inside each app's `QueryClientProvider` and does not
@@ -83,8 +89,9 @@ retry a failed read. Where the provider knows nobody is signed in it passes
 no account value is requested. Regression coverage lives in
 `sorbet-ui.test.ts`, `sorbet-theme.test.ts`, `experimental-ui-sync.test.tsx` and
 `settings/experimental-ui-setting.test.tsx` under
-`packages/ui/src/components/ui/custom/`, and `packages/ui/src/sorbet-presets.test.ts`
-checks every palette's contrast in both modes.
+`packages/ui/src/components/ui/custom/`; `packages/ui/src/sorbet-presets.test.ts`
+checks every palette's contrast in both modes, and `sorbet-surfaces.test.ts`
+checks that every surface rule stays scoped to Sorbet.
 
 ## Mobile app
 

@@ -1,0 +1,131 @@
+/*
+  Sorbet surfaces: hierarchy, elevation and motion for the shared shells,
+  starting with the settings dialog. Every rule is scoped under
+  html[data-ui="sorbet"], so the classic design is unchanged; :where keeps the
+  selectors light. sorbet-surfaces.test.ts checks the scoping.
+*/
+
+/*
+  The settings dialog overrides the contrast tokens with neutral greys because
+  the classic dark palette shares one value for border, input, muted and accent.
+  Every Sorbet palette keeps them distinct, so the dialog uses the palette.
+*/
+:root[data-ui="sorbet"] .settings-surface {
+  --muted-foreground: inherit;
+  --card: inherit;
+  --border: inherit;
+  --input: inherit;
+  --accent: inherit;
+}
+
+/* Two planes: navigation on the ground, content on the surface. */
+:root[data-ui="sorbet"]
+  :where([data-settings-pane="nav"], [data-settings-pane="nav-header"]) {
+  background-color: var(--sidebar-background);
+}
+
+:root[data-ui="sorbet"] :where([data-settings-pane="nav-header"]) {
+  border-color: transparent;
+}
+
+:root[data-ui="sorbet"] :where([data-settings-pane="header"]) {
+  border-color: color-mix(in oklab, var(--border) 70%, transparent);
+}
+
+/* Navigation: the current page is a filled row with an accent edge. */
+:root[data-ui="sorbet"]
+  :where([data-settings-pane="nav"] [data-slot="sidebar-menu-button"]) {
+  border-radius: var(--radius);
+}
+
+:root[data-ui="sorbet"]
+  :where(
+    [data-settings-pane="nav"]
+      [data-slot="sidebar-menu-button"][data-active="true"]
+  ) {
+  background-color: var(--sidebar-accent);
+  color: var(--sidebar-accent-foreground);
+  font-weight: 600;
+  box-shadow: inset 3px 0 0 var(--sidebar-primary);
+}
+
+/* Settings sections are raised surfaces with quiet dividers. */
+:root[data-ui="sorbet"]
+  :where(
+    [data-slot="settings-card"],
+    [data-slot="settings-row"]:not([data-slot="settings-card"] *)
+  ) {
+  border-radius: var(--radius-xl);
+  border-color: color-mix(in oklab, var(--border) 80%, transparent);
+  box-shadow: var(--sorbet-shadow-sm);
+}
+
+/* High contrast keeps every section edge solid. */
+:root[data-ui="sorbet"][data-sorbet-preset="high-contrast"]
+  :where([data-slot="settings-card"], [data-slot="settings-row"]) {
+  border-color: var(--border);
+}
+
+/* Row hierarchy: a firm title over a lighter, smaller description. */
+:root[data-ui="sorbet"] :where([data-slot="settings-row-title"]) {
+  font-weight: 600;
+  letter-spacing: -0.005em;
+}
+
+:root[data-ui="sorbet"] :where([data-slot="settings-row-description"]) {
+  font-size: 0.8125rem;
+  line-height: 1.25rem;
+}
+
+/* Segmented tabs: a recessed track with a raised thumb. */
+:root[data-ui="sorbet"] :where([data-slot="tabs-list"]) {
+  border-radius: 9999px;
+  background-color: var(--muted);
+}
+
+:root[data-ui="sorbet"] :where([data-slot="tabs-trigger"]) {
+  border-radius: 9999px;
+}
+
+:root[data-ui="sorbet"]
+  :where([data-slot="tabs-trigger"][data-state="active"]) {
+  background-color: var(--card);
+  color: var(--foreground);
+  box-shadow: var(--sorbet-shadow-sm);
+}
+
+/* Focus: the same solid ring on navigation, tabs and switches. */
+:root[data-ui="sorbet"]
+  :where(
+    [data-slot="sidebar-menu-button"],
+    [data-slot="tabs-trigger"],
+    [data-slot="switch"]
+  ):focus-visible {
+  outline: 2px solid var(--ring);
+  outline-offset: 2px;
+}
+
+/* Motion: short colour and elevation changes; none when motion is reduced. */
+:root[data-ui="sorbet"]
+  :where(
+    [data-slot="button"],
+    [data-slot="sidebar-menu-button"],
+    [data-slot="tabs-trigger"],
+    [data-slot="switch"]
+  ) {
+  transition-property: background-color, border-color, color, box-shadow;
+  transition-duration: 160ms;
+  transition-timing-function: cubic-bezier(0.2, 0, 0, 1);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  :root[data-ui="sorbet"]
+    :where(
+      [data-slot="button"],
+      [data-slot="sidebar-menu-button"],
+      [data-slot="tabs-trigger"],
+      [data-slot="switch"]
+    ) {
+    transition-duration: 0ms;
+  }
+}
