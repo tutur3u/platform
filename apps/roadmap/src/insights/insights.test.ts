@@ -12,7 +12,7 @@ import {
   parseActivity,
   type ActivitySnapshot,
 } from './activity.ts';
-import { axisRank, nextIndex, niceMax } from './chart-nav.ts';
+import { axisRank, dayAt, nextIndex, niceMax } from './chart-nav.ts';
 import { allMerged, buildPulse } from './pulse-model.ts';
 import { productionUpdates, timeToLive, waitingAge } from './production.ts';
 import { change, dayKeys, movingAverage, quantile, RANGES } from './series.ts';
@@ -601,6 +601,33 @@ describe('chart keyboard navigation', () => {
     assert.ok(!chart.includes('<details'), 'no "show the numbers" disclosure');
   });
 
+  it('is one pointer target: a tap or drag selects the day under it', () => {
+    // 14 days across a 290px plot that starts at x = 50.
+    assert.equal(dayAt(50, 50, 290, 14), 0);
+    assert.equal(dayAt(50 + 290 / 14 - 0.01, 50, 290, 14), 0);
+    assert.equal(dayAt(50 + 290 / 14 + 0.01, 50, 290, 14), 1);
+    assert.equal(dayAt(339.99, 50, 290, 14), 13);
+    // A drag past either edge keeps the first or last day.
+    assert.equal(dayAt(10, 50, 290, 14), 0);
+    assert.equal(dayAt(900, 50, 290, 14), 13);
+    assert.equal(dayAt(100, 50, 0, 14), 0);
+    // Broken variant: an unclamped index past the edge selects no day.
+    const unclamped = (x: number) => Math.floor(((x - 50) / 290) * 14);
+    assert.equal(unclamped(900) < 14, false);
+    // The surface takes the pointer; the day buttons keep keyboard and
+    // assistive-technology use and never take a pointer hit.
+    const chart = readFileSync(
+      new URL('../components/insights/pulse-chart.tsx', import.meta.url),
+      'utf8'
+    );
+    for (const handler of ['onPointerDown', 'onPointerUp', 'onPointerCancel'])
+      assert.match(chart, new RegExp(`${handler}=\\{${handler}\\}`));
+    assert.match(chart, /aria-label=\{longDay\(point\.day, lang\)\}/);
+    const css = readStyles();
+    assert.match(css, /\.pchart-hit \{[^}]*pointer-events: none;/);
+    assert.match(css, /\.pchart-hits \{[^}]*touch-action: pan-y;/);
+  });
+
   it('labels the axis without crowding', () => {
     assert.equal(axisRank(0, 14, 2), 0);
     assert.equal(axisRank(13, 14, 2), 0);
@@ -642,7 +669,7 @@ describe('hero and navbar offset (CSS contract)', async () => {
   it('clears the navbar at every width and for every anchor', () => {
     assert.ok(heroClearsNavbar(css, shellNavOffset(false)));
     // The shell offsets #main-content by pt-20 (80px); with the hero's
-    // minimum padding the eyebrow starts well below the full navbar.
+    // minimum padding (16px) the eyebrow starts below the full navbar.
     const shell = readFileSync(
       new URL(
         '../../../../packages/marketing-shell/src/marketing-shell.tsx',
@@ -652,14 +679,14 @@ describe('hero and navbar offset (CSS contract)', async () => {
     );
     assert.match(shell, /id="main-content"/);
     assert.match(shell, /pt-20/);
-    assert.ok(80 + 48 >= shellNavOffset(false) + 32);
+    assert.ok(80 + 16 >= shellNavOffset(false) + 16);
   });
 
   it('broken variant: top-0 anchors and a fixed hero padding fail', () => {
     const broken = css
       .replace(/scroll-padding-top:\s*\d+px/, 'scroll-padding-top: 0px')
       .replace(
-        /padding-top: max\(48px, calc\(var\(--shell-nav-offset, 76px\) - 24px\)\)/,
+        /padding-top: max\(16px, calc\(var\(--shell-nav-offset, 76px\) - 64px\)\)/,
         'padding-top: 0'
       );
     assert.equal(heroClearsNavbar(broken, shellNavOffset(false)), false);

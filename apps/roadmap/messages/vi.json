@@ -17,9 +17,9 @@
   "hero": {
     "asOf": "Từ pull request công khai và kiểm tra triển khai · cập nhật lúc",
     "state": {
-      "snapshot": "Ảnh chụp",
+      "snapshot": "Bản lưu",
       "live": "Trực tiếp",
-      "failed": "Chỉ ảnh chụp"
+      "failed": "Chỉ bản lưu"
     }
   },
   "tabs": {
@@ -34,13 +34,13 @@
     "close": "Đóng"
   },
   "stats": {
-    "shippedWeek": "Ra mắt tuần này",
+    "shippedWeek": "Đã ra mắt tuần này",
     "live": "Hạng mục đang chạy",
     "inFlight": "Đang thực hiện",
     "planned": "Dự kiến",
     "cloudflare": "Ứng dụng trên Cloudflare",
     "mergedWeek": "PR đã gộp tuần này",
-    "waiting": "Chờ đồng bộ production",
+    "waiting": "Chờ đồng bộ bản chính thức",
     "ofTotal": "trên {n}",
     "trackedNote": "{n} PR thuộc lộ trình",
     "newThisWeek": "{n} mới trong tuần",
@@ -50,7 +50,7 @@
     "down": "Giảm",
     "flat": "Không đổi",
     "fromZero": "từ 0",
-    "allNotAvailable": "Bản dựng này chưa có tổng số PR",
+    "allNotAvailable": "Phiên bản trang này chưa có tổng số PR",
     "trackedVsLastWeek": "PR thuộc lộ trình, so với tuần trước"
   },
   "calendar_category_reorder_pilot": {
@@ -64,15 +64,15 @@
   },
   "comingSoon": "Sắp ra mắt",
   "shipped": {
-    "title": "Ra mắt tuần này",
-    "subtitle": "Các hạng mục được merge trong 7 ngày qua. “Đã chạy” nghĩa là bản triển khai production đã có thay đổi.",
+    "title": "Đã ra mắt tuần này",
+    "subtitle": "Các hạng mục được gộp trong 7 ngày qua. “Đã chạy” nghĩa là bản chính thức đã có thay đổi.",
     "today": "Hôm nay",
     "yesterday": "Hôm qua",
-    "empty": "Chưa có gì được merge trong 7 ngày qua.",
+    "empty": "Chưa có gì được gộp trong 7 ngày qua.",
     "showAll": "Xem tất cả",
     "showLess": "Thu gọn",
-    "more": "Tính năng khác đã merge",
-    "moreHint": "Pull request tính năng được merge tuần này, lấy trực tiếp từ GitHub."
+    "more": "Tính năng khác đã gộp",
+    "moreHint": "Pull request tính năng được gộp tuần này, lấy trực tiếp từ GitHub."
   },
   "tracks": {
     "title": "Các mảng",
@@ -90,31 +90,31 @@
   },
   "status": {
     "live": "Đã chạy",
-    "waiting_for_prod_sync": "Chờ đồng bộ production",
-    "waiting_for_merge": "Chờ merge",
+    "waiting_for_prod_sync": "Chờ đồng bộ bản chính thức",
+    "waiting_for_merge": "Chờ gộp",
     "in_progress": "Đang thực hiện",
     "planned": "Dự kiến"
   },
   "item": {
-    "merged": "Đã merge",
-    "awaitingDeploy": "Đã merge; chờ triển khai lên",
-    "unverified": "Đã merge; chưa thể xác minh triển khai công khai",
-    "notOnWorkers": "Đã merge; ứng dụng chưa chạy trên Workers",
-    "nextRelease": "Đã merge; có trong bản phát hành ứng dụng tới"
+    "merged": "Đã gộp",
+    "awaitingDeploy": "Đã gộp; chờ triển khai lên",
+    "unverified": "Đã gộp; chưa thể xác minh triển khai công khai",
+    "notOnWorkers": "Đã gộp; ứng dụng chưa chạy trên Workers",
+    "nextRelease": "Đã gộp; có trong bản phát hành ứng dụng tới"
   },
   "hosting": {
     "title": "Mỗi ứng dụng đang chạy ở đâu",
     "subtitle": "Endpoint build-info công khai của từng ứng dụng, kiểm tra từ bên ngoài Cloudflare, cho biết ứng dụng đang chạy commit nào và commit đó được tạo khi nào.",
     "checked": "Nơi chạy ứng dụng tính đến",
-    "checkedNote": "Kiểm tra lúc trang này được build; mỗi lần triển khai đều kiểm tra lại.",
+    "checkedNote": "Kiểm tra lúc trang này được cập nhật; mỗi lần triển khai đều kiểm tra lại.",
     "workers": "Cloudflare Workers",
     "vercel": "Vercel",
     "store": "Kho ứng dụng",
     "unknown": "Chưa xác minh được",
-    "buildFrom": "Bản build ngày",
+    "buildFrom": "Phiên bản ngày",
     "noCommit": "Không báo commit",
     "main": "Mới nhất trên main",
-    "notObserved": "Bản build này không kiểm tra được nơi chạy của ứng dụng, nên mọi ứng dụng đều hiển thị là chưa xác minh được.",
+    "notObserved": "Phiên bản trang này không kiểm tra được nơi chạy của ứng dụng, nên mọi ứng dụng đều hiển thị là chưa xác minh được.",
     "trademark": "Cloudflare, logo Cloudflare và Cloudflare Workers là nhãn hiệu và/hoặc nhãn hiệu đã đăng ký của Cloudflare, Inc. tại Hoa Kỳ và các khu vực pháp lý khác."
   },
   "migration": {
@@ -131,7 +131,7 @@
     "from": "từ",
     "to": "sang",
     "list": "Các ứng dụng và đường dẫn mới",
-    "asOf": "Kiểm tra lúc trang này được build:",
+    "asOf": "Kiểm tra lúc trang này được cập nhật:",
     "methodTitle": "Cách xác định từng trạng thái",
     "rules": {
       "done": "Tên miền phụ tự chuyển hướng sang đường dẫn trên tuturuuu.com.",
@@ -142,15 +142,15 @@
   },
   "method": {
     "title": "Cách tính trạng thái",
-    "live": "Mọi pull request đã merge và bản triển khai production có từ sau thời điểm merge.",
-    "waiting_for_prod_sync": "Đã merge vào main; production chưa có hoặc chưa xác minh được.",
+    "live": "Mọi pull request đã gộp và bản chính thức được triển khai sau thời điểm gộp.",
+    "waiting_for_prod_sync": "Đã gộp vào main; bản chính thức chưa có hoặc chưa xác minh được.",
     "waiting_for_merge": "Pull request đang mở, sẵn sàng và đã được duyệt.",
     "in_progress": "Có pull request đang mở, hoặc việc đã bắt đầu nhưng chưa có PR công khai.",
     "planned": "Có trong kế hoạch. Không khẳng định gì khi chưa có bằng chứng công khai.",
     "sources": "Nguồn: pull request công khai trong tutur3u/platform và /api/build-info công khai của từng ứng dụng. Khi tab này đang mở, trang tự làm mới mỗi 30 phút."
   },
   "footer": "Lộ trình công khai. Không có dữ liệu vận hành nội bộ. Ngày theo giờ Việt Nam (UTC+7).",
-  "build": "Bản dựng",
+  "build": "Phiên bản",
   "timeline": {
     "title": "Dòng thời gian",
     "subtitle": "Mọi thứ đã ra mắt, từ commit đầu tiên vào tháng 10/2022 đến hôm nay. Chọn tuần, tháng hoặc năm.",
@@ -170,12 +170,12 @@
     "features": "tính năng",
     "fixes": "sửa lỗi",
     "changes": "thay đổi",
-    "merged": "thay đổi đã merge",
+    "merged": "thay đổi đã gộp",
     "moreFixes": "sửa lỗi",
     "moreOther": "thay đổi khác",
     "showMore": "Xem thêm {n}",
     "showLess": "Thu gọn",
-    "nothing": "Không có thay đổi nào được merge trong giai đoạn này.",
+    "nothing": "Không có thay đổi nào được gộp trong giai đoạn này.",
     "otherNote": "thay đổi ở các sản phẩm khác, dự án khách hàng và việc nội bộ.",
     "plannedTitle": "Sắp tới",
     "plannedNote": "Việc đang làm và trong kế hoạch, từ các mảng bên dưới.",
@@ -188,15 +188,15 @@
   "titleMark": "công khai",
   "pulse": {
     "title": "Nhịp phát hành",
-    "subtitle": "Số pull request được gộp mỗi ngày, và bao nhiêu phần việc của lộ trình đã chạy trên production.",
+    "subtitle": "Số pull request được gộp mỗi ngày, và bao nhiêu phần việc của lộ trình đã chạy trên bản chính thức.",
     "range": "Khoảng thời gian",
     "rangeOption": "{n} ngày",
     "rangeName": "{n} ngày gần nhất",
     "all": "Tất cả PR đã gộp",
     "tracked": "PR thuộc lộ trình",
-    "inProd": "Thuộc lộ trình, đang chạy production",
+    "inProd": "Thuộc lộ trình, đang chạy trên bản chính thức",
     "average": "Trung bình 7 ngày",
-    "deploys": "Bản dựng production",
+    "deploys": "Bản chính thức đang chạy",
     "products": "Sản phẩm có thay đổi",
     "none": "Không có",
     "notAvailable": "Chưa có số liệu",
@@ -208,16 +208,16 @@
     "capped": "Tìm kiếm GitHub chạm giới hạn, nên tổng số PR gần đây có thể thấp hơn thực tế.",
     "loading": "Đang tải các ngày cũ hơn…",
     "failed": "Hiện chưa tải được các ngày cũ hơn.",
-    "deploysNote": "Bản dựng mỗi ứng dụng đang chạy, theo ngày dựng.",
+    "deploysNote": "Phiên bản mỗi ứng dụng đang chạy, theo ngày tạo.",
     "chart": "Số pull request được gộp mỗi ngày. Dùng phím mũi tên để chuyển giữa các ngày.",
     "table": "Số liệu theo ngày",
     "day": "Ngày",
     "vsPrevious": "so với {n} ngày trước đó",
-    "ttl": "Từ lúc gộp đến production",
-    "ttlNote": "Tính đến bản dựng đang phục vụ mỗi PR, nên là giới hạn trên.",
+    "ttl": "Từ lúc gộp đến bản chính thức",
+    "ttlNote": "Tính đến phiên bản đang phục vụ mỗi PR, nên là giới hạn trên.",
     "median": "Trung vị",
     "p90": "p90",
-    "waitingAge": "Đang chờ production",
+    "waitingAge": "Đang chờ lên bản chính thức",
     "breakdown": "Theo sản phẩm",
     "other": "Sản phẩm khác",
     "minutes": "{n} phút",
@@ -231,18 +231,18 @@
     "shipped": "đã phát hành"
   },
   "updates": {
-    "title": "Cập nhật production mới nhất",
-    "subtitle": "Những gì đã lên production, ở ứng dụng nào và khi nào. Mới nhất ở trên.",
-    "built": "Dựng lúc",
+    "title": "Cập nhật bản chính thức mới nhất",
+    "subtitle": "Những gì đã lên bản chính thức, ở ứng dụng nào và khi nào. Mới nhất ở trên.",
+    "built": "Tạo lúc",
     "commitTime": "Commit đang chạy, tạo lúc",
     "waiting": "Chờ lần deploy tiếp theo của ứng dụng",
     "sinceLastVisit": "Từ lần ghé thăm trước",
     "new": "Mới",
-    "empty": "Chưa ghi nhận bản dựng production nào cho trang này.",
+    "empty": "Trang này chưa ghi nhận phiên bản chính thức nào.",
     "more": "+{n} mục nữa",
     "liveCount": "{n} đang chạy",
     "waitingCount": "{n} đang chờ",
-    "latest": "Bản cập nhật production gần nhất",
+    "latest": "Cập nhật bản chính thức gần nhất",
     "seeAll": "Xem tất cả bản cập nhật"
   },
   "notes": {
@@ -251,5 +251,13 @@
     "llm": "{model} tóm tắt từ các pull request đã gộp.",
     "fallback": "Dự phòng (fallback) · Tổng hợp từ tiêu đề các pull request đã gộp.",
     "pr": "Pull request #{n}"
+  },
+  "empty": {
+    "hosting": "Phiên bản trang này chưa xác minh được hạ tầng đang chạy",
+    "notes": "Phiên bản trang này chưa có ghi chú phát hành",
+    "notesBody": "Ghi chú phát hành được tổng hợp từ các pull request đã gộp mỗi khi trang được cập nhật, và lần này chưa có ghi chú nào. Mục cập nhật bản chính thức vẫn cho biết những gì đã lên bản chính thức.",
+    "updates": "Chưa có cập nhật bản chính thức",
+    "tracks": "Không có hạng mục phù hợp",
+    "period": "Chưa có thay đổi"
   }
 }

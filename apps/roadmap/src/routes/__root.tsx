@@ -12,6 +12,7 @@ import { StatusPage } from '@tuturuuu/ui/custom/status-page';
 import type { ReactNode } from 'react';
 import logo from '../assets/tuturuuu-logo.png?no-inline';
 import { langFromPathname } from '../seo';
+import { sorbetPage } from '../sorbet-page';
 import styles from '../styles.css?url';
 
 export const Route = createRootRoute({
@@ -80,10 +81,15 @@ function RoadmapError({ error, reset }: ErrorComponentProps) {
 }
 
 function Document({ children }: { children: ReactNode }) {
-  // Each language has its own URL, so the document language follows it.
+  // Each language has its own URL, so the document language follows it;
+  // the roadmap renders in Sorbet (see sorbet-page.ts).
   const pathname = useRouterState({ select: (s) => s.location.pathname });
   return (
-    <html lang={langFromPathname(pathname)} suppressHydrationWarning>
+    <html
+      lang={langFromPathname(pathname)}
+      data-ui={sorbetPage(pathname) ? 'sorbet' : undefined}
+      suppressHydrationWarning
+    >
       <head>
         <HeadContent />
       </head>

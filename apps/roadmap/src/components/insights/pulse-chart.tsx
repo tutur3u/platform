@@ -7,7 +7,12 @@ import {
   useState,
 } from 'react';
 import { TRACK_NAMES } from '../../content/track-names';
-import { axisRank, nextIndex, niceMax } from '../../insights/chart-nav';
+import { axisRank, dayAt, nextIndex, niceMax } from '../../insights/chart-nav';
+import {
+  type Press,
+  type PressEvent,
+  pressStep,
+} from '../../insights/chart-press';
 import type { PulsePoint } from '../../insights/pulse-model';
 import type { Lang, Messages } from '../shared';
 import { formatNumber, longDay, shortDay } from './format';
@@ -100,9 +105,12 @@ function linePath(points: readonly PulsePoint[], max: number) {
 
 /**
  * Interactive daily chart: SVG marks under a row of real buttons, one per
- * day, so hover, tap and keyboard all select a day. Arrow keys, Home, End,
- * PageUp and PageDown move a roving focus; the tooltip is a polite live
- * region; a visually hidden table carries every figure.
+ * day. For a pointer the whole plot is ONE target: a tap or a drag selects
+ * the nearest day (hover too, with a mouse), so no day needs a 44px column.
+ * The per-day buttons carry keyboard and assistive-technology use: arrow
+ * keys, Home, End, PageUp and PageDown move a roving focus, and each has
+ * the day as its name. The tooltip is a polite live region; a visually
+ * hidden table carries every figure.
  */
 export function PulseChart({
   points,
@@ -119,6 +127,8 @@ export function PulseChart({
   const [focusIndex, setFocusIndex] = useState(count - 1);
   const [active, setActive] = useState<number | null>(null);
   const buttons = useRef<(HTMLButtonElement | null)[]>([]);
+  // The press in progress on the plot (insights/chart-press.ts).
+  const press = useRef<Press | null>(null);
   const tooltipId = useId();
   const roving = Math.min(focusIndex, count - 1);
   const max = niceMax(
@@ -145,14 +155,47 @@ export function PulseChart({
     event.preventDefault();
     select(next, true);
   };
-  const onPointerMove = (event: PointerEvent<HTMLDivElement>) => {
-    if (event.pointerType === 'touch') return;
+  const pointerDay = (event: PointerEvent<HTMLDivElement>) => {
     const box = event.currentTarget.getBoundingClientRect();
-    const index = Math.floor(((event.clientX - box.left) / box.width) * count);
-    if (index >= 0 && index < count && index !== active) setActive(index);
+    return dayAt(event.clientX, box.left, box.width, count);
   };
+  const apply = (event: PressEvent) => {
+    const next = pressStep({ press: press.current, active, roving }, event);
+    press.current = next.press;
+    if (next.active !== active) setActive(next.active);
+    if (next.roving !== roving) setFocusIndex(next.roving);
+  };
+  const onPointerDown = (event: PointerEvent<HTMLDivElement>) => {
+    if (event.button !== 0) return;
+    // A mouse or pen keeps the plot's moves while held, also outside it
+    // (each clamps to the first or last day) and gets the up there. Touch
+    // is captured implicitly, and pan-y lets a vertical swipe scroll (the
+    // browser then sends pointercancel).
+    if (event.pointerType !== 'touch')
+      event.currentTarget.setPointerCapture?.(event.pointerId);
+    apply({
+      type: 'down',
+      id: event.pointerId,
+      index: pointerDay(event),
+      pointerType: event.pointerType,
+    });
+  };
+  const onPointerMove = (event: PointerEvent<HTMLDivElement>) =>
+    apply({
+      type: 'move',
+      id: event.pointerId,
+      index: pointerDay(event),
+      pointerType: event.pointerType,
+      buttons: event.buttons,
+    });
+  const onPointerUp = (event: PointerEvent<HTMLDivElement>) =>
+    apply({ type: 'up', id: event.pointerId });
+  const onPointerCancel = (event: PointerEvent<HTMLDivElement>) =>
+    apply({ type: 'cancel', id: event.pointerId });
+  const onLostPointerCapture = (event: PointerEvent<HTMLDivElement>) =>
+    apply({ type: 'lost', id: event.pointerId });
   const onPointerLeave = (event: PointerEvent<HTMLDivElement>) => {
-    if (event.pointerType === 'touch') return;
+    if (event.pointerType === 'touch' || press.current) return;
     if (!event.currentTarget.contains(document.activeElement)) setActive(null);
   };
 
@@ -206,7 +249,11 @@ export function PulseChart({
           role="group"
           aria-label={t.pulse.chart}
           onKeyDown={onKeyDown}
+          onPointerDown={onPointerDown}
           onPointerMove={onPointerMove}
+          onPointerUp={onPointerUp}
+          onPointerCancel={onPointerCancel}
+          onLostPointerCapture={onLostPointerCapture}
           onPointerLeave={onPointerLeave}
           onBlur={(event) => {
             if (!event.currentTarget.contains(event.relatedTarget as Node))

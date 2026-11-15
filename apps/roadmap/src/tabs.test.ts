@@ -149,4 +149,19 @@ describe('hero: the live label describes the data on screen', () => {
       state === 'refreshing' ? 'snapshot' : state;
     assert.notEqual(byState('refreshing'), shownState('refreshing', 'live'));
   });
+
+  it('is source first: live data on screen is labelled live, even after a failed check', () => {
+    // A failed check while live data is still displayed (the switch back to
+    // the snapshot has not rendered yet) describes the data shown: live.
+    assert.equal(shownState('failed', 'live'), 'live');
+    assert.equal(shownState('snapshot', 'live'), 'live');
+    // Build data is never labelled live, whatever the refresh state.
+    for (const state of ['snapshot', 'refreshing', 'live'] as const)
+      assert.notEqual(shownState(state, 'build'), 'live');
+    // Broken variant (state first): a failed check wins over the source and
+    // claims "Snapshot only" while live data is still on screen.
+    const stateFirst = (state: string, source: 'build' | 'live') =>
+      state === 'failed' ? 'failed' : source === 'live' ? 'live' : 'snapshot';
+    assert.notEqual(stateFirst('failed', 'live'), shownState('failed', 'live'));
+  });
 });

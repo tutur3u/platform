@@ -1,4 +1,9 @@
-import { ChevronDown, ChevronLeft, ChevronRight } from '@tuturuuu/icons';
+import {
+  CalendarX2,
+  ChevronDown,
+  ChevronLeft,
+  ChevronRight,
+} from '@tuturuuu/icons';
 import {
   type KeyboardEvent,
   useCallback,
@@ -28,6 +33,7 @@ import {
   timelineSearch,
 } from '../history/timeline';
 import { useHistory } from '../history/use-history';
+import { EmptyState } from './empty-state';
 import type { LiveData } from '../live/model';
 import type { RoadmapView } from '../view-model';
 import {
@@ -270,7 +276,9 @@ export function TimelineSection({
             ))}
           </div>
         ) : (
-          <p className="empty">{t.timeline.nothing}</p>
+          <EmptyState icon={<CalendarX2 size={18} />} title={t.empty.period}>
+            {t.timeline.nothing}
+          </EmptyState>
         )}
         {period.isCurrent ? (
           <PlannedNext t={t} items={plannedNext(deliverables)} />

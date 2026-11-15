@@ -39,7 +39,7 @@ import {
   ProductionUpdates,
   UpdatesTeaser,
 } from '../components/insights/updates';
-import { PatchNotes } from '../components/insights/patch-notes';
+import { NotesEmpty, PatchNotes } from '../components/insights/patch-notes';
 import { shownState } from '../components/live-label';
 import { RoadmapTabs, skipToTabs } from '../components/tabs';
 
@@ -178,6 +178,7 @@ const RoadmapMain = memo(function RoadmapMain({
           >
             <ProductionUpdates t={t} lang={lang} updates={insights.updates} />
             <PatchNotes t={t} lang={lang} changelog={changelog} />
+            {changelog?.releases.length ? null : <NotesEmpty t={t} />}
           </div>
         </Suspense>
       </>
@@ -196,7 +197,7 @@ const RoadmapMain = memo(function RoadmapMain({
     ),
   };
   return (
-    <main className="page">
+    <main className="page rm-page">
       <Hero
         t={t}
         view={view}

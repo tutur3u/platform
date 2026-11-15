@@ -10,7 +10,7 @@
  * TABS_SOURCE_DIR points it at another copy of the component (an older
  * commit), so a regression test can show that it rejects that code.
  */
-import { mkdtempSync, readFileSync, writeFileSync } from 'node:fs';
+import { mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { fileURLToPath, pathToFileURL } from 'node:url';
@@ -48,12 +48,26 @@ const OWNERS = {
 
 let loaded = null;
 
+/** Every temporary module directory this process made (all removed once loaded). */
+export const harnessDirs = [];
+
 async function load() {
   if (loaded) return loaded;
   const dir =
     process.env.TABS_SOURCE_DIR ??
     fileURLToPath(new URL('../src/components/', import.meta.url));
   const out = mkdtempSync(join(tmpdir(), 'roadmap-tabs-'));
+  harnessDirs.push(out);
+  try {
+    loaded = await compile(dir, out);
+  } finally {
+    // The modules are evaluated once imported; the files are not needed.
+    rmSync(out, { recursive: true, force: true });
+  }
+  return loaded;
+}
+
+async function compile(dir, out) {
   const urls = {};
   for (const [name, code] of Object.entries(STUBS)) {
     const file = join(out, `${name.replace(/[^a-z]/gi, '_')}.mjs`);
@@ -75,8 +89,7 @@ async function load() {
   );
   const file = join(out, 'tabs.mjs');
   writeFileSync(file, linked);
-  loaded = await import(pathToFileURL(file).href);
-  return loaded;
+  return import(pathToFileURL(file).href);
 }
 
 function walk(node, visit) {

@@ -44,3 +44,18 @@ export function niceMax(value: number) {
   }
   return 10 * magnitude;
 }
+
+/**
+ * The day under a pointer on the pulse chart: its x across the plot as a
+ * day index, clamped so a drag past either edge keeps the first or last.
+ */
+export function dayAt(
+  clientX: number,
+  left: number,
+  width: number,
+  count: number
+) {
+  if (!(width > 0) || count < 1) return 0;
+  const index = Math.floor(((clientX - left) / width) * count);
+  return Math.min(count - 1, Math.max(0, index));
+}

@@ -34,7 +34,6 @@
   flex: 1;
   border-top: 2px solid color-mix(in oklab, var(--rm-merge) 50%, transparent);
 }
-.updates-empty,
 .notes-source {
   margin: 0;
   font-size: 13px;

@@ -7,7 +7,8 @@
  */
 import assert from 'node:assert/strict';
 import test from 'node:test';
-import { mountTabs } from './tabs-harness.mjs';
+import { existsSync } from 'node:fs';
+import { harnessDirs, mountTabs } from './tabs-harness.mjs';
 
 test('tabs: an unknown fragment, a tab click, then Back shows Overview again', async () => {
   for (const start of ['garbage', '100%']) {
@@ -53,4 +54,11 @@ test('tabs: a fragment link to an old section opens its tab and scrolls to it', 
   assert.equal(page.fragmentLink('pulse'), 'activity', 'hero "PRs merged"');
   assert.equal(page.back(), 'activity');
   assert.equal(page.back(), 'overview');
+});
+
+test('tabs harness: removes its temporary module directory once loaded', async () => {
+  await mountTabs('');
+  assert.ok(harnessDirs.length >= 1, 'the harness made a module directory');
+  for (const dir of harnessDirs)
+    assert.equal(existsSync(dir), false, `${dir} is left behind`);
 });

@@ -2,19 +2,30 @@
   height: 12px;
 }
 .rm-panel > .overall .legend {
-  font-size: 13px;
+  font-size: var(--rm-text-sm);
   gap: 8px 18px;
 }
-@media (min-width: 900px) {
+@media (min-width: 720px) {
   .kpis {
     grid-template-columns: repeat(3, minmax(0, 1fr));
-    gap: 12px;
-  }
-  .kpi-waiting {
-    grid-column: auto;
+    gap: var(--rm-space-3);
   }
   .kpi-body {
-    padding: 18px 20px;
+    grid-template-columns: minmax(0, 1fr);
+    grid-template-areas: "label" "figure" "delta" "note";
+    align-items: start;
+    align-content: start;
+    gap: var(--rm-space-1);
+    padding: var(--rm-space-4) var(--rm-space-5);
+  }
+  .kpi-body > .kpi-value {
+    margin-top: var(--rm-space-1);
+    text-align: start;
+  }
+  .kpi-note {
+    min-height: 2.8em;
+    -webkit-line-clamp: 2;
+    line-clamp: 2;
   }
 }
 
@@ -24,7 +35,7 @@
   flex-wrap: wrap;
   align-items: center;
   gap: 4px;
-  font-size: 12.5px;
+  font-size: var(--rm-text-xs);
   font-weight: 600;
   font-variant-numeric: tabular-nums;
 }
@@ -52,10 +63,13 @@
   color: var(--rm-muted);
 }
 .delta-good {
-  color: color-mix(in oklab, var(--rm-live) 62%, var(--rm-ink));
+  color: var(--rm-live-text);
 }
 .delta-bad {
-  color: color-mix(in oklab, var(--rm-progress) 62%, var(--rm-ink));
+  color: var(--rm-progress-text);
+}
+.kpi-waiting .delta-label {
+  color: var(--rm-ink);
 }
 
 /* Shipping pulse */
@@ -100,9 +114,12 @@
   height: 10px;
   border-radius: 3px;
 }
+/* Series colours (tokens.css): each mark is at least 3:1 against the card
+   and the hover band in both modes; stacked series are also separated by
+   a card-coloured edge, so they never rely on colour alone. */
 .pulse-section {
-  --pc-all: color-mix(in oklab, var(--rm-ink) 46%, transparent);
-  --pc-na: color-mix(in oklab, var(--rm-ink) 3%, transparent);
+  --pc-all: var(--rm-chart-muted);
+  --pc-na: color-mix(in srgb, var(--rm-ink) 3%, transparent);
   --pc-tracked: var(--rm-merge);
   --pc-prod: var(--rm-live);
 }
@@ -155,14 +172,28 @@
   height: 100%;
   overflow: visible;
 }
+/* A highlight behind the selected day, not a mark: no 3:1 claim. The marks
+   keep 3:1 or more on top of it (sorbet-tokens.test.ts). */
 .pchart-hover {
-  fill: color-mix(in oklab, var(--rm-ink) 7%, transparent);
+  fill: color-mix(in srgb, var(--rm-ink) 7%, transparent);
 }
 .bar-all {
   fill: var(--pc-all);
 }
+/* Days without an all-PR count: a faint band with a dashed muted outline
+   (4.5:1), so the gap reads as "no data", not as a short bar. */
 .bar-na {
   fill: var(--pc-na);
+  stroke: var(--rm-muted);
+  stroke-width: 1px;
+  stroke-dasharray: 3 3;
+  vector-effect: non-scaling-stroke;
+}
+.bar-tracked,
+.bar-prod {
+  stroke: var(--rm-panel);
+  stroke-width: 1px;
+  vector-effect: non-scaling-stroke;
 }
 .bar-tracked {
   fill: var(--pc-tracked);
@@ -177,10 +208,16 @@
   stroke-linejoin: round;
   stroke-linecap: round;
 }
+/* One pointer target for the whole plot (pulse-chart.tsx): a tap or a
+   horizontal drag selects the nearest day; a vertical drag still scrolls.
+   The per-day buttons take keyboard focus and assistive-technology
+   activation only, so no column has to be a 44px target. */
 .pchart-hits {
   position: absolute;
   inset: 0;
   display: flex;
+  cursor: pointer;
+  touch-action: pan-y;
 }
 .pchart-hit {
   flex: 1;
@@ -190,7 +227,7 @@
   border: 0;
   border-radius: 4px;
   background: transparent;
-  touch-action: manipulation;
+  pointer-events: none;
 }
 .pchart-hit:focus-visible {
   outline: 2px solid var(--rm-sync);
@@ -401,7 +438,7 @@
   display: block;
   height: 100%;
   border-radius: inherit;
-  background: color-mix(in oklab, var(--rm-ink) 55%, transparent);
+  background: var(--rm-chart-muted);
 }
 .breakdown-count {
   text-align: right;

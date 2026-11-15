@@ -1,8 +1,10 @@
+import { ScrollText } from '@tuturuuu/icons';
 import { useState } from 'react';
 import { localDay } from '../../live/feed';
 import type { Changelog } from '../../changelog/schema';
 import { TRACK_NAMES } from '../../content/track-names';
 import { REPO_URL } from '../../live/model';
+import { EmptyState } from '../empty-state';
 import type { Lang, Messages } from '../shared';
 import { fill, shortDay } from './format';
 
@@ -92,6 +94,27 @@ export function PatchNotes({
           </li>
         ))}
       </ol>
+    </section>
+  );
+}
+
+/**
+ * No changelog in this build (missing, invalid or with no releases): say
+ * so where the patch notes would be, instead of leaving a silent gap.
+ */
+export function NotesEmpty({ t }: { t: Messages }) {
+  return (
+    <section
+      className="section patch-notes"
+      id="patch-notes"
+      aria-labelledby="notes-empty-title"
+    >
+      <header className="section-head">
+        <h2 id="notes-empty-title">{t.notes.title}</h2>
+      </header>
+      <EmptyState icon={<ScrollText size={18} />} title={t.empty.notes}>
+        {t.empty.notesBody}
+      </EmptyState>
     </section>
   );
 }

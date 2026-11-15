@@ -1,4 +1,5 @@
 @import "./styles/section-1.css";
+@import "./styles/tokens.css";
 @import "./styles/section-2.css";
 @import "./styles/section-3.css";
 @import "./styles/section-4.css";
@@ -9,3 +10,4 @@
 @import "./styles/masonry.css";
 @import "./styles/info.css";
 @import "./styles/tabs.css";
+@import "./styles/targets.css";

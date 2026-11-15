@@ -251,5 +251,13 @@
     "llm": "Summarised by {model} from merged pull requests.",
     "fallback": "Fallback · Compiled from merged pull request titles.",
     "pr": "Pull request #{n}"
+  },
+  "empty": {
+    "hosting": "Hosting not verified in this build",
+    "notes": "No patch notes in this build",
+    "notesBody": "Patch notes are compiled from merged pull requests when the page is built, and none were available this time. The production updates still show what reached production.",
+    "updates": "No production updates yet",
+    "tracks": "No matching deliverables",
+    "period": "Nothing merged"
   }
 }

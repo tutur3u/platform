@@ -1,0 +1,97 @@
+/* Targets: every roadmap control is at least 44 x 44 CSS px on every
+   pointer. Compact controls keep their look and gain an invisible hit
+   area: a positioned ::after inside the control, centred on it and at
+   least 44px in each direction it can grow without reaching a neighbour
+   (vertical only where neighbours sit side by side). Rows that scroll
+   sideways clip what sticks out, so they get room inside without moving.
+   On touch screens the period buttons also grow for real. The pulse chart
+   is one pointer target (section-7.css). The only exceptions are inline
+   targets (WCAG 2.5.8): PR numbers inside a metadata line and links in
+   running text. The browser self-test measures every control at 1440 (fine
+   pointer) and 390 (coarse), docked and undocked. */
+.segmented button,
+.tip-btn,
+.info-btn,
+.icon-button,
+.track-nav a,
+.text-button,
+.host-commit {
+  position: relative;
+}
+.segmented button::after,
+.tip-btn::after,
+.track-nav a::after,
+.text-button::after {
+  content: "";
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: min(0px, calc(50% - 22px));
+  bottom: min(0px, calc(50% - 22px));
+}
+.info-btn::after,
+.icon-button::after,
+.host-commit::after {
+  content: "";
+  position: absolute;
+  inset: min(0px, calc(50% - 22px));
+}
+.segmented button {
+  min-width: 44px;
+}
+.skip-link {
+  display: inline-flex;
+  align-items: center;
+  min-height: 44px;
+}
+/* The chip and filter rows scroll sideways, which clips anything outside
+   them: room for the hit areas inside each row, the same outer size, and a
+   bar gap wide enough that the two rows' hit areas never meet. */
+.track-nav {
+  padding-block: 7px;
+  margin-block: -7px;
+}
+.filters {
+  padding-block: 6px;
+  margin-block: -6px;
+}
+.sticky-bar {
+  row-gap: 14px;
+}
+/* Legend rows and the timeline footer: room for the 44px hit areas of
+   stacked rows. */
+.legend,
+.rm-panel > .overall .legend,
+.pulse-legend {
+  row-gap: 20px;
+}
+.period-group footer {
+  margin-top: 16px;
+}
+/* Docked into the compact navbar (y 8-52): the scroll row spans y 4-48,
+   4px inside the header, and its content box (from y 12) keeps the chips
+   centred on the pill at y 30. Each hit area runs from 26px above that
+   centre to 18px below it: y 4-48, 44px, all inside the row. */
+.roadmap[data-nav-compact] .sticky-bar {
+  top: 4px;
+  height: 44px;
+  padding-top: 8px;
+}
+.roadmap[data-nav-compact] .track-nav,
+.roadmap[data-nav-compact] .filters {
+  padding-block: 0;
+  margin-block: 0;
+}
+.roadmap[data-nav-compact] :is(.track-nav a, .filters button)::after {
+  top: calc(50% - 26px);
+  bottom: calc(50% - 18px);
+}
+@media (pointer: coarse) {
+  .icon-button {
+    width: 44px;
+    height: 44px;
+  }
+  .scrubber {
+    grid-template-columns: 44px minmax(0, 1fr) 44px;
+  }
+}

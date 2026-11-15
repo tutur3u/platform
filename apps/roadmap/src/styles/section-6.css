@@ -144,15 +144,15 @@
   list-style: none;
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 10px;
+  gap: var(--rm-space-2);
 }
 .glance-tile {
   display: grid;
-  grid-template-columns: 48px minmax(0, 1fr);
+  grid-template-columns: 40px minmax(0, 1fr);
   grid-template-rows: auto auto;
-  column-gap: 12px;
+  column-gap: 10px;
   align-items: center;
-  padding: 12px;
+  padding: 10px;
   border: 1px solid var(--rm-line);
   border-radius: var(--rm-radius);
   background: var(--rm-panel);
@@ -163,8 +163,8 @@
 }
 .glance-ring {
   grid-row: span 2;
-  width: 48px;
-  height: 48px;
+  width: 40px;
+  height: 40px;
 }
 .glance-ring-track {
   fill: none;
@@ -177,15 +177,16 @@
   stroke-width: 6;
   stroke-linecap: round;
 }
+/* 15 units in the 48-unit ring: 12.5px on a phone's 40px ring. */
 .glance-ring-label {
-  font-size: 13px;
+  font-size: 15px;
   font-weight: 600;
   fill: var(--rm-ink);
   font-variant-numeric: tabular-nums;
 }
 .glance-name {
   font-weight: 600;
-  font-size: 14.5px;
+  font-size: var(--rm-text-md);
   line-height: 1.2;
   overflow: hidden;
   display: -webkit-box;
@@ -199,6 +200,19 @@
 @media (min-width: 720px) {
   .glance-grid {
     grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: var(--rm-space-3);
+  }
+  .glance-tile {
+    grid-template-columns: 48px minmax(0, 1fr);
+    column-gap: var(--rm-space-3);
+    padding: var(--rm-space-3);
+  }
+  .glance-ring {
+    width: 48px;
+    height: 48px;
+  }
+  .glance-ring-label {
+    font-size: 13px;
   }
 }
 @media (min-width: 1024px) {
@@ -286,10 +300,6 @@ button[data-roadmap-pending] {
 }
 button[data-roadmap-pending]:not([aria-pressed]) {
   opacity: 0.72;
-}
-
-.hosting-unverified {
-  color: var(--rm-progress-text);
 }
 
 /* Subdomain → tuturuuu.com/<app> migration. */
@@ -417,21 +427,26 @@ html:has(.roadmap) {
 .roadmap section[id] {
   scroll-margin-top: calc(var(--shell-nav-offset, 76px) + 24px);
 }
+/* The shell already reserves 80px (pt-20) above the page, which clears
+   the 76px pill; the hero adds one spacing step, so the tab bar stays in
+   a phone's first screen. */
 .roadmap .hero {
-  padding-top: max(48px, calc(var(--shell-nav-offset, 76px) - 24px));
+  padding-top: max(16px, calc(var(--shell-nav-offset, 76px) - 64px));
 }
 
-/* Headline figures: four tiles with week-over-week change, then the
-   status bar. Both span the hero, so no column is left empty. Weights stay
-   at the preloaded 500/600, so no other font face loads near the fold. */
+/* Headline figures: three tiles with week-over-week change. Phones get
+   one compact row per figure (label and change on the left, the figure on
+   the right, the note below), so the tab bar stays in the first screen;
+   wider screens get three tiles (section-7.css). Weights stay at the
+   preloaded 500/600, so no other font face loads near the fold. */
 .kpis {
   width: 100%;
-  margin: 8px 0 0;
+  margin: 0;
   padding: 0;
   list-style: none;
   display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 10px;
+  grid-template-columns: minmax(0, 1fr);
+  gap: var(--rm-space-2);
   text-align: left;
 }
 .kpi {
@@ -440,14 +455,32 @@ html:has(.roadmap) {
 }
 .kpi-body {
   display: grid;
-  align-content: start;
-  gap: 6px;
-  padding: 16px;
+  grid-template-columns: minmax(0, 1fr) auto;
+  grid-template-areas:
+    "label figure"
+    "delta figure"
+    "note note";
+  align-items: center;
+  gap: 2px var(--rm-space-3);
+  padding: var(--rm-space-3) var(--rm-space-4);
   border: 1px solid var(--rm-line);
   border-radius: var(--rm-radius);
   background: var(--rm-panel);
   color: inherit;
   text-decoration: none;
+}
+.kpi-body > .kpi-label {
+  grid-area: label;
+}
+.kpi-body > .kpi-value {
+  grid-area: figure;
+  text-align: end;
+}
+.kpi-body > .delta {
+  grid-area: delta;
+}
+.kpi-body > .kpi-note {
+  grid-area: note;
 }
 a.kpi-body:hover {
   border-color: color-mix(in oklab, var(--rm-ink) 30%, var(--rm-line));
@@ -456,39 +489,37 @@ a.kpi-body:hover {
   display: inline-flex;
   align-items: center;
   gap: 6px;
-  font-size: 13px;
+  font-size: var(--rm-text-sm);
   font-weight: 500;
   color: var(--rm-muted);
 }
 .kpi-value {
-  font-size: clamp(30px, 5vw, 40px);
+  font-size: var(--rm-text-figure);
   font-weight: 600;
   letter-spacing: -0.03em;
   line-height: 1.05;
   font-variant-numeric: tabular-nums;
 }
 .kpi-of {
-  font-size: 15px;
+  font-size: var(--rm-text-sm);
   font-weight: 500;
   letter-spacing: 0;
   color: var(--rm-muted);
 }
 /* Stable heights: a live refresh changes figures, never the tile row's
    height (no layout shift). The change label has its own line, and its
-   length depends only on the build's data. */
+   length depends only on the build's data. One line on phones, two on
+   wider tiles. */
 .kpi-note {
   display: -webkit-box;
-  min-height: 2.8em;
+  min-height: 1.4em;
   overflow: hidden;
   -webkit-box-orient: vertical;
-  -webkit-line-clamp: 2;
-  line-clamp: 2;
-  font-size: 12.5px;
+  -webkit-line-clamp: 1;
+  line-clamp: 1;
+  font-size: var(--rm-text-xs);
   line-height: 1.4;
   color: var(--rm-muted);
-}
-.kpi .delta-label {
-  flex-basis: 100%;
 }
 /* Icons are CSS masks (lucide shapes, ISC), not inline SVG, which keeps
    the document small. */
@@ -520,13 +551,13 @@ a.kpi-body:hover {
   --i-tone: var(--rm-sync);
   --i-glyph: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'><path d='M12 13v8'/><path d='M4 14.899A7 7 0 1 1 15.71 8h1.79a4.5 4.5 0 0 1 2.5 8.242'/><path d='m8 17 4-4 4 4'/></svg>");
 }
-/* Three tiles on a two-column phone grid: the emphasised one spans it. */
-.kpi-waiting {
-  grid-column: 1 / -1;
-}
+/* The emphasised tile: merged work production does not run yet. */
 .kpi-waiting .kpi-body {
-  border-color: color-mix(in oklab, var(--rm-sync) 55%, var(--rm-line));
-  background: color-mix(in oklab, var(--rm-sync) 9%, var(--rm-panel));
+  border-color: var(--rm-sync);
+  background: var(--rm-sync-fill);
+}
+.kpi-waiting :is(.kpi-of, .kpi-note) {
+  color: var(--rm-ink);
 }
 .kpi-waiting .kpi-label {
   color: var(--rm-ink);

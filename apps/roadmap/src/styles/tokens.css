@@ -1,0 +1,185 @@
+/* Design tokens. Every roadmap rule reads --rm-* only; this file says where
+   they come from.
+
+   /roadmap and /roadmap/vi render <html data-ui="sorbet"> on the server (no
+   script), so packages/ui/src/sorbet.css, shipped here through the shared
+   globals.css, remaps the shared semantic tokens to the default Sorbet
+   palette: its `:root[data-ui="sorbet"]` block in light, `.dark` in dark.
+   The second block below maps --rm-* onto those names only (the stable
+   Sorbet surface: semantic colours, status inks, --calendar-bg-* fills,
+   --radius*, --sorbet-shadow-*). sorbet-tokens.test.ts pins both Sorbet
+   blocks and checks every text pair here for WCAG AA in both modes.
+
+   The workshop pages share this stylesheet without Sorbet; the first block
+   keeps their earlier look. */
+:root {
+  --rm-bg: var(--root-background);
+  --rm-panel: var(--background);
+  --rm-ink: var(--foreground);
+  --rm-muted: color-mix(
+    in srgb,
+    var(--muted-foreground) 85%,
+    var(--foreground)
+  );
+  --rm-line: var(--border);
+  --rm-soft: color-mix(in oklab, var(--foreground) 5%, transparent);
+  --rm-ring: var(--cyan);
+  --rm-live: var(--green);
+  --rm-sync: var(--cyan);
+  --rm-merge: var(--purple);
+  --rm-progress: var(--orange);
+  --rm-planned: color-mix(in oklab, var(--muted-foreground) 70%, transparent);
+  /* Text colours are independent of the status fills. */
+  --rm-live-text: color-mix(in srgb, var(--rm-live) 65%, var(--rm-ink));
+  --rm-sync-text: color-mix(in srgb, var(--rm-sync) 65%, var(--rm-ink));
+  --rm-merge-text: color-mix(in srgb, var(--rm-merge) 65%, var(--rm-ink));
+  --rm-progress-text: color-mix(in srgb, var(--rm-progress) 65%, var(--rm-ink));
+  /* Pastel fills behind status text (badges, chips, empty-state icons). */
+  --rm-live-fill: color-mix(in oklab, var(--rm-live) 10%, transparent);
+  --rm-sync-fill: color-mix(in oklab, var(--rm-sync) 10%, transparent);
+  --rm-merge-fill: color-mix(in oklab, var(--rm-merge) 10%, transparent);
+  --rm-progress-fill: color-mix(in oklab, var(--rm-progress) 10%, transparent);
+  --rm-planned-fill: var(--rm-soft);
+  --rm-radius-sm: 10px;
+  --rm-radius: 16px;
+  --rm-radius-lg: 20px;
+  --rm-shadow: none;
+  --rm-wash-1: color-mix(in oklab, var(--purple) 20%, transparent);
+  --rm-wash-2: color-mix(in oklab, var(--blue) 16%, transparent);
+  /* Chart marks without a status colour: all merged PRs, the Workers
+     host segment's edge. */
+  --rm-chart-muted: color-mix(in oklab, var(--rm-ink) 46%, transparent);
+  --rm-chart-workers-edge: var(--orange);
+
+  /* One type scale and one spacing rhythm for the hero, the tab bar and
+     every panel (Sorbet publishes no type or spacing tokens yet). */
+  --rm-text-xs: 12px;
+  --rm-text-sm: 13px;
+  --rm-text-md: 14px;
+  --rm-text-base: 15px;
+  --rm-text-lg: 18px;
+  --rm-text-xl: 22px;
+  --rm-text-h2: clamp(26px, 3.4vw, 34px);
+  --rm-text-h1: clamp(30px, 5.4vw, 64px);
+  --rm-text-figure: clamp(24px, 3.2vw, 34px);
+  --rm-space-1: 4px;
+  --rm-space-2: 8px;
+  --rm-space-3: 12px;
+  --rm-space-4: 16px;
+  --rm-space-5: 24px;
+  --rm-space-6: 32px;
+  --rm-space-7: 48px;
+  --rm-space-8: 64px;
+}
+
+/* The roadmap: Sorbet. Inks are text-safe on every Sorbet surface, so the
+   text tokens use them directly; fills are Sorbet's matching pastels. */
+:root[data-ui="sorbet"] {
+  --rm-bg: var(--background);
+  --rm-panel: var(--card);
+  --rm-ink: var(--foreground);
+  --rm-muted: var(--muted-foreground);
+  --rm-line: var(--border);
+  --rm-soft: var(--accent);
+  --rm-ring: var(--ring);
+  --rm-live: var(--green);
+  --rm-sync: var(--teal);
+  --rm-merge: var(--purple);
+  --rm-progress: var(--orange);
+  --rm-planned: var(--gray);
+  --rm-live-text: var(--green);
+  --rm-sync-text: var(--teal);
+  --rm-merge-text: var(--purple);
+  --rm-progress-text: var(--orange);
+  --rm-live-fill: var(--calendar-bg-green);
+  --rm-sync-fill: var(--calendar-bg-cyan);
+  --rm-merge-fill: var(--calendar-bg-purple);
+  --rm-progress-fill: var(--calendar-bg-orange);
+  --rm-planned-fill: var(--calendar-bg-gray);
+  --rm-radius-sm: var(--radius);
+  --rm-radius: var(--radius-xl);
+  --rm-radius-lg: var(--radius-2xl);
+  --rm-shadow: var(--sorbet-shadow-sm);
+  --rm-wash-1: var(--calendar-bg-pink);
+  --rm-wash-2: var(--calendar-bg-blue);
+  /* Opaque mixes into the card, so every chart mark is a solid colour of at
+     least 3:1 against the card, the hover band and the bar tracks. */
+  --rm-chart-muted: color-mix(in srgb, var(--gray) 70%, var(--card));
+  --rm-chart-workers-edge: var(--orange);
+}
+:root[data-ui="sorbet"].dark {
+  --rm-chart-muted: color-mix(in srgb, var(--gray) 55%, var(--card));
+}
+
+/* Cards: one surface for every card on the page. Zero specificity, so a
+   card's own rule (an emphasised border, a hover) still wins. */
+:where(
+  .kpi-body,
+  .glance-tile,
+  .rm-panel > .overall,
+  .track,
+  .period-group,
+  .planned-next,
+  .feed,
+  .pulse-side,
+  .pulse-breakdown,
+  .release details,
+  .host-summary,
+  .host-card,
+  .migration-summary,
+  .rm-empty
+) {
+  box-shadow: var(--rm-shadow);
+}
+
+/* Empty and unknown states (components/empty-state.tsx): what is missing,
+   why, and what the page shows instead. No figures, no placeholders. */
+.rm-empty {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  align-items: start;
+  gap: var(--rm-space-1) var(--rm-space-3);
+  padding: var(--rm-space-4);
+  border: 1px dashed var(--rm-line);
+  border-radius: var(--rm-radius);
+  background: var(--rm-panel);
+  color: var(--rm-ink);
+  text-align: start;
+}
+.rm-empty-icon {
+  grid-row: 1 / span 2;
+  display: grid;
+  place-items: center;
+  width: 36px;
+  height: 36px;
+  border-radius: 999px;
+  background: var(--rm-planned-fill);
+  color: var(--rm-muted);
+}
+.rm-empty-title {
+  margin: 0;
+  font-size: var(--rm-text-base);
+  font-weight: 600;
+  line-height: 1.4;
+}
+.rm-empty-body {
+  grid-column: 2;
+  margin: 0;
+  font-size: var(--rm-text-md);
+  line-height: 1.5;
+  color: var(--rm-muted);
+}
+.rm-empty[data-tone="unknown"] {
+  border-style: solid;
+}
+.rm-empty[data-tone="unknown"] .rm-empty-icon {
+  background: var(--rm-progress-fill);
+  color: var(--rm-progress-text);
+}
+
+/* The shared footer's secondary text is foreground at 60%: 5.2:1 on the
+   default ground, 4.2:1 on Sorbet's warm white. Sorbet's muted ink keeps
+   it at 5.7:1 (light) on the roadmap; hover still turns it to ink. */
+:root[data-ui="sorbet"] .roadmap footer .text-foreground\/60:not(:hover) {
+  color: var(--rm-muted);
+}

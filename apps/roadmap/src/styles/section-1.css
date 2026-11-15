@@ -34,32 +34,9 @@
   --font-mono-ui:
     "JetBrains Mono Labels", ui-monospace, SFMono-Regular, Menlo, monospace;
 }
-/* Mobile first. Colours come from the shared Tuturuuu tokens, so the page
-   follows the same light/dark theme as every satellite. */
+/* Mobile first. The --rm-* design tokens live in tokens.css: Sorbet on the
+   roadmap, the shared Tuturuuu tokens on the workshop pages. */
 :root {
-  --rm-bg: var(--root-background);
-  --rm-panel: var(--background);
-  --rm-ink: var(--foreground);
-  --rm-muted: color-mix(
-    in srgb,
-    var(--muted-foreground) 85%,
-    var(--foreground)
-  );
-  --rm-line: var(--border);
-  --rm-soft: color-mix(in oklab, var(--foreground) 5%, transparent);
-  --rm-live: var(--green);
-  --rm-sync: var(--cyan);
-  --rm-merge: var(--purple);
-  --rm-progress: var(--orange);
-  --rm-planned: color-mix(in oklab, var(--muted-foreground) 70%, transparent);
-  /* Text colours are independent of the status fills. */
-  --rm-live-text: color-mix(in srgb, var(--rm-live) 65%, var(--rm-ink));
-  --rm-sync-text: color-mix(in srgb, var(--rm-sync) 65%, var(--rm-ink));
-  --rm-merge-text: color-mix(in srgb, var(--rm-merge) 65%, var(--rm-ink));
-  --rm-progress-text: color-mix(in srgb, var(--rm-progress) 65%, var(--rm-ink));
-  --rm-radius: 16px;
-  --rm-wash-1: color-mix(in oklab, var(--purple) 20%, transparent);
-  --rm-wash-2: color-mix(in oklab, var(--blue) 16%, transparent);
   font-family:
     ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
   background: var(--rm-bg);
@@ -88,7 +65,7 @@
     -webkit-tap-highlight-color: transparent;
   }
   :focus-visible {
-    outline: 2px solid var(--rm-sync);
+    outline: 2px solid var(--rm-ring);
     outline-offset: 3px;
     border-radius: 6px;
   }
@@ -97,7 +74,8 @@
   position: absolute;
   left: 16px;
   top: -48px;
-  z-index: 20;
+  /* Above the shell's fixed navbar (z-index 50), so it shows when focused. */
+  z-index: 60;
   padding: 8px 12px;
   border-radius: 8px;
   background: var(--rm-ink);
@@ -182,10 +160,10 @@
 .hero {
   position: relative;
   isolation: isolate;
-  padding: 48px 0 8px;
+  padding: var(--rm-space-4) 0 0;
   display: grid;
   justify-items: center;
-  gap: 18px;
+  gap: var(--rm-space-3);
   text-align: center;
 }
 /* The roadmap hero shares the EduFest hero's editorial treatment: a static
@@ -222,12 +200,12 @@
   margin: 0;
   display: inline-flex;
   align-items: center;
-  gap: 8px;
-  font-size: 13px;
+  gap: var(--rm-space-2);
+  font-size: var(--rm-text-xs);
   font-weight: 600;
-  letter-spacing: 0.06em;
+  letter-spacing: 0.08em;
   text-transform: uppercase;
-  color: color-mix(in oklab, var(--rm-ink) 70%, transparent);
+  color: var(--rm-muted);
 }
 .eyebrow-dot {
   width: 7px;
@@ -240,7 +218,7 @@
   margin: 0;
   display: grid;
   justify-items: center;
-  gap: 10px;
+  gap: 0;
   width: 100%;
   font-family: var(--font-display);
   font-weight: 600;
@@ -250,13 +228,13 @@
   display: block;
   max-width: 14em;
   text-wrap: balance;
-  font-size: clamp(38px, 7vw, 80px);
-  line-height: 1.04;
-  letter-spacing: -0.045em;
+  font-size: var(--rm-text-h1);
+  line-height: 1.1;
+  letter-spacing: -0.04em;
   color: var(--rm-ink);
 }
 .hero-h1-sub {
-  color: color-mix(in oklab, var(--rm-ink) 72%, transparent);
+  color: var(--rm-muted);
 }
 /* One emphasised phrase, underlined in brand purple instead of gradient text. */
 .hero-mark {
@@ -334,17 +312,15 @@
 /* Coming soon */
 .coming-soon article {
   position: relative;
-  padding: 20px;
-  border-radius: calc(var(--rm-radius) + 4px);
-  background:
-    linear-gradient(var(--rm-panel), var(--rm-panel)) padding-box,
-    linear-gradient(120deg, var(--rm-merge), var(--rm-sync) 55%, var(--rm-live))
-      border-box;
-  border: 1.5px solid transparent;
+  padding: var(--rm-space-5);
+  border: 1px solid var(--rm-line);
+  border-radius: var(--rm-radius-lg);
+  background: var(--rm-panel);
+  box-shadow: var(--rm-shadow);
 }
 .coming-soon h2 {
-  margin: 12px 0 6px;
-  font-size: 22px;
+  margin: var(--rm-space-3) 0 var(--rm-space-2);
+  font-size: var(--rm-text-xl);
   letter-spacing: -0.02em;
 }
 .coming-soon p {
@@ -356,39 +332,40 @@
   display: inline-flex;
   align-items: center;
   gap: 5px;
-  padding: 2px 9px;
+  padding: 2px 10px;
   border-radius: 999px;
   border: 1px solid var(--rm-line);
-  font-size: 12px;
-  font-weight: 500;
+  font-size: var(--rm-text-xs);
+  font-weight: 600;
   color: var(--rm-muted);
   white-space: nowrap;
 }
 .chip.glow {
   color: var(--rm-merge-text);
-  border-color: color-mix(in oklab, var(--rm-merge) 40%, transparent);
-  background: color-mix(in oklab, var(--rm-merge) 10%, transparent);
+  border-color: transparent;
+  background: var(--rm-merge-fill);
 }
 /* Sections */
 .section {
   display: grid;
   min-width: 0;
-  gap: 16px;
+  gap: var(--rm-space-4);
   /* In-page links land below the fixed navbar, not under it. */
   scroll-margin-top: calc(var(--shell-nav-offset, 76px) + 16px);
 }
 .section-head h2 {
   margin: 0;
   font-family: var(--font-display);
-  font-size: clamp(26px, 5vw, 40px);
+  font-size: var(--rm-text-h2);
   font-weight: 700;
-  letter-spacing: -0.035em;
-  line-height: 1.05;
+  letter-spacing: -0.03em;
+  line-height: 1.1;
 }
 .section-head p {
-  margin: 6px 0 0;
+  margin: var(--rm-space-2) 0 0;
+  max-width: 65ch;
   color: var(--rm-muted);
-  font-size: 14px;
+  font-size: var(--rm-text-md);
   line-height: 1.5;
 }
 .empty,
@@ -418,28 +395,34 @@
   display: inline-flex;
   align-items: center;
   gap: 4px;
-  padding: 2px 8px;
+  padding: 2px 10px;
   border-radius: 999px;
   background: color-mix(in oklab, currentColor 10%, transparent);
-  font-size: 12px;
+  font-size: var(--rm-text-xs);
   font-weight: 600;
   line-height: 1.4;
   white-space: nowrap;
 }
+/* Status badges: Sorbet's pastel fill with its matching ink. */
 .badge.live {
   color: var(--rm-live-text);
+  background: var(--rm-live-fill);
 }
 .badge.waiting_for_prod_sync {
   color: var(--rm-sync-text);
+  background: var(--rm-sync-fill);
 }
 .badge.waiting_for_merge {
   color: var(--rm-merge-text);
+  background: var(--rm-merge-fill);
 }
 .badge.in_progress {
   color: var(--rm-progress-text);
+  background: var(--rm-progress-fill);
 }
 .badge.planned {
   color: var(--rm-muted);
+  background: var(--rm-planned-fill);
 }
 .text-button {
   justify-self: start;

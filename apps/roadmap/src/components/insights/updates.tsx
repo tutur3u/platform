@@ -1,4 +1,4 @@
-import { ArrowRight } from '@tuturuuu/icons';
+import { ArrowRight, Inbox } from '@tuturuuu/icons';
 import { Fragment, useEffect, useState, useSyncExternalStore } from 'react';
 import {
   previousVisit,
@@ -9,6 +9,7 @@ import type { ProductionUpdate } from '../../insights/production';
 import type { TrackedPr } from '../../insights/tracked';
 import { APP_NAMES } from '../../live/host-probe';
 import { REPO_URL } from '../../live/model';
+import { EmptyState } from '../empty-state';
 import { formatDate, type Lang, type Messages } from '../shared';
 import { plural } from './delta';
 
@@ -186,7 +187,9 @@ export function ProductionUpdates({
           ) : null}
         </>
       ) : (
-        <p className="updates-empty">{t.updates.empty}</p>
+        <EmptyState icon={<Inbox size={18} />} title={t.empty.updates}>
+          {t.updates.empty}
+        </EmptyState>
       )}
     </section>
   );
@@ -228,7 +231,9 @@ export function UpdatesTeaser({
           ))}
         </ol>
       ) : (
-        <p className="updates-empty">{t.updates.empty}</p>
+        <EmptyState icon={<Inbox size={18} />} title={t.empty.updates}>
+          {t.updates.empty}
+        </EmptyState>
       )}
     </section>
   );

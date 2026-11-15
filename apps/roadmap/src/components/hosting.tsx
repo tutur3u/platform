@@ -1,8 +1,10 @@
+import { ServerOff } from '@tuturuuu/icons';
 import cloudflareMark from '../assets/brands/cloudflare-mark.svg?no-inline';
 import { hostBadge } from '../live/host-badge';
 import { type HostingSnapshot, hostingAsOf } from '../live/hosting';
 import { REPO_URL } from '../live/model';
 import type { RoadmapView } from '../view-model';
+import { EmptyState } from './empty-state';
 
 const PLATFORM_ORDER = ['workers', 'vercel', 'store', 'unknown'] as const;
 type Platform = (typeof PLATFORM_ORDER)[number];
@@ -109,11 +111,6 @@ export function HostingSection({
             <time dateTime={asOf}>{formatDate(asOf, lang, true)} (UTC+7)</time>
           </p>
         ) : null}
-        {hosting.mode !== 'probed' ? (
-          <p className="main-commit hosting-unverified">
-            {t.hosting.notObserved}
-          </p>
-        ) : null}
         {main ? (
           <p className="main-commit">
             {t.hosting.main}:{' '}
@@ -124,7 +121,20 @@ export function HostingSection({
           </p>
         ) : null}
       </div>
-      <HostSummary t={t} hosts={view.hosts} />
+      {/* A build that could not check hosting says so first, and claims
+          no platform for any app (the summary would be one grey bar). */}
+      {hosting.mode !== 'probed' ? (
+        <EmptyState
+          icon={<ServerOff size={18} />}
+          title={t.empty.hosting}
+          tone="unknown"
+        >
+          {t.hosting.notObserved}
+        </EmptyState>
+      ) : null}
+      {view.hosts.some((host) => host.platform !== 'unknown') ? (
+        <HostSummary t={t} hosts={view.hosts} />
+      ) : null}
       {PLATFORM_ORDER.map((platform) => {
         const group = view.hosts.filter((host) => host.platform === platform);
         if (!group.length) return null;

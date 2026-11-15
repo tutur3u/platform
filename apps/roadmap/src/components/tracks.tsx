@@ -1,4 +1,4 @@
-import { ChevronDown } from '@tuturuuu/icons';
+import { ChevronDown, SearchX } from '@tuturuuu/icons';
 import { shellNavOffset } from '@tuturuuu/marketing-shell';
 import {
   memo,
@@ -11,6 +11,7 @@ import {
   useState,
 } from 'react';
 import { APP_NAMES } from '../live/host-probe';
+import { EmptyState } from './empty-state';
 import { shippedShare, statuses } from '../live/status';
 import {
   matchesFilter,
@@ -176,7 +177,11 @@ const TrackList = memo(function TrackList({
   );
   return (
     <>
-      {visible.length ? null : <p className="empty">{t.tracks.empty}</p>}
+      {visible.length ? null : (
+        <EmptyState icon={<SearchX size={18} />} title={t.empty.tracks}>
+          {t.tracks.empty}
+        </EmptyState>
+      )}
       <div className="track-list masonry" aria-busy={pending || undefined}>
         {visible.map(({ track, milestones }) => (
           // One hydration boundary per card: React hydrates the list in

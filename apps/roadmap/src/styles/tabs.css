@@ -6,9 +6,16 @@
    Once hydrated, React sets data-active on the root and data-current on
    the selected panel, and only that rule applies. Browsers without :has()
    show every panel until then. */
+
+/* The roadmap page: a 16px gutter on phones, one spacing rhythm (tokens.css)
+   between the hero, the tab bar, the panels and the footer. */
+.rm-page {
+  padding: 0 var(--rm-space-4) var(--rm-space-5);
+  gap: var(--rm-space-6);
+}
 .rm-tabs {
   display: grid;
-  gap: 28px;
+  gap: var(--rm-space-5);
   min-width: 0;
   scroll-margin-top: calc(var(--shell-nav-offset, 76px) + 16px);
 }
@@ -30,7 +37,7 @@
 }
 .rm-panel {
   display: grid;
-  gap: 40px;
+  gap: var(--rm-space-7);
   min-width: 0;
   border-radius: var(--rm-radius);
 }
@@ -38,8 +45,9 @@
   outline-offset: 8px;
 }
 
-/* The bar: one row of tabs on a hairline. It scrolls sideways when the
-   labels do not fit (phones), never the page. */
+/* The bar: one row of tabs on a hairline. On phones the four tabs share
+   the width, icon above label, so every tab is visible at 390px; the row
+   can still scroll sideways (never the page) if a label cannot fit. */
 .rm-tabbar {
   min-width: 0;
   border-bottom: 1px solid var(--rm-line);
@@ -59,15 +67,17 @@
   position: relative;
   flex: 1 0 auto;
   display: inline-flex;
+  flex-direction: column;
   align-items: center;
   justify-content: center;
-  gap: 8px;
-  min-height: 44px;
-  padding: 0 14px;
-  border-radius: 10px 10px 0 0;
+  gap: 2px;
+  min-height: 56px;
+  min-width: 64px;
+  padding: var(--rm-space-1) var(--rm-space-2) 6px;
+  border-radius: var(--rm-radius-sm) var(--rm-radius-sm) 0 0;
   color: var(--rm-muted);
-  font-size: 14.5px;
-  font-weight: 500;
+  font-size: var(--rm-text-xs);
+  font-weight: 600;
   text-decoration: none;
   white-space: nowrap;
 }
@@ -94,7 +104,7 @@
 /* The overflow container clips outer outlines, so the ring sits inside. */
 .rm-tab:focus-visible {
   outline-offset: -2px;
-  border-radius: 10px 10px 0 0;
+  border-radius: var(--rm-radius-sm) var(--rm-radius-sm) 0 0;
 }
 /* The selected tab: before hydration the fragment decides (as for the
    panels above), after it aria-selected does. Same look either way, so
@@ -143,11 +153,21 @@
    visible) and the time keeps one width, so a refresh moves nothing. */
 .hero-asof {
   margin: 0;
-  font-size: 13px;
+  font-size: var(--rm-text-sm);
+  line-height: 1.6;
   color: var(--rm-muted);
   font-variant-numeric: tabular-nums;
 }
+/* The state is a Sorbet pill (pastel fill, matching ink) as wide as its
+   widest label, with the label centred, so the reserved width reads as
+   the pill, not as a gap. */
 .hero-asof-state {
+  display: inline-flex;
+  align-items: center;
+  margin-inline-end: var(--rm-space-1);
+  padding: 1px 10px;
+  border-radius: 999px;
+  background: var(--rm-planned-fill);
   color: var(--rm-ink);
   font-weight: 600;
   white-space: nowrap;
@@ -159,17 +179,22 @@
   margin-inline-end: 6px;
   border-radius: 999px;
   background: var(--rm-planned);
-  vertical-align: 1px;
+}
+.hero-asof[data-live="live"] .hero-asof-state {
+  background: var(--rm-live-fill);
 }
 .hero-asof[data-live="live"] .hero-asof-dot {
   background: var(--rm-live);
+}
+.hero-asof[data-live="failed"] .hero-asof-state {
+  background: var(--rm-progress-fill);
 }
 .hero-asof[data-live="failed"] .hero-asof-dot {
   background: var(--rm-progress);
 }
 .hero-asof-labels {
   display: inline-grid;
-  justify-items: start;
+  justify-items: center;
 }
 .hero-asof-labels > span {
   grid-area: 1 / 1;
@@ -210,17 +235,26 @@
 }
 
 @media (min-width: 720px) {
+  .rm-page {
+    padding-inline: var(--rm-space-5);
+    gap: var(--rm-space-7);
+  }
   .rm-tabs {
-    gap: 40px;
+    gap: var(--rm-space-6);
   }
   .activity-kpis {
     grid-template-columns: minmax(0, 22rem);
   }
   .rm-panel {
-    gap: 72px;
+    gap: var(--rm-space-8);
   }
   .rm-tab {
     flex: none;
-    padding: 0 18px;
+    flex-direction: row;
+    gap: var(--rm-space-2);
+    min-height: 44px;
+    padding: 0 var(--rm-space-4);
+    font-size: var(--rm-text-md);
+    font-weight: 500;
   }
 }

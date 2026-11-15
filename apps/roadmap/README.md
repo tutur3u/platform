@@ -45,6 +45,69 @@ not sticky: the tracks filter bar already docks into the navbar pill.
 nothing without script and leave inactive panels out of the server HTML.
 `scripts/doctor-tabs.mjs` checks the built page's tab markup.
 
+## Design tokens (Sorbet)
+
+The roadmap uses the default Sorbet palette from `@tuturuuu/ui`. Its root
+document renders `<html data-ui="sorbet">` for `/roadmap` and `/roadmap/vi`
+(`src/sorbet-page.ts`, set in the server HTML, no script), so
+`packages/ui/src/sorbet.css`, which the page already ships through the
+shared `globals.css`, remaps the shared semantic tokens: light from its
+`:root[data-ui="sorbet"]` block, dark from `.dark`. Nothing is copied, so the
+stylesheet does not grow. `src/styles/tokens.css` maps the page's own tokens
+onto Sorbet's stable names:
+
+| Roadmap token | Sorbet source |
+| --- | --- |
+| `--rm-bg`, `--rm-panel` | `--background` (warm white), `--card` (white) |
+| `--rm-ink`, `--rm-muted` | `--foreground`, `--muted-foreground` |
+| `--rm-line`, `--rm-soft`, `--rm-ring` | `--border`, `--accent`, `--ring` |
+| `--rm-live`, `-sync`, `-merge`, `-progress`, `-planned` (and `*-text`) | status inks `--green`, `--teal`, `--purple`, `--orange`, `--gray` |
+| `--rm-*-fill` (badges, the emphasised figure, empty-state icons) | `--calendar-bg-green`, `-cyan`, `-purple`, `-orange`, `-gray` |
+| `--rm-radius-sm`, `--rm-radius`, `--rm-radius-lg` | `--radius` (12px), `--radius-xl` (18px cards), `--radius-2xl` (24px) |
+| `--rm-shadow` (every card) | `--sorbet-shadow-sm` |
+| `--rm-wash-1`, `--rm-wash-2` (hero wash) | `--calendar-bg-pink`, `--calendar-bg-blue` |
+| `--rm-chart-muted` (all-PR bars and swatch, product bars) | `--gray` mixed into `--card`: 70% light, 55% dark (opaque) |
+| `--rm-chart-workers-edge` (1px edge on the Cloudflare-orange Workers segment) | `--orange` |
+
+Sorbet has no type or spacing tokens yet, so `tokens.css` also holds one type
+scale (`--rm-text-xs` 12px to `--rm-text-h1`) and one spacing rhythm
+(`--rm-space-1` 4px to `--rm-space-8` 64px) used by the hero, the tab bar and
+every panel. The workshop pages share the stylesheet without Sorbet and keep
+the earlier mapping (the first block in `tokens.css`).
+`src/sorbet-tokens.test.ts` pins both default Sorbet blocks byte for byte,
+allows only the stable Sorbet names, and checks every text pair the page
+draws for WCAG AA (4.5:1; focus ring and status marks 3:1) in light and dark,
+so a Sorbet change fails CI here until the roadmap is reviewed against it.
+It also composites every pulse-chart mark (all PRs, tracked, in production,
+the moving average and the no-data outline) over the card and over the hover
+band and requires 3:1 (WCAG 1.4.11) in both modes; stacked series also have a
+card-coloured edge, so they never rely on colour alone. The hover band itself
+is a highlight behind the selected day (ink at 7%), not a mark: it makes no
+3:1 claim, and the marks stay at 3:1 or more on top of it.
+
+Every control is at least 44 x 44 CSS px on every pointer
+(`src/styles/targets.css`): compact controls keep their look and gain an
+invisible, centred hit area inside the control; rows that scroll sideways
+(the track chips and the status filters) get room inside them for those hit
+areas, and stacked rows open up so no two hit areas overlap. Docked into the
+44px compact navbar, the chip row is a 44px scroll row 4px inside the header
+and each chip's hit area spans it. On the pulse chart the whole plot is one
+pointer target: a tap, a click or a horizontal drag selects the day under
+the pointer (`dayAt` in `src/insights/chart-nav.ts`), a vertical drag still
+scrolls (and, cancelled, leaves no day selected), a mouse or pen is captured
+so a drag past an edge keeps the first or last day, and every end of a press
+(release, cancel, lost capture, a move with no button held) clears it
+(`src/insights/chart-press.ts`), and the per-day buttons keep keyboard and screen-reader use (roving
+focus, each day's name, the live readout). The only exceptions are inline
+targets under WCAG 2.5.8: PR numbers inside a metadata line and links in
+running text. The shared marketing shell's own controls are measured but
+owned by `packages/marketing-shell`.
+
+Empty and unknown states share one component (`src/components/empty-state.tsx`):
+a build that could not check hosting, no patch notes, no production updates, a
+filter with no deliverables and a timeline period with nothing merged each say
+what is missing and why, in English and Vietnamese, with no placeholder data.
+
 ## Content and status
 
 `src/content/tracks.ts` is the curated roadmap: tracks → milestones →
