@@ -45,6 +45,9 @@ const FAILURE_REASONS = [
 // Only a bounded integer reaches evidence; anything else is recorded as null.
 const scrubbedHeight = (value) =>
   Number.isInteger(value) && value >= 0 && value <= 10_000_000 ? value : null;
+// A tall mobile page can exceed what Chromium captures in one full-page image,
+// so the screenshot covers at most this many CSS pixels from the top.
+const MAX_CAPTURE_HEIGHT = 8000;
 
 // Default Next.js image optimization (`apps/web/next.config.ts` uses the
 // built-in loader; `apps/web/src/proxy.ts` leaves `/_next/image` unmigrated).
@@ -666,10 +669,23 @@ async function main({ env = process.env, runCommand = run, browserType } = {}) {
         evidence,
         `.${screenshot}.${randomBytes(8).toString('hex')}.part`
       );
+      const fullHeight = viewport.scrollHeight;
+      const capturedHeight = Math.max(
+        1,
+        Math.min(fullHeight ?? MAX_CAPTURE_HEIGHT, MAX_CAPTURE_HEIGHT)
+      );
+      const truncated = fullHeight === null || fullHeight > capturedHeight;
+      // One clipped image, never tiles; an unknown height counts as clipped.
+      Object.assign(viewport, {
+        captureMode: truncated ? 'clipped' : 'full',
+        tileCount: 1,
+        clipHeight: capturedHeight,
+      });
       try {
         await page.screenshot({
           path: partial,
           fullPage: true,
+          clip: { x: 0, y: 0, width, height: capturedHeight },
           animations: 'disabled',
         });
       } catch {
@@ -681,6 +697,10 @@ async function main({ env = process.env, runCommand = run, browserType } = {}) {
         height: 900,
         path: '/en',
         screenshot,
+        scrollHeight: viewport.scrollHeight,
+        captureMode: viewport.captureMode,
+        tileCount: viewport.tileCount,
+        clipHeight: viewport.clipHeight,
         ...pageMetrics,
       });
       await page.close();
