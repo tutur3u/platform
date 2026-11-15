@@ -113,23 +113,22 @@ export async function decryptEventsForTools<T extends CalendarEventRow>(
 
   const state = await resolveWorkspaceKeyForTools(wsId);
   if (state.status !== 'available') {
-    return events.map((event) =>
-      event.is_encrypted
-        ? {
-            ...event,
-            title: '',
-            ...('description' in event ? { description: '' } : {}),
-            ...('location' in event ? { location: null } : {}),
-            encryption_unavailable: true as const,
-          }
-        : event
-    ) as Array<WithheldEventRow<T>>;
+    const withheld = events.map((event) => {
+      if (!event.is_encrypted) return event;
+      return {
+        ...event,
+        title: '',
+        ...('description' in event ? { description: '' } : {}),
+        ...('location' in event ? { location: null } : {}),
+        encryption_unavailable: true as const,
+      };
+    });
+    return withheld as Array<WithheldEventRow<T>>;
   }
 
   const { decryptCalendarEvents } = await import('@tuturuuu/utils/encryption');
-  return decryptCalendarEvents(events, state.key) as Array<
-    WithheldEventRow<T>
-  >;
+  const decrypted = decryptCalendarEvents(events, state.key);
+  return decrypted as Array<WithheldEventRow<T>>;
 }
 
 /**
