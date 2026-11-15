@@ -141,11 +141,12 @@ async function loadCalendar({ ctx, wsId, timezone, start, end }: DayContext) {
     truncated: rows.length > DAY_OVERVIEW_LIMITS.events,
     events: events.map((event) => ({
       id: event.id,
-      title: event.title,
+      title: event.encryption_unavailable ? null : event.title,
       start: formatInTimezone(event.start_at, timezone),
       end: formatInTimezone(event.end_at, timezone),
       location: event.location ?? null,
       locked: event.locked === true,
+      ...(event.encryption_unavailable ? { encryptionUnavailable: true } : {}),
     })),
   };
 }

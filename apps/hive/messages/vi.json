@@ -301,6 +301,12 @@
     "description": "Xây dựng thế giới voxel dùng chung, cấu hình NPC dùng LLM và chạy thí nghiệm quyết định agent thủ công.",
     "title": "Hive"
   },
+  "experimental-ui": {
+    "badge": "Beta",
+    "setting_description": "Dùng thử Sorbet, giao diện mới của Tuturuuu, trên mọi ứng dụng. Lưu vào tài khoản của bạn.",
+    "setting_title": "Giao diện thử nghiệm",
+    "setting_toggle_label": "Dùng giao diện thử nghiệm Sorbet"
+  },
   "finance": {
     "new_debt": "Khoản nợ mới",
     "new_loan": "Khoản cho vay mới",

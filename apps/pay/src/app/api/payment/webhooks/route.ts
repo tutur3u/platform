@@ -21,6 +21,7 @@ import {
   hasActiveSubscription,
 } from '@tuturuuu/payment-core/subscription-helper';
 import { createAdminClient } from '@tuturuuu/supabase/next/server';
+import type { NextRequest } from 'next/server';
 
 // Helper function to report initial seat usage to Polar
 export async function reportInitialUsage(wsId: string, customerId: string) {
@@ -52,9 +53,7 @@ export async function reportInitialUsage(wsId: string, customerId: string) {
   );
 }
 
-export const POST = Webhooks({
-  webhookSecret: process.env.POLAR_WEBHOOK_SECRET || '',
-
+const webhookHandlers: Omit<Parameters<typeof Webhooks>[0], 'webhookSecret'> = {
   onCheckoutCreated: async (payload) => {
     try {
       await syncInventoryPolarCheckout(payload.data as Checkout);
@@ -384,4 +383,19 @@ export const POST = Webhooks({
       throw new Response('Internal Server Error', { status: 500 });
     }
   },
-});
+};
+
+// Fails closed: a missing or blank signing secret is rejected before the
+// adapter (and therefore signature validation or any handler) runs.
+export async function POST(request: NextRequest) {
+  const webhookSecret = process.env.POLAR_WEBHOOK_SECRET;
+
+  if (!webhookSecret?.trim()) {
+    console.error(
+      'Webhook: POLAR_WEBHOOK_SECRET is not configured; rejecting request'
+    );
+    return new Response('Internal Server Error', { status: 500 });
+  }
+
+  return Webhooks({ ...webhookHandlers, webhookSecret })(request);
+}

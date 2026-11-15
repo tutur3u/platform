@@ -1,5 +1,6 @@
 import '@/lib/dayjs-setup';
 import { getSupabaseSessionUser } from '@tuturuuu/auth/supabase-session-user';
+import { ExperimentalUiSync } from '@tuturuuu/ui/custom/experimental-ui-sync';
 import { WorkspaceVisibilityProvider } from '@tuturuuu/ui/hooks/use-workspace-visibility';
 import { type AbstractIntlMessages, NextIntlClientProvider } from 'next-intl';
 import { ThemeProvider as NextThemesProvider } from 'next-themes';
@@ -40,6 +41,8 @@ export async function Providers({
   const content = <ClientProviders>{children}</ClientProviders>;
   return (
     <QueryProvider>
+      {/* Signed-out pages keep the device value and make no account read. */}
+      <ExperimentalUiSync account={Boolean(user?.id)} />
       <MiraSoulScopeProvider
         key={`${user?.id ?? 'signed-out'}:${user?.last_sign_in_at ?? 'unknown-session'}`}
         actorId={user?.id ?? null}

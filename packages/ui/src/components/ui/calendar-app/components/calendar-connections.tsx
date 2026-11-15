@@ -123,7 +123,7 @@ export function QuickCalendarToggle() {
       <PopoverTrigger asChild>
         <Button variant="outline" size="sm" className="gap-2">
           <Calendar className="h-4 w-4" />
-          <span>{t('calendars')}</span>
+          <span className="@max-3xl/toolbar:sr-only">{t('calendars')}</span>
           {enabledCount > 0 && (
             <span className="flex h-5 w-5 items-center justify-center rounded-full bg-primary text-primary-foreground text-xs">
               {enabledCount}
@@ -556,7 +556,7 @@ export default function CalendarConnections({
           <PopoverTrigger asChild>
             <Button variant="outline" size="sm" className="gap-2">
               <Calendar className="h-4 w-4" />
-              <span>{t('calendars')}</span>
+              <span className="@max-3xl/toolbar:sr-only">{t('calendars')}</span>
               {enabledCount > 0 && (
                 <span className="flex h-5 w-5 items-center justify-center rounded-full bg-primary text-primary-foreground text-xs">
                   {enabledCount}

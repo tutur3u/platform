@@ -2,6 +2,10 @@ import type {
   Workspace,
   WorkspaceCalendarGoogleTokenClient,
 } from '@tuturuuu/types';
+import {
+  CALENDAR_LAST_VIEW_STORAGE_KEY,
+  readInitialCalendarView,
+} from '@tuturuuu/ui/hooks/calendar-default-view';
 import { useCalendarDayZone } from '@tuturuuu/ui/hooks/use-calendar-day-zone';
 import { CalendarPreferencesProvider } from '@tuturuuu/ui/hooks/use-calendar-preferences';
 import { useCalendarSync } from '@tuturuuu/ui/hooks/use-calendar-sync';
@@ -152,9 +156,6 @@ export const CalendarContent = ({
     { value: string; label: string; disabled?: boolean }[]
   >(externalState?.availableViews || []);
 
-  // LocalStorage key for view persistence
-  const VIEW_STORAGE_KEY = 'calendar-view-mode';
-
   // Use the external state handlers when provided
   const handleSetDate = useCallback(
     (newDate: Date | ((prevDate: Date) => Date)) => {
@@ -178,7 +179,7 @@ export const CalendarContent = ({
       }
       // Persist view selection to localStorage
       if (typeof window !== 'undefined') {
-        localStorage.setItem(VIEW_STORAGE_KEY, newView);
+        localStorage.setItem(CALENDAR_LAST_VIEW_STORAGE_KEY, newView);
       }
     },
     [externalState]
@@ -348,38 +349,13 @@ export const CalendarContent = ({
       else if (externalState.view === 'year') enableYearView();
       else if (externalState.view === 'agenda') enableAgendaView();
     } else {
-      // Load saved view from localStorage
-      const savedView =
-        typeof window !== 'undefined'
-          ? (localStorage.getItem(VIEW_STORAGE_KEY) as CalendarView | null)
-          : null;
-
-      const isMobile =
-        typeof window !== 'undefined' && window.innerWidth <= 768;
-
-      // Restore the saved view, adapting wide time grids for mobile.
-      if (savedView) {
-        if ((savedView === 'week' || savedView === '4-days') && isMobile) {
-          // Week and 4-day views are disabled on mobile
-          enableDayView();
-        } else {
-          // Apply saved view
-          if (savedView === 'day') enableDayView();
-          else if (savedView === '4-days') enable4DayView();
-          else if (savedView === 'week') enableWeekView();
-          else if (savedView === 'month') enableMonthView();
-          else if (savedView === 'year') enableYearView();
-          else if (savedView === 'agenda') enableAgendaView();
-          else enableWeekView();
-        }
-      } else {
-        // No saved view - default to day on mobile, week on desktop
-        if (isMobile) {
-          enableDayView();
-        } else {
-          enableWeekView();
-        }
-      }
+      const initialView = readInitialCalendarView();
+      if (initialView === 'day') enableDayView();
+      else if (initialView === '4-days') enable4DayView();
+      else if (initialView === 'month') enableMonthView();
+      else if (initialView === 'year') enableYearView();
+      else if (initialView === 'agenda') enableAgendaView();
+      else enableWeekView();
     }
   }, [
     t,

@@ -19,6 +19,7 @@ const apps = [
   'forms',
   'inventory',
   'nova',
+  'mind',
   'meet',
   'calendar',
   'mail',
@@ -313,6 +314,39 @@ test('Calendar, Meet, Mail and Apps admissions open only their publishers while 
     runPolicy(root, 'shortener-cloudflare.yaml').output,
     'allowed=false\n'
   );
+});
+
+test('admitted apps refuse a dispatch of their switched-off Vercel publishers', (t) => {
+  const root = fixture(t);
+  const disabled = /disabled in the tuturuuu\.ci\.ts switchboard/;
+  for (const app of ['calendar', 'meet', 'mail', 'apps']) {
+    const legacy = runPolicy(root, `vercel-production-${app}.yaml`);
+    assert.equal(legacy.output, 'allowed=false\n');
+    assert.match(legacy.stdout, disabled);
+    assert.match(legacy.summary, disabled);
+    assert.equal(
+      runPolicy(root, `${app}-cloudflare.yaml`).output,
+      'allowed=true\n'
+    );
+  }
+});
+
+test('a known publisher switched off in the switchboard holds on dispatch', (t) => {
+  const root = fixture(t);
+  const workflow = 'vercel-production-storefront.yaml';
+  assert.equal(runPolicy(root, workflow).output, 'allowed=true\n');
+  const config = join(root, 'tuturuuu.ci.ts');
+  const source = readFileSync(config, 'utf8');
+  assert.ok(source.includes(`'${workflow}': true,`));
+  writeFileSync(
+    config,
+    source.replace(`'${workflow}': true,`, `'${workflow}': false,`)
+  );
+  const [decision] = plan(root, [workflow]);
+  assert.equal(decision.shouldRun, false);
+  assert.equal(decision.held, true);
+  assert.match(decision.reason, /switchboard/);
+  assert.equal(runPolicy(root, workflow).output, 'allowed=false\n');
 });
 
 const publishers = [

@@ -192,6 +192,7 @@ jobs:
       worker-environment-type: ShortenerEnvironment
       helper-tests: python3 scripts/ci/shortener-native-artifact.test.py
       profile-env: VITE_SHORTENER_NATIVE_PROFILE=production
+      build-environment: production
       artifact-suffix: production
       # The Worker reads Supabase settings at runtime from provisioned secrets;
       # no browser code uses them, so they stay out of this build.

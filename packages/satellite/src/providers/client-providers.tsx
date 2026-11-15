@@ -2,6 +2,7 @@
 
 import { QueryClientProvider } from '@tanstack/react-query';
 import { AccountAssuranceRefresh } from '@tuturuuu/ui/custom/account-assurance-refresh';
+import { ExperimentalUiSync } from '@tuturuuu/ui/custom/experimental-ui-sync';
 import { WorkspaceVisibilityProvider } from '@tuturuuu/ui/hooks/use-workspace-visibility';
 import { TooltipProvider } from '@tuturuuu/ui/tooltip';
 import type { LaunchableAppSlug } from '@tuturuuu/utils/launchable-apps';
@@ -14,15 +15,19 @@ export function ClientProviders({
   children,
   currentApp,
   actorId,
+  accountSync = true,
 }: {
   children: ReactNode;
   actorId?: string;
   currentApp?: LaunchableAppSlug;
+  /** False when the page knows nobody is signed in: skip account reads. */
+  accountSync?: boolean;
 }) {
   const [queryClient] = useState(createSatelliteQueryClient);
   const content = (
     <>
       <AccountAssuranceRefresh />
+      <ExperimentalUiSync account={accountSync} />
       <TooltipProvider>
         {children}
         {currentApp && (

@@ -145,7 +145,7 @@ export function CalendarHeader({
         data-slot="calendar-header"
         className={cn(
           CALENDAR_HEADER_HEIGHT_CLASS,
-          'flex min-w-0 shrink-0 items-center gap-1'
+          '@container/toolbar flex min-w-0 shrink-0 items-center gap-1'
         )}
       >
         <div className="flex shrink-0 items-center gap-1">
@@ -164,18 +164,18 @@ export function CalendarHeader({
               <Button
                 variant="outline"
                 size="sm"
-                className="max-md:w-8 max-md:px-0"
+                className="@max-3xl/toolbar:w-8 @max-3xl/toolbar:px-0"
                 onClick={isCurrentPeriod ? undefined : selectToday}
                 disabled={isCurrentPeriod}
                 aria-label={todayLabel}
               >
-                <span className="md:hidden">
+                <span className="@3xl/toolbar:hidden">
                   <CalendarCheck className="size-4" />
                 </span>
-                <span className="max-md:hidden">{todayLabel}</span>
+                <span className="@max-3xl/toolbar:hidden">{todayLabel}</span>
               </Button>
             </TooltipTrigger>
-            <TooltipContent className="md:hidden">{todayLabel}</TooltipContent>
+            <TooltipContent>{todayLabel}</TooltipContent>
           </Tooltip>
         </div>
 

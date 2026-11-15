@@ -4,6 +4,7 @@ import {
   hasSupportedSupabaseAuthCookie,
   hasWebAppSessionTokenFromRequest,
 } from '@tuturuuu/auth/app-session';
+import { withCanonicalLocaleCookie } from '@tuturuuu/auth/locale-cookie';
 import {
   appSessionFailureResponse,
   consumeVerifyTokenRequest,
@@ -27,7 +28,12 @@ import { isPersonalWorkspace } from '@tuturuuu/utils/workspace-helper';
 import type { NextRequest } from 'next/server';
 import { NextResponse } from 'next/server';
 import createIntlMiddleware from 'next-intl/middleware';
-import { LOCALE_COOKIE_NAME, PUBLIC_PATHS, TTR_URL } from './constants/common';
+import {
+  BASE_URL,
+  LOCALE_COOKIE_NAME,
+  PUBLIC_PATHS,
+  TTR_URL,
+} from './constants/common';
 import { defaultLocale, type Locale, supportedLocales } from './i18n/routing';
 import { FINANCE_INVOICE_ROUTE_POLICY } from './lib/api-route-policies';
 import { pinFinanceDeployment } from './lib/vercel-deployment-pin';
@@ -36,6 +42,7 @@ import { pinFinanceDeployment } from './lib/vercel-deployment-pin';
 // MFA is disabled because satellite apps delegate auth to the web app.
 // Sessions here are created via cross-app tokens that already require aal2 on web.
 const authProxy = createCentralizedAuthProxy({
+  canonicalOrigins: [BASE_URL],
   appSession: { sessionMode: 'supabase-first', targetApp: 'finance' },
   webAppUrl: TTR_URL,
   publicPaths: PUBLIC_PATHS,
@@ -45,7 +52,7 @@ const authProxy = createCentralizedAuthProxy({
 });
 const LOCAL_AUTH_API_PREFIX = '/api/auth/';
 
-export async function proxy(req: NextRequest): Promise<NextResponse> {
+async function handleProxy(req: NextRequest): Promise<NextResponse> {
   const finish = (response: NextResponse) =>
     pinFinanceDeployment(req, response);
   const workspaceUrl = (pathname: string) => {
@@ -258,6 +265,16 @@ export async function proxy(req: NextRequest): Promise<NextResponse> {
   propagateAuthCookies(authRes, localeRes);
   return finish(localeRes);
 }
+
+const LOCALE_COOKIE_ORIGINS = {
+  canonicalOrigins: [BASE_URL],
+  webAppUrl: TTR_URL,
+};
+
+export const proxy = withCanonicalLocaleCookie(
+  handleProxy,
+  LOCALE_COOKIE_ORIGINS
+);
 
 export const config = {
   matcher: [

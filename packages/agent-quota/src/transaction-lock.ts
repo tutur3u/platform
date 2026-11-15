@@ -31,6 +31,16 @@ async function create(path: string): Promise<FileHandle> {
   }
 }
 
+// The lock opened for inspection can be released by its owner at any moment:
+// releaseTransactionLock unlinks without `.reclaim`. A missing path after
+// that point is the same normal hand-off as a missing path at open, so it stays
+// retryable. Only O_EXCL create ever takes the lock, so this never grants one.
+function lockDisappeared(error: unknown): never {
+  if ((error as NodeJS.ErrnoException).code === 'ENOENT')
+    throw Error('transaction-lock-disappeared');
+  throw error;
+}
+
 async function createAfterReclamation(path: string): Promise<FileHandle> {
   try {
     return await create(path);
@@ -69,10 +79,10 @@ export async function acquireTransactionLock(
       const reclaimIncomplete = async () => {
         if (Date.now() - stat.mtimeMs < INCOMPLETE_LOCK_GRACE_MS)
           throw Error('transaction-lock-incomplete');
-        const current = await lstat(path);
+        const current = await lstat(path).catch(lockDisappeared);
         if (current.ino !== stat.ino || current.dev !== stat.dev)
           throw Error('transaction-lock-changed');
-        await unlink(path);
+        await unlink(path).catch(lockDisappeared);
         return createAfterReclamation(path);
       };
       let owner: { pid?: unknown; processStartedAt?: unknown };
@@ -97,10 +107,10 @@ export async function acquireTransactionLock(
         return await reclaimIncomplete();
       if (!['dead', 'replaced'].includes(processState(pid, startedAt)))
         throw Error('transaction-owner-live-or-unverified');
-      const current = await lstat(path);
+      const current = await lstat(path).catch(lockDisappeared);
       if (current.ino !== stat.ino || current.dev !== stat.dev)
         throw Error('transaction-lock-changed');
-      await unlink(path);
+      await unlink(path).catch(lockDisappeared);
       return await createAfterReclamation(path);
     } finally {
       await old.close();

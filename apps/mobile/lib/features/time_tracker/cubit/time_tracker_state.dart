@@ -258,6 +258,29 @@ class TimeTrackerState extends Equatable {
     );
   }
 
+  /// Whether [other] differs from this state only in [elapsed].
+  ///
+  /// The running-session ticker emits a new state every second with an
+  /// updated [elapsed] and nothing else. Widgets that do not display the
+  /// live elapsed value use this in `buildWhen` to skip those rebuilds.
+  bool equalsIgnoringElapsed(TimeTrackerState other) =>
+      other.copyWith(elapsed: elapsed) == this;
+
+  /// Whether a history row is still open, so its duration is measured
+  /// against the current time and advances with every ticker emit.
+  bool get hasOpenHistorySession => historySessions.any(
+    (session) =>
+        session.durationSeconds == null &&
+        session.startTime != null &&
+        session.endTime == null,
+  );
+
+  /// Whether a widget showing history durations must rebuild when this
+  /// state follows [previous]: on any change other than `elapsed`, or on
+  /// every tick while a history row is still open.
+  bool historyViewChangedFrom(TimeTrackerState previous) =>
+      !previous.equalsIgnoringElapsed(this) || hasOpenHistorySession;
+
   @override
   List<Object?> get props => [
     status,

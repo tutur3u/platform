@@ -1,5 +1,5 @@
 import 'server-only';
-import { checkEnvVariables } from '@tuturuuu/supabase/next/common';
+import { checkSecretEnvVariables } from '@tuturuuu/supabase/next/secret-env';
 import { createAdminClient } from '@tuturuuu/supabase/next/server';
 import { hasEmployeeRequestOrigin } from '@tuturuuu/utils/internal-accounts/employee-request-origin';
 import { authorizeEmployeeCliRecovery } from './employee-cli-recovery-authorization';
@@ -24,9 +24,7 @@ export function observeEmployeeCliOutcome(
       return actor;
     },
     async connect() {
-      const transport = createEmployeeRuntimeRpc(
-        checkEnvVariables({ useSecretKey: true })
-      );
+      const transport = createEmployeeRuntimeRpc(checkSecretEnvVariables());
       const admin = await createAdminClient({ noCookie: true });
       return {
         async inspect(actorId, operationId) {

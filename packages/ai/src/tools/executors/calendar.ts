@@ -7,9 +7,30 @@ import { getWorkspaceContextWorkspaceId } from '../workspace-context';
 import { executeCalendarAutomation } from './calendar-automation';
 import {
   decryptEventsForTools,
+  ENCRYPTION_UNAVAILABLE_MESSAGE,
   encryptEventFieldsForTools,
-  getWorkspaceKeyForTools,
+  isWorkspaceEncryptionUnavailableError,
+  resolveWorkspaceKeyForTools,
 } from './helpers/encryption';
+
+const ENCRYPTED_EVENTS_WITHHELD_NOTICE =
+  'Some events are end-to-end encrypted and encryption is unavailable on this server right now, so their title, description and location are withheld.';
+
+/** Encrypt event fields, or return a tool error when encryption is unavailable. */
+async function encryptOrRefuse(
+  fields: { title: string; description: string; location: string | null },
+  workspaceId: string
+) {
+  try {
+    return {
+      encrypted: await encryptEventFieldsForTools(fields, workspaceId),
+    };
+  } catch (error) {
+    if (isWorkspaceEncryptionUnavailableError(error))
+      return { error: ENCRYPTION_UNAVAILABLE_MESSAGE };
+    throw error;
+  }
+}
 
 dayjs.extend(utc);
 dayjs.extend(timezone);
@@ -56,6 +77,7 @@ export async function executeGetUpcomingEvents(
   if (!events?.length) return { count: 0, events: [] };
 
   const decrypted = await decryptEventsForTools(events, workspaceId);
+  const withheld = decrypted.some((e) => e.encryption_unavailable);
 
   // Format dates in the user's timezone so the model presents local times
   const formatInTz = (iso: string) => {
@@ -70,6 +92,7 @@ export async function executeGetUpcomingEvents(
   return {
     count: decrypted.length,
     timezone: tz ?? 'UTC',
+    ...(withheld ? { notice: ENCRYPTED_EVENTS_WITHHELD_NOTICE } : {}),
     events: decrypted.map(
       (e: {
         id: string;
@@ -79,14 +102,16 @@ export async function executeGetUpcomingEvents(
         end_at: string;
         location: string | null;
         locked?: boolean | null;
+        encryption_unavailable?: true;
       }) => ({
         id: e.id,
-        title: e.title,
+        title: e.encryption_unavailable ? null : e.title,
         description: e.description || null,
         start: formatInTz(e.start_at),
         end: formatInTz(e.end_at),
         location: e.location,
         locked: e.locked === true,
+        ...(e.encryption_unavailable ? { encryptionUnavailable: true } : {}),
       })
     ),
   };
@@ -143,10 +168,12 @@ export async function executeCreateEvent(
     endAt = new Date(args.endAt as string).toISOString();
   }
 
-  const encrypted = await encryptEventFieldsForTools(
+  const prepared = await encryptOrRefuse(
     { title, description, location },
     workspaceId
   );
+  if ('error' in prepared) return { error: prepared.error };
+  const { encrypted } = prepared;
 
   const { data: event, error } = await ctx.supabase
     .from('workspace_calendar_events')
@@ -255,10 +282,9 @@ export async function executeUpdateEvent(
 
     // We only encrypt the fields that were actually provided to be updated,
     // but the helper expects the full object. We will merge carefully.
-    const encrypted = await encryptEventFieldsForTools(
-      fieldsToEncrypt,
-      workspaceId
-    );
+    const prepared = await encryptOrRefuse(fieldsToEncrypt, workspaceId);
+    if ('error' in prepared) return { error: prepared.error };
+    const { encrypted } = prepared;
 
     if (title !== undefined) updates.title = encrypted.title;
     if (description !== undefined) updates.description = encrypted.description;
@@ -310,15 +336,24 @@ export async function executeCheckE2EEStatus(
   ctx: MiraToolContext
 ) {
   const workspaceId = getWorkspaceContextWorkspaceId(ctx);
-  const key = await getWorkspaceKeyForTools(workspaceId);
-  const hasKey = key !== null;
+  const keyState = await resolveWorkspaceKeyForTools(workspaceId);
 
-  if (!hasKey) {
+  if (keyState.status === 'none') {
     return {
       enabled: false,
       hasKey: false,
       message:
         'End-to-end encryption is not enabled for this workspace. Calendar events are stored in plaintext.',
+    };
+  }
+
+  if (keyState.status === 'unavailable') {
+    return {
+      enabled: true,
+      hasKey: true,
+      available: false,
+      message:
+        'E2EE is enabled for this workspace, but encryption is unavailable on this server right now. Encrypted events cannot be read or changed until it is restored.',
     };
   }
 
@@ -361,8 +396,15 @@ export async function executeEnableE2EE(
     }
 
     // Check if key already exists
-    const existingKey = await getWorkspaceKeyForTools(workspaceId);
-    if (existingKey) {
+    const keyState = await resolveWorkspaceKeyForTools(workspaceId);
+    if (keyState.status === 'unavailable') {
+      return {
+        success: false,
+        error:
+          'E2EE could not be verified for this workspace right now. No changes were made.',
+      };
+    }
+    if (keyState.status === 'available') {
       return {
         success: true,
         message: 'E2EE is already enabled for this workspace.',

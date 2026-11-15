@@ -6,7 +6,9 @@ identity, public files and source-SHA channel.
 
 ``--profile production`` seals the cutover output after the workflow's config
 rewrite: production worker, topLevelName and vars, same four emitted fields as
-the staging output. The default profile is the staging qualification.
+the staging output. Without ``--profile`` the profile comes from
+VITE_MIND_NATIVE_PROFILE (default staging) and seals the build output as
+emitted, for the staging/production qualification matrix.
 """
 import importlib.util
 import os
@@ -14,15 +16,57 @@ from pathlib import Path
 
 WORKER = "tuturuuu-mind-vite-staging"
 PRODUCTION_WORKER = "tuturuuu-mind"
+# No staging abuse-guard Worker exists in source: every profile binds the
+# shared guard. It is the only service target a staging artifact may share
+# with production; any other binding must target the artifact's own Worker.
+ABUSE_GUARD_WORKER = "tuturuuu-abuse-guard"
 PUBLIC_FILES = (
     "robots.txt",
 )
+PROFILES = ("staging", "production")
+ENV_PROFILE = "VITE_MIND_NATIVE_PROFILE"
 
 
-def load(profile="staging"):
-    if profile not in ("staging", "production"):
+def services_for(worker):
+    # Exact service bindings from apps/mind/cloudflare/deployment-profile.ts.
+    # Any other list fails. WORKER_SELF_REFERENCE targets the profile's own Worker.
+    return [
+        {"binding": "WORKER_SELF_REFERENCE", "service": worker},
+        {
+            "binding": "ABUSE_GUARD",
+            "service": ABUSE_GUARD_WORKER,
+            "entrypoint": "AbuseGuardEntrypoint",
+        },
+    ]
+
+
+def assert_staging_isolated(services):
+    """A staging artifact binds no production Worker."""
+    for service in services:
+        target = service.get("service")
+        if target in (WORKER, ABUSE_GUARD_WORKER):
+            continue
+        raise ValueError(
+            "staging isolation: service binding targets a non-staging Worker: "
+            + str(service.get("binding"))
+        )
+
+
+def load(profile="staging", cutover=False):
+    """Seal identity for a profile.
+
+    ``cutover`` selects the production output after the workflow's config
+    rewrite (extra vars, no source maps). Without it, ``production`` is the
+    production profile as the build emits it, qualified before any rewrite.
+    """
+    if profile not in PROFILES:
         raise ValueError("unknown Mind artifact profile")
+    if cutover and profile != "production":
+        raise ValueError("only the production profile has a cutover output")
     worker = PRODUCTION_WORKER if profile == "production" else WORKER
+    services = services_for(worker)
+    if profile == "staging":
+        assert_staging_isolated(services)
     path = Path(__file__).with_name("apps-native-artifact.py")
     spec = importlib.util.spec_from_file_location("mind_native_artifact_base", path)
     module = importlib.util.module_from_spec(spec)
@@ -34,21 +78,18 @@ def load(profile="staging"):
         "compatibility_flags": ["nodejs_compat","global_fetch_strictly_public"],
         "workers_dev": False,
     }
-    # Exact service bindings from apps/mind/void.config.ts. Any other list fails.
     module.NORMALIZED_DEFAULTS = {
         **module.NORMALIZED_DEFAULTS,
         "topLevelName": worker,
-        "services": [
-            {"binding": "WORKER_SELF_REFERENCE", "service": "tuturuuu-mind"},
-            {
-                "binding": "ABUSE_GUARD",
-                "service": "tuturuuu-abuse-guard",
-                "entrypoint": "AbuseGuardEntrypoint",
-            },
-        ],
+        "services": services,
     }
     module.RECEIPT = "mind-native-artifact.json"
     if profile == "production":
+        module.IDENTITY = {
+            **module.IDENTITY,
+            "vars": {"TUTURUUU_NOINDEX": "0"},
+        }
+    if cutover:
         module.IDENTITY = {
             **module.IDENTITY,
             "vars": {
@@ -71,18 +112,24 @@ def load(profile="staging"):
 
 def main():
     import sys
-    profile = "staging"
+    cutover = False
+    # The qualification profile follows the build: VITE_MIND_NATIVE_PROFILE.
+    profile = os.environ.get(ENV_PROFILE, "staging")
     if len(sys.argv) > 1 and sys.argv[1] == "--profile":
-        if len(sys.argv) < 3 or sys.argv[2] not in ("staging", "production"):
+        if len(sys.argv) < 3 or sys.argv[2] not in PROFILES:
             raise SystemExit("only the staging and production artifact profiles are supported")
+        # An explicit profile is the sealed cutover output of that profile.
         profile = sys.argv[2]
+        cutover = profile == "production"
         del sys.argv[1:3]
+    if profile not in PROFILES:
+        raise SystemExit("Expected mind native profile staging or production")
     # The shared CLI reads its exact source from APPS_SOURCE_SHA.
     if "MIND_SOURCE_SHA" in os.environ:
         os.environ["APPS_SOURCE_SHA"] = os.environ["MIND_SOURCE_SHA"]
     else:
         os.environ.pop("APPS_SOURCE_SHA", None)
-    load(profile).main()
+    load(profile, cutover).main()
 
 
 if __name__ == "__main__":

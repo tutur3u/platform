@@ -175,13 +175,19 @@ describe('satellite controlled calendar views', () => {
     fireEvent.click(screen.getByText('Open September 22'));
     expect(screen.getByText('day:9:22')).toBeVisible();
   });
-  it('the menu enters month and an uncontrolled calendar restores the saved month', () => {
+  it('the menu enters month and a last-used default reopens the saved month', () => {
     const mounted = render(<ControlledCalendar />);
     fireEvent.click(screen.getByText('Header week'));
     expect(screen.getByText('month:9:1')).toBeVisible();
     mounted.unmount();
+    localStorage.setItem('calendar-default-view', 'last');
     render(<CalendarContent t={translate} locale="en" />);
     expect(screen.getByText('Header month')).toBeVisible();
+  });
+  it('an uncontrolled calendar opens week by default on wide screens', () => {
+    localStorage.setItem('calendar-view-mode', 'month');
+    render(<CalendarContent t={translate} locale="en" />);
+    expect(screen.getByText('Header week')).toBeVisible();
   });
   it('year drill-down opens the chosen month', () => {
     render(<ControlledCalendar initialView="year" />);

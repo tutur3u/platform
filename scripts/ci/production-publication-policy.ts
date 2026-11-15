@@ -1,5 +1,5 @@
 import { appendFileSync } from 'node:fs';
-import { productionPublicationPolicy } from '../../tuturuuu.ci.ts';
+import { ci, productionPublicationPolicy } from '../../tuturuuu.ci.ts';
 import {
   cloudflareProductionTargets,
   vercelWorkflowTargets,
@@ -9,6 +9,7 @@ const protectedSurfaces = {
   forms: ['frontend'],
   inventory: ['frontend'],
   nova: ['frontend'],
+  mind: ['frontend'],
   mastermind: ['frontend'],
   meet: ['frontend', 'realtime-do'],
   calendar: ['frontend'],
@@ -87,20 +88,31 @@ export function validateProductionPublicationPolicy(policy: unknown) {
   return entries;
 }
 
+/**
+ * A publisher switched off in the tuturuuu.ci.ts workflow switchboard never
+ * publishes, including on a manual dispatch the switchboard does not gate.
+ */
+function switchboardHold(workflowName: string): string | undefined {
+  const switchboard: Record<string, boolean> = ci;
+  if (!Object.hasOwn(switchboard, workflowName)) return undefined;
+  if (switchboard[workflowName] !== false) return undefined;
+  return 'held: publisher disabled in the tuturuuu.ci.ts switchboard';
+}
+
 export function productionPublicationHold(
   workflowName: string
 ): string | undefined {
   const app = protectedWorkflows.get(workflowName);
   if (!app) {
     return knownWorkflows.has(workflowName)
-      ? undefined
+      ? switchboardHold(workflowName)
       : 'held for wave-1 cutover: unknown production workflow';
   }
   try {
     const entry = validateProductionPublicationPolicy(
       productionPublicationPolicy
     ).get(app);
-    if (entry?.state === 'admitted') return undefined;
+    if (entry?.state === 'admitted') return switchboardHold(workflowName);
     return entry?.reason ?? 'held for wave-1 cutover: missing admission';
   } catch {
     return 'held for wave-1 cutover: invalid or incomplete publication policy';

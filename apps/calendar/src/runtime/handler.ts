@@ -10,6 +10,7 @@ import { beforeLocalApiOwner, forwardToOwner } from './api-owner-routing';
 import { dispatchCalendarEndpoint } from './api-registry.server';
 import { registerCalendarServerApiPaths } from './calendar-api-server';
 import { calendarBase } from './calendar-mount';
+import { legacyHostResponse } from './legacy-host';
 import {
   CALENDAR_FUNCTION_BASE,
   CALENDAR_LEGACY_FUNCTION_BASE,
@@ -60,6 +61,8 @@ async function dispatchCalendarRequest(
   nonce: string,
   telemetry?: CalendarTelemetryPort
 ): Promise<Response> {
+  const legacy = legacyHostResponse(request);
+  if (legacy) return legacy;
   const url = new URL(request.url);
   const base = calendarBase(url);
   let path = base?.strip(url.pathname);

@@ -205,11 +205,15 @@ describe('short-link documents', () => {
 
   it('keeps root, trailing slash, nested, malformed and method behavior', async () => {
     const { call, pages, deps } = setup();
+    // The bare root `/` is the home redirect (307 to SHORTENER_HOME_URL), not
+    // the 308 slash strip.
     const root = await call(`${origin}/?a=1`);
     expect(root.status).toBe(307);
+    expect(root.headers.get('location')).not.toBeNull();
     expect(root.headers.get('location')).toBe('https://tuturuuu.com');
     const slash = await call(`${origin}/abc123/?a=1&a=2`);
     expect(slash.status).toBe(308);
+    expect(slash.headers.get('location')).not.toBeNull();
     expect(slash.headers.get('location')).toBe('/abc123?a=1&a=2');
     expect((await call(`${origin}/a/b`)).status).toBe(404);
     expect(pages).toEqual([null]);
@@ -225,6 +229,94 @@ describe('short-link documents', () => {
     expect(page.status).toBe(200);
     expect(page.body).toBeNull();
     expect(deps.renderPage.mock.calls.at(-1)?.[0].method).toBe('GET');
+  });
+
+  it('redirects every slash-terminated vector with 308 to a same-origin Location', async () => {
+    const { call, clicks, pages } = setup();
+    // [request path + query, exact Location]. Every vector must answer 308
+    // with a non-null, same-origin, non-protocol-relative Location.
+    const vectors: [string, string][] = [
+      ['/abc123/?a=1&a=2', '/abc123?a=1&a=2'],
+      ['/abc/', '/abc'],
+      ['/abc/?a=1', '/abc?a=1'],
+      ['/abc123//', '/abc123'],
+      ['/abc123\\', '/abc123'],
+      ['/a/b/', '/a/b'],
+      ['///', '/'],
+      ['///?a=1', '/?a=1'],
+      ['//evil.example/?a=1', '/evil.example?a=1'],
+      ['///evil.example/?a=1', '/evil.example?a=1'],
+      ['/\\evil.example/?a=1', '/evil.example?a=1'],
+      ['/\\/evil.example/?a=1', '/evil.example?a=1'],
+      ['/\\\\evil.example/?a=1', '/evil.example?a=1'],
+      ['//evil.example/x/?a=1', '/evil.example/x?a=1'],
+      ['/%2F%2Fevil.example/?a=1', '/%2F%2Fevil.example?a=1'],
+      ['/%5C%5Cevil.example/?a=1', '/%5C%5Cevil.example?a=1'],
+      ['/%2F%5Cevil.example/', '/%2F%5Cevil.example'],
+      ['/@evil.example/', '/@evil.example'],
+      ['/https:%2F%2Fevil.example/', '/https:%2F%2Fevil.example'],
+      ['/https://evil.example/', '/https://evil.example'],
+      ['/%09/evil.example/', '/%09/evil.example'],
+    ];
+    for (const [path, expected] of vectors) {
+      for (const method of ['GET', 'HEAD']) {
+        const response = await call(`${origin}${path}`, { method });
+        expect(response.status, `${method} ${path}`).toBe(308);
+        const location = response.headers.get('location');
+        expect(location, `${method} ${path}`).not.toBeNull();
+        expect(location, `${method} ${path}`).toBe(expected);
+        expect(location).toMatch(/^\/(?![/\\])/);
+        expect(new URL(location as string, 'https://ttr.gg').origin).toBe(
+          'https://ttr.gg'
+        );
+      }
+    }
+    expect(clicks).toEqual([]);
+    expect(pages).toEqual([]);
+  });
+
+  it('keeps slash-terminated redirects on the canonical host same-origin', async () => {
+    const { call, clicks } = setup({ SHORTENER_CANONICAL_HOST_ENABLED: '1' });
+    for (const [path, expected] of [
+      ['/abc123/?a=1', '/abc123?a=1'],
+      ['//evil.example/', '/evil.example'],
+      ['/\\evil.example/', '/evil.example'],
+      ['/%2F%2Fevil.example/', '/%2F%2Fevil.example'],
+    ]) {
+      const response = await call(`https://ttr.gg${path}`);
+      expect(response.status, path).toBe(308);
+      const location = response.headers.get('location');
+      expect(location, path).not.toBeNull();
+      expect(location, path).toBe(expected);
+      expect(new URL(location as string, 'https://ttr.gg').origin).toBe(
+        'https://ttr.gg'
+      );
+    }
+    // www.ttr.gg is a 308 alias: it keeps the slash path and only ever points
+    // at the canonical host, which then strips the slash same-origin.
+    for (const [path, expected] of [
+      ['/abc123/?a=1', 'https://ttr.gg/abc123/?a=1'],
+      ['//evil.example/', 'https://ttr.gg//evil.example/'],
+    ]) {
+      const response = await call(`https://www.ttr.gg${path}`);
+      expect(response.status, path).toBe(308);
+      const location = response.headers.get('location');
+      expect(location, path).not.toBeNull();
+      expect(location, path).toBe(expected);
+      expect(new URL(location as string).origin).toBe('https://ttr.gg');
+    }
+    // Legacy aliases answer slash-terminated paths with their own 307 alias
+    // redirect rather than the 308 slash strip; Location stays on https://ttr.gg.
+    const legacy = await call('https://shortener.tuturuuu.com//evil.example/');
+    expect(legacy.status).toBe(307);
+    expect(legacy.headers.get('location')).not.toBeNull();
+    expect(legacy.headers.get('location')).toBe(
+      'https://ttr.gg//evil.example/'
+    );
+    expect(new URL(legacy.headers.get('location') as string).origin).toBe(
+      'https://ttr.gg'
+    );
+    expect(clicks).toEqual([]);
   });
 
   it('serves owned static files before any slug lookup', async () => {

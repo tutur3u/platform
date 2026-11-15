@@ -2,6 +2,7 @@ import { withBridgeRequest } from '@tuturuuu/start-bridge/request-context';
 import { NextRequest, NextResponse } from 'next/server';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import LoginPage from './app/[locale]/(auth)/login/page';
+import { centralCalendarLoginUrl } from './lib/central-login';
 import { proxy } from './proxy';
 
 const APEX = 'https://tuturuuu.com';
@@ -287,6 +288,54 @@ describe('mounted Calendar verify-token resume', () => {
   });
 });
 
+describe('mounted Calendar public completion document', () => {
+  for (const method of ['GET', 'HEAD']) {
+    it.each([
+      ['/verify-token', {}, 'en'],
+      ['/verify-token', { cookie: 'NEXT_LOCALE=vi' }, 'vi'],
+      ['/verify-token?nextUrl=%2Fabc', {}, 'en'],
+    ] as const)(
+      `${method} tokenless %s renders its locale route in place`,
+      async (path, headers, locale) => {
+        const response = await proxy(
+          new NextRequest(`${APEX}${BASE}${path}`, {
+            method,
+            headers,
+            nextConfig: { basePath: BASE },
+          })
+        );
+        expect(response.headers.get('location')).toBeNull();
+        const rewrite = new URL(
+          response.headers.get('x-middleware-rewrite') ?? ''
+        );
+        expect(`${rewrite.origin}${rewrite.pathname}`).toBe(
+          `${APEX}${BASE}/${locale}/verify-token`
+        );
+        expect(rewrite.search).toBe(new URL(`${APEX}${path}`).search);
+        expectNoSessionWrites(response);
+      }
+    );
+
+    it(`${method} tokenless /vi/verify-token keeps its route`, async () => {
+      const response = await proxy(
+        mounted(`${BASE}/vi/verify-token`, { method })
+      );
+      expect(response.headers.get('location')).toBeNull();
+      expect(response.headers.get('x-middleware-next')).toBe('1');
+      expectNoSessionWrites(response);
+    });
+  }
+
+  it('keeps a token-bearing mounted request on the resume redirect', async () => {
+    const response = await proxy(
+      mounted(verifyTokenUrl({ token: 'x', nextUrl: '/abc' }))
+    );
+    expect(response.status).toBe(307);
+    expect(response.headers.get('location')).toBe(`${APEX}${BASE}/abc`);
+    expectNoSessionWrites(response);
+  });
+});
+
 describe('mounted Calendar login with a stale shared cookie', () => {
   beforeEach(() => {
     // The cookie name is present, but the session behind it no longer verifies.
@@ -323,7 +372,10 @@ describe('mounted Calendar login with a stale shared cookie', () => {
 });
 
 describe('Calendar host login short-circuit', () => {
-  it('keeps redirecting a cookie-bearing login on calendar.tuturuuu.com', async () => {
+  // A Supabase cookie name without verified app-session claims may be stale,
+  // so the host login hands off to central sign-in (keeping the deep link)
+  // and clears that cookie instead of short-circuiting to the next path.
+  it('hands a cookie-bearing but unverified login on calendar.tuturuuu.com to central sign-in', async () => {
     mocks.hasSupportedSupabaseAuthCookie.mockReturnValue(true);
     const response = await proxy(
       new NextRequest('https://calendar.tuturuuu.com/login?next=%2Fabc', {
@@ -332,8 +384,9 @@ describe('Calendar host login short-circuit', () => {
     );
     expect(response.status).toBe(307);
     expect(response.headers.get('location')).toBe(
-      'https://calendar.tuturuuu.com/abc'
+      centralCalendarLoginUrl('/abc').toString()
     );
+    expect(response.headers.get('cache-control')).toBe('private, no-store');
     expect(mocks.clearSupabaseAuthCookies).toHaveBeenCalled();
   });
 });

@@ -16,6 +16,7 @@ vi.mock('@tanstack/react-start/server-only', () => ({}));
 vi.mock('../proxy', () => ({ proxy: suppliers.proxy }));
 
 import { handleCalendarRequest } from './handler';
+import { LEGACY_SERVICE_WORKER_SOURCE } from './legacy-host';
 
 const asset = vi.fn(async () => new Response('asset'));
 const env = { ASSETS: { fetch: asset } };
@@ -27,9 +28,9 @@ const telemetry: CalendarTelemetryPort = {
 beforeEach(() => vi.resetAllMocks());
 
 describe('Calendar cutover boundary', () => {
-  it.each(['calendar.tuturuuu.com'])(
+  it.each(['https://tuturuuu.com/calendar/personal'])(
     'threads a fresh CSP nonce through the proxy and Start on %s',
-    async (host) => {
+    async (url) => {
       const seen: string[] = [];
       suppliers.proxy.mockImplementation(async () => {
         const nonce = requestNonce();
@@ -43,7 +44,7 @@ describe('Calendar cutover boundary', () => {
       });
       for (let i = 0; i < 2; i++) {
         const response = await handleCalendarRequest(
-          new Request(`https://${host}/personal`),
+          new Request(url),
           env,
           ctx,
           telemetry
@@ -86,11 +87,7 @@ describe('Calendar cutover boundary', () => {
     expect(asset).not.toHaveBeenCalled();
   });
 
-  it('does not forward canonical ACME requests through global fetch', async () => {
-    suppliers.proxy.mockImplementation(() => NextResponse.next());
-    suppliers.start.mockResolvedValue(
-      new Response('Not Found', { status: 404 })
-    );
+  it('does not forward legacy-host ACME requests through global fetch', async () => {
     const fetchOrigin = vi.spyOn(globalThis, 'fetch');
     try {
       const response = await handleCalendarRequest(
@@ -101,7 +98,10 @@ describe('Calendar cutover boundary', () => {
         ctx,
         telemetry
       );
-      expect(response.status).toBe(404);
+      expect(response.status).toBe(307);
+      expect(response.headers.get('location')).toBe(
+        'https://tuturuuu.com/calendar/.well-known/acme-challenge/probe'
+      );
       expect(fetchOrigin).not.toHaveBeenCalled();
     } finally {
       fetchOrigin.mockRestore();
@@ -154,4 +154,97 @@ describe('Calendar cutover boundary', () => {
       );
     }
   );
+});
+
+describe('legacy calendar.tuturuuu.com host', () => {
+  const methods = ['GET', 'HEAD', 'POST'] as const;
+  it.each([
+    ['/', '/calendar'],
+    ['/en/personal', '/calendar/en/personal'],
+    [
+      '/00000000-0000-4000-8000-000000000001?date=2026-11-15',
+      '/calendar/00000000-0000-4000-8000-000000000001?date=2026-11-15',
+    ],
+    ['/settings?x=1', '/calendar/settings?x=1'],
+    ['/login?next=%2Fabc', '/calendar/login?next=%2Fabc'],
+    ['/verify-token?nextUrl=%2Fabc', '/calendar/verify-token?nextUrl=%2Fabc'],
+    ['/api/v1/calendar/connections', '/calendar/api/v1/calendar/connections'],
+    ['/offline.html', '/calendar/offline.html'],
+    ['/calendar/personal', '/calendar/personal'],
+  ])('sends %s to the apex mount before auth', async (path, to) => {
+    for (const method of methods) {
+      const response = await handleCalendarRequest(
+        new Request(`https://calendar.tuturuuu.com${path}`, {
+          method,
+          headers: { cookie: 'sb-fixture-auth-token=stale' },
+        }),
+        env,
+        ctx,
+        telemetry
+      );
+      expect(response.status).toBe(307);
+      expect(response.headers.get('location')).toBe(
+        `https://tuturuuu.com${to}`
+      );
+      expect(response.headers.getSetCookie()).toEqual([]);
+      expect(response.headers.get('cache-control')).toBe('private, no-store');
+    }
+    expect(suppliers.proxy).not.toHaveBeenCalled();
+    expect(suppliers.start).not.toHaveBeenCalled();
+    expect(asset).not.toHaveBeenCalled();
+  });
+
+  it('keeps serving build-info for monitoring', async () => {
+    const response = await handleCalendarRequest(
+      new Request('https://calendar.tuturuuu.com/api/build-info'),
+      env,
+      ctx,
+      telemetry
+    );
+    expect(response.status).toBe(200);
+    expect(response.headers.has('location')).toBe(false);
+    expect((await response.json()).appName).toBe('calendar');
+  });
+
+  it('answers the service-worker path with a self-removing worker', async () => {
+    const response = await handleCalendarRequest(
+      new Request('https://calendar.tuturuuu.com/serwist/sw.js?revision=7'),
+      env,
+      ctx,
+      telemetry
+    );
+    expect(response.status).toBe(200);
+    expect(response.headers.get('cache-control')).toBe('no-store');
+    expect(response.headers.get('content-type')).toBe(
+      'application/javascript; charset=utf-8'
+    );
+    expect(response.headers.get('service-worker-allowed')).toBe('/');
+    const source = await response.text();
+    expect(source).toBe(LEGACY_SERVICE_WORKER_SOURCE);
+    for (const marker of [
+      'self.skipWaiting()',
+      'caches.delete(key)',
+      'self.registration.unregister()',
+      "self.clients.matchAll({ type: 'window' })",
+      'tab.navigate(tab.url)',
+    ]) {
+      expect(source).toContain(marker);
+    }
+    expect(suppliers.proxy).not.toHaveBeenCalled();
+    expect(suppliers.start).not.toHaveBeenCalled();
+    expect(asset).not.toHaveBeenCalled();
+  });
+
+  it('leaves the apex mount itself to the app', async () => {
+    suppliers.proxy.mockImplementation(async () => NextResponse.next());
+    suppliers.start.mockResolvedValue(new Response('mounted'));
+    const response = await handleCalendarRequest(
+      new Request('https://tuturuuu.com/calendar/personal'),
+      env,
+      ctx,
+      telemetry
+    );
+    expect(response.status).toBe(200);
+    expect(await response.text()).toBe('mounted');
+  });
 });

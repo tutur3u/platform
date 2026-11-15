@@ -899,6 +899,7 @@ async function blockSuspiciousAnonymousApiRequest(
 }
 
 const authProxy = createCentralizedAuthProxy({
+  canonicalOrigins: [BASE_URL],
   webAppUrl: WEB_APP_URL,
   publicPaths: PUBLIC_PATHS,
   isPublicPath: isAuthProxyPublicPath,

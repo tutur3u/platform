@@ -5,6 +5,7 @@ import {
 } from '../../../packages/auth/src/proxy/page-adapter-test-fixture';
 
 vi.mock('@/constants/common', () => ({
+  BASE_URL: 'https://git.tuturuuu.com',
   LOCALE_COOKIE_NAME: 'NEXT_LOCALE',
   WEB_APP_URL: 'https://central.example.test',
 }));

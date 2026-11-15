@@ -51,12 +51,16 @@ const PUBLIC_FILES = [
   'site.webmanifest',
 ];
 // From start-bridge.routes.json `runtime`: a status, or a redirect prefix.
-const EXPECTED = { '/': { redirect: '/login' } };
+const EXPECTED = { '/': { redirect: 'https://tuturuuu.com/login' } };
 // Response-policy probes (start-bridge.routes.json `runtimeProbes`).
 const POLICY_PROBES = [
   { kind: 'page', path: '/' },
   { kind: 'api', path: '/api/build-info' },
-  { kind: 'notFound', path: '/__native-smoke-missing__' },
+  {
+    kind: 'notFound',
+    skip: 'unknown paths redirect signed-out users to login',
+    fixture: 'cloudflare/anonymous-smoke.runtime.mjs',
+  },
 ];
 // The Worker's mounts: the generated defaults plus the app-owned
 // start-bridge.config.ts overrides, exactly as cloudflare/worker.ts spreads

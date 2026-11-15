@@ -6,6 +6,7 @@ const {
 } = require('./cloudflare-backend-ownership-allowlist');
 const {
   MIGRATION_CUTOFF,
+  REQUEST_SCOPED_CONTINUATIONS,
   checkRepository,
   evaluateOwnership,
   parsePgCronCalls,
@@ -113,6 +114,35 @@ const allowedEntry = (id, target = TARGETS.cronTrigger) => ({
 
 test('the repository adds no schedule or background owner outside Cloudflare', () => {
   assert.deepEqual(checkRepository().violations, []);
+});
+
+test('same-request stream persistence has one exact-path registration', () => {
+  const file = 'packages/ai/src/chat/google/stream-lifetime.ts';
+  assert.deepEqual(Object.keys(REQUEST_SCOPED_CONTINUATIONS), [file]);
+  assert.equal(
+    REQUEST_SCOPED_CONTINUATIONS[file].target,
+    TARGETS.workerWaitUntil
+  );
+  assert.match(REQUEST_SCOPED_CONTINUATIONS[file].rationale, /120 s timeout/);
+  assert.deepEqual(
+    evaluate({ [file]: "import { after } from 'next/server';" }),
+    []
+  );
+});
+
+test('request-lifetime registration never admits another after owner', () => {
+  for (const file of [
+    'packages/ai/src/chat/google/other-lifetime.ts',
+    'packages/other/src/chat/google/stream-lifetime.ts',
+    'apps/web/src/request-lifetime.ts',
+  ]) {
+    const violations = evaluate({
+      [file]: "import { after as waitUntil } from 'next/server';",
+    });
+    assert.equal(violations.length, 1);
+    assert.match(violations[0], /New next-after owner outside Cloudflare/);
+    assert.ok(violations[0].includes(file));
+  }
 });
 
 test('every legacy owner records an owner, Cloudflare target and plan', () => {
