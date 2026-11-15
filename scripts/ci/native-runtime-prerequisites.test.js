@@ -198,8 +198,18 @@ test('native build identity records the environment its caller declares', () => 
 
   // A caller that pins the production native profile records production in
   // /api/build-info, and only a production profile may claim production.
+  // Matrix callers derive it from the profile: production only for the
+  // production profile, preview for every other profile.
+  const matrixEnvironment = expression(
+    "matrix.profile == 'production' && 'production' || 'preview'"
+  );
+  const resolveMatrixEnvironment = (environment, profile) => {
+    assert.equal(environment, matrixEnvironment);
+    return profile === 'production' ? 'production' : 'preview';
+  };
   const workflowsDir = path.resolve(__dirname, '../../.github/workflows');
   const callers = [];
+  const matrixCallers = [];
   for (const name of fs.readdirSync(workflowsDir)) {
     if (!/\.ya?ml$/.test(name) || name === 'native-start-app.yaml') continue;
     const caller = readWorkflow(name);
@@ -211,6 +221,20 @@ test('native build identity records the environment its caller declares', () => 
       if (/_NATIVE_PROFILE=production$/.test(profile)) {
         callers.push(label);
         assert.equal(environment, 'production', label);
+      } else if (
+        profile.endsWith(`_NATIVE_PROFILE=${expression('matrix.profile')}`)
+      ) {
+        matrixCallers.push(label);
+        const profiles = job.strategy?.matrix?.profile ?? [];
+        assert.ok(profiles.includes('production'), label);
+        assert.equal(environment, matrixEnvironment, label);
+        for (const value of profiles) {
+          assert.equal(
+            resolveMatrixEnvironment(environment, value),
+            value === 'production' ? 'production' : 'preview',
+            `${label}:${value}`
+          );
+        }
       } else {
         assert.notEqual(environment, 'production', label);
       }
@@ -220,4 +244,17 @@ test('native build identity records the environment its caller declares', () => 
     'finance-cloudflare.yaml:native-production',
     'shortener-cloudflare.yaml:native-production',
   ]);
+  assert.deepEqual(matrixCallers.sort(), [
+    'forms-cloudflare.yaml:native',
+    'inventory-cloudflare.yaml:native',
+    'mind-cloudflare.yaml:native',
+    'nova-cloudflare.yaml:native',
+  ]);
+  assert.equal(
+    resolveMatrixEnvironment(matrixEnvironment, 'production'),
+    'production'
+  );
+  for (const value of ['staging', 'preview', 'development', '']) {
+    assert.equal(resolveMatrixEnvironment(matrixEnvironment, value), 'preview');
+  }
 });
