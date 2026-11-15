@@ -1,4 +1,6 @@
 import { DurableObject } from 'cloudflare:workers';
+import { bootstrapControl, controlColo } from './control-bootstrap';
+import type { FenceEnv } from './fence';
 import type {
   AbuseGuardFamily,
   GuardResult,
@@ -130,7 +132,9 @@ export { type ControlState, familyOpen } from './control-state';
  * The operator stop persists until an operator resumes.
  */
 export class GuardControl extends DurableObject {
-  constructor(ctx: DurableObjectState, env: unknown) {
+  private colo?: Promise<string | null>;
+
+  constructor(ctx: DurableObjectState, env: FenceEnv) {
     super(ctx, env as never);
     ensureFairAdmissionSchema(ctx.storage.sql);
     ctx.storage.sql
@@ -138,6 +142,25 @@ export class GuardControl extends DurableObject {
         'CREATE TABLE IF NOT EXISTS control (id INTEGER PRIMARY KEY CHECK (id = 1), state TEXT NOT NULL)'
       )
       .toArray();
+    if (ctx.id.equals(env.GUARD_CONTROL.idFromName('control:v2'))) {
+      ctx.blockConcurrencyWhile(async () => {
+        const existing = ctx.storage.sql
+          .exec('SELECT state FROM control WHERE id = 1')
+          .toArray();
+        if (existing.length) return;
+        const state = await bootstrapControl(() =>
+          env.GUARD_CONTROL.get(
+            env.GUARD_CONTROL.idFromName('control:v1')
+          ).read()
+        );
+        this.save(state);
+      });
+    }
+  }
+
+  async diag(): Promise<string | null> {
+    this.colo ??= controlColo();
+    return this.colo;
   }
 
   private load(now: number): { state: ControlState; changed: boolean } {

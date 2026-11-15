@@ -33,6 +33,14 @@ import {
   GuardConfigError,
 } from './fence';
 import type { GuardControl, GuardSubject } from './objects';
+import { locationHint } from './placement';
+import {
+  elapsed,
+  newTiming,
+  recordRpc,
+  serverTiming,
+  type RpcTiming,
+} from './metrics';
 
 export { GuardControl, GuardSubject } from './objects';
 
@@ -42,20 +50,8 @@ export interface Env extends FenceEnv {
   /** Comma-separated HMAC secrets: current first, previous during rotation. */
   ABUSE_GUARD_SECRETS?: string;
   ABUSE_GUARD_OPERATOR_TOKEN?: string;
-  ABUSE_GUARD_LOCATION_HINT?: string;
+  GUARD_METRICS?: AnalyticsEngineDataset;
 }
-
-const LOCATION_HINTS = new Set([
-  'wnam',
-  'enam',
-  'sam',
-  'weur',
-  'eeur',
-  'apac',
-  'oc',
-  'afr',
-  'me',
-]);
 
 let invalidBudgetConfigLogged = false;
 
@@ -81,11 +77,11 @@ function failure(
 }
 
 function subjectStub(env: Env, rpc: ParsedGuardRpc, partition: string) {
-  const hint = env.ABUSE_GUARD_LOCATION_HINT?.trim() || 'apac';
+  const hint = locationHint(env.ABUSE_GUARD_LOCATION_HINT);
   const id = env.GUARD_SUBJECT.idFromName(`${rpc.family}:${partition}`);
-  return LOCATION_HINTS.has(hint)
+  return hint
     ? env.GUARD_SUBJECT.get(id, {
-        locationHint: hint as DurableObjectLocationHint,
+        locationHint: hint,
       })
     : env.GUARD_SUBJECT.get(id);
 }
@@ -93,8 +89,10 @@ function subjectStub(env: Env, rpc: ParsedGuardRpc, partition: string) {
 /** Executes a validated RPC with at most `steps.length` subject calls. */
 export async function executeRpc(
   env: Env,
-  rpc: ParsedGuardRpc
+  rpc: ParsedGuardRpc,
+  timing: RpcTiming = newTiming()
 ): Promise<RpcOutcome> {
+  timing.family = rpc.family;
   const ops = rpc.steps.reduce((total, step) => total + step.cmds.length, 0);
   const requiresFairness = rpc.family === 'replay' || rpc.family === 'password';
   if (
@@ -104,6 +102,7 @@ export async function executeRpc(
     return failure(400, 'bad_request');
   }
   const fair = rpc.fairness;
+  const admitStart = performance.now();
   try {
     if (fair) {
       const outcome = await admitFair(env, rpc.family, fair, ops);
@@ -120,8 +119,11 @@ export async function executeRpc(
       );
     }
     return failure(503, 'guard_unavailable');
+  } finally {
+    timing.admitMs = elapsed(admitStart);
   }
 
+  const subjectStart = performance.now();
   try {
     // Each step records its operation id with its results in the same
     // transaction as the mutation, so replays and concurrent duplicates
@@ -168,6 +170,8 @@ export async function executeRpc(
   } catch (error) {
     console.error('[abuse-guard] subject call failed', error);
     return failure(503, 'guard_unavailable');
+  } finally {
+    timing.subjectMs = elapsed(subjectStart);
   }
 }
 
@@ -230,7 +234,11 @@ async function stepHash(step: ParsedGuardRpc['steps'][number]) {
     .join('');
 }
 
-async function handleRpc(request: Request, env: Env): Promise<RpcOutcome> {
+async function handleRpc(
+  request: Request,
+  env: Env,
+  timing: RpcTiming
+): Promise<RpcOutcome> {
   const secrets = acceptedSecrets(env);
   // A Worker without a usable secret set serves nothing.
   if (!secrets) return failure(503, 'guard_unavailable');
@@ -258,7 +266,7 @@ async function handleRpc(request: Request, env: Env): Promise<RpcOutcome> {
   }
   const parsed = guardRpcSchema.safeParse(payload);
   if (!parsed.success) return failure(400, 'bad_request');
-  return executeRpc(env, parsed.data);
+  return executeRpc(env, parsed.data, timing);
 }
 
 function operatorAuthorized(request: Request, env: Env) {
@@ -273,8 +281,17 @@ async function handleControl(request: Request, env: Env, pathname: string) {
   if (!operatorAuthorized(request, env)) {
     return json({ status: 401, body: { error: 'unauthorized' } });
   }
-  const stub = controlStub(env);
   try {
+    const stub = controlStub(env);
+    if (request.method === 'GET' && pathname === '/control/diag') {
+      return json({
+        status: 200,
+        body: {
+          workerColo: request.cf?.colo ?? null,
+          controlColo: await stub.diag(),
+        },
+      });
+    }
     if (request.method === 'GET' && pathname === '/control/state') {
       return json({ status: 200, body: await stub.read() });
     }
@@ -297,10 +314,21 @@ export default {
   async fetch(request: Request, env: Env): Promise<Response> {
     const { pathname } = new URL(request.url);
     if (pathname === '/v1/rpc') {
-      if (request.method !== 'POST') {
-        return json({ status: 405, body: { error: 'bad_request' } });
-      }
-      return json(await handleRpc(request, env));
+      const start = performance.now();
+      const timing = newTiming();
+      const outcome =
+        request.method === 'POST'
+          ? await handleRpc(request, env, timing)
+          : { status: 405, body: { error: 'bad_request' } };
+      const response = json(outcome);
+      response.headers.set('Server-Timing', serverTiming(timing));
+      recordRpc(
+        env.GUARD_METRICS,
+        timing,
+        'error' in outcome.body ? outcome.body.error : 'ok',
+        elapsed(start)
+      );
+      return response;
     }
     if (pathname.startsWith('/control/')) {
       return handleControl(request, env, pathname);
@@ -327,6 +355,15 @@ export class AbuseGuardEntrypoint extends WorkerEntrypoint<Env> {
     if (size > ABUSE_GUARD_LIMITS.maxBodyBytes) return { error: 'bad_request' };
     const parsed = guardRpcSchema.safeParse(rpc);
     if (!parsed.success) return { error: 'bad_request' };
-    return (await executeRpc(this.env, parsed.data)).body;
+    const start = performance.now();
+    const timing = newTiming();
+    const outcome = await executeRpc(this.env, parsed.data, timing);
+    recordRpc(
+      this.env.GUARD_METRICS,
+      timing,
+      'error' in outcome.body ? outcome.body.error : 'ok',
+      elapsed(start)
+    );
+    return outcome.body;
   }
 }

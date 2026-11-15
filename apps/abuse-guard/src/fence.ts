@@ -13,8 +13,11 @@ import {
   fairIdentityKeys,
 } from './fair-admission';
 import type { GuardControl } from './objects';
+import { locationHint } from './placement';
 
 export interface FenceEnv {
+  ABUSE_GUARD_CONTROL_ID?: 'v1' | 'v2';
+  ABUSE_GUARD_LOCATION_HINT?: string;
   GUARD_CONTROL: DurableObjectNamespace<GuardControl>;
   /** Total admitted commands per UTC day, split across families. */
   ABUSE_GUARD_DAILY_OP_BUDGET?: string;
@@ -122,7 +125,14 @@ export function resolveFamilyBudgets(
 }
 
 export function controlStub(env: FenceEnv) {
-  return env.GUARD_CONTROL.get(env.GUARD_CONTROL.idFromName('control:v1'));
+  const version = env.ABUSE_GUARD_CONTROL_ID ?? 'v1';
+  if (version !== 'v1' && version !== 'v2')
+    throw new GuardConfigError('invalid control id');
+  const id = env.GUARD_CONTROL.idFromName(`control:${version}`);
+  const hint = locationHint(env.ABUSE_GUARD_LOCATION_HINT);
+  return version === 'v2' && hint
+    ? env.GUARD_CONTROL.get(id, { locationHint: hint })
+    : env.GUARD_CONTROL.get(id);
 }
 
 /** Reserve before execution. Interrupted or skipped work remains charged. */

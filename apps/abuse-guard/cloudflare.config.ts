@@ -24,6 +24,10 @@ export default defineConfig({
       // 10% each).
       ABUSE_GUARD_FAMILY_BUDGETS: bindings.text(''),
       ABUSE_GUARD_LOCATION_HINT: bindings.text('apac'),
+      ABUSE_GUARD_CONTROL_ID: bindings.text('v1'),
+      GUARD_METRICS: bindings.analyticsEngineDataset({
+        name: 'abuse_guard_metrics',
+      }),
       ABUSE_GUARD_SECRETS: bindings.secret(),
       ABUSE_GUARD_OPERATOR_TOKEN: bindings.secret(),
       GUARD_SUBJECT: bindings.durableObject({

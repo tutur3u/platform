@@ -9,7 +9,8 @@ import {
 } from '@tuturuuu/utils/abuse-guard/client';
 import { hashGuardValue } from '@tuturuuu/utils/abuse-guard/crypto';
 import { build } from 'esbuild';
-import { Miniflare } from 'miniflare';
+import type { GuardControl } from './objects';
+import { Miniflare, createFetchMock } from 'miniflare';
 import { afterAll, beforeAll, describe, expect, it, vi } from 'vite-plus/test';
 
 const SECRET = 'test-secret-'.padEnd(48, 'x');
@@ -43,6 +44,7 @@ afterAll(async () => {
 
 function createRuntime(
   options: {
+    controlId?: 'v1' | 'v2';
     familyBudgets?: string;
     cacheMs?: string;
     persist?: string;
@@ -50,11 +52,19 @@ function createRuntime(
     operator?: string;
   } = {}
 ) {
+  const fetchMock = createFetchMock();
+  fetchMock.disableNetConnect();
+  fetchMock
+    .get('https://www.cloudflare.com')
+    .intercept({ path: '/cdn-cgi/trace' })
+    .reply(200, 'ip=private\ncolo=SIN\n')
+    .persist();
   return new Miniflare({
     durableObjectsPersist: options.persist ?? false,
     workers: [
       {
         name: 'guard',
+        fetchMock,
         modules: true,
         scriptPath,
         modulesRoot: workDir,
@@ -67,6 +77,7 @@ function createRuntime(
           ABUSE_GUARD_SECRETS:
             options.secrets ?? `${SECRET},${'old-secret-'.padEnd(48, 'o')}`,
           ABUSE_GUARD_OPERATOR_TOKEN: options.operator ?? OPERATOR,
+          ABUSE_GUARD_CONTROL_ID: options.controlId ?? 'v1',
           ABUSE_GUARD_CONTROL_CACHE_MS: options.cacheMs ?? '0',
           ABUSE_GUARD_DAILY_OP_BUDGET: '100000',
           ABUSE_GUARD_FAMILY_BUDGETS: options.familyBudgets ?? '',
@@ -74,6 +85,7 @@ function createRuntime(
       },
       {
         name: 'caller',
+        fetchMock,
         modules: true,
         compatibilityDate: '2026-07-01',
         script: `export default {
@@ -156,6 +168,53 @@ describe('abuse-guard Worker in workerd', () => {
     await mf.dispose();
   });
 
+  it('restricts diagnostics to operator auth and the two colo fields', async () => {
+    const denied = await mf.dispatchFetch(`${ORIGIN}/control/diag`);
+    expect(denied.status).toBe(401);
+    const response = await control(mf, 'diag');
+    expect(response.status).toBe(200);
+    expect(Object.keys(response.body).sort()).toEqual([
+      'controlColo',
+      'workerColo',
+    ]);
+    expect(response.body.controlColo).toBe('SIN');
+  });
+
+  it('puts integer-only timing on rejected RPC responses', async () => {
+    const response = await mf.dispatchFetch(`${ORIGIN}/v1/rpc`, {
+      method: 'POST',
+      body: '{}',
+    });
+    expect(response.headers.get('server-timing')).toMatch(
+      /^admit;dur=\d+, subject;dur=\d+$/
+    );
+  });
+
+  it('inherits and durably retains v1 STOP on v2 first use', async () => {
+    const persist = await mkdtemp(join(workDir, 'control-persist-'));
+    let runtime = createRuntime({ controlId: 'v2', persist });
+    try {
+      const ns = (await runtime.getDurableObjectNamespace(
+        'GUARD_CONTROL',
+        'guard'
+      )) as unknown as DurableObjectNamespace<GuardControl>;
+      await ns.get(ns.idFromName('control:v1')).setStopped(true);
+      expect((await control(runtime, 'state')).body.stopped).toBe(true);
+      await ns.get(ns.idFromName('control:v1')).setStopped(false);
+      expect((await control(runtime, 'state')).body.stopped).toBe(true);
+      await expect(
+        httpClient(runtime).get('stopped-key')
+      ).rejects.toMatchObject({ code: 'guard_stopped' });
+      await runtime.dispose();
+      runtime = createRuntime({ controlId: 'v2', persist });
+      expect((await control(runtime, 'state')).body.stopped).toBe(true);
+      await control(runtime, 'resume', 'POST');
+      await expect(httpClient(runtime).get('open-key')).resolves.toBeNull();
+    } finally {
+      await runtime.dispose();
+    }
+  });
+
   it('rejects unauthenticated and malformed requests before any work', async () => {
     const unsigned = await mf.dispatchFetch(`${ORIGIN}/v1/rpc`, {
       method: 'POST',
@@ -213,7 +272,11 @@ describe('abuse-guard Worker in workerd', () => {
       remaining: 4,
     });
     const { url, init } = captured[0]!;
-    const original = await (await mf.dispatchFetch(url, init as never)).text();
+    const timed = await mf.dispatchFetch(url, init as never);
+    expect(timed.headers.get('server-timing')).toMatch(
+      /^admit;dur=\d+, subject;dur=\d+$/
+    );
+    const original = await timed.text();
     const replays = await Promise.all(
       Array.from({ length: 10 }, async () => {
         const response = await mf.dispatchFetch(url, init as never);
