@@ -186,12 +186,45 @@ test(
         assert.ok(fixture.slugReads.includes('My-Alias_1'));
         const head = await get('/abc123', { method: 'HEAD' });
         assert.equal(head.status, 307);
+        const clicksBeforeSlash = fixture.clicks.length;
+        // TODO(FINDING-2): the bare root `/` is the home redirect (307), not
+        // the 308 slash strip; this pins current behaviour.
         const root = await get('/?a=1');
         assert.equal(root.status, 307);
+        assert.notEqual(root.headers.get('location'), null);
         assert.equal(root.headers.get('location'), 'https://tuturuuu.com');
-        const slash = await get('/abc123/?a=1&a=2');
-        assert.equal(slash.status, 308);
-        assert.equal(slash.headers.get('location'), '/abc123?a=1&a=2');
+        // Every slash-terminated vector answers 308 with a non-null Location
+        // that stays on the request origin (never `//host` or `/\\host`).
+        for (const [path, expected] of [
+          ['/abc123/?a=1&a=2', '/abc123?a=1&a=2'],
+          ['/abc/', '/abc'],
+          ['/abc123//', '/abc123'],
+          ['/a/b/', '/a/b'],
+          ['///?a=1', '/?a=1'],
+          ['//evil.example/?a=1', '/evil.example?a=1'],
+          ['///evil.example/?a=1', '/evil.example?a=1'],
+          ['/\\evil.example/?a=1', '/evil.example?a=1'],
+          ['/\\/evil.example/?a=1', '/evil.example?a=1'],
+          ['//evil.example/x/?a=1', '/evil.example/x?a=1'],
+          ['/%2F%2Fevil.example/?a=1', '/%2F%2Fevil.example?a=1'],
+          ['/%5C%5Cevil.example/?a=1', '/%5C%5Cevil.example?a=1'],
+          ['/@evil.example/', '/@evil.example'],
+          ['/https:%2F%2Fevil.example/', '/https:%2F%2Fevil.example'],
+        ]) {
+          const slash = await get(path);
+          assert.equal(slash.status, 308, path);
+          const location = slash.headers.get('location');
+          assert.notEqual(location, null, path);
+          assert.equal(location, expected, path);
+          assert.match(location, /^\/(?![/\\])/, path);
+          assert.equal(
+            new URL(location, 'https://ttr.gg').origin,
+            'https://ttr.gg',
+            path
+          );
+          await slash.text();
+        }
+        assert.equal(fixture.clicks.length, clicksBeforeSlash);
         assert.equal((await get('/%ZZ')).status, 400);
         assert.equal((await get('/abc123', { method: 'POST' })).status, 405);
       }
