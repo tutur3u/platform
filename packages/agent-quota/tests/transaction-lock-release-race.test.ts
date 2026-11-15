@@ -40,9 +40,8 @@ vi.mock('../src/process-identity', async (original) => {
   };
 });
 
-const { acquireTransactionLock, releaseTransactionLock } = await import(
-  '../src/transaction-lock'
-);
+const { acquireTransactionLock, releaseTransactionLock } =
+  await import('../src/transaction-lock');
 const { readLedger, transactLedger } = await import('../src/hook-ledger');
 
 const dirs: string[] = [];
