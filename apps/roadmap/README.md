@@ -10,6 +10,41 @@ maps to the physical `dist/client/roadmap/assets/example.js` through the
 database bindings, analytics, forms, provider credentials or private fleet
 dependencies.
 
+## Page layout and tabs
+
+A compact hero (title, three headline figures, when the public data was
+read, labelled Snapshot, Live or Snapshot only for the data on screen) sits above four tabs:
+**Overview** (track glance, coming soon, the three latest production updates),
+**Progress** (status summary, tracks, timeline), **Activity** (deliverables
+shipped this week, shipping pulse, every production update, patch notes) and
+**Infrastructure** (hosting, the move to tuturuuu.com). `src/components/tabs.tsx`
+renders every panel on the server, so crawlers, no-JS readers, structured data
+and the live refresh cover all of them. The tab bar is fragment links
+(`#overview`, `#progress`, `#activity`, `#infrastructure`); `src/styles/tabs.css`
+shows the panel the fragment names, or the panel holding the element it names
+(old links such as `#pulse` or `#track-cms`), with `:target` and `:has()`.
+Where `:has()` is supported the right panel paints first without script and
+nothing shifts; without it every panel shows until hydration. After hydration
+the same markup becomes the WAI-ARIA tabs pattern (roles, `aria-selected`,
+`aria-controls`, a roving tabindex, arrow keys with Home and End). The tab is a
+pure function of the URL (`src/components/tab-model.ts`): a tab id selects
+itself, an id inside a panel selects that panel's tab, and anything else (no
+fragment, an unknown or malformed one, an element outside the panels) selects
+Overview. Before hydration CSS applies that rule; after it the selected tab is
+derived on every render from the router location and nothing else, so a tab
+click, a router navigation (which fires no `hashchange`), a plain fragment
+link, back and forward all select the tab their URL names. A tab click only
+navigates through the router, with `resetScroll: false` and
+`hashScrollIntoView: false`, so the page does not scroll; a link into another
+tab opens it and scrolls to its section. `scripts/tabs-selection.test.mjs` drives
+the real component through these changes. The skip link targets `#sections`
+(focusable with `tabindex="-1"`); once hydrated it focuses the selected tab and
+keeps the URL. Known limit: before hydration, following it selects Overview. The tab bar is
+not sticky: the tracks filter bar already docks into the navbar pill.
+`@tuturuuu/ui` tabs (Radix) are not used: they render button triggers that do
+nothing without script and leave inactive panels out of the server HTML.
+`scripts/doctor-tabs.mjs` checks the built page's tab markup.
+
 ## Content and status
 
 `src/content/tracks.ts` is the curated roadmap: tracks → milestones →

@@ -17,9 +17,10 @@ type Tile = {
 };
 
 /**
- * Four headline figures, each with its week-over-week change. "Waiting for
+ * Three headline figures, each with its week-over-week change. "Waiting for
  * prod sync" is the emphasised tile: merged work that production does not
- * run yet.
+ * run yet. Deliverables shipped this week lead the Activity tab
+ * (ShippedTile).
  */
 export function KpiTiles({
   t,
@@ -62,13 +63,6 @@ export function KpiTiles({
       href: '#pulse',
     },
     {
-      id: 'shipped',
-      label: t.stats.shippedWeek,
-      value: n(tiles.shipped.current),
-      delta: <Delta value={tiles.shipped} t={t} lang={lang} />,
-      tone: 'shipped',
-    },
-    {
       id: 'live',
       label: t.stats.live,
       value: n(tiles.live.total),
@@ -99,8 +93,48 @@ export function KpiTiles({
       href: '#updates',
     },
   ];
+  return <Tiles list={list} />;
+}
+
+/**
+ * Deliverables shipped in the last 7 days against the 7 before, as a
+ * compact stat at the top of the Activity tab (the pulse below counts PRs).
+ */
+export function ShippedTile({
+  t,
+  lang,
+  insights,
+}: {
+  t: Messages;
+  lang: Lang;
+  insights: Insights;
+}) {
+  const { shipped } = insights.tiles;
   return (
-    <ul className="kpis">
+    <Tiles
+      className="kpis activity-kpis"
+      list={[
+        {
+          id: 'shipped',
+          label: t.stats.shippedWeek,
+          value: formatNumber(shipped.current, lang),
+          delta: <Delta value={shipped} t={t} lang={lang} />,
+          tone: 'shipped',
+        },
+      ]}
+    />
+  );
+}
+
+function Tiles({
+  list,
+  className = 'kpis',
+}: {
+  list: Tile[];
+  className?: string;
+}) {
+  return (
+    <ul className={className}>
       {list.map((tile) => {
         const body = (
           <>

@@ -9,13 +9,26 @@
   "appName": "Lộ trình",
   "eyebrow": "Lộ trình sản phẩm",
   "title": "Những gì chúng tôi đang xây dựng.",
-  "intro": "Mọi sản phẩm, cột mốc và hạng mục, kèm những gì đã ra mắt và sắp tới. Trạng thái lấy trực tiếp từ pull request công khai và kiểm tra triển khai thực tế.",
   "signIn": "Đăng nhập",
   "language": "Ngôn ngữ",
   "theme": "Đổi giao diện",
-  "skip": "Tới các hạng mục",
-  "footerChecked": "Dữ liệu công khai từ",
+  "skip": "Tới nội dung lộ trình",
   "liveCheckFailed": "Không thể kiểm tra trực tiếp.",
+  "hero": {
+    "asOf": "Từ pull request công khai và kiểm tra triển khai · cập nhật lúc",
+    "state": {
+      "snapshot": "Ảnh chụp",
+      "live": "Trực tiếp",
+      "failed": "Chỉ ảnh chụp"
+    }
+  },
+  "tabs": {
+    "label": "Các mục của lộ trình",
+    "overview": "Tổng quan",
+    "progress": "Tiến độ",
+    "activity": "Hoạt động",
+    "infrastructure": "Hạ tầng"
+  },
   "info": {
     "about": "Giải thích về {title}",
     "close": "Đóng"
@@ -228,7 +241,9 @@
     "empty": "Chưa ghi nhận bản dựng production nào cho trang này.",
     "more": "+{n} mục nữa",
     "liveCount": "{n} đang chạy",
-    "waitingCount": "{n} đang chờ"
+    "waitingCount": "{n} đang chờ",
+    "latest": "Bản cập nhật production gần nhất",
+    "seeAll": "Xem tất cả bản cập nhật"
   },
   "notes": {
     "title": "Ghi chú phát hành",

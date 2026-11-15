@@ -1,0 +1,226 @@
+/* Tabs (src/components/tabs.tsx). Every panel is in the server HTML; the
+   URL fragment picks the visible one before any script runs:
+   - a fragment naming a panel (#progress), or any element inside one
+     (#pulse, #track-cms), shows that panel;
+   - otherwise Overview (data-default) shows.
+   Once hydrated, React sets data-active on the root and data-current on
+   the selected panel, and only that rule applies. Browsers without :has()
+   show every panel until then. */
+.rm-tabs {
+  display: grid;
+  gap: 28px;
+  min-width: 0;
+  scroll-margin-top: calc(var(--shell-nav-offset, 76px) + 16px);
+}
+/* The skip link's target takes focus only as a starting point: the tab
+   bar inside it shows the focus ring once a key moves on. */
+.rm-tabs:focus {
+  outline: none;
+}
+@supports selector(:has(*)) {
+  .rm-tabs:not([data-active]):has(> .rm-panel:target, > .rm-panel :target)
+    > .rm-panel:not(:target):not(:has(:target)),
+  .rm-tabs:not([data-active]):not(:has(> .rm-panel:target, > .rm-panel :target))
+    > .rm-panel:not([data-default]) {
+    display: none;
+  }
+}
+.rm-tabs[data-active] > .rm-panel:not([data-current]) {
+  display: none;
+}
+.rm-panel {
+  display: grid;
+  gap: 40px;
+  min-width: 0;
+  border-radius: var(--rm-radius);
+}
+.rm-panel:focus-visible {
+  outline-offset: 8px;
+}
+
+/* The bar: one row of tabs on a hairline. It scrolls sideways when the
+   labels do not fit (phones), never the page. */
+.rm-tabbar {
+  min-width: 0;
+  border-bottom: 1px solid var(--rm-line);
+}
+.rm-tablist {
+  display: flex;
+  gap: 4px;
+  min-width: 0;
+  overflow-x: auto;
+  overscroll-behavior-x: contain;
+  scrollbar-width: none;
+}
+.rm-tablist::-webkit-scrollbar {
+  display: none;
+}
+.rm-tab {
+  position: relative;
+  flex: 1 0 auto;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  min-height: 44px;
+  padding: 0 14px;
+  border-radius: 10px 10px 0 0;
+  color: var(--rm-muted);
+  font-size: 14.5px;
+  font-weight: 500;
+  text-decoration: none;
+  white-space: nowrap;
+}
+.rm-tab svg {
+  flex: none;
+}
+.rm-tab::after {
+  content: "";
+  position: absolute;
+  left: 10px;
+  right: 10px;
+  bottom: 0;
+  height: 2px;
+  border-radius: 2px;
+  background: transparent;
+}
+/* Hover only where a pointer hovers: a tap must not leave a tab tinted. */
+@media (hover: hover) {
+  .rm-tab:hover {
+    color: var(--rm-ink);
+    background: var(--rm-soft);
+  }
+}
+/* The overflow container clips outer outlines, so the ring sits inside. */
+.rm-tab:focus-visible {
+  outline-offset: -2px;
+  border-radius: 10px 10px 0 0;
+}
+/* The selected tab: before hydration the fragment decides (as for the
+   panels above), after it aria-selected does. Same look either way, so
+   the upgrade changes nothing on screen. */
+.rm-tab[aria-selected="true"] {
+  color: var(--rm-ink);
+}
+.rm-tab[aria-selected="true"]::after {
+  background: var(--rm-ink);
+}
+@supports selector(:has(*)) {
+  .rm-tabs:not([data-active]):has(> #overview:target, > #overview :target)
+    .rm-tab[data-tab="overview"],
+  .rm-tabs:not([data-active]):has(> #progress:target, > #progress :target)
+    .rm-tab[data-tab="progress"],
+  .rm-tabs:not([data-active]):has(> #activity:target, > #activity :target)
+    .rm-tab[data-tab="activity"],
+  .rm-tabs:not([data-active]):has(
+      > #infrastructure:target,
+      > #infrastructure :target
+    )
+    .rm-tab[data-tab="infrastructure"],
+  .rm-tabs:not([data-active]):not(:has(> .rm-panel:target, > .rm-panel :target))
+    .rm-tab[data-tab="overview"] {
+    color: var(--rm-ink);
+  }
+  .rm-tabs:not([data-active]):has(> #overview:target, > #overview :target)
+    .rm-tab[data-tab="overview"]::after,
+  .rm-tabs:not([data-active]):has(> #progress:target, > #progress :target)
+    .rm-tab[data-tab="progress"]::after,
+  .rm-tabs:not([data-active]):has(> #activity:target, > #activity :target)
+    .rm-tab[data-tab="activity"]::after,
+  .rm-tabs:not([data-active]):has(
+      > #infrastructure:target,
+      > #infrastructure :target
+    )
+    .rm-tab[data-tab="infrastructure"]::after,
+  .rm-tabs:not([data-active]):not(:has(> .rm-panel:target, > .rm-panel :target))
+    .rm-tab[data-tab="overview"]::after {
+    background: var(--rm-ink);
+  }
+}
+
+/* Hero: when the public data was read, and whether it is live. The state
+   label slot is as wide as its widest label (all three are stacked, one is
+   visible) and the time keeps one width, so a refresh moves nothing. */
+.hero-asof {
+  margin: 0;
+  font-size: 13px;
+  color: var(--rm-muted);
+  font-variant-numeric: tabular-nums;
+}
+.hero-asof-state {
+  color: var(--rm-ink);
+  font-weight: 600;
+  white-space: nowrap;
+}
+.hero-asof-dot {
+  display: inline-block;
+  width: 8px;
+  height: 8px;
+  margin-inline-end: 6px;
+  border-radius: 999px;
+  background: var(--rm-planned);
+  vertical-align: 1px;
+}
+.hero-asof[data-live="live"] .hero-asof-dot {
+  background: var(--rm-live);
+}
+.hero-asof[data-live="failed"] .hero-asof-dot {
+  background: var(--rm-progress);
+}
+.hero-asof-labels {
+  display: inline-grid;
+  justify-items: start;
+}
+.hero-asof-labels > span {
+  grid-area: 1 / 1;
+  visibility: hidden;
+}
+.hero-asof-labels > [data-shown] {
+  visibility: visible;
+}
+.hero-asof time {
+  display: inline-block;
+  min-width: 16ch;
+  text-align: start;
+}
+
+/* Activity: deliverables shipped this week, one compact tile above the
+   pulse (which counts PRs). */
+.activity-kpis {
+  margin: 0;
+  grid-template-columns: minmax(0, 1fr);
+}
+
+/* Overview: the latest production updates, linking to the full list. */
+.teaser-head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 4px 16px;
+}
+.see-all {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  min-height: 44px;
+  font-size: 14px;
+  font-weight: 500;
+  white-space: nowrap;
+}
+
+@media (min-width: 720px) {
+  .rm-tabs {
+    gap: 40px;
+  }
+  .activity-kpis {
+    grid-template-columns: minmax(0, 22rem);
+  }
+  .rm-panel {
+    gap: 72px;
+  }
+  .rm-tab {
+    flex: none;
+    padding: 0 18px;
+  }
+}

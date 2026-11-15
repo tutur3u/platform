@@ -1,22 +1,32 @@
 import { Sparkles } from '@tuturuuu/icons';
 import { visibleComingSoon } from '../content/coming-soon';
 import { type Status, statuses } from '../live/status';
+import { SHOWN_STATES, type ShownState } from './live-label';
 import type { Insights } from '../insights/model';
 import type { RoadmapView } from '../view-model';
 import { InfoPopover, Tooltip } from './info';
 import { KpiTiles } from './insights/kpis';
-import { type Lang, type Messages, StatusBadge } from './shared';
+import { formatDate, type Lang, type Messages, StatusBadge } from './shared';
 
+/**
+ * The compact hero above the tabs: the title, three headline figures and
+ * when the public data was read. Everything else lives in a tab.
+ */
 export function Hero({
   t,
   view,
   lang,
   insights,
+  generatedAt,
+  shown,
 }: {
   t: Messages;
   view: RoadmapView;
   lang: Lang;
   insights: Insights;
+  generatedAt: string;
+  /** What the data on screen is (see live-label.ts). */
+  shown: ShownState;
 }) {
   return (
     <section className="hero" aria-labelledby="page-title">
@@ -31,9 +41,38 @@ export function Hero({
           <MarkedPhrase text={t.titleAccent} mark={t.titleMark} />
         </span>
       </h1>
-      <p className="intro">{t.intro}</p>
       <KpiTiles t={t} lang={lang} view={view} insights={insights} />
-      <OverallBar totals={view.totals} t={t} />
+      {/* The live state is a visible label in a slot as wide as its widest
+          label (all three are stacked, one shown), so a refresh or a
+          failed live check never changes the line: the tabs below stay. */}
+      <p
+        className="hero-asof"
+        data-live={shown}
+        title={shown === 'failed' ? t.liveCheckFailed : undefined}
+      >
+        <span className="hero-asof-state">
+          <span className="hero-asof-dot" aria-hidden />
+          <span className="hero-asof-labels">
+            {SHOWN_STATES.map((state) => (
+              <span
+                key={state}
+                data-shown={state === shown ? '' : undefined}
+                aria-hidden={state === shown ? undefined : true}
+              >
+                {t.hero.state[state]}
+              </span>
+            ))}
+          </span>
+        </span>
+        {shown === 'failed' ? (
+          <span className="sr-only">{t.liveCheckFailed} </span>
+        ) : null}
+        <span aria-hidden> · </span>
+        {t.hero.asOf}{' '}
+        <time dateTime={generatedAt}>
+          {formatDate(generatedAt, lang, true)}
+        </time>
+      </p>
     </section>
   );
 }

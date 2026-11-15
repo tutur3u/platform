@@ -275,13 +275,6 @@
   color: var(--rm-muted);
   text-wrap: pretty;
 }
-.hero .intro {
-  max-width: 40rem;
-  font-size: clamp(16.5px, 1.6vw, 19px);
-  font-weight: 500;
-  line-height: 1.5;
-  color: color-mix(in oklab, var(--rm-ink) 78%, transparent);
-}
 .overall {
   display: grid;
   gap: 10px;

@@ -1,3 +1,4 @@
+import { ArrowRight } from '@tuturuuu/icons';
 import { Fragment, useEffect, useState, useSyncExternalStore } from 'react';
 import {
   previousVisit,
@@ -184,6 +185,48 @@ export function ProductionUpdates({
             </button>
           ) : null}
         </>
+      ) : (
+        <p className="updates-empty">{t.updates.empty}</p>
+      )}
+    </section>
+  );
+}
+
+/**
+ * Overview: the newest production builds, with a link to the full list
+ * (Activity). The full list keeps the since-last-visit marker.
+ */
+export function UpdatesTeaser({
+  t,
+  lang,
+  updates,
+}: {
+  t: Messages;
+  lang: Lang;
+  updates: readonly ProductionUpdate[];
+}) {
+  const latest = updates.slice(0, SHOWN);
+  return (
+    <section className="section updates" aria-labelledby="latest-updates-title">
+      <header className="section-head teaser-head">
+        <h2 id="latest-updates-title">{t.updates.latest}</h2>
+        <a className="see-all" href="#updates">
+          {t.updates.seeAll}
+          <ArrowRight size={16} aria-hidden />
+        </a>
+      </header>
+      {latest.length ? (
+        <ol className="update-list">
+          {latest.map((update) => (
+            <Update
+              key={update.app}
+              update={update}
+              t={t}
+              lang={lang}
+              isNew={false}
+            />
+          ))}
+        </ol>
       ) : (
         <p className="updates-empty">{t.updates.empty}</p>
       )}

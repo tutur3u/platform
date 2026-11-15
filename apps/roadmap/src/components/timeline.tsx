@@ -306,11 +306,23 @@ function Scrubber({
     const list = listRef.current;
     const chip = list?.querySelector<HTMLElement>('[aria-current="true"]');
     if (!list || !chip) return;
-    const left = chip.offsetLeft - list.clientWidth / 2 + chip.clientWidth / 2;
-    list.scrollTo({
-      left,
-      behavior: prefersReducedMotion() ? 'auto' : 'smooth',
+    const centre = (behavior: ScrollBehavior) =>
+      list.scrollTo({
+        left: chip.offsetLeft - list.clientWidth / 2 + chip.clientWidth / 2,
+        behavior,
+      });
+    if (list.clientWidth || typeof ResizeObserver === 'undefined') {
+      centre(prefersReducedMotion() ? 'auto' : 'smooth');
+      return;
+    }
+    // In a hidden tab panel: centre once the panel shows.
+    const resize = new ResizeObserver(() => {
+      if (!list.clientWidth) return;
+      resize.disconnect();
+      centre('auto');
     });
+    resize.observe(list);
+    return () => resize.disconnect();
   }, [selected, view, shown.length]);
   const step = (delta: number) => {
     const next = shiftPeriod(selected, view, delta);

@@ -21,8 +21,10 @@ import {
   pendingBoundaryFailures,
   redundantAltFailures,
 } from './doctor-markup.mjs';
+import { tabFailures, TABS } from './doctor-tabs.mjs';
 import '../../../scripts/ci/asset-smoke.test.mjs';
 import './canonical-smoke.test.mjs';
+import './tabs-selection.test.mjs';
 
 const LOGO = '/roadmap/assets/tuturuuu-logo-Abcd1234.png';
 const STATUSES = [
@@ -41,6 +43,27 @@ const INFO = `<ul class="legend">${STATUSES.map(
 )}</ul><button type="button" class="info-btn" popovertarget="status-method" aria-controls="status-method" aria-expanded="false" aria-label="How statuses are computed"></button><div id="status-method" popover="auto" class="info-pop" aria-labelledby="status-method-title"><dl class="method-list">${STATUSES.map(
   (s) => `<div><dt>${s}</dt><dd>${s} rule</dd></div>`
 ).join('')}</dl></div>`;
+/**
+ * The server HTML of the tabs (src/components/tabs.tsx): fragment links,
+ * then every panel with its sections. The status legend (INFO) sits in the
+ * Progress panel.
+ */
+const PANEL_BODY = {
+  overview:
+    '<h2 id="glance-title">Glance</h2><h2 id="latest-updates-title">Latest</h2>',
+  progress: `${INFO}<section class="section" id="tracks"></section><h2 id="timeline-title">Timeline</h2>`,
+  activity:
+    '<section class="section" id="pulse"></section><section class="section" id="updates"></section>',
+  infrastructure:
+    '<h2 id="hosting-title">Hosting</h2><h2 id="migration-title">Migration</h2>',
+};
+const TAB_HTML = `<div class="rm-tabs" id="sections"><nav class="rm-tabbar" aria-label="Roadmap sections"><div class="rm-tablist">${TABS.map(
+  (tab) =>
+    `<a id="tab-${tab}" class="rm-tab" href="#${tab}" data-tab="${tab}"><span>${tab}</span></a>`
+).join('')}</div></nav>${TABS.map(
+  (tab, index) =>
+    `<section id="${tab}" class="rm-panel" data-panel="${tab}"${index ? '' : ' data-default=""'} aria-labelledby="tab-${tab}">${PANEL_BODY[tab]}</section>`
+).join('')}</div>`;
 const COMMIT = 'a'.repeat(40);
 
 function passingRaw() {
@@ -49,7 +72,7 @@ function passingRaw() {
     canonical: {
       status: 200,
       cacheControl: 'public,s-maxage=300,stale-while-revalidate=86400',
-      body: `<link rel="canonical" href="https://tuturuuu.com/roadmap"/><h2 id="timeline-title">Timeline</h2><meta property="og:url" content="https://tuturuuu.com/roadmap"/><meta property="og:image" content="https://tuturuuu.com/roadmap/assets/og-roadmap-Abcd1234.png"/><link rel="alternate" hreflang="x-default" href="https://tuturuuu.com/roadmap"/><header id="navbar"><a href="https://tuturuuu.com/home"><img alt="" src="${LOGO}"><span class="font-bold">Tuturuuu</span></a><a href="https://tuturuuu.com/login">Get Started</a></header><div id="main-content"><script src="/roadmap/assets/index-CGgt8iCG.js"></script>${[...STAGE_LABELS, PLAN_LABEL].join(' ')}${INFO}</div><footer></footer>`,
+      body: `<link rel="canonical" href="https://tuturuuu.com/roadmap"/><meta property="og:url" content="https://tuturuuu.com/roadmap"/><meta property="og:image" content="https://tuturuuu.com/roadmap/assets/og-roadmap-Abcd1234.png"/><link rel="alternate" hreflang="x-default" href="https://tuturuuu.com/roadmap"/><header id="navbar"><a href="https://tuturuuu.com/home"><img alt="" src="${LOGO}"><span class="font-bold">Tuturuuu</span></a><a href="https://tuturuuu.com/login">Get Started</a></header><div id="main-content"><script src="/roadmap/assets/index-CGgt8iCG.js"></script>${[...STAGE_LABELS, PLAN_LABEL].join(' ')}${TAB_HTML}</div><footer></footer>`,
     },
     satellite: { status: 301, location: 'https://tuturuuu.com/roadmap' },
     redirects: REDIRECT_CHAINS.map((chain) => ({
@@ -483,4 +506,67 @@ test('D79: statuses popover, (i) buttons and tooltips keep their server markup',
     body.replace('popovertarget="tip-status-live"', 'data-x="1"'),
     'has 4 tooltips'
   );
+});
+
+test('all four tab panels are in the server HTML, with link tabs until hydration', () => {
+  const body = passing().canonical.body;
+  assert.deepEqual(tabFailures(body), []);
+  const fails = (html, text) => {
+    const failures = tabFailures(html);
+    assert.ok(
+      failures.some((failure) => failure.includes(text)),
+      `${text}: ${failures.join('; ')}`
+    );
+    const verdict = assessDoctor({
+      ...passing(),
+      canonical: { ...passing().canonical, body: html },
+    });
+    assert.equal(verdict.ok, false, text);
+  };
+  // Broken variants. A panel rendered only when selected (client-only).
+  fails(
+    body.replace(/<section id="activity"[^]*?<\/section><\/section>/, ''),
+    'panel activity is not in the server HTML'
+  );
+  // A hidden or preselected panel in the server HTML.
+  fails(
+    body.replace('<section id="progress"', '<section hidden id="progress"'),
+    'panel progress is hidden or selected'
+  );
+  // Tab roles without the script that gives them keyboard behaviour.
+  fails(
+    body.replace(
+      'class="rm-tab" href="#overview"',
+      'class="rm-tab" role="tab" href="#overview"'
+    ),
+    'tab overview has tab semantics before hydration'
+  );
+  // A tab that is a button (dead without JS) instead of a fragment link.
+  fails(
+    body.replace('href="#infrastructure"', ''),
+    'tab infrastructure is not a link to #infrastructure'
+  );
+  // A section moved out of its tab (old #pulse links would miss it).
+  fails(
+    body.replace('<section class="section" id="pulse"></section>', '') +
+      '<section class="section" id="pulse"></section>',
+    '#pulse is not in the activity panel'
+  );
+  // Two defaults, or none: the no-JS page would show the wrong panel.
+  fails(
+    body.replace('data-default=""', ''),
+    'panel overview has the wrong default'
+  );
+  fails(
+    body
+      .replace(' data-active', '')
+      .replace(
+        'class="rm-tabs" id="sections"',
+        'class="rm-tabs" id="sections" data-active="overview"'
+      ),
+    'already selects a tab'
+  );
+  assert.deepEqual(tabFailures('<main></main>'), [
+    'the tabs root (#sections) is missing',
+  ]);
 });

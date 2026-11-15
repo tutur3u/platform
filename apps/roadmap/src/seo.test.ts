@@ -1,5 +1,6 @@
 /** D79: search metadata, structured data and the sitemap. */
 import assert from 'node:assert/strict';
+import { readFileSync } from 'node:fs';
 import { describe, it } from 'node:test';
 import eduEn from '../messages/edufest-2026.en.json' with { type: 'json' };
 import eduVi from '../messages/edufest-2026.vi.json' with { type: 'json' };
@@ -230,5 +231,49 @@ describe('SEO: hero font preloads', () => {
     // English pages do not download the Vietnamese subset.
     const en = source.slice(source.indexOf(': ['), source.indexOf('];'));
     assert.ok(!/vietnamese/.test(en.split(']')[1] ?? ''), en);
+  });
+});
+
+describe('SEO: every tab panel is in the server HTML', () => {
+  const read = (file: string) =>
+    readFileSync(new URL(file, import.meta.url), 'utf8');
+  /** Each panel renders its content whether or not it is selected. */
+  const allRendered = (source: string) =>
+    /\{TAB_IDS\.map\(\(tab\) => \(\s*<section[^]*?>\s*\{panels\[tab\]\}\s*<\/section>/.test(
+      source
+    ) &&
+    !/\bhidden=|active === tab \?\s*panels|active === tab &&\s*panels/.test(
+      source
+    );
+
+  it('panels are siblings of the tab bar, all rendered, none hidden by markup', () => {
+    const tabs = read('./components/tabs.tsx');
+    assert.equal(allRendered(tabs), true);
+    // Broken variants: client-only panels (crawlers and no-JS readers see
+    // one tab) and the hidden attribute (the fragment cannot reveal it).
+    assert.equal(
+      allRendered(
+        tabs.replace('{panels[tab]}', '{active === tab ? panels[tab] : null}')
+      ),
+      false
+    );
+    assert.equal(
+      allRendered(
+        tabs.replace(
+          'className="rm-panel"',
+          'className="rm-panel" hidden={active !== tab}'
+        )
+      ),
+      false
+    );
+  });
+
+  it('the page passes all four panels and the skip link reaches them', () => {
+    const page = read('./pages/roadmap.tsx');
+    for (const tab of ['overview', 'progress', 'activity', 'infrastructure'])
+      assert.match(page, new RegExp(`\\n    ${tab}: \\(`), tab);
+    assert.match(page, /<RoadmapTabs\b[^>]*panels=\{panels\}/);
+    assert.match(page, /className="skip-link" href="#sections"/);
+    assert.match(read('./components/tabs.tsx'), /id="sections"/);
   });
 });

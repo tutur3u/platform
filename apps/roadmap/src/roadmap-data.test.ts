@@ -22,6 +22,7 @@ import './a11y.test.ts';
 import './hosting.test.ts';
 import './insights/insights.test.ts';
 import './info.test.ts';
+import './tabs.test.ts';
 import { comingSoon, visibleComingSoon } from './content/coming-soon.ts';
 import { showPlans, tracks } from './content/tracks.ts';
 import {

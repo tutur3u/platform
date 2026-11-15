@@ -3,7 +3,7 @@ import type { ComponentProps } from 'react';
 import logo from '../assets/tuturuuu-logo.png?no-inline';
 import { useEffect, useState } from 'react';
 import { REPO_URL } from '../live/model';
-import { formatDate, type Lang, type Messages } from './shared';
+import type { Messages } from './shared';
 
 /**
  * The shell's only image is the brand logo. Serve it from this Worker's own
@@ -49,28 +49,19 @@ export function ThemeToggle({ label }: { label: string }) {
   );
 }
 
+/** The page foot. When the data was read shows in the hero. */
 export function Footer({
   t,
-  lang,
-  data,
   liveCheckFailed,
 }: {
   t: Messages;
-  lang: Lang;
-  data: { generatedAt: string };
   liveCheckFailed: boolean;
 }) {
   const sha = __ROADMAP_BUILD_SHA__;
   return (
     <div className="footer-inner">
       <p>{t.footer}</p>
-      <p>
-        {liveCheckFailed ? `${t.liveCheckFailed} ` : null}
-        {t.footerChecked}{' '}
-        <time dateTime={data.generatedAt}>
-          {formatDate(data.generatedAt, lang, true)}
-        </time>
-      </p>
+      {liveCheckFailed ? <p>{t.liveCheckFailed}</p> : null}
       <p>
         <a href={REPO_URL}>GitHub</a>
         {/^[a-f0-9]{40}$/.test(sha) ? (

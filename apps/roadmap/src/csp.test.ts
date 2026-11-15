@@ -328,3 +328,29 @@ describe('content security policy: oversized documents', () => {
     );
   });
 });
+
+describe('content security policy: the tabs add no inline script', () => {
+  const INLINE = /<script|dangerouslySetInnerHTML|\bon[a-z]+="|javascript:/i;
+  const read = (file: string) =>
+    readFileSync(new URL(file, import.meta.url), 'utf8');
+
+  it('the tab bar, its model and the page carry no inline code', () => {
+    for (const file of [
+      './components/tabs.tsx',
+      './components/tab-model.ts',
+      './pages/roadmap.tsx',
+      './styles/tabs.css',
+    ])
+      assert.doesNotMatch(read(file), INLINE, file);
+    // Broken variant: an inline handler written into the tab markup.
+    assert.match('<a href="#progress" onclick="select(1)">', INLINE);
+  });
+
+  it('the page keeps exactly the router four inline scripts', () => {
+    // Pre-JS switching is CSS (:target), and the upgrade is the hydrated
+    // tree, so neither needs a hashed inline script.
+    const doctor = read('../scripts/doctor-markup.mjs');
+    assert.match(doctor, /export const EXPECTED_INLINE_SCRIPTS = 4;/);
+    assert.doesNotMatch(read('./components/tabs.tsx'), /<script\b|ScriptOnce/);
+  });
+});

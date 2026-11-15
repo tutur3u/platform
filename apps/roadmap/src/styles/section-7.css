@@ -1,14 +1,17 @@
-.hero .overall .bar {
+.rm-panel > .overall .bar {
   height: 12px;
 }
-.hero .overall .legend {
+.rm-panel > .overall .legend {
   font-size: 13px;
   gap: 8px 18px;
 }
 @media (min-width: 900px) {
   .kpis {
-    grid-template-columns: repeat(4, minmax(0, 1fr));
+    grid-template-columns: repeat(3, minmax(0, 1fr));
     gap: 12px;
+  }
+  .kpi-waiting {
+    grid-column: auto;
   }
   .kpi-body {
     padding: 18px 20px;
@@ -455,7 +458,7 @@
   gap: 40px;
   min-width: 0;
 }
-.page > .catchup {
+.rm-panel > .catchup {
   content-visibility: auto;
   contain-intrinsic-block-size: auto 720px;
 }

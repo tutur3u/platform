@@ -273,7 +273,7 @@ html[data-lite] .roadmap .backdrop-blur-xl {
    one's real height once rendered, so the scrollbar settles after a pass.
    Only the block size gets a placeholder: a placeholder width would widen
    the column on a phone. */
-.page > .section:not(#tracks),
+.rm-panel > .section:not(#tracks),
 .track,
 #main-content + footer {
   content-visibility: auto;
@@ -520,6 +520,10 @@ a.kpi-body:hover {
   --i-tone: var(--rm-sync);
   --i-glyph: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'><path d='M12 13v8'/><path d='M4 14.899A7 7 0 1 1 15.71 8h1.79a4.5 4.5 0 0 1 2.5 8.242'/><path d='m8 17 4-4 4 4'/></svg>");
 }
+/* Three tiles on a two-column phone grid: the emphasised one spans it. */
+.kpi-waiting {
+  grid-column: 1 / -1;
+}
 .kpi-waiting .kpi-body {
   border-color: color-mix(in oklab, var(--rm-sync) 55%, var(--rm-line));
   background: color-mix(in oklab, var(--rm-sync) 9%, var(--rm-panel));
@@ -528,7 +532,7 @@ a.kpi-body:hover {
   color: var(--rm-ink);
   font-weight: 600;
 }
-.hero .overall {
+.rm-panel > .overall {
   width: 100%;
   gap: 12px;
   padding: 16px;

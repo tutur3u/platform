@@ -1,6 +1,7 @@
 /** Markup and size checks the pre-seal doctor runs on the public documents. */
 import { MAX_DOCUMENT_BYTES } from '../src/csp.ts';
 import { canonicalSmoke } from './canonical-smoke.mjs';
+import { tabFailures } from './doctor-tabs.mjs';
 
 /**
  * The navbar logo sits beside the visible brand name, so its alt text must be
@@ -208,5 +209,6 @@ export function markupFailures(html) {
     ...redundantAltFailures(html),
     ...pendingBoundaryFailures(html),
     ...infoPopoverFailures(html),
+    ...tabFailures(html),
   ];
 }

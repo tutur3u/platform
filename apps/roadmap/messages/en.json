@@ -9,13 +9,26 @@
   "appName": "Roadmap",
   "eyebrow": "Product roadmap",
   "title": "What we’re building.",
-  "intro": "Every product, milestone and deliverable, with what has shipped and what’s next. Statuses come straight from public pull requests and live deploy checks.",
   "signIn": "Sign in",
   "language": "Language",
   "theme": "Toggle theme",
-  "skip": "Skip to tracks",
-  "footerChecked": "Public data from",
+  "skip": "Skip to the roadmap",
   "liveCheckFailed": "Live check unavailable.",
+  "hero": {
+    "asOf": "From public pull requests and deploy checks · as of",
+    "state": {
+      "snapshot": "Snapshot",
+      "live": "Live",
+      "failed": "Snapshot only"
+    }
+  },
+  "tabs": {
+    "label": "Roadmap sections",
+    "overview": "Overview",
+    "progress": "Progress",
+    "activity": "Activity",
+    "infrastructure": "Infrastructure"
+  },
   "info": {
     "about": "About {title}",
     "close": "Close"
@@ -228,7 +241,9 @@
     "empty": "No production builds were observed for this page.",
     "more": "+{n} more",
     "liveCount": "{n} live",
-    "waitingCount": "{n} waiting"
+    "waitingCount": "{n} waiting",
+    "latest": "Latest production updates",
+    "seeAll": "See all updates"
   },
   "notes": {
     "title": "Patch notes",

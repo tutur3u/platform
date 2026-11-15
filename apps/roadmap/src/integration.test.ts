@@ -1,4 +1,6 @@
 import { readStyles } from './style-source.ts';
+import en from '../messages/en.json' with { type: 'json' };
+import vi from '../messages/vi.json' with { type: 'json' };
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import { test } from 'node:test';
@@ -87,5 +89,190 @@ test('split CSS keeps the UI scan exclusion at the repository components directo
   assert.ok(matches(css));
   assert.ok(
     !matches(css.replace('../../../../packages/ui', '../../../packages/ui'))
+  );
+});
+test('the page is a compact hero over four tabs, each section in its tab', () => {
+  const page = source('./pages/roadmap.tsx');
+  /** The source of one panel in the page's `panels` object. */
+  const panel = (s: string, tab: string, next: string | null) =>
+    s.slice(
+      s.indexOf(`\n    ${tab}: (`),
+      next ? s.indexOf(`\n    ${next}: (`) : s.indexOf('\n  };')
+    );
+  const placed = (s: string) => {
+    const at = {
+      overview: panel(s, 'overview', 'progress'),
+      progress: panel(s, 'progress', 'activity'),
+      activity: panel(s, 'activity', 'infrastructure'),
+      infrastructure: panel(s, 'infrastructure', null),
+    };
+    return (
+      ['<TrackGlance', '<ComingSoon', '<UpdatesTeaser'].every((c) =>
+        at.overview.includes(c)
+      ) &&
+      ['<OverallBar', '<TracksSection', '<TimelineSection'].every((c) =>
+        at.progress.includes(c)
+      ) &&
+      [
+        '<ShippedTile',
+        '<PulseSection',
+        '<ProductionUpdates',
+        '<PatchNotes',
+      ].every((c) => at.activity.includes(c)) &&
+      ['<HostingSection', '<MigrationSection'].every((c) =>
+        at.infrastructure.includes(c)
+      )
+    );
+  };
+  assert.ok(placed(page));
+  // Broken variant: the shipping pulse back on the Overview tab.
+  const moved = page
+    .replace('<PulseSection', '<PulseChart')
+    .replace('<TrackGlance', '<PulseSection /><TrackGlance');
+  assert.ok(!placed(moved));
+  // The hero keeps three figures and when the data was read.
+  const hero = source('./components/hero.tsx');
+  assert.ok(hero.includes('<KpiTiles') && hero.includes('t.hero.asOf'));
+  assert.ok(!hero.includes('<OverallBar totals'));
+  const kpis = source('./components/insights/kpis.tsx');
+  assert.equal(kpis.match(/^ {6}id: '/gm)?.length, 3);
+});
+test('a hidden tab panel never docks the navbar or loses the timeline scrubber position', () => {
+  const tracks = source('./components/tracks.tsx');
+  const guarded = (s: string) =>
+    /el\.getClientRects\(\)\.length > 0 &&\s*el\.getBoundingClientRect\(\)\.top < dockLine/.test(
+      s
+    ) && /new ResizeObserver\(schedule\)/.test(s);
+  assert.ok(guarded(tracks));
+  // Broken variant: a display:none sentinel reports top 0, which is above
+  // the dock line, so the navbar would compact on every other tab.
+  assert.ok(!guarded(tracks.replace('el.getClientRects().length > 0 &&', '')));
+  const timeline = source('./components/timeline.tsx');
+  assert.ok(
+    /In a hidden tab panel: centre once the panel shows\./.test(timeline)
+  );
+  assert.ok(
+    /if \(list\.clientWidth \|\| typeof ResizeObserver === 'undefined'\)/.test(
+      timeline
+    )
+  );
+});
+test('the router location alone selects the tab; a click only navigates', () => {
+  const tabs = source('./components/tabs.tsx');
+  const derived = (s: string) =>
+    s.includes('useRouterState({ select: (state) => state.location.hash })') &&
+    s.includes(
+      'const active = upgraded ? tabForFragment(hash, panelOf) : null;'
+    ) &&
+    !/useState<TabId|setActive|addEventListener\('hashchange'/.test(s);
+  assert.ok(derived(tabs));
+  // Broken variant: a click that also sets local state can drift from the
+  // location (the router's own navigations fire no hashchange).
+  assert.ok(
+    !derived(
+      tabs.replace(
+        'const active = upgraded',
+        'const [picked, setActive] = useState<TabId | null>(null);\n  const active = upgraded'
+      )
+    )
+  );
+  assert.ok(/event\.preventDefault\(\);\s*select\(tab, false\);/.test(tabs));
+  assert.ok(/hashScrollIntoView: false,/.test(tabs));
+  // Modified clicks (new tab, new window) keep the native link.
+  assert.ok(/event\.metaKey \|\|\s*event\.ctrlKey/.test(tabs));
+  // A fragment naming a section in a hidden panel scrolls to it once shown.
+  assert.ok(
+    /document\.getElementById\(id\)\?\.scrollIntoView\(\{ block: 'start' \}\)/.test(
+      tabs
+    )
+  );
+  // The skip target takes focus before hydration too.
+  assert.match(tabs, /id="sections"\s*tabIndex=\{-1\}/);
+});
+test('the live state is a visible label in a fixed slot (no layout shift)', () => {
+  const hero = source('./components/hero.tsx');
+  const css = readStyles();
+  const line = (s: string) =>
+    s.slice(
+      s.indexOf('className="hero-asof"'),
+      s.indexOf('</p>', s.indexOf('className="hero-asof"'))
+    );
+  /** Every label renders, stacked; only the current one shows. */
+  const stable = (s: string, styles: string) =>
+    /SHOWN_STATES\.map\(\(state\) =>/.test(line(s)) &&
+    /\{t\.hero\.state\[state\]\}/.test(line(s)) &&
+    /data-shown=\{state === shown \? '' : undefined\}/.test(line(s)) &&
+    /<span className="sr-only">\{t\.liveCheckFailed\} <\/span>/.test(line(s)) &&
+    /\.hero-asof-labels > span \{\s*grid-area: 1 \/ 1;\s*visibility: hidden;/.test(
+      styles
+    ) &&
+    /\.hero-asof-labels > \[data-shown\] \{\s*visibility: visible;/.test(
+      styles
+    );
+  assert.ok(stable(hero, css));
+  assert.match(
+    source('./components/live-label.ts'),
+    /export const SHOWN_STATES = \['snapshot', 'live', 'failed'\] as const;/
+  );
+  assert.match(
+    source('./pages/roadmap.tsx'),
+    /shown=\{shownState\(liveState, data\.source\)\}/
+  );
+  for (const t of [en, vi])
+    assert.ok(
+      t.hero.state.snapshot && t.hero.state.live && t.hero.state.failed
+    );
+  assert.notEqual(en.hero.state.failed, vi.hero.state.failed);
+  // Broken variants: rendering only the current label (the slot's width
+  // follows the text, so the line wraps differently on a phone when the
+  // check fails), and hiding the label with display: none (same effect).
+  assert.ok(
+    !stable(
+      hero.replace('SHOWN_STATES.map((state) =>', '[shown].map((state) =>'),
+      css
+    )
+  );
+  assert.ok(
+    !stable(
+      hero,
+      css.replace(
+        /(\.hero-asof-labels > span \{\s*grid-area: 1 \/ 1;\s*)visibility: hidden;/,
+        '$1display: none;'
+      )
+    )
+  );
+  assert.match(
+    source('./components/chrome.tsx'),
+    /\{liveCheckFailed \? <p>\{t\.liveCheckFailed\}<\/p> : null\}/
+  );
+});
+test('deliverables shipped this week lead the Activity tab', () => {
+  const kpis = source('./components/insights/kpis.tsx');
+  const tile = kpis.slice(kpis.indexOf('export function ShippedTile'));
+  assert.ok(tile.includes('label: t.stats.shippedWeek'));
+  assert.ok(tile.includes('<Delta value={shipped} t={t} lang={lang} />'));
+  assert.ok(tile.includes('const { shipped } = insights.tiles;'));
+  const page = source('./pages/roadmap.tsx');
+  const activity = page.slice(page.indexOf('\n    activity: ('));
+  assert.ok(
+    activity.indexOf('<ShippedTile') >= 0 &&
+      activity.indexOf('<ShippedTile') < activity.indexOf('<PulseSection')
+  );
+  assert.doesNotMatch(kpis, /weekly shipped flow lives in the shipping pulse/);
+});
+test('the skip link focuses the selected tab and leaves the fragment alone', () => {
+  const tabs = source('./components/tabs.tsx');
+  const skip = tabs.slice(tabs.indexOf('export function skipToTabs'));
+  const keeps = (s: string) =>
+    /if \(!tab\) return;\s*event\.preventDefault\(\);\s*tab\.focus\(\);/.test(
+      s
+    );
+  assert.ok(keeps(skip));
+  // Broken variant: following #sections would select Overview (it names
+  // no panel), so a reader on Progress would lose their tab.
+  assert.ok(!keeps(skip.replace('event.preventDefault();', '')));
+  assert.match(
+    source('./pages/roadmap.tsx'),
+    /<a className="skip-link" href="#sections" onClick=\{skipToTabs\}>/
   );
 });

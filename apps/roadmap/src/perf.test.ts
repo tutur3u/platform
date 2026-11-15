@@ -86,7 +86,7 @@ describe('perf: expensive CSS stays off phones and low-end devices', () => {
         css
       );
     assert.ok(rule, 'content-visibility rule');
-    for (const selector of ['.page > .section:not(#tracks)', '.track'])
+    for (const selector of ['.rm-panel > .section:not(#tracks)', '.track'])
       assert.ok(rule[1]?.includes(selector), selector);
     // Broken variant: the two-axis shorthand gives skipped cards a 720px
     // width, which widened the track column past a 390px phone.
@@ -352,5 +352,20 @@ describe('perf: the entry chunk names the hashed history asset', () => {
       read('./history/use-history.ts'),
       /import \{ historyUrl \} from '\.\/history-url\.ts';/
     );
+  });
+});
+
+describe('perf: switching tabs loads nothing', () => {
+  it('no prefetch, preload, speculation or route of its own', () => {
+    const tabs = read('./components/tabs.tsx');
+    assert.doesNotMatch(
+      tabs,
+      /prefetch|preload|prerender|speculationrules|<Link\b|createFileRoute/
+    );
+    // Every panel is already in the document: a switch is a fragment
+    // change through the router, with no scroll reset.
+    assert.match(tabs, /resetScroll: false,\s*hashScrollIntoView: false,/);
+    // Broken variant: a router Link preloads its route on hover and intent.
+    assert.match('<Link to="/" preload="intent">', /<Link\b/);
   });
 });

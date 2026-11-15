@@ -83,7 +83,10 @@ export function TracksSection({
     let docked: boolean | null = null;
     const update = () => {
       frame = null;
-      const next = el.getBoundingClientRect().top < dockLine;
+      // A hidden tab panel gives the sentinel no box (top 0): not docked.
+      const next =
+        el.getClientRects().length > 0 &&
+        el.getBoundingClientRect().top < dockLine;
       if (next === docked) return;
       docked = next;
       onDock(next);
@@ -95,7 +98,14 @@ export function TracksSection({
     update();
     window.addEventListener('scroll', schedule, { passive: true });
     window.addEventListener('resize', schedule);
+    // Switching tabs shows or hides this section without a scroll.
+    const resize =
+      typeof ResizeObserver === 'undefined'
+        ? null
+        : new ResizeObserver(schedule);
+    resize?.observe(el);
     return () => {
+      resize?.disconnect();
       window.removeEventListener('scroll', schedule);
       window.removeEventListener('resize', schedule);
       if (frame !== null) cancelAnimationFrame(frame);
