@@ -37,8 +37,10 @@ export function WorkspaceView({
       >
         <Structure
           actions={
-            <div className="flex items-center gap-1">
-              {userPopover}
+            <div className="flex w-full items-center gap-1">
+              <div className="min-w-0 flex-1">
+                <UserNavClient user={profile} locale={locale} />
+              </div>
               {notificationPopover}
             </div>
           }
