@@ -4,6 +4,13 @@
  * Uses dynamic imports to avoid pulling server-only modules into the
  * `packages/ai` dependency graph at build time. This mirrors the pattern
  * used by the image generation tool for `createAdminClient`.
+ *
+ * A workspace with a `workspace_encryption_keys` row is end-to-end encrypted
+ * whether or not this server can unwrap its key. When the key cannot be
+ * unwrapped (missing master key, failed lookup or failed decryption), tools
+ * fail closed: writes are refused and encrypted fields are withheld from
+ * reads, so an encrypted workspace never receives plaintext writes and tools
+ * never surface ciphertext.
  */
 
 type CalendarEventRow = {
@@ -15,20 +22,39 @@ type CalendarEventRow = {
   [key: string]: unknown;
 };
 
+export type WithheldEventRow<T> = T & { encryption_unavailable?: true };
+
+export type WorkspaceKeyState =
+  | { status: 'none' }
+  | { status: 'available'; key: Buffer }
+  | { status: 'unavailable'; cause: unknown };
+
+export const ENCRYPTION_UNAVAILABLE_MESSAGE =
+  'This workspace uses end-to-end encryption, but encryption is unavailable on this server right now. No event changes were saved.';
+
+export class WorkspaceEncryptionUnavailableError extends Error {
+  constructor(options?: { cause?: unknown }) {
+    super(ENCRYPTION_UNAVAILABLE_MESSAGE, options);
+    this.name = 'WorkspaceEncryptionUnavailableError';
+  }
+}
+
+export function isWorkspaceEncryptionUnavailableError(
+  error: unknown
+): error is WorkspaceEncryptionUnavailableError {
+  return error instanceof WorkspaceEncryptionUnavailableError;
+}
+
 /**
- * Retrieve the workspace encryption key (read-only).
- * Strict mode throws on key/configuration failures; null means no workspace key.
+ * Resolve the workspace encryption state (read-only).
+ * The key row is checked independently of the master key, so a workspace
+ * with a key row is never reported as unencrypted.
  */
-export async function getWorkspaceKeyForTools(
-  wsId: string,
-  strict = false
-): Promise<Buffer | null> {
+export async function resolveWorkspaceKeyForTools(
+  wsId: string
+): Promise<WorkspaceKeyState> {
+  let encryptedKey: string;
   try {
-    const { isEncryptionEnabled, getMasterKey, decryptWorkspaceKey } =
-      await import('@tuturuuu/utils/encryption');
-
-    if (!strict && !isEncryptionEnabled()) return null;
-
     const { createAdminClient } =
       await import('@tuturuuu/supabase/next/server');
     const sbAdmin = await createAdminClient();
@@ -40,38 +66,77 @@ export async function getWorkspaceKeyForTools(
       .maybeSingle();
 
     if (error) throw error;
-    if (!data) return null;
+    if (!data) return { status: 'none' };
+    encryptedKey = (data as { encrypted_key: string }).encrypted_key;
+  } catch (cause) {
+    return { status: 'unavailable', cause };
+  }
 
-    return await decryptWorkspaceKey(
-      (data as { encrypted_key: string }).encrypted_key,
-      getMasterKey()
-    );
-  } catch (error) {
-    if (strict) throw error;
-    return null;
+  try {
+    const { getMasterKey, decryptWorkspaceKey } =
+      await import('@tuturuuu/utils/encryption');
+    const key = await decryptWorkspaceKey(encryptedKey, getMasterKey());
+    return { status: 'available', key };
+  } catch (cause) {
+    return { status: 'unavailable', cause };
   }
 }
 
 /**
- * Decrypt an array of calendar events in-place if any are encrypted.
+ * Retrieve the workspace encryption key (read-only).
+ * Null means the workspace has no key row. When a key row exists but cannot
+ * be unwrapped, strict mode rethrows the underlying failure and non-strict
+ * mode throws `WorkspaceEncryptionUnavailableError`.
+ */
+export async function getWorkspaceKeyForTools(
+  wsId: string,
+  strict = false
+): Promise<Buffer | null> {
+  const state = await resolveWorkspaceKeyForTools(wsId);
+  if (state.status === 'none') return null;
+  if (state.status === 'available') return state.key;
+  if (strict) throw state.cause;
+  throw new WorkspaceEncryptionUnavailableError({ cause: state.cause });
+}
+
+/**
+ * Decrypt an array of calendar events if any are encrypted.
+ * Encrypted events that cannot be decrypted keep their metadata but have
+ * title, description and location withheld and `encryption_unavailable` set.
  */
 export async function decryptEventsForTools<T extends CalendarEventRow>(
   events: T[],
   wsId: string
-): Promise<T[]> {
+): Promise<Array<WithheldEventRow<T>>> {
   const hasEncrypted = events.some((e) => e.is_encrypted);
-  if (!hasEncrypted) return events;
+  if (!hasEncrypted) return events as Array<WithheldEventRow<T>>;
 
-  const key = await getWorkspaceKeyForTools(wsId);
-  if (!key) return events;
+  const state = await resolveWorkspaceKeyForTools(wsId);
+  if (state.status !== 'available') {
+    return events.map((event) =>
+      event.is_encrypted
+        ? {
+            ...event,
+            title: '',
+            ...('description' in event ? { description: '' } : {}),
+            ...('location' in event ? { location: null } : {}),
+            encryption_unavailable: true as const,
+          }
+        : event
+    ) as Array<WithheldEventRow<T>>;
+  }
 
   const { decryptCalendarEvents } = await import('@tuturuuu/utils/encryption');
-  return decryptCalendarEvents(events, key);
+  return decryptCalendarEvents(events, state.key) as Array<
+    WithheldEventRow<T>
+  >;
 }
 
 /**
  * Encrypt the sensitive fields of a calendar event before storage.
- * Returns the original data untouched when E2EE is not enabled.
+ * Returns the original data untouched only when the workspace has no
+ * encryption key. Throws when the workspace is encrypted but its key cannot
+ * be used (see `getWorkspaceKeyForTools` for strict vs non-strict errors).
  */
 export async function encryptEventFieldsForTools(
   fields: { title: string; description: string; location: string | null },
