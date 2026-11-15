@@ -5,11 +5,18 @@ name: Security Checks
 # through codeql.yml and builds the redacted findings register; on Mondays it
 # also runs the weekly deep pass (full-history secret scan). The separate
 # read-only daily inventory lives in security-scan.yaml.
+# Merge queue (merge_group) runs check the candidate merge commit M against the
+# queue base B exactly like a pull request: they are untrusted candidate code,
+# so every guard, config and differ loads from B, a missing B fails closed,
+# jobs stay on GitHub-hosted ubuntu-latest (the fork pull request pool) with
+# read-only permissions (scripts/ci/merge-group-workflow-policy.test.js).
 on:
   pull_request:
   push:
     branches:
       - main
+  merge_group:
+    types: [checks_requested]
   schedule:
     - cron: '17 2 * * *'
   workflow_dispatch:
@@ -37,7 +44,7 @@ env:
 jobs:
   definer-guard:
     name: Definer execution policy
-    if: github.event_name == 'pull_request' || github.event_name == 'push'
+    if: github.event_name == 'pull_request' || github.event_name == 'push' || github.event_name == 'merge_group'
     runs-on: ubuntu-latest
     timeout-minutes: 10
     # statuses: read lets the trusted guard verify the definer record
@@ -63,7 +70,7 @@ jobs:
         # on that exact head covers the additions. Rerun this job after posting.
         env:
           EVENT_NAME: ${{ github.event_name }}
-          BASE_SHA: ${{ github.event.pull_request.base.sha || github.event.before }}
+          BASE_SHA: ${{ github.event.pull_request.base.sha || github.event.merge_group.base_sha || github.event.before }}
           HEAD_SHA: ${{ github.event.pull_request.head.sha || github.sha }}
           GITHUB_TOKEN: ${{ github.token }}
         run: |
@@ -79,6 +86,11 @@ jobs:
             else
               echo "::warning::Merge commit ${GITHUB_SHA} is not in this checkout. Using the pull request base ${BASE_SHA}."
             fi
+          fi
+          # A merge group never bootstraps from its own candidate scripts.
+          if [ "$EVENT_NAME" = merge_group ] && { ! [[ "$BASE_SHA" =~ ^[0-9a-f]{40}$ ]] || ! git cat-file -e "$BASE_SHA^{commit}" 2>/dev/null; }; then
+            echo "::error::The merge group base commit is missing or invalid; refusing to load the definer guard."
+            exit 1
           fi
           dir="$RUNNER_TEMP/definer-guard"
           mkdir -p "$dir"
@@ -146,12 +158,12 @@ jobs:
       - name: Load trusted scope scripts
         id: trusted_scope
         env:
-          BASE_SHA: ${{ github.event.pull_request.base.sha || github.event.before }}
+          BASE_SHA: ${{ github.event.pull_request.base.sha || github.event.merge_group.base_sha || github.event.before }}
           EVENT_NAME: ${{ github.event_name }}
         run: |
           set -euo pipefail
           trusted="$GITHUB_SHA"
-          if [ "$EVENT_NAME" = pull_request ] || [ "$EVENT_NAME" = push ]; then
+          if [ "$EVENT_NAME" = pull_request ] || [ "$EVENT_NAME" = push ] || [ "$EVENT_NAME" = merge_group ]; then
             trusted=""
             if [[ "$BASE_SHA" =~ ^[0-9a-f]{40}$ ]] && git cat-file -e "$BASE_SHA^{commit}" 2>/dev/null; then
               trusted="$BASE_SHA"
@@ -173,7 +185,7 @@ jobs:
 
       - name: Compute changed files
         id: changed_files
-        if: steps.trusted_scope.outputs.available == 'true' && (github.event_name == 'pull_request' || github.event_name == 'push')
+        if: steps.trusted_scope.outputs.available == 'true' && (github.event_name == 'pull_request' || github.event_name == 'push' || github.event_name == 'merge_group')
         env:
           GITHUB_TOKEN: ${{ github.token }}
           TRUSTED_SCOPE: ${{ steps.trusted_scope.outputs.dir }}
@@ -334,7 +346,7 @@ jobs:
       # Scheduled runs scan main.
       - name: Scan for secrets
         env:
-          BASE_SHA: ${{ github.event.pull_request.base.sha || github.event.before }}
+          BASE_SHA: ${{ github.event.pull_request.base.sha || github.event.merge_group.base_sha || github.event.before }}
           DEEP: ${{ needs.scope.outputs.deep }}
           EVENT_NAME: ${{ github.event_name }}
         run: |
@@ -342,11 +354,15 @@ jobs:
           trusted="$GITHUB_SHA"
           log_opts="--since=3.days.ago"
           mode=register
-          if [ "$EVENT_NAME" = pull_request ] || [ "$EVENT_NAME" = push ]; then
+          if [ "$EVENT_NAME" = pull_request ] || [ "$EVENT_NAME" = push ] || [ "$EVENT_NAME" = merge_group ]; then
             mode=pr
             if [[ "$BASE_SHA" =~ ^[0-9a-f]{40}$ ]] && [ "$BASE_SHA" != 0000000000000000000000000000000000000000 ] && git cat-file -e "$BASE_SHA^{commit}"; then
               trusted="$BASE_SHA"
               log_opts="$BASE_SHA..$GITHUB_SHA"
+            elif [ "$EVENT_NAME" = merge_group ]; then
+              # The fallback would load config from the candidate itself.
+              echo "::error::The merge group base commit is missing or invalid; refusing to scan with untrusted config."
+              exit 1
             else
               log_opts="-n 50 $GITHUB_SHA"
             fi
@@ -465,7 +481,7 @@ jobs:
 
       - name: Audit locked dependencies
         env:
-          BASE_SHA: ${{ github.event.pull_request.base.sha || github.event.before }}
+          BASE_SHA: ${{ github.event.pull_request.base.sha || github.event.merge_group.base_sha || github.event.before }}
           BUN_BIN: ${{ runner.temp }}/bun-bin/bun
           BUN_CONFIG_REGISTRY: https://registry.npmjs.org/
           EVENT_NAME: ${{ github.event_name }}
@@ -498,10 +514,14 @@ jobs:
           mkdir -p "$RUNNER_TEMP/register-input"
           manifests HEAD "$RUNNER_TEMP/head"
           audit "$RUNNER_TEMP/head" "$RUNNER_TEMP/register-input/bun-audit.json"
-          if [ "$EVENT_NAME" != pull_request ] && [ "$EVENT_NAME" != push ]; then
+          if [ "$EVENT_NAME" != pull_request ] && [ "$EVENT_NAME" != push ] && [ "$EVENT_NAME" != merge_group ]; then
             exit 0
           fi
           if ! [[ "$BASE_SHA" =~ ^[0-9a-f]{40}$ ]] || ! git cat-file -e "$BASE_SHA^{commit}"; then
+            if [ "$EVENT_NAME" = merge_group ]; then
+              echo "::error::The merge group base commit is missing or invalid; refusing to audit."
+              exit 1
+            fi
             echo "::warning::No base commit; every high/critical advisory counts as new."
             echo '{}' > "$RUNNER_TEMP/base-audit.json"
           else

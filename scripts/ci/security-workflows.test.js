@@ -72,7 +72,9 @@ test('security review classifier never touches pull request content', () => {
 
 test('CodeQL runs on pull requests and main pushes with the extended suite', () => {
   const on = triggers(codeql);
+  // merge_group: see scripts/ci/merge-group-workflow-policy.test.js.
   assert.deepEqual(Object.keys(on).sort(), [
+    'merge_group',
     'pull_request',
     'push',
     'workflow_call',
@@ -107,10 +109,15 @@ test('CodeQL runs on pull requests and main pushes with the extended suite', () 
     run.with.upload,
     /head\.repo\.full_name != github\.repository\) && 'never'/u
   );
-  assert.equal(gate.if, "github.event_name == 'pull_request'");
+  assert.equal(
+    gate.if,
+    "github.event_name == 'pull_request' || github.event_name == 'merge_group'"
+  );
+  // The PR merge commit's first parent, or the merge group's queue base.
+  assert.match(gate.run, /trusted="HEAD\^1"/u);
   assert.match(
     gate.run,
-    /git show "HEAD\^1:scripts\/ci\/codeql-new-alerts\.js"/u
+    /git show "\$trusted:scripts\/ci\/codeql-new-alerts\.js"/u
   );
   assert.match(gate.env.BASELINE_REF, /default_branch/u);
 });

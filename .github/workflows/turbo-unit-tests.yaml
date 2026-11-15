@@ -1,10 +1,16 @@
 name: Test
 
+# Merge queue (merge_group) runs are untrusted candidate code: they receive no
+# secrets or remote-cache tokens, take their range from the queue base B,
+# and every job stays on GitHub-hosted ubuntu-latest (the fork pull request
+# pool) with read-only permissions (scripts/ci/merge-group-workflow-policy.test.js).
 on:
   push:
     branches: [main, production, 'release-please--branches--**']
   pull_request:
     types: [opened, synchronize, reopened, ready_for_review, labeled, converted_to_draft]
+  merge_group:
+    types: [checks_requested]
 
 permissions:
   contents: read
@@ -169,7 +175,7 @@ jobs:
   test-shards:
     name: Unit test shard (${{ matrix.shard }})
     needs: [changes, check-ci, coverage-check-ci]
-    if: ${{ ((github.event_name != 'pull_request' || github.event.pull_request.draft == false) && ((github.event_name != 'pull_request' && needs.changes.outputs.code == 'true' && !cancelled() && ((needs.check-ci.result == 'success' && needs.check-ci.outputs.should_run == 'true' && needs.check-ci.outputs.run_checks == 'true') || (needs.coverage-check-ci.result == 'success' && needs.coverage-check-ci.outputs.should_run == 'true' && needs.coverage-check-ci.outputs.run_checks == 'true'))))) && (github.event_name != 'pull_request' || contains(github.event.pull_request.labels.*.name, 'ready-for-ci')) }}
+    if: ${{ ((github.event_name != 'pull_request' || github.event.pull_request.draft == false) && ((github.event_name != 'pull_request' && github.event_name != 'merge_group' && needs.changes.outputs.code == 'true' && !cancelled() && ((needs.check-ci.result == 'success' && needs.check-ci.outputs.should_run == 'true' && needs.check-ci.outputs.run_checks == 'true') || (needs.coverage-check-ci.result == 'success' && needs.coverage-check-ci.outputs.should_run == 'true' && needs.coverage-check-ci.outputs.run_checks == 'true'))))) && (github.event_name != 'pull_request' || contains(github.event.pull_request.labels.*.name, 'ready-for-ci')) }}
     timeout-minutes: 20
     runs-on: ubuntu-latest
     strategy:
@@ -178,9 +184,10 @@ jobs:
         shard: [0, 1, 2, 3]
 
     env:
-      # Pull request tests use local fixtures; other events retain configured values.
-      NEXT_PUBLIC_SUPABASE_URL: ${{ github.event_name != 'pull_request' && secrets.NEXT_PUBLIC_SUPABASE_URL || '' }}
-      NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY: ${{ github.event_name != 'pull_request' && secrets.PRODUCTION_SUPABASE_PUBLISHABLE_KEY || '' }}
+      # Pull request and merge queue tests use local fixtures; merge_group runs
+      # are untrusted candidate code. Other events retain configured values.
+      NEXT_PUBLIC_SUPABASE_URL: ${{ github.event_name != 'pull_request' && github.event_name != 'merge_group' && secrets.NEXT_PUBLIC_SUPABASE_URL || '' }}
+      NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY: ${{ github.event_name != 'pull_request' && github.event_name != 'merge_group' && secrets.PRODUCTION_SUPABASE_PUBLISHABLE_KEY || '' }}
       # Unit tests run on same-repo pull requests, so they never receive the
       # production service-role key. Tests needing a real key bring their own.
       SUPABASE_SECRET_KEY: sb_secret_ci_placeholder
@@ -225,8 +232,8 @@ jobs:
         uses: ./.github/actions/run-with-turbo-remote-cache
         with:
           command: bun turbo:local run build --concurrency=4 --filter=@tuturuuu/types --filter=@tuturuuu/supabase --filter=@tuturuuu/masonry --filter=@tuturuuu/internal-api --filter=tuturuuu
-          token: ${{ github.event_name != 'pull_request' && github.actor != 'dependabot[bot]' && (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/production') && secrets.TURBO_TOKEN || '' }}
-          team: ${{ github.event_name != 'pull_request' && github.actor != 'dependabot[bot]' && (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/production') && (vars.TURBO_TEAM || secrets.TURBO_TEAM) || '' }}
+          token: ${{ github.event_name != 'pull_request' && github.event_name != 'merge_group' && github.actor != 'dependabot[bot]' && (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/production') && secrets.TURBO_TOKEN || '' }}
+          team: ${{ github.event_name != 'pull_request' && github.event_name != 'merge_group' && github.actor != 'dependabot[bot]' && (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/production') && (vars.TURBO_TEAM || secrets.TURBO_TEAM) || '' }}
 
       - name: Test
         # Cap Turbo concurrency so parallel package test suites don't
@@ -236,8 +243,8 @@ jobs:
         uses: ./.github/actions/run-with-turbo-remote-cache
         with:
           command: node scripts/ci/run-test-shard.js ${{ matrix.shard }} 4 --coverage
-          token: ${{ github.event_name != 'pull_request' && github.actor != 'dependabot[bot]' && (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/production') && secrets.TURBO_TOKEN || '' }}
-          team: ${{ github.event_name != 'pull_request' && github.actor != 'dependabot[bot]' && (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/production') && (vars.TURBO_TEAM || secrets.TURBO_TEAM) || '' }}
+          token: ${{ github.event_name != 'pull_request' && github.event_name != 'merge_group' && github.actor != 'dependabot[bot]' && (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/production') && secrets.TURBO_TOKEN || '' }}
+          team: ${{ github.event_name != 'pull_request' && github.event_name != 'merge_group' && github.actor != 'dependabot[bot]' && (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/production') && (vars.TURBO_TEAM || secrets.TURBO_TEAM) || '' }}
 
       - name: Preserve complete workspace coverage
         uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
@@ -255,7 +262,7 @@ jobs:
   test-shards-pr:
     name: Unit test shard (${{ matrix.shard }})
     needs: [changes, check-ci, coverage-check-ci]
-    if: ${{ ((github.event_name != 'pull_request' || github.event.pull_request.draft == false) && ((github.event_name == 'pull_request' && needs.changes.outputs.code == 'true' && !cancelled() && ((needs.check-ci.result == 'success' && needs.check-ci.outputs.should_run == 'true' && needs.check-ci.outputs.run_checks == 'true') || (needs.coverage-check-ci.result == 'success' && needs.coverage-check-ci.outputs.should_run == 'true' && needs.coverage-check-ci.outputs.run_checks == 'true'))))) && (github.event_name != 'pull_request' || contains(github.event.pull_request.labels.*.name, 'ready-for-ci')) }}
+    if: ${{ ((github.event_name != 'pull_request' || github.event.pull_request.draft == false) && (((github.event_name == 'pull_request' || github.event_name == 'merge_group') && needs.changes.outputs.code == 'true' && !cancelled() && ((needs.check-ci.result == 'success' && needs.check-ci.outputs.should_run == 'true' && needs.check-ci.outputs.run_checks == 'true') || (needs.coverage-check-ci.result == 'success' && needs.coverage-check-ci.outputs.should_run == 'true' && needs.coverage-check-ci.outputs.run_checks == 'true'))))) && (github.event_name != 'pull_request' || contains(github.event.pull_request.labels.*.name, 'ready-for-ci')) }}
     timeout-minutes: 20
     runs-on: ${{ github.event_name == 'pull_request' && github.event.pull_request.head.repo.full_name == github.repository && github.actor != 'dependabot[bot]' && github.triggering_actor != 'dependabot[bot]' && github.event.pull_request.user.login != 'dependabot[bot]' && (vars.PR_SELF_HOSTED_RUNNERS == 'true' || vars.PR_SELF_HOSTED_RUNNERS == format('pr:{0}', github.event.pull_request.number)) && fromJSON('["self-hosted","macOS","ARM64","tuturuuu-pr-ephemeral"]') || 'ubuntu-latest' }}
     strategy:

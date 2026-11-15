@@ -1,7 +1,13 @@
 name: App builds (affected)
+# Merge queue (merge_group) runs are untrusted candidate code: they receive no
+# secrets or remote-cache tokens, take their range from the queue base B (a missing B fails the verdict),
+# and every job stays on GitHub-hosted ubuntu-latest (the fork pull request
+# pool) with read-only permissions (scripts/ci/merge-group-workflow-policy.test.js).
 on:
   pull_request:
     types: [opened, synchronize, reopened, ready_for_review, labeled, converted_to_draft]
+  merge_group:
+    types: [checks_requested]
   schedule:
     - cron: '17 19 * * *'
   workflow_dispatch:
@@ -37,10 +43,20 @@ jobs:
         env:
           EVENT_NAME: ${{ github.event_name }}
           BASE_REF: ${{ github.base_ref }}
+          QUEUE_BASE_SHA: ${{ github.event.merge_group.base_sha }}
         run: |
+          set -euo pipefail
           if [ "$EVENT_NAME" = schedule ] || [ "$EVENT_NAME" = workflow_dispatch ]; then
             json='{"mode":"all","apps":[],"reason":"full build trigger"}'
             changed=true
+          elif [ "$EVENT_NAME" = merge_group ]; then
+            # The queue has no base_ref; select from B..M or fail the verdict.
+            if ! [[ "$QUEUE_BASE_SHA" =~ ^[0-9a-f]{40}$ ]] || ! git cat-file -e "$QUEUE_BASE_SHA^{commit}" 2>/dev/null; then
+              echo "::error::The merge group base commit is missing or invalid; refusing to select affected apps."
+              exit 1
+            fi
+            json=$(node scripts/ci/affected-apps.mjs --base "$QUEUE_BASE_SHA")
+            changed=$(git diff --quiet "$QUEUE_BASE_SHA" HEAD -- 'apps/**' 'packages/**' && echo false || echo true)
           else
             git fetch --no-tags origin "$BASE_REF"
             json=$(node scripts/ci/affected-apps.mjs --base "origin/$BASE_REF")

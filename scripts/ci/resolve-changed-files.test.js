@@ -468,3 +468,57 @@ test('workflow gating reuses manifest indexes for equivalent arrays', () => {
   assert.equal(decision.shouldRun, true);
   assert.deepEqual(reads, { dependencies: 1, name: 1, path: 1 });
 });
+
+test('merge_group runs diff the queue base..candidate range from the payload', () => {
+  const rootDir = createFixtureRoot();
+  const baseSha = initializeGitRepo(rootDir);
+  commitFile(rootDir, 'apps/calendar/src/a.ts', 'a\n', 'first queued');
+  const headSha = commitFile(rootDir, 'scripts/ci/b.js', 'b\n', 'second');
+  const eventPath = writeEventPayload(rootDir, {
+    merge_group: { base_sha: baseSha, head_sha: headSha },
+  });
+
+  const { changedFiles, output } = runChangedFileResolver({
+    eventName: 'merge_group',
+    eventPath,
+    headSha,
+    refName: 'gh-readonly-queue/main/pr-1-' + baseSha,
+    rootDir,
+    workflowName: 'turbo-unit-tests.yaml',
+  });
+
+  assert.match(output, /merge-group-range/);
+  assert.deepEqual(changedFiles.sort(), [
+    'apps/calendar/src/a.ts',
+    'scripts/ci/b.js',
+  ]);
+});
+
+test('merge_group runs fail closed on a missing, malformed or foreign SHA', () => {
+  const rootDir = createFixtureRoot();
+  const baseSha = initializeGitRepo(rootDir);
+  const headSha = commitFile(rootDir, 'apps/web/x.ts', 'x\n', 'candidate');
+  const otherSha = commitFile(rootDir, 'apps/web/y.ts', 'y\n', 'later');
+  const cases = [
+    [{ head_sha: headSha }, /base_sha is missing/],
+    [{ base_sha: 'main', head_sha: headSha }, /base_sha is missing/],
+    [{ base_sha: baseSha }, /head_sha is missing/],
+    [{ base_sha: baseSha, head_sha: otherSha }, /does not match/],
+    [{ base_sha: headSha, head_sha: baseSha }, /not an ancestor/],
+  ];
+  for (const [mergeGroup, reason] of cases) {
+    const eventPath = writeEventPayload(rootDir, { merge_group: mergeGroup });
+    assert.throws(
+      () =>
+        runChangedFileResolver({
+          eventName: 'merge_group',
+          eventPath,
+          headSha: mergeGroup.head_sha === baseSha ? baseSha : headSha,
+          rootDir,
+          workflowName: 'turbo-unit-tests.yaml',
+        }),
+      (error) => reason.test(String(error.stderr)),
+      JSON.stringify(mergeGroup)
+    );
+  }
+});

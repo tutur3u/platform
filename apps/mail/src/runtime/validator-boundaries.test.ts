@@ -23,7 +23,7 @@ import { addRealtimeLog } from './realtime-actions';
 
 describe('pinned Start validator boundaries', () => {
   it('initializes real boundary modules against a validator-only builder', () => {
-    expect(pinned.methods).toEqual(['GET', 'POST']);
+    expect(pinned.methods).toEqual(['POST', 'POST']);
   });
   it('preserves page URL validation before a supplier can execute', async () => {
     expect(

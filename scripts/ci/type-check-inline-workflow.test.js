@@ -38,6 +38,8 @@ test('singleton keeps the Type Check context, event surface and runner with a re
         'converted_to_draft',
       ],
     },
+    // See scripts/ci/merge-group-workflow-policy.test.js.
+    merge_group: { types: ['checks_requested'] },
     workflow_dispatch: null,
   });
   // Two variants share the Type Check context; exactly one runs per event. The
@@ -111,7 +113,7 @@ test('same preflight scripts precede every heavy step without error overrides', 
   );
   assert.equal(
     job.steps.find((entry) => entry.id === 'release_relevance').env.BEFORE_SHA,
-    expression('github.event.before')
+    expression('github.event.before || github.event.merge_group.base_sha')
   );
   const lastPreflight = job.steps.findIndex(
     (step) => step.id === 'release_relevance'
