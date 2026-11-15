@@ -38,6 +38,8 @@ export type AbuseGuardSelection =
   | { kind: 'off' };
 
 export const ABUSE_GUARD_DEFAULT_TIMEOUT_MS = 750;
+/** Fail-closed replay calls allow cold-object admission, bounded to two seconds. */
+export const ABUSE_GUARD_REPLAY_TIMEOUT_MS = 2000;
 
 const warnedFamilyNames = new Set<string>();
 
@@ -63,10 +65,15 @@ export function parseAbuseGuardFamilies(value: string | undefined) {
   return families;
 }
 
-export function parseAbuseGuardTimeout(value: string | undefined) {
+export function parseAbuseGuardTimeout(
+  value: string | undefined,
+  family?: AbuseGuardFamily
+) {
   const parsed = Number(value);
   if (!value?.trim() || !Number.isFinite(parsed)) {
-    return ABUSE_GUARD_DEFAULT_TIMEOUT_MS;
+    return family === 'replay'
+      ? ABUSE_GUARD_REPLAY_TIMEOUT_MS
+      : ABUSE_GUARD_DEFAULT_TIMEOUT_MS;
   }
   return Math.min(2000, Math.max(100, Math.trunc(parsed)));
 }
@@ -86,7 +93,10 @@ type RuntimeInput = {
 type RuntimeOverride = {
   families: ReadonlySet<AbuseGuardFamily>;
   /** Null when the injected configuration is unusable: assigned families are off. */
-  usable: { transport: AbuseGuardTransport; pepper: string } | null;
+  usable: {
+    transport: (family: AbuseGuardFamily) => AbuseGuardTransport;
+    pepper: string;
+  } | null;
 };
 
 let runtimeOverride: RuntimeOverride | null = null;
@@ -120,10 +130,11 @@ export function configureAbuseGuardRuntime(input: RuntimeInput | null) {
     families: parseAbuseGuardFamilies(input.families),
     usable: pepper
       ? {
-          transport: createBindingGuardTransport(
-            input.binding,
-            parseAbuseGuardTimeout(input.timeoutMs)
-          ),
+          transport: (family) =>
+            createBindingGuardTransport(
+              input.binding,
+              parseAbuseGuardTimeout(input.timeoutMs, family)
+            ),
           pepper,
         }
       : null,
@@ -190,7 +201,7 @@ export function selectAbuseGuard(
         createAbuseGuardClient({
           family,
           pepper: usable.pepper,
-          transport: usable.transport,
+          transport: usable.transport(family),
         })
       ),
     };
@@ -201,7 +212,7 @@ export function selectAbuseGuard(
   const pepper = strong(env.ABUSE_GUARD_KEY_PEPPER);
   if (!url || !secret || !pepper) return { kind: 'off' };
 
-  const timeoutMs = parseAbuseGuardTimeout(env.ABUSE_GUARD_TIMEOUT_MS);
+  const timeoutMs = parseAbuseGuardTimeout(env.ABUSE_GUARD_TIMEOUT_MS, family);
   return {
     kind: 'durable-object',
     client: cachedClient(

@@ -44,6 +44,9 @@ export type AbuseGuardTransport = (rpc: GuardRpc) => Promise<unknown>;
 
 export const ABUSE_GUARD_RPC_PATH = '/v1/rpc';
 
+/** Fixed per-family fan-out balances object reuse with independent shard concurrency. */
+export const KV_SHARD_COUNT = 64;
+
 const ERROR_CODES = new Set<GuardErrorCode>([
   'bad_request',
   'unauthorized',
@@ -311,6 +314,14 @@ export function createAbuseGuardClient(options: {
   const partitionOf = (raw: string) =>
     hashGuardValue(pepper, `p:${family}`, raw);
   const keyOf = (raw: string) => hashGuardValue(pepper, `k:${family}`, raw);
+  const shardOf = async (raw: string) => {
+    const digest = await hashGuardValue(pepper, `shard:${family}`, raw);
+    const bytes = atob(digest.replace(/-/g, '+').replace(/_/g, '/') + '=');
+    const prefix = new DataView(
+      Uint8Array.from(bytes.slice(0, 4), (byte) => byte.charCodeAt(0)).buffer
+    ).getUint32(0);
+    return `kv-shard:${prefix % KV_SHARD_COUNT}`;
+  };
 
   async function run(
     steps: StepInput[],
@@ -383,13 +394,16 @@ export function createAbuseGuardClient(options: {
     async hitWindows(subjects, callOptions) {
       const steps = await Promise.all(
         subjects.map(async (subject) => ({
-          partition: subject.partition,
+          partition: await shardOf(subject.partition),
           cmds: [
             {
               op: 'win.hit' as const,
               windows: await Promise.all(
                 subject.windows.map(async (window) => ({
-                  k: await keyOf(window.key),
+                  // A shard contains many subjects; window identity includes its owner.
+                  k: await keyOf(
+                    JSON.stringify([subject.partition, window.key])
+                  ),
                   limit: window.limit,
                   windowMs: window.windowMs,
                   algo: window.algo,
@@ -432,14 +446,16 @@ export function createAbuseGuardClient(options: {
     },
 
     async get(key) {
-      return (await single(key, { op: 'kv.get', k: await keyOf(key) })).v;
+      return (
+        await single(await shardOf(key), { op: 'kv.get', k: await keyOf(key) })
+      ).v;
     },
 
     async mget(keys) {
       if (keys.length === 0) return [];
       const steps = await Promise.all(
         keys.map(async (key) => ({
-          partition: key,
+          partition: await shardOf(key),
           cmds: [{ op: 'kv.get' as const, k: await keyOf(key) }],
         }))
       );
@@ -453,7 +469,7 @@ export function createAbuseGuardClient(options: {
     async set(key, value, setOptions) {
       return (
         await single(
-          key,
+          await shardOf(key),
           {
             op: 'kv.set',
             k: await keyOf(key),
@@ -471,7 +487,7 @@ export function createAbuseGuardClient(options: {
       if (keys.length === 0) return 0;
       const steps = await Promise.all(
         keys.map(async (key) => ({
-          partition: key,
+          partition: await shardOf(key),
           cmds: [{ op: 'kv.del' as const, k: await keyOf(key) }],
         }))
       );
@@ -484,7 +500,7 @@ export function createAbuseGuardClient(options: {
 
     async incr(key, by, ttlMsOnCreate, callOptions) {
       const result = await single(
-        key,
+        await shardOf(key),
         { op: 'kv.incr', k: await keyOf(key), by, ttlMsOnCreate },
         callOptions?.operationId
       );
@@ -494,7 +510,7 @@ export function createAbuseGuardClient(options: {
     async expire(key, ttlMs, callOptions) {
       return (
         await single(
-          key,
+          await shardOf(key),
           { op: 'kv.expire', k: await keyOf(key), ttlMs },
           callOptions?.operationId
         )
@@ -502,7 +518,9 @@ export function createAbuseGuardClient(options: {
     },
 
     async ttl(key) {
-      return (await single(key, { op: 'kv.ttl', k: await keyOf(key) })).ttlMs;
+      return (
+        await single(await shardOf(key), { op: 'kv.ttl', k: await keyOf(key) })
+      ).ttlMs;
     },
 
     async reserve(input) {

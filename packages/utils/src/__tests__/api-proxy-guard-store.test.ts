@@ -217,8 +217,16 @@ describe('guardApiProxyRequest on the abuse-guard store', () => {
 
   it('applies per-instance limits while the store throws', async () => {
     const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
-    mocks.hitWindows.mockRejectedValue(new Error('timeout'));
+    mocks.hitWindows.mockRejectedValue(
+      Object.assign(new Error('sensitive raw and digest partition key'), {
+        name: 'sensitive raw and digest partition key',
+      })
+    );
     await expect(guard()).resolves.toBeNull();
+    expect(warn).toHaveBeenCalledWith(
+      '[ProxyGuard] guard store unavailable; applying per-instance limits',
+      'Error'
+    );
     // The single-read policy allows one request per minute.
     expect((await guard())?.status).toBe(429);
     expect(mocks.limit).not.toHaveBeenCalled();

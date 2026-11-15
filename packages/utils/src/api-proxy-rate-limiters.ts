@@ -160,7 +160,10 @@ function createGuardRateLimitBuckets(
               nextOutageWarningAt = now + 60_000;
               console.warn(
                 '[ProxyGuard] guard store unavailable; applying per-instance limits',
-                error
+                error instanceof Error &&
+                  error.name === 'AbuseGuardUnavailableError'
+                  ? 'AbuseGuardUnavailableError'
+                  : 'Error'
               );
             }
             const denied = outageLimiter.hit(
