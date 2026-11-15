@@ -37,7 +37,11 @@ const reportedGuardProblems = new Set<string>();
  * (Host or X-Forwarded-Host), so a spoofed header can't steer or suppress
  * paging. Anything not matching the fixed shape becomes `unknown`.
  */
-export function guardAlertServiceName(env: NodeJS.ProcessEnv = process.env) {
+type GuardAlertServiceEnv = Partial<
+  Record<'TUTURUUU_SERVICE_NAME' | 'VERCEL_PROJECT_PRODUCTION_URL', string>
+>;
+
+export function guardAlertServiceName(env: GuardAlertServiceEnv = process.env) {
   const configured = env.TUTURUUU_SERVICE_NAME?.trim().toLowerCase();
   const host = env.VERCEL_PROJECT_PRODUCTION_URL?.trim()
     .toLowerCase()
