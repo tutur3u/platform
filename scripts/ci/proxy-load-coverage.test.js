@@ -12,7 +12,7 @@ const PROXY_IMPORT =
 // Apps whose unit tests are not wired into CI yet: they have no `test` script,
 // so scripts/ci/test-shards.js never runs them. This list may only shrink; an
 // entry that gains a test script must be removed (asserted below).
-const UNWIRED_TEST_APPS = new Set(['external', 'inventory', 'tools', 'track']);
+const UNWIRED_TEST_APPS = new Set(['external', 'tools', 'track']);
 
 function testFiles(directory) {
   const found = [];
