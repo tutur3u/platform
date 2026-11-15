@@ -79,7 +79,11 @@ export async function prewarmProfileRoute(
     )
       fail('mime');
     const body = await response.body();
-    if (!(body instanceof Uint8Array) || !body.length || body.length > bodyLimit)
+    if (
+      !(body instanceof Uint8Array) ||
+      !body.length ||
+      body.length > bodyLimit
+    )
       fail('body');
     const prefix = new TextDecoder().decode(body.subarray(0, 1024));
     if (!/<(?:!doctype\s+html|html)(?:\s|>)/iu.test(prefix)) fail('body');

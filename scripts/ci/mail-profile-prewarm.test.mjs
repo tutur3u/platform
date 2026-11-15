@@ -35,7 +35,10 @@ function fixture(patch = {}) {
     options: { emit: (line) => lines.push(line), now: () => 10 },
   };
 }
-const result = (lines) => ({ retry: 0, stdout: lines.map((text) => ({ text })) });
+const result = (lines) => ({
+  retry: 0,
+  stdout: lines.map((text) => ({ text })),
+});
 
 test('one no-follow request waits for the full HTML body and disposes it', async () => {
   let finishBody;
@@ -67,7 +70,10 @@ test('one no-follow request waits for the full HTML body and disposes it', async
   assert.equal(receipt.responseDisposed, true);
   assert.deepEqual(f.calls.slice(1), ['dispose']);
   assert.doesNotThrow(() => assertProfilePrewarmedResult(result(f.lines)));
-  assert.equal(profilePrewarmDiagnostics(result(f.lines)).record.outcome, 'passed');
+  assert.equal(
+    profilePrewarmDiagnostics(result(f.lines)).record.outcome,
+    'passed'
+  );
 });
 
 test('redirects and auth/server errors fail once without following or exposing a body', async () => {
@@ -171,7 +177,7 @@ test('elapsed setup cannot exceed 60 seconds or manufacture a duration', async (
   for (const end of [60011, NaN, -1]) {
     const f = fixture();
     let calls = 0;
-    f.options.now = () => calls++ === 0 ? 10 : end;
+    f.options.now = () => (calls++ === 0 ? 10 : end);
     await assert.rejects(
       prewarmProfileRoute(f.request, origin, workspace, f.options)
     );

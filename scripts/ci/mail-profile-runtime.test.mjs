@@ -87,7 +87,11 @@ test('real results require both named contracts without skip, retry or empty PAS
 });
 
 test('profile result needs a complete successful pre-warm receipt', () => {
-  for (const stdout of [undefined, [], [{ text: '[mail-profile-prewarm] {}\n' }]]) {
+  for (const stdout of [
+    undefined,
+    [],
+    [{ text: '[mail-profile-prewarm] {}\n' }],
+  ]) {
     const report = results();
     report.suites[0].specs[0].tests[0].results[0].stdout = stdout;
     assert.throws(() => assertBrowserResults(report));
