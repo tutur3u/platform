@@ -17,7 +17,10 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import { calendarDay, calendarToday } from '../../../../lib/calendar-day';
 import { AgendaView } from './agenda-view';
 import { CalendarHeader } from './calendar-header';
-import { CalendarLoadingSkeleton } from './calendar-loading-skeleton';
+import {
+  CalendarFirstPaintSkeleton,
+  CalendarLoadingSkeleton,
+} from './calendar-loading-skeleton';
 import { calendarPeriodDates } from './calendar-period';
 import { CalendarViewWithTrail } from './calendar-view-with-trail';
 import { EventModal } from './event-modal';
@@ -341,9 +344,20 @@ export const CalendarContent = ({
       ]);
     }
 
-    // Set initial view based on settings or external state
+    const isMobile =
+      typeof window !== 'undefined' &&
+      window.innerWidth <= CALENDAR_MOBILE_MAX_WIDTH;
+
+    // Set initial view based on settings or external state. Multi-day time
+    // grids resolve to Agenda on phones here, so the first rendered view is
+    // already final instead of being corrected by the resize listener.
     if (externalState?.view) {
-      if (externalState.view === 'day') enableDayView();
+      if (
+        isMobile &&
+        (externalState.view === 'week' || externalState.view === '4-days')
+      )
+        enableAgendaView();
+      else if (externalState.view === 'day') enableDayView();
       else if (externalState.view === '4-days') enable4DayView();
       else if (externalState.view === 'week') enableWeekView();
       else if (externalState.view === 'month') enableMonthView();
@@ -497,7 +511,10 @@ export const CalendarContent = ({
     agenda: enableAgendaView,
   });
 
-  if (!initialized || !view || !dates.length) return null;
+  // Until the view and its dates resolve, hold the calendar's space with a
+  // placeholder of the same layout instead of rendering nothing.
+  if (!initialized || !view || !dates.length)
+    return <CalendarFirstPaintSkeleton view={view} />;
 
   return (
     <div
@@ -544,6 +561,7 @@ export const CalendarContent = ({
       )}
 
       <div
+        data-slot="calendar-body"
         className={cn(
           'scrollbar-none relative min-h-0 flex-1 overflow-auto rounded-lg focus:outline-none',
           view === 'agenda' ||
