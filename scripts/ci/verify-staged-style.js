@@ -45,9 +45,31 @@ const FAILURE_REASONS = [
 // Only a bounded integer reaches evidence; anything else is recorded as null.
 const scrubbedHeight = (value) =>
   Number.isInteger(value) && value >= 0 && value <= 10_000_000 ? value : null;
-// A tall mobile page can exceed what Chromium captures in one full-page image,
-// so the screenshot covers at most this many CSS pixels from the top.
-const MAX_CAPTURE_HEIGHT = 8000;
+// A tall mobile page can exceed what Chromium captures in one image (a 390x8000
+// viewport still failed on hosted runners), so the screenshot covers at most
+// this many CSS pixels from the top.
+const MAX_CAPTURE_HEIGHT = 4000;
+// The height each page loads at; the last-resort capture is a clip inside it.
+const LOAD_VIEWPORT_HEIGHT = 900;
+const SCREENSHOT_TIMEOUT_MS = 30_000;
+// Screenshot failures reach evidence only as `<ErrorName>:<class>` from this
+// fixed list: raw Playwright messages can carry URLs or page text.
+const SCREENSHOT_ERROR_CLASSES = [
+  ['timeout', /timeout|timed out/iu],
+  ['target-closed', /closed|crashed|disconnected/iu],
+  ['memory', /out of memory|\boom\b|allocation/iu],
+  ['protocol', /protocol error/iu],
+];
+function classifyScreenshotError(error) {
+  const message = String(error?.message ?? '');
+  const match = SCREENSHOT_ERROR_CLASSES.find(([, pattern]) =>
+    pattern.test(message)
+  );
+  const name = /^[A-Za-z]{1,40}$/u.test(error?.name ?? '')
+    ? error.name
+    : 'Error';
+  return `${name}:${match ? match[0] : 'other'}`;
+}
 
 // Default Next.js image optimization (`apps/web/next.config.ts` uses the
 // built-in loader; `apps/web/src/proxy.ts` leaves `/_next/image` unmigrated).
@@ -680,16 +702,47 @@ async function main({ env = process.env, runCommand = run, browserType } = {}) {
         captureMode: truncated ? 'clipped' : 'full',
         tileCount: 1,
         clipHeight: capturedHeight,
+        screenshotErrors: [],
       });
-      try {
-        // Size the viewport to the capture and take a plain viewport image:
-        // fullPage asks Chromium to render beyond the viewport (the whole
-        // document), which fails on very tall pages even with a small clip.
-        await page.setViewportSize({ width, height: capturedHeight });
-        await page.screenshot({ path: partial, animations: 'disabled' });
-      } catch {
-        throw new Error('Staged viewport screenshot failed');
+      // Size the viewport to the capture and take a plain viewport image:
+      // fullPage asks Chromium to render beyond the viewport (the whole
+      // document), which fails on very tall pages even with a small clip.
+      // A failed capture is retried once, then falls back to a clip of the
+      // load viewport. The style checks above already ran in full, so the
+      // image is evidence only; every attempt failing still blocks promotion.
+      const attempts = [
+        { height: capturedHeight },
+        { height: capturedHeight },
+        {
+          height: Math.min(capturedHeight, LOAD_VIEWPORT_HEIGHT),
+          fallback: true,
+        },
+      ];
+      let captured;
+      for (const attempt of attempts) {
+        try {
+          await page.setViewportSize({ width, height: attempt.height });
+          await page.screenshot({
+            path: partial,
+            animations: 'disabled',
+            timeout: SCREENSHOT_TIMEOUT_MS,
+            ...(attempt.fallback
+              ? { clip: { x: 0, y: 0, width, height: attempt.height } }
+              : {}),
+          });
+          captured = attempt;
+          break;
+        } catch (error) {
+          viewport.screenshotErrors.push(classifyScreenshotError(error));
+          await rm(partial, { force: true }).catch(() => {});
+        }
       }
+      if (!captured) throw new Error('Staged viewport screenshot failed');
+      if (captured.fallback)
+        Object.assign(viewport, {
+          captureMode: 'viewport-fallback',
+          clipHeight: captured.height,
+        });
       await rename(partial, join(evidence, screenshot));
       viewports.push({
         width,
@@ -700,6 +753,7 @@ async function main({ env = process.env, runCommand = run, browserType } = {}) {
         captureMode: viewport.captureMode,
         tileCount: viewport.tileCount,
         clipHeight: viewport.clipHeight,
+        screenshotErrors: viewport.screenshotErrors,
         ...pageMetrics,
       });
       await page.close();
