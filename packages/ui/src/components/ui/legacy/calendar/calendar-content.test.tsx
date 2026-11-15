@@ -1,6 +1,7 @@
-import { fireEvent, render, screen } from '@testing-library/react';
+import { act, fireEvent, render, screen } from '@testing-library/react';
 import { useState } from 'react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { CALENDAR_MOBILE_MAX_WIDTH } from '../../../../hooks/calendar-default-view';
 import type { CalendarView } from '../../../../hooks/use-view-transition';
 
 const mocks = vi.hoisted(() => ({
@@ -188,6 +189,39 @@ describe('satellite controlled calendar views', () => {
     localStorage.setItem('calendar-view-mode', 'month');
     render(<CalendarContent t={translate} locale="en" />);
     expect(screen.getByText('Header week')).toBeVisible();
+  });
+  describe('phone widths', () => {
+    const wideWidth = window.innerWidth;
+    const setWidth = (value: number) =>
+      Object.defineProperty(window, 'innerWidth', {
+        configurable: true,
+        value,
+      });
+    afterEach(() => setWidth(wideWidth));
+
+    it('resolves a controlled week view to agenda on a phone', () => {
+      setWidth(CALENDAR_MOBILE_MAX_WIDTH);
+      render(<ControlledCalendar initialView="week" />);
+      expect(screen.getByText(/^agenda:/)).toBeVisible();
+      expect(screen.getByText('Header agenda')).toBeVisible();
+    });
+
+    it('keeps a controlled week view on a tablet', () => {
+      setWidth(CALENDAR_MOBILE_MAX_WIDTH + 1);
+      render(<ControlledCalendar initialView="week" />);
+      expect(screen.getByText(/^week:/)).toBeVisible();
+    });
+
+    it('moves an uncontrolled week view to agenda when resized to a phone', () => {
+      setWidth(1024);
+      render(<CalendarContent t={translate} locale="en" />);
+      expect(screen.getByText('Header week')).toBeVisible();
+      act(() => {
+        setWidth(CALENDAR_MOBILE_MAX_WIDTH);
+        window.dispatchEvent(new Event('resize'));
+      });
+      expect(screen.getByText('Header agenda')).toBeVisible();
+    });
   });
   it('year drill-down opens the chosen month', () => {
     render(<ControlledCalendar initialView="year" />);
