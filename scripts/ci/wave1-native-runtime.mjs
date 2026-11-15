@@ -222,6 +222,29 @@ async function runRuntimeAcceptance() {
           (name) => name.startsWith('client/assets/') && name.endsWith('.js')
         );
         assert.ok(file, 'Native client asset missing');
+        if (calendarPathTarget && host !== calendarPathTarget.host) {
+          // The Calendar subdomain moves every request to the apex mount.
+          const apex = `https://${calendarPathTarget.host}${calendarPathTarget.basePath}`;
+          const asset = `/${file.slice('client/'.length)}`;
+          for (const [path, location] of [
+            [asset, `${apex}${asset}`],
+            [
+              '/en/00000000-0000-4000-8000-000000000001?view=week',
+              `${apex}/en/00000000-0000-4000-8000-000000000001?view=week`,
+            ],
+            ['/?view=week', `${apex}?view=week`],
+          ]) {
+            const moved = await fetchWorker(path);
+            assert.equal(moved.status, 307, `${host}${path} must move`);
+            assert.equal(moved.headers.get('location'), location);
+            assert.deepEqual(moved.headers.getSetCookie(), []);
+          }
+          const serviceWorker = await fetchWorker('/serwist/sw.js');
+          assert.equal(serviceWorker.status, 200);
+          assert.match(serviceWorker.headers.get('cache-control'), /no-store/);
+          assert.match(await serviceWorker.text(), /registration\.unregister/);
+          continue;
+        }
         const response = await fetchWorker(`/${file.slice('client/'.length)}`);
         assert.equal(response.status, 200);
         assert.deepEqual(

@@ -9,7 +9,8 @@ import { proxy } from '../proxy';
 import { beforeLocalApiOwner, forwardToOwner } from './api-owner-routing';
 import { dispatchCalendarEndpoint } from './api-registry.server';
 import { registerCalendarServerApiPaths } from './calendar-api-server';
-import { apexMountLocation, calendarBase } from './calendar-mount';
+import { calendarBase } from './calendar-mount';
+import { legacyHostResponse } from './legacy-host';
 import {
   CALENDAR_FUNCTION_BASE,
   CALENDAR_LEGACY_FUNCTION_BASE,
@@ -42,38 +43,15 @@ export async function handleCalendarRequest(
 ): Promise<Response> {
   const nonce = createNonce();
   try {
-    const response = await dispatchCalendarRequest(
-      request,
-      env,
-      ctx,
-      nonce,
-      telemetry
-    );
     return await applyCalendarResponsePolicy(
       request,
-      withApexMountLocation(request, response),
+      await dispatchCalendarRequest(request, env, ctx, nonce, telemetry),
       nonce
     );
   } catch (error) {
     reportCalendarSsrError(error, 'handler');
     throw error;
   }
-}
-
-function withApexMountLocation(request: Request, response: Response) {
-  if (response.status < 300 || response.status >= 400) return response;
-  const location = apexMountLocation(
-    new URL(request.url),
-    response.headers.get('location')
-  );
-  if (!location) return response;
-  const headers = new Headers(response.headers);
-  headers.set('location', location);
-  return new Response(response.body, {
-    status: response.status,
-    statusText: response.statusText,
-    headers,
-  });
 }
 
 async function dispatchCalendarRequest(
@@ -83,6 +61,8 @@ async function dispatchCalendarRequest(
   nonce: string,
   telemetry?: CalendarTelemetryPort
 ): Promise<Response> {
+  const legacy = legacyHostResponse(request);
+  if (legacy) return legacy;
   const url = new URL(request.url);
   const base = calendarBase(url);
   let path = base?.strip(url.pathname);

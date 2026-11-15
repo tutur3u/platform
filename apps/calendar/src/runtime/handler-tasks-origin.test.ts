@@ -11,6 +11,10 @@ vi.mock('@tuturuuu/start-bridge/start/server-entry', () => ({
 }));
 vi.mock('@tanstack/react-start/server-only', () => ({}));
 vi.mock('../proxy', () => ({ proxy: suppliers.proxy }));
+// These cases cover root-host serving, which the staging and development
+// artifacts (no apex mount) still use. The production subdomain's redirect
+// is covered unmocked in root-cutover.test.ts.
+vi.mock('./legacy-host', () => ({ legacyHostResponse: () => null }));
 vi.mock('@tuturuuu/utils/api-proxy-guard', () => ({
   guardApiProxyRequest: async () => null,
 }));
