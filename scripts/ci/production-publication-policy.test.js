@@ -318,11 +318,12 @@ test('Calendar, Meet, Mail and Apps admissions open only their publishers while 
 
 test('admitted apps refuse a dispatch of their switched-off Vercel publishers', (t) => {
   const root = fixture(t);
+  const disabled = /disabled in the tuturuuu\.ci\.ts switchboard/;
   for (const app of ['calendar', 'meet', 'mail', 'apps']) {
     const legacy = runPolicy(root, `vercel-production-${app}.yaml`);
     assert.equal(legacy.output, 'allowed=false\n');
-    assert.match(legacy.stdout, /disabled in the tuturuuu\.ci\.ts switchboard/);
-    assert.match(legacy.summary, /disabled in the tuturuuu\.ci\.ts switchboard/);
+    assert.match(legacy.stdout, disabled);
+    assert.match(legacy.summary, disabled);
     assert.equal(
       runPolicy(root, `${app}-cloudflare.yaml`).output,
       'allowed=true\n'
