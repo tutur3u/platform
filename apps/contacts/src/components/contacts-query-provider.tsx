@@ -1,6 +1,7 @@
 'use client';
 
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import { ExperimentalUiSync } from '@tuturuuu/ui/custom/experimental-ui-sync';
 import { type ReactNode, useState } from 'react';
 
 export const CONTACTS_QUERY_STALE_TIME_MS = 5 * 60_000;
@@ -22,6 +23,9 @@ export function ContactsQueryProvider({ children }: { children: ReactNode }) {
   const [queryClient] = useState(createContactsQueryClient);
 
   return (
-    <QueryClientProvider client={queryClient}>{children}</QueryClientProvider>
+    <QueryClientProvider client={queryClient}>
+      <ExperimentalUiSync />
+      {children}
+    </QueryClientProvider>
   );
 }

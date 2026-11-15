@@ -12,8 +12,8 @@ export function ClientProviders({ children }: { children: ReactNode }) {
 
   return (
     <ThemeProvider attribute="class" defaultTheme="system" enableSystem>
-      <ExperimentalUiSync />
       <QueryClientProvider client={queryClient}>
+        <ExperimentalUiSync />
         {children}
         <GlobalCommandLauncher currentApp="mind" />
       </QueryClientProvider>

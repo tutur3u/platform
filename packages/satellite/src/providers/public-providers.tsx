@@ -16,7 +16,7 @@ export function PublicSatelliteProviders({
       enableSystem
       scriptProps={{ 'data-cfasync': 'false' }}
     >
-      <ExperimentalUiSync />
+      <ExperimentalUiSync account={false} />
       {children}
     </ThemeProvider>
   );

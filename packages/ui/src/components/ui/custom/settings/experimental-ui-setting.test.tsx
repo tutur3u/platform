@@ -5,10 +5,14 @@ import { ExperimentalUiSetting } from './experimental-ui-setting';
 
 const mockUseUserBooleanConfig = vi.fn();
 const mockSetValue = vi.fn();
+const mockUseUserConfig = vi.fn();
+const mockMutate = vi.fn();
 
 vi.mock('@tuturuuu/ui/hooks/use-user-config', () => ({
   useUserBooleanConfig: (...args: unknown[]) =>
     mockUseUserBooleanConfig(...args),
+  useUserConfig: (...args: unknown[]) => mockUseUserConfig(...args),
+  useUpdateUserConfig: () => ({ mutate: mockMutate }),
 }));
 
 vi.mock('next-intl', () => ({
@@ -17,6 +21,8 @@ vi.mock('next-intl', () => ({
 
 beforeEach(() => {
   mockSetValue.mockReset();
+  mockMutate.mockReset();
+  mockUseUserConfig.mockReturnValue({ data: '', isLoading: false });
   mockUseUserBooleanConfig.mockReturnValue({
     isLoading: false,
     isPending: false,
@@ -27,6 +33,7 @@ beforeEach(() => {
 
 afterEach(() => {
   document.documentElement.removeAttribute('data-ui');
+  document.documentElement.removeAttribute('data-sorbet-preset');
   window.localStorage.clear();
 });
 
@@ -65,5 +72,42 @@ describe('ExperimentalUiSetting', () => {
     expect(
       screen.getByRole('switch', { name: 'setting_toggle_label' })
     ).toBeDisabled();
+  });
+
+  it('hides the palette while the design is off', () => {
+    render(<ExperimentalUiSetting />);
+
+    expect(screen.queryByRole('radiogroup')).toBeNull();
+    expect(mockUseUserConfig).not.toHaveBeenCalled();
+  });
+
+  it('shows the palette while the design is on and saves a choice', () => {
+    mockUseUserBooleanConfig.mockReturnValue({
+      isLoading: false,
+      isPending: false,
+      setValue: mockSetValue,
+      value: true,
+    });
+    render(<ExperimentalUiSetting />);
+
+    const presets = screen.getAllByRole('radio');
+    expect(presets).toHaveLength(10);
+    expect(screen.getByRole('radio', { name: 'presets.sorbet' })).toBeChecked();
+
+    fireEvent.click(screen.getByRole('radio', { name: 'presets.matcha' }));
+
+    expect(
+      document.documentElement.getAttribute('data-sorbet-preset')
+    ).toBe('matcha');
+    expect(mockMutate).toHaveBeenCalledWith({
+      configId: 'SORBET_THEME',
+      value: JSON.stringify({
+        preset: 'matcha',
+        accent: null,
+        radius: 'soft',
+        density: 'comfortable',
+        font: 'nunito',
+      }),
+    });
   });
 });

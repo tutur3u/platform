@@ -9,10 +9,12 @@ import {
   announceSorbetUi,
   EXPERIMENTAL_SORBET_UI_CONFIG_ID,
 } from '../sorbet-ui';
+import { SorbetThemeSetting } from './sorbet-theme-setting';
 
 /**
  * Account-wide opt-in to the experimental Sorbet design. Off by default; the
- * choice is stored on the account, so every Tuturuuu app follows it.
+ * choice is stored on the account, so every Tuturuuu app follows it. While it
+ * is on, the Sorbet palette picker follows it.
  */
 export function ExperimentalUiSetting() {
   const t = useTranslations('experimental-ui');
@@ -27,7 +29,8 @@ export function ExperimentalUiSetting() {
   };
 
   return (
-    <SettingItemTab
+    <>
+      <SettingItemTab
       title={
         <span className="inline-flex items-center gap-2">
           {t('setting_title')}
@@ -43,5 +46,7 @@ export function ExperimentalUiSetting() {
         onCheckedChange={onChange}
       />
     </SettingItemTab>
+      {value && <SorbetThemeSetting />}
+    </>
   );
 }

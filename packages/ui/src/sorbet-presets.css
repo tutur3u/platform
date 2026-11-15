@@ -1,0 +1,380 @@
+/*
+  Sorbet presets. Each preset sets eleven source colours (--sorbet-*) for light
+  and dark; the mapping block below turns them into the shared semantic tokens.
+  The default Sorbet palette lives in sorbet.css and applies when <html> has no
+  data-sorbet-preset attribute, so it is unchanged by this file.
+
+  [data-sorbet-preview] scopes a palette to one element (the preset gallery
+  tiles); [data-sorbet-preview-mode="dark"] picks its dark side.
+
+  The mapping block has the same specificity as the dark block in sorbet.css
+  and wins by coming later: globals.css imports this file after sorbet.css.
+  sorbet-presets.test.ts checks every text pair in both modes: 4.5:1, and 7:1
+  for High Contrast; focus rings and accents 3:1.
+*/
+
+:root[data-ui="sorbet"][data-sorbet-preset],
+[data-sorbet-preview] {
+  --root-background: var(--sorbet-ground);
+  --background: var(--sorbet-surface);
+  --foreground: var(--sorbet-ink);
+  --card: var(--sorbet-card);
+  --card-foreground: var(--sorbet-ink);
+  --popover: var(--sorbet-card);
+  --popover-foreground: var(--sorbet-ink);
+  --primary: var(--sorbet-accent);
+  --primary-foreground: var(--sorbet-accent-ink);
+  --secondary: var(--sorbet-ground);
+  --secondary-foreground: var(--sorbet-ink);
+  --muted: var(--sorbet-ground);
+  --muted-foreground: var(--sorbet-muted-ink);
+  --accent: var(--sorbet-accent-soft);
+  --accent-foreground: var(--sorbet-ink);
+  --border: var(--sorbet-hairline);
+  --input: var(--sorbet-input);
+  --ring: var(--sorbet-ring);
+  --sidebar-background: var(--sorbet-ground);
+  --sidebar-foreground: var(--sorbet-ink);
+  --sidebar-primary: var(--sorbet-accent);
+  --sidebar-primary-foreground: var(--sorbet-accent-ink);
+  --sidebar-accent: var(--sorbet-accent-soft);
+  --sidebar-accent-foreground: var(--sorbet-ink);
+  --sidebar-border: var(--sorbet-hairline);
+  --sidebar-ring: var(--sorbet-ring);
+}
+
+[data-sorbet-preview="sorbet"] {
+  --sorbet-ground: #fff1ee;
+  --sorbet-surface: #fffbfa;
+  --sorbet-card: #ffffff;
+  --sorbet-ink: #26212b;
+  --sorbet-muted-ink: #6b6170;
+  --sorbet-hairline: #f0e1dd;
+  --sorbet-input: #dcc8c3;
+  --sorbet-accent: #26212b;
+  --sorbet-accent-ink: #fffbfa;
+  --sorbet-accent-soft: #ffe9e4;
+  --sorbet-ring: #2a55a8;
+}
+
+[data-sorbet-preview="sorbet"][data-sorbet-preview-mode="dark"] {
+  --sorbet-ground: #1d1a22;
+  --sorbet-surface: #18151c;
+  --sorbet-card: #211d26;
+  --sorbet-ink: #f6eff4;
+  --sorbet-muted-ink: #b3a8b5;
+  --sorbet-hairline: #3a3241;
+  --sorbet-input: #544a5c;
+  --sorbet-accent: #f6eff4;
+  --sorbet-accent-ink: #18151c;
+  --sorbet-accent-soft: #2f2935;
+  --sorbet-ring: #b5cdff;
+}
+
+:root[data-ui="sorbet"][data-sorbet-preset="matcha"],
+[data-sorbet-preview="matcha"] {
+  --sorbet-ground: #eef5ea;
+  --sorbet-surface: #f9fcf7;
+  --sorbet-card: #ffffff;
+  --sorbet-ink: #1d2a1f;
+  --sorbet-muted-ink: #566457;
+  --sorbet-hairline: #dce8d6;
+  --sorbet-input: #b9cdb1;
+  --sorbet-accent: #2f6b3a;
+  --sorbet-accent-ink: #ffffff;
+  --sorbet-accent-soft: #e1f0dc;
+  --sorbet-ring: #2f6b3a;
+}
+
+:root[data-ui="sorbet"][data-sorbet-preset="matcha"].dark,
+[data-sorbet-preview="matcha"][data-sorbet-preview-mode="dark"] {
+  --sorbet-ground: #141b16;
+  --sorbet-surface: #111712;
+  --sorbet-card: #1a221c;
+  --sorbet-ink: #eaf3e6;
+  --sorbet-muted-ink: #a5b5a2;
+  --sorbet-hairline: #2c3a2e;
+  --sorbet-input: #46594a;
+  --sorbet-accent: #8fd69a;
+  --sorbet-accent-ink: #0f1a12;
+  --sorbet-accent-soft: #24362a;
+  --sorbet-ring: #8fd69a;
+}
+
+:root[data-ui="sorbet"][data-sorbet-preset="blueberry"],
+[data-sorbet-preview="blueberry"] {
+  --sorbet-ground: #edf1fb;
+  --sorbet-surface: #f8faff;
+  --sorbet-card: #ffffff;
+  --sorbet-ink: #1b2233;
+  --sorbet-muted-ink: #565f75;
+  --sorbet-hairline: #dbe2f2;
+  --sorbet-input: #b5c1dd;
+  --sorbet-accent: #2f55c4;
+  --sorbet-accent-ink: #ffffff;
+  --sorbet-accent-soft: #e2e9fb;
+  --sorbet-ring: #2f55c4;
+}
+
+:root[data-ui="sorbet"][data-sorbet-preset="blueberry"].dark,
+[data-sorbet-preview="blueberry"][data-sorbet-preview-mode="dark"] {
+  --sorbet-ground: #12151f;
+  --sorbet-surface: #0f121b;
+  --sorbet-card: #181c28;
+  --sorbet-ink: #e8edfb;
+  --sorbet-muted-ink: #a3abc2;
+  --sorbet-hairline: #2a3042;
+  --sorbet-input: #444d66;
+  --sorbet-accent: #9db6ff;
+  --sorbet-accent-ink: #0f1424;
+  --sorbet-accent-soft: #222b45;
+  --sorbet-ring: #9db6ff;
+}
+
+:root[data-ui="sorbet"][data-sorbet-preset="mango"],
+[data-sorbet-preview="mango"] {
+  --sorbet-ground: #fdf2e3;
+  --sorbet-surface: #fffaf3;
+  --sorbet-card: #ffffff;
+  --sorbet-ink: #2b2117;
+  --sorbet-muted-ink: #6b5a47;
+  --sorbet-hairline: #f0e0c8;
+  --sorbet-input: #dcc3a0;
+  --sorbet-accent: #9a4a00;
+  --sorbet-accent-ink: #ffffff;
+  --sorbet-accent-soft: #fde6c8;
+  --sorbet-ring: #9a4a00;
+}
+
+:root[data-ui="sorbet"][data-sorbet-preset="mango"].dark,
+[data-sorbet-preview="mango"][data-sorbet-preview-mode="dark"] {
+  --sorbet-ground: #1c1610;
+  --sorbet-surface: #18130d;
+  --sorbet-card: #221b13;
+  --sorbet-ink: #fbefe0;
+  --sorbet-muted-ink: #c2ad94;
+  --sorbet-hairline: #3a2e20;
+  --sorbet-input: #5a4733;
+  --sorbet-accent: #ffb866;
+  --sorbet-accent-ink: #241605;
+  --sorbet-accent-soft: #3a2a17;
+  --sorbet-ring: #ffb866;
+}
+
+:root[data-ui="sorbet"][data-sorbet-preset="lavender"],
+[data-sorbet-preview="lavender"] {
+  --sorbet-ground: #f3effc;
+  --sorbet-surface: #fbf9ff;
+  --sorbet-card: #ffffff;
+  --sorbet-ink: #251f33;
+  --sorbet-muted-ink: #625a75;
+  --sorbet-hairline: #e5def5;
+  --sorbet-input: #c6badf;
+  --sorbet-accent: #6236b0;
+  --sorbet-accent-ink: #ffffff;
+  --sorbet-accent-soft: #ece4fd;
+  --sorbet-ring: #6236b0;
+}
+
+:root[data-ui="sorbet"][data-sorbet-preset="lavender"].dark,
+[data-sorbet-preview="lavender"][data-sorbet-preview-mode="dark"] {
+  --sorbet-ground: #18141f;
+  --sorbet-surface: #15111c;
+  --sorbet-card: #1f1a28;
+  --sorbet-ink: #f1ecfb;
+  --sorbet-muted-ink: #b2a8c4;
+  --sorbet-hairline: #332b42;
+  --sorbet-input: #4f4563;
+  --sorbet-accent: #c9b2ff;
+  --sorbet-accent-ink: #1b1229;
+  --sorbet-accent-soft: #2e2442;
+  --sorbet-ring: #c9b2ff;
+}
+
+:root[data-ui="sorbet"][data-sorbet-preset="lagoon"],
+[data-sorbet-preview="lagoon"] {
+  --sorbet-ground: #e9f5f3;
+  --sorbet-surface: #f7fcfb;
+  --sorbet-card: #ffffff;
+  --sorbet-ink: #16292a;
+  --sorbet-muted-ink: #4f6466;
+  --sorbet-hairline: #d4e9e5;
+  --sorbet-input: #a8cbc5;
+  --sorbet-accent: #12675e;
+  --sorbet-accent-ink: #ffffff;
+  --sorbet-accent-soft: #d7f0eb;
+  --sorbet-ring: #12675e;
+}
+
+:root[data-ui="sorbet"][data-sorbet-preset="lagoon"].dark,
+[data-sorbet-preview="lagoon"][data-sorbet-preview-mode="dark"] {
+  --sorbet-ground: #101b1b;
+  --sorbet-surface: #0d1717;
+  --sorbet-card: #152222;
+  --sorbet-ink: #e4f4f1;
+  --sorbet-muted-ink: #9bb8b3;
+  --sorbet-hairline: #253837;
+  --sorbet-input: #3e5856;
+  --sorbet-accent: #7fdccd;
+  --sorbet-accent-ink: #082220;
+  --sorbet-accent-soft: #1b3634;
+  --sorbet-ring: #7fdccd;
+}
+
+:root[data-ui="sorbet"][data-sorbet-preset="rose"],
+[data-sorbet-preview="rose"] {
+  --sorbet-ground: #fcecf2;
+  --sorbet-surface: #fff8fb;
+  --sorbet-card: #ffffff;
+  --sorbet-ink: #2d1b24;
+  --sorbet-muted-ink: #6d5562;
+  --sorbet-hairline: #f2dbe5;
+  --sorbet-input: #dcbccb;
+  --sorbet-accent: #a2286a;
+  --sorbet-accent-ink: #ffffff;
+  --sorbet-accent-soft: #fde0ed;
+  --sorbet-ring: #a2286a;
+}
+
+:root[data-ui="sorbet"][data-sorbet-preset="rose"].dark,
+[data-sorbet-preview="rose"][data-sorbet-preview-mode="dark"] {
+  --sorbet-ground: #1e141a;
+  --sorbet-surface: #1a1116;
+  --sorbet-card: #241820;
+  --sorbet-ink: #fbe9f1;
+  --sorbet-muted-ink: #c4a6b5;
+  --sorbet-hairline: #3c2934;
+  --sorbet-input: #5b4250;
+  --sorbet-accent: #ffa8cf;
+  --sorbet-accent-ink: #2a0f1c;
+  --sorbet-accent-soft: #3b2030;
+  --sorbet-ring: #ffa8cf;
+}
+
+:root[data-ui="sorbet"][data-sorbet-preset="graphite"],
+[data-sorbet-preview="graphite"] {
+  --sorbet-ground: #f1f1f2;
+  --sorbet-surface: #fafafa;
+  --sorbet-card: #ffffff;
+  --sorbet-ink: #1c1c1f;
+  --sorbet-muted-ink: #5b5b63;
+  --sorbet-hairline: #e2e2e5;
+  --sorbet-input: #c2c2c8;
+  --sorbet-accent: #1c1c1f;
+  --sorbet-accent-ink: #fafafa;
+  --sorbet-accent-soft: #ececee;
+  --sorbet-ring: #3b5bdb;
+}
+
+:root[data-ui="sorbet"][data-sorbet-preset="graphite"].dark,
+[data-sorbet-preview="graphite"][data-sorbet-preview-mode="dark"] {
+  --sorbet-ground: #161618;
+  --sorbet-surface: #121214;
+  --sorbet-card: #1c1c1f;
+  --sorbet-ink: #ededef;
+  --sorbet-muted-ink: #a5a5ad;
+  --sorbet-hairline: #2e2e33;
+  --sorbet-input: #4a4a52;
+  --sorbet-accent: #ededef;
+  --sorbet-accent-ink: #121214;
+  --sorbet-accent-soft: #26262a;
+  --sorbet-ring: #8fa8ff;
+}
+
+:root[data-ui="sorbet"][data-sorbet-preset="midnight"],
+[data-sorbet-preview="midnight"] {
+  --sorbet-ground: #eceefb;
+  --sorbet-surface: #f7f8ff;
+  --sorbet-card: #ffffff;
+  --sorbet-ink: #191b33;
+  --sorbet-muted-ink: #575a78;
+  --sorbet-hairline: #dcdff3;
+  --sorbet-input: #b7bbdc;
+  --sorbet-accent: #4338ca;
+  --sorbet-accent-ink: #ffffff;
+  --sorbet-accent-soft: #e3e3fc;
+  --sorbet-ring: #4338ca;
+}
+
+:root[data-ui="sorbet"][data-sorbet-preset="midnight"].dark,
+[data-sorbet-preview="midnight"][data-sorbet-preview-mode="dark"] {
+  --sorbet-ground: #0b0d1a;
+  --sorbet-surface: #080a15;
+  --sorbet-card: #11142a;
+  --sorbet-ink: #e7e9ff;
+  --sorbet-muted-ink: #a2a6cc;
+  --sorbet-hairline: #22264a;
+  --sorbet-input: #3c4170;
+  --sorbet-accent: #a5b0ff;
+  --sorbet-accent-ink: #0c0f2b;
+  --sorbet-accent-soft: #1d2250;
+  --sorbet-ring: #a5b0ff;
+}
+
+:root[data-ui="sorbet"][data-sorbet-preset="high-contrast"],
+[data-sorbet-preview="high-contrast"] {
+  --sorbet-ground: #ffffff;
+  --sorbet-surface: #ffffff;
+  --sorbet-card: #ffffff;
+  --sorbet-ink: #000000;
+  --sorbet-muted-ink: #333333;
+  --sorbet-hairline: #1a1a1a;
+  --sorbet-input: #000000;
+  --sorbet-accent: #0b3d91;
+  --sorbet-accent-ink: #ffffff;
+  --sorbet-accent-soft: #e6eeff;
+  --sorbet-ring: #0b3d91;
+  --blue: #123f8c;
+  --green: #1d5016;
+  --orange: #6e3300;
+  --red: #8a1c1a;
+  --yellow: #5a4100;
+  --purple: #4a2390;
+  --pink: #7d1a50;
+  --teal: #0c4d46;
+  --gray: #3d383f;
+}
+
+:root[data-ui="sorbet"][data-sorbet-preset="high-contrast"].dark,
+[data-sorbet-preview="high-contrast"][data-sorbet-preview-mode="dark"] {
+  --sorbet-ground: #000000;
+  --sorbet-surface: #000000;
+  --sorbet-card: #0a0a0a;
+  --sorbet-ink: #ffffff;
+  --sorbet-muted-ink: #d6d6d6;
+  --sorbet-hairline: #f0f0f0;
+  --sorbet-input: #ffffff;
+  --sorbet-accent: #9ec5ff;
+  --sorbet-accent-ink: #000000;
+  --sorbet-accent-soft: #10203d;
+  --sorbet-ring: #9ec5ff;
+  --blue: #cfe0ff;
+  --green: #c7f0bf;
+  --orange: #ffdcb8;
+  --red: #ffcdc9;
+  --yellow: #f9e6a6;
+  --purple: #e4d6ff;
+  --pink: #ffcfe5;
+  --teal: #b6efe6;
+  --gray: #e0dae1;
+}
+
+/* High Contrast: solid borders, no soft shadows, a wider focus ring. */
+:root[data-ui="sorbet"][data-sorbet-preset="high-contrast"] {
+  --sorbet-shadow-sm: none;
+  --sorbet-shadow-md: none;
+}
+
+:root[data-ui="sorbet"][data-sorbet-preset="high-contrast"]
+  :where([data-slot="card"]) {
+  border-color: var(--border);
+}
+
+:root[data-ui="sorbet"][data-sorbet-preset="high-contrast"]
+  :where(
+    [data-slot="button"],
+    [data-slot="input"],
+    [data-slot="select-trigger"]
+  ):focus-visible {
+  outline-width: 3px;
+}
