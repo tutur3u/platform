@@ -54,7 +54,7 @@ describe('SidebarStructureHeader', () => {
     expect(screen.getByRole('button', { name: 'Open apps' })).toBeTruthy();
   });
 
-  it('collapses to the Tuturuuu home link', () => {
+  it('collapses to the Home link', () => {
     render(<SidebarStructureHeader {...baseProps} isCollapsed />);
 
     expect(

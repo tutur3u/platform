@@ -126,6 +126,13 @@ for correction. Do not turn an explicit-save form into autosave during styling.
 Put destructive actions in a final section with a destructive button and preserve
 the existing confirmation behavior.
 
+Label the home destination **Home** (Vietnamese **Trang chủ**) in every link,
+button, menu item and sentence that sends people there, never with the brand
+name ("Tuturuuu home", "Return to Tuturuuu", "Trang chủ Tuturuuu", "Quay về
+Tuturuuu"). Brand mentions that are not a home label, such as "Learn more about
+Tuturuuu", stay. `scripts/i18n-home-label.test.js` scans every app's message
+bundles and the app and package sources and fails on a brand-prefixed home label.
+
 | State | Visible behavior | Review evidence |
 | --- | --- | --- |
 | Loading | Skeleton follows the final section and row geometry; controls cannot submit stale values. | No jump to an unrelated layout; loading status is accessible. |
@@ -139,7 +146,7 @@ the existing confirmation behavior.
 Every app renders unknown paths (404) and uncaught render errors (500) with
 `StatusPage` from `@tuturuuu/ui/custom/status-page`: the Tuturuuu header and
 logo, one `h1`, Back (history with an `href` fallback), the app's start page,
-Tuturuuu home, optional search/help links and a small footer, in English or
+Home, optional search/help links and a small footer, in English or
 Vietnamese. It ships its own scoped stylesheet, so it needs no Tailwind scanning
 and no theme script: light by default, dark from `prefers-color-scheme` unless
 an ancestor has `.light`, and dark under `.dark`.

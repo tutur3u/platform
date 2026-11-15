@@ -224,7 +224,7 @@ describe('actual Apps root route callbacks', () => {
       expect(
         view.getByRole('link', { name: appLink }).getAttribute('href')
       ).toBe('/');
-      const home = locale === 'vi' ? 'Trang chủ Tuturuuu' : 'Tuturuuu home';
+      const home = locale === 'vi' ? 'Trang chủ' : 'Home';
       expect(
         view
           .getAllByRole('link', { name: home })

@@ -66,7 +66,7 @@ describe('AppErrorBoundary', () => {
     );
     expect(screen.queryByRole('link', { name: 'Open Tuturuuu' })).toBeNull();
     expect(
-      screen.getAllByRole('link', { name: 'Tuturuuu home' }).length
+      screen.getAllByRole('link', { name: 'Home' }).length
     ).toBeGreaterThan(0);
   });
 });
