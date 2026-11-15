@@ -98,4 +98,51 @@ describe('abuseStoreCoverage (SR-951)', () => {
         .replay
     ).toBe('none');
   });
+
+  it('counts Sensitive (redacted) values as present, presence only', () => {
+    const all = ABUSE_GUARD_FAMILIES.join(',');
+    const redacted = {
+      ABUSE_GUARD_URL: '[SENSITIVE]',
+      ABUSE_GUARD_SECRET: '[SENSITIVE]',
+      ABUSE_GUARD_KEY_PEPPER: '[SENSITIVE]',
+      ABUSE_GUARD_FAMILIES: all,
+    };
+    // Without the redaction hint the placeholder fails the strength check.
+    expect(
+      abuseStoreCoverage(redacted, NOW).every((entry) => entry.store === 'none')
+    ).toBe(true);
+    const coverage = abuseStoreCoverage(
+      redacted,
+      NOW,
+      new Set([
+        'ABUSE_GUARD_URL',
+        'ABUSE_GUARD_SECRET',
+        'ABUSE_GUARD_KEY_PEPPER',
+      ])
+    );
+    for (const entry of coverage) {
+      expect(entry.store).toBe('durable-object');
+      expect(entry.presenceOnly).toBe(true);
+    }
+    // A visible weak secret still fails even when the pepper is redacted.
+    const weak = abuseStoreCoverage(
+      { ...redacted, ABUSE_GUARD_SECRET: 'short' },
+      NOW,
+      new Set(['ABUSE_GUARD_URL', 'ABUSE_GUARD_KEY_PEPPER'])
+    );
+    expect(weak.every((entry) => entry.store === 'none')).toBe(true);
+    // A redacted Upstash token counts as present.
+    const upstash = abuseStoreCoverage(
+      {
+        UPSTASH_REDIS_REST_URL: 'https://fixture.upstash.invalid',
+        UPSTASH_REDIS_REST_TOKEN: '[SENSITIVE]',
+      },
+      NOW,
+      new Set(['UPSTASH_REDIS_REST_TOKEN'])
+    );
+    for (const entry of upstash) {
+      expect(entry.store).toBe('upstash');
+      expect(entry.presenceOnly).toBe(true);
+    }
+  });
 });

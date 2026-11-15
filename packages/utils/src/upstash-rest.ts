@@ -22,35 +22,41 @@ export type UpstashRatelimitRedisClient = Pick<
   'eval' | 'evalsha' | 'get' | 'set'
 >;
 
-let missingStoreReported = false;
+const reportedLegacyFamilies = new Set<string>();
 
 /**
- * SR-951: a production instance without the legacy store makes every
- * fail-open guard (route rate limits, MFA/password budgets, edge controls)
- * stop enforcing, and fail-closed paths such as refresh replay return 503.
- * Report that loudly, once per instance, with a fixed message (no values).
- * The deployment gate (scripts/ci/verify-abuse-store-env.ts) refuses to build
- * Web production without a covering store; this is the runtime backstop.
+ * SR-951 (D186-FP): a guard family that resolves to the legacy Upstash store
+ * while the pair is missing stops enforcing (fail-open: password, MFA, OTP and
+ * route budgets) or becomes unavailable (fail-closed: replay). Emit one
+ * structured, pageable error per family per production instance. Fixed
+ * fields only, never a value. Plain `hasUpstashRestEnv()` callers (per-app
+ * rate limiters) don't alert, so apps that intentionally run without
+ * Upstash stay quiet.
  */
-function reportMissingUpstashEnv() {
-  if (missingStoreReported || process.env.NODE_ENV !== 'production') return;
-  missingStoreReported = true;
+export function reportLegacyFamilyWithoutStore(family: string) {
+  if (process.env.NODE_ENV !== 'production') return;
+  if (reportedLegacyFamilies.has(family)) return;
+  reportedLegacyFamilies.add(family);
   console.error(
-    '[abuse-guard] SR-951 UPSTASH_REDIS_REST_URL/UPSTASH_REDIS_REST_TOKEN are not configured: fail-open guards are not enforcing and replay-protected refresh is unavailable'
+    `[ALERT][abuse-guard] SR-951 ${JSON.stringify({
+      alert: 'abuse-guard-store-missing',
+      severity: 'critical',
+      family,
+      store: 'upstash',
+      missing: ['UPSTASH_REDIS_REST_URL', 'UPSTASH_REDIS_REST_TOKEN'],
+    })}`
   );
 }
 
-/** Test-only reset of the once-per-instance report. */
-export function resetMissingUpstashEnvReportForTests() {
-  missingStoreReported = false;
+/** Test-only reset of the once-per-family report. */
+export function resetLegacyFamilyReportsForTests() {
+  reportedLegacyFamilies.clear();
 }
 
 export function hasUpstashRestEnv(): boolean {
   const url = process.env.UPSTASH_REDIS_REST_URL?.trim();
   const token = process.env.UPSTASH_REDIS_REST_TOKEN?.trim();
-  const configured = Boolean(url && token);
-  if (!configured) reportMissingUpstashEnv();
-  return configured;
+  return Boolean(url && token);
 }
 
 /**
@@ -152,7 +158,10 @@ export async function getUpstashRestRedisClient(options?: {
       ) as unknown as UpstashRestRedisClient;
     }
   }
-  return legacyRestClient();
+  const client = await legacyRestClient();
+  if (!client && options?.family)
+    reportLegacyFamilyWithoutStore(options.family);
+  return client;
 }
 
 async function legacyRestClient(): Promise<UpstashRestRedisClient | null> {

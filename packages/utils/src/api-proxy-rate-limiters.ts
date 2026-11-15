@@ -18,6 +18,7 @@ import type {
 import {
   getUpstashRatelimitRedisClient,
   type UpstashRatelimitRedisClient,
+  reportLegacyFamilyWithoutStore,
 } from './upstash-rest';
 
 type RateLimitBucket = {
@@ -245,6 +246,7 @@ export async function getRateLimiters(
 
   const redis = await getUpstashRatelimitRedisClient().catch(() => null);
   if (!redis) {
+    reportLegacyFamilyWithoutStore('proxy');
     return null;
   }
 

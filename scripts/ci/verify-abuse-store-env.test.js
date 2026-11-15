@@ -67,6 +67,31 @@ test('refuses a partial guard assignment without the Upstash pair', () => {
   assert.match(result.out, /family replay: none/);
 });
 
+test('treats Vercel Sensitive placeholders as present (presence only)', () => {
+  const result = gate([
+    'ABUSE_GUARD_URL="[SENSITIVE]"',
+    'ABUSE_GUARD_SECRET="[SENSITIVE]"',
+    'ABUSE_GUARD_KEY_PEPPER="[SENSITIVE]"',
+    'ABUSE_GUARD_FAMILIES="offline,password,proxy,replay,meet"',
+  ]);
+  assert.equal(result.code, 0, result.out);
+  assert.match(
+    result.out,
+    /family replay: durable-object \(Sensitive values: presence only\)/
+  );
+});
+
+test('still refuses a visible weak guard secret next to redacted values', () => {
+  const result = gate([
+    'ABUSE_GUARD_URL="[SENSITIVE]"',
+    'ABUSE_GUARD_SECRET="short"',
+    'ABUSE_GUARD_KEY_PEPPER="[SENSITIVE]"',
+    'ABUSE_GUARD_FAMILIES="offline,password,proxy,replay,meet"',
+  ]);
+  assert.equal(result.code, 1, result.out);
+  assert.match(result.out, /family proxy: none/);
+});
+
 test('refuses when the pulled env file is missing', () => {
   const result = spawnSync(
     'bun',

@@ -13,6 +13,7 @@ import {
   getUpstashRestRedisClient,
   hasUpstashRestEnv,
   type UpstashRestRedisClient,
+  reportLegacyFamilyWithoutStore,
 } from '../upstash-rest';
 import type { AbuseCheckResult } from './types';
 
@@ -52,7 +53,10 @@ export function getMFASubjectKeys(subject: MFAVerifySubject) {
 }
 
 async function defaultRedis(): Promise<CounterClient | null> {
-  if (!hasUpstashRestEnv()) return null;
+  if (!hasUpstashRestEnv()) {
+    reportLegacyFamilyWithoutStore('mfa');
+    return null;
+  }
   return getUpstashRestRedisClient();
 }
 

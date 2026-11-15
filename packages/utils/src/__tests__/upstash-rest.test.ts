@@ -84,46 +84,66 @@ describe('upstash-rest', () => {
   });
 });
 
-describe('SR-951 missing-store report', () => {
+describe('SR-951 legacy-family store report', () => {
   afterEach(() => {
     vi.unstubAllEnvs();
     vi.restoreAllMocks();
   });
 
-  it('reports a missing Upstash pair loudly once per production instance', async () => {
-    const { hasUpstashRestEnv, resetMissingUpstashEnvReportForTests } =
-      await import('../upstash-rest.js');
-    resetMissingUpstashEnvReportForTests();
+  it('pages once per family when a family resolves to legacy without the pair', async () => {
+    const {
+      getUpstashRestRedisClient,
+      reportLegacyFamilyWithoutStore,
+      resetLegacyFamilyReportsForTests,
+    } = await import('../upstash-rest.js');
+    resetLegacyFamilyReportsForTests();
     vi.stubEnv('NODE_ENV', 'production');
     vi.stubEnv('UPSTASH_REDIS_REST_URL', '');
     vi.stubEnv('UPSTASH_REDIS_REST_TOKEN', 'secret-token-value');
+    vi.stubEnv('ABUSE_GUARD_BACKEND', '');
+    vi.stubEnv('ABUSE_GUARD_FAMILIES', '');
     const error = vi.spyOn(console, 'error').mockImplementation(() => {});
 
-    expect(hasUpstashRestEnv()).toBe(false);
-    expect(hasUpstashRestEnv()).toBe(false);
+    await expect(
+      getUpstashRestRedisClient({ family: 'replay' })
+    ).resolves.toBeNull();
+    await expect(
+      getUpstashRestRedisClient({ family: 'replay' })
+    ).resolves.toBeNull();
+    reportLegacyFamilyWithoutStore('password');
 
-    expect(error).toHaveBeenCalledOnce();
-    const [message] = error.mock.calls[0] ?? [];
-    expect(message).toContain('[abuse-guard] SR-951');
-    // Fixed text only: never a configured value.
-    expect(String(message)).not.toContain('secret-token-value');
+    expect(error).toHaveBeenCalledTimes(2);
+    const messages = error.mock.calls.map(([message]) => String(message));
+    expect(messages[0]).toMatch(/^\[ALERT\]\[abuse-guard\] SR-951 /);
+    const payload = JSON.parse(messages[0]!.replace(/^[^{]*/, ''));
+    expect(payload).toMatchObject({
+      alert: 'abuse-guard-store-missing',
+      family: 'replay',
+      severity: 'critical',
+    });
+    expect(messages.join('\n')).not.toContain('secret-token-value');
   });
 
-  it('stays quiet outside production and when the pair is configured', async () => {
-    const { hasUpstashRestEnv, resetMissingUpstashEnvReportForTests } =
-      await import('../upstash-rest.js');
+  it('stays quiet for plain env checks, outside production and with the pair', async () => {
+    const {
+      getUpstashRestRedisClient,
+      hasUpstashRestEnv,
+      resetLegacyFamilyReportsForTests,
+    } = await import('../upstash-rest.js');
     const error = vi.spyOn(console, 'error').mockImplementation(() => {});
 
-    resetMissingUpstashEnvReportForTests();
-    vi.stubEnv('NODE_ENV', 'test');
+    // Per-app rate limiters call hasUpstashRestEnv() directly: never alert.
+    resetLegacyFamilyReportsForTests();
+    vi.stubEnv('NODE_ENV', 'production');
     vi.stubEnv('UPSTASH_REDIS_REST_URL', '');
     expect(hasUpstashRestEnv()).toBe(false);
+    await expect(getUpstashRestRedisClient()).resolves.toBeNull();
 
-    resetMissingUpstashEnvReportForTests();
-    vi.stubEnv('NODE_ENV', 'production');
-    vi.stubEnv('UPSTASH_REDIS_REST_URL', 'https://redis.test');
-    vi.stubEnv('UPSTASH_REDIS_REST_TOKEN', 'token');
-    expect(hasUpstashRestEnv()).toBe(true);
+    resetLegacyFamilyReportsForTests();
+    vi.stubEnv('NODE_ENV', 'test');
+    await expect(
+      getUpstashRestRedisClient({ family: 'replay' })
+    ).resolves.toBeNull();
 
     expect(error).not.toHaveBeenCalled();
   });

@@ -18,6 +18,7 @@ import {
   getUpstashRatelimitRedisClient,
   hasUpstashRestEnv,
   type UpstashRatelimitRedisClient,
+  reportLegacyFamilyWithoutStore,
 } from '../upstash-rest';
 import type { AbuseCheckResult } from './types';
 
@@ -72,7 +73,10 @@ export function normalizePasswordAttemptName(name: string) {
 }
 
 async function defaultRedis(): Promise<CounterClient | null> {
-  if (!hasUpstashRestEnv()) return null;
+  if (!hasUpstashRestEnv()) {
+    reportLegacyFamilyWithoutStore('password');
+    return null;
+  }
   return getUpstashRatelimitRedisClient();
 }
 

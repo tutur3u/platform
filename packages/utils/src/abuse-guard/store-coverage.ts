@@ -16,6 +16,24 @@ export type AbuseStoreFamilyCoverage = {
   store: 'durable-object' | 'upstash' | 'none';
   /** Fixed, value-free explanation when `store` is `none`. */
   reason?: string;
+  /**
+   * True when the decision rests on Sensitive (redacted) values whose
+   * presence is known but whose strength or shape could not be checked.
+   */
+  presenceOnly?: boolean;
+};
+
+/**
+ * Stand-ins for Sensitive values that `vercel pull` redacts. Presence is
+ * known from the placeholder; the stand-ins satisfy only the selector's shape
+ * and strength checks, which cannot be run on a redacted value.
+ */
+const REDACTED_STAND_INS: Record<string, string> = {
+  ABUSE_GUARD_KEY_PEPPER: 'redacted-sensitive-value-present-'.padEnd(32, 'x'),
+  ABUSE_GUARD_SECRET: 'redacted-sensitive-value-present-'.padEnd(32, 'x'),
+  ABUSE_GUARD_URL: 'https://redacted-sensitive-value.invalid',
+  UPSTASH_REDIS_REST_TOKEN: 'redacted-sensitive-value-present',
+  UPSTASH_REDIS_REST_URL: 'https://redacted-sensitive-value.invalid',
 };
 
 const LEGACY_UNTIL = /^\d{4}-\d{2}-\d{2}T[\d:.]+(?:Z|[+-]\d{2}:\d{2})$/u;
@@ -36,15 +54,36 @@ function hasUpstashPair(env: AbuseStoreCoverageEnv) {
  * never covered (runtime treats it as unavailable).
  */
 export function abuseStoreCoverage(
-  env: AbuseStoreCoverageEnv,
-  now = Date.now()
+  input: AbuseStoreCoverageEnv,
+  now = Date.now(),
+  redactedKeys: ReadonlySet<string> = new Set()
 ): AbuseStoreFamilyCoverage[] {
+  const env: AbuseStoreCoverageEnv = { ...input };
+  for (const key of redactedKeys) {
+    const standIn = REDACTED_STAND_INS[key];
+    if (standIn) (env as Record<string, string>)[key] = standIn;
+  }
   const upstash = hasUpstashPair(env);
-  return ABUSE_GUARD_FAMILIES.map((family) => {
+  const redactedGuard = [
+    'ABUSE_GUARD_URL',
+    'ABUSE_GUARD_SECRET',
+    'ABUSE_GUARD_KEY_PEPPER',
+  ].some((key) => redactedKeys.has(key));
+  const redactedUpstash = [
+    'UPSTASH_REDIS_REST_URL',
+    'UPSTASH_REDIS_REST_TOKEN',
+  ].some((key) => redactedKeys.has(key));
+  return ABUSE_GUARD_FAMILIES.map((family) => coverFamily(family));
+
+  function coverFamily(family: AbuseGuardFamily): AbuseStoreFamilyCoverage {
     const selection = selectAbuseGuard(family, env);
     if (selection.kind === 'legacy') {
       return upstash
-        ? { family, store: 'upstash' as const }
+        ? {
+            family,
+            store: 'upstash' as const,
+            ...(redactedUpstash ? { presenceOnly: true } : {}),
+          }
         : {
             family,
             store: 'none' as const,
@@ -79,6 +118,10 @@ export function abuseStoreCoverage(
           };
       }
     }
-    return { family, store: 'durable-object' as const };
-  });
+    return {
+      family,
+      store: 'durable-object' as const,
+      ...(redactedGuard ? { presenceOnly: true } : {}),
+    };
+  }
 }
