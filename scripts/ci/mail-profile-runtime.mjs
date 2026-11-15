@@ -11,6 +11,7 @@ import os from 'node:os';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { readBrowserResultSummary } from './mail-profile-result-summary.mjs';
+import { assertProfilePrewarmedResult } from './mail-profile-prewarm.mjs';
 import {
   assertHostedOwner,
   profilePreflight,
@@ -65,10 +66,11 @@ export function assertBrowserResults(report) {
     [PROFILE_TITLE, TRANSPORT_TITLE].sort()
   );
   assert.equal(report.errors?.length ?? 0, 0);
-  for (const { test } of tests) {
+  for (const { title, test } of tests) {
     assert.equal(test.expectedStatus, 'passed');
     assert.equal(test.results.length, 1);
     assert.equal(test.results[0].status, 'passed');
+    if (title === PROFILE_TITLE) assertProfilePrewarmedResult(test.results[0]);
   }
 }
 
@@ -492,6 +494,7 @@ export async function main() {
           ...process.env,
           NODE_ENV: 'development',
           TUTURUUU_LETTIN_PROFILE_DIAGNOSTICS: '1',
+          TUTURUUU_LETTIN_PROFILE_PREWARM: '1',
           NODE_OPTIONS:
             '--max-old-space-size=4096 --experimental-require-module',
           NODE_EXTRA_CA_CERTS: tls.ca,
