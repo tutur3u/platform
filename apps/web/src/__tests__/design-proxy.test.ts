@@ -229,8 +229,11 @@ describe('web proxy api handling', () => {
     expect(authOptions?.isPublicPath?.('/design/components/button')).toBe(true);
     expect(authOptions?.isPublicPath?.('/en/design/setup')).toBe(true);
     expect(authOptions?.isPublicPath?.('/vi/design')).toBe(true);
-    expect(authOptions?.isPublicPath?.('/design-private')).toBe(false);
-    expect(authOptions?.isPublicPath?.('/en/design-private')).toBe(false);
+    // Segment-exact, not a prefix. A bare `/design-private` is now an unknown
+    // route shape (public for auth, renders 404; USER M-6), so prove the
+    // prefix with a known workspace-child shape instead.
+    expect(authOptions?.isPublicPath?.('/design-private/tasks')).toBe(false);
+    expect(authOptions?.isPublicPath?.('/en/design-private/tasks')).toBe(false);
     expect(authOptions?.publicPaths).not.toEqual(
       expect.arrayContaining(['/design', '/en/design', '/vi/design'])
     );

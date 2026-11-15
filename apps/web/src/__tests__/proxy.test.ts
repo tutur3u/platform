@@ -1350,6 +1350,36 @@ describe('web proxy api handling', () => {
     expect(authOptions?.isPublicPath?.('/auth/recovery-token')).toBe(false);
   });
 
+  it('lets signed-out visitors reach not-found for unknown route shapes only', async () => {
+    const { proxy } = await import('../proxy');
+    await proxy(new NextRequest('http://localhost/some-nonexistent-path-xyz'));
+
+    const authOptions = mocks.createCentralizedAuthProxy.mock.calls[0]?.[0] as
+      | {
+          isPublicPath?: (pathname: string) => boolean;
+        }
+      | undefined;
+
+    // Unknown shapes skip the login redirect; the [wsId] layout renders 404.
+    for (const pathname of [
+      '/some-nonexistent-path-xyz',
+      '/en/acme-handle',
+      '/vi/foo/bar',
+    ])
+      expect(authOptions?.isPublicPath?.(pathname), pathname).toBe(true);
+    // Known shapes keep the login redirect exactly as before.
+    for (const pathname of [
+      '/calendar',
+      '/onboarding',
+      '/personal',
+      '/internal/tasks',
+      '/3f9a1c2e-1b2c-4d5e-8f90-0123456789ab',
+      '/acme-handle/tasks',
+      '/en/acme-handle/settings/members',
+    ])
+      expect(authOptions?.isPublicPath?.(pathname), pathname).toBe(false);
+  });
+
   it('serves anonymous roadmap requests from the worker without login or cookies', async () => {
     vi.useRealTimers();
     const fetchMock = vi.fn(
@@ -1411,7 +1441,10 @@ describe('web proxy api handling', () => {
     expect(authOptions?.isPublicPath?.('/roadmap/assets/app.js')).toBe(true);
     expect(authOptions?.isPublicPath?.('/en/roadmap/assets/app.js')).toBe(true);
     expect(authOptions?.isPublicPath?.('/personal')).toBe(false);
-    expect(authOptions?.isPublicPath?.('/roadmap-private')).toBe(false);
+    // The roadmap matcher is exact, not a prefix. A bare `/roadmap-private` is
+    // now an unknown route shape (public for auth, renders 404; USER M-6), so
+    // prove the prefix with a known workspace-child shape instead.
+    expect(authOptions?.isPublicPath?.('/roadmap-private/tasks')).toBe(false);
     expect(authOptions?.publicPaths).not.toEqual(
       expect.arrayContaining(['/roadmap'])
     );

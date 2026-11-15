@@ -16,6 +16,7 @@ export interface StatusPageCopy {
   openApp: string;
   appHome: string;
   home: string;
+  signIn: string;
   search: string;
   help: string;
   nav: string;
@@ -46,6 +47,7 @@ export const STATUS_PAGE_COPY: Record<StatusPageLocale, StatusPageCopy> = {
     openApp: 'Open {app}',
     appHome: 'App home',
     home: 'Tuturuuu home',
+    signIn: 'Sign in',
     search: 'Search',
     help: 'Help',
     nav: 'Helpful links',
@@ -74,6 +76,7 @@ export const STATUS_PAGE_COPY: Record<StatusPageLocale, StatusPageCopy> = {
     openApp: 'Mở {app}',
     appHome: 'Trang ứng dụng',
     home: 'Trang chủ Tuturuuu',
+    signIn: 'Đăng nhập',
     search: 'Tìm kiếm',
     help: 'Trợ giúp',
     nav: 'Liên kết hữu ích',
