@@ -10,7 +10,7 @@ import { connection } from 'next/server';
 
 export const metadata: Metadata = {
   title: 'Get started with Tuturuuu',
-  description: 'Choose a role and goal pathway from your Tuturuuu home.',
+  description: 'Choose a role and goal pathway from Home.',
   robots: NO_INDEX_ROBOTS,
 };
 

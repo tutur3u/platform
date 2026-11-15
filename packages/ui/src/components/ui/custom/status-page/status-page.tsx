@@ -25,7 +25,7 @@ export interface StatusPageProps {
   helpHref?: string;
   /** Where Back goes without history; defaults to `appHref`, then home. */
   backHref?: string;
-  /** Tuturuuu home; defaults to https://tuturuuu.com. */
+  /** Home destination; defaults to https://tuturuuu.com. */
   homeHref?: string;
   /**
    * Sign-in link for a signed-out visitor on the not-found variant (a page
