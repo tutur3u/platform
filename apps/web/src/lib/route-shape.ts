@@ -39,6 +39,7 @@ export const KNOWN_ROOT_ROUTE_SEGMENTS: ReadonlySet<string> = new Set([
   'calendar',
   'careers',
   'changelog',
+  'cite',
   'community-guidelines',
   'contact',
   'contributors',

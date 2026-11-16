@@ -1,7 +1,7 @@
 vi.mock('server-only', () => ({}));
 
 import { NextRequest } from 'next/server';
-import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 const mocks = vi.hoisted(() => ({
   tier: vi.fn(),
@@ -310,9 +310,29 @@ describe('Calendar scheduling', () => {
   });
 });
 
+afterEach(() => {
+  vi.unstubAllEnvs();
+});
+
+// Paid external hosting is gated by an explicit flag since 5d93023e.
+it('keeps paid external hosting closed while the paid-tier flag is unset', async () => {
+  vi.stubEnv('MEET_PAID_TIER_HOSTING_ENABLED', '');
+  mocks.auth.mockResolvedValue(authenticatedContext('paid@example.test'));
+  mocks.identity.mockResolvedValue({
+    data: {
+      user: { email: 'paid@example.test', email_confirmed_at: '2026-01-01' },
+    },
+    error: null,
+  });
+  mocks.tier.mockResolvedValue('PLUS');
+  expect((await POST(request(), params)).status).toBe(403);
+  expect(mocks.insert).not.toHaveBeenCalled();
+});
+
 it.each(['PLUS', 'PRO', 'ENTERPRISE'])(
   'allows a verified external %s host using current identity',
   async (tier) => {
+    vi.stubEnv('MEET_PAID_TIER_HOSTING_ENABLED', 'true');
     mocks.auth.mockResolvedValue(authenticatedContext('stale@example.test'));
     mocks.identity.mockResolvedValue({
       data: {
@@ -331,6 +351,7 @@ it.each(['PLUS', 'PRO', 'ENTERPRISE'])(
   }
 );
 it('does not bypass workspace membership for paid hosts', async () => {
+  vi.stubEnv('MEET_PAID_TIER_HOSTING_ENABLED', 'true');
   mocks.auth.mockResolvedValue(authenticatedContext('paid@example.test'));
   mocks.identity.mockResolvedValue({
     data: {
@@ -345,6 +366,7 @@ it('does not bypass workspace membership for paid hosts', async () => {
 });
 
 it('fails closed with retryable status when paid entitlement is unavailable', async () => {
+  vi.stubEnv('MEET_PAID_TIER_HOSTING_ENABLED', 'true');
   mocks.auth.mockResolvedValue(authenticatedContext('paid@example.test'));
   mocks.identity.mockResolvedValue({
     data: {
