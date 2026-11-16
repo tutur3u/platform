@@ -47,13 +47,31 @@ function hslToHex(value: string) {
   return `#${channel(0)}${channel(8)}${channel(4)}`;
 }
 
+function luminance(hex: string) {
+  const [r, g, b] = [1, 3, 5].map((i) => {
+    const c = Number.parseInt(hex.slice(i, i + 2), 16) / 255;
+    return c <= 0.03928 ? c / 12.92 : ((c + 0.055) / 1.055) ** 2.4;
+  }) as [number, number, number];
+  return 0.2126 * r + 0.7152 * g + 0.0722 * b;
+}
+
+function contrast(a: string, b: string) {
+  const [hi, lo] = [luminance(a), luminance(b)].sort((x, y) => y - x) as [
+    number,
+    number,
+  ];
+  return (hi + 0.05) / (lo + 0.05);
+}
+
 // The classic table lets the mobile app and design canvas draw the default
 // (non-Sorbet) theme from the same role names Sorbet uses.
 describe('classic theme role table', () => {
-  it('names every Sorbet colour role in both modes', () => {
+  // Sorbet's destructive already reads as text; the classic one is a fill
+  // only, so classic adds a separate destructive-ink.
+  it('names every Sorbet colour role, plus destructive-ink, in both modes', () => {
     for (const mode of ['light', 'dark'] as const) {
-      expect(Object.keys(tokens.classic.color[mode])).toEqual(
-        Object.keys(tokens.color[mode])
+      expect(Object.keys(tokens.classic.color[mode]).sort()).toEqual(
+        [...Object.keys(tokens.color[mode]), 'destructive-ink'].sort()
       );
     }
   });
@@ -68,6 +86,18 @@ describe('classic theme role table', () => {
         expect(tokens.classic.color[mode][role], `${mode} ${role}`).toBe(
           hslToHex(variable(css, source))
         );
+      }
+    }
+  });
+
+  it('keeps classic destructive text at 4.5:1 on every ground', () => {
+    for (const mode of ['light', 'dark'] as const) {
+      const c = tokens.classic.color[mode];
+      for (const ground of ['background', 'surface', 'surface-sunken']) {
+        expect(
+          contrast(c['destructive-ink']!, c[ground]!),
+          `${mode} on ${ground}`
+        ).toBeGreaterThanOrEqual(4.5);
       }
     }
   });
