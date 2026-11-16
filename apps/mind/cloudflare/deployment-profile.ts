@@ -14,6 +14,7 @@ export function deploymentProfile(
   const name = value === 'production' ? PRODUCTION_WORKER : STAGING_WORKER;
   return {
     name,
+    basePath: value === 'production' ? '/mind' : '',
     vars: { TUTURUUU_NOINDEX: value === 'production' ? '0' : '1' },
     services: [
       // A Worker references itself: each profile binds its own Worker.

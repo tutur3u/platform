@@ -17,7 +17,7 @@ export const CENTRAL_PORT = process.env.CENTRAL_PORT || 7803;
 
 const DEFAULT_MIND_APP_URL =
   process.env.NODE_ENV === 'production'
-    ? 'https://mind.tuturuuu.com'
+    ? 'https://tuturuuu.com/mind'
     : getLocalInternalAppUrl('mind', `http://localhost:${PORT}`);
 
 const DEFAULT_WEB_APP_URL =
@@ -25,16 +25,30 @@ const DEFAULT_WEB_APP_URL =
     ? 'https://tuturuuu.com'
     : getLocalInternalAppUrl('platform', `http://localhost:${CENTRAL_PORT}`);
 
-export const MIND_APP_URL = resolveInternalAppUrl({
-  appName: 'mind',
-  candidates: [
-    process.env.MIND_APP_URL,
-    process.env.NEXT_PUBLIC_MIND_APP_URL,
-    process.env.NEXT_PUBLIC_APP_URL,
-    process.env.BASE_URL,
-  ],
-  fallback: DEFAULT_MIND_APP_URL,
-});
+const MIND_APP_URL_CANDIDATES = [
+  process.env.MIND_APP_URL,
+  process.env.NEXT_PUBLIC_MIND_APP_URL,
+  process.env.NEXT_PUBLIC_APP_URL,
+  process.env.BASE_URL,
+];
+const MIND_MOUNT_URL = 'https://tuturuuu.com/mind';
+
+export const MIND_APP_URL = MIND_APP_URL_CANDIDATES.some(
+  (candidate) => candidate?.trim().replace(/\/+$/u, '') === MIND_MOUNT_URL
+)
+  ? MIND_MOUNT_URL
+  : resolveInternalAppUrl({
+      appName: 'mind',
+      candidates: MIND_APP_URL_CANDIDATES.filter((candidate) => {
+        if (!candidate) return false;
+        try {
+          return new URL(candidate).hostname !== 'tuturuuu.com';
+        } catch {
+          return false;
+        }
+      }),
+      fallback: DEFAULT_MIND_APP_URL,
+    });
 
 export const BASE_URL = MIND_APP_URL;
 

@@ -1,0 +1,203 @@
+import { updateSession } from '@tuturuuu/supabase/next/proxy';
+import type { AppName } from '@tuturuuu/utils/internal-domains';
+import { discardAppCookiesForVerifiedProvider } from '@tuturuuu/utils/required-mfa-credentials';
+import { enforceRequiredMfaRequest } from '@tuturuuu/utils/required-mfa-runtime';
+import type { NextRequest } from 'next/server';
+import { NextResponse } from 'next/server';
+import { hasSupportedSupabaseAuthCookie } from '../app-session';
+import { authRedirect } from './central-login-url';
+import {
+  copySetCookieHeaders,
+  createNextResponseWithRequestHeaders,
+  getSetCookieHeaders,
+  propagateAuthCookies,
+} from './response-cookies';
+import type { AppSessionRefreshState } from './signed-refresh';
+import { createAppSessionClaimsFromSupabaseClaims } from './supabase-app-claims';
+import { hasVerifiedTotpFactor } from './verified-request-user';
+
+/**
+ * Opt-in `supabase-only` session mode for an app mounted on the apex
+ * (`https://tuturuuu.com/<app>`). It accepts only the shared provider session:
+ * app-session cookies and Authorization are discarded, the signed-refresh
+ * fallback is never used, and enrolled MFA users fail closed.
+ */
+export type MountedSharedSessionOptions = {
+  mode: 'supabase-only';
+  targetApp: AppName | string;
+  webAppUrl: string;
+};
+
+const NOT_FOUND_HEADERS = { 'Cache-Control': 'private, no-store' };
+const UNAVAILABLE = 'Shared session unavailable';
+
+function asRecord(value: unknown): Record<string, unknown> {
+  return value && typeof value === 'object' && !Array.isArray(value)
+    ? (value as Record<string, unknown>)
+    : {};
+}
+
+function trustedSharedMount(req: NextRequest, targetApp: AppName | string) {
+  return (
+    /^[a-z][a-z0-9-]*$/u.test(targetApp) &&
+    targetApp !== 'api' &&
+    req.nextUrl.origin === 'https://tuturuuu.com' &&
+    req.nextUrl.basePath === `/${targetApp}`
+  );
+}
+
+export async function resolveMountedSharedSession(
+  req: NextRequest,
+  options: { now: Date; targetApp: AppName | string }
+): Promise<AppSessionRefreshState> {
+  if (!trustedSharedMount(req, options.targetApp))
+    return { ok: false, error: UNAVAILABLE };
+  discardAppCookiesForVerifiedProvider(req);
+  req.headers.delete('authorization');
+  if (!hasSupportedSupabaseAuthCookie(req))
+    return { ok: false, error: UNAVAILABLE };
+
+  const { res, claims } = await updateSession(req);
+  const record = asRecord(claims);
+  if (
+    typeof record.sub !== 'string' ||
+    !record.sub ||
+    typeof record.exp !== 'number' ||
+    !Number.isFinite(record.exp) ||
+    record.exp <= Math.floor(options.now.getTime() / 1000) ||
+    (record.aal !== undefined && record.aal !== 'aal1' && record.aal !== 'aal2')
+  )
+    return { ok: false, error: UNAVAILABLE, response: res };
+
+  const assurance = await enforceRequiredMfaRequest(req);
+  if (assurance)
+    return {
+      ok: false,
+      error:
+        assurance.status === 503
+          ? 'Account assurance unavailable'
+          : 'MFA required',
+      response: res,
+    };
+  // Enrolled MFA users stay closed until the timestamp-aware verified-claims
+  // assurance contract is available to mounted browser sessions.
+  if (await hasVerifiedTotpFactor(req, record.sub))
+    return { ok: false, error: 'MFA required', response: res };
+
+  const appClaims = await createAppSessionClaimsFromSupabaseClaims(claims, {
+    now: options.now,
+    request: req,
+    targetApp: options.targetApp,
+  });
+  if (!appClaims) return { ok: false, error: 'MFA required', response: res };
+
+  const requestHeaders = new Headers(req.headers);
+  const response = createNextResponseWithRequestHeaders(requestHeaders);
+  copySetCookieHeaders(getSetCookieHeaders(res.headers), response);
+  return {
+    ok: true,
+    claims: appClaims,
+    refreshed: false,
+    requestHeaders,
+    response,
+  };
+}
+
+/** A same-origin destination inside the mount, or the mount root. */
+export function mountedVerifyDestination(req: NextRequest, basePath: string) {
+  const raw = req.nextUrl.searchParams.get('nextUrl');
+  if (!raw) return basePath;
+  if (
+    /[\\\u0000- ]/u.test(raw) ||
+    raw.startsWith('//') ||
+    (!raw.startsWith('/') && !raw.startsWith('https://'))
+  )
+    return basePath;
+  try {
+    const destination = new URL(raw, req.nextUrl.origin);
+    let pathname = destination.pathname;
+    for (let depth = 0; depth < 5; depth += 1) {
+      if (
+        destination.origin !== req.nextUrl.origin ||
+        destination.username ||
+        destination.password ||
+        (pathname !== basePath && !pathname.startsWith(`${basePath}/`)) ||
+        /[\\\u0000- ]/u.test(pathname)
+      )
+        return basePath;
+      const decoded = decodeURIComponent(pathname);
+      const normalized = new URL(decoded, req.nextUrl.origin);
+      if (normalized.origin !== req.nextUrl.origin) return basePath;
+      if (decoded === pathname) {
+        const targetPath = destination.pathname.replace(/\/+$/u, '');
+        if (
+          ['/login', '/verify-token', '/api/auth/callback'].some(
+            (path) => targetPath === `${basePath}${path}`
+          )
+        )
+          return basePath;
+        return `${targetPath}${destination.search}${destination.hash}`;
+      }
+      pathname = normalized.pathname;
+    }
+  } catch {
+    return basePath;
+  }
+  return basePath;
+}
+
+/**
+ * The mounted verify-token step: a valid shared session redirects into the
+ * mount; otherwise the central login returns here. `refresh` is the caller's
+ * logout-fenced session resolver. Redirects are 307 with `private, no-store`.
+ */
+export async function consumeMountedSharedSession(
+  req: NextRequest,
+  options: MountedSharedSessionOptions,
+  deps: {
+    refresh: (
+      req: NextRequest,
+      options: { sessionMode: 'supabase-only'; targetApp: AppName | string }
+    ) => Promise<AppSessionRefreshState>;
+  }
+) {
+  if (!trustedSharedMount(req, options.targetApp))
+    return new NextResponse('Not Found', {
+      status: 404,
+      headers: NOT_FOUND_HEADERS,
+    });
+  const basePath = req.nextUrl.basePath;
+  const session = await deps.refresh(req, {
+    sessionMode: options.mode,
+    targetApp: options.targetApp,
+  });
+  if (!session.ok) {
+    const login = new URL('/login', options.webAppUrl);
+    if (
+      login.origin !== 'https://tuturuuu.com' ||
+      login.username ||
+      login.password
+    )
+      return new NextResponse('Not Found', {
+        status: 404,
+        headers: NOT_FOUND_HEADERS,
+      });
+    const callback = new URL(`${basePath}/verify-token`, req.nextUrl.origin);
+    callback.searchParams.set(
+      'nextUrl',
+      mountedVerifyDestination(req, basePath)
+    );
+    login.searchParams.set('returnUrl', callback.toString());
+    if (session.error === 'MFA required')
+      login.searchParams.set('mfa', 'required');
+    const response = authRedirect(login);
+    if (session.response instanceof NextResponse)
+      propagateAuthCookies(session.response, response);
+    return response;
+  }
+  const response = authRedirect(
+    new URL(mountedVerifyDestination(req, basePath), req.nextUrl.origin)
+  );
+  propagateAuthCookies(session.response, response);
+  return response;
+}

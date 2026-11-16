@@ -10,9 +10,9 @@ import {
 
 export type MindAiCreditSource = 'personal' | 'workspace';
 
-const MODEL_STORAGE_KEY_PREFIX = 'mind-ai-model-';
-const THINKING_STORAGE_KEY_PREFIX = 'mind-ai-thinking-mode-';
-const CREDIT_SOURCE_STORAGE_KEY_PREFIX = 'mind-ai-credit-source-';
+const MODEL_STORAGE_KEY_PREFIX = 'mind:ai-model:';
+const THINKING_STORAGE_KEY_PREFIX = 'mind:ai-thinking-mode:';
+const CREDIT_SOURCE_STORAGE_KEY_PREFIX = 'mind:ai-credit-source:';
 
 function modelFromStorage(value: string | null): AIModelUI {
   if (!value) return INITIAL_MIND_AI_MODEL;

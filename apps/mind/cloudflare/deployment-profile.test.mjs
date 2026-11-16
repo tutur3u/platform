@@ -8,8 +8,10 @@ test('staging and production use isolated route-free Worker identities', () => {
   const staging = deploymentProfile('staging');
   const production = deploymentProfile('production');
   assert.equal(staging.name, 'tuturuuu-mind-vite-staging');
+  assert.equal(staging.basePath, '');
   assert.deepEqual(staging.vars, { TUTURUUU_NOINDEX: '1' });
   assert.equal(production.name, 'tuturuuu-mind');
+  assert.equal(production.basePath, '/mind');
   assert.deepEqual(production.vars, { TUTURUUU_NOINDEX: '0' });
   assert.throws(() => deploymentProfile('prod'), /Expected/);
 });

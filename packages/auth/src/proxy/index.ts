@@ -33,6 +33,11 @@ import {
 } from './canonical-origin';
 import { appSessionFailureResponse } from './mfa-failure';
 import {
+  consumeMountedSharedSession,
+  type MountedSharedSessionOptions,
+  resolveMountedSharedSession,
+} from './mounted-shared-session';
+import {
   appLogoutFenceResponse,
   hasAppLogoutFence,
   withAppLogoutFence,
@@ -46,6 +51,7 @@ import {
   copySetCookieHeaders,
   createNextResponseWithRequestHeaders,
   getSetCookieHeaders,
+  propagateAuthCookies,
 } from './response-cookies';
 import {
   type AppSessionRefreshState,
@@ -73,7 +79,10 @@ export {
   normalizeAuthRedirectPath,
   withRequestBasePath,
 } from './redirect-path';
-export { getRequestHeadersWithResponseCookies } from './response-cookies';
+export {
+  getRequestHeadersWithResponseCookies,
+  propagateAuthCookies,
+} from './response-cookies';
 
 function shouldPreserveCentralLoopbackCookies(
   req: NextRequest,
@@ -94,32 +103,12 @@ function shouldPreserveCentralLoopbackCookies(
   }
 }
 
-/**
- * Copies all cookies from one NextResponse onto another.
- * Use this to preserve auth cookies set by `updateSession` when the
- * final response is a fresh object (e.g. from locale middleware or a redirect).
- */
-export function propagateAuthCookies(
-  source: NextResponse,
-  target: NextResponse
-): void {
-  const setCookieHeaders = getSetCookieHeaders(source.headers);
-
-  if (setCookieHeaders.length > 0) {
-    copySetCookieHeaders(setCookieHeaders, target);
-    return;
-  }
-
-  for (const cookie of source.cookies.getAll()) {
-    target.cookies.set(cookie);
-  }
-}
-
 type ConsumeVerifyTokenRequestOptions = {
   fallbackPath?: string;
   locales?: readonly string[];
   verifyApiPath?: string;
   verifyPath?: string;
+  mountedSession?: MountedSharedSessionOptions;
 };
 
 function isTuturuuuLocalhost(hostname: string) {
@@ -213,6 +202,10 @@ export async function consumeVerifyTokenRequest(
     return null;
   }
 
+  if (options.mountedSession)
+    return consumeMountedSharedSession(req, options.mountedSession, {
+      refresh: refreshAppSessionForRequest,
+    });
   if (shouldUseClientVerifyTokenFlow(req)) {
     return null;
   }
@@ -324,12 +317,16 @@ async function resolveAppSessionForRequest(
     now?: Date;
     requireWebAppSession?: boolean;
     refreshPath?: string;
-    sessionMode?: 'app-session' | 'supabase-first';
+    sessionMode?: 'app-session' | 'supabase-first' | 'supabase-only';
     targetApp: AppName | string;
   }
 ): Promise<AppSessionRefreshState> {
   const now = options.now ?? new Date();
-
+  if (options.sessionMode === 'supabase-only')
+    return resolveMountedSharedSession(req, {
+      now,
+      targetApp: options.targetApp,
+    });
   if (
     options.sessionMode === 'supabase-first' &&
     hasSupportedSupabaseAuthCookie(req)

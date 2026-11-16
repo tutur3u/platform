@@ -1,7 +1,7 @@
 ---
 title: "Mind on Start + Void"
 description: "Cutover packet for the native Mind Worker: names, bindings, build, smoke checks and rollback."
-updatedAt: "2026-11-15"
+updatedAt: "2026-11-17"
 audience: developers
 ---
 
@@ -16,7 +16,8 @@ the route is flipped. `vercel-production-mind.yaml` still deploys the Next app.
 - Service bindings: `WORKER_SELF_REFERENCE` targets the profile's own Worker, so a staging artifact binds no production Mind Worker. `ABUSE_GUARD` targets `tuturuuu-abuse-guard` in both profiles because no staging guard Worker exists; the seal allows that one shared target in a staging artifact and rejects any other.
 - Publication: `mind` is a protected app in `productionPublicationPolicy` (`tuturuuu.ci.ts`) and `vercel-production-mind.yaml` runs the shared `production-policy` gate before its deploy job. No workflow publishes the Cloudflare Worker.
 - Entry: `apps/mind/cloudflare/worker.ts`; Wrangler config is emitted by `void` into `dist`.
-- Host: `mind.tuturuuu.com`. Root-only: `mountHosts` is empty and `unknownHost` is `reject`, so `tuturuuu.com/mind` and any other host answer 404 before app code runs.
+- Host: `mind.tuturuuu.com` for the staging profile. Root-only: `mountHosts` is empty and `unknownHost` is `reject`, so `tuturuuu.com/mind` and any other host answer 404 before app code runs.
+- Mount: the production profile is built for `https://tuturuuu.com/mind` (`basePath` `/mind`, `mountHosts` `tuturuuu.com`; the profile is a build-time literal, not a runtime variable). Mounted browser requests use the strict `supabase-only` session mode from `@tuturuuu/auth/proxy`: only the shared Supabase session on the exact apex origin and base is accepted, app-session cookies, Authorization and the signed-refresh fallback are ignored, and users with an enrolled TOTP factor fail closed. A cookie-less coordination bearer keeps its existing endpoint verification; a browser app-session token sent as a bearer is refused. The start-bridge handler keeps refusing mounted session minting and strips mounted session writes, so Web stays the only writer of `sb-*` cookies. Locale uses a `mind_locale` cookie at `Path=/mind`. Serving the mount needs the gateway's `MOUNT_MIND` binding with `/mind,/mind/*` in `GATEWAY_MOUNTED_PATHS` ([gateway mounts](/build/devops/gateway-worker)); both stay unset until the cutover is approved.
 - Binding: `ASSETS` (static output, `run_worker_first`).
 - Variables (names): `TUTURUUU_NOINDEX`, optional `INTERNAL_WEB_API_ORIGIN` (default `https://tuturuuu.com`).
 - Secrets (names, set in the Worker, never in the repo): `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY`, `SUPABASE_SECRET_KEY`, and `TUTURUUU_APP_COORDINATION_SECRET`. Configure service binding `ABUSE_GUARD` to `tuturuuu-abuse-guard`, secret `ABUSE_GUARD_KEY_PEPPER`, and text variable `ABUSE_GUARD_FAMILIES=proxy`; `ABUSE_GUARD_TIMEOUT_MS` is optional. Upstash is not required. The abuse guard is optional, as on Vercel: with none of `ABUSE_GUARD_KEY_PEPPER`, `ABUSE_GUARD_FAMILIES`, `ABUSE_GUARD_BACKEND` and the Upstash names set, the Worker skips the guard and logs the names once per isolate. Setting any of them requires a complete configuration, and the Worker refuses to serve otherwise. Compare the remaining Worker secrets with the Vercel project environment list before the flip.
@@ -48,7 +49,7 @@ refresh, so deployment verification gets `200` instead of `401`.
 curl -sI https://mind.tuturuuu.com/api/build-info   # 200, JSON, no-store
 curl -sI https://mind.tuturuuu.com/                 # 307 to /login for a signed-out client
 curl -sI https://mind.tuturuuu.com/login            # renders, no 5xx
-curl -sI https://tuturuuu.com/mind        # 404 (root-only app)
+curl -sI https://tuturuuu.com/mind        # 404 until the gateway mount is activated
 ```
 
 Every page redirects signed-out users to login, so a signed-in check needs a test

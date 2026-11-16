@@ -11,6 +11,7 @@ import {
   useRouter as useRawRouter,
 } from '../next/navigation';
 import { createLocalizedPaths, type Href } from './localized-path';
+import { localeCookieAssignment } from './locale-cookie';
 import type { BridgeRouting } from './routing';
 
 /**
@@ -36,8 +37,14 @@ export function createNavigation<const Locales extends readonly string[]>(
 
   function rememberLocale(locale: string | undefined, current: string) {
     if (mode !== 'never' || !locale || locale === current) return;
-    if (typeof document !== 'undefined')
-      document.cookie = localeCookieString(locale, runtimeAppBase());
+    if (typeof document === 'undefined') return;
+    // An app-configured locale cookie (Mind) owns its own name and scope;
+    // otherwise NEXT_LOCALE follows the runtime mount base.
+    const cookie =
+      routing.localeCookie === undefined
+        ? localeCookieString(locale, runtimeAppBase())
+        : localeCookieAssignment(routing.localeCookie, locale);
+    if (cookie !== null) document.cookie = cookie;
   }
 
   const LocalizedLink = forwardRef<

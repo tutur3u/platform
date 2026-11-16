@@ -3,7 +3,7 @@ import {
   withCanonicalLocaleCookie,
 } from '@tuturuuu/auth/locale-cookie';
 import {
-  clearSupabaseAuthCookies,
+  clearSupabaseAuthCookies as clearRootSupabaseAuthCookies,
   hasSupportedSupabaseAuthCookie,
   hasWebAppSessionTokenFromRequest,
 } from '@tuturuuu/auth/app-session';
@@ -21,8 +21,47 @@ import createIntlMiddleware from 'next-intl/middleware';
 import { BASE_URL, LOCALE_COOKIE_NAME, WEB_APP_URL } from './constants/common';
 import { type Locale, routing, supportedLocales } from './i18n/routing';
 import { createMindPublicUrl } from './lib/mind-public-url';
+import {
+  isExplicitBearerRequest,
+  rejectsLegacyMountedBearer,
+} from './runtime/mounted-bearer';
 
 const intlMiddleware = createIntlMiddleware(routing);
+const MOUNTED_LOCALE_COOKIE_NAME = 'mind_locale';
+const mountedIntlMiddleware = createIntlMiddleware({
+  ...routing,
+  localeCookie: {
+    name: MOUNTED_LOCALE_COOKIE_NAME,
+    path: '/mind',
+    secure: true,
+    sameSite: 'lax',
+  },
+});
+
+function isMounted(request: NextRequest) {
+  return request.nextUrl.basePath === '/mind';
+}
+
+function browserSessionMode(request: NextRequest) {
+  return isMounted(request) && !isExplicitBearerRequest(request)
+    ? 'supabase-only'
+    : 'supabase-first';
+}
+
+function clearSupabaseAuthCookies(
+  request: NextRequest,
+  response: NextResponse
+) {
+  return isMounted(request)
+    ? response
+    : clearRootSupabaseAuthCookies(request, response);
+}
+
+function localeResponse(request: NextRequest) {
+  return isMounted(request)
+    ? mountedIntlMiddleware(request)
+    : intlMiddleware(request);
+}
 const LOCAL_AUTH_API_PATHS = new Set([
   '/api/auth/logout',
   '/api/auth/refresh-app-session',
@@ -43,6 +82,15 @@ function setLocaleCookie(
   request: NextRequest,
   locale: string
 ) {
+  if (isMounted(request)) {
+    response.cookies.set(MOUNTED_LOCALE_COOKIE_NAME, locale, {
+      maxAge: LOCALE_COOKIE_OPTIONS.maxAge,
+      path: '/mind',
+      sameSite: 'lax',
+      secure: true,
+    });
+    return;
+  }
   response.cookies.set(
     LOCALE_COOKIE_NAME,
     locale,
@@ -91,6 +139,19 @@ function getCanonicalLocaleRedirect(request: NextRequest) {
 }
 
 async function handleProxy(request: NextRequest): Promise<NextResponse> {
+  if (isMounted(request)) {
+    if (rejectsLegacyMountedBearer(request)) {
+      return NextResponse.json(
+        { error: 'Unauthorized' },
+        { status: 401, headers: { 'Cache-Control': 'private, no-store' } }
+      );
+    }
+    request.headers.delete('x-next-intl-locale');
+    const locale = request.cookies.get(MOUNTED_LOCALE_COOKIE_NAME)?.value;
+    if (locale && supportedLocales.some((supported) => supported === locale)) {
+      request.headers.set('x-next-intl-locale', locale);
+    }
+  }
   if (request.nextUrl.pathname.startsWith('/api')) {
     const isLocalAuthApi = LOCAL_AUTH_API_PATHS.has(request.nextUrl.pathname);
     const isBuildInfoRead =
@@ -103,10 +164,12 @@ async function handleProxy(request: NextRequest): Promise<NextResponse> {
       request.headers.delete('authorization');
     }
     const appSessionRefresh =
-      isLocalAuthApi || isBuildInfoRead
+      isLocalAuthApi ||
+      isBuildInfoRead ||
+      (isMounted(request) && isExplicitBearerRequest(request))
         ? null
         : await refreshAppSessionForRequest(request, {
-            sessionMode: 'supabase-first',
+            sessionMode: browserSessionMode(request),
             targetApp: 'mind',
           });
 
@@ -141,6 +204,15 @@ async function handleProxy(request: NextRequest): Promise<NextResponse> {
 
   const verifyTokenResponse = await consumeVerifyTokenRequest(request, {
     locales: supportedLocales,
+    ...(isMounted(request)
+      ? {
+          mountedSession: {
+            mode: 'supabase-only',
+            targetApp: 'mind',
+            webAppUrl: WEB_APP_URL,
+          },
+        }
+      : {}),
   });
   if (verifyTokenResponse) {
     return verifyTokenResponse;
@@ -151,10 +223,28 @@ async function handleProxy(request: NextRequest): Promise<NextResponse> {
     unlocalizedPath.startsWith('/login') ||
     unlocalizedPath.startsWith('/verify-token');
 
+  if (isMounted(request) && isPublicPath) {
+    const session = await refreshAppSessionForRequest(request, {
+      sessionMode: 'supabase-only',
+      targetApp: 'mind',
+    });
+    if (!session.ok && session.error !== 'Shared session unavailable') {
+      return appSessionFailureResponse(
+        request,
+        session.error,
+        session.response
+      );
+    }
+    const response = localeResponse(request);
+    if (session.response instanceof NextResponse)
+      propagateAuthCookies(session.response, response);
+    return response;
+  }
+
   if (!isPublicPath) {
     const appSessionRefresh = await refreshAppSessionForRequest(request, {
       requireWebAppSession: true,
-      sessionMode: 'supabase-first',
+      sessionMode: isMounted(request) ? 'supabase-only' : 'supabase-first',
       targetApp: 'mind',
     });
     if (
@@ -190,16 +280,17 @@ async function handleProxy(request: NextRequest): Promise<NextResponse> {
       return clearSupabaseAuthCookies(request, NextResponse.redirect(url));
     }
 
-    const response = intlMiddleware(request);
+    const response = localeResponse(request);
     if (appSessionRefresh.ok) {
       propagateAuthCookies(appSessionRefresh.response, response);
     }
     return clearSupabaseAuthCookies(request, response);
   }
 
-  return clearSupabaseAuthCookies(request, intlMiddleware(request));
+  return clearSupabaseAuthCookies(request, localeResponse(request));
 }
 
+// Only NEXT_LOCALE is rescoped; the mount writes mind_locale at /mind instead.
 export const proxy = withCanonicalLocaleCookie(
   handleProxy,
   LOCALE_COOKIE_ORIGINS

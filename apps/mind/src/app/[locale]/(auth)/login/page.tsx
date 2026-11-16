@@ -7,10 +7,31 @@ import { getSatelliteAppSession } from '@tuturuuu/satellite/auth';
 import { headers } from 'next/headers';
 import { redirect } from 'next/navigation';
 import { BASE_URL, WEB_APP_URL } from '@/constants/common';
+import { createMindPublicUrl } from '@/lib/mind-public-url';
 
 function normalizeNextPath(value: string | string[] | undefined) {
-  const rawValue = Array.isArray(value) ? value[0] : value;
-  return normalizeAuthRedirectPath(rawValue, BASE_URL, '/');
+  let candidate = Array.isArray(value) ? value[0] : value;
+  const base = new URL(BASE_URL);
+  const basePath = base.pathname.replace(/\/+$/u, '');
+  for (let depth = 0; depth < 5; depth += 1) {
+    const normalized = normalizeAuthRedirectPath(candidate, base.origin, '/');
+    const url = new URL(normalized, base.origin);
+    const appPath =
+      basePath && url.pathname.startsWith(`${basePath}/`)
+        ? url.pathname.slice(basePath.length)
+        : url.pathname;
+    if (['/login', '/verify-token', '/api/auth/callback'].includes(appPath)) {
+      candidate =
+        url.searchParams.get('nextUrl') ??
+        url.searchParams.get('next') ??
+        url.searchParams.get('returnUrl') ??
+        undefined;
+      continue;
+    }
+    const target = createMindPublicUrl(normalized);
+    return `${target.pathname}${target.search}`;
+  }
+  return createMindPublicUrl('/').pathname;
 }
 
 export default async function LoginPage({
@@ -38,7 +59,7 @@ export default async function LoginPage({
     redirect(nextPath);
   }
 
-  const returnUrl = new URL('/verify-token', BASE_URL);
+  const returnUrl = createMindPublicUrl('/verify-token');
   returnUrl.searchParams.set('nextUrl', nextPath);
 
   const loginUrl = new URL('/login', WEB_APP_URL);

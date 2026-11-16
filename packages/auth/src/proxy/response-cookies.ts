@@ -132,3 +132,24 @@ export function createNextResponseWithRequestHeaders(headers?: Headers) {
       })
     : NextResponse.next();
 }
+
+/**
+ * Copies all cookies from one NextResponse onto another.
+ * Use this to preserve auth cookies set by `updateSession` when the
+ * final response is a fresh object (e.g. from locale middleware or a redirect).
+ */
+export function propagateAuthCookies(
+  source: NextResponse,
+  target: NextResponse
+): void {
+  const setCookieHeaders = getSetCookieHeaders(source.headers);
+
+  if (setCookieHeaders.length > 0) {
+    copySetCookieHeaders(setCookieHeaders, target);
+    return;
+  }
+
+  for (const cookie of source.cookies.getAll()) {
+    target.cookies.set(cookie);
+  }
+}

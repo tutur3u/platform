@@ -1,7 +1,11 @@
+import { isAppMounted } from '@tuturuuu/utils/app-mounts';
 import { resolveInternalAppUrl } from '@tuturuuu/utils/app-url';
 import { getLocalInternalAppUrl } from '@tuturuuu/utils/internal-domains';
 
 export function getMindAppOrigin() {
+  // Links move to the apex mount only once `mind` is an active app mount.
+  if (process.env.NODE_ENV === 'production' && isAppMounted('mind'))
+    return 'https://tuturuuu.com/mind';
   return resolveInternalAppUrl({
     appName: 'mind',
     candidates: [

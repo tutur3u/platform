@@ -1,4 +1,5 @@
 import tailwindcss from '@tailwindcss/vite';
+import { fileURLToPath } from 'node:url';
 import { tanstackStart } from '@tanstack/react-start/plugin/vite';
 import { startBridgePreset } from '@tuturuuu/start-bridge/vite';
 import {
@@ -9,10 +10,13 @@ import react from '@vitejs/plugin-react';
 import rsc from '@vitejs/plugin-rsc';
 import { defineConfig } from 'vite-plus';
 import { voidPlugin } from 'void';
+import { deploymentProfile } from './cloudflare/deployment-profile';
 
+const profile = process.env.VITE_MIND_NATIVE_PROFILE ?? 'staging';
 const bridge = startBridgePreset({
   appRoot: import.meta.url,
   app: 'mind',
+  basePath: deploymentProfile(profile).basePath,
   rsc: true,
   serverOnlySpecifiers: [
     '@tuturuuu/satellite/auth',
@@ -23,9 +27,11 @@ const bridge = startBridgePreset({
 
 export default defineConfig(({ command }) => ({
   base: bridge.base,
+  experimental: bridge.experimental,
   define: {
     ...bridge.define,
     'process.env.NODE_ENV': JSON.stringify('production'),
+    'process.env.VITE_MIND_NATIVE_PROFILE': JSON.stringify(profile),
   },
   plugins: [
     startBridgeRscPlugin({
@@ -52,5 +58,15 @@ export default defineConfig(({ command }) => ({
   environments: {
     client: { define: bridge.clientDefine(command) },
   },
-  resolve: { alias: bridge.alias },
+  resolve: {
+    alias: [
+      {
+        find: /^@tuturuuu\/start-bridge\/function-proxy$/u,
+        replacement: fileURLToPath(
+          new URL('./src/runtime/function-proxy.ts', import.meta.url)
+        ),
+      },
+      ...bridge.alias,
+    ],
+  },
 }));
