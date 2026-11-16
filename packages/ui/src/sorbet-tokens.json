@@ -64,6 +64,71 @@
       "hover": "rgba(246,239,244,0.05)"
     }
   },
+  "classic": {
+    "sources": {
+      "ground": "root-background",
+      "background": "background",
+      "surface": "card",
+      "surface-sunken": "muted",
+      "accent": "accent",
+      "border": "border",
+      "border-strong": "input",
+      "foreground": "foreground",
+      "muted-foreground": "muted-foreground",
+      "primary": "primary",
+      "primary-foreground": "primary-foreground",
+      "destructive": "destructive",
+      "destructive-foreground": "destructive-foreground",
+      "ring": "ring",
+      "hover": "accent"
+    },
+    "color": {
+      "light": {
+        "ground": "#fdf9f7",
+        "background": "#ffffff",
+        "surface": "#fdf9f7",
+        "surface-sunken": "#f5f5f5",
+        "accent": "#f5f5f5",
+        "border": "#e5e5e5",
+        "border-strong": "#e5e5e5",
+        "foreground": "#0a0a0a",
+        "muted-foreground": "#666666",
+        "primary": "#171717",
+        "primary-foreground": "#fafafa",
+        "destructive": "#ef4444",
+        "destructive-foreground": "#fafafa",
+        "ring": "#0a0a0a",
+        "scrim": "rgba(0,0,0,0.5)",
+        "hover": "#f5f5f5"
+      },
+      "dark": {
+        "ground": "#1b1818",
+        "background": "#0a0a0a",
+        "surface": "#0a0a0a",
+        "surface-sunken": "#262626",
+        "accent": "#262626",
+        "border": "#262626",
+        "border-strong": "#262626",
+        "foreground": "#fafafa",
+        "muted-foreground": "#a3a3a3",
+        "primary": "#fafafa",
+        "primary-foreground": "#171717",
+        "destructive": "#7f1d1d",
+        "destructive-foreground": "#fafafa",
+        "ring": "#d4d4d4",
+        "scrim": "rgba(0,0,0,0.5)",
+        "hover": "#262626"
+      }
+    },
+    "radius": {
+      "sm": 4,
+      "md": 6,
+      "lg": 8,
+      "control": 6,
+      "sheet": 8,
+      "popover": 6
+    }
+  },
   "hues": {
     "blue": {
       "light": {
@@ -426,7 +491,7 @@
     "dockFadeHeight": 12,
     "dockBlur": 0
   },
-  "revision": 1,
+  "revision": 2,
   "roles": {
     "eventFill": "calm",
     "tagFill": "fill",

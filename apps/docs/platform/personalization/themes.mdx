@@ -131,6 +131,10 @@ scale for rows, cards, panels, controls, sheets and popovers; tablets use a
 colours. `packages/ui/src/sorbet-tokens.test.ts` pins `sorbet.css` to the
 contract and the palettes to `sorbet-presets.css`, keeps the setting allowlists
 and popover corners equal to the runtime, and checks text and focus contrast.
+The `classic` table gives the same colour roles and radius scale for the
+default theme, read from `globals.css`, so the mobile app and the design canvas
+draw both themes from one set of names; `sorbet-classic-tokens.test.ts` keeps it
+equal to `globals.css` and the dialog scrim.
 
 `sorbet-surfaces.css` styles the shared shells (the settings dialog's
 navigation, sections, rows and tabs) and `sorbet-components.css` the shared
