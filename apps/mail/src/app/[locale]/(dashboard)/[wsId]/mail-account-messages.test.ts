@@ -21,10 +21,7 @@ const ACCOUNT_KEYS = [
 
 describe('Mail account picker and settings messages', () => {
   it('ships every key in English and Vietnamese', () => {
-    for (const bundle of [en.mail, viMessages.mail] as Record<
-      string,
-      string
-    >[]) {
+    for (const bundle of [en.mail, viMessages.mail]) {
       for (const key of ACCOUNT_KEYS) {
         expect(bundle[key], key).toEqual(expect.any(String));
         expect(bundle[key]?.length, key).toBeGreaterThan(0);
@@ -33,12 +30,9 @@ describe('Mail account picker and settings messages', () => {
   });
 
   it('drops the source radio copy that the picker replaces', () => {
-    for (const bundle of [en.mail, viMessages.mail] as Record<
-      string,
-      string
-    >[]) {
-      expect(bundle.source).toBeUndefined();
-      expect(bundle.source_description).toBeUndefined();
+    for (const bundle of [en.mail, viMessages.mail]) {
+      expect(bundle).not.toHaveProperty('source');
+      expect(bundle).not.toHaveProperty('source_description');
     }
   });
 });

@@ -16,6 +16,12 @@ import messages from '../../../../../messages/en.json';
 import { MailAppClient } from './mail-client';
 import { getMailThreadsQueryKey } from './mail-thread-query';
 
+type MailTextKey = {
+  [
+    Key in keyof typeof messages.mail
+  ]: (typeof messages.mail)[Key] extends string ? Key : never;
+}[keyof typeof messages.mail];
+
 const api = vi.hoisted(() => ({
   list: vi.fn(),
   update: vi.fn(),
@@ -49,12 +55,11 @@ vi.mock('next/navigation', () => ({
 }));
 vi.mock('next-intl', () => ({
   useLocale: () => 'en',
-  useTranslations:
-    () => (key: keyof typeof messages.mail, values?: Record<string, string>) =>
-      Object.entries(values ?? {}).reduce(
-        (text, [name, value]) => text.replace(`{${name}}`, value),
-        messages.mail[key] ?? key
-      ),
+  useTranslations: () => (key: MailTextKey, values?: Record<string, string>) =>
+    Object.entries(values ?? {}).reduce(
+      (text, [name, value]) => text.replace(`{${name}}`, value),
+      messages.mail[key] ?? key
+    ),
 }));
 vi.mock('@tuturuuu/ui/sonner', () => ({
   toast: { error: vi.fn(), success: vi.fn() },

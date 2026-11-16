@@ -12,6 +12,12 @@ import { afterEach, expect, it, vi } from 'vitest';
 import messages from '../../../../../messages/en.json';
 import { MailInvitationCard } from './mail-invitation-card';
 
+type MailTextKey = {
+  [
+    Key in keyof typeof messages.mail
+  ]: (typeof messages.mail)[Key] extends string ? Key : never;
+}[keyof typeof messages.mail];
+
 const api = vi.hoisted(() => ({ get: vi.fn(), respond: vi.fn() }));
 vi.mock('@tuturuuu/internal-api', () => ({
   getMailCalendarLink: vi.fn(async () => ({ target: null, association: null })),
@@ -19,12 +25,11 @@ vi.mock('@tuturuuu/internal-api', () => ({
   respondToMailInvitation: api.respond,
 }));
 vi.mock('next-intl', () => ({
-  useTranslations:
-    () => (key: keyof typeof messages.mail, values?: Record<string, string>) =>
-      Object.entries(values ?? {}).reduce(
-        (text, [name, value]) => text.replace(`{${name}}`, value),
-        messages.mail[key]
-      ),
+  useTranslations: () => (key: MailTextKey, values?: Record<string, string>) =>
+    Object.entries(values ?? {}).reduce(
+      (text, [name, value]) => text.replace(`{${name}}`, value),
+      messages.mail[key]
+    ),
 }));
 afterEach(() => {
   cleanup();
