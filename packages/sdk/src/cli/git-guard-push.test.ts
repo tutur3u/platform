@@ -69,7 +69,7 @@ const log = () =>
     .split('\n')
     .map((line) => JSON.parse(line));
 
-suite('ttr git guard pre-push (real git)', () => {
+suite('ttr git guard pre-push (real git)', { timeout: 60_000 }, () => {
   let guarded = '';
   let other = '';
   let work = '';

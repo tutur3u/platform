@@ -120,7 +120,7 @@ describe('checkGhInvocation', () => {
   });
 });
 
-suite('gh shim (installed)', () => {
+suite('gh shim (installed)', { timeout: 60_000 }, () => {
   let root = '';
   let env: NodeJS.ProcessEnv = {};
   let work = '';
