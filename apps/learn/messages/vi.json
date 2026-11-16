@@ -844,6 +844,14 @@
     "title": "Điểm",
     "untitled": "Điểm"
   },
+  "mobile_dock": {
+    "apps": "Ứng dụng",
+    "back": "Quay lại",
+    "calendar": "Lịch",
+    "home": "Trang chủ",
+    "navigation": "Điều hướng chính",
+    "tasks": "Công việc"
+  },
   "navigation": {
     "aiChat": "AI Chat",
     "assignments": "Bài tập",

@@ -3133,6 +3133,14 @@
     "your_name": "Your name",
     "your_name_desc": "This is how others will see you in this plan."
   },
+  "mobile_dock": {
+    "apps": "Apps",
+    "back": "Back",
+    "calendar": "Calendar",
+    "home": "Home",
+    "navigation": "Main navigation",
+    "tasks": "Tasks"
+  },
   "money-lover-import": {
     "amount": "Amount",
     "batch_info": "Data will be imported in {batches} batches of {size} transactions each for optimal performance",

@@ -11351,6 +11351,14 @@
       "unavailable": "Trò chuyện bằng giọng nói không khả dụng"
     }
   },
+  "mobile_dock": {
+    "apps": "Ứng dụng",
+    "back": "Quay lại",
+    "calendar": "Lịch",
+    "home": "Trang chủ",
+    "navigation": "Điều hướng chính",
+    "tasks": "Công việc"
+  },
   "mobile-deployment-settings": {
     "activate": "Kích hoạt bản nháp",
     "activated": "Đã kích hoạt bản nháp triển khai di động.",

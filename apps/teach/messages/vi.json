@@ -504,6 +504,14 @@
     "title": "Trợ lý học tập",
     "writing": "Viết và trích dẫn"
   },
+  "mobile_dock": {
+    "apps": "Ứng dụng",
+    "back": "Quay lại",
+    "calendar": "Lịch",
+    "home": "Trang chủ",
+    "navigation": "Điều hướng chính",
+    "tasks": "Công việc"
+  },
   "notifications": {
     "accept": "Chấp nhận",
     "archive": "Lưu trữ",

@@ -399,6 +399,14 @@
     "description": "Trình biên tập nghiên cứu dựa trên voxel cho thí nghiệm hành vi agent trong môi trường mô phỏng.",
     "title": "Hive"
   },
+  "mobile_dock": {
+    "apps": "Ứng dụng",
+    "back": "Quay lại",
+    "calendar": "Lịch",
+    "home": "Trang chủ",
+    "navigation": "Điều hướng chính",
+    "tasks": "Công việc"
+  },
   "onboarding_guide": {
     "close": "Đóng hướng dẫn",
     "confirmation_note": "Gửi, xuất bản, thay đổi nhà cung cấp, thanh toán và thao tác AI có phí luôn yêu cầu xác nhận rõ ràng.",

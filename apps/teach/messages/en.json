@@ -504,6 +504,14 @@
     "title": "Learning assistant",
     "writing": "Writing & citations"
   },
+  "mobile_dock": {
+    "apps": "Apps",
+    "back": "Back",
+    "calendar": "Calendar",
+    "home": "Home",
+    "navigation": "Main navigation",
+    "tasks": "Tasks"
+  },
   "notifications": {
     "accept": "Accept",
     "archive": "Archive",

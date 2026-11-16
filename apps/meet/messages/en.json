@@ -4916,6 +4916,14 @@
     "your_name": "Your name",
     "your_name_desc": "This is how others will see you in this plan."
   },
+  "mobile_dock": {
+    "apps": "Apps",
+    "back": "Back",
+    "calendar": "Calendar",
+    "home": "Home",
+    "navigation": "Main navigation",
+    "tasks": "Tasks"
+  },
   "money-lover-import": {
     "amount": "Amount",
     "batch_progress": "Batch {batch} of {totalBatches} • {current} / {total} imported",

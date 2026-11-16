@@ -685,6 +685,14 @@
     "write_message": "Write your message…",
     "write_with_ai": "Write with AI"
   },
+  "mobile_dock": {
+    "apps": "Apps",
+    "back": "Back",
+    "calendar": "Calendar",
+    "home": "Home",
+    "navigation": "Main navigation",
+    "tasks": "Tasks"
+  },
   "nav-upgrade-dialog": {
     "contact_support": "If you require immediate access to this feature, please contact our support team.",
     "description": "The {feature} feature requires a {tier} plan or higher.",

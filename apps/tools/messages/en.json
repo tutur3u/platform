@@ -356,6 +356,14 @@
     "weekly": "Weekly",
     "yearly": "Yearly"
   },
+  "mobile_dock": {
+    "apps": "Apps",
+    "back": "Back",
+    "calendar": "Calendar",
+    "home": "Home",
+    "navigation": "Main navigation",
+    "tasks": "Tasks"
+  },
   "onboarding_guide": {
     "close": "Close guide",
     "confirmation_note": "Sending, publishing, provider changes, billing, and paid AI actions always require an explicit confirmation.",

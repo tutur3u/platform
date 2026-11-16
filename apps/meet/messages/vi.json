@@ -4916,6 +4916,14 @@
     "your_name": "Tên của bạn",
     "your_name_desc": "Đây là tên mà mọi người sẽ thấy trong kế hoạch này."
   },
+  "mobile_dock": {
+    "apps": "Ứng dụng",
+    "back": "Quay lại",
+    "calendar": "Lịch",
+    "home": "Trang chủ",
+    "navigation": "Điều hướng chính",
+    "tasks": "Công việc"
+  },
   "money-lover-import": {
     "amount": "Số tiền",
     "batch_progress": "Lô {batch} / {totalBatches} • Đã nhập {current} / {total}",

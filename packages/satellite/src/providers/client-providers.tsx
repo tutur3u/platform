@@ -9,6 +9,7 @@ import type { LaunchableAppSlug } from '@tuturuuu/utils/launchable-apps';
 import { type ReactNode, Suspense, useState } from 'react';
 import { AppSwitchTracker } from '../components/app-switch-tracker';
 import { GlobalCommandLauncher } from '../components/command-launcher';
+import { SatelliteMobileDock } from '../components/satellite-mobile-dock';
 import { createSatelliteQueryClient } from './query-client';
 
 export function ClientProviders({
@@ -36,6 +37,7 @@ export function ClientProviders({
           </Suspense>
         )}
         {currentApp && <AppSwitchTracker currentApp={currentApp} />}
+        {currentApp && <SatelliteMobileDock currentApp={currentApp} />}
       </TooltipProvider>
     </>
   );

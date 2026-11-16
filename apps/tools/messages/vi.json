@@ -356,6 +356,14 @@
     "weekly": "Hàng tuần",
     "yearly": "Hàng năm"
   },
+  "mobile_dock": {
+    "apps": "Ứng dụng",
+    "back": "Quay lại",
+    "calendar": "Lịch",
+    "home": "Trang chủ",
+    "navigation": "Điều hướng chính",
+    "tasks": "Công việc"
+  },
   "onboarding_guide": {
     "close": "Đóng hướng dẫn",
     "confirmation_note": "Gửi, xuất bản, thay đổi nhà cung cấp, thanh toán và thao tác AI có phí luôn yêu cầu xác nhận rõ ràng.",

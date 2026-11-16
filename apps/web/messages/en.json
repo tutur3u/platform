@@ -11351,6 +11351,14 @@
       "unavailable": "Voice chat unavailable"
     }
   },
+  "mobile_dock": {
+    "apps": "Apps",
+    "back": "Back",
+    "calendar": "Calendar",
+    "home": "Home",
+    "navigation": "Main navigation",
+    "tasks": "Tasks"
+  },
   "mobile-deployment-settings": {
     "activate": "Activate draft",
     "activated": "Mobile deployment draft activated.",

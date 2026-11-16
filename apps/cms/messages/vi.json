@@ -8826,6 +8826,14 @@
       "unavailable": "Trò chuyện bằng giọng nói không khả dụng"
     }
   },
+  "mobile_dock": {
+    "apps": "Ứng dụng",
+    "back": "Quay lại",
+    "calendar": "Lịch",
+    "home": "Trang chủ",
+    "navigation": "Điều hướng chính",
+    "tasks": "Công việc"
+  },
   "mobile-version-settings": {
     "android": {
       "description": "Cấu hình ngưỡng cập nhật mềm và cứng cho ứng dụng Android.",

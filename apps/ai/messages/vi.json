@@ -1459,6 +1459,14 @@
     "yellow": "Vàng",
     "yesterday": "Hôm qua"
   },
+  "mobile_dock": {
+    "apps": "Ứng dụng",
+    "back": "Quay lại",
+    "calendar": "Lịch",
+    "home": "Trang chủ",
+    "navigation": "Điều hướng chính",
+    "tasks": "Công việc"
+  },
   "nav-upgrade-dialog": {
     "contact_support": "Nếu bạn cần truy cập ngay vào tính năng này, vui lòng liên hệ với đội ngũ hỗ trợ của chúng tôi.",
     "description": "Tính năng {feature} yêu cầu gói {tier} hoặc cao hơn.",

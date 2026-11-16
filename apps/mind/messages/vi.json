@@ -766,6 +766,14 @@
       "untitled": "Workspace chưa đặt tên"
     }
   },
+  "mobile_dock": {
+    "apps": "Ứng dụng",
+    "back": "Quay lại",
+    "calendar": "Lịch",
+    "home": "Trang chủ",
+    "navigation": "Điều hướng chính",
+    "tasks": "Công việc"
+  },
   "nav-upgrade-dialog": {
     "contact_support": "Nếu bạn cần dùng tính năng này ngay, vui lòng liên hệ đội hỗ trợ.",
     "description": "Tính năng {feature} yêu cầu gói {tier} hoặc cao hơn.",

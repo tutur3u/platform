@@ -148,10 +148,15 @@ Below a destination's own page the dock adds a leading Back button; a long
 press returns to that destination's page, and the dock's frame never moves.
 Apps opens the apps launcher. The top bar keeps the page title and actions and
 never shows Back. Scrolling content reserves the dock's clearance, and a short
-fade behind the dock keeps it legible. With Sorbet off, the classic mobile
-navigation is unchanged. `mobile-dock.test.tsx` covers the active slot, Back,
-long press and the fixed frame; `dashboard-mobile-dock-location.test.ts` covers
-which destination and Back state each dashboard path gets.
+fade behind the dock keeps it legible. Every satellite app shows the same dock
+(`SatelliteMobileDock`, mounted once in the shared satellite providers):
+Tasks and Calendar mark their own slot, every other app keeps Apps active and
+shows Back below its root, and links to other apps resolve their address for
+the current environment. With Sorbet off, the classic mobile navigation is
+unchanged. `mobile-dock.test.tsx` covers the active slot, Back,
+long press and the fixed frame; `dashboard-mobile-dock-location.test.ts` and
+`satellite-mobile-dock-location.test.ts` cover which destination and Back
+state each path gets.
 
 On touch screens (`pointer: coarse`) Sorbet fields are at least 44px tall, and
 buttons, tabs and switches get an invisible 44px hit area without changing their

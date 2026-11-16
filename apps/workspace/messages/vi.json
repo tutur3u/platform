@@ -11391,6 +11391,14 @@
       "title": "OTP Web"
     }
   },
+  "mobile_dock": {
+    "apps": "Ứng dụng",
+    "back": "Quay lại",
+    "calendar": "Lịch",
+    "home": "Trang chủ",
+    "navigation": "Điều hướng chính",
+    "tasks": "Công việc"
+  },
   "money-lover-import": {
     "amount": "Số tiền",
     "batch_info": "Dữ liệu sẽ được nhập theo {batches} lô, mỗi lô {size} giao dịch để tối ưu hiệu suất",

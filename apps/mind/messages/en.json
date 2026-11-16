@@ -766,6 +766,14 @@
       "untitled": "Untitled workspace"
     }
   },
+  "mobile_dock": {
+    "apps": "Apps",
+    "back": "Back",
+    "calendar": "Calendar",
+    "home": "Home",
+    "navigation": "Main navigation",
+    "tasks": "Tasks"
+  },
   "nav-upgrade-dialog": {
     "contact_support": "If you require immediate access to this feature, please contact support.",
     "description": "The {feature} feature requires a {tier} plan or higher.",

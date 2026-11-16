@@ -844,6 +844,14 @@
     "title": "Marks",
     "untitled": "Mark"
   },
+  "mobile_dock": {
+    "apps": "Apps",
+    "back": "Back",
+    "calendar": "Calendar",
+    "home": "Home",
+    "navigation": "Main navigation",
+    "tasks": "Tasks"
+  },
   "navigation": {
     "aiChat": "AI Chat",
     "assignments": "Assignments",

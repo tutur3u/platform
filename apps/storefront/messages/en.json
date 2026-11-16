@@ -1023,6 +1023,14 @@
     "yellow": "Yellow",
     "yesterday": "Yesterday"
   },
+  "mobile_dock": {
+    "apps": "Apps",
+    "back": "Back",
+    "calendar": "Calendar",
+    "home": "Home",
+    "navigation": "Main navigation",
+    "tasks": "Tasks"
+  },
   "notifications": {
     "accept": "Accept",
     "archive": "Archive",
