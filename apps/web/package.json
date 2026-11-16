@@ -13,7 +13,7 @@
     "start:app": "NODE_OPTIONS='--experimental-require-module' node ../../scripts/portless-dev-banner.js -- next start -p ${PORT:-7803}",
     "serve:web": "NODE_OPTIONS='--experimental-require-module' next start -p 7803",
     "preview": "NODE_OPTIONS='--max-old-space-size=8192 --experimental-require-module' next build --turbopack && NODE_OPTIONS='--experimental-require-module' next start -p 7803 --turbopack",
-    "test": "vitest run",
+    "test": "node ../../scripts/ci/run-web-tests.js",
     "test:watch": "vitest",
     "test:e2e": "playwright test",
     "test:e2e:ui": "playwright test --ui",

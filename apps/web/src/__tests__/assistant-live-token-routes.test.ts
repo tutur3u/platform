@@ -1,6 +1,8 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 const mocks = vi.hoisted(() => ({
+  reserveLiveMint: vi.fn(),
+  resolveMobileLiveBillingWorkspace: vi.fn(),
   assistantChatScopeKey: vi.fn((chatId: string) => `assistant:${chatId}`),
   abortLiveBillingSession: vi.fn(),
   beginLiveBillingSession: vi.fn(),
@@ -19,6 +21,23 @@ const mocks = vi.hoisted(() => ({
   settleLiveBillingSession: vi.fn(),
   validateAiTempAuthRequest: vi.fn(),
   verifyWorkspaceMembershipType: vi.fn(),
+}));
+
+vi.mock('@/lib/live/mint-cap', async (importOriginal) => ({
+  ...(await importOriginal<typeof import('@/lib/live/mint-cap')>()),
+  readLiveMintConfig: () => ({
+    freeSessionSeconds: 180,
+    actorDailyMints: 10,
+    dailyBudgetMicroUsd: 50_000_000,
+    usdPerMinuteMicroUsd: 36_800,
+    killSwitch: false,
+    actorMaxConcurrent: 1,
+  }),
+  reserveLiveMint: (...args: unknown[]) => mocks.reserveLiveMint(...args),
+}));
+vi.mock('@/lib/live/mobile-billing', () => ({
+  resolveMobileLiveBillingWorkspace: (...args: unknown[]) =>
+    mocks.resolveMobileLiveBillingWorkspace(...args),
 }));
 
 vi.mock('@tuturuuu/supabase/next/auth-session-user', () => ({
@@ -139,9 +158,19 @@ function postRequest(path: string, body: unknown) {
 
 describe('assistant live token routes', () => {
   const requestSupabase = { auth: {}, from: vi.fn() };
+  const mintExpiresAt = '2099-01-01T00:03:00.000Z';
 
   beforeEach(() => {
     vi.clearAllMocks();
+    mocks.reserveLiveMint.mockResolvedValue({
+      mintId: 'synthetic-mint',
+      freeSessionSeconds: 180,
+      expiresAt: mintExpiresAt,
+      reservedMicroUsd: 110_400,
+    });
+    mocks.resolveMobileLiveBillingWorkspace.mockResolvedValue(
+      'personal-workspace-id'
+    );
     mocks.createClient.mockResolvedValue(requestSupabase);
     mocks.buildLiveMiraPrompt.mockResolvedValue(
       'Personalized shared Chat prompt'
@@ -306,7 +335,10 @@ describe('assistant live token routes', () => {
       token: 'ephemeral-token',
       chatId: 'chat-1',
       scopeKey: 'assistant:chat-1',
-      model: 'gemini-3.1-flash-live-preview',
+      model: 'gemini-3.8-live',
+      expiresAt: mintExpiresAt,
+      liveSessionId: '00000000-0000-4000-8000-000000000001',
+      reservedCredits: 1000,
       sessionHandle: null,
       seedHistory: [],
       toolProtocol: 'legacy',
@@ -319,7 +351,7 @@ describe('assistant live token routes', () => {
       supabase: requestSupabase,
       userId: 'user-1',
       chatId: undefined,
-      model: 'gemini-3.1-flash-live-preview',
+      model: 'gemini-3.8-live',
     });
     expect(mocks.loadAssistantLiveSeedHistory).toHaveBeenCalledWith({
       chat: { id: 'chat-1' },
@@ -388,8 +420,10 @@ describe('assistant live token routes', () => {
     tier.resolve('PRO');
     await flush();
     // Prompt and chat preparation both start before either is released.
-    expect(mocks.buildLiveMiraPrompt).toHaveBeenCalledOnce();
-    expect(mocks.ensureAssistantLiveChat).toHaveBeenCalledOnce();
+    await vi.waitFor(() => {
+      expect(mocks.buildLiveMiraPrompt).toHaveBeenCalledOnce();
+      expect(mocks.ensureAssistantLiveChat).toHaveBeenCalledOnce();
+    });
     expect(mocks.createConstrainedLiveToken).not.toHaveBeenCalled();
 
     chat.resolve({ id: 'chat-1' });

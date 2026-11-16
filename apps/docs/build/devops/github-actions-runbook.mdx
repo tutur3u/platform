@@ -124,6 +124,13 @@ computed shard includes `@tuturuuu/web`. Both Test workflow shard jobs and the
 public merged-main unit path call this runner; neither needs a separate service.
 Non-web shards and paused runtimes do not provision a fixture.
 
+Direct `bun run --cwd apps/web test` calls use `scripts/ci/run-web-tests.js`,
+which applies the same fixture boundary before forwarding Vitest arguments.
+This covers Web-owning tests in the Mail/Calendar/Tasks workflow without a
+workflow service. An inherited explicitly opted-in endpoint is reused by local
+and Turbo-filtered child environments; direct hosted calls provision their own
+disposable fixture.
+
 Automatic provisioning requires GitHub-hosted Linux. The helper pulls the official
 `library/redis` image by immutable digest, publishes only an ephemeral loopback
 port, disables persistence, and caps Redis memory at 16 MiB inside a 64 MiB

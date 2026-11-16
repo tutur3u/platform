@@ -3,6 +3,10 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 // Exercises the real admin tier lookup behind the Live token route so UUID
 // canonicalization regressions surface as a denied paid workspace.
 const mocks = vi.hoisted(() => ({
+  reserveLiveMint: vi.fn(),
+  resolveMobileLiveBillingWorkspace: vi.fn(),
+  beginLiveBillingSession: vi.fn(),
+  abortLiveBillingSession: vi.fn(),
   createAdminClient: vi.fn(),
   createClient: vi.fn(),
   createConstrainedLiveToken: vi.fn(),
@@ -12,6 +16,23 @@ const mocks = vi.hoisted(() => ({
   normalizeWorkspaceId: vi.fn(),
   resolveAuthenticatedSessionUser: vi.fn(),
   verifyWorkspaceMembershipType: vi.fn(),
+}));
+
+vi.mock('@/lib/live/mint-cap', async (importOriginal) => ({
+  ...(await importOriginal<typeof import('@/lib/live/mint-cap')>()),
+  readLiveMintConfig: () => ({
+    freeSessionSeconds: 180,
+    actorDailyMints: 10,
+    dailyBudgetMicroUsd: 50_000_000,
+    usdPerMinuteMicroUsd: 36_800,
+    killSwitch: false,
+    actorMaxConcurrent: 1,
+  }),
+  reserveLiveMint: (...args: unknown[]) => mocks.reserveLiveMint(...args),
+}));
+vi.mock('@/lib/live/mobile-billing', () => ({
+  resolveMobileLiveBillingWorkspace: (...args: unknown[]) =>
+    mocks.resolveMobileLiveBillingWorkspace(...args),
 }));
 
 vi.mock('@tuturuuu/supabase/next/auth-session-user', () => ({
@@ -35,6 +56,13 @@ vi.mock('@tuturuuu/utils/workspace-helper', async (importOriginal) => ({
 // requirement to make the resolved tier observable at the route boundary.
 vi.mock('@/lib/feature-tiers', () => ({
   isFeatureAvailable: mocks.isFeatureAvailable,
+}));
+vi.mock('@/lib/live/billing', async (importOriginal) => ({
+  ...(await importOriginal<typeof import('@/lib/live/billing')>()),
+  beginLiveBillingSession: (...args: unknown[]) =>
+    mocks.beginLiveBillingSession(...args),
+  abortLiveBillingSession: (...args: unknown[]) =>
+    mocks.abortLiveBillingSession(...args),
 }));
 vi.mock('@/lib/live/mira-prompt', () => ({
   buildLiveMiraPrompt: async () => 'prompt',
@@ -81,6 +109,18 @@ function tierAdmin(tier: string) {
 describe('assistant live token tier admission', () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    mocks.reserveLiveMint.mockResolvedValue({
+      mintId: 'synthetic-mint',
+      freeSessionSeconds: 180,
+      expiresAt: new Date(Date.now() + 180_000).toISOString(),
+      reservedMicroUsd: 110_400,
+    });
+    mocks.resolveMobileLiveBillingWorkspace.mockResolvedValue(canonical);
+    mocks.beginLiveBillingSession.mockResolvedValue({
+      liveSessionId: '00000000-0000-4000-8000-000000000001',
+      reservationId: 'synthetic-reservation',
+      reservedCredits: 1000,
+    });
     mocks.createClient.mockResolvedValue({ auth: {}, from: vi.fn() });
     mocks.resolveAuthenticatedSessionUser.mockResolvedValue({
       user: { id: 'user-1', email: 'user@example.com' },
