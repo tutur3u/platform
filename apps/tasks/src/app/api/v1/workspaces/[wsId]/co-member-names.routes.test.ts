@@ -116,7 +116,7 @@ function request(path: string) {
   return new NextRequest(`http://localhost${path}`);
 }
 
-const params = (extra: Record<string, string> = {}) => ({
+const params = <Extra extends Record<string, string>>(extra: Extra) => ({
   params: Promise.resolve({ wsId: WS_ID, ...extra }),
 });
 
@@ -139,7 +139,7 @@ describe('task projects (list, detail)', () => {
     useTables(scenarios.member, { task_projects: [projectRow] });
 
     const [project] = (await (
-      await listProjects(request('/api'), params())
+      await listProjects(request('/api'), params({}))
     ).json()) as Array<Record<string, any>>;
     const detail = (await (
       await getProject(request('/api'), params({ projectId: 'project-1' }))
@@ -158,7 +158,7 @@ describe('task projects (list, detail)', () => {
   ])('keeps the handle when %s', async (_label, scenario) => {
     useTables(scenario, { task_projects: [projectRow] });
 
-    const body = await (await listProjects(request('/api'), params())).json();
+    const body = await (await listProjects(request('/api'), params({}))).json();
 
     expect(body[0].creator.display_name).toBe('nameless-handle');
     expect(JSON.stringify(body)).not.toContain('@example.com');
@@ -239,7 +239,7 @@ describe('task initiatives', () => {
     useTables(scenario, { task_initiatives: [initiativeRow] });
 
     const body = await (
-      await listInitiatives(request('/api'), params())
+      await listInitiatives(request('/api'), params({}))
     ).json();
 
     expect(body[0].creator.display_name).toBe(name);
@@ -276,7 +276,7 @@ describe('my tasks assignees', () => {
       from: () => overrides,
     };
     const body = await (
-      await getMyTasks(request(`/api?wsId=${WS_ID}`), params())
+      await getMyTasks(request(`/api?wsId=${WS_ID}`), params({}))
     ).json();
     return body.upcoming[0].assignees.map(
       (entry: { user: Record<string, unknown> }) => entry.user
