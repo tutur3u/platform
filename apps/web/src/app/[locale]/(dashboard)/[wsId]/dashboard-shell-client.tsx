@@ -75,6 +75,12 @@ function loadDashboardClientProviders(): Promise<DashboardClientProvidersCompone
   );
 }
 
+function loadMobileDock(): Promise<ComponentType<{ wsId: string }>> {
+  return import('./dashboard-mobile-dock').then(
+    (module) => module.DashboardMobileDock
+  );
+}
+
 function loadStructure(): Promise<ComponentType<StructureProps>> {
   return import('./structure').then((module) => module.Structure);
 }
@@ -193,6 +199,7 @@ export function DashboardShellClient({
     loadDashboardClientProviders
   );
   const Structure = useLazyClientComponent(loadStructure);
+  const MobileDock = useLazyClientComponent(loadMobileDock);
   const SettingsDialogHost = useDashboardSettingsDialogHost(!isGuestWorkspace);
 
   const dashboardContent = DashboardClientProviders ? (
@@ -244,6 +251,7 @@ export function DashboardShellClient({
         </div>
       )}
       {structuredContent}
+      {MobileDock && <MobileDock wsId={wsId} />}
     </SidebarProvider>
   );
 

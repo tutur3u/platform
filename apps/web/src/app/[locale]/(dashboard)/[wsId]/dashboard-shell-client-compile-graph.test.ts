@@ -33,6 +33,7 @@ describe('[wsId] dashboard shell client compile graph', () => {
     for (const modulePath of [
       '@/lib/calendar-preferences-provider',
       './dashboard-client-providers',
+      './dashboard-mobile-dock',
       './dashboard-settings-dialog-host',
       './structure',
     ] as const) {

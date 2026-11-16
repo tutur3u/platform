@@ -109,6 +109,7 @@ export function Structure({
       {!sidebarHidden && (
         <nav
           ref={mobileNavRef}
+          data-slot="mobile-top-bar"
           className="safe-top safe-x fixed inset-x-0 top-0 z-30 max-sm:border-b md:hidden"
         >
           <div className="bg-background/50 p-2 font-semibold backdrop-blur-md md:px-8 lg:px-16 xl:px-32">
@@ -301,6 +302,7 @@ export function Structure({
           >
             {header && <div className="mb-4 hidden md:block">{header}</div>}
             <div
+              data-slot="structure-content"
               className={cn(
                 'safe-bottom relative w-full',
                 contentFullBleed

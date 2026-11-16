@@ -89,6 +89,67 @@
   background-color: color-mix(in oklab, var(--foreground) 12%, var(--card));
 }
 
+/*
+  Mobile shell on phones (below the md breakpoint, where the shared Structure
+  shows its top bar): the top bar sits on the ground, and the floating dock
+  (MobileDock) shows only while Sorbet is on. Its frame never moves or
+  resizes; scrolling content reserves the dock clearance, and a short fade
+  behind the dock keeps content legible as it scrolls under.
+*/
+@media (max-width: 767.98px) {
+  :root[data-ui="sorbet"] :where([data-slot="mobile-top-bar"]) {
+    border-color: transparent;
+  }
+
+  :root[data-ui="sorbet"] :where([data-slot="mobile-top-bar"] > div) {
+    background-color: color-mix(
+      in oklab,
+      var(--root-background) 88%,
+      transparent
+    );
+  }
+
+  :root[data-ui="sorbet"] :where([data-slot="mobile-dock"]) {
+    position: fixed;
+    z-index: 40;
+    right: var(--sorbet-dock-inset);
+    bottom: calc(var(--sorbet-dock-inset) + env(safe-area-inset-bottom, 0px));
+    left: var(--sorbet-dock-inset);
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    max-width: 480px;
+    height: var(--sorbet-dock-height);
+    margin-inline: auto;
+    padding: 6px;
+    border-radius: 9999px;
+    background-color: var(--card);
+    box-shadow:
+      var(--sorbet-shadow-lg),
+      0 0 0 1px color-mix(in oklab, var(--foreground) 5%, transparent);
+  }
+
+  :root[data-ui="sorbet"] :where([data-slot="mobile-dock-fade"]) {
+    position: fixed;
+    z-index: 39;
+    inset-inline: 0;
+    bottom: 0;
+    display: block;
+    height: var(--sorbet-content-bottom-clearance);
+    pointer-events: none;
+    background: linear-gradient(
+      to bottom,
+      transparent,
+      color-mix(in oklab, var(--root-background) 55%, transparent) 12px
+    );
+  }
+
+  :root[data-ui="sorbet"]:has([data-slot="mobile-dock"])
+    :where([data-slot="structure-content"]) {
+    padding-bottom: var(--sorbet-content-bottom-clearance);
+  }
+}
+
 /* Focus: the same solid ring on navigation, tabs and switches. */
 :root[data-ui="sorbet"]
   :where(
