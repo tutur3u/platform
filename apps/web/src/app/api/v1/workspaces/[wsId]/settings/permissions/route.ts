@@ -6,6 +6,7 @@ import type { PermissionId } from '@tuturuuu/types';
 import { ROOT_WORKSPACE_ID } from '@tuturuuu/utils/constants';
 import { isVerifiedTuturuuuStaffSession } from '@tuturuuu/utils/email/staff-session';
 import { getPermissions, verifySecret } from '@tuturuuu/utils/workspace-helper';
+import { canViewWorkspaceUsage } from '@tuturuuu/utils/workspace-usage-access';
 import { NextResponse } from 'next/server';
 import { createLegacyHeadHandler } from '@/legacy-api-routes/head';
 import { CURRENT_USER_APP_SESSION_AUTH } from '@/legacy-api-routes/v1/users/me/session-auth';
@@ -95,6 +96,7 @@ export const GET = withSessionAuth<{ wsId: string }>(
       const canManageWorkspaceMembers = hasWorkspacePermission(
         'manage_workspace_members'
       );
+      const canViewUsage = canViewWorkspaceUsage(permissions);
       const canManageWorkspaceSettings = hasWorkspacePermission(
         'manage_workspace_settings'
       );
@@ -133,7 +135,7 @@ export const GET = withSessionAuth<{ wsId: string }>(
         manage_workspace_roles: canManageWorkspaceRoles,
         manage_workspace_secrets: canManageWorkspaceSecrets,
         manage_workspace_settings: canManageWorkspaceSettings,
-        view_usage: canManageWorkspaceMembers,
+        view_usage: canViewUsage,
         available: {
           api_keys: canAccessApiKeys,
           billing: canAccessBilling,
@@ -141,7 +143,7 @@ export const GET = withSessionAuth<{ wsId: string }>(
           integrations: canAccessIntegrations,
           reports: canManageUserReportTemplates,
           secrets: canManageWorkspaceSecrets,
-          usage: canManageWorkspaceMembers,
+          usage: canViewUsage,
           workspace_members: canManageWorkspaceMembers,
           workspace_roles: canManageWorkspaceRoles,
           workspace_settings: canManageWorkspaceSettings,

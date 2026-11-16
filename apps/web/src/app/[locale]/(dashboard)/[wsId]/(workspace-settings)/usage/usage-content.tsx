@@ -14,7 +14,8 @@ import { Badge } from '@tuturuuu/ui/badge';
 import FeatureSummary from '@tuturuuu/ui/custom/feature-summary';
 import { Separator } from '@tuturuuu/ui/separator';
 import { ROOT_WORKSPACE_ID } from '@tuturuuu/utils/constants';
-import { getWorkspace } from '@tuturuuu/utils/workspace-helper';
+import { canViewWorkspaceUsage } from '@tuturuuu/utils/workspace-usage-access';
+import { getPermissions, getWorkspace } from '@tuturuuu/utils/workspace-helper';
 import { notFound } from 'next/navigation';
 import { getTranslations } from 'next-intl/server';
 import { Suspense } from 'react';
@@ -60,6 +61,10 @@ interface UsageContentProps {
 }
 
 export default async function UsageContent({ wsId }: UsageContentProps) {
+  // Gate before any stat query runs; the stats below assume an allowed member.
+  const permissions = await getPermissions({ wsId });
+  if (!canViewWorkspaceUsage(permissions)) notFound();
+
   const t = await getTranslations();
   const workspace = await getWorkspace(wsId);
   if (!workspace) notFound();
