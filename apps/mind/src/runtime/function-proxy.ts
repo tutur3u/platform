@@ -23,7 +23,8 @@ export function createFunctionProxy(
 ) {
   const rootProxy = createSharedFunctionProxy(options);
   // The shared proxy clears unsupported provider cookies on its refusals; on
-  // the apex those belong to Web, so the mount keeps only its cookie writes.
+  // the apex those belong to Web, so the mount drops each deletion of a key
+  // the response does not rewrite.
   const mountedRootProxy = async (request: FunctionRequest) =>
     withoutExpiringCookies(await rootProxy(request));
 

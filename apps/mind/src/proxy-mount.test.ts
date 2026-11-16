@@ -37,7 +37,11 @@ const CURRENT = 'sb-nzamlzqfdwaaxdefwraj-auth-token';
 // A provider cookie of another project: root-host refusals clear it.
 const COOKIE = `${CURRENT}.0=current; sb-otherprojectref-auth-token=stale`;
 const FRESH = `${CURRENT}.0=fresh; Domain=.tuturuuu.com; Path=/; Max-Age=3600`;
-const DELETION = `${CURRENT}.1=; Domain=.tuturuuu.com; Path=/; Max-Age=0`;
+// The refresh rewrites the current key, so its stale chunk must expire with it.
+const STALE_CHUNK = `${CURRENT}.1=; Domain=.tuturuuu.com; Path=/; Max-Age=0`;
+// A Web-owned key the mount does not write: no mounted response expires it.
+const WEB_DELETION =
+  'sb-otherprojectref-auth-token=; Domain=.tuturuuu.com; Path=/; Max-Age=0';
 
 function mounted(path: string, headers: Record<string, string> = {}) {
   return new NextRequest(`https://tuturuuu.com/mind${path}`, {
@@ -63,7 +67,7 @@ function refuse(error: string) {
   vi.mocked(refreshAppSessionForRequest).mockResolvedValue({
     ok: false,
     error,
-    response: refreshed(FRESH, DELETION),
+    response: refreshed(FRESH, STALE_CHUNK, WEB_DELETION),
   });
 }
 
@@ -131,12 +135,12 @@ describe('mounted Mind responses are never cached', () => {
     expectPrivateWithoutExpiry(response);
   });
 
-  it('marks the public mounted login private, no-store and keeps only cookie writes', async () => {
+  it('marks the public mounted login private, no-store and keeps Web cookies', async () => {
     refuse('Shared session unavailable');
     const response = await proxy(mounted('/login'));
     expect(response.headers.get('x-middleware-next')).toBe('1');
-    expect(response.headers.getSetCookie()).toEqual([FRESH]);
-    expectPrivateWithoutExpiry(response);
+    expect(response.headers.get('cache-control')).toBe('private, no-store');
+    expect(response.headers.getSetCookie()).toEqual([FRESH, STALE_CHUNK]);
   });
 
   it('keeps a verify-token response private, no-store', async () => {
@@ -170,7 +174,13 @@ describe('mounted Mind refusals never clear Web-owned cookies', () => {
     refuse(error);
     const response = await proxy(mounted(path));
     expect(response.status).toBe(status);
-    expectPrivateWithoutExpiry(response);
+    expect(response.headers.get('cache-control')).toBe('private, no-store');
+    // Only the assurance refusals carry the refresh's cookie writes.
+    expect(response.headers.getSetCookie()).toEqual(
+      status === 401 || error === 'App session refresh unavailable'
+        ? []
+        : [FRESH, STALE_CHUNK]
+    );
   });
 
   it('keeps cookies on a mounted API guard refusal', async () => {

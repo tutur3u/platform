@@ -1,4 +1,3 @@
-import { isExpiringSetCookie } from '@tuturuuu/auth/proxy/mounted-failure';
 import { NextRequest, NextResponse } from 'next/server';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
@@ -38,12 +37,6 @@ function mounted(headers: Record<string, string> = {}) {
 function withCookies(response: NextResponse, ...cookies: string[]) {
   for (const cookie of cookies) response.headers.append('set-cookie', cookie);
   return response;
-}
-
-function expiresAnyCookie(response: Response) {
-  return response.headers
-    .getSetCookie()
-    .some((cookie) => isExpiringSetCookie(cookie));
 }
 
 describe('Mind mounted server-function authority', () => {
@@ -102,13 +95,15 @@ describe('Mind mounted server-function authority', () => {
   ])(
     'answers a %s refusal without expiring Web cookies',
     async (error, status) => {
+      const staleChunk = `${PROVIDER}.1=; Path=/; Max-Age=0`;
       mocks.refresh.mockResolvedValue({
         ok: false,
         error,
         response: withCookies(
           NextResponse.next(),
           FRESH,
-          `${PROVIDER}.1=; Path=/; Max-Age=0`
+          staleChunk,
+          'sb-otherprojectref-auth-token=; Path=/; Max-Age=0'
         ),
       });
       const response = await createFunctionProxy({ targetApp: 'mind' })(
@@ -116,7 +111,12 @@ describe('Mind mounted server-function authority', () => {
       );
       expect(response.status).toBe(status);
       expect(response.headers.get('cache-control')).toBe('private, no-store');
-      expect(expiresAnyCookie(response)).toBe(false);
+      // Only the assurance refusals carry the refresh's cookie writes.
+      expect(response.headers.getSetCookie()).toEqual(
+        status === 401 || error === 'App session refresh unavailable'
+          ? []
+          : [FRESH, staleChunk]
+      );
       expect(mocks.shared).not.toHaveBeenCalled();
     }
   );

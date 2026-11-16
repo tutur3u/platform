@@ -30,30 +30,65 @@ export function isExpiringSetCookie(value: string, now = Date.now()) {
   return false;
 }
 
-/** Remove every Set-Cookie on `response` that deletes or expires a cookie. */
+/** The storage key a Set-Cookie belongs to: the cookie name without a
+ * trailing `.N` chunk index, so `sb-<ref>-auth-token` and its `.0`, `.1`
+ * chunks share one key. */
+export function setCookieStorageKey(value: string) {
+  const pair = value.split(';', 1)[0] ?? '';
+  const separator = pair.indexOf('=');
+  return (separator < 0 ? pair : pair.slice(0, separator))
+    .trim()
+    .replace(/\.\d+$/u, '');
+}
+
+/**
+ * The Set-Cookies a mounted response may send, in their original order: every
+ * cookie write, and a deletion only when the same list writes a cookie with the
+ * same storage key. A session rewrite that changes chunking (`name` to
+ * `name.0`/`name.1`, or fewer chunks) must expire the stale form, or the old
+ * and new chunks combine into a corrupt session. A deletion for a key the list
+ * does not write is a Web-owned cookie the mount never expires.
+ */
+export function mountedSetCookies(cookies: string[], now = Date.now()) {
+  const written = new Set<string>();
+  for (const cookie of cookies)
+    if (!isExpiringSetCookie(cookie, now)) {
+      const key = setCookieStorageKey(cookie);
+      if (key) written.add(key);
+    }
+  return cookies.filter(
+    (cookie) =>
+      !isExpiringSetCookie(cookie, now) ||
+      written.has(setCookieStorageKey(cookie))
+  );
+}
+
+/** Remove every Set-Cookie on `response` that deletes or expires a cookie the
+ * response does not also rewrite (see `mountedSetCookies`). */
 export function withoutExpiringCookies<T extends Response>(response: T): T {
   const cookies = response.headers.getSetCookie();
-  if (!cookies.some((cookie) => isExpiringSetCookie(cookie))) return response;
+  const kept = mountedSetCookies(cookies);
+  if (kept.length === cookies.length) return response;
   response.headers.delete('set-cookie');
-  for (const cookie of cookies)
-    if (!isExpiringSetCookie(cookie))
-      response.headers.append('set-cookie', cookie);
+  for (const cookie of kept) response.headers.append('set-cookie', cookie);
   return response;
 }
 
-/** A carrier holding only the cookie writes of `source`, never its deletions. */
+/** A carrier holding the cookie writes of `source` and the deletions of stale
+ * chunks of the keys it rewrites, never any other deletion. */
 export function nonExpiringCookieCarrier(source?: Response | null) {
   const headers = new Headers();
-  for (const cookie of source?.headers.getSetCookie() ?? [])
-    if (!isExpiringSetCookie(cookie)) headers.append('set-cookie', cookie);
+  for (const cookie of mountedSetCookies(source?.headers.getSetCookie() ?? []))
+    headers.append('set-cookie', cookie);
   return new NextResponse(null, { headers });
 }
 
 /**
  * The refusal for a session failure inside an app mounted on the apex
  * (`https://tuturuuu.com/<app>`). The shared provider cookies there belong to
- * Web, so this response never clears or expires a cookie: it only carries a
- * provider cookie that a refresh rewrote. It is always `private, no-store`.
+ * Web, so this response never clears or expires a cookie it does not rewrite:
+ * it carries only a provider cookie that a refresh rewrote, plus that
+ * rewrite's stale-chunk deletions. It is always `private, no-store`.
  */
 export function mountedSessionFailureResponse(
   request: NextRequest,
