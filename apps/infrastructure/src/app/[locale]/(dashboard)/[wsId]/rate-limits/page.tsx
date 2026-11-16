@@ -4,7 +4,7 @@ import { ROOT_WORKSPACE_ID } from '@tuturuuu/utils/constants';
 import { getPermissions } from '@tuturuuu/utils/workspace-helper';
 import type { Metadata } from 'next';
 import Link from 'next/link';
-import { redirect } from 'next/navigation';
+import { notFound } from 'next/navigation';
 import { connection } from 'next/server';
 import { getTranslations } from 'next-intl/server';
 import { enforceInfrastructureRootWorkspace } from '../enforce-infrastructure-root';
@@ -30,7 +30,7 @@ export default async function InfrastructureRateLimitsPage({ params }: Props) {
 
   const permissions = await getPermissions({ wsId: ROOT_WORKSPACE_ID });
   if (!permissions || permissions.withoutPermission('view_infrastructure')) {
-    redirect(`/${wsId}/settings`);
+    notFound();
   }
 
   const t = await getTranslations('rate-limits');

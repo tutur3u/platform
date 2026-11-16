@@ -2,13 +2,11 @@
 
 import { getSatelliteAppSessionUser } from '@tuturuuu/satellite/auth';
 import { ROOT_WORKSPACE_ID } from '@tuturuuu/utils/constants';
-import {
-  enforceRootWorkspaceAdmin,
-  getPermissions,
-} from '@tuturuuu/utils/workspace-helper';
+import { getPermissions } from '@tuturuuu/utils/workspace-helper';
 import { revalidatePath } from 'next/cache';
-import { redirect } from 'next/navigation';
+import { notFound } from 'next/navigation';
 import { z } from 'zod';
+import { enforceInfrastructureRootWorkspace } from '../enforce-infrastructure-root';
 import { setDevboxRunnerDrain } from '@/lib/devboxes/admin-runner-control';
 import {
   type DevboxRunnerFeature,
@@ -25,10 +23,8 @@ import {
 
 async function requireDevboxInfrastructureAdmin(wsId: string) {
   const user = await getSatelliteAppSessionUser('infra');
-  if (!user) redirect(`/${wsId}/settings`);
-  await enforceRootWorkspaceAdmin(wsId, {
-    redirectTo: `/${wsId}/settings`,
-  });
+  if (!user) notFound();
+  await enforceInfrastructureRootWorkspace(wsId);
 
   const permissions = await getPermissions({ user, wsId: ROOT_WORKSPACE_ID });
   if (
@@ -36,7 +32,7 @@ async function requireDevboxInfrastructureAdmin(wsId: string) {
     (permissions.withoutPermission('manage_workspace_secrets') &&
       permissions.withoutPermission('manage_workspace_roles'))
   ) {
-    redirect(`/${wsId}/settings`);
+    notFound();
   }
   return user;
 }

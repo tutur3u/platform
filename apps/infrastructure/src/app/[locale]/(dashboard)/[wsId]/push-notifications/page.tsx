@@ -3,13 +3,10 @@ import { createAdminClient } from '@tuturuuu/supabase/next/server';
 import { Badge } from '@tuturuuu/ui/badge';
 import { Card, CardContent, CardHeader, CardTitle } from '@tuturuuu/ui/card';
 import { Separator } from '@tuturuuu/ui/separator';
-import {
-  ROOT_WORKSPACE_ID,
-  resolveWorkspaceId,
-} from '@tuturuuu/utils/constants';
+import { ROOT_WORKSPACE_ID } from '@tuturuuu/utils/constants';
 import { getPermissions } from '@tuturuuu/utils/workspace-helper';
 import type { Metadata } from 'next';
-import { redirect } from 'next/navigation';
+import { notFound } from 'next/navigation';
 import { connection } from 'next/server';
 import { getTranslations } from 'next-intl/server';
 import { getFirebaseMessagingConfigurationStatus } from '@/lib/notifications/firebase-admin';
@@ -353,7 +350,7 @@ export default async function InfrastructurePushNotificationsPage({
 
   const permissions = await getPermissions({ wsId: ROOT_WORKSPACE_ID });
   if (!permissions) {
-    redirect(`/${resolveWorkspaceId(wsId)}/settings`);
+    notFound();
   }
 
   const canManagePush = !permissions.withoutPermission(

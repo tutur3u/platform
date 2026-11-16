@@ -14,7 +14,7 @@ import { Badge } from '@tuturuuu/ui/badge';
 import { ROOT_WORKSPACE_ID } from '@tuturuuu/utils/constants';
 import { getPermissions } from '@tuturuuu/utils/workspace-helper';
 import type { Metadata } from 'next';
-import { redirect } from 'next/navigation';
+import { notFound, redirect } from 'next/navigation';
 import { connection } from 'next/server';
 import { getTranslations } from 'next-intl/server';
 import { listDevboxControlSnapshot } from '@/lib/devboxes/admin-store';
@@ -58,7 +58,7 @@ export default async function InfrastructureDevboxesPage({ params }: Props) {
 
   const permissions = await getPermissions({ user, wsId: ROOT_WORKSPACE_ID });
   if (!permissions) {
-    redirect(`/${wsId}/settings`);
+    notFound();
   }
 
   const canManage =

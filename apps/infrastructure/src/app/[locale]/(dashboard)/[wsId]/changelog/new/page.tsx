@@ -3,7 +3,7 @@ import { Separator } from '@tuturuuu/ui/separator';
 import { getPermissions } from '@tuturuuu/utils/workspace-helper';
 import type { Metadata } from 'next';
 import Link from 'next/link';
-import { notFound, redirect } from 'next/navigation';
+import { notFound } from 'next/navigation';
 import { connection } from 'next/server';
 import { ChangelogForm } from '../changelog-form';
 
@@ -28,7 +28,7 @@ export default async function NewChangelogPage({ params }: Props) {
   const { withoutPermission } = permissions;
 
   if (withoutPermission('manage_changelog')) {
-    redirect(`/${wsId}/settings`);
+    notFound();
   }
 
   return (

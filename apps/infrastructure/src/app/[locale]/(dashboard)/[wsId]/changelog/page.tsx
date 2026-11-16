@@ -5,7 +5,7 @@ import { Separator } from '@tuturuuu/ui/separator';
 import { getPermissions } from '@tuturuuu/utils/workspace-helper';
 import type { Metadata } from 'next';
 import Link from 'next/link';
-import { notFound, redirect } from 'next/navigation';
+import { notFound } from 'next/navigation';
 import { getTranslations } from 'next-intl/server';
 import { changelogColumns } from './columns';
 
@@ -38,7 +38,7 @@ export default async function InfrastructureChangelogPage({
   const { withoutPermission } = permissions;
 
   if (withoutPermission('manage_changelog')) {
-    redirect(`/${wsId}/settings`);
+    notFound();
   }
 
   const t = await getTranslations();

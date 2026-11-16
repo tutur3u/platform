@@ -6,7 +6,7 @@ import {
   enforceRootWorkspaceAdmin,
   WorkspaceRedirectRequiredError,
 } from '@tuturuuu/utils/workspace-helper';
-import { redirect } from 'next/navigation';
+import { notFound, redirect } from 'next/navigation';
 
 function getRedirectTarget(error: unknown): string | null {
   if (error instanceof WorkspaceRedirectRequiredError) {
@@ -34,16 +34,10 @@ export async function enforceInfrastructureRootWorkspace(wsId: string) {
   }
 
   try {
-    await enforceRootWorkspaceAdmin(wsId, {
-      redirectTo: `/${wsId}/settings`,
-    });
+    // Any redirect target marks a denied member; infra has no fallback page.
+    await enforceRootWorkspaceAdmin(wsId, { redirectTo: `/${wsId}` });
   } catch (error) {
-    const redirectTo = getRedirectTarget(error);
-    if (redirectTo) {
-      redirect(redirectTo);
-      return;
-    }
-
+    if (getRedirectTarget(error)) notFound();
     throw error;
   }
 }

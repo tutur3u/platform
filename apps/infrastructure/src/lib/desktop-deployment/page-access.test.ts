@@ -5,6 +5,9 @@ const mock = vi.hoisted(() => ({
   db: vi.fn(),
   permission: vi.fn(),
   redirect: vi.fn(),
+  notFound: vi.fn(() => {
+    throw new Error('not-found');
+  }),
   member: vi.fn(),
   query: { select: vi.fn(), eq: vi.fn(), maybeSingle: vi.fn() },
 }));
@@ -19,7 +22,10 @@ vi.mock('@tuturuuu/utils/workspace-helper', () => ({
   getPermissions: mock.permission,
   WorkspaceAuthError: class WorkspaceAuthError extends Error {},
 }));
-vi.mock('next/navigation', () => ({ redirect: mock.redirect }));
+vi.mock('next/navigation', () => ({
+  notFound: mock.notFound,
+  redirect: mock.redirect,
+}));
 
 import { getDesktopPageAccess } from './page-access';
 
@@ -38,15 +44,18 @@ beforeEach(() => {
   mock.redirect.mockImplementation((url: string) => {
     throw new Error(`redirect:${url}`);
   });
+  mock.notFound.mockImplementation(() => {
+    throw new Error('not-found');
+  });
 });
 describe('desktop page registered actor boundary', () => {
-  it('preserves personal and non-root redirects before reading an actor', async () => {
+  it('redirects personal routes and denies non-root workspaces before reading an actor', async () => {
     await expect(getDesktopPageAccess('PERSONAL')).rejects.toThrow(
       'redirect:/internal'
     );
-    await expect(getDesktopPageAccess('other')).rejects.toThrow(
-      'redirect:/other/settings'
-    );
+    await expect(getDesktopPageAccess('other')).rejects.toMatchObject({
+      message: 'not-found',
+    });
     expect(mock.user).not.toHaveBeenCalled();
   });
   it('uses canonical root membership and the exact satellite actor for permission checks', async () => {
@@ -73,11 +82,11 @@ describe('desktop page registered actor boundary', () => {
       canManage: false,
     });
   });
-  it('redirects non-members and does not invoke permission shortcuts', async () => {
+  it('returns not found for non-members and does not invoke permission shortcuts', async () => {
     mock.query.maybeSingle.mockResolvedValue({ data: null, error: null });
-    await expect(getDesktopPageAccess('internal')).rejects.toThrow(
-      'redirect:/internal/settings'
-    );
+    await expect(getDesktopPageAccess('internal')).rejects.toMatchObject({
+      message: 'not-found',
+    });
     expect(mock.permission).not.toHaveBeenCalled();
   });
   it('does not downgrade a membership failure to an access denial or expose database details', async () => {

@@ -5,7 +5,7 @@ import { Separator } from '@tuturuuu/ui/separator';
 import { ROOT_WORKSPACE_ID } from '@tuturuuu/utils/constants';
 import { getPermissions } from '@tuturuuu/utils/workspace-helper';
 import type { Metadata } from 'next';
-import { redirect } from 'next/navigation';
+import { notFound } from 'next/navigation';
 import { connection } from 'next/server';
 import { getTranslations } from 'next-intl/server';
 import { listGitHubBotState } from '@/lib/infrastructure/github-bot';
@@ -34,7 +34,7 @@ export default async function InfrastructureGitHubBotPage({ params }: Props) {
     !permissions ||
     permissions.withoutPermission('manage_workspace_secrets')
   ) {
-    redirect(`/${wsId}/settings`);
+    notFound();
   }
 
   const [t, state] = await Promise.all([

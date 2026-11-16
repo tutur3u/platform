@@ -3,7 +3,7 @@ import { Separator } from '@tuturuuu/ui/separator';
 import { ROOT_WORKSPACE_ID } from '@tuturuuu/utils/constants';
 import { getPermissions } from '@tuturuuu/utils/workspace-helper';
 import type { Metadata } from 'next';
-import { redirect } from 'next/navigation';
+import { notFound } from 'next/navigation';
 import { getTranslations } from 'next-intl/server';
 import { listExternalApps } from '@/lib/app-coordination/external-apps';
 import { listEnabledManagedCronDomains } from '@/lib/managed-cron/domain-repository';
@@ -41,7 +41,7 @@ export default async function ExternalAppApprovalPage({
     (permissions.withoutPermission('manage_workspace_secrets') &&
       permissions.withoutPermission('manage_workspace_roles'))
   ) {
-    redirect(`/${wsId}/settings`);
+    notFound();
   }
 
   const [t, apps, query] = await Promise.all([

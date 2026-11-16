@@ -1,7 +1,7 @@
 import { ROOT_WORKSPACE_ID } from '@tuturuuu/utils/constants';
 import { getPermissions } from '@tuturuuu/utils/workspace-helper';
 import type { Metadata } from 'next';
-import { redirect } from 'next/navigation';
+import { notFound } from 'next/navigation';
 import { connection } from 'next/server';
 import { getTranslations } from 'next-intl/server';
 import { listBalancerRuns } from '@/lib/balancer/store';
@@ -23,7 +23,7 @@ export default async function InfrastructureBalancerPage({ params }: Props) {
   const { wsId } = await params;
   await enforceInfrastructureRootWorkspace(wsId);
   const permissions = await getPermissions({ wsId: ROOT_WORKSPACE_ID });
-  if (!permissions) redirect(`/${wsId}/settings`);
+  if (!permissions) notFound();
 
   const [t, runs] = await Promise.all([
     getTranslations('balancer'),

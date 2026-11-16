@@ -2,7 +2,7 @@ import { Separator } from '@tuturuuu/ui/separator';
 import { ROOT_WORKSPACE_ID } from '@tuturuuu/utils/constants';
 import { getPermissions } from '@tuturuuu/utils/workspace-helper';
 import type { Metadata } from 'next';
-import { redirect } from 'next/navigation';
+import { notFound } from 'next/navigation';
 import { getTranslations } from 'next-intl/server';
 import { enforceInfrastructureRootWorkspace } from '../enforce-infrastructure-root';
 import {
@@ -42,7 +42,7 @@ export default async function InfrastructureWorkspacesPage({
   const permissions = await getPermissions({ wsId: ROOT_WORKSPACE_ID });
 
   if (!permissions || permissions.withoutPermission('manage_workspace_roles')) {
-    redirect(`/${wsId}/settings`);
+    notFound();
   }
 
   const t = await getTranslations('ws-overview');

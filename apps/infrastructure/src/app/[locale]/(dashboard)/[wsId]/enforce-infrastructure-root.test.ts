@@ -9,12 +9,16 @@ const mocks = vi.hoisted(() => {
 
   return {
     redirect: vi.fn(),
+    notFound: vi.fn(() => {
+      throw new Error('NEXT_NOT_FOUND');
+    }),
     enforceRootWorkspaceAdmin: vi.fn(),
     MockWorkspaceRedirectRequiredError,
   };
 });
 
 vi.mock('next/navigation', () => ({
+  notFound: () => mocks.notFound(),
   redirect: (...args: Parameters<typeof mocks.redirect>) =>
     mocks.redirect(...args),
 }));
@@ -41,7 +45,7 @@ describe('enforceInfrastructureRootWorkspace', () => {
     ).resolves.toBeUndefined();
 
     expect(mocks.enforceRootWorkspaceAdmin).toHaveBeenCalledWith('ws-1', {
-      redirectTo: '/ws-1/settings',
+      redirectTo: '/ws-1',
     });
     expect(mocks.redirect).not.toHaveBeenCalled();
   });
@@ -55,16 +59,15 @@ describe('enforceInfrastructureRootWorkspace', () => {
     expect(mocks.redirect).toHaveBeenCalledWith('/internal');
   });
 
-  it('redirects when the root-workspace guard requests it', async () => {
+  it('returns not found when the root-workspace guard denies access', async () => {
     mocks.enforceRootWorkspaceAdmin.mockRejectedValueOnce(
-      new mocks.MockWorkspaceRedirectRequiredError('/ws-1/settings')
+      new mocks.MockWorkspaceRedirectRequiredError('/ws-1')
     );
 
     await expect(
       enforceInfrastructureRootWorkspace('ws-1')
-    ).resolves.toBeUndefined();
-
-    expect(mocks.redirect).toHaveBeenCalledWith('/ws-1/settings');
+    ).rejects.toMatchObject({ message: 'NEXT_NOT_FOUND' });
+    expect(mocks.redirect).not.toHaveBeenCalled();
   });
 
   it('rethrows unrelated errors', async () => {
