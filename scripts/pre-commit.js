@@ -91,8 +91,18 @@ function runPreCommit({ execFile = execFileSync, spawn = spawnSync } = {}) {
   }
 
   const stagedFiles = getStagedFiles(execFile);
+  if (stagedFiles.length === 0) {
+    return 0;
+  }
+
+  // Direct main commits (D191b) check exactly the staged paths with the
+  // admitted changed-files gate: formatting, lint, affected type-check and
+  // tests, and every auth guard for staged app/package source. Whole-repo
+  // `bun validate` is not run here, so unrelated global failures cannot block
+  // a scoped commit or push owners toward branch workarounds. Main CI stays
+  // authoritative. `--files` consumes the rest of argv, so it stays last.
   const shouldRunMobileCheck = touchesMobile(stagedFiles);
-  const commands = [['bun', ['validate']]];
+  const commands = [['bun', ['check:changed', '--files', ...stagedFiles]]];
 
   if (shouldRunMobileCheck) {
     commands.push(['bun', ['check:mobile']]);

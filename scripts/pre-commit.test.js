@@ -86,12 +86,12 @@ test('runPreCommit removes git local environment keys from checks', () => {
   assert.equal(envs[0].GIT_WORK_TREE, undefined);
 });
 
-test('runPreCommit runs bun validate only when mobile is untouched', () => {
+test('runPreCommit checks only the staged files when mobile is untouched', () => {
   const commands = [];
 
   const exitCode = runPreCommit({
     execFile: createGitExecFile({
-      stagedFiles: 'apps/web/src/app/page.tsx\n',
+      stagedFiles: 'apps/web/src/app/page.tsx\nscripts/check.js\n',
     }),
     spawn: (command, args) => {
       commands.push([command, args]);
@@ -100,10 +100,58 @@ test('runPreCommit runs bun validate only when mobile is untouched', () => {
   });
 
   assert.equal(exitCode, 0);
-  assert.deepEqual(commands, [['bun', ['validate']]]);
+  assert.deepEqual(commands, [
+    [
+      'bun',
+      [
+        'check:changed',
+        '--files',
+        'apps/web/src/app/page.tsx',
+        'scripts/check.js',
+      ],
+    ],
+  ]);
 });
 
-test('runPreCommit runs mobile checks after bun validate when mobile is touched', () => {
+test('runPreCommit never runs whole-repository validation on main', () => {
+  const commands = [];
+
+  runPreCommit({
+    execFile: createGitExecFile({
+      stagedFiles: 'apps/mobile/lib/main.dart\napps/web/src/app/page.tsx\n',
+    }),
+    spawn: (command, args) => {
+      commands.push([command, args]);
+      return { status: 0 };
+    },
+  });
+
+  for (const [, args] of commands) {
+    assert.notEqual(args[0], 'validate');
+    if (args[0] === 'check:changed') {
+      // --files consumes the remaining argv; nothing may follow the paths.
+      assert.equal(args[1], '--files');
+      assert.ok(args.slice(2).every((arg) => !arg.startsWith('--')));
+    }
+  }
+});
+
+test('runPreCommit skips checks when nothing is staged on main', () => {
+  const commands = [];
+
+  const exitCode = runPreCommit({
+    execFile: createGitExecFile({ stagedFiles: '\n' }),
+    spawn: (command, args) => {
+      commands.push([command, args]);
+      return { status: 0 };
+    },
+  });
+
+  assert.equal(exitCode, 0);
+  assert.deepEqual(commands, []);
+});
+
+test('runPreCommit runs mobile checks after the staged-file gate when mobile is touched', () => {
   const commands = [];
 
   const exitCode = runPreCommit({
@@ -118,7 +166,15 @@ test('runPreCommit runs mobile checks after bun validate when mobile is touched'
 
   assert.equal(exitCode, 0);
   assert.deepEqual(commands, [
-    ['bun', ['validate']],
+    [
+      'bun',
+      [
+        'check:changed',
+        '--files',
+        'apps/mobile/lib/main.dart',
+        'apps/web/src/app/page.tsx',
+      ],
+    ],
     ['bun', ['check:mobile']],
   ]);
 });
@@ -137,7 +193,9 @@ test('runPreCommit stops on the first failing command', () => {
   });
 
   assert.equal(exitCode, 1);
-  assert.deepEqual(commands, [['bun', ['validate']]]);
+  assert.deepEqual(commands, [
+    ['bun', ['check:changed', '--files', 'apps/mobile/lib/main.dart']],
+  ]);
 });
 
 test('runPreCommit skips checks outside the main branch', () => {
