@@ -103,7 +103,9 @@ it.each(['PLUS', 'PRO', 'ENTERPRISE'])(
     vi.stubEnv('MEET_PAID_TIER_HOSTING_ENABLED', 'true');
     tier.mockResolvedValue(value);
     expect(
-      await canVerifiedAccountHostMeeting('actor', { email: 'host@example.com' })
+      await canVerifiedAccountHostMeeting('actor', {
+        email: 'host@example.com',
+      })
     ).toBe(false);
     expect(tier).not.toHaveBeenCalled();
   }
