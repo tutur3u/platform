@@ -128,6 +128,58 @@ export function checkKeywords(listing, errors) {
   }
 }
 
+/** Microsoft Store policy 10.1.3: seven unique, relevant terms per language. */
+export function checkSearchTerms(listing, errors) {
+  const terms = listing.listing?.searchTerms;
+  if (!Array.isArray(terms)) return;
+  for (const locale of LOCALES) {
+    const seen = new Set();
+    terms.forEach((term, index) => {
+      const value = term?.[locale];
+      if (typeof value !== 'string') return;
+      const at = `$.listing.searchTerms[${index}].${locale}`;
+      const normalized = value.trim().toLowerCase();
+      if (seen.has(normalized)) {
+        errors.push({ path: at, message: `duplicate search term "${value}"` });
+      }
+      seen.add(normalized);
+      if (normalized.includes('tuturuuu')) {
+        errors.push({
+          path: at,
+          message: `search term repeats the app name: "${value}"`,
+        });
+      }
+    });
+  }
+}
+
+// App Review Guideline 2.3.10: Apple metadata must not name other platforms
+// or app marketplaces.
+const OTHER_PLATFORMS =
+  /\b(android|windows|google play|play store|microsoft store|chromebook)\b/iu;
+const APPLE_STORES = new Set(['app-store-ios', 'app-store-macos']);
+
+export function checkPlatformNames(listing, errors) {
+  if (!APPLE_STORES.has(listing.store)) return;
+  const visible = [
+    ['$.listing', listing.listing],
+    ['$.screenshots', listing.screenshots],
+    ['$.gallery', listing.gallery],
+  ];
+  for (const [root, value] of visible) {
+    for (const [at, text] of strings(value ?? {}, root)) {
+      if (/\.files\.|\.file$/u.test(at)) continue;
+      const match = text.match(OTHER_PLATFORMS);
+      if (match) {
+        errors.push({
+          path: at,
+          message: `Apple metadata names another platform: "${match[0]}"`,
+        });
+      }
+    }
+  }
+}
+
 const STATUS_REQUIRES = {
   submitted: ['submittedAt'],
   in_review: ['submittedAt'],
