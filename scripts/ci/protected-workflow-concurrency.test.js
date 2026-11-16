@@ -271,9 +271,10 @@ function assertMutationLocks(workflow) {
   const jobs = Object.entries(workflow.jobs).filter(([, job]) =>
     Object.values(job.permissions || {}).includes('write')
   );
+  // apply-format only publishes a repair patch (D191b), so it holds no write.
   assert.deepEqual(
     jobs.map(([id]) => id),
-    ['apply-format', 'close-outdated-format-pr', 'comment']
+    ['close-outdated-format-pr', 'comment']
   );
   let group;
   for (const [, job] of jobs) {

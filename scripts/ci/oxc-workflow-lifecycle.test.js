@@ -57,6 +57,30 @@ test('Release Please owns formatting its generated branches', () => {
   }
 });
 
+test('Oxc format drift publishes an exact repair patch instead of opening a PR', () => {
+  // D191b: direct pushes must not spawn repair PRs or bot pushes.
+  assert.doesNotMatch(
+    workflow,
+    /create-pull-request|pulls\.create|gh pr create|createPullRequest/u
+  );
+  const job = readWorkflowJobBlock('oxc-check.yaml', 'apply-format');
+  assert.match(job, /permissions:\n\s+contents: read\n/u);
+  assert.doesNotMatch(
+    job,
+    /contents: write|pull-requests: write|git push|git commit|git config/u
+  );
+  assert.match(job, /persist-credentials: false/u);
+  assert.match(job, /git diff --binary --no-color --no-ext-diff > "\$patch"/u);
+  assert.match(
+    job,
+    /uses: actions\/upload-artifact@[0-9a-f]{40} # v7[\s\S]*name: oxfmt-repair-\$\{\{ github\.sha \}\}/u
+  );
+  assert.match(job, /retention-days: 7/u);
+  assert.match(job, /if-no-files-found: error/u);
+  // The run stays red until the pushing owner applies the patch directly.
+  assert.match(job, /name: Keep formatting drift red[\s\S]*exit 1/u);
+});
+
 test('cancelled or skipped validation cannot publish a misleading PR report', () => {
   const comment = readWorkflowJobBlock('oxc-check.yaml', 'comment');
   assert.match(comment, /!cancelled\(\)/);
