@@ -1,5 +1,10 @@
 # Citation engine and style assets
 
+Server metadata text extraction uses `htmlparser2` 12.0.0 under the MIT license.
+Its parser is already part of the dependency graph through `@types/sanitize-html`;
+the owning web app pins a direct runtime dependency. Upstream source and license:
+<https://github.com/fb55/htmlparser2>.
+
 The citation helper runs the unmodified `citeproc` 2.4.63 package (citeproc-js
 1.4.63). Copyright (c) 2009-2019 Frank Bennett. The CPAL-1.0 licensing option
 applies to that dependency. Its source is available at

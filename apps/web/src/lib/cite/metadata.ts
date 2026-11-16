@@ -1,6 +1,7 @@
 import 'server-only';
 
 import { isIP } from 'node:net';
+import { Parser } from 'htmlparser2';
 import { z } from 'zod';
 import {
   CitationLookupError,
@@ -52,13 +53,26 @@ export interface CitationLookupResult {
 }
 
 function clean(value: string | undefined, limit = 1000) {
-  return value === undefined
-    ? undefined
-    : decodeEntities(value)
-        .replace(/<[^>]*>/g, '')
-        .replace(/\s+/g, ' ')
-        .trim()
-        .slice(0, limit);
+  if (value === undefined) return undefined;
+  const text: string[] = [];
+  let suppressed = 0;
+  const parser = new Parser(
+    {
+      onopentag(name) {
+        if (name === 'script' || name === 'style') suppressed += 1;
+      },
+      onclosetag(name) {
+        if ((name === 'script' || name === 'style') && suppressed > 0)
+          suppressed -= 1;
+      },
+      ontext(chunk) {
+        if (suppressed === 0) text.push(chunk);
+      },
+    },
+    { decodeEntities: false, recognizeCDATA: true }
+  );
+  parser.end(decodeEntities(value));
+  return text.join('').replace(/\s+/g, ' ').trim().slice(0, limit);
 }
 
 function parseAuthor(value: string) {

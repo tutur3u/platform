@@ -164,6 +164,58 @@ describe('citation source metadata', () => {
     });
   });
 
+  it.each(['Synthetic <unfinished', 'Synthetic &lt;unfinished'])(
+    'discards incomplete metadata markup: %s',
+    async (title) => {
+      const { network } = networkFor({ message: { title: [title] } });
+      expect(await lookupCitation('10.5555/incomplete', network)).toMatchObject(
+        { fields: { title: 'Synthetic' } }
+      );
+    }
+  );
+
+  it('discards script and style contents while retaining source title text', async () => {
+    const { network } = networkFor({
+      message: {
+        title: [
+          'Synthetic<script>untrusted()</script><style>body{}</style> source',
+        ],
+      },
+    });
+    expect(await lookupCitation('10.5555/script', network)).toMatchObject({
+      fields: { title: 'Synthetic source' },
+    });
+  });
+
+  it.each([
+    [
+      'Synthetic <scr<script>ipt>payload</scr<script>ipt> source',
+      'Synthetic ipt>payloadipt> source',
+    ],
+    ['Synthetic <script', 'Synthetic script'],
+    ['Synthetic <!-- hidden --> source', 'Synthetic source'],
+    ['<span data-note="a > b">Synthetic</span> source', 'Synthetic source'],
+    ['<![CDATA[Synthetic <b>literal</b>]]>', 'Synthetic <b>literal</b>'],
+    ['&amp;lt;script&amp;gt;', '&lt;script&gt;'],
+  ])(
+    'extracts bounded literal text from malformed or encoded metadata: %s',
+    async (title, expected) => {
+      const { network } = networkFor({ message: { title: [title] } });
+      expect(await lookupCitation('10.5555/markup', network)).toMatchObject({
+        fields: { title: expected },
+      });
+    }
+  );
+
+  it('retains the output cap after parsing and entity decoding', async () => {
+    const { network } = networkFor({
+      message: { title: [`<i>${'x'.repeat(3000)}</i>`] },
+    });
+    expect(
+      (await lookupCitation('10.5555/bounded', network)).fields.title
+    ).toBe('x'.repeat(1000));
+  });
+
   it('decodes webpage entities only once', async () => {
     const { network } = networkFor({});
     network.fetch = async () =>

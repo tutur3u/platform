@@ -154,6 +154,7 @@
     "firebase-admin": "^14.5.0",
     "framer-motion": "^13.5.1",
     "html2canvas-pro": "^2.5.2",
+    "htmlparser2": "12.0.0",
     "isomorphic-dompurify": "^4.6.0",
     "jose": "^6.2.13",
     "jotai": "^3.0.2",
