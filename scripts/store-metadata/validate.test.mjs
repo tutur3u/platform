@@ -342,6 +342,71 @@ test('copy rejects non-NFC text, emoji and ranking or competitor claims', () => 
   );
 });
 
+test('Microsoft Store search terms allow 40 characters and reject padding, duplicates and the app name', () => {
+  const long = variant('windows', (l) => {
+    l.listing.searchTerms[0].en = 'shared team task planner board view';
+  });
+  assert.deepEqual(messages(long), []);
+  assert.ok(
+    long.warnings.some(({ path: at }) => at.endsWith('searchTerms[0].en'))
+  );
+  assertRejects(
+    variant('windows', (l) => {
+      l.listing.searchTerms[0].en = 'x'.repeat(41);
+    }),
+    /searchTerms\[0\]\.en: must be at most 40 characters/u
+  );
+  assertRejects(
+    variant('windows', (l) => {
+      l.listing.searchTerms[0].vi = ' quản lý công việc';
+    }),
+    /searchTerms\[0\]\.vi: does not match/u
+  );
+  assertRejects(
+    variant('windows', (l) => {
+      l.listing.searchTerms[1].en = 'Task Manager';
+    }),
+    /searchTerms\[1\]\.en: duplicate search term/u
+  );
+  assertRejects(
+    variant('windows', (l) => {
+      l.listing.searchTerms[2].vi = 'tuturuuu lịch';
+    }),
+    /searchTerms\[2\]\.vi: search term repeats the app name/u
+  );
+  assertRejects(
+    variant('windows', (l) => {
+      for (const index of [3, 4, 5]) {
+        l.listing.searchTerms[index].en = `plan ${index} a b c d e`;
+      }
+    }),
+    /searchTerms: en: must have at most 21 words/u
+  );
+});
+
+test('Apple listings must not name other platforms or marketplaces', () => {
+  assertRejects(
+    variant('ios', (l) => {
+      l.listing.description.en += '\nAlso on Android and Windows.';
+    }),
+    /description\.en: Apple metadata names another platform: "Android"/u
+  );
+  assertRejects(
+    variant('macos', (l) => {
+      l.screenshots.mac[0].caption.vi = 'Có trên Google Play';
+    }),
+    /caption\.vi: Apple metadata names another platform/u
+  );
+  assert.deepEqual(
+    messages(
+      variant('windows', (l) => {
+        l.listing.description.en += '\nBuilt for Windows.';
+      })
+    ),
+    []
+  );
+});
+
 test('types.ts declares every schema property', () => {
   const types = readFileSync(
     path.join(REPO_ROOT, METADATA_DIR, 'types.ts'),

@@ -19,8 +19,10 @@ import {
 import {
   checkCopy,
   checkKeywords,
+  checkPlatformNames,
   checkPublicData,
   checkRelease,
+  checkSearchTerms,
   LOCALES,
   walk,
 } from './content-checks.mjs';
@@ -95,6 +97,8 @@ export function validateListing(listing, options = {}) {
   checkRelease(listing, errors);
   checkCopy(listing, errors);
   checkKeywords(listing, errors);
+  checkSearchTerms(listing, errors);
+  checkPlatformNames(listing, errors);
   checkPublicData(listing, internalValues, errors);
   checkScreenshots(listing, errors);
   checkGallery(listing, errors);

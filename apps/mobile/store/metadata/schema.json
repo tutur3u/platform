@@ -258,7 +258,7 @@
                 "maxItems": 7,
                 "x-maxTotalWords": 21,
                 "items": {
-                  "$ref": "#/$defs/text30"
+                  "$ref": "#/$defs/searchTerm"
                 }
               },
               "releaseNotes": {
@@ -452,6 +452,15 @@
       "$ref": "#/$defs/localized",
       "additionalProperties": {
         "maxLength": 30
+      }
+    },
+    "searchTerm": {
+      "$ref": "#/$defs/localized",
+      "description": "Partner Center keyword: up to 40 characters; the older submission FAQ still says 30, so longer terms warn.",
+      "additionalProperties": {
+        "maxLength": 40,
+        "x-recommendedMaxLength": 30,
+        "pattern": "^\\S(.*\\S)?$"
       }
     },
     "text80": {

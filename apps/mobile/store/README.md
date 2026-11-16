@@ -70,7 +70,7 @@ so Vietnamese diacritics cost two or three bytes each.
 | Microsoft Store | `shortDescription` | 1000 (warning above 270) |
 | Microsoft Store | `description` | 10000 |
 | Microsoft Store | `features` | 20 items, 200 each |
-| Microsoft Store | `searchTerms` | 7 terms, 30 each, 21 words per language |
+| Microsoft Store | `searchTerms` | 7 unique terms, 40 each (warning above 30), 21 words per language, no padding or app name |
 | Microsoft Store | screenshot `caption` | 200 |
 | All | gallery `alt` | 150 |
 
@@ -86,8 +86,18 @@ so Vietnamese diacritics cost two or three bytes each.
 | Windows tile / hero | 300x300 / 1920x1080 PNG |
 | `gallery` | at most 6 WebP, long edge at most 1280 px, at most 150,000 bytes |
 
+Sources: App Store Connect
+[app information](https://developer.apple.com/help/app-store-connect/reference/app-information/app-information)
+and [platform version information](https://developer.apple.com/help/app-store-connect/reference/app-information/platform-version-information);
+Google Play [app details](https://support.google.com/googleplay/android-developer/answer/9859152)
+and [release notes](https://support.google.com/googleplay/android-developer/answer/9859348);
+Microsoft Store [listing info](https://learn.microsoft.com/windows/apps/publish/publish-your-app/msix/add-and-edit-store-listing-info)
+and [keywords](https://learn.microsoft.com/windows/apps/publish/publish-your-app/msix/add-additional-information).
+Partner Center labels search terms "Keywords".
+
 The validator also rejects emoji, non-NFC text, ranking claims ("best", "#1",
-"tốt nhất"), prices and other products' names. Every feature claim in the copy
+"tốt nhất"), prices, other products' names and, in App Store listings, other
+platforms or marketplaces (Guideline 2.3.10). Every feature claim in the copy
 must match shipped behavior in `apps/mobile/lib/features`.
 
 ## Validate
