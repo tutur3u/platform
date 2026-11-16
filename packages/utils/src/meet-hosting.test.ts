@@ -97,13 +97,17 @@ it.each(['PLUS', 'PRO', 'ENTERPRISE'])(
     expect(tier).toHaveBeenCalledWith('actor');
   }
 );
-it('requires verification before considering a paid subscription', async () => {
-  tier.mockResolvedValue('PLUS');
-  expect(
-    await canVerifiedAccountHostMeeting('actor', { email: 'host@example.com' })
-  ).toBe(false);
-  expect(tier).not.toHaveBeenCalled();
-});
+it.each(['PLUS', 'PRO', 'ENTERPRISE'])(
+  'denies unverified %s accounts even with paid hosting enabled',
+  async (value) => {
+    vi.stubEnv('MEET_PAID_TIER_HOSTING_ENABLED', 'true');
+    tier.mockResolvedValue(value);
+    expect(
+      await canVerifiedAccountHostMeeting('actor', { email: 'host@example.com' })
+    ).toBe(false);
+    expect(tier).not.toHaveBeenCalled();
+  }
+);
 it('preserves verified company hosting without paid entitlement', async () => {
   expect(
     await canVerifiedAccountHostMeeting('actor', {
