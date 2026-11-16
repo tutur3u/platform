@@ -11,6 +11,11 @@ on:
         description: Build and seal only. The publish job does not run.
         type: boolean
         default: false
+      source-sha:
+        description: Exact 40-hex main commit. Required for a release artifact.
+        type: string
+        required: false
+        default: ''
 permissions:
   contents: read
   actions: read
@@ -38,15 +43,40 @@ jobs:
         env:
           APP: ${{ inputs.app }}
         run: node scripts/ci/production-publication-policy.ts "$APP-cloudflare.yaml" "$GITHUB_STEP_SUMMARY"
+  release-admission:
+    if: ${{ inputs['release-artifact'] == true }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 3
+    env:
+      APP: ${{ inputs.app }}
+      RELEASE_ARTIFACT: 'true'
+      REQUESTED_SHA: ${{ inputs['source-sha'] }}
+      INPUT_ENVIRONMENT: wave1-${{ inputs.app }}-production
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ github.sha }}
+          persist-credentials: false
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version: 24.22.0
+      - name: Admit only this exact main commit
+        run: |
+          node --input-type=module <<'JS'
+          import { assertMainReleaseAdmission } from './scripts/ci/wave1-release-inputs.mjs';
+          assertMainReleaseAdmission(process.env);
+          JS
   qualify:
-    needs: production-policy
-    if: ${{ !cancelled() && github.ref == 'refs/heads/production' && (inputs['release-artifact'] == true || needs.production-policy.outputs.allowed == 'true') }}
+    needs: [production-policy, release-admission]
+    if: ${{ !cancelled() && ((inputs['release-artifact'] == true && github.ref == 'refs/heads/main') || (github.ref == 'refs/heads/production' && inputs['release-artifact'] != true && needs.production-policy.outputs.allowed == 'true')) }}
     runs-on: ubuntu-latest
     environment: wave1-${{ inputs.app }}-production
     timeout-minutes: 45
     env:
       APP: ${{ inputs.app }}
       RELEASE_ARTIFACT: ${{ inputs.release-artifact }}
+      REQUESTED_SHA: ${{ inputs['source-sha'] }}
+      INPUT_ENVIRONMENT: wave1-${{ inputs.app }}-production
       PROFILE: production
       CALENDAR_DEPLOYMENT_PROFILE: production
       SOURCE_SHA: ${{ github.sha }}
@@ -98,10 +128,13 @@ jobs:
           node scripts/ci/wave1-native-artifact.mjs prepare "$APP" production "$SOURCE_SHA"
           if [ "$RELEASE_ARTIFACT" = true ]; then
             node --input-type=module <<'JS'
-            import { readFileSync } from 'node:fs';
-            import { assertReceiptDigest } from './scripts/ci/wave1-release-inputs.mjs';
-            const receipt = JSON.parse(readFileSync(`apps/${process.env.APP}/wave1-artifact.json`, 'utf8'));
-            assertReceiptDigest(receipt, process.env);
+            import { readFileSync, writeFileSync } from 'node:fs';
+            import { assertReceiptDigest, stampReleaseSeal } from './scripts/ci/wave1-release-inputs.mjs';
+            const path = `apps/${process.env.APP}/wave1-artifact.json`;
+            const receipt = JSON.parse(readFileSync(path, 'utf8'));
+            const sealed = stampReleaseSeal(receipt, process.env);
+            writeFileSync(path, `${JSON.stringify(sealed, null, 2)}\n`);
+            assertReceiptDigest(sealed, process.env);
             JS
           fi
           if [ "$APP" = calendar ]; then node scripts/ci/calendar-host-scan.mjs "apps/$APP/dist" production; fi
@@ -132,6 +165,9 @@ jobs:
     env:
       APP: ${{ inputs.app }}
       SOURCE_SHA: ${{ github.sha }}
+      RELEASE_ARTIFACT: ${{ inputs.release-artifact }}
+      REQUESTED_SHA: ${{ inputs['source-sha'] }}
+      INPUT_ENVIRONMENT: wave1-${{ inputs.app }}-production
       WRANGLER_SEND_METRICS: 'false'
       WRANGLER_WRITE_LOGS: 'false'
     steps:
@@ -156,6 +192,14 @@ jobs:
           test "$(git rev-parse HEAD)" = "$SOURCE_SHA"
           python3 scripts/ci/wave1-native-archive.py restore "apps/$APP" "$RUNNER_TEMP/native-production/wave1-native.tar.gz"
           node scripts/ci/wave1-native-artifact.mjs verify "$APP" production "$SOURCE_SHA"
+          if [ "$RELEASE_ARTIFACT" = true ]; then
+            node --input-type=module <<'JS'
+            import { readFileSync } from 'node:fs';
+            import { assertRestoredReleaseSeal } from './scripts/ci/wave1-release-inputs.mjs';
+            const receipt = JSON.parse(readFileSync(`apps/${process.env.APP}/wave1-artifact.json`, 'utf8'));
+            assertRestoredReleaseSeal(receipt, process.env);
+            JS
+          fi
           node scripts/ci/wave1-native-runtime.mjs "$APP" production "$SOURCE_SHA"
           node scripts/ci/wave1-native-publish.mjs dry-run "$APP" production "$SOURCE_SHA"
           node scripts/ci/wave1-native-artifact.mjs verify "$APP" production "$SOURCE_SHA"

@@ -4,10 +4,13 @@ import { test } from 'node:test';
 import vm from 'node:vm';
 import { publicInputsDigest } from './wave1-native-artifact.mjs';
 import {
+  assertMainReleaseAdmission,
   assertReceiptDigest,
   assertReleaseInputs,
+  assertRestoredReleaseSeal,
   FIXTURE_PUBLIC_INPUTS_SHA256,
   MAIL_PRODUCTION_HOST,
+  stampReleaseSeal,
 } from './wave1-release-inputs.mjs';
 
 const workflow = readFileSync(
@@ -37,28 +40,57 @@ function jobIf(name) {
   return match[1];
 }
 
-test('release-artifact does not run publish-mail and skips the publication policy', () => {
+test('release-artifact builds only the exact main commit and never publishes', () => {
   assert.match(workflow, /release-artifact:\n/);
+  assert.match(workflow, /source-sha:\n/);
+  assert.match(workflow, /stampReleaseSeal/);
   assert.doesNotMatch(workflow, /mail-cloudflare\.yaml/);
-  const inputs = { app: 'mail', 'release-artifact': true };
+  const sha = 'a'.repeat(40);
   const needs = {
     'production-policy': { outputs: { allowed: 'true' } },
+    'release-admission': { result: 'success' },
   };
-  const scope = {
-    inputs,
+  const mainRelease = {
+    inputs: {
+      app: 'mail',
+      'release-artifact': true,
+      'source-sha': sha,
+    },
     needs,
-    github: { ref: 'refs/heads/production' },
+    github: { ref: 'refs/heads/main', sha },
     cancelled: () => false,
   };
-  assert.equal(evaluate(jobIf('production-policy'), scope), false);
-  assert.equal(evaluate(jobIf('qualify'), scope), true);
-  assert.equal(evaluate(jobIf('publish'), scope), false);
-  scope.inputs = { app: 'mail', 'release-artifact': false };
-  scope.needs['production-policy'].outputs.allowed = 'true';
-  assert.equal(evaluate(jobIf('publish'), scope), true);
-  scope.needs['production-policy'].outputs.allowed = 'false';
-  assert.equal(evaluate(jobIf('qualify'), scope), false);
-  assert.equal(evaluate(jobIf('publish'), scope), false);
+  assert.equal(evaluate(jobIf('release-admission'), mainRelease), true);
+  assert.equal(evaluate(jobIf('production-policy'), mainRelease), false);
+  assert.equal(evaluate(jobIf('qualify'), mainRelease), true);
+  assert.equal(evaluate(jobIf('publish'), mainRelease), false);
+
+  const productionRelease = {
+    ...mainRelease,
+    github: { ref: 'refs/heads/production', sha },
+  };
+  assert.equal(evaluate(jobIf('qualify'), productionRelease), false);
+  assert.equal(evaluate(jobIf('publish'), productionRelease), false);
+  assert.equal(evaluate(jobIf('production-policy'), productionRelease), false);
+
+  const mainSync = {
+    ...mainRelease,
+    inputs: { app: 'mail', 'release-artifact': false, 'source-sha': sha },
+  };
+  assert.equal(evaluate(jobIf('qualify'), mainSync), false);
+  assert.equal(evaluate(jobIf('publish'), mainSync), false);
+  assert.equal(evaluate(jobIf('production-policy'), mainSync), false);
+
+  const productionPublish = {
+    ...mainRelease,
+    inputs: { app: 'mail', 'release-artifact': false, 'source-sha': '' },
+    github: { ref: 'refs/heads/production', sha },
+  };
+  assert.equal(evaluate(jobIf('qualify'), productionPublish), true);
+  assert.equal(evaluate(jobIf('publish'), productionPublish), true);
+  productionPublish.needs['production-policy'].outputs.allowed = 'false';
+  assert.equal(evaluate(jobIf('qualify'), productionPublish), false);
+  assert.equal(evaluate(jobIf('publish'), productionPublish), false);
 });
 
 test('mail release inputs fail closed and agree with the sealed digest', () => {
@@ -99,18 +131,46 @@ test('mail release inputs fail closed and agree with the sealed digest', () => {
       return true;
     }
   );
+  const sha = 'b'.repeat(40);
   const env = {
     APP: 'mail',
+    RELEASE_ARTIFACT: 'true',
+    GITHUB_REF: 'refs/heads/main',
+    GITHUB_SHA: sha,
+    REQUESTED_SHA: sha,
+    INPUT_ENVIRONMENT: 'wave1-mail-production',
     NEXT_PUBLIC_SUPABASE_URL: mailUrl,
     NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY: mailKey,
   };
   const digest = assertReleaseInputs(env);
   assert.notEqual(digest, FIXTURE_PUBLIC_INPUTS_SHA256);
-  assert.equal(assertReceiptDigest({ publicInputsSha256: digest }, env), digest);
+  const sealed = stampReleaseSeal({ sha, publicInputsSha256: digest }, env);
+  assert.deepEqual(
+    { sourceSha: sealed.sourceSha, inputEnvironment: sealed.inputEnvironment },
+    { sourceSha: sha, inputEnvironment: 'wave1-mail-production' }
+  );
+  assert.equal(assertReceiptDigest(sealed, env), digest);
   assert.throws(
-    () => assertReceiptDigest({ publicInputsSha256: FIXTURE_PUBLIC_INPUTS_SHA256 }, env),
+    () => assertReceiptDigest({ sha, publicInputsSha256: FIXTURE_PUBLIC_INPUTS_SHA256, sourceSha: sha, inputEnvironment: 'wave1-mail-production' }, env),
     /does not match the production build inputs/
+  );
+  assert.throws(
+    () => assertMainReleaseAdmission({ ...env, GITHUB_REF: 'refs/heads/production' }),
+    /only on refs\/heads\/main/
+  );
+  assert.throws(
+    () => assertMainReleaseAdmission({ ...env, REQUESTED_SHA: 'c'.repeat(40) }),
+    /does not match this main commit/
+  );
+  const restoredEnv = { ...env };
+  delete restoredEnv.NEXT_PUBLIC_SUPABASE_URL;
+  delete restoredEnv.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY;
+  assert.equal(assertRestoredReleaseSeal(sealed, restoredEnv), digest);
+  assert.throws(
+    () => assertRestoredReleaseSeal({ ...sealed, publicInputsSha256: FIXTURE_PUBLIC_INPUTS_SHA256 }, restoredEnv),
+    /Fixture publicInputsSha256 is refused/
   );
   assert.match(workflow, /assertReceiptDigest/);
   assert.match(workflow, /assertReleaseInputs/);
+  assert.match(workflow, /assertMainReleaseAdmission/);
 });
