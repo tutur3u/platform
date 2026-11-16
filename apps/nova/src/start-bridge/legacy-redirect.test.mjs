@@ -1,5 +1,5 @@
 import assert from 'node:assert/strict';
-import test from 'node:test';
+import { test } from 'vitest';
 import {
   NOVA_APEX_URL,
   NOVA_LEGACY_REDIRECT_STATUS,

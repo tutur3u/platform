@@ -66,13 +66,31 @@ describe('nova root-only response policy', () => {
     }
   );
 
+  it('mounts the apex only under /nova', () => {
+    const mounts = {
+      app: 'nova',
+      rootHosts: [canonical],
+      mountHosts: ['tuturuuu.com'],
+      basePath: '/nova',
+      ...config.mounts,
+    };
+    expect(
+      resolveAppBase(new URL('https://tuturuuu.com/nova'), mounts)
+    ).toEqual({
+      mode: 'mounted',
+      basePath: '/nova',
+    });
+    expect(
+      resolveAppBase(new URL('https://tuturuuu.com/other'), mounts)
+    ).toBeNull();
+  });
+
   it.each([
-    'tuturuuu.com',
     'unknown.invalid',
     'nova.tuturuuu.com.attacker.invalid',
     'nova.ai.vn.attacker.invalid',
     'tuturuuu-nova-vite-staging.example.workers.dev',
-  ])('rejects apex and unlisted host %s', (host) => {
+  ])('rejects unlisted host %s', (host) => {
     const mounts = {
       app: 'nova',
       rootHosts: [canonical],
