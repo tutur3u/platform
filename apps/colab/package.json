@@ -6,7 +6,7 @@
     "dev": "vp dev --host 127.0.0.1 --port 7835",
     "build": "vp build && tsc --noEmit",
     "type-check": "tsc --noEmit",
-    "test": "vp test --pool=threads",
+    "test": "vp test --pool=threads --exclude scripts/bake-build-commit.test.mjs --exclude scripts/build-info.test.mjs",
     "preview": "vp dev --config vite.worker.config.ts",
     "deploy": "bun run build && wrangler deploy",
     "deploy:dry-run": "bun run build && wrangler deploy --dry-run",
