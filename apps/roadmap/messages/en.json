@@ -51,7 +51,10 @@
     "flat": "No change",
     "fromZero": "from 0",
     "allNotAvailable": "All-PR count not available in this build",
-    "trackedVsLastWeek": "roadmap-tracked, vs last week"
+    "trackedVsLastWeek": "roadmap-tracked, vs last week",
+    "thisWeek": "this week",
+    "weekBefore": "{n} last week",
+    "flowWords": "{n} new this week, {previous} last week"
   },
   "calendar_category_reorder_pilot": {
     "cancel": "Returned {label} to position {position} of {total}.",
@@ -228,7 +231,14 @@
   "glance": {
     "title": "Every product at a glance",
     "subtitle": "How much of each track has shipped. Tap a track to jump to its details.",
-    "shipped": "shipped"
+    "shipped": "shipped",
+    "toGo": "{n} to go",
+    "bands": {
+      "done": "Complete",
+      "good": "80% or more",
+      "attention": "Needs attention"
+    },
+    "bandsLabel": "Ring colours"
   },
   "updates": {
     "title": "Recent production updates",

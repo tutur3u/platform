@@ -55,11 +55,28 @@ export function formatDuration(ms: number, t: Messages, lang: Lang) {
   return fill(t.pulse.days, { n: formatNumber(days, lang, days < 10 ? 1 : 0) });
 }
 
-/** "+12%" / "−8%" / "+5" (no base) / "0". */
+/**
+ * A percentage only means something on a real base: below this many items
+ * last week, or past this ratio, the change is shown as a count instead
+ * ("+11", not "+1,100%").
+ */
+export const PCT_MIN_BASE = 10;
+export const PCT_MAX_RATIO = 3;
+
+/** Whether `value` reads as a percentage (else as a signed count). */
+export function deltaAsPercent(value: Change) {
+  return (
+    value.pct !== null &&
+    value.previous >= PCT_MIN_BASE &&
+    Math.abs(value.pct) <= PCT_MAX_RATIO
+  );
+}
+
+/** "+12%" / "−8%" / "+5" (small or no base, or an outsized ratio) / "0". */
 export function deltaText(value: Change, lang: Lang) {
   if (value.direction === 'flat') return '0';
   const sign = value.delta > 0 ? '+' : '−';
-  if (value.pct === null)
+  if (value.pct === null || !deltaAsPercent(value))
     return `${sign}${formatNumber(Math.abs(value.delta), lang)}`;
   return `${sign}${formatNumber(Math.abs(value.pct) * 100, lang)}%`;
 }

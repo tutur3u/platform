@@ -158,43 +158,44 @@
   color: var(--rm-muted);
   font-variant-numeric: tabular-nums;
 }
-/* The state is a Sorbet pill (pastel fill, matching ink) as wide as its
-   widest label, with the label centred, so the reserved width reads as
-   the pill, not as a gap. */
+/* The state is a status dot and a label in the line's own size, coloured
+   by state, so it reads as part of the sentence, not as a button. */
 .hero-asof-state {
   display: inline-flex;
   align-items: center;
   margin-inline-end: var(--rm-space-1);
-  padding: 1px 10px;
-  border-radius: 999px;
-  background: var(--rm-planned-fill);
   color: var(--rm-ink);
   font-weight: 600;
   white-space: nowrap;
 }
-.hero-asof-dot {
+/* Each stacked label carries its own dot, and the labels sit at the end of
+   the slot, so the reserved width falls before the dot, never between the
+   label and the sentence. */
+.hero-asof-labels > span::before {
+  content: "";
   display: inline-block;
   width: 8px;
   height: 8px;
   margin-inline-end: 6px;
   border-radius: 999px;
-  background: var(--rm-planned);
+  background: var(--hero-asof-dot, var(--rm-planned));
+  vertical-align: 0.05em;
 }
 .hero-asof[data-live="live"] .hero-asof-state {
-  background: var(--rm-live-fill);
+  color: var(--rm-live-text);
 }
-.hero-asof[data-live="live"] .hero-asof-dot {
-  background: var(--rm-live);
+.hero-asof[data-live="live"] {
+  --hero-asof-dot: var(--rm-live);
 }
 .hero-asof[data-live="failed"] .hero-asof-state {
-  background: var(--rm-progress-fill);
+  color: var(--rm-progress-text);
 }
-.hero-asof[data-live="failed"] .hero-asof-dot {
-  background: var(--rm-progress);
+.hero-asof[data-live="failed"] {
+  --hero-asof-dot: var(--rm-progress);
 }
 .hero-asof-labels {
   display: inline-grid;
-  justify-items: center;
+  justify-items: end;
 }
 .hero-asof-labels > span {
   grid-area: 1 / 1;

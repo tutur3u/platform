@@ -68,7 +68,15 @@
 .delta-bad {
   color: var(--rm-progress-text);
 }
-.kpi-waiting .delta-label {
+/* A weekly flow (delta.tsx Flow): a dot, not a trend arrow, since the
+   figure is a count of arrivals, not a change. Neutral flows use ink. */
+.delta-flow::before {
+  width: 6px;
+  height: 6px;
+  border-radius: 999px;
+  clip-path: none;
+}
+.delta-neutral {
   color: var(--rm-ink);
 }
 

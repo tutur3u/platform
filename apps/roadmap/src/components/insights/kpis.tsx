@@ -2,7 +2,7 @@ import type { ReactNode } from 'react';
 import type { Insights } from '../../insights/model';
 import type { RoadmapView } from '../../view-model';
 import type { Lang, Messages } from '../shared';
-import { Delta, plural } from './delta';
+import { Delta, Flow, plural } from './delta';
 import { fill, formatDuration, formatNumber } from './format';
 
 type Tile = {
@@ -17,10 +17,10 @@ type Tile = {
 };
 
 /**
- * Three headline figures, each with its week-over-week change. "Waiting for
- * prod sync" is the emphasised tile: merged work that production does not
- * run yet. Deliverables shipped this week lead the Activity tab
- * (ShippedTile).
+ * Three headline figures with equal weight. Merged PRs carry a week-over-week
+ * change; live and waiting deliverables carry this week's flow into that
+ * state as a count, since a percentage of the running total misleads.
+ * Deliverables shipped this week lead the Activity tab (ShippedTile).
  */
 export function KpiTiles({
   t,
@@ -67,8 +67,8 @@ export function KpiTiles({
       label: t.stats.live,
       value: n(tiles.live.total),
       of: fill(t.stats.ofTotal, { n: n(view.total) }),
-      delta: <Delta value={tiles.live.added} t={t} lang={lang} />,
-      note: plural(t.stats.newThisWeek, tiles.live.added.current, lang),
+      delta: <Flow value={tiles.live.added} t={t} lang={lang} tone="good" />,
+      note: plural(t.stats.weekBefore, tiles.live.added.previous, lang),
       tone: 'live',
     },
     {
@@ -77,18 +77,15 @@ export function KpiTiles({
       value: n(tiles.waiting.total),
       of: fill(t.stats.ofTotal, { n: n(view.total) }),
       delta: (
-        <Delta value={tiles.waiting.added} t={t} lang={lang} good="down" />
+        <Flow value={tiles.waiting.added} t={t} lang={lang} tone="neutral" />
       ),
-      note: [
-        plural(t.stats.newThisWeek, tiles.waiting.added.current, lang),
+      // The queue's health is how long work waits, not how much entered it.
+      note:
         waitAge.medianMs !== null
           ? fill(t.stats.waitAge, {
               median: formatDuration(waitAge.medianMs, t, lang),
             })
-          : null,
-      ]
-        .filter(Boolean)
-        .join(' · '),
+          : plural(t.stats.weekBefore, tiles.waiting.added.previous, lang),
       tone: 'waiting',
       href: '#updates',
     },

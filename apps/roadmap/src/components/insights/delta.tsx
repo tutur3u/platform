@@ -45,6 +45,41 @@ export function Delta({
   );
 }
 
+/**
+ * A weekly flow: how many items entered a state this week, shown as a count
+ * ("+11 this week"), never as a percentage of the running total. `tone`
+ * says whether more is welcome; a queue filling up is neutral, its wait
+ * time is the signal.
+ */
+export function Flow({
+  value,
+  t,
+  lang,
+  tone,
+}: {
+  value: Change;
+  t: Messages;
+  lang: Lang;
+  tone: 'good' | 'neutral';
+}) {
+  const n = formatNumber(value.current, lang);
+  const words = fill(t.stats.flowWords, {
+    n,
+    previous: formatNumber(value.previous, lang),
+  });
+  return (
+    <span
+      className={`delta delta-flow delta-${value.current > 0 ? tone : 'flat'}`}
+    >
+      <span aria-hidden>{value.current > 0 ? `+${n}` : n}</span>
+      <span className="delta-label" aria-hidden>
+        {t.stats.thisWeek}
+      </span>
+      <span className="sr-only">{words}</span>
+    </span>
+  );
+}
+
 export function plural(template: string, n: number, lang: Lang) {
   return fill(template, { n: formatNumber(n, lang) });
 }

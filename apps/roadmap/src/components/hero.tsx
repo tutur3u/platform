@@ -51,7 +51,6 @@ export function Hero({
         title={shown === 'failed' ? t.liveCheckFailed : undefined}
       >
         <span className="hero-asof-state">
-          <span className="hero-asof-dot" aria-hidden />
           <span className="hero-asof-labels">
             {SHOWN_STATES.map((state) => (
               <span

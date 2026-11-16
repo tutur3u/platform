@@ -51,7 +51,10 @@
     "flat": "Không đổi",
     "fromZero": "từ 0",
     "allNotAvailable": "Phiên bản trang này chưa có tổng số PR",
-    "trackedVsLastWeek": "PR thuộc lộ trình, so với tuần trước"
+    "trackedVsLastWeek": "PR thuộc lộ trình, so với tuần trước",
+    "thisWeek": "tuần này",
+    "weekBefore": "Tuần trước: {n}",
+    "flowWords": "{n} mới trong tuần, tuần trước {previous}"
   },
   "calendar_category_reorder_pilot": {
     "cancel": "Đã trả {label} về vị trí {position} trên {total}.",
@@ -228,7 +231,14 @@
   "glance": {
     "title": "Toàn cảnh mọi sản phẩm",
     "subtitle": "Mỗi mảng đã phát hành được bao nhiêu. Chạm vào một mảng để xem chi tiết.",
-    "shipped": "đã phát hành"
+    "shipped": "đã phát hành",
+    "toGo": "còn {n}",
+    "bands": {
+      "done": "Hoàn tất",
+      "good": "Từ 80% trở lên",
+      "attention": "Cần chú ý"
+    },
+    "bandsLabel": "Màu vòng tiến độ"
   },
   "updates": {
     "title": "Cập nhật bản chính thức mới nhất",

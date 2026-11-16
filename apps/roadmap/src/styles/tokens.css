@@ -60,7 +60,7 @@
   --rm-text-lg: 18px;
   --rm-text-xl: 22px;
   --rm-text-h2: clamp(26px, 3.4vw, 34px);
-  --rm-text-h1: clamp(30px, 5.4vw, 64px);
+  --rm-text-h1: clamp(28px, 4.2vw, 48px);
   --rm-text-figure: clamp(24px, 3.2vw, 34px);
   --rm-space-1: 4px;
   --rm-space-2: 8px;

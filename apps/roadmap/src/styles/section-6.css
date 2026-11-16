@@ -159,7 +159,52 @@
   text-decoration: none;
 }
 .glance-tile:hover {
-  border-color: color-mix(in oklab, var(--rm-live) 50%, transparent);
+  border-color: color-mix(in oklab, var(--glance-tone) 55%, var(--rm-line));
+  box-shadow: var(--sorbet-shadow-md, var(--rm-shadow));
+}
+.glance-tile:focus-visible {
+  outline: 2px solid var(--rm-ring);
+  outline-offset: 2px;
+}
+/* Ring colour by how much of the track has shipped (pulse.tsx glanceBand):
+   complete, 80% or more, needs attention. The number is always printed, so
+   the colour only reinforces it. */
+.glance-band-done {
+  --glance-tone: var(--rm-live);
+}
+.glance-band-good {
+  --glance-tone: var(--rm-sync);
+}
+.glance-band-attention {
+  --glance-tone: var(--rm-progress);
+}
+.glance-head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: end;
+  justify-content: space-between;
+  gap: var(--rm-space-2) var(--rm-space-4);
+}
+.glance-legend {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--rm-space-1) var(--rm-space-4);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  font-size: var(--rm-text-xs);
+  color: var(--rm-muted);
+}
+.glance-legend li {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+.glance-legend-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 999px;
+  background: var(--glance-tone);
 }
 .glance-ring {
   grid-row: span 2;
@@ -173,7 +218,7 @@
 }
 .glance-ring-value {
   fill: none;
-  stroke: var(--rm-live);
+  stroke: var(--glance-tone, var(--rm-live));
   stroke-width: 6;
   stroke-linecap: round;
 }
@@ -185,22 +230,49 @@
   font-variant-numeric: tabular-nums;
 }
 .glance-name {
+  min-width: 0;
   font-weight: 600;
   font-size: var(--rm-text-md);
-  line-height: 1.2;
+  line-height: 1.3;
+  /* Two lines on a phone's narrow tiles; one line from 720px (below), so
+     the rings and counts align across a row. The full name is in the title
+     attribute and on the track below. */
   overflow: hidden;
   display: -webkit-box;
   -webkit-line-clamp: 2;
+  line-clamp: 2;
   -webkit-box-orient: vertical;
 }
+/* "N to go" needs the wider tiles; on a phone the ring colour flags it. */
+.glance-left {
+  display: none;
+}
 .glance-count {
+  min-width: 0;
   font-size: 12px;
   color: var(--rm-muted);
+}
+.glance-band-attention .glance-left {
+  color: var(--rm-progress-text);
+  font-weight: 600;
 }
 @media (min-width: 720px) {
   .glance-grid {
     grid-template-columns: repeat(3, minmax(0, 1fr));
     gap: var(--rm-space-3);
+  }
+  .glance-name {
+    display: block;
+    white-space: nowrap;
+    text-overflow: ellipsis;
+  }
+  .glance-left {
+    display: inline;
+  }
+  .glance-count {
+    overflow: hidden;
+    white-space: nowrap;
+    text-overflow: ellipsis;
   }
   .glance-tile {
     grid-template-columns: 48px minmax(0, 1fr);
@@ -217,7 +289,7 @@
 }
 @media (min-width: 1024px) {
   .glance-grid {
-    grid-template-columns: repeat(5, minmax(0, 1fr));
+    grid-template-columns: repeat(4, minmax(0, 1fr));
   }
 }
 @media (prefers-reduced-motion: no-preference) {
@@ -550,18 +622,6 @@ a.kpi-body:hover {
 .count-waiting {
   --i-tone: var(--rm-sync);
   --i-glyph: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'><path d='M12 13v8'/><path d='M4 14.899A7 7 0 1 1 15.71 8h1.79a4.5 4.5 0 0 1 2.5 8.242'/><path d='m8 17 4-4 4 4'/></svg>");
-}
-/* The emphasised tile: merged work production does not run yet. */
-.kpi-waiting .kpi-body {
-  border-color: var(--rm-sync);
-  background: var(--rm-sync-fill);
-}
-.kpi-waiting :is(.kpi-of, .kpi-note) {
-  color: var(--rm-ink);
-}
-.kpi-waiting .kpi-label {
-  color: var(--rm-ink);
-  font-weight: 600;
 }
 .rm-panel > .overall {
   width: 100%;

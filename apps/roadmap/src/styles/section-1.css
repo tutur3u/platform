@@ -160,11 +160,15 @@
 .hero {
   position: relative;
   isolation: isolate;
-  padding: var(--rm-space-4) 0 0;
+  padding: var(--rm-space-2) 0 0;
   display: grid;
   justify-items: center;
   gap: var(--rm-space-3);
   text-align: center;
+}
+/* The figures sit a step below the headline, the data line close under them. */
+.hero > .kpis {
+  margin-top: var(--rm-space-3);
 }
 /* The roadmap hero shares the EduFest hero's editorial treatment: a static
    colour wash (no blur, no animation, no blend), a calm headline with one
@@ -226,10 +230,10 @@
 .hero-h1-main,
 .hero-h1-sub {
   display: block;
-  max-width: 14em;
+  max-width: 18em;
   text-wrap: balance;
   font-size: var(--rm-text-h1);
-  line-height: 1.1;
+  line-height: 1.12;
   letter-spacing: -0.04em;
   color: var(--rm-ink);
 }
