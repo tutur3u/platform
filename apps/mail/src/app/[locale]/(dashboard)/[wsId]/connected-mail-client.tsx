@@ -7,43 +7,71 @@ import {
   useQueryClient,
 } from '@tanstack/react-query';
 import {
-  type ConnectedMailAccount,
   type ConnectedMailMessage,
   connectedMailRequest,
 } from '@tuturuuu/internal-api';
 import { Button } from '@tuturuuu/ui/button';
 import { Input } from '@tuturuuu/ui/input';
 import { useTranslations } from 'next-intl';
+import { useQueryState } from 'nuqs';
 import { useState } from 'react';
-import { useMailActor } from '@/components/mail-actor-provider';
 import { ConnectedMailCompose } from './connected-mail-compose';
+import { useConnectedMailAccounts } from './connected-mail-accounts';
 import { ConnectedMailReader } from './connected-mail-reader';
+import {
+  type ConnectedMailFolder,
+  resolveConnectedAccountId,
+} from './mail-source-selection';
 
-type Folder = 'inbox' | 'sent' | 'drafts' | 'archive' | 'trash' | 'spam';
-export function ConnectedMailClient({ workspaceId }: { workspaceId: string }) {
+interface ComposeState {
+  accountId: string;
+  intentId: string;
+  mode?: 'reply' | 'reply_all' | 'forward' | 'edit';
+  source?: ConnectedMailMessage;
+}
+
+/**
+ * Message list and reader for the connected account chosen in the sidebar.
+ * The folder comes from the route and the account from `?account=`; account
+ * management lives in Mail settings.
+ */
+export function ConnectedMailClient({
+  folder,
+  workspaceId,
+}: {
+  folder: ConnectedMailFolder;
+  workspaceId: string;
+}) {
   const t = useTranslations('mail');
   const cache = useQueryClient();
-  const [chosen, setChosen] = useState('');
-  const [folder, setFolder] = useState<Folder>('inbox');
+  const [requestedAccountId] = useQueryState('account');
+  const [composeParam, setComposeParam] = useQueryState('compose');
   const [query, setQuery] = useState('');
   const [search, setSearch] = useState('');
-  const [messageId, setMessageId] = useState('');
-  const [compose, setCompose] = useState<{
-    intentId: string;
-    mode?: 'reply' | 'reply_all' | 'forward' | 'edit';
-    source?: ConnectedMailMessage;
-  } | null>(null);
-  const [disconnectConfirmation, setDisconnectConfirmation] = useState(false);
-  const actorId = useMailActor();
-  const cacheScope = ['connected-mail', workspaceId, actorId];
-  const accounts = useQuery({
-    queryKey: [...cacheScope, 'accounts'],
-    queryFn: () =>
-      connectedMailRequest<ConnectedMailAccount[]>(workspaceId, []),
-  });
-  const account =
-    accounts.data?.find((item) => item.id === chosen) ?? accounts.data?.[0];
-  const accountId = account?.id ?? '';
+  const [selected, setSelected] = useState({ id: '', scope: '' });
+  const [composeState, setComposeState] = useState<ComposeState | null>(null);
+  const {
+    actorId,
+    cacheScope,
+    query: accounts,
+  } = useConnectedMailAccounts(workspaceId);
+  const accountId =
+    resolveConnectedAccountId(accounts.data, requestedAccountId) ?? '';
+  const account = accounts.data?.find((item) => item.id === accountId);
+  const scope = `${accountId}:${folder}`;
+  const messageId = selected.scope === scope ? selected.id : '';
+  const setMessageId = (id: string) => setSelected({ id, scope });
+  // The sidebar Compose button requests a new message through `?compose=1`.
+  const compose: ComposeState | null =
+    composeState?.accountId === accountId
+      ? composeState
+      : composeParam === '1' && accountId
+        ? { accountId, intentId: 'sidebar' }
+        : null;
+  const closeCompose = (target: ComposeState | null) => {
+    setComposeState((current) => (current === target ? null : current));
+    if (composeParam) void setComposeParam(null);
+  };
   const messages = useInfiniteQuery({
     queryKey: [...cacheScope, accountId, folder, search],
     enabled: !!accountId,
@@ -71,14 +99,6 @@ export function ConnectedMailClient({ workspaceId }: { workspaceId: string }) {
       ),
   });
   const refresh = () => cache.invalidateQueries({ queryKey: cacheScope });
-  const connect = useMutation({
-    mutationFn: (provider: 'google' | 'microsoft') =>
-      connectedMailRequest<{ authUrl: string }>(workspaceId, ['connect'], {
-        method: 'POST',
-        body: { provider },
-      }),
-    onSuccess: ({ authUrl }) => window.location.assign(authUrl),
-  });
   const markRead = useMutation({
     retry: false,
     mutationFn: (id: string) =>
@@ -100,120 +120,26 @@ export function ConnectedMailClient({ workspaceId }: { workspaceId: string }) {
       void refresh();
     },
   });
-  const disconnect = useMutation({
-    mutationFn: () =>
-      connectedMailRequest(workspaceId, [accountId], { method: 'DELETE' }),
-    onSuccess: () => {
-      setChosen('');
-      setMessageId('');
-      setCompose(null);
-      setDisconnectConfirmation(false);
-      cache.removeQueries({ queryKey: [...cacheScope, accountId] });
-      void refresh();
-    },
-  });
   const error =
     accounts.error ||
     messages.error ||
     detail.error ||
-    connect.error ||
     action.error ||
-    markRead.error ||
-    disconnect.error;
+    markRead.error;
   return (
     <div className="flex h-full flex-col gap-3 overflow-auto bg-background p-4">
-      <div className="flex flex-wrap items-center gap-2">
-        <h1 className="mr-auto font-semibold">{t('connected_accounts')}</h1>
-        <Button
-          variant="outline"
-          disabled={connect.isPending}
-          onClick={() => connect.mutate('google')}
-        >
-          {t('connected_google')}
-        </Button>
-        <Button
-          variant="outline"
-          disabled={connect.isPending}
-          onClick={() => connect.mutate('microsoft')}
-        >
-          {t('connected_microsoft')}
-        </Button>
-      </div>
       {error ? (
         <p role="alert" className="text-destructive">
           {error.message}
         </p>
       ) : null}
-      <div className="flex flex-wrap gap-2">
-        {accounts.data?.map((item) => (
-          <Button
-            key={item.id}
-            variant={item.id === accountId ? 'default' : 'outline'}
-            onClick={() => {
-              setChosen(item.id);
-              setMessageId('');
-              setCompose(null);
-              setDisconnectConfirmation(false);
-            }}
-          >
-            {item.address}
-          </Button>
-        ))}
-      </div>
       {!account && !accounts.isLoading ? (
         <p className="text-muted-foreground">{t('connected_empty')}</p>
       ) : null}
       {account ? (
         <>
-          <div className="flex flex-wrap gap-2">
-            {(
-              ['inbox', 'sent', 'drafts', 'archive', 'trash', 'spam'] as const
-            ).map((item) => (
-              <Button
-                key={item}
-                variant={folder === item ? 'secondary' : 'ghost'}
-                onClick={() => {
-                  setFolder(item);
-                  setMessageId('');
-                }}
-              >
-                {t(item)}
-              </Button>
-            ))}
-            <Button
-              onClick={() => setCompose({ intentId: crypto.randomUUID() })}
-            >
-              {t('compose')}
-            </Button>
-            <Button variant="outline" onClick={() => void refresh()}>
-              {t('connected_refresh')}
-            </Button>
-            <Button
-              variant="ghost"
-              onClick={() => setDisconnectConfirmation(true)}
-            >
-              {t('connected_disconnect')}
-            </Button>
-          </div>
-          {disconnectConfirmation ? (
-            <div className="flex items-center gap-2 rounded-lg border p-3">
-              <p>{t('connected_disconnect_confirm')}</p>
-              <Button
-                disabled={disconnect.isPending}
-                onClick={() => disconnect.mutate()}
-              >
-                {t('connected_disconnect')}
-              </Button>
-              <Button
-                variant="outline"
-                onClick={() => setDisconnectConfirmation(false)}
-              >
-                {t('connected_close')}
-              </Button>
-            </div>
-          ) : null}
           <form
-            className="flex gap-2"
+            className="flex flex-wrap gap-2"
             onSubmit={(event) => {
               event.preventDefault();
               setSearch(query);
@@ -222,10 +148,26 @@ export function ConnectedMailClient({ workspaceId }: { workspaceId: string }) {
           >
             <Input
               aria-label={t('search')}
+              className="min-w-0 flex-1"
               value={query}
               onChange={(event) => setQuery(event.target.value)}
             />
             <Button type="submit">{t('search')}</Button>
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => void refresh()}
+            >
+              {t('connected_refresh')}
+            </Button>
+            <Button
+              type="button"
+              onClick={() =>
+                setComposeState({ accountId, intentId: crypto.randomUUID() })
+              }
+            >
+              {t('compose')}
+            </Button>
           </form>
           {compose ? (
             <ConnectedMailCompose
@@ -235,11 +177,9 @@ export function ConnectedMailClient({ workspaceId }: { workspaceId: string }) {
               address={account.address}
               source={compose.source}
               mode={compose.mode}
-              onClose={() =>
-                setCompose((current) => (current === compose ? null : current))
-              }
+              onClose={() => closeCompose(compose)}
               onSent={() => {
-                setCompose((current) => (current === compose ? null : current));
+                closeCompose(compose);
                 void refresh();
               }}
             />
@@ -285,7 +225,8 @@ export function ConnectedMailClient({ workspaceId }: { workspaceId: string }) {
                 message={detail.data}
                 folder={folder}
                 onCompose={(mode) =>
-                  setCompose({
+                  setComposeState({
+                    accountId,
                     intentId: crypto.randomUUID(),
                     mode,
                     source: detail.data,
@@ -294,8 +235,10 @@ export function ConnectedMailClient({ workspaceId }: { workspaceId: string }) {
                 onAction={action.mutate}
                 actionsPending={action.isPending}
                 onSent={() => {
-                  setMessageId((current) =>
-                    current === messageId ? '' : current
+                  setSelected((current) =>
+                    current.scope === scope && current.id === messageId
+                      ? { id: '', scope }
+                      : current
                   );
                   void refresh();
                 }}

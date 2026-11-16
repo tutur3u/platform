@@ -48,36 +48,36 @@ export function MailWorkspaceView({
   });
   return (
     <MailSourceProvider connectedByDefault={model.connectedByDefault}>
-      <SidebarProvider
-        initialBehavior={model.behavior}
-        initialBehaviorUpdatedAt={model.behaviorUpdatedAt}
-      >
-        <Structure
-          actions={
-            <div className="flex w-full items-center gap-1">
-              <div className="flex-1">{userPopover}</div>
-              {notificationPopover}
-            </div>
-          }
-          defaultCollapsed={model.defaultCollapsed}
-          links={links}
-          personalOrWsId={workspaceSlug}
-          notificationPopover={notificationPopover}
-          userPopover={userPopover}
-          workspace={model.workspace}
-          wsId={wsId}
+      <MailActorProvider actorId={actorId}>
+        <SidebarProvider
+          initialBehavior={model.behavior}
+          initialBehaviorUpdatedAt={model.behaviorUpdatedAt}
         >
-          <RealtimeLogProvider wsId={wsId}>
-            <div data-workspace-slug={workspaceSlug}>
-              <MailActorProvider actorId={actorId}>
+          <Structure
+            actions={
+              <div className="flex w-full items-center gap-1">
+                <div className="flex-1">{userPopover}</div>
+                {notificationPopover}
+              </div>
+            }
+            defaultCollapsed={model.defaultCollapsed}
+            links={links}
+            personalOrWsId={workspaceSlug}
+            notificationPopover={notificationPopover}
+            userPopover={userPopover}
+            workspace={model.workspace}
+            wsId={wsId}
+          >
+            <RealtimeLogProvider wsId={wsId}>
+              <div data-workspace-slug={workspaceSlug}>
                 <MailWorkspace workspaceId={workspaceSlug}>
                   {null}
                 </MailWorkspace>
-              </MailActorProvider>
-            </div>
-          </RealtimeLogProvider>
-        </Structure>
-      </SidebarProvider>
+              </div>
+            </RealtimeLogProvider>
+          </Structure>
+        </SidebarProvider>
+      </MailActorProvider>
     </MailSourceProvider>
   );
 }

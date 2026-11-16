@@ -731,10 +731,30 @@ the default. Mail settings continue using the `mailSettings` URL state, and keep
 their tab in `mailSettingsTab`; the shared `settingsTab` parameter belongs to the
 account settings dialog, which would otherwise open on top of Mail settings.
 
-Settings → Mail source switches between managed mailboxes and connected Gmail
-or Outlook accounts; the inbox has no source tab bar. The `connected=1` URL
+The sidebar account picker under Compose switches between managed mailboxes
+(personal first, then shared groups) and connected Gmail or Outlook accounts; the
+inbox has no source tab bar. It offers search once five or more entries exist and
+closes the mobile drawer after a choice. Managed choices write `mailbox=<id>`;
+connected choices write `connected=1&account=<id>`. The `connected=1` URL
 parameter still selects connected accounts, and non-`@tuturuuu.com` accounts
-still default to them.
+still default to them. An unknown or disconnected `account` falls back to the
+first connected account.
+
+In connected mode the sidebar lists only the provider folders (Inbox, Sent,
+Drafts, Archive, Spam, Trash) and hides Labels, custom folders, Snoozed, Muted
+and Starred; the folder comes from the route, and a managed-only route shows the
+inbox. Managed mode keeps its existing folders and labels. The sidebar Compose
+button opens the connected composer through `?compose=1` while connected.
+
+Settings → Accounts (tab key `source`, so `mailSettingsTab=source` links keep
+working) lists managed mailboxes with a Mailbox settings shortcut, and connected
+accounts with Connect Gmail, Connect Outlook and Disconnect with the existing
+confirmation. The picker's Manage accounts entry opens it. The connected pane
+keeps search, refresh, compose, list and reader only. Roles, group policy,
+personal-workspace-only connection, disconnect semantics and the default source
+are unchanged, and no new default is persisted. `mail-source-selection.test.ts`,
+`mailbox-groups.test.ts` and `mail-account-messages.test.ts` cover the URL,
+folder and grouping rules and the English and Vietnamese copy.
 
 The inbox sync icon is tied to the refresh request, not a timer. Refresh
 refetches the list, mailboxes and unread counts together; the icon spins until
