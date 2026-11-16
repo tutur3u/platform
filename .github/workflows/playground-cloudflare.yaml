@@ -167,6 +167,7 @@ jobs:
       worker-environment-type: PlaygroundEnvironment
       # The emitted gate qualifies the apex-mounted production artifact.
       profile-env: VITE_PLAYGROUND_NATIVE_PROFILE=production
+      build-environment: production
       unit-command: node --test cloudflare/deployment-profile.test.mjs cloudflare/startup.test.mjs && bun x --no-install vitest run --passWithNoTests
       # Public staging values from repository variables for same-repository
       # events; fork pull requests (and unset variables) build with fixtures.
