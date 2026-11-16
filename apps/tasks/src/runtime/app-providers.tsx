@@ -4,6 +4,7 @@ import { BridgeParamsContext } from '@tuturuuu/start-bridge/next/navigation';
 import { FadeSettingInitializer } from '@tuturuuu/tasks-ui/tu-do/shared/fade-setting-initializer';
 import { TaskSoundEffectsInitializer } from '@tuturuuu/tasks-ui/tu-do/shared/task-sound-effects';
 import { ProductionIndicator } from '@tuturuuu/ui/custom/production-indicator';
+import { SorbetPrePaintScript } from '@tuturuuu/ui/custom/sorbet-pre-paint';
 import { StaffToolbar } from '@tuturuuu/ui/custom/staff-toolbar';
 import { TailwindIndicator } from '@tuturuuu/ui/custom/tailwind-indicator';
 import { Toaster } from '@tuturuuu/ui/sonner';
@@ -38,6 +39,7 @@ export function AppProviders({
       scriptProps={{ 'data-cfasync': 'false' }}
       nonce={requestNonce()}
     >
+      <SorbetPrePaintScript nonce={requestNonce()} />
       <NextIntlClientProvider
         locale={locale}
         messages={locale === 'vi' ? vi : en}

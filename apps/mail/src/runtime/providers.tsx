@@ -1,6 +1,8 @@
 import { OfflineProvider } from '@tuturuuu/offline/provider';
 import { ClientProviders } from '@tuturuuu/satellite/client-providers';
+import { requestNonce } from '@tuturuuu/start-bridge/csp';
 import { ProductionIndicator } from '@tuturuuu/ui/custom/production-indicator';
+import { SorbetPrePaintScript } from '@tuturuuu/ui/custom/sorbet-pre-paint';
 import { TailwindIndicator } from '@tuturuuu/ui/custom/tailwind-indicator';
 import { VersionBadge } from '@tuturuuu/ui/custom/version-badge';
 import { Toaster } from '@tuturuuu/ui/sonner';
@@ -34,6 +36,7 @@ export function AppProviders({
       enableSystem
       scriptProps={{ 'data-cfasync': 'false' }}
     >
+      <SorbetPrePaintScript nonce={requestNonce()} />
       <OfflineProvider register={false}>
         <VercelAnalytics />
         <VercelInsights />

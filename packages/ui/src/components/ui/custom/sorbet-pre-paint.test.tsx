@@ -1,7 +1,9 @@
+import { createHash } from 'node:crypto';
 import { renderToStaticMarkup } from 'react-dom/server';
 import { afterEach, describe, expect, it } from 'vitest';
 import {
   SORBET_PRE_PAINT_SCRIPT,
+  SORBET_PRE_PAINT_SCRIPT_HASH,
   SorbetPrePaintScript,
 } from './sorbet-pre-paint';
 import {
@@ -48,6 +50,31 @@ function runtimeResult(stored: string) {
 afterEach(clear);
 
 describe('Sorbet pre-paint script', () => {
+  it('publishes the CSP hash of the exact script', () => {
+    const digest = createHash('sha256')
+      .update(SORBET_PRE_PAINT_SCRIPT, 'utf8')
+      .digest('base64');
+    expect(SORBET_PRE_PAINT_SCRIPT_HASH).toBe(`'sha256-${digest}'`);
+  });
+
+  it('writes to the document only through setAttribute', () => {
+    expect(SORBET_PRE_PAINT_SCRIPT).not.toMatch(
+      /innerHTML|outerHTML|insertAdjacent|document\.write|eval\(|Function\(/
+    );
+    expect(SORBET_PRE_PAINT_SCRIPT.match(/\.\w+\(/g)).toEqual(
+      expect.arrayContaining(['.setAttribute('])
+    );
+  });
+
+  it('leaves default values absent, like applySorbetTheme', () => {
+    window.localStorage.setItem(
+      SORBET_THEME_STORAGE_KEY,
+      '{"preset":"sorbet","radius":"soft","density":"comfortable","font":"nunito"}'
+    );
+    runScript();
+    expect(attributes()).toEqual({});
+  });
+
   it('turns Sorbet on only for the stored value "true"', () => {
     window.localStorage.setItem(SORBET_UI_STORAGE_KEY, 'true');
     runScript();
