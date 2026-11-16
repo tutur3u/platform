@@ -13,8 +13,8 @@ import { createServer, request as httpRequest } from 'node:http';
 import { join, sep } from 'node:path';
 import { fileURLToPath, pathToFileURL } from 'node:url';
 import { Miniflare, supportedCompatibilityDate } from 'miniflare';
-import { showPlans } from '../src/content/tracks.ts';
-import { inlineScriptTexts } from '../src/html-scripts.ts';
+import { showPlans } from '@tuturuuu/roadmap-core/content/tracks.ts';
+import { inlineScriptTexts } from '@tuturuuu/roadmap-core/html-scripts.ts';
 import * as markup from './doctor-markup.mjs';
 import {
   reportAssetSmokeRejection,

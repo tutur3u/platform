@@ -1,7 +1,7 @@
 /** D79: the canonical post-deploy smoke catches zone-only failures. */
 import assert from 'node:assert/strict';
 import test from 'node:test';
-import { PUBLIC_DOCUMENTS } from '../src/cache-policy.ts';
+import { PUBLIC_DOCUMENTS } from '@tuturuuu/roadmap-core/cache-policy.ts';
 import {
   browserHeaders,
   CANONICAL_PAGES,

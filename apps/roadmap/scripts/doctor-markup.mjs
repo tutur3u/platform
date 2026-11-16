@@ -1,5 +1,5 @@
 /** Markup and size checks the pre-seal doctor runs on the public documents. */
-import { MAX_DOCUMENT_BYTES } from '../src/csp.ts';
+import { MAX_DOCUMENT_BYTES } from '@tuturuuu/roadmap-core/csp.ts';
 import { canonicalSmoke } from './canonical-smoke.mjs';
 import { tabFailures } from './doctor-tabs.mjs';
 

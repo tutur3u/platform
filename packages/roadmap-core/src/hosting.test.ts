@@ -125,7 +125,10 @@ describe('hosting: the as-of time is the build time', () => {
     // Broken variant: yesterday's file left before a bare `vp build`.
     assert.equal(snapshotForBuild(fresh, NOW + SNAPSHOT_MAX_AGE_MS + 1), null);
     assert.equal(snapshotForBuild({ mode: 'probed' }, NOW), null);
-    assert.match(read('../vite.config.ts'), /snapshotForBuild\(/);
+    assert.match(
+      read('../../../apps/roadmap/vite.config.ts'),
+      /snapshotForBuild\(/
+    );
   });
 
   it('the build probe never buffers a large body', () => {
@@ -136,7 +139,9 @@ describe('hosting: the as-of time is the build time', () => {
   });
 
   it('the build writes a fresh snapshot every time, before GitHub and offline mode', () => {
-    const script = read('../scripts/generate-roadmap-data.mjs');
+    const script = read(
+      '../../../apps/roadmap/scripts/generate-roadmap-data.mjs'
+    );
     const main = script.slice(script.indexOf('async function main()'));
     const write = main.indexOf('await writeHosting();');
     assert.ok(write > 0);

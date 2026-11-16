@@ -1,5 +1,5 @@
-import { plainText } from '../src/changelog/schema.ts';
-import { feedItem } from '../src/live/feed.ts';
+import { plainText } from '@tuturuuu/roadmap-core/changelog/schema.ts';
+import { feedItem } from '@tuturuuu/roadmap-core/live/feed.ts';
 
 export const REPO = 'tutur3u/platform';
 export const MODEL = 'gemini-3.1-flash-lite'; // packages/ai/src/credits/model-mapping.ts:7

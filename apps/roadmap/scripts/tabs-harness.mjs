@@ -55,7 +55,9 @@ async function load() {
   if (loaded) return loaded;
   const dir =
     process.env.TABS_SOURCE_DIR ??
-    fileURLToPath(new URL('../src/components/', import.meta.url));
+    fileURLToPath(
+      new URL('../../../packages/roadmap-core/src/components/', import.meta.url)
+    );
   const out = mkdtempSync(join(tmpdir(), 'roadmap-tabs-'));
   harnessDirs.push(out);
   try {

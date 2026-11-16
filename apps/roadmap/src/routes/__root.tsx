@@ -10,10 +10,10 @@ import {
 import { PublicSatelliteProviders } from '@tuturuuu/satellite/public';
 import { StatusPage } from '@tuturuuu/ui/custom/status-page';
 import type { ReactNode } from 'react';
-import logo from '../assets/tuturuuu-logo.png?no-inline';
-import { langFromPathname } from '../seo';
-import { sorbetPage } from '../sorbet-page';
-import styles from '../styles.css?url';
+import logo from '@tuturuuu/roadmap-core/assets/tuturuuu-logo.png?no-inline';
+import { langFromPathname } from '@tuturuuu/roadmap-core/seo.ts';
+import { sorbetPage } from '@tuturuuu/roadmap-core/sorbet-page.ts';
+import styles from '@tuturuuu/roadmap-core/styles.css?url';
 
 export const Route = createRootRoute({
   head: () => ({

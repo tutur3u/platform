@@ -1,4 +1,4 @@
-import './integration.test.ts';
+import '@tuturuuu/roadmap-core/integration.test.ts';
 /**
  * D79 data tests for the public roadmap. Every guard has a broken variant
  * that must fail: a validator that accepts anything, a status engine that
@@ -8,33 +8,36 @@ import './integration.test.ts';
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import { describe, it } from 'node:test';
-import './csp.test.ts';
-import './history/history.test.ts';
-import './live/regressions.test.ts';
-import './content/workshops/edufest-2026.test.ts';
-import './live/initial-data.test.ts';
-import './live/runtime-refresh.test.ts';
-import './live/pulse.test.ts';
-import './seo.test.ts';
-import './perf.test.ts';
-import './hydration-loader.test.ts';
-import './a11y.test.ts';
-import './hosting.test.ts';
-import './insights/insights.test.ts';
-import './insights/chart-press.test.ts';
-import './info.test.ts';
-import './tabs.test.ts';
-import './sorbet-tokens.test.ts';
-import './glance.test.ts';
-import { comingSoon, visibleComingSoon } from './content/coming-soon.ts';
-import { showPlans, tracks } from './content/tracks.ts';
+import '@tuturuuu/roadmap-core/csp.test.ts';
+import '@tuturuuu/roadmap-core/history/history.test.ts';
+import '@tuturuuu/roadmap-core/live/regressions.test.ts';
+import '@tuturuuu/roadmap-core/content/workshops/edufest-2026.test.ts';
+import '@tuturuuu/roadmap-core/live/initial-data.test.ts';
+import '@tuturuuu/roadmap-core/live/runtime-refresh.test.ts';
+import '@tuturuuu/roadmap-core/live/pulse.test.ts';
+import '@tuturuuu/roadmap-core/seo.test.ts';
+import '@tuturuuu/roadmap-core/perf.test.ts';
+import '@tuturuuu/roadmap-core/hydration-loader.test.ts';
+import '@tuturuuu/roadmap-core/a11y.test.ts';
+import '@tuturuuu/roadmap-core/hosting.test.ts';
+import '@tuturuuu/roadmap-core/insights/insights.test.ts';
+import '@tuturuuu/roadmap-core/insights/chart-press.test.ts';
+import '@tuturuuu/roadmap-core/info.test.ts';
+import '@tuturuuu/roadmap-core/tabs.test.ts';
+import '@tuturuuu/roadmap-core/sorbet-tokens.test.ts';
+import '@tuturuuu/roadmap-core/glance.test.ts';
+import {
+  comingSoon,
+  visibleComingSoon,
+} from '@tuturuuu/roadmap-core/content/coming-soon.ts';
+import { showPlans, tracks } from '@tuturuuu/roadmap-core/content/tracks.ts';
 import {
   feedItem,
   INCIDENT_TERMS,
   localDay,
   shippedFeed,
   termHash,
-} from './live/feed.ts';
+} from '@tuturuuu/roadmap-core/live/feed.ts';
 import {
   classifyProbeResponse,
   hostsResponse,
@@ -44,20 +47,20 @@ import {
   probeHosts,
   resetHostsMemo,
   RUNTIME_PROBED_APPS,
-} from './live/host-probe.ts';
+} from '@tuturuuu/roadmap-core/live/host-probe.ts';
 import {
   type LiveData,
   mergeLiveData,
   type PrFact,
   parseLiveData,
-} from './live/model.ts';
+} from '@tuturuuu/roadmap-core/live/model.ts';
 import {
   type Deliverable,
   deriveDeliverable,
   deriveTracks,
   indexLiveData,
-} from './live/status.ts';
-import { buildView, matchesFilter } from './view-model.ts';
+} from '@tuturuuu/roadmap-core/live/status.ts';
+import { buildView, matchesFilter } from '@tuturuuu/roadmap-core/view-model.ts';
 
 const NOW = Date.parse('2026-11-10T08:00:00Z');
 const SHA_A = 'a'.repeat(40);
@@ -98,7 +101,13 @@ const deliverable = (overrides: Partial<Deliverable> = {}): Deliverable => ({
 describe('live data validator', () => {
   it('accepts the committed generated data', () => {
     const raw = JSON.parse(
-      readFileSync(new URL('./generated/live.json', import.meta.url), 'utf8')
+      readFileSync(
+        new URL(
+          '../../../packages/roadmap-core/src/generated/live.json',
+          import.meta.url
+        ),
+        'utf8'
+      )
     );
     const parsed = parseLiveData(raw);
     assert.equal(parsed.schema, 1);

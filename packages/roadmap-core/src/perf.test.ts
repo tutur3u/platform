@@ -269,7 +269,7 @@ describe('perf: the served document fetches no module before paint or intent', (
     // Broken variant: a transform that inserts an inline loader.
     assert.equal(inlineScriptTexts(inserting(html)).length, 1);
     assert.match(
-      read('./worker.ts'),
+      read('../../../apps/roadmap/src/worker.ts'),
       /withContentSecurityPolicy\(response, deferHydration\)/
     );
   });

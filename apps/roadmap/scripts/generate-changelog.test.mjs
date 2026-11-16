@@ -3,7 +3,7 @@ import { mkdtempSync, readFileSync, rmSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { test } from 'node:test';
-import { parseChangelog } from '../src/changelog/schema.ts';
+import { parseChangelog } from '@tuturuuu/roadmap-core/changelog/schema.ts';
 import { MODEL, publicItems, releaseWindows } from './changelog-inputs.mjs';
 import {
   fallbackRelease,

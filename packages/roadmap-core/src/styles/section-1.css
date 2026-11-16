@@ -12,6 +12,9 @@
 @source '../../../../packages/ui/src/components/ui/accordion.tsx';
 @source '../../../../packages/ui/src/components/ui/button.tsx';
 @source '../../../../packages/ui/src/components/ui/custom/theme-toggle.tsx';
+/* This package's own source (it moved out of apps/roadmap, which Tailwind
+   scans by default as the build root). */
+@source '../..';
 /* JetBrains Mono for the small mono labels, subset to what they need
    (Latin, Vietnamese, digits, arrows; weights 400-700): 17 KB instead of
    the 114 KB full variable font. Rebuild it from the shared font with

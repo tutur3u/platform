@@ -43,7 +43,7 @@ test('root route and Worker 404 use the shared status page', () => {
     statusWiringProblems(
       read('./routes/__root.tsx'),
       read('./worker.ts'),
-      read('./not-found-response.tsx')
+      read('../../../packages/roadmap-core/src/not-found-response.tsx')
     ),
     []
   );

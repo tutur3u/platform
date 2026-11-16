@@ -11,12 +11,18 @@
 import { readFileSync, writeFileSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { HISTORY_TRACKS } from '../src/content/track-names.ts';
-import { buildHistory, parseHistory } from '../src/history/build.ts';
-import { REPO } from '../src/live/model.ts';
+import { HISTORY_TRACKS } from '@tuturuuu/roadmap-core/content/track-names.ts';
+import {
+  buildHistory,
+  parseHistory,
+} from '@tuturuuu/roadmap-core/history/build.ts';
+import { REPO } from '@tuturuuu/roadmap-core/live/model.ts';
 
 const root = dirname(dirname(fileURLToPath(import.meta.url)));
-const target = join(root, 'src/generated/history.json');
+const target = join(
+  root,
+  '../../packages/roadmap-core/src/generated/history.json'
+);
 const token = process.env.GITHUB_TOKEN || process.env.GH_TOKEN || undefined;
 const log = (message) => process.stderr.write(`[roadmap-history] ${message}\n`);
 

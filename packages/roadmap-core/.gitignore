@@ -1,0 +1,3 @@
+node_modules/
+# Build-time observations (apps/roadmap/scripts/generate-*.mjs); never committed.
+.generated/

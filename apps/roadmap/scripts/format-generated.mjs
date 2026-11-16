@@ -21,8 +21,8 @@ const appRoot = dirname(dirname(fileURLToPath(import.meta.url)));
 const defaultRepoRoot = resolve(appRoot, '../..');
 
 export const GENERATED_FILES = [
-  'src/generated/live.json',
-  'src/generated/history.json',
+  '../../packages/roadmap-core/src/generated/live.json',
+  '../../packages/roadmap-core/src/generated/history.json',
 ];
 
 function readJson(path, what) {

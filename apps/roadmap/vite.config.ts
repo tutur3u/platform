@@ -3,12 +3,18 @@ import tailwindcss from '@tailwindcss/vite';
 import { tanstackStart } from '@tanstack/react-start/plugin/vite';
 import react from '@vitejs/plugin-react';
 import { defineConfig } from 'vite-plus';
-import { snapshotForBuild } from './src/live/hosting.ts';
-import { activityForBuild } from './src/insights/activity.ts';
+import { snapshotForBuild } from '../../packages/roadmap-core/src/live/hosting.ts';
+import { activityForBuild } from '../../packages/roadmap-core/src/insights/activity.ts';
 import { voidPlugin } from 'void';
 
-const HOSTING_FILE = new URL('./.generated/hosting.json', import.meta.url);
-const ACTIVITY_FILE = new URL('./.generated/activity.json', import.meta.url);
+const HOSTING_FILE = new URL(
+  '../../packages/roadmap-core/.generated/hosting.json',
+  import.meta.url
+);
+const ACTIVITY_FILE = new URL(
+  '../../packages/roadmap-core/.generated/activity.json',
+  import.meta.url
+);
 
 /** A generated JSON file, or null when it is absent or unreadable. */
 function generated(file: URL): unknown {

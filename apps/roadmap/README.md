@@ -10,6 +10,13 @@ maps to the physical `dist/client/roadmap/assets/example.js` through the
 database bindings, analytics, forms, provider credentials or private fleet
 dependencies.
 
+The page source (pages, components, content, live data, insights, history,
+changelog, styles, messages and their tests) lives in the shared workspace
+package `@tuturuuu/roadmap-core` at `packages/roadmap-core`, so the marketing app
+can render the same pages. This app keeps the Worker (`src/worker.ts`), the
+router and routes, the build and release scripts, and the route-level tests.
+Build-time observations land in the untracked `packages/roadmap-core/.generated/`.
+
 ## Page layout and tabs
 
 A compact hero (title, three headline figures, when the public data was
@@ -17,17 +24,17 @@ read, labelled Snapshot, Live or Snapshot only for the data on screen) sits abov
 **Overview** (track glance, coming soon, the three latest production updates),
 **Progress** (status summary, tracks, timeline), **Activity** (deliverables
 shipped this week, shipping pulse, every production update, patch notes) and
-**Infrastructure** (hosting, the move to tuturuuu.com). `src/components/tabs.tsx`
+**Infrastructure** (hosting, the move to tuturuuu.com). `packages/roadmap-core/src/components/tabs.tsx`
 renders every panel on the server, so crawlers, no-JS readers, structured data
 and the live refresh cover all of them. The tab bar is fragment links
-(`#overview`, `#progress`, `#activity`, `#infrastructure`); `src/styles/tabs.css`
+(`#overview`, `#progress`, `#activity`, `#infrastructure`); `packages/roadmap-core/src/styles/tabs.css`
 shows the panel the fragment names, or the panel holding the element it names
 (old links such as `#pulse` or `#track-cms`), with `:target` and `:has()`.
 Where `:has()` is supported the right panel paints first without script and
 nothing shifts; without it every panel shows until hydration. After hydration
 the same markup becomes the WAI-ARIA tabs pattern (roles, `aria-selected`,
 `aria-controls`, a roving tabindex, arrow keys with Home and End). The tab is a
-pure function of the URL (`src/components/tab-model.ts`): a tab id selects
+pure function of the URL (`packages/roadmap-core/src/components/tab-model.ts`): a tab id selects
 itself, an id inside a panel selects that panel's tab, and anything else (no
 fragment, an unknown or malformed one, an element outside the panels) selects
 Overview. Before hydration CSS applies that rule; after it the selected tab is
@@ -49,11 +56,11 @@ nothing without script and leave inactive panels out of the server HTML.
 
 The roadmap uses the default Sorbet palette from `@tuturuuu/ui`. Its root
 document renders `<html data-ui="sorbet">` for `/roadmap` and `/roadmap/vi`
-(`src/sorbet-page.ts`, set in the server HTML, no script), so
+(`packages/roadmap-core/src/sorbet-page.ts`, set in the server HTML, no script), so
 `packages/ui/src/sorbet.css`, which the page already ships through the
 shared `globals.css`, remaps the shared semantic tokens: light from its
 `:root[data-ui="sorbet"]` block, dark from `.dark`. Nothing is copied, so the
-stylesheet does not grow. `src/styles/tokens.css` maps the page's own tokens
+stylesheet does not grow. `packages/roadmap-core/src/styles/tokens.css` maps the page's own tokens
 onto Sorbet's stable names:
 
 | Roadmap token | Sorbet source |
@@ -74,7 +81,7 @@ scale (`--rm-text-xs` 12px to `--rm-text-h1`) and one spacing rhythm
 (`--rm-space-1` 4px to `--rm-space-8` 64px) used by the hero, the tab bar and
 every panel. The workshop pages share the stylesheet without Sorbet and keep
 the earlier mapping (the first block in `tokens.css`).
-`src/sorbet-tokens.test.ts` pins both default Sorbet blocks byte for byte,
+`packages/roadmap-core/src/sorbet-tokens.test.ts` pins both default Sorbet blocks byte for byte,
 allows only the stable Sorbet names, and checks every text pair the page
 draws for WCAG AA (4.5:1; focus ring and status marks 3:1) in light and dark,
 so a Sorbet change fails CI here until the roadmap is reviewed against it.
@@ -86,34 +93,34 @@ is a highlight behind the selected day (ink at 7%), not a mark: it makes no
 3:1 claim, and the marks stay at 3:1 or more on top of it.
 
 Every control is at least 44 x 44 CSS px on every pointer
-(`src/styles/targets.css`): compact controls keep their look and gain an
+(`packages/roadmap-core/src/styles/targets.css`): compact controls keep their look and gain an
 invisible, centred hit area inside the control; rows that scroll sideways
 (the track chips and the status filters) get room inside them for those hit
 areas, and stacked rows open up so no two hit areas overlap. Docked into the
 44px compact navbar, the chip row is a 44px scroll row 4px inside the header
 and each chip's hit area spans it. On the pulse chart the whole plot is one
 pointer target: a tap, a click or a horizontal drag selects the day under
-the pointer (`dayAt` in `src/insights/chart-nav.ts`), a vertical drag still
+the pointer (`dayAt` in `packages/roadmap-core/src/insights/chart-nav.ts`), a vertical drag still
 scrolls (and, cancelled, leaves no day selected), a mouse or pen is captured
 so a drag past an edge keeps the first or last day, and every end of a press
 (release, cancel, lost capture, a move with no button held) clears it
-(`src/insights/chart-press.ts`), and the per-day buttons keep keyboard and screen-reader use (roving
+(`packages/roadmap-core/src/insights/chart-press.ts`), and the per-day buttons keep keyboard and screen-reader use (roving
 focus, each day's name, the live readout). The only exceptions are inline
 targets under WCAG 2.5.8: PR numbers inside a metadata line and links in
 running text. The shared marketing shell's own controls are measured but
 owned by `packages/marketing-shell`.
 
-Empty and unknown states share one component (`src/components/empty-state.tsx`):
+Empty and unknown states share one component (`packages/roadmap-core/src/components/empty-state.tsx`):
 a build that could not check hosting, no patch notes, no production updates, a
 filter with no deliverables and a timeline period with nothing merged each say
 what is missing and why, in English and Vietnamese, with no placeholder data.
 
 ## Content and status
 
-`src/content/tracks.ts` is the curated roadmap: tracks → milestones →
+`packages/roadmap-core/src/content/tracks.ts` is the curated roadmap: tracks → milestones →
 deliverables. Each deliverable lists the public PRs in tutur3u/platform that
 deliver it and the app whose production deploy must contain them. Status is
-never written by hand; `src/live/status.ts` derives it from evidence:
+never written by hand; `packages/roadmap-core/src/live/status.ts` derives it from evidence:
 
 | Status | Rule |
 | --- | --- |
@@ -123,7 +130,7 @@ never written by hand; `src/live/status.ts` derives it from evidence:
 | In progress | Any other open PR, or curated `fallback: 'in_progress'` with no PR. |
 | Planned | No public evidence. No claims. |
 
-`src/content/coming-soon.ts` holds approved announcement copy only; change it
+`packages/roadmap-core/src/content/coming-soon.ts` holds approved announcement copy only; change it
 only with an approved replacement. Never add private products, client names,
 security incidents, operational notes or tokens to content.
 
@@ -133,14 +140,14 @@ security incidents, operational notes or tokens to content.
 `data:refresh`, with `GITHUB_TOKEN`) reads every merged PR in tutur3u/platform
 since the first one (October 2022), drops bots and dependency churn, and
 classifies each into a public track and a kind (feature, fix, maintenance) in
-`src/history/classify.ts`. Titles are published only for user-facing features in
+`packages/roadmap-core/src/history/classify.ts`. Titles are published only for user-facing features in
 a public product track that pass the incident/security/customer, plumbing and
 internal-implementation filters; everything else (including client work) is
 counted, never titled. The result, with per-week/month/year aggregates
-(`src/history/build.ts`, validated by `parseHistory`), is committed as
-`src/generated/history.json` and emitted as a hashed, immutable asset that the
+(`packages/roadmap-core/src/history/build.ts`, validated by `parseHistory`), is committed as
+`packages/roadmap-core/src/generated/history.json` and emitted as a hashed, immutable asset that the
 page fetches only when the timeline comes within 600px of the viewport
-(`src/history/lazy-load.ts`); it is never prefetched. Without a token the
+(`packages/roadmap-core/src/history/lazy-load.ts`); it is never prefetched. Without a token the
 committed file is kept. `data:refresh` then runs
 `scripts/format-generated.mjs`, which rewrites `live.json` and `history.json`
 with the root-pinned oxfmt so the refreshed snapshot passes `oxfmt --check`;
@@ -158,12 +165,12 @@ Data comes from public sources only, in two layers:
    approved and recently merged PRs, every PR the content references, main
    HEAD, deployed-commit-vs-main compares and the latest mobile release tag)
    and probes each allowlisted app's public `/api/build-info`. It writes
-   `src/generated/live.json`. `GITHUB_TOKEN`/`GH_TOKEN` is optional and only
+   `packages/roadmap-core/src/generated/live.json`. `GITHUB_TOKEN`/`GH_TOKEN` is optional and only
    lifts the anonymous rate limit; it is never written. If GitHub fails, the
    previous file is kept with its own timestamp. `ROADMAP_OFFLINE=1` skips the
    refresh.
 2. **In the browser.** Once the page has loaded, the tab is visible and the
-   main thread is idle (`src/live/defer.ts`), the page refreshes from the
+   main thread is idle (`packages/roadmap-core/src/live/defer.ts`), the page refreshes from the
    public GitHub API (unauthenticated, the viewer's own quota: four search
    calls, the most recently updated PRs only, see `LIVE_SEARCH`) and from
    `GET /roadmap/api/hosts`, then every 30 minutes while visible. A 403 or
@@ -182,13 +189,13 @@ Data comes from public sources only, in two layers:
    tabs do not poll, so this is a visible-page cadence, not a scheduled job.
    Hosting classifications, migration observations, activity history and patch
    notes retain their build-owned provenance: the Workers and Vercel provider
-   counts come from `BUILD_HOSTING` (`src/live/build-hosting.ts`) and change
-   only with a new build. `src/live/runtime-refresh.test.ts` covers clock
+   counts come from `BUILD_HOSTING` (`packages/roadmap-core/src/live/build-hosting.ts`) and change
+   only with a new build. `packages/roadmap-core/src/live/runtime-refresh.test.ts` covers clock
    boundaries, storage bounds, malformed data and build fallback.
 
 **Hosting and the move to tuturuuu.com** are observed on every build, before
-and independent of GitHub (`src/live/build-probe.ts`, written to the untracked
-`.generated/hosting.json` and embedded by Vite). Providers come from each
+and independent of GitHub (`packages/roadmap-core/src/live/build-probe.ts`, written to the untracked
+`packages/roadmap-core/.generated/hosting.json` and embedded by Vite). Providers come from each
 app's public build-info, probed from the build machine (outside Cloudflare).
 The migration list and paths are the repo's base-path registry
 (`ONE_ORIGIN_APP_BASE_PATHS` in `packages/utils/src/app-mounts.ts`); an app
@@ -198,17 +205,17 @@ there. A build that cannot observe (for example `ROADMAP_OFFLINE=1`) shows
 every value as not verifiable, with that build's time; the page never shows a
 provider or migration value from an earlier build. The Cloudflare Workers
 group and legend show Cloudflare's official cloud mark, unaltered, where the
-Vercel group shows its triangle (`src/assets/brands/CLOUDFLARE-MARK.md`).
+Vercel group shows its triangle (`packages/roadmap-core/src/assets/brands/CLOUDFLARE-MARK.md`).
 
 `GET|HEAD /roadmap/api/hosts` probes the fixed allowlist in
-`src/live/host-probe.ts` (request input never selects a host), with manual
+`packages/roadmap-core/src/live/host-probe.ts` (request input never selects a host), with manual
 redirects, a 4-second timeout and a 16 KiB body bound. It returns only
 `{ app, platform, commit }` per app, with `private,no-store`. One isolate
 shares a result for 60 seconds, so bursts fan out at most once a minute.
 
-The shipped feed (`src/live/feed.ts`) publishes merged PR titles only when
+The shipped feed (`packages/roadmap-core/src/live/feed.ts`) publishes merged PR titles only when
 they are `feat`/`perf` in a public product scope and contain no incident,
-security, customer or internal-plumbing wording. `src/content/title-denylist.ts`
+security, customer or internal-plumbing wording. `packages/roadmap-core/src/content/title-denylist.ts`
 keeps a hashed-term hook but is intentionally empty: hashes of short names are
 guessable, so client names are never shipped, even hashed.
 
@@ -225,7 +232,7 @@ that must fail.
 ## Shipping pulse, production updates and patch notes
 
 Every figure comes from the same public sources, derived at build time and in
-the page (`src/insights`); anything not observed reads "not available", never
+the page (`packages/roadmap-core/src/insights`); anything not observed reads "not available", never
 zero or an earlier build's value.
 
 - **Two scopes, labelled.** *All merged PRs* are every merged pull request in
@@ -234,8 +241,8 @@ zero or an earlier build's value.
   them: all, tracked, and tracked PRs production runs now, plus a 7-day
   moving average.
 - **Build activity.** `scripts/generate-roadmap-data.mjs` writes the
-  untracked `.generated/activity.json` (embedded by Vite like
-  `hosting.json`, `src/insights/activity.ts`): each app's production build
+  untracked `packages/roadmap-core/.generated/activity.json` (embedded by Vite like
+  `hosting.json`, `packages/roadmap-core/src/insights/activity.ts`): each app's production build
   (commit and `builtAt` from its public build-info) and the merged PRs from
   the build's search window, as `[number, day, track]`. Anonymous search
   allows 10 requests a minute, so the window is 7 days without a token and
@@ -251,8 +258,8 @@ zero or an earlier build's value.
   first, with the tracked work it runs and what waits for its next deploy,
   using the Live rule (deployed commit at or after the merge). A divider marks
   what is new since the reader's last visit (`localStorage`, optional).
-- **Patch notes** render `.generated/changelog.json` from the changelog
-  pipeline (validated by `parseChangelog` in `src/changelog/schema.ts`, the
+- **Patch notes** render `packages/roadmap-core/.generated/changelog.json` from the changelog
+  pipeline (validated by `parseChangelog` in `packages/roadmap-core/src/changelog/schema.ts`, the
   data.ts Vite glob embedding) as plain text, with PR links built from
   numbers. Fallback output has a visible label; model output names its model.
   Release dates use Vietnam calendar days. Release details mount when opened,
@@ -268,9 +275,9 @@ Targets: Lighthouse mobile 90+, LCP under 2.5 s and interaction latency under
 200 ms at 4x CPU throttling on all four public pages.
 
 - **First paint first.** The Worker rewrites each document before hashing its
-  inline scripts (`src/defer-hydration.ts`), changing attributes only: module
+  inline scripts (`packages/roadmap-core/src/defer-hydration.ts`), changing attributes only: module
   preloads and the entry script stay in place but inert. The boot script
-  (`src/boot/roadmap-boot.js`, an async hashed same-origin asset in `<head>`,
+  (`packages/roadmap-core/src/boot/roadmap-boot.js`, an async hashed same-origin asset in `<head>`,
   so no inline script and no render blocking) sets lite mode before first paint and imports the bundle at
   the reader's first intent (pointerdown, touchstart, keydown or focusin) or
   within 1 s of the largest contentful paint. A tap on a button that is not
@@ -279,7 +286,7 @@ Targets: Lighthouse mobile 90+, LCP under 2.5 s and interaction latency under
   throughout.
 - **Explanations on demand.** Long explanations (how statuses are computed,
   section intros, migration rules, pulse scopes) sit behind (i) buttons, and
-  status and metric labels carry definition tooltips (`src/components/info.tsx`).
+  status and metric labels carry definition tooltips (`packages/roadmap-core/src/components/info.tsx`).
   Both are native HTML popovers (`popovertarget`): their text is in the server
   HTML, a tap, Enter or Space opens them before hydration and without
   JavaScript, Escape or a tap elsewhere closes them, and they open in the top
@@ -297,10 +304,10 @@ Targets: Lighthouse mobile 90+, LCP under 2.5 s and interaction latency under
   streamdown from Tailwind's class scan and lists the shell primitives it
   renders, which keeps the stylesheet near 20 KB compressed.
 - **Fonts.** Heroes use only the preloaded 500/600 weights. The mono labels
-  use a 17 KB subset of JetBrains Mono (`src/assets/fonts`; the rebuild
+  use a 17 KB subset of JetBrains Mono (`packages/roadmap-core/src/assets/fonts`; the rebuild
   command is in `styles.css`) instead of the 114 KB variable font.
 - **Effects by tier.** Phones, screens under 1024px and low-end devices get
-  flat surfaces. `src/lite-mode.ts` marks `html[data-lite]` before first paint
+  flat surfaces. `packages/roadmap-core/src/lite-mode.ts` marks `html[data-lite]` before first paint
   when a device reports four or fewer cores, 4 GB or less of memory, or Data
   Saver. Backdrop filters, blend modes and infinite animations exist only
   for `:root:not([data-lite])` at 1024px and wider (infinite animations also
@@ -321,13 +328,13 @@ Targets: Lighthouse mobile 90+, LCP under 2.5 s and interaction latency under
   scrubber renders 24 chips around the selected period; each deliverable's
   status glyph is a CSS mask, not an inline SVG.
 
-`src/perf.test.ts`, `src/hydration-loader.test.ts` and `src/a11y.test.ts` (D79, run via
+`packages/roadmap-core/src/perf.test.ts`, `packages/roadmap-core/src/hydration-loader.test.ts` and `packages/roadmap-core/src/a11y.test.ts` (D79, run via
 `src/roadmap-data.test.ts`) guard each rule with a broken variant;
-`src/css-guards.ts` checks the stylesheet.
+`packages/roadmap-core/src/css-guards.ts` checks the stylesheet.
 
 ## Content-Security-Policy
 
-`src/csp.ts` attaches a CSP to every HTML response from the SSR handler.
+`packages/roadmap-core/src/csp.ts` attaches a CSP to every HTML response from the SSR handler.
 `script-src` is `'self'` plus the sha256 of each inline script in that exact
 response (theme bootstrap and TanStack stream bootstrap; the stream bootstrap
 changes per request, so hashes are computed per response). There is no
@@ -449,7 +456,7 @@ reads `/roadmap/api/build-info` for `ROADMAP_SOURCE_SHA`. It also runs
 `scripts/ci/asset-smoke.mjs`: every CSS, JS, font, `<img>` and icon-link URL
 referenced by the canonical and satellite documents must return 200 with the
 matching MIME type on `tuturuuu.com`, and images must be non-empty. The brand
-logo and favicon ship inside the mount (`src/assets/tuturuuu-logo.png`, served
+logo and favicon ship inside the mount (`packages/roadmap-core/src/assets/tuturuuu-logo.png`, served
 as a hashed `/roadmap/assets/` file) rather than from the apex `/media` path,
 and the doctor requires that mounted logo. The same checker must reject a broken variant, including a
 stylesheet that returns 404 `text/html`. Post-deploy D15 runs that smoke for
@@ -484,13 +491,13 @@ refreshed in the browser from public sources.
 A central sign-in link is the only account affordance. Root and mounted-host
 router selection and the canonical apex URL remain owned by the request adapter.
 
-`src/cache-policy.ts` composes headers after the native response. Only successful
+`packages/roadmap-core/src/cache-policy.ts` composes headers after the native response. Only successful
 GET/HEAD HTML at `https://tuturuuu.com/roadmap` and
 `https://roadmap.tuturuuu.com/`, without query variants, receives
 `public,s-maxage=300,stale-while-revalidate=86400`. A renderer default of
 `private` or `no-store` does not keep that document private: the page has no
 actor. Cookie-bearing requests do not select a different document or read
-identity. `src/public-cache-guard.ts` fails the cache test if `src` imports
+identity. `packages/roadmap-core/src/public-cache-guard.ts` fails the cache test if `src` imports
 an auth or session module, or reads `Cookie` or `Authorization`, while that
 document still uses the shared cache. The only escape is an explicit
 `private` cache-control with no `s-maxage` on the document. Set-Cookie, a

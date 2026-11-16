@@ -1,20 +1,20 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
-import { buildInfoResponse } from './build-info.ts';
+import { buildInfoResponse } from '@tuturuuu/roadmap-core/build-info.ts';
 import {
   normalizeLocalHost,
   prepareRoadmapRequest,
   roadmapBoundary,
   selectedBasepath,
   withoutEnglishPrefix,
-} from './request-boundary.ts';
+} from '@tuturuuu/roadmap-core/request-boundary.ts';
 import {
   withRoadmapCachePolicy,
   PUBLIC_DOCUMENT_CACHE,
   PRIVATE_RESPONSE_CACHE,
   IMMUTABLE_ASSET_CACHE,
   isHashedAssetPath,
-} from './cache-policy.ts';
+} from '@tuturuuu/roadmap-core/cache-policy.ts';
 import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
@@ -23,7 +23,7 @@ import {
   assessPublicCacheGuard,
   personalizationFindings,
   scanRoadmapSource,
-} from './public-cache-guard.ts';
+} from '@tuturuuu/roadmap-core/public-cache-guard.ts';
 const document = 'https://tuturuuu.com/roadmap';
 const html = (headers: Record<string, string> = {}, status = 200) =>
   new Response('public', {
@@ -306,9 +306,14 @@ test('loopback Host selects the public host contract', () => {
 });
 
 test('roadmap source stays anonymous while the public document is shared', () => {
-  const findings = scanRoadmapSource(
-    fileURLToPath(new URL('.', import.meta.url))
-  );
+  const findings = [
+    ...scanRoadmapSource(fileURLToPath(new URL('.', import.meta.url))),
+    ...scanRoadmapSource(
+      fileURLToPath(
+        new URL('../../../packages/roadmap-core/src/', import.meta.url)
+      )
+    ),
+  ];
   const cacheControl = control(new Request(document));
   const verdict = assessPublicCacheGuard({ findings, cacheControl });
   assert.deepEqual(verdict.failures, []);
@@ -362,7 +367,8 @@ test('D79: auth, session, cookie or authorization cannot stay on the public cach
 });
 
 test('every public page and language shares the document cache; nothing next to them does', async () => {
-  const { PUBLIC_DOCUMENTS } = await import('./cache-policy.ts');
+  const { PUBLIC_DOCUMENTS } =
+    await import('@tuturuuu/roadmap-core/cache-policy.ts');
   for (const path of PUBLIC_DOCUMENTS)
     assert.equal(
       control(new Request(`https://tuturuuu.com${path}`)),

@@ -17,8 +17,8 @@
 import { mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { tracks } from '../src/content/tracks.ts';
-import { feedItem } from '../src/live/feed.ts';
+import { tracks } from '@tuturuuu/roadmap-core/content/tracks.ts';
+import { feedItem } from '@tuturuuu/roadmap-core/live/feed.ts';
 import {
   assembleLiveData,
   fetchCompare,
@@ -26,23 +26,32 @@ import {
   fetchPullFacts,
   fetchPullsByNumber,
   hostFacts,
-} from '../src/live/github.ts';
-import { PROBED_APPS, probeHosts } from '../src/live/host-probe.ts';
-import { observeHosting } from '../src/live/build-probe.ts';
-import { offlineSnapshot } from '../src/live/hosting.ts';
+} from '@tuturuuu/roadmap-core/live/github.ts';
+import {
+  PROBED_APPS,
+  probeHosts,
+} from '@tuturuuu/roadmap-core/live/host-probe.ts';
+import { observeHosting } from '@tuturuuu/roadmap-core/live/build-probe.ts';
+import { offlineSnapshot } from '@tuturuuu/roadmap-core/live/hosting.ts';
 import { ONE_ORIGIN_APP_BASE_PATHS } from '../../../packages/utils/src/app-mounts.ts';
-import { parseLiveData, REPO } from '../src/live/model.ts';
+import { parseLiveData, REPO } from '@tuturuuu/roadmap-core/live/model.ts';
 import {
   builtAtFrom,
   mergedWindow,
   offlineActivity,
-} from '../src/insights/activity.ts';
-import { HISTORY_TRACKS } from '../src/content/track-names.ts';
-import { classifyTitle, isNoise } from '../src/history/classify.ts';
-import { localDay } from '../src/live/feed.ts';
+} from '@tuturuuu/roadmap-core/insights/activity.ts';
+import { HISTORY_TRACKS } from '@tuturuuu/roadmap-core/content/track-names.ts';
+import {
+  classifyTitle,
+  isNoise,
+} from '@tuturuuu/roadmap-core/history/classify.ts';
+import { localDay } from '@tuturuuu/roadmap-core/live/feed.ts';
 
 const root = dirname(dirname(fileURLToPath(import.meta.url)));
-const target = join(root, 'src/generated/live.json');
+const target = join(
+  root,
+  '../../packages/roadmap-core/src/generated/live.json'
+);
 const token = process.env.GITHUB_TOKEN || process.env.GH_TOKEN || undefined;
 const now = Date.now();
 const log = (message) => process.stderr.write(`[roadmap-data] ${message}\n`);
@@ -85,8 +94,14 @@ async function mobileRelease() {
   return { app: 'mobile', platform: 'store', commit: sha, ...compare };
 }
 
-const hostingTarget = join(root, '.generated/hosting.json');
-const activityTarget = join(root, '.generated/activity.json');
+const hostingTarget = join(
+  root,
+  '../../packages/roadmap-core/.generated/hosting.json'
+);
+const activityTarget = join(
+  root,
+  '../../packages/roadmap-core/.generated/activity.json'
+);
 /**
  * The build's merged-PR search window. Anonymous search allows 10 requests a
  * minute: 7 days (about 350 PRs, 4 pages) fits beside the open-PR searches;

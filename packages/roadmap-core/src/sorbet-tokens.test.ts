@@ -338,7 +338,7 @@ describe('design tokens: which pages render in Sorbet', () => {
   });
 
   it('the root document sets data-ui on <html> in the server HTML', () => {
-    const root = read('./routes/__root.tsx');
+    const root = read('../../../apps/roadmap/src/routes/__root.tsx');
     assert.match(
       root,
       /data-ui=\{sorbetPage\(pathname\) \? 'sorbet' : undefined\}/

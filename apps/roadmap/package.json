@@ -17,6 +17,7 @@
     "@tanstack/react-start": "1.169.3",
     "@tuturuuu/icons": "workspace:*",
     "@tuturuuu/marketing-shell": "workspace:*",
+    "@tuturuuu/roadmap-core": "workspace:*",
     "@tuturuuu/satellite": "workspace:*",
     "@tuturuuu/ui": "workspace:*",
     "react": "19.2.8",

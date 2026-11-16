@@ -4,6 +4,7 @@ on:
     types: [opened, synchronize, reopened, ready_for_review, labeled]
     paths:
       - 'apps/roadmap/**'
+      - 'packages/roadmap-core/**'
       - 'bun.lock'
       - 'package.json'
       - 'tuturuuu.ci.ts'

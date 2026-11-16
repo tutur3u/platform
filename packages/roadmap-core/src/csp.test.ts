@@ -139,22 +139,28 @@ describe('content security policy', () => {
   });
 
   it('roadmap source has no HTML or eval sinks that would bypass escaping', () => {
-    const root = new URL('.', import.meta.url);
-    const files = readdirSync(root, { recursive: true })
-      .map(String)
-      .filter(
-        (f) =>
-          /\.(ts|tsx)$/.test(f) &&
-          !f.endsWith('.test.ts') &&
-          !f.includes('routeTree.gen')
-      );
+    const roots = [
+      new URL('.', import.meta.url),
+      new URL('../../../apps/roadmap/src/', import.meta.url),
+    ];
+    const files = roots.flatMap((root) =>
+      readdirSync(root, { recursive: true })
+        .map(String)
+        .filter(
+          (f) =>
+            /\.(ts|tsx)$/.test(f) &&
+            !f.endsWith('.test.ts') &&
+            !f.includes('routeTree.gen')
+        )
+        .map((f) => new URL(f, root))
+    );
     assert.ok(files.length > 10);
     for (const file of files) {
-      const source = readFileSync(new URL(file, root), 'utf8');
+      const source = readFileSync(file, 'utf8');
       assert.doesNotMatch(
         source,
         /dangerouslySetInnerHTML|\.innerHTML\s*=|\beval\(|new Function\(/,
-        file
+        file.pathname
       );
     }
   });
@@ -349,7 +355,7 @@ describe('content security policy: the tabs add no inline script', () => {
   it('the page keeps exactly the router four inline scripts', () => {
     // Pre-JS switching is CSS (:target), and the upgrade is the hydrated
     // tree, so neither needs a hashed inline script.
-    const doctor = read('../scripts/doctor-markup.mjs');
+    const doctor = read('../../../apps/roadmap/scripts/doctor-markup.mjs');
     assert.match(doctor, /export const EXPECTED_INLINE_SCRIPTS = 4;/);
     assert.doesNotMatch(read('./components/tabs.tsx'), /<script\b|ScriptOnce/);
   });

@@ -6,7 +6,7 @@ import {
   hydrationBasepath,
   mountHeader,
   parseBasepath,
-} from './request-boundary';
+} from '@tuturuuu/roadmap-core/request-boundary.ts';
 import { routeTree } from './routeTree.gen';
 
 const serverSelectedBasepath = createIsomorphicFn()

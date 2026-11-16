@@ -1,0 +1,35 @@
+{
+  "name": "@tuturuuu/roadmap-core",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "The public roadmap's pages, content, live data and styles, shared by the roadmap Worker (apps/roadmap) and marketing-owned routes (apps/marketing).",
+  "exports": {
+    "./messages/*": "./messages/*",
+    "./*": "./src/*"
+  },
+  "scripts": {
+    "type-check": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@tuturuuu/icons": "workspace:*",
+    "@tuturuuu/marketing-shell": "workspace:*",
+    "@tuturuuu/ui": "workspace:*"
+  },
+  "peerDependencies": {
+    "@tanstack/react-router": "1.170.45",
+    "react": "19.2.8",
+    "react-dom": "19.2.8"
+  },
+  "devDependencies": {
+    "@tanstack/react-router": "1.170.45",
+    "@types/node": "26.6.5",
+    "@types/react": "19.2.18",
+    "@types/react-dom": "19.2.7",
+    "miniflare": "4.20260730.0",
+    "react": "19.2.8",
+    "react-dom": "19.2.8",
+    "typescript": "7.0.2",
+    "vite": "npm:@voidzero-dev/vite-plus-core@1.3.0"
+  }
+}

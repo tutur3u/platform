@@ -1,6 +1,6 @@
 import { createFileRoute } from '@tanstack/react-router';
-import { RoadmapPage } from '../pages/roadmap';
-import { roadmapHead } from '../pages/roadmap-head';
+import { RoadmapPage } from '@tuturuuu/roadmap-core/pages/roadmap.tsx';
+import { roadmapHead } from '@tuturuuu/roadmap-core/pages/roadmap-head.ts';
 
 /** The Vietnamese roadmap: its own URL, so search engines can index it. */
 export const Route = createFileRoute('/vi')({

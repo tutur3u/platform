@@ -27,7 +27,10 @@ test('real Vite data-module bundle embeds parsed fallback and never the fake key
   mkdirSync(join(root, 'src/changelog'), { recursive: true });
   for (const file of ['data.ts', 'schema.ts'])
     cpSync(
-      new URL(`../src/changelog/${file}`, import.meta.url),
+      new URL(
+        `../../../packages/roadmap-core/src/changelog/${file}`,
+        import.meta.url
+      ),
       join(root, 'src/changelog', file)
     );
   const key = 'FAKE_KEY_NEVER_SHIP_321';

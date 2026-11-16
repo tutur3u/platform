@@ -12,5 +12,11 @@
     "types": ["vite/client", "node"],
     "resolveJsonModule": true
   },
-  "include": ["src/**/*.ts", "src/**/*.tsx", "vite.config.ts", "void.config.ts"]
+  "include": [
+    "src/**/*.ts",
+    "src/**/*.tsx",
+    "../../packages/roadmap-core/src/env.d.ts",
+    "vite.config.ts",
+    "void.config.ts"
+  ]
 }

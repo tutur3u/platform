@@ -8,7 +8,10 @@ import {
 } from 'node:fs';
 import { dirname, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { parseChangelog, plainText } from '../src/changelog/schema.ts';
+import {
+  parseChangelog,
+  plainText,
+} from '@tuturuuu/roadmap-core/changelog/schema.ts';
 import { fetchInputs, MODEL, publicItems } from './changelog-inputs.mjs';
 
 const root = dirname(dirname(fileURLToPath(import.meta.url)));
@@ -63,7 +66,7 @@ export function llmAllowed(env) {
 }
 
 export async function generateChangelog({
-  directory = join(root, '.generated'),
+  directory = join(root, '../../packages/roadmap-core/.generated'),
   env = process.env,
   fetchImpl = fetch,
   now = () => new Date().toISOString(),

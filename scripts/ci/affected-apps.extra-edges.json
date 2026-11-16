@@ -28,6 +28,7 @@
   "apps/mobile/lib/core/feature_flags/": ["packages/feature-flags"],
   "apps/nova/src/lib/": ["apps/web"],
   "apps/rewise/src/lib/": ["apps/web"],
+  "apps/roadmap/": ["packages/roadmap-core"],
   "apps/storefront/": ["apps/inventory"],
   "apps/teach/": ["apps/database"],
   "apps/teach/src/app/api/v1/workspaces/[wsId]/teach/courses/[courseId]/members/": [
@@ -61,7 +62,8 @@
     "apps/coordination",
     "apps/gateway",
     "apps/meet-realtime",
-    "apps/roadmap"
+    "apps/roadmap",
+    "packages/roadmap-core"
   ],
   "packages/utils/src/internal-accounts/": ["apps/database"]
 }

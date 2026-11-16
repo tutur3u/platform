@@ -105,7 +105,10 @@ test(
   () => {
     const dir = mkdtempSync(join(tmpdir(), 'roadmap-history-'));
     try {
-      const committed = join(appRoot, 'src/generated/history.json');
+      const committed = join(
+        appRoot,
+        '../../packages/roadmap-core/src/generated/history.json'
+      );
       const target = join(dir, 'history.json');
       const run = (check) =>
         formatGenerated({

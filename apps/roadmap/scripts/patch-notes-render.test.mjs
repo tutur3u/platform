@@ -14,9 +14,9 @@ test('patch notes render through the real parser, including fallback, model and 
     `
 import React from 'react';
 import { renderToStaticMarkup } from 'react-dom/server';
-import { PatchNotes } from '../src/components/insights/patch-notes';
-import { parseChangelog } from '../src/changelog/schema';
-import en from '../messages/en.json';
+import { PatchNotes } from '../../../packages/roadmap-core/src/components/insights/patch-notes';
+import { parseChangelog } from '../../../packages/roadmap-core/src/changelog/schema';
+import en from '../../../packages/roadmap-core/messages/en.json';
 export const render = raw => renderToStaticMarkup(<PatchNotes t={en} lang="en" changelog={parseChangelog(raw)} />);
 `
   );
@@ -34,7 +34,10 @@ export const render = raw => renderToStaticMarkup(<PatchNotes t={en} lang="en" c
   const { render } = await import(pathToFileURL(join(root, 'out/render.js')));
   const fixture = JSON.parse(
     readFileSync(
-      new URL('../src/changelog/fixtures/changelog.json', import.meta.url),
+      new URL(
+        '../../../packages/roadmap-core/src/changelog/fixtures/changelog.json',
+        import.meta.url
+      ),
       'utf8'
     )
   );

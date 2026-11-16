@@ -3,8 +3,8 @@ import {
   mountHeader,
   prepareRoadmapRequest,
   selectedBasepath,
-} from '../src/request-boundary.ts';
-import { roadmapBoundary } from '../src/request-boundary.ts';
+} from '@tuturuuu/roadmap-core/request-boundary.ts';
+import { roadmapBoundary } from '@tuturuuu/roadmap-core/request-boundary.ts';
 import { assertEmittedMapping } from './asset-mapping.mjs';
 import { packageAssets } from './package-assets.mjs';
 import assert from 'node:assert/strict';
