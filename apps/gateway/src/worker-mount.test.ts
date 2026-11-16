@@ -190,3 +190,119 @@ describe('mounted app ingress', () => {
     expect(sent?.headers.get('x-forwarded-proto')).toBe('https');
   });
 });
+
+describe('mount admission', () => {
+  function mindEnv(paths: string, extra: Partial<Env> = {}) {
+    const fetch = vi.fn(async (request: Request) => new Response(request.url));
+    const origin = vi.fn(async (_request: Request) => new Response('web'));
+    vi.stubGlobal('fetch', origin);
+    return {
+      fetch,
+      origin,
+      env: {
+        ...ENV,
+        ...extra,
+        GATEWAY_MOUNTED_PATHS: paths,
+        MOUNT_MIND: { fetch },
+        MOUNT_API: { fetch },
+      } as unknown as Env,
+    };
+  }
+
+  it('routes the exact segment and an explicit subtree without rewriting', async () => {
+    const { cache, handle } = handler();
+    const { env, fetch, origin } = mindEnv('/mind, /mind/*');
+    for (const path of ['/mind', '/mind?q', '/mind/', '/mind/a/b?x=%20&x=1']) {
+      const response = await handle(
+        new Request(`https://tuturuuu.com${path}`),
+        env
+      );
+      expect(await response.text()).toBe(`https://tuturuuu.com${path}`);
+      expect(response.headers.get('x-gateway-cache')).toBe('MOUNT');
+    }
+    expect(fetch).toHaveBeenCalledTimes(4);
+    expect(origin).not.toHaveBeenCalled();
+    expect(cache.entries.size).toBe(0);
+  });
+
+  it('admits nested paths only through an explicit subtree entry', async () => {
+    const { handle } = handler();
+    const exact = mindEnv('/mind');
+    await handle(new Request('https://tuturuuu.com/mind/boards'), exact.env);
+    await handle(new Request('https://tuturuuu.com/mind/'), exact.env);
+    expect(exact.fetch).not.toHaveBeenCalled();
+    expect(exact.origin).toHaveBeenCalledTimes(2);
+    const subtree = mindEnv('/mind/*');
+    await handle(new Request('https://tuturuuu.com/mind?x=1'), subtree.env);
+    expect(subtree.fetch).not.toHaveBeenCalled();
+    await handle(new Request('https://tuturuuu.com/mind/boards'), subtree.env);
+    expect(subtree.fetch).toHaveBeenCalledTimes(1);
+  });
+
+  it('does not mount encoded, normalized, lookalike, API or alias-host paths', async () => {
+    const { handle } = handler();
+    const { env, fetch } = mindEnv('/mind,/mind/*,/api,/api/*');
+    for (const path of [
+      '/mindful',
+      '/mind-x',
+      '/MIND',
+      '/mind%2Fx',
+      '/%6Dind',
+      '//mind',
+      '/api',
+      '/api/mind',
+      '/mind/../x',
+      '/mind%5Cx',
+      '/mind%2Ex',
+      '/en/mind',
+    ]) {
+      await handle(new Request(`https://tuturuuu.com${path}`), env);
+    }
+    for (const host of ['evil.example.com', 'www.tuturuuu.com']) {
+      await handle(new Request(`https://${host}/mind/boards`), env);
+    }
+    expect(fetch).not.toHaveBeenCalled();
+  });
+
+  it('sanitizes nested mounted requests and passes responses through', async () => {
+    const { cache, handle } = handler();
+    const { env, origin } = mindEnv('/mind/*');
+    const fetch = vi.fn(async (received: Request) => {
+      for (const name of FORBIDDEN) {
+        expect(received.headers.has(name)).toBe(false);
+      }
+      expect(received.url).toBe('https://tuturuuu.com/mind/api/boards?x=1');
+      expect(received.method).toBe('POST');
+      expect(await received.text()).toBe('unchanged-body');
+      return new Response(null, {
+        status: 307,
+        headers: [
+          ['location', 'https://tuturuuu.com/mind/login?next=%2Fmind'],
+          ['set-cookie', 'mind_first=a; Path=/mind; Secure; HttpOnly'],
+          ['set-cookie', 'mind_second=b; Path=/mind; Secure; HttpOnly'],
+          ['cache-control', 'private, no-store'],
+        ],
+      });
+    });
+    const response = await handle(
+      new Request('https://tuturuuu.com/mind/api/boards?x=1', {
+        method: 'POST',
+        body: 'unchanged-body',
+        headers: FORBIDDEN.map((name) => [name, 'untrusted']),
+      }),
+      { ...env, MOUNT_MIND: { fetch } } as unknown as Env
+    );
+    expect(fetch).toHaveBeenCalledTimes(1);
+    expect(response.status).toBe(307);
+    expect(response.headers.get('location')).toBe(
+      'https://tuturuuu.com/mind/login?next=%2Fmind'
+    );
+    expect(response.headers.getSetCookie()).toEqual([
+      'mind_first=a; Path=/mind; Secure; HttpOnly',
+      'mind_second=b; Path=/mind; Secure; HttpOnly',
+    ]);
+    expect(response.headers.get('cache-control')).toBe('private, no-store');
+    expect(origin).not.toHaveBeenCalled();
+    expect(cache.entries.size).toBe(0);
+  });
+});

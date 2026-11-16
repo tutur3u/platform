@@ -174,17 +174,28 @@ reach the gateway. One case slips through: a zone route cannot match the bare
 path once a query string is present, so `tuturuuu.com/<app>?x=1` would fall to
 the gateway and on to Web.
 
-For that case the gateway hands **exactly** `/<app>` (any query) to the app's
-Worker through a service binding:
+For that case the gateway hands `/<app>` (any query) to the app's Worker
+through a service binding. An app that serves its nested paths through the
+gateway instead of its own `/<app>/*` zone route opts in explicitly:
 
-- Add the mount path to `GATEWAY_MOUNTED_PATHS` (comma-separated, e.g.
-  `/learn,/tasks`).
+- Add the exact mount to `GATEWAY_MOUNTED_PATHS` (comma-separated, e.g.
+  `/learn,/tasks`). Add `/<app>/*` (e.g. `/learn,/learn/*`) only when the
+  gateway should also hand that app its nested paths.
 - Bind the app Worker as `MOUNT_<SEGMENT>` (`MOUNT_LEARN`, `MOUNT_STORE`).
 
 A service binding is not a same-zone subrequest, so the request reaches the
-Worker, not the Vercel origin. Responses carry `x-gateway-cache: MOUNT` and are
-never cached by the gateway. Nested paths (`/<app>/x`), lookalikes
-(`/learning`) and unlisted or unbound paths keep going to `WEB_ORIGIN`.
+Worker, not the Vercel origin. Only requests on `PUBLIC_HOST` mount, and
+`/api` never mounts. The URL, prefix, query, method and body reach the app
+unchanged. Client-supplied forwarding and framework-internal headers
+(`x-forwarded-*`, `Forwarded`, `x-real-ip`, `x-original-*`, `x-rewrite-url`,
+`x-middleware-*`, `x-nextjs-*`, `x-next-intl-*`, `x-tuturuuu-*`, `x-gateway-*`)
+are stripped and none are synthesized, so a mounted app takes its public origin
+from its own configuration. Responses carry `x-gateway-cache: MOUNT` and are
+never cached by the gateway. Nested paths without a `/<app>/*` entry,
+lookalikes (`/learning`), other hosts and unlisted or unbound paths keep going
+to `WEB_ORIGIN`. Regression coverage lives in
+`apps/gateway/src/worker-mount.test.ts`.
 
 **Rollback for one app:** remove its two zone routes and its
-`GATEWAY_MOUNTED_PATHS` entry. Its subdomain serves again.
+`GATEWAY_MOUNTED_PATHS` entries. Its subdomain serves again. Mount dispatch
+precedes `GATEWAY_MODE`, so `passthrough` alone does not roll back a mount.

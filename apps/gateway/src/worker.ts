@@ -34,12 +34,13 @@ export interface Env {
   /** `true` honours origin `no-store`/`private` on cacheable routes. */
   GATEWAY_RESPECT_ORIGIN_CACHE_CONTROL?: string;
   /**
-   * Comma-separated mount paths of apps served at `tuturuuu.com/<app>` (for
-   * example `/learn,/tasks`). Their zone routes cannot match the bare path
-   * once a query string is present, so the gateway hands exactly `/<app>`
-   * (any query) to the app Worker through the service binding
-   * `MOUNT_<SEGMENT>` (`MOUNT_LEARN`). Unlisted or unbound paths keep going to
-   * WEB_ORIGIN. Clearing an entry is part of that app's one-step rollback.
+   * Comma-separated mounts of apps served at `tuturuuu.com/<app>`: an exact
+   * entry (`/learn`) admits the bare path with any query, and an explicit
+   * subtree entry (`/learn/*`) admits its nested paths. Admitted requests on
+   * PUBLIC_HOST reach the app Worker through the service binding
+   * `MOUNT_<SEGMENT>` (`MOUNT_LEARN`) with prefix and query unchanged. `/api`
+   * never mounts. Unlisted or unbound paths keep going to WEB_ORIGIN.
+   * Clearing an app's entries is part of that app's one-step rollback.
    */
   GATEWAY_MOUNTED_PATHS?: string;
   [name: string]: string | undefined;
@@ -52,19 +53,23 @@ export interface ServiceBinding {
 
 const MOUNT_PATH_PATTERN = /^\/[a-z][a-z0-9-]*$/u;
 
-/** The service binding serving this exact bare mount path, if any. */
+/** The service binding admitted for this public-host path, if any. */
 export function mountedAppBinding(
   request: Request,
   env: Env
 ): ServiceBinding | null {
-  const { pathname } = new URL(request.url);
-  if (!MOUNT_PATH_PATTERN.test(pathname)) return null;
+  const url = new URL(request.url);
+  if (env.PUBLIC_HOST && url.host !== env.PUBLIC_HOST) return null;
+  const { pathname } = url;
+  const mount = `/${pathname.split('/')[1] ?? ''}`;
+  if (!MOUNT_PATH_PATTERN.test(mount) || mount === '/api') return null;
   const listed = (env.GATEWAY_MOUNTED_PATHS ?? '')
     .split(',')
-    .map((entry) => entry.trim())
-    .filter((entry) => MOUNT_PATH_PATTERN.test(entry));
-  if (!listed.includes(pathname)) return null;
-  const name = `MOUNT_${pathname.slice(1).replace(/-/gu, '_').toUpperCase()}`;
+    .map((entry) => entry.trim());
+  const admitted =
+    pathname === mount ? listed.includes(mount) : listed.includes(`${mount}/*`);
+  if (!admitted) return null;
+  const name = `MOUNT_${mount.slice(1).replace(/-/gu, '_').toUpperCase()}`;
   const binding = (env as unknown as Record<string, unknown>)[name];
   return binding &&
     typeof (binding as Partial<ServiceBinding>).fetch === 'function'
@@ -432,7 +437,7 @@ export function createHandler(deps: HandlerDeps) {
     if (request.headers.has(HOP_HEADER)) {
       return plain(508, 'gateway loop detected');
     }
-    // A mounted app owns its bare path; only a query string brings it here.
+    // Admitted mounts precede the Web manifest, cache and passthrough mode.
     const mounted = mountedAppBinding(request, env);
     if (mounted) {
       try {
