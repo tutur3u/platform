@@ -593,6 +593,17 @@
     "quoted_text": "Quoted text",
     "reading_settings": "Reading",
     "reading_settings_description": "Customize reading preferences for this browser. Changes are saved automatically.",
+    "recipient_people": {
+      "contact": "Contact",
+      "empty": "No matching recipients with a visible email address.",
+      "error": "Could not search recipients.",
+      "loading": "Searching…",
+      "member": "Member",
+      "minimum_query": "Enter at least 2 characters to search.",
+      "retry": "Try again",
+      "search": "Search name or email",
+      "trigger": "Find for {field}"
+    },
     "redo": "Redo",
     "refresh": "Refresh",
     "regenerate": "Regenerate",

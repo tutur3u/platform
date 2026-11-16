@@ -519,6 +519,7 @@ export function FloatingComposer({
               </Select>
             </div>
             <RecipientField
+              workspaceId={workspaceId}
               actions={
                 <>
                   <Button
@@ -558,6 +559,7 @@ export function FloatingComposer({
             />
             {showCc ? (
               <RecipientField
+                workspaceId={workspaceId}
                 disabledAddresses={[...to, ...bcc]}
                 displayNames={recipientDisplayNames}
                 label={t('cc')}
@@ -578,6 +580,7 @@ export function FloatingComposer({
             ) : null}
             {showBcc ? (
               <RecipientField
+                workspaceId={workspaceId}
                 disabledAddresses={[...to, ...cc]}
                 displayNames={recipientDisplayNames}
                 label={t('bcc')}

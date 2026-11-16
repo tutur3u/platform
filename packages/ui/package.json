@@ -204,6 +204,7 @@
     "@tanstack/react-table": "^9.0.0"
   },
   "exports": {
+    "./custom/workspace-people-picker": "./src/components/ui/custom/workspace-people-picker.tsx",
     "./custom/education-todo": "./src/components/ui/custom/education-todo.tsx",
     "./globals.css": "./src/globals.css",
     "./sorbet-tokens.json": "./src/sorbet-tokens.json",

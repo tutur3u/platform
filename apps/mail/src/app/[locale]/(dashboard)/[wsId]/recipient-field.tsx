@@ -6,6 +6,7 @@ import { Input } from '@tuturuuu/ui/input';
 import { cn } from '@tuturuuu/utils/format';
 import { type ReactNode, useState } from 'react';
 import { parseRecipientInput } from './recipient-utils';
+import { RecipientPeoplePicker } from './recipient-people-picker';
 
 export function RecipientField({
   disabledAddresses = [],
@@ -16,6 +17,7 @@ export function RecipientField({
   onDisplayNamesChange,
   removeLabel,
   recipients,
+  workspaceId,
 }: {
   disabledAddresses?: string[];
   displayNames?: Record<string, string>;
@@ -25,6 +27,7 @@ export function RecipientField({
   onDisplayNamesChange?: (displayNames: Record<string, string>) => void;
   removeLabel: (address: string) => string;
   recipients: string[];
+  workspaceId?: string;
 }) {
   const [input, setInput] = useState('');
   const [invalid, setInvalid] = useState(false);
@@ -123,6 +126,17 @@ export function RecipientField({
           }}
           value={input}
         />
+        {workspaceId ? (
+          <RecipientPeoplePicker
+            workspaceId={workspaceId}
+            fieldLabel={label}
+            excludedAddresses={[...recipients, ...disabledAddresses]}
+            onSelect={({ address, displayName }) => {
+              onChange([...recipients, address]);
+              if (displayName) onDisplayNamesChange?.({ [address]: displayName });
+            }}
+          />
+        ) : null}
         {actions ? (
           <div className="flex shrink-0 items-center gap-1">{actions}</div>
         ) : null}

@@ -593,6 +593,17 @@
     "quoted_text": "Nội dung trích dẫn",
     "reading_settings": "Đọc thư",
     "reading_settings_description": "Tùy chỉnh cách đọc thư trên trình duyệt này. Thay đổi được lưu tự động.",
+    "recipient_people": {
+      "contact": "Liên hệ",
+      "empty": "Không có người nhận phù hợp với địa chỉ email hiển thị.",
+      "error": "Không thể tìm người nhận.",
+      "loading": "Đang tìm…",
+      "member": "Thành viên",
+      "minimum_query": "Nhập ít nhất 2 ký tự để tìm.",
+      "retry": "Thử lại",
+      "search": "Tìm tên hoặc email",
+      "trigger": "Tìm cho {field}"
+    },
     "redo": "Làm lại",
     "refresh": "Làm mới",
     "regenerate": "Tạo lại",
