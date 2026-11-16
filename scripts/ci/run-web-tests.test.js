@@ -2,7 +2,7 @@ const test = require('node:test');
 const assert = require('node:assert/strict');
 const { EventEmitter } = require('node:events');
 const path = require('node:path');
-const { runWebTests } = require('./run-web-tests.js');
+const { resolveWebVitest, runWebTests } = require('./run-web-tests.js');
 
 test('direct Web entry carries the owned fixture and Vitest arguments', async () => {
   const signal = new AbortController().signal;
@@ -15,6 +15,10 @@ test('direct Web entry carries the owned fixture and Vitest arguments', async ()
   const result = await runWebTests({
     root: '/synthetic/repo',
     args: ['--coverage', '--maxWorkers=1'],
+    resolveVitest: (webDir) => {
+      assert.equal(webDir, '/synthetic/repo/apps/web');
+      return '/synthetic/web-vitest/vitest.mjs';
+    },
     fixture: async (options) => {
       assert.deepEqual(options.packages, ['@tuturuuu/web']);
       try {
@@ -34,7 +38,7 @@ test('direct Web entry carries the owned fixture and Vitest arguments', async ()
   assert.equal(cleaned, true);
   assert.equal(spawned.command, process.execPath);
   assert.deepEqual(spawned.args, [
-    path.join('/synthetic/repo', 'node_modules/vitest/vitest.mjs'),
+    '/synthetic/web-vitest/vitest.mjs',
     'run',
     '--coverage',
     '--maxWorkers=1',
@@ -113,4 +117,13 @@ test('fixture refusal happens before any test child starts', async () => {
     /explicit fixture required/
   );
   assert.equal(spawned, false);
+});
+
+test('the default entry is the Vitest copy that apps/web test files import', () => {
+  const root = path.resolve(__dirname, '../..');
+  const webDir = path.join(root, 'apps/web');
+  const imported = path.dirname(
+    require.resolve('vitest/package.json', { paths: [webDir] })
+  );
+  assert.equal(resolveWebVitest(webDir), path.join(imported, 'vitest.mjs'));
 });
