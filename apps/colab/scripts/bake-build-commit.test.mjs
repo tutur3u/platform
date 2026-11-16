@@ -4,7 +4,10 @@ import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { spawnSync } from 'node:child_process';
 import test from 'node:test';
-import { bakeBuildCommit, bakedBuildCommitSource } from './bake-build-commit.mjs';
+import {
+  bakeBuildCommit,
+  bakedBuildCommitSource,
+} from './bake-build-commit.mjs';
 
 const SHA = '0123456789abcdef0123456789abcdef01234567';
 
