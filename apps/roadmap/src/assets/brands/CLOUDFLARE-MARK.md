@@ -36,6 +36,10 @@ Removed only:
 The root `<svg>` attributes, both `d` values and both `fill` values are
 byte-identical to the source and in the same order.
 
+Image optimisers must not touch it: `.imgbotconfig` lists it in
+`ignoredFiles`, because ImgBot reordered the root attributes once (#8440)
+and `src/hosting.test.ts` pins the committed SHA256.
+
 ## Colour
 
 The fills stay exactly as published (`#F38020`, `#FAAE40`). The brand
