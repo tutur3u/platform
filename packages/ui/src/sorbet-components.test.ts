@@ -65,12 +65,13 @@ describe('Sorbet components', () => {
   });
 
   it('targets data hooks that the primitives render', () => {
-    const sources = ['alert.tsx', 'calendar.tsx'].map((name) =>
+    const sources = ['alert.tsx', 'calendar.tsx', 'button.tsx'].map((name) =>
       readUiFile(`components/ui/${name}`)
     );
     expect(sources[0]).toContain('data-slot="alert"');
     expect(sources[0]).toContain('data-variant={variant');
     expect(sources[1]).toContain('data-slot="calendar"');
+    expect(sources[2]).toContain("data-variant={variant ?? 'default'}");
   });
 
   it('loads after the Sorbet palettes and surfaces', () => {

@@ -52,13 +52,21 @@ function Button({
     return (
       <Slot
         data-slot="button"
+        data-variant={variant ?? 'default'}
         className={classNames}
         {...(props as React.ComponentProps<typeof Slot>)}
       />
     );
   }
 
-  return <button data-slot="button" className={classNames} {...props} />;
+  return (
+    <button
+      data-slot="button"
+      data-variant={variant ?? 'default'}
+      className={classNames}
+      {...props}
+    />
+  );
 }
 
 type ButtonProps = React.ComponentProps<typeof Button>;

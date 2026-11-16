@@ -11,6 +11,11 @@
   reduced-motion and focus rules.
 */
 
+/* Outline buttons stroke with the input edge; the hairline is too faint on white. */
+:root[data-ui="sorbet"] :where([data-slot="button"][data-variant="outline"]) {
+  border-color: var(--input);
+}
+
 /* Accordion: quiet hairlines, firm triggers, a chevron that eases. */
 :root[data-ui="sorbet"] :where([data-slot="accordion-item"]) {
   border-color: color-mix(in oklab, var(--border) 70%, transparent);
