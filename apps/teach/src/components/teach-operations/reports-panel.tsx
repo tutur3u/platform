@@ -15,6 +15,7 @@ import { Input } from '@tuturuuu/ui/input';
 import { toast } from '@tuturuuu/ui/sonner';
 import { Textarea } from '@tuturuuu/ui/textarea';
 import { cn } from '@tuturuuu/utils/format';
+import { resolveUserFullName } from '@tuturuuu/utils/name-helper';
 import { useTranslations } from 'next-intl';
 import { useMemo, useState } from 'react';
 import { ReportPreviewer } from './report-previewer';
@@ -191,7 +192,7 @@ export function ReportsPanel({
           >
             {members.map((member) => (
               <option key={member.id} value={member.id}>
-                {member.full_name ?? member.display_name ?? member.email}
+                {resolveUserFullName(member)}
               </option>
             ))}
           </select>
@@ -253,11 +254,9 @@ function ReportCard({
   report: TeachReport;
 }) {
   const t = useTranslations('teachOperations');
-  const learnerName =
-    report.user?.full_name ??
-    report.user?.display_name ??
-    report.user?.email ??
-    t('learner');
+  const learnerName = resolveUserFullName(report.user, {
+    fallback: t('learner'),
+  });
 
   return (
     <button

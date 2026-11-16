@@ -2,6 +2,7 @@ import { Mail, Phone } from '@tuturuuu/icons';
 import { Badge } from '@tuturuuu/ui/badge';
 import { RequireAttentionName } from '@tuturuuu/users-ui/components/require-attention-name';
 import { cn } from '@tuturuuu/utils/format';
+import { resolveUserFullName } from '@tuturuuu/utils/name-helper';
 import Link from 'next/link';
 import type { ReactNode } from 'react';
 import { ContactNote, type ContactNoteLabels } from '../contact-note';
@@ -31,7 +32,9 @@ export function ProfileHeader({
     unknownUser: string;
   };
 }) {
-  const primaryName = user.full_name || user.display_name || labels.unknownUser;
+  const primaryName = resolveUserFullName(user, {
+    fallback: labels.unknownUser,
+  });
   const secondaryName =
     user.display_name && user.display_name !== primaryName
       ? user.display_name

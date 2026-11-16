@@ -38,6 +38,7 @@ import { Progress } from '@tuturuuu/ui/progress';
 import { Switch } from '@tuturuuu/ui/switch';
 import { cn } from '@tuturuuu/utils/format';
 import { computeAccessibleLabelStyles } from '@tuturuuu/utils/label-colors';
+import { resolveUserDisplayName } from '@tuturuuu/utils/name-helper';
 import dayjs from 'dayjs';
 import { useTranslations } from 'next-intl';
 import {
@@ -930,8 +931,9 @@ export function TaskPropertiesSection(props: TaskPropertiesSectionProps) {
                   >
                     <Users className="h-2.5 w-2.5" />
                     {selectedAssignees.length === 1
-                      ? selectedAssignees[0]?.display_name ||
-                        t('ws-task-boards.dialog.unknown_user')
+                      ? resolveUserDisplayName(selectedAssignees[0], {
+                          fallback: t('ws-task-boards.dialog.unknown_user'),
+                        })
                       : t('common.n_assignees', {
                           count: selectedAssignees.length,
                         })}
@@ -1684,8 +1686,9 @@ export function TaskPropertiesSection(props: TaskPropertiesSectionProps) {
                       selectedAssignees.length === 0
                         ? t('common.assignees')
                         : selectedAssignees.length === 1
-                          ? selectedAssignees[0]?.display_name ||
-                            t('ws-task-boards.dialog.unknown_user')
+                          ? resolveUserDisplayName(selectedAssignees[0], {
+                              fallback: t('ws-task-boards.dialog.unknown_user'),
+                            })
                           : t('common.n_assignees', {
                               count: selectedAssignees.length,
                             })
@@ -1709,8 +1712,11 @@ export function TaskPropertiesSection(props: TaskPropertiesSectionProps) {
                         {selectedAssignees.length === 0
                           ? t('common.assignees')
                           : selectedAssignees.length === 1
-                            ? selectedAssignees[0]?.display_name ||
-                              t('ws-task-boards.dialog.unknown_user')
+                            ? resolveUserDisplayName(selectedAssignees[0], {
+                                fallback: t(
+                                  'ws-task-boards.dialog.unknown_user'
+                                ),
+                              })
                             : t('common.n_assignees', {
                                 count: selectedAssignees.length,
                               })}
@@ -1748,8 +1754,11 @@ export function TaskPropertiesSection(props: TaskPropertiesSectionProps) {
                                   }
                                 >
                                   <UserAvatar user={assignee} size="xs" />
-                                  {assignee.display_name ||
-                                    t('ws-task-boards.dialog.unknown_user')}
+                                  {resolveUserDisplayName(assignee, {
+                                    fallback: t(
+                                      'ws-task-boards.dialog.unknown_user'
+                                    ),
+                                  })}
                                   {!disabled && <X className="h-2.5 w-2.5" />}
                                 </Badge>
                               ))}
@@ -1790,8 +1799,11 @@ export function TaskPropertiesSection(props: TaskPropertiesSectionProps) {
                                     className="shrink-0 border"
                                   />
                                   <span className="flex-1">
-                                    {member.display_name ||
-                                      t('ws-task-boards.dialog.unknown_user')}
+                                    {resolveUserDisplayName(member, {
+                                      fallback: t(
+                                        'ws-task-boards.dialog.unknown_user'
+                                      ),
+                                    })}
                                   </span>
                                   <Plus className="h-4 w-4 shrink-0" />
                                 </button>

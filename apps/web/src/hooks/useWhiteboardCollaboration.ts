@@ -4,6 +4,7 @@ import type { RealtimePresenceState } from '@tuturuuu/internal-api/realtime';
 import { createClient } from '@tuturuuu/supabase/next/client';
 import type { User } from '@tuturuuu/types/primitives/User';
 import type { WorkspacePresenceState } from '@tuturuuu/ui/hooks/use-workspace-presence';
+import { resolveUserDisplayName } from '@tuturuuu/utils/name-helper';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import type { SelectedElementIds } from '@/utils/excalidraw-selection';
 import { useExcalidrawCursor } from './useExcalidrawCursor';
@@ -155,7 +156,10 @@ export function useWhiteboardCollaboration({
   const currentUser = useMemo<CurrentUserInfo>(() => {
     return {
       id: resolvedUserId || '',
-      displayName: currentUserData?.display_name || 'Unknown',
+      displayName: resolveUserDisplayName(currentUserData, {
+        emailLocalPart: true,
+        fallback: 'Unknown',
+      }),
       email: currentUserData?.email || '',
       avatarUrl: currentUserData?.avatar_url || undefined,
     };
@@ -208,7 +212,10 @@ export function useWhiteboardCollaboration({
         collabMap.set(userId as SocketId, {
           id: userId,
           socketId: userId as SocketId,
-          username: presence.user.display_name || 'Unknown',
+          username: resolveUserDisplayName(presence.user, {
+            emailLocalPart: true,
+            fallback: 'Unknown',
+          }),
           avatarUrl: presence.user.avatar_url || undefined,
           color,
           pointer: cursor

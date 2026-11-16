@@ -2,6 +2,7 @@
 
 import type { CursorPosition } from '@tuturuuu/tasks-ui/hooks/useCursorTracking';
 import { Badge } from '@tuturuuu/ui/badge';
+import { resolveUserDisplayName } from '@tuturuuu/utils/name-helper';
 
 interface CursorOverlayProps {
   cursors: Map<string, CursorPosition>;
@@ -67,7 +68,7 @@ export default function CursorOverlay({
             {/* Badge */}
             <Badge className="absolute top-4 left-4 border-2 border-background bg-background px-1 py-0.5 ring-1 ring-border transition-shadow hover:ring-2">
               <p className="font-medium text-foreground text-xs">
-                {user?.display_name || 'Unknown User'}
+                {resolveUserDisplayName(user, { emailLocalPart: true })}
               </p>
             </Badge>
           </div>

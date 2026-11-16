@@ -6,6 +6,7 @@ import type {
 import type { WorkspaceConfig } from '@tuturuuu/types/primitives/WorkspaceConfig';
 import { Separator } from '@tuturuuu/ui/separator';
 import { formatCurrency } from '@tuturuuu/utils/format';
+import { resolveUserFullName } from '@tuturuuu/utils/name-helper';
 import { useTranslations } from 'next-intl';
 import { FinanceDisplayAmount } from '../../shared/finance-display-amount';
 import { getSavedInvoiceDiscount } from '../invoice-discount';
@@ -330,7 +331,7 @@ export function FullInvoiceTemplate({
           <p
             className={`${isDarkPreview ? 'text-foreground/70' : 'text-black'}`}
           >
-            {invoice.creator?.full_name || invoice.creator?.display_name}
+            {resolveUserFullName(invoice.creator)}
           </p>
         </div>
       )}

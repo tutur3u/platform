@@ -37,6 +37,103 @@ export const getInitials = (name?: string | null): string => {
   ).toUpperCase();
 };
 
+/**
+ * Any user-shaped record that may carry name fields. Both snake_case (DB rows)
+ * and camelCase (mapped DTOs) spellings are accepted so one helper serves
+ * every surface.
+ */
+export interface UserNameSource {
+  display_name?: string | null;
+  displayName?: string | null;
+  full_name?: string | null;
+  fullName?: string | null;
+  email?: string | null;
+  handle?: string | null;
+  username?: string | null;
+}
+
+export interface ResolveUserDisplayNameOptions {
+  /**
+   * Show only the part of the email before "@" when the email is the chosen
+   * value. Use it where space is tight (chips, cursors, avatar tooltips).
+   */
+  emailLocalPart?: boolean;
+  /**
+   * Returned only when the record has no usable name, email or handle at all.
+   * Defaults to an empty string.
+   */
+  fallback?: string;
+}
+
+function cleanName(value: string | null | undefined): string {
+  return typeof value === 'string' ? value.trim() : '';
+}
+
+function emailLocalPart(email: string): string {
+  const at = email.indexOf('@');
+  return at > 0 ? email.slice(0, at) : email;
+}
+
+/**
+ * The single source of truth for "what do we call this user":
+ * display name → full name → email → handle/username → `fallback`.
+ *
+ * Whitespace-only values count as unset. Accounts without a display name are
+ * shown by their full name, then by their email, rather than by a generic
+ * "Unknown" label.
+ */
+export function resolveUserDisplayName(
+  user: UserNameSource | null | undefined,
+  options: ResolveUserDisplayNameOptions = {}
+): string {
+  const fallback = options.fallback ?? '';
+  if (!user) return fallback;
+
+  const displayName = cleanName(user.display_name ?? user.displayName);
+  if (displayName) return displayName;
+
+  const fullName = cleanName(user.full_name ?? user.fullName);
+  if (fullName) return fullName;
+
+  const email = cleanName(user.email);
+  if (email) return options.emailLocalPart ? emailLocalPart(email) : email;
+
+  const handle = cleanName(user.handle ?? user.username);
+  if (handle) return handle;
+
+  return fallback;
+}
+
+/**
+ * Like {@link resolveUserDisplayName}, but for a full-name slot: prefers the
+ * full name and only then falls back to display name → email → handle.
+ */
+export function resolveUserFullName(
+  user: UserNameSource | null | undefined,
+  options: ResolveUserDisplayNameOptions = {}
+): string {
+  const fullName = cleanName(user?.full_name ?? user?.fullName);
+  if (fullName) return fullName;
+  return resolveUserDisplayName(user, options);
+}
+
+/**
+ * Placeholders for the profile name inputs: each field hints with the other
+ * name when it is set, and both fall back to the account email.
+ */
+export function resolveProfileNamePlaceholders(
+  user: UserNameSource | null | undefined
+): { displayName: string; fullName: string } {
+  const displayName = cleanName(user?.display_name ?? user?.displayName);
+  const fullName = cleanName(user?.full_name ?? user?.fullName);
+  const email = cleanName(user?.email);
+
+  return {
+    displayName: fullName || email,
+    fullName: displayName || email,
+  };
+}
+
 export function getAvatarPlaceholder(name: string) {
   return `https://ui-avatars.com/api/?name=${encodeURIComponent(name)}`;
 }

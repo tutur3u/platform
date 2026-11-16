@@ -17,6 +17,7 @@ import type {
   TulearnWorkspaceSummary,
 } from '@tuturuuu/internal-api';
 import { cn } from '@tuturuuu/utils/format';
+import { resolveUserDisplayName } from '@tuturuuu/utils/name-helper';
 import { getTranslations } from 'next-intl/server';
 import { TeachDashboardFeatureGrid } from './teach-dashboard-feature-grid';
 import { TeachMetricTile } from './teach-metric-tile';
@@ -79,7 +80,9 @@ export async function TeachDashboard({
     (sum, group) => sum + (group.attendance_amount ?? 0),
     0
   );
-  const profileName = bootstrap.profile.display_name ?? t('teacher');
+  const profileName = resolveUserDisplayName(bootstrap.profile, {
+    fallback: t('teacher'),
+  });
   const workspaceName = workspace.name ?? t('workspaceFallback');
   const coursesUrl = `/${wsId}/courses`;
 
@@ -289,11 +292,9 @@ function CourseUserGroupCard({
   wsId: string;
 }) {
   const baseUrl = `/${wsId}/courses/${group.id}`;
-  const manager =
-    group.managers?.[0]?.display_name ||
-    group.managers?.[0]?.full_name ||
-    group.managers?.[0]?.email ||
-    t('unassigned');
+  const manager = resolveUserDisplayName(group.managers?.[0], {
+    fallback: t('unassigned'),
+  });
 
   return (
     <article className="grid gap-4 rounded-lg border border-border bg-background p-4 md:grid-cols-[minmax(0,1fr)_22rem]">

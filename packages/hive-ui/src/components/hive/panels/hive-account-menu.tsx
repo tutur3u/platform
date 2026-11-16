@@ -10,7 +10,10 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@tuturuuu/ui/dropdown-menu';
-import { getInitials } from '@tuturuuu/utils/name-helper';
+import {
+  getInitials,
+  resolveUserDisplayName,
+} from '@tuturuuu/utils/name-helper';
 import type { HiveUser } from '../../../engine/types';
 
 type HiveAccountMenuProps = {
@@ -22,7 +25,9 @@ export function HiveAccountMenu({
   user,
   variant = 'full',
 }: HiveAccountMenuProps) {
-  const displayName = user.displayName || user.email || 'Hive member';
+  const displayName = resolveUserDisplayName(user, {
+    fallback: 'Hive member',
+  });
   const fallback = getInitials(displayName) || 'H';
 
   return (

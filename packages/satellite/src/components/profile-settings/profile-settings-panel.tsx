@@ -11,6 +11,7 @@ import { SettingsSection } from '@tuturuuu/ui/custom/settings-section';
 import { useCopyToClipboard } from '@tuturuuu/ui/hooks/use-copy-to-clipboard';
 import { Input } from '@tuturuuu/ui/input';
 import { Skeleton } from '@tuturuuu/ui/skeleton';
+import { resolveProfileNamePlaceholders } from '@tuturuuu/utils/name-helper';
 import { useTranslations } from 'next-intl';
 import {
   ProfileAvatarEditor,
@@ -47,6 +48,7 @@ export function SatelliteProfileSettingsPanel({
   const { copyToClipboard, isCopied } = useCopyToClipboard({ timeout: 2000 });
 
   if (!profile) return <ProfileSkeleton />;
+  const namePlaceholders = resolveProfileNamePlaceholders(profile);
 
   return (
     <div className="space-y-8">
@@ -68,6 +70,7 @@ export function SatelliteProfileSettingsPanel({
           <ProfileFieldForm
             field="display_name"
             initialValue={profile.display_name}
+            placeholder={namePlaceholders.displayName}
           />
         </SettingItemTab>
         <SettingItemTab
@@ -78,11 +81,7 @@ export function SatelliteProfileSettingsPanel({
           <ProfileFieldForm
             field="full_name"
             initialValue={profile.full_name}
-            placeholder={
-              profile.full_name
-                ? undefined
-                : (profile.display_name ?? undefined)
-            }
+            placeholder={namePlaceholders.fullName}
           />
         </SettingItemTab>
         <SettingItemTab

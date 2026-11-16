@@ -33,6 +33,7 @@ import {
   DropdownMenuTrigger,
 } from '@tuturuuu/ui/dropdown-menu';
 import { toast } from '@tuturuuu/ui/sonner';
+import { resolveUserDisplayName } from '@tuturuuu/utils/name-helper';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { useTranslations } from 'next-intl';
@@ -88,7 +89,7 @@ export function UserRowActions({ row, href, extraData }: UserRowActionsProps) {
 
   const handleFormSuccess = () => {
     toast.success(t('ws-members.member-updated'), {
-      description: `"${user?.display_name || user?.full_name || 'Unknown'}" ${t(
+      description: `"${resolveUserDisplayName(user, { fallback: t('common.unknown') })}" ${t(
         'ws-members.has-been-updated'
       )}`,
     });
@@ -248,7 +249,7 @@ export function UserRowActions({ row, href, extraData }: UserRowActionsProps) {
           wsId={user.ws_id!}
           mode="per_user"
           targetUserId={user.id}
-          targetUserLabel={user.display_name || user.full_name || user.email}
+          targetUserLabel={resolveUserDisplayName(user)}
           currentValues={{
             display_name: user.display_name,
             full_name: user.full_name,

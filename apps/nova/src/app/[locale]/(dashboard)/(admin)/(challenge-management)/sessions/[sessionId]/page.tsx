@@ -1,4 +1,5 @@
 import { createAdminClient } from '@tuturuuu/supabase/next/server';
+import { resolveUserDisplayName } from '@tuturuuu/utils/name-helper';
 import type { Metadata } from 'next';
 import { notFound } from 'next/navigation';
 import { connection } from 'next/server';
@@ -144,7 +145,13 @@ export default async function SessionPage({ params: futureParams }: Props) {
     createdAt: new Date(session.created_at).toISOString(),
     user: {
       id: sessionUser.id,
-      displayName: sessionUser.display_name || 'Unknown User',
+      displayName: resolveUserDisplayName(
+        {
+          ...sessionUser,
+          email: userPrivateDetails?.email,
+        },
+        { fallback: 'Unknown User' }
+      ),
       avatarUrl: sessionUser.avatar_url || '',
       email: userPrivateDetails?.email || null,
     },

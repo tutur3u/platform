@@ -145,4 +145,53 @@ describe('SatelliteProfileSettingsPanel', () => {
       /(^|\s)(disabled:)?bg-(muted|secondary|accent)/
     );
   });
+
+  it.each([
+    {
+      name: 'defaults both placeholders to the email when no name is set',
+      profile: { display_name: null, full_name: '  ' },
+      expected: {
+        display_name: 'sokora@example.com',
+        full_name: 'sokora@example.com',
+      },
+    },
+    {
+      name: 'hints each name field with the other name',
+      profile: { display_name: 'Sokora', full_name: 'So Ko Ra' },
+      expected: { display_name: 'So Ko Ra', full_name: 'Sokora' },
+    },
+  ])('$name', async ({ profile, expected }) => {
+    getCurrentUserProfile.mockResolvedValue({
+      id: 'user-1',
+      avatar_url: null,
+      created_at: '2026-07-23T00:00:00.000Z',
+      default_workspace_id: null,
+      email: 'sokora@example.com',
+      new_email: null,
+      ...profile,
+    });
+
+    renderWithClient(
+      <SatelliteProfileSettingsPanel
+        centralUrl="https://tuturuuu.com"
+        user={
+          {
+            id: 'user-1',
+            email: 'sokora@example.com',
+            ...profile,
+          } as unknown as WorkspaceUser
+        }
+      />
+    );
+
+    await waitFor(() => expect(getCurrentUserProfile).toHaveBeenCalledOnce());
+    await waitFor(() => {
+      expect(
+        (screen.getByLabelText('display_name') as HTMLInputElement).placeholder
+      ).toBe(expected.display_name);
+      expect(
+        (screen.getByLabelText('full_name') as HTMLInputElement).placeholder
+      ).toBe(expected.full_name);
+    });
+  });
 });

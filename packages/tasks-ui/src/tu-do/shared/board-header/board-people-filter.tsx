@@ -7,6 +7,7 @@ import {
   DropdownMenuTrigger,
 } from '@tuturuuu/ui/dropdown-menu';
 import { cn } from '@tuturuuu/utils/format';
+import { resolveUserDisplayName } from '@tuturuuu/utils/name-helper';
 import { useTranslations } from 'next-intl';
 import { useEffect, useState } from 'react';
 import type { TaskFilters } from '../task-filter.types';
@@ -48,7 +49,7 @@ function useNarrowHeader(element: HTMLElement | null) {
 }
 
 function personName(person: BoardPerson) {
-  return person.display_name || person.email || '?';
+  return resolveUserDisplayName(person, { fallback: '?' });
 }
 
 function PersonAvatar({ person }: { person: BoardPerson }) {

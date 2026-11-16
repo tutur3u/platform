@@ -17,6 +17,7 @@ import { Input } from '@tuturuuu/ui/input';
 import { Popover, PopoverContent, PopoverTrigger } from '@tuturuuu/ui/popover';
 import { toast } from '@tuturuuu/ui/sonner';
 import { cn } from '@tuturuuu/utils/format';
+import { resolveUserDisplayName } from '@tuturuuu/utils/name-helper';
 import { useParams } from 'next/navigation';
 import { useTranslations } from 'next-intl';
 import {
@@ -475,7 +476,7 @@ export const AssigneeSelect = forwardRef<AssigneeSelectHandle, Props>(
                                 '?'}
                             </AvatarFallback>
                           </Avatar>
-                          {member.display_name || member.email}
+                          {resolveUserDisplayName(member)}
                           <X className="h-3 w-3 opacity-70" />
                         </Button>
                       );
@@ -555,7 +556,7 @@ export const AssigneeSelect = forwardRef<AssigneeSelectHandle, Props>(
                               </AvatarFallback>
                             </Avatar>
                             <span className="flex-1 truncate text-sm">
-                              {member.display_name || member.email}
+                              {resolveUserDisplayName(member)}
                             </span>
                             <UserPlus className="h-3.5 w-3.5 shrink-0 text-muted-foreground opacity-0 transition-opacity group-hover:opacity-100" />
                           </button>

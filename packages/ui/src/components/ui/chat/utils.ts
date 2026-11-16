@@ -4,6 +4,7 @@ import type {
   ChatMessage,
   ChatUserProfile,
 } from '@tuturuuu/internal-api';
+import { resolveUserDisplayName } from '@tuturuuu/utils/name-helper';
 import {
   decodeExternalChatContent,
   getChatMessageDisplayContent,
@@ -211,7 +212,7 @@ export function getChatMessageSenderLabel(
   message: Pick<ChatMessage, 'kind' | 'metadata' | 'sender'>,
   fallback: { assistant: string; external: string; unknown: string }
 ) {
-  const nativeDisplayName = readNonEmptyString(message.sender?.displayName);
+  const nativeDisplayName = resolveUserDisplayName(message.sender);
   if (nativeDisplayName) return nativeDisplayName;
   if (message.kind === 'assistant') return fallback.assistant;
 
@@ -274,7 +275,9 @@ export function getConversationTitle(
       (member) => member.userId !== currentUserId
     );
     return (
-      otherMember?.user.displayName ?? fallback?.direct ?? 'Direct message'
+      resolveUserDisplayName(otherMember?.user) ||
+      fallback?.direct ||
+      'Direct message'
     );
   }
 

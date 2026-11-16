@@ -2,6 +2,7 @@
 
 import { Sparkles } from '@tuturuuu/icons';
 import { AiCreditIndicator } from '@tuturuuu/tasks-ui/tu-do/my-tasks/ai-credit-indicator';
+import { resolveUserDisplayName } from '@tuturuuu/utils/name-helper';
 import { useTranslations } from 'next-intl';
 import { useMemo } from 'react';
 import MiraNameBadge from './mira-name-badge';
@@ -38,11 +39,7 @@ export default function GreetingHeader({
   const t = useTranslations('dashboard.greeting');
 
   const greetingKey = useMemo(() => getGreetingKey(), []);
-  const userName =
-    currentUser.display_name ||
-    currentUser.full_name ||
-    currentUser.email ||
-    '';
+  const userName = resolveUserDisplayName(currentUser);
 
   return (
     <div className="flex min-w-0 flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">

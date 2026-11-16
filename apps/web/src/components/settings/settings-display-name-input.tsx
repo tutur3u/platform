@@ -24,6 +24,7 @@ import { currentUserProfileQueryKey } from '@/hooks/use-current-user-profile';
 interface Props {
   defaultValue?: string | null;
   disabled?: boolean;
+  placeholder?: string | null;
 }
 
 const FormSchema = z.object({
@@ -33,8 +34,10 @@ const FormSchema = z.object({
 export default function DisplayNameInput({
   defaultValue = '',
   disabled,
+  placeholder,
 }: Props) {
   const t = useTranslations('settings-account');
+  const commonT = useTranslations('common');
   const queryClient = useQueryClient();
   const router = useRouter();
 
@@ -98,7 +101,7 @@ export default function DisplayNameInput({
                 <FormControl>
                   <Input
                     id="display-name"
-                    placeholder={t('display-name')}
+                    placeholder={placeholder || t('display-name')}
                     disabled={disabled}
                     {...field}
                   />
@@ -112,6 +115,7 @@ export default function DisplayNameInput({
             type="submit"
             size="icon"
             variant="outline"
+            aria-label={commonT('save')}
             disabled={!isDirty || saving || disabled}
             className="shrink-0"
           >

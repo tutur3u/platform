@@ -17,6 +17,7 @@ import {
   TableHeader,
   TableRow,
 } from '@tuturuuu/ui/table';
+import { resolveUserFullName } from '@tuturuuu/utils/name-helper';
 import type { Metadata } from 'next';
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
@@ -288,7 +289,9 @@ export default async function QuizAttemptsPage({
                     <TableRow key={attempt.id}>
                       <TableCell>
                         <div className="font-medium">
-                          {learner?.full_name || t('common.unknown')}
+                          {resolveUserFullName(learner, {
+                            fallback: t('common.unknown'),
+                          })}
                         </div>
                         <div className="text-foreground/65 text-xs">
                           {learner?.email || attempt.user_id}

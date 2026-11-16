@@ -1,4 +1,5 @@
 import type { SupportedColor } from '@tuturuuu/types/primitives/SupportedColors';
+import { resolveUserFullName } from '@tuturuuu/utils/name-helper';
 
 export const REQUIRE_ATTENTION_COLOR_CONFIG_ID =
   'USER_FEEDBACK_REQUIRE_ATTENTION_COLOR';
@@ -82,10 +83,5 @@ export function getWorkspaceUserDisplayName(person?: {
   display_name?: string | null;
   email?: string | null;
 }) {
-  return (
-    person?.full_name?.trim() ||
-    person?.display_name?.trim() ||
-    person?.email?.trim() ||
-    'Unknown User'
-  );
+  return resolveUserFullName(person);
 }

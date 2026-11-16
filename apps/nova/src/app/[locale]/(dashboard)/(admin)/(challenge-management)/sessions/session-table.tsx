@@ -32,7 +32,10 @@ import {
   TableRow,
 } from '@tuturuuu/ui/table';
 import { cn } from '@tuturuuu/utils/format';
-import { generateFunName } from '@tuturuuu/utils/name-helper';
+import {
+  generateFunName,
+  resolveUserDisplayName,
+} from '@tuturuuu/utils/name-helper';
 import Image from 'next/image';
 import { useRouter } from 'next/navigation';
 import { useLocale, useTranslations } from 'next-intl';
@@ -404,7 +407,10 @@ export function SessionTable({
                           </div>
                         )}
                         <span className="line-clamp-1">
-                          {session.user?.display_name ||
+                          {resolveUserDisplayName({
+                            display_name: session.user?.display_name,
+                            email: showEmail ? session.user?.email : null,
+                          }) ||
                             generateFunName({
                               id: session.user?.display_name,
                               locale,

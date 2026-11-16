@@ -2,6 +2,7 @@
 
 import type { TimeTrackingSession } from '@tuturuuu/types';
 import { XLSX } from '@tuturuuu/ui/xlsx';
+import { resolveUserDisplayName } from '@tuturuuu/utils/name-helper';
 import dayjs from 'dayjs';
 import { useCallback, useState } from 'react';
 
@@ -222,7 +223,9 @@ export function useExportData(params: ExportParams) {
       const effectiveDuration = session.periodDuration ?? session.totalDuration;
 
       return {
-        user: session.user.displayName || 'Unknown User',
+        user: resolveUserDisplayName(session.user, {
+          fallback: 'Unknown User',
+        }),
         period: session.period,
         periodType:
           period === 'day' ? 'Daily' : period === 'week' ? 'Weekly' : 'Monthly',

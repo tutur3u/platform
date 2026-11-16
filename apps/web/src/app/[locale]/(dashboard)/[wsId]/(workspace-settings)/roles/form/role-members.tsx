@@ -23,7 +23,10 @@ import { Input } from '@tuturuuu/ui/input';
 import { Label } from '@tuturuuu/ui/label';
 import { Separator } from '@tuturuuu/ui/separator';
 import { toast } from '@tuturuuu/ui/sonner';
-import { getInitials } from '@tuturuuu/utils/name-helper';
+import {
+  getInitials,
+  resolveUserDisplayName,
+} from '@tuturuuu/utils/name-helper';
 import { useTranslations } from 'next-intl';
 import { useEffect, useMemo, useState } from 'react';
 import type { SectionProps } from './index';
@@ -332,9 +335,9 @@ export default function RoleFormMembersSection({
                       </Avatar>
                       <div className="min-w-0 flex-1">
                         <div className="truncate font-semibold text-sm">
-                          {user.display_name ||
-                            user.full_name ||
-                            t('common.unnamed')}
+                          {resolveUserDisplayName(user, {
+                            fallback: t('common.unnamed'),
+                          })}
                         </div>
                         {user.email ? (
                           <div className="truncate text-muted-foreground text-xs sm:text-sm">
@@ -418,9 +421,9 @@ export default function RoleFormMembersSection({
                   </Avatar>
                   <div className="min-w-0 flex-1">
                     <div className="truncate font-semibold text-sm sm:text-base">
-                      {member.display_name ||
-                        member.full_name ||
-                        t('common.unnamed')}
+                      {resolveUserDisplayName(member, {
+                        fallback: t('common.unnamed'),
+                      })}
                     </div>
                     {member.email ? (
                       <div className="truncate text-muted-foreground text-xs sm:text-sm">

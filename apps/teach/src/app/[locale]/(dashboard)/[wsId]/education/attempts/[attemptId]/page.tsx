@@ -9,6 +9,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@tuturuuu/ui/card';
 import { EducationContentSurface } from '@tuturuuu/ui/custom/education/shell/education-content-surface';
 import { EducationKpiStrip } from '@tuturuuu/ui/custom/education/shell/education-kpi-strip';
 import { EducationPageHeader } from '@tuturuuu/ui/custom/education/shell/education-page-header';
+import { resolveUserFullName } from '@tuturuuu/utils/name-helper';
 import type { Metadata } from 'next';
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
@@ -177,7 +178,9 @@ export default async function AttemptDetailsPage({ params }: Props) {
           </CardHeader>
           <CardContent className="space-y-1 text-sm">
             <div className="font-medium">
-              {learner?.full_name || t('common.unknown')}
+              {resolveUserFullName(learner, {
+                fallback: t('common.unknown'),
+              })}
             </div>
             <div className="text-foreground/65">
               {learner?.email || attempt.user_id}

@@ -63,6 +63,7 @@ import { isPersonalExternalOverlayTask } from '@tuturuuu/ui/lib/task-personal-ex
 import { toast } from '@tuturuuu/ui/sonner';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@tuturuuu/ui/tooltip';
 import { cn } from '@tuturuuu/utils/format';
+import { resolveUserDisplayName } from '@tuturuuu/utils/name-helper';
 import {
   createTask,
   getPersonalExternalStagingListId,
@@ -304,8 +305,10 @@ function ReadOnlyTaskCard({ task, taskList }: TaskCardProps) {
                 variant="secondary"
                 className="h-5 px-1.5 font-normal text-xs"
               >
-                {assignee.display_name ||
-                  (assignee.handle ? `@${assignee.handle}` : t('assignee'))}
+                {resolveUserDisplayName(assignee, {
+                  emailLocalPart: true,
+                  fallback: t('assignee'),
+                })}
               </Badge>
             ))}
           </div>
@@ -525,7 +528,9 @@ function TaskCardInner({
         id: member.user_id,
         user_id: member.user_id,
         workspace_id: boardViewableMembersWorkspaceId,
-        display_name: member.display_name ?? member.email ?? member.user_id,
+        display_name: resolveUserDisplayName(member, {
+          fallback: member.user_id,
+        }),
         email: member.email ?? undefined,
         avatar_url: member.avatar_url ?? undefined,
       }));

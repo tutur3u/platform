@@ -18,6 +18,7 @@ import { Label } from '@tuturuuu/ui/label';
 import { toast } from '@tuturuuu/ui/sonner';
 import { Textarea } from '@tuturuuu/ui/textarea';
 import { cn } from '@tuturuuu/utils/format';
+import { resolveUserDisplayName } from '@tuturuuu/utils/name-helper';
 import { createTask } from '@tuturuuu/utils/task-helper';
 import { useParams } from 'next/navigation';
 import { useEffect, useState } from 'react';
@@ -363,9 +364,10 @@ export function TaskForm({
                       onClick={() => handleQuickAssign(member.id)}
                     >
                       <Users className="mr-1 h-3 w-3" />
-                      {member.display_name ||
-                        member.email?.split('@')[0] ||
-                        'User'}
+                      {resolveUserDisplayName(member, {
+                        emailLocalPart: true,
+                        fallback: 'User',
+                      })}
                     </Button>
                   )
                 )}

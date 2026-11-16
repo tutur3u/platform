@@ -1,6 +1,7 @@
 import type { Invoice } from '@tuturuuu/types';
 import type { WorkspaceConfig } from '@tuturuuu/types/primitives/WorkspaceConfig';
 import { formatCurrency } from '@tuturuuu/utils/format';
+import { resolveUserFullName } from '@tuturuuu/utils/name-helper';
 import { useTranslations } from 'next-intl';
 import { FinanceDisplayAmount } from '../../shared/finance-display-amount';
 import { formatInvoiceTemplateDate } from './format-invoice-template-date';
@@ -156,7 +157,7 @@ export function CompactInvoiceTemplate({
             <p
               className={`font-bold text-xl ${isDarkPreview ? 'text-foreground/70' : 'text-black'}`}
             >
-              {invoice.creator?.full_name || invoice.creator?.display_name}
+              {resolveUserFullName(invoice.creator)}
             </p>
           </>
         )}

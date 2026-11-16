@@ -3,6 +3,7 @@ import {
   feeLockSnapshotSchema,
 } from '@tuturuuu/internal-api/finance-fee-lock-contracts';
 import type { TypedSupabaseClient } from '@tuturuuu/supabase/types';
+import { resolveUserFullName } from '@tuturuuu/utils/name-helper';
 import { NextResponse } from 'next/server';
 import type { FeeLockExportEntry } from '@/lib/fee-lock/export-rows';
 import { FEE_LOCK_EXPORT_MAX_ROWS } from '@/lib/fee-lock/export-workbook';
@@ -195,7 +196,7 @@ export async function loadFeeLockExportEntries(
     if (students.error)
       return { response: feeLockErrorResponse(students.error) };
     const names = new Map(
-      students.rows.map((s) => [s.id, s.full_name ?? s.display_name ?? ''])
+      students.rows.map((s) => [s.id, resolveUserFullName(s)])
     );
     for (const lock of drafts) {
       entries.set(lock.id, {

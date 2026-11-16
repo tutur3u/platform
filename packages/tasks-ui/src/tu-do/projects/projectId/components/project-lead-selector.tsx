@@ -9,6 +9,7 @@ import {
   SelectValue,
 } from '@tuturuuu/ui/select';
 import { cn } from '@tuturuuu/utils/format';
+import { resolveUserDisplayName } from '@tuturuuu/utils/name-helper';
 import { useTranslations } from 'next-intl';
 import type { ProjectLeadSelectorProps } from '../types';
 
@@ -40,12 +41,10 @@ export function ProjectLeadSelector({
               <Avatar className="h-5 w-5">
                 <AvatarImage src={member.avatar_url || undefined} />
                 <AvatarFallback className="text-xs">
-                  {member.display_name?.[0]?.toUpperCase() || 'U'}
+                  {resolveUserDisplayName(member)[0]?.toUpperCase() || 'U'}
                 </AvatarFallback>
               </Avatar>
-              <span className="text-sm">
-                {member.display_name || member.email}
-              </span>
+              <span className="text-sm">{resolveUserDisplayName(member)}</span>
             </div>
           </SelectItem>
         ))}

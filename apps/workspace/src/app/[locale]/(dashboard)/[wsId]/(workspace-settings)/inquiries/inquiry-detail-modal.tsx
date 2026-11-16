@@ -21,6 +21,7 @@ import {
   DialogTitle,
 } from '@tuturuuu/ui/dialog';
 import { toast } from '@tuturuuu/ui/sonner';
+import { resolveUserDisplayName } from '@tuturuuu/utils/name-helper';
 import { format } from 'date-fns';
 import Image from 'next/image';
 import { useRouter } from 'next/navigation';
@@ -86,6 +87,13 @@ export function InquiryDetailModal({
   } | null>(null);
 
   const inquiryId = currentInquiry.id;
+  const inquirerName = resolveUserDisplayName(
+    currentInquiry.users && {
+      ...currentInquiry.users,
+      email: currentInquiry.users.user_private_details.email,
+    },
+    { fallback: 'Unknown User' }
+  );
   const { data: mediaUrls = {}, isLoading } = useInquiryMediaUrlsQuery(
     inquiryId,
     currentInquiry.images
@@ -264,15 +272,12 @@ export function InquiryDetailModal({
                           src={currentInquiry.users.avatar_url || ''}
                         />
                         <AvatarFallback className="bg-linear-to-br from-dynamic-blue to-dynamic-purple font-semibold text-white">
-                          {currentInquiry.users.display_name?.[0] ||
-                            currentInquiry.users.user_private_details
-                              .email?.[0] ||
-                            'U'}
+                          {inquirerName[0] || 'U'}
                         </AvatarFallback>
                       </Avatar>
                       <div className="min-w-0 flex-1 space-y-1">
                         <p className="font-medium text-foreground">
-                          {currentInquiry.users.display_name || 'Unknown User'}
+                          {inquirerName}
                         </p>
                         <p className="text-muted-foreground text-sm">
                           {currentInquiry.users.user_private_details.email}

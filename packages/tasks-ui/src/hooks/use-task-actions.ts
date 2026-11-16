@@ -8,6 +8,7 @@ import type { Task } from '@tuturuuu/types/primitives/Task';
 import type { TaskBoardStatus } from '@tuturuuu/types/primitives/TaskBoard';
 import type { TaskList } from '@tuturuuu/types/primitives/TaskList';
 import { toast } from '@tuturuuu/ui/sonner';
+import { resolveUserDisplayName } from '@tuturuuu/utils/name-helper';
 import {
   isTaskBoardCompletedStatus,
   isTaskBoardResolvedStatus,
@@ -1035,7 +1036,7 @@ export function useTaskActions({
 
         const assignee = task.assignees?.find((a) => a.id === assigneeId);
         toast.success('Success', {
-          description: `${assignee?.display_name || assignee?.email || 'Assignee'} removed from task`,
+          description: `${resolveUserDisplayName(assignee, { fallback: 'Assignee' })} removed from task`,
         });
         broadcast?.('task:relations-changed', { taskId: task.id });
         dispatchTaskActionSound('update');
@@ -1904,10 +1905,9 @@ export function useTaskActions({
         const selectedAssignee = task.assignees?.find(
           (a) => a.id === assigneeId
         );
-        const assigneeName =
-          selectedAssignee?.display_name ||
-          selectedAssignee?.email ||
-          'Assignee';
+        const assigneeName = resolveUserDisplayName(selectedAssignee, {
+          fallback: 'Assignee',
+        });
         toast.success(active ? 'Assignee removed' : 'Assignee added', {
           description:
             succeededTaskIds.length > 1

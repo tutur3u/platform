@@ -14,6 +14,7 @@ import {
   type WorkspaceRoleDetails,
 } from '@tuturuuu/internal-api';
 import type { SupabaseUser } from '@tuturuuu/supabase/next/user';
+import { resolveUserDisplayName } from '@tuturuuu/utils/name-helper';
 import {
   permissionGroups,
   totalPermissions,
@@ -258,9 +259,7 @@ export function useCmsMembersSection({
       .filter((member) =>
         member.roles.some((assignedRole) => assignedRole.id === role.id)
       )
-      .map(
-        (member) => member.display_name || member.email || member.handle || ''
-      );
+      .map((member) => resolveUserDisplayName(member));
 
     return [role.name, ...memberNames]
       .filter(Boolean)

@@ -12,6 +12,7 @@ import {
   MAX_LONG_TEXT_LENGTH,
   MAX_TASK_NAME_LENGTH,
 } from '@tuturuuu/utils/constants';
+import { resolveUserDisplayName } from '@tuturuuu/utils/name-helper';
 import { verifyWorkspaceMembershipType } from '@tuturuuu/utils/workspace-helper';
 import { connection, type NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
@@ -426,7 +427,14 @@ export async function GET(
                 {
                   id: member.user_id,
                   user_id: member.user_id,
-                  display_name: member.display_name || 'Unknown User',
+                  // Share-link editors never receive member emails; handle only.
+                  display_name: resolveUserDisplayName(
+                    {
+                      display_name: member.display_name,
+                      handle: member.handle,
+                    },
+                    { fallback: 'Unknown User' }
+                  ),
                   avatar_url: member.avatar_url,
                 },
               ]

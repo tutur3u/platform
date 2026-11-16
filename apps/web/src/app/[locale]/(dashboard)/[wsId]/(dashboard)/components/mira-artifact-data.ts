@@ -4,6 +4,7 @@ import { getWorkspaceMeetings } from '@tuturuuu/internal-api/meetings';
 import { getUserTaskDashboard } from '@tuturuuu/internal-api/tasks';
 import { getWorkspace } from '@tuturuuu/internal-api/workspaces';
 import type { TaskLabelSummary } from '@tuturuuu/types/db';
+import { resolveUserDisplayName } from '@tuturuuu/utils/name-helper';
 import type { ArtifactKind } from './mira-workspace-state';
 
 export interface ArtifactRow {
@@ -68,7 +69,7 @@ export async function loadArtifactRows(
             ? [
                 {
                   id: user.id,
-                  name: user.display_name ?? '',
+                  name: resolveUserDisplayName(user, { emailLocalPart: true }),
                   avatarUrl: user.avatar_url ?? undefined,
                 },
               ]

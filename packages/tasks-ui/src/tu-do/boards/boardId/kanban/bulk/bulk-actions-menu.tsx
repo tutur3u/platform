@@ -36,6 +36,7 @@ import {
 } from '@tuturuuu/ui/dropdown-menu';
 import type { WorkspaceMember } from '@tuturuuu/ui/hooks/use-workspace-members';
 import { toast } from '@tuturuuu/ui/sonner';
+import { resolveUserDisplayName } from '@tuturuuu/utils/name-helper';
 import type { BoardConfig } from '@tuturuuu/utils/task-helper';
 import { useTranslations } from 'next-intl';
 import { mapEstimationPoints } from '../../../../shared/estimation-mapping';
@@ -636,7 +637,7 @@ export function BulkActionsMenu({
                             </AvatarFallback>
                           </Avatar>
                           <span className="truncate text-sm">
-                            {member.display_name || member.email}
+                            {resolveUserDisplayName(member)}
                           </span>
                         </div>
                         {isApplied && <Check className="h-4 w-4 shrink-0" />}

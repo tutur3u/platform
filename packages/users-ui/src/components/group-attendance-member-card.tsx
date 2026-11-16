@@ -7,6 +7,7 @@ import { Button } from '@tuturuuu/ui/button';
 import { Label } from '@tuturuuu/ui/label';
 import { Textarea } from '@tuturuuu/ui/textarea';
 import { cn } from '@tuturuuu/utils/format';
+import { resolveUserDisplayName } from '@tuturuuu/utils/name-helper';
 import { format } from 'date-fns';
 import { useTranslations } from 'next-intl';
 
@@ -101,7 +102,7 @@ export function GroupAttendanceMemberCard({
           <Avatar className="h-10 w-10 shrink-0 sm:h-12 sm:w-12">
             <AvatarImage src={member.avatar_url ?? undefined} />
             <AvatarFallback className="font-semibold">
-              {(member.display_name || member.full_name || '?')
+              {resolveUserDisplayName(member, { fallback: '?' })
                 .slice(0, 1)
                 .toUpperCase()}
             </AvatarFallback>
@@ -119,7 +120,7 @@ export function GroupAttendanceMemberCard({
                   ? member.display_name
                     ? `${member.full_name} (${member.display_name})`
                     : member.full_name
-                  : member.display_name || member.email || 'Unknown'}
+                  : resolveUserDisplayName(member)}
               </div>
               {member.role === 'TEACHER' && (
                 <Badge

@@ -1,4 +1,5 @@
 import { createAdminClient } from '@tuturuuu/supabase/next/server';
+import { resolveUserFullName } from '@tuturuuu/utils/name-helper';
 import { getPermissions, getWorkspace } from '@tuturuuu/utils/workspace-helper';
 import { NextResponse } from 'next/server';
 import { z } from 'zod';
@@ -115,12 +116,9 @@ export async function GET(request: Request, { params }: Params) {
   }
 
   const rows = ((data ?? []) as unknown as AttendanceExportRow[]).map((row) => {
-    const userName =
-      row.user?.full_name?.trim() ||
-      row.user?.display_name?.trim() ||
-      row.user?.email?.trim() ||
-      row.user?.id ||
-      '';
+    const userName = resolveUserFullName(row.user, {
+      fallback: row.user?.id || '',
+    });
 
     return {
       date: row.date,

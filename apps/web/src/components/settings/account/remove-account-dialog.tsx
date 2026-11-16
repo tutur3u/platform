@@ -12,6 +12,7 @@ import {
   AlertDialogTitle,
 } from '@tuturuuu/ui/alert-dialog';
 import { toast } from '@tuturuuu/ui/sonner';
+import { resolveUserDisplayName } from '@tuturuuu/utils/name-helper';
 import { useTranslations } from 'next-intl';
 import { type JSX, useState } from 'react';
 import { useAccountSwitcher } from '@/context/account-switcher-context';
@@ -67,10 +68,13 @@ export function RemoveAccountDialog({
           </AlertDialogTitle>
           <AlertDialogDescription>
             {t('account_switcher.remove_account_description', {
-              account:
-                account?.metadata.displayName ||
-                account?.email ||
-                'this account',
+              account: resolveUserDisplayName(
+                {
+                  displayName: account?.metadata.displayName,
+                  email: account?.email,
+                },
+                { fallback: 'this account' }
+              ),
             })}
           </AlertDialogDescription>
         </AlertDialogHeader>

@@ -10,7 +10,10 @@ import {
   CollapsibleContent,
   CollapsibleTrigger,
 } from '@tuturuuu/ui/collapsible';
-import { getInitials } from '@tuturuuu/utils/name-helper';
+import {
+  getInitials,
+  resolveUserDisplayName,
+} from '@tuturuuu/utils/name-helper';
 import moment from 'moment';
 import { useTranslations } from 'next-intl';
 import { useState } from 'react';
@@ -120,8 +123,8 @@ export function ExpandableRoleRow({
                     <Avatar className="h-11 w-11 ring-2 ring-background">
                       <AvatarImage src={member.avatar_url ?? undefined} />
                       <AvatarFallback className="text-xs">
-                        {member.display_name ? (
-                          getInitials(member.display_name)
+                        {resolveUserDisplayName(member) ? (
+                          getInitials(resolveUserDisplayName(member))
                         ) : (
                           <User className="h-4 w-4" />
                         )}
@@ -130,7 +133,9 @@ export function ExpandableRoleRow({
 
                     <div className="min-w-0 flex-1 space-y-1">
                       <p className="truncate font-medium text-sm">
-                        {member.display_name || t('common.unnamed')}
+                        {resolveUserDisplayName(member, {
+                          fallback: t('common.unnamed'),
+                        })}
                       </p>
                       <p className="truncate text-muted-foreground text-xs">
                         {member.email || member.id}

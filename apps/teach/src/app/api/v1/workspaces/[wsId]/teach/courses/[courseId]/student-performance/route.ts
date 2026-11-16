@@ -2,6 +2,7 @@ import {
   requireTeachWorkspaceAccess,
   validateTeachCourse,
 } from '@tuturuuu/education-core/teach/api';
+import { resolveUserDisplayName } from '@tuturuuu/utils/name-helper';
 import { NextResponse } from 'next/server';
 import { z } from 'zod';
 import { withSessionAuth } from '@/lib/api-auth';
@@ -216,7 +217,7 @@ export const GET = withSessionAuth(
 
         return {
           userId: m.user_id,
-          displayName: profile?.display_name ?? profile?.full_name ?? null,
+          displayName: resolveUserDisplayName(profile) || null,
           email: profile?.email ?? null,
           avatarUrl: profile?.avatar_url ?? null,
           totalQuizzes: totalQuizzes ?? 0,

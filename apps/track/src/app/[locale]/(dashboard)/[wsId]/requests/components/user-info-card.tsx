@@ -1,5 +1,6 @@
 import { UserIcon } from '@tuturuuu/icons';
 import { Avatar, AvatarFallback, AvatarImage } from '@tuturuuu/ui/avatar';
+import { resolveUserDisplayName } from '@tuturuuu/utils/name-helper';
 import { format } from 'date-fns';
 import type { ExtendedTimeTrackingRequest } from '../page';
 
@@ -22,7 +23,13 @@ export function UserInfoCard({ request }: UserInfoCardProps) {
           </Avatar>
           <div className="min-w-0 flex-1 space-y-1">
             <p className="font-medium text-foreground">
-              {request.user.display_name || 'Unknown User'}
+              {resolveUserDisplayName(
+                {
+                  ...request.user,
+                  email: request.user.user_private_details?.email,
+                },
+                { fallback: 'Unknown User' }
+              )}
             </p>
             <p className="text-muted-foreground text-sm">
               {request.user.user_private_details.email}

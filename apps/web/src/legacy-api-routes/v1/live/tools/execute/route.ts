@@ -5,6 +5,7 @@ import {
   createClient,
 } from '@tuturuuu/supabase/next/server';
 import type { TablesUpdate } from '@tuturuuu/types';
+import { resolveUserDisplayName } from '@tuturuuu/utils/name-helper';
 import {
   getWorkspaceTier,
   normalizeWorkspaceId,
@@ -707,7 +708,7 @@ async function getWorkspaceMembers(
   return {
     members: (data || []).map((m) => ({
       id: m.id,
-      name: m.display_name || m.email || 'Unknown',
+      name: resolveUserDisplayName(m, { fallback: 'Unknown' }),
       avatarUrl: m.avatar_url,
       isPending: m.pending,
     })),
@@ -1077,7 +1078,7 @@ async function visualizeTaskList(
     .select(
       `
       id, name, priority, end_date, completed_at,
-      task_assignees(users(display_name, avatar_url))
+      task_assignees(users(display_name, handle, avatar_url))
     `
     )
     .in('id', taskIds)
@@ -1099,10 +1100,14 @@ async function visualizeTaskList(
     completed: !!task.completed_at,
     assignees: ((task.task_assignees as unknown[]) || []).map((ta: unknown) => {
       const assignee = ta as {
-        users?: { display_name?: string; avatar_url?: string };
+        users?: {
+          display_name?: string;
+          handle?: string | null;
+          avatar_url?: string;
+        };
       };
       return {
-        name: assignee.users?.display_name || 'Unknown',
+        name: resolveUserDisplayName(assignee.users, { fallback: 'Unknown' }),
         avatarUrl: assignee.users?.avatar_url,
       };
     }),
@@ -1385,7 +1390,7 @@ async function visualizeTaskDetail(
       start_date,
       end_date,
       task_labels(workspace_task_labels(name, color)),
-      task_assignees(users(display_name, avatar_url)),
+      task_assignees(users(display_name, handle, avatar_url)),
       task_lists!inner(
         name,
         workspace_boards!inner(name, ws_id)
@@ -1413,7 +1418,11 @@ async function visualizeTaskDetail(
       workspace_task_labels?: { name?: string; color?: string };
     }>;
     task_assignees?: Array<{
-      users?: { display_name?: string; avatar_url?: string };
+      users?: {
+        display_name?: string;
+        handle?: string | null;
+        avatar_url?: string;
+      };
     }>;
   };
 
@@ -1443,7 +1452,7 @@ async function visualizeTaskDetail(
       color: tl.workspace_task_labels?.color || '#888888',
     })),
     assignees: (taskAny.task_assignees || []).map((ta) => ({
-      name: ta.users?.display_name || 'Unknown',
+      name: resolveUserDisplayName(ta.users, { fallback: 'Unknown' }),
       avatarUrl: ta.users?.avatar_url,
     })),
   };

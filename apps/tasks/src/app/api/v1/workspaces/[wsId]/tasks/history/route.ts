@@ -1,6 +1,7 @@
 import { CLI_APP_TARGET_APP } from '@tuturuuu/auth/cli-session';
 import { createAdminClient } from '@tuturuuu/supabase/next/server';
 import { MAX_COLOR_LENGTH, MAX_SEARCH_LENGTH } from '@tuturuuu/utils/constants';
+import { resolveUserDisplayName } from '@tuturuuu/utils/name-helper';
 import {
   normalizeWorkspaceId,
   verifyWorkspaceMembershipType,
@@ -433,7 +434,10 @@ export async function GET(
       user: entry.user_id
         ? {
             id: entry.user_id,
-            name: entry.user_display_name || 'Unknown',
+            name: resolveUserDisplayName(
+              { display_name: entry.user_display_name },
+              { fallback: 'Unknown' }
+            ),
             avatar_url: entry.user_avatar_url,
           }
         : null,

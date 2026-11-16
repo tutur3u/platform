@@ -7,7 +7,10 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from '@tuturuuu/ui/tooltip';
-import { getInitials } from '@tuturuuu/utils/name-helper';
+import {
+  getInitials,
+  resolveUserDisplayName,
+} from '@tuturuuu/utils/name-helper';
 
 interface PresenceUser {
   id: string;
@@ -93,7 +96,9 @@ export function OnlineUsers({
                       </span>
                     ) : (
                       <span>
-                        {user.display_name || user.email || 'Anonymous'}
+                        {resolveUserDisplayName(user, {
+                          fallback: 'Anonymous',
+                        })}
                       </span>
                     )}
                   </p>

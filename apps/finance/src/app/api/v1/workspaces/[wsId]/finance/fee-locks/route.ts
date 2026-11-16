@@ -6,6 +6,7 @@ import {
   isFeeLockMoneyInRange,
 } from '@tuturuuu/internal-api/finance-fee-lock-contracts';
 import type { Json } from '@tuturuuu/types';
+import { resolveUserFullName } from '@tuturuuu/utils/name-helper';
 import { searchParamsToRecord } from '@tuturuuu/utils/search-params-record';
 import { NextResponse } from 'next/server';
 import {
@@ -153,7 +154,7 @@ export async function GET(request: Request, { params }: Params) {
   for (const student of students.rows) {
     rows.set(student.id, {
       student_id: student.id,
-      student_name: student.full_name ?? student.display_name ?? '',
+      student_name: resolveUserFullName(student),
       classes: [],
       baseline_total: 0,
       lock: null,

@@ -2,6 +2,7 @@ import { useQuery } from '@tanstack/react-query';
 import { listWorkspaceTaskBoardViewableMembers } from '@tuturuuu/internal-api/tasks';
 import type { Task } from '@tuturuuu/types/primitives/Task';
 import type { TaskList } from '@tuturuuu/types/primitives/TaskList';
+import { resolveUserDisplayName } from '@tuturuuu/utils/name-helper';
 import { useMemo } from 'react';
 import { useProgressiveLoader } from '../progressive-loader-context';
 import { collectBoardPeople, countUnassignedTasks } from './board-filter-state';
@@ -37,7 +38,9 @@ export function useBoardHeaderData({
       return (payload.members ?? []).map((member) => ({
         id: member.user_id,
         user_id: member.user_id,
-        display_name: member.display_name || member.email || member.user_id,
+        display_name: resolveUserDisplayName(member, {
+          fallback: member.user_id,
+        }),
         email: member.email ?? undefined,
         avatar_url: member.avatar_url ?? undefined,
       }));

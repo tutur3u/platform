@@ -3,6 +3,7 @@ import type { MeetFollowupContext } from '@tuturuuu/internal-api';
 import { Button } from '@tuturuuu/ui/button';
 import { Checkbox } from '@tuturuuu/ui/checkbox';
 import { Input } from '@tuturuuu/ui/input';
+import { resolveUserDisplayName } from '@tuturuuu/utils/name-helper';
 import { useTranslations } from 'next-intl';
 import { useState } from 'react';
 import type { MeetingFollowup } from './followup-types';
@@ -74,7 +75,7 @@ export function FollowupAssignees({
           onClick={() => onChange([...new Set([...selected, owner.id])])}
         >
           {t('followup_use_owner', {
-            name: owner.displayName || owner.email || owner.id,
+            name: resolveUserDisplayName(owner, { fallback: owner.id }),
           })}
         </Button>
       ) : (
@@ -108,7 +109,7 @@ export function FollowupAssignees({
             />
             <span className="min-w-0 text-sm">
               <span className="block break-words">
-                {member.displayName || member.email || member.id}
+                {resolveUserDisplayName(member, { fallback: member.id })}
               </span>
               {member.displayName && member.email && (
                 <span className="block break-words text-muted-foreground text-xs">

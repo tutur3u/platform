@@ -19,6 +19,7 @@ import {
   DropdownMenuTrigger,
 } from '@tuturuuu/ui/dropdown-menu';
 import { Textarea } from '@tuturuuu/ui/textarea';
+import { resolveUserDisplayName } from '@tuturuuu/utils/name-helper';
 import { motion } from 'framer-motion';
 import { useFormatter, useTranslations } from 'next-intl';
 import type { UpdateCardProps } from '../types';
@@ -47,14 +48,16 @@ export function UpdateCard({
           <Avatar className="h-10 w-10">
             <AvatarImage src={update.creator?.avatar_url || undefined} />
             <AvatarFallback>
-              {update.creator?.display_name?.[0]?.toUpperCase() || 'U'}
+              {resolveUserDisplayName(update.creator)[0]?.toUpperCase() || 'U'}
             </AvatarFallback>
           </Avatar>
           <div className="flex-1">
             <div className="mb-2 flex items-center justify-between">
               <div className="flex items-center gap-2">
                 <span className="font-semibold">
-                  {update.creator?.display_name || t('unknown_user')}
+                  {resolveUserDisplayName(update.creator, {
+                    fallback: t('unknown_user'),
+                  })}
                 </span>
                 <span className="text-muted-foreground text-xs">
                   {dateTime(new Date(update.created_at), {

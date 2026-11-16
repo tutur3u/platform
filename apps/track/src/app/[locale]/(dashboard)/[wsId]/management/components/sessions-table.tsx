@@ -32,7 +32,10 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@tuturuuu/ui/select';
-import { getInitials } from '@tuturuuu/utils/name-helper';
+import {
+  getInitials,
+  resolveUserDisplayName,
+} from '@tuturuuu/utils/name-helper';
 import dayjs from 'dayjs';
 import duration from 'dayjs/plugin/duration';
 import { useTranslations } from 'next-intl';
@@ -362,17 +365,23 @@ export default function SessionsTable({
                             session.user.avatarUrl ||
                             `https://i.pravatar.cc/40?u=${session.user.displayName}`
                           }
-                          alt={session.user.displayName || 'User'}
+                          alt={resolveUserDisplayName(session.user, {
+                            fallback: 'User',
+                          })}
                         />
                         <AvatarFallback className="bg-linear-to-br from-dynamic-blue/10 to-dynamic-purple/10 text-dynamic-blue">
                           {getInitials(
-                            session.user.displayName || 'Unknown User'
+                            resolveUserDisplayName(session.user, {
+                              fallback: 'Unknown User',
+                            })
                           )}
                         </AvatarFallback>
                       </Avatar>
                       <div className="min-w-0 flex-1">
                         <p className="font-semibold text-dynamic-foreground text-sm">
-                          {session.user.displayName}
+                          {resolveUserDisplayName(session.user, {
+                            fallback: 'Unknown User',
+                          })}
                         </p>
                         <p className="truncate text-dynamic-muted text-xs">
                           {formatPeriodDisplay(session.period, period)}

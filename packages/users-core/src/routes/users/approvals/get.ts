@@ -1,5 +1,9 @@
 import { createAdminClient } from '@tuturuuu/supabase/next/server';
 import {
+  resolveUserDisplayName,
+  resolveUserFullName,
+} from '@tuturuuu/utils/name-helper';
+import {
   getPermissions,
   normalizeWorkspaceId,
 } from '@tuturuuu/utils/workspace-helper';
@@ -139,27 +143,31 @@ export async function handleGetApprovalsRequest(
       const rows = (data ?? []) as unknown as ReportApprovalRow[];
       return NextResponse.json({
         bulkApprovalEnabled,
-        items: rows.map((row) => ({
-          ...row,
-          creator_name:
-            row.creator_full_name ||
-            row.creator_display_name ||
-            row.creator_email ||
-            null,
-          modifier_name:
-            row.modifier_display_name ||
-            row.modifier_full_name ||
-            row.modifier_email ||
-            row.creator_full_name ||
-            row.creator_display_name ||
-            row.creator_email ||
-            null,
-          user_name:
-            row.user_full_name ||
-            row.user_display_name ||
-            row.user_email ||
-            null,
-        })),
+        items: rows.map((row) => {
+          const creator = {
+            full_name: row.creator_full_name,
+            display_name: row.creator_display_name,
+            email: row.creator_email,
+          };
+          return {
+            ...row,
+            creator_name: resolveUserFullName(creator) || null,
+            modifier_name:
+              resolveUserDisplayName({
+                display_name: row.modifier_display_name,
+                full_name: row.modifier_full_name,
+                email: row.modifier_email,
+              }) ||
+              resolveUserFullName(creator) ||
+              null,
+            user_name:
+              resolveUserFullName({
+                full_name: row.user_full_name,
+                display_name: row.user_display_name,
+                email: row.user_email,
+              }) || null,
+          };
+        }),
         totalCount: count ?? 0,
         totalPages: Math.ceil((count ?? 0) / limit),
       });
@@ -259,11 +267,7 @@ export async function handleGetApprovalsRequest(
           group_name: row.post?.workspace_user_groups?.name,
           id: itemId,
           is_completed: row.is_completed,
-          modifier_name:
-            row.post?.modifier?.display_name ||
-            row.post?.modifier?.full_name ||
-            row.post?.modifier?.email ||
-            null,
+          modifier_name: resolveUserDisplayName(row.post?.modifier) || null,
           notes: row.notes ?? row.post?.notes ?? null,
           post_approval_status: row.approval_status,
           post_id: row.post_id,
@@ -273,8 +277,7 @@ export async function handleGetApprovalsRequest(
           title: row.post?.title,
           updated_by: row.post?.updated_by,
           user_id: row.user_id,
-          user_name:
-            row.user?.full_name || row.user?.display_name || row.user?.email,
+          user_name: resolveUserFullName(row.user) || null,
         };
       }),
       totalCount: count ?? 0,

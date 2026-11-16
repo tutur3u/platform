@@ -11,6 +11,7 @@ import {
   useWorkspaceMembers,
   type WorkspaceMember,
 } from '@tuturuuu/ui/hooks/use-workspace-members';
+import { resolveUserDisplayName } from '@tuturuuu/utils/name-helper';
 
 export function normalizeWorkspaceMemberList(
   value: unknown
@@ -90,7 +91,9 @@ export function useBulkResources({
         id: member.user_id,
         user_id: member.user_id,
         workspace_id: workspace.id,
-        display_name: member.display_name ?? member.email ?? member.user_id,
+        display_name: resolveUserDisplayName(member, {
+          fallback: member.user_id,
+        }),
         email: member.email ?? undefined,
         avatar_url: member.avatar_url ?? undefined,
       }));

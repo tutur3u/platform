@@ -17,17 +17,23 @@ import { zodResolver } from '@tuturuuu/ui/resolvers';
 import { MAX_FULL_NAME_LENGTH } from '@tuturuuu/utils/constants';
 import { useRouter } from 'next/navigation';
 import { useTranslations } from 'next-intl';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import * as z from 'zod';
 import { currentUserProfileQueryKey } from '@/hooks/use-current-user-profile';
 
 interface Props {
   defaultValue?: string | null;
   disabled?: boolean;
+  placeholder?: string | null;
 }
 
-export default function FullNameInput({ defaultValue = '', disabled }: Props) {
+export default function FullNameInput({
+  defaultValue = '',
+  disabled,
+  placeholder,
+}: Props) {
   const t = useTranslations('settings-account');
+  const commonT = useTranslations('common');
   const queryClient = useQueryClient();
   const router = useRouter();
 
@@ -41,9 +47,9 @@ export default function FullNameInput({ defaultValue = '', disabled }: Props) {
   const FormSchema = z.object({
     name: z
       .string()
-      .min(1, { message: minLengthError })
-      .max(MAX_FULL_NAME_LENGTH, { message: maxLengthError })
-      .optional(),
+      .trim()
+      .min(minLength, { message: minLengthError })
+      .max(maxLength, { message: maxLengthError }),
   });
 
   const form = useForm({
@@ -53,10 +59,19 @@ export default function FullNameInput({ defaultValue = '', disabled }: Props) {
     },
   });
 
-  const name = form.watch('name');
-  const hasChanges = name !== defaultValue;
+  useEffect(() => {
+    form.reset({ name: defaultValue || '' });
+  }, [defaultValue, form]);
+
+  const name = form.watch('name') ?? '';
+  // Compare against the form baseline (updated by reset after a save), not
+  // the prop, so the button disables immediately after a successful save.
+  const savedName = form.formState.defaultValues?.name ?? '';
+  const hasChanges = name.trim() !== savedName.trim();
+  const canSave = hasChanges && name.trim().length > 0;
 
   async function onSubmit(data: z.infer<typeof FormSchema>) {
+    if (!canSave) return;
     setSaving(true);
 
     try {
@@ -75,6 +90,8 @@ export default function FullNameInput({ defaultValue = '', disabled }: Props) {
           title: t('profile-updated'),
           description: t('full-name-updated'),
         });
+        // Reset with the saved value so the button returns to disabled.
+        form.reset({ name: data.name });
         router.refresh();
       } else {
         const errorData = await res.json().catch(() => ({}));
@@ -90,9 +107,9 @@ export default function FullNameInput({ defaultValue = '', disabled }: Props) {
         description:
           error instanceof Error ? error.message : t('please-try-again'),
       });
+    } finally {
+      setSaving(false);
     }
-
-    setSaving(false);
   }
 
   return (
@@ -107,7 +124,7 @@ export default function FullNameInput({ defaultValue = '', disabled }: Props) {
                 <FormControl>
                   <Input
                     id="full-name"
-                    placeholder={t('full-name')}
+                    placeholder={placeholder || t('full-name')}
                     disabled={disabled}
                     {...field}
                   />
@@ -117,22 +134,20 @@ export default function FullNameInput({ defaultValue = '', disabled }: Props) {
             )}
           />
 
-          {hasChanges && (
-            <Button
-              type="submit"
-              size="icon"
-              variant="outline"
-              onClick={form.handleSubmit(onSubmit)}
-              disabled={saving || disabled}
-              className="shrink-0"
-            >
-              {saving ? (
-                <Loader2 className="h-5 w-5 animate-spin" />
-              ) : (
-                <Check className="h-5 w-5" />
-              )}
-            </Button>
-          )}
+          <Button
+            type="submit"
+            size="icon"
+            variant="outline"
+            aria-label={commonT('save')}
+            disabled={!canSave || saving || disabled}
+            className="shrink-0"
+          >
+            {saving ? (
+              <Loader2 className="h-5 w-5 animate-spin" />
+            ) : (
+              <Check className="h-5 w-5" />
+            )}
+          </Button>
         </div>
       </form>
     </Form>

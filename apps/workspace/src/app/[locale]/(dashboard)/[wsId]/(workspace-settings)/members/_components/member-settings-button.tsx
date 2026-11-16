@@ -22,7 +22,10 @@ import { toast } from '@tuturuuu/ui/hooks/use-toast';
 import { Input } from '@tuturuuu/ui/input';
 import { Label } from '@tuturuuu/ui/label';
 import { MAX_NAME_LENGTH } from '@tuturuuu/utils/constants';
-import { getInitials } from '@tuturuuu/utils/name-helper';
+import {
+  getInitials,
+  resolveUserDisplayName,
+} from '@tuturuuu/utils/name-helper';
 import { useRouter } from 'next/navigation';
 import { useTranslations } from 'next-intl';
 import type { FormEvent } from 'react';
@@ -48,6 +51,7 @@ export function MemberSettingsButton({
 
   const [open, setOpen] = useState(false);
   const [displayName, setDisplayName] = useState(user.display_name ?? '');
+  const memberName = resolveUserDisplayName(user);
 
   const canEditDisplayName = !!canManageMembers && (!!user.id || !!user.email);
 
@@ -68,7 +72,7 @@ export function MemberSettingsButton({
               user?.display_name ||
               user?.email
             } ${t('has_been_revoked')}`
-          : `"${user?.display_name || 'Unknown'}" ${t('has_been_removed')}`,
+          : `"${memberName || t('unknown_member')}" ${t('has_been_removed')}`,
         color: 'teal',
       });
 
@@ -84,7 +88,7 @@ export function MemberSettingsButton({
         title: t('error'),
         description: invited
           ? t('revoke_error')
-          : `${t('remove_error')} "${user?.display_name || 'Unknown'}"`,
+          : `${t('remove_error')} "${memberName || t('unknown_member')}"`,
       });
     },
   });
@@ -161,8 +165,8 @@ export function MemberSettingsButton({
           <Avatar>
             <AvatarImage src={user?.avatar_url || undefined} />
             <AvatarFallback className="font-semibold">
-              {user?.display_name ? (
-                getInitials(user.display_name)
+              {memberName ? (
+                getInitials(memberName)
               ) : (
                 <UserIcon className="h-5 w-5" />
               )}
@@ -171,8 +175,8 @@ export function MemberSettingsButton({
 
           <div className="flex-1 space-y-1">
             <p className="line-clamp-1 font-medium text-sm leading-none">
-              {user?.display_name ? (
-                user.display_name
+              {memberName ? (
+                memberName
               ) : (
                 <span className="opacity-50">{t('unknown_member')}</span>
               )}

@@ -46,6 +46,7 @@ import {
 } from '@tuturuuu/ui/select';
 import { toast } from '@tuturuuu/ui/sonner';
 import { Textarea } from '@tuturuuu/ui/textarea';
+import { resolveUserDisplayName } from '@tuturuuu/utils/name-helper';
 import dayjs from 'dayjs';
 import { useCallback, useEffect, useMemo, useState } from 'react';
 
@@ -457,7 +458,7 @@ export function TaskCyclesClient({
                 <div className="flex flex-wrap items-center gap-4 text-muted-foreground text-sm">
                   <div className="flex items-center gap-1">
                     <User className="h-3 w-3" />
-                    <span>{cycle.creator?.display_name || 'Unknown'}</span>
+                    <span>{resolveUserDisplayName(cycle.creator)}</span>
                   </div>
                   <div className="flex items-center gap-1">
                     <Calendar className="h-3 w-3" />

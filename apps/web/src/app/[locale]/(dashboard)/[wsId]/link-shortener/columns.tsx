@@ -24,6 +24,7 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from '@tuturuuu/ui/tooltip';
+import { resolveUserDisplayName } from '@tuturuuu/utils/name-helper';
 import { getTuturuuuPortlessAppOrigin } from '@tuturuuu/utils/portless';
 import { formatDistanceToNow } from 'date-fns';
 import Link from 'next/link';
@@ -117,8 +118,10 @@ function CreatorDisplay({
     );
   }
 
-  const displayName =
-    creator.display_name || creator.email?.split('@')[0] || 'Unknown';
+  const displayName = resolveUserDisplayName(creator, {
+    emailLocalPart: true,
+    fallback: t('link-shortener.unknown_creator'),
+  });
   const initials = displayName.slice(0, 2).toUpperCase();
 
   return (

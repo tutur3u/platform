@@ -1,5 +1,9 @@
 'use client';
 
+import {
+  resolveUserDisplayName,
+  resolveUserFullName,
+} from '@tuturuuu/utils/name-helper';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import {
   AlertTriangle,
@@ -117,7 +121,7 @@ export default function ReferralSectionClient({
     () =>
       (availableUsersQuery.data?.data || []).map((user) => ({
         value: user.id,
-        label: user.full_name || user.display_name || t('common.unknown'),
+        label: resolveUserFullName(user, { fallback: t('common.unknown') }),
         description: user.email || user.phone || undefined,
         searchValue: buildWorkspaceUserSearchValue(user),
       })),
@@ -373,11 +377,9 @@ export default function ReferralSectionClient({
                                   </div>
                                 )}
                                 <RequireAttentionName
-                                  name={
-                                    u.display_name ||
-                                    u.full_name ||
-                                    t('common.unknown')
-                                  }
+                                  name={resolveUserDisplayName(u, {
+                                    fallback: t('common.unknown'),
+                                  })}
                                   requireAttention={
                                     !!u.has_require_attention_feedback
                                   }

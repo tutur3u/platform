@@ -18,6 +18,7 @@ import { Badge } from '@tuturuuu/ui/badge';
 import { Button } from '@tuturuuu/ui/button';
 import { Popover, PopoverContent, PopoverTrigger } from '@tuturuuu/ui/popover';
 import { cn } from '@tuturuuu/utils/format';
+import { resolveUserDisplayName } from '@tuturuuu/utils/name-helper';
 import { getDescriptionText } from '@tuturuuu/utils/text-helper';
 import { format } from 'date-fns';
 import type { ReactNode } from 'react';
@@ -233,17 +234,25 @@ export function TaskSummaryPopover({
                     <Avatar
                       key={assignee.id}
                       className="h-5 w-5 border border-background ring-1 ring-border transition-transform hover:z-10 hover:scale-110"
-                      title={assignee.display_name || 'Unknown'}
+                      title={resolveUserDisplayName(assignee, {
+                        emailLocalPart: true,
+                      })}
                     >
                       {assignee.avatar_url && (
                         <AvatarImage
                           src={assignee.avatar_url}
-                          alt={assignee.display_name || 'User'}
+                          alt={resolveUserDisplayName(assignee, {
+                            emailLocalPart: true,
+                            fallback: 'User',
+                          })}
                           referrerPolicy="no-referrer"
                         />
                       )}
                       <AvatarFallback className="font-bold text-[8px]">
-                        {getAssigneeInitials(assignee.display_name, null)}
+                        {getAssigneeInitials(
+                          assignee.display_name,
+                          assignee.email
+                        )}
                       </AvatarFallback>
                     </Avatar>
                   ))}

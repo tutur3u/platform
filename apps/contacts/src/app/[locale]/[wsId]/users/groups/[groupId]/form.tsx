@@ -15,7 +15,10 @@ import SearchBar from '@tuturuuu/ui/custom/search-bar';
 import { Filter } from '@tuturuuu/ui/custom/user-filters';
 import { ScrollArea } from '@tuturuuu/ui/scroll-area';
 import { cn } from '@tuturuuu/utils/format';
-import { getInitials } from '@tuturuuu/utils/name-helper';
+import {
+  getInitials,
+  resolveUserDisplayName,
+} from '@tuturuuu/utils/name-helper';
 import { useRouter } from 'next/navigation';
 import { useTranslations } from 'next-intl';
 import { useState } from 'react';
@@ -92,7 +95,7 @@ export default function GroupMemberForm({
           title={t('ws-members.invite_member')}
           icon={<User className="mr-2 h-4 w-4" />}
           options={users.map((user) => ({
-            label: user.display_name || user.full_name || 'No name',
+            label: resolveUserDisplayName(user, { fallback: 'No name' }),
             description: user.email || undefined,
             icon: (
               <Avatar className="relative h-8 w-8 cursor-pointer overflow-visible font-semibold">

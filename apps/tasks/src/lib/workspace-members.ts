@@ -1,5 +1,6 @@
 import type { TypedSupabaseClient } from '@tuturuuu/supabase/types';
 import type { User } from '@tuturuuu/types/primitives/User';
+import { resolveUserDisplayName } from '@tuturuuu/utils/name-helper';
 
 export interface WorkspaceMemberRole {
   id: string;
@@ -63,8 +64,6 @@ interface WorkspaceProfileRow {
 const normalizeEmail = (email: string | null | undefined) =>
   email?.trim().toLowerCase() || null;
 
-const normalizeName = (name: string | null | undefined) => name?.trim() || null;
-
 export const resolveWorkspaceMemberDisplayName = ({
   workspaceDisplayName,
   workspaceFullName,
@@ -74,9 +73,12 @@ export const resolveWorkspaceMemberDisplayName = ({
   workspaceFullName?: string | null;
   userDisplayName?: string | null;
 }) =>
-  normalizeName(workspaceDisplayName) ??
-  normalizeName(workspaceFullName) ??
-  normalizeName(userDisplayName);
+  resolveUserDisplayName({
+    display_name: workspaceDisplayName,
+    full_name: workspaceFullName,
+  }) ||
+  resolveUserDisplayName({ display_name: userDisplayName }) ||
+  null;
 
 export async function getWorkspaceMembers({
   supabase,
@@ -371,7 +373,14 @@ export async function getWorkspaceMembers({
       email: hiddenSecrets.has('HIDE_MEMBER_EMAIL') ? null : email,
       display_name: hiddenSecrets.has('HIDE_MEMBER_NAME')
         ? null
-        : (row.users?.display_name ?? email ?? 'Board guest'),
+        : resolveUserDisplayName(
+            {
+              display_name: row.users?.display_name,
+              email: hiddenSecrets.has('HIDE_MEMBER_EMAIL') ? null : email,
+              handle: row.users?.handle,
+            },
+            { fallback: 'Board guest' }
+          ),
       avatar_url: row.users?.avatar_url ?? null,
       pending: !userId,
       created_at: previous?.created_at ?? row.created_at ?? null,

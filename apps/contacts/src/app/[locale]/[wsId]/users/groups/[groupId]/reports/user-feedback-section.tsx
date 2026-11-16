@@ -35,6 +35,7 @@ import { toast } from '@tuturuuu/ui/sonner';
 import { Switch } from '@tuturuuu/ui/switch';
 import { Textarea } from '@tuturuuu/ui/textarea';
 import { RequireAttentionName } from '@tuturuuu/users-ui/components/require-attention-name';
+import { resolveUserFullName } from '@tuturuuu/utils/name-helper';
 import { format } from 'date-fns';
 import { vi } from 'date-fns/locale';
 import { useRouter } from 'next/navigation';
@@ -64,6 +65,7 @@ interface UserFeedback {
   creator: {
     full_name: string | null;
     display_name: string | null;
+    email?: string | null;
   } | null;
 }
 
@@ -311,9 +313,9 @@ export default function UserFeedbackSection({
   };
 
   const getCreatorName = (feedback: UserFeedback) => {
-    if (feedback.creator?.full_name) return feedback.creator.full_name;
-    if (feedback.creator?.display_name) return feedback.creator.display_name;
-    return 'Unknown User';
+    return resolveUserFullName(feedback.creator, {
+      fallback: 'Unknown User',
+    });
   };
 
   const formatFeedbackDate = (dateString: string) => {

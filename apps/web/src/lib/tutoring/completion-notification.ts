@@ -1,4 +1,5 @@
 import type { TypedSupabaseClient } from '@tuturuuu/supabase/types';
+import { resolveUserFullName } from '@tuturuuu/utils/name-helper';
 
 export const TUTORING_COMPLETED_CODE = 'tutoring_session_completed';
 export const TUTORING_SESSION_ENTITY = 'tutoring_session';
@@ -14,12 +15,7 @@ function nameOf(
     | null
     | undefined
 ) {
-  return (
-    user?.full_name?.trim() ||
-    user?.display_name?.trim() ||
-    user?.email?.trim() ||
-    'A learner'
-  );
+  return resolveUserFullName(user, { fallback: 'A learner' });
 }
 
 /**

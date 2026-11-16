@@ -23,6 +23,7 @@ import {
 } from '@tuturuuu/internal-api';
 import { toast } from '@tuturuuu/ui/sonner';
 import { cn } from '@tuturuuu/utils/format';
+import { resolveUserDisplayName } from '@tuturuuu/utils/name-helper';
 import { useLocale, useTranslations } from 'next-intl';
 import { useState } from 'react';
 
@@ -360,7 +361,7 @@ function StudentRow({
   courseId: string;
   wsId: string;
 }) {
-  const name = s.displayName ?? s.email ?? s.userId.slice(0, 8);
+  const name = resolveUserDisplayName(s, { fallback: s.userId.slice(0, 8) });
   const progressPct =
     totalModules > 0
       ? Math.round((s.completedModules / totalModules) * 100)

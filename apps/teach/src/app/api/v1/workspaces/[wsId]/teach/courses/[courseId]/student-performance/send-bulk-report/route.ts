@@ -3,6 +3,7 @@ import {
   validateTeachCourse,
 } from '@tuturuuu/education-core/teach/api';
 import { createBatch } from '@tuturuuu/email-service';
+import { resolveUserDisplayName } from '@tuturuuu/utils/name-helper';
 import { NextResponse } from 'next/server';
 import { z } from 'zod';
 import { withSessionAuth } from '@/lib/api-auth';
@@ -162,8 +163,9 @@ export const POST = withSessionAuth(
         ).length;
 
         // Render HTML
-        const studentName =
-          profile.display_name ?? profile.full_name ?? 'Học sinh';
+        const studentName = resolveUserDisplayName(profile, {
+          fallback: 'Học sinh',
+        });
         const escapedCourseName = escapeHtml(course.name);
         const escapedStudentName = escapeHtml(studentName);
         const learnerDashboardHref = escapeHtml(

@@ -59,6 +59,7 @@ import {
   TooltipTrigger,
 } from '@tuturuuu/ui/tooltip';
 import { cn } from '@tuturuuu/utils/format';
+import { resolveUserDisplayName } from '@tuturuuu/utils/name-helper';
 import { format, isPast, isToday, isTomorrow } from 'date-fns';
 import { enUS, vi } from 'date-fns/locale';
 import Image from 'next/image';
@@ -952,29 +953,25 @@ function InteractiveListView({
                                 <div
                                   key={assignee.id}
                                   className="relative inline-flex h-5 w-5 items-center justify-center overflow-hidden rounded-full border border-background bg-muted"
-                                  title={
-                                    assignee.display_name ||
-                                    assignee.email ||
-                                    'User'
-                                  }
+                                  title={resolveUserDisplayName(assignee, {
+                                    fallback: 'User',
+                                  })}
                                 >
                                   {assignee.avatar_url ? (
                                     <Image
                                       src={assignee.avatar_url}
-                                      alt={
-                                        assignee.display_name ||
-                                        assignee.email ||
-                                        'User'
-                                      }
+                                      alt={resolveUserDisplayName(assignee, {
+                                        fallback: 'User',
+                                      })}
                                       width={20}
                                       height={20}
                                       className="h-full w-full object-cover"
                                     />
                                   ) : (
                                     <span className="text-[9px]">
-                                      {(assignee.display_name ||
-                                        assignee.email ||
-                                        '?')[0]?.toUpperCase()}
+                                      {resolveUserDisplayName(assignee, {
+                                        fallback: '?',
+                                      })[0]?.toUpperCase()}
                                     </span>
                                   )}
                                 </div>

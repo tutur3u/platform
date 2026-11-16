@@ -10,6 +10,7 @@ import {
 import { Avatar, AvatarFallback, AvatarImage } from '@tuturuuu/ui/avatar';
 import { Button } from '@tuturuuu/ui/button';
 import { Card } from '@tuturuuu/ui/card';
+import { resolveUserDisplayName } from '@tuturuuu/utils/name-helper';
 import NextLink from 'next/link';
 import { useFormatter, useTranslations } from 'next-intl';
 import type { ComponentType } from 'react';
@@ -109,11 +110,11 @@ export function ProjectGridCard({
             <Avatar className="h-7 w-7 rounded-md">
               <AvatarImage src={project.lead.avatar_url || undefined} />
               <AvatarFallback className="rounded-md text-xs">
-                {project.lead.display_name?.[0]?.toUpperCase() || 'U'}
+                {resolveUserDisplayName(project.lead)[0]?.toUpperCase() || 'U'}
               </AvatarFallback>
             </Avatar>
             <span className="truncate text-sm">
-              {project.lead.display_name || t('unknown')}
+              {resolveUserDisplayName(project.lead, { fallback: t('unknown') })}
             </span>
           </div>
         ) : null}

@@ -6,6 +6,7 @@ import { Button } from '@tuturuuu/ui/button';
 import { Card } from '@tuturuuu/ui/card';
 import { Input } from '@tuturuuu/ui/input';
 import { Label } from '@tuturuuu/ui/label';
+import { resolveUserDisplayName } from '@tuturuuu/utils/name-helper';
 import { motion } from 'framer-motion';
 import { useTranslations } from 'next-intl';
 import { ProjectLeadSelector } from './project-lead-selector';
@@ -82,17 +83,20 @@ export function ProjectSidebar() {
                   }
                 />
                 <AvatarFallback className="text-xs">
-                  {(workspaceMembers.find((m) => m.id === editedLeadId)
-                    ?.display_name ||
-                    project.lead?.display_name ||
+                  {(resolveUserDisplayName(
+                    workspaceMembers.find((m) => m.id === editedLeadId)
+                  ) ||
+                    resolveUserDisplayName(project.lead) ||
                     'U')?.[0]?.toUpperCase()}
                 </AvatarFallback>
               </Avatar>
               <span className="text-sm">
-                {workspaceMembers.find((m) => m.id === editedLeadId)
-                  ?.display_name ||
-                  project.lead?.display_name ||
-                  t('unknown')}
+                {resolveUserDisplayName(
+                  workspaceMembers.find((m) => m.id === editedLeadId)
+                ) ||
+                  resolveUserDisplayName(project.lead, {
+                    fallback: t('unknown'),
+                  })}
               </span>
             </div>
           ) : (

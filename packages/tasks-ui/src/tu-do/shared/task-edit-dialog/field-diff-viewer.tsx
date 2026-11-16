@@ -21,6 +21,7 @@ import { Avatar, AvatarFallback, AvatarImage } from '@tuturuuu/ui/avatar';
 import { Badge } from '@tuturuuu/ui/badge';
 import { Checkbox } from '@tuturuuu/ui/checkbox';
 import { cn } from '@tuturuuu/utils/format';
+import { resolveUserDisplayName } from '@tuturuuu/utils/name-helper';
 import {
   type ComparableField,
   formatDateForDisplay,
@@ -587,12 +588,10 @@ function AssigneesDiff({
             <Avatar className="h-4 w-4">
               <AvatarImage src={assignee.avatar_url || undefined} />
               <AvatarFallback className="text-[8px]">
-                {(assignee.display_name || '?')[0]}
+                {(resolveUserDisplayName(assignee) || '?')[0]}
               </AvatarFallback>
             </Avatar>
-            <span className="text-xs">
-              {assignee.display_name || 'Unknown'}
-            </span>
+            <span className="text-xs">{resolveUserDisplayName(assignee)}</span>
           </div>
         </div>
       ))}
@@ -606,12 +605,10 @@ function AssigneesDiff({
             <Avatar className="h-4 w-4">
               <AvatarImage src={assignee.avatar_url || undefined} />
               <AvatarFallback className="text-[8px]">
-                {(assignee.display_name || '?')[0]}
+                {(resolveUserDisplayName(assignee) || '?')[0]}
               </AvatarFallback>
             </Avatar>
-            <span className="text-xs">
-              {assignee.display_name || 'Unknown'}
-            </span>
+            <span className="text-xs">{resolveUserDisplayName(assignee)}</span>
           </div>
         </div>
       ))}

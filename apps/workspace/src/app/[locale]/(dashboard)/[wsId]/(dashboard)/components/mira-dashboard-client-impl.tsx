@@ -1,6 +1,7 @@
 'use client';
 
 import { cn } from '@tuturuuu/utils/format';
+import { resolveUserDisplayName } from '@tuturuuu/utils/name-helper';
 import dynamic from 'next/dynamic';
 import type { ComponentType } from 'react';
 import { useEffect, useState } from 'react';
@@ -112,9 +113,7 @@ export default function MiraDashboardClientImpl({
             wsId={wsId}
             assistantName={assistantName}
             userName={
-              currentUser.display_name ||
-              currentUser.full_name ||
-              currentUser.email?.split('@')[0] ||
+              resolveUserDisplayName(currentUser, { emailLocalPart: true }) ||
               undefined
             }
             userAvatarUrl={currentUser.avatar_url}

@@ -1,4 +1,5 @@
 import { MAX_NAME_LENGTH } from '@tuturuuu/utils/constants';
+import { resolveUserDisplayName } from '@tuturuuu/utils/name-helper';
 import { connection, type NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
 import { authorizeInfrastructureAdminRequest } from '@/lib/infrastructure-admin-access';
@@ -227,11 +228,14 @@ export async function GET(req: NextRequest) {
     const userIds = Array.from(userMap.keys());
     const { data: users } = await supabase
       .from('users')
-      .select('id, display_name')
+      .select('id, display_name, handle')
       .in('id', userIds);
 
     const userNameMap = new Map(
-      (users || []).map((u) => [u.id, u.display_name || 'Unknown User'])
+      (users || []).map((u) => [
+        u.id,
+        resolveUserDisplayName(u, { fallback: 'Unknown User' }),
+      ])
     );
 
     // Build top consumers arrays

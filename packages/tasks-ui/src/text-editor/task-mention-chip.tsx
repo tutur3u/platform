@@ -31,6 +31,7 @@ import { useDomResolvedTheme } from '@tuturuuu/ui/hooks/use-dom-resolved-theme';
 import { useWorkspaceMembers } from '@tuturuuu/ui/hooks/use-workspace-members';
 import { toast } from '@tuturuuu/ui/sonner';
 import { cn } from '@tuturuuu/utils/format';
+import { resolveUserDisplayName } from '@tuturuuu/utils/name-helper';
 import {
   useBoardConfig,
   useWorkspaceLabels,
@@ -891,17 +892,20 @@ export function TaskMentionChip({
             <Avatar
               key={assignee.id}
               className="h-4 w-4 border border-background"
-              title={assignee.display_name || 'Unknown'}
+              title={resolveUserDisplayName(assignee, { emailLocalPart: true })}
             >
               {assignee.avatar_url && (
                 <AvatarImage
                   src={assignee.avatar_url}
-                  alt={assignee.display_name || 'User'}
+                  alt={resolveUserDisplayName(assignee, {
+                    emailLocalPart: true,
+                    fallback: 'User',
+                  })}
                   referrerPolicy="no-referrer"
                 />
               )}
               <AvatarFallback className="text-[8px]">
-                {getAssigneeInitials(assignee.display_name, null)}
+                {getAssigneeInitials(assignee.display_name, assignee.email)}
               </AvatarFallback>
             </Avatar>
           ))}

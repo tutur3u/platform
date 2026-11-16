@@ -38,7 +38,10 @@ import { Input } from '@tuturuuu/ui/input';
 import { Label } from '@tuturuuu/ui/label';
 import { Separator } from '@tuturuuu/ui/separator';
 import { toast } from '@tuturuuu/ui/sonner';
-import { getInitials } from '@tuturuuu/utils/name-helper';
+import {
+  getInitials,
+  resolveUserDisplayName,
+} from '@tuturuuu/utils/name-helper';
 import moment from 'moment';
 import { useCallback, useEffect, useState } from 'react';
 import { DisconnectDiscordDialog } from './disconnect-discord-dialog';
@@ -717,13 +720,17 @@ export default function DiscordIntegrationDashboard({
                         />
                         <AvatarFallback className="text-xs">
                           {getInitials(
-                            member.users?.display_name || 'Unknown User'
+                            resolveUserDisplayName(member.users, {
+                              fallback: 'Unknown User',
+                            })
                           )}
                         </AvatarFallback>
                       </Avatar>
                       <div className="min-w-0 flex-1">
                         <p className="truncate font-medium text-dynamic-foreground text-sm">
-                          {member.users?.display_name || 'Unknown User'}
+                          {resolveUserDisplayName(member.users, {
+                            fallback: 'Unknown User',
+                          })}
                         </p>
                         {member.users?.handle && (
                           <p className="text-dynamic-muted-foreground text-xs">

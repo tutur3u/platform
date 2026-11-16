@@ -4,6 +4,7 @@ import {
   createClient,
 } from '@tuturuuu/supabase/next/server';
 import type { TimeTrackingSession } from '@tuturuuu/types';
+import { resolveUserDisplayName } from '@tuturuuu/utils/name-helper';
 import dayjs from 'dayjs';
 import isoWeek from 'dayjs/plugin/isoWeek';
 import timezone from 'dayjs/plugin/timezone';
@@ -585,7 +586,7 @@ export const groupSessions = (
 
       if (!grouped.has(key)) {
         grouped.set(key, {
-          title: `${session.user?.display_name || 'Unknown User'} - ${periodKey}`,
+          title: `${resolveUserDisplayName(session.user, { fallback: 'Unknown User' })} - ${periodKey}`,
           category: null, // Not used in management view
           sessions: [],
           totalDuration: 0,

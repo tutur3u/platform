@@ -11,6 +11,7 @@ import { Avatar, AvatarFallback, AvatarImage } from '@tuturuuu/ui/avatar';
 import { Button } from '@tuturuuu/ui/button';
 import { ScrollArea } from '@tuturuuu/ui/scroll-area';
 import { formatCurrency } from '@tuturuuu/utils/format';
+import { resolveUserDisplayName } from '@tuturuuu/utils/name-helper';
 import Link from 'next/link';
 import { useLocale, useTranslations } from 'next-intl';
 import { useEffect, useRef, useState } from 'react';
@@ -198,16 +199,13 @@ export function InvoiceUserHistoryAccordion({
                                   src={invoice.creator.avatar_url || undefined}
                                 />
                                 <AvatarFallback className="text-[8px]">
-                                  {(
-                                    invoice.creator.display_name ||
-                                    invoice.creator.full_name ||
-                                    '?'
-                                  ).slice(0, 2)}
+                                  {resolveUserDisplayName(invoice.creator, {
+                                    fallback: '?',
+                                  }).slice(0, 2)}
                                 </AvatarFallback>
                               </Avatar>
                               <span className="truncate font-medium">
-                                {invoice.creator.display_name ||
-                                  invoice.creator.full_name}
+                                {resolveUserDisplayName(invoice.creator)}
                               </span>
                             </div>
                           </div>

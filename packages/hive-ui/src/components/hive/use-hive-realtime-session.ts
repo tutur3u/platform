@@ -1,6 +1,7 @@
 'use client';
 
 import type { HiveRealtimeAwareness } from '@tuturuuu/realtime/hive';
+import { resolveUserDisplayName } from '@tuturuuu/utils/name-helper';
 import {
   type Dispatch,
   type MutableRefObject,
@@ -40,16 +41,12 @@ type UseHiveRealtimeSessionProps = {
   revisionRef: MutableRefObject<number>;
 };
 
-function cleanPresenceName(value?: string | null) {
-  const trimmed = value?.trim();
-  return trimmed ? trimmed : null;
-}
-
 export function getHivePresenceDisplayName(currentUser: HiveUser) {
-  return (
-    cleanPresenceName(currentUser.displayName) ??
-    cleanPresenceName(currentUser.handle) ??
-    'Hive researcher'
+  // Presence is broadcast to other researchers, so the account email is
+  // deliberately left out of the name chain.
+  return resolveUserDisplayName(
+    { displayName: currentUser.displayName, handle: currentUser.handle },
+    { fallback: 'Hive researcher' }
   );
 }
 

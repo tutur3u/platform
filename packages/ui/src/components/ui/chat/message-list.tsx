@@ -3,6 +3,7 @@
 import { useVirtualizer } from '@tanstack/react-virtual';
 import { LoaderCircle, MessageCircle } from '@tuturuuu/icons';
 import type { ChatAttachment, ChatMessage } from '@tuturuuu/internal-api';
+import { resolveUserDisplayName } from '@tuturuuu/utils/name-helper';
 import { useTranslations } from 'next-intl';
 import {
   type UIEvent,
@@ -297,7 +298,9 @@ function MessageSystemEvent({ message }: { message: ChatMessage }) {
   const metadata = message.metadata;
   const eventType =
     typeof metadata.eventType === 'string' ? metadata.eventType : null;
-  const actorName = message.sender?.displayName ?? t('unknown_sender');
+  const actorName = resolveUserDisplayName(message.sender, {
+    fallback: t('unknown_sender'),
+  });
 
   let label = message.content || t('system_event_generic');
 

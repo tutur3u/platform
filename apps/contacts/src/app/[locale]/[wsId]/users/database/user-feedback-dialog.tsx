@@ -8,6 +8,7 @@ import {
   DialogTitle,
 } from '@tuturuuu/ui/dialog';
 import { RequireAttentionName } from '@tuturuuu/users-ui/components/require-attention-name';
+import { resolveUserFullName } from '@tuturuuu/utils/name-helper';
 import { useTranslations } from 'next-intl';
 import { UserFeedbackPanel } from './user-feedback-panel';
 
@@ -38,10 +39,9 @@ export function UserFeedbackDialog({
     return null;
   }
 
-  const userName =
-    user.full_name?.trim() ||
-    user.display_name?.trim() ||
-    tFeedback('unknown_user');
+  const userName = resolveUserFullName(user, {
+    fallback: tFeedback('unknown_user'),
+  });
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>

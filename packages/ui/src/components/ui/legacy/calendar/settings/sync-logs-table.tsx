@@ -39,6 +39,7 @@ import {
   TableHeader,
   TableRow,
 } from '@tuturuuu/ui/table';
+import { resolveUserDisplayName } from '@tuturuuu/utils/name-helper';
 import { useState } from 'react';
 import type { SyncLog } from './types';
 
@@ -292,7 +293,7 @@ export function SyncLogsTable({
                             src={log.triggeredBy.avatar || '/placeholder.svg'}
                           />
                           <AvatarFallback className="bg-foreground/10 text-xs">
-                            {(log.triggeredBy.display_name || 'U')
+                            {(resolveUserDisplayName(log.triggeredBy) || 'U')
                               .split(' ')
                               .map((n) => n[0])
                               .join('')}
@@ -300,7 +301,7 @@ export function SyncLogsTable({
                         </Avatar>
                         <div className="flex min-w-0 flex-col">
                           <span className="truncate font-medium text-sm">
-                            {log.triggeredBy.display_name || 'Unknown User'}
+                            {resolveUserDisplayName(log.triggeredBy)}
                           </span>
                         </div>
                       </div>

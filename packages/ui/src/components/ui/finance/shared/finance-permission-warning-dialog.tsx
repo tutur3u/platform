@@ -12,6 +12,7 @@ import {
   DialogTrigger,
 } from '@tuturuuu/ui/dialog';
 import { toast } from '@tuturuuu/ui/sonner';
+import { resolveUserDisplayName } from '@tuturuuu/utils/name-helper';
 import { useTranslations } from 'next-intl';
 import type { ReactNode } from 'react';
 import { useMemo, useState } from 'react';
@@ -36,7 +37,7 @@ function resolveDisplayName(
   user: FinancePermissionRequestUser | null | undefined,
   fallback: string
 ) {
-  return user?.displayName || user?.email || user?.id || fallback;
+  return resolveUserDisplayName(user, { fallback: user?.id || fallback });
 }
 
 export function FinancePermissionWarningContent({

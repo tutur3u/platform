@@ -12,6 +12,7 @@ import {
   DropdownMenuSubTrigger,
 } from '@tuturuuu/ui/dropdown-menu';
 import { cn } from '@tuturuuu/utils/format';
+import { resolveUserDisplayName } from '@tuturuuu/utils/name-helper';
 import { useMemo, useState } from 'react';
 import {
   clearTaskCommandSearchOnEscape,
@@ -186,7 +187,7 @@ export function TaskAssigneesMenu({
                           </Avatar>
                         )}
                         <span className="truncate text-sm">
-                          {member.display_name || member.email}
+                          {resolveUserDisplayName(member)}
                         </span>
                       </div>
                       <TaskOptionShortcutHint

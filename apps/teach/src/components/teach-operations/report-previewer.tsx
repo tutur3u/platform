@@ -11,6 +11,7 @@ import { Badge } from '@tuturuuu/ui/badge';
 import { Button } from '@tuturuuu/ui/button';
 import { Progress } from '@tuturuuu/ui/progress';
 import { cn } from '@tuturuuu/utils/format';
+import { resolveUserFullName } from '@tuturuuu/utils/name-helper';
 import { useLocale, useTranslations } from 'next-intl';
 import { LEARN_APP_URL } from '@/constants/common';
 
@@ -41,8 +42,7 @@ export function ReportPreviewer({
 }) {
   const locale = useLocale();
   const t = useTranslations('teachOperations');
-  const learnerName =
-    user?.full_name ?? user?.display_name ?? user?.email ?? t('learner');
+  const learnerName = resolveUserFullName(user, { fallback: t('learner') });
   const reportDate = report?.created_at
     ? new Date(report.created_at).toLocaleDateString(locale, {
         dateStyle: 'medium',

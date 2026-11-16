@@ -11,7 +11,10 @@ import { Avatar, AvatarFallback, AvatarImage } from '@tuturuuu/ui/avatar';
 import { Popover, PopoverContent, PopoverTrigger } from '@tuturuuu/ui/popover';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@tuturuuu/ui/tooltip';
 import { cn } from '@tuturuuu/utils/format';
-import { getInitials } from '@tuturuuu/utils/name-helper';
+import {
+  getInitials,
+  resolveUserDisplayName,
+} from '@tuturuuu/utils/name-helper';
 import { useTranslations } from 'next-intl';
 import { useMemo, useState } from 'react';
 import { useOptionalWorkspacePresenceContext } from '../providers/workspace-presence-provider';
@@ -52,7 +55,10 @@ function ViewerAvatar({
 }) {
   const t = useTranslations('ws-presence');
   const [popoverOpen, setPopoverOpen] = useState(false);
-  const displayName = user.display_name || user.email || 'User';
+  const displayName = resolveUserDisplayName(user, {
+    emailLocalPart: true,
+    fallback: 'User',
+  });
 
   const modeLabel =
     mode === 'away' ? t('away') : isCurrentUser ? t('you') : activeLabel;
@@ -197,7 +203,7 @@ function ViewerAvatar({
           </Avatar>
           <div className="min-w-0 flex-1">
             <p className="truncate font-medium text-sm leading-tight">
-              {user.display_name || 'Unknown User'}
+              {displayName}
               {isCurrentUser && (
                 <span className="ml-1 font-normal text-muted-foreground text-xs">
                   ({t('you')})

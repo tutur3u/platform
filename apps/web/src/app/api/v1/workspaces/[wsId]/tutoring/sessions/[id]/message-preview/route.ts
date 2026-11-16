@@ -8,6 +8,7 @@ import {
   TUTORING_POLICY_CONFIG_ID,
 } from '@tuturuuu/internal-api/tutoring-policy';
 import { createAdminClient } from '@tuturuuu/supabase/next/server';
+import { resolveUserFullName } from '@tuturuuu/utils/name-helper';
 import {
   formatTutoringDate,
   formatTutoringTimeRange,
@@ -31,13 +32,7 @@ function displayName(
     email: string | null;
   } | null
 ) {
-  if (!value) return 'N/A';
-  return (
-    value.full_name?.trim() ||
-    value.display_name?.trim() ||
-    value.email?.trim() ||
-    'N/A'
-  );
+  return resolveUserFullName(value, { fallback: 'N/A' });
 }
 
 /** Class sessions in the window that can hold the tutoring day or follow it. */

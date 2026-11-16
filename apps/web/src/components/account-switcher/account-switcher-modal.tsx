@@ -16,7 +16,10 @@ import { Separator } from '@tuturuuu/ui/separator';
 import { describeWebAccountSaveError } from '@tuturuuu/internal-api/auth';
 import { toast } from '@tuturuuu/ui/sonner';
 import { cn } from '@tuturuuu/utils/format';
-import { getInitials } from '@tuturuuu/utils/name-helper';
+import {
+  getInitials,
+  resolveUserDisplayName,
+} from '@tuturuuu/utils/name-helper';
 import { formatDistanceToNow } from 'date-fns';
 import { useTranslations } from 'next-intl';
 import { type MouseEvent, useEffect, useState } from 'react';
@@ -171,10 +174,13 @@ export function AccountSwitcherModal({
 
               {filteredAccounts.map((account) => {
                 const isActive = account.id === activeAccountId;
-                const displayName =
-                  account.metadata.displayName ||
-                  account.email ||
-                  t('account_switcher.unknown_user');
+                const displayName = resolveUserDisplayName(
+                  {
+                    displayName: account.metadata.displayName,
+                    email: account.email,
+                  },
+                  { fallback: t('account_switcher.unknown_user') }
+                );
                 const initials = getInitials(displayName);
                 const lastActive = account.metadata.lastActiveAt
                   ? formatDistanceToNow(account.metadata.lastActiveAt, {

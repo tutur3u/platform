@@ -1,5 +1,6 @@
 import { createAdminClient } from '@tuturuuu/supabase/next/server';
 import type { TypedSupabaseClient } from '@tuturuuu/supabase/types';
+import { resolveUserFullName } from '@tuturuuu/utils/name-helper';
 import { z } from 'zod';
 import { denyRestrictedWeakContent } from './weak-content-access';
 import { getContactsWorkspaceAccess } from './workspace';
@@ -57,11 +58,10 @@ function displayName(
   user: {
     full_name: string | null;
     display_name: string | null;
+    email?: string | null;
   } | null
 ) {
-  return (
-    user?.full_name?.trim() || user?.display_name?.trim() || 'Unknown User'
-  );
+  return resolveUserFullName(user, { fallback: 'Unknown User' });
 }
 
 type RelatedUser = {

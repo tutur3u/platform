@@ -20,7 +20,11 @@ import {
 } from '@tuturuuu/ui/command';
 import { Popover, PopoverContent, PopoverTrigger } from '@tuturuuu/ui/popover';
 import { cn } from '@tuturuuu/utils/format';
-import { getAvatarPlaceholder, getInitials } from '@tuturuuu/utils/name-helper';
+import {
+  getAvatarPlaceholder,
+  getInitials,
+  resolveUserDisplayName,
+} from '@tuturuuu/utils/name-helper';
 import { useTranslations } from 'next-intl';
 import { useState } from 'react';
 
@@ -195,25 +199,19 @@ export function UserFilter({
                         if (!aSelected && bSelected) return 1;
 
                         // For users with the same selection status, sort by name
-                        const aName =
-                          a.display_name ||
-                          a.full_name ||
-                          a.email ||
-                          unknownUserLabel;
-                        const bName =
-                          b.display_name ||
-                          b.full_name ||
-                          b.email ||
-                          unknownUserLabel;
+                        const aName = resolveUserDisplayName(a, {
+                          fallback: unknownUserLabel,
+                        });
+                        const bName = resolveUserDisplayName(b, {
+                          fallback: unknownUserLabel,
+                        });
                         return aName.localeCompare(bName);
                       })
                       .map((user) => {
                         const isSelected = selectedUserIds.includes(user.id);
-                        const displayName =
-                          user.display_name ||
-                          user.full_name ||
-                          user.email ||
-                          unknownUserLabel;
+                        const displayName = resolveUserDisplayName(user, {
+                          fallback: unknownUserLabel,
+                        });
 
                         return (
                           <CommandItem

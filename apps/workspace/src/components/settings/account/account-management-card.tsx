@@ -11,7 +11,10 @@ import {
   SettingsSectionMessage,
 } from '@tuturuuu/ui/custom/settings-section';
 import { toast } from '@tuturuuu/ui/sonner';
-import { getInitials } from '@tuturuuu/utils/name-helper';
+import {
+  getInitials,
+  resolveUserDisplayName,
+} from '@tuturuuu/utils/name-helper';
 import { formatDistanceToNow } from 'date-fns';
 import { useTranslations } from 'next-intl';
 import { type JSX, useState } from 'react';
@@ -86,10 +89,13 @@ export function AccountManagementCard(): JSX.Element {
           accounts.length > 0 &&
           sortedAccounts.map((account) => {
             const isActive = account.id === activeAccountId;
-            const displayName =
-              account.metadata.displayName ||
-              account.email ||
-              t('account_switcher.unknown_user');
+            const displayName = resolveUserDisplayName(
+              {
+                displayName: account.metadata.displayName,
+                email: account.email,
+              },
+              { fallback: t('account_switcher.unknown_user') }
+            );
             const initials = getInitials(displayName);
             const lastActive =
               account.metadata.lastActiveAt != null

@@ -110,7 +110,9 @@ describe('task history API app-session auth', () => {
       }
     );
     expect(mocks.authenticatedSupabase.from).toHaveBeenCalledWith('users');
-    expect(mocks.profileSelect).toHaveBeenCalledWith('id, display_name');
+    expect(mocks.profileSelect).toHaveBeenCalledWith(
+      'id, display_name, handle'
+    );
     expect(mocks.profileIn).toHaveBeenCalledWith('id', [USER_ID]);
     await expect(response.json()).resolves.toMatchObject({
       count: 1,

@@ -1,4 +1,5 @@
 import type { UpsertMailMailboxMemberPayload } from '@tuturuuu/internal-api';
+import { resolveUserFullName } from '@tuturuuu/utils/name-helper';
 import type { MailMailboxMember, MailRouteContext } from '../types';
 import { requireMailboxAccess } from './bootstrap';
 import { type AnyRecord, privateTable } from './shared';
@@ -33,7 +34,11 @@ async function getMailboxMemberProfile(
 
   return {
     email: privateDetails?.email ?? null,
-    fullName: privateDetails?.full_name ?? user?.display_name ?? null,
+    fullName:
+      resolveUserFullName({
+        full_name: privateDetails?.full_name,
+        display_name: user?.display_name,
+      }) || null,
   };
 }
 

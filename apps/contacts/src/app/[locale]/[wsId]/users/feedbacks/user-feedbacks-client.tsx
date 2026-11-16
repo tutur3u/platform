@@ -54,6 +54,7 @@ import { Textarea } from '@tuturuuu/ui/textarea';
 import { XLSX } from '@tuturuuu/ui/xlsx';
 import { RequireAttentionName } from '@tuturuuu/users-ui/components/require-attention-name';
 import { useInfiniteWorkspaceUserGroups } from '@tuturuuu/users-ui/hooks/use-workspace-user-groups';
+import { resolveUserFullName } from '@tuturuuu/utils/name-helper';
 import { format } from 'date-fns';
 import { useTranslations } from 'next-intl';
 import { parseAsInteger, parseAsString, useQueryState } from 'nuqs';
@@ -186,12 +187,7 @@ function getUserOptionLabel(
   user: WorkspaceUserOptionData,
   fallbackLabel: string
 ) {
-  return (
-    user.full_name?.trim() ||
-    user.display_name?.trim() ||
-    user.email?.trim() ||
-    fallbackLabel
-  );
+  return resolveUserFullName(user, { fallback: fallbackLabel });
 }
 
 function useInfiniteWorkspaceUsers(

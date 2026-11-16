@@ -3,6 +3,7 @@ import {
   validateTeachCourse,
   validateTeachCourseModule,
 } from '@tuturuuu/education-core/teach/api';
+import { resolveUserDisplayName } from '@tuturuuu/utils/name-helper';
 import { NextResponse } from 'next/server';
 import { z } from 'zod';
 import { withSessionAuth } from '@/lib/api-auth';
@@ -119,7 +120,7 @@ export const GET = withSessionAuth(
       const userIds = [...new Set(typedSubmissions.map((row) => row.user_id))];
       const { data: users, error: usersErr } = await access.sbAdmin
         .from('users')
-        .select('id, display_name')
+        .select('id, display_name, handle')
         .in('id', userIds);
 
       if (usersErr) {
@@ -135,7 +136,10 @@ export const GET = withSessionAuth(
       }
 
       const userMap = new Map(
-        (users ?? []).map((user) => [user.id, user.display_name ?? 'Unknown'])
+        (users ?? []).map((user) => [
+          user.id,
+          resolveUserDisplayName(user, { fallback: 'Unknown' }),
+        ])
       );
 
       const grouped = new Map<

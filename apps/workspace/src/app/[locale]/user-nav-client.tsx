@@ -40,7 +40,10 @@ import { SETTINGS_DIALOG_CLOSE_INTENT_EVENT } from '@tuturuuu/ui/hooks/settings-
 import { useSettingsDialogUrlState } from '@tuturuuu/ui/hooks/use-settings-dialog-url-state';
 import { cn } from '@tuturuuu/utils/format';
 import { usePlatform } from '@tuturuuu/utils/hooks/use-platform';
-import { getInitials } from '@tuturuuu/utils/name-helper';
+import {
+  getInitials,
+  resolveUserDisplayName,
+} from '@tuturuuu/utils/name-helper';
 import { getPublicProfilePath } from '@tuturuuu/utils/public-profile-url';
 import dynamic from 'next/dynamic';
 import { useParams } from 'next/navigation';
@@ -157,6 +160,7 @@ export default function UserNavClient({
 
   const wsId = workspace?.id ?? resolvedWorkspace?.id;
   const displayedWorkspace = workspace ?? resolvedWorkspace;
+  const userName = resolveUserDisplayName(user);
   const secondaryLabel = resolveUserNavSecondaryLabel({
     email: user?.email,
     workspaceName: displayedWorkspace?.name,
@@ -248,8 +252,8 @@ export default function UserNavClient({
                 className="aspect-square overflow-clip rounded-lg object-cover"
               />
               <AvatarFallback className="rounded-lg font-semibold">
-                {user?.display_name ? (
-                  getInitials(user.display_name)
+                {userName ? (
+                  getInitials(userName)
                 ) : (
                   <User className="h-5 w-5" />
                 )}
@@ -259,7 +263,7 @@ export default function UserNavClient({
             {hideMetadata || (
               <div className="flex w-full flex-col items-start justify-center">
                 <div className="line-clamp-1 break-all font-semibold text-sm">
-                  {user?.display_name || user?.handle || t('common.unnamed')}
+                  {userName || t('common.unnamed')}
                 </div>
                 <AnimatedSlotText
                   className="text-xs opacity-70"
@@ -282,7 +286,7 @@ export default function UserNavClient({
                 onClick={() => openSettingsDialog('profile')}
                 className="line-clamp-1 w-fit break-all font-medium text-sm hover:underline"
               >
-                {user?.display_name || user?.handle || t('common.unnamed')}
+                {userName || t('common.unnamed')}
               </button>
               <p className="line-clamp-1 break-all text-xs opacity-70">
                 {user?.email}

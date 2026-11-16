@@ -1,4 +1,5 @@
 import type { User } from '@tuturuuu/types/primitives/User';
+import { resolveUserDisplayName } from '@tuturuuu/utils/name-helper';
 
 export type TaskDialogUserIdentity = User & {
   full_name?: string | null;
@@ -12,24 +13,10 @@ export type TaskDialogCurrentUser = {
   avatar_url?: string | null;
 };
 
-function normalizeName(value: string | null | undefined): string | null {
-  const trimmed = value?.trim();
-  return trimmed ? trimmed : null;
-}
-
 export function getTaskDialogUserDisplayName(
   user: TaskDialogUserIdentity | null | undefined
 ): string {
-  const displayName = normalizeName(user?.display_name);
-  if (displayName) return displayName;
-
-  const fullName = normalizeName(user?.full_name);
-  if (fullName) return fullName;
-
-  const emailName = normalizeName(user?.email?.split('@')[0]);
-  if (emailName) return emailName;
-
-  return 'Unknown User';
+  return resolveUserDisplayName(user, { emailLocalPart: true });
 }
 
 export function normalizeTaskDialogCurrentUser(

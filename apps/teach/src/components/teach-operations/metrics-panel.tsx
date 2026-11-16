@@ -9,6 +9,7 @@ import {
   updateWorkspaceCourseIndicators,
 } from '@tuturuuu/internal-api';
 import { Button } from '@tuturuuu/ui/button';
+import { resolveUserFullName } from '@tuturuuu/utils/name-helper';
 import { useTranslations } from 'next-intl';
 import { useState } from 'react';
 import { LEARN_APP_URL } from '@/constants/common';
@@ -143,9 +144,7 @@ export function MetricsPanel({
           <tbody>
             {(membersQuery.data?.data ?? []).map((member) => (
               <tr className="border-border border-b" key={member.id}>
-                <td className="p-3 font-bold">
-                  {member.full_name ?? member.display_name ?? member.email}
-                </td>
+                <td className="p-3 font-bold">{resolveUserFullName(member)}</td>
                 {(indicatorsQuery.data?.indicators ?? []).map((indicator) => {
                   const key = `${member.id}:${indicator.id}`;
                   const value = draftValues[key] ?? valuesByKey.get(key) ?? '';

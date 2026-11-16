@@ -8,6 +8,7 @@ import {
   listWorkspaceUsers,
   removeWorkspaceCourseMember,
 } from '@tuturuuu/internal-api';
+import { resolveUserFullName } from '@tuturuuu/utils/name-helper';
 import { useTranslations } from 'next-intl';
 import { useState } from 'react';
 
@@ -59,7 +60,7 @@ export function CourseMembersPanel({
             >
               <span className="min-w-0">
                 <span className="block truncate font-bold">
-                  {member.full_name ?? member.display_name ?? member.email}
+                  {resolveUserFullName(member)}
                 </span>
                 <span className="block truncate text-muted-foreground text-xs">
                   {member.email}
@@ -99,7 +100,7 @@ export function CourseMembersPanel({
               >
                 <span className="min-w-0">
                   <span className="block truncate font-bold">
-                    {user.full_name ?? user.display_name ?? user.email}
+                    {resolveUserFullName(user)}
                   </span>
                   <span className="block truncate text-muted-foreground text-xs">
                     {user.email}

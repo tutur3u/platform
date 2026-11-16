@@ -1,6 +1,7 @@
 import type { Task } from '@tuturuuu/types/primitives/Task';
 import type { TaskList } from '@tuturuuu/types/primitives/TaskList';
 import { isPersonalExternalOverlayTask } from '@tuturuuu/ui/lib/task-personal-external';
+import { resolveUserDisplayName } from '@tuturuuu/utils/name-helper';
 import {
   type BoardConfig,
   getTaskTicketLabel,
@@ -137,7 +138,9 @@ function buildInitialSourceContext(
       task.assignees?.map((assignee) => ({
         id: assignee.id,
         user_id: assignee.id,
-        display_name: assignee.display_name ?? assignee.email ?? assignee.id,
+        display_name: resolveUserDisplayName(assignee, {
+          fallback: assignee.id,
+        }),
         avatar_url: assignee.avatar_url ?? null,
       })) ?? [],
     workspaceProjects: task.projects ?? [],

@@ -2,6 +2,7 @@ import {
   requireTeachWorkspaceAccess,
   validateTeachCourse,
 } from '@tuturuuu/education-core/teach/api';
+import { resolveUserDisplayName } from '@tuturuuu/utils/name-helper';
 import { NextResponse } from 'next/server';
 import { z } from 'zod';
 import { withSessionAuth } from '@/lib/api-auth';
@@ -107,11 +108,14 @@ export const GET = withSessionAuth(
     const userIds = [...new Set(attempts.map((a) => a.user_id))];
     const { data: users } = await access.sbAdmin
       .from('users')
-      .select('id, display_name')
+      .select('id, display_name, handle')
       .in('id', userIds);
 
     const userMap = new Map(
-      (users ?? []).map((u) => [u.id, u.display_name ?? 'Unknown'])
+      (users ?? []).map((u) => [
+        u.id,
+        resolveUserDisplayName(u, { fallback: 'Unknown' }),
+      ])
     );
 
     const { data: testQuizzes, error: testQuizzesErr } = await access.sbAdmin

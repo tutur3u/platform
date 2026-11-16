@@ -12,6 +12,7 @@ import {
   DialogTitle,
 } from '@tuturuuu/ui/dialog';
 import { Textarea } from '@tuturuuu/ui/textarea';
+import { resolveUserDisplayName } from '@tuturuuu/utils/name-helper';
 import dayjs from 'dayjs';
 import relativeTime from 'dayjs/plugin/relativeTime';
 import { useTranslations } from 'next-intl';
@@ -122,7 +123,9 @@ export function CommentItem({
         <div className="flex items-center justify-between gap-2">
           <div className="flex items-center gap-2">
             <span className="font-medium text-sm">
-              {comment.user.display_name || 'Unknown User'}
+              {resolveUserDisplayName(comment.user, {
+                fallback: t('detail.unknownUser'),
+              })}
             </span>
             <span className="text-muted-foreground text-xs">
               {formatRelativeTime(comment.created_at)}

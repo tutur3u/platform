@@ -17,7 +17,11 @@ import { FinanceDisplayAmount } from '@tuturuuu/ui/finance/shared/finance-displa
 import { Separator } from '@tuturuuu/ui/separator';
 import { availableConfigs } from '@tuturuuu/utils/configs/reports';
 import { formatCurrency } from '@tuturuuu/utils/format';
-import { getAvatarPlaceholder, getInitials } from '@tuturuuu/utils/name-helper';
+import {
+  getAvatarPlaceholder,
+  getInitials,
+  resolveUserFullName,
+} from '@tuturuuu/utils/name-helper';
 import 'dayjs/locale/vi';
 import moment from 'moment';
 import { notFound } from 'next/navigation';
@@ -53,6 +57,10 @@ export default async function InvoiceDetailsPage({
   const promotions = await getPromotions(wsId, invoice.id);
   const savedDiscount = getSavedInvoiceDiscount(products, invoice.price);
   const { data: configs } = await getConfigs(wsId);
+  const customerName = resolveUserFullName({
+    full_name: invoice.customer_full_name,
+    display_name: invoice.customer_display_name,
+  });
 
   return (
     <>
@@ -81,31 +89,15 @@ export default async function InvoiceDetailsPage({
                       <AvatarImage
                         src={
                           invoice.customer_avatar_url ||
-                          getAvatarPlaceholder(
-                            invoice.customer_full_name ||
-                              invoice.customer_display_name ||
-                              'Unknown'
-                          )
+                          getAvatarPlaceholder(customerName)
                         }
-                        alt={
-                          invoice.customer_full_name ||
-                          invoice.customer_display_name ||
-                          'Unknown'
-                        }
+                        alt={customerName}
                       />
                       <AvatarFallback className="text-xs">
-                        {getInitials(
-                          invoice.customer_full_name ||
-                            invoice.customer_display_name ||
-                            'Unknown'
-                        )}
+                        {getInitials(customerName)}
                       </AvatarFallback>
                     </Avatar>
-                    <span>
-                      {invoice.customer_full_name ||
-                        invoice.customer_display_name ||
-                        '-'}
-                    </span>
+                    <span>{customerName || '-'}</span>
                   </div>
                 }
               />

@@ -1,4 +1,5 @@
 import { createAdminClient } from '@tuturuuu/supabase/next/server';
+import { resolveUserDisplayName } from '@tuturuuu/utils/name-helper';
 import {
   getPermissions,
   normalizeWorkspaceId,
@@ -92,7 +93,9 @@ export async function GET(
             r.user_id,
             {
               id: r.user_id,
-              display_name: r.user?.display_name || 'Unknown',
+              display_name: resolveUserDisplayName(r.user, {
+                fallback: 'Unknown',
+              }),
             },
           ]) || []
       ).values()

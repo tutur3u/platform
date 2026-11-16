@@ -2,6 +2,7 @@ import {
   getPublicSchemaClient,
   type TopicAnnouncementsSupabaseClient,
 } from '@tuturuuu/users-core/routes/topic-announcements';
+import { resolveUserFullName } from '@tuturuuu/utils/name-helper';
 import {
   isGvnnContactTags,
   normalizeScheduleTime,
@@ -50,12 +51,7 @@ export interface ScheduleMonthData {
 }
 
 function teacherName(user: Row | undefined) {
-  return (
-    user?.full_name?.trim() ||
-    user?.display_name?.trim() ||
-    user?.email?.trim() ||
-    ''
-  );
+  return resolveUserFullName(user);
 }
 
 /** Active classes of the workspace with their TEACHER members (GVCN). */

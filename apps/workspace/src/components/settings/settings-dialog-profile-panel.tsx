@@ -3,6 +3,7 @@
 import type { WorkspaceUser } from '@tuturuuu/types/primitives/WorkspaceUser';
 import { SettingItemTab } from '@tuturuuu/ui/custom/settings-item-tab';
 import { SettingsSection } from '@tuturuuu/ui/custom/settings-section';
+import { resolveProfileNamePlaceholders } from '@tuturuuu/utils/name-helper';
 import { useTranslations } from 'next-intl';
 import AccountStatusSection from './account/account-status-section';
 import UserAvatar from './settings-avatar';
@@ -14,6 +15,7 @@ import UserIdInput from './settings-user-id-input';
 
 export function ProfileSettingsPanel({ user }: { user: WorkspaceUser }) {
   const t = useTranslations();
+  const namePlaceholders = resolveProfileNamePlaceholders(user);
 
   return (
     <div className="space-y-8">
@@ -39,14 +41,20 @@ export function ProfileSettingsPanel({ user }: { user: WorkspaceUser }) {
           title={t('settings-account.display-name')}
           description={t('settings-account.display-name-description')}
         >
-          <DisplayNameInput defaultValue={user.display_name} />
+          <DisplayNameInput
+            defaultValue={user.display_name}
+            placeholder={namePlaceholders.displayName}
+          />
         </SettingItemTab>
         <SettingItemTab
           controlWidth="xl"
           title={t('settings-account.full-name')}
           description={t('settings-account.full-name-description')}
         >
-          <FullNameInput defaultValue={user.full_name} />
+          <FullNameInput
+            defaultValue={user.full_name}
+            placeholder={namePlaceholders.fullName}
+          />
         </SettingItemTab>
         <SettingItemTab
           controlWidth="xl"

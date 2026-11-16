@@ -3,6 +3,7 @@ import { createAdminClient } from '@tuturuuu/supabase/next/server';
 import { Filter } from '@tuturuuu/ui/custom/user-filters';
 import { VisibleWorkspaceFilter } from '@tuturuuu/ui/custom/workspace-select';
 import { ROOT_WORKSPACE_ID } from '@tuturuuu/utils/constants';
+import { resolveUserDisplayName } from '@tuturuuu/utils/name-helper';
 import { getTranslations } from 'next-intl/server';
 
 interface Props {
@@ -50,8 +51,10 @@ export default async function LinkShortenerFilters({ wsId }: Props) {
         title={t('creator')}
         icon={<User className="mr-2 h-4 w-4" />}
         options={creators.map((creator) => ({
-          label:
-            creator.display_name || creator.email?.split('@')[0] || 'Unknown',
+          label: resolveUserDisplayName(creator, {
+            emailLocalPart: true,
+            fallback: 'Unknown',
+          }),
           value: creator.id || '',
           count: creator.link_count || 0,
         }))}

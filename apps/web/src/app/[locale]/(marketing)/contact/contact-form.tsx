@@ -31,6 +31,7 @@ import {
   MAX_SUPPORT_INQUIRY_SUBJECT_LENGTH,
 } from '@tuturuuu/utils/constants';
 import { cn } from '@tuturuuu/utils/format';
+import { resolveUserDisplayName } from '@tuturuuu/utils/name-helper';
 import Link from 'next/link';
 import { useTranslations } from 'next-intl';
 import { useEffect, useState } from 'react';
@@ -112,7 +113,7 @@ export function ContactForm() {
     }
 
     const name = inquiryPrefillName(
-      profile.display_name || profile.email?.split('@')[0] || ''
+      resolveUserDisplayName(profile, { emailLocalPart: true })
     );
     if (name) {
       form.setValue('name', name);

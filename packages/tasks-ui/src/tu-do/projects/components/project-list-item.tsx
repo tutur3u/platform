@@ -10,6 +10,7 @@ import {
 } from '@tuturuuu/icons';
 import { Button } from '@tuturuuu/ui/button';
 import { Card } from '@tuturuuu/ui/card';
+import { resolveUserDisplayName } from '@tuturuuu/utils/name-helper';
 import NextLink from 'next/link';
 import { useFormatter, useTranslations } from 'next-intl';
 import type { ComponentType } from 'react';
@@ -132,7 +133,9 @@ export function ProjectListItem({
         <div className="flex flex-col gap-2">
           <MetaRow
             icon={User}
-            value={project.lead?.display_name || t('unknown')}
+            value={resolveUserDisplayName(project.lead, {
+              fallback: t('unknown'),
+            })}
           />
           <MetaRow
             icon={Calendar}

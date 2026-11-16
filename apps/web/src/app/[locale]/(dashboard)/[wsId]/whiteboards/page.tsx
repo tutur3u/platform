@@ -2,6 +2,7 @@ import { PlusIcon } from '@tuturuuu/icons';
 import { createAdminClient } from '@tuturuuu/supabase/next/server';
 import { Button } from '@tuturuuu/ui/button';
 import { Separator } from '@tuturuuu/ui/separator';
+import { resolveUserDisplayName } from '@tuturuuu/utils/name-helper';
 import { getWorkspace } from '@tuturuuu/utils/workspace-helper';
 import type { Metadata } from 'next';
 import { notFound } from 'next/navigation';
@@ -32,7 +33,7 @@ export default async function WhiteboardsPage({
   }
 
   const t = await getTranslations('common');
-  const whiteboards = await getWhiteboards(workspace.id);
+  const whiteboards = await getWhiteboards(workspace.id, t('unknown'));
 
   return (
     <div className="container mx-auto space-y-6 p-6">
@@ -63,14 +64,17 @@ export default async function WhiteboardsPage({
   );
 }
 
-async function getWhiteboards(wsId: string): Promise<Whiteboard[]> {
+async function getWhiteboards(
+  wsId: string,
+  unknownCreatorLabel: string
+): Promise<Whiteboard[]> {
   const supabase = await createAdminClient();
 
   const { data: whiteboards, error } = await supabase
     .from('workspace_whiteboards')
     .select(
       `*,
-      creator:users(display_name)
+      creator:users(display_name, handle)
     `
     )
     .eq('ws_id', wsId)
@@ -88,7 +92,9 @@ async function getWhiteboards(wsId: string): Promise<Whiteboard[]> {
     description: whiteboard.description || undefined,
     dateCreated: new Date(whiteboard.created_at),
     lastModified: new Date(whiteboard.updated_at),
-    creatorName: whiteboard.creator?.display_name || 'Unknown User',
+    creatorName: resolveUserDisplayName(whiteboard.creator, {
+      fallback: unknownCreatorLabel,
+    }),
     archivedAt: whiteboard.archived_at
       ? new Date(whiteboard.archived_at)
       : undefined,

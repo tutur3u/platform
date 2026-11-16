@@ -12,6 +12,7 @@ import {
   DialogTitle,
 } from '@tuturuuu/ui/dialog';
 import { toast } from '@tuturuuu/ui/sonner';
+import { resolveUserDisplayName } from '@tuturuuu/utils/name-helper';
 import { useRouter } from 'next/navigation';
 import { useTranslations } from 'next-intl';
 import { useState } from 'react';
@@ -30,7 +31,7 @@ export default function EditUserDialog({ wsId, data }: EditUserDialogProps) {
 
   const handleSuccess = () => {
     toast.success(t('ws-members.member-updated'), {
-      description: `"${data.display_name || data.full_name || 'Unknown'}" ${t('ws-members.has-been-updated')}`,
+      description: `"${resolveUserDisplayName(data, { fallback: t('common.unknown') })}" ${t('ws-members.has-been-updated')}`,
     });
     setOpen(false);
     router.refresh();

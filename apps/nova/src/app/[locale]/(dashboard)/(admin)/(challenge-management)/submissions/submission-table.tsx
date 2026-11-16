@@ -36,6 +36,7 @@ import {
   TableRow,
 } from '@tuturuuu/ui/table';
 import { cn } from '@tuturuuu/utils/format';
+import { resolveUserDisplayName } from '@tuturuuu/utils/name-helper';
 import Image from 'next/image';
 import { usePathname, useRouter } from 'next/navigation';
 import { useTranslations } from 'next-intl';
@@ -393,7 +394,13 @@ export function SubmissionTable({
                           </div>
                         )}
                         <span>
-                          {submission.user?.display_name || 'Unknown'}
+                          {resolveUserDisplayName(
+                            {
+                              display_name: submission.user?.display_name,
+                              email: showEmail ? submission.user?.email : null,
+                            },
+                            { fallback: 'Unknown' }
+                          )}
                         </span>
                       </div>
                     </TableCell>

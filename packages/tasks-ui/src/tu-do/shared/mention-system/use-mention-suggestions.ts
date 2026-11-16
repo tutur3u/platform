@@ -1,3 +1,4 @@
+import { resolveUserDisplayName } from '@tuturuuu/utils/name-helper';
 import dayjs from 'dayjs';
 import { useMemo } from 'react';
 import type { MentionOption } from './types';
@@ -39,11 +40,11 @@ export function useMentionSuggestions({
     () =>
       [...workspaceMembers]
         .sort((a, b) =>
-          (a?.display_name || '').localeCompare(b?.display_name || '')
+          resolveUserDisplayName(a).localeCompare(resolveUserDisplayName(b))
         )
         .map((member: any) => ({
           id: member.user_id,
-          label: member.display_name || 'Unknown member',
+          label: resolveUserDisplayName(member, { emailLocalPart: true }),
           subtitle: undefined,
           avatarUrl: member.avatar_url,
           type: 'user' as const,

@@ -39,6 +39,7 @@ import { Textarea } from '@tuturuuu/ui/textarea';
 import { RequireAttentionName } from '@tuturuuu/users-ui/components/require-attention-name';
 import { useInfiniteWorkspaceUserGroups } from '@tuturuuu/users-ui/hooks/use-workspace-user-groups';
 import { cn } from '@tuturuuu/utils/format';
+import { resolveUserFullName } from '@tuturuuu/utils/name-helper';
 import { format } from 'date-fns';
 import { useRouter } from 'next/navigation';
 import { useTranslations } from 'next-intl';
@@ -233,10 +234,9 @@ export function UserFeedbackPanel({
   const attentionCount = attentionQuery.data?.count ?? 0;
   const requiresAttention =
     attentionCount > 0 || !!user.has_require_attention_feedback;
-  const displayName =
-    user.full_name?.trim() ||
-    user.display_name?.trim() ||
-    tFeedback('unknown_user');
+  const displayName = resolveUserFullName(user, {
+    fallback: tFeedback('unknown_user'),
+  });
   const isMutating =
     createFeedbackMutation.isPending ||
     updateFeedbackMutation.isPending ||

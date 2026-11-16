@@ -4,6 +4,7 @@ import { ChevronRight, Loader2, Sparkles } from '@tuturuuu/icons';
 import { Avatar, AvatarFallback, AvatarImage } from '@tuturuuu/ui/avatar';
 import { Button } from '@tuturuuu/ui/button';
 import { Card } from '@tuturuuu/ui/card';
+import { resolveUserDisplayName } from '@tuturuuu/utils/name-helper';
 import { motion } from 'framer-motion';
 import { useTranslations } from 'next-intl';
 import { useProjectOverview } from '../project-overview-context';
@@ -47,11 +48,15 @@ export function OverviewUpdates() {
                       src={update.creator?.avatar_url || undefined}
                     />
                     <AvatarFallback className="text-xs">
-                      {update.creator?.display_name?.[0]?.toUpperCase() || 'U'}
+                      {resolveUserDisplayName(
+                        update.creator
+                      )[0]?.toUpperCase() || 'U'}
                     </AvatarFallback>
                   </Avatar>
                   <span className="font-medium text-sm">
-                    {update.creator?.display_name || t('unknown_user')}
+                    {resolveUserDisplayName(update.creator, {
+                      fallback: t('unknown_user'),
+                    })}
                   </span>
                   <span className="text-muted-foreground text-xs">
                     {new Date(update.created_at).toLocaleDateString()}

@@ -16,6 +16,7 @@ import {
   CardTitle,
 } from '@tuturuuu/ui/card';
 import { Skeleton } from '@tuturuuu/ui/skeleton';
+import { resolveUserDisplayName } from '@tuturuuu/utils/name-helper';
 import { useTranslations } from 'next-intl';
 import { getAssignedMembersForRole } from './cms-members-shared';
 
@@ -273,10 +274,9 @@ export function CmsRolesPanel({
                           variant="outline"
                           className="rounded-full"
                         >
-                          {member.display_name ||
-                            member.email ||
-                            member.handle ||
-                            t('common.unknown')}
+                          {resolveUserDisplayName(member, {
+                            fallback: t('common.unknown'),
+                          })}
                         </Badge>
                       ))
                     )}

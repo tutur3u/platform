@@ -32,6 +32,7 @@ import {
   SelectValue,
 } from '@tuturuuu/ui/select';
 import { cn } from '@tuturuuu/utils/format';
+import { resolveUserDisplayName } from '@tuturuuu/utils/name-helper';
 import { format } from 'date-fns';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useState } from 'react';
@@ -364,16 +365,24 @@ export function InquiriesClient({
                                     src={inquiry.users.avatar_url || ''}
                                   />
                                   <AvatarFallback className="bg-dynamic-orange/10 font-semibold text-[10px] text-dynamic-orange">
-                                    {inquiry.users.display_name?.[0] ||
-                                      inquiry.users.user_private_details
-                                        .email?.[0] ||
-                                      'U'}
+                                    {resolveUserDisplayName({
+                                      ...inquiry.users,
+                                      email:
+                                        inquiry.users.user_private_details
+                                          .email,
+                                    })[0] || 'U'}
                                   </AvatarFallback>
                                 </Avatar>
                                 <span className="font-medium">
-                                  {inquiry.users.display_name ||
-                                    inquiry.users.user_private_details.email ||
-                                    'Unknown User'}
+                                  {resolveUserDisplayName(
+                                    {
+                                      ...inquiry.users,
+                                      email:
+                                        inquiry.users.user_private_details
+                                          .email,
+                                    },
+                                    { fallback: 'Unknown User' }
+                                  )}
                                 </span>
                               </>
                             ) : (

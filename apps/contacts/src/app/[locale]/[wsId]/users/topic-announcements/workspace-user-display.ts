@@ -1,21 +1,10 @@
 import type { WorkspaceBasicUserRecord } from '@tuturuuu/internal-api';
-import { getInitials } from '@tuturuuu/utils/name-helper';
+import { getInitials, resolveUserFullName } from '@tuturuuu/utils/name-helper';
 
 export function getWorkspaceUserDisplayName(
   user: WorkspaceBasicUserRecord | null | undefined
 ) {
-  if (!user) return '—';
-
-  const fullName = user.full_name?.trim();
-  if (fullName) return fullName;
-
-  const displayName = user.display_name?.trim();
-  if (displayName) return displayName;
-
-  const email = user.email?.trim();
-  if (email) return email;
-
-  return '—';
+  return resolveUserFullName(user, { fallback: '—' });
 }
 
 export function getWorkspaceUserSecondaryLabel(

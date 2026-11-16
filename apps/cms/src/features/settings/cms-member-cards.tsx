@@ -15,7 +15,10 @@ import {
   SelectValue,
 } from '@tuturuuu/ui/select';
 import { Skeleton } from '@tuturuuu/ui/skeleton';
-import { getInitials } from '@tuturuuu/utils/name-helper';
+import {
+  getInitials,
+  resolveUserDisplayName,
+} from '@tuturuuu/utils/name-helper';
 import { useLocale, useTranslations } from 'next-intl';
 import {
   type CmsMemberTab,
@@ -86,11 +89,9 @@ export function CmsMemberCards({
         {members.map((member) => {
           const memberId = member.id ?? null;
           const availableRoles = getAvailableRolesForMember(member, roles);
-          const memberName =
-            member.display_name ||
-            member.email ||
-            member.handle ||
-            t('common.unknown');
+          const memberName = resolveUserDisplayName(member, {
+            fallback: t('common.unknown'),
+          });
 
           return (
             <div

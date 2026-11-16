@@ -3,6 +3,7 @@ import {
   validateTeachCourse,
 } from '@tuturuuu/education-core/teach/api';
 import { sendWorkspaceEmail } from '@tuturuuu/email-service';
+import { resolveUserDisplayName } from '@tuturuuu/utils/name-helper';
 import { NextResponse } from 'next/server';
 import { z } from 'zod';
 import { withSessionAuth } from '@/lib/api-auth';
@@ -151,10 +152,9 @@ export const POST = withSessionAuth(
       ).length;
 
       // 5. Render beautiful responsive HTML Email Template with Localization
-      const studentName =
-        profile.display_name ??
-        profile.full_name ??
-        (isVi ? 'Học sinh' : 'Student');
+      const studentName = resolveUserDisplayName(profile, {
+        fallback: isVi ? 'Học sinh' : 'Student',
+      });
       const escapedCourseName = escapeHtml(course.name);
       const escapedStudentName = escapeHtml(studentName);
       const learnerDashboardHref = escapeHtml(

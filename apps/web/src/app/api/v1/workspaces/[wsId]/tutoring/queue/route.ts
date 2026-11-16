@@ -11,6 +11,7 @@ import {
   unchangedFeedbackSince,
 } from '@tuturuuu/internal-api/tutoring-queue-rules';
 import { createAdminClient } from '@tuturuuu/supabase/next/server';
+import { resolveUserFullName } from '@tuturuuu/utils/name-helper';
 import { NextResponse } from 'next/server';
 import {
   createLegacyGetHandler,
@@ -65,12 +66,7 @@ type QueueSummary = {
 };
 
 function nameOf(value: QueueIdentity) {
-  return (
-    value.full_name?.trim() ||
-    value.display_name?.trim() ||
-    value.email?.trim() ||
-    'Unknown'
-  );
+  return resolveUserFullName(value, { fallback: 'Unknown' });
 }
 
 function isPresentId(value: string | null | undefined): value is string {

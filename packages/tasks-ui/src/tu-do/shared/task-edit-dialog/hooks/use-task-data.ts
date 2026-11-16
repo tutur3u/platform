@@ -7,6 +7,7 @@ import {
 import { listWorkspaceMembers } from '@tuturuuu/internal-api/workspaces';
 import { createClient } from '@tuturuuu/supabase/next/client';
 import type { TaskList } from '@tuturuuu/types/primitives/TaskList';
+import { resolveUserDisplayName } from '@tuturuuu/utils/name-helper';
 import {
   useBoardConfig,
   useWorkspaceLabels,
@@ -217,7 +218,7 @@ export function useTaskData({
           {
             id: userId,
             user_id: userId,
-            display_name: member.display_name || 'Unknown User',
+            display_name: resolveUserDisplayName(member),
             avatar_url: member.avatar_url,
           },
         ];
@@ -258,7 +259,9 @@ export function useTaskData({
         .map((member) => ({
           id: member.user_id,
           user_id: member.user_id,
-          display_name: member.display_name || member.email || member.user_id,
+          display_name: resolveUserDisplayName(member, {
+            fallback: member.user_id,
+          }),
           avatar_url: member.avatar_url,
         }))
         .sort((a, b) =>

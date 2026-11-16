@@ -1,5 +1,6 @@
 import { getAppSessionTokenFromRequest } from '@tuturuuu/auth/app-session';
 import { CLI_APP_TARGET_APP } from '@tuturuuu/auth/cli-session';
+import { resolveUserDisplayName } from '@tuturuuu/utils/name-helper';
 import { normalizeWorkspaceId } from '@tuturuuu/utils/workspace-helper';
 import { NextResponse } from 'next/server';
 import { z } from 'zod';
@@ -61,7 +62,7 @@ type TaskHistoryRpcEntry = {
 
 export function formatTaskHistoryEntry(
   entry: TaskHistoryRpcEntry,
-  publicProfile?: { display_name: string | null }
+  publicProfile?: { display_name: string | null; handle?: string | null }
 ) {
   return {
     id: entry.id,
@@ -76,7 +77,7 @@ export function formatTaskHistoryEntry(
     user: entry.user_id
       ? {
           id: entry.user_id,
-          name: publicProfile?.display_name || 'Unknown',
+          name: resolveUserDisplayName(publicProfile, { fallback: 'Unknown' }),
           avatar_url: entry.user_avatar_url,
         }
       : null,
@@ -182,7 +183,7 @@ export async function GET(
     const { data: profiles, error: profilesError } = actorIds.length
       ? await supabase
           .from('users')
-          .select('id, display_name')
+          .select('id, display_name, handle')
           .in('id', actorIds)
       : { data: [], error: null };
     if (profilesError) {

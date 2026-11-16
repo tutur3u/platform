@@ -1,5 +1,9 @@
 import { createAdminClient } from '@tuturuuu/supabase/next/server';
 import {
+  resolveUserDisplayName,
+  resolveUserFullName,
+} from '@tuturuuu/utils/name-helper';
+import {
   getPermissions,
   normalizeWorkspaceId,
 } from '@tuturuuu/utils/workspace-helper';
@@ -128,9 +132,11 @@ export async function GET(request: Request, { params }: Params) {
           group_name: row.group_name,
           user_name: row.user_full_name,
           modifier_name:
-            row.modifier_display_name ||
-            row.modifier_full_name ||
-            row.modifier_email ||
+            resolveUserDisplayName({
+              display_name: row.modifier_display_name,
+              full_name: row.modifier_full_name,
+              email: row.modifier_email,
+            }) ||
             row.creator_full_name ||
             null,
           creator_name: row.creator_full_name,
@@ -252,8 +258,7 @@ export async function GET(request: Request, { params }: Params) {
           row.approval_status === 'APPROVED' &&
           !sentRecipientIds.has(itemId) &&
           queueRow?.status !== 'sent';
-        const userName =
-          row.user?.full_name || row.user?.display_name || row.user?.email;
+        const userName = resolveUserFullName(row.user) || null;
 
         return {
           id: itemId,
@@ -272,11 +277,7 @@ export async function GET(request: Request, { params }: Params) {
           user_name: userName,
           post_id: row.post_id,
           is_completed: row.is_completed,
-          modifier_name:
-            modifier?.display_name ||
-            modifier?.full_name ||
-            modifier?.email ||
-            null,
+          modifier_name: resolveUserDisplayName(modifier) || null,
           can_remove_approval: canRemoveApproval,
           queue_counts: summarizePostEmailQueue(queueRow ? [queueRow] : []),
         };

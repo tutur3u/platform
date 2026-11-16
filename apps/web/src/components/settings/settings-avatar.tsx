@@ -12,7 +12,10 @@ import {
   type AvatarEditorCropRequest,
 } from '@tuturuuu/ui/custom/avatar-editor';
 import { toast } from '@tuturuuu/ui/sonner';
-import { getInitials } from '@tuturuuu/utils/name-helper';
+import {
+  getInitials,
+  resolveUserDisplayName,
+} from '@tuturuuu/utils/name-helper';
 import { useRouter } from 'next/navigation';
 import { useTranslations } from 'next-intl';
 import { ImageCropper } from '@/components/image-cropper';
@@ -26,7 +29,7 @@ export default function UserAvatar({ user }: AvatarProps) {
   const t = useTranslations();
   const queryClient = useQueryClient();
   const router = useRouter();
-  const initials = getInitials(user?.display_name || user?.email);
+  const initials = getInitials(resolveUserDisplayName(user));
 
   return (
     <AvatarEditor

@@ -18,6 +18,7 @@ import { Button } from '@tuturuuu/ui/button';
 import { toast } from '@tuturuuu/ui/sonner';
 import { Textarea } from '@tuturuuu/ui/textarea';
 import { cn } from '@tuturuuu/utils/format';
+import { resolveUserFullName } from '@tuturuuu/utils/name-helper';
 import { useTranslations } from 'next-intl';
 import { useEffect, useMemo, useState } from 'react';
 import { AttendanceCalendar } from './attendance-calendar';
@@ -257,21 +258,14 @@ export function AttendancePanel({
                     <Avatar className="h-12 w-12 border border-border">
                       <AvatarImage src={member.avatar_url ?? undefined} />
                       <AvatarFallback>
-                        {(
-                          member.full_name ??
-                          member.display_name ??
-                          member.email ??
-                          '?'
-                        )
+                        {resolveUserFullName(member, { fallback: '?' })
                           .slice(0, 1)
                           .toUpperCase()}
                       </AvatarFallback>
                     </Avatar>
                     <div className="min-w-0">
                       <p className="truncate font-semibold">
-                        {member.full_name ??
-                          member.display_name ??
-                          member.email}
+                        {resolveUserFullName(member)}
                       </p>
                       <p className="truncate text-muted-foreground text-xs">
                         {member.email}

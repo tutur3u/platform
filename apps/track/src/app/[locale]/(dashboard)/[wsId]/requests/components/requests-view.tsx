@@ -36,6 +36,7 @@ import {
   SelectValue,
 } from '@tuturuuu/ui/select';
 import { cn } from '@tuturuuu/utils/format';
+import { resolveUserDisplayName } from '@tuturuuu/utils/name-helper';
 import { format } from 'date-fns';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useTranslations } from 'next-intl';
@@ -440,9 +441,13 @@ export function RequestsView({
                             </AvatarFallback>
                           </Avatar>
                           <span className="font-medium">
-                            {request.user.display_name ||
-                              request.user.user_private_details.email ||
-                              t('detail.unknownUser')}
+                            {resolveUserDisplayName(
+                              {
+                                ...request.user,
+                                email: request.user.user_private_details?.email,
+                              },
+                              { fallback: t('detail.unknownUser') }
+                            )}
                           </span>
                         </>
                       ) : (

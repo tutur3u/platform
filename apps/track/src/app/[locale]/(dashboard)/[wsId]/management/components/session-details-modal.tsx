@@ -7,7 +7,10 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@tuturuuu/ui/dialog';
-import { getInitials } from '@tuturuuu/utils/name-helper';
+import {
+  getInitials,
+  resolveUserDisplayName,
+} from '@tuturuuu/utils/name-helper';
 import { getDescriptionText } from '@tuturuuu/utils/text-helper';
 import dayjs from 'dayjs';
 import duration from 'dayjs/plugin/duration';
@@ -43,13 +46,19 @@ export default function SessionDetailsModal({
           <div className="flex items-center gap-4">
             <div className="relative flex size-12 items-center justify-center rounded-full border-2 border-dynamic-blue/30 bg-linear-to-br from-dynamic-blue/20 to-dynamic-purple/20 sm:size-14">
               <span className="font-bold text-dynamic-blue text-lg sm:text-xl">
-                {getInitials(session.user.displayName || 'Unknown User')}
+                {getInitials(
+                  resolveUserDisplayName(session.user, {
+                    fallback: 'Unknown User',
+                  })
+                )}
               </span>
               <div className="absolute inset-0 rounded-full bg-linear-to-br from-dynamic-blue/10 to-transparent opacity-0" />
             </div>
             <div className="flex-1">
               <DialogTitle className="bg-linear-to-r from-dynamic-blue to-dynamic-purple bg-clip-text font-bold text-lg text-transparent sm:text-2xl">
-                {session.user.displayName || 'Unknown User'}
+                {resolveUserDisplayName(session.user, {
+                  fallback: 'Unknown User',
+                })}
               </DialogTitle>
               <p className="mt-1 text-dynamic-muted text-sm">
                 <span className="inline-block rounded-full bg-dynamic-blue/10 px-3 py-1 font-medium text-dynamic-blue">

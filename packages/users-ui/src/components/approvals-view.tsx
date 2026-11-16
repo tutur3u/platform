@@ -37,6 +37,7 @@ import {
   STATUS_LABELS,
 } from '@tuturuuu/users-core/lib/approvals-utils';
 import { cn } from '@tuturuuu/utils/format';
+import { resolveUserFullName } from '@tuturuuu/utils/name-helper';
 import Link from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useTranslations } from 'next-intl';
@@ -355,7 +356,9 @@ export function ApprovalsView({
                       </SelectItem>
                       {(filterUsersQuery.data ?? []).map((user) => (
                         <SelectItem key={user.id} value={user.id}>
-                          {user.full_name || t('labels.unknown_user')}
+                          {resolveUserFullName(user, {
+                            fallback: t('labels.unknown_user'),
+                          })}
                         </SelectItem>
                       ))}
                     </SelectContent>
@@ -390,7 +393,9 @@ export function ApprovalsView({
                       </SelectItem>
                       {(filterUsersQuery.data ?? []).map((creator) => (
                         <SelectItem key={creator.id} value={creator.id}>
-                          {creator.full_name || t('labels.unknown_user')}
+                          {resolveUserFullName(creator, {
+                            fallback: t('labels.unknown_user'),
+                          })}
                         </SelectItem>
                       ))}
                     </SelectContent>

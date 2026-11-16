@@ -22,7 +22,11 @@ import {
 import { Label } from '@tuturuuu/ui/label';
 import { Popover, PopoverContent, PopoverTrigger } from '@tuturuuu/ui/popover';
 import { cn } from '@tuturuuu/utils/format';
-import { getAvatarPlaceholder, getInitials } from '@tuturuuu/utils/name-helper';
+import {
+  getAvatarPlaceholder,
+  getInitials,
+  resolveUserFullName,
+} from '@tuturuuu/utils/name-helper';
 import { useTranslations } from 'next-intl';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 
@@ -47,7 +51,7 @@ interface InvoiceCustomerSelectCardProps {
 }
 
 function getUserDisplayName(user: WorkspaceUser) {
-  return user.full_name || user.display_name || 'Unknown';
+  return resolveUserFullName(user);
 }
 
 function getUserSecondaryLabel(user: WorkspaceUser) {

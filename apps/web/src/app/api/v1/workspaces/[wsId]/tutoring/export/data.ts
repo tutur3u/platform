@@ -1,5 +1,6 @@
 import { calculateTutoringPayroll } from '@tuturuuu/internal-api/tutoring';
 import { createAdminClient } from '@tuturuuu/supabase/next/server';
+import { resolveUserFullName } from '@tuturuuu/utils/name-helper';
 import type { Tables } from '@tuturuuu/types/supabase';
 import { NextResponse } from 'next/server';
 import { z } from 'zod';
@@ -42,13 +43,7 @@ function nameOf(
     email: string | null;
   } | null
 ) {
-  if (!value) return 'N/A';
-  return (
-    value.full_name?.trim() ||
-    value.display_name?.trim() ||
-    value.email?.trim() ||
-    'N/A'
-  );
+  return resolveUserFullName(value, { fallback: 'N/A' });
 }
 
 /** `access` must come from `resolveTutoringRouteAccess` (the ENABLE_TUTORING gate). */

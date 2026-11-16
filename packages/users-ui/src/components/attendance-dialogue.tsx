@@ -17,6 +17,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@tuturuuu/ui/select';
+import { resolveUserDisplayName } from '@tuturuuu/utils/name-helper';
 import { format } from 'date-fns';
 import { useLocale, useTranslations } from 'next-intl';
 import { useEffect, useState } from 'react';
@@ -120,7 +121,7 @@ export function AttendanceDialog({
               {t('ws-users.display_name')}:
             </span>
             <span className="col-span-3">
-              {user?.display_name || user?.full_name || user?.email || '-'}
+              {resolveUserDisplayName(user, { fallback: '-' })}
             </span>
           </div>
           <div className="grid grid-cols-4 items-center gap-4">

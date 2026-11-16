@@ -4,6 +4,7 @@ import { Check } from '@tuturuuu/icons/lucide-static';
 import type { WebAccountSummary } from '@tuturuuu/internal-api/auth';
 import { Avatar, AvatarFallback, AvatarImage } from '@tuturuuu/ui/avatar';
 import { Badge } from '@tuturuuu/ui/badge';
+import { resolveUserDisplayName } from '@tuturuuu/utils/name-helper';
 import { useTranslations } from 'next-intl';
 
 interface AccountItemProps {
@@ -15,10 +16,10 @@ interface AccountItemProps {
 export function AccountItem({ account, isActive, onClick }: AccountItemProps) {
   const t = useTranslations();
 
-  const displayName =
-    account.metadata.displayName ||
-    account.email ||
-    t('account_switcher.unknown_user');
+  const displayName = resolveUserDisplayName(
+    { displayName: account.metadata.displayName, email: account.email },
+    { fallback: t('account_switcher.unknown_user') }
+  );
   const initials = displayName
     .trim()
     .split(' ')

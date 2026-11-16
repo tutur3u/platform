@@ -1,5 +1,6 @@
 import { Avatar, AvatarFallback, AvatarImage } from '@tuturuuu/ui/avatar';
 import { cn } from '@tuturuuu/utils/format';
+import { resolveUserDisplayName } from '@tuturuuu/utils/name-helper';
 
 interface UserAvatarProps {
   user: {
@@ -32,7 +33,7 @@ const fallbackSizeClasses = {
  * ```
  */
 export function UserAvatar({ user, size = 'md', className }: UserAvatarProps) {
-  const displayName = user.display_name || 'Unknown';
+  const displayName = resolveUserDisplayName(user, { emailLocalPart: true });
   const initial = displayName[0]?.toUpperCase() || '?';
 
   return (

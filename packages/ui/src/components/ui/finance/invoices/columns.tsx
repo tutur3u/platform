@@ -15,7 +15,11 @@ import {
   TooltipTrigger,
 } from '@tuturuuu/ui/tooltip';
 import { formatCurrency } from '@tuturuuu/utils/format';
-import { getAvatarPlaceholder, getInitials } from '@tuturuuu/utils/name-helper';
+import {
+  getAvatarPlaceholder,
+  getInitials,
+  resolveUserDisplayName,
+} from '@tuturuuu/utils/name-helper';
 import moment from 'moment';
 import type { ReactNode } from 'react';
 import {
@@ -176,8 +180,7 @@ export const invoiceColumns = ({
         const customer = row.original.customer;
         if (!customer) return <div className="min-w-32">-</div>;
 
-        const displayName =
-          customer.display_name || customer.full_name || 'Unknown';
+        const displayName = resolveUserDisplayName(customer);
 
         return (
           <div className="flex min-w-32 items-center gap-2">
@@ -208,11 +211,7 @@ export const invoiceColumns = ({
         const creator = row.original.creator;
         if (!creator) return <div className="min-w-32">-</div>;
 
-        const displayName =
-          creator.display_name ||
-          creator.full_name ||
-          creator.email ||
-          'Unknown';
+        const displayName = resolveUserDisplayName(creator);
 
         return (
           <div className="flex min-w-32 items-center gap-2">

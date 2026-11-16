@@ -23,7 +23,10 @@ import { useForm } from '@tuturuuu/ui/hooks/use-form';
 import { Label } from '@tuturuuu/ui/label';
 import { zodResolver } from '@tuturuuu/ui/resolvers';
 import { toast } from '@tuturuuu/ui/sonner';
-import { getInitials } from '@tuturuuu/utils/name-helper';
+import {
+  getInitials,
+  resolveUserDisplayName,
+} from '@tuturuuu/utils/name-helper';
 import { useRouter } from 'next/navigation';
 import { useTranslations } from 'next-intl';
 import { useCallback, useEffect, useRef, useState } from 'react';
@@ -351,7 +354,7 @@ export default function UserAvatar({ user }: AvatarProps) {
                     className="rounded-full object-cover"
                   />
                   <AvatarFallback className="font-semibold">
-                    {getInitials(user?.display_name || user?.email) || (
+                    {getInitials(resolveUserDisplayName(user)) || (
                       <UserIcon className="h-6 w-6" />
                     )}
                   </AvatarFallback>
@@ -381,7 +384,7 @@ export default function UserAvatar({ user }: AvatarProps) {
                     className="rounded-full object-cover"
                   />
                   <AvatarFallback className="font-semibold">
-                    {getInitials(user?.display_name || user?.email) || (
+                    {getInitials(resolveUserDisplayName(user)) || (
                       <UserIcon className="h-12 w-12" />
                     )}
                   </AvatarFallback>

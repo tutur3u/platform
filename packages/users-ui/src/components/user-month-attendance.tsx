@@ -16,6 +16,7 @@ import {
   TooltipTrigger,
 } from '@tuturuuu/ui/tooltip';
 import { cn } from '@tuturuuu/utils/format';
+import { resolveUserDisplayName } from '@tuturuuu/utils/name-helper';
 import { format, isAfter, parse, startOfDay } from 'date-fns';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
@@ -303,7 +304,7 @@ export default function UserMonthAttendance({
                     'text-dynamic-red line-through decoration-2 decoration-dynamic-red'
                 )}
               >
-                {data?.display_name || data?.full_name || data?.email || '-'}
+                {resolveUserDisplayName(data, { fallback: '-' })}
               </Link>
               <div className="flex items-center gap-1">
                 {data.role === 'TEACHER' && (

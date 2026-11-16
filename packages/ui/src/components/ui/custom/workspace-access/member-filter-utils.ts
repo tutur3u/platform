@@ -1,4 +1,5 @@
 import type { InternalApiEnhancedWorkspaceMember } from '@tuturuuu/types';
+import { resolveUserDisplayName } from '@tuturuuu/utils/name-helper';
 import type {
   MemberFiltersState,
   PermissionOption,
@@ -48,7 +49,7 @@ export function getMemberDisplayName(
   member: InternalApiEnhancedWorkspaceMember,
   fallback: string
 ) {
-  return member.display_name || member.email || member.handle || fallback;
+  return resolveUserDisplayName(member, { fallback });
 }
 
 export function getAvailableRolesForMember(

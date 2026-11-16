@@ -19,6 +19,7 @@ import {
   SelectValue,
 } from '@tuturuuu/ui/select';
 import { Textarea } from '@tuturuuu/ui/textarea';
+import { resolveUserDisplayName } from '@tuturuuu/utils/name-helper';
 import { useTranslations } from 'next-intl';
 import { useRef, useState } from 'react';
 import { FollowupConflicts } from './followup-conflicts';
@@ -192,7 +193,7 @@ export function FollowupReviewForm({
           <>
             <p className="break-words text-sm">
               {t('followup_identity', {
-                name: user.display_name || user.email || user.id,
+                name: resolveUserDisplayName(user, { fallback: user.id }),
               })}
             </p>
             <fieldset

@@ -3,6 +3,7 @@
 import { type QueryClient, useMutation } from '@tanstack/react-query';
 import type { Task } from '@tuturuuu/types/primitives/Task';
 import { toast } from '@tuturuuu/ui/sonner';
+import { resolveUserDisplayName } from '@tuturuuu/utils/name-helper';
 import type { BoardBroadcastFn } from '../../../../shared/board-broadcast-context';
 import type { BulkOperationI18n } from './bulk-operation-i18n';
 import type { WorkspaceMember } from './bulk-operation-types';
@@ -63,10 +64,9 @@ export function useBulkAddAssignee(
           const resolvedMember = resolveMember(assigneeId);
           const optimisticAssignee = {
             id: assigneeId,
-            display_name:
-              resolvedMember?.display_name ||
-              resolvedMember?.email ||
-              assigneeId,
+            display_name: resolveUserDisplayName(resolvedMember, {
+              fallback: assigneeId,
+            }),
             email: resolvedMember?.email || '',
             avatar_url: resolvedMember?.avatar_url ?? undefined,
           };

@@ -1,4 +1,5 @@
 import { listWorkspaceTaskBoardViewableMembers } from '@tuturuuu/internal-api/tasks';
+import { resolveUserDisplayName } from '@tuturuuu/utils/name-helper';
 
 export interface BoardMember {
   id: string;
@@ -23,7 +24,7 @@ export async function fetchBoardMembers(
   return members.map((member) => ({
     id: member.user_id,
     user_id: member.user_id,
-    display_name: member.display_name || member.email || member.user_id,
+    display_name: resolveUserDisplayName(member, { fallback: member.user_id }),
     email: member.email ?? undefined,
     avatar_url: member.avatar_url ?? undefined,
   }));

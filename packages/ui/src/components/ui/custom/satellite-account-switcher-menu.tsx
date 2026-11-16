@@ -17,6 +17,7 @@ import {
   DropdownMenuSubContent,
   DropdownMenuSubTrigger,
 } from '@tuturuuu/ui/dropdown-menu';
+import { resolveUserDisplayName } from '@tuturuuu/utils/name-helper';
 
 interface SatelliteAccountSwitcherMenuProps {
   centralUrl: string;
@@ -39,8 +40,9 @@ const accountQueryKey = (centralUrl: string) =>
   ['satellite', 'web-accounts', centralUrl] as const;
 
 function accountLabel(account: WebAccountSummary, fallback: string) {
-  return (
-    account.metadata.displayName?.trim() || account.email?.trim() || fallback
+  return resolveUserDisplayName(
+    { displayName: account.metadata.displayName, email: account.email },
+    { fallback }
   );
 }
 

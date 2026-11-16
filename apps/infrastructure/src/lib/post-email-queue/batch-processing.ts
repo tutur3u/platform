@@ -1,6 +1,7 @@
 import { render } from '@react-email/render';
 import type { TypedSupabaseClient } from '@tuturuuu/supabase';
 import type { Database } from '@tuturuuu/types/db';
+import { resolveUserFullName } from '@tuturuuu/utils/name-helper';
 import PostEmailTemplate from '@/app/[locale]/(dashboard)/[wsId]/mail/default-email-template';
 import { createEmailUnsubscribeUrl } from '@/lib/email-unsubscribe';
 import { prefetchBatchData } from './batch-prefetch';
@@ -284,8 +285,7 @@ function buildPostSendContextFromPrefetch(
     recipient: {
       id: check.user_id,
       email: check.user.email,
-      username:
-        check.user.full_name ?? check.user.display_name ?? check.user.email,
+      username: resolveUserFullName(check.user),
       notes: check.notes,
       is_completed: check.is_completed,
     },
