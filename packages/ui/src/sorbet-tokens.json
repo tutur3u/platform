@@ -433,7 +433,10 @@
     "navSelectedFill": "accent",
     "navSelectedInk": "foreground",
     "skeleton": "surface-sunken",
-    "dockSurface": "surface"
+    "dockSurface": "surface",
+    "pageSurface": "background",
+    "frameSurface": "ground",
+    "outlineStroke": "border-strong"
   },
   "presets": {
     "sources": [

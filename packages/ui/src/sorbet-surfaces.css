@@ -91,7 +91,8 @@
 
 /*
   Mobile shell on phones (below the md breakpoint, where the shared Structure
-  shows its top bar): the top bar sits on the ground, and the floating dock
+  shows its top bar): the top bar sits on the page background (the ground is
+  for the frame only, and matches the sunken fills in light), and the floating dock
   (MobileDock) shows only while Sorbet is on. Its frame never moves or
   resizes; scrolling content reserves the dock clearance, and a short fade
   behind the dock keeps content legible as it scrolls under.
@@ -102,11 +103,7 @@
   }
 
   :root[data-ui="sorbet"] :where([data-slot="mobile-top-bar"] > div) {
-    background-color: color-mix(
-      in oklab,
-      var(--root-background) 88%,
-      transparent
-    );
+    background-color: color-mix(in oklab, var(--background) 88%, transparent);
   }
 
   :root[data-ui="sorbet"] :where([data-slot="mobile-dock"]) {
@@ -140,7 +137,7 @@
     background: linear-gradient(
       to bottom,
       transparent,
-      color-mix(in oklab, var(--root-background) 55%, transparent) 12px
+      color-mix(in oklab, var(--background) 55%, transparent) 12px
     );
   }
 
