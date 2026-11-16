@@ -1,5 +1,49 @@
 # Changelog
 
+## [0.42.0](https://github.com/tutur3u/platform/compare/ui-v0.41.0...ui-v0.42.0) (2026-11-16)
+
+
+### Features
+
+* branded, theme-aware not-found and error page for every app ([#8189](https://github.com/tutur3u/platform/issues/8189)) ([1239360](https://github.com/tutur3u/platform/commit/123936030549e1e275ccd2b5256c9286a9f54a32))
+* **calendar:** anchored event preview with undo delete ([#8352](https://github.com/tutur3u/platform/issues/8352)) ([6fdad4b](https://github.com/tutur3u/platform/commit/6fdad4baea5023e276a1ded4ba2c6b750ecc5237))
+* **calendar:** anchored event preview with undo delete. ([6fdad4b](https://github.com/tutur3u/platform/commit/6fdad4baea5023e276a1ded4ba2c6b750ecc5237))
+* **calendar:** compact toolbar with a New menu ([#8349](https://github.com/tutur3u/platform/issues/8349)) ([fbda347](https://github.com/tutur3u/platform/commit/fbda3471246c807b4d58b9dd1ae2f099faa5c9b3))
+* **calendar:** compact toolbar with a New menu. ([fbda347](https://github.com/tutur3u/platform/commit/fbda3471246c807b4d58b9dd1ae2f099faa5c9b3))
+* **calendar:** open week on desktop, agenda on phones, with a default-view setting ([d075fb6](https://github.com/tutur3u/platform/commit/d075fb65e3370631f8e13a8b3733d3380f38aaf9))
+* **calendar:** unify sidebar list and preserve overnight date selection ([#8358](https://github.com/tutur3u/platform/issues/8358)) ([916a377](https://github.com/tutur3u/platform/commit/916a377e20b9f3ba25bcf98cd53a2295cbe50ce4))
+* **calendar:** unify sidebar list and preserve overnight date selection. ([916a377](https://github.com/tutur3u/platform/commit/916a377e20b9f3ba25bcf98cd53a2295cbe50ce4))
+* **settings:** flatten board layout and inset the settings dialog ([#7920](https://github.com/tutur3u/platform/issues/7920)) ([e1518c1](https://github.com/tutur3u/platform/commit/e1518c1194ae6a8092056a80b6d53e4824f29a04))
+* **ui:** add actor-scoped workspace picker shortcuts ([#8170](https://github.com/tutur3u/platform/issues/8170)) ([d9a512c](https://github.com/tutur3u/platform/commit/d9a512cade746445f2b96535b8f50e8f7ee1d066))
+* **ui:** add experimental Sorbet design behind an account-synced toggle ([3f3a1cc](https://github.com/tutur3u/platform/commit/3f3a1cc7a2f82e9a72b93800a86f3fe60566a562))
+* **ui:** add Sorbet palettes behind the experimental design ([#8436](https://github.com/tutur3u/platform/issues/8436)) ([63f18c4](https://github.com/tutur3u/platform/commit/63f18c4ac6a4d0ece11518682ba2a9dd80129e9b))
+* **ui:** mount-aware Tasks app and API URLs (one-origin T3) ([#8111](https://github.com/tutur3u/platform/issues/8111)) ([d02d73b](https://github.com/tutur3u/platform/commit/d02d73b75838e3aba44c83e37f1e5b23a9194597))
+* **ui:** pilot @ui-sdk/core for category keyboard reordering ([#8250](https://github.com/tutur3u/platform/issues/8250)) ([7b0eee6](https://github.com/tutur3u/platform/commit/7b0eee600b935e394b210a4590b670947b9a606f))
+* **ui:** redesign the workspace picker as a command-palette dialog ([#8309](https://github.com/tutur3u/platform/issues/8309)) ([2fd24ad](https://github.com/tutur3u/platform/commit/2fd24ad7a43606bc2404f02e5fcb423349517392))
+* **ui:** share the profile avatar editor with workspaces ([#7871](https://github.com/tutur3u/platform/issues/7871)) ([6b04c23](https://github.com/tutur3u/platform/commit/6b04c2398038a5b86dab1bf4517bb5564911fd37))
+* **web:** move app marketing pages under products ([#6795](https://github.com/tutur3u/platform/issues/6795)) ([3fe3bdb](https://github.com/tutur3u/platform/commit/3fe3bdbc5a6426180f26fe48ade0f6927731060a))
+
+
+### Bug Fixes
+
+* **calendar:** keep phones on agenda when the calendar resizes ([#8404](https://github.com/tutur3u/platform/issues/8404)) ([a5d8529](https://github.com/tutur3u/platform/commit/a5d85292a10e00d537d0ffc875fdf6366eff8b4a))
+* **ci:** align picker fixture and Pay contract fences ([#8180](https://github.com/tutur3u/platform/issues/8180)) ([b2752ac](https://github.com/tutur3u/platform/commit/b2752acdccf6fa2372e58144d0f57b1084852e27))
+* **finance:** resolve invoice creators with invoice permissions ([8993b82](https://github.com/tutur3u/platform/commit/8993b82f5337697c7b7c14c395cd51eb97c18442))
+* **i18n:** label the home destination "Home" without the brand name ([#8437](https://github.com/tutur3u/platform/issues/8437)) ([31f0736](https://github.com/tutur3u/platform/commit/31f07360f0ca1e0ab7d4a2454da2324b718206b9))
+* **satellites:** shared workspace picker — Web invitations routing + picker layout ([#8273](https://github.com/tutur3u/platform/issues/8273)) ([38e21e3](https://github.com/tutur3u/platform/commit/38e21e33e9daeb855c707526108fb9dcee0f0522))
+* **ui:** make the hover-expand sidebar a layout-shift-free overlay ([#8090](https://github.com/tutur3u/platform/issues/8090)) ([a1cb136](https://github.com/tutur3u/platform/commit/a1cb1360e70798b0da26f061420f29e742411d74))
+* **ui:** preserve workspace choices when discovery fails ([def3b03](https://github.com/tutur3u/platform/commit/def3b0318292c36d21d48729e0fdd2b2bb49beb2))
+* **ui:** retain workspace choices after discovery errors ([#8159](https://github.com/tutur3u/platform/issues/8159)) ([d928e7b](https://github.com/tutur3u/platform/commit/d928e7b3be35d187f9a984ffd37d257e208f3f78))
+* **ui:** skip the Sorbet account read when nobody is signed in ([b181b61](https://github.com/tutur3u/platform/commit/b181b611cf4c7497b36e77d16b4f120ee0c5b113))
+* **web:** render the 404 page for signed-out visitors on unknown paths ([f2ce615](https://github.com/tutur3u/platform/commit/f2ce61564a97935e64bbcea8928e5114a67991b0))
+* **workspaces:** refresh accepted invitations and handle acceptance replay ([0ad899e](https://github.com/tutur3u/platform/commit/0ad899e88085ab96be49e99dea3f6b1883f8682c))
+
+
+### Performance Improvements
+
+* **calendar:** paint the final calendar layout before its view resolves ([#8373](https://github.com/tutur3u/platform/issues/8373)) ([2f3b65f](https://github.com/tutur3u/platform/commit/2f3b65fc21364663c4e7a63e21267607f4a7b4cb))
+* **marketing:** adopt shared shell and streamline landing ([#8129](https://github.com/tutur3u/platform/issues/8129)) ([5f510d6](https://github.com/tutur3u/platform/commit/5f510d6db991bd3792e697cc2ee3ff7d543295a1))
+
 ## [0.41.0](https://github.com/tutur3u/platform/compare/ui-v0.40.0...ui-v0.41.0) (2026-11-08)
 
 

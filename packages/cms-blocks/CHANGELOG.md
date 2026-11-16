@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.1.0](https://github.com/tutur3u/platform/compare/cms-blocks-v1.0.0...cms-blocks-v1.1.0) (2026-11-16)
+
+
+### Features
+
+* **cms:** reviewed CMS unit as one union ([#7597](https://github.com/tutur3u/platform/issues/7597) [#7714](https://github.com/tutur3u/platform/issues/7714) [#7738](https://github.com/tutur3u/platform/issues/7738) [#7747](https://github.com/tutur3u/platform/issues/7747) [#7733](https://github.com/tutur3u/platform/issues/7733) [#7741](https://github.com/tutur3u/platform/issues/7741) [#7595](https://github.com/tutur3u/platform/issues/7595)) ([#8300](https://github.com/tutur3u/platform/issues/8300)) ([d9d127e](https://github.com/tutur3u/platform/commit/d9d127e936f9e20dff2da728798a26d360512019))
+
 ## 1.0.0 (2026-11-08)
 
 
