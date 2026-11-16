@@ -21,14 +21,19 @@ export default defineConfig({
   },
   resolve: {
     alias: [
-      // Exercise report contracts directly without requiring local package builds.
+      // Resolve internal-api modules from source so tests need no local package builds.
       ...[
         'reports',
         'reports-delivery-batch',
         'client',
         'user-group-attendance',
         'posts',
+        'promotions',
+        'settings',
         'topic-announcements',
+        'user-groups',
+        'users-feedbacks',
+        'workspaces',
       ].map((entry) => ({
         find: `@tuturuuu/internal-api/${entry}`,
         replacement: resolve(
@@ -42,6 +47,14 @@ export default defineConfig({
         replacement: resolve(
           __dirname,
           '../../packages/supabase/src/next/server.ts'
+        ),
+      },
+      // The source server client imports its package-internal env reader.
+      {
+        find: '#secret-env',
+        replacement: resolve(
+          __dirname,
+          '../../packages/supabase/src/next/secret-env.ts'
         ),
       },
       {
