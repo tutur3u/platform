@@ -133,8 +133,10 @@ contract and the palettes to `sorbet-presets.css`, keeps the setting allowlists
 and popover corners equal to the runtime, and checks text and focus contrast.
 The `classic` table gives the same colour roles and radius scale for the
 default theme, read from `globals.css`, so the mobile app and the design canvas
-draw both themes from one set of names; `sorbet-classic-tokens.test.ts` keeps it
-equal to `globals.css` and the dialog scrim.
+draw both themes from one set of names. Classic `destructive` is a fill only, so
+the table adds `destructive-ink` (`--red`) for destructive text; Sorbet's
+`destructive` already reads as text. `sorbet-classic-tokens.test.ts` keeps the
+table equal to `globals.css` and the dialog scrim and checks text contrast.
 
 `sorbet-surfaces.css` styles the shared shells (the settings dialog's
 navigation, sections, rows and tabs) and `sorbet-components.css` the shared

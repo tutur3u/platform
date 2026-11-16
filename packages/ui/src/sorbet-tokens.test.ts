@@ -294,6 +294,7 @@ describe('Sorbet token contract', () => {
         expect(contrast(role('muted-foreground'), g)).toBeGreaterThanOrEqual(
           4.5
         );
+        expect(contrast(role('destructive'), g)).toBeGreaterThanOrEqual(4.5);
         expect(contrast(role('ring'), g)).toBeGreaterThanOrEqual(3);
       }
       expect(
