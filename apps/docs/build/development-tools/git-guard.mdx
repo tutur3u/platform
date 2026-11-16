@@ -132,10 +132,64 @@ it:
 `status` lists each file. `uninstall` removes exactly the rules the guard added
 and keeps any rule the user already had.
 
-The durable backstop is a GitHub repository ruleset that restricts branch
-creation, with bypass for the release-please, Dependabot and Actions identities.
-It is prepared and applied through the release owner after review, never by the
-CLI.
+The durable backstop is the server-side ruleset below. The CLI never applies
+it.
+
+## Server-side ruleset (tutur3u/platform)
+
+`tutur3u/platform` adds one repository ruleset after the local guard ships.
+`upskii/platform` is private on the free plan and stays local-guard only.
+
+```json
+{
+  "name": "D354b no new remote branches (fleet direct-to-main)",
+  "target": "branch",
+  "enforcement": "active",
+  "conditions": {
+    "ref_name": {
+      "include": ["~ALL"],
+      "exclude": [
+        "refs/heads/main",
+        "refs/heads/production",
+        "refs/heads/release-please--branches--**",
+        "refs/heads/dependabot/**"
+      ]
+    }
+  },
+  "rules": [{ "type": "creation" }],
+  "bypass_actors": []
+}
+```
+
+- **Scope.** The only rule is `creation`: updates to existing branches,
+  deletions and pull requests are untouched. Fast-forward pushes to `main` and
+  `production` are excluded here and keep their existing D191 and
+  protected-branch rulesets unchanged.
+- **Release bots by ref, not by bypass.** The legitimate server-side branch
+  creators are release-please (`release-please--branches--*`, through
+  `RELEASE_PLEASE_TOKEN`) and Dependabot (`dependabot/*`).
+  `release-please-auto-merge` only pushes `main` and deletes branches. The
+  ruleset excludes those ref patterns instead of naming bypass actors, because
+  fleet lanes push as the same user identity that holds bypass on the existing
+  rulesets. A user bypass would void the rule for exactly the pushes it exists
+  to stop.
+- **Side effects.** GitHub UI "revert" branches and agent-created branches are
+  refused. A genuine emergency branch needs a reviewed ruleset change.
+- **Apply.** The security reviewer gives an exact acknowledgement of this JSON,
+  then the named executor applies it once:
+  `gh api -X POST repos/tutur3u/platform/rulesets --input <file>`. The executor
+  reads it back by id and compares it with the acknowledged JSON.
+- **Applied.** Ruleset `27390877`, created on 2026-11-17 under acknowledgement
+  D354B-RULESET-01. The readback matched every field. A throwaway
+  `guard-probe/*` push with `--no-verify` was rejected with
+  `GH013 … creations being restricted`, and no probe ref exists.
+- **Changes.** There is no merge queue today. Enabling one first needs a
+  `refs/heads/gh-readonly-queue/**` exclusion. Every change to this ruleset,
+  including one for an emergency branch, needs its own exact acknowledgement.
+- **Verify.** The next release-please run still creates or updates its branch,
+  and a Dependabot branch still appears. A throwaway branch pushed with
+  `--no-verify` by a normal user token is rejected by the server. Delete nothing
+  else.
 
 ## Rollout check
 
