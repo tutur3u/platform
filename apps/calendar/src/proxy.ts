@@ -85,6 +85,16 @@ function isApexMountedRequest(req: NextRequest) {
 }
 
 async function handleProxy(req: NextRequest): Promise<NextResponse> {
+  const response = await routeProxy(req);
+  // Every redirect here depends on the visitor's session, workspace or locale,
+  // so neither a browser nor an edge cache may store or replay it.
+  if (response.headers.has('Location')) {
+    response.headers.set('Cache-Control', 'private, no-store');
+  }
+  return response;
+}
+
+async function routeProxy(req: NextRequest): Promise<NextResponse> {
   const mounted = isApexMountedRequest(req);
   if (req.nextUrl.pathname.startsWith('/api')) {
     const isLocalAuthApi = req.nextUrl.pathname.startsWith(
@@ -270,7 +280,6 @@ async function handleProxy(req: NextRequest): Promise<NextResponse> {
       ),
       307
     );
-    handoff.headers.set('Cache-Control', 'private, no-store');
     // A stale Supabase cookie is the only cookie this response clears, so it
     // cannot re-enter the signed-in branch above.
     return hasSupabaseSession

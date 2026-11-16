@@ -1,3 +1,4 @@
+import { isPersonalWorkspace } from '@tuturuuu/utils/workspace-helper';
 import { NextRequest, NextResponse } from 'next/server';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { config, proxy } from './proxy';
@@ -462,5 +463,120 @@ describe('mounted Calendar shared-session boundary', () => {
           /^(?:tuturuuu_app_session|sb-[^=]+-auth-token)/u.test(cookie)
         )
     ).toEqual([]);
+  });
+});
+
+describe('Calendar proxy redirect caching', () => {
+  const WORKSPACE_ID = '44444444-4444-4444-8444-444444444444';
+
+  beforeEach(() => {
+    vi.clearAllMocks();
+    mocks.authProxy.mockReturnValue(NextResponse.next());
+    mocks.consumeVerifyTokenRequest.mockResolvedValue(null);
+    mocks.getAppSessionClaimsFromRequest.mockReturnValue({ sub: 'user-1' });
+    mocks.getCurrentUserDefaultWorkspace.mockResolvedValue(null);
+    mocks.getRequestHeadersWithResponseCookies.mockReturnValue(new Headers());
+    mocks.hasSupportedSupabaseAuthCookie.mockReturnValue(false);
+    mocks.hasWebAppSessionTokenFromRequest.mockReturnValue(true);
+    mocks.withForwardedInternalApiAuth.mockReturnValue({});
+    vi.mocked(isPersonalWorkspace).mockResolvedValue(false);
+  });
+
+  const expectPrivateRedirect = (response: Response, location: string) => {
+    expect(response.status).toBe(307);
+    expect(response.headers.get('location')).toBe(location);
+    expect(response.headers.get('cache-control')).toBe('private, no-store');
+  };
+
+  it('marks the root-workspace remap uncacheable', async () => {
+    const response = await proxy(
+      new NextRequest(
+        'https://calendar.tuturuuu.com/en/00000000-0000-0000-0000-000000000000/settings?view=week'
+      )
+    );
+    expectPrivateRedirect(
+      response,
+      'https://calendar.tuturuuu.com/en/internal/settings?view=week'
+    );
+  });
+
+  it('marks the personal-workspace remap uncacheable', async () => {
+    vi.mocked(isPersonalWorkspace).mockResolvedValue(true);
+    const response = await proxy(
+      new NextRequest(`https://calendar.tuturuuu.com/${WORKSPACE_ID}?d=1`)
+    );
+    expectPrivateRedirect(
+      response,
+      'https://calendar.tuturuuu.com/personal?d=1'
+    );
+  });
+
+  it('marks the default-workspace redirect uncacheable', async () => {
+    mocks.getCurrentUserDefaultWorkspace.mockResolvedValue({
+      id: WORKSPACE_ID,
+      personal: false,
+    });
+    const response = await proxy(
+      new NextRequest('https://calendar.tuturuuu.com/')
+    );
+    expectPrivateRedirect(
+      response,
+      `https://calendar.tuturuuu.com/${WORKSPACE_ID}`
+    );
+  });
+
+  it('marks the default-workspace fallback redirect uncacheable', async () => {
+    mocks.getCurrentUserDefaultWorkspace.mockRejectedValue(new Error('down'));
+    const response = await proxy(
+      new NextRequest('https://calendar.tuturuuu.com/vi')
+    );
+    expectPrivateRedirect(response, 'https://calendar.tuturuuu.com/personal');
+  });
+
+  it('marks the signed-in login short-circuit uncacheable', async () => {
+    const response = await proxy(
+      new NextRequest('https://calendar.tuturuuu.com/login?next=%2Fabc')
+    );
+    expectPrivateRedirect(response, 'https://calendar.tuturuuu.com/personal');
+  });
+
+  it('marks the mounted verify-token resume uncacheable', async () => {
+    const response = await proxy(
+      new NextRequest(
+        'https://tuturuuu.com/calendar/verify-token?token=t&nextUrl=%2Fpersonal',
+        { nextConfig: { basePath: '/calendar' } }
+      )
+    );
+    expectPrivateRedirect(response, 'https://tuturuuu.com/calendar/personal');
+  });
+
+  it('marks delegated auth and verify-token redirects uncacheable', async () => {
+    mocks.consumeVerifyTokenRequest.mockResolvedValueOnce(
+      NextResponse.redirect('https://calendar.tuturuuu.com/personal')
+    );
+    expectPrivateRedirect(
+      await proxy(
+        new NextRequest('https://calendar.tuturuuu.com/verify-token?token=t')
+      ),
+      'https://calendar.tuturuuu.com/personal'
+    );
+
+    mocks.authProxy.mockReturnValueOnce(
+      NextResponse.redirect('https://tuturuuu.com/login')
+    );
+    expectPrivateRedirect(
+      await proxy(new NextRequest('https://calendar.tuturuuu.com/dashboard')),
+      'https://tuturuuu.com/login'
+    );
+  });
+
+  it('leaves rendered documents to their own cache policy', async () => {
+    mocks.getAppSessionClaimsFromRequest.mockReturnValue(null);
+    mocks.hasWebAppSessionTokenFromRequest.mockReturnValue(false);
+    const response = await proxy(
+      new NextRequest(`https://calendar.tuturuuu.com/${WORKSPACE_ID}`)
+    );
+    expect(response.headers.get('location')).toBeNull();
+    expect(response.headers.get('cache-control')).toBeNull();
   });
 });
