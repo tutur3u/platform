@@ -6,8 +6,8 @@ describe('guest playground proxy', () => {
     expect(config.matcher).toEqual([]);
   });
 
-  it('passes through without redirecting or setting cookies', () => {
-    const response = proxy();
+  it('passes through without redirecting or setting cookies', async () => {
+    const response = await proxy();
 
     expect(response.status).toBe(200);
     expect(response.headers.get('x-middleware-next')).toBe('1');

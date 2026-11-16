@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 
-export function proxy() {
+// Async to match the start-bridge NextProxy contract; behaviour is unchanged.
+export async function proxy(): Promise<NextResponse> {
   return NextResponse.next();
 }
 
