@@ -483,3 +483,8 @@ export async function createDynamicAdminClient(): Promise<SupabaseClient<any>> {
     },
   });
 }
+
+export {
+  createAccountSwitchAuth,
+  clearAccountSwitchSession,
+} from './account-switch-auth';

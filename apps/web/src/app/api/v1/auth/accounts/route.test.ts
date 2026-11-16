@@ -2,7 +2,10 @@ import { NextRequest } from 'next/server';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { DELETE } from './[accountId]/route';
 import { POST as saveCurrentPOST } from './current/route';
-import { OPTIONS as accountsOPTIONS, GET } from './route';
+import {
+  OPTIONS as accountsOPTIONS,
+  GET,
+} from '@/legacy-api-routes/v1/auth/accounts/route';
 import { OPTIONS as switchOPTIONS, POST as switchPOST } from './switch/route';
 
 const mocks = vi.hoisted(() => ({
@@ -264,4 +267,22 @@ describe('web multi-account API routes', () => {
     expect(response.status).toBe(200);
     expect(mocks.removeWebAccount).toHaveBeenCalledWith(request, 'user-2');
   });
+});
+
+it('returns a generic 409 for a stale account-switch CAS', async () => {
+  mocks.switchWebAccount.mockResolvedValue({
+    accounts: [],
+    activeAccountId: null,
+    success: false,
+    errorCode: 'switch_conflict',
+    error: 'Account switch state changed',
+  });
+  const response = await switchPOST(
+    new NextRequest('https://tuturuuu.com/api/v1/auth/accounts/switch', {
+      method: 'POST',
+      body: JSON.stringify({ accountId: 'synthetic' }),
+    })
+  );
+  expect(response.status).toBe(409);
+  expect(response.headers.getSetCookie()).toEqual([]);
 });

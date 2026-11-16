@@ -28,6 +28,7 @@ export interface WebAccountsResponse {
 }
 
 export type WebAccountErrorCode =
+  | 'switch_conflict'
   | 'account_limit'
   | 'device_unavailable'
   | 'save_failed'

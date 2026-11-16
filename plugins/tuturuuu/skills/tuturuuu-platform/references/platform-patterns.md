@@ -1556,16 +1556,16 @@ production-like preview refusal in the source auth matrix.
 
 ### Multi-account switch verification
 
-Account switches use the direct private PostgreSQL connection and retain device
-and target-session row locks through the provider effect and vault writes.
-`xmin` plus `ctid` are captured in-flight comparison tokens, never durable epochs.
-Run `switch-transaction.test.ts` with `GAP01_TEST_DATABASE_URL` pointing to a
-disposable loopback database named `gap01_fixture` with the matching role. The
-suite refuses other targets; the fixture uses synthetic identifiers and tokens.
-Run the provider bookkeeping and context suites separately. An unset fixture URL
-skips PG tests and cannot count as lock acceptance. Do not infer cross-origin
-Set-Cookie ordering from these tests; see
-[shared-session scope](../../../../../apps/docs/platform/architecture/shared-session.mdx#account-switch-serialization).
+Account switches use service-role REST CAS on existing private tables. Match
+sessions by device/user plus observed `updated_at`; match devices by ID, secret
+hash, null-aware active user, observed `last_seen_at` and unrevoked state. Advance
+both timestamps strictly; require one returned row from each update. Read outgoing
+cookies without provider refresh, refresh the target detached at most once, and
+flush buffered session cookies only after both CAS updates. Active removal must
+sign the browser out if fallback fails. Run `rest-cas.test.ts`,
+`rest-transport.test.ts` and `account-switch-auth.test.ts`; these use synthetic
+provider transport and do not prove deployed provider or cross-origin ordering.
+See [shared-session scope](../../../../../apps/docs/platform/architecture/shared-session.mdx#account-switch-serialization).
 
 ### Native Tasks navigation and diagnostics
 

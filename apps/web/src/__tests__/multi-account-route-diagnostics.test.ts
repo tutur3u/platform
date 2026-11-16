@@ -100,8 +100,7 @@ describe('multi-account route diagnostics', () => {
       success: false,
     });
 
-    const { POST } =
-      await import('@/legacy-api-routes/v1/auth/accounts/switch/route');
+    const { POST } = await import('@/app/api/v1/auth/accounts/switch/route');
     const response = await POST(
       new NextRequest('http://localhost/api/v1/auth/accounts/switch', {
         body: JSON.stringify({

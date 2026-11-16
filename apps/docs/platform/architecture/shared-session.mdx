@@ -117,13 +117,27 @@ covers signup, workspace creation, invitations and task CRUD.
 
 ## Account switch serialization
 
-Web account switches lock the verified vault device and target session in one
-PostgreSQL transaction. Captured MVCC row identities reject state changed while
-a switch waited for admission. These tokens cover an in-flight comparison only;
-they are not durable operation identifiers. Session and active-account writes use
-the same connection and check affected-row counts. This path requires the private
-database connection configured for `platform-sql.ts`, with read/update/delete
-access to the existing private vault tables. It adds no schema or journal.
+Web account switches use server-only service-role Supabase REST against the
+existing private vault tables. The signed device cookie and derived secret hash
+bind every switch to its saved-account set. The target update compares its
+composite device/user key and observed `updated_at`; the device update compares
+its ID, secret hash, observed active user (including null), observed `last_seen_at`
+and unrevoked state. Both updates must return exactly one row. Version timestamps
+advance beyond the observed value even under a frozen millisecond clock.
+
+Outgoing rotated tokens are read from cookies without a provider refresh. Target
+session validation uses a detached client with one refresh HTTP attempt and no
+retry. Browser cookie writes remain buffered until both updates succeed. A CAS
+loss returns generic HTTP 409 and emits no session cookies. The session row can
+remain updated if the following device CAS fails; these REST writes are not an
+atomic transaction. Independent revocation, target removal after admission, and
+cross-origin cookie ordering remain concurrency limitations. Other device touches
+can cause a safe conflict. Switching requires no direct database connection URL.
+
+Removing the active account deletes its stored row first. A failed fallback
+switch clears browser auth cookies and returns a login redirect target. An invalid target
+session returns `requiresReauth` with a generic error and retains its saved entry
+for explicit removal or reauthentication; provider error text is never returned.
 
 The Web client shares switch admission across modal lifetimes, retains only the
 latest queued intent, and suppresses stale navigation after query invalidation.
@@ -140,8 +154,9 @@ ordering or exactly-once provider effects.
 
 Regression coverage: `switch-intent.test.ts` covers latest-intent admission,
 asynchronous callback fencing and transport failure without replay.
-`switch-transaction.test.ts` exercises real PostgreSQL locks, stale device
-versions, credential rejection and rollback against a disposable loopback
-`gap01_fixture` database. Supply `GAP01_TEST_DATABASE_URL` for that suite; an
-unset variable skips it. Provider bookkeeping remains fixture-based in
-`vault-switch.test.ts`; it does not prove locking or deployed provider behavior.
+`rest-cas.test.ts` covers concurrent admission, revocation, removal, actor/device
+binding and fail-closed active logout. `rest-transport.test.ts` exercises real
+PostgREST and auth SDK clients with synthetic HTTP responses, exact CAS predicates,
+version advancement and actual response Set-Cookie absence on failed CAS.
+`account-switch-auth.test.ts` covers pure expired-cookie reads, bounded refresh,
+and buffered installation. These fixtures do not establish deployed provider behavior.

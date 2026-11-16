@@ -2,6 +2,7 @@ import { randomUUID } from 'node:crypto';
 import { switchStoredAccount } from './switch-stored-account';
 import {
   createAdminClient,
+  clearAccountSwitchSession,
   createClient,
 } from '@tuturuuu/supabase/next/server';
 import type { SupabaseSession } from '@tuturuuu/supabase/next/user';
@@ -467,38 +468,12 @@ export async function saveCurrentWebAccount(
   };
 }
 
-async function revokeCurrentUserTempAuth(supabase: {
-  auth: {
-    getUser: () => Promise<{
-      data: {
-        user: { id: string } | null;
-      };
-    }>;
-  };
-}) {
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-
-  if (user) {
-    await revokeUserAiTempAuthTokens(user.id);
-  }
-}
-
 async function switchToStoredWebAccount(
   request: Request,
   device: WebAccountDevice,
   accountId: string,
   payload: SwitchAccountPayload = {}
 ): Promise<WebAccountMutationResponse> {
-  if (!(await getStoredSession(device.deviceId, accountId))) {
-    return {
-      ...(await listAccountsForDevice(device)),
-      error: 'Account not found',
-      requiresReauth: true,
-      success: false,
-    } as WebAccountMutationResponse & { error: string };
-  }
   const profile = (await readCanonicalProfiles([accountId])).get(accountId);
 
   return switchStoredAccount({
@@ -508,7 +483,9 @@ async function switchToStoredWebAccount(
     payload,
     listAccounts: listAccountsForDevice,
     resolveIdentity: (fallback) => profileFields(profile, fallback),
-    revokeTempAuth: revokeCurrentUserTempAuth,
+    revokeTempAuth: async (userId) => {
+      await revokeUserAiTempAuthTokens(userId);
+    },
   });
 }
 
@@ -591,7 +568,7 @@ export async function removeWebAccount(
   }
 
   const db = await getPrivateDb();
-  await db
+  const removed = await db
     .from('web_account_sessions')
     .delete()
     .eq('device_id', device.deviceId)
@@ -604,11 +581,36 @@ export async function removeWebAccount(
     };
   }
 
-  const remaining = await getAccountRows(device.deviceId);
-  const nextAccount = remaining.find((row) => row.user_id !== accountId);
-
-  if (nextAccount) {
-    return switchToStoredWebAccount(request, device, nextAccount.user_id);
+  const failClosed = async (result: WebAccountMutationResponse) => {
+    await clearAccountSwitchSession(request);
+    try {
+      await updateDeviceActiveUser(device.deviceId, null);
+    } catch {
+      /* Browser sign-out remains effective if bookkeeping is unavailable. */
+    }
+    return { ...result, activeAccountId: null, redirectTo: '/login' };
+  };
+  const failure: WebAccountMutationResponse = {
+    accounts: [],
+    activeAccountId: null,
+    success: false,
+    errorCode: 'switch_conflict',
+    error: 'Account switch state changed',
+  };
+  if (removed.error) return failClosed(failure);
+  try {
+    const remaining = await getAccountRows(device.deviceId);
+    const nextAccount = remaining.find((row) => row.user_id !== accountId);
+    if (nextAccount) {
+      const switched = await switchToStoredWebAccount(
+        request,
+        device,
+        nextAccount.user_id
+      );
+      return switched.success ? switched : failClosed(switched);
+    }
+  } catch {
+    return failClosed(failure);
   }
 
   const supabase = await createClient(request);

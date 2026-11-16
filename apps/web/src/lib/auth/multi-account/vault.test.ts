@@ -10,7 +10,7 @@ import {
   resolveMultiAccountSwitchRedirect,
   WEB_WORKSPACE_ROUTE_SEGMENTS,
 } from './routes';
-import { normalizeMultiAccountRedirectPath } from './vault';
+import { normalizeMultiAccountRedirectPath } from './routes';
 
 describe('web multi-account vault helpers', () => {
   const request = {
