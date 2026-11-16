@@ -11,14 +11,17 @@ import en from '../../../../../messages/en.json';
 import viMessages from '../../../../../messages/vi.json';
 import { LogoutChoices } from './logout-choices';
 
-const mocks = vi.hoisted(() => ({
-  app: vi.fn(),
-  browser: vi.fn(),
-  push: vi.fn(),
-  refresh: vi.fn(),
-  signOut: vi.fn(),
-  locale: 'en',
-}));
+const mocks = vi.hoisted(() => {
+  const locale: { locale: 'en' | 'vi' } = { locale: 'en' };
+  return {
+    app: vi.fn(),
+    browser: vi.fn(),
+    push: vi.fn(),
+    refresh: vi.fn(),
+    signOut: vi.fn(),
+    ...locale,
+  };
+});
 vi.mock('./logout-navigation', () => ({ navigateFromLogout: mocks.push }));
 vi.mock('next/navigation', () => ({
   useRouter: () => ({ push: mocks.push, refresh: mocks.refresh }),
