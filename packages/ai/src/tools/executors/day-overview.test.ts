@@ -2,6 +2,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import type { MiraToolContext } from '../mira-tool-types';
 import {
   DAY_OVERVIEW_LIMITS,
+  DAY_CARDS_PRESENTATION,
   executeGetDayOverview,
   summarizeDayProgress,
 } from './day-overview';
@@ -166,6 +167,22 @@ describe('get_day_overview', () => {
       id: 's1',
       elapsedMinutes: 30,
     });
+  });
+
+  it('returns the workspace and timing, and frames card clients', async () => {
+    const plain = (await executeGetDayOverview({}, context())) as Record<
+      string,
+      any
+    >;
+    expect(plain.wsId).toBe('ws-1');
+    expect(plain.durationMs).toEqual(expect.any(Number));
+    expect(plain.presentation).toBeUndefined();
+
+    const cards = (await executeGetDayOverview(
+      {},
+      context({ clientCapabilities: new Set(['day_cards']) })
+    )) as Record<string, any>;
+    expect(cards.presentation).toBe(DAY_CARDS_PRESENTATION);
   });
 
   it('returns partial results with per-section errors', async () => {

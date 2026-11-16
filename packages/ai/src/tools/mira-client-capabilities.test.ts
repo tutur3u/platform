@@ -99,6 +99,10 @@ describe('Mira client capabilities', () => {
     expect(buildMiraClientCapabilityInstruction(undefined)).toContain(
       'theme, sidebar, artifact_panels, immersive, navigate'
     );
+    // Presentation-only capabilities never read as a missing effect.
+    expect(buildMiraClientCapabilityInstruction(undefined)).not.toContain(
+      'day_cards'
+    );
     expect(
       buildMiraClientCapabilityInstruction(
         resolveMiraClientCapabilities([

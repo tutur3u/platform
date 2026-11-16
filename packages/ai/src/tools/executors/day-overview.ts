@@ -39,6 +39,10 @@ const argsSchema = z.object({
     .optional(),
 });
 
+/** The client shows every event and task as cards; the reply only frames it. */
+export const DAY_CARDS_PRESENTATION =
+  'The user already sees this overview as cards listing every event, free gap and task. Reply in one or two plain sentences: the shape of the day and the one thing that needs attention most. Do not repeat the lists, do not use headings or emoji.';
+
 type DayContext = {
   ctx: MiraToolContext;
   wsId: string;
@@ -285,6 +289,7 @@ export async function executeGetDayOverview(
     (parsed.data.date && !isValidDateKey(parsed.data.date))
   )
     return { success: false, error: 'date must be a valid YYYY-MM-DD.' };
+  const startedAt = performance.now();
   const { timezone, timezoneAssumed } = resolveUserTimezone(ctx);
   const dateKey = parsed.data.date ?? toDateKey(new Date(), timezone);
   const { start, end } = getDayWindow(dateKey, timezone);
@@ -328,7 +333,12 @@ export async function executeGetDayOverview(
   return {
     success: failed < names.length,
     date: dateKey,
+    wsId: day.wsId,
     timezone,
+    durationMs: Math.round(performance.now() - startedAt),
+    ...(ctx.clientCapabilities?.has('day_cards')
+      ? { presentation: DAY_CARDS_PRESENTATION }
+      : {}),
     ...(timezoneAssumed ? { timezoneAssumed: true } : {}),
     window: { start: start.toISOString(), end: end.toISOString() },
     ...output,

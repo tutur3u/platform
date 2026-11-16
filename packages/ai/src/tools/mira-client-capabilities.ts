@@ -12,6 +12,8 @@ export const MIRA_CLIENT_CAPABILITIES = [
   'artifact_panels',
   'immersive',
   'navigate',
+  /** Renders get_day_overview results as agenda cards. */
+  'day_cards',
 ] as const;
 
 export type MiraClientCapability = (typeof MIRA_CLIENT_CAPABILITIES)[number];
@@ -80,8 +82,14 @@ export function isMiraToolAvailableToClient(
 export function buildMiraClientCapabilityInstruction(
   capabilities: ReadonlySet<MiraClientCapability> | undefined
 ) {
+  // Only capabilities that gate a tool can make Mira claim a missing effect;
+  // presentation-only ones such as day_cards change nothing here.
+  const toolCapabilities = new Set(
+    Object.values(MIRA_CLIENT_TOOL_CAPABILITIES)
+  );
   const missing = MIRA_CLIENT_CAPABILITIES.filter(
-    (capability) => !capabilities?.has(capability)
+    (capability) =>
+      toolCapabilities.has(capability) && !capabilities?.has(capability)
   );
   if (!missing.length) return '';
   const lines = [
