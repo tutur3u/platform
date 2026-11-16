@@ -112,9 +112,16 @@ colour roles and hue fills, inks and calm fills for both modes, type, spacing,
 radius, shadows, control sizes, motion, elevation, mobile metrics and the
 setting keys with their allowlists. Web reads it through `sorbet.css`; the
 mobile app and the design system artifact map the same names. Changes to it are
-additive. `packages/ui/src/sorbet-tokens.test.ts` pins `sorbet.css` to the
-contract, keeps the setting allowlists equal to the runtime parsers, and checks
-text and focus contrast.
+additive. It also records the shared decisions both platforms follow:
+calendar events use the calm fill of their hue while tags and chips use the
+vibrant fill; the selected navigation item is `accent` with `foreground` ink;
+skeletons use `surface-sunken`; the focus ring is 2px with a 2px offset (3px in
+High Contrast); each Corners option (soft, sharp, round) has its own radius
+scale for rows, cards, panels, controls, sheets and popovers; tablets use a
+24px gutter with the dock capped at 480px; and every palette's eleven source
+colours. `packages/ui/src/sorbet-tokens.test.ts` pins `sorbet.css` to the
+contract and the palettes to `sorbet-presets.css`, keeps the setting allowlists
+and popover corners equal to the runtime, and checks text and focus contrast.
 
 On touch screens (`pointer: coarse`) Sorbet fields are at least 44px tall, and
 buttons, tabs and switches get an invisible 44px hit area without changing their

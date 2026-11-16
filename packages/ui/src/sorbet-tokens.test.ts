@@ -30,6 +30,16 @@ interface SorbetTokenContract {
     themeFields: Record<'preset' | 'radius' | 'density' | 'font', string[]>;
   };
   color: Record<Mode, Record<string, string>>;
+  roles: Record<string, string>;
+  presets: {
+    sources: string[];
+    roles: Record<string, string>;
+    palettes: Record<string, Record<Mode, Record<string, unknown>>>;
+  };
+  radius: {
+    popover: Record<string, number>;
+    corners: Record<string, Record<string, number>>;
+  };
   hues: Record<string, Hue>;
   motion: {
     duration: Record<string, number>;
@@ -113,7 +123,105 @@ const CALENDAR_FILLS = {
   gray: 'gray',
 } as const;
 
+const presetsCss = readFileSync(
+  resolve(repoRoot, 'packages/ui/src/sorbet-presets.css'),
+  'utf8'
+).replace(/\/\*[\s\S]*?\*\//g, '');
+const floatingCss = readFileSync(
+  resolve(repoRoot, 'packages/ui/src/floating-surface.css'),
+  'utf8'
+);
+
+/** Source colours and ink overrides per preview palette, read from the CSS. */
+function cssPalettes() {
+  const palettes: Record<string, Record<string, Record<string, unknown>>> = {};
+  for (const [, selector, body] of presetsCss.matchAll(
+    /([^{}]+)\{([^{}]*)\}/g
+  )) {
+    const preview =
+      /\[data-sorbet-preview="([\w-]+)"\](\[data-sorbet-preview-mode="dark"\])?/.exec(
+        selector!
+      );
+    if (!preview) continue;
+    const values = Object.fromEntries(
+      [...body!.matchAll(/--([\w-]+):\s*([^;]+);/g)].map((m) => [
+        m[1]!,
+        m[2]!.trim(),
+      ])
+    );
+    const sources = Object.fromEntries(
+      Object.entries(values)
+        .filter(([name]) => name.startsWith('sorbet-'))
+        .map(([name, value]) => [name.slice('sorbet-'.length), value])
+    );
+    if (Object.keys(sources).length !== tokens.presets.sources.length) continue;
+    const inks = Object.fromEntries(
+      Object.keys(tokens.hues)
+        .filter((hue) => hue in values)
+        .map((hue) => [hue, values[hue]])
+    );
+    const entry: Record<string, unknown> = { ...sources };
+    if (Object.keys(inks).length > 0) entry.inks = inks;
+    (palettes[preview[1]!] ??= {})[preview[2] ? 'dark' : 'light'] = entry;
+  }
+  return palettes;
+}
+
+const remToPx = (value: string) => Number.parseFloat(value) * 16;
+
 describe('Sorbet token contract', () => {
+  it('lists every palette exactly as sorbet-presets.css defines it', () => {
+    expect(Object.keys(tokens.presets.palettes)).toEqual([...SORBET_PRESETS]);
+    expect(tokens.presets.palettes).toEqual(cssPalettes());
+    for (const palette of Object.values(tokens.presets.palettes)) {
+      for (const mode of ['light', 'dark'] as const) {
+        for (const source of tokens.presets.sources) {
+          expect(palette[mode]![source], source).toMatch(/^#[0-9a-f]{6}$/);
+        }
+      }
+    }
+    expect(Object.keys(tokens.presets.roles)).toEqual(tokens.presets.sources);
+  });
+
+  it('keeps the default palette equal to the base colour roles', () => {
+    for (const mode of ['light', 'dark'] as const) {
+      const palette = tokens.presets.palettes.sorbet![mode]!;
+      for (const [source, role] of Object.entries(tokens.presets.roles)) {
+        expect(palette[source], `${mode} ${source}`).toBe(
+          tokens.color[mode][role]
+        );
+      }
+    }
+  });
+
+  it('names only real colour roles or hue variants in roles', () => {
+    const roleNames = new Set(Object.keys(tokens.color.light));
+    for (const [use, role] of Object.entries(tokens.roles)) {
+      expect(roleNames.has(role) || ['fill', 'calm'].includes(role), use).toBe(
+        true
+      );
+    }
+  });
+
+  it('matches the popover corners the web applies for each radius', () => {
+    const corners = tokens.radius.corners;
+    expect(Object.keys(corners)).toEqual([...SORBET_RADII]);
+    for (const radius of SORBET_RADII) {
+      expect(corners[radius]!.popover).toBe(tokens.radius.popover[radius]);
+    }
+    const sharp =
+      /data-sorbet-radius='sharp'\][^{]*\{\s*--radius-popover:\s*([\d.]+)rem/.exec(
+        floatingCss
+      );
+    const round =
+      /data-sorbet-radius='round'\][^{]*\{\s*--radius-popover:\s*([\d.]+)rem/.exec(
+        floatingCss
+      );
+    expect(remToPx(sharp![1]!)).toBe(corners.sharp!.popover);
+    expect(remToPx(round![1]!)).toBe(corners.round!.popover);
+    expect(corners.soft!.popover).toBe(corners.soft!.lg);
+  });
+
   it('lists the same setting keys and allowlists as the runtime parsers', () => {
     expect(tokens.setting.enabledConfigId).toBe(
       EXPERIMENTAL_SORBET_UI_CONFIG_ID
