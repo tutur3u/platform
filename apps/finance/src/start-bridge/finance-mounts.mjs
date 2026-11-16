@@ -38,11 +38,20 @@ export function financeBakedApexUrl(candidates) {
 export function isFinanceApexRoot(value) {
   if (typeof value !== 'string') return false;
   const raw = value.trim();
-  if (!raw || /[\u0000-\u0020\\]/.test(raw) || raw.includes('%') || raw.includes('@')) {
+  if (
+    !raw ||
+    /[\u0000-\u0020\\]/.test(raw) ||
+    raw.includes('%') ||
+    raw.includes('@')
+  ) {
     return false;
   }
   const scheme = raw.indexOf('://');
-  if (scheme < 0 || raw.slice(scheme + 3).includes('//') || raw.includes('..')) {
+  if (
+    scheme < 0 ||
+    raw.slice(scheme + 3).includes('//') ||
+    raw.includes('..')
+  ) {
     return false;
   }
   let url;
@@ -51,8 +60,11 @@ export function isFinanceApexRoot(value) {
   } catch {
     return false;
   }
-  if (url.username || url.password || url.search || url.hash || url.port) return false;
-  if (url.protocol !== 'https:' || url.hostname !== 'tuturuuu.com') return false;
-  const path = url.pathname.length > 1 ? url.pathname.replace(/\/+$/u, '') : url.pathname;
+  if (url.username || url.password || url.search || url.hash || url.port)
+    return false;
+  if (url.protocol !== 'https:' || url.hostname !== 'tuturuuu.com')
+    return false;
+  const path =
+    url.pathname.length > 1 ? url.pathname.replace(/\/+$/u, '') : url.pathname;
   return path === '/finance';
 }
