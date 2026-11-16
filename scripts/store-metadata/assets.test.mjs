@@ -177,6 +177,13 @@ test('screenshot files follow the per-locale layout for every device', () => {
     /mac\[0\]\.files\.vi: expected .*\/mac\/vi\/01-dashboard\.jpg/u
   );
   assertRejects(
+    check('windows', (l) => {
+      l.screenshots.desktop[0].files.en =
+        'apps/mobile/store/screenshots/windows/desktop/en/01-dashboard.jpg';
+    }),
+    /desktop\[0\]\.files\.en: expected .*\/desktop\/en\/01-dashboard\.png/u
+  );
+  assertRejects(
     check('android', (l) => {
       delete l.screenshots.tablet10;
     }),

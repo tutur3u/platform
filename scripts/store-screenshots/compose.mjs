@@ -17,6 +17,7 @@
 //   --locales <ids>    comma-separated locales (default en,vi)
 //   --plate <png>      background plate image instead of the drawn discs
 //   --no-graphics      skip the feature graphic and hero
+//   --gallery-only     only rebuild the web gallery from composed screenshots
 //
 // It also writes the /roadmap web gallery: up to six EN shots per platform as
 // `<platform>/web/NN-<id>.webp` (at most 1280 px on the long edge and 150 KB
@@ -99,10 +100,12 @@ async function main() {
       locales: { type: 'string', default: LOCALES.join(',') },
       plate: { type: 'string' },
       'no-graphics': { type: 'boolean', default: false },
+      'gallery-only': { type: 'boolean', default: false },
     },
   });
-  if (!values.raw) throw new Error('--raw <dir> is required');
-  const rawDir = path.resolve(values.raw);
+  const galleryOnly = values['gallery-only'];
+  if (!values.raw && !galleryOnly) throw new Error('--raw <dir> is required');
+  const rawDir = galleryOnly ? '' : path.resolve(values.raw);
   const only = values.only ? new Set(values.only.split(',')) : null;
   const locales = values.locales.split(',');
   const plateUrl = values.plate ? dataUrl(values.plate) : undefined;
@@ -114,6 +117,7 @@ async function main() {
   let written = 0;
   try {
     for (const target of SCREENSHOT_TARGETS) {
+      if (galleryOnly) break;
       if (only && !only.has(`${target.store}/${target.device}`)) continue;
       const metadata = loadMetadata(values.metadata, target.store);
       for (const locale of locales) {
@@ -143,7 +147,7 @@ async function main() {
       }
     }
 
-    if (!values['no-graphics']) {
+    if (!values['no-graphics'] && !galleryOnly) {
       const pick = (store, device, id) =>
         findRaw(rawDir, SCREENSHOT_TARGETS.find((t) => t.store === store && t.device === device), 'en', id);
       const phoneDashboard = pick('ios', 'iphone-6.9', 'dashboard');
@@ -173,7 +177,7 @@ async function main() {
       }
     }
 
-    const gallery = await writeWebGallery(page, values.out);
+    const gallery = await writeWebGallery(page, values.out, values.metadata);
     for (const items of Object.values(gallery)) {
       for (const item of items) {
         console.log(`${item.file} ${item.width}x${item.height} ${(item.bytes / 1024).toFixed(0)} KB`);

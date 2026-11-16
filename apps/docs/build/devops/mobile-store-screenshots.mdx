@@ -79,14 +79,17 @@ Outputs:
   `scripts/store-metadata` expect `.png` for `windows`.
 - `apps/mobile/store/screenshots/<platform>/web/NN-<id>.webp` and a
   `manifest.json` with each file's width and height: up to six EN shots per
-  platform for /roadmap, at most 1280 px on the long edge and 150 KB each.
+  platform for /roadmap, at most 1280 px on the long edge and 150 KB each. The
+  listing's `gallery` entries choose the screens.
 - `apps/mobile/store/graphics/android/feature-graphic-1024x500.png` and
   `apps/mobile/store/graphics/windows/hero-1920x1080.png`: 24-bit PNG with no
   alpha. The hero carries no text, and the feature graphic shows only the app
   name.
 
 Options: `--only ios/iphone-6.9,macos/mac`, `--locales en`, `--plate <png>`
-(replaces the drawn background with a generated plate) and `--no-graphics`.
+(replaces the drawn background with a generated plate), `--no-graphics` and
+`--gallery-only` (rebuilds only the web gallery from the composed screenshots,
+leaving them byte-for-byte unchanged).
 Headlines use Nunito from Google Fonts, so composition needs network access.
 Playwright resolves from a workspace that depends on it. Run
 `bunx playwright install chromium` once per host.

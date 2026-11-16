@@ -64,7 +64,7 @@ export interface StoreGraphic {
 
 export interface StoreScreenshot {
   id: string;
-  /** apps/mobile/store/screenshots/<slug>/<device>/<locale>/NN-<id>.jpg */
+  /** apps/mobile/store/screenshots/<slug>/<device>/<locale>/NN-<id>.jpg (.png for windows) */
   files: Localized;
   caption: Localized;
 }

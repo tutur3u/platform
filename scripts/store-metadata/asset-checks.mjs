@@ -35,9 +35,10 @@ export function checkScreenshots(listing, errors) {
     if (new Set(ids).size !== ids.length) {
       errors.push({ path: at, message: 'duplicate screenshot id' });
     }
+    const extension = screenshotExtension(listing);
     shots.forEach((shot, index) => {
       for (const locale of LOCALES) {
-        const expected = `apps/mobile/store/screenshots/${listing.slug}/${device}/${locale}/${nn(index)}-${shot?.id}.jpg`;
+        const expected = `apps/mobile/store/screenshots/${listing.slug}/${device}/${locale}/${nn(index)}-${shot?.id}.${extension}`;
         if (shot?.files?.[locale] !== expected) {
           errors.push({
             path: `${at}[${index}].files.${locale}`,
@@ -47,6 +48,11 @@ export function checkScreenshots(listing, errors) {
       }
     });
   }
+}
+
+/** Microsoft Store screenshots are opaque PNG; the other stores take JPEG. */
+export function screenshotExtension(listing) {
+  return listing.slug === 'windows' ? 'png' : 'jpg';
 }
 
 export function checkGallery(listing, errors) {

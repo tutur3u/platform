@@ -564,7 +564,7 @@
     },
     "screenshotFile": {
       "type": "string",
-      "pattern": "^apps/mobile/store/screenshots/[a-z]+/[a-z0-9.-]+/(en|vi)/\\d{2}-[a-z][a-z0-9-]*\\.jpg$"
+      "pattern": "^apps/mobile/store/screenshots/[a-z]+/[a-z0-9.-]+/(en|vi)/\\d{2}-[a-z][a-z0-9-]*\\.(jpg|png)$"
     },
     "screenshot": {
       "type": "object",

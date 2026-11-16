@@ -6,6 +6,7 @@ import test from 'node:test';
 import { fileURLToPath } from 'node:url';
 import zlib from 'node:zlib';
 import { headlineFor, planScreens } from './captions.mjs';
+import { gallerySources } from './web-gallery.mjs';
 import { readImageInfo } from './image-info.mjs';
 import { toOpaqueRgbPng } from './png-rgb.mjs';
 import { GRAPHIC_TARGETS, SCREENSHOT_TARGETS } from './specs.mjs';
@@ -193,4 +194,20 @@ test('checks the web gallery count and manifest sizes', () => {
 test('committed store images pass', () => {
   const { problems } = validateStoreImages(REPO_ROOT);
   assert.deepEqual(problems, []);
+});
+
+test('web gallery follows the listing gallery, else the first screenshots', () => {
+  const shots = ['01-dashboard.png', '05-finance.png', '07-time-tracker.png', '08-notes.png', 'notes.txt'];
+  assert.deepEqual(
+    gallerySources(shots, [
+      { file: 'apps/mobile/store/screenshots/windows/web/01-dashboard.webp' },
+      { file: 'apps/mobile/store/screenshots/windows/web/05-time-tracker.webp' },
+    ]),
+    [
+      ['01-dashboard.png', '01-dashboard.webp'],
+      ['07-time-tracker.png', '05-time-tracker.webp'],
+    ]
+  );
+  assert.deepEqual(gallerySources(shots, null).length, 4);
+  assert.throws(() => gallerySources(shots, [{ file: 'x/web/02-tasks.webp' }]), /No screenshot/);
 });

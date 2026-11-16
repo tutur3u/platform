@@ -152,8 +152,8 @@
       {
         "id": "dashboard",
         "files": {
-          "en": "apps/mobile/store/screenshots/windows/desktop/en/01-dashboard.jpg",
-          "vi": "apps/mobile/store/screenshots/windows/desktop/vi/01-dashboard.jpg"
+          "en": "apps/mobile/store/screenshots/windows/desktop/en/01-dashboard.png",
+          "vi": "apps/mobile/store/screenshots/windows/desktop/vi/01-dashboard.png"
         },
         "caption": {
           "en": "See today’s tasks, events and workspace activity in one place.",
@@ -163,8 +163,8 @@
       {
         "id": "tasks",
         "files": {
-          "en": "apps/mobile/store/screenshots/windows/desktop/en/02-tasks.jpg",
-          "vi": "apps/mobile/store/screenshots/windows/desktop/vi/02-tasks.jpg"
+          "en": "apps/mobile/store/screenshots/windows/desktop/en/02-tasks.png",
+          "vi": "apps/mobile/store/screenshots/windows/desktop/vi/02-tasks.png"
         },
         "caption": {
           "en": "Organize work on boards and switch between Kanban, list and timeline views.",
@@ -174,8 +174,8 @@
       {
         "id": "calendar",
         "files": {
-          "en": "apps/mobile/store/screenshots/windows/desktop/en/03-calendar.jpg",
-          "vi": "apps/mobile/store/screenshots/windows/desktop/vi/03-calendar.jpg"
+          "en": "apps/mobile/store/screenshots/windows/desktop/en/03-calendar.png",
+          "vi": "apps/mobile/store/screenshots/windows/desktop/vi/03-calendar.png"
         },
         "caption": {
           "en": "Review your schedule in day, 3-day, week, month or agenda view.",
@@ -185,8 +185,8 @@
       {
         "id": "assistant",
         "files": {
-          "en": "apps/mobile/store/screenshots/windows/desktop/en/04-assistant.jpg",
-          "vi": "apps/mobile/store/screenshots/windows/desktop/vi/04-assistant.jpg"
+          "en": "apps/mobile/store/screenshots/windows/desktop/en/04-assistant.png",
+          "vi": "apps/mobile/store/screenshots/windows/desktop/vi/04-assistant.png"
         },
         "caption": {
           "en": "Ask Mira to summarize your calendar, surface urgent tasks or draft a team update.",
@@ -196,8 +196,8 @@
       {
         "id": "finance",
         "files": {
-          "en": "apps/mobile/store/screenshots/windows/desktop/en/05-finance.jpg",
-          "vi": "apps/mobile/store/screenshots/windows/desktop/vi/05-finance.jpg"
+          "en": "apps/mobile/store/screenshots/windows/desktop/en/05-finance.png",
+          "vi": "apps/mobile/store/screenshots/windows/desktop/vi/05-finance.png"
         },
         "caption": {
           "en": "Record income and expenses across wallets, categories and tags.",
@@ -207,8 +207,8 @@
       {
         "id": "habits",
         "files": {
-          "en": "apps/mobile/store/screenshots/windows/desktop/en/06-habits.jpg",
-          "vi": "apps/mobile/store/screenshots/windows/desktop/vi/06-habits.jpg"
+          "en": "apps/mobile/store/screenshots/windows/desktop/en/06-habits.png",
+          "vi": "apps/mobile/store/screenshots/windows/desktop/vi/06-habits.png"
         },
         "caption": {
           "en": "Follow shared habit trackers and keep your streak going.",
@@ -218,8 +218,8 @@
       {
         "id": "time-tracker",
         "files": {
-          "en": "apps/mobile/store/screenshots/windows/desktop/en/07-time-tracker.jpg",
-          "vi": "apps/mobile/store/screenshots/windows/desktop/vi/07-time-tracker.jpg"
+          "en": "apps/mobile/store/screenshots/windows/desktop/en/07-time-tracker.png",
+          "vi": "apps/mobile/store/screenshots/windows/desktop/vi/07-time-tracker.png"
         },
         "caption": {
           "en": "Time work sessions or Pomodoro cycles and review personal and workspace stats.",
@@ -229,8 +229,8 @@
       {
         "id": "notes",
         "files": {
-          "en": "apps/mobile/store/screenshots/windows/desktop/en/08-notes.jpg",
-          "vi": "apps/mobile/store/screenshots/windows/desktop/vi/08-notes.jpg"
+          "en": "apps/mobile/store/screenshots/windows/desktop/en/08-notes.png",
+          "vi": "apps/mobile/store/screenshots/windows/desktop/vi/08-notes.png"
         },
         "caption": {
           "en": "Write notes, link them to your work and convert them into tasks when you are ready.",

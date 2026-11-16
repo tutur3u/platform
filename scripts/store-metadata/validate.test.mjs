@@ -41,11 +41,20 @@ test('every committed store listing passes', () => {
   }
 });
 
+// Each store is submitted on its own date; all go live together.
+const TARGET_SUBMIT_DATES = {
+  ios: '2026-11-28T23:59:00+07:00',
+  macos: '2026-11-28T23:59:00+07:00',
+  android: '2026-11-25T23:59:00+07:00',
+  windows: '2026-11-20T23:59:00+07:00',
+};
+
 test('every listing carries the shared release plan and public URLs', () => {
-  for (const listing of Object.values(listings)) {
+  assert.deepEqual(Object.keys(listings).sort(), Object.keys(TARGET_SUBMIT_DATES).sort());
+  for (const [slug, listing] of Object.entries(listings)) {
     assert.equal(listing.release.version, '1.0.0');
     assert.equal(typeof listing.release.build, 'string');
-    assert.equal(listing.release.targetSubmitDate, '2026-11-28T23:59:00+07:00');
+    assert.equal(listing.release.targetSubmitDate, TARGET_SUBMIT_DATES[slug], slug);
     assert.equal(listing.release.targetLiveDate, '2026-12-10T23:59:00+07:00');
     assert.equal(listing.urls.privacy, 'https://tuturuuu.com/privacy');
     assert.equal(listing.urls.support, 'https://tuturuuu.com/contact');

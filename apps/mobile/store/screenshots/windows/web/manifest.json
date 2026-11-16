@@ -30,18 +30,18 @@
       "bytes": 24726
     },
     {
-      "id": "finance",
-      "file": "apps/mobile/store/screenshots/windows/web/05-finance.webp",
+      "id": "time-tracker",
+      "file": "apps/mobile/store/screenshots/windows/web/05-time-tracker.webp",
       "width": 1280,
       "height": 720,
-      "bytes": 28848
+      "bytes": 25632
     },
     {
-      "id": "habits",
-      "file": "apps/mobile/store/screenshots/windows/web/06-habits.webp",
+      "id": "notes",
+      "file": "apps/mobile/store/screenshots/windows/web/06-notes.webp",
       "width": 1280,
       "height": 720,
-      "bytes": 25538
+      "bytes": 46430
     }
   ]
 }

@@ -1,8 +1,10 @@
-// Web gallery derivatives for /roadmap: small WebP copies of the first EN
-// composed screenshots of one device per platform, plus a manifest with each
-// file's pixel size for the metadata `gallery` entries.
+// Web gallery derivatives for /roadmap: small WebP copies of EN composed
+// screenshots of one device per platform, plus a manifest with each file's
+// pixel size for the metadata `gallery` entries. The listing's `gallery`
+// chooses the screens; without one, the first screenshots are used.
 import fs from 'node:fs';
 import path from 'node:path';
+import { loadMetadata } from './captions.mjs';
 import { SCREENSHOT_ROOT, WEB_GALLERY, webGalleryPath } from './specs.mjs';
 
 const QUALITIES = [0.86, 0.8, 0.74, 0.68, 0.6, 0.52, 0.44];
@@ -35,23 +37,44 @@ async function encodeInPage({ src, maxEdge, maxBytes, qualities }) {
   throw new Error(`Cannot fit ${maxBytes} bytes`);
 }
 
+const SHOT_NAME = /^\d{2}-([a-z][a-z0-9-]*)\.(jpg|png)$/;
+
+/**
+ * The `[source, webp]` file name pairs for one platform: the listing's
+ * gallery entries mapped to the EN screenshot with the same screen id.
+ */
+export function gallerySources(shotNames, gallery) {
+  const shots = shotNames.filter((name) => SHOT_NAME.test(name)).sort();
+  if (!Array.isArray(gallery) || gallery.length === 0) {
+    return shots
+      .slice(0, WEB_GALLERY.maxPerPlatform)
+      .map((name) => [name, name.replace(/\.(jpg|png)$/, '.webp')]);
+  }
+  return gallery.slice(0, WEB_GALLERY.maxPerPlatform).map((item) => {
+    const webName = path.basename(item.file);
+    const id = webName.replace(/^\d{2}-/, '').replace(/\.webp$/, '');
+    const source = shots.find((name) => SHOT_NAME.exec(name)[1] === id);
+    if (!source) throw new Error(`No screenshot for gallery entry ${item.file}`);
+    return [source, webName];
+  });
+}
+
 /** Writes `<platform>/web/NN-<id>.webp` and `manifest.json`; returns entries. */
-export async function writeWebGallery(page, outRoot) {
+export async function writeWebGallery(page, outRoot, metadataDir) {
   const written = {};
   await page.setContent('<!doctype html><html><body></body></html>');
   for (const [platform, device] of Object.entries(WEB_GALLERY.sources)) {
     const sourceDir = path.join(outRoot, SCREENSHOT_ROOT, platform, device, WEB_GALLERY.locale);
     if (!fs.existsSync(sourceDir)) continue;
-    const sources = fs
-      .readdirSync(sourceDir)
-      .filter((name) => /^\d{2}-[a-z][a-z0-9-]*\.(jpg|png)$/.test(name))
-      .sort()
-      .slice(0, WEB_GALLERY.maxPerPlatform);
+    const sources = gallerySources(
+      fs.readdirSync(sourceDir),
+      metadataDir ? loadMetadata(metadataDir, platform)?.gallery : null
+    );
     const webDir = path.join(outRoot, SCREENSHOT_ROOT, platform, 'web');
     fs.rmSync(webDir, { recursive: true, force: true });
     fs.mkdirSync(webDir, { recursive: true });
     const items = [];
-    for (const name of sources) {
+    for (const [name, fileName] of sources) {
       const mime = name.endsWith('.png') ? 'image/png' : 'image/jpeg';
       const src = `data:${mime};base64,${fs.readFileSync(path.join(sourceDir, name)).toString('base64')}`;
       const encoded = await page.evaluate(encodeInPage, {
@@ -60,7 +83,6 @@ export async function writeWebGallery(page, outRoot) {
         maxBytes: WEB_GALLERY.maxBytes,
         qualities: QUALITIES,
       });
-      const fileName = name.replace(/\.(jpg|png)$/, '.webp');
       const bytes = Buffer.from(encoded.base64, 'base64');
       fs.writeFileSync(path.join(webDir, fileName), bytes);
       items.push({
