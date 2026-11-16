@@ -1,5 +1,6 @@
 import { defaultContentSecurityPolicy } from '@tuturuuu/start-bridge/csp';
 import { defineBridgeAppConfig } from '@tuturuuu/start-bridge/start/app-config';
+import { CALENDAR_PRODUCTION_MOUNT_HOSTS } from './src/lib/calendar-mount-hosts';
 import { invalidCalendarDeploymentProfile } from './src/runtime/deployment-profile';
 
 // Each artifact serves only its own environment's host. The profile is a
@@ -21,7 +22,7 @@ export default defineBridgeAppConfig({
             : invalidCalendarDeploymentProfile(),
     mountHosts:
       process.env.CALENDAR_DEPLOYMENT_PROFILE === 'production'
-        ? ['tuturuuu.com']
+        ? [...CALENDAR_PRODUCTION_MOUNT_HOSTS]
         : [],
     basePath: '/calendar',
     unknownHost: 'reject',

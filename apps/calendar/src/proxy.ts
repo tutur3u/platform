@@ -37,6 +37,7 @@ import {
   TTR_URL,
 } from './constants/common';
 import { type Locale, supportedLocales } from './i18n/routing';
+import { isCalendarApexMountUrl } from './lib/calendar-mount-hosts';
 import { centralCalendarLoginUrl } from './lib/central-login';
 import {
   preferredCalendarLocale,
@@ -69,8 +70,22 @@ const authProxy = createCentralizedAuthProxy({
 });
 const LOCAL_AUTH_API_PREFIX = '/api/auth/';
 
+/**
+ * The mounted branch serves the shared apex session, so it applies only to the
+ * configured apex host under the base path. Every other host serving the base
+ * path (`calendar.tuturuuu.com/calendar/*`) keeps the satellite session flow.
+ * `nextUrl` is built from the URL the runtime routed, not from `Host` or
+ * `X-Forwarded-Host`, so request headers cannot select the branch.
+ */
+function isApexMountedRequest(req: NextRequest) {
+  return isCalendarApexMountUrl(
+    new URL(req.nextUrl.href),
+    req.nextUrl.basePath
+  );
+}
+
 async function handleProxy(req: NextRequest): Promise<NextResponse> {
-  const mounted = Boolean(req.nextUrl.basePath);
+  const mounted = isApexMountedRequest(req);
   if (req.nextUrl.pathname.startsWith('/api')) {
     const isLocalAuthApi = req.nextUrl.pathname.startsWith(
       LOCAL_AUTH_API_PREFIX
