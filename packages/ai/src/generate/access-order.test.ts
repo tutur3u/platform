@@ -72,4 +72,16 @@ describe('SR-269 public generation admission', () => {
       expect.objectContaining({ wsId: 'workspace' })
     );
   });
+  it('returns a generic 500 without the server stack trace', async () => {
+    const error = new Error('db exploded');
+    error.stack =
+      'Error: db exploded\n    at internal (/srv/app/secret.ts:1:1)';
+    mocks.key.mockRejectedValue(error);
+    vi.spyOn(console, 'error').mockImplementation(() => undefined);
+    const response = await createPOST()(request());
+    const body = await response.text();
+    expect(response.status).toBe(500);
+    expect(body).not.toContain('secret.ts');
+    expect(body).not.toContain('db exploded');
+  });
 });

@@ -1293,20 +1293,16 @@ When integrating AI features, implement proper error handling to account for:
 3. Invalid user input
 4. Exceeded token limits
 
-Example error handling pattern used in Tuturuuu:
+Example error handling pattern used in Tuturuuu. Log the details on the server and return a generic message: never put `error.stack` or the raw error message in the response body, because it discloses file paths and internals to the caller.
 
 ```typescript
 try {
   // AI SDK code here
 } catch (error) {
-  console.log(error);
+  console.error('AI request failed', error);
   return NextResponse.json(
-    {
-      message: `## Edge API Failure\nCould not complete the request. Please view the **Stack trace** below.\n\`\`\`bash\n${(error as Error)?.stack || 'No stack trace available'}`,
-    },
-    {
-      status: 200,
-    }
+    { message: 'Could not complete the request. Please try again.' },
+    { status: 500 }
   );
 }
 ```
