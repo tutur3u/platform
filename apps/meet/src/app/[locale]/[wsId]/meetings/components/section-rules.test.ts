@@ -71,10 +71,7 @@ describe('Meetings home section rules', () => {
       ],
       NOW
     );
-    expect(result.upcoming.map((entry) => entry.id)).toEqual([
-      'soon',
-      'later',
-    ]);
+    expect(result.upcoming.map((entry) => entry.id)).toEqual(['soon', 'later']);
     expect(result.past.map((entry) => entry.id)).toEqual([
       'yesterday',
       'last-week',
