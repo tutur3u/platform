@@ -152,19 +152,26 @@ jobs:
           NEXT_PUBLIC_SUPABASE_URL: ${{ secrets.PRODUCTION_SUPABASE_URL }}
           SUPABASE_SECRET_KEY: ${{ secrets.PRODUCTION_SUPABASE_SECRET_KEY }}
         run: bun packages/meet-core/scripts/verify-schema.ts
-      - name: Configure shared realtime signing identity
-        env:
-          MEET_REALTIME_TOKEN_SECRET: ${{ secrets.MEET_REALTIME_TOKEN_SECRET }}
-        run: bun apps/parley/scripts/configure-realtime.ts
+      # MEET_REALTIME_TOKEN_SECRET is published with the code below, so only the
+      # names this workflow does not supply must already exist.
       - name: Verify required runtime secret names
         run: |
           bun x --no-install wrangler secret list --name tuturuuu-parley --format json > "$RUNNER_TEMP/parley-secrets.json"
-          jq -e --argjson required '["MEET_REALTIME_TOKEN_SECRET","NEXT_PUBLIC_SUPABASE_URL","NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY","SUPABASE_SECRET_KEY"]' 'map(.name) as $names | all($required[]; . as $name | $names | index($name) != null)' "$RUNNER_TEMP/parley-secrets.json" > /dev/null
+          jq -e --argjson required '["NEXT_PUBLIC_SUPABASE_URL","NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY","SUPABASE_SECRET_KEY"]' 'map(.name) as $names | all($required[]; . as $name | $names | index($name) != null)' "$RUNNER_TEMP/parley-secrets.json" > /dev/null
       - name: Wait for shared provider runtime
         run: bun apps/parley/scripts/verify-provider.ts
+      # Code and the realtime signing identity publish as ONE version. A separate
+      # secret write first would deploy a secret-only version of the previous
+      # code that stays live if the code upload then fails.
       - name: Deploy verified Worker
         working-directory: apps/parley
-        run: bun run deploy:cloudflare -- --cacheChunkSize 1 --message "$GITHUB_SHA"
+        env:
+          MEET_REALTIME_TOKEN_SECRET: ${{ secrets.MEET_REALTIME_TOKEN_SECRET }}
+        run: |
+          secrets_file="$RUNNER_TEMP/parley-secrets-upload.json"
+          trap 'rm -f "$secrets_file"' EXIT
+          node ../../scripts/ci/write-worker-secrets-file.mjs "$secrets_file" MEET_REALTIME_TOKEN_SECRET
+          bun run deploy:cloudflare -- --cacheChunkSize 1 --message "$GITHUB_SHA" --secrets-file "$secrets_file"
       - name: Verify rendered canonical route
         run: |
           route_status=$(curl --fail --retry 5 --retry-delay 5 --max-time 30 \

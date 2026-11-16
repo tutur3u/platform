@@ -159,14 +159,14 @@
       "digest": "d69c48ecdd7092efd00e91c3a95ea607ca8303d5c5f7839b7f583228fe79fa04"
     },
     ".github/workflows/devbox-control-cloudflare.yaml": {
-      "lines": 13,
-      "uses": 18,
+      "lines": 12,
+      "uses": 16,
       "gap": "do-publication-rehearsal",
       "admitted": {
-        "decision": "https://github.com/tutur3u/platform/pull/6487",
-        "reason": "REV-6487-4: qualify real Vite metadata while preserving DO publication validation"
+        "decision": "https://github.com/tutur3u/platform/pull/8443",
+        "reason": "Atomic release: code and runtime secrets publish as one version with deploy --secrets-file; the separate secret bulk write is removed (1 fewer Wrangler line)."
       },
-      "digest": "4c6ff97c6fb7094a52e42757868d6c78f550f049b11add0f570bc9c02c0a3578"
+      "digest": "4977dd032e461a7ec30b4c5e6f87722203348a7e474a723987296e399215a460"
     },
     ".github/workflows/drive-cloudflare-artifact.yaml": {
       "lines": 1,
@@ -279,14 +279,14 @@
       "digest": "ecd7cdb3ecc244b40fc2d16e412b82af9287148a79307beba4a0758f3e070257"
     },
     ".github/workflows/meet-cloudflare.yaml": {
-      "lines": 33,
-      "uses": 37,
+      "lines": 35,
+      "uses": 39,
       "gap": "void-wave1-publication",
       "admitted": {
-        "decision": "https://github.com/tutur3u/platform/pull/8394",
-        "reason": "#8283 separated Meet fixture and production artifact admission (3 more Wrangler lines naming the emitted config and metrics setting)."
+        "decision": "https://github.com/tutur3u/platform/pull/8443",
+        "reason": "Atomic Meet pair release: a failed or cancelled release restores signaling and frontend to the versions pinned before the first write and proves the pair (2 more Wrangler lines: versions deploy and deployments list)."
       },
-      "digest": "92cbc96ca3d93aded1b58d7f77789bd16aa4dc5c73601747c4bd8678125be5aa"
+      "digest": "5f4ba1b4fd21b3095fb87a18c4da5c905a973b2bd7bf2af3b719dda1c6214c89"
     },
     ".github/workflows/mind-cloudflare.yaml": {
       "lines": 6,
@@ -1189,16 +1189,6 @@
       },
       "digest": "b1f6f53eef189d678604d27afca10f69be7484fd77a65facd2606dfc27be3c50"
     },
-    "apps/lettin/scripts/configure-identity.ts": {
-      "lines": 1,
-      "uses": 1,
-      "gap": "opennext-adapter",
-      "admitted": {
-        "decision": "https://github.com/tutur3u/platform/pull/6485",
-        "reason": "REV-6485-1..7: reviewed token/digest scanner, explicit settings, and fixture harness corrections."
-      },
-      "digest": "5ffdcc88ac8e5cb6681e91b5b99b9a85dc4a95461ab2b1704f9964c19095a04a"
-    },
     "apps/lettin/wrangler.jsonc": {
       "lines": 2,
       "uses": 2,
@@ -1630,16 +1620,6 @@
         "reason": "Atomic Oxfmt formatting and replacement of trailing formatter commands. Wrangler targets, flags, bindings and invocation counts are preserved."
       },
       "digest": "c30a371f8a83a533219e7896e4c4ddfb612820564130e0ea7be9df68ae75e332"
-    },
-    "apps/parley/scripts/configure-realtime.ts": {
-      "lines": 1,
-      "uses": 1,
-      "gap": "opennext-adapter",
-      "admitted": {
-        "decision": "https://github.com/tutur3u/platform/pull/6485",
-        "reason": "REV-6485-1..7: reviewed token/digest scanner, explicit settings, and fixture harness corrections."
-      },
-      "digest": "d74417773f1b71014c5cebea5eedad445d536e323dd2c16b92d46de3e21627b4"
     },
     "apps/parley/test-fixtures/built-worker/verify.mjs": {
       "lines": 2,

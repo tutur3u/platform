@@ -288,6 +288,81 @@ for (const [changedPath, expectedSelection] of [
   });
 }
 
+const secretSyncTargets = [
+  { productionWorkflow: 'lettin-cloudflare.yaml' },
+  { productionWorkflow: 'parley-cloudflare.yaml' },
+  { productionWorkflow: 'devbox-control-cloudflare.yaml' },
+  { productionWorkflow: 'cron-control-cloudflare.yaml' },
+];
+
+test('commit-driven selection fails closed for Cloudflare Workers without a success marker', () => {
+  const rootDir = createFixtureRoot();
+  initializeGitRepo(rootDir);
+  const headSha = commitFile(
+    rootDir,
+    'apps/lettin/src/app/page.tsx',
+    'export default function Page() {}\n',
+    'runtime change after a failed release'
+  );
+  const decisions = resolveFixtureTargets({
+    baseSha: '',
+    headSha,
+    rootDir,
+    targets: secretSyncTargets,
+    workflowMarkers: {},
+    includeEvidence: true,
+  });
+  assert.equal(decisions.length, secretSyncTargets.length);
+  for (const decision of decisions) {
+    assert.equal(decision.shouldRun, false, decision.workflowName);
+    assert.equal(decision.held, true, decision.workflowName);
+    assert.equal(
+      decision.changeResult.source,
+      'deployment-marker-unavailable',
+      decision.workflowName
+    );
+    assert.match(decision.reason, /fails closed/u);
+  }
+});
+
+test('a recorded success marker restores commit-driven Cloudflare selection', () => {
+  const rootDir = createFixtureRoot();
+  const baseSha = initializeGitRepo(rootDir);
+  const headSha = commitFile(
+    rootDir,
+    'apps/lettin/src/app/page.tsx',
+    'export default function Page() {}\n',
+    'runtime change after a recorded release'
+  );
+  const decisions = resolveFixtureTargets({
+    baseSha,
+    headSha,
+    rootDir,
+    targets: [{ productionWorkflow: 'lettin-cloudflare.yaml' }],
+    workflowMarkers: { 'lettin-cloudflare.yaml': { sha: baseSha } },
+  });
+  assert.deepEqual(decisions, [
+    { shouldRun: true, workflowName: 'lettin-cloudflare.yaml' },
+  ]);
+});
+
+test('operator dispatch remains an explicit admission without Cloudflare markers', () => {
+  const rootDir = createFixtureRoot();
+  const headSha = initializeGitRepo(rootDir);
+  const decisions = resolveFixtureTargets({
+    baseSha: '',
+    headSha,
+    rootDir,
+    eventName: 'workflow_dispatch',
+    targets: secretSyncTargets,
+    workflowMarkers: {},
+  });
+  assert.deepEqual(
+    decisions.map(({ shouldRun }) => shouldRun),
+    secretSyncTargets.map(() => true)
+  );
+});
+
 test('control recovery without deployment markers still fails open safely', () => {
   const rootDir = createFixtureRoot();
   const headSha = initializeGitRepo(rootDir);

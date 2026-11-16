@@ -655,6 +655,9 @@ jobs:
             bun x --no-install wrangler deployments list --name "$worker" --json > "$RUNNER_TEMP/meet-$service-deployments-raw.json"
             jq -e '[.[] | {id, created_on: .metadata.created_on}] | select(length > 0) | select(all(.[]; (.id | type == "string") and (.created_on | type == "string")))' "$RUNNER_TEMP/meet-$service-versions-raw.json" > "$RUNNER_TEMP/meet-rollback-$service-versions.json"
             jq -e '[.[] | {id, created_on, versions}] | select(length > 0) | select(all(.[]; (.id | type == "string") and (.versions | length > 0)))' "$RUNNER_TEMP/meet-$service-deployments-raw.json" > "$RUNNER_TEMP/meet-rollback-$service-deployments.json"
+            # Pin the exact serving version before any write: the active
+            # deployment must be one version at 100%, or nothing is published.
+            jq -e '[.[] | select(.created_on | type == "string")] | max_by(.created_on) | select(.versions | length == 1) | .versions[0] | select(.percentage == 100) | .version_id | select(type == "string" and test("^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$")) | {versionId: .}' "$RUNNER_TEMP/meet-$service-deployments-raw.json" > "$RUNNER_TEMP/meet-rollback-$service-target.json"
           done
       - name: Retain rollback version evidence
         uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7
@@ -664,12 +667,14 @@ jobs:
           retention-days: 7
           if-no-files-found: error
       - name: Deploy signaling before the frontend
+        id: signaling
         run: |
           test -n "$CLOUDFLARE_API_TOKEN" || { echo 'Missing Cloudflare deployment credential'; exit 1; }
           bun x --no-install wrangler deploy -c apps/meet-realtime/wrangler.jsonc --message "$GITHUB_SHA"
       # Void 1.1.12 CLI rebuilds/wraps after build gates and rejects targeted
       # placement with pinned secrets. Publish its qualified SDK output unchanged.
       - name: Deploy the verified frontend
+        id: frontend
         working-directory: apps/meet
         timeout-minutes: 10
         run: |
@@ -689,6 +694,24 @@ jobs:
         run: |
           bun apps/meet-realtime/src/integration-check.ts
           bun apps/meet-realtime/src/room-controls-check.ts
+      # Signaling and the frontend release as a pair. Once any production write
+      # was attempted, a later failure restores BOTH to the versions pinned
+      # before the first write (frontend first), then proves the pair. The job
+      # stays failed and records no success marker.
+      - name: Restore the previous Meet pair after a failed release
+        if: (failure() || cancelled()) && steps.signaling.outcome != 'skipped'
+        timeout-minutes: 10
+        run: |
+          status=0
+          for service in frontend realtime; do
+            worker=tuturuuu-meet
+            if [ "$service" = realtime ]; then worker=tuturuuu-meet-realtime; fi
+            target=$(jq -r '.versionId' "$RUNNER_TEMP/meet-rollback-$service-target.json")
+            bun x --no-install wrangler versions deploy "$target@100%" --name "$worker" --message "Restore pair after failed $GITHUB_SHA" --yes || status=1
+            bun x --no-install wrangler deployments list --name "$worker" --json > "$RUNNER_TEMP/meet-restored-$service-deployments.json" || status=1
+            jq -e --arg target "$target" '[.[] | select(.created_on | type == "string")] | max_by(.created_on) | (.versions | length == 1) and .versions[0].version_id == $target and .versions[0].percentage == 100' "$RUNNER_TEMP/meet-restored-$service-deployments.json" > /dev/null || { echo "Meet $service is not serving its pinned version"; status=1; }
+          done
+          exit "$status"
       - name: Record successful Cloudflare deployment
         continue-on-error: true
         env:
