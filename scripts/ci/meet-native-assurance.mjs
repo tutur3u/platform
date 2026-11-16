@@ -1,7 +1,9 @@
 export const ASSURANCE_ORIGIN = 'https://meet-ci.supabase.invalid';
 export const ASSURANCE_SUBJECT = 'be0e8f2e-c239-4e40-a1f4-d6881938cae4';
 export const ASSURANCE_PATH = `/auth/v1/admin/users/${ASSURANCE_SUBJECT}`;
-export const ASSURANCE_READS = 8;
+// Two reads come from the cookie-bearing logout CSRF refusal, which runs last.
+export const CSRF_LOGOUT_ASSURANCE_READS = 2;
+export const ASSURANCE_READS = 10;
 const account = Object.freeze({
   id: ASSURANCE_SUBJECT,
   aud: 'authenticated',

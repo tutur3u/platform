@@ -204,7 +204,7 @@ outcome. Pure controls live in `ssr-diagnostics.test.ts`,
 Meet's finite `meet-emitted-v1` graph uses two public
 `unstable_startWorker` handles and one fresh private registry. Both the original
 and restored artifact gates run `node scripts/ci/meet-native-launcher.mjs
-"$SOURCE_SHA"`. Each launcher runs all eleven original cases and three HTTP hook
+"$SOURCE_SHA"`. Each launcher runs all twelve original cases and three HTTP hook
 controls twice, with distinct private homes, registries, temporary roots and
 nonpersistent local storage. The existing three-minute CI watchdog and 30000 ms
 per-case deadlines stay in force; duration fit and real binding resolution need
@@ -292,7 +292,7 @@ routing must not change to conceal an unexplained HTTP500.
 
 The HTTP fixture claim covers trusted repository app/probe code through each
 configured role's outbound hook. App allows one exact bounded central API forward
-and the eight exact synthetic account-assurance reads above; probe allows none.
+and the ten exact synthetic account-assurance reads above; probe allows none.
 Live controls exercise app default, app named-entrypoint and
 probe hooks, including private/loopback/lookalike targets. Hash-pinned SDK generated
 helpers, assets/registry/control-plane traffic and Node control paths are trusted

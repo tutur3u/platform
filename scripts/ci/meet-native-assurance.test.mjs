@@ -1,5 +1,6 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
+import { ASSURANCE_READS } from './meet-native-assurance.mjs';
 import { createMeetPolicy } from './meet-native-policy.mjs';
 
 const key = 'a'.repeat(72);
@@ -11,9 +12,9 @@ function request(target = url, options = {}) {
     ...options,
   });
 }
-test('exact synthetic account assurance remains distinct from central forwarding and bounded to eight reads', async () => {
+test('exact synthetic account assurance remains distinct from central forwarding and bounded to its read budget', async () => {
   const policy = createMeetPolicy('app', { assuranceKey: key });
-  for (let i = 0; i < 8; i++) {
+  for (let i = 0; i < ASSURANCE_READS; i++) {
     const response = await policy.handler(request());
     assert.equal(response.status, 200);
     const user = await response.json();
@@ -24,10 +25,10 @@ test('exact synthetic account assurance remains distinct from central forwarding
       tuturuuu_required_mfa: { required: false },
     });
   }
-  assert.equal(policy.assurance.length, 8);
+  assert.equal(policy.assurance.length, ASSURANCE_READS);
   assert.equal(policy.forwarded.length, 0);
   assert.equal((await policy.handler(request())).status, 599);
-  assert.equal(policy.assurance.length, 8);
+  assert.equal(policy.assurance.length, ASSURANCE_READS);
   assert.equal(policy.unexpected.length, 1);
 });
 for (const [name, make] of [

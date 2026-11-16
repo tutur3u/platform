@@ -7,6 +7,7 @@ import { after, before, test as nodeTest } from 'node:test';
 import {
   ASSURANCE_READS,
   ASSURANCE_SUBJECT,
+  CSRF_LOGOUT_ASSURANCE_READS,
 } from './meet-native-assurance.mjs';
 import { createMeetGraph } from './meet-native-graph.mjs';
 import { readMeetRegistry } from './meet-native-graph-files.mjs';
@@ -494,7 +495,10 @@ test(
     assert.equal(response.status, 599);
     assert.equal(await response.text(), 'Unexpected fixture egress');
     assert.equal(forwarded.length, before);
-    assert.equal(policies.app.assurance.length, ASSURANCE_READS);
+    assert.equal(
+      policies.app.assurance.length,
+      ASSURANCE_READS - CSRF_LOGOUT_ASSURANCE_READS
+    );
     policies.app.assertControls(1);
     policies.probe.assertControls(0);
   }
@@ -543,7 +547,10 @@ test(
       await response.text(),
       'Room meeting AI is unavailable. Use Private Mira.'
     );
-    assert.equal(policies.app.assurance.length, ASSURANCE_READS);
+    assert.equal(
+      policies.app.assurance.length,
+      ASSURANCE_READS - CSRF_LOGOUT_ASSURANCE_READS
+    );
     assert.equal(policies.probe.assurance.length, 0);
     policies.app.assertControls(count);
     policies.probe.assertControls(PROBE_NEGATIVES);
@@ -554,6 +561,41 @@ test(
       'Room meeting AI is unavailable. Use Private Mira.'
     );
     policies.app.assertControls(count);
+    assert.deepEqual(unexpected, []);
+  }
+);
+
+test(
+  'native local auth handler refuses a signed-in logout POST without a trusted Origin',
+  {
+    timeout: 30000,
+  },
+  async () => {
+    const forwardedBefore = forwarded.length;
+    const assuranceBefore = policies.app.assurance.length;
+    const response = await fetchWorker('/api/auth/logout', {
+      method: 'POST',
+      headers: { Accept: 'application/json', Cookie: signedCookie() },
+    });
+    assert.equal(response.status, 403);
+    await response.text();
+    const cookies = response.headers.getSetCookie();
+    for (const name of [
+      'tuturuuu_app_session',
+      'tuturuuu_web_app_session',
+      'tuturuuu_app_session_refresh',
+      'tuturuuu_web_app_session_refresh',
+    ]) {
+      assert.ok(!cookies.some((value) => value.startsWith(`${name}=`)), name);
+    }
+    assert.equal(response.headers.get('access-control-allow-origin'), null);
+    assert.equal(forwarded.length, forwardedBefore);
+    // The API guard's account assurance runs before the handler's origin check.
+    assert.equal(
+      policies.app.assurance.length - assuranceBefore,
+      CSRF_LOGOUT_ASSURANCE_READS
+    );
+    assert.equal(policies.app.assurance.length, ASSURANCE_READS);
     assert.deepEqual(unexpected, []);
   }
 );
