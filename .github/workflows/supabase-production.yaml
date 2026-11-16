@@ -23,6 +23,14 @@ on:
         description: "Expected production project reference required for migration recovery"
         type: string
         default: ""
+      user_ok_record_id:
+        description: "USER OK record id for this exact production migration"
+        type: string
+        required: true
+      migration_patch_id:
+        description: "Stable 40-hex patch-id of the migration diff this OK covers"
+        type: string
+        required: true
 concurrency:
   group: ${{ ((github.event_name == 'workflow_dispatch' && github.ref == 'refs/heads/production') || (github.event_name == 'workflow_run' && github.event.workflow_run.conclusion == 'success' && github.event.workflow_run.head_repository.full_name == github.repository && ((github.event.workflow_run.name == 'Production Deployment Planner' && github.event.workflow_run.head_branch == 'production' && (github.event.workflow_run.event == 'push' || github.event.workflow_run.event == 'workflow_dispatch')) || (github.event.workflow_run.name == 'Supabase Staging Migration' && github.event.workflow_run.head_branch == 'main' && (github.event.workflow_run.event == 'push' || github.event.workflow_run.event == 'workflow_run' || github.event.workflow_run.event == 'workflow_dispatch'))))) && 'supabase-production-migration' || format('supabase-production-migration-ignored-{0}', github.run_id) }}
   cancel-in-progress: false
@@ -653,11 +661,11 @@ jobs:
     name: Migrate production database
     timeout-minutes: 30
     runs-on: ubuntu-latest
-    # Branch-restricted (main for workflow_run, production for dispatch) so
-    # other branches cannot read the Management API token or DB password.
+    # Production dispatch only. A staging success may still evaluate
+    # prerequisites, but it cannot open this environment or run db push.
     environment: supabase-production-migrations
     needs: [evaluate-prerequisites]
-    if: needs.evaluate-prerequisites.outputs.trusted_trigger == 'true' && needs.evaluate-prerequisites.outputs.should_deploy == 'true'
+    if: github.event_name == 'workflow_dispatch' && github.ref == 'refs/heads/production' && inputs.user_ok_record_id != '' && inputs.migration_patch_id != '' && needs.evaluate-prerequisites.outputs.trusted_trigger == 'true' && needs.evaluate-prerequisites.outputs.should_deploy == 'true'
     permissions:
       contents: read
       deployments: write
@@ -676,9 +684,21 @@ jobs:
           PRODUCTION_PROJECT_ID: ${{ secrets.PRODUCTION_PROJECT_ID }}
           ALLOW_CLOUDFLARE_VERIFICATION_FAILURES: ${{ inputs.allow_cloudflare_verification_failures }}
           EXPECTED_PROJECT_REF: ${{ inputs.expected_project_ref }}
+          USER_OK_RECORD_ID: ${{ inputs.user_ok_record_id }}
+          MIGRATION_PATCH_ID: ${{ inputs.migration_patch_id }}
           SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
           SUPABASE_DB_PASSWORD: ${{ secrets.PRODUCTION_DB_PASSWORD }}
         run: |
+          if ! [[ "${USER_OK_RECORD_ID:-}" =~ ^[A-Za-z0-9][A-Za-z0-9._:-]{7,127}$ ]]; then
+            echo "::error::Production migration requires a USER-OK record id."
+            exit 1
+          fi
+          if ! [[ "${MIGRATION_PATCH_ID:-}" =~ ^[0-9a-f]{40}$ ]]; then
+            echo "::error::Production migration requires the 40-hex migration patch-id."
+            exit 1
+          fi
+          echo "USER-OK record id: $USER_OK_RECORD_ID"
+          echo "Migration patch-id: $MIGRATION_PATCH_ID"
           if [ "$ALLOW_CLOUDFLARE_VERIFICATION_FAILURES" = "true" ] && \
              { [ -z "$EXPECTED_PROJECT_REF" ] || [ "$PRODUCTION_PROJECT_ID" != "$EXPECTED_PROJECT_REF" ]; }; then
             echo "::error::Migration recovery production project binding does not match."

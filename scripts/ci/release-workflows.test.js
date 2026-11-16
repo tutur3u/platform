@@ -1060,7 +1060,7 @@ test('Supabase production migration requires production platform deploy and succ
   assert.match(evaluateJob, /ref: \$\{\{ github\.sha \}\}/);
   assert.match(
     deployJob,
-    /needs: \[evaluate-prerequisites\][\s\S]*if: needs\.evaluate-prerequisites\.outputs\.trusted_trigger == 'true' && needs\.evaluate-prerequisites\.outputs\.should_deploy == 'true'/
+    /needs: \[evaluate-prerequisites\][\s\S]*if: github\.event_name == 'workflow_dispatch' && github\.ref == 'refs\/heads\/production' && inputs\.user_ok_record_id != '' && inputs\.migration_patch_id != '' && needs\.evaluate-prerequisites\.outputs\.trusted_trigger == 'true' && needs\.evaluate-prerequisites\.outputs\.should_deploy == 'true'/
   );
   assert.match(
     deployJob,
