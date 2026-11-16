@@ -59,7 +59,16 @@ const longName = ws(
   { tier: 'ENTERPRISE' }
 );
 const hidden = ws('hidden', 'Hidden loft', { tier: 'ENTERPRISE' });
-const ALL = [other, hidden, longName, guest, recent, pinned, internal, personal];
+const ALL = [
+  other,
+  hidden,
+  longName,
+  guest,
+  recent,
+  pinned,
+  internal,
+  personal,
+];
 
 function visibility(overrides = {}) {
   return {
@@ -108,9 +117,7 @@ function renderPicker(
 
 const row = (id: string) => screen.getByTestId(`workspace-picker-row-${id}`);
 const choices = () =>
-  Array.from(
-    document.querySelectorAll<HTMLElement>('[data-workspace-choice]')
-  );
+  Array.from(document.querySelectorAll<HTMLElement>('[data-workspace-choice]'));
 const choiceIds = () => choices().map((item) => item.dataset.workspaceId);
 // Whitespace-insensitive grid template, as the style engine may reformat it.
 const columns = (value: HTMLElement | string) =>
@@ -267,7 +274,9 @@ describe('WorkspacePickerDialog row layout', () => {
 describe('WorkspacePickerDialog row actions', () => {
   it('shows active pin and default states and keeps their semantics', () => {
     const { props } = renderPicker();
-    const pin = screen.getByRole('button', { name: 'picker_pin: Pinned studio' });
+    const pin = screen.getByRole('button', {
+      name: 'picker_pin: Pinned studio',
+    });
     expect(pin).toHaveAttribute('aria-pressed', 'true');
     expect(pin).toHaveAttribute('data-on', 'true');
     const unpinned = screen.getByRole('button', {
@@ -385,7 +394,9 @@ describe('WorkspacePickerDialog compact sheet', () => {
         .getAllByRole('menuitem')
         .map((item) => item.textContent)
     ).toEqual(['picker_set_default', 'hide_workspace']);
-    fireEvent.click(within(menu).getByRole('menuitem', { name: 'picker_set_default' }));
+    fireEvent.click(
+      within(menu).getByRole('menuitem', { name: 'picker_set_default' })
+    );
     expect(props.onDefault).toHaveBeenCalledWith('own');
     expect(props.onSelect).not.toHaveBeenCalled();
     await waitFor(() => expect(screen.queryByRole('menu')).toBeNull());

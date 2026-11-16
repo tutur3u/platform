@@ -95,7 +95,8 @@ export function WorkspaceRow({
         </MetaItem>
       );
   }
-  if (hidden) meta.push(<MetaItem key="hidden">{t('picker_state_hidden')}</MetaItem>);
+  if (hidden)
+    meta.push(<MetaItem key="hidden">{t('picker_state_hidden')}</MetaItem>);
   const label = [
     name,
     tier,
