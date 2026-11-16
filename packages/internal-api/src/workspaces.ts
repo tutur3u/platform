@@ -170,14 +170,21 @@ export async function getWorkspace(
   );
 }
 
+/** Deletes a workspace; `confirmation` is the workspace name the user typed. */
 export async function deleteWorkspace(
   workspaceId: string,
+  confirmation: string,
   options?: InternalApiClientOptions
 ) {
   const client = getInternalApiClient(options);
   return client.json<void>(
     `/api/workspaces/${encodePathSegment(workspaceId)}`,
-    { method: 'DELETE', cache: 'no-store' }
+    {
+      method: 'DELETE',
+      cache: 'no-store',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ confirmation }),
+    }
   );
 }
 

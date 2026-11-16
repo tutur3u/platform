@@ -39,18 +39,27 @@ export default function Security({ workspace }: Props) {
   const [confirmationInput, setConfirmationInput] = useState('');
 
   const deletion = useMutation({
-    mutationFn: (wsId: string) => deleteWorkspace(wsId),
+    mutationFn: ({
+      confirmation,
+      wsId,
+    }: {
+      confirmation: string;
+      wsId: string;
+    }) => deleteWorkspace(wsId, confirmation),
     retry: false,
     onSuccess: () => {
       router.push('/');
       router.refresh();
     },
     onError: (error) => {
+      const code = error instanceof InternalApiError ? error.code : undefined;
       toast.error(t('delete_failed'), {
         description:
-          error instanceof InternalApiError
-            ? error.message
-            : t('delete_failed_description'),
+          code === 'subscription_active'
+            ? t('delete_subscription_active')
+            : code === 'confirmation_mismatch'
+              ? t('delete_confirmation_mismatch')
+              : t('delete_failed_description'),
       });
     },
   });
@@ -72,7 +81,7 @@ export default function Security({ workspace }: Props) {
     )
       return;
 
-    deletion.mutate(workspace.id);
+    deletion.mutate({ wsId: workspace.id, confirmation: confirmationInput });
   };
 
   const isDeleteDisabled = confirmationInput !== workspace?.name || isDeleting;

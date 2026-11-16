@@ -1,5 +1,3 @@
-import { isPolarSubscriptionEnded } from '@tuturuuu/payment/polar/errors';
-import { createPolarClient } from '@tuturuuu/payment/polar/server';
 import { createAdminClient } from '@tuturuuu/supabase/next/server';
 import {
   loadTaskBoardGuestSharesForWorkspace,
@@ -19,6 +17,7 @@ import { NextResponse } from 'next/server';
 import { z } from 'zod';
 import { CURRENT_USER_APP_SESSION_AUTH } from '@/legacy-api-routes/v1/users/me/session-auth';
 import { withSessionAuth } from '@/lib/api-auth';
+import { deleteWorkspaceForActor } from '@/lib/workspaces/workspace-deletion';
 
 const UpdateWorkspaceSchema = z.object({
   handle: z
@@ -194,87 +193,28 @@ export const PUT = withSessionAuth<{ wsId: string }>(
 );
 
 export const DELETE = withSessionAuth<{ wsId: string }>(
-  async (request, { supabase }, { wsId: id }) => {
+  async (request, { supabase, user }, { wsId: id }) => {
     const wsId = await normalizeWorkspaceId(id, supabase);
+    const body = (await request.json().catch(() => null)) as {
+      confirmation?: unknown;
+    } | null;
 
-    const { data: wsData } = await supabase
-      .from('workspaces')
-      .select('personal')
-      .eq('id', wsId)
-      .single();
-
-    if (wsData?.personal) {
-      return NextResponse.json(
-        { message: 'Personal workspaces cannot be manually deleted.' },
-        { status: 403 }
-      );
-    }
-
-    const permissions = await getPermissions({ wsId, request });
-
-    if (!permissions?.containsPermission('manage_workspace_settings')) {
-      return NextResponse.json(
-        { message: 'Insufficient permissions to delete workspace' },
-        { status: 403 }
-      );
-    }
-
-    const preventDeletion = await verifyHasSecrets(wsId, [
-      'PREVENT_WORKSPACE_DELETION',
-    ]);
-
-    if (preventDeletion) {
-      return NextResponse.json(
-        { message: 'Workspace deletion is disabled for this workspace.' },
-        { status: 403 }
-      );
-    }
-
-    try {
-      const { data: subscription, error: subError } = await supabase
-        .from('workspace_subscriptions')
-        .select('polar_subscription_id')
-        .eq('ws_id', wsId)
-        .neq('status', 'canceled')
-        .maybeSingle();
-
-      if (subError?.code === 'PGRST116') {
-        return NextResponse.json(
-          { message: 'Workspace subscription state conflicts with deletion' },
-          { status: 409 }
-        );
+    const result = await deleteWorkspaceForActor(
+      { actorId: user.id, workspaceId: wsId, confirmation: body?.confirmation },
+      {
+        supabase,
+        // Service role: caller RLS hides subscriptions from an actor who
+        // lacks manage_subscription, which would skip the 409.
+        subscriptionClient: () =>
+          Promise.resolve(createAdminClient({ noCookie: true })),
+        getPermissions: () => getPermissions({ wsId, request }),
+        isDeletionPrevented: () =>
+          verifyHasSecrets(wsId, ['PREVENT_WORKSPACE_DELETION']),
+        audit: (event) => console.info('[audit] workspace.delete', event),
       }
-      if (subError) throw subError;
+    );
 
-      if (subscription?.polar_subscription_id) {
-        const polar = createPolarClient();
-        try {
-          await polar.subscriptions.revoke({
-            id: subscription.polar_subscription_id,
-          });
-        } catch (error) {
-          if (!isPolarSubscriptionEnded(error)) throw error;
-        }
-      }
-    } catch (error) {
-      console.error('Workspace subscription cleanup failed:', error);
-      return NextResponse.json(
-        { message: 'Failed to clean up workspace subscription' },
-        { status: 502 }
-      );
-    }
-
-    const { error } = await supabase.from('workspaces').delete().eq('id', wsId);
-
-    if (error) {
-      console.error('Workspace deletion failed', { code: error.code });
-      return NextResponse.json(
-        { message: 'Error deleting workspace' },
-        { status: 500 }
-      );
-    }
-
-    return NextResponse.json({ message: 'success' });
+    return NextResponse.json(result.body, { status: result.status });
   },
   { allowAppSessionAuth: CURRENT_USER_APP_SESSION_AUTH }
 );

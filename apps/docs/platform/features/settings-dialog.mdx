@@ -244,6 +244,27 @@ These rules cover the active Web and Inventory handlers. Regression tests live
 beside the settings, encryption, referral, asset, crawler, backfill, export and
 exchange-rate handlers, and in Users Core's referral-discount route tests.
 
+### Workspace deletion
+
+Scope: `DELETE /api/workspaces/{wsId}` and the delete card in workspace
+settings (Web and Workspace). Both use `getWorkspaceDeletionBlock` from
+`@tuturuuu/utils/workspace-deletion`, so the card shows exactly when the API
+would allow the request; the server still decides.
+
+Deletion requires `manage_workspace_security`. It is refused for the root
+workspace, personal workspaces and workspaces with the
+`PREVENT_WORKSPACE_DELETION` secret (403, one generic message). A workspace with
+a paid subscription that is not canceled returns 409 until the subscription is
+canceled in Billing. The request body must carry `confirmation`, the workspace
+name or handle the user typed (400 otherwise). Each attempt logs a structured
+`[audit] workspace.delete` event with the actor, workspace and outcome.
+
+Exception: when the last member leaves, the members route deletes the orphaned
+workspace (never root or personal workspaces).
+
+Regression coverage: `packages/utils/src/workspace-deletion.test.ts` and
+`apps/web/src/legacy-api-routes/workspaces/[wsId]/route.test.ts`.
+
 ## Layout and contrast
 
 Scope: every settings dialog built on `SatelliteSettingsDialogShell`, plus the Nova dialog. Applies to light and dark themes on web and satellite apps. Mobile Flutter settings follow [mobile settings shell](/platform/features/mobile-settings-shell) instead.

@@ -4,7 +4,7 @@ import { deleteWorkspace } from './workspaces';
 
 describe('deleteWorkspace', () => {
   it.each([200, 204])(
-    'sends one encoded DELETE and accepts HTTP %s',
+    'sends one encoded DELETE with the confirmation and accepts HTTP %s',
     async (status) => {
       const fetch = vi
         .fn<typeof globalThis.fetch>()
@@ -14,14 +14,18 @@ describe('deleteWorkspace', () => {
             { status }
           )
         );
-      await deleteWorkspace('workspace/id', {
+      await deleteWorkspace('workspace/id', 'Acme', {
         baseUrl: 'https://fixture.example',
         fetch,
       });
       expect(fetch).toHaveBeenCalledOnce();
       expect(fetch).toHaveBeenCalledWith(
         'https://fixture.example/api/workspaces/workspace%2Fid',
-        expect.objectContaining({ method: 'DELETE', cache: 'no-store' })
+        expect.objectContaining({
+          method: 'DELETE',
+          cache: 'no-store',
+          body: JSON.stringify({ confirmation: 'Acme' }),
+        })
       );
     }
   );
@@ -33,7 +37,7 @@ describe('deleteWorkspace', () => {
       })
     );
     await expect(
-      deleteWorkspace('workspace', {
+      deleteWorkspace('workspace', 'Acme', {
         baseUrl: 'https://fixture.example',
         fetch,
       })
@@ -49,7 +53,7 @@ describe('deleteWorkspace', () => {
       .fn<typeof globalThis.fetch>()
       .mockResolvedValue(new Response('Gateway timeout', { status: 504 }));
     await expect(
-      deleteWorkspace('workspace', {
+      deleteWorkspace('workspace', 'Acme', {
         baseUrl: 'https://fixture.example',
         fetch,
       })

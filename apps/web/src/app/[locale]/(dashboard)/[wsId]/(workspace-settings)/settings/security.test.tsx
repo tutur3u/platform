@@ -73,15 +73,32 @@ describe('Workspace deletion failure UI', () => {
 
   it.each([
     [
-      new InternalApiError('Error deleting workspace', 500),
-      'Error deleting workspace',
+      new InternalApiError(
+        'Cancel the workspace subscription before deleting it.',
+        409,
+        'subscription_active'
+      ),
+      'delete_subscription_active',
     ],
     [
       new InternalApiError(
-        'Workspace deletion is disabled for this workspace.',
-        403
+        'Type the workspace name to confirm.',
+        400,
+        'confirmation_mismatch'
       ),
-      'Workspace deletion is disabled for this workspace.',
+      'delete_confirmation_mismatch',
+    ],
+    [
+      new InternalApiError(
+        'This workspace cannot be deleted.',
+        403,
+        'forbidden'
+      ),
+      'delete_failed_description',
+    ],
+    [
+      new InternalApiError('Error deleting workspace', 500),
+      'delete_failed_description',
     ],
     [new TypeError('Failed to fetch'), 'delete_failed_description'],
   ])(
@@ -119,7 +136,10 @@ describe('Workspace deletion failure UI', () => {
     renderSecurity();
     confirmDeletion();
     await waitFor(() =>
-      expect(mocks.deleteWorkspace).toHaveBeenCalledWith(workspace.id)
+      expect(mocks.deleteWorkspace).toHaveBeenCalledWith(
+        workspace.id,
+        workspace.name
+      )
     );
     const action = within(screen.getByRole('alertdialog')).getByRole('button', {
       name: 'deleting...',

@@ -1,21 +1,21 @@
-import {
-  AlreadyCanceledSubscription,
-  PolarError,
-} from '@tuturuuu/payment/polar/errors';
 import { NextRequest } from 'next/server';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
-type DeleteWorkspaceResult = {
-  error: { code: string; message: string; details: string } | null;
-};
+const ROOT_WORKSPACE_ID = '00000000-0000-0000-0000-000000000000';
+const WORKSPACE_ID = '00000000-0000-0000-0000-000000000011';
 
 const mocks = vi.hoisted(() => ({
-  createPolarClient: vi.fn(),
-  subscription: vi.fn(),
-  revoke: vi.fn(),
   getPermissions: vi.fn(),
   normalizeWorkspaceId: vi.fn(),
   verifyHasSecrets: vi.fn(),
+  createAdminClient: vi.fn(),
+  subscriptionCount: vi.fn(),
+  adminSubscriptionSelect: vi.fn(),
+  adminSubscriptionEq: vi.fn(),
+  adminFrom: vi.fn(),
+  workspaceRow: vi.fn(),
+  deleteEq: vi.fn(),
+  from: vi.fn(),
   withSessionAuth: vi.fn(
     (
       handler: (
@@ -42,14 +42,6 @@ const mocks = vi.hoisted(() => ({
         );
     }
   ),
-  from: vi.fn(),
-  deleteWorkspace: vi.fn(() => ({
-    eq: vi.fn(async (): Promise<DeleteWorkspaceResult> => ({ error: null })),
-  })),
-}));
-
-vi.mock('@tuturuuu/payment/polar/server', () => ({
-  createPolarClient: mocks.createPolarClient,
 }));
 
 vi.mock('@tuturuuu/utils/workspace-helper', () => ({
@@ -66,83 +58,91 @@ vi.mock('@/lib/api-auth', () => ({
   withSessionAuth: mocks.withSessionAuth,
 }));
 
-const WORKSPACE_ID = '00000000-0000-0000-0000-000000000011';
+vi.mock('@tuturuuu/supabase/next/server', () => ({
+  createAdminClient: (...args: unknown[]) => mocks.createAdminClient(...args),
+}));
 
-function createDeleteRequest() {
-  return new NextRequest(`http://localhost/api/workspaces/${WORKSPACE_ID}`, {
-    method: 'DELETE',
-  });
+const permissionsWith = (...granted: string[]) => ({
+  containsPermission: (permission: string) => granted.includes(permission),
+});
+
+/** Caller RLS hides billing rows from an actor without manage_subscription. */
+function callerHiddenSubscription() {
+  return {
+    select: vi.fn(() => ({
+      eq: vi.fn(() => ({
+        neq: vi.fn(() => ({
+          not: vi.fn(async () => ({ count: 0, error: null })),
+        })),
+      })),
+    })),
+  };
 }
 
-function mockWorkspaceLookup(personal = false) {
+function mockTables() {
   mocks.from.mockImplementation((table: string) => {
     if (table === 'workspaces') {
       return {
         select: vi.fn(() => ({
-          eq: vi.fn(() => ({
-            single: vi.fn(() =>
-              Promise.resolve({
-                data: { personal },
-                error: null,
-              })
-            ),
-          })),
+          eq: vi.fn(() => ({ maybeSingle: mocks.workspaceRow })),
         })),
-        delete: mocks.deleteWorkspace,
+        delete: vi.fn(() => ({ eq: mocks.deleteEq })),
       };
     }
-
     if (table === 'workspace_subscriptions') {
-      return {
-        select: vi.fn(() => ({
-          eq: vi.fn(() => ({
-            neq: vi.fn(() => ({
-              maybeSingle: mocks.subscription,
-            })),
-          })),
-        })),
-      };
+      return callerHiddenSubscription();
     }
-
     throw new Error(`Unexpected table: ${table}`);
+  });
+  mocks.adminFrom.mockImplementation((table: string) => {
+    if (table !== 'workspace_subscriptions') {
+      throw new Error(`Unexpected admin table: ${table}`);
+    }
+    return {
+      select: mocks.adminSubscriptionSelect.mockImplementation(() => ({
+        eq: mocks.adminSubscriptionEq.mockImplementation(() => ({
+          neq: vi.fn(() => ({ not: mocks.subscriptionCount })),
+        })),
+      })),
+    };
+  });
+}
+
+function deleteRequest(body?: unknown) {
+  return new NextRequest(`http://localhost/api/workspaces/${WORKSPACE_ID}`, {
+    method: 'DELETE',
+    ...(body === undefined ? {} : { body: JSON.stringify(body) }),
+  });
+}
+
+async function callDelete(wsId: string, body?: unknown) {
+  mocks.normalizeWorkspaceId.mockResolvedValue(wsId);
+  const route = await import('./route');
+  return route.DELETE(deleteRequest(body), {
+    params: Promise.resolve({ wsId }),
   });
 }
 
 describe('legacy workspace detail route DELETE', () => {
+  let audit: ReturnType<typeof vi.spyOn>;
+
   beforeEach(() => {
     vi.resetModules();
     vi.clearAllMocks();
-    mocks.normalizeWorkspaceId.mockResolvedValue(WORKSPACE_ID);
-    mocks.verifyHasSecrets.mockResolvedValue(false);
-    mocks.subscription.mockResolvedValue({ data: null, error: null });
-    mocks.createPolarClient.mockReturnValue({
-      subscriptions: { revoke: mocks.revoke },
+    mockTables();
+    mocks.workspaceRow.mockResolvedValue({
+      data: { id: WORKSPACE_ID, name: 'Acme', handle: 'acme', personal: false },
+      error: null,
     });
+    mocks.getPermissions.mockResolvedValue(
+      permissionsWith('manage_workspace_security')
+    );
+    mocks.verifyHasSecrets.mockResolvedValue(false);
+    mocks.createAdminClient.mockResolvedValue({ from: mocks.adminFrom });
+    mocks.subscriptionCount.mockResolvedValue({ count: 0, error: null });
+    mocks.deleteEq.mockResolvedValue({ error: null });
+    audit = vi.spyOn(console, 'info').mockImplementation(() => {});
   });
-
-  it.each(['lookup', 'revoke'])(
-    'stops deletion when subscription %s fails',
-    async (failure) => {
-      mockWorkspaceLookup(false);
-      mocks.getPermissions.mockResolvedValue({
-        containsPermission: () => true,
-      });
-      mocks.subscription.mockResolvedValue(
-        failure === 'lookup'
-          ? { data: null, error: new Error('lookup failed') }
-          : { data: { polar_subscription_id: 'subscription' }, error: null }
-      );
-      mocks.revoke.mockRejectedValue(new Error('revoke failed'));
-      const log = vi.spyOn(console, 'error').mockImplementation(() => {});
-      const route = await import('./route');
-      const response = await route.DELETE(createDeleteRequest(), {
-        params: Promise.resolve({ wsId: WORKSPACE_ID }),
-      });
-      expect(response.status).toBe(502);
-      expect(mocks.deleteWorkspace).not.toHaveBeenCalled();
-      log.mockRestore();
-    }
-  );
 
   it('opts GET, PUT, and DELETE into app-session auth', async () => {
     await import('./route');
@@ -155,180 +155,171 @@ describe('legacy workspace detail route DELETE', () => {
     ).toBe(true);
   });
 
-  it('denies deletion without manage_workspace_settings', async () => {
-    mockWorkspaceLookup(false);
-    mocks.getPermissions.mockResolvedValue({
-      containsPermission: () => false,
-    });
+  it('deletes when permitted and confirmed, and records an audit event', async () => {
+    const response = await callDelete(WORKSPACE_ID, { confirmation: 'Acme' });
 
-    const route = await import('./route');
-    const response = await route.DELETE(createDeleteRequest(), {
-      params: Promise.resolve({ wsId: WORKSPACE_ID }),
-    });
-
-    expect(response.status).toBe(403);
-    await expect(response.json()).resolves.toEqual({
-      message: 'Insufficient permissions to delete workspace',
-    });
-    expect(mocks.deleteWorkspace).not.toHaveBeenCalled();
+    expect(response.status).toBe(200);
+    expect(mocks.deleteEq).toHaveBeenCalledWith('id', WORKSPACE_ID);
+    expect(audit).toHaveBeenCalledWith(
+      '[audit] workspace.delete',
+      expect.objectContaining({
+        actorId: 'user-1',
+        outcome: 'deleted',
+        workspaceId: WORKSPACE_ID,
+      })
+    );
   });
 
-  it('denies deletion when PREVENT_WORKSPACE_DELETION is enabled', async () => {
-    mockWorkspaceLookup(false);
-    mocks.getPermissions.mockResolvedValue({
-      containsPermission: (permission: string) =>
-        permission === 'manage_workspace_settings',
-    });
-    mocks.verifyHasSecrets.mockResolvedValue(true);
-
-    const route = await import('./route');
-    const response = await route.DELETE(createDeleteRequest(), {
-      params: Promise.resolve({ wsId: WORKSPACE_ID }),
-    });
+  it('refuses a role with only manage_workspace_settings', async () => {
+    mocks.getPermissions.mockResolvedValue(
+      permissionsWith('manage_workspace_settings')
+    );
+    mocks.subscriptionCount.mockResolvedValue({ count: 1, error: null });
+    const response = await callDelete(WORKSPACE_ID, { confirmation: 'Acme' });
 
     expect(response.status).toBe(403);
     await expect(response.json()).resolves.toEqual({
-      message: 'Workspace deletion is disabled for this workspace.',
+      code: 'forbidden',
+      message: 'This workspace cannot be deleted.',
     });
+    expect(mocks.deleteEq).not.toHaveBeenCalled();
+  });
+
+  it('refuses the root workspace', async () => {
+    mocks.workspaceRow.mockResolvedValue({
+      data: {
+        id: ROOT_WORKSPACE_ID,
+        name: 'Tuturuuu',
+        handle: 'tuturuuu',
+        personal: false,
+      },
+      error: null,
+    });
+    const response = await callDelete(ROOT_WORKSPACE_ID, {
+      confirmation: 'Tuturuuu',
+    });
+
+    expect(response.status).toBe(403);
+    expect(mocks.deleteEq).not.toHaveBeenCalled();
+  });
+
+  it('refuses a personal workspace', async () => {
+    mocks.workspaceRow.mockResolvedValue({
+      data: { id: WORKSPACE_ID, name: 'Acme', handle: null, personal: true },
+      error: null,
+    });
+    const response = await callDelete(WORKSPACE_ID, { confirmation: 'Acme' });
+
+    expect(response.status).toBe(403);
+    expect(mocks.deleteEq).not.toHaveBeenCalled();
+  });
+
+  it('refuses when PREVENT_WORKSPACE_DELETION is set', async () => {
+    mocks.verifyHasSecrets.mockResolvedValue(true);
+    const response = await callDelete(WORKSPACE_ID, { confirmation: 'Acme' });
+
+    expect(response.status).toBe(403);
     expect(mocks.verifyHasSecrets).toHaveBeenCalledWith(WORKSPACE_ID, [
       'PREVENT_WORKSPACE_DELETION',
     ]);
-    expect(mocks.deleteWorkspace).not.toHaveBeenCalled();
+    expect(mocks.deleteEq).not.toHaveBeenCalled();
   });
 
-  it('deletes the workspace when permission and secret checks pass', async () => {
-    mockWorkspaceLookup(false);
-    mocks.getPermissions.mockResolvedValue({
-      containsPermission: (permission: string) =>
-        permission === 'manage_workspace_settings',
-    });
+  it('asks to cancel an active paid subscription first', async () => {
+    mocks.subscriptionCount.mockResolvedValue({ count: 1, error: null });
+    const response = await callDelete(WORKSPACE_ID, { confirmation: 'Acme' });
 
-    const route = await import('./route');
-    const response = await route.DELETE(createDeleteRequest(), {
-      params: Promise.resolve({ wsId: WORKSPACE_ID }),
-    });
-
-    expect(response.status).toBe(200);
-    await expect(response.json()).resolves.toEqual({ message: 'success' });
-    expect(mocks.getPermissions).toHaveBeenCalledWith({
-      wsId: WORKSPACE_ID,
-      request: expect.any(NextRequest),
-    });
-    expect(mocks.deleteWorkspace).toHaveBeenCalled();
-  });
-  it('returns a failure and logs only the database code when deletion fails', async () => {
-    mockWorkspaceLookup(false);
-    mocks.getPermissions.mockResolvedValue({ containsPermission: () => true });
-    mocks.deleteWorkspace.mockImplementationOnce(() => ({
-      eq: vi.fn(async (): Promise<DeleteWorkspaceResult> => ({
-        error: {
-          code: '23503',
-          message: 'private fixture detail',
-          details: 'private fixture record',
-        },
-      })),
-    }));
-    const log = vi.spyOn(console, 'error').mockImplementation(() => {});
-    try {
-      const route = await import('./route');
-      const response = await route.DELETE(createDeleteRequest(), {
-        params: Promise.resolve({ wsId: WORKSPACE_ID }),
-      });
-      expect(response.status).toBe(500);
-      await expect(response.json()).resolves.toEqual({
-        message: 'Error deleting workspace',
-      });
-      expect(log).toHaveBeenCalledExactlyOnceWith('Workspace deletion failed', {
-        code: '23503',
-      });
-    } finally {
-      log.mockRestore();
-    }
-  });
-
-  function providerError(status: number) {
-    const meta = {
-      response: new Response('', { status }),
-      request: new Request('https://example.test'),
-      body: '',
-    };
-    return status === 403
-      ? new AlreadyCanceledSubscription(
-          { error: 'AlreadyCanceledSubscription', detail: 'already canceled' },
-          meta
-        )
-      : new PolarError('private provider detail', meta);
-  }
-
-  it.each([404, 403])(
-    'deletes a workspace after terminal Polar status %s',
-    async (status) => {
-      mockWorkspaceLookup(false);
-      mocks.getPermissions.mockResolvedValue({
-        containsPermission: () => true,
-      });
-      mocks.subscription.mockResolvedValue({
-        data: { polar_subscription_id: 'subscription' },
-        error: null,
-      });
-      mocks.revoke.mockRejectedValue(providerError(status));
-      const route = await import('./route');
-      const response = await route.DELETE(createDeleteRequest(), {
-        params: Promise.resolve({ wsId: WORKSPACE_ID }),
-      });
-      expect(response.status).toBe(200);
-      expect(mocks.deleteWorkspace).toHaveBeenCalledOnce();
-    }
-  );
-
-  it('returns a non-leaky 409 for multiple subscription rows', async () => {
-    mockWorkspaceLookup(false);
-    mocks.getPermissions.mockResolvedValue({ containsPermission: () => true });
-    mocks.subscription.mockResolvedValue({
-      data: null,
-      error: {
-        code: 'PGRST116',
-        details: 'private rows',
-        message: 'private detail',
-      },
-    });
-    const route = await import('./route');
-    const response = await route.DELETE(createDeleteRequest(), {
-      params: Promise.resolve({ wsId: WORKSPACE_ID }),
-    });
     expect(response.status).toBe(409);
-    expect(await response.json()).toEqual({
-      message: 'Workspace subscription state conflicts with deletion',
+    await expect(response.json()).resolves.toMatchObject({
+      code: 'subscription_active',
     });
-    expect(mocks.deleteWorkspace).not.toHaveBeenCalled();
-    expect(mocks.revoke).not.toHaveBeenCalled();
+    expect(mocks.deleteEq).not.toHaveBeenCalled();
   });
 
-  it.each([providerError(503), new TypeError('network'), new Error('timeout')])(
-    'does not delete a workspace after a provider failure',
-    async (error) => {
-      mockWorkspaceLookup(false);
-      mocks.getPermissions.mockResolvedValue({
-        containsPermission: () => true,
-      });
-      mocks.subscription.mockResolvedValue({
-        data: { polar_subscription_id: 'subscription' },
-        error: null,
-      });
-      mocks.revoke.mockRejectedValue(error);
-      const log = vi.spyOn(console, 'error').mockImplementation(() => {});
-      try {
-        const route = await import('./route');
-        const response = await route.DELETE(createDeleteRequest(), {
-          params: Promise.resolve({ wsId: WORKSPACE_ID }),
-        });
-        expect(response.status).toBe(502);
-        expect(mocks.deleteWorkspace).not.toHaveBeenCalled();
-      } finally {
-        log.mockRestore();
-      }
+  it('returns 409 for a security manager without manage_subscription when a paid subscription is active', async () => {
+    const permissions = permissionsWith('manage_workspace_security');
+    expect(permissions.containsPermission('manage_subscription')).toBe(false);
+    mocks.getPermissions.mockResolvedValue(permissions);
+    mocks.subscriptionCount.mockResolvedValue({ count: 1, error: null });
+    const response = await callDelete(WORKSPACE_ID, { confirmation: 'Acme' });
+
+    expect(response.status).toBe(409);
+    await expect(response.json()).resolves.toEqual({
+      code: 'subscription_active',
+      message: 'Cancel the workspace subscription before deleting it.',
+    });
+    expect(mocks.deleteEq).not.toHaveBeenCalled();
+    expect(mocks.createAdminClient).toHaveBeenCalledWith({ noCookie: true });
+    expect(mocks.adminFrom).toHaveBeenCalledWith('workspace_subscriptions');
+    expect(mocks.adminSubscriptionSelect).toHaveBeenCalledWith('id', {
+      count: 'exact',
+      head: true,
+    });
+    expect(mocks.adminSubscriptionEq).toHaveBeenCalledWith(
+      'ws_id',
+      WORKSPACE_ID
+    );
+    expect(mocks.from.mock.calls.map((call) => call[0])).not.toContain(
+      'workspace_subscriptions'
+    );
+    expect(mocks.subscriptionCount).toHaveBeenCalledWith(
+      'polar_subscription_id',
+      'is',
+      null
+    );
+  });
+
+  it.each([undefined, {}, { confirmation: 'acme team' }])(
+    'rejects a missing or wrong confirmation (%j)',
+    async (body) => {
+      const response = await callDelete(WORKSPACE_ID, body);
+
+      expect(response.status).toBe(400);
+      expect(mocks.deleteEq).not.toHaveBeenCalled();
     }
   );
+
+  it('returns the same generic denial for every forbidden reason', async () => {
+    mocks.verifyHasSecrets.mockResolvedValue(true);
+    const prevented = await (
+      await callDelete(WORKSPACE_ID, { confirmation: 'Acme' })
+    ).json();
+    mocks.verifyHasSecrets.mockResolvedValue(false);
+    mocks.getPermissions.mockResolvedValue(null);
+    const denied = await (
+      await callDelete(WORKSPACE_ID, { confirmation: 'Acme' })
+    ).json();
+
+    expect(prevented).toEqual(denied);
+  });
+
+  it('stops without deleting when the subscription lookup fails', async () => {
+    mocks.subscriptionCount.mockResolvedValue({
+      count: null,
+      error: { code: 'XX000' },
+    });
+    const log = vi.spyOn(console, 'error').mockImplementation(() => {});
+    const response = await callDelete(WORKSPACE_ID, { confirmation: 'Acme' });
+
+    expect(response.status).toBe(500);
+    expect(mocks.deleteEq).not.toHaveBeenCalled();
+    log.mockRestore();
+  });
+
+  it('logs only the database code when deletion fails', async () => {
+    mocks.deleteEq.mockResolvedValue({
+      error: { code: '23503', message: 'secret detail', details: 'row data' },
+    });
+    const log = vi.spyOn(console, 'error').mockImplementation(() => {});
+    const response = await callDelete(WORKSPACE_ID, { confirmation: 'Acme' });
+
+    expect(response.status).toBe(500);
+    expect(log).toHaveBeenCalledWith('Workspace deletion failed', {
+      code: '23503',
+    });
+    expect(JSON.stringify(await response.json())).not.toContain('secret');
+    log.mockRestore();
+  });
 });
 
 describe('legacy workspace handle reservations', () => {

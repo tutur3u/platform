@@ -3,7 +3,12 @@ import { Button } from '@tuturuuu/ui/button';
 import FeatureSummary from '@tuturuuu/ui/custom/feature-summary';
 import { Separator } from '@tuturuuu/ui/separator';
 import { ROOT_WORKSPACE_ID } from '@tuturuuu/utils/constants';
+import { createAdminClient } from '@tuturuuu/supabase/next/server';
 import { getCurrentUser } from '@tuturuuu/utils/user-helper';
+import {
+  getWorkspaceDeletionBlock,
+  lookupActivePaidWorkspaceSubscription,
+} from '@tuturuuu/utils/workspace-deletion';
 import {
   getPermissions,
   getSecrets,
@@ -78,6 +83,22 @@ export default async function WorkspaceSettingsPage({ params }: Props) {
     !isRootWorkspace &&
     !preventWorkspaceDeletion &&
     containsPermission('manage_workspace_security');
+  // The delete card follows the same rule the DELETE API enforces. The
+  // subscription head-count uses the service role, like the API: caller RLS
+  // hides subscriptions from members without manage_subscription.
+  const { active: hasActivePaidSubscription } =
+    await lookupActivePaidWorkspaceSubscription(
+      await createAdminClient({ noCookie: true }),
+      wsId
+    );
+  const canDeleteWorkspace =
+    getWorkspaceDeletionBlock({
+      workspaceId: wsId,
+      personal: Boolean(ws.personal),
+      permissions,
+      deletionPrevented: preventWorkspaceDeletion,
+      hasActivePaidSubscription,
+    }) === null;
   const rootPermissions = await getPermissions({
     wsId: ROOT_WORKSPACE_ID,
   });
@@ -161,7 +182,7 @@ export default async function WorkspaceSettingsPage({ params }: Props) {
           />
         ) : null}
 
-        {id !== 'personal' && enableSecurity && <Security workspace={ws} />}
+        {canDeleteWorkspace && <Security workspace={ws} />}
         {id !== 'personal' && (
           <RemoveYourself workspace={ws} currentUserId={user?.id} />
         )}
