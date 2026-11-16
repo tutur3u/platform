@@ -6,13 +6,10 @@ import {
   createRootResponsePolicy,
 } from '@tuturuuu/start-bridge/response-policy';
 import { defineBridgeAppConfig } from '@tuturuuu/start-bridge/start/app-config';
+import { hiveApexMounts } from './cloudflare/apex-mount';
 
 export default defineBridgeAppConfig({
-  mounts: {
-    rootHosts: ['hive.tuturuuu.com'],
-    mountHosts: [],
-    unknownHost: 'reject',
-  },
+  mounts: hiveApexMounts,
   // Robots (the app's seo-policy.json allowlist on its canonical host),
   // framing, sniffing, referrer and private caching on every response; only
   // GET/HEAD static files keep their own caching.

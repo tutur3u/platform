@@ -183,7 +183,7 @@ jobs:
         TUTURUUU_NOINDEX=1
       format-paths: >-
         apps/hive/src/start-bridge apps/hive/src/routes apps/hive/src/router.tsx apps/hive/src/start.ts apps/hive/cloudflare apps/hive/vite.config.mts apps/hive/void.config.ts apps/hive/tsconfig.json apps/hive/package.json apps/hive/start-bridge.routes.json
-      unit-command: bun run test && node --test cloudflare/deployment-profile.test.mjs
+      unit-command: bun run test && node --test cloudflare/deployment-profile.test.mjs cloudflare/apex-mount.test.mjs
   hive-cutover-artifact:
     needs: [check-ci, affected-gate]
     if: ${{ (needs.affected-gate.outputs.run == 'true' && needs.check-ci.outputs.should_run == 'true') && (github.event_name != 'pull_request' || contains(github.event.pull_request.labels.*.name, 'ready-for-ci')) }}
