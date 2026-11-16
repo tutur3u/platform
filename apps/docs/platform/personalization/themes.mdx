@@ -89,7 +89,15 @@ default. The sync reads both account values through the shared `user-config`
 queries, so it mounts inside each app's `QueryClientProvider` and does not
 retry a failed read. Where the provider knows nobody is signed in it passes
 `account={false}`: the device values still apply, no query client is needed and
-no account value is requested. Regression coverage lives in
+no account value is requested. So that a page opens in Sorbet rather than
+switching after hydration, `SorbetPrePaintScript` (in `@tuturuuu/ui`) is mounted
+beside each app's theme provider, outside any Suspense boundary. It is a static
+inline script that reads only this device's stored values, sets only
+allowlisted attributes on `<html>`, and takes the response's CSP nonce where an
+app requires one; `sorbet-pre-paint.test.tsx` checks that it applies exactly
+what the runtime applies for valid, invalid and oversized stored values.
+The native Start apps (Calendar, Tasks, Mail, Meet) do not mount it, so there
+Sorbet applies after hydration. Regression coverage lives in
 `sorbet-ui.test.ts`, `sorbet-theme.test.ts`, `experimental-ui-sync.test.tsx` and
 `settings/experimental-ui-setting.test.tsx` under
 `packages/ui/src/components/ui/custom/`, and `packages/ui/src/sorbet-presets.test.ts`

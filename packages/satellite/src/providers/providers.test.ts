@@ -1,5 +1,11 @@
 import { readFileSync } from 'node:fs';
-import type { ReactElement, ReactNode } from 'react';
+import {
+  Children,
+  isValidElement,
+  type ReactElement,
+  type ReactNode,
+  Suspense,
+} from 'react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 const mocks = vi.hoisted(() => ({ connection: vi.fn(), session: vi.fn() }));
@@ -15,13 +21,16 @@ vi.mock('@tuturuuu/utils/launchable-apps', () => ({
 vi.mock('next-intl', () => ({ NextIntlClientProvider: () => null }));
 vi.mock('next-themes', () => ({ ThemeProvider: () => null }));
 
+import { SorbetPrePaintScript } from '@tuturuuu/ui/custom/sorbet-pre-paint';
 import { Providers } from './providers';
 
 type ChildrenElement = ReactElement<{ children: ReactNode }>;
 
 function verifiedProvider() {
   const theme = Providers({ children: 'content', currentApp: 'tasks' });
-  const suspense = theme.props.children as ChildrenElement;
+  const suspense = Children.toArray(theme.props.children).find(
+    (child) => isValidElement(child) && child.type === Suspense
+  ) as ChildrenElement;
   const intl = suspense.props.children as ChildrenElement;
   return intl.props.children as ReactElement<{
     children: ReactNode;
@@ -42,6 +51,19 @@ async function runVerifiedProvider() {
 const source = readFileSync('src/providers/providers.tsx', 'utf8');
 
 describe('satellite providers', () => {
+  it('renders the Sorbet pre-paint script outside the Suspense boundary', () => {
+    const theme = Providers({ children: 'content', currentApp: 'tasks' });
+    const children = Children.toArray(theme.props.children);
+    const scriptIndex = children.findIndex(
+      (child) => isValidElement(child) && child.type === SorbetPrePaintScript
+    );
+    const suspenseIndex = children.findIndex(
+      (child) => isValidElement(child) && child.type === Suspense
+    );
+    expect(scriptIndex).toBeGreaterThanOrEqual(0);
+    expect(scriptIndex).toBeLessThan(suspenseIndex);
+  });
+
   beforeEach(() => {
     vi.resetAllMocks();
     mocks.connection.mockResolvedValue(undefined);

@@ -1,3 +1,4 @@
+import { SorbetPrePaintScript } from '@tuturuuu/ui/custom/sorbet-pre-paint';
 import {
   getLaunchableAppByTitle,
   type LaunchableAppSlug,
@@ -43,6 +44,7 @@ export function Providers({
       // see https://github.com/pacocoursey/next-themes?tab=readme-ov-file#using-with-cloudflare-rocket-loader
       // for more details
     >
+      <SorbetPrePaintScript />
       {/*
         ThemeProvider stays ABOVE the Suspense boundary on purpose. next-themes
         injects a no-flash <script>; when that script lives inside a Suspense

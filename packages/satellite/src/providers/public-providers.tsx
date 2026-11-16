@@ -1,6 +1,7 @@
 'use client';
 
 import { ExperimentalUiSync } from '@tuturuuu/ui/custom/experimental-ui-sync';
+import { SorbetPrePaintScript } from '@tuturuuu/ui/custom/sorbet-pre-paint';
 import { ThemeProvider } from 'next-themes';
 import type { ReactNode } from 'react';
 
@@ -16,6 +17,7 @@ export function PublicSatelliteProviders({
       enableSystem
       scriptProps={{ 'data-cfasync': 'false' }}
     >
+      <SorbetPrePaintScript />
       <ExperimentalUiSync account={false} />
       {children}
     </ThemeProvider>

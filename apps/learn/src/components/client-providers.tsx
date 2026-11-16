@@ -3,6 +3,7 @@
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { GlobalCommandLauncher } from '@tuturuuu/satellite/command-launcher';
 import { ExperimentalUiSync } from '@tuturuuu/ui/custom/experimental-ui-sync';
+import { SorbetPrePaintScript } from '@tuturuuu/ui/custom/sorbet-pre-paint';
 import { WorkspaceVisibilityProvider } from '@tuturuuu/ui/hooks/use-workspace-visibility';
 import { ThemeProvider } from 'next-themes';
 import { type ReactNode, useState } from 'react';
@@ -27,6 +28,7 @@ export function ClientProviders({
 
   return (
     <ThemeProvider attribute="class" defaultTheme="system" enableSystem>
+      <SorbetPrePaintScript />
       <QueryClientProvider client={queryClient}>
         <ExperimentalUiSync account={Boolean(actorId)} />
         {actorId ? (

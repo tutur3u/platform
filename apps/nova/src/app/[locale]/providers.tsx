@@ -1,3 +1,4 @@
+import { SorbetPrePaintScript } from '@tuturuuu/ui/custom/sorbet-pre-paint';
 import { Toaster } from '@tuturuuu/ui/sonner';
 import { ThemeProvider } from 'next-themes';
 import type { ReactNode } from 'react';
@@ -11,6 +12,7 @@ export function Providers({ children }: { children: ReactNode }) {
       themes={['system', 'light', 'dark']}
       enableSystem
     >
+      <SorbetPrePaintScript />
       <ClientProviders>{children}</ClientProviders>
       <Toaster />
     </ThemeProvider>
