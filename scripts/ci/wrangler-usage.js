@@ -140,9 +140,14 @@ function validAdmission(admitted) {
     !Array.isArray(admitted) &&
     isDeepStrictEqual(Object.keys(admitted).sort(), ['decision', 'reason']) &&
     typeof admitted.decision === 'string' &&
-    /^https:\/\/github\.com\/tutur3u\/platform\/pull\/[1-9]\d*$/.test(
+    // D353: direct ff-only main pushes have no PR, so a full 40-hex commit URL
+    // on this repository is an equally durable decision reference.
+    (/^https:\/\/github\.com\/tutur3u\/platform\/pull\/[1-9]\d*$/.test(
       admitted.decision
-    ) &&
+    ) ||
+      /^https:\/\/github\.com\/tutur3u\/platform\/commit\/[0-9a-f]{40}$/.test(
+        admitted.decision
+      )) &&
     typeof admitted.reason === 'string' &&
     admitted.reason.trim().length > 0
   );
@@ -155,7 +160,7 @@ function validateAllowlistTransition(previous, current) {
     const admissionValid = validAdmission(entry.admitted);
     if (entry.admitted !== undefined && !admissionValid)
       problems.push(
-        `${file}: admitted needs a repository PR decision and reason`
+        `${file}: admitted needs a repository PR or commit decision and reason`
       );
     if (!previous) continue;
     const before = previous.files[file];

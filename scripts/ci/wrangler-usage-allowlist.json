@@ -1706,20 +1706,10 @@
       "uses": 1,
       "gap": "void-wave1-publication",
       "admitted": {
-        "decision": "https://github.com/tutur3u/platform/pull/7438",
-        "reason": "Playground follows the Wave 1 Start + Void template (codemod): Void rebuilds on deploy, so the exact Void-emitted Worker is qualified with the pinned Wrangler adapter (generated .void-wrangler.jsonc ignored, built-Worker harness, dependency pin). Publication stays held; remove with the Apps gap when cf deploy --prebuilt parity is proven."
+        "decision": "https://github.com/tutur3u/platform/commit/c4a91e626f1cea56b91fce8210e6fdfb1a88d944",
+        "reason": "Inlined the pinned require('wrangler').unstable_startWorker built-Worker harness (test-only, no publication); counts unchanged; remove with the Apps gap when cf deploy --prebuilt parity is proven."
       },
-      "digest": "48ca5c86212153d8453634f1858ce3959303f9191bbf8c6c7da6cc0663c4fc20"
-    },
-    "apps/playground/cloudflare/staff-auth.runtime.mjs": {
-      "lines": 1,
-      "uses": 1,
-      "gap": "void-wave1-publication",
-      "admitted": {
-        "decision": "https://github.com/tutur3u/platform/pull/7438",
-        "reason": "Playground staff-auth runtime fixture qualifies the exact Void-emitted Worker with the pinned Wrangler adapter (same as the generated gate); test-only, no publication. Remove with the Apps gap when cf deploy --prebuilt parity is proven."
-      },
-      "digest": "92ac9f70d750cdcea067d2eee2f6f7bc2aafb114a4b0d1c61907d2683c4b2ed0"
+      "digest": "e139bd3b3961b60527b5aa98419fb40cde9679450f4c651769242014bfec1e29"
     },
     "apps/playground/package.json": {
       "lines": 1,
@@ -2655,6 +2645,26 @@
         "decision": "https://github.com/tutur3u/platform/pull/8228",
         "reason": "Proposal for synthetic local qualification only; Security acceptance pending. Disposable abuse-guard config and local SDK denial/cleanup controls; no provider access."
       }
+    },
+    "scripts/ci/mail-exact-sha-publisher.mjs": {
+      "lines": 2,
+      "uses": 2,
+      "gap": "security-path-classification",
+      "admitted": {
+        "decision": "https://github.com/tutur3u/platform/commit/d58b74795cc6e6423805fa1f67a2f45fec9cf786",
+        "reason": "Name-only `.wrangler` match so the exact-SHA Vercel fallback rejects Cloudflare/Void artifacts; no CLI/SDK invocation; landed direct-to-main under D353."
+      },
+      "digest": "fd2e53ca24788fde1171366dd2b7e0e043c7a6809e84d22c8cee2fc04278dee9"
+    },
+    "scripts/ci/mail-exact-sha-publisher.test.mjs": {
+      "lines": 1,
+      "uses": 1,
+      "gap": "security-path-classification",
+      "admitted": {
+        "decision": "https://github.com/tutur3u/platform/commit/d58b74795cc6e6423805fa1f67a2f45fec9cf786",
+        "reason": "Name-only `.wrangler` match so the exact-SHA Vercel fallback rejects Cloudflare/Void artifacts; no CLI/SDK invocation; landed direct-to-main under D353."
+      },
+      "digest": "9b8445641c679cde67292a92a4c416d996a3fa51ab5a3fc2d327039161eef2be"
     },
     "scripts/ci/meet-build-metadata.test.js": {
       "lines": 14,

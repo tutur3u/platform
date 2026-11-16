@@ -299,6 +299,26 @@ test('allowlist transitions require structured, fresh admission for expansion or
     { ...admission(), decision: 'https://example.com/6485' },
     { ...admission(), decision: 'https://github.com/other/repo/pull/6485' },
     { ...admission(), decision: 'https://github.com/tutur3u/platform/pull/0' },
+    {
+      ...admission(),
+      decision: 'https://github.com/tutur3u/platform/commit/c4a91e626f',
+    },
+    {
+      ...admission(),
+      decision: `https://github.com/other/repo/commit/${'a'.repeat(40)}`,
+    },
+    {
+      ...admission(),
+      decision: `https://github.com/tutur3u/platform/tree/${'a'.repeat(40)}`,
+    },
+    {
+      ...admission(),
+      decision: `https://github.com/tutur3u/platform/blob/${'a'.repeat(40)}/run.js`,
+    },
+    {
+      ...admission(),
+      decision: `https://github.com/tutur3u/platform/commit/${'A'.repeat(40)}`,
+    },
     { ...admission(), extra: true },
   ]) {
     const next = copy();
@@ -321,6 +341,19 @@ test('allowlist transitions require structured, fresh admission for expansion or
     admitted: admission(),
   };
   assert.deepEqual(validateAllowlistTransition(baseline, added), []);
+  // D353 direct-to-main changes cite the full commit URL instead of a PR.
+  const committed = copy();
+  committed.files['new.js'] = {
+    lines: 1,
+    uses: 1,
+    gap: 'old',
+    admitted: {
+      decision:
+        'https://github.com/tutur3u/platform/commit/c4a91e626f1cea56b91fce8210e6fdfb1a88d944',
+      reason: 'direct-to-main change under D353',
+    },
+  };
+  assert.deepEqual(validateAllowlistTransition(baseline, committed), []);
   const grandfathered = copy();
   delete grandfathered.files['run.js'].admitted;
   assert.deepEqual(validateAllowlistTransition(baseline, grandfathered), []);
