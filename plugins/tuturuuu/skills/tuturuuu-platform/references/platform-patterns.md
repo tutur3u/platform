@@ -468,6 +468,14 @@ Rules:
 
 ## Satellite Apps (contacts, pay, tasks, …)
 
+- Consumer apps' Tailwind automatic detection does not scan
+  `packages/satellite`. A class that appears only there (typically an
+  arbitrary value such as `h-[min(680px,calc(100dvh-1.5rem))]`) is silently
+  omitted from every app's CSS unless `packages/ui/src/globals.css` registers
+  that directory with `@source`. The global command launcher overflowed the
+  viewport for this reason. When satellite UI depends on such a class, add a
+  scoped `@source` and extend `packages/ui/src/globals-sources.test.ts`.
+
 - Cold satellite unit checks should select workspace `bun` source exports in both
   Vitest `resolve.conditions` and `ssr.resolve.conditions`. Keep existing source
   aliases for dist-only packages and inline `next-intl` where its extensionless
