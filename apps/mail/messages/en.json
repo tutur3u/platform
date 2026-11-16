@@ -641,6 +641,18 @@
     "send": "Send",
     "send_anyway": "Send anyway",
     "send_failed": "Could not send message",
+    "sender_contact": {
+      "contact": "Contact",
+      "loading": "Looking up visible profiles…",
+      "member": "Workspace member",
+      "message_sender": "Sender on this message",
+      "no_visible_match": "No visible exact matches in this search.",
+      "open": "Open in Contacts",
+      "retry": "Try again",
+      "show": "Show profile for {sender}",
+      "title": "Workspace profiles",
+      "unavailable": "Profile lookup is unavailable."
+    },
     "sender_name": "Sender name",
     "sender_name_managed": "Personal mailboxes use the display name from your Tuturuuu profile. Update your profile to change this sender name everywhere.",
     "sending": "Sending",

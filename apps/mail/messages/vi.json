@@ -641,6 +641,18 @@
     "send": "Gửi",
     "send_anyway": "Vẫn gửi",
     "send_failed": "Không thể gửi thư",
+    "sender_contact": {
+      "contact": "Liên hệ",
+      "loading": "Đang tìm hồ sơ được phép hiển thị…",
+      "member": "Thành viên không gian làm việc",
+      "message_sender": "Người gửi trên thư này",
+      "no_visible_match": "Lần tìm này không có hồ sơ hiển thị khớp chính xác.",
+      "open": "Mở trong Danh bạ",
+      "retry": "Thử lại",
+      "show": "Xem hồ sơ của {sender}",
+      "title": "Hồ sơ trong không gian làm việc",
+      "unavailable": "Không thể tra cứu hồ sơ."
+    },
     "sender_name": "Tên người gửi",
     "sender_name_managed": "Hộp thư cá nhân sử dụng tên hiển thị từ hồ sơ Tuturuuu của bạn. Hãy cập nhật hồ sơ để thay đổi tên người gửi ở mọi nơi.",
     "sending": "Đang gửi",

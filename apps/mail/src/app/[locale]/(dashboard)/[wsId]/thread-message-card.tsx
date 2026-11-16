@@ -25,6 +25,7 @@ import {
 import { MailMessagePreview } from './mail-message-preview';
 import { MailParticipantAvatar } from './mail-participant-avatar';
 import { MailPlainTextBody } from './mail-plain-text-body';
+import { MailSenderContactCard } from './mail-sender-contact-card';
 import { mailSnippetText } from './mail-snippet-text';
 import { visibleMailLabels } from './mail-visible-labels';
 
@@ -58,22 +59,18 @@ export function ThreadMessageCard({
     >
       <div className="px-4 py-3 md:px-6">
         <div className="flex min-w-0 items-center gap-2">
+          <MailSenderContactCard
+            workspaceId={workspaceId}
+            address={message.fromAddress}
+            name={message.fromName}
+          />
           <Popover>
             <PopoverTrigger asChild>
               <button
                 type="button"
                 aria-label={`${t('message_details')}: ${sender}${recipient ? ` → ${recipient}` : ''}`}
-                className="flex min-w-0 flex-1 items-center gap-1.5 rounded-md text-left outline-ring/50 transition-colors hover:bg-muted/50 focus-visible:outline-2"
+                className="flex min-w-0 max-w-[45%] items-center gap-1.5 rounded-md text-left outline-ring/50 transition-colors hover:bg-muted/50 focus-visible:outline-2"
               >
-                <MailParticipantAvatar
-                  workspaceId={workspaceId}
-                  address={message.fromAddress}
-                  name={message.fromName}
-                />
-                <Address
-                  value={sender}
-                  label={message.fromName?.trim() || message.fromAddress}
-                />
                 {recipient ? (
                   <>
                     <ArrowRight
