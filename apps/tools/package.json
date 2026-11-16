@@ -4,6 +4,7 @@
   "private": true,
   "scripts": {
     "type-check": "node ../../scripts/run-tsc-build.js --build",
+    "test": "vitest run",
     "dev": "node ../../scripts/portless-safe-dev.js",
     "dev:app": "node ../../scripts/portless-dev-banner.js -- next dev -p ${PORT:-7825} --turbopack",
     "build": "vp build --configLoader runner",
