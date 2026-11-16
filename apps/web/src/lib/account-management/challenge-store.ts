@@ -12,7 +12,17 @@ export async function createChallengeStore(): Promise<ChallengeStore> {
       );
     },
     async getdel(key) {
-      return redis.eval("return redis.call('GETDEL', KEYS[1])", [key], []);
+      const value: unknown = await redis.eval(
+        "return redis.call('GETDEL', KEYS[1])",
+        [key],
+        []
+      );
+      if (typeof value !== 'string') return value;
+      try {
+        return JSON.parse(value);
+      } catch {
+        return null;
+      }
     },
   };
 }
