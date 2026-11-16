@@ -9,7 +9,7 @@ import {
   getPermissions,
   verifyWorkspaceMembershipType,
 } from '@tuturuuu/utils/workspace-helper';
-import { connection, NextResponse } from 'next/server';
+import { connection, type NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
 import { type AuthorizedRequest, withSessionAuth } from '@/lib/api-auth';
 import { normalizeWorkspaceId } from '@/lib/workspace-helper';
@@ -33,7 +33,7 @@ const options = {
 } satisfies NonNullable<Parameters<typeof withSessionAuth>[1]>;
 
 async function authorize(
-  request: Request,
+  request: NextRequest,
   context: AuthorizedRequest,
   rawWsId: string
 ) {
