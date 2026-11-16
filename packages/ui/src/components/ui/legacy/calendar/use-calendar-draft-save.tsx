@@ -1,3 +1,4 @@
+import { useCalendarInvitationCapabilities } from '../../../../hooks/use-calendar-invitation-capabilities';
 import { useQuery } from '@tanstack/react-query';
 import {
   type CalendarSourceOption,
@@ -37,11 +38,9 @@ export function useCalendarDraftSave(args: SaveArgs) {
   const t = useTranslations('calendar');
   const connectionId =
     args.source?.provider === 'google' ? args.source.connectionId : null;
-  const {
-    data: capabilities,
-    isSuccess: capabilityReady,
-    isFetching: capabilityFetching,
-  } = useQuery({
+  const { capabilities: invitationCapabilities } =
+    useCalendarInvitationCapabilities(args.wsId, args.source);
+  const { data: capabilities } = useQuery({
     queryKey: ['google-calendar-color-options', args.wsId, connectionId],
     enabled: !!args.wsId && !!connectionId,
     queryFn: () => getGoogleCalendarColorOptions(args.wsId!, connectionId!),
@@ -86,14 +85,12 @@ export function useCalendarDraftSave(args: SaveArgs) {
       const payload = args.buildPayload();
       if (
         payload.invitation &&
-        (!capabilityReady ||
-          capabilityFetching ||
-          !canInviteCalendarGuests({
-            source: args.source,
-            capabilities,
-            timeZone: payload.invitation.timeZone,
-            providerColor: payload.providerColor,
-          }))
+        !canInviteCalendarGuests({
+          source: args.source,
+          capabilities: invitationCapabilities,
+          timeZone: payload.invitation.timeZone,
+          providerColor: payload.providerColor,
+        })
       )
         throw new Error('Invitations are unavailable for this calendar');
       const confirmed = recovery.original();

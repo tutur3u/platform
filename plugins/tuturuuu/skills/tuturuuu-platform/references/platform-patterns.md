@@ -6,6 +6,15 @@ shared-package changes.
 
 ## Web And Shared UI
 
+- Calendar guest creates use the dedicated invitation-capabilities internal API
+  submodule and shared hook, matched to the selected provider, connection and
+  calendar. Keep Google color options separate: the save hook needs that query
+  for uncertain provider-color create recovery. Capability discovery is read-only;
+  retained-request and generation guards remain authoritative on submission.
+  Expiring dialog capability needs an explicit Retry path that refreshes the read
+  while retaining the draft; test expiry and recovery with a real QueryClient.
+  See [Contacts Calendar invitations](../../../../../apps/docs/platform/applications/contacts.mdx#calendar-invitation-creates).
+
 - Mira temporary chat credentials warm through the visibility/activity-bounded
   query hook in both Web and Workspace. Keep token values out of query state,
   preserve transport scope keys, share in-flight acquisition, and fence pending

@@ -1,11 +1,8 @@
 'use client';
 
-import { useQuery } from '@tanstack/react-query';
 import { X } from '@tuturuuu/icons';
-import {
-  getGoogleCalendarColorOptions,
-  type CalendarSourceOption,
-} from '@tuturuuu/internal-api';
+import type { CalendarSourceOption } from '@tuturuuu/internal-api';
+import { useCalendarInvitationCapabilities } from '../../../../hooks/use-calendar-invitation-capabilities';
 import { Badge } from '@tuturuuu/ui/badge';
 import { Button } from '@tuturuuu/ui/button';
 import { WorkspacePeoplePicker } from '@tuturuuu/ui/custom/workspace-people-picker';
@@ -71,24 +68,21 @@ function CalendarEventGuests({
   timeZone?: string;
 }) {
   const t = useTranslations('calendar.contact_guests');
-  const connectionId =
-    source?.provider === 'google' ? source.connectionId : null;
-  const capability = useQuery({
-    queryKey: ['google-calendar-color-options', workspaceId, connectionId],
-    enabled: Boolean(connectionId && source?.writable),
-    queryFn: () => getGoogleCalendarColorOptions(workspaceId, connectionId!),
-  });
+  const { capabilities, refresh, isRefreshing } =
+    useCalendarInvitationCapabilities(workspaceId, source);
   const guests = event.invitation?.guests ?? [];
-  const available =
-    capability.isSuccess &&
-    !capability.isFetching &&
-    canInviteCalendarGuests({
-      source,
-      capabilities: capability.data,
-      timeZone,
-      providerColor: event.providerColor,
-    });
-  if (!available && !guests.length) return null;
+  const available = canInviteCalendarGuests({
+    source,
+    capabilities,
+    timeZone,
+    providerColor: event.providerColor,
+  });
+  const refreshable =
+    source?.writable &&
+    (source.provider === 'google' || source.provider === 'microsoft') &&
+    Boolean(source.accountEmail && timeZone) &&
+    !event.providerColor;
+  if (!available && !guests.length && !refreshable) return null;
   return (
     <div className="space-y-2">
       <p className="font-medium text-sm">{t('title')}</p>
@@ -130,9 +124,23 @@ function CalendarEventGuests({
           }}
         />
       ) : (
-        <p role="status" className="text-destructive text-sm">
-          {t('unavailable')}
-        </p>
+        <div className="flex items-center gap-2">
+          <p role="status" className="text-destructive text-sm">
+            {t('unavailable')}
+          </p>
+          {refreshable && (
+            <Button
+              type="button"
+              variant="outline"
+              disabled={isRefreshing}
+              onClick={() => {
+                void refresh();
+              }}
+            >
+              {t('retry')}
+            </Button>
+          )}
+        </div>
       )}
       <div className="flex flex-wrap gap-2">
         {guests.map((guest) => (

@@ -134,3 +134,25 @@ Contacts satellite sessions and central Web API ownership are preserved.
 See [Contacts Start candidate](/build/devops/contacts-start-candidate) for owner
 inputs, regression controls, staging acceptance and instant rollback boundaries.
 This exception adds no live customer rule or production route.
+
+## Calendar invitation creates
+
+The shared Calendar create dialog supports explicit contact guest selection for
+writable Google and Outlook sources when legacy color generation is disabled.
+A dedicated authenticated, read-only capability query binds availability to the
+selected workspace, provider, connection and calendar. Missing, stale or refreshing
+capability disables guest selection and submission. Retry refreshes availability
+inside the open dialog without changing draft fields, guests or request identity;
+failed or denied refresh keeps submission blocked. Discovery never sends invites
+or refreshes provider colors. The server retains final authority over generation
+and retained-request refusals.
+
+Creation preserves the draft request identity for explicit recovery of an uncertain
+response. Guest addresses use the existing normalized people-picker projection,
+100-guest limit and time zone. Saved-event attendee editing, native sources and
+provider-color invitations remain unavailable. Google color discovery remains
+separate for recoverable color creates.
+
+Regression coverage: Calendar invitation-capabilities route tests, shared UI
+`calendar-event-create-payload`, `use-calendar-invitation-capabilities` and
+`use-calendar-draft-save` tests, plus existing provider meeting and generation tests.

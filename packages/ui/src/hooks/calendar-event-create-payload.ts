@@ -1,6 +1,6 @@
+import type { CalendarInvitationCapabilities } from '@tuturuuu/internal-api/calendar-invitation-capabilities';
 import type {
   CalendarSourceOption,
-  GoogleProviderColorOptions,
   WorkspaceCalendarEventCreatePayload,
 } from '@tuturuuu/internal-api';
 import type { CalendarEvent } from '@tuturuuu/types/primitives/calendar-event';
@@ -20,17 +20,19 @@ export function canInviteCalendarGuests({
   providerColor,
 }: {
   source?: CalendarSourceOption;
-  capabilities?: GoogleProviderColorOptions;
+  capabilities?: CalendarInvitationCapabilities;
   timeZone?: string;
   providerColor?: CalendarEvent['providerColor'];
 }) {
   return (
-    source?.provider === 'google' &&
+    (source?.provider === 'google' || source?.provider === 'microsoft') &&
     source.writable &&
     Boolean(source.accountEmail && timeZone) &&
     !providerColor &&
     capabilities?.connectionId === source.connectionId &&
-    capabilities.providerColorWrites === false
+    capabilities.provider === source.provider &&
+    capabilities.calendarId === source.externalCalendarId &&
+    capabilities.invitationCreates === true
   );
 }
 
@@ -41,11 +43,11 @@ export function calendarEventCreatePayload(
 ): WorkspaceCalendarEventCreatePayload {
   if (
     event.invitation &&
-    (event.source?.provider !== 'google' || event.providerColor)
+    ((event.source?.provider !== 'google' &&
+      event.source?.provider !== 'microsoft') ||
+      event.providerColor)
   ) {
-    throw new Error(
-      'Invitations require a supported connected Google calendar'
-    );
+    throw new Error('Invitations require a supported connected calendar');
   }
   return {
     title: event.title || '',
