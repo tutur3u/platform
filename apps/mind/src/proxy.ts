@@ -23,7 +23,8 @@ import { type Locale, routing, supportedLocales } from './i18n/routing';
 import { createMindPublicUrl } from './lib/mind-public-url';
 import {
   isExplicitBearerRequest,
-  rejectsLegacyMountedBearer,
+  mountedAuthorizationRefusal,
+  refusesMountedAuthorization,
 } from './runtime/mounted-bearer';
 
 const intlMiddleware = createIntlMiddleware(routing);
@@ -140,12 +141,8 @@ function getCanonicalLocaleRedirect(request: NextRequest) {
 
 async function handleProxy(request: NextRequest): Promise<NextResponse> {
   if (isMounted(request)) {
-    if (rejectsLegacyMountedBearer(request)) {
-      return NextResponse.json(
-        { error: 'Unauthorized' },
-        { status: 401, headers: { 'Cache-Control': 'private, no-store' } }
-      );
-    }
+    if (refusesMountedAuthorization(request))
+      return mountedAuthorizationRefusal();
     request.headers.delete('x-next-intl-locale');
     const locale = request.cookies.get(MOUNTED_LOCALE_COOKIE_NAME)?.value;
     if (locale && supportedLocales.some((supported) => supported === locale)) {

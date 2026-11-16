@@ -15,10 +15,11 @@ vi.mock('@tuturuuu/auth/proxy', () => ({
     NextResponse.json({ error: 'Unauthorized' }, { status: 401 }),
   propagateAuthCookies: vi.fn(),
 }));
-vi.mock('./mounted-bearer', () => ({
-  isExplicitBearerRequest: (r: NextRequest) =>
-    r.headers.has('authorization') && !r.headers.has('cookie'),
-  rejectsLegacyMountedBearer: mocks.reject,
+vi.mock('./mounted-bearer', async () => ({
+  ...(await vi.importActual<typeof import('./mounted-bearer')>(
+    './mounted-bearer'
+  )),
+  refusesMountedAuthorization: mocks.reject,
 }));
 import { createFunctionProxy } from './function-proxy';
 
@@ -56,7 +57,7 @@ describe('Mind mounted server-function authority', () => {
     expect(mocks.refresh).not.toHaveBeenCalled();
     expect(mocks.shared).toHaveBeenCalledExactlyOnceWith(req);
   });
-  it('rejects a legacy app-session bearer before shared dispatch', async () => {
+  it('refuses a mounted Authorization before shared dispatch', async () => {
     mocks.reject.mockReturnValue(true);
     const req = new NextRequest('https://tuturuuu.com/mind/_serverFn/id', {
       nextConfig: { basePath: '/mind' },

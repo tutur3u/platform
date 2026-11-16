@@ -4,10 +4,10 @@ import {
   refreshAppSessionForRequest,
 } from '@tuturuuu/auth/proxy';
 import { createFunctionProxy as createSharedFunctionProxy } from '../../../../packages/start-bridge/src/next/function-proxy';
-import { NextResponse } from 'next/server';
 import {
   isExplicitBearerRequest,
-  rejectsLegacyMountedBearer,
+  mountedAuthorizationRefusal,
+  refusesMountedAuthorization,
 } from './mounted-bearer';
 
 export function createFunctionProxy(
@@ -18,12 +18,8 @@ export function createFunctionProxy(
     request: Parameters<ReturnType<typeof createSharedFunctionProxy>>[0]
   ) {
     if (request.nextUrl.basePath !== '/mind') return rootProxy(request);
-    if (rejectsLegacyMountedBearer(request)) {
-      return NextResponse.json(
-        { error: 'Unauthorized' },
-        { status: 401, headers: { 'Cache-Control': 'private, no-store' } }
-      );
-    }
+    if (refusesMountedAuthorization(request))
+      return mountedAuthorizationRefusal();
     if (isExplicitBearerRequest(request)) return rootProxy(request);
     const session = await refreshAppSessionForRequest(request, {
       sessionMode: 'supabase-only',
