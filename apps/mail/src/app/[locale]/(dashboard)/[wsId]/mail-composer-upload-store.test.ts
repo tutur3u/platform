@@ -61,6 +61,24 @@ describe('immediate placeholders', () => {
 });
 
 describe('replace by id after decode', () => {
+  it('deletes a known attachment when its decode retry is queued behind another upload', async () => {
+    const t = setup();
+    t.store.addFiles([png('a.png')], true);
+    await flush();
+    t.deps.decodeImage.mockResolvedValueOnce(null);
+    t.uploads[0]?.succeed();
+    await flush();
+    t.store.addFiles([pdf('b.pdf')], false);
+    await flush();
+    t.store.retry('id1');
+    expect(t.find('id1')?.status).toBe('queued');
+    t.store.remove('id1');
+    await flush();
+    expect(t.deps.remove).toHaveBeenCalledExactlyOnceWith(OWNER, 'att1');
+    expect(t.find('id1')).toBeUndefined();
+    expect(t.uploads).toHaveLength(2);
+  });
+
   it('keeps a failed server decode preview and retries the same attachment', async () => {
     const t = setup();
     t.store.addFiles([png('a.png')], true);

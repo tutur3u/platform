@@ -182,7 +182,10 @@ export class MailUploadStore {
   remove(id: string) {
     const item = this.find(id);
     if (!item || item.status === 'removing') return;
-    if (item.status === 'failed' && item.attachment) {
+    if (
+      item.attachment &&
+      (item.status === 'failed' || item.status === 'queued')
+    ) {
       this.removeUploaded(item, item.kind === 'inline' ? id : null);
       return;
     }
