@@ -62,8 +62,6 @@ try {
     ['/vi/meet', '/vi/products/meet'],
     ['/meet/plans/one', '/products/meet/plans/one'],
     ['/vi/meet/plans/one', '/vi/products/meet/plans/one'],
-    ['/calendar', '/products/calendar'],
-    ['/vi/calendar', '/vi/products/calendar'],
     ['/ai', '/products/ai'],
     ['/vi/ai', '/vi/products/ai'],
   ]) {

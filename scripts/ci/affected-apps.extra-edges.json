@@ -1,5 +1,6 @@
 {
   "apps/apps/cloudflare/": ["apps/finance", "apps/pay"],
+  "apps/calendar/messages/": ["packages/ui"],
   "apps/calendar/src/lib/calendar/": ["apps/cron-control"],
   "apps/contacts/messages/": ["packages/ui"],
   "apps/contacts/src/app/api/v1/workspaces/[wsId]/settings/approvals/pending-summary/": [
@@ -52,8 +53,10 @@
   ],
   "packages/realtime/src/": ["apps/chat-realtime"],
   "packages/satellite/src/": ["packages/users-core"],
+  "packages/satellite/src/components/command-launcher/": ["packages/ui"],
   "packages/sdk/src/cli/": ["packages/education-core"],
   "packages/start-bridge/src/": ["packages/internal-api"],
+  "packages/start-bridge/src/next/": ["packages/hive-ui"],
   "packages/supabase/src/next/": ["apps/tanstack-web"],
   "packages/types/src/": ["apps/database"],
   "packages/typescript-config/": ["apps/database"],

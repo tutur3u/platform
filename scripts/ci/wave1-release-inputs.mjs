@@ -35,7 +35,9 @@ export function assertMainReleaseAdmission(env) {
   const sourceSha = env.GITHUB_SHA || '';
   const requestedSha = env.REQUESTED_SHA || '';
   if (!/^[0-9a-f]{40}$/.test(sourceSha) || sourceSha !== requestedSha) {
-    throw new Error('release-artifact source SHA does not match this main commit');
+    throw new Error(
+      'release-artifact source SHA does not match this main commit'
+    );
   }
   const inputEnvironment = `wave1-${env.APP}-production`;
   if (env.INPUT_ENVIRONMENT !== inputEnvironment) {

@@ -31,7 +31,10 @@ function catalog(t, versions) {
   );
   t.after(() => fs.rmSync(directory, { recursive: true, force: true }));
   for (const version of versions) {
-    fs.writeFileSync(path.join(directory, `${version}_fixture.sql`), '-- fixture\n');
+    fs.writeFileSync(
+      path.join(directory, `${version}_fixture.sql`),
+      '-- fixture\n'
+    );
   }
   return directory;
 }
@@ -101,8 +104,7 @@ test('a clean backtick table exits 0 and reports no pending versions', (t) => {
 });
 
 test('bare digit cells still exit 0 on a clean match', (t) => {
-  const listing =
-    '   20230202082703 | 20230202082703 | 2023-02-02 08:27:03\n';
+  const listing = '   20230202082703 | 20230202082703 | 2023-02-02 08:27:03\n';
   const result = summarize(listing, catalog(t, ['20230202082703']), {
     GITHUB_SHA: 'bare',
   });
@@ -125,9 +127,16 @@ test('a local-only version at or below the cutoff is pending and still exits 0',
   assert.match(result.stdout, /^pending_count=1$/m);
   assert.match(result.stdout, /^missing_at_or_below_20261112133000=1$/m);
   assert.match(result.stdout, /^remote_only_count=0$/m);
-  assert.equal(between(result.stdout, 'PENDING_BEGIN\n', 'PENDING_END'), '20261110120000\n');
+  assert.equal(
+    between(result.stdout, 'PENDING_BEGIN\n', 'PENDING_END'),
+    '20261110120000\n'
+  );
   assert.match(
-    between(result.stdout, 'MISSING_AT_OR_BELOW_20261112133000_BEGIN\n', 'MISSING_AT_OR_BELOW_20261112133000_END'),
+    between(
+      result.stdout,
+      'MISSING_AT_OR_BELOW_20261112133000_BEGIN\n',
+      'MISSING_AT_OR_BELOW_20261112133000_END'
+    ),
     /20261110120000/
   );
 });
