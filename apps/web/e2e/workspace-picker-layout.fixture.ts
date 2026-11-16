@@ -6,7 +6,7 @@ for (const width of [390, 728, 1024, 1440]) {
       page,
     }) => {
       await page.setViewportSize({ width, height: 900 });
-      await page.goto(`/?state=dialog&locale=${locale}&theme=dark`);
+      await page.goto(`/dialog.html?locale=${locale}&theme=dark`);
       const choices = page.locator('[data-workspace-choice]');
       await expect(choices).toHaveCount(7);
       const failures: string[] = [];
