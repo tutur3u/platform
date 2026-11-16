@@ -338,11 +338,10 @@ export function createPOST(options: CreatePostOptions = {}) {
 
       return NextResponse.json({ id: chat.id, title }, { status: 200 });
     } catch (error: unknown) {
-      console.log(error);
+      // Keep stack traces in server logs; never return them to the client.
+      console.error('AI chat request failed', error);
       return NextResponse.json(
-        {
-          message: `## Edge API Failure\nCould not complete the request. Please view the **Stack trace** below.\n\`\`\`bash\n${error instanceof Error ? error.stack : 'Unknown error'}`,
-        },
+        { message: 'Could not complete the request. Please try again.' },
         {
           status: 500,
         }

@@ -166,11 +166,10 @@ export function createPATCH(
         status: 200,
       });
     } catch (error) {
-      console.error(error);
+      // Keep stack traces in server logs; never return them to the client.
+      console.error('AI chat request failed', error);
       return NextResponse.json(
-        {
-          message: `## Edge API Failure\nCould not complete the request. Please view the **Stack trace** below.\n\`\`\`bash\n${(error as Error)?.stack || 'No stack trace available'}`,
-        },
+        { message: 'Could not complete the request. Please try again.' },
         {
           status: 200,
         }
