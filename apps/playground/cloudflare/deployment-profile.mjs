@@ -1,12 +1,17 @@
-export function deploymentProfile(value = 'staging') {
-  if (!['staging', 'production'].includes(value)) {
+export function deploymentProfile(
+  value = 'staging',
+  commit = process.env.PLATFORM_BUILD_COMMIT_HASH ??
+    process.env.PLAYGROUND_SOURCE_SHA
+) {
+  if (!['staging', 'production'].includes(value))
     throw new Error('Unknown playground native profile');
-  }
-  const production = value === 'production';
+  if (!/^[a-f0-9]{40}$/.test(commit ?? ''))
+    throw new Error('Missing 40-hex build commit');
   return {
-    name: production
-      ? 'tuturuuu-playground'
-      : 'tuturuuu-playground-vite-staging',
-    vars: { TUTURUUU_NOINDEX: production ? '0' : '1' },
+    name:
+      value === 'production'
+        ? 'tuturuuu-playground'
+        : 'tuturuuu-playground-vite-staging',
+    vars: { PLATFORM_BUILD_COMMIT_HASH: commit },
   };
 }

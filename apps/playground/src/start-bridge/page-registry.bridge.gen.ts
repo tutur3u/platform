@@ -2,8 +2,8 @@
 import type { BridgePage } from '@tuturuuu/start-bridge/pages';
 
 export const pages = [
+  { pattern: "/demo/[product]", file: "src/app/demo/[product]/page.tsx" },
   { pattern: "/", file: "src/app/page.tsx" },
-  { pattern: "/tool-calling", file: "src/app/tool-calling/page.tsx" },
 ] as const satisfies readonly BridgePage[];
 
 export type PagePattern = (typeof pages)[number]['pattern'];

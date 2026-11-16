@@ -1,4 +1,7 @@
-export function deploymentProfile(value?: string): {
+export function deploymentProfile(
+  value?: string,
+  commit?: string
+): {
   name: string;
-  vars: { TUTURUUU_NOINDEX: string };
+  vars: { PLATFORM_BUILD_COMMIT_HASH: string };
 };

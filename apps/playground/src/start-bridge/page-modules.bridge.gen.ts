@@ -5,14 +5,14 @@ import type { pages } from './page-registry.bridge.gen';
 type PageFile = (typeof pages)[number]['file'];
 
 export const pageModules = {
-  'src/app/page.tsx': {
-    page: () => import('../app/page'),
+  'src/app/demo/[product]/page.tsx': {
+    page: () => import('../app/demo/[product]/page'),
     layouts: [
       () => import('../app/layout'),
     ],
   },
-  'src/app/tool-calling/page.tsx': {
-    page: () => import('../app/tool-calling/page'),
+  'src/app/page.tsx': {
+    page: () => import('../app/page'),
     layouts: [
       () => import('../app/layout'),
     ],

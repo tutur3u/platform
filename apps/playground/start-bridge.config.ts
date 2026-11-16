@@ -1,6 +1,3 @@
-// App-owned start-bridge Worker options for playground: the codemod created this
-// file and never overwrites it. See "Worker options" in
-// apps/docs/build/devops/start-bridge-codemod.mdx.
 import {
   appRobots,
   createRootResponsePolicy,
@@ -8,16 +5,23 @@ import {
 import { defineBridgeAppConfig } from '@tuturuuu/start-bridge/start/app-config';
 
 export default defineBridgeAppConfig({
-  // Production keeps `playground.tuturuuu.com` plus the `tuturuuu.com/playground`
-  // mount. Staging is Cloudflare-only on `playground.tutur3u.com`: the Worker
-  // serves no other host (no `*.workers.dev`, no Vercel preview). The codemod
-  // derives `workers_dev: false` in void.config.ts from this policy.
   mounts: {
     rootHosts: ['playground.tuturuuu.com', 'playground.tutur3u.com'],
     unknownHost: 'reject',
   },
-  // Robots (the app's seo-policy.json allowlist on its canonical host),
-  // framing, sniffing, referrer and private caching on every response; only
-  // GET/HEAD static files keep their own caching.
+  csp: (nonce) =>
+    [
+      "default-src 'self'",
+      `script-src 'self' 'nonce-${nonce}'`,
+      "connect-src 'self'",
+      "style-src 'self' 'unsafe-inline'",
+      "img-src 'self' data:",
+      "font-src 'self'",
+      "object-src 'none'",
+      "base-uri 'self'",
+      "frame-ancestors 'self'",
+      "form-action 'none'",
+      "worker-src 'none'",
+    ].join('; '),
   wrapResponse: createRootResponsePolicy({ seo: appRobots }),
 });
