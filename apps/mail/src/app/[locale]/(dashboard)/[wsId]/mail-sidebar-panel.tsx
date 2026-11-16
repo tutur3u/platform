@@ -1,12 +1,8 @@
 'use client';
 
 import { useQuery, useQueryClient } from '@tanstack/react-query';
-import { Loader2, Mail, PenLine, Settings, Users } from '@tuturuuu/icons';
-import {
-  getMailboxOrganization,
-  listMailThreads,
-  type MailMailbox,
-} from '@tuturuuu/internal-api';
+import { Mail, PenLine, Settings } from '@tuturuuu/icons';
+import { getMailboxOrganization, listMailThreads } from '@tuturuuu/internal-api';
 import {
   Accordion,
   AccordionContent,
@@ -15,23 +11,32 @@ import {
 } from '@tuturuuu/ui/accordion';
 import { Button } from '@tuturuuu/ui/button';
 import type { NavLink } from '@tuturuuu/ui/custom/navigation';
-import { Input } from '@tuturuuu/ui/input';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@tuturuuu/ui/tooltip';
 import { cn } from '@tuturuuu/utils/format';
 import Link from 'next/link';
 import { usePathname, useSearchParams } from 'next/navigation';
 import { useTranslations } from 'next-intl';
-import { parseAsStringLiteral, useQueryState } from 'nuqs';
-import { type ReactNode, useState } from 'react';
+import { parseAsString, parseAsStringLiteral, useQueryState } from 'nuqs';
+import type { ReactNode } from 'react';
+import { useConnectedMailAccounts } from './connected-mail-accounts';
+import { MailAccountPicker } from './mail-account-picker';
 import { isMailFolder } from './mail-folders';
 import { resolveActiveMailboxId, useMailboxHint } from './mail-mailbox-hint';
 import { MailSettingsDialog } from './mail-settings-dialog';
+import { useConnectedByDefault, useMailSource } from './mail-source';
+import {
+  applyMailSelection,
+  getSourceFolderHref,
+  isConnectedMailFolder,
+  type MailSelection,
+  resolveConnectedAccountId,
+  resolveSelectionPathname,
+} from './mail-source-selection';
 import {
   getMailThreadsQueryKey,
   getNextMailThreadPage,
   MAIL_THREAD_PAGE_SIZE,
 } from './mail-thread-query';
-import { MailboxGroups } from './mailbox-groups';
 import { useMailBootstrap } from './use-mail-bootstrap';
 
 export function MailSidebarPanel({
@@ -48,17 +53,20 @@ export function MailSidebarPanel({
   workspaceId: string;
 }) {
   const t = useTranslations('mail');
-  const [mailboxSearch, setMailboxSearch] = useState('');
   const queryClient = useQueryClient();
   const pathname = usePathname();
   const searchParams = useSearchParams();
   const bootstrapQuery = useMailBootstrap(workspaceId);
   const mailboxes = bootstrapQuery.data?.mailboxes ?? [];
-  const visibleMailboxes = mailboxes.filter((mailbox) =>
-    `${mailbox.displayName} ${mailbox.address}`
-      .toLowerCase()
-      .includes(mailboxSearch.trim().toLowerCase())
+  const { source, accountId: requestedAccountId } = useMailSource();
+  const connectedByDefault = useConnectedByDefault();
+  const { query: accountsQuery } = useConnectedMailAccounts(workspaceId);
+  const connectedAccounts = accountsQuery.data ?? [];
+  const activeAccountId = resolveConnectedAccountId(
+    accountsQuery.data,
+    requestedAccountId
   );
+  const managed = source === 'managed';
   const selectedMailboxId = searchParams.get('mailbox');
   const activeMailboxId = resolveActiveMailboxId({
     hint: useMailboxHint(workspaceId),
@@ -66,7 +74,7 @@ export function MailSidebarPanel({
     requested: selectedMailboxId,
   });
   const organizationQuery = useQuery({
-    enabled: Boolean(activeMailboxId),
+    enabled: managed && Boolean(activeMailboxId),
     queryFn: () => getMailboxOrganization(workspaceId, activeMailboxId ?? ''),
     queryKey: ['mail', workspaceId, activeMailboxId, 'organization'],
   });
@@ -78,38 +86,68 @@ export function MailSidebarPanel({
       scroll: false,
     })
   );
+  const [, setMailSettingsTab] = useQueryState(
+    'mailSettingsTab',
+    parseAsString.withOptions({
+      history: 'replace',
+      shallow: true,
+      scroll: false,
+    })
+  );
   const settingsOpen = mailSettings === 'open';
   const setSettingsOpen = (open: boolean) => {
     void setMailSettings(open ? 'open' : null);
   };
   const activeMailbox =
     mailboxes.find((mailbox) => mailbox.id === activeMailboxId) ?? null;
-  const customFolders = (organizationQuery.data?.folders ?? []).filter(
+  const customFolders = (managed
+    ? (organizationQuery.data?.folders ?? [])
+    : []
+  ).filter(
     (folder) => folder.kind === 'custom'
   );
-  const customLabels = (organizationQuery.data?.labels ?? []).filter(
+  const customLabels = (managed
+    ? (organizationQuery.data?.labels ?? [])
+    : []
+  ).filter(
     (label) => label.kind === 'custom'
   );
 
-  const selectMailbox = (mailboxId: string) => {
-    const params = new URLSearchParams(searchParams.toString());
-    params.set('mailbox', mailboxId);
-    params.delete('thread');
-    window.history.replaceState(null, '', `${pathname}?${params}`);
+  const selectSource = (selection: MailSelection) => {
+    const params = applyMailSelection(
+      searchParams.toString(),
+      selection,
+      connectedByDefault
+    );
+    const nextPath = resolveSelectionPathname(pathname, selection);
+    window.history.replaceState(null, '', `${nextPath}?${params}`);
+    closeOnMobile?.();
+  };
+  const manageAccounts = () => {
+    void setMailSettingsTab('source');
+    setSettingsOpen(true);
     closeOnMobile?.();
   };
   const compose = () => {
     onCompose();
     closeOnMobile?.();
   };
-  const getFolderHref = (href: string | undefined) => {
-    if (!href || !activeMailboxId) return href ?? '#';
-    const params = new URLSearchParams({ mailbox: activeMailboxId });
-    if (searchParams.get('compose') === '1') params.set('compose', '1');
-    return `${href.split('?')[0]}?${params}`;
-  };
+  const getFolderHref = (href: string | undefined) =>
+    getSourceFolderHref({
+      accountId: activeAccountId,
+      composing: searchParams.get('compose') === '1',
+      href,
+      mailboxId: activeMailboxId,
+      source,
+    });
+  const visibleFolderLinks = folderLinks.filter(
+    (link): link is NavLink =>
+      Boolean(link) &&
+      (managed ||
+        isConnectedMailFolder(link?.id?.replace('mail.folder.', '')))
+  );
   const prefetchFolder = (href: string | undefined) => {
-    if (!href || !activeMailboxId) return;
+    if (!href || !managed || !activeMailboxId) return;
     const folder = href.split('?')[0]?.split('/').filter(Boolean).at(-1);
     if (!folder || !isMailFolder(folder)) return;
     void queryClient.prefetchInfiniteQuery({
@@ -139,7 +177,7 @@ export function MailSidebarPanel({
           </Button>
         </IconTooltip>
         <div className="my-1 h-px w-8 bg-border" />
-        {folderLinks.filter(Boolean).map((link) => {
+        {visibleFolderLinks.map((link) => {
           if (!link) return null;
           return (
             <IconTooltip key={link.id} label={String(link.title)}>
@@ -180,6 +218,9 @@ export function MailSidebarPanel({
         <MailSettingsDialog
           mailbox={activeMailbox}
           onOpenChange={setSettingsOpen}
+          onSelectMailbox={(mailboxId) =>
+            selectSource({ kind: 'managed', mailboxId })
+          }
           open={settingsOpen}
           workspaceId={workspaceId}
         />
@@ -189,17 +230,29 @@ export function MailSidebarPanel({
 
   return (
     <div className="flex min-h-0 flex-1 flex-col">
-      <div className="p-3">
+      <div className="space-y-3 p-3">
         <Button
           className="h-10 w-full justify-start rounded-lg px-3 shadow-sm"
           onClick={compose}
         >
           <PenLine className="size-4" /> {t('compose')}
         </Button>
+        <MailAccountPicker
+          onManage={manageAccounts}
+          onSelect={selectSource}
+          state={{
+            accountId: activeAccountId,
+            accounts: connectedAccounts,
+            loading: bootstrapQuery.isLoading || accountsQuery.isLoading,
+            mailboxId: activeMailboxId,
+            mailboxes,
+            source,
+          }}
+        />
       </div>
       <Accordion
         className="scrollbar-none min-h-0 flex-1 overflow-y-auto px-2"
-        defaultValue={['folders', 'mailboxes']}
+        defaultValue={['folders']}
         type="multiple"
       >
         <AccordionItem className="border-0" value="folders">
@@ -207,7 +260,7 @@ export function MailSidebarPanel({
             {t('folders')}
           </AccordionTrigger>
           <AccordionContent className="space-y-0.5 pb-2">
-            {folderLinks.filter(Boolean).map((link) =>
+            {visibleFolderLinks.map((link) =>
               link ? (
                 <Link
                   className={cn(
@@ -227,7 +280,8 @@ export function MailSidebarPanel({
                 >
                   {link.icon}
                   <span className="min-w-0 flex-1">{link.title}</span>
-                  {link.id === 'mail.folder.inbox' &&
+                  {managed &&
+                  link.id === 'mail.folder.inbox' &&
                   activeMailbox?.unreadCount ? (
                     <span className="rounded-full bg-foreground px-2 py-0.5 text-background text-xs tabular-nums">
                       {activeMailbox.unreadCount}
@@ -248,6 +302,7 @@ export function MailSidebarPanel({
             ))}
           </AccordionContent>
         </AccordionItem>
+        {managed ? (
         <AccordionItem className="border-0" value="labels">
           <AccordionTrigger className="px-2 py-2 font-medium text-muted-foreground text-xs">
             <span className="flex min-w-0 flex-1 items-center justify-between gap-2">
@@ -280,53 +335,7 @@ export function MailSidebarPanel({
             ) : null}
           </AccordionContent>
         </AccordionItem>
-        <AccordionItem className="border-0" value="mailboxes">
-          <AccordionTrigger className="px-2 py-2 font-medium text-muted-foreground text-xs">
-            <span className="flex min-w-0 flex-1 items-center justify-between gap-2">
-              <span>{t('mailboxes')}</span>
-              {mailboxes.length > 1 ? (
-                <span className="tabular-nums">{mailboxes.length}</span>
-              ) : null}
-            </span>
-          </AccordionTrigger>
-          <AccordionContent className="space-y-1 pb-3">
-            {mailboxes.length > 4 && (
-              <div className="px-2 pb-2">
-                <Input
-                  aria-label={t('search_mailboxes')}
-                  placeholder={t('search_mailboxes')}
-                  className="h-8 text-xs"
-                  value={mailboxSearch}
-                  onChange={(event) => setMailboxSearch(event.target.value)}
-                />
-              </div>
-            )}
-            {!visibleMailboxes.length && !bootstrapQuery.isLoading && (
-              <p className="px-3 py-2 text-muted-foreground text-xs">
-                {t('no_matching_mailboxes')}
-              </p>
-            )}
-            {bootstrapQuery.isLoading ? (
-              <div className="flex items-center gap-2 px-2 py-3 text-muted-foreground text-sm">
-                <Loader2 className="size-4 animate-spin" />
-                {t('loading')}
-              </div>
-            ) : (
-              <MailboxGroups
-                mailboxes={visibleMailboxes}
-                activeMailboxId={activeMailboxId}
-                renderMailbox={(mailbox) => (
-                  <MailboxButton
-                    active={mailbox.id === activeMailboxId}
-                    key={mailbox.id}
-                    mailbox={mailbox}
-                    onClick={() => selectMailbox(mailbox.id)}
-                  />
-                )}
-              />
-            )}
-          </AccordionContent>
-        </AccordionItem>
+        ) : null}
       </Accordion>
       <div className="border-dynamic border-t p-2">
         <Button
@@ -341,48 +350,13 @@ export function MailSidebarPanel({
       <MailSettingsDialog
         mailbox={activeMailbox}
         onOpenChange={setSettingsOpen}
+        onSelectMailbox={(mailboxId) =>
+          selectSource({ kind: 'managed', mailboxId })
+        }
         open={settingsOpen}
         workspaceId={workspaceId}
       />
     </div>
-  );
-}
-
-function MailboxButton({
-  active,
-  mailbox,
-  onClick,
-}: {
-  active: boolean;
-  mailbox: MailMailbox;
-  onClick: () => void;
-}) {
-  const Icon = mailbox.type === 'shared' ? Users : Mail;
-  return (
-    <button
-      aria-current={active ? 'true' : undefined}
-      className={cn(
-        'flex w-full items-center gap-2.5 rounded-lg border border-transparent px-2.5 py-2 text-left text-sm transition hover:bg-accent',
-        active && 'bg-accent/60'
-      )}
-      onClick={onClick}
-      type="button"
-    >
-      <Icon className="size-4 shrink-0" />
-      <span className="min-w-0 flex-1">
-        <span className="block truncate font-medium">
-          {mailbox.displayName}
-        </span>
-        <span className="block truncate text-muted-foreground text-xs">
-          {mailbox.address}
-        </span>
-      </span>
-      {(mailbox.unreadCount ?? 0) > 0 ? (
-        <span className="rounded-full bg-foreground px-2 py-0.5 text-background text-xs tabular-nums">
-          {mailbox.unreadCount}
-        </span>
-      ) : null}
-    </button>
   );
 }
 

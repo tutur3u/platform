@@ -32,7 +32,9 @@ import { Switch } from '@tuturuuu/ui/switch';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@tuturuuu/ui/tabs';
 import { Textarea } from '@tuturuuu/ui/textarea';
 import { useTranslations } from 'next-intl';
+import { parseAsString, useQueryState } from 'nuqs';
 import { useEffect, useMemo, useState } from 'react';
+import { MailAccountsSettings } from './mail-accounts-settings';
 import { MailAutomationSettings } from './mail-automation-settings';
 import { MailContentState } from './mail-content-state';
 import { MailGroupSettings } from './mail-group-settings';
@@ -41,22 +43,31 @@ import { MailMemberSettings } from './mail-member-settings';
 import { MailReadingSettings } from './mail-reading-settings';
 import { MailSettingsShell } from './mail-settings-shell';
 import { MailSignaturePreview } from './mail-signature-preview';
-import { MailSourceSettings } from './mail-source';
 
 export function MailSettingsDialog({
   mailbox,
   onOpenChange,
+  onSelectMailbox,
   open,
   workspaceId,
 }: {
   mailbox: MailMailbox | null;
   onOpenChange: (open: boolean) => void;
+  onSelectMailbox: (mailboxId: string) => void;
   open: boolean;
   workspaceId: string;
 }) {
   const t = useTranslations('mail');
   const queryClient = useQueryClient();
   const [tab, setTab] = useState('identity');
+  const [, setPersistedTab] = useQueryState(
+    'mailSettingsTab',
+    parseAsString.withOptions({
+      history: 'replace',
+      shallow: true,
+      scroll: false,
+    })
+  );
   const [senderName, setSenderName] = useState('');
   const [signatureText, setSignatureText] = useState('');
   const [signatureHtml, setSignatureHtml] = useState('');
@@ -174,9 +185,9 @@ export function MailSettingsDialog({
       {
         items: [
           {
-            description: t('source_description'),
+            description: t('accounts_description'),
             icon: Inbox,
-            label: t('source'),
+            label: t('accounts'),
             name: 'source',
           },
           {
@@ -255,7 +266,16 @@ export function MailSettingsDialog({
             />
           ) : null}
           <div hidden={settingsUnavailable} className="space-y-8">
-            {tab === 'source' ? <MailSourceSettings /> : null}
+            {tab === 'source' ? (
+              <MailAccountsSettings
+                onOpenMailboxSettings={(mailboxId) => {
+                  onSelectMailbox(mailboxId);
+                  setTab('identity');
+                  void setPersistedTab('identity');
+                }}
+                workspaceId={workspaceId}
+              />
+            ) : null}
             {tab === 'reading' ? <MailReadingSettings /> : null}
             {tab === 'identity' ? (
               <SettingsSection>
