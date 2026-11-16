@@ -10,8 +10,8 @@ import {
   HIVE_MOUNTED_REPORT_ONLY_POLICY,
   hiveContentSecurityPolicy,
   isHiveMountedRequest,
-} from './cloudflare/apex-csp';
-import { hiveApexMounts } from './cloudflare/apex-mount';
+} from './cloudflare/apex-csp.ts';
+import { hiveApexMounts } from './cloudflare/apex-mount.ts';
 
 const rootResponsePolicy = createRootResponsePolicy({ seo: appRobots });
 

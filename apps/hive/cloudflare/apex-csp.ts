@@ -1,5 +1,5 @@
 import { resolveAppBase } from '@tuturuuu/start-bridge/mounts';
-import { hiveApexMounts } from './apex-mount';
+import { hiveApexMounts } from './apex-mount.ts';
 
 const mounts = { app: 'hive', ...hiveApexMounts };
 

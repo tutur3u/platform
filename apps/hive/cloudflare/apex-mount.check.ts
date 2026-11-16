@@ -6,8 +6,8 @@ import { resolveAppBase } from '../../../packages/start-bridge/src/core/mounts';
 import {
   HIVE_MOUNTED_REPORT_ONLY_POLICY,
   hiveContentSecurityPolicy,
-} from './apex-csp';
-import { hiveApexMounts } from './apex-mount';
+} from './apex-csp.ts';
+import { hiveApexMounts } from './apex-mount.ts';
 
 const shipped = { app: 'hive', ...hiveApexMounts };
 let executed = 0;
