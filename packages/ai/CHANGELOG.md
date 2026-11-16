@@ -1,5 +1,24 @@
 # Changelog
 
+## [0.19.1](https://github.com/tutur3u/platform/compare/ai-v0.19.0...ai-v0.19.1) (2026-11-16)
+
+
+### Bug Fixes
+
+* **ai:** fail closed for E2EE calendar tools without the master key ([351b28a](https://github.com/tutur3u/platform/commit/351b28aaa1d7d6f777865affedb05e3613cf3a63))
+* **ai:** persist completed chat streams after disconnect ([#8343](https://github.com/tutur3u/platform/issues/8343)) ([91606d5](https://github.com/tutur3u/platform/commit/91606d5a0b30c26b263d67b55c97a0b8ec4113b2))
+* **meet:** prepare transcript readers for erasure markers ([#7517](https://github.com/tutur3u/platform/issues/7517)) ([f35343e](https://github.com/tutur3u/platform/commit/f35343e88998b4748ffe459a86debf26fb6bfb2c))
+* **meet:** redact transcription provider errors (erase V0) ([#7512](https://github.com/tutur3u/platform/issues/7512)) ([421adb8](https://github.com/tutur3u/platform/commit/421adb88736c8317572d1915bf2bcaf8dc8df6ff))
+* **meet:** refuse legacy transcription permanently and retire the old recorder ([#7506](https://github.com/tutur3u/platform/issues/7506)) ([5ac0f24](https://github.com/tutur3u/platform/commit/5ac0f241be51d094ca2e515015a5307a386d342e))
+
+
+### Performance Improvements
+
+* **mira:** build context lazily ([#8307](https://github.com/tutur3u/platform/issues/8307)) ([3a6f1a7](https://github.com/tutur3u/platform/commit/3a6f1a7e23e99e3e8d38b2ad08bb2cdf8f23dcfd))
+* **mira:** build context lazily. ([3a6f1a7](https://github.com/tutur3u/platform/commit/3a6f1a7e23e99e3e8d38b2ad08bb2cdf8f23dcfd))
+* **mira:** create new chats without waiting for title generation ([#8281](https://github.com/tutur3u/platform/issues/8281)) ([8b3431d](https://github.com/tutur3u/platform/commit/8b3431d1d3f7e8039dd395d0a4e1348f3b278b2b))
+* **mira:** parallelize server checks and stream the first token immediately ([#8304](https://github.com/tutur3u/platform/issues/8304)) ([07f42e4](https://github.com/tutur3u/platform/commit/07f42e4404418f542b3c7c8783e71da61abe166b))
+
 ## [0.19.0](https://github.com/tutur3u/platform/compare/ai-v0.18.3...ai-v0.19.0) (2026-11-08)
 
 

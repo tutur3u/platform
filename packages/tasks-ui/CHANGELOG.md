@@ -1,5 +1,17 @@
 # Changelog
 
+## [0.19.0](https://github.com/tutur3u/platform/compare/tasks-ui-v0.18.0...tasks-ui-v0.19.0) (2026-11-16)
+
+
+### Features
+
+* **calendar:** compact toolbar with a New menu ([#8349](https://github.com/tutur3u/platform/issues/8349)) ([fbda347](https://github.com/tutur3u/platform/commit/fbda3471246c807b4d58b9dd1ae2f099faa5c9b3))
+* **calendar:** compact toolbar with a New menu. ([fbda347](https://github.com/tutur3u/platform/commit/fbda3471246c807b4d58b9dd1ae2f099faa5c9b3))
+* **calendar:** open week on desktop, agenda on phones, with a default-view setting ([d075fb6](https://github.com/tutur3u/platform/commit/d075fb65e3370631f8e13a8b3733d3380f38aaf9))
+* **calendar:** rebuild the plan panel as one compact sidebar ([#8396](https://github.com/tutur3u/platform/issues/8396)) ([071292b](https://github.com/tutur3u/platform/commit/071292be4a7c50abef007b6a6b44d62117d5d8b1))
+* **settings:** flatten board layout and inset the settings dialog ([#7920](https://github.com/tutur3u/platform/issues/7920)) ([e1518c1](https://github.com/tutur3u/platform/commit/e1518c1194ae6a8092056a80b6d53e4824f29a04))
+* **tasks-ui:** route bare Tasks API fetches and root links through the app base (one-origin T4) ([#8113](https://github.com/tutur3u/platform/issues/8113)) ([d71e054](https://github.com/tutur3u/platform/commit/d71e054b1bf5e6d8ddfedc3179ada74c540c0be4))
+
 ## [0.18.0](https://github.com/tutur3u/platform/compare/tasks-ui-v0.17.3...tasks-ui-v0.18.0) (2026-11-08)
 
 

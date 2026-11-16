@@ -1,5 +1,48 @@
 # Changelog
 
+## [0.40.0](https://github.com/tutur3u/platform/compare/infra-v0.39.0...infra-v0.40.0) (2026-11-16)
+
+
+### Features
+
+* branded, theme-aware not-found and error page for every app ([#8189](https://github.com/tutur3u/platform/issues/8189)) ([1239360](https://github.com/tutur3u/platform/commit/123936030549e1e275ccd2b5256c9286a9f54a32))
+* **calendar:** anchored event preview with undo delete ([#8352](https://github.com/tutur3u/platform/issues/8352)) ([6fdad4b](https://github.com/tutur3u/platform/commit/6fdad4baea5023e276a1ded4ba2c6b750ecc5237))
+* **calendar:** anchored event preview with undo delete. ([6fdad4b](https://github.com/tutur3u/platform/commit/6fdad4baea5023e276a1ded4ba2c6b750ecc5237))
+* **database:** add workspace domains, entitlement and permissions ([3fa8b0d](https://github.com/tutur3u/platform/commit/3fa8b0dd8af1a3aa4bdbb7f59e97167e84d74115))
+* **flags:** add server audience rules and rollout metadata ([#7883](https://github.com/tutur3u/platform/issues/7883)) ([ca431b7](https://github.com/tutur3u/platform/commit/ca431b74893a5c5b6facfa6eeb35e7e69e2e3144))
+* **infrastructure:** native TanStack Start + Void source for Cloudflare Workers ([#7963](https://github.com/tutur3u/platform/issues/7963)) ([a7826c1](https://github.com/tutur3u/platform/commit/a7826c1fb0931e315ef628caeb085d4110a8450f))
+* **journal:** add a flagged mood chart and JSON export ([#7874](https://github.com/tutur3u/platform/issues/7874)) ([a230fb5](https://github.com/tutur3u/platform/commit/a230fb5f24fc511dbeb7e44a4e8960bcc3baa287))
+* **ui:** add actor-scoped workspace picker shortcuts ([#8170](https://github.com/tutur3u/platform/issues/8170)) ([d9a512c](https://github.com/tutur3u/platform/commit/d9a512cade746445f2b96535b8f50e8f7ee1d066))
+* **ui:** add experimental Sorbet design behind an account-synced toggle ([3f3a1cc](https://github.com/tutur3u/platform/commit/3f3a1cc7a2f82e9a72b93800a86f3fe60566a562))
+* **ui:** add Sorbet palettes behind the experimental design ([#8436](https://github.com/tutur3u/platform/issues/8436)) ([63f18c4](https://github.com/tutur3u/platform/commit/63f18c4ac6a4d0ece11518682ba2a9dd80129e9b))
+* **ui:** pilot @ui-sdk/core for category keyboard reordering ([#8250](https://github.com/tutur3u/platform/issues/8250)) ([7b0eee6](https://github.com/tutur3u/platform/commit/7b0eee600b935e394b210a4590b670947b9a606f))
+* **ui:** redesign the workspace picker as a command-palette dialog ([#8309](https://github.com/tutur3u/platform/issues/8309)) ([2fd24ad](https://github.com/tutur3u/platform/commit/2fd24ad7a43606bc2404f02e5fcb423349517392))
+* **utils:** accept-only app coordination secret slot with promote and fallback-disable switches ([#7992](https://github.com/tutur3u/platform/issues/7992)) ([ac2b355](https://github.com/tutur3u/platform/commit/ac2b3552df633b7775cabeca5aee0b4da19030a9))
+* **utils:** support staged coordination-token signing secret rotation ([#8205](https://github.com/tutur3u/platform/issues/8205)) ([baaa031](https://github.com/tutur3u/platform/commit/baaa03188bc1c57b69511503efe991196bddd446))
+* **workspace-domains:** read the SaaS zone, apex and fallback origin from config ([8a38689](https://github.com/tutur3u/platform/commit/8a386894505308f1e4ceb3a826caa80ade76f40f))
+* **workspace-domains:** workspace custom domains (paid add-on, staff bypass, edge Worker) ([#8157](https://github.com/tutur3u/platform/issues/8157)) ([11a94f0](https://github.com/tutur3u/platform/commit/11a94f0953a2fa6632c73eadfc35182229dda48c))
+
+
+### Bug Fixes
+
+* **admin:** authenticate infrastructure operations with one actor ([#8229](https://github.com/tutur3u/platform/issues/8229)) ([f83e4dd](https://github.com/tutur3u/platform/commit/f83e4ddf0d68a33f7b7b13c8ab3421de877a374d))
+* **devbox:** bind run claims and leases to their owners ([#7130](https://github.com/tutur3u/platform/issues/7130)) ([cd92cc7](https://github.com/tutur3u/platform/commit/cd92cc7d7a6ee38069b683888ff21bd09bff0119))
+* **encryption:** refuse to store plaintext when no workspace key is available ([#8086](https://github.com/tutur3u/platform/issues/8086)) ([34616cf](https://github.com/tutur3u/platform/commit/34616cf49cebc206d15e9ccb4cc9813dc56e5019))
+* **encryption:** store plaintext for workspaces without a key row ([f2a12e7](https://github.com/tutur3u/platform/commit/f2a12e7e4175226148808a03c200335d963510a5))
+* **feature-flags:** reconcile catalog pins with workspace-scoped and catalog-only flags ([#8332](https://github.com/tutur3u/platform/issues/8332)) ([cad2996](https://github.com/tutur3u/platform/commit/cad2996cddcd2e6e31a11371b7091a04e91fc895))
+* **i18n:** label the home destination "Home" without the brand name ([#8437](https://github.com/tutur3u/platform/issues/8437)) ([31f0736](https://github.com/tutur3u/platform/commit/31f07360f0ca1e0ab7d4a2454da2324b718206b9))
+* **infrastructure:** admit authorized protected build-info reads ([#8359](https://github.com/tutur3u/platform/issues/8359)) ([ce2dced](https://github.com/tutur3u/platform/commit/ce2dced5b47baef566f6b891b0e4d80bc8e70643))
+* **infrastructure:** admit authorized protected build-info reads. ([ce2dced](https://github.com/tutur3u/platform/commit/ce2dced5b47baef566f6b891b0e4d80bc8e70643))
+* **infrastructure:** register policy-notice route and follow manual-redirect transport ([#8057](https://github.com/tutur3u/platform/issues/8057)) ([fc0d557](https://github.com/tutur3u/platform/commit/fc0d5579bafd0dd50bfaafd7f0ead8b20055581c))
+* **infrastructure:** use manual redirect handling in desktop status and Apple review requests ([#8032](https://github.com/tutur3u/platform/issues/8032)) ([c3c08fd](https://github.com/tutur3u/platform/commit/c3c08fdeb7d75805c0c37d3aa19799bf40a047c0))
+* **satellites:** scope NEXT_LOCALE from the canonical origin ([705f7fa](https://github.com/tutur3u/platform/commit/705f7fa74e97584f9e256fd46bef3800f43459f1))
+* **security:** enforce exact shared Worker HSTS boundary ([#8226](https://github.com/tutur3u/platform/issues/8226)) ([95fad90](https://github.com/tutur3u/platform/commit/95fad90e527fe3a2a24b3e0df12e3445901a7cbe))
+* **start-bridge:** await redirect-only root pages so the redirect reaches the router ([#8078](https://github.com/tutur3u/platform/issues/8078)) ([ff9478b](https://github.com/tutur3u/platform/commit/ff9478b15b01ea8482cade822be8e2ede6d5b12e))
+* **start-bridge:** send server-function payloads in POST bodies ([#8239](https://github.com/tutur3u/platform/issues/8239)) ([028d2a7](https://github.com/tutur3u/platform/commit/028d2a7c98fdd7fbd48ff8b263b65bc5007177fe))
+* **supabase:** keep the secret key reader out of browser bundles ([1840f61](https://github.com/tutur3u/platform/commit/1840f6167ab30e53f0ed8163b417eca98e00a136))
+* **tasks:** compose POST transport with current main ([1ff0fc7](https://github.com/tutur3u/platform/commit/1ff0fc7806853b0be9ac53d75c73d0677089ad68))
+* **ui:** compose workspace reliability with current main ([07bffbe](https://github.com/tutur3u/platform/commit/07bffbe850fc6bf345f8d863c10feae66b3ccb70))
+
 ## [0.39.0](https://github.com/tutur3u/platform/compare/infra-v0.38.0...infra-v0.39.0) (2026-11-08)
 
 

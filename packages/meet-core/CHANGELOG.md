@@ -1,5 +1,29 @@
 # Changelog
 
+## [1.6.0](https://github.com/tutur3u/platform/compare/meet-core-v1.5.0...meet-core-v1.6.0) (2026-11-16)
+
+
+### Features
+
+* **meet:** add named media scrim token for participant name bar ([#7948](https://github.com/tutur3u/platform/issues/7948)) ([dcdd4d4](https://github.com/tutur3u/platform/commit/dcdd4d41a455afa9eb364b2559b6b4389e110c2e))
+* **meet:** classroom room caps and host admission ([#8141](https://github.com/tutur3u/platform/issues/8141)) ([d827c7b](https://github.com/tutur3u/platform/commit/d827c7b86a29fd1b129311a84d38bc1fca62b7ff))
+* **meet:** keep signaling recovery calm until retries are exhausted ([#8295](https://github.com/tutur3u/platform/issues/8295)) ([7bde57e](https://github.com/tutur3u/platform/commit/7bde57eb5359eceb620a76f67b6770001de90257))
+
+
+### Bug Fixes
+
+* **ci:** clear Oxc lint escape and format drift on main ([#8331](https://github.com/tutur3u/platform/issues/8331)) ([fa19f7d](https://github.com/tutur3u/platform/commit/fa19f7d77e88fc437a1a8519226470862e32b714))
+* **meet:** clear Private Mira acceptance when consent lapses ([#8299](https://github.com/tutur3u/platform/issues/8299)) ([67f348e](https://github.com/tutur3u/platform/commit/67f348e085cc488aaf54044f81072cf2d8493ea9))
+* **meet:** explain unavailable Mira Live invitations ([440321e](https://github.com/tutur3u/platform/commit/440321ed0a9e2374861ae67c8382d96404aad212))
+* **meet:** gate private Mira on durable participant consent ([#8274](https://github.com/tutur3u/platform/issues/8274)) ([061a566](https://github.com/tutur3u/platform/commit/061a566123e309f9004eb0793cd9a59016924c04))
+* **meet:** harden server function and invite cookie WAF contracts ([#8305](https://github.com/tutur3u/platform/issues/8305)) ([12b7053](https://github.com/tutur3u/platform/commit/12b7053ee7d64b5f3baa7da0b395ad700888d197))
+* **meet:** keep the name bar readable on light avatar tiles ([#7953](https://github.com/tutur3u/platform/issues/7953)) ([ce96056](https://github.com/tutur3u/platform/commit/ce96056f9b3eb0093cd282cd502ee06c25a242be))
+* **meet:** make Private Mira choices, leave and denials visible ([#8287](https://github.com/tutur3u/platform/issues/8287)) ([aad395d](https://github.com/tutur3u/platform/commit/aad395d94983c82d4623086e269d53f540fbae4e))
+* **meet:** prepare transcript readers for erasure markers ([#7517](https://github.com/tutur3u/platform/issues/7517)) ([f35343e](https://github.com/tutur3u/platform/commit/f35343e88998b4748ffe459a86debf26fb6bfb2c))
+* **meet:** preserve Private Mira through disconnected recovery ([#8292](https://github.com/tutur3u/platform/issues/8292)) ([4e04f96](https://github.com/tutur3u/platform/commit/4e04f961c6fe0f41e28809a7aa232dfb57ecd489))
+* **meet:** refuse legacy transcription permanently and retire the old recorder ([#7506](https://github.com/tutur3u/platform/issues/7506)) ([5ac0f24](https://github.com/tutur3u/platform/commit/5ac0f241be51d094ca2e515015a5307a386d342e))
+* **meet:** remove unused meeting AI availability bindings ([#8276](https://github.com/tutur3u/platform/issues/8276)) ([418d59e](https://github.com/tutur3u/platform/commit/418d59ef181421761aa366bbe98a2c8cf1dc0ad9))
+
 ## [1.5.0](https://github.com/tutur3u/platform/compare/meet-core-v1.4.2...meet-core-v1.5.0) (2026-11-08)
 
 

@@ -1,5 +1,34 @@
 # Changelog
 
+## [0.57.0](https://github.com/tutur3u/platform/compare/internal-api-v0.56.0...internal-api-v0.57.0) (2026-11-16)
+
+
+### Features
+
+* **cms:** reviewed CMS unit as one union ([#7597](https://github.com/tutur3u/platform/issues/7597) [#7714](https://github.com/tutur3u/platform/issues/7714) [#7738](https://github.com/tutur3u/platform/issues/7738) [#7747](https://github.com/tutur3u/platform/issues/7747) [#7733](https://github.com/tutur3u/platform/issues/7733) [#7741](https://github.com/tutur3u/platform/issues/7741) [#7595](https://github.com/tutur3u/platform/issues/7595)) ([#8300](https://github.com/tutur3u/platform/issues/8300)) ([d9d127e](https://github.com/tutur3u/platform/commit/d9d127e936f9e20dff2da728798a26d360512019))
+* **documents:** gate hierarchy API and validate writes ([325affa](https://github.com/tutur3u/platform/commit/325affa9f8fd3d570f2bfb643c7891d35e1e2274))
+* **journal:** add a flagged mood chart and JSON export ([#7874](https://github.com/tutur3u/platform/issues/7874)) ([a230fb5](https://github.com/tutur3u/platform/commit/a230fb5f24fc511dbeb7e44a4e8960bcc3baa287))
+* **meet:** add self-capture session, consent and read contracts ([#7309](https://github.com/tutur3u/platform/issues/7309)) ([52c690c](https://github.com/tutur3u/platform/commit/52c690c802e60099dd3d1df8122d2ef09f922a59))
+* **tasks-ui:** route bare Tasks API fetches and root links through the app base (one-origin T4) ([#8113](https://github.com/tutur3u/platform/issues/8113)) ([d71e054](https://github.com/tutur3u/platform/commit/d71e054b1bf5e6d8ddfedc3179ada74c540c0be4))
+* **teach:** add inline AI review to module content ([#8167](https://github.com/tutur3u/platform/issues/8167)) ([e2b31a3](https://github.com/tutur3u/platform/commit/e2b31a39798eddce41027d4431734959918b30af))
+* **tutoring:** gate parent message v2 by workspace config ([#7483](https://github.com/tutur3u/platform/issues/7483)) ([27ce3f5](https://github.com/tutur3u/platform/commit/27ce3f584ef69e340f388326763525c07e13b34c))
+* **web:** add workspace domains settings page ([f37c0c0](https://github.com/tutur3u/platform/commit/f37c0c0fc8a2293ca9a82402155e253ca811b67d))
+* **workspace-domains:** read the SaaS zone, apex and fallback origin from config ([8a38689](https://github.com/tutur3u/platform/commit/8a386894505308f1e4ceb3a826caa80ade76f40f))
+* **workspace-domains:** workspace custom domains (paid add-on, staff bypass, edge Worker) ([#8157](https://github.com/tutur3u/platform/issues/8157)) ([11a94f0](https://github.com/tutur3u/platform/commit/11a94f0953a2fa6632c73eadfc35182229dda48c))
+* **workspace:** carve authenticated app out of web onto Start ([#7944](https://github.com/tutur3u/platform/issues/7944)) ([51d7454](https://github.com/tutur3u/platform/commit/51d7454b305abc360a3320e6e43dcb1e1aa64c6c))
+
+
+### Bug Fixes
+
+* **auth:** allow ten switchable accounts and canonical avatars ([#7869](https://github.com/tutur3u/platform/issues/7869)) ([a552aa5](https://github.com/tutur3u/platform/commit/a552aa5e0df05e3912d764c26684956fe98d50af))
+* **internal-api,utils:** use manual redirect handling in shared infrastructure clients ([#8033](https://github.com/tutur3u/platform/issues/8033)) ([8e8a7ea](https://github.com/tutur3u/platform/commit/8e8a7eaad26a40b61e94335e9321fd3ac3855589))
+* **meet:** gate private Mira on durable participant consent ([#8274](https://github.com/tutur3u/platform/issues/8274)) ([061a566](https://github.com/tutur3u/platform/commit/061a566123e309f9004eb0793cd9a59016924c04))
+* **meet:** harden server function and invite cookie WAF contracts ([#8305](https://github.com/tutur3u/platform/issues/8305)) ([12b7053](https://github.com/tutur3u/platform/commit/12b7053ee7d64b5f3baa7da0b395ad700888d197))
+* **meet:** prepare transcript readers for erasure markers ([#7517](https://github.com/tutur3u/platform/issues/7517)) ([f35343e](https://github.com/tutur3u/platform/commit/f35343e88998b4748ffe459a86debf26fb6bfb2c))
+* **reports:** show report totals on open and filter by the month in the title ([#8063](https://github.com/tutur3u/platform/issues/8063)) ([69c7de8](https://github.com/tutur3u/platform/commit/69c7de89353e6d54064fa9b383fdcf39b96e8894))
+* **tasks:** compose POST transport with current main ([1ff0fc7](https://github.com/tutur3u/platform/commit/1ff0fc7806853b0be9ac53d75c73d0677089ad68))
+* **ui:** compose workspace reliability with current main ([07bffbe](https://github.com/tutur3u/platform/commit/07bffbe850fc6bf345f8d863c10feae66b3ccb70))
+
 ## [0.56.0](https://github.com/tutur3u/platform/compare/internal-api-v0.55.0...internal-api-v0.56.0) (2026-11-08)
 
 

@@ -1,5 +1,17 @@
 # Changelog
 
+## [0.7.0](https://github.com/tutur3u/platform/compare/external-v0.6.1...external-v0.7.0) (2026-11-16)
+
+
+### Features
+
+* branded, theme-aware not-found and error page for every app ([#8189](https://github.com/tutur3u/platform/issues/8189)) ([1239360](https://github.com/tutur3u/platform/commit/123936030549e1e275ccd2b5256c9286a9f54a32))
+
+
+### Bug Fixes
+
+* **start-bridge:** send server-function payloads in POST bodies ([#8239](https://github.com/tutur3u/platform/issues/8239)) ([028d2a7](https://github.com/tutur3u/platform/commit/028d2a7c98fdd7fbd48ff8b263b65bc5007177fe))
+
 ## [0.6.1](https://github.com/tutur3u/platform/compare/external-v0.6.0...external-v0.6.1) (2026-10-17)
 
 

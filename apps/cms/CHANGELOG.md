@@ -1,5 +1,41 @@
 # Changelog
 
+## [0.40.0](https://github.com/tutur3u/platform/compare/cms-v0.39.0...cms-v0.40.0) (2026-11-16)
+
+
+### Features
+
+* branded, theme-aware not-found and error page for every app ([#8189](https://github.com/tutur3u/platform/issues/8189)) ([1239360](https://github.com/tutur3u/platform/commit/123936030549e1e275ccd2b5256c9286a9f54a32))
+* **calendar:** anchored event preview with undo delete ([#8352](https://github.com/tutur3u/platform/issues/8352)) ([6fdad4b](https://github.com/tutur3u/platform/commit/6fdad4baea5023e276a1ded4ba2c6b750ecc5237))
+* **calendar:** anchored event preview with undo delete. ([6fdad4b](https://github.com/tutur3u/platform/commit/6fdad4baea5023e276a1ded4ba2c6b750ecc5237))
+* **calendar:** unify sidebar list and preserve overnight date selection ([#8358](https://github.com/tutur3u/platform/issues/8358)) ([916a377](https://github.com/tutur3u/platform/commit/916a377e20b9f3ba25bcf98cd53a2295cbe50ce4))
+* **calendar:** unify sidebar list and preserve overnight date selection. ([916a377](https://github.com/tutur3u/platform/commit/916a377e20b9f3ba25bcf98cd53a2295cbe50ce4))
+* **cms:** admit editor-only members without publish access ([#7623](https://github.com/tutur3u/platform/issues/7623)) ([0588617](https://github.com/tutur3u/platform/commit/0588617737b70c92d0117a10d0ab7c15364b9e38))
+* **cms:** full-page editor layout in IEEAI styling ([#8149](https://github.com/tutur3u/platform/issues/8149)) ([1cf665b](https://github.com/tutur3u/platform/commit/1cf665b069b66af5140fb6a09c9a3dbc069b74f8))
+* **cms:** reviewed CMS unit as one union ([#7597](https://github.com/tutur3u/platform/issues/7597) [#7714](https://github.com/tutur3u/platform/issues/7714) [#7738](https://github.com/tutur3u/platform/issues/7738) [#7747](https://github.com/tutur3u/platform/issues/7747) [#7733](https://github.com/tutur3u/platform/issues/7733) [#7741](https://github.com/tutur3u/platform/issues/7741) [#7595](https://github.com/tutur3u/platform/issues/7595)) ([#8300](https://github.com/tutur3u/platform/issues/8300)) ([d9d127e](https://github.com/tutur3u/platform/commit/d9d127e936f9e20dff2da728798a26d360512019))
+* **database:** add workspace domains, entitlement and permissions ([3fa8b0d](https://github.com/tutur3u/platform/commit/3fa8b0dd8af1a3aa4bdbb7f59e97167e84d74115))
+* **ui:** add actor-scoped workspace picker shortcuts ([#8170](https://github.com/tutur3u/platform/issues/8170)) ([d9a512c](https://github.com/tutur3u/platform/commit/d9a512cade746445f2b96535b8f50e8f7ee1d066))
+* **ui:** add experimental Sorbet design behind an account-synced toggle ([3f3a1cc](https://github.com/tutur3u/platform/commit/3f3a1cc7a2f82e9a72b93800a86f3fe60566a562))
+* **ui:** add Sorbet palettes behind the experimental design ([#8436](https://github.com/tutur3u/platform/issues/8436)) ([63f18c4](https://github.com/tutur3u/platform/commit/63f18c4ac6a4d0ece11518682ba2a9dd80129e9b))
+* **ui:** pilot @ui-sdk/core for category keyboard reordering ([#8250](https://github.com/tutur3u/platform/issues/8250)) ([7b0eee6](https://github.com/tutur3u/platform/commit/7b0eee600b935e394b210a4590b670947b9a606f))
+* **ui:** redesign the workspace picker as a command-palette dialog ([#8309](https://github.com/tutur3u/platform/issues/8309)) ([2fd24ad](https://github.com/tutur3u/platform/commit/2fd24ad7a43606bc2404f02e5fcb423349517392))
+* **web:** add CMS page version edit, preview and publish routes ([#7591](https://github.com/tutur3u/platform/issues/7591)) ([97d33b0](https://github.com/tutur3u/platform/commit/97d33b089e9f29dcce2a08ece86632710b5f87ea))
+* **workers:** bind rewise and cms to the tuturuuu-abuse-guard service ([#8035](https://github.com/tutur3u/platform/issues/8035)) ([e4ac60e](https://github.com/tutur3u/platform/commit/e4ac60ed5fdc661f95eebe3726504098256a6053))
+* **workspace-domains:** read the SaaS zone, apex and fallback origin from config ([8a38689](https://github.com/tutur3u/platform/commit/8a386894505308f1e4ceb3a826caa80ade76f40f))
+* **workspace-domains:** workspace custom domains (paid add-on, staff bypass, edge Worker) ([#8157](https://github.com/tutur3u/platform/issues/8157)) ([11a94f0](https://github.com/tutur3u/platform/commit/11a94f0953a2fa6632c73eadfc35182229dda48c))
+
+
+### Bug Fixes
+
+* **auth:** never reflect untrusted forwarded hosts into login return URLs (SR-XFH-RETURN) ([6ef797e](https://github.com/tutur3u/platform/commit/6ef797ee7f82756a9cf91f0ac194a9f5d31af46b))
+* **cms:** restack state and canvas onto main ([#8197](https://github.com/tutur3u/platform/issues/8197)) ([5007e14](https://github.com/tutur3u/platform/commit/5007e14c852a2acfffce6e9cf4d7e04936de661a))
+* **i18n:** label the home destination "Home" without the brand name ([#8437](https://github.com/tutur3u/platform/issues/8437)) ([31f0736](https://github.com/tutur3u/platform/commit/31f07360f0ca1e0ab7d4a2454da2324b718206b9))
+* **satellites:** scope NEXT_LOCALE from the canonical origin ([705f7fa](https://github.com/tutur3u/platform/commit/705f7fa74e97584f9e256fd46bef3800f43459f1))
+* **security:** enforce exact shared Worker HSTS boundary ([#8226](https://github.com/tutur3u/platform/issues/8226)) ([95fad90](https://github.com/tutur3u/platform/commit/95fad90e527fe3a2a24b3e0df12e3445901a7cbe))
+* **start-bridge:** send server-function payloads in POST bodies ([#8239](https://github.com/tutur3u/platform/issues/8239)) ([028d2a7](https://github.com/tutur3u/platform/commit/028d2a7c98fdd7fbd48ff8b263b65bc5007177fe))
+* **tasks:** compose POST transport with current main ([1ff0fc7](https://github.com/tutur3u/platform/commit/1ff0fc7806853b0be9ac53d75c73d0677089ad68))
+* **ui:** compose workspace reliability with current main ([07bffbe](https://github.com/tutur3u/platform/commit/07bffbe850fc6bf345f8d863c10feae66b3ccb70))
+
 ## [0.39.0](https://github.com/tutur3u/platform/compare/cms-v0.38.0...cms-v0.39.0) (2026-11-08)
 
 

@@ -1,6 +1,6 @@
 {
   "name": "@tuturuuu/inventory-core",
-  "version": "0.11.2",
+  "version": "0.12.0",
   "private": true,
   "exports": {
     "./infrastructure/employee-sql/process": "./src/lib/infrastructure/employee-sql/employee-fixed-sql-process.ts",

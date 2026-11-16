@@ -1,5 +1,46 @@
 # Changelog
 
+## [0.37.0](https://github.com/tutur3u/platform/compare/meet-v0.36.0...meet-v0.37.0) (2026-11-16)
+
+
+### Features
+
+* branded, theme-aware not-found and error page for every app ([#8189](https://github.com/tutur3u/platform/issues/8189)) ([1239360](https://github.com/tutur3u/platform/commit/123936030549e1e275ccd2b5256c9286a9f54a32))
+* **calendar:** anchored event preview with undo delete ([#8352](https://github.com/tutur3u/platform/issues/8352)) ([6fdad4b](https://github.com/tutur3u/platform/commit/6fdad4baea5023e276a1ded4ba2c6b750ecc5237))
+* **calendar:** anchored event preview with undo delete. ([6fdad4b](https://github.com/tutur3u/platform/commit/6fdad4baea5023e276a1ded4ba2c6b750ecc5237))
+* **database:** add workspace domains, entitlement and permissions ([3fa8b0d](https://github.com/tutur3u/platform/commit/3fa8b0dd8af1a3aa4bdbb7f59e97167e84d74115))
+* **meet:** add named media scrim token for participant name bar ([#7948](https://github.com/tutur3u/platform/issues/7948)) ([dcdd4d4](https://github.com/tutur3u/platform/commit/dcdd4d41a455afa9eb364b2559b6b4389e110c2e))
+* **meet:** classroom room caps and host admission ([#8141](https://github.com/tutur3u/platform/issues/8141)) ([d827c7b](https://github.com/tutur3u/platform/commit/d827c7b86a29fd1b129311a84d38bc1fca62b7ff))
+* **meet:** schedule read model for Upcoming, Current and Past meetings ([#8318](https://github.com/tutur3u/platform/issues/8318)) ([03178b8](https://github.com/tutur3u/platform/commit/03178b822f7c2443a524b20f5d8d2dd810fadd7a))
+* **ui:** add actor-scoped workspace picker shortcuts ([#8170](https://github.com/tutur3u/platform/issues/8170)) ([d9a512c](https://github.com/tutur3u/platform/commit/d9a512cade746445f2b96535b8f50e8f7ee1d066))
+* **ui:** add experimental Sorbet design behind an account-synced toggle ([3f3a1cc](https://github.com/tutur3u/platform/commit/3f3a1cc7a2f82e9a72b93800a86f3fe60566a562))
+* **ui:** add Sorbet palettes behind the experimental design ([#8436](https://github.com/tutur3u/platform/issues/8436)) ([63f18c4](https://github.com/tutur3u/platform/commit/63f18c4ac6a4d0ece11518682ba2a9dd80129e9b))
+* **ui:** pilot @ui-sdk/core for category keyboard reordering ([#8250](https://github.com/tutur3u/platform/issues/8250)) ([7b0eee6](https://github.com/tutur3u/platform/commit/7b0eee600b935e394b210a4590b670947b9a606f))
+* **ui:** redesign the workspace picker as a command-palette dialog ([#8309](https://github.com/tutur3u/platform/issues/8309)) ([2fd24ad](https://github.com/tutur3u/platform/commit/2fd24ad7a43606bc2404f02e5fcb423349517392))
+* **workspace-domains:** read the SaaS zone, apex and fallback origin from config ([8a38689](https://github.com/tutur3u/platform/commit/8a386894505308f1e4ceb3a826caa80ade76f40f))
+* **workspace-domains:** workspace custom domains (paid add-on, staff bypass, edge Worker) ([#8157](https://github.com/tutur3u/platform/issues/8157)) ([11a94f0](https://github.com/tutur3u/platform/commit/11a94f0953a2fa6632c73eadfc35182229dda48c))
+
+
+### Bug Fixes
+
+* **auth:** apply the forwarded-host trust model to shared cookies and Meet redirects ([705d9ff](https://github.com/tutur3u/platform/commit/705d9ff2a74bd0fcccfdd862721f3f1ba9387e3d))
+* **auth:** never reflect untrusted forwarded hosts into login return URLs (SR-XFH-RETURN) ([6ef797e](https://github.com/tutur3u/platform/commit/6ef797ee7f82756a9cf91f0ac194a9f5d31af46b))
+* **i18n:** label the home destination "Home" without the brand name ([#8437](https://github.com/tutur3u/platform/issues/8437)) ([31f0736](https://github.com/tutur3u/platform/commit/31f07360f0ca1e0ab7d4a2454da2324b718206b9))
+* **meet:** explain unavailable Mira Live invitations ([440321e](https://github.com/tutur3u/platform/commit/440321ed0a9e2374861ae67c8382d96404aad212))
+* **meet:** gate private Mira on durable participant consent ([#8274](https://github.com/tutur3u/platform/issues/8274)) ([061a566](https://github.com/tutur3u/platform/commit/061a566123e309f9004eb0793cd9a59016924c04))
+* **meet:** harden server function and invite cookie WAF contracts ([#8305](https://github.com/tutur3u/platform/issues/8305)) ([12b7053](https://github.com/tutur3u/platform/commit/12b7053ee7d64b5f3baa7da0b395ad700888d197))
+* **meet:** list room-mira-private in the Cloudflare type project ([#8354](https://github.com/tutur3u/platform/issues/8354)) ([1f6516b](https://github.com/tutur3u/platform/commit/1f6516ba3317b7b33e51f38d6e6bd2b2d45afd10))
+* **meet:** make Private Mira choices, leave and denials visible ([#8287](https://github.com/tutur3u/platform/issues/8287)) ([aad395d](https://github.com/tutur3u/platform/commit/aad395d94983c82d4623086e269d53f540fbae4e))
+* **meet:** prepare transcript readers for erasure markers ([#7517](https://github.com/tutur3u/platform/issues/7517)) ([f35343e](https://github.com/tutur3u/platform/commit/f35343e88998b4748ffe459a86debf26fb6bfb2c))
+* **meet:** refuse legacy transcription permanently and retire the old recorder ([#7506](https://github.com/tutur3u/platform/issues/7506)) ([5ac0f24](https://github.com/tutur3u/platform/commit/5ac0f241be51d094ca2e515015a5307a386d342e))
+* **meet:** show signed-in name and email in the account menu ([#8317](https://github.com/tutur3u/platform/issues/8317)) ([d508414](https://github.com/tutur3u/platform/commit/d50841427db79cab59301e28484f8b9818d3934d))
+* **satellites:** scope NEXT_LOCALE from the canonical origin ([705f7fa](https://github.com/tutur3u/platform/commit/705f7fa74e97584f9e256fd46bef3800f43459f1))
+* **start-bridge:** send server-function payloads in POST bodies ([#8239](https://github.com/tutur3u/platform/issues/8239)) ([028d2a7](https://github.com/tutur3u/platform/commit/028d2a7c98fdd7fbd48ff8b263b65bc5007177fe))
+* **tasks:** compose POST transport with current main ([1ff0fc7](https://github.com/tutur3u/platform/commit/1ff0fc7806853b0be9ac53d75c73d0677089ad68))
+* **ui:** compose workspace reliability with current main ([07bffbe](https://github.com/tutur3u/platform/commit/07bffbe850fc6bf345f8d863c10feae66b3ccb70))
+* **workers:** disable public worker development origins ([#8361](https://github.com/tutur3u/platform/issues/8361)) ([3ad4197](https://github.com/tutur3u/platform/commit/3ad4197cc2417c3a59f1dfacf0bf246387ed475c))
+* **workers:** disable public worker development origins. ([3ad4197](https://github.com/tutur3u/platform/commit/3ad4197cc2417c3a59f1dfacf0bf246387ed475c))
+
 ## [0.36.0](https://github.com/tutur3u/platform/compare/meet-v0.35.0...meet-v0.36.0) (2026-11-08)
 
 

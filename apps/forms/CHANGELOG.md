@@ -1,5 +1,36 @@
 # Changelog
 
+## [0.22.0](https://github.com/tutur3u/platform/compare/forms-v0.21.0...forms-v0.22.0) (2026-11-16)
+
+
+### Features
+
+* branded, theme-aware not-found and error page for every app ([#8189](https://github.com/tutur3u/platform/issues/8189)) ([1239360](https://github.com/tutur3u/platform/commit/123936030549e1e275ccd2b5256c9286a9f54a32))
+* **calendar:** anchored event preview with undo delete ([#8352](https://github.com/tutur3u/platform/issues/8352)) ([6fdad4b](https://github.com/tutur3u/platform/commit/6fdad4baea5023e276a1ded4ba2c6b750ecc5237))
+* **calendar:** anchored event preview with undo delete. ([6fdad4b](https://github.com/tutur3u/platform/commit/6fdad4baea5023e276a1ded4ba2c6b750ecc5237))
+* **calendar:** unify sidebar list and preserve overnight date selection ([#8358](https://github.com/tutur3u/platform/issues/8358)) ([916a377](https://github.com/tutur3u/platform/commit/916a377e20b9f3ba25bcf98cd53a2295cbe50ce4))
+* **calendar:** unify sidebar list and preserve overnight date selection. ([916a377](https://github.com/tutur3u/platform/commit/916a377e20b9f3ba25bcf98cd53a2295cbe50ce4))
+* **database:** add workspace domains, entitlement and permissions ([3fa8b0d](https://github.com/tutur3u/platform/commit/3fa8b0dd8af1a3aa4bdbb7f59e97167e84d74115))
+* **ui:** add actor-scoped workspace picker shortcuts ([#8170](https://github.com/tutur3u/platform/issues/8170)) ([d9a512c](https://github.com/tutur3u/platform/commit/d9a512cade746445f2b96535b8f50e8f7ee1d066))
+* **ui:** add experimental Sorbet design behind an account-synced toggle ([3f3a1cc](https://github.com/tutur3u/platform/commit/3f3a1cc7a2f82e9a72b93800a86f3fe60566a562))
+* **ui:** add Sorbet palettes behind the experimental design ([#8436](https://github.com/tutur3u/platform/issues/8436)) ([63f18c4](https://github.com/tutur3u/platform/commit/63f18c4ac6a4d0ece11518682ba2a9dd80129e9b))
+* **ui:** pilot @ui-sdk/core for category keyboard reordering ([#8250](https://github.com/tutur3u/platform/issues/8250)) ([7b0eee6](https://github.com/tutur3u/platform/commit/7b0eee600b935e394b210a4590b670947b9a606f))
+* **ui:** redesign the workspace picker as a command-palette dialog ([#8309](https://github.com/tutur3u/platform/issues/8309)) ([2fd24ad](https://github.com/tutur3u/platform/commit/2fd24ad7a43606bc2404f02e5fcb423349517392))
+* **workspace-domains:** read the SaaS zone, apex and fallback origin from config ([8a38689](https://github.com/tutur3u/platform/commit/8a386894505308f1e4ceb3a826caa80ade76f40f))
+* **workspace-domains:** workspace custom domains (paid add-on, staff bypass, edge Worker) ([#8157](https://github.com/tutur3u/platform/issues/8157)) ([11a94f0](https://github.com/tutur3u/platform/commit/11a94f0953a2fa6632c73eadfc35182229dda48c))
+
+
+### Bug Fixes
+
+* **ci:** overnight main-green fix-up part 2 (shortener oxfmt, calendar default-view i18n) ([b71d32f](https://github.com/tutur3u/platform/commit/b71d32f77fbb3e911e630a4f6b55ba982486fd71))
+* **i18n:** label the home destination "Home" without the brand name ([#8437](https://github.com/tutur3u/platform/issues/8437)) ([31f0736](https://github.com/tutur3u/platform/commit/31f07360f0ca1e0ab7d4a2454da2324b718206b9))
+* **satellites:** scope NEXT_LOCALE from the canonical origin ([705f7fa](https://github.com/tutur3u/platform/commit/705f7fa74e97584f9e256fd46bef3800f43459f1))
+* **security:** enforce exact shared Worker HSTS boundary ([#8226](https://github.com/tutur3u/platform/issues/8226)) ([95fad90](https://github.com/tutur3u/platform/commit/95fad90e527fe3a2a24b3e0df12e3445901a7cbe))
+* **start-bridge:** deny framing when a kept CSP sets no frame-ancestors ([#8140](https://github.com/tutur3u/platform/issues/8140)) ([7882748](https://github.com/tutur3u/platform/commit/78827486265644b81dfc073752b6551d2871e269))
+* **start-bridge:** send server-function payloads in POST bodies ([#8239](https://github.com/tutur3u/platform/issues/8239)) ([028d2a7](https://github.com/tutur3u/platform/commit/028d2a7c98fdd7fbd48ff8b263b65bc5007177fe))
+* **tasks:** compose POST transport with current main ([1ff0fc7](https://github.com/tutur3u/platform/commit/1ff0fc7806853b0be9ac53d75c73d0677089ad68))
+* **ui:** compose workspace reliability with current main ([07bffbe](https://github.com/tutur3u/platform/commit/07bffbe850fc6bf345f8d863c10feae66b3ccb70))
+
 ## [0.21.0](https://github.com/tutur3u/platform/compare/forms-v0.20.0...forms-v0.21.0) (2026-11-08)
 
 

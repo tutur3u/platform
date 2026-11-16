@@ -1,5 +1,14 @@
 # Changelog
 
+## [0.12.1](https://github.com/tutur3u/platform/compare/users-core-v0.12.0...users-core-v0.12.1) (2026-11-16)
+
+
+### Bug Fixes
+
+* **reports:** block approval and sending without feedback ([#7893](https://github.com/tutur3u/platform/issues/7893)) ([e1a34a4](https://github.com/tutur3u/platform/commit/e1a34a4b38c387640a88312ce3139df30eecfefe))
+* **reports:** show report totals on open and filter by the month in the title ([#8063](https://github.com/tutur3u/platform/issues/8063)) ([69c7de8](https://github.com/tutur3u/platform/commit/69c7de89353e6d54064fa9b383fdcf39b96e8894))
+* **users:** authenticate API keys before privileged queries ([#8236](https://github.com/tutur3u/platform/issues/8236)) ([1cf9687](https://github.com/tutur3u/platform/commit/1cf9687b00f05f9dd460d82f9d55924a8bce7c9e))
+
 ## [0.12.0](https://github.com/tutur3u/platform/compare/users-core-v0.11.2...users-core-v0.12.0) (2026-11-08)
 
 

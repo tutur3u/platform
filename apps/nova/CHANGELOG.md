@@ -1,5 +1,40 @@
 # Changelog
 
+## [0.44.0](https://github.com/tutur3u/platform/compare/nova-v0.43.0...nova-v0.44.0) (2026-11-16)
+
+
+### Features
+
+* branded, theme-aware not-found and error page for every app ([#8189](https://github.com/tutur3u/platform/issues/8189)) ([1239360](https://github.com/tutur3u/platform/commit/123936030549e1e275ccd2b5256c9286a9f54a32))
+* **calendar:** anchored event preview with undo delete ([#8352](https://github.com/tutur3u/platform/issues/8352)) ([6fdad4b](https://github.com/tutur3u/platform/commit/6fdad4baea5023e276a1ded4ba2c6b750ecc5237))
+* **calendar:** anchored event preview with undo delete. ([6fdad4b](https://github.com/tutur3u/platform/commit/6fdad4baea5023e276a1ded4ba2c6b750ecc5237))
+* **database:** add workspace domains, entitlement and permissions ([3fa8b0d](https://github.com/tutur3u/platform/commit/3fa8b0dd8af1a3aa4bdbb7f59e97167e84d74115))
+* **nova:** run the abuse guard through the Cloudflare service binding ([#8002](https://github.com/tutur3u/platform/issues/8002)) ([c602004](https://github.com/tutur3u/platform/commit/c60200460f84fcf01583b390dc7532f7895fcf13))
+* **ui:** add actor-scoped workspace picker shortcuts ([#8170](https://github.com/tutur3u/platform/issues/8170)) ([d9a512c](https://github.com/tutur3u/platform/commit/d9a512cade746445f2b96535b8f50e8f7ee1d066))
+* **ui:** add experimental Sorbet design behind an account-synced toggle ([3f3a1cc](https://github.com/tutur3u/platform/commit/3f3a1cc7a2f82e9a72b93800a86f3fe60566a562))
+* **ui:** add Sorbet palettes behind the experimental design ([#8436](https://github.com/tutur3u/platform/issues/8436)) ([63f18c4](https://github.com/tutur3u/platform/commit/63f18c4ac6a4d0ece11518682ba2a9dd80129e9b))
+* **ui:** pilot @ui-sdk/core for category keyboard reordering ([#8250](https://github.com/tutur3u/platform/issues/8250)) ([7b0eee6](https://github.com/tutur3u/platform/commit/7b0eee600b935e394b210a4590b670947b9a606f))
+* **ui:** redesign the workspace picker as a command-palette dialog ([#8309](https://github.com/tutur3u/platform/issues/8309)) ([2fd24ad](https://github.com/tutur3u/platform/commit/2fd24ad7a43606bc2404f02e5fcb423349517392))
+* **workspace-domains:** read the SaaS zone, apex and fallback origin from config ([8a38689](https://github.com/tutur3u/platform/commit/8a386894505308f1e4ceb3a826caa80ade76f40f))
+* **workspace-domains:** workspace custom domains (paid add-on, staff bypass, edge Worker) ([#8157](https://github.com/tutur3u/platform/issues/8157)) ([11a94f0](https://github.com/tutur3u/platform/commit/11a94f0953a2fa6632c73eadfc35182229dda48c))
+
+
+### Bug Fixes
+
+* **auth:** never reflect untrusted forwarded hosts into login return URLs (SR-XFH-RETURN) ([6ef797e](https://github.com/tutur3u/platform/commit/6ef797ee7f82756a9cf91f0ac194a9f5d31af46b))
+* **i18n:** label the home destination "Home" without the brand name ([#8437](https://github.com/tutur3u/platform/issues/8437)) ([31f0736](https://github.com/tutur3u/platform/commit/31f07360f0ca1e0ab7d4a2454da2324b718206b9))
+* **nova:** accept nova.ai.vn as a canonical auth return origin ([20dd011](https://github.com/tutur3u/platform/commit/20dd011a3127100db281e9785379779e1b3855fd))
+* **nova:** scope NEXT_LOCALE from the auth canonical origins ([396d872](https://github.com/tutur3u/platform/commit/396d872e8f397615dd62c3425e1bf01af6d1102c))
+* **nova:** serve the production host and sweep Worker root hosts ([#8064](https://github.com/tutur3u/platform/issues/8064)) ([8c552cd](https://github.com/tutur3u/platform/commit/8c552cd31a6cb59e23b026ce2d0f963f8dcf70d5))
+* **nova:** type optional mounts and generated runtime bindings ([#8144](https://github.com/tutur3u/platform/issues/8144)) ([54504e7](https://github.com/tutur3u/platform/commit/54504e7c35bd7a52d5412d150fdb46a4813d5411))
+* **rewise,mind,nova:** skip the abuse guard when it is not configured ([fbe9f42](https://github.com/tutur3u/platform/commit/fbe9f42400992b9366b0ae8a21ff90de653a5105))
+* **satellites:** scope NEXT_LOCALE from the canonical origin ([705f7fa](https://github.com/tutur3u/platform/commit/705f7fa74e97584f9e256fd46bef3800f43459f1))
+* **security:** enforce exact shared Worker HSTS boundary ([#8226](https://github.com/tutur3u/platform/issues/8226)) ([95fad90](https://github.com/tutur3u/platform/commit/95fad90e527fe3a2a24b3e0df12e3445901a7cbe))
+* **start-bridge:** install the request store everywhere except client builds ([#8123](https://github.com/tutur3u/platform/issues/8123)) ([1ad6d50](https://github.com/tutur3u/platform/commit/1ad6d507de5d2b4cedced558d3eb12716720c1d5))
+* **start-bridge:** send server-function payloads in POST bodies ([#8239](https://github.com/tutur3u/platform/issues/8239)) ([028d2a7](https://github.com/tutur3u/platform/commit/028d2a7c98fdd7fbd48ff8b263b65bc5007177fe))
+* **tasks:** compose POST transport with current main ([1ff0fc7](https://github.com/tutur3u/platform/commit/1ff0fc7806853b0be9ac53d75c73d0677089ad68))
+* **ui:** compose workspace reliability with current main ([07bffbe](https://github.com/tutur3u/platform/commit/07bffbe850fc6bf345f8d863c10feae66b3ccb70))
+
 ## [0.43.0](https://github.com/tutur3u/platform/compare/nova-v0.42.2...nova-v0.43.0) (2026-11-08)
 
 
