@@ -106,8 +106,17 @@ jobs:
           elif git merge-base --is-ancestor "${branch}" origin/main; then
             echo "${branch} is already merged into origin/main."
           else
-            echo "${branch} is unmerged and will be merged into main."
+            echo "${branch} is unmerged."
             should_merge=true
+          fi
+
+          # D191b (Rex, option B, 16 Nov 2026): never integrate a generated
+          # release branch. Release metadata lands only through a reviewed
+          # direct vhpx commit, so a held branch (#8014) is reported and left
+          # untouched. The main/production alignment below is unchanged.
+          if [ "${should_merge}" = true ]; then
+            echo "::notice::${branch} is held and will not be merged (D191b: release metadata lands by a reviewed direct commit)."
+            should_merge=false
           fi
 
           main_sha="$(git rev-parse origin/main)"

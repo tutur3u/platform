@@ -70,6 +70,68 @@ test('release merge skips cleanly when there is nothing to merge', () => {
   );
 });
 
+test('D191b: the daily merge never integrates a held generated release branch', () => {
+  const lines = workflow.split('\n');
+  const start = lines.findIndex((line) =>
+    line.endsWith('- name: Resolve work to do')
+  );
+  const run = lines.findIndex(
+    (line, index) => index > start && line === '        run: |'
+  );
+  assert.ok(start >= 0 && run > start, 'Resolve work to do keeps a run block');
+  const body = [];
+  for (const line of lines.slice(run + 1)) {
+    if (line !== '' && !line.startsWith(' '.repeat(10))) break;
+    body.push(line.slice(10));
+  }
+  const script = body.join('\n');
+  assert.match(script, /should_merge=false/u);
+  const dir = fs.mkdtempSync(path.join(require('node:os').tmpdir(), 'd191b-'));
+  try {
+    // A stub git: the production release branch exists and is NOT merged.
+    const git = path.join(dir, 'git');
+    fs.writeFileSync(
+      git,
+      [
+        '#!/bin/sh',
+        'case "$1" in',
+        '  fetch) exit 0 ;;',
+        '  show-ref) exit 0 ;;',
+        '  merge-base) exit 1 ;;',
+        '  rev-parse) echo 1111111111111111111111111111111111111111 ;;',
+        '  *) exit 0 ;;',
+        'esac',
+        '',
+      ].join('\n'),
+      { mode: 0o755 }
+    );
+    const output = path.join(dir, 'out');
+    fs.writeFileSync(output, '');
+    const result = spawnSync('bash', ['-c', script], {
+      encoding: 'utf8',
+      env: { PATH: `${dir}:/usr/bin:/bin`, GITHUB_OUTPUT: output },
+    });
+    assert.equal(result.status, 0, result.stderr);
+    const outputs = fs.readFileSync(output, 'utf8');
+    assert.match(outputs, /^should_merge=false$/mu);
+    assert.match(
+      outputs,
+      /^branch=origin\/release-please--branches--production$/mu
+    );
+    assert.match(result.stdout, /is held and will not be merged/u);
+  } finally {
+    fs.rmSync(dir, { recursive: true, force: true });
+  }
+});
+
+test('D191b: release generation never opens a PR or rewrites the held branch', () => {
+  assert.match(
+    releasePleaseWorkflow,
+    /^ {2}release-please:\n {4}needs: \[check-ci\]\n(?: {4}#.*\n)+ {4}if: \$\{\{ false && /mu,
+    'the PR-producing release-please job must be hard-gated off'
+  );
+});
+
 test('production waits for the exact pushed main commit and never promotes a newer unchecked head', () => {
   const push = workflow.indexOf('- name: Push verified release merge to main');
   const wait = workflow.indexOf(

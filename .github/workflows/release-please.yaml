@@ -38,7 +38,12 @@ jobs:
 
   release-please:
     needs: [check-ci]
-    if: github.ref == 'refs/heads/production' && needs.check-ci.outputs.should_run == 'true'
+    # D191b (Rex, option B, 16 Nov 2026): PR-mode Release Please is retired. This
+    # job never runs, so it opens or updates no release PR and never rewrites
+    # the held release-please--branches--production branch (#8014). Version,
+    # changelog and manifest changes land through a reviewed direct vhpx
+    # commit; draft generation returns later as a separate artifact unit.
+    if: ${{ false && github.ref == 'refs/heads/production' && needs.check-ci.outputs.should_run == 'true' }}
     runs-on: ubuntu-latest
     # RELEASE_PLEASE_TOKEN is an admin PAT; only main and production may read it.
     environment: release-please

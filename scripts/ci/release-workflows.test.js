@@ -785,9 +785,11 @@ test('Release Please workflow is production-scoped and prefers bot token', () =>
   );
   assert.match(checkCiJob, /if: github\.ref == 'refs\/heads\/production'/);
   assert.match(checkCiJob, /workflow_name: release-please\.yaml/);
+  // D191b (option B): the PR-producing job is hard-gated off but keeps its
+  // production scope for when owner-applied metadata replaces it.
   assert.match(
     releaseJob,
-    /if: github\.ref == 'refs\/heads\/production' && needs\.check-ci\.outputs\.should_run == 'true'/
+    /if: \$\{\{ false && github\.ref == 'refs\/heads\/production' && needs\.check-ci\.outputs\.should_run == 'true' \}\}/
   );
   assert.match(releaseJob, /contents:\s*write/);
   assert.match(releaseJob, /issues:\s*write/);
