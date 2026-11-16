@@ -29,6 +29,20 @@ For assigned ongoing idea/bug/feature intake, read `references/request-backlog.m
 capture each outcome before dispatch, recover durable requests on every wake, and
 keep implemented work distinct from verified delivery.
 
+## On DONE
+
+When the item is done, blocked for good, or handed to another owner, send Atlas one handover, then settle yourself. Never complete silently.
+
+The handover states what shipped, with the commit SHA and the live proof, what is left, the open risks, and the links.
+
+Settle with t3_thread_organize action settle. It applies at the end of the turn.
+
+A live lane with standing duties does not settle. That includes Atlas, Iris, Quinn, Selene, Rex, Pax, Cora, Forge, Mira, and any lane that still holds a watch, a waiter, a webhook, an open question, or an open program.
+
+A parent consumes a delegated child's result, reports it upward, and settles the child. Do not settle a child while its parent is still live.
+
+Every new brief includes this sentence: when the work is done, blocked for good, or handed off, send Atlas one handover and then settle, unless you are a live lane with standing duties.
+
 Before staging or committing, inspect existing staged paths and claim the window:
 
 ```bash
