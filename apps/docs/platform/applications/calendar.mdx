@@ -47,17 +47,23 @@ mount rule and `apps/calendar/src/runtime/root-cutover.test.ts` the subdomain.
 The Next build serves the app under the `/calendar` base path on its own host.
 Next prefixes the proxy matchers with the base path, so the proxy only sees
 prefixed paths; its root matcher `/` covers the bare `/calendar`. Unprefixed
-paths answer a same-host 307 that keeps the query string, and their sources also
-declare `Cache-Control: private, no-store`: `/` goes to `/calendar`, and any
-other path goes to `/calendar/<path>` unless its first segment is `calendar`,
-`api`, `_next`, `_vercel`, `serwist`, `monitoring` or `.well-known`. Three
-GET-only API paths redirect the same way:
-the Google and Microsoft OAuth callbacks and `/api/build-info`. Every other
-unprefixed `/api/*` path stays unrouted. Next serves an unprefixed path in place
-only through an external rewrite, and a redirect breaks non-GET or
-manual-redirect callers, so those callers use `/calendar/api/*`. Next's built-in
-308 removes a trailing slash first. `apps/calendar/src/lib/legacy-root-routes.ts`
-holds the rule and `apps/calendar/next.config.test.ts` covers the emitted routes.
+document paths answer a same-host 307 that keeps the query string, and their
+sources also declare `Cache-Control: private, no-store`: `/` goes to
+`/calendar`, and any other path goes to `/calendar/<path>` unless its first
+segment is `calendar`, `api`, `_next`, `_vercel`, `serwist`, `monitoring` or
+`.well-known`. Next's built-in 308 removes a trailing slash first.
+
+On Vercel, unprefixed `/api/*` is served in place. A `routes` entry in
+`apps/calendar/vercel.json` rewrites it to `/calendar/api/*` with
+`continue: true` ahead of Next's routes, so every method and body pass through
+and the proxy API guard and owner rewrites apply as on the prefixed path. A
+vercel.json `rewrites` entry cannot do this: it compiles to a `check` route that
+leaves the phase before Next's proxy route. Next alone cannot serve an
+unprefixed path in place, so without that entry the Google and Microsoft OAuth
+callbacks and `/api/build-info` redirect to their prefixed paths and other
+unprefixed API paths are not found. `apps/calendar/src/lib/legacy-root-routes.ts`
+holds the Next rule; `apps/calendar/next.config.test.ts` and
+`apps/calendar/vercel-config.test.ts` cover both.
 
 `apps/calendar/src/runtime/public-completion.test.ts` covers the real proxy,
 shared token consumer, locale resolution, anonymous page model, security policy,

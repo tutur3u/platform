@@ -3,6 +3,13 @@
   "buildCommand": "cd ../.. && bun turbo:local run build --filter='@tuturuuu/calendar^...' && bun run --cwd apps/calendar build:legacy",
   "installCommand": "cd ../.. && bun install --frozen-lockfile --minimum-release-age=0",
   "regions": ["sin1"],
+  "routes": [
+    {
+      "src": "^/api/(.*)$",
+      "dest": "/calendar/api/$1",
+      "continue": true
+    }
+  ],
   "git": {
     "deploymentEnabled": false
   },
