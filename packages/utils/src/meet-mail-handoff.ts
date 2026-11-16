@@ -7,6 +7,9 @@ export const HANDOFF_PREFIX = '#meet-mail=';
 const subject = z
   .string()
   .refine((value) => !/[\x00-\x1f\x7f\u2028\u2029]/u.test(value))
+  .refine(
+    (value) => !/(?:https?:\/\/|www\.|mailto:|javascript:|data:)/iu.test(value)
+  )
   .trim()
   .min(1)
   .max(160);

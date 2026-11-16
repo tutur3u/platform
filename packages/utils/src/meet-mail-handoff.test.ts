@@ -100,3 +100,25 @@ it('refuses control characters even when trimming could hide them', () => {
     )
   ).toBeNull();
 });
+
+it.each([
+  'https://evil.example',
+  'Review www.evil.example',
+  'mailto:elsewhere@example.invalid',
+  'javascript:alert(1)',
+])('rejects URL-like subject %s', (subject) => {
+  const value = {
+    v: 1 as const,
+    source: 'meet' as const,
+    id: crypto.randomUUID(),
+    issuedAt: Date.now(),
+    actorId: '00000000-0000-4000-8000-000000000001',
+    workspaceId: '00000000-0000-4000-8000-000000000002',
+    subject,
+    joinUrl: 'https://meet.tuturuuu.com/r/bs91fqmvp-d7213csa9-nd7sz39w',
+    body:
+      subject + '\nhttps://meet.tuturuuu.com/r/bs91fqmvp-d7213csa9-nd7sz39w',
+    to: ['guest@example.invalid'],
+  };
+  expect(() => meetMailFragment(value)).toThrow();
+});

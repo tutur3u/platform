@@ -17,9 +17,15 @@ export async function claimMeetMailHandoff(value: MeetMailHandoff) {
       value.issuedAt > now + 30_000
     )
       return false;
-    const receipts = receiptSchema
-      .parse(JSON.parse(localStorage.getItem(storageKey) ?? '[]'))
-      .filter((entry) => entry.until >= now);
+    let receipts: { id: string; until: number }[];
+    try {
+      receipts = receiptSchema
+        .parse(JSON.parse(localStorage.getItem(storageKey) ?? '[]'))
+        .filter((entry) => entry.until >= now);
+    } catch {
+      localStorage.removeItem(storageKey);
+      throw new Error('Invalid replay receipts; this claim was refused');
+    }
     if (receipts.some(({ id }) => id === value.id) || receipts.length >= 128)
       return false;
     localStorage.setItem(

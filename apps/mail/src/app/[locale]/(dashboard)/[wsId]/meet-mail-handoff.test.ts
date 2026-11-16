@@ -62,6 +62,9 @@ vi.mock('@tuturuuu/internal-api', () => ({
 vi.mock('next/navigation', () => ({
   useRouter: () => ({ push: vi.fn(), replace: vi.fn() }),
 }));
+vi.mock('@tuturuuu/internal-api/people', () => ({
+  searchWorkspacePeople: vi.fn(async () => ({ data: [] })),
+}));
 vi.mock('next-intl', () => ({
   useLocale: () => 'en',
   useTranslations: () => (key: string) => key,
@@ -273,7 +276,7 @@ it('does not import a duplicate hash or show an old actor preview after a live a
       )
     )
   );
-  await screen.findByText('invalid');
+  expect(window.location.hash).toBe('');
   expect(screen.queryByText('guest@example.invalid')).toBeNull();
   expect(api.create).not.toHaveBeenCalled();
 });

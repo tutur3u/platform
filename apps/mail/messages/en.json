@@ -623,8 +623,10 @@
       "blocked": "Keep your current draft. Open this handoff in a new tab to continue.",
       "confirm": "Review these recipients and plain text before opening a draft. Mail may save the draft after you confirm.",
       "dismiss": "Dismiss",
+      "external": "Outside workspace or unverified",
       "import": "Open draft",
       "invalid": "This handoff is invalid, expired or already imported. Open a new handoff from Meet.",
+      "link_warning": "Opened from a link — check the recipients and subject before sending",
       "new_tab": "Open in new Mail tab",
       "title": "Meet draft"
     },

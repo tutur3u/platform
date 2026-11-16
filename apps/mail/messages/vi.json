@@ -623,8 +623,10 @@
       "blocked": "Giữ bản nháp hiện tại. Mở yêu cầu này trong thẻ mới để tiếp tục.",
       "confirm": "Xem lại người nhận và văn bản trước khi mở bản nháp. Mail có thể lưu bản nháp sau khi bạn xác nhận.",
       "dismiss": "Bỏ qua",
+      "external": "Ngoài không gian làm việc hoặc chưa xác minh",
       "import": "Mở bản nháp",
       "invalid": "Yêu cầu này không hợp lệ, đã hết hạn hoặc đã nhập. Hãy tạo yêu cầu mới từ Meet.",
+      "link_warning": "Được mở từ liên kết — hãy kiểm tra người nhận và tiêu đề trước khi gửi",
       "new_tab": "Mở trong thẻ Mail mới",
       "title": "Bản nháp Meet"
     },

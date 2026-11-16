@@ -1388,8 +1388,22 @@ An open or retained composer blocks import without saving or replacing its
 contents. The user can keep it and explicitly open the handoff in a new Mail tab.
 Duplicate hashes and rerenders do not import again. Actor/workspace mismatch,
 expiry, unavailable browser replay protection and source changes during an import
-claim fail closed. Fragments remain pending for source selection until consent
-or dismissal; plaintext is not stored in replay receipts or application logs.
+claim fail closed. A valid payload hash is removed immediately with
+history.replaceState; the pending draft stays only in actor/workspace-scoped
+memory across Mail source changes. New-tab transfer uses a short-lived same-origin
+BroadcastChannel and a random channel ID in the URL, never another email-bearing
+URL. Closing the tab, an expired channel, unsupported BroadcastChannel or lost
+memory requires a fresh handoff. Plaintext is not stored in replay receipts or
+application logs. A corrupt receipt store is cleared, but that claim is refused.
+
+Matching actor/workspace UUIDs does not authenticate who issued the link. Every
+preview warns, "Opened from a link — check the recipients and subject before
+sending". Recipients remain visibly marked "Outside workspace or unverified"
+unless the existing permitted people search positively returns a matching
+workspace member. Contact-only results, hidden emails, failed/pending lookups and
+addresses too long for the bounded search remain unverified; they are not silently
+classified as members. At most 20 bounded lookups run per preview, without retry
+or focus polling. Subjects containing URL-like strings are rejected.
 
 See [Meet's protocol and browser limits](meet#explicit-mail-draft-handoff).
 Signed-out resume is not guaranteed; a fresh handoff may be necessary after login.

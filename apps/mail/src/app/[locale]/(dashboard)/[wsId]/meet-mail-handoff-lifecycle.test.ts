@@ -1,3 +1,4 @@
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 // @vitest-environment jsdom
 import '@testing-library/jest-dom/vitest';
 import {
@@ -15,6 +16,9 @@ import {
 } from '@tuturuuu/utils/meet-mail-handoff';
 import { MailActorProvider } from '@/components/mail-actor-provider';
 import { MeetMailHandoffPreview } from './meet-mail-handoff-preview';
+vi.mock('@tuturuuu/internal-api/people', () => ({
+  searchWorkspacePeople: vi.fn(async () => ({ data: [] })),
+}));
 vi.mock('next-intl', () => ({ useTranslations: () => (key: string) => key }));
 const actorId = '00000000-0000-4000-8000-000000000001',
   workspaceId = '00000000-0000-4000-8000-000000000002';
@@ -49,15 +53,23 @@ function tree(
   targetWorkspace = workspaceId
 ) {
   return h(
-    MailActorProvider,
-    { actorId },
-    h(MeetMailHandoffPreview, {
-      workspaceId: targetWorkspace,
-      sourceKey,
-      blocked: false,
-      canImport: true,
-      onImport,
-    })
+    QueryClientProvider,
+    {
+      client: new QueryClient({
+        defaultOptions: { queries: { retry: false } },
+      }),
+    },
+    h(
+      MailActorProvider,
+      { actorId },
+      h(MeetMailHandoffPreview, {
+        workspaceId: targetWorkspace,
+        sourceKey,
+        blocked: false,
+        canImport: true,
+        onImport,
+      })
+    )
   );
 }
 it.each(['unmount', 'source change'] as const)(

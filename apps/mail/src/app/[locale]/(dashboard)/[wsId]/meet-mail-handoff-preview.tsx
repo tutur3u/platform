@@ -10,7 +10,16 @@ import {
 import { useTranslations } from 'next-intl';
 import { useEffect, useRef, useState } from 'react';
 import { useMailActor } from '@/components/mail-actor-provider';
-import { useMeetMailWorkspaceScope } from './meet-mail-workspace-scope';
+import {
+  useMeetMailWorkspaceScope,
+  useMeetMailDraftMemory,
+} from './meet-mail-workspace-scope';
+import {
+  openMailTransfer,
+  receiveMailTransfer,
+  transferId,
+} from './meet-mail-transfer';
+import { MeetMailRecipientFlags } from './meet-mail-recipient-flags';
 import { claimMeetMailHandoff } from './meet-mail-handoff-browser';
 
 function readHandoff(raw: string, actorId: string, workspaceId: string) {
@@ -41,7 +50,8 @@ export function MeetMailHandoffPreview({
   workspaceId = useMeetMailWorkspaceScope(workspaceId);
   const actorId = useMailActor();
   const t = useTranslations('mail.meet_handoff');
-  const [raw, setRaw] = useState<string | null>(null);
+  const { raw, setRaw } = useMeetMailDraftMemory();
+  const transfers = useRef(new Set<() => void>());
   const [failed, setFailed] = useState(false);
   const [busy, setBusy] = useState(false);
   const mounted = useRef(true);
@@ -49,31 +59,48 @@ export function MeetMailHandoffPreview({
     mounted.current = true;
     return () => {
       mounted.current = false;
+      for (const close of transfers.current) close();
+      transfers.current.clear();
     };
   }, []);
   const live = useRef({ actorId, workspaceId, sourceKey, blocked, canImport });
   live.current = { actorId, workspaceId, sourceKey, blocked, canImport };
   useEffect(() => {
-    setRaw(null);
-    const capture = () => {
-      if (!window.location.hash.startsWith(HANDOFF_PREFIX)) return;
-      const fragment = window.location.hash;
-      if (!actorId) return;
-      if (!readHandoff(fragment, actorId, workspaceId)) {
-        window.history.replaceState(
-          window.history.state,
-          '',
-          window.location.pathname + window.location.search
-        );
+    const removeHash = () =>
+      window.history.replaceState(
+        window.history.state,
+        '',
+        window.location.pathname + window.location.search
+      );
+    const accept = (fragment: string) => {
+      if (!actorId || !readHandoff(fragment, actorId, workspaceId)) {
         setFailed(true);
         return;
       }
-      setRaw((current) => current ?? fragment);
+      setRaw(fragment);
+    };
+    const capture = () => {
+      const fragment = window.location.hash;
+      const channel = transferId(fragment);
+      if (channel) {
+        removeHash();
+        try {
+          for (const close of transfers.current) close();
+          transfers.current.clear();
+          transfers.current.add(receiveMailTransfer(channel, accept));
+        } catch {
+          setFailed(true);
+        }
+        return;
+      }
+      if (!fragment.startsWith(HANDOFF_PREFIX)) return;
+      removeHash();
+      accept(fragment);
     };
     capture();
     window.addEventListener('hashchange', capture);
     return () => window.removeEventListener('hashchange', capture);
-  }, [actorId, workspaceId]);
+  }, [actorId, workspaceId, setRaw]);
   const clear = () => {
     window.history.replaceState(
       window.history.state,
@@ -92,7 +119,15 @@ export function MeetMailHandoffPreview({
       aria-label={t('title')}
     >
       <h2 className="font-medium">{t('title')}</h2>
-      <p>{value.to.join(', ')}</p>
+      <p role="note" className="font-medium">
+        {t('link_warning')}
+      </p>
+      <MeetMailRecipientFlags
+        actorId={actorId}
+        workspaceId={workspaceId}
+        id={value.id}
+        recipients={value.to}
+      />
       <p>{value.subject}</p>
       <pre className="whitespace-pre-wrap font-sans text-sm">{value.body}</pre>
       <p className="text-muted-foreground text-sm">
@@ -137,8 +172,9 @@ export function MeetMailHandoffPreview({
                 `/${document.documentElement.lang === 'vi' ? 'vi' : 'en'}/${encodeURIComponent(workspaceId)}/inbox`,
                 meetMailOrigins().mail
               );
-              target.hash = raw;
-              window.open(target.href, '_blank', 'noopener,noreferrer');
+              for (const close of transfers.current) close();
+              transfers.current.clear();
+              transfers.current.add(openMailTransfer(target, raw, value));
             } catch {
               setFailed(true);
             }

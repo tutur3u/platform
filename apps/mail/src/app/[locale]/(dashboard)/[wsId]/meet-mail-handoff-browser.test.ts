@@ -55,6 +55,7 @@ it('refuses stale claims, full or corrupt receipts, and unavailable locking', as
   ).toBe(false);
   localStorage.setItem('mail-meet-handoff-receipts-v1', 'bad');
   await expect(claimMeetMailHandoff(payload)).rejects.toThrow();
+  expect(localStorage.getItem('mail-meet-handoff-receipts-v1')).toBeNull();
   localStorage.clear();
   for (let i = 0; i < 128; i++)
     expect(await claimMeetMailHandoff(value())).toBe(true);
