@@ -21,6 +21,12 @@ import {
   writeGitGuardConfig,
   writeJsonAtomic,
 } from './git-guard-config';
+import {
+  type AgentConfigRecord,
+  agentSettingsFiles,
+  applyAgentDenyRules,
+  removeAgentDenyRules,
+} from './git-guard-agents';
 import { appendGuardLog } from './git-guard-log';
 import {
   DISPATCHED_HOOKS,
@@ -52,6 +58,8 @@ export interface GuardManifest {
   /** Repos whose local core.hooksPath was repointed, with the old value. */
   repos: { path: string; previous: string }[];
   shellFiles: string[];
+  /** Agent settings files given MCP pull-request deny rules (--agents). */
+  agents?: AgentConfigRecord[];
 }
 
 /** Prefer a launcher path that survives `ttr upgrade` over a versioned one. */
@@ -124,6 +132,9 @@ export interface InstallOptions {
   config?: Partial<GitGuardConfig>;
   /** Refresh only: keep config and repo list, rewrite templates. */
   refresh?: boolean;
+  /** Add MCP pull-request deny rules to agent settings (opt-in). */
+  agents?: boolean;
+  agentFiles?: string[];
 }
 
 export async function installGitGuard(options: InstallOptions = {}) {
@@ -209,6 +220,14 @@ export async function installGitGuard(options: InstallOptions = {}) {
     previousGlobal,
     repos: repoRecords,
     shellFiles: [...new Set([...(manifest?.shellFiles ?? []), ...shellFiles])],
+    agents:
+      options.agents && !options.refresh
+        ? await applyAgentDenyRules({
+            files: options.agentFiles ?? agentSettingsFiles(options.userHome),
+            backupDir: join(home, 'backups'),
+            previous: manifest?.agents,
+          })
+        : (manifest?.agents ?? []),
   };
   await writeJsonAtomic(paths.manifest, nextManifest);
   await appendGuardLog(
@@ -264,6 +283,7 @@ export async function uninstallGitGuard(
     const stripped = stripShellBlock(original);
     if (stripped !== original) await writeFile(file, stripped);
   }
+  await removeAgentDenyRules(manifest?.agents ?? []);
   await rm(paths.hooks, { recursive: true, force: true });
   await rm(paths.bin, { recursive: true, force: true });
   await rm(paths.manifest, { force: true });

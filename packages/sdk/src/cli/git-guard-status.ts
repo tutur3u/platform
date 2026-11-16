@@ -7,6 +7,7 @@ import {
   readGitGuardConfig,
 } from './git-guard-config';
 import { defaultGit, type GitRunner, readManifest } from './git-guard-install';
+import { agentDenyStatus } from './git-guard-agents';
 import { listOverrides, readGuardLog } from './git-guard-log';
 import { DISPATCHED_HOOKS, MANAGED_MARKER } from './git-guard-templates';
 
@@ -134,6 +135,9 @@ export async function gitGuardStatus(
         readFileSync(ghFirst, 'utf8').includes(MANAGED_MARKER),
     },
     repos,
+    agents: await agentDenyStatus(
+      (manifest?.agents ?? []).map((record) => record.path)
+    ),
     pendingOverrides: (await listOverrides(home)).filter(
       (override) => Date.parse(override.expiresAt) > now
     ),
@@ -172,6 +176,10 @@ export function renderGitGuardStatus(status: GitGuardStatus) {
         `    not dispatched from ${repo.chain}: ${repo.undispatched.join(', ')}`
       );
   }
+  for (const agent of status.agents)
+    lines.push(
+      `  agent MCP PR deny: ${agent.denied ? 'yes' : 'NO'} ${agent.path}${'error' in agent && agent.error ? ` (${agent.error})` : ''}`
+    );
   lines.push(`  pending overrides: ${status.pendingOverrides.length}`);
   for (const override of status.pendingOverrides)
     lines.push(

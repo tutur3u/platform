@@ -13,6 +13,8 @@ Usage: ttr git guard <install|refresh|uninstall|status|allow-once|log> [options]
     --machine <name>          machine name for logs (default: hostname)
     --allow-branch <glob>     add an allowlisted branch pattern (repeatable)
     --existing-branches <refuse|allow>   other existing branches (default refuse)
+    --agents                  also deny GitHub MCP pull-request tools in agent
+                              settings (backed up; only adds rules; uninstall removes them)
   refresh            rewrite hook and shim for the running CLI (ttr upgrade runs it)
   uninstall          restore the previous hooksPath and shell files
   status [--json] [--repo <path>]   hook, gh guard, clones, overrides, refusals
@@ -39,7 +41,7 @@ function parse(args: string[]) {
     if (arg.startsWith('--')) {
       const [name, inline] = arg.slice(2).split(/=(.*)/su);
       const next = args[index + 1];
-      const boolean = ['json', 'help'].includes(name!);
+      const boolean = ['json', 'help', 'agents'].includes(name!);
       const value =
         inline ?? (boolean || next === undefined ? 'true' : args[++index]!);
       const key = name!;
@@ -125,6 +127,7 @@ export async function runGitCommand(args: string[]) {
     const result = await installGitGuard({
       repos: flags.repo ?? [process.cwd()],
       shell: one('shell'),
+      agents: one('agents') === 'true',
       config: {
         ...(one('machine') ? { machine: one('machine') } : {}),
         ...(existing

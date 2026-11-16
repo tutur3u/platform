@@ -106,6 +106,11 @@ suite('ttr git guard pre-push (real git)', () => {
     // Keep the fixture hook out of commits so branch switches never drop it.
     writeFileSync(join(work, '.git', 'info', 'exclude'), '.githooks/\n');
 
+    mkdirSync(join(root, '.claude'));
+    writeFileSync(
+      join(root, '.claude', 'settings.json'),
+      JSON.stringify({ theme: 'dark' })
+    );
     const install = ttr([
       'git',
       'guard',
@@ -118,6 +123,7 @@ suite('ttr git guard pre-push (real git)', () => {
       'test-box',
       '--allow-branch',
       'guard-allowed/*',
+      '--agents',
     ]);
     expect(install.stderr).toBe('');
     expect(install.status).toBe(0);
@@ -278,11 +284,17 @@ suite('ttr git guard pre-push (real git)', () => {
     expect(value.repos[0]).toMatchObject({ guarded: true });
     expect(value.lastRefusals.length).toBeGreaterThan(0);
     expect(value.config.allowBranches).toEqual(['guard-allowed/*']);
+    expect(value.agents).toEqual([
+      { path: join(root, '.claude', 'settings.json'), denied: true },
+    ]);
   });
 
   it('uninstall restores the previous hooksPath', () => {
     const result = ttr(['git', 'guard', 'uninstall']);
     expect(result.status).toBe(0);
+    expect(
+      JSON.parse(readFileSync(join(root, '.claude', 'settings.json'), 'utf8'))
+    ).toEqual({ theme: 'dark' });
     expect(git(['config', 'core.hooksPath'], work).stdout.trim()).toBe(
       '.githooks'
     );
