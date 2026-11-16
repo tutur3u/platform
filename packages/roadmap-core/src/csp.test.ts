@@ -352,11 +352,12 @@ describe('content security policy: the tabs add no inline script', () => {
     assert.match('<a href="#progress" onclick="select(1)">', INLINE);
   });
 
-  it('the page keeps exactly the router four inline scripts', () => {
+  it('the page keeps exactly its five inline scripts', () => {
     // Pre-JS switching is CSS (:target), and the upgrade is the hydrated
-    // tree, so neither needs a hashed inline script.
+    // tree, so neither needs a hashed inline script. The five are the
+    // router's four plus the shared Sorbet pre-paint script.
     const doctor = read('../../../apps/roadmap/scripts/doctor-markup.mjs');
-    assert.match(doctor, /export const EXPECTED_INLINE_SCRIPTS = 4;/);
+    assert.match(doctor, /export const EXPECTED_INLINE_SCRIPTS = 5;/);
     assert.doesNotMatch(read('./components/tabs.tsx'), /<script\b|ScriptOnce/);
   });
 });

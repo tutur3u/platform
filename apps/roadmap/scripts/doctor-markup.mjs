@@ -84,12 +84,14 @@ export function pendingBoundaryFailures(html) {
 }
 
 /**
- * Inline scripts per public page: the router's four (JSON-LD, theme,
- * router bootstrap, stream boundary). The boot script and the hydration
- * loader are external same-origin assets, so a fifth inline script means
- * something new now depends on a CSP hash.
+ * Inline scripts per public page: JSON-LD, the theme script, the shared
+ * Sorbet pre-paint script (packages/ui SorbetPrePaintScript, mounted by the
+ * shared satellite providers since 21783c00: static, no request data), the
+ * router bootstrap and the stream boundary. The boot script and the
+ * hydration loader are external same-origin assets, so a sixth inline
+ * script means something new now depends on a CSP hash.
  */
-export const EXPECTED_INLINE_SCRIPTS = 4;
+export const EXPECTED_INLINE_SCRIPTS = 5;
 
 /** How many inline scripts a page has, and how many its CSP leaves out. */
 export function scriptCoverage(hashes, csp) {
