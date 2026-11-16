@@ -1,6 +1,5 @@
 import {
   createInternalApiClient,
-  InternalApiError,
   type InternalApiClientOptions,
 } from '@tuturuuu/internal-api/client';
 import { z } from 'zod';
@@ -191,10 +190,10 @@ export class AccountsClient {
       );
     } catch (error) {
       // Supplier errors and invalid responses may contain credentials; never echo them.
-      if (error instanceof InternalApiError && error.status === 401) {
+      if (error instanceof Error && 'status' in error && error.status === 401) {
         throw new Error('Account authorization or fresh MFA is required.');
       }
-      if (error instanceof InternalApiError && error.status === 503) {
+      if (error instanceof Error && 'status' in error && error.status === 503) {
         throw new Error(
           'Account operation is unavailable. Use status to reconcile before retrying.'
         );
