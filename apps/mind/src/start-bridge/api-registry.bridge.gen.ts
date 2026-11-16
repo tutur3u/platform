@@ -7,7 +7,7 @@ import {
 
 export const endpoints: readonly BridgeEndpoint[] = sortEndpoints([
   { pattern: "/api/ai/mind", module: lazyRouteModule(() => import('../app/api/ai/mind/route'), ["POST"]) },
-  { pattern: "/api/auth/logout", module: lazyRouteModule(() => import('../app/api/auth/logout/route'), ["GET","POST"]) },
+  { pattern: "/api/auth/logout", module: lazyRouteModule(() => import('../app/api/auth/logout/route'), ["GET","POST","OPTIONS"]) },
   { pattern: "/api/auth/refresh-app-session", module: lazyRouteModule(() => import('../app/api/auth/refresh-app-session/route'), ["POST"]) },
   { pattern: "/api/auth/verify-app-token", module: lazyRouteModule(() => import('../app/api/auth/verify-app-token/route'), ["POST"]) },
   { pattern: "/api/build-info", module: lazyRouteModule(() => import('../app/api/build-info/route'), ["GET"]) },

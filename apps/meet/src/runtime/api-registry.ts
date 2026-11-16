@@ -53,8 +53,9 @@ export const meetEndpoints: Endpoint[] = [
   {
     pattern: '/api/auth/logout',
     methods: {
-      GET: async () => (await api0()).GET(),
-      POST: async () => (await api0()).POST(),
+      GET: async (request) => (await api0()).GET(request),
+      POST: async (request) => (await api0()).POST(request),
+      OPTIONS: async (request) => (await api0()).OPTIONS(request),
     },
   },
   {
