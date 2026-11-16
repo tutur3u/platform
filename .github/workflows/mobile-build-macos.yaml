@@ -99,3 +99,64 @@ jobs:
             /Users/runner/Library/Caches/CocoaPods
             /Users/runner/.cocoapods/repos/trunk
           key: ${{ runner.os }}-${{ runner.arch }}-flutter-macos-pods-${{ hashFiles('apps/mobile/pubspec.lock', 'apps/mobile/macos/Podfile', 'apps/mobile/macos/Podfile.lock') }}
+
+  build-macos-app-store:
+    name: Build macOS (Mac App Store sandbox)
+    needs: [check-ci]
+    if: (needs.check-ci.outputs.should_run == 'true') && (github.event_name != 'pull_request' || contains(github.event.pull_request.labels.*.name, 'ready-for-ci'))
+    runs-on: macos-latest
+    defaults:
+      run:
+        working-directory: apps/mobile
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - name: Setup Flutter
+        uses: ./.github/actions/setup-flutter-with-cache
+        with:
+          flutter-version: "3.47.x"
+          channel: stable
+
+      - name: Enable macOS desktop
+        run: flutter config --enable-macos-desktop
+
+      - name: Install dependencies
+        run: flutter pub get --enforce-lockfile
+
+      - name: Restore CocoaPods downloads without saving
+        uses: actions/cache/restore@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: |
+            /Users/runner/Library/Caches/CocoaPods
+            /Users/runner/.cocoapods/repos/trunk
+          key: ${{ runner.os }}-${{ runner.arch }}-flutter-macos-pods-${{ hashFiles('apps/mobile/pubspec.lock', 'apps/mobile/macos/Podfile', 'apps/mobile/macos/Podfile.lock') }}
+          restore-keys: |
+            ${{ runner.os }}-${{ runner.arch }}-flutter-macos-pods-
+
+      - name: Prepare development Firebase configuration
+        run: python3 ../../scripts/mobile-deployment/firebase-service-config.py --platform macos
+
+      # Same build switches as the Mac App Store upload job, without signing
+      # assets: sandboxed entitlements and no direct-download updater.
+      - name: Build sandboxed store configuration
+        env:
+          FLUTTER_XCODE_TUTURUUU_RELEASE_ENTITLEMENTS: Runner/AppStore.entitlements
+        run: flutter build macos --release --flavor development --target lib/main_development.dart --dart-define=DESKTOP_STORE_CHANNEL=true
+
+      - name: Verify sandbox, privacy manifest and store metadata
+        run: |
+          set -euo pipefail
+          app_path="$(find build/macos/Build/Products -maxdepth 2 -type d -name '*.app' -print -quit)"
+          test -n "$app_path"
+          entitlements="$RUNNER_TEMP/store-entitlements.plist"
+          codesign -d --entitlements :- "$app_path" > "$entitlements"
+          test "$(/usr/libexec/PlistBuddy -c 'Print com.apple.security.app-sandbox' "$entitlements")" = true
+          test "$(/usr/libexec/PlistBuddy -c 'Print com.apple.security.network.client' "$entitlements")" = true
+          test "$(/usr/libexec/PlistBuddy -c 'Print com.apple.security.files.user-selected.read-write' "$entitlements")" = true
+          test -f "$app_path/Contents/Resources/PrivacyInfo.xcprivacy"
+          test "$(/usr/libexec/PlistBuddy -c 'Print ITSAppUsesNonExemptEncryption' "$app_path/Contents/Info.plist")" = false
+          test "$(/usr/libexec/PlistBuddy -c 'Print LSApplicationCategoryType' "$app_path/Contents/Info.plist")" = public.app-category.productivity
+          lipo -archs "$app_path/Contents/MacOS/"*
+          echo "Mac App Store sandbox build verified: $(basename "$app_path")" >> "$GITHUB_STEP_SUMMARY"

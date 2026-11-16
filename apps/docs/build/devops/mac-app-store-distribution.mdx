@@ -1,0 +1,107 @@
+---
+title: "Mac App Store Distribution"
+description: "Build, sign and upload the sandboxed macOS app to the Mac App Store alongside the Developer ID beta."
+updatedAt: "2026-11-16"
+audience: developers
+---
+
+The macOS app ships through two independent channels from the same Flutter
+target (`apps/mobile/macos`, bundle `com.tuturuuu.app.mobile`):
+
+| Channel | Workflow | Entitlements | Signing | Updates |
+| --- | --- | --- | --- | --- |
+| Direct download beta | `desktop-beta.yaml` | `Runner/Release.entitlements` (not sandboxed) | Developer ID Application, notarized DMG | In-app updater (`DESKTOP_RELEASE_RUN_ID`) |
+| Mac App Store | `mobile-deploy-stores.yaml` job `publish-macos-app-store` | `Runner/AppStore.entitlements` (App Sandbox) | Apple Distribution + Mac Installer Distribution `.pkg` | Mac App Store only |
+
+The Mac App Store build shares the iOS App Store Connect record (same bundle
+identifier, universal purchase), so its builds appear under the macOS platform of
+that app.
+
+## Selecting the store configuration
+
+The Runner target's Release configurations sign with
+`$(TUTURUUU_RELEASE_ENTITLEMENTS)`, which `Runner/Configs/AppInfo.xcconfig`
+defaults to `Runner/Release.entitlements`. The store build overrides it only for
+that invocation:
+
+```bash
+FLUTTER_XCODE_TUTURUUU_RELEASE_ENTITLEMENTS=Runner/AppStore.entitlements \
+  flutter build macos --release --flavor production \
+  --target lib/main_production.dart --dart-define=DESKTOP_STORE_CHANNEL=true
+```
+
+Flutter passes `FLUTTER_XCODE_*` variables to `xcodebuild` as build settings. A
+custom setting name keeps CocoaPods targets untouched. `DESKTOP_STORE_CHANNEL`
+compiles the direct-download updater out even if a release run id were passed;
+Apple does not allow self-updating Mac App Store apps.
+
+`Runner/PrivacyInfo.xcprivacy` mirrors the iOS manifest and ships in both
+channels. `Info.plist` declares `ITSAppUsesNonExemptEncryption = false` and
+`LSApplicationCategoryType = public.app-category.productivity`.
+
+## Sandbox decisions
+
+| Feature or plugin | Sandboxed verdict |
+| --- | --- |
+| Supabase, API, Firebase Analytics/Crashlytics, WebRTC, video, webviews (`flutter_inappwebview`, `desktop_webview_window`), `background_downloader` model downloads | Works; needs `network.client` |
+| Meet collaboration preview proxy (`HttpServer.bind` on loopback) | Works; needs `network.server` |
+| Camera (`camera`, `mobile_scanner`, Meet video) | Works; needs `device.camera` plus `NSCameraUsageDescription` |
+| Microphone (`record`, Meet, voice input, `flutter_pcm_sound` output) | Works; needs `device.audio-input` plus `NSMicrophoneUsageDescription` |
+| File pick/save (`file_picker`, `file_selector`, `image_picker`, attachments) | Works; needs `files.user-selected.read-write` |
+| Hive cache, SQLite, shared preferences, local model store, temp files | Works; paths resolve inside the app container |
+| Secure storage, Supabase session (`flutter_secure_storage`) | Works; `keychain-access-groups` `TEAM.com.tuturuuu.app.mobile` from the profile |
+| Sign in with Apple | Works; needs `com.apple.developer.applesignin` in the profile |
+| Passkeys and universal links (`passkeys`, `app_links` https) | Works; needs `associated-domains` (`webcredentials:`/`applinks:tuturuuu.com`) and the macOS app id in the hosted association file |
+| Custom URL scheme sign-in callback (`CFBundleURLTypes`), Google sign-in, `url_launcher`, `share_plus` | Works without extra entitlements |
+| Push (`firebase_messaging`) | Works; needs `com.apple.developer.aps-environment` (production) in the profile |
+| Local notifications, `local_auth` (Touch ID), connectivity, device/package info, timezone | Works without extra entitlements |
+| App Attest native integrity channel | Unavailable until App Attest is added to the App ID; the channel already reports `unsupported` |
+| Local inference (`flutter_edge_ai_litertlm`) | Works; companion dylibs are staged before signing, no JIT entitlement |
+| Direct-download updater (`desktop_update`, `hdiutil`, `/bin/sh` installer) | Disabled: `DESKTOP_STORE_CHANNEL=true` and no `DESKTOP_RELEASE_RUN_ID` |
+| Launch at login, screen capture, global hotkeys | Not used by the macOS app |
+
+Any new plugin that reads arbitrary paths, spawns processes, opens listening
+sockets or adds a URL handler must update this table and, if needed,
+`AppStore.entitlements` and the profile.
+
+## Packaging and upload
+
+`scripts/desktop-deployment/package-mac-app-store.mjs` takes the built app and:
+
+1. verifies the provisioning profile is an unexpired macOS distribution profile
+   for the team and bundle, and grants every non-sandbox entitlement requested;
+2. renders `AppStore.entitlements` with the team prefix and application
+   identifier, embeds the profile, stages local inference dylibs and macOS
+   localizations;
+3. imports the Apple Distribution and Mac Installer Distribution identities into
+   a temporary keychain, signs Mach-O files and nested bundles inside out
+   (helper executables inherit the sandbox), signs the app, verifies the signed
+   entitlements, and builds a signed `.pkg` with `productbuild`.
+
+The job then uploads with `xcrun altool --upload-app --type macos` using the same
+App Store Connect API key as iOS. Entitlement and profile rules are covered by
+`mac-app-store-entitlements.test.mjs`; `mobile-build-macos.yaml` builds the
+sandboxed configuration and checks the signed entitlements, privacy manifest and
+store metadata on every run.
+
+## Enabling the channel
+
+The job is skipped unless the repository variable `MAC_APP_STORE_ENABLED` is
+`true`, and its build steps are skipped until the iOS deployment bundle holds
+all Mac App Store entries (`hydrate-bundle.mjs` exports `MAC_APP_STORE_READY`):
+
+| Bundle entry | Kind | Exported as |
+| --- | --- | --- |
+| Mac Installer Distribution certificate `.p12` | file `apple_mac_installer_certificate_p12` | `APPLE_MAC_INSTALLER_CERTIFICATE_P12_PATH` |
+| Its password | scalar `APPLE_MAC_INSTALLER_CERTIFICATE_PASSWORD` | `APPLE_MAC_INSTALLER_CERTIFICATE_PASSWORD` |
+| Mac App Store provisioning profile `.provisionprofile` | file `apple_mac_app_store_provisioning_profile` | `APPLE_MAC_APPSTORE_PROVISIONING_PROFILE_PATH` |
+
+A partial set fails the job. The existing Apple Distribution certificate, team
+id and App Store Connect API key are reused. The vault's file kinds and scalar
+names are allowlisted, so adding these entries needs a vault schema and
+validation update before the files can be stored.
+
+Apple-side prerequisites: add the macOS platform to the App Store Connect app
+record, create a Mac Installer Distribution certificate, and create a Mac App
+Store provisioning profile for `com.tuturuuu.app.mobile` with the App ID's
+Sign in with Apple, Associated Domains and Push Notifications capabilities.

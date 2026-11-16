@@ -603,6 +603,139 @@ jobs:
           rm -f "$RUNNER_TEMP/mobile-deployment-ios-oidc.json"
 
 
+  publish-macos-app-store:
+    permissions:
+      actions: read
+      contents: read
+      deployments: read
+      id-token: write
+    name: Upload macOS to the Mac App Store
+    needs: [check-ci, mobile-store-publish-gate, mobile-credentials-preflight]
+    # Off until MAC_APP_STORE_ENABLED is true; it then still skips its build
+    # until the deployment bundle holds the Mac App Store signing entries.
+    if: vars.MAC_APP_STORE_ENABLED == 'true' && github.ref == 'refs/heads/production' && (github.event_name == 'push' || (github.event_name == 'workflow_dispatch' && inputs.mode == 'release')) && needs.check-ci.outputs.should_run == 'true' && needs.mobile-store-publish-gate.outputs.publish == 'true' && needs.mobile-credentials-preflight.result == 'success'
+    runs-on: macos-latest
+    timeout-minutes: 120
+    environment: mobile-store-beta
+    defaults:
+      run:
+        working-directory: apps/mobile
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - name: Use prepared beta release history
+        uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
+        with:
+          name: mobile-beta-release-history
+          path: apps/mobile/assets
+
+      - name: Fetch Apple deployment bundle from Tuturuuu
+        shell: bash
+        env:
+          MOBILE_DEPLOYMENT_CI_TOKEN: ${{ secrets.MOBILE_DEPLOYMENT_CI_TOKEN }}
+        run: |
+          set -euo pipefail
+          umask 077
+
+          bundle_path="$RUNNER_TEMP/mobile-deployment-macos.json"
+          oidc_response="$RUNNER_TEMP/mobile-deployment-macos-oidc.json"
+          oidc_url="${ACTIONS_ID_TOKEN_REQUEST_URL}&audience=tuturuuu-mobile-deployment"
+          curl -fsSL \
+            -H "Authorization: bearer ${ACTIONS_ID_TOKEN_REQUEST_TOKEN}" \
+            "$oidc_url" \
+            -o "$oidc_response"
+          oidc_token="$(node -e 'process.stdout.write(JSON.parse(require("node:fs").readFileSync(process.argv[1], "utf8")).value)' "$oidc_response")"
+
+          curl -fsSL \
+            -H "Authorization: Bearer ${MOBILE_DEPLOYMENT_CI_TOKEN}" \
+            -H "X-GitHub-OIDC-Token: ${oidc_token}" \
+            "https://infrastructure.tuturuuu.com/api/v1/mobile-deployment/bundle?environment=production&platform=ios" \
+            -o "$bundle_path"
+
+          node ../../scripts/mobile-deployment/hydrate-bundle.mjs \
+            --platform ios \
+            --bundle "$bundle_path" \
+            --mobile-root "$PWD"
+
+      - name: Check Mac App Store signing entries
+        id: ready
+        shell: bash
+        run: |
+          if [ "${MAC_APP_STORE_READY:-false}" = true ]; then
+            echo "ready=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "ready=false" >> "$GITHUB_OUTPUT"
+            echo "::notice title=Mac App Store skipped::The deployment bundle has no Mac installer certificate or Mac App Store profile yet."
+          fi
+
+      - name: Setup Flutter
+        if: steps.ready.outputs.ready == 'true'
+        uses: ./.github/actions/setup-flutter-with-cache
+        with:
+          flutter-version: "3.47.x"
+          channel: stable
+
+      - name: Install dependencies
+        if: steps.ready.outputs.ready == 'true'
+        run: |
+          flutter config --enable-macos-desktop
+          flutter pub get --enforce-lockfile
+
+      - name: Prepare macOS Firebase inputs
+        if: steps.ready.outputs.ready == 'true'
+        working-directory: .
+        run: node scripts/desktop-deployment/prepare-macos.mjs
+
+      - name: Verify release backend URLs are https
+        if: steps.ready.outputs.ready == 'true'
+        run: node ../../scripts/mobile-validate-dart-defines.js .env.github
+
+      # Sandboxed entitlements and the store channel define: the direct-download
+      # updater is compiled out because the Mac App Store owns updates.
+      - name: Build sandboxed macOS app
+        if: steps.ready.outputs.ready == 'true'
+        env:
+          FLUTTER_XCODE_TUTURUUU_RELEASE_ENTITLEMENTS: Runner/AppStore.entitlements
+        run: flutter build macos --release --flavor production --target lib/main_production.dart --dart-define-from-file=.env.github --dart-define=DESKTOP_STORE_CHANNEL=true --build-name=${{ needs.mobile-credentials-preflight.outputs.build_name }} --build-number=${{ needs.mobile-credentials-preflight.outputs.build_number }}
+
+      - name: Sign and package for the Mac App Store
+        if: steps.ready.outputs.ready == 'true'
+        working-directory: .
+        run: |
+          set -euo pipefail
+          app_path="apps/mobile/build/macos/Build/Products/Release-production/Tuturuuu.app"
+          archs="$(lipo -archs "$app_path/Contents/MacOS/Tuturuuu")"
+          case "$archs" in *arm64*x86_64*|*x86_64*arm64*) ;; *) echo "::error::Mac App Store build must be universal"; exit 1 ;; esac
+          node scripts/desktop-deployment/package-mac-app-store.mjs "$app_path" "$RUNNER_TEMP/mac-app-store/Tuturuuu.pkg"
+
+      - name: Upload macOS package to App Store Connect
+        if: steps.ready.outputs.ready == 'true'
+        shell: bash
+        run: |
+          set -euo pipefail
+          xcrun altool --upload-app \
+            --type macos \
+            --file "$RUNNER_TEMP/mac-app-store/Tuturuuu.pkg" \
+            --apiKey "$APP_STORE_CONNECT_API_KEY_ID" \
+            --apiIssuer "$APP_STORE_CONNECT_ISSUER_ID"
+
+      - name: Cleanup macOS release files
+        if: always()
+        shell: bash
+        run: |
+          if [ -n "${APP_STORE_CONNECT_PRIVATE_KEY_PATH:-}" ]; then
+            rm -f "$APP_STORE_CONNECT_PRIVATE_KEY_PATH"
+          fi
+          rm -f .env.github
+          rm -f ios/Runner/GoogleService-Info.plist
+          rm -f ios/Runner/GoogleService-Info-production.plist
+          rm -rf "$RUNNER_TEMP/mobile-deployment" "$RUNNER_TEMP/mac-app-store"
+          rm -f "$RUNNER_TEMP/mobile-deployment-macos.json"
+          rm -f "$RUNNER_TEMP/mobile-deployment-macos-oidc.json"
+
   record-mobile-store-tree:
     permissions:
       actions: read

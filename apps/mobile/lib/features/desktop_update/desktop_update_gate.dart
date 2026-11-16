@@ -15,6 +15,9 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 const _releaseRun = String.fromEnvironment('DESKTOP_RELEASE_RUN_ID');
+// Store builds (Mac App Store, Microsoft Store) update through their store.
+const _storeChannel = bool.fromEnvironment('DESKTOP_STORE_CHANNEL');
+const _updaterEnabled = _releaseRun != '' && !_storeChannel;
 const _pendingKey = 'desktop_update_install_on_launch';
 
 /// Enabled only in a desktop release built by the publishing workflow. Checking
@@ -40,7 +43,7 @@ class _DesktopUpdateGateState extends State<DesktopUpdateGate> {
   void initState() {
     super.initState();
     if (!kIsWeb &&
-        _releaseRun.isNotEmpty &&
+        _updaterEnabled &&
         (Platform.isMacOS || Platform.isWindows || Platform.isLinux)) {
       unawaited(_check(firstLaunch: true));
       _timer = Timer.periodic(
@@ -150,7 +153,7 @@ class _DesktopUpdateGateState extends State<DesktopUpdateGate> {
   @override
   Widget build(BuildContext context) {
     final release = _release;
-    if (_releaseRun.isEmpty ||
+    if (!_updaterEnabled ||
         kIsWeb ||
         !(Platform.isMacOS || Platform.isWindows || Platform.isLinux)) {
       return widget.child;
