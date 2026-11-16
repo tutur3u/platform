@@ -1,3 +1,4 @@
+import { SORBET_PRE_PAINT_SCRIPT } from '@tuturuuu/ui/custom/sorbet-pre-paint';
 import { runInNewContext } from 'node:vm';
 import { ThemeProvider } from 'next-themes';
 import { renderToStaticMarkup } from 'react-dom/server';
@@ -87,9 +88,10 @@ describe('Meet theme startup', () => {
       const scripts = [
         ...markup.matchAll(/<script([^>]*)>([\s\S]*?)<\/script>/g),
       ];
-      expect(scripts).toHaveLength(2);
+      expect(scripts).toHaveLength(3);
       expect(scripts[0]?.[1]).toContain('type="application/json"');
       expect(scripts[1]?.[1]).toContain('data-cfasync="false"');
+      expect(scripts[2]?.[2]).toBe(SORBET_PRE_PAINT_SCRIPT);
       runInNewContext(scripts[1]![2]!, context);
       expect(context.classes).toEqual(new Set(['unrelated', expected]));
       expect(context.style.colorScheme).toBe(expected);

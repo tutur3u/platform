@@ -1,5 +1,6 @@
 'use client';
 
+import { SorbetPrePaintScript } from '@tuturuuu/ui/custom/sorbet-pre-paint';
 import { ThemeProvider } from 'next-themes';
 import type { ComponentProps } from 'react';
 import { meetThemeBootstrap } from './theme-bootstrap';
@@ -22,6 +23,7 @@ export function MeetThemeProvider({
         // eslint-disable-next-line react/no-danger -- meetThemeBootstrap JSON-encodes and HTML-escapes its configuration.
         dangerouslySetInnerHTML={{ __html: meetThemeBootstrap(props) }}
       />
+      <SorbetPrePaintScript nonce={props.nonce} />
       {children}
     </ThemeProvider>
   );

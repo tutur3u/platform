@@ -1,6 +1,8 @@
 import { ClientProviders } from '@tuturuuu/satellite/client-providers';
+import { requestNonce } from '@tuturuuu/start-bridge/csp';
 import { FadeSettingInitializer } from '@tuturuuu/tasks-ui/tu-do/shared/fade-setting-initializer';
 import { ProductionIndicator } from '@tuturuuu/ui/custom/production-indicator';
+import { SorbetPrePaintScript } from '@tuturuuu/ui/custom/sorbet-pre-paint';
 import { StaffToolbar } from '@tuturuuu/ui/custom/staff-toolbar';
 import { TailwindIndicator } from '@tuturuuu/ui/custom/tailwind-indicator';
 import { VersionBadge } from '@tuturuuu/ui/custom/version-badge';
@@ -36,6 +38,7 @@ export function AppProviders({
       enableSystem
       scriptProps={{ 'data-cfasync': 'false' }}
     >
+      <SorbetPrePaintScript nonce={requestNonce()} />
       <NextIntlClientProvider
         locale={locale}
         messages={locale === 'vi' ? vi : en}

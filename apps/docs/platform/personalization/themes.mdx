@@ -100,8 +100,11 @@ inline script that reads only this device's stored values, sets only
 allowlisted attributes on `<html>`, and takes the response's CSP nonce where an
 app requires one; `sorbet-pre-paint.test.tsx` checks that it applies exactly
 what the runtime applies for valid, invalid and oversized stored values.
-The native Start apps (Calendar, Tasks, Mail, Meet) do not mount it, so there
-Sorbet applies after hydration. Regression coverage lives in
+The native Start apps (Calendar, Tasks, Mail, Meet and Apps) mount it with
+their request nonce; Colab renders only on the client and does not apply
+Sorbet. A policy without a per-request nonce allows the script by
+`SORBET_PRE_PAINT_SCRIPT_HASH`, never `'unsafe-inline'`; a test recomputes that
+hash, so any edit to the script fails until the hash and its policies change. Regression coverage lives in
 `sorbet-ui.test.ts`, `sorbet-theme.test.ts`, `experimental-ui-sync.test.tsx` and
 `settings/experimental-ui-setting.test.tsx` under
 `packages/ui/src/components/ui/custom/`, and `packages/ui/src/sorbet-presets.test.ts`

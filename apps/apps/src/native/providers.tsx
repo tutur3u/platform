@@ -1,4 +1,5 @@
 import { ClientProviders } from '@tuturuuu/satellite/client-providers';
+import { SorbetPrePaintScript } from '@tuturuuu/ui/custom/sorbet-pre-paint';
 import { TailwindIndicator } from '@tuturuuu/ui/custom/tailwind-indicator';
 import { VersionBadge } from '@tuturuuu/ui/custom/version-badge';
 import { Toaster } from '@tuturuuu/ui/sonner';
@@ -24,6 +25,7 @@ export function GatewayProviders({
       enableSystem
       scriptProps={{ 'data-cfasync': 'false' }}
     >
+      <SorbetPrePaintScript />
       <IntlProvider
         locale={data.locale}
         messages={data.locale === 'vi' ? vi : en}
