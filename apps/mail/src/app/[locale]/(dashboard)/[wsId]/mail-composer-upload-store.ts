@@ -254,9 +254,11 @@ export class MailUploadStore {
     const live = nodes.liveIds();
     for (const item of pending) {
       if (live.has(item.id)) continue;
-      this.controllers.get(item.id)?.abort();
-      this.controllers.delete(item.id);
-      this.discard(item.id, null);
+      // A deleted placeholder with a known upload needs the same cleanup as
+      // Remove. Keep a recoverable chip if that server deletion fails.
+      if (item.attachment && item.status !== 'uploading')
+        this.update(item.id, { kind: 'attachment' });
+      this.remove(item.id);
     }
   }
 
@@ -329,11 +331,11 @@ export class MailUploadStore {
         // Same item, same list position: only its status changes back.
         this.update(
           id,
-          { status: item.status },
+          { status: item.status === 'queued' ? 'failed' : item.status },
           { kind: 'restored', name: item.name }
         );
         if (instanceId) this.deps.nodes()?.setRemoving(instanceId, false);
-        if (instanceId && item.status === 'failed')
+        if (instanceId && item.status !== 'uploaded')
           this.deps.nodes()?.setState(instanceId, 'failed');
         this.deps.onRemoveFailed(item, () =>
           instanceId ? this.removeImage(instanceId) : this.remove(id)

@@ -61,6 +61,55 @@ describe('immediate placeholders', () => {
 });
 
 describe('replace by id after decode', () => {
+  it('cleans a keyboard-deleted failed preview and retains a retry chip on delete failure', async () => {
+    const t = setup();
+    t.store.addFiles([png('a.png')], true);
+    await flush();
+    t.deps.decodeImage.mockResolvedValueOnce(null);
+    t.uploads[0]?.succeed();
+    await flush();
+    t.deps.remove.mockRejectedValueOnce(new Error('offline'));
+    t.fake.nodes.remove('id1');
+    t.store.reconcileNodes();
+    await flush();
+    expect(t.deps.remove).toHaveBeenCalledExactlyOnceWith(OWNER, 'att1');
+    expect(t.find('id1')?.status).toBe('failed');
+    expect(t.find('id1')?.kind).toBe('attachment');
+    expect(visibleMediaChips(t.store.getSnapshot().items, '')).toHaveLength(1);
+    t.store.remove('id1');
+    await flush();
+    expect(t.find('id1')).toBeUndefined();
+  });
+
+  it('restores a failed queued-removal as retryable after the upload pump has stopped', async () => {
+    const t = setup();
+    t.store.addFiles([png('a.png')], true);
+    await flush();
+    t.deps.decodeImage.mockResolvedValueOnce(null);
+    t.uploads[0]?.succeed();
+    await flush();
+    t.store.addFiles([pdf('b.pdf')], false);
+    await flush();
+    t.store.retry('id1');
+    let reject: ((error: Error) => void) | undefined;
+    t.deps.remove.mockImplementationOnce(
+      () =>
+        new Promise<void>((_resolve, fail) => {
+          reject = fail;
+        })
+    );
+    t.store.remove('id1');
+    t.uploads[1]?.succeed();
+    await flush();
+    reject?.(new Error('offline'));
+    await flush();
+    expect(t.find('id1')?.status).toBe('failed');
+    t.store.retry('id1');
+    await flush();
+    expect(t.find('id1')?.status).toBe('uploaded');
+    expect(t.uploads).toHaveLength(2);
+  });
+
   it('deletes a known attachment when its decode retry is queued behind another upload', async () => {
     const t = setup();
     t.store.addFiles([png('a.png')], true);
