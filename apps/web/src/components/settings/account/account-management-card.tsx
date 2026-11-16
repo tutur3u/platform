@@ -45,12 +45,17 @@ export function AccountManagementCard(): JSX.Element {
   const handleSwitchAccount = async (accountId: string) => {
     setSwitchingAccountId(accountId);
     try {
-      await switchAccount(accountId);
-      // Navigation will happen automatically in switchAccount
+      const result = await switchAccount(accountId);
+      if (!result.success) {
+        toast.error(t('account_switcher.switch_account_error'), {
+          description: result.error,
+        });
+      }
     } catch (error) {
       toast.error(t('account_switcher.switch_account_error'), {
         description: error instanceof Error ? error.message : undefined,
       });
+    } finally {
       setSwitchingAccountId(null);
     }
   };
