@@ -14,6 +14,10 @@ import {
   propagateAuthCookies,
   refreshAppSessionForRequest,
 } from '@tuturuuu/auth/proxy';
+import {
+  mountedSessionFailureResponse,
+  nonExpiringCookieCarrier,
+} from '@tuturuuu/auth/proxy/mounted-failure';
 import { guardApiProxyRequest } from '@tuturuuu/utils/api-proxy-guard';
 import type { NextRequest } from 'next/server';
 import { NextResponse } from 'next/server';
@@ -49,6 +53,7 @@ function browserSessionMode(request: NextRequest) {
     : 'supabase-first';
 }
 
+// The mount shares the apex with Web, whose provider cookies Mind never clears.
 function clearSupabaseAuthCookies(
   request: NextRequest,
   response: NextResponse
@@ -56,6 +61,16 @@ function clearSupabaseAuthCookies(
   return isMounted(request)
     ? response
     : clearRootSupabaseAuthCookies(request, response);
+}
+
+function sessionFailureResponse(
+  request: NextRequest,
+  error: string,
+  refreshed?: Response
+) {
+  return isMounted(request)
+    ? mountedSessionFailureResponse(request, error, refreshed)
+    : appSessionFailureResponse(request, error, refreshed);
 }
 
 function localeResponse(request: NextRequest) {
@@ -139,7 +154,7 @@ function getCanonicalLocaleRedirect(request: NextRequest) {
   return response;
 }
 
-async function handleProxy(request: NextRequest): Promise<NextResponse> {
+async function routeProxy(request: NextRequest): Promise<NextResponse> {
   if (isMounted(request)) {
     if (refusesMountedAuthorization(request))
       return mountedAuthorizationRefusal();
@@ -171,7 +186,7 @@ async function handleProxy(request: NextRequest): Promise<NextResponse> {
           });
 
     if (appSessionRefresh && !appSessionRefresh.ok) {
-      return appSessionFailureResponse(
+      return sessionFailureResponse(
         request,
         appSessionRefresh.error,
         appSessionRefresh.response
@@ -185,7 +200,9 @@ async function handleProxy(request: NextRequest): Promise<NextResponse> {
       if (appSessionRefresh) {
         propagateAuthCookies(appSessionRefresh.response, guardResponse);
       }
-      return preserveMfaRecoveryCookies(request, guardResponse);
+      return isMounted(request)
+        ? guardResponse
+        : preserveMfaRecoveryCookies(request, guardResponse);
     }
 
     return (
@@ -226,15 +243,15 @@ async function handleProxy(request: NextRequest): Promise<NextResponse> {
       targetApp: 'mind',
     });
     if (!session.ok && session.error !== 'Shared session unavailable') {
-      return appSessionFailureResponse(
-        request,
-        session.error,
-        session.response
-      );
+      return sessionFailureResponse(request, session.error, session.response);
     }
     const response = localeResponse(request);
-    if (session.response instanceof NextResponse)
-      propagateAuthCookies(session.response, response);
+    propagateAuthCookies(
+      session.ok
+        ? session.response
+        : nonExpiringCookieCarrier(session.response),
+      response
+    );
     return response;
   }
 
@@ -250,7 +267,7 @@ async function handleProxy(request: NextRequest): Promise<NextResponse> {
         appSessionRefresh.error === 'MFA required' ||
         appSessionRefresh.error === 'Account assurance unavailable')
     ) {
-      return appSessionFailureResponse(
+      return sessionFailureResponse(
         request,
         appSessionRefresh.error,
         appSessionRefresh.response
@@ -285,6 +302,15 @@ async function handleProxy(request: NextRequest): Promise<NextResponse> {
   }
 
   return clearSupabaseAuthCookies(request, localeResponse(request));
+}
+
+async function handleProxy(request: NextRequest): Promise<NextResponse> {
+  const response = await routeProxy(request);
+  // Every mounted response is personalised or an auth or locale redirect on
+  // the shared apex, so no browser or edge cache may store it.
+  if (isMounted(request))
+    response.headers.set('Cache-Control', 'private, no-store');
+  return response;
 }
 
 // Only NEXT_LOCALE is rescoped; the mount writes mind_locale at /mind instead.

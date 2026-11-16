@@ -1,3 +1,4 @@
+import { isExpiringSetCookie } from '@tuturuuu/auth/proxy/mounted-failure';
 import { NextRequest, NextResponse } from 'next/server';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
@@ -11,9 +12,10 @@ vi.mock('../../../../packages/start-bridge/src/next/function-proxy', () => ({
 }));
 vi.mock('@tuturuuu/auth/proxy', () => ({
   refreshAppSessionForRequest: mocks.refresh,
-  appSessionFailureResponse: () =>
-    NextResponse.json({ error: 'Unauthorized' }, { status: 401 }),
-  propagateAuthCookies: vi.fn(),
+  propagateAuthCookies: (source: Response, target: Response) => {
+    for (const cookie of source.headers.getSetCookie())
+      target.headers.append('set-cookie', cookie);
+  },
 }));
 vi.mock('./mounted-bearer', async () => ({
   ...(await vi.importActual<typeof import('./mounted-bearer')>(
@@ -22,6 +24,27 @@ vi.mock('./mounted-bearer', async () => ({
   refusesMountedAuthorization: mocks.reject,
 }));
 import { createFunctionProxy } from './function-proxy';
+
+const PROVIDER = 'sb-nzamlzqfdwaaxdefwraj-auth-token';
+const FRESH = `${PROVIDER}.0=fresh; Path=/; Max-Age=3600`;
+
+function mounted(headers: Record<string, string> = {}) {
+  return new NextRequest('https://tuturuuu.com/mind/_serverFn/id', {
+    nextConfig: { basePath: '/mind' },
+    headers: { cookie: `${PROVIDER}.0=current`, ...headers },
+  });
+}
+
+function withCookies(response: NextResponse, ...cookies: string[]) {
+  for (const cookie of cookies) response.headers.append('set-cookie', cookie);
+  return response;
+}
+
+function expiresAnyCookie(response: Response) {
+  return response.headers
+    .getSetCookie()
+    .some((cookie) => isExpiringSetCookie(cookie));
+}
 
 describe('Mind mounted server-function authority', () => {
   beforeEach(() => {
@@ -48,14 +71,15 @@ describe('Mind mounted server-function authority', () => {
       expect(mocks.shared).toHaveBeenCalledExactlyOnceWith(req);
     }
   );
-  it('keeps explicit request-only bearers on their existing endpoint verification path', async () => {
+  it('keeps admitted coordination bearers on their existing endpoint verification path', async () => {
     const req = new NextRequest('https://tuturuuu.com/mind/_serverFn/id', {
       nextConfig: { basePath: '/mind' },
       headers: { authorization: 'Bearer coordination' },
     });
-    await createFunctionProxy({ targetApp: 'mind' })(req);
+    const response = await createFunctionProxy({ targetApp: 'mind' })(req);
     expect(mocks.refresh).not.toHaveBeenCalled();
     expect(mocks.shared).toHaveBeenCalledExactlyOnceWith(req);
+    expect(response.headers.get('cache-control')).toBe('private, no-store');
   });
   it('refuses a mounted Authorization before shared dispatch', async () => {
     mocks.reject.mockReturnValue(true);
@@ -66,12 +90,65 @@ describe('Mind mounted server-function authority', () => {
     const response = await createFunctionProxy({ targetApp: 'mind' })(req);
     expect(response.status).toBe(401);
     expect(response.headers.get('cache-control')).toBe('private, no-store');
+    expect(response.headers.getSetCookie()).toEqual([]);
     expect(mocks.shared).not.toHaveBeenCalled();
+  });
+  it.each([
+    ['Shared session unavailable', 401],
+    ['App signed out', 401],
+    ['MFA required', 403],
+    ['Account assurance unavailable', 503],
+    ['App session refresh unavailable', 503],
+  ])(
+    'answers a %s refusal without expiring Web cookies',
+    async (error, status) => {
+      mocks.refresh.mockResolvedValue({
+        ok: false,
+        error,
+        response: withCookies(
+          NextResponse.next(),
+          FRESH,
+          `${PROVIDER}.1=; Path=/; Max-Age=0`
+        ),
+      });
+      const response = await createFunctionProxy({ targetApp: 'mind' })(
+        mounted()
+      );
+      expect(response.status).toBe(status);
+      expect(response.headers.get('cache-control')).toBe('private, no-store');
+      expect(expiresAnyCookie(response)).toBe(false);
+      expect(mocks.shared).not.toHaveBeenCalled();
+    }
+  );
+  it('drops the shared proxy cookie clearing from a mounted guard refusal', async () => {
+    mocks.shared.mockResolvedValue(
+      withCookies(
+        NextResponse.json({ error: 'Too many requests' }, { status: 429 }),
+        `${PROVIDER}-legacy=; Path=/; Expires=Thu, 01 Jan 1970 00:00:00 GMT; Max-Age=0`
+      )
+    );
+    mocks.refresh.mockResolvedValue({
+      ok: true,
+      response: withCookies(NextResponse.next(), FRESH),
+    });
+    const response = await createFunctionProxy({ targetApp: 'mind' })(
+      mounted()
+    );
+    expect(response.status).toBe(429);
+    expect(response.headers.get('cache-control')).toBe('private, no-store');
+    expect(response.headers.getSetCookie()).toEqual([FRESH]);
+  });
+  it('marks a personalised mounted response private, no-store', async () => {
+    const response = await createFunctionProxy({ targetApp: 'mind' })(
+      mounted()
+    );
+    expect(response.headers.get('cache-control')).toBe('private, no-store');
   });
   it('keeps root-host behavior unchanged', async () => {
     const req = new NextRequest('https://mind.tuturuuu.com/_serverFn/id');
-    await createFunctionProxy({ targetApp: 'mind' })(req);
+    const response = await createFunctionProxy({ targetApp: 'mind' })(req);
     expect(mocks.refresh).not.toHaveBeenCalled();
     expect(mocks.shared).toHaveBeenCalledExactlyOnceWith(req);
+    expect(response.headers.get('cache-control')).toBeNull();
   });
 });
