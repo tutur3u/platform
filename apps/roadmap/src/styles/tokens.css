@@ -44,6 +44,13 @@
   --rm-radius: 16px;
   --rm-radius-lg: 20px;
   --rm-shadow: none;
+  /* Raised panels (a track, the feed, the pulse side panel); small cards
+     keep --rm-shadow. */
+  --rm-shadow-raised: none;
+  /* The page's accent: the eyebrow dot and the hero's marked phrase. */
+  --rm-accent: var(--purple);
+  --rm-mark: color-mix(in oklab, var(--purple) 80%, var(--rm-ink));
+  --rm-text-h2-weight: 700;
   --rm-wash-1: color-mix(in oklab, var(--purple) 20%, transparent);
   --rm-wash-2: color-mix(in oklab, var(--blue) 16%, transparent);
   /* Chart marks without a status colour: all merged PRs, the Workers
@@ -100,6 +107,15 @@
   --rm-radius: var(--radius-xl);
   --rm-radius-lg: var(--radius-2xl);
   --rm-shadow: var(--sorbet-shadow-sm);
+  --rm-shadow-raised: var(--sorbet-shadow-md);
+  /* Sorbet roles (Sorbet-Owner): the accent is --primary, ink in the
+     default palette and the preset's accent under a preset; a mark that
+     needs a hue uses --ring, 3:1 on every surface. */
+  --rm-accent: var(--primary);
+  --rm-mark: var(--ring);
+  /* Sorbet's page heading: 24px, 600, tight. */
+  --rm-text-h2-weight: 600;
+  --rm-text-h2: clamp(22px, 2.4vw, 26px);
   --rm-wash-1: var(--calendar-bg-pink);
   --rm-wash-2: var(--calendar-bg-blue);
   /* Opaque mixes into the card, so every chart mark is a solid colour of at
@@ -112,10 +128,12 @@
 }
 
 /* Cards: one surface for every card on the page. Zero specificity, so a
-   card's own rule (an emphasised border, a hover) still wins. */
+   card's own rule (an emphasised border, a hover) still wins. Small cards
+   sit on --rm-shadow; the larger panels are raised a step further. */
+:where(.kpi-body, .glance-tile, .release details, .host-card, .rm-empty) {
+  box-shadow: var(--rm-shadow);
+}
 :where(
-  .kpi-body,
-  .glance-tile,
   .rm-panel > .overall,
   .track,
   .period-group,
@@ -123,13 +141,10 @@
   .feed,
   .pulse-side,
   .pulse-breakdown,
-  .release details,
   .host-summary,
-  .host-card,
-  .migration-summary,
-  .rm-empty
+  .migration-summary
 ) {
-  box-shadow: var(--rm-shadow);
+  box-shadow: var(--rm-shadow-raised);
 }
 
 /* Empty and unknown states (components/empty-state.tsx): what is missing,

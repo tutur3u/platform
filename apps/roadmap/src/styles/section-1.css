@@ -215,8 +215,8 @@
   width: 7px;
   height: 7px;
   border-radius: 999px;
-  background: var(--purple);
-  box-shadow: 0 0 0 4px color-mix(in oklab, var(--purple) 18%, transparent);
+  background: var(--rm-accent);
+  box-shadow: 0 0 0 4px color-mix(in oklab, var(--rm-accent) 18%, transparent);
 }
 .hero h1 {
   margin: 0;
@@ -244,7 +244,7 @@
 .hero-mark {
   color: var(--rm-ink);
   text-decoration-line: underline;
-  text-decoration-color: color-mix(in oklab, var(--purple) 80%, var(--rm-ink));
+  text-decoration-color: var(--rm-mark);
   text-decoration-thickness: 0.07em;
   text-underline-offset: 0.16em;
   text-decoration-skip-ink: none;
@@ -361,7 +361,7 @@
   margin: 0;
   font-family: var(--font-display);
   font-size: var(--rm-text-h2);
-  font-weight: 700;
+  font-weight: var(--rm-text-h2-weight);
   letter-spacing: -0.03em;
   line-height: 1.1;
 }

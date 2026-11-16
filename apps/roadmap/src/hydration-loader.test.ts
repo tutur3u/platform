@@ -25,7 +25,11 @@ const BOOT = readFileSync(
 type Fn = (...args: unknown[]) => unknown;
 
 /** Run `source` against a fake page; returns handles to drive it. */
-function boot(source: string, navigator: object = {}) {
+function boot(
+  source: string,
+  navigator: object = {},
+  stored: Record<string, string> = {}
+) {
   const listeners = new Map<string, Fn[]>();
   const imports: string[] = [];
   const idle: { run: Fn; timeout?: number }[] = [];
@@ -34,7 +38,7 @@ function boot(source: string, navigator: object = {}) {
   let paint: Fn = () => {};
   let finishImport: Fn = () => {};
   const appended: unknown[] = [];
-  const attributes = new Map<string, string>();
+  const attributes = new Map<string, string>([['data-ui', 'sorbet']]);
   const context = {
     navigator,
     document: {
@@ -43,6 +47,8 @@ function boot(source: string, navigator: object = {}) {
       documentElement: {
         setAttribute: (name: string, value: string) =>
           attributes.set(name, value),
+        getAttribute: (name: string) => attributes.get(name) ?? null,
+        removeAttribute: (name: string) => attributes.delete(name),
       },
       head: { append: (node: unknown) => appended.push(node) },
       querySelectorAll: () => [
@@ -54,6 +60,9 @@ function boot(source: string, navigator: object = {}) {
       createElement: () => ({}),
     },
     window: {
+      localStorage: {
+        getItem: (key: string) => stored[key] ?? null,
+      },
       requestIdleCallback: (run: Fn, options?: { timeout?: number }) =>
         idle.push({ run, timeout: options?.timeout }),
     },
@@ -319,4 +328,27 @@ describe('perf: lite mode is decided before the first paint', () => {
         head
       );
   });
+});
+
+it('D79: a device that turned the experimental design off gets the classic design before paint', () => {
+  const key = 'tuturuuu:experimental-sorbet-ui';
+  // No stored choice, or on: the server's Sorbet stays.
+  assert.equal(boot(BOOT).attributes.get('data-ui'), 'sorbet');
+  assert.equal(
+    boot(BOOT, {}, { [key]: 'true' }).attributes.get('data-ui'),
+    'sorbet'
+  );
+  // Stored off: removed before the first paint.
+  assert.equal(
+    boot(BOOT, {}, { [key]: 'false' }).attributes.has('data-ui'),
+    false
+  );
+  // Broken variant: a boot script without the step leaves Sorbet on, and the
+  // page flips to the classic design only after hydration.
+  const without = BOOT.replace("root.removeAttribute('data-ui');", 'void 0;');
+  assert.notEqual(without, BOOT);
+  assert.equal(
+    boot(without, {}, { [key]: 'false' }).attributes.get('data-ui'),
+    'sorbet'
+  );
 });

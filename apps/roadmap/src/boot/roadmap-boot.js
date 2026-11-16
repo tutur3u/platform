@@ -4,6 +4,10 @@
  * ~2 KB runs as soon as it arrives, before the stylesheet allows a paint.
  * See src/defer-hydration.ts and src/lite-mode.ts for the contract.
  *
+ * 0. Experimental design: the server renders the roadmap in Sorbet
+ *    (html[data-ui="sorbet"]). A device whose shared switch is stored off
+ *    gets the classic design before the first paint, as ExperimentalUiSync
+ *    would after hydration, so the page never flips.
  * 1. Lite mode: mark html[data-lite] before the first paint on devices with
  *    four or fewer cores, 4 GB or less of memory, or Data Saver.
  * 2. Hydration loader: on the first pointerdown, touchstart, keydown or
@@ -19,6 +23,15 @@
  */
 (function () {
   var root = document.documentElement;
+  try {
+    // packages/ui sorbet-ui.ts: SORBET_UI_STORAGE_KEY and applySorbetUi.
+    if (
+      window.localStorage.getItem('tuturuuu:experimental-sorbet-ui') ===
+        'false' &&
+      root.getAttribute('data-ui') === 'sorbet'
+    )
+      root.removeAttribute('data-ui');
+  } catch (error) {}
   try {
     var nav = navigator;
     var cores = nav.hardwareConcurrency;

@@ -64,6 +64,12 @@ soft shadows and the Nunito typeface. You can try it before it becomes the defau
   solid borders and a wider focus ring.
 - **Signed out:** public pages keep the last choices made on that device and
   never read the account.
+- **Exception, the public roadmap:** `tuturuuu.com/roadmap` uses Sorbet as its
+  public design, so a visitor who has never set the switch sees Sorbet. A device
+  whose switch is off gets the classic design, applied before the first paint
+  (the roadmap's boot script), and a palette chosen on the device still applies.
+  The roadmap's own colours read Sorbet's role names (`--primary`, `--card`,
+  `--ring` and the status inks), never a palette's source colours.
 - **Not covered:** the mobile app, Colab, and web apps without a theme provider
   (Hive, Tulletin, the link shortener and external embeds) keep their current
   design.
