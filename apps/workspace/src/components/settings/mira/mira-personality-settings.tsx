@@ -1,7 +1,6 @@
 'use client';
 
-import { Sparkles } from '@tuturuuu/icons';
-import { Button } from '@tuturuuu/ui/button';
+import type { MiraSoulUpdate } from '@tuturuuu/internal-api/mira-soul';
 import { SettingItemTab } from '@tuturuuu/ui/custom/settings-item-tab';
 import { SettingsSection } from '@tuturuuu/ui/custom/settings-section';
 import { Input } from '@tuturuuu/ui/input';
@@ -12,6 +11,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@tuturuuu/ui/select';
+import { toast } from '@tuturuuu/ui/sonner';
 import { Textarea } from '@tuturuuu/ui/textarea';
 import { useTranslations } from 'next-intl';
 import { useCallback } from 'react';
@@ -19,6 +19,11 @@ import {
   useMiraSoul,
   useUpdateMiraSoul,
 } from '../../../app/[locale]/(dashboard)/[wsId]/(dashboard)/hooks/use-mira-soul';
+import { MiraPersonaTemplatePicker } from './mira-persona-template-picker';
+import {
+  type PersonaTemplateKey,
+  personaUndoUpdate,
+} from './mira-persona-templates';
 
 const TONE_OPTIONS = [
   'balanced',
@@ -42,50 +47,6 @@ const VIBE_OPTIONS = [
 
 const CHAT_TONE_OPTIONS = ['thorough', 'concise', 'detailed', 'brief'] as const;
 
-type PersonaTemplate = {
-  key: string;
-  name: string;
-  tone: string;
-  personality: string;
-  vibe: string;
-  chat_tone: string;
-};
-
-const PERSONA_TEMPLATES: PersonaTemplate[] = [
-  {
-    key: 'default',
-    name: 'Mira',
-    tone: 'balanced',
-    personality: 'Helpful and knowledgeable',
-    vibe: 'warm',
-    chat_tone: 'thorough',
-  },
-  {
-    key: 'casual',
-    name: 'Mira',
-    tone: 'casual',
-    personality: 'Laid-back friend who keeps it real',
-    vibe: 'energetic',
-    chat_tone: 'concise',
-  },
-  {
-    key: 'coach',
-    name: 'Mira',
-    tone: 'professional',
-    personality: 'Disciplined coach focused on accountability',
-    vibe: 'calm',
-    chat_tone: 'brief',
-  },
-  {
-    key: 'creative',
-    name: 'Mira',
-    tone: 'playful',
-    personality: 'Imaginative collaborator who loves brainstorming',
-    vibe: 'witty',
-    chat_tone: 'detailed',
-  },
-];
-
 export function MiraPersonalitySettings() {
   const t = useTranslations('settings.mira');
   const { data: soul, isLoading } = useMiraSoul();
@@ -99,16 +60,28 @@ export function MiraPersonalitySettings() {
   );
 
   const handleApplyTemplate = useCallback(
-    (template: PersonaTemplate) => {
-      updateSoul({
-        name: template.name,
-        tone: template.tone,
-        personality: template.personality,
-        vibe: template.vibe,
-        chat_tone: template.chat_tone,
+    (key: PersonaTemplateKey, update: MiraSoulUpdate) => {
+      const undo = soul ? personaUndoUpdate(soul, update) : null;
+      updateSoul(update, {
+        onSuccess: () => {
+          toast.success(
+            t('template_applied', {
+              name: t(`template_${key}` as Parameters<typeof t>[0]),
+            }),
+            undo
+              ? {
+                  action: {
+                    label: t('template_undo'),
+                    onClick: () => updateSoul(undo),
+                  },
+                }
+              : undefined
+          );
+        },
+        onError: () => toast.error(t('template_apply_error')),
       });
     },
-    [updateSoul]
+    [soul, t, updateSoul]
   );
 
   if (isLoading) {
@@ -121,37 +94,11 @@ export function MiraPersonalitySettings() {
 
   return (
     <div className="space-y-8">
-      {/* Persona Templates */}
-      <SettingsSection>
-        <SettingItemTab
-          layout="stacked"
-          title={t('persona_templates')}
-          description={t('persona_templates_description')}
-          icon={<Sparkles className="h-4 w-4" />}
-        >
-          <div className="grid @md:grid-cols-2 gap-2">
-            {PERSONA_TEMPLATES.map((template) => (
-              <Button
-                key={template.key}
-                variant="outline"
-                size="sm"
-                className="h-auto justify-start whitespace-normal px-3 py-2 text-left"
-                disabled={isPending}
-                onClick={() => handleApplyTemplate(template)}
-              >
-                <div>
-                  <div className="font-medium text-sm">
-                    {t(`template_${template.key}` as Parameters<typeof t>[0])}
-                  </div>
-                  <div className="mt-0.5 font-normal text-muted-foreground text-sm">
-                    {template.personality}
-                  </div>
-                </div>
-              </Button>
-            ))}
-          </div>
-        </SettingItemTab>
-      </SettingsSection>
+      <MiraPersonaTemplatePicker
+        disabled={isPending}
+        onApply={handleApplyTemplate}
+        soul={soul}
+      />
 
       <SettingsSection title={t('identity_title')}>
         {/* Name */}
@@ -203,6 +150,8 @@ export function MiraPersonalitySettings() {
           description={t('personality_description_field')}
         >
           <Textarea
+            // Remount when a template or undo changes the saved text.
+            key={soul?.personality ?? ''}
             defaultValue={soul?.personality ?? ''}
             maxLength={2000}
             rows={3}
