@@ -10,7 +10,8 @@ export function eventSavePayload(
   sourceChanged = false
 ) {
   if (!original || original.id === 'new') return draft;
-  if (draft.invitation) throw new Error('Attendee editing is not supported for saved events');
+  if (draft.invitation)
+    throw new Error('Attendee editing is not supported for saved events');
   const updates: Partial<CalendarEvent> = {};
   for (const field of [
     'title',

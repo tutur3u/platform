@@ -2490,6 +2490,31 @@
     "experimental_feature": "Experimental feature",
     "experimental_notice": "This is an experimental feature that is still under heavy development. It may not work as expected and may change in the future."
   },
+  "experimental-ui": {
+    "badge": "Beta",
+    "corners": {
+      "round": "Round",
+      "sharp": "Sharp",
+      "soft": "Soft"
+    },
+    "corners_title": "Corners",
+    "palette_title": "Palette",
+    "presets": {
+      "blueberry": "Blueberry",
+      "graphite": "Graphite",
+      "high-contrast": "High contrast",
+      "lagoon": "Lagoon",
+      "lavender": "Lavender",
+      "mango": "Mango",
+      "matcha": "Matcha",
+      "midnight": "Midnight",
+      "rose": "Rosé",
+      "sorbet": "Sorbet"
+    },
+    "setting_description": "Try Sorbet, the new Tuturuuu look, in every app. Saved to your account.",
+    "setting_title": "Experimental design",
+    "setting_toggle_label": "Use the experimental Sorbet design"
+  },
   "external-projects": {
     "settings": {
       "bound_project_label": "Connected site",
@@ -10783,30 +10808,5 @@
     "try_different_search_term": "Try a different search term",
     "wallet": "Payment Method",
     "wallet_deleted": "Wallet deleted successfully"
-  },
-  "experimental-ui": {
-    "badge": "Beta",
-    "corners": {
-      "round": "Round",
-      "sharp": "Sharp",
-      "soft": "Soft"
-    },
-    "corners_title": "Corners",
-    "palette_title": "Palette",
-    "presets": {
-      "blueberry": "Blueberry",
-      "graphite": "Graphite",
-      "high-contrast": "High contrast",
-      "lagoon": "Lagoon",
-      "lavender": "Lavender",
-      "mango": "Mango",
-      "matcha": "Matcha",
-      "midnight": "Midnight",
-      "rose": "Rosé",
-      "sorbet": "Sorbet"
-    },
-    "setting_description": "Try Sorbet, the new Tuturuuu look, in every app. Saved to your account.",
-    "setting_title": "Experimental design",
-    "setting_toggle_label": "Use the experimental Sorbet design"
   }
 }

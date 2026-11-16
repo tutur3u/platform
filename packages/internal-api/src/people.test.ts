@@ -3,9 +3,9 @@ import { searchWorkspacePeople, type WorkspacePerson } from './people';
 
 describe('workspace people search', () => {
   it('encodes workspace and query without turning search text into parameters', async () => {
-    const fetchMock = vi.fn<typeof fetch>().mockResolvedValue(
-      Response.json({ data: [] })
-    );
+    const fetchMock = vi
+      .fn<typeof fetch>()
+      .mockResolvedValue(Response.json({ data: [] }));
 
     await searchWorkspacePeople(
       'workspace/one',
@@ -42,9 +42,9 @@ describe('workspace people search', () => {
         avatarUrl: null,
       },
     ];
-    const fetchMock = vi.fn<typeof fetch>().mockResolvedValue(
-      Response.json({ data })
-    );
+    const fetchMock = vi
+      .fn<typeof fetch>()
+      .mockResolvedValue(Response.json({ data }));
 
     const result = await searchWorkspacePeople(
       'workspace-1',
@@ -60,9 +60,11 @@ describe('workspace people search', () => {
   });
 
   it('propagates permission failures instead of returning an empty success', async () => {
-    const fetchMock = vi.fn<typeof fetch>().mockResolvedValue(
-      Response.json({ message: 'Forbidden' }, { status: 403 })
-    );
+    const fetchMock = vi
+      .fn<typeof fetch>()
+      .mockResolvedValue(
+        Response.json({ message: 'Forbidden' }, { status: 403 })
+      );
 
     await expect(
       searchWorkspacePeople(

@@ -85,7 +85,10 @@ export function SatelliteProfileSettingsPanel({
         description: t('email-description'),
         control: (
           <div className="w-full space-y-2">
-            <ProfileEmailLinkOut centralUrl={centralUrl} email={profile.email} />
+            <ProfileEmailLinkOut
+              centralUrl={centralUrl}
+              email={profile.email}
+            />
             {profile.new_email ? (
               <p className="text-muted-foreground text-sm">
                 {t('check-email-verify', { email: profile.new_email })}

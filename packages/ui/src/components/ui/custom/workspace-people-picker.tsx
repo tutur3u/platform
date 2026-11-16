@@ -110,7 +110,10 @@ export function WorkspacePeoplePicker({
           <ChevronsUpDown className="size-4 shrink-0 text-muted-foreground" />
         </Button>
       </PopoverTrigger>
-      <PopoverContent align="start" className="w-80 max-w-[calc(100vw-2rem)] p-0">
+      <PopoverContent
+        align="start"
+        className="w-80 max-w-[calc(100vw-2rem)] p-0"
+      >
         <Command shouldFilter={false} label={labels.search}>
           <CommandInput
             aria-label={labels.search}
@@ -143,13 +146,18 @@ export function WorkspacePeoplePicker({
                       ) : null}
                     </span>
                     <span className="text-muted-foreground text-xs">
-                      {person.kind === 'contact' ? labels.contact : labels.member}
+                      {person.kind === 'contact'
+                        ? labels.contact
+                        : labels.member}
                     </span>
                   </CommandItem>
                 ))}
               </CommandGroup>
             ) : (
-              <div className="px-3 py-4 text-muted-foreground text-sm" role="status">
+              <div
+                className="px-3 py-4 text-muted-foreground text-sm"
+                role="status"
+              >
                 {state.kind === 'idle'
                   ? labels.minimumQuery
                   : state.kind === 'loading'
@@ -161,7 +169,11 @@ export function WorkspacePeoplePicker({
             )}
           </CommandList>
           {state.kind === 'error' ? (
-            <Button type="button" variant="ghost" onClick={() => void search.refetch()}>
+            <Button
+              type="button"
+              variant="ghost"
+              onClick={() => void search.refetch()}
+            >
               {labels.retry}
             </Button>
           ) : null}

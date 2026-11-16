@@ -12,7 +12,10 @@ export function RecipientPeoplePicker({
   workspaceId: string;
   fieldLabel: string;
   excludedAddresses: readonly string[];
-  onSelect: (recipient: { address: string; displayName: string | null }) => void;
+  onSelect: (recipient: {
+    address: string;
+    displayName: string | null;
+  }) => void;
 }) {
   const t = useTranslations('mail.recipient_people');
   return (
@@ -37,8 +40,11 @@ export function RecipientPeoplePicker({
           if (
             !address ||
             !/^[^\s@<>]+@[^\s@<>]+\.[^\s@<>]+$/u.test(address) ||
-            excludedAddresses.some((value) => value.trim().toLowerCase() === address)
-          ) return;
+            excludedAddresses.some(
+              (value) => value.trim().toLowerCase() === address
+            )
+          )
+            return;
           onSelect({ address, displayName: person.displayName });
         }}
       />

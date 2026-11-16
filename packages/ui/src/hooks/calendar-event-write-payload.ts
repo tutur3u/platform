@@ -5,7 +5,8 @@ import { isProviderRecurrenceReadonly } from '@tuturuuu/utils/calendar-provider-
 export function calendarEventUpdatePayload(
   input: Partial<CalendarEvent>
 ): WorkspaceCalendarEventUpdatePayload {
-  if ('invitation' in input && input.invitation) throw new Error('Attendee editing is not supported for saved events');
+  if ('invitation' in input && input.invitation)
+    throw new Error('Attendee editing is not supported for saved events');
   const payload: WorkspaceCalendarEventUpdatePayload = {};
   for (const field of [
     'title',
@@ -26,7 +27,8 @@ export function calendarEventUpdatePayload(
 }
 
 export function cleanCalendarEventUpdates(input: Partial<CalendarEvent>) {
-  if ('invitation' in input && input.invitation) throw new Error('Attendee editing is not supported for saved events');
+  if ('invitation' in input && input.invitation)
+    throw new Error('Attendee editing is not supported for saved events');
   const result: Partial<CalendarEvent> = {};
   for (const field of [
     'title',

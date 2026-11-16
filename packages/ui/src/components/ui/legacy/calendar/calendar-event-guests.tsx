@@ -2,15 +2,31 @@
 
 import { useQuery } from '@tanstack/react-query';
 import { X } from '@tuturuuu/icons';
-import { getGoogleCalendarColorOptions, type CalendarSourceOption } from '@tuturuuu/internal-api';
+import {
+  getGoogleCalendarColorOptions,
+  type CalendarSourceOption,
+} from '@tuturuuu/internal-api';
 import { Badge } from '@tuturuuu/ui/badge';
 import { Button } from '@tuturuuu/ui/button';
 import { WorkspacePeoplePicker } from '@tuturuuu/ui/custom/workspace-people-picker';
 import { useTranslations } from 'next-intl';
-import { canInviteCalendarGuests, type CalendarEventCreationDraft } from '../../../../hooks/calendar-event-create-payload';
-import { EventDescriptionInput, EventLocationInput } from './event-form-components';
+import {
+  canInviteCalendarGuests,
+  type CalendarEventCreationDraft,
+} from '../../../../hooks/calendar-event-create-payload';
+import {
+  EventDescriptionInput,
+  EventLocationInput,
+} from './event-form-components';
 
-export function CalendarEventDetails({ event, onChange, source, workspaceId, isEditing, timeZone }: {
+export function CalendarEventDetails({
+  event,
+  onChange,
+  source,
+  workspaceId,
+  isEditing,
+  timeZone,
+}: {
   event: CalendarEventCreationDraft;
   onChange: (event: CalendarEventCreationDraft) => void;
   source?: CalendarSourceOption;
@@ -18,14 +34,36 @@ export function CalendarEventDetails({ event, onChange, source, workspaceId, isE
   isEditing: boolean;
   timeZone?: string;
 }) {
-  return <>
-    <EventLocationInput value={event.location || ''} onChange={(location) => onChange({ ...event, location })} />
-    <EventDescriptionInput value={event.description || ''} onChange={(description) => onChange({ ...event, description })} />
-    {!isEditing && workspaceId && <CalendarEventGuests event={event} onChange={onChange} source={source} workspaceId={workspaceId} timeZone={timeZone} />}
-  </>;
+  return (
+    <>
+      <EventLocationInput
+        value={event.location || ''}
+        onChange={(location) => onChange({ ...event, location })}
+      />
+      <EventDescriptionInput
+        value={event.description || ''}
+        onChange={(description) => onChange({ ...event, description })}
+      />
+      {!isEditing && workspaceId && (
+        <CalendarEventGuests
+          event={event}
+          onChange={onChange}
+          source={source}
+          workspaceId={workspaceId}
+          timeZone={timeZone}
+        />
+      )}
+    </>
+  );
 }
 
-function CalendarEventGuests({ event, onChange, source, workspaceId, timeZone }: {
+function CalendarEventGuests({
+  event,
+  onChange,
+  source,
+  workspaceId,
+  timeZone,
+}: {
   event: CalendarEventCreationDraft;
   onChange: (event: CalendarEventCreationDraft) => void;
   source?: CalendarSourceOption;
@@ -33,38 +71,102 @@ function CalendarEventGuests({ event, onChange, source, workspaceId, timeZone }:
   timeZone?: string;
 }) {
   const t = useTranslations('calendar.contact_guests');
-  const connectionId = source?.provider === 'google' ? source.connectionId : null;
+  const connectionId =
+    source?.provider === 'google' ? source.connectionId : null;
   const capability = useQuery({
     queryKey: ['google-calendar-color-options', workspaceId, connectionId],
     enabled: Boolean(connectionId && source?.writable),
     queryFn: () => getGoogleCalendarColorOptions(workspaceId, connectionId!),
   });
   const guests = event.invitation?.guests ?? [];
-  const available = capability.isSuccess && !capability.isFetching && canInviteCalendarGuests({ source, capabilities: capability.data, timeZone, providerColor: event.providerColor });
+  const available =
+    capability.isSuccess &&
+    !capability.isFetching &&
+    canInviteCalendarGuests({
+      source,
+      capabilities: capability.data,
+      timeZone,
+      providerColor: event.providerColor,
+    });
   if (!available && !guests.length) return null;
-  return <div className="space-y-2">
-    <p className="font-medium text-sm">{t('title')}</p>
-    {available ? <WorkspacePeoplePicker
-      workspaceId={workspaceId}
-      emailRequired
-      disabled={guests.length >= 100}
-      excludedEmails={guests.map(({ email }) => email)}
-      labels={{ trigger: t('add'), search: t('search'), minimumQuery: t('minimum_query'), loading: t('loading'), empty: t('empty'), error: t('error'), retry: t('retry'), contact: t('contact'), member: t('member') }}
-      onSelect={(person) => {
-        if (!person.email || !timeZone || guests.length >= 100) return;
-        const email = person.email.trim().toLowerCase();
-        if (guests.some((guest) => guest.email.toLowerCase() === email)) return;
-        onChange({ ...event, invitation: { timeZone, guests: [...guests, { email, ...(person.displayName ? { name: person.displayName } : {}) }] } });
-      }}
-    /> : <p role="status" className="text-destructive text-sm">{t('unavailable')}</p>}
-    <div className="flex flex-wrap gap-2">
-      {guests.map((guest) => <Badge key={guest.email} variant="secondary" className="gap-1">
-        <span>{guest.name ? `${guest.name} <${guest.email}>` : guest.email}</span>
-        <Button type="button" size="icon" variant="ghost" className="size-5" aria-label={t('remove', { email: guest.email })} onClick={() => {
-          const remaining = guests.filter(({ email }) => email !== guest.email);
-          onChange({ ...event, invitation: remaining.length && event.invitation ? { guests: remaining, timeZone: event.invitation.timeZone } : undefined });
-        }}><X className="size-3" /></Button>
-      </Badge>)}
+  return (
+    <div className="space-y-2">
+      <p className="font-medium text-sm">{t('title')}</p>
+      {available ? (
+        <WorkspacePeoplePicker
+          workspaceId={workspaceId}
+          emailRequired
+          disabled={guests.length >= 100}
+          excludedEmails={guests.map(({ email }) => email)}
+          labels={{
+            trigger: t('add'),
+            search: t('search'),
+            minimumQuery: t('minimum_query'),
+            loading: t('loading'),
+            empty: t('empty'),
+            error: t('error'),
+            retry: t('retry'),
+            contact: t('contact'),
+            member: t('member'),
+          }}
+          onSelect={(person) => {
+            if (!person.email || !timeZone || guests.length >= 100) return;
+            const email = person.email.trim().toLowerCase();
+            if (guests.some((guest) => guest.email.toLowerCase() === email))
+              return;
+            onChange({
+              ...event,
+              invitation: {
+                timeZone,
+                guests: [
+                  ...guests,
+                  {
+                    email,
+                    ...(person.displayName ? { name: person.displayName } : {}),
+                  },
+                ],
+              },
+            });
+          }}
+        />
+      ) : (
+        <p role="status" className="text-destructive text-sm">
+          {t('unavailable')}
+        </p>
+      )}
+      <div className="flex flex-wrap gap-2">
+        {guests.map((guest) => (
+          <Badge key={guest.email} variant="secondary" className="gap-1">
+            <span>
+              {guest.name ? `${guest.name} <${guest.email}>` : guest.email}
+            </span>
+            <Button
+              type="button"
+              size="icon"
+              variant="ghost"
+              className="size-5"
+              aria-label={t('remove', { email: guest.email })}
+              onClick={() => {
+                const remaining = guests.filter(
+                  ({ email }) => email !== guest.email
+                );
+                onChange({
+                  ...event,
+                  invitation:
+                    remaining.length && event.invitation
+                      ? {
+                          guests: remaining,
+                          timeZone: event.invitation.timeZone,
+                        }
+                      : undefined,
+                });
+              }}
+            >
+              <X className="size-3" />
+            </Button>
+          </Badge>
+        ))}
+      </div>
     </div>
-  </div>;
+  );
 }

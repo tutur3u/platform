@@ -31,29 +31,44 @@ export function projectWorkspacePeople(
 ) {
   const needle = query.toLocaleLowerCase();
   const seen = new Set<string>();
-  return candidates.flatMap<PersonProjection>((candidate) => {
-    const contact = candidate.kind === 'contact';
-    const displayName = visibility.hideName || (contact && !visibility.publicContacts)
-      ? null
-      : resolveUserDisplayName({
-          display_name: candidate.display_name,
-          full_name: contact && visibility.publicContacts ? candidate.full_name : null,
-        }) || null;
-    const email = visibility.hideEmail || (contact && !visibility.privateContacts)
-      ? null : candidate.email;
-    const key = `${candidate.kind}:${candidate.id}`;
-    if (seen.has(key) || ![displayName, email].some((value) => value?.toLocaleLowerCase().includes(needle))) return [];
-    seen.add(key);
-    const fields = {
-      id: candidate.id,
-      displayName,
-      email,
-      avatarUrl: contact && !visibility.publicContacts ? null : candidate.avatar_url,
-    };
-    return candidate.kind === 'contact'
-      ? [{ ...fields, kind: 'contact' as const, linkedUserId: null }]
-      : [{ ...fields, kind: 'member' as const }];
-  }).slice(0, limit);
+  return candidates
+    .flatMap<PersonProjection>((candidate) => {
+      const contact = candidate.kind === 'contact';
+      const displayName =
+        visibility.hideName || (contact && !visibility.publicContacts)
+          ? null
+          : resolveUserDisplayName({
+              display_name: candidate.display_name,
+              full_name:
+                contact && visibility.publicContacts
+                  ? candidate.full_name
+                  : null,
+            }) || null;
+      const email =
+        visibility.hideEmail || (contact && !visibility.privateContacts)
+          ? null
+          : candidate.email;
+      const key = `${candidate.kind}:${candidate.id}`;
+      if (
+        seen.has(key) ||
+        ![displayName, email].some((value) =>
+          value?.toLocaleLowerCase().includes(needle)
+        )
+      )
+        return [];
+      seen.add(key);
+      const fields = {
+        id: candidate.id,
+        displayName,
+        email,
+        avatarUrl:
+          contact && !visibility.publicContacts ? null : candidate.avatar_url,
+      };
+      return candidate.kind === 'contact'
+        ? [{ ...fields, kind: 'contact' as const, linkedUserId: null }]
+        : [{ ...fields, kind: 'member' as const }];
+    })
+    .slice(0, limit);
 }
 
 // PostgREST quoted filter values keep commas and parentheses inside the value.
@@ -64,6 +79,14 @@ export function peopleSearchPattern(query: string) {
 export function parsePeopleSearch(params: URLSearchParams) {
   const query = params.get('q')?.trim() ?? '';
   const limit = Number(params.get('limit') ?? 10);
-  if (query.length < 2 || query.length > 100 || query.includes('*') || !Number.isInteger(limit) || limit < 1 || limit > 20) return null;
+  if (
+    query.length < 2 ||
+    query.length > 100 ||
+    query.includes('*') ||
+    !Number.isInteger(limit) ||
+    limit < 1 ||
+    limit > 20
+  )
+    return null;
   return { query, limit };
 }

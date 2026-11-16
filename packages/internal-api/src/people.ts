@@ -12,10 +12,7 @@ type WorkspacePersonFields = {
 };
 
 export type WorkspacePerson = WorkspacePersonFields &
-  (
-    | { kind: 'contact'; linkedUserId: string | null }
-    | { kind: 'member' }
-  );
+  ({ kind: 'contact'; linkedUserId: string | null } | { kind: 'member' });
 
 export type WorkspacePeopleSearchParams = {
   query: string;

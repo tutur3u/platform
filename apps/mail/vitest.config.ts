@@ -30,7 +30,7 @@ export default defineConfig({
         replacement: resolve(__dirname, 'src/runtime/intl-server.ts'),
       },
       {
-        find: /^@tuturuuu\/internal-api\/(calendar|client|mail)$/,
+        find: /^@tuturuuu\/internal-api\/(calendar|client|mail|people)$/,
         replacement: `${resolve(__dirname, '../../packages/internal-api/src')}/$1`,
       },
       { find: '@', replacement: resolve(__dirname, './src') },

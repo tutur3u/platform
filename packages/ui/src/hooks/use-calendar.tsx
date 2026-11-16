@@ -32,7 +32,10 @@ import {
   createOptimisticEventId,
 } from './calendar-creation-request';
 import { roundToNearest15Minutes } from './calendar-date-utils';
-import { calendarEventCreatePayload, type CalendarEventCreationInput } from './calendar-event-create-payload';
+import {
+  calendarEventCreatePayload,
+  type CalendarEventCreationInput,
+} from './calendar-event-create-payload';
 import { createCalendarEventLookup } from './calendar-event-lookup';
 import type { PendingEventUpdate } from './calendar-event-update-queue-types';
 import {
@@ -579,7 +582,8 @@ export const CalendarProvider = ({
 
       const eventColor = event.color || 'BLUE';
 
-      if (event.invitation && eventAdapter?.onCreate) throw new Error('This calendar does not support invitations');
+      if (event.invitation && eventAdapter?.onCreate)
+        throw new Error('This calendar does not support invitations');
       if (eventAdapter?.onCreate) {
         const created = await eventAdapter.onCreate({
           ...event,
@@ -594,7 +598,11 @@ export const CalendarProvider = ({
 
       if (!ws) throw new Error('No workspace selected');
 
-      const payload = calendarEventCreatePayload(event, startDate.toISOString(), endDate.toISOString());
+      const payload = calendarEventCreatePayload(
+        event,
+        startDate.toISOString(),
+        endDate.toISOString()
+      );
       payload.requestId = creationRequests.current.forAttempt(
         { wsId: ws.id, ...payload },
         options?.requestId

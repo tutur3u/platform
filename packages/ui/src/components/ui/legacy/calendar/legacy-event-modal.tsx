@@ -1000,9 +1000,14 @@ export function LegacyEventModal() {
 
                     {/* Location and Description */}
                     <div className="space-y-2">
-                      <CalendarEventDetails event={event} onChange={setEvent}
-                        source={selectedSourceOption} workspaceId={wsId}
-                        isEditing={isEditing} timeZone={tz} />
+                      <CalendarEventDetails
+                        event={event}
+                        onChange={setEvent}
+                        source={selectedSourceOption}
+                        workspaceId={wsId}
+                        isEditing={isEditing}
+                        timeZone={tz}
+                      />
 
                       {/* Color and Options Row */}
                       <div className="flex items-end justify-between gap-4">

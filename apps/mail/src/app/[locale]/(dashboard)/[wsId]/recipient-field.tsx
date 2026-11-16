@@ -133,7 +133,8 @@ export function RecipientField({
             excludedAddresses={[...recipients, ...disabledAddresses]}
             onSelect={({ address, displayName }) => {
               onChange([...recipients, address]);
-              if (displayName) onDisplayNamesChange?.({ [address]: displayName });
+              if (displayName)
+                onDisplayNamesChange?.({ [address]: displayName });
             }}
           />
         ) : null}

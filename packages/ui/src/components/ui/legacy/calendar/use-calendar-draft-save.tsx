@@ -7,7 +7,11 @@ import type { CalendarEvent } from '@tuturuuu/types/primitives/calendar-event';
 import { Button } from '@tuturuuu/ui/button';
 import { useTranslations } from 'next-intl';
 import { useRef, useState } from 'react';
-import { canInviteCalendarGuests, type CalendarEventCreationDraft, type CalendarEventCreationInput } from '../../../../hooks/calendar-event-create-payload';
+import {
+  canInviteCalendarGuests,
+  type CalendarEventCreationDraft,
+  type CalendarEventCreationInput,
+} from '../../../../hooks/calendar-event-create-payload';
 import { createCalendarDraftRecovery } from './calendar-draft-recovery';
 import { eventSavePayload } from './event-save-payload';
 
@@ -33,7 +37,11 @@ export function useCalendarDraftSave(args: SaveArgs) {
   const t = useTranslations('calendar');
   const connectionId =
     args.source?.provider === 'google' ? args.source.connectionId : null;
-  const { data: capabilities, isSuccess: capabilityReady, isFetching: capabilityFetching } = useQuery({
+  const {
+    data: capabilities,
+    isSuccess: capabilityReady,
+    isFetching: capabilityFetching,
+  } = useQuery({
     queryKey: ['google-calendar-color-options', args.wsId, connectionId],
     enabled: !!args.wsId && !!connectionId,
     queryFn: () => getGoogleCalendarColorOptions(args.wsId!, connectionId!),
@@ -76,7 +84,18 @@ export function useCalendarDraftSave(args: SaveArgs) {
     args.setIsSaving(true);
     try {
       const payload = args.buildPayload();
-      if (payload.invitation && (!capabilityReady || capabilityFetching || !canInviteCalendarGuests({ source: args.source, capabilities, timeZone: payload.invitation.timeZone, providerColor: payload.providerColor }))) throw new Error('Invitations are unavailable for this calendar');
+      if (
+        payload.invitation &&
+        (!capabilityReady ||
+          capabilityFetching ||
+          !canInviteCalendarGuests({
+            source: args.source,
+            capabilities,
+            timeZone: payload.invitation.timeZone,
+            providerColor: payload.providerColor,
+          }))
+      )
+        throw new Error('Invitations are unavailable for this calendar');
       const confirmed = recovery.original();
       if (confirmed) {
         const sourceChanged =
@@ -91,9 +110,10 @@ export function useCalendarDraftSave(args: SaveArgs) {
         const submission = recovery.capture(
           payload,
           args.draft.requestId,
-          Boolean(payload.invitation) || (!!connectionId &&
-            capabilities?.connectionId === connectionId &&
-            capabilities.providerColorWrites === true)
+          Boolean(payload.invitation) ||
+            (!!connectionId &&
+              capabilities?.connectionId === connectionId &&
+              capabilities.providerColorWrites === true)
         );
         const saved = await args.addEvent(
           submission.payload as CalendarEventCreationInput,
