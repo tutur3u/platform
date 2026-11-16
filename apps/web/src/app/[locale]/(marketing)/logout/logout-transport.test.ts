@@ -1,8 +1,8 @@
 import { createServer } from 'node:http';
 import { NextRequest } from 'next/server';
 import { expect, it } from 'vitest';
-import { logoutSatelliteAppWithInternalApi } from '../../internal-api/src/auth-logout';
-import { createAppOnlyLogoutHandlers } from './app-session';
+import { logoutSatelliteAppWithInternalApi } from '@tuturuuu/internal-api/auth';
+import { createAppOnlyLogoutHandlers } from '@tuturuuu/auth/app-session';
 
 it('receives app logout JSON through real HTTP transport instead of following a 303', async () => {
   const handlers = createAppOnlyLogoutHandlers({
