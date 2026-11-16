@@ -24,10 +24,20 @@ const manifest = JSON.parse(
 const CLIENT_CONDITIONS = {
   'next-client': ['browser', 'import', 'module', 'production', 'default'],
   'vite-client': ['browser', 'module', 'import', 'production', 'default'],
+  // Vite+ apps (Calendar, Tasks) enable `bun` for workspace sources.
+  'vite-plus-client': [
+    'bun',
+    'module',
+    'browser',
+    'import',
+    'production',
+    'default',
+  ],
   'esbuild-browser': ['browser', 'import', 'default'],
 };
 const SERVER_CONDITIONS = {
   node: ['node', 'import', 'default'],
+  'bun-runtime': ['bun', 'node', 'import', 'default'],
   'next-react-server': ['react-server', 'node', 'import', 'default'],
   'next-edge': ['edge-light', 'worker', 'browser', 'import', 'default'],
   'cloudflare-workerd': [
@@ -40,6 +50,21 @@ const SERVER_CONDITIONS = {
   ],
 };
 const SECRET_NAMES = ['SUPABASE_SECRET_KEY', 'SUPABASE_SERVICE_ROLE'];
+const SERVER_RUNTIME_KEYS = [
+  'workerd',
+  'worker',
+  'edge-light',
+  'react-server',
+  'node',
+];
+const BROWSER_STUBS = [
+  './dist/next/secret-env.browser.js',
+  './src/next/secret-env.browser.ts',
+];
+const SERVER_READERS = [
+  './dist/next/secret-env.js',
+  './src/next/secret-env.ts',
+];
 
 // Node's conditional-export algorithm: the first key, in object order, that is
 // an active condition (or `default`) wins.
@@ -122,19 +147,62 @@ describe('secret-env resolution conditions', () => {
   for (const [name, target] of SECRET_ENTRIES) {
     for (const [toolchain, conditions] of Object.entries(CLIENT_CONDITIONS)) {
       it(`${toolchain} resolves ${name} to the browser stub`, () => {
-        expect(resolveTarget(target, conditions)).toBe(
-          './dist/next/secret-env.browser.js'
-        );
+        expect(BROWSER_STUBS).toContain(resolveTarget(target, conditions));
       });
     }
     for (const [runtime, conditions] of Object.entries(SERVER_CONDITIONS)) {
       it(`${runtime} resolves ${name} to the server reader`, () => {
-        expect(resolveTarget(target, conditions)).toBe(
-          './dist/next/secret-env.js'
-        );
+        expect(SERVER_READERS).toContain(resolveTarget(target, conditions));
       });
     }
   }
+
+  it('keeps source resolution for Bun and Vite+ while gating secrets', () => {
+    for (const [, target] of SECRET_ENTRIES) {
+      expect(resolveTarget(target, CLIENT_CONDITIONS['vite-plus-client'])).toBe(
+        './src/next/secret-env.browser.ts'
+      );
+      expect(resolveTarget(target, SERVER_CONDITIONS['bun-runtime'])).toBe(
+        './src/next/secret-env.ts'
+      );
+      expect(resolveTarget(target, SERVER_CONDITIONS.node)).toBe(
+        './dist/next/secret-env.js'
+      );
+    }
+  });
+
+  // Conditions match in object order, so a `bun` key ahead of `browser` hands
+  // the server source to any client build that also enables `bun`.
+  it('orders server runtimes, then browser, then bun in every entry', () => {
+    const entries = [
+      ...Object.entries(manifest.exports).map(
+        ([subpath, target]) => [`exports ${subpath}`, target] as const
+      ),
+      ...Object.entries(manifest.imports).map(
+        ([specifier, target]) => [`imports ${specifier}`, target] as const
+      ),
+    ];
+    const violations: string[] = [];
+    const visit = (label: string, target: unknown) => {
+      if (!target || typeof target !== 'object') return;
+      const keys = Object.keys(target);
+      const browser = keys.indexOf('browser');
+      const bun = keys.indexOf('bun');
+      if (browser >= 0 && bun >= 0 && bun < browser)
+        violations.push(`${label}: bun before browser`);
+      for (const runtime of SERVER_RUNTIME_KEYS) {
+        const index = keys.indexOf(runtime);
+        if (browser >= 0 && index > browser)
+          violations.push(`${label}: ${runtime} after browser`);
+      }
+      for (const [key, value] of Object.entries(target))
+        visit(`${label}.${key}`, value);
+    };
+    for (const [label, target] of entries) visit(label, target);
+
+    expect(entries.length).toBeGreaterThan(0);
+    expect(violations).toEqual([]);
+  });
 
   it('keeps the browser stub free of secret names and environment reads', () => {
     const stub = readFileSync(

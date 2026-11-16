@@ -7,7 +7,9 @@ import { getServerSupabaseUrl } from './common';
  * `./next/secret-env` export resolve the `browser` condition to
  * `secret-env.browser.ts`, a stub with no environment reads. Server runtimes
  * (`node`, `react-server`, `edge-light`, `worker`, `workerd`) are listed before
- * `browser` so they always receive this reader.
+ * `browser` so they always receive this reader, and `browser` is listed before
+ * `bun` so a Vite+ client build that enables `bun` still receives the stub.
+ * `bun` nests under `node` and `browser` to keep resolving source files.
  *
  * There is deliberately no fallback to the publishable key: a missing secret is
  * a configuration error.
