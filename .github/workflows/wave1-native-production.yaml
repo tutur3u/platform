@@ -7,6 +7,10 @@ on:
         type: choice
         options: [calendar, mail, apps]
         required: true
+      release-artifact:
+        description: Build and seal only. The publish job does not run.
+        type: boolean
+        default: false
 permissions:
   contents: read
   actions: read
@@ -17,7 +21,7 @@ concurrency:
   queue: max
 jobs:
   production-policy:
-    if: github.ref == 'refs/heads/production'
+    if: ${{ github.ref == 'refs/heads/production' && inputs['release-artifact'] != true }}
     runs-on: ubuntu-latest
     timeout-minutes: 3
     outputs:
@@ -36,12 +40,13 @@ jobs:
         run: node scripts/ci/production-publication-policy.ts "$APP-cloudflare.yaml" "$GITHUB_STEP_SUMMARY"
   qualify:
     needs: production-policy
-    if: github.ref == 'refs/heads/production' && needs.production-policy.outputs.allowed == 'true'
+    if: ${{ !cancelled() && github.ref == 'refs/heads/production' && (inputs['release-artifact'] == true || needs.production-policy.outputs.allowed == 'true') }}
     runs-on: ubuntu-latest
     environment: wave1-${{ inputs.app }}-production
     timeout-minutes: 45
     env:
       APP: ${{ inputs.app }}
+      RELEASE_ARTIFACT: ${{ inputs.release-artifact }}
       PROFILE: production
       CALENDAR_DEPLOYMENT_PROFILE: production
       SOURCE_SHA: ${{ github.sha }}
@@ -69,6 +74,10 @@ jobs:
           import { profileFor } from './scripts/ci/wave1-native-profile.mjs';
           const p = profileFor(process.env.APP, 'production');
           if (!process.env.NEXT_PUBLIC_SUPABASE_URL || process.env.NEXT_PUBLIC_SUPABASE_URL.includes('.invalid') || !process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY) throw new Error('Production public inputs are required');
+          if (process.env.RELEASE_ARTIFACT === 'true') {
+            const { assertReleaseInputs } = await import('./scripts/ci/wave1-release-inputs.mjs');
+            assertReleaseInputs(process.env);
+          }
           appendFileSync(process.env.GITHUB_ENV, `NEXT_PUBLIC_APP_URL=https://${p.host}\nNEXT_PUBLIC_${p.app.toUpperCase()}_APP_URL=https://${p.host}\nNEXT_PUBLIC_WEB_APP_URL=https://tuturuuu.com\n`);
           JS
       - name: Generate exact source metadata
@@ -87,6 +96,14 @@ jobs:
         timeout-minutes: 2
         run: |
           node scripts/ci/wave1-native-artifact.mjs prepare "$APP" production "$SOURCE_SHA"
+          if [ "$RELEASE_ARTIFACT" = true ]; then
+            node --input-type=module <<'JS'
+            import { readFileSync } from 'node:fs';
+            import { assertReceiptDigest } from './scripts/ci/wave1-release-inputs.mjs';
+            const receipt = JSON.parse(readFileSync(`apps/${process.env.APP}/wave1-artifact.json`, 'utf8'));
+            assertReceiptDigest(receipt, process.env);
+            JS
+          fi
           if [ "$APP" = calendar ]; then node scripts/ci/calendar-host-scan.mjs "apps/$APP/dist" production; fi
       - name: Pre-seal doctor on the production Host header
         timeout-minutes: 3
@@ -104,7 +121,7 @@ jobs:
           python3 scripts/ci/wave1-native-archive.py pack "apps/$APP" "$RUNNER_TEMP/wave1-native.tar.gz"
       - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
-          name: wave1-${{ inputs.app }}-production-${{ env.SOURCE_SHA }}
+          name: wave1-${{ inputs.app }}-production-${{ inputs['release-artifact'] == true && 'release-' || '' }}${{ env.SOURCE_SHA }}
           path: ${{ runner.temp }}/wave1-native.tar.gz
           retention-days: 14
           if-no-files-found: error
@@ -131,7 +148,7 @@ jobs:
       - run: bash scripts/ci/run-with-backoff.sh bun install --frozen-lockfile
       - uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
         with:
-          name: wave1-${{ inputs.app }}-production-${{ env.SOURCE_SHA }}
+          name: wave1-${{ inputs.app }}-production-${{ inputs['release-artifact'] == true && 'release-' || '' }}${{ env.SOURCE_SHA }}
           path: ${{ runner.temp }}/native-production
       - name: Restore and requalify without deploy credentials
         timeout-minutes: 5
@@ -145,7 +162,7 @@ jobs:
   publish:
     name: publish-${{ inputs.app }}
     needs: [production-policy, qualify, restored]
-    if: github.ref == 'refs/heads/production' && needs.production-policy.outputs.allowed == 'true'
+    if: ${{ inputs['release-artifact'] != true && github.ref == 'refs/heads/production' && needs.production-policy.outputs.allowed == 'true' }}
     runs-on: ubuntu-latest
     environment: wave1-${{ inputs.app }}-production
     timeout-minutes: 15
@@ -169,7 +186,7 @@ jobs:
       - run: bash scripts/ci/run-with-backoff.sh bun install --frozen-lockfile --ignore-scripts
       - uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
         with:
-          name: wave1-${{ inputs.app }}-production-${{ env.SOURCE_SHA }}
+          name: wave1-${{ inputs.app }}-production-${{ inputs['release-artifact'] == true && 'release-' || '' }}${{ env.SOURCE_SHA }}
           path: ${{ runner.temp }}/native-production
       - name: Restore same-run production artifact
         run: |

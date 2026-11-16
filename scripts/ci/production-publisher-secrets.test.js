@@ -44,6 +44,7 @@ function context(ref, allowed = 'false', event = 'workflow_dispatch') {
     vars: { TURBO_TEAM: '' },
     matrix: { profile: 'staging' },
     secrets: new Proxy({}, { get: (_, name) => `credential:${String(name)}` }),
+    inputs: { app: 'mail', 'release-artifact': false },
     env: {},
     always: () => true,
     cancelled: () => false,
