@@ -37,6 +37,7 @@ import { canVerifiedAccountHostMeeting } from '@tuturuuu/utils/meet-hosting';
 import { getPermissions } from '@tuturuuu/utils/workspace-helper';
 import { loadMeetingCalendarEvent } from '../app/[locale]/[wsId]/meetings/[meetingId]/meeting-calendar-event';
 import { getMeetWorkspaceContext } from '../app/[locale]/[wsId]/workspace-context';
+import { loadMeetingSchedule } from '../lib/meeting-schedule/loader.server';
 import { getLocale, getTranslations } from './intl-server';
 import type { MeetPageMeta } from './page-head';
 import { meetPlanPolls } from './plan-polls';
@@ -429,14 +430,27 @@ async function loadResolvedPageModel(url: URL) {
       workspace,
       detail: await detailModel(workspace, segments[2]),
     };
-  if (segments[1] === 'meetings')
+  if (segments[1] === 'meetings') {
+    const paging = pagination(url, 10);
+    const schedule = await loadMeetingSchedule({
+      supabase: await createAdminClient({ noCookie: true }),
+      wsId: workspace.wsId,
+      userId: workspace.user.id,
+      permissions: await getPermissions({
+        user: workspace.user,
+        wsId: workspace.wsId,
+      }),
+      search: paging.search,
+    });
     return {
       ...common,
       kind: 'meetings' as const,
       workspace,
-      paging: pagination(url, 10),
+      paging,
+      schedule,
       hosting: await hostingPromise,
     };
+  }
   throw notFound();
 }
 
