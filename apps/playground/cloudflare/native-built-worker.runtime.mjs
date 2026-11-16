@@ -1,10 +1,10 @@
 import assert from 'node:assert/strict';
-import { cp, mkdir, mkdtemp, readFile, rm, writeFile } from 'node:fs/promises';
+import { cp, mkdir, mkdtemp, rm, writeFile } from 'node:fs/promises';
 import { request } from 'node:http';
 import { createRequire } from 'node:module';
 import { tmpdir } from 'node:os';
 import { join, relative } from 'node:path';
-import { fileURLToPath } from 'node:url';
+import { fileURLToPath, pathToFileURL } from 'node:url';
 import test from 'node:test';
 import { readNativeRuntimeConfig } from '../../../scripts/ci/apps-native-runtime-pointer.mjs';
 import { assertNoPublicResources } from './public-resources.mjs';
@@ -27,12 +27,12 @@ test(
     assert.equal(config.assets.binding, 'ASSETS');
     assert.equal(config.assets.run_worker_first, true);
     assertNoPublicResources(config);
-    const manifestSource = await readFile(
-      join(app, 'dist/server/__vite_rsc_assets_manifest.js'),
-      'utf8'
-    );
-    const manifest = JSON.parse(
-      manifestSource.replace(/^export default\s+/, '').replace(/;\s*$/, '')
+    // JS asset URLs are runtime expressions (start-bridge renderBuiltUrl), so
+    // evaluate the emitted module. With no request-scoped app base they fall
+    // back to the build's base path, which the mount assertion checks.
+    assert.equal(globalThis.__tuturuuuAppBase, undefined);
+    const { default: manifest } = await import(
+      pathToFileURL(join(app, 'dist/server/__vite_rsc_assets_manifest.js')).href
     );
     const manifestAssets = assertManifestAssetMount(manifest);
     const scratch = await mkdtemp(join(tmpdir(), 'playground-guest-runtime-'));
