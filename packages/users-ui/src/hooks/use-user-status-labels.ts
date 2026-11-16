@@ -1,5 +1,8 @@
 import { useQuery } from '@tanstack/react-query';
+import { getOptionalWorkspaceConfig } from '@tuturuuu/internal-api/workspace-configs';
 import { useTranslations } from 'next-intl';
+
+export const USER_STATUS_LABELS_CONFIG_ID = 'user_status_labels';
 
 export interface UserStatusLabels {
   archived: string;
@@ -7,37 +10,67 @@ export interface UserStatusLabels {
   permanently_archived: string;
 }
 
-export function useUserStatusLabels(wsId: string) {
+export const USER_STATUS_LABEL_KEYS = [
+  'archived',
+  'archived_until',
+  'permanently_archived',
+] as const satisfies readonly (keyof UserStatusLabels)[];
+
+export function userStatusLabelsQueryKey(wsId: string) {
+  return ['workspace-config', wsId, USER_STATUS_LABELS_CONFIG_ID] as const;
+}
+
+/** Parses the stored config value, keeping only non-empty string labels. */
+export function parseUserStatusLabels(
+  value: string | null | undefined
+): Partial<UserStatusLabels> {
+  if (!value) return {};
+
+  try {
+    const parsed: unknown = JSON.parse(value);
+    if (!parsed || typeof parsed !== 'object') return {};
+
+    const labels: Partial<UserStatusLabels> = {};
+    for (const key of USER_STATUS_LABEL_KEYS) {
+      const label = (parsed as Record<string, unknown>)[key];
+      if (typeof label === 'string' && label.trim()) labels[key] = label;
+    }
+    return labels;
+  } catch (error) {
+    console.error('Failed to parse user status labels config', error);
+    return {};
+  }
+}
+
+export function useDefaultUserStatusLabels(): UserStatusLabels {
   const t = useTranslations('ws-users');
 
-  const defaults: UserStatusLabels = {
+  return {
     archived: t('status_archived'),
     archived_until: t('status_archived_until'),
     permanently_archived: t('archived_user'),
   };
+}
 
-  const { data: labels } = useQuery({
-    queryKey: ['workspace-config', wsId, 'user_status_labels'],
+/** The workspace's saved label overrides, without defaults applied. */
+export function useUserStatusLabelOverrides(wsId: string) {
+  return useQuery({
+    queryKey: userStatusLabelsQueryKey(wsId),
     queryFn: async () => {
-      const res = await fetch(
-        `/api/v1/workspaces/${wsId}/settings/user_status_labels`,
-        { cache: 'no-store' }
+      const config = await getOptionalWorkspaceConfig(
+        wsId,
+        USER_STATUS_LABELS_CONFIG_ID
       );
-      if (!res.ok) return null;
-      const data = await res.json();
-      try {
-        // The API returns { id, ws_id, value, ... }
-        // value is a stringified JSON
-        if (data.value) {
-          return JSON.parse(data.value) as Partial<UserStatusLabels>;
-        }
-      } catch (e) {
-        console.error('Failed to parse user status labels config', e);
-      }
-      return null;
+      return parseUserStatusLabels(config?.value);
     },
+    enabled: Boolean(wsId),
     staleTime: 5 * 60 * 1000,
   });
+}
 
-  return { ...defaults, ...labels };
+export function useUserStatusLabels(wsId: string): UserStatusLabels {
+  const defaults = useDefaultUserStatusLabels();
+  const { data: overrides } = useUserStatusLabelOverrides(wsId);
+
+  return { ...defaults, ...overrides };
 }

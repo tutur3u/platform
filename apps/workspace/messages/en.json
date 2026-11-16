@@ -16736,9 +16736,7 @@
       "manage_current": "Manage current workspace settings",
       "members": "Members",
       "overview": "Overview",
-      "title": "Current workspace",
-      "user_status": "User Status Terminology",
-      "user_status_description": "Customize user status terminology"
+      "title": "Current workspace"
     }
   },
   "settings-account": {
@@ -27236,17 +27234,6 @@
     "edit_description": "Edit an existing user report",
     "plural": "User Reports",
     "singular": "User Report"
-  },
-  "ws-user-status-settings": {
-    "archived_label": "Archived Label",
-    "archived_until_label": "Archived Until Label",
-    "description": "Customize the terminology used for user statuses in your workspace.",
-    "permanently_archived_label": "Permanently Archived Label",
-    "save": "Save changes",
-    "saving": "Saving...",
-    "title": "User Status Terminology",
-    "update_error": "Failed to update settings.",
-    "update_success": "Settings updated successfully."
   },
   "ws-users": {
     "address": "Address",

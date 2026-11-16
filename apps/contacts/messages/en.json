@@ -1825,6 +1825,22 @@
     "yellow": "Yellow",
     "yesterday": "Yesterday"
   },
+  "contact-labels-settings": {
+    "archive_section": "Archive status",
+    "archived": "Archived",
+    "archived_help": "Shown in filters and on archived contacts.",
+    "archived_until": "Archived until a date",
+    "archived_until_help": "Shown on contacts archived until a set date.",
+    "load_error": "Contact labels could not be loaded.",
+    "permanently_archived": "Permanently archived",
+    "permanently_archived_help": "Shown on the option that archives a contact with no end date.",
+    "reset": "Reset to defaults",
+    "retry": "Retry",
+    "save": "Save changes",
+    "saving": "Saving...",
+    "update_error": "Contact labels could not be saved.",
+    "update_success": "Contact labels saved."
+  },
   "course-data-table": {
     "modules": "Modules"
   },
@@ -4248,6 +4264,8 @@
     "user_management": {
       "auto_add_new_groups_to_default_included_groups_help": "Automatically append each newly created user group to the default included groups list.",
       "auto_add_new_groups_to_default_included_groups_label": "Auto-add new groups to default included groups",
+      "contact_labels": "Contact Labels",
+      "contact_labels_description": "Rename the status labels shown on contacts",
       "database_filters": "Database Filters",
       "database_filters_description": "Configure personal defaults and workspace group filters for the users database",
       "default_excluded_groups_help": "Groups selected here will be excluded by default when you visit the database page. You can still change filters on the page.",

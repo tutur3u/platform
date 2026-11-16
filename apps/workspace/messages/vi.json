@@ -16743,9 +16743,7 @@
       "manage_current": "Quản lý cài đặt không gian làm việc hiện tại",
       "members": "Thành viên",
       "overview": "Tổng quan",
-      "title": "Không gian làm việc hiện tại",
-      "user_status": "Thuật ngữ trạng thái người dùng",
-      "user_status_description": "Tùy chỉnh thuật ngữ cho trạng thái người dùng"
+      "title": "Không gian làm việc hiện tại"
     }
   },
   "settings-account": {
@@ -27243,17 +27241,6 @@
     "edit_description": "Sửa báo cáo hiện có",
     "plural": "Báo cáo người dùng",
     "singular": "Báo cáo người dùng"
-  },
-  "ws-user-status-settings": {
-    "archived_label": "Nhãn đã lưu trữ",
-    "archived_until_label": "Nhãn lưu trữ tạm thời",
-    "description": "Tùy chỉnh thuật ngữ được sử dụng cho trạng thái người dùng trong không gian làm việc của bạn.",
-    "permanently_archived_label": "Nhãn lưu trữ vĩnh viễn",
-    "save": "Lưu thay đổi",
-    "saving": "Đang lưu...",
-    "title": "Thuật ngữ trạng thái người dùng",
-    "update_error": "Không thể cập nhật cài đặt.",
-    "update_success": "Đã cập nhật cài đặt thành công."
   },
   "ws-users": {
     "address": "Địa chỉ",

@@ -54,7 +54,7 @@ describe('settings dialog nav items', () => {
     const names = namesFor(baseAvailability, 'ws_1');
 
     expect(names).toContain('workspace_general');
-    expect(names).toContain('user_status');
+    expect(names).not.toContain('user_status');
     expect(names).not.toContain('workspace_members');
     expect(names).not.toContain('workspace_billing');
     expect(names).not.toContain('usage');

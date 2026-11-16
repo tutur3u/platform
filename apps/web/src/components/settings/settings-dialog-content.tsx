@@ -14,7 +14,6 @@ import {
   SecuritySettings,
   SessionSettings,
   SettingsDialogNativeRoutePanels,
-  UserStatusSettings,
   WorkspaceBillingSettings,
   WorkspaceGeneralSettingsPanel,
   WorkspaceMembersSettingsPanel,
@@ -125,11 +124,6 @@ export function SettingsDialogContent({
       {activeTab === 'workspace_billing' && wsId && hasBillingPermission && (
         <div className="h-full">
           <WorkspaceBillingSettings wsId={wsId} />
-        </div>
-      )}
-      {activeTab === 'user_status' && wsId && (
-        <div className="h-full">
-          <UserStatusSettings wsId={wsId} />
         </div>
       )}
       {wsId && (

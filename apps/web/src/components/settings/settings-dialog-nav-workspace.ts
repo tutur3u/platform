@@ -54,13 +54,6 @@ export function buildWorkspaceSettingsNavGroups({
               },
             ]
           : []),
-        {
-          name: 'user_status',
-          label: t('settings.workspaces.user_status'),
-          icon: Users,
-          description: t('settings.workspaces.user_status_description'),
-          keywords: ['User Status'],
-        },
       ],
     },
   ];

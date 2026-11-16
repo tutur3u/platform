@@ -23,9 +23,6 @@ const LazyProfileSettingsPanel = lazy(() =>
 );
 const LazySecuritySettings = lazy(() => import('./account/security-settings'));
 const LazySessionSettings = lazy(() => import('./account/session-settings'));
-const LazyUserStatusSettings = lazy(
-  () => import('./workspace/user-status-settings')
-);
 const LazyWorkspaceBillingSettings = lazy(
   () => import('./workspace/billing-settings')
 );
@@ -75,7 +72,6 @@ export const SettingsDialogNativeRoutePanels = withPanelSuspense(
 );
 export const SecuritySettings = withPanelSuspense(LazySecuritySettings);
 export const SessionSettings = withPanelSuspense(LazySessionSettings);
-export const UserStatusSettings = withPanelSuspense(LazyUserStatusSettings);
 export const WorkspaceBillingSettings = withPanelSuspense(
   LazyWorkspaceBillingSettings
 );

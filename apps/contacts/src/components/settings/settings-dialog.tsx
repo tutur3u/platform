@@ -7,6 +7,7 @@ import {
   Paintbrush,
   PanelLeft,
   Star,
+  Tags,
   Users,
 } from '@tuturuuu/icons';
 import {
@@ -32,6 +33,7 @@ import SharedSidebarSettings from '@tuturuuu/ui/custom/settings/sidebar-settings
 import { SettingsDialogShell } from '@tuturuuu/ui/custom/settings-dialog-shell';
 import { useUserBooleanConfig } from '@tuturuuu/ui/hooks/use-user-config';
 import { useWorkspaceConfigs } from '@tuturuuu/ui/hooks/use-workspace-config';
+import { ContactLabelsSettings } from '@tuturuuu/users-ui/components/contact-labels-settings';
 import { isExactTuturuuuDotComEmail } from '@tuturuuu/utils/email/client';
 import { useTranslations } from 'next-intl';
 import { useState } from 'react';
@@ -132,6 +134,15 @@ export function SettingsDialog({
                   'settings.user_management.require_attention_color_description'
                 ),
                 keywords: ['Users', 'Feedback', 'Attention', 'Color'],
+              },
+              {
+                name: 'contact_labels',
+                label: t('settings.user_management.contact_labels'),
+                icon: Tags,
+                description: t(
+                  'settings.user_management.contact_labels_description'
+                ),
+                keywords: ['Contact', 'Labels', 'Status', 'Archived'],
               },
               {
                 name: 'approvals',
@@ -254,6 +265,10 @@ export function SettingsDialog({
 
       {activeTab === 'attendance_display' && wsId && (
         <AttendanceDisplaySettings wsId={wsId} />
+      )}
+
+      {activeTab === 'contact_labels' && wsId && (
+        <ContactLabelsSettings wsId={wsId} />
       )}
 
       {activeTab === 'approvals' && wsId && <ApprovalsSettings wsId={wsId} />}

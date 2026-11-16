@@ -1825,6 +1825,22 @@
     "yellow": "Vàng",
     "yesterday": "Hôm qua"
   },
+  "contact-labels-settings": {
+    "archive_section": "Trạng thái lưu trữ",
+    "archived": "Đã lưu trữ",
+    "archived_help": "Hiển thị trong bộ lọc và trên các liên hệ đã lưu trữ.",
+    "archived_until": "Lưu trữ đến một ngày",
+    "archived_until_help": "Hiển thị trên các liên hệ được lưu trữ đến một ngày đã định.",
+    "load_error": "Không thể tải nhãn liên hệ.",
+    "permanently_archived": "Lưu trữ vĩnh viễn",
+    "permanently_archived_help": "Hiển thị trên tùy chọn lưu trữ liên hệ không có ngày kết thúc.",
+    "reset": "Khôi phục mặc định",
+    "retry": "Thử lại",
+    "save": "Lưu thay đổi",
+    "saving": "Đang lưu...",
+    "update_error": "Không thể lưu nhãn liên hệ.",
+    "update_success": "Đã lưu nhãn liên hệ."
+  },
   "course-data-table": {
     "modules": "Mô-đun"
   },
@@ -4248,6 +4264,8 @@
     "user_management": {
       "auto_add_new_groups_to_default_included_groups_help": "Tự động thêm mỗi nhóm người dùng mới tạo vào danh sách nhóm được bao gồm mặc định.",
       "auto_add_new_groups_to_default_included_groups_label": "Tự động thêm nhóm mới vào nhóm bao gồm mặc định",
+      "contact_labels": "Nhãn liên hệ",
+      "contact_labels_description": "Đổi tên các nhãn trạng thái hiển thị trên liên hệ",
       "database_filters": "Bộ lọc Cơ sở dữ liệu",
       "database_filters_description": "Cấu hình mặc định cá nhân và bộ lọc nhóm cấp không gian làm việc cho cơ sở dữ liệu người dùng",
       "default_excluded_groups_help": "Các nhóm được chọn ở đây sẽ bị loại trừ theo mặc định khi bạn truy cập trang cơ sở dữ liệu. Bạn vẫn có thể thay đổi bộ lọc trên trang.",

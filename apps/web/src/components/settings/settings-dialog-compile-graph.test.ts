@@ -101,7 +101,6 @@ describe('settings dialog compile graph', () => {
       './keyboard-shortcuts-settings',
       './sidebar-settings',
       './workspace/billing-settings',
-      './workspace/user-status-settings',
     ]) {
       expect(settingsDialogRuntimeSource).not.toMatch(
         staticImportPattern(modulePath)

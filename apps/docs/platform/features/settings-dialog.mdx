@@ -138,6 +138,26 @@ contract.
 - Personal timezone and notification preferences are only in apps/web.
 - Calendar keeps workspace timezone under its own calendar tabs.
 
+### Guidance and learning tab
+
+Scope: every dialog built on `SatelliteSettingsDialogShell`, including apps/web
+and apps/workspace. The shell appends the **Guidance and learning** group itself
+(tab id `SHARED_SETTINGS_TAB_IDS.onboardingGuide`), so it never appears in an
+app's own nav groups. Hosts that reset an unknown active tab use
+`isSettingsTabVisible`, which accepts this tab. The guidance panel and the guide
+overlay both resolve the current app from `window.location.host`, because
+localhost apps differ only by port.
+
+### Contact labels live in Contacts
+
+Scope: the workspace `user_status_labels` config, which names the archive
+statuses shown on contacts (archived, archived until a date, permanently
+archived). Default: each label uses its localized name. The **Contact Labels**
+tab in the Contacts settings dialog (`contact_labels`, User management group)
+edits it; apps/web and apps/workspace do not show it. Empty fields fall back to
+the default and are not stored. Saving needs `manage_workspace_settings`,
+enforced by the contacts settings route.
+
 ## Implementation
 
 `packages/ui/src/hooks/settings-dialog-url.ts` is the single source of truth: the
@@ -182,6 +202,12 @@ instead of hand-writing query strings.
   app-specific dialog includes the shared account tabs.
 - `apps/web/src/__tests__/proxy.test.ts`: settings params survive the root
   redirect.
+- `apps/web/src/components/settings/settings-dialog-nav-items.test.ts`: the
+  guidance tab stays active in apps/web, and `user_status` is not a web tab.
+- `packages/ui/src/components/ui/custom/__tests__/onboarding-settings-panel.test.tsx`:
+  guide replay and feedback resolve the app on a localhost port.
+- `packages/users-ui/src/components/contact-labels-settings.test.tsx`: loading,
+  error, save of trimmed overrides and reset to defaults.
 
 
 ## Workspace operation permissions
