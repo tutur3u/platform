@@ -40,7 +40,11 @@ describe('reserved workspace handles', () => {
     for (const handle of ['playground', 'PLAYGROUND', ' Playground ']) {
       expect(isReservedWorkspaceHandle(handle)).toBe(true);
     }
-    for (const handle of ['playgroundful', 'playground-team', 'my-playground']) {
+    for (const handle of [
+      'playgroundful',
+      'playground-team',
+      'my-playground',
+    ]) {
       expect(isReservedWorkspaceHandle(handle)).toBe(false);
     }
   });
