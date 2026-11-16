@@ -512,8 +512,10 @@ and a bare 32-hex segment → `/plans/<planId>`, so shared plan links keep worki
 The meetings POST handler checks the creator’s current confirmed authentication
 email and personal subscription. Verified Plus, Pro, and Enterprise accounts can
 host regardless of email domain only when the server flag
-`MEET_PAID_TIER_HOSTING_ENABLED` is exactly `true`. The flag defaults off and
-rejects blank, mixed-case, whitespace-padded and other values. Verified
+`MEET_PAID_TIER_HOSTING_ENABLED` is exactly `true`. The code defaults off; production rollout sets the flag to `true` after the
+reviewed release to allow paying customers to host. External Free and unverified
+accounts remain ineligible. Rollback sets it to `false`. Blank, mixed-case,
+whitespace-padded and other values are rejected. Verified
 `@tuturuuu.com` accounts remain eligible on Free with either flag state. Workspace membership is required, and Calendar scheduling additionally
 requires Calendar permission. Both instant creation and scheduled creation use a
 trusted server writer only after these checks; the actor is always server supplied.
