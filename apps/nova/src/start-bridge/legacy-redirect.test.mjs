@@ -55,7 +55,10 @@ test('GET and HEAD on the legacy hosts move to the apex and keep the query', () 
     request('https://nova.ai.vn/login', 'HEAD'),
     APEX
   );
-  assert.equal(head?.headers.get('Location'), 'https://tuturuuu.com/nova/login');
+  assert.equal(
+    head?.headers.get('Location'),
+    'https://tuturuuu.com/nova/login'
+  );
 });
 
 test('the root loses its trailing slash in the same hop', () => {
@@ -82,14 +85,21 @@ test('machine paths, assets, and non-GET stay on the legacy host', () => {
     request('https://nova.ai.vn.attacker.invalid/login'),
     request('https://nova.ai.vn/login', 'GET'),
   ];
-  assert.equal(novaLegacyRedirect(stayed.at(-1), 'https://nova.tuturuuu.com'), null);
+  assert.equal(
+    novaLegacyRedirect(stayed.at(-1), 'https://nova.tuturuuu.com'),
+    null
+  );
   for (const candidate of stayed.slice(0, -1))
     assert.equal(novaLegacyRedirect(candidate, APEX), null, candidate.url);
 });
 
 test('a Host header selects the legacy redirect and the target stays fixed', () => {
   const response = novaLegacyRedirect(
-    request('http://127.0.0.1/verify-token?nextUrl=%2Fhome', 'GET', 'nova.ai.vn'),
+    request(
+      'http://127.0.0.1/verify-token?nextUrl=%2Fhome',
+      'GET',
+      'nova.ai.vn'
+    ),
     APEX
   );
   assert.equal(

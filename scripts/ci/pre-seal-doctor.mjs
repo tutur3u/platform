@@ -77,8 +77,7 @@ export function parseArgs(argv) {
           `--expect-location must be an https URL with no query, hash, userinfo, or trailing slash\n${USAGE}`
         );
       options.expectLocation = location.href;
-    }
-    else if (arg === '--wave1') options.config = WAVE1_CONFIG;
+    } else if (arg === '--wave1') options.config = WAVE1_CONFIG;
     else if (arg === '--config') {
       const value = argv[(index += 1)];
       if (!value || value.startsWith('--'))
@@ -117,9 +116,7 @@ export function judgeRoot(response, { host, expectRedirect, expectLocation }) {
     const location = response.location ?? '';
     return location === expectLocation
       ? []
-      : [
-          `${where} redirected to "${location}", expected ${expectLocation}`,
-        ];
+      : [`${where} redirected to "${location}", expected ${expectLocation}`];
   }
   if (status === 200) return [];
   if (status >= 300 && status < 400) {

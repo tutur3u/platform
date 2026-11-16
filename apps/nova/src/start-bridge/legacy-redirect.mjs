@@ -51,7 +51,12 @@ function bareHost(value) {
 export function isNovaApexRoot(value) {
   if (typeof value !== 'string') return false;
   const raw = value.trim();
-  if (!raw || /[\u0000-\u0020\\]/u.test(raw) || raw.includes('%') || raw.includes('@'))
+  if (
+    !raw ||
+    /[\u0000-\u0020\\]/u.test(raw) ||
+    raw.includes('%') ||
+    raw.includes('@')
+  )
     return false;
   const scheme = raw.indexOf('://');
   if (scheme < 0 || raw.slice(scheme + 3).includes('//') || raw.includes('..'))
@@ -64,7 +69,8 @@ export function isNovaApexRoot(value) {
   }
   if (url.username || url.password || url.search || url.hash || url.port)
     return false;
-  if (url.protocol !== 'https:' || url.hostname !== 'tuturuuu.com') return false;
+  if (url.protocol !== 'https:' || url.hostname !== 'tuturuuu.com')
+    return false;
   const path =
     url.pathname.length > 1 ? url.pathname.replace(/\/+$/u, '') : url.pathname;
   return path === '/nova';
@@ -85,7 +91,10 @@ export function novaBakedApexUrl(candidates) {
  * Returns null when the baked app URL is not the apex, so Vercel and fixture
  * builds keep serving the current host.
  */
-export function novaLegacyRedirect(request, appUrl = process.env.NEXT_PUBLIC_APP_URL) {
+export function novaLegacyRedirect(
+  request,
+  appUrl = process.env.NEXT_PUBLIC_APP_URL
+) {
   if (!isNovaApexRoot(appUrl)) return null;
   const method = request.method.toUpperCase();
   if (method !== 'GET' && method !== 'HEAD') return null;
