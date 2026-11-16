@@ -33,6 +33,13 @@ export const STAGE_LABELS = [
 export const PLAN_LABEL = 'Mira subscription plans';
 
 /** The logo ships inside the roadmap mount; the apex /media path is not ours. */
+/**
+ * The shell's Get Started link: an anchor whose href is exactly the login
+ * page, not the URL appearing anywhere in the page (a query string or another
+ * host could carry it).
+ */
+export const GET_STARTED_LINK =
+  /<a\b[^>]*\shref="https:\/\/tuturuuu\.com\/login"/;
 export const MOUNTED_LOGO =
   /<img\b[^>]*\bsrc="\/roadmap\/assets\/tuturuuu-logo-[A-Za-z0-9_-]{8,}\.png"/;
 
@@ -162,7 +169,7 @@ export function assessDoctor(observation) {
     failures.push('canonical HTML missing the mounted Tuturuuu logo');
   if (body.includes('public-satellite-shell'))
     failures.push('canonical HTML still uses the satellite shell');
-  if (!body.includes('https://tuturuuu.com/login'))
+  if (!GET_STARTED_LINK.test(body))
     failures.push('canonical HTML missing the get-started link');
   // React marks a boundary it could not render on the server with <!--$!-->.
   // The browser recovers, but crawlers and link previews get an empty page.
@@ -679,7 +686,7 @@ async function main() {
             ...observation,
             canonical: {
               status: 200,
-              body: `<header id="navbar"><img alt="" src="/roadmap/assets/tuturuuu-logo-Abcd1234.png"><span>Tuturuuu</span></header><div id="main-content"></div><footer></footer> https://tuturuuu.com/login ${STAGE_LABELS.join(' ')} /roadmap/assets/index-CGgt8iCG.js</div>`,
+              body: `<header id="navbar"><img alt="" src="/roadmap/assets/tuturuuu-logo-Abcd1234.png"><span>Tuturuuu</span></header><div id="main-content"></div><footer></footer><a href="https://tuturuuu.com/login">Get Started</a> ${STAGE_LABELS.join(' ')} /roadmap/assets/index-CGgt8iCG.js</div>`,
               cacheControl: 'public,s-maxage=300,stale-while-revalidate=86400',
             },
             satellite: {

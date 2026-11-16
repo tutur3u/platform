@@ -570,3 +570,30 @@ test('all four tab panels are in the server HTML, with link tabs until hydration
     'the tabs root (#sections) is missing',
   ]);
 });
+
+test('D79: the get-started link must be an anchor to the login page itself', () => {
+  const observation = passing();
+  const body = observation.canonical.body;
+  assert.equal(assessDoctor(observation).ok, true);
+  const verdict = (html) =>
+    assessDoctor({
+      ...observation,
+      canonical: { ...observation.canonical, body: html },
+    });
+  const link = '<a href="https://tuturuuu.com/login">';
+  assert.ok(body.includes(link));
+  // Broken variants: the URL only as text, inside another host's query, or
+  // as a prefix of a longer path. None is the shell's Get Started link.
+  for (const swap of [
+    'https://tuturuuu.com/login ',
+    '<a href="https://evil.example/?next=https://tuturuuu.com/login">',
+    '<a href="https://tuturuuu.com/login.evil.example/">',
+  ]) {
+    const result = verdict(body.replace(link, swap));
+    assert.equal(result.ok, false, swap);
+    assert.ok(
+      result.failures.includes('canonical HTML missing the get-started link'),
+      result.failures.join('\n')
+    );
+  }
+});
