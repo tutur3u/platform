@@ -67,12 +67,13 @@
 
 /* Segmented tabs: a recessed track with a raised thumb. */
 :root[data-ui="sorbet"] :where([data-slot="tabs-list"]) {
-  border-radius: 9999px;
+  border-radius: var(--sorbet-control-radius);
   background-color: var(--muted);
 }
 
+/* Triggers nest inside the track's 4px padding, so corners stay concentric. */
 :root[data-ui="sorbet"] :where([data-slot="tabs-trigger"]) {
-  border-radius: 9999px;
+  border-radius: max(0px, calc(var(--sorbet-control-radius) - 4px));
 }
 
 :root[data-ui="sorbet"]

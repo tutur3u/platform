@@ -52,7 +52,7 @@
     [data-slot="toggle"],
     [data-slot="toggle-group-item"]
   ) {
-  border-radius: 9999px;
+  border-radius: var(--sorbet-control-radius);
 }
 
 :root[data-ui="sorbet"]
@@ -70,7 +70,7 @@
 /* A default toggle group reads as one segmented control. */
 :root[data-ui="sorbet"]
   :where([data-slot="toggle-group"][data-variant="default"]) {
-  border-radius: 9999px;
+  border-radius: var(--sorbet-control-radius);
   background-color: var(--muted);
   padding: 2px;
   gap: 2px;
@@ -83,6 +83,15 @@
   ) {
   background-color: var(--card);
   box-shadow: var(--sorbet-shadow-sm);
+}
+
+/* Items nest inside the 2px track padding, so their corners stay concentric. */
+:root[data-ui="sorbet"]
+  :where(
+    [data-slot="toggle-group"][data-variant="default"]
+      [data-slot="toggle-group-item"]
+  ) {
+  border-radius: max(0px, calc(var(--sorbet-control-radius) - 2px));
 }
 
 /* Dark cards sit below the track, so the dark thumb lifts toward the ink. */

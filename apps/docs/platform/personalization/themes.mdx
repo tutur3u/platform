@@ -65,6 +65,12 @@ soft shadows and the Nunito typeface. You can try it before it becomes the defau
   saved to your account (user config `SORBET_THEME`) and follows you across apps
   like the switch. High contrast keeps every text colour at 7:1 or more, with
   solid borders and a wider focus ring.
+- **Corners:** **Corners** under the palette offers Soft (the default), Sharp
+  and Round. Soft keeps 12px rows, 18px cards and pill controls; Sharp uses
+  6px rows, 10px cards and 8px controls; Round uses 16px rows, 24px cards and
+  pill controls. Sheets, panels and menus follow the same choice. It is saved
+  in the same account theme as the palette. `sorbet-tokens.test.ts` checks
+  each option against the contract's `radius.corners` scale.
 - **Signed out:** public pages keep the last choices made on that device and
   never read the account.
 - **Exception, the public roadmap:** `tuturuuu.com/roadmap` uses Sorbet as its
