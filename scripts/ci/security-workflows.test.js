@@ -107,19 +107,45 @@ test('CodeQL runs on pull requests and main pushes with the extended suite', () 
   assert.equal(init.with['build-mode'], 'none');
   assert.match(
     run.with.upload,
-    /head\.repo\.full_name != github\.repository\) && 'never'/u
+    /github\.event_name == 'push' && github\.ref == 'refs\/heads\/main'/u
   );
+  assert.match(
+    run.with.upload,
+    /head\.repo\.full_name != github\.repository/u
+  );
+  assert.match(run.with.upload, /'never'/u);
+  assert.match(run.with.upload, /'always'/u);
   assert.equal(
     gate.if,
-    "github.event_name == 'pull_request' || github.event_name == 'merge_group'"
+    "github.event_name == 'pull_request' || github.event_name == 'merge_group' || (github.event_name == 'push' && github.ref == 'refs/heads/main')"
   );
-  // The PR merge commit's first parent, or the merge group's queue base.
+  // The PR merge commit's first parent, the merge group's queue base, or
+  // the pre-push SHA on a main push.
   assert.match(gate.run, /trusted="HEAD\^1"/u);
+  assert.match(gate.run, /trusted="\$PUSH_BEFORE_SHA"/u);
+  assert.match(gate.run, /The main push base commit is missing or invalid/u);
+  assert.equal(gate.env.PUSH_BEFORE_SHA, '${{ github.event.before }}');
   assert.match(
     gate.run,
     /git show "\$trusted:scripts\/ci\/codeql-new-alerts\.js"/u
   );
   assert.match(gate.env.BASELINE_REF, /default_branch/u);
+  const upload = analyze.steps.find(
+    (step) => step.name === 'Upload main CodeQL results'
+  );
+  assert.equal(
+    upload.uses,
+    'github/codeql-action/upload-sarif@33d7b85da1a04171e211befe2c739303b9a4c066'
+  );
+  assert.equal(
+    upload.if,
+    "always() && github.event_name == 'push' && github.ref == 'refs/heads/main'"
+  );
+  assert.equal(upload.with.sarif_file, '${{ runner.temp }}/codeql-sarif');
+  assert.equal(upload.with.category, '/language:${{ matrix.language }}');
+  assert.equal(analyze.steps.indexOf(upload), analyze.steps.indexOf(gate) + 1);
+  assert.equal(analyze.permissions['security-events'], 'write');
+  assert.equal(Object.keys(codeql.permissions).join(','), 'contents');
 });
 
 test('security checks keep one daily timer and a weekly deep pass', () => {

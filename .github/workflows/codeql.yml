@@ -145,9 +145,10 @@ jobs:
       - name: Check out repository
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
-          # A merge group's base B can sit several queued commits below M; the
-          # new-alert gate loads from B, so queue runs fetch full history.
-          fetch-depth: ${{ github.event_name == 'merge_group' && 0 || 2 }}
+          # A merge group's base B, and a main push's pre-push commit, can sit
+          # several commits below the tip. The new-alert gate loads from that
+          # commit, so those runs fetch full history.
+          fetch-depth: ${{ (github.event_name == 'merge_group' || (github.event_name == 'push' && github.ref == 'refs/heads/main')) && 0 || 2 }}
           persist-credentials: false
 
       - name: Initialize CodeQL
@@ -164,21 +165,24 @@ jobs:
         with:
           category: /language:${{ matrix.language }}
           output: ${{ runner.temp }}/codeql-sarif
-          upload: ${{ (github.event_name == 'pull_request' && github.event.pull_request.head.repo.full_name != github.repository) && 'never' || 'always' }}
+          upload: ${{ ((github.event_name == 'push' && github.ref == 'refs/heads/main') || (github.event_name == 'pull_request' && github.event.pull_request.head.repo.full_name != github.repository)) && 'never' || 'always' }}
 
-      # Pre-existing alerts are tracked by the findings register; a pull request
-      # or merge group fails only for high/critical results absent from the
-      # default-branch baseline. The gate runs from the base commit (the PR
-      # merge commit's first parent, or the queue base B, never an earlier
-      # queued entry) so the candidate cannot edit it.
+      # Pre-existing alerts are tracked by the findings register. A pull
+      # request, merge group, or push to main fails only for high or critical
+      # results absent from the latest default-branch analysis. The gate
+      # script loads from the base commit (the pull request merge commit's
+      # first parent, the queue base B, or the pre-push SHA), never from the
+      # candidate. A main push uploads only after this gate, so that baseline
+      # is still the previous analysis. Permissions are unchanged.
       - name: Fail on new high or critical results
-        if: github.event_name == 'pull_request' || github.event_name == 'merge_group'
+        if: github.event_name == 'pull_request' || github.event_name == 'merge_group' || (github.event_name == 'push' && github.ref == 'refs/heads/main')
         env:
           BASELINE_REF: refs/heads/${{ github.event.repository.default_branch }}
           CATEGORY: /language:${{ matrix.language }}
           EVENT_NAME: ${{ github.event_name }}
           GITHUB_TOKEN: ${{ github.token }}
           QUEUE_BASE_SHA: ${{ github.event.merge_group.base_sha }}
+          PUSH_BEFORE_SHA: ${{ github.event.before }}
         run: |
           set -euo pipefail
           trusted="HEAD^1"
@@ -188,6 +192,13 @@ jobs:
               exit 1
             fi
             trusted="$QUEUE_BASE_SHA"
+          fi
+          if [ "$EVENT_NAME" = push ]; then
+            if ! [[ "$PUSH_BEFORE_SHA" =~ ^[0-9a-f]{40}$ ]] || ! git cat-file -e "$PUSH_BEFORE_SHA^{commit}" 2>/dev/null; then
+              echo "::error::The main push base commit is missing or invalid; refusing to gate."
+              exit 1
+            fi
+            trusted="$PUSH_BEFORE_SHA"
           fi
           # Never the checkout's copy: without the trusted gate (bootstrap)
           # every high/critical result fails, and a result whose rule or rule
@@ -220,4 +231,14 @@ jobs:
             fi
             [ "$count" -eq 0 ]
           fi
+
+      # After the gate. Uploading first would make this push the baseline it
+      # is compared against, and a new high result would not fail the job.
+      # The job permission security-events: write already covers this upload.
+      - name: Upload main CodeQL results
+        if: always() && github.event_name == 'push' && github.ref == 'refs/heads/main'
+        uses: github/codeql-action/upload-sarif@33d7b85da1a04171e211befe2c739303b9a4c066 # v4.39.3
+        with:
+          sarif_file: ${{ runner.temp }}/codeql-sarif
+          category: /language:${{ matrix.language }}
 
