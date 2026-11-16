@@ -7,6 +7,7 @@ import { join, relative } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import test from 'node:test';
 import { readNativeRuntimeConfig } from '../../../scripts/ci/apps-native-runtime-pointer.mjs';
+import { assertNoPublicResources } from './public-resources.mjs';
 
 const app = fileURLToPath(new URL('../', import.meta.url));
 const require = createRequire(join(app, 'package.json'));
@@ -21,17 +22,7 @@ test(
     assert.deepEqual(config.vars, { PLATFORM_BUILD_COMMIT_HASH: source });
     assert.equal(config.assets.binding, 'ASSETS');
     assert.equal(config.assets.run_worker_first, true);
-    for (const key of [
-      'services',
-      'kv_namespaces',
-      'd1_databases',
-      'r2_buckets',
-      'durable_objects',
-      'queues',
-      'secrets_store_secrets',
-    ]) {
-      assert.ok(!config[key] || Object.keys(config[key]).length === 0, key);
-    }
+    assertNoPublicResources(config);
     const scratch = await mkdtemp(join(tmpdir(), 'playground-guest-runtime-'));
     t.after(() => rm(scratch, { recursive: true, force: true }));
     await cp(join(app, 'dist'), join(scratch, 'dist'), {
