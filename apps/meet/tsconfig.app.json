@@ -41,6 +41,7 @@
     "src/app/[locale]/[wsId]/meetings/[meetingId]/recording-session-actions.tsx",
     "src/app/[locale]/[wsId]/meetings/[meetingId]/recording-sessions-overview.tsx",
     "src/app/[locale]/[wsId]/meetings/meetings-content.tsx",
+    "src/app/[locale]/[wsId]/meetings/components",
     "src/app/[locale]/[wsId]/structure.tsx",
     "src/app/[locale]/[wsId]/workspace-context.ts",
     "src/app/[locale]/[wsId]/workspace-select.tsx",

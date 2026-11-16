@@ -43,6 +43,10 @@ export default defineConfig(({ command }) => ({
     conditions: ['bun', 'module', 'browser', 'development|production'],
     alias: [
       {
+        find: /^@\//u,
+        replacement: local('./src/'),
+      },
+      {
         find: /^next\/headers$/u,
         replacement: local('./src/runtime/request-context.ts'),
       },

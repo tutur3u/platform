@@ -7,8 +7,6 @@ import { MeetingsContent } from './meetings-content';
 export async function AuthorizedMeetingsContent(props: {
   accountId: string;
   wsId: string;
-  page: number;
-  pageSize: number;
   search: string;
 }) {
   const admin = await createAdminClient({ noCookie: true });
@@ -28,7 +26,7 @@ export async function AuthorizedMeetingsContent(props: {
     <>
       {!canCreate && (
         <p
-          className="mb-6 rounded-xl border bg-muted/30 p-4 text-muted-foreground text-sm"
+          className="rounded-xl border bg-muted/30 p-4 text-muted-foreground text-sm"
           role={unavailable ? 'alert' : undefined}
         >
           {t(unavailable ? 'hosting_unavailable' : 'creation_restricted')}
