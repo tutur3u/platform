@@ -11,10 +11,7 @@ test('stub root runs the local script and never falls through', async () => {
   process.env.DESKTOP_COMMAND_STUB_ROOT = directory;
   try {
     await writeFile(join(directory, 'echo-ok.mjs'), 'console.log("ok")\n');
-    assert.equal(
-      runCommand('echo-ok', [], { encoding: 'utf8' }).trim(),
-      'ok'
-    );
+    assert.equal(runCommand('echo-ok', [], { encoding: 'utf8' }).trim(), 'ok');
     assert.throws(
       () => runCommand('../echo-ok', [], { encoding: 'utf8' }),
       /Invalid desktop command stub/

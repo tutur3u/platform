@@ -28,7 +28,10 @@ describe('getPublicClientMessages', () => {
         ...MARKETING_CLIENT_MESSAGE_NAMESPACES,
       ]);
       if (!catalog.logout) throw new Error('Missing logout namespace');
-      const t = createTranslator({ locale, messages: { logout: catalog.logout } });
+      const t = createTranslator({
+        locale,
+        messages: { logout: catalog.logout },
+      });
       expect(t('logout.logged-out-from', { app: 'App' })).not.toBe(
         'logout.logged-out-from'
       );

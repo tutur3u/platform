@@ -12,7 +12,11 @@ const COMMAND = /^[a-z][a-z0-9-]{0,31}$/u;
 export function runCommand(command, args, options) {
   const root = process.env.DESKTOP_COMMAND_STUB_ROOT;
   if (root === undefined) return execFileSync(command, args, options);
-  if (typeof command !== 'string' || !COMMAND.test(command) || !isAbsolute(root))
+  if (
+    typeof command !== 'string' ||
+    !COMMAND.test(command) ||
+    !isAbsolute(root)
+  )
     throw new Error('Invalid desktop command stub');
   const stub = resolve(root, `${command}.mjs`);
   const inside = relative(resolve(root), stub);

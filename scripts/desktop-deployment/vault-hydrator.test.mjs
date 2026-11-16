@@ -296,8 +296,7 @@ for (const failure of [false, true])
       else await promise;
       assert.equal(info.isDirectory(), true);
       // windows-latest runs this macOS chmod path, but it does not store Unix mode bits.
-      if (process.platform !== 'win32')
-        assert.equal(info.mode & 0o777, 0o700);
+      if (process.platform !== 'win32') assert.equal(info.mode & 0o777, 0o700);
       assert.deepEqual(Object.keys(child), []);
       await assert.rejects(stat(path), { code: 'ENOENT' });
     } finally {

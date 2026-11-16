@@ -86,7 +86,8 @@ console.error('gh: Not Found (HTTP 404)'); process.exit(1);
 `
     );
     if (process.platform === 'win32') {
-      const cmd = '@echo off\r\necho direct desktop command lookup is refused 1>&2\r\nexit /b 1\r\n';
+      const cmd =
+        '@echo off\r\necho direct desktop command lookup is refused 1>&2\r\nexit /b 1\r\n';
       await writeFile(join(temp, 'gh.cmd'), cmd);
       await writeFile(join(temp, 'git.cmd'), cmd);
     } else {
