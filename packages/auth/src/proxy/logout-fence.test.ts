@@ -29,3 +29,33 @@ describe('app-only logout refresh', () => {
     expect(resolve).toHaveBeenCalledOnce();
   });
 });
+
+it('fails closed when the cookie reader cannot parse the signed-out marker', async () => {
+  const resolve = vi.fn();
+  const request = {
+    headers: new Headers({ cookie: '__Host-tuturuuu_app_signed_out=%E0%A4%A' }),
+  };
+  await expect(withAppLogoutFence(request, resolve)).resolves.toEqual({
+    ok: false,
+    error: 'App signed out',
+  });
+  expect(resolve).not.toHaveBeenCalled();
+});
+it('cannot hide the marker by making a framework cookie reader throw', async () => {
+  const resolve = vi.fn();
+  const request = {
+    headers: new Headers({
+      cookie: 'other=%E0%A4%A; __Host-tuturuuu_app_signed_out=1',
+    }),
+    cookies: {
+      get: () => {
+        throw new URIError('Malformed fixture cookie');
+      },
+    },
+  };
+  await expect(withAppLogoutFence(request, resolve)).resolves.toEqual({
+    ok: false,
+    error: 'App signed out',
+  });
+  expect(resolve).not.toHaveBeenCalled();
+});

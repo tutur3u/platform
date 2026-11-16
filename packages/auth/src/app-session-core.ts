@@ -81,7 +81,7 @@ export function hasAppLogoutFence(request: AppSessionRequest) {
   try {
     return getCookieValue(request, APP_LOGOUT_COOKIE_NAME) === '1';
   } catch {
-    return false;
+    return true;
   }
 }
 

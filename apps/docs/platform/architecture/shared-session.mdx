@@ -49,7 +49,7 @@ anyone out. The page displays the verified current account when available and of
   host. Its POST clears only host-scoped app cookies. Web and other app hosts
   keep their sessions. A secure, HttpOnly, host-only signed-out marker prevents
   shared-cookie fallback and automatic refresh from restoring that app's actor.
-  A signed-out app redirects through central login with an explicit account-confirmation step before a new app token is minted. Ordinary internal SSO remains automatic when the app has not been signed out. A fresh explicit app sign-in clears the marker. The confirmation stays on Web after success so it does
+  A signed-out app redirects through central login with an explicit account-confirmation step before a new app token is minted. Ordinary internal SSO remains automatic when the app has not been signed out. A fresh explicit app sign-in clears the marker. App-only logout keeps the central Web session and is not a security boundary against someone who can use that session. A direct central login return link without the confirmation request can issue a fresh app token. The confirmation stays on Web after success so it does
   not immediately re-enter the signed-out app.
 - **All of Tuturuuu** means the **current account in this browser**, using the
   existing local sign-out operation. It does not sign out other saved accounts

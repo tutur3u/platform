@@ -1,5 +1,6 @@
+'use client';
+
 import { requiresAccountConfirmationForReturnApp } from './return-app-confirmation';
-('use client');
 
 import type { TurnstileInstance } from '@marsidev/react-turnstile';
 import { useMutation, useQuery } from '@tanstack/react-query';
