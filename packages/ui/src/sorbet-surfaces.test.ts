@@ -45,6 +45,16 @@ describe('Sorbet surfaces', () => {
     );
   });
 
+  it('marks the active settings tab with a fill, not an edge accent', () => {
+    const activeRule = css.match(
+      /\[data-settings-pane="nav"\]\s*\[data-slot="sidebar-menu-button"\]\[data-active="true"\]\s*\)\s*\{([^}]*)\}/
+    );
+    expect(activeRule?.[1]).toContain(
+      'background-color: var(--sidebar-accent)'
+    );
+    expect(activeRule?.[1]).not.toMatch(/box-shadow|border-left/);
+  });
+
   it('loads after the Sorbet palettes', () => {
     const globals = readUiFile('globals.css');
     expect(globals.indexOf('@import "./sorbet-surfaces.css";')).toBeGreaterThan(
