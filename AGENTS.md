@@ -144,10 +144,13 @@ for roles, independent review, publication, receipts and retirement.
   creating the worktree; `bun setup` includes local builds and must not run on
   this machine. After the PR is confirmed merged into `main`, remove
   the completed worktree and delete its local task branch.
-- Use native [GitHub stacks](https://gh.io/stacks-overview) by default for
-  reviewable dependent work; keep independent changes on separate branches.
-  Native stacks are our day-to-day workflow, with no repository pilot gate.
-  Load the installed upstream `.agents/skills/gh-stack/SKILL.md` for stack command
+- Fleet work on `tutur3u/platform` and `upskii/platform` opens no pull requests
+  and pushes no new remote branches (user rule; `ttr git guard` enforces it on
+  configured machines). Review internally, run `bun check:changed`, push
+  fast-forward only to `main`, then run the production sync. Use pull requests or
+  native [GitHub stacks](https://gh.io/stacks-overview) only when the user
+  explicitly asks for them; see [git guard](apps/docs/build/development-tools/git-guard.mdx).
+  For such requested stacks, load the installed upstream `.agents/skills/gh-stack/SKILL.md` for stack command
   mechanics; the stack policy's repository corrections, ownership, and delivery
   rules take precedence over upstream examples.
   Prefer `gh stack` or GitHub's stack UI for creation, adoption, cascading updates,

@@ -61,7 +61,7 @@ without starting Bun.
 ## Install and operate
 
 ```bash
-ttr git guard install --shell zsh          # or bash / none
+ttr git guard install --shell zsh --agents # or bash / none; --agents optional
 ttr git guard status                       # add --json for receipts
 ttr git guard log --limit 20
 ```
@@ -119,11 +119,23 @@ Protected-branch rewrites and deletions cannot be overridden.
 ## Limits and server-side backstop
 
 Client hooks are advisory: `git push --no-verify` skips them, and the GitHub MCP
-server talks to the API directly instead of through `gh`. On guarded machines,
-agent configurations should deny MCP pull-request creation tools. The durable
-backstop is a GitHub repository ruleset that restricts branch creation, with
-bypass for the release-please, Dependabot and Actions identities. That ruleset
-is a repository-administration decision and is not applied by the CLI.
+server talks to the API directly instead of through `gh`. `install --agents`
+closes the MCP gap for Claude agents. For each Claude settings file
+(`~/.claude/settings.json`, `$CLAUDE_CONFIG_DIR`, and each `~/.claude-t3/<account>/`)
+it:
+
+- backs the file up once into the guard home
+- adds only `permissions.deny` rules for the GitHub MCP `create_pull_request` and
+  `create_pull_request_with_copilot` tools; no other key or rule is changed
+- is idempotent
+
+`status` lists each file. `uninstall` removes exactly the rules the guard added
+and keeps any rule the user already had.
+
+The durable backstop is a GitHub repository ruleset that restricts branch
+creation, with bypass for the release-please, Dependabot and Actions identities.
+It is prepared and applied through the release owner after review, never by the
+CLI.
 
 ## Rollout check
 

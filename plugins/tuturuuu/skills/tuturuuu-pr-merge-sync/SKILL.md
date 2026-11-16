@@ -11,8 +11,9 @@ when production delivery is authorized. Keep open PR work in an isolated `.workt
 Use exact-head CI for builds; do not run builds or build-triggering setup locally.
 
 Read `references/merge-procedure.md` for Required Gates, native asynchronous continuation, and
-failure recovery when preparing a merge or sync. Native GitHub stacks are the
-standard for dependent PR work. Load `.agents/skills/gh-stack/SKILL.md` for
+failure recovery when preparing a merge or sync. Fleet work goes directly to
+`main` (fast-forward, no PRs or new remote branches); use native GitHub stacks
+only when the user explicitly asks for PRs. Load `.agents/skills/gh-stack/SKILL.md` for
 upstream command mechanics; read the stack policy's repository corrections
 before recovery or restructuring. Repository ownership and gates take precedence.
 Verify native membership and the complete

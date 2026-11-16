@@ -1,15 +1,19 @@
 ---
 title: "Stacked Pull Requests"
-description: "Use native GitHub stacks for daily dependent PR work, cascading updates, and verified merges."
-updatedAt: "2026-10-17"
+description: "Use native GitHub stacks, when the user explicitly asks for pull requests, for dependent PR work, cascading updates, and verified merges."
+updatedAt: "2026-11-16"
 audience: developers
 ---
 
 ## Daily operating policy
 
-Use [native GitHub stacked pull requests](https://gh.io/stacks-overview) whenever
-reviewable changes depend on one another. This is our day-to-day workflow; no
-repository pilot or separate adoption approval is required. Split large dependent
+Fleet work on `tutur3u/platform` and `upskii/platform` goes directly to `main`:
+internal review, `bun check:changed`, a fast-forward push, then the production
+sync. It opens no pull requests and no new remote branches, and
+[`ttr git guard`](/build/development-tools/git-guard) enforces this on configured
+machines. Use [native GitHub stacked pull requests](https://gh.io/stacks-overview)
+only when the user explicitly asks for pull requests and the changes depend on
+one another; the rest of this page applies to those stacks. Split large dependent
 work into focused layers and continue on the next layer while earlier layers are
 reviewed. Keep independent changes on separate branches from `main`, and keep a
 single focused change in one PR.
