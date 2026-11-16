@@ -32,7 +32,12 @@ test('Store verification defaults to submission mode and invokes the WACK prereq
     verifier,
     /if \(\$LASTEXITCODE -ne 0\) \{ throw 'Windows App Certification Kit reported a failure' \}/
   );
-  assert.match(verifier, /GetAttribute\('OVERALL_RESULT'\) -ne 'PASS'/);
+  assert.match(verifier, /windows-store-wack-verdict\.mjs/);
+  assert.match(
+    verifier,
+    /if \(\$LASTEXITCODE -ne 0\) \{ throw 'WACK report does not establish an accepted certification result' \}/
+  );
+  assert.doesNotMatch(verifier, /OVERALL_RESULT'\) -ne 'PASS'/);
 });
 
 test('workflow carries explicit diagnostic input and never uploads diagnostic MSIX', () => {

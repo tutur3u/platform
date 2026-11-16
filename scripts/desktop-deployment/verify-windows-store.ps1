@@ -113,7 +113,12 @@ public static class TuturuuuWindowCapture {
       }
     }
     $summary | Set-Content (Join-Path $ReportDirectory 'wack-summary.txt')
-    if (!$overall -or $overall.GetAttribute('OVERALL_RESULT') -ne 'PASS') { throw 'WACK report does not establish an overall pass' }
+    # PASS, or WARNING only when windows-store-wack-verdict.mjs accepts every required test.
+    # A required FAIL, or a missing or malformed verdict, fails closed. Optional failures do not.
+    $verdictScript = Join-Path $PSScriptRoot 'windows-store-wack-verdict.mjs'
+    if (!(Test-Path -LiteralPath $verdictScript -PathType Leaf)) { throw 'Missing Windows Store WACK verdict script' }
+    & node $verdictScript --report (Join-Path $ReportDirectory 'wack.xml') --report-directory $ReportDirectory
+    if ($LASTEXITCODE -ne 0) { throw 'WACK report does not establish an accepted certification result' }
   }
 } finally {
   if ($installed) {

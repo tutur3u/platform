@@ -280,7 +280,8 @@ removed afterward. WACK runs when the kit and an interactive session are present
 A missing kit/session writes an explicit submission-blocked report and fails the
 submission job, preventing MSIX upload. Only an explicit diagnostic-only run may
 finish with blocked evidence; it never uploads a submission MSIX. When WACK runs,
-a failed, missing, or non-passing report fails either mode. Inspect the attached
+a kit failure, a missing report, or a verdict rejected by the narrow rule
+below fails either mode. Inspect the attached
 validation reports before submission. The prerequisite policy is covered by
 `store-certification-gate.test.mjs`; actual PowerShell execution and WACK remain
 Windows CI gates, not evidence established by source-policy tests on another OS.
@@ -387,11 +388,22 @@ A Store draft validation retains the installed executable's embedded manifest,
 process/window DPI awareness, and a compact list of non-passing WACK tests in
 its validation artifact. Missing manifest-tool output is explicitly unavailable.
 These receipts help distinguish packaging errors from certification-tool
-warnings; they do not approve a package. The submission gate still requires an
-overall WACK `PASS`, plus the existing runtime and publisher review gates.
+warnings; they do not approve a package. The submission gate accepts an overall
+WACK `PASS`. It also accepts overall `WARNING` only when every required test is
+`PASS`, or the single required test `DPIAwarenessValidation` is `WARNING` and
+the same report directory contains the reviewed evidence: the embedded manifest
+declares `dpiAware` `true/pm` and `dpiAwareness` `PerMonitorV2`, and
+`dpi-awareness.txt` records `processDpiQuerySucceeded=True`,
+`processDpiAwareness=2`, and `windowPerMonitorV2=True`. No other required
+warning is accepted. A required `FAIL` rejects the report. A missing, unknown,
+or malformed required verdict fails closed. Optional `FAIL` and `WARNING`
+results, including Archive files usage and Blocked executables, do not by
+themselves reject the report. The gate does not rewrite the kit result to
+`PASS`. The interactive-session prerequisite and the publisher identity check
+stay in force.
 Do not remove Flutter license notices or required plugin functionality merely to
 hide an informational test. [Microsoft documents optional Desktop Bridge tests](https://learn.microsoft.com/en-us/windows/uwp/debug-test-perf/windows-desktop-bridge-app-tests)
-as informational, but a required DPI warning still needs investigation.
+as informational.
 
 The Windows runner manifest declares both the legacy `dpiAware` value `true/pm`
 and modern `dpiAwareness` value `PerMonitorV2`. [Microsoft documents both
@@ -400,15 +412,28 @@ Windows 10 version 1607 and later uses the modern declaration in preference to
 the legacy one. This preserves PerMonitorV2 while exposing the compatible legacy
 fallback to older consumers.
 
-A diagnostic report can still return overall `WARNING`: observed optional tests
-flagged Flutter's compressed `NOTICES.Z` and process-launch references in bundled
-binaries, while the required DPI test could not process the executable despite
-its extracted PerMonitorV2 manifest and positive installed-process DPI receipt.
-These are different findings. The dual declaration is a compatibility change,
-not proof the certification warning is resolved. Require a fresh exact-source
-Windows build, extracted manifest/runtime DPI checks, and overall WACK `PASS`
-before submission. Preserve licenses and legitimate functionality while
-investigating; do not convert warnings into passing results.
+Report `16df906e3b8bb5544b25ea09b87f7b31` from run 43840857242 is the reviewed
+example. Its overall result is `WARNING`. Optional Archive files usage failed
+on `data\flutter_assets\NOTICES.Z`. Optional Blocked executables failed on
+`CreateProcessW`, `ShellExecuteW`, and the string hits `cMd`, `DNX`, `reg`, and
+`rEG`. Required `DPIAwarenessValidation` is `WARNING`: the kit failed to process
+`tuturuuu.exe` and reported the app as not DPI Aware. The companion receipt in
+that same artifact says `processDpiAwareness=2` and `windowPerMonitorV2=True`,
+and the extracted manifest declares `true/pm` and `PerMonitorV2`. Those optional
+failures and that one required warning are the whole allowlist scope. A later
+required warning, or this DPI warning without both evidence files, still fails
+the gate.
+
+Microsoft's documented kit command is `appcert.exe reset`, then
+`appcert.exe test -packagefullname <package> -reportoutputpath <report>`.
+There is no documented switch that changes the DPI test, and selecting tests
+with `-testid` would hide results rather than resolve them. The kit already ran
+in a non-zero session on `windows-latest`. One later attempt may repeat that
+documented command after this gate is on the branch the upload job builds. Do
+not increase the job timeout and do not retry that attempt. The upload remains
+the existing production artifact step. It is not a Partner Center submission.
+Preserve licenses and legitimate functionality. Do not convert a kit warning
+into a `PASS` result.
 
 
 ### Infrastructure desktop signing contract
