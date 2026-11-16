@@ -14,6 +14,17 @@ export type MailMediaStatus =
   | 'uploaded'
   | 'uploading';
 
+/**
+ * Where a server attachment lives. Captured when the attachment is created or
+ * seeded, so a late cleanup or a removal after the composer was closed and
+ * reopened always addresses the draft that owns the attachment.
+ */
+export interface MailMediaOwner {
+  draftId: string;
+  mailboxId: string;
+  workspaceId: string;
+}
+
 export interface MailMediaItem {
   /** Server record once uploaded; kept while `removing` for rollback. */
   attachment: MailAttachment | null;
@@ -21,6 +32,8 @@ export interface MailMediaItem {
   id: string;
   kind: MailMediaKind;
   name: string;
+  /** Draft that owns `attachment`; null until it is known. */
+  owner: MailMediaOwner | null;
   /** Local object URL of an inline image, revoked when no longer needed. */
   previewUrl: string | null;
   /** Orders the sequential queue; a retry moves the item to the back. */
@@ -44,12 +57,19 @@ export interface MailMediaSnapshot {
   announcement: MailMediaAnnouncement;
   /** Bumps on every announcement so repeated text is re-read. */
   announcementSeq: number;
+  /**
+   * Uploaded attachments of `items`. The array keeps its reference until the
+   * set of uploaded attachments changes, so status-only updates (queued,
+   * uploading, failed) never invalidate consumers memoized on it.
+   */
+  attachments: MailAttachment[];
   items: MailMediaItem[];
 }
 
 export const EMPTY_MEDIA_SNAPSHOT: MailMediaSnapshot = {
   announcement: null,
   announcementSeq: 0,
+  attachments: [],
   items: [],
 };
 
@@ -88,12 +108,25 @@ export function uploadedAttachments(items: MailMediaItem[]): MailAttachment[] {
   );
 }
 
+/** `next`, or `previous` itself when both hold the same attachment objects. */
+export function stableAttachments(
+  previous: MailAttachment[],
+  next: MailAttachment[]
+) {
+  return previous.length === next.length &&
+    previous.every((attachment, index) => attachment === next[index])
+    ? previous
+    : next;
+}
+
 export function mailMediaKind(attachment: MailAttachment): MailMediaKind {
   return attachment.disposition === 'inline' ? 'inline' : 'attachment';
 }
 
+/** Whether the body has an image sourced from this exact attachment. */
 export function referencesAttachment(html: string, attachmentId: string) {
-  return html.includes(`/attachments/${attachmentId}`);
+  const escaped = attachmentId.replace(/[.*+?^${}()|[\]\\]/gu, '\\$&');
+  return new RegExp(`/attachments/${escaped}(?![\\w-])`, 'u').test(html);
 }
 
 /**
@@ -116,12 +149,16 @@ export function visibleMediaChips(
   });
 }
 
-export function seedMediaItems(attachments: MailAttachment[]): MailMediaItem[] {
+export function seedMediaItems(
+  attachments: MailAttachment[],
+  owner: MailMediaOwner | null
+): MailMediaItem[] {
   return attachments.map((attachment, index) => ({
     attachment,
     id: attachment.id,
     kind: mailMediaKind(attachment),
     name: attachment.filename,
+    owner,
     previewUrl: null,
     queuedAt: index,
     sizeBytes: attachment.sizeBytes,

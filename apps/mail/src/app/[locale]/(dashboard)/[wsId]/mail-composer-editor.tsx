@@ -28,6 +28,7 @@ import {
 } from './mail-composer-image';
 import {
   createMailImageNodes,
+  ensureUniqueMailImageIds,
   type MailImageNodes,
   mailImageNodeId,
   stripPendingMailImages,
@@ -112,6 +113,8 @@ export const MailComposerEditor = memo(function MailComposerEditor({
     ],
     immediatelyRender: false,
     onUpdate: ({ editor: nextEditor }) => {
+      // Repairing identities dispatches again, and that update does the rest.
+      if (ensureUniqueMailImageIds(nextEditor)) return;
       actions.current.onImageNodesChange?.();
       // Placeholders are stripped: a draft never carries a preview or blob.
       const authored = stripPendingMailImages(nextEditor.getHTML());

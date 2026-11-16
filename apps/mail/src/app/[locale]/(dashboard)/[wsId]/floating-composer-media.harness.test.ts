@@ -42,6 +42,7 @@ const api = vi.hoisted(() => ({
   upload: vi.fn(),
 }));
 const probe = vi.hoisted(() => ({
+  attachmentRefs: new Set<unknown>(),
   editor: null as unknown,
   editors: new Set<unknown>(),
   renders: 0,
@@ -65,6 +66,19 @@ vi.mock('@tiptap/react', async (importOriginal) => {
       probe.editor = editor;
       if (editor) probe.editors.add(editor);
       return editor;
+    },
+  };
+});
+// Counts the distinct `attachments` arrays the composer hands the editor. A new
+// array defeats the editor's memoization, so each one is a possible re-render.
+vi.mock('./mail-composer-editor', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('./mail-composer-editor')>();
+  const { createElement } = await import('react');
+  return {
+    ...actual,
+    MailComposerEditor: (props: Record<string, unknown>) => {
+      probe.attachmentRefs.add(props.attachments);
+      return createElement(actual.MailComposerEditor as never, props);
     },
   };
 });
@@ -174,6 +188,8 @@ function stats(values: number[]) {
 interface RunResult {
   commits: { churn: number; idle: number; select: number; uploading: number };
   commitMs: { churn: number; idle: number; select: number; uploading: number };
+  /** New editor attachment arrays while files are only queued or uploading. */
+  editorAttachmentRefsAtSelect: number;
   editorIdentities: number;
   editorRenders: { churn: number; idle: number; select: number; uploading: number };
   final: {
@@ -194,6 +210,7 @@ interface RunResult {
 async function runOnce(): Promise<RunResult> {
   probe.editor = null;
   probe.editors = new Set();
+  probe.attachmentRefs = new Set();
   probe.renders = 0;
   installUploadMock();
   api.update.mockResolvedValue({ message: { id: 'draft' } });
@@ -257,6 +274,7 @@ async function runOnce(): Promise<RunResult> {
   // Select the same files in both versions; uploads are held by the mock.
   phase = 'select';
   mark = rendersAtPhaseStart();
+  const refsBeforeSelect = probe.attachmentRefs.size;
   pick(
     'insert_images',
     Array.from({ length: WORKLOAD.imageFiles }, (_, index) =>
@@ -277,6 +295,9 @@ async function runOnce(): Promise<RunResult> {
   };
   await flushMicrotasks();
   editorRenders.select = probe.renders - mark;
+  // Only statuses changed so far (queued, uploading): nothing was uploaded.
+  const editorAttachmentRefsAtSelect =
+    probe.attachmentRefs.size - refsBeforeSelect;
 
   // Typing while every upload is still in flight.
   phase = 'uploading';
@@ -308,6 +329,7 @@ async function runOnce(): Promise<RunResult> {
   const result: RunResult = {
     commits,
     commitMs,
+    editorAttachmentRefsAtSelect,
     editorIdentities: probe.editors.size,
     editorRenders,
     final,
@@ -339,6 +361,9 @@ function summarize(runs: RunResult[]) {
     perRunMedian: {
       commits: median(measured.map((run) => total(run.commits))),
       commitMs: median(measured.map((run) => total(run.commitMs))),
+      editorAttachmentRefsAtSelect: median(
+        measured.map((run) => run.editorAttachmentRefsAtSelect)
+      ),
       editorIdentities: median(measured.map((run) => run.editorIdentities)),
       editorRenders: median(measured.map((run) => total(run.editorRenders))),
       editorRendersWhileUploading: median(

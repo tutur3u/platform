@@ -50,9 +50,9 @@ describe('image ids', () => {
     expect(mailImageAttachmentId('https://img.example/a.png')).toBeNull();
   });
 
-  it('prefers the client upload id over the source', () => {
+  it('identifies a node by its instance id, never by its attachment', () => {
     expect(mailImageNodeId({ src: raw, uploadId: 'u1' })).toBe('u1');
-    expect(mailImageNodeId({ src: raw })).toBe('att-1');
+    expect(mailImageNodeId({ src: raw })).toBeNull();
     expect(mailImageNodeId({ src: 'blob:x' })).toBeNull();
   });
 });

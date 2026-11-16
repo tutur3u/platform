@@ -114,6 +114,7 @@ export function FloatingComposer({
     draftIdRef,
     ensureDraft: () => ensureDraftRef.current(),
     mailboxId,
+    markDirty: () => markDirtyRef.current(),
     workspaceId,
   });
   const { attachments } = uploads;
@@ -151,7 +152,16 @@ export function FloatingComposer({
     setBodyText(initialBody.text);
     draftIdRef.current = initialDraft?.draftId ?? null;
     failedSaveVersionRef.current = null;
-    uploads.reset(initialDraft?.attachments ?? []);
+    uploads.reset(
+      initialDraft?.attachments ?? [],
+      initialDraft?.draftId
+        ? {
+            draftId: initialDraft.draftId,
+            mailboxId: defaultMailbox.id,
+            workspaceId,
+          }
+        : null
+    );
     attachmentCopy.schedule(
       initialDraft?.sourceMessageId && initialDraft.sourceAttachmentIds?.length
         ? {
@@ -175,6 +185,7 @@ export function FloatingComposer({
     open,
     uploads.cancelAll,
     uploads.reset,
+    workspaceId,
   ]);
 
   useEffect(() => {
@@ -271,14 +282,6 @@ export function FloatingComposer({
     []
   );
   const openAi = useCallback(() => setAiOpen(true), []);
-  // A removal invalidates a pending Send exactly like any other edit.
-  const removeMedia = useCallback(
-    (id: string) => {
-      markDirtyRef.current();
-      uploads.remove(id);
-    },
-    [uploads.remove]
-  );
   const editorAttachments = useMemo(
     () => [...(initialDraft?.quotedAttachments ?? []), ...attachments],
     [attachments, initialDraft?.quotedAttachments]
@@ -332,10 +335,6 @@ export function FloatingComposer({
     draftIdRef.current = null;
     setMailboxId(nextMailboxId);
     setDirty(true);
-  };
-  const uploadFiles = (files: FileList | File[], inline = false) => {
-    markDirty();
-    uploads.addFiles(files, inline);
   };
   const jumpToFailed = () => {
     const retry = composerKeyboard.ref.current?.querySelector<HTMLElement>(
@@ -448,7 +447,7 @@ export function FloatingComposer({
           event.preventDefault();
           setDragActive(false);
           if (event.dataTransfer.files.length)
-            uploadFiles(event.dataTransfer.files);
+            uploads.addFiles(event.dataTransfer.files);
         }}
         onDragEnter={(event) => {
           event.preventDefault();
@@ -467,7 +466,7 @@ export function FloatingComposer({
           const files = event.clipboardData.files;
           if (!files.length) return;
           event.preventDefault();
-          uploadFiles(
+          uploads.addFiles(
             files,
             Array.from(files).every((file) => file.type.startsWith('image/'))
           );
@@ -619,13 +618,13 @@ export function FloatingComposer({
             onEnhance={openAi}
             onImageNodes={uploads.setNodes}
             onImageNodesChange={uploads.onNodesChange}
-            onRemoveImage={removeMedia}
+            onRemoveImage={uploads.removeImage}
             onRetryImage={uploads.retry}
             onSelectionChange={setSelection}
           />
           <MailComposerAttachments
             items={visibleMediaChips(uploads.items, bodyHtml)}
-            onRemove={removeMedia}
+            onRemove={uploads.remove}
             onRetry={uploads.retry}
           />
           <MailComposerFooter
@@ -665,7 +664,7 @@ export function FloatingComposer({
             onAiOpenChange={setAiOpen}
             onJumpToFailed={jumpToFailed}
             onSend={() => void requestSend()}
-            onUpload={uploadFiles}
+            onUpload={uploads.addFiles}
             recipientLimit={recipientLimit}
             recipients={combinedRecipients}
             sending={sending}

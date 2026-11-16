@@ -20,7 +20,9 @@ const api = vi.hoisted(() => ({
   upload: vi.fn(),
   toast: vi.fn(),
   editor: {
+    attachments: [] as unknown[],
     onChange: null as null | ((value: { html: string; text: string }) => void),
+    onRemoveImage: null as null | ((id: string) => void),
   },
 }));
 vi.mock('@tuturuuu/internal-api', () => ({
@@ -38,8 +40,11 @@ vi.mock('./mail-composer-header', () => ({ MailComposerHeader: () => null }));
 
 const nodes = {
   insertPending: vi.fn(() => true),
+  inspect: vi.fn((): { attachmentId: string | null } | null => null),
   liveIds: vi.fn(() => new Set<string>()),
+  references: vi.fn(() => 0),
   remove: vi.fn(() => true),
+  removeReferences: vi.fn(),
   resolve: vi.fn(() => true),
   setRemoving: vi.fn(),
   setSize: vi.fn(),
@@ -47,11 +52,15 @@ const nodes = {
 } satisfies MailImageNodes;
 vi.mock('./mail-composer-editor', () => ({
   MailComposerEditor: (props: {
+    attachments?: unknown[];
     initialHtml: string;
     onChange: (value: { html: string; text: string }) => void;
     onImageNodes: (value: MailImageNodes | null) => void;
+    onRemoveImage: (id: string) => void;
   }) => {
     api.editor.onChange = props.onChange;
+    api.editor.onRemoveImage = props.onRemoveImage;
+    api.editor.attachments.push(props.attachments);
     useEffect(() => {
       props.onImageNodes(nodes);
       return () => props.onImageNodes(null);
@@ -199,6 +208,17 @@ function mount(initialDraft: Record<string, unknown> = draft) {
   return {
     ...view,
     close: () => view.rerender(h(FloatingComposer, { ...props, open: false })),
+    /** Closed, then opened again on another workspace and draft. */
+    reopenElsewhere: () => {
+      view.rerender(h(FloatingComposer, { ...props, open: false }));
+      view.rerender(
+        h(FloatingComposer, {
+          ...props,
+          initialDraft: { ...draft, draftId: 'draft-2' },
+          workspaceId: 'other',
+        })
+      );
+    },
   };
 }
 const settle = () => act(async () => void (await vi.advanceTimersByTimeAsync(0)));
@@ -230,6 +250,7 @@ beforeEach(() => {
   vi.useFakeTimers();
   vi.clearAllMocks();
   uploads.length = 0;
+  api.editor.attachments.length = 0;
   frames.clear();
   nextFrame = 0;
   vi.stubGlobal('requestAnimationFrame', (callback: FrameRequestCallback) => {
@@ -432,20 +453,94 @@ describe('optimistic removal', () => {
     expect(screen.queryByText('Remove a.png')).toBeNull();
   });
 
-  it('removes an inline image node optimistically and restores it by id', async () => {
+  it('removes an orphaned inline image through its chip and restores it on failure', async () => {
     api.remove.mockRejectedValueOnce(new Error('offline'));
     mount({ ...draft, attachments: [attachment('img', 'inline')] });
     emit(
       '<img src="/api/v1/workspaces/personal/mail/mailboxes/mailbox/drafts/draft/attachments/img">'
     );
     expect(screen.queryByText(/img\.png/u)).toBeNull();
-    // Orphan fallback chip exists only if the body lost the image.
+    // The chip exists only if the body lost the image.
     emit('<p>x</p>');
     fireEvent.click(screen.getByText('Remove img.png'));
-    expect(nodes.setRemoving).toHaveBeenCalledWith('img', true);
+    expect(screen.queryByText('Remove img.png')).toBeNull();
     await settle();
-    expect(nodes.setRemoving).toHaveBeenCalledWith('img', false);
+    expect(screen.getByText('uploaded:img.png')).not.toBeNull();
+  });
+
+  it('removes an editor image by instance id and restores that node on failure', async () => {
+    api.remove.mockRejectedValueOnce(new Error('offline'));
+    nodes.inspect.mockReturnValueOnce({ attachmentId: 'img' });
+    mount({ ...draft, attachments: [attachment('img', 'inline')] });
+    act(() => api.editor.onRemoveImage?.('node-1'));
+    expect(nodes.setRemoving).toHaveBeenCalledWith('node-1', true);
+    expect(api.remove).toHaveBeenCalledExactlyOnceWith(
+      'personal',
+      'mailbox',
+      'draft',
+      'img'
+    );
+    await settle();
+    expect(nodes.setRemoving).toHaveBeenCalledWith('node-1', false);
     expect(nodes.remove).not.toHaveBeenCalled();
+    // Removing makes the draft dirty like any other edit.
+    await act(async () => void (await vi.advanceTimersByTimeAsync(800)));
+    expect(api.update).toHaveBeenCalled();
+  });
+
+  it('keeps the attachment when another node still shows it', async () => {
+    nodes.inspect.mockReturnValueOnce({ attachmentId: 'img' });
+    nodes.references.mockReturnValueOnce(1);
+    mount({ ...draft, attachments: [attachment('img', 'inline')] });
+    act(() => api.editor.onRemoveImage?.('node-2'));
+    expect(nodes.remove).toHaveBeenCalledWith('node-2');
+    await settle();
+    expect(api.remove).not.toHaveBeenCalled();
+  });
+});
+
+describe('late results after the composer was reopened elsewhere', () => {
+  it('deletes a late cancelled upload from the draft that received it', async () => {
+    const view = mount();
+    fireEvent.click(screen.getByText('Add image'));
+    await settle();
+    view.reopenElsewhere();
+    await act(async () => uploads[0]?.succeed());
+    await settle();
+    expect(api.remove).toHaveBeenCalledExactlyOnceWith(
+      'personal',
+      'mailbox',
+      'draft',
+      'att1'
+    );
+    expect(api.remove).not.toHaveBeenCalledWith(
+      'other',
+      expect.anything(),
+      expect.anything(),
+      expect.anything()
+    );
+  });
+});
+
+describe('editor attachments reference', () => {
+  it('stays the same through status-only upload updates', async () => {
+    mount({ ...draft, quotedAttachments: [attachment('quoted', 'attachment')] });
+    const seen = () => new Set(api.editor.attachments);
+    expect(seen().size).toBe(1);
+    fireEvent.click(screen.getByText('Add file'));
+    await settle();
+    await act(async () => uploads[0]?.fail());
+    await settle();
+    fireEvent.click(screen.getByText('Retry notes.pdf'));
+    await settle();
+    // queued, uploading, failed and queued again: nothing uploaded changed.
+    expect(api.editor.attachments.length).toBeGreaterThan(3);
+    expect(seen().size).toBe(1);
+    await act(async () => uploads[1]?.succeed());
+    await settle();
+    expect(seen().size).toBe(2);
+    const latest = api.editor.attachments.at(-1) as { id: string }[];
+    expect(latest.map((entry) => entry.id)).toEqual(['quoted', 'att2']);
   });
 });
 

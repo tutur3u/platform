@@ -1,138 +1,17 @@
-import type { MailAttachment } from '@tuturuuu/internal-api';
-import { describe, expect, it, vi } from 'vitest';
-import type {
-  MailImageNodes,
-  MailImageNodeState,
-} from './mail-composer-image-nodes';
+import { describe, expect, it } from 'vitest';
+import {
+  attachment,
+  flush,
+  OWNER,
+  pdf,
+  png,
+  setup,
+} from './mail-composer-upload-store.fixtures';
 import {
   type MailMediaItem,
   summarizeMedia,
   visibleMediaChips,
 } from './mail-composer-upload-state';
-import { type MailUploadDeps, MailUploadStore } from './mail-composer-upload-store';
-
-const flush = () => new Promise((resolve) => setTimeout(resolve, 0));
-
-function attachment(id: string, disposition: 'attachment' | 'inline') {
-  return {
-    contentId: null,
-    contentType: 'image/png',
-    disposition,
-    filename: `${id}.png`,
-    id,
-    protectedUrl: null,
-    sizeBytes: 10,
-  } satisfies MailAttachment;
-}
-const png = (name: string) => new File(['x'], name, { type: 'image/png' });
-const pdf = (name: string) => new File(['x'], name, { type: 'application/pdf' });
-
-function fakeNodes() {
-  const ids = new Set<string>();
-  const calls: string[] = [];
-  const nodes: MailImageNodes = {
-    insertPending: ({ uploadId, state }) => {
-      ids.add(uploadId);
-      calls.push(`insert:${uploadId}:${state}`);
-      return true;
-    },
-    liveIds: () => new Set(ids),
-    remove: (id) => {
-      calls.push(`remove:${id}`);
-      return ids.delete(id);
-    },
-    resolve: (id, src) => {
-      calls.push(`resolve:${id}:${src}`);
-      return ids.has(id);
-    },
-    setRemoving: (id, removing) => {
-      calls.push(`removing:${id}:${removing}`);
-    },
-    setSize: (id, width, height) => {
-      calls.push(`size:${id}:${width}x${height}`);
-    },
-    setState: (id, state: MailImageNodeState) => {
-      calls.push(`state:${id}:${state}`);
-    },
-  };
-  return { calls, ids, nodes };
-}
-
-interface PendingUpload {
-  attachmentId: string;
-  fail: (error?: unknown) => void;
-  input: Parameters<MailUploadDeps['upload']>[0];
-  succeed: () => void;
-}
-
-function setup({
-  editor = true,
-  honorAbort = true,
-}: { editor?: boolean; honorAbort?: boolean } = {}) {
-  const fake = fakeNodes();
-  const uploads: PendingUpload[] = [];
-  const draft = { id: null as string | null };
-  let counter = 0;
-  let decode: (() => void) | null = null;
-  const holdDecode = { enabled: false };
-  const deps = {
-    createObjectUrl: vi.fn((file: Blob) => `blob:${(file as File).name}`),
-    decodeImage: vi.fn(
-      (src: string) =>
-        new Promise<{ height: number; width: number } | null>((resolve) => {
-          if (src.startsWith('blob:') || !holdDecode.enabled)
-            resolve({ height: 480, width: 640 });
-          else decode = () => resolve({ height: 480, width: 640 });
-        })
-    ),
-    draftId: () => draft.id,
-    ensureDraft: vi.fn(async () => {
-      draft.id = 'draft';
-      return 'draft';
-    }),
-    imageSource: (draftId: string, id: string) =>
-      `/api/v1/workspaces/ws/mail/mailboxes/box/drafts/${draftId}/attachments/${id}`,
-    newId: () => `id${++counter}`,
-    nodes: () => (editor ? fake.nodes : null),
-    onRemoveFailed: vi.fn(),
-    remove: vi.fn(async () => {}),
-    revokeObjectUrl: vi.fn(),
-    upload: vi.fn(
-      (input: PendingUpload['input']) =>
-        new Promise<MailAttachment>((resolve, reject) => {
-          const attachmentId = `att${uploads.length + 1}`;
-          if (honorAbort)
-            input.signal.addEventListener('abort', () =>
-              reject(new DOMException('aborted', 'AbortError'))
-            );
-          uploads.push({
-            attachmentId,
-            fail: (error = new Error('network')) => reject(error),
-            input,
-            succeed: () =>
-              resolve(
-                attachment(attachmentId, input.inline ? 'inline' : 'attachment')
-              ),
-          });
-        })
-    ),
-  } satisfies MailUploadDeps;
-  const store = new MailUploadStore(deps);
-  const statuses = () => store.getSnapshot().items.map((item) => item.status);
-  const find = (id: string) =>
-    store.getSnapshot().items.find((item) => item.id === id);
-  return {
-    decode: () => decode?.(),
-    deps,
-    draft,
-    fake,
-    find,
-    holdDecode,
-    statuses,
-    store,
-    uploads,
-  };
-}
 
 describe('immediate placeholders', () => {
   it('queues every file at once and uploads them one at a time', async () => {
@@ -280,7 +159,7 @@ describe('removal races', () => {
     await flush();
     expect(t.store.getSnapshot().items).toEqual([]);
     expect(t.fake.calls.some((call) => call.startsWith('resolve'))).toBe(false);
-    expect(t.deps.remove).toHaveBeenCalledExactlyOnceWith('draft', 'att1');
+    expect(t.deps.remove).toHaveBeenCalledExactlyOnceWith(OWNER, 'att1');
   });
 
   it('never deletes anything for a failed upload whose outcome is unknown', async () => {
@@ -317,7 +196,7 @@ describe('removal races', () => {
 
   it('leaves uploaded and unrelated items alone during reconcile', async () => {
     const t = setup();
-    t.store.reset([attachment('att0', 'inline')]);
+    t.store.reset([attachment('att0', 'inline')], OWNER);
     t.store.reconcileNodes();
     expect(t.statuses()).toEqual(['uploaded']);
   });
@@ -326,26 +205,30 @@ describe('removal races', () => {
 describe('optimistic removal of uploaded items', () => {
   it('hides the item at once and drops it when the delete succeeds', async () => {
     const t = setup();
-    t.draft.id = 'draft';
-    t.store.reset([attachment('a', 'attachment'), attachment('b', 'attachment')]);
+    t.store.reset(
+      [attachment('a', 'attachment'), attachment('b', 'attachment')],
+      OWNER
+    );
     t.store.remove('a');
     expect(t.statuses()).toEqual(['removing', 'uploaded']);
     expect(visibleMediaChips(t.store.getSnapshot().items, '').map((i) => i.id)).toEqual(
       ['b']
     );
-    expect(t.deps.remove).toHaveBeenCalledExactlyOnceWith('draft', 'a');
+    expect(t.deps.remove).toHaveBeenCalledExactlyOnceWith(OWNER, 'a');
     await flush();
     expect(t.store.getSnapshot().items.map((item) => item.id)).toEqual(['b']);
   });
 
   it('rolls back to the same index and offers Try again when the delete fails', async () => {
     const t = setup();
-    t.draft.id = 'draft';
-    t.store.reset([
-      attachment('a', 'attachment'),
-      attachment('b', 'attachment'),
-      attachment('c', 'attachment'),
-    ]);
+    t.store.reset(
+      [
+        attachment('a', 'attachment'),
+        attachment('b', 'attachment'),
+        attachment('c', 'attachment'),
+      ],
+      OWNER
+    );
     t.deps.remove.mockRejectedValueOnce(new Error('offline'));
     t.store.remove('b');
     await flush();
@@ -370,22 +253,9 @@ describe('optimistic removal of uploaded items', () => {
     ]);
   });
 
-  it('restores an inline image node by id on failure', async () => {
-    const t = setup();
-    t.draft.id = 'draft';
-    t.store.reset([attachment('img', 'inline')]);
-    t.deps.remove.mockRejectedValueOnce(new Error('offline'));
-    t.store.remove('img');
-    expect(t.fake.calls).toContain('removing:img:true');
-    await flush();
-    expect(t.fake.calls).toContain('removing:img:false');
-    expect(t.fake.calls).not.toContain('remove:img');
-  });
-
   it('treats a missing server object as already removed', async () => {
     const t = setup();
-    t.draft.id = 'draft';
-    t.store.reset([attachment('a', 'attachment')]);
+    t.store.reset([attachment('a', 'attachment')], OWNER);
     t.deps.remove.mockRejectedValueOnce(
       Object.assign(new Error('gone'), { status: 404 })
     );
@@ -397,8 +267,7 @@ describe('optimistic removal of uploaded items', () => {
 
   it('ignores a second removal while one is pending', async () => {
     const t = setup();
-    t.draft.id = 'draft';
-    t.store.reset([attachment('a', 'attachment')]);
+    t.store.reset([attachment('a', 'attachment')], OWNER);
     t.store.remove('a');
     t.store.remove('a');
     expect(t.deps.remove).toHaveBeenCalledTimes(1);
@@ -462,7 +331,10 @@ describe('derived state', () => {
 
   it('shows an uploaded inline image only in the editor unless the body lost it', () => {
     const t = setup();
-    t.store.reset([attachment('img', 'inline'), attachment('file', 'attachment')]);
+    t.store.reset(
+      [attachment('img', 'inline'), attachment('file', 'attachment')],
+      OWNER
+    );
     const items = t.store.getSnapshot().items;
     const withImage = '<p><img src="/api/v1/workspaces/w/mail/mailboxes/m/drafts/d/attachments/img"></p>';
     expect(visibleMediaChips(items, withImage).map((item) => item.id)).toEqual([
@@ -493,3 +365,4 @@ describe('derived state', () => {
     expect(snapshot.announcementSeq).toBeGreaterThanOrEqual(2);
   });
 });
+

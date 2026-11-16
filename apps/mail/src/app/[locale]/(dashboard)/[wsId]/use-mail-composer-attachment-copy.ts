@@ -1,5 +1,6 @@
 import { copyMailDraftAttachments } from '@tuturuuu/internal-api';
 import { useEffect, useState } from 'react';
+import type { MailMediaOwner } from './mail-composer-upload-state';
 
 export interface MailAttachmentCopy {
   attachmentIds: string[];
@@ -23,7 +24,8 @@ export function useMailAttachmentCopy({
   onCopied: (
     attachments: Awaited<
       ReturnType<typeof copyMailDraftAttachments>
-    >['attachments']
+    >['attachments'],
+    owner: MailMediaOwner
   ) => void;
   onFailed: () => void;
   open: boolean;
@@ -47,7 +49,7 @@ export function useMailAttachmentCopy({
           draftId,
           copy
         );
-        onCopied(response.attachments);
+        onCopied(response.attachments, { draftId, mailboxId, workspaceId });
       } catch {
         onFailed();
       } finally {

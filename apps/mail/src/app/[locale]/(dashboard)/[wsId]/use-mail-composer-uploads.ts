@@ -19,8 +19,8 @@ import type { MailImageNodes } from './mail-composer-image-nodes';
 import {
   isMediaInFlight,
   isMediaSettled,
+  type MailMediaOwner,
   summarizeMedia,
-  uploadedAttachments,
 } from './mail-composer-upload-state';
 import { MailUploadStore } from './mail-composer-upload-store';
 
@@ -57,23 +57,28 @@ export function decodeMailImage(src: string) {
 /**
  * Composer-facing wrapper around the upload store: wires the real transport,
  * the editor's node operations and the remove-failed toast. React sees only
- * item snapshots, so uploads never re-render the editor.
+ * item snapshots, so uploads never re-render the editor. Every action that
+ * changes the message (adding or removing media) marks the draft dirty first.
  */
 export function useMailComposerUploads({
   draftIdRef,
   ensureDraft,
   mailboxId,
+  markDirty,
   workspaceId,
 }: {
   draftIdRef: RefObject<string | null>;
   /** Create the draft (flushing the latest body) when it does not exist yet. */
   ensureDraft: () => Promise<string | null>;
   mailboxId: string;
+  markDirty: () => void;
   workspaceId: string;
 }) {
   const t = useTranslations('mail');
-  const latest = useRef({ ensureDraft, mailboxId, t, workspaceId });
-  latest.current = { ensureDraft, mailboxId, t, workspaceId };
+  // Read only for what is current right now. Anything that outlives a render
+  // (an upload, a delete) uses the owner captured when it was created.
+  const latest = useRef({ ensureDraft, mailboxId, markDirty, t, workspaceId });
+  latest.current = { ensureDraft, mailboxId, markDirty, t, workspaceId };
   const nodesRef = useRef<MailImageNodes | null>(null);
 
   const [store] = useState(
@@ -83,30 +88,34 @@ export function useMailComposerUploads({
         decodeImage: (src) => decodeMailImage(withAppBase(src)),
         draftId: () => draftIdRef.current,
         ensureDraft: () => latest.current.ensureDraft(),
-        imageSource: (draftId, attachmentId) =>
-          `/api/v1/workspaces/${latest.current.workspaceId}/mail/mailboxes/${latest.current.mailboxId}/drafts/${draftId}/attachments/${attachmentId}`,
+        imageSource: (owner, attachmentId) =>
+          `/api/v1/workspaces/${owner.workspaceId}/mail/mailboxes/${owner.mailboxId}/drafts/${owner.draftId}/attachments/${attachmentId}`,
         newId: () => crypto.randomUUID(),
         nodes: () => nodesRef.current,
         onRemoveFailed: (item, retry) =>
           toast.error(latest.current.t('remove_failed', { name: item.name }), {
             action: { label: latest.current.t('retry'), onClick: retry },
           }),
-        remove: (draftId, attachmentId) =>
+        remove: (owner, attachmentId) =>
           deleteMailDraftAttachment(
-            latest.current.workspaceId,
-            latest.current.mailboxId,
-            draftId,
+            owner.workspaceId,
+            owner.mailboxId,
+            owner.draftId,
             attachmentId
           ),
         revokeObjectUrl: (url) => URL.revokeObjectURL(url),
+        scope: () => ({
+          mailboxId: latest.current.mailboxId,
+          workspaceId: latest.current.workspaceId,
+        }),
         // The shared transport takes a custom fetch; wrapping it adds
         // cancellation without changing the transport.
-        upload: async ({ contentId, draftId, file, inline, signal }) =>
+        upload: async ({ contentId, file, inline, owner, signal }) =>
           (
             await uploadMailDraftAttachment(
-              latest.current.workspaceId,
-              latest.current.mailboxId,
-              draftId,
+              owner.workspaceId,
+              owner.mailboxId,
+              owner.draftId,
               file,
               file.name,
               { contentId, disposition: inline ? 'inline' : 'attachment' },
@@ -126,34 +135,49 @@ export function useMailComposerUploads({
     () => summarizeMedia(snapshot.items),
     [snapshot.items]
   );
-  const attachments = useMemo(
-    () => uploadedAttachments(snapshot.items),
-    [snapshot.items]
-  );
   const setNodes = useCallback((nodes: MailImageNodes | null) => {
     nodesRef.current = nodes;
   }, []);
 
   return {
     addFiles: useCallback(
-      (files: FileList | File[], inline = false) =>
-        store.addFiles(Array.from(files), inline),
+      (files: FileList | File[], inline = false) => {
+        latest.current.markDirty();
+        store.addFiles(Array.from(files), inline);
+      },
       [store]
     ),
     addUploaded: useCallback(
-      (items: MailAttachment[]) => store.addUploaded(items),
+      (items: MailAttachment[], owner: MailMediaOwner) =>
+        store.addUploaded(items, owner),
       [store]
     ),
     announcement: snapshot.announcement,
     announcementSeq: snapshot.announcementSeq,
-    attachments,
+    attachments: snapshot.attachments,
     cancelAll: useCallback(() => store.cancelAll(), [store]),
     inFlight: isMediaInFlight(summary),
     items: snapshot.items,
     onNodesChange: useCallback(() => store.reconcileNodes(), [store]),
-    remove: useCallback((id: string) => store.remove(id), [store]),
+    /** Remove a chip or a failed placeholder by item id. */
+    remove: useCallback(
+      (id: string) => {
+        latest.current.markDirty();
+        store.remove(id);
+      },
+      [store]
+    ),
+    /** Remove one image node by instance id (editor toolbar and keyboard). */
+    removeImage: useCallback(
+      (instanceId: string) => {
+        latest.current.markDirty();
+        store.removeImage(instanceId);
+      },
+      [store]
+    ),
     reset: useCallback(
-      (items: MailAttachment[]) => store.reset(items),
+      (items: MailAttachment[], owner: MailMediaOwner | null) =>
+        store.reset(items, owner),
       [store]
     ),
     retry: useCallback((id: string) => store.retry(id), [store]),

@@ -1,6 +1,9 @@
 import Image, { type ImageOptions } from '@tiptap/extension-image';
 import { withAppBase } from '@tuturuuu/start-bridge/app-url';
-import { MAIL_IMAGE_UPLOAD_MARKER } from './mail-composer-image-nodes';
+import {
+  MAIL_IMAGE_UPLOAD_MARKER,
+  newMailImageInstanceId,
+} from './mail-composer-image-nodes';
 import {
   attachMailImageUploadView,
   type MailImageUploadActions,
@@ -157,9 +160,15 @@ export const MailComposerImage = Image.extend<MailComposerImageOptions>({
           return source === null ? null : rawMailDraftImageSource(source);
         },
       },
-      // Client-only identity and state of an image that is not settled yet.
-      // Only the state marker is serialized, so placeholders can be stripped.
-      uploadId: { default: null, parseHTML: () => null, rendered: false },
+      // Client-only identity of this node and state of an image that is not
+      // settled yet. Every parsed image (reopened draft, paste, drop) gets its
+      // own id, so copies of one attachment stay distinguishable. Only the
+      // state marker is serialized, so placeholders can be stripped.
+      uploadId: {
+        default: null,
+        parseHTML: () => newMailImageInstanceId(),
+        rendered: false,
+      },
       uploadName: { default: null, parseHTML: () => null, rendered: false },
       uploadState: {
         default: null,

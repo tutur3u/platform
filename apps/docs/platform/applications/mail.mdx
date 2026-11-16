@@ -358,14 +358,28 @@ and no other app has a composer that uses them.
 - **Send and close wait.** Send is disabled while any item is queued, uploading,
   failed or removing. Save-and-close waits for queued, uploading and removing items;
   failed items are discarded with the composer.
-- **Optimistic removal.** Removing an uploaded image or chip hides it immediately
-  and issues the delete. If the delete fails, the same item reappears at the same
-  list position (the image node is only hidden until the delete settles) and a
-  toast offers Try again. A missing server object (404) counts as removed.
+- **Image instances.** Every image node has its own client-only instance id
+  (assigned on parse, so reopened drafts, pasted and dropped images each get
+  one; a repeated id from a modifier-key drag copy is reassigned, and a copied
+  placeholder is dropped). The id is never the server attachment id. Copies of an
+  image therefore share one attachment but are removed one at a time; the toolbar
+  Remove acts on the selected node only.
+- **Optimistic removal.** Removing an image node deletes that node at once. The
+  attachment is deleted from the server only when no other node still shows it;
+  that last node is hidden in place until the delete settles, so a failure restores
+  the same node at the same position and a toast offers Try again. Removing a chip
+  works the same way for its item, and also removes any node an undo brought back.
+  A missing server object (404) counts as removed. Toolbar and chip removals are
+  not undoable; deleting an image with the keyboard is, and while the body has lost
+  an image its chip is the intentional recovery path.
 - **Nothing resurrects.** Removing or closing cancels the in-flight request. If the
   server still created the attachment, only that known id is deleted. An upload
   whose outcome is unknown (failed, never answered) is never deleted blindly.
   Closing the composer aborts requests and revokes every preview object URL.
+- **Work stays with its owner.** Each attachment records the workspace, mailbox
+  and draft that own it when it is created or seeded. A late cleanup, a removal or
+  a retry after the composer was closed and reopened (another draft, mailbox or
+  workspace) always addresses that owner, never the composer's current state.
 - **Drafts never carry local state.** Placeholder images (queued, uploading,
   failed or being removed) serialize with a `data-mail-upload` marker and are
   stripped, together with any `blob:`/`data:` source, before the body reaches the
@@ -374,15 +388,20 @@ and no other app has a composer that uses them.
 - **Editor isolation.** Upload state lives in a store outside React and updates
   placeholder DOM through node attributes. The editor component is memoized, keeps
   one TipTap instance (also while the composer is minimized) and is not re-rendered
-  by status changes. Placeholder insertion and swaps skip undo history so undo never
+  by status changes: the uploaded-attachment list handed to it keeps its reference
+  until the set of uploaded attachments actually changes. Placeholder insertion and swaps skip undo history so undo never
   restores a placeholder.
 
 Regression coverage lives next to the composer:
 `mail-composer-upload-store.test.ts` (ordering, replace-by-id, failure, retry,
-races, rollback, cancellation, cleanup), `mail-composer-image-nodes.test.ts`
-(serialization stripping), `mail-composer-editor-media.test.ts` (one editor,
-in-place swap, reserved size) and `floating-composer-media.test.ts` (send gate,
-draft and send payloads, dedup, cleanup on close and unmount).
+races, rollback, cancellation, cleanup), `mail-composer-upload-store-ownership.test.ts`
+(late results and removals keep their owner, shared-attachment ownership, stable
+attachment reference), `mail-composer-image-instances.test.ts` (real TipTap copy,
+paste, drag-copy and reopened duplicates through the real store),
+`mail-composer-image-nodes.test.ts` (serialization stripping, ids),
+`mail-composer-editor-media.test.ts` (one editor, in-place swap, reserved size)
+and `floating-composer-media.test.ts` (send gate, draft and send payloads, dedup,
+cleanup on close and unmount, reopen elsewhere, stable editor attachments).
 
 #### Measuring input latency and editor renders
 
@@ -393,8 +412,10 @@ replaced by a manually released mock: 20 control keystrokes, selecting 3 images 
 complete one by one. It records per-keystroke time for a synchronous editor
 dispatch plus the React commit, editor component render counts (via `useEditor`
 calls), composer commits and Profiler time, TipTap transactions, editor identity
-count, and what is on screen immediately after selecting files. It is skipped unless
-`MAIL_MEDIA_HARNESS=1`.
+count, what is on screen immediately after selecting files, and how many distinct
+`attachments` arrays the composer hands the editor while files are only queued or
+uploading (`editorAttachmentRefsAtSelect`; each new array defeats the editor's
+memoization, so it should stay at 0). It is skipped unless `MAIL_MEDIA_HARNESS=1`.
 
 It uses only public props and the DOM, so the same file runs on any commit. Run it
 on the baseline commit and on the changed commit on the same machine, interleaved,

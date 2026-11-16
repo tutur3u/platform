@@ -31,6 +31,7 @@ const per = (key) =>
 for (const key of [
   'editorRenders',
   'editorRendersAtSelect',
+  'editorAttachmentRefsAtSelect',
   'editorRendersWhileUploading',
   'commits',
   'commitMs',

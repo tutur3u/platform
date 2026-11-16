@@ -187,12 +187,17 @@ describe('image placeholders', () => {
     const view = await open(`<p>Hi</p><img src="${raw}">`);
     act(() => view.editor.commands.insertContentAt(1, 'x'));
     expect(lastHtml(view.changed)).toContain(`src="${raw}"`);
-    act(() => view.nodes().setRemoving('image-1', true));
+    const [id] = [...view.nodes().liveIds()];
+    expect(id).toBeTruthy();
+    expect(view.nodes().inspect(id as string)).toEqual({
+      attachmentId: 'image-1',
+    });
+    act(() => view.nodes().setRemoving(id as string, true));
     expect(lastHtml(view.changed)).not.toContain('<img');
-    act(() => view.nodes().setRemoving('image-1', false));
+    act(() => view.nodes().setRemoving(id as string, false));
     expect(lastHtml(view.changed)).toContain(`src="${raw}"`);
     act(() => {
-      view.nodes().remove('image-1');
+      view.nodes().remove(id as string);
     });
     expect(view.editor.getHTML()).not.toContain('<img');
     expect(view.nodes().liveIds().size).toBe(0);

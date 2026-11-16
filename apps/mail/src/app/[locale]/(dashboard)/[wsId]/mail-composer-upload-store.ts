@@ -4,8 +4,11 @@ import {
   EMPTY_MEDIA_SNAPSHOT,
   type MailMediaAnnouncement,
   type MailMediaItem,
+  type MailMediaOwner,
   type MailMediaSnapshot,
   seedMediaItems,
+  stableAttachments,
+  uploadedAttachments,
 } from './mail-composer-upload-state';
 
 /** Everything the store needs from the outside world, injectable for tests. */
@@ -18,17 +21,20 @@ export interface MailUploadDeps {
   /** Create the draft when it does not exist yet; null when saving failed. */
   ensureDraft: () => Promise<string | null>;
   /** Raw (host independent) editor source of an uploaded draft image. */
-  imageSource: (draftId: string, attachmentId: string) => string;
+  imageSource: (owner: MailMediaOwner, attachmentId: string) => string;
   newId: () => string;
   nodes: () => MailImageNodes | null;
   onRemoveFailed: (item: MailMediaItem, retry: () => void) => void;
-  remove: (draftId: string, attachmentId: string) => Promise<void>;
+  /** Delete an attachment from the draft that owns it, whatever is open now. */
+  remove: (owner: MailMediaOwner, attachmentId: string) => Promise<void>;
   revokeObjectUrl: (url: string) => void;
+  /** Workspace and mailbox the composer shows right now. */
+  scope: () => { mailboxId: string; workspaceId: string };
   upload: (input: {
     contentId: string | null;
-    draftId: string;
     file: File;
     inline: boolean;
+    owner: MailMediaOwner;
     signal: AbortSignal;
   }) => Promise<MailAttachment>;
 }
@@ -51,6 +57,12 @@ function isNotFound(error: unknown) {
  * - A cancelled item never resurrects: its late result is ignored, and an
  *   attachment the server did create for it (a known id) is deleted quietly.
  *   Nothing is ever deleted for an upload whose outcome is unknown.
+ * - Every attachment remembers the draft that owns it (workspace, mailbox and
+ *   draft id captured when it was created), so a late cleanup or a removal
+ *   after the composer was closed and reopened never reads the current one.
+ * - Images are addressed by instance id (one editor node), attachments by item
+ *   id. Several nodes can show one attachment; it is deleted from the server
+ *   only when its last node is removed.
  * - Removal of an uploaded item is optimistic and rolls back to the same list
  *   position (the item never leaves the list) when the delete fails.
  */
@@ -74,14 +86,14 @@ export class MailUploadStore {
   getSnapshot = () => this.snapshot;
 
   /** Replace everything with the attachments of a freshly opened draft. */
-  reset(attachments: MailAttachment[]) {
+  reset(attachments: MailAttachment[], owner: MailMediaOwner | null) {
     this.cancelAll(false);
-    this.commit(seedMediaItems(attachments));
+    this.commit(seedMediaItems(attachments, owner));
   }
 
   /** Server-created attachments (forwarded files) join as uploaded items. */
-  addUploaded(attachments: MailAttachment[]) {
-    this.commit([...this.items(), ...seedMediaItems(attachments)]);
+  addUploaded(attachments: MailAttachment[], owner: MailMediaOwner) {
+    this.commit([...this.items(), ...seedMediaItems(attachments, owner)]);
   }
 
   /** Abort every request, drop every item and release every preview URL. */
@@ -91,7 +103,7 @@ export class MailUploadStore {
     this.files.clear();
     for (const item of this.items()) this.release(item);
     if (notify && this.items().length) this.commit([]);
-    else this.snapshot = { ...this.snapshot, items: [] };
+    else this.snapshot = { ...this.snapshot, attachments: [], items: [] };
   }
 
   /**
@@ -128,6 +140,7 @@ export class MailUploadStore {
         id,
         kind: placed ? 'inline' : 'attachment',
         name: file.name,
+        owner: null,
         previewUrl: placed ? previewUrl : null,
         queuedAt: ++this.clock,
         sizeBytes: file.size,
@@ -149,6 +162,7 @@ export class MailUploadStore {
     void this.pump();
   }
 
+  /** Remove an item (a chip, or a placeholder) by its item id. */
   remove(id: string) {
     const item = this.find(id);
     if (!item || item.status === 'removing') return;
@@ -161,29 +175,38 @@ export class MailUploadStore {
       this.deps.nodes()?.remove(id);
       return;
     }
-    const attachment = item.attachment;
-    const draftId = this.deps.draftId();
-    this.update(id, { status: 'removing' }, { kind: 'removed', name: item.name });
-    this.deps.nodes()?.setRemoving(id, true);
-    if (!attachment || !draftId) {
-      this.finishRemoval(id);
+    this.removeUploaded(item, null);
+  }
+
+  /**
+   * Remove one image node by instance id. The node goes at once. Its
+   * attachment is deleted only when no other node shows it; the node is then
+   * hidden in place until the delete settles, so a failure restores that very
+   * node at its position.
+   */
+  removeImage(instanceId: string) {
+    const pending = this.find(instanceId);
+    if (pending && pending.status !== 'uploaded') return this.remove(instanceId);
+    const nodes = this.deps.nodes();
+    const info = nodes?.inspect(instanceId);
+    if (!nodes || !info) return;
+    const attachmentId = info.attachmentId;
+    const backing = attachmentId
+      ? this.items().find(
+          (item) =>
+            item.status === 'uploaded' && item.attachment?.id === attachmentId
+        )
+      : undefined;
+    if (!attachmentId || !backing) {
+      nodes.remove(instanceId);
       return;
     }
-    void this.deps.remove(draftId, attachment.id).then(
-      () => this.finishRemoval(id),
-      (error: unknown) => {
-        if (isNotFound(error)) return this.finishRemoval(id);
-        if (this.find(id)?.status !== 'removing') return;
-        // Same item, same list position: only its status changes back.
-        this.update(
-          id,
-          { status: 'uploaded' },
-          { kind: 'restored', name: item.name }
-        );
-        this.deps.nodes()?.setRemoving(id, false);
-        this.deps.onRemoveFailed(item, () => this.remove(id));
-      }
-    );
+    if (nodes.references(attachmentId, instanceId) > 0) {
+      nodes.remove(instanceId);
+      this.commit(this.items(), { kind: 'removed', name: backing.name });
+      return;
+    }
+    this.removeUploaded(backing, instanceId);
   }
 
   /**
@@ -221,6 +244,10 @@ export class MailUploadStore {
     this.snapshot = {
       announcement: announcement ?? this.snapshot.announcement,
       announcementSeq: this.snapshot.announcementSeq + (announcement ? 1 : 0),
+      attachments: stableAttachments(
+        this.snapshot.attachments,
+        uploadedAttachments(items)
+      ),
       items,
     };
     for (const listener of this.listeners) listener();
@@ -254,10 +281,40 @@ export class MailUploadStore {
     );
   }
 
-  private finishRemoval(id: string) {
+  private removeUploaded(item: MailMediaItem, instanceId: string | null) {
+    const { attachment, id, owner } = item;
+    this.update(id, { status: 'removing' }, { kind: 'removed', name: item.name });
+    if (instanceId) this.deps.nodes()?.setRemoving(instanceId, true);
+    if (!attachment || !owner) {
+      this.finishRemoval(id, instanceId);
+      return;
+    }
+    void this.deps.remove(owner, attachment.id).then(
+      () => this.finishRemoval(id, instanceId),
+      (error: unknown) => {
+        if (isNotFound(error)) return this.finishRemoval(id, instanceId);
+        if (this.find(id)?.status !== 'removing') return;
+        // Same item, same list position: only its status changes back.
+        this.update(
+          id,
+          { status: 'uploaded' },
+          { kind: 'restored', name: item.name }
+        );
+        if (instanceId) this.deps.nodes()?.setRemoving(instanceId, false);
+        this.deps.onRemoveFailed(item, () =>
+          instanceId ? this.removeImage(instanceId) : this.remove(id)
+        );
+      }
+    );
+  }
+
+  private finishRemoval(id: string, instanceId: string | null) {
     const item = this.find(id);
     if (item?.status !== 'removing') return;
-    this.deps.nodes()?.remove(id);
+    const nodes = this.deps.nodes();
+    if (instanceId) nodes?.remove(instanceId);
+    // An undo may have brought a node back while the delete was in flight.
+    if (item.attachment) nodes?.removeReferences(item.attachment.id);
     this.discard(id, null);
   }
 
@@ -272,8 +329,8 @@ export class MailUploadStore {
   }
 
   /** The upload finished after its item was cancelled: clean up our own object. */
-  private discardLate(draftId: string, attachment: MailAttachment) {
-    void this.deps.remove(draftId, attachment.id).catch(() => undefined);
+  private discardLate(owner: MailMediaOwner, attachment: MailAttachment) {
+    void this.deps.remove(owner, attachment.id).catch(() => undefined);
   }
 
   private async pump() {
@@ -303,26 +360,30 @@ export class MailUploadStore {
     this.controllers.set(id, controller);
     const alive = () =>
       this.controllers.get(id) === controller && !controller.signal.aborted;
+    // Captured before any await: a result that lands after the composer was
+    // closed and reopened still belongs to this workspace, mailbox and draft.
+    const scope = this.deps.scope();
     this.update(id, { status: 'uploading' });
     this.deps.nodes()?.setState(id, 'uploading');
     try {
       const draftId = this.deps.draftId() ?? (await this.deps.ensureDraft());
       if (!alive()) return;
       if (!draftId) throw new Error('Draft was not saved');
+      const owner: MailMediaOwner = { ...scope, draftId };
       const inline = item.kind === 'inline';
       const attachment = await this.deps.upload({
         contentId: inline ? `${this.deps.newId()}@tuturuuu.mail` : null,
-        draftId,
         file,
         inline,
+        owner,
         signal: controller.signal,
       });
-      if (!alive()) return this.discardLate(draftId, attachment);
-      const source = this.deps.imageSource(draftId, attachment.id);
+      if (!alive()) return this.discardLate(owner, attachment);
+      const source = this.deps.imageSource(owner, attachment.id);
       if (inline) {
         // Swap only once the server image has decoded, so nothing flashes.
         await this.deps.decodeImage(source);
-        if (!alive()) return this.discardLate(draftId, attachment);
+        if (!alive()) return this.discardLate(owner, attachment);
         this.deps.nodes()?.resolve(id, source);
       }
       this.controllers.delete(id);
@@ -330,7 +391,7 @@ export class MailUploadStore {
       this.release(item);
       this.update(
         id,
-        { attachment, previewUrl: null, status: 'uploaded' },
+        { attachment, owner, previewUrl: null, status: 'uploaded' },
         { kind: 'uploaded', name: item.name }
       );
     } catch {
