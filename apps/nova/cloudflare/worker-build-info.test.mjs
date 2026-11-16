@@ -77,10 +77,7 @@ test('other paths are left unchanged', async () => {
 
 test('the shared Vercel handler source does not hardcode the worker platform', () => {
   const source = readFileSync(
-    new URL(
-      '../../../packages/utils/src/build-info-route.ts',
-      import.meta.url
-    ),
+    new URL('../../../packages/utils/src/build-info-route.ts', import.meta.url),
     'utf8'
   );
   assert.equal(source.includes('cloudflare'), false);
