@@ -53,14 +53,14 @@ import { performCreditPreflight } from './route-credits';
 import {
   extractLatestUserMessageContent,
   mergeSystemInstructions,
-  originalUserText,
   persistLatestUserMessage,
-  persistRequestScopedUserMessage,
   prepareProcessedMessages,
   splitSystemMessages,
 } from './route-message-preparation';
 import { prepareMiraRuntime } from './route-mira-runtime';
 import { validateSubscriptionRoute } from './route-subscription-boundary';
+import { createChatRouteTimer } from './route-timing';
+import { createUserMessageInserter } from './route-user-message-insert';
 import {
   buildAbortedStreamFinishResponse,
   persistAssistantResponse,
@@ -92,6 +92,7 @@ export function createPOST(
 
   return async function handler(req: NextRequest): Promise<Response> {
     let releaseClaimedPersistenceLease: (() => Promise<void>) | null = null;
+    const timer = createChatRouteTimer();
     try {
       const sbAdmin = await createAdminClient();
       let requestBody: unknown;
@@ -150,6 +151,7 @@ export function createPOST(
       const auth =
         (await _options.resolveAuth?.(req)) ?? (await resolveAiRouteAuth(req));
       if (!auth.ok) return auth.response;
+      timer.mark('auth');
       const { messageInsertMode = 'rpc', supabase, user } = auth;
       let subscriptionModel: LanguageModel | undefined;
       if (_options.subscription) {
@@ -199,6 +201,7 @@ export function createPOST(
         }
         normalizedWsId = workspaceAuthorization.wsId;
       }
+      timer.mark('workspace_auth');
 
       try {
         requestedCreditWsId = rawCreditWsId
@@ -306,6 +309,7 @@ export function createPOST(
         }
       }
 
+      timer.mark('billing_workspace');
       let resolvedModelId: string;
       try {
         if (subscriptionModel && model) {
@@ -350,6 +354,7 @@ export function createPOST(
         );
       }
 
+      timer.mark('model');
       const resolvedChatId = await resolveChatIdForUser(
         id,
         () =>
@@ -372,6 +377,7 @@ export function createPOST(
         return resolvedChatId.error;
       }
       const chatId = resolvedChatId.chatId;
+      timer.mark('chat_id');
 
       const moveFilesError = await moveTempFilesToThread({
         listFiles: (tempStoragePath) =>
@@ -403,6 +409,7 @@ export function createPOST(
         return preparedMessages.error;
       }
       const { processedMessages } = preparedMessages;
+      timer.mark('messages');
       if (
         subscriptionModel &&
         processedMessages.some(
@@ -428,64 +435,22 @@ export function createPOST(
       const persistUserMessageError = await persistLatestUserMessage({
         processedMessages,
         chatId,
-        insertChatMessage: async (args) => {
-          if (messageInsertMode === 'direct' || persistenceRequestId) {
-            if (!persistenceRequestId) {
-              const { error } = await supabase.from('ai_chat_messages').insert({
-                chat_id: chatId,
-                content: args.message,
-                creator_id: user.id,
-                metadata: { source: args.source },
-                role: 'USER',
-              });
-              return { error };
-            }
-            return persistRequestScopedUserMessage({
-              chatId,
-              content: args.message,
-              originalText: originalUserText(normalizedMessages),
-              creatorId: user.id,
-              findExistingMessage: async () => {
-                const { data, error } = await sbAdmin
-                  .from('ai_chat_messages')
-                  .select('content,creator_id,metadata')
-                  .eq('chat_id', chatId)
-                  .eq('role', 'USER')
-                  .contains('metadata', {
-                    requestId: persistenceRequestId,
-                    source: args.source,
-                  })
-                  .maybeSingle();
-                return { data, error };
-              },
-              insertMessage: async (metadata) => {
-                const { error } = await sbAdmin
-                  .from('ai_chat_messages')
-                  .insert({
-                    chat_id: chatId,
-                    content: args.message,
-                    creator_id: user.id,
-                    metadata,
-                    role: 'USER',
-                  });
-                return { error };
-              },
-              requestId: persistenceRequestId,
-              source: args.source,
-            });
-          }
-          const { error } = await supabase.rpc(
-            'insert_ai_chat_message' as never,
-            args as never
-          );
-          return { error };
-        },
+        insertChatMessage: createUserMessageInserter({
+          chatId,
+          messageInsertMode,
+          normalizedMessages,
+          persistenceRequestId,
+          sbAdmin,
+          supabase,
+          userId: user.id,
+        }),
         requestScoped: Boolean(persistenceRequestId),
         source: isMiraMode ? 'Mira' : 'Rewise',
       });
       if (persistUserMessageError) {
         return persistUserMessageError;
       }
+      timer.mark('persist_user_message');
 
       const creditPreflight = subscriptionModel
         ? { cappedMaxOutput: null }
@@ -499,6 +464,7 @@ export function createPOST(
         return creditPreflight.error;
       }
       const { cappedMaxOutput } = creditPreflight;
+      timer.mark('credit_preflight');
 
       const stepsRef: { current: unknown[] } = { current: [] };
 
@@ -520,6 +486,7 @@ export function createPOST(
           getSteps: () => stepsRef.current,
         });
 
+      timer.mark('mira_runtime');
       const effectiveSource = isMiraMode ? 'Mira' : 'Rewise';
 
       const resolvedGatewayModel =
@@ -534,6 +501,7 @@ export function createPOST(
           wsId: billingWsId ?? normalizedWsId,
         }));
 
+      timer.mark('memory');
       const reasoningSettings = resolveChatReasoningSettings(thinkingMode);
       const forceWorkspaceArtifact = shouldPresentWorkspaceArtifact(
         promptMessages.messages
@@ -588,6 +556,7 @@ export function createPOST(
           source: effectiveSource,
         });
       if (leaseResponse) return leaseResponse;
+      timer.mark('persistence_lease');
       if (claimedLease) {
         releaseClaimedPersistenceLease = async () => {
           await releaseAiPersistenceRequest(sbAdmin, claimedLease);
@@ -617,6 +586,7 @@ export function createPOST(
           }),
       });
 
+      timer.streamStarted();
       const result = streamText({
         abortSignal: req.signal,
         experimental_transform: smoothStream({ delayInMs: null }),
@@ -644,6 +614,10 @@ export function createPOST(
           : createGoogleChatProviderOptions(reasoningSettings.includeThoughts),
         onAbort: async ({ steps }) =>
           persistChatAssistantResponse(buildAbortedStreamFinishResponse(steps)),
+        onChunk: ({ chunk }) => timer.chunk(chunk.type),
+        onStepFinish: (step) => timer.step(step),
+        onToolExecutionEnd: (event) =>
+          timer.tool(event.toolCall.toolName, event.toolExecutionMs),
         onFinish: persistChatAssistantResponse,
         timeout: {
           chunkMs: 20_000,
@@ -657,6 +631,9 @@ export function createPOST(
       // to handle isAborted when needed.
       return result.toUIMessageStreamResponse({
         consumeSseStream: consumeStream,
+        headers: { 'Server-Timing': timer.serverTimingHeader() },
+        messageMetadata: ({ part }) =>
+          part.type === 'finish' ? { timing: timer.finish() } : undefined,
         sendReasoning: true,
         sendSources: true,
         ...(_options.subscription
