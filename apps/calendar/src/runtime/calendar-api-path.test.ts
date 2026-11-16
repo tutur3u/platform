@@ -35,6 +35,13 @@ describe('Calendar client API ownership', () => {
   });
   it.each(['', '/calendar'])('resolves only owned paths at base %j', (base) => {
     vi.stubGlobal('__tuturuuuAppBase', base);
+    expect(
+      calendarApiPath(
+        '/api/v1/workspaces/ws/calendar/invitation-capabilities?provider=microsoft&connectionId=selected'
+      )
+    ).toBe(
+      `${base}/api/v1/workspaces/ws/calendar/invitation-capabilities?provider=microsoft&connectionId=selected`
+    );
     expect(calendarApiPath('/api/v1/calendar/connections?x=a%2Bb')).toBe(
       `${base}/api/v1/calendar/connections?x=a%2Bb`
     );

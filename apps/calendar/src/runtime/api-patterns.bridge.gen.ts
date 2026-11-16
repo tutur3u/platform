@@ -44,6 +44,7 @@ export const appApiPatterns = [
   "/api/v1/workspaces/[wsId]/calendar/events/[eventId]/link-preview",
   "/api/v1/workspaces/[wsId]/calendar/events/[eventId]/response",
   "/api/v1/workspaces/[wsId]/calendar/habit-events",
+  "/api/v1/workspaces/[wsId]/calendar/invitation-capabilities",
   "/api/v1/workspaces/[wsId]/calendar/schedulable-tasks",
   "/api/v1/workspaces/[wsId]/calendar/schedule",
   "/api/v1/workspaces/[wsId]/calendar/schedule/preview",

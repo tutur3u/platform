@@ -7,7 +7,7 @@ import {
 
 export const endpoints: readonly BridgeEndpoint[] = sortEndpoints([
   { pattern: "/api/[wsId]/calendar/auto-schedule", module: lazyRouteModule(() => import('../app/api/[wsId]/calendar/auto-schedule/route'), ["GET","POST"]) },
-  { pattern: "/api/auth/logout", module: lazyRouteModule(() => import('../app/api/auth/logout/route'), ["GET","POST"]) },
+  { pattern: "/api/auth/logout", module: lazyRouteModule(() => import('../app/api/auth/logout/route'), ["GET","POST","OPTIONS"]) },
   { pattern: "/api/auth/refresh-app-session", module: lazyRouteModule(() => import('../app/api/auth/refresh-app-session/route'), ["POST"]) },
   { pattern: "/api/auth/verify-app-token", module: lazyRouteModule(() => import('../app/api/auth/verify-app-token/route'), ["POST"]) },
   { pattern: "/api/build-info", module: lazyRouteModule(() => import('../app/api/build-info/route'), ["GET"]) },
@@ -50,6 +50,7 @@ export const endpoints: readonly BridgeEndpoint[] = sortEndpoints([
   { pattern: "/api/v1/workspaces/[wsId]/calendar/events/[eventId]", module: lazyRouteModule(() => import('../app/api/v1/workspaces/[wsId]/calendar/events/[eventId]/route'), ["GET","PUT","DELETE"]) },
   { pattern: "/api/v1/workspaces/[wsId]/calendar/events", module: lazyRouteModule(() => import('../app/api/v1/workspaces/[wsId]/calendar/events/route'), ["GET","POST"]) },
   { pattern: "/api/v1/workspaces/[wsId]/calendar/habit-events", module: lazyRouteModule(() => import('../app/api/v1/workspaces/[wsId]/calendar/habit-events/route'), ["GET"]) },
+  { pattern: "/api/v1/workspaces/[wsId]/calendar/invitation-capabilities", module: lazyRouteModule(() => import('../app/api/v1/workspaces/[wsId]/calendar/invitation-capabilities/route'), ["GET"]) },
   { pattern: "/api/v1/workspaces/[wsId]/calendar/schedulable-tasks", module: lazyRouteModule(() => import('../app/api/v1/workspaces/[wsId]/calendar/schedulable-tasks/route'), ["GET"]) },
   { pattern: "/api/v1/workspaces/[wsId]/calendar/schedule/preview", module: lazyRouteModule(() => import('../app/api/v1/workspaces/[wsId]/calendar/schedule/preview/route'), ["POST"]) },
   { pattern: "/api/v1/workspaces/[wsId]/calendar/schedule", module: lazyRouteModule(() => import('../app/api/v1/workspaces/[wsId]/calendar/schedule/route'), ["GET","POST"]) },

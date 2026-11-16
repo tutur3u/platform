@@ -1,3 +1,5 @@
+import { fileURLToPath } from 'node:url';
+import { runRegistries } from '../../../../packages/start-bridge/src/codegen/cli';
 import { NextRequest } from 'next/dist/server/web/spec-extension/request';
 import { describe, expect, it, vi } from 'vitest';
 
@@ -31,10 +33,12 @@ import {
 const request = (path: string, method = 'GET') =>
   new NextRequest(`https://calendar.test${path}`, { method });
 describe('native Calendar local endpoints', () => {
-  it('keeps each of the57 canonical local routes registered once', () => {
-    expect(calendarEndpoints).toHaveLength(57);
+  it('keeps canonical source registries current and every local pattern unique', () => {
+    expect(
+      runRegistries(fileURLToPath(new URL('../../', import.meta.url)), 'check')
+    ).toEqual([]);
     expect(new Set(calendarEndpoints.map(({ pattern }) => pattern)).size).toBe(
-      57
+      calendarEndpoints.length
     );
   });
   it('chooses static reorder before the dynamic category route and preserves context', async () => {

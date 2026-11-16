@@ -13,6 +13,13 @@ shared-package changes.
   retained-request and generation guards remain authoritative on submission.
   Expiring dialog capability needs an explicit Retry path that refreshes the read
   while retaining the draft; test expiry and recovery with a real QueryClient.
+  Calendar runs through the native Start bridge: adding an App Router handler also
+  requires its tracked API registry and client ownership patterns. Run
+  `bun packages/start-bridge/src/codegen/cli.ts generate apps/calendar`, inspect
+  the Calendar-only diff, then run the same command with `check`. This is source
+  codegen, not a build. Keep source parity in `runtime/api-registry.test.ts`, and
+  exercise real `dispatchCalendarEndpoint` and mounted `calendarApiPath` ownership;
+  direct handler tests alone do not establish native reachability.
   See [Contacts Calendar invitations](../../../../../apps/docs/platform/applications/contacts.mdx#calendar-invitation-creates).
 
 - Mira temporary chat credentials warm through the visibility/activity-bounded
