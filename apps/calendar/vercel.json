@@ -1,6 +1,6 @@
 {
   "$schema": "https://openapi.vercel.sh/vercel.json",
-  "buildCommand": "cd ../.. && bun turbo:local run build --filter=@tuturuuu/calendar",
+  "buildCommand": "cd ../.. && bun turbo:local run build --filter='@tuturuuu/calendar^...' && bun run --cwd apps/calendar build:legacy",
   "installCommand": "cd ../.. && bun install --frozen-lockfile --minimum-release-age=0",
   "regions": ["sin1"],
   "git": {
