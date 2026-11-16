@@ -157,6 +157,33 @@ jobs:
       deployments: read
     with:
       workflow_name: ai-cloudflare.yaml
+  # Restored-bytes acceptance of the staging-profile Worker: the reusable
+  # workflow builds, seals, exercises the emitted runtime, then repeats the
+  # runtime acceptance on the restored archive. No secrets, no publication.
+  native:
+    needs: [check-ci, affected-gate]
+    if: ${{ (needs.affected-gate.outputs.run == 'true' && (needs.check-ci.outputs.should_run == 'true')) && (github.event_name != 'pull_request' || contains(github.event.pull_request.labels.*.name, 'ready-for-ci')) }}
+    uses: ./.github/workflows/native-start-app.yaml
+    permissions:
+      contents: read
+    with:
+      app: ai
+      package: '@tuturuuu/ai-studio'
+      artifact-script: scripts/ci/ai-native-artifact.py
+      env-interface: AiGeneratedEnv
+      worker-environment-type: AiEnvironment
+      unit-command: bun run test && bun run type-check:cloudflare
+      runtime-command: node --test --test-concurrency=1 cloudflare/*.runtime.mjs
+      # Public staging values from repository variables for same-repository
+      # events; fork pull requests (and unset variables) build with fixtures.
+      public-env: |
+        NEXT_PUBLIC_SUPABASE_URL=${{ (github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository) && vars.STAGING_SUPABASE_URL || 'https://ai-ci.supabase.invalid' }}
+        NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY=${{ (github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository) && vars.STAGING_SUPABASE_PUBLISHABLE_KEY || 'sb_publishable_ai_ci_placeholder' }}
+        NEXT_PUBLIC_APP_URL=https://ai.tuturuuu.com
+        NEXT_PUBLIC_WEB_APP_URL=https://tuturuuu.com
+        TUTURUUU_NOINDEX=1
+      format-paths: >-
+        apps/ai/cloudflare apps/ai/src/routes apps/ai/src/router.tsx apps/ai/src/start.ts apps/ai/vite.config.mts apps/ai/void.config.ts apps/ai/vitest.config.ts apps/ai/native-profile.ts apps/ai/tsconfig.json apps/ai/tsconfig.cloudflare.json apps/ai/package.json apps/ai/start-bridge.routes.json apps/ai/start-bridge.config.ts
   cutover-build:
     needs: [check-ci, affected-gate]
     if: ${{ (needs.affected-gate.outputs.run == 'true' && (needs.check-ci.outputs.should_run == 'true' && (github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository))) && (github.event_name != 'pull_request' || contains(github.event.pull_request.labels.*.name, 'ready-for-ci')) }}
