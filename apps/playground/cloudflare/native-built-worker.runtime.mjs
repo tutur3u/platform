@@ -86,16 +86,35 @@ test(
             method,
             headers: { host: 'tuturuuu.com', ...headers },
           },
-          (res) => {
+          (response) => {
             const chunks = [];
-            res.on('data', (chunk) => chunks.push(chunk));
-            res.on('end', () =>
+            response.on('data', (chunk) => chunks.push(chunk));
+            response.on('end', () => {
+              try {
+                assert.equal(
+                  response.headers['strict-transport-security'],
+                  'max-age=63072000',
+                  `Every emitted Worker response must enforce HSTS: ${path}`
+                );
+                assert.equal(
+                  response.rawHeaders.filter(
+                    (name, index) =>
+                      index % 2 === 0 &&
+                      name.toLowerCase() === 'strict-transport-security'
+                  ).length,
+                  1,
+                  `Every emitted Worker response must have exactly one HSTS header: ${path}`
+                );
+              } catch (error) {
+                reject(error);
+                return;
+              }
               resolve({
-                status: res.statusCode,
-                headers: res.headers,
+                status: response.statusCode,
+                headers: response.headers,
                 body: Buffer.concat(chunks).toString('utf8'),
-              })
-            );
+              });
+            });
           }
         );
         req.on('error', reject);

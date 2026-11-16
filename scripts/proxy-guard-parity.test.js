@@ -54,12 +54,47 @@ test('every Next app under apps/ has a src/proxy.ts file', () => {
   }
 });
 
+// Secretless guest showcases disable Next middleware entirely. Their deployed
+// Worker entry gates every request through cloudflare/public-boundary.mjs
+// (allowlisted routes only, cookies and credentials stripped), so importing
+// the shared guard would pull a credentialed client into a secretless Worker.
+const PUBLIC_BOUNDARY_APPS = new Set(['playground']);
+
+function assertPublicBoundaryApp(appName, proxySource) {
+  const app = path.join(appsDir, appName);
+  const read = (file) => fs.readFileSync(path.join(app, file), 'utf8');
+  assert.match(
+    proxySource,
+    /matcher:\s*\[\]/,
+    `Expected ${appName} proxy to disable middleware matching`
+  );
+  assert.match(
+    read('void.config.ts'),
+    /main: '\.\/cloudflare\/public-worker\.ts'/,
+    `Expected ${appName} to deploy through its public Worker boundary`
+  );
+  assert.match(
+    read('cloudflare/public-worker.ts'),
+    /const refused = publicBoundary\(request, env\);\s*if \(refused\) return refused;/,
+    `Expected ${appName} public Worker to gate requests before dispatch`
+  );
+  assert.ok(
+    fs.existsSync(path.join(app, 'cloudflare/public-boundary.test.mjs')),
+    `Expected ${appName} to test its public Worker boundary`
+  );
+}
+
 test('every app proxy uses the shared API guard or the web-specific guard path', () => {
   const apps = getNextApps();
 
   for (const appName of apps) {
     const proxyPath = path.join(appsDir, appName, 'src', 'proxy.ts');
     const source = fs.readFileSync(proxyPath, 'utf8');
+
+    if (PUBLIC_BOUNDARY_APPS.has(appName)) {
+      assertPublicBoundaryApp(appName, source);
+      continue;
+    }
 
     if (appName === 'web') {
       assert.match(
