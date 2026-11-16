@@ -156,8 +156,10 @@ jobs:
         with:
           # A merge group's base B, and a main push's pre-push commit, can sit
           # several commits below the tip. The new-alert gate loads from that
-          # commit, so those runs fetch full history.
-          fetch-depth: ${{ (github.event_name == 'merge_group' || (github.event_name == 'push' && github.ref == 'refs/heads/main')) && 0 || 2 }}
+          # commit, so those runs fetch full history. The depth is the string
+          # '0': a numeric 0 is falsy here, and the expression would stay at 2,
+          # which keeps only HEAD^1 and hides every earlier ancestor.
+          fetch-depth: ${{ (github.event_name == 'merge_group' || (github.event_name == 'push' && github.ref == 'refs/heads/main')) && '0' || 2 }}
           persist-credentials: false
 
       - name: Initialize CodeQL
@@ -203,7 +205,10 @@ jobs:
             trusted="$QUEUE_BASE_SHA"
           fi
           if [ "$EVENT_NAME" = push ]; then
-            if ! [[ "$PUSH_BEFORE_SHA" =~ ^[0-9a-f]{40}$ ]] || ! git cat-file -e "$PUSH_BEFORE_SHA^{commit}" 2>/dev/null; then
+            # PUSH_BEFORE_SHA is the previous main tip. A multi-commit push
+            # makes that tip older than HEAD^1. Load the gate from it only
+            # when it is an ancestor of HEAD; otherwise refuse.
+            if ! [[ "$PUSH_BEFORE_SHA" =~ ^[0-9a-f]{40}$ ]] || ! git cat-file -e "$PUSH_BEFORE_SHA^{commit}" 2>/dev/null || ! git merge-base --is-ancestor "$PUSH_BEFORE_SHA" HEAD; then
               echo "::error::The main push base commit is missing or invalid; refusing to gate."
               exit 1
             fi

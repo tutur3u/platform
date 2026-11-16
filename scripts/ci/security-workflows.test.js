@@ -117,9 +117,15 @@ test('CodeQL runs on pull requests and main pushes with the extended suite', () 
     "github.event_name == 'pull_request' || github.event_name == 'merge_group' || (github.event_name == 'push' && github.ref == 'refs/heads/main')"
   );
   // The PR merge commit's first parent, the merge group's queue base, or
-  // the pre-push SHA on a main push.
+  // the pre-push SHA on a main push. A numeric fetch-depth of 0 is falsy in
+  // the expression, so full history has to be the string '0'.
+  assert.match(String(checkout.with['fetch-depth']), /&& '0' \|\| 2/u);
   assert.match(gate.run, /trusted="HEAD\^1"/u);
   assert.match(gate.run, /trusted="\$PUSH_BEFORE_SHA"/u);
+  assert.match(
+    gate.run,
+    /git merge-base --is-ancestor "\$PUSH_BEFORE_SHA" HEAD/u
+  );
   assert.match(gate.run, /The main push base commit is missing or invalid/u);
   assert.equal(gate.env.PUSH_BEFORE_SHA, '${{ github.event.before }}');
   assert.match(

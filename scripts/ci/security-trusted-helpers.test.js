@@ -289,6 +289,56 @@ test('CodeQL gate fails closed when the base lacks the gate script', (t) => {
   }
 });
 
+test('main push loads the gate from an ancestor before SHA, not HEAD^1', (t) => {
+  const box = sandbox(t);
+  const marker = path.join(box.temp, 'which-gate');
+  const scriptFor = (label) =>
+    `require('node:fs').writeFileSync(process.env.RUNNER_TEMP + '/which-gate', '${label}');\nprocess.exit(0);\n`;
+  const before = commit(
+    box.repo,
+    { 'scripts/ci/codeql-new-alerts.js': scriptFor('before') },
+    'before'
+  );
+  commit(
+    box.repo,
+    { 'scripts/ci/codeql-new-alerts.js': scriptFor('head1') },
+    'middle'
+  );
+  const head = commit(
+    box.repo,
+    { 'scripts/ci/codeql-new-alerts.js': scriptFor('head') },
+    'head'
+  );
+  const script = stepScript(
+    'codeql.yml',
+    'Fail on new high or critical results'
+  );
+  const push = (PUSH_BEFORE_SHA) =>
+    run(script, box, {
+      CATEGORY: '/language:javascript',
+      EVENT_NAME: 'push',
+      GITHUB_SHA: head,
+      PUSH_BEFORE_SHA,
+    });
+
+  const accepted = push(before);
+  assert.equal(accepted.status, 0, accepted.stdout + accepted.stderr);
+  assert.equal(fs.readFileSync(marker, 'utf8'), 'before');
+
+  git(box.repo, 'checkout', '-q', '--detach', before);
+  const side = commit(box.repo, { 'side.txt': 'side\n' }, 'side');
+  git(box.repo, 'checkout', '-q', 'main');
+  const unrelated = push(side);
+  assert.notEqual(unrelated.status, 0, unrelated.stdout + unrelated.stderr);
+  assert.match(unrelated.stdout, /refusing to gate/u);
+
+  for (const PUSH_BEFORE_SHA of ['', 'main', 'f'.repeat(40)]) {
+    const refused = push(PUSH_BEFORE_SHA);
+    assert.notEqual(refused.status, 0, PUSH_BEFORE_SHA);
+    assert.match(refused.stdout, /refusing to gate/u, PUSH_BEFORE_SHA);
+  }
+});
+
 function outputs(temp) {
   return Object.fromEntries(
     fs
