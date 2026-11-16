@@ -97,12 +97,15 @@ const mainExceptions = {
     'Job-level validation and separate repository mutation locks',
   'tanstack-route-manifest.yaml': 'TanStack runtime is paused',
   'codeql.yml':
-    'Main-push baselines queue so PR new-alert gates compare against a completed scan',
+    'Each main SHA keeps its own non-cancelling analysis',
 };
-// Main pushes of these workflows queue (one running, newest pending) instead of
-// cancelling; every other qualification assertion still applies. Test
-// (turbo-unit-tests.yaml) left this set in #8350: first-attempt main pushes now
-// supersede, while reruns and dispatch keep immutable slots.
+// These workflows do not cancel a main push. CodeQL used to share one
+// "latest" group (one running, newest pending); a later push dropped the
+// pending analysis even with cancel-in-progress false. It now keys each main
+// SHA separately and stays in this set so the generic supersede rule does not
+// require cancellation. Test (turbo-unit-tests.yaml) left this set in #8350:
+// first-attempt main pushes now supersede, while reruns and dispatch keep
+// immutable slots.
 const queuedMainBaselines = new Set(['codeql.yml']);
 const workflows = Object.fromEntries(
   fs

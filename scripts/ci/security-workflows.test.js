@@ -139,7 +139,7 @@ test('CodeQL runs on pull requests and main pushes with the extended suite', () 
   );
   assert.equal(
     upload.if,
-    "always() && github.event_name == 'push' && github.ref == 'refs/heads/main'"
+    "(success() || failure()) && github.event_name == 'push' && github.ref == 'refs/heads/main'"
   );
   assert.equal(upload.with.sarif_file, '${{ runner.temp }}/codeql-sarif');
   assert.equal(upload.with.category, '/language:${{ matrix.language }}');

@@ -90,6 +90,28 @@ async function github(url, accept) {
   return response.json();
 }
 
+async function completedMainCodeql(api, repo, sha) {
+  const query = new URLSearchParams({
+    head_sha: sha,
+    per_page: '20',
+    status: 'completed',
+  });
+  const body = await github(
+    `${api}/repos/${repo}/actions/workflows/codeql.yml/runs?${query}`,
+    'application/vnd.github+json'
+  );
+  const runs = Array.isArray(body?.workflow_runs) ? body.workflow_runs : [];
+  // A completed success or failure counts, including a daily workflow_call
+  // or dispatch on main. A cancelled-only SHA is not a baseline: the next
+  // finished run still has to cover everything since the last real one.
+  return runs.some(
+    (run) =>
+      run.head_sha === sha &&
+      run.head_branch === 'main' &&
+      (run.conclusion === 'success' || run.conclusion === 'failure')
+  );
+}
+
 async function baselineSarif({ category, ref, repo }) {
   const api = (env.GITHUB_API_URL || 'https://api.github.com').replace(
     /\/$/u,
@@ -97,7 +119,7 @@ async function baselineSarif({ category, ref, repo }) {
   );
   // Analyses of every category are listed newest first, and frequent
   // categories (one per main push) can bury a daily one, so page until the
-  // newest analysis of this category is found, within a fixed bound.
+  // newest completed analysis of this category is found, within a fixed bound.
   let analysis;
   for (let page = 1; page <= maxAnalysisPages && !analysis; page += 1) {
     const query = new URLSearchParams({
@@ -111,16 +133,24 @@ async function baselineSarif({ category, ref, repo }) {
       'application/vnd.github+json'
     );
     if (!Array.isArray(analyses)) break;
-    analysis = analyses.find(
-      (candidate) => candidate.category === category && !candidate.error
-    );
+    for (const candidate of analyses) {
+      if (candidate.category !== category || candidate.error) continue;
+      if (!/^[0-9a-f]{40}$/u.test(candidate.commit_sha ?? '')) continue;
+      if (!(await completedMainCodeql(api, repo, candidate.commit_sha)))
+        continue;
+      analysis = candidate;
+      break;
+    }
     if (analyses.length < 100) break;
   }
   if (!analysis) throw new Error(`no ${category} analysis on ${ref}`);
-  return github(
-    `${api}/repos/${repo}/code-scanning/analyses/${analysis.id}`,
-    'application/sarif+json'
-  );
+  return {
+    commitSha: analysis.commit_sha,
+    sarif: await github(
+      `${api}/repos/${repo}/code-scanning/analyses/${analysis.id}`,
+      'application/sarif+json'
+    ),
+  };
 }
 
 // The analysis output must exist and be well formed: no SARIF file, an
@@ -161,20 +191,22 @@ async function main(argv = process.argv.slice(2)) {
     ({ severity }) => severity >= highSeverity
   );
   let fresh;
+  let baselineCommit = 'none';
   try {
     const base = await baselineSarif({
       category,
       ref: env.BASELINE_REF,
       repo: env.GITHUB_REPOSITORY,
     });
-    fresh = newHighFindings(head, base);
+    baselineCommit = base.commitSha;
+    fresh = newHighFindings(head, base.sarif);
   } catch (error) {
     // Without a baseline nothing proves a high result pre-existed.
     console.error(`CodeQL baseline unavailable: ${error.message}`);
     fresh = headHigh;
   }
   console.log(
-    `${category}: ${headHigh.length} high/critical result(s) at head, ${fresh.length} not in the ${env.BASELINE_REF} baseline.`
+    `${category}: ${headHigh.length} high/critical result(s) at head, ${fresh.length} not in the ${env.BASELINE_REF} baseline (${baselineCommit}).`
   );
   if (fresh.length > 0) {
     for (const { line, ruleId, severity, uri } of fresh) {

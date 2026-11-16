@@ -64,7 +64,7 @@ test('rules with unreadable severities count as high', () => {
   assert.deepEqual(actual, severityCases.blocking);
 });
 
-function harness(t, { analyses, baseline, head }) {
+function harness(t, { analyses, baseline, head, runs }) {
   const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'codeql-new-alerts-'));
   t.after(() => fs.rmSync(dir, { force: true, recursive: true }));
   fs.writeFileSync(
@@ -86,11 +86,32 @@ function harness(t, { analyses, baseline, head }) {
   const requests = [];
   t.mock.method(global, 'fetch', async (url) => {
     requests.push(String(url));
-    const page = Number(new URL(url).searchParams.get('page') ?? 1);
+    const parsed = new URL(url);
+    if (String(url).includes('/actions/workflows/')) {
+      const sha = parsed.searchParams.get('head_sha');
+      return {
+        json: async () => ({
+          workflow_runs: runs?.[sha] ?? [
+            {
+              conclusion: 'success',
+              event: 'push',
+              head_branch: 'main',
+              head_sha: sha,
+            },
+          ],
+        }),
+        ok: true,
+        status: 200,
+      };
+    }
+    const page = Number(parsed.searchParams.get('page') ?? 1);
     return {
       json: async () =>
         String(url).includes('/analyses?')
-          ? (analyses[page - 1] ?? [])
+          ? (analyses[page - 1] ?? []).map((analysis) => ({
+              commit_sha: 'a'.repeat(40),
+              ...analysis,
+            }))
           : baseline,
       ok: true,
       status: 200,
@@ -183,6 +204,47 @@ test('a blocking result without a location is still identified', async (t) => {
     /CodeQL high result: py\/high at unknown location/u
   );
   assert.doesNotMatch(run.output(), /private detail/u);
+});
+
+test('a cancelled-only analysis is skipped for the last completed main SHA', async (t) => {
+  const cancelled = 'b'.repeat(40);
+  const completed = 'c'.repeat(40);
+  const run = harness(t, {
+    analyses: [
+      [
+        { category: '/language:python', commit_sha: cancelled, id: 9 },
+        { category: '/language:python', commit_sha: completed, id: 4 },
+      ],
+    ],
+    baseline: sarif([result('py/high', 'h1'), result('py/critical', 'h3')]),
+    runs: {
+      [cancelled]: [
+        {
+          conclusion: 'cancelled',
+          event: 'push',
+          head_branch: 'main',
+          head_sha: cancelled,
+        },
+      ],
+      [completed]: [
+        {
+          conclusion: 'failure',
+          event: 'workflow_dispatch',
+          head_branch: 'main',
+          head_sha: completed,
+        },
+      ],
+    },
+  });
+  await main([run.dir, '/language:python']);
+  assert.equal(process.exitCode, undefined, run.output());
+  assert.ok(run.requests.some((url) => url.endsWith('/analyses/4')));
+  assert.equal(
+    run.requests.some((url) => url.endsWith('/analyses/9')),
+    false
+  );
+  assert.match(run.output(), new RegExp(`baseline \\(${completed}\\)`));
+  assert.doesNotMatch(run.output(), /exploit detail/u);
 });
 
 test('baseline paging is bounded', async (t) => {

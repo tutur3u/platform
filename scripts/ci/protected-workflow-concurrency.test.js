@@ -449,6 +449,27 @@ test('PR path filters never apply to CodeQL main baselines', () => {
   assert.ok(events(workflows['codeql.yml']).pull_request['paths-ignore']);
 });
 
+test('each CodeQL main push completes and pull requests still supersede', () => {
+  const policy = workflows['codeql.yml'].concurrency;
+  const first = {
+    ...context('refs/heads/main', 'a'.repeat(40), 11),
+    workflow: 'CodeQL Manual Fallback',
+  };
+  const second = {
+    ...context('refs/heads/main', 'b'.repeat(40), 22),
+    workflow: 'CodeQL Manual Fallback',
+  };
+  assert.notEqual(render(policy.group, first), render(policy.group, second));
+  assert.equal(render(policy['cancel-in-progress'], first), false);
+  assert.equal(render(policy['cancel-in-progress'], second), false);
+  const pull = {
+    ...context('refs/pull/7/merge', 'c'.repeat(40), 3, 'pull_request', 7),
+    workflow: 'CodeQL Manual Fallback',
+  };
+  assert.equal(render(policy['cancel-in-progress'], pull), true);
+  assert.notEqual(render(policy.group, pull), render(policy.group, first));
+});
+
 function prGroupExclusion(file) {
   if (file.includes('cloudflare')) return 'deploys to Cloudflare';
   if (
