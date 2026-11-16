@@ -422,11 +422,11 @@ on the baseline commit and on the changed commit on the same machine, interleave
 then compare:
 
 ```bash
+cd apps/mail
 MAIL_MEDIA_HARNESS=1 MAIL_MEDIA_HARNESS_LABEL=baseline \
   MAIL_MEDIA_HARNESS_OUT=/abs/baseline.json \
-  bunx vitest run --config apps/mail/vitest.config.ts \
-  "apps/mail/src/app/[locale]/(dashboard)/[wsId]/floating-composer-media.harness.test.ts"
-node apps/mail/scripts/compare-compose-media-harness.mjs /abs/baseline.json /abs/after.json
+  bun x vitest run --maxWorkers=1 floating-composer-media.harness.test.ts
+node scripts/compare-compose-media-harness.mjs /abs/baseline.json /abs/after.json
 ```
 
 Limits: jsdom has no layout, paint or real input pipeline, so values are CPU time

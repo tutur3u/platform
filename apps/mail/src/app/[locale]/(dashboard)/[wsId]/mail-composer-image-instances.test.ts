@@ -140,10 +140,23 @@ const settle = () => act(async () => void (await flush()));
 
 it('keeps every image placeholder when multiple files are selected together', async () => {
   const view = await open({ html: '<p>Start</p>' });
+  act(() => {
+    view.editor.commands.setTextSelection(1);
+  });
   act(() =>
     view.store.addFiles([png('a.png'), png('b.png'), png('c.png')], true)
   );
   expect(images(view.editor)).toHaveLength(3);
+  const names: string[] = [];
+  let lastImageEnd = 0;
+  view.editor.state.doc.descendants((node, pos) => {
+    if (node.type.name === 'image') {
+      names.push(node.attrs.uploadName);
+      lastImageEnd = pos + node.nodeSize;
+    }
+  });
+  expect(names).toEqual(['a.png', 'b.png', 'c.png']);
+  expect(view.editor.state.selection.from).toBeGreaterThan(lastImageEnd);
   act(() => {
     view.editor.commands.insertContent('Typing after selection');
   });

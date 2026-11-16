@@ -187,10 +187,22 @@ export function createMailImageNodes(editor: Editor): MailImageNodes {
             attrs: { src, uploadId, uploadName: name, uploadState: state },
           }
         )
-        .command(({ commands }) => {
-          // Keep typing after the preview instead of replacing its selection.
-          commands.createParagraphNear();
-          return true;
+        .command(({ commands, tr }) => {
+          let after: number | null = null;
+          tr.doc.descendants((node, pos) => {
+            if (node.type.name === 'image' && node.attrs.uploadId === uploadId)
+              after = pos + node.nodeSize;
+          });
+          if (after === null) return false;
+          // Anchor after this exact preview; nearest-paragraph heuristics can
+          // choose the preceding block at the start of a draft.
+          if (!tr.doc.nodeAt(after)?.isTextblock)
+            commands.insertContentAt(
+              after,
+              { type: 'paragraph' },
+              { updateSelection: false }
+            );
+          return commands.setTextSelection(after + 1);
         })
         .setMeta('addToHistory', false)
         .run(),

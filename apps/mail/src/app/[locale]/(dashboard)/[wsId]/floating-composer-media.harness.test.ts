@@ -6,10 +6,10 @@
  * It drives only the public surface (FloatingComposer props and the DOM), so
  * the identical file runs against the baseline source and the changed source:
  *
+ *   cd apps/mail
  *   MAIL_MEDIA_HARNESS=1 MAIL_MEDIA_HARNESS_LABEL=baseline \
  *   MAIL_MEDIA_HARNESS_OUT=/abs/path/baseline.json \
- *   bunx vitest run --config apps/mail/vitest.config.ts \
- *     "apps/mail/src/app/[locale]/(dashboard)/[wsId]/floating-composer-media.harness.test.ts"
+ *   bun x vitest run --maxWorkers=1 floating-composer-media.harness.test.ts
  *
  * Method and limits are documented in the Mail platform docs (compose media).
  * Numbers are jsdom CPU time for synchronous dispatch + React commit, not
