@@ -382,6 +382,9 @@ cd apps/web
 bunx --no-install playwright test --config playwright.workspace-picker.config.ts
 ```
 
+The browser regression opens `/dialog.html`, whose isolated entry imports only
+the dialog and fictional data. The older `index.html` fixture also imports the
+full switching/invitation flow and needs its internal-api/Supabase dependencies.
 The configuration uses one worker, no retries and no application auth or database
 setup. Set `WORKSPACE_PICKER_FIXTURE_URL` for a separately admitted fixture server.
 The regression measures real row, badge and action bounds, including hover and
