@@ -540,7 +540,11 @@ describe('editor attachments reference', () => {
       ...draft,
       quotedAttachments: [attachment('quoted', 'attachment')],
     });
-    const seen = () => new Set(api.editor.attachments);
+    // Opening seeds the quoted attachment; measure subsequent status changes.
+    const initial = api.editor.attachments.at(-1);
+    const start = api.editor.attachments.length;
+    const seen = () =>
+      new Set([initial, ...api.editor.attachments.slice(start)]);
     expect(seen().size).toBe(1);
     fireEvent.click(screen.getByText('Add file'));
     await settle();

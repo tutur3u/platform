@@ -230,12 +230,19 @@ describe('images reopened from a draft', () => {
       html: `<p>Hi</p><img src="${raw('image-1')}"><p>after</p>`,
     });
     const [only] = images(view.editor);
-    view.deps.remove.mockRejectedValueOnce(new Error('offline'));
+    let reject: ((error: Error) => void) | undefined;
+    view.deps.remove.mockImplementationOnce(
+      () =>
+        new Promise<void>((_resolve, fail) => {
+          reject = fail;
+        })
+    );
     select(view.editor, 0);
     await clickRemove(view);
     // Hidden at once, and never part of a save while hidden.
     expect(view.editor.getHTML()).toContain('data-mail-upload="removing"');
     expect(view.changed.mock.calls.at(-1)?.[0].html).not.toContain('<img');
+    await act(async () => reject?.(new Error('offline')));
     await settle();
     const [back] = images(view.editor);
     expect(back?.id).toBe(only?.id);
