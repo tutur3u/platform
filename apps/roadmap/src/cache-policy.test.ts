@@ -15,6 +15,9 @@ import {
   IMMUTABLE_ASSET_CACHE,
   isHashedAssetPath,
 } from './cache-policy.ts';
+import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from 'node:fs';
+import { tmpdir } from 'node:os';
+import { join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import {
   assessPublicCacheGuard,
@@ -444,4 +447,28 @@ test('D79: only an exact en segment redirects; other pages are untouched', () =>
     )?.headers.get('location'),
     'https://tuturuuu.com/roadmap/en'
   );
+});
+
+test('D79: the source scan walks nested folders and skips tests and generated routes', () => {
+  const root = mkdtempSync(join(tmpdir(), 'roadmap-cache-scan-'));
+  try {
+    mkdirSync(join(root, 'routes', 'nested'), { recursive: true });
+    writeFileSync(
+      join(root, 'routes', 'nested', 'page.tsx'),
+      'const jar = document.cookie'
+    );
+    writeFileSync(join(root, 'page.test.ts'), 'const jar = document.cookie');
+    writeFileSync(
+      join(root, 'routeTree.gen.ts'),
+      'const jar = document.cookie'
+    );
+    writeFileSync(join(root, 'notes.md'), 'document.cookie');
+    const findings = scanRoadmapSource(root);
+    assert.deepEqual(
+      [...new Set(findings.map((finding) => finding.path))],
+      [join('routes', 'nested', 'page.tsx')]
+    );
+  } finally {
+    rmSync(root, { recursive: true, force: true });
+  }
 });

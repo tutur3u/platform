@@ -1,4 +1,4 @@
-import { readdirSync, readFileSync, statSync } from 'node:fs';
+import { readdirSync, readFileSync } from 'node:fs';
 import { join, relative } from 'node:path';
 
 export type PublicCacheFinding = {
@@ -103,14 +103,16 @@ function includedSource(name: string): boolean {
 
 export function scanRoadmapSource(root: string): PublicCacheFinding[] {
   const findings: PublicCacheFinding[] = [];
+  // Directory entries carry their type, so no separate stat precedes the
+  // read (no check-then-use race on the path).
   const walk = (dir: string) => {
-    for (const name of readdirSync(dir)) {
-      const path = join(dir, name);
-      if (statSync(path).isDirectory()) {
+    for (const entry of readdirSync(dir, { withFileTypes: true })) {
+      const path = join(dir, entry.name);
+      if (entry.isDirectory()) {
         walk(path);
         continue;
       }
-      if (!includedSource(name)) continue;
+      if (!entry.isFile() || !includedSource(entry.name)) continue;
       findings.push(
         ...personalizationFindings(
           readFileSync(path, 'utf8'),
