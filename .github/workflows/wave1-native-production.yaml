@@ -160,6 +160,7 @@ jobs:
           if-no-files-found: error
   restored:
     needs: qualify
+    if: ${{ !cancelled() && needs.qualify.result == 'success' }}
     runs-on: ubuntu-latest
     timeout-minutes: 15
     env:

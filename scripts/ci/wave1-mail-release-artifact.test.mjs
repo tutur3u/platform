@@ -122,6 +122,146 @@ test('release-artifact builds only the exact main commit and never publishes', (
   assert.equal(evaluate(jobIf('publish'), productionPublish), false);
 });
 
+function jobSlice(name) {
+  const start = workflow.indexOf(`\n  ${name}:\n`);
+  assert.notEqual(start, -1, name);
+  const rest = workflow.slice(start + 1);
+  const next = rest.search(/\n  [^ \n]/);
+  return rest.slice(0, next === -1 ? rest.length : next);
+}
+
+function jobField(name, key) {
+  const match = jobSlice(name).match(new RegExp(`\\n    ${key}: (.*)\\n`));
+  assert.ok(match, `${name} ${key}`);
+  return match[1];
+}
+
+test('restored follows qualify and publish keeps its production gate', () => {
+  const policyIf = "${{ github.ref == 'refs/heads/production' && inputs['release-artifact'] != true }}";
+  const qualifyIf = "${{ !cancelled() && ((inputs['release-artifact'] == true && github.ref == 'refs/heads/main' && needs.release-admission.result == 'success') || (github.ref == 'refs/heads/production' && inputs['release-artifact'] != true && needs.production-policy.outputs.allowed == 'true')) }}";
+  const publishIf = "${{ inputs['release-artifact'] != true && github.ref == 'refs/heads/production' && needs.production-policy.outputs.allowed == 'true' }}";
+  const restoredIf = "${{ !cancelled() && needs.qualify.result == 'success' }}";
+  assert.equal(jobIf('production-policy'), policyIf);
+  assert.equal(jobIf('qualify'), qualifyIf);
+  assert.equal(jobIf('publish'), publishIf);
+  assert.equal(jobField('qualify', 'needs'), '[production-policy, release-admission]');
+  assert.equal(jobField('publish', 'needs'), '[production-policy, qualify, restored]');
+  assert.equal(jobIf('restored'), restoredIf);
+  assert.equal(jobField('restored', 'needs'), 'qualify');
+  assert.doesNotMatch(publishIf, /\b(?:success|failure|cancelled|always)\s*\(/);
+  const restoredJob = jobSlice('restored');
+  assert.equal(restoredJob.includes('\n    environment:'), false);
+  assert.equal(restoredJob.includes('secrets.'), false);
+  assert.equal(restoredJob.includes('secrets['), false);
+  assert.equal(restoredJob.includes('NEXT_PUBLIC_SUPABASE'), false);
+
+  const sha = 'c'.repeat(40);
+  const scope = (overrides) => ({
+    inputs: { app: 'mail', 'release-artifact': true, 'source-sha': sha },
+    github: { ref: 'refs/heads/main', sha },
+    cancelled: () => false,
+    needs: {
+      'production-policy': { result: 'skipped', outputs: { allowed: '' } },
+      'release-admission': { result: 'success' },
+      qualify: { result: 'success' },
+    },
+    ...overrides,
+  });
+  const row = (label, current) => {
+    const restored = evaluate(jobIf('restored'), current);
+    const publish = evaluate(jobIf('publish'), current);
+    const line = [
+      label,
+      `policyIf=${evaluate(jobIf('production-policy'), current) ? 'run' : 'skip'}`,
+      `policyResult=${current.needs['production-policy'].result}`,
+      `qualifyIf=${evaluate(jobIf('qualify'), current) ? 'run' : 'skip'}`,
+      `qualifyResult=${current.needs.qualify.result}`,
+      `restored=${restored ? 'run' : 'skip'}`,
+      `publish=${publish ? 'run' : 'skip'}`,
+    ].join(' ');
+    console.log(line);
+    return { restored, publish, line };
+  };
+
+  const release = row('a release-main qualify-success', scope());
+  assert.equal(release.restored, true);
+  assert.equal(release.publish, false);
+  assert.match(release.line, /policyIf=skip policyResult=skipped qualifyIf=run qualifyResult=success restored=run publish=skip/);
+
+  const failed = row('b release-main qualify-failure', scope({
+    needs: {
+      'production-policy': { result: 'skipped', outputs: { allowed: '' } },
+      'release-admission': { result: 'success' },
+      qualify: { result: 'failure' },
+    },
+  }));
+  assert.equal(failed.restored, false);
+  assert.equal(failed.publish, false);
+  assert.match(failed.line, /qualifyResult=failure restored=skip publish=skip/);
+
+  const skipped = row('b release-main qualify-skipped', scope({
+    needs: {
+      'production-policy': { result: 'skipped', outputs: { allowed: '' } },
+      'release-admission': { result: 'failure' },
+      qualify: { result: 'skipped' },
+    },
+  }));
+  assert.equal(skipped.restored, false);
+  assert.equal(skipped.publish, false);
+  assert.match(skipped.line, /qualifyIf=skip qualifyResult=skipped restored=skip publish=skip/);
+  assert.equal(evaluate(jobIf('qualify'), scope({
+    needs: {
+      'production-policy': { result: 'skipped', outputs: { allowed: '' } },
+      'release-admission': { result: 'failure' },
+      qualify: { result: 'skipped' },
+    },
+  })), false);
+
+  const allowed = row('c production policy-allowed', scope({
+    inputs: { app: 'mail', 'release-artifact': false, 'source-sha': '' },
+    github: { ref: 'refs/heads/production', sha },
+    needs: {
+      'production-policy': { result: 'success', outputs: { allowed: 'true' } },
+      'release-admission': { result: 'skipped' },
+      qualify: { result: 'success' },
+    },
+  }));
+  assert.equal(allowed.restored, true);
+  assert.equal(allowed.publish, true);
+  assert.match(allowed.line, /policyIf=run policyResult=success qualifyIf=run qualifyResult=success restored=run publish=run/);
+
+  const denied = row('d production policy-denied', scope({
+    inputs: { app: 'mail', 'release-artifact': false, 'source-sha': '' },
+    github: { ref: 'refs/heads/production', sha },
+    needs: {
+      'production-policy': { result: 'success', outputs: { allowed: 'false' } },
+      'release-admission': { result: 'skipped' },
+      qualify: { result: 'skipped' },
+    },
+  }));
+  assert.equal(denied.restored, false);
+  assert.equal(denied.publish, false);
+  assert.match(denied.line, /policyIf=run policyResult=success qualifyIf=skip qualifyResult=skipped restored=skip publish=skip/);
+
+  const policySkipped = row('d production policy-skipped', scope({
+    inputs: { app: 'mail', 'release-artifact': false, 'source-sha': '' },
+    github: { ref: 'refs/heads/production', sha },
+    needs: {
+      'production-policy': { result: 'skipped', outputs: { allowed: '' } },
+      'release-admission': { result: 'skipped' },
+      qualify: { result: 'skipped' },
+    },
+  }));
+  assert.equal(policySkipped.restored, false);
+  assert.equal(policySkipped.publish, false);
+  assert.match(policySkipped.line, /policyResult=skipped qualifyIf=skip qualifyResult=skipped restored=skip publish=skip/);
+
+  const cancelled = row('cancelled qualify-success', scope({ cancelled: () => true }));
+  assert.equal(cancelled.restored, false);
+  assert.equal(cancelled.publish, false);
+  assert.match(cancelled.line, /qualifyResult=success restored=skip publish=skip/);
+});
+
 test('mail release inputs fail closed and agree with the sealed digest', () => {
   assert.throws(
     () => assertReleaseInputs({ APP: 'mail', NEXT_PUBLIC_SUPABASE_URL: '', NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY: mailKey }),
