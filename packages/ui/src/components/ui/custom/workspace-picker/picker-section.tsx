@@ -1,6 +1,7 @@
 'use client';
 
 import type { InternalApiWorkspaceSummary } from '@tuturuuu/types';
+import type { PickerTranslator } from './translation';
 import { useId } from 'react';
 import type { PickerVariant } from './row-layout';
 import { WorkspaceRow } from './workspace-row';
@@ -27,7 +28,7 @@ export interface PickerRowContext {
   onDefault: (id: string) => void;
   onTogglePin: (id: string) => void;
   onToggleHidden: (id: string, hidden: boolean) => void;
-  t: (key: string) => string;
+  t: PickerTranslator;
 }
 
 export function PickerSection({

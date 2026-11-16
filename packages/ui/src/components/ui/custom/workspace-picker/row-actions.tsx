@@ -11,6 +11,7 @@ import {
   DropdownMenuTrigger,
 } from '../../dropdown-menu';
 import { PICKER_ROW_LAYOUT, type PickerVariant } from './row-layout';
+import type { PickerTranslator } from './translation';
 
 export interface PickerRowActionState {
   name: string;
@@ -24,7 +25,7 @@ export interface PickerRowActionState {
   onTogglePin: () => void;
   onDefault: () => void;
   onToggleHidden: () => void;
-  t: (key: string) => string;
+  t: PickerTranslator;
 }
 
 /** Fills an unavailable action so the remaining actions keep their column. */

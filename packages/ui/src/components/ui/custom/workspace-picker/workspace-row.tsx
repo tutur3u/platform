@@ -13,6 +13,7 @@ import {
 } from './partition';
 import { PickerRowActions } from './row-actions';
 import { type PickerVariant, pickerRowColumns } from './row-layout';
+import type { PickerTranslator } from './translation';
 import { WorkspaceName } from './workspace-name';
 
 export function tierClass(tier: string | null | undefined) {
@@ -41,7 +42,7 @@ export interface WorkspaceRowProps {
   onDefault: (id: string) => void;
   onTogglePin: (id: string) => void;
   onToggleHidden: (id: string, hidden: boolean) => void;
-  t: (key: string) => string;
+  t: PickerTranslator;
 }
 
 function MetaItem({ icon, children }: { icon?: ReactNode; children: string }) {
