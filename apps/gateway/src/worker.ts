@@ -91,6 +91,35 @@ const HOP_HEADER = 'x-gateway-hop';
 const STORED_AT = 'x-gateway-stored-at';
 const PAGE_CLIENT_CACHE_CONTROL = 'public, max-age=0, must-revalidate';
 
+/**
+ * Client-supplied forwarding, rewrite and framework-internal headers never
+ * reach a mounted app, and the gateway synthesizes none: a mounted app takes
+ * its public origin from trusted configuration. A clean request keeps its
+ * identity; otherwise one copy carries the same URL, method, redirect mode and
+ * unbuffered body with the cleaned headers. The edge-set `cf-connecting-ip`
+ * passes through.
+ */
+function mountedRequest(request: Request): Request {
+  const headers = new Headers(request.headers);
+  let changed = false;
+  for (const name of request.headers.keys()) {
+    if (
+      name.startsWith('x-forwarded-') ||
+      name.startsWith('x-original-') ||
+      name.startsWith('x-middleware-') ||
+      name.startsWith('x-nextjs-') ||
+      name.startsWith('x-next-intl-') ||
+      name.startsWith('x-tuturuuu-') ||
+      (name.startsWith('x-gateway-') && name !== HOP_HEADER) ||
+      ['forwarded', 'x-real-ip', 'x-rewrite-url'].includes(name)
+    ) {
+      headers.delete(name);
+      changed = true;
+    }
+  }
+  return changed ? new Request(request, { headers }) : request;
+}
+
 function plain(status: number, body: string) {
   return new Response(body, {
     status,
@@ -407,7 +436,10 @@ export function createHandler(deps: HandlerDeps) {
     const mounted = mountedAppBinding(request, env);
     if (mounted) {
       try {
-        return withGatewayHeader(await mounted.fetch(request), 'MOUNT');
+        return withGatewayHeader(
+          await mounted.fetch(mountedRequest(request)),
+          'MOUNT'
+        );
       } catch {
         return plain(502, 'gateway mounted app unreachable');
       }
