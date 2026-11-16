@@ -64,17 +64,20 @@ async function verifyDevPublication({
 async function waitForDevPublication(
   options,
   {
-    attempts = 12,
+    attempts = 14,
     sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms)),
   } = {}
 ) {
+  // The npm CDN can serve a cached 404 for minutes after a publish. Back off
+  // from 10s by 1.5x up to 60s, so 14 attempts cover about ten minutes.
   for (let attempt = 0; attempt < attempts; attempt++) {
     try {
       if (!(await verifyDevPublication(options)).shouldPublish) return;
     } catch (error) {
       if (error.retryable !== true) throw error;
     }
-    if (attempt + 1 < attempts) await sleep(10000);
+    if (attempt + 1 < attempts)
+      await sleep(Math.min(60000, Math.round(10000 * 1.5 ** attempt)));
   }
   throw new Error('PUBLICATION_NOT_VISIBLE_DO_NOT_BLINDLY_REPUBLISH');
 }

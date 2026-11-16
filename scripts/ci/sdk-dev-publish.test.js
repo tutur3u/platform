@@ -153,7 +153,7 @@ test('post-publish verification retries transient 5xx and 404 without republishi
     { sleep: async (ms) => sleeps.push(ms) }
   );
   assert.deepEqual(statuses, []);
-  assert.deepEqual(sleeps, [10000, 10000, 10000]);
+  assert.deepEqual(sleeps, [10000, 15000, 22500]);
 });
 test('post-publish retries are bounded and reject auth errors or byte mismatches immediately', async (t) => {
   const { waitForDevPublication } = require('./sdk-dev-publish');
@@ -191,4 +191,21 @@ test('post-publish retries are bounded and reject auth errors or byte mismatches
       /REGISTRY_VERIFICATION_FAILED|PUBLISHED_DEV_BYTES_MISMATCH/
     );
   }
+});
+
+test('the default post-publish window backs off to about ten minutes', async (t) => {
+  const { waitForDevPublication } = require('./sdk-dev-publish');
+  const f = fixture(t),
+    sleeps = [];
+  await assert.rejects(
+    waitForDevPublication(
+      { ...f, fetchRegistry: async () => ({ status: 404, ok: false }) },
+      { sleep: async (ms) => sleeps.push(ms) }
+    ),
+    /DO_NOT_BLINDLY_REPUBLISH/
+  );
+  assert.equal(sleeps.length, 13);
+  assert.ok(sleeps.every((ms) => ms <= 60000));
+  const total = sleeps.reduce((sum, ms) => sum + ms, 0);
+  assert.ok(total >= 9 * 60000 && total <= 11 * 60000, String(total));
 });
