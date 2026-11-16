@@ -4,7 +4,6 @@ import {
   createLiveMintGuard,
   LiveMintCapError,
   readLiveMintConfig,
-  RESERVE_LIVE_MINT_SCRIPT,
 } from './mint-cap';
 const actorId = '00000000-0000-4000-8000-000000000001';
 const config = readLiveMintConfig({ LIVE_MINT_KILL_SWITCH: 'false' });
@@ -53,6 +52,8 @@ describe('Live mint configuration', () => {
     { LIVE_FREE_USD_PER_MINUTE: '0' },
     { LIVE_MINT_KILL_SWITCH: 'FALSE' },
     { LIVE_FREE_SESSION_SECONDS: '3601' },
+    { LIVE_ACTOR_DAILY_MINTS: '1001' },
+    { LIVE_ACTOR_MAX_CONCURRENT: '101' },
   ])('denies invalid configuration %j', (env) => {
     expect(() => readLiveMintConfig(env)).toThrow(LiveMintCapError);
   });
@@ -73,7 +74,7 @@ describe('Live mint adapter, store boundary mocked; not Lua atomic proof', () =>
         getStore: async () => {
           if (mode === null) return null;
           return {
-            eval: async () => {
+            reserve: async () => {
               if (mode === 'throw') throw new Error('unavailable');
               return [1];
             },
@@ -99,24 +100,22 @@ describe('Live mint adapter, store boundary mocked; not Lua atomic proof', () =>
         day,
       ]);
     const guard = createLiveMintGuard({
-      getStore: async () => ({ eval: evaluate }),
+      getStore: async () => ({ reserve: evaluate }),
     });
     const admission = await guard({ actorId, isFree: true, config });
     expect(admission.expiresAt).toBe(new Date(now + 180_000).toISOString());
     expect(admission.reservedMicroUsd).toBe(110_400);
     expect(evaluate).toHaveBeenCalledOnce();
-    const [script, keys, args] = evaluate.mock.calls[0] ?? [];
-    expect(script).toBe(RESERVE_LIVE_MINT_SCRIPT);
-    expect(keys.join('')).not.toContain(actorId);
-    expect(args).toEqual([
-      10,
-      1,
-      180_000,
-      '1',
-      admission.mintId,
-      50_000_000,
-      36_800,
-    ]);
+    expect(evaluate).toHaveBeenCalledWith({
+      actorId,
+      mintId: admission.mintId,
+      actorLimit: 10,
+      concurrentLimit: 1,
+      durationMs: 180_000,
+      isFree: true,
+      budgetLimit: 50_000_000,
+      rate: 36_800,
+    });
     expect(Object.keys(admission).sort()).toEqual([
       'expiresAt',
       'freeSessionSeconds',
@@ -129,7 +128,7 @@ describe('Live mint adapter, store boundary mocked; not Lua atomic proof', () =>
     async (reason) => {
       const guard = createLiveMintGuard({
         getStore: async () => ({
-          eval: async () => [0, reason, 42, 0, 50_000_000, 0, day],
+          reserve: async () => [0, reason, 42, 0, 50_000_000, 0, day],
         }),
       });
       await expect(
@@ -145,7 +144,7 @@ describe('Live mint adapter, store boundary mocked; not Lua atomic proof', () =>
     const alert = vi.fn().mockResolvedValue(undefined);
     const guard = createLiveMintGuard({
       getStore: async () => ({
-        eval: async () => [0, 'budget', 42, 49_900_800, 50_000_000, 2, day],
+        reserve: async () => [0, 'budget', 42, 49_900_800, 50_000_000, 2, day],
       }),
       alert,
     });
@@ -166,7 +165,7 @@ describe('Live mint adapter, store boundary mocked; not Lua atomic proof', () =>
     const alert = vi.fn().mockResolvedValue(undefined);
     const guard = createLiveMintGuard({
       getStore: async () => ({
-        eval: async () => [
+        reserve: async () => [
           1,
           now,
           now + 180_000,
@@ -201,7 +200,7 @@ describe('Live mint adapter, store boundary mocked; not Lua atomic proof', () =>
         day,
       ]);
     const guard = createLiveMintGuard({
-      getStore: async () => ({ eval: evaluate }),
+      getStore: async () => ({ reserve: evaluate }),
       alert: async () => {
         throw new Error('unknown');
       },

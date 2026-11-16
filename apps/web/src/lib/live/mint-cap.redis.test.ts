@@ -4,9 +4,10 @@ import { afterAll, beforeAll, describe, expect, it, vi } from 'vitest';
 vi.mock('@tuturuuu/email-service', () => ({ sendSystemEmail: vi.fn() }));
 import {
   createLiveMintGuard,
+  createRedisLiveMintStore,
   readLiveMintConfig,
-  type LiveMintStore,
 } from './mint-cap';
+import type { LiveMintRedis } from './mint-cap-store';
 
 type Frame = { value: unknown; next: number };
 function frame(bytes: Buffer, offset = 0): Frame | null {
@@ -45,7 +46,7 @@ function frame(bytes: Buffer, offset = 0): Frame | null {
 
 // One persistent RESP connection: the many-account test never spawns thousands
 // of clients/processes. This is a real disposable Redis fixture, not a fake eval.
-class FixtureRedis implements LiveMintStore {
+class FixtureRedis implements LiveMintRedis {
   private bytes: Buffer = Buffer.alloc(0);
   private readonly pending: {
     resolve(value: unknown): void;
@@ -107,8 +108,7 @@ function makeGuard(alert = vi.fn().mockResolvedValue(undefined)) {
     prefix,
     alert,
     guard: createLiveMintGuard({
-      getStore: async () => redis,
-      keyPrefix: prefix,
+      getStore: async () => createRedisLiveMintStore(redis, prefix),
       alert,
     }),
   };
@@ -270,23 +270,26 @@ describe('real Redis atomic Live admission', () => {
     // executes the production admission/ledger Lua; host time is never changed.
     const clocked = (ms: number) =>
       createLiveMintGuard({
-        keyPrefix: prefix,
         alert: async () => {},
-        getStore: async () => ({
-          eval: async (script, keys, args) => {
-            const statement = "local clock = redis.call('TIME')";
-            if (!script.includes(statement))
-              throw new Error('Fixture clock hook changed');
-            return redis.eval(
-              script.replace(
-                statement,
-                `local clock = {'${Math.floor(ms / 1000)}','${(ms % 1000) * 1000}'}`
-              ),
-              keys,
-              args
-            );
-          },
-        }),
+        getStore: async () =>
+          createRedisLiveMintStore(
+            {
+              eval: async (script, keys, args) => {
+                const statement = "local clock = redis.call('TIME')";
+                if (!script.includes(statement))
+                  throw new Error('Fixture clock hook changed');
+                return redis.eval(
+                  script.replace(
+                    statement,
+                    `local clock = {'${Math.floor(ms / 1000)}','${(ms % 1000) * 1000}'}`
+                  ),
+                  keys,
+                  args
+                );
+              },
+            },
+            prefix
+          ),
       });
     const before = clocked(midnight - 1000);
     await redis.command(

@@ -17,6 +17,7 @@ export const ABUSE_GUARD_FAMILIES = [
   'proxy',
   'replay',
   'meet',
+  'live',
 ] as const;
 export type AbuseGuardFamily = (typeof ABUSE_GUARD_FAMILIES)[number];
 
@@ -45,6 +46,15 @@ export const GUARD_OPERATION_ID_PATTERN = /^[A-Za-z0-9_-]{22,64}$/u;
  * (2 × 60 s, covering future timestamps) plus margin.
  */
 export const GUARD_OPERATION_RETENTION_MS = 180_000;
+
+/** Bounds for `live.reserve`; they also bound each actor's stored rows. */
+export const LIVE_RESERVE_LIMITS = {
+  maxActorMints: 1000,
+  maxConcurrent: 100,
+  maxDurationMs: 60 * 60 * 1000,
+  maxBudgetMicroUsd: 1_000_000_000_000,
+  maxRateMicroUsd: 1_000_000_000,
+} as const;
 
 const digest = z.string().regex(GUARD_DIGEST_PATTERN);
 const ttlMs = z
@@ -119,6 +129,30 @@ export const guardCommandSchema = z.discriminatedUnion('op', [
   }),
   /** Refunds one unit of `target` at most once, when `receipt` still owns it. */
   z.object({ op: z.literal('res.refund'), receipt: digest, target: digest }),
+  /**
+   * Live voice mint admission (port of RESERVE_LIVE_MINT_SCRIPT): rolling 24 h
+   * actor window, lease concurrency, and the global ICT-day FREE budget in
+   * micro-USD, checked and charged atomically inside one partition.
+   */
+  z.object({
+    op: z.literal('live.reserve'),
+    actor: digest,
+    budget: digest,
+    actorLimit: z.number().int().min(1).max(LIVE_RESERVE_LIMITS.maxActorMints),
+    concurrentLimit: z
+      .number()
+      .int()
+      .min(1)
+      .max(LIVE_RESERVE_LIMITS.maxConcurrent),
+    durationMs: z
+      .number()
+      .int()
+      .min(1000)
+      .max(LIVE_RESERVE_LIMITS.maxDurationMs),
+    free: z.boolean(),
+    limit: z.number().int().min(1).max(LIVE_RESERVE_LIMITS.maxBudgetMicroUsd),
+    rate: z.number().int().min(1).max(LIVE_RESERVE_LIMITS.maxRateMicroUsd),
+  }),
 ]);
 
 export const guardStepSchema = z.object({
@@ -192,6 +226,27 @@ export const guardResultSchema = z.union([
     retryAfterMs: z.number().int(),
   }),
   z.object({ op: z.literal('res.refund'), n: z.number().int() }),
+  z.object({
+    op: z.literal('live.reserve'),
+    ok: z.literal(true),
+    at: z.number().int().positive(),
+    expiresAt: z.number().int().positive(),
+    reserved: z.number().int().nonnegative(),
+    spent: z.number().int().nonnegative(),
+    limit: z.number().int().positive(),
+    alert: z.number().int().min(0).max(3),
+    day: z.number().int().positive(),
+  }),
+  z.object({
+    op: z.literal('live.reserve'),
+    ok: z.literal(false),
+    reason: z.enum(['actor', 'budget', 'concurrency']),
+    retryAfterS: z.number().int().positive(),
+    spent: z.number().int().nonnegative(),
+    limit: z.number().int().positive(),
+    alert: z.number().int().min(0).max(3),
+    day: z.number().int().positive(),
+  }),
 ]);
 
 export const guardStepResultSchema = z.union([
@@ -218,5 +273,10 @@ export type GuardErrorCode =
 
 /** A denial in this result stops a sequential RPC. */
 export function isGuardDenial(result: GuardResult) {
-  return (result.op === 'win.hit' || result.op === 'res.reserve') && !result.ok;
+  return (
+    (result.op === 'win.hit' ||
+      result.op === 'res.reserve' ||
+      result.op === 'live.reserve') &&
+    !result.ok
+  );
 }

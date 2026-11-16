@@ -71,6 +71,7 @@ Per D74 security and operational policies:
   - `GUARD_SUBJECT`: Durable Object (`GuardSubject`).
   - `GUARD_CONTROL`: Durable Object (`GuardControl`).
 - **Durable Objects**: `GuardSubject` (SQLite storage), `GuardControl` (SQLite storage).
+- **Families**: `offline` 45%, `proxy` 20%, `replay`/`password`/`meet` 10% each, `live` 5% of the daily op budget. `live` serves Live voice mint admission from one `GuardSubject` partition; its Web callers fail closed for every tier.
 - **Build & Test**: `vp build`, `vp test`, `cf workers types && tsc`.
 - **Workflow**: No dedicated publication workflow; stub verification tested in `meet-cloudflare.yaml`.
 - **Owner**: `@vhpx` (`.github/CODEOWNERS`).

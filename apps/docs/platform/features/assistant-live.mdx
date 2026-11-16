@@ -352,6 +352,43 @@ stayed ready for at least 60 seconds (for example, before a routine provider
 `GoAway`) starts a fresh budget, and so does any start or Retry the user makes.
 Regression coverage: `assistant_live_reconnect_backoff_test.dart`.
 
+### Live voice admission cap
+
+Every Live token mint (Web `/api/v1/live/token` and mobile
+`/api/v1/assistant/live/token`) passes one admission check before any provider
+token is issued. Scope and defaults:
+
+- FREE Live shares a global budget of USD 50 per ICT day, first come, first
+  served. Each mint reserves its full 180 s lease at the configured rate
+  (USD 0.0368/min). There is no early refund, and FREE leases end at ICT
+  midnight. Exhaustion pauses FREE Live until 00:00 ICT. Budget alerts go out
+  once per threshold per day at 80% and 100%.
+- Every tier keeps a per-actor cap of 10 mints per rolling 24 h and one
+  concurrent lease. Paid tiers skip the FREE budget only.
+- `LIVE_MINT_KILL_SWITCH` is on unless explicitly `false`. It refuses all tiers
+  with 503 before any store call. Rollback is setting it back to `true`.
+- The store is the `live` family of the `tuturuuu-abuse-guard` Worker: one
+  SQLite Durable Object partition holds the budget and every actor row, so a
+  mint is checked and charged atomically. Web reaches it over signed HTTPS
+  (`ABUSE_GUARD_URL`, `ABUSE_GUARD_SECRET`, `ABUSE_GUARD_KEY_PEPPER`,
+  `ABUSE_GUARD_FAMILIES` including `live`). Actor ids leave Web only as
+  peppered HMAC digests, and the mint id is the idempotent operation id.
+- Fail closed: an unreachable, stopped or exhausted guard, or an invalid
+  decision, returns 503 `LIVE_MINT_STORE_UNAVAILABLE` or
+  `LIVE_MINT_STORE_INVALID` for every tier. A guard outage is therefore a paid
+  Live outage too. An assigned family never falls back to Upstash. Upstash is
+  only the legacy path while `live` is unassigned.
+- Cost fence: each mint makes at most one Worker request and two Durable Object
+  calls, with no retries. The `live` family gets 5% of the guard's daily
+  operation budget (warning logged at 80%), and the operator stop fence halts
+  it durably.
+
+Regression coverage: `apps/web/src/lib/live/mint-cap*.test.ts` (configuration,
+store selection, fail-closed, legacy Lua on a disposable Redis) and
+`apps/abuse-guard/src/live-mint*.test.ts` (atomic budget, day rollover,
+concurrency, bounded storage, replay, auth rejection, op budget and operator
+stop in workerd).
+
 Credit reservation and cumulative usage settlement run on the Next.js backend
 (`apps/web`), the only active runtime for these routes. The paused Rust backend
 and TanStack app are not current runtimes; their retained route tracking is

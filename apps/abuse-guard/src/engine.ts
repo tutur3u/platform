@@ -9,6 +9,7 @@ import {
   type GuardWindow,
   type ParsedGuardCommand,
 } from '@tuturuuu/utils/abuse-guard/protocol';
+import { reserveLiveMint } from './live-mint';
 
 export type SqlValue = string | number | null | ArrayBuffer;
 export interface SqlRunner {
@@ -267,6 +268,12 @@ export function createGuardEngine(sql: SqlRunner) {
         write(cmd.target, String(count - 1), target.exp);
         return { op: 'res.refund', n: count - 1 };
       }
+      case 'live.reserve':
+        return reserveLiveMint(cmd, now, {
+          read,
+          write,
+          invalid: (message) => new GuardCommandError(message),
+        });
     }
   }
 
