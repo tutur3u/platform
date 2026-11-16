@@ -2,7 +2,7 @@
 
 import Link from '@tiptap/extension-link';
 import Placeholder from '@tiptap/extension-placeholder';
-import { EditorContent, useEditor } from '@tiptap/react';
+import { EditorContent, type Editor, useEditor } from '@tiptap/react';
 import StarterKit from '@tiptap/starter-kit';
 import {
   Bold,
@@ -22,6 +22,7 @@ import { cn } from '@tuturuuu/utils/format';
 import { useTranslations } from 'next-intl';
 import { useEffect, useMemo, useState } from 'react';
 import {
+  MAIL_IMAGE_WIDTH_PRESETS,
   MailComposerImage,
   rawMailDraftImageSource,
 } from './mail-composer-image';
@@ -55,6 +56,8 @@ export function MailComposerEditor({
   const [quoteOpen, setQuoteOpen] = useState(false);
   const [hasSelection, setHasSelection] = useState(false);
   const [linkOpen, setLinkOpen] = useState(false);
+  // null: no image selected; '': selected image keeps its natural size.
+  const [imageWidth, setImageWidth] = useState<string | null>(null);
   const [href, setHref] = useState('https://');
   const editor = useEditor({
     content: parts.authored,
@@ -74,10 +77,12 @@ export function MailComposerEditor({
           .join('\n\n'),
       });
       onSelectionChange(null);
+      setImageWidth(selectedImageWidth(nextEditor));
     },
     onSelectionUpdate: ({ editor: current }) => {
       const selection = captureComposerSelection(current);
       setHasSelection(Boolean(selection));
+      setImageWidth(selectedImageWidth(current));
       onSelectionChange(selection);
     },
   });
@@ -178,6 +183,43 @@ export function MailComposerEditor({
         >
           <Redo2 className="size-4" />
         </ToolButton>
+        {imageWidth !== null && (
+          <>
+            <div className="mx-1 h-5 w-px bg-border" />
+            <div
+              aria-label={t('image_size')}
+              className="flex items-center gap-0.5"
+              role="group"
+            >
+              {MAIL_IMAGE_WIDTH_PRESETS.map((percent) => (
+                <Button
+                  aria-label={t('image_size_percent', { percent })}
+                  aria-pressed={imageWidth === `${percent}%`}
+                  className={cn(
+                    'px-2 text-xs',
+                    imageWidth === `${percent}%` && 'bg-accent'
+                  )}
+                  key={percent}
+                  onClick={() =>
+                    editor
+                      .chain()
+                      .focus()
+                      .updateAttributes('image', {
+                        width: `${percent}%`,
+                        height: null,
+                      })
+                      .run()
+                  }
+                  size="sm"
+                  type="button"
+                  variant="ghost"
+                >
+                  {percent}%
+                </Button>
+              ))}
+            </div>
+          </>
+        )}
         {hasSelection && (
           <Button
             className="ml-auto gap-1"
@@ -193,7 +235,7 @@ export function MailComposerEditor({
       </div>
       <div className="min-h-0 flex-1 overflow-y-auto">
         <EditorContent
-          className="[&_.ProseMirror]:min-h-56 [&_.ProseMirror]:px-5 [&_.ProseMirror]:py-5 [&_.ProseMirror]:text-sm [&_.ProseMirror]:leading-6 [&_.ProseMirror]:outline-none [&_.ProseMirror_a]:underline [&_.ProseMirror_ol]:list-decimal [&_.ProseMirror_ol]:pl-5 [&_.ProseMirror_p]:my-2 [&_.ProseMirror_ul]:list-disc [&_.ProseMirror_ul]:pl-5 [&_.is-editor-empty:first-child:before]:pointer-events-none [&_.is-editor-empty:first-child:before]:float-left [&_.is-editor-empty:first-child:before]:h-0 [&_.is-editor-empty:first-child:before]:text-muted-foreground [&_.is-editor-empty:first-child:before]:content-[attr(data-placeholder)]"
+          className="[&_.ProseMirror]:min-h-56 [&_.ProseMirror]:px-5 [&_.ProseMirror]:py-5 [&_.ProseMirror]:text-sm [&_.ProseMirror]:leading-6 [&_.ProseMirror]:outline-none [&_.ProseMirror_a]:underline [&_.ProseMirror_img]:max-w-full [&_.ProseMirror_img.ProseMirror-selectednode]:outline [&_.ProseMirror_img.ProseMirror-selectednode]:outline-2 [&_.ProseMirror_img.ProseMirror-selectednode]:outline-ring [&_.ProseMirror_ol]:list-decimal [&_.ProseMirror_ol]:pl-5 [&_.ProseMirror_p]:my-2 [&_.ProseMirror_ul]:list-disc [&_.ProseMirror_ul]:pl-5 [&_.is-editor-empty:first-child:before]:pointer-events-none [&_.is-editor-empty:first-child:before]:float-left [&_.is-editor-empty:first-child:before]:h-0 [&_.is-editor-empty:first-child:before]:text-muted-foreground [&_.is-editor-empty:first-child:before]:content-[attr(data-placeholder)]"
           editor={editor}
         />
         {parts.quoted && (
@@ -217,6 +259,11 @@ export function MailComposerEditor({
       </div>
     </div>
   );
+}
+
+function selectedImageWidth(editor: Editor) {
+  if (!editor.isActive('image')) return null;
+  return String(editor.getAttributes('image').width ?? '');
 }
 
 function ToolButton({

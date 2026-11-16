@@ -312,6 +312,15 @@ their original value. The composer regression in
 `apps/mail/src/app/[locale]/(dashboard)/[wsId]/mail-composer-editor.test.ts`
 covers both directions and the legacy reference.
 
+Selecting an image in the web composer shows 25%, 50%, 75% and 100% width
+presets in the toolbar (web only; drag resizing is not offered). The choice is a
+`width` attribute (for example `50%`) plus an inline
+`width`, `max-width: 100%` and `height: auto` style, so it persists in saved drafts and
+sent HTML. Pixel widths from existing mail stay as pixels, and any other width
+value is dropped on load. The nodeview updates in place on resize and keeps the
+raw attachment `src` in serialized HTML. Regression coverage lives in the same
+composer test file.
+
 ## SES Receiving Setup
 
 Do not change DNS from code or migrations. The current public MX for `tuturuuu.com` is Google-routed, so real `@tuturuuu.com` receiving requires an explicit staged MX cutover or a pilot subdomain first.

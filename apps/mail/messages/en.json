@@ -381,6 +381,8 @@
     "blacklisted": "Blacklisted",
     "blacklisted_count": "{count} of {total} blacklisted",
     "bold": "Bold",
+    "image_size": "Image size",
+    "image_size_percent": "Image width {percent}%",
     "bulleted_list": "Bulleted list",
     "calendar_link_cancel": "Cancel",
     "calendar_link_changed": "The invitation or event changed. Preview again.",

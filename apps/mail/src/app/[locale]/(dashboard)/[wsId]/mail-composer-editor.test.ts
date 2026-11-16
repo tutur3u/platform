@@ -110,3 +110,43 @@ it('preserves external image URLs and their accessible attributes', async () => 
   expect(image?.getAttribute('title')).toBe('Sender');
   expect(image?.getAttribute('width')).toBe('48');
 });
+
+it('resizes a selected image, persists width and style, and keeps the raw src', async () => {
+  vi.stubGlobal('__tuturuuuAppBase', '/mail');
+  const view = await open(`<p>Hi</p><img src="/mail${raw}" alt="Logo">`);
+  act(() => {
+    view.editor.state.doc.descendants((node, position) => {
+      if (node.type.name === 'image') {
+        view.editor.commands.setNodeSelection(position);
+        return false;
+      }
+    });
+  });
+  const group = await waitFor(() => {
+    const found = view.container.querySelector('[role="group"]');
+    if (!found) throw new Error('Presets not shown');
+    return found;
+  });
+  expect(group.querySelectorAll('button')).toHaveLength(4);
+  const fifty = group.querySelectorAll('button')[1];
+  act(() => fifty?.click());
+  const html = view.editor.getHTML();
+  expect(html).toContain('width="50%"');
+  expect(html).toContain('width: 50%; max-width: 100%; height: auto;');
+  expect(html).toContain(`src="${raw}"`);
+  const image = view.container.querySelector('.tiptap img');
+  expect(image?.getAttribute('width')).toBe('50%');
+  expect(image?.getAttribute('src')).toBe(`/mail${raw}`);
+  await waitFor(() =>
+    expect(
+      view.container.querySelectorAll('[aria-pressed="true"]')
+    ).toHaveLength(1)
+  );
+});
+it('drops unsafe image widths when parsing', async () => {
+  const view = await open(
+    '<img src="https://images.example/a.png" style="width: 10px; background: url(x)" width="calc(1px)">'
+  );
+  expect(view.editor.getHTML()).not.toContain('calc');
+  expect(view.editor.getHTML()).toContain('width="10"');
+});
