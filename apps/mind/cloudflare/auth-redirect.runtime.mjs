@@ -15,6 +15,9 @@ import { readNativeRuntimeConfig } from '../../../scripts/ci/apps-native-runtime
 
 const app = 'mind';
 const require = createRequire(import.meta.url);
+const { deploymentProfile } = await import('./deployment-profile.ts');
+// The production profile serves the apex mount; its legacy host only redirects.
+const MOUNTED = deploymentProfile().basePath === '/mind';
 
 test(
   'signed-out unknown paths redirect to login without a server error',
@@ -96,13 +99,23 @@ test(
           .end();
       });
     const canonical = `${app}.tuturuuu.com`;
-    const missing = await get(canonical, '/__native-smoke-missing__');
+    if (MOUNTED) {
+      const legacy = await get(canonical, '/__native-smoke-missing__');
+      assert.equal(legacy.status, 307, 'legacy host');
+      assert.equal(
+        legacy.location,
+        'https://tuturuuu.com/mind/__native-smoke-missing__'
+      );
+    }
+    const host = MOUNTED ? 'tuturuuu.com' : canonical;
+    const base = MOUNTED ? '/mind' : '';
+    const missing = await get(host, `${base}/__native-smoke-missing__`);
     assert.ok(missing.status < 500, `unknown path: ${missing.status}`);
     if (missing.status >= 300 && missing.status < 400) {
-      const target = new URL(missing.location, `https://${canonical}`);
+      const target = new URL(missing.location, `https://${host}`);
       assert.match(target.pathname, /\/login/u);
     }
-    const login = await get(canonical, '/login');
+    const login = await get(host, `${base}/login`);
     assert.ok(login.status < 500, `login: ${login.status}`);
   }
 );

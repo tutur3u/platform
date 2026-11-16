@@ -15,6 +15,7 @@ import { centralFirst } from '../src/start-bridge/central-first';
 import { publicAssets } from '../src/start-bridge/public-assets.bridge.gen';
 import { assertRequiredSecrets } from './required-secrets';
 import { configureMindAbuseGuard } from '../src/runtime/abuse-guard';
+import { legacyHostResponse } from '../src/runtime/legacy-host';
 
 export interface MindEnvironment {
   ASSETS: AssetsBinding;
@@ -78,7 +79,12 @@ export default {
       try {
         configureMindAbuseGuard(env);
         assertRequiredSecrets(env);
-        response = await (await handler)(request, env, ctx);
+        // With the apex mount (production), the subdomain only redirects.
+        response =
+          legacyHostResponse(request, mounts) ??
+          (await (
+            await handler
+          )(request, env, ctx));
       } catch (error) {
         // Even a failed route load answers through the response policy.
         console.error('[start-bridge] worker failed', error);

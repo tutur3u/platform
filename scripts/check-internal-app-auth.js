@@ -466,7 +466,8 @@ const registeredAppConstantPaths = [
   ['apps/learn/src/constants/common.ts', REGISTERED_APP_TARGETS.learn],
   ['apps/mail/src/constants/common.ts', REGISTERED_APP_TARGETS.mail],
   ['apps/meet/src/constants/common.ts', REGISTERED_APP_TARGETS.meet],
-  ['apps/mind/src/constants/common.ts', REGISTERED_APP_TARGETS.mind],
+  // Mind resolves its URLs in a module free of satellite imports (i18n cycle).
+  ['apps/mind/src/constants/app-urls.ts', REGISTERED_APP_TARGETS.mind],
   ['apps/nova/src/constants/common.ts', REGISTERED_APP_TARGETS.nova],
   ['apps/pay/src/constants/common.ts', REGISTERED_APP_TARGETS.pay],
   ['apps/rewise/src/constants/common.ts', REGISTERED_APP_TARGETS.rewise],

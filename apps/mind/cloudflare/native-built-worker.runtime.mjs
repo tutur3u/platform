@@ -191,11 +191,16 @@ test(
     // Every probe sends a raw Host header (node:http; fetch() drops it), so no
     // dev origin or canonical-host default can turn an apex or unknown-host
     // probe into a canonical-root request.
-    const call = (path, host) =>
+    const call = (path, host, headers = {}) =>
       new Promise((resolve, reject) => {
         const target = new URL(origin);
         httpRequest(
-          { host: target.hostname, port: target.port, path, headers: { host } },
+          {
+            host: target.hostname,
+            port: target.port,
+            path,
+            headers: { ...headers, host },
+          },
           (response) => {
             const chunks = [];
             response.on('data', (chunk) => chunks.push(chunk));
@@ -249,32 +254,91 @@ test(
       async () => {
         assert.deepEqual(runtimeExpectationProblems(EXPECTED), []);
         for (const [path, expected] of Object.entries(EXPECTED)) {
-          const response = await get(path);
+          // With an apex mount the pages are served there (the root host
+          // only redirects); a root-only app serves them on its root host.
+          const response = MOUNTED
+            ? await call(mountedPath(BASE, path), APEX)
+            : await get(path);
           const failure = runtimeOutcomeFailure({
             path,
             expected,
             ...response,
-            origin: `http://${ROOT_HOST}`,
+            origin: `http://${MOUNTED ? APEX : ROOT_HOST}`,
+            ...(MOUNTED ? { base: BASE } : {}),
           });
           assert.equal(failure, null, failure ?? '');
         }
       }
     );
 
-    await t.test(
-      'every configured root host serves the root page',
-      async () => {
-        for (const host of MOUNTS.rootHosts) {
-          const failure = runtimeOutcomeFailure({
-            path: '/',
-            expected: EXPECTED['/'],
-            ...(await call('/', host)),
-            origin: `http://${host}`,
-          });
-          assert.equal(failure, null, `${host}: ${failure}`);
+    if (MOUNTED) {
+      await t.test(
+        'every configured root host moves visitors to the apex mount',
+        async () => {
+          // Path-preserving 307 to the fixed apex origin under the base, for
+          // any Host spoof, forwarded host, path or query.
+          const probes = [
+            ['/', 'https://tuturuuu.com/mind'],
+            [
+              '/boards?a=1&a=2&b=%20x&',
+              'https://tuturuuu.com/mind/boards?a=1&a=2&b=%20x&',
+            ],
+            ['/boards?', 'https://tuturuuu.com/mind/boards?'],
+            ['//evil.example/x', 'https://tuturuuu.com/mind/evil.example/x'],
+            ['/\\evil.example', 'https://tuturuuu.com/mind/evil.example'],
+            [
+              '/%2F%2Fevil.example',
+              'https://tuturuuu.com/mind/%2F%2Fevil.example',
+            ],
+            ['/..//evil.example', 'https://tuturuuu.com/mind/evil.example'],
+            [
+              '/x?next=//evil.example',
+              'https://tuturuuu.com/mind/x?next=//evil.example',
+            ],
+          ];
+          for (const host of MOUNTS.rootHosts) {
+            for (const [path, location] of probes) {
+              const before = egress.length;
+              const response = await call(path, host, {
+                'x-forwarded-host': 'evil.example',
+              });
+              const where = `${host}${path}`;
+              assert.equal(response.status, 307, where);
+              assert.equal(response.location, location, where);
+              const target = new URL(response.location);
+              assert.equal(target.origin, `https://${APEX}`, where);
+              assert.ok(
+                target.pathname === BASE ||
+                  target.pathname.startsWith(`${BASE}/`),
+                where
+              );
+              assert.equal(
+                response.headers['cache-control'],
+                'private, no-store',
+                where
+              );
+              assert.equal(response.headers['set-cookie'], undefined, where);
+              assert.equal(egress.length, before, `${where}: egress`);
+            }
+          }
         }
-      }
-    );
+      );
+    } else {
+      await t.test(
+        'every configured root host serves the root page',
+        async () => {
+          for (const host of MOUNTS.rootHosts) {
+            const failure = runtimeOutcomeFailure({
+              path: '/',
+              expected: EXPECTED['/'],
+              ...(await call('/', host)),
+              origin: `http://${host}`,
+            });
+            assert.equal(failure, null, `${host}: ${failure}`);
+          }
+        }
+      );
+    }
 
     if (MOUNTED) {
       await t.test(

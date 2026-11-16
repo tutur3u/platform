@@ -1,5 +1,5 @@
 import { defineRouting } from 'next-intl/routing';
-import { BASE_URL } from '@/constants/common';
+import { BASE_URL } from '@/constants/app-urls';
 
 export const defaultLocale = 'en' as const;
 export const supportedLocales = ['en', 'vi'] as const;
