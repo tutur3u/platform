@@ -1,13 +1,9 @@
 'use client';
 import {
-  copyMailDraftAttachments,
   createMailDraft,
-  deleteMailDraftAttachment,
-  type MailAttachment,
   type MailMailbox,
   type SendMailMessagePayload,
   updateMailDraft,
-  uploadMailDraftAttachment,
 } from '@tuturuuu/internal-api';
 import { Button } from '@tuturuuu/ui/button';
 import { Input } from '@tuturuuu/ui/input';
@@ -34,6 +30,7 @@ import { MailComposerAttachments } from './mail-composer-attachments';
 import { MailComposerEditor } from './mail-composer-editor';
 import { MailComposerFooter } from './mail-composer-footer';
 import { MailComposerHeader } from './mail-composer-header';
+import { stripPendingMailImages } from './mail-composer-image-nodes';
 import type { ComposerSelection } from './mail-composer-selection';
 import { MailComposerSendReview } from './mail-composer-send-review';
 import type {
@@ -49,8 +46,11 @@ import {
   getSendableMailboxes,
   mailHtmlToText,
 } from './mail-composer-utils';
+import { visibleMediaChips } from './mail-composer-upload-state';
 import { RecipientField } from './recipient-field';
+import { useMailAttachmentCopy } from './use-mail-composer-attachment-copy';
 import { useMailComposerKeyboard } from './use-mail-composer-keyboard';
+import { useMailComposerUploads } from './use-mail-composer-uploads';
 
 export function FloatingComposer({
   ref,
@@ -89,8 +89,6 @@ export function FloatingComposer({
   const [subject, setSubject] = useState('');
   const [bodyHtml, setBodyHtml] = useState('');
   const [bodyText, setBodyText] = useState('');
-  const [draftId, setDraftId] = useState<string | null>(null);
-  const [attachments, setAttachments] = useState<MailAttachment[]>([]);
   const [showCc, setShowCc] = useState(false);
   const [showBcc, setShowBcc] = useState(false);
   const [minimized, setMinimized] = useState(false);
@@ -101,20 +99,33 @@ export function FloatingComposer({
   const [sendWarnings, setSendWarnings] = useState<ComposerWarning[]>([]);
   const [saveState, setSaveState] = useState<MailComposerSaveState>('idle');
   const [dirty, setDirty] = useState(false);
-  const [uploading, setUploading] = useState(false);
   const [dragActive, setDragActive] = useState(false);
   const [online, setOnline] = useState(true);
-  const [imageUrlToInsert, setImageUrlToInsert] = useState<string | null>(null);
-  const [pendingAttachmentCopy, setPendingAttachmentCopy] = useState<{
-    attachmentIds: string[];
-    sourceMessageId: string;
-  } | null>(null);
   const initializedRef = useRef(false);
   const closingRef = useRef(false);
   const draftIdRef = useRef<string | null>(null);
   const dirtyVersionRef = useRef(0);
   const failedSaveVersionRef = useRef<number | null>(null);
   const saveChainRef = useRef<Promise<string | null>>(Promise.resolve(null));
+  const ensureDraftRef = useRef<() => Promise<string | null>>(async () => null);
+  const markDirtyRef = useRef<() => void>(() => {});
+  const mediaBusyRef = useRef(false);
+  const uploads = useMailComposerUploads({
+    draftIdRef,
+    ensureDraft: () => ensureDraftRef.current(),
+    mailboxId,
+    workspaceId,
+  });
+  const { attachments } = uploads;
+  const attachmentCopy = useMailAttachmentCopy({
+    ensureDraft: () => ensureDraftRef.current(),
+    mailboxId,
+    onCopied: uploads.addUploaded,
+    onFailed: () => setSaveState('failed'),
+    open,
+    workspaceId,
+  });
+  const copying = attachmentCopy.copying;
   const activeMailbox = sendableMailboxes.find(
     (mailbox) => mailbox.id === mailboxId
   );
@@ -122,6 +133,7 @@ export function FloatingComposer({
   useEffect(() => {
     if (!open) {
       initializedRef.current = false;
+      uploads.cancelAll();
       return;
     }
     if (!defaultMailbox || initializedRef.current) return;
@@ -137,11 +149,10 @@ export function FloatingComposer({
     setSubject(initialDraft?.subject ?? '');
     setBodyHtml(initialBody.html);
     setBodyText(initialBody.text);
-    setDraftId(initialDraft?.draftId ?? null);
     draftIdRef.current = initialDraft?.draftId ?? null;
     failedSaveVersionRef.current = null;
-    setAttachments(initialDraft?.attachments ?? []);
-    setPendingAttachmentCopy(
+    uploads.reset(initialDraft?.attachments ?? []);
+    attachmentCopy.schedule(
       initialDraft?.sourceMessageId && initialDraft.sourceAttachmentIds?.length
         ? {
             attachmentIds: initialDraft.sourceAttachmentIds,
@@ -157,7 +168,14 @@ export function FloatingComposer({
     setDirty(Boolean(initialDraft && !initialDraft.draftId));
     dirtyVersionRef.current = initialDraft ? 1 : 0;
     setMinimized(false);
-  }, [defaultMailbox, initialDraft, open]);
+  }, [
+    attachmentCopy.schedule,
+    defaultMailbox,
+    initialDraft,
+    open,
+    uploads.cancelAll,
+    uploads.reset,
+  ]);
 
   useEffect(() => {
     const updateOnlineState = () => setOnline(window.navigator.onLine);
@@ -173,7 +191,8 @@ export function FloatingComposer({
   const snapshot = useMemo(
     () => ({
       bcc,
-      bodyHtml,
+      // Defense in depth: a placeholder never reaches a save or a send.
+      bodyHtml: stripPendingMailImages(bodyHtml),
       bodyText,
       cc,
       inReplyTo: initialDraft?.inReplyTo,
@@ -218,7 +237,6 @@ export function FloatingComposer({
               )
             : await createMailDraft(workspaceId, mailboxId, nextSnapshot);
           draftIdRef.current = response.message.id;
-          setDraftId(response.message.id);
           setSaveState('saved');
           if (failedSaveVersionRef.current === savingVersion) {
             failedSaveVersionRef.current = null;
@@ -241,6 +259,30 @@ export function FloatingComposer({
     setSaveState(online ? 'saving' : 'offline');
     setDirty(true);
   };
+  markDirtyRef.current = markDirty;
+  ensureDraftRef.current = () => persist(snapshot, true);
+  const handleEditorChange = useCallback(
+    (value: { html: string; text: string }) => {
+      setAiOpen(false);
+      setBodyHtml(value.html);
+      setBodyText(value.text);
+      markDirtyRef.current();
+    },
+    []
+  );
+  const openAi = useCallback(() => setAiOpen(true), []);
+  // A removal invalidates a pending Send exactly like any other edit.
+  const removeMedia = useCallback(
+    (id: string) => {
+      markDirtyRef.current();
+      uploads.remove(id);
+    },
+    [uploads.remove]
+  );
+  const editorAttachments = useMemo(
+    () => [...(initialDraft?.quotedAttachments ?? []), ...attachments],
+    [attachments, initialDraft?.quotedAttachments]
+  );
 
   useEffect(() => {
     if (!open || !dirty || !mailboxId) return;
@@ -258,30 +300,6 @@ export function FloatingComposer({
     if (online && saveState === 'offline' && dirty) void persist();
   }, [dirty, online, persist, saveState]);
 
-  useEffect(() => {
-    if (!open || !pendingAttachmentCopy || !mailboxId) return;
-    const copy = pendingAttachmentCopy;
-    setPendingAttachmentCopy(null);
-    void (async () => {
-      setUploading(true);
-      try {
-        const savedDraftId = await persist(snapshot, true);
-        if (!savedDraftId) return;
-        const response = await copyMailDraftAttachments(
-          workspaceId,
-          mailboxId,
-          savedDraftId,
-          copy
-        );
-        setAttachments((current) => [...current, ...response.attachments]);
-      } catch {
-        setSaveState('failed');
-      } finally {
-        setUploading(false);
-      }
-    })();
-  }, [mailboxId, open, pendingAttachmentCopy, persist, snapshot, workspaceId]);
-
   const combinedRecipients = [...to, ...cc, ...bcc];
   const recipientLimit = activeMailbox?.providerLimits.maxRecipients ?? 50;
   const messageLimit =
@@ -294,8 +312,11 @@ export function FloatingComposer({
         total + Math.ceil(attachment.sizeBytes / 3) * 4 + 512,
       0
     );
+  const mediaBusy = copying || !uploads.settled;
+  mediaBusyRef.current = mediaBusy;
   const canSend =
     online &&
+    !mediaBusy &&
     combinedRecipients.length > 0 &&
     combinedRecipients.length <= recipientLimit &&
     estimatedBytes <= messageLimit;
@@ -307,51 +328,32 @@ export function FloatingComposer({
     }
     markDirty();
     const saved = await persist(snapshot, true);
-    if (!saved || attachments.length) return;
+    if (!saved || uploads.items.length) return;
     draftIdRef.current = null;
-    setDraftId(null);
-    setAttachments([]);
     setMailboxId(nextMailboxId);
     setDirty(true);
   };
-  const uploadFiles = async (files: FileList | File[], inline = false) => {
+  const uploadFiles = (files: FileList | File[], inline = false) => {
     markDirty();
-    setUploading(true);
-    try {
-      const savedDraftId = await persist(snapshot, true);
-      if (!savedDraftId) return;
-      for (const file of Array.from(files)) {
-        const contentId = inline
-          ? `${crypto.randomUUID()}@tuturuuu.mail`
-          : null;
-        const response = await uploadMailDraftAttachment(
-          workspaceId,
-          mailboxId,
-          savedDraftId,
-          file,
-          file.name,
-          { contentId, disposition: inline ? 'inline' : 'attachment' }
-        );
-        setAttachments((current) => [...current, response.attachment]);
-        if (inline) {
-          setImageUrlToInsert(
-            `/api/v1/workspaces/${workspaceId}/mail/mailboxes/${mailboxId}/drafts/${savedDraftId}/attachments/${response.attachment.id}`
-          );
-        }
-      }
-    } finally {
-      setUploading(false);
-    }
+    uploads.addFiles(files, inline);
+  };
+  const jumpToFailed = () => {
+    const retry = composerKeyboard.ref.current?.querySelector<HTMLElement>(
+      '[data-mail-upload-retry], [data-chip-retry]'
+    );
+    retry?.scrollIntoView?.({ block: 'center' });
+    retry?.focus();
   };
   const performSend = async () => {
-    if (!canSend || uploading) return;
+    if (!canSend) return;
     const sendingVersion = dirtyVersionRef.current;
     const savedDraftId = await persist();
     if (dirty && !savedDraftId) {
       toast.error(t('save_failed'));
       return;
     }
-    if (dirtyVersionRef.current !== sendingVersion) return;
+    if (dirtyVersionRef.current !== sendingVersion || mediaBusyRef.current)
+      return;
     await onSend(mailboxId, { ...snapshot, draftId: savedDraftId });
     onOpenChange(false);
   };
@@ -373,7 +375,8 @@ export function FloatingComposer({
   };
 
   const saveAndClose = async (close = true): Promise<boolean> => {
-    if (uploading || sending || closingRef.current) return false;
+    if (copying || uploads.inFlight || sending || closingRef.current)
+      return false;
     if (!dirty) {
       await saveChainRef.current;
       if (close) onOpenChange(false);
@@ -445,7 +448,7 @@ export function FloatingComposer({
           event.preventDefault();
           setDragActive(false);
           if (event.dataTransfer.files.length)
-            void uploadFiles(event.dataTransfer.files);
+            uploadFiles(event.dataTransfer.files);
         }}
         onDragEnter={(event) => {
           event.preventDefault();
@@ -464,7 +467,7 @@ export function FloatingComposer({
           const files = event.clipboardData.files;
           if (!files.length) return;
           event.preventDefault();
-          void uploadFiles(
+          uploadFiles(
             files,
             Array.from(files).every((file) => file.type.startsWith('image/'))
           );
@@ -497,54 +500,75 @@ export function FloatingComposer({
           subject={subject}
         />
 
-        {!minimized ? (
-          <>
-            <div className="grid grid-cols-[3.25rem_minmax(0,1fr)] items-center border-dynamic border-b px-3 py-1.5">
-              <span className="text-muted-foreground text-xs">{t('from')}</span>
-              <Select
-                disabled={uploading || attachments.length > 0}
-                value={mailboxId}
-                onValueChange={(value) => void changeMailbox(value)}
-              >
-                <SelectTrigger className="h-8 border-0 px-1 shadow-none">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  {sendableMailboxes.map((mailbox) => (
-                    <SelectItem key={mailbox.id} value={mailbox.id}>
-                      {mailbox.displayName} · {mailbox.address}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
+        {/* Kept mounted while minimized so the editor keeps its identity,
+            caret, undo history and any upload placeholders. */}
+        <div className={minimized ? 'hidden' : 'contents'}>
+          <div className="grid grid-cols-[3.25rem_minmax(0,1fr)] items-center border-dynamic border-b px-3 py-1.5">
+            <span className="text-muted-foreground text-xs">{t('from')}</span>
+            <Select
+              disabled={mediaBusy || uploads.items.length > 0}
+              value={mailboxId}
+              onValueChange={(value) => void changeMailbox(value)}
+            >
+              <SelectTrigger className="h-8 border-0 px-1 shadow-none">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                {sendableMailboxes.map((mailbox) => (
+                  <SelectItem key={mailbox.id} value={mailbox.id}>
+                    {mailbox.displayName} · {mailbox.address}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+          <RecipientField
+            workspaceId={workspaceId}
+            actions={
+              <>
+                <Button
+                  className="h-7 px-2 text-xs"
+                  onClick={() => setShowCc((current) => !current)}
+                  type="button"
+                  variant={showCc ? 'secondary' : 'ghost'}
+                >
+                  {t('cc')}
+                </Button>
+                <Button
+                  className="h-7 px-2 text-xs"
+                  onClick={() => setShowBcc((current) => !current)}
+                  type="button"
+                  variant={showBcc ? 'secondary' : 'ghost'}
+                >
+                  {t('bcc')}
+                </Button>
+              </>
+            }
+            disabledAddresses={[...cc, ...bcc]}
+            displayNames={recipientDisplayNames}
+            label={t('to')}
+            onChange={(value) => {
+              setTo(value);
+              markDirty();
+            }}
+            onDisplayNamesChange={(names) => {
+              setRecipientDisplayNames((current) => ({
+                ...current,
+                ...names,
+              }));
+              markDirty();
+            }}
+            recipients={to}
+            removeLabel={(address) => t('remove_recipient', { address })}
+          />
+          {showCc ? (
             <RecipientField
               workspaceId={workspaceId}
-              actions={
-                <>
-                  <Button
-                    className="h-7 px-2 text-xs"
-                    onClick={() => setShowCc((current) => !current)}
-                    type="button"
-                    variant={showCc ? 'secondary' : 'ghost'}
-                  >
-                    {t('cc')}
-                  </Button>
-                  <Button
-                    className="h-7 px-2 text-xs"
-                    onClick={() => setShowBcc((current) => !current)}
-                    type="button"
-                    variant={showBcc ? 'secondary' : 'ghost'}
-                  >
-                    {t('bcc')}
-                  </Button>
-                </>
-              }
-              disabledAddresses={[...cc, ...bcc]}
+              disabledAddresses={[...to, ...bcc]}
               displayNames={recipientDisplayNames}
-              label={t('to')}
+              label={t('cc')}
               onChange={(value) => {
-                setTo(value);
+                setCc(value);
                 markDirty();
               }}
               onDisplayNamesChange={(names) => {
@@ -554,132 +578,102 @@ export function FloatingComposer({
                 }));
                 markDirty();
               }}
-              recipients={to}
+              recipients={cc}
               removeLabel={(address) => t('remove_recipient', { address })}
             />
-            {showCc ? (
-              <RecipientField
-                workspaceId={workspaceId}
-                disabledAddresses={[...to, ...bcc]}
-                displayNames={recipientDisplayNames}
-                label={t('cc')}
-                onChange={(value) => {
-                  setCc(value);
-                  markDirty();
-                }}
-                onDisplayNamesChange={(names) => {
-                  setRecipientDisplayNames((current) => ({
-                    ...current,
-                    ...names,
-                  }));
-                  markDirty();
-                }}
-                recipients={cc}
-                removeLabel={(address) => t('remove_recipient', { address })}
-              />
-            ) : null}
-            {showBcc ? (
-              <RecipientField
-                workspaceId={workspaceId}
-                disabledAddresses={[...to, ...cc]}
-                displayNames={recipientDisplayNames}
-                label={t('bcc')}
-                onChange={(value) => {
-                  setBcc(value);
-                  markDirty();
-                }}
-                onDisplayNamesChange={(names) => {
-                  setRecipientDisplayNames((current) => ({
-                    ...current,
-                    ...names,
-                  }));
-                  markDirty();
-                }}
-                recipients={bcc}
-                removeLabel={(address) => t('remove_recipient', { address })}
-              />
-            ) : null}
-            <Input
-              className="h-11 rounded-none border-x-0 border-t-0 px-4 font-semibold shadow-none outline-none focus-visible:outline-none focus-visible:ring-0"
-              onChange={(event) => {
-                setSubject(event.target.value);
-                markDirty();
-              }}
-              placeholder={t('subject')}
-              value={subject}
-            />
-            <MailComposerEditor
-              attachments={[
-                ...(initialDraft?.quotedAttachments ?? []),
-                ...attachments,
-              ]}
-              onSelectionChange={setSelection}
-              onEnhance={() => setAiOpen(true)}
-              imageUrlToInsert={imageUrlToInsert}
-              initialHtml={bodyHtml}
-              onImageInserted={() => setImageUrlToInsert(null)}
-              onChange={(value) => {
-                setAiOpen(false);
-                setBodyHtml(value.html);
-                setBodyText(value.text);
-                markDirty();
-              }}
-            />
-            <MailComposerAttachments
-              attachments={attachments}
-              onRemove={async (attachment) => {
-                if (!draftId) return;
-                markDirty();
-                await deleteMailDraftAttachment(
-                  workspaceId,
-                  mailboxId,
-                  draftId,
-                  attachment.id
-                );
-                setAttachments((items) =>
-                  items.filter((item) => item.id !== attachment.id)
-                );
-              }}
-              removeLabel={t('remove_attachment')}
-            />
-            <MailComposerFooter
-              selectionOnly={Boolean(selection)}
-              aiOpen={aiOpen}
-              bodyHtml={selection ? '' : bodyHtml}
-              bodyText={selection?.text ?? bodyText}
-              canSend={canSend}
-              estimatedBytes={estimatedBytes}
-              mailboxId={mailboxId}
-              messageLimit={messageLimit}
-              onAiApply={(result) => {
-                if (selection) {
-                  if (!selection.apply(result.content))
-                    toast.error(t('ai_selection_changed'));
-                  setSelection(null);
-                  return;
-                }
-                const nextBodyHtml = applyAiDraftToBody(
-                  bodyHtml,
-                  result.content
-                );
-                setSubject(result.subject);
-                setBodyHtml(nextBodyHtml);
-                setBodyText(mailHtmlToText(nextBodyHtml));
-                markDirty();
-              }}
-              onAiOpenChange={setAiOpen}
-              onSend={() => void requestSend()}
-              onUpload={(files, inline) => void uploadFiles(files, inline)}
-              recipientLimit={recipientLimit}
-              recipients={combinedRecipients}
-              sending={sending}
-              subject={subject}
-              threadId={initialDraft?.threadId}
-              uploading={uploading}
+          ) : null}
+          {showBcc ? (
+            <RecipientField
               workspaceId={workspaceId}
+              disabledAddresses={[...to, ...cc]}
+              displayNames={recipientDisplayNames}
+              label={t('bcc')}
+              onChange={(value) => {
+                setBcc(value);
+                markDirty();
+              }}
+              onDisplayNamesChange={(names) => {
+                setRecipientDisplayNames((current) => ({
+                  ...current,
+                  ...names,
+                }));
+                markDirty();
+              }}
+              recipients={bcc}
+              removeLabel={(address) => t('remove_recipient', { address })}
             />
-          </>
-        ) : null}
+          ) : null}
+          <Input
+            className="h-11 rounded-none border-x-0 border-t-0 px-4 font-semibold shadow-none outline-none focus-visible:outline-none focus-visible:ring-0"
+            onChange={(event) => {
+              setSubject(event.target.value);
+              markDirty();
+            }}
+            placeholder={t('subject')}
+            value={subject}
+          />
+          <MailComposerEditor
+            attachments={editorAttachments}
+            initialHtml={bodyHtml}
+            onChange={handleEditorChange}
+            onEnhance={openAi}
+            onImageNodes={uploads.setNodes}
+            onImageNodesChange={uploads.onNodesChange}
+            onRemoveImage={removeMedia}
+            onRetryImage={uploads.retry}
+            onSelectionChange={setSelection}
+          />
+          <MailComposerAttachments
+            items={visibleMediaChips(uploads.items, bodyHtml)}
+            onRemove={removeMedia}
+            onRetry={uploads.retry}
+          />
+          <MailComposerFooter
+            announcement={
+              uploads.announcement
+                ? t(`media_announce_${uploads.announcement.kind}`, {
+                    name: uploads.announcement.name,
+                  })
+                : ''
+            }
+            selectionOnly={Boolean(selection)}
+            aiOpen={aiOpen}
+            bodyHtml={selection ? '' : bodyHtml}
+            bodyText={selection?.text ?? bodyText}
+            canSend={canSend}
+            estimatedBytes={estimatedBytes}
+            mailboxId={mailboxId}
+            mediaFailed={uploads.summary.failed}
+            mediaPending={uploads.summary.queued + uploads.summary.uploading}
+            messageLimit={messageLimit}
+            onAiApply={(result) => {
+              if (selection) {
+                if (!selection.apply(result.content))
+                  toast.error(t('ai_selection_changed'));
+                setSelection(null);
+                return;
+              }
+              const nextBodyHtml = applyAiDraftToBody(
+                bodyHtml,
+                result.content
+              );
+              setSubject(result.subject);
+              setBodyHtml(nextBodyHtml);
+              setBodyText(mailHtmlToText(nextBodyHtml));
+              markDirty();
+            }}
+            onAiOpenChange={setAiOpen}
+            onJumpToFailed={jumpToFailed}
+            onSend={() => void requestSend()}
+            onUpload={uploadFiles}
+            recipientLimit={recipientLimit}
+            recipients={combinedRecipients}
+            sending={sending}
+            subject={subject}
+            threadId={initialDraft?.threadId}
+            workspaceId={workspaceId}
+          />
+        </div>
       </section>
 
       <MailComposerSendReview

@@ -40,17 +40,15 @@ afterEach(() => {
   cleanup();
   vi.unstubAllGlobals();
 });
-async function open(html: string, imageUrlToInsert?: string) {
+async function open(html: string) {
   observed.editor = null;
   const changed = vi.fn<(value: { html: string; text: string }) => void>();
   const view = render(
     createElement(MailComposerEditor, {
       initialHtml: html,
-      imageUrlToInsert,
       onChange: changed,
       onSelectionChange: vi.fn(),
       onEnhance: vi.fn(),
-      onImageInserted: vi.fn(),
     })
   );
   const editor = await waitFor(() => {
@@ -67,7 +65,8 @@ it.each([
   'reopens a draft saved at %j on %j without persisting the serving mount',
   async (from, to) => {
     vi.stubGlobal('__tuturuuuAppBase', from);
-    const first = await open('<p>Draft</p>', `${from}${raw}`);
+    const first = await open(`<p>Draft</p><img src="${from}${raw}">`);
+    act(() => first.editor.commands.insertContentAt(1, 'x'));
     await waitFor(() => expect(first.changed).toHaveBeenCalled());
     const saved = first.changed.mock.calls.at(-1)?.[0].html;
     if (!saved) throw new Error('Draft did not serialize');

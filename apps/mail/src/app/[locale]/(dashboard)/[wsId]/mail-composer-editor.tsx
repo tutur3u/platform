@@ -12,6 +12,7 @@ import {
   ListOrdered,
   Redo2,
   Sparkles,
+  Trash2,
   Undo2,
 } from '@tuturuuu/icons';
 import type { MailAttachment } from '@tuturuuu/internal-api';
@@ -20,12 +21,17 @@ import { Input } from '@tuturuuu/ui/input';
 import { Popover, PopoverContent, PopoverTrigger } from '@tuturuuu/ui/popover';
 import { cn } from '@tuturuuu/utils/format';
 import { useTranslations } from 'next-intl';
-import { useEffect, useMemo, useState } from 'react';
+import { memo, useEffect, useMemo, useRef, useState } from 'react';
 import {
   MAIL_IMAGE_WIDTH_PRESETS,
   MailComposerImage,
-  rawMailDraftImageSource,
 } from './mail-composer-image';
+import {
+  createMailImageNodes,
+  type MailImageNodes,
+  mailImageNodeId,
+  stripPendingMailImages,
+} from './mail-composer-image-nodes';
 import { splitComposerQuote } from './mail-composer-quote';
 import {
   type ComposerSelection,
@@ -34,30 +40,47 @@ import {
 import { mailHtmlToText } from './mail-composer-utils';
 import { MailMessagePreview } from './mail-message-preview';
 
-export function MailComposerEditor({
-  attachments = [],
-  imageUrlToInsert,
-  initialHtml,
-  onImageInserted,
-  onChange,
-  onSelectionChange,
-  onEnhance,
-}: {
+export interface MailComposerEditorProps {
   attachments?: MailAttachment[];
-  imageUrlToInsert?: string | null;
   initialHtml: string;
-  onSelectionChange: (selection: ComposerSelection | null) => void;
-  onEnhance: () => void;
-  onImageInserted?: () => void;
   onChange: (value: { html: string; text: string }) => void;
-}) {
+  onEnhance: () => void;
+  /** Fires on every document change, including placeholder-only ones. */
+  onImageNodesChange?: () => void;
+  /** Hands the composer the node operations for this editor, or null on unmount. */
+  onImageNodes?: (nodes: MailImageNodes | null) => void;
+  onRemoveImage?: (id: string) => void;
+  onRetryImage?: (id: string) => void;
+  onSelectionChange: (selection: ComposerSelection | null) => void;
+}
+
+/**
+ * Memoized: upload progress changes the composer's media state many times,
+ * and none of it may re-render the editor. Image placeholders are driven
+ * through `onImageNodes`, never through props.
+ */
+export const MailComposerEditor = memo(function MailComposerEditor({
+  attachments = [],
+  initialHtml,
+  onChange,
+  onEnhance,
+  onImageNodes,
+  onImageNodesChange,
+  onRemoveImage,
+  onRetryImage,
+  onSelectionChange,
+}: MailComposerEditorProps) {
   const t = useTranslations('mail');
+  const actions = useRef({ onImageNodesChange, onRemoveImage, onRetryImage });
+  actions.current = { onImageNodesChange, onRemoveImage, onRetryImage };
+  const lastEmitted = useRef<string | null>(null);
   const parts = useMemo(() => splitComposerQuote(initialHtml), [initialHtml]);
   const [quoteOpen, setQuoteOpen] = useState(false);
   const [hasSelection, setHasSelection] = useState(false);
   const [linkOpen, setLinkOpen] = useState(false);
-  // null: no image selected; '': selected image keeps its natural size.
+  // null: no settled image selected; '': selected image keeps its natural size.
   const [imageWidth, setImageWidth] = useState<string | null>(null);
+  const [imageId, setImageId] = useState<string | null>(null);
   const [href, setHref] = useState('https://');
   const editor = useEditor({
     content: parts.authored,
@@ -70,12 +93,33 @@ export function MailComposerEditor({
           label: t('image_resize'),
           value: (width) => t('image_resize_value', { width }),
         }),
+        uploadActions: () => ({
+          remove: (id) => actions.current.onRemoveImage?.(id),
+          retry: (id) => actions.current.onRetryImage?.(id),
+        }),
+        uploadLabels: () => ({
+          describe: (name, state) =>
+            t('media_item_state', { name, state: t(`media_state_${state}`) }),
+          failed: t('upload_failed'),
+          named: (action, name) => t('media_action_named', { action, name }),
+          queued: t('upload_waiting'),
+          remove: t('media_remove'),
+          retry: t('retry'),
+          uploading: t('uploading'),
+        }),
       }),
       Placeholder.configure({ placeholder: t('write_message') }),
     ],
     immediatelyRender: false,
     onUpdate: ({ editor: nextEditor }) => {
-      const html = nextEditor.getHTML() + parts.quoted;
+      actions.current.onImageNodesChange?.();
+      // Placeholders are stripped: a draft never carries a preview or blob.
+      const authored = stripPendingMailImages(nextEditor.getHTML());
+      // Status-only changes to a placeholder leave the body untouched, so they
+      // must not mark the draft dirty or clear the user's selection.
+      if (authored === lastEmitted.current) return;
+      lastEmitted.current = authored;
+      const html = authored + parts.quoted;
       onChange({
         html,
         text: [nextEditor.getText(), mailHtmlToText(parts.quoted)]
@@ -84,29 +128,29 @@ export function MailComposerEditor({
       });
       onSelectionChange(null);
       setImageWidth(selectedImageWidth(nextEditor));
+      setImageId(selectedImageId(nextEditor));
     },
     onSelectionUpdate: ({ editor: current }) => {
       const selection = captureComposerSelection(current);
       setHasSelection(Boolean(selection));
       setImageWidth(selectedImageWidth(current));
+      setImageId(selectedImageId(current));
       onSelectionChange(selection);
     },
   });
 
   useEffect(() => {
-    if (!editor || editor.getHTML() === parts.authored) return;
+    if (!editor || stripPendingMailImages(editor.getHTML()) === parts.authored)
+      return;
+    lastEmitted.current = parts.authored;
     editor.commands.setContent(parts.authored, { emitUpdate: false });
   }, [editor, parts.authored]);
 
   useEffect(() => {
-    if (!editor || !imageUrlToInsert) return;
-    editor
-      .chain()
-      .focus()
-      .setImage({ src: rawMailDraftImageSource(imageUrlToInsert) })
-      .run();
-    onImageInserted?.();
-  }, [editor, imageUrlToInsert, onImageInserted]);
+    if (!editor || !onImageNodes) return;
+    onImageNodes(createMailImageNodes(editor));
+    return () => onImageNodes(null);
+  }, [editor, onImageNodes]);
 
   if (!editor)
     return <div className="min-h-56 animate-pulse bg-foreground/[0.025]" />;
@@ -223,6 +267,17 @@ export function MailComposerEditor({
                   {percent}%
                 </Button>
               ))}
+              {imageId !== null && onRemoveImage && (
+                <Button
+                  aria-label={t('media_remove_image')}
+                  onClick={() => onRemoveImage(imageId)}
+                  size="icon"
+                  type="button"
+                  variant="ghost"
+                >
+                  <Trash2 className="size-4" />
+                </Button>
+              )}
             </div>
           </>
         )}
@@ -265,11 +320,19 @@ export function MailComposerEditor({
       </div>
     </div>
   );
-}
+});
 
 function selectedImageWidth(editor: Editor) {
   if (!editor.isActive('image')) return null;
-  return String(editor.getAttributes('image').width ?? '');
+  const attrs = editor.getAttributes('image');
+  if (attrs.uploadState) return null;
+  return String(attrs.width ?? '');
+}
+
+function selectedImageId(editor: Editor) {
+  if (!editor.isActive('image')) return null;
+  const attrs = editor.getAttributes('image');
+  return attrs.uploadState ? null : mailImageNodeId(attrs);
 }
 
 function ToolButton({

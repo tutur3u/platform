@@ -1,0 +1,495 @@
+import type { MailAttachment } from '@tuturuuu/internal-api';
+import { describe, expect, it, vi } from 'vitest';
+import type {
+  MailImageNodes,
+  MailImageNodeState,
+} from './mail-composer-image-nodes';
+import {
+  type MailMediaItem,
+  summarizeMedia,
+  visibleMediaChips,
+} from './mail-composer-upload-state';
+import { type MailUploadDeps, MailUploadStore } from './mail-composer-upload-store';
+
+const flush = () => new Promise((resolve) => setTimeout(resolve, 0));
+
+function attachment(id: string, disposition: 'attachment' | 'inline') {
+  return {
+    contentId: null,
+    contentType: 'image/png',
+    disposition,
+    filename: `${id}.png`,
+    id,
+    protectedUrl: null,
+    sizeBytes: 10,
+  } satisfies MailAttachment;
+}
+const png = (name: string) => new File(['x'], name, { type: 'image/png' });
+const pdf = (name: string) => new File(['x'], name, { type: 'application/pdf' });
+
+function fakeNodes() {
+  const ids = new Set<string>();
+  const calls: string[] = [];
+  const nodes: MailImageNodes = {
+    insertPending: ({ uploadId, state }) => {
+      ids.add(uploadId);
+      calls.push(`insert:${uploadId}:${state}`);
+      return true;
+    },
+    liveIds: () => new Set(ids),
+    remove: (id) => {
+      calls.push(`remove:${id}`);
+      return ids.delete(id);
+    },
+    resolve: (id, src) => {
+      calls.push(`resolve:${id}:${src}`);
+      return ids.has(id);
+    },
+    setRemoving: (id, removing) => {
+      calls.push(`removing:${id}:${removing}`);
+    },
+    setSize: (id, width, height) => {
+      calls.push(`size:${id}:${width}x${height}`);
+    },
+    setState: (id, state: MailImageNodeState) => {
+      calls.push(`state:${id}:${state}`);
+    },
+  };
+  return { calls, ids, nodes };
+}
+
+interface PendingUpload {
+  attachmentId: string;
+  fail: (error?: unknown) => void;
+  input: Parameters<MailUploadDeps['upload']>[0];
+  succeed: () => void;
+}
+
+function setup({
+  editor = true,
+  honorAbort = true,
+}: { editor?: boolean; honorAbort?: boolean } = {}) {
+  const fake = fakeNodes();
+  const uploads: PendingUpload[] = [];
+  const draft = { id: null as string | null };
+  let counter = 0;
+  let decode: (() => void) | null = null;
+  const holdDecode = { enabled: false };
+  const deps = {
+    createObjectUrl: vi.fn((file: Blob) => `blob:${(file as File).name}`),
+    decodeImage: vi.fn(
+      (src: string) =>
+        new Promise<{ height: number; width: number } | null>((resolve) => {
+          if (src.startsWith('blob:') || !holdDecode.enabled)
+            resolve({ height: 480, width: 640 });
+          else decode = () => resolve({ height: 480, width: 640 });
+        })
+    ),
+    draftId: () => draft.id,
+    ensureDraft: vi.fn(async () => {
+      draft.id = 'draft';
+      return 'draft';
+    }),
+    imageSource: (draftId: string, id: string) =>
+      `/api/v1/workspaces/ws/mail/mailboxes/box/drafts/${draftId}/attachments/${id}`,
+    newId: () => `id${++counter}`,
+    nodes: () => (editor ? fake.nodes : null),
+    onRemoveFailed: vi.fn(),
+    remove: vi.fn(async () => {}),
+    revokeObjectUrl: vi.fn(),
+    upload: vi.fn(
+      (input: PendingUpload['input']) =>
+        new Promise<MailAttachment>((resolve, reject) => {
+          const attachmentId = `att${uploads.length + 1}`;
+          if (honorAbort)
+            input.signal.addEventListener('abort', () =>
+              reject(new DOMException('aborted', 'AbortError'))
+            );
+          uploads.push({
+            attachmentId,
+            fail: (error = new Error('network')) => reject(error),
+            input,
+            succeed: () =>
+              resolve(
+                attachment(attachmentId, input.inline ? 'inline' : 'attachment')
+              ),
+          });
+        })
+    ),
+  } satisfies MailUploadDeps;
+  const store = new MailUploadStore(deps);
+  const statuses = () => store.getSnapshot().items.map((item) => item.status);
+  const find = (id: string) =>
+    store.getSnapshot().items.find((item) => item.id === id);
+  return {
+    decode: () => decode?.(),
+    deps,
+    draft,
+    fake,
+    find,
+    holdDecode,
+    statuses,
+    store,
+    uploads,
+  };
+}
+
+describe('immediate placeholders', () => {
+  it('queues every file at once and uploads them one at a time', async () => {
+    const t = setup();
+    t.store.addFiles([png('a.png'), png('b.png'), pdf('c.pdf')], true);
+    // Synchronously: all placeholders exist; the first has started.
+    expect(t.fake.calls.filter((call) => call.startsWith('insert'))).toEqual([
+      'insert:id1:queued',
+      'insert:id2:queued',
+    ]);
+    expect(t.statuses()).toEqual(['uploading', 'queued', 'queued']);
+    await flush();
+    expect(t.uploads).toHaveLength(1);
+    t.uploads[0]?.succeed();
+    await flush();
+    expect(t.statuses()).toEqual(['uploaded', 'uploading', 'queued']);
+    expect(t.uploads).toHaveLength(2);
+  });
+
+  it('treats non-images and plain attachments as chips without editor nodes', () => {
+    const t = setup();
+    t.store.addFiles([pdf('c.pdf')], true);
+    t.store.addFiles([png('d.png')], false);
+    expect(t.fake.calls.filter((call) => call.startsWith('insert'))).toEqual(
+      []
+    );
+    expect(t.deps.createObjectUrl).toHaveBeenCalledTimes(0);
+    expect(t.store.getSnapshot().items.map((item) => item.kind)).toEqual([
+      'attachment',
+      'attachment',
+    ]);
+  });
+
+  it('falls back to a chip when no editor is mounted', () => {
+    const t = setup({ editor: false });
+    t.store.addFiles([png('a.png')], true);
+    expect(t.store.getSnapshot().items[0]?.kind).toBe('attachment');
+    expect(t.deps.revokeObjectUrl).toHaveBeenCalledWith('blob:a.png');
+  });
+
+  it('reserves the decoded local size', async () => {
+    const t = setup();
+    t.store.addFiles([png('a.png')], true);
+    await flush();
+    expect(t.fake.calls).toContain('size:id1:640x480');
+  });
+});
+
+describe('replace by id after decode', () => {
+  it('swaps the same node only once the server image has decoded', async () => {
+    const t = setup();
+    t.holdDecode.enabled = true;
+    t.store.addFiles([png('a.png')], true);
+    await flush();
+    t.uploads[0]?.succeed();
+    await flush();
+    expect(t.statuses()).toEqual(['uploading']);
+    expect(t.fake.calls.some((call) => call.startsWith('resolve'))).toBe(false);
+    t.decode();
+    await flush();
+    expect(t.fake.calls).toContain(
+      'resolve:id1:/api/v1/workspaces/ws/mail/mailboxes/box/drafts/draft/attachments/att1'
+    );
+    const item = t.find('id1');
+    expect(item?.status).toBe('uploaded');
+    expect(item?.attachment?.id).toBe('att1');
+    // The preview is released only after the swap.
+    expect(t.deps.revokeObjectUrl).toHaveBeenCalledExactlyOnceWith('blob:a.png');
+    // The upload used an inline content id and never a blob in the body.
+    expect(t.uploads[0]?.input.contentId).toMatch(/@tuturuuu\.mail$/u);
+  });
+
+  it('keeps the item id stable while the server id differs', async () => {
+    const t = setup();
+    t.store.addFiles([png('a.png')], true);
+    await flush();
+    t.uploads[0]?.succeed();
+    await flush();
+    expect(t.find('id1')?.attachment?.id).toBe('att1');
+    expect(t.find('att1')).toBeUndefined();
+  });
+});
+
+describe('failure and retry', () => {
+  it('marks the item failed in place and retries it behind the queue', async () => {
+    const t = setup();
+    t.store.addFiles([png('a.png'), png('b.png')], true);
+    await flush();
+    t.uploads[0]?.fail();
+    await flush();
+    expect(t.statuses()).toEqual(['failed', 'uploading']);
+    expect(t.fake.calls).toContain('state:id1:failed');
+    t.store.retry('id1');
+    expect(t.statuses()).toEqual(['queued', 'uploading']);
+    t.uploads[1]?.succeed();
+    await flush();
+    // b finished first; the retried item now runs.
+    expect(t.statuses()).toEqual(['uploading', 'uploaded']);
+    expect(t.uploads).toHaveLength(3);
+    t.uploads[2]?.succeed();
+    await flush();
+    expect(t.statuses()).toEqual(['uploaded', 'uploaded']);
+  });
+
+  it('fails the item when the draft cannot be saved, without uploading', async () => {
+    const t = setup();
+    t.deps.ensureDraft.mockResolvedValueOnce(null);
+    t.store.addFiles([pdf('c.pdf')], false);
+    await flush();
+    expect(t.statuses()).toEqual(['failed']);
+    expect(t.deps.upload).not.toHaveBeenCalled();
+  });
+
+  it('ignores retry for an item that is not failed', async () => {
+    const t = setup();
+    t.store.addFiles([pdf('c.pdf')], false);
+    await flush();
+    t.store.retry('id1');
+    expect(t.statuses()).toEqual(['uploading']);
+    expect(t.uploads).toHaveLength(1);
+  });
+});
+
+describe('removal races', () => {
+  it('cancels an upload in flight and never resurrects it', async () => {
+    const t = setup();
+    t.store.addFiles([png('a.png')], true);
+    await flush();
+    t.store.remove('id1');
+    expect(t.store.getSnapshot().items).toEqual([]);
+    expect(t.fake.calls).toContain('remove:id1');
+    expect(t.uploads[0]?.input.signal.aborted).toBe(true);
+    await flush();
+    expect(t.fake.calls.some((call) => call.startsWith('resolve'))).toBe(false);
+    expect(t.deps.remove).not.toHaveBeenCalled();
+    expect(t.deps.revokeObjectUrl).toHaveBeenCalledExactlyOnceWith('blob:a.png');
+  });
+
+  it('deletes only the known attachment when a cancelled upload still succeeds', async () => {
+    const t = setup({ honorAbort: false });
+    t.store.addFiles([png('a.png')], true);
+    await flush();
+    t.store.remove('id1');
+    t.uploads[0]?.succeed();
+    await flush();
+    expect(t.store.getSnapshot().items).toEqual([]);
+    expect(t.fake.calls.some((call) => call.startsWith('resolve'))).toBe(false);
+    expect(t.deps.remove).toHaveBeenCalledExactlyOnceWith('draft', 'att1');
+  });
+
+  it('never deletes anything for a failed upload whose outcome is unknown', async () => {
+    const t = setup();
+    t.store.addFiles([pdf('c.pdf')], false);
+    await flush();
+    t.uploads[0]?.fail();
+    await flush();
+    t.store.remove('id1');
+    expect(t.store.getSnapshot().items).toEqual([]);
+    expect(t.deps.remove).not.toHaveBeenCalled();
+  });
+
+  it('drops a queued item without any request', async () => {
+    const t = setup();
+    t.store.addFiles([pdf('a.pdf'), pdf('b.pdf')], false);
+    await flush();
+    t.store.remove('id2');
+    t.uploads[0]?.succeed();
+    await flush();
+    expect(t.deps.upload).toHaveBeenCalledTimes(1);
+    expect(t.statuses()).toEqual(['uploaded']);
+  });
+
+  it('cancels a placeholder whose node the user deleted', async () => {
+    const t = setup();
+    t.store.addFiles([png('a.png')], true);
+    await flush();
+    t.fake.ids.delete('id1');
+    t.store.reconcileNodes();
+    expect(t.store.getSnapshot().items).toEqual([]);
+    expect(t.uploads[0]?.input.signal.aborted).toBe(true);
+  });
+
+  it('leaves uploaded and unrelated items alone during reconcile', async () => {
+    const t = setup();
+    t.store.reset([attachment('att0', 'inline')]);
+    t.store.reconcileNodes();
+    expect(t.statuses()).toEqual(['uploaded']);
+  });
+});
+
+describe('optimistic removal of uploaded items', () => {
+  it('hides the item at once and drops it when the delete succeeds', async () => {
+    const t = setup();
+    t.draft.id = 'draft';
+    t.store.reset([attachment('a', 'attachment'), attachment('b', 'attachment')]);
+    t.store.remove('a');
+    expect(t.statuses()).toEqual(['removing', 'uploaded']);
+    expect(visibleMediaChips(t.store.getSnapshot().items, '').map((i) => i.id)).toEqual(
+      ['b']
+    );
+    expect(t.deps.remove).toHaveBeenCalledExactlyOnceWith('draft', 'a');
+    await flush();
+    expect(t.store.getSnapshot().items.map((item) => item.id)).toEqual(['b']);
+  });
+
+  it('rolls back to the same index and offers Try again when the delete fails', async () => {
+    const t = setup();
+    t.draft.id = 'draft';
+    t.store.reset([
+      attachment('a', 'attachment'),
+      attachment('b', 'attachment'),
+      attachment('c', 'attachment'),
+    ]);
+    t.deps.remove.mockRejectedValueOnce(new Error('offline'));
+    t.store.remove('b');
+    await flush();
+    expect(t.store.getSnapshot().items.map((item) => item.id)).toEqual([
+      'a',
+      'b',
+      'c',
+    ]);
+    expect(t.statuses()).toEqual(['uploaded', 'uploaded', 'uploaded']);
+    expect(t.deps.onRemoveFailed).toHaveBeenCalledTimes(1);
+    const [failed, retry] = t.deps.onRemoveFailed.mock.calls[0] as [
+      MailMediaItem,
+      () => void,
+    ];
+    expect(failed.id).toBe('b');
+    retry();
+    await flush();
+    expect(t.deps.remove).toHaveBeenCalledTimes(2);
+    expect(t.store.getSnapshot().items.map((item) => item.id)).toEqual([
+      'a',
+      'c',
+    ]);
+  });
+
+  it('restores an inline image node by id on failure', async () => {
+    const t = setup();
+    t.draft.id = 'draft';
+    t.store.reset([attachment('img', 'inline')]);
+    t.deps.remove.mockRejectedValueOnce(new Error('offline'));
+    t.store.remove('img');
+    expect(t.fake.calls).toContain('removing:img:true');
+    await flush();
+    expect(t.fake.calls).toContain('removing:img:false');
+    expect(t.fake.calls).not.toContain('remove:img');
+  });
+
+  it('treats a missing server object as already removed', async () => {
+    const t = setup();
+    t.draft.id = 'draft';
+    t.store.reset([attachment('a', 'attachment')]);
+    t.deps.remove.mockRejectedValueOnce(
+      Object.assign(new Error('gone'), { status: 404 })
+    );
+    t.store.remove('a');
+    await flush();
+    expect(t.store.getSnapshot().items).toEqual([]);
+    expect(t.deps.onRemoveFailed).not.toHaveBeenCalled();
+  });
+
+  it('ignores a second removal while one is pending', async () => {
+    const t = setup();
+    t.draft.id = 'draft';
+    t.store.reset([attachment('a', 'attachment')]);
+    t.store.remove('a');
+    t.store.remove('a');
+    expect(t.deps.remove).toHaveBeenCalledTimes(1);
+  });
+});
+
+describe('cancel and cleanup', () => {
+  it('aborts requests, revokes every preview and drops all items', async () => {
+    const t = setup();
+    t.store.addFiles([png('a.png'), png('b.png')], true);
+    await flush();
+    t.store.cancelAll();
+    expect(t.store.getSnapshot().items).toEqual([]);
+    expect(t.uploads[0]?.input.signal.aborted).toBe(true);
+    expect(t.deps.revokeObjectUrl.mock.calls.map((call) => call[0]).sort()).toEqual([
+      'blob:a.png',
+      'blob:b.png',
+    ]);
+    await flush();
+    // The queued second file never starts after cancel.
+    expect(t.deps.upload).toHaveBeenCalledTimes(1);
+  });
+
+  it('accepts new files after a cancel without leaking the old run', async () => {
+    const t = setup();
+    t.store.addFiles([pdf('a.pdf')], false);
+    await flush();
+    t.store.cancelAll();
+    t.store.addFiles([pdf('b.pdf')], false);
+    await flush();
+    expect(t.uploads).toHaveLength(2);
+    t.uploads[1]?.succeed();
+    await flush();
+    expect(t.statuses()).toEqual(['uploaded']);
+  });
+
+  it('never reports an unhandled rejection for failures after cancel', async () => {
+    const t = setup();
+    t.deps.remove.mockRejectedValue(new Error('offline'));
+    t.store.addFiles([pdf('a.pdf')], false);
+    await flush();
+    t.store.cancelAll();
+    t.uploads[0]?.fail();
+    await flush();
+    expect(t.store.getSnapshot().items).toEqual([]);
+  });
+});
+
+describe('derived state', () => {
+  it('summarizes the send gate from every non-settled status', () => {
+    const items = ['queued', 'uploading', 'failed', 'removing', 'uploaded'].map(
+      (status) => ({ status }) as MailMediaItem
+    );
+    expect(summarizeMedia(items)).toEqual({
+      failed: 1,
+      queued: 1,
+      removing: 1,
+      uploading: 1,
+    });
+  });
+
+  it('shows an uploaded inline image only in the editor unless the body lost it', () => {
+    const t = setup();
+    t.store.reset([attachment('img', 'inline'), attachment('file', 'attachment')]);
+    const items = t.store.getSnapshot().items;
+    const withImage = '<p><img src="/api/v1/workspaces/w/mail/mailboxes/m/drafts/d/attachments/img"></p>';
+    expect(visibleMediaChips(items, withImage).map((item) => item.id)).toEqual([
+      'file',
+    ]);
+    expect(visibleMediaChips(items, '<p>no image</p>').map((item) => item.id)).toEqual(
+      ['img', 'file']
+    );
+  });
+
+  it('keeps pending and failed attachments visible as chips', async () => {
+    const t = setup();
+    t.store.addFiles([pdf('a.pdf')], false);
+    await flush();
+    t.uploads[0]?.fail();
+    await flush();
+    expect(visibleMediaChips(t.store.getSnapshot().items, '')).toHaveLength(1);
+  });
+
+  it('announces events with a sequence number', async () => {
+    const t = setup();
+    t.store.addFiles([pdf('a.pdf')], false);
+    await flush();
+    t.uploads[0]?.succeed();
+    await flush();
+    const snapshot = t.store.getSnapshot();
+    expect(snapshot.announcement).toEqual({ kind: 'uploaded', name: 'a.pdf' });
+    expect(snapshot.announcementSeq).toBeGreaterThanOrEqual(2);
+  });
+});

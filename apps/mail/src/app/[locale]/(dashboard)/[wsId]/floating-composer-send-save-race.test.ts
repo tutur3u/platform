@@ -43,21 +43,21 @@ vi.mock('./mail-composer-editor', () => ({
 vi.mock('./mail-composer-footer', () => ({ MailComposerFooter: () => null }));
 vi.mock('./mail-composer-attachments', () => ({
   MailComposerAttachments: (props: {
-    attachments: MailAttachment[];
-    onRemove: (attachment: MailAttachment) => Promise<void>;
+    items: { id: string; name: string }[];
+    onRemove: (id: string) => void;
   }) =>
     h(
       'div',
       null,
-      props.attachments.map((attachment) =>
+      props.items.map((item) =>
         h(
           'button',
           {
-            key: attachment.id,
+            key: item.id,
             type: 'button',
-            onClick: () => void props.onRemove(attachment),
+            onClick: () => props.onRemove(item.id),
           },
-          `Remove ${attachment.filename}`
+          `Remove ${item.name}`
         )
       )
     ),
@@ -298,10 +298,11 @@ describe('composer Send while saving a draft', () => {
       'draft',
       'attachment'
     );
+    // Removal is optimistic: the chip is gone before the delete settles.
+    expect(screen.queryByText('Remove notes.txt')).toBeNull();
     await act(async () => save.resolve());
     expect(api.send).not.toHaveBeenCalled();
     expect(screen.queryByText('Composer closed')).toBeNull();
-    expect(screen.getByText('Remove notes.txt')).not.toBeNull();
     await act(async () => finishRemoval());
     expect(screen.queryByText('Remove notes.txt')).toBeNull();
     expect(body().value).toBe('Before removal');

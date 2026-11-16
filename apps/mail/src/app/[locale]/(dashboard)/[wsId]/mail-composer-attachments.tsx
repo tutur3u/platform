@@ -1,44 +1,62 @@
-import { Paperclip, X } from '@tuturuuu/icons';
-import type { MailAttachment } from '@tuturuuu/internal-api';
+import { useTranslations } from 'next-intl';
+import { useEffect, useRef } from 'react';
+import { MailComposerAttachmentChip } from './mail-composer-attachment-chip';
+import type { MailMediaItem } from './mail-composer-upload-state';
 
 export function MailComposerAttachments({
-  attachments,
+  items,
   onRemove,
-  removeLabel,
+  onRetry,
 }: {
-  attachments: MailAttachment[];
-  onRemove: (attachment: MailAttachment) => Promise<void>;
-  removeLabel: string;
+  items: MailMediaItem[];
+  onRemove: (id: string) => void;
+  onRetry: (id: string) => void;
 }) {
-  if (attachments.length === 0) return null;
+  const t = useTranslations('mail');
+  const list = useRef<HTMLUListElement>(null);
+  // '' means "no sibling left": focus returns to the attach button.
+  const focusAfterRemoval = useRef<string | null>(null);
+
+  useEffect(() => {
+    const target = focusAfterRemoval.current;
+    if (target === null) return;
+    focusAfterRemoval.current = null;
+    const sibling = target
+      ? Array.from(
+          list.current?.querySelectorAll<HTMLElement>('[data-chip-remove]') ??
+            []
+        ).find((element) => element.dataset.chipRemove === target)
+      : undefined;
+    (
+      sibling ??
+      document.querySelector<HTMLElement>('[data-mail-attach-trigger]')
+    )?.focus();
+  }, [items]);
+
+  if (items.length === 0) return null;
+
+  const remove = (id: string) => {
+    if (list.current?.contains(document.activeElement)) {
+      const index = items.findIndex((item) => item.id === id);
+      focusAfterRemoval.current = (items[index + 1] ?? items[index - 1])?.id ?? '';
+    }
+    onRemove(id);
+  };
 
   return (
-    <div className="flex flex-wrap gap-2 border-dynamic border-t px-3 py-2">
-      {attachments.map((attachment) => (
-        <div
-          className="flex min-w-0 items-center gap-2 rounded-lg bg-foreground/[0.05] px-2 py-1 text-xs"
-          key={attachment.id}
-        >
-          <Paperclip className="size-3 shrink-0" />
-          <span className="max-w-44 truncate">{attachment.filename}</span>
-          <span className="text-[0.68rem] text-muted-foreground">
-            {formatBytes(attachment.sizeBytes)}
-          </span>
-          <button
-            aria-label={removeLabel}
-            className="rounded-sm p-0.5 text-muted-foreground transition-colors hover:bg-foreground/10 hover:text-foreground"
-            onClick={() => void onRemove(attachment)}
-            type="button"
-          >
-            <X className="size-3" />
-          </button>
-        </div>
+    <ul
+      aria-label={t('attachments')}
+      className="flex flex-wrap gap-2 border-dynamic border-t px-3 py-2"
+      ref={list}
+    >
+      {items.map((item) => (
+        <MailComposerAttachmentChip
+          item={item}
+          key={item.id}
+          onRemove={remove}
+          onRetry={onRetry}
+        />
       ))}
-    </div>
+    </ul>
   );
-}
-
-function formatBytes(bytes: number) {
-  if (bytes < 1024 * 1024) return `${Math.ceil(bytes / 1024)} KB`;
-  return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
 }
