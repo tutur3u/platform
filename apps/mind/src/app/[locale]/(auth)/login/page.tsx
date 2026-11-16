@@ -9,6 +9,17 @@ import { redirect } from 'next/navigation';
 import { BASE_URL, WEB_APP_URL } from '@/constants/common';
 import { createMindPublicUrl } from '@/lib/mind-public-url';
 
+/** The public Mind path for `path`, or the app root (`/mind` on the mount)
+ * when the path cannot stay inside it; an unusable target is never a 500. */
+function mindPublicPath(path: string) {
+  try {
+    const target = createMindPublicUrl(path);
+    return `${target.pathname}${target.search}`;
+  } catch {
+    return new URL(BASE_URL).pathname.replace(/\/+$/u, '') || '/';
+  }
+}
+
 function normalizeNextPath(value: string | string[] | undefined) {
   let candidate = Array.isArray(value) ? value[0] : value;
   const base = new URL(BASE_URL);
@@ -28,10 +39,9 @@ function normalizeNextPath(value: string | string[] | undefined) {
         undefined;
       continue;
     }
-    const target = createMindPublicUrl(normalized);
-    return `${target.pathname}${target.search}`;
+    return mindPublicPath(normalized);
   }
-  return createMindPublicUrl('/').pathname;
+  return mindPublicPath('/');
 }
 
 export default async function LoginPage({

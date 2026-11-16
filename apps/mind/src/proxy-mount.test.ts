@@ -113,6 +113,13 @@ describe('mounted Mind responses are never cached', () => {
     expectPrivateWithoutExpiry(response);
   });
 
+  it('lands a locale-prefixed path that cannot stay in the app on its root', async () => {
+    const response = await proxy(mounted('/vi/boards%20one'));
+    expect(response.status).toBe(307);
+    expect(new URL(response.headers.get('location')!).pathname).toBe('/');
+    expectPrivateWithoutExpiry(response);
+  });
+
   it('marks a personalised page private, no-store', async () => {
     const response = await proxy(
       mounted('/boards', {

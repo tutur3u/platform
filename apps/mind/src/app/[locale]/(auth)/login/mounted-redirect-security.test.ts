@@ -72,6 +72,16 @@ describe('mounted Mind login redirect authority', () => {
     expect((await destination(path)).pathname).toBe('/mind');
   });
 
+  it.each(['/boards/one%20two', '/mind/a%2520b'])(
+    'falls back to the mount root instead of failing on %j',
+    async (path) => {
+      expect((await destination(path)).pathname).toBe('/mind');
+      const login = await destination(path, false);
+      const callback = new URL(login.searchParams.get('returnUrl') ?? '');
+      expect(callback.searchParams.get('nextUrl')).toBe('/mind');
+    }
+  );
+
   it('unwraps a mounted authentication alias without looping', async () => {
     expect(
       (await destination('/mind/login?next=%2Fmind%2Fboards%2Fone')).pathname

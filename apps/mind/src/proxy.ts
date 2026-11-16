@@ -144,10 +144,16 @@ function getCanonicalLocaleRedirect(request: NextRequest) {
   const pathLocale = getPathLocale(request.nextUrl.pathname);
   if (!pathLocale) return null;
 
-  const url = createMindPublicUrl(
-    `${stripLocale(request.nextUrl.pathname)}${request.nextUrl.search}`,
-    request
-  );
+  let url: URL;
+  try {
+    url = createMindPublicUrl(
+      `${stripLocale(request.nextUrl.pathname)}${request.nextUrl.search}`,
+      request
+    );
+  } catch {
+    // A path that cannot stay inside the app base lands on its root.
+    url = createMindPublicUrl('/', request);
+  }
 
   const response = NextResponse.redirect(url);
   setLocaleCookie(response, request, pathLocale);
