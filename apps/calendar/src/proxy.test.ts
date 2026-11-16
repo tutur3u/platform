@@ -388,6 +388,26 @@ describe('PWA public-route boundary', () => {
       expect(matcher.test(path)).toBe(true);
     }
   });
+  it('reaches the bare base path once Next prefixes the matchers', async () => {
+    // Next's build-time matcher compiler; its declaration file omits it.
+    const { getMiddlewareMatchers } =
+      (await import('next/dist/build/analysis/get-page-static-info')) as unknown as {
+        getMiddlewareMatchers: (
+          matcher: typeof config.matcher,
+          nextConfig: { basePath: string }
+        ) => { regexp: string }[];
+      };
+    const matchers = getMiddlewareMatchers(config.matcher, {
+      basePath: '/calendar',
+    }).map(({ regexp }) => new RegExp(regexp));
+    const matches = (path: string) => matchers.some((re) => re.test(path));
+    for (const path of ['/calendar', '/calendar/', '/calendar/personal']) {
+      expect(matches(path)).toBe(true);
+    }
+    for (const path of ['/', '/personal', '/calendar/_next/static/a.js']) {
+      expect(matches(path)).toBe(false);
+    }
+  });
   it('preserves terminal auth outage before workspace and locale handling', async () => {
     const unavailable = NextResponse.json(
       { code: 'APP_SESSION_REFRESH_UNAVAILABLE' },

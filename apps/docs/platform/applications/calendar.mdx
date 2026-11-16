@@ -35,13 +35,29 @@ or forwards the token: GET and HEAD resume the validated same-origin next path,
 and other methods return to login, because the mount shares the apex session.
 
 In the production Worker artifact, `calendar.tuturuuu.com` only moves visitors to
-the mount: every request, before auth, locale or app handling, answers a 307 to
-`https://tuturuuu.com/calendar/<path>?<query>` (method kept). Two paths stay on
+the mount: every request, before auth, locale or app handling, answers
+`https://tuturuuu.com/calendar/<path>?<query>` with a 301 for GET and HEAD and a
+307 for other methods (method kept). Two paths stay on
 the subdomain: `/api/build-info` keeps answering for monitoring, and
 `/serwist/sw.js` answers with a worker that clears the subdomain's caches,
 unregisters itself and reloads open tabs, so browsers that installed the old
 worker reach the mount. `apps/calendar/src/proxy.mounted-auth.test.ts` covers the
 mount rule and `apps/calendar/src/runtime/root-cutover.test.ts` the subdomain.
+
+The Next build serves the app under the `/calendar` base path on its own host.
+Next prefixes the proxy matchers with the base path, so the proxy only sees
+prefixed paths; its root matcher `/` covers the bare `/calendar`. Unprefixed
+paths answer a same-host 307 that keeps the query string, and their sources also
+declare `Cache-Control: private, no-store`: `/` goes to `/calendar`, and any
+other path goes to `/calendar/<path>` unless its first segment is `calendar`,
+`api`, `_next`, `_vercel`, `serwist`, `monitoring` or `.well-known`. Three
+GET-only API paths redirect the same way:
+the Google and Microsoft OAuth callbacks and `/api/build-info`. Every other
+unprefixed `/api/*` path stays unrouted. Next serves an unprefixed path in place
+only through an external rewrite, and a redirect breaks non-GET or
+manual-redirect callers, so those callers use `/calendar/api/*`. Next's built-in
+308 removes a trailing slash first. `apps/calendar/src/lib/legacy-root-routes.ts`
+holds the rule and `apps/calendar/next.config.test.ts` covers the emitted routes.
 
 `apps/calendar/src/runtime/public-completion.test.ts` covers the real proxy,
 shared token consumer, locale resolution, anonymous page model, security policy,

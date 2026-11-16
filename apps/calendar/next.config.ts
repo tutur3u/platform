@@ -8,6 +8,11 @@ import {
 } from '@tuturuuu/utils/next-config';
 import createNextIntlPlugin from 'next-intl/plugin';
 
+import {
+  CALENDAR_BASE_PATH,
+  createLegacyRootRedirectHeaders,
+  createLegacyRootRedirects,
+} from './src/lib/legacy-root-routes';
 import { createTaskApiRewrites } from './src/lib/task-api-rewrites';
 
 const withNextIntl = createNextIntlPlugin();
@@ -27,7 +32,7 @@ const TASKS_APP_URL = resolveInternalAppUrl({
 
 const nextConfig = createTuturuuuNextConfig({
   seoApp: 'calendar',
-  basePath: '/calendar',
+  basePath: CALENDAR_BASE_PATH,
   ...getOfflineTurbopackConfig(),
   transpilePackages: ['@tuturuuu/ui'],
   images: {
@@ -37,6 +42,14 @@ const nextConfig = createTuturuuuNextConfig({
         hostname: 'tuturuuu.com',
       },
     ],
+  },
+  async headers() {
+    return createLegacyRootRedirectHeaders();
+  },
+  // Unprefixed legacy paths (`/`, `/personal`) have no route under the base
+  // path; see src/lib/legacy-root-routes.ts.
+  async redirects() {
+    return createLegacyRootRedirects();
   },
   async rewrites() {
     return {
