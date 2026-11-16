@@ -43,6 +43,8 @@ abstract final class DesignRender {
     )..addFont(rootBundle.load('assets/fonts/NotoSans.ttf'))).load();
     for (final font in {
       'NotoSans': 'assets/fonts/NotoSans.ttf',
+      // Tabular figures (timers, durations) ask for the platform monospace.
+      'monospace': 'assets/fonts/NotoSans.ttf',
       'MaterialIcons': 'fonts/MaterialIcons-Regular.otf',
       'LucideIcons': 'assets/fonts/lucide/LucideIcons.otf',
       'LucideLabIcons': 'assets/fonts/lucide/LucideLabIcons.otf',
@@ -60,10 +62,17 @@ abstract final class DesignRender {
   }
 
   /// Writes the [DesignRenderApp] boundary to `<DESIGN_RENDER_DIR>/<name>.png`.
-  static Future<void> capture(WidgetTester tester, String name) async {
+  /// [pixelRatio] overrides `DESIGN_RENDER_PIXEL_RATIO`; [name] may contain
+  /// `/` to write into subfolders.
+  static Future<void> capture(
+    WidgetTester tester,
+    String name, {
+    double? pixelRatio,
+  }) async {
     final output = outputDir;
     if (output == null) return;
     final ratio =
+        pixelRatio ??
         double.tryParse(
           Platform.environment['DESIGN_RENDER_PIXEL_RATIO'] ?? '',
         ) ??
@@ -74,8 +83,9 @@ abstract final class DesignRender {
       );
       final image = await boundary.toImage(pixelRatio: ratio);
       final bytes = await image.toByteData(format: ui.ImageByteFormat.png);
-      await Directory(output).create(recursive: true);
-      await File('$output/$name.png').writeAsBytes(bytes!.buffer.asUint8List());
+      final file = File('$output/$name.png');
+      await file.parent.create(recursive: true);
+      await file.writeAsBytes(bytes!.buffer.asUint8List());
       image.dispose();
     });
   }

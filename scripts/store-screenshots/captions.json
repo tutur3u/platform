@@ -1,0 +1,23 @@
+{
+  "$comment": "Image headlines used when a store's metadata caption is missing or too long to set as a headline. Metadata captions in apps/mobile/store/metadata take precedence.",
+  "en": {
+    "dashboard": "Your day at a glance",
+    "tasks": "Plan work in Kanban, list or timeline",
+    "calendar": "Day, week, month and agenda views",
+    "assistant": "Ask Mira by text or voice",
+    "finance": "Track spending across wallets",
+    "habits": "Build habits and keep your streak",
+    "time-tracker": "Time work sessions or use Pomodoro",
+    "notes": "Capture ideas and turn them into tasks"
+  },
+  "vi": {
+    "dashboard": "Cả ngày của bạn trong một màn hình",
+    "tasks": "Xếp việc theo Kanban, danh sách, dòng thời gian",
+    "calendar": "Xem lịch theo ngày, tuần, tháng",
+    "assistant": "Hỏi Mira bằng tin nhắn hoặc giọng nói",
+    "finance": "Nắm rõ thu chi trên từng ví",
+    "habits": "Xây thói quen, giữ chuỗi ngày liên tục",
+    "time-tracker": "Bấm giờ làm việc hoặc chạy Pomodoro",
+    "notes": "Ghi lại ý tưởng, chuyển thành việc cần làm"
+  }
+}

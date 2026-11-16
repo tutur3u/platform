@@ -262,6 +262,7 @@
                   "build/devops/cloudflare-processor-migration",
                   "build/devops/web-cloudflare-migration",
                   "build/devops/mobile-store-deployment",
+                  "build/devops/mobile-store-screenshots",
                   "build/devops/desktop-beta-distribution",
                   "build/devops/mac-app-store-distribution",
                   "build/devops/desktop-release-versioning",

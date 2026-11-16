@@ -1,0 +1,99 @@
+---
+title: "Mobile Store Screenshots"
+description: "How the App Store, Google Play and Microsoft Store screenshots and graphics are captured from the real Flutter UI and composed into store images."
+updatedAt: "2026-11-16"
+audience: developers
+---
+
+Store images come from two stages. The first stage captures the real app UI from
+Flutter widget tests with synthetic fixture data. The second stage composes those
+captures into branded store images. Re-run both stages after any visible change to
+the app shell or to a listed screen.
+
+## 1. Raw capture (Flutter)
+
+`apps/mobile/test/store_screenshots/store_screenshots_test.dart` pumps eight real
+feature pages (dashboard, tasks, calendar, assistant, finance, habits, time
+tracker, notes) inside `StoreScreenshotApp`, which is the app's own root frame
+in the default light Sorbet theme. It renders each page in English and
+Vietnamese at every store device size in `storeDevices`.
+
+- Each page reads fixture data from `screens/<id>_screen.dart` and
+  `fixtures/`: one fictional design team ("Sorbet Studio") with dates relative to
+  the capture day. Fixtures never use real accounts, real data or a backend.
+- Apple guideline 2.3.3 requires the screenshots to show the real UI. Never
+  replace a page with drawn UI. If a page cannot render from fixtures, capture
+  it on a device against the seeded local backend
+  (`integration_test/e2e_flows_test.dart`, `E2E_SHOT` markers).
+- Every capture passes `expectCleanStoreCapture` (`capture_guard.dart`) after
+  its PNG is written. It fails when the screen shows a load error ("Something
+  went wrong" or Home's "Pull down to try again") or any fixture string from
+  the other locale. `StoreLocale.pick` records each EN/VI pair, so a new
+  fixture string is covered automatically. Fix a failure in the fixture. Never
+  crop around it.
+- Root tabs (Home, Assistant) are built by `ShellPage` itself and ignore the
+  shell's `child`. Pass their fixture page through `storeShellFrame`'s
+  `homePageBuilder` or `assistantPageBuilder`.
+- The app cache (`CacheStore.instance`) is one singleton for the whole run,
+  and its cache keys do not carry the listing locale
+  (`currentCacheLocaleTag()` reads the host locale). Fixture ids that reach a
+  cache key carry the locale (`StoreTasksFixture.boardId(locale)`,
+  `StoreTeam.localeWorkspaceId(locale)`), so EN data never shows in VI. Seed
+  cache snapshots only from `initStoreCache` in `setUpAll`. A cache write
+  started inside a widget test's fake-async zone never completes once that
+  test ends, and every later write queues behind it and hangs the run.
+
+Run it on a host with Flutter (not on a machine that is short on disk):
+
+```bash
+cd apps/mobile
+DESIGN_RENDER_DIR=$PWD/build/store_raw \
+  flutter test test/store_screenshots/store_screenshots_test.dart
+```
+
+PNGs land in `build/store_raw/<store>/<device>/<locale>/NN-<id>.png` at the
+store pixel size (logical size × pixel ratio). Filter a run with
+comma-separated `STORE_SCREENS`, `STORE_DEVICES` (`ios/iphone-6.9`) or
+`STORE_LOCALES`. Without `DESIGN_RENDER_DIR`, the suite runs as a smoke test on
+one phone size and one desktop size and writes nothing.
+
+## 2. Composition (Playwright)
+
+```bash
+node scripts/store-screenshots/compose.mjs --raw apps/mobile/build/store_raw
+node scripts/store-screenshots/validate.mjs
+```
+
+`compose.mjs` renders each capture in headless Chromium. Each image gets a Sorbet
+background tinted with the screen's product tone, a generic device frame (no
+manufacturer device art) and the headline. Headlines come from the
+`screenshots` captions in `apps/mobile/store/metadata/<store>.json`. A caption
+longer than 48 characters, such as a Microsoft Store sentence caption, falls
+back to the short headline in `scripts/store-screenshots/captions.json`.
+Outputs:
+
+- `apps/mobile/store/screenshots/<store>/<device>/<locale>/NN-<id>.jpg`: JPEG,
+  quality 88, RGB with no alpha, at the exact size in `specs.mjs`. Microsoft
+  Store targets (`format: 'png'`) write `NN-<id>.png` as 24-bit PNG with no
+  alpha at 1920x1080. The metadata `files` paths and
+  `scripts/store-metadata` expect `.png` for `windows`.
+- `apps/mobile/store/screenshots/<platform>/web/NN-<id>.webp` and a
+  `manifest.json` with each file's width and height: up to six EN shots per
+  platform for /roadmap, at most 1280 px on the long edge and 150 KB each.
+- `apps/mobile/store/graphics/android/feature-graphic-1024x500.png` and
+  `apps/mobile/store/graphics/windows/hero-1920x1080.png`: 24-bit PNG with no
+  alpha. The hero carries no text, and the feature graphic shows only the app
+  name.
+
+Options: `--only ios/iphone-6.9,macos/mac`, `--locales en`, `--plate <png>`
+(replaces the drawn background with a generated plate) and `--no-graphics`.
+Headlines use Nunito from Google Fonts, so composition needs network access.
+Playwright resolves from a workspace that depends on it. Run
+`bunx playwright install chromium` once per host.
+
+`validate.mjs` (also run by `scripts/store-screenshots/validate.test.mjs` in
+`bun test:scripts`) checks exact sizes, each target's format and RGB channels,
+per-store file limits, opaque graphics, the web gallery limits, the 40 MiB
+budget for committed screenshots, and that every screenshot the metadata lists
+exists for each store that has any screenshot committed. Stores can land one at
+a time.

@@ -1,0 +1,47 @@
+{
+  "source": "windows/desktop/en",
+  "items": [
+    {
+      "id": "dashboard",
+      "file": "apps/mobile/store/screenshots/windows/web/01-dashboard.webp",
+      "width": 1280,
+      "height": 720,
+      "bytes": 33858
+    },
+    {
+      "id": "tasks",
+      "file": "apps/mobile/store/screenshots/windows/web/02-tasks.webp",
+      "width": 1280,
+      "height": 720,
+      "bytes": 46022
+    },
+    {
+      "id": "calendar",
+      "file": "apps/mobile/store/screenshots/windows/web/03-calendar.webp",
+      "width": 1280,
+      "height": 720,
+      "bytes": 37318
+    },
+    {
+      "id": "assistant",
+      "file": "apps/mobile/store/screenshots/windows/web/04-assistant.webp",
+      "width": 1280,
+      "height": 720,
+      "bytes": 24726
+    },
+    {
+      "id": "finance",
+      "file": "apps/mobile/store/screenshots/windows/web/05-finance.webp",
+      "width": 1280,
+      "height": 720,
+      "bytes": 28848
+    },
+    {
+      "id": "habits",
+      "file": "apps/mobile/store/screenshots/windows/web/06-habits.webp",
+      "width": 1280,
+      "height": 720,
+      "bytes": 25538
+    }
+  ]
+}
