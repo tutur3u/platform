@@ -33,6 +33,8 @@ import type {
   ComposeInitialDraft,
   MailComposerHandle,
 } from './mail-composer-types';
+import { MeetMailHandoffPreview } from './meet-mail-handoff-preview';
+import { getSendableMailboxes } from './mail-composer-utils';
 import { toComposeInitialDraft } from './mail-composer-utils';
 import { MailContentState } from './mail-content-state';
 import { MailDeliveryList } from './mail-delivery-list';
@@ -644,6 +646,21 @@ export function MailAppClient({ folder, workspaceId }: MailAppClientProps) {
       <MailKeyboardHelp
         open={keyboard.helpOpen}
         onOpenChange={keyboard.setHelpOpen}
+      />
+      <MeetMailHandoffPreview
+        workspaceId={workspaceId}
+        sourceKey={activeMailboxId ?? ''}
+        blocked={composerMounted}
+        canImport={Boolean(
+          activeMailbox && getSendableMailboxes([activeMailbox]).length
+        )}
+        onImport={(draft) => {
+          void openCompose({
+            to: draft.to,
+            subject: draft.subject,
+            bodyText: draft.text,
+          });
+        }}
       />
       {composerMounted && (
         <LazyFloatingComposer

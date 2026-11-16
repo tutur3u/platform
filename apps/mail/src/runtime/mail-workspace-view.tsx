@@ -70,7 +70,10 @@ export function MailWorkspaceView({
           >
             <RealtimeLogProvider wsId={wsId}>
               <div data-workspace-slug={workspaceSlug}>
-                <MailWorkspace workspaceId={workspaceSlug}>
+                <MailWorkspace
+                  workspaceId={workspaceSlug}
+                  handoffWorkspaceId={wsId}
+                >
                   {null}
                 </MailWorkspace>
               </div>

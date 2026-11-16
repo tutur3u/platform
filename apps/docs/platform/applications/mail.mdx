@@ -1369,3 +1369,30 @@ Root-mode Mail keeps its existing satellite session behavior. The required
 `NEXT_PUBLIC_SUPABASE_URL` Worker secret is declared in the native artifact
 profile and remains separate from browser build-time configuration. See
 `proxy-auth.test.ts` for the no-session-cookie-write regression.
+
+## Pending Meet drafts
+
+The two Mail clients share the explicit Meet draft preview. A fragment is parsed
+as untrusted draft data and matched to the current authenticated actor and the
+server-verified workspace UUID, including personal alias routes. It cannot select
+an account, mailbox, From/Cc/Bcc, reply source, HTML or attachments. Mail retains
+normal source selection and account/mailbox permissions.
+
+Arrival and parsing perform no draft or send mutation. Only Open draft may
+initialize a composer. A managed nonempty draft then follows normal autosave;
+connected account drafts use normal explicit Save draft or Send. Import itself
+never sends an email or a provider invitation. Subject/body tags are literal text,
+not imported markup. No notes, transcript or private recording URL is accepted.
+
+An open or retained composer blocks import without saving or replacing its
+contents. The user can keep it and explicitly open the handoff in a new Mail tab.
+Duplicate hashes and rerenders do not import again. Actor/workspace mismatch,
+expiry, unavailable browser replay protection and source changes during an import
+claim fail closed. Fragments remain pending for source selection until consent
+or dismissal; plaintext is not stored in replay receipts or application logs.
+
+See [Meet's protocol and browser limits](meet#explicit-mail-draft-handoff).
+Signed-out resume is not guaranteed; a fresh handoff may be necessary after login.
+Client native loaders must project pathname/query before any server-function
+serialization, and the native workspace adapter must supply its verified UUID.
+These boundaries require explicit native acceptance in addition to component tests.

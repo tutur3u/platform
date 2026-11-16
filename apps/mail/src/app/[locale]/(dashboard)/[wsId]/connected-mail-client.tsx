@@ -15,6 +15,8 @@ import { Input } from '@tuturuuu/ui/input';
 import { useTranslations } from 'next-intl';
 import { useQueryState } from 'nuqs';
 import { useState } from 'react';
+import type { MeetMailPlainDraft } from '@tuturuuu/utils/meet-mail-handoff';
+import { MeetMailHandoffPreview } from './meet-mail-handoff-preview';
 import { ConnectedMailCompose } from './connected-mail-compose';
 import { useConnectedMailAccounts } from './connected-mail-accounts';
 import { ConnectedMailReader } from './connected-mail-reader';
@@ -24,6 +26,7 @@ import {
 } from './mail-source-selection';
 
 interface ComposeState {
+  initialDraft?: MeetMailPlainDraft;
   accountId: string;
   intentId: string;
   mode?: 'reply' | 'reply_all' | 'forward' | 'edit';
@@ -136,6 +139,19 @@ export function ConnectedMailClient({
       {!account && !accounts.isLoading ? (
         <p className="text-muted-foreground">{t('connected_empty')}</p>
       ) : null}
+      <MeetMailHandoffPreview
+        workspaceId={workspaceId}
+        sourceKey={accountId}
+        blocked={Boolean(composeState || composeParam === '1')}
+        canImport={Boolean(actorId && account)}
+        onImport={(initialDraft) =>
+          setComposeState({
+            accountId,
+            intentId: crypto.randomUUID(),
+            initialDraft,
+          })
+        }
+      />
       {account ? (
         <>
           <form
@@ -175,6 +191,7 @@ export function ConnectedMailClient({
               workspaceId={workspaceId}
               accountId={accountId}
               address={account.address}
+              initialDraft={compose.initialDraft}
               source={compose.source}
               mode={compose.mode}
               onClose={() => closeCompose(compose)}

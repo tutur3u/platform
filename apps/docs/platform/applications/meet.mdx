@@ -531,3 +531,50 @@ Meet build in hosted CI and replay representative authenticated navigation,
 workspace reads, plan actions, and the denied upload through managed rules
 without the relevant skips. Record contributor IDs and redacted outcomes.
 POST bodies are still inspected; POST alone does not prove a score below 949110.
+
+## Explicit Mail draft handoff
+
+The active Meet call overflow offers Mail to a host who can read the workspace.
+Parley, guests without workspace access, and nonmanagers do not receive this
+people-directory surface. Copy invite and room admission retain their own rules.
+The dialog uses the permitted people email projection and requires explicit
+selection of up to 20 recipients; hidden or absent emails cannot be selected.
+
+Open Mail carries only a versioned draft in a URL fragment to the registered
+first-party Mail origin. Its join URL uses the existing room code, and the subject
+and body contain only bounded meeting title text and that URL. Notes, transcripts,
+recordings, account selection, reply metadata, HTML and attachments are excluded.
+The payload grants no membership, room admission, Mail permission or sender proof.
+Neither opening the handoff nor previewing it sends mail or provider invitations.
+
+Mail shows a pending preview. Open draft is separate consent to initialize a
+composer: the managed composer can then autosave using normal Mail permissions;
+the connected composer persists only through its normal explicit actions.
+Existing or retained composers block import. Open in new Mail tab leaves that
+work untouched and requires preview confirmation again in the new tab.
+
+Version 1 accepts a UUIDv4 handoff ID, current actor/workspace UUIDs, a five-minute
+age with 30-second future skew, a 160-character subject, a 1024-character body,
+a 512-character canonical Meet room URL and a 16,384-character encoded fragment.
+The body is exactly the subject followed by the join URL on a new line. Header
+control characters, malformed input and unknown fields are rejected. Recipient
+addresses are trimmed, lowercased and deduplicated. Literal HTML in meeting text
+stays plain text and is escaped by the managed composer.
+
+Browser replay receipts store only random IDs and expiry, never recipients or
+body. A Web Lock serializes import claims; missing locking/storage support,
+corrupt receipts or 128 unexpired receipts fail closed. Receipts expire at issue
+time plus five minutes and 30 seconds. This is browser-local draft replay
+protection, not a delivery guarantee or a server authorization mechanism.
+
+Sign in to Mail before sharing. Signed-out redirect hops can discard the
+fragment; resumable login handoff is not established. Generate a fresh handoff
+from Meet if it is lost or expired. Handoff data must never be placed in login
+returnTo queries or the room pending-invite cookie. Native acceptance requires
+stripping the fragment before loader server-function serialization and binding
+Mail's personal alias to the server-verified workspace UUID.
+
+Coverage includes the real producer picker, both Mail clients/composers, replay
+and scope/lifecycle tests in `meet-mail-share`, `meet-mail-handoff`, and the
+portable protocol tests. Cross-app signed-in runtime acceptance remains a
+separate release gate.

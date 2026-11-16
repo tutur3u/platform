@@ -6,6 +6,15 @@ shared-package changes.
 
 ## Web And Shared UI
 
+- Meet-to-Mail handoff is untrusted fragment draft data, with explicit Mail preview
+  before composer initialization. Managed drafts can autosave after confirmation.
+  Keep normal mailbox/account permissions and retained composers intact. Inspect
+  native loaders before claiming fragment privacy: passing `location.href` to a
+  server function serializes the hash too; strip it on the client side. Both Next
+  and native workspace adapters must inject the verified UUID behind `personal`.
+  See [Meet handoff](../../../../../apps/docs/platform/applications/meet.mdx#explicit-mail-draft-handoff)
+  for protocol, replay limits and signed-out constraints.
+
 - Saved Calendar attendee snapshots are organizer-only explicit reads. Keep them
   out of generic Save payloads and do not infer attendee mutation safety from
   create request reservations or expiring coordination leases. Mutation admission

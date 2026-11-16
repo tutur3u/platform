@@ -4587,6 +4587,21 @@
       "status": "Đang chuẩn bị",
       "title": "Meet"
     },
+    "mail_handoff": {
+      "add": "Thêm khách mời",
+      "contact": "Liên hệ",
+      "empty": "Không tìm thấy người",
+      "error": "Không thể chuyển sang Mail.",
+      "loading": "Đang tải…",
+      "member": "Thành viên",
+      "minimum_query": "Nhập ít nhất 2 ký tự",
+      "open": "Mở Mail",
+      "preview": "Mail sẽ yêu cầu bạn xem lại bản nháp. Lời mời chưa được gửi.",
+      "remove": "Xóa {email}",
+      "retry": "Thử lại",
+      "search": "Tìm người",
+      "title": "Chia sẻ qua Mail"
+    },
     "meetings": {
       "calendar_hint": "Thêm cuộc họp vào Lịch Tuturuuu kèm liên kết trở lại phòng này.",
       "cancel": "Hủy",

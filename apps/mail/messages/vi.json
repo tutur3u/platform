@@ -619,6 +619,15 @@
     "media_state_queued": "đang chờ",
     "media_state_removing": "đang xóa",
     "media_state_uploading": "đang tải lên",
+    "meet_handoff": {
+      "blocked": "Giữ bản nháp hiện tại. Mở yêu cầu này trong thẻ mới để tiếp tục.",
+      "confirm": "Xem lại người nhận và văn bản trước khi mở bản nháp. Mail có thể lưu bản nháp sau khi bạn xác nhận.",
+      "dismiss": "Bỏ qua",
+      "import": "Mở bản nháp",
+      "invalid": "Yêu cầu này không hợp lệ, đã hết hạn hoặc đã nhập. Hãy tạo yêu cầu mới từ Meet.",
+      "new_tab": "Mở trong thẻ Mail mới",
+      "title": "Bản nháp Meet"
+    },
     "members": "Thành viên",
     "members_description": "Người và vai trò có quyền truy cập hộp thư",
     "message": "Nội dung",

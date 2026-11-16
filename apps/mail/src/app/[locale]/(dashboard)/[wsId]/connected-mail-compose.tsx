@@ -11,10 +11,12 @@ import { Input } from '@tuturuuu/ui/input';
 import { Textarea } from '@tuturuuu/ui/textarea';
 import { useTranslations } from 'next-intl';
 import { useEffect, useRef, useState } from 'react';
+import type { MeetMailPlainDraft } from '@tuturuuu/utils/meet-mail-handoff';
 import { connectedReplyDraft } from './connected-mail-reply';
 
 export function ConnectedMailCompose({
   workspaceId,
+  initialDraft,
   accountId,
   address,
   source,
@@ -22,6 +24,7 @@ export function ConnectedMailCompose({
   onClose,
   onSent,
 }: {
+  initialDraft?: MeetMailPlainDraft;
   workspaceId: string;
   accountId: string;
   address: string;
@@ -38,7 +41,11 @@ export function ConnectedMailCompose({
       mounted.current = false;
     };
   }, []);
-  const [initial] = useState(() => connectedReplyDraft(source, address, mode));
+  const [initial] = useState(() =>
+    source || mode || !initialDraft
+      ? connectedReplyDraft(source, address, mode)
+      : { ...initialDraft, cc: [] }
+  );
   const [to, setTo] = useState(initial.to.join(', '));
   const [cc, setCc] = useState(initial.cc.join(', '));
   const [bcc, setBcc] = useState(

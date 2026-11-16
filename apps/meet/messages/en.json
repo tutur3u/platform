@@ -4587,6 +4587,21 @@
       "status": "Getting things ready",
       "title": "Meet"
     },
+    "mail_handoff": {
+      "add": "Add guest",
+      "contact": "Contact",
+      "empty": "No people found",
+      "error": "Mail handoff is unavailable.",
+      "loading": "Loading…",
+      "member": "Member",
+      "minimum_query": "Enter at least 2 characters",
+      "open": "Open Mail",
+      "preview": "Mail will ask you to review this draft. No invitation is sent.",
+      "remove": "Remove {email}",
+      "retry": "Retry",
+      "search": "Search people",
+      "title": "Share via Mail"
+    },
     "meetings": {
       "calendar_hint": "Adds the meeting to Tuturuuu Calendar with a link back to this room.",
       "cancel": "Cancel",

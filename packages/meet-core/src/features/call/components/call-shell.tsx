@@ -416,6 +416,12 @@ function CallShellContent({
           />
           <RoomCountdown expiresAt={state.roomExpiresAt} />
           <CallTopBarMore
+            mailContext={{
+              workspaceId: wsId,
+              actorId: accountId,
+              canReadWorkspace,
+              canManage,
+            }}
             meetingId={meetingId}
             meetingName={room.state.title ?? meetingName}
             canReadNotes={canReadNotes}

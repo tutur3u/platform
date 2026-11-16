@@ -4,9 +4,15 @@ import type { ReactNode } from 'react';
 import { afterEach, beforeEach, expect, it, vi } from 'vitest';
 
 const mocks = vi.hoisted(() => ({
+  app: 'meet',
   success: vi.fn(),
   error: vi.fn(),
   writeText: vi.fn(),
+}));
+vi.mock('@tuturuuu/meet-core/runtime', () => ({
+  get MEETING_APP() {
+    return mocks.app;
+  },
 }));
 vi.mock('next-intl', () => ({ useTranslations: () => (key: string) => key }));
 vi.mock('@tuturuuu/ui/sonner', () => ({
@@ -145,3 +151,46 @@ it.each(['error', 'closed'] as const)(
     expect(onRetry).toHaveBeenCalledOnce();
   }
 );
+
+it.each([
+  { canReadWorkspace: false, canManage: true },
+  { canReadWorkspace: true, canManage: false },
+])(
+  'does not offer Mail or a people picker for unauthorized call context %j',
+  (rights) => {
+    render(
+      <CallTopBarMore
+        meetingId="5e5217de-9bb3-4e20-8d99-526ad3e7e34f"
+        meetingName="Call"
+        canReadNotes={false}
+        transcriptOpen={false}
+        onToggleTranscript={() => {}}
+        mailContext={{ ...rights, workspaceId: 'workspace', actorId: 'actor' }}
+      />
+    );
+    expect(screen.queryByRole('menuitem', { name: 'title' })).toBeNull();
+    expect(screen.queryByRole('combobox')).toBeNull();
+  }
+);
+
+it('keeps the Mail directory action out of Parley even for a host', () => {
+  mocks.app = 'parley';
+  render(
+    <CallTopBarMore
+      meetingId="5e5217de-9bb3-4e20-8d99-526ad3e7e34f"
+      meetingName="Call"
+      canReadNotes={false}
+      transcriptOpen={false}
+      onToggleTranscript={() => {}}
+      mailContext={{
+        canReadWorkspace: true,
+        canManage: true,
+        workspaceId: 'workspace',
+        actorId: 'actor',
+      }}
+    />
+  );
+  expect(screen.queryByRole('menuitem', { name: 'title' })).toBeNull();
+  expect(screen.queryByRole('combobox')).toBeNull();
+  mocks.app = 'meet';
+});
