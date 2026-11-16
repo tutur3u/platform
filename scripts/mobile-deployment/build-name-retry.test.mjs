@@ -83,6 +83,48 @@ for (const status of [400, 401, 403, 404]) {
   });
 }
 
+test('a 403 surfaces only allow-listed Apple error codes', async () => {
+  const body = {
+    errors: [
+      {
+        status: '403',
+        code: 'FORBIDDEN.REQUIRED_AGREEMENTS_MISSING_OR_EXPIRED',
+        detail: 'A required agreement is missing or has expired.',
+      },
+      { code: 'not a code <script>' },
+    ],
+  };
+  await withFetch(
+    [new Response(JSON.stringify(body), { status: 403 })],
+    async () => {
+      await assert.rejects(
+        appleGet('/v1/apps', credentials, {
+          sleep: async () => assert.fail('must not back off'),
+        }),
+        (error) => {
+          assert.equal(
+            error.message,
+            'App Store Connect lookup failed (403): FORBIDDEN.REQUIRED_AGREEMENTS_MISSING_OR_EXPIRED'
+          );
+          return true;
+        }
+      );
+    }
+  );
+});
+
+test('a non-JSON error body keeps the bare status message', async () => {
+  await withFetch(
+    [new Response('<html>denied</html>', { status: 401 })],
+    async () => {
+      await assert.rejects(
+        appleGet('/v1/apps', credentials, { sleep: async () => {} }),
+        /^Error: App Store Connect lookup failed \(401\)$/
+      );
+    }
+  );
+});
+
 test('the overall deadline aborts backoff and prevents another request', async () => {
   const controller = new AbortController();
   await withFetch([new TypeError('network unavailable')], async (calls) => {

@@ -48,6 +48,29 @@ function appleToken(privateKey, keyId, issuerId) {
 const lookupDeadlineMs = 240_000;
 const retryBackoffMs = [5_000, 15_000];
 
+// Apple's error codes (e.g. FORBIDDEN.REQUIRED_AGREEMENTS_MISSING_OR_EXPIRED)
+// tell an unaccepted agreement apart from a revoked key or a missing role.
+// Only allow-listed code tokens are surfaced; free-form detail text is dropped.
+export async function appleErrorCodes(response) {
+  try {
+    const text = (await response.text()).slice(0, 16_384);
+    const errors = JSON.parse(text)?.errors;
+    if (!Array.isArray(errors)) return [];
+    return [
+      ...new Set(
+        errors
+          .map((error) => error?.code)
+          .filter(
+            (code) =>
+              typeof code === 'string' && /^[A-Z0-9_.]{1,80}$/.test(code)
+          )
+      ),
+    ].slice(0, 3);
+  } catch {
+    return [];
+  }
+}
+
 export async function appleGet(
   path,
   credentials,
@@ -84,7 +107,6 @@ export async function appleGet(
       response = undefined;
     }
     if (response) {
-      await response.body?.cancel();
       if (
         attempt === 2 ||
         !(
@@ -92,8 +114,13 @@ export async function appleGet(
           (response.status >= 500 && response.status < 600)
         )
       ) {
-        throw new Error(`App Store Connect lookup failed (${response.status})`);
+        const codes = await appleErrorCodes(response);
+        const detail = codes.length > 0 ? `: ${codes.join(', ')}` : '';
+        throw new Error(
+          `App Store Connect lookup failed (${response.status})${detail}`
+        );
       }
+      await response.body?.cancel();
     }
     await sleep(retryBackoffMs[attempt], undefined, { signal });
   }
