@@ -1,5 +1,13 @@
 import { createHash } from 'node:crypto';
-import { lstatSync, readFileSync, readdirSync, writeFileSync } from 'node:fs';
+import {
+  closeSync,
+  constants,
+  fstatSync,
+  openSync,
+  readFileSync,
+  readdirSync,
+  writeFileSync,
+} from 'node:fs';
 import { spawnSync } from 'node:child_process';
 import path from 'node:path';
 import { pathToFileURL } from 'node:url';
@@ -100,11 +108,29 @@ export function assertReady(state) {
   if (state !== 'READY') throw new Error('deployment is not READY');
 }
 
+function isExactMailAlias(alias) {
+  if (alias !== MAIL_PRODUCTION_ALIAS) return false;
+  let url;
+  try {
+    url = new URL(`https://${alias}`);
+  } catch {
+    return false;
+  }
+  return (
+    url.hostname === MAIL_PRODUCTION_ALIAS &&
+    url.pathname === '/' &&
+    url.search === '' &&
+    url.hash === '' &&
+    url.username === '' &&
+    url.password === ''
+  );
+}
+
 export function assertAliasBeforePromote({ stagedAliases, rollbackAliases }) {
-  if ((stagedAliases ?? []).includes(MAIL_PRODUCTION_ALIAS)) {
+  if ((stagedAliases ?? []).some(isExactMailAlias)) {
     throw new Error('staged deployment already owns the mail alias');
   }
-  if (!(rollbackAliases ?? []).includes(MAIL_PRODUCTION_ALIAS)) {
+  if (!(rollbackAliases ?? []).some(isExactMailAlias)) {
     throw new Error('rollback is not bound to the mail alias');
   }
 }
@@ -303,20 +329,39 @@ function deploymentUrl(stdout) {
   return assertHttpsUrl(urls.at(-1), 'staged URL').href;
 }
 
-function listOutput(rootDir) {
+const readOnlyNoFollow =
+  constants.O_RDONLY | constants.O_NOFOLLOW | constants.O_NONBLOCK;
+
+export function listOutput(rootDir) {
   const files = [];
   const walk = (dir) => {
     for (const name of readdirSync(dir)) {
       const abs = path.join(dir, name);
       const rel = path.relative(rootDir, abs).split(path.sep).join('/');
-      const stat = lstatSync(abs);
-      if (stat.isSymbolicLink()) throw new Error('output symlink refused');
-      if (stat.isDirectory()) walk(abs);
-      else if (stat.isFile()) {
-        files.push({
-          path: rel,
-          sha256: createHash('sha256').update(readFileSync(abs)).digest('hex'),
-        });
+      // Open once and hash that descriptor. A later read of the path could
+      // follow a symlink swapped in after a stat.
+      let fd;
+      try {
+        fd = openSync(abs, readOnlyNoFollow);
+      } catch (error) {
+        if (error?.code === 'ELOOP' || error?.code === 'EINVAL') {
+          throw new Error('output symlink refused');
+        }
+        throw error;
+      }
+      try {
+        const stat = fstatSync(fd);
+        if (stat.isDirectory()) walk(abs);
+        else if (stat.isFile()) {
+          files.push({
+            path: rel,
+            sha256: createHash('sha256').update(readFileSync(fd)).digest('hex'),
+          });
+        } else {
+          throw new Error('output symlink refused');
+        }
+      } finally {
+        closeSync(fd);
       }
     }
   };

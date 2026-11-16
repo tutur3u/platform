@@ -1,5 +1,13 @@
 import assert from 'node:assert/strict';
-import { readFileSync } from 'node:fs';
+import {
+  mkdtempSync,
+  mkdirSync,
+  readFileSync,
+  rmSync,
+  symlinkSync,
+  writeFileSync,
+} from 'node:fs';
+import { tmpdir } from 'node:os';
 import path from 'node:path';
 import test from 'node:test';
 import { fileURLToPath } from 'node:url';
@@ -19,6 +27,7 @@ import {
   assertSourceSeal,
   assertSupabaseUrl,
   legacyVercelJson,
+  listOutput,
   normalizeDeployment,
   runPublish,
   promoteCommand,
@@ -174,6 +183,22 @@ test('READY, project, Supabase, HTTPS, and alias guards reject the bad cases', (
       }),
     /already owns the mail alias/
   );
+  for (const lookalike of [
+    `not${MAIL_PRODUCTION_ALIAS}`,
+    `${MAIL_PRODUCTION_ALIAS}.evil.test`,
+    `https://${MAIL_PRODUCTION_ALIAS}`,
+    `prefix ${MAIL_PRODUCTION_ALIAS}`,
+  ]) {
+    assert.throws(
+      () =>
+        assertAliasBeforePromote({
+          stagedAliases: [],
+          rollbackAliases: [lookalike],
+        }),
+      /not bound to the mail alias/,
+      lookalike
+    );
+  }
   assert.throws(
     () =>
       assertPreboundRollback({
@@ -209,6 +234,25 @@ test('READY, project, Supabase, HTTPS, and alias guards reject the bad cases', (
     () => sealTree([{ path: '../config.json', sha256: seal }]),
     /seal is missing/
   );
+});
+
+test('output listing hashes the opened file and refuses a symlink', () => {
+  const dir = mkdtempSync(path.join(tmpdir(), 'mail-seal-'));
+  try {
+    const nested = path.join(dir, 'static');
+    mkdirSync(nested);
+    writeFileSync(path.join(nested, 'app.js'), 'legacy');
+    const files = listOutput(dir);
+    assert.deepEqual(
+      files.map((file) => file.path),
+      ['static/app.js']
+    );
+    assert.match(files[0].sha256, /^[a-f0-9]{64}$/u);
+    symlinkSync(path.join(nested, 'app.js'), path.join(dir, 'linked.js'));
+    assert.throws(() => listOutput(dir), /output symlink refused/);
+  } finally {
+    rmSync(dir, { recursive: true, force: true });
+  }
 });
 
 test('the new workflow is dispatch-only and the general Mail publisher stays held', () => {
