@@ -58,6 +58,7 @@ test('all 27 active Vercel projects preserve their exact Turbo build recipes', (
 
     const legacyProfiles = {
       ai: { quote: '"', concurrency: ' --concurrency=2' },
+      calendar: { quote: "'", concurrency: '' },
       cms: { quote: '"', concurrency: ' --concurrency=2' },
       external: { quote: '"', concurrency: '' },
       finance: { quote: '"', concurrency: ' --concurrency=2' },
