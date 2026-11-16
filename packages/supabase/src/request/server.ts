@@ -13,6 +13,7 @@ import { checkSecretEnvVariables } from '#secret-env';
 import { wrapRequestClientForProxyOnlyTables } from '../next/protected-tables';
 
 const APP_SESSION_COOKIE_NAME = 'tuturuuu_app_session';
+const APP_LOGOUT_COOKIE_NAME = '__Host-tuturuuu_app_signed_out';
 const APP_SESSION_BEARER_PREFIX = 'ttr_app_';
 
 export type RequestClientFetchOptions = {
@@ -123,6 +124,10 @@ function requestHasAppSessionAuth(request: Pick<Request, 'headers'>) {
   const accessToken = getBearerAccessToken(request);
 
   return (
+    request.headers
+      .get('cookie')
+      ?.split(';')
+      .some((part) => part.trim() === `${APP_LOGOUT_COOKIE_NAME}=1`) ||
     Boolean(accessToken?.startsWith(APP_SESSION_BEARER_PREFIX)) ||
     hasCookieNamed(request.headers.get('cookie'), APP_SESSION_COOKIE_NAME)
   );

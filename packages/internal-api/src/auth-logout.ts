@@ -9,6 +9,7 @@ export function logoutBrowserSessionWithInternalApi(
     {
       cache: 'no-store',
       credentials: 'include',
+      headers: { Accept: 'application/json' },
       method: 'POST',
     }
   );

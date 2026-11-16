@@ -1,4 +1,5 @@
-'use client';
+import { requiresAccountConfirmationForReturnApp } from './return-app-confirmation';
+('use client');
 
 import type { TurnstileInstance } from '@marsidev/react-turnstile';
 import { useMutation, useQuery } from '@tanstack/react-query';
@@ -270,17 +271,6 @@ function getReturnAppName(returnApp: string | null) {
   return returnApp ?? 'the app';
 }
 
-function requiresAccountConfirmationForReturnApp(
-  returnApp: string | null,
-  isRegisteredInternalAppReturn: boolean
-) {
-  return Boolean(
-    returnApp &&
-    !['platform', 'web', MANAGED_TUTURUUU_RETURN_APP].includes(returnApp) &&
-    !isRegisteredInternalAppReturn
-  );
-}
-
 function SocialLogoMask({ src, alt }: { src: string; alt: string }) {
   return (
     <span
@@ -398,7 +388,8 @@ export default function LoginForm({
     staticReturnApp !== MANAGED_TUTURUUU_RETURN_APP;
   const requiresReturnAppConfirmation = requiresAccountConfirmationForReturnApp(
     returnApp,
-    isRegisteredInternalAppReturn
+    isRegisteredInternalAppReturn,
+    searchParams.get('confirmAccount') === '1'
   );
   const returnAppName =
     resolvedReturnApp?.appName ?? getReturnAppName(returnApp);
@@ -774,7 +765,8 @@ export default function LoginForm({
     if (
       !requiresAccountConfirmationForReturnApp(
         resolvedReturnApp,
-        isRegisteredInternalAppReturn
+        isRegisteredInternalAppReturn,
+        searchParams.get('confirmAccount') === '1'
       )
     ) {
       return false;

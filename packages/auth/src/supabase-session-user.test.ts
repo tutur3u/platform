@@ -53,3 +53,15 @@ it('fails closed when the provider rejects the request session', async () => {
   expect(result.user).toBeNull();
   expect(result.authError?.message).toBe('Session revoked');
 });
+
+it('does not resolve a shared or provided provider session after app-only logout', async () => {
+  const request = new Request('https://parley.tuturuuu.com/api/public', {
+    headers: {
+      cookie: '__Host-tuturuuu_app_signed_out=1; sb-shared-auth-token=fixture',
+    },
+  });
+  const result = await resolveSupabaseSessionRequest(request);
+  expect(result).toEqual({ authError: null, supabase: null, user: null });
+  expect(f.request).not.toHaveBeenCalled();
+  expect(f.resolve).not.toHaveBeenCalled();
+});

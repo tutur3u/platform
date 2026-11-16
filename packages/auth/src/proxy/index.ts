@@ -1,3 +1,8 @@
+import {
+  authRedirect,
+  buildCentralizedReturnUrl,
+  buildCentralLoginUrl as createCentralLoginUrl,
+} from './central-login-url';
 import { updateSession } from '@tuturuuu/supabase/next/proxy';
 import { createAdminClient } from '@tuturuuu/supabase/next/server';
 import type { AuthenticatorAssuranceLevels } from '@tuturuuu/supabase/next/user';
@@ -27,7 +32,11 @@ import {
   resolveCanonicalRequestOrigin,
 } from './canonical-origin';
 import { appSessionFailureResponse } from './mfa-failure';
-import { hasAppLogoutFence, withAppLogoutFence } from './logout-fence';
+import {
+  appLogoutFenceResponse,
+  hasAppLogoutFence,
+  withAppLogoutFence,
+} from './logout-fence';
 import {
   decodeURIComponentSafely,
   normalizeAuthRedirectPath,
@@ -65,7 +74,6 @@ export {
   withRequestBasePath,
 } from './redirect-path';
 export { getRequestHeadersWithResponseCookies } from './response-cookies';
-const AUTH_REDIRECT_CACHE_CONTROL = 'private, no-store';
 
 function shouldPreserveCentralLoopbackCookies(
   req: NextRequest,
@@ -84,57 +92,6 @@ function shouldPreserveCentralLoopbackCookies(
   } catch {
     return false;
   }
-}
-
-function buildCentralizedReturnUrl(
-  req: NextRequest,
-  webAppUrl: string,
-  canonicalOrigins: readonly string[],
-  rawTargetPath?: string | null
-): string | null {
-  const publicOrigin = resolveCanonicalRequestOrigin(
-    req,
-    webAppUrl,
-    canonicalOrigins
-  );
-  if (!publicOrigin) {
-    return null;
-  }
-  const normalizedTargetPath = normalizeAuthRedirectPath(
-    rawTargetPath ?? `${req.nextUrl.pathname}${req.nextUrl.search}`,
-    publicOrigin,
-    '/'
-  );
-  const verifyUrl = new URL(
-    withRequestBasePath(req, '/verify-token'),
-    publicOrigin
-  );
-  verifyUrl.searchParams.set('nextUrl', normalizedTargetPath);
-  return verifyUrl.toString();
-}
-
-/**
- * Central login URL for a signed-out request. The return URL is omitted when
- * the app has no valid canonical origin, so a header value is never reflected.
- */
-function buildCentralLoginUrl(
-  req: NextRequest,
-  webAppUrl: string,
-  canonicalOrigins: readonly string[]
-): URL {
-  const loginUrl = new URL('/login', webAppUrl);
-  const returnUrl = buildCentralizedReturnUrl(req, webAppUrl, canonicalOrigins);
-  if (returnUrl) {
-    loginUrl.searchParams.set('returnUrl', returnUrl);
-  }
-  return loginUrl;
-}
-
-/** Auth redirects carry per-user state; never let a shared cache keep them. */
-function authRedirect(url: URL): NextResponse {
-  const response = NextResponse.redirect(url);
-  response.headers.set('Cache-Control', AUTH_REDIRECT_CACHE_CONTROL);
-  return response;
 }
 
 /**
@@ -605,7 +562,7 @@ async function handleMFACheck(
 
         const loginUrl = returnUrl
           ? new URL('/login', webAppUrl)
-          : buildCentralLoginUrl(req, webAppUrl, canonicalOrigins);
+          : createCentralLoginUrl(req, webAppUrl, canonicalOrigins);
         if (returnUrl) {
           loginUrl.searchParams.set('returnUrl', returnUrl);
         }
@@ -742,6 +699,10 @@ export function createCentralizedAuthProxy(options: CentralizedAuthOptions) {
         publicPaths.some((path) => req.nextUrl.pathname.startsWith(path)) ||
         isPublicPath?.(req.nextUrl.pathname);
 
+      const signedOut = appLogoutFenceResponse(req, () =>
+        createCentralLoginUrl(req, webAppUrl, canonicalOrigins)
+      );
+      if (signedOut) return signedOut;
       if (appSession) {
         if (
           appSession.sessionMode === 'supabase-first' &&
@@ -821,7 +782,7 @@ export function createCentralizedAuthProxy(options: CentralizedAuthOptions) {
             );
           }
 
-          const loginUrl = buildCentralLoginUrl(
+          const loginUrl = createCentralLoginUrl(
             req,
             webAppUrl,
             canonicalOrigins
@@ -860,7 +821,11 @@ export function createCentralizedAuthProxy(options: CentralizedAuthOptions) {
       }
 
       if (!claims && !isPublic) {
-        const loginUrl = buildCentralLoginUrl(req, webAppUrl, canonicalOrigins);
+        const loginUrl = createCentralLoginUrl(
+          req,
+          webAppUrl,
+          canonicalOrigins
+        );
 
         const redirectResponse = authRedirect(loginUrl);
         propagateAuthCookies(res, redirectResponse);

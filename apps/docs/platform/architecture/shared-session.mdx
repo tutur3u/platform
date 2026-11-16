@@ -49,7 +49,7 @@ anyone out. The page displays the verified current account when available and of
   host. Its POST clears only host-scoped app cookies. Web and other app hosts
   keep their sessions. A secure, HttpOnly, host-only signed-out marker prevents
   shared-cookie fallback and automatic refresh from restoring that app's actor.
-  A fresh explicit app sign-in clears the marker. The confirmation stays on Web after success so it does
+  A signed-out app redirects through central login with an explicit account-confirmation step before a new app token is minted. Ordinary internal SSO remains automatic when the app has not been signed out. A fresh explicit app sign-in clears the marker. The confirmation stays on Web after success so it does
   not immediately re-enter the signed-out app.
 - **All of Tuturuuu** means the **current account in this browser**, using the
   existing local sign-out operation. It does not sign out other saved accounts
@@ -83,7 +83,7 @@ hostile and non-isolated destinations; the logout page component tests cover
 EN/VI, ask-first behavior, failure recovery and current-account local scope.
 `packages/satellite/src/components/user-nav-client-settings.test.tsx` verifies
 that the menu navigates without calling logout. These are fixture-based checks,
-not signed-in production acceptance.
+not signed-in production acceptance. `packages/auth/src/proxy/logout-fence-integration.test.ts` and the login form logout-confirmation test cover the explicit click before re-entry; the transport test drives the actual logout handler over loopback HTTP.
 
 ## Credentials minted from a signed-in session
 

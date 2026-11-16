@@ -30,6 +30,13 @@ export default defineConfig({
   },
   resolve: {
     alias: [
+      {
+        find: '@tuturuuu/supabase/next/auth-browser',
+        replacement: resolve(
+          __dirname,
+          '../../packages/supabase/src/next/auth-browser.ts'
+        ),
+      },
       // Tests exercise the real server reader, never the browser stub.
       {
         find: '@tuturuuu/supabase/next/secret-env',

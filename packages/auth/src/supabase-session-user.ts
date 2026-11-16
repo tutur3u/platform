@@ -1,3 +1,4 @@
+import { hasAppLogoutFence } from './app-session-core';
 import { resolveAuthenticatedSessionUser } from '@tuturuuu/supabase/next/auth-session-user';
 import type { TypedSupabaseClient } from '@tuturuuu/supabase/next/client';
 import type { SupabaseUser } from '@tuturuuu/supabase/next/user';
@@ -14,6 +15,8 @@ export async function resolveSupabaseSessionRequest(
   request?: RequestLike,
   providedSupabase?: TypedSupabaseClient
 ): Promise<SupabaseSessionResolution> {
+  if (request && hasAppLogoutFence(request))
+    return { authError: null, supabase: null, user: null };
   try {
     const supabase =
       providedSupabase ??

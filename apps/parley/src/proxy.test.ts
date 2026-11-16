@@ -145,3 +145,23 @@ it('retains the verified shared cookie when the browser clears its host-only dup
   );
   expect(f.propagate).toHaveBeenCalledWith(response, expect.anything());
 });
+
+it.each(['/r/code', '/api/meet-call/room/token', '/login'])(
+  'checks the central signed-out fence before provider auth at %s',
+  async (path) => {
+    const denied = NextResponse.json(
+      { error: 'App signed out' },
+      { status: 401 }
+    );
+    f.auth.mockResolvedValue(denied);
+    const req = request(path);
+    req.headers.set(
+      'cookie',
+      '__Host-tuturuuu_app_signed_out=1; sb-shared-auth-token=fixture'
+    );
+    expect((await proxy(req)).status).toBe(401);
+    expect(f.auth).toHaveBeenCalledWith(req);
+    expect(f.session).not.toHaveBeenCalled();
+    expect(f.access).not.toHaveBeenCalled();
+  }
+);

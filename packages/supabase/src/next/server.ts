@@ -19,6 +19,7 @@ import {
 import { sessionUserAgentHeaders } from './session-user-agent';
 
 const APP_SESSION_COOKIE_NAME = 'tuturuuu_app_session';
+const APP_LOGOUT_COOKIE_NAME = '__Host-tuturuuu_app_signed_out';
 const APP_SESSION_BEARER_PREFIX = 'ttr_app_';
 const SUPABASE_SESSION_COOKIE_MAX_AGE_SECONDS = 60 * 60 * 24 * 400;
 
@@ -153,11 +154,20 @@ async function createGenericClient<T = Database>(
   // static module graph clean so middleware/proxy consumers build under Turbopack.
   const { cookies } = await import('next/headers');
   const cookieStore = await cookies();
+  const incomingHeaders = headerStore ?? (await readIncomingHeaderStore());
+  if (
+    !isAdmin &&
+    incomingHeaders
+      ?.get('cookie')
+      ?.split(';')
+      .some((part) => part.trim() === `${APP_LOGOUT_COOKIE_NAME}=1`)
+  )
+    return createNoCookieAnonProxyClient<T>();
   const resolvedRequestUrl = requestUrl ?? (await getRequestUrlFromHeaders());
   const cookieOptions = getSupabaseCookieOptions(url, resolvedRequestUrl);
   const sessionHeaders = isAdmin
     ? undefined
-    : sessionUserAgentHeaders(headerStore ?? (await readIncomingHeaderStore()));
+    : sessionUserAgentHeaders(incomingHeaders);
   return createServerClient<T>(url, key, {
     ...(sessionHeaders ? { global: { headers: sessionHeaders } } : {}),
     cookieOptions,
@@ -227,6 +237,10 @@ function requestHasAppSessionAuth(request: Pick<Request, 'headers'>) {
   const accessToken = getBearerAccessToken(request);
 
   return (
+    request.headers
+      .get('cookie')
+      ?.split(';')
+      .some((part) => part.trim() === `${APP_LOGOUT_COOKIE_NAME}=1`) ||
     Boolean(accessToken?.startsWith(APP_SESSION_BEARER_PREFIX)) ||
     hasCookieNamed(request.headers.get('cookie'), APP_SESSION_COOKIE_NAME)
   );

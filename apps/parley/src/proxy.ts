@@ -1,3 +1,4 @@
+import { hasAppLogoutFence } from '@tuturuuu/auth/app-session-core';
 import { withCanonicalLocaleCookie } from '@tuturuuu/auth/locale-cookie';
 import {
   createCentralizedAuthProxy,
@@ -49,6 +50,8 @@ async function handleProxy(request: NextRequest) {
     ].includes(path)
   )
     return NextResponse.next();
+  if (hasAppLogoutFence(request) && path !== '/verify-token')
+    return auth(request);
   if (['/login', '/verify-token', '/access-denied'].includes(path))
     return intl(request);
   const response = await auth(request);
