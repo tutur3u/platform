@@ -6,9 +6,11 @@
 
 /**
  * Screenshots are JPEG unless a target sets `format: 'png'`; the Microsoft
- * Store listing takes opaque PNG.
+ * Store listing takes opaque PNG. `fill` sizes the device to that share of
+ * the canvas width with a tighter headline margin, for large canvases where
+ * the default frame reads small at thumbnail size.
  * @type {Array<{ store: string, device: string, width: number, height: number,
- *   frame: FrameKind, maxBytes: number, format?: 'png' }>}
+ *   frame: FrameKind, maxBytes: number, format?: 'png', fill?: number }>}
  */
 export const SCREENSHOT_TARGETS = [
   {
@@ -34,6 +36,7 @@ export const SCREENSHOT_TARGETS = [
     height: 2752,
     frame: 'tablet',
     maxBytes: 10_000_000,
+    fill: 0.8,
   },
   {
     store: 'android',
@@ -58,6 +61,7 @@ export const SCREENSHOT_TARGETS = [
     height: 2560,
     frame: 'tablet',
     maxBytes: 8_000_000,
+    fill: 0.8,
   },
   {
     store: 'macos',
@@ -66,6 +70,7 @@ export const SCREENSHOT_TARGETS = [
     height: 1800,
     frame: 'desktop-mac',
     maxBytes: 10_000_000,
+    fill: 0.8,
   },
   {
     store: 'windows',

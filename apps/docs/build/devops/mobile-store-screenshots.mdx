@@ -66,7 +66,9 @@ node scripts/store-screenshots/validate.mjs
 
 `compose.mjs` renders each capture in headless Chromium. Each image gets a Sorbet
 background tinted with the screen's product tone, a generic device frame (no
-manufacturer device art) and the headline. Headlines come from the
+manufacturer device art) and the headline. Large canvases (iPad 13", Android 10"
+tablet, Mac) set `fill: 0.8` in `specs.mjs`: the device spans 80% of the width
+under a tighter headline margin, so the UI stays legible as a store thumbnail. Headlines come from the
 `screenshots` captions in `apps/mobile/store/metadata/<store>.json`. A caption
 longer than 48 characters, such as a Microsoft Store sentence caption, falls
 back to the short headline in `scripts/store-screenshots/captions.json`.

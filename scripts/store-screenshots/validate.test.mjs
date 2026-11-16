@@ -10,6 +10,7 @@ import { gallerySources } from './web-gallery.mjs';
 import { readImageInfo } from './image-info.mjs';
 import { toOpaqueRgbPng } from './png-rgb.mjs';
 import { GRAPHIC_TARGETS, SCREENSHOT_TARGETS } from './specs.mjs';
+import { screenshotSpec } from './template.mjs';
 import {
   checkGraphic,
   checkScreenshot,
@@ -383,4 +384,18 @@ test('web gallery follows the listing gallery, else the first screenshots', () =
     () => gallerySources(shots, [{ file: 'x/web/02-tasks.webp' }]),
     /No screenshot/
   );
+});
+
+test('only the large canvases fill 80% of the width', () => {
+  const filled = SCREENSHOT_TARGETS.filter((t) => t.fill).map(
+    (t) => `${t.store}/${t.device}`
+  );
+  assert.deepEqual(filled, ['ios/ipad-13', 'android/tablet10', 'macos/mac']);
+  for (const target of SCREENSHOT_TARGETS) {
+    const spec = screenshotSpec(target);
+    assert.equal(
+      spec.frames[target.frame].maxWidth,
+      target.fill ?? (target.frame === 'phone' ? 0.8 : 0.84)
+    );
+  }
 });

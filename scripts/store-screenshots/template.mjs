@@ -204,6 +204,27 @@ function page(body, width, height, fontCss) {
 
 /** Layout numbers for a listing screenshot of [target]. */
 export function screenshotSpec(target) {
+  return target.fill ? filledSpec(target) : defaultSpec(target);
+}
+
+// Large canvases: the device takes [target.fill] of the width and the headline
+// sits close to the top edge, so the UI stays legible as a store thumbnail.
+function filledSpec(target) {
+  const portrait = target.height > target.width;
+  const base = portrait ? target.width : target.height;
+  return {
+    headlineSize: Math.round(base * (portrait ? 0.056 : 0.062)),
+    headlineTop: Math.round(target.height * (portrait ? 0.028 : 0.035)),
+    gap: Math.round(target.height * (portrait ? 0.022 : 0.03)),
+    bottom: Math.round(target.height * (portrait ? 0.02 : 0.03)),
+    frames: {
+      ...FRAMES,
+      [target.frame]: { ...FRAMES[target.frame], maxWidth: target.fill },
+    },
+  };
+}
+
+function defaultSpec(target) {
   const portrait = target.height > target.width;
   const base = portrait ? target.width : target.height;
   return {
