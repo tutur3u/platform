@@ -82,6 +82,39 @@ test('expression helper models GitHub comparison semantics', () => {
   );
 });
 
+// True only when the job condition is a pure conjunction that requires a
+// manual dispatch from main, so no workflow_run event can ever select it.
+function dispatchOnly(job) {
+  const condition = String(job.if ?? '')
+    .replace(/^\$\{\{\s*/u, '')
+    .replace(/\s*\}\}$/u, '');
+  if (/\|\||!|\(/u.test(condition)) return false;
+  const terms = condition.split('&&').map((term) => term.trim());
+  return (
+    terms.includes("github.event_name == 'workflow_dispatch'") &&
+    terms.includes("github.ref == 'refs/heads/main'")
+  );
+}
+
+test('dispatch-only detection rejects widened conditions', () => {
+  const check = (condition) => dispatchOnly({ if: condition });
+  assert.equal(
+    check(
+      "${{ github.event_name == 'workflow_dispatch' && github.ref == 'refs/heads/main' && inputs.list_only == true }}"
+    ),
+    true
+  );
+  for (const widened of [
+    "${{ github.event_name == 'workflow_dispatch' && github.ref == 'refs/heads/main' || github.event_name == 'workflow_run' }}",
+    "${{ !(github.event_name != 'workflow_dispatch') && github.ref == 'refs/heads/main' }}",
+    "${{ github.event_name == 'workflow_dispatch' }}",
+    "${{ github.ref == 'refs/heads/main' }}",
+    "${{ (github.event_name == 'workflow_dispatch') && github.ref == 'refs/heads/main' }}",
+    undefined,
+  ])
+    assert.equal(check(widened), false, String(widened));
+});
+
 test('every workflow_run consumer is gated by the canonical trust step', () => {
   assert.deepEqual(consumerFiles.sort(), [
     'discord-modal-deploy.yml',
@@ -121,6 +154,14 @@ test('every workflow_run consumer is gated by the canonical trust step', () => {
             `${file}:${id}:${later.name} must use the verified SHA`
           );
         }
+      } else if (dispatchOnly(job)) {
+        // A job that can never run for a workflow_run event is outside the
+        // trigger-trust boundary; dispatch permission and its environment gate it.
+        assert.doesNotMatch(
+          JSON.stringify(job),
+          /workflow_run\./u,
+          `${file}:${id} dispatch-only job must not read workflow_run data`
+        );
       } else {
         assert.match(
           String(job.if),
