@@ -19,7 +19,7 @@ import {
 } from './response-cookies';
 import type { AppSessionRefreshState } from './signed-refresh';
 import { createAppSessionClaimsFromSupabaseClaims } from './supabase-app-claims';
-import { hasVerifiedTotpFactor } from './verified-request-user';
+import { peekVerifiedTotpFactor } from './verified-request-user';
 
 /**
  * Opt-in `supabase-only` session mode for an app mounted on the apex
@@ -87,10 +87,13 @@ export async function resolveMountedSharedSession(
         : 'MFA required',
       res
     );
-  // Enrolled MFA users stay closed until the timestamp-aware verified-claims
-  // assurance contract is available to mounted browser sessions.
-  if (await hasVerifiedTotpFactor(req, record.sub))
-    return refused('MFA required', res);
+  // Enrollment comes only from the user the assurance check above revalidated
+  // on this request; without it the mount cannot rule out TOTP and fails
+  // closed. Enrolled MFA users stay closed until the timestamp-aware
+  // verified-claims assurance contract is available to mounted sessions.
+  const totp = peekVerifiedTotpFactor(req, record.sub);
+  if (totp === null) return refused('Account assurance unavailable', res);
+  if (totp) return refused('MFA required', res);
 
   const appClaims = await createAppSessionClaimsFromSupabaseClaims(claims, {
     now: options.now,

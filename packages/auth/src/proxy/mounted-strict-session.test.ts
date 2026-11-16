@@ -25,7 +25,7 @@ vi.mock('@tuturuuu/utils/required-mfa-runtime', () => ({
   enforceRequiredMfaRequest: mocks.assurance,
 }));
 vi.mock('./verified-request-user', () => ({
-  hasVerifiedTotpFactor: mocks.factors,
+  peekVerifiedTotpFactor: mocks.factors,
   bindRequestAppToken: vi.fn(),
 }));
 vi.mock('./supabase-app-claims', () => ({
@@ -74,7 +74,7 @@ beforeEach(() => {
     claims: { sub: 'provider-user', exp, aal: 'aal1' },
   });
   mocks.assurance.mockResolvedValue(null);
-  mocks.factors.mockResolvedValue(false);
+  mocks.factors.mockReturnValue(false);
   mocks.appClaims.mockResolvedValue({
     sub: 'provider-user',
     target_app: 'mind',
@@ -175,7 +175,7 @@ describe('opt-in mounted provider-only sessions', () => {
         res: NextResponse.next(),
         claims: { sub: 'provider-user', exp, aal },
       });
-      mocks.factors.mockResolvedValue(true);
+      mocks.factors.mockReturnValue(true);
       const result = await refreshAppSessionForRequest(request('/boards'), {
         ...strictOptions,
         now,
@@ -320,7 +320,7 @@ describe('mounted verify-token requires a shared session before redirecting', ()
   );
 
   it('sends MFA-enrolled sessions to Web MFA without redeeming a token', async () => {
-    mocks.factors.mockResolvedValue(true);
+    mocks.factors.mockReturnValue(true);
     const response = await consumeVerifyTokenRequest(
       request('/verify-token?token=never-exchange'),
       verifyOptions
