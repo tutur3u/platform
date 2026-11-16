@@ -22,6 +22,19 @@ import {
 } from './contracts';
 import { boundedCitationOperation } from './timeout';
 
+const featureQuerySchema = z.object({
+  data: z.object({ enabled: z.boolean() }).nullable(),
+  error: z.null(),
+});
+const allocationQuerySchema = z.object({
+  data: z.object({ markup_multiplier: z.number() }).nullable(),
+  error: z.null(),
+});
+const modelRateQuerySchema = z.object({
+  data: z.object({ output_price_per_token: z.number().nullable() }).nullable(),
+  error: z.null(),
+});
+
 export async function admitCitationAi(
   binding: CitationAiBinding,
   estimatedInputTokens: number
@@ -30,16 +43,19 @@ export async function admitCitationAi(
     resolvePlanModel({ wsId: binding.billingWsId, capability: 'language' })
   );
   const admin = await createAdminClient();
-  const feature = await boundedCitationOperation(
-    admin
-      .from('ai_credit_feature_access')
-      .select('enabled')
-      .eq('tier', plan.tier)
-      .eq('feature', binding.feature)
-      .maybeSingle()
+  const featureResult = featureQuerySchema.safeParse(
+    await boundedCitationOperation(
+      admin
+        .from('ai_credit_feature_access')
+        .select('enabled')
+        .eq('tier', plan.tier)
+        .eq('feature', binding.feature)
+        .maybeSingle()
+    )
   );
-  if (feature.error) throw new CitationAiError('CREDIT_CHECK_FAILED', 503);
-  if (feature.data?.enabled !== true)
+  if (!featureResult.success)
+    throw new CitationAiError('CREDIT_CHECK_FAILED', 503);
+  if (featureResult.data.data?.enabled !== true)
     throw new CitationAiError('FEATURE_NOT_ALLOWED', 403);
   const allowance = await boundedCitationOperation(
     checkAiCredits(binding.billingWsId, plan.modelId, binding.feature, {
@@ -64,17 +80,20 @@ export async function admitCitationAi(
       throw new CitationAiError('FEATURE_NOT_ALLOWED', 403);
     throw new CitationAiError('CREDITS_EXHAUSTED', 403);
   }
-  const allocation = await boundedCitationOperation(
-    admin
-      .from('ai_credit_plan_allocations')
-      .select('markup_multiplier')
-      .eq('id', plan.allocationId)
-      .eq('is_active', true)
-      .maybeSingle()
+  const allocationResult = allocationQuerySchema.safeParse(
+    await boundedCitationOperation(
+      admin
+        .from('ai_credit_plan_allocations')
+        .select('markup_multiplier')
+        .eq('id', plan.allocationId)
+        .eq('is_active', true)
+        .maybeSingle()
+    )
   );
-  if (allocation.error || !allocation.data)
+  if (!allocationResult.success || !allocationResult.data.data)
     throw new CitationAiError('CREDIT_CHECK_FAILED', 503);
-  const [tierRate, flat] = await Promise.all([
+  const allocation = allocationResult.data.data;
+  const [tierRate, flatResponse] = await Promise.all([
     boundedCitationOperation(readOutputPricePerToken(admin, plan.modelId)),
     boundedCitationOperation(
       admin
@@ -86,9 +105,12 @@ export async function admitCitationAi(
         .maybeSingle()
     ),
   ]);
-  const baseRate = flat.data?.output_price_per_token;
+  const flat = modelRateQuerySchema.safeParse(flatResponse);
+  const baseRate = flat.success
+    ? flat.data.data?.output_price_per_token
+    : undefined;
   if (
-    flat.error ||
+    !flat.success ||
     typeof baseRate !== 'number' ||
     !Number.isFinite(baseRate) ||
     baseRate <= 0 ||
@@ -105,7 +127,7 @@ export async function admitCitationAi(
       plan.modelId,
       Math.min(allowance.maxOutputTokens ?? 8192, 8192),
       allowance.remainingCredits,
-      allocation.data.markup_multiplier,
+      allocation.markup_multiplier,
       outputRateCeiling
     )
   );
@@ -123,6 +145,10 @@ const durableChargeRowsSchema = z
     })
   )
   .max(2);
+const durableChargeQuerySchema = z.object({
+  data: durableChargeRowsSchema,
+  error: z.null(),
+});
 const LEDGER_CLOCK_MARGIN_MS = 60 * 1000;
 
 /** Pool-or-actor identity covers paid workspace rows and nullable personal-balance rows. */
@@ -162,12 +188,12 @@ export async function readCitationDurableCharge(
         .contains('metadata', { citeOperationId: canonicalId })
         .limit(2)
     );
-    if (response.error) return { kind: 'unavailable' };
-    const parsed = durableChargeRowsSchema.safeParse(response.data);
+    const parsed = durableChargeQuerySchema.safeParse(response);
     if (!parsed.success) return { kind: 'unavailable' };
-    if (parsed.data.length === 0) return { kind: 'absent' };
-    if (parsed.data.length !== 1) return { kind: 'unavailable' };
-    const charge = parsed.data[0];
+    const charges = parsed.data.data;
+    if (charges.length === 0) return { kind: 'absent' };
+    if (charges.length !== 1) return { kind: 'unavailable' };
+    const charge = charges[0];
     if (!charge) return { kind: 'unavailable' };
     return {
       kind: 'charged',
@@ -208,6 +234,10 @@ export async function deductCitationAi(
 const chargeRowsSchema = z
   .array(z.object({ amount: z.number().finite().nonpositive() }))
   .max(2);
+const chargeQuerySchema = z.object({
+  data: chargeRowsSchema,
+  error: z.null(),
+});
 /** Absence and ambiguity never authorize another deduction. User balances may have no ws_id. */
 export async function recoverCitationCharge(
   operationId: string,
@@ -228,9 +258,8 @@ export async function recoverCitationCharge(
       })
       .limit(2)
   );
-  if (response.error) return null;
-  const parsed = chargeRowsSchema.safeParse(response.data);
-  if (!parsed.success || parsed.data.length !== 1) return null;
-  const charge = parsed.data[0];
+  const parsed = chargeQuerySchema.safeParse(response);
+  if (!parsed.success || parsed.data.data.length !== 1) return null;
+  const charge = parsed.data.data[0];
   return charge ? Math.abs(charge.amount) : null;
 }

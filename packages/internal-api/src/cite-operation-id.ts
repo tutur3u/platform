@@ -9,9 +9,10 @@ export function createCitationOperationId(
   if (!Number.isSafeInteger(now) || now < 0 || now > 0xffffffffffff) {
     throw new RangeError('Invalid citation operation time');
   }
-  const bytes = (options.random ?? ((value) => crypto.getRandomValues(value)))(
-    new Uint8Array(16)
-  );
+  const buffer = new Uint8Array(16);
+  const bytes = options.random
+    ? options.random(buffer)
+    : crypto.getRandomValues(buffer);
   if (bytes.length !== 16)
     throw new RangeError('Invalid citation operation randomness');
   let timestamp = now;

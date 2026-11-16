@@ -90,7 +90,9 @@ describe('passive portable citation schemas', () => {
     citation.textContent = '(citation)';
     const parsed = generateJSON(`<p>${citation.outerHTML}</p>`, extensions);
     expect(
-      parsed.content?.[0]?.content?.some((node) => node.type === 'citation')
+      parsed.content?.[0]?.content?.some(
+        (node: JSONContent) => node.type === 'citation'
+      )
     ).toBeFalsy();
   });
 

@@ -60,8 +60,8 @@ function row(data: unknown, error: unknown = null) {
     gte,
     lte,
     or,
-    maybeSingle: vi.fn(async () => ({ data, error })),
-    limit: vi.fn(async () => ({ data, error })),
+    maybeSingle: vi.fn(async (): Promise<unknown> => ({ data, error })),
+    limit: vi.fn(async (): Promise<unknown> => ({ data, error })),
   };
   chain.select.mockReturnValue(chain);
   eq.mockReturnValue(chain);
@@ -166,6 +166,51 @@ afterEach(() => {
 });
 
 describe('citation feature and personal credit admission', () => {
+  it.each([
+    { response: undefined },
+    { response: { error: null } },
+    { response: { data: { enabled: true } } },
+    {
+      response: {
+        data: { enabled: true },
+        error: { message: 'private database detail' },
+      },
+    },
+    { response: { data: { enabled: 'true' }, error: null } },
+  ])(
+    'rejects malformed feature responses before credit allowance',
+    async ({ response }) => {
+      const query = row(null);
+      query.maybeSingle.mockResolvedValue(response);
+      mocked.from.mockReturnValue(query);
+      await expect(admitCitationAi(binding, 900)).rejects.toMatchObject({
+        code: 'CREDIT_CHECK_FAILED',
+        status: 503,
+      });
+      expect(mocked.check).not.toHaveBeenCalled();
+      expect(mocked.cap).not.toHaveBeenCalled();
+    }
+  );
+
+  it.each([
+    { response: undefined },
+    { response: { data: [] } },
+    { response: { data: [], error: { message: 'private database detail' } } },
+    { response: { error: null } },
+  ])(
+    'keeps malformed ledger envelopes unavailable rather than absent or settled',
+    async ({ response }) => {
+      const query = row(null);
+      query.limit.mockResolvedValue(response);
+      mocked.from.mockReturnValue(query);
+      expect(await readCitationDurableCharge(operationId, binding)).toEqual({
+        kind: 'unavailable',
+      });
+      expect(await recoverCitationCharge(operationId, binding)).toBeNull();
+      expect(mocked.deduct).not.toHaveBeenCalled();
+    }
+  );
+
   it('distinguishes an absent durable charge from a failed transaction lookup', async () => {
     mocked.from
       .mockReturnValueOnce(row([]))
@@ -353,15 +398,17 @@ describe('citation feature and personal credit admission', () => {
   );
 
   it.each([
-    null,
-    [{ user_id: 'invalid' }],
-    [
-      { ws_id: null, user_id: null, feature: null, metadata: null },
-      { ws_id: null, user_id: null, feature: null, metadata: null },
-    ],
+    { data: null },
+    { data: [{ user_id: 'invalid' }] },
+    {
+      data: [
+        { ws_id: null, user_id: null, feature: null, metadata: null },
+        { ws_id: null, user_id: null, feature: null, metadata: null },
+      ],
+    },
   ])(
     'fails closed for malformed or ambiguous identity-scoped charge data',
-    async (data) => {
+    async ({ data }) => {
       mocked.from.mockReturnValue(row(data));
       expect(await readCitationDurableCharge(operationId, binding)).toEqual({
         kind: 'unavailable',
@@ -477,6 +524,17 @@ describe('citation feature and personal credit admission', () => {
     });
   });
 
+  it('rejects a numeric-string markup multiplier before authorizing output', async () => {
+    mocked.from
+      .mockReturnValueOnce(row({ enabled: true }))
+      .mockReturnValueOnce(row({ markup_multiplier: '1.25' }));
+    await expect(admitCitationAi(binding, 900)).rejects.toMatchObject({
+      code: 'CREDIT_CHECK_FAILED',
+      status: 503,
+    });
+    expect(mocked.cap).not.toHaveBeenCalled();
+  });
+
   it('passes actual usage and operation metadata without an execution FK or private citation text', async () => {
     const checkpoint: CitationAiCheckpoint = {
       binding,
@@ -500,14 +558,15 @@ describe('citation feature and personal credit admission', () => {
     });
   });
 
-  it.each([[], [{ amount: -1 }, { amount: -1 }], [{ amount: 1 }]])(
-    'keeps missing or ambiguous charge readback unknown',
-    async (data) => {
-      mocked.from.mockReturnValue(row(data));
-      expect(await recoverCitationCharge(operationId, binding)).toBeNull();
-      expect(mocked.deduct).not.toHaveBeenCalled();
-    }
-  );
+  it.each([
+    { data: [] },
+    { data: [{ amount: -1 }, { amount: -1 }] },
+    { data: [{ amount: 1 }] },
+  ])('keeps missing or ambiguous charge readback unknown', async ({ data }) => {
+    mocked.from.mockReturnValue(row(data));
+    expect(await recoverCitationCharge(operationId, binding)).toBeNull();
+    expect(mocked.deduct).not.toHaveBeenCalled();
+  });
 
   it('reads a single actor/feature/original-pool transaction without filtering nullable ws_id', async () => {
     const query = row([{ amount: -0.4 }]);

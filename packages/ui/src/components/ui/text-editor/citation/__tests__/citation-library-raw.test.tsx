@@ -1,5 +1,11 @@
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import { fireEvent, render, screen, waitFor } from '@testing-library/react';
+import {
+  cleanup,
+  fireEvent,
+  render,
+  screen,
+  waitFor,
+} from '@testing-library/react';
 import { type ReactNode, useState } from 'react';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import {
@@ -62,9 +68,7 @@ const library = (
   ...overrides,
 });
 
-afterEach(() => {
-  document.body.innerHTML = '';
-});
+afterEach(cleanup);
 
 describe('raw reference repair before insertion', () => {
   it('confirms once, keeps the proposal across reopen and never auto-inserts', async () => {

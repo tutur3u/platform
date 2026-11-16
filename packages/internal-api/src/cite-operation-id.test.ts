@@ -20,4 +20,16 @@ describe('citation operation identity', () => {
       );
     }
   );
+
+  it('accepts a replacement random buffer and rejects the wrong byte count', () => {
+    expect(
+      createCitationOperationId({
+        now: () => 0,
+        random: () => new Uint8Array(16).fill(255),
+      })
+    ).toBe('00000000-0000-7fff-bfff-ffffffffffff');
+    expect(() =>
+      createCitationOperationId({ random: () => new Uint8Array(15) })
+    ).toThrow(RangeError);
+  });
 });
