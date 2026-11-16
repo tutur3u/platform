@@ -1,19 +1,32 @@
 import assert from 'node:assert/strict';
+import { readFileSync } from 'node:fs';
 import test from 'node:test';
 import {
   FINANCE_APEX_URL,
   financeBakedApexUrl,
+  financeBuildBasePath,
   financeNativeMounts,
   isFinanceApexRoot,
 } from './finance-mounts.mjs';
 
-test('a production root host mounts tuturuuu.com and keeps the subdomain as root', () => {
+test('a production root host stays the subdomain and does not claim the apex', () => {
   assert.deepEqual(financeNativeMounts('finance.tuturuuu.com'), {
     rootHosts: ['finance.tuturuuu.com'],
-    mountHosts: ['tuturuuu.com'],
+    mountHosts: [],
     basePath: '/finance',
     unknownHost: 'reject',
   });
+});
+
+test('the Vite base stays empty so the subdomain root is not prefixed', () => {
+  assert.equal(financeBuildBasePath(), '');
+  const viteConfig = readFileSync(
+    new URL('../../vite.config.mts', import.meta.url),
+    'utf8'
+  );
+  assert.match(viteConfig, /basePath: financeBuildBasePath\(\)/);
+  assert.equal(viteConfig.includes("'/finance'"), false);
+  assert.equal(viteConfig.includes('"/finance"'), false);
 });
 
 test('staging and an undefined host do not mount the apex', () => {

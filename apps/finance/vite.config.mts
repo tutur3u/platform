@@ -11,6 +11,7 @@ import {
   FINANCE_NATIVE_PROFILE_ENV,
   resolveFinanceNativeProfile,
 } from './cloudflare/native-profile.ts';
+import { financeBuildBasePath } from './src/start-bridge/finance-mounts.mjs';
 
 export default defineConfig(({ command }) => {
   // Resolve the native profile before the preset reads NEXT_PUBLIC_* so the
@@ -22,7 +23,7 @@ export default defineConfig(({ command }) => {
   const bridge = startBridgePreset({
     appRoot: import.meta.url,
     app: 'finance',
-    basePath: profile.name === 'production' ? '/finance' : '',
+    basePath: financeBuildBasePath(),
     rsc: true,
     serverOnlySpecifiers: [
       '@tuturuuu/satellite/auth',

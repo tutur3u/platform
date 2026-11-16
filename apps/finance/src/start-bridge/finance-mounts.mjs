@@ -4,9 +4,23 @@ export const FINANCE_PRODUCTION_ROOT_HOST = 'finance.tuturuuu.com';
 export const FINANCE_APEX_URL = 'https://tuturuuu.com/finance';
 
 /**
+ * Vite `base` for every profile. Empty on purpose: the Worker applies
+ * `/finance` per request, and only after it has classified that request
+ * as mounted. Baking `/finance` makes the subdomain root redirect onto
+ * `/finance/<workspace id>`, which then 404s.
+ * @returns {''}
+ */
+export function financeBuildBasePath() {
+  return '';
+}
+
+/**
  * Mounts for one native profile. `rootHost` is the Vite define
  * `VITE_FINANCE_NATIVE_ROOT_HOST`. An empty value admits no host.
  * Passing the apex as the root host throws: that would claim all of tuturuuu.com.
+ * `mountHosts` stays empty. Playground's bridge config also rejects
+ * unknown hosts and does not list tuturuuu.com. The generated Worker
+ * spreads this object over its default, so the apex host is not admitted.
  * The literal return keeps `unknownHost` as `'reject'` for tsc.
  * @returns {{
  *   rootHosts: string[],
@@ -24,7 +38,7 @@ export function financeNativeMounts(rootHost) {
   }
   return {
     rootHosts: host ? [host] : [],
-    mountHosts: host === FINANCE_PRODUCTION_ROOT_HOST ? ['tuturuuu.com'] : [],
+    mountHosts: [],
     basePath: '/finance',
     unknownHost: 'reject',
   };
