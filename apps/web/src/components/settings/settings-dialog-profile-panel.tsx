@@ -2,7 +2,7 @@
 
 import type { WorkspaceUser } from '@tuturuuu/types/primitives/WorkspaceUser';
 import { SettingItemTab } from '@tuturuuu/ui/custom/settings-item-tab';
-import { SettingsSection } from '@tuturuuu/ui/custom/settings-section';
+import { AccountProfilePanel } from '@tuturuuu/ui/custom/account-profile-panel';
 import { resolveProfileNamePlaceholders } from '@tuturuuu/utils/name-helper';
 import { useTranslations } from 'next-intl';
 import AccountStatusSection from './account/account-status-section';
@@ -18,62 +18,54 @@ export function ProfileSettingsPanel({ user }: { user: WorkspaceUser }) {
   const namePlaceholders = resolveProfileNamePlaceholders(user);
 
   return (
-    <div className="space-y-8">
-      <SettingsSection>
-        <SettingItemTab
-          title={t('settings-account.avatar')}
-          description={t('settings-account.avatar-description')}
-        >
-          <UserAvatar user={user} />
-        </SettingItemTab>
-        <SettingItemTab
-          layout="stacked"
-          title={t('settings-account.banner')}
-          description={t('settings-account.banner-description')}
-        >
-          <UserBanner key={user.id} userId={user.id} />
-        </SettingItemTab>
-      </SettingsSection>
-
-      <SettingsSection>
-        <SettingItemTab
-          controlWidth="xl"
-          title={t('settings-account.display-name')}
-          description={t('settings-account.display-name-description')}
-        >
+    <AccountProfilePanel
+      controlWidth="xl"
+      avatar={{
+        title: t('settings-account.avatar'),
+        description: t('settings-account.avatar-description'),
+        control: <UserAvatar user={user} />,
+      }}
+      banner={{
+        title: t('settings-account.banner'),
+        description: t('settings-account.banner-description'),
+        control: <UserBanner key={user.id} userId={user.id} />,
+      }}
+      displayName={{
+        title: t('settings-account.display-name'),
+        description: t('settings-account.display-name-description'),
+        control: (
           <DisplayNameInput
             defaultValue={user.display_name}
             placeholder={namePlaceholders.displayName}
           />
-        </SettingItemTab>
-        <SettingItemTab
-          controlWidth="xl"
-          title={t('settings-account.full-name')}
-          description={t('settings-account.full-name-description')}
-        >
+        ),
+      }}
+      fullName={{
+        title: t('settings-account.full-name'),
+        description: t('settings-account.full-name-description'),
+        control: (
           <FullNameInput
             defaultValue={user.full_name}
             placeholder={namePlaceholders.fullName}
           />
-        </SettingItemTab>
-        <SettingItemTab
-          controlWidth="xl"
-          title="Email"
-          description={t('settings-account.email-description')}
-        >
-          <EmailInput oldEmail={user.email} newEmail={user.new_email} />
-        </SettingItemTab>
-      </SettingsSection>
-
-      <AccountStatusSection user={user}>
-        <SettingItemTab
-          controlWidth="2xl"
-          title={t('settings-account.user-id')}
-          description={t('settings-account.user-id-description')}
-        >
-          <UserIdInput userId={user.id} />
-        </SettingItemTab>
-      </AccountStatusSection>
-    </div>
+        ),
+      }}
+      email={{
+        title: t('settings-account.email-address'),
+        description: t('settings-account.email-description'),
+        control: <EmailInput oldEmail={user.email} newEmail={user.new_email} />,
+      }}
+      accountSection={
+        <AccountStatusSection user={user}>
+          <SettingItemTab
+            controlWidth="2xl"
+            title={t('settings-account.user-id')}
+            description={t('settings-account.user-id-description')}
+          >
+            <UserIdInput userId={user.id} />
+          </SettingItemTab>
+        </AccountStatusSection>
+      }
+    />
   );
 }

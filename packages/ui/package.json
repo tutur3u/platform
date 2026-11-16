@@ -204,6 +204,7 @@
     "@tanstack/react-table": "^9.0.0"
   },
   "exports": {
+    "./custom/account-profile-panel": "./src/components/ui/custom/account-profile-panel.tsx",
     "./custom/workspace-people-picker": "./src/components/ui/custom/workspace-people-picker.tsx",
     "./custom/education-todo": "./src/components/ui/custom/education-todo.tsx",
     "./globals.css": "./src/globals.css",

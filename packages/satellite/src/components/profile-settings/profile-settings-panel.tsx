@@ -6,6 +6,7 @@ import { getCurrentUserProfile } from '@tuturuuu/internal-api';
 import type { WorkspaceUser } from '@tuturuuu/types/primitives/WorkspaceUser';
 import { Badge } from '@tuturuuu/ui/badge';
 import { Button } from '@tuturuuu/ui/button';
+import { AccountProfilePanel } from '@tuturuuu/ui/custom/account-profile-panel';
 import { SettingItemTab } from '@tuturuuu/ui/custom/settings-item-tab';
 import { SettingsSection } from '@tuturuuu/ui/custom/settings-section';
 import { useCopyToClipboard } from '@tuturuuu/ui/hooks/use-copy-to-clipboard';
@@ -51,92 +52,84 @@ export function SatelliteProfileSettingsPanel({
   const namePlaceholders = resolveProfileNamePlaceholders(profile);
 
   return (
-    <div className="space-y-8">
-      <SettingsSection>
-        <SettingItemTab
-          title={t('avatar')}
-          description={t('avatar-description')}
-        >
-          <ProfileAvatarEditor profile={profile} />
-        </SettingItemTab>
-      </SettingsSection>
-
-      <SettingsSection>
-        <SettingItemTab
-          controlWidth="2xl"
-          title={t('display-name')}
-          description={t('display-name-description')}
-        >
+    <AccountProfilePanel
+      avatar={{
+        title: t('avatar'),
+        description: t('avatar-description'),
+        control: <ProfileAvatarEditor profile={profile} />,
+      }}
+      displayName={{
+        title: t('display-name'),
+        description: t('display-name-description'),
+        control: (
           <ProfileFieldForm
             field="display_name"
             initialValue={profile.display_name}
             placeholder={namePlaceholders.displayName}
           />
-        </SettingItemTab>
-        <SettingItemTab
-          controlWidth="2xl"
-          title={t('full-name')}
-          description={t('full-name-description')}
-        >
+        ),
+      }}
+      fullName={{
+        title: t('full-name'),
+        description: t('full-name-description'),
+        control: (
           <ProfileFieldForm
             field="full_name"
             initialValue={profile.full_name}
             placeholder={namePlaceholders.fullName}
           />
-        </SettingItemTab>
-        <SettingItemTab
-          controlWidth="2xl"
-          title={t('email-address')}
-          description={t('email-description')}
-        >
+        ),
+      }}
+      email={{
+        title: t('email-address'),
+        description: t('email-description'),
+        control: (
           <div className="w-full space-y-2">
-            <ProfileEmailLinkOut
-              centralUrl={centralUrl}
-              email={profile.email}
-            />
+            <ProfileEmailLinkOut centralUrl={centralUrl} email={profile.email} />
             {profile.new_email ? (
               <p className="text-muted-foreground text-sm">
                 {t('check-email-verify', { email: profile.new_email })}
               </p>
             ) : null}
           </div>
-        </SettingItemTab>
-      </SettingsSection>
-
-      <SettingsSection>
-        <SettingItemTab
-          title={t('account-status')}
-          description={t('account-status-description')}
-        >
-          <div className="flex gap-2">
-            <Badge variant="success">{t('active')}</Badge>
-            <Badge variant="outline">{t('verified')}</Badge>
-          </div>
-        </SettingItemTab>
-        <SettingItemTab
-          controlWidth="2xl"
-          title={t('user-id')}
-          description={t('user-id-description')}
-        >
-          <div className="flex w-full items-center gap-2">
-            <Input disabled value={profile.id} />
-            <Button
-              className="shrink-0"
-              size="icon"
-              type="button"
-              variant="outline"
-              onClick={() => copyToClipboard(profile.id)}
-            >
-              {isCopied ? (
-                <Check className="size-4" />
-              ) : (
-                <Copy className="size-4" />
-              )}
-            </Button>
-          </div>
-        </SettingItemTab>
-      </SettingsSection>
-    </div>
+        ),
+      }}
+      accountSection={
+        <SettingsSection>
+          <SettingItemTab
+            title={t('account-status')}
+            description={t('account-status-description')}
+          >
+            <div className="flex gap-2">
+              <Badge variant="success">{t('active')}</Badge>
+              <Badge variant="outline">{t('verified')}</Badge>
+            </div>
+          </SettingItemTab>
+          <SettingItemTab
+            controlWidth="2xl"
+            title={t('user-id')}
+            description={t('user-id-description')}
+          >
+            <div className="flex w-full items-center gap-2">
+              <Input disabled value={profile.id} />
+              <Button
+                className="shrink-0"
+                size="icon"
+                type="button"
+                variant="outline"
+                onClick={() => copyToClipboard(profile.id)}
+              >
+                {isCopied ? (
+                  <Check className="size-4" />
+                ) : (
+                  <Copy className="size-4" />
+                )}
+              </Button>
+            </div>
+          </SettingItemTab>
+        </SettingsSection>
+      }
+    />
   );
 }
 
