@@ -334,6 +334,86 @@ to host the handles, and keeps the raw attachment `src` in serialized HTML.
 Regression coverage lives in the composer test file and
 `apps/mail/src/lib/mail/html.test.ts`.
 
+### Uploads, placeholders and removal
+
+Scope: the web Mail composer (`apps/mail`) only. Attachment, inline-image and
+removal requests go through the existing `uploadMailDraftAttachment` and
+`deleteMailDraftAttachment` helpers; nothing in `packages/internal-api` changed,
+and no other app has a composer that uses them.
+
+- **Immediate placeholders.** Choosing, pasting or dropping files creates one item
+  per file at once. Inline images insert an image node at the caret with the local
+  preview and a stable client id; attachments appear as chips. Items upload one at
+  a time and move `queued` → `uploading` → `uploaded` or `failed`. The box of an
+  image is reserved from its decoded local size, and the server image replaces the
+  preview in the same node, by id, only after it has decoded.
+- **Honest progress.** `fetch` reports no upload bytes, so progress is an
+  indeterminate hairline plus a status label, never a percentage.
+- **Failure and retry.** A failed item stays in place (inline image or chip) with
+  Retry and Remove. The footer shows `Uploading n` and `n failed`; the failed
+  count jumps to the first failed item. Retry re-queues the same item at the back.
+- **No duplicates.** An uploaded inline image appears in the editor only. It falls
+  back to a chip only when the body no longer references it (for example the user
+  deleted the image with the keyboard), so it stays removable.
+- **Send and close wait.** Send is disabled while any item is queued, uploading,
+  failed or removing. Save-and-close waits for queued, uploading and removing items;
+  failed items are discarded with the composer.
+- **Optimistic removal.** Removing an uploaded image or chip hides it immediately
+  and issues the delete. If the delete fails, the same item reappears at the same
+  list position (the image node is only hidden until the delete settles) and a
+  toast offers Try again. A missing server object (404) counts as removed.
+- **Nothing resurrects.** Removing or closing cancels the in-flight request. If the
+  server still created the attachment, only that known id is deleted. An upload
+  whose outcome is unknown (failed, never answered) is never deleted blindly.
+  Closing the composer aborts requests and revokes every preview object URL.
+- **Drafts never carry local state.** Placeholder images (queued, uploading,
+  failed or being removed) serialize with a `data-mail-upload` marker and are
+  stripped, together with any `blob:`/`data:` source, before the body reaches the
+  composer state, the draft save or the send payload. Settled images keep the raw
+  attachment `src`.
+- **Editor isolation.** Upload state lives in a store outside React and updates
+  placeholder DOM through node attributes. The editor component is memoized, keeps
+  one TipTap instance (also while the composer is minimized) and is not re-rendered
+  by status changes. Placeholder insertion and swaps skip undo history so undo never
+  restores a placeholder.
+
+Regression coverage lives next to the composer:
+`mail-composer-upload-store.test.ts` (ordering, replace-by-id, failure, retry,
+races, rollback, cancellation, cleanup), `mail-composer-image-nodes.test.ts`
+(serialization stripping), `mail-composer-editor-media.test.ts` (one editor,
+in-place swap, reserved size) and `floating-composer-media.test.ts` (send gate,
+draft and send payloads, dedup, cleanup on close and unmount).
+
+#### Measuring input latency and editor renders
+
+`floating-composer-media.harness.test.ts` replays one deterministic workload
+against the real composer, editor, footer and chips with the upload transport
+replaced by a manually released mock: 20 control keystrokes, selecting 3 images and
+2 files, 40 keystrokes while every upload is held, then 30 keystrokes while uploads
+complete one by one. It records per-keystroke time for a synchronous editor
+dispatch plus the React commit, editor component render counts (via `useEditor`
+calls), composer commits and Profiler time, TipTap transactions, editor identity
+count, and what is on screen immediately after selecting files. It is skipped unless
+`MAIL_MEDIA_HARNESS=1`.
+
+It uses only public props and the DOM, so the same file runs on any commit. Run it
+on the baseline commit and on the changed commit on the same machine, interleaved,
+then compare:
+
+```bash
+MAIL_MEDIA_HARNESS=1 MAIL_MEDIA_HARNESS_LABEL=baseline \
+  MAIL_MEDIA_HARNESS_OUT=/abs/baseline.json \
+  bunx vitest run --config apps/mail/vitest.config.ts \
+  "apps/mail/src/app/[locale]/(dashboard)/[wsId]/floating-composer-media.harness.test.ts"
+node apps/mail/scripts/compare-compose-media-harness.mjs /abs/baseline.json /abs/after.json
+```
+
+Limits: jsdom has no layout, paint or real input pipeline, so values are CPU time
+for dispatch and commit, comparable only between runs on one machine. Run 0 is
+warm-up and excluded. Autosave timers are frozen so saves are not part of the
+workload. The idle rows are a control: a ratio far from 1.00 means the runs are not
+comparable. Layout shift is not measured and must be checked in a real browser.
+
 ## SES Receiving Setup
 
 Do not change DNS from code or migrations. The current public MX for `tuturuuu.com` is Google-routed, so real `@tuturuuu.com` receiving requires an explicit staged MX cutover or a pilot subdomain first.
