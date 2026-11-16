@@ -160,31 +160,67 @@ test('production planner holds Cloudflare for shared Meet runtime changes', () =
   ]);
 });
 
-test('admitted Meet runs Cloudflare for shared Meet runtime changes', () => {
+test('the Meet exclusion holds an admitted Meet on push and dispatch until that line is removed', () => {
   const rootDir = createFixtureRoot();
   const baseSha = initializeGitRepo(rootDir);
   const headSha = commitFile(
     rootDir,
-    'apps/meet-realtime/src/worker.ts',
-    'export const changed = true;\n',
-    'meet realtime change'
+    'apps/meet/src/app/page.tsx',
+    'export default function Page() {}\n',
+    'meet frontend change'
   );
-  const [meet] = resolveFixtureTargets({
-    baseSha,
-    headSha,
-    rootDir,
-    publicationPolicy: {
-      meet: {
-        state: 'admitted',
-        reason: 'reviewed cutover',
-        surfaces: ['frontend', 'realtime-do'],
-      },
+  const publicationPolicy = {
+    meet: {
+      state: 'admitted',
+      reason: 'reviewed cutover',
+      surfaces: ['frontend', 'realtime-do'],
     },
-  });
-  assert.deepEqual(meet, {
-    shouldRun: true,
-    workflowName: 'meet-cloudflare.yaml',
-  });
+  };
+  const targets = [
+    {
+      app: 'meet',
+      appPath: 'apps/meet',
+      additionalPaths: ['apps/meet-realtime/'],
+      productionWorkflow: 'meet-cloudflare.yaml',
+    },
+  ];
+  const workflowMarkers = { 'meet-cloudflare.yaml': { sha: baseSha } };
+  for (const eventName of ['push', 'workflow_dispatch']) {
+    const [meet] = resolveFixtureTargets({
+      baseSha,
+      headSha,
+      rootDir,
+      eventName,
+      targets,
+      publicationPolicy,
+      workflowMarkers,
+      includeEvidence: true,
+    });
+    assert.equal(meet.shouldRun, false, eventName);
+    assert.equal(meet.held, true, eventName);
+    assert.equal(meet.changeResult.source, 'publication-hold', eventName);
+    assert.match(
+      meet.reason,
+      /^held: Meet excluded until the frontend startup failure is tested$/u,
+      eventName
+    );
+  }
+  for (const eventName of ['push', 'workflow_dispatch']) {
+    const [meet] = resolveFixtureTargets({
+      baseSha,
+      headSha,
+      rootDir,
+      eventName,
+      targets,
+      publicationPolicy,
+      workflowMarkers,
+      liftExclusions: ['meet'],
+    });
+    assert.deepEqual(meet, {
+      shouldRun: true,
+      workflowName: 'meet-cloudflare.yaml',
+    });
+  }
 });
 
 test('production hold overrides missing Cloudflare deployment markers', () => {
@@ -480,14 +516,15 @@ test('a non-held app still runs beside the slot exclusions, and Web is not liste
     'bun',
     [
       '--eval',
-      `import { productionAppExclusions } from './tuturuuu.ci.ts';
+      `import { ci, productionAppExclusions } from './tuturuuu.ci.ts';
        const keys = Object.keys(productionAppExclusions).sort();
-       if (keys.includes('web') || keys.includes('platform')) throw new Error(keys.join(','));
+       if (keys.includes('web') || keys.includes('platform') || keys.includes('finance') || keys.includes('storefront')) throw new Error(keys.join(','));
+       if (ci['meet-cloudflare.yaml'] !== true) throw new Error('meet switchboard flipped');
        console.log(keys.join(','));`,
     ],
     { cwd: repoRoot, encoding: 'utf8' }
   );
-  assert.equal(listed.trim(), 'colab,lettin,mind,parley,track');
+  assert.equal(listed.trim(), 'colab,lettin,meet,mind,parley,track');
 });
 
 test('control recovery without deployment markers still fails open safely', () => {
@@ -827,7 +864,12 @@ for (const eventName of ['push', 'workflow_dispatch']) {
     for (const decision of decisions) {
       assert.equal(decision.shouldRun, false);
       assert.equal(decision.held, true);
-      assert.equal(decision.reason, 'held for wave-1 cutover');
+      assert.equal(
+        decision.reason,
+        decision.workflowName.includes('meet')
+          ? 'held: Meet excluded until the frontend startup failure is tested'
+          : 'held for wave-1 cutover'
+      );
     }
   });
 }
