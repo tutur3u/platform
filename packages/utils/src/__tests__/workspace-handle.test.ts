@@ -36,6 +36,15 @@ describe('reserved workspace handles', () => {
     expect(isReservedWorkspaceHandle('CALENDAR')).toBe(true);
   });
 
+  it('reserves the public Playground mount without reserving neighboring handles', () => {
+    for (const handle of ['playground', 'PLAYGROUND', ' Playground ']) {
+      expect(isReservedWorkspaceHandle(handle)).toBe(true);
+    }
+    for (const handle of ['playgroundful', 'playground-team', 'my-playground']) {
+      expect(isReservedWorkspaceHandle(handle)).toBe(false);
+    }
+  });
+
   it('only reserves whole handles', () => {
     expect(isReservedWorkspaceHandle('tasks-team')).toBe(false);
     expect(isReservedWorkspaceHandle('my-calendar')).toBe(false);

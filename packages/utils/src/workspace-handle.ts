@@ -50,6 +50,7 @@ export const RESERVED_WORKSPACE_HANDLES: readonly string[] = [
   'nova',
   'parley',
   'pay',
+  'playground',
   'products',
   'rewise',
   'roadmap',
