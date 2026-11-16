@@ -1,7 +1,7 @@
 'use client';
 
 import { useQuery } from '@tanstack/react-query';
-import { FileText, KeyRound, Phone, Smartphone } from '@tuturuuu/icons';
+import { FileText, Phone, Smartphone } from '@tuturuuu/icons';
 import { Badge } from '@tuturuuu/ui/badge';
 import { SettingItemTab } from '@tuturuuu/ui/custom/settings-item-tab';
 import { SettingsSectionBlock } from '@tuturuuu/ui/custom/settings-section';
@@ -11,11 +11,7 @@ import { useMemo } from 'react';
 import TOTPDialog from './totp-dialog';
 
 type MFAStatus = 'enabled' | 'disabled' | 'coming-soon';
-type MFAMessageKey =
-  | 'authenticator-app'
-  | 'phone-number'
-  | 'security-keys'
-  | 'recovery-codes';
+type MFAMessageKey = 'authenticator-app' | 'phone-number' | 'recovery-codes';
 
 interface MFAMethod {
   id: string;
@@ -41,14 +37,6 @@ const DEFAULT_MFA_METHODS: MFAMethod[] = [
     titleKey: 'phone-number',
     descriptionKey: 'phone-number-description',
     icon: Phone,
-    status: 'coming-soon',
-    dialog: null,
-  },
-  {
-    id: 'security-keys',
-    titleKey: 'security-keys',
-    descriptionKey: 'security-keys-description',
-    icon: KeyRound,
     status: 'coming-soon',
     dialog: null,
   },
@@ -101,7 +89,7 @@ export default function MFAMethodList() {
   if (isLoading) {
     return (
       <>
-        {Array.from({ length: 4 }).map((_, index) => (
+        {Array.from({ length: DEFAULT_MFA_METHODS.length }).map((_, index) => (
           <SettingsSectionBlock className="space-y-2" key={index}>
             <Skeleton className="h-4 w-1/3" />
             <Skeleton className="h-4 w-2/3" />

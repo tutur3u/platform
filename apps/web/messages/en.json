@@ -17103,7 +17103,7 @@
     "passkeys-delete": "Delete passkey",
     "passkeys-delete-error": "Could not delete passkey",
     "passkeys-delete-success": "Passkey deleted",
-    "passkeys-description": "Use biometrics, security keys, or device unlock to sign in without a password.",
+    "passkeys-description": "Use biometrics, hardware security keys, or device unlock to sign in without a password.",
     "passkeys-empty-description": "Add a passkey from a trusted device to make future sign-ins faster and more secure.",
     "passkeys-empty-title": "No passkeys yet",
     "passkeys-last-used-at": "Last used {date}",

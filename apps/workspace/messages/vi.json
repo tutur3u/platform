@@ -16930,7 +16930,7 @@
     "passkeys-delete": "Xóa passkey",
     "passkeys-delete-error": "Không thể xóa passkey",
     "passkeys-delete-success": "Đã xóa passkey",
-    "passkeys-description": "Dùng sinh trắc học, khóa bảo mật hoặc mở khóa thiết bị để đăng nhập không cần mật khẩu.",
+    "passkeys-description": "Dùng sinh trắc học, khóa bảo mật phần cứng hoặc mở khóa thiết bị để đăng nhập không cần mật khẩu.",
     "passkeys-empty-description": "Thêm passkey từ thiết bị tin cậy để các lần đăng nhập sau nhanh hơn và bảo mật hơn.",
     "passkeys-empty-title": "Chưa có passkey",
     "passkeys-last-used-at": "Dùng lần cuối {date}",

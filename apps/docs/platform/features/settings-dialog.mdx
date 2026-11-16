@@ -148,6 +148,12 @@ app's own nav groups. Hosts that reset an unknown active tab use
 overlay both resolve the current app from `window.location.host`, because
 localhost apps differ only by port.
 
+### Security tab: passkeys cover hardware keys
+
+Hardware security keys register through the passkey (WebAuthn) flow. The
+two-factor list has no separate security-key method; the passkeys row says it
+accepts hardware security keys.
+
 ### Contact labels live in Contacts
 
 Scope: the workspace `user_status_labels` config, which names the archive
