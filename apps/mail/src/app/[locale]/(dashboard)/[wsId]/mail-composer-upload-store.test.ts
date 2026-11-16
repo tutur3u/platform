@@ -150,7 +150,7 @@ describe('replace by id after decode', () => {
     );
   });
 
-  it.each(['remove', 'close'] as const)(
+  it.each(['remove', 'close', 'unmount'] as const)(
     'cleans up the known upload after decode failure on %s',
     async (action) => {
       const t = setup();
@@ -160,7 +160,10 @@ describe('replace by id after decode', () => {
       t.uploads[0]?.succeed();
       await flush();
       if (action === 'remove') t.store.remove('id1');
-      else t.store.cancelAll();
+      else if (action === 'unmount') {
+        t.store.dispose();
+        t.store.dispose();
+      } else t.store.cancelAll();
       await flush();
       expect(t.deps.remove).toHaveBeenCalledExactlyOnceWith(OWNER, 'att1');
       expect(t.store.getSnapshot().items).toEqual([]);

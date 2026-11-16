@@ -102,15 +102,7 @@ export class MailUploadStore {
   /** Abort every request, drop every item and release every preview URL. */
   cancelAll(notify = true) {
     this.deletedAttachments.clear();
-    for (const item of this.items()) {
-      if (
-        item.attachment &&
-        item.owner &&
-        item.status !== 'uploaded' &&
-        !this.controllers.has(item.id)
-      )
-        this.discardLate(item.owner, item.attachment);
-    }
+    this.cleanupPendingAttachments();
     for (const controller of this.controllers.values()) controller.abort();
     this.controllers.clear();
     this.files.clear();
@@ -119,15 +111,37 @@ export class MailUploadStore {
     else this.snapshot = { ...this.snapshot, attachments: [], items: [] };
   }
 
+  private cleanupPendingAttachments() {
+    for (const item of this.items()) {
+      if (
+        item.attachment &&
+        item.owner &&
+        item.status !== 'uploaded' &&
+        item.status !== 'removing' &&
+        !this.controllers.has(item.id)
+      )
+        this.discardLate(item.owner, item.attachment);
+    }
+  }
+
   /**
-   * Unmount cleanup: abort requests and release preview URLs without touching
-   * the item list, so a development-mode remount keeps seeded attachments.
+   * Unmount cleanup: abort requests, release previews and drop pending items.
+   * Retain settled attachments for a development-mode remount.
    */
   dispose() {
+    this.cleanupPendingAttachments();
     for (const controller of this.controllers.values()) controller.abort();
     this.controllers.clear();
     this.files.clear();
     for (const item of this.items()) this.release(item);
+    // Pending previews cannot survive revoked URLs; retain settled items and
+    // removals already owned by an in-flight DELETE.
+    this.snapshot = {
+      ...this.snapshot,
+      items: this.items().filter(
+        (item) => item.status === 'uploaded' || item.status === 'removing'
+      ),
+    };
   }
 
   addFiles(files: Iterable<File>, inline: boolean) {

@@ -175,9 +175,22 @@ export function createMailImageNodes(editor: Editor): MailImageNodes {
       editor
         .chain()
         .focus()
-        .insertContent({
-          type: 'image',
-          attrs: { src, uploadId, uploadName: name, uploadState: state },
+        .insertContentAt(
+          editor.isActive('image')
+            ? editor.state.selection.to
+            : {
+                from: editor.state.selection.from,
+                to: editor.state.selection.to,
+              },
+          {
+            type: 'image',
+            attrs: { src, uploadId, uploadName: name, uploadState: state },
+          }
+        )
+        .command(({ commands }) => {
+          // Keep typing after the preview instead of replacing its selection.
+          commands.createParagraphNear();
+          return true;
         })
         .setMeta('addToHistory', false)
         .run(),

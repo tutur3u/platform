@@ -22,6 +22,7 @@ import {
   attachment,
   flush,
   OWNER,
+  png,
 } from './mail-composer-upload-store.fixtures';
 
 const observed: { editor: Editor | null } = { editor: null };
@@ -136,6 +137,25 @@ const addImage = (view: { store: MailUploadStore }) =>
     view.store.addFiles([new File(['x'], 'a.png', { type: 'image/png' })], true)
   );
 const settle = () => act(async () => void (await flush()));
+
+it('keeps every image placeholder when multiple files are selected together', async () => {
+  const view = await open({ html: '<p>Start</p>' });
+  act(() =>
+    view.store.addFiles([png('a.png'), png('b.png'), png('c.png')], true)
+  );
+  expect(images(view.editor)).toHaveLength(3);
+  act(() => {
+    view.editor.commands.insertContent('Typing after selection');
+  });
+  expect(images(view.editor)).toHaveLength(3);
+  await settle();
+  expect(images(view.editor)).toHaveLength(3);
+  expect(view.store.getSnapshot().items.map((item) => item.status)).toEqual([
+    'uploaded',
+    'uploaded',
+    'uploaded',
+  ]);
+});
 const select = (editor: Editor, index: number) =>
   act(() => {
     editor.commands.setNodeSelection(images(editor)[index]?.pos ?? 0);
