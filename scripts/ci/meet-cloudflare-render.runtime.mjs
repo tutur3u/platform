@@ -287,10 +287,12 @@ test(
     timeout: 30000,
   },
   async () => {
-    // Logout POSTs must come from the app's own origin (logout scope contract).
+    // Logout POSTs must come from the app's own origin (logout scope contract);
+    // a JSON Accept selects the JSON result instead of the /login redirect.
     const response = await fetchWorker('/api/auth/logout', {
       method: 'POST',
       headers: {
+        Accept: 'application/json',
         Cookie: signedCookie(),
         Origin: 'https://meet.tuturuuu.com',
         'Sec-Fetch-Site': 'same-origin',
