@@ -5,9 +5,11 @@ import {
   resolveTrustedForwardedHostname,
 } from '@tuturuuu/utils/shared-cookie';
 import type { ResponseCookie } from 'next/dist/compiled/@edge-runtime/cookies';
-import { NextResponse } from 'next/server';
+import { type NextRequest, NextResponse } from 'next/server';
 import {
   APP_SESSION_COOKIE_NAME,
+  APP_LOGOUT_COOKIE_NAME,
+  hasAppLogoutFence,
   APP_SESSION_REFRESH_COOKIE_NAME,
   type AppSessionRequest,
   getAppSessionClaimsFromRequest,
@@ -54,6 +56,7 @@ export function setAppSessionCookie(
     expires?: Date;
   } = {}
 ) {
+  clearAppLogoutFence(response);
   response.cookies.set(
     APP_SESSION_COOKIE_NAME,
     token,
@@ -68,6 +71,7 @@ export function setWebAppSessionCookie(
     expires?: Date;
   } = {}
 ) {
+  clearAppLogoutFence(response);
   response.cookies.set(
     WEB_APP_SESSION_COOKIE_NAME,
     token,
@@ -127,6 +131,16 @@ export function clearAppSessionAndReturn(response: NextResponse) {
   return response;
 }
 
+function clearAppLogoutFence(response: NextResponse) {
+  response.cookies.set(APP_LOGOUT_COOKIE_NAME, '', {
+    httpOnly: true,
+    secure: true,
+    sameSite: 'lax',
+    path: '/',
+    maxAge: 0,
+  });
+}
+
 function wantsJsonLogoutResponse(request: RequestLike) {
   const accept = request.headers.get('accept') ?? '';
   return accept.includes('application/json') && !accept.includes('text/html');
@@ -143,6 +157,102 @@ export function createAppSessionLogoutResponse(
     : NextResponse.redirect(options.redirectUrl, { status: 303 });
 
   return clearSupabaseAuthCookies(request, clearAppSessionAndReturn(response));
+}
+
+export function createAppOnlyLogoutHandlers({
+  centralOrigin: centralUrl,
+  confirmationOnGet = false,
+  getAppOrigin = (request: NextRequest) => new URL(request.url).origin,
+}: {
+  centralOrigin: string;
+  confirmationOnGet?: boolean;
+  getAppOrigin?: (request: NextRequest) => string;
+}) {
+  const centralOrigin = new URL(centralUrl).origin;
+  const GET = (request?: NextRequest) => {
+    if (confirmationOnGet && request?.method === 'GET') {
+      const locale = request.cookies.get('NEXT_LOCALE')?.value;
+      const destination = new URL(
+        locale === 'vi' ? '/vi/logout' : '/logout',
+        centralOrigin
+      );
+      destination.searchParams.set('appUrl', getAppOrigin(request));
+      return NextResponse.redirect(destination, { status: 303 });
+    }
+    return new NextResponse(null, {
+      status: 405,
+      headers: { Allow: 'POST, OPTIONS' },
+    });
+  };
+
+  const acceptedOrigin = (request: NextRequest) => {
+    const origin = request.headers.get('origin');
+    const site = request.headers.get('sec-fetch-site');
+    const ownOrigin = getAppOrigin(request);
+    if (origin === ownOrigin)
+      return site === null || site === 'same-origin' ? origin : null;
+    // Only the configured central confirmation page may end this app's session.
+    return origin === centralOrigin && (site === null || site === 'same-site')
+      ? origin
+      : null;
+  };
+
+  const withCors = (origin: string, response: NextResponse) => {
+    response.headers.set('Access-Control-Allow-Origin', origin);
+    response.headers.set('Access-Control-Allow-Credentials', 'true');
+    response.headers.append('Vary', 'Origin');
+    return response;
+  };
+
+  const OPTIONS = (request: NextRequest) => {
+    const origin = acceptedOrigin(request);
+    if (!origin) return new NextResponse(null, { status: 403 });
+    const response = withCors(origin, new NextResponse(null, { status: 204 }));
+    response.headers.set('Access-Control-Allow-Methods', 'POST');
+    response.headers.set(
+      'Access-Control-Allow-Headers',
+      'Accept, Content-Type'
+    );
+    return response;
+  };
+
+  const POST = (request: NextRequest) => {
+    if (request.method !== 'POST') return GET();
+    const origin = acceptedOrigin(request);
+    if (!origin) return new NextResponse(null, { status: 403 });
+    const appOrigin = new URL(getAppOrigin(request));
+    if (
+      appOrigin.protocol !== 'https:' ||
+      appOrigin.hostname === new URL(centralOrigin).hostname
+    ) {
+      return withCors(
+        origin,
+        NextResponse.json(
+          { success: false, error: 'app_scope_unavailable' },
+          { status: 409 }
+        )
+      );
+    }
+    const result = wantsJsonLogoutResponse(request)
+      ? NextResponse.json({ success: true })
+      : NextResponse.redirect(new URL('/login', request.url), { status: 303 });
+    if (result.headers.has('location'))
+      result.headers.set('location', '/login');
+    const response = clearSupabaseAuthCookies(
+      request,
+      clearAppSessionAndReturn(result)
+    );
+    response.cookies.set(APP_LOGOUT_COOKIE_NAME, '1', {
+      httpOnly: true,
+      secure: true,
+      sameSite: 'lax',
+      path: '/',
+      maxAge: 365 * 24 * 60 * 60,
+    });
+    return withCors(origin, response);
+  };
+
+  return { GET, OPTIONS, POST };
 }
 
 export function isSupabaseAuthCookieName(name: string) {
@@ -321,6 +431,7 @@ export function clearSupabaseAuthCookies(
 }
 
 export function hasSupportedSupabaseAuthCookie(request: RequestLike) {
+  if (hasAppLogoutFence(request)) return false;
   return getRequestCookieNames(request).some(
     (name) =>
       isSupabaseAuthCookieName(name) &&

@@ -457,7 +457,7 @@ const registeredAppConstantPaths = [
   ['apps/forms/src/constants/common.ts', REGISTERED_APP_TARGETS.forms],
   ['apps/lettin/src/constants/common.ts', REGISTERED_APP_TARGETS.lettin],
   ['apps/git/src/constants/common.ts', REGISTERED_APP_TARGETS.git],
-  ['apps/hive/src/constants/common.ts', REGISTERED_APP_TARGETS.hive],
+  ['apps/hive/src/constants/app-origins.ts', REGISTERED_APP_TARGETS.hive],
   ['apps/inventory/src/constants/common.ts', REGISTERED_APP_TARGETS.inventory],
   [
     'apps/storefront/src/constants/common.ts',

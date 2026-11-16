@@ -1,8 +1,10 @@
-import { clearAppSessionAndReturn } from '@tuturuuu/auth/app-session';
-import { NextResponse } from 'next/server';
+import { createAppOnlyLogoutHandlers } from '@tuturuuu/auth/app-session';
+import { TTR_URL } from '../../../../constants/common';
 
-export function GET() {
-  return clearAppSessionAndReturn(NextResponse.json({ success: true }));
-}
+const handlers = createAppOnlyLogoutHandlers({
+  centralOrigin: TTR_URL,
+});
 
-export const POST = GET;
+export const GET = handlers.GET;
+export const OPTIONS = handlers.OPTIONS;
+export const POST = handlers.POST;

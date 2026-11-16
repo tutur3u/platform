@@ -1,5 +1,7 @@
 'use client';
 
+import { createLogoutConfirmationUrl } from '@tuturuuu/utils/logout-target';
+
 import { Button } from '@tuturuuu/ui/button';
 import { cn } from '@tuturuuu/utils/format';
 import Link from 'next/link';
@@ -14,12 +16,14 @@ export function AuthButton({
   onClick?: () => void;
   className?: string;
 }) {
-  const handleLogout = async () => {
-    await fetch('/api/auth/logout', {
-      cache: 'no-store',
-      method: 'POST',
-    }).catch(() => null);
-    window.location.assign(`${TTR_URL}/logout?from=Nova`);
+  const handleLogout = () => {
+    window.location.assign(
+      createLogoutConfirmationUrl({
+        centralUrl: TTR_URL,
+        appOrigin: window.location.origin,
+        locale: document.documentElement.lang,
+      })
+    );
   };
 
   return user ? (

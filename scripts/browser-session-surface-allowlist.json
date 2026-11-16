@@ -38,7 +38,6 @@
     "apps/web/src/app/[locale]/(dashboard)/[wsId]/(dashboard)/components/mira-meeting-create.tsx",
     "apps/web/src/app/[locale]/(dashboard)/[wsId]/notes/note-key-transfer.tsx",
     "apps/web/src/app/[locale]/(marketing)/account/delete/page.tsx",
-    "apps/web/src/app/[locale]/(marketing)/logout/page.tsx",
     "apps/web/src/app/[locale]/(marketing)/users/[handle]/page.tsx",
     "apps/web/src/app/[locale]/auth-button.tsx",
     "apps/web/src/app/api/v1/workspaces/[wsId]/settings/permissions/route.ts",

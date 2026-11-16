@@ -6,6 +6,13 @@ export default defineConfig({
   resolve: {
     alias: [
       {
+        find: /^@tuturuuu\/supabase\/next\/auth-session-user$/,
+        replacement: path.resolve(
+          import.meta.dirname,
+          '../supabase/src/next/auth-session-user.ts'
+        ),
+      },
+      {
         find: /^@tuturuuu\/supabase\/next\/server$/,
         replacement: path.resolve(
           import.meta.dirname,

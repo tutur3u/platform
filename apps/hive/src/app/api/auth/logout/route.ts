@@ -1,35 +1,13 @@
-import {
-  clearAppSessionAndReturn,
-  clearSupabaseAuthCookies,
-} from '@tuturuuu/auth/app-session';
-import { type NextRequest, NextResponse } from 'next/server';
+import { createAppOnlyLogoutHandlers } from '@tuturuuu/auth/app-session';
 import { createHivePublicUrl } from '@/lib/hive-public-url';
+import { WEB_APP_URL } from '@/constants/app-origins';
 
-function wantsJsonResponse(request: NextRequest) {
-  const accept = request.headers.get('accept') ?? '';
-  return accept.includes('application/json') && !accept.includes('text/html');
-}
+const handlers = createAppOnlyLogoutHandlers({
+  centralOrigin: WEB_APP_URL,
+  confirmationOnGet: true,
+  getAppOrigin: (request) => createHivePublicUrl('/', request).origin,
+});
 
-function createLogoutResponse(request: NextRequest) {
-  const response = wantsJsonResponse(request)
-    ? NextResponse.json({ success: true })
-    : NextResponse.redirect(createHivePublicUrl('/login', request), {
-        status: 303,
-      });
-
-  return clearSupabaseAuthCookies(request, clearAppSessionAndReturn(response));
-}
-
-export function GET(_request: NextRequest) {
-  return NextResponse.json(
-    { error: 'Method not allowed' },
-    {
-      headers: { Allow: 'POST' },
-      status: 405,
-    }
-  );
-}
-
-export function POST(request: NextRequest) {
-  return createLogoutResponse(request);
-}
+export const GET = handlers.GET;
+export const OPTIONS = handlers.OPTIONS;
+export const POST = handlers.POST;

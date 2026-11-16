@@ -14,7 +14,7 @@ function request(method: string, headers: Record<string, string> = {}) {
 it('GET returns 405 with Allow POST without deleting cookies or forwarding', () => {
   const response = GET(request('GET'));
   expect(response.status).toBe(405);
-  expect(response.headers.get('allow')).toBe('POST');
+  expect(response.headers.get('allow')).toBe('POST, OPTIONS');
   expect(response.headers.get('set-cookie')).toBeNull();
   expect(response.headers.get('location')).toBeNull();
 });

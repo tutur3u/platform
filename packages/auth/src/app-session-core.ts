@@ -14,6 +14,7 @@ import {
 import type { MfaSessionProof } from './required-mfa-policy';
 
 export const APP_SESSION_COOKIE_NAME = 'tuturuuu_app_session';
+export const APP_LOGOUT_COOKIE_NAME = '__Host-tuturuuu_app_signed_out';
 export const WEB_APP_SESSION_COOKIE_NAME = 'tuturuuu_web_app_session';
 export const APP_SESSION_REFRESH_COOKIE_NAME = 'tuturuuu_app_session_refresh';
 export const WEB_APP_SESSION_REFRESH_COOKIE_NAME =
@@ -75,6 +76,14 @@ export type AppSessionRequest = Pick<Request, 'headers'> & {
   };
   url?: string;
 };
+
+export function hasAppLogoutFence(request: AppSessionRequest) {
+  try {
+    return getCookieValue(request, APP_LOGOUT_COOKIE_NAME) === '1';
+  } catch {
+    return false;
+  }
+}
 
 export function createAppSessionToken(
   payload: AppSessionTokenPayload,
@@ -371,6 +380,7 @@ export function verifyAppSessionRequestWithToken(
 ):
   | (Extract<AppSessionVerification, { ok: true }> & { token: string })
   | Extract<AppSessionVerification, { ok: false }> {
+  if (hasAppLogoutFence(request)) return { ok: false, error: 'App signed out' };
   const tokens = getAppSessionTokenCandidatesFromRequest(request);
 
   if (tokens.length === 0) {

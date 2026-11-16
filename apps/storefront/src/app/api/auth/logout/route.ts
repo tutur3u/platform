@@ -1,17 +1,10 @@
-import { createAppSessionLogoutResponse } from '@tuturuuu/auth/app-session';
-import type { NextRequest } from 'next/server';
-import { WEB_APP_URL } from '@/constants/common';
+import { createAppOnlyLogoutHandlers } from '@tuturuuu/auth/app-session';
+import { TTR_URL } from '@/constants/common';
 
-function getCentralLogoutUrl() {
-  const url = new URL('/logout', WEB_APP_URL);
-  url.searchParams.set('from', 'Storefront');
-  return url;
-}
+const handlers = createAppOnlyLogoutHandlers({
+  centralOrigin: TTR_URL,
+});
 
-export function GET(request: NextRequest) {
-  return createAppSessionLogoutResponse(request, {
-    redirectUrl: getCentralLogoutUrl(),
-  });
-}
-
-export const POST = GET;
+export const GET = handlers.GET;
+export const OPTIONS = handlers.OPTIONS;
+export const POST = handlers.POST;

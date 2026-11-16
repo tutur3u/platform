@@ -5,7 +5,20 @@ import { defineConfig } from 'vitest/config';
 export default defineConfig({
   plugins: [react()],
   resolve: {
-    alias: [{ find: '@', replacement: resolve(__dirname, './src') }],
+    alias: [
+      { find: '@', replacement: resolve(__dirname, './src') },
+      {
+        find: '@tuturuuu/internal-api',
+        replacement: resolve(__dirname, '../internal-api/src/index.ts'),
+      },
+      {
+        find: 'next/navigation',
+        replacement: resolve(
+          __dirname,
+          '../start-bridge/src/next/navigation.tsx'
+        ),
+      },
+    ],
   },
   test: {
     environment: 'jsdom',

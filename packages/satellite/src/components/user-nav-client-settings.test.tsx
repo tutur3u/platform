@@ -9,11 +9,21 @@ import { withNuqsTestingAdapter } from 'nuqs/adapters/testing';
 import type { ReactNode } from 'react';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 
+const logoutMocks = vi.hoisted(() => ({
+  push: vi.fn(),
+  centralLogout: vi.fn(),
+  fetch: vi.fn(),
+}));
+vi.mock('next/navigation', async (importOriginal) => ({
+  ...(await importOriginal<typeof import('next/navigation')>()),
+  useRouter: () => ({ push: logoutMocks.push }),
+}));
+
 vi.mock('next-intl', () => ({
   useTranslations: () => (key: string) => key,
 }));
 vi.mock('@tuturuuu/internal-api/auth', () => ({
-  logoutCurrentWebAccountWithInternalApi: vi.fn(),
+  logoutCurrentWebAccountWithInternalApi: logoutMocks.centralLogout,
 }));
 vi.mock('@tuturuuu/ui/custom/satellite-user-menu', () => ({
   SatelliteUserMenu: ({ children }: { children: ReactNode }) => (
@@ -23,14 +33,22 @@ vi.mock('@tuturuuu/ui/custom/satellite-user-menu', () => ({
 vi.mock('@tuturuuu/ui/custom/satellite-user-menu-items', () => ({
   SatelliteUserMenuItems: ({
     settings,
+    onLogout,
   }: {
     settings?: { label: string; onOpen: () => void };
-  }) =>
-    settings ? (
-      <button type="button" onClick={settings.onOpen}>
-        {settings.label}
+    onLogout?: () => void;
+  }) => (
+    <>
+      <button type="button" onClick={onLogout}>
+        Log out
       </button>
-    ) : null,
+      {settings ? (
+        <button type="button" onClick={settings.onOpen}>
+          {settings.label}
+        </button>
+      ) : null}
+    </>
+  ),
 }));
 vi.mock('./account-settings/default-settings-dialog', () => ({
   SatelliteDefaultSettingsDialog: ({
@@ -87,6 +105,29 @@ const user = { email: 'ada@example.com', id: 'user-1' } as never;
 afterEach(cleanup);
 
 describe('satellite UserNavClient shared settings', () => {
+  it('navigates to confirmation before calling any logout endpoint', () => {
+    vi.stubGlobal('fetch', logoutMocks.fetch);
+    try {
+      render(
+        <UserNavClient locale="vi" ttrUrl="https://tuturuuu.com" user={user} />,
+        {
+          wrapper: withNuqsTestingAdapter({ searchParams: '' }),
+        }
+      );
+      fireEvent.click(screen.getByRole('button', { name: 'Log out' }));
+      const href = logoutMocks.push.mock.calls.at(-1)?.[0];
+      const confirmation = new URL(href);
+      expect(confirmation.origin).toBe('https://tuturuuu.com');
+      expect(confirmation.pathname).toBe('/vi/logout');
+      expect(confirmation.searchParams.get('appUrl')).toBe(
+        window.location.origin
+      );
+      expect(logoutMocks.centralLogout).not.toHaveBeenCalled();
+      expect(logoutMocks.fetch).not.toHaveBeenCalled();
+    } finally {
+      vi.unstubAllGlobals();
+    }
+  });
   it('falls back to the shared account settings dialog', () => {
     render(
       <UserNavClient locale="en" ttrUrl="https://tuturuuu.com" user={user} />,

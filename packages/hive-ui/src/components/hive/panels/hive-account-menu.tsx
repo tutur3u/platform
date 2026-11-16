@@ -101,7 +101,7 @@ export function HiveAccountMenu({
           Centralized Tuturuuu account
         </DropdownMenuItem>
         <DropdownMenuSeparator />
-        <form action="/api/auth/logout" method="post">
+        <form action="/api/auth/logout" method="get">
           <DropdownMenuItem asChild>
             <button
               className="w-full cursor-pointer text-dynamic-red focus:text-dynamic-red"

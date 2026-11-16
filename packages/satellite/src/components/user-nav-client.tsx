@@ -1,6 +1,5 @@
 'use client';
 
-import { logoutCurrentWebAccountWithInternalApi } from '@tuturuuu/internal-api/auth';
 import type { WorkspaceUser } from '@tuturuuu/types/primitives/WorkspaceUser';
 import { SatelliteUserMenu } from '@tuturuuu/ui/custom/satellite-user-menu';
 import { SatelliteUserMenuItems } from '@tuturuuu/ui/custom/satellite-user-menu-items';
@@ -15,6 +14,8 @@ import { useSettingsDialogUrlState } from '@tuturuuu/ui/hooks/use-settings-dialo
 import { ReportProblemDialog } from '@tuturuuu/ui/report-problem-dialog';
 import { usePlatform } from '@tuturuuu/utils/hooks/use-platform';
 import { getPublicProfileUrl } from '@tuturuuu/utils/public-profile-url';
+import { createLogoutConfirmationUrl } from '@tuturuuu/utils/logout-target';
+import { useRouter } from 'next/navigation';
 import { useTranslations } from 'next-intl';
 import {
   cloneElement,
@@ -55,12 +56,12 @@ export default function UserNavClient({
   user,
   locale,
   hideMetadata = false,
-  appName = 'App',
   ttrUrl,
   settingsDialog,
   externalSettingsHost = false,
 }: UserNavClientProps) {
   const t = useTranslations();
+  const router = useRouter();
 
   const sidebar = useContext(SidebarContext);
   const workspaceSelector = useWorkspaceSelector();
@@ -150,15 +151,14 @@ export default function UserNavClient({
     workspaceSelectorVisible: workspaceSelector?.visible ?? true,
   });
 
-  const handleLogout = async () => {
-    await logoutCurrentWebAccountWithInternalApi({
-      baseUrl: centralUrl,
-    }).catch(() => null);
-    await fetch('/api/auth/logout', {
-      cache: 'no-store',
-      method: 'POST',
-    }).catch(() => null);
-    window.location.assign(`${centralUrl}/logout?from=${appName}`);
+  const handleLogout = () => {
+    router.push(
+      createLogoutConfirmationUrl({
+        centralUrl,
+        appOrigin: window.location.origin,
+        locale,
+      })
+    );
   };
 
   return (

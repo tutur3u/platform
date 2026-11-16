@@ -5,6 +5,7 @@ import {
   getAppSessionClaimsFromRequest,
   getAppSessionUserFromRequest,
 } from '@tuturuuu/auth/app-session';
+import { hasAppLogoutFence } from '@tuturuuu/auth/app-session-core';
 import {
   getCurrentUserProfile,
   withForwardedInternalApiAuth,
@@ -44,6 +45,7 @@ export async function getSatelliteAppSessionFromRequest({
   targetApp,
   getSupabaseSessionUser,
 }: SatelliteAuthRequestOptions) {
+  if (hasAppLogoutFence(request)) return null;
   const requestHeaders = request.headers;
   const appSession = getAppSessionClaimsFromRequest(
     { headers: requestHeaders },
@@ -66,6 +68,7 @@ export async function getSatelliteAppSessionUserFromRequest({
   targetApp,
   getSupabaseSessionUser,
 }: SatelliteAuthRequestOptions) {
+  if (hasAppLogoutFence(request)) return null;
   const requestHeaders = request.headers;
   const appSessionUser = getAppSessionUserFromRequest(
     { headers: requestHeaders },
@@ -86,6 +89,7 @@ export async function getSatelliteCurrentUserFromRequest({
   targetApp,
   getSupabaseSessionUser,
 }: SatelliteAuthRequestOptions): Promise<WorkspaceUser | null> {
+  if (hasAppLogoutFence(request)) return null;
   const requestHeaders = request.headers;
   const supabaseUser = await getSupabaseSessionUser();
   const appSession = getAppSessionClaimsFromRequest(

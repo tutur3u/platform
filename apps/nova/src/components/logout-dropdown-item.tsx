@@ -1,5 +1,9 @@
 'use client';
 
+import { createLogoutConfirmationUrl } from '@tuturuuu/utils/logout-target';
+
+import { TTR_URL } from '@/constants/common';
+
 import { LogOut } from '@tuturuuu/icons';
 import { DropdownMenuItem } from '@tuturuuu/ui/dropdown-menu';
 // import { useTranslations } from 'next-intl';
@@ -9,12 +13,14 @@ export function LogoutDropdownItem() {
   // const t = useTranslations('common');
   const router = useRouter();
 
-  const logout = async () => {
-    await fetch('/api/auth/logout', {
-      method: 'POST',
-    });
-    router.refresh();
-    router.push('/');
+  const logout = () => {
+    router.push(
+      createLogoutConfirmationUrl({
+        centralUrl: TTR_URL,
+        appOrigin: window.location.origin,
+        locale: document.documentElement.lang,
+      })
+    );
   };
 
   return (

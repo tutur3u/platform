@@ -9,6 +9,11 @@ import { withNuqsTestingAdapter } from 'nuqs/adapters/testing';
 import type { ReactNode } from 'react';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 
+vi.mock('next/navigation', async (importOriginal) => ({
+  ...(await importOriginal<typeof import('next/navigation')>()),
+  useRouter: () => ({ push: vi.fn() }),
+}));
+
 vi.mock('next-intl', () => ({
   useTranslations: () => (key: string) => key,
 }));

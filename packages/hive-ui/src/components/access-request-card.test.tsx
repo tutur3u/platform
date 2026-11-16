@@ -100,6 +100,11 @@ describe('AccessRequestCard', () => {
     renderCard(<AccessRequestCard email="researcher@example.com" />);
 
     expect(screen.getByText('Request researcher access')).toBeTruthy();
+    const logout = screen
+      .getByRole('button', { name: messages.auth.logout })
+      .closest('form');
+    expect(logout?.getAttribute('method')).toBe('get');
+    expect(logout?.getAttribute('action')).toBe('/api/auth/logout');
     await act(async () => {
       await Promise.resolve();
     });

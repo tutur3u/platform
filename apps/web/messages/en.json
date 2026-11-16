@@ -10225,13 +10225,23 @@
     "with_password": "Password"
   },
   "logout": {
+    "all-current-account": "Log out of all of Tuturuuu",
     "also-logout-question": "Would you also like to log out of Tuturuuu?",
+    "app-done": "Logged out of {app}",
+    "app-only": "Log out of {app} only",
+    "back-to-app": "Go back to {app}",
     "confirm-title": "Log out of Tuturuuu",
+    "current-account": "Current account only. Other accounts and devices stay signed in.",
     "description": "Log out of your account",
+    "error": "Could not complete logout. Please try again.",
+    "go-back": "Go back",
     "go-to-dashboard": "Go back to dashboard",
+    "in-progress": "Logging out…",
     "logged-out-from": "You've logged out of {app}",
     "logout": "Log out",
-    "logout-of-tuturuuu": "Log out of Tuturuuu"
+    "logout-of-tuturuuu": "Log out of Tuturuuu",
+    "others-stay-signed-in": "Your other apps were not logged out.",
+    "this-browser": "Choose where to log out on this browser."
   },
   "mail": {
     "ai_draft": "AI Email Draft",

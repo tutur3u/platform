@@ -27,6 +27,7 @@ import {
   resolveCanonicalRequestOrigin,
 } from './canonical-origin';
 import { appSessionFailureResponse } from './mfa-failure';
+import { hasAppLogoutFence, withAppLogoutFence } from './logout-fence';
 import {
   decodeURIComponentSafely,
   normalizeAuthRedirectPath,
@@ -51,7 +52,6 @@ import {
   redirectToNormalizedVerifyTarget,
   redirectToVerifyFallback,
 } from './verify-token-redirect';
-
 export {
   normalizeCanonicalOrigins,
   resolveCanonicalRequestOrigin,
@@ -65,7 +65,6 @@ export {
   withRequestBasePath,
 } from './redirect-path';
 export { getRequestHeadersWithResponseCookies } from './response-cookies';
-
 const AUTH_REDIRECT_CACHE_CONTROL = 'private, no-store';
 
 function shouldPreserveCentralLoopbackCookies(
@@ -357,11 +356,9 @@ export async function refreshAppSessionForRequest(
   request: NextRequest,
   options: Parameters<typeof resolveAppSessionForRequest>[1]
 ): Promise<AppSessionRefreshState> {
-  try {
-    return await resolveAppSessionForRequest(request, options);
-  } catch {
-    return { ok: false, error: 'Account assurance unavailable' };
-  }
+  return withAppLogoutFence(request, () =>
+    resolveAppSessionForRequest(request, options)
+  );
 }
 
 async function resolveAppSessionForRequest(
@@ -748,6 +745,7 @@ export function createCentralizedAuthProxy(options: CentralizedAuthOptions) {
       if (appSession) {
         if (
           appSession.sessionMode === 'supabase-first' &&
+          !hasAppLogoutFence(req) &&
           hasSupportedSupabaseAuthCookie(req)
         ) {
           const { res, claims } = await updateSession(req);

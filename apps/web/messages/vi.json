@@ -10225,13 +10225,23 @@
     "with_password": "Với mật khẩu"
   },
   "logout": {
+    "all-current-account": "Đăng xuất khỏi toàn bộ Tuturuuu",
     "also-logout-question": "Bạn có muốn đăng xuất khỏi Tuturuuu không?",
+    "app-done": "Đã đăng xuất khỏi {app}",
+    "app-only": "Chỉ đăng xuất khỏi {app}",
+    "back-to-app": "Quay lại {app}",
     "confirm-title": "Đăng xuất khỏi Tuturuuu",
+    "current-account": "Chỉ áp dụng cho tài khoản hiện tại. Các tài khoản và thiết bị khác vẫn đăng nhập.",
     "description": "Đăng xuất khỏi tài khoản của bạn",
+    "error": "Chưa thể hoàn tất đăng xuất. Vui lòng thử lại.",
+    "go-back": "Quay lại",
     "go-to-dashboard": "Quay lại bảng điều khiển",
+    "in-progress": "Đang đăng xuất…",
     "logged-out-from": "Bạn đã đăng xuất khỏi {app}",
     "logout": "Đăng xuất",
-    "logout-of-tuturuuu": "Đăng xuất khỏi Tuturuuu"
+    "logout-of-tuturuuu": "Đăng xuất khỏi Tuturuuu",
+    "others-stay-signed-in": "Các ứng dụng khác không bị đăng xuất.",
+    "this-browser": "Chọn phạm vi đăng xuất trên trình duyệt này."
   },
   "mail": {
     "ai_draft": "Soạn thảo Email AI",

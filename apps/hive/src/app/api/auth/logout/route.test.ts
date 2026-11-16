@@ -13,9 +13,10 @@ describe('Hive logout route', () => {
       new NextRequest('https://hive.tuturuuu.com/api/auth/logout', {
         headers: {
           accept: 'text/html',
+          origin: 'https://hive.tuturuuu.com',
           cookie: [
             `${APP_SESSION_COOKIE_NAME}=ttr_app_session`,
-            'sb-resolved-kingfish-21146-auth-token=stale',
+            'sb-fixture-auth-token=stale',
           ].join('; '),
         },
         method: 'POST',
@@ -25,11 +26,9 @@ describe('Hive logout route', () => {
     const setCookie = response.headers.get('set-cookie') ?? '';
 
     expect(response.status).toBe(303);
-    expect(response.headers.get('location')).toBe(
-      'https://hive.tuturuuu.com/login'
-    );
+    expect(response.headers.get('location')).toBe('/login');
     expect(setCookie).toContain(`${APP_SESSION_COOKIE_NAME}=;`);
-    expect(setCookie).toContain('sb-resolved-kingfish-21146-auth-token=;');
+    expect(setCookie).toContain('sb-fixture-auth-token=;');
     expect(setCookie).toContain('Max-Age=0');
   });
 
@@ -43,6 +42,7 @@ describe('Hive logout route', () => {
       new NextRequest('http://0.0.0.0:7814/api/auth/logout', {
         headers: {
           accept: 'text/html',
+          origin: 'https://hive.tuturuuu.com',
           cookie: `${APP_SESSION_COOKIE_NAME}=ttr_app_session`,
         },
         method: 'POST',
@@ -50,15 +50,14 @@ describe('Hive logout route', () => {
     );
 
     expect(response.status).toBe(303);
-    expect(response.headers.get('location')).toBe(
-      'https://hive.tuturuuu.com/login'
-    );
+    expect(response.headers.get('location')).toBe('/login');
   });
 
   it('keeps JSON compatibility for programmatic POST logout requests', async () => {
     const response = POST(
       new NextRequest('https://hive.tuturuuu.com/api/auth/logout', {
         headers: {
+          origin: 'https://hive.tuturuuu.com',
           accept: 'application/json',
           cookie: `${APP_SESSION_COOKIE_NAME}=ttr_app_session`,
         },
@@ -71,25 +70,26 @@ describe('Hive logout route', () => {
     await expect(response.json()).resolves.toEqual({ success: true });
   });
 
-  it('rejects GET logout without clearing session cookies', async () => {
+  it('redirects GET to confirmation without clearing session cookies', async () => {
     const response = GET(
       new NextRequest('https://hive.tuturuuu.com/api/auth/logout', {
         headers: {
           accept: 'text/html',
+          origin: 'https://hive.tuturuuu.com',
           cookie: [
             `${APP_SESSION_COOKIE_NAME}=ttr_app_session`,
-            'sb-resolved-kingfish-21146-auth-token=stale',
+            'sb-fixture-auth-token=stale',
           ].join('; '),
         },
       })
     );
 
-    expect(response.status).toBe(405);
-    expect(response.headers.get('allow')).toBe('POST');
-    expect(response.headers.get('location')).toBeNull();
+    expect(response.status).toBe(303);
+    const confirmation = new URL(response.headers.get('location') ?? '');
+    expect(confirmation.pathname).toBe('/logout');
+    expect(confirmation.searchParams.get('appUrl')).toBe(
+      'https://hive.tuturuuu.com'
+    );
     expect(response.headers.get('set-cookie')).toBeNull();
-    await expect(response.json()).resolves.toEqual({
-      error: 'Method not allowed',
-    });
   });
 });

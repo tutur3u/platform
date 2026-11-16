@@ -4,6 +4,7 @@ import {
   getAppSessionTokenFromRequest,
   verifyAppSessionRequest,
 } from '@tuturuuu/auth/app-session';
+import { hasAppLogoutFence } from '@tuturuuu/auth/app-session-core';
 import { resolveAuthenticatedSessionUser } from '@tuturuuu/supabase/next/auth-session-user';
 import {
   createAdminClient,
@@ -31,6 +32,7 @@ export async function resolveSatelliteRequestActor(
   request: Request,
   targetApp: SatelliteAppSessionAudience
 ): Promise<SatelliteRequestActorContext | null> {
+  if (hasAppLogoutFence(request)) return null;
   const appSessionToken = getAppSessionTokenFromRequest(request);
 
   if (appSessionToken) {
@@ -60,6 +62,7 @@ export async function resolveSatellitePageActor(
   targetApp: SatelliteAppSessionAudience
 ): Promise<SatelliteRequestActorContext | null> {
   const requestLike = { headers: await headers() };
+  if (hasAppLogoutFence(requestLike)) return null;
   const appSessionToken = getAppSessionTokenFromRequest(requestLike);
 
   if (appSessionToken) {

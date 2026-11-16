@@ -142,7 +142,7 @@ export function AccessRequestCard({
               {isPending ? t('requestAccessWaiting') : t('requestAccessCta')}
             </Button>
             {showLogout ? (
-              <form action="/api/auth/logout" method="post">
+              <form action="/api/auth/logout" method="get">
                 <Button type="submit" variant="outline">
                   {t('logout')}
                 </Button>

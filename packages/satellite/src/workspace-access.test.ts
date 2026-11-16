@@ -42,6 +42,7 @@ import {
   getSatelliteRequestWorkspaceAccess,
   getSatelliteWorkspace,
   resolveSatelliteRequestActor,
+  resolveSatellitePageActor,
   resolveSatelliteWorkspaceId,
 } from './workspace-access';
 
@@ -79,6 +80,20 @@ describe('satellite workspace access', () => {
       targetApp: 'inventory',
     });
     expect(mocks.createClient).not.toHaveBeenCalled();
+  });
+
+  it('does not restore signed-out app actors or workspace access from a shared Supabase session', async () => {
+    const signedOut = new Request('https://inventory.example/api', {
+      headers: { cookie: '__Host-tuturuuu_app_signed_out=1' },
+    });
+    mocks.headers.mockResolvedValue(signedOut.headers);
+    await expect(
+      resolveSatelliteRequestActor(signedOut, 'inventory')
+    ).resolves.toBeNull();
+    await expect(resolveSatellitePageActor('inventory')).resolves.toBeNull();
+    expect(mocks.createClient).not.toHaveBeenCalled();
+    expect(mocks.resolveAuthenticatedSessionUser).not.toHaveBeenCalled();
+    expect(mocks.createAdminClient).not.toHaveBeenCalled();
   });
 
   it('rejects an invalid or mismatched app session without cookie fallback', async () => {

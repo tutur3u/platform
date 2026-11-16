@@ -476,6 +476,13 @@ Rules:
   viewport for this reason. When satellite UI depends on such a class, add a
   scoped `@source` and extend `packages/ui/src/globals-sources.test.ts`.
 
+- Logout menus navigate to central confirmation before any session mutation.
+  App-only logout uses the selected registered host's POST handler; it must not
+  call central account logout or expire parent-domain cookies. Preserve exact
+  configured-origin checks and verify rejected requests emit no cookie changes.
+  Same-host mounts cannot promise host-based cookie isolation. Keep product
+  scope and regression links in the shared-session feature documentation.
+
 - Cold satellite unit checks should select workspace `bun` source exports in both
   Vitest `resolve.conditions` and `ssr.resolve.conditions`. Keep existing source
   aliases for dist-only packages and inline `next-intl` where its extensionless

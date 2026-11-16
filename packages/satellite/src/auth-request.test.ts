@@ -56,6 +56,23 @@ describe('request-scoped satellite authentication', () => {
     mocks.forward.mockImplementation((headers: Headers) => ({ headers }));
   });
 
+  it('does not restore an app-only signed-out actor from the shared session', async () => {
+    const options = context();
+    options.request.headers.set('cookie', '__Host-tuturuuu_app_signed_out=1');
+    options.getSupabaseSessionUser.mockResolvedValue({ id: 'fixture-central' });
+    await expect(
+      getSatelliteAppSessionFromRequest(options)
+    ).resolves.toBeNull();
+    await expect(
+      getSatelliteAppSessionUserFromRequest(options)
+    ).resolves.toBeNull();
+    await expect(
+      getSatelliteCurrentUserFromRequest(options)
+    ).resolves.toBeNull();
+    expect(options.getSupabaseSessionUser).not.toHaveBeenCalled();
+    expect(mocks.profile).not.toHaveBeenCalled();
+  });
+
   it('passes the explicit request and target to the claims verifier', async () => {
     const options = context();
     mocks.claims.mockReturnValue(claims);

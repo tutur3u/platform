@@ -31,13 +31,59 @@ plan, with its owner PR not yet merged.
 
 | Rule | Default | Status |
 | --- | --- | --- |
-| **Log out** ends the session in this browser, for Web and every app in it at once | Default action | Partially enforced: Web logout signs out locally |
+| Logout asks before changing sessions; app-only is the primary satellite choice, and central logout ends the current account in this browser | Explicit choice | See Logout confirmation and app scope below |
 | **Log out everywhere** ends every session of the account on every device | Explicit second action | Planned |
-| Logout clears site cookies with `Clear-Site-Data: "cookies"`, so subdomain app sessions in the same browser end too | Always | Planned |
+| Logout preserves other saved accounts and does not purge every site cookie with `Clear-Site-Data` | Current-account scope | See Logout confirmation and app scope below |
 | Logout never clears local app data (`"storage"` is not sent), so unsent drafts survive | Always | Planned |
 | Logout and a password change revoke outstanding cross-app handoff tokens | Always | Enforced |
 | After logout, another app on a subdomain stops accepting the session within 15 minutes | 15 min bound | Planned (app access-token lifetime 8 h to 15 min) |
 | A signed-out session's access token stops working within 15 minutes | 15 min bound | Planned (hosted access-token lifetime 60 min to 15 min) |
+
+## Logout confirmation and app scope
+
+The logout menu opens the central confirmation page before clearing any session.
+Opening `/logout`, going back, and a GET to an app logout endpoint do not sign
+anyone out. The page displays the verified current account when available and offers these choices:
+
+- **This app only** is the primary choice for a registered satellite on its own
+  host. Its POST clears only host-scoped app cookies. Web and other app hosts
+  keep their sessions. A secure, HttpOnly, host-only signed-out marker prevents
+  shared-cookie fallback and automatic refresh from restoring that app's actor.
+  A fresh explicit app sign-in clears the marker. The confirmation stays on Web after success so it does
+  not immediately re-enter the signed-out app.
+- **All of Tuturuuu** means the **current account in this browser**, using the
+  existing local sign-out operation. It does not sign out other saved accounts
+  or other devices. It does not call the all-accounts logout endpoint.
+- **Go back** returns to the registered app without changing a session.
+
+If the central session has expired while an app session remains, a registered
+app can still be logged out without signing into Web first. The central-account
+choice is omitted in that state. Central logout uses the server local-scope
+endpoint followed by a full document navigation, so no new browser Supabase
+client surface is needed.
+
+App-only logout is not offered for an unknown origin, an app without this logout
+endpoint, an origin outside the central site's configured shared-cookie domain,
+an HTTP origin, or apps sharing the central hostname (including localhost ports and
+same-origin mounts), whose cookie scopes cannot be isolated by host. The display
+name and return origin come from the first-party registry; a `from` label or
+arbitrary return URL does not become a redirect destination.
+
+Satellite logout accepts POST from its own origin and, for the confirmation
+flow only, the exact configured central origin with same-site browser metadata.
+Other sibling origins, cross-site requests, missing or opaque origins are rejected
+without setting cookies. CORS credentials are allowed only for that accepted
+origin. GET returns 405 except legacy Hive and Teach entries, which redirect to the
+confirmation page without clearing cookies; OPTIONS never clears a session. This narrow endpoint
+exception does not change general cookie-authenticated mutation rules.
+
+Regression coverage: `packages/auth/src/app-only-logout.test.ts` checks cookie
+scope and origin rejection; `packages/utils/src/logout-target.test.ts` rejects
+hostile and non-isolated destinations; the logout page component tests cover
+EN/VI, ask-first behavior, failure recovery and current-account local scope.
+`packages/satellite/src/components/user-nav-client-settings.test.tsx` verifies
+that the menu navigates without calling logout. These are fixture-based checks,
+not signed-in production acceptance.
 
 ## Credentials minted from a signed-in session
 

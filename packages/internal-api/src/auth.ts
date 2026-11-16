@@ -539,16 +539,10 @@ export async function logoutAllWebAccountsWithInternalApi(
   return parseAuthResponse<WebAccountMutationResponse>(response);
 }
 
-export async function logoutBrowserSessionWithInternalApi(
-  options?: InternalApiClientOptions
-) {
-  const client = getInternalApiClient(options);
-  const response = await client.fetch('/api/auth/logout', {
-    cache: 'no-store',
-    method: 'POST',
-  });
-  return parseAuthResponse<BrowserSessionLogoutResponse>(response);
-}
+export {
+  logoutBrowserSessionWithInternalApi,
+  logoutSatelliteAppWithInternalApi,
+} from './auth-logout';
 
 export async function createQrLoginChallengeWithInternalApi(
   payload: CreateQrLoginChallengePayload,
