@@ -1642,10 +1642,19 @@
     "people": "People",
     "personal_account": "Personal Account",
     "pick_a_date": "Pick a date",
+    "picker_internal_meta": "Platform administration",
+    "picker_more_actions": "More actions",
+    "picker_personal_meta": "Only you",
     "picker_pin": "Pin workspace",
     "picker_pinned": "Pinned",
     "picker_recent": "Recent",
     "picker_section_all": "All workspaces",
+    "picker_section_internal": "Internal",
+    "picker_section_personal": "Personal",
+    "picker_section_workspaces": "Workspaces",
+    "picker_set_default": "Set as default workspace",
+    "picker_state_default": "Default",
+    "picker_state_hidden": "Hidden",
     "picker_unpin": "Unpin workspace",
     "pink": "Pink",
     "please_try_again_later": "Please try again later",
@@ -2475,6 +2484,31 @@
   "experimental-notice": {
     "experimental_feature": "Experimental feature",
     "experimental_notice": "This is an experimental feature that is still under heavy development. It may not work as expected and may change in the future."
+  },
+  "experimental-ui": {
+    "badge": "Beta",
+    "corners": {
+      "round": "Round",
+      "sharp": "Sharp",
+      "soft": "Soft"
+    },
+    "corners_title": "Corners",
+    "palette_title": "Palette",
+    "presets": {
+      "blueberry": "Blueberry",
+      "graphite": "Graphite",
+      "high-contrast": "High contrast",
+      "lagoon": "Lagoon",
+      "lavender": "Lavender",
+      "mango": "Mango",
+      "matcha": "Matcha",
+      "midnight": "Midnight",
+      "rose": "Rosé",
+      "sorbet": "Sorbet"
+    },
+    "setting_description": "Try Sorbet, the new Tuturuuu look, in every app. Saved to your account.",
+    "setting_title": "Experimental design",
+    "setting_toggle_label": "Use the experimental Sorbet design"
   },
   "external-projects": {
     "settings": {
@@ -10769,30 +10803,5 @@
     "try_different_search_term": "Try a different search term",
     "wallet": "Payment Method",
     "wallet_deleted": "Wallet deleted successfully"
-  },
-  "experimental-ui": {
-    "badge": "Beta",
-    "corners": {
-      "round": "Round",
-      "sharp": "Sharp",
-      "soft": "Soft"
-    },
-    "corners_title": "Corners",
-    "palette_title": "Palette",
-    "presets": {
-      "blueberry": "Blueberry",
-      "graphite": "Graphite",
-      "high-contrast": "High contrast",
-      "lagoon": "Lagoon",
-      "lavender": "Lavender",
-      "mango": "Mango",
-      "matcha": "Matcha",
-      "midnight": "Midnight",
-      "rose": "Rosé",
-      "sorbet": "Sorbet"
-    },
-    "setting_description": "Try Sorbet, the new Tuturuuu look, in every app. Saved to your account.",
-    "setting_title": "Experimental design",
-    "setting_toggle_label": "Use the experimental Sorbet design"
   }
 }
