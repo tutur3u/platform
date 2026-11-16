@@ -1,0 +1,58 @@
+name: Mail exact-SHA Vercel fallback
+on:
+  workflow_dispatch:
+    inputs:
+      main_sha:
+        description: Full lowercase main commit to publish
+        required: true
+        type: string
+
+permissions:
+  contents: read
+
+concurrency:
+  group: mail-vercel-exact-sha-${{ github.ref }}-${{ inputs.main_sha }}
+  cancel-in-progress: false
+  queue: max
+
+jobs:
+  publish:
+    name: Publish one exact main SHA
+    if: github.event_name == 'workflow_dispatch' && github.ref == 'refs/heads/main'
+    environment: vercel-production-mail
+    runs-on: ubuntu-latest
+    timeout-minutes: 90
+    permissions:
+      contents: read
+      deployments: write
+    steps:
+      - name: Check out main
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+
+      - name: Setup bun
+        uses: ./.github/actions/setup-bun-with-retry
+        with:
+          bun-version: 1.4.4
+
+      - name: Use Node.js 24
+        uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version: 24
+
+      - name: Install dependencies
+        run: bash scripts/ci/run-with-backoff.sh bun install --frozen-lockfile
+
+      - name: Install Vercel CLI
+        # unfrozen-bun-install: pinned global CLI has no project lockfile
+        run: bash scripts/ci/run-with-backoff.sh bun install --global vercel@59.25.0 --ignore-scripts
+
+      - name: Publish the exact SHA once
+        env:
+          MAIL_MAIN_SHA: ${{ inputs.main_sha }}
+          VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
+          VERCEL_PROJECT_ID: ${{ secrets.VERCEL_MAIL_PROJECT_ID }}
+          VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
+        run: node scripts/ci/mail-exact-sha-publisher.mjs publish

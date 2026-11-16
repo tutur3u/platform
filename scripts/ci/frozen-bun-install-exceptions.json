@@ -205,6 +205,11 @@
     "bash scripts/ci/run-with-backoff.sh bun install --global vercel@59.25.0 --ignore-scripts"
   ],
   [
+    "mail-vercel-exact-sha.yaml",
+    "Install Vercel CLI",
+    "bash scripts/ci/run-with-backoff.sh bun install --global vercel@59.25.0 --ignore-scripts"
+  ],
+  [
     "vercel-production-meet.yaml",
     "Install Vercel CLI",
     "bash scripts/ci/run-with-backoff.sh bun install --global vercel@59.25.0 --ignore-scripts"
