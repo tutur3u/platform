@@ -109,10 +109,7 @@ test('CodeQL runs on pull requests and main pushes with the extended suite', () 
     run.with.upload,
     /github\.event_name == 'push' && github\.ref == 'refs\/heads\/main'/u
   );
-  assert.match(
-    run.with.upload,
-    /head\.repo\.full_name != github\.repository/u
-  );
+  assert.match(run.with.upload, /head\.repo\.full_name != github\.repository/u);
   assert.match(run.with.upload, /'never'/u);
   assert.match(run.with.upload, /'always'/u);
   assert.equal(

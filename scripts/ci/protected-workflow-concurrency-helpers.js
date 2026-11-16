@@ -98,8 +98,7 @@ const mainExceptions = {
   'oxc-check.yaml':
     'Each main SHA keeps its own non-cancelling validation run; mutation locks stay separate',
   'tanstack-route-manifest.yaml': 'TanStack runtime is paused',
-  'codeql.yml':
-    'Each main SHA keeps its own non-cancelling analysis',
+  'codeql.yml': 'Each main SHA keeps its own non-cancelling analysis',
 };
 // These workflows do not cancel a main push, and each main SHA has its own
 // group. A shared "latest" group still drops the previous pending run when

@@ -404,7 +404,10 @@ test('operator dispatch remains an explicit admission without Cloudflare markers
     workflowMarkers: {},
   });
   assert.deepEqual(
-    decisions.map(({ shouldRun, workflowName }) => ({ shouldRun, workflowName })),
+    decisions.map(({ shouldRun, workflowName }) => ({
+      shouldRun,
+      workflowName,
+    })),
     [
       { shouldRun: false, workflowName: 'lettin-cloudflare.yaml' },
       { shouldRun: false, workflowName: 'parley-cloudflare.yaml' },
@@ -447,7 +450,10 @@ for (const [app, workflow, changedPath] of slotExclusions) {
       assert.equal(decision.shouldRun, false, eventName);
       assert.equal(decision.held, true, eventName);
       assert.equal(decision.changeResult.source, 'publication-hold', eventName);
-      assert.match(decision.reason, new RegExp(`^held: ${app[0].toUpperCase()}${app.slice(1)} `, 'u'));
+      assert.match(
+        decision.reason,
+        new RegExp(`^held: ${app[0].toUpperCase()}${app.slice(1)} `, 'u')
+      );
     }
     const [liftedPush] = resolveFixtureTargets({
       baseSha,
@@ -467,7 +473,10 @@ for (const [app, workflow, changedPath] of slotExclusions) {
       workflowMarkers,
       liftExclusions: [app],
     });
-    assert.deepEqual(liftedDispatch, { shouldRun: true, workflowName: workflow });
+    assert.deepEqual(liftedDispatch, {
+      shouldRun: true,
+      workflowName: workflow,
+    });
   });
 }
 

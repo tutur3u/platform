@@ -303,11 +303,7 @@ function assertMutationLocks(workflow) {
       id
     );
     const validationGroup = render(job.concurrency.group, first);
-    assert.notEqual(
-      validationGroup,
-      render(job.concurrency.group, next),
-      id
-    );
+    assert.notEqual(validationGroup, render(job.concurrency.group, next), id);
     assert.equal(validationGroups.has(validationGroup), false);
     validationGroups.add(validationGroup);
     assert.notEqual(validationGroup, render(group, first));
