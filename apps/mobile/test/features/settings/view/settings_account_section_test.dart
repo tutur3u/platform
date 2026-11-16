@@ -42,5 +42,9 @@ void main() {
     expect(row.trailingValue, isNull);
     expect(find.textContaining('3 workspaces'), findsNothing);
     expect(row.onTap, isNotNull);
+    expect(
+      find.byKey(const ValueKey('settings-delete-account-row')),
+      findsOneWidget,
+    );
   });
 }

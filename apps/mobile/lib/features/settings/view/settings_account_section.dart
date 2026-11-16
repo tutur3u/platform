@@ -4,6 +4,7 @@ import 'package:go_router/go_router.dart';
 import 'package:mobile/core/router/routes.dart';
 import 'package:mobile/core/ui/ui.dart';
 import 'package:mobile/features/auth/cubit/auth_cubit.dart';
+import 'package:mobile/features/settings/view/settings_delete_account_row.dart';
 import 'package:mobile/features/settings/view/settings_group.dart';
 import 'package:mobile/features/settings/view/settings_profile_parts.dart';
 import 'package:mobile/features/settings/view/settings_row_layout.dart';
@@ -50,6 +51,9 @@ class SettingsAccountSection extends StatelessWidget {
         const HiddenWorkspacesSettingsRow(
           key: ValueKey('settings-hidden-workspaces-row'),
           grouped: true,
+        ),
+        const SettingsDeleteAccountRow(
+          key: ValueKey('settings-delete-account-row'),
         ),
       ],
     );

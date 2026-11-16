@@ -3707,6 +3707,7 @@
   "settingsAboutTab": "About",
   "settingsAccountSectionDescription": "Profile access and session controls.",
   "settingsAccountSectionTitle": "Account",
+  "settingsDeleteAccount": "Delete account",
   "settingsAccountTab": "Account",
   "settingsAppPreferences": "App preferences",
   "settingsAppVersion": "App version",
