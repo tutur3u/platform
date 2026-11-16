@@ -1642,10 +1642,19 @@
     "people": "Người",
     "personal_account": "Tài khoản cá nhân",
     "pick_a_date": "Chọn một ngày",
+    "picker_internal_meta": "Quản trị nền tảng",
+    "picker_more_actions": "Thêm thao tác",
+    "picker_personal_meta": "Chỉ mình bạn",
     "picker_pin": "Ghim không gian làm việc",
     "picker_pinned": "Đã ghim",
     "picker_recent": "Gần đây",
     "picker_section_all": "Tất cả không gian làm việc",
+    "picker_section_internal": "Nội bộ",
+    "picker_section_personal": "Cá nhân",
+    "picker_section_workspaces": "Không gian làm việc",
+    "picker_set_default": "Đặt làm không gian mặc định",
+    "picker_state_default": "Mặc định",
+    "picker_state_hidden": "Đã ẩn",
     "picker_unpin": "Bỏ ghim không gian làm việc",
     "pink": "Hồng",
     "please_try_again_later": "Vui lòng thử lại sau",
@@ -2475,6 +2484,31 @@
   "experimental-notice": {
     "experimental_feature": "Tính năng thử nghiệm",
     "experimental_notice": "Đây là một tính năng thử nghiệm đang trong quá trình phát triển. Nó có thể không hoạt động như mong đợi và có thể thay đổi trong tương lai."
+  },
+  "experimental-ui": {
+    "badge": "Beta",
+    "corners": {
+      "round": "Tròn",
+      "sharp": "Vuông",
+      "soft": "Mềm"
+    },
+    "corners_title": "Góc bo",
+    "palette_title": "Bảng màu",
+    "presets": {
+      "blueberry": "Việt quất",
+      "graphite": "Than chì",
+      "high-contrast": "Tương phản cao",
+      "lagoon": "Đầm phá",
+      "lavender": "Oải hương",
+      "mango": "Xoài",
+      "matcha": "Trà xanh",
+      "midnight": "Nửa đêm",
+      "rose": "Hồng",
+      "sorbet": "Sorbet"
+    },
+    "setting_description": "Dùng thử Sorbet, giao diện mới của Tuturuuu, trên mọi ứng dụng. Lưu vào tài khoản của bạn.",
+    "setting_title": "Giao diện thử nghiệm",
+    "setting_toggle_label": "Dùng giao diện thử nghiệm Sorbet"
   },
   "external-projects": {
     "settings": {
@@ -10769,30 +10803,5 @@
     "try_different_search_term": "Thử từ khóa tìm kiếm khác",
     "wallet": "Phương thức thanh toán",
     "wallet_deleted": "Đã xóa ví thành công"
-  },
-  "experimental-ui": {
-    "badge": "Beta",
-    "corners": {
-      "round": "Tròn",
-      "sharp": "Vuông",
-      "soft": "Mềm"
-    },
-    "corners_title": "Góc bo",
-    "palette_title": "Bảng màu",
-    "presets": {
-      "blueberry": "Việt quất",
-      "graphite": "Than chì",
-      "high-contrast": "Tương phản cao",
-      "lagoon": "Đầm phá",
-      "lavender": "Oải hương",
-      "mango": "Xoài",
-      "matcha": "Trà xanh",
-      "midnight": "Nửa đêm",
-      "rose": "Hồng",
-      "sorbet": "Sorbet"
-    },
-    "setting_description": "Dùng thử Sorbet, giao diện mới của Tuturuuu, trên mọi ứng dụng. Lưu vào tài khoản của bạn.",
-    "setting_title": "Giao diện thử nghiệm",
-    "setting_toggle_label": "Dùng giao diện thử nghiệm Sorbet"
   }
 }

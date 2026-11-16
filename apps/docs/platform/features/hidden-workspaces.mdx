@@ -305,8 +305,8 @@ and fullscreen presentation. Arrow Up and Arrow Down move through filtered
 workspace choices; Home and End move to the first and last choices while a choice
 has focus. Search retains the native Home and End text editing behavior.
 
-Pins and the five most recently selected workspaces order visible choices before
-other workspaces. Pins are independent of the account's default workspace and
+Pins and the five most recently selected workspaces order visible choices after
+Personal and Internal and before other workspaces. Pins are independent of the account's default workspace and
 never change its landing destination. These shortcuts start empty, remain only
 in the mounted selector session, and reset on every actor transition, including
 A → B → A. They are neither persisted nor synchronized across devices. Hidden
@@ -320,6 +320,48 @@ height across loading, empty, error, and ready states. Motion respects the syste
 reduced-motion preference. Coverage lives in `workspace-picker-content.test.tsx`
 and the actor visibility hook tests.
 
+## Web picker sections and row actions
+
+Scope: the shared `WorkspacePickerDialog` that `WorkspaceSelect` opens in
+`apps/web` and every satellite that ships it, in Classic and Sorbet, light and
+dark, English and Vietnamese.
+
+Sections appear in this order: Personal (the actor's own personal workspace),
+Internal (the platform root workspace), Pinned, Recent, Workspaces (A–Z), then
+the collapsed Hidden workspaces section. Each workspace appears in exactly one
+section. Personal and Internal keep their place, never repeat in Pinned or
+Recent, and offer no pin action. Guest access to someone else's personal
+workspace is an ordinary workspace. Hidden workspaces, including Personal and
+Internal, appear only under Hidden, which offers Restore only.
+
+Rows use fixed columns: name, plan badge, current check and actions. Actions
+have a column of their own, so they never cover or move the plan badge, and a
+row with fewer actions keeps empty slots instead of shifting. Every plan keeps
+its badge; FREE stays neutral. There is no per-workspace colour dot. The
+current workspace shows a check and `aria-current`. Pinned and Default stay
+visible at rest; the other desktop actions appear on hover or focus, and on
+devices without hover. The default action is announced but inert on the
+current default.
+
+Below 768 pixels the picker becomes a full-screen sheet. Each row then has one
+44-pixel More actions menu with Pin, Set as default and Hide or Restore, and
+the pinned and default states move to the row's meta line.
+
+Each row is a group holding one choice button and separate action buttons;
+no control is nested inside another. Arrow Up and Arrow Down, Home and End move
+between rows, Arrow Right and Arrow Left move between a row's choice and its
+actions, and Enter in search opens the highlighted row. Action labels include
+the workspace name.
+
+Pins, recents, the default workspace, hiding and logos keep the behavior
+described above; this layout adds no storage, permission or synchronization.
+Coverage: `packages/ui/src/components/ui/custom/__tests__/workspace-picker-partition.test.ts`
+(section partition without duplicates),
+`apps/web/e2e/workspace-picker-layout.fixture.ts` (rendered badge/action geometry
+at 390, 728, 1024 and 1440 pixels in English and Vietnamese) and
+`workspace-picker-dialog.test.tsx` (section order, row cells,
+row actions, keyboard model and the compact More menu).
+
 ### Isolated component verification
 
 Run the fictional picker fixture with the installed dependencies:
@@ -329,8 +371,21 @@ ttr resources run -- node node_modules/vite/bin/vite.js --config packages/ui/fix
 ```
 
 Open `http://127.0.0.1:5197/?locale=en&theme=light&state=ready`.
-Use `locale=en|vi`, `theme=light|dark`, and
-`state=ready|loading|empty|failure`. Capture at 390 and 1440 pixels. The fixture
+Use `locale=en|vi`, `theme=light|dark`, `ui=sorbet` for Sorbet, and
+`state=ready|loading|empty|failure|dialog`. `state=dialog` opens the shared
+`WorkspacePickerDialog` with Personal, Internal, every plan, a guest workspace
+and a long name; check its row columns and the compact More menu at 390 and
+1440 pixels. Run the isolated browser regression against that fixture server:
+
+```sh
+cd apps/web
+bunx --no-install playwright test --config playwright.workspace-picker.config.ts
+```
+
+The configuration uses one worker, no retries and no application auth or database
+setup. Set `WORKSPACE_PICKER_FIXTURE_URL` for a separately admitted fixture server.
+The regression measures real row, badge and action bounds, including hover and
+the compact touch target. The fixture
 renders the shared picker controls and styles, supplies fictional workspaces,
 and never loads application sessions or API clients. Its content security policy
 blocks external images and connections; avatar delivery and authenticated API

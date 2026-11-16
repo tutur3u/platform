@@ -11,6 +11,7 @@ import en from '../../../../apps/web/messages/en.json';
 import vi from '../../../../apps/web/messages/vi.json';
 import type { useWorkspaceVisibility } from '../../src/hooks/use-workspace-visibility';
 import { WorkspacePickerContent } from '../../src/components/ui/custom/workspace-picker-content';
+import { WorkspacePickerDialog } from '../../src/components/ui/custom/workspace-picker-dialog';
 import { useWorkspacePickerPreferences } from '../../src/components/ui/custom/use-workspace-picker-preferences';
 import { Popover, PopoverTrigger } from '../../src/components/ui/popover';
 import '../../src/globals.css';
@@ -21,6 +22,7 @@ document.documentElement.classList.toggle(
   'dark',
   params.get('theme') === 'dark'
 );
+if (params.get('ui') === 'sorbet') document.documentElement.dataset.ui = 'sorbet';
 const state = params.get('state') ?? 'ready';
 const workspaces = [
   'Orchard design collective',
@@ -42,6 +44,29 @@ const fixtureRouter = {
   replace() {},
   prefetch: async () => {},
 };
+// Root workspace id (Internal section); every other value is fictional.
+const dialogWorkspaces = [
+  { name: 'Personal', personal: true, tier: 'FREE' as const },
+  {
+    id: '00000000-0000-0000-0000-000000000000',
+    name: 'Platform',
+    tier: 'ENTERPRISE' as const,
+  },
+  { name: 'Orchard design collective', tier: 'PRO' as const },
+  { name: 'Lunar research studio', tier: 'PLUS' as const },
+  { name: 'Paperboat community', tier: 'FREE' as const },
+  {
+    name: 'Northwind regional tutoring cooperative and evening learning collective',
+    tier: 'ENTERPRISE' as const,
+  },
+  { name: 'Shared board', access_type: 'guest' as const },
+].map((workspace, index) => ({
+  id: `fictional-dialog-${index}`,
+  personal: false,
+  avatar_url: null,
+  logo_url: null,
+  ...workspace,
+}));
 const p0Workspaces = Array.from({ length: 42 }, (_, index) => ({
   ...workspaces[0]!,
   id: `fictional-${index}`,
@@ -112,7 +137,22 @@ function Fixture() {
         >
           Switch fictional actor
         </button>
-        {state.startsWith('invitations-') ? (
+        {state === 'dialog' ? (
+          <WorkspacePickerDialog
+            currentId="fictional-dialog-2"
+            defaultId="fictional-dialog-3"
+            onCreate={() => {}}
+            onDefault={() => {}}
+            onJoin={() => {}}
+            onOpenChange={() => {}}
+            onSelect={(workspace) => preferences.record(workspace.id)}
+            open
+            preferences={preferences}
+            trigger={<button type="button">Select workspace</button>}
+            visibility={visibility}
+            workspaces={dialogWorkspaces}
+          />
+        ) : state.startsWith('invitations-') ? (
           <AppRouterContext.Provider value={fixtureRouter}>
             <PathnameContext.Provider value="/en/fictional-0/tasks">
               <WorkspaceVisibilityProvider actorId="fictional-actor-a">
