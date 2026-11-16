@@ -1,0 +1,10 @@
+{
+  "store": "microsoft-store",
+  "packageIdentityName": "Tuturuuu.Tuturuuu",
+  "packagePublisher": "CN=0AC0922B-9A14-4E11-AC48-1A1AC49C81E1",
+  "packageFamilyName": "Tuturuuu.Tuturuuu_3fbz370g3eega",
+  "sources": [
+    "scripts/desktop-deployment/windows-store-manifest.xml",
+    "scripts/desktop-deployment/verify-windows-store.ps1"
+  ]
+}

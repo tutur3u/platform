@@ -1,0 +1,636 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://tuturuuu.com/schemas/store-metadata.json",
+  "title": "Tuturuuu store listing",
+  "description": "Public store listing for one platform. Every user-visible string is an { en, vi } object; limits apply to each language. String lengths count Unicode code points of NFC text; x-maxUtf8Bytes counts UTF-8 bytes.",
+  "type": "object",
+  "required": [
+    "store",
+    "slug",
+    "platform",
+    "productId",
+    "category",
+    "release",
+    "urls",
+    "listing",
+    "screenshotDevices",
+    "screenshots",
+    "gallery"
+  ],
+  "additionalProperties": false,
+  "properties": {
+    "$schema": {
+      "type": "string"
+    },
+    "store": {
+      "enum": [
+        "app-store-ios",
+        "app-store-macos",
+        "google-play",
+        "microsoft-store"
+      ]
+    },
+    "slug": {
+      "enum": [
+        "ios",
+        "macos",
+        "android",
+        "windows"
+      ]
+    },
+    "platform": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 40
+    },
+    "productId": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 100
+    },
+    "category": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 40
+    },
+    "release": {
+      "$ref": "#/$defs/release"
+    },
+    "urls": {
+      "$ref": "#/$defs/urls"
+    },
+    "listing": {
+      "type": "object"
+    },
+    "graphics": {
+      "type": "object"
+    },
+    "screenshotDevices": {
+      "type": "object",
+      "minProperties": 1,
+      "additionalProperties": {
+        "$ref": "#/$defs/deviceSize"
+      }
+    },
+    "screenshots": {
+      "$ref": "#/$defs/screenshotSets"
+    },
+    "gallery": {
+      "type": "array",
+      "minItems": 1,
+      "maxItems": 6,
+      "items": {
+        "$ref": "#/$defs/galleryItem"
+      }
+    }
+  },
+  "allOf": [
+    {
+      "if": {
+        "properties": {
+          "store": {
+            "enum": [
+              "app-store-ios",
+              "app-store-macos"
+            ]
+          }
+        }
+      },
+      "then": {
+        "properties": {
+          "listing": {
+            "type": "object",
+            "required": [
+              "name",
+              "subtitle",
+              "promotionalText",
+              "description",
+              "keywords",
+              "whatsNew"
+            ],
+            "additionalProperties": false,
+            "properties": {
+              "name": {
+                "$ref": "#/$defs/appName"
+              },
+              "nameFallback": {
+                "$ref": "#/$defs/appName"
+              },
+              "subtitle": {
+                "$ref": "#/$defs/text30"
+              },
+              "promotionalText": {
+                "$ref": "#/$defs/text170"
+              },
+              "description": {
+                "$ref": "#/$defs/text4000"
+              },
+              "keywords": {
+                "$ref": "#/$defs/appStoreKeywords"
+              },
+              "whatsNew": {
+                "anyOf": [
+                  {
+                    "$ref": "#/$defs/text4000"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ]
+              }
+            }
+          },
+          "screenshots": {
+            "x-captionMaxLength": 60
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "store": {
+            "const": "google-play"
+          }
+        }
+      },
+      "then": {
+        "properties": {
+          "listing": {
+            "type": "object",
+            "required": [
+              "title",
+              "shortDescription",
+              "fullDescription",
+              "whatsNew"
+            ],
+            "additionalProperties": false,
+            "properties": {
+              "title": {
+                "$ref": "#/$defs/appName"
+              },
+              "shortDescription": {
+                "$ref": "#/$defs/text80"
+              },
+              "fullDescription": {
+                "$ref": "#/$defs/text4000"
+              },
+              "whatsNew": {
+                "anyOf": [
+                  {
+                    "$ref": "#/$defs/text500"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ]
+              }
+            }
+          },
+          "graphics": {
+            "type": "object",
+            "required": [
+              "icon",
+              "featureGraphic"
+            ],
+            "additionalProperties": false,
+            "properties": {
+              "icon": {
+                "$ref": "#/$defs/graphic"
+              },
+              "featureGraphic": {
+                "$ref": "#/$defs/graphic"
+              }
+            }
+          },
+          "screenshots": {
+            "required": [
+              "phone"
+            ],
+            "x-captionMaxLength": 60
+          }
+        },
+        "required": [
+          "graphics"
+        ]
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "store": {
+            "const": "microsoft-store"
+          }
+        }
+      },
+      "then": {
+        "properties": {
+          "listing": {
+            "type": "object",
+            "required": [
+              "name",
+              "shortDescription",
+              "description",
+              "features",
+              "searchTerms",
+              "releaseNotes"
+            ],
+            "additionalProperties": false,
+            "properties": {
+              "name": {
+                "$ref": "#/$defs/appName"
+              },
+              "shortDescription": {
+                "$ref": "#/$defs/text1000"
+              },
+              "description": {
+                "$ref": "#/$defs/text10000"
+              },
+              "features": {
+                "type": "array",
+                "maxItems": 20,
+                "items": {
+                  "$ref": "#/$defs/text200"
+                }
+              },
+              "searchTerms": {
+                "type": "array",
+                "maxItems": 7,
+                "x-maxTotalWords": 21,
+                "items": {
+                  "$ref": "#/$defs/text30"
+                }
+              },
+              "releaseNotes": {
+                "anyOf": [
+                  {
+                    "$ref": "#/$defs/text1500"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ]
+              }
+            }
+          },
+          "graphics": {
+            "type": "object",
+            "required": [
+              "tile",
+              "hero"
+            ],
+            "additionalProperties": false,
+            "properties": {
+              "tile": {
+                "$ref": "#/$defs/graphic"
+              },
+              "hero": {
+                "$ref": "#/$defs/graphic"
+              }
+            }
+          },
+          "screenshots": {
+            "required": [
+              "desktop"
+            ],
+            "x-captionMaxLength": 200
+          }
+        },
+        "required": [
+          "graphics"
+        ]
+      }
+    }
+  ],
+  "$defs": {
+    "dateTime": {
+      "type": "string",
+      "description": "ISO 8601 date-time with an explicit offset.",
+      "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}(:\\d{2}(\\.\\d+)?)?(Z|[+-]\\d{2}:\\d{2})$"
+    },
+    "publicUrl": {
+      "type": "string",
+      "description": "HTTPS on a public store or tuturuuu.com host.",
+      "pattern": "^https://(tuturuuu\\.com|apps\\.apple\\.com|play\\.google\\.com|apps\\.microsoft\\.com)(/[^\\s]*)?$"
+    },
+    "release": {
+      "type": "object",
+      "required": [
+        "status",
+        "version",
+        "build",
+        "targetSubmitDate",
+        "targetLiveDate",
+        "submittedAt",
+        "approvedAt",
+        "liveAt",
+        "storeUrl"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "status": {
+          "enum": [
+            "planned",
+            "preparing",
+            "submitted",
+            "in_review",
+            "approved",
+            "live",
+            "rejected"
+          ]
+        },
+        "version": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 20,
+          "pattern": "^\\d+\\.\\d+\\.\\d+$"
+        },
+        "build": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 20,
+          "pattern": "^\\d+$"
+        },
+        "targetSubmitDate": {
+          "$ref": "#/$defs/dateTime"
+        },
+        "targetLiveDate": {
+          "$ref": "#/$defs/dateTime"
+        },
+        "submittedAt": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/dateTime"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "approvedAt": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/dateTime"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "liveAt": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/dateTime"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "storeUrl": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/publicUrl"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        }
+      }
+    },
+    "urls": {
+      "type": "object",
+      "required": [
+        "privacy",
+        "support",
+        "marketing",
+        "accountDeletion"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "privacy": {
+          "$ref": "#/$defs/publicUrl"
+        },
+        "support": {
+          "$ref": "#/$defs/publicUrl"
+        },
+        "marketing": {
+          "$ref": "#/$defs/publicUrl"
+        },
+        "accountDeletion": {
+          "$ref": "#/$defs/publicUrl"
+        }
+      }
+    },
+    "localized": {
+      "type": "object",
+      "description": "An { en, vi } pair of non-empty strings.",
+      "required": [
+        "en",
+        "vi"
+      ],
+      "propertyNames": {
+        "enum": [
+          "en",
+          "vi"
+        ]
+      },
+      "additionalProperties": {
+        "type": "string",
+        "minLength": 1
+      }
+    },
+    "appName": {
+      "$ref": "#/$defs/localized",
+      "additionalProperties": {
+        "maxLength": 30,
+        "minLength": 2
+      }
+    },
+    "text30": {
+      "$ref": "#/$defs/localized",
+      "additionalProperties": {
+        "maxLength": 30
+      }
+    },
+    "text80": {
+      "$ref": "#/$defs/localized",
+      "additionalProperties": {
+        "maxLength": 80
+      }
+    },
+    "text170": {
+      "$ref": "#/$defs/localized",
+      "additionalProperties": {
+        "maxLength": 170
+      }
+    },
+    "text200": {
+      "$ref": "#/$defs/localized",
+      "additionalProperties": {
+        "maxLength": 200
+      }
+    },
+    "text500": {
+      "$ref": "#/$defs/localized",
+      "additionalProperties": {
+        "maxLength": 500
+      }
+    },
+    "text1000": {
+      "$ref": "#/$defs/localized",
+      "additionalProperties": {
+        "maxLength": 1000,
+        "x-recommendedMaxLength": 270
+      }
+    },
+    "text1500": {
+      "$ref": "#/$defs/localized",
+      "additionalProperties": {
+        "maxLength": 1500
+      }
+    },
+    "text4000": {
+      "$ref": "#/$defs/localized",
+      "additionalProperties": {
+        "maxLength": 4000
+      }
+    },
+    "text10000": {
+      "$ref": "#/$defs/localized",
+      "additionalProperties": {
+        "maxLength": 10000
+      }
+    },
+    "altText": {
+      "$ref": "#/$defs/localized",
+      "additionalProperties": {
+        "maxLength": 150
+      }
+    },
+    "appStoreKeywords": {
+      "$ref": "#/$defs/localized",
+      "additionalProperties": {
+        "x-maxUtf8Bytes": 100,
+        "pattern": "^[^,\\s][^,]*(,[^,\\s][^,]*)*$"
+      }
+    },
+    "deviceSize": {
+      "type": "object",
+      "description": "Exact width/height, or minWidth/minHeight for stores that accept larger captures.",
+      "additionalProperties": false,
+      "properties": {
+        "width": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "height": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "minWidth": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "minHeight": {
+          "type": "integer",
+          "minimum": 1
+        }
+      }
+    },
+    "graphic": {
+      "type": "object",
+      "required": [
+        "file",
+        "width",
+        "height"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "file": {
+          "type": "string",
+          "pattern": "^apps/mobile/store/graphics/[a-z]+/[a-z0-9-]+\\.png$"
+        },
+        "width": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "height": {
+          "type": "integer",
+          "minimum": 1
+        }
+      }
+    },
+    "screenshotFile": {
+      "type": "string",
+      "pattern": "^apps/mobile/store/screenshots/[a-z]+/[a-z0-9.-]+/(en|vi)/\\d{2}-[a-z][a-z0-9-]*\\.jpg$"
+    },
+    "screenshot": {
+      "type": "object",
+      "required": [
+        "id",
+        "files",
+        "caption"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "id": {
+          "type": "string",
+          "pattern": "^[a-z][a-z0-9-]*$"
+        },
+        "files": {
+          "$ref": "#/$defs/localized",
+          "additionalProperties": {
+            "$ref": "#/$defs/screenshotFile"
+          }
+        },
+        "caption": {
+          "$ref": "#/$defs/text200"
+        }
+      }
+    },
+    "screenshotSets": {
+      "type": "object",
+      "minProperties": 1,
+      "additionalProperties": {
+        "type": "array",
+        "minItems": 2,
+        "maxItems": 10,
+        "items": {
+          "$ref": "#/$defs/screenshot"
+        }
+      }
+    },
+    "galleryItem": {
+      "type": "object",
+      "required": [
+        "file",
+        "width",
+        "height",
+        "alt"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "file": {
+          "type": "string",
+          "description": "WebP, long edge at most 1280 px, at most 150 KB.",
+          "pattern": "^apps/mobile/store/screenshots/[a-z]+/web/\\d{2}-[a-z][a-z0-9-]*\\.webp$"
+        },
+        "width": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 1280
+        },
+        "height": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 1280
+        },
+        "alt": {
+          "$ref": "#/$defs/altText"
+        }
+      }
+    }
+  }
+}

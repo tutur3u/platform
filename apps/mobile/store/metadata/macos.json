@@ -1,0 +1,206 @@
+{
+  "$schema": "./schema.json",
+  "store": "app-store-macos",
+  "slug": "macos",
+  "platform": "macOS",
+  "productId": "com.tuturuuu.app.mobile",
+  "category": "Productivity",
+  "release": {
+    "status": "preparing",
+    "version": "1.0.0",
+    "build": "103",
+    "targetSubmitDate": "2026-11-28T23:59:00+07:00",
+    "targetLiveDate": "2026-12-10T23:59:00+07:00",
+    "submittedAt": null,
+    "approvedAt": null,
+    "liveAt": null,
+    "storeUrl": null
+  },
+  "urls": {
+    "privacy": "https://tuturuuu.com/privacy",
+    "support": "https://tuturuuu.com/contact",
+    "marketing": "https://tuturuuu.com",
+    "accountDeletion": "https://tuturuuu.com/account/delete"
+  },
+  "listing": {
+    "name": {
+      "en": "Tuturuuu",
+      "vi": "Tuturuuu"
+    },
+    "nameFallback": {
+      "en": "Tuturuuu: Tasks & Calendar",
+      "vi": "Tuturuuu: Công việc & Lịch"
+    },
+    "subtitle": {
+      "en": "Tasks, calendar & AI workspace",
+      "vi": "Công việc, lịch và trợ lý AI"
+    },
+    "promotionalText": {
+      "en": "Ask Mira what is urgent, summarize today’s calendar or log a quick expense, then get back to work in the same workspace.",
+      "vi": "Hỏi Mira việc nào đang gấp, tóm tắt lịch hôm nay hay ghi nhanh một khoản chi, rồi quay lại làm việc ngay trong cùng không gian."
+    },
+    "keywords": {
+      "en": "planner,to-do,todo list,habit tracker,time tracker,pomodoro,notes,expenses,kanban,team,agenda,focus",
+      "vi": "kế hoạch,việc cần làm,thói quen,chấm công,pomodoro,ghi chú,chi tiêu,kanban,nhóm,todo"
+    },
+    "description": {
+      "en": "Tuturuuu brings your tasks, calendar, notes and team tools into one workspace on your desktop, with Mira, an AI assistant that works alongside you.\n\nPLAN YOUR WORK\n• Organize tasks on boards in Kanban, list or timeline view\n• Assign work, add estimates and follow progress\n• See your schedule in day, 3-day, week, month or agenda view\n• Get reminders for upcoming tasks and events\n\nASK MIRA\n• Chat with Mira by text or voice and add attachments for context\n• Start a live voice session when typing is not convenient\n• Ask Mira to summarize today’s calendar, list urgent tasks or draft a team update\n• On supported devices, download a model and chat on device: those conversations stay on your device\n\nCAPTURE AND KEEP\n• Write notes, link them to your work and convert them into tasks\n• Record a voice note and review its transcript, summary and suggested action items\n• Lock sensitive notes with a passphrase that encrypts them across your devices\n• Browse workspace files and folders, upload files and create share links\n\nTRACK WHAT MATTERS\n• Time work sessions or Pomodoro cycles and review your statistics\n• Build habits with shared trackers and streaks\n• Record income and expenses across wallets, categories and tags\n\nWORK TOGETHER\n• Switch between personal and team workspaces, each kept separate\n• Plan meetings and keep team conversations in one place\n\nTuturuuu is available in English and Vietnamese. A Tuturuuu account and an internet connection are required. Available features depend on your workspace and its permissions.",
+      "vi": "Tuturuuu gom công việc, lịch, ghi chú và công cụ làm việc nhóm vào một không gian duy nhất ngay trên máy tính, cùng Mira – trợ lý AI luôn sẵn sàng hỗ trợ bạn.\n\nSẮP XẾP CÔNG VIỆC\n• Quản lý công việc trên bảng với chế độ Kanban, danh sách hoặc dòng thời gian\n• Giao việc, ước lượng thời gian và theo dõi tiến độ\n• Xem lịch theo ngày, 3 ngày, tuần, tháng hoặc dạng danh sách sự kiện\n• Nhận nhắc nhở trước các công việc và sự kiện sắp tới\n\nHỎI MIRA\n• Trò chuyện với Mira bằng tin nhắn hoặc giọng nói, gửi kèm tệp khi cần thêm ngữ cảnh\n• Chuyển sang trò chuyện trực tiếp bằng giọng nói khi không tiện gõ phím\n• Nhờ Mira tóm tắt lịch hôm nay, liệt kê việc gấp hoặc soạn nhanh bản cập nhật cho nhóm\n• Trên thiết bị được hỗ trợ, tải mô hình về máy để trò chuyện ngay trên thiết bị, nội dung không rời khỏi máy của bạn\n\nGHI LẠI MỌI Ý TƯỞNG\n• Viết ghi chú, liên kết với công việc và chuyển thành việc cần làm\n• Ghi âm ghi chú giọng nói rồi xem lại bản chép lời, phần tóm tắt và các việc được gợi ý\n• Đặt cụm mật khẩu cho ghi chú quan trọng để mã hóa trên mọi thiết bị của bạn\n• Duyệt tệp và thư mục, tải tệp lên và tạo liên kết chia sẻ\n\nTHEO DÕI ĐIỀU QUAN TRỌNG\n• Bấm giờ phiên làm việc hoặc theo chu kỳ Pomodoro, xem lại thống kê\n• Duy trì thói quen với bộ theo dõi dùng chung và chuỗi ngày liên tục\n• Ghi lại thu chi theo ví, danh mục và thẻ\n\nLÀM VIỆC CÙNG NHAU\n• Chuyển qua lại giữa không gian cá nhân và không gian nhóm, dữ liệu mỗi nơi được tách riêng\n• Lên lịch họp và trao đổi với đồng đội ngay trong ứng dụng\n\nTuturuuu có giao diện tiếng Việt và tiếng Anh. Bạn cần có tài khoản Tuturuuu và kết nối Internet. Các tính năng khả dụng tùy thuộc vào không gian làm việc và quyền của bạn."
+    },
+    "whatsNew": null
+  },
+  "screenshotDevices": {
+    "mac": {
+      "width": 2880,
+      "height": 1800
+    }
+  },
+  "screenshots": {
+    "mac": [
+      {
+        "id": "dashboard",
+        "files": {
+          "en": "apps/mobile/store/screenshots/macos/mac/en/01-dashboard.jpg",
+          "vi": "apps/mobile/store/screenshots/macos/mac/vi/01-dashboard.jpg"
+        },
+        "caption": {
+          "en": "Your day at a glance",
+          "vi": "Cả ngày của bạn trong một màn hình"
+        }
+      },
+      {
+        "id": "tasks",
+        "files": {
+          "en": "apps/mobile/store/screenshots/macos/mac/en/02-tasks.jpg",
+          "vi": "apps/mobile/store/screenshots/macos/mac/vi/02-tasks.jpg"
+        },
+        "caption": {
+          "en": "Plan work in Kanban, list or timeline",
+          "vi": "Xếp việc theo Kanban, danh sách, dòng thời gian"
+        }
+      },
+      {
+        "id": "calendar",
+        "files": {
+          "en": "apps/mobile/store/screenshots/macos/mac/en/03-calendar.jpg",
+          "vi": "apps/mobile/store/screenshots/macos/mac/vi/03-calendar.jpg"
+        },
+        "caption": {
+          "en": "Day, week, month and agenda views",
+          "vi": "Xem lịch theo ngày, tuần, tháng"
+        }
+      },
+      {
+        "id": "assistant",
+        "files": {
+          "en": "apps/mobile/store/screenshots/macos/mac/en/04-assistant.jpg",
+          "vi": "apps/mobile/store/screenshots/macos/mac/vi/04-assistant.jpg"
+        },
+        "caption": {
+          "en": "Ask Mira by text or voice",
+          "vi": "Hỏi Mira bằng tin nhắn hoặc giọng nói"
+        }
+      },
+      {
+        "id": "finance",
+        "files": {
+          "en": "apps/mobile/store/screenshots/macos/mac/en/05-finance.jpg",
+          "vi": "apps/mobile/store/screenshots/macos/mac/vi/05-finance.jpg"
+        },
+        "caption": {
+          "en": "Track spending across wallets",
+          "vi": "Nắm rõ thu chi trên từng ví"
+        }
+      },
+      {
+        "id": "habits",
+        "files": {
+          "en": "apps/mobile/store/screenshots/macos/mac/en/06-habits.jpg",
+          "vi": "apps/mobile/store/screenshots/macos/mac/vi/06-habits.jpg"
+        },
+        "caption": {
+          "en": "Build habits and keep your streak",
+          "vi": "Xây thói quen, giữ chuỗi ngày liên tục"
+        }
+      },
+      {
+        "id": "time-tracker",
+        "files": {
+          "en": "apps/mobile/store/screenshots/macos/mac/en/07-time-tracker.jpg",
+          "vi": "apps/mobile/store/screenshots/macos/mac/vi/07-time-tracker.jpg"
+        },
+        "caption": {
+          "en": "Time work sessions or use Pomodoro",
+          "vi": "Bấm giờ làm việc hoặc chạy Pomodoro"
+        }
+      },
+      {
+        "id": "notes",
+        "files": {
+          "en": "apps/mobile/store/screenshots/macos/mac/en/08-notes.jpg",
+          "vi": "apps/mobile/store/screenshots/macos/mac/vi/08-notes.jpg"
+        },
+        "caption": {
+          "en": "Capture ideas and turn them into tasks",
+          "vi": "Ghi lại ý tưởng, chuyển thành việc cần làm"
+        }
+      }
+    ]
+  },
+  "gallery": [
+    {
+      "file": "apps/mobile/store/screenshots/macos/web/01-dashboard.webp",
+      "width": 1280,
+      "height": 800,
+      "alt": {
+        "en": "Tuturuuu home screen with today’s tasks, events and workspace activity",
+        "vi": "Màn hình chính Tuturuuu với công việc, sự kiện và hoạt động trong ngày"
+      }
+    },
+    {
+      "file": "apps/mobile/store/screenshots/macos/web/02-tasks.webp",
+      "width": 1280,
+      "height": 800,
+      "alt": {
+        "en": "Task board in Kanban view with columns of task cards",
+        "vi": "Bảng công việc ở chế độ Kanban với các cột thẻ công việc"
+      }
+    },
+    {
+      "file": "apps/mobile/store/screenshots/macos/web/03-calendar.webp",
+      "width": 1280,
+      "height": 800,
+      "alt": {
+        "en": "Calendar in week view with scheduled events",
+        "vi": "Lịch ở chế độ xem tuần với các sự kiện đã lên lịch"
+      }
+    },
+    {
+      "file": "apps/mobile/store/screenshots/macos/web/04-assistant.webp",
+      "width": 1280,
+      "height": 800,
+      "alt": {
+        "en": "Conversation with Mira, the AI assistant",
+        "vi": "Cuộc trò chuyện với trợ lý AI Mira"
+      }
+    },
+    {
+      "file": "apps/mobile/store/screenshots/macos/web/05-time-tracker.webp",
+      "width": 1280,
+      "height": 800,
+      "alt": {
+        "en": "Time tracker with a running work session",
+        "vi": "Bộ bấm giờ đang chạy một phiên làm việc"
+      }
+    },
+    {
+      "file": "apps/mobile/store/screenshots/macos/web/06-notes.webp",
+      "width": 1280,
+      "height": 800,
+      "alt": {
+        "en": "Note editor with a note linked to a task",
+        "vi": "Trình soạn ghi chú với một ghi chú liên kết công việc"
+      }
+    }
+  ]
+}

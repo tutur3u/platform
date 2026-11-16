@@ -1,0 +1,298 @@
+{
+  "$schema": "./schema.json",
+  "store": "microsoft-store",
+  "slug": "windows",
+  "platform": "Windows",
+  "productId": "9N7B6VC7RR7W",
+  "category": "Productivity",
+  "release": {
+    "status": "preparing",
+    "version": "1.0.0",
+    "build": "103",
+    "targetSubmitDate": "2026-11-28T23:59:00+07:00",
+    "targetLiveDate": "2026-12-10T23:59:00+07:00",
+    "submittedAt": null,
+    "approvedAt": null,
+    "liveAt": null,
+    "storeUrl": null
+  },
+  "urls": {
+    "privacy": "https://tuturuuu.com/privacy",
+    "support": "https://tuturuuu.com/contact",
+    "marketing": "https://tuturuuu.com",
+    "accountDeletion": "https://tuturuuu.com/account/delete"
+  },
+  "listing": {
+    "name": {
+      "en": "Tuturuuu",
+      "vi": "Tuturuuu"
+    },
+    "shortDescription": {
+      "en": "Tasks, calendar, notes and Mira, an AI assistant, in one desktop workspace. Plan work in Kanban, list or timeline view, time focus sessions, track habits and expenses, and switch between personal and team workspaces.",
+      "vi": "Công việc, lịch, ghi chú và trợ lý AI Mira trong một không gian làm việc trên máy tính. Sắp xếp việc theo Kanban, danh sách hoặc dòng thời gian, bấm giờ tập trung, theo dõi thói quen, thu chi và chuyển đổi giữa không gian cá nhân và nhóm."
+    },
+    "description": {
+      "en": "Tuturuuu brings your tasks, calendar, notes and team tools into one workspace on your desktop, with Mira, an AI assistant that works alongside you.\n\nPLAN YOUR WORK\n• Organize tasks on boards in Kanban, list or timeline view\n• Assign work, add estimates and follow progress\n• See your schedule in day, 3-day, week, month or agenda view\n• Get reminders for upcoming tasks and events\n\nASK MIRA\n• Chat with Mira by text or voice and add attachments for context\n• Start a live voice session when typing is not convenient\n• Ask Mira to summarize today’s calendar, list urgent tasks or draft a team update\n• On supported devices, download a model and chat on device: those conversations stay on your device\n\nCAPTURE AND KEEP\n• Write notes, link them to your work and convert them into tasks\n• Record a voice note and review its transcript, summary and suggested action items\n• Lock sensitive notes with a passphrase that encrypts them across your devices\n• Browse workspace files and folders, upload files and create share links\n\nTRACK WHAT MATTERS\n• Time work sessions or Pomodoro cycles and review your statistics\n• Build habits with shared trackers and streaks\n• Record income and expenses across wallets, categories and tags\n\nWORK TOGETHER\n• Switch between personal and team workspaces, each kept separate\n• Plan meetings and keep team conversations in one place\n\nTuturuuu is available in English and Vietnamese. A Tuturuuu account and an internet connection are required. Available features depend on your workspace and its permissions.\n\nCamera, microphone and file access are requested only when you choose a feature that needs them. Microsoft Store delivers app updates.",
+      "vi": "Tuturuuu gom công việc, lịch, ghi chú và công cụ làm việc nhóm vào một không gian duy nhất ngay trên máy tính, cùng Mira – trợ lý AI luôn sẵn sàng hỗ trợ bạn.\n\nSẮP XẾP CÔNG VIỆC\n• Quản lý công việc trên bảng với chế độ Kanban, danh sách hoặc dòng thời gian\n• Giao việc, ước lượng thời gian và theo dõi tiến độ\n• Xem lịch theo ngày, 3 ngày, tuần, tháng hoặc dạng danh sách sự kiện\n• Nhận nhắc nhở trước các công việc và sự kiện sắp tới\n\nHỎI MIRA\n• Trò chuyện với Mira bằng tin nhắn hoặc giọng nói, gửi kèm tệp khi cần thêm ngữ cảnh\n• Chuyển sang trò chuyện trực tiếp bằng giọng nói khi không tiện gõ phím\n• Nhờ Mira tóm tắt lịch hôm nay, liệt kê việc gấp hoặc soạn nhanh bản cập nhật cho nhóm\n• Trên thiết bị được hỗ trợ, tải mô hình về máy để trò chuyện ngay trên thiết bị, nội dung không rời khỏi máy của bạn\n\nGHI LẠI MỌI Ý TƯỞNG\n• Viết ghi chú, liên kết với công việc và chuyển thành việc cần làm\n• Ghi âm ghi chú giọng nói rồi xem lại bản chép lời, phần tóm tắt và các việc được gợi ý\n• Đặt cụm mật khẩu cho ghi chú quan trọng để mã hóa trên mọi thiết bị của bạn\n• Duyệt tệp và thư mục, tải tệp lên và tạo liên kết chia sẻ\n\nTHEO DÕI ĐIỀU QUAN TRỌNG\n• Bấm giờ phiên làm việc hoặc theo chu kỳ Pomodoro, xem lại thống kê\n• Duy trì thói quen với bộ theo dõi dùng chung và chuỗi ngày liên tục\n• Ghi lại thu chi theo ví, danh mục và thẻ\n\nLÀM VIỆC CÙNG NHAU\n• Chuyển qua lại giữa không gian cá nhân và không gian nhóm, dữ liệu mỗi nơi được tách riêng\n• Lên lịch họp và trao đổi với đồng đội ngay trong ứng dụng\n\nTuturuuu có giao diện tiếng Việt và tiếng Anh. Bạn cần có tài khoản Tuturuuu và kết nối Internet. Các tính năng khả dụng tùy thuộc vào không gian làm việc và quyền của bạn.\n\nỨng dụng chỉ xin quyền camera, micrô hoặc truy cập tệp khi bạn dùng tính năng cần đến. Bản cập nhật được phân phối qua Microsoft Store."
+    },
+    "features": [
+      {
+        "en": "Task boards with Kanban, list and timeline views",
+        "vi": "Bảng công việc với chế độ Kanban, danh sách và dòng thời gian"
+      },
+      {
+        "en": "Day, 3-day, week, month and agenda calendar views",
+        "vi": "Lịch theo ngày, 3 ngày, tuần, tháng và danh sách sự kiện"
+      },
+      {
+        "en": "Reminders for upcoming tasks and events",
+        "vi": "Nhắc nhở trước các công việc và sự kiện sắp tới"
+      },
+      {
+        "en": "Mira AI assistant with text, voice and attachments",
+        "vi": "Trợ lý AI Mira hỗ trợ tin nhắn, giọng nói và tệp đính kèm"
+      },
+      {
+        "en": "On-device AI chat on supported hardware",
+        "vi": "Trò chuyện AI ngay trên máy với phần cứng được hỗ trợ"
+      },
+      {
+        "en": "Notes that link to your work and convert into tasks",
+        "vi": "Ghi chú liên kết với công việc và chuyển thành việc cần làm"
+      },
+      {
+        "en": "Voice notes with transcript, summary and suggested action items",
+        "vi": "Ghi chú giọng nói kèm bản chép lời, tóm tắt và gợi ý việc cần làm"
+      },
+      {
+        "en": "Passphrase-encrypted notes",
+        "vi": "Ghi chú được mã hóa bằng cụm mật khẩu"
+      },
+      {
+        "en": "Workspace files, folders, uploads and share links",
+        "vi": "Tệp, thư mục, tải lên và liên kết chia sẻ của không gian làm việc"
+      },
+      {
+        "en": "Work session timer with Pomodoro cycles and statistics",
+        "vi": "Bấm giờ phiên làm việc với chu kỳ Pomodoro và thống kê"
+      },
+      {
+        "en": "Shared habit trackers with streaks",
+        "vi": "Bộ theo dõi thói quen dùng chung với chuỗi ngày liên tục"
+      },
+      {
+        "en": "Income and expense tracking across wallets, categories and tags",
+        "vi": "Quản lý thu chi theo ví, danh mục và thẻ"
+      },
+      {
+        "en": "Separate personal and team workspaces",
+        "vi": "Không gian cá nhân và không gian nhóm tách biệt"
+      },
+      {
+        "en": "English and Vietnamese interfaces",
+        "vi": "Giao diện tiếng Việt và tiếng Anh"
+      },
+      {
+        "en": "Updates delivered through Microsoft Store",
+        "vi": "Cập nhật qua Microsoft Store"
+      }
+    ],
+    "searchTerms": [
+      {
+        "en": "task manager",
+        "vi": "quản lý công việc"
+      },
+      {
+        "en": "calendar",
+        "vi": "lịch"
+      },
+      {
+        "en": "planner",
+        "vi": "kế hoạch"
+      },
+      {
+        "en": "AI assistant",
+        "vi": "trợ lý AI"
+      },
+      {
+        "en": "time tracker",
+        "vi": "chấm công"
+      },
+      {
+        "en": "habit tracker",
+        "vi": "thói quen"
+      },
+      {
+        "en": "notes",
+        "vi": "ghi chú"
+      }
+    ],
+    "releaseNotes": null
+  },
+  "graphics": {
+    "tile": {
+      "file": "apps/mobile/store/graphics/windows/tile-300.png",
+      "width": 300,
+      "height": 300
+    },
+    "hero": {
+      "file": "apps/mobile/store/graphics/windows/hero-1920x1080.png",
+      "width": 1920,
+      "height": 1080
+    }
+  },
+  "screenshotDevices": {
+    "desktop": {
+      "minWidth": 1920,
+      "minHeight": 1080
+    }
+  },
+  "screenshots": {
+    "desktop": [
+      {
+        "id": "dashboard",
+        "files": {
+          "en": "apps/mobile/store/screenshots/windows/desktop/en/01-dashboard.jpg",
+          "vi": "apps/mobile/store/screenshots/windows/desktop/vi/01-dashboard.jpg"
+        },
+        "caption": {
+          "en": "See today’s tasks, events and workspace activity in one place.",
+          "vi": "Xem công việc, sự kiện và hoạt động của không gian làm việc hôm nay tại một nơi."
+        }
+      },
+      {
+        "id": "tasks",
+        "files": {
+          "en": "apps/mobile/store/screenshots/windows/desktop/en/02-tasks.jpg",
+          "vi": "apps/mobile/store/screenshots/windows/desktop/vi/02-tasks.jpg"
+        },
+        "caption": {
+          "en": "Organize work on boards and switch between Kanban, list and timeline views.",
+          "vi": "Sắp xếp công việc trên bảng và chuyển nhanh giữa chế độ Kanban, danh sách và dòng thời gian."
+        }
+      },
+      {
+        "id": "calendar",
+        "files": {
+          "en": "apps/mobile/store/screenshots/windows/desktop/en/03-calendar.jpg",
+          "vi": "apps/mobile/store/screenshots/windows/desktop/vi/03-calendar.jpg"
+        },
+        "caption": {
+          "en": "Review your schedule in day, 3-day, week, month or agenda view.",
+          "vi": "Xem lịch theo ngày, 3 ngày, tuần, tháng hoặc dạng danh sách sự kiện."
+        }
+      },
+      {
+        "id": "assistant",
+        "files": {
+          "en": "apps/mobile/store/screenshots/windows/desktop/en/04-assistant.jpg",
+          "vi": "apps/mobile/store/screenshots/windows/desktop/vi/04-assistant.jpg"
+        },
+        "caption": {
+          "en": "Ask Mira to summarize your calendar, surface urgent tasks or draft a team update.",
+          "vi": "Nhờ Mira tóm tắt lịch, chỉ ra việc gấp hoặc soạn bản cập nhật gửi nhóm."
+        }
+      },
+      {
+        "id": "finance",
+        "files": {
+          "en": "apps/mobile/store/screenshots/windows/desktop/en/05-finance.jpg",
+          "vi": "apps/mobile/store/screenshots/windows/desktop/vi/05-finance.jpg"
+        },
+        "caption": {
+          "en": "Record income and expenses across wallets, categories and tags.",
+          "vi": "Ghi lại thu chi theo ví, danh mục và thẻ."
+        }
+      },
+      {
+        "id": "habits",
+        "files": {
+          "en": "apps/mobile/store/screenshots/windows/desktop/en/06-habits.jpg",
+          "vi": "apps/mobile/store/screenshots/windows/desktop/vi/06-habits.jpg"
+        },
+        "caption": {
+          "en": "Follow shared habit trackers and keep your streak going.",
+          "vi": "Cùng nhóm theo dõi thói quen và giữ chuỗi ngày không gián đoạn."
+        }
+      },
+      {
+        "id": "time-tracker",
+        "files": {
+          "en": "apps/mobile/store/screenshots/windows/desktop/en/07-time-tracker.jpg",
+          "vi": "apps/mobile/store/screenshots/windows/desktop/vi/07-time-tracker.jpg"
+        },
+        "caption": {
+          "en": "Time work sessions or Pomodoro cycles and review personal and workspace stats.",
+          "vi": "Bấm giờ phiên làm việc hoặc chu kỳ Pomodoro, xem thống kê cá nhân và cả nhóm."
+        }
+      },
+      {
+        "id": "notes",
+        "files": {
+          "en": "apps/mobile/store/screenshots/windows/desktop/en/08-notes.jpg",
+          "vi": "apps/mobile/store/screenshots/windows/desktop/vi/08-notes.jpg"
+        },
+        "caption": {
+          "en": "Write notes, link them to your work and convert them into tasks when you are ready.",
+          "vi": "Viết ghi chú, liên kết với công việc và chuyển thành việc cần làm khi sẵn sàng."
+        }
+      }
+    ]
+  },
+  "gallery": [
+    {
+      "file": "apps/mobile/store/screenshots/windows/web/01-dashboard.webp",
+      "width": 1280,
+      "height": 720,
+      "alt": {
+        "en": "Tuturuuu home screen with today’s tasks, events and workspace activity",
+        "vi": "Màn hình chính Tuturuuu với công việc, sự kiện và hoạt động trong ngày"
+      }
+    },
+    {
+      "file": "apps/mobile/store/screenshots/windows/web/02-tasks.webp",
+      "width": 1280,
+      "height": 720,
+      "alt": {
+        "en": "Task board in Kanban view with columns of task cards",
+        "vi": "Bảng công việc ở chế độ Kanban với các cột thẻ công việc"
+      }
+    },
+    {
+      "file": "apps/mobile/store/screenshots/windows/web/03-calendar.webp",
+      "width": 1280,
+      "height": 720,
+      "alt": {
+        "en": "Calendar in week view with scheduled events",
+        "vi": "Lịch ở chế độ xem tuần với các sự kiện đã lên lịch"
+      }
+    },
+    {
+      "file": "apps/mobile/store/screenshots/windows/web/04-assistant.webp",
+      "width": 1280,
+      "height": 720,
+      "alt": {
+        "en": "Conversation with Mira, the AI assistant",
+        "vi": "Cuộc trò chuyện với trợ lý AI Mira"
+      }
+    },
+    {
+      "file": "apps/mobile/store/screenshots/windows/web/05-time-tracker.webp",
+      "width": 1280,
+      "height": 720,
+      "alt": {
+        "en": "Time tracker with a running work session",
+        "vi": "Bộ bấm giờ đang chạy một phiên làm việc"
+      }
+    },
+    {
+      "file": "apps/mobile/store/screenshots/windows/web/06-notes.webp",
+      "width": 1280,
+      "height": 720,
+      "alt": {
+        "en": "Note editor with a note linked to a task",
+        "vi": "Trình soạn ghi chú với một ghi chú liên kết công việc"
+      }
+    }
+  ]
+}
