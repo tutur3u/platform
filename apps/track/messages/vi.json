@@ -3956,6 +3956,12 @@
   },
   "experimental-ui": {
     "badge": "Beta",
+    "corners": {
+      "round": "Tròn",
+      "sharp": "Vuông",
+      "soft": "Mềm"
+    },
+    "corners_title": "Góc bo",
     "palette_title": "Bảng màu",
     "presets": {
       "blueberry": "Việt quất",

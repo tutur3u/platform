@@ -1,5 +1,5 @@
 import '@testing-library/jest-dom';
-import { fireEvent, render, screen } from '@testing-library/react';
+import { fireEvent, render, screen, within } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { ExperimentalUiSetting } from './experimental-ui-setting';
 
@@ -34,6 +34,7 @@ beforeEach(() => {
 afterEach(() => {
   document.documentElement.removeAttribute('data-ui');
   document.documentElement.removeAttribute('data-sorbet-preset');
+  document.documentElement.removeAttribute('data-sorbet-radius');
   window.localStorage.clear();
 });
 
@@ -99,8 +100,8 @@ describe('ExperimentalUiSetting', () => {
     });
     render(<ExperimentalUiSetting />);
 
-    const presets = screen.getAllByRole('radio');
-    expect(presets).toHaveLength(10);
+    const palette = screen.getByRole('radiogroup', { name: 'palette_title' });
+    expect(within(palette).getAllByRole('radio')).toHaveLength(10);
     expect(screen.getByRole('radio', { name: 'presets.sorbet' })).toBeChecked();
 
     fireEvent.click(screen.getByRole('radio', { name: 'presets.matcha' }));
@@ -114,6 +115,40 @@ describe('ExperimentalUiSetting', () => {
         preset: 'matcha',
         accent: null,
         radius: 'soft',
+        density: 'comfortable',
+        font: 'nunito',
+      }),
+    });
+  });
+
+  it('offers Soft, Sharp and Round corners and saves a choice', () => {
+    mockUseUserBooleanConfig.mockReturnValue({
+      isLoading: false,
+      isPending: false,
+      setValue: mockSetValue,
+      value: true,
+    });
+    render(<ExperimentalUiSetting />);
+
+    const corners = screen.getByRole('radiogroup', { name: 'corners_title' });
+    expect(
+      within(corners)
+        .getAllByRole('radio')
+        .map((radio) => radio.getAttribute('value'))
+    ).toEqual(['soft', 'sharp', 'round']);
+    expect(screen.getByRole('radio', { name: 'corners.soft' })).toBeChecked();
+
+    fireEvent.click(screen.getByRole('radio', { name: 'corners.sharp' }));
+
+    expect(document.documentElement.getAttribute('data-sorbet-radius')).toBe(
+      'sharp'
+    );
+    expect(mockMutate).toHaveBeenCalledWith({
+      configId: 'SORBET_THEME',
+      value: JSON.stringify({
+        preset: 'sorbet',
+        accent: null,
+        radius: 'sharp',
         density: 'comfortable',
         font: 'nunito',
       }),

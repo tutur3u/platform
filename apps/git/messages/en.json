@@ -2052,6 +2052,12 @@
   },
   "experimental-ui": {
     "badge": "Beta",
+    "corners": {
+      "round": "Round",
+      "sharp": "Sharp",
+      "soft": "Soft"
+    },
+    "corners_title": "Corners",
     "palette_title": "Palette",
     "presets": {
       "blueberry": "Blueberry",

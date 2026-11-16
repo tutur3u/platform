@@ -97,6 +97,7 @@
   --sorbet-dock-height: 64px;
   --sorbet-dock-inset: 12px;
   --sorbet-sheet-radius: 24px;
+  --sorbet-control-radius: 9999px;
   --sorbet-list-row-min-height: 52px;
   --sorbet-content-bottom-clearance: calc(
     var(--sorbet-dock-height) + var(--sorbet-dock-inset) * 2 +
@@ -168,6 +169,29 @@
   --sorbet-scrim: rgb(0 0 0 / 0.6);
 }
 
+/*
+  Corners (Sorbet theme radius; soft is the default and leaves the attribute
+  off). Each option sets the whole scale from radius.corners in
+  sorbet-tokens.json: rows and blocks (--radius), cards and dialogs
+  (--radius-xl), panels (--radius-2xl), controls and sheets. Popovers follow
+  floating-surface.css.
+*/
+:root[data-ui="sorbet"][data-sorbet-radius="sharp"] {
+  --radius: 0.375rem;
+  --radius-xl: 0.625rem;
+  --radius-2xl: 0.75rem;
+  --sorbet-control-radius: 0.5rem;
+  --sorbet-sheet-radius: 0.75rem;
+}
+
+:root[data-ui="sorbet"][data-sorbet-radius="round"] {
+  --radius: 1rem;
+  --radius-xl: 1.5rem;
+  --radius-2xl: 2rem;
+  --sorbet-control-radius: 9999px;
+  --sorbet-sheet-radius: 1.75rem;
+}
+
 /* Typeface: Nunito, self-hosted through the shared next/font loader. */
 :root[data-ui="sorbet"] .ttr-sorbet-font {
   /* Start apps receive inert next/font objects, so fall back by family name. */
@@ -184,7 +208,7 @@
     [data-slot="select-trigger"],
     [data-slot="badge"]
   ) {
-  border-radius: 9999px;
+  border-radius: var(--sorbet-control-radius);
 }
 
 /* Surfaces float on soft shadows; borders recede. */

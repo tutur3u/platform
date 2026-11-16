@@ -204,6 +204,36 @@ describe('Sorbet token contract', () => {
     }
   });
 
+  it('applies every Corners option as the contract scale', () => {
+    const px = (value: string | undefined) =>
+      value === undefined
+        ? Number.NaN
+        : value.endsWith('rem')
+          ? Number.parseFloat(value) * 16
+          : Number.parseFloat(value);
+    const scales = {
+      soft: modes.light,
+      sharp: declarations(
+        ':root[data-ui="sorbet"][data-sorbet-radius="sharp"] {'
+      ),
+      round: declarations(
+        ':root[data-ui="sorbet"][data-sorbet-radius="round"] {'
+      ),
+    };
+    for (const [radius, declared] of Object.entries(scales)) {
+      const corners = tokens.radius.corners[radius]!;
+      expect(px(declared.radius), `${radius} md`).toBe(corners.md);
+      expect(px(declared['radius-xl']), `${radius} lg`).toBe(corners.lg);
+      expect(px(declared['radius-2xl']), `${radius} xl`).toBe(corners.xl);
+      expect(px(declared['sorbet-control-radius']), `${radius} control`).toBe(
+        corners.control
+      );
+      expect(px(declared['sorbet-sheet-radius']), `${radius} sheet`).toBe(
+        corners.sheet
+      );
+    }
+  });
+
   it('matches the popover corners the web applies for each radius', () => {
     const corners = tokens.radius.corners;
     expect(Object.keys(corners)).toEqual([...SORBET_RADII]);
