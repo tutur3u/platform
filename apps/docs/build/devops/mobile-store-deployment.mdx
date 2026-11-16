@@ -124,6 +124,20 @@ successful preflight, check the vault replay policy before rerunning the job.
 | `apple_distribution_certificate_p12` (file) | Apple distribution certificate (with private key) exported as `.p12`. | [Apple Developer → Certificates](https://developer.apple.com/account/resources/certificates/list); export from Keychain Access. |
 | `apple_app_store_provisioning_profile` (file) | App Store provisioning profile (`.mobileprovision`) tying the bundle ID to the certificate. | [Apple Developer → Profiles](https://developer.apple.com/account/resources/profiles/list). |
 
+### Mac App Store (optional)
+
+The macOS store build reuses the Apple Distribution certificate and App Store
+Connect key above. These three entries are optional: activation never requires
+them, and the iOS bundle carries them only when all three are present and
+valid. A partial set is left out of the bundle, so the macOS store job stays a
+no-op instead of failing the iOS release.
+
+| Field | What it is | Where to get it |
+| --- | --- | --- |
+| `APPLE_MAC_INSTALLER_CERTIFICATE_PASSWORD` | Password used when exporting the installer certificate `.p12`. | Chosen by you during Keychain Access export. |
+| `apple_mac_installer_certificate_p12` (file) | Mac Installer Distribution certificate (with private key) exported as `.p12`. | [Apple Developer → Certificates](https://developer.apple.com/account/resources/certificates/list); export from Keychain Access. |
+| `apple_mac_app_store_provisioning_profile` (file) | Mac App Store profile (`.provisionprofile`); must target macOS (`OSX`) and include the bundle ID and entitlements. | [Apple Developer → Profiles](https://developer.apple.com/account/resources/profiles/list). |
+
 ## App Store Connect API
 
 | Field | What it is | Where to get it |

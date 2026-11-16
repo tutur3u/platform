@@ -5,6 +5,10 @@ import type {
 } from '@tuturuuu/types';
 import type { Json } from '@tuturuuu/types/db';
 import type { ChatMessage } from '../chat-types';
+import type {
+  MobileDeploymentPlatform,
+  MobileDeploymentScalarName,
+} from './mobile-deployment-kinds';
 
 export interface MobilePlatformVersionPolicyPayload {
   effectiveVersion: string | null;
@@ -19,26 +23,11 @@ export interface MobileVersionPoliciesPayload {
   webOtpEnabled: boolean;
 }
 
-export type MobileDeploymentPlatform = 'android' | 'ios';
-export type MobileDeploymentFileKind =
-  | 'android_google_services_json'
-  | 'ios_google_service_info_plist'
-  | 'android_upload_keystore'
-  | 'google_play_service_account_json'
-  | 'apple_distribution_certificate_p12'
-  | 'apple_app_store_provisioning_profile'
-  | 'app_store_connect_private_key_p8';
-export type MobileDeploymentScalarName =
-  | 'ANDROID_KEYSTORE_ALIAS'
-  | 'ANDROID_KEYSTORE_PASSWORD'
-  | 'ANDROID_KEYSTORE_PRIVATE_KEY_PASSWORD'
-  | 'GOOGLE_PLAY_PACKAGE_NAME'
-  | 'GOOGLE_PLAY_TRACK'
-  | 'APPLE_BUNDLE_ID'
-  | 'APPLE_DISTRIBUTION_CERTIFICATE_PASSWORD'
-  | 'APPLE_TEAM_ID'
-  | 'APP_STORE_CONNECT_API_KEY_ID'
-  | 'APP_STORE_CONNECT_ISSUER_ID';
+export type {
+  MobileDeploymentFileKind,
+  MobileDeploymentPlatform,
+  MobileDeploymentScalarName,
+} from './mobile-deployment-kinds';
 export type MobileDeploymentEnvKeyName = string;
 export type MobileDeploymentSecretKind = 'env' | 'scalar';
 export type InfrastructureJsonValue =

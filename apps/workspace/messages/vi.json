@@ -11257,6 +11257,18 @@
           "what": "Mật khẩu dùng để mã hóa chứng chỉ phân phối Apple đã xuất (.p12) để quy trình có thể nhập nó.",
           "where": "Do bạn đặt khi xuất chứng chỉ từ Keychain Access dưới dạng .p12."
         },
+        "apple_mac_app_store_provisioning_profile": {
+          "what": "Hồ sơ cấp phép Mac App Store (.provisionprofile) cho ứng dụng macOS. Hồ sơ phải dành cho macOS và bao gồm bundle ID của ứng dụng. Không bắt buộc.",
+          "where": "Apple Developer → Profiles → tạo hồ sơ phân phối Mac App Store Connect."
+        },
+        "apple_mac_installer_certificate_p12": {
+          "what": "Chứng chỉ Mac Installer Distribution xuất dưới dạng .p12 (gồm khóa riêng) để ký gói cài đặt Mac App Store. Không bắt buộc.",
+          "where": "Apple Developer → Certificates (Mac Installer Distribution); xuất từ Keychain Access dưới dạng .p12."
+        },
+        "APPLE_MAC_INSTALLER_CERTIFICATE_PASSWORD": {
+          "what": "Mật khẩu dùng để mã hóa chứng chỉ Mac installer (.p12) đã xuất. Không bắt buộc; hãy đặt cùng với cả hai tệp Mac App Store.",
+          "where": "Do bạn chọn khi xuất chứng chỉ từ Keychain Access dưới dạng .p12."
+        },
         "APPLE_TEAM_ID": {
           "what": "Team ID Apple Developer gồm 10 ký tự, dùng để giới hạn việc ký và cấp profile.",
           "where": "Apple Developer → thông tin Membership."

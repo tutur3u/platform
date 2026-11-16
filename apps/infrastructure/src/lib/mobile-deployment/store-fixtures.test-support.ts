@@ -7,6 +7,8 @@ import { afterEach, beforeAll, beforeEach, type Mock, vi } from 'vitest';
 import {
   ANDROID_REQUIRED_FILE_KINDS,
   IOS_REQUIRED_FILE_KINDS,
+  MAC_APP_STORE_FILE_KINDS,
+  MAC_APP_STORE_SCALAR,
   MOBILE_DEPLOYMENT_DRIVE_PREFIX,
   MOBILE_DEPLOYMENT_SCALAR_NAMES,
   MOBILE_DEPLOYMENT_WORKFLOW_REF,
@@ -54,6 +56,7 @@ const scalarValues: Record<string, string> = {
   ANDROID_KEYSTORE_PRIVATE_KEY_PASSWORD: 'synthetic-key-password',
   APPLE_BUNDLE_ID: 'com.tuturuuu.app.mobile',
   APPLE_DISTRIBUTION_CERTIFICATE_PASSWORD: 'synthetic-p12-password',
+  APPLE_MAC_INSTALLER_CERTIFICATE_PASSWORD: 'synthetic-installer-password',
   APPLE_TEAM_ID: 'ABCDE12345',
   APP_STORE_CONNECT_API_KEY_ID: 'ABCDE12345',
   APP_STORE_CONNECT_ISSUER_ID: 'synthetic-issuer-id',
@@ -72,9 +75,17 @@ export function setupStoreFixture(mocks: StoreFixtureMocks) {
     objects: new Map<string, Uint8Array>(),
   };
 
-  function seedActiveVersion() {
+  // The optional Mac App Store resources are seeded only when requested.
+  function seedActiveVersion({
+    macFiles = [],
+    macPassword = false,
+  }: {
+    macFiles?: readonly (typeof MAC_APP_STORE_FILE_KINDS)[number][];
+    macPassword?: boolean;
+  } = {}) {
     const { activeKey, db, objects } = state;
     for (const name of MOBILE_DEPLOYMENT_SCALAR_NAMES) {
+      if (name === MAC_APP_STORE_SCALAR && !macPassword) continue;
       db.tables.mobile_deployment_secret_values.push({
         encrypted_value: encryptSecretValue(scalarValues[name]!, activeKey),
         id: `scalar-${name}`,
@@ -93,6 +104,7 @@ export function setupStoreFixture(mocks: StoreFixtureMocks) {
     for (const kind of [
       ...ANDROID_REQUIRED_FILE_KINDS,
       ...IOS_REQUIRED_FILE_KINDS,
+      ...macFiles,
     ]) {
       const plaintext = Buffer.from(`synthetic-file-content-${kind}`);
       const ciphertext = encryptBytes(plaintext, activeKey);

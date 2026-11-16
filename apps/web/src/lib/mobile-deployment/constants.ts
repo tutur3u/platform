@@ -48,6 +48,8 @@ export const MOBILE_DEPLOYMENT_FILE_KINDS = [
   'apple_distribution_certificate_p12',
   'apple_app_store_provisioning_profile',
   'app_store_connect_private_key_p8',
+  'apple_mac_installer_certificate_p12',
+  'apple_mac_app_store_provisioning_profile',
 ] as const;
 export type MobileDeploymentFileKind =
   (typeof MOBILE_DEPLOYMENT_FILE_KINDS)[number];
@@ -63,6 +65,7 @@ export const MOBILE_DEPLOYMENT_SCALAR_NAMES = [
   'APPLE_TEAM_ID',
   'APP_STORE_CONNECT_API_KEY_ID',
   'APP_STORE_CONNECT_ISSUER_ID',
+  'APPLE_MAC_INSTALLER_CERTIFICATE_PASSWORD',
 ] as const;
 export type MobileDeploymentScalarName =
   (typeof MOBILE_DEPLOYMENT_SCALAR_NAMES)[number];
@@ -96,6 +99,20 @@ export const IOS_REQUIRED_SCALARS = [
   'APP_STORE_CONNECT_ISSUER_ID',
 ] as const satisfies readonly MobileDeploymentScalarName[];
 
+/**
+ * Optional Mac App Store resources carried in the iOS bundle. The macOS store
+ * job reuses the Apple Distribution identity and App Store Connect key, so it
+ * only adds an installer identity, a macOS profile and the installer password.
+ * Activation never requires them; the bundle carries all three or none.
+ */
+export const MAC_APP_STORE_FILE_KINDS = [
+  'apple_mac_installer_certificate_p12',
+  'apple_mac_app_store_provisioning_profile',
+] as const satisfies readonly MobileDeploymentFileKind[];
+
+export const MAC_APP_STORE_SCALAR =
+  'APPLE_MAC_INSTALLER_CERTIFICATE_PASSWORD' as const satisfies MobileDeploymentScalarName;
+
 export const BLOCKED_ENV_FILE_KEYS = [
   'MOBILE_ANDROID_GOOGLE_SERVICES_JSON_B64',
   'MOBILE_IOS_GOOGLE_SERVICE_INFO_PLIST_B64',
@@ -117,6 +134,9 @@ export const FILE_KIND_LABELS: Record<MobileDeploymentFileKind, string> = {
   apple_distribution_certificate_p12: 'Apple distribution certificate .p12',
   apple_app_store_provisioning_profile: 'Apple App Store provisioning profile',
   app_store_connect_private_key_p8: 'App Store Connect private key .p8',
+  apple_mac_installer_certificate_p12: 'Mac installer certificate .p12',
+  apple_mac_app_store_provisioning_profile:
+    'Mac App Store provisioning profile',
 };
 
 /**

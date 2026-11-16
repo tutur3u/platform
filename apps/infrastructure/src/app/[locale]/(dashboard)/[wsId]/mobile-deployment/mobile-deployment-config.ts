@@ -29,6 +29,8 @@ export const MOBILE_DEPLOYMENT_FILE_KINDS: MobileDeploymentFileKind[] = [
   'apple_distribution_certificate_p12',
   'apple_app_store_provisioning_profile',
   'app_store_connect_private_key_p8',
+  'apple_mac_installer_certificate_p12',
+  'apple_mac_app_store_provisioning_profile',
 ];
 
 export const MOBILE_DEPLOYMENT_SCALAR_NAMES: MobileDeploymentScalarName[] = [
@@ -42,4 +44,5 @@ export const MOBILE_DEPLOYMENT_SCALAR_NAMES: MobileDeploymentScalarName[] = [
   'APPLE_TEAM_ID',
   'APP_STORE_CONNECT_API_KEY_ID',
   'APP_STORE_CONNECT_ISSUER_ID',
+  'APPLE_MAC_INSTALLER_CERTIFICATE_PASSWORD',
 ];

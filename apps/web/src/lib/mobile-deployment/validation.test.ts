@@ -106,4 +106,51 @@ describe('mobile deployment validation', () => {
       validateFileArtifact('ios_google_service_info_plist', payload)
     ).not.toThrow();
   });
+
+  const profile = (platform: string) =>
+    new TextEncoder().encode(
+      `<plist><dict><key>Entitlements</key><dict><key>com.apple.application-identifier</key><string>TEAM.${EXPECTED_IOS_BUNDLE_ID}</string></dict><key>Platform</key><array><string>${platform}</string></array></dict></plist>`
+    );
+
+  it('accepts a macOS Mac App Store provisioning profile', () => {
+    expect(() =>
+      validateFileArtifact(
+        'apple_mac_app_store_provisioning_profile',
+        profile('OSX')
+      )
+    ).not.toThrow();
+  });
+
+  it('rejects an iOS profile uploaded as the Mac App Store profile', () => {
+    expect(() =>
+      validateFileArtifact(
+        'apple_mac_app_store_provisioning_profile',
+        profile('iOS')
+      )
+    ).toThrow('Mac App Store provisioning profile must target macOS');
+  });
+
+  it('rejects a Mac App Store profile for another bundle', () => {
+    const payload = new TextEncoder().encode(
+      '<plist><dict><key>Entitlements</key><dict/><key>Platform</key><array><string>OSX</string></array></dict></plist>'
+    );
+    expect(() =>
+      validateFileArtifact('apple_mac_app_store_provisioning_profile', payload)
+    ).toThrow(MobileDeploymentValidationError);
+  });
+
+  it('accepts the Mac installer certificate as an opaque non-empty file', () => {
+    expect(() =>
+      validateFileArtifact(
+        'apple_mac_installer_certificate_p12',
+        new Uint8Array([0x30, 0x82])
+      )
+    ).not.toThrow();
+    expect(
+      validateScalarValue(
+        'APPLE_MAC_INSTALLER_CERTIFICATE_PASSWORD',
+        'synthetic-installer-password'
+      )
+    ).toBe('synthetic-installer-password');
+  });
 });

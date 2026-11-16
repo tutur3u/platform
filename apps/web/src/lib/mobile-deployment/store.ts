@@ -20,6 +20,7 @@ import {
   IOS_REQUIRED_FILE_KINDS,
   IOS_REQUIRED_SCALARS,
   MOBILE_DEPLOYMENT_ENVIRONMENT,
+  MOBILE_DEPLOYMENT_FILE_KINDS,
   MOBILE_DEPLOYMENT_NON_SECRET_NAMES,
   MOBILE_DEPLOYMENT_SCALAR_NAMES,
   MOBILE_DEPLOYMENT_TOKEN_LOOKUP_LENGTH,
@@ -43,6 +44,10 @@ import {
   getOrCreateDraftVersion,
   inheritDraft,
 } from './draft-inheritance';
+import {
+  bundleFileKindsForPlatform,
+  requiredScalarsForPlatform,
+} from './platform-resources';
 import { MobileDeploymentStoreError } from './store-error';
 
 export { MobileDeploymentStoreError } from './store-error';
@@ -127,18 +132,6 @@ function assertNoError(error: unknown, message: string): asserts error is null {
         : message;
     throw new MobileDeploymentStoreError(detail || message, 500);
   }
-}
-
-function requiredFilesForPlatform(platform: MobileDeploymentPlatform) {
-  return platform === 'android'
-    ? ANDROID_REQUIRED_FILE_KINDS
-    : IOS_REQUIRED_FILE_KINDS;
-}
-
-function requiredScalarsForPlatform(platform: MobileDeploymentPlatform) {
-  return platform === 'android'
-    ? ANDROID_REQUIRED_SCALARS
-    : IOS_REQUIRED_SCALARS;
 }
 
 function mapVersionStatus(
@@ -1170,12 +1163,14 @@ async function buildBundle({
   const bundleFiles: MobileDeploymentBundle['files'] = {};
   const fileIds: MobileDeploymentBundle['resourceVersionIds']['files'] =
     Object.fromEntries(
-      [...ANDROID_REQUIRED_FILE_KINDS, ...IOS_REQUIRED_FILE_KINDS].map(
-        (kind) => [kind, undefined]
-      )
+      MOBILE_DEPLOYMENT_FILE_KINDS.map((kind) => [kind, undefined])
     ) as MobileDeploymentBundle['resourceVersionIds']['files'];
 
-  for (const kind of requiredFilesForPlatform(platform)) {
+  for (const kind of bundleFileKindsForPlatform(
+    platform,
+    filesByKind,
+    scalarValues
+  )) {
     const file = filesByKind.get(kind);
     if (!file) {
       throw new MobileDeploymentStoreError(

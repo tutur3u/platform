@@ -41,6 +41,9 @@ export const MOBILE_DEPLOYMENT_FIELD_DOCS: Record<string, { url?: string }> = {
   APPLE_TEAM_ID: {
     url: 'https://developer.apple.com/account',
   },
+  APPLE_MAC_INSTALLER_CERTIFICATE_PASSWORD: {
+    url: 'https://developer.apple.com/account/resources/certificates/list',
+  },
 
   // App Store Connect scalars
   APP_STORE_CONNECT_API_KEY_ID: {
@@ -92,6 +95,12 @@ export const MOBILE_DEPLOYMENT_FIELD_DOCS: Record<string, { url?: string }> = {
   },
   app_store_connect_private_key_p8: {
     url: 'https://appstoreconnect.apple.com/access/integrations/api',
+  },
+  apple_mac_installer_certificate_p12: {
+    url: 'https://developer.apple.com/account/resources/certificates/list',
+  },
+  apple_mac_app_store_provisioning_profile: {
+    url: 'https://developer.apple.com/account/resources/profiles/list',
   },
 
   // CI token name (self-chosen label, no external doc)

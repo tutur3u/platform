@@ -11435,6 +11435,18 @@
           "what": "Password used to encrypt the exported Apple distribution certificate (.p12) so the workflow can import it.",
           "where": "Chosen by you when exporting the certificate from Keychain Access as a .p12."
         },
+        "apple_mac_app_store_provisioning_profile": {
+          "what": "Mac App Store provisioning profile (.provisionprofile) for the macOS app. It must target macOS and cover the app bundle ID. Optional.",
+          "where": "Apple Developer → Profiles → create a Mac App Store Connect distribution profile."
+        },
+        "apple_mac_installer_certificate_p12": {
+          "what": "Mac Installer Distribution certificate exported as a .p12 (includes its private key) for signing the Mac App Store installer package. Optional.",
+          "where": "Apple Developer → Certificates (Mac Installer Distribution); export from Keychain Access as .p12."
+        },
+        "APPLE_MAC_INSTALLER_CERTIFICATE_PASSWORD": {
+          "what": "Password used to encrypt the exported Mac installer certificate (.p12). Optional; set it together with both Mac App Store files.",
+          "where": "Chosen by you when exporting the certificate from Keychain Access as a .p12."
+        },
         "APPLE_TEAM_ID": {
           "what": "Your 10-character Apple Developer Team ID, used to scope signing and provisioning.",
           "where": "Apple Developer → Membership details."

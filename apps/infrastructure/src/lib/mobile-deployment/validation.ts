@@ -348,6 +348,17 @@ function validateProvisioningProfile(buffer: Uint8Array) {
   }
 }
 
+function validateMacAppStoreProvisioningProfile(buffer: Uint8Array) {
+  validateProvisioningProfile(buffer);
+
+  // The profile plist lists its platforms as <string> entries; macOS is OSX.
+  if (!new TextDecoder().decode(buffer).includes('<string>OSX</string>')) {
+    throw new MobileDeploymentValidationError(
+      'Mac App Store provisioning profile must target macOS'
+    );
+  }
+}
+
 export function validateFileArtifact(
   kind: MobileDeploymentFileKind,
   buffer: Uint8Array
@@ -372,6 +383,8 @@ export function validateFileArtifact(
     validateAppStoreConnectPrivateKey(buffer);
   } else if (kind === 'apple_app_store_provisioning_profile') {
     validateProvisioningProfile(buffer);
+  } else if (kind === 'apple_mac_app_store_provisioning_profile') {
+    validateMacAppStoreProvisioningProfile(buffer);
   }
 }
 
