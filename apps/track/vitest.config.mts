@@ -15,6 +15,10 @@ export default defineConfig({
   resolve: {
     alias: [
       {
+        find: /^server-only$/,
+        replacement: resolve(__dirname, './src/test/server-only-stub.ts'),
+      },
+      {
         find: '@tuturuuu/supabase/next/user',
         replacement: resolve(
           __dirname,

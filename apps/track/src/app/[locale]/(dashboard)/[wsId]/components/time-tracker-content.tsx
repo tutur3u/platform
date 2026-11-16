@@ -960,9 +960,7 @@ export default function TimeTrackerContent({
                                               <div
                                                 key={assignee.id}
                                                 className="h-5 w-5 rounded-full border-2 border-white bg-linear-to-br from-gray-100 to-gray-200 dark:border-gray-800 dark:from-gray-700 dark:to-gray-600"
-                                                title={
-                                                  assignee.display_name
-                                                }
+                                                title={assignee.display_name}
                                               >
                                                 {assignee.avatar_url ? (
                                                   <img
