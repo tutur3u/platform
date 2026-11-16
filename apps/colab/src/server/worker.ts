@@ -6,6 +6,8 @@ import {
   text,
 } from '@tuturuuu/multiplayer';
 import { authRoute, hash, randomToken, sessionCookie, sign } from './auth';
+import { COLAB_BUILD_COMMIT } from './build-commit';
+import { colabBuildInfoResponse } from './build-info';
 import type { Env } from './env';
 import { platformProxy } from './platform-proxy';
 import { centralAuthCookies, resolveSession } from './session';
@@ -114,6 +116,8 @@ async function handle(
     }
     return env.ASSETS.fetch(request);
   }
+  if (url.pathname === '/api/build-info')
+    return colabBuildInfoResponse(request.method, COLAB_BUILD_COMMIT);
   const platformResponse = await platformProxy(request, env);
   if (platformResponse) return platformResponse;
   if (url.pathname === '/api/health')

@@ -104,6 +104,9 @@ jobs:
         working-directory: packages/multiplayer
       - run: bun run test
         working-directory: apps/colab
+      - name: Verify the public commit bake and build-info contract
+        run: node --experimental-strip-types --test scripts/bake-build-commit.test.mjs scripts/build-info.test.mjs
+        working-directory: apps/colab
       - name: Verify idempotent expiry in a local Worker
         run: node --test scripts/verify-expiry-runtime.mjs
         working-directory: apps/colab
@@ -149,6 +152,9 @@ jobs:
         with:
           name: colab-assets-${{ github.sha }}
           path: apps/colab/dist
+      - name: Bake the public commit into build-info
+        working-directory: apps/colab
+        run: node scripts/bake-build-commit.mjs
       - name: Deploy the verified revision
         working-directory: apps/colab
         env:
