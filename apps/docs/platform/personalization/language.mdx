@@ -31,4 +31,4 @@ Each supported locale lives in a single message bundle under `apps/web/messages/
 - `apps/web/messages/en.json` for English
 - `apps/web/messages/vi.json` for Vietnamese
 
-When you add or change a key, update it in **both** `en.json` and `vi.json` so the bundles stay in sync, then run `bun i18n:sort` to keep the keys ordered consistently before committing.
+When you add or change a key, update it in **both** `en.json` and `vi.json` so the bundles stay in sync, then run `bun i18n:sort` to keep the keys ordered consistently before committing. `bun i18n:sort` expands short inline arrays onto several lines; run `bun oxc:write` on the bundles you changed afterwards so the diff holds only your keys.

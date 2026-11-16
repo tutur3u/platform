@@ -236,6 +236,32 @@ entries cannot lower (`max`, `count_entries`, `boolean_any`); otherwise it is
 The calendar section requires `manage_calendar`, like `get_upcoming_events`. When
 the session cannot verify that permission, the section fails closed.
 
+### Agenda answers and cards
+
+Every result also carries `wsId` (the workspace context it read) and
+`durationMs` (the tool's own read time).
+
+Read-only agenda asks in English or Vietnamese ("Today's Agenda", "plan my day",
+"lịch hôm nay"), up to 160 characters and without a write verb, skip tool
+discovery: the first model step must call `get_day_overview`, unless a named
+workspace has to be resolved first. Today's overview starts loading as soon as
+the request's tool context exists, after the credit check. That prefetch belongs
+to one request only, is used at most once, and is discarded when the workspace
+context changes, another date is requested, or it fails.
+
+Clients that declare the `day_cards` capability render the result as cards, and
+the tool adds a `presentation` note so Mira replies with one or two sentences
+instead of repeating the lists. `day_cards` gates no tool, so clients without it
+are never told an effect is missing; they keep the full text answer.
+
+| Surface | Behavior |
+| --- | --- |
+| Web dashboard Mira chat | Declares `day_cards`. Shows a schedule card (all-day pills, timed events, free gaps of at least 30 minutes between 09:00 and 18:00) and a tasks card (due today, the first 4 overdue tasks with priority and days overdue, then "See all"). Rows open the event at `/{wsId}/calendar?eventId=…&date=…` or the task at `/{wsId}/tasks/{taskId}`. A "Checked calendar and tasks · Xs" chip replaces the tool row, and the latest answer offers Plan my day, Reschedule overdue and Block focus time follow-ups. |
+| Workspace app, mobile and messaging channels | Do not declare `day_cards`; Mira answers in text. |
+
+Free gaps are shown only when the calendar section was read; a calendar error is
+stated in the card instead of showing free time.
+
 ## Regression coverage
 
 - `packages/ai/src/tools/executors/body-weight.test.ts`: forwarded auth, the
@@ -260,3 +286,13 @@ the session cannot verify that permission, the section fails closed.
   service-role-only access.
 - `packages/ai/src/tools/mira-tool-discovery.test.ts`: English and Vietnamese
   discovery of the health and planning tools.
+- `packages/ai/src/chat/mira-day-overview-intent.test.ts`,
+  `packages/ai/src/chat/google/mira-step-preparation.test.ts` and
+  `packages/ai/src/tools/day-overview-prefetch.test.ts`: the agenda fast path,
+  write asks excluded, and prefetch reuse, date and workspace misses and
+  failure.
+- `packages/ai/src/tools/mira-client-capabilities.test.ts`: `day_cards` never
+  reads as a missing effect.
+- `apps/web/src/app/[locale]/(dashboard)/[wsId]/(dashboard)/components/chat-message-list/day-overview/*.test.ts(x)`:
+  all-day split, free gaps, deep links, unsafe workspace ids, section errors,
+  the overdue preview, Vietnamese copy, the timing chip and follow-ups.
