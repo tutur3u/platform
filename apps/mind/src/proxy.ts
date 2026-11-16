@@ -17,6 +17,7 @@ import {
 import {
   mountedSessionFailureResponse,
   nonExpiringCookieCarrier,
+  withoutExpiringCookies,
 } from '@tuturuuu/auth/proxy/mounted-failure';
 import { guardApiProxyRequest } from '@tuturuuu/utils/api-proxy-guard';
 import type { NextRequest } from 'next/server';
@@ -207,7 +208,7 @@ async function routeProxy(request: NextRequest): Promise<NextResponse> {
         propagateAuthCookies(appSessionRefresh.response, guardResponse);
       }
       return isMounted(request)
-        ? guardResponse
+        ? withoutExpiringCookies(guardResponse)
         : preserveMfaRecoveryCookies(request, guardResponse);
     }
 

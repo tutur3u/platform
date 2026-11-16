@@ -34,6 +34,27 @@ function mounted(headers: Record<string, string> = {}) {
   });
 }
 
+/** A JWT shaped like a Supabase access token, with a fixture signature. */
+function supabaseShapedJwt() {
+  const base64url = (text: string) =>
+    btoa(text).replace(/=+$/u, '').replace(/\+/gu, '-').replace(/\//gu, '_');
+  const encode = (value: unknown) => base64url(JSON.stringify(value));
+  return [
+    encode({ alg: 'HS256', kid: 'fixture', typ: 'JWT' }),
+    encode({
+      aal: 'aal1',
+      aud: 'authenticated',
+      exp: 1_900_000_000,
+      iat: 1_800_000_000,
+      iss: 'https://nzamlzqfdwaaxdefwraj.supabase.co/auth/v1',
+      role: 'authenticated',
+      session_id: '00000000-0000-4000-8000-000000000001',
+      sub: '00000000-0000-4000-8000-000000000002',
+    }),
+    base64url(String.fromCharCode(...new Array<number>(32).fill(7))),
+  ].join('.');
+}
+
 function withCookies(response: NextResponse, ...cookies: string[]) {
   for (const cookie of cookies) response.headers.append('set-cookie', cookie);
   return response;
@@ -86,6 +107,35 @@ describe('Mind mounted server-function authority', () => {
     expect(response.headers.getSetCookie()).toEqual([]);
     expect(mocks.shared).not.toHaveBeenCalled();
   });
+  it.each([
+    ['a real-shaped Supabase JWT', [`Bearer ${supabaseShapedJwt()}`]],
+    [
+      'two Authorization headers',
+      [`Bearer ${supabaseShapedJwt()}`, 'Basic Zml4dHVyZTpzZWNyZXQ='],
+    ],
+  ])(
+    'refuses %s through the actual mounted-bearer classifier',
+    async (_, values) => {
+      const actual =
+        await vi.importActual<typeof import('./mounted-bearer')>(
+          './mounted-bearer'
+        );
+      mocks.reject.mockImplementation(actual.refusesMountedAuthorization);
+      const headers = new Headers();
+      for (const value of values) headers.append('authorization', value);
+      const req = new NextRequest('https://tuturuuu.com/mind/_serverFn/id', {
+        nextConfig: { basePath: '/mind' },
+        headers,
+      });
+      const response = await createFunctionProxy({ targetApp: 'mind' })(req);
+      expect(mocks.reject).toHaveReturnedWith(true);
+      expect(response.status).toBe(401);
+      expect(response.headers.get('cache-control')).toBe('private, no-store');
+      expect(response.headers.getSetCookie()).toEqual([]);
+      expect(mocks.refresh).not.toHaveBeenCalled();
+      expect(mocks.shared).not.toHaveBeenCalled();
+    }
+  );
   it.each([
     ['Shared session unavailable', 401],
     ['App signed out', 401],

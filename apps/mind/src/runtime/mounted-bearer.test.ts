@@ -86,6 +86,15 @@ describe('mounted explicit bearer boundary', () => {
     ).toBe(false);
   });
 
+  it('refuses several Authorization values, even two verified tokens', () => {
+    const token = coordinationToken(['mind:server']);
+    const headers = new Headers();
+    headers.append('authorization', `Bearer ${token}`);
+    headers.append('authorization', `Bearer ${token}`);
+    expect(refusesMountedAuthorization({ headers })).toBe(true);
+    expect(refuses(`Bearer ${token}, Bearer ${token}`)).toBe(true);
+  });
+
   it('answers 401 private, no-store without any Set-Cookie', () => {
     const response = mountedAuthorizationRefusal();
     expect(response.status).toBe(401);

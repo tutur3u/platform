@@ -193,6 +193,25 @@ describe('mounted Mind refusals never clear Web-owned cookies', () => {
     expectPrivateWithoutExpiry(response);
   });
 
+  it('expires only rewritten keys on a mounted API guard refusal', async () => {
+    vi.mocked(refreshAppSessionForRequest).mockResolvedValue({
+      ok: true,
+      claims: { sub: 'fixture-user' } as never,
+      refreshed: true,
+      response: refreshed(FRESH, STALE_CHUNK),
+    });
+    const rejection = NextResponse.json(
+      { error: 'Too many requests' },
+      { status: 429 }
+    );
+    rejection.headers.append('set-cookie', WEB_DELETION);
+    vi.mocked(guardApiProxyRequest).mockResolvedValue(rejection);
+    const response = await proxy(mounted('/api/boards'));
+    expect(response.status).toBe(429);
+    expect(response.headers.get('cache-control')).toBe('private, no-store');
+    expect(response.headers.getSetCookie()).toEqual([FRESH, STALE_CHUNK]);
+  });
+
   it('answers an unauthenticated mounted API request without any Set-Cookie', async () => {
     refuse('Shared session unavailable');
     const response = await proxy(mounted('/api/boards'));
@@ -212,6 +231,31 @@ describe('mounted Mind Authorization boundary', () => {
     expect(response.status).toBe(401);
     expect(response.headers.getSetCookie()).toEqual([]);
     expectPrivateWithoutExpiry(response);
+    expect(refreshAppSessionForRequest).not.toHaveBeenCalled();
+    expect(guardApiProxyRequest).not.toHaveBeenCalled();
+  });
+
+  it.each([
+    [
+      'two Authorization headers',
+      ['Bearer ttr_app_a.b.c', 'Basic Zml4dHVyZTpzZWNyZXQ='],
+    ],
+    [
+      'a comma-joined Authorization',
+      ['Bearer ttr_app_a.b.c, Bearer ttr_app_d.e.f'],
+    ],
+  ])('refuses %s before any session work', async (_, values) => {
+    const headers = new Headers();
+    for (const value of values) headers.append('authorization', value);
+    const response = await proxy(
+      new NextRequest('https://tuturuuu.com/mind/api/boards', {
+        nextConfig: { basePath: '/mind' },
+        headers,
+      })
+    );
+    expect(response.status).toBe(401);
+    expect(response.headers.get('cache-control')).toBe('private, no-store');
+    expect(response.headers.getSetCookie()).toEqual([]);
     expect(refreshAppSessionForRequest).not.toHaveBeenCalled();
     expect(guardApiProxyRequest).not.toHaveBeenCalled();
   });
