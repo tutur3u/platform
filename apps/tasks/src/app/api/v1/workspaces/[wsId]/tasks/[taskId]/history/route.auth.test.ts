@@ -14,6 +14,17 @@ const mocks = vi.hoisted(() => ({
   profileIn: vi.fn(),
   normalizeWorkspaceId: vi.fn(),
   resolveSessionAuthContext: vi.fn(),
+  adminClient: { admin: true },
+  createAdminClient: vi.fn(),
+  resolveCoMemberNames: vi.fn(),
+}));
+
+vi.mock('@tuturuuu/supabase/next/server', () => ({
+  createAdminClient: mocks.createAdminClient,
+}));
+
+vi.mock('@tuturuuu/utils/co-member-names', () => ({
+  resolveCoMemberNames: mocks.resolveCoMemberNames,
 }));
 
 vi.mock('@tuturuuu/auth/app-session', () => ({
@@ -45,6 +56,14 @@ describe('task history API app-session auth', () => {
       data: [{ id: USER_ID, display_name: 'Public Task User' }],
       error: null,
     });
+    mocks.createAdminClient.mockResolvedValue(mocks.adminClient);
+    mocks.resolveCoMemberNames.mockImplementation(
+      async ({
+        users,
+      }: {
+        users: { id: string; display_name?: string | null }[];
+      }) => new Map(users.map((u) => [u.id, u.display_name ?? '']))
+    );
     mocks.normalizeWorkspaceId.mockImplementation(async (wsId: string) =>
       wsId === 'personal' ? PERSONAL_WS_ID : wsId
     );
@@ -182,6 +201,55 @@ describe('task history API app-session auth', () => {
     });
   });
 
+  it('names a nameless co-member by email via the server resolver (D246)', async () => {
+    mocks.profileIn.mockResolvedValue({
+      data: [{ id: USER_ID, display_name: null, handle: 'nameless' }],
+      error: null,
+    });
+    mocks.resolveCoMemberNames.mockResolvedValue(
+      new Map([[USER_ID, 'nameless@example.com']])
+    );
+    const { GET } = await import('./route.js');
+    const response = await GET(new Request('http://localhost/history'), {
+      params: Promise.resolve({ taskId: TASK_ID, wsId: 'personal' }),
+    });
+
+    expect(response.status).toBe(200);
+    expect(mocks.resolveCoMemberNames).toHaveBeenCalledWith({
+      admin: mocks.adminClient,
+      wsId: PERSONAL_WS_ID,
+      viewerUserId: USER_ID,
+      users: [{ id: USER_ID, display_name: null, handle: 'nameless' }],
+    });
+    const body = await response.json();
+    expect(body).toMatchObject({
+      history: [{ user: { id: USER_ID, name: 'nameless@example.com' } }],
+    });
+    expect(body.history[0].user).not.toHaveProperty('email');
+  });
+
+  it('keeps the handle when HIDE_MEMBER_EMAIL withholds the email', async () => {
+    mocks.profileIn.mockResolvedValue({
+      data: [{ id: USER_ID, display_name: null, handle: 'nameless' }],
+      error: null,
+    });
+    // The resolver enforces HIDE_MEMBER_EMAIL / membership and returns the handle.
+    mocks.resolveCoMemberNames.mockResolvedValue(
+      new Map([[USER_ID, 'nameless']])
+    );
+    const { GET } = await import('./route.js');
+    const response = await GET(new Request('http://localhost/history'), {
+      params: Promise.resolve({ taskId: TASK_ID, wsId: WS_ID }),
+    });
+
+    const text = await response.text();
+    expect(response.status).toBe(200);
+    expect(text).not.toContain('private@example.com');
+    expect(JSON.parse(text)).toMatchObject({
+      history: [{ user: { name: 'nameless' } }],
+    });
+  });
+
   it('does not look up profiles when task access is denied', async () => {
     mocks.authenticatedSupabase.rpc.mockResolvedValue({
       data: null,
@@ -193,5 +261,6 @@ describe('task history API app-session auth', () => {
     });
     expect(response.status).toBe(403);
     expect(mocks.authenticatedSupabase.from).not.toHaveBeenCalled();
+    expect(mocks.resolveCoMemberNames).not.toHaveBeenCalled();
   });
 });

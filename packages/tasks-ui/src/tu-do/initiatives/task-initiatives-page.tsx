@@ -1,5 +1,6 @@
 import { createAdminClient } from '@tuturuuu/supabase/next/server';
 import { TaskInitiativesClient } from '@tuturuuu/tasks-ui/tu-do/initiatives/task-initiatives-client';
+import { resolveCoMemberNames } from '@tuturuuu/utils/co-member-names';
 import { getCurrentUser } from '@tuturuuu/utils/user-helper';
 import { getPermissions, getWorkspace } from '@tuturuuu/utils/workspace-helper';
 import { notFound, redirect } from 'next/navigation';
@@ -19,6 +20,7 @@ type InitiativeRow = {
   creator: {
     id: string;
     display_name: string | null;
+    handle: string | null;
     avatar_url: string | null;
   } | null;
   task_project_initiatives:
@@ -62,7 +64,7 @@ export default async function TaskInitiativesPage({ params }: Props) {
       `
         *,
         creator:users!task_initiatives_creator_id_fkey(
-          id, display_name, avatar_url
+          id, display_name, handle, avatar_url
         ),
         task_project_initiatives(
           project_id,
@@ -86,20 +88,38 @@ export default async function TaskInitiativesPage({ params }: Props) {
       : null;
   };
 
-  const initiatives =
-    (initiativesData as InitiativeRow[] | null)?.map((initiative) => ({
-      id: initiative.id,
-      name: initiative.name,
-      description: initiative.description,
-      status: toInitiativeStatus(initiative.status),
-      created_at: initiative.created_at,
-      creator: initiative.creator,
-      projectsCount: initiative.task_project_initiatives?.length ?? 0,
-      linkedProjects:
-        initiative.task_project_initiatives?.flatMap((link) =>
-          link.project ? [link.project] : []
-        ) ?? [],
-    })) ?? [];
+  const rows = (initiativesData as InitiativeRow[] | null) ?? [];
+  // Co-members without a name are shown by email (D246); resolved here so
+  // the client only ever receives the name string.
+  const names = await resolveCoMemberNames({
+    admin: supabase,
+    wsId,
+    viewerUserId: user.id,
+    users: rows.flatMap((initiative) =>
+      initiative.creator ? [initiative.creator] : []
+    ),
+  });
+
+  const initiatives = rows.map((initiative) => ({
+    id: initiative.id,
+    name: initiative.name,
+    description: initiative.description,
+    status: toInitiativeStatus(initiative.status),
+    created_at: initiative.created_at,
+    creator: initiative.creator
+      ? {
+          id: initiative.creator.id,
+          display_name:
+            names.get(initiative.creator.id) || initiative.creator.display_name,
+          avatar_url: initiative.creator.avatar_url,
+        }
+      : null,
+    projectsCount: initiative.task_project_initiatives?.length ?? 0,
+    linkedProjects:
+      initiative.task_project_initiatives?.flatMap((link) =>
+        link.project ? [link.project] : []
+      ) ?? [],
+  }));
 
   return (
     <div className="space-y-6">

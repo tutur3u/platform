@@ -20,6 +20,7 @@ export interface EmailBlacklistEntry {
   users?: {
     id: string;
     display_name: string | null;
+    handle?: string | null;
   } | null;
 }
 

@@ -75,7 +75,8 @@ export default async function TimeTrackerManagementPage({
               startDate: startDate || undefined,
               endDate: endDate || undefined,
             },
-            supabase
+            supabase,
+            { viewerUserId: user.id, admin: supabase }
           ),
           getTimeTrackingStats(wsId, undefined, supabase),
         ]);

@@ -12,9 +12,17 @@ const mocks = vi.hoisted(() => ({
   listIn: vi.fn(),
   listSelect: vi.fn(),
   normalizeWorkspaceId: vi.fn(),
+  resolveCoMemberNames: vi.fn(),
   resolveSessionAuthContext: vi.fn(),
   rpc: vi.fn(),
+  usersIn: vi.fn(),
   verifyWorkspaceMembershipType: vi.fn(),
+}));
+
+vi.mock('@tuturuuu/utils/co-member-names', () => ({
+  resolveCoMemberNames: (
+    ...args: Parameters<typeof mocks.resolveCoMemberNames>
+  ) => mocks.resolveCoMemberNames(...args),
 }));
 
 vi.mock('@/lib/api-auth', () => ({
@@ -88,6 +96,23 @@ describe('workspace task history route', () => {
     });
     mocks.listSelect.mockReturnValue({ in: mocks.listIn });
     mocks.from.mockReturnValue({ select: mocks.listSelect });
+    mocks.usersIn.mockResolvedValue({
+      data: [{ id: 'user-1', display_name: 'Alex Nguyen', handle: 'alex' }],
+      error: null,
+    });
+    mocks.createAdminClient.mockResolvedValue({
+      from: vi.fn((table: string) => {
+        expect(table).toBe('users');
+        return { select: vi.fn(() => ({ in: mocks.usersIn })) };
+      }),
+    });
+    mocks.resolveCoMemberNames.mockImplementation(
+      async ({
+        users,
+      }: {
+        users: { id: string; display_name?: string | null }[];
+      }) => new Map(users.map((u) => [u.id, u.display_name ?? '']))
+    );
     mocks.normalizeWorkspaceId.mockResolvedValue(workspaceId);
     mocks.verifyWorkspaceMembershipType.mockResolvedValue({
       ok: true,
@@ -132,5 +157,94 @@ describe('workspace task history route', () => {
     });
     expect(mocks.from).toHaveBeenCalledWith('task_lists');
     expect(mocks.listIn).toHaveBeenCalledWith('id', [oldListId, newListId]);
+  });
+  it('names a nameless co-member by email via the server resolver (D246)', async () => {
+    mocks.rpc.mockResolvedValue({
+      data: [
+        {
+          change_type: 'field_updated',
+          changed_at: '2026-06-22T08:00:00.000Z',
+          changed_by: 'user-2',
+          field_name: 'priority',
+          id: 'history-2',
+          metadata: {},
+          new_value: 'high',
+          old_value: null,
+          task_id: 'task-1',
+          task_name: 'Task',
+          total_count: 1,
+          user_avatar_url: null,
+          user_display_name: 'rpc-private@example.com',
+          user_id: 'user-2',
+        },
+      ],
+      error: null,
+    });
+    mocks.usersIn.mockResolvedValue({
+      data: [{ id: 'user-2', display_name: null, handle: 'nameless' }],
+      error: null,
+    });
+    mocks.resolveCoMemberNames.mockResolvedValue(
+      new Map([['user-2', 'nameless@example.com']])
+    );
+    const { GET } = await import('./route');
+
+    const response = await GET(createRequest(), createContext());
+
+    expect(response.status).toBe(200);
+    expect(mocks.usersIn).toHaveBeenCalledWith('id', ['user-2']);
+    expect(mocks.resolveCoMemberNames).toHaveBeenCalledWith(
+      expect.objectContaining({
+        users: [{ id: 'user-2', display_name: null, handle: 'nameless' }],
+        viewerUserId: 'user-1',
+        wsId: workspaceId,
+      })
+    );
+    const body = await response.json();
+    expect(body.data[0].user).toEqual({
+      avatar_url: null,
+      id: 'user-2',
+      name: 'nameless@example.com',
+    });
+  });
+
+  it('never sends the RPC email fallback when HIDE_MEMBER_EMAIL withholds it', async () => {
+    mocks.rpc.mockResolvedValue({
+      data: [
+        {
+          change_type: 'field_updated',
+          changed_at: '2026-06-22T08:00:00.000Z',
+          changed_by: 'user-2',
+          field_name: 'priority',
+          id: 'history-2',
+          metadata: {},
+          new_value: 'high',
+          old_value: null,
+          task_id: 'task-1',
+          task_name: 'Task',
+          total_count: 1,
+          user_avatar_url: null,
+          user_display_name: 'rpc-private@example.com',
+          user_id: 'user-2',
+        },
+      ],
+      error: null,
+    });
+    mocks.usersIn.mockResolvedValue({
+      data: [{ id: 'user-2', display_name: null, handle: 'nameless' }],
+      error: null,
+    });
+    // The resolver enforces HIDE_MEMBER_EMAIL / membership and returns the handle.
+    mocks.resolveCoMemberNames.mockResolvedValue(
+      new Map([['user-2', 'nameless']])
+    );
+    const { GET } = await import('./route');
+
+    const response = await GET(createRequest(), createContext());
+    const text = await response.text();
+
+    expect(response.status).toBe(200);
+    expect(text).not.toContain('@example.com');
+    expect(JSON.parse(text).data[0].user.name).toBe('nameless');
   });
 });

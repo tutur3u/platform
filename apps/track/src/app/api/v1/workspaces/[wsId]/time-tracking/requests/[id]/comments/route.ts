@@ -3,11 +3,18 @@ import {
   MAX_LONG_TEXT_LENGTH,
   resolveWorkspaceId,
 } from '@tuturuuu/utils/constants';
+import { resolveCoMemberNames } from '@tuturuuu/utils/co-member-names';
 import { verifyWorkspaceMembershipType } from '@tuturuuu/utils/workspace-helper';
 import type { NextRequest } from 'next/server';
 import { NextResponse } from 'next/server';
 import { z } from 'zod';
 import { resolveSessionAuthContext } from '@/lib/api-auth';
+
+interface CommentUser {
+  id: string;
+  display_name: string | null;
+  avatar_url: string | null;
+}
 
 const createCommentSchema = z.object({
   content: z
@@ -204,7 +211,30 @@ export async function GET(
       );
     }
 
-    return NextResponse.json({ comments: comments || [] });
+    // Co-members without a display name are named by email (D246); the email
+    // only lands in `user.display_name` and only when the helper allows it.
+    const commentUsers = (comments ?? []).flatMap((comment) => {
+      const commentUser = comment.user as CommentUser | null;
+      return commentUser?.id ? [commentUser] : [];
+    });
+    const names = commentUsers.some((u) => !u.display_name?.trim())
+      ? await resolveCoMemberNames({
+          admin: sbAdmin,
+          users: commentUsers,
+          viewerUserId: user.id,
+          wsId: resolvedWorkspaceId,
+        })
+      : new Map<string, string>();
+
+    return NextResponse.json({
+      comments: (comments ?? []).map((comment) => {
+        const commentUser = comment.user as CommentUser | null;
+        const name = commentUser?.id ? names.get(commentUser.id) : undefined;
+        return name && commentUser
+          ? { ...comment, user: { ...commentUser, display_name: name } }
+          : comment;
+      }),
+    });
   } catch (error) {
     console.error(
       'Error in GET /api/v1/workspaces/[wsId]/time-tracking/requests/[requestId]/comments:',

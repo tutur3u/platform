@@ -11,6 +11,10 @@ import type { NextRequest } from 'next/server';
 import { NextResponse } from 'next/server';
 import { z } from 'zod';
 import { withSessionAuth } from '@/lib/api-auth';
+import {
+  resolveCoMemberDisplayNames,
+  withCoMemberDisplayName,
+} from '@/lib/co-member-display-names';
 
 interface RouteParams {
   wsId: string;
@@ -101,11 +105,13 @@ export const GET = withSessionAuth<RouteParams>(
         creator:users!task_projects_creator_id_fkey(
           id,
           display_name,
+          handle,
           avatar_url
         ),
         lead:users!task_projects_lead_id_fkey(
           id,
           display_name,
+          handle,
           avatar_url
         ),
         task_project_tasks(
@@ -142,6 +148,15 @@ export const GET = withSessionAuth<RouteParams>(
         );
       }
 
+      const names = await resolveCoMemberDisplayNames({
+        admin: sbAdmin,
+        wsId,
+        viewerUserId: user.id,
+        users: (projects ?? []).flatMap((project) =>
+          [project.creator, project.lead].filter((related) => !!related)
+        ),
+      });
+
       const formattedProjects = (projects ?? []).map((project) => {
         const linkedItems = partitionTaskProjectLinks(
           project.task_project_tasks
@@ -149,6 +164,12 @@ export const GET = withSessionAuth<RouteParams>(
 
         return {
           ...project,
+          creator: project.creator
+            ? withCoMemberDisplayName(project.creator, names)
+            : project.creator,
+          lead: project.lead
+            ? withCoMemberDisplayName(project.lead, names)
+            : project.lead,
           created_at: project.created_at ?? new Date().toISOString(),
           ...linkedItems,
         };

@@ -11,6 +11,10 @@ import type { NextRequest } from 'next/server';
 import { NextResponse } from 'next/server';
 import { z } from 'zod';
 import { resolveAuthenticatedSessionUser } from '@/lib/app-session-user';
+import {
+  resolveCoMemberDisplayNames,
+  withCoMemberDisplayName,
+} from '@/lib/co-member-display-names';
 
 const updateUpdateSchema = z.object({
   content: z
@@ -144,6 +148,7 @@ export async function PATCH(
         creator:users!task_project_updates_creator_id_fkey(
           id,
           display_name,
+          handle,
           avatar_url
         )
       `
@@ -159,7 +164,21 @@ export async function PATCH(
       return NextResponse.json({ error: 'Update not found' }, { status: 404 });
     }
 
-    return NextResponse.json(updatedUpdate);
+    const creatorNames = updatedUpdate.creator
+      ? await resolveCoMemberDisplayNames({
+          admin: sbAdmin,
+          wsId,
+          viewerUserId: user.id,
+          users: [updatedUpdate.creator],
+        })
+      : new Map<string, string>();
+
+    return NextResponse.json({
+      ...updatedUpdate,
+      creator: updatedUpdate.creator
+        ? withCoMemberDisplayName(updatedUpdate.creator, creatorNames)
+        : updatedUpdate.creator,
+    });
   } catch (error) {
     if (error instanceof z.ZodError) {
       return NextResponse.json({ error: error.message }, { status: 400 });

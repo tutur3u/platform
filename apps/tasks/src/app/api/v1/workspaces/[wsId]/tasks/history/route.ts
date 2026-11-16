@@ -1,7 +1,7 @@
 import { CLI_APP_TARGET_APP } from '@tuturuuu/auth/cli-session';
 import { createAdminClient } from '@tuturuuu/supabase/next/server';
+import { resolveCoMemberNames } from '@tuturuuu/utils/co-member-names';
 import { MAX_COLOR_LENGTH, MAX_SEARCH_LENGTH } from '@tuturuuu/utils/constants';
-import { resolveUserDisplayName } from '@tuturuuu/utils/name-helper';
 import {
   normalizeWorkspaceId,
   verifyWorkspaceMembershipType,
@@ -395,6 +395,40 @@ export async function GET(
       }
     }
 
+    // Resolve actor names from public profiles. The history RPC's own
+    // user_display_name falls back to private details without honouring
+    // HIDE_MEMBER_EMAIL, so it is never sent. Nameless co-members are named by
+    // email only through the D246 resolver.
+    const actorIds = [
+      ...new Set(
+        (history ?? []).flatMap((entry) =>
+          entry.user_id ? [entry.user_id] : []
+        )
+      ),
+    ];
+    const actorNames = new Map<string, string>();
+    if (actorIds.length > 0) {
+      const sbAdmin = await createAdminClient({ noCookie: true });
+      const { data: profiles, error: profilesError } = await sbAdmin
+        .from('users')
+        .select('id, display_name, handle')
+        .in('id', actorIds);
+
+      if (profilesError) {
+        console.error('Error fetching history actor profiles:', profilesError);
+      } else if (profiles?.length) {
+        const names = await resolveCoMemberNames({
+          admin: sbAdmin,
+          wsId,
+          viewerUserId: auth.user.id,
+          users: profiles,
+        });
+        for (const [id, name] of names) {
+          if (name) actorNames.set(id, name);
+        }
+      }
+    }
+
     // Format the response
     const formattedHistory = (history || []).map((entry) => ({
       id: entry.id,
@@ -434,10 +468,7 @@ export async function GET(
       user: entry.user_id
         ? {
             id: entry.user_id,
-            name: resolveUserDisplayName(
-              { display_name: entry.user_display_name },
-              { fallback: 'Unknown' }
-            ),
+            name: actorNames.get(entry.user_id) ?? 'Unknown',
             avatar_url: entry.user_avatar_url,
           }
         : null,

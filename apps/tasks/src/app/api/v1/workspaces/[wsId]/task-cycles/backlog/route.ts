@@ -9,7 +9,7 @@ import {
   isCycleBoardScopeUnavailable,
   isInNoWorkspaceCycle,
   type RawPlanningTask,
-  toCyclePlanningTask,
+  toCyclePlanningTasksForViewer,
 } from '../_cycle-planning-task';
 import {
   MAX_CYCLE_TASKS,
@@ -83,9 +83,12 @@ export const GET = withSessionAuth<RouteParams>(
       }
 
       return NextResponse.json({
-        tasks: ((data ?? []) as unknown as RawPlanningTask[])
-          .filter(isInNoWorkspaceCycle)
-          .map(toCyclePlanningTask),
+        tasks: await toCyclePlanningTasksForViewer(
+          ((data ?? []) as unknown as RawPlanningTask[]).filter(
+            isInNoWorkspaceCycle
+          ),
+          { admin: sbAdmin, wsId: access.wsId, viewerUserId: user.id }
+        ),
       });
     } catch (error) {
       console.error(

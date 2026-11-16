@@ -78,7 +78,13 @@ export const GET = withSessionAuth(
       };
 
       // Fetch paginated sessions
-      const result = await getGroupedSessionsPaginated(wsId, period, params);
+      const result = await getGroupedSessionsPaginated(
+        wsId,
+        period,
+        params,
+        undefined,
+        { viewerUserId: user.id }
+      );
 
       return NextResponse.json({
         data: result.data,

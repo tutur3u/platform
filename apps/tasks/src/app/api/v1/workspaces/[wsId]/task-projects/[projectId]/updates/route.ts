@@ -8,12 +8,17 @@ import type { NextRequest } from 'next/server';
 import { NextResponse } from 'next/server';
 import { z } from 'zod';
 import { resolveAuthenticatedSessionUser } from '@/lib/app-session-user';
+import {
+  resolveCoMemberDisplayNames,
+  withCoMemberDisplayName,
+} from '@/lib/co-member-display-names';
 import { normalizeWorkspaceId } from '@/lib/workspace-helper';
 
 // Type definitions for update responses
 interface User {
   id: string;
   display_name: string | null;
+  handle?: string | null;
   avatar_url: string | null;
 }
 
@@ -164,6 +169,7 @@ export async function POST(
         creator:users!task_project_updates_creator_id_fkey(
           id,
           display_name,
+          handle,
           avatar_url
         )
       `
@@ -178,7 +184,24 @@ export async function POST(
       );
     }
 
-    return NextResponse.json(newUpdate, { status: 201 });
+    const creatorNames = newUpdate.creator
+      ? await resolveCoMemberDisplayNames({
+          admin: sbAdmin,
+          wsId: normalizedWsId,
+          viewerUserId: user.id,
+          users: [newUpdate.creator],
+        })
+      : new Map<string, string>();
+
+    return NextResponse.json(
+      {
+        ...newUpdate,
+        creator: newUpdate.creator
+          ? withCoMemberDisplayName(newUpdate.creator, creatorNames)
+          : newUpdate.creator,
+      },
+      { status: 201 }
+    );
   } catch (error) {
     if (error instanceof z.ZodError) {
       return NextResponse.json({ error: error.message }, { status: 400 });
@@ -268,6 +291,7 @@ export async function GET(
         creator:users!task_project_updates_creator_id_fkey(
           id,
           display_name,
+          handle,
           avatar_url
         ),
         reactions:task_project_update_reactions(
@@ -278,6 +302,7 @@ export async function GET(
           user:users(
             id,
             display_name,
+            handle,
             avatar_url
           )
         ),
@@ -292,6 +317,7 @@ export async function GET(
           user:users(
             id,
             display_name,
+            handle,
             avatar_url
           )
         ),
@@ -306,6 +332,7 @@ export async function GET(
           uploader:users!task_project_update_attachments_uploaded_by_fkey(
             id,
             display_name,
+            handle,
             avatar_url
           )
         )
@@ -324,9 +351,44 @@ export async function GET(
       );
     }
 
+    const rawUpdates = (updates as UpdateWithRelations[] | null) ?? [];
+    const names = await resolveCoMemberDisplayNames({
+      admin: sbAdmin,
+      wsId: normalizedWsId,
+      viewerUserId: user.id,
+      users: rawUpdates.flatMap((update) =>
+        [
+          update.creator,
+          ...(update.reactions ?? []).map((reaction) => reaction.user),
+          ...(update.comments ?? []).map((comment) => comment.user),
+          ...(update.attachments ?? []).map(
+            (attachment) => attachment.uploader
+          ),
+        ].filter((related) => !!related)
+      ),
+    });
+    const named = (related: User) =>
+      related ? withCoMemberDisplayName(related, names) : related;
+
     // Group reactions by emoji with counts
-    const updatesWithGroupedReactions: MappedUpdate[] =
-      (updates as UpdateWithRelations[] | null)?.map((update) => {
+    const updatesWithGroupedReactions: MappedUpdate[] = rawUpdates
+      .map((update) => ({
+        ...update,
+        creator: named(update.creator),
+        reactions: update.reactions?.map((reaction) => ({
+          ...reaction,
+          user: named(reaction.user),
+        })),
+        comments: update.comments?.map((comment) => ({
+          ...comment,
+          user: named(comment.user),
+        })),
+        attachments: update.attachments?.map((attachment) => ({
+          ...attachment,
+          uploader: named(attachment.uploader),
+        })),
+      }))
+      .map((update) => {
         const reactionGroups: Record<string, ReactionGroup> = {};
 
         update.reactions?.forEach((reaction) => {
@@ -353,7 +415,7 @@ export async function GET(
             update.comments?.filter((c) => !c.deleted_at).length || 0,
           attachmentsCount: update.attachments?.length || 0,
         };
-      }) || [];
+      });
 
     return NextResponse.json({
       updates: updatesWithGroupedReactions,

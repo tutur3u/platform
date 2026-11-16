@@ -4,13 +4,20 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 type QueryResult = { data: unknown; error: { code: string } | null };
 
 const mocks = vi.hoisted(() => ({
+  createAdminClient: vi.fn(),
   createClient: vi.fn(),
   getCurrentUser: vi.fn(),
+  resolveCoMemberNames: vi.fn(),
   verifyWorkspaceMembershipType: vi.fn(),
 }));
 
 vi.mock('@tuturuuu/supabase/next/server', () => ({
+  createAdminClient: mocks.createAdminClient,
   createClient: mocks.createClient,
+}));
+
+vi.mock('@tuturuuu/utils/co-member-names', () => ({
+  resolveCoMemberNames: mocks.resolveCoMemberNames,
 }));
 
 vi.mock('@tuturuuu/utils/user-helper', () => ({
@@ -84,6 +91,8 @@ describe('Discord members route', () => {
     vi.clearAllMocks();
     mocks.getCurrentUser.mockResolvedValue({ id: 'user-1' });
     mocks.verifyWorkspaceMembershipType.mockResolvedValue({ ok: true });
+    mocks.createAdminClient.mockResolvedValue({ name: 'admin-client' });
+    mocks.resolveCoMemberNames.mockResolvedValue(new Map());
   });
 
   it('rejects mapping a coworker without manage_workspace_integrations', async () => {
@@ -131,6 +140,76 @@ describe('Discord members route', () => {
     const response = await POST(request('POST', addBody));
 
     expect(response.status).toBe(200);
+  });
+
+  it('names a newly mapped nameless co-member by email (D246)', async () => {
+    mocks.resolveCoMemberNames.mockResolvedValue(
+      new Map([[TARGET_ID, 'target@example.com']])
+    );
+    mockSupabase(
+      {
+        discord_guild_members: [
+          empty,
+          empty,
+          {
+            data: {
+              id: MEMBER_ID,
+              users: {
+                avatar_url: null,
+                display_name: null,
+                handle: 'target',
+                id: TARGET_ID,
+              },
+            },
+            error: null,
+          },
+        ],
+        discord_integrations: [integration],
+        platform_user_roles: [allowed],
+      },
+      { data: true, error: null }
+    );
+
+    const response = await POST(request('POST', addBody));
+    const body = await response.json();
+
+    expect(response.status).toBe(200);
+    expect(body.data.users.display_name).toBe('target@example.com');
+    expect(body.data.users).not.toHaveProperty('email');
+    expect(mocks.resolveCoMemberNames).toHaveBeenCalledWith(
+      expect.objectContaining({ viewerUserId: 'user-1', wsId: WS_ID })
+    );
+  });
+
+  it('keeps the email out when the helper withholds it', async () => {
+    mocks.resolveCoMemberNames.mockResolvedValue(
+      new Map([[TARGET_ID, 'target']])
+    );
+    mockSupabase(
+      {
+        discord_guild_members: [
+          empty,
+          empty,
+          {
+            data: {
+              id: MEMBER_ID,
+              users: { display_name: null, handle: 'target', id: TARGET_ID },
+            },
+            error: null,
+          },
+        ],
+        discord_integrations: [integration],
+        platform_user_roles: [allowed],
+      },
+      { data: true, error: null }
+    );
+
+    const response = await POST(request('POST', addBody));
+    const body = await response.json();
+
+    expect(response.status).toBe(200);
+    expect(body.data.users.display_name).toBeNull();
+    expect(JSON.stringify(body)).not.toContain('@example.com');
   });
 
   it('reports a duplicate Discord identity as a conflict', async () => {

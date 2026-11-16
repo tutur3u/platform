@@ -4,6 +4,7 @@ import { getWorkspace } from '@tuturuuu/utils/workspace-helper';
 import type { Metadata } from 'next';
 import { notFound, redirect } from 'next/navigation';
 import { connection } from 'next/server';
+import { withCoMemberDisplayNames } from '@/lib/discord/co-member-display-names';
 import DiscordIntegrationDashboard from './discord-integration-dashboard';
 
 export const metadata: Metadata = {
@@ -69,7 +70,13 @@ export default async function DiscordIntegrationPage({ params }: Props) {
       `)
       .eq('discord_guild_id', discordIntegration.discord_guild_id);
 
-    guildMembers = members;
+    guildMembers = members
+      ? await withCoMemberDisplayNames({
+          rows: members,
+          viewerUserId: user.id,
+          wsId,
+        })
+      : null;
   }
 
   return (

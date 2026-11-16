@@ -1,5 +1,5 @@
 import { MAX_NAME_LENGTH } from '@tuturuuu/utils/constants';
-import { resolveUserDisplayName } from '@tuturuuu/utils/name-helper';
+import { resolveCoMemberNames } from '@tuturuuu/utils/co-member-names';
 import { connection, type NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
 import { authorizeInfrastructureAdminRequest } from '@/lib/infrastructure-admin-access';
@@ -224,19 +224,22 @@ export async function GET(req: NextRequest) {
       (workspaces || []).map((ws) => [ws.id, ws.name])
     );
 
-    // Fetch user names from users table (display_name) and user_private_details (email if needed)
+    // Fetch public user names. Emails are only a name fallback for co-members
+    // of the filtered workspace (D246); without a workspace filter there is no
+    // shared workspace, so the resolver fails closed to handles.
     const userIds = Array.from(userMap.keys());
     const { data: users } = await supabase
       .from('users')
       .select('id, display_name, handle')
       .in('id', userIds);
 
-    const userNameMap = new Map(
-      (users || []).map((u) => [
-        u.id,
-        resolveUserDisplayName(u, { fallback: 'Unknown User' }),
-      ])
-    );
+    const userNameMap = await resolveCoMemberNames({
+      admin: supabase,
+      wsId: workspaceId,
+      viewerUserId: authorization.user.id,
+      users: users ?? [],
+      options: { fallback: 'Unknown User' },
+    });
 
     // Build top consumers arrays
     const topWorkspaces: TopConsumer[] = Array.from(workspaceMap.entries())

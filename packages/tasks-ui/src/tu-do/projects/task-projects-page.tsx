@@ -7,6 +7,7 @@ import type {
   ProjectStatus,
   TaskProject,
 } from '@tuturuuu/tasks-ui/tu-do/projects/types';
+import { resolveCoMemberNames } from '@tuturuuu/utils/co-member-names';
 import { getCurrentUser } from '@tuturuuu/utils/user-helper';
 import { getPermissions, getWorkspace } from '@tuturuuu/utils/workspace-helper';
 import { notFound, redirect } from 'next/navigation';
@@ -47,10 +48,10 @@ export default async function TaskProjectsPage({ params }: Props) {
     .select(`
       *,
       creator:users!task_projects_creator_id_fkey(
-        id, display_name, avatar_url
+        id, display_name, handle, avatar_url
       ),
       lead:users!task_projects_lead_id_fkey(
-        id, display_name, avatar_url
+        id, display_name, handle, avatar_url
       ),
       task_project_tasks(
         task:tasks!inner(
@@ -67,11 +68,33 @@ export default async function TaskProjectsPage({ params }: Props) {
     notFound();
   }
 
+  // Co-members without a name are shown by email (D246); resolved here so
+  // the client only ever receives the name string.
+  const names = await resolveCoMemberNames({
+    admin: supabase,
+    wsId,
+    viewerUserId: user.id,
+    users: (projects ?? []).flatMap((project) =>
+      [project.creator, project.lead].filter((related) => !!related)
+    ),
+  });
+  const withName = <T extends { id: string; display_name: string | null }>(
+    related: T | null
+  ) =>
+    related
+      ? {
+          ...related,
+          display_name: names.get(related.id) || related.display_name,
+        }
+      : related;
+
   const formattedProjects: TaskProject[] = (projects ?? []).map((project) => {
     const linkedItems = partitionTaskProjectLinks(project.task_project_tasks);
 
     return {
       ...project,
+      creator: withName(project.creator),
+      lead: withName(project.lead),
       status: project.status as ProjectStatus | null,
       priority: project.priority as ProjectPriority | null,
       health_status: project.health_status as ProjectHealth | null,

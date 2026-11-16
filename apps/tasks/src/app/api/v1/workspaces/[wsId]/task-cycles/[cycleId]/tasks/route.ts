@@ -9,7 +9,7 @@ import {
   isCycleBoardScopeUnavailable,
   isCurrentlyInCycle,
   type RawPlanningTask,
-  toCyclePlanningTask,
+  toCyclePlanningTasksForViewer,
 } from '../../_cycle-planning-task';
 import {
   assertCycleInWorkspace,
@@ -133,9 +133,12 @@ export const GET = withSessionAuth<RouteParams>(
 
       // A task with older duplicate links is listed only in its newest cycle.
       return NextResponse.json({
-        tasks: ((data ?? []) as unknown as RawPlanningTask[])
-          .filter((task) => isCurrentlyInCycle(task, cycleId))
-          .map(toCyclePlanningTask),
+        tasks: await toCyclePlanningTasksForViewer(
+          ((data ?? []) as unknown as RawPlanningTask[]).filter((task) =>
+            isCurrentlyInCycle(task, cycleId)
+          ),
+          { admin: sbAdmin, wsId: access.wsId, viewerUserId: user.id }
+        ),
       });
     } catch (error) {
       return failed('Internal server error', error);

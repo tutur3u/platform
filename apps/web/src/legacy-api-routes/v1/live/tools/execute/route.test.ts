@@ -12,8 +12,11 @@ const mocks = vi.hoisted(() => ({
   isFeatureAvailable: vi.fn(),
   normalizeWorkspaceId: vi.fn(),
   resolveAuthenticatedSessionUser: vi.fn(),
+  verifySecret: vi.fn(),
   verifyWorkspaceMembershipType: vi.fn(),
 }));
+
+vi.mock('server-only', () => ({}));
 
 vi.mock('@tuturuuu/ai/embeddings/metered', () => ({
   createMeteredTextEmbedding: mocks.createMeteredTextEmbedding,
@@ -36,6 +39,7 @@ vi.mock('@tuturuuu/utils/workspace-helper', async (importOriginal) => {
     ...actual,
     getWorkspaceTier: mocks.getWorkspaceTier,
     normalizeWorkspaceId: mocks.normalizeWorkspaceId,
+    verifySecret: mocks.verifySecret,
     verifyWorkspaceMembershipType: mocks.verifyWorkspaceMembershipType,
   };
 });
@@ -148,5 +152,98 @@ describe('live tools execute route workspace authorization', () => {
         wsId: NORMALIZED_WORKSPACE_ID,
       })
     );
+  });
+});
+
+describe('live tools get_workspace_members email fallback (D246)', () => {
+  const members = [
+    {
+      avatar_url: null,
+      display_name: null,
+      email: 'nameless@example.com',
+      id: 'member-1',
+      pending: false,
+    },
+    {
+      avatar_url: null,
+      display_name: 'Named',
+      email: 'named@example.com',
+      id: 'member-2',
+      pending: false,
+    },
+  ];
+
+  function membersQuery() {
+    const query = {
+      eq: vi.fn(() => query),
+      limit: vi.fn().mockResolvedValue({ data: members, error: null }),
+      order: vi.fn(() => query),
+      select: vi.fn(() => query),
+    };
+    return query;
+  }
+
+  function membersRequest() {
+    return new Request('http://localhost/api/v1/live/tools/execute', {
+      body: JSON.stringify({
+        args: {},
+        functionName: 'get_workspace_members',
+        wsId: RAW_WORKSPACE_ID,
+      }),
+      method: 'POST',
+    });
+  }
+
+  beforeEach(() => {
+    vi.resetModules();
+    vi.clearAllMocks();
+    vi.spyOn(console, 'error').mockImplementation(() => {});
+    vi.spyOn(console, 'log').mockImplementation(() => {});
+    mocks.createClient.mockResolvedValue({ from: vi.fn(() => membersQuery()) });
+    mocks.resolveAuthenticatedSessionUser.mockResolvedValue({
+      authError: null,
+      user: { id: USER_ID },
+    });
+    mocks.normalizeWorkspaceId.mockResolvedValue(NORMALIZED_WORKSPACE_ID);
+    mocks.verifyWorkspaceMembershipType.mockResolvedValue({
+      membershipType: 'MEMBER',
+      ok: true,
+    });
+    mocks.getWorkspaceTier.mockResolvedValue('PRO');
+    mocks.isFeatureAvailable.mockReturnValue(true);
+  });
+
+  it('names a nameless member by email when HIDE_MEMBER_EMAIL is off', async () => {
+    mocks.verifySecret.mockResolvedValue(false);
+    const { POST } = await import('./route');
+    const response = await POST(membersRequest());
+
+    expect(response.status).toBe(200);
+    const body = await response.json();
+    expect(body.result.members.map((m: { name: string }) => m.name)).toEqual([
+      'nameless@example.com',
+      'Named',
+    ]);
+    expect(JSON.stringify(body)).not.toContain('named@example.com');
+    expect(mocks.verifySecret).toHaveBeenCalledWith({
+      forceAdmin: true,
+      name: 'HIDE_MEMBER_EMAIL',
+      value: 'true',
+      wsId: NORMALIZED_WORKSPACE_ID,
+    });
+  });
+
+  it('never uses the email when HIDE_MEMBER_EMAIL is on', async () => {
+    mocks.verifySecret.mockResolvedValue(true);
+    const { POST } = await import('./route');
+    const response = await POST(membersRequest());
+
+    expect(response.status).toBe(200);
+    const body = await response.json();
+    expect(body.result.members.map((m: { name: string }) => m.name)).toEqual([
+      'Unknown',
+      'Named',
+    ]);
+    expect(JSON.stringify(body)).not.toContain('@example.com');
   });
 });

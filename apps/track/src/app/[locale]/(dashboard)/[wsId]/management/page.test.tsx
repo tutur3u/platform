@@ -75,7 +75,8 @@ describe('TimeTrackerManagementPage', () => {
       'workspace-1',
       'day',
       expect.objectContaining({ limit: 20, page: 1 }),
-      { client: 'admin' }
+      { client: 'admin' },
+      { viewerUserId: 'user-1', admin: { client: 'admin' } }
     );
     expect(mocks.getTimeTrackingStats).toHaveBeenCalledWith(
       'workspace-1',

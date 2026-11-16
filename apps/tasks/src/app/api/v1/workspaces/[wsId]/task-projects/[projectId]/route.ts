@@ -15,6 +15,10 @@ import type { NextRequest } from 'next/server';
 import { NextResponse } from 'next/server';
 import { z } from 'zod';
 import { type SessionAuthContext, withSessionAuth } from '@/lib/api-auth';
+import {
+  resolveCoMemberDisplayNames,
+  withCoMemberDisplayName,
+} from '@/lib/co-member-display-names';
 
 interface RouteParams {
   wsId: string;
@@ -121,8 +125,8 @@ export const GET = withSessionAuth<RouteParams>(
         .select(
           `
         *,
-        creator:users!task_projects_creator_id_fkey(id, display_name, avatar_url),
-        lead:users!task_projects_lead_id_fkey(id, display_name, avatar_url)
+        creator:users!task_projects_creator_id_fkey(id, display_name, handle, avatar_url),
+        lead:users!task_projects_lead_id_fkey(id, display_name, handle, avatar_url)
       `
         )
         .eq('id', projectId)
@@ -143,7 +147,22 @@ export const GET = withSessionAuth<RouteParams>(
         );
       }
 
-      return NextResponse.json(project);
+      const names = await resolveCoMemberDisplayNames({
+        admin: sbAdmin,
+        wsId,
+        viewerUserId: user.id,
+        users: [project.creator, project.lead].filter((related) => !!related),
+      });
+
+      return NextResponse.json({
+        ...project,
+        creator: project.creator
+          ? withCoMemberDisplayName(project.creator, names)
+          : project.creator,
+        lead: project.lead
+          ? withCoMemberDisplayName(project.lead, names)
+          : project.lead,
+      });
     } catch (error) {
       console.error(
         'Error in GET /api/v1/workspaces/[wsId]/task-projects/[projectId]:',
@@ -294,6 +313,7 @@ async function updateProject(
         lead:users!task_projects_lead_id_fkey(
           id,
           display_name,
+          handle,
           avatar_url
         ),
         task_project_tasks(
@@ -338,6 +358,14 @@ async function updateProject(
     const linkedItems = partitionTaskProjectLinks(
       updatedProject.task_project_tasks
     );
+    const leadNames = updatedProject.lead
+      ? await resolveCoMemberDisplayNames({
+          admin: sbAdmin,
+          wsId,
+          viewerUserId: user.id,
+          users: [updatedProject.lead],
+        })
+      : new Map<string, string>();
 
     return NextResponse.json({
       id: updatedProject.id,
@@ -347,7 +375,9 @@ async function updateProject(
       description: updatedProject.description,
       priority: updatedProject.priority,
       lead_id: updatedProject.lead_id,
-      lead: updatedProject.lead,
+      lead: updatedProject.lead
+        ? withCoMemberDisplayName(updatedProject.lead, leadNames)
+        : updatedProject.lead,
       start_date: updatedProject.start_date,
       end_date: updatedProject.end_date,
       health_status: updatedProject.health_status,

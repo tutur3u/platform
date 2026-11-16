@@ -4,6 +4,7 @@ import type {
   TaskProgressMetric,
 } from '@tuturuuu/tasks-api';
 import { loadAutonomousTaskProgressEntries } from './_autonomous';
+import { resolveLeaderboardMemberNames } from './leaderboards/_leaderboards';
 import type { TaskProgressRouteAuth } from './_utils';
 
 function formatDate(date: Date) {
@@ -130,20 +131,8 @@ export async function buildAutonomousWeeklyLeaderboard(
         ),
     ])
   );
-  const { data: users, error: usersError } = userIds.length
-    ? await (auth.sbAdmin as any)
-        .from('users')
-        .select('id, display_name')
-        .in('id', userIds)
-    : { data: [], error: null };
-  if (usersError) throw usersError;
-
-  const names = new Map<string, string | null>(
-    (users ?? []).map((user: { display_name?: string | null; id: string }) => [
-      user.id,
-      user.display_name ?? null,
-    ])
-  );
+  // Profile display name, else (D246) a co-member's email, else the handle.
+  const names = await resolveLeaderboardMemberNames(auth, userIds);
   const totals = new Map<string, number>();
   for (const entry of entries) {
     if (!entry.created_by) continue;
@@ -155,7 +144,7 @@ export async function buildAutonomousWeeklyLeaderboard(
 
   const rankings = userIds
     .map((userId) => ({
-      display_name: names.get(userId) ?? null,
+      display_name: names.get(userId) || null,
       id: `autonomous-member:${userId}`,
       leaderboard_id: `autonomous-weekly-leaderboard:${week.start}`,
       status: 'active' as const,

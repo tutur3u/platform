@@ -96,7 +96,9 @@ export async function GET(request: NextRequest) {
     };
 
     // Fetch paginated sessions
-    const result = await getGroupedSessionsPaginated(wsId, period, params);
+    const result = await getGroupedSessionsPaginated(wsId, period, params, {
+      viewerUserId: user.id,
+    });
 
     return NextResponse.json({
       data: result.data,

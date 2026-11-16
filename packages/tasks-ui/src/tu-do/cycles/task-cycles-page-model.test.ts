@@ -122,3 +122,69 @@ describe('loadTaskCycles', () => {
     );
   });
 });
+
+describe('loadTaskCycles creator names (D246)', () => {
+  function supabaseWith(rows: unknown[]) {
+    const select = vi.fn((_columns: string) => ({
+      eq: () => ({ order: async () => ({ data: rows, error: null }) }),
+    }));
+    return { select, supabase: { from: () => ({ select }) } };
+  }
+
+  const rows = [
+    {
+      id: NEW_CYCLE,
+      name: 'New',
+      status: 'active',
+      creator: {
+        id: 'nameless',
+        display_name: null,
+        handle: 'nameless-handle',
+        avatar_url: null,
+      },
+      task_cycle_tasks: [],
+    },
+    {
+      id: OLD_CYCLE,
+      name: 'Old',
+      status: 'planned',
+      creator: null,
+      task_cycle_tasks: [],
+    },
+  ];
+
+  it('puts the server-resolved name into display_name without adding an email field', async () => {
+    const { select, supabase } = supabaseWith(rows);
+    const resolveNames = vi.fn(
+      async () => new Map([['nameless', 'nameless@example.com']])
+    );
+
+    const cycles = await loadTaskCycles(supabase as never, 'ws-1', {
+      resolveNames,
+    });
+
+    expect(resolveNames).toHaveBeenCalledWith([rows[0]?.creator]);
+    expect(cycles?.[0]?.creator).toEqual({
+      id: 'nameless',
+      display_name: 'nameless@example.com',
+      avatar_url: null,
+    });
+    expect(cycles?.[1]?.creator).toBeNull();
+    expect(String(select.mock.calls[0]?.[0])).toContain(
+      'id, display_name, handle, avatar_url'
+    );
+  });
+
+  it('keeps the stored name when the resolver withholds the email', async () => {
+    const { supabase } = supabaseWith(rows);
+
+    const hidden = await loadTaskCycles(supabase as never, 'ws-1', {
+      resolveNames: async () => new Map([['nameless', 'nameless-handle']]),
+    });
+    const withoutResolver = await loadTaskCycles(supabase as never, 'ws-1');
+
+    expect(hidden?.[0]?.creator?.display_name).toBe('nameless-handle');
+    expect(withoutResolver?.[0]?.creator?.display_name).toBeNull();
+    expect(JSON.stringify(hidden)).not.toContain('@');
+  });
+});

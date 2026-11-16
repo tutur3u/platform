@@ -1,5 +1,7 @@
 import { getAppSessionTokenFromRequest } from '@tuturuuu/auth/app-session';
 import { CLI_APP_TARGET_APP } from '@tuturuuu/auth/cli-session';
+import { createAdminClient } from '@tuturuuu/supabase/next/server';
+import { resolveCoMemberNames } from '@tuturuuu/utils/co-member-names';
 import { resolveUserDisplayName } from '@tuturuuu/utils/name-helper';
 import { normalizeWorkspaceId } from '@tuturuuu/utils/workspace-helper';
 import { NextResponse } from 'next/server';
@@ -62,7 +64,9 @@ type TaskHistoryRpcEntry = {
 
 export function formatTaskHistoryEntry(
   entry: TaskHistoryRpcEntry,
-  publicProfile?: { display_name: string | null; handle?: string | null }
+  publicProfile?: { display_name: string | null; handle?: string | null },
+  /** Server-resolved co-member name (D246); may be an email by design. */
+  resolvedName?: string
 ) {
   return {
     id: entry.id,
@@ -77,7 +81,9 @@ export function formatTaskHistoryEntry(
     user: entry.user_id
       ? {
           id: entry.user_id,
-          name: resolveUserDisplayName(publicProfile, { fallback: 'Unknown' }),
+          name:
+            resolvedName ||
+            resolveUserDisplayName(publicProfile, { fallback: 'Unknown' }),
           avatar_url: entry.user_avatar_url,
         }
       : null,
@@ -195,8 +201,22 @@ export async function GET(
     const profilesById = new Map(
       (profiles ?? []).map((profile) => [profile.id, profile])
     );
+    // Nameless co-members fall back to their email (D246); the RPC's own
+    // user_display_name is never used because it is not HIDE_MEMBER_EMAIL-aware.
+    const names = profiles?.length
+      ? await resolveCoMemberNames({
+          admin: await createAdminClient({ noCookie: true }),
+          wsId,
+          viewerUserId: user.id,
+          users: profiles,
+        })
+      : new Map<string, string>();
     const formattedHistory = (history || []).map((entry: TaskHistoryRpcEntry) =>
-      formatTaskHistoryEntry(entry, profilesById.get(entry.user_id ?? ''))
+      formatTaskHistoryEntry(
+        entry,
+        profilesById.get(entry.user_id ?? ''),
+        names.get(entry.user_id ?? '')
+      )
     );
 
     return NextResponse.json({

@@ -1,9 +1,11 @@
 import { getAppSessionTokenFromRequest } from '@tuturuuu/auth/app-session';
 import { CLI_APP_TARGET_APP } from '@tuturuuu/auth/cli-session';
+import { createAdminClient } from '@tuturuuu/supabase/next/server';
 import type { WorkspaceTask } from '@tuturuuu/types/db';
 import { normalizeWorkspaceId } from '@tuturuuu/utils/workspace-helper';
 import { NextResponse } from 'next/server';
 import { resolveSessionAuthContext } from '@/lib/api-auth';
+import { resolveCoMemberDisplayNames } from '@/lib/co-member-display-names';
 import {
   getRelationshipsBeforeSelectedChange,
   getSnapshotBeforeSelectedChange,
@@ -23,6 +25,35 @@ type SnapshotRpc = <T>(
   functionName: string,
   args: Record<string, unknown>
 ) => PromiseLike<{ data: T | null; error: Error | null }>;
+
+function assigneeUserId(assignee: Record<string, unknown>) {
+  const id = assignee.user_id ?? assignee.id;
+  return typeof id === 'string' ? id : null;
+}
+
+async function withAssigneeNames<T extends Record<string, unknown>>(
+  assignees: T[],
+  { wsId, viewerUserId }: { wsId: string; viewerUserId: string }
+): Promise<T[]> {
+  if (assignees.length === 0) return assignees;
+  const names = await resolveCoMemberDisplayNames({
+    admin: await createAdminClient(),
+    wsId,
+    viewerUserId,
+    users: assignees.map((assignee) => ({
+      id: assigneeUserId(assignee),
+      display_name:
+        typeof assignee.display_name === 'string'
+          ? assignee.display_name
+          : null,
+    })),
+  });
+  return assignees.map((assignee) => {
+    const id = assigneeUserId(assignee);
+    const name = id ? names.get(id) : undefined;
+    return name ? { ...assignee, display_name: name } : assignee;
+  });
+}
 
 /**
  * GET /api/v1/workspaces/[wsId]/tasks/[taskId]/snapshot/[historyId]
@@ -146,10 +177,17 @@ export async function GET(
       historyEntry
     );
 
+    // Co-members without a name are shown by email (D246); the name lands
+    // in the existing display_name field.
+    const assignees = await withAssigneeNames(
+      historicalRelationships.assignees || [],
+      { wsId, viewerUserId: user.id }
+    );
+
     // Merge task snapshot with relationships
     const fullSnapshot = {
       ...(historicalTaskSnapshot || {}),
-      assignees: historicalRelationships.assignees || [],
+      assignees,
       labels: historicalRelationships.labels || [],
       projects: historicalRelationships.projects || [],
     };

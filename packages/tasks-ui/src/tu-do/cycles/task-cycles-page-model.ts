@@ -95,10 +95,29 @@ type CycleRow = {
   creator: {
     id: string;
     display_name: string | null;
+    handle?: string | null;
     avatar_url: string | null;
   } | null;
   task_cycle_tasks: { task_id: string; created_at?: string | null }[] | null;
 };
+
+/** A cycle creator as handed to {@link LoadTaskCyclesOptions.resolveNames}. */
+export interface CycleCreatorNameSource {
+  id: string;
+  display_name: string | null;
+  handle?: string | null;
+}
+
+export interface LoadTaskCyclesOptions {
+  /**
+   * Server-side co-member name resolution (D246), e.g. a bound
+   * `resolveCoMemberNames` from `@tuturuuu/utils/co-member-names`. Injected
+   * so this model stays free of server-only imports. Returns names by user id.
+   */
+  resolveNames?: (
+    users: CycleCreatorNameSource[]
+  ) => Promise<ReadonlyMap<string, string>>;
+}
 
 const CYCLE_STATUSES = ['planned', 'active', 'completed', 'cancelled'] as const;
 
@@ -116,7 +135,8 @@ function toCycleStatus(value: string | null) {
  */
 export async function loadTaskCycles(
   supabase: TypedSupabaseClient,
-  wsId: string
+  wsId: string,
+  options: LoadTaskCyclesOptions = {}
 ) {
   const { data, error } = await supabase
     .from('task_cycles')
@@ -124,7 +144,7 @@ export async function loadTaskCycles(
       `
         *,
         creator:users!task_cycles_creator_id_fkey(
-          id, display_name, avatar_url
+          id, display_name, handle, avatar_url
         ),
         task_cycle_tasks(task_id, created_at)
       `
@@ -139,6 +159,13 @@ export async function loadTaskCycles(
 
   const cycles = (data as CycleRow[] | null) ?? [];
   const counts = countCurrentCycleTasks(cycles);
+  const creators = cycles.flatMap((cycle) =>
+    cycle.creator ? [cycle.creator] : []
+  );
+  const names =
+    options.resolveNames && creators.length > 0
+      ? await options.resolveNames(creators)
+      : new Map<string, string>();
   return cycles.map((cycle) => ({
     id: cycle.id,
     name: cycle.name,
@@ -147,7 +174,14 @@ export async function loadTaskCycles(
     start_date: cycle.start_date,
     end_date: cycle.end_date,
     created_at: cycle.created_at,
-    creator: cycle.creator,
+    creator: cycle.creator
+      ? {
+          id: cycle.creator.id,
+          display_name:
+            names.get(cycle.creator.id) || cycle.creator.display_name,
+          avatar_url: cycle.creator.avatar_url,
+        }
+      : null,
     tasksCount: counts.get(cycle.id) ?? 0,
   }));
 }

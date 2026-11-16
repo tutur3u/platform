@@ -1,10 +1,16 @@
 import { describe, expect, it } from 'vitest';
 import {
+  coMemberTables,
+  createFakeAdmin,
+  type FakeTables,
+} from '@/test/co-member-admin-fake';
+import {
   cyclePlanningTaskSelect,
   isCurrentlyInCycle,
   isInNoWorkspaceCycle,
   type RawPlanningTask,
   toCyclePlanningTask,
+  toCyclePlanningTasksForViewer,
 } from './_cycle-planning-task';
 
 const OLDER_CYCLE = '00000000-0000-4000-8000-0000000000c1';
@@ -131,5 +137,96 @@ describe('toCyclePlanningTask cycle_id with pre-existing duplicate links', () =>
   it('returns null for a task in no cycle', () => {
     expect(toCyclePlanningTask(task([])).cycle_id).toBeNull();
     expect(toCyclePlanningTask(task(null)).cycle_id).toBeNull();
+  });
+});
+
+describe('toCyclePlanningTasksForViewer assignee names (D246)', () => {
+  const WS_ID = '00000000-0000-4000-8000-000000000001';
+  const VIEWER = 'viewer-1';
+  const raw: RawPlanningTask = {
+    ...task([]),
+    assignees: [
+      {
+        user: {
+          id: 'nameless',
+          display_name: null,
+          handle: 'nameless-handle',
+          avatar_url: null,
+        },
+      },
+      { user: { id: 'named', display_name: 'Named', avatar_url: null } },
+    ],
+  };
+  const members = [
+    { user_id: VIEWER, type: 'MEMBER' as const },
+    { user_id: 'nameless', type: 'MEMBER' as const },
+    { user_id: 'named', type: 'MEMBER' as const },
+  ];
+  const emails = [
+    { user_id: 'nameless', email: 'nameless@example.com' },
+    { user_id: 'named', email: 'named@example.com' },
+  ];
+
+  async function assigneesFor(tables: FakeTables) {
+    const [row] = await toCyclePlanningTasksForViewer([raw], {
+      admin: createFakeAdmin(tables) as never,
+      wsId: WS_ID,
+      viewerUserId: VIEWER,
+    });
+    return row?.assignees;
+  }
+
+  it('selects the public handle with each assignee', () => {
+    expect(cyclePlanningTaskSelect('backlog')).toContain(
+      'user:users(id, display_name, handle, avatar_url)'
+    );
+  });
+
+  it('shows a nameless co-member by email to a member viewer', async () => {
+    expect(
+      await assigneesFor(coMemberTables({ wsId: WS_ID, members, emails }))
+    ).toEqual([
+      {
+        id: 'nameless',
+        display_name: 'nameless@example.com',
+        avatar_url: null,
+      },
+      { id: 'named', display_name: 'Named', avatar_url: null },
+    ]);
+  });
+
+  it('keeps the handle when the workspace hides member emails', async () => {
+    const assignees = await assigneesFor(
+      coMemberTables({ wsId: WS_ID, hideEmail: true, members, emails })
+    );
+
+    expect(assignees?.[0]?.display_name).toBe('nameless-handle');
+    expect(JSON.stringify(assignees)).not.toContain('@example.com');
+  });
+
+  it('never shows the email to a guest viewer or for a non-member', async () => {
+    const asGuest = await assigneesFor(
+      coMemberTables({
+        wsId: WS_ID,
+        members: [{ user_id: VIEWER, type: 'GUEST' }, ...members.slice(1)],
+        emails,
+      })
+    );
+    const nonMemberTarget = await assigneesFor(
+      coMemberTables({ wsId: WS_ID, members: [members[0]!], emails })
+    );
+
+    expect(asGuest?.[0]?.display_name).toBe('nameless-handle');
+    expect(nonMemberTarget?.[0]?.display_name).toBe('nameless-handle');
+  });
+
+  it('skips the lookup when no task has assignees', async () => {
+    const admin = createFakeAdmin({});
+    await toCyclePlanningTasksForViewer([task([])], {
+      admin: admin as never,
+      wsId: WS_ID,
+      viewerUserId: VIEWER,
+    });
+    expect(admin.calls).toEqual([]);
   });
 });

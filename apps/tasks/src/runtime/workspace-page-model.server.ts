@@ -13,6 +13,7 @@ import type { TaskProgressView } from '@tuturuuu/tasks-ui/progress/task-progress
 import { loadTaskBoardPageModel } from '@tuturuuu/tasks-ui/tu-do/boards/boardId/task-board-page-model';
 import { loadTaskCycles } from '@tuturuuu/tasks-ui/tu-do/cycles/task-cycles-page-model';
 import { fetchUserWorkspaceCalendarGoogleTokenForClient } from '@tuturuuu/utils/calendar-auth-token';
+import { resolveCoMemberNames } from '@tuturuuu/utils/co-member-names';
 import { getLettinNotebookReferenceUrl } from '@tuturuuu/utils/lettin-task-reference';
 import { getPermissions, getWorkspace } from '@tuturuuu/utils/workspace-helper';
 import { resolveTaskBoardEntrypoint } from '../lib/tasks/task-board-entrypoint';
@@ -125,10 +126,16 @@ export async function cyclesModel(scope: Scope) {
   const permissions = await getPermissions({ user: scope.user, wsId });
   if (!permissions) notFound();
   if (permissions.withoutPermission('manage_projects')) redirect(`/${wsId}`);
-  const cycles = await loadTaskCycles(
-    await createAdminClient({ noCookie: true }),
-    wsId
-  );
+  const admin = await createAdminClient({ noCookie: true });
+  const cycles = await loadTaskCycles(admin, wsId, {
+    resolveNames: (users) =>
+      resolveCoMemberNames({
+        admin,
+        wsId,
+        viewerUserId: scope.user.id,
+        users,
+      }),
+  });
   if (!cycles) notFound();
   return { kind: 'cycles' as const, wsId, cycles };
 }

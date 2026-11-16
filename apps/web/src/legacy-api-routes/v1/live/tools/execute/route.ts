@@ -5,10 +5,12 @@ import {
   createClient,
 } from '@tuturuuu/supabase/next/server';
 import type { TablesUpdate } from '@tuturuuu/types';
+import { resolveCoMemberNames } from '@tuturuuu/utils/co-member-names';
 import { resolveUserDisplayName } from '@tuturuuu/utils/name-helper';
 import {
   getWorkspaceTier,
   normalizeWorkspaceId,
+  verifySecret,
   verifyWorkspaceMembershipType,
 } from '@tuturuuu/utils/workspace-helper';
 import { isFeatureAvailable } from '@/lib/feature-tiers';
@@ -135,7 +137,7 @@ export async function POST(req: Request) {
         result = await visualizeStatusBreakdown(normalizedWsId, user.id, args);
         break;
       case 'visualize_task_detail':
-        result = await visualizeTaskDetail(normalizedWsId, args);
+        result = await visualizeTaskDetail(normalizedWsId, user.id, args);
         break;
       case 'dismiss_visualization':
         result = {
@@ -701,14 +703,26 @@ async function getWorkspaceMembers(
     query = query.eq('pending', false);
   }
 
-  const { data, error } = await query.limit(100);
+  const [{ data, error }, hideEmail] = await Promise.all([
+    query.limit(100),
+    // D246: emails are a name fallback only when HIDE_MEMBER_EMAIL is off.
+    verifySecret({
+      wsId,
+      forceAdmin: true,
+      name: 'HIDE_MEMBER_EMAIL',
+      value: 'true',
+    }),
+  ]);
 
   if (error) throw error;
 
   return {
     members: (data || []).map((m) => ({
       id: m.id,
-      name: resolveUserDisplayName(m, { fallback: 'Unknown' }),
+      name: resolveUserDisplayName(
+        { ...m, email: hideEmail ? null : m.email },
+        { fallback: 'Unknown' }
+      ),
       avatarUrl: m.avatar_url,
       isPending: m.pending,
     })),
@@ -978,6 +992,52 @@ function getPriorityLabel(priority: string | null): string {
 
 // Visualization tool handlers
 
+type AssigneeProfile = {
+  id?: string | null;
+  display_name?: string | null;
+  handle?: string | null;
+  avatar_url?: string | null;
+};
+
+/**
+ * Names task assignees for the viewer. Nameless co-members are named by email
+ * (D246) only after the resolver's HIDE_MEMBER_EMAIL and membership checks.
+ */
+async function resolveAssigneeNames(
+  wsId: string,
+  viewerUserId: string,
+  assignees: (AssigneeProfile | null | undefined)[]
+) {
+  const users = assignees.flatMap((assignee) =>
+    assignee?.id
+      ? [
+          {
+            id: assignee.id,
+            display_name: assignee.display_name,
+            handle: assignee.handle,
+          },
+        ]
+      : []
+  );
+  if (users.length === 0) return new Map<string, string>();
+  return resolveCoMemberNames({
+    admin: await createAdminClient(),
+    wsId,
+    viewerUserId,
+    users,
+  });
+}
+
+function resolveAssigneeName(
+  assignee: AssigneeProfile | null | undefined,
+  names: Map<string, string>
+) {
+  return (
+    (assignee?.id ? names.get(assignee.id) : undefined) ||
+    resolveUserDisplayName(assignee, { fallback: 'Unknown' })
+  );
+}
+
 async function visualizeTaskList(
   normalizedWsId: string,
   userId: string,
@@ -1078,7 +1138,7 @@ async function visualizeTaskList(
     .select(
       `
       id, name, priority, end_date, completed_at,
-      task_assignees(users(display_name, handle, avatar_url))
+      task_assignees(users(id, display_name, handle, avatar_url))
     `
     )
     .in('id', taskIds)
@@ -1091,26 +1151,29 @@ async function visualizeTaskList(
     };
   }
 
-  const mappedTasks = (tasks || []).map((task) => ({
+  const taskAssignees = (tasks || []).map(
+    (task) =>
+      ((task.task_assignees as unknown[]) || []) as {
+        users?: AssigneeProfile | null;
+      }[]
+  );
+  const assigneeNames = await resolveAssigneeNames(
+    normalizedWsId,
+    userId,
+    taskAssignees.flat().map((assignee) => assignee.users)
+  );
+
+  const mappedTasks = (tasks || []).map((task, index) => ({
     id: task.id,
     name: task.name,
     priority: task.priority,
     priorityLabel: getPriorityLabel(task.priority),
     endDate: task.end_date,
     completed: !!task.completed_at,
-    assignees: ((task.task_assignees as unknown[]) || []).map((ta: unknown) => {
-      const assignee = ta as {
-        users?: {
-          display_name?: string;
-          handle?: string | null;
-          avatar_url?: string;
-        };
-      };
-      return {
-        name: resolveUserDisplayName(assignee.users, { fallback: 'Unknown' }),
-        avatarUrl: assignee.users?.avatar_url,
-      };
-    }),
+    assignees: (taskAssignees[index] || []).map((assignee) => ({
+      name: resolveAssigneeName(assignee.users, assigneeNames),
+      avatarUrl: assignee.users?.avatar_url,
+    })),
   }));
 
   return {
@@ -1364,6 +1427,7 @@ async function visualizeStatusBreakdown(
 
 async function visualizeTaskDetail(
   normalizedWsId: string,
+  viewerUserId: string,
   args: Record<string, unknown>
 ) {
   const supabase = await createClient();
@@ -1390,7 +1454,7 @@ async function visualizeTaskDetail(
       start_date,
       end_date,
       task_labels(workspace_task_labels(name, color)),
-      task_assignees(users(display_name, handle, avatar_url)),
+      task_assignees(users(id, display_name, handle, avatar_url)),
       task_lists!inner(
         name,
         workspace_boards!inner(name, ws_id)
@@ -1418,11 +1482,7 @@ async function visualizeTaskDetail(
       workspace_task_labels?: { name?: string; color?: string };
     }>;
     task_assignees?: Array<{
-      users?: {
-        display_name?: string;
-        handle?: string | null;
-        avatar_url?: string;
-      };
+      users?: AssigneeProfile | null;
     }>;
   };
 
@@ -1432,6 +1492,12 @@ async function visualizeTaskDetail(
       error: 'Task does not belong to this workspace',
     };
   }
+
+  const assigneeNames = await resolveAssigneeNames(
+    normalizedWsId,
+    viewerUserId,
+    (taskAny.task_assignees || []).map((ta) => ta.users)
+  );
 
   const taskData = {
     id: task.id,
@@ -1452,7 +1518,7 @@ async function visualizeTaskDetail(
       color: tl.workspace_task_labels?.color || '#888888',
     })),
     assignees: (taskAny.task_assignees || []).map((ta) => ({
-      name: resolveUserDisplayName(ta.users, { fallback: 'Unknown' }),
+      name: resolveAssigneeName(ta.users, assigneeNames),
       avatarUrl: ta.users?.avatar_url,
     })),
   };

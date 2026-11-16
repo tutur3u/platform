@@ -2,7 +2,9 @@ import { PlusIcon } from '@tuturuuu/icons';
 import { createAdminClient } from '@tuturuuu/supabase/next/server';
 import { Button } from '@tuturuuu/ui/button';
 import { Separator } from '@tuturuuu/ui/separator';
+import { resolveCoMemberNames } from '@tuturuuu/utils/co-member-names';
 import { resolveUserDisplayName } from '@tuturuuu/utils/name-helper';
+import { getCurrentSupabaseUser } from '@tuturuuu/utils/user-helper';
 import { getWorkspace } from '@tuturuuu/utils/workspace-helper';
 import type { Metadata } from 'next';
 import { notFound } from 'next/navigation';
@@ -33,7 +35,12 @@ export default async function WhiteboardsPage({
   }
 
   const t = await getTranslations('common');
-  const whiteboards = await getWhiteboards(workspace.id, t('unknown'));
+  const viewer = await getCurrentSupabaseUser();
+  const whiteboards = await getWhiteboards(
+    workspace.id,
+    t('unknown'),
+    viewer?.id
+  );
 
   return (
     <div className="container mx-auto space-y-6 p-6">
@@ -66,7 +73,8 @@ export default async function WhiteboardsPage({
 
 async function getWhiteboards(
   wsId: string,
-  unknownCreatorLabel: string
+  unknownCreatorLabel: string,
+  viewerUserId: string | null | undefined
 ): Promise<Whiteboard[]> {
   const supabase = await createAdminClient();
 
@@ -85,6 +93,19 @@ async function getWhiteboards(
     throw error;
   }
 
+  // Nameless co-member creators are named by email (D246); the resolver
+  // enforces HIDE_MEMBER_EMAIL and same-workspace membership.
+  const creatorNames = await resolveCoMemberNames({
+    admin: supabase,
+    wsId,
+    viewerUserId,
+    users: whiteboards.map((whiteboard) => ({
+      id: whiteboard.creator_id,
+      display_name: whiteboard.creator?.display_name,
+      handle: whiteboard.creator?.handle,
+    })),
+  });
+
   return whiteboards.map((whiteboard) => ({
     id: whiteboard.id,
     wsId,
@@ -92,9 +113,11 @@ async function getWhiteboards(
     description: whiteboard.description || undefined,
     dateCreated: new Date(whiteboard.created_at),
     lastModified: new Date(whiteboard.updated_at),
-    creatorName: resolveUserDisplayName(whiteboard.creator, {
-      fallback: unknownCreatorLabel,
-    }),
+    creatorName:
+      (whiteboard.creator ? creatorNames.get(whiteboard.creator_id) : '') ||
+      resolveUserDisplayName(whiteboard.creator, {
+        fallback: unknownCreatorLabel,
+      }),
     archivedAt: whiteboard.archived_at
       ? new Date(whiteboard.archived_at)
       : undefined,

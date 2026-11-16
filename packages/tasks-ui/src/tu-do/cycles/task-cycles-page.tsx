@@ -1,4 +1,5 @@
 import { createAdminClient } from '@tuturuuu/supabase/next/server';
+import { resolveCoMemberNames } from '@tuturuuu/utils/co-member-names';
 import { getCurrentUser } from '@tuturuuu/utils/user-helper';
 import { getPermissions, getWorkspace } from '@tuturuuu/utils/workspace-helper';
 import { notFound, redirect } from 'next/navigation';
@@ -34,7 +35,11 @@ export default async function TaskCyclesPage({ params }: Props) {
 
   // task_cycles is service-role only; the read is scoped to the workspace
   // resolved and permission-checked above.
-  const cycles = await loadTaskCycles(await createAdminClient(), wsId);
+  const admin = await createAdminClient();
+  const cycles = await loadTaskCycles(admin, wsId, {
+    resolveNames: (users) =>
+      resolveCoMemberNames({ admin, wsId, viewerUserId: user.id, users }),
+  });
   if (!cycles) notFound();
 
   return <TaskCyclesView wsId={wsId} initialCycles={cycles} />;

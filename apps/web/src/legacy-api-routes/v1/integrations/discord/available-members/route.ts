@@ -3,6 +3,7 @@ import { createClient } from '@tuturuuu/supabase/next/server';
 import { verifyWorkspaceMembershipType } from '@tuturuuu/utils/workspace-helper';
 import type { NextRequest } from 'next/server';
 import { connection, NextResponse } from 'next/server';
+import { withCoMemberDisplayNames } from '@/lib/discord/co-member-display-names';
 
 export async function GET(request: NextRequest) {
   await connection();
@@ -130,7 +131,13 @@ export async function GET(request: NextRequest) {
       );
     }
 
-    return NextResponse.json({ data: availableMembers });
+    const data = await withCoMemberDisplayNames({
+      rows: availableMembers ?? [],
+      viewerUserId: user.id,
+      wsId,
+    });
+
+    return NextResponse.json({ data });
   } catch (error) {
     console.error('Error in available members GET:', error);
     return NextResponse.json(

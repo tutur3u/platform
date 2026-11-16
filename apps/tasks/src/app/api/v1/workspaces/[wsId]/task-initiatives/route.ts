@@ -8,6 +8,10 @@ import type { NextRequest } from 'next/server';
 import { NextResponse } from 'next/server';
 import { z } from 'zod';
 import { withSessionAuth } from '@/lib/api-auth';
+import {
+  resolveCoMemberDisplayNames,
+  withCoMemberDisplayName,
+} from '@/lib/co-member-display-names';
 
 const initiativeStatusSchema = z.enum([
   'active',
@@ -38,6 +42,7 @@ type InitiativeRow = {
   creator: {
     id: string;
     display_name: string | null;
+    handle?: string | null;
     avatar_url: string | null;
   } | null;
   task_project_initiatives:
@@ -52,14 +57,19 @@ type InitiativeRow = {
     | null;
 };
 
-const serializeInitiatives = (rows: InitiativeRow[]) =>
+const serializeInitiatives = (
+  rows: InitiativeRow[],
+  names: ReadonlyMap<string, string> = new Map()
+) =>
   rows.map((initiative) => ({
     id: initiative.id,
     name: initiative.name,
     description: initiative.description,
     status: initiative.status,
     created_at: initiative.created_at,
-    creator: initiative.creator,
+    creator: initiative.creator
+      ? withCoMemberDisplayName(initiative.creator, names)
+      : null,
     projectsCount: initiative.task_project_initiatives?.length ?? 0,
     linkedProjects:
       initiative.task_project_initiatives?.flatMap((link) =>
@@ -98,6 +108,7 @@ export const GET = withSessionAuth<{ wsId: string }>(
           creator:users!task_initiatives_creator_id_fkey(
             id,
             display_name,
+            handle,
             avatar_url
           ),
           task_project_initiatives(
@@ -121,9 +132,17 @@ export const GET = withSessionAuth<{ wsId: string }>(
         );
       }
 
-      return NextResponse.json(
-        serializeInitiatives((initiatives ?? []) as InitiativeRow[])
-      );
+      const rows = (initiatives ?? []) as InitiativeRow[];
+      const names = await resolveCoMemberDisplayNames({
+        admin: sbAdmin,
+        wsId,
+        viewerUserId: user.id,
+        users: rows.flatMap((initiative) =>
+          initiative.creator ? [initiative.creator] : []
+        ),
+      });
+
+      return NextResponse.json(serializeInitiatives(rows, names));
     } catch (error) {
       console.error(
         'Error in GET /api/v1/workspaces/[wsId]/task-initiatives:',

@@ -1,6 +1,7 @@
 import { createClient } from '@tuturuuu/supabase/next/server';
 import FeatureSummary from '@tuturuuu/ui/custom/feature-summary';
 import { Separator } from '@tuturuuu/ui/separator';
+import { getCurrentUser } from '@tuturuuu/utils/user-helper';
 import { getPermissions } from '@tuturuuu/utils/workspace-helper';
 import type { Metadata } from 'next';
 import { notFound } from 'next/navigation';
@@ -8,6 +9,7 @@ import { getTranslations } from 'next-intl/server';
 import { z } from 'zod';
 import { CustomDataTable } from '@/components/custom-data-table';
 import WorkspaceWrapper from '@/components/workspace-wrapper';
+import { withAddedByNames } from './added-by-names';
 import { getEmailBlacklistColumns } from './columns';
 import Filters from './filters';
 import EmailBlacklistForm from './form';
@@ -59,7 +61,15 @@ export default async function EmailBlacklistPage({
 
         const sp = SearchParamsSchema.parse(await searchParams);
 
-        const { data, count } = await getData(sp);
+        const [{ data: rows, count }, viewer] = await Promise.all([
+          getData(sp),
+          getCurrentUser(),
+        ]);
+        const data = await withAddedByNames({
+          rows,
+          viewerUserId: viewer?.id,
+          wsId,
+        });
 
         return (
           <>
@@ -111,7 +121,8 @@ async function getData({
       *,
       users:added_by_user_id (
         id,
-        display_name
+        display_name,
+        handle
       )
     `,
       {

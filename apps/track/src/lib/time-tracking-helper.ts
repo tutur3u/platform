@@ -4,6 +4,7 @@ import {
   createClient,
 } from '@tuturuuu/supabase/next/server';
 import type { TimeTrackingSession } from '@tuturuuu/types';
+import { resolveCoMemberNames } from '@tuturuuu/utils/co-member-names';
 import { resolveUserDisplayName } from '@tuturuuu/utils/name-helper';
 import dayjs from 'dayjs';
 import isoWeek from 'dayjs/plugin/isoWeek';
@@ -93,6 +94,25 @@ export interface DailyActivity {
 }
 
 export const getGroupedSessionsPaginated = async (
+  wsId: string,
+  period: 'day' | 'week' | 'month' = 'day',
+  params: PaginationParams = {},
+  client?: TypedSupabaseClient,
+  viewer: GroupedSessionViewerOptions = {}
+): Promise<PaginatedResult<GroupedSession>> => {
+  const result = await fetchGroupedSessionsPaginated(
+    wsId,
+    period,
+    params,
+    client
+  );
+  return {
+    ...result,
+    data: await applyCoMemberGroupNames(result.data, { wsId, ...viewer }),
+  };
+};
+
+const fetchGroupedSessionsPaginated = async (
   wsId: string,
   period: 'day' | 'week' | 'month' = 'day',
   params: PaginationParams = {},
@@ -191,7 +211,7 @@ const getFallbackGroupedSessions = async (
       .select(`
         *,
         category:time_tracking_categories(name, color),
-        user:users(display_name, avatar_url)
+        user:users(display_name, handle, avatar_url)
       `)
       .eq('ws_id', wsId)
       .order('start_time', { ascending: false });
@@ -426,10 +446,83 @@ export const getDailyActivityHeatmap = async (
   }
 };
 
+export interface GroupedSessionViewerOptions {
+  /**
+   * The authenticated viewer. When set, nameless co-members are named by
+   * their email (D246) after the HIDE_MEMBER_EMAIL and membership checks.
+   */
+  viewerUserId?: string | null;
+  /** Service-role client to reuse; created on demand otherwise. */
+  admin?: TypedSupabaseClient;
+}
+
+/**
+ * Names groups whose user has no display name with the co-member resolver
+ * (display name -> email -> handle). Emails only ever land in the name and
+ * title strings, never in a separate field. Fails closed to the input.
+ */
+export const applyCoMemberGroupNames = async (
+  groups: GroupedSession[],
+  { wsId, viewerUserId, admin }: { wsId: string } & GroupedSessionViewerOptions
+): Promise<GroupedSession[]> => {
+  if (!viewerUserId) return groups;
+
+  const sessionIds = [
+    ...new Set(
+      groups
+        .filter((group) => !group.user.displayName?.trim())
+        .map((group) => group.sessions[0]?.id)
+        .filter((id): id is string => Boolean(id))
+    ),
+  ];
+  if (sessionIds.length === 0) return groups;
+
+  try {
+    const sbAdmin = admin ?? (await createAdminClient());
+    const { data, error } = await sbAdmin
+      .from('time_tracking_sessions')
+      .select('id, user_id, user:users(display_name, handle)')
+      .eq('ws_id', wsId)
+      .in('id', sessionIds);
+    if (error || !data?.length) return groups;
+
+    const userIdBySessionId = new Map(data.map((row) => [row.id, row.user_id]));
+    const names = await resolveCoMemberNames({
+      admin: sbAdmin,
+      wsId,
+      viewerUserId,
+      users: data.map((row) => ({
+        id: row.user_id,
+        display_name: row.user?.display_name,
+        handle: row.user?.handle,
+      })),
+    });
+
+    return groups.map((group) => {
+      if (group.user.displayName?.trim()) return group;
+      const userId = userIdBySessionId.get(group.sessions[0]?.id ?? '');
+      const name = userId ? names.get(userId) : undefined;
+      if (!name) return group;
+      return {
+        ...group,
+        title: `${name} - ${group.period}`,
+        user: { ...group.user, displayName: name },
+      };
+    });
+  } catch (error) {
+    console.error('Failed to resolve co-member session names:', error);
+    return groups;
+  }
+};
+
 // Legacy function - now calls the paginated function for backwards compatibility
 export const groupSessions = (
   sessions: (TimeTrackingSession & {
-    user?: { display_name?: string | null; avatar_url?: string | null };
+    user?: {
+      display_name?: string | null;
+      handle?: string | null;
+      avatar_url?: string | null;
+    };
   })[],
   period: 'day' | 'week' | 'month' = 'day',
   userTimezone?: string
@@ -445,7 +538,11 @@ export const groupSessions = (
       title: string;
       category: null;
       sessions: (TimeTrackingSession & {
-        user?: { display_name?: string | null; avatar_url?: string | null };
+        user?: {
+          display_name?: string | null;
+          handle?: string | null;
+          avatar_url?: string | null;
+        };
       })[];
       totalDuration: number;
       periodDuration: number;

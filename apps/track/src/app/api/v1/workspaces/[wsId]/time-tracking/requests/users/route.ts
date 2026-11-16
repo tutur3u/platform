@@ -1,5 +1,5 @@
 import { createAdminClient } from '@tuturuuu/supabase/next/server';
-import { resolveUserDisplayName } from '@tuturuuu/utils/name-helper';
+import { resolveCoMemberNames } from '@tuturuuu/utils/co-member-names';
 import {
   getPermissions,
   normalizeWorkspaceId,
@@ -83,23 +83,48 @@ export async function GET(
     if (error) throw error;
 
     const requestRows = (requests ?? []) as TimeTrackingRequestUserRow[];
+    const requesters = new Map<string, TimeTrackingRequestUserRow['user']>();
+    for (const row of requestRows) {
+      if (row.user && row.user_id && !requesters.has(row.user_id)) {
+        requesters.set(row.user_id, row.user);
+      }
+    }
+    const requesterIds = [...requesters.keys()];
+
+    // Public handles back up nameless requesters. The view's private email is
+    // never forwarded; co-member emails only appear as the resolved name.
+    const { data: profiles, error: profilesError } = requesterIds.length
+      ? await sbAdmin
+          .from('users')
+          .select('id, display_name, handle')
+          .in('id', requesterIds)
+      : { data: [], error: null };
+    if (profilesError) throw profilesError;
+
+    const profilesById = new Map(
+      (profiles ?? []).map((profile) => [profile.id, profile])
+    );
+    const names = await resolveCoMemberNames({
+      admin: sbAdmin,
+      wsId: normalizedWsId,
+      viewerUserId: user.id,
+      users: requesterIds.map((id) => {
+        const profile = profilesById.get(id);
+        return {
+          id,
+          display_name:
+            requesters.get(id)?.display_name ?? profile?.display_name,
+          handle: profile?.handle,
+        };
+      }),
+      options: { fallback: 'Unknown' },
+    });
 
     // Extract unique users
-    const uniqueUsers = Array.from(
-      new Map(
-        requestRows
-          ?.filter((r) => r.user)
-          .map((r) => [
-            r.user_id,
-            {
-              id: r.user_id,
-              display_name: resolveUserDisplayName(r.user, {
-                fallback: 'Unknown',
-              }),
-            },
-          ]) || []
-      ).values()
-    );
+    const uniqueUsers = requesterIds.map((id) => ({
+      id,
+      display_name: names.get(id) || 'Unknown',
+    }));
 
     return NextResponse.json(uniqueUsers);
   } catch (error) {

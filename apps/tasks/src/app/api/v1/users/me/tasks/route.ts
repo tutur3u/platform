@@ -7,8 +7,13 @@ import {
   isPersonallyHidden,
   resolveEffectiveValues,
 } from '@tuturuuu/utils/task-overrides';
+import { createAdminClient } from '@tuturuuu/supabase/next/server';
 import { NextResponse } from 'next/server';
 import { withSessionAuth } from '@/lib/api-auth';
+import {
+  resolveCoMemberDisplayNames,
+  withCoMemberDisplayName,
+} from '@/lib/co-member-display-names';
 import { normalizeWorkspaceId } from '@/lib/workspace-helper';
 
 const TASKS_APP_SESSION_AUTH = {
@@ -52,6 +57,67 @@ interface RpcTaskRow {
   assignees_data: Array<{ user: Record<string, unknown> | null }>;
   labels_data: Array<{ label: Record<string, unknown> | null }>;
   projects_data: Array<{ project: Record<string, unknown> | null }>;
+}
+
+type AssigneeUser = {
+  id?: string | null;
+  display_name?: string | null;
+};
+
+function rowWorkspaceId(row: RpcTaskRow) {
+  const board = (row.list_data as { board?: { ws_id?: unknown } } | null)
+    ?.board;
+  return typeof board?.ws_id === 'string' ? board.ws_id : null;
+}
+
+function rowAssigneeUsers(row: RpcTaskRow) {
+  return (row.assignees_data ?? [])
+    .map((entry) => entry.user as AssigneeUser | null)
+    .filter((user): user is AssigneeUser => Boolean(user?.id));
+}
+
+/**
+ * Assignee names per task workspace (D246): a co-member without a name is
+ * shown by email only to members of the task's own workspace. Tasks span
+ * workspaces here, so each workspace is resolved on its own.
+ */
+async function resolveAssigneeNamesByWorkspace(
+  rows: RpcTaskRow[],
+  viewerUserId: string
+) {
+  const usersByWorkspace = new Map<string, AssigneeUser[]>();
+  for (const row of rows) {
+    const wsId = rowWorkspaceId(row);
+    if (!wsId) continue;
+    const users = rowAssigneeUsers(row);
+    if (users.length === 0) continue;
+    usersByWorkspace.set(wsId, [
+      ...(usersByWorkspace.get(wsId) ?? []),
+      ...users,
+    ]);
+  }
+
+  const namesByWorkspace = new Map<string, Map<string, string>>();
+  if (usersByWorkspace.size === 0) return namesByWorkspace;
+
+  const admin = await createAdminClient();
+  await Promise.all(
+    [...usersByWorkspace].map(async ([wsId, users]) => {
+      namesByWorkspace.set(
+        wsId,
+        await resolveCoMemberDisplayNames({
+          admin,
+          wsId,
+          viewerUserId,
+          users: users.map((user) => ({
+            id: user.id,
+            display_name: user.display_name ?? null,
+          })),
+        })
+      );
+    })
+  );
+  return namesByWorkspace;
 }
 
 export const GET = withSessionAuth(
@@ -117,6 +183,11 @@ export const GET = withSessionAuth(
       const boardListOverrides: UserBoardListOverride[] =
         (boardListOverridesResult.data as UserBoardListOverride[] | null) ?? [];
 
+      const assigneeNames = await resolveAssigneeNamesByWorkspace(
+        rpcTasks as RpcTaskRow[],
+        user.id
+      );
+
       // Map RPC results to TaskWithRelations shape
       const allTasksWithRelations = (rpcTasks as RpcTaskRow[]).map((row) => {
         const override: TaskUserOverride | null =
@@ -175,8 +246,18 @@ export const GET = withSessionAuth(
           created_at: row.task_created_at,
           ...scheduling,
           list: row.list_data as TaskWithRelations['list'],
-          assignees: (row.assignees_data ??
-            []) as TaskWithRelations['assignees'],
+          assignees: (row.assignees_data ?? []).map((entry) => {
+            const names = assigneeNames.get(rowWorkspaceId(row) ?? '');
+            return entry.user && names
+              ? {
+                  ...entry,
+                  user: withCoMemberDisplayName(
+                    entry.user as AssigneeUser,
+                    names
+                  ),
+                }
+              : entry;
+          }) as TaskWithRelations['assignees'],
           labels: (row.labels_data ?? []) as TaskWithRelations['labels'],
           projects: (row.projects_data ?? []) as TaskWithRelations['projects'],
           overrides: override,

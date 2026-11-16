@@ -1,7 +1,12 @@
+import type { TypedSupabaseClient } from '@tuturuuu/supabase/types';
 import {
   currentCycleLink,
   isWorkspaceCycle,
 } from '@tuturuuu/tasks-ui/tu-do/cycles/task-cycles-page-model';
+import {
+  resolveCoMemberDisplayNames,
+  withCoMemberDisplayName,
+} from '@/lib/co-member-display-names';
 
 /**
  * Row shape shared by the cycle-task and backlog endpoints. Mirrors
@@ -49,7 +54,7 @@ export function cyclePlanningTaskSelect(scope: 'cycle' | 'backlog') {
       board:workspace_boards!inner(id, ws_id, ticket_prefix, deleted_at, archived_at)
     ),${scope === 'cycle' ? '\n    in_cycle:task_cycle_tasks!inner(cycle_id),' : ''}
     cycle_links:task_cycle_tasks!left(cycle_id, created_at, cycle:task_cycles!inner(*)),
-    assignees:task_assignees(user:users(id, display_name, avatar_url)),
+    assignees:task_assignees(user:users(id, display_name, handle, avatar_url)),
     projects:task_project_tasks(project:task_projects(id, name)),
     labels:task_labels(label:workspace_task_labels(id, name))
   `;
@@ -90,6 +95,7 @@ export interface RawPlanningTask {
       user: Maybe<{
         id: string;
         display_name: Maybe<string>;
+        handle?: Maybe<string>;
         avatar_url: Maybe<string>;
       }>;
     }[]
@@ -127,7 +133,8 @@ export function isInNoWorkspaceCycle(raw: RawPlanningTask) {
 }
 
 export function toCyclePlanningTask(
-  raw: RawPlanningTask
+  raw: RawPlanningTask,
+  names: ReadonlyMap<string, string> = new Map()
 ): CyclePlanningTaskRow {
   return {
     id: raw.id,
@@ -141,14 +148,55 @@ export function toCyclePlanningTask(
     assignees: (raw.assignees ?? [])
       .map((entry) => entry.user)
       .filter(present)
-      .map((user) => ({
-        id: user.id,
-        display_name: user.display_name ?? null,
-        avatar_url: user.avatar_url ?? null,
-      })),
+      .map((user) =>
+        withCoMemberDisplayName(
+          {
+            id: user.id,
+            display_name: user.display_name ?? null,
+            avatar_url: user.avatar_url ?? null,
+          },
+          names
+        )
+      ),
     projects: (raw.projects ?? [])
       .map((entry) => entry.project)
       .filter(present),
     labels: (raw.labels ?? []).map((entry) => entry.label).filter(present),
   };
+}
+
+/**
+ * Planning rows with assignee names resolved for this viewer: co-members
+ * without a name are shown by email (D246). The name lands in the existing
+ * `display_name`; no email field is added.
+ */
+export async function toCyclePlanningTasksForViewer(
+  raws: RawPlanningTask[],
+  {
+    admin,
+    wsId,
+    viewerUserId,
+  }: {
+    admin: TypedSupabaseClient;
+    wsId: string;
+    viewerUserId: string;
+  }
+): Promise<CyclePlanningTaskRow[]> {
+  const users = raws.flatMap((raw) =>
+    (raw.assignees ?? []).map((entry) => entry.user).filter(present)
+  );
+  const names =
+    users.length > 0
+      ? await resolveCoMemberDisplayNames({
+          admin,
+          wsId,
+          viewerUserId,
+          users: users.map((user) => ({
+            id: user.id,
+            display_name: user.display_name ?? null,
+            handle: user.handle ?? null,
+          })),
+        })
+      : new Map<string, string>();
+  return raws.map((raw) => toCyclePlanningTask(raw, names));
 }

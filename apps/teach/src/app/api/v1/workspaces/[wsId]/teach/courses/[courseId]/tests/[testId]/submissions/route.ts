@@ -2,7 +2,7 @@ import {
   requireTeachWorkspaceAccess,
   validateTeachCourse,
 } from '@tuturuuu/education-core/teach/api';
-import { resolveUserDisplayName } from '@tuturuuu/utils/name-helper';
+import { resolveCoMemberNames } from '@tuturuuu/utils/co-member-names';
 import { NextResponse } from 'next/server';
 import { z } from 'zod';
 import { withSessionAuth } from '@/lib/api-auth';
@@ -111,12 +111,15 @@ export const GET = withSessionAuth(
       .select('id, display_name, handle')
       .in('id', userIds);
 
-    const userMap = new Map(
-      (users ?? []).map((u) => [
-        u.id,
-        resolveUserDisplayName(u, { fallback: 'Unknown' }),
-      ])
-    );
+    // Nameless co-members are named by email (D246) after the resolver's
+    // HIDE_MEMBER_EMAIL and membership checks; no email field is sent.
+    const userMap = await resolveCoMemberNames({
+      admin: access.sbAdmin,
+      wsId: access.normalizedWsId,
+      viewerUserId: access.userId,
+      users: users ?? [],
+      options: { fallback: 'Unknown' },
+    });
 
     const { data: testQuizzes, error: testQuizzesErr } = await access.sbAdmin
       .from('course_test_quizzes')

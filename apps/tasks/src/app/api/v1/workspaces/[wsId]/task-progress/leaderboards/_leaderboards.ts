@@ -1,3 +1,4 @@
+import { resolveCoMemberDisplayNames } from '@/lib/co-member-display-names';
 import {
   isAutonomousTaskMetric,
   loadAutonomousTaskProgressEntries,
@@ -24,6 +25,60 @@ function sparklineDates(periodEnd: string | null): string[] {
       new Date(endDate.getTime() - (SPARKLINE_DAYS - 1 - index) * DAY_MS)
     )
   );
+}
+
+/**
+ * Names for leaderboard members without a leaderboard alias: the profile
+ * display name, else (D246) the email of a co-member, else the handle.
+ * Resolved for the viewer on the server; only the name string is returned.
+ */
+export async function resolveLeaderboardMemberNames(
+  auth: TaskProgressRouteAuth,
+  userIds: readonly string[]
+): Promise<Map<string, string>> {
+  const ids = [...new Set(userIds.filter(Boolean))];
+  if (ids.length === 0) return new Map();
+
+  const { data: users, error } = await (auth.sbAdmin as any)
+    .from('users')
+    .select('id, display_name, handle')
+    .in('id', ids);
+  // Names are cosmetic: a failed lookup keeps the stored names.
+  if (error) return new Map();
+
+  const profiles = new Map<
+    string,
+    { display_name?: string | null; handle?: string | null }
+  >(
+    (users ?? []).map(
+      (user: {
+        id: string;
+        display_name?: string | null;
+        handle?: string | null;
+      }) => [user.id, user]
+    )
+  );
+  return resolveCoMemberDisplayNames({
+    admin: auth.sbAdmin,
+    wsId: auth.wsId,
+    viewerUserId: auth.user.id,
+    users: ids.map((id) => ({
+      id,
+      display_name: profiles.get(id)?.display_name ?? null,
+      handle: profiles.get(id)?.handle ?? null,
+    })),
+  });
+}
+
+function withMemberName(
+  member: Record<string, any>,
+  names: ReadonlyMap<string, string>
+) {
+  if (typeof member.display_name === 'string' && member.display_name.trim()) {
+    return member;
+  }
+  const name = names.get(member.user_id);
+  return name ? { ...member, display_name: name } : member;
 }
 
 export async function hydrateLeaderboards(
@@ -72,6 +127,23 @@ export async function hydrateLeaderboards(
         if (result.error) throw result.error;
       }
 
+      const rawMembers: Record<string, any>[] = membersResult.data ?? [];
+      const memberNames = await resolveLeaderboardMemberNames(
+        auth,
+        rawMembers
+          .filter(
+            (member) =>
+              !(
+                typeof member.display_name === 'string' &&
+                member.display_name.trim()
+              )
+          )
+          .map((member) => member.user_id)
+      );
+      const members = rawMembers.map((member) =>
+        withMemberName(member, memberNames)
+      );
+
       const progressEntries =
         leaderboard.metric && isAutonomousTaskMetric(leaderboard.metric)
           ? await loadAutonomousTaskProgressEntries(auth, leaderboard.metric, {
@@ -98,7 +170,7 @@ export async function hydrateLeaderboards(
 
       const sparkDates = sparklineDates(leaderboard.period_end ?? null);
 
-      const rankings = (membersResult.data ?? [])
+      const rankings = members
         .map((member: Record<string, any>) => ({
           ...member,
           value: totalsByUser.get(member.user_id) ?? 0,
@@ -137,13 +209,13 @@ export async function hydrateLeaderboards(
             Number(b.value ?? 0) - Number(a.value ?? 0)
         );
 
-      const joined = (membersResult.data ?? []).some(
+      const joined = members.some(
         (member: Record<string, any>) => member.user_id === auth.user.id
       );
 
       return {
         ...leaderboard,
-        members: membersResult.data ?? [],
+        members,
         teams: teamsResult.data ?? [],
         rankings,
         teamTotals,

@@ -1,3 +1,4 @@
+import { createAdminClient } from '@tuturuuu/supabase/next/server';
 import { countCurrentCycleTasks } from '@tuturuuu/tasks-ui/tu-do/cycles/task-cycles-page-model';
 import {
   MAX_MEDIUM_TEXT_LENGTH,
@@ -8,6 +9,10 @@ import type { NextRequest } from 'next/server';
 import { NextResponse } from 'next/server';
 import { z } from 'zod';
 import { resolveAuthenticatedSessionUser } from '@/lib/app-session-user';
+import {
+  resolveCoMemberDisplayNames,
+  withCoMemberDisplayName,
+} from '@/lib/co-member-display-names';
 
 const cycleStatusSchema = z.enum([
   'planned',
@@ -45,13 +50,17 @@ type CycleRow = {
   creator: {
     id: string;
     display_name: string | null;
+    handle?: string | null;
     avatar_url: string | null;
   } | null;
   task_cycle_tasks: { task_id: string; created_at: string | null }[] | null;
 };
 
 // A task linked to several workspace cycles counts only in its newest one.
-const serializeCycles = (rows: CycleRow[]) => {
+const serializeCycles = (
+  rows: CycleRow[],
+  names: ReadonlyMap<string, string> = new Map()
+) => {
   const counts = countCurrentCycleTasks(rows);
   return rows.map((cycle) => ({
     id: cycle.id,
@@ -61,7 +70,16 @@ const serializeCycles = (rows: CycleRow[]) => {
     start_date: cycle.start_date,
     end_date: cycle.end_date,
     created_at: cycle.created_at,
-    creator: cycle.creator,
+    creator: cycle.creator
+      ? withCoMemberDisplayName(
+          {
+            id: cycle.creator.id,
+            display_name: cycle.creator.display_name,
+            avatar_url: cycle.creator.avatar_url,
+          },
+          names
+        )
+      : null,
     tasksCount: counts.get(cycle.id) ?? 0,
   }));
 };
@@ -107,6 +125,7 @@ export async function GET(
           creator:users!task_cycles_creator_id_fkey(
             id,
             display_name,
+            handle,
             avatar_url
           ),
           task_cycle_tasks(
@@ -126,7 +145,21 @@ export async function GET(
       );
     }
 
-    return NextResponse.json(serializeCycles((cycles ?? []) as CycleRow[]));
+    const rows = (cycles ?? []) as CycleRow[];
+    const creators = rows.flatMap((cycle) =>
+      cycle.creator ? [cycle.creator] : []
+    );
+    const names =
+      creators.length > 0
+        ? await resolveCoMemberDisplayNames({
+            admin: await createAdminClient(),
+            wsId,
+            viewerUserId: user.id,
+            users: creators,
+          })
+        : new Map<string, string>();
+
+    return NextResponse.json(serializeCycles(rows, names));
   } catch (error) {
     console.error('Error in GET /api/v1/workspaces/[wsId]/task-cycles:', error);
     return NextResponse.json(

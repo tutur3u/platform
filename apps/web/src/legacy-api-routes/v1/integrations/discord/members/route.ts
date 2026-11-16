@@ -6,6 +6,7 @@ import { verifyWorkspaceMembershipType } from '@tuturuuu/utils/workspace-helper'
 import type { NextRequest } from 'next/server';
 import { NextResponse } from 'next/server';
 import { z } from 'zod';
+import { withCoMemberDisplayNames } from '@/lib/discord/co-member-display-names';
 
 // Custom UUID validation that accepts all valid UUID formats
 const uuidSchema = z
@@ -142,7 +143,13 @@ export async function GET(request: NextRequest) {
       );
     }
 
-    return NextResponse.json({ data: guildMembers });
+    const data = await withCoMemberDisplayNames({
+      rows: guildMembers ?? [],
+      viewerUserId: user.id,
+      wsId,
+    });
+
+    return NextResponse.json({ data });
   } catch (error) {
     console.error('Error in Discord members GET:', error);
     return NextResponse.json(
@@ -318,7 +325,13 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    return NextResponse.json({ data: newMember });
+    const [data] = await withCoMemberDisplayNames({
+      rows: [newMember],
+      viewerUserId: user.id,
+      wsId,
+    });
+
+    return NextResponse.json({ data });
   } catch (error) {
     console.error('Error in Discord members POST:', error);
     return NextResponse.json(
