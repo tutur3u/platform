@@ -1,5 +1,7 @@
 # Tuturuuu Microsoft Store listing draft
 
+> Superseded for listing copy. Edit `apps/mobile/store/metadata/windows.json` (EN and VI). That file is what Partner Center and `/roadmap` use. The English and Tiếng Việt sections below are the old short draft and must not be pasted again. Reviewer notes in this file stay.
+
 Product: `9N7B6VC7RR7W` · Publisher: Tuturuuu · Category: Productivity
 Privacy policy: https://tuturuuu.com/privacy
 Support: https://tuturuuu.com/contact

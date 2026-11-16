@@ -273,6 +273,7 @@ for (const failure of [false, true])
     const root = await mkdtemp(join(tmpdir(), 'desktop-private-test-'));
     let child;
     let path;
+    let info;
     try {
       const promise = signVaultBundle(
         { ...host(), DESKTOP_PLATFORM: 'macos', RUNNER_TEMP: root },
@@ -282,7 +283,7 @@ for (const failure of [false, true])
           sign: async (env) => {
             child = env;
             path = env.DESKTOP_SIGNING_TEMP;
-            assert.equal((await stat(path)).mode & 0o777, 0o700);
+            info = await stat(path);
             assert.equal(env.RUNNER_TEMP, root);
             if (failure) throw new Error('raw secret child error');
           },
@@ -293,6 +294,10 @@ for (const failure of [false, true])
           message: 'Desktop vault signing failed; no package was published',
         });
       else await promise;
+      assert.equal(info.isDirectory(), true);
+      // windows-latest runs this macOS chmod path, but it does not store Unix mode bits.
+      if (process.platform !== 'win32')
+        assert.equal(info.mode & 0o777, 0o700);
       assert.deepEqual(Object.keys(child), []);
       await assert.rejects(stat(path), { code: 'ENOENT' });
     } finally {
