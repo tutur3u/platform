@@ -33,7 +33,7 @@ describe('playground route surface', () => {
       .map(routePath)
       .sort();
 
-    expect(pages).toEqual(['/', '/tool-calling']);
+    expect(pages).toEqual(['/', '/demo/[product]']);
   });
 
   it('serves exactly the inventoried local route handlers', () => {
@@ -42,11 +42,7 @@ describe('playground route surface', () => {
       .map(routePath)
       .sort();
 
-    expect(handlers).toEqual([
-      '/api/ai/object-generation',
-      '/api/ai/tool-calling',
-      '/api/build-info',
-    ]);
+    expect(handlers).toEqual(['/api/build-info']);
   });
 
   it('keeps one root layout and the shared status pages', () => {
@@ -67,12 +63,12 @@ describe('playground route surface', () => {
     ]);
   });
 
-  it('has no catch-all or dynamic segments that could shadow proxied /api paths', () => {
+  it('allows only the inventoried demo parameter and no catch-all that could shadow /api paths', () => {
     const dynamicSegments = walk(APP_DIR)
       .map((path) => toPosix(relative(APP_DIR, path)))
       .filter((path) => path.includes('['));
 
-    expect(dynamicSegments).toEqual([]);
+    expect(dynamicSegments.sort()).toEqual(['demo/[product]/page.tsx']);
   });
 
   it('declares no server actions', () => {
@@ -116,7 +112,7 @@ describe('playground isolation: no execution surface', () => {
     expect(offenders).toEqual([]);
   });
 
-  it('only fetches same-origin relative /api paths from client code', () => {
+  it('declares no client fetch targets', () => {
     const clientFiles = sourceFiles.filter((path) =>
       /^\s*['"]use client['"]/m.test(readFileSync(path, 'utf8'))
     );
@@ -126,10 +122,7 @@ describe('playground isolation: no execution surface', () => {
       )
     );
 
-    expect(fetchTargets.sort()).toEqual([
-      "'/api/ai/object-generation'",
-      "'/api/ai/tool-calling'",
-    ]);
+    expect(fetchTargets).toEqual([]);
   });
 
   it('reads no server secrets from client code', () => {
