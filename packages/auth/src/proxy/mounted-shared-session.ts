@@ -7,6 +7,11 @@ import { NextResponse } from 'next/server';
 import { hasSupportedSupabaseAuthCookie } from '../app-session';
 import { authRedirect } from './central-login-url';
 import {
+  mountedSessionFailureResponse,
+  nonExpiringCookieCarrier,
+  withoutExpiringCookies,
+} from './mounted-failure';
+import {
   copySetCookieHeaders,
   createNextResponseWithRequestHeaders,
   getSetCookieHeaders,
@@ -20,7 +25,8 @@ import { hasVerifiedTotpFactor } from './verified-request-user';
  * Opt-in `supabase-only` session mode for an app mounted on the apex
  * (`https://tuturuuu.com/<app>`). It accepts only the shared provider session:
  * app-session cookies and Authorization are discarded, the signed-refresh
- * fallback is never used, and enrolled MFA users fail closed.
+ * fallback is never used, and enrolled MFA users fail closed. A refusal never
+ * carries a provider refresh's cookie deletions, because Web owns those cookies.
  */
 export type MountedSharedSessionOptions = {
   mode: 'supabase-only';
@@ -46,6 +52,10 @@ function trustedSharedMount(req: NextRequest, targetApp: AppName | string) {
   );
 }
 
+function refused(error: string, res: NextResponse): AppSessionRefreshState {
+  return { ok: false, error, response: withoutExpiringCookies(res) };
+}
+
 export async function resolveMountedSharedSession(
   req: NextRequest,
   options: { now: Date; targetApp: AppName | string }
@@ -67,29 +77,27 @@ export async function resolveMountedSharedSession(
     record.exp <= Math.floor(options.now.getTime() / 1000) ||
     (record.aal !== undefined && record.aal !== 'aal1' && record.aal !== 'aal2')
   )
-    return { ok: false, error: UNAVAILABLE, response: res };
+    return refused(UNAVAILABLE, res);
 
   const assurance = await enforceRequiredMfaRequest(req);
   if (assurance)
-    return {
-      ok: false,
-      error:
-        assurance.status === 503
-          ? 'Account assurance unavailable'
-          : 'MFA required',
-      response: res,
-    };
+    return refused(
+      assurance.status === 503
+        ? 'Account assurance unavailable'
+        : 'MFA required',
+      res
+    );
   // Enrolled MFA users stay closed until the timestamp-aware verified-claims
   // assurance contract is available to mounted browser sessions.
   if (await hasVerifiedTotpFactor(req, record.sub))
-    return { ok: false, error: 'MFA required', response: res };
+    return refused('MFA required', res);
 
   const appClaims = await createAppSessionClaimsFromSupabaseClaims(claims, {
     now: options.now,
     request: req,
     targetApp: options.targetApp,
   });
-  if (!appClaims) return { ok: false, error: 'MFA required', response: res };
+  if (!appClaims) return refused('MFA required', res);
 
   const requestHeaders = new Headers(req.headers);
   const response = createNextResponseWithRequestHeaders(requestHeaders);
@@ -148,8 +156,10 @@ export function mountedVerifyDestination(req: NextRequest, basePath: string) {
 
 /**
  * The mounted verify-token step: a valid shared session redirects into the
- * mount; otherwise the central login returns here. `refresh` is the caller's
- * logout-fenced session resolver. Redirects are 307 with `private, no-store`.
+ * mount; otherwise the central login returns here. An unavailable refresh or
+ * assurance check answers here instead, since the still-valid central session
+ * would send the login straight back. `refresh` is the caller's logout-fenced
+ * session resolver. Redirects are 307 with `private, no-store`.
  */
 export async function consumeMountedSharedSession(
   req: NextRequest,
@@ -171,6 +181,12 @@ export async function consumeMountedSharedSession(
     sessionMode: options.mode,
     targetApp: options.targetApp,
   });
+  if (
+    !session.ok &&
+    (session.error === 'Account assurance unavailable' ||
+      session.error === 'App session refresh unavailable')
+  )
+    return mountedSessionFailureResponse(req, session.error, session.response);
   if (!session.ok) {
     const login = new URL('/login', options.webAppUrl);
     if (
@@ -191,8 +207,7 @@ export async function consumeMountedSharedSession(
     if (session.error === 'MFA required')
       login.searchParams.set('mfa', 'required');
     const response = authRedirect(login);
-    if (session.response instanceof NextResponse)
-      propagateAuthCookies(session.response, response);
+    propagateAuthCookies(nonExpiringCookieCarrier(session.response), response);
     return response;
   }
   const response = authRedirect(

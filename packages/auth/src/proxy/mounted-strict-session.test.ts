@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { createAppSessionToken } from '../app-session';
+import { isExpiringSetCookie } from './mounted-failure';
 import {
   consumeVerifyTokenRequest,
   refreshAppSessionForRequest,
@@ -327,6 +328,72 @@ describe('mounted verify-token requires a shared session before redirecting', ()
     const location = new URL(response!.headers.get('location')!);
     expect(location.pathname).toBe('/login');
     expect(location.searchParams.get('mfa')).toBe('required');
+    expect(mocks.signedRefresh).not.toHaveBeenCalled();
+  });
+});
+
+describe('mounted refusals never expire Web-owned provider cookies', () => {
+  const fresh =
+    'sb-nzamlzqfdwaaxdefwraj-auth-token.0=fresh; Domain=.tuturuuu.com; Path=/; Max-Age=3600';
+  function refreshWithDeletions(claims: unknown) {
+    const res = NextResponse.next();
+    res.headers.append('set-cookie', fresh);
+    res.headers.append(
+      'set-cookie',
+      'sb-nzamlzqfdwaaxdefwraj-auth-token.1=; Domain=.tuturuuu.com; Path=/; Max-Age=0'
+    );
+    res.headers.append(
+      'set-cookie',
+      'sb-nzamlzqfdwaaxdefwraj-auth-token=; Path=/; Expires=Thu, 01 Jan 1970 00:00:00 GMT'
+    );
+    mocks.updateSession.mockResolvedValue({ res, claims });
+  }
+  const expires = (response: Response | undefined) =>
+    (response?.headers.getSetCookie() ?? []).some((cookie) =>
+      isExpiringSetCookie(cookie)
+    );
+
+  it.each([
+    ['invalid claims', null, null],
+    ['required MFA', { sub: 'provider-user', exp, aal: 'aal1' }, 403],
+    ['unavailable assurance', { sub: 'provider-user', exp, aal: 'aal1' }, 503],
+  ])('%s keeps only the refreshed cookie writes', async (_, claims, status) => {
+    refreshWithDeletions(claims);
+    if (status)
+      mocks.assurance.mockResolvedValueOnce(new NextResponse(null, { status }));
+    const result = await refreshAppSessionForRequest(request('/boards'), {
+      ...strictOptions,
+      now,
+    });
+    expect(result.ok).toBe(false);
+    expect(expires(result.response)).toBe(false);
+    expect(result.response?.headers.getSetCookie()).toEqual([fresh]);
+  });
+
+  it('sends a refused verify-token to login without expiring cookies', async () => {
+    refreshWithDeletions(null);
+    const response = await consumeVerifyTokenRequest(
+      request('/verify-token?nextUrl=%2Fmind%2Fboards'),
+      verifyOptions
+    );
+    expect(response!.status).toBe(307);
+    expect(response!.headers.get('cache-control')).toBe('private, no-store');
+    expect(expires(response!)).toBe(false);
+  });
+
+  it('answers unavailable assurance on verify-token instead of looping through login', async () => {
+    refreshWithDeletions({ sub: 'provider-user', exp, aal: 'aal1' });
+    mocks.assurance.mockResolvedValueOnce(
+      new NextResponse(null, { status: 503 })
+    );
+    const response = await consumeVerifyTokenRequest(
+      request('/verify-token?nextUrl=%2Fmind%2Fboards'),
+      verifyOptions
+    );
+    expect(response!.status).toBe(503);
+    expect(response!.headers.get('location')).toBeNull();
+    expect(response!.headers.get('cache-control')).toBe('private, no-store');
+    expect(expires(response!)).toBe(false);
     expect(mocks.signedRefresh).not.toHaveBeenCalled();
   });
 });
