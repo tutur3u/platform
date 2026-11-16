@@ -741,6 +741,7 @@
     "account_switcher.please_wait": "Vui lòng đợi...",
     "account_switcher.remove_account": "Xóa tài khoản",
     "account_switcher.switch_account": "Chuyển tài khoản",
+    "account_switcher.switch_account_error": "Không thể chuyển tài khoản. Vui lòng thử lại.",
     "account_switcher.unknown_user": "Người dùng không xác định",
     "common.affected-product-required": "Sản phẩm bị ảnh hưởng *",
     "common.cancel": "Hủy bỏ",

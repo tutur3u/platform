@@ -741,6 +741,7 @@
     "account_switcher.please_wait": "Please wait...",
     "account_switcher.remove_account": "Remove account",
     "account_switcher.switch_account": "Switch Account",
+    "account_switcher.switch_account_error": "Failed to switch account. Please try again.",
     "account_switcher.unknown_user": "Unknown User",
     "common.affected-product-required": "Affected Product *",
     "common.cancel": "Cancel",

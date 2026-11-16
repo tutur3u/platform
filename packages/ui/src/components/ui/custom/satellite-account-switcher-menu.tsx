@@ -3,6 +3,7 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { Check, ExternalLink, Trash2, User, Users } from '@tuturuuu/icons';
 import type { WebAccountSummary } from '@tuturuuu/internal-api/auth';
+import { toast } from '@tuturuuu/ui/sonner';
 import {
   listWebAccountsWithInternalApi,
   removeWebAccountWithInternalApi,
@@ -31,6 +32,7 @@ interface SatelliteAccountSwitcherMenuProps {
       | 'please_wait'
       | 'remove_account'
       | 'switch_account'
+      | 'switch_account_error'
       | 'unknown_user'
   ) => string;
   onAccountChanged?: () => void;
@@ -86,8 +88,20 @@ export function SatelliteAccountSwitcherMenu({
         { baseUrl: centralUrl }
       ),
     onSuccess: async (response) => {
+      if (!response.success) {
+        toast.error(t('switch_account_error'), {
+          description: response.error,
+        });
+        void invalidateAccounts();
+        return;
+      }
       await invalidateAccounts();
-      if (response.success) onAccountChanged();
+      onAccountChanged();
+    },
+    onError: (error) => {
+      toast.error(t('switch_account_error'), {
+        description: error.message,
+      });
     },
   });
   const removeMutation = useMutation({
