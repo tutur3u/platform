@@ -68,7 +68,7 @@ jobs:
           JS
   qualify:
     needs: [production-policy, release-admission]
-    if: ${{ !cancelled() && ((inputs['release-artifact'] == true && github.ref == 'refs/heads/main') || (github.ref == 'refs/heads/production' && inputs['release-artifact'] != true && needs.production-policy.outputs.allowed == 'true')) }}
+    if: ${{ !cancelled() && ((inputs['release-artifact'] == true && github.ref == 'refs/heads/main' && needs.release-admission.result == 'success') || (github.ref == 'refs/heads/production' && inputs['release-artifact'] != true && needs.production-policy.outputs.allowed == 'true')) }}
     runs-on: ubuntu-latest
     environment: wave1-${{ inputs.app }}-production
     timeout-minutes: 45

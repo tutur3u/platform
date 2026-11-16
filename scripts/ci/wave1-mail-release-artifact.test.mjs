@@ -64,6 +64,14 @@ test('release-artifact builds only the exact main commit and never publishes', (
   assert.equal(evaluate(jobIf('production-policy'), mainRelease), false);
   assert.equal(evaluate(jobIf('qualify'), mainRelease), true);
   assert.equal(evaluate(jobIf('publish'), mainRelease), false);
+  const failedAdmission = {
+    ...mainRelease,
+    needs: {
+      'production-policy': { outputs: { allowed: 'true' } },
+      'release-admission': { result: 'failure' },
+    },
+  };
+  assert.equal(evaluate(jobIf('qualify'), failedAdmission), false);
 
   const productionRelease = {
     ...mainRelease,
@@ -88,6 +96,14 @@ test('release-artifact builds only the exact main commit and never publishes', (
   };
   assert.equal(evaluate(jobIf('qualify'), productionPublish), true);
   assert.equal(evaluate(jobIf('publish'), productionPublish), true);
+  const skippedAdmission = {
+    ...productionPublish,
+    needs: {
+      'production-policy': { outputs: { allowed: 'true' } },
+      'release-admission': { result: 'skipped' },
+    },
+  };
+  assert.equal(evaluate(jobIf('qualify'), skippedAdmission), true);
   productionPublish.needs['production-policy'].outputs.allowed = 'false';
   assert.equal(evaluate(jobIf('qualify'), productionPublish), false);
   assert.equal(evaluate(jobIf('publish'), productionPublish), false);
