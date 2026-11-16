@@ -18,6 +18,16 @@ localization changes.
   `apps/docs/build/development-tools/local-e2e.mdx`). On-device flows
   belong in `apps/mobile/integration_test/`; `flutter test -d` runs other test
   files on the host VM.
+- Generate and verify goldens (`matchesGoldenFile`) with the toolchain CI
+  uses: Linux x86_64 and the `flutter-version` pinned in `mobile.yaml`. The
+  Flutter test font rasterizes differently across Flutter versions and between
+  macOS and Linux, so goldens from a macOS host or a newer Flutter fail CI at
+  about 1% even when the layout is identical, and committed goldens fail on
+  such a host for the same reason. A Docker `ubuntu:24.04` image with the
+  pinned `flutter_linux_<version>-stable.tar.xz` release works; on Apple
+  Silicon, run it under `--platform linux/amd64` or on an Intel host.
+  `test/helpers/golden_tolerance.dart` allows 0.5% of pixels to differ, and
+  that budget is for rounding, not for host drift.
 - Do not manually bump `apps/mobile/pubspec.yaml` for ordinary authored mobile
   behavior changes. Release Please owns mobile version updates.
 - Keep `mobile-build-ios.yaml` on CocoaPods by disabling Flutter Swift Package
