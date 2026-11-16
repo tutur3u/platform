@@ -381,6 +381,8 @@
     "blacklisted": "Blacklisted",
     "blacklisted_count": "{count} of {total} blacklisted",
     "bold": "Bold",
+    "image_resize": "Resize image",
+    "image_resize_value": "{width} pixels wide",
     "image_size": "Image size",
     "image_size_percent": "Image width {percent}%",
     "bulleted_list": "Bulleted list",

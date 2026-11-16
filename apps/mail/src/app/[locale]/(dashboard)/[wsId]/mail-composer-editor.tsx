@@ -64,7 +64,13 @@ export function MailComposerEditor({
     extensions: [
       StarterKit,
       Link.configure({ openOnClick: false }),
-      MailComposerImage.configure({ allowBase64: false }),
+      MailComposerImage.configure({
+        allowBase64: false,
+        resizeLabels: () => ({
+          label: t('image_resize'),
+          value: (width) => t('image_resize_value', { width }),
+        }),
+      }),
       Placeholder.configure({ placeholder: t('write_message') }),
     ],
     immediatelyRender: false,
@@ -235,7 +241,7 @@ export function MailComposerEditor({
       </div>
       <div className="min-h-0 flex-1 overflow-y-auto">
         <EditorContent
-          className="[&_.ProseMirror]:min-h-56 [&_.ProseMirror]:px-5 [&_.ProseMirror]:py-5 [&_.ProseMirror]:text-sm [&_.ProseMirror]:leading-6 [&_.ProseMirror]:outline-none [&_.ProseMirror_a]:underline [&_.ProseMirror_img]:max-w-full [&_.ProseMirror_img.ProseMirror-selectednode]:outline [&_.ProseMirror_img.ProseMirror-selectednode]:outline-2 [&_.ProseMirror_img.ProseMirror-selectednode]:outline-ring [&_.ProseMirror_ol]:list-decimal [&_.ProseMirror_ol]:pl-5 [&_.ProseMirror_p]:my-2 [&_.ProseMirror_ul]:list-disc [&_.ProseMirror_ul]:pl-5 [&_.is-editor-empty:first-child:before]:pointer-events-none [&_.is-editor-empty:first-child:before]:float-left [&_.is-editor-empty:first-child:before]:h-0 [&_.is-editor-empty:first-child:before]:text-muted-foreground [&_.is-editor-empty:first-child:before]:content-[attr(data-placeholder)]"
+          className="[&_.ProseMirror]:min-h-56 [&_.ProseMirror]:px-5 [&_.ProseMirror]:py-5 [&_.ProseMirror]:text-sm [&_.ProseMirror]:leading-6 [&_.ProseMirror]:outline-none [&_.ProseMirror_a]:underline [&_.ProseMirror_img]:max-w-full [&_.ProseMirror_.ProseMirror-selectednode_img]:outline [&_.ProseMirror_.ProseMirror-selectednode_img]:outline-2 [&_.ProseMirror_.ProseMirror-selectednode_img]:outline-ring [&_.ProseMirror_ol]:list-decimal [&_.ProseMirror_ol]:pl-5 [&_.ProseMirror_p]:my-2 [&_.ProseMirror_ul]:list-disc [&_.ProseMirror_ul]:pl-5 [&_.is-editor-empty:first-child:before]:pointer-events-none [&_.is-editor-empty:first-child:before]:float-left [&_.is-editor-empty:first-child:before]:h-0 [&_.is-editor-empty:first-child:before]:text-muted-foreground [&_.is-editor-empty:first-child:before]:content-[attr(data-placeholder)]"
           editor={editor}
         />
         {parts.quoted && (

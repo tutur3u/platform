@@ -143,7 +143,8 @@ export function sanitizeMailHtml(
             'line-height': [/^\d+(?:\.\d+)?(?:px|pt|em|rem|%)?$/],
             width: [/^\d+(?:\.\d+)?(?:px|pt|em|rem|%)$/],
             'max-width': [/^\d+(?:\.\d+)?(?:px|pt|em|rem|%)$/],
-            height: [/^\d+(?:\.\d+)?(?:px|pt|em|rem|%)$/],
+            // Literal `auto` keeps resized images proportional on narrow screens.
+            height: [/^(?:auto|\d+(?:\.\d+)?(?:px|pt|em|rem|%))$/],
             padding: [
               /^[\d.\s]+(?:px|pt|em|rem|%)?(?:\s+[\d.]+(?:px|pt|em|rem|%)?){0,3}$/,
             ],

@@ -1,5 +1,11 @@
-import Image from '@tiptap/extension-image';
+import Image, { type ImageOptions } from '@tiptap/extension-image';
 import { withAppBase } from '@tuturuuu/start-bridge/app-url';
+import {
+  applyMailImageLayout,
+  attachMailImageResize,
+  type MailImageResizeController,
+  type MailImageResizeLabels,
+} from './mail-composer-image-resize';
 
 /** Keep a draft's attachment reference independent of its serving host/base. */
 export function rawMailDraftImageSource(source: string) {
@@ -66,7 +72,21 @@ function syncMailImage(
   }
 }
 
-export const MailComposerImage = Image.extend({
+interface MailComposerImageOptions extends ImageOptions {
+  /** Translated slider labels for the drag handles. */
+  resizeLabels: () => MailImageResizeLabels;
+}
+
+export const MailComposerImage = Image.extend<MailComposerImageOptions>({
+  addOptions() {
+    return {
+      ...(this.parent?.() as ImageOptions),
+      resizeLabels: () => ({
+        label: 'Resize image',
+        value: (width) => `${width}px`,
+      }),
+    };
+  },
   addAttributes() {
     const attributes = this.parent?.() ?? {};
     return {
@@ -93,22 +113,53 @@ export const MailComposerImage = Image.extend({
   },
   // A node view changes the displayed DOM only. Image's normal renderHTML
   // serializer keeps the raw src in getHTML(), draft saves and send payloads.
+  // The wrapper hosts the corner resize handles around the image.
   addNodeView() {
-    return ({ node }) => {
+    return ({ node, editor, getPos }) => {
+      let current = node;
+      const wrapper = document.createElement('span');
+      wrapper.className = 'group relative inline-block max-w-full align-top';
       const image = document.createElement('img');
-      const render = (attrs: Record<string, unknown>) =>
+      wrapper.append(image);
+      let resize: MailImageResizeController | null = null;
+      const render = (attrs: Record<string, unknown>) => {
         syncMailImage(
           image,
           mailImageDomAttributes(this.options.HTMLAttributes, attrs)
         );
-      render(node.attrs);
+        const preview = resize?.preview;
+        applyMailImageLayout(
+          wrapper,
+          image,
+          preview ? String(preview) : normalizeMailImageWidth(attrs.width)
+        );
+      };
+      resize = attachMailImageResize({
+        wrapper,
+        image,
+        labels: () => this.options.resizeLabels(),
+        restore: () => render(current.attrs),
+        commit: (width) => {
+          const position = getPos();
+          if (position === undefined) return;
+          editor
+            .chain()
+            .setNodeSelection(position)
+            .updateAttributes(this.name, { width: String(width), height: null })
+            .run();
+        },
+      });
+      render(current.attrs);
       return {
-        dom: image,
+        dom: wrapper,
         update: (next) => {
-          if (next.type !== node.type) return false;
+          if (next.type !== current.type) return false;
+          current = next;
           render(next.attrs);
           return true;
         },
+        stopEvent: (event) => resize?.owns(event.target) ?? false,
+        destroy: () => resize?.destroy(),
       };
     };
   },
