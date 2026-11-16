@@ -710,19 +710,15 @@ export function createPOST(
           { status: 502 }
         );
       }
-      if (error instanceof Error) {
-        console.log(error.message);
-        return NextResponse.json(
-          {
-            message: `## Edge API Failure\nCould not complete the request. Please view the **Stack trace** below.\n\`\`\`bash\n${error instanceof Error ? error.stack : 'Unknown error'}\n\`\`\``,
-          },
-          {
-            status: 500,
-          }
-        );
-      }
-      console.log(error);
-      return new Response('Internal Server Error', { status: 500 });
+      // Keep stack traces in server logs; never return them to the client.
+      console.error('AI chat request failed', error);
+      return NextResponse.json(
+        {
+          error: 'Could not complete the request. Please try again.',
+          message: 'Could not complete the request. Please try again.',
+        },
+        { status: 500 }
+      );
     }
   };
 }

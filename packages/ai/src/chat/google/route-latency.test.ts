@@ -192,6 +192,24 @@ describe('mira server first-byte route', () => {
     );
   });
 
+  it('returns a generic 500 without the server stack trace', async () => {
+    const error = new Error('db exploded');
+    error.stack =
+      'Error: db exploded\n    at internalModule (/srv/app/secret.ts:1:1)';
+    mocks.creditPreflight.mockRejectedValue(error);
+    vi.spyOn(console, 'error').mockImplementation(() => undefined);
+
+    const response = await fundedRequest();
+    const body = await response.text();
+    expect(response.status).toBe(500);
+    expect(body).not.toContain('secret.ts');
+    expect(body).not.toContain('db exploded');
+    expect(JSON.parse(body)).toEqual({
+      error: 'Could not complete the request. Please try again.',
+      message: 'Could not complete the request. Please try again.',
+    });
+  });
+
   it('still prefers a plan failure over a foreign chat', async () => {
     mocks.resolvePlanModel.mockRejectedValue(
       new PlanModelResolutionError('NO_ALLOCATION', 'No allocation')
