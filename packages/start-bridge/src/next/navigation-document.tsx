@@ -1,5 +1,6 @@
 import {
   useLocation,
+  useParams as useStartParams,
   useRouter as useStartRouter,
 } from '@tanstack/react-router';
 import type { AnchorHTMLAttributes } from 'react';
@@ -15,6 +16,10 @@ export function usePathname() {
 export function useSearchParams() {
   const search = useLocation({ select: (location) => location.searchStr });
   return new URLSearchParams(search);
+}
+/** Route params of the matched TanStack route, read without a route id. */
+export function useParams() {
+  return useStartParams({ strict: false });
 }
 export function useRouter() {
   const router = useStartRouter();
