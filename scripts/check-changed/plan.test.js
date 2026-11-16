@@ -41,6 +41,17 @@ test('branch-name pattern mirrors the branch-name-check workflow', () => {
   assert.equal(isBranchNameValid('chore/tsrs-shadow'), true);
   assert.equal(isBranchNameValid('ci/tsrs-shadow'), false);
   assert.equal(isBranchNameValid('imgbot'), true);
+  assert.equal(isBranchNameValid('main'), true);
+  assert.equal(isBranchNameValid('Main'), false);
+});
+
+test('main passes the publication branch check', () => {
+  const plan = planChecks(
+    changed('README.md'),
+    context([], { branch: 'main' })
+  );
+  const step = plan.steps.find((entry) => entry.id === 'branch-name');
+  assert.equal(step.inline(), true);
 });
 
 test('always runs cheap repository guards and flags bad branch names', () => {

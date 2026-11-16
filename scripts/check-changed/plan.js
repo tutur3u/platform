@@ -62,7 +62,8 @@ function workspaceOf(file) {
 }
 
 function isBranchNameValid(branch) {
-  return BRANCH_NAME_PATTERN.test(branch);
+  // main is the direct publication branch. The workflow regex stays feature-branch only.
+  return branch === 'main' || BRANCH_NAME_PATTERN.test(branch);
 }
 
 function nodeStep(id, label, args, extra = {}) {
