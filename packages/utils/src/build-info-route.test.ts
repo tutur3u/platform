@@ -11,6 +11,10 @@ describe('createBuildInfoHandler', () => {
     expect(typeof body.commitHash).toBe('string');
     expect(body.commitHash.length).toBeGreaterThan(0);
     expect(typeof body.version).toBe('string');
+    // Vercel and every other non-worker caller share this handler. The
+    // Cloudflare platform stamp stays on the worker response.
+    expect(body.platform).toBeUndefined();
+    expect(body.commit).toBeUndefined();
   });
 
   it('is never cached', () => {
