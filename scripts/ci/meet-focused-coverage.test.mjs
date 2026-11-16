@@ -1,5 +1,6 @@
 import assert from 'node:assert/strict';
 import { mkdir, mkdtemp, readFile, rm, writeFile } from 'node:fs/promises';
+import { EventEmitter } from 'node:events';
 import { createRequire } from 'node:module';
 import { tmpdir } from 'node:os';
 import { join, resolve } from 'node:path';
@@ -49,29 +50,60 @@ async function workspace(t, meetWeight) {
   return directory;
 }
 
-function execute(directory, args, results = [], text = source) {
+// The runner dispatches the ordinary shard through an async spawn wrapped by
+// the disposable Redis fixture, then the focused Meet pass with spawnSync.
+// Both are intercepted, and execute() waits for the runner's promise chain.
+async function execute(directory, args, results = [], text = source) {
   const calls = [],
     output = [],
+    errors = [],
     env = { FIXTURE: 'command-sink' };
   const process = { argv: ['node', 'run-test-shard.js', ...args], env };
+  const record = (command, commandArgs, options) => {
+    calls.push({
+      command,
+      args: Array.from(commandArgs),
+      cwd: options.cwd,
+      stdio: options.stdio,
+      sameEnvironment: options.env === env,
+    });
+    return results[calls.length - 1] ?? { status: 0 };
+  };
   let error;
+  let dispatched;
   try {
     new vm.Script(text, { filename: 'run-test-shard.js' }).runInNewContext({
       __dirname: join(directory, 'scripts/ci'),
       process,
-      console: { log: (line) => output.push(JSON.parse(line)) },
+      setTimeout,
+      clearTimeout,
+      console: {
+        log: (line) => output.push(JSON.parse(line)),
+        error: (...parts) => errors.push(parts.join(' ')),
+      },
       require(id) {
         if (id === 'node:child_process')
           return {
+            spawn(command, commandArgs, options) {
+              const outcome = record(command, commandArgs, options);
+              const child = new EventEmitter();
+              setImmediate(() =>
+                outcome.error
+                  ? child.emit('error', outcome.error)
+                  : child.emit('close', outcome.status, outcome.signal)
+              );
+              return child;
+            },
             spawnSync(command, commandArgs, options) {
-              calls.push({
-                command,
-                args: Array.from(commandArgs),
-                cwd: options.cwd,
-                stdio: options.stdio,
-                sameEnvironment: options.env === env,
-              });
-              return results[calls.length - 1] ?? { status: 0 };
+              return record(command, commandArgs, options);
+            },
+          };
+        if (id === './disposable-redis.js')
+          return {
+            withDisposableRedis({ packages, run }) {
+              assert.ok(Array.isArray(packages));
+              dispatched = Promise.resolve().then(() => run(env));
+              return dispatched;
             },
           };
         if (id === './test-shards.js') return planner;
@@ -81,7 +113,11 @@ function execute(directory, args, results = [], text = source) {
   } catch (caught) {
     error = caught;
   }
-  return { calls, output, error, status: process.exitCode };
+  if (dispatched) {
+    await dispatched.catch(() => {});
+    await new Promise((resolve) => setImmediate(resolve));
+  }
+  return { calls, output, error, errors, status: process.exitCode };
 }
 
 for (const meetWeight of [4, 3, 2, 1])
@@ -94,7 +130,7 @@ for (const meetWeight of [4, 3, 2, 1])
     );
     for (let index = 0; index < 4; index++) {
       for (const mode of [undefined, '--coverage', '--plan']) {
-        const result = execute(directory, [
+        const result = await execute(directory, [
           String(index),
           '4',
           ...(mode ? [mode] : []),
@@ -145,13 +181,18 @@ for (const failure of [
 ])
   test(`ordinary failure ${failure.error ? 'spawn' : (failure.status ?? failure.signal ?? 'null')} prevents focused coverage and retains outcome`, async (t) => {
     const directory = await workspace(t, 4);
-    const result = execute(directory, ['0', '4', '--coverage'], [failure]);
+    const result = await execute(
+      directory,
+      ['0', '4', '--coverage'],
+      [failure]
+    );
     assert.equal(result.calls.length, 1);
-    if (failure.error) assert.equal(result.error, failure.error);
-    else {
-      assert.equal(result.error, undefined);
-      assert.equal(result.status, failure.status ?? 1);
-    }
+    assert.equal(result.error, undefined);
+    assert.equal(result.status, failure.status ?? 1);
+    if (failure.error)
+      assert.ok(
+        result.errors.some((line) => line.includes(failure.error.message))
+      );
   });
 
 for (const failure of [
@@ -162,17 +203,18 @@ for (const failure of [
 ])
   test(`focused failure ${failure.error ? 'spawn' : (failure.status ?? failure.signal ?? 'null')} retains its outcome after ordinary success`, async (t) => {
     const directory = await workspace(t, 4);
-    const result = execute(
+    const result = await execute(
       directory,
       ['0', '4', '--coverage'],
       [{ status: 0 }, failure]
     );
     assert.equal(result.calls.length, 2);
-    if (failure.error) assert.equal(result.error, failure.error);
-    else {
-      assert.equal(result.error, undefined);
-      assert.equal(result.status, failure.status ?? 1);
-    }
+    assert.equal(result.error, undefined);
+    assert.equal(result.status, failure.status ?? 1);
+    if (failure.error)
+      assert.ok(
+        result.errors.some((line) => line.includes(failure.error.message))
+      );
   });
 
 for (const args of [
@@ -183,7 +225,7 @@ for (const args of [
 ])
   test(`invalid runner arguments ${args.join(' ')} cannot dispatch`, async (t) => {
     const directory = await workspace(t, 4);
-    const result = execute(directory, args);
+    const result = await execute(directory, args);
     assert.ok(result.error);
     assert.deepEqual(result.calls, []);
   });
@@ -195,7 +237,12 @@ test('omitting the Meet focused invocation fails the required dispatch contract'
     "packages.includes('@fixture/omitted')"
   );
   assert.notEqual(omitted, source);
-  const result = execute(directory, ['0', '4', '--coverage'], [], omitted);
+  const result = await execute(
+    directory,
+    ['0', '4', '--coverage'],
+    [],
+    omitted
+  );
   assert.equal(result.status, 0);
   assert.equal(result.calls.length, 1);
   assert.throws(() => assert.deepEqual(result.calls[1]?.args, focused));

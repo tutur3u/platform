@@ -287,6 +287,10 @@
       "component": "realtime",
       "package-name": "@tuturuuu/realtime"
     },
+    "packages/roadmap-core": {
+      "component": "roadmap-core",
+      "package-name": "@tuturuuu/roadmap-core"
+    },
     "packages/satellite": {
       "component": "satellite",
       "package-name": "@tuturuuu/satellite"

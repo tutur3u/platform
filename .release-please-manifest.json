@@ -64,6 +64,7 @@
   "packages/payment": "0.4.3",
   "packages/programming-ui": "1.0.0",
   "packages/realtime": "0.11.0",
+  "packages/roadmap-core": "0.1.0",
   "packages/satellite": "0.27.0",
   "packages/sdk": "0.30.0",
   "packages/sso": "1.0.0",
