@@ -105,6 +105,7 @@ export function MiraChatConversation({
             userName={userName}
             userAvatarUrl={userAvatarUrl}
             onAutoSubmitMermaidFix={onAutoSubmitMermaidFix}
+            onSubmitPrompt={onAutoSubmitMermaidFix}
             scrollContainerRef={scrollContainerRef}
             messageAttachments={messageAttachments}
           />

@@ -10,6 +10,7 @@ export const WEB_MIRA_CLIENT_CAPABILITIES: MiraClientCapability[] = [
   'artifact_panels',
   'immersive',
   'navigate',
+  'day_cards',
 ];
 
 // Satellite segments are redirected to their owning app by Web's proxy.

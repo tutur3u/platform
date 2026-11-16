@@ -10,6 +10,8 @@ export interface ChatMessageListProps {
   userName?: string;
   userAvatarUrl?: string | null;
   onAutoSubmitMermaidFix?: (prompt: string) => void;
+  /** Sends a follow-up prompt as a new user turn (agenda follow-up chips). */
+  onSubmitPrompt?: (prompt: string) => void;
   reserveComposerSpace?: boolean;
   scrollContainerRef?: RefObject<HTMLDivElement | null>;
   toolbarVisibilityAnchorRef?: RefObject<HTMLDivElement | null>;

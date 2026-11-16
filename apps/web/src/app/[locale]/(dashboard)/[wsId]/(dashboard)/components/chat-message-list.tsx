@@ -40,6 +40,12 @@ import {
   SourcesPart,
   ToolCallPart,
 } from './chat-message-list/tool-components';
+import {
+  DayOverviewCards,
+  DayOverviewFollowUps,
+  DayOverviewTrace,
+} from './chat-message-list/day-overview/day-overview-block';
+import { dayOverviewFromDescriptor } from './chat-message-list/day-overview/day-overview-descriptor';
 import type { ChatMessageListProps } from './chat-message-list/types';
 import { UserMessageContent } from './chat-message-list/user-message-components';
 import { useChatScrollFollow } from './use-chat-scroll-follow';
@@ -140,6 +146,7 @@ export default function ChatMessageList({
   userName,
   userAvatarUrl,
   onAutoSubmitMermaidFix,
+  onSubmitPrompt,
   reserveComposerSpace = true,
   scrollContainerRef,
   toolbarVisibilityAnchorRef,
@@ -364,7 +371,7 @@ export default function ChatMessageList({
                     'min-w-0 max-w-full overflow-hidden rounded-2xl px-3.5 py-2.5 text-sm [overflow-wrap:anywhere]',
                     isUser
                       ? 'bg-foreground text-background'
-                      : 'bg-muted/50 text-foreground'
+                      : 'w-full px-0 text-foreground'
                   )}
                 >
                   {isUser ? (
@@ -389,6 +396,8 @@ export default function ChatMessageList({
                         );
                         const { recovered } = getToolChainOutcome(historyParts);
                         const elements: React.ReactNode[] = [];
+                        // Agenda cards follow Mira's short lead-in text.
+                        const dayCards: React.ReactNode[] = [];
                         let genericToolBatch: Extract<
                           (typeof descriptors)[number],
                           { kind: 'tool' | 'tool-group' }
@@ -457,7 +466,22 @@ export default function ChatMessageList({
                             descriptor.kind === 'tool' ||
                             descriptor.kind === 'tool-group'
                           ) {
-                            if (isVisualToolDescriptor(descriptor)) {
+                            const day = dayOverviewFromDescriptor(descriptor);
+                            if (day) {
+                              flushBatch();
+                              elements.push(
+                                <DayOverviewTrace
+                                  key={`${descriptor.key}-trace`}
+                                  durationMs={day.durationMs}
+                                />
+                              );
+                              dayCards.push(
+                                <DayOverviewCards
+                                  key={descriptor.key}
+                                  day={day}
+                                />
+                              );
+                            } else if (isVisualToolDescriptor(descriptor)) {
                               flushBatch();
                               elements.push(
                                 descriptor.kind === 'tool' ? (
@@ -496,6 +520,20 @@ export default function ChatMessageList({
                           }
                         }
                         flushBatch();
+                        elements.push(...dayCards);
+                        if (
+                          dayCards.length > 0 &&
+                          isLastAssistant &&
+                          !isStreaming &&
+                          onSubmitPrompt
+                        ) {
+                          elements.push(
+                            <DayOverviewFollowUps
+                              key="day-overview-follow-ups"
+                              onSend={onSubmitPrompt}
+                            />
+                          );
+                        }
                         return elements;
                       })()}
                     </div>
