@@ -14,6 +14,12 @@ import { voidPlugin } from 'void';
 const bridge = startBridgePreset({
   appRoot: import.meta.url,
   app: 'playground',
+  // The production Worker is mounted at this apex path; legacy hosts keep
+  // their current origin until the separately reviewed redirect cutover.
+  basePath:
+    process.env.VITE_PLAYGROUND_NATIVE_PROFILE === 'production'
+      ? '/playground'
+      : undefined,
   rsc: true,
   serverOnlySpecifiers: [
     '@tuturuuu/satellite/auth',
@@ -24,6 +30,7 @@ const bridge = startBridgePreset({
 
 export default defineConfig(({ command }) => ({
   base: bridge.base,
+  experimental: bridge.experimental,
   define: {
     ...bridge.define,
     ...(command === 'build'

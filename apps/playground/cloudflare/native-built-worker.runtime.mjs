@@ -1,5 +1,5 @@
 import assert from 'node:assert/strict';
-import { cp, mkdir, mkdtemp, rm, writeFile } from 'node:fs/promises';
+import { cp, mkdir, mkdtemp, readFile, rm, writeFile } from 'node:fs/promises';
 import { request } from 'node:http';
 import { createRequire } from 'node:module';
 import { tmpdir } from 'node:os';
@@ -8,6 +8,10 @@ import { fileURLToPath } from 'node:url';
 import test from 'node:test';
 import { readNativeRuntimeConfig } from '../../../scripts/ci/apps-native-runtime-pointer.mjs';
 import { assertNoPublicResources } from './public-resources.mjs';
+import {
+  assertHtmlAssetMount,
+  assertManifestAssetMount,
+} from './asset-mount.mjs';
 
 const app = fileURLToPath(new URL('../', import.meta.url));
 const require = createRequire(join(app, 'package.json'));
@@ -23,6 +27,14 @@ test(
     assert.equal(config.assets.binding, 'ASSETS');
     assert.equal(config.assets.run_worker_first, true);
     assertNoPublicResources(config);
+    const manifestSource = await readFile(
+      join(app, 'dist/server/__vite_rsc_assets_manifest.js'),
+      'utf8'
+    );
+    const manifest = JSON.parse(
+      manifestSource.replace(/^export default\s+/, '').replace(/;\s*$/, '')
+    );
+    const manifestAssets = assertManifestAssetMount(manifest);
     const scratch = await mkdtemp(join(tmpdir(), 'playground-guest-runtime-'));
     t.after(() => rm(scratch, { recursive: true, force: true }));
     await cp(join(app, 'dist'), join(scratch, 'dist'), {
@@ -133,6 +145,12 @@ test(
         })
       );
       assert.match(res.body, /playground/i);
+      const htmlAssets = assertHtmlAssetMount(res.body);
+      for (const asset of new Set([...manifestAssets, ...htmlAssets])) {
+        const emitted = await call(asset);
+        assert.equal(emitted.status, 200, asset);
+        assert.ok(emitted.body.length > 0, asset);
+      }
     }
     for (const headers of [
       {},
