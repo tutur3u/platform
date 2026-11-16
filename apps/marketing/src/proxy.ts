@@ -15,6 +15,15 @@ const intlMiddleware = createIntlMiddleware(routing);
  * (payload limits, abuse and rate policies) like every other app.
  */
 async function handleProxy(request: NextRequest): Promise<NextResponse> {
+  // The roadmap routes (MARKETING_ROADMAP_ROUTES=1 at build time, see
+  // scripts/roadmap-routes.mjs) keep their own /roadmap and /roadmap/vi URLs:
+  // no locale negotiation, rewrite or cookie. Off, this folds away.
+  if (
+    process.env.MARKETING_ROADMAP_ROUTES === '1' &&
+    /^\/roadmap(?:\/|$)/u.test(request.nextUrl.pathname)
+  ) {
+    return NextResponse.next();
+  }
   if (request.nextUrl.pathname.startsWith('/api')) {
     const guardResponse = await guardApiProxyRequest(request, {
       prefixBase: 'proxy:marketing:api',

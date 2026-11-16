@@ -1,0 +1,18 @@
+/* The stylesheet of marketing's roadmap routes (roadmap/routes.tsx, D221).
+   They render outside the Next layout, so they load the shared UI styles and
+   the marketing fonts themselves (nothing else on those pages does), then the
+   roadmap's own styles from @tuturuuu/roadmap-core, as apps/roadmap does. */
+@import "@tuturuuu/ui/globals.css";
+@import "@tuturuuu/marketing-shell/fonts.css";
+@import "@tuturuuu/roadmap-core/styles.css";
+/* The shared globals scan every UI component (and streamdown) for classes.
+   Scan only the shared marketing layout and the primitives the roadmap
+   renders, as apps/roadmap/src/styles.css does. */
+@source not '../../../../packages/ui/src/components';
+@source not '../../../../node_modules/streamdown';
+@source not '../../../../node_modules/@streamdown';
+@source '../../../../packages/marketing-shell/src';
+@source '../../../../packages/ui/src/components/ui/sheet.tsx';
+@source '../../../../packages/ui/src/components/ui/accordion.tsx';
+@source '../../../../packages/ui/src/components/ui/button.tsx';
+@source '../../../../packages/ui/src/components/ui/custom/theme-toggle.tsx';

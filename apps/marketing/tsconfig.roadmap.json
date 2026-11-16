@@ -1,0 +1,15 @@
+{
+  "$comment": "Marketing's roadmap routes (roadmap/, D221), checked with @tuturuuu/roadmap-core's own compiler options; tsconfig.cloudflare.json checks the rest of the Worker.",
+  "extends": "./tsconfig.cloudflare.json",
+  "compilerOptions": {
+    "allowImportingTsExtensions": true,
+    "noUncheckedIndexedAccess": false,
+    "noUnusedLocals": false
+  },
+  "include": [
+    "roadmap/routes.tsx",
+    "global.d.ts",
+    "../../packages/roadmap-core/src/env.d.ts"
+  ],
+  "exclude": ["node_modules", "dist", "**/*.test.ts", "**/*.test.tsx"]
+}

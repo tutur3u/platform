@@ -125,9 +125,10 @@ describe('hosting: the as-of time is the build time', () => {
     // Broken variant: yesterday's file left before a bare `vp build`.
     assert.equal(snapshotForBuild(fresh, NOW + SNAPSHOT_MAX_AGE_MS + 1), null);
     assert.equal(snapshotForBuild({ mode: 'probed' }, NOW), null);
+    assert.match(read('./build-defines.ts'), /snapshotForBuild\(/);
     assert.match(
       read('../../../apps/roadmap/vite.config.ts'),
-      /snapshotForBuild\(/
+      /define: roadmapBuildDefines\(command\)/
     );
   });
 

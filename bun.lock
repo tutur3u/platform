@@ -1254,6 +1254,7 @@
         "@tuturuuu/internal-api": "workspace:*",
         "@tuturuuu/legal": "workspace:*",
         "@tuturuuu/marketing-shell": "workspace:*",
+        "@tuturuuu/roadmap-core": "workspace:*",
         "@tuturuuu/satellite": "workspace:*",
         "@tuturuuu/start-bridge": "workspace:*",
         "@tuturuuu/supabase": "workspace:*",

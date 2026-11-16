@@ -10,40 +10,13 @@ import {
 import { PublicSatelliteProviders } from '@tuturuuu/satellite/public';
 import { StatusPage } from '@tuturuuu/ui/custom/status-page';
 import type { ReactNode } from 'react';
-import logo from '@tuturuuu/roadmap-core/assets/tuturuuu-logo.png?no-inline';
+import { roadmapDocumentHead } from '@tuturuuu/roadmap-core/document-head.ts';
 import { langFromPathname } from '@tuturuuu/roadmap-core/seo.ts';
 import { sorbetPage } from '@tuturuuu/roadmap-core/sorbet-page.ts';
 import styles from '../styles.css?url';
 
 export const Route = createRootRoute({
-  head: () => ({
-    meta: [
-      { charSet: 'utf-8' },
-      {
-        name: 'viewport',
-        content: 'width=device-width, initial-scale=1, viewport-fit=cover',
-      },
-      {
-        name: 'theme-color',
-        content: '#0a0a0a',
-        media: '(prefers-color-scheme: dark)',
-      },
-      {
-        name: 'theme-color',
-        content: '#fdf9f7',
-        media: '(prefers-color-scheme: light)',
-      },
-      // Title, description, og:title/url, canonical and hreflang are per
-      // page: each route sets its own, so no page claims another's URL.
-      { property: 'og:type', content: 'website' },
-      { property: 'og:site_name', content: 'Tuturuuu' },
-    ],
-    links: [
-      { rel: 'stylesheet', href: styles },
-      { rel: 'icon', type: 'image/png', href: logo },
-      { rel: 'apple-touch-icon', href: logo },
-    ],
-  }),
+  head: () => roadmapDocumentHead(styles),
   component: Outlet,
   shellComponent: Document,
   notFoundComponent: RoadmapNotFound,

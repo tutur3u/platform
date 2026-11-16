@@ -3,7 +3,7 @@
   "version": "0.1.0",
   "private": true,
   "scripts": {
-    "type-check": "node ../../scripts/run-tsc-build.js --build",
+    "type-check": "node ../../scripts/run-tsc-build.js --build && bun run type-check:roadmap",
     "test": "vitest run --passWithNoTests",
     "dev": "node ../../scripts/portless-safe-dev.js",
     "dev:app": "node ../../scripts/portless-dev-banner.js -- next dev -p ${PORT:-7836} --turbopack",
@@ -18,6 +18,7 @@
     "preview:cloudflare": "vp preview --configLoader runner --host 127.0.0.1 --port ${PORT:-7836}",
     "routes:check": "bun ../../packages/start-bridge/src/codegen/cli.ts check .",
     "type-check:cloudflare": "tsc --noEmit -p tsconfig.cloudflare.json",
+    "type-check:roadmap": "tsc --noEmit -p tsconfig.roadmap.json",
     "test:runtime": "node --test cloudflare/*.runtime.mjs",
     "check:native": "node scripts/check-native.mjs"
   },
@@ -30,6 +31,7 @@
     "@tuturuuu/internal-api": "workspace:*",
     "@tuturuuu/legal": "workspace:*",
     "@tuturuuu/marketing-shell": "workspace:*",
+    "@tuturuuu/roadmap-core": "workspace:*",
     "@tuturuuu/satellite": "workspace:*",
     "@tuturuuu/start-bridge": "workspace:*",
     "@tuturuuu/supabase": "workspace:*",
