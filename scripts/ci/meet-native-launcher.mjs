@@ -190,8 +190,8 @@ export async function launchMeet(sourceSHA, fixture) {
       assert.equal(receipt.schema, 1);
       assert.equal(
         receipt.completed,
-        13,
-        'All ten original cases and three hook controls required'
+        14,
+        'All eleven original cases and three hook controls required'
       );
       assert.deepEqual(receipt.lifecycle.errors, []);
       assert.deepEqual(receipt.lifecycle.roles, ['app', 'probe']);

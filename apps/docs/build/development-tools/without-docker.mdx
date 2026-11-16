@@ -204,7 +204,7 @@ outcome. Pure controls live in `ssr-diagnostics.test.ts`,
 Meet's finite `meet-emitted-v1` graph uses two public
 `unstable_startWorker` handles and one fresh private registry. Both the original
 and restored artifact gates run `node scripts/ci/meet-native-launcher.mjs
-"$SOURCE_SHA"`. Each launcher runs all ten original cases and three HTTP hook
+"$SOURCE_SHA"`. Each launcher runs all eleven original cases and three HTTP hook
 controls twice, with distinct private homes, registries, temporary roots and
 nonpersistent local storage. The existing three-minute CI watchdog and 30000 ms
 per-case deadlines stay in force; duration fit and real binding resolution need
