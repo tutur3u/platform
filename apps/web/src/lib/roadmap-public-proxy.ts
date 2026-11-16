@@ -2,10 +2,23 @@ import type { NextRequest } from 'next/server';
 import { NextResponse } from 'next/server';
 import { type Locale, supportedLocales } from '@/i18n/routing';
 
-/** Non-redirecting worker origin. roadmap.tuturuuu.com 301s to the canonical host. */
-export const ROADMAP_UPSTREAM_ORIGIN =
-  'https://tuturuuu-roadmap.tuturuuu-e89.workers.dev';
+/**
+ * The roadmap Worker's own route host. Cloudflare routes
+ * `tuturuuu.com/roadmap` and `tuturuuu.com/roadmap/*` to the roadmap Worker
+ * before any origin, so the upstream request is served by the Worker behind
+ * the tuturuuu.com zone (WAF and routes). The workers.dev origin is not used:
+ * it exposes the Worker outside the zone and is being disabled.
+ * roadmap.tuturuuu.com 301s to the canonical host, so it is never the upstream.
+ */
+export const ROADMAP_UPSTREAM_ORIGIN = 'https://tuturuuu.com';
 export const ROADMAP_SATELLITE_HOST = 'roadmap.tuturuuu.com';
+
+/**
+ * Marks the upstream request. If the Worker route ever stops matching, the
+ * upstream request would come back to this app; the marker turns that into a
+ * single 508 instead of a proxy loop.
+ */
+export const ROADMAP_PROXY_LOOP_HEADER = 'x-tuturuuu-roadmap-proxy';
 
 const FORWARDED_REQUEST_HEADERS = [
   'accept',
@@ -80,7 +93,7 @@ function roadmapUpstreamPathname(pathname: string): string {
 }
 
 function forwardedRequestHeaders(req: NextRequest): Headers {
-  const headers = new Headers();
+  const headers = new Headers({ [ROADMAP_PROXY_LOOP_HEADER]: '1' });
 
   for (const name of FORWARDED_REQUEST_HEADERS) {
     const value = req.headers.get(name);
@@ -137,6 +150,13 @@ export async function proxyRoadmapPublicRequest(
     const target = new URL(canonicalPath, req.nextUrl);
     target.search = req.nextUrl.search;
     return NextResponse.redirect(target, 308);
+  }
+
+  if (req.headers.has(ROADMAP_PROXY_LOOP_HEADER)) {
+    return new NextResponse(null, {
+      status: 508,
+      headers: { 'Cache-Control': 'no-store' },
+    });
   }
 
   if (req.method !== 'GET' && req.method !== 'HEAD') {
