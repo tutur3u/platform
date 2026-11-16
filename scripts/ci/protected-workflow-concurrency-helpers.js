@@ -83,7 +83,9 @@ const prExceptions = {
 const mainExceptions = {
   ...prExceptions,
   'turbo-unit-tests.yaml':
-    'Every main push retains its own non-cancelling validation result',
+    'Each main SHA keeps its own non-cancelling Test run',
+  'type-check.yaml':
+    'Each main SHA keeps its own non-cancelling Type Check run',
   'supabase-staging.yaml':
     'Protected main migrations serialize exact-SHA marker evidence',
   'release-sdk-dev.yaml':
@@ -94,19 +96,22 @@ const mainExceptions = {
   'mail-cloudflare.yaml':
     'Staging publication consumes the durable attempt ledger',
   'oxc-check.yaml':
-    'Job-level validation and separate repository mutation locks',
+    'Each main SHA keeps its own non-cancelling validation run; mutation locks stay separate',
   'tanstack-route-manifest.yaml': 'TanStack runtime is paused',
   'codeql.yml':
     'Each main SHA keeps its own non-cancelling analysis',
 };
-// These workflows do not cancel a main push. CodeQL used to share one
-// "latest" group (one running, newest pending); a later push dropped the
-// pending analysis even with cancel-in-progress false. It now keys each main
-// SHA separately and stays in this set so the generic supersede rule does not
-// require cancellation. Test (turbo-unit-tests.yaml) left this set in #8350:
-// first-attempt main pushes now supersede, while reruns and dispatch keep
-// immutable slots.
-const queuedMainBaselines = new Set(['codeql.yml']);
+// These workflows do not cancel a main push, and each main SHA has its own
+// group. A shared "latest" group still drops the previous pending run when
+// cancel-in-progress is false, so the proof tests require distinct groups.
+// Feature branches and pull requests still supersede. Documentation and SEO
+// contracts stay on the superseding main policy.
+const queuedMainBaselines = new Set([
+  'codeql.yml',
+  'oxc-check.yaml',
+  'turbo-unit-tests.yaml',
+  'type-check.yaml',
+]);
 const workflows = Object.fromEntries(
   fs
     .readdirSync(workflowRoot)

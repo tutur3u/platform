@@ -287,15 +287,38 @@ function assertMutationLocks(workflow) {
   for (const id of ['check-ci', 'duplicate-validation', 'format', 'lint']) {
     const job = workflow.jobs[id];
     const first = { ...context('refs/heads/main'), workflow: workflow.name };
-    const validationGroup = assertSupersedes(job, first, {
-      ...first,
-      sha: 'next',
-      run_id: 2,
-    });
+    const next = { ...first, sha: 'next', run_id: 2 };
+    assert.equal(
+      render(job.concurrency['cancel-in-progress'], first),
+      false,
+      id
+    );
+    assert.equal(
+      render(job.concurrency['cancel-in-progress'], next),
+      false,
+      id
+    );
+    const validationGroup = render(job.concurrency.group, first);
+    assert.notEqual(
+      validationGroup,
+      render(job.concurrency.group, next),
+      id
+    );
     assert.equal(validationGroups.has(validationGroup), false);
     validationGroups.add(validationGroup);
     assert.notEqual(validationGroup, render(group, first));
-    assertQualification(job.concurrency, workflow.name);
+    assertQualification(job.concurrency, workflow.name, false);
+    const branch = { ...first, ref: 'refs/heads/fix/example' };
+    assert.equal(
+      render(job.concurrency['cancel-in-progress'], branch),
+      true,
+      id
+    );
+    assert.equal(
+      render(job.concurrency.group, branch),
+      render(job.concurrency.group, { ...branch, sha: 'next', run_id: 2 }),
+      id
+    );
   }
 }
 test('Oxc repository writes are outside every cancelling parent and validation group', () => {
@@ -667,14 +690,85 @@ test('security review writers share one non-cancelling group per pull request', 
   );
 });
 
-test('first-attempt main Test pushes supersede; reruns, dispatch and production keep immutable results', () => {
-  // Reviewed policy from #8350: only first-attempt main pushes cancel superseded
-  // Test runs. Reruns, dispatch and production retain their own slots.
+test('Type Check, Oxc and Test keep each main push; the docs contract still supersedes', () => {
+  const proof = [
+    ['type-check.yaml', workflows['type-check.yaml'].concurrency],
+    ['turbo-unit-tests.yaml', workflows['turbo-unit-tests.yaml'].concurrency],
+  ];
+  for (const id of ['check-ci', 'duplicate-validation', 'format', 'lint']) {
+    proof.push([
+      `oxc-check.yaml:${id}`,
+      workflows['oxc-check.yaml'].jobs[id].concurrency,
+    ]);
+  }
+  for (const [name, policy] of proof) {
+    const first = {
+      ...context('refs/heads/main', 'a'.repeat(40), 11),
+      workflow: name,
+    };
+    const second = {
+      ...context('refs/heads/main', 'b'.repeat(40), 22),
+      workflow: name,
+    };
+    assert.notEqual(
+      render(policy.group, first),
+      render(policy.group, second),
+      name
+    );
+    assert.equal(render(policy['cancel-in-progress'], first), false, name);
+    assert.equal(render(policy['cancel-in-progress'], second), false, name);
+    const feature = {
+      ...first,
+      ref: 'refs/heads/fix/example',
+      sha: 'c'.repeat(40),
+      run_id: 3,
+    };
+    const featureNext = {
+      ...feature,
+      sha: 'd'.repeat(40),
+      run_id: 4,
+    };
+    assert.equal(
+      render(policy.group, feature),
+      render(policy.group, featureNext),
+      name
+    );
+    assert.equal(render(policy['cancel-in-progress'], feature), true, name);
+    const spoof = { ...first, ref: 'refs/heads/main-spoof' };
+    const spoofNext = { ...spoof, sha: 'e'.repeat(40), run_id: 5 };
+    assert.equal(
+      render(policy.group, spoof),
+      render(policy.group, spoofNext),
+      name
+    );
+    assert.equal(render(policy['cancel-in-progress'], spoof), true, name);
+  }
+  const docs = workflows['docs-seo-check.yaml'];
+  const docsFirst = { ...context('refs/heads/main'), workflow: docs.name };
+  assertSupersedes(docs, docsFirst, {
+    ...docsFirst,
+    sha: 'second',
+    run_id: 2,
+  });
+});
+
+test('Test reruns, dispatch and production stay immutable while feature branches still supersede', () => {
   const workflow = workflows['turbo-unit-tests.yaml'];
   assert.ok(events(workflow).push.branches.includes('main'));
   const first = { ...context('refs/heads/main'), workflow: workflow.name };
   const later = { ...first, sha: 'later', run_id: 2 };
-  const shared = assertSupersedes(workflow, first, later);
+  assert.notEqual(
+    render(workflow.concurrency.group, first),
+    render(workflow.concurrency.group, later)
+  );
+  assert.equal(
+    render(workflow.concurrency['cancel-in-progress'], first),
+    false
+  );
+  assert.equal(
+    render(workflow.concurrency['cancel-in-progress'], later),
+    false
+  );
   for (const extra of [
     { run_attempt: 2 },
     { event_name: 'workflow_dispatch' },
@@ -689,7 +783,7 @@ test('first-attempt main Test pushes supersede; reruns, dispatch and production 
     );
     assert.notEqual(
       render(workflow.concurrency.group, candidate),
-      shared,
+      render(workflow.concurrency.group, first),
       JSON.stringify(extra)
     );
   }
@@ -701,5 +795,14 @@ test('first-attempt main Test pushes supersede; reruns, dispatch and production 
       sha: 'later',
       run_id: 2,
     })
+  );
+  const branch = { ...first, ref: 'refs/heads/fix/example' };
+  assert.equal(
+    render(workflow.concurrency.group, branch),
+    render(workflow.concurrency.group, { ...branch, sha: 'later', run_id: 2 })
+  );
+  assert.equal(
+    render(workflow.concurrency['cancel-in-progress'], branch),
+    true
   );
 });
