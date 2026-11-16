@@ -22,6 +22,7 @@ export default defineConfig(({ command }) => {
   const bridge = startBridgePreset({
     appRoot: import.meta.url,
     app: 'finance',
+    basePath: profile.name === 'production' ? '/finance' : '',
     rsc: true,
     serverOnlySpecifiers: [
       '@tuturuuu/satellite/auth',

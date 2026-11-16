@@ -2,6 +2,7 @@ import { defaultContentSecurityPolicy } from '@tuturuuu/start-bridge/csp';
 import { defineBridgeAppConfig } from '@tuturuuu/start-bridge/start/app-config';
 import { framablePathRegexes } from '@tuturuuu/utils/framable-paths';
 import type { FinanceEnvironment } from './cloudflare/worker';
+import { financeNativeMounts } from './src/start-bridge/finance-mounts.mjs';
 import { publicAssets } from './src/start-bridge/public-assets.bridge.gen.ts';
 
 const framablePaths = framablePathRegexes();
@@ -17,11 +18,7 @@ declare global {
 
 export default defineBridgeAppConfig<FinanceEnvironment>({
   csp: defaultContentSecurityPolicy,
-  mounts: {
-    rootHosts: rootHost ? [rootHost] : [],
-    mountHosts: [],
-    unknownHost: 'reject',
-  },
+  mounts: financeNativeMounts(rootHost),
   wrapResponse(response, { request }) {
     const secured = new Response(response.body, response);
     // Matches Vercel Finance, which sends this on every response.

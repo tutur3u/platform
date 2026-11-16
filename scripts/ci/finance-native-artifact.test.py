@@ -132,8 +132,8 @@ class FinanceArtifactTest(unittest.TestCase):
         self.assertEqual(production.IDENTITY["vars"], {
             "INTERNAL_WEB_API_ORIGIN": "https://tuturuuu.com",
             "NEXT_PUBLIC_WEB_APP_URL": "https://tuturuuu.com",
-            "NEXT_PUBLIC_APP_URL": "https://finance.tuturuuu.com",
-            "FINANCE_APP_URL": "https://finance.tuturuuu.com",
+            "NEXT_PUBLIC_APP_URL": "https://tuturuuu.com/finance",
+            "FINANCE_APP_URL": "https://tuturuuu.com/finance",
             "NEXT_PUBLIC_SUPABASE_URL": "https://nzamlzqfdwaaxdefwraj.supabase.co",
         })
         self.assertEqual(wrapper.PROFILES["staging"]["rootHost"], "finance.tutur3u.com")

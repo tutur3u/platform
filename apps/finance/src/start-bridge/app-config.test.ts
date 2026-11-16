@@ -10,6 +10,8 @@ const wrap = (url: string, env: Record<string, string> = {}) =>
 describe('Finance bridge app config', () => {
   it('admits no root host unless the build defines the profile host', () => {
     expect(appConfig.mounts?.rootHosts).toEqual([]);
+    expect(appConfig.mounts?.mountHosts).toEqual([]);
+    expect(appConfig.mounts?.basePath).toBe('/finance');
     expect(appConfig.mounts?.unknownHost).toBe('reject');
   });
 

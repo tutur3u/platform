@@ -1,5 +1,6 @@
 import { resolveInternalAppUrl } from '@tuturuuu/utils/app-url';
 import { getLocalInternalAppUrl } from '@tuturuuu/utils/internal-domains';
+import { financeBakedApexUrl } from '../start-bridge/finance-mounts.mjs';
 
 // Re-export shared constants from satellite package
 export {
@@ -26,16 +27,23 @@ const DEFAULT_WEB_APP_URL =
     ? 'https://tuturuuu.com'
     : getLocalInternalAppUrl('platform', `http://localhost:${CENTRAL_PORT}`);
 
-export const BASE_URL = resolveInternalAppUrl({
-  appName: 'finance',
-  candidates: [
-    process.env.FINANCE_APP_URL,
-    process.env.NEXT_PUBLIC_FINANCE_APP_URL,
-    process.env.NEXT_PUBLIC_APP_URL,
-    process.env.BASE_URL,
-  ],
-  fallback: DEFAULT_FINANCE_APP_URL,
-});
+const FINANCE_URL_CANDIDATES = [
+  process.env.FINANCE_APP_URL,
+  process.env.NEXT_PUBLIC_FINANCE_APP_URL,
+  process.env.NEXT_PUBLIC_APP_URL,
+  process.env.BASE_URL,
+];
+
+// The shared resolver classifies https://tuturuuu.com/finance as the platform
+// origin and skips it. Accept that exact root here so the production profile
+// wins. Every other candidate still goes through the shared resolver.
+export const BASE_URL =
+  financeBakedApexUrl(FINANCE_URL_CANDIDATES) ??
+  resolveInternalAppUrl({
+    appName: 'finance',
+    candidates: FINANCE_URL_CANDIDATES,
+    fallback: DEFAULT_FINANCE_APP_URL,
+  });
 
 export const API_URL = process.env.API_URL || `${BASE_URL}/api`;
 
