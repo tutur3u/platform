@@ -1,8 +1,20 @@
 import { describe, expect, it } from 'vitest';
+import { InternalApiError } from '@tuturuuu/internal-api';
 import { LiveClientError } from '@/lib/live/errors';
 import { classifyLiveInitializationError } from './use-ephemeral-token';
 
 describe('classifyLiveInitializationError', () => {
+  it('keeps the shared FREE budget error distinct for localized display', () => {
+    expect(
+      classifyLiveInitializationError(
+        new InternalApiError(
+          'Free Live daily budget exhausted',
+          429,
+          'FREE_LIVE_DAILY_BUDGET_EXHAUSTED'
+        )
+      )
+    ).toBe('FREE_LIVE_DAILY_BUDGET_EXHAUSTED');
+  });
   it('distinguishes provider connection failures', () => {
     expect(
       classifyLiveInitializationError(

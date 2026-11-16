@@ -10,6 +10,7 @@ describe('buildLiveConnectConfig', () => {
   afterEach(() => {
     vi.unstubAllEnvs();
     vi.unstubAllGlobals();
+    vi.restoreAllMocks();
   });
 
   it.each(['gemini-3.8-live', 'gemini-3.8-live-extended-thinking'])(
@@ -106,5 +107,53 @@ describe('buildLiveConnectConfig', () => {
 
     expect(body.fieldMask).toBeUndefined();
     expect(body.bidiGenerateContentSetup.tools).toHaveLength(2);
+  });
+
+  it('locks absent FREE resumption and honors the server-admitted expiry', () => {
+    const now = Date.now();
+    vi.spyOn(Date, 'now').mockReturnValue(now);
+    const expiresAt = new Date(now + 180_000).toISOString();
+    const config = buildCreateAuthTokenConfig({
+      model: 'gemini-3.8-live',
+      allowResumption: false,
+      expiresAt,
+    });
+    expect(config?.expireTime).toBe(expiresAt);
+    expect(config?.newSessionExpireTime).toBe(
+      new Date(now + 30_000).toISOString()
+    );
+    expect(config?.lockAdditionalFields).toEqual(['sessionResumption']);
+    expect(config?.liveConnectConstraints?.config).not.toHaveProperty(
+      'sessionResumption'
+    );
+    expect(
+      buildLiveConnectConfig({
+        model: 'gemini-3.8-live',
+        allowResumption: false,
+        sessionHandle: 'must-not-resume',
+      }).config
+    ).not.toHaveProperty('sessionResumption');
+  });
+
+  it('serializes the singular no-resumption lock without a tool field mask', async () => {
+    const fetchMock = vi.fn().mockResolvedValue(
+      new Response(JSON.stringify({ name: 'auth_tokens/test' }), {
+        headers: { 'content-type': 'application/json' },
+      })
+    );
+    vi.stubGlobal('fetch', fetchMock);
+    vi.stubEnv('GOOGLE_GENERATIVE_AI_API_KEY', 'synthetic-boundary-fixture');
+    await createConstrainedLiveToken({
+      model: 'gemini-3.8-live',
+      allowResumption: false,
+      expiresAt: new Date(Date.now() + 180_000).toISOString(),
+    });
+    const request = fetchMock.mock.calls[0]?.[1] as RequestInit | undefined;
+    const body = JSON.parse(String(request?.body));
+    expect(body.fieldMask.split(',')).toContain('sessionResumption');
+    expect(body.fieldMask.split(',')).not.toContain('tools');
+    expect(body.bidiGenerateContentSetup).not.toHaveProperty(
+      'sessionResumption'
+    );
   });
 });

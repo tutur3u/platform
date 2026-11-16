@@ -6615,6 +6615,7 @@
       "expand_preview": "Mở rộng bản xem trước",
       "flash_description": "Trò chuyện nhanh và tự nhiên.",
       "flash_mode": "Flash",
+      "free_daily_budget_exhausted": "Hạn mức Trực tiếp miễn phí hôm nay đã hết. Bạn có thể dùng lại sau 00:00 (giờ Việt Nam).",
       "greeting": "Hôm nay tôi có thể giúp gì cho bạn?",
       "history_not_ready": "Vui lòng đợi lịch sử trò chuyện tải xong trước khi bắt đầu Trực tiếp.",
       "history_restore_failed": "Không thể tải lịch sử trò chuyện. Thử lại để tiếp tục cuộc trò chuyện này.",

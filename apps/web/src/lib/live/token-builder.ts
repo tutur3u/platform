@@ -20,6 +20,8 @@ type LiveTokenBuilderParams = {
   voiceName?: string;
   thinkingLevel?: ThinkingLevel;
   sessionHandle?: string;
+  allowResumption?: boolean;
+  expiresAt?: string;
 };
 
 export const LIVE_TOKEN_LIFETIME_MS = 5 * 60 * 1000;
@@ -32,14 +34,24 @@ export function buildCreateAuthTokenConfig({
   responseModalities,
   voiceName,
   thinkingLevel,
+  allowResumption = true,
+  expiresAt,
 }: LiveTokenBuilderParams): AuthTokenCreateParams['config'] {
-  const expireTime = new Date(
-    Date.now() + LIVE_TOKEN_LIFETIME_MS
-  ).toISOString();
+  const now = Date.now();
+  const expiresMs =
+    expiresAt == null ? now + LIVE_TOKEN_LIFETIME_MS : Date.parse(expiresAt);
+  if (!Number.isFinite(expiresMs) || expiresMs <= now) {
+    throw new Error('Invalid Live token expiry');
+  }
+  const expireTime = new Date(expiresMs).toISOString();
 
   return {
     uses: 1,
     expireTime,
+    newSessionExpireTime: new Date(
+      Math.min(expiresMs - 1, now + 30_000)
+    ).toISOString(),
+    ...(allowResumption ? {} : { lockAdditionalFields: ['sessionResumption'] }),
     liveConnectConstraints: buildLiveConnectConfig({
       model,
       systemInstruction,
@@ -48,6 +60,7 @@ export function buildCreateAuthTokenConfig({
       responseModalities,
       voiceName,
       thinkingLevel,
+      allowResumption,
     }),
     httpOptions: { apiVersion: GEMINI_LIVE_API_VERSION },
   };
@@ -62,6 +75,7 @@ export function buildLiveConnectConfig({
   voiceName = 'Aoede',
   thinkingLevel,
   sessionHandle,
+  allowResumption = true,
 }: LiveTokenBuilderParams): LiveConnectConstraints {
   return {
     model,
@@ -70,7 +84,12 @@ export function buildLiveConnectConfig({
       inputAudioTranscription: {},
       outputAudioTranscription: {},
       contextWindowCompression: getLiveContextWindowCompression(model),
-      sessionResumption: sessionHandle == null ? {} : { handle: sessionHandle },
+      ...(allowResumption
+        ? {
+            sessionResumption:
+              sessionHandle == null ? {} : { handle: sessionHandle },
+          }
+        : {}),
       ...getLiveThinkingConfig(model, thinkingLevel),
       speechConfig: {
         voiceConfig: {
@@ -100,6 +119,8 @@ export async function createConstrainedLiveToken({
   responseModalities,
   voiceName,
   thinkingLevel,
+  allowResumption,
+  expiresAt,
 }: LiveTokenBuilderParams): Promise<string> {
   const apiKey = process.env.GOOGLE_GENERATIVE_AI_API_KEY;
   if (apiKey == null || apiKey.trim().length === 0) {
@@ -120,6 +141,8 @@ export async function createConstrainedLiveToken({
       responseModalities,
       voiceName,
       thinkingLevel,
+      allowResumption,
+      expiresAt,
     }),
   });
 

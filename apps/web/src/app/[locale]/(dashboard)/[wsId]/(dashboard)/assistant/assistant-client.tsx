@@ -92,19 +92,21 @@ export default function AssistantClient({
     ? classifyLiveInitializationError(sessionError)
     : errorCode;
   const errorDescription =
-    effectiveErrorCode === 'INSUFFICIENT_CREDITS'
-      ? t('insufficient_credits')
-      : effectiveErrorCode === 'MICROPHONE_DENIED'
-        ? t('microphone_denied')
-        : effectiveErrorCode === 'MICROPHONE_UNAVAILABLE'
-          ? t('microphone_unavailable')
-          : effectiveErrorCode === 'NOT_CONFIGURED'
-            ? t('not_configured')
-            : effectiveErrorCode === 'AUTHORIZATION_EXPIRED'
-              ? t('authorization_expired')
-              : effectiveErrorCode === 'CONNECTION_FAILED'
-                ? t('connection_failed')
-                : t('connection_error_fallback');
+    effectiveErrorCode === 'FREE_LIVE_DAILY_BUDGET_EXHAUSTED'
+      ? t('free_daily_budget_exhausted')
+      : effectiveErrorCode === 'INSUFFICIENT_CREDITS'
+        ? t('insufficient_credits')
+        : effectiveErrorCode === 'MICROPHONE_DENIED'
+          ? t('microphone_denied')
+          : effectiveErrorCode === 'MICROPHONE_UNAVAILABLE'
+            ? t('microphone_unavailable')
+            : effectiveErrorCode === 'NOT_CONFIGURED'
+              ? t('not_configured')
+              : effectiveErrorCode === 'AUTHORIZATION_EXPIRED'
+                ? t('authorization_expired')
+                : effectiveErrorCode === 'CONNECTION_FAILED'
+                  ? t('connection_failed')
+                  : t('connection_error_fallback');
   const errorTitle =
     effectiveErrorCode === 'INSUFFICIENT_CREDITS'
       ? t('credits_required_title')

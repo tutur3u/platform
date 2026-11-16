@@ -6,6 +6,7 @@ import {
 } from '@tuturuuu/supabase/next/server';
 import {
   normalizeWorkspaceId,
+  getWorkspaceTier,
   verifyWorkspaceMembershipType,
 } from '@tuturuuu/utils/workspace-helper';
 import type { NextRequest } from 'next/server';
@@ -22,9 +23,11 @@ import {
 import { buildLiveMiraPrompt } from '@/lib/live/mira-prompt';
 import { getLiveModeScope, LIVE_MODELS } from '@/lib/live/models';
 import {
-  createConstrainedLiveToken,
-  LIVE_TOKEN_LIFETIME_MS,
-} from '@/lib/live/token-builder';
+  LiveMintCapError,
+  readLiveMintConfig,
+  reserveLiveMint,
+} from '@/lib/live/mint-cap';
+import { createConstrainedLiveToken } from '@/lib/live/token-builder';
 
 const RequestSchema = z.object({
   timezone: z.string().trim().min(1).max(100).optional(),
@@ -50,8 +53,10 @@ async function resolveBillingWorkspace({
     const { data, error } = await sbAdmin
       .from('workspaces')
       .select('id, workspace_members!inner(user_id)')
+      .eq('creator_id', userId)
       .eq('personal', true)
       .eq('workspace_members.user_id', userId)
+      .eq('workspace_members.type', 'MEMBER')
       .maybeSingle();
     if (error) throw new Error('Failed to resolve personal workspace');
     if (!data?.id || (creditWsId && creditWsId !== data.id)) {
@@ -129,16 +134,27 @@ export async function POST(request: NextRequest) {
       creditWsId: normalizedCreditWsId,
       userId: user.id,
     });
+    const billingTier = await getWorkspaceTier(billingWsId, { useAdmin: true });
+    const isFree = !['PLUS', 'PRO', 'ENTERPRISE'].includes(billingTier ?? '');
+    const model = LIVE_MODELS[parsed.data.mode];
+    if (isFree && model !== LIVE_MODELS.flash) {
+      return Response.json(
+        {
+          code: 'LIVE_MODEL_NOT_ALLOWED',
+          error: 'Live model is unavailable for this plan.',
+        },
+        { status: 403 }
+      );
+    }
+    const config = readLiveMintConfig();
+    const mint = await reserveLiveMint({ actorId: user.id, isFree, config });
     const systemInstruction = await buildLiveMiraPrompt({
       supabase,
       user,
       wsId: accessWsId,
       timezone: parsed.data.timezone,
     });
-    const model = LIVE_MODELS[parsed.data.mode];
-    const expiresAt = new Date(
-      Date.now() + LIVE_TOKEN_LIFETIME_MS
-    ).toISOString();
+    const expiresAt = mint.expiresAt;
     const billing = await beginLiveBillingSession({
       accessWsId,
       billingWsId,
@@ -150,6 +166,8 @@ export async function POST(request: NextRequest) {
 
     const token = await createConstrainedLiveToken({
       model,
+      expiresAt,
+      allowResumption: !isFree,
       responseModalities: [Modality.AUDIO],
       systemInstruction,
       toolConfig: ASSISTANT_LIVE_TOOL_CONFIG,
@@ -163,14 +181,17 @@ export async function POST(request: NextRequest) {
       ],
     });
 
-    return Response.json({
-      expiresAt,
-      liveSessionId,
-      model,
-      reservedCredits: billing.reservedCredits,
-      scopeKey: getLiveModeScope(parsed.data.mode),
-      token,
-    });
+    return Response.json(
+      {
+        expiresAt,
+        liveSessionId,
+        model,
+        reservedCredits: billing.reservedCredits,
+        scopeKey: getLiveModeScope(parsed.data.mode),
+        token,
+      },
+      { headers: { 'Cache-Control': 'private, no-store' } }
+    );
   } catch (error) {
     if (liveSessionId && userId) {
       await abortLiveBillingSession({ liveSessionId, userId }).catch(
@@ -179,6 +200,21 @@ export async function POST(request: NextRequest) {
             'Failed to release Live billing reservation',
             abortError
           );
+        }
+      );
+    }
+    if (error instanceof LiveMintCapError) {
+      return Response.json(
+        {
+          code: error.code,
+          error:
+            error.code === 'FREE_LIVE_DAILY_BUDGET_EXHAUSTED'
+              ? 'Free Live voice has reached its daily budget. Please try again after the daily reset.'
+              : 'Live token admission is unavailable.',
+        },
+        {
+          status: error.status,
+          headers: { 'Retry-After': String(error.retryAfter) },
         }
       );
     }

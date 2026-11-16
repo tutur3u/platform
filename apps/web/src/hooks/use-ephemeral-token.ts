@@ -11,6 +11,7 @@ import { useCallback } from 'react';
 import { LiveClientError } from '@/lib/live/errors';
 
 export type LiveInitializationErrorCode =
+  | 'FREE_LIVE_DAILY_BUDGET_EXHAUSTED'
   | 'INSUFFICIENT_CREDITS'
   | 'AUTHORIZATION_EXPIRED'
   | 'CONNECTION_FAILED'
@@ -27,6 +28,9 @@ export function classifyLiveInitializationError(
   }
 
   if (error instanceof InternalApiError) {
+    if (error.code === 'FREE_LIVE_DAILY_BUDGET_EXHAUSTED') {
+      return 'FREE_LIVE_DAILY_BUDGET_EXHAUSTED';
+    }
     if (error.code === 'INSUFFICIENT_CREDITS' || error.status === 402) {
       return 'INSUFFICIENT_CREDITS';
     }

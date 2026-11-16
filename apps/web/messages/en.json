@@ -6615,6 +6615,7 @@
       "expand_preview": "Expand preview",
       "flash_description": "Quick, fluid conversation.",
       "flash_mode": "Flash",
+      "free_daily_budget_exhausted": "Today's free Live budget is used up. It resets at midnight Vietnam time.",
       "greeting": "How can I help you today?",
       "history_not_ready": "Wait for chat history to finish loading before starting Live.",
       "history_restore_failed": "Chat history could not load. Retry to continue this conversation.",
