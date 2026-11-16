@@ -1514,6 +1514,7 @@
   "assistantLiveStopScreen": "Dừng chia sẻ",
   "assistantLiveSubtitle": "Gemini 3.1 Flash Live với giọng nói, camera, tệp đính kèm và lịch sử chat thống nhất.",
   "assistantLiveTierRequired": "Giọng nói trực tiếp chỉ có từ gói PLUS trở lên.",
+  "assistantLiveTierUnavailable": "Giọng nói trực tiếp không khả dụng với gói hiện tại của bạn.",
   "assistantLiveTitle": "Mira Live",
   "assistantLiveTranscriptPending": "Các thay đổi trong bản ghi chưa được đồng bộ.",
   "assistantLiveTypeMessage": "Gõ",

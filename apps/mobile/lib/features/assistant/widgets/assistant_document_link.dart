@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:mobile/core/platform/purchase_channel.dart';
 import 'package:mobile/core/ui/ui.dart';
 import 'package:mobile/l10n/l10n.dart';
 import 'package:url_launcher/url_launcher.dart';
@@ -8,7 +9,8 @@ Uri? assistantDocumentUri(String? url) {
   if (uri == null ||
       !{'http', 'https'}.contains(uri.scheme.toLowerCase()) ||
       uri.host.isEmpty ||
-      uri.userInfo.isNotEmpty) {
+      uri.userInfo.isNotEmpty ||
+      !allowsPurchaseNavigation(uri)) {
     return null;
   }
   return uri;

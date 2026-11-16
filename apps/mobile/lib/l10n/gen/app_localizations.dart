@@ -1669,6 +1669,12 @@ abstract class AppLocalizations {
   /// **'Live voice is available on PLUS and above.'**
   String get assistantLiveTierRequired;
 
+  /// No description provided for @assistantLiveTierUnavailable.
+  ///
+  /// In en, this message translates to:
+  /// **'Live voice isn\'t available on your current plan.'**
+  String get assistantLiveTierUnavailable;
+
   /// No description provided for @assistantLiveTitle.
   ///
   /// In en, this message translates to:

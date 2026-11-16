@@ -1,0 +1,44 @@
+---
+title: Mobile purchase channels
+description: How the Flutter app starts plan and credit purchases on each platform.
+updatedAt: "2026-11-16"
+audience: developers
+---
+
+The Flutter app decides how a plan, credit or subscription purchase may start
+through one seam, `PurchaseChannel` in
+`apps/mobile/lib/core/platform/purchase_channel.dart`.
+
+| Platform | Channel | Behavior |
+|---|---|---|
+| Android, Windows, Linux, web | `external` | Purchase links open the Tuturuuu web billing pages. |
+| iOS, macOS (App Store builds) | `unavailable` | No external purchase link opens; upgrade entry points are hidden. |
+
+App Store Guidelines 3.1.1 and 3.1.3 forbid the Apple builds from linking to a
+purchase made outside StoreKit. When StoreKit purchases are wired,
+`appleStorePurchaseChannel` becomes `native` and upgrade entry points call
+`startNativePurchase` instead of a web page.
+
+## Rules
+
+- Paid entitlements a user already holds stay usable on every channel. Tier
+  badges, credit balances and the current plan name are displays, not offers.
+- Off the `external` channel, `launchMobileLink`, assistant document links and
+  Mastermind catch-up links refuse first-party purchase URLs: any
+  `tuturuuu.com` path with a `pricing`, `billing`, `upgrade`, `subscribe`,
+  `subscription(s)` or `top-up` segment, every `pay.tuturuuu.com` page and
+  Polar hosts. Other links, including storefront and inventory checkouts that
+  sell a workspace's own goods, are unaffected.
+- On the `unavailable` channel, a locked feature says it is not available on
+  the current plan without naming a plan to buy. Mira Live uses
+  `assistantLiveTierUnavailable` for this.
+- Show an upgrade, plan or credits call to action only when
+  `showsPurchaseEntryPoints(resolvePurchaseChannel())` is true.
+
+## Regression coverage
+
+- `apps/mobile/test/core/platform/purchase_channel_test.dart`: channel per
+  platform, the native switch, purchase URL matching and link refusal on iOS
+  and macOS.
+- `apps/mobile/test/features/assistant/widgets/assistant_live_purchase_gating_test.dart`:
+  the Live tier message on iOS and macOS versus Android and Windows.

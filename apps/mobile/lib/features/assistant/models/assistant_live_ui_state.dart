@@ -1,4 +1,5 @@
 import 'package:equatable/equatable.dart';
+import 'package:mobile/core/platform/purchase_channel.dart';
 import 'package:mobile/features/assistant/cubit/assistant_live_cubit.dart';
 import 'package:mobile/features/assistant/cubit/assistant_shell_cubit.dart';
 import 'package:mobile/features/assistant/models/assistant_live_models.dart';
@@ -92,8 +93,11 @@ class AssistantLiveUiState extends Equatable {
 
     // Tier gate: explain requirement once here; plan rows in the sheet carry
     // workspace/source details (avoid duplicating the access summary string).
+    // Without a purchase channel, name no plan the user cannot buy here.
     if (kind == AssistantLiveUiKind.unavailable && showBlockedReason) {
-      return l10n.assistantLiveTierRequired;
+      return showsPurchaseEntryPoints(resolvePurchaseChannel())
+          ? l10n.assistantLiveTierRequired
+          : l10n.assistantLiveTierUnavailable;
     }
 
     return summary;

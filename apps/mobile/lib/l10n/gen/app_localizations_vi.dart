@@ -832,6 +832,9 @@ class AppLocalizationsVi extends AppLocalizations {
   String get assistantLiveTierRequired => 'Giọng nói trực tiếp chỉ có từ gói PLUS trở lên.';
 
   @override
+  String get assistantLiveTierUnavailable => 'Giọng nói trực tiếp không khả dụng với gói hiện tại của bạn.';
+
+  @override
   String get assistantLiveTitle => 'Mira Live';
 
   @override

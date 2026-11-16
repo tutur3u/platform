@@ -832,6 +832,9 @@ class AppLocalizationsEn extends AppLocalizations {
   String get assistantLiveTierRequired => 'Live voice is available on PLUS and above.';
 
   @override
+  String get assistantLiveTierUnavailable => 'Live voice isn\'t available on your current plan.';
+
+  @override
   String get assistantLiveTitle => 'Mira Live';
 
   @override
