@@ -76,6 +76,31 @@
   --sorbet-shadow-sm:
     0 1px 2px rgb(38 33 43 / 0.06), 0 2px 8px -4px rgb(38 33 43 / 0.12);
   --sorbet-shadow-md: 0 10px 30px -18px rgb(38 33 43 / 0.35);
+  --sorbet-shadow-lg: 0 24px 48px -24px rgb(38 33 43 / 0.35);
+  --sorbet-scrim: rgb(38 33 43 / 0.32);
+
+  /* Motion and touch metrics; sorbet-tokens.json is the shared contract. */
+  --sorbet-duration-instant: 80ms;
+  --sorbet-duration-fast: 120ms;
+  --sorbet-duration-base: 180ms;
+  --sorbet-duration-slow: 280ms;
+  --sorbet-duration-sheet: 320ms;
+  --sorbet-ease-standard: cubic-bezier(0.2, 0, 0, 1);
+  --sorbet-ease-emphasized: cubic-bezier(0.3, 0, 0, 1);
+  --sorbet-ease-exit: cubic-bezier(0.4, 0, 1, 1);
+
+  --sorbet-touch-target: 44px;
+  --sorbet-input-font-size: 16px;
+  --sorbet-gutter: 16px;
+  --sorbet-header-height: 56px;
+  --sorbet-dock-height: 64px;
+  --sorbet-dock-inset: 12px;
+  --sorbet-sheet-radius: 24px;
+  --sorbet-list-row-min-height: 52px;
+  --sorbet-content-bottom-clearance: calc(
+    var(--sorbet-dock-height) + var(--sorbet-dock-inset) * 2 +
+      env(safe-area-inset-bottom, 0px)
+  );
 }
 
 :root[data-ui="sorbet"].dark {
@@ -138,6 +163,8 @@
 
   --sorbet-shadow-sm: 0 1px 2px rgb(0 0 0 / 0.4);
   --sorbet-shadow-md: 0 10px 30px -18px rgb(0 0 0 / 0.7);
+  --sorbet-shadow-lg: 0 24px 48px -24px rgb(0 0 0 / 0.8);
+  --sorbet-scrim: rgb(0 0 0 / 0.6);
 }
 
 /* Typeface: Nunito, self-hosted through the shared next/font loader. */
@@ -183,4 +210,86 @@
   ):focus-visible {
   outline: 2px solid var(--ring);
   outline-offset: 2px;
+}
+
+/* Overlays: one scrim and one floating elevation for every sheet and dialog. */
+:root[data-ui="sorbet"]
+  :where(
+    [data-slot="sheet-overlay"],
+    [data-slot="dialog-overlay"],
+    [data-slot="drawer-overlay"],
+    [data-slot="alert-dialog-overlay"]
+  ) {
+  background-color: var(--sorbet-scrim);
+}
+
+:root[data-ui="sorbet"]
+  :where([data-slot="sheet-content"], [data-slot="drawer-content"]) {
+  border-color: color-mix(in oklab, var(--border) 60%, transparent);
+  box-shadow: var(--sorbet-shadow-lg);
+}
+
+/* Bottom sheets: rounded top edge, clear of the home indicator. */
+:root[data-ui="sorbet"]
+  :where(
+    [data-slot="sheet-content"][data-side="bottom"],
+    [data-slot="drawer-content"][data-vaul-drawer-direction="bottom"]
+  ) {
+  border-top-left-radius: var(--sorbet-sheet-radius);
+  border-top-right-radius: var(--sorbet-sheet-radius);
+}
+
+/* Layered below utilities, so a caller's own bottom padding still wins. */
+@layer components {
+  :root[data-ui="sorbet"]
+    :where(
+      [data-slot="sheet-content"][data-side="bottom"],
+      [data-slot="drawer-content"][data-vaul-drawer-direction="bottom"]
+    ) {
+    padding-bottom: env(safe-area-inset-bottom, 0px);
+  }
+}
+
+/*
+  Touch screens. Fields reach the 44px target (globals.css already keeps their
+  text at 16px on iOS). Buttons keep their drawn size; an invisible hit area
+  grows them to 44px instead, so dense toolbars keep their layout.
+*/
+@media (pointer: coarse) {
+  :root[data-ui="sorbet"]
+    :where([data-slot="input"], [data-slot="select-trigger"]) {
+    min-height: var(--sorbet-touch-target);
+  }
+
+  /* Layered below utilities, so a button's own absolute or fixed position wins. */
+  @layer components {
+    :root[data-ui="sorbet"]
+      :where(
+        [data-slot="button"],
+        [data-slot="tabs-trigger"],
+        [data-slot="switch"]
+      ) {
+      position: relative;
+    }
+
+    :root[data-ui="sorbet"]
+      :where(
+        [data-slot="button"],
+        [data-slot="tabs-trigger"],
+        [data-slot="switch"]
+      )::after {
+      content: "";
+      position: absolute;
+      inset: min(0px, calc((100% - var(--sorbet-touch-target)) / 2));
+    }
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  :root[data-ui="sorbet"] {
+    --sorbet-duration-fast: 0ms;
+    --sorbet-duration-base: 0ms;
+    --sorbet-duration-slow: 0ms;
+    --sorbet-duration-sheet: 0ms;
+  }
 }

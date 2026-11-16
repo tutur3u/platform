@@ -206,6 +206,7 @@
   "exports": {
     "./custom/education-todo": "./src/components/ui/custom/education-todo.tsx",
     "./globals.css": "./src/globals.css",
+    "./sorbet-tokens.json": "./src/sorbet-tokens.json",
     "./marketing": "./src/components/ui/marketing/index.ts",
     "./postcss.config": "./postcss.config.mjs",
     "./badge": {

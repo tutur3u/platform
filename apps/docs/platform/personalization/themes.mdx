@@ -92,6 +92,21 @@ no account value is requested. Regression coverage lives in
 `packages/ui/src/components/ui/custom/`, and `packages/ui/src/sorbet-presets.test.ts`
 checks every palette's contrast in both modes.
 
+`packages/ui/src/sorbet-tokens.json` is the portable Sorbet token contract: the
+colour roles and hue fills, inks and calm fills for both modes, type, spacing,
+radius, shadows, control sizes, motion, elevation, mobile metrics and the
+setting keys with their allowlists. Web reads it through `sorbet.css`; the
+mobile app and the design system artifact map the same names. Changes to it are
+additive. `packages/ui/src/sorbet-tokens.test.ts` pins `sorbet.css` to the
+contract, keeps the setting allowlists equal to the runtime parsers, and checks
+text and focus contrast.
+
+On touch screens (`pointer: coarse`) Sorbet fields are at least 44px tall, and
+buttons, tabs and switches get an invisible 44px hit area without changing their
+drawn size. Bottom sheets and drawers round their top edge and pad for the home
+indicator. Sheets and dialogs share one scrim. With Reduce Motion on, Sorbet's
+motion durations drop to zero.
+
 ## Mobile app
 
 In the mobile app, open **Settings → Appearance** to pick a mode (System, Light
