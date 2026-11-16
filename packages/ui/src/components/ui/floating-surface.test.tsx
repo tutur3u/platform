@@ -42,7 +42,7 @@ describe('floating surface radius', () => {
     );
     for (const shape of ['sharp', 'round']) {
       expect(compact).toContain(
-        `[data-sorbet-radius='${shape}'] { --radius-popover:`
+        `[data-sorbet-radius="${shape}"] { --radius-popover:`
       );
     }
   });
@@ -90,6 +90,6 @@ describe('floating surface radius', () => {
   it('lets a padded panel keep its padding for the inner radius', () => {
     const popover = readFileSync(resolve(__dirname, 'popover.tsx'), 'utf8');
     expect(popover).toContain('[--popover-padding:1rem]');
-    expect(css).toContain("[data-slot='popover-content']");
+    expect(css).toContain('[data-slot="popover-content"]');
   });
 });

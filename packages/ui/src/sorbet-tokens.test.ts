@@ -210,11 +210,11 @@ describe('Sorbet token contract', () => {
       expect(corners[radius]!.popover).toBe(tokens.radius.popover[radius]);
     }
     const sharp =
-      /data-sorbet-radius='sharp'\][^{]*\{\s*--radius-popover:\s*([\d.]+)rem/.exec(
+      /data-sorbet-radius="sharp"\][^{]*\{\s*--radius-popover:\s*([\d.]+)rem/.exec(
         floatingCss
       );
     const round =
-      /data-sorbet-radius='round'\][^{]*\{\s*--radius-popover:\s*([\d.]+)rem/.exec(
+      /data-sorbet-radius="round"\][^{]*\{\s*--radius-popover:\s*([\d.]+)rem/.exec(
         floatingCss
       );
     expect(remToPx(sharp![1]!)).toBe(corners.sharp!.popover);

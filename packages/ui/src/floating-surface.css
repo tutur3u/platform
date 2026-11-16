@@ -15,11 +15,11 @@
   );
 }
 
-:root[data-ui='sorbet'] {
+:root[data-ui="sorbet"] {
   --radius-popover: var(--radius-xl);
 }
 
-:root[data-ui='sorbet'][data-sorbet-radius='sharp'] {
+:root[data-ui="sorbet"][data-sorbet-radius="sharp"] {
   --radius-popover: 0.375rem;
 }
 
@@ -28,7 +28,7 @@
   (1.25rem − 0.25rem = 1rem) is exactly a pill and stays concentric.
   A larger value is clamped by the row height and the corners drift apart.
 */
-:root[data-ui='sorbet'][data-sorbet-radius='round'] {
+:root[data-ui="sorbet"][data-sorbet-radius="round"] {
   --radius-popover: 1.25rem;
 }
 
@@ -39,18 +39,18 @@
   1rem; Command resets to 0.25rem) gives its children the matching radius.
 */
 :where(
-    [data-slot='dropdown-menu-content'],
-    [data-slot='dropdown-menu-sub-content'],
-    [data-slot='context-menu-content'],
-    [data-slot='context-menu-sub-content'],
-    [data-slot='menubar-content'],
-    [data-slot='menubar-sub-content'],
-    [data-slot='select-content'],
-    [data-slot='popover-content'],
-    [data-slot='hover-card-content'],
-    [data-slot='command'],
-    [data-slot='tooltip-content']
-  ) {
+  [data-slot="dropdown-menu-content"],
+  [data-slot="dropdown-menu-sub-content"],
+  [data-slot="context-menu-content"],
+  [data-slot="context-menu-sub-content"],
+  [data-slot="menubar-content"],
+  [data-slot="menubar-sub-content"],
+  [data-slot="select-content"],
+  [data-slot="popover-content"],
+  [data-slot="hover-card-content"],
+  [data-slot="command"],
+  [data-slot="tooltip-content"]
+) {
   --radius-inner: max(
     0.125rem,
     calc(var(--radius-popover) - var(--popover-padding))
@@ -61,8 +61,8 @@
   sorbet.css pins popover and dropdown content to --radius-xl, which would
   ignore Shape. Same specificity, later in the cascade, so this one wins.
 */
-:root[data-ui='sorbet']
-  :where([data-slot='popover-content'], [data-slot='dropdown-menu-content']) {
+:root[data-ui="sorbet"]
+  :where([data-slot="popover-content"], [data-slot="dropdown-menu-content"]) {
   border-radius: var(--radius-popover);
 }
 
@@ -110,7 +110,7 @@
 
 :root
   [data-sonner-toaster][data-sonner-theme]
-  [data-sonner-toast][data-styled='true'] {
+  [data-sonner-toast][data-styled="true"] {
   font-size: var(--text-sm, 0.875rem);
   line-height: var(--text-sm--line-height, 1.25rem);
   box-shadow: var(
@@ -120,9 +120,9 @@
   );
 }
 
-:root[data-ui='sorbet']
+:root[data-ui="sorbet"]
   [data-sonner-toaster][data-sonner-theme]
-  [data-sonner-toast][data-styled='true'] {
+  [data-sonner-toast][data-styled="true"] {
   box-shadow: var(--sorbet-shadow-md);
 }
 
@@ -135,7 +135,7 @@
 
 :root
   [data-sonner-toaster][data-sonner-theme]
-  [data-sonner-toast]:not([data-rich-colors='true'])
+  [data-sonner-toast]:not([data-rich-colors="true"])
   [data-description] {
   color: var(--muted-foreground);
 }
@@ -143,36 +143,30 @@
 /* The type icon carries the semantic colour, rich colours or not. */
 :root
   [data-sonner-toaster]
-  [data-sonner-toast][data-type='success']
+  [data-sonner-toast][data-type="success"]
   [data-icon] {
   color: var(--green);
 }
 
-:root
-  [data-sonner-toaster]
-  [data-sonner-toast][data-type='info']
-  [data-icon] {
+:root [data-sonner-toaster] [data-sonner-toast][data-type="info"] [data-icon] {
   color: var(--blue);
 }
 
 :root
   [data-sonner-toaster]
-  [data-sonner-toast][data-type='warning']
+  [data-sonner-toast][data-type="warning"]
   [data-icon] {
   color: var(--yellow);
 }
 
-:root
-  [data-sonner-toaster]
-  [data-sonner-toast][data-type='error']
-  [data-icon] {
+:root [data-sonner-toaster] [data-sonner-toast][data-type="error"] [data-icon] {
   color: var(--red);
 }
 
 /* Buttons sit inside the toast, so they take the inner radius. */
 :root
   [data-sonner-toaster][data-sonner-theme]
-  [data-sonner-toast][data-styled='true']
+  [data-sonner-toast][data-styled="true"]
   [data-button] {
   border-radius: var(--radius-inner);
   font-size: var(--text-xs, 0.75rem);
@@ -180,7 +174,7 @@
 
 :root
   [data-sonner-toaster][data-sonner-theme]
-  [data-sonner-toast][data-styled='true']
+  [data-sonner-toast][data-styled="true"]
   [data-action] {
   background: var(--primary);
   color: var(--primary-foreground);
@@ -188,7 +182,7 @@
 
 :root
   [data-sonner-toaster][data-sonner-theme]
-  [data-sonner-toast][data-styled='true']
+  [data-sonner-toast][data-styled="true"]
   [data-cancel] {
   background: var(--muted);
   color: var(--muted-foreground);
@@ -196,7 +190,7 @@
 
 :root
   [data-sonner-toaster][data-sonner-theme]
-  [data-sonner-toast][data-styled='true']
+  [data-sonner-toast][data-styled="true"]
   [data-button]:focus-visible {
   box-shadow: none;
   outline: 2px solid var(--ring);
@@ -205,7 +199,7 @@
 
 :root
   [data-sonner-toaster][data-sonner-theme]
-  [data-sonner-toast]:not([data-rich-colors='true'])
+  [data-sonner-toast]:not([data-rich-colors="true"])
   [data-close-button] {
   background: var(--popover);
   border-color: var(--border);
@@ -214,7 +208,7 @@
 
 :root
   [data-sonner-toaster][data-sonner-theme]
-  [data-sonner-toast][data-styled='true']:not([data-rich-colors='true']):hover
+  [data-sonner-toast][data-styled="true"]:not([data-rich-colors="true"]):hover
   [data-close-button]:hover {
   background: var(--muted);
   border-color: var(--border);
@@ -223,7 +217,7 @@
 
 :root
   [data-sonner-toaster][data-sonner-theme]
-  [data-sonner-toast][data-styled='true']
+  [data-sonner-toast][data-styled="true"]
   [data-close-button]:focus-visible {
   box-shadow: none;
   outline: 2px solid var(--ring);
