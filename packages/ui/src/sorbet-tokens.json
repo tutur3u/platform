@@ -436,7 +436,8 @@
     "dockSurface": "surface",
     "pageSurface": "background",
     "frameSurface": "ground",
-    "outlineStroke": "border-strong"
+    "outlineStroke": "border-strong",
+    "sheetSurface": "surface"
   },
   "presets": {
     "sources": [

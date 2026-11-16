@@ -254,12 +254,18 @@
   box-shadow: var(--sorbet-shadow-lg);
 }
 
-/* Bottom sheets: rounded top edge, clear of the home indicator. */
+/*
+  Bottom sheets float over the scrim like popovers, so they take the surface
+  (pages stay on the background), with a rounded top edge and room for the
+  home indicator.
+*/
 :root[data-ui="sorbet"]
   :where(
     [data-slot="sheet-content"][data-side="bottom"],
     [data-slot="drawer-content"][data-vaul-drawer-direction="bottom"]
   ) {
+  background-color: var(--popover);
+  color: var(--popover-foreground);
   border-top-left-radius: var(--sorbet-sheet-radius);
   border-top-right-radius: var(--sorbet-sheet-radius);
 }
