@@ -26,6 +26,11 @@
     "type-check": "tsc --project tsconfig.typecheck.json"
   },
   "exports": {
+    "./people": {
+      "types": "./dist/people.d.ts",
+      "import": "./dist/people.js",
+      "require": "./dist/people.js"
+    },
     "./cite": {
       "types": "./dist/cite.d.ts",
       "import": "./dist/cite.js",

@@ -30,6 +30,39 @@ pretend that all of these mean a missing record. See
 
 ## Related workflows
 
+### Cross-app people integration proposal
+
+The shared people-search integration is under development. Its first slice adds
+`GET /api/v1/workspaces/{wsId}/people` and the
+`@tuturuuu/internal-api/people` client; this does not establish that every app
+already uses the endpoint. Mail recipient selection, Calendar attendees, Tasks
+mentions and assignments, and Meet invitations will adopt it in separate slices.
+
+Search is workspace scoped and requires membership and contact-read permission.
+Results contain only a contact or member identity and permitted name, email and
+avatar fields. CRM notes, addresses, guardians, birthdays, balances and identity
+documents are excluded. Hidden member names and emails cannot be used to find
+records through this endpoint, including linked Contacts records. Contact email
+requires private-information permission; public names and avatars require
+public-information permission. Query text is bounded to 2–100 characters and
+results to at most 20. Wildcard queries are unsupported.
+
+A contact ID remains distinct from an authenticated member ID. Searching does
+not create membership, send an invitation, change a profile, or make a contact
+eligible for task assignment. Assignment and notification keep their existing
+member and board access checks. Explicitly adding a mail sender uses the existing
+contact-create permission and requires a separate user action.
+
+The shared account/profile panel proposal builds on the existing satellite and
+Web panels and current-user profile API. Global account names remain separate
+from workspace CRM profiles; shared name fallback and private-detail policy stay
+with their existing owners. Email changes retain verification and sensitive
+action checks. No database migration is part of the initial search slice.
+
+Focused coverage lives in the Web `workspace-people` tests, the people route tests,
+and `packages/internal-api/src/people.test.ts`. Execution and deployment evidence
+are required separately before this proposal can be described as shipped.
+
 [User management](/platform/features/user-management) describes user and account
 boundaries. [Reports](/platform/applications/reports) and
 [Tutoring](/platform/applications/tutoring) explain the education/CRM flows.
