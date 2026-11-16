@@ -102,6 +102,34 @@ jobs:
           path: ${{ runner.temp }}/cutover/
           retention-days: 7
           if-no-files-found: error
+  # Restored-bytes acceptance of the staging-profile Worker: the reusable
+  # workflow builds, seals, exercises the emitted runtime, then repeats the
+  # runtime acceptance on the restored archive. No secrets, no publication.
+  native:
+    needs: affected-gate
+    if: ${{ (needs.affected-gate.outputs.run == 'true') && (github.event_name != 'pull_request' || contains(github.event.pull_request.labels.*.name, 'ready-for-ci')) }}
+    uses: ./.github/workflows/native-start-app.yaml
+    permissions:
+      contents: read
+    with:
+      app: git
+      package: '@tuturuuu/git'
+      artifact-script: scripts/ci/git-native-artifact.py
+      env-interface: GitGeneratedEnv
+      worker-environment-type: GitEnvironment
+      helper-tests: python3 scripts/ci/git-native-artifact.test.py
+      unit-command: bun run test && bun run type-check:cloudflare
+      runtime-command: node --test --test-concurrency=1 cloudflare/*.runtime.mjs
+      # Public staging values from repository variables for same-repository
+      # events; fork pull requests (and unset variables) build with fixtures.
+      public-env: |
+        NEXT_PUBLIC_SUPABASE_URL=${{ (github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository) && vars.STAGING_SUPABASE_URL || 'https://git-ci.supabase.invalid' }}
+        NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY=${{ (github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository) && vars.STAGING_SUPABASE_PUBLISHABLE_KEY || 'sb_publishable_git_ci_placeholder' }}
+        NEXT_PUBLIC_APP_URL=https://git.tuturuuu.com
+        NEXT_PUBLIC_WEB_APP_URL=https://tuturuuu.com
+        TUTURUUU_NOINDEX=1
+      format-paths: >-
+        apps/git/cloudflare apps/git/src/routes apps/git/src/router.tsx apps/git/src/start.ts apps/git/vite.config.mts apps/git/void.config.ts apps/git/vitest.config.mts apps/git/tsconfig.json apps/git/tsconfig.cloudflare.json apps/git/package.json apps/git/start-bridge.routes.json apps/git/start-bridge.config.ts
   git-cutover-artifact:
     needs: [build, affected-gate]
     if: ${{ (needs.affected-gate.outputs.run == 'true') && (github.event_name != 'pull_request' || contains(github.event.pull_request.labels.*.name, 'ready-for-ci')) }}

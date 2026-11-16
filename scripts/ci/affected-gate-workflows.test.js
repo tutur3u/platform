@@ -13,7 +13,7 @@ const gated = Object.entries(workflows).filter(([, workflow]) =>
 const needsOf = (job) => [job.needs ?? []].flat();
 
 const scopedCallers = {
-  'git-cloudflare.yaml': { app: 'git', jobs: ['build'] },
+  'git-cloudflare.yaml': { app: 'git', jobs: ['build', 'native'] },
   'external-cloudflare.yaml': { app: 'external', jobs: ['build'] },
   'roadmap-cloudflare.yaml': { app: 'roadmap', jobs: ['build'] },
   'rewise-cloudflare.yaml': {
