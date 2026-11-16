@@ -15,7 +15,10 @@ async function encodeInPage({ src, maxEdge, maxBytes, qualities }) {
   const img = new Image();
   img.src = src;
   await img.decode();
-  const scale = Math.min(1, maxEdge / Math.max(img.naturalWidth, img.naturalHeight));
+  const scale = Math.min(
+    1,
+    maxEdge / Math.max(img.naturalWidth, img.naturalHeight)
+  );
   const canvas = document.createElement('canvas');
   canvas.width = Math.round(img.naturalWidth * scale);
   canvas.height = Math.round(img.naturalHeight * scale);
@@ -23,15 +26,23 @@ async function encodeInPage({ src, maxEdge, maxBytes, qualities }) {
   ctx.imageSmoothingQuality = 'high';
   ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
   for (const quality of qualities) {
-    const blob = await new Promise((resolve) => canvas.toBlob(resolve, 'image/webp', quality));
-    if (blob.type !== 'image/webp') throw new Error('This browser cannot encode WebP');
+    const blob = await new Promise((resolve) =>
+      canvas.toBlob(resolve, 'image/webp', quality)
+    );
+    if (blob.type !== 'image/webp')
+      throw new Error('This browser cannot encode WebP');
     if (blob.size <= maxBytes) {
       const bytes = new Uint8Array(await blob.arrayBuffer());
       let binary = '';
       for (let i = 0; i < bytes.length; i += 0x8000) {
         binary += String.fromCharCode(...bytes.subarray(i, i + 0x8000));
       }
-      return { base64: btoa(binary), width: canvas.width, height: canvas.height, quality };
+      return {
+        base64: btoa(binary),
+        width: canvas.width,
+        height: canvas.height,
+        quality,
+      };
     }
   }
   throw new Error(`Cannot fit ${maxBytes} bytes`);
@@ -54,7 +65,8 @@ export function gallerySources(shotNames, gallery) {
     const webName = path.basename(item.file);
     const id = webName.replace(/^\d{2}-/, '').replace(/\.webp$/, '');
     const source = shots.find((name) => SHOT_NAME.exec(name)[1] === id);
-    if (!source) throw new Error(`No screenshot for gallery entry ${item.file}`);
+    if (!source)
+      throw new Error(`No screenshot for gallery entry ${item.file}`);
     return [source, webName];
   });
 }
@@ -64,7 +76,13 @@ export async function writeWebGallery(page, outRoot, metadataDir) {
   const written = {};
   await page.setContent('<!doctype html><html><body></body></html>');
   for (const [platform, device] of Object.entries(WEB_GALLERY.sources)) {
-    const sourceDir = path.join(outRoot, SCREENSHOT_ROOT, platform, device, WEB_GALLERY.locale);
+    const sourceDir = path.join(
+      outRoot,
+      SCREENSHOT_ROOT,
+      platform,
+      device,
+      WEB_GALLERY.locale
+    );
     if (!fs.existsSync(sourceDir)) continue;
     const sources = gallerySources(
       fs.readdirSync(sourceDir),
@@ -93,8 +111,14 @@ export async function writeWebGallery(page, outRoot, metadataDir) {
         bytes: bytes.length,
       });
     }
-    const manifest = { source: `${platform}/${device}/${WEB_GALLERY.locale}`, items };
-    fs.writeFileSync(path.join(webDir, 'manifest.json'), `${JSON.stringify(manifest, null, 2)}\n`);
+    const manifest = {
+      source: `${platform}/${device}/${WEB_GALLERY.locale}`,
+      items,
+    };
+    fs.writeFileSync(
+      path.join(webDir, 'manifest.json'),
+      `${JSON.stringify(manifest, null, 2)}\n`
+    );
     written[platform] = items;
   }
   return written;

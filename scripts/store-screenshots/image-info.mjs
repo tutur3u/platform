@@ -1,7 +1,9 @@
 // Reads format, pixel size and channel layout from PNG, JPEG and WebP headers, so
 // store assets can be checked without an image library.
 
-const PNG_SIGNATURE = Buffer.from([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a]);
+const PNG_SIGNATURE = Buffer.from([
+  0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a,
+]);
 
 // Start-of-frame markers that carry dimensions (excludes DHT, JPG and DAC).
 const SOF_MARKERS = new Set([
@@ -96,7 +98,11 @@ function readJpegInfo(buffer) {
       offset += 1;
       continue;
     }
-    if (marker === 0xd8 || (marker >= 0xd0 && marker <= 0xd7) || marker === 0x01) {
+    if (
+      marker === 0xd8 ||
+      (marker >= 0xd0 && marker <= 0xd7) ||
+      marker === 0x01
+    ) {
       offset += 2;
       continue;
     }

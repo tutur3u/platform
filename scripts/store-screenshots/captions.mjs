@@ -24,13 +24,19 @@ export function loadMetadata(metadataDir, store) {
  */
 export function planScreens(metadata, target, locale) {
   const entries = metadata?.screenshots?.[target.device];
-  const list = Array.isArray(entries) && entries.length > 0
-    ? entries.map((entry) => ({
-        id: entry.id,
-        file: entry.files?.[locale] ?? screenshotPath(target, locale, entry.id),
-        caption: entry.caption?.[locale],
-      }))
-    : SCREEN_IDS.map((id) => ({ id, file: screenshotPath(target, locale, id), caption: null }));
+  const list =
+    Array.isArray(entries) && entries.length > 0
+      ? entries.map((entry) => ({
+          id: entry.id,
+          file:
+            entry.files?.[locale] ?? screenshotPath(target, locale, entry.id),
+          caption: entry.caption?.[locale],
+        }))
+      : SCREEN_IDS.map((id) => ({
+          id,
+          file: screenshotPath(target, locale, id),
+          caption: null,
+        }));
   return list.map(({ id, file, caption }) => ({
     id,
     file,

@@ -44,14 +44,18 @@ import {
   screenshotSpec,
 } from './template.mjs';
 
-const REPO_ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../..');
+const REPO_ROOT = path.resolve(
+  path.dirname(fileURLToPath(import.meta.url)),
+  '../..'
+);
 
 // The workspace uses Bun's isolated linker, so Playwright resolves from a
 // workspace that depends on it when the root cannot see it.
 async function loadChromium() {
   const candidates = [
     pathToFileURL(path.join(REPO_ROOT, 'package.json')).href,
-    pathToFileURL(path.join(REPO_ROOT, 'apps/infrastructure/package.json')).href,
+    pathToFileURL(path.join(REPO_ROOT, 'apps/infrastructure/package.json'))
+      .href,
     pathToFileURL(path.join(REPO_ROOT, 'apps/contacts/package.json')).href,
   ];
   for (const from of candidates) {
@@ -66,7 +70,9 @@ async function loadChromium() {
       }
     }
   }
-  throw new Error('Playwright is not installed. Run `bun install`, then `bunx playwright install chromium`.');
+  throw new Error(
+    'Playwright is not installed. Run `bun install`, then `bunx playwright install chromium`.'
+  );
 }
 
 function dataUrl(file) {
@@ -79,7 +85,9 @@ function dataUrl(file) {
 export function findRaw(rawDir, target, locale, id) {
   const dir = path.join(rawDir, target.store, target.device, locale);
   if (!fs.existsSync(dir)) return null;
-  const match = fs.readdirSync(dir).find((name) => /^\d{2}-/.test(name) && name.slice(3) === `${id}.png`);
+  const match = fs
+    .readdirSync(dir)
+    .find((name) => /^\d{2}-/.test(name) && name.slice(3) === `${id}.png`);
   return match ? path.join(dir, match) : null;
 }
 
@@ -87,14 +95,20 @@ async function render(page, html, width, height, spec) {
   await page.setViewportSize({ width, height });
   await page.setContent(html, { waitUntil: 'networkidle' });
   const fontsLoaded = await page.evaluate((s) => window.__layout(s), spec);
-  if (!fontsLoaded) throw new Error('Nunito did not load; check network access to Google Fonts.');
+  if (!fontsLoaded)
+    throw new Error(
+      'Nunito did not load; check network access to Google Fonts.'
+    );
 }
 
 async function main() {
   const { values } = parseArgs({
     options: {
       raw: { type: 'string' },
-      metadata: { type: 'string', default: path.join(REPO_ROOT, 'apps/mobile/store/metadata') },
+      metadata: {
+        type: 'string',
+        default: path.join(REPO_ROOT, 'apps/mobile/store/metadata'),
+      },
       out: { type: 'string', default: REPO_ROOT },
       only: { type: 'string' },
       locales: { type: 'string', default: LOCALES.join(',') },
@@ -124,7 +138,9 @@ async function main() {
         for (const screen of planScreens(metadata, target, locale)) {
           const raw = findRaw(rawDir, target, locale, screen.id);
           if (!raw) {
-            missing.push(`${target.store}/${target.device}/${locale}/${screen.id}`);
+            missing.push(
+              `${target.store}/${target.device}/${locale}/${screen.id}`
+            );
             continue;
           }
           const html = screenshotHtml({
@@ -134,13 +150,26 @@ async function main() {
             rawUrl: dataUrl(raw),
             plateUrl,
           });
-          await render(page, html, target.width, target.height, screenshotSpec(target));
+          await render(
+            page,
+            html,
+            target.width,
+            target.height,
+            screenshotSpec(target)
+          );
           const out = path.join(values.out, screen.file);
           fs.mkdirSync(path.dirname(out), { recursive: true });
           if (out.endsWith('.png')) {
-            fs.writeFileSync(out, toOpaqueRgbPng(await page.screenshot({ type: 'png' })));
+            fs.writeFileSync(
+              out,
+              toOpaqueRgbPng(await page.screenshot({ type: 'png' }))
+            );
           } else {
-            await page.screenshot({ path: out, type: 'jpeg', quality: JPEG_QUALITY });
+            await page.screenshot({
+              path: out,
+              type: 'jpeg',
+              quality: JPEG_QUALITY,
+            });
           }
           written += 1;
         }
@@ -149,21 +178,36 @@ async function main() {
 
     if (!values['no-graphics'] && !galleryOnly) {
       const pick = (store, device, id) =>
-        findRaw(rawDir, SCREENSHOT_TARGETS.find((t) => t.store === store && t.device === device), 'en', id);
+        findRaw(
+          rawDir,
+          SCREENSHOT_TARGETS.find(
+            (t) => t.store === store && t.device === device
+          ),
+          'en',
+          id
+        );
       const phoneDashboard = pick('ios', 'iphone-6.9', 'dashboard');
       const phoneCalendar = pick('ios', 'iphone-6.9', 'calendar');
       const desktopDashboard = pick('windows', 'desktop', 'dashboard');
       const icon = path.join(REPO_ROOT, 'apps/mobile/assets/app_icon.png');
       for (const graphic of GRAPHIC_TARGETS) {
         let html;
-        if (graphic.id === 'feature-graphic' && phoneDashboard && phoneCalendar) {
+        if (
+          graphic.id === 'feature-graphic' &&
+          phoneDashboard &&
+          phoneCalendar
+        ) {
           html = featureGraphicHtml({
             iconUrl: dataUrl(icon),
             phoneUrls: [dataUrl(phoneDashboard), dataUrl(phoneCalendar)],
             plateUrl,
           });
         } else if (graphic.id === 'hero' && desktopDashboard && phoneCalendar) {
-          html = heroHtml({ desktopUrl: dataUrl(desktopDashboard), phoneUrl: dataUrl(phoneCalendar), plateUrl });
+          html = heroHtml({
+            desktopUrl: dataUrl(desktopDashboard),
+            phoneUrl: dataUrl(phoneCalendar),
+            plateUrl,
+          });
         } else {
           missing.push(`graphic ${graphic.id}`);
           continue;
@@ -180,7 +224,9 @@ async function main() {
     const gallery = await writeWebGallery(page, values.out, values.metadata);
     for (const items of Object.values(gallery)) {
       for (const item of items) {
-        console.log(`${item.file} ${item.width}x${item.height} ${(item.bytes / 1024).toFixed(0)} KB`);
+        console.log(
+          `${item.file} ${item.width}x${item.height} ${(item.bytes / 1024).toFixed(0)} KB`
+        );
       }
       written += items.length;
     }
@@ -190,12 +236,17 @@ async function main() {
 
   console.log(`Wrote ${written} images.`);
   if (missing.length > 0) {
-    console.error(`Missing raw captures (${missing.length}):\n  ${missing.join('\n  ')}`);
+    console.error(
+      `Missing raw captures (${missing.length}):\n  ${missing.join('\n  ')}`
+    );
     process.exitCode = 1;
   }
 }
 
-if (process.argv[1] && fileURLToPath(import.meta.url) === path.resolve(process.argv[1])) {
+if (
+  process.argv[1] &&
+  fileURLToPath(import.meta.url) === path.resolve(process.argv[1])
+) {
   main().catch((error) => {
     console.error(error.message);
     process.exit(1);

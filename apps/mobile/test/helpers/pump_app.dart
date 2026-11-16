@@ -177,3 +177,34 @@ Widget sorbetTestApp({
   ),
   home: home,
 );
+
+/// A routed page under the app's light theme pipeline in a fixed [locale]:
+/// the [sorbet] or classic shad theme, the appearance host and the Material
+/// bridge. Routes wrap their page in [routedTestPage] for drawer and sheet
+/// hosting. Store screenshots render through this root.
+Widget routedSorbetTestApp({
+  required GoRouter router,
+  required Locale locale,
+  AppearanceSettings appearance = const AppearanceSettings(),
+  SorbetTheme? sorbet,
+}) => shad.ShadcnApp.router(
+  debugShowCheckedModeBanner: false,
+  theme: AppearanceTheme.shadThemeFor(appearance, sorbet, Brightness.light),
+  darkTheme: AppearanceTheme.shadThemeFor(appearance, sorbet, Brightness.dark),
+  themeMode: shad.ThemeMode.light,
+  locale: locale,
+  localizationsDelegates: const [
+    ...AppLocalizations.localizationsDelegates,
+    AppShadcnLocalizationsDelegate(),
+  ],
+  supportedLocales: AppLocalizations.supportedLocales,
+  routerConfig: router,
+  builder: (context, child) => SorbetAppearanceHost(
+    appearance: appearance,
+    sorbet: sorbet,
+    child: ShadcnMaterialBridge(child: child ?? const SizedBox.shrink()),
+  ),
+);
+
+/// Hosts the drawers and sheets a routed [page] opens.
+Widget routedTestPage(Widget page) => shad.DrawerOverlay(child: page);

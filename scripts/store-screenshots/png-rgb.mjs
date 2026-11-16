@@ -8,10 +8,13 @@ const CHANNELS = { 0: 1, 2: 3, 4: 2, 6: 4 };
 
 export function toOpaqueRgbPng(buffer, background = [255, 255, 255]) {
   if (!buffer.subarray(0, 8).equals(SIGNATURE)) throw new Error('Not a PNG');
-  const { width, height, bitDepth, colorType, interlace, idat } = readChunks(buffer);
+  const { width, height, bitDepth, colorType, interlace, idat } =
+    readChunks(buffer);
   const channels = CHANNELS[colorType];
   if (bitDepth !== 8 || !channels || interlace !== 0) {
-    throw new Error(`Unsupported PNG layout (depth ${bitDepth}, type ${colorType}, interlace ${interlace})`);
+    throw new Error(
+      `Unsupported PNG layout (depth ${bitDepth}, type ${colorType}, interlace ${interlace})`
+    );
   }
   const pixels = unfilter(zlib.inflateSync(idat), width, height, channels);
   const rowBytes = width * 3 + 1;
@@ -25,9 +28,16 @@ export function toOpaqueRgbPng(buffer, background = [255, 255, 255]) {
       const rgb = gray
         ? [pixels[src], pixels[src], pixels[src]]
         : [pixels[src], pixels[src + 1], pixels[src + 2]];
-      const alpha = channels === 2 ? pixels[src + 1] : channels === 4 ? pixels[src + 3] : 255;
+      const alpha =
+        channels === 2
+          ? pixels[src + 1]
+          : channels === 4
+            ? pixels[src + 3]
+            : 255;
       for (let c = 0; c < 3; c++) {
-        out[dst + c] = Math.round((rgb[c] * alpha + background[c] * (255 - alpha)) / 255);
+        out[dst + c] = Math.round(
+          (rgb[c] * alpha + background[c] * (255 - alpha)) / 255
+        );
       }
     }
   }
@@ -85,12 +95,23 @@ function unfilter(data, width, height, bpp) {
       const c = x >= bpp && y > 0 ? out[row - stride + x - bpp] : 0;
       let value;
       switch (filter) {
-        case 0: value = raw; break;
-        case 1: value = raw + a; break;
-        case 2: value = raw + b; break;
-        case 3: value = raw + ((a + b) >> 1); break;
-        case 4: value = raw + paeth(a, b, c); break;
-        default: throw new Error(`Unknown PNG filter ${filter}`);
+        case 0:
+          value = raw;
+          break;
+        case 1:
+          value = raw + a;
+          break;
+        case 2:
+          value = raw + b;
+          break;
+        case 3:
+          value = raw + ((a + b) >> 1);
+          break;
+        case 4:
+          value = raw + paeth(a, b, c);
+          break;
+        default:
+          throw new Error(`Unknown PNG filter ${filter}`);
       }
       out[row + x] = value & 0xff;
     }

@@ -50,11 +50,18 @@ const TARGET_SUBMIT_DATES = {
 };
 
 test('every listing carries the shared release plan and public URLs', () => {
-  assert.deepEqual(Object.keys(listings).sort(), Object.keys(TARGET_SUBMIT_DATES).sort());
+  assert.deepEqual(
+    Object.keys(listings).sort(),
+    Object.keys(TARGET_SUBMIT_DATES).sort()
+  );
   for (const [slug, listing] of Object.entries(listings)) {
     assert.equal(listing.release.version, '1.0.0');
     assert.equal(typeof listing.release.build, 'string');
-    assert.equal(listing.release.targetSubmitDate, TARGET_SUBMIT_DATES[slug], slug);
+    assert.equal(
+      listing.release.targetSubmitDate,
+      TARGET_SUBMIT_DATES[slug],
+      slug
+    );
     assert.equal(listing.release.targetLiveDate, '2026-12-10T23:59:00+07:00');
     assert.equal(listing.urls.privacy, 'https://tuturuuu.com/privacy');
     assert.equal(listing.urls.support, 'https://tuturuuu.com/contact');

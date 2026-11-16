@@ -33,10 +33,34 @@ export const FONT_CSS_URL =
 
 /** Frame proportions, relative to the screen width. */
 const FRAMES = {
-  phone: { bezel: 0.035, radius: 0.15, screenRadius: 0.12, bar: 0.1, maxWidth: 0.8 },
-  tablet: { bezel: 0.028, radius: 0.06, screenRadius: 0.035, bar: 0.03, maxWidth: 0.84 },
-  'desktop-mac': { bezel: 0, radius: 0.012, screenRadius: 0.012, bar: 0.026, maxWidth: 0.84 },
-  'desktop-windows': { bezel: 0, radius: 0.006, screenRadius: 0.006, bar: 0.024, maxWidth: 0.84 },
+  phone: {
+    bezel: 0.035,
+    radius: 0.15,
+    screenRadius: 0.12,
+    bar: 0.1,
+    maxWidth: 0.8,
+  },
+  tablet: {
+    bezel: 0.028,
+    radius: 0.06,
+    screenRadius: 0.035,
+    bar: 0.03,
+    maxWidth: 0.84,
+  },
+  'desktop-mac': {
+    bezel: 0,
+    radius: 0.012,
+    screenRadius: 0.012,
+    bar: 0.026,
+    maxWidth: 0.84,
+  },
+  'desktop-windows': {
+    bezel: 0,
+    radius: 0.006,
+    screenRadius: 0.006,
+    bar: 0.024,
+    maxWidth: 0.84,
+  },
 };
 
 function escapeHtml(text) {
@@ -183,7 +207,9 @@ export function screenshotSpec(target) {
   const portrait = target.height > target.width;
   const base = portrait ? target.width : target.height;
   return {
-    headlineSize: Math.round(base * (target.frame === 'phone' ? 0.078 : portrait ? 0.056 : 0.062)),
+    headlineSize: Math.round(
+      base * (target.frame === 'phone' ? 0.078 : portrait ? 0.056 : 0.062)
+    ),
     headlineTop: Math.round(target.height * (portrait ? 0.045 : 0.06)),
     gap: Math.round(target.height * (portrait ? 0.035 : 0.05)),
     bottom: Math.round(target.height * (portrait ? 0.035 : 0.06)),
@@ -191,7 +217,14 @@ export function screenshotSpec(target) {
   };
 }
 
-export function screenshotHtml({ target, screenId, headline, rawUrl, plateUrl, fontCss = FONT_CSS_URL }) {
+export function screenshotHtml({
+  target,
+  screenId,
+  headline,
+  rawUrl,
+  plateUrl,
+  fontCss = FONT_CSS_URL,
+}) {
   const tones = SCREEN_TONES[screenId] ?? ['blue', 'pink'];
   const body = `${blobs(tones, target.width, target.height, plateUrl)}
 <h1 class="headline" data-font>${escapeHtml(headline)}</h1>
@@ -200,7 +233,12 @@ ${device(target.frame, rawUrl)}`;
 }
 
 /** Play feature graphic: app icon and name beside two phones. */
-export function featureGraphicHtml({ iconUrl, phoneUrls, plateUrl, fontCss = FONT_CSS_URL }) {
+export function featureGraphicHtml({
+  iconUrl,
+  phoneUrls,
+  plateUrl,
+  fontCss = FONT_CSS_URL,
+}) {
   const [front, back] = phoneUrls;
   const body = `${blobs(['blue', 'green'], 1024, 500, plateUrl)}
 <div style="position:absolute;left:72px;top:0;bottom:0;display:flex;align-items:center;gap:28px">
@@ -213,7 +251,12 @@ export function featureGraphicHtml({ iconUrl, phoneUrls, plateUrl, fontCss = FON
 }
 
 /** Microsoft Store hero: a desktop window and a phone, no text. */
-export function heroHtml({ desktopUrl, phoneUrl, plateUrl, fontCss = FONT_CSS_URL }) {
+export function heroHtml({
+  desktopUrl,
+  phoneUrl,
+  plateUrl,
+  fontCss = FONT_CSS_URL,
+}) {
   const body = `${blobs(['purple', 'blue'], 1920, 1080, plateUrl)}
 <div class="device desktop-windows" data-kind="desktop-windows" data-box='{"x":300,"y":150,"w":1240,"h":780}'><div class="screen">${frameBar('desktop-windows')}<img class="raw" src="${desktopUrl}" alt=""></div></div>
 <div class="device phone" data-kind="phone" data-box='{"x":1380,"y":300,"w":300,"h":700}'><div class="screen">${frameBar('phone')}<img class="raw" src="${phoneUrl}" alt=""></div></div>`;

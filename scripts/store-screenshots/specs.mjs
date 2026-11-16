@@ -11,20 +11,89 @@
  *   frame: FrameKind, maxBytes: number, format?: 'png' }>}
  */
 export const SCREENSHOT_TARGETS = [
-  { store: 'ios', device: 'iphone-6.9', width: 1320, height: 2868, frame: 'phone', maxBytes: 10_000_000 },
-  { store: 'ios', device: 'iphone-6.5', width: 1284, height: 2778, frame: 'phone', maxBytes: 10_000_000 },
-  { store: 'ios', device: 'ipad-13', width: 2064, height: 2752, frame: 'tablet', maxBytes: 10_000_000 },
-  { store: 'android', device: 'phone', width: 1080, height: 1920, frame: 'phone', maxBytes: 8_000_000 },
-  { store: 'android', device: 'tablet7', width: 1200, height: 1920, frame: 'tablet', maxBytes: 8_000_000 },
-  { store: 'android', device: 'tablet10', width: 1600, height: 2560, frame: 'tablet', maxBytes: 8_000_000 },
-  { store: 'macos', device: 'mac', width: 2880, height: 1800, frame: 'desktop-mac', maxBytes: 10_000_000 },
-  { store: 'windows', device: 'desktop', width: 1920, height: 1080, frame: 'desktop-windows', maxBytes: 50_000_000, format: 'png' },
+  {
+    store: 'ios',
+    device: 'iphone-6.9',
+    width: 1320,
+    height: 2868,
+    frame: 'phone',
+    maxBytes: 10_000_000,
+  },
+  {
+    store: 'ios',
+    device: 'iphone-6.5',
+    width: 1284,
+    height: 2778,
+    frame: 'phone',
+    maxBytes: 10_000_000,
+  },
+  {
+    store: 'ios',
+    device: 'ipad-13',
+    width: 2064,
+    height: 2752,
+    frame: 'tablet',
+    maxBytes: 10_000_000,
+  },
+  {
+    store: 'android',
+    device: 'phone',
+    width: 1080,
+    height: 1920,
+    frame: 'phone',
+    maxBytes: 8_000_000,
+  },
+  {
+    store: 'android',
+    device: 'tablet7',
+    width: 1200,
+    height: 1920,
+    frame: 'tablet',
+    maxBytes: 8_000_000,
+  },
+  {
+    store: 'android',
+    device: 'tablet10',
+    width: 1600,
+    height: 2560,
+    frame: 'tablet',
+    maxBytes: 8_000_000,
+  },
+  {
+    store: 'macos',
+    device: 'mac',
+    width: 2880,
+    height: 1800,
+    frame: 'desktop-mac',
+    maxBytes: 10_000_000,
+  },
+  {
+    store: 'windows',
+    device: 'desktop',
+    width: 1920,
+    height: 1080,
+    frame: 'desktop-windows',
+    maxBytes: 50_000_000,
+    format: 'png',
+  },
 ];
 
 /** Opaque PNG graphics, at the paths the metadata `graphics` entries name. */
 export const GRAPHIC_TARGETS = [
-  { id: 'feature-graphic', file: 'apps/mobile/store/graphics/android/feature-graphic-1024x500.png', width: 1024, height: 500, maxBytes: 15_000_000 },
-  { id: 'hero', file: 'apps/mobile/store/graphics/windows/hero-1920x1080.png', width: 1920, height: 1080, maxBytes: 50_000_000 },
+  {
+    id: 'feature-graphic',
+    file: 'apps/mobile/store/graphics/android/feature-graphic-1024x500.png',
+    width: 1024,
+    height: 500,
+    maxBytes: 15_000_000,
+  },
+  {
+    id: 'hero',
+    file: 'apps/mobile/store/graphics/windows/hero-1920x1080.png',
+    width: 1920,
+    height: 1080,
+    maxBytes: 50_000_000,
+  },
 ];
 
 export const LOCALES = ['en', 'vi'];
@@ -72,7 +141,12 @@ export const WEB_GALLERY = {
   maxLongEdge: 1280,
   maxBytes: 150 * 1024,
   locale: 'en',
-  sources: { ios: 'iphone-6.9', macos: 'mac', android: 'phone', windows: 'desktop' },
+  sources: {
+    ios: 'iphone-6.9',
+    macos: 'mac',
+    android: 'phone',
+    windows: 'desktop',
+  },
 };
 
 export function webGalleryPath(platform, fileName) {

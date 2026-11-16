@@ -1,17 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:go_router/go_router.dart';
-import 'package:mobile/core/theme/appearance/appearance_settings.dart';
-import 'package:mobile/core/theme/appearance/appearance_theme.dart';
-import 'package:mobile/core/theme/sorbet/sorbet_scope.dart';
-import 'package:mobile/core/widgets/shadcn_localizations_fallback.dart';
-import 'package:mobile/core/widgets/shadcn_material_bridge.dart';
-import 'package:mobile/l10n/l10n.dart';
-import 'package:shadcn_flutter/shadcn_flutter.dart' as shad;
-
 import 'package:shared_preferences/shared_preferences.dart';
 
 import '../helpers/design_render_harness.dart';
+import '../helpers/pump_app.dart';
 import 'capture_guard.dart';
 import 'fixtures/shell_frame_fixture.dart';
 
@@ -104,15 +97,13 @@ class StoreScreenshotApp extends StatefulWidget {
 }
 
 class _StoreScreenshotAppState extends State<StoreScreenshotApp> {
-  static const _appearance = AppearanceSettings();
-
   late final GoRouter _router = GoRouter(
     initialLocation: '/store',
     routes: [
       GoRoute(path: '/', builder: (context, state) => const SizedBox.shrink()),
       GoRoute(
         path: '/store',
-        builder: (context, state) => shad.DrawerOverlay(child: widget.child),
+        builder: (context, state) => routedTestPage(widget.child),
       ),
     ],
   );
@@ -127,32 +118,7 @@ class _StoreScreenshotAppState extends State<StoreScreenshotApp> {
   Widget build(BuildContext context) {
     return RepaintBoundary(
       key: DesignRenderApp.boundaryKey,
-      child: shad.ShadcnApp.router(
-        debugShowCheckedModeBanner: false,
-        theme: AppearanceTheme.shadThemeFor(
-          _appearance,
-          null,
-          Brightness.light,
-        ),
-        darkTheme: AppearanceTheme.shadThemeFor(
-          _appearance,
-          null,
-          Brightness.dark,
-        ),
-        themeMode: shad.ThemeMode.light,
-        locale: widget.locale.locale,
-        localizationsDelegates: const [
-          ...AppLocalizations.localizationsDelegates,
-          AppShadcnLocalizationsDelegate(),
-        ],
-        supportedLocales: AppLocalizations.supportedLocales,
-        routerConfig: _router,
-        builder: (context, child) => SorbetAppearanceHost(
-          appearance: _appearance,
-          sorbet: null,
-          child: ShadcnMaterialBridge(child: child ?? const SizedBox.shrink()),
-        ),
-      ),
+      child: routedSorbetTestApp(router: _router, locale: widget.locale.locale),
     );
   }
 }
