@@ -381,6 +381,8 @@
     "blacklisted": "Đã chặn",
     "blacklisted_count": "Đã chặn {count}/{total} địa chỉ",
     "bold": "In đậm",
+    "image_resize": "Thay đổi kích thước ảnh",
+    "image_resize_value": "Rộng {width} pixel",
     "image_size": "Kích thước ảnh",
     "image_size_percent": "Chiều rộng ảnh {percent}%",
     "bulleted_list": "Danh sách dấu đầu dòng",

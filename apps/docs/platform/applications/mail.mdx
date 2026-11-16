@@ -313,13 +313,26 @@ their original value. The composer regression in
 covers both directions and the legacy reference.
 
 Selecting an image in the web composer shows 25%, 50%, 75% and 100% width
-presets in the toolbar (web only; drag resizing is not offered). The choice is a
-`width` attribute (for example `50%`) plus an inline
-`width`, `max-width: 100%` and `height: auto` style, so it persists in saved drafts and
-sent HTML. Pixel widths from existing mail stay as pixels, and any other width
-value is dropped on load. The nodeview updates in place on resize and keeps the
-raw attachment `src` in serialized HTML. Regression coverage lives in the same
-composer test file.
+presets in the toolbar and four corner drag handles on the image (web only).
+Dragging a corner resizes with the aspect ratio locked, previewing in the DOM
+and saving once when the pointer is released. It works with mouse, touch and pen
+(pointer capture); Escape or a cancelled pointer discards the drag. The
+south-east handle is also a keyboard slider: arrow keys change the width by 10px
+(50px with Shift), Home sets the 48px minimum and End the editor content width.
+Widths are clamped between 48px and the editor content width.
+
+A preset stores a percentage `width` attribute (for example `50%`) and a drag
+or key press stores a pixel width (for example `240`). Both add an inline
+`width`, `max-width: 100%` and `height: auto` style, so the image never
+overflows a phone-width viewport in the composer, saved drafts, sent HTML or the
+Mail reader, and the saved size persists. The outbound sanitizer allows the
+literal `auto` for `height` (any other non-length value is still dropped) so
+that declaration survives sending; the isolated reader already caps images at
+`max-width: 100%`. Pixel widths from existing mail stay as pixels, and any other
+width value is dropped on load. The nodeview updates in place, wraps the image
+to host the handles, and keeps the raw attachment `src` in serialized HTML.
+Regression coverage lives in the composer test file and
+`apps/mail/src/lib/mail/html.test.ts`.
 
 ## SES Receiving Setup
 

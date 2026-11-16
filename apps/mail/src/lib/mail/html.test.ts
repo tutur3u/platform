@@ -77,3 +77,44 @@ it('preserves newsletter preheader hiding and layout only in isolated documents'
   expect(result).toContain('padding:24px 32px');
   expect(sanitizeMailHtml(html)).not.toContain('mso-hide');
 });
+
+describe('resized image styles', () => {
+  const resized =
+    '<img src="https://images.example/a.png" width="240" style="width: 240px; max-width: 100%; height: auto;">';
+
+  it('keeps width, max-width and height:auto so images shrink on phones', () => {
+    const output = sanitizeMailHtml(resized);
+    expect(output).toContain('width="240"');
+    expect(output).toMatch(/style="[^"]*width:\s*240px/u);
+    expect(output).toMatch(/style="[^"]*max-width:\s*100%/u);
+    expect(output).toMatch(/style="[^"]*height:\s*auto/u);
+  });
+
+  it('rejects height values other than auto or a safe length', () => {
+    for (const unsafe of [
+      'expression(alert(1))',
+      'url(https://tracker.example)',
+      'inherit',
+      'expression(alert(1)) !important',
+      'calc(1px)',
+    ]) {
+      const output = sanitizeMailHtml(
+        `<img src="https://images.example/a.png" style="height: ${unsafe}">`
+      );
+      expect(output).not.toMatch(/height:/u);
+    }
+  });
+
+  it('retains the safe auto height with CSS priority', () => {
+    const output = sanitizeMailHtml(
+      '<img src="https://images.example/a.png" style="height: auto !important">'
+    );
+    expect(output).toContain('height:auto !important');
+  });
+
+  it('retains the responsive declarations in the isolated reader path', () => {
+    const output = sanitizeMailHtml(resized, { isolatedDocument: true });
+    expect(output).toMatch(/max-width:\s*100%/u);
+    expect(output).toMatch(/height:\s*auto/u);
+  });
+});
