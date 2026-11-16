@@ -201,25 +201,27 @@ jobs:
     env:
       SOURCE_SHA: ${{ github.event.pull_request.head.sha || github.sha }}
       TRUSTED: ${{ github.ref == 'refs/heads/main' && (github.event_name == 'push' || github.event_name == 'workflow_dispatch') }}
-      NEXT_PUBLIC_SUPABASE_URL: ${{ (github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository) && vars.PRODUCTION_SUPABASE_URL || 'https://mind-ci.supabase.invalid' }}
-      NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY: ${{ (github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository) && vars.PRODUCTION_SUPABASE_PUBLISHABLE_KEY || 'sb_publishable_mind_ci_placeholder' }}
+      # Exact production vars only. Native qualification keeps its own fixture
+      # public-env; this job has no fixture fallback.
+      NEXT_PUBLIC_SUPABASE_URL: ${{ vars.PRODUCTION_SUPABASE_URL }}
+      NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY: ${{ vars.PRODUCTION_SUPABASE_PUBLISHABLE_KEY }}
       NEXT_PUBLIC_APP_URL: https://mind.tuturuuu.com
       NEXT_PUBLIC_WEB_APP_URL: https://tuturuuu.com
       VITE_MIND_NATIVE_PROFILE: production
       WRANGLER_SEND_METRICS: 'false'
       NODE_OPTIONS: --max-old-space-size=8192
     steps:
-      # A trusted run uploads the artifact named "production": it must never be a
-      # fixture build. The env fallback above exists only for untrusted PR runs.
+      # Empty or fixture production vars fail this job before any build. The
+      # native qualification job keeps the fixture public-env on its own.
       - name: Require real production public inputs for a production artifact
-        if: env.TRUSTED == 'true'
         env:
           PRODUCTION_SUPABASE_URL_VAR: ${{ vars.PRODUCTION_SUPABASE_URL }}
           PRODUCTION_SUPABASE_PUBLISHABLE_KEY_VAR: ${{ vars.PRODUCTION_SUPABASE_PUBLISHABLE_KEY }}
         run: |
           test -n "$PRODUCTION_SUPABASE_URL_VAR" && test -n "$PRODUCTION_SUPABASE_PUBLISHABLE_KEY_VAR" || { echo 'PRODUCTION_SUPABASE_URL and PRODUCTION_SUPABASE_PUBLISHABLE_KEY are required; no fixture fallback for a production artifact'; exit 1; }
-          case "$NEXT_PUBLIC_SUPABASE_URL" in ''|*.invalid|*.invalid/*|*.invalid:*) echo 'Fixture Supabase URL refused for a production artifact'; exit 1;; esac
-          case "$NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY" in ''|*_ci_placeholder) echo 'Fixture publishable key refused for a production artifact'; exit 1;; esac
+          test "$NEXT_PUBLIC_SUPABASE_URL" = "$PRODUCTION_SUPABASE_URL_VAR" && test "$NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY" = "$PRODUCTION_SUPABASE_PUBLISHABLE_KEY_VAR" || { echo 'Cutover build inputs must be the production vars exactly'; exit 1; }
+          case "$NEXT_PUBLIC_SUPABASE_URL" in *.invalid|*.invalid/*|*.invalid:*) echo 'Fixture Supabase URL refused for a production artifact'; exit 1;; esac
+          case "$NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY" in *_ci_placeholder) echo 'Fixture publishable key refused for a production artifact'; exit 1;; esac
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           ref: ${{ env.SOURCE_SHA }}
@@ -285,6 +287,17 @@ jobs:
           test "$(git rev-parse HEAD)" = "$SOURCE_SHA"
           python3 scripts/ci/mind-native-artifact.py --profile production config apps/mind
           python3 scripts/ci/mind-native-artifact.py --profile production seal apps/mind --receipt "$RUNNER_TEMP/mind-production-artifact.json"
+          RECEIPT="$RUNNER_TEMP/mind-production-artifact.json" python3 - <<'PY'
+          import importlib.util, json, os
+          from pathlib import Path
+          spec = importlib.util.spec_from_file_location("apps_artifact", "scripts/ci/apps-native-artifact.py")
+          module = importlib.util.module_from_spec(spec)
+          spec.loader.exec_module(module)
+          receipt = json.loads(Path(os.environ["RECEIPT"]).read_text())
+          digest = module.public_inputs_digest(os.environ)
+          if receipt.get("publicInputsSha256") != digest:
+              raise SystemExit("publicInputsSha256 does not match the exact production build inputs")
+          PY
           python3 scripts/ci/mind-native-artifact.py --profile production pack apps/mind --receipt "$RUNNER_TEMP/mind-production-artifact.json" --archive "$RUNNER_TEMP/mind-production-artifact.tar.gz"
       - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
