@@ -1053,6 +1053,14 @@ remaining cross-store crash and hosted-runtime evidence.
 
 ## Native Meet realtime toolchain
 
+Meet frontend upload validation requires the `meet_source_maps` numeric receipt
+from `meet-dry-run-scratch.mjs` as well as the real emitted Worker startup probes.
+Error 10021 can reject encoded sourcemaps above 60 MiB after local startup passes.
+Keep map uploads enabled and omit embedded source text in SSR maps; verify the
+actual emitted payload rather than treating a Wrangler dry run as provider
+acceptance. See the native Start migration runbook's artifact gate guidance and
+`scripts/ci/wave1-native-upload-limits.test.mjs` for regression coverage.
+
 For the native Meet realtime Vite+ workspace, keep the original production Wrangler
 entry and migration history intact while CI qualifies `dist/worker/wrangler.json`.
 Run emitted-config identity/binding checks and real SQLite routing probes after the

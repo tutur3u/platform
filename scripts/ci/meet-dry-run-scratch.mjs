@@ -6,6 +6,7 @@ import { dirname, join, relative } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { sealMeetGraph } from './meet-native-profile.mjs';
 import { readMeetProductionReceipt } from './meet-native-fixture-supplier.mjs';
+import { assertSourceMapUpload } from './wave1-native-upload-limits.mjs';
 
 const { validateOutput } = createRequire(import.meta.url)(
   './verify-meet-start-output.js'
@@ -91,6 +92,8 @@ async function main() {
     sha: sourceSHA,
     mode: 'restore-required',
   });
+  const sourceMaps = assertSourceMapUpload(artifact.configPath);
+  process.stdout.write(`meet_source_maps:${JSON.stringify(sourceMaps)}\n`);
   const configParent = dirname(artifact.configPath);
   const parentStat = await canonicalDirectory(configParent);
   const options = {

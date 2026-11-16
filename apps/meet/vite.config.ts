@@ -132,6 +132,16 @@ export default defineConfig(({ command }) => ({
     'process.env.NEXT_PUBLIC_MEETING_APP': JSON.stringify('meet'),
   },
   environments: {
+    ssr: {
+      build: {
+        rolldownOptions: {
+          output: {
+            // Keep stack mappings without duplicating dependency sources in uploads.
+            sourcemapExcludeSources: true,
+          },
+        },
+      },
+    },
     client: {
       define: {
         'process.env': JSON.stringify({
