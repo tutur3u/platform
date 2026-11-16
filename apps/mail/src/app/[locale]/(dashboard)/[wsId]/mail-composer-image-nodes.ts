@@ -23,9 +23,7 @@ export function stripPendingMailImages(html: string) {
 
 /** Attachment id inside a raw draft image source, or null. */
 export function mailImageAttachmentId(source: string) {
-  return (
-    /\/drafts\/[^/]+\/attachments\/([^/?#]+)/u.exec(source)?.[1] ?? null
-  );
+  return /\/drafts\/[^/]+\/attachments\/([^/?#]+)/u.exec(source)?.[1] ?? null;
 }
 
 let instanceSequence = 0;
@@ -33,7 +31,8 @@ let instanceSequence = 0;
 /** Fresh identity for one image node in the editor. */
 export function newMailImageInstanceId() {
   return (
-    globalThis.crypto?.randomUUID?.() ?? `image-${Date.now()}-${++instanceSequence}`
+    globalThis.crypto?.randomUUID?.() ??
+    `image-${Date.now()}-${++instanceSequence}`
   );
 }
 
@@ -60,8 +59,11 @@ function isLocalSource(source: unknown) {
 export function ensureUniqueMailImageIds(editor: Editor) {
   if (editor.isDestroyed) return false;
   const seen = new Set<string>();
-  const fixes: { attrs: Record<string, unknown> | null; pos: number; size: number }[] =
-    [];
+  const fixes: {
+    attrs: Record<string, unknown> | null;
+    pos: number;
+    size: number;
+  }[] = [];
   editor.state.doc.descendants((node, pos) => {
     if (node.type.name !== 'image') return true;
     const id = mailImageNodeId(node.attrs);
@@ -161,7 +163,8 @@ export function createMailImageNodes(editor: Editor): MailImageNodes {
   const drop = (hits: Found[]) => {
     if (!hits.length) return false;
     const tr = editor.state.tr;
-    for (const hit of [...hits].reverse()) tr.delete(hit.pos, hit.pos + hit.size);
+    for (const hit of [...hits].reverse())
+      tr.delete(hit.pos, hit.pos + hit.size);
     editor.view.dispatch(tr.setMeta('addToHistory', false));
     return true;
   };

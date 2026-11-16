@@ -18,7 +18,11 @@ import { afterEach, beforeAll, describe, expect, it, vi } from 'vitest';
 import type { MailImageNodes } from './mail-composer-image-nodes';
 import type { MailMediaOwner } from './mail-composer-upload-state';
 import { MailUploadStore } from './mail-composer-upload-store';
-import { attachment, flush, OWNER } from './mail-composer-upload-store.fixtures';
+import {
+  attachment,
+  flush,
+  OWNER,
+} from './mail-composer-upload-store.fixtures';
 
 const observed: { editor: Editor | null } = { editor: null };
 vi.mock('@tiptap/react', async (importOriginal) => {
@@ -129,10 +133,7 @@ const ids = (editor: Editor) => images(editor).map((image) => image.id);
 
 const addImage = (view: { store: MailUploadStore }) =>
   act(() =>
-    view.store.addFiles(
-      [new File(['x'], 'a.png', { type: 'image/png' })],
-      true
-    )
+    view.store.addFiles([new File(['x'], 'a.png', { type: 'image/png' })], true)
   );
 const settle = () => act(async () => void (await flush()));
 const select = (editor: Editor, index: number) =>
@@ -217,10 +218,7 @@ describe('images reopened from a draft', () => {
 
     select(view.editor, 0);
     await clickRemove(view);
-    expect(view.deps.remove).toHaveBeenCalledExactlyOnceWith(
-      OWNER,
-      'image-1'
-    );
+    expect(view.deps.remove).toHaveBeenCalledExactlyOnceWith(OWNER, 'image-1');
     await settle();
     expect(images(view.editor)).toEqual([]);
     expect(view.store.getSnapshot().items).toEqual([]);
@@ -251,6 +249,61 @@ describe('images reopened from a draft', () => {
   });
 });
 
+describe('undo after orphan attachment removal', () => {
+  it('fences deleted sources until the composer session resets', async () => {
+    const image = attachment('image-1', 'inline');
+    const html = `<p>Hi</p><img src="${raw(image.id)}"><p>end</p>`;
+    const view = await open({ attachments: [image], html });
+    select(view.editor, 0);
+    act(() => {
+      view.editor.commands.deleteSelection();
+    });
+    expect(images(view.editor)).toEqual([]);
+
+    act(() => view.store.remove(image.id));
+    await settle();
+    expect(view.deps.remove).toHaveBeenCalledExactlyOnceWith(OWNER, image.id);
+    expect(view.store.getSnapshot().items).toEqual([]);
+
+    act(() => {
+      expect(view.editor.commands.undo()).toBe(true);
+    });
+    expect(images(view.editor)).toEqual([]);
+    expect(view.changed.mock.calls.at(-1)?.[0].html).not.toContain('<img');
+
+    // A newly opened draft owns its own attachment set and undo fence.
+    act(() => {
+      view.store.reset([image], OWNER);
+      view.editor.commands.setContent(html);
+    });
+    expect(images(view.editor).map((node) => node.src)).toEqual([
+      raw(image.id),
+    ]);
+  });
+
+  it('allows undo to restore an image when the server delete failed', async () => {
+    const image = attachment('image-1', 'inline');
+    const view = await open({
+      attachments: [image],
+      html: `<p>Hi</p><img src="${raw(image.id)}"><p>end</p>`,
+    });
+    view.deps.remove.mockRejectedValueOnce(new Error('offline'));
+    select(view.editor, 0);
+    act(() => {
+      view.editor.commands.deleteSelection();
+      view.store.remove(image.id);
+    });
+    await settle();
+    expect(view.deps.onRemoveFailed).toHaveBeenCalledTimes(1);
+    act(() => {
+      expect(view.editor.commands.undo()).toBe(true);
+    });
+    expect(images(view.editor).map((node) => node.src)).toEqual([
+      raw(image.id),
+    ]);
+  });
+});
+
 describe('copy and paste', () => {
   async function uploadedImage() {
     const view = await open({ html: '<p>Hi</p><p>end</p>' });
@@ -259,7 +312,9 @@ describe('copy and paste', () => {
     expect(view.store.getSnapshot().items.map((item) => item.status)).toEqual([
       'uploaded',
     ]);
-    expect(images(view.editor).map((image) => image.src)).toEqual([raw('att1')]);
+    expect(images(view.editor).map((image) => image.src)).toEqual([
+      raw('att1'),
+    ]);
     return view;
   }
 
@@ -314,7 +369,9 @@ describe('copy and paste', () => {
 
   it('drops a pasted copy of a placeholder that can never resolve', async () => {
     const view = await open({ html: '<p>Hi</p><p>end</p>' });
-    view.deps.upload.mockImplementation(() => new Promise<MailAttachment>(() => {}));
+    view.deps.upload.mockImplementation(
+      () => new Promise<MailAttachment>(() => {})
+    );
     addImage(view);
     await settle();
     const [pending] = ids(view.editor);

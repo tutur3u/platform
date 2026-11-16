@@ -25,8 +25,10 @@ export function attachment(id: string, disposition: 'attachment' | 'inline') {
     sizeBytes: 10,
   } satisfies MailAttachment;
 }
-export const png = (name: string) => new File(['x'], name, { type: 'image/png' });
-export const pdf = (name: string) => new File(['x'], name, { type: 'application/pdf' });
+export const png = (name: string) =>
+  new File(['x'], name, { type: 'image/png' });
+export const pdf = (name: string) =>
+  new File(['x'], name, { type: 'application/pdf' });
 
 export const OWNER: MailMediaOwner = {
   draftId: 'draft',
@@ -176,4 +178,3 @@ export function setup({
     uploads,
   };
 }
-

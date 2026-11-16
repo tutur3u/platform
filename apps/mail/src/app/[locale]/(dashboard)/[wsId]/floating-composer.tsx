@@ -652,10 +652,7 @@ export function FloatingComposer({
                 setSelection(null);
                 return;
               }
-              const nextBodyHtml = applyAiDraftToBody(
-                bodyHtml,
-                result.content
-              );
+              const nextBodyHtml = applyAiDraftToBody(bodyHtml, result.content);
               setSubject(result.subject);
               setBodyHtml(nextBodyHtml);
               setBodyText(mailHtmlToText(nextBodyHtml));

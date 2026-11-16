@@ -16,12 +16,26 @@
  * browser paint latency; there is no layout engine, so no layout-shift value
  * is measured or implied.
  */
-import { act, cleanup, fireEvent, render, screen } from '@testing-library/react';
+import {
+  act,
+  cleanup,
+  fireEvent,
+  render,
+  screen,
+} from '@testing-library/react';
 import type { Editor } from '@tiptap/react';
 import type { MailMailbox } from '@tuturuuu/internal-api';
 import { writeFileSync } from 'node:fs';
 import { createElement as h, Profiler } from 'react';
-import { afterAll, afterEach, beforeAll, describe, expect, it, vi } from 'vitest';
+import {
+  afterAll,
+  afterEach,
+  beforeAll,
+  describe,
+  expect,
+  it,
+  vi,
+} from 'vitest';
 import { FloatingComposer } from './floating-composer';
 
 const enabled = process.env.MAIL_MEDIA_HARNESS === '1';
@@ -72,7 +86,8 @@ vi.mock('@tiptap/react', async (importOriginal) => {
 // Counts the distinct `attachments` arrays the composer hands the editor. A new
 // array defeats the editor's memoization, so each one is a possible re-render.
 vi.mock('./mail-composer-editor', async (importOriginal) => {
-  const actual = await importOriginal<typeof import('./mail-composer-editor')>();
+  const actual =
+    await importOriginal<typeof import('./mail-composer-editor')>();
   const { createElement } = await import('react');
   return {
     ...actual,
@@ -191,7 +206,12 @@ interface RunResult {
   /** New editor attachment arrays while files are only queued or uploading. */
   editorAttachmentRefsAtSelect: number;
   editorIdentities: number;
-  editorRenders: { churn: number; idle: number; select: number; uploading: number };
+  editorRenders: {
+    churn: number;
+    idle: number;
+    select: number;
+    uploading: number;
+  };
   final: {
     imageElements: number;
     removeControls: number;
@@ -356,7 +376,9 @@ function summarize(runs: RunResult[]) {
       uploading: collect((run) => run.keystrokeMs.uploading),
     },
     medianOfRunMedians: {
-      uploading: median(measured.map((run) => stats(run.keystrokeMs.uploading).p50)),
+      uploading: median(
+        measured.map((run) => stats(run.keystrokeMs.uploading).p50)
+      ),
     },
     perRunMedian: {
       commits: median(measured.map((run) => total(run.commits))),
@@ -367,9 +389,13 @@ function summarize(runs: RunResult[]) {
       editorIdentities: median(measured.map((run) => run.editorIdentities)),
       editorRenders: median(measured.map((run) => total(run.editorRenders))),
       editorRendersWhileUploading: median(
-        measured.map((run) => run.editorRenders.uploading + run.editorRenders.churn)
+        measured.map(
+          (run) => run.editorRenders.uploading + run.editorRenders.churn
+        )
       ),
-      editorRendersAtSelect: median(measured.map((run) => run.editorRenders.select)),
+      editorRendersAtSelect: median(
+        measured.map((run) => run.editorRenders.select)
+      ),
       transactions: median(measured.map((run) => run.transactions)),
     },
     behavior: {
@@ -426,11 +452,13 @@ describe.skipIf(!enabled)('compose media before/after harness', () => {
       };
       const out = process.env.MAIL_MEDIA_HARNESS_OUT;
       if (out) writeFileSync(out, `${JSON.stringify(output, null, 2)}\n`);
-      console.log(`MAIL_MEDIA_HARNESS_RESULT ${JSON.stringify(output.summary)}`);
-      // The workload itself must complete identically on both versions.
-      expect(output.summary.behavior.uploadsCompleted.every((n) => n === 5)).toBe(
-        true
+      console.log(
+        `MAIL_MEDIA_HARNESS_RESULT ${JSON.stringify(output.summary)}`
       );
+      // The workload itself must complete identically on both versions.
+      expect(
+        output.summary.behavior.uploadsCompleted.every((n) => n === 5)
+      ).toBe(true);
     }
   );
 });

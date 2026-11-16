@@ -79,7 +79,9 @@ describe('replace by id after decode', () => {
     expect(item?.status).toBe('uploaded');
     expect(item?.attachment?.id).toBe('att1');
     // The preview is released only after the swap.
-    expect(t.deps.revokeObjectUrl).toHaveBeenCalledExactlyOnceWith('blob:a.png');
+    expect(t.deps.revokeObjectUrl).toHaveBeenCalledExactlyOnceWith(
+      'blob:a.png'
+    );
     // The upload used an inline content id and never a blob in the body.
     expect(t.uploads[0]?.input.contentId).toMatch(/@tuturuuu\.mail$/u);
   });
@@ -147,7 +149,9 @@ describe('removal races', () => {
     await flush();
     expect(t.fake.calls.some((call) => call.startsWith('resolve'))).toBe(false);
     expect(t.deps.remove).not.toHaveBeenCalled();
-    expect(t.deps.revokeObjectUrl).toHaveBeenCalledExactlyOnceWith('blob:a.png');
+    expect(t.deps.revokeObjectUrl).toHaveBeenCalledExactlyOnceWith(
+      'blob:a.png'
+    );
   });
 
   it('deletes only the known attachment when a cancelled upload still succeeds', async () => {
@@ -211,9 +215,9 @@ describe('optimistic removal of uploaded items', () => {
     );
     t.store.remove('a');
     expect(t.statuses()).toEqual(['removing', 'uploaded']);
-    expect(visibleMediaChips(t.store.getSnapshot().items, '').map((i) => i.id)).toEqual(
-      ['b']
-    );
+    expect(
+      visibleMediaChips(t.store.getSnapshot().items, '').map((i) => i.id)
+    ).toEqual(['b']);
     expect(t.deps.remove).toHaveBeenCalledExactlyOnceWith(OWNER, 'a');
     await flush();
     expect(t.store.getSnapshot().items.map((item) => item.id)).toEqual(['b']);
@@ -282,10 +286,9 @@ describe('cancel and cleanup', () => {
     t.store.cancelAll();
     expect(t.store.getSnapshot().items).toEqual([]);
     expect(t.uploads[0]?.input.signal.aborted).toBe(true);
-    expect(t.deps.revokeObjectUrl.mock.calls.map((call) => call[0]).sort()).toEqual([
-      'blob:a.png',
-      'blob:b.png',
-    ]);
+    expect(
+      t.deps.revokeObjectUrl.mock.calls.map((call) => call[0]).sort()
+    ).toEqual(['blob:a.png', 'blob:b.png']);
     await flush();
     // The queued second file never starts after cancel.
     expect(t.deps.upload).toHaveBeenCalledTimes(1);
@@ -336,13 +339,14 @@ describe('derived state', () => {
       OWNER
     );
     const items = t.store.getSnapshot().items;
-    const withImage = '<p><img src="/api/v1/workspaces/w/mail/mailboxes/m/drafts/d/attachments/img"></p>';
+    const withImage =
+      '<p><img src="/api/v1/workspaces/w/mail/mailboxes/m/drafts/d/attachments/img"></p>';
     expect(visibleMediaChips(items, withImage).map((item) => item.id)).toEqual([
       'file',
     ]);
-    expect(visibleMediaChips(items, '<p>no image</p>').map((item) => item.id)).toEqual(
-      ['img', 'file']
-    );
+    expect(
+      visibleMediaChips(items, '<p>no image</p>').map((item) => item.id)
+    ).toEqual(['img', 'file']);
   });
 
   it('keeps pending and failed attachments visible as chips', async () => {
@@ -365,4 +369,3 @@ describe('derived state', () => {
     expect(snapshot.announcementSeq).toBeGreaterThanOrEqual(2);
   });
 });
-

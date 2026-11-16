@@ -49,9 +49,10 @@ export interface MailMediaSummary {
   uploading: number;
 }
 
-export type MailMediaAnnouncement =
-  | { kind: 'added' | 'failed' | 'removed' | 'restored' | 'uploaded'; name: string }
-  | null;
+export type MailMediaAnnouncement = {
+  kind: 'added' | 'failed' | 'removed' | 'restored' | 'uploaded';
+  name: string;
+} | null;
 
 export interface MailMediaSnapshot {
   announcement: MailMediaAnnouncement;

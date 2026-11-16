@@ -26,8 +26,7 @@ export interface MailImageUploadView {
 }
 
 const ICONS = {
-  alert:
-    '<circle cx="12" cy="12" r="10"/><path d="M12 8v4M12 16h.01"/>',
+  alert: '<circle cx="12" cy="12" r="10"/><path d="M12 8v4M12 16h.01"/>',
   clock: '<circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/>',
   retry:
     '<path d="M21 12a9 9 0 1 1-9-9c2.5 0 4.9 1 6.7 2.7L21 8"/><path d="M21 3v5h-5"/>',
@@ -128,9 +127,13 @@ export function attachMailImageUploadView({
     event.stopPropagation();
     if (id) run(id);
   };
-  retryButton.addEventListener('click', act((value) => actions().retry(value)), {
-    signal,
-  });
+  retryButton.addEventListener(
+    'click',
+    act((value) => actions().retry(value)),
+    {
+      signal,
+    }
+  );
   removeButton.addEventListener(
     'click',
     act((value) => actions().remove(value)),
@@ -197,7 +200,8 @@ export function attachMailImageUploadView({
       ))
         handle.style.display = next ? 'none' : '';
 
-      const showBadge = next === 'queued' || next === 'uploading' || next === 'failed';
+      const showBadge =
+        next === 'queued' || next === 'uploading' || next === 'failed';
       badge.style.display = showBadge ? 'inline-flex' : 'none';
       badge.classList.toggle('text-dynamic-red', next === 'failed');
       badge.replaceChildren(

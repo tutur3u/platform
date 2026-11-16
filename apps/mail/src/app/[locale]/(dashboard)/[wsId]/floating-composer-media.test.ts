@@ -112,7 +112,11 @@ vi.mock('./mail-composer-footer', () => ({
         },
         'Add file'
       ),
-      h('output', null, `pending:${props.mediaPending} failed:${props.mediaFailed}`)
+      h(
+        'output',
+        null,
+        `pending:${props.mediaPending} failed:${props.mediaFailed}`
+      )
     ),
 }));
 vi.mock('./mail-composer-attachments', () => ({
@@ -221,7 +225,8 @@ function mount(initialDraft: Record<string, unknown> = draft) {
     },
   };
 }
-const settle = () => act(async () => void (await vi.advanceTimersByTimeAsync(0)));
+const settle = () =>
+  act(async () => void (await vi.advanceTimersByTimeAsync(0)));
 const send = () => screen.getByText('Send') as HTMLButtonElement;
 const frames = new Map<number, FrameRequestCallback>();
 let nextFrame = 0;
@@ -263,7 +268,10 @@ beforeEach(() => {
     revokeObjectURL: vi.fn(),
   });
   vi.stubGlobal('Image', FakeImage);
-  vi.stubGlobal('fetch', vi.fn(async () => new Response('{}')));
+  vi.stubGlobal(
+    'fetch',
+    vi.fn(async () => new Response('{}'))
+  );
   api.update.mockResolvedValue({ message: { id: 'draft' } });
   api.create.mockResolvedValue({ message: { id: 'draft' } });
   api.send.mockResolvedValue(undefined);
@@ -367,14 +375,18 @@ describe('draft serialization', () => {
     await act(async () => void (await vi.advanceTimersByTimeAsync(800)));
     const saved = api.update.mock.calls.at(-1)?.[3];
     expect(saved.bodyHtml).toBe('<p>Hi</p><p>more</p>');
-    expect(JSON.stringify(saved)).not.toMatch(/blob:|data-mail-upload|uploadId/u);
+    expect(JSON.stringify(saved)).not.toMatch(
+      /blob:|data-mail-upload|uploadId/u
+    );
     await act(async () => uploads[0]?.succeed());
     await settle();
     await sendShortcut();
     await settle();
     const sent = api.send.mock.calls[0]?.[1];
     expect(sent.bodyHtml).toBe('<p>Hi</p><p>more</p>');
-    expect(JSON.stringify(sent)).not.toMatch(/blob:|data-mail-upload|uploadId/u);
+    expect(JSON.stringify(sent)).not.toMatch(
+      /blob:|data-mail-upload|uploadId/u
+    );
   });
 
   it('asks the editor for a placeholder and later swaps it by the same id', async () => {
@@ -524,7 +536,10 @@ describe('late results after the composer was reopened elsewhere', () => {
 
 describe('editor attachments reference', () => {
   it('stays the same through status-only upload updates', async () => {
-    mount({ ...draft, quotedAttachments: [attachment('quoted', 'attachment')] });
+    mount({
+      ...draft,
+      quotedAttachments: [attachment('quoted', 'attachment')],
+    });
     const seen = () => new Set(api.editor.attachments);
     expect(seen().size).toBe(1);
     fireEvent.click(screen.getByText('Add file'));

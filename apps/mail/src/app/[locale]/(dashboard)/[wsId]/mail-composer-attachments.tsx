@@ -38,7 +38,8 @@ export function MailComposerAttachments({
   const remove = (id: string) => {
     if (list.current?.contains(document.activeElement)) {
       const index = items.findIndex((item) => item.id === id);
-      focusAfterRemoval.current = (items[index + 1] ?? items[index - 1])?.id ?? '';
+      focusAfterRemoval.current =
+        (items[index + 1] ?? items[index - 1])?.id ?? '';
     }
     onRemove(id);
   };

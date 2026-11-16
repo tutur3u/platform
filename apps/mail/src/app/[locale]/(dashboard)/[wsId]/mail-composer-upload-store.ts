@@ -15,7 +15,9 @@ import {
 export interface MailUploadDeps {
   createObjectUrl: (file: Blob) => string;
   /** Natural size once the browser decodes the image; null if it cannot. */
-  decodeImage: (src: string) => Promise<{ height: number; width: number } | null>;
+  decodeImage: (
+    src: string
+  ) => Promise<{ height: number; width: number } | null>;
   /** The draft id if one already exists. */
   draftId: () => string | null;
   /** Create the draft when it does not exist yet; null when saving failed. */
@@ -71,6 +73,7 @@ export class MailUploadStore {
   private readonly listeners = new Set<() => void>();
   private readonly files = new Map<string, File>();
   private readonly controllers = new Map<string, AbortController>();
+  private readonly deletedAttachments = new Set<string>();
   private clock = 0;
   private running = false;
 
@@ -98,6 +101,7 @@ export class MailUploadStore {
 
   /** Abort every request, drop every item and release every preview URL. */
   cancelAll(notify = true) {
+    this.deletedAttachments.clear();
     for (const controller of this.controllers.values()) controller.abort();
     this.controllers.clear();
     this.files.clear();
@@ -150,7 +154,10 @@ export class MailUploadStore {
     }
     const last = added.at(-1);
     if (!last) return;
-    this.commit([...this.items(), ...added], { kind: 'added', name: last.name });
+    this.commit([...this.items(), ...added], {
+      kind: 'added',
+      name: last.name,
+    });
     void this.pump();
   }
 
@@ -186,7 +193,8 @@ export class MailUploadStore {
    */
   removeImage(instanceId: string) {
     const pending = this.find(instanceId);
-    if (pending && pending.status !== 'uploaded') return this.remove(instanceId);
+    if (pending && pending.status !== 'uploaded')
+      return this.remove(instanceId);
     const nodes = this.deps.nodes();
     const info = nodes?.inspect(instanceId);
     if (!nodes || !info) return;
@@ -214,6 +222,11 @@ export class MailUploadStore {
    * the keyboard). Cheap when nothing is pending.
    */
   reconcileNodes() {
+    const nodes = this.deps.nodes();
+    // Undo can restore a keyboard-deleted image after its orphan chip has
+    // deleted the server attachment. Keep that source fenced for this session.
+    for (const attachmentId of this.deletedAttachments)
+      nodes?.removeReferences(attachmentId);
     const pending = this.items().filter(
       (item) =>
         item.kind === 'inline' &&
@@ -221,7 +234,6 @@ export class MailUploadStore {
           item.status === 'uploading' ||
           item.status === 'failed')
     );
-    const nodes = this.deps.nodes();
     if (!pending.length || !nodes) return;
     const live = nodes.liveIds();
     for (const item of pending) {
@@ -283,7 +295,11 @@ export class MailUploadStore {
 
   private removeUploaded(item: MailMediaItem, instanceId: string | null) {
     const { attachment, id, owner } = item;
-    this.update(id, { status: 'removing' }, { kind: 'removed', name: item.name });
+    this.update(
+      id,
+      { status: 'removing' },
+      { kind: 'removed', name: item.name }
+    );
     if (instanceId) this.deps.nodes()?.setRemoving(instanceId, true);
     if (!attachment || !owner) {
       this.finishRemoval(id, instanceId);
@@ -314,7 +330,10 @@ export class MailUploadStore {
     const nodes = this.deps.nodes();
     if (instanceId) nodes?.remove(instanceId);
     // An undo may have brought a node back while the delete was in flight.
-    if (item.attachment) nodes?.removeReferences(item.attachment.id);
+    if (item.attachment) {
+      this.deletedAttachments.add(item.attachment.id);
+      nodes?.removeReferences(item.attachment.id);
+    }
     this.discard(id, null);
   }
 
@@ -397,7 +416,11 @@ export class MailUploadStore {
     } catch {
       if (!alive()) return;
       this.controllers.delete(id);
-      this.update(id, { status: 'failed' }, { kind: 'failed', name: item.name });
+      this.update(
+        id,
+        { status: 'failed' },
+        { kind: 'failed', name: item.name }
+      );
       this.deps.nodes()?.setState(id, 'failed');
     }
   }
