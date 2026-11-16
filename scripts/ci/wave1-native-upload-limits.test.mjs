@@ -13,6 +13,8 @@ import { gzipSync } from 'node:zlib';
 import { uploadArtifact } from './wave1-native-publish.mjs';
 import {
   assertUploadLimits,
+  assertSourceMapUpload,
+  assertSourceMapSizes,
   measureUpload,
   uploadLimits,
 } from './wave1-native-upload-limits.mjs';
@@ -119,7 +121,31 @@ test('main-module maps use their sealed original path and canonical encoding', (
   assert.equal(m.sourcemaps.count, 1);
   assert.equal(m.sourcemaps.encodedBytes, bytes.length);
   assert.equal(m.sourcemaps.gzipBytes, gzipSync(bytes).length);
+  assert.deepEqual(assertSourceMapUpload(join(p.root, 'config.json')), {
+    count: 1,
+    encodedBytes: bytes.length,
+    gzipBytes: gzipSync(bytes).length,
+  });
   assertUploadLimits(m);
+});
+test('Meet release sourcemaps at 69464 KiB exceed the upload limit despite valid script size', (t) => {
+  const m = fixture(t).measure();
+  m.sourcemaps.enabled = true;
+  m.sourcemaps.encodedBytes = 69464 * 1024;
+  m.sourcemaps.gzipBytes = null;
+  assert.throws(
+    () => assertUploadLimits(m),
+    /source map encoded bytes 71131136 > 62914560/u
+  );
+  assert.throws(
+    () =>
+      assertSourceMapSizes({
+        count: 1,
+        encodedBytes: 69464 * 1024,
+        gzipBytes: null,
+      }),
+    /Source map encoded bytes 71131136 > 62914560/u
+  );
 });
 test('maps emitted despite disabled uploads fail closed', (t) => {
   const p = fixture(t);
