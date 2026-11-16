@@ -95,6 +95,61 @@ class ArtifactTest(unittest.TestCase):
         self.assertEqual(json.loads((target / "dist/native/wrangler.json").read_text())["configPath"], str(app / ".void-wrangler.jsonc"))
         self.assertEqual((target / "dist/native/index.js").read_bytes(), (app / "dist/native/index.js").read_bytes())
 
+    def test_public_inputs_digest_matches_the_wave1_algorithm(self):
+        # wave1-native-artifact.mjs publicInputsDigest of its CI fixture inputs.
+        wave1_fixture = {
+            "NEXT_PUBLIC_SUPABASE_URL": "https://wave1-ci.supabase.invalid",
+            "NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY": "sb_publishable_wave1_ci_placeholder",
+        }
+        self.assertEqual(
+            artifact.public_inputs_digest(wave1_fixture),
+            "ab2513d58f0caab4d67fdc7ede1cca0bbf7032a3a630c3766fa1a6526a89f832",
+        )
+        empty = hashlib.sha256(b'["",""]').hexdigest()
+        self.assertEqual(artifact.public_inputs_digest({}), empty)
+        self.assertNotEqual(
+            artifact.public_inputs_digest({**wave1_fixture, "NEXT_PUBLIC_SUPABASE_URL": "https://project.supabase.co"}),
+            artifact.public_inputs_digest(wave1_fixture),
+        )
+
+    def test_sealed_public_inputs_digest_survives_pack_and_restore_in_another_env(self):
+        app, _, _ = self.fixture()
+        production = {
+            "NEXT_PUBLIC_SUPABASE_URL": "https://project.supabase.co",
+            "NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY": "sb_publishable_real",
+        }
+        receipt = artifact.sealed_receipt(app, SHA, production)
+        self.assertEqual(receipt["publicInputsSha256"], artifact.public_inputs_digest(production))
+        self.assertEqual({k: v for k, v in receipt.items() if k != "publicInputsSha256"}, artifact.artifact(app, SHA))
+        receipt_path, archive = app / "receipt.json", app / "artifact.tar.gz"
+        receipt_path.write_text(json.dumps(receipt))
+        # pack/restore run in a later job with other inputs; they must carry the
+        # sealed digest unchanged, never recompute it from their own env.
+        later_job = {
+            "NEXT_PUBLIC_SUPABASE_URL": "https://wave1-ci.supabase.invalid",
+            "NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY": "sb_publishable_wave1_ci_placeholder",
+        }
+        with mock.patch.dict(artifact.os.environ, later_job):
+            artifact.pack(app, receipt_path, archive, SHA)
+            target = app / "fresh"
+            target.mkdir()
+            (target / "public").mkdir()
+            for name in artifact.PUBLIC_FILES:
+                (target / "public" / name).write_bytes((app / "public" / name).read_bytes())
+            artifact.restore(target, archive, app / "restored.json", SHA)
+        restored = json.loads((app / "restored.json").read_text())
+        self.assertEqual(restored["publicInputsSha256"], receipt["publicInputsSha256"])
+
+    def test_verify_rejects_a_malformed_digest_and_accepts_a_legacy_receipt(self):
+        app, _, _ = self.fixture()
+        legacy = artifact.artifact(app, SHA)
+        artifact.verify(app, legacy, SHA)
+        for value in ("", "A" * 64, "a" * 63, 123, ["a" * 64]):
+            with self.subTest(value=value):
+                with self.assertRaisesRegex(ValueError, "malformed public input digest"):
+                    artifact.verify(app, {**legacy, "publicInputsSha256": value}, SHA)
+        artifact.verify(app, {**legacy, "publicInputsSha256": "b" * 64}, SHA)
+
     def use_saved_pointer(self, app):
         native = app / artifact.REDIRECT
         saved = app / artifact.SAVED_REDIRECT

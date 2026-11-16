@@ -52,6 +52,11 @@ PUBLIC_FILES = ("robots.txt", "sitemap.xml")
 PUBLIC_HTML = ()
 MAX_FILES = 50000
 MAX_BYTES = 1024 * 1024 * 1024
+# Public build inputs sealed as a digest, so a reviewer can prove a production
+# artifact was not built from fixture inputs. Same algorithm as wave1
+# (scripts/ci/wave1-native-artifact.mjs publicInputsDigest): sha256 of the
+# compact JSON array [url, key], a missing value counting as "".
+PUBLIC_INPUT_NAMES = ("NEXT_PUBLIC_SUPABASE_URL", "NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY")
 
 
 def require(condition, message):
@@ -173,8 +178,23 @@ def artifact(directory, sha, source=None):
     return {"schema": 1, "sourceSha": sha, "worker": IDENTITY["name"], "configPath": output["config"].relative_to(output["app"]).as_posix(), "files": file_hashes(directory)}
 
 
+def public_inputs_digest(env):
+    values = [env.get(name) or "" for name in PUBLIC_INPUT_NAMES]
+    return sha256(json.dumps(values, separators=(",", ":"), ensure_ascii=False).encode())
+
+
+def sealed_receipt(directory, sha, env):
+    # The digest is recorded at seal time only; later jobs (verify, pack,
+    # restore) carry it unchanged instead of recomputing it from their own env.
+    return {**artifact(directory, sha), "publicInputsSha256": public_inputs_digest(env)}
+
+
 def verify(directory, receipt, sha, source=None):
-    require(artifact(directory, sha, source) == receipt, "artifact differs from sealed exact-source output")
+    require(isinstance(receipt, dict), "artifact differs from sealed exact-source output")
+    sealed = dict(receipt)
+    digest = sealed.pop("publicInputsSha256", None)
+    require(digest is None or (isinstance(digest, str) and re.fullmatch(r"[a-f0-9]{64}", digest)), "malformed public input digest")
+    require(artifact(directory, sha, source) == sealed, "artifact differs from sealed exact-source output")
 
 
 def pack(directory, receipt_path, archive_path, sha):
@@ -253,7 +273,7 @@ def main():
         with open(os.environ["GITHUB_OUTPUT"], "a") as channel:
             channel.write("config=" + str(output["config"]) + "\n")
     elif args.mode == "seal":
-        args.receipt.write_text(json.dumps(artifact(args.directory, sha), indent=2) + "\n")
+        args.receipt.write_text(json.dumps(sealed_receipt(args.directory, sha, os.environ), indent=2) + "\n")
     elif args.mode == "verify":
         verify(args.directory, read_json(args.receipt), sha)
     elif args.mode == "pack":

@@ -209,6 +209,17 @@ jobs:
       WRANGLER_SEND_METRICS: 'false'
       NODE_OPTIONS: --max-old-space-size=8192
     steps:
+      # A trusted run uploads the artifact named "production": it must never be a
+      # fixture build. The env fallback above exists only for untrusted PR runs.
+      - name: Require real production public inputs for a production artifact
+        if: env.TRUSTED == 'true'
+        env:
+          PRODUCTION_SUPABASE_URL_VAR: ${{ vars.PRODUCTION_SUPABASE_URL }}
+          PRODUCTION_SUPABASE_PUBLISHABLE_KEY_VAR: ${{ vars.PRODUCTION_SUPABASE_PUBLISHABLE_KEY }}
+        run: |
+          test -n "$PRODUCTION_SUPABASE_URL_VAR" && test -n "$PRODUCTION_SUPABASE_PUBLISHABLE_KEY_VAR" || { echo 'PRODUCTION_SUPABASE_URL and PRODUCTION_SUPABASE_PUBLISHABLE_KEY are required; no fixture fallback for a production artifact'; exit 1; }
+          case "$NEXT_PUBLIC_SUPABASE_URL" in ''|*.invalid|*.invalid/*|*.invalid:*) echo 'Fixture Supabase URL refused for a production artifact'; exit 1;; esac
+          case "$NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY" in ''|*_ci_placeholder) echo 'Fixture publishable key refused for a production artifact'; exit 1;; esac
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           ref: ${{ env.SOURCE_SHA }}
