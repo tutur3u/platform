@@ -181,6 +181,13 @@ its envelope; it is not an ordinary unit test.
 
 ## Web API route inventories
 
+`node scripts/check-mobile-api-mappings.js` checks client paths against canonical
+API owners. A CLI client whose handler is not enabled can reserve an exact path
+in `scripts/cli-api-route-ownership.json`, naming its owning active app and client
+source. Reservations do not establish deployed handlers, authorize runtime
+activation, cover child paths, or satisfy mobile route ownership. Remove the
+reservation when the handler supplies ownership directly.
+
 Moving a retained handler into `apps/web/src/app/api` changes its source digest
 and import graph even when the endpoint URL stays the same. Refresh each owning
 inventory after the final handler edit:

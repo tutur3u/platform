@@ -6,6 +6,7 @@ const {
   collectApiPaths,
   collectConfiguredMobileApiApps,
   collectMobileApiPaths,
+  collectReservedCliApiRoutes,
   findSatelliteProxyBearerGaps,
   findUnconfiguredSatelliteOwners,
   findUnmappedMobileApiPaths,
@@ -142,4 +143,28 @@ test('all checked-in mobile API paths have a canonical owner', () => {
   assert.ok(result.cliSdkPaths.size >= 20);
   assert.deepEqual(result.unmappedCliSdk, []);
   assert.deepEqual(result.originRouting.errors, []);
+});
+
+test('accounts reserves only its exact CLI path without claiming a deployed route', () => {
+  const result = validateMobileApiMappings();
+  const reserved = collectReservedCliApiRoutes();
+  assert.ok(reserved.has('/api/v1/admin/accounts'));
+  assert.ok(!result.ownedRoutes.has('/api/v1/admin/accounts'));
+  assert.deepEqual(
+    findUnmappedMobileApiPaths({
+      mobilePaths: new Set([
+        '/api/v1/admin/accounts',
+        '/api/v1/admin/accounts/missing',
+      ]),
+      ownedRoutes: new Set([...result.ownedRoutes, ...reserved]),
+    }),
+    ['/api/v1/admin/accounts/missing']
+  );
+  assert.deepEqual(
+    findUnmappedMobileApiPaths({
+      mobilePaths: new Set(['/api/v1/admin/accounts']),
+      ownedRoutes: result.ownedRoutes,
+    }),
+    ['/api/v1/admin/accounts']
+  );
 });

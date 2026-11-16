@@ -1,0 +1,10 @@
+{
+  "routes": [
+    {
+      "routePath": "/api/v1/admin/accounts",
+      "canonicalApp": "web",
+      "clientFile": "packages/sdk/src/accounts.ts",
+      "status": "reserved"
+    }
+  ]
+}

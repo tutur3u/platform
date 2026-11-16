@@ -9,6 +9,7 @@ const MOBILE_API_ORIGINS = 'apps/mobile/lib/core/config/api_origins.dart';
 const MOBILE_API_CLIENT = 'apps/mobile/lib/data/sources/api_client.dart';
 const CLI_SDK_DIRECTORY = 'packages/sdk/src';
 const ROUTE_MANIFEST = 'apps/tanstack-web/migration/route-manifest.json';
+const CLI_ROUTE_OWNERSHIP = 'scripts/cli-api-route-ownership.json';
 
 function canonicalizeRoute(route) {
   return route
@@ -136,6 +137,45 @@ function collectOwnedApiRoutesByApp({ rootDir = ROOT_DIR } = {}) {
   return routesByApp;
 }
 
+// Reserved CLI paths name an owner without claiming that a handler is deployed.
+// These exact registrations do not satisfy mobile runtime route ownership.
+function collectReservedCliApiRoutes({ rootDir = ROOT_DIR } = {}) {
+  const manifest = JSON.parse(
+    fs.readFileSync(path.join(rootDir, CLI_ROUTE_OWNERSHIP), 'utf8')
+  );
+  if (!Array.isArray(manifest.routes)) {
+    throw new Error('CLI API ownership must contain a routes array.');
+  }
+  const routes = new Set();
+  for (const entry of manifest.routes) {
+    if (
+      entry.status !== 'reserved' ||
+      typeof entry.routePath !== 'string' ||
+      !/^\/api\/[a-zA-Z0-9/_-]+$/u.test(entry.routePath) ||
+      typeof entry.canonicalApp !== 'string' ||
+      !/^[a-z0-9-]+$/u.test(entry.canonicalApp) ||
+      !fs.existsSync(
+        path.join(rootDir, 'apps', entry.canonicalApp, 'src/app')
+      ) ||
+      typeof entry.clientFile !== 'string' ||
+      !/^packages\/sdk\/src\/[a-zA-Z0-9/_-]+\.ts$/u.test(entry.clientFile)
+    ) {
+      throw new Error('Invalid reserved CLI API ownership registration.');
+    }
+    const client = fs.readFileSync(
+      path.join(rootDir, entry.clientFile),
+      'utf8'
+    );
+    if (!collectApiPaths(client).has(entry.routePath)) {
+      throw new Error('Reserved CLI API ownership must match its client path.');
+    }
+    const route = canonicalizeRoute(entry.routePath);
+    if (routes.has(route)) throw new Error('Duplicate reserved CLI API owner.');
+    routes.add(route);
+  }
+  return routes;
+}
+
 function collectConfiguredMobileApiApps(source) {
   return new Set(
     [...source.matchAll(/(['"])(https:\/\/[^'"\r\n]+)\1/gu)].flatMap(
@@ -246,15 +286,18 @@ function validateMobileApiMappings({ rootDir = ROOT_DIR } = {}) {
   const mobilePaths = collectMobileApiPaths(source);
   const cliSdkPaths = collectCliSdkApiPaths({ rootDir });
   const ownedRoutes = collectOwnedApiRoutes({ rootDir });
+  const reservedCliRoutes = collectReservedCliApiRoutes({ rootDir });
+  const cliOwnedRoutes = new Set([...ownedRoutes, ...reservedCliRoutes]);
   const originRouting = validateMobileOriginRouting({ rootDir, mobilePaths });
   return {
     mobilePaths,
     cliSdkPaths,
     ownedRoutes,
+    reservedCliRoutes,
     unmapped: findUnmappedMobileApiPaths({ mobilePaths, ownedRoutes }),
     unmappedCliSdk: findUnmappedMobileApiPaths({
       mobilePaths: cliSdkPaths,
-      ownedRoutes,
+      ownedRoutes: cliOwnedRoutes,
     }),
     originRouting,
     sharedClientPaths: new Set(
@@ -301,7 +344,7 @@ function main() {
     process.exit(1);
   }
   console.log(
-    `Client API mappings verified: ${result.mobilePaths.size} Flutter paths and ${result.cliSdkPaths.size} CLI SDK paths resolve to ${result.ownedRoutes.size} canonical API routes across ${result.originRouting.configuredApps.size} mobile satellite origins (${result.sharedClientPaths.size} exact overlaps).`
+    `Client API mappings verified: ${result.mobilePaths.size} Flutter paths and ${result.cliSdkPaths.size} CLI SDK paths resolve to ${result.ownedRoutes.size} canonical API routes and ${result.reservedCliRoutes.size} reserved CLI paths across ${result.originRouting.configuredApps.size} mobile satellite origins (${result.sharedClientPaths.size} exact overlaps).`
   );
 }
 
@@ -314,6 +357,7 @@ module.exports = {
   collectMobileApiPaths,
   collectOwnedApiRoutes,
   collectOwnedApiRoutesByApp,
+  collectReservedCliApiRoutes,
   collectConfiguredMobileApiApps,
   findUnmappedMobileApiPaths,
   findUnconfiguredSatelliteOwners,
