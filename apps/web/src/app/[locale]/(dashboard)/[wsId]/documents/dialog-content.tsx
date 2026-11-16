@@ -1,5 +1,7 @@
 'use client';
 
+import { useQueryClient } from '@tanstack/react-query';
+import { documentHierarchyQueryKey } from '@/lib/documents/hierarchy';
 import { Button } from '@tuturuuu/ui/button';
 import {
   DialogContent,
@@ -34,6 +36,7 @@ const FormSchema = z.object({
 export default function MyDialogContent({ wsId }: MyDialogContentProps) {
   const t = useTranslations();
   const router = useRouter();
+  const queryClient = useQueryClient();
 
   const [loading, setLoading] = useState(false);
 
@@ -49,6 +52,9 @@ export default function MyDialogContent({ wsId }: MyDialogContentProps) {
     try {
       await createDocumentAction(wsId, data.name, router, () => {
         form.reset();
+        void queryClient.invalidateQueries({
+          queryKey: documentHierarchyQueryKey(wsId),
+        });
       });
     } catch (error) {
       setLoading(false);
