@@ -13,7 +13,7 @@ import type { ReactNode } from 'react';
 import logo from '@tuturuuu/roadmap-core/assets/tuturuuu-logo.png?no-inline';
 import { langFromPathname } from '@tuturuuu/roadmap-core/seo.ts';
 import { sorbetPage } from '@tuturuuu/roadmap-core/sorbet-page.ts';
-import styles from '@tuturuuu/roadmap-core/styles.css?url';
+import styles from '../styles.css?url';
 
 export const Route = createRootRoute({
   head: () => ({

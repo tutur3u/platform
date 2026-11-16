@@ -51,8 +51,8 @@ const STABLE =
   /^--(background|foreground|card|primary|muted-foreground|border|input|ring|accent|sidebar-[a-z-]+|blue|green|orange|red|yellow|purple|pink|teal|gray|calendar-bg-[a-z]+|radius|radius-xl|radius-2xl|sorbet-shadow-sm|sorbet-shadow-md|sorbet-(ground|surface|card|ink|muted-ink|hairline|input|accent|accent-ink|accent-soft|ring))$/;
 
 const PINNED = {
-  light: '8eaca8fcac14104f959b98a8a4b176bf7f156d4485da796c3edbba6be2d1c748',
-  dark: '8f8e86c8904b57667fad41fb83a848ee2132f0135d3294fef70378e4c19ad7d9',
+  light: '8457b19f1468a8129bffcfb0db830a123179d5a770a615410cd22de568fe3aa6',
+  dark: 'cadd5776d0b88b95bf79f7e787bf3c6c2e240acb0065d91d0807e6377dbe8a3b',
 };
 
 function luminance(hex: string) {
@@ -237,10 +237,10 @@ describe('design tokens: Sorbet parity', () => {
     );
     assert.notEqual(drifted, block(SORBET, LIGHT));
     assert.notEqual(sha256(drifted), PINNED.light);
-    // The page ships them through the shared globals.css it imports.
+    // The page ships them through the shared globals.css its app imports.
     assert.match(GLOBALS, /@import "\.\/sorbet\.css";/);
     assert.match(
-      read('./styles/section-1.css'),
+      read('../../../apps/roadmap/src/styles.css'),
       /@import "@tuturuuu\/ui\/globals\.css";/
     );
   });

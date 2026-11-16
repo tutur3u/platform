@@ -74,7 +74,8 @@ test('EduFest actions reserve at least 24px height', () => {
 });
 
 test('split CSS keeps the UI scan exclusion at the repository components directory', () => {
-  const path = new URL('./styles/section-1.css', import.meta.url);
+  // The app's stylesheet entry loads the shared globals and scopes their scan.
+  const path = new URL('../../../apps/roadmap/src/styles.css', import.meta.url);
   const css = readFileSync(path, 'utf8');
   const expected = new URL(
     '../../../packages/ui/src/components',
@@ -88,7 +89,7 @@ test('split CSS keeps the UI scan exclusion at the repository components directo
   };
   assert.ok(matches(css));
   assert.ok(
-    !matches(css.replace('../../../../packages/ui', '../../../packages/ui'))
+    !matches(css.replace('../../../packages/ui', '../../packages/ui'))
   );
 });
 test('the page is a compact hero over four tabs, each section in its tab', () => {
