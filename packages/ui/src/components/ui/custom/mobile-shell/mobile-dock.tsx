@@ -36,7 +36,7 @@ const defaultRenderLink = ({ href, ...props }: MobileDockLinkProps) => (
 );
 
 const slotClassName =
-  'flex h-13 min-w-0 flex-1 flex-col items-center justify-center gap-0.5 rounded-full px-1 text-xs leading-tight transition-colors duration-150 focus-visible:outline-2 focus-visible:outline-ring focus-visible:outline-offset-2 motion-reduce:transition-none [&_svg]:size-5.5 [&_svg]:shrink-0';
+  'flex h-13 min-w-0 flex-1 flex-col items-center justify-center gap-0.5 rounded-full px-1 text-[0.6875rem] leading-[0.875rem] transition-colors duration-150 focus-visible:outline-2 focus-visible:outline-ring focus-visible:outline-offset-2 motion-reduce:transition-none [&_svg]:size-5.5 [&_svg]:shrink-0';
 
 /**
  * The floating bottom dock of the mobile shell: up to five destinations and,
