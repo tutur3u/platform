@@ -1,0 +1,47 @@
+{
+  "source": "ios/iphone-6.9/en",
+  "items": [
+    {
+      "id": "dashboard",
+      "file": "apps/mobile/store/screenshots/ios/web/01-dashboard.webp",
+      "width": 589,
+      "height": 1280,
+      "bytes": 45808
+    },
+    {
+      "id": "tasks",
+      "file": "apps/mobile/store/screenshots/ios/web/02-tasks.webp",
+      "width": 589,
+      "height": 1280,
+      "bytes": 40876
+    },
+    {
+      "id": "calendar",
+      "file": "apps/mobile/store/screenshots/ios/web/03-calendar.webp",
+      "width": 589,
+      "height": 1280,
+      "bytes": 37262
+    },
+    {
+      "id": "assistant",
+      "file": "apps/mobile/store/screenshots/ios/web/04-assistant.webp",
+      "width": 589,
+      "height": 1280,
+      "bytes": 44368
+    },
+    {
+      "id": "time-tracker",
+      "file": "apps/mobile/store/screenshots/ios/web/05-time-tracker.webp",
+      "width": 589,
+      "height": 1280,
+      "bytes": 38614
+    },
+    {
+      "id": "notes",
+      "file": "apps/mobile/store/screenshots/ios/web/06-notes.webp",
+      "width": 589,
+      "height": 1280,
+      "bytes": 45278
+    }
+  ]
+}

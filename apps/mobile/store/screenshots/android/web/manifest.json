@@ -1,0 +1,47 @@
+{
+  "source": "android/phone/en",
+  "items": [
+    {
+      "id": "dashboard",
+      "file": "apps/mobile/store/screenshots/android/web/01-dashboard.webp",
+      "width": 720,
+      "height": 1280,
+      "bytes": 50442
+    },
+    {
+      "id": "tasks",
+      "file": "apps/mobile/store/screenshots/android/web/02-tasks.webp",
+      "width": 720,
+      "height": 1280,
+      "bytes": 45636
+    },
+    {
+      "id": "calendar",
+      "file": "apps/mobile/store/screenshots/android/web/03-calendar.webp",
+      "width": 720,
+      "height": 1280,
+      "bytes": 45874
+    },
+    {
+      "id": "assistant",
+      "file": "apps/mobile/store/screenshots/android/web/04-assistant.webp",
+      "width": 720,
+      "height": 1280,
+      "bytes": 50702
+    },
+    {
+      "id": "time-tracker",
+      "file": "apps/mobile/store/screenshots/android/web/05-time-tracker.webp",
+      "width": 720,
+      "height": 1280,
+      "bytes": 41402
+    },
+    {
+      "id": "notes",
+      "file": "apps/mobile/store/screenshots/android/web/06-notes.webp",
+      "width": 720,
+      "height": 1280,
+      "bytes": 51104
+    }
+  ]
+}
