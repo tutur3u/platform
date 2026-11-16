@@ -10,6 +10,7 @@ import { resolveInternalAppUrl } from '@tuturuuu/utils/app-url';
 import { getLocalInternalAppUrl } from '@tuturuuu/utils/internal-domains';
 import { useLocale, useTranslations } from 'next-intl';
 import { useEffect, useRef, useState } from 'react';
+import { MailSenderContactCreate } from './mail-sender-contact-create';
 
 const contactsOrigin = resolveInternalAppUrl({
   appName: 'contacts',
@@ -199,6 +200,21 @@ export function MailSenderContactCard({
             </p>
           )}
         </div>
+        {workspaceId &&
+        validEmail &&
+        !lookup.isError &&
+        !lookup.isFetching &&
+        !lookup.isPending &&
+        !matches.some((person) => person.kind === 'contact') ? (
+          <MailSenderContactCreate
+            key={`${workspaceId}:${email}`}
+            workspaceId={workspaceId}
+            email={email}
+            displayName={name?.trim() || null}
+            contactsHref={`${contactsOrigin}/${encodeURIComponent(locale)}/${encodeURIComponent(workspaceId)}/users/database`}
+            onCreated={() => void lookup.refetch()}
+          />
+        ) : null}
       </PopoverContent>
     </Popover>
   );

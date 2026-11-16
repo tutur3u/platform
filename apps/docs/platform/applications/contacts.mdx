@@ -72,6 +72,34 @@ recipient rules.
 
 ## Ownership and privacy
 
+### Explicit Mail sender creation
+
+Mail's sender card offers **Add to Contacts** only after the API confirms the
+current member has `create_users`. The action creates a workspace contact through
+the existing audited RPC; it never creates an authenticated member, guest group,
+identity link, invitation or notification. The message's displayed sender name
+is bounded to the contact name limit. The server accepts only an operation UUID,
+email and display name, and derives the contact ID from the verified actor,
+workspace and operation. It does not accept actor or contact IDs from the client.
+The handler opens its contact-operation write client only after the membership
+and create-permission checks. Shared authentication and permission helpers may
+already open read-only admin clients under the verified user.
+
+The browser retains the operation UUID in tab storage scoped by actor, workspace
+and a hashed sender identity before the explicit submit. Reopening the action or
+checking an UNKNOWN result performs a read-only status request, never another
+create. An unobserved result remains UNKNOWN; it does not mean no contact exists.
+A later confirmed commit opens the contact without replaying the write. Storage
+failure prevents submission. Server reconciliation returns only state and a
+contact ID, with no CRM fields. Repeated or concurrent calls with the same
+operation converge through the existing contact primary key and audit RPC.
+
+This rule applies to Mail's workspace sender card. Existing Contacts forms keep
+their own creation behavior. No database policy or migration is changed.
+Regression coverage includes `contact-create-operation.test.ts`, the active Web
+`people/contacts/route.test.ts`, and Mail's sender-operation and create-control
+tests. Signed-in runtime acceptance remains a separate release check.
+
 Contacts owns the users routes removed from Web. Shared domain/UI code lives in
 `packages/users-core` and `packages/users-ui`. Non-owned workspace destinations
 redirect to their canonical app rather than being implemented as catch-all API

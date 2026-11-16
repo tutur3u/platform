@@ -1,5 +1,11 @@
 import { describe, expect, it, vi } from 'vitest';
-import { searchWorkspacePeople, type WorkspacePerson } from './people';
+import {
+  createSenderContact,
+  getContactCreateCapability,
+  getSenderContactOperation,
+  searchWorkspacePeople,
+  type WorkspacePerson,
+} from './people';
 
 describe('workspace people search', () => {
   it('encodes workspace and query without turning search text into parameters', async () => {
@@ -73,5 +79,52 @@ describe('workspace people search', () => {
         { baseUrl: 'https://internal.example.com', fetch: fetchMock }
       )
     ).rejects.toMatchObject({ status: 403 });
+  });
+});
+
+describe('Mail sender contact operations', () => {
+  it('sends only explicit contact input to the encoded workspace endpoint', async () => {
+    const fetchMock = vi
+      .fn<typeof fetch>()
+      .mockResolvedValue(Response.json({ state: 'unknown' }, { status: 202 }));
+    const input = {
+      operationId: 'operation',
+      email: 'sender@example.com',
+      displayName: 'Sender',
+    };
+    expect(
+      await createSenderContact('workspace/one', input, {
+        baseUrl: 'https://internal.example.com',
+        fetch: fetchMock,
+      })
+    ).toEqual({ state: 'unknown' });
+    expect(fetchMock).toHaveBeenCalledTimes(1);
+    expect(fetchMock).toHaveBeenCalledWith(
+      'https://internal.example.com/api/v1/workspaces/workspace%2Fone/people/contacts',
+      expect.objectContaining({
+        method: 'POST',
+        body: JSON.stringify(input),
+        cache: 'no-store',
+      })
+    );
+  });
+
+  it('uses read-only requests for capability and UNKNOWN reconciliation', async () => {
+    const fetchMock = vi
+      .fn<typeof fetch>()
+      .mockResolvedValueOnce(Response.json({ canCreate: true }))
+      .mockResolvedValueOnce(Response.json({ state: 'unknown' }));
+    const options = {
+      baseUrl: 'https://internal.example.com',
+      fetch: fetchMock,
+    };
+    await getContactCreateCapability('workspace', options);
+    await getSenderContactOperation('workspace', 'operation&one', options);
+    expect(fetchMock).toHaveBeenLastCalledWith(
+      'https://internal.example.com/api/v1/workspaces/workspace/people/contacts?operationId=operation%26one',
+      expect.objectContaining({ cache: 'no-store' })
+    );
+    for (const [, init] of fetchMock.mock.calls)
+      expect(init?.method ?? 'GET').toBe('GET');
   });
 });
