@@ -15,7 +15,7 @@ fixed; bandwidth and decoding work still grow with subscribed media tracks.
 
 ## Preview resource budgets
 
-Hosting is available to all verified Plus, Pro, and Enterprise accounts, as well as verified @tuturuuu.com accounts. Eligibility uses the current confirmed authentication email and the host’s personal subscription; session claims cannot override it. Other accounts can join by invitation. Workspace membership and Calendar permissions still apply when creating or scheduling a meeting.
+Hosting defaults to verified @tuturuuu.com accounts. External verified Plus, Pro, and Enterprise accounts are eligible only when the server flag `MEET_PAID_TIER_HOSTING_ENABLED` is exactly `true`; unset or any other value keeps external hosting disabled. Eligibility uses the current confirmed authentication email and the host’s personal subscription; session claims cannot override it. Other accounts can join by invitation. Workspace membership and Calendar permissions still apply when creating or scheduling a meeting.
 
 A room lasts up to two hours for eligible Free hosts,
 ten hours for Plus, and twenty-four hours for Pro/Enterprise. The server resolves
@@ -208,8 +208,9 @@ and no lookup table — an invalid code is rejected before any query runs.
 Decoding tolerates case, spaces, dashes, and the `I`/`L`/`O`/`U` characters
 Crockford omits, folding them onto the digits the sender meant.
 
-Only signed-in accounts with a verified `@tuturuuu.com` address can create
-online meetings. Other signed-in users can follow an invitation and ask the
+By default, only signed-in accounts with a verified `@tuturuuu.com` address can
+create online meetings. The paid-tier flag described below can also admit verified
+external paid accounts. Other signed-in users can follow an invitation and ask the
 host to admit them. Sign-in preserves the room link, and an existing profile
 display name is reused. A missing name is saved to the profile before joining.
 
@@ -510,12 +511,17 @@ and a bare 32-hex segment → `/plans/<planId>`, so shared plan links keep worki
 
 The meetings POST handler checks the creator’s current confirmed authentication
 email and personal subscription. Verified Plus, Pro, and Enterprise accounts can
-host regardless of email domain; verified `@tuturuuu.com` accounts remain eligible
-on Free. Workspace membership is required, and Calendar scheduling additionally
+host regardless of email domain only when the server flag
+`MEET_PAID_TIER_HOSTING_ENABLED` is exactly `true`. The flag defaults off and
+rejects blank, mixed-case, whitespace-padded and other values. Verified
+`@tuturuuu.com` accounts remain eligible on Free with either flag state. Workspace membership is required, and Calendar scheduling additionally
 requires Calendar permission. Both instant creation and scheduled creation use a
 trusted server writer only after these checks; the actor is always server supplied.
 The older restrictive direct-client INSERT policy remains in place. No production
-migration is needed to unlock paid hosting through the application API.
+migration is needed to enable this server flag. The same gate applies to meeting
+creation, invitee host eligibility and the native page model through
+`canVerifiedAccountHostMeeting`. Regression coverage:
+`packages/utils/src/meet-hosting.test.ts`.
 
 Existing workspace members may still join calls regardless of their email domain.
 Signed-in invitees outside the workspace can join a meeting whose creator is an
