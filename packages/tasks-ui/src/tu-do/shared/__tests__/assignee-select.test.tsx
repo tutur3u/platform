@@ -14,9 +14,16 @@ import { AssigneeSelect, type AssigneeSelectHandle } from '../assignee-select';
 
 const listWorkspaceTaskBoardViewableMembersMock = vi.fn();
 const updateWorkspaceTaskMock = vi.fn();
+const searchPeopleMock = vi.fn();
 
 vi.mock('next-intl', () => ({
+  useLocale: () => 'en',
   useTranslations: () => (key: string) => key,
+}));
+
+vi.mock('@tuturuuu/internal-api/people', () => ({
+  searchWorkspacePeople: (...args: Parameters<typeof searchPeopleMock>) =>
+    searchPeopleMock(...args),
 }));
 
 vi.mock('next/navigation', () => ({
@@ -53,6 +60,7 @@ describe('AssigneeSelect', () => {
       members: [],
     });
     updateWorkspaceTaskMock.mockResolvedValue({});
+    searchPeopleMock.mockResolvedValue({ data: [] });
   });
 
   function renderWithQueryClient(
@@ -139,5 +147,89 @@ describe('AssigneeSelect', () => {
         assignee_ids: ['guest-user-1'],
       });
     });
+  });
+
+  it('keeps contact links and ineligible people out of board assignment', async () => {
+    listWorkspaceTaskBoardViewableMembersMock.mockResolvedValue({
+      members: [
+        {
+          id: 'guest-1',
+          user_id: 'guest-1',
+          display_name: 'Guest',
+          email: 'guest@example.com',
+        },
+      ],
+    });
+    searchPeopleMock.mockResolvedValue({
+      data: [
+        {
+          kind: 'contact',
+          id: 'contact-1',
+          linkedUserId: 'outside-1',
+          displayName: 'Guest Contact',
+          email: 'guest@example.com',
+          avatarUrl: null,
+        },
+        {
+          kind: 'member',
+          id: 'outside-1',
+          displayName: 'Guest Outsider',
+          email: 'guest@example.com',
+          avatarUrl: null,
+        },
+      ],
+    });
+    const ref = createRef<AssigneeSelectHandle>();
+    renderWithQueryClient({ taskId: 'task-1' }, ref);
+    await waitFor(() =>
+      expect(listWorkspaceTaskBoardViewableMembersMock).toHaveBeenCalled()
+    );
+    act(() => ref.current?.open());
+    fireEvent.change(screen.getByPlaceholderText('task_contacts.search'), {
+      target: { value: 'Guest' },
+    });
+    const contactLink = await screen.findByRole('link');
+    expect(contactLink.getAttribute('href')).toMatch(
+      /\/ws-1\/users\/database\/contact-1$/
+    );
+    expect(screen.queryByText('Guest Outsider')).not.toBeInTheDocument();
+    fireEvent.click(contactLink);
+    expect(updateWorkspaceTaskMock).not.toHaveBeenCalled();
+    fireEvent.click(screen.getByText('Guest'));
+    await waitFor(() =>
+      expect(updateWorkspaceTaskMock).toHaveBeenCalledWith('ws-1', 'task-1', {
+        assignee_ids: ['guest-1'],
+      })
+    );
+  });
+
+  it('retains board guests when the contact read is denied', async () => {
+    listWorkspaceTaskBoardViewableMembersMock.mockResolvedValue({
+      members: [
+        {
+          id: 'guest-1',
+          user_id: 'guest-1',
+          display_name: 'Guest',
+          email: 'guest@example.com',
+        },
+      ],
+    });
+    searchPeopleMock.mockRejectedValue(new Error('Forbidden'));
+    const ref = createRef<AssigneeSelectHandle>();
+    renderWithQueryClient({ taskId: 'task-1' }, ref);
+    await waitFor(() =>
+      expect(listWorkspaceTaskBoardViewableMembersMock).toHaveBeenCalled()
+    );
+    act(() => ref.current?.open());
+    fireEvent.change(screen.getByPlaceholderText('task_contacts.search'), {
+      target: { value: 'Guest' },
+    });
+    expect(await screen.findByRole('status')).toHaveTextContent('unavailable');
+    fireEvent.click(screen.getByText('Guest'));
+    await waitFor(() =>
+      expect(updateWorkspaceTaskMock).toHaveBeenCalledWith('ws-1', 'task-1', {
+        assignee_ids: ['guest-1'],
+      })
+    );
   });
 });

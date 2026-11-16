@@ -5509,6 +5509,13 @@
     "switch_tracking_to_task": "Switch timer to this task",
     "system": "System",
     "task": "task",
+    "task_contacts": {
+      "heading": "Contacts",
+      "open": "Open contact: {name}",
+      "search": "Search members or contacts...",
+      "unavailable": "Contact search unavailable",
+      "unnamed": "Contact"
+    },
     "task_duplicated_successfully": "Task duplicated successfully",
     "task_header": "Task",
     "task_relationship_already_exists": "This relationship already exists.",

@@ -23,6 +23,7 @@ import {
   TaskOptionShortcutHint,
 } from '../../../shared/task-option-shortcuts';
 import { memberMatchesSearchQuery } from '../../../shared/task-resource-search-filters';
+import { TaskContactResults } from '../../../shared/task-contact-results';
 import { TaskControlledSubmenu } from './task-submenu-controller';
 
 interface Member {
@@ -33,6 +34,7 @@ interface Member {
 }
 
 interface TaskAssigneesMenuProps {
+  workspaceId?: string;
   forceOpen?: boolean;
   taskAssignees: Member[];
   availableMembers: Member[];
@@ -51,6 +53,7 @@ interface TaskAssigneesMenuProps {
 }
 
 export function TaskAssigneesMenu({
+  workspaceId,
   forceOpen,
   taskAssignees,
   availableMembers,
@@ -74,6 +77,7 @@ export function TaskAssigneesMenu({
   };
 
   const [searchQuery, setSearchQuery] = useState('');
+  const [open, setOpen] = useState(false);
 
   // Merge availableMembers with taskAssignees to include removed members
   // Removed members are those in taskAssignees but not in availableMembers
@@ -112,7 +116,11 @@ export function TaskAssigneesMenu({
     );
 
   return (
-    <TaskControlledSubmenu submenuId="assignees" forceOpen={forceOpen}>
+    <TaskControlledSubmenu
+      submenuId="assignees"
+      forceOpen={forceOpen}
+      onOpenChange={setOpen}
+    >
       <DropdownMenuSubTrigger>
         <UserStar className="h-4 w-4 text-dynamic-yellow" />
         {t.assignees}
@@ -209,6 +217,11 @@ export function TaskAssigneesMenu({
             )}
           </CommandList>
         </Command>
+        <TaskContactResults
+          workspaceId={workspaceId}
+          query={searchQuery}
+          open={open || !!forceOpen}
+        />
       </DropdownMenuSubContent>
     </TaskControlledSubmenu>
   );

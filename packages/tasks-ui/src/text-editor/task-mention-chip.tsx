@@ -1153,9 +1153,9 @@ export function TaskMentionChip({
         />
       )}
 
-      {/* Assignee Menu */}
       {actionWorkspaceId && (
         <TaskAssigneesMenu
+          workspaceId={actionWorkspaceId}
           taskAssignees={task.assignees || []}
           availableMembers={workspaceMembers}
           isLoading={membersLoading}

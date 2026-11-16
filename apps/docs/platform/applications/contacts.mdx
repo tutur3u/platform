@@ -30,13 +30,26 @@ pretend that all of these mean a missing record. See
 
 ## Related workflows
 
-### Cross-app people integration proposal
+### Cross-app people integration
 
 The shared people-search integration is under development. Its first slice adds
 `GET /api/v1/workspaces/{wsId}/people` and the
 `@tuturuuu/internal-api/people` client; this does not establish that every app
 already uses the endpoint. Mail recipient selection, Calendar attendees, Tasks
-mentions and assignments, and Meet invitations will adopt it in separate slices.
+contacts search, and Meet invitations adopt it in separate slices.
+
+In the shared Tasks assignee popover and task-card assignee menu, a search of
+2–100 characters can show a separate Contacts group. Each contact opens its
+workspace record in Contacts. Contacts never enter the assignee list or its
+numeric shortcuts, including when a contact ID, explicit linked account or email
+matches a member. Board-viewable members and direct guests remain the assignment
+source, and existing assigned users can still be removed. Contact-read denial
+does not disable board assignment. Existing task mention notifications keep
+their authenticated-member semantics; opening a contact sends no notification.
+This applies to active apps using the shared Tasks UI; standalone contact views
+and member assignment permission checks retain their own rules. Regression
+coverage lives in `task-contact-results.test.tsx`, `assignee-select.test.tsx` and
+`task-assignees-contacts.test.tsx` in `packages/tasks-ui`.
 
 Search is workspace scoped and requires membership and contact-read permission.
 Results contain only a contact or member identity and permitted name, email and

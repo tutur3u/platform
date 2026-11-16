@@ -3252,6 +3252,13 @@
     "switch_tracking_to_task": "Chuyển bộ tính giờ sang công việc này",
     "system": "Hệ thống",
     "task": "công việc",
+    "task_contacts": {
+      "heading": "Liên hệ",
+      "open": "Mở liên hệ: {name}",
+      "search": "Tìm thành viên hoặc liên hệ...",
+      "unavailable": "Không thể tìm kiếm liên hệ",
+      "unnamed": "Liên hệ"
+    },
     "task_duplicated_successfully": "Đã nhân bản công việc thành công",
     "task_header": "Công việc",
     "task_relationship_already_exists": "Mối quan hệ này đã tồn tại.",

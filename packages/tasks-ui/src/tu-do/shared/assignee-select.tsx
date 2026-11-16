@@ -28,6 +28,7 @@ import {
   useState,
 } from 'react';
 import { useBoardBroadcast } from './board-broadcast-context';
+import { TaskContactResults } from './task-contact-results';
 import {
   fetchBoardMembers,
   getBoardMembersQueryKey,
@@ -420,7 +421,7 @@ export const AssigneeSelect = forwardRef<AssigneeSelectHandle, Props>(
             <div className="relative">
               <Search className="absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
               <Input
-                placeholder={t('search_members')}
+                placeholder={t('task_contacts.search')}
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
                 className="h-9 border-0 bg-muted/50 pl-9 text-sm focus-visible:ring-0"
@@ -567,6 +568,11 @@ export const AssigneeSelect = forwardRef<AssigneeSelectHandle, Props>(
                 })()}
               </div>
             </div>
+            <TaskContactResults
+              workspaceId={wsId}
+              query={searchQuery}
+              open={open}
+            />
           </div>
         </PopoverContent>
       </Popover>

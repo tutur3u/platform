@@ -2052,7 +2052,6 @@ function TaskCardInner({
           </div>
           {/* Actions menu only */}
           <div className="flex items-center justify-end gap-1">
-            {/* Main Actions Menu - With integrated date picker */}
             {!isOverlay && (
               <DropdownMenu
                 open={menuOpen}
@@ -2429,6 +2428,7 @@ function TaskCardInner({
 
                   {shouldUseBoardAssignees && (
                     <TaskAssigneesMenu
+                      workspaceId={effectiveWorkspaceId}
                       forceOpen={hotkeyAction === 'assignees'}
                       taskAssignees={displayAssignees}
                       availableMembers={workspaceMembers}
@@ -2437,7 +2437,7 @@ function TaskCardInner({
                       onMenuItemSelect={handleMenuItemSelect}
                       translations={{
                         assignees: t('assignees'),
-                        searchMembers: t('search_members'),
+                        searchMembers: t('task_contacts.search'),
                         loading: t('loading'),
                         noMembersFound: t('no_members_found'),
                         noMembersAvailable: t('no_members_available'),
