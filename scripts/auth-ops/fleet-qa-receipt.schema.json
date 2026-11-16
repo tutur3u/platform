@@ -1,0 +1,203 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "Fleet QA receipt v1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "version",
+    "ack",
+    "projectRef",
+    "runId",
+    "startedAt",
+    "deleteBy",
+    "accounts",
+    "sharedRecords",
+    "visitedSurfaces",
+    "accessTokenLifetime"
+  ],
+  "properties": {
+    "version": {
+      "const": 1
+    },
+    "ack": {
+      "type": "string",
+      "pattern": "^D241[A-Za-z0-9_-]{1,96}$"
+    },
+    "projectRef": {
+      "type": "string",
+      "pattern": "^[a-z]{20}$"
+    },
+    "runId": {
+      "type": "string",
+      "format": "uuid"
+    },
+    "startedAt": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "deleteBy": {
+      "const": "2026-11-17T16:59:00.000Z"
+    },
+    "accounts": {
+      "type": "array",
+      "minItems": 2,
+      "maxItems": 2,
+      "items": {
+        "$ref": "#/$defs/account"
+      }
+    },
+    "sharedRecords": {
+      "type": "array",
+      "maxItems": 1,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["label", "id", "name"],
+        "properties": {
+          "label": {
+            "const": "a1"
+          },
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "name": {
+            "const": "QA D241"
+          }
+        }
+      }
+    },
+    "visitedSurfaces": {
+      "type": "array",
+      "maxItems": 128,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["label", "surface", "at"],
+        "properties": {
+          "label": {
+            "enum": ["a1", "a2"]
+          },
+          "surface": {
+            "type": "string",
+            "maxLength": 96,
+            "pattern": "^(?!.*(?:shorten|aurora|crawl|time-tracking.*export))(?:web|app:[a-z][a-z-]{1,30}):(login|logout|account-switch|dashboard|qa-workspace-create)$"
+          },
+          "at": {
+            "type": "string",
+            "format": "date-time"
+          }
+        }
+      }
+    },
+    "accessTokenLifetime": {
+      "const": "UNKNOWN"
+    }
+  },
+  "$defs": {
+    "account": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "label",
+        "id",
+        "outcome",
+        "workspaces",
+        "residuals",
+        "loginOutcome",
+        "sessionRevocation",
+        "accessJwtResidual"
+      ],
+      "properties": {
+        "label": {
+          "enum": ["a1", "a2"]
+        },
+        "id": {
+          "type": ["string", "null"],
+          "format": "uuid"
+        },
+        "outcome": {
+          "enum": [
+            "reserved",
+            "create-intent",
+            "created",
+            "ready",
+            "login-intent",
+            "login-ready",
+            "delete-intent",
+            "deleted",
+            "unknown",
+            "login-failed"
+          ]
+        },
+        "workspaces": {
+          "type": "array",
+          "maxItems": 1,
+          "items": {
+            "$ref": "#/$defs/workspace"
+          }
+        },
+        "residuals": {
+          "anyOf": [
+            {
+              "type": "null"
+            },
+            {
+              "type": "object",
+              "additionalProperties": false,
+              "required": [
+                "users",
+                "user_private_details",
+                "platform_user_roles"
+              ],
+              "properties": {
+                "users": {
+                  "type": "integer",
+                  "minimum": 0,
+                  "maximum": 1
+                },
+                "user_private_details": {
+                  "type": "integer",
+                  "minimum": 0,
+                  "maximum": 1
+                },
+                "platform_user_roles": {
+                  "type": "integer",
+                  "minimum": 0,
+                  "maximum": 1
+                }
+              }
+            }
+          ]
+        },
+        "loginOutcome": {
+          "enum": [null, "consumed", "rejected", "expired", "stopped"]
+        },
+        "sessionRevocation": {
+          "enum": [null, "auth-delete-cascade"]
+        },
+        "accessJwtResidual": {
+          "enum": [null, "access-jwt-valid-until-exp"]
+        }
+      }
+    },
+    "workspace": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "creatorId", "personal"],
+      "properties": {
+        "id": {
+          "type": "string",
+          "format": "uuid"
+        },
+        "creatorId": {
+          "type": "string",
+          "format": "uuid"
+        },
+        "personal": {
+          "const": true
+        }
+      }
+    }
+  }
+}

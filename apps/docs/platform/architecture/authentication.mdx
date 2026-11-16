@@ -45,3 +45,19 @@ Browser sign-in uses the browser session flow. Raw access and refresh tokens are
 ## Further reading
 
 Read the [security overview](/platform/architecture/system-design/security-architecture) and [one-origin session design](/platform/architecture/one-origin-security#session-cookies). Authentication does not replace feature-specific consent or the [data protection standard](/platform/data-protection-standard).
+
+## Reserved fleet QA identities
+
+The auth-ops helper creates only two reserved normal-user aliases after exact
+source and one-use execution review. It checks for existing Auth identities and
+pending email roles before creating either user, and it grants no platform roles.
+A1 creates one dedicated shared test workspace through the product UI; A2 has no
+shared membership. Trigger-created personal workspaces remain during QA.
+
+Cleanup verifies both identity and workspace inventories, deletes the recorded
+shared workspace before its creator, deletes Auth users to revoke sessions, and
+then confirms personal-workspace cascade deletion or performs the fenced fallback.
+Auth absence and exact filtered alias lookups are required; alias-only tombstones
+are counted. Access JWT lifetime is recorded as UNKNOWN without reading auth
+configuration. See `scripts/auth-ops/fleet-qa-contract.md` for the exact CLI,
+source/ACK binding, one-shot browser consumer, restricted surfaces and mock limits.

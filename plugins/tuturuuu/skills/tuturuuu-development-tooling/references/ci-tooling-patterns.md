@@ -1549,3 +1549,19 @@ publication, exact owner cleanup and Turbo fixture environment propagation.
 See the [unit fixture runbook](../../../../../apps/docs/build/devops/github-actions-runbook.mdx#disposable-redis-for-web-unit-shards)
 and `scripts/ci/disposable-redis.test.js`. Mocked Docker commands prove control
 flow; live container startup and signal teardown need ephemeral Linux evidence.
+
+## Fleet QA helper verification
+
+Bind the credential entry and its verified non-credential sibling to exact source
+hashes before SDK access. Credential modes require a direct Node entry in the
+executor's private copy; wrappers handle local receipt data only. Keep the mock
+SDK and synthetic credentials separate from production supplier qualification.
+
+Model the personal-workspace creator-present deletion guard and Auth membership
+cascade. Exercise the real main cleanup path for both personal-workspace cascade
+outcomes, exact ID/creator filters, shared-before-Auth ordering, filtered alias
+lookup anomalies, role tombstones, receipt conflicts, signal cleanup and on-disk
+intent replay. Null-pin tests must prove no environment reads or SDK resolution.
+Negative controls cover type, creator, creation time, name, filters and ordering.
+See `scripts/auth-ops/fleet-qa-contract.md` for the command and proof boundaries.
+Mocks do not establish production session revocation or authorize execution.
