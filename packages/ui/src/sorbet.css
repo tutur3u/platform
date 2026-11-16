@@ -293,3 +293,37 @@
     --sorbet-duration-sheet: 0ms;
   }
 }
+
+/*
+  The mobile sidebar backdrop uses the Sorbet scrim, like modal overlays. This
+  file is unlayered, so the rule wins over the backdrop's bg-black utility.
+*/
+:root[data-ui="sorbet"] :where([data-slot="sidebar-backdrop"]) {
+  background-color: var(--sorbet-scrim);
+}
+
+/*
+  Dark status fills are pastel, so white text on a solid dynamic fill drops
+  below 2:1. That text takes the dark ground instead, which meets 4.5:1 on
+  every Sorbet status ink (sorbet-presets.test.ts). Tinted fills such as
+  bg-dynamic-red/10 are separate class names and are not matched.
+*/
+:root[data-ui="sorbet"].dark
+  :where(
+    .bg-dynamic-blue,
+    .bg-dynamic-cyan,
+    .bg-dynamic-gray,
+    .bg-dynamic-green,
+    .bg-dynamic-indigo,
+    .bg-dynamic-lime,
+    .bg-dynamic-orange,
+    .bg-dynamic-pink,
+    .bg-dynamic-purple,
+    .bg-dynamic-red,
+    .bg-dynamic-rose,
+    .bg-dynamic-sky,
+    .bg-dynamic-teal,
+    .bg-dynamic-yellow
+  ):where(.text-white) {
+  color: var(--background);
+}

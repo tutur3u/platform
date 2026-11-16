@@ -36,7 +36,7 @@ export function StickyBottomBar({
         <div className="flex items-center gap-2">
           <div
             className={cn(
-              'h-2 w-2 animate-pulse rounded-full bg-amber-500',
+              'h-2 w-2 animate-pulse rounded-full bg-dynamic-orange',
               pulseDotClassName
             )}
           ></div>

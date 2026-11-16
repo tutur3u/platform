@@ -139,6 +139,7 @@ export function Structure({
         {!sidebarHidden && (mobileSidebarOpen ?? !isCollapsed) && (
           <button
             type="button"
+            data-slot="sidebar-backdrop"
             className="fixed inset-0 z-40 bg-black/20 backdrop-blur-lg md:hidden"
             aria-label={sidebarLabels?.close}
             onClick={() => setIsCollapsed(true)}

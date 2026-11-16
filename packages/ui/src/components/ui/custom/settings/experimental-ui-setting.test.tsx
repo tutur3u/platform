@@ -60,6 +60,15 @@ describe('ExperimentalUiSetting', () => {
     expect(document.documentElement.getAttribute('data-ui')).toBe('sorbet');
   });
 
+  it('gives the switch a 44px touch target', () => {
+    render(<ExperimentalUiSetting />);
+
+    // 20px switch + 12px on each side.
+    expect(
+      screen.getByRole('switch', { name: 'setting_toggle_label' })
+    ).toHaveClass('relative', 'after:absolute', 'after:-inset-3');
+  });
+
   it('disables the switch while the value loads', () => {
     mockUseUserBooleanConfig.mockReturnValue({
       isLoading: true,

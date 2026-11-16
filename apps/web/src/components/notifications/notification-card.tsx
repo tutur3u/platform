@@ -178,7 +178,7 @@ export function NotificationCard({
               className={cn(
                 'font-medium text-xs',
                 isUnread
-                  ? 'bg-dynamic-blue text-white'
+                  ? 'bg-dynamic-blue text-background'
                   : 'bg-muted text-muted-foreground'
               )}
             >
@@ -411,11 +411,11 @@ function ChangeDetails({
               {formatFieldName(field)}:
             </span>
             <div className="mt-0.5 flex flex-wrap items-center gap-1.5">
-              <span className="rounded bg-red-500/10 px-1.5 py-0.5 font-mono text-red-600 text-xs dark:text-red-400">
+              <span className="rounded bg-dynamic-red/10 px-1.5 py-0.5 font-mono text-dynamic-red text-xs">
                 {displayOldValue}
               </span>
               <span className="text-foreground/30">→</span>
-              <span className="rounded bg-green-500/10 px-1.5 py-0.5 font-mono text-green-600 text-xs dark:text-green-400">
+              <span className="rounded bg-dynamic-green/10 px-1.5 py-0.5 font-mono text-dynamic-green text-xs">
                 {displayNewValue}
               </span>
               {isDescriptionChange && (oldValue != null || newValue != null) ? (
@@ -474,7 +474,7 @@ function SingleChangeDetail({
         </span>
         <div className="mt-0.5 flex flex-wrap items-center gap-1.5">
           {oldValue != null && (
-            <span className="rounded bg-red-500/10 px-1.5 py-0.5 font-mono text-red-600 text-xs dark:text-red-400">
+            <span className="rounded bg-dynamic-red/10 px-1.5 py-0.5 font-mono text-dynamic-red text-xs">
               {displayOldValue}
             </span>
           )}
@@ -482,7 +482,7 @@ function SingleChangeDetail({
             <span className="text-foreground/30">→</span>
           )}
           {newValue != null && (
-            <span className="rounded bg-green-500/10 px-1.5 py-0.5 font-mono text-green-600 text-xs dark:text-green-400">
+            <span className="rounded bg-dynamic-green/10 px-1.5 py-0.5 font-mono text-dynamic-green text-xs">
               {displayNewValue}
             </span>
           )}

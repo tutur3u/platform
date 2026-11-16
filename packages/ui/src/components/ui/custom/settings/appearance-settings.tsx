@@ -18,6 +18,7 @@ import { useTransition } from 'react';
 import { persistLocalePreference } from '../locale-preference';
 import { VersionBadgeSetting } from '../version-badge';
 import { ExperimentalUiSetting } from './experimental-ui-setting';
+import { ThemeModePreview } from './theme-mode-preview';
 
 /**
  * Shared appearance settings with theme and language.
@@ -65,7 +66,7 @@ export function AppearanceSettings({
                 htmlFor="light"
                 className="flex cursor-pointer flex-col gap-2 rounded-lg border bg-background p-2 font-normal hover:bg-accent hover:text-accent-foreground peer-focus-visible:ring-2 peer-focus-visible:ring-ring peer-data-[state=checked]:border-foreground peer-data-[state=checked]:ring-1 peer-data-[state=checked]:ring-foreground"
               >
-                <div className="h-14 w-full rounded-md border bg-[#ecedef] shadow-sm" />
+                <ThemeModePreview mode="light" />
                 {t('common.light')}
               </Label>
             </div>
@@ -75,7 +76,7 @@ export function AppearanceSettings({
                 htmlFor="dark"
                 className="flex cursor-pointer flex-col gap-2 rounded-lg border bg-background p-2 font-normal hover:bg-accent hover:text-accent-foreground peer-focus-visible:ring-2 peer-focus-visible:ring-ring peer-data-[state=checked]:border-foreground peer-data-[state=checked]:ring-1 peer-data-[state=checked]:ring-foreground"
               >
-                <div className="h-14 w-full rounded-md border bg-slate-950 shadow-sm" />
+                <ThemeModePreview mode="dark" />
                 {t('common.dark')}
               </Label>
             </div>
@@ -89,7 +90,7 @@ export function AppearanceSettings({
                 htmlFor="system"
                 className="flex cursor-pointer flex-col gap-2 rounded-lg border bg-background p-2 font-normal hover:bg-accent hover:text-accent-foreground peer-focus-visible:ring-2 peer-focus-visible:ring-ring peer-data-[state=checked]:border-foreground peer-data-[state=checked]:ring-1 peer-data-[state=checked]:ring-foreground"
               >
-                <div className="h-14 w-full rounded-md border bg-linear-to-r from-[#ecedef] to-slate-950 shadow-sm" />
+                <ThemeModePreview mode="system" />
                 {t('common.system')}
               </Label>
             </div>

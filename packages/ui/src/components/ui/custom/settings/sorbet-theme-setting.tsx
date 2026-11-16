@@ -13,35 +13,9 @@ import {
   parseSorbetTheme,
   SORBET_PRESETS,
   SORBET_THEME_CONFIG_ID,
-  type SorbetPreset,
   serializeSorbetTheme,
 } from '../sorbet-theme';
-
-/** One side of a preset tile, painted with that preset's own tokens. */
-function PresetSwatch({
-  preset,
-  mode,
-}: {
-  preset: SorbetPreset;
-  mode: 'light' | 'dark';
-}) {
-  return (
-    <div
-      data-sorbet-preview={preset}
-      data-sorbet-preview-mode={mode}
-      className="flex flex-1 flex-col gap-1.5 bg-background p-2"
-    >
-      <div className="flex flex-col gap-1 rounded-md border bg-card p-1.5">
-        <div className="h-1.5 w-3/4 rounded-full bg-foreground" />
-        <div className="h-1.5 w-1/2 rounded-full bg-muted-foreground" />
-      </div>
-      <div className="flex items-center gap-1">
-        <div className="h-3 w-8 rounded-full bg-primary" />
-        <div className="h-3 w-5 rounded-full bg-accent" />
-      </div>
-    </div>
-  );
-}
+import { SorbetPresetSwatch } from './sorbet-preset-swatch';
 
 /**
  * Palette picker for the Sorbet design, shown while it is on. The choice is
@@ -84,8 +58,8 @@ export function SorbetThemeSetting() {
                   aria-hidden
                   className="flex h-16 w-full overflow-hidden rounded-lg border"
                 >
-                  <PresetSwatch preset={preset} mode="light" />
-                  <PresetSwatch preset={preset} mode="dark" />
+                  <SorbetPresetSwatch preset={preset} mode="light" />
+                  <SorbetPresetSwatch preset={preset} mode="dark" />
                 </div>
                 <span className="px-1 pb-0.5 text-sm">
                   {t(`presets.${preset}`)}

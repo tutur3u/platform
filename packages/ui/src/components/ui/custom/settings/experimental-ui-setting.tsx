@@ -41,6 +41,8 @@ export function ExperimentalUiSetting() {
       >
         <Switch
           aria-label={t('setting_toggle_label')}
+          // Extends the touch target to 44px without resizing the switch.
+          className="relative after:absolute after:-inset-3"
           checked={value}
           disabled={isLoading || isPending}
           onCheckedChange={onChange}

@@ -5,6 +5,7 @@ import { persistLocalePreference } from '@tuturuuu/ui/custom/locale-preference';
 import { SettingItemTab } from '@tuturuuu/ui/custom/settings-item-tab';
 import { SettingsSection } from '@tuturuuu/ui/custom/settings-section';
 import { ExperimentalUiSetting } from '@tuturuuu/ui/custom/settings/experimental-ui-setting';
+import { ThemeModePreview } from '@tuturuuu/ui/custom/settings/theme-mode-preview';
 import { VersionBadgeSetting } from '@tuturuuu/ui/custom/version-badge';
 import { Label } from '@tuturuuu/ui/label';
 import { RadioGroup, RadioGroupItem } from '@tuturuuu/ui/radio-group';
@@ -133,7 +134,7 @@ export default function AppearanceSettings({
                 htmlFor="light"
                 className="flex cursor-pointer flex-col gap-2 rounded-lg border bg-background p-2 font-normal hover:bg-accent hover:text-accent-foreground peer-focus-visible:ring-2 peer-focus-visible:ring-ring peer-data-[state=checked]:border-foreground peer-data-[state=checked]:ring-1 peer-data-[state=checked]:ring-foreground"
               >
-                <div className="h-14 w-full rounded-md border bg-[#ecedef] shadow-sm" />
+                <ThemeModePreview mode="light" />
                 {t('common.light')}
               </Label>
             </div>
@@ -143,7 +144,7 @@ export default function AppearanceSettings({
                 htmlFor="dark"
                 className="flex cursor-pointer flex-col gap-2 rounded-lg border bg-background p-2 font-normal hover:bg-accent hover:text-accent-foreground peer-focus-visible:ring-2 peer-focus-visible:ring-ring peer-data-[state=checked]:border-foreground peer-data-[state=checked]:ring-1 peer-data-[state=checked]:ring-foreground"
               >
-                <div className="h-14 w-full rounded-md border bg-slate-950 shadow-sm" />
+                <ThemeModePreview mode="dark" />
                 {t('common.dark')}
               </Label>
             </div>
@@ -157,7 +158,7 @@ export default function AppearanceSettings({
                 htmlFor="system"
                 className="flex cursor-pointer flex-col gap-2 rounded-lg border bg-background p-2 font-normal hover:bg-accent hover:text-accent-foreground peer-focus-visible:ring-2 peer-focus-visible:ring-ring peer-data-[state=checked]:border-foreground peer-data-[state=checked]:ring-1 peer-data-[state=checked]:ring-foreground"
               >
-                <div className="h-14 w-full rounded-md border bg-linear-to-r from-[#ecedef] to-slate-950 shadow-sm" />
+                <ThemeModePreview mode="system" />
                 {t('common.system')}
               </Label>
             </div>

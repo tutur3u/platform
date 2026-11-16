@@ -110,6 +110,25 @@ describe('Sorbet presets', () => {
     }
   });
 
+  it('gives the mobile sidebar backdrop the Sorbet scrim', () => {
+    expect(baseCss).toMatch(
+      /\[data-slot="sidebar-backdrop"\]\) \{\s*background-color: var\(--sorbet-scrim/
+    );
+  });
+
+  it('keeps white text on solid status fills readable in dark mode', () => {
+    const rule = baseCss.slice(
+      baseCss.indexOf(
+        ':root[data-ui="sorbet"].dark\n  :where(\n    .bg-dynamic-'
+      )
+    );
+    expect(rule).toContain(':where(.text-white)');
+    expect(rule).toContain('color: var(--background);');
+    for (const ink of STATUS_INKS) {
+      expect(rule).toMatch(new RegExp(`\\.bg-dynamic-${ink}[,\\n]`));
+    }
+  });
+
   it('loads after the base Sorbet tokens', () => {
     const globals = readUiFile('globals.css');
     expect(globals.indexOf('@import "./sorbet-presets.css";')).toBeGreaterThan(

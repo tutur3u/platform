@@ -177,7 +177,7 @@ export function NotificationGroupCard({
                       className={cn(
                         'font-medium text-xs',
                         hasUnread
-                          ? 'bg-dynamic-blue text-white'
+                          ? 'bg-dynamic-blue text-background'
                           : 'bg-muted text-muted-foreground'
                       )}
                     >
@@ -384,7 +384,7 @@ function GroupedNotificationItem({
             className={cn(
               'font-medium text-[10px]',
               isUnread
-                ? 'bg-dynamic-blue text-white'
+                ? 'bg-dynamic-blue text-background'
                 : 'bg-muted text-muted-foreground'
             )}
           >
@@ -514,11 +514,11 @@ function MiniChangeDetails({
             <span className="text-foreground/50">
               {formatFieldName(field)}:
             </span>
-            <span className="text-red-500/70 line-through">
+            <span className="text-dynamic-red/70 line-through">
               {displayOldValue.slice(0, 15)}
             </span>
             <span className="text-foreground/30">→</span>
-            <span className="text-green-600/80">
+            <span className="text-dynamic-green/80">
               {displayNewValue.slice(0, 15)}
             </span>
           </span>
