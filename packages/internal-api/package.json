@@ -26,6 +26,11 @@
     "type-check": "tsc --project tsconfig.typecheck.json"
   },
   "exports": {
+    "./calendar-attendees": {
+      "types": "./dist/calendar-attendees.d.ts",
+      "import": "./dist/calendar-attendees.js",
+      "require": "./dist/calendar-attendees.js"
+    },
     "./calendar-invitation-capabilities": {
       "types": "./dist/calendar-invitation-capabilities.d.ts",
       "import": "./dist/calendar-invitation-capabilities.js",

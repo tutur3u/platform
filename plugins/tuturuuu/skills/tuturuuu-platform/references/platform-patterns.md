@@ -6,6 +6,12 @@ shared-package changes.
 
 ## Web And Shared UI
 
+- Saved Calendar attendee snapshots are organizer-only explicit reads. Keep them
+  out of generic Save payloads and do not infer attendee mutation safety from
+  create request reservations or expiring coordination leases. Mutation admission
+  needs a durable event-level UNKNOWN fence and a verified provider conditional
+  contract. See [existing guest snapshots](../../../../../apps/docs/platform/applications/contacts.mdx#existing-calendar-guest-snapshots).
+
 - Calendar guest creates use the dedicated invitation-capabilities internal API
   submodule and shared hook, matched to the selected provider, connection and
   calendar. Keep Google color options separate: the save hook needs that query

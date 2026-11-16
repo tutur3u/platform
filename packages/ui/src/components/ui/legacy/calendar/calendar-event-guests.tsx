@@ -1,5 +1,7 @@
 'use client';
 
+import { CalendarAttendeeSnapshot } from './calendar-attendee-snapshot';
+
 import { X } from '@tuturuuu/icons';
 import type { CalendarSourceOption } from '@tuturuuu/internal-api';
 import { useCalendarInvitationCapabilities } from '../../../../hooks/use-calendar-invitation-capabilities';
@@ -41,6 +43,21 @@ export function CalendarEventDetails({
         value={event.description || ''}
         onChange={(description) => onChange({ ...event, description })}
       />
+      {isEditing &&
+        workspaceId &&
+        event.id &&
+        event.id !== 'new' &&
+        source?.writable &&
+        source.provider !== 'tuturuuu' &&
+        !event.providerColor &&
+        !event.seriesId && (
+          <CalendarAttendeeSnapshot
+            key={`${workspaceId}:${event.id}:${source.id}`}
+            wsId={workspaceId}
+            eventId={event.id}
+            source={source}
+          />
+        )}
       {!isEditing && workspaceId && (
         <CalendarEventGuests
           event={event}

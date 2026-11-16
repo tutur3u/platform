@@ -1703,6 +1703,15 @@
     "reset_calendar_confirm_desc": "Thao tác này sẽ xóa vĩnh viễn tất cả sự kiện lịch, ngắt kết nối tất cả tài khoản đã liên kết (Google, Microsoft), và xóa lịch tùy chỉnh. Lịch hệ thống sẽ được giữ lại nhưng dữ liệu sẽ bị xóa. Hành động này không thể hoàn tác.",
     "reset_calendar_confirm_title": "Đặt lại toàn bộ dữ liệu lịch?",
     "reset_calendar_data": "Đặt lại dữ liệu lịch",
+    "saved_guests": {
+      "empty": "Không có khách mời",
+      "loading": "Đang tải khách mời…",
+      "read_only": "Thông tin khách mời chỉ đọc. Quản lý khách mời trong dịch vụ lịch của bạn.",
+      "refresh": "Tải lại khách mời",
+      "title": "Khách mời",
+      "unavailable": "Không thể xem thông tin khách mời của sự kiện này.",
+      "view": "Xem khách mời"
+    },
     "send": "Gửi",
     "settings_tab_accounts": "Tài khoản",
     "settings_tab_calendars": "Lịch",

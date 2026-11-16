@@ -42,6 +42,9 @@ describe('Calendar client API ownership', () => {
     ).toBe(
       `${base}/api/v1/workspaces/ws/calendar/invitation-capabilities?provider=microsoft&connectionId=selected`
     );
+    expect(
+      calendarApiPath('/api/v1/workspaces/ws/calendar/events/event/attendees')
+    ).toBe(`${base}/api/v1/workspaces/ws/calendar/events/event/attendees`);
     expect(calendarApiPath('/api/v1/calendar/connections?x=a%2Bb')).toBe(
       `${base}/api/v1/calendar/connections?x=a%2Bb`
     );

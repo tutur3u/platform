@@ -1703,6 +1703,15 @@
     "reset_calendar_confirm_desc": "This will permanently delete all calendar events, disconnect all linked accounts (Google, Microsoft), and remove custom calendars. System calendars will be preserved but emptied. This action cannot be undone.",
     "reset_calendar_confirm_title": "Reset all calendar data?",
     "reset_calendar_data": "Reset Calendar Data",
+    "saved_guests": {
+      "empty": "No guests",
+      "loading": "Loading guests…",
+      "read_only": "Guest details are read only. Manage guests in your calendar provider.",
+      "refresh": "Refresh guests",
+      "title": "Guests",
+      "unavailable": "Guest details are unavailable for this event.",
+      "view": "View guests"
+    },
     "send": "Send",
     "settings_tab_accounts": "Accounts",
     "settings_tab_calendars": "Calendars",

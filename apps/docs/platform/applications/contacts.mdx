@@ -156,3 +156,43 @@ separate for recoverable color creates.
 Regression coverage: Calendar invitation-capabilities route tests, shared UI
 `calendar-event-create-payload`, `use-calendar-invitation-capabilities` and
 `use-calendar-draft-save` tests, plus existing provider meeting and generation tests.
+
+## Existing Calendar guest snapshots
+
+Saved-event guest details are read only in the shared Calendar modal in Calendar,
+Web, Tasks and Contacts. View guests performs an explicit organizer-authorized
+provider read; Refresh guests repeats only that read. The server derives actor,
+workspace, calendar and provider event identity from the authorized local event
+and writable connection. The UI keeps snapshots out of generic event Save payloads.
+It does not offer add/remove or RSVP changes. Snapshots are scoped to the open
+component instance, are not persisted, and are removed after a failed refresh.
+
+This slice admits only nonrecurring Google/Outlook organizer events with complete
+attendee lists and a provider revision. Native, read-only, foreign-source,
+provider-color, pending create, retained generation and legacy-mode events are
+refused. Missing recurrence state fails closed. The response projects guest
+names/addresses and RSVP/resource/optional flags; it does not return account
+credentials or raw provider payloads. Reads do not notify guests or change RSVP.
+
+Attendee writes require a durable event-level operation ledger before admission.
+The create reservation binds an event insertion and its stable provider create ID;
+it is not an attendee journal. Meeting coordination fingerprints expire after two
+hours. An attendee ledger must bind actor/workspace/source/calendar/event,
+operation identity, base revision and full intended attendee metadata; atomically
+fence dispatch and every new operation while outcome is unknown; survive reload
+and coordinate with all other event writers. Unknown outcomes permit bounded
+read reconciliation only, never another notification-producing write. Ordinary
+mutable event metadata or an expiring lease alone does not provide that fence.
+
+[Google documents conditional modification](https://developers.google.com/workspace/calendar/api/guides/version-resources)
+with ETag/If-Match and a 412 conflict. The
+[Graph event update contract](https://learn.microsoft.com/en-us/graph/api/event-update?view=graph-rest-1.0)
+limits notifications when the body contains only attendees, but does not establish
+If-Match semantics for event PATCH. Outlook mutation stays blocked until its
+conditional-write contract is verified. No read-only snapshot implies write
+capability. Existing create invitations retain their separate durable identities.
+
+Regression coverage: `attendee-snapshot.test.ts`, the event attendees route tests,
+shared `calendar-attendee-snapshot.test.tsx`, and native registry/mount parity.
+Successful add/remove, stale-write conflict and UNKNOWN mutation recovery are
+not implemented by this read-only slice; no corresponding safety claim is made.
