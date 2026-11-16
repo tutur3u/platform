@@ -12,6 +12,7 @@ const mounts = { app: 'hive', ...hiveApexMounts };
 export function hiveMountedContentSecurityPolicy(nonce: string) {
   return [
     `script-src 'nonce-${nonce}' 'strict-dynamic'`,
+    "form-action 'self'",
     "object-src 'none'",
     "base-uri 'none'",
     "frame-ancestors 'none'",

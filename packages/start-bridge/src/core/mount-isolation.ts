@@ -1,3 +1,5 @@
+import { isMountedForbiddenCookieName } from '../start/mounted-session-guard';
+
 /**
  * Same-origin isolation for an app mounted on the shared apex
  * (`tuturuuu.com/<app>`), opted in per app with `mounts.isolation`.
@@ -10,10 +12,12 @@
  *   and the Supabase session reach app code. The Supabase session is reduced
  *   to an access-token-only session (no refresh or provider tokens), so a
  *   mounted app can verify the user but can never rotate, extend or clear the
- *   central session. Every other cookie (per-app and Web app sessions, other
+ *   central session through app code. Central logout alone receives the original
+ *   cookie header after admission. Every other cookie (per-app and Web app sessions, other
  *   apps' cookies, PKCE verifiers, analytics) is removed.
  * - Response: every `Set-Cookie` for a name the app does not own is dropped
- *   (writes and deletions alike). Owned cookies are rewritten host-only
+ *   (writes and deletions alike), except explicitly admitted central logout
+ *   deletions. Owned cookies are rewritten host-only
  *   (`Domain` removed), `Path=<base>` and `Secure`, so they can never shadow
  *   or clobber a central `Path=/` cookie.
  * - Upstreams: a request forwarded to any origin other than the central Web
@@ -51,7 +55,14 @@ export function assertMountIsolationConfig(config: MountIsolationConfig) {
       throw new Error(`Invalid owned cookie name: ${name}`);
     if (name.startsWith('__Host-'))
       throw new Error(`An owned mount cookie cannot be __Host-: ${name}`);
-    if (SUPABASE_AUTH_COOKIE.test(name) || name === LOGOUT_FENCE_COOKIE_NAME)
+    if (
+      SUPABASE_AUTH_COOKIE.test(name) ||
+      name === LOGOUT_FENCE_COOKIE_NAME ||
+      isMountedForbiddenCookieName(name) ||
+      /^(?:__(?:Secure|Host)-)?(?:tuturuuu_web_account_device|ttr_mfa_mobile_approval)(?:\.\d+)?$/u.test(
+        name
+      )
+    )
       throw new Error(`A mounted app cannot own a session cookie: ${name}`);
   }
 }
@@ -198,14 +209,31 @@ export function scopeOwnedSetCookie(setCookie: string, basePath: string) {
 export function scopeMountedResponseCookies(
   response: Response,
   basePath: string,
-  config: MountIsolationConfig
+  config: MountIsolationConfig,
+  centralLogout = false
 ): Response {
+  if (response.headers.has('clear-site-data') && response.status !== 101) {
+    response = new Response(response.body, response);
+    response.headers.delete('clear-site-data');
+  }
   const setCookies = response.headers.getSetCookie();
   if (!setCookies.length || response.status === 101) return response;
   const owned = new Set(config.ownedCookies);
-  const scoped = setCookies
-    .filter((value) => owned.has(cookieName(value)))
-    .map((value) => scopeOwnedSetCookie(value, basePath));
+  const scoped = setCookies.flatMap((value) => {
+    const name = cookieName(value);
+    if (owned.has(name)) return [scopeOwnedSetCookie(value, basePath)];
+    const [pair, ...attributes] = value.split(';');
+    const deletion =
+      pair?.trim() === `${name}=` &&
+      attributes.some((attribute) => /^max-age=0$/iu.test(attribute.trim()));
+    return centralLogout &&
+      deletion &&
+      (SUPABASE_AUTH_COOKIE.test(name) ||
+        name === LOGOUT_FENCE_COOKIE_NAME ||
+        name === 'ttr_mfa_mobile_approval')
+      ? [value]
+      : [];
+  });
   const result = new Response(response.body, response);
   result.headers.delete('set-cookie');
   for (const value of scoped) result.headers.append('set-cookie', value);

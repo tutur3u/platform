@@ -87,7 +87,7 @@ export async function GET(request: NextRequest): Promise<NextResponse> {
     <main>
       <h1>${title}</h1>
       <p>${description}</p>
-      <form method="post" action="/~recover-browser-state">
+      <form method="post" action="${escapeHtml(createHivePublicUrl('/~recover-browser-state', request).pathname)}">
         <button type="submit">${button}</button>
       </form>
     </main>
@@ -126,7 +126,12 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
   );
   const response = NextResponse.redirect(redirectUrl);
 
-  applyClearSiteDataHeaders(response);
+  if (
+    request.nextUrl.basePath === '/hive' ||
+    new URL(request.url).pathname.startsWith('/hive/')
+  )
+    applyNoStoreHeaders(response);
+  else applyClearSiteDataHeaders(response);
 
   for (const cookieName of getAuthCookieNames(request)) {
     response.cookies.set(cookieName, '', {

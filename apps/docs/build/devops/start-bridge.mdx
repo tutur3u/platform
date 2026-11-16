@@ -294,7 +294,7 @@ A mount may opt into same-origin isolation with `mounts.isolation` (Hive does:
 rewrite central cookies through its own server:
 
 - **Request cookies.** App code (`proxy.ts`, endpoints, server functions,
-  SSR, central forwards) receives only the app's `ownedCookies`, the read-only
+  SSR, ordinary central forwards) receives only the app's `ownedCookies`, the read-only
   `__Host-tuturuuu_app_signed_out` fence, and the Supabase session reduced to
   an access-token-only value (`refresh_token` emptied, provider tokens
   removed). A mounted app can verify the user but can never rotate, extend or
@@ -302,10 +302,16 @@ rewrite central cookies through its own server:
   app's login path. Per-app and Web app sessions, device, SSO, MFA approval,
   PKCE and other apps' cookies never reach it.
 - **Response cookies.** Every `Set-Cookie` the app does not own is dropped,
-  including Supabase rotations and deletions. Owned cookies are rewritten
+  including Supabase rotations and deletions, except on admitted central logout.
+  Only empty values with `Max-Age=0` for Supabase session chunks, the logout
+  fence and `ttr_mfa_mobile_approval` pass through that response. Web alone
+  receives the original cookie header on admitted logout so it can revoke
+  expired sessions and clear all chunks; app callbacks keep the reduced view. Owned cookies are rewritten
   host-only (`Domain` removed), `Path=<base>` and `Secure`. `__Host-` names,
-  Supabase names and the fence cannot be owned. Client navigation writes
+  Supabase names, central device/MFA cookies, forbidden session names and the fence cannot be owned. Client navigation writes
   `NEXT_LOCALE` at the mount base too (`localeCookieString`).
+- **Recovery.** Mounted responses strip `Clear-Site-Data` to protect apex
+  storage and open Web tabs. Hive recovery submits and redirects under `/hive`.
 - **Upstreams.** A forward to any origin other than the central Web API
   carries no `Cookie` or `Authorization`.
 

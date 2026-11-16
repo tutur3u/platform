@@ -144,3 +144,27 @@ describe('Hive browser state recovery route', () => {
     ).toBeUndefined();
   });
 });
+
+it('keeps mounted recovery under /hive without clearing apex storage', async () => {
+  mocks.getTranslations.mockResolvedValue(
+    (key: string) => translations[key] ?? key
+  );
+  const options = {
+    nextConfig: { basePath: '/hive' },
+    headers: { origin: 'https://tuturuuu.com' },
+  };
+  const page = await GET(
+    new NextRequest('https://tuturuuu.com/hive/~recover-browser-state', options)
+  );
+  expect(await page.text()).toContain('action="/hive/~recover-browser-state"');
+  const response = await POST(
+    new NextRequest('https://tuturuuu.com/hive/~recover-browser-state', {
+      ...options,
+      method: 'POST',
+    })
+  );
+  expect(response.headers.get('clear-site-data')).toBeNull();
+  expect(response.headers.get('location')).toBe(
+    'https://tuturuuu.com/hive/login?browserStateReset=1'
+  );
+});

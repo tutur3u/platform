@@ -196,3 +196,56 @@ describe('assertMountIsolationConfig', () => {
     expect(() => assertMountIsolationConfig(config)).not.toThrow();
   });
 });
+
+describe('activation isolation fences', () => {
+  it('passes central logout deletions only on the admitted logout response', () => {
+    const response = new Response(null);
+    const deletions = [
+      KEY,
+      `${KEY}.0`,
+      'ttr_mfa_mobile_approval',
+      '__Host-tuturuuu_app_signed_out',
+    ].map((name) => `${name}=; Path=/; Max-Age=0; Secure`);
+    for (const cookie of deletions)
+      response.headers.append('set-cookie', cookie);
+    response.headers.append('set-cookie', `${KEY}=live; Path=/; Max-Age=0`);
+    response.headers.append('set-cookie', 'ttr_mfa_mobile_approval=; Path=/');
+    response.headers.append('set-cookie', 'tuturuuu_app_session=; Max-Age=0');
+    expect(
+      scopeMountedResponseCookies(
+        response.clone(),
+        '/hive',
+        config,
+        true
+      ).headers.getSetCookie()
+    ).toEqual(deletions);
+    expect(
+      scopeMountedResponseCookies(
+        response,
+        '/hive',
+        config
+      ).headers.getSetCookie()
+    ).toEqual([]);
+  });
+
+  it('strips origin-wide recovery storage clearing even without cookies', () => {
+    const response = scopeMountedResponseCookies(
+      new Response(null, { headers: { 'Clear-Site-Data': '"storage"' } }),
+      '/hive',
+      config
+    );
+    expect(response.headers.get('clear-site-data')).toBeNull();
+  });
+
+  it.each([
+    'tuturuuu_app_session',
+    'tuturuuu_app_session_refresh',
+    'tuturuuu_web_account_device',
+    'ttr_mfa_mobile_approval',
+    '__Secure-tuturuuu_app_session.0',
+  ])('rejects central cookie ownership: %s', (name) => {
+    expect(() =>
+      assertMountIsolationConfig({ ownedCookies: [name] })
+    ).toThrow();
+  });
+});

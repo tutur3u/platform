@@ -250,3 +250,21 @@ describe('isolated tuturuuu.com/hive mount', () => {
     ).toThrow();
   });
 });
+
+it('emits central logout deletions while the proxy sees a reduced session', async () => {
+  const response = await handle(
+    new Request('https://tuturuuu.com/hive/api/auth/logout', {
+      method: 'POST',
+      headers: { cookie: APEX_COOKIES, origin: 'https://tuturuuu.com' },
+    }),
+    {},
+    ctx
+  );
+  expect(response.headers.getSetCookie()).toContain(
+    'sb-ref-auth-token=; Path=/; Max-Age=0'
+  );
+  expect(fetcher.mock.calls.at(-1)?.[0].headers.get('cookie')).toBe(
+    APEX_COOKIES
+  );
+  expect(seen[0]?.cookie).not.toContain('refresh-fixture');
+});

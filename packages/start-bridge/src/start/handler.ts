@@ -243,6 +243,19 @@ export function createBridgeHandler<
           const origin =
             options.apiOrigin?.(forwarded, { env, path: pathname }) ??
             centralOrigin;
+          // Only admitted central logout receives the original session chunks,
+          // so expired sessions and every stored chunk can be cleared by Web.
+          if (
+            isolated &&
+            origin === centralOrigin &&
+            isMountedLogoutPath(pathname)
+          ) {
+            const headers = new Headers(forwarded.headers);
+            const cookie = incoming.headers.get('cookie');
+            if (cookie) headers.set('cookie', cookie);
+            else headers.delete('cookie');
+            forwarded = new NextRequest(forwarded, { headers });
+          }
           // An isolated mount sends credentials only to the central Web API,
           // which owns the shared session; any other upstream gets none.
           const upstream =
@@ -291,7 +304,8 @@ export function createBridgeHandler<
         ? scopeMountedResponseCookies(
             stripMountedSessionWrites(finalized),
             base.basePath,
-            isolated
+            isolated,
+            isMountedLogoutPath(appPath)
           )
         : stripMountedSessionWrites(finalized);
     if (!nonce || !options.csp) return final;
