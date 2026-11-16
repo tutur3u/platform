@@ -1,3 +1,5 @@
 {
-  "ignoredFiles": ["packages/roadmap-core/src/assets/brands/cloudflare-mark.svg"]
+  "ignoredFiles": [
+    "packages/roadmap-core/src/assets/brands/cloudflare-mark.svg"
+  ]
 }

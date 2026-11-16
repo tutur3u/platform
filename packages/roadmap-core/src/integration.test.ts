@@ -88,9 +88,7 @@ test('split CSS keeps the UI scan exclusion at the repository components directo
     return target && new URL(target, path).pathname === expected;
   };
   assert.ok(matches(css));
-  assert.ok(
-    !matches(css.replace('../../../packages/ui', '../../packages/ui'))
-  );
+  assert.ok(!matches(css.replace('../../../packages/ui', '../../packages/ui')));
 });
 test('the page is a compact hero over four tabs, each section in its tab', () => {
   const page = source('./pages/roadmap.tsx');
