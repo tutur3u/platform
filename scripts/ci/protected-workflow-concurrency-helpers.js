@@ -104,10 +104,12 @@ const mainExceptions = {
 // These workflows do not cancel a main push, and each main SHA has its own
 // group. A shared "latest" group still drops the previous pending run when
 // cancel-in-progress is false, so the proof tests require distinct groups.
-// Feature branches and pull requests still supersede. Documentation and SEO
-// contracts stay on the superseding main policy.
+// Feature branches and pull requests still supersede. Every Cloudflare Source
+// workflow joins this set from its workflow name, so a new app cannot copy
+// the old shared main group without failing the proof.
 const queuedMainBaselines = new Set([
   'codeql.yml',
+  'docs-seo-check.yaml',
   'oxc-check.yaml',
   'turbo-unit-tests.yaml',
   'type-check.yaml',
@@ -118,6 +120,10 @@ const workflows = Object.fromEntries(
     .filter((file) => /\.ya?ml$/.test(file))
     .map((file) => [file, readWorkflow(file)])
 );
+for (const [file, workflow] of Object.entries(workflows)) {
+  if (String(workflow.name || '').endsWith(' Cloudflare Source'))
+    queuedMainBaselines.add(file);
+}
 function events(workflow) {
   const on = workflow.on;
   if (typeof on === 'string') return { [on]: null };

@@ -65,7 +65,7 @@ for (const [file, workflow] of Object.entries(workflows)) {
     Object.hasOwn(events(workflow), 'push') &&
     (!push?.branches || push.branches.includes('main')) &&
     !push?.['branches-ignore']?.includes('main');
-  if (onMain && !mainExceptions[file]) {
+  if (onMain && !mainExceptions[file] && !queuedMainBaselines.has(file)) {
     test(`${file}: main validation supersedes without sharing a production group`, () => {
       const first = { ...context('refs/heads/main'), workflow: workflow.name };
       const group = assertSupersedes(workflow, first, {
@@ -250,7 +250,11 @@ test('main validation inventory requires isolated qualification, including Oxc j
     const push = events(workflow).push;
     if (push?.branches && !push.branches.includes('main')) continue;
     if (push?.['branches-ignore']?.includes('main')) continue;
-    assertQualification(workflow.concurrency, workflow.name);
+    assertQualification(
+      workflow.concurrency,
+      workflow.name,
+      !queuedMainBaselines.has(file)
+    );
   }
 });
 test('qualification regression controls reject shared groups in either cancellation direction', () => {
@@ -690,7 +694,7 @@ test('security review writers share one non-cancelling group per pull request', 
   );
 });
 
-test('Type Check, Oxc and Test keep each main push; the docs contract still supersedes', () => {
+test('Type Check, Oxc and Test keep each main push', () => {
   const proof = [
     ['type-check.yaml', workflows['type-check.yaml'].concurrency],
     ['turbo-unit-tests.yaml', workflows['turbo-unit-tests.yaml'].concurrency],
@@ -743,13 +747,62 @@ test('Type Check, Oxc and Test keep each main push; the docs contract still supe
     );
     assert.equal(render(policy['cancel-in-progress'], spoof), true, name);
   }
-  const docs = workflows['docs-seo-check.yaml'];
-  const docsFirst = { ...context('refs/heads/main'), workflow: docs.name };
-  assertSupersedes(docs, docsFirst, {
-    ...docsFirst,
-    sha: 'second',
-    run_id: 2,
-  });
+});
+
+test('Cloudflare Source workflows and the docs contract keep each main push', () => {
+  const files = Object.entries(workflows)
+    .filter(([, workflow]) =>
+      String(workflow.name || '').endsWith(' Cloudflare Source')
+    )
+    .map(([file]) => file)
+    .sort();
+  assert.ok(files.includes('finance-cloudflare.yaml'));
+  assert.ok(files.includes('nova-cloudflare.yaml'));
+  assert.equal(files.length, 23);
+  files.push('docs-seo-check.yaml');
+  for (const file of files) {
+    assert.equal(queuedMainBaselines.has(file), true, file);
+    const policy = workflows[file].concurrency;
+    const first = {
+      ...context('refs/heads/main', 'a'.repeat(40), 11),
+      workflow: workflows[file].name,
+    };
+    const second = {
+      ...context('refs/heads/main', 'b'.repeat(40), 22),
+      workflow: workflows[file].name,
+    };
+    assert.notEqual(
+      render(policy.group, first),
+      render(policy.group, second),
+      file
+    );
+    assert.equal(render(policy['cancel-in-progress'], first), false, file);
+    assert.equal(render(policy['cancel-in-progress'], second), false, file);
+    const feature = {
+      ...first,
+      ref: 'refs/heads/fix/example',
+      sha: 'c'.repeat(40),
+      run_id: 3,
+    };
+    assert.equal(
+      render(policy.group, feature),
+      render(policy.group, { ...feature, sha: 'd'.repeat(40), run_id: 4 }),
+      file
+    );
+    assert.equal(render(policy['cancel-in-progress'], feature), true, file);
+    const spoof = { ...first, ref: 'refs/heads/main-spoof' };
+    assert.equal(
+      render(policy.group, spoof),
+      render(policy.group, { ...spoof, sha: 'e'.repeat(40), run_id: 5 }),
+      file
+    );
+    assert.equal(render(policy['cancel-in-progress'], spoof), true, file);
+    const pull = {
+      ...context('refs/pull/7/merge', 'f'.repeat(40), 6, 'pull_request', 7),
+      workflow: workflows[file].name,
+    };
+    assert.equal(render(policy['cancel-in-progress'], pull), true, file);
+  }
 });
 
 test('Test reruns, dispatch and production stay immutable while feature branches still supersede', () => {
