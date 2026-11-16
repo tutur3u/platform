@@ -190,3 +190,79 @@ test('iOS API keys stay in runner temp and traversal key ids are rejected', asyn
   writeFileSync(bundlePath, JSON.stringify(bundle));
   assert.throws(run, /APP_STORE_CONNECT_API_KEY_ID must contain/);
 });
+
+test('Mac App Store entries are optional but must be complete', async () => {
+  const root = mkdtempSync(join(tmpdir(), 'mobile-mas-hydrate-'));
+  const runnerTemp = join(root, 'runner-temp');
+  const githubEnv = join(root, 'github-env');
+  const entry = (kind) => {
+    const bytes = Buffer.from(`fixture-${kind}`);
+    return {
+      base64: bytes.toString('base64'),
+      size: bytes.length,
+      sha256: sha256Hex(bytes),
+    };
+  };
+  const files = Object.fromEntries(
+    [
+      'ios_google_service_info_plist',
+      'apple_distribution_certificate_p12',
+      'apple_app_store_provisioning_profile',
+      'app_store_connect_private_key_p8',
+    ].map((kind) => [kind, entry(kind)])
+  );
+  const bundle = {
+    environment: 'production',
+    platform: 'ios',
+    envFile: 'API_BASE_URL=https://tuturuuu.com\n',
+    files,
+    scalarValues: {
+      APPLE_BUNDLE_ID: 'com.tuturuuu.app.mobile',
+      APPLE_TEAM_ID: 'ABCDE12345',
+      APP_STORE_CONNECT_API_KEY_ID: 'ABCDE12345',
+    },
+  };
+  const bundlePath = join(root, 'bundle.json');
+  const run = () => {
+    writeFileSync(bundlePath, JSON.stringify(bundle));
+    writeFileSync(githubEnv, '');
+    execFileSync(
+      'node',
+      [
+        'scripts/mobile-deployment/hydrate-bundle.mjs',
+        '--platform',
+        'ios',
+        '--bundle',
+        bundlePath,
+        '--mobile-root',
+        join(root, 'mobile'),
+      ],
+      {
+        env: { ...process.env, GITHUB_ENV: githubEnv, RUNNER_TEMP: runnerTemp },
+        stdio: 'pipe',
+      }
+    );
+    return readFileSync(githubEnv, 'utf8');
+  };
+  assert.match(run(), /MAC_APP_STORE_READY<<[^\n]+\nfalse\n/);
+
+  files.apple_mac_installer_certificate_p12 = entry(
+    'apple_mac_installer_certificate_p12'
+  );
+  assert.throws(run, /Mac App Store bundle entries are incomplete/);
+
+  files.apple_mac_app_store_provisioning_profile = entry(
+    'apple_mac_app_store_provisioning_profile'
+  );
+  bundle.scalarValues.APPLE_MAC_INSTALLER_CERTIFICATE_PASSWORD = 'installer';
+  const env = run();
+  assert.match(env, /MAC_APP_STORE_READY<<[^\n]+\ntrue\n/);
+  assert.match(env, /APPLE_MAC_APPSTORE_PROVISIONING_PROFILE_PATH/);
+  assert.equal(
+    readFileSync(
+      join(runnerTemp, 'mobile-deployment/mac-app-store.provisionprofile'),
+      'utf8'
+    ),
+    'fixture-apple_mac_app_store_provisioning_profile'
+  );
+});

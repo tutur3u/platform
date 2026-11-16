@@ -12,3 +12,7 @@ PRODUCT_BUNDLE_IDENTIFIER = com.tuturuuu.app.mobile
 
 // The copyright displayed in application information
 PRODUCT_COPYRIGHT = Copyright © 2026 Tuturuuu. All rights reserved.
+
+// Release signing entitlements. The Mac App Store build overrides this with
+// Runner/AppStore.entitlements (sandboxed); Developer ID keeps the default.
+TUTURUUU_RELEASE_ENTITLEMENTS = Runner/Release.entitlements
