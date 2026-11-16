@@ -18,6 +18,7 @@ import {
   useGenerativeUIStore,
 } from '@/components/json-render/generative-ui-store';
 import { MiraChatBottomBar } from './mira-chat-bottom-bar';
+import { useMiraDraftPrefill } from './use-mira-draft-prefill';
 import { getGreetingKey, STORAGE_KEY_PREFIX } from './mira-chat-constants';
 import { MiraChatConversation } from './mira-chat-conversation';
 import { MiraChatEmptyState } from './mira-chat-empty-state';
@@ -48,6 +49,9 @@ export interface MiraChatPanelProps {
   isFullscreen?: boolean;
   onToggleFullscreen?: () => void;
   onResetPanelState?: () => void;
+  /** Validated `?prompt=` text to place in the composer once, unsent. */
+  draftPrefill?: string;
+  onDraftPrefillConsumed?: () => void;
 }
 
 export default function MiraChatPanel({
@@ -62,6 +66,8 @@ export default function MiraChatPanel({
   isFullscreen,
   onToggleFullscreen,
   onResetPanelState,
+  draftPrefill,
+  onDraftPrefillConsumed,
 }: MiraChatPanelProps) {
   const timing = useMiraLatency();
   const t = useTranslations('dashboard.mira_chat');
@@ -74,6 +80,13 @@ export default function MiraChatPanel({
   const composerRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLTextAreaElement>(null);
   const scrollContainerRef = useRef<HTMLDivElement>(null);
+  useMiraDraftPrefill({
+    draft: draftPrefill,
+    input,
+    setInput,
+    inputRef,
+    onConsumed: onDraftPrefillConsumed,
+  });
   const toolbarContentRef = useRef<HTMLDivElement>(null);
   const greetingKey = useMemo(() => getGreetingKey(), []);
   const generativeUIStore = useMemo(() => createGenerativeUIAdapter(), []);

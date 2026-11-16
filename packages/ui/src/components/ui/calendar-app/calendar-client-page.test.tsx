@@ -1,7 +1,9 @@
-import { render, screen } from '@testing-library/react';
+import { cleanup, fireEvent, render, screen } from '@testing-library/react';
 import type { Workspace } from '@tuturuuu/types';
 import type { ReactNode } from 'react';
-import { describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+
+const settings = vi.hoisted(() => ({ needsCalendarGate: false }));
 
 vi.mock('next-intl', () => ({
   useLocale: () => 'en',
@@ -10,11 +12,13 @@ vi.mock('next-intl', () => ({
 vi.mock('./hooks', () => ({
   useCalendarSettings: () => ({
     initialSettings: {},
-    needsCalendarGate: false,
+    needsCalendarGate: settings.needsCalendarGate,
   }),
 }));
 vi.mock('./components/require-workspace-timezone-dialog', () => ({
-  RequireWorkspaceTimezoneDialog: () => null,
+  RequireWorkspaceTimezoneDialog: ({ onCompleted }: { onCompleted: () => void }) => (
+    <button type="button" onClick={onCompleted}>Complete timezone setup</button>
+  ),
 }));
 vi.mock('@tuturuuu/ui/legacy/calendar/smart-calendar', () => ({
   SmartCalendar: ({ extras }: { extras: ReactNode }) => <div>{extras}</div>,
@@ -31,6 +35,19 @@ const workspace = { id: 'workspace' } as Workspace;
 const HeaderActions = () => <span>Calendar actions</span>;
 
 describe('calendar sync warning placement', () => {
+  beforeEach(() => { settings.needsCalendarGate = false; });
+  afterEach(cleanup);
+
+  it('blocks automatic creation until timezone setup completes', () => {
+    settings.needsCalendarGate = true;
+    const Actions = ({ creationBlocked }: { creationBlocked?: boolean }) => (
+      <span>{creationBlocked ? 'Creation blocked' : 'Creation ready'}</span>
+    );
+    render(<CalendarClientPage workspace={workspace} HeaderActions={Actions} enableSmartScheduling={false} />);
+    expect(screen.getByText('Creation blocked')).toBeTruthy();
+    fireEvent.click(screen.getByRole('button', { name: 'Complete timezone setup' }));
+    expect(screen.getByText('Creation ready')).toBeTruthy();
+  });
   it('keeps a header recovery entry when Calendar uses its sidebar for calendar selection', () => {
     render(
       <CalendarClientPage

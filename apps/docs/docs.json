@@ -99,6 +99,7 @@
               "platform/features/legal-publications",
               "platform/features/command-center-dashboard",
               "platform/features/command-launcher",
+              "platform/features/workspace-dashboard",
               "platform/features/document-hierarchy",
               "platform/personal-journal",
               "platform/features/assistant-live",

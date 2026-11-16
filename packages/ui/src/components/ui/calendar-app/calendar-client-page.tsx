@@ -19,6 +19,7 @@ import { RequireWorkspaceTimezoneDialog } from './components/require-workspace-t
 import { useCalendarSettings } from './hooks';
 
 export interface CalendarHeaderActionsProps {
+  creationBlocked?: boolean;
   enableSmartScheduling: boolean;
   workspaceId: string;
 }
@@ -67,6 +68,7 @@ export function CalendarClientPage({
         <CalendarConnectionsUnified wsId={workspace.id} variant="status" />
       )}
       <HeaderActions
+        creationBlocked={needsCalendarGate}
         workspaceId={workspace.id}
         enableSmartScheduling={enableSmartScheduling}
       />

@@ -4,7 +4,13 @@ import { connection } from 'next/server';
 import { getTranslations } from 'next-intl/server';
 import { Suspense } from 'react';
 import type { Locale } from '@/i18n/routing';
+import { getCalendarAppOrigin } from '@/lib/calendar-app-url';
+import { getFinanceAppOrigin } from '@/lib/finance-app-url';
+import { getTasksAppOrigin } from '@/lib/tasks-app-url';
+import { getTrackAppOrigin } from '@/lib/track-app-url';
 import MiraDashboardClient from './components/mira-dashboard-client';
+import { parseMiraDraftPrompt } from './mira-draft-prompt';
+import { type OverviewCards, WorkspaceOverview } from './workspace-overview';
 
 const DEFAULT_ASSISTANT_NAME = 'Mira';
 
@@ -39,10 +45,32 @@ async function ensureDashboardAccess({
     id: string;
   };
   wsId: string;
-}) {
-  const { getPermissions } = await import('@tuturuuu/utils/workspace-helper');
-  const permissions = await getPermissions({ user, wsId });
+}): Promise<OverviewCards> {
+  const { getPermissions, verifySecret } =
+    await import('@tuturuuu/utils/workspace-helper');
+  const [permissions, aiOnly] = await Promise.all([
+    getPermissions({ user, wsId }),
+    verifySecret({
+      wsId,
+      forceAdmin: true,
+      name: 'ENABLE_AI_ONLY',
+      value: 'true',
+    }),
+  ]);
   if (!permissions) notFound();
+
+  // Cards mirror the sidebar gates for the same apps, so the overview never
+  // shows a surface the navigation hides. The time tracker entry has no
+  // permission gate; Finance amounts need `view_transactions`, which the
+  // Finance route enforces again.
+  const { containsPermission } = permissions;
+  return {
+    showAgenda: !aiOnly && containsPermission('manage_calendar'),
+    showTasks: !aiOnly && containsPermission('manage_projects'),
+    showTime: true,
+    showFinance: containsPermission('view_transactions'),
+    canLogTransaction: containsPermission('create_transactions'),
+  };
 }
 
 async function resolveDashboardWorkspace(routeWsId: string) {
@@ -80,17 +108,22 @@ interface Props {
     locale: Locale;
     wsId: string;
   }>;
+  searchParams?: Promise<{ prompt?: string | string[] }>;
 }
 
-export default async function WorkspaceHomePage({ params }: Props) {
+export default async function WorkspaceHomePage({
+  params,
+  searchParams,
+}: Props) {
   await connection();
 
   const { wsId: routeWsId } = await params;
+  const initialDraft = parseMiraDraftPrompt((await searchParams)?.prompt);
   const { currentUser, workspace } = await resolveDashboardWorkspace(routeWsId);
 
   const wsId = workspace.id;
   const isCreator = workspace.creator_id === currentUser.id;
-  await ensureDashboardAccess({
+  const cards = await ensureDashboardAccess({
     user: {
       email: currentUser.email ?? null,
       id: currentUser.id,
@@ -99,24 +132,42 @@ export default async function WorkspaceHomePage({ params }: Props) {
   });
 
   return (
-    <>
-      {!workspace.personal && (
-        <Suspense fallback={null}>
-          <PermissionSetupBannerSlot wsId={wsId} isCreator={isCreator} />
-        </Suspense>
-      )}
-
-      {!workspace.personal && (
-        <Suspense fallback={null}>
-          <UserGroupQuickActionsSlot wsId={wsId} />
-        </Suspense>
-      )}
-
-      <MiraDashboardClient
-        currentUser={currentUser}
-        initialAssistantName={DEFAULT_ASSISTANT_NAME}
-        wsId={wsId}
-      />
-    </>
+    <WorkspaceOverview
+      wsId={wsId}
+      isPersonal={workspace.personal === true}
+      timeZone={workspace.timezone ?? null}
+      cards={cards}
+      links={{
+        tasksHref: `${getTasksAppOrigin()}/${routeWsId}/tasks`,
+        calendarHref: `${getCalendarAppOrigin()}/${routeWsId}`,
+        trackHref: `${getTrackAppOrigin()}/${routeWsId}`,
+        financeHref: `${getFinanceAppOrigin()}/${routeWsId}`,
+        newTaskHref: `${getTasksAppOrigin()}/${routeWsId}/tasks/new`,
+        logTransactionHref: `${getFinanceAppOrigin()}/${routeWsId}/transactions?create=transaction`,
+      }}
+      setup={
+        workspace.personal ? null : (
+          <Suspense fallback={null}>
+            <PermissionSetupBannerSlot wsId={wsId} isCreator={isCreator} />
+          </Suspense>
+        )
+      }
+      groups={
+        workspace.personal ? null : (
+          <Suspense fallback={null}>
+            <UserGroupQuickActionsSlot wsId={wsId} />
+          </Suspense>
+        )
+      }
+      mira={
+        <MiraDashboardClient
+          currentUser={currentUser}
+          initialAssistantName={DEFAULT_ASSISTANT_NAME}
+          initialDraft={initialDraft}
+          wsId={wsId}
+          variant="embedded"
+        />
+      }
+    />
   );
 }

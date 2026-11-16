@@ -5,7 +5,6 @@ import {
   UserCheck,
   Users,
 } from '@tuturuuu/icons/lucide';
-import { Separator } from '@tuturuuu/ui/separator';
 import { cn } from '@tuturuuu/utils/format';
 import { getPermissions } from '@tuturuuu/utils/workspace-helper';
 import Link from 'next/link';
@@ -73,13 +72,17 @@ export default async function UserGroupQuickActionsContent({
 
   return (
     <>
-      <div className="col-span-full">
+      <section
+        aria-labelledby="dashboard-card-groups"
+        data-dashboard-card="groups"
+        className="@container/groups col-span-full min-w-0 rounded-xl border bg-card p-4"
+      >
         <div className="mb-4 flex items-center gap-3">
           <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-dynamic-blue/10">
             <Users className="h-5 w-5 text-dynamic-blue" />
           </div>
           <div>
-            <h2 className="font-semibold text-lg">
+            <h2 id="dashboard-card-groups" className="font-semibold text-lg">
               {t('dashboard.user_group_quick_actions')}
             </h2>
             <p className="text-muted-foreground text-sm">
@@ -87,7 +90,7 @@ export default async function UserGroupQuickActionsContent({
             </p>
           </div>
         </div>
-        <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+        <div className="grid grid-cols-1 gap-3 @min-[26rem]/groups:grid-cols-2 @min-[52rem]/groups:grid-cols-4">
           {quickActions.map((action) => (
             <Link key={action.href} href={action.href} className="group">
               <div
@@ -121,8 +124,7 @@ export default async function UserGroupQuickActionsContent({
             </Link>
           ))}
         </div>
-      </div>
-      <Separator className="my-4" />
+      </section>
     </>
   );
 }

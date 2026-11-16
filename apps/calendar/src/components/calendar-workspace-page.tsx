@@ -9,6 +9,7 @@ import { useIsMobile } from '@tuturuuu/ui/hooks/use-mobile';
 import { calendarNavigationDate } from '@tuturuuu/ui/lib/calendar-day';
 import { useTranslations } from 'next-intl';
 import { type ComponentProps, useEffect, useMemo, useRef } from 'react';
+import { CalendarHeaderActionsWithCreateIntent } from './calendar-header-actions-with-create-intent';
 import { useCalendarNavigation } from './calendar-navigation-provider';
 
 export function CalendarWorkspacePage({
@@ -71,6 +72,7 @@ export function CalendarWorkspacePage({
       experimentalGoogleToken={experimentalGoogleToken}
       initialEventId={initialEventId}
       externalState={{ ...navigation, availableViews }}
+      HeaderActions={CalendarHeaderActionsWithCreateIntent}
       isPersonalWorkspace={isPersonalWorkspace}
       locale={locale}
       manageCalendarSyncProvider={false}

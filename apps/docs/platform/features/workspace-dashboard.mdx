@@ -1,0 +1,217 @@
+---
+updatedAt: "2026-11-16"
+title: 'Workspace dashboard'
+description: 'Workspace home layout, card visibility and responsive rules.'
+audience: users
+---
+
+The workspace home (`/[locale]/[wsId]`) opens with Mira, then shows what is next
+and the viewer's own work. It applies to apps/web and the carved apps/workspace
+copy, which render the same shared module,
+`packages/ui/src/components/ui/workspace-dashboard`.
+
+## Layout
+
+| Region | Contents, in order |
+| --- | --- |
+| Main column | Mira, Next up, permission setup prompt (team workspaces, creator only), My tasks, Time |
+| Rail | Today (agenda), this month's Finance, user-group quick actions (team workspaces) |
+
+Mira keeps every current control: workspace context, model, credits, voice,
+attachments, prompts, fullscreen and artifacts. On the home page it is a bounded
+panel (at most 40rem, at least 26rem tall) so the cards stay reachable;
+fullscreen is unchanged.
+
+Columns follow the width the dashboard itself gets, through CSS container
+queries, not the viewport. An expanded or collapsed sidebar therefore never
+squeezes a card:
+
+- The rail sits beside the main column (20rem wide) only when the dashboard is
+  at least 56rem (896px) wide.
+- Narrower, the rail drops below the main column and lays its cards out in one
+  or two columns, each at least 17.5rem (280px).
+- Below 40rem (640px), Mira moves to the end of the page and docks to the
+  bottom of the screen as a compact, composer-first panel (at most 18rem or
+  45% of the screen height), above the Sorbet mobile dock when that dock is
+  shown. Content scrolls beneath it. Because the dock is last in the page, the
+  final card is fully visible at the end of the scroll. Focused links and
+  buttons keep a scroll margin taller than the dock so keyboard focus is never
+  hidden. Fullscreen opens the full conversation.
+- Next up (next event, next task, time tracked today) shows its cells side by
+  side from a 32rem card width and stacks them below that. Task rows hide their project label below a 26rem card width
+  before the task name is shortened. Long names truncate with the full name in
+  a tooltip.
+- Group quick actions use one, two or four columns by their own card width.
+
+## Card visibility
+
+Cards mirror the sidebar gates for the same apps, so the home page never shows
+a surface the navigation hides. They add no permission of their own, and each
+data request is still authorized by its owning API.
+
+| Card | Shown when |
+| --- | --- |
+| My tasks, Next up task | `manage_projects`, and the workspace is not AI-only (`ENABLE_AI_ONLY`) |
+| Today, Next up event | `manage_calendar`, and the workspace is not AI-only |
+| Time, Next up tracked time | Always, like the time tracker sidebar entry; the route returns only the viewer's own sessions |
+| Finance | `view_transactions`; the Finance routes check it again and hide confidential amounts. Log also needs `create_transactions` |
+| Setup prompt | Team workspace, viewer is the creator, permissions not yet configured |
+| Group quick actions | Team workspace, `SHOW_USER_GROUP_QUICK_ACTIONS_IN_DASHBOARD`, `view_user_groups` |
+
+Next up is omitted when none of its sources is visible.
+
+## Data and states
+
+Tasks, agenda and time read in the browser through `@tuturuuu/internal-api`
+(`getUserTaskDashboard`, `listWorkspaceCalendarEvents`,
+`getCurrentUserRunningTimeTrackingSession`, `getCurrentUserTimeTrackingStats`)
+with TanStack Query; Next up reuses the same queries and adds no requests.
+"Today" is the viewer's local day, and tracked-time totals use the viewer's
+time zone. Time is read-only on the dashboard; the timer is controlled in Track.
+
+Finance is read on the server with `getTransactionStats` (this month's
+totals) and `listTransactions` (the three latest, page size 3), both with the
+viewer's own session forwarded by `withForwardedInternalApiAuth` to the
+Finance origin, which is already on that helper's allowlist. The browser
+never calls Finance across origins. The month uses the workspace time zone,
+the same source Finance uses for its periods. Finance resolves `auto` in the
+browser, which a server render cannot read, so an `auto` or unset zone uses
+UTC. Amounts the viewer may not see stay hidden and are announced as hidden;
+if only the recent list fails, the totals still show.
+
+## Actions
+
+| Action | Behavior |
+| --- | --- |
+| Complete a task | Same rules as My Tasks (`completeCurrentUserTask`): self-managed tasks record a personal completion, tasks on the viewer's personal board move to its done state, other tasks move to their board's list whose status is `done`. With no such list, nothing is written and the viewer is told why. Tasks the viewer handed off have no complete control. The row leaves at once and returns if the write fails. |
+| New task | Opens the Tasks app task composer (`/[wsId]/tasks/new`). |
+| Pause or stop the timer | The existing session route (`PATCH .../time-tracking/sessions/[sessionId]`), which accepts only the session owner. |
+| Daily goal | The viewer's active overall goal (no category), as Track shows it. With none set, the card says so and links to Track. |
+| Last 7 days | Seven bars from the viewer's real daily totals (`stats/period`) in their time zone. |
+| Log a transaction | Shown with `create_transactions`; opens Finance's transactions page with its create dialog (`?create=transaction`). |
+| Open an event | Next up and agenda rows open the event in Calendar (`?eventId=`). |
+| New event | Opens Calendar with `?create=event` (contract below); shown with the Today card (`manage_calendar`). |
+
+### Calendar `?create=event`
+
+The Calendar page (Next route and native Start view, both through
+`CalendarWorkspacePage`) accepts `create=event` next to `date` and `eventId`.
+On arrival it removes `create` from the current history entry, then runs
+Calendar's own New event action (`useCreateCalendarEvent`), which opens an
+unsaved draft at Calendar's default time; nothing is written until the user
+saves it. Only exactly one `create=event` opens the draft. Repeated or unknown
+values are removed and ignored, read-only viewers get no draft, and viewers
+without `manage_calendar` never reach the page. Reloads, Back and remounts do
+not reopen it.
+
+### Join
+
+Calendar events have no conference-link field, so the dashboard offers no
+Join action; a location that looks like a URL is not treated as one. The event
+link opens the event in Calendar. Join can be added only when events expose
+an actual conference-link contract.
+
+### Mira `?prompt=` draft
+
+`/[locale]/[wsId]?prompt=<text>` puts text into Mira's composer on that
+workspace's home as an unsent draft, for example from the command center's
+Ask Mira action. Build it with `URLSearchParams`; the workspace is the route's
+`[wsId]`.
+
+- The page accepts one `prompt` value of at most 4,000 characters, normalizes
+  line breaks and removes control characters. Repeated, empty or longer
+  values are dropped whole, never truncated.
+- The draft fills an empty composer and focuses it. If the user already has
+  text, the prompt is added after it with a notice; their text is never
+  replaced.
+- The draft is applied once per page load. `prompt` is removed from the
+  current history entry, so reloads, Back and a reset panel do not reapply it.
+- It is never sent automatically and spends no credits until the user sends.
+ Every card
+has its own loading, empty and error state. A failing card shows Retry and
+never hides the others.
+
+## Regression coverage
+
+- `apps/web/e2e/dashboard-layout.spec.ts`: real-browser geometry at 390, 728,
+  1024 and 1440px. No overlap, cards at least 240px wide, labels and actions
+  inside their card, no horizontal scroll, the rail beside the main column
+  exactly when the dashboard is at least 896px wide, and Mira docked exactly
+  below 640px. A docked Mira stays on screen, never hides a focused control,
+  and covers no card at the end of the page.
+- `apps/web/src/app/[locale]/(dashboard)/[wsId]/(dashboard)/finance-month-card-slot.test.ts`:
+  both Finance reads carry the forwarded session, the month follows the
+  workspace zone (UTC for `auto`), and partial and full failures render truthfully.
+- `packages/ui/src/components/ui/workspace-dashboard/finance-period.test.ts`:
+  month edges east and west of UTC, DST and leap years.
+- `packages/internal-api/src/time-tracking-current-user.test.ts`: time reads
+  and pause/stop hit the web-owned routes and never send another user's id.
+- `packages/internal-api/src/tasks-dashboard-completion.test.ts`: each
+  completion path's exact requests, and no write when completion is refused.
+- `apps/calendar/src/components/calendar-create-intent.test.tsx`: one draft
+  per intent, read-only viewers, repeated or unknown values, and untouched
+  `date`/`eventId` links.
+- `apps/web/src/app/[locale]/(dashboard)/[wsId]/(dashboard)/mira-draft-prompt.test.ts`
+  and `components/use-mira-draft-prefill.test.tsx`: limits, rejection,
+  once-only application, preserved user drafts, no sending.
+- `packages/ui/src/components/ui/workspace-dashboard/dashboard-geometry.test.ts`:
+  the geometry rules reject boxes measured from the squeezed layout and accept
+  the container-query layout.
+- `packages/ui/src/components/ui/workspace-dashboard/dashboard-cards.test.tsx`
+  and `dashboard-model.test.ts`: states, Retry, links and day and task
+  selection.
+- `apps/web/src/app/[locale]/(dashboard)/[wsId]/(dashboard)/page.test.tsx`:
+  access, card gates and personal-workspace slots.
+
+## Isolated layout verification
+
+`packages/ui/fixtures/workspace-dashboard` renders the shared layout and the
+production cards (Next up, My tasks, Time, Today, Finance) with synthetic
+in-memory data. Every request is answered by `fixture-api.ts` and anything else
+is rejected and recorded, so it needs no auth, database or network. Its Vite
+config refuses server-only modules (`next/headers`, `next/server`,
+`@tuturuuu/supabase/next/server`, the workspace and user helpers). Mira is a
+stand-in with the real panel's size classes, and Finance renders the shared
+card view with fixed states. The fixture proves layout and client behavior,
+not deployed server authorization, Finance forwarding or the real Mira panel;
+`apps/web/e2e/dashboard-layout.spec.ts` covers those against the running app.
+
+```sh
+ttr resources run -- node node_modules/vite/bin/vite.js --config packages/ui/fixtures/workspace-dashboard/vite.config.ts
+cd apps/web
+bunx --no-install playwright test --config playwright.workspace-dashboard.config.ts
+```
+
+Open `http://127.0.0.1:5201/` with `ui=classic|sorbet`, `theme=light|dark`,
+`locale=en|vi`, `state=ready|loading|error|empty|partial`, `names=long|short`,
+`goal=set|unset` and `sidebar=expanded|collapsed|none`. The regression checks
+390, 728, 1024 and 1440 pixels in Classic and Sorbet for ready, loading, error
+and partial-failure states with long names. It also checks the docked Mira
+against the Sorbet mobile dock, and that the probe fails when the original
+squeezed side-rail layout is forced. Set `WORKSPACE_DASHBOARD_FIXTURE_URL` for
+a separately admitted server.
+
+## Performance comparison
+
+`apps/web/e2e/perf/workspace-dashboard-perf.ts` runs unchanged against the
+baseline (Mira-only home) and the current home on the same host, browser and
+synthetic data. Each scenario takes 20 samples and reports median and p95
+(nearest rank) of time and React commits. Commits are counted through a
+devtools hook installed before load, so neither build changes.
+
+| Scenario | Baseline | Current |
+| --- | --- | --- |
+| Load to an interactive Mira composer | Measured | Measured |
+| Composer keystroke to paint (never sends) | Measured | Measured |
+| Resize 1440 to 728 to 1440 | Measured | Measured |
+| Complete a task, pause the timer | Not applicable: no such cards | Measured |
+
+```sh
+cd apps/web
+PERF_TARGET=app PERF_LABEL=baseline BASE_URL=<baseline app> bunx --no-install playwright test --config playwright.workspace-dashboard-perf.config.ts
+PERF_TARGET=app PERF_LABEL=head BASE_URL=<head app> bunx --no-install playwright test --config playwright.workspace-dashboard-perf.config.ts
+```
+
+Each run needs the authenticated storage state from the main Playwright setup.
+`PERF_TARGET=fixture` measures the current cards in the fixture only. Bundle
+sizes come from the CI build artifacts, not from this adapter.

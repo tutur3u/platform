@@ -1,4 +1,8 @@
-import type { InternalApiWorkspaceMember, Tables } from '@tuturuuu/types';
+import type {
+  InternalApiWorkspaceMember,
+  SessionWithRelations,
+  Tables,
+} from '@tuturuuu/types';
 import {
   encodePathSegment,
   getInternalApiClient,
@@ -243,4 +247,143 @@ export async function listSessionBreakSummaries(
   );
 
   return payload.breaksBySession ?? {};
+}
+
+/** Tracked-time totals for the signed-in user, in seconds. */
+export interface CurrentUserTimeTrackingStats {
+  todayTime: number;
+  weekTime: number;
+  monthTime: number;
+  streak: number;
+}
+
+/** The signed-in user's running session in a workspace, if any. */
+export async function getCurrentUserRunningTimeTrackingSession(
+  workspaceId: string,
+  options: InternalApiClientOptions & { signal?: AbortSignal } = {}
+) {
+  const { signal, ...clientOptions } = options;
+  const client = getInternalApiClient(clientOptions);
+  const payload = await client.json<{
+    session: SessionWithRelations | null;
+  }>(
+    `/api/v1/workspaces/${encodePathSegment(workspaceId)}/time-tracking/sessions`,
+    { query: { type: 'running' }, cache: 'no-store', signal }
+  );
+  return payload.session ?? null;
+}
+
+/**
+ * The signed-in user's tracked-time totals. `timezone` (IANA) sets where
+ * "today" and "this week" begin; the route defaults to UTC.
+ */
+export async function getCurrentUserTimeTrackingStats(
+  workspaceId: string,
+  query: { timezone?: string } = {},
+  options: InternalApiClientOptions & { signal?: AbortSignal } = {}
+) {
+  const { signal, ...clientOptions } = options;
+  const client = getInternalApiClient(clientOptions);
+  const payload = await client.json<{ stats: CurrentUserTimeTrackingStats }>(
+    `/api/v1/workspaces/${encodePathSegment(workspaceId)}/time-tracking/sessions`,
+    {
+      query: { type: 'stats', ...(query.timezone ? { timezone: query.timezone } : {}) },
+      cache: 'no-store',
+      signal,
+    }
+  );
+  return payload.stats;
+}
+
+async function patchCurrentUserTimeTrackingSession(
+  workspaceId: string,
+  sessionId: string,
+  action: 'pause' | 'stop',
+  options?: InternalApiClientOptions
+) {
+  const client = getInternalApiClient(options);
+  return client.json<{ session: SessionWithRelations | null }>(
+    `/api/v1/workspaces/${encodePathSegment(workspaceId)}/time-tracking/sessions/${encodePathSegment(sessionId)}`,
+    {
+      method: 'PATCH',
+      cache: 'no-store',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ action }),
+    }
+  );
+}
+
+/** Stops the signed-in user's own session; the route rejects anyone else's. */
+export function stopCurrentUserTimeTrackingSession(
+  workspaceId: string,
+  sessionId: string,
+  options?: InternalApiClientOptions
+) {
+  return patchCurrentUserTimeTrackingSession(
+    workspaceId,
+    sessionId,
+    'stop',
+    options
+  );
+}
+
+/** Pauses the signed-in user's own session; the route rejects anyone else's. */
+export function pauseCurrentUserTimeTrackingSession(
+  workspaceId: string,
+  sessionId: string,
+  options?: InternalApiClientOptions
+) {
+  return patchCurrentUserTimeTrackingSession(
+    workspaceId,
+    sessionId,
+    'pause',
+    options
+  );
+}
+
+export type CurrentUserTimeTrackingGoal = Pick<
+  Tables<'time_tracking_goals'>,
+  'id' | 'category_id' | 'daily_goal_minutes' | 'weekly_goal_minutes' | 'is_active'
+>;
+
+/** The signed-in user's time-tracking goals in a workspace. */
+export async function listCurrentUserTimeTrackingGoals(
+  workspaceId: string,
+  options: InternalApiClientOptions & { signal?: AbortSignal } = {}
+) {
+  const { signal, ...clientOptions } = options;
+  const client = getInternalApiClient(clientOptions);
+  const payload = await client.json<{ goals: CurrentUserTimeTrackingGoal[] }>(
+    `/api/v1/workspaces/${encodePathSegment(workspaceId)}/time-tracking/goals`,
+    { cache: 'no-store', signal }
+  );
+  return payload.goals ?? [];
+}
+
+export interface CurrentUserTimeTrackingDay {
+  /** Local calendar date (YYYY-MM-DD) in the requested time zone. */
+  date: string;
+  /** Seconds tracked that day. */
+  totalDuration: number;
+}
+
+/** The signed-in user's tracked seconds per local day in a date range. */
+export async function getCurrentUserTimeTrackingDailyTotals(
+  workspaceId: string,
+  query: { dateFrom: string; dateTo: string; timezone: string },
+  options: InternalApiClientOptions & { signal?: AbortSignal } = {}
+) {
+  const { signal, ...clientOptions } = options;
+  const client = getInternalApiClient(clientOptions);
+  const payload = await client.json<{
+    totalDuration?: number;
+    dailyBreakdown?: CurrentUserTimeTrackingDay[];
+  }>(
+    `/api/v1/workspaces/${encodePathSegment(workspaceId)}/time-tracking/stats/period`,
+    { query, cache: 'no-store', signal }
+  );
+  return (payload.dailyBreakdown ?? []).map(({ date, totalDuration }) => ({
+    date,
+    totalDuration: Number(totalDuration) || 0,
+  }));
 }

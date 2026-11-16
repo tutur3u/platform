@@ -13,12 +13,18 @@ interface TaskCalendarPageShellProps extends Omit<
 > {
   isPersonalWorkspace: boolean;
   manageTaskDialog?: boolean;
+  /**
+   * Header actions rendered inside the calendar providers. Defaults to the
+   * standard New/Plan actions; hosts wrap them to add entry behavior.
+   */
+  HeaderActions?: ComponentProps<typeof CalendarPageShell>['HeaderActions'];
 }
 
 export function TaskCalendarPageShell({
   isPersonalWorkspace,
   workspace,
   manageTaskDialog = true,
+  HeaderActions = CalendarHeaderActions,
   ...props
 }: TaskCalendarPageShellProps) {
   const routePrefix = useTasksRoutePrefix();
@@ -26,7 +32,7 @@ export function TaskCalendarPageShell({
     <CalendarPageShell
       {...props}
       workspace={workspace}
-      HeaderActions={CalendarHeaderActions}
+      HeaderActions={HeaderActions}
       TasksSidebar={TasksSidebar}
     />
   );

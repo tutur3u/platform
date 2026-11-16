@@ -4,10 +4,13 @@ import { cn } from '@tuturuuu/utils/format';
 import { resolveUserDisplayName } from '@tuturuuu/utils/name-helper';
 import dynamic from 'next/dynamic';
 import type { ComponentType } from 'react';
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { useMiraSoul } from '../hooks/use-mira-soul';
 import type { MiraChatPanelProps } from './mira-chat-panel';
-import type { MiraDashboardClientProps } from './mira-dashboard-client-types';
+import {
+  MIRA_EMBEDDED_HEIGHT_CLASS,
+  type MiraDashboardClientProps,
+} from './mira-dashboard-client-types';
 import { MiraWorkspaceLayout } from './mira-workspace-layout';
 
 const MiraWorkspaceContextSelector = dynamic(
@@ -85,6 +88,8 @@ function FullscreenGradientBg() {
 export default function MiraDashboardClientImpl({
   currentUser,
   initialAssistantName,
+  initialDraft,
+  variant = 'page',
   wsId,
 }: MiraDashboardClientProps) {
   const { data: soul } = useMiraSoul();
@@ -93,14 +98,20 @@ export default function MiraDashboardClientImpl({
   const MiraChatPanel = useMiraChatPanelComponent();
   const [isFullscreen, setIsFullscreen] = useState(false);
   const [chatPanelResetKey, setChatPanelResetKey] = useState(0);
+  // Handed to the first panel only; a reset panel never reapplies it.
+  const [pendingDraft, setPendingDraft] = useState(initialDraft);
+  const consumeDraft = useCallback(() => setPendingDraft(undefined), []);
 
   return (
     <div
+      data-dashboard-block="mira"
       className={cn(
         '@container relative flex flex-col overflow-hidden',
         isFullscreen
           ? 'fixed inset-0 z-50 bg-background p-3 sm:p-4'
-          : 'h-[calc(100dvh-5rem)] min-h-0 md:h-[calc(100dvh-2rem)]'
+          : variant === 'embedded'
+            ? MIRA_EMBEDDED_HEIGHT_CLASS
+            : 'h-[calc(100dvh-5rem)] min-h-0 md:h-[calc(100dvh-2rem)]'
       )}
     >
       {/* Animated gradient backdrop in fullscreen */}
@@ -123,6 +134,8 @@ export default function MiraDashboardClientImpl({
               setChatPanelResetKey((current) => current + 1)
             }
             workspaceContextBadge={<MiraWorkspaceContextSelector wsId={wsId} />}
+            draftPrefill={pendingDraft}
+            onDraftPrefillConsumed={consumeDraft}
           />
         ) : (
           <MiraChatPanelLoading />
