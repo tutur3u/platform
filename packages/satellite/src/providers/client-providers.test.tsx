@@ -17,14 +17,15 @@ vi.mock('@tuturuuu/ui/custom/account-assurance-refresh', () => ({
   AccountAssuranceRefresh: () => null,
 }));
 vi.mock('../components/command-launcher', () => ({
-  GlobalCommandLauncher: Probe,
+  IntlGlobalCommandLauncher: Probe,
 }));
-function Probe() {
+function Probe({ currentApp }: { currentApp?: string }) {
   const actor = useWorkspaceActor();
   const visibility = useWorkspaceVisibility();
   const client = useQueryClient();
   return (
     <output
+      data-current-app={currentApp}
       data-cache-a={JSON.stringify(
         client.getQueryData(['workspace-hidden', 'A'])
       )}
@@ -78,4 +79,14 @@ it('makes no account config request when the page has no signed-in account', asy
   await screen.findByRole('status');
   await new Promise((resolve) => setTimeout(resolve, 0));
   expect(mocks.config).not.toHaveBeenCalled();
+});
+
+it('mounts the launcher for a command-only host without tracking it as an app', async () => {
+  render(
+    <ClientProviders accountSync={false} commandHost="tools">
+      <div>Tools</div>
+    </ClientProviders>
+  );
+  const probe = await screen.findByRole('status');
+  expect(probe.getAttribute('data-current-app')).toBe('tools');
 });

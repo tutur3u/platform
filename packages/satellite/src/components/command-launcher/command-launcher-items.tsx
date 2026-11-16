@@ -18,7 +18,12 @@ import type {
   CommandLauncherNavItem,
   GlobalCommandLauncherLabels,
   LauncherWorkspace,
-} from './global-command-launcher';
+} from './command-launcher-types';
+import { commandItemValue } from './command-launcher-utils';
+import { HighlightMatch } from './highlight-match';
+
+const ROW_CLASS_NAME =
+  'group/row min-h-11 gap-2.5 rounded-lg px-2.5 py-1.5 data-[selected=true]:bg-accent';
 
 export function AppCommandItem({
   app,
@@ -26,22 +31,27 @@ export function AppCommandItem({
   labels,
   matchContext,
   onSelect,
+  query = '',
+  value,
 }: {
   app: LaunchableApp;
   isCurrent: boolean;
   labels: GlobalCommandLauncherLabels;
   matchContext: string | null;
   onSelect: () => void;
+  query?: string;
+  value?: string;
 }) {
   return (
     <CommandItem
-      className="min-h-13 rounded-lg border border-transparent px-2.5 data-[selected=true]:border-border"
+      className={ROW_CLASS_NAME}
       onSelect={onSelect}
-      value={`app-${app.slug}-${app.title}`}
+      value={value ?? commandItemValue.app(app)}
     >
       <ItemIcon icon={<Globe2 className="size-4" />} />
       <ItemText
         badge={isCurrent ? labels.current : undefined}
+        query={query}
         subtitle={matchContext ?? app.productionUrl}
         title={app.title}
       />
@@ -55,20 +65,24 @@ export function WorkspaceCommandItem({
   labels,
   matchContext,
   onSelect,
+  query = '',
+  value,
   workspace,
 }: {
   isCurrent: boolean;
   labels: GlobalCommandLauncherLabels;
   matchContext: string | null;
   onSelect: () => void;
+  query?: string;
+  value?: string;
   workspace: LauncherWorkspace;
 }) {
   const accessType = 'access_type' in workspace ? workspace.access_type : null;
   return (
     <CommandItem
-      className="min-h-13 rounded-lg border border-transparent px-2.5 data-[selected=true]:border-border"
+      className={ROW_CLASS_NAME}
       onSelect={onSelect}
-      value={`workspace-${workspace.id}-${workspace.name}`}
+      value={value ?? commandItemValue.workspace(workspace)}
     >
       <ItemIcon
         icon={
@@ -82,7 +96,10 @@ export function WorkspaceCommandItem({
       <div className="min-w-0 flex-1">
         <div className="flex items-center gap-2">
           <span className="truncate font-medium">
-            {workspace.name || workspace.id}
+            <HighlightMatch
+              query={query}
+              text={workspace.name || workspace.id}
+            />
           </span>
           {isCurrent ? <StatusBadge label={labels.current} /> : null}
           {workspace.personal ? <StatusBadge label={labels.personal} /> : null}
@@ -109,21 +126,26 @@ export function NavigationCommandItem({
   labels,
   matchContext,
   onSelect,
+  query = '',
+  value,
 }: {
   item: CommandLauncherNavItem;
   labels: GlobalCommandLauncherLabels;
   matchContext: string | null;
   onSelect: () => void;
+  query?: string;
+  value?: string;
 }) {
   return (
     <CommandItem
-      className="min-h-13 rounded-lg border border-transparent px-2.5 data-[selected=true]:border-border"
+      className={ROW_CLASS_NAME}
       onSelect={onSelect}
-      value={`nav-${item.href}-${item.title}`}
+      value={value ?? commandItemValue.navigation(item)}
     >
       <ItemIcon icon={item.icon ?? <PanelTop className="size-4" />} />
       <ItemText
         external={item.external}
+        query={query}
         subtitle={matchContext ?? item.subtitle ?? item.href}
         title={item.title}
       />
@@ -156,7 +178,7 @@ export function EmptyState({
 
 function ItemIcon({ icon }: { icon: ReactNode }) {
   return (
-    <div className="flex size-9 shrink-0 items-center justify-center rounded-lg border bg-muted/60">
+    <div className="flex size-7 shrink-0 items-center justify-center rounded-md border bg-background text-muted-foreground group-data-[selected=true]/row:text-foreground">
       {icon}
     </div>
   );
@@ -165,24 +187,30 @@ function ItemIcon({ icon }: { icon: ReactNode }) {
 function ItemText({
   badge,
   external,
+  query,
   subtitle,
   title,
 }: {
   badge?: string;
   external?: boolean;
+  query: string;
   subtitle: string;
   title: string;
 }) {
   return (
     <div className="min-w-0 flex-1">
       <div className="flex items-center gap-2">
-        <span className="truncate font-medium">{title}</span>
+        <span className="truncate font-medium">
+          <HighlightMatch query={query} text={title} />
+        </span>
         {external ? (
           <ExternalLink className="size-3 text-muted-foreground" />
         ) : null}
         {badge ? <StatusBadge label={badge} /> : null}
       </div>
-      <p className="truncate text-muted-foreground text-xs">{subtitle}</p>
+      <p className="truncate text-muted-foreground text-xs">
+        <HighlightMatch query={query} text={subtitle} />
+      </p>
     </div>
   );
 }
@@ -190,10 +218,10 @@ function ItemText({
 function ItemAction({ label }: { label: string }) {
   return (
     <>
-      <span className="hidden text-muted-foreground text-xs sm:inline">
+      <span className="hidden text-muted-foreground text-xs opacity-0 group-data-[selected=true]/row:opacity-100 sm:inline">
         {label}
       </span>
-      <ArrowRight className="size-4" />
+      <ArrowRight className="size-4 text-muted-foreground opacity-0 group-data-[selected=true]/row:opacity-100" />
     </>
   );
 }

@@ -277,13 +277,19 @@ describe('GlobalCommandLauncher', () => {
     );
 
     fireEvent.change(input, { target: { value: 'fin' } });
-    expect(await screen.findByText('Finance')).toBeTruthy();
+    expect(
+      (await screen.findAllByRole('option', { name: /Finance/ })).length
+    ).toBeGreaterThan(0);
 
     fireEvent.change(input, { target: { value: 'alhpa workspace' } });
-    expect(await screen.findByText('Alpha Workspace')).toBeTruthy();
+    expect(
+      (await screen.findAllByRole('option', { name: /Alpha Workspace/ })).length
+    ).toBeGreaterThan(0);
 
     fireEvent.change(input, { target: { value: 'project boards' } });
-    expect(await screen.findByText('Task Boards')).toBeTruthy();
+    expect(
+      (await screen.findAllByRole('option', { name: /Task Boards/ })).length
+    ).toBeGreaterThan(0);
   });
 
   it('switches result categories with tabs, prefixes, and keyboard shortcuts', async () => {
@@ -392,7 +398,9 @@ describe('GlobalCommandLauncher', () => {
 
     fireEvent.change(input, { target: { value: 'zeta' } });
 
-    expect(await screen.findByText('Zeta Workspace')).toBeTruthy();
+    expect(
+      (await screen.findAllByRole('option', { name: /Zeta Workspace/ })).length
+    ).toBeGreaterThan(0);
     await waitFor(() =>
       expect(listWorkspaces).toHaveBeenCalledWith({
         limit: 50,
@@ -447,17 +455,19 @@ describe('GlobalCommandLauncher', () => {
     );
     const commandList = document.querySelector('[data-slot="command-list"]');
 
-    expect(dialogContent?.className).toContain(
-      'h-[min(680px,calc(100dvh-1.5rem))]'
+    const className = dialogContent?.className ?? '';
+    expect(className).toContain('top-[max(12px,9vh)]');
+    expect(className).toContain(
+      'max-h-[calc(100dvh_-_max(12px,9vh)_-_12px)]'
     );
-    expect(dialogContent?.className).toContain('grid-rows-[minmax(0,1fr)]');
-    expect(dialogContent?.className).toContain(
-      'w-[min(760px,calc(100vw-1.5rem))]'
-    );
-    expect(dialogContent?.className).toContain('overflow-hidden');
+    expect(className).toContain('w-[min(680px,calc(100vw_-_1.5rem))]');
+    expect(className).toContain('max-sm:h-[calc(100dvh_-_1rem)]');
+    expect(className).toContain('overflow-hidden');
+    expect(className).not.toContain('translate-y-[-50%]');
     expect(commandList?.className).toContain('min-h-0');
     expect(commandList?.className).toContain('flex-1');
     expect(commandList?.className).toContain('overflow-y-auto');
+    expect(commandList?.className).toContain('overscroll-contain');
   });
 
   it('navigates through the resolved app URL when a result is selected', async () => {

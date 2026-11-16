@@ -1429,6 +1429,14 @@ API's destination authorization. A permission failure preserves the entered form
 Mutation retries are disabled so this workflow does not automatically repeat a
 creation request.
 
+A single `title` query value (at most 500 characters, as sent by the command
+launcher's Create task) seeds the name field once when the composer opens.
+Control characters become spaces; a missing, repeated, blank or longer title is
+ignored and the composer opens empty. Board, list and every other field keep
+their defaults, nothing is submitted, and the parameter is removed from the
+address after reading so reload and Back do not re-seed a form the person has
+edited. Regression coverage: `apps/tasks/src/components/task-plan-composer.test.tsx`.
+
 A Lettin studio handoff includes only source IDs and remains in the same workspace.
 An unchecked source-reference control lets the creator deliberately attach a
 canonical private notebook link to the task description. The form states the

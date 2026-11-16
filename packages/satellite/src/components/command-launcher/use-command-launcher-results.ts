@@ -19,7 +19,7 @@ import {
 import type {
   CommandLauncherNavItem,
   LauncherWorkspace,
-} from './global-command-launcher';
+} from './command-launcher-types';
 
 export function useCommandLauncherResults({
   currentWorkspaceId,
@@ -128,12 +128,18 @@ export function useCommandLauncherResults({
   );
 
   return {
+    actorId: actor?.actorId ?? null,
     appResults,
     currentWorkspace,
     isLoadingWorkspaces: workspaceQuery.isLoading,
     isSearchingWorkspaces: remoteWorkspaceQuery.isFetching,
     navigationResults,
-    workspaceError: workspaceQuery.error,
+    searchableWorkspaces,
+    retryWorkspaces: () => {
+      if (workspaceQuery.error) void workspaceQuery.refetch();
+      if (remoteWorkspaceQuery.error) void remoteWorkspaceQuery.refetch();
+    },
+    workspaceError: workspaceQuery.error ?? remoteWorkspaceQuery.error,
     workspaceResults,
   };
 }

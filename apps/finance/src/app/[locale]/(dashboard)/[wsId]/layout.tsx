@@ -10,7 +10,6 @@ import {
   parseSidebarBehavior,
 } from '@tuturuuu/satellite/workspace-layout-helpers';
 import { RealtimeLogProvider } from '@tuturuuu/supabase/next/realtime-log-provider';
-import { FinanceCommandProvider } from '@tuturuuu/ui/finance/command/finance-command-provider';
 import { FinanceRouteProvider } from '@tuturuuu/ui/finance/finance-route-context';
 import { FinanceLayoutControls } from '@tuturuuu/ui/finance/shared/finance-layout-controls';
 import { QuickActions } from '@tuturuuu/ui/finance/shared/quick-actions';
@@ -26,6 +25,7 @@ import { cookies, headers } from 'next/headers';
 import { notFound, redirect } from 'next/navigation';
 import { connection } from 'next/server';
 import { type ReactNode, Suspense } from 'react';
+import { FinanceCommandProvider } from '@/components/command-center/finance-command-provider';
 import { SidebarProvider } from '@/context/sidebar-context';
 import { isFeeLockEnabled } from '@/lib/fee-lock-access';
 import NavbarActions from '../../navbar-actions';

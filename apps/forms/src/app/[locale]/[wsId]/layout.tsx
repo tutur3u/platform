@@ -1,4 +1,5 @@
 import { getSatelliteAppSessionUser } from '@tuturuuu/satellite/auth';
+import { IntlGlobalCommandLauncher } from '@tuturuuu/satellite/command-launcher';
 import NotificationPopover from '@tuturuuu/satellite/notification-popover';
 import {
   getPendingWorkspaceInvitation,
@@ -116,6 +117,12 @@ async function WorkspaceLayoutContent({ children, params }: LayoutProps) {
           }
         >
           {children}
+          <Suspense fallback={null}>
+            <IntlGlobalCommandLauncher
+              currentApp="forms"
+              currentWorkspaceId={workspace.id}
+            />
+          </Suspense>
         </Structure>
       </SidebarProvider>
     </WorkspaceVisibilityProvider>

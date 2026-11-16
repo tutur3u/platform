@@ -22,8 +22,8 @@
   "answerCopyFailed": "Could not copy automatically. Select the text and copy it manually.",
   "appActions": "App actions",
   "appActionsShort": "actions",
-  "appearance": "Appearance",
   "appMenu": "Switch application",
+  "appearance": "Appearance",
   "approvalFirst": "Ready for your review",
   "appsUsed": "Apps used",
   "artCaption": "A LITTLE STRUCTURE. A LOT OF POSSIBILITY.",
@@ -57,6 +57,13 @@
     "inherit_calendar_color": "Use calendar color",
     "provider_color_label": "Google event color",
     "recurrence": {
+      "FR": "Fri",
+      "MO": "Mon",
+      "SA": "Sat",
+      "SU": "Sun",
+      "TH": "Thu",
+      "TU": "Tue",
+      "WE": "Wed",
       "advancedPattern": "This series uses an advanced pattern, which is preserved. Edit its event details here.",
       "all": "Entire series",
       "allDay": "All day",
@@ -71,7 +78,6 @@
       "end": "Ends (exclusive for all-day events)",
       "ending": "Repeat until",
       "failed": "Could not save this change. Your draft is retained; try again.",
-      "FR": "Fri",
       "frequency": "Repeat",
       "future": "This and following occurrences",
       "futureExceptionsReset": "Edits and cancellations for this and following occurrences will be reset when you save.",
@@ -79,18 +85,17 @@
       "invalid": "Check the title, dates, time zone and recurrence settings.",
       "loading": "Loading recurring event…",
       "location": "Location",
-      "MO": "Mon",
       "month": "Month (1–12)",
       "monthDay": "Day of month",
       "monthDayLast": "Use the last day",
       "monthDayOverflow": "When the day is missing",
       "monthDayPattern": "Day of month",
       "monthDaySkip": "Skip that month",
-      "monthly": "Monthly",
       "monthPattern": "Repeat by",
       "monthWeekdayPattern": "Weekday in month",
-      "native_source": "Tuturuuu Calendar",
+      "monthly": "Monthly",
       "nativeOnly": "Saved to Tuturuuu Calendar. Missing local times during daylight saving are skipped. Provider recurrence is managed separately.",
+      "native_source": "Tuturuuu Calendar",
       "never": "No end date",
       "ordinal1": "First",
       "ordinal2": "Second",
@@ -105,22 +110,17 @@
       "provider_source": "Calendar",
       "relativeWeekdayHelp": "With several weekdays selected, each month uses the earliest matching date in the selected week. The start date must match this pattern.",
       "reload": "Reload series",
-      "SA": "Sat",
       "save": "Save",
       "saving": "Saving…",
       "scope": "Apply changes to",
       "start": "Starts",
-      "SU": "Sun",
-      "TH": "Thu",
       "this": "Only this occurrence",
       "timezone": "Time zone",
       "title": "Title",
-      "TU": "Tue",
       "unavailable": "This recurring event is unavailable.",
       "until": "End date",
-      "WE": "Wed",
-      "weekdays": "Days of the week",
       "weekIndex": "Which week",
+      "weekdays": "Days of the week",
       "weekly": "Weekly",
       "yearly": "Yearly"
     }
@@ -137,6 +137,7 @@
   "cancel": "Cancel",
   "capacity": "Participant limit",
   "checkConflict": "Check availability first",
+  "coachNotes": "Coach notes",
   "coaching": {
     "aiReview": "Ask AI to review",
     "aiReviewHelp": "Review the saved prompt with RISE or CRAFT. Uses one sponsored AI operation; the draft is never replaced automatically.",
@@ -148,14 +149,13 @@
     "sponsorCoverage": "Totals include confirmed receipts recorded by this workshop. AI Studio is the authoritative credit ledger, including failed calls. The latest 100 receipts are available here.",
     "sponsorCredits": "Confirmed sponsored credits",
     "sponsorDownload": "Download sponsorship report",
-    "sponsored": "AI sponsored by Tuturuuu",
-    "sponsoredHelp": "Workshop AI uses Tuturuuu’s root workspace credits. Attendees do not spend personal credits.",
     "sponsorLedger": "Open root workspace AI Studio",
     "sponsorNotConfigured": "No sponsored credit receipts yet. AI operations and AI credits are different: one operation may use several model calls.",
-    "sponsorReceipts": "Sponsorship evidence"
+    "sponsorReceipts": "Sponsorship evidence",
+    "sponsored": "AI sponsored by Tuturuuu",
+    "sponsoredHelp": "Workshop AI uses Tuturuuu’s root workspace credits. Attendees do not spend personal credits."
   },
   "coachingUnavailable": "Coaching is temporarily unavailable. Your answer and app activity have been saved. Review the evidence and ask a team member to check the result.",
-  "coachNotes": "Coach notes",
   "command_launcher": {
     "app_categories": {
       "ai": "AI",
@@ -231,16 +231,55 @@
     "apps": "Apps",
     "apps_count": "{count, plural, one {# app} other {# apps}}",
     "apps_description": "Open another Tuturuuu app.",
+    "ask_mira": "Ask Mira",
+    "ask_mira_description": "Opens as a Mira draft. Nothing is sent.",
+    "back": "back",
+    "close": "close",
+    "copy_id": "Copy ID",
+    "copy_link": "Copy link",
+    "create_task": "Create task",
+    "create_task_description": "Opens the task form with this title",
+    "current": "Current",
+    "current_app": "Current app",
+    "current_workspace": "Current workspace",
+    "empty": "No command found",
+    "empty_description": "Try a workspace, app, page, or a closer spelling.",
     "error_workspaces": "Could not load workspaces",
+    "guest": "Guest",
+    "item_actions": "actions",
+    "loading_workspaces": "Loading workspaces",
+    "match": "Match",
     "navigate": "navigate",
+    "navigation": "Navigation",
     "no_apps_found": "No apps found",
     "no_apps_found_description": "Try a different app name or keyword.",
+    "offline": "Offline. Results load when you reconnect.",
+    "open": "Open",
+    "open_app": "Open app",
     "open_apps_in": "Open apps in",
     "open_current_tab": "This tab",
+    "open_in_new_tab": "Open in new tab",
     "open_new_tab": "New tab",
     "open_options": "Open options",
+    "open_workspace": "Open workspace",
+    "personal": "Personal",
+    "placeholder": "Search apps, workspaces, and pages...",
+    "recent": "Recent",
+    "retry": "Retry",
+    "scope": "scope",
+    "scopes": {
+      "actions": "Actions",
+      "all": "All",
+      "label": "Search category",
+      "tasks": "Tasks"
+    },
     "search_apps": "Search apps",
-    "select": "select"
+    "search_hint": "Type a workspace, app, page, acronym, or close spelling.",
+    "searching_workspaces": "Searching workspaces",
+    "select": "select",
+    "suggestions": "Suggestions",
+    "title": "Command Launcher",
+    "workspaces": "Workspaces"
   },
   "common": {
     "all_workspaces_hidden": "All your workspaces are Hidden. Restore one to choose a workspace.",
@@ -316,8 +355,8 @@
   "detailTakeaway": "Leave with something useful",
   "detailTakeawayText": "Turn your instructions into readable Markdown skills. Export one skill or split a larger workflow into focused skills.",
   "download": "Download SKILL.md",
-  "draftedIn": "Prepared a draft in",
   "draftNotice": "Draft changes are local until you save them.",
+  "draftedIn": "Prepared a draft in",
   "emptyPrompt": "No prompt saved yet.",
   "ends": "Ends at",
   "enter": "Enter workshop",
@@ -412,39 +451,40 @@
     "found": "Evidence found",
     "frameworkHelp": "Use RISE for reusable team instructions. Use CRAFT to shape a communication brief. These are memory aids, not magic formulas; a strong prompt still needs accurate sources and testing.",
     "frameworkLabel": "Prompt framework",
+    "frameworkTitle": "A clear prompt has a job for every section",
     "frameworks": {
       "craft": {
         "name": "CRAFT · content brief",
         "sections": [
           {
             "id": "context",
+            "sample": "## Context\nRISE needs an Induction Day invitation that helps new students find their place.",
             "title": "Context",
-            "why": "Explain the situation and purpose.",
-            "sample": "## Context\nRISE needs an Induction Day invitation that helps new students find their place."
+            "why": "Explain the situation and purpose."
           },
           {
             "id": "role",
+            "sample": "## Role\nAct as a welcoming student communications editor for RMIT newcomers.",
             "title": "Role",
-            "why": "Define the perspective and audience.",
-            "sample": "## Role\nAct as a welcoming student communications editor for RMIT newcomers."
+            "why": "Define the perspective and audience."
           },
           {
             "id": "action",
+            "sample": "## Action\nRead the approved event records, draft the invitation, then verify all factual claims.",
             "title": "Action",
-            "why": "Say which work to complete, in order.",
-            "sample": "## Action\nRead the approved event records, draft the invitation, then verify all factual claims."
+            "why": "Say which work to complete, in order."
           },
           {
             "id": "format",
+            "sample": "## Format\nProvide English and Vietnamese plain-text captions, source notes, and artwork alt text separately.",
             "title": "Format",
-            "why": "Make the handoff easy to use.",
-            "sample": "## Format\nProvide English and Vietnamese plain-text captions, source notes, and artwork alt text separately."
+            "why": "Make the handoff easy to use."
           },
           {
             "id": "tone",
+            "sample": "## Tone\nBe warm, concrete, inclusive, and student-to-student. Avoid hype and unexplained jargon.",
             "title": "Tone",
-            "why": "Choose a voice that fits the readers.",
-            "sample": "## Tone\nBe warm, concrete, inclusive, and student-to-student. Avoid hype and unexplained jargon."
+            "why": "Choose a voice that fits the readers."
           }
         ]
       },
@@ -453,82 +493,81 @@
         "sections": [
           {
             "id": "role",
+            "sample": "## Role & readers\nYou are RISE’s communications assistant. Write for RMIT students who are curious but new to entrepreneurship.",
             "title": "Role & readers",
-            "why": "Give the assistant a job and the people it serves.",
-            "sample": "## Role & readers\nYou are RISE’s communications assistant. Write for RMIT students who are curious but new to entrepreneurship."
+            "why": "Give the assistant a job and the people it serves."
           },
           {
             "id": "inputs",
+            "sample": "## Inputs & evidence\nSearch the approved event brief, voice guide, department notes, and partner review. Use the latest approved facts; ask about missing or conflicting details.",
             "title": "Inputs & evidence",
-            "why": "Name trusted sources and what to do when they disagree.",
-            "sample": "## Inputs & evidence\nSearch the approved event brief, voice guide, department notes, and partner review. Use the latest approved facts; ask about missing or conflicting details."
+            "why": "Name trusted sources and what to do when they disagree."
           },
           {
             "id": "steps",
+            "sample": "## Steps & safeguards\nGather sources, compare facts, draft, and check both languages. Never invent a speaker, sponsor, date, or link. Ask a member to approve publishing.",
             "title": "Steps & safeguards",
-            "why": "Give a repeatable method and clear decision boundaries.",
-            "sample": "## Steps & safeguards\nGather sources, compare facts, draft, and check both languages. Never invent a speaker, sponsor, date, or link. Ask a member to approve publishing."
+            "why": "Give a repeatable method and clear decision boundaries."
           },
           {
             "id": "output",
+            "sample": "## Expected output\nReturn separate English and Vietnamese plain-text Facebook captions, an artwork brief, alt text, source notes, and a readiness checklist.",
             "title": "Expected output",
-            "why": "Describe a result a teammate can actually use.",
-            "sample": "## Expected output\nReturn separate English and Vietnamese plain-text Facebook captions, an artwork brief, alt text, source notes, and a readiness checklist."
+            "why": "Describe a result a teammate can actually use."
           }
         ]
       }
     },
-    "frameworkTitle": "A clear prompt has a job for every section",
     "heading": "Build an assistant your team can trust.",
     "intro": "Learn one idea, try it, then use it in your Induction Day system. No coding experience needed.",
     "lessons": [
       {
-        "title": "The big picture",
-        "subtitle": "An assistant is a teammate with a written brief.",
         "body": "A useful AI system combines instructions, relevant knowledge, and a way to check its work. A model predicts a response from what it receives; it does not automatically know your club’s latest plans. Your job is to give it a clear job and a reliable route to the facts.",
-        "why": "One vague request may produce a good-looking post with a wrong date. A repeatable workflow helps every department get consistent work and catch gaps before sharing it.",
         "example": "For Induction Day: start with the team’s system prompt → gather the approved event brief and voice guide → follow a bilingual drafting skill → produce a caption → check facts and ask a member to approve it.",
-        "takeaway": "Choose one outcome: a Facebook-ready caption package. Split work by strengths: Marketing owns voice, Product checks the attendee experience, External Relations checks claims, and People & Culture checks welcome and accessibility."
+        "subtitle": "An assistant is a teammate with a written brief.",
+        "takeaway": "Choose one outcome: a Facebook-ready caption package. Split work by strengths: Marketing owns voice, Product checks the attendee experience, External Relations checks claims, and People & Culture checks welcome and accessibility.",
+        "title": "The big picture",
+        "why": "One vague request may produce a good-looking post with a wrong date. A repeatable workflow helps every department get consistent work and catch gaps before sharing it."
       },
       {
-        "title": "Markdown",
-        "subtitle": "Simple marks that give your writing structure.",
         "body": "Markdown is ordinary text with a few readable shortcuts. A # starts a heading, - starts a bullet, **word** adds emphasis, and [label](https://example.com) describes a link. A .md file is just a text file using these conventions. You can read it even without special software.",
-        "why": "Headings separate role, evidence, workflow, and output. Bullets turn a long paragraph into instructions teammates can scan and maintain. Markdown organizes meaning; it does not make a claim true or force a model to obey.",
         "example": "Edit the example below and watch its preview. Keep system prompts and SKILL.md files structured. For the final Facebook caption, ask for plain text: Facebook may display the Markdown punctuation instead of formatting it.",
-        "takeaway": "Use one heading per responsibility and short numbered steps for ordered work. Avoid an enormous wall of text or headings with no useful instruction underneath."
+        "subtitle": "Simple marks that give your writing structure.",
+        "takeaway": "Use one heading per responsibility and short numbered steps for ordered work. Avoid an enormous wall of text or headings with no useful instruction underneath.",
+        "title": "Markdown",
+        "why": "Headings separate role, evidence, workflow, and output. Bullets turn a long paragraph into instructions teammates can scan and maintain. Markdown organizes meaning; it does not make a claim true or force a model to obey."
       },
       {
-        "title": "System prompts",
-        "subtitle": "The standing brief, not today’s task.",
         "body": "A system prompt describes how an assistant should behave across requests: its role, audience, evidence rules, working steps, and expected output. A task prompt is today’s assignment. Context is the information it needs for that assignment. In Colab, your saved team instructions are turned into skills and used with the current scenario.",
-        "why": "You can change the event or audience without rebuilding your assistant. Clear boundaries also help when source documents contain outdated notes or text that tries to tell the assistant what to do.",
         "example": "Standing instruction: “Use the latest approved event brief. If required facts are missing, list the questions before calling a caption ready.” Today’s task: “Prepare the Induction Day invitation.” Context: the approved brief, newcomer questions, and tone guide.",
-        "takeaway": "Use RISE: Role & readers, Inputs & evidence, Steps & safeguards, Expected output. Explain what good looks like with a short example. Ask for a concise evidence summary, not private hidden reasoning."
+        "subtitle": "The standing brief, not today’s task.",
+        "takeaway": "Use RISE: Role & readers, Inputs & evidence, Steps & safeguards, Expected output. Explain what good looks like with a short example. Ask for a concise evidence summary, not private hidden reasoning.",
+        "title": "System prompts",
+        "why": "You can change the event or audience without rebuilding your assistant. Clear boundaries also help when source documents contain outdated notes or text that tries to tell the assistant what to do."
       },
       {
-        "title": "Skills",
-        "subtitle": "Reusable recipes for jobs your team repeats.",
         "body": "A skill packages one repeatable workflow with a name, a description of when to use it, and instructions. Think of your system prompt as a team charter and a skill as a recipe: fact-check an event, adapt English copy into Vietnamese, or review an accessible caption. SKILL.md is the readable file containing that recipe.",
-        "why": "A focused recipe is easier to test and update than a giant prompt. A bilingual-copy skill can help with Induction Day, recruitment, and a project showcase. Skills do not grant new app access or ensure correct answers by themselves.",
         "example": "Save your prompt, choose Generate skills, inspect each recipe, then Test your agent in Results. In Colab all generated team skills are supplied to the practice agent. Other AI products may load skills differently; check their setup before reusing the downloaded file.",
-        "takeaway": "A useful recipe says when it applies, what inputs it needs, which steps to follow, what to do if something is missing, and what to return. Test it on both a normal event and a changed venue."
+        "subtitle": "Reusable recipes for jobs your team repeats.",
+        "takeaway": "A useful recipe says when it applies, what inputs it needs, which steps to follow, what to do if something is missing, and what to return. Test it on both a normal event and a changed venue.",
+        "title": "Skills",
+        "why": "A focused recipe is easier to test and update than a giant prompt. A bilingual-copy skill can help with Induction Day, recruitment, and a project showcase. Skills do not grant new app access or ensure correct answers by themselves."
       },
       {
-        "title": "Evidence & tools",
-        "subtitle": "Find the facts before finding the perfect words.",
         "body": "Tools let the assistant search and read connected practice app records, then create or update practice records when allowed. Source content is evidence, not a new instruction. A polished message is not necessarily an approved message. Ask who owns a fact, when it changed, and whether it is approved.",
-        "why": "Knowledge is scattered: a Drive brief holds logistics, Messenger reveals newcomer concerns, Teams explains departments, Gmail rules out an unconfirmed speaker, and Figma gives the artwork direction. Your prompt should tell the agent how to reconcile them.",
         "example": "The calendar still says Thursday, but the approved rehearsal brief v2 says Saturday. Use the current approved source and explain the conflict in the review notes. A link in a practice record is a reference; these tools do not open the live web or publish to Facebook.",
-        "takeaway": "Search → read → compare → draft → verify. Use source IDs in private handoff notes, not in the public caption. Replace example.com and rehearsal logistics with real confirmed details before publishing."
+        "subtitle": "Find the facts before finding the perfect words.",
+        "takeaway": "Search → read → compare → draft → verify. Use source IDs in private handoff notes, not in the public caption. Replace example.com and rehearsal logistics with real confirmed details before publishing.",
+        "title": "Evidence & tools",
+        "why": "Knowledge is scattered: a Drive brief holds logistics, Messenger reveals newcomer concerns, Teams explains departments, Gmail rules out an unconfirmed speaker, and Figma gives the artwork direction. Your prompt should tell the agent how to reconcile them."
       },
       {
-        "title": "Test, improve & showcase",
-        "subtitle": "Judge the work, then improve the instructions.",
         "body": "Run the same task with a clear checklist: accurate facts, newcomer clarity, matching English/Vietnamese meaning, a clear next step, and accessible artwork notes. Change one instruction at a time and compare the results. An AI coach’s feedback is a suggestion; members remain the reviewers.",
-        "why": "A single good response can hide a fragile prompt. Test a missing registration link, a venue change, or an unapproved sponsor. A dependable assistant should ask useful questions instead of filling gaps with confident guesses.",
         "example": "In Live showcase, the host puts a team on stage. Everyone follows its system, skills, and results while the team demonstrates the same challenge. Explain what changed and which evidence improved the post, then hand the stage to the next team.",
-        "takeaway": "Reuse the method for study: ask for explanations of your notes, a revision plan, or practice questions. Check course AI rules and sources; do your own assessed work. For club work, save the prompt and skills with the final caption package."
+        "subtitle": "Judge the work, then improve the instructions.",
+        "takeaway": "Reuse the method for study: ask for explanations of your notes, a revision plan, or practice questions. Check course AI rules and sources; do your own assessed work. For club work, save the prompt and skills with the final caption package.",
+        "title": "Test, improve & showcase",
+        "why": "A single good response can hide a fragile prompt. Test a missing registration link, a venue change, or an unapproved sponsor. A dependable assistant should ask useful questions instead of filling gaps with confident guesses."
       }
     ],
     "local": "Your practice here stays in this browser. It does not change your team’s saved prompt.",
@@ -612,9 +651,9 @@
   "name": "Your display name",
   "namePlaceholder": "How should your team know you?",
   "needsAttention": "Needs attention",
-  "newer": "A teammate saved a newer version. Copy your work before loading theirs.",
   "newScenario": "Generate shared scenario",
   "newTeam": "New department",
+  "newer": "A teammate saved a newer version. Copy your work before loading theirs.",
   "nextStep": "Start here",
   "nextStepHelp": "Open your team prompt, describe how the agent should work, then save and generate your first skill.",
   "nextTeam": "Next team",
@@ -623,6 +662,7 @@
   "noInvites": "No account invitations yet.",
   "noRunsYet": "No practice runs yet",
   "noStartDate": "No start date",
+  "noToolCalls": "The agent answered without opening an app.",
   "notifications": {
     "accept": "Accept",
     "archive": "Archive",
@@ -647,15 +687,14 @@
     "notifications": "Notifications",
     "view-all": "View All Notifications"
   },
-  "noToolCalls": "The agent answered without opening an app.",
   "nowShowcasing": "Now showcasing",
   "offline": "Reconnecting…",
-  "online": "online",
   "onStage": "On stage",
+  "online": "online",
   "open": "Live workshop",
-  "openedIn": "Opened a record in",
   "openNow": "Open now",
   "openTeamSystem": "Open team system",
+  "openedIn": "Opened a record in",
   "overviewNextStep": "Use the tabs to organize departments, invite participants, tune the RISE scenario, and set predictable AI limits.",
   "overviewTab": "Overview",
   "owner": "Owner",
@@ -673,8 +712,8 @@
   "practiceRuns": "Practice runs",
   "preferencesHelp": "Manage your Colab preferences. Your profile and accounts are managed on Tuturuuu.",
   "preferencesTitle": "Preferences",
-  "presenting": "Presenting",
   "presentTeam": "Present team",
+  "presenting": "Presenting",
   "previewDisclaimer": "Illustrative example · no AI call or account needed",
   "previewEyebrow": "A SMALL CHANGE. A BETTER TEAMMATE.",
   "previewIntro": "Try two instructions for the same task. Notice what the agent checks, what it assumes, and when it asks.",
@@ -686,8 +725,8 @@
   "promptSection": "PROMPT",
   "promptTitle": "Make a great teammate.",
   "readBrief": "Read the launch brief",
-  "readonly": "Read-only",
   "readOnlyHelp": "The room is not accepting edits. You can review the work you have access to.",
+  "readonly": "Read-only",
   "recent": "Return to your last workshop",
   "recordMissingHelp": "The requested item was not found. Search the selected app first, then open the returned record.",
   "records": "records",
@@ -735,16 +774,15 @@
   "sandboxSection": "APPS",
   "save": "Save team prompt",
   "saveBefore": "Save your prompt before generating skills.",
-  "saved": "Saved",
   "saveRoomLimits": "Save workshop limits",
   "saveSchedule": "Save schedule",
   "saveTeamLimits": "Save team limits",
+  "saved": "Saved",
   "scenario": "Challenge",
   "scenarioLibrary": "Scenario library",
-  "scenariosTab": "Scenarios",
   "scenarioStudio": "RISE scenario studio",
   "scenarioStudioHelp": "Practice AI workflows for club operations, university study, and collaboration across RISE departments.",
-  "scheduled": "Waiting to start",
+  "scenariosTab": "Scenarios",
   "scheduleErrors": {
     "end_too_late": "Workshops can run for up to 8 hours. Choose an earlier end time.",
     "end_too_soon": "Choose an end time at least 5 minutes after the workshop starts.",
@@ -757,8 +795,9 @@
   "scheduleManagementHelp": "Set a working window when it helps, or leave either date open. Participants can still join before or after the window to review permitted work.",
   "scheduleTab": "Schedule",
   "scheduleTitle": "Optional schedule",
-  "searchedIn": "Searched in",
+  "scheduled": "Waiting to start",
   "searchRecords": "Search practice data…",
+  "searchedIn": "Searched in",
   "settings": "Settings",
   "shell": {
     "account_switcher.accounts": "Accounts",
@@ -841,10 +880,10 @@
   "skillsEmpty": "Your instructions become readable SKILL.md files here.",
   "skillsSection": "SKILLS",
   "skipConflict": "No availability check specified",
+  "startTogether": "START TOGETHER",
   "starter": "Try a starter prompt",
   "starterText": "## Role & readers\nYou are RISE’s communications assistant. Write for RMIT students who are curious but new to entrepreneurship.\n\n## Inputs & evidence\nSearch the approved event brief, voice guide, department notes, and partner review. Use the latest approved facts; ask about missing or conflicting details.\n\n## Steps & safeguards\nGather sources, compare facts, draft, and check both languages. Never invent a speaker, sponsor, date, or link. Ask a member to approve publishing.\n\n## Expected output\nReturn separate English and Vietnamese plain-text Facebook captions, an artwork brief, alt text, source notes, and a readiness checklist.",
   "starts": "Starts at",
-  "startTogether": "START TOGETHER",
   "steer": "Steer the next scenario",
   "steerPlaceholder": "For example: help Marketing & Growth launch the RISE pathways campaign while Product prepares the Induction Day showcase…",
   "step1": "Describe your agent",
@@ -855,10 +894,10 @@
   "step3Text": "Compare approaches, refine your skills, and take them with you.",
   "stepByStep": "What the agent did",
   "stepByStepHelp": "Open a step only when you want to inspect the details.",
+  "stopReason": "Why the run stopped",
   "stop_answered": "The agent returned a final answer",
   "stop_tool_limit": "The app-action limit was reached",
   "stop_turn_limit": "The AI-turn limit was reached",
-  "stopReason": "Why the run stopped",
   "studio": {
     "actions": {
       "admin": "Changed an admin role",
@@ -943,12 +982,12 @@
   "themeLight": "Light",
   "themeSystem": "System",
   "title": "Workshop name",
+  "toReview": "to review",
   "together": "+ together",
   "toolCalls": "Tool calls per run",
   "toolCallsHelp": "App searches, reads, and practice-data changes allowed per test. One turn is always reserved for the answer.",
   "toolCallsShort": "tools",
   "toolIssues": "Tool issues",
-  "toReview": "to review",
   "trace": "Tool actions",
   "turnsShort": "turns",
   "unset": "Clear",
@@ -978,8 +1017,8 @@
     "next": "Explore Colab",
     "privateLabel": "Invite-only",
     "recentDescription": "Pick up where you left off. Room access and timing are checked when you enter.",
-    "sessions": "Your workshops",
     "sessionUnavailable": "Your account could not be checked right now. Retry to continue where you left off.",
+    "sessions": "Your workshops",
     "welcome": "Welcome back"
   },
   "workspace-invitation": {

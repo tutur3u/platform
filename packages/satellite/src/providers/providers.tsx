@@ -1,15 +1,14 @@
 import { SorbetPrePaintScript } from '@tuturuuu/ui/custom/sorbet-pre-paint';
-import {
-  getLaunchableAppByTitle,
-  type LaunchableAppSlug,
-} from '@tuturuuu/utils/launchable-apps';
+import type { LaunchableAppSlug } from '@tuturuuu/utils/launchable-apps';
 import { connection } from 'next/server';
 import { NextIntlClientProvider } from 'next-intl';
 import { ThemeProvider as DefaultThemeProvider } from 'next-themes';
 import { type ReactNode, Suspense } from 'react';
 import { getSatelliteAppSessionUser } from '../auth';
+import type { CommandLauncherHostApp } from '../components/command-launcher/command-launcher-utils';
 import { SatelliteVersionBadge } from '../components/version-badge-gate';
 import { ClientProviders } from './client-providers';
+import { resolveCommandHost, resolveLaunchableHostApp } from './command-host';
 
 export function Providers({
   appName = 'Tuturuuu App',
@@ -24,10 +23,8 @@ export function Providers({
   loadingFallback?: ReactNode;
   themeProvider?: typeof DefaultThemeProvider;
 }) {
-  const launchableApp =
-    currentApp ??
-    getLaunchableAppByTitle(appName)?.slug ??
-    getLaunchableAppByTitle(appName.replace(/^Tuturuuu\s+/i, ''))?.slug;
+  const launchableApp = currentApp ?? resolveLaunchableHostApp(appName);
+  const commandHost = resolveCommandHost(appName, launchableApp);
 
   return (
     <ThemeProvider
@@ -53,7 +50,10 @@ export function Providers({
       */}
       <Suspense fallback={loadingFallback}>
         <NextIntlClientProvider>
-          <VerifiedClientProviders currentApp={launchableApp}>
+          <VerifiedClientProviders
+            commandHost={commandHost}
+            currentApp={launchableApp}
+          >
             {children}
             <Suspense fallback={null}>
               <SatelliteVersionBadge appName={appName} />
@@ -67,9 +67,11 @@ export function Providers({
 
 async function VerifiedClientProviders({
   children,
+  commandHost,
   currentApp,
 }: {
   children: ReactNode;
+  commandHost?: CommandLauncherHostApp;
   currentApp?: LaunchableAppSlug;
 }) {
   // Session verification reads the current clock even when cookies/headers
@@ -78,7 +80,11 @@ async function VerifiedClientProviders({
   await connection();
   const user = currentApp ? await getSatelliteAppSessionUser(currentApp) : null;
   return (
-    <ClientProviders actorId={user?.id} currentApp={currentApp}>
+    <ClientProviders
+      actorId={user?.id}
+      commandHost={commandHost}
+      currentApp={currentApp}
+    >
       {children}
     </ClientProviders>
   );

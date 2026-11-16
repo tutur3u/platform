@@ -7,6 +7,7 @@ import {
 import { AppErrorBoundary } from '@tuturuuu/ui/custom/app-error-boundary';
 import type { ReactNode } from 'react';
 import { LinkStatusPage } from '../components/link-status-page';
+import { ShortenerCommandCenter } from '../components/shortener-command-center';
 import '@tuturuuu/ui/globals.css';
 
 const name = 'Tuturuuu Shortener';
@@ -88,6 +89,7 @@ function Document({ children }: { children: ReactNode }) {
       </head>
       <body>
         {children}
+        <ShortenerCommandCenter />
         <Scripts />
       </body>
     </html>

@@ -8,6 +8,18 @@
     "switch_account": "Chuyển tài khoản",
     "unknown_user": "Người dùng không xác định"
   },
+  "ai-prompts-data-table": {
+    "created_at": "Ngày tạo",
+    "id": "Mã số",
+    "input": "Đầu vào",
+    "model": "Mô hình AI",
+    "name": "Tên",
+    "output": "Đầu ra"
+  },
+  "ai-whitelist": {
+    "add_domain": "Thêm tên miền",
+    "add_email": "Thêm email"
+  },
   "ai_chat": {
     "add_attachments": "Thêm tệp đính kèm",
     "ai_models": "Mô hình AI",
@@ -83,18 +95,6 @@
     "which_is": "đó là một câu trả lời",
     "you": "Bạn",
     "you_selected": "Bạn đã chọn"
-  },
-  "ai-prompts-data-table": {
-    "created_at": "Ngày tạo",
-    "id": "Mã số",
-    "input": "Đầu vào",
-    "model": "Mô hình AI",
-    "name": "Tên",
-    "output": "Đầu ra"
-  },
-  "ai-whitelist": {
-    "add_domain": "Thêm tên miền",
-    "add_email": "Thêm email"
   },
   "api-key-data-table": {
     "created_at": "Tạo lúc",
@@ -201,6 +201,13 @@
     "inherit_calendar_color": "Dùng màu lịch",
     "provider_color_label": "Màu sự kiện Google",
     "recurrence": {
+      "FR": "T6",
+      "MO": "T2",
+      "SA": "T7",
+      "SU": "CN",
+      "TH": "T5",
+      "TU": "T3",
+      "WE": "T4",
       "advancedPattern": "Chuỗi này sử dụng mẫu nâng cao và sẽ được giữ nguyên. Sửa thông tin sự kiện tại đây.",
       "all": "Toàn bộ chuỗi",
       "allDay": "Cả ngày",
@@ -215,7 +222,6 @@
       "end": "Kết thúc (không bao gồm ngày cuối cho sự kiện cả ngày)",
       "ending": "Lặp lại đến",
       "failed": "Không thể lưu thay đổi. Bản nháp được giữ lại; hãy thử lại.",
-      "FR": "T6",
       "frequency": "Lặp lại",
       "future": "Lần này và các lần sau",
       "futureExceptionsReset": "Các chỉnh sửa và lần hủy cho lần này và các lần tiếp theo sẽ được đặt lại khi bạn lưu.",
@@ -223,18 +229,17 @@
       "invalid": "Kiểm tra tiêu đề, ngày, múi giờ và cài đặt lặp lại.",
       "loading": "Đang tải sự kiện lặp lại…",
       "location": "Địa điểm",
-      "MO": "T2",
       "month": "Tháng (1–12)",
       "monthDay": "Ngày trong tháng",
       "monthDayLast": "Dùng ngày cuối tháng",
       "monthDayOverflow": "Khi tháng không có ngày này",
       "monthDayPattern": "Ngày trong tháng",
       "monthDaySkip": "Bỏ qua tháng đó",
-      "monthly": "Hàng tháng",
       "monthPattern": "Lặp theo",
       "monthWeekdayPattern": "Thứ trong tháng",
-      "native_source": "Lịch Tuturuuu",
+      "monthly": "Hàng tháng",
       "nativeOnly": "Lưu vào Lịch Tuturuuu. Giờ địa phương không tồn tại khi đổi giờ mùa hè sẽ được bỏ qua. Lịch lặp của nhà cung cấp được quản lý riêng.",
+      "native_source": "Lịch Tuturuuu",
       "never": "Không có ngày kết thúc",
       "ordinal1": "Đầu tiên",
       "ordinal2": "Thứ hai",
@@ -249,22 +254,17 @@
       "provider_source": "Lịch",
       "relativeWeekdayHelp": "Khi chọn nhiều thứ, mỗi tháng dùng ngày khớp sớm nhất trong tuần đã chọn. Ngày bắt đầu phải khớp quy tắc này.",
       "reload": "Tải lại chuỗi",
-      "SA": "T7",
       "save": "Lưu",
       "saving": "Đang lưu…",
       "scope": "Áp dụng thay đổi cho",
       "start": "Bắt đầu",
-      "SU": "CN",
-      "TH": "T5",
       "this": "Chỉ lần này",
       "timezone": "Múi giờ",
       "title": "Tiêu đề",
-      "TU": "T3",
       "unavailable": "Sự kiện lặp lại này không khả dụng.",
       "until": "Ngày kết thúc",
-      "WE": "T4",
-      "weekdays": "Ngày trong tuần",
       "weekIndex": "Tuần nào",
+      "weekdays": "Ngày trong tuần",
       "weekly": "Hàng tuần",
       "yearly": "Hàng năm"
     },
@@ -293,6 +293,11 @@
     },
     "week": "Tuần"
   },
+  "calendar-tabs": {
+    "calendar": "Lịch",
+    "events": "Sự kiện",
+    "overview": "Tổng quan"
+  },
   "calendar_category_reorder_pilot": {
     "cancel": "Đã trả {label} về vị trí {position} trên {total}.",
     "drop": "Đã thả {label} tại vị trí {position} trên {total}.",
@@ -301,11 +306,6 @@
     "invalid": "Tên danh mục phải duy nhất và không trống để sắp xếp.",
     "label": "Thứ tự danh mục",
     "move": "{label}, vị trí {position} trên {total}."
-  },
-  "calendar-tabs": {
-    "calendar": "Lịch",
-    "events": "Sự kiện",
-    "overview": "Tổng quan"
   },
   "chat": {
     "accept_friend": "Chấp nhận",
@@ -789,7 +789,14 @@
     "apps": "Ứng dụng",
     "apps_count": "{count, plural, one {# ứng dụng} other {# ứng dụng}}",
     "apps_description": "Mở một ứng dụng Tuturuuu khác từ workspace này.",
+    "ask_mira": "Hỏi Mira",
+    "ask_mira_description": "Mở dưới dạng bản nháp Mira. Chưa gửi gì.",
+    "back": "quay lại",
     "close": "đóng",
+    "copy_id": "Sao chép ID",
+    "copy_link": "Sao chép liên kết",
+    "create_task": "Tạo nhiệm vụ",
+    "create_task_description": "Mở biểu mẫu nhiệm vụ với tiêu đề này",
     "current": "Hiện tại",
     "current_app": "Ứng dụng hiện tại",
     "current_workspace": "Workspace hiện tại",
@@ -799,12 +806,14 @@
     "error_workspaces": "Không thể tải workspace",
     "guest": "Khách",
     "hide_workspace_selector": "Ẩn bộ chọn workspace",
+    "item_actions": "thao tác",
     "loading_workspaces": "Đang tải workspace",
     "match": "Khớp",
     "navigate": "di chuyển",
     "navigation": "Điều hướng",
     "no_apps_found": "Không tìm thấy ứng dụng",
     "no_apps_found_description": "Hãy thử tên ứng dụng hoặc từ khóa khác.",
+    "offline": "Đang ngoại tuyến. Kết quả sẽ tải khi có kết nối lại.",
     "open": "Mở",
     "open_app": "Mở ứng dụng",
     "open_apps_in": "Mở ứng dụng trong",
@@ -816,10 +825,21 @@
     "open_workspace": "Mở workspace",
     "personal": "Cá nhân",
     "placeholder": "Tìm ứng dụng, workspace và trang...",
+    "recent": "Gần đây",
+    "retry": "Thử lại",
+    "scope": "phạm vi",
+    "scopes": {
+      "actions": "Thao tác",
+      "all": "Tất cả",
+      "label": "Danh mục tìm kiếm",
+      "tasks": "Nhiệm vụ"
+    },
     "search_apps": "Tìm ứng dụng",
     "search_hint": "Nhập workspace, ứng dụng, trang, chữ viết tắt hoặc cách viết gần đúng.",
+    "searching_workspaces": "Đang tìm workspace",
     "select": "chọn",
     "show_workspace_selector": "Hiện bộ chọn workspace",
+    "suggestions": "Gợi ý",
     "title": "Trình mở lệnh",
     "workspace_destination": "Workspace {workspace}",
     "workspaces": "Workspace"
@@ -933,8 +953,8 @@
     "email_added": "Đã thêm email",
     "empty": "Trống",
     "enabled": "Đã bật",
-    "enter_context": "Nhập ngữ cảnh",
     "enter-email": "Nhập email của bạn",
+    "enter_context": "Nhập ngữ cảnh",
     "enterprise": "Doanh nghiệp",
     "error": "Lỗi",
     "error_adding_domain": "Không thể thêm miền",
@@ -972,10 +992,10 @@
     "hidden_workspaces_empty": "Bạn không có không gian làm việc đã ẩn",
     "hidden_workspaces_load_error": "Không thể tải danh sách đã ẩn. Thử lại khi có kết nối.",
     "hidden_workspaces_update_error": "Không thể cập nhật danh sách đã ẩn. Lựa chọn trước đó đã được khôi phục.",
+    "hide-all": "Ẩn tất cả",
     "hide_column": "Ẩn cột",
     "hide_sidebar": "Ẩn thanh bên",
     "hide_workspace": "Ẩn không gian làm việc",
-    "hide-all": "Ẩn tất cả",
     "history": "Lịch sử",
     "home": "Trang chủ",
     "hospitality": "Du lịch & Khách sạn",
@@ -993,8 +1013,8 @@
     "language": "Ngôn ngữ",
     "last_saved": "Lần lưu cuối: {time}",
     "learn": "Học tập",
-    "learn_more": "Tìm hiểu thêm",
     "learn-description": "Learn description",
+    "learn_more": "Tìm hiểu thêm",
     "legal": "Pháp lý",
     "light": "Sáng",
     "lms": "LMS",
@@ -1019,11 +1039,11 @@
     "new": "Mới",
     "new-features": "Tính năng mới",
     "next": "Tiếp theo",
+    "no-results": "Không có kết quả",
+    "no-sheets-found": "Không tìm thấy trang tính nào.",
     "no_content_yet": "Chưa có nội dung",
     "no_online_users": "Không có ai trực tuyến",
     "no_workspace_found": "Không tìm thấy không gian làm việc",
-    "no-results": "Không có kết quả",
-    "no-sheets-found": "Không tìm thấy trang tính nào.",
     "not_whitelisted": "Không có trong danh sách trắng",
     "of": "trên",
     "open-source": "Mã nguồn mở",
@@ -1137,8 +1157,8 @@
     "unnamed": "Chưa đặt tên",
     "unnamed-workspace": "Không có tên",
     "unsaved": "Chưa lưu",
-    "unsaved_changes": "Bạn có thay đổi chưa được lưu",
     "unsaved-changes": "Bạn có thay đổi chưa được lưu.",
+    "unsaved_changes": "Bạn có thay đổi chưa được lưu",
     "untitled": "Chưa đặt tên",
     "updating": "Đang cập nhật...",
     "upload": "Tải lên",
@@ -1245,9 +1265,9 @@
     "next-month": "Tháng sau",
     "next-week": "Tuần sau",
     "next-year": "Năm sau",
-    "this_month": "Tháng này",
     "this-week": "Tuần này",
     "this-year": "Năm nay",
+    "this_month": "Tháng này",
     "time-range": "Khoảng thời gian",
     "time-range-placeholder": "Chọn khoảng thời gian",
     "time-unit": "Đơn vị thời gian",
@@ -1559,10 +1579,10 @@
     "total_diff": "Chênh lệch giá"
   },
   "invoices": {
-    "add_promotion": "Thêm khuyến mãi",
     "add-note": "Thêm ghi chú",
     "add-notice": "Thêm lời dặn",
     "add-product": "Thêm sản phẩm",
+    "add_promotion": "Thêm khuyến mãi",
     "basic-info": "Thông tin cơ bản",
     "bill_to": "Thanh toán cho",
     "brand_logo_alt": "Biểu trưng {brand}",
@@ -1616,28 +1636,28 @@
     "ai_features": {
       "features": [
         {
-          "title": "Tự động hóa Thông minh",
-          "description": "Tự động hóa quy trình phức tạp với AI học hỏi từ sở thích của bạn"
+          "description": "Tự động hóa quy trình phức tạp với AI học hỏi từ sở thích của bạn",
+          "title": "Tự động hóa Thông minh"
         },
         {
-          "title": "Thông tin Chi tiết Thông minh",
-          "description": "Nhận các đề xuất hữu ích dựa trên dữ liệu và xu hướng ngành của bạn"
+          "description": "Nhận các đề xuất hữu ích dựa trên dữ liệu và xu hướng ngành của bạn",
+          "title": "Thông tin Chi tiết Thông minh"
         },
         {
-          "title": "Hợp tác Tự nhiên",
-          "description": "Làm việc với AI hiểu ngữ cảnh và giao tiếp tự nhiên"
+          "description": "Làm việc với AI hiểu ngữ cảnh và giao tiếp tự nhiên",
+          "title": "Hợp tác Tự nhiên"
         },
         {
-          "title": "Phân tích Dự đoán",
-          "description": "Dự đoán thách thức và cơ hội với dự báo được hỗ trợ bởi AI"
+          "description": "Dự đoán thách thức và cơ hội với dự báo được hỗ trợ bởi AI",
+          "title": "Phân tích Dự đoán"
         },
         {
-          "title": "Học hỏi Thích nghi",
-          "description": "AI liên tục cải thiện dựa trên mô hình sử dụng của đội ngũ bạn"
+          "description": "AI liên tục cải thiện dựa trên mô hình sử dụng của đội ngũ bạn",
+          "title": "Học hỏi Thích nghi"
         },
         {
-          "title": "Trí tuệ Toàn cầu",
-          "description": "Truy cập thông tin từ dữ liệu toàn cầu trong khi vẫn đảm bảo quyền riêng tư"
+          "description": "Truy cập thông tin từ dữ liệu toàn cầu trong khi vẫn đảm bảo quyền riêng tư",
+          "title": "Trí tuệ Toàn cầu"
         }
       ],
       "subtitle": "Mọi tính năng đều được nâng cao bởi trí tuệ nhân tạo tiên tiến",
@@ -1646,20 +1666,20 @@
     "ai_revolution": {
       "items": [
         {
-          "title": "Tư duy Nhanh hơn",
-          "description": "Thông tin chi tiết và tự động hóa được hỗ trợ bởi AI giúp bạn ra quyết định nhanh hơn 10 lần"
+          "description": "Thông tin chi tiết và tự động hóa được hỗ trợ bởi AI giúp bạn ra quyết định nhanh hơn 10 lần",
+          "title": "Tư duy Nhanh hơn"
         },
         {
-          "title": "Làm việc Thông minh hơn",
-          "description": "Để AI xử lý các công việc lặp lại trong khi bạn tập trung vào những điều quan trọng nhất"
+          "description": "Để AI xử lý các công việc lặp lại trong khi bạn tập trung vào những điều quan trọng nhất",
+          "title": "Làm việc Thông minh hơn"
         },
         {
-          "title": "Phát triển Lớn mạnh hơn",
-          "description": "Mở rộng hoạt động một cách dễ dàng với AI học hỏi và thích nghi"
+          "description": "Mở rộng hoạt động một cách dễ dàng với AI học hỏi và thích nghi",
+          "title": "Phát triển Lớn mạnh hơn"
         },
         {
-          "title": "Luôn Dẫn đầu",
-          "description": "Luôn ở vị trí dẫn đầu với khả năng AI không ngừng phát triển"
+          "description": "Luôn ở vị trí dẫn đầu với khả năng AI không ngừng phát triển",
+          "title": "Luôn Dẫn đầu"
         }
       ],
       "subtitle": "Trải nghiệm tương lai của công việc với AI hiểu, thích nghi và phát triển cùng bạn",
@@ -1811,20 +1831,20 @@
     "success_metrics": {
       "metrics": [
         {
-          "value": "10x",
-          "label": "Ra quyết định Nhanh hơn"
+          "label": "Ra quyết định Nhanh hơn",
+          "value": "10x"
         },
         {
-          "value": "80%",
-          "label": "Thời gian Tiết kiệm cho Công việc Thường xuyên"
+          "label": "Thời gian Tiết kiệm cho Công việc Thường xuyên",
+          "value": "80%"
         },
         {
-          "value": "50%",
-          "label": "Giảm Chi phí Hoạt động"
+          "label": "Giảm Chi phí Hoạt động",
+          "value": "50%"
         },
         {
-          "value": "3x",
-          "label": "Tăng Năng suất Đội ngũ"
+          "label": "Tăng Năng suất Đội ngũ",
+          "value": "3x"
         }
       ],
       "subtitle": "Tham gia cùng hàng nghìn tổ chức đạt được kết quả đáng kinh ngạc",
@@ -1833,22 +1853,22 @@
     "testimonials": {
       "items": [
         {
-          "quote": "Tuturuuu đã thay đổi cách chúng tôi làm việc. Các tính năng AI thật đáng kinh ngạc!",
           "author": "Sarah Chen",
-          "role": "Quản lý Sản phẩm",
-          "company": "TechCorp"
+          "company": "TechCorp",
+          "quote": "Tuturuuu đã thay đổi cách chúng tôi làm việc. Các tính năng AI thật đáng kinh ngạc!",
+          "role": "Quản lý Sản phẩm"
         },
         {
-          "quote": "Giải pháp tất cả trong một tốt nhất mà chúng tôi từng tìm thấy cho nhu cầu của đội ngũ.",
           "author": "Michael Rodriguez",
-          "role": "Giám đốc Điều hành",
-          "company": "StartupX"
+          "company": "StartupX",
+          "quote": "Giải pháp tất cả trong một tốt nhất mà chúng tôi từng tìm thấy cho nhu cầu của đội ngũ.",
+          "role": "Giám đốc Điều hành"
         },
         {
-          "quote": "Giao diện trực quan và tính năng mạnh mẽ. Rất đáng để giới thiệu!",
           "author": "Emily Johnson",
-          "role": "Trưởng nhóm",
-          "company": "DesignPro"
+          "company": "DesignPro",
+          "quote": "Giao diện trực quan và tính năng mạnh mẽ. Rất đáng để giới thiệu!",
+          "role": "Trưởng nhóm"
         }
       ],
       "subtitle": "Tham gia cùng hàng nghìn người dùng hài lòng tin tưởng Tuturuuu",
@@ -1857,16 +1877,16 @@
     "transformation": {
       "steps": [
         {
-          "title": "Bắt đầu Ngay lập tức",
-          "description": "Bắt đầu và vận hành trong vài phút với hướng dẫn trực quan"
+          "description": "Bắt đầu và vận hành trong vài phút với hướng dẫn trực quan",
+          "title": "Bắt đầu Ngay lập tức"
         },
         {
-          "title": "Mở rộng Dễ dàng",
-          "description": "Phát triển từ một đến hàng nghìn người dùng mà không gặp trở ngại"
+          "description": "Phát triển từ một đến hàng nghìn người dùng mà không gặp trở ngại",
+          "title": "Mở rộng Dễ dàng"
         },
         {
-          "title": "Phát triển Liên tục",
-          "description": "Luôn dẫn đầu với AI học hỏi và cải thiện mỗi ngày"
+          "description": "Luôn dẫn đầu với AI học hỏi và cải thiện mỗi ngày",
+          "title": "Phát triển Liên tục"
         }
       ],
       "subtitle": "Trải nghiệm sức mạnh của chuyển đổi được hỗ trợ bởi AI",
@@ -2005,18 +2025,18 @@
         "trusted_section_description": "Nền tảng của chúng tôi được thiết kế để đáp ứng các tiêu chuẩn cao nhất về bảo mật và quyền riêng tư, đảm bảo môi trường học tập an toàn cho học sinh ở mọi lứa tuổi.",
         "trusted_section_title": "Được tin cậy bởi các tổ chức giáo dục",
         "use_cases": {
-          "higher_education": "Giáo dục bậc cao",
-          "higher_education_desc": "Các tính năng nâng cao dành cho các trường đại học và cao đẳng.",
-          "higher_education_item1": "Quản lý khóa học",
-          "higher_education_item2": "Hợp tác nghiên cứu",
-          "higher_education_item3": "Phân tích sinh viên",
-          "higher_education_item4": "Chia sẻ tài nguyên",
           "K_12_education": "Chương trình phổ thông 12 năm",
           "K_12_education_desc": "Công cụ toàn diện để quản lý giáo dục tiểu học và trung học.",
           "K_12_education_item1": "Bài học tương tác",
           "K_12_education_item2": "Giao tiếp phụ huynh",
           "K_12_education_item3": "Quản lý bài tập về nhà",
           "K_12_education_item4": "Báo cáo tiến độ",
+          "higher_education": "Giáo dục bậc cao",
+          "higher_education_desc": "Các tính năng nâng cao dành cho các trường đại học và cao đẳng.",
+          "higher_education_item1": "Quản lý khóa học",
+          "higher_education_item2": "Hợp tác nghiên cứu",
+          "higher_education_item3": "Phân tích sinh viên",
+          "higher_education_item4": "Chia sẻ tài nguyên",
           "professional_training": "Đào tạo chuyên nghiệp",
           "professional_training_desc": "Giải pháp đào tạo và phát triển chuyên môn doanh nghiệp.",
           "professional_training_item1": "Đánh giá kỹ năng",
@@ -2032,8 +2052,8 @@
     "cant_create_plan_right_now": "Chúng tôi không thể tạo kế hoạch của bạn lúc này. Vui lòng thử lại sau.",
     "create_plan": "Tạo kế hoạch",
     "creating_plan": "Đang tạo kế hoạch...",
-    "dates_required": "Vui lòng chọn ít nhất một ngày",
     "dates-to-meet-together": "Những ngày gặp nhau",
+    "dates_required": "Vui lòng chọn ít nhất một ngày",
     "end_time_required": "Vui lòng chọn thời gian kết thúc",
     "headline-p1": "Tìm khung giờ tốt nhất cho mọi người,",
     "headline-p2": "dễ hơn bao giờ hết",
@@ -2154,6 +2174,10 @@
     "workspace-invite": "Lời mời tham gia"
   },
   "nova": {
+    "AI-assistant": "Trợ lý AI",
+    "AI-assistant-description": "Nhận trợ giúp từ trợ lý AI của chúng tôi để có kỹ thuật nhanh chóng",
+    "Meta-prompting": "Meta Prompting",
+    "Meta-prompting-description": "Khám phá các kỹ thuật nâng cao để sử dụng các prompt nhằm tự động tạo ra các prompt khác.",
     "about": {
       "event-intro": {
         "badge": "Cuộc Thi Đầu Tiên",
@@ -2448,8 +2472,6 @@
     "advanced-controls": "Kiểm soát nâng cao",
     "advanced-controls-description": "Tinh chỉnh lời nhắc của bạn bằng các kiểm soát nâng cao",
     "age": "18+ tuổi",
-    "AI-assistant": "Trợ lý AI",
-    "AI-assistant-description": "Nhận trợ giúp từ trợ lý AI của chúng tôi để có kỹ thuật nhanh chóng",
     "ai-capabilities": "Khả năng AI",
     "ai-capabilities-description": "Trải nghiệm thế hệ kỹ thuật nhắc nhở tiếp theo với các tính năng và công cụ AI tiên tiến của chúng tôi",
     "ai-capabilities-subtitle": "Được hỗ trợ bởi Công nghệ AI tiên tiến",
@@ -2809,8 +2831,6 @@
     "learning-tututorials": "Hướng dẫn và bài tập tương tác",
     "magic-commands": "Lệnh ma thuật",
     "magic-commands-description": "Sử dụng các lệnh đặc biệt để nhanh chóng tạo lời nhắc được tối ưu hóa cho các trường hợp sử dụng khác nhau",
-    "Meta-prompting": "Meta Prompting",
-    "Meta-prompting-description": "Khám phá các kỹ thuật nâng cao để sử dụng các prompt nhằm tự động tạo ra các prompt khác.",
     "module-1": "Giới Thiệu về kỹ thuật tạo lệnh",
     "module-1-description": "Tìm hiểu các khái niệm cơ bản về kỹ thuật tạo lệnh và tầm quan trọng của nó trong phát triển AI",
     "module-2": "Kỹ Thuật Cơ Bản trong kỹ thuật tạo lệnh",
@@ -3380,11 +3400,11 @@
     "account-status-description": "Thông tin tài khoản của bạn",
     "active": "Hoạt động",
     "avatar": "Ảnh đại diện",
+    "avatar-description": "Cá nhân hoá hồ sơ của bạn với ảnh đại diện tùy chỉnh.",
     "avatar_remove_error": "Đã xảy ra lỗi khi xóa hình đại diện của bạn. Vui lòng thử lại.",
     "avatar_removed": "Đã xóa ảnh đại diện",
     "avatar_update_error": "Đã xảy ra lỗi khi cập nhật hình đại diện của bạn. Vui lòng thử lại.",
     "avatar_updated": "Đã cập nhật ảnh đại diện",
-    "avatar-description": "Cá nhân hoá hồ sơ của bạn với ảnh đại diện tùy chỉnh.",
     "birthday": "Ngày sinh",
     "birthday-description": "Ngày sinh của bạn sẽ chỉ được dùng cho các tính năng xã hội.",
     "birthday-placeholder": "Ngày sinh của bạn",
@@ -3411,8 +3431,8 @@
     "language": "Ngôn ngữ",
     "language-description": "Thay đổi ngôn ngữ của trang web.",
     "logout-description": "Đăng xuất khỏi tài khoản của bạn.",
-    "new_avatar": "Hình đại diện mới",
     "new-email": "Email mới",
+    "new_avatar": "Hình đại diện mới",
     "preview": "Xem trước",
     "remove_avatar": "Xóa hình đại diện",
     "revert_changes": "Hoàn tác thay đổi",
@@ -4146,9 +4166,6 @@
     "overview": "Tổng quan",
     "reports": "Báo cáo"
   },
-  "ws_post_details": {
-    "check_all": "Đã kiểm tra tất cả"
-  },
   "ws-activities": {
     "added": "Đã thêm",
     "change_address_from": "Thay đổi địa chỉ từ",
@@ -4696,10 +4713,10 @@
     "guest_self_join_label": "Bật tham gia khách bằng khớp email",
     "guest_self_join_update_error": "Không thể cập nhật cài đặt tham gia khách.",
     "guest_self_join_update_success": "Đã cập nhật cài đặt tham gia khách.",
+    "has-been-updated": "đã được cập nhật",
     "has_been_removed": "đã bị xóa khỏi không gian làm việc này",
     "has_been_revoked": "đã bị thu hồi",
     "has_been_sent": "đã được gửi",
-    "has-been-updated": "đã được cập nhật",
     "invitation_error": "Không thể gửi lời mời",
     "invitation_error_already_exist": "Người dùng đã là thành viên hoặc lời mời đã được gửi.",
     "invitation_error_user_not_found": "Người dùng không tìm thấy hoặc chưa đăng ký trên nền tảng.",
@@ -4729,10 +4746,10 @@
     "joined": "Đã tham gia",
     "leave": "Rời khỏi",
     "member": "Thành viên",
-    "member_removed": "Thành viên đã bị xóa",
-    "member_since": "Đã tham gia",
     "member-settings": "Cài đặt thành viên",
     "member-updated": "Thành viên đã được cập nhật",
+    "member_removed": "Thành viên đã bị xóa",
+    "member_since": "Đã tham gia",
     "no_invited_members_found": "Chưa có thành viên nào được mời",
     "no_members_match": "Không có thành viên nào phù hợp với tìm kiếm của bạn",
     "no_role_assigned": "Chưa gán vai trò",
@@ -5462,5 +5479,8 @@
     "edit_description": "Sửa ví hiện có",
     "plural": "Ví",
     "singular": "Ví"
+  },
+  "ws_post_details": {
+    "check_all": "Đã kiểm tra tất cả"
   }
 }

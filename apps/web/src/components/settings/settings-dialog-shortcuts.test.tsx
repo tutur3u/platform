@@ -72,6 +72,7 @@ vi.mock('@tanstack/react-query', () => ({
 }));
 
 vi.mock('@tuturuuu/satellite/command-launcher', () => ({
+  buildCommandLauncherLabels: () => ({}),
   GlobalCommandLauncher: (props: unknown) => {
     globalCommandLauncherMock(props);
     return null;

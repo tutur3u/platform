@@ -1,6 +1,7 @@
 'use client';
 
 import {
+  buildCommandLauncherLabels,
   type CommandLauncherNavItem,
   GlobalCommandLauncher,
 } from '@tuturuuu/satellite/command-launcher';
@@ -42,6 +43,17 @@ export function UserNavCommandLauncher({
       })),
     [navLinks]
   );
+  const labels = useMemo(
+    () => ({
+      ...buildCommandLauncherLabels({ launcher: launcherT, palette: t }),
+      placeholder: canUseWorkspaceTasks
+        ? commandNavItems.length
+          ? t('search_placeholder_power')
+          : t('search_placeholder_tasks')
+        : t('search_placeholder_navigation'),
+    }),
+    [canUseWorkspaceTasks, commandNavItems.length, launcherT, t]
+  );
   const resolvePlatformWorkspacePath = useCallback(
     (targetWorkspace: { id: string; personal?: boolean | null }) =>
       `/${locale ?? 'en'}/${toWorkspaceSlug(targetWorkspace.id, {
@@ -67,36 +79,10 @@ export function UserNavCommandLauncher({
           workspaceName={workspace?.name}
         />
       )}
-      labels={{
-        actions: t('tabs.actions'),
-        all: t('tabs.all'),
-        apps: t('tabs.apps'),
-        categories: t('tabs.label'),
-        current: launcherT('current'),
-        empty: t('no_results'),
-        emptyDescription: t('try_searching'),
-        errorWorkspaces: launcherT('error_workspaces'),
-        guest: launcherT('guest'),
-        loadingWorkspaces: t('loading_workspaces'),
-        match: launcherT('match'),
-        navigate: launcherT('navigate'),
-        navigation: t('tabs.navigate'),
-        open: launcherT('open'),
-        openApp: launcherT('open_app'),
-        openWorkspace: launcherT('open_workspace'),
-        personal: launcherT('personal'),
-        placeholder: canUseWorkspaceTasks
-          ? commandNavItems.length
-            ? t('search_placeholder_power')
-            : t('search_placeholder_tasks')
-          : t('search_placeholder_navigation'),
-        searchHint: launcherT('search_hint'),
-        select: launcherT('select'),
-        tasks: t('tabs.tasks'),
-        title: t('title'),
-        workspaces: launcherT('workspaces'),
-      }}
+      labels={labels}
       navItems={commandNavItems}
+      // PlatformCommandExtraSections renders the platform Recent section.
+      showRecent={false}
       workspacePathResolver={resolvePlatformWorkspacePath}
     />
   );

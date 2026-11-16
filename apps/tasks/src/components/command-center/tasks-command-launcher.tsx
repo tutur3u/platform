@@ -1,6 +1,7 @@
 'use client';
 
 import {
+  buildCommandLauncherLabels,
   type CommandLauncherNavItem,
   GlobalCommandLauncher,
 } from '@tuturuuu/satellite/command-launcher';
@@ -23,6 +24,13 @@ export function TasksCommandLauncher({
   const t = useTranslations('command_palette');
   const launcherT = useTranslations('command_launcher');
   const commandNavItems = useMemo(() => flattenNavLinks(navLinks), [navLinks]);
+  const labels = useMemo(
+    () => ({
+      ...buildCommandLauncherLabels({ launcher: launcherT, palette: t }),
+      searchHint: t('task_command.syntax_hint'),
+    }),
+    [launcherT, t]
+  );
 
   return (
     <GlobalCommandLauncher
@@ -38,35 +46,12 @@ export function TasksCommandLauncher({
           wsId={wsId}
         />
       )}
+      // Task sections already create a task from the typed name.
+      fallbackActions={{ createTask: false }}
+      // Mounted inside the Tasks provider tree (task dialog, route prefix), so
+      // it outranks the shell launcher and becomes the document's center.
       instancePriority={10}
-      labels={{
-        actions: t('tabs.actions'),
-        all: t('tabs.all'),
-        apps: t('tabs.apps'),
-        categories: t('tabs.label'),
-        close: launcherT('close'),
-        current: launcherT('current'),
-        currentApp: launcherT('current_app'),
-        currentWorkspace: launcherT('current_workspace'),
-        empty: t('no_results'),
-        emptyDescription: t('try_searching'),
-        errorWorkspaces: launcherT('error_workspaces'),
-        guest: launcherT('guest'),
-        loadingWorkspaces: t('loading_workspaces'),
-        match: launcherT('match'),
-        navigate: launcherT('navigate'),
-        navigation: t('tabs.navigate'),
-        open: launcherT('open'),
-        openApp: launcherT('open_app'),
-        openWorkspace: launcherT('open_workspace'),
-        personal: launcherT('personal'),
-        placeholder: t('search_placeholder_power'),
-        searchHint: t('task_command.syntax_hint'),
-        select: launcherT('select'),
-        tasks: t('tabs.tasks'),
-        title: t('title'),
-        workspaces: launcherT('workspaces'),
-      }}
+      labels={labels}
       navItems={commandNavItems}
     />
   );

@@ -1,6 +1,7 @@
 'use client';
 
-import { Loader2, Search } from '@tuturuuu/icons';
+import { AlertTriangle, Loader2, RotateCw, WifiOff } from '@tuturuuu/icons';
+import { Button } from '@tuturuuu/ui/button';
 import { CommandEmpty, CommandGroup, CommandItem } from '@tuturuuu/ui/command';
 import type { LaunchableApp } from '@tuturuuu/utils/launchable-apps';
 import type { IntentSearchResult } from '@tuturuuu/utils/search';
@@ -20,20 +21,23 @@ import type {
   CommandLauncherNavItem,
   GlobalCommandLauncherLabels,
   LauncherWorkspace,
-} from './global-command-launcher';
+} from './command-launcher-types';
 
 interface CommandLauncherResultsProps {
   appResults: IntentSearchResult<LaunchableApp>[];
   currentApp: string;
   currentWorkspaceId?: string | null;
   extraSections: ReactNode;
+  fallbackSection: ReactNode;
   isLoadingWorkspaces: boolean;
+  isOffline: boolean;
   isSearchingWorkspaces: boolean;
   labels: GlobalCommandLauncherLabels;
   navigationResults: IntentSearchResult<CommandLauncherNavItem>[];
   onOpenApp: (app: LaunchableApp) => void;
   onOpenNavigation: (item: CommandLauncherNavItem) => void;
   onOpenWorkspace: (workspace: LauncherWorkspace) => void;
+  onRetryWorkspaces: () => void;
   pathname: string | null;
   query: string;
   showApps: boolean;
@@ -47,13 +51,16 @@ export function CommandLauncherResults({
   currentApp,
   currentWorkspaceId,
   extraSections,
+  fallbackSection,
   isLoadingWorkspaces,
+  isOffline,
   isSearchingWorkspaces,
   labels,
   navigationResults,
   onOpenApp,
   onOpenNavigation,
   onOpenWorkspace,
+  onRetryWorkspaces,
   pathname,
   query,
   showApps,
@@ -77,6 +84,7 @@ export function CommandLauncherResults({
               labels={labels}
               matchContext={getMatchContext(result, labels)}
               onSelect={() => onOpenApp(result.item)}
+              query={query}
             />
           ))}
         </CommandGroup>
@@ -86,18 +94,28 @@ export function CommandLauncherResults({
         isSearchingWorkspaces ||
         workspaceError ||
         workspaceResults.length > 0) ? (
-        <CommandGroup heading={labels.workspaces}>
-          {isLoadingWorkspaces || isSearchingWorkspaces ? (
+        <CommandGroup
+          heading={
+            <SectionHeading
+              busy={isSearchingWorkspaces && !isLoadingWorkspaces}
+              busyLabel={labels.searchingWorkspaces}
+              label={labels.workspaces}
+            />
+          }
+        >
+          {isLoadingWorkspaces ? (
             <CommandItem disabled value="loading-workspaces">
               <Loader2 className="size-4 animate-spin" />
               <span>{labels.loadingWorkspaces}</span>
             </CommandItem>
           ) : null}
           {workspaceError ? (
-            <CommandItem disabled value="workspace-error">
-              <Search className="size-4" />
-              <span>{labels.errorWorkspaces}</span>
-            </CommandItem>
+            <RemoteErrorRow
+              label={isOffline ? labels.offline : labels.errorWorkspaces}
+              offline={isOffline}
+              onRetry={onRetryWorkspaces}
+              retryLabel={labels.retry}
+            />
           ) : null}
           {workspaceResults.map((result) => (
             <WorkspaceCommandItem
@@ -110,6 +128,7 @@ export function CommandLauncherResults({
               labels={labels}
               matchContext={getMatchContext(result, labels)}
               onSelect={() => onOpenWorkspace(result.item)}
+              query={query}
               workspace={result.item}
             />
           ))}
@@ -124,10 +143,82 @@ export function CommandLauncherResults({
               labels={labels}
               matchContext={getMatchContext(result, labels)}
               onSelect={() => onOpenNavigation(result.item)}
+              query={query}
             />
           ))}
         </CommandGroup>
       ) : null}
+      {fallbackSection}
     </>
+  );
+}
+
+function SectionHeading({
+  busy,
+  busyLabel,
+  label,
+}: {
+  busy: boolean;
+  busyLabel: string;
+  label: string;
+}) {
+  return (
+    <span className="flex items-center gap-2">
+      {label}
+      {busy ? (
+        <span className="ml-auto flex items-center" role="status">
+          <Loader2 aria-hidden="true" className="size-3 animate-spin" />
+          <span className="sr-only">{busyLabel}</span>
+        </span>
+      ) : null}
+    </span>
+  );
+}
+
+/**
+ * A failed remote source stays inside its own section; local sections keep
+ * rendering. Retry is a keyboard-selectable row, not a separate focus stop.
+ */
+function RemoteErrorRow({
+  label,
+  offline,
+  onRetry,
+  retryLabel,
+}: {
+  label: string;
+  offline: boolean;
+  onRetry: () => void;
+  retryLabel: string;
+}) {
+  return (
+    <CommandItem
+      className="min-h-10 gap-2.5 rounded-lg border border-dashed px-2.5 text-muted-foreground"
+      disabled={offline}
+      onSelect={onRetry}
+      value="workspace-error"
+    >
+      {offline ? (
+        <WifiOff className="size-4" />
+      ) : (
+        <AlertTriangle className="size-4 text-dynamic-red" />
+      )}
+      <span className="min-w-0 flex-1 truncate">{label}</span>
+      {offline ? null : (
+        <Button
+          className="h-7 gap-1.5"
+          onClick={(event) => {
+            event.stopPropagation();
+            onRetry();
+          }}
+          size="sm"
+          tabIndex={-1}
+          type="button"
+          variant="outline"
+        >
+          <RotateCw className="size-3.5" />
+          {retryLabel}
+        </Button>
+      )}
+    </CommandItem>
   );
 }

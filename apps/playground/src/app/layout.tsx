@@ -1,5 +1,6 @@
 import '@tuturuuu/ui/globals.css';
 import type { ReactNode } from 'react';
+import { PlaygroundCommandCenter } from '@/components/playground-command-center';
 
 export const metadata = {
   title: 'Playground · Tuturuuu',

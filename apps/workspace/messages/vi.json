@@ -587,82 +587,6 @@
     "title": "Ngày lễ Việt Nam",
     "year": "Năm"
   },
-  "ai_chat": {
-    "add_attachments": "Thêm tệp đính kèm",
-    "ai_models": "Mô hình AI",
-    "all_conversations": "Tất cả cuộc trò chuyện",
-    "anonymous": "Ẩn danh",
-    "chat_notes": "Ghi chú",
-    "chat_summary": "Tóm tắt",
-    "chat_updated": "Cập nhật trò chuyện",
-    "chat_visibility": "Hiển thị trò chuyện",
-    "chat_visibility_description": "Chọn ai có thể xem cuộc trò chuyện này.",
-    "chatbots": "Thư viện chatbot",
-    "chats": "Các cuộc trò chuyện",
-    "copy_public_link": "Sao chép liên kết công khai",
-    "correct": "chính xác",
-    "correct_answer_is_highlighed": "Câu trả lời đúng đã được đánh dấu",
-    "created": "Đã tạo",
-    "creating_chat": "Đang tạo cuộc trò chuyện...",
-    "default_chat": "Mặc định",
-    "example_1": "Giải thích các khái niệm liên quan đến công nghệ",
-    "example_1_prompt": "Giải thích về vật lý lượng tử?",
-    "example_2": "Tạo ra danh sách bài tập toán",
-    "example_2_prompt": "Tạo ra một danh sách các bài toán toán học khó nhưng thú vị cho sinh viên đại học.",
-    "example_3": "Giải thích cho học sinh lớp 5",
-    "example_3_prompt": "Giải thích các khái niệm sau như thể tôi là học sinh lớp 5: \n\n",
-    "example_4": "Tóm tắt một văn bản",
-    "example_4_prompt": "Tóm tắt bài viết sau cho học sinh lớp 2: \n\n",
-    "example_5": "Viết một email",
-    "example_5_prompt": "Viết một email cho sếp tôi về vấn đề sau: \n\n",
-    "example_6": "Tạo một bài thơ",
-    "example_6_prompt": "Tạo một bài thơ về vấn đề sau: \n\n",
-    "experimental_disclaimer": "Chú ý: Nội dung được tạo ra bởi AI có thể không chính xác hoặc cập nhật, vui lòng kiểm tra thông tin trước khi sử dụng.",
-    "extra_options": "Tùy chọn khác",
-    "flashcards": "Thẻ ghi nhớ",
-    "incorrect": "không chính xác",
-    "latest_messages": "Tin nhắn mới nhất",
-    "microphone_permission_denied": "Bạn đã từ chối quyền truy cập microphone. Vui lòng bật quyền truy cập microphone trong cài đặt trình duyệt của bạn để sử dụng tính năng này.",
-    "multi_choice_quiz": "Câu hỏi nhiều lựa chọn",
-    "multiple_choice": "Bộ trắc nghiệm",
-    "my_chatbots": "Chatbot của tôi",
-    "my_chatbots_description": "Quản lý chatbot tùy chỉnh của bạn với các lệnh nhắc và câu trả lời của riêng bạn.",
-    "new_chat": "Trò chuyện mới",
-    "new_chatbot": "Chatbot mới",
-    "no_chats": "Bắt đầu trò chuyện mới bằng cách gửi một yêu cầu.",
-    "notes": "Ghi chú",
-    "only_me": "Chỉ mình tôi",
-    "open_public_link": "Mở liên kết công khai",
-    "paragraph_answers": "Câu hỏi đoạn văn",
-    "paragraph_quiz": "Câu hỏi đoạn văn",
-    "permission_denied": "Quyền truy cập bị từ chối",
-    "prompt": "Nhập yêu cầu để bắt đầu trò chuyện với Tuturuuu AI.",
-    "prompt_placeholder": "Nhập yêu cầu của bạn...",
-    "public": "Công khai",
-    "quizzes": "Bộ câu hỏi",
-    "recent_conversations": "Các cuộc trò chuyện gần đây",
-    "refresh_chat": "Làm mới trò chuyện",
-    "regenerate_response": "Tạo lại câu trả lời",
-    "reset_chat": "Đặt lại",
-    "response_language": "Ngôn ngữ phản hồi",
-    "reveal_answer": "Xem đáp án",
-    "send_message": "Gửi tin nhắn",
-    "something_went_wrong": "Có lỗi xảy ra.",
-    "stop_generating": "Dừng trả lời",
-    "summarized": "Có tóm tắt",
-    "summary": "Tóm tắt",
-    "try_again_later": "Vui lòng thử lại sau.",
-    "upload_file_description": "Chọn tệp bạn muốn tải lên cuộc trò chuyện này.",
-    "upload_files": "Tải lên tập tin",
-    "view_conversation": "Xem cuộc trò chuyện",
-    "visibility_updated_desc": "Hiển thị trò chuyện đã được cập nhật.",
-    "voice_input": "Nhập bằng giọng nói",
-    "welcome_msg": "Bạn có thể bắt đầu một cuộc trò chuyện ở đây hoặc thử các ví dụ sau:",
-    "welcome_to": "Chào mừng đến với",
-    "which_is": "đó là một câu trả lời",
-    "you": "Bạn",
-    "you_selected": "Bạn đã chọn"
-  },
   "ai-agents-settings": {
     "actions": {
       "cancel": "Hủy",
@@ -1161,6 +1085,82 @@
     "add_domain": "Thêm tên miền",
     "add_email": "Thêm email"
   },
+  "ai_chat": {
+    "add_attachments": "Thêm tệp đính kèm",
+    "ai_models": "Mô hình AI",
+    "all_conversations": "Tất cả cuộc trò chuyện",
+    "anonymous": "Ẩn danh",
+    "chat_notes": "Ghi chú",
+    "chat_summary": "Tóm tắt",
+    "chat_updated": "Cập nhật trò chuyện",
+    "chat_visibility": "Hiển thị trò chuyện",
+    "chat_visibility_description": "Chọn ai có thể xem cuộc trò chuyện này.",
+    "chatbots": "Thư viện chatbot",
+    "chats": "Các cuộc trò chuyện",
+    "copy_public_link": "Sao chép liên kết công khai",
+    "correct": "chính xác",
+    "correct_answer_is_highlighed": "Câu trả lời đúng đã được đánh dấu",
+    "created": "Đã tạo",
+    "creating_chat": "Đang tạo cuộc trò chuyện...",
+    "default_chat": "Mặc định",
+    "example_1": "Giải thích các khái niệm liên quan đến công nghệ",
+    "example_1_prompt": "Giải thích về vật lý lượng tử?",
+    "example_2": "Tạo ra danh sách bài tập toán",
+    "example_2_prompt": "Tạo ra một danh sách các bài toán toán học khó nhưng thú vị cho sinh viên đại học.",
+    "example_3": "Giải thích cho học sinh lớp 5",
+    "example_3_prompt": "Giải thích các khái niệm sau như thể tôi là học sinh lớp 5: \n\n",
+    "example_4": "Tóm tắt một văn bản",
+    "example_4_prompt": "Tóm tắt bài viết sau cho học sinh lớp 2: \n\n",
+    "example_5": "Viết một email",
+    "example_5_prompt": "Viết một email cho sếp tôi về vấn đề sau: \n\n",
+    "example_6": "Tạo một bài thơ",
+    "example_6_prompt": "Tạo một bài thơ về vấn đề sau: \n\n",
+    "experimental_disclaimer": "Chú ý: Nội dung được tạo ra bởi AI có thể không chính xác hoặc cập nhật, vui lòng kiểm tra thông tin trước khi sử dụng.",
+    "extra_options": "Tùy chọn khác",
+    "flashcards": "Thẻ ghi nhớ",
+    "incorrect": "không chính xác",
+    "latest_messages": "Tin nhắn mới nhất",
+    "microphone_permission_denied": "Bạn đã từ chối quyền truy cập microphone. Vui lòng bật quyền truy cập microphone trong cài đặt trình duyệt của bạn để sử dụng tính năng này.",
+    "multi_choice_quiz": "Câu hỏi nhiều lựa chọn",
+    "multiple_choice": "Bộ trắc nghiệm",
+    "my_chatbots": "Chatbot của tôi",
+    "my_chatbots_description": "Quản lý chatbot tùy chỉnh của bạn với các lệnh nhắc và câu trả lời của riêng bạn.",
+    "new_chat": "Trò chuyện mới",
+    "new_chatbot": "Chatbot mới",
+    "no_chats": "Bắt đầu trò chuyện mới bằng cách gửi một yêu cầu.",
+    "notes": "Ghi chú",
+    "only_me": "Chỉ mình tôi",
+    "open_public_link": "Mở liên kết công khai",
+    "paragraph_answers": "Câu hỏi đoạn văn",
+    "paragraph_quiz": "Câu hỏi đoạn văn",
+    "permission_denied": "Quyền truy cập bị từ chối",
+    "prompt": "Nhập yêu cầu để bắt đầu trò chuyện với Tuturuuu AI.",
+    "prompt_placeholder": "Nhập yêu cầu của bạn...",
+    "public": "Công khai",
+    "quizzes": "Bộ câu hỏi",
+    "recent_conversations": "Các cuộc trò chuyện gần đây",
+    "refresh_chat": "Làm mới trò chuyện",
+    "regenerate_response": "Tạo lại câu trả lời",
+    "reset_chat": "Đặt lại",
+    "response_language": "Ngôn ngữ phản hồi",
+    "reveal_answer": "Xem đáp án",
+    "send_message": "Gửi tin nhắn",
+    "something_went_wrong": "Có lỗi xảy ra.",
+    "stop_generating": "Dừng trả lời",
+    "summarized": "Có tóm tắt",
+    "summary": "Tóm tắt",
+    "try_again_later": "Vui lòng thử lại sau.",
+    "upload_file_description": "Chọn tệp bạn muốn tải lên cuộc trò chuyện này.",
+    "upload_files": "Tải lên tập tin",
+    "view_conversation": "Xem cuộc trò chuyện",
+    "visibility_updated_desc": "Hiển thị trò chuyện đã được cập nhật.",
+    "voice_input": "Nhập bằng giọng nói",
+    "welcome_msg": "Bạn có thể bắt đầu một cuộc trò chuyện ở đây hoặc thử các ví dụ sau:",
+    "welcome_to": "Chào mừng đến với",
+    "which_is": "đó là một câu trả lời",
+    "you": "Bạn",
+    "you_selected": "Bạn đã chọn"
+  },
   "api-key-data-table": {
     "active": "Hoạt động",
     "created_at": "Ngày tạo",
@@ -1303,9 +1303,9 @@
       "feedback": "Nhận Xét",
       "loading": "Đang tải...",
       "metadata": "Thông Tin",
-      "no_content": "Không có nội dung",
       "noContent": "Không có nội dung",
       "noData": "Không có dữ liệu",
+      "no_content": "Không có nội dung",
       "notes": "Ghi chú",
       "pendingApproval": "Đang Chờ Phê Duyệt",
       "pendingApprovalDescription": "Báo cáo này đang chờ phê duyệt. Vui lòng xem nội dung bên dưới.",
@@ -1539,10 +1539,10 @@
     "house": "Nhà",
     "logout": "Đăng xuất",
     "manualRuns": "Lượt chạy quyết định NPC thủ công",
-    "notice-p1": "Bằng cách tiếp tục, bạn đồng ý với",
-    "notice-p2": "của Tuturuuu và nhận email định kỳ với các cập nhật mới",
     "notWhitelistedBody": "Tài khoản của bạn đã đăng nhập, nhưng chưa được bật trong danh sách cho phép của Hive.",
     "notWhitelistedTitle": "Quyền truy cập Hive bị giới hạn",
+    "notice-p1": "Bằng cách tiếp tục, bạn đồng ý với",
+    "notice-p2": "của Tuturuuu và nhận email định kỳ với các cập nhật mới",
     "npcLab": "Phòng NPC",
     "password": "Mật khẩu",
     "path": "Đường",
@@ -1942,9 +1942,9 @@
     "add_blocked_ip": "Chặn IP",
     "add_blocked_ip_description": "Thêm địa chỉ IP vào danh sách chặn. Điều này sẽ ngăn các nỗ lực xác thực từ IP này.",
     "add_blocked_ip_title": "Chặn địa chỉ IP",
+    "block-details": "Chi tiết chặn",
     "block_ip": "Chặn IP",
     "block_level": "Cấp độ chặn",
-    "block-details": "Chi tiết chặn",
     "blocked_at": "Thời gian chặn",
     "blocking": "Đang chặn...",
     "cancel": "Hủy",
@@ -1955,9 +1955,9 @@
     "expires_at": "Hết hạn lúc",
     "filter_by_status": "Lọc theo trạng thái",
     "has-been-unblocked": "đã được bỏ chặn thành công",
+    "ip-unblocked": "Đã bỏ chặn IP",
     "ip_address": "Địa chỉ IP",
     "ip_blocked_success": "Đã chặn địa chỉ IP thành công",
-    "ip-unblocked": "Đã bỏ chặn IP",
     "level_1": "Cấp 1 (5 phút)",
     "level_2": "Cấp 2 (15 phút)",
     "level_3": "Cấp 3 (1 giờ)",
@@ -1987,13 +1987,13 @@
     "status_expired": "Đã hết hạn",
     "status_unblocked": "Đã bỏ chặn",
     "unblock": "Bỏ chặn",
-    "unblock_reason": "Lý do bỏ chặn",
     "unblock-error": "Không thể bỏ chặn địa chỉ IP",
     "unblock-failed": "Bỏ chặn thất bại",
     "unblock-ip": "Bỏ chặn địa chỉ IP",
     "unblock-ip-description": "Bạn có chắc muốn bỏ chặn địa chỉ IP này? Người dùng sẽ có thể thử đăng nhập lại.",
     "unblock-reason": "Lý do bỏ chặn",
     "unblock-reason-placeholder": "Tùy chọn: Tại sao bạn bỏ chặn IP này?",
+    "unblock_reason": "Lý do bỏ chặn",
     "unblocked_at": "Thời gian bỏ chặn",
     "unblocked_by": "Người bỏ chặn",
     "view-details": "Xem chi tiết"
@@ -3194,14 +3194,14 @@
     "break_duration": "Thời gian nghỉ",
     "break_interval_hint": "Thời gian nghỉ được tính theo bội số 15 phút",
     "options": {
+      "105": "1 giờ 45 phút",
+      "120": "2 giờ",
       "15": "15 phút",
       "30": "30 phút",
       "45": "45 phút",
       "60": "1 giờ",
       "75": "1 giờ 15 phút",
-      "90": "1 giờ 30 phút",
-      "105": "1 giờ 45 phút",
-      "120": "2 giờ"
+      "90": "1 giờ 30 phút"
     },
     "schedule_break_description": "Lên lịch nghỉ ngơi sau khi hoàn thành",
     "scheduled_break": "Giờ nghỉ đã lên lịch",
@@ -3529,6 +3529,13 @@
     "reconnect_desc": "Kết nối hiện tại của bạn cần thêm quyền. Vui lòng ngắt kết nối và kết nối lại Google Calendar.",
     "reconnect_required": "Cần kết nối lại",
     "recurrence": {
+      "FR": "T6",
+      "MO": "T2",
+      "SA": "T7",
+      "SU": "CN",
+      "TH": "T5",
+      "TU": "T3",
+      "WE": "T4",
       "advancedPattern": "Chuỗi này sử dụng mẫu nâng cao và sẽ được giữ nguyên. Sửa thông tin sự kiện tại đây.",
       "all": "Toàn bộ chuỗi",
       "allDay": "Cả ngày",
@@ -3543,7 +3550,6 @@
       "end": "Kết thúc (không bao gồm ngày cuối cho sự kiện cả ngày)",
       "ending": "Lặp lại đến",
       "failed": "Không thể lưu thay đổi. Bản nháp được giữ lại; hãy thử lại.",
-      "FR": "T6",
       "frequency": "Lặp lại",
       "future": "Lần này và các lần sau",
       "futureExceptionsReset": "Các chỉnh sửa và lần hủy cho lần này và các lần tiếp theo sẽ được đặt lại khi bạn lưu.",
@@ -3551,18 +3557,17 @@
       "invalid": "Kiểm tra tiêu đề, ngày, múi giờ và cài đặt lặp lại.",
       "loading": "Đang tải sự kiện lặp lại…",
       "location": "Địa điểm",
-      "MO": "T2",
       "month": "Tháng (1–12)",
       "monthDay": "Ngày trong tháng",
       "monthDayLast": "Dùng ngày cuối tháng",
       "monthDayOverflow": "Khi tháng không có ngày này",
       "monthDayPattern": "Ngày trong tháng",
       "monthDaySkip": "Bỏ qua tháng đó",
-      "monthly": "Hàng tháng",
       "monthPattern": "Lặp theo",
       "monthWeekdayPattern": "Thứ trong tháng",
-      "native_source": "Lịch Tuturuuu",
+      "monthly": "Hàng tháng",
       "nativeOnly": "Lưu vào Lịch Tuturuuu. Giờ địa phương không tồn tại khi đổi giờ mùa hè sẽ được bỏ qua. Lịch lặp của nhà cung cấp được quản lý riêng.",
+      "native_source": "Lịch Tuturuuu",
       "never": "Không có ngày kết thúc",
       "ordinal1": "Đầu tiên",
       "ordinal2": "Thứ hai",
@@ -3577,22 +3582,17 @@
       "provider_source": "Lịch",
       "relativeWeekdayHelp": "Khi chọn nhiều thứ, mỗi tháng dùng ngày khớp sớm nhất trong tuần đã chọn. Ngày bắt đầu phải khớp quy tắc này.",
       "reload": "Tải lại chuỗi",
-      "SA": "T7",
       "save": "Lưu",
       "saving": "Đang lưu…",
       "scope": "Áp dụng thay đổi cho",
       "start": "Bắt đầu",
-      "SU": "CN",
-      "TH": "T5",
       "this": "Chỉ lần này",
       "timezone": "Múi giờ",
       "title": "Tiêu đề",
-      "TU": "T3",
       "unavailable": "Sự kiện lặp lại này không khả dụng.",
       "until": "Ngày kết thúc",
-      "WE": "T4",
-      "weekdays": "Ngày trong tuần",
       "weekIndex": "Tuần nào",
+      "weekdays": "Ngày trong tuần",
       "weekly": "Hàng tuần",
       "yearly": "Hàng năm"
     },
@@ -3702,6 +3702,29 @@
     "year": "Năm",
     "yesterday": "Hôm qua"
   },
+  "calendar-sidebar": {
+    "collapse": "Thu gọn thanh bên",
+    "due": "Hạn",
+    "expand": "Mở rộng thanh bên",
+    "habits-tab": "Thói quen",
+    "no-tasks": "Không có công việc được giao",
+    "priority-critical": "Ưu tiên khẩn cấp",
+    "priority-high": "Ưu tiên cao",
+    "priority-low": "Ưu tiên thấp",
+    "priority-normal": "Ưu tiên bình thường",
+    "ready": "Sẵn sàng",
+    "schedule-tab": "Lịch trình",
+    "search-tasks": "Tìm kiếm công việc...",
+    "tasks-tab": "Công việc",
+    "untitled-task": "Công việc chưa đặt tên"
+  },
+  "calendar-tabs": {
+    "calendar": "Lịch",
+    "events": "Sự kiện",
+    "overview": "Tổng quan",
+    "sync-dashboard": "Bảng điều khiển đồng bộ",
+    "sync-history": "Đồng bộ hóa lịch sử"
+  },
   "calendar_category_reorder_pilot": {
     "cancel": "Đã trả {label} về vị trí {position} trên {total}.",
     "drop": "Đã thả {label} tại vị trí {position} trên {total}.",
@@ -3745,29 +3768,6 @@
     "tuning": "Tinh chỉnh trọng số",
     "violations": "Vi phạm",
     "visualization": "Trực quan hóa"
-  },
-  "calendar-sidebar": {
-    "collapse": "Thu gọn thanh bên",
-    "due": "Hạn",
-    "expand": "Mở rộng thanh bên",
-    "habits-tab": "Thói quen",
-    "no-tasks": "Không có công việc được giao",
-    "priority-critical": "Ưu tiên khẩn cấp",
-    "priority-high": "Ưu tiên cao",
-    "priority-low": "Ưu tiên thấp",
-    "priority-normal": "Ưu tiên bình thường",
-    "ready": "Sẵn sàng",
-    "schedule-tab": "Lịch trình",
-    "search-tasks": "Tìm kiếm công việc...",
-    "tasks-tab": "Công việc",
-    "untitled-task": "Công việc chưa đặt tên"
-  },
-  "calendar-tabs": {
-    "calendar": "Lịch",
-    "events": "Sự kiện",
-    "overview": "Tổng quan",
-    "sync-dashboard": "Bảng điều khiển đồng bộ",
-    "sync-history": "Đồng bộ hóa lịch sử"
   },
   "capabilities": {
     "illustration": "Minh họa sản phẩm tương tác · nội dung mẫu",
@@ -4371,7 +4371,14 @@
     "apps": "Ứng dụng",
     "apps_count": "{count, plural, one {# ứng dụng} other {# ứng dụng}}",
     "apps_description": "Mở một ứng dụng Tuturuuu khác từ workspace này.",
+    "ask_mira": "Hỏi Mira",
+    "ask_mira_description": "Mở dưới dạng bản nháp Mira. Chưa gửi gì.",
+    "back": "quay lại",
     "close": "đóng",
+    "copy_id": "Sao chép ID",
+    "copy_link": "Sao chép liên kết",
+    "create_task": "Tạo nhiệm vụ",
+    "create_task_description": "Mở biểu mẫu nhiệm vụ với tiêu đề này",
     "current": "Hiện tại",
     "current_app": "Ứng dụng hiện tại",
     "current_workspace": "Workspace hiện tại",
@@ -4381,12 +4388,14 @@
     "error_workspaces": "Không thể tải workspace",
     "guest": "Khách",
     "hide_workspace_selector": "Ẩn bộ chọn workspace",
+    "item_actions": "thao tác",
     "loading_workspaces": "Đang tải workspace",
     "match": "Khớp",
     "navigate": "di chuyển",
     "navigation": "Điều hướng",
     "no_apps_found": "Không tìm thấy ứng dụng",
     "no_apps_found_description": "Hãy thử tên ứng dụng hoặc từ khóa khác.",
+    "offline": "Đang ngoại tuyến. Kết quả sẽ tải khi có kết nối lại.",
     "open": "Mở",
     "open_app": "Mở ứng dụng",
     "open_apps_in": "Mở ứng dụng trong",
@@ -4398,10 +4407,21 @@
     "open_workspace": "Mở workspace",
     "personal": "Cá nhân",
     "placeholder": "Tìm ứng dụng, workspace và trang...",
+    "recent": "Gần đây",
+    "retry": "Thử lại",
+    "scope": "phạm vi",
+    "scopes": {
+      "actions": "Thao tác",
+      "all": "Tất cả",
+      "label": "Danh mục tìm kiếm",
+      "tasks": "Nhiệm vụ"
+    },
     "search_apps": "Tìm ứng dụng",
     "search_hint": "Nhập workspace, ứng dụng, trang, chữ viết tắt hoặc cách viết gần đúng.",
+    "searching_workspaces": "Đang tìm workspace",
     "select": "chọn",
     "show_workspace_selector": "Hiện bộ chọn workspace",
+    "suggestions": "Gợi ý",
     "title": "Trình mở lệnh",
     "workspace_destination": "Workspace {workspace}",
     "workspaces": "Workspace"
@@ -4627,14 +4647,14 @@
     "feature": "Tính năng và phạm vi",
     "features": {
       "abuse-guard_0": "Kho chống lạm dụng",
+      "aiCredits": "Tín dụng AI hằng tháng",
+      "aiLab": "Phòng thí nghiệm AI",
       "ai_0": "Trò chuyện AI và truy cập mô hình",
       "ai_1": "Câu lệnh, tác tử và bộ dữ liệu",
       "ai_2": "Thử nghiệm và lượt chạy",
       "ai_3": "Chính sách mô hình và quản trị",
       "ai_4": "Mức sử dụng, tín dụng và giám sát",
       "ai_5": "Khóa API và tích hợp",
-      "aiCredits": "Tín dụng AI hằng tháng",
-      "aiLab": "Phòng thí nghiệm AI",
       "api_0": "Dịch vụ nền tảng và vận hành",
       "apps_0": "Khám phá và chuyển ứng dụng",
       "attachments": "Tệp đính kèm mỗi giao dịch",
@@ -4644,10 +4664,10 @@
       "calendar_0": "Sự kiện và lịch trình",
       "calendar_1": "Kết nối và đồng bộ lịch",
       "calendar_2": "Lên lịch công việc",
+      "chat-realtime_0": "Dịch vụ nền tảng và vận hành",
       "chat_0": "Cuộc hội thoại và tin nhắn",
       "chat_1": "Nhận tin theo thời gian thực",
       "chat_2": "Tệp đính kèm tin nhắn",
-      "chat-realtime_0": "Dịch vụ nền tảng và vận hành",
       "cms_0": "Trang web và trang nội dung",
       "cms_1": "Bộ sưu tập nội dung và phân loại",
       "cms_2": "Thư viện phương tiện",
@@ -4694,9 +4714,9 @@
       "git_1": "Kết nối GitHub App",
       "git_2": "Tích hợp tổ chức",
       "guests": "Khách có quyền hạn giới hạn",
+      "hive-realtime_0": "Dịch vụ nền tảng và vận hành",
       "hive_0": "Không gian AI cộng tác",
       "hive_1": "Phiên cộng tác thời gian thực",
-      "hive-realtime_0": "Dịch vụ nền tảng và vận hành",
       "infrastructure_0": "Dịch vụ nền tảng và vận hành",
       "inventory_0": "Sản phẩm và hồ sơ kho",
       "inventory_1": "Nghiệp vụ kho",
@@ -4704,12 +4724,12 @@
       "mail_0": "Hộp thư và truy cập thư",
       "mail_1": "Gửi thư và chuyển phát",
       "mail_2": "Cấu hình tên miền và nhà cung cấp",
+      "meet-realtime_0": "Dịch vụ nền tảng và vận hành",
       "meet_0": "Kế hoạch và lịch họp",
       "meet_1": "Cuộc gọi âm thanh và hình ảnh",
       "meet_2": "Chia sẻ màn hình và phòng chờ",
       "meet_3": "Trợ lý AI trong cuộc họp",
       "meet_4": "Ghi nhận thời gian người tham gia",
-      "meet-realtime_0": "Dịch vụ nền tảng và vận hành",
       "members": "Thành viên chính thức",
       "mind_0": "Không gian tri thức và bộ nhớ",
       "mira": "Trợ lý Mira",
@@ -4839,9 +4859,9 @@
     "available": "Hiện có",
     "average": "Trung bình",
     "back": "Quay lại",
-    "back_to": "Quay lại {name}",
     "back-to-home": "Quay lại trang chủ",
     "back-to-login": "Quay lại đăng nhập",
+    "back_to": "Quay lại {name}",
     "background": "Màu nền",
     "backlog": "Chờ xử lý",
     "beta": "Beta",
@@ -4899,10 +4919,10 @@
     "clear_selection": "Bỏ chọn",
     "clear_smart_focus": "Xóa tập trung thông minh",
     "clearing": "Đang xoá",
+    "click-upload-images": "Nhấp để tải lên hình ảnh ({count}/5)",
     "click_to_edit": "Nhấn để chỉnh sửa",
     "click_to_edit_drag_to_resize": "Nhấp đúp để sửa • Kéo để di chuyển • Kéo cạnh để đổi thời lượng",
     "click_to_edit_task": "Nhấn để chỉnh sửa công việc",
-    "click-upload-images": "Nhấp để tải lên hình ảnh ({count}/5)",
     "close": "Đóng",
     "closed": "Đã đóng",
     "closed_list": "Danh sách đã đóng",
@@ -5036,8 +5056,8 @@
     "empty": "Trống",
     "enabled": "Đã bật",
     "end_date": "Ngày kết thúc",
-    "enter_context": "Nhập ngữ cảnh",
     "enter-email": "Nhập email của bạn",
+    "enter_context": "Nhập ngữ cảnh",
     "enterprise": "Doanh nghiệp",
     "error": "Lỗi",
     "error_adding_domain": "Không thể thêm miền",
@@ -5113,10 +5133,10 @@
     "hidden_workspaces_empty": "Bạn không có không gian làm việc đã ẩn",
     "hidden_workspaces_load_error": "Không thể tải danh sách đã ẩn. Thử lại khi có kết nối.",
     "hidden_workspaces_update_error": "Không thể cập nhật danh sách đã ẩn. Lựa chọn trước đó đã được khôi phục.",
+    "hide-all": "Ẩn tất cả",
     "hide_column": "Ẩn cột",
     "hide_sidebar": "Ẩn thanh bên",
     "hide_workspace": "Ẩn không gian làm việc",
-    "hide-all": "Ẩn tất cả",
     "history": "Lịch sử",
     "home": "Trang chủ",
     "hospitality": "Du lịch & Khách sạn",
@@ -5140,8 +5160,8 @@
     "label_name": "Tên nhãn",
     "labels": "Nhãn",
     "language": "Ngôn ngữ",
-    "last_saved": "Lần lưu cuối: {time}",
     "lastModified": "Chỉnh sửa lần cuối",
+    "last_saved": "Lần lưu cuối: {time}",
     "learn_more": "Tìm hiểu thêm",
     "legal": "Pháp lý",
     "library": "Thư viện",
@@ -5181,8 +5201,8 @@
     "media-optional": "Tệp đa phương tiện (Tùy chọn)",
     "meet-together": "Tuturuuu Meet",
     "meet-together-description": "Lên lịch cuộc họp dễ dàng giữa các múi giờ khác nhau và đội ngũ khác nhau.",
-    "member_no_longer_in_workspace": "Thành viên không còn trong không gian làm việc",
     "member-since": "Thành viên từ {date}",
+    "member_no_longer_in_workspace": "Thành viên không còn trong không gian làm việc",
     "members": "Thành viên",
     "minimize": "giảm thiểu",
     "month": "Tháng",
@@ -5211,10 +5231,13 @@
     "name": "Tên",
     "name_updated": "Đã cập nhật tên thành công",
     "new": "Mới",
-    "new_whiteboard": "Bảng trắng mới",
     "new-features": "Tính năng mới",
+    "new_whiteboard": "Bảng trắng mới",
     "next": "Tiếp theo",
     "next_week": "Tuần sau",
+    "no-results": "Không có kết quả",
+    "no-selection": "Chưa chọn người dùng nào",
+    "no-sheets-found": "Không tìm thấy trang tính nào.",
     "no_archived_whiteboards": "Chưa có bảng trắng nào được lưu trữ.",
     "no_archived_whiteboards_description": "Các bảng trắng đã lưu trữ sẽ xuất hiện tại đây",
     "no_changes_to_save": "Không có thay đổi để lưu",
@@ -5237,17 +5260,14 @@
     "no_tasks_yet": "Chưa có công việc nào",
     "no_whiteboards_found": "Không tìm thấy bảng trắng nào",
     "no_workspace_found": "Không tìm thấy không gian làm việc",
-    "no-results": "Không có kết quả",
-    "no-selection": "Chưa chọn người dùng nào",
-    "no-sheets-found": "Không tìm thấy trang tính nào.",
     "none": "Không có",
     "not_completed": "Chưa hoàn thành",
     "not_whitelisted": "Không có trong danh sách trắng",
     "nova-description": "Sân chơi prompt engineering cho mọi người.",
     "of": "trên",
     "open": "Mở",
-    "open_menu": "Mở menu",
     "open-source": "Mã nguồn mở",
+    "open_menu": "Mở menu",
     "option": "Lựa chọn",
     "optional": "tùy chọn",
     "or": "hoặc",
@@ -5451,14 +5471,14 @@
     "search_workspace": "Tìm kiếm không gian làm việc",
     "security": "Bảo mật",
     "security-description": "Tìm hiểu về cách chúng tôi bảo vệ dữ liệu và thông tin của bạn.",
+    "select-language": "Chọn ngôn ngữ",
+    "select-product-placeholder": "Chọn sản phẩm có vấn đề",
     "select_all_tasks": "Chọn tất cả công việc",
     "select_board_first": "Chọn bảng trước",
     "select_or_create_board": "Chọn hoặc tạo bảng",
     "select_or_create_list": "Chọn hoặc tạo danh sách",
     "select_task": "Chọn {name}",
     "select_workspace": "Chọn không gian làm việc",
-    "select-language": "Chọn ngôn ngữ",
-    "select-product-placeholder": "Chọn sản phẩm có vấn đề",
     "selected": "đã chọn",
     "selected_of_total": "Đã chọn {selected} / {total}",
     "selection_instruction": "Nhấn vào thẻ để chọn • Kéo để di chuyển • {modKey}M di chuyển bảng • Esc để bỏ chọn",
@@ -5551,13 +5571,13 @@
       "viewer": "Người xem"
     },
     "tasks": "Công việc",
+    "tasks-description": "Tổ chức và theo dõi các dự án một cách rõ ràng.",
     "tasks_deleted": "Đã xóa công việc",
     "tasks_deleted_successfully": "Đã xóa thành công {count} công việc.",
     "tasks_duplicated_successfully": "{count, plural, other {Đã nhân bản # công việc thành công}}",
     "tasks_only": "Chỉ nhiệm vụ",
     "tasks_plural": "công việc",
     "tasks_without_dates": "{count} công việc chưa có ngày. Chuyển sang chế độ Bảng hoặc Danh sách để quản lý.",
-    "tasks-description": "Tổ chức và theo dõi các dự án một cách rõ ràng.",
     "terms": "Điều khoản sử dụng",
     "theme": "Giao diện",
     "this_list_is_empty": "Danh sách này trống.",
@@ -5620,8 +5640,8 @@
     "unnamed": "Chưa đặt tên",
     "unnamed-workspace": "Không có tên",
     "unsaved": "Chưa lưu",
-    "unsaved_changes": "Bạn có thay đổi chưa được lưu",
     "unsaved-changes": "Bạn có thay đổi chưa được lưu.",
+    "unsaved_changes": "Bạn có thay đổi chưa được lưu",
     "unscheduled": "chưa lên lịch",
     "untitled": "Chưa đặt tên",
     "update_action": "Cập nhật",
@@ -5636,10 +5656,10 @@
     "usage_based_pricing_description": "Chỉ trả tiền cho những gì bạn sử dụng. Tất cả các gói đều bao gồm các tính năng cốt lõi với các giới hạn sử dụng khác nhau.",
     "vietnamese-womens-day": "Ngày Phụ Nữ Việt Nam",
     "view": "Xem",
-    "view_email": "Xem Email",
-    "view_task": "Xem nhiệm vụ",
     "view-full-documentation": "Xem tài liệu đầy đủ",
     "view-options": "Trình bày",
+    "view_email": "Xem Email",
+    "view_task": "Xem nhiệm vụ",
     "visibility_updated": "Đã cập nhật quyền truy cập thành công",
     "waiting_for_response": "Tôi sẽ trả lời bạn trong giây lát, vui lòng đợi...",
     "waitlist": "Danh sách chờ",
@@ -6801,9 +6821,9 @@
     "next-month": "Tháng sau",
     "next-week": "Tuần sau",
     "next-year": "Năm sau",
-    "this_month": "Tháng này",
     "this-week": "Tuần này",
     "this-year": "Năm nay",
+    "this_month": "Tháng này",
     "time-range": "Khoảng thời gian",
     "time-range-placeholder": "Chọn khoảng thời gian",
     "time-unit": "Đơn vị thời gian",
@@ -7036,16 +7056,6 @@
   "dworkspace-mail": {
     "destination-addresses": "Địa chỉ đích"
   },
-  "email_service": {
-    "emails_already_sent": "Email đã được gửi đến những người nhận này.",
-    "emails_blocked_count": "Đã chặn {count} email. Có thể áp dụng giới hạn tần suất.",
-    "emails_send_failed_count": "Gửi thất bại {count} email.",
-    "emails_sent_success": "Đã gửi thành công {count} email.",
-    "rate_limit_blocked": "Việc gửi email bị chặn do giới hạn tần suất.",
-    "rate_limit_exceeded_details": "Vượt quá giới hạn tần suất ({limitType}). Đã sử dụng {usage}/{limit}. Thử lại sau {retryAfter} giây.",
-    "send_failed": "Gửi email thất bại.",
-    "unexpected_error": "Đã xảy ra lỗi không mong muốn"
-  },
   "email-audit": {
     "description": "Xem và theo dõi tất cả email gửi đi từ không gian làm việc của bạn.",
     "failed_emails": "Email thất bại",
@@ -7219,6 +7229,16 @@
     "select_template": "Chọn Mẫu",
     "template_props": "Thuộc tính Mẫu",
     "title": "Mẫu Email"
+  },
+  "email_service": {
+    "emails_already_sent": "Email đã được gửi đến những người nhận này.",
+    "emails_blocked_count": "Đã chặn {count} email. Có thể áp dụng giới hạn tần suất.",
+    "emails_send_failed_count": "Gửi thất bại {count} email.",
+    "emails_sent_success": "Đã gửi thành công {count} email.",
+    "rate_limit_blocked": "Việc gửi email bị chặn do giới hạn tần suất.",
+    "rate_limit_exceeded_details": "Vượt quá giới hạn tần suất ({limitType}). Đã sử dụng {usage}/{limit}. Thử lại sau {retryAfter} giây.",
+    "send_failed": "Gửi email thất bại.",
+    "unexpected_error": "Đã xảy ra lỗi không mong muốn"
   },
   "entity-creation-limits": {
     "actions": {
@@ -8093,7 +8113,9 @@
     "recent_tags": "Thẻ",
     "recent_transactions": "Giao dịch gần đây",
     "recent_wallets": "Ví gần đây",
+    "search_failed": "Không thể tải dữ liệu tài chính",
     "search_placeholder": "Tìm tác vụ, giao dịch, ví...",
+    "searching": "Đang tìm dữ liệu tài chính",
     "title": "Trung tâm lệnh tài chính",
     "tools_group": "Công cụ",
     "transaction_fallback": "Giao dịch",
@@ -8889,10 +8911,10 @@
     "yearly": "Theo năm"
   },
   "invoices": {
-    "add_promotion": "Thêm khuyến mãi",
     "add-note": "Thêm ghi chú",
     "add-notice": "Thêm lời dặn",
     "add-product": "Thêm sản phẩm",
+    "add_promotion": "Thêm khuyến mãi",
     "basic-info": "Thông tin cơ bản",
     "bill": "BIÊN LAI",
     "bill_to": "Thanh toán cho",
@@ -10222,18 +10244,18 @@
         "trusted_section_description": "Nền tảng của chúng tôi được thiết kế để đáp ứng các tiêu chuẩn cao nhất về bảo mật và quyền riêng tư, đảm bảo môi trường học tập an toàn cho học sinh ở mọi lứa tuổi.",
         "trusted_section_title": "Được tin cậy bởi các tổ chức giáo dục",
         "use_cases": {
-          "higher_education": "Giáo dục bậc cao",
-          "higher_education_desc": "Các tính năng nâng cao dành cho các trường đại học và cao đẳng.",
-          "higher_education_item1": "Quản lý khóa học",
-          "higher_education_item2": "Hợp tác nghiên cứu",
-          "higher_education_item3": "Phân tích sinh viên",
-          "higher_education_item4": "Chia sẻ tài nguyên",
           "K_12_education": "Chương trình phổ thông 12 năm",
           "K_12_education_desc": "Công cụ toàn diện để quản lý giáo dục tiểu học và trung học.",
           "K_12_education_item1": "Bài học tương tác",
           "K_12_education_item2": "Giao tiếp phụ huynh",
           "K_12_education_item3": "Quản lý bài tập về nhà",
           "K_12_education_item4": "Báo cáo tiến độ",
+          "higher_education": "Giáo dục bậc cao",
+          "higher_education_desc": "Các tính năng nâng cao dành cho các trường đại học và cao đẳng.",
+          "higher_education_item1": "Quản lý khóa học",
+          "higher_education_item2": "Hợp tác nghiên cứu",
+          "higher_education_item3": "Phân tích sinh viên",
+          "higher_education_item4": "Chia sẻ tài nguyên",
           "professional_training": "Đào tạo chuyên nghiệp",
           "professional_training_desc": "Giải pháp đào tạo và phát triển chuyên môn doanh nghiệp.",
           "professional_training_item1": "Đánh giá kỹ năng",
@@ -10538,9 +10560,9 @@
     "created_at": "Tạo ngày {date}",
     "creating_plan": "Đang tạo kế hoạch...",
     "dates": "ngày",
+    "dates-to-meet-together": "Ngày gặp nhau",
     "dates_count": "{count} ngày",
     "dates_required": "Vui lòng chọn ít nhất một ngày",
-    "dates-to-meet-together": "Ngày gặp nhau",
     "duration": "Thời lượng cuộc họp",
     "end_time_required": "Vui lòng chọn giờ kết thúc",
     "find_perfect_time": "Tìm thời gian hoàn hảo",
@@ -10563,10 +10585,10 @@
     "name": "Tên",
     "new_plan": "Kế hoạch mới",
     "new_plan_desc": "Kế hoạch này sẽ giúp bạn tìm ra thời gian tốt nhất để gặp nhau với bạn bè, gia đình hoặc đồng nghiệp.",
+    "no-timezone-found": "Không tìm thấy múi giờ",
     "no_participants": "Chưa có người tham gia",
     "no_plans_desc": "Tạo kế hoạch cuộc họp đầu tiên để bắt đầu.",
     "no_plans_yet": "Không tìm thấy kế hoạch",
-    "no-timezone-found": "Không tìm thấy múi giờ",
     "participant_count": "{count} người tham gia",
     "participants": "Người tham gia",
     "registered_users": "Người dùng đã đăng ký",
@@ -10577,8 +10599,8 @@
     "something_went_wrong": "Có lỗi xảy ra",
     "soonest-time-to-meet": "Giờ sớm nhất",
     "start_time_required": "Vui lòng chọn giờ bắt đầu",
-    "time_range": "Khoảng thời gian",
     "time-zone": "Múi giờ",
+    "time_range": "Khoảng thời gian",
     "timezone_required": "Vui lòng chọn múi giờ",
     "untitled_plan": "Kế hoạch chưa đặt tên",
     "user_count": "{count} người dùng",
@@ -10773,9 +10795,9 @@
       "apply": "Áp dụng",
       "applyDraft": "Áp dụng bản nháp",
       "artifactPlan": "Kế hoạch đã tạo",
+      "artifactSummary": "{count, plural, one {# tạo phẩm} other {# tạo phẩm}}",
       "artifacts": "Tạo phẩm",
       "artifactsInTools": "Đề xuất nháp được gom ở bên dưới. Mở để xem kế hoạch và áp dụng bản nháp đồ thị.",
-      "artifactSummary": "{count, plural, one {# tạo phẩm} other {# tạo phẩm}}",
       "assistantSettings": "Thiết lập trợ lý",
       "attachFiles": "Đính kèm tệp",
       "attachmentOnlyPrompt": "Dùng các tệp đính kèm làm ngữ cảnh cho mindboard này.",
@@ -10818,9 +10840,9 @@
       "implement": "Triển khai",
       "layoutRefreshError": "Bản nháp đã được áp dụng, nhưng Mind chưa thể tự sắp xếp lại bảng. Hãy thử làm mới bố cục hoặc tiếp tục với đồ thị đã cập nhật.",
       "layoutRefreshErrorTitle": "Cần thử lại bố cục",
+      "loadMoreModels": "Tải thêm mô hình",
       "loadingModels": "Đang tải mô hình...",
       "loadingMoreModels": "Đang tải thêm mô hình...",
-      "loadMoreModels": "Tải thêm mô hình",
       "messageActions": "Thao tác với tin nhắn",
       "model": "Mô hình",
       "modelSearch": "Tìm mô hình",
@@ -10982,8 +11004,8 @@
       "edge": "Quan hệ",
       "empty": "Chọn một nút, quan hệ, nhóm, hoặc cụm để xem chi tiết.",
       "group": "Nhóm",
-      "node": "Nút ý tưởng",
       "noRelatedRelationships": "Không có quan hệ liên quan.",
+      "node": "Nút ý tưởng",
       "relatedNodes": "Nút liên quan",
       "relatedRelationships": "Quan hệ liên quan",
       "relatedView": "Chế độ xem liên quan"
@@ -11215,14 +11237,6 @@
       "unavailable": "Trò chuyện bằng giọng nói không khả dụng"
     }
   },
-  "mobile_dock": {
-    "apps": "Ứng dụng",
-    "back": "Quay lại",
-    "calendar": "Lịch",
-    "home": "Trang chủ",
-    "navigation": "Điều hướng chính",
-    "tasks": "Công việc"
-  },
   "mobile-deployment-settings": {
     "activate": "Kích hoạt bản nháp",
     "activated": "Đã kích hoạt bản nháp triển khai di động.",
@@ -11247,10 +11261,6 @@
     "guidance": {
       "ariaLabel": "Hướng dẫn cho {field}",
       "fields": {
-        "android_google_services_json": {
-          "what": "Tệp cấu hình Firebase (google-services.json) được đóng gói vào bản build Android.",
-          "where": "Firebase Console → Project settings → ứng dụng Android của bạn → tải xuống google-services.json."
-        },
         "ANDROID_KEYSTORE_ALIAS": {
           "what": "Bí danh (alias) của khóa ký nằm trong keystore tải lên Android. Quy trình triển khai dùng nó để chọn khóa khi ký bản phát hành.",
           "where": "Do bạn đặt khi tạo keystore bằng `keytool -genkeypair -alias <alias>`."
@@ -11263,37 +11273,13 @@
           "what": "Mật khẩu bảo vệ mục khóa riêng (private key) bên trong keystore (thường giống mật khẩu keystore).",
           "where": "Do bạn đặt khi tạo keystore bằng `keytool`."
         },
-        "android_upload_keystore": {
-          "what": "Keystore Java (.jks/.keystore) dùng để ký các bản phát hành Android.",
-          "where": "Tạo bằng `keytool -genkeypair -v -keystore upload-keystore.jks ...`."
-        },
         "API_BASE_URL": {
           "what": "URL gốc của API nền tảng Tuturuuu mà ứng dụng di động gọi tới.",
           "where": "URL triển khai web production của bạn (giá trị nội bộ)."
         },
-        "APP_STORE_CONNECT_API_KEY_ID": {
-          "what": "Key ID của khóa App Store Connect API dùng để tải bản build lên mà không cần mật khẩu Apple ID.",
-          "where": "App Store Connect → Users and Access → Integrations → App Store Connect API."
-        },
-        "APP_STORE_CONNECT_ISSUER_ID": {
-          "what": "Issuer ID đi kèm với khóa App Store Connect API để xác thực.",
-          "where": "App Store Connect → Users and Access → Integrations → App Store Connect API (hiển thị phía trên danh sách khóa)."
-        },
-        "app_store_connect_private_key_p8": {
-          "what": "Khóa riêng App Store Connect API (.p8) dùng để xác thực khi tải lên. Chỉ tải xuống được một lần.",
-          "where": "App Store Connect → Users and Access → Integrations → App Store Connect API → tạo khóa."
-        },
-        "apple_app_store_provisioning_profile": {
-          "what": "Provisioning profile App Store (.mobileprovision) liên kết bundle ID với chứng chỉ phân phối.",
-          "where": "Apple Developer → Profiles → tạo profile phân phối App Store."
-        },
         "APPLE_BUNDLE_ID": {
           "what": "Bundle identifier iOS của ứng dụng (ví dụ com.tuturuuu.app.mobile).",
           "where": "Apple Developer → Certificates, Identifiers & Profiles → Identifiers."
-        },
-        "apple_distribution_certificate_p12": {
-          "what": "Chứng chỉ phân phối Apple xuất ra dưới dạng .p12 (bao gồm khóa riêng) để ký bản build iOS.",
-          "where": "Apple Developer → Certificates (Apple Distribution); xuất từ Keychain Access dưới dạng .p12."
         },
         "APPLE_DISTRIBUTION_CERTIFICATE_PASSWORD": {
           "what": "Mật khẩu dùng để mã hóa chứng chỉ phân phối Apple đã xuất (.p12) để quy trình có thể nhập nó.",
@@ -11302,6 +11288,14 @@
         "APPLE_TEAM_ID": {
           "what": "Team ID Apple Developer gồm 10 ký tự, dùng để giới hạn việc ký và cấp profile.",
           "where": "Apple Developer → thông tin Membership."
+        },
+        "APP_STORE_CONNECT_API_KEY_ID": {
+          "what": "Key ID của khóa App Store Connect API dùng để tải bản build lên mà không cần mật khẩu Apple ID.",
+          "where": "App Store Connect → Users and Access → Integrations → App Store Connect API."
+        },
+        "APP_STORE_CONNECT_ISSUER_ID": {
+          "what": "Issuer ID đi kèm với khóa App Store Connect API để xác thực.",
+          "where": "App Store Connect → Users and Access → Integrations → App Store Connect API (hiển thị phía trên danh sách khóa)."
         },
         "CI_TOKEN_NAME": {
           "what": "Nhãn dễ đọc cho token CI mà quy trình GitHub Actions triển khai di động dùng để xác thực với kho bí mật này.",
@@ -11315,10 +11309,6 @@
           "what": "Application ID mà ứng dụng được phát hành trên Google Play (ví dụ com.tuturuuu.app.mobile). Phải khớp với `applicationId` trong cấu hình build Android.",
           "where": "Google Play Console → ứng dụng của bạn → App information."
         },
-        "google_play_service_account_json": {
-          "what": "Khóa tài khoản dịch vụ Google Cloud (JSON) có quyền Play Developer API để phát hành tự động.",
-          "where": "Google Cloud Console → IAM & Admin → Service Accounts → tạo khóa JSON, sau đó cấp quyền trong Play Console → Users and permissions."
-        },
         "GOOGLE_PLAY_TRACK": {
           "what": "Kênh phát hành trên Google Play mà bản build được đẩy lên (internal, alpha, beta hoặc production).",
           "where": "Google Play Console → Release → chọn tên kênh."
@@ -11326,10 +11316,6 @@
         "GOOGLE_WEB_CLIENT_ID": {
           "what": "Google OAuth 2.0 web client ID dùng cho đăng nhập bằng Google.",
           "where": "Google Cloud Console → APIs & Services → Credentials → OAuth 2.0 Client IDs (Web)."
-        },
-        "ios_google_service_info_plist": {
-          "what": "Tệp cấu hình Firebase (GoogleService-Info.plist) được đóng gói vào bản build iOS.",
-          "where": "Firebase Console → Project settings → ứng dụng iOS của bạn → tải xuống GoogleService-Info.plist."
         },
         "MOBILE_CALENDAR_INTEGRATIONS_ENABLED": {
           "what": "Cờ tính năng ('true' hoặc 'false') bật/tắt tích hợp lịch trong ứng dụng di động.",
@@ -11354,6 +11340,34 @@
         "TURNSTILE_SITE_KEY": {
           "what": "Site key Cloudflare Turnstile dùng để chống bot trong các luồng xác thực.",
           "where": "Bảng điều khiển Cloudflare → Turnstile → widget của bạn."
+        },
+        "android_google_services_json": {
+          "what": "Tệp cấu hình Firebase (google-services.json) được đóng gói vào bản build Android.",
+          "where": "Firebase Console → Project settings → ứng dụng Android của bạn → tải xuống google-services.json."
+        },
+        "android_upload_keystore": {
+          "what": "Keystore Java (.jks/.keystore) dùng để ký các bản phát hành Android.",
+          "where": "Tạo bằng `keytool -genkeypair -v -keystore upload-keystore.jks ...`."
+        },
+        "app_store_connect_private_key_p8": {
+          "what": "Khóa riêng App Store Connect API (.p8) dùng để xác thực khi tải lên. Chỉ tải xuống được một lần.",
+          "where": "App Store Connect → Users and Access → Integrations → App Store Connect API → tạo khóa."
+        },
+        "apple_app_store_provisioning_profile": {
+          "what": "Provisioning profile App Store (.mobileprovision) liên kết bundle ID với chứng chỉ phân phối.",
+          "where": "Apple Developer → Profiles → tạo profile phân phối App Store."
+        },
+        "apple_distribution_certificate_p12": {
+          "what": "Chứng chỉ phân phối Apple xuất ra dưới dạng .p12 (bao gồm khóa riêng) để ký bản build iOS.",
+          "where": "Apple Developer → Certificates (Apple Distribution); xuất từ Keychain Access dưới dạng .p12."
+        },
+        "google_play_service_account_json": {
+          "what": "Khóa tài khoản dịch vụ Google Cloud (JSON) có quyền Play Developer API để phát hành tự động.",
+          "where": "Google Cloud Console → IAM & Admin → Service Accounts → tạo khóa JSON, sau đó cấp quyền trong Play Console → Users and permissions."
+        },
+        "ios_google_service_info_plist": {
+          "what": "Tệp cấu hình Firebase (GoogleService-Info.plist) được đóng gói vào bản build iOS.",
+          "where": "Firebase Console → Project settings → ứng dụng iOS của bạn → tải xuống GoogleService-Info.plist."
         }
       },
       "label": "Lấy ở đâu",
@@ -11379,8 +11393,8 @@
     "saved": "Đã lưu.",
     "searchSecrets": "Tìm bí mật",
     "secretNamePlaceholder": "SECRET_NAME",
-    "secretsTitle": "Bí mật",
     "secretValuePlaceholder": "Nhập giá trị bí mật",
+    "secretsTitle": "Bí mật",
     "selectValue": "Chọn một giá trị",
     "showSecretValue": "Hiển thị giá trị bí mật",
     "sizeBytes": "{count, plural, one {# byte} other {# byte}}",
@@ -11432,6 +11446,14 @@
       "description": "Kiểm soát việc trang đăng nhập web marketing có thể dùng đăng nhập bằng mã xác thực hay không.",
       "title": "OTP Web"
     }
+  },
+  "mobile_dock": {
+    "apps": "Ứng dụng",
+    "back": "Quay lại",
+    "calendar": "Lịch",
+    "home": "Trang chủ",
+    "navigation": "Điều hướng chính",
+    "tasks": "Công việc"
   },
   "money-lover-import": {
     "amount": "Số tiền",
@@ -11557,6 +11579,7 @@
     "decline": "Từ chối",
     "delete": "Xóa",
     "description_changes": "Thay đổi mô tả",
+    "empty-archive": "Chưa có thông báo đã lưu trữ.",
     "empty_all_description": "Bạn không có thông báo nào. Chúng tôi sẽ thông báo khi có việc xảy ra.",
     "empty_all_title": "Đã xem hết!",
     "empty_filtered_description": "Thử điều chỉnh bộ lọc để xem thêm thông báo.",
@@ -11566,7 +11589,6 @@
     "empty_tasks_title": "Không có thông báo nhiệm vụ",
     "empty_unread_description": "Bạn đã đọc tất cả thông báo. Tuyệt vời!",
     "empty_unread_title": "Không có thông báo chưa đọc",
-    "empty-archive": "Chưa có thông báo đã lưu trữ.",
     "go": "Đi",
     "go_to_page": "Đi đến trang",
     "inbox": "Hộp thư",
@@ -11583,9 +11605,9 @@
     "mark-as-unread": "Đánh dấu chưa đọc",
     "new_version": "Hiện tại",
     "next": "Sau",
+    "no-notifications": "Bạn không có thông báo nào.",
     "no_visible_changes": "Không có thay đổi văn bản",
     "no_visible_changes_description": "Mô tả đã được sửa đổi nhưng nội dung văn bản có vẻ giống nhau. Điều này có thể do thay đổi định dạng hoặc cấu trúc.",
-    "no-notifications": "Bạn không có thông báo nào.",
     "notifications": "Thông báo",
     "old_version": "Trước",
     "page": "Trang",
@@ -11760,11 +11782,11 @@
     "update-error": "Không thể cập nhật thông báo",
     "updates": "cập nhật",
     "updating": "Đang cập nhật...",
+    "view-all": "Xem tất cả thông báo",
+    "view-inquiries": "Xem yêu cầu",
     "view_changes": "Xem thay đổi",
     "view_details": "Xem chi tiết",
     "view_task": "Xem nhiệm vụ",
-    "view-all": "Xem tất cả thông báo",
-    "view-inquiries": "Xem yêu cầu",
     "word_diff": "Từ",
     "workspace-invite": "Lời mời tham gia",
     "workspace-invite-accepted": "Đã tham gia",
@@ -12083,6 +12105,17 @@
     "user_id": "Mã học viên",
     "user_name": "Khách hàng"
   },
+  "personal-workspace": {
+    "change_prompt": "Bạn có thể thay đổi điều này sau trong cài đặt không gian làm việc",
+    "create_failed": "Không thể tạo không gian làm việc",
+    "create_new_personal_workspace": "Tạo một không gian làm việc mới dành riêng cho bạn",
+    "error_creating_workspace": "Không thể tạo không gian làm việc. Vui lòng thử lại.",
+    "error_marking_workspace": "Không thể đánh dấu không gian làm việc là cá nhân. Vui lòng thử lại.",
+    "mark_failed": "Không thể đánh dấu không gian làm việc",
+    "workspace_created": "Không gian làm việc đã được tạo thành công",
+    "workspace_limit_reached": "Đã đạt giới hạn không gian làm việc",
+    "workspace_marked": "Không gian làm việc đã được đánh dấu là cá nhân thành công"
+  },
   "personal_journal": {
     "body": "Nội dung nguyên bản",
     "body_error": "Nhập ít nhất một ký tự.",
@@ -12141,17 +12174,6 @@
     "work": "Công việc",
     "year": "Năm"
   },
-  "personal-workspace": {
-    "change_prompt": "Bạn có thể thay đổi điều này sau trong cài đặt không gian làm việc",
-    "create_failed": "Không thể tạo không gian làm việc",
-    "create_new_personal_workspace": "Tạo một không gian làm việc mới dành riêng cho bạn",
-    "error_creating_workspace": "Không thể tạo không gian làm việc. Vui lòng thử lại.",
-    "error_marking_workspace": "Không thể đánh dấu không gian làm việc là cá nhân. Vui lòng thử lại.",
-    "mark_failed": "Không thể đánh dấu không gian làm việc",
-    "workspace_created": "Không gian làm việc đã được tạo thành công",
-    "workspace_limit_reached": "Đã đạt giới hạn không gian làm việc",
-    "workspace_marked": "Không gian làm việc đã được đánh dấu là cá nhân thành công"
-  },
   "pitch": {
     "advanced": "Quy trình nâng cao",
     "annual": "Thanh toán năm",
@@ -12169,12 +12191,12 @@
     "contact": "Cùng xây dựng",
     "contract": "Phạm vi thỏa thuận",
     "core": "Công việc cơ bản",
-    "credits": "Tín dụng AI / tháng",
     "creditValues": [
       "1.000 / người",
       "10.000 / thành viên trả phí",
       "30.000 / thành viên trả phí"
     ],
+    "credits": "Tín dụng AI / tháng",
     "custom": "Theo thỏa thuận",
     "description": "Hệ sinh thái kết nối công việc, học tập và tiềm năng con người. Khám phá hướng phát triển AI nhân lực và tầm nhìn dài hạn.",
     "diagramNote": "Minh họa ý tưởng · không phải kết quả đo lường",
@@ -12262,28 +12284,28 @@
     "proposal": "Hướng phát triển sản phẩm",
     "references": [
       {
-        "label": "Stanford HAI · AI Index 2026",
-        "detail": "Ghi nhận 88% tổ chức được khảo sát dùng AI năm 2025; đây là dữ liệu khảo sát, không phải điều tra mọi doanh nghiệp."
+        "detail": "Ghi nhận 88% tổ chức được khảo sát dùng AI năm 2025; đây là dữ liệu khảo sát, không phải điều tra mọi doanh nghiệp.",
+        "label": "Stanford HAI · AI Index 2026"
       },
       {
-        "label": "Microsoft · Work Trend Index 2026",
-        "detail": "Tác tử hoạt động riêng biệt trên Microsoft 365 Copilot Agents và SharePoint tăng 15×, theo cửa sổ 28 ngày, 3/2025–3/2026. Dữ liệu nhà cung cấp, không phải toàn cầu."
+        "detail": "Tác tử hoạt động riêng biệt trên Microsoft 365 Copilot Agents và SharePoint tăng 15×, theo cửa sổ 28 ngày, 3/2025–3/2026. Dữ liệu nhà cung cấp, không phải toàn cầu.",
+        "label": "Microsoft · Work Trend Index 2026"
       },
       {
-        "label": "Diễn đàn Kinh tế Thế giới · Future of Jobs 2025",
-        "detail": "Nhà tuyển dụng dự báo 39% kỹ năng cốt lõi thay đổi tới 2030. Khảo sát hơn 1.000 nhà tuyển dụng ở 55 nền kinh tế; đây là kỳ vọng, chưa phải kết quả quan sát."
+        "detail": "Nhà tuyển dụng dự báo 39% kỹ năng cốt lõi thay đổi tới 2030. Khảo sát hơn 1.000 nhà tuyển dụng ở 55 nền kinh tế; đây là kỳ vọng, chưa phải kết quả quan sát.",
+        "label": "Diễn đàn Kinh tế Thế giới · Future of Jobs 2025"
       },
       {
-        "label": "OECD · Generative AI and the SME Workforce (2025)",
-        "detail": "Khảo sát cuối 2024 với hơn 5.000 doanh nghiệp nhỏ và vừa ở bảy quốc gia: 31% dùng AI tạo sinh; 65% nhóm dùng báo cáo hiệu suất tăng. Không phải thử nghiệm nhân quả hay ước lượng ASEAN."
+        "detail": "Khảo sát cuối 2024 với hơn 5.000 doanh nghiệp nhỏ và vừa ở bảy quốc gia: 31% dùng AI tạo sinh; 65% nhóm dùng báo cáo hiệu suất tăng. Không phải thử nghiệm nhân quả hay ước lượng ASEAN.",
+        "label": "OECD · Generative AI and the SME Workforce (2025)"
       },
       {
-        "label": "Anthropic · Trustworthy agents in practice (2026)",
-        "detail": "Thảo luận từ nhà phát triển về quyền tác tử, giám sát và rủi ro prompt injection. Dùng làm bối cảnh thiết kế, không kiểm chứng Tuturuuu."
+        "detail": "Thảo luận từ nhà phát triển về quyền tác tử, giám sát và rủi ro prompt injection. Dùng làm bối cảnh thiết kế, không kiểm chứng Tuturuuu.",
+        "label": "Anthropic · Trustworthy agents in practice (2026)"
       },
       {
-        "label": "Tuturuuu · Mã nguồn và giấy phép nền tảng",
-        "detail": "Mã nguồn công khai, Apache 2.0 và triển khai sản phẩm. Có mã nguồn không đồng nghĩa mọi thành phần đã sẵn sàng tự vận hành."
+        "detail": "Mã nguồn công khai, Apache 2.0 và triển khai sản phẩm. Có mã nguồn không đồng nghĩa mọi thành phần đã sẵn sàng tự vận hành.",
+        "label": "Tuturuuu · Mã nguồn và giấy phép nền tảng"
       }
     ],
     "roadmap": [
@@ -12315,16 +12337,16 @@
         "note": "Một cuộc trò chuyện tự nhiên có thể mở ra công cụ, tri thức và quy trình phối hợp. Mục tiêu dài hạn là trợ lý biết dùng khả năng nào, giải thích cơ sở đề xuất và xin đúng quyền hạn cần thiết. Giao diện AI hiện có → tầm nhìn mở rộng.",
         "panels": [
           {
-            "label": "Hỏi tự nhiên",
-            "detail": "Mang đến một câu hỏi, tài liệu hay ý tưởng."
+            "detail": "Mang đến một câu hỏi, tài liệu hay ý tưởng.",
+            "label": "Hỏi tự nhiên"
           },
           {
-            "label": "Cùng khám phá",
-            "detail": "So sánh phương án, xem lập luận và nguồn thông tin."
+            "detail": "So sánh phương án, xem lập luận và nguồn thông tin.",
+            "label": "Cùng khám phá"
           },
           {
-            "label": "Giữ quyền kiểm soát",
-            "detail": "Điều phối liên ứng dụng là hướng phát triển, có phê duyệt ở bước quan trọng."
+            "detail": "Điều phối liên ứng dụng là hướng phát triển, có phê duyệt ở bước quan trọng.",
+            "label": "Giữ quyền kiểm soát"
           }
         ],
         "status": "Giao diện AI hiện có → tầm nhìn mở rộng",
@@ -12337,16 +12359,16 @@
         "note": "Tách truy cập dữ liệu, tính toán, suy luận mô hình, thực thi quy trình và phê duyệt thành các lớp rõ ràng. Mẫu thử giới hạn sẽ dễ đánh giá hơn—đồng thời mở đường thay thế từng thành phần khi hệ sinh thái trưởng thành. Thiết kế kỹ thuật đề xuất.",
         "panels": [
           {
-            "label": "Đầu vào được cấp quyền",
-            "detail": "Nhập dữ liệu hoặc kết nối được duyệt → kiểm tra → lưu theo không gian làm việc."
+            "detail": "Nhập dữ liệu hoặc kết nối được duyệt → kiểm tra → lưu theo không gian làm việc.",
+            "label": "Đầu vào được cấp quyền"
           },
           {
-            "label": "Lớp hỗ trợ quyết định",
-            "detail": "Chỉ số tính toán xác định + giải thích AI có căn cứ + kịch bản cấu hình được."
+            "detail": "Chỉ số tính toán xác định + giải thích AI có căn cứ + kịch bản cấu hình được.",
+            "label": "Lớp hỗ trợ quyết định"
           },
           {
-            "label": "Xem xét & đánh giá",
-            "detail": "Bảng điều khiển hoặc Mira → phê duyệt và phản hồi → hồ sơ đánh giá có phiên bản."
+            "detail": "Bảng điều khiển hoặc Mira → phê duyệt và phản hồi → hồ sơ đánh giá có phiên bản.",
+            "label": "Xem xét & đánh giá"
           }
         ],
         "status": "Thiết kế kỹ thuật đề xuất",
@@ -12359,16 +12381,16 @@
         "note": "Xây dựng cùng cá nhân, đội nhóm nhỏ, nhà giáo dục và người vận hành tại Việt Nam. Học điều gì hiệu quả trong ngôn ngữ và thực tế của họ. Mở rộng mô hình đã kiểm chứng tới Đông Nam Á và xa hơn qua đối tác địa phương. Chiến lược tiếp cận thị trường.",
         "panels": [
           {
-            "label": "Trọng tâm ban đầu",
-            "detail": "Doanh nghiệp dịch vụ, đội ngũ giáo dục và doanh nghiệp nhỏ dựa trên tri thức."
+            "detail": "Doanh nghiệp dịch vụ, đội ngũ giáo dục và doanh nghiệp nhỏ dựa trên tri thức.",
+            "label": "Trọng tâm ban đầu"
           },
           {
-            "label": "Phân phối",
-            "detail": "Tăng trưởng từ sản phẩm, đối tác triển khai và cộng đồng học tập."
+            "detail": "Tăng trưởng từ sản phẩm, đối tác triển khai và cộng đồng học tập.",
+            "label": "Phân phối"
           },
           {
-            "label": "Điều kiện mở rộng",
-            "detail": "Kích hoạt lặp lại được, duy trì sử dụng, năng lực hỗ trợ và quy trình được kiểm chứng tại địa phương."
+            "detail": "Kích hoạt lặp lại được, duy trì sử dụng, năng lực hỗ trợ và quy trình được kiểm chứng tại địa phương.",
+            "label": "Điều kiện mở rộng"
           }
         ],
         "status": "Chiến lược tiếp cận thị trường",
@@ -12381,16 +12403,16 @@
         "note": "Sản phẩm hằng ngày tạo lý do gắn bó. Thuê bao và hợp tác kỹ thuật có phạm vi tài trợ cho triển khai, bảo trì và nghiên cứu. Chúng tôi hướng tới hệ sinh thái tiếp tục cải thiện nhờ giá trị và hiệu quả vận hành hỗ trợ nhau. Chiến lược thương mại.",
         "panels": [
           {
-            "label": "Tiếp cận",
-            "detail": "Quy trình cốt lõi dễ tiếp cận giúp cá nhân và đội nhỏ bắt đầu."
+            "detail": "Quy trình cốt lõi dễ tiếp cận giúp cá nhân và đội nhỏ bắt đầu.",
+            "label": "Tiếp cận"
           },
           {
-            "label": "Mở rộng",
-            "detail": "Dung lượng trả phí và khả năng nâng cao hỗ trợ đội ngũ phát triển."
+            "detail": "Dung lượng trả phí và khả năng nâng cao hỗ trợ đội ngũ phát triển.",
+            "label": "Mở rộng"
           },
           {
-            "label": "Đối tác",
-            "detail": "Triển khai và hỗ trợ có phạm vi biến thí điểm đã kiểm chứng thành giải pháp lặp lại được."
+            "detail": "Triển khai và hỗ trợ có phạm vi biến thí điểm đã kiểm chứng thành giải pháp lặp lại được.",
+            "label": "Đối tác"
           }
         ],
         "status": "Chiến lược thương mại",
@@ -12412,16 +12434,16 @@
         "note": "Smart Calendar đưa nhiệm vụ và thói quen vào thực tế của giờ làm, sự kiện, ưu tiên và hạn chót. Tự động xếp lịch giúp biến ý định thành thời gian có thể sử dụng; bạn có thể xem lại và điều chỉnh kết quả. Đã có khả năng xếp lịch thông minh · tùy cấu hình và phạm vi sử dụng.",
         "panels": [
           {
-            "label": "Tôn trọng thực tế",
-            "detail": "Thời gian rảnh, giờ làm việc và sự kiện hiện có."
+            "detail": "Thời gian rảnh, giờ làm việc và sự kiện hiện có.",
+            "label": "Tôn trọng thực tế"
           },
           {
-            "label": "Lập kế hoạch hữu ích",
-            "detail": "Xếp lịch theo ưu tiên cho nhiệm vụ và thói quen."
+            "detail": "Xếp lịch theo ưu tiên cho nhiệm vụ và thói quen.",
+            "label": "Lập kế hoạch hữu ích"
           },
           {
-            "label": "Liên tục thích ứng",
-            "detail": "Xem lại lịch khi các ưu tiên thay đổi."
+            "detail": "Xem lại lịch khi các ưu tiên thay đổi.",
+            "label": "Liên tục thích ứng"
           }
         ],
         "status": "Đã có khả năng xếp lịch thông minh · tùy cấu hình và phạm vi sử dụng",
@@ -12434,16 +12456,16 @@
         "note": "Bắt đầu từ thời gian sẵn có, ước lượng và hạn chót đã thống nhất. Chỉ ra áp lực của một cam kết mới. So sánh thời điểm, phạm vi và nguồn hỗ trợ trước khi quyết định đội nhóm có thể nhận thêm điều gì. Mô-đun thí điểm đề xuất.",
         "panels": [
           {
-            "label": "Dữ liệu đầu vào",
-            "detail": "Ước lượng công việc, hạn chót, lịch làm việc và thời gian khả dụng tự khai báo."
+            "detail": "Ước lượng công việc, hạn chót, lịch làm việc và thời gian khả dụng tự khai báo.",
+            "label": "Dữ liệu đầu vào"
           },
           {
-            "label": "Đầu ra cấu hình được",
-            "detail": "Góc nhìn năng lực đội ngũ, xung đột lịch và phương án phân bổ."
+            "detail": "Góc nhìn năng lực đội ngũ, xung đột lịch và phương án phân bổ.",
+            "label": "Đầu ra cấu hình được"
           },
           {
-            "label": "Đánh giá",
-            "detail": "Thời gian lập kế hoạch, cam kết bị trễ và phản hồi nhân viên so với ban đầu."
+            "detail": "Thời gian lập kế hoạch, cam kết bị trễ và phản hồi nhân viên so với ban đầu.",
+            "label": "Đánh giá"
           }
         ],
         "status": "Mô-đun thí điểm đề xuất",
@@ -12456,16 +12478,16 @@
         "note": "Con người, kênh, tệp chung và hội thoại AI cần cùng một ngữ cảnh làm việc. Smart Chat là con đường để con người và AI phối hợp ngay trong cuộc trao đổi nơi quyết định bắt đầu. Nền tảng Chat đã có · đang phát triển khả năng phối hợp sâu hơn.",
         "panels": [
           {
-            "label": "Cùng trao đổi",
-            "detail": "Tin nhắn trực tiếp, nhóm, kênh và hội thoại AI."
+            "detail": "Tin nhắn trực tiếp, nhóm, kênh và hội thoại AI.",
+            "label": "Cùng trao đổi"
           },
           {
-            "label": "Giữ ngữ cảnh",
-            "detail": "Lịch sử hội thoại và tệp đính kèm từ Drive."
+            "detail": "Lịch sử hội thoại và tệp đính kèm từ Drive.",
+            "label": "Giữ ngữ cảnh"
           },
           {
-            "label": "Phối hợp bước tiếp theo",
-            "detail": "Định hướng: con người và AI cộng tác xuyên suốt quy trình."
+            "detail": "Định hướng: con người và AI cộng tác xuyên suốt quy trình.",
+            "label": "Phối hợp bước tiếp theo"
           }
         ],
         "status": "Nền tảng Chat đã có · đang phát triển khả năng phối hợp sâu hơn",
@@ -12478,16 +12500,16 @@
         "note": "Chúng tôi hướng tới hệ sinh thái mở có thể vận hành độc lập và một trợ lý đặc biệt mạnh mẽ bên trong. Hãy mang đến vấn đề có ý nghĩa, câu hỏi nghiên cứu hoặc đội nhóm sẵn sàng xây dựng. Cùng biến tương lai đó thành điều hữu ích—và thuộc về bạn. Bắt đầu từ một vấn đề có ý nghĩa.",
         "panels": [
           {
-            "label": "Cho mỗi người",
-            "detail": "Thêm không gian sáng tạo."
+            "detail": "Thêm không gian sáng tạo.",
+            "label": "Cho mỗi người"
           },
           {
-            "label": "Cho đội ngũ",
-            "detail": "Thêm tự tin phát triển."
+            "detail": "Thêm tự tin phát triển.",
+            "label": "Cho đội ngũ"
           },
           {
-            "label": "Cho đối tác",
-            "detail": "Nền tảng để cùng xây."
+            "detail": "Nền tảng để cùng xây.",
+            "label": "Cho đối tác"
           }
         ],
         "status": "Bắt đầu từ một vấn đề có ý nghĩa",
@@ -12500,16 +12522,16 @@
         "note": "Bảng trắng thời gian thực làm rõ suy nghĩ. Tài liệu cộng tác biến chúng thành tri thức chung. Soạn thảo như Google Docs, tệp và ngữ cảnh không gian làm việc tạo nên một phần bộ nhớ mà cộng sự thông minh cần có. Đã có nền tảng cộng tác · tiếp tục kết nối sâu hơn giữa các sản phẩm.",
         "panels": [
           {
-            "label": "Cùng phác thảo",
-            "detail": "Không gian vẽ chung và bảng trắng thời gian thực."
+            "detail": "Không gian vẽ chung và bảng trắng thời gian thực.",
+            "label": "Cùng phác thảo"
           },
           {
-            "label": "Cùng viết",
-            "detail": "Soạn thảo văn bản cộng tác và tri thức dùng chung."
+            "detail": "Soạn thảo văn bản cộng tác và tri thức dùng chung.",
+            "label": "Cùng viết"
           },
           {
-            "label": "Kết nối kết quả",
-            "detail": "Tệp, con người, nhiệm vụ và hội thoại trong một định hướng sản phẩm."
+            "detail": "Tệp, con người, nhiệm vụ và hội thoại trong một định hướng sản phẩm.",
+            "label": "Kết nối kết quả"
           }
         ],
         "status": "Đã có nền tảng cộng tác · tiếp tục kết nối sâu hơn giữa các sản phẩm",
@@ -12522,16 +12544,16 @@
         "note": "Nhiệm vụ hữu ích hơn khi gắn với cam kết phía sau, tri thức cần có, người tham gia và thời gian sẵn có. Lớp tiếp theo là ngữ cảnh tuân thủ quyền truy cập, giúp Mira hiểu các mối liên hệ trong công việc. Chiến lược kết nối bối cảnh.",
         "panels": [
           {
-            "label": "Bối cảnh chung",
-            "detail": "Con người, dự án, kiến thức và quyền trong không gian làm việc."
+            "detail": "Con người, dự án, kiến thức và quyền trong không gian làm việc.",
+            "label": "Bối cảnh chung"
           },
           {
-            "label": "Quyết định hữu ích",
-            "detail": "Liên hệ cam kết với năng lực và nhu cầu học tập."
+            "detail": "Liên hệ cam kết với năng lực và nhu cầu học tập.",
+            "label": "Quyết định hữu ích"
           },
           {
-            "label": "Giá trị tích lũy",
-            "detail": "Mỗi quy trình hữu ích làm kết nối tiếp theo có giá trị hơn."
+            "detail": "Mỗi quy trình hữu ích làm kết nối tiếp theo có giá trị hơn.",
+            "label": "Giá trị tích lũy"
           }
         ],
         "status": "Chiến lược kết nối bối cảnh",
@@ -12544,16 +12566,16 @@
         "note": "Đây là niềm tin chiến lược, không phải khẳng định sản phẩm tập trung không thể thành công. AI có thể giảm chi phí tạo ứng dụng ban đầu nhưng không tự giải quyết việc vận hành hệ thống nhất quán qua nhiều năm. Chúng tôi chọn hệ sinh thái được duy trì chủ động để cải tiến kỹ thuật, ngữ cảnh chung và hạ tầng tái sử dụng mang lại lợi ích cho nhiều quy trình. Độ rộng không phải mục tiêu tự thân: ưu tiên nhu cầu thực, chứng minh khả năng tái sử dụng và tính đủ chi phí hỗ trợ từng sản phẩm.",
         "panels": [
           {
-            "label": "Tạo phiên bản đầu tiên",
-            "detail": "Giúp mọi người tạo và tùy chỉnh công cụ hữu ích. Rào cản thấp hơn mở ra cơ hội."
+            "detail": "Giúp mọi người tạo và tùy chỉnh công cụ hữu ích. Rào cản thấp hơn mở ra cơ hội.",
+            "label": "Tạo phiên bản đầu tiên"
           },
           {
-            "label": "Duy trì toàn hệ thống",
-            "detail": "Phân quyền, bảo mật, độ tin cậy, chuyển đổi dữ liệu và khả năng tương tác cần được chăm sóc liên tục."
+            "detail": "Phân quyền, bảo mật, độ tin cậy, chuyển đổi dữ liệu và khả năng tương tác cần được chăm sóc liên tục.",
+            "label": "Duy trì toàn hệ thống"
           },
           {
-            "label": "Tích lũy giá trị đầu tư",
-            "detail": "Xây sản phẩm tập trung trên nền tảng chung. Mở rộng khi giá trị sử dụng và khả năng tái sử dụng xứng đáng với chi phí duy trì."
+            "detail": "Xây sản phẩm tập trung trên nền tảng chung. Mở rộng khi giá trị sử dụng và khả năng tái sử dụng xứng đáng với chi phí duy trì.",
+            "label": "Tích lũy giá trị đầu tư"
           }
         ],
         "status": "Luận điểm chiến lược · giá trị bền vững cần được chứng minh qua vận hành",
@@ -12566,16 +12588,16 @@
         "note": "Thống nhất đầu mối kỹ thuật, ranh giới dữ liệu, sản phẩm bàn giao, thời gian và ngân sách trước khi xây dựng. Xác định đầu ra tùy chỉnh, theo dõi tương tác, tiêu chí đánh giá và bàn giao để mọi người hiểu tiến bộ nghĩa là gì. Cấu trúc hợp tác đề xuất · báo giá sau khảo sát.",
         "panels": [
           {
-            "label": "Phạm vi & đầu ra",
-            "detail": "Chọn 1–3 vấn đề, nguồn dữ liệu thống nhất, báo cáo cấu hình được, mô phỏng và kết quả đánh giá."
+            "detail": "Chọn 1–3 vấn đề, nguồn dữ liệu thống nhất, báo cáo cấu hình được, mô phỏng và kết quả đánh giá.",
+            "label": "Phạm vi & đầu ra"
           },
           {
-            "label": "Ngân sách & kiểm soát chi phí",
-            "detail": "Tách khảo sát, điều chỉnh, kiểm thử và hỗ trợ. Đặt giới hạn mô hình, hạ tầng và thanh toán theo mốc."
+            "detail": "Tách khảo sát, điều chỉnh, kiểm thử và hỗ trợ. Đặt giới hạn mô hình, hạ tầng và thanh toán theo mốc.",
+            "label": "Ngân sách & kiểm soát chi phí"
           },
           {
-            "label": "Bàn giao & quyết định tiếp theo",
-            "detail": "Cung cấp tài liệu, giới hạn, kết quả đánh giá và kế hoạch hỗ trợ hoặc kết thúc rõ ràng."
+            "detail": "Cung cấp tài liệu, giới hạn, kết quả đánh giá và kế hoạch hỗ trợ hoặc kết thúc rõ ràng.",
+            "label": "Bàn giao & quyết định tiếp theo"
           }
         ],
         "status": "Cấu trúc hợp tác đề xuất · báo giá sau khảo sát",
@@ -12588,16 +12610,16 @@
         "note": "Thống nhất đường cơ sở trước thử nghiệm. Theo dõi thành công nhiệm vụ, sửa lỗi, công sức duyệt, trải nghiệm và chi phí. Bản trình diễn mở đầu cuộc trao đổi; kết quả đáng tin trong bối cảnh thực mới là cơ sở mở rộng. Khung đánh giá đề xuất.",
         "panels": [
           {
-            "label": "Chất lượng quyết định",
-            "detail": "So sánh đề xuất với chuyên gia; kiểm tra lỗi và câu trả lời thiếu căn cứ."
+            "detail": "So sánh đề xuất với chuyên gia; kiểm tra lỗi và câu trả lời thiếu căn cứ.",
+            "label": "Chất lượng quyết định"
           },
           {
-            "label": "Giá trị quy trình",
-            "detail": "Đo thời gian hoàn thành và phản hồi so với quy trình hiện tại."
+            "detail": "Đo thời gian hoàn thành và phản hồi so với quy trình hiện tại.",
+            "label": "Giá trị quy trình"
           },
           {
-            "label": "Sử dụng có trách nhiệm",
-            "detail": "Ghi nhận gợi ý được chấp nhận, chỉnh sửa hoặc từ chối với đồng thuận và dữ liệu tối thiểu."
+            "detail": "Ghi nhận gợi ý được chấp nhận, chỉnh sửa hoặc từ chối với đồng thuận và dữ liệu tối thiểu.",
+            "label": "Sử dụng có trách nhiệm"
           }
         ],
         "status": "Khung đánh giá đề xuất",
@@ -12610,16 +12632,16 @@
         "note": "Khát vọng vượt xa năng suất: học tập, khám phá và cuối cùng là hỗ trợ trong thế giới vật lý. Thành công là con người làm được nhiều hơn, hiểu sâu hơn và vẫn tự định hướng khi công nghệ tiến bộ. Tầm nhìn nghiên cứu dài hạn.",
         "panels": [
           {
-            "label": "Mira / Mối quan hệ",
-            "detail": "Cộng sự gần gũi xuyên suốt hệ sinh thái."
+            "detail": "Cộng sự gần gũi xuyên suốt hệ sinh thái.",
+            "label": "Mira / Mối quan hệ"
           },
           {
-            "label": "Trí tuệ kết nối / Nền tảng",
-            "detail": "Bối cảnh, kiến thức, đánh giá và điều phối cùng hoạt động."
+            "detail": "Bối cảnh, kiến thức, đánh giá và điều phối cùng hoạt động.",
+            "label": "Trí tuệ kết nối / Nền tảng"
           },
           {
-            "label": "Ngoài phần mềm / Chân trời",
-            "detail": "Chỉ khám phá hỗ trợ vật lý khi an toàn và nghiên cứu đủ trưởng thành."
+            "detail": "Chỉ khám phá hỗ trợ vật lý khi an toàn và nghiên cứu đủ trưởng thành.",
+            "label": "Ngoài phần mềm / Chân trời"
           }
         ],
         "status": "Tầm nhìn nghiên cứu dài hạn",
@@ -12632,16 +12654,16 @@
         "note": "Độc lập hoàn toàn là định hướng, chưa phải tuyên bố về triển khai hiện tại. Chúng tôi hướng tới hệ sinh thái tự vận hành qua dữ liệu di chuyển được, dịch vụ thay thế được, triển khai kiểm chứng và lựa chọn mô hình—vẫn kết nối với thế giới. Lộ trình chiến lược · hiện vẫn dùng hạ tầng và nhà cung cấp mô hình bên ngoài.",
         "panels": [
           {
-            "label": "Hiện tại / làm chủ sản phẩm",
-            "detail": "Duy trì mã nguồn, giao ước, trải nghiệm và quy trình phát hành."
+            "detail": "Duy trì mã nguồn, giao ước, trải nghiệm và quy trình phát hành.",
+            "label": "Hiện tại / làm chủ sản phẩm"
           },
           {
-            "label": "Tiếp theo / làm chủ lựa chọn",
-            "detail": "Kiểm chứng xuất và phục hồi, ghi rõ phụ thuộc và thử tích hợp thay thế."
+            "detail": "Kiểm chứng xuất và phục hồi, ghi rõ phụ thuộc và thử tích hợp thay thế.",
+            "label": "Tiếp theo / làm chủ lựa chọn"
           },
           {
-            "label": "Tầm nhìn / làm chủ vận hành",
-            "detail": "Mở rộng tự triển khai và mô hình cục bộ hoặc mở khi khả thi."
+            "detail": "Mở rộng tự triển khai và mô hình cục bộ hoặc mở khi khả thi.",
+            "label": "Tầm nhìn / làm chủ vận hành"
           }
         ],
         "status": "Lộ trình chiến lược · hiện vẫn dùng hạ tầng và nhà cung cấp mô hình bên ngoài",
@@ -12654,24 +12676,24 @@
         "note": "Tầm nhìn dài hạn kết hợp suy luận, bộ nhớ, sáng tạo, học hỏi và hành động quanh mục tiêu của con người. Các khái niệm Tuturuuu ban đầu mô tả hướng nghiên cứu bổ trợ, chưa phải hệ thống tự chủ tổng quát đã hoàn thiện. Kiến trúc ý tưởng · không có nghĩa cả năm hệ thống đã hoàn thiện.",
         "panels": [
           {
-            "label": "Mira / Mối quan hệ",
-            "detail": "Cách tự nhiên để tư duy và làm việc cùng trí tuệ."
+            "detail": "Cách tự nhiên để tư duy và làm việc cùng trí tuệ.",
+            "label": "Mira / Mối quan hệ"
           },
           {
-            "label": "Aurora / Điều phối",
-            "detail": "Bối cảnh và hành động được cấp quyền xuyên hệ sinh thái."
+            "detail": "Bối cảnh và hành động được cấp quyền xuyên hệ sinh thái.",
+            "label": "Aurora / Điều phối"
           },
           {
-            "label": "Rewise / Kiến thức",
-            "detail": "Đưa kiến thức phù hợp đến đúng thời điểm."
+            "detail": "Đưa kiến thức phù hợp đến đúng thời điểm.",
+            "label": "Rewise / Kiến thức"
           },
           {
-            "label": "Nova / Tinh chỉnh",
-            "detail": "Khám phá cách hướng dẫn, đánh giá và cải thiện trí tuệ."
+            "detail": "Khám phá cách hướng dẫn, đánh giá và cải thiện trí tuệ.",
+            "label": "Nova / Tinh chỉnh"
           },
           {
-            "label": "Crystal / Chân trời vật lý",
-            "detail": "Nghiên cứu tương lai hỗ trợ vượt khỏi màn hình."
+            "detail": "Nghiên cứu tương lai hỗ trợ vượt khỏi màn hình.",
+            "label": "Crystal / Chân trời vật lý"
           }
         ],
         "status": "Kiến trúc ý tưởng · không có nghĩa cả năm hệ thống đã hoàn thiện",
@@ -12684,16 +12706,16 @@
         "note": "Nhãn thông minh, hỗ trợ soạn thư và theo dõi phản hồi là nền tảng. Chúng tôi hướng tới Mira trích xuất việc cần làm, gắn cam kết với nhiệm vụ và lịch—để hộp thư về không đồng nghĩa với ít việc dang dở hơn. Nền tảng AI cho Mail đã có · Mira trích xuất nhiệm vụ là hướng phát triển.",
         "panels": [
           {
-            "label": "Thấu hiểu",
-            "detail": "Nền tảng nhãn thông minh và soạn thư theo ngữ cảnh."
+            "detail": "Nền tảng nhãn thông minh và soạn thư theo ngữ cảnh.",
+            "label": "Thấu hiểu"
           },
           {
-            "label": "Trích xuất",
-            "detail": "Hướng tới việc Mira nhận diện nhiệm vụ và cam kết."
+            "detail": "Hướng tới việc Mira nhận diện nhiệm vụ và cam kết.",
+            "label": "Trích xuất"
           },
           {
-            "label": "Theo sát",
-            "detail": "Duyệt phản hồi, theo dõi và tiến tới hộp thư không tồn đọng."
+            "detail": "Duyệt phản hồi, theo dõi và tiến tới hộp thư không tồn đọng.",
+            "label": "Theo sát"
           }
         ],
         "status": "Nền tảng AI cho Mail đã có · Mira trích xuất nhiệm vụ là hướng phát triển",
@@ -12706,16 +12728,16 @@
         "note": "Mira có thể tham gia Tuturuuu Meet qua chat phòng và giọng nói Live theo lựa chọn của người dùng. Hỗ trợ riêng và thao tác được duyệt nối thảo luận với hành động, đồng thời giúp mọi người biết AI đang tham gia như thế nào. Năng lực đã triển khai · tùy quyền và khả năng cung cấp.",
         "panels": [
           {
-            "label": "AI hiện diện rõ ràng",
-            "detail": "Mira có ô người tham gia, trạng thái nói và điều khiển âm thanh riêng."
+            "detail": "Mira có ô người tham gia, trạng thái nói và điều khiển âm thanh riêng.",
+            "label": "AI hiện diện rõ ràng"
           },
           {
-            "label": "Riêng tư khi cần",
-            "detail": "Ngữ cảnh phòng và hỗ trợ cá nhân có ranh giới riêng."
+            "detail": "Ngữ cảnh phòng và hỗ trợ cá nhân có ranh giới riêng.",
+            "label": "Riêng tư khi cần"
           },
           {
-            "label": "Từ trao đổi đến hành động",
-            "detail": "Xem xét nhiệm vụ và lịch hẹn được gợi ý trước khi tạo."
+            "detail": "Xem xét nhiệm vụ và lịch hẹn được gợi ý trước khi tạo.",
+            "label": "Từ trao đổi đến hành động"
           }
         ],
         "status": "Năng lực đã triển khai · tùy quyền và khả năng cung cấp",
@@ -12728,16 +12750,16 @@
         "note": "AI được dùng rộng rãi, tác tử tăng nhanh và yêu cầu kỹ năng thay đổi. Những tín hiệu này cho thấy nhu cầu tổ chức công việc, học hỏi và giữ quyền kiểm soát tốt hơn—vượt ra ngoài một nơi để đặt câu hỏi. Bằng chứng bên ngoài · khác mẫu và thước đo, không so sánh trực tiếp.",
         "panels": [
           {
-            "label": "88%",
-            "detail": "Tổ chức được khảo sát cho biết có dùng AI trong năm 2025."
+            "detail": "Tổ chức được khảo sát cho biết có dùng AI trong năm 2025.",
+            "label": "88%"
           },
           {
-            "label": "15×",
-            "detail": "Mức tăng tác tử hoạt động trong hệ sinh thái Microsoft, 3/2025–3/2026."
+            "detail": "Mức tăng tác tử hoạt động trong hệ sinh thái Microsoft, 3/2025–3/2026.",
+            "label": "15×"
           },
           {
-            "label": "39%",
-            "detail": "Kỹ năng cốt lõi được nhà tuyển dụng dự báo sẽ thay đổi tới 2030."
+            "detail": "Kỹ năng cốt lõi được nhà tuyển dụng dự báo sẽ thay đổi tới 2030.",
+            "label": "39%"
           }
         ],
         "status": "Bằng chứng bên ngoài · khác mẫu và thước đo, không so sánh trực tiếp",
@@ -12750,16 +12772,16 @@
         "note": "Tri thức được kết nối có thể giúp đồng đội mới hiểu công việc, tìm câu trả lời đáng tin và xây dựng tự tin. Mục tiêu là rút ngắn con đường từ gia nhập đội nhóm đến đóng góp có ý nghĩa. Mô-đun thí điểm đề xuất.",
         "panels": [
           {
-            "label": "Dữ liệu đầu vào",
-            "detail": "Chính sách được duyệt, hướng dẫn vai trò và công việc hội nhập."
+            "detail": "Chính sách được duyệt, hướng dẫn vai trò và công việc hội nhập.",
+            "label": "Dữ liệu đầu vào"
           },
           {
-            "label": "Đầu ra cấu hình được",
-            "detail": "Câu trả lời dẫn nguồn, danh sách theo vai trò và chuyển tiếp đến người hướng dẫn."
+            "detail": "Câu trả lời dẫn nguồn, danh sách theo vai trò và chuyển tiếp đến người hướng dẫn.",
+            "label": "Đầu ra cấu hình được"
           },
           {
-            "label": "Đánh giá",
-            "detail": "Thời gian tìm câu trả lời, độ chính xác và phản hồi của nhân viên mới."
+            "detail": "Thời gian tìm câu trả lời, độ chính xác và phản hồi của nhân viên mới.",
+            "label": "Đánh giá"
           }
         ],
         "status": "Mô-đun thí điểm đề xuất",
@@ -12772,16 +12794,16 @@
         "note": "Khát vọng của chúng tôi là xây dựng trợ lý thông minh nhất có thể hình dung: một cộng sự hiểu thế giới của bạn, giúp bạn hành động và trở nên giỏi hơn. Tuturuuu đang xây dựng hệ sinh thái mở để hiện thực hóa điều đó. Tầm nhìn Tuturuuu.",
         "panels": [
           {
-            "label": "Công việc",
-            "detail": "Tiến bộ có ý nghĩa."
+            "detail": "Tiến bộ có ý nghĩa.",
+            "label": "Công việc"
           },
           {
-            "label": "Cuộc sống",
-            "detail": "Bảo vệ điều quan trọng."
+            "detail": "Bảo vệ điều quan trọng.",
+            "label": "Cuộc sống"
           },
           {
-            "label": "Trí tuệ",
-            "detail": "Kết nối tất cả."
+            "detail": "Kết nối tất cả.",
+            "label": "Trí tuệ"
           }
         ],
         "status": "Tầm nhìn Tuturuuu",
@@ -12794,16 +12816,16 @@
         "note": "Mã nguồn nền tảng Tuturuuu được cung cấp theo Apache 2.0. Chúng tôi muốn sự mở rộng ra ngoài mã: giao diện dễ hiểu, tri thức có thể di chuyển, quy trình có thể mở rộng và lựa chọn nơi, cách vận hành công nghệ. Nền tảng mã nguồn mở đã có · khả năng di chuyển và lựa chọn triển khai đang phát triển.",
         "panels": [
           {
-            "label": "Kiểm tra và mở rộng",
-            "detail": "Đọc mã nguồn, xây trên API có tài liệu và điều chỉnh theo giấy phép."
+            "detail": "Đọc mã nguồn, xây trên API có tài liệu và điều chỉnh theo giấy phép.",
+            "label": "Kiểm tra và mở rộng"
           },
           {
-            "label": "Giữ tri thức của bạn",
-            "detail": "Phát triển xuất, nhập và quy trình tương tác đáng tin xuyên hệ sinh thái."
+            "detail": "Phát triển xuất, nhập và quy trình tương tác đáng tin xuyên hệ sinh thái.",
+            "label": "Giữ tri thức của bạn"
           },
           {
-            "label": "Chọn tương lai",
-            "detail": "Hướng tới nhiều lựa chọn triển khai, mô hình và tiếp tục kết nối hữu ích."
+            "detail": "Hướng tới nhiều lựa chọn triển khai, mô hình và tiếp tục kết nối hữu ích.",
+            "label": "Chọn tương lai"
           }
         ],
         "status": "Nền tảng mã nguồn mở đã có · khả năng di chuyển và lựa chọn triển khai đang phát triển",
@@ -12816,16 +12838,16 @@
         "note": "Mỗi ý tưởng cần thời gian. Mỗi công cụ đòi hỏi sự chú ý. Tuturuuu bắt đầu bằng việc giúp mọi người tổ chức công việc; rồi câu hỏi lớn hơn xuất hiện: công nghệ có thể mở thêm không gian để suy nghĩ, học hỏi và sáng tạo như thế nào? Mục đích khởi đầu.",
         "panels": [
           {
-            "label": "Vấn đề cá nhân",
-            "detail": "Sự phức tạp của công nghệ lấy đi năng lượng dành cho sáng tạo."
+            "detail": "Sự phức tạp của công nghệ lấy đi năng lượng dành cho sáng tạo.",
+            "label": "Vấn đề cá nhân"
           },
           {
-            "label": "Mục đích chung",
-            "detail": "Giúp mọi người cùng biến ý định thành tiến bộ."
+            "detail": "Giúp mọi người cùng biến ý định thành tiến bộ.",
+            "label": "Mục đích chung"
           },
           {
-            "label": "Câu hỏi lớn hơn",
-            "detail": "Ta có thể làm được gì nếu có một cộng sự hiểu thế giới của mình?"
+            "detail": "Ta có thể làm được gì nếu có một cộng sự hiểu thế giới của mình?",
+            "label": "Câu hỏi lớn hơn"
           }
         ],
         "status": "Mục đích khởi đầu",
@@ -12838,16 +12860,16 @@
         "note": "Chúng tôi xây dựng và vận hành sản phẩm riêng cho tệp, họp, thư, chat, tài liệu, CRM, danh bạ, tài chính và vận hành. Tuturuuu chịu trách nhiệm về cách các mảnh ghép cùng phát triển—và tạo nền tảng để mọi người làm chủ công nghệ nhiều hơn. Hệ sinh thái sản phẩm do Tuturuuu sở hữu · khả năng và quyền truy cập tùy ứng dụng.",
         "panels": [
           {
-            "label": "Sản phẩm của chúng tôi",
-            "detail": "Một lựa chọn nhất quán cho giao tiếp, cộng tác và vận hành."
+            "detail": "Một lựa chọn nhất quán cho giao tiếp, cộng tác và vận hành.",
+            "label": "Sản phẩm của chúng tôi"
           },
           {
-            "label": "Trách nhiệm vận hành",
-            "detail": "Tuturuuu xây dựng, vận hành và phát triển hệ sinh thái sản phẩm."
+            "detail": "Tuturuuu xây dựng, vận hành và phát triển hệ sinh thái sản phẩm.",
+            "label": "Trách nhiệm vận hành"
           },
           {
-            "label": "Giá trị tích lũy",
-            "detail": "Mỗi khả năng mới làm phong phú ngữ cảnh cho toàn hệ thống."
+            "detail": "Mỗi khả năng mới làm phong phú ngữ cảnh cho toàn hệ thống.",
+            "label": "Giá trị tích lũy"
           }
         ],
         "status": "Hệ sinh thái sản phẩm do Tuturuuu sở hữu · khả năng và quyền truy cập tùy ứng dụng",
@@ -12860,16 +12882,16 @@
         "note": "Hợp tác dự kiến 12 tuần bắt đầu với một câu hỏi nhân sự và kế hoạch đánh giá rõ ràng. Điều chỉnh thành phần phù hợp, thử với người dùng và cùng quyết định liệu bằng chứng có đủ để mở rộng tình huống sử dụng. Kế hoạch minh họa · cần thống nhất phạm vi.",
         "panels": [
           {
-            "label": "Tuần 01–03 / Xác định",
-            "detail": "Chọn bài toán, chỉ định đầu mối kỹ thuật và nghiệp vụ, thống nhất dữ liệu và đánh giá."
+            "detail": "Chọn bài toán, chỉ định đầu mối kỹ thuật và nghiệp vụ, thống nhất dữ liệu và đánh giá.",
+            "label": "Tuần 01–03 / Xác định"
           },
           {
-            "label": "Tuần 04–08 / Điều chỉnh",
-            "detail": "Xây nguyên mẫu có giới hạn, cấu hình đầu ra, thử kịch bản, rà soát an toàn và trải nghiệm."
+            "detail": "Xây nguyên mẫu có giới hạn, cấu hình đầu ra, thử kịch bản, rà soát an toàn và trải nghiệm.",
+            "label": "Tuần 04–08 / Điều chỉnh"
           },
           {
-            "label": "Tuần 09–12 / Đánh giá",
-            "detail": "Thí điểm có giám sát, báo cáo kết quả và giới hạn, đề xuất mở rộng hoặc dừng."
+            "detail": "Thí điểm có giám sát, báo cáo kết quả và giới hạn, đề xuất mở rộng hoặc dừng.",
+            "label": "Tuần 09–12 / Đánh giá"
           }
         ],
         "status": "Kế hoạch minh họa · cần thống nhất phạm vi",
@@ -12882,16 +12904,16 @@
         "note": "Nhiệm vụ thể hiện ý định. Lịch thể hiện ràng buộc. Hội thoại ghi lại quyết định. Tài liệu lưu tri thức. Tài chính và danh bạ gắn công việc với quan hệ thực. Hệ sinh thái là nền tảng để kết nối các tín hiệu này có trách nhiệm. Nền tảng sản phẩm hiện có · mức độ cung cấp tùy ứng dụng.",
         "panels": [
           {
-            "label": "Công việc & cộng tác",
-            "detail": "Tasks · Calendar · Track · Meet · Mail · Chat · Drive · Colab"
+            "detail": "Tasks · Calendar · Track · Meet · Mail · Chat · Drive · Colab",
+            "label": "Công việc & cộng tác"
           },
           {
-            "label": "Kinh doanh & con người",
-            "detail": "Contacts · Finance · Pay · Inventory · Forms · CMS"
+            "detail": "Contacts · Finance · Pay · Inventory · Forms · CMS",
+            "label": "Kinh doanh & con người"
           },
           {
-            "label": "Học tập & trí tuệ",
-            "detail": "Learn · Teach · Mira · Rewise · Nova"
+            "detail": "Learn · Teach · Mira · Rewise · Nova",
+            "label": "Học tập & trí tuệ"
           }
         ],
         "status": "Nền tảng sản phẩm hiện có · mức độ cung cấp tùy ứng dụng",
@@ -12913,16 +12935,16 @@
         "note": "Cam kết với khách hàng đến qua email. Kế hoạch nằm trên bảng nhiệm vụ. Quyết định được đưa ra trong cuộc họp. Ngữ cảnh nằm sâu trong tài liệu. Con người phải nối mọi thứ lại—còn AI mạnh đến đâu cũng chỉ thấy từng mảnh. Thách thức vận hành quen thuộc.",
         "panels": [
           {
-            "label": "09:00 / Cam kết",
-            "detail": "Dự án mới đến. Ai có thời gian và kỹ năng phù hợp?"
+            "detail": "Dự án mới đến. Ai có thời gian và kỹ năng phù hợp?",
+            "label": "09:00 / Cam kết"
           },
           {
-            "label": "13:00 / Xoay xở",
-            "detail": "Kế hoạch thay đổi. Lịch và bảng công việc không còn khớp."
+            "detail": "Kế hoạch thay đổi. Lịch và bảng công việc không còn khớp.",
+            "label": "13:00 / Xoay xở"
           },
           {
-            "label": "18:00 / Cái giá",
-            "detail": "Cả đội làm việc cả ngày. Việc quan trọng nhất vẫn đang chờ."
+            "detail": "Cả đội làm việc cả ngày. Việc quan trọng nhất vẫn đang chờ.",
+            "label": "18:00 / Cái giá"
           }
         ],
         "status": "Thách thức vận hành quen thuộc",
@@ -12935,16 +12957,16 @@
         "note": "Chúng tôi có bề mặt sản phẩm, quyền không gian làm việc, công cụ AI, cộng tác và mô phỏng. Ngữ cảnh xuyên sản phẩm và hỗ trợ quyết định nhân sự vẫn cần triển khai, đánh giá có giới hạn. Đó là cây cầu chúng tôi sẵn sàng xây cùng đối tác. Ranh giới năng lực và bàn giao.",
         "panels": [
           {
-            "label": "Nền tảng hiện có",
-            "detail": "Sản phẩm không gian làm việc, công cụ quản lý việc và lịch, giao diện học tập và AI hội thoại."
+            "detail": "Sản phẩm không gian làm việc, công cụ quản lý việc và lịch, giao diện học tập và AI hội thoại.",
+            "label": "Nền tảng hiện có"
           },
           {
-            "label": "Cần điều chỉnh và kiểm chứng",
-            "detail": "Ánh xạ dữ liệu nhân lực, phân tích, thử kịch bản, ghi nhận tương tác và quản trị riêng cho thí điểm."
+            "detail": "Ánh xạ dữ liệu nhân lực, phân tích, thử kịch bản, ghi nhận tương tác và quản trị riêng cho thí điểm.",
+            "label": "Cần điều chỉnh và kiểm chứng"
           },
           {
-            "label": "Nghiên cứu dài hạn",
-            "detail": "Điều phối chủ động liên lĩnh vực và hỗ trợ trong thế giới vật lý."
+            "detail": "Điều phối chủ động liên lĩnh vực và hỗ trợ trong thế giới vật lý.",
+            "label": "Nghiên cứu dài hạn"
           }
         ],
         "status": "Ranh giới năng lực và bàn giao",
@@ -12966,16 +12988,16 @@
         "note": "Trước khi mở rộng hành vi tác tử phức tạp, chúng tôi nghiên cứu bằng mô phỏng. Hive và Mind kết nối vai trò, quy trình tương tác, môi trường và lịch sử phiên nghiên cứu để khảo sát phối hợp, bàn giao và phục hồi khi lỗi. Đang nghiên cứu và thử nghiệm · mô phỏng chưa chứng minh hiệu quả thực tế.",
         "panels": [
           {
-            "label": "Tạo bối cảnh",
-            "detail": "Vai trò, ngữ cảnh thế giới và điều kiện kịch bản."
+            "detail": "Vai trò, ngữ cảnh thế giới và điều kiện kịch bản.",
+            "label": "Tạo bối cảnh"
           },
           {
-            "label": "Điều phối tác tử",
-            "detail": "Các cặp tương tác và quy trình được thiết kế."
+            "detail": "Các cặp tương tác và quy trình được thiết kế.",
+            "label": "Điều phối tác tử"
           },
           {
-            "label": "Quan sát và học hỏi",
-            "detail": "Lịch sử chạy, nhịp mô phỏng và phiên nghiên cứu."
+            "detail": "Lịch sử chạy, nhịp mô phỏng và phiên nghiên cứu.",
+            "label": "Quan sát và học hỏi"
           }
         ],
         "status": "Đang nghiên cứu và thử nghiệm · mô phỏng chưa chứng minh hiệu quả thực tế",
@@ -12988,16 +13010,16 @@
         "note": "Làm sản phẩm đáng tin. Kết nối ngữ cảnh theo quyền. Kiểm chứng quy trình có duyệt. Phối hợp tác tử chuyên biệt. Mở rộng lựa chọn triển khai và mô hình. Mỗi bước cần đem lại năng lực hữu ích và quyền kiểm soát lớn hơn. Lộ trình chiến lược · chưa cam kết ngày ra mắt.",
         "panels": [
           {
-            "label": "Hiện tại / Củng cố nền móng",
-            "detail": "Cải thiện quy trình kết nối, độ tin cậy và ranh giới truy cập."
+            "detail": "Cải thiện quy trình kết nối, độ tin cậy và ranh giới truy cập.",
+            "label": "Hiện tại / Củng cố nền móng"
           },
           {
-            "label": "Tiếp theo / Kiểm chứng trí tuệ",
-            "detail": "Xác thực bài toán nhân lực và điều phối có giám sát cùng đối tác."
+            "detail": "Xác thực bài toán nhân lực và điều phối có giám sát cùng đối tác.",
+            "label": "Tiếp theo / Kiểm chứng trí tuệ"
           },
           {
-            "label": "Xa hơn / Mở rộng cộng sự",
-            "detail": "Mở rộng hỗ trợ theo bối cảnh, nghiên cứu hành động chủ động có cấp quyền."
+            "detail": "Mở rộng hỗ trợ theo bối cảnh, nghiên cứu hành động chủ động có cấp quyền.",
+            "label": "Xa hơn / Mở rộng cộng sự"
           }
         ],
         "status": "Lộ trình chiến lược · chưa cam kết ngày ra mắt",
@@ -13010,16 +13032,16 @@
         "note": "AI đang chuyển từ hội thoại riêng lẻ sang công cụ và tác tử có thể hành động qua nhiều quy trình. Chúng tôi tin giá trị lâu dài đến từ ngữ cảnh thực, quyền hạn rõ ràng và những con người không ngừng học hỏi. Luận điểm chiến lược.",
         "panels": [
           {
-            "label": "01 / Công cụ",
-            "detail": "Bạn vận hành từng tính năng."
+            "detail": "Bạn vận hành từng tính năng.",
+            "label": "01 / Công cụ"
           },
           {
-            "label": "02 / Nền tảng",
-            "detail": "Bạn kết nối công việc."
+            "detail": "Bạn kết nối công việc.",
+            "label": "02 / Nền tảng"
           },
           {
-            "label": "03 / Cộng sự",
-            "detail": "Bạn định hướng. Trí tuệ hỗ trợ điều phối bước tiếp theo."
+            "detail": "Bạn định hướng. Trí tuệ hỗ trợ điều phối bước tiếp theo.",
+            "label": "03 / Cộng sự"
           }
         ],
         "status": "Luận điểm chiến lược",
@@ -13032,16 +13054,16 @@
         "note": "Trợ lý hữu ích cần giúp xem xét giả định. Mô phỏng năng lực này làm rõ một quan hệ đơn giản: số người, giờ sẵn có và nhu cầu. Nó minh họa cách công cụ hỗ trợ quyết định có thể mở ra thảo luận trước hành động. Minh họa tương tác · dữ liệu giả lập.",
         "panels": [
           {
-            "label": "Nhu cầu",
-            "detail": "Khối lượng công việc ước tính trong một tuần."
+            "detail": "Khối lượng công việc ước tính trong một tuần.",
+            "label": "Nhu cầu"
           },
           {
-            "label": "Năng lực",
-            "detail": "Thời gian đã thống nhất dành cho công việc."
+            "detail": "Thời gian đã thống nhất dành cho công việc.",
+            "label": "Năng lực"
           },
           {
-            "label": "Phán đoán",
-            "detail": "Con số hỗ trợ thảo luận. Con người quyết định."
+            "detail": "Con số hỗ trợ thảo luận. Con người quyết định.",
+            "label": "Phán đoán"
           }
         ],
         "status": "Minh họa tương tác · dữ liệu giả lập",
@@ -13054,16 +13076,16 @@
         "note": "Nhà tuyển dụng trong khảo sát Diễn đàn Kinh tế Thế giới dự báo 39% kỹ năng cốt lõi sẽ thay đổi tới năm 2030. Chúng tôi muốn công việc và học tập bổ trợ nhau: hồ sơ kỹ năng tự nguyện, hướng dẫn và lộ trình phát triển gắn với dự án thực. Mô-đun thí điểm đề xuất.",
         "panels": [
           {
-            "label": "Dữ liệu đầu vào",
-            "detail": "Yêu cầu vai trò, kỹ năng tự khai báo và mục tiêu học tập đã thống nhất."
+            "detail": "Yêu cầu vai trò, kỹ năng tự khai báo và mục tiêu học tập đã thống nhất.",
+            "label": "Dữ liệu đầu vào"
           },
           {
-            "label": "Đầu ra cấu hình được",
-            "detail": "Bản đồ kỹ năng và gợi ý học tập có căn cứ, nêu rõ mức độ chưa chắc chắn."
+            "detail": "Bản đồ kỹ năng và gợi ý học tập có căn cứ, nêu rõ mức độ chưa chắc chắn.",
+            "label": "Đầu ra cấu hình được"
           },
           {
-            "label": "Đánh giá",
-            "detail": "Mức hoàn thành học tập, đánh giá thực hành và phản hồi về tính hữu ích."
+            "detail": "Mức hoàn thành học tập, đánh giá thực hành và phản hồi về tính hữu ích.",
+            "label": "Đánh giá"
           }
         ],
         "status": "Mô-đun thí điểm đề xuất",
@@ -13076,16 +13098,16 @@
         "note": "Một suy nghĩ trở thành nhiệm vụ, rồi thành kế hoạch. Bảng việc, dự án, chu kỳ và gợi ý thông minh giúp mọi người xác định điều quan trọng. Đây là viên gạch đầu tiên để trợ lý hiểu điều bạn muốn hoàn thành. Năng lực đã triển khai · tùy quyền và khả năng cung cấp.",
         "panels": [
           {
-            "label": "Ghi lại dễ dàng",
-            "detail": "Bảng, dự án, chu kỳ và hộp ghi nhanh."
+            "detail": "Bảng, dự án, chu kỳ và hộp ghi nhanh.",
+            "label": "Ghi lại dễ dàng"
           },
           {
-            "label": "Xem xét gợi ý thông minh",
-            "detail": "Con người quyết định thông tin nhiệm vụ được đề xuất."
+            "detail": "Con người quyết định thông tin nhiệm vụ được đề xuất.",
+            "label": "Xem xét gợi ý thông minh"
           },
           {
-            "label": "Dành thời gian thực hiện",
-            "detail": "Kết nối nhiệm vụ, thói quen và tùy chọn lịch."
+            "detail": "Kết nối nhiệm vụ, thói quen và tùy chọn lịch.",
+            "label": "Dành thời gian thực hiện"
           }
         ],
         "status": "Năng lực đã triển khai · tùy quyền và khả năng cung cấp",
@@ -13098,16 +13120,16 @@
         "note": "Do Võ Hoàng Phúc sáng lập, Tuturuuu đóng góp năng lực sản phẩm, kỹ thuật và duy trì hệ sinh thái. Đối tác mang đến chuyên môn lĩnh vực, quy trình thực và bối cảnh đánh giá. Cùng nhau, chúng ta biến câu hỏi nghiên cứu thành công cụ hữu ích. Mô hình hợp tác đề xuất.",
         "panels": [
           {
-            "label": "Đầu mối kỹ thuật Tuturuuu",
-            "detail": "Kiến trúc, điều chỉnh, kiểm thử, tài liệu và đầu mối được chỉ định khi khởi động."
+            "detail": "Kiến trúc, điều chỉnh, kiểm thử, tài liệu và đầu mối được chỉ định khi khởi động.",
+            "label": "Đầu mối kỹ thuật Tuturuuu"
           },
           {
-            "label": "Đối tác nghiệp vụ & nghiên cứu",
-            "detail": "Chọn bài toán, đánh giá chuyên môn, kết nối người tham gia và diễn giải kết quả."
+            "detail": "Chọn bài toán, đánh giá chuyên môn, kết nối người tham gia và diễn giải kết quả.",
+            "label": "Đối tác nghiệp vụ & nghiên cứu"
           },
           {
-            "label": "Trách nhiệm chung",
-            "detail": "Demo định kỳ, nghiệm thu mốc, sổ rủi ro và thỏa thuận trách nhiệm dữ liệu, sở hữu trí tuệ."
+            "detail": "Demo định kỳ, nghiệm thu mốc, sổ rủi ro và thỏa thuận trách nhiệm dữ liệu, sở hữu trí tuệ.",
+            "label": "Trách nhiệm chung"
           }
         ],
         "status": "Mô hình hợp tác đề xuất",
@@ -13120,16 +13142,16 @@
         "note": "Tự động hóa hữu ích cần ranh giới rõ: trợ lý được đọc gì, làm gì và khi nào cần con người. Chúng tôi muốn mọi người hiểu, chất vấn, sửa và dừng hành động quan trọng, đồng thời giữ tiếng nói khi hệ thống ngày càng mạnh. Yêu cầu quản trị thí điểm.",
         "panels": [
           {
-            "label": "Chỉ dùng dữ liệu cần thiết",
-            "detail": "Thống nhất mục đích, quyền, lưu giữ, xóa và đồng thuận hoặc cơ sở phù hợp trước khi nhập."
+            "detail": "Thống nhất mục đích, quyền, lưu giữ, xóa và đồng thuận hoặc cơ sở phù hợp trước khi nhập.",
+            "label": "Chỉ dùng dữ liệu cần thiết"
           },
           {
-            "label": "Cho phép phản biện đầu ra",
-            "detail": "Hiển thị nguồn và giả định, kiểm tra lỗi và thiên lệch, hỗ trợ sửa và chuyển cấp."
+            "detail": "Hiển thị nguồn và giả định, kiểm tra lỗi và thiên lệch, hỗ trợ sửa và chuyển cấp.",
+            "label": "Cho phép phản biện đầu ra"
           },
           {
-            "label": "Con người chịu trách nhiệm",
-            "detail": "Không tự động tuyển dụng, sa thải, quyết định lương hay kỷ luật. Không giám sát ngầm hoặc suy đoán cảm xúc."
+            "detail": "Không tự động tuyển dụng, sa thải, quyết định lương hay kỷ luật. Không giám sát ngầm hoặc suy đoán cảm xúc.",
+            "label": "Con người chịu trách nhiệm"
           }
         ],
         "status": "Yêu cầu quản trị thí điểm",
@@ -13142,16 +13164,16 @@
         "note": "Hãy hình dung bạn mô tả kết quả mong muốn thay vì thao tác qua mười công cụ. Trợ lý tập hợp tri thức cần thiết, khảo sát lựa chọn và hỗ trợ thực hiện kế hoạch đã duyệt. Chúng tôi bắt đầu từ công việc hằng ngày để xây dựng sự thấu hiểu. Tầm nhìn dài hạn.",
         "panels": [
           {
-            "label": "Thấu hiểu",
-            "detail": "Hỗ trợ dựa trên bối cảnh bạn chọn chia sẻ."
+            "detail": "Hỗ trợ dựa trên bối cảnh bạn chọn chia sẻ.",
+            "label": "Thấu hiểu"
           },
           {
-            "label": "Chủ động",
-            "detail": "Làm rõ cơ hội và giới hạn trước khi chúng trở nên cấp bách."
+            "detail": "Làm rõ cơ hội và giới hạn trước khi chúng trở nên cấp bách.",
+            "label": "Chủ động"
           },
           {
-            "label": "Đồng hành",
-            "detail": "Đề xuất, giải thích, xin phê duyệt và học từ kết quả."
+            "detail": "Đề xuất, giải thích, xin phê duyệt và học từ kết quả.",
+            "label": "Đồng hành"
           }
         ],
         "status": "Khát vọng toàn cầu, được chứng minh qua từng năng lực hữu ích",
@@ -13164,16 +13186,16 @@
         "note": "Theo dõi một quy trình tương lai: Mira kết nối yêu cầu khách hàng với cam kết giao hàng, năng lực và kỹ năng đội nhóm muốn phát triển. Trợ lý đề xuất lựa chọn để mọi người xem xét. Giá trị nằm ở quyết định tốt hơn với đầy đủ ngữ cảnh. Tình huống tương lai minh họa.",
         "panels": [
           {
-            "label": "Hiểu cam kết",
-            "detail": "Tổng hợp yêu cầu, thời hạn và tiêu chí đã thống nhất."
+            "detail": "Tổng hợp yêu cầu, thời hạn và tiêu chí đã thống nhất.",
+            "label": "Hiểu cam kết"
           },
           {
-            "label": "So sánh phương án",
-            "detail": "Khám phá khối lượng công việc, khoảng trống kỹ năng và đánh đổi về lịch."
+            "detail": "Khám phá khối lượng công việc, khoảng trống kỹ năng và đánh đổi về lịch.",
+            "label": "So sánh phương án"
           },
           {
-            "label": "Biến quyết định thành tiến bộ",
-            "detail": "Duyệt kế hoạch, điều phối công việc và nhìn lại kết quả thực tế."
+            "detail": "Duyệt kế hoạch, điều phối công việc và nhìn lại kết quả thực tế.",
+            "label": "Biến quyết định thành tiến bộ"
           }
         ],
         "status": "Tình huống tương lai minh họa",
@@ -13186,16 +13208,16 @@
         "note": "Trong khảo sát OECD, 31% doanh nghiệp nhỏ và vừa dùng AI tạo sinh; trong nhóm sử dụng, 65% cho biết hiệu suất nhân viên được cải thiện. Đây là lý do để thử nghiệm hỗ trợ thực tế, không phải bằng chứng mọi sản phẩm đều đạt kết quả tương tự. Đề xuất nguyên mẫu hỗ trợ quyết định nhân lực.",
         "panels": [
           {
-            "label": "01 / Năng lực",
-            "detail": "Công việc nào có rủi ro và có thể cân bằng lại ra sao?"
+            "detail": "Công việc nào có rủi ro và có thể cân bằng lại ra sao?",
+            "label": "01 / Năng lực"
           },
           {
-            "label": "02 / Kỹ năng",
-            "detail": "Đội ngũ cần học gì để nắm bắt cơ hội tiếp theo?"
+            "detail": "Đội ngũ cần học gì để nắm bắt cơ hội tiếp theo?",
+            "label": "02 / Kỹ năng"
           },
           {
-            "label": "03 / Hội nhập",
-            "detail": "Làm sao giúp đồng đội mới tự tin và làm việc hiệu quả sớm hơn?"
+            "detail": "Làm sao giúp đồng đội mới tự tin và làm việc hiệu quả sớm hơn?",
+            "label": "03 / Hội nhập"
           }
         ],
         "status": "Đề xuất nguyên mẫu hỗ trợ quyết định nhân lực",
@@ -13419,28 +13441,28 @@
       "flowTitle": "Theo một yêu cầu từ trao đổi đến hành động.",
       "steps": [
         {
-          "title": "Yêu cầu xuất hiện",
-          "body": "Mail lưu cam kết và cuộc trao đổi phía sau. Mira có thể giúp chuyển thư thành đề xuất bước tiếp theo."
+          "body": "Mail lưu cam kết và cuộc trao đổi phía sau. Mira có thể giúp chuyển thư thành đề xuất bước tiếp theo.",
+          "title": "Yêu cầu xuất hiện"
         },
         {
-          "title": "Đội ngũ thống nhất",
-          "body": "Meet đưa con người và Mira vào cùng cuộc thảo luận, với sự hiện diện AI rõ ràng và ngữ cảnh chung."
+          "body": "Meet đưa con người và Mira vào cùng cuộc thảo luận, với sự hiện diện AI rõ ràng và ngữ cảnh chung.",
+          "title": "Đội ngũ thống nhất"
         },
         {
-          "title": "Kế hoạch hình thành",
-          "body": "Tasks kết nối ưu tiên, người phụ trách và quan hệ phụ thuộc. Con người xem xét và điều chỉnh kế hoạch từ gợi ý."
+          "body": "Tasks kết nối ưu tiên, người phụ trách và quan hệ phụ thuộc. Con người xem xét và điều chỉnh kế hoạch từ gợi ý.",
+          "title": "Kế hoạch hình thành"
         },
         {
-          "title": "Thời gian cụ thể",
-          "body": "Calendar kết hợp thời gian rảnh, thói quen và hạn chót để xây dựng lịch khả thi."
+          "body": "Calendar kết hợp thời gian rảnh, thói quen và hạn chót để xây dựng lịch khả thi.",
+          "title": "Thời gian cụ thể"
         },
         {
-          "title": "Tri thức ở lại",
-          "body": "Tài liệu cộng tác và tệp dùng chung giữ lại lý do, quyết định và kết quả cho người tiếp theo."
+          "body": "Tài liệu cộng tác và tệp dùng chung giữ lại lý do, quyết định và kết quả cho người tiếp theo.",
+          "title": "Tri thức ở lại"
         },
         {
-          "title": "Hiểu biết sâu hơn",
-          "body": "Mira kết nối ngữ cảnh được cấp quyền trong công việc. Kết quả đã xem xét giúp định hướng hành động hữu ích tiếp theo."
+          "body": "Mira kết nối ngữ cảnh được cấp quyền trong công việc. Kết quả đã xem xét giúp định hướng hành động hữu ích tiếp theo.",
+          "title": "Hiểu biết sâu hơn"
         }
       ],
       "title": "Một gia đình sản phẩm kết nối."
@@ -13561,67 +13583,67 @@
       "body": "Chúng tôi muốn trở thành Google tiếp theo của Việt Nam về tầm vóc và khả năng sáng tạo: sản phẩm hữu ích, kỹ thuật vững chắc và nghiên cứu mở ra cơ hội mới.",
       "chapters": [
         {
-          "tab": "Sản phẩm hữu ích",
-          "title": "Giúp công việc hằng ngày dễ hơn.",
-          "body": "Danh sách việc rõ ràng. Cuộc họp có bước tiếp theo hữu ích. Lịch có khoảng trống để tập trung. Chúng tôi bắt đầu từ công cụ thực tế giúp mọi người làm việc mỗi ngày.",
           "alt": "Xưởng đổi mới Việt Nam tưởng tượng với con người xây các mô hình kính kết nối lúc bình minh.",
+          "body": "Danh sách việc rõ ràng. Cuộc họp có bước tiếp theo hữu ích. Lịch có khoảng trống để tập trung. Chúng tôi bắt đầu từ công cụ thực tế giúp mọi người làm việc mỗi ngày.",
           "proof": "Nền tảng sản phẩm trải rộng từ công việc, giao tiếp, học tập đến vận hành doanh nghiệp.",
           "steps": [
             {
-              "title": "Giải quyết vướng mắc thật",
-              "body": "Đến với quy trình thực tế bằng công cụ hữu ích và lý do rõ ràng để quay lại."
+              "body": "Đến với quy trình thực tế bằng công cụ hữu ích và lý do rõ ràng để quay lại.",
+              "title": "Giải quyết vướng mắc thật"
             },
             {
-              "title": "Kết nối bước tiếp theo",
-              "body": "Nối những khoảnh khắc riêng lẻ: cuộc trò chuyện, lời hứa và kế hoạch."
+              "body": "Nối những khoảnh khắc riêng lẻ: cuộc trò chuyện, lời hứa và kế hoạch.",
+              "title": "Kết nối bước tiếp theo"
             },
             {
-              "title": "Xây niềm tin hằng ngày",
-              "body": "Liên tục cải thiện độ tin cậy, khả năng tiếp cận và những chi tiết người dùng cảm nhận."
+              "body": "Liên tục cải thiện độ tin cậy, khả năng tiếp cận và những chi tiết người dùng cảm nhận.",
+              "title": "Xây niềm tin hằng ngày"
             }
-          ]
+          ],
+          "tab": "Sản phẩm hữu ích",
+          "title": "Giúp công việc hằng ngày dễ hơn."
         },
         {
-          "tab": "Nền tảng chung",
-          "title": "Xây trên nền tảng dùng chung.",
-          "body": "Tệp, con người, quyền truy cập và tri thức luôn liên quan trong công việc. Kiến trúc chung giúp mỗi sản phẩm dùng được ngữ cảnh đó mà không bắt người dùng nhập lại mọi thứ.",
           "alt": "Khu vườn tri thức bằng kính tưởng tượng kết nối các đảo học tập, cộng tác và lập kế hoạch.",
+          "body": "Tệp, con người, quyền truy cập và tri thức luôn liên quan trong công việc. Kiến trúc chung giúp mỗi sản phẩm dùng được ngữ cảnh đó mà không bắt người dùng nhập lại mọi thứ.",
           "proof": "Lợi thế cần được duy trì: kiến trúc, hạ tầng, kỹ thuật và trải nghiệm nhất quán.",
           "steps": [
             {
-              "title": "Tái sử dụng nền tảng",
-              "body": "Danh tính, ranh giới không gian làm việc, API, lưu trữ và triển khai phục vụ nhiều sản phẩm."
+              "body": "Danh tính, ranh giới không gian làm việc, API, lưu trữ và triển khai phục vụ nhiều sản phẩm.",
+              "title": "Tái sử dụng nền tảng"
             },
             {
-              "title": "Giữ liền mạch ngữ cảnh",
-              "body": "Kết nối thông tin đúng quyền và mục đích để công cụ kế tiếp hiểu công việc."
+              "body": "Kết nối thông tin đúng quyền và mục đích để công cụ kế tiếp hiểu công việc.",
+              "title": "Giữ liền mạch ngữ cảnh"
             },
             {
-              "title": "Tích lũy giá trị đầu tư",
-              "body": "Cải thiện một năng lực chung và đưa lợi ích tới nhiều phần của hệ sinh thái."
+              "body": "Cải thiện một năng lực chung và đưa lợi ích tới nhiều phần của hệ sinh thái.",
+              "title": "Tích lũy giá trị đầu tư"
             }
-          ]
+          ],
+          "tab": "Nền tảng chung",
+          "title": "Xây trên nền tảng dùng chung."
         },
         {
-          "tab": "Trí tuệ mới",
-          "title": "Cho trí tuệ một thế giới để hiểu.",
-          "body": "Trợ lý như JARVIS cần ngữ cảnh, trí nhớ, công cụ và khả năng phối hợp với con người cùng tác tử khác. Đó là hướng nghiên cứu chúng tôi khám phá cùng Mira.",
           "alt": "Thế giới mô phỏng thu nhỏ với các đường đi tác tử nhiều màu hội tụ tại sân chung.",
+          "body": "Trợ lý như JARVIS cần ngữ cảnh, trí nhớ, công cụ và khả năng phối hợp với con người cùng tác tử khác. Đó là hướng nghiên cứu chúng tôi khám phá cùng Mira.",
           "proof": "Hướng nghiên cứu: phối hợp đa tác tử, mô phỏng, học hỏi và hành động có kiểm duyệt.",
           "steps": [
             {
-              "title": "Khám phá qua mô phỏng",
-              "body": "So sánh hành vi tác tử và phương án quy trình trong môi trường có giới hạn."
+              "body": "So sánh hành vi tác tử và phương án quy trình trong môi trường có giới hạn.",
+              "title": "Khám phá qua mô phỏng"
             },
             {
-              "title": "Học từ bằng chứng",
-              "body": "Xem xét kết quả, thất bại, phản hồi và giả định phía sau quyết định."
+              "body": "Xem xét kết quả, thất bại, phản hồi và giả định phía sau quyết định.",
+              "title": "Học từ bằng chứng"
             },
             {
-              "title": "Con người giữ quyền quyết định",
-              "body": "Tiến tới năng lực cao hơn với quyền rõ ràng và con người xem xét ở nơi cần thiết."
+              "body": "Tiến tới năng lực cao hơn với quyền rõ ràng và con người xem xét ở nơi cần thiết.",
+              "title": "Con người giữ quyền quyết định"
             }
-          ]
+          ],
+          "tab": "Trí tuệ mới",
+          "title": "Cho trí tuệ một thế giới để hiểu."
         }
       ],
       "cycle": "Mỗi khoản đầu tư tạo cơ hội tiếp theo như thế nào",
@@ -13639,39 +13661,39 @@
       "imageAlt": "Phong cảnh ven biển Việt Nam tưởng tượng nối với đường chân trời rực sáng của Trái Đất.",
       "stages": [
         {
-          "title": "Việt Nam",
+          "body": "Xây dựng gần con người, đội ngũ và những công việc hằng ngày đang cần công cụ tốt hơn.",
           "tag": "CỘI NGUỒN",
-          "body": "Xây dựng gần con người, đội ngũ và những công việc hằng ngày đang cần công cụ tốt hơn."
+          "title": "Việt Nam"
         },
         {
-          "title": "Thế giới",
+          "body": "Mã nguồn mở, nền tảng chung và đối tác địa phương tạo chỗ cho nhiều ngôn ngữ và cách làm việc.",
           "tag": "THIẾT KẾ ĐỂ VƯƠN XA",
-          "body": "Mã nguồn mở, nền tảng chung và đối tác địa phương tạo chỗ cho nhiều ngôn ngữ và cách làm việc."
+          "title": "Thế giới"
         },
         {
-          "title": "Vươn tới vì sao",
+          "body": "Khám phá trí tuệ mở rộng điều con người có thể hình dung và thực hiện. Khát vọng cần từng bước chứng minh, chưa phải đích đến đã đạt được.",
           "tag": "HƯỚNG ĐI",
-          "body": "Khám phá trí tuệ mở rộng điều con người có thể hình dung và thực hiện. Khát vọng cần từng bước chứng minh, chưa phải đích đến đã đạt được."
+          "title": "Vươn tới vì sao"
         }
       ],
       "title": "Từ nhu cầu gần gũi\nđến cơ hội toàn cầu."
     },
     "layers": [
       {
-        "title": "Giao diện cho con người",
-        "detail": "Ứng dụng web, Flutter, tương tác dễ tiếp cận, trải nghiệm tiếng Anh và tiếng Việt."
+        "detail": "Ứng dụng web, Flutter, tương tác dễ tiếp cận, trải nghiệm tiếng Anh và tiếng Việt.",
+        "title": "Giao diện cho con người"
       },
       {
-        "title": "Quy trình thông minh",
-        "detail": "Tích hợp mô hình, công cụ streaming, xếp lịch thông minh, trợ lý giọng nói, con người xem xét."
+        "detail": "Tích hợp mô hình, công cụ streaming, xếp lịch thông minh, trợ lý giọng nói, con người xem xét.",
+        "title": "Quy trình thông minh"
       },
       {
-        "title": "Hệ thống cộng tác",
-        "detail": "Phòng thời gian thực, trạng thái chia sẻ, ngữ cảnh họp, biên tập cộng tác, quyền không gian làm việc."
+        "detail": "Phòng thời gian thực, trạng thái chia sẻ, ngữ cảnh họp, biên tập cộng tác, quyền không gian làm việc.",
+        "title": "Hệ thống cộng tác"
       },
       {
-        "title": "Dữ liệu & triển khai",
-        "detail": "PostgreSQL, kiểm soát theo hàng, API và SDK, edge worker, quy trình phát hành có kiểm thử."
+        "detail": "PostgreSQL, kiểm soát theo hàng, API và SDK, edge worker, quy trình phát hành có kiểm thử.",
+        "title": "Dữ liệu & triển khai"
       }
     ],
     "meetBody": "Mời Mira vào trò chuyện trong phòng hoặc bật giọng nói Live. Nhờ hỗ trợ trong cuộc họp, trao đổi riêng và xem lại việc cần làm trước khi hành động.",
@@ -13702,20 +13724,20 @@
     "research": "Từ câu hỏi nghiên cứu\nđến nguyên mẫu hoạt động.",
     "researchAreas": [
       {
-        "title": "Hỗ trợ quyết định nhân lực",
-        "detail": "Nghiên cứu năng lực làm việc, phát triển kỹ năng và hội nhập với giả định minh bạch và con người xem xét."
+        "detail": "Nghiên cứu năng lực làm việc, phát triển kỹ năng và hội nhập với giả định minh bạch và con người xem xét.",
+        "title": "Hỗ trợ quyết định nhân lực"
       },
       {
-        "title": "Cộng tác người–AI",
-        "detail": "Khám phá cộng sự AI trong họp, giọng nói có sự đồng thuận và chuyển trao đổi thành hành động được xem xét."
+        "detail": "Khám phá cộng sự AI trong họp, giọng nói có sự đồng thuận và chuyển trao đổi thành hành động được xem xét.",
+        "title": "Cộng tác người–AI"
       },
       {
-        "title": "Học tập & tri thức",
-        "detail": "Nghiên cứu truy xuất kiến thức, quy trình học tập và cách đội ngũ xây dựng sự tự tin với AI."
+        "detail": "Nghiên cứu truy xuất kiến thức, quy trình học tập và cách đội ngũ xây dựng sự tự tin với AI.",
+        "title": "Học tập & tri thức"
       },
       {
-        "title": "Điều phối đa tác tử",
-        "detail": "Chúng tôi nghiên cứu hành vi đa tác tử và điều phối quy trình qua các kịch bản mô phỏng. Hive và Mind kết nối tác tử, quy trình tương tác, môi trường chung và lịch sử có thể kiểm tra—để thử nghiệm ý tưởng trước khi mở rộng."
+        "detail": "Chúng tôi nghiên cứu hành vi đa tác tử và điều phối quy trình qua các kịch bản mô phỏng. Hive và Mind kết nối tác tử, quy trình tương tác, môi trường chung và lịch sử có thể kiểm tra—để thử nghiệm ý tưởng trước khi mở rộng.",
+        "title": "Điều phối đa tác tử"
       }
     ],
     "researchBody": "Chúng tôi chào đón trường đại học, nhóm nghiên cứu, doanh nghiệp và đối tác vì cộng đồng cùng khám phá AI ứng dụng, phát triển nhân lực và năng suất số. Tuturuuu có thể đóng góp kỹ thuật sản phẩm và nền tảng phần mềm có thể cấu hình cho nghiên cứu chung, thí điểm được tài trợ và đề xuất liên danh.",
@@ -13734,34 +13756,34 @@
       "eyebrow": "MỘT HỆ SINH THÁI. CAM KẾT DÀI HẠN.",
       "items": [
         {
-          "id": "chat",
-          "title": "Con người và AI. Trong cùng cuộc trò chuyện.",
           "body": "Smart Chat kết nối con người, các kênh, ngữ cảnh chung và hội thoại AI trong một không gian làm việc. Chúng tôi đang xây dựng những đồng nghiệp có thể biến trao đổi thành công việc được phối hợp.",
-          "status": "Nền tảng Chat đã có · đang phát triển khả năng phối hợp sâu hơn"
+          "id": "chat",
+          "status": "Nền tảng Chat đã có · đang phát triển khả năng phối hợp sâu hơn",
+          "title": "Con người và AI. Trong cùng cuộc trò chuyện."
         },
         {
-          "id": "mail",
-          "title": "Hộp thư về không. Cam kết vẫn được theo sát.",
           "body": "Smart Mail bắt đầu từ nhãn thông minh, hỗ trợ soạn thư và theo dõi phản hồi. Bước tiếp theo là Mira trích xuất việc cần làm, kết nối cam kết với nhiệm vụ và giúp xử lý dứt điểm công việc trong hộp thư.",
-          "status": "Nền tảng AI cho Mail đã có · Mira trích xuất nhiệm vụ là hướng phát triển"
+          "id": "mail",
+          "status": "Nền tảng AI cho Mail đã có · Mira trích xuất nhiệm vụ là hướng phát triển",
+          "title": "Hộp thư về không. Cam kết vẫn được theo sát."
         },
         {
-          "id": "calendar",
-          "title": "Lịch dành chỗ cho điều bạn ưu tiên.",
           "body": "Nhiệm vụ, thói quen, giờ làm và hạn chót cùng chia sẻ một ngày hữu hạn. Smart Calendar giúp tự động xếp lịch theo ràng buộc của bạn—và đưa ra kế hoạch để bạn điều chỉnh.",
-          "status": "Đã có khả năng xếp lịch thông minh · tùy cấu hình và phạm vi sử dụng"
+          "id": "calendar",
+          "status": "Đã có khả năng xếp lịch thông minh · tùy cấu hình và phạm vi sử dụng",
+          "title": "Lịch dành chỗ cho điều bạn ưu tiên."
         },
         {
-          "id": "collaboration",
-          "title": "Tư duy trên bảng. Cùng xây dựng tài liệu.",
           "body": "Bảng trắng thời gian thực và tài liệu cộng tác mang đến không gian chung để suy nghĩ, viết và hoàn thiện. Trải nghiệm cộng tác như Google Docs cần nằm trong cùng hệ sinh thái với công việc mà nó hỗ trợ.",
-          "status": "Đã có nền tảng cộng tác · tiếp tục kết nối sâu hơn giữa các sản phẩm"
+          "id": "collaboration",
+          "status": "Đã có nền tảng cộng tác · tiếp tục kết nối sâu hơn giữa các sản phẩm",
+          "title": "Tư duy trên bảng. Cùng xây dựng tài liệu."
         },
         {
-          "id": "research",
-          "title": "Trước khi giao việc cho tác tử, hãy để chúng vận hành thế giới.",
           "body": "Chúng tôi nghiên cứu hành vi đa tác tử và điều phối quy trình qua các kịch bản mô phỏng. Hive và Mind kết nối tác tử, quy trình tương tác, môi trường chung và lịch sử có thể kiểm tra—để thử nghiệm ý tưởng trước khi mở rộng.",
-          "status": "Đang nghiên cứu và thử nghiệm · mô phỏng chưa chứng minh hiệu quả thực tế"
+          "id": "research",
+          "status": "Đang nghiên cứu và thử nghiệm · mô phỏng chưa chứng minh hiệu quả thực tế",
+          "title": "Trước khi giao việc cho tác tử, hãy để chúng vận hành thế giới."
         }
       ],
       "note": "Định hướng dài hạn bao trùm toàn bộ hệ sinh thái. Tính năng, mức độ hoàn thiện và quyền truy cập tùy từng ứng dụng.",
@@ -15388,8 +15410,8 @@
     "run": "Chạy",
     "running": "Đang chạy…",
     "save": "Lưu vào Drive",
-    "saved": "Đã lưu vào Drive",
     "saveFailed": "Lưu Drive thất bại. Giữ phòng mở và thử lại.",
+    "saved": "Đã lưu vào Drive",
     "setupTitle": "Mở bài tập Learn hoặc playground",
     "share": "Mời cộng tác",
     "shared": "Đã cập nhật quyền cộng tác.",
@@ -16811,6 +16833,7 @@
     "available": "Có sẵn",
     "available-accounts": "Tài khoản có sẵn để liên kết",
     "avatar": "Ảnh đại diện",
+    "avatar-description": "Cá nhân hoá hồ sơ của bạn với ảnh đại diện tùy chỉnh.",
     "avatar_compression_error": "Đã xảy ra lỗi khi nén hình đại diện của bạn",
     "avatar_remove_error": "Đã xảy ra lỗi khi xóa hình đại diện của bạn. \nVui lòng thử lại.",
     "avatar_removed": "Đã xóa ảnh đại diện",
@@ -16818,13 +16841,12 @@
     "avatar_update_error": "Đã xảy ra lỗi khi cập nhật hình đại diện của bạn. \nVui lòng thử lại.",
     "avatar_updated": "Đã cập nhật ảnh đại diện",
     "avatar_updated_description": "Hình đại diện của bạn đã được cập nhật thành công.",
-    "avatar-description": "Cá nhân hoá hồ sơ của bạn với ảnh đại diện tùy chỉnh.",
     "avoid-public-wifi-tip": "Tránh truy cập thông tin nhạy cảm trên WiFi công cộng",
     "banner": "Ảnh bìa hồ sơ",
+    "banner-description": "Thêm ảnh bìa cho hồ sơ của bạn.",
     "banner_removed": "Đã xóa ảnh bìa",
     "banner_update_error": "Không thể cập nhật ảnh bìa. Vui lòng thử lại.",
     "banner_updated": "Đã cập nhật ảnh bìa",
-    "banner-description": "Thêm ảnh bìa cho hồ sơ của bạn.",
     "billing-address": "Địa chỉ hóa đơn",
     "billing-description": "Xem và quản lý thông tin thanh toán và đăng ký",
     "billing-history": "Lịch sử hóa đơn",
@@ -16835,10 +16857,10 @@
     "cancel": "Hủy",
     "cannot-unlink": "Không thể hủy liên kết",
     "cannot-unlink-description": "Bạn phải có ít nhất một tài khoản được liên kết để đăng nhập",
-    "change_banner": "Đổi ảnh bìa",
     "change-email-description": "Sau khi bạn xác nhận ở cả hai email, email mới của bạn sẽ được tự động cập nhật.",
     "change-password": "Đổi mật khẩu",
     "change-password-description": "Đổi mật khẩu cho tài khoản của bạn.",
+    "change_banner": "Đổi ảnh bìa",
     "check-email-verify": "Kiểm tra email của bạn để xác minh {email}",
     "code-must-be-6-digits": "Mã phải có 6 chữ số",
     "coming-soon": "Sắp ra mắt",
@@ -16942,8 +16964,8 @@
     "mfa-verification-successful": "Xác minh MFA thành công",
     "mfa-verification-title": "Xác thực hai yếu tố",
     "monitor-account-activity-tip": "Thường xuyên theo dõi hoạt động tài khoản của bạn",
-    "new_avatar": "Hình đại diện mới",
     "new-email": "Email mới",
+    "new_avatar": "Hình đại diện mới",
     "no-linked-accounts": "Chưa có tài khoản được liên kết",
     "no-linked-accounts-description": "Kết nối các tài khoản mạng xã hội của bạn để việc đăng nhập trở nên dễ dàng và an toàn hơn.",
     "no-mfa-methods": "Không có phương thức MFA",
@@ -17147,8 +17169,8 @@
     "unlink-confirmation": "Bạn có chắc chắn muốn hủy liên kết tài khoản {provider} của mình không? Bạn sẽ không thể đăng nhập bằng tài khoản này nữa.",
     "unlinking": "Đang hủy liên kết",
     "unverified": "Chưa xác minh",
-    "update_failed": "Cập nhật thất bại",
     "update-address": "Cập nhật địa chỉ",
+    "update_failed": "Cập nhật thất bại",
     "upgrade-plan": "Nâng cấp gói",
     "upload_avatar": "Hình đại diện mới",
     "upload_banner": "Tải ảnh bìa lên",
@@ -17354,8 +17376,8 @@
     "migrations": "Chuyển dữ liệu",
     "mind": "Mind",
     "models": "Các mô hình",
-    "more_tools": "Nhiều công cụ hơn",
     "more-members": "người khác",
+    "more_tools": "Nhiều công cụ hơn",
     "my_tasks": "Nhiệm vụ của tôi",
     "new": "Tạo mới",
     "new-invoice": "Tạo hóa đơn mới",
@@ -17392,10 +17414,10 @@
     "tasks": "Nhiệm vụ",
     "teams": "Đội",
     "templates": "Mẫu bảng",
+    "time-tracker": "Theo dõi thời gian",
     "time_tracker": "Trình theo dõi thời gian",
     "time_tracker_management": "Quản lý",
     "time_tracker_requests": "Yêu cầu",
-    "time-tracker": "Theo dõi thời gian",
     "timer": "Hẹn giờ",
     "to": "To",
     "total_emails": "Tổng số email",
@@ -17821,151 +17843,6 @@
         "missing_trigger": "Quy trình cần một nút kích hoạt thủ công.",
         "node_limit": "Mỗi quy trình Hive tối đa 80 nút."
       }
-    }
-  },
-  "task_project_detail": {
-    "common": {
-      "untitled_list": "Danh sách chưa đặt tên"
-    },
-    "configuration": {
-      "archive_description": "Dự án đã lưu trữ sẽ bị ẩn khỏi chế độ xem mặc định",
-      "archive_project": "Lưu trữ dự án",
-      "end_date_label": "Ngày kết thúc",
-      "health_status": {
-        "at_risk": "Có rủi ro",
-        "off_track": "Lệch tiến độ",
-        "on_track": "Đúng tiến độ"
-      },
-      "health_status_label": "Tình trạng sức khỏe",
-      "health_status_placeholder": "Chọn tình trạng sức khỏe",
-      "key_invalid": "Dùng 2–10 chữ cái in hoa hoặc chữ số, bắt đầu bằng chữ cái.",
-      "key_label": "Mã",
-      "key_preview": "Xem trước: {identifier}",
-      "priority": {
-        "critical": "Nghiêm trọng",
-        "high": "Cao",
-        "low": "Thấp",
-        "normal": "Bình thường"
-      },
-      "priority_label": "Mức độ ưu tiên",
-      "priority_placeholder": "Chọn mức độ ưu tiên",
-      "project_lead_label": "Trưởng dự án",
-      "start_date_label": "Ngày bắt đầu",
-      "status": {
-        "active": "Đang hoạt động",
-        "backlog": "Tồn đọng",
-        "cancelled": "Đã hủy",
-        "completed": "Hoàn thành",
-        "in_progress": "Đang thực hiện",
-        "in_review": "Đang xem xét",
-        "in_testing": "Đang kiểm tra",
-        "on_hold": "Tạm dừng",
-        "planned": "Đã lên kế hoạch"
-      },
-      "status_label": "Trạng thái",
-      "title": "Cấu hình dự án"
-    },
-    "documents_tab": {
-      "description": "{count} mục tham khảo được liên kết qua danh sách tài liệu.",
-      "document_list": "Danh sách tài liệu",
-      "documents": "tài liệu",
-      "empty_description": "Các nhiệm vụ trong danh sách tài liệu được liên kết vào dự án sẽ xuất hiện tại đây, tách khỏi công việc thực thi.",
-      "empty_title": "Chưa có tài liệu liên kết",
-      "title": "Tài liệu đã liên kết"
-    },
-    "header": {
-      "cancel": "Hủy",
-      "edit_name_aria": "Chỉnh sửa tên dự án",
-      "project_name_placeholder": "Tên dự án",
-      "save_changes": "Lưu thay đổi",
-      "saving": "Đang lưu..."
-    },
-    "lead_selector": {
-      "loading": "Đang tải...",
-      "no_lead": "Không có trưởng dự án",
-      "select_lead": "Chọn trưởng dự án"
-    },
-    "link_dialog": {
-      "description": "Tìm kiếm công việc hiện có để liên kết vào dự án này",
-      "no_tasks_found": "Không tìm thấy công việc nào phù hợp với \"{query}\"",
-      "search_placeholder": "Tìm kiếm công việc theo tiêu đề...",
-      "start_typing": "Bắt đầu nhập để tìm kiếm công việc",
-      "tip": "Mẹo: Tạo công việc mới trực tiếp trong tab Công việc và chúng sẽ tự động được liên kết vào dự án này.",
-      "title": "Liên kết công việc vào dự án"
-    },
-    "metadata": {
-      "page_description": "Xem và quản lý chi tiết dự án nhiệm vụ.",
-      "page_title": "Dự Án Nhiệm Vụ"
-    },
-    "overview": {
-      "describe_placeholder": "Mô tả dự án của bạn...",
-      "description": "Mô tả",
-      "document": "Tài liệu",
-      "document_list": "Danh sách tài liệu",
-      "done": "Hoàn thành",
-      "edit_description_aria": "Chỉnh sửa mô tả dự án",
-      "hide_configuration": "Ẩn cấu hình",
-      "link_tasks": "Liên kết công việc",
-      "linked_documents": "Tài Liệu Đã Liên Kết",
-      "linked_documents_description": "Mục tham khảo được tách khỏi số lượng nhiệm vụ.",
-      "linked_tasks": "Công việc đã liên kết",
-      "no_description": "Chưa có mô tả. Nhấp vào biểu tượng chỉnh sửa để thêm.",
-      "no_documents_linked": "Chưa liên kết tài liệu nào",
-      "no_tasks_linked": "Chưa liên kết công việc nào",
-      "no_updates_yet": "Chưa có cập nhật nào. Hãy chia sẻ cập nhật đầu tiên!",
-      "post_update": "Đăng cập nhật",
-      "recent_updates": "Cập nhật gần đây",
-      "rich_text_note": "Lưu ý: Trình soạn thảo văn bản sẽ được thêm trong bản cập nhật tương lai",
-      "show_configuration": "Hiện cấu hình",
-      "unknown_user": "Không xác định",
-      "view_all": "Xem tất cả"
-    },
-    "sidebar": {
-      "click_assign_lead": "Nhấp để chỉ định trưởng dự án",
-      "click_set_timeline": "Nhấp để đặt tiến độ",
-      "completed": "Đã hoàn thành",
-      "edit_lead_aria": "Chỉnh sửa trưởng dự án",
-      "edit_timeline_aria": "Chỉnh sửa tiến độ",
-      "end_date": "Ngày kết thúc",
-      "end_label": "Kết thúc:",
-      "in_progress": "Đang thực hiện",
-      "project_lead": "Trưởng dự án",
-      "project_stats": "Thống kê dự án",
-      "select_lead_label": "Chọn trưởng dự án",
-      "start_date": "Ngày bắt đầu",
-      "start_label": "Bắt đầu:",
-      "timeline": "Tiến độ",
-      "total_tasks": "Tổng công việc",
-      "unknown": "Không xác định"
-    },
-    "tabs": {
-      "documents": "Tài liệu",
-      "overview": "Tổng quan",
-      "tasks": "Công việc",
-      "updates": "Cập nhật"
-    },
-    "tasks_tab": {
-      "link_tasks": "Liên kết công việc",
-      "no_tasks_description": "Liên kết công việc hiện có hoặc tạo công việc mới để bắt đầu",
-      "no_tasks_title": "Chưa liên kết công việc nào"
-    },
-    "update_card": {
-      "actions_aria": "Hành động cập nhật",
-      "cancel": "Hủy",
-      "delete": "Xóa",
-      "edit": "Chỉnh sửa",
-      "edited_badge": "Đã chỉnh sửa",
-      "save": "Lưu",
-      "unknown_user": "Không xác định"
-    },
-    "updates_tab": {
-      "no_updates_description": "Hãy là người đầu tiên chia sẻ tiến độ cho dự án này!",
-      "no_updates_title": "Chưa có cập nhật nào",
-      "post_update": "Đăng cập nhật",
-      "posting": "Đang đăng...",
-      "rich_text_coming_soon": "Trình soạn thảo văn bản, phản ứng và tệp đính kèm sẽ sớm ra mắt",
-      "share_placeholder": "Chia sẻ tiến độ, kỷ niệm thành công hoặc thảo luận thách thức...",
-      "share_update": "Chia sẻ cập nhật"
     }
   },
   "task-cycle-planning": {
@@ -18521,6 +18398,151 @@
     "task_created": "Tạo tác vụ thành công",
     "task_creation_failed": "Không thể tạo tác vụ"
   },
+  "task_project_detail": {
+    "common": {
+      "untitled_list": "Danh sách chưa đặt tên"
+    },
+    "configuration": {
+      "archive_description": "Dự án đã lưu trữ sẽ bị ẩn khỏi chế độ xem mặc định",
+      "archive_project": "Lưu trữ dự án",
+      "end_date_label": "Ngày kết thúc",
+      "health_status": {
+        "at_risk": "Có rủi ro",
+        "off_track": "Lệch tiến độ",
+        "on_track": "Đúng tiến độ"
+      },
+      "health_status_label": "Tình trạng sức khỏe",
+      "health_status_placeholder": "Chọn tình trạng sức khỏe",
+      "key_invalid": "Dùng 2–10 chữ cái in hoa hoặc chữ số, bắt đầu bằng chữ cái.",
+      "key_label": "Mã",
+      "key_preview": "Xem trước: {identifier}",
+      "priority": {
+        "critical": "Nghiêm trọng",
+        "high": "Cao",
+        "low": "Thấp",
+        "normal": "Bình thường"
+      },
+      "priority_label": "Mức độ ưu tiên",
+      "priority_placeholder": "Chọn mức độ ưu tiên",
+      "project_lead_label": "Trưởng dự án",
+      "start_date_label": "Ngày bắt đầu",
+      "status": {
+        "active": "Đang hoạt động",
+        "backlog": "Tồn đọng",
+        "cancelled": "Đã hủy",
+        "completed": "Hoàn thành",
+        "in_progress": "Đang thực hiện",
+        "in_review": "Đang xem xét",
+        "in_testing": "Đang kiểm tra",
+        "on_hold": "Tạm dừng",
+        "planned": "Đã lên kế hoạch"
+      },
+      "status_label": "Trạng thái",
+      "title": "Cấu hình dự án"
+    },
+    "documents_tab": {
+      "description": "{count} mục tham khảo được liên kết qua danh sách tài liệu.",
+      "document_list": "Danh sách tài liệu",
+      "documents": "tài liệu",
+      "empty_description": "Các nhiệm vụ trong danh sách tài liệu được liên kết vào dự án sẽ xuất hiện tại đây, tách khỏi công việc thực thi.",
+      "empty_title": "Chưa có tài liệu liên kết",
+      "title": "Tài liệu đã liên kết"
+    },
+    "header": {
+      "cancel": "Hủy",
+      "edit_name_aria": "Chỉnh sửa tên dự án",
+      "project_name_placeholder": "Tên dự án",
+      "save_changes": "Lưu thay đổi",
+      "saving": "Đang lưu..."
+    },
+    "lead_selector": {
+      "loading": "Đang tải...",
+      "no_lead": "Không có trưởng dự án",
+      "select_lead": "Chọn trưởng dự án"
+    },
+    "link_dialog": {
+      "description": "Tìm kiếm công việc hiện có để liên kết vào dự án này",
+      "no_tasks_found": "Không tìm thấy công việc nào phù hợp với \"{query}\"",
+      "search_placeholder": "Tìm kiếm công việc theo tiêu đề...",
+      "start_typing": "Bắt đầu nhập để tìm kiếm công việc",
+      "tip": "Mẹo: Tạo công việc mới trực tiếp trong tab Công việc và chúng sẽ tự động được liên kết vào dự án này.",
+      "title": "Liên kết công việc vào dự án"
+    },
+    "metadata": {
+      "page_description": "Xem và quản lý chi tiết dự án nhiệm vụ.",
+      "page_title": "Dự Án Nhiệm Vụ"
+    },
+    "overview": {
+      "describe_placeholder": "Mô tả dự án của bạn...",
+      "description": "Mô tả",
+      "document": "Tài liệu",
+      "document_list": "Danh sách tài liệu",
+      "done": "Hoàn thành",
+      "edit_description_aria": "Chỉnh sửa mô tả dự án",
+      "hide_configuration": "Ẩn cấu hình",
+      "link_tasks": "Liên kết công việc",
+      "linked_documents": "Tài Liệu Đã Liên Kết",
+      "linked_documents_description": "Mục tham khảo được tách khỏi số lượng nhiệm vụ.",
+      "linked_tasks": "Công việc đã liên kết",
+      "no_description": "Chưa có mô tả. Nhấp vào biểu tượng chỉnh sửa để thêm.",
+      "no_documents_linked": "Chưa liên kết tài liệu nào",
+      "no_tasks_linked": "Chưa liên kết công việc nào",
+      "no_updates_yet": "Chưa có cập nhật nào. Hãy chia sẻ cập nhật đầu tiên!",
+      "post_update": "Đăng cập nhật",
+      "recent_updates": "Cập nhật gần đây",
+      "rich_text_note": "Lưu ý: Trình soạn thảo văn bản sẽ được thêm trong bản cập nhật tương lai",
+      "show_configuration": "Hiện cấu hình",
+      "unknown_user": "Không xác định",
+      "view_all": "Xem tất cả"
+    },
+    "sidebar": {
+      "click_assign_lead": "Nhấp để chỉ định trưởng dự án",
+      "click_set_timeline": "Nhấp để đặt tiến độ",
+      "completed": "Đã hoàn thành",
+      "edit_lead_aria": "Chỉnh sửa trưởng dự án",
+      "edit_timeline_aria": "Chỉnh sửa tiến độ",
+      "end_date": "Ngày kết thúc",
+      "end_label": "Kết thúc:",
+      "in_progress": "Đang thực hiện",
+      "project_lead": "Trưởng dự án",
+      "project_stats": "Thống kê dự án",
+      "select_lead_label": "Chọn trưởng dự án",
+      "start_date": "Ngày bắt đầu",
+      "start_label": "Bắt đầu:",
+      "timeline": "Tiến độ",
+      "total_tasks": "Tổng công việc",
+      "unknown": "Không xác định"
+    },
+    "tabs": {
+      "documents": "Tài liệu",
+      "overview": "Tổng quan",
+      "tasks": "Công việc",
+      "updates": "Cập nhật"
+    },
+    "tasks_tab": {
+      "link_tasks": "Liên kết công việc",
+      "no_tasks_description": "Liên kết công việc hiện có hoặc tạo công việc mới để bắt đầu",
+      "no_tasks_title": "Chưa liên kết công việc nào"
+    },
+    "update_card": {
+      "actions_aria": "Hành động cập nhật",
+      "cancel": "Hủy",
+      "delete": "Xóa",
+      "edit": "Chỉnh sửa",
+      "edited_badge": "Đã chỉnh sửa",
+      "save": "Lưu",
+      "unknown_user": "Không xác định"
+    },
+    "updates_tab": {
+      "no_updates_description": "Hãy là người đầu tiên chia sẻ tiến độ cho dự án này!",
+      "no_updates_title": "Chưa có cập nhật nào",
+      "post_update": "Đăng cập nhật",
+      "posting": "Đang đăng...",
+      "rich_text_coming_soon": "Trình soạn thảo văn bản, phản ứng và tệp đính kèm sẽ sớm ra mắt",
+      "share_placeholder": "Chia sẻ tiến độ, kỷ niệm thành công hoặc thảo luận thách thức...",
+      "share_update": "Chia sẻ cập nhật"
+    }
+  },
   "tasks": {
     "board": "Bảng",
     "could_not_find_lists": "Không tìm thấy danh sách phù hợp để hoàn thành nhiệm vụ",
@@ -18994,8 +19016,8 @@
       "resumePreviousSession": "Tiếp tục phiên làm việc trước đó của bạn",
       "searchFilter": "Tìm kiếm: \"{query}\"",
       "searchTasks": "Tìm nhiệm vụ...",
-      "tasksPrioritized": "Nhiệm vụ được ưu tiên: Nhiệm vụ khẩn cấp của bạn → Chưa giao khẩn cấp → Nhiệm vụ khác của bạn",
       "taskWorkspace": "Không Gian Nhiệm Vụ",
+      "tasksPrioritized": "Nhiệm vụ được ưu tiên: Nhiệm vụ khẩn cấp của bạn → Chưa giao khẩn cấp → Nhiệm vụ khác của bạn",
       "toast": {
         "assignedToYourself": "Đã giao \"{taskName}\" cho chính mình",
         "failedToResume": "Không thể tiếp tục phiên",
@@ -19509,10 +19531,10 @@
         "previous": "Trước",
         "session": "phiên",
         "sessionPlural": "phiên",
-        "sessions_plural": "phiên",
+        "sessionSingular": "phiên",
         "sessionsColumn": "Phiên",
         "sessionsHeader": "Phiên",
-        "sessionSingular": "phiên",
+        "sessions_plural": "phiên",
         "showing": "Hiển thị {start} đến {end} trong tổng {total} kết quả",
         "status": "Trạng thái",
         "statusHeader": "Trạng thái",
@@ -19529,8 +19551,8 @@
       "stats": {
         "acrossUsers": "Từ {count} người dùng",
         "activeSessions": "Phiên Đang Hoạt Động",
-        "currentlyInProgress": "Hiện đang tiến hành",
         "currentPeriodTotal": "Tổng {period} hiện tại",
+        "currentlyInProgress": "Hiện đang tiến hành",
         "daily": "Hàng ngày",
         "dailyAverage": "Trung Bình Ngày",
         "liveTracking": "Theo dõi trực tiếp",
@@ -19611,8 +19633,8 @@
         "chainTitle": "Chuỗi phiên vượt quá giới hạn thời gian",
         "description": "Phiên này đã chạy lâu hơn ngưỡng cho phép. Bạn có thể hủy phiên hoặc tạo yêu cầu thêm mục bị thiếu để phê duyệt.",
         "discardFailed": "Không thể hủy phiên",
-        "discarding": "Đang hủy...",
         "discardSession": "Hủy phiên",
+        "discarding": "Đang hủy...",
         "exceedsThreshold": "Phiên này đã chạy hơn {days} ngày. Vui lòng cung cấp thời gian bắt đầu và kết thúc chính xác cùng với bằng chứng công việc.",
         "runningFor": "Đã chạy {duration}",
         "sessionDiscarded": "Đã hủy phiên thành công",
@@ -19668,10 +19690,10 @@
       "simpleDescription": "Bạn đang sử dụng bộ hẹn giờ đơn giản tập trung vào việc theo dõi thời gian dễ dàng và nhanh chóng. Chuyển sang chế độ nâng cao để có bộ hẹn giờ Pomodoro, lời nhắc nghỉ ngơi, kéo thả và các tính năng chi tiết.",
       "simpleMode": "Chế độ Đơn giản",
       "simpleToastDescription": "Trải nghiệm theo dõi thời gian sạch sẽ, tập trung",
-      "switchedToAdvanced": "Đã chuyển sang Chế độ Nâng cao",
-      "switchedToSimple": "Đã chuyển sang Chế độ Đơn giản",
       "switchToAdvanced": "Chuyển sang Nâng cao",
-      "switchToSimple": "Chuyển sang Đơn giản"
+      "switchToSimple": "Chuyển sang Đơn giản",
+      "switchedToAdvanced": "Đã chuyển sang Chế độ Nâng cao",
+      "switchedToSimple": "Đã chuyển sang Chế độ Đơn giản"
     },
     "overview": {
       "quickTimer": "Bắt đầu theo dõi thời gian nhanh chóng. Cần thêm tính năng? Chuyển sang chế độ nâng cao.",
@@ -20057,9 +20079,9 @@
       "noCategory": "Không có danh mục",
       "onBreak": "Nghỉ giải lao",
       "pause": "Tạm dừng",
+      "pauseTimerFailed": "Không thể tạm dừng hẹn giờ",
       "paused": "Tạm dừng",
       "pausedAt": "Nghỉ tại {time}",
-      "pauseTimerFailed": "Không thể tạm dừng hẹn giờ",
       "recordingTime": "Đang ghi thời gian",
       "resume": "Tiếp tục",
       "resumeTimerFailed": "Không thể tiếp tục hẹn giờ",
@@ -20119,13 +20141,13 @@
       },
       "loadingWorkspaces": "Đang tải không gian làm việc...",
       "movingSession": "Đang di chuyển phiên:",
+      "noWorkspaces": "Không có không gian làm việc nào khác. Bạn cần là thành viên của ít nhất một không gian làm việc khác để di chuyển phiên.",
       "note": "Lưu ý:",
       "noteItems": {
         "match": "Danh mục và nhiệm vụ sẽ được khớp theo tên nếu chúng tồn tại trong không gian làm việc đích",
         "move": "Phiên sẽ được di chuyển sang không gian làm việc đã chọn",
         "unassign": "Nếu không tìm thấy danh mục/nhiệm vụ khớp, chúng sẽ bị hủy gán"
       },
-      "noWorkspaces": "Không có không gian làm việc nào khác. Bạn cần là thành viên của ít nhất một không gian làm việc khác để di chuyển phiên.",
       "selectTarget": "Chọn Không Gian Làm Việc Đích",
       "title": "Di Chuyển Phiên Sang Không Gian Làm Việc Khác"
     }
@@ -20513,9 +20535,9 @@
       },
       "metadata": {
         "componentDescription": "Xem trước {name}, sao chép ví dụ cách dùng và xem export API cho {importPath}.",
+        "componentTitle": "{name} - Tuturuuu UI",
         "componentsDescription": "Duyệt thành phần UI Tuturuuu với ghi chú setup, import, ví dụ và export API.",
         "componentsTitle": "Thành phần UI Tuturuuu",
-        "componentTitle": "{name} - Tuturuuu UI",
         "contributingDescription": "Quy trình đóng góp để giữ tài liệu UI Tuturuuu chính xác.",
         "contributingTitle": "Đóng góp cho tài liệu UI Tuturuuu",
         "overviewDescription": "Trung tâm tài liệu kiểu shadcn cho package Tuturuuu UI.",
@@ -20565,7 +20587,6 @@
       },
       "setup": {
         "badge": "Cài đặt",
-        "contributorsDescription": "Maintainer nội bộ nên cập nhật route docs, registry, messages và tests cùng lúc.",
         "contributorSteps": {
           "exports": {
             "description": "Kiểm tra export map của package trước khi ghi tài liệu đường import công khai mới.",
@@ -20584,6 +20605,7 @@
             "title": "Thêm test"
           }
         },
+        "contributorsDescription": "Maintainer nội bộ nên cập nhật route docs, registry, messages và tests cùng lúc.",
         "contributorsTitle": "Setup cho người đóng góp",
         "description": "Cài đặt và nối package dùng chung cho app sản phẩm, sau đó theo quy trình đóng góp khi thư viện thay đổi.",
         "importsDescription": "Import mọi primitive từ subpath công khai. Giữ app workspace sau cùng package boundary với người dùng ngoài.",
@@ -20693,8 +20715,8 @@
       "resources": "Tai nguyen",
       "rightClick": "Nhan chuot phai de mo menu",
       "save": "Luu",
-      "saved": "Da luu",
       "saveDraft": "Luu ban nhap",
+      "saved": "Da luu",
       "searchPlaceholder": "Tim kiem...",
       "sectionCopy": "Separator tao thu bac ma khong can them panel.",
       "sectionTitle": "Tieu de phan",
@@ -20820,8 +20842,8 @@
     "referral_success": "Đã giới thiệu một người dùng mới",
     "referred_by": "Được giới thiệu bởi:",
     "referred_users_label": "Người đã được bạn giới thiệu",
-    "remove_from_group_failed": "Không thể xóa người dùng khỏi nhóm",
     "remove-from-group": "Xóa khỏi nhóm",
+    "remove_from_group_failed": "Không thể xóa người dùng khỏi nhóm",
     "report": "Báo cáo",
     "reports": "Báo cáo",
     "retry": "Thử lại",
@@ -21731,10 +21753,10 @@
     "activation": "Trạng thái kích hoạt",
     "activationHelp": "Chỉ người vận hành triển khai có thể thay đổi cờ toàn cục. Ứng dụng còn cần được chọn làm thử nghiệm, có khóa ký đang hoạt động và chỉ định THÀNH VIÊN rõ ràng. Bật ứng dụng tại đây không thể bật cờ máy chủ.",
     "assign": "Chỉ định",
+    "assignNamed": "Chỉ định {name}",
     "assigned": "Đã chỉ định",
     "assignments": "Chỉ định thành viên",
     "assignmentsHelp": "Chỉ THÀNH VIÊN hiện tại của không gian làm việc xuất hiện ở đây. Khách và lời mời bị loại trừ. Chỉ định không mời người dùng vào Claude hoặc mua chỗ. Mỗi lần đăng nhập vẫn cần email đã xác minh, MFA mới và chấp thuận chia sẻ danh tính.",
-    "assignNamed": "Chỉ định {name}",
     "audit": "Sự kiện kiểm toán gần đây",
     "auditHelp": "50 sự kiện mới nhất của ứng dụng. Không hiển thị xác nhận SAML, token, email hoặc mã phiên. Phản hồi đã ký không chứng minh đăng nhập Claude thành công.",
     "cancel": "Hủy",
@@ -21784,14 +21806,14 @@
       "retiredAt": "Đã ngừng",
       "revokedAt": "Đã thu hồi"
     },
-    "keys": "Trạng thái khóa ký",
-    "keysHelp": "Chỉ chứng chỉ công khai và thời điểm xoay khóa. Việc tạo khóa, bảo quản khóa riêng và xoay khóa thuộc trách nhiệm người vận hành triển khai.",
     "keyStatus": {
       "active": "Hoạt động",
       "pending": "Chờ xử lý",
       "retiring": "Đang ngừng sử dụng",
       "revoked": "Đã thu hồi"
     },
+    "keys": "Trạng thái khóa ký",
+    "keysHelp": "Chỉ chứng chỉ công khai và thời điểm xoay khóa. Việc tạo khóa, bảo quản khóa riêng và xoay khóa thuộc trách nhiệm người vận hành triển khai.",
     "legacyPolicy": "Lưu chính sách chữ ký yêu cầu rõ ràng trước khi bật ứng dụng này.",
     "loadError": "Cài đặt SSO không khả dụng hoặc bạn không có quyền.",
     "loading": "Đang tải cài đặt SSO…",
@@ -21874,20 +21896,6 @@
     "contracts": "Hợp đồng",
     "directory": "Danh bạ",
     "payroll": "Bảng lương"
-  },
-  "ws_post_details": {
-    "approval_locked": "Không thể gỡ phê duyệt vì đã có ít nhất một email được gửi.",
-    "approval_revocable": "Có thể gỡ phê duyệt vì chưa có email nào được gửi.",
-    "check_all": "Đã kiểm tra tất cả",
-    "completed": "Hoàn thành",
-    "history": "Lịch sử",
-    "history_description": "Mọi thay đổi hoàn thành của bài đăng này, mới nhất trước.",
-    "history_empty": "Chưa ghi nhận thay đổi nào.",
-    "reset_check": "Đặt lại",
-    "reset_check_description": "Đưa thành viên này về trạng thái chưa xử lý (xóa dấu hoàn thành)",
-    "status_pending": "Chưa xử lý",
-    "uncheck_all": "Bỏ đánh dấu tất cả",
-    "uncheck_all_description": "Đưa tất cả thành viên về trạng thái chưa xử lý"
   },
   "ws-activities": {
     "added": "Đã thêm",
@@ -23066,8 +23074,8 @@
     "listingTitle": "Tên listing",
     "noListings": "Cửa hàng này chưa có listing nào.",
     "optionNamePlaceholder": "Kích cỡ",
-    "options": "Tùy chọn",
     "optionValuesPlaceholder": "S, M, L, XL",
+    "options": "Tùy chọn",
     "price": "Giá",
     "remove": "Xóa",
     "save": "Lưu",
@@ -23507,8 +23515,8 @@
     "direct_board_guest_badge": "Khách của bảng",
     "direct_board_guest_scope_description": "Người này không phải thành viên không gian làm việc. Họ chỉ có thể truy cập {count, plural, =1 {bảng được chia sẻ trực tiếp với họ} other {các bảng được chia sẻ trực tiếp với họ}} và không thể xem cài đặt, vai trò, thành viên, bảng không liên quan, nhãn, dự án, mẫu, nhật ký hoặc sản phẩm khác.",
     "direct_board_guest_scope_title": "Chỉ có quyền trực tiếp trên bảng",
-    "edit_role": "Chỉnh sửa vai trò",
     "edit-member-description": "Chỉnh sửa thông tin hồ sơ của thành viên này.",
+    "edit_role": "Chỉnh sửa vai trò",
     "enter_email_or_username": "Nhập email hoặc tên người dùng",
     "error": "Lỗi",
     "expand_permissions": "Mở rộng quyền",
@@ -23525,11 +23533,15 @@
     "guest_self_join_label": "Bật tham gia khách bằng khớp email",
     "guest_self_join_update_error": "Không thể cập nhật cài đặt tham gia khách.",
     "guest_self_join_update_success": "Đã cập nhật cài đặt tham gia khách.",
+    "has-been-updated": "đã được cập nhật",
     "has_been_removed": "đã bị xóa khỏi không gian làm việc này",
     "has_been_revoked": "đã bị thu hồi",
     "has_been_sent": "đã được gửi",
     "has_permission": "Có quyền",
-    "has-been-updated": "đã được cập nhật",
+    "invitation-failed": "Không thể mời thành viên",
+    "invitation-failed-description": "Đã xảy ra lỗi khi gửi lời mời. Vui lòng thử lại.",
+    "invitation-sent": "Lời mời đã được gửi",
+    "invitation-sent-description": "Lời mời đã được gửi đến {email}.",
     "invitation_error": "Không thể gửi lời mời",
     "invitation_error_already_exist": "Người dùng đã là thành viên hoặc lời mời đã được gửi.",
     "invitation_error_user_not_found": "Người dùng không tìm thấy hoặc chưa đăng ký trên nền tảng.",
@@ -23539,10 +23551,6 @@
     "invitation_role_updated": "Đã cập nhật vai trò của lời mời",
     "invitation_sent": "Lời mời đã được gửi",
     "invitation_to": "Lời mời đến",
-    "invitation-failed": "Không thể mời thành viên",
-    "invitation-failed-description": "Đã xảy ra lỗi khi gửi lời mời. Vui lòng thử lại.",
-    "invitation-sent": "Lời mời đã được gửi",
-    "invitation-sent-description": "Lời mời đã được gửi đến {email}.",
     "invite_access_guest_tab": "Khách",
     "invite_access_member_tab": "Thành viên",
     "invite_access_pos_tab": "POS",
@@ -23576,10 +23584,10 @@
     "leave_workspace": "Rời khỏi không gian làm việc",
     "manage-billing": "Quản lý thanh toán",
     "member": "Thành viên",
-    "member_removed": "Thành viên đã bị xóa",
-    "member_since": "Thành viên từ",
     "member-settings": "Cài đặt thành viên",
     "member-updated": "Thành viên đã được cập nhật",
+    "member_removed": "Thành viên đã bị xóa",
+    "member_since": "Thành viên từ",
     "members_workspace_settings_description": "Tùy chọn cấp không gian làm việc cho thành viên và quyền truy cập khách.",
     "no_invited_members_found": "Chưa có thành viên nào được mời",
     "no_members_found": "Không tìm thấy thành viên",
@@ -23625,10 +23633,10 @@
     "revoke_error": "Đã xảy ra lỗi khi thu hồi lời mời",
     "revoke_invitation": "Thu hồi lời mời",
     "role": "Vai trò",
-    "role_permissions": "Quyền Vai trò",
     "role-placeholder": "Chọn vai trò",
     "role-title": "Vị trí",
     "role-title-placeholder": "Thiết kế, Quản lý dự án, v.v.",
+    "role_permissions": "Quyền Vai trò",
     "roles": "Vai trò",
     "roles_selected": "Đã chọn {count} vai trò",
     "save_profile_display_name": "Lưu tên hiển thị",
@@ -26216,8 +26224,8 @@
     "cancel_schedule": "Hủy lịch gửi",
     "cancel_schedule_failed": "Không thể hủy lịch gửi",
     "cancel_schedule_success": "Đã hủy lịch gửi",
-    "class_schedule": "Lịch học",
     "classLabel": "Lớp",
+    "class_schedule": "Lịch học",
     "clear_recipients": "Xóa lựa chọn",
     "contact_created": "Đã tạo liên hệ",
     "contact_dialog_helper": "Thêm người nhận và tùy chọn liên kết với người dùng cùng workspace để tái sử dụng trạng thái thành viên đã xác minh.",
@@ -27528,5 +27536,19 @@
     "unnamed_wallet": "Ví không tên",
     "wallet": "Phương thức thanh toán",
     "wallet_deleted": "Đã xóa ví thành công"
+  },
+  "ws_post_details": {
+    "approval_locked": "Không thể gỡ phê duyệt vì đã có ít nhất một email được gửi.",
+    "approval_revocable": "Có thể gỡ phê duyệt vì chưa có email nào được gửi.",
+    "check_all": "Đã kiểm tra tất cả",
+    "completed": "Hoàn thành",
+    "history": "Lịch sử",
+    "history_description": "Mọi thay đổi hoàn thành của bài đăng này, mới nhất trước.",
+    "history_empty": "Chưa ghi nhận thay đổi nào.",
+    "reset_check": "Đặt lại",
+    "reset_check_description": "Đưa thành viên này về trạng thái chưa xử lý (xóa dấu hoàn thành)",
+    "status_pending": "Chưa xử lý",
+    "uncheck_all": "Bỏ đánh dấu tất cả",
+    "uncheck_all_description": "Đưa tất cả thành viên về trạng thái chưa xử lý"
   }
 }

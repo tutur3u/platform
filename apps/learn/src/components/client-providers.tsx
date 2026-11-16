@@ -1,12 +1,19 @@
 'use client';
 
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import { GlobalCommandLauncher } from '@tuturuuu/satellite/command-launcher';
+import { MessagesCommandLauncher } from '@tuturuuu/satellite/command-launcher';
 import { ExperimentalUiSync } from '@tuturuuu/ui/custom/experimental-ui-sync';
 import { SorbetPrePaintScript } from '@tuturuuu/ui/custom/sorbet-pre-paint';
 import { WorkspaceVisibilityProvider } from '@tuturuuu/ui/hooks/use-workspace-visibility';
 import { ThemeProvider } from 'next-themes';
 import { type ReactNode, useState } from 'react';
+
+// The launcher mounts above this app's intl provider; its labels load from
+// the same message bundle on first open.
+const loadLauncherMessages = (locale: 'en' | 'vi') =>
+  locale === 'vi'
+    ? import('../../messages/vi.json')
+    : import('../../messages/en.json');
 
 export function ClientProviders({
   children,
@@ -34,12 +41,18 @@ export function ClientProviders({
         {actorId ? (
           <WorkspaceVisibilityProvider actorId={actorId}>
             {children}
-            <GlobalCommandLauncher currentApp="learn" />
+            <MessagesCommandLauncher
+              currentApp="learn"
+              loadMessages={loadLauncherMessages}
+            />
           </WorkspaceVisibilityProvider>
         ) : (
           <>
             {children}
-            <GlobalCommandLauncher currentApp="learn" />
+            <MessagesCommandLauncher
+              currentApp="learn"
+              loadMessages={loadLauncherMessages}
+            />
           </>
         )}
       </QueryClientProvider>

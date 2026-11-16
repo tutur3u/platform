@@ -1,0 +1,132 @@
+---
+title: 'Command launcher'
+description: 'One Ctrl/Cmd+K center shared by every web app and satellite, with product actions, scopes and item actions.'
+updatedAt: '2026-11-16'
+audience: users
+---
+
+Every active web app and satellite opens the same command center with
+Ctrl+K (Cmd+K on macOS). Layout, keyboard model and result states are the same
+everywhere; only the context chip and the product sections change per app.
+
+## Scope and default
+
+- **One center per page.** Several mounted launchers elect one owner: the
+  highest priority wins and the latest mount breaks a tie. The page keeps one
+  shortcut listener, so two dialogs never answer the same key press.
+- **Product sections.** Tasks and Finance mount their launcher inside their own
+  route tree at a higher priority, so their sections keep access to task
+  dialogs and Finance links. Web (`apps/web`, and the `apps/workspace` copy)
+  adds platform actions and task search.
+- **Permissions.** Sections show only what the signed-in member may already do
+  on the page. Finance Create and Tools actions follow the same permission
+  flags as the Finance quick actions. Hidden workspaces stay out of workspace
+  results. The launcher never widens access.
+
+## Keyboard
+
+| Key | Effect |
+| --- | --- |
+| Ctrl/Cmd+K | Open or close. Ignored while an input method is composing. |
+| `#` `/` `@` `>` | Jump to Tasks, Navigation, Apps or Actions while typing. |
+| Tab, Shift+Tab | Next or previous scope. |
+| Ctrl/Cmd+1…5 | Scope by position. |
+| Backspace on an empty query | Leave an entered scope. |
+| ↑ ↓, Enter | Move, open. |
+| Ctrl/Cmd+Enter | Open the highlighted app, workspace or page in a new tab. |
+| → | Item actions (new tab, copy link, copy workspace ID); ← returns. |
+| Esc | Close item actions, then clear the query, then close. |
+
+Focus returns to the element that opened the center. In Finance, bare `C`
+outside a text field opens the center in quick create: Actions scope, with
+`1`…`9` and `0` running the first ten visible actions.
+
+## Sections
+
+- **Recent.** With an empty query in All, the center lists up to five apps,
+  pages and workspaces this person opened from it, newest first. The list is
+  kept in this browser for 30 days, per account where the host knows the
+  signed-in account and otherwise in one browser bucket that never holds
+  workspaces. An entry is shown only when the same app, page or workspace is in
+  the host's current results, so a removed page, lost access or a Hidden
+  workspace never appears. Web and Workspace keep their platform Recent
+  section (pages, tasks and searches) instead.
+- **Suggestions.** For a typed query in All or Actions, a signed-in person
+  gets **Create task** and **Ask Mira**, both for the current workspace (the
+  personal workspace when none is resolved). When nothing else matches, the
+  list reads as an empty state above them. The typed text travels as an
+  editable draft; nothing is created, sent or charged until the person acts.
+  - Create task opens the Tasks composer at `/{workspace}/tasks/new` with
+    `title` (at most 500 characters). The composer seeds its name field once,
+    keeps its board, list and other defaults empty, ignores a missing,
+    repeated, blank or oversized title, and removes the parameter from the
+    address so reload and Back do not re-seed. Existing route access checks
+    apply. Tasks itself turns this off: its own section already opens the task
+    dialog with the typed name.
+  - Ask Mira opens the platform workspace home with `prompt` (at most 4000
+    characters). The dashboard fills an empty draft or appends after existing
+    text with a notice. It never sends the draft and consumes the parameter once.
+  Signed-out pages get no suggestions.
+- **Matches.** The matched part of each app, page and workspace title is
+  emphasized. Titles always render as text, never as markup.
+
+## States and layout
+
+Apps, pages and Recent render from local data at once. Workspace search, task
+search and Finance record search load, fail or report offline inside their own
+section; a failed section offers Retry while the rest of the list stays usable.
+Launcher requests run only for a known signed-in account, so public and demo
+pages send none.
+The dialog starts `max(12px, 9vh)` from the top, never runs past 12px above the
+bottom edge and scrolls only the result list. Below the `sm` breakpoint it is a
+full-width top sheet and item actions open as a bottom tray.
+
+The dialog, its queries and its scoring load on first intent: holding Ctrl or
+Cmd, or the first open.
+
+## Labels
+
+Every label comes from the shared `command_launcher` namespace in each app's
+English and Vietnamese messages. Web, Workspace, Tasks and Finance keep their
+`command_palette` copy for scope names and the placeholder. Apps that mount the
+launcher above their intl provider (chat, learn, hive, mind, nova) load the
+same bundle with the dialog; Colab uses its own launcher copy; Shortener follows
+the page language. External and Playground are English-only apps with no
+message catalog.
+
+## Hosts
+
+| Host | Mount | Labels |
+| --- | --- | --- |
+| Satellites through `@tuturuuu/satellite/providers` or `ClientProviders` (ai, apps, calendar, cms, drive, finance, git, inventory, lettin, mail, meet, parley, rewise, storefront, tasks, tools, track, infrastructure) | Provider launcher; app from `currentApp`, then title or alias | intl |
+| Tools (`Tuturuuu QR`), Infrastructure (`Tuturuuu Infra`) | Command-only host (`tools`, `external`); app-switch tracking and mobile dock unchanged | intl |
+| teach, contacts, forms (workspace layouts), pay | Explicit mount | intl |
+| chat, learn, hive, mind, nova | Explicit mount above the intl provider | bundle on first open |
+| external | Explicit mount | English |
+| colab | Framework-free `CommandCenterHost` | Colab launcher copy |
+| shortener | Framework-free host on link status pages | bundle by page language |
+| playground | Framework-free host with demo page links | English |
+| Web, Workspace | User menu launcher with platform sections | intl + palette |
+
+## Intentional exceptions
+
+- Contributed rows (tasks, Finance, platform actions) have no → item actions;
+  their own row controls remain.
+- Hosts without a known account at the mount point (hive, mind, nova, teach,
+  pay, external, colab, shortener, playground) list apps and pages only.
+
+Regression coverage:
+`packages/satellite/src/components/command-launcher/command-center-intents.test.ts`,
+`apps/tasks/src/components/task-plan-title-intent.test.ts`,
+`apps/tasks/src/components/task-plan-composer.test.tsx`,
+`packages/satellite/src/components/command-launcher/command-center.test.tsx`,
+`packages/satellite/src/components/command-launcher/command-center-extras.test.tsx`,
+`packages/satellite/src/components/command-launcher/command-launcher-messages.test.ts`,
+`apps/web/e2e/command-center.fixture.ts` (browser fixture at 390/728/1024/1440),
+`packages/ui/src/globals-sources.test.ts`,
+`packages/satellite/src/components/command-launcher/command-center-keyboard.test.ts`,
+`packages/satellite/src/components/command-launcher/global-command-launcher.test.tsx`,
+`packages/satellite/src/providers/command-host.test.ts`,
+`packages/ui/src/components/ui/finance/command/finance-command-sections.test.tsx`,
+`apps/finance/src/components/command-center/finance-command-provider.test.tsx`,
+`apps/tasks/src/components/command-center/tasks-command-launcher.test.tsx`.

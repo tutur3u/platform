@@ -10,8 +10,9 @@ import { Button } from '@tuturuuu/ui/button';
 import { Input } from '@tuturuuu/ui/input';
 import { Textarea } from '@tuturuuu/ui/textarea';
 import { MAX_TASK_NAME_LENGTH } from '@tuturuuu/utils/constants';
+import { useSearchParams } from 'next/navigation';
 import { useTranslations } from 'next-intl';
-import { useRef, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { Link } from '@/i18n/routing';
 import {
   getTaskPlanDescription,
@@ -20,6 +21,10 @@ import {
 import { TaskPlanPriority } from './task-plan-priority';
 import { TaskPlanProject, useTaskPlanProject } from './task-plan-project';
 import { TaskPlanSource } from './task-plan-source';
+import {
+  parseTaskTitleIntent,
+  urlWithoutTaskTitleIntent,
+} from './task-plan-title-intent';
 
 export function TaskPlanComposer({
   wsId,
@@ -32,7 +37,14 @@ export function TaskPlanComposer({
 }) {
   const t = useTranslations('task-plan');
   const client = useQueryClient();
-  const [name, setName] = useState('');
+  const searchParams = useSearchParams();
+  // A title intent seeds the name once, at mount. A later intent while the
+  // form is open never overwrites what the user has typed.
+  const [name, setName] = useState(() => parseTaskTitleIntent(searchParams) ?? '');
+  useEffect(() => {
+    const next = urlWithoutTaskTitleIntent(window.location.href);
+    if (next) window.history.replaceState(window.history.state, '', next);
+  }, []);
   const [notes, setNotes] = useState('');
   const notesValid = notes.length <= MAX_TASK_PLAN_NOTES_LENGTH;
   const [boardId, setBoardId] = useState('');

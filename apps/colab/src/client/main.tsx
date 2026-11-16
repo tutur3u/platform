@@ -20,6 +20,7 @@ import { ThemeProvider } from 'next-themes';
 import { useState } from 'react';
 import { createRoot } from 'react-dom/client';
 import { HostWorkshopDialog } from './host-dialog';
+import { ColabCommandCenter } from './colab-command-center';
 import {
   type Locale,
   LocaleContext,
@@ -208,6 +209,7 @@ function Root() {
               <App />
               <Toaster />
             </SidebarProvider>
+            <ColabCommandCenter />
           </QueryClientProvider>
         </LocalePreferenceContext>
       </LocaleContext>

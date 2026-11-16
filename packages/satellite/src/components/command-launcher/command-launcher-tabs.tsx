@@ -12,12 +12,24 @@ export type CommandLauncherTab =
   | 'actions';
 
 const TAB_DEFINITIONS = [
-  { icon: ListTodo, key: 'tasks' },
-  { icon: Search, key: 'all' },
-  { icon: Compass, key: 'navigation' },
-  { icon: Boxes, key: 'apps' },
-  { icon: Sparkles, key: 'actions' },
+  { icon: ListTodo, key: 'tasks', prefix: '#' },
+  { icon: Search, key: 'all', prefix: null },
+  { icon: Compass, key: 'navigation', prefix: '/' },
+  { icon: Boxes, key: 'apps', prefix: '@' },
+  { icon: Sparkles, key: 'actions', prefix: '>' },
 ] as const;
+
+/** Next scope for Tab (forward) or Shift+Tab (backward), wrapping around. */
+export function cycleLauncherTab(
+  tabs: readonly CommandLauncherTab[],
+  current: CommandLauncherTab,
+  direction: 1 | -1
+): CommandLauncherTab {
+  if (tabs.length === 0) return current;
+  const index = tabs.indexOf(current);
+  const start = index < 0 ? 0 : index;
+  return tabs[(start + direction + tabs.length) % tabs.length] ?? current;
+}
 
 export function parseLauncherQuery(query: string): {
   query: string;
@@ -57,30 +69,35 @@ export function CommandLauncherTabs({
   return (
     <fieldset
       aria-label={ariaLabel}
-      className="m-0 flex min-w-0 gap-1 overflow-x-auto border-0 border-b bg-muted/20 px-3 pt-2"
+      className="m-0 flex min-w-0 gap-0.5 overflow-x-auto border-0 border-b px-2 py-1.5 [scrollbar-width:none]"
     >
       {TAB_DEFINITIONS.filter(({ key }) => availableTabs.includes(key)).map(
-        ({ icon: Icon, key }, index) => {
+        ({ icon: Icon, key, prefix }) => {
           const selected = activeTab === key;
           return (
             <Button
               aria-pressed={selected}
               className={cn(
-                'h-9 shrink-0 gap-2 rounded-b-none border-transparent px-3 text-muted-foreground',
-                selected &&
-                  'border-border border-b-background bg-background text-foreground shadow-xs'
+                'h-7 shrink-0 gap-1.5 rounded-md px-2.5 font-normal text-muted-foreground text-[13px]',
+                selected && 'bg-accent font-medium text-foreground'
               )}
               key={key}
               onClick={() => onChange(key)}
               size="sm"
+              tabIndex={-1}
               type="button"
               variant="ghost"
             >
-              <Icon className="size-4" />
+              <Icon className="size-3.5" />
               {labels[key]}
-              <span className="hidden font-mono text-[10px] opacity-50 sm:inline">
-                {index + 1}
-              </span>
+              {prefix ? (
+                <span
+                  aria-hidden="true"
+                  className="font-mono text-[11px] opacity-60"
+                >
+                  {prefix}
+                </span>
+              ) : null}
             </Button>
           );
         }

@@ -8,6 +8,18 @@
     "switch_account": "Switch Account",
     "unknown_user": "Unknown User"
   },
+  "ai-prompts-data-table": {
+    "created_at": "Created At",
+    "id": "ID",
+    "input": "Input",
+    "model": "AI Model",
+    "name": "Name",
+    "output": "Output"
+  },
+  "ai-whitelist": {
+    "add_domain": "Add domain",
+    "add_email": "Add email"
+  },
   "ai_chat": {
     "add_attachments": "Add attachments",
     "ai_models": "AI Models",
@@ -83,18 +95,6 @@
     "which_is": "which is",
     "you": "You",
     "you_selected": "You selected"
-  },
-  "ai-prompts-data-table": {
-    "created_at": "Created At",
-    "id": "ID",
-    "input": "Input",
-    "model": "AI Model",
-    "name": "Name",
-    "output": "Output"
-  },
-  "ai-whitelist": {
-    "add_domain": "Add domain",
-    "add_email": "Add email"
   },
   "api-key-data-table": {
     "created_at": "Created at",
@@ -201,6 +201,13 @@
     "inherit_calendar_color": "Use calendar color",
     "provider_color_label": "Google event color",
     "recurrence": {
+      "FR": "Fri",
+      "MO": "Mon",
+      "SA": "Sat",
+      "SU": "Sun",
+      "TH": "Thu",
+      "TU": "Tue",
+      "WE": "Wed",
       "advancedPattern": "This series uses an advanced pattern, which is preserved. Edit its event details here.",
       "all": "Entire series",
       "allDay": "All day",
@@ -215,7 +222,6 @@
       "end": "Ends (exclusive for all-day events)",
       "ending": "Repeat until",
       "failed": "Could not save this change. Your draft is retained; try again.",
-      "FR": "Fri",
       "frequency": "Repeat",
       "future": "This and following occurrences",
       "futureExceptionsReset": "Edits and cancellations for this and following occurrences will be reset when you save.",
@@ -223,18 +229,17 @@
       "invalid": "Check the title, dates, time zone and recurrence settings.",
       "loading": "Loading recurring event…",
       "location": "Location",
-      "MO": "Mon",
       "month": "Month (1–12)",
       "monthDay": "Day of month",
       "monthDayLast": "Use the last day",
       "monthDayOverflow": "When the day is missing",
       "monthDayPattern": "Day of month",
       "monthDaySkip": "Skip that month",
-      "monthly": "Monthly",
       "monthPattern": "Repeat by",
       "monthWeekdayPattern": "Weekday in month",
-      "native_source": "Tuturuuu Calendar",
+      "monthly": "Monthly",
       "nativeOnly": "Saved to Tuturuuu Calendar. Missing local times during daylight saving are skipped. Provider recurrence is managed separately.",
+      "native_source": "Tuturuuu Calendar",
       "never": "No end date",
       "ordinal1": "First",
       "ordinal2": "Second",
@@ -249,22 +254,17 @@
       "provider_source": "Calendar",
       "relativeWeekdayHelp": "With several weekdays selected, each month uses the earliest matching date in the selected week. The start date must match this pattern.",
       "reload": "Reload series",
-      "SA": "Sat",
       "save": "Save",
       "saving": "Saving…",
       "scope": "Apply changes to",
       "start": "Starts",
-      "SU": "Sun",
-      "TH": "Thu",
       "this": "Only this occurrence",
       "timezone": "Time zone",
       "title": "Title",
-      "TU": "Tue",
       "unavailable": "This recurring event is unavailable.",
       "until": "End date",
-      "WE": "Wed",
-      "weekdays": "Days of the week",
       "weekIndex": "Which week",
+      "weekdays": "Days of the week",
       "weekly": "Weekly",
       "yearly": "Yearly"
     },
@@ -293,6 +293,11 @@
     },
     "week": "Week"
   },
+  "calendar-tabs": {
+    "calendar": "Calendar",
+    "events": "Events",
+    "overview": "Overview"
+  },
   "calendar_category_reorder_pilot": {
     "cancel": "Returned {label} to position {position} of {total}.",
     "drop": "Dropped {label} at position {position} of {total}.",
@@ -301,11 +306,6 @@
     "invalid": "Category names must be unique and nonempty to reorder.",
     "label": "Category order",
     "move": "{label}, position {position} of {total}."
-  },
-  "calendar-tabs": {
-    "calendar": "Calendar",
-    "events": "Events",
-    "overview": "Overview"
   },
   "chat": {
     "accept_friend": "Accept",
@@ -789,7 +789,14 @@
     "apps": "Apps",
     "apps_count": "{count, plural, one {# app} other {# apps}}",
     "apps_description": "Open another Tuturuuu app from this workspace.",
+    "ask_mira": "Ask Mira",
+    "ask_mira_description": "Opens as a Mira draft. Nothing is sent.",
+    "back": "back",
     "close": "close",
+    "copy_id": "Copy ID",
+    "copy_link": "Copy link",
+    "create_task": "Create task",
+    "create_task_description": "Opens the task form with this title",
     "current": "Current",
     "current_app": "Current app",
     "current_workspace": "Current workspace",
@@ -799,12 +806,14 @@
     "error_workspaces": "Could not load workspaces",
     "guest": "Guest",
     "hide_workspace_selector": "Hide workspace selector",
+    "item_actions": "actions",
     "loading_workspaces": "Loading workspaces",
     "match": "Match",
     "navigate": "navigate",
     "navigation": "Navigation",
     "no_apps_found": "No apps found",
     "no_apps_found_description": "Try a different app name or keyword.",
+    "offline": "Offline. Results load when you reconnect.",
     "open": "Open",
     "open_app": "Open app",
     "open_apps_in": "Open apps in",
@@ -816,10 +825,21 @@
     "open_workspace": "Open workspace",
     "personal": "Personal",
     "placeholder": "Search apps, workspaces, and pages...",
+    "recent": "Recent",
+    "retry": "Retry",
+    "scope": "scope",
+    "scopes": {
+      "actions": "Actions",
+      "all": "All",
+      "label": "Search category",
+      "tasks": "Tasks"
+    },
     "search_apps": "Search apps",
     "search_hint": "Type a workspace, app, page, acronym, or close spelling.",
+    "searching_workspaces": "Searching workspaces",
     "select": "select",
     "show_workspace_selector": "Show workspace selector",
+    "suggestions": "Suggestions",
     "title": "Command Launcher",
     "workspace_destination": "{workspace} workspace",
     "workspaces": "Workspaces"
@@ -933,8 +953,8 @@
     "email_added": "Email added",
     "empty": "Empty",
     "enabled": "Enabled",
-    "enter_context": "Enter context",
     "enter-email": "Enter your email",
+    "enter_context": "Enter context",
     "enterprise": "Enterprise",
     "error": "Error",
     "error_adding_domain": "Failed to add domain",
@@ -972,10 +992,10 @@
     "hidden_workspaces_empty": "You have no Hidden workspaces",
     "hidden_workspaces_load_error": "Unable to load Hidden workspaces. Retry when you are online.",
     "hidden_workspaces_update_error": "Unable to update Hidden workspaces. Your previous choice was restored.",
+    "hide-all": "Hide All",
     "hide_column": "Hide column",
     "hide_sidebar": "Hide sidebar",
     "hide_workspace": "Hide workspace",
-    "hide-all": "Hide All",
     "history": "History",
     "home": "Home",
     "hospitality": "Hospitality",
@@ -993,8 +1013,8 @@
     "language": "Language",
     "last_saved": "Last saved: {time}",
     "learn": "Learn",
-    "learn_more": "Learn more",
     "learn-description": "Learn description",
+    "learn_more": "Learn more",
     "legal": "Legal",
     "light": "Light",
     "lms": "LMS",
@@ -1019,11 +1039,11 @@
     "new": "New",
     "new-features": "New Features",
     "next": "Next",
+    "no-results": "No Results",
+    "no-sheets-found": "No sheets found.",
     "no_content_yet": "No content yet",
     "no_online_users": "No online users",
     "no_workspace_found": "No workspaces found",
-    "no-results": "No Results",
-    "no-sheets-found": "No sheets found.",
     "not_whitelisted": "Not whitelisted",
     "of": "of",
     "open-source": "Open Source",
@@ -1137,8 +1157,8 @@
     "unnamed": "No name",
     "unnamed-workspace": "Unnamed Workspace",
     "unsaved": "Unsaved",
-    "unsaved_changes": "You have unsaved changes",
     "unsaved-changes": "You have unsaved changes.",
+    "unsaved_changes": "You have unsaved changes",
     "untitled": "Untitled",
     "updating": "Updating...",
     "upload": "Upload",
@@ -1245,9 +1265,9 @@
     "next-month": "Next month",
     "next-week": "Next week",
     "next-year": "Next year",
-    "this_month": "This month",
     "this-week": "This week",
     "this-year": "This year",
+    "this_month": "This month",
     "time-range": "Time range",
     "time-range-placeholder": "Select time range",
     "time-unit": "Time unit",
@@ -1559,10 +1579,10 @@
     "total_diff": "Price difference"
   },
   "invoices": {
-    "add_promotion": "Add promotion",
     "add-note": "Add note",
     "add-notice": "Add notice",
     "add-product": "Add product",
+    "add_promotion": "Add promotion",
     "basic-info": "Basic information",
     "bill_to": "Bill to",
     "brand_logo_alt": "{brand} logo",
@@ -1616,28 +1636,28 @@
     "ai_features": {
       "features": [
         {
-          "title": "Smart Automation",
-          "description": "Automate complex workflows with AI that learns your preferences"
+          "description": "Automate complex workflows with AI that learns your preferences",
+          "title": "Smart Automation"
         },
         {
-          "title": "Intelligent Insights",
-          "description": "Get actionable recommendations based on your data and industry trends"
+          "description": "Get actionable recommendations based on your data and industry trends",
+          "title": "Intelligent Insights"
         },
         {
-          "title": "Natural Collaboration",
-          "description": "Work with AI that understands context and communicates naturally"
+          "description": "Work with AI that understands context and communicates naturally",
+          "title": "Natural Collaboration"
         },
         {
-          "title": "Predictive Analytics",
-          "description": "Anticipate challenges and opportunities with AI-powered forecasting"
+          "description": "Anticipate challenges and opportunities with AI-powered forecasting",
+          "title": "Predictive Analytics"
         },
         {
-          "title": "Adaptive Learning",
-          "description": "AI that continuously improves based on your team's usage patterns"
+          "description": "AI that continuously improves based on your team's usage patterns",
+          "title": "Adaptive Learning"
         },
         {
-          "title": "Global Intelligence",
-          "description": "Access insights from worldwide data while maintaining privacy"
+          "description": "Access insights from worldwide data while maintaining privacy",
+          "title": "Global Intelligence"
         }
       ],
       "subtitle": "Every feature is enhanced by cutting-edge artificial intelligence",
@@ -1646,20 +1666,20 @@
     "ai_revolution": {
       "items": [
         {
-          "title": "Think Faster",
-          "description": "AI-powered insights and automation help you make decisions 10x faster"
+          "description": "AI-powered insights and automation help you make decisions 10x faster",
+          "title": "Think Faster"
         },
         {
-          "title": "Work Smarter",
-          "description": "Let AI handle repetitive tasks while you focus on what matters most"
+          "description": "Let AI handle repetitive tasks while you focus on what matters most",
+          "title": "Work Smarter"
         },
         {
-          "title": "Grow Bigger",
-          "description": "Scale your operations effortlessly with AI that learns and adapts"
+          "description": "Scale your operations effortlessly with AI that learns and adapts",
+          "title": "Grow Bigger"
         },
         {
-          "title": "Stay Ahead",
-          "description": "Always be at the cutting edge with continuously evolving AI capabilities"
+          "description": "Always be at the cutting edge with continuously evolving AI capabilities",
+          "title": "Stay Ahead"
         }
       ],
       "subtitle": "Experience the future of work with AI that understands, adapts, and grows with you",
@@ -1811,20 +1831,20 @@
     "success_metrics": {
       "metrics": [
         {
-          "value": "10x",
-          "label": "Faster Decision Making"
+          "label": "Faster Decision Making",
+          "value": "10x"
         },
         {
-          "value": "80%",
-          "label": "Time Saved on Routine Tasks"
+          "label": "Time Saved on Routine Tasks",
+          "value": "80%"
         },
         {
-          "value": "50%",
-          "label": "Reduction in Operating Costs"
+          "label": "Reduction in Operating Costs",
+          "value": "50%"
         },
         {
-          "value": "3x",
-          "label": "Increase in Team Productivity"
+          "label": "Increase in Team Productivity",
+          "value": "3x"
         }
       ],
       "subtitle": "Join thousands of organizations achieving remarkable results",
@@ -1833,22 +1853,22 @@
     "testimonials": {
       "items": [
         {
-          "quote": "Tuturuuu has transformed how we work. The AI features are incredible!",
           "author": "Sarah Chen",
-          "role": "Product Manager",
-          "company": "TechCorp"
+          "company": "TechCorp",
+          "quote": "Tuturuuu has transformed how we work. The AI features are incredible!",
+          "role": "Product Manager"
         },
         {
-          "quote": "The best all-in-one solution we've found for our team's needs.",
           "author": "Michael Rodriguez",
-          "role": "CEO",
-          "company": "StartupX"
+          "company": "StartupX",
+          "quote": "The best all-in-one solution we've found for our team's needs.",
+          "role": "CEO"
         },
         {
-          "quote": "Intuitive interface and powerful features. Highly recommended!",
           "author": "Emily Johnson",
-          "role": "Team Lead",
-          "company": "DesignPro"
+          "company": "DesignPro",
+          "quote": "Intuitive interface and powerful features. Highly recommended!",
+          "role": "Team Lead"
         }
       ],
       "subtitle": "Join thousands of satisfied users who trust Tuturuuu",
@@ -1857,16 +1877,16 @@
     "transformation": {
       "steps": [
         {
-          "title": "Start Instantly",
-          "description": "Get up and running in minutes with intuitive onboarding"
+          "description": "Get up and running in minutes with intuitive onboarding",
+          "title": "Start Instantly"
         },
         {
-          "title": "Scale Effortlessly",
-          "description": "Grow from one to thousands of users without friction"
+          "description": "Grow from one to thousands of users without friction",
+          "title": "Scale Effortlessly"
         },
         {
-          "title": "Evolve Continuously",
-          "description": "Stay ahead with AI that learns and improves every day"
+          "description": "Stay ahead with AI that learns and improves every day",
+          "title": "Evolve Continuously"
         }
       ],
       "subtitle": "Experience the power of AI-driven transformation",
@@ -2005,18 +2025,18 @@
         "trusted_section_description": "Our platform is designed to meet the highest standards of security and privacy, ensuring a safe learning environment for students of all ages.",
         "trusted_section_title": "Trusted by Educational Institutions",
         "use_cases": {
-          "higher_education": "Higher Education",
-          "higher_education_desc": "Advanced features for universities and colleges.",
-          "higher_education_item1": "Course management",
-          "higher_education_item2": "Research collaboration",
-          "higher_education_item3": "Student analytics",
-          "higher_education_item4": "Resource sharing",
           "K_12_education": "K-12 Education",
           "K_12_education_desc": "Comprehensive tools for primary and secondary education management.",
           "K_12_education_item1": "Interactive lessons",
           "K_12_education_item2": "Parent communication",
           "K_12_education_item3": "Homework management",
           "K_12_education_item4": "Progress reports",
+          "higher_education": "Higher Education",
+          "higher_education_desc": "Advanced features for universities and colleges.",
+          "higher_education_item1": "Course management",
+          "higher_education_item2": "Research collaboration",
+          "higher_education_item3": "Student analytics",
+          "higher_education_item4": "Resource sharing",
           "professional_training": "Professional Training",
           "professional_training_desc": "Corporate training and professional development solutions.",
           "professional_training_item1": "Skill assessments",
@@ -2032,8 +2052,8 @@
     "cant_create_plan_right_now": "We can't create your plan right now. Please try again later.",
     "create_plan": "Create plan",
     "creating_plan": "Creating plan...",
-    "dates_required": "Please select at least one date",
     "dates-to-meet-together": "Dates to meet together",
+    "dates_required": "Please select at least one date",
     "end_time_required": "Please select end time",
     "headline-p1": "Find the best time slot for everyone,",
     "headline-p2": "hassle-free",
@@ -2154,6 +2174,10 @@
     "workspace-invite": "Workspace invite"
   },
   "nova": {
+    "AI-assistant": "AI Assistant",
+    "AI-assistant-description": "Get help from our AI assistant for prompt engineering",
+    "Meta-prompting": "Meta prompting",
+    "Meta-prompting-description": "Discover advanced techniques for using prompts to generate other prompts automatically.",
     "about": {
       "event-intro": {
         "badge": "First Ever Collaboration",
@@ -2448,8 +2472,6 @@
     "advanced-controls": "Advanced Controls",
     "advanced-controls-description": "Fine-tune your prompts with advanced controls",
     "age": "18+ yearts old",
-    "AI-assistant": "AI Assistant",
-    "AI-assistant-description": "Get help from our AI assistant for prompt engineering",
     "ai-capabilities": "AI Capabilities",
     "ai-capabilities-description": "Experience the next generation of prompt engineering with our cutting-edge AI features and tools.",
     "ai-capabilities-subtitle": "Powered by Advanced AI Technology",
@@ -2809,8 +2831,6 @@
     "learning-tututorials": "Interactive tutorials and exercises",
     "magic-commands": "Magic Commands",
     "magic-commands-description": "Use special commands to quickly generate optimized prompts for different use cases",
-    "Meta-prompting": "Meta prompting",
-    "Meta-prompting-description": "Discover advanced techniques for using prompts to generate other prompts automatically.",
     "module-1": "Introduction to Prompt Engineering",
     "module-1-description": "Learn the basics of prompt engineering and its importance in AI development",
     "module-2": "Basic Techniques in Prompt Engineering",
@@ -3380,11 +3400,11 @@
     "account-status-description": "Your account information",
     "active": "Active",
     "avatar": "Avatar",
+    "avatar-description": "Personalize your profile with a custom avatar.",
     "avatar_remove_error": "There was an error removing your avatar. Please try again.",
     "avatar_removed": "Avatar removed",
     "avatar_update_error": "There was an error updating your avatar. Please try again.",
     "avatar_updated": "Avatar updated",
-    "avatar-description": "Personalize your profile with a custom avatar.",
     "birthday": "Birthday",
     "birthday-description": "Your birthday will only be used for social features.",
     "birthday-placeholder": "Your birthday",
@@ -3411,8 +3431,8 @@
     "language": "Language",
     "language-description": "Change the language of the website.",
     "logout-description": "Log out of your account.",
-    "new_avatar": "New avatar",
     "new-email": "New email",
+    "new_avatar": "New avatar",
     "preview": "Preview",
     "remove_avatar": "Remove avatar",
     "revert_changes": "Revert changes",
@@ -4146,9 +4166,6 @@
     "overview": "Overview",
     "reports": "Reports"
   },
-  "ws_post_details": {
-    "check_all": "Check all"
-  },
   "ws-activities": {
     "added": "Added",
     "change_address_from": "Changed address from",
@@ -4696,10 +4713,10 @@
     "guest_self_join_label": "Enable guest self-join by email match",
     "guest_self_join_update_error": "Failed to update guest self-join setting.",
     "guest_self_join_update_success": "Guest self-join setting updated.",
+    "has-been-updated": "has been updated",
     "has_been_removed": "has been removed from this workspace",
     "has_been_revoked": "has been revoked",
     "has_been_sent": "has been sent",
-    "has-been-updated": "has been updated",
     "invitation_error": "Failed to send invitation",
     "invitation_error_already_exist": "User is already a member or invite has been sent.",
     "invitation_error_user_not_found": "User not found or not registered on the platform.",
@@ -4729,10 +4746,10 @@
     "joined": "Joined",
     "leave": "Leave",
     "member": "Member",
-    "member_removed": "Member removed",
-    "member_since": "Member since",
     "member-settings": "Member settings",
     "member-updated": "Member updated",
+    "member_removed": "Member removed",
+    "member_since": "Member since",
     "no_invited_members_found": "No pending invitations found",
     "no_members_match": "No members match your search",
     "no_role_assigned": "No role assigned",
@@ -5462,5 +5479,8 @@
     "edit_description": "Edit an existing wallet",
     "plural": "Wallets",
     "singular": "Wallet"
+  },
+  "ws_post_details": {
+    "check_all": "Check all"
   }
 }

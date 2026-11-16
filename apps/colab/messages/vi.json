@@ -22,8 +22,8 @@
   "answerCopyFailed": "Không thể tự động sao chép. Hãy chọn văn bản và sao chép thủ công.",
   "appActions": "Thao tác ứng dụng",
   "appActionsShort": "thao tác",
-  "appearance": "Giao diện",
   "appMenu": "Chuyển ứng dụng",
+  "appearance": "Giao diện",
   "approvalFirst": "Sẵn sàng để bạn duyệt",
   "appsUsed": "Ứng dụng đã dùng",
   "artCaption": "CHỈ DẪN RÕ RÀNG. KHẢ NĂNG RỘNG MỞ.",
@@ -57,6 +57,13 @@
     "inherit_calendar_color": "Dùng màu lịch",
     "provider_color_label": "Màu sự kiện Google",
     "recurrence": {
+      "FR": "T6",
+      "MO": "T2",
+      "SA": "T7",
+      "SU": "CN",
+      "TH": "T5",
+      "TU": "T3",
+      "WE": "T4",
       "advancedPattern": "Chuỗi này sử dụng mẫu nâng cao và sẽ được giữ nguyên. Sửa thông tin sự kiện tại đây.",
       "all": "Toàn bộ chuỗi",
       "allDay": "Cả ngày",
@@ -71,7 +78,6 @@
       "end": "Kết thúc (không bao gồm ngày cuối cho sự kiện cả ngày)",
       "ending": "Lặp lại đến",
       "failed": "Không thể lưu thay đổi. Bản nháp được giữ lại; hãy thử lại.",
-      "FR": "T6",
       "frequency": "Lặp lại",
       "future": "Lần này và các lần sau",
       "futureExceptionsReset": "Các chỉnh sửa và lần hủy cho lần này và các lần tiếp theo sẽ được đặt lại khi bạn lưu.",
@@ -79,18 +85,17 @@
       "invalid": "Kiểm tra tiêu đề, ngày, múi giờ và cài đặt lặp lại.",
       "loading": "Đang tải sự kiện lặp lại…",
       "location": "Địa điểm",
-      "MO": "T2",
       "month": "Tháng (1–12)",
       "monthDay": "Ngày trong tháng",
       "monthDayLast": "Dùng ngày cuối tháng",
       "monthDayOverflow": "Khi tháng không có ngày này",
       "monthDayPattern": "Ngày trong tháng",
       "monthDaySkip": "Bỏ qua tháng đó",
-      "monthly": "Hàng tháng",
       "monthPattern": "Lặp theo",
       "monthWeekdayPattern": "Thứ trong tháng",
-      "native_source": "Lịch Tuturuuu",
+      "monthly": "Hàng tháng",
       "nativeOnly": "Lưu vào Lịch Tuturuuu. Giờ địa phương không tồn tại khi đổi giờ mùa hè sẽ được bỏ qua. Lịch lặp của nhà cung cấp được quản lý riêng.",
+      "native_source": "Lịch Tuturuuu",
       "never": "Không có ngày kết thúc",
       "ordinal1": "Đầu tiên",
       "ordinal2": "Thứ hai",
@@ -105,22 +110,17 @@
       "provider_source": "Lịch",
       "relativeWeekdayHelp": "Khi chọn nhiều thứ, mỗi tháng dùng ngày khớp sớm nhất trong tuần đã chọn. Ngày bắt đầu phải khớp quy tắc này.",
       "reload": "Tải lại chuỗi",
-      "SA": "T7",
       "save": "Lưu",
       "saving": "Đang lưu…",
       "scope": "Áp dụng thay đổi cho",
       "start": "Bắt đầu",
-      "SU": "CN",
-      "TH": "T5",
       "this": "Chỉ lần này",
       "timezone": "Múi giờ",
       "title": "Tiêu đề",
-      "TU": "T3",
       "unavailable": "Sự kiện lặp lại này không khả dụng.",
       "until": "Ngày kết thúc",
-      "WE": "T4",
-      "weekdays": "Ngày trong tuần",
       "weekIndex": "Tuần nào",
+      "weekdays": "Ngày trong tuần",
       "weekly": "Hàng tuần",
       "yearly": "Hàng năm"
     }
@@ -137,6 +137,7 @@
   "cancel": "Hủy",
   "capacity": "Giới hạn người tham gia",
   "checkConflict": "Kiểm tra lịch trống trước",
+  "coachNotes": "Nhận xét từ người hướng dẫn",
   "coaching": {
     "aiReview": "Nhờ AI góp ý",
     "aiReviewHelp": "Rà soát prompt đã lưu bằng RISE hoặc CRAFT. Dùng một lượt AI được tài trợ; bản nháp không tự bị thay thế.",
@@ -148,14 +149,13 @@
     "sponsorCoverage": "Tổng gồm biên nhận đã xác nhận của workshop. AI Studio là sổ tín dụng chính thức, kể cả lượt lỗi. Tại đây lưu 100 biên nhận mới nhất.",
     "sponsorCredits": "Tín dụng tài trợ đã xác nhận",
     "sponsorDownload": "Tải báo cáo tài trợ",
-    "sponsored": "AI được Tuturuuu tài trợ",
-    "sponsoredHelp": "AI của workshop dùng tín dụng từ workspace gốc Tuturuuu. Người tham dự không dùng tín dụng cá nhân.",
     "sponsorLedger": "Mở AI Studio của workspace gốc",
     "sponsorNotConfigured": "Chưa có biên nhận tín dụng tài trợ. Lượt thao tác AI khác tín dụng AI: một thao tác có thể dùng nhiều lượt mô hình.",
-    "sponsorReceipts": "Bằng chứng tài trợ"
+    "sponsorReceipts": "Bằng chứng tài trợ",
+    "sponsored": "AI được Tuturuuu tài trợ",
+    "sponsoredHelp": "AI của workshop dùng tín dụng từ workspace gốc Tuturuuu. Người tham dự không dùng tín dụng cá nhân."
   },
   "coachingUnavailable": "Hiện chưa có phản hồi hướng dẫn. Câu trả lời và hoạt động ứng dụng đã được lưu. Hãy kiểm tra nguồn thông tin và nhờ thành viên trong nhóm duyệt kết quả.",
-  "coachNotes": "Nhận xét từ người hướng dẫn",
   "command_launcher": {
     "app_categories": {
       "ai": "AI",
@@ -231,16 +231,55 @@
     "apps": "Ứng dụng",
     "apps_count": "{count, plural, one {# ứng dụng} other {# ứng dụng}}",
     "apps_description": "Mở một ứng dụng Tuturuuu khác.",
+    "ask_mira": "Hỏi Mira",
+    "ask_mira_description": "Mở dưới dạng bản nháp Mira. Chưa gửi gì.",
+    "back": "quay lại",
+    "close": "đóng",
+    "copy_id": "Sao chép ID",
+    "copy_link": "Sao chép liên kết",
+    "create_task": "Tạo nhiệm vụ",
+    "create_task_description": "Mở biểu mẫu nhiệm vụ với tiêu đề này",
+    "current": "Hiện tại",
+    "current_app": "Ứng dụng hiện tại",
+    "current_workspace": "Workspace hiện tại",
+    "empty": "Không tìm thấy lệnh",
+    "empty_description": "Thử workspace, ứng dụng, trang hoặc cách viết gần đúng hơn.",
     "error_workspaces": "Không thể tải workspace",
+    "guest": "Khách",
+    "item_actions": "thao tác",
+    "loading_workspaces": "Đang tải workspace",
+    "match": "Khớp",
     "navigate": "di chuyển",
+    "navigation": "Điều hướng",
     "no_apps_found": "Không tìm thấy ứng dụng",
     "no_apps_found_description": "Hãy thử tên ứng dụng hoặc từ khóa khác.",
+    "offline": "Đang ngoại tuyến. Kết quả sẽ tải khi có kết nối lại.",
+    "open": "Mở",
+    "open_app": "Mở ứng dụng",
     "open_apps_in": "Mở ứng dụng trong",
     "open_current_tab": "Tab này",
+    "open_in_new_tab": "Mở trong tab mới",
     "open_new_tab": "Tab mới",
     "open_options": "Tùy chọn mở",
+    "open_workspace": "Mở workspace",
+    "personal": "Cá nhân",
+    "placeholder": "Tìm ứng dụng, workspace và trang...",
+    "recent": "Gần đây",
+    "retry": "Thử lại",
+    "scope": "phạm vi",
+    "scopes": {
+      "actions": "Thao tác",
+      "all": "Tất cả",
+      "label": "Danh mục tìm kiếm",
+      "tasks": "Nhiệm vụ"
+    },
     "search_apps": "Tìm ứng dụng",
-    "select": "chọn"
+    "search_hint": "Nhập workspace, ứng dụng, trang, chữ viết tắt hoặc cách viết gần đúng.",
+    "searching_workspaces": "Đang tìm workspace",
+    "select": "chọn",
+    "suggestions": "Gợi ý",
+    "title": "Trình mở lệnh",
+    "workspaces": "Workspace"
   },
   "common": {
     "all_workspaces_hidden": "Tất cả không gian làm việc của bạn đã ẩn. Khôi phục một không gian để chọn.",
@@ -316,8 +355,8 @@
   "detailTakeaway": "Mang về kết quả hữu ích",
   "detailTakeawayText": "Chuyển hướng dẫn thành kỹ năng Markdown dễ đọc. Xuất một kỹ năng hoặc chia quy trình lớn thành nhiều kỹ năng tập trung.",
   "download": "Tải SKILL.md",
-  "draftedIn": "Đã chuẩn bị bản nháp trong",
   "draftNotice": "Bản nháp chỉ ở trên máy bạn cho đến khi lưu.",
+  "draftedIn": "Đã chuẩn bị bản nháp trong",
   "emptyPrompt": "Chưa lưu prompt.",
   "ends": "Kết thúc",
   "enter": "Vào phòng thực hành",
@@ -412,39 +451,40 @@
     "found": "Đã tìm thấy dấu hiệu",
     "frameworkHelp": "Dùng RISE cho hướng dẫn lâu dài của đội. Dùng CRAFT để xây yêu cầu nội dung. Đây là cách ghi nhớ, không phải công thức thần kỳ; prompt tốt vẫn cần nguồn đúng và thử nghiệm.",
     "frameworkLabel": "Khung viết prompt",
+    "frameworkTitle": "Mỗi phần trong prompt đều có một nhiệm vụ",
     "frameworks": {
       "craft": {
         "name": "CRAFT · yêu cầu nội dung",
         "sections": [
           {
             "id": "context",
+            "sample": "## Bối cảnh\nRISE cần lời mời Induction Day giúp sinh viên mới tìm nơi phù hợp.",
             "title": "Bối cảnh",
-            "why": "Giải thích tình huống và mục đích.",
-            "sample": "## Bối cảnh\nRISE cần lời mời Induction Day giúp sinh viên mới tìm nơi phù hợp."
+            "why": "Giải thích tình huống và mục đích."
           },
           {
             "id": "role",
+            "sample": "## Vai trò\nLàm biên tập viên truyền thông sinh viên thân thiện cho người mới ở RMIT.",
             "title": "Vai trò",
-            "why": "Xác định góc nhìn và độc giả.",
-            "sample": "## Vai trò\nLàm biên tập viên truyền thông sinh viên thân thiện cho người mới ở RMIT."
+            "why": "Xác định góc nhìn và độc giả."
           },
           {
             "id": "action",
+            "sample": "## Hành động\nĐọc bản ghi sự kiện đã duyệt, viết lời mời, rồi kiểm chứng mọi dữ kiện.",
             "title": "Hành động",
-            "why": "Nêu việc cần hoàn thành theo thứ tự.",
-            "sample": "## Hành động\nĐọc bản ghi sự kiện đã duyệt, viết lời mời, rồi kiểm chứng mọi dữ kiện."
+            "why": "Nêu việc cần hoàn thành theo thứ tự."
           },
           {
             "id": "format",
+            "sample": "## Định dạng\nTách bài văn bản thuần tiếng Anh và tiếng Việt, ghi chú nguồn, văn bản thay thế cho hình ảnh.",
             "title": "Định dạng",
-            "why": "Giúp bàn giao dễ dùng.",
-            "sample": "## Định dạng\nTách bài văn bản thuần tiếng Anh và tiếng Việt, ghi chú nguồn, văn bản thay thế cho hình ảnh."
+            "why": "Giúp bàn giao dễ dùng."
           },
           {
             "id": "tone",
+            "sample": "## Giọng văn\nẤm áp, cụ thể, hòa nhập và sinh viên nói với sinh viên. Tránh cường điệu và thuật ngữ khó hiểu.",
             "title": "Giọng văn",
-            "why": "Chọn cách nói hợp người đọc.",
-            "sample": "## Giọng văn\nẤm áp, cụ thể, hòa nhập và sinh viên nói với sinh viên. Tránh cường điệu và thuật ngữ khó hiểu."
+            "why": "Chọn cách nói hợp người đọc."
           }
         ]
       },
@@ -453,82 +493,81 @@
         "sections": [
           {
             "id": "role",
+            "sample": "## Vai trò & người đọc\nBạn là trợ lý truyền thông RISE, viết cho sinh viên RMIT tò mò nhưng mới biết khởi nghiệp.",
             "title": "Vai trò & người đọc",
-            "why": "Giao một công việc và xác định người được phục vụ.",
-            "sample": "## Vai trò & người đọc\nBạn là trợ lý truyền thông RISE, viết cho sinh viên RMIT tò mò nhưng mới biết khởi nghiệp."
+            "why": "Giao một công việc và xác định người được phục vụ."
           },
           {
             "id": "inputs",
+            "sample": "## Nguồn & bằng chứng\nTìm brief sự kiện, hướng dẫn giọng văn, ghi chú các ban và duyệt đối tác. Dùng dữ kiện mới nhất đã duyệt; hỏi khi thiếu hoặc mâu thuẫn.",
             "title": "Nguồn & bằng chứng",
-            "why": "Nêu nguồn đáng tin và cách xử lý mâu thuẫn.",
-            "sample": "## Nguồn & bằng chứng\nTìm brief sự kiện, hướng dẫn giọng văn, ghi chú các ban và duyệt đối tác. Dùng dữ kiện mới nhất đã duyệt; hỏi khi thiếu hoặc mâu thuẫn."
+            "why": "Nêu nguồn đáng tin và cách xử lý mâu thuẫn."
           },
           {
             "id": "steps",
+            "sample": "## Quy trình & giới hạn\nThu thập nguồn, đối chiếu, viết và kiểm tra hai ngôn ngữ. Không tự tạo diễn giả, nhà tài trợ, ngày hay link. Nhờ thành viên duyệt trước khi đăng.",
             "title": "Quy trình & giới hạn",
-            "why": "Cho phương pháp lặp lại và ranh giới quyết định.",
-            "sample": "## Quy trình & giới hạn\nThu thập nguồn, đối chiếu, viết và kiểm tra hai ngôn ngữ. Không tự tạo diễn giả, nhà tài trợ, ngày hay link. Nhờ thành viên duyệt trước khi đăng."
+            "why": "Cho phương pháp lặp lại và ranh giới quyết định."
           },
           {
             "id": "output",
+            "sample": "## Đầu ra mong đợi\nTrả bài Facebook văn bản thuần tiếng Anh và tiếng Việt riêng, brief hình ảnh, văn bản thay thế, ghi chú nguồn và danh sách kiểm tra.",
             "title": "Đầu ra mong đợi",
-            "why": "Mô tả kết quả đồng đội thực sự dùng được.",
-            "sample": "## Đầu ra mong đợi\nTrả bài Facebook văn bản thuần tiếng Anh và tiếng Việt riêng, brief hình ảnh, văn bản thay thế, ghi chú nguồn và danh sách kiểm tra."
+            "why": "Mô tả kết quả đồng đội thực sự dùng được."
           }
         ]
       }
     },
-    "frameworkTitle": "Mỗi phần trong prompt đều có một nhiệm vụ",
     "heading": "Xây trợ lý mà cả đội có thể tin tưởng.",
     "intro": "Hiểu một ý tưởng, thử ngay, rồi áp dụng vào hệ thống cho Induction Day. Bạn không cần biết lập trình.",
     "lessons": [
       {
-        "title": "Bức tranh tổng thể",
-        "subtitle": "Trợ lý là đồng đội có bản hướng dẫn.",
         "body": "Một hệ thống AI hữu ích kết hợp hướng dẫn, kiến thức liên quan và cách kiểm tra kết quả. Mô hình tạo câu trả lời từ thông tin nhận được, không tự biết kế hoạch mới nhất của CLB. Nhiệm vụ của bạn là giao việc rõ ràng và chỉ đường tới nguồn đáng tin.",
-        "why": "Yêu cầu chung chung có thể tạo bài viết rất hay nhưng sai ngày. Quy trình lặp lại giúp các ban làm việc nhất quán và phát hiện thiếu sót trước khi chia sẻ.",
         "example": "Với Induction Day: prompt hệ thống của đội → đọc thông tin sự kiện và giọng văn đã duyệt → làm theo kỹ năng viết song ngữ → tạo bài → kiểm chứng và nhờ thành viên duyệt.",
-        "takeaway": "Chọn một đầu ra: bộ nội dung sẵn sàng cho Facebook. Marketing phụ trách giọng văn; Product kiểm tra trải nghiệm; External Relations kiểm chứng tuyên bố; People & Culture kiểm tra sự gần gũi và khả năng tiếp cận."
+        "subtitle": "Trợ lý là đồng đội có bản hướng dẫn.",
+        "takeaway": "Chọn một đầu ra: bộ nội dung sẵn sàng cho Facebook. Marketing phụ trách giọng văn; Product kiểm tra trải nghiệm; External Relations kiểm chứng tuyên bố; People & Culture kiểm tra sự gần gũi và khả năng tiếp cận.",
+        "title": "Bức tranh tổng thể",
+        "why": "Yêu cầu chung chung có thể tạo bài viết rất hay nhưng sai ngày. Quy trình lặp lại giúp các ban làm việc nhất quán và phát hiện thiếu sót trước khi chia sẻ."
       },
       {
-        "title": "Markdown",
-        "subtitle": "Vài ký hiệu đơn giản giúp bài viết có cấu trúc.",
         "body": "Markdown là văn bản thông thường với một số quy ước dễ đọc: # tạo tiêu đề, - tạo gạch đầu dòng, **từ** để nhấn mạnh, [nhãn](https://example.com) mô tả liên kết. Tệp .md đơn giản là tệp văn bản dùng các quy ước này. Không có phần mềm đặc biệt vẫn đọc được.",
-        "why": "Tiêu đề tách vai trò, nguồn, quy trình và đầu ra. Danh sách biến đoạn dài thành hướng dẫn dễ xem và cập nhật. Markdown tổ chức ý nghĩa, không làm thông tin tự đúng hay buộc AI tuân thủ.",
         "example": "Sửa ví dụ bên dưới và xem bản hiển thị. Dùng cấu trúc cho prompt và SKILL.md. Riêng bài Facebook cuối cùng hãy yêu cầu văn bản thuần: Facebook có thể hiện nguyên ký hiệu Markdown.",
-        "takeaway": "Mỗi trách nhiệm có một tiêu đề; việc có thứ tự dùng các bước đánh số. Tránh bức tường chữ dài hoặc tiêu đề không có hướng dẫn cụ thể."
+        "subtitle": "Vài ký hiệu đơn giản giúp bài viết có cấu trúc.",
+        "takeaway": "Mỗi trách nhiệm có một tiêu đề; việc có thứ tự dùng các bước đánh số. Tránh bức tường chữ dài hoặc tiêu đề không có hướng dẫn cụ thể.",
+        "title": "Markdown",
+        "why": "Tiêu đề tách vai trò, nguồn, quy trình và đầu ra. Danh sách biến đoạn dài thành hướng dẫn dễ xem và cập nhật. Markdown tổ chức ý nghĩa, không làm thông tin tự đúng hay buộc AI tuân thủ."
       },
       {
-        "title": "System prompt",
-        "subtitle": "Bản giao việc lâu dài, không chỉ việc hôm nay.",
         "body": "System prompt mô tả cách trợ lý làm việc qua nhiều yêu cầu: vai trò, độc giả, quy tắc về nguồn, các bước và đầu ra. Task prompt là nhiệm vụ hôm nay. Context là thông tin cần để làm nhiệm vụ đó. Trong Colab, hướng dẫn đã lưu của đội được chuyển thành kỹ năng và dùng cùng tình huống hiện tại.",
-        "why": "Bạn thay sự kiện hoặc độc giả mà không phải xây lại trợ lý. Ranh giới rõ ràng cũng giúp khi tài liệu chứa ghi chú lỗi thời hoặc nội dung cố ra lệnh cho AI.",
         "example": "Hướng dẫn lâu dài: “Dùng brief sự kiện mới nhất đã duyệt. Nếu thiếu dữ kiện bắt buộc, nêu câu hỏi trước khi gọi bài viết là sẵn sàng.” Việc hôm nay: “Viết lời mời Induction Day.” Ngữ cảnh: brief, câu hỏi thành viên mới và hướng dẫn giọng văn.",
-        "takeaway": "Dùng RISE: Vai trò & người đọc, Nguồn & bằng chứng, Quy trình & giới hạn, Đầu ra mong đợi. Cho ví dụ ngắn để diễn tả chất lượng tốt. Yêu cầu tóm tắt bằng chứng, không yêu cầu suy luận nội bộ ẩn."
+        "subtitle": "Bản giao việc lâu dài, không chỉ việc hôm nay.",
+        "takeaway": "Dùng RISE: Vai trò & người đọc, Nguồn & bằng chứng, Quy trình & giới hạn, Đầu ra mong đợi. Cho ví dụ ngắn để diễn tả chất lượng tốt. Yêu cầu tóm tắt bằng chứng, không yêu cầu suy luận nội bộ ẩn.",
+        "title": "System prompt",
+        "why": "Bạn thay sự kiện hoặc độc giả mà không phải xây lại trợ lý. Ranh giới rõ ràng cũng giúp khi tài liệu chứa ghi chú lỗi thời hoặc nội dung cố ra lệnh cho AI."
       },
       {
-        "title": "Skills",
-        "subtitle": "Công thức dùng lại cho việc đội thường làm.",
         "body": "Skill đóng gói một quy trình lặp lại: tên, mô tả khi nào dùng và hướng dẫn. System prompt giống thỏa thuận làm việc; skill giống công thức: kiểm chứng sự kiện, chuyển bài Anh sang Việt hoặc rà soát nội dung dễ tiếp cận. SKILL.md là tệp dễ đọc chứa công thức ấy.",
-        "why": "Công thức tập trung dễ thử và sửa hơn một prompt khổng lồ. Kỹ năng viết song ngữ dùng cho Induction Day, tuyển thành viên hay showcase. Skill không tự cấp quyền ứng dụng hoặc bảo đảm đáp án đúng.",
         "example": "Lưu prompt, chọn Tạo kỹ năng, đọc từng công thức, rồi Chạy thử tác tử trong Kết quả. Colab đưa toàn bộ kỹ năng đã tạo cho tác tử thực hành. Sản phẩm AI khác có thể nạp skill khác; kiểm tra cách thiết lập trước khi dùng tệp tải về.",
-        "takeaway": "Công thức tốt nêu lúc áp dụng, đầu vào cần có, các bước, cách xử lý thiếu thông tin và đầu ra. Thử cả sự kiện bình thường và khi đổi địa điểm."
+        "subtitle": "Công thức dùng lại cho việc đội thường làm.",
+        "takeaway": "Công thức tốt nêu lúc áp dụng, đầu vào cần có, các bước, cách xử lý thiếu thông tin và đầu ra. Thử cả sự kiện bình thường và khi đổi địa điểm.",
+        "title": "Skills",
+        "why": "Công thức tập trung dễ thử và sửa hơn một prompt khổng lồ. Kỹ năng viết song ngữ dùng cho Induction Day, tuyển thành viên hay showcase. Skill không tự cấp quyền ứng dụng hoặc bảo đảm đáp án đúng."
       },
       {
-        "title": "Nguồn & công cụ",
-        "subtitle": "Tìm đúng dữ kiện trước khi tìm câu chữ hay.",
         "body": "Công cụ cho phép trợ lý tìm và đọc bản ghi ứng dụng thực hành, rồi tạo hoặc cập nhật khi được phép. Nội dung nguồn là bằng chứng, không phải lệnh mới. Tin nhắn trau chuốt chưa chắc đã được duyệt. Hãy hỏi ai sở hữu dữ kiện, khi nào cập nhật và đã xác nhận chưa.",
-        "why": "Kiến thức nằm nhiều nơi: Drive giữ thông tin sự kiện, Messenger cho biết băn khoăn của người mới, Teams giải thích các ban, Gmail loại diễn giả chưa duyệt, Figma cho hướng hình ảnh. Prompt cần chỉ cách đối chiếu chúng.",
         "example": "Lịch cũ ghi thứ Năm, brief thực hành v2 đã duyệt ghi thứ Bảy. Dùng nguồn được duyệt mới nhất và giải thích xung đột trong ghi chú. Liên kết trong bản ghi chỉ là tham khảo; công cụ không mở web trực tiếp hay đăng Facebook.",
-        "takeaway": "Tìm → đọc → đối chiếu → viết → kiểm chứng. Đưa mã nguồn vào ghi chú bàn giao, không chèn vào bài công khai. Thay example.com và thông tin diễn tập bằng dữ kiện thật đã xác nhận trước khi đăng."
+        "subtitle": "Tìm đúng dữ kiện trước khi tìm câu chữ hay.",
+        "takeaway": "Tìm → đọc → đối chiếu → viết → kiểm chứng. Đưa mã nguồn vào ghi chú bàn giao, không chèn vào bài công khai. Thay example.com và thông tin diễn tập bằng dữ kiện thật đã xác nhận trước khi đăng.",
+        "title": "Nguồn & công cụ",
+        "why": "Kiến thức nằm nhiều nơi: Drive giữ thông tin sự kiện, Messenger cho biết băn khoăn của người mới, Teams giải thích các ban, Gmail loại diễn giả chưa duyệt, Figma cho hướng hình ảnh. Prompt cần chỉ cách đối chiếu chúng."
       },
       {
-        "title": "Thử, cải thiện & trình diễn",
-        "subtitle": "Đánh giá kết quả rồi cải thiện hướng dẫn.",
         "body": "Chạy cùng nhiệm vụ với tiêu chí rõ: dữ kiện đúng, dễ hiểu với người mới, Anh–Việt đồng nghĩa, bước tiếp theo rõ và hình ảnh dễ tiếp cận. Mỗi lần thay một hướng dẫn rồi so kết quả. Phản hồi AI chỉ là gợi ý; thành viên vẫn là người đánh giá.",
-        "why": "Một câu trả lời hay có thể che prompt chưa vững. Thử thiếu link đăng ký, đổi địa điểm hoặc nhà tài trợ chưa duyệt. Trợ lý đáng tin cần hỏi đúng thay vì tự điền bằng phỏng đoán.",
         "example": "Trong Trình diễn trực tiếp, người chủ trì đưa một đội lên sân khấu. Mọi người theo dõi hệ thống, kỹ năng và kết quả khi đội giải cùng thử thách. Giải thích điều đã sửa và nguồn giúp bài tốt hơn, rồi chuyển đội.",
-        "takeaway": "Áp dụng vào học tập: nhờ giải thích ghi chú, lên lịch ôn hoặc tạo câu hỏi luyện tập. Kiểm tra quy định AI của môn học và nguồn; tự làm bài đánh giá. Với việc CLB, lưu prompt và skill cùng bộ nội dung cuối."
+        "subtitle": "Đánh giá kết quả rồi cải thiện hướng dẫn.",
+        "takeaway": "Áp dụng vào học tập: nhờ giải thích ghi chú, lên lịch ôn hoặc tạo câu hỏi luyện tập. Kiểm tra quy định AI của môn học và nguồn; tự làm bài đánh giá. Với việc CLB, lưu prompt và skill cùng bộ nội dung cuối.",
+        "title": "Thử, cải thiện & trình diễn",
+        "why": "Một câu trả lời hay có thể che prompt chưa vững. Thử thiếu link đăng ký, đổi địa điểm hoặc nhà tài trợ chưa duyệt. Trợ lý đáng tin cần hỏi đúng thay vì tự điền bằng phỏng đoán."
       }
     ],
     "local": "Bài tập này ở trong trình duyệt của bạn, không thay đổi prompt đã lưu của đội.",
@@ -612,9 +651,9 @@
   "name": "Tên hiển thị",
   "namePlaceholder": "Đồng đội nên gọi bạn là gì?",
   "needsAttention": "Cần xem lại",
-  "newer": "Đồng đội đã lưu phiên bản mới. Sao chép bài của bạn trước khi tải bản của họ.",
   "newScenario": "Tạo tình huống chung",
   "newTeam": "Ban mới",
+  "newer": "Đồng đội đã lưu phiên bản mới. Sao chép bài của bạn trước khi tải bản của họ.",
   "nextStep": "Bắt đầu tại đây",
   "nextStepHelp": "Mở phần prompt của nhóm, mô tả cách trợ lý nên làm việc, sau đó lưu và tạo kỹ năng đầu tiên.",
   "nextTeam": "Nhóm tiếp theo",
@@ -623,6 +662,7 @@
   "noInvites": "Chưa có lời mời tài khoản.",
   "noRunsYet": "Chưa có lượt thực hành",
   "noStartDate": "Không có ngày bắt đầu",
+  "noToolCalls": "Trợ lý đã trả lời mà không mở ứng dụng nào.",
   "notifications": {
     "accept": "Chấp nhận",
     "archive": "Lưu trữ",
@@ -647,15 +687,14 @@
     "notifications": "Thông báo",
     "view-all": "Xem tất cả thông báo"
   },
-  "noToolCalls": "Trợ lý đã trả lời mà không mở ứng dụng nào.",
   "nowShowcasing": "Đang trình diễn",
   "offline": "Đang kết nối lại…",
-  "online": "trực tuyến",
   "onStage": "Đang trình bày",
+  "online": "trực tuyến",
   "open": "Đang thực hành",
-  "openedIn": "Đã mở một bản ghi trong",
   "openNow": "Mở ngay",
   "openTeamSystem": "Mở hệ thống của nhóm",
+  "openedIn": "Đã mở một bản ghi trong",
   "overviewNextStep": "Dùng các thẻ để tổ chức ban, mời người tham gia, điều chỉnh tình huống RISE và đặt giới hạn AI dễ kiểm soát.",
   "overviewTab": "Tổng quan",
   "owner": "Chủ sở hữu",
@@ -673,8 +712,8 @@
   "practiceRuns": "Lượt thực hành",
   "preferencesHelp": "Quản lý tùy chọn Colab. Hồ sơ và tài khoản của bạn được quản lý trên Tuturuuu.",
   "preferencesTitle": "Tùy chọn",
-  "presenting": "Đang trình bày",
   "presentTeam": "Trình bày nhóm",
+  "presenting": "Đang trình bày",
   "previewDisclaimer": "Ví dụ minh họa · không cần gọi AI hay tài khoản",
   "previewEyebrow": "MỘT THAY ĐỔI NHỎ. MỘT CỘNG SỰ TỐT HƠN.",
   "previewIntro": "Thử hai cách hướng dẫn cho cùng một nhiệm vụ. Quan sát điều AI kiểm tra, giả định và hỏi lại.",
@@ -686,8 +725,8 @@
   "promptSection": "CHỈ DẪN",
   "promptTitle": "Tạo một đồng đội tuyệt vời.",
   "readBrief": "Đọc tài liệu ra mắt",
-  "readonly": "Chỉ đọc",
   "readOnlyHelp": "Phòng không nhận chỉnh sửa. Bạn có thể xem lại nội dung được cấp quyền.",
+  "readonly": "Chỉ đọc",
   "recent": "Quay lại phòng thực hành gần nhất",
   "recordMissingHelp": "Không tìm thấy mục được yêu cầu. Hãy tìm trong ứng dụng đã chọn trước, sau đó mở bản ghi được trả về.",
   "records": "bản ghi",
@@ -735,16 +774,15 @@
   "sandboxSection": "ỨNG DỤNG",
   "save": "Lưu prompt của nhóm",
   "saveBefore": "Lưu prompt trước khi tạo kỹ năng.",
-  "saved": "Đã lưu",
   "saveRoomLimits": "Lưu giới hạn phòng",
   "saveSchedule": "Lưu lịch",
   "saveTeamLimits": "Lưu giới hạn nhóm",
+  "saved": "Đã lưu",
   "scenario": "Thử thách",
   "scenarioLibrary": "Thư viện tình huống",
-  "scenariosTab": "Tình huống",
   "scenarioStudio": "Xưởng tình huống RISE",
   "scenarioStudioHelp": "Thực hành quy trình AI cho vận hành câu lạc bộ, học tập đại học và phối hợp giữa các ban RISE.",
-  "scheduled": "Chờ bắt đầu",
+  "scenariosTab": "Tình huống",
   "scheduleErrors": {
     "end_too_late": "Buổi thực hành có thể kéo dài tối đa 8 giờ. Hãy chọn giờ kết thúc sớm hơn.",
     "end_too_soon": "Chọn giờ kết thúc sau giờ bắt đầu ít nhất 5 phút.",
@@ -757,8 +795,9 @@
   "scheduleManagementHelp": "Đặt khung giờ làm việc khi cần hoặc để trống một trong hai mốc. Người tham gia vẫn có thể vào trước hoặc sau khung giờ để xem nội dung được phép.",
   "scheduleTab": "Lịch",
   "scheduleTitle": "Lịch tùy chọn",
-  "searchedIn": "Đã tìm kiếm trong",
+  "scheduled": "Chờ bắt đầu",
   "searchRecords": "Tìm dữ liệu thực hành…",
+  "searchedIn": "Đã tìm kiếm trong",
   "settings": "Cài đặt",
   "shell": {
     "account_switcher.accounts": "Tài khoản",
@@ -841,10 +880,10 @@
   "skillsEmpty": "Chỉ dẫn của bạn sẽ trở thành tệp SKILL.md dễ đọc tại đây.",
   "skillsSection": "KỸ NĂNG",
   "skipConflict": "Chưa yêu cầu kiểm tra lịch trống",
+  "startTogether": "BẮT ĐẦU CÙNG NHAU",
   "starter": "Dùng prompt mẫu",
   "starterText": "## Vai trò & người đọc\nBạn là trợ lý truyền thông RISE, viết cho sinh viên RMIT tò mò nhưng mới biết khởi nghiệp.\n\n## Nguồn & bằng chứng\nTìm brief sự kiện, hướng dẫn giọng văn, ghi chú các ban và duyệt đối tác. Dùng dữ kiện mới nhất đã duyệt; hỏi khi thiếu hoặc mâu thuẫn.\n\n## Quy trình & giới hạn\nThu thập nguồn, đối chiếu, viết và kiểm tra hai ngôn ngữ. Không tự tạo diễn giả, nhà tài trợ, ngày hay link. Nhờ thành viên duyệt trước khi đăng.\n\n## Đầu ra mong đợi\nTrả bài Facebook văn bản thuần tiếng Anh và tiếng Việt riêng, brief hình ảnh, văn bản thay thế, ghi chú nguồn và danh sách kiểm tra.",
   "starts": "Bắt đầu",
-  "startTogether": "BẮT ĐẦU CÙNG NHAU",
   "steer": "Định hướng tình huống tiếp theo",
   "steerPlaceholder": "Ví dụ: giúp Marketing & Growth triển khai chiến dịch định hướng RISE trong khi Product chuẩn bị showcase cho Induction Day…",
   "step1": "Mô tả trợ lý",
@@ -855,10 +894,10 @@
   "step3Text": "So sánh cách làm, cải thiện kỹ năng và mang chúng theo bạn.",
   "stepByStep": "Các bước trợ lý đã làm",
   "stepByStepHelp": "Chỉ mở một bước khi bạn muốn xem chi tiết.",
+  "stopReason": "Lý do lượt thử dừng",
   "stop_answered": "Trợ lý đã trả lời cuối cùng",
   "stop_tool_limit": "Đã đạt giới hạn thao tác ứng dụng",
   "stop_turn_limit": "Đã đạt giới hạn lượt AI",
-  "stopReason": "Lý do lượt thử dừng",
   "studio": {
     "actions": {
       "admin": "Đã đổi vai trò quản trị",
@@ -943,12 +982,12 @@
   "themeLight": "Sáng",
   "themeSystem": "Hệ thống",
   "title": "Tên buổi thực hành",
+  "toReview": "cần xem lại",
   "together": "+ cùng nhau",
   "toolCalls": "Lần dùng công cụ mỗi lượt",
   "toolCallsHelp": "Số lần tìm kiếm, đọc và thay đổi dữ liệu thực hành mỗi lượt. Luôn chừa một lượt cho câu trả lời cuối cùng.",
   "toolCallsShort": "công cụ",
   "toolIssues": "Lỗi công cụ",
-  "toReview": "cần xem lại",
   "trace": "Thao tác công cụ",
   "turnsShort": "lượt",
   "unset": "Bỏ chọn",
@@ -978,8 +1017,8 @@
     "next": "Khám phá Colab",
     "privateLabel": "Chỉ người được mời",
     "recentDescription": "Tiếp tục buổi gần nhất. Quyền truy cập và thời gian sẽ được kiểm tra khi vào phòng.",
-    "sessions": "Buổi thực hành của bạn",
     "sessionUnavailable": "Hiện chưa thể kiểm tra tài khoản. Thử lại để tiếp tục công việc đang làm.",
+    "sessions": "Buổi thực hành của bạn",
     "welcome": "Chào mừng trở lại"
   },
   "workspace-invitation": {

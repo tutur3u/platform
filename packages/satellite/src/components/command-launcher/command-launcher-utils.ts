@@ -6,7 +6,7 @@ import {
 import type {
   GlobalCommandLauncherLabels,
   LauncherWorkspace,
-} from './global-command-launcher';
+} from './command-launcher-types';
 
 export type CommandLauncherHostApp = LaunchableAppSlug | 'external';
 
@@ -26,44 +26,6 @@ export const APP_SEARCH_ITEMS: readonly LaunchableApp[] = LAUNCHABLE_APPS.map(
 
 export const REMOTE_WORKSPACE_SEARCH_LIMIT = 50;
 export const VISIBLE_WORKSPACE_SEARCH_LIMIT = 20;
-
-type LauncherInstance = { id: symbol; priority: number };
-const instanceRegistry = new Map<CommandLauncherHostApp, LauncherInstance[]>();
-
-export function registerLauncherInstance(
-  currentApp: CommandLauncherHostApp,
-  instanceId: symbol,
-  priority: number
-) {
-  const instances = instanceRegistry.get(currentApp) ?? [];
-  instanceRegistry.set(currentApp, [
-    ...instances,
-    { id: instanceId, priority },
-  ]);
-}
-
-export function unregisterLauncherInstance(
-  currentApp: CommandLauncherHostApp,
-  instanceId: symbol
-) {
-  const nextInstances = (instanceRegistry.get(currentApp) ?? []).filter(
-    (instance) => instance.id !== instanceId
-  );
-  if (nextInstances.length === 0) instanceRegistry.delete(currentApp);
-  else instanceRegistry.set(currentApp, nextInstances);
-}
-
-export function isActiveLauncherInstance(
-  currentApp: CommandLauncherHostApp,
-  instanceId: symbol
-) {
-  const instances = instanceRegistry.get(currentApp) ?? [];
-  let active: LauncherInstance | undefined;
-  for (const instance of instances) {
-    if (!active || instance.priority >= active.priority) active = instance;
-  }
-  return active?.id === instanceId;
-}
 
 export function workspaceToSearchItem(
   workspace: LauncherWorkspace
@@ -118,3 +80,13 @@ export function getMatchContext<T extends { title: string }>(
   if (result.matchedText === result.item.title) return result.reason;
   return `${labels.match}: ${result.matchedText}`;
 }
+
+/** Stable cmdk values shared by result rows and their keyboard entries. */
+export const commandItemValue = {
+  app: (app: Pick<LaunchableApp, 'slug' | 'title'>) =>
+    `app-${app.slug}-${app.title}`,
+  navigation: (item: { href: string; title: string }) =>
+    `nav-${item.href}-${item.title}`,
+  workspace: (workspace: { id: string; name?: string | null }) =>
+    `workspace-${workspace.id}-${workspace.name}`,
+};

@@ -7,11 +7,17 @@ import en from '../../messages/en.json';
 import vietnamese from '../../messages/vi.json';
 import { TaskPlanComposer } from './task-plan-composer';
 
-const { createTask, boards, projects, translation } = vi.hoisted(() => ({
-  createTask: vi.fn(),
-  boards: vi.fn(),
-  projects: vi.fn(),
-  translation: { locale: 'en' },
+const { createTask, boards, projects, translation, navigation } = vi.hoisted(
+  () => ({
+    createTask: vi.fn(),
+    boards: vi.fn(),
+    projects: vi.fn(),
+    translation: { locale: 'en' },
+    navigation: { search: '' },
+  })
+);
+vi.mock('next/navigation', () => ({
+  useSearchParams: () => new URLSearchParams(navigation.search),
 }));
 vi.mock('@tuturuuu/internal-api', () => ({
   createWorkspaceTask: createTask,
@@ -67,6 +73,8 @@ afterEach(() => {
   dispose();
   vi.resetAllMocks();
   translation.locale = 'en';
+  navigation.search = '';
+  window.history.replaceState(null, '', '/');
 });
 async function mount(source: string | undefined = sourceUrl) {
   Object.assign(globalThis, { IS_REACT_ACT_ENVIRONMENT: true });
@@ -581,4 +589,45 @@ it('rejects an oversized programmatic note before sending a task command', async
   expect(
     container.querySelector<HTMLButtonElement>('button[type=submit]')?.disabled
   ).toBe(true);
+});
+
+async function mountWithIntent(search: string) {
+  navigation.search = search;
+  window.history.replaceState(null, '', `/personal/tasks/new${search}`);
+  return mount(undefined);
+}
+const nameInput = (container: HTMLElement) =>
+  container.querySelector<HTMLInputElement>('input:not([type=checkbox])')!;
+it('seeds the name from a title intent without submitting or choosing a destination', async () => {
+  const container = await mountWithIntent(
+    '?source=command-launcher&title=Plan+the+offsite&keep=1'
+  );
+  expect(nameInput(container).value).toBe('Plan the offsite');
+  expect(createTask).not.toHaveBeenCalled();
+  expect(container.querySelector('select')?.value).toBe('');
+  expect(window.location.search).toBe('?keep=1');
+});
+it.each([
+  ['duplicate', '?title=One&title=Two'],
+  ['blank', '?title=%20%20'],
+  ['too long', `?title=${'a'.repeat(501)}`],
+])('ignores a %s title intent and still consumes it', async (_, search) => {
+  const container = await mountWithIntent(search);
+  expect(nameInput(container).value).toBe('');
+  expect(window.location.search).toBe('');
+});
+it('turns control characters into spaces and keeps a non-launcher source', async () => {
+  const container = await mountWithIntent('?source=lettin&title=Line%0Abreak');
+  expect(nameInput(container).value).toBe('Line break');
+  expect(window.location.search).toBe('?source=lettin');
+});
+it('creates only after the user picks a destination, with the edited name', async () => {
+  createTask.mockResolvedValue({ task: { id: 'created-task' } });
+  const container = await mountWithIntent('?title=Draft+title');
+  await fill(container);
+  await submit(container);
+  expect(createTask).toHaveBeenCalledExactlyOnceWith('workspace', {
+    name: 'Draw a character study',
+    listId: 'list-1',
+  });
 });
