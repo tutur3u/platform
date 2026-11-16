@@ -176,7 +176,7 @@ const mutations = {
   },
   'explicit hold'() {},
 };
-for (const app of apps.filter((name) => name !== 'mind' && name !== 'meet')) {
+for (const app of apps.filter((name) => name !== 'mind')) {
   for (const [label, mutate] of Object.entries(mutations)) {
     test(`${app}: ${label} holds native/legacy planner targets and CLI`, (t) => {
       const policy = structuredClone(heldPolicy);
@@ -254,7 +254,7 @@ for (const invalidPolicy of [
   });
 }
 
-for (const app of apps.filter((name) => name !== 'mind' && name !== 'meet')) {
+for (const app of apps.filter((name) => name !== 'mind')) {
   test(`${app}: explicit reviewed admission permits planner selection and native CLI`, (t) => {
     const policy = structuredClone(heldPolicy);
     policy[app] = {
@@ -285,18 +285,10 @@ test('known unrelated publisher retains normal selection even with malformed pro
   );
 });
 
-test('Calendar, Mail and Apps admissions open only their publishers while Meet and Shortener stay held', (t) => {
+test('Calendar, Meet, Mail and Apps admissions open only their publishers while Shortener remains held', (t) => {
   const root = fixture(t);
-  assert.equal(
-    runPolicy(root, 'calendar-cloudflare.yaml').output,
-    'allowed=true\n'
-  );
-  const meetPolicy = runPolicy(root, 'meet-cloudflare.yaml');
-  assert.equal(meetPolicy.output, 'allowed=false\n');
-  assert.match(
-    meetPolicy.stdout,
-    /held: Meet excluded until the frontend startup failure is tested/
-  );
+  for (const workflow of ['calendar-cloudflare.yaml', 'meet-cloudflare.yaml'])
+    assert.equal(runPolicy(root, workflow).output, 'allowed=true\n');
   for (const event of ['push', 'workflow_dispatch']) {
     const [native, legacy] = plan(
       root,
@@ -310,12 +302,14 @@ test('Calendar, Mail and Apps admissions open only their publishers while Meet a
       ['meet-cloudflare.yaml', 'vercel-production-meet.yaml'],
       event
     );
-    // The app-id deny-list wins over Meet's admitted publication record.
-    assert.equal(meetNative.shouldRun, false);
-    assert.equal(meetNative.held, true);
-    assert.match(meetNative.reason, /^held: Meet /u);
+    // Admission opens the native publisher. Without a success marker, a
+    // commit-driven push still fails closed; operator dispatch selects it.
+    if (event === 'push') {
+      assert.equal(meetNative.shouldRun, false);
+      assert.equal(meetNative.held, true);
+      assert.match(meetNative.reason, /fails closed/u);
+    } else assert.equal(meetNative.shouldRun, true);
     assert.equal(meetLegacy.shouldRun, false);
-    assert.match(meetLegacy.reason, /^held: Meet /u);
   }
   for (const app of ['mail', 'apps'])
     assert.equal(
@@ -331,7 +325,7 @@ test('Calendar, Mail and Apps admissions open only their publishers while Meet a
 test('admitted apps refuse a dispatch of their switched-off Vercel publishers', (t) => {
   const root = fixture(t);
   const disabled = /disabled in the tuturuuu\.ci\.ts switchboard/;
-  for (const app of ['calendar', 'mail', 'apps']) {
+  for (const app of ['calendar', 'meet', 'mail', 'apps']) {
     const legacy = runPolicy(root, `vercel-production-${app}.yaml`);
     assert.equal(legacy.output, 'allowed=false\n');
     assert.match(legacy.stdout, disabled);
@@ -341,34 +335,6 @@ test('admitted apps refuse a dispatch of their switched-off Vercel publishers', 
       'allowed=true\n'
     );
   }
-  for (const workflow of [
-    'vercel-production-meet.yaml',
-    'meet-cloudflare.yaml',
-  ]) {
-    const meetHeld = runPolicy(root, workflow);
-    assert.equal(meetHeld.output, 'allowed=false\n');
-    assert.match(
-      meetHeld.stdout,
-      /held: Meet excluded until the frontend startup failure is tested/
-    );
-  }
-});
-
-test('mutant: dropping the deny-list return admits Meet again', (t) => {
-  const root = fixture(t);
-  const file = join(root, 'scripts/ci/production-publication-policy.ts');
-  const source = readFileSync(file, 'utf8');
-  const needle = '  if (excluded) return excluded;\n';
-  assert.equal(source.split(needle).length, 2);
-  assert.equal(
-    runPolicy(root, 'meet-cloudflare.yaml').output,
-    'allowed=false\n'
-  );
-  writeFileSync(file, source.replace(needle, ''));
-  assert.equal(
-    runPolicy(root, 'meet-cloudflare.yaml').output,
-    'allowed=true\n'
-  );
 });
 
 test('a known publisher switched off in the switchboard holds on dispatch', (t) => {
@@ -437,15 +403,12 @@ for (const { workflow, job } of publishers) {
     );
     const result = runPolicy(fixture(t, heldPolicy), workflow, policy.run);
     assert.equal(result.output, 'allowed=false\n');
-    const exclusionReason = {
-      'vercel-production-mind.yaml':
-        /held: Mind stays with its dedicated owner/,
-      'meet-cloudflare.yaml':
-        /held: Meet excluded until the frontend startup failure is tested/,
-      'vercel-production-meet.yaml':
-        /held: Meet excluded until the frontend startup failure is tested/,
-    };
-    assert.match(result.summary, exclusionReason[workflow] ?? heldReason);
+    assert.match(
+      result.summary,
+      workflow === 'vercel-production-mind.yaml'
+        ? /held: Mind stays with its dedicated owner/
+        : heldReason
+    );
   });
 }
 
