@@ -119,7 +119,20 @@ describe('document citation adapter', () => {
 
     expect(result.inText.l).toContain('Le');
     expect(result.bibliography).toHaveLength(1);
-    expect(result.issues).toEqual([{ citationId: 'x', code: 'invalid-work' }]);
+    expect(result.issues).toEqual([
+      { citationId: 'x', code: 'invalid-work' },
+      { citationId: 'l', code: 'missing-fields' },
+    ]);
+    const legacyInspection = inspectCitationSnapshot(legacy, 'harvard');
+    expect(legacyInspection.status).toBe('valid');
+    if (legacyInspection.status === 'valid') {
+      expect(legacyInspection.issues).toEqual(
+        expect.arrayContaining([
+          { field: 'url', severity: 'error' },
+          { field: 'accessed', severity: 'error' },
+        ])
+      );
+    }
     expect(inspectCitationSnapshot(broken, 'apa')).toEqual({
       status: 'invalid',
       summary: { title: 'No type', contributors: '', year: null },

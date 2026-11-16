@@ -37,6 +37,15 @@ const schemaExtensions = [
   BibliographyNode.extend({ addNodeView: null }),
 ];
 
+/** jsdom has no ClipboardEvent constructor; ProseMirror still handles the paste. */
+class PasteEvent extends Event implements ClipboardEvent {
+  readonly clipboardData = null;
+}
+
+function pasteHtml(instance: Editor, html: string) {
+  return instance.view.pasteHTML(html, new PasteEvent('paste'));
+}
+
 const bibliographies = (instance: Editor) =>
   (instance.getJSON().content ?? []).filter(
     (node) => node.type === 'citationBibliography'
@@ -79,7 +88,7 @@ describe('pasting cited content', () => {
   it('keeps the existing references block and the document style', () => {
     editor = new Editor({ extensions: schemaExtensions, content: original });
     editor.commands.setTextSelection(3);
-    editor.view.pasteHTML(pasted);
+    pasteHtml(editor, pasted);
 
     const blocks = bibliographies(editor);
     expect(blocks).toHaveLength(1);
@@ -94,7 +103,7 @@ describe('pasting cited content', () => {
     editor = new Editor({ extensions: schemaExtensions, content: original });
     const before = editor.getJSON();
     editor.commands.setTextSelection(3);
-    editor.view.pasteHTML(pasted);
+    pasteHtml(editor, pasted);
     expect(bibliographies(editor)).toHaveLength(1);
 
     editor.commands.undo();
@@ -106,7 +115,7 @@ describe('pasting cited content', () => {
       extensions: schemaExtensions,
       content: { type: 'doc', content: [{ type: 'paragraph' }] },
     });
-    editor.view.pasteHTML(pasted);
+    pasteHtml(editor, pasted);
     const blocks = bibliographies(editor);
     expect(blocks).toHaveLength(1);
     expect(blocks[0]?.attrs?.style).toBe('harvard');
@@ -121,7 +130,8 @@ describe('pasting cited content', () => {
     const title = '界'.repeat(Math.ceil(MAX_CITATION_BYTES / 3) + 10);
     const attrs = JSON.stringify(citation('cit_big', title).attrs);
     expect(attrs.length).toBeLessThan(MAX_CITATION_BYTES);
-    editor.view.pasteHTML(
+    pasteHtml(
+      editor,
       `<p><cite data-citation="${attrs.replaceAll('"', '&quot;')}">(x)</cite></p>`
     );
     expect(collectDocumentCitations(editor.state.doc).citations).toHaveLength(

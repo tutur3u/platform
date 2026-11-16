@@ -1,5 +1,11 @@
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import { fireEvent, render, screen, waitFor } from '@testing-library/react';
+import {
+  cleanup,
+  fireEvent,
+  render,
+  screen,
+  waitFor,
+} from '@testing-library/react';
 import { afterEach, describe, expect, it } from 'vitest';
 import { CitationCaptureTab } from '../citation-capture-tab';
 import { createDrawerSessionFence } from '../citation-layer';
@@ -101,9 +107,7 @@ const libraryItem = (title: string): CitationLibraryItem => ({
   updatedAt: '2026-11-16T00:00:00.000Z',
 });
 
-afterEach(() => {
-  document.body.innerHTML = '';
-});
+afterEach(cleanup);
 
 describe('drawer session fence', () => {
   it('retires a session on close, choice and reopen', () => {

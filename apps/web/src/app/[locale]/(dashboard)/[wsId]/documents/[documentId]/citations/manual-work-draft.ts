@@ -232,7 +232,7 @@ export function manualDraftToWork(
   if (!title) return { kind: 'incomplete' };
 
   const byRole = (role: ManualContributorRole) =>
-    draft.contributors.flatMap((contributor) => {
+    draft.contributors.flatMap<CiteContributor>((contributor) => {
       if (contributor.role !== role) return [];
       const source = contributor.source;
       if (contributor.kind === 'organization') {

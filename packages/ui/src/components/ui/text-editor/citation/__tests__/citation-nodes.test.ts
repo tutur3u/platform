@@ -82,7 +82,10 @@ describe('citation nodes', () => {
       content: doc(citationJson('cit_bad', { snapshot: { kind: 'future' } })),
     });
     const node = editor.getJSON().content?.[0]?.content?.[1];
-    expect(node?.attrs?.snapshot).toEqual({ kind: 'future' });
+    expect(node?.type).toBe('citation');
+    expect(node && 'attrs' in node ? node.attrs?.snapshot : undefined).toEqual({
+      kind: 'future',
+    });
     expect(collectDocumentCitations(editor.state.doc).unreadableIds).toEqual([
       'cit_bad',
     ]);
