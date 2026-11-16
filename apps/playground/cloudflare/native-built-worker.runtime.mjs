@@ -127,7 +127,11 @@ test(
       ),
     ]) {
       const res = await call('/playground' + suffix);
-      assert.equal(res.status, 200, suffix);
+      assert.equal(
+        res.status,
+        200,
+        `/playground${suffix} -> ${res.status} ${res.headers.location ?? ''}`
+      );
       assert.match(res.headers['content-type'], /text\/html/);
       assert.equal(res.headers['set-cookie'], undefined);
       assert.equal(res.headers['cache-control'], 'private, no-store');
