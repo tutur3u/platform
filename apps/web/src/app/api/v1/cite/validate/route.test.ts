@@ -1,0 +1,70 @@
+import { CiteWorkSchema, validateCitation } from '@tuturuuu/cite';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { POST } from './route';
+
+const mocks = vi.hoisted(() => ({
+  auth: vi.fn(),
+  store: vi.fn(),
+  evaluate: vi.fn(),
+}));
+vi.mock('server-only', () => ({}));
+vi.mock('@/lib/api-auth', () => ({ resolveSessionAuthContext: mocks.auth }));
+vi.mock('@tuturuuu/utils/upstash-rest', () => ({
+  getUpstashRestRedisClient: mocks.store,
+}));
+const work = CiteWorkSchema.parse({
+  id: 'synthetic-web',
+  type: 'webpage',
+  title: 'Synthetic tides',
+  provenance: {
+    sourceCaptureMethod: 'ai_parsed',
+    verificationStatus: 'ai_inferred',
+  },
+});
+function request(style: 'apa' | 'harvard') {
+  return new Request('https://tuturuuu.com/api/v1/cite/validate', {
+    method: 'POST',
+    headers: { 'content-type': 'application/json' },
+    body: JSON.stringify({ style, work }),
+  });
+}
+beforeEach(() => {
+  vi.clearAllMocks();
+  mocks.auth.mockResolvedValue({ ok: true, user: { id: 'verified-actor' } });
+  mocks.store.mockResolvedValue({ eval: mocks.evaluate });
+  mocks.evaluate.mockResolvedValue(1);
+});
+describe('POST /api/v1/cite/validate', () => {
+  it.each(['apa', 'harvard'] as const)(
+    'matches portable %s source requirements and provenance warnings',
+    async (style) => {
+      const input = request(style);
+      const response = await POST(input);
+      expect(response.status).toBe(200);
+      expect(await response.json()).toEqual({
+        issues: validateCitation(work, style),
+      });
+      expect(mocks.auth).toHaveBeenCalledWith(input);
+      expect(response.headers.get('cache-control')).toBe('private, no-store');
+    }
+  );
+  it('shares the actor/global formatting budget and returns Retry-After', async () => {
+    mocks.evaluate.mockResolvedValue(0);
+    const response = await POST(request('harvard'));
+    expect(response.status).toBe(429);
+    expect(await response.json()).toEqual({ error: 'RATE_LIMITED' });
+    expect(response.headers.get('retry-after')).toMatch(/^\d+$/);
+    expect(mocks.evaluate.mock.calls[0]?.[1]).toEqual([
+      expect.stringMatching(/^cite:format:\{budget\}:\d+:actor:[a-f0-9]{64}$/),
+      expect.stringMatching(/^cite:format:\{budget\}:\d+:global$/),
+    ]);
+  });
+  it('requires a current authenticated actor', async () => {
+    mocks.auth.mockResolvedValue({
+      ok: false,
+      response: Response.json({ error: 'Unauthorized' }, { status: 401 }),
+    });
+    expect((await POST(request('apa'))).status).toBe(401);
+    expect(mocks.store).not.toHaveBeenCalled();
+  });
+});

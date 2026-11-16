@@ -44,6 +44,40 @@ describe('required MFA browser navigation', () => {
   });
 });
 
+describe('duplicate citation recovery', () => {
+  const id = 'c4f7f9d2-5b72-4a02-8867-39850ec60c44';
+
+  it('carries a valid authorized duplicate id for source reuse', async () => {
+    const { parseInternalApiError } = await import('./internal-api-error');
+    expect(
+      await parseInternalApiError(
+        Response.json(
+          { code: 'DUPLICATE_SOURCE', existingId: id },
+          { status: 409 }
+        )
+      )
+    ).toMatchObject({ code: 'DUPLICATE_SOURCE', existingId: id });
+  });
+
+  it.each([
+    [409, 'DUPLICATE_SOURCE', '/other-workspace/item'],
+    [409, 'VERSION_CONFLICT', id],
+    [403, 'DUPLICATE_SOURCE', id],
+  ])(
+    'ignores unrelated or malformed recovery ids',
+    async (status, code, existingId) => {
+      const { parseInternalApiError } = await import('./internal-api-error');
+      expect(
+        (
+          await parseInternalApiError(
+            Response.json({ code, existingId }, { status })
+          )
+        ).existingId
+      ).toBeUndefined();
+    }
+  );
+});
+
 describe('retry hints', () => {
   const respond = (body: unknown, headers: HeadersInit = {}, status = 429) =>
     new Response(JSON.stringify(body), { status, headers });

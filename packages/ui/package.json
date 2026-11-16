@@ -483,6 +483,10 @@
       "types": "./src/components/ui/time-tracker/types.ts",
       "import": "./src/components/ui/time-tracker/types.ts"
     },
+    "./text-editor/citation": {
+      "types": "./src/components/ui/text-editor/citation/index.ts",
+      "import": "./src/components/ui/text-editor/citation/index.ts"
+    },
     "./text-editor/editor": {
       "types": "./src/components/ui/text-editor/editor.tsx",
       "import": "./src/components/ui/text-editor/editor.tsx"

@@ -23,6 +23,11 @@ import type { Awareness } from 'y-protocols/awareness';
 import type * as Y from 'yjs';
 import { BackgroundColor } from './background-color-extension';
 import {
+  BibliographyNode,
+  CitationKit,
+  CitationNode,
+} from './citation/citation-nodes';
+import {
   renderCollaborationCaret,
   renderCollaborationSelection,
 } from './collaboration-carets';
@@ -72,6 +77,8 @@ interface EditorExtensionsOptions {
   };
   renderTaskMention?: TaskMentionNodeViewRenderer;
   readOnly?: boolean;
+  /** Adds citation insertion triggers; citation nodes are always registered. */
+  citations?: boolean;
 }
 
 export function getEditorExtensions({
@@ -87,6 +94,7 @@ export function getEditorExtensions({
   mentionTranslations,
   renderTaskMention,
   readOnly = false,
+  citations = false,
 }: EditorExtensionsOptions = {}): Extensions {
   return [
     ...(doc
@@ -206,6 +214,10 @@ export function getEditorExtensions({
     ToggleSummary,
     DetailsContent,
     ToggleBlock,
+    // Always registered so cited documents keep their citations in any editor.
+    CitationNode,
+    BibliographyNode,
+    ...(citations && !readOnly ? [CitationKit] : []),
     Mention.configure({
       renderTaskMention,
       translations: mentionTranslations,

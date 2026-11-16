@@ -5,6 +5,7 @@ const HOTKEYS = {
   'heading-2': 'Mod+Alt+2',
   'heading-3': 'Mod+Alt+3',
   bold: 'Mod+B',
+  citation: 'Mod+Alt+C',
   italic: 'Mod+I',
   strike: 'Mod+Shift+S',
   subscript: 'Mod+,',

@@ -1,3 +1,7 @@
+import {
+  citationClipboardText,
+  type CitationClipboardScope,
+} from './citation-clipboard';
 import type { Fragment, Mark, Node, Slice } from '@tiptap/pm/model';
 
 type ClipboardFormat = 'markdown' | 'text';
@@ -28,10 +32,17 @@ function wrapMarkedText(
   return href ? `[${result}](${href})` : result;
 }
 
-function serializeInlineContent(node: Node, format: ClipboardFormat): string {
+function serializeInlineContent(
+  node: Node,
+  format: ClipboardFormat,
+  scope?: CitationClipboardScope
+): string {
   let result = '';
   node.forEach((child) => {
-    if (child.isText) {
+    const citation = citationClipboardText(child, scope);
+    if (citation !== null) {
+      result += citation;
+    } else if (child.isText) {
       result += wrapMarkedText(child.text ?? '', child.marks, format);
     } else if (child.type.name === 'hardBreak') {
       result += '\n';
@@ -48,7 +59,7 @@ function serializeInlineContent(node: Node, format: ClipboardFormat): string {
       if (format === 'markdown') result += src ? `![${alt}](${src})` : alt;
       else result += [alt || 'Image', src].filter(Boolean).join(': ');
     } else {
-      result += serializeInlineContent(child, format);
+      result += serializeInlineContent(child, format, scope);
     }
   });
   return result;
@@ -58,7 +69,8 @@ function serializeListItem(
   node: Node,
   marker: string,
   depth: number,
-  format: ClipboardFormat
+  format: ClipboardFormat,
+  scope?: CitationClipboardScope
 ): string {
   const indent = '  '.repeat(depth);
   const prefix = `${marker} `;
@@ -67,11 +79,11 @@ function serializeListItem(
 
   node.forEach((child) => {
     if (['bulletList', 'orderedList', 'taskList'].includes(child.type.name)) {
-      lines.push(serializeList(child, depth + 1, format));
+      lines.push(serializeList(child, depth + 1, format, scope));
       return;
     }
 
-    const text = serializeBlock(child, depth, format).trimEnd();
+    const text = serializeBlock(child, depth, format, scope).trimEnd();
     if (!hasMarker) {
       const continuation = ' '.repeat(prefix.length);
       const marked = text
@@ -98,7 +110,8 @@ function serializeListItem(
 function serializeList(
   node: Node,
   depth: number,
-  format: ClipboardFormat
+  format: ClipboardFormat,
+  scope?: CitationClipboardScope
 ): string {
   const start =
     node.type.name === 'orderedList' && typeof node.attrs.start === 'number'
@@ -120,18 +133,22 @@ function serializeList(
           : format === 'markdown'
             ? '-'
             : '•';
-    lines.push(serializeListItem(item, marker, depth, format));
+    lines.push(serializeListItem(item, marker, depth, format, scope));
   });
   return lines.join('\n');
 }
 
-function serializeTable(node: Node, format: ClipboardFormat): string {
+function serializeTable(
+  node: Node,
+  format: ClipboardFormat,
+  scope?: CitationClipboardScope
+): string {
   const rows: string[][] = [];
   node.forEach((row) => {
     const cells: string[] = [];
     row.forEach((cell) => {
       cells.push(
-        serializeBlocks(cell.content, format).replace(/\n+/g, ' ').trim()
+        serializeBlocks(cell.content, format, scope).replace(/\n+/g, ' ').trim()
       );
     });
     rows.push(cells);
@@ -153,13 +170,16 @@ function serializeTable(node: Node, format: ClipboardFormat): string {
 function serializeBlock(
   node: Node,
   depth = 0,
-  format: ClipboardFormat
+  format: ClipboardFormat,
+  scope?: CitationClipboardScope
 ): string {
+  const citation = citationClipboardText(node, scope);
+  if (citation !== null) return citation;
   switch (node.type.name) {
     case 'paragraph':
-      return serializeInlineContent(node, format);
+      return serializeInlineContent(node, format, scope);
     case 'heading': {
-      const text = serializeInlineContent(node, format);
+      const text = serializeInlineContent(node, format, scope);
       if (format === 'text') return text;
       const level = typeof node.attrs.level === 'number' ? node.attrs.level : 1;
       return `${'#'.repeat(Math.min(6, Math.max(1, level)))} ${text}`;
@@ -167,9 +187,9 @@ function serializeBlock(
     case 'bulletList':
     case 'orderedList':
     case 'taskList':
-      return serializeList(node, depth, format);
+      return serializeList(node, depth, format, scope);
     case 'blockquote': {
-      const text = serializeBlocks(node.content, format);
+      const text = serializeBlocks(node.content, format, scope);
       return format === 'text'
         ? text
         : text
@@ -186,7 +206,7 @@ function serializeBlock(
     case 'horizontalRule':
       return '---';
     case 'table':
-      return serializeTable(node, format);
+      return serializeTable(node, format, scope);
     case 'image':
     case 'imageResize': {
       const src = typeof node.attrs.src === 'string' ? node.attrs.src : '';
@@ -205,23 +225,27 @@ function serializeBlock(
         : '';
     case 'details':
     case 'detailsContent':
-      return serializeBlocks(node.content, format);
+      return serializeBlocks(node.content, format, scope);
     case 'detailsSummary': {
-      const summary = serializeInlineContent(node, format);
+      const summary = serializeInlineContent(node, format, scope);
       if (format === 'text') return summary;
       const level =
         typeof node.attrs.level === 'number' ? node.attrs.level : null;
       return level ? `${'#'.repeat(level)} ${summary}` : summary;
     }
     default:
-      return serializeBlocks(node.content, format);
+      return serializeBlocks(node.content, format, scope);
   }
 }
 
-function serializeBlocks(fragment: Fragment, format: ClipboardFormat): string {
+function serializeBlocks(
+  fragment: Fragment,
+  format: ClipboardFormat,
+  scope?: CitationClipboardScope
+): string {
   const blocks: string[] = [];
   fragment.forEach((node) => {
-    blocks.push(serializeBlock(node, 0, format));
+    blocks.push(serializeBlock(node, 0, format, scope));
   });
   return blocks.join('\n\n');
 }
@@ -240,20 +264,30 @@ export function collapseExcessBlankLines(text: string): string {
   return normalized.join('\n');
 }
 
-function serializeClipboard(slice: Slice, format: ClipboardFormat): string {
+function serializeClipboard(
+  slice: Slice,
+  format: ClipboardFormat,
+  scope?: CitationClipboardScope
+): string {
   return collapseExcessBlankLines(
-    serializeBlocks(slice.content, format)
+    serializeBlocks(slice.content, format, scope)
       .replace(/\r\n?/g, '\n')
       .replace(/[ \t]+$/gm, '')
   ).replace(/^\n+|\n+$/g, '');
 }
 
 /** Markdown representation used for normal clipboard copy and explicit export. */
-export function serializeClipboardText(slice: Slice): string {
-  return serializeClipboard(slice, 'markdown');
+export function serializeClipboardText(
+  slice: Slice,
+  scope?: CitationClipboardScope
+): string {
+  return serializeClipboard(slice, 'markdown', scope);
 }
 
 /** Readable plain text without Markdown formatting delimiters. */
-export function serializeClipboardPlainText(slice: Slice): string {
-  return serializeClipboard(slice, 'text');
+export function serializeClipboardPlainText(
+  slice: Slice,
+  scope?: CitationClipboardScope
+): string {
+  return serializeClipboard(slice, 'text', scope);
 }

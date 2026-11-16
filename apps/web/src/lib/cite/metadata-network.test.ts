@@ -23,6 +23,50 @@ function networkFor(response = Response.json({ message: {} })) {
 }
 
 describe('bounded citation network', () => {
+  it('aborts a pending DNS wait without starting a connection', async () => {
+    const { network } = networkFor();
+    const started = Promise.withResolvers<void>();
+    network.resolve = vi.fn(() => {
+      started.resolve();
+      return new Promise<never>(() => {});
+    });
+    const controller = new AbortController();
+    const pending = fetchMetadataText(target, 'json', network, {
+      signal: controller.signal,
+    });
+    await started.promise;
+    controller.abort();
+    await expect(pending).rejects.toMatchObject({ name: 'AbortError' });
+    expect(network.dispatcher).not.toHaveBeenCalled();
+    expect(network.fetch).not.toHaveBeenCalled();
+  });
+
+  it('aborts a pending body, cancels its stream and destroys its connection', async () => {
+    const reading = Promise.withResolvers<void>();
+    const cancel = vi.fn();
+    const stream = new ReadableStream<Uint8Array>(
+      {
+        pull: () => {
+          reading.resolve();
+        },
+        cancel,
+      },
+      { highWaterMark: 0 }
+    );
+    const { network, destroy } = networkFor(
+      new Response(stream, { headers: { 'content-type': 'application/json' } })
+    );
+    const controller = new AbortController();
+    const pending = fetchMetadataText(target, 'json', network, {
+      signal: controller.signal,
+    });
+    await reading.promise;
+    controller.abort();
+    await expect(pending).rejects.toMatchObject({ name: 'AbortError' });
+    expect(cancel).toHaveBeenCalledTimes(1);
+    expect(destroy).toHaveBeenCalled();
+  });
+
   it.each([
     '127.0.0.1',
     '10.1.2.3',

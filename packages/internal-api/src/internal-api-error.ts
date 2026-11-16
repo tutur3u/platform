@@ -4,7 +4,9 @@ export class InternalApiError extends Error {
     public readonly status: number,
     public readonly code?: string,
     /** Seconds until a rate/budget limit resets, from `Retry-After` or the body. */
-    public readonly retryAfter?: number
+    public readonly retryAfter?: number,
+    public readonly existingId?: string,
+    public readonly billingStatus?: 'unknown' | 'settled'
   ) {
     super(message);
     this.name = 'InternalApiError';
@@ -32,6 +34,8 @@ export async function parseInternalApiError(response: Response) {
   const fallbackMessage = `Internal API request failed: ${response.status}`;
   let code: string | undefined;
   let retryAfter: number | undefined;
+  let existingId: string | undefined;
+  let billingStatus: 'unknown' | 'settled' | undefined;
   let message: string;
   try {
     const data = (await response.json()) as {
@@ -39,8 +43,21 @@ export async function parseInternalApiError(response: Response) {
       error?: string;
       message?: string;
       retryAfter?: number;
+      existingId?: unknown;
+      billingStatus?: unknown;
     };
     code = data.code;
+    if (data.billingStatus === 'unknown' || data.billingStatus === 'settled')
+      billingStatus = data.billingStatus;
+    if (
+      response.status === 409 &&
+      code === 'DUPLICATE_SOURCE' &&
+      typeof data.existingId === 'string' &&
+      /^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(
+        data.existingId
+      )
+    )
+      existingId = data.existingId;
     const header = Number(response.headers?.get?.('retry-after'));
     const body = Number(data.retryAfter);
     retryAfter = [header, body].find((n) => Number.isFinite(n) && n > 0);
@@ -56,5 +73,12 @@ export async function parseInternalApiError(response: Response) {
     message = fallbackMessage;
   }
   routeRequiredMfa(code);
-  return new InternalApiError(message, response.status, code, retryAfter);
+  return new InternalApiError(
+    message,
+    response.status,
+    code,
+    retryAfter,
+    existingId,
+    billingStatus
+  );
 }

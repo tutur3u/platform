@@ -1,7 +1,14 @@
 import 'server-only';
 
 import { createHash } from 'node:crypto';
-import { normalizeClientIp } from '@tuturuuu/utils/abuse-protection/client-ip';
+import {
+  type ClientIpConfig,
+  isAuthenticatedCloudflareOrigin,
+  resolveClientIp,
+  resolveTrustedProxyConfig,
+  type ResolveTrustedProxyOptions,
+  UNKNOWN_CLIENT_IP,
+} from '@tuturuuu/utils/abuse-protection/client-ip';
 import { getUpstashRestRedisClient } from '@tuturuuu/utils/upstash-rest';
 
 export const LOOKUP_IP_LIMIT = 10;
@@ -29,16 +36,24 @@ type BudgetResult =
   | { kind: 'allowed' }
   | { kind: 'rejected'; status: 429 | 503; retryAfter: number };
 
-/** Anonymous lookups require Cloudflare's client IP; other forwarding headers are ignored. */
+/** Anonymous lookups require authenticated Cloudflare origin proof before trusting any IP. */
 export async function reserveCitationLookup(
   headers: Headers,
   dependencies: {
     store?: () => Promise<BudgetStore | null>;
     now?: () => number;
+    proxyConfig?: ClientIpConfig;
+    proxyOptions?: ResolveTrustedProxyOptions;
   } = {}
 ): Promise<BudgetResult> {
-  const ip = normalizeClientIp(headers.get('cf-connecting-ip'));
-  if (!ip) return { kind: 'rejected', status: 429, retryAfter: 60 };
+  const config =
+    dependencies.proxyConfig ??
+    resolveTrustedProxyConfig(dependencies.proxyOptions);
+  if (!isAuthenticatedCloudflareOrigin(headers, config))
+    return { kind: 'rejected', status: 429, retryAfter: 60 };
+  const ip = resolveClientIp(headers, config);
+  if (ip === UNKNOWN_CLIENT_IP)
+    return { kind: 'rejected', status: 429, retryAfter: 60 };
   const now = (dependencies.now ?? Date.now)();
   const minute = Math.floor(now / 60_000);
   const retryAfter = Math.max(1, 60 - Math.floor((now % 60_000) / 1000));

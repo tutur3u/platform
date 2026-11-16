@@ -30,22 +30,126 @@ available. Lookup does not create a saved citation library or upload a document.
 
 Anonymous lookup is allowed. Before a lookup, an atomic shared-store reservation
 enforces 10 requests per Cloudflare client IP per minute and 120 requests globally
-per minute. Only `CF-Connecting-IP` supplies the client identity; other forwarding
-headers are ignored. Missing client identity or an exhausted limit returns `429`;
+per minute. Requests require the platform's authenticated Cloudflare-origin
+proof before resolving the client IP from that proof or `CF-Connecting-IP`.
+Other forwarding headers cannot substitute for origin authentication. Missing
+proof, missing trusted client identity or an exhausted limit returns `429`;
 unavailable budget storage returns `503`. Both include `Retry-After`. The lookup
 fails closed and manual formatting remains available. Counter keys use a digest
 of the normalized IP and expire after two minutes. Lookup logs contain fixed
 categories only, never source URLs or titles.
 
+## Documents integration
+
+<Note>
+The Documents integration is undergoing qualification. Saved-library access
+fails closed until its approved schema and typed storage adapter are available.
+AI repair also requires an enabled credit-feature policy. The standalone helper
+remains available independently of those services.
+</Note>
+
+Workspace Documents opts into the citation editor through its host adapter.
+The toolbar, `/cite` followed by a space, and Mod+Alt+C open source capture and
+the workspace library. Each inline citation stores its own versioned source
+snapshot, locator and hide-author option. The References block derives its
+entries from the document; changing APA 7 or Harvard reformats the whole list
+and applies document-wide author/year disambiguation.
+
+The shared editor preserves citation nodes even when insertion is disabled.
+Deleting a library source does not delete a document's saved snapshot. A newer
+library version requires an explicit update. Unknown snapshot versions remain
+stored for recovery. Portable HTML and Markdown retain bounded, escaped citation
+attributes; text-only output uses injected formatting or a readable fallback.
+
+The portable `@tuturuuu/cite` package includes a canonical model, validation,
+identifier deduplication and safe rich-output serializers. Documents formatting
+uses the official APA style and an attributed Harvard derivative covering the
+supported compatibility rules. The standalone three-type formatter retains its
+official Harvard style. This is compatibility with tested cases, rather than a
+claim that every RMIT source subtype has identical output. Authored code uses MIT;
+the engine and style assets retain their separate CPAL and CC BY-SA notices.
+
+## Capture and deterministic APIs
+
+`POST /api/v1/cite/capture` adds arXiv and PubMed identifiers, DOI fallback through
+OpenAlex, and explicit `title:` searches returning up to three review candidates.
+It shares the anonymous lookup reservation. The only additional upstream host is
+`api.openalex.org`; results never select a later request's host or path. Manual
+completion remains available without inventing a source title.
+
+A capture permits at most two upstream reads, a combined 256 KiB response budget,
+and a five-second deadline. Grounding sessions share these limits across their
+identifier checks and bypass the public cache. Public DOI/ISBN capture caching
+stores only validated bibliographic fields for 24 hours. URLs, title searches,
+private annotations, abstracts and AI inputs are not cached there.
+
+Authenticated clients can use `POST /api/v1/cite/format` and `/validate` for server
+parity without AI credits. They accept strict JSON up to 96 KiB. Formatting is
+limited to 100 works, 200 citation occurrences and 10 sources per cluster. A shared
+atomic budget admits 10 requests per verified actor per minute and 120 globally;
+unavailable storage fails closed. These endpoints do not fetch source metadata.
+
+## Saved library
+
+Library CRUD lives under `/api/v1/workspaces/{wsId}/cite/library`; a bounded batch
+read checks up to 50 linked items. Access requires workspace membership and
+document-management permission. The workspace owns the library; creator
+attribution can become empty when its account is deleted. Workspace deletion
+removes the library, while separately saved document snapshots remain independent.
+
+Create requests carry a client-generated item ID for retry identity. Duplicate
+fingerprints resolve to the existing authorized source. Updates and deletes
+require the expected version, so a stale editor cannot silently overwrite a
+newer library item. Application validation and row policies enforce the same
+workspace boundary. An unavailable schema is a service error, never an empty
+library or an in-memory persistence substitute.
+
+Editing bibliographic details keeps their capture origin but marks the edited
+metadata as manual. An unchanged form retains its existing verification.
+
+## AI repair
+
+Repair is an explicit operation billed through the authenticated person's existing
+personal credit pool and `cite_fix_ref` feature. The client cannot choose the
+billing workspace, provider or model. Cost follows the platform's existing token
+metering; deterministic formatting, validation and capture cost no AI credits.
+The proposed source remains subject to review before it replaces document data.
+The billing workspace must be personal, created by the actor and joined by that
+actor. Thinking controls are explicit; unknown model capabilities fail before a
+provider call. Combined output limits use a rate covering both text and reasoning.
+
+A repair retains its operation ID and original input when a response is lost.
+Shared-store receipts bind it to the actor, billing pool, feature and input.
+Provider work and an uncertain deduction are never automatically replayed. A
+pending settlement is reported as unknown; an invalid proposal can still have
+settled token usage. On a receipt miss, a global transaction lookup checks the
+operation ID before another claim. A confirmed prior charge prevents generation
+and deduction even when its proposal receipt was lost. Failed lookup is
+unavailable, never permission to retry. Receipt retention and that readback still
+do not establish durable exactly-once behavior for an in-flight call before any
+charge row exists.
+
+Registry grounding checks identifiers within the bounded capture budget. A
+matching registry record alone does not establish that it belongs to the user's
+reference. AI-generated source details remain marked for review.
+
 ## Scope and verification
 
-This slice supports books, journal articles and webpages. It does not include
-document-wide disambiguation, saved libraries, browser extensions, Office add-ins,
-or AI revision. Additional styles and integrations are follow-up slices. EduFest
-timing and its Tuturuuu surface remain an open product decision.
+The standalone helper supports books, journal articles and webpages. The Documents
+slice adds common book, periodical, web, report, dataset, thesis, standard,
+software, AI-generated and Indigenous-knowledge source families. Additional
+styles, the full AI revision suite, native citation authoring, browser extensions
+and Office add-ins are separate slices. Tuturuuu is the only product scope.
 
 Regression coverage lives in `apps/web/src/lib/cite/format.test.ts`, the metadata
 tests beside it, `apps/web/src/app/api/v1/cite/lookup/route.test.ts`, and the public
 route tests. Release acceptance also requires the real web build and browser
 checks at 390px and 1440px in light and dark themes, including lookup failures,
 manual recovery, style switching and copy actions.
+
+Portable formatter, validation, serializer and deduplication fixtures live in
+`packages/cite/src`. Documents adapter/node and portable codec regressions cover
+snapshot preservation, source identity and bibliography output. Database rollout
+requires isolated full-schema policy, deletion, race and rollback checks, supported
+type generation, Security review and explicit migration approval. Source checks
+alone do not establish deployed or signed-in acceptance.

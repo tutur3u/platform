@@ -1,0 +1,19 @@
+{
+  "name": "@tuturuuu/cite",
+  "private": true,
+  "type": "module",
+  "license": "MIT",
+  "sideEffects": false,
+  "exports": {
+    ".": "./src/index.ts"
+  },
+  "scripts": {
+    "test": "vitest run",
+    "type-check": "tsc --noEmit -p tsconfig.json"
+  },
+  "dependencies": {
+    "citeproc": "2.4.63",
+    "htmlparser2": "12.0.0",
+    "zod": "4.6.7"
+  }
+}

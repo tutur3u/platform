@@ -10,6 +10,10 @@ export const AI_FEATURES = [
   'image_generation',
   'embeddings',
   'voice_live',
+  'cite_fix_ref',
+  'cite_convert_style',
+  'cite_suggest_sources',
+  'cite_claim_check',
 ] as const;
 
 export type AiFeature = (typeof AI_FEATURES)[number];

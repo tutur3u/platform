@@ -12,3 +12,12 @@ export type {
   RichTextStylePolicy,
 } from './types.js';
 export { normalizeRichTextImageUrl, normalizeRichTextUrl } from './url.js';
+
+export {
+  boundedCitationAttrs,
+  citationFallbackText,
+  MAX_CITATION_BYTES,
+  parseCitationHTML,
+  renderCitationHTML,
+  sanitizeCitationNode,
+} from './citation-codec.js';

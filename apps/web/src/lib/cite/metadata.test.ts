@@ -18,6 +18,16 @@ function networkFor(body: unknown, status = 200) {
 }
 
 describe('citation source metadata', () => {
+  it('does not start a legacy lookup after caller cancellation', async () => {
+    const controller = new AbortController();
+    controller.abort();
+    const { network, fetch } = networkFor({});
+    await expect(
+      lookupCitation('10.5555/synthetic', network, controller.signal)
+    ).rejects.toMatchObject({ name: 'AbortError' });
+    expect(fetch).not.toHaveBeenCalled();
+  });
+
   it('maps synthetic DOI metadata with one pinned registry request', async () => {
     const { network, fetch } = networkFor({
       message: {

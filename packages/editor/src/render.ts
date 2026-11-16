@@ -1,3 +1,8 @@
+import {
+  preserveCitationBibliographies,
+  renderCitationHTML,
+  sanitizeCitationNode,
+} from './citation-codec.js';
 import type {
   JSONContent,
   RichTextFeaturePreset,
@@ -75,6 +80,8 @@ function sanitizeNode(
   preset: RichTextFeaturePreset | 'legacy',
   policy: RichTextStylePolicy
 ): JSONContent | null {
+  const citation = sanitizeCitationNode(node);
+  if (citation) return citation;
   if (node.type === 'text') {
     return {
       ...(node.marks?.length
@@ -167,7 +174,7 @@ function sanitizeNode(
   if (!children.length) return null;
   const inlineContent: JSONContent[] = [];
   const collectInline = (child: JSONContent) => {
-    if (['text', 'hardBreak'].includes(child.type ?? '')) {
+    if (['text', 'hardBreak', 'citation'].includes(child.type ?? '')) {
       inlineContent.push(child);
       return;
     }
@@ -176,7 +183,7 @@ function sanitizeNode(
       collectInline(nestedChild);
       if (
         index < nested.length - 1 &&
-        !['text', 'hardBreak'].includes(nestedChild.type ?? '')
+        !['text', 'hardBreak', 'citation'].includes(nestedChild.type ?? '')
       )
         inlineContent.push({ type: 'hardBreak' });
     }
@@ -185,7 +192,7 @@ function sanitizeNode(
     collectInline(child);
     if (
       index < children.length - 1 &&
-      !['text', 'hardBreak'].includes(child.type ?? '')
+      !['text', 'hardBreak', 'citation'].includes(child.type ?? '')
     )
       inlineContent.push({ type: 'hardBreak' });
   }
@@ -203,9 +210,10 @@ export function sanitizeRichTextContent(
     options.stylePolicy ?? {}
   );
   if (!sanitized) return { content: [], type: 'doc' };
-  return sanitized.type === 'doc'
-    ? sanitized
-    : { content: [sanitized], type: 'doc' };
+  return preserveCitationBibliographies(
+    content,
+    sanitized.type === 'doc' ? sanitized : { content: [sanitized], type: 'doc' }
+  );
 }
 
 function styleAttribute(
@@ -228,6 +236,8 @@ function renderNode(
   policy: RichTextStylePolicy,
   sets: AllowedStyleSets
 ): string {
+  const citationHTML = renderCitationHTML(node);
+  if (citationHTML !== null) return citationHTML;
   if (node.type === 'text') {
     let children = escapeHtml(node.text ?? '');
     for (const mark of node.marks ?? []) {

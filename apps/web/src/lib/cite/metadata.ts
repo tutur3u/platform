@@ -1,7 +1,5 @@
 import 'server-only';
 
-import { isIP } from 'node:net';
-import { Parser } from 'htmlparser2';
 import { z } from 'zod';
 import {
   CitationLookupError,
@@ -10,6 +8,15 @@ import {
   WEBPAGE_HOSTS,
 } from './metadata-network';
 import type { CitationFields } from './types';
+import { parseHtmlCitation } from './capture-webpage';
+import {
+  clean,
+  parseAuthor,
+  validIsbn,
+  yearFrom,
+  normalizedYear,
+  safeUrl,
+} from './metadata-text';
 
 const text = z.string().max(4000);
 const crossrefSchema = z.object({
@@ -52,203 +59,12 @@ export interface CitationLookupResult {
   needsReview: true;
 }
 
-function clean(value: string | undefined, limit = 1000) {
-  if (value === undefined) return undefined;
-  const text: string[] = [];
-  let suppressed = 0;
-  const parser = new Parser(
-    {
-      onopentag(name) {
-        if (name === 'script' || name === 'style') suppressed += 1;
-      },
-      onclosetag(name) {
-        if ((name === 'script' || name === 'style') && suppressed > 0)
-          suppressed -= 1;
-      },
-      ontext(chunk) {
-        if (suppressed === 0) text.push(chunk);
-      },
-    },
-    { decodeEntities: false, recognizeCDATA: true }
-  );
-  parser.end(decodeEntities(value));
-  return text.join('').replace(/\s+/g, ' ').trim().slice(0, limit);
-}
-
-function parseAuthor(value: string) {
-  const name = value.replace(/\s+/g, ' ').trim().slice(0, 400);
-  const comma = name.indexOf(',');
-  if (comma >= 0)
-    return {
-      family: name.slice(0, comma).trim().slice(0, 200),
-      given: name
-        .slice(comma + 1)
-        .trim()
-        .slice(0, 200),
-    };
-  const parts = name.split(' ');
-  return {
-    family: (parts.pop() ?? '').slice(0, 200),
-    given: parts.join(' ').slice(0, 200),
-  };
-}
-
-function validIsbn(value: string) {
-  if (/^\d{9}[\dX]$/.test(value)) {
-    return (
-      value
-        .split('')
-        .reduce(
-          (sum, character, index) =>
-            sum + (character === 'X' ? 10 : Number(character)) * (10 - index),
-          0
-        ) %
-        11 ===
-      0
-    );
-  }
-  return (
-    /^97[89]\d{10}$/.test(value) &&
-    value
-      .split('')
-      .reduce(
-        (sum, character, index) =>
-          sum + Number(character) * (index % 2 ? 3 : 1),
-        0
-      ) %
-      10 ===
-      0
-  );
-}
-
-function yearFrom(value: string | undefined) {
-  const match = value?.match(/\b(1[5-9]\d{2}|20\d{2}|2100)\b/);
-  return match ? Number(match[0]) : undefined;
-}
-
-function normalizedYear(value: number | undefined) {
-  return value !== undefined &&
-    Number.isInteger(value) &&
-    value >= 1 &&
-    value <= 9999
-    ? value
-    : undefined;
-}
-
-function safeUrl(value: string) {
-  const authority = value.match(/^https?:\/\/([^/?#]*)/i)?.[1];
-  if (!authority || /[^\x21-\x7e]|[%\\@]/.test(authority)) {
-    throw new CitationLookupError('INVALID_INPUT', 400);
-  }
-  let url: URL;
-  try {
-    url = new URL(value);
-  } catch {
-    throw new CitationLookupError('INVALID_INPUT', 400);
-  }
-  if (
-    !['http:', 'https:'].includes(url.protocol) ||
-    url.username ||
-    url.password ||
-    url.port ||
-    url.hostname.endsWith('.') ||
-    url.hostname.split('.').some((part) => part.startsWith('xn--')) ||
-    isIP(url.hostname.replace(/^\[|\]$/g, '')) ||
-    [
-      'api.crossref.org',
-      'openlibrary.org',
-      'doi.org',
-      'dx.doi.org',
-      ...WEBPAGE_HOSTS,
-    ].some(
-      (host) =>
-        url.hostname !== host &&
-        (url.hostname.startsWith(`${host}.`) ||
-          url.hostname.endsWith(`.${host}`))
-    )
-  ) {
-    throw new CitationLookupError('INVALID_INPUT', 400);
-  }
-  url.hash = '';
-  return url;
-}
-
-function decodeEntities(value: string) {
-  const named: Record<string, string> = {
-    amp: '&',
-    quot: '"',
-    apos: "'",
-    lt: '<',
-    gt: '>',
-    nbsp: ' ',
-  };
-  return value.replace(
-    /&(#x[0-9a-f]+|#\d+|amp|quot|apos|lt|gt|nbsp);/gi,
-    (_whole, entity: string) => {
-      if (!entity.startsWith('#')) return named[entity.toLowerCase()] ?? '';
-      const point = entity.toLowerCase().startsWith('#x')
-        ? Number.parseInt(entity.slice(2), 16)
-        : Number(entity.slice(1));
-      return point > 0 && point <= 0x10ffff ? String.fromCodePoint(point) : '';
-    }
-  );
-}
-
-function parseWebpage(html: string, url: URL): CitationFields {
-  const values = new Map<string, string[]>();
-  for (const match of html.matchAll(/<meta\b[^>]{0,8000}>/gi)) {
-    const attributes = new Map<string, string>();
-    for (const attribute of match[0].matchAll(
-      /([\w:-]+)\s*=\s*(?:"([^"]*)"|'([^']*)'|([^\s>]+))/g
-    )) {
-      if (attribute[1])
-        attributes.set(
-          attribute[1].toLowerCase(),
-          attribute[2] ?? attribute[3] ?? attribute[4] ?? ''
-        );
-    }
-    const key = (
-      attributes.get('name') ?? attributes.get('property')
-    )?.toLowerCase();
-    const content = clean(attributes.get('content'));
-    if (key && content) values.set(key, [...(values.get(key) ?? []), content]);
-  }
-  const first = (key: string) => values.get(key)?.[0];
-  const title =
-    first('citation_title') ??
-    first('og:title') ??
-    clean(html.match(/<title\b[^>]*>([\s\S]*?)<\/title>/i)?.[1]) ??
-    '';
-  const journal = first('citation_journal_title');
-  const firstPage = first('citation_firstpage');
-  const lastPage = first('citation_lastpage');
-  return {
-    type: journal ? 'article-journal' : 'webpage',
-    title,
-    authors: (values.get('citation_author') ?? values.get('author') ?? [])
-      .slice(0, 100)
-      .map(parseAuthor)
-      .filter(({ family }) => family.length > 0),
-    year: yearFrom(
-      first('citation_publication_date') ?? first('article:published_time')
-    ),
-    containerTitle: journal ?? first('og:site_name'),
-    publisher: first('citation_publisher'),
-    volume: first('citation_volume'),
-    issue: first('citation_issue'),
-    pages:
-      first('citation_pages') ??
-      (firstPage && lastPage ? `${firstPage}-${lastPage}` : firstPage),
-    DOI: first('citation_doi'),
-    URL: url.toString(),
-    accessed: new Date().toISOString().slice(0, 10),
-  };
-}
-
 export async function lookupCitation(
   input: string,
-  network?: MetadataNetwork
+  network?: MetadataNetwork,
+  signal?: AbortSignal
 ): Promise<CitationLookupResult> {
+  signal?.throwIfAborted();
   const value = input.trim();
   if (!value || value.length > 2048 || /[\u0000-\u001f]/.test(value))
     throw new CitationLookupError('INVALID_INPUT', 400);
@@ -273,7 +89,8 @@ export async function lookupCitation(
         `https://api.crossref.org/works/${encodeURIComponent(identifier)}`
       ),
       'json',
-      network
+      network,
+      { signal }
     );
     let parsed: unknown;
     try {
@@ -320,7 +137,8 @@ export async function lookupCitation(
         `https://openlibrary.org/api/books?bibkeys=ISBN:${isbn}&format=json&jscmd=data`
       ),
       'json',
-      network
+      network,
+      { signal }
     );
     let parsed: unknown;
     try {
@@ -349,11 +167,11 @@ export async function lookupCitation(
   }
   if (url) {
     if (url.protocol === 'https:' && WEBPAGE_HOSTS.has(url.hostname)) {
-      const html = await fetchMetadataText(url, 'html', network);
+      const html = await fetchMetadataText(url, 'html', network, { signal });
       return {
         source: 'webpage',
         needsReview: true,
-        fields: parseWebpage(html, url),
+        fields: parseHtmlCitation(html, url).fields,
       };
     }
     return {

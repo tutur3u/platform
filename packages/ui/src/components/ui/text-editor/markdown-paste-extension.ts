@@ -5,6 +5,7 @@ import {
   collapseExcessBlankLines,
   serializeClipboardText,
 } from './clipboard-serialization';
+import { citationClipboardScope } from './citation-clipboard-scope';
 
 // ---------------------------------------------------------------------------
 // Markdown -> HTML converter (toolbar-supported features only)
@@ -603,7 +604,8 @@ export const MarkdownPaste = Extension.create({
       new Plugin({
         key: markdownPastePluginKey,
         props: {
-          clipboardTextSerializer: serializeClipboardText,
+          clipboardTextSerializer: (slice) =>
+            serializeClipboardText(slice, citationClipboardScope(this.editor)),
           handleDOMEvents: {
             paste: (
               view: import('@tiptap/pm/view').EditorView,

@@ -1,4 +1,10 @@
 import {
+  parseCitationHTML,
+  parseCitationInline,
+  renderCitationHTML,
+} from './citation-codec.js';
+export { extractPlainText } from './citation-codec.js';
+import {
   collapsibleToMarkdown,
   parseCollapsibleBlock,
   parseIndentedCollapsibleBlock,
@@ -273,7 +279,9 @@ function parseProtectedInline(value: string): JSONContent[] {
 }
 
 function parseInline(value: string): JSONContent[] {
-  return parseProtectedInline(protectMarkdownEscapes(value));
+  return parseCitationInline(value, (text) =>
+    parseProtectedInline(protectMarkdownEscapes(text))
+  );
 }
 
 const paragraph = (value: string): JSONContent => ({
@@ -440,6 +448,12 @@ export function markdownToJSON(markdown: string): JSONContent {
       index += 1;
       continue;
     }
+    const citationBlock = parseCitationHTML(line);
+    if (citationBlock?.type === 'citationBibliography') {
+      content.push(citationBlock);
+      index += 1;
+      continue;
+    }
     const collapsible = parseCollapsibleBlock({
       index,
       lines,
@@ -591,6 +605,8 @@ function textToMarkdown(node: JSONContent): string {
 }
 
 function nodeToMarkdown(node: JSONContent): string {
+  const citation = renderCitationHTML(node);
+  if (citation !== null) return citation;
   if (node.type === 'text') return textToMarkdown(node);
   if (node.type === 'hardBreak') return '  \n';
   if (node.type === 'image') {
@@ -672,29 +688,4 @@ function nodeToMarkdown(node: JSONContent): string {
 
 export function jsonToMarkdown(content: JSONContent | null): string {
   return (content?.content ?? []).map(nodeToMarkdown).join('\n\n').trim();
-}
-export function extractPlainText(content: JSONContent | null): string {
-  if (!content) return '';
-  const parts: string[] = [];
-  const visit = (node: JSONContent) => {
-    if (node.text) parts.push(node.text);
-    if (node.type === 'image' && node.attrs?.alt)
-      parts.push(String(node.attrs.alt));
-    for (const child of node.content ?? []) visit(child);
-    if (
-      [
-        'paragraph',
-        'heading',
-        'listItem',
-        'blockquote',
-        'collapsibleSummary',
-      ].includes(node.type ?? '')
-    )
-      parts.push('\n');
-  };
-  visit(content);
-  return parts
-    .join('')
-    .replace(/\n{2,}/gu, '\n')
-    .trim();
 }

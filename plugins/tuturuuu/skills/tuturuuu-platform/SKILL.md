@@ -13,6 +13,8 @@ load only the reference section needed by the affected surface.
   boundaries, dashboard interaction, translations, and navigation.
 - `references/repository-workflows.md`: app ownership, settings shells, package
   commands, task capture, and coordination metadata.
+- `references/citation-integration.md`: citation snapshots, formatter injection,
+  bounded grounding, repair settlement and isolated-schema evidence.
 - `references/employee-cli-recovery.md`: operation-only CLI employee recovery authorization and dispatch fences.
 - `references/saml-protocol.md`: outbound SAML protocol, XML security and local SP verification boundaries.
 - `references/contacts-start-candidate.md`: default-off Contacts candidate and staging acceptance.
