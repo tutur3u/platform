@@ -40,6 +40,7 @@ function BridgePageView() {
 }
 
 export function createBridgePageRoute(options: BridgePageRouteOptions) {
+  const { BridgeError } = createBridgeStatusComponents();
   return {
     loader: async ({ location }: { location: { href: string } }) => {
       const data = await options.load(location.href);
@@ -49,6 +50,7 @@ export function createBridgePageRoute(options: BridgePageRouteOptions) {
     head: ({ loaderData }: { loaderData?: BridgePageData }) =>
       loaderData ? loaderData.head : {},
     component: BridgePageView,
+    errorComponent: BridgeError,
   };
 }
 
