@@ -22,7 +22,8 @@ document.documentElement.classList.toggle(
   'dark',
   params.get('theme') === 'dark'
 );
-if (params.get('ui') === 'sorbet') document.documentElement.dataset.ui = 'sorbet';
+if (params.get('ui') === 'sorbet')
+  document.documentElement.dataset.ui = 'sorbet';
 const state = params.get('state') ?? 'ready';
 const workspaces = [
   'Orchard design collective',

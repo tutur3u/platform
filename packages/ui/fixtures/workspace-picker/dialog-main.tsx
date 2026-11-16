@@ -14,8 +14,12 @@ import '../../src/globals.css';
 
 const params = new URLSearchParams(location.search);
 const locale = params.get('locale') === 'vi' ? 'vi' : 'en';
-document.documentElement.classList.toggle('dark', params.get('theme') === 'dark');
-if (params.get('ui') === 'sorbet') document.documentElement.dataset.ui = 'sorbet';
+document.documentElement.classList.toggle(
+  'dark',
+  params.get('theme') === 'dark'
+);
+if (params.get('ui') === 'sorbet')
+  document.documentElement.dataset.ui = 'sorbet';
 
 function workspace(
   id: string,
@@ -48,7 +52,9 @@ const workspaces = [
   workspace('fictional-guest', 'Shared board', { access_type: 'guest' }),
 ];
 
-const client = new QueryClient({ defaultOptions: { queries: { retry: false } } });
+const client = new QueryClient({
+  defaultOptions: { queries: { retry: false } },
+});
 
 function Fixture() {
   const preferences = useWorkspacePickerPreferences('fictional-actor');
@@ -76,7 +82,10 @@ function Fixture() {
     },
   } satisfies Parameters<typeof WorkspacePickerDialog>[0]['visibility'];
   return (
-    <NextIntlClientProvider locale={locale} messages={locale === 'vi' ? vi : en}>
+    <NextIntlClientProvider
+      locale={locale}
+      messages={locale === 'vi' ? vi : en}
+    >
       <WorkspacePickerDialog
         currentId="fictional-current"
         defaultId="fictional-default"
