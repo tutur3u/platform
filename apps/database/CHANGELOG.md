@@ -1,5 +1,28 @@
 # Changelog
 
+## [1.46.0](https://github.com/tutur3u/platform/compare/database-v1.45.0...database-v1.46.0) (2026-11-16)
+
+
+### Features
+
+* **cms:** reviewed CMS unit as one union ([#7597](https://github.com/tutur3u/platform/issues/7597) [#7714](https://github.com/tutur3u/platform/issues/7714) [#7738](https://github.com/tutur3u/platform/issues/7738) [#7747](https://github.com/tutur3u/platform/issues/7747) [#7733](https://github.com/tutur3u/platform/issues/7733) [#7741](https://github.com/tutur3u/platform/issues/7741) [#7595](https://github.com/tutur3u/platform/issues/7595)) ([#8300](https://github.com/tutur3u/platform/issues/8300)) ([d9d127e](https://github.com/tutur3u/platform/commit/d9d127e936f9e20dff2da728798a26d360512019))
+* **cron-control:** schedule bounded AI Studio retention with a dry-run default ([#7524](https://github.com/tutur3u/platform/issues/7524)) ([41b40a0](https://github.com/tutur3u/platform/commit/41b40a09dfda9d7b58b59b516e5f7a6af06eee79))
+* **database:** add workspace domains, entitlement and permissions ([3fa8b0d](https://github.com/tutur3u/platform/commit/3fa8b0dd8af1a3aa4bdbb7f59e97167e84d74115))
+* **ieeai:** free-only auto-accept for ieeai-stats invites (v1) ([#8246](https://github.com/tutur3u/platform/issues/8246)) ([585cbd1](https://github.com/tutur3u/platform/commit/585cbd13b25372da7f29b79e5e14846568490190))
+* **meet:** add self-capture session, consent and read contracts ([#7309](https://github.com/tutur3u/platform/issues/7309)) ([52c690c](https://github.com/tutur3u/platform/commit/52c690c802e60099dd3d1df8122d2ef09f922a59))
+* **workspace-domains:** workspace custom domains (paid add-on, staff bypass, edge Worker) ([#8157](https://github.com/tutur3u/platform/issues/8157)) ([11a94f0](https://github.com/tutur3u/platform/commit/11a94f0953a2fa6632c73eadfc35182229dda48c))
+
+
+### Bug Fixes
+
+* **database:** SR-924 revoke client-role EXECUTE on private functions and note_voice_jobs ([#7960](https://github.com/tutur3u/platform/issues/7960)) ([b97b3ec](https://github.com/tutur3u/platform/commit/b97b3ecc9b0793964cda70891d79d4b3daae3c23))
+* **database:** SR-924 sql-grant guard markers and non-executable rollback ([#8128](https://github.com/tutur3u/platform/issues/8128)) ([41888aa](https://github.com/tutur3u/platform/commit/41888aad837f6b701ea208a86667beb9df5468f0))
+* **devbox:** bind run claims and leases to their owners ([#7130](https://github.com/tutur3u/platform/issues/7130)) ([cd92cc7](https://github.com/tutur3u/platform/commit/cd92cc7d7a6ee38069b683888ff21bd09bff0119))
+* **tasks:** compose POST transport with current main ([1ff0fc7](https://github.com/tutur3u/platform/commit/1ff0fc7806853b0be9ac53d75c73d0677089ad68))
+* **ui:** compose workspace reliability with current main ([07bffbe](https://github.com/tutur3u/platform/commit/07bffbe850fc6bf345f8d863c10feae66b3ccb70))
+* **utils:** register workspace.tuturuuu.com for app-session refresh ([#8023](https://github.com/tutur3u/platform/issues/8023)) ([d478cdb](https://github.com/tutur3u/platform/commit/d478cdbf10fd873ea5ddfdbb2043d0b1f990c488))
+* **workspace-domains:** refuse platform subdomains the zone already answers for ([76e45a8](https://github.com/tutur3u/platform/commit/76e45a8225faeb6dc3dddf55cea7c590e7646368))
+
 ## [1.45.0](https://github.com/tutur3u/platform/compare/database-v1.44.0...database-v1.45.0) (2026-11-08)
 
 

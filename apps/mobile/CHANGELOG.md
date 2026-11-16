@@ -1,5 +1,22 @@
 # Changelog
 
+## [0.28.0](https://github.com/tutur3u/platform/compare/mobile-v0.27.0...mobile-v0.28.0) (2026-11-16)
+
+
+### Highlights
+
+* **mobile:** prepare the Drive root list for offline reading behind offline_read_drive_list ([#7474](https://github.com/tutur3u/platform/issues/7474)) ([43618a3](https://github.com/tutur3u/platform/commit/43618a314e14a9191ea3682191f9bd1dbb2e1532))
+* **tutoring:** gate parent message v2 by workspace config ([#7483](https://github.com/tutur3u/platform/issues/7483)) ([27ce3f5](https://github.com/tutur3u/platform/commit/27ce3f584ef69e340f388326763525c07e13b34c))
+
+
+### Fixes
+
+* **mobile:** decode avatars at their displayed size ([#8330](https://github.com/tutur3u/platform/issues/8330)) ([414588c](https://github.com/tutur3u/platform/commit/414588ce53009e5a4eeea99e0a11ccd225718619))
+* **mobile:** macOS keychain access group for OAuth PKCE storage ([#8256](https://github.com/tutur3u/platform/issues/8256)) ([ac3da73](https://github.com/tutur3u/platform/commit/ac3da737bfc65d0deede465d3083f377b8380fbc))
+* **mobile:** skip elapsed-only timer tick rebuilds ([#8329](https://github.com/tutur3u/platform/issues/8329)) ([3748060](https://github.com/tutur3u/platform/commit/37480606010341e71763a7690952d15c1d781f86))
+* **mobile:** skip elapsed-only timer tick rebuilds. ([3748060](https://github.com/tutur3u/platform/commit/37480606010341e71763a7690952d15c1d781f86))
+* **mobile:** skip repeat tasks cache warm-up inside a reuse window ([#8335](https://github.com/tutur3u/platform/issues/8335)) ([055708c](https://github.com/tutur3u/platform/commit/055708cf750429049acd6db660facbeb34755539))
+
 ## [0.27.0](https://github.com/tutur3u/platform/compare/mobile-v0.26.0...mobile-v0.27.0) (2026-11-08)
 
 

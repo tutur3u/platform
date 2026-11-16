@@ -1,5 +1,23 @@
 # Changelog
 
+## [0.28.0](https://github.com/tutur3u/platform/compare/satellite-v0.27.0...satellite-v0.28.0) (2026-11-16)
+
+
+### Features
+
+* **ui:** add experimental Sorbet design behind an account-synced toggle ([3f3a1cc](https://github.com/tutur3u/platform/commit/3f3a1cc7a2f82e9a72b93800a86f3fe60566a562))
+* **ui:** add Sorbet palettes behind the experimental design ([#8436](https://github.com/tutur3u/platform/issues/8436)) ([63f18c4](https://github.com/tutur3u/platform/commit/63f18c4ac6a4d0ece11518682ba2a9dd80129e9b))
+* **web:** move app marketing pages under products ([#6795](https://github.com/tutur3u/platform/issues/6795)) ([3fe3bdb](https://github.com/tutur3u/platform/commit/3fe3bdbc5a6426180f26fe48ade0f6927731060a))
+
+
+### Bug Fixes
+
+* **i18n:** label the home destination "Home" without the brand name ([#8437](https://github.com/tutur3u/platform/issues/8437)) ([31f0736](https://github.com/tutur3u/platform/commit/31f07360f0ca1e0ab7d4a2454da2324b718206b9))
+* **settings:** show the workspace plan name once ([#7866](https://github.com/tutur3u/platform/issues/7866)) ([8eec383](https://github.com/tutur3u/platform/commit/8eec38339dc81b0bbbfaf9702c4273b88a01a2af))
+* **ui:** make the hover-expand sidebar a layout-shift-free overlay ([#8090](https://github.com/tutur3u/platform/issues/8090)) ([a1cb136](https://github.com/tutur3u/platform/commit/a1cb1360e70798b0da26f061420f29e742411d74))
+* **ui:** skip the Sorbet account read when nobody is signed in ([b181b61](https://github.com/tutur3u/platform/commit/b181b611cf4c7497b36e77d16b4f120ee0c5b113))
+* **workspaces:** reserve app-path workspace handles ([#8088](https://github.com/tutur3u/platform/issues/8088)) ([7df0569](https://github.com/tutur3u/platform/commit/7df056971b239690bdb79b0c435ddc681cd2d0fc))
+
 ## [0.27.0](https://github.com/tutur3u/platform/compare/satellite-v0.26.0...satellite-v0.27.0) (2026-11-08)
 
 

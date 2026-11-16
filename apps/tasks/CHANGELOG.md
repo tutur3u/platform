@@ -1,5 +1,54 @@
 # Changelog
 
+## [0.42.0](https://github.com/tutur3u/platform/compare/tasks-v0.41.0...tasks-v0.42.0) (2026-11-16)
+
+
+### Features
+
+* branded, theme-aware not-found and error page for every app ([#8189](https://github.com/tutur3u/platform/issues/8189)) ([1239360](https://github.com/tutur3u/platform/commit/123936030549e1e275ccd2b5256c9286a9f54a32))
+* **calendar:** anchored event preview with undo delete ([#8352](https://github.com/tutur3u/platform/issues/8352)) ([6fdad4b](https://github.com/tutur3u/platform/commit/6fdad4baea5023e276a1ded4ba2c6b750ecc5237))
+* **calendar:** anchored event preview with undo delete. ([6fdad4b](https://github.com/tutur3u/platform/commit/6fdad4baea5023e276a1ded4ba2c6b750ecc5237))
+* **calendar:** compact toolbar with a New menu ([#8349](https://github.com/tutur3u/platform/issues/8349)) ([fbda347](https://github.com/tutur3u/platform/commit/fbda3471246c807b4d58b9dd1ae2f099faa5c9b3))
+* **calendar:** compact toolbar with a New menu. ([fbda347](https://github.com/tutur3u/platform/commit/fbda3471246c807b4d58b9dd1ae2f099faa5c9b3))
+* **calendar:** open week on desktop, agenda on phones, with a default-view setting ([d075fb6](https://github.com/tutur3u/platform/commit/d075fb65e3370631f8e13a8b3733d3380f38aaf9))
+* **calendar:** rebuild the plan panel as one compact sidebar ([#8396](https://github.com/tutur3u/platform/issues/8396)) ([071292b](https://github.com/tutur3u/platform/commit/071292be4a7c50abef007b6a6b44d62117d5d8b1))
+* **calendar:** unify sidebar list and preserve overnight date selection ([#8358](https://github.com/tutur3u/platform/issues/8358)) ([916a377](https://github.com/tutur3u/platform/commit/916a377e20b9f3ba25bcf98cd53a2295cbe50ce4))
+* **calendar:** unify sidebar list and preserve overnight date selection. ([916a377](https://github.com/tutur3u/platform/commit/916a377e20b9f3ba25bcf98cd53a2295cbe50ce4))
+* **database:** add workspace domains, entitlement and permissions ([3fa8b0d](https://github.com/tutur3u/platform/commit/3fa8b0dd8af1a3aa4bdbb7f59e97167e84d74115))
+* **settings:** flatten board layout and inset the settings dialog ([#7920](https://github.com/tutur3u/platform/issues/7920)) ([e1518c1](https://github.com/tutur3u/platform/commit/e1518c1194ae6a8092056a80b6d53e4824f29a04))
+* **start-bridge,cors:** enforce CSRF on mounts and tighten first-party CORS ([#8096](https://github.com/tutur3u/platform/issues/8096)) ([2abcaa0](https://github.com/tutur3u/platform/commit/2abcaa092a9ea1f50d3243c2d9f29101ac0eabf6))
+* **tasks:** CSP with nonces and Trusted Types, report-only then switchable to enforce (one-origin T6) ([#8121](https://github.com/tutur3u/platform/issues/8121)) ([de3a663](https://github.com/tutur3u/platform/commit/de3a66307efa2643fe5e220d05e18d4e43f434d1))
+* **tasks:** manifest and offline page relative to where they are served (one-origin T5) ([#8116](https://github.com/tutur3u/platform/issues/8116)) ([c1f1e2c](https://github.com/tutur3u/platform/commit/c1f1e2cf669d8867558327e32207cefb78bd1132))
+* **tasks:** resolve Tasks-owned API calls under the app base (one-origin T2) ([#8110](https://github.com/tutur3u/platform/issues/8110)) ([52e7fcf](https://github.com/tutur3u/platform/commit/52e7fcfc1821728efe5a69607065cffd87183a01))
+* **tasks:** serve the tuturuuu.com/tasks mount from the Tasks Worker (one-origin T1) ([#8109](https://github.com/tutur3u/platform/issues/8109)) ([7a9017e](https://github.com/tutur3u/platform/commit/7a9017e62a063e06c50c6418b6a50d93deb11845))
+* **ui:** add actor-scoped workspace picker shortcuts ([#8170](https://github.com/tutur3u/platform/issues/8170)) ([d9a512c](https://github.com/tutur3u/platform/commit/d9a512cade746445f2b96535b8f50e8f7ee1d066))
+* **ui:** add experimental Sorbet design behind an account-synced toggle ([3f3a1cc](https://github.com/tutur3u/platform/commit/3f3a1cc7a2f82e9a72b93800a86f3fe60566a562))
+* **ui:** add Sorbet palettes behind the experimental design ([#8436](https://github.com/tutur3u/platform/issues/8436)) ([63f18c4](https://github.com/tutur3u/platform/commit/63f18c4ac6a4d0ece11518682ba2a9dd80129e9b))
+* **ui:** pilot @ui-sdk/core for category keyboard reordering ([#8250](https://github.com/tutur3u/platform/issues/8250)) ([7b0eee6](https://github.com/tutur3u/platform/commit/7b0eee600b935e394b210a4590b670947b9a606f))
+* **ui:** redesign the workspace picker as a command-palette dialog ([#8309](https://github.com/tutur3u/platform/issues/8309)) ([2fd24ad](https://github.com/tutur3u/platform/commit/2fd24ad7a43606bc2404f02e5fcb423349517392))
+* **workspace-domains:** read the SaaS zone, apex and fallback origin from config ([8a38689](https://github.com/tutur3u/platform/commit/8a386894505308f1e4ceb3a826caa80ade76f40f))
+* **workspace-domains:** workspace custom domains (paid add-on, staff bypass, edge Worker) ([#8157](https://github.com/tutur3u/platform/issues/8157)) ([11a94f0](https://github.com/tutur3u/platform/commit/11a94f0953a2fa6632c73eadfc35182229dda48c))
+
+
+### Bug Fixes
+
+* **auth:** never reflect untrusted forwarded hosts into login return URLs (SR-XFH-RETURN) ([6ef797e](https://github.com/tutur3u/platform/commit/6ef797ee7f82756a9cf91f0ac194a9f5d31af46b))
+* **ci:** retain root ratchet history and format Tasks manifest ([#8139](https://github.com/tutur3u/platform/issues/8139)) ([635f9c5](https://github.com/tutur3u/platform/commit/635f9c5c47b92ad708e098a19283b4031622fe86))
+* **cloudflare:** add HSTS to bespoke Worker responses ([#8238](https://github.com/tutur3u/platform/issues/8238)) ([9d38c27](https://github.com/tutur3u/platform/commit/9d38c271de6d42978d5748b1fc662356ca19db63))
+* **encryption:** refuse to store plaintext when no workspace key is available ([#8086](https://github.com/tutur3u/platform/issues/8086)) ([34616cf](https://github.com/tutur3u/platform/commit/34616cf49cebc206d15e9ccb4cc9813dc56e5019))
+* **encryption:** store plaintext for workspaces without a key row ([f2a12e7](https://github.com/tutur3u/platform/commit/f2a12e7e4175226148808a03c200335d963510a5))
+* **i18n:** label the home destination "Home" without the brand name ([#8437](https://github.com/tutur3u/platform/issues/8437)) ([31f0736](https://github.com/tutur3u/platform/commit/31f07360f0ca1e0ab7d4a2454da2324b718206b9))
+* **satellites:** scope NEXT_LOCALE from the canonical origin ([705f7fa](https://github.com/tutur3u/platform/commit/705f7fa74e97584f9e256fd46bef3800f43459f1))
+* **satellites:** shared workspace picker — Web invitations routing + picker layout ([#8273](https://github.com/tutur3u/platform/issues/8273)) ([38e21e3](https://github.com/tutur3u/platform/commit/38e21e33e9daeb855c707526108fb9dcee0f0522))
+* **tasks:** compose POST transport with current main ([1ff0fc7](https://github.com/tutur3u/platform/commit/1ff0fc7806853b0be9ac53d75c73d0677089ad68))
+* **tasks:** CSP collector stream cap, no script samples in logs, strict CSP on the topic verification page ([#8127](https://github.com/tutur3u/platform/issues/8127)) ([7647f10](https://github.com/tutur3u/platform/commit/7647f104247befe16821cbd789df85ea4b8ea397))
+* **tasks:** forward calendar-owned API paths to Calendar ([eb3cb1f](https://github.com/tutur3u/platform/commit/eb3cb1f90a469b91c304e9e62681d0688a395844))
+* **tasks:** isolate board transitions and sanitize runtime diagnostics ([#8177](https://github.com/tutur3u/platform/issues/8177)) ([9440e98](https://github.com/tutur3u/platform/commit/9440e9866615f296c5b2ca6f932d62710a94d411))
+* **tasks:** no Supabase cookie deletions from the /api proxy on the mount (one-origin T8) ([#8122](https://github.com/tutur3u/platform/issues/8122)) ([569bc55](https://github.com/tutur3u/platform/commit/569bc55c68434969860c6734510a2550879f7409))
+* **tasks:** send explicit JSON for workspace discovery and page loading ([32facc1](https://github.com/tutur3u/platform/commit/32facc1f3a88f1aee12f9cd248270e0ccd8c484c))
+* **tasks:** send JSON for workspace discovery and page loaders ([#8160](https://github.com/tutur3u/platform/issues/8160)) ([65430a6](https://github.com/tutur3u/platform/commit/65430a6a09efec3591a8abe7376630c1acdc56ee))
+* **ui:** compose workspace reliability with current main ([07bffbe](https://github.com/tutur3u/platform/commit/07bffbe850fc6bf345f8d863c10feae66b3ccb70))
+
 ## [0.41.0](https://github.com/tutur3u/platform/compare/tasks-v0.40.0...tasks-v0.41.0) (2026-11-08)
 
 

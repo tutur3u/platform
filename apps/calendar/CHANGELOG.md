@@ -1,5 +1,51 @@
 # Changelog
 
+## [0.38.0](https://github.com/tutur3u/platform/compare/calendar-v0.37.0...calendar-v0.38.0) (2026-11-16)
+
+
+### Features
+
+* branded, theme-aware not-found and error page for every app ([#8189](https://github.com/tutur3u/platform/issues/8189)) ([1239360](https://github.com/tutur3u/platform/commit/123936030549e1e275ccd2b5256c9286a9f54a32))
+* **calendar:** anchored event preview with undo delete ([#8352](https://github.com/tutur3u/platform/issues/8352)) ([6fdad4b](https://github.com/tutur3u/platform/commit/6fdad4baea5023e276a1ded4ba2c6b750ecc5237))
+* **calendar:** anchored event preview with undo delete. ([6fdad4b](https://github.com/tutur3u/platform/commit/6fdad4baea5023e276a1ded4ba2c6b750ecc5237))
+* **calendar:** compact toolbar with a New menu ([#8349](https://github.com/tutur3u/platform/issues/8349)) ([fbda347](https://github.com/tutur3u/platform/commit/fbda3471246c807b4d58b9dd1ae2f099faa5c9b3))
+* **calendar:** compact toolbar with a New menu. ([fbda347](https://github.com/tutur3u/platform/commit/fbda3471246c807b4d58b9dd1ae2f099faa5c9b3))
+* **calendar:** open week on desktop, agenda on phones, with a default-view setting ([d075fb6](https://github.com/tutur3u/platform/commit/d075fb65e3370631f8e13a8b3733d3380f38aaf9))
+* **calendar:** preserve the native /calendar root path ([#8257](https://github.com/tutur3u/platform/issues/8257)) ([c69664a](https://github.com/tutur3u/platform/commit/c69664af3317a7dce02997db3c6ea041c99a53f7))
+* **calendar:** rebuild the plan panel as one compact sidebar ([#8396](https://github.com/tutur3u/platform/issues/8396)) ([071292b](https://github.com/tutur3u/platform/commit/071292be4a7c50abef007b6a6b44d62117d5d8b1))
+* **calendar:** unify sidebar list and preserve overnight date selection ([#8358](https://github.com/tutur3u/platform/issues/8358)) ([916a377](https://github.com/tutur3u/platform/commit/916a377e20b9f3ba25bcf98cd53a2295cbe50ce4))
+* **calendar:** unify sidebar list and preserve overnight date selection. ([916a377](https://github.com/tutur3u/platform/commit/916a377e20b9f3ba25bcf98cd53a2295cbe50ce4))
+* **database:** add workspace domains, entitlement and permissions ([3fa8b0d](https://github.com/tutur3u/platform/commit/3fa8b0dd8af1a3aa4bdbb7f59e97167e84d74115))
+* **ui:** add actor-scoped workspace picker shortcuts ([#8170](https://github.com/tutur3u/platform/issues/8170)) ([d9a512c](https://github.com/tutur3u/platform/commit/d9a512cade746445f2b96535b8f50e8f7ee1d066))
+* **ui:** add experimental Sorbet design behind an account-synced toggle ([3f3a1cc](https://github.com/tutur3u/platform/commit/3f3a1cc7a2f82e9a72b93800a86f3fe60566a562))
+* **ui:** add Sorbet palettes behind the experimental design ([#8436](https://github.com/tutur3u/platform/issues/8436)) ([63f18c4](https://github.com/tutur3u/platform/commit/63f18c4ac6a4d0ece11518682ba2a9dd80129e9b))
+* **ui:** pilot @ui-sdk/core for category keyboard reordering ([#8250](https://github.com/tutur3u/platform/issues/8250)) ([7b0eee6](https://github.com/tutur3u/platform/commit/7b0eee600b935e394b210a4590b670947b9a606f))
+* **ui:** redesign the workspace picker as a command-palette dialog ([#8309](https://github.com/tutur3u/platform/issues/8309)) ([2fd24ad](https://github.com/tutur3u/platform/commit/2fd24ad7a43606bc2404f02e5fcb423349517392))
+* **workspace-domains:** read the SaaS zone, apex and fallback origin from config ([8a38689](https://github.com/tutur3u/platform/commit/8a386894505308f1e4ceb3a826caa80ade76f40f))
+* **workspace-domains:** workspace custom domains (paid add-on, staff bypass, edge Worker) ([#8157](https://github.com/tutur3u/platform/issues/8157)) ([11a94f0](https://github.com/tutur3u/platform/commit/11a94f0953a2fa6632c73eadfc35182229dda48c))
+
+
+### Bug Fixes
+
+* **auth:** never reflect untrusted forwarded hosts into login return URLs (SR-XFH-RETURN) ([6ef797e](https://github.com/tutur3u/platform/commit/6ef797ee7f82756a9cf91f0ac194a9f5d31af46b))
+* **calendar:** apply the offline document CSP under the /calendar base path ([#8345](https://github.com/tutur3u/platform/issues/8345)) ([fcd1157](https://github.com/tutur3u/platform/commit/fcd1157bedb0eee97b9507b8579fb339118d505a))
+* **calendar:** bound the stored sync diagnostics and redact secrets from error messages ([#8068](https://github.com/tutur3u/platform/issues/8068)) ([c9117bc](https://github.com/tutur3u/platform/commit/c9117bc953dde3bf2456a34011cf016ad875ed89))
+* **calendar:** cache static files under the calendar base path ([#8344](https://github.com/tutur3u/platform/issues/8344)) ([eaeac47](https://github.com/tutur3u/platform/commit/eaeac47d68f7be2c87efe33cd8ac0ceaf2604692))
+* **calendar:** cache static files under the calendar base path. ([eaeac47](https://github.com/tutur3u/platform/commit/eaeac47d68f7be2c87efe33cd8ac0ceaf2604692))
+* **calendar:** move every legacy-host request to the apex mount first ([13022b7](https://github.com/tutur3u/platform/commit/13022b7e76e13f12a8f8f81ed0cea50338b3f054))
+* **calendar:** preserve mounted sign-in deep links ([#8363](https://github.com/tutur3u/platform/issues/8363)) ([a5dba54](https://github.com/tutur3u/platform/commit/a5dba54955d7e5f59ac340672d773c103dff1f1d))
+* **calendar:** preserve mounted sign-in deep links. ([a5dba54](https://github.com/tutur3u/platform/commit/a5dba54955d7e5f59ac340672d773c103dff1f1d))
+* **calendar:** render the mounted completion page and send legacy redirects to the apex ([c797eae](https://github.com/tutur3u/platform/commit/c797eae21d0c356f6d27b33a9bff2dfbafa08623))
+* **calendar:** route signed-out login through the central handoff ([#8377](https://github.com/tutur3u/platform/issues/8377)) ([c20a17b](https://github.com/tutur3u/platform/commit/c20a17bbd0f68c580232b63ae5462eb8c72151d1))
+* **calendar:** serve unprefixed tokenless /verify-token from its locale route ([569404c](https://github.com/tutur3u/platform/commit/569404c1b04de10e4d182dd082a8a3525c5b221a))
+* **encryption:** refuse to store plaintext when no workspace key is available ([#8086](https://github.com/tutur3u/platform/issues/8086)) ([34616cf](https://github.com/tutur3u/platform/commit/34616cf49cebc206d15e9ccb4cc9813dc56e5019))
+* **encryption:** store plaintext for workspaces without a key row ([f2a12e7](https://github.com/tutur3u/platform/commit/f2a12e7e4175226148808a03c200335d963510a5))
+* **i18n:** label the home destination "Home" without the brand name ([#8437](https://github.com/tutur3u/platform/issues/8437)) ([31f0736](https://github.com/tutur3u/platform/commit/31f07360f0ca1e0ab7d4a2454da2324b718206b9))
+* **satellites:** scope NEXT_LOCALE from the canonical origin ([705f7fa](https://github.com/tutur3u/platform/commit/705f7fa74e97584f9e256fd46bef3800f43459f1))
+* **start-bridge:** send server-function payloads in POST bodies ([#8239](https://github.com/tutur3u/platform/issues/8239)) ([028d2a7](https://github.com/tutur3u/platform/commit/028d2a7c98fdd7fbd48ff8b263b65bc5007177fe))
+* **tasks:** compose POST transport with current main ([1ff0fc7](https://github.com/tutur3u/platform/commit/1ff0fc7806853b0be9ac53d75c73d0677089ad68))
+* **ui:** compose workspace reliability with current main ([07bffbe](https://github.com/tutur3u/platform/commit/07bffbe850fc6bf345f8d863c10feae66b3ccb70))
+
 ## [0.37.0](https://github.com/tutur3u/platform/compare/calendar-v0.36.0...calendar-v0.37.0) (2026-11-08)
 
 

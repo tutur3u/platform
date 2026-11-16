@@ -1,5 +1,42 @@
 # Changelog
 
+## [0.28.0](https://github.com/tutur3u/platform/compare/mind-v0.27.0...mind-v0.28.0) (2026-11-16)
+
+
+### Features
+
+* branded, theme-aware not-found and error page for every app ([#8189](https://github.com/tutur3u/platform/issues/8189)) ([1239360](https://github.com/tutur3u/platform/commit/123936030549e1e275ccd2b5256c9286a9f54a32))
+* **calendar:** anchored event preview with undo delete ([#8352](https://github.com/tutur3u/platform/issues/8352)) ([6fdad4b](https://github.com/tutur3u/platform/commit/6fdad4baea5023e276a1ded4ba2c6b750ecc5237))
+* **calendar:** anchored event preview with undo delete. ([6fdad4b](https://github.com/tutur3u/platform/commit/6fdad4baea5023e276a1ded4ba2c6b750ecc5237))
+* **database:** add workspace domains, entitlement and permissions ([3fa8b0d](https://github.com/tutur3u/platform/commit/3fa8b0dd8af1a3aa4bdbb7f59e97167e84d74115))
+* **mind:** Cloudflare hardening: required secrets, full server-file smoke scan and smoke preconditions ([#7982](https://github.com/tutur3u/platform/issues/7982)) ([29b4527](https://github.com/tutur3u/platform/commit/29b45270223e7d6f697e4da23df69dd29c08a0fd))
+* **mind:** native TanStack Start + Void source for Cloudflare Workers ([#7964](https://github.com/tutur3u/platform/issues/7964)) ([2f09b14](https://github.com/tutur3u/platform/commit/2f09b149f8a2233f847499f72bfdc5361825a43d))
+* **mind:** run the abuse guard through the Cloudflare service binding ([#8001](https://github.com/tutur3u/platform/issues/8001)) ([9f703c3](https://github.com/tutur3u/platform/commit/9f703c315b74f61967e19c0b8d5fdf34b6c5494a))
+* **ui:** add actor-scoped workspace picker shortcuts ([#8170](https://github.com/tutur3u/platform/issues/8170)) ([d9a512c](https://github.com/tutur3u/platform/commit/d9a512cade746445f2b96535b8f50e8f7ee1d066))
+* **ui:** add experimental Sorbet design behind an account-synced toggle ([3f3a1cc](https://github.com/tutur3u/platform/commit/3f3a1cc7a2f82e9a72b93800a86f3fe60566a562))
+* **ui:** add Sorbet palettes behind the experimental design ([#8436](https://github.com/tutur3u/platform/issues/8436)) ([63f18c4](https://github.com/tutur3u/platform/commit/63f18c4ac6a4d0ece11518682ba2a9dd80129e9b))
+* **ui:** pilot @ui-sdk/core for category keyboard reordering ([#8250](https://github.com/tutur3u/platform/issues/8250)) ([7b0eee6](https://github.com/tutur3u/platform/commit/7b0eee600b935e394b210a4590b670947b9a606f))
+* **ui:** redesign the workspace picker as a command-palette dialog ([#8309](https://github.com/tutur3u/platform/issues/8309)) ([2fd24ad](https://github.com/tutur3u/platform/commit/2fd24ad7a43606bc2404f02e5fcb423349517392))
+* **workspace-domains:** read the SaaS zone, apex and fallback origin from config ([8a38689](https://github.com/tutur3u/platform/commit/8a386894505308f1e4ceb3a826caa80ade76f40f))
+* **workspace-domains:** workspace custom domains (paid add-on, staff bypass, edge Worker) ([#8157](https://github.com/tutur3u/platform/issues/8157)) ([11a94f0](https://github.com/tutur3u/platform/commit/11a94f0953a2fa6632c73eadfc35182229dda48c))
+
+
+### Bug Fixes
+
+* **cutover:** align native artifact contracts ([#8228](https://github.com/tutur3u/platform/issues/8228)) ([c57c7fb](https://github.com/tutur3u/platform/commit/c57c7fb525e6c65989ffe130209e08cb6e8948a4))
+* **i18n:** label the home destination "Home" without the brand name ([#8437](https://github.com/tutur3u/platform/issues/8437)) ([31f0736](https://github.com/tutur3u/platform/commit/31f07360f0ca1e0ab7d4a2454da2324b718206b9))
+* **mind:** bind each profile to its own Worker and qualify both profiles ([6beeb89](https://github.com/tutur3u/platform/commit/6beeb8970ec9722a99f77bb00e749bce1107b0fb))
+* **mind:** mark NEXT_LOCALE Secure from the canonical origin ([#8397](https://github.com/tutur3u/platform/issues/8397)) ([67e747a](https://github.com/tutur3u/platform/commit/67e747a6ee5b2dd84d84e2d5989f307e88a2ddc3))
+* **mind:** qualify sealed-output smoke with required bindings ([#8132](https://github.com/tutur3u/platform/issues/8132)) ([102c44f](https://github.com/tutur3u/platform/commit/102c44fafa26a4d0f22cad2143e07d57be3adfe3))
+* **mind:** select and seal the production Worker profile ([#8340](https://github.com/tutur3u/platform/issues/8340)) ([34d1f96](https://github.com/tutur3u/platform/commit/34d1f96ecb9892227fd6737650c0ad98d4f730a9))
+* **mind:** stub the abuse guard in required-secrets tests ([#8054](https://github.com/tutur3u/platform/issues/8054)) ([da9f0e7](https://github.com/tutur3u/platform/commit/da9f0e727acf75abe5094579ee0acec35594d343))
+* **rewise,mind,nova:** skip the abuse guard when it is not configured ([fbe9f42](https://github.com/tutur3u/platform/commit/fbe9f42400992b9366b0ae8a21ff90de653a5105))
+* **satellites:** scope NEXT_LOCALE from the canonical origin ([705f7fa](https://github.com/tutur3u/platform/commit/705f7fa74e97584f9e256fd46bef3800f43459f1))
+* **security:** enforce exact shared Worker HSTS boundary ([#8226](https://github.com/tutur3u/platform/issues/8226)) ([95fad90](https://github.com/tutur3u/platform/commit/95fad90e527fe3a2a24b3e0df12e3445901a7cbe))
+* **start-bridge:** send server-function payloads in POST bodies ([#8239](https://github.com/tutur3u/platform/issues/8239)) ([028d2a7](https://github.com/tutur3u/platform/commit/028d2a7c98fdd7fbd48ff8b263b65bc5007177fe))
+* **tasks:** compose POST transport with current main ([1ff0fc7](https://github.com/tutur3u/platform/commit/1ff0fc7806853b0be9ac53d75c73d0677089ad68))
+* **ui:** compose workspace reliability with current main ([07bffbe](https://github.com/tutur3u/platform/commit/07bffbe850fc6bf345f8d863c10feae66b3ccb70))
+
 ## [0.27.0](https://github.com/tutur3u/platform/compare/mind-v0.26.0...mind-v0.27.0) (2026-11-08)
 
 

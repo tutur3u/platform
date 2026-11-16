@@ -5,6 +5,14 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.7.1](https://github.com/tutur3u/platform/compare/supabase-v0.7.0...supabase-v0.7.1) (2026-11-16)
+
+
+### Bug Fixes
+
+* **supabase:** ignore untrusted forwarded hosts when scoping auth cookies ([cffb3fa](https://github.com/tutur3u/platform/commit/cffb3fa9d58607e7b224b73e9c91cd0db6b0016c))
+* **supabase:** keep the secret key reader out of browser bundles ([1840f61](https://github.com/tutur3u/platform/commit/1840f6167ab30e53f0ed8163b417eca98e00a136))
+
 ## [0.7.0](https://github.com/tutur3u/platform/compare/supabase-v0.6.0...supabase-v0.7.0) (2026-11-08)
 
 

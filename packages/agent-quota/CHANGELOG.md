@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.2.2](https://github.com/tutur3u/platform/compare/agent-quota-v0.2.1...agent-quota-v0.2.2) (2026-11-16)
+
+
+### Bug Fixes
+
+* **agent-quota:** keep a mid-reclamation lock release retryable ([a625e53](https://github.com/tutur3u/platform/commit/a625e53da003b3bba4ecba7abacf4577fc9f9735))
+
 ## [0.2.1](https://github.com/tutur3u/platform/compare/agent-quota-v0.2.0...agent-quota-v0.2.1) (2026-11-08)
 
 
