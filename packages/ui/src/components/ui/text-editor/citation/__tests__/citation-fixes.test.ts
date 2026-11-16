@@ -93,7 +93,11 @@ describe('pasting cited content', () => {
     const blocks = bibliographies(editor);
     expect(blocks).toHaveLength(1);
     expect(blocks[0]?.attrs?.style).toBe('apa');
-    expect(editor.getJSON().content?.at(-1)?.type).toBe('citationBibliography');
+    // StarterKit keeps an editable paragraph after a terminal atom.
+    expect(editor.getJSON().content?.slice(-2)).toEqual([
+      { type: 'citationBibliography', attrs: { style: 'apa' } },
+      { type: 'paragraph' },
+    ]);
     expect(collectDocumentCitations(editor.state.doc).citations).toHaveLength(
       2
     );
@@ -101,8 +105,9 @@ describe('pasting cited content', () => {
 
   it('reverts the paste and its cleanup with one undo', () => {
     editor = new Editor({ extensions: schemaExtensions, content: original });
-    const before = editor.getJSON();
     editor.commands.setTextSelection(3);
+    // Selection dispatch lets StarterKit normalize its trailing paragraph.
+    const before = editor.getJSON();
     pasteHtml(editor, pasted);
     expect(bibliographies(editor)).toHaveLength(1);
 
