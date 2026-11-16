@@ -1,12 +1,15 @@
 // Shared test doubles for the upload store specs.
 import type { MailAttachment } from '@tuturuuu/internal-api';
-import { vi } from 'vitest';
+import { type Mock, vi } from 'vitest';
 import {
   type MailImageNodes,
   type MailImageNodeState,
   mailImageAttachmentId,
 } from './mail-composer-image-nodes';
-import type { MailMediaOwner } from './mail-composer-upload-state';
+import type {
+  MailMediaItem,
+  MailMediaOwner,
+} from './mail-composer-upload-state';
 import {
   type MailUploadDeps,
   MailUploadStore,
@@ -107,10 +110,35 @@ export interface PendingUpload {
   succeed: () => void;
 }
 
+type FixtureMockKey =
+  | 'createObjectUrl'
+  | 'decodeImage'
+  | 'ensureDraft'
+  | 'onRemoveFailed'
+  | 'remove'
+  | 'revokeObjectUrl'
+  | 'upload';
+type FixtureDeps = Omit<MailUploadDeps, FixtureMockKey> & {
+  [Key in FixtureMockKey]: Mock<MailUploadDeps[Key]>;
+};
+
+export interface MailUploadFixture {
+  context: { mailboxId: string; workspaceId: string };
+  decode: () => void;
+  deps: FixtureDeps;
+  draft: { id: string | null };
+  fake: ReturnType<typeof fakeNodes>;
+  find: (id: string) => MailMediaItem | undefined;
+  holdDecode: { enabled: boolean };
+  statuses: () => MailMediaItem['status'][];
+  store: MailUploadStore;
+  uploads: PendingUpload[];
+}
+
 export function setup({
   editor = true,
   honorAbort = true,
-}: { editor?: boolean; honorAbort?: boolean } = {}) {
+}: { editor?: boolean; honorAbort?: boolean } = {}): MailUploadFixture {
   const fake = fakeNodes();
   const uploads: PendingUpload[] = [];
   const draft = { id: null as string | null };
@@ -118,7 +146,7 @@ export function setup({
   let counter = 0;
   let decode: (() => void) | null = null;
   const holdDecode = { enabled: false };
-  const deps = {
+  const deps: FixtureDeps = {
     createObjectUrl: vi.fn((file: Blob) => `blob:${(file as File).name}`),
     decodeImage: vi.fn(
       (src: string) =>
@@ -137,9 +165,9 @@ export function setup({
       `/api/v1/workspaces/${owner.workspaceId}/mail/mailboxes/${owner.mailboxId}/drafts/${owner.draftId}/attachments/${id}`,
     newId: () => `id${++counter}`,
     nodes: () => (editor ? fake.nodes : null),
-    onRemoveFailed: vi.fn(),
-    remove: vi.fn(async () => {}),
-    revokeObjectUrl: vi.fn(),
+    onRemoveFailed: vi.fn<MailUploadDeps['onRemoveFailed']>(),
+    remove: vi.fn<MailUploadDeps['remove']>(async () => {}),
+    revokeObjectUrl: vi.fn<MailUploadDeps['revokeObjectUrl']>(),
     scope: () => ({ ...context }),
     upload: vi.fn(
       (input: PendingUpload['input']) =>
