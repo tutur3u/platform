@@ -4,6 +4,10 @@ import type { ComponentProps, ReactNode } from 'react';
 import { useState } from 'react';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 
+const calendarConfig = vi.hoisted(() => ({
+  url: 'https://calendar.example.test',
+}));
+
 vi.mock('next-intl', async () => {
   const messages = (await import('../../../../../../messages/en.json'))
     .default as Record<string, unknown>;
@@ -60,9 +64,7 @@ vi.mock('@tuturuuu/ui/input', () => ({
   Input: (props: ComponentProps<'input'>) => <input {...props} />,
 }));
 vi.mock('@tuturuuu/ui/toggle-group', () => ({
-  ToggleGroup: ({ children }: { children: ReactNode }) => (
-    <div>{children}</div>
-  ),
+  ToggleGroup: ({ children }: { children: ReactNode }) => <div>{children}</div>,
   ToggleGroupItem: ({ children }: { children: ReactNode }) => (
     <button type="button">{children}</button>
   ),
@@ -73,7 +75,9 @@ vi.mock('next/link', () => ({
   ),
 }));
 vi.mock('@/constants/common', () => ({
-  CALENDAR_URL: 'https://calendar.example.test',
+  get CALENDAR_URL() {
+    return calendarConfig.url;
+  },
 }));
 vi.mock('@/features/call/components/meeting-local-time', () => ({
   useMeetingTimeZone: () => 'UTC',
@@ -85,12 +89,14 @@ vi.mock('@/features/call/components/meeting-room-action', () => ({
 }));
 
 import { MeetingsHome } from './meetings-home';
+import { UpcomingSection } from './upcoming-section';
 import { DEFAULT_PAST_CHOICE } from './section-rules';
 import type {
   CurrentMeetings,
   MeetingsHomeSchedule,
   PastCollapseChoice,
   PastController,
+  OlderMeetings,
   ScheduledMeeting,
 } from './types';
 
@@ -124,25 +130,32 @@ function schedule(current: CurrentMeetings): MeetingsHomeSchedule {
 function Harness({
   current = { current: [], currentSource: 'unavailable' },
   onChoiceChange = () => {},
+  pastMeetings = past,
+  older = { kind: 'complete' },
+  filter = 'all',
+  onLoadOlder = () => {},
 }: {
   current?: CurrentMeetings;
   onChoiceChange?: (choice: PastCollapseChoice) => void;
+  pastMeetings?: ScheduledMeeting[];
+  older?: OlderMeetings;
+  filter?: PastController['filter'];
+  onLoadOlder?: () => void;
 }) {
-  const [choice, setChoice] =
-    useState<PastCollapseChoice>(DEFAULT_PAST_CHOICE);
+  const [choice, setChoice] = useState<PastCollapseChoice>(DEFAULT_PAST_CHOICE);
   const controller: PastController = {
     choice,
-    count: { loaded: past.length, more: false },
-    filter: 'all',
+    count: { loaded: pastMeetings.length, more: older.kind !== 'complete' },
+    filter,
     onChoiceChange: (next) => {
       setChoice(next);
       onChoiceChange(next);
     },
     onFilterChange: () => {},
-    onLoadOlder: () => {},
+    onLoadOlder,
     onRetry: () => {},
     onSearchChange: () => {},
-    results: { kind: 'ready', meetings: past, older: { kind: 'complete' } },
+    results: { kind: 'ready', meetings: pastMeetings, older },
     search: '',
   };
   return (
@@ -157,9 +170,74 @@ function Harness({
   );
 }
 
-afterEach(cleanup);
+afterEach(() => {
+  cleanup();
+  calendarConfig.url = 'https://calendar.example.test';
+});
 
 describe('Meetings home sections', () => {
+  it.each([
+    ['https://calendar.example.test', '/workspace-1'],
+    ['https://calendar.example.test/calendar', '/calendar/workspace-1'],
+    ['https://calendar.example.test/calendar/', '/calendar/workspace-1'],
+  ])('preserves the Calendar base path for %s', (base, pathname) => {
+    calendarConfig.url = base;
+    render(
+      <UpcomingSection
+        accountId="account-a"
+        calendarAccess={{ status: 'available' }}
+        management={{ onDelete: () => {}, onEdit: () => {} }}
+        meetings={[]}
+        now={NOW}
+        timeZone="UTC"
+        wsId="workspace-1"
+      />
+    );
+    expect(
+      screen.getByRole('link', { name: 'Open Calendar' }).getAttribute('href')
+    ).toBe(`https://calendar.example.test${pathname}`);
+  });
+
+  it('loads older meetings when the fetched page has no past meetings', () => {
+    const onLoadOlder = vi.fn();
+    render(
+      <Harness
+        onLoadOlder={onLoadOlder}
+        older={{ kind: 'available' }}
+        pastMeetings={[]}
+      />
+    );
+    fireEvent.click(screen.getByRole('button', { name: /Past/ }));
+    expect(screen.getByText('No past meetings')).toBeTruthy();
+    fireEvent.click(
+      screen.getByRole('button', { name: 'Load older meetings' })
+    );
+    expect(onLoadOlder).toHaveBeenCalledOnce();
+  });
+
+  it('loads older meetings when Mine filters out the fetched past meetings', () => {
+    const onLoadOlder = vi.fn();
+    render(
+      <Harness
+        filter="mine"
+        onLoadOlder={onLoadOlder}
+        older={{ kind: 'available' }}
+        pastMeetings={[
+          {
+            ...meeting('other', '2026-03-09T09:00:00.000Z'),
+            creatorId: 'another-account',
+          },
+        ]}
+      />
+    );
+    fireEvent.click(screen.getByRole('button', { name: /Past/ }));
+    expect(screen.getByText('No past meetings match')).toBeTruthy();
+    fireEvent.click(
+      screen.getByRole('button', { name: 'Load older meetings' })
+    );
+    expect(onLoadOlder).toHaveBeenCalledOnce();
+  });
+
   it('keeps Past collapsed by default and mounts no past rows', () => {
     render(<Harness />);
     const toggle = screen.getByRole('button', { name: /Past/ });

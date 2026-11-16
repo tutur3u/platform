@@ -15,8 +15,8 @@ import type {
 
 export function calendarHomeHref(wsId: string) {
   return new URL(
-    `/${encodeURIComponent(wsId)}`,
-    CALENDAR_URL.replace(/\/+$/, '')
+    encodeURIComponent(wsId),
+    `${CALENDAR_URL.replace(/\/+$/, '')}/`
   ).toString();
 }
 

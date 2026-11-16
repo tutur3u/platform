@@ -54,32 +54,32 @@ export function PastResultsBody({
         </div>
       );
     case 'ready':
-      if (meetings.length === 0)
-        return (
-          <div className="flex flex-col items-center gap-2 px-4 py-6 text-center text-muted-foreground text-sm md:px-5">
-            {narrowed ? t('past_no_results') : t('past_empty')}
-            {narrowed && (
-              <Button onClick={onClear} size="sm" variant="ghost">
-                {clearLabel}
-              </Button>
-            )}
-          </div>
-        );
       return (
         <>
-          <ul className="divide-y">
-            {meetings.map((meeting) => (
-              <MeetingRow
-                accountId={accountId}
-                key={meeting.id}
-                management={management}
-                meeting={meeting}
-                timeZone={timeZone}
-                withDate
-                wsId={wsId}
-              />
-            ))}
-          </ul>
+          {meetings.length === 0 ? (
+            <div className="flex flex-col items-center gap-2 px-4 py-6 text-center text-muted-foreground text-sm md:px-5">
+              {narrowed ? t('past_no_results') : t('past_empty')}
+              {narrowed && (
+                <Button onClick={onClear} size="sm" variant="ghost">
+                  {clearLabel}
+                </Button>
+              )}
+            </div>
+          ) : (
+            <ul className="divide-y">
+              {meetings.map((meeting) => (
+                <MeetingRow
+                  accountId={accountId}
+                  key={meeting.id}
+                  management={management}
+                  meeting={meeting}
+                  timeZone={timeZone}
+                  withDate
+                  wsId={wsId}
+                />
+              ))}
+            </ul>
+          )}
           <OlderFooter older={results.older} onLoadOlder={onLoadOlder} />
         </>
       );
