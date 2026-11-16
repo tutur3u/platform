@@ -7,6 +7,13 @@ export const FINANCE_APEX_URL = 'https://tuturuuu.com/finance';
  * Mounts for one native profile. `rootHost` is the Vite define
  * `VITE_FINANCE_NATIVE_ROOT_HOST`. An empty value admits no host.
  * Passing the apex as the root host throws: that would claim all of tuturuuu.com.
+ * The literal return keeps `unknownHost` as `'reject'` for tsc.
+ * @returns {{
+ *   rootHosts: string[],
+ *   mountHosts: string[],
+ *   basePath: string,
+ *   unknownHost: 'reject'
+ * }}
  */
 export function financeNativeMounts(rootHost) {
   const host = typeof rootHost === 'string' ? rootHost.trim() : '';
