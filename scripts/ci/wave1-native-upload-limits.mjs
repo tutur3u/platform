@@ -96,6 +96,37 @@ function sourceMaps(configPath, config, modules) {
   return maps;
 }
 
+/** Check emitted module maps before a dry run can be mistaken for upload acceptance. */
+export function assertSourceMapUpload(configPath) {
+  const config = JSON.parse(readFileSync(configPath, 'utf8'));
+  const root = dirname(resolve(dirname(configPath), config.main));
+  const modules = files(root).filter((file) => /\.(?:m?js)$/u.test(file.name));
+  const maps = sourceMaps(configPath, config, modules);
+  const encodedBytes = maps.reduce((total, map) => total + map.length, 0);
+  // Skip compression of an already invalid payload.
+  const gzipBytes =
+    encodedBytes > uploadLimits.sourcemapEncodedBytes
+      ? null
+      : maps.reduce((total, map) => total + gzipSync(map).length, 0);
+  return assertSourceMapSizes({ count: maps.length, encodedBytes, gzipBytes });
+}
+
+export function assertSourceMapSizes(measured) {
+  const { count, encodedBytes, gzipBytes } = measured;
+  assert.ok(Number.isSafeInteger(count) && count >= 0);
+  assert.ok(Number.isSafeInteger(encodedBytes) && encodedBytes >= 0);
+  assert.ok(
+    encodedBytes <= uploadLimits.sourcemapEncodedBytes,
+    `Source map encoded bytes ${encodedBytes} > ${uploadLimits.sourcemapEncodedBytes}`
+  );
+  assert.ok(Number.isSafeInteger(gzipBytes) && gzipBytes >= 0);
+  assert.ok(
+    gzipBytes <= uploadLimits.sourcemapGzipBytes,
+    `Source map gzip bytes ${gzipBytes} > ${uploadLimits.sourcemapGzipBytes}`
+  );
+  return measured;
+}
+
 /** Measure the actual token-free CLI outdir, never an estimate from source imports. */
 export function measureUpload(configPath, outdir, secretNames = [], cliSize) {
   const config = JSON.parse(readFileSync(configPath, 'utf8'));

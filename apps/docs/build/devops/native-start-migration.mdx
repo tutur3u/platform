@@ -265,6 +265,15 @@ unchanged before the gate. Retyping it by hand can leave a malformed config that
 the seal rejects. Meet uses `scripts/ci/verify-meet-start-output.js` with an
 in-tree seal and is not covered by the helper.
 
+Meet's dry-run gate also measures encoded and compressed sourcemaps before
+invoking Wrangler. Cloudflare rejects encoded maps above 60 MiB with error
+10021 even when the emitted Worker starts locally. Meet retains map uploads
+and omits embedded dependency source text in its SSR output; mappings and
+source paths remain available. Check the `meet_source_maps` receipt alongside
+the emitted Worker startup probes. A dry run alone does not certify either
+hosted upload acceptance or production behavior. The focused upload regression
+coverage lives in `scripts/ci/wave1-native-upload-limits.test.mjs`.
+
 ### Finance held-profile host acceptance
 
 Finance's native staging and production qualification profiles admit only their
