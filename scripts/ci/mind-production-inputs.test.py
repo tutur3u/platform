@@ -82,6 +82,13 @@ class MindProductionInputsTest(unittest.TestCase):
         self.assertIn("vars.PRODUCTION_SUPABASE_PUBLISHABLE_KEY", self.cutover)
         self.assertNotIn("|| 'https://", self.cutover)
 
+    def test_cutover_bakes_the_apex_app_url(self):
+        self.assertEqual(self.cutover.count("https://tuturuuu.com/mind"), 2)
+        self.assertNotIn("https://mind.tuturuuu.com", self.cutover)
+        self.assertNotIn("https://tuturuuu.com/mind/", self.cutover)
+        self.assertIn("NEXT_PUBLIC_WEB_APP_URL: https://tuturuuu.com", self.cutover)
+        self.assertIn("https://mind.tuturuuu.com", self.native)
+
     def test_empty_production_vars_fail_closed(self):
         cases = [
             ("", "", "", ""),

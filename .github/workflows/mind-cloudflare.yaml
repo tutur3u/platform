@@ -205,7 +205,7 @@ jobs:
       # public-env; this job has no fixture fallback.
       NEXT_PUBLIC_SUPABASE_URL: ${{ vars.PRODUCTION_SUPABASE_URL }}
       NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY: ${{ vars.PRODUCTION_SUPABASE_PUBLISHABLE_KEY }}
-      NEXT_PUBLIC_APP_URL: https://mind.tuturuuu.com
+      NEXT_PUBLIC_APP_URL: https://tuturuuu.com/mind
       NEXT_PUBLIC_WEB_APP_URL: https://tuturuuu.com
       VITE_MIND_NATIVE_PROFILE: production
       WRANGLER_SEND_METRICS: 'false'
@@ -266,7 +266,7 @@ jobs:
             TUTURUUU_NOINDEX: '0',
             NODE_ENV: 'production',
             TUTURUUU_REQUIRE_SECRETS: '1',
-            NEXT_PUBLIC_APP_URL: 'https://mind.tuturuuu.com',
+            NEXT_PUBLIC_APP_URL: 'https://tuturuuu.com/mind',
             NEXT_PUBLIC_WEB_APP_URL: 'https://tuturuuu.com',
           };
           writeFileSync(path, `${JSON.stringify(c, null, 2)}\n`);

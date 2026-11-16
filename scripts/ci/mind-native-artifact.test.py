@@ -113,7 +113,7 @@ class MindProductionCutoverTest(MindServiceSealTest):
             "TUTURUUU_NOINDEX": "0",
             "NODE_ENV": "production",
             "TUTURUUU_REQUIRE_SECRETS": "1",
-            "NEXT_PUBLIC_APP_URL": "https://mind.tuturuuu.com",
+            "NEXT_PUBLIC_APP_URL": "https://tuturuuu.com/mind",
             "NEXT_PUBLIC_WEB_APP_URL": "https://tuturuuu.com",
         })
         self.assertEqual(self.production.NORMALIZED_DEFAULTS["services"], [
