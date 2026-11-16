@@ -10,7 +10,7 @@ import { setCookie } from 'cookies-next';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { useTranslations } from 'next-intl';
-import type { ReactNode } from 'react';
+import { Suspense, type ReactNode } from 'react';
 import { SIDEBAR_COLLAPSED_COOKIE_NAME } from '../constants/common';
 import {
   getSidebarCookieOptions,
@@ -244,11 +244,15 @@ export function SidebarStructure({
             ) : null
           }
         >
-          {childContainerClassName ? (
-            <div className={childContainerClassName}>{children}</div>
-          ) : (
-            children
-          )}
+          <Suspense
+            fallback={<div aria-busy="true" className="min-h-40 flex-1" />}
+          >
+            {childContainerClassName ? (
+              <div className={childContainerClassName}>{children}</div>
+            ) : (
+              children
+            )}
+          </Suspense>
         </SatelliteShell>
       </WorkspaceSelectorProvider>
     </>

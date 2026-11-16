@@ -3,6 +3,11 @@
 import { useTheme } from 'next-themes';
 import { Toaster as Sonner, type ToasterProps, toast } from 'sonner';
 
+/*
+  Surface, radius, shadow, type, semantic colours and buttons come from the
+  app tokens in ../../floating-surface.css. Sonner injects unlayered CSS that
+  beats Tailwind utilities, so the skin lives there instead of in classNames.
+*/
 const Toaster = ({ ...props }: ToasterProps) => {
   const { theme = 'system' } = useTheme();
 
@@ -10,17 +15,9 @@ const Toaster = ({ ...props }: ToasterProps) => {
     <Sonner
       theme={theme as ToasterProps['theme']}
       className="toaster group"
-      toastOptions={{
-        classNames: {
-          toast:
-            'group toast group-[.toaster]:bg-background group-[.toaster]:text-foreground group-[.toaster]:border-border group-[.toaster]:shadow-lg',
-          description: 'group-[.toast]:text-muted-foreground',
-          actionButton:
-            'group-[.toast]:bg-primary group-[.toast]:text-primary-foreground',
-          cancelButton:
-            'group-[.toast]:bg-muted group-[.toast]:text-muted-foreground',
-        },
-      }}
+      position="bottom-right"
+      offset="1rem"
+      closeButton
       {...props}
     />
   );

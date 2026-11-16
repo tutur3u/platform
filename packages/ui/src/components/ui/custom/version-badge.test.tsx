@@ -96,7 +96,7 @@ describe('VersionBadgeSetting', () => {
     render(<VersionBadgeSetting canManage />);
 
     expect(screen.getByText('setting_title')).toBeInTheDocument();
-    expect(screen.getByText('SHOW_VERSION_BADGE=true')).toBeInTheDocument();
+    expect(screen.queryByText(/SHOW_VERSION_BADGE/)).not.toBeInTheDocument();
     expect(screen.getByLabelText('setting_toggle_label')).toBeInTheDocument();
   });
 });

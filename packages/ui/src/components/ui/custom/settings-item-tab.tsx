@@ -64,14 +64,20 @@ export function SettingItemTab({
         )}
       >
         <div className="min-w-0 flex-1 space-y-0.5">
-          <div className="flex min-w-0 flex-wrap items-center gap-2 font-medium text-foreground text-sm">
+          <div
+            data-slot="settings-row-title"
+            className="flex min-w-0 flex-wrap items-center gap-2 font-medium text-foreground text-sm"
+          >
             {icon && (
               <span className="shrink-0 text-muted-foreground">{icon}</span>
             )}
             {title}
           </div>
           {description && (
-            <div className="whitespace-pre-line text-muted-foreground text-sm">
+            <div
+              data-slot="settings-row-description"
+              className="whitespace-pre-line text-muted-foreground text-sm"
+            >
               {description}
             </div>
           )}

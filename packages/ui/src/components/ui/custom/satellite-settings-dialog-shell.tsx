@@ -377,9 +377,13 @@ export function SatelliteSettingsDialogShell({
       <SidebarProvider className="flex h-full min-h-0 items-start">
         <Sidebar
           collapsible="none"
+          data-settings-pane="nav"
           className="hidden h-full w-64 shrink-0 flex-col border-r bg-muted/20 md:flex"
         >
-          <SidebarHeader className="sticky top-0 z-10 gap-3 border-b bg-background p-4">
+          <SidebarHeader
+            data-settings-pane="nav-header"
+            className="sticky top-0 z-10 gap-3 border-b bg-background p-4"
+          >
             <DialogClose asChild>
               <Button
                 type="button"
@@ -428,8 +432,14 @@ export function SatelliteSettingsDialogShell({
             ))}
           </SidebarContent>
         </Sidebar>
-        <main className="flex h-full min-w-0 flex-1 flex-col overflow-hidden bg-background">
-          <header className="flex h-14 shrink-0 items-center gap-2 border-b px-2 transition-[width,height] ease-linear group-has-data-[collapsible=icon]/sidebar-wrapper:h-12 md:px-6">
+        <main
+          data-settings-pane="main"
+          className="flex h-full min-w-0 flex-1 flex-col overflow-hidden bg-background"
+        >
+          <header
+            data-settings-pane="header"
+            className="flex h-14 shrink-0 items-center gap-2 border-b px-2 transition-[width,height] ease-linear group-has-data-[collapsible=icon]/sidebar-wrapper:h-12 md:px-6"
+          >
             <div className="flex flex-1 items-center gap-2 md:flex-initial">
               {isMobile && (
                 <SettingsMobileNav

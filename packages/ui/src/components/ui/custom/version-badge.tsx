@@ -153,17 +153,12 @@ function VersionBadgeSettingControl() {
       title={t('setting_title')}
       description={t('setting_description')}
     >
-      <div className="flex items-center gap-3">
-        <span className="rounded-md border border-border/70 bg-muted/40 px-2 py-1 font-mono text-muted-foreground text-xs">
-          {SHOW_VERSION_BADGE_CONFIG_ID}={enabled ? 'true' : 'false'}
-        </span>
-        <Switch
-          aria-label={t('setting_toggle_label')}
-          checked={enabled}
-          disabled={isLoading || isPending}
-          onCheckedChange={setValue}
-        />
-      </div>
+      <Switch
+        aria-label={t('setting_toggle_label')}
+        checked={enabled}
+        disabled={isLoading || isPending}
+        onCheckedChange={setValue}
+      />
     </SettingItemTab>
   );
 }

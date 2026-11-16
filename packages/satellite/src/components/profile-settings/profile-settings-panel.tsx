@@ -110,13 +110,8 @@ export function SatelliteProfileSettingsPanel({
           description={t('account-status-description')}
         >
           <div className="flex gap-2">
-            <Badge
-              className="border-dynamic-green/30 bg-dynamic-green/10 text-dynamic-green"
-              variant="outline"
-            >
-              {t('active')}
-            </Badge>
-            <Badge variant="secondary">{t('verified')}</Badge>
+            <Badge variant="success">{t('active')}</Badge>
+            <Badge variant="outline">{t('verified')}</Badge>
           </div>
         </SettingItemTab>
         <SettingItemTab

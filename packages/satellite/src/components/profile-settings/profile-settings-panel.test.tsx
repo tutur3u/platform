@@ -110,4 +110,39 @@ describe('SatelliteProfileSettingsPanel', () => {
       'https://cdn.example.com/avatar.png'
     );
   });
+
+  it('renders status badges from shared variants and a plain read-only user id', async () => {
+    getCurrentUserProfile.mockResolvedValue({
+      id: 'user-1',
+      avatar_url: null,
+      created_at: '2026-07-23T00:00:00.000Z',
+      default_workspace_id: null,
+      display_name: 'Sokora',
+      email: 'sokora@example.com',
+      full_name: null,
+      new_email: null,
+    });
+
+    renderWithClient(
+      <SatelliteProfileSettingsPanel
+        centralUrl="https://tuturuuu.com"
+        user={{ id: 'user-1' } as unknown as WorkspaceUser}
+      />
+    );
+
+    const active = await screen.findByText('active');
+    const verified = screen.getByText('verified');
+    // Success variant owns the green tokens; no one-off overrides on top.
+    expect(active.className).toContain('bg-dynamic-green/10');
+    expect(active.className).not.toContain('border-dynamic-green/30');
+    // Outline variant: no fill, so it reads on any settings card.
+    expect(verified.className).not.toMatch(/(^|\s)bg-/);
+
+    const userId = screen.getByDisplayValue('user-1') as HTMLInputElement;
+    expect(userId.disabled).toBe(true);
+    // The settings surface styles it; the field carries no shade of its own.
+    expect(userId.className).not.toMatch(
+      /(^|\s)(disabled:)?bg-(muted|secondary|accent)/
+    );
+  });
 });

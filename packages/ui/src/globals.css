@@ -2,6 +2,7 @@
 @import "slot-text/style.css";
 @import "./sorbet.css";
 @import "./sorbet-presets.css";
+@import "./floating-surface.css";
 @source "components";
 /* The shared marketing layout renders in every app that imports this file. */
 @source "../../marketing-shell/src";
@@ -251,11 +252,49 @@
   --accent: hsl(0 0% 15%);
 }
 
-/* A disabled value is often what the user came to read or copy. */
-.settings-surface :is(input, textarea, [data-slot="select-trigger"]):disabled {
-  background-color: var(--muted);
-  color: var(--muted-foreground);
+/*
+  Sorbet already gives border, input, muted and accent distinct values, so the
+  classic contrast overrides above must not apply. Inheriting hands the dialog
+  the Sorbet palette from :root; this selector outranks .dark .settings-surface.
+*/
+:root[data-ui="sorbet"] .settings-surface {
+  --muted-foreground: inherit;
+  --card: inherit;
+  --border: inherit;
+  --input: inherit;
+  --accent: inherit;
+}
+
+/*
+  A disabled or read-only value is often what the user came to read or copy, so
+  it keeps the enabled field's surface, border and text instead of a muted fill.
+*/
+.settings-surface
+  :is(
+    input:not([type="checkbox"], [type="radio"], [type="range"], [type="hidden"]),
+    textarea,
+    [data-slot="select-trigger"]
+  ):is(:disabled, [readonly], [aria-readonly="true"], [data-disabled]) {
+  border-color: var(--input);
+  color: var(--foreground);
   opacity: 1;
+}
+
+.settings-surface
+  :is(
+    input:not([type="checkbox"], [type="radio"], [type="range"], [type="hidden"]),
+    textarea
+  ):is(:disabled, [readonly], [aria-readonly="true"]) {
+  background-color: transparent;
+}
+
+.settings-surface [data-slot="select-trigger"]:is(:disabled, [data-disabled]) {
+  background-color: var(--background);
+}
+
+/* Loading placeholders sit on the dialog surface, never a primary wash. */
+.settings-surface [data-slot="skeleton"] {
+  background-color: var(--muted);
 }
 
 .settings-surface :is(button, [role="switch"], [role="checkbox"]):disabled {

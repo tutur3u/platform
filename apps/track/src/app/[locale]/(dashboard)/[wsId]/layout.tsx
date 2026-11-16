@@ -107,7 +107,9 @@ export default async function Layout({ children, params }: LayoutProps) {
         >
           <div className="space-y-4">
             <TimeTrackerHeader />
-            {children}
+            <Suspense fallback={<div aria-busy="true" className="min-h-40" />}>
+              {children}
+            </Suspense>
           </div>
         </Structure>
       </SidebarProvider>
