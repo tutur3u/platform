@@ -1,6 +1,6 @@
-import { execFileSync } from 'node:child_process';
 import { appendFile, readFile, stat, writeFile } from 'node:fs/promises';
 import { join } from 'node:path';
+import { runCommand } from './command.mjs';
 import { readDraftRelease, verifyDraftRelease } from './draft-release.mjs';
 import { changesSince, renderDesktopReleaseNotes } from './release-notes.mjs';
 import {
@@ -67,7 +67,7 @@ await writeFile(
 );
 // Publish as a draft first. No partially uploaded release appears on /download.
 // No --clobber: immutable release tags cannot silently replace an installed build.
-const gh = (args) => execFileSync('gh', args, { stdio: 'inherit' });
+const gh = (args) => runCommand('gh', args, { stdio: 'inherit' });
 gh([
   'release',
   'create',

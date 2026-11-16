@@ -1,8 +1,8 @@
-import { execFileSync } from 'node:child_process';
+import { runCommand } from './command.mjs';
 
 // Drafts can exist without a public tag lookup. Resolve the authenticated CLI's
 // database ID, then verify the REST release before making any package public.
-export function readDraftRelease(tag, execute = execFileSync) {
+export function readDraftRelease(tag, execute = runCommand) {
   const options = {
     encoding: 'utf8',
     stdio: ['ignore', 'pipe', 'pipe'],

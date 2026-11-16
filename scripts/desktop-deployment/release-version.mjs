@@ -1,7 +1,7 @@
-import { execFileSync } from 'node:child_process';
 import { appendFile, readFile } from 'node:fs/promises';
 import { pathToFileURL } from 'node:url';
 import { nextBuildName } from '../mobile-deployment/build-name.mjs';
+import { runCommand } from './command.mjs';
 
 // Desktop and mobile share one scheme: Release Please owns major.minor (and a
 // patch floor) in apps/mobile/pubspec.yaml; CI publishes the next unused patch
@@ -37,7 +37,7 @@ export function desktopBuildVersion(pubspec, override) {
 
 // Newest first, as the REST API lists them. Drafts are included when the token
 // can see them so an unfinished publication still reserves its version.
-export function listDesktopReleases(execute = execFileSync) {
+export function listDesktopReleases(execute = runCommand) {
   const output = execute(
     'gh',
     [

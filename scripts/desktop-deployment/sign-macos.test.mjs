@@ -4,7 +4,29 @@ import { mkdir, mkdtemp, readFile, rm, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { test } from 'node:test';
-import { withMacosSigning as signing } from './sign-macos.mjs';
+import {
+  absoluteKeychainPath,
+  withMacosSigning as signing,
+} from './sign-macos.mjs';
+
+test('keychain paths stay absolute for the host that runs the signer', () => {
+  assert.equal(absoluteKeychainPath('/tmp/login.keychain-db', 'darwin'), true);
+  assert.equal(absoluteKeychainPath('login.keychain-db', 'darwin'), false);
+  assert.equal(
+    absoluteKeychainPath('C:\\Users\\fixture\\login.keychain-db', 'darwin'),
+    false
+  );
+  assert.equal(
+    absoluteKeychainPath('C:\\Users\\fixture\\login.keychain-db', 'win32'),
+    true
+  );
+  assert.equal(
+    absoluteKeychainPath('/Users/fixture/login.keychain-db', 'win32'),
+    true
+  );
+  assert.equal(absoluteKeychainPath('login.keychain-db', 'win32'), false);
+  assert.equal(absoluteKeychainPath('../login.keychain-db', 'win32'), false);
+});
 
 // Existing identity/notary controls use an isolated in-memory search list.
 function withMacosSigning(callback, options = {}) {

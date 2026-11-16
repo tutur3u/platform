@@ -1,5 +1,5 @@
-import { execFileSync } from 'node:child_process';
 import normalizer from '../ci/normalize-release-notes.js';
+import { runCommand } from './command.mjs';
 import { DESKTOP_PLATFORMS } from './platforms.mjs';
 import { desktopReleaseTag } from './release-version.mjs';
 
@@ -49,7 +49,7 @@ export function classifyChanges(subjects) {
 // Production syncs can rewrite history, so the previous source is not always an
 // ancestor. A right-only cherry-pick range skips patch-equivalent commits that
 // the previous beta already shipped.
-export function changesSince(previous, source, git = execFileSync) {
+export function changesSince(previous, source, git = runCommand) {
   if (
     ![previous, source].every(
       (value) =>

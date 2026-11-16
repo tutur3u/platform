@@ -1,7 +1,7 @@
 import { execFileSync, spawnSync } from 'node:child_process';
 import { randomBytes } from 'node:crypto';
 import { lstat, open, readdir, rm } from 'node:fs/promises';
-import { join } from 'node:path';
+import path, { join } from 'node:path';
 import { readRegularFile } from '../safe-fs.js';
 import { codesignDiagnostic } from './codesign-diagnostic.mjs';
 
@@ -12,6 +12,14 @@ function hasAsciiControl(value) {
     if (code <= 0x1f || code === 0x7f) return true;
   }
   return false;
+}
+
+// POSIX absolute on the production macOS host. Windows CI uses drive paths
+// for the owned keychain, so the same rule follows that host's path style.
+export function absoluteKeychainPath(entry, platform = process.platform) {
+  if (typeof entry !== 'string') return false;
+  const style = platform === 'win32' ? path.win32 : path.posix;
+  return style.isAbsolute(entry);
 }
 
 function keychainSearchList(output) {
@@ -27,7 +35,7 @@ function keychainSearchList(output) {
       const entry = JSON.parse(line.trim());
       if (
         typeof entry !== 'string' ||
-        !entry.startsWith('/') ||
+        !absoluteKeychainPath(entry) ||
         entry.length > 4096 ||
         hasAsciiControl(entry)
       )

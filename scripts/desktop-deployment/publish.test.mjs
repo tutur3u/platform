@@ -3,7 +3,7 @@ import { spawnSync } from 'node:child_process';
 import { createHash } from 'node:crypto';
 import { mkdir, mkdtemp, readFile, rm, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
-import { dirname, join, resolve } from 'node:path';
+import { delimiter, dirname, join, resolve } from 'node:path';
 import { test } from 'node:test';
 import { fileURLToPath } from 'node:url';
 import { nextDesktopVersion } from './release-version.mjs';
@@ -60,13 +60,20 @@ async function runPublication(
       },
     };
     await writeFile(join(temp, 'fixture.json'), JSON.stringify(fixture));
-    // Synthetic source SHAs have no local history. Keep this subprocess fixture
-    // offline instead of asking a partial clone to fetch these fake objects.
-    await writeFile(join(temp, 'git'), '#!/bin/sh\nexit 1\n', { mode: 0o700 });
+    // The publisher reaches gh and git through DESKTOP_COMMAND_STUB_ROOT.
+    // A direct PATH lookup is a separate fail-closed stub so a missed call
+    // site cannot use the real CLI. Windows resolves `gh.cmd`, not a shebang.
     await writeFile(
-      join(temp, 'gh'),
-      `#!${process.execPath}
-const fs = require('node:fs');
+      join(temp, 'git.mjs'),
+      "console.error('direct desktop command lookup is refused');\nprocess.exit(1);\n"
+    );
+    await writeFile(
+      join(temp, 'gh.mjs'),
+      `import fs from 'node:fs';
+if (process.env.GH_TOKEN || process.env.GITHUB_TOKEN || process.env.GH_ENTERPRISE_TOKEN || process.env.GITHUB_ENTERPRISE_TOKEN) {
+  console.error('stub received a GitHub token');
+  process.exit(2);
+}
 const args = process.argv.slice(2);
 const fixture = JSON.parse(fs.readFileSync(process.env.TEST_FIXTURE, 'utf8'));
 fs.appendFileSync(process.env.TEST_CALLS, JSON.stringify(args) + '\\n');
@@ -76,9 +83,26 @@ if (args[0] === 'release' && args[1] === 'view') { console.log(JSON.stringify(fi
 if (args[0] === 'api' && args[1] === 'repos/tutur3u/platform/releases/456') { console.log(JSON.stringify(fixture.release)); process.exit(0); }
 if (args[0] === 'release' && args[1] === 'edit') process.exit(0);
 console.error('gh: Not Found (HTTP 404)'); process.exit(1);
-`,
-      { mode: 0o700 }
+`
     );
+    if (process.platform === 'win32') {
+      const cmd = '@echo off\r\necho direct desktop command lookup is refused 1>&2\r\nexit /b 1\r\n';
+      await writeFile(join(temp, 'gh.cmd'), cmd);
+      await writeFile(join(temp, 'git.cmd'), cmd);
+    } else {
+      const shell =
+        '#!/bin/sh\necho direct desktop command lookup is refused >&2\nexit 1\n';
+      await writeFile(join(temp, 'gh'), shell, { mode: 0o700 });
+      await writeFile(join(temp, 'git'), shell, { mode: 0o700 });
+    }
+    const env = { ...process.env };
+    for (const key of [
+      'GH_TOKEN',
+      'GITHUB_TOKEN',
+      'GH_ENTERPRISE_TOKEN',
+      'GITHUB_ENTERPRISE_TOKEN',
+    ])
+      delete env[key];
     const result = spawnSync(
       process.execPath,
       [join(root, 'scripts/desktop-deployment/publish.mjs')],
@@ -86,8 +110,9 @@ console.error('gh: Not Found (HTTP 404)'); process.exit(1);
         cwd: root,
         encoding: 'utf8',
         env: {
-          ...process.env,
-          PATH: `${temp}:${process.env.PATH}`,
+          ...env,
+          PATH: `${temp}${delimiter}${env.PATH ?? ''}`,
+          DESKTOP_COMMAND_STUB_ROOT: temp,
           RUNNER_TEMP: temp,
           GITHUB_REF: 'refs/heads/production',
           GITHUB_REPOSITORY: 'tutur3u/platform',
