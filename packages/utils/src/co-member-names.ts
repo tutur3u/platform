@@ -73,8 +73,10 @@ function uniqueIds(ids: readonly (string | null | undefined)[]) {
 /**
  * Returns the private full name and/or email that may serve as a name
  * fallback for each target, for this viewer. Empty whenever a guard fails.
+ * Module-internal on purpose: callers only ever get resolved name strings
+ * from `resolveCoMemberNames`, never a raw email field.
  */
-export async function getCoMemberPrivateNames({
+async function getCoMemberPrivateNames({
   admin,
   wsId,
   viewerUserId,
@@ -149,17 +151,6 @@ export async function getCoMemberPrivateNames({
   }
 
   return names;
-}
-
-/** Back-compat view of {@link getCoMemberPrivateNames}: emails only. */
-export async function getCoMemberEmailFallbacks(
-  input: Parameters<typeof getCoMemberPrivateNames>[0]
-): Promise<Map<string, string>> {
-  const emails = new Map<string, string>();
-  for (const [id, value] of await getCoMemberPrivateNames(input)) {
-    if (value.email) emails.set(id, value.email);
-  }
-  return emails;
 }
 
 /**

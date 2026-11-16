@@ -44,7 +44,6 @@ export default async function TimeTrackerPage({ params }: Props) {
               ...assignee,
               display_name: assignee.display_name || undefined,
               avatar_url: assignee.avatar_url || undefined,
-              email: assignee.email || undefined,
             })),
           })),
         };

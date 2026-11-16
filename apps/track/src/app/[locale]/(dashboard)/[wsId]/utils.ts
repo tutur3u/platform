@@ -173,14 +173,16 @@ export function useTaskCounts(tasks: ExtendedWorkspaceTask[]) {
 }
 
 /**
- * Generate initials from assignee name or email consistently
+ * Initials from the server-resolved assignee name. That name may be an
+ * email when the co-member helper is allowed to use one; there is no
+ * separate email field on the timer payload.
  */
 export function generateAssigneeInitials(assignee: {
   display_name?: string;
-  email?: string;
 }): string {
-  const name = assignee.display_name?.trim();
-  const email = assignee.email?.trim();
+  const raw = assignee.display_name?.trim();
+  const name =
+    raw && raw.includes('@') ? (raw.split('@')[0] ?? raw).trim() : raw;
 
   if (name && name.length > 0) {
     // Handle names with multiple parts (e.g., "John Doe" -> "JD")
@@ -198,17 +200,6 @@ export function generateAssigneeInitials(assignee: {
     const firstChar = name.charAt(0);
     if (firstChar) {
       return firstChar.toUpperCase();
-    }
-  }
-
-  if (email && email.length > 0) {
-    // Use part before @ for email
-    const username = email.split('@')[0];
-    if (username && username.length > 0) {
-      const firstChar = username.charAt(0);
-      if (firstChar) {
-        return firstChar.toUpperCase();
-      }
     }
   }
 

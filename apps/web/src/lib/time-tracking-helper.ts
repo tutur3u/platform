@@ -753,6 +753,34 @@ export const groupSessions = (
   return Array.from(grouped.values()) as GroupedSession[];
 };
 
+type TimerAssigneeUser = {
+  id: string | null;
+  display_name: string | null;
+  avatar_url: string | null;
+  handle: string | null;
+} | null;
+
+/**
+ * Timer-page assignees (D246): only public fields plus the server-resolved
+ * name. Never includes an email or a user_private_details row.
+ */
+export function mapTimerAssignees(
+  assignees: ReadonlyArray<{ user: TimerAssigneeUser }> | null | undefined,
+  names: ReadonlyMap<string, string>
+) {
+  return (assignees || []).flatMap(({ user }) => {
+    if (!user?.id) return [];
+    return [
+      {
+        id: user.id,
+        display_name: names.get(user.id) || user.display_name,
+        avatar_url: user.avatar_url,
+        handle: user.handle,
+      },
+    ];
+  });
+}
+
 export const getTimeTrackingData = async (wsId: string, userId: string) => {
   const supabase = await createClient();
 
@@ -815,7 +843,7 @@ export const getTimeTrackingData = async (wsId: string, userId: string) => {
           id,
           display_name,
           avatar_url,
-          user_private_details(email)
+          handle
         )
       )
     `
@@ -968,6 +996,22 @@ export const getTimeTrackingData = async (wsId: string, userId: string) => {
     dailyActivity,
   };
 
+  // D246: co-assignee names are resolved on the server (display name -> full
+  // name -> email -> handle, HIDE_MEMBER_EMAIL-gated, members only). No raw
+  // email or user_private_details row is sent to the client.
+  const assigneeNames = await resolveCoMemberNames({
+    admin: sbAdmin,
+    wsId: workspace.id,
+    viewerUserId: userId,
+    users: (tasks || []).flatMap((task) =>
+      (task.assignees || []).map((assignee) => ({
+        id: assignee.user?.id,
+        display_name: assignee.user?.display_name,
+        handle: assignee.user?.handle,
+      }))
+    ),
+  });
+
   // Transform tasks to match the ExtendedWorkspaceTask interface expected by the time tracker
   const transformedTasks = (tasks || []).map((task) => ({
     ...task,
@@ -978,18 +1022,7 @@ export const getTimeTrackingData = async (wsId: string, userId: string) => {
     list_name: task.list?.name,
     list_status: task.list?.status,
     // Transform assignees to match expected format - extract users directly from assignees
-    assignees: (task.assignees || [])
-      .map((assignee) => assignee.user)
-      .filter((user) => user?.id)
-      .map((user) => ({
-        ...user,
-        // Extract email from nested user_private_details
-        email:
-          Array.isArray(user?.user_private_details) &&
-          user.user_private_details.length > 0
-            ? user.user_private_details[0]?.email || null
-            : null,
-      })),
+    assignees: mapTimerAssignees(task.assignees, assigneeNames),
     // Add current user assignment flag
     is_assigned_to_current_user:
       task.assignees?.some((a) => a.user?.id === userId) || false,

@@ -4330,8 +4330,7 @@ export function TimerControls({
                                                         key={assignee.id}
                                                         className="h-4 w-4 rounded-full border border-white bg-linear-to-br from-gray-100 to-gray-200 dark:border-gray-800 dark:from-gray-700 dark:to-gray-600"
                                                         title={
-                                                          assignee.display_name ||
-                                                          assignee.email
+                                                          assignee.display_name
                                                         }
                                                       >
                                                         {assignee.avatar_url ? (
@@ -4341,7 +4340,6 @@ export function TimerControls({
                                                             }
                                                             alt={
                                                               assignee.display_name ||
-                                                              assignee.email ||
                                                               ''
                                                             }
                                                             width={16}

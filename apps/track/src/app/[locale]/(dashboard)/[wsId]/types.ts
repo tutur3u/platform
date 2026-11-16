@@ -56,7 +56,6 @@ export interface ExtendedWorkspaceTask extends WorkspaceTask {
     id: string;
     display_name?: string;
     avatar_url?: string;
-    email?: string;
   }>;
   /** Workspace ID from task_lists -> workspace_boards relation */
   ws_id?: string;

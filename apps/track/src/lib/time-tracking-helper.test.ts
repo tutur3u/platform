@@ -21,6 +21,7 @@ import {
   applyCoMemberGroupNames,
   type GroupedSession,
   getGroupedSessionsPaginated,
+  mapTimerAssignees,
 } from './time-tracking-helper';
 
 const WS_ID = '11111111-1111-4111-8111-111111111111';
@@ -187,5 +188,63 @@ describe('getGroupedSessionsPaginated viewer naming', () => {
     );
     expect(result.data[0]?.user.displayName).toBe('nameless@example.com');
     expect(result.pagination.total).toBe(1);
+  });
+});
+
+describe('mapTimerAssignees (timer page, D246 finding)', () => {
+  const assignees = [
+    {
+      user: {
+        id: 'member-a',
+        display_name: null,
+        avatar_url: null,
+        handle: 'aa',
+      },
+    },
+    {
+      user: {
+        id: 'named',
+        display_name: 'Named',
+        avatar_url: 'https://cdn.example.com/a.png',
+        handle: null,
+      },
+    },
+    { user: null },
+  ];
+
+  it('uses the server-resolved name and never returns email fields', () => {
+    const result = mapTimerAssignees(
+      assignees,
+      new Map([
+        ['member-a', 'a@example.com'],
+        ['named', 'Named'],
+      ])
+    );
+
+    expect(result).toEqual([
+      {
+        id: 'member-a',
+        display_name: 'a@example.com',
+        avatar_url: null,
+        handle: 'aa',
+      },
+      {
+        id: 'named',
+        display_name: 'Named',
+        avatar_url: 'https://cdn.example.com/a.png',
+        handle: null,
+      },
+    ]);
+    for (const assignee of result) {
+      expect(assignee).not.toHaveProperty('email');
+      expect(assignee).not.toHaveProperty('user_private_details');
+    }
+  });
+
+  it('falls back to the handle-free public name when no email is allowed', () => {
+    // HIDE_MEMBER_EMAIL / non-member: the resolver returns the handle.
+    const result = mapTimerAssignees(assignees, new Map([['member-a', 'aa']]));
+    expect(result[0]?.display_name).toBe('aa');
+    expect(JSON.stringify(result)).not.toContain('@example.com');
   });
 });

@@ -961,8 +961,7 @@ export default function TimeTrackerContent({
                                                 key={assignee.id}
                                                 className="h-5 w-5 rounded-full border-2 border-white bg-linear-to-br from-gray-100 to-gray-200 dark:border-gray-800 dark:from-gray-700 dark:to-gray-600"
                                                 title={
-                                                  assignee.display_name ||
-                                                  assignee.email
+                                                  assignee.display_name
                                                 }
                                               >
                                                 {assignee.avatar_url ? (
@@ -970,7 +969,6 @@ export default function TimeTrackerContent({
                                                     src={assignee.avatar_url}
                                                     alt={
                                                       assignee.display_name ||
-                                                      assignee.email ||
                                                       ''
                                                     }
                                                     className="h-full w-full rounded-full object-cover"

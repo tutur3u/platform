@@ -1,9 +1,7 @@
 import type { TypedSupabaseClient } from '@tuturuuu/supabase/types';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import {
-  getCoMemberEmailFallbacks,
-  resolveCoMemberNames,
-} from './co-member-names';
+import * as coMemberNames from './co-member-names';
+import { resolveCoMemberNames } from './co-member-names';
 
 vi.mock('server-only', () => ({}));
 
@@ -117,7 +115,7 @@ describe('resolveCoMemberNames', () => {
     expect(privateRead?.ids).toEqual(['member-a']);
   });
 
-  it('respects HIDE_MEMBER_EMAIL=true and skips the private read', async () => {
+  it('hides email while allowing a bounded private full-name lookup', async () => {
     tables.workspace_secrets = [
       { ws_id: WS, name: 'HIDE_MEMBER_EMAIL', value: 'true' },
     ];
@@ -128,7 +126,9 @@ describe('resolveCoMemberNames', () => {
       users,
     });
     expect(names.get('member-a')).toBe('aa');
-    expect(reads.some((r) => r.table === 'user_private_details')).toBe(false);
+    expect(reads.find((r) => r.table === 'user_private_details')?.ids).toEqual([
+      'member-a',
+    ]);
   });
 
   it('still shows emails when HIDE_MEMBER_EMAIL is set but not true', async () => {
@@ -297,14 +297,32 @@ describe('private full name (user_private_details)', () => {
   });
 });
 
-describe('getCoMemberEmailFallbacks', () => {
-  it('returns only eligible member emails', async () => {
-    const emails = await getCoMemberEmailFallbacks({
+describe('module surface', () => {
+  it('exports only name resolution, never a raw email accessor', () => {
+    expect(Object.keys(coMemberNames).sort()).toEqual([
+      'HIDE_MEMBER_EMAIL_SECRET',
+      'HIDE_MEMBER_NAME_SECRET',
+      'resolveCoMemberNames',
+    ]);
+  });
+
+  it('resolves duplicate and missing ids without leaking ineligible emails', async () => {
+    const names = await resolveCoMemberNames({
       admin: fakeAdmin(),
       wsId: WS,
       viewerUserId: VIEWER,
-      userIds: ['member-a', 'guest-g', 'outsider', null, 'member-a'],
+      users: [
+        { id: 'member-a' },
+        { id: 'guest-g', handle: 'gg' },
+        { id: 'outsider', handle: 'oo' },
+        { id: null, display_name: 'No id' },
+        { id: 'member-a' },
+      ],
     });
-    expect([...emails.entries()]).toEqual([['member-a', 'a@example.com']]);
+    expect([...names.entries()]).toEqual([
+      ['member-a', 'a@example.com'],
+      ['guest-g', 'gg'],
+      ['outsider', 'oo'],
+    ]);
   });
 });
