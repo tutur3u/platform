@@ -126,6 +126,15 @@ colours. `packages/ui/src/sorbet-tokens.test.ts` pins `sorbet.css` to the
 contract and the palettes to `sorbet-presets.css`, keeps the setting allowlists
 and popover corners equal to the runtime, and checks text and focus contrast.
 
+`sorbet-surfaces.css` styles the shared shells (the settings dialog's
+navigation, sections, rows and tabs) and `sorbet-components.css` the shared
+primitives: accordion, breadcrumb, pagination, toggles and toggle groups,
+progress, slider, skeleton, table, avatar, scroll area, navigation menu, alert
+and the date picker. Selected pages and toggles take the `accent` fill; the
+date picker rings today in ink; every one of these controls shows the solid
+focus ring. Both files read only the shared tokens, so each palette and both
+modes follow, and each has a test that keeps its rules under `data-ui`.
+
 On touch screens (`pointer: coarse`) Sorbet fields are at least 44px tall, and
 buttons, tabs and switches get an invisible 44px hit area without changing their
 drawn size. Bottom sheets and drawers round their top edge and pad for the home

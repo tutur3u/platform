@@ -42,6 +42,7 @@ interface SorbetTokenContract {
   };
   hues: Record<string, Hue>;
   motion: {
+    skeleton: { pulse: number };
     duration: Record<string, number>;
     easing: Record<string, number[]>;
   };
@@ -295,6 +296,9 @@ describe('Sorbet token contract', () => {
         `cubic-bezier(${curve.join(', ')})`
       );
     }
+    expect(light['sorbet-skeleton-pulse']).toBe(
+      `${tokens.motion.skeleton.pulse}ms`
+    );
     const m = tokens.mobile;
     expect(light['sorbet-touch-target']).toBe(`${m.touchTarget}px`);
     expect(light['sorbet-input-font-size']).toBe(`${m.inputFontSize}px`);

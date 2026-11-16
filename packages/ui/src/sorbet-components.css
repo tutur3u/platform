@@ -1,0 +1,218 @@
+/*
+  Sorbet components: shape, state and motion for the shared navigation,
+  feedback and data primitives (accordion, breadcrumb, pagination, toggle
+  groups, progress, skeleton, table, avatar, slider, scroll area, navigation
+  menu, alert and the date picker). Floating menus and popovers live in
+  floating-surface.css; the settings shell lives in sorbet-surfaces.css.
+
+  Every rule is scoped under html[data-ui="sorbet"] and reads the shared
+  semantic tokens, so the classic design is unchanged and every palette
+  follows. sorbet-components.test.ts checks the scoping and the
+  reduced-motion and focus rules.
+*/
+
+/* Accordion: quiet hairlines, firm triggers, a chevron that eases. */
+:root[data-ui="sorbet"] :where([data-slot="accordion-item"]) {
+  border-color: color-mix(in oklab, var(--border) 70%, transparent);
+}
+
+:root[data-ui="sorbet"] :where([data-slot="accordion-trigger"]) {
+  font-weight: 600;
+  text-decoration: none;
+}
+
+:root[data-ui="sorbet"] :where([data-slot="accordion-trigger"] > svg) {
+  transition-duration: var(--sorbet-duration-base);
+  transition-timing-function: var(--sorbet-ease-standard);
+}
+
+/* Breadcrumb: muted trail, the current page in ink. */
+:root[data-ui="sorbet"] :where([data-slot="breadcrumb-link"]) {
+  color: var(--muted-foreground);
+  text-decoration: none;
+}
+
+:root[data-ui="sorbet"] :where([data-slot="breadcrumb-link"]:hover) {
+  color: var(--foreground);
+}
+
+:root[data-ui="sorbet"] :where([data-slot="breadcrumb-page"]) {
+  color: var(--foreground);
+  font-weight: 600;
+}
+
+:root[data-ui="sorbet"] :where([data-slot="breadcrumb-separator"]) {
+  color: color-mix(in oklab, var(--muted-foreground) 70%, transparent);
+}
+
+/* Pagination and toggles: pills; the selected one is the accent fill. */
+:root[data-ui="sorbet"]
+  :where(
+    [data-slot="pagination-link"],
+    [data-slot="toggle"],
+    [data-slot="toggle-group-item"]
+  ) {
+  border-radius: 9999px;
+}
+
+:root[data-ui="sorbet"]
+  :where(
+    [data-slot="pagination-link"][data-active="true"],
+    [data-slot="toggle"][data-state="on"],
+    [data-slot="toggle-group-item"][data-state="on"]
+  ) {
+  border-color: transparent;
+  background-color: var(--accent);
+  color: var(--foreground);
+  font-weight: 700;
+}
+
+/* A default toggle group reads as one segmented control. */
+:root[data-ui="sorbet"]
+  :where([data-slot="toggle-group"][data-variant="default"]) {
+  border-radius: 9999px;
+  background-color: var(--muted);
+  padding: 2px;
+  gap: 2px;
+}
+
+:root[data-ui="sorbet"]
+  :where(
+    [data-slot="toggle-group"][data-variant="default"]
+      [data-slot="toggle-group-item"][data-state="on"]
+  ) {
+  background-color: var(--card);
+  box-shadow: var(--sorbet-shadow-sm);
+}
+
+/* Dark cards sit below the track, so the dark thumb lifts toward the ink. */
+:root[data-ui="sorbet"].dark
+  :where(
+    [data-slot="toggle-group"][data-variant="default"]
+      [data-slot="toggle-group-item"][data-state="on"]
+  ) {
+  background-color: color-mix(in oklab, var(--foreground) 12%, var(--card));
+}
+
+/* Progress and slider: a sunken pill track with an ink fill. */
+:root[data-ui="sorbet"]
+  :where([data-slot="progress"], [data-slot="slider-track"]) {
+  border-radius: 9999px;
+  background-color: var(--secondary);
+}
+
+:root[data-ui="sorbet"]
+  :where([data-slot="progress-indicator"], [data-slot="slider-range"]) {
+  border-radius: 9999px;
+  background-color: var(--primary);
+}
+
+:root[data-ui="sorbet"] :where([data-slot="progress-indicator"]) {
+  transition-duration: var(--sorbet-duration-slow);
+  transition-timing-function: var(--sorbet-ease-standard);
+}
+
+:root[data-ui="sorbet"] :where([data-slot="slider-thumb"]) {
+  border-color: var(--primary);
+  background-color: var(--card);
+  box-shadow: var(--sorbet-shadow-sm);
+}
+
+/* Skeleton: the sunken surface with a slow pulse; still when motion is reduced. */
+:root[data-ui="sorbet"] :where([data-slot="skeleton"]) {
+  background-color: var(--secondary);
+  animation-duration: var(--sorbet-skeleton-pulse);
+}
+
+/* Table: a sunken header, hairline rows and the hover wash. */
+:root[data-ui="sorbet"] :where([data-slot="table-header"]) {
+  background-color: var(--secondary);
+}
+
+:root[data-ui="sorbet"] :where([data-slot="table-head"]) {
+  color: var(--muted-foreground);
+  font-size: 0.8125rem;
+  font-weight: 600;
+}
+
+:root[data-ui="sorbet"] :where([data-slot="table-row"]) {
+  border-color: color-mix(in oklab, var(--border) 70%, transparent);
+}
+
+:root[data-ui="sorbet"]
+  :where([data-slot="table-body"] [data-slot="table-row"]:hover) {
+  background-color: color-mix(in oklab, var(--foreground) 4%, transparent);
+}
+
+/* Avatar fallback and scroll thumb sit on the quiet surfaces. */
+:root[data-ui="sorbet"] :where([data-slot="avatar-fallback"]) {
+  background-color: var(--secondary);
+  color: var(--foreground);
+  font-weight: 700;
+}
+
+:root[data-ui="sorbet"] :where([data-slot="scroll-area-thumb"]) {
+  border-radius: 9999px;
+  background-color: var(--input);
+}
+
+/* Navigation menu panels float like every other popover. */
+:root[data-ui="sorbet"]
+  :where(
+    [data-slot="navigation-menu-viewport"],
+    [data-slot="navigation-menu-content"]
+  ) {
+  border-color: color-mix(in oklab, var(--border) 60%, transparent);
+  border-radius: var(--radius-popover, var(--radius-xl));
+  box-shadow: var(--sorbet-shadow-lg);
+}
+
+/* Alert: a card-like note; destructive takes a red wash with red ink. */
+:root[data-ui="sorbet"] :where([data-slot="alert"]) {
+  border-color: color-mix(in oklab, var(--border) 70%, transparent);
+  border-radius: var(--radius-xl);
+  background-color: var(--card);
+}
+
+:root[data-ui="sorbet"]
+  :where([data-slot="alert"][data-variant="destructive"]) {
+  border-color: color-mix(in oklab, var(--destructive) 35%, transparent);
+  background-color: color-mix(in oklab, var(--destructive) 8%, var(--card));
+}
+
+/* Date picker: round days, today ringed in ink, selection unchanged. */
+:root[data-ui="sorbet"]
+  :where([data-slot="calendar"] td:not([data-selected]) > button) {
+  border-radius: 9999px;
+}
+
+:root[data-ui="sorbet"]
+  :where([data-slot="calendar"] td[data-today]:not([data-selected])) {
+  border-radius: 9999px;
+  background-color: transparent;
+  box-shadow: inset 0 0 0 1.5px var(--foreground);
+  font-weight: 700;
+}
+
+/* Focus: the same solid ring on every control in this file. */
+:root[data-ui="sorbet"]
+  :where(
+    [data-slot="accordion-trigger"],
+    [data-slot="breadcrumb-link"],
+    [data-slot="pagination-link"],
+    [data-slot="toggle"],
+    [data-slot="toggle-group-item"],
+    [data-slot="slider-thumb"],
+    [data-slot="checkbox"],
+    [data-slot="radio-group-item"],
+    [data-slot="navigation-menu-trigger"]
+  ):focus-visible {
+  outline: 2px solid var(--ring);
+  outline-offset: 2px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  :root[data-ui="sorbet"] :where([data-slot="skeleton"]) {
+    animation: none;
+  }
+}

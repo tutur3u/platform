@@ -3,6 +3,7 @@
 @import "./sorbet.css";
 @import "./sorbet-presets.css";
 @import "./sorbet-surfaces.css";
+@import "./sorbet-components.css";
 @import "./floating-surface.css";
 @source "components";
 /* The shared marketing layout renders in every app that imports this file. */

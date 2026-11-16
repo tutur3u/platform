@@ -189,7 +189,7 @@ function Calendar({
   };
 
   return (
-    <div className="min-w-0 space-y-4">
+    <div data-slot="calendar" className="min-w-0 space-y-4">
       <div>
         <div className="mb-4 flex items-center justify-between gap-2 border-b px-2 pb-4">
           <button
