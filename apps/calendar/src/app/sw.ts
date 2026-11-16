@@ -7,7 +7,7 @@ declare const self: ServiceWorkerGlobalScope;
 
 createOfflineWorker({
   cacheNamespace: 'calendar',
-  offlineFallbackUrl: '/offline.html',
+  offlineFallbackUrl: '/calendar/offline.html',
   cacheNavigations: false,
   staticAssetsOnly: true,
   maxRuntimeCacheEntries: 160,

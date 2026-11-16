@@ -1,4 +1,4 @@
-const marketingApps = ['meet', 'calendar', 'ai'];
+const marketingApps = ['meet', 'ai'];
 const localePrefixes = ['', '/:locale(en|vi)'];
 const marketingRedirectStatus = 307;
 

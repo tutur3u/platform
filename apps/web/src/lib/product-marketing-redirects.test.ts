@@ -17,8 +17,6 @@ it.each([
   ['/vi/meet', '/vi/products/meet'],
   ['/meet/plans/one', '/products/meet/plans/one'],
   ['/vi/meet/plans/one', '/vi/products/meet/plans/one'],
-  ['/calendar', '/products/calendar'],
-  ['/vi/calendar', '/vi/products/calendar'],
   ['/ai', '/products/ai'],
   ['/vi/ai', '/vi/products/ai'],
 ])('temporarily redirects %s to its product page', async (source, target) => {
@@ -38,6 +36,10 @@ it.each([
 });
 
 it.each([
+  '/calendar',
+  '/vi/calendar',
+  '/calendar/events',
+  '/calendar/api/auth/callback',
   '/meet-together',
   '/meet-together/plans/one',
   '/products/meet-together',

@@ -1,7 +1,7 @@
 import { createOfflineRoute } from '@tuturuuu/offline/route';
 export const { GET, generateStaticParams } = createOfflineRoute({
   swSrc: 'src/app/sw.ts',
-  offlineFallbackUrl: '/offline.html',
+  offlineFallbackUrl: '/calendar/offline.html',
   disableInDev: true,
   precacheStaticAssets: false,
   publicPrecachePatterns: [

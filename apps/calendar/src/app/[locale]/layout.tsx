@@ -1,4 +1,5 @@
 import { OfflineProvider } from '@tuturuuu/offline/provider';
+import { calendarOfflineContract } from '@/runtime/offline-assets';
 import { ProductionIndicator } from '@tuturuuu/ui/custom/production-indicator';
 import { StaffToolbar } from '@tuturuuu/ui/custom/staff-toolbar';
 import { TailwindIndicator } from '@tuturuuu/ui/custom/tailwind-indicator';
@@ -76,7 +77,10 @@ export default async function RootLayout({ children }: Props) {
           font.className
         )}
       >
-        <OfflineProvider options={{ scope: '/' }}>
+        <OfflineProvider
+          swUrl={calendarOfflineContract('/calendar').workerUrl}
+          options={{ scope: calendarOfflineContract('/calendar').scope }}
+        >
           <VercelAnalytics />
           <VercelInsights />
           <NuqsAdapter>
