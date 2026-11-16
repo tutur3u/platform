@@ -2,7 +2,7 @@ import 'dart:async';
 
 import 'package:flutter/widgets.dart';
 import 'package:go_router/go_router.dart';
-import 'package:mobile/core/platform/purchase_channel.dart';
+import 'package:mobile/core/platform/purchase_links.dart';
 import 'package:mobile/core/router/routes.dart';
 import 'package:mobile/features/mastermind/catchup/catchup_models.dart';
 import 'package:url_launcher/url_launcher.dart';

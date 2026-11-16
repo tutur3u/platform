@@ -1,4 +1,5 @@
 import 'package:flutter/foundation.dart';
+import 'package:flutter/widgets.dart';
 
 /// How a build may let someone buy a plan, credits or a subscription.
 ///
@@ -10,81 +11,91 @@ enum PurchaseChannel {
   /// Purchases open the Tuturuuu web billing pages.
   external,
 
-  /// Purchases run through the platform store via [startNativePurchase].
+  /// Purchases run through the platform store via [NativePurchaseLauncher].
   native,
 
-  /// No purchase can start here: upgrade entry points are hidden.
+  /// No purchase can start here: purchase entry points are hidden.
   unavailable,
 }
 
-/// The channel for App Store builds. StoreKit purchases are not wired yet, so
-/// iOS and macOS start no purchase until this becomes [PurchaseChannel.native].
-const PurchaseChannel appleStorePurchaseChannel = PurchaseChannel.unavailable;
+/// Whether the platform store can sell right now: the server verified store
+/// purchases for this build and the store returned the products.
+abstract interface class NativePurchaseAvailability {
+  /// The last known answer, read synchronously for the first frame.
+  /// Report false until availability is verified.
+  bool get isAvailable;
 
-/// Resolves the channel for [platform], defaulting to the running target.
-///
-/// Widget tests select a platform with `debugDefaultTargetPlatformOverride` or
-/// `TargetPlatformVariant`; [appleChannel] lets tests exercise the native path.
+  /// Emits whenever [isAvailable] changes. Must be a broadcast stream: every
+  /// purchase entry point listens to it.
+  Stream<bool> get changes;
+}
+
+/// Store purchases are never available. The default until a store
+/// integration provides a verified implementation.
+final class UnavailableNativePurchaseAvailability
+    implements NativePurchaseAvailability {
+  const UnavailableNativePurchaseAvailability();
+
+  @override
+  bool get isAvailable => false;
+
+  @override
+  Stream<bool> get changes => const Stream<bool>.empty();
+}
+
+/// Starts a platform store purchase. Only reached on [PurchaseChannel.native].
+abstract interface class NativePurchaseLauncher {
+  /// Buys [productKey], the plan or credit pack; returns whether the purchase
+  /// completed.
+  Future<bool> launch(String productKey);
+}
+
+/// Starts nothing. The default until a store integration replaces it.
+final class NoopNativePurchaseLauncher implements NativePurchaseLauncher {
+  const NoopNativePurchaseLauncher();
+
+  @override
+  Future<bool> launch(String productKey) async => false;
+}
+
+/// Whether [platform] (default: the running target) ships through the App
+/// Store, where external purchases are never offered.
+bool isAppStorePlatform({TargetPlatform? platform}) {
+  if (kIsWeb && platform == null) return false;
+  final target = platform ?? defaultTargetPlatform;
+  return target == TargetPlatform.iOS || target == TargetPlatform.macOS;
+}
+
+/// Resolves the channel from the platform and store availability. The
+/// platform alone never selects [PurchaseChannel.native].
 PurchaseChannel resolvePurchaseChannel({
+  required bool nativeAvailable,
   TargetPlatform? platform,
-  PurchaseChannel appleChannel = appleStorePurchaseChannel,
 }) {
-  if (kIsWeb && platform == null) return PurchaseChannel.external;
-  return switch (platform ?? defaultTargetPlatform) {
-    TargetPlatform.iOS || TargetPlatform.macOS => appleChannel,
-    _ => PurchaseChannel.external,
-  };
+  if (!isAppStorePlatform(platform: platform)) return PurchaseChannel.external;
+  return nativeAvailable ? PurchaseChannel.native : PurchaseChannel.unavailable;
 }
 
-/// Whether an upgrade, plan or credits call to action may be shown.
-bool showsPurchaseEntryPoints(PurchaseChannel channel) =>
-    channel != PurchaseChannel.unavailable;
+/// Provides store availability and the purchase launcher to a subtree. Without
+/// a scope, store purchases are unavailable and the launcher starts nothing.
+class PurchaseScope extends InheritedWidget {
+  const PurchaseScope({
+    required super.child,
+    this.availability = const UnavailableNativePurchaseAvailability(),
+    this.launcher = const NoopNativePurchaseLauncher(),
+    super.key,
+  });
 
-/// A store purchase request. [productKey] names the plan or credit pack.
-typedef NativePurchaseHook = Future<bool> Function(String productKey);
+  final NativePurchaseAvailability availability;
+  final NativePurchaseLauncher launcher;
 
-/// Starts a store purchase on the [PurchaseChannel.native] channel. It returns
-/// false until a store integration replaces it.
-NativePurchaseHook startNativePurchase = (_) async => false;
+  static const _fallback = PurchaseScope(child: SizedBox.shrink());
 
-const _firstPartyHost = 'tuturuuu.com';
+  /// The nearest scope, or the unavailable defaults.
+  static PurchaseScope of(BuildContext context) =>
+      context.dependOnInheritedWidgetOfExactType<PurchaseScope>() ?? _fallback;
 
-/// First-party path segments that sell plans, credits or subscriptions.
-/// Storefront and inventory checkouts sell a workspace's own goods and are
-/// not Tuturuuu purchases, so `checkout` is not matched.
-const _purchaseSegments = {
-  'billing',
-  'pricing',
-  'upgrade',
-  'subscribe',
-  'subscription',
-  'subscriptions',
-  'top-up',
-  'topup',
-};
-
-/// Hosts whose every page belongs to a Tuturuuu purchase flow.
-const _purchaseHosts = {'pay.$_firstPartyHost', 'polar.sh'};
-
-/// Whether [uri] opens a Tuturuuu plan, credit or subscription purchase page.
-bool isExternalPurchaseUri(Uri uri) {
-  final scheme = uri.scheme.toLowerCase();
-  if (scheme != 'https' && scheme != 'http') return false;
-  final host = uri.host.toLowerCase();
-  if (host.isEmpty) return false;
-  for (final purchaseHost in _purchaseHosts) {
-    if (host == purchaseHost || host.endsWith('.$purchaseHost')) return true;
-  }
-  final firstParty =
-      host == _firstPartyHost || host.endsWith('.$_firstPartyHost');
-  if (!firstParty) return false;
-  return uri.pathSegments.any(
-    (segment) => _purchaseSegments.contains(segment.toLowerCase()),
-  );
+  @override
+  bool updateShouldNotify(PurchaseScope oldWidget) =>
+      availability != oldWidget.availability || launcher != oldWidget.launcher;
 }
-
-/// Whether the app may open [uri]. External purchase pages open only on the
-/// [PurchaseChannel.external] channel; every other link is unaffected.
-bool allowsPurchaseNavigation(Uri uri, {PurchaseChannel? channel}) =>
-    (channel ?? resolvePurchaseChannel()) == PurchaseChannel.external ||
-    !isExternalPurchaseUri(uri);

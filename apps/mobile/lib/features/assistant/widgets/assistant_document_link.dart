@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:mobile/core/platform/purchase_channel.dart';
+import 'package:mobile/core/platform/purchase_links.dart';
 import 'package:mobile/core/ui/ui.dart';
 import 'package:mobile/l10n/l10n.dart';
 import 'package:url_launcher/url_launcher.dart';

@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:mobile/core/platform/purchase_channel.dart';
+import 'package:mobile/core/platform/purchase_links.dart';
 import 'package:mobile/core/router/link_browser_preference.dart';
 import 'package:mobile/core/ui/ui.dart';
 import 'package:mobile/l10n/l10n.dart';
@@ -7,9 +7,10 @@ import 'package:url_launcher/url_launcher.dart';
 
 typedef MobileLinkLaunch = Future<bool> Function(Uri uri, LaunchMode mode);
 
-/// Ordinary web links honor the device preference. External purchase pages
-/// open only on the external [PurchaseChannel]. Authentication callbacks,
-/// signed downloads and app-store update flows use their dedicated launchers.
+/// Ordinary web links honor the device preference. App Store builds never
+/// open an external purchase page (see [allowsPurchaseNavigation]).
+/// Authentication callbacks, signed downloads and app-store update flows use
+/// their dedicated launchers.
 Future<bool> launchMobileLink(
   Uri uri, {
   MobileLinkLaunch? launch,

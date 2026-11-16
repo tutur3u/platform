@@ -93,9 +93,9 @@ class AssistantLiveUiState extends Equatable {
 
     // Tier gate: explain requirement once here; plan rows in the sheet carry
     // workspace/source details (avoid duplicating the access summary string).
-    // Without a purchase channel, name no plan the user cannot buy here.
+    // App Store builds name no plan to buy outside the store.
     if (kind == AssistantLiveUiKind.unavailable && showBlockedReason) {
-      return showsPurchaseEntryPoints(resolvePurchaseChannel())
+      return !isAppStorePlatform()
           ? l10n.assistantLiveTierRequired
           : l10n.assistantLiveTierUnavailable;
     }

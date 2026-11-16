@@ -6,39 +6,52 @@ audience: developers
 ---
 
 The Flutter app decides how a plan, credit or subscription purchase may start
-through one seam, `PurchaseChannel` in
-`apps/mobile/lib/core/platform/purchase_channel.dart`.
+through one seam in `apps/mobile/lib/core/platform/`:
 
-| Platform | Channel | Behavior |
-|---|---|---|
-| Android, Windows, Linux, web | `external` | Purchase links open the Tuturuuu web billing pages. |
-| iOS, macOS (App Store builds) | `unavailable` | No external purchase link opens; upgrade entry points are hidden. |
+- `purchase_channel.dart`: `PurchaseChannel`, `resolvePurchaseChannel`,
+  `NativePurchaseAvailability`, `NativePurchaseLauncher` and `PurchaseScope`.
+- `purchase_entry_point.dart`: `PurchaseEntryPoint`, the widget every upgrade,
+  plan or credits call to action renders through.
+- `purchase_links.dart`: the external purchase URL policy.
+
+| Platform | Store available | Channel | Behavior |
+|---|---|---|---|
+| Android, Windows, Linux, web | n/a | `external` | Purchase links open the Tuturuuu web billing pages. |
+| iOS, macOS | no (default) | `unavailable` | Calls to action are hidden; no external purchase link opens. |
+| iOS, macOS | yes | `native` | Calls to action start `NativePurchaseLauncher.launch`; external purchase links still never open. |
 
 App Store Guidelines 3.1.1 and 3.1.3 forbid the Apple builds from linking to a
-purchase made outside StoreKit. When StoreKit purchases are wired,
-`appleStorePurchaseChannel` becomes `native` and upgrade entry points call
-`startNativePurchase` instead of a web page.
+purchase made outside StoreKit. The platform alone never selects `native`: a
+`NativePurchaseAvailability` must report true, meaning the server verified store
+purchases for the build and the store returned the products. Without a
+`PurchaseScope`, availability is always false and the launcher is a no-op.
 
 ## Rules
 
 - Paid entitlements a user already holds stay usable on every channel. Tier
   badges, credit balances and the current plan name are displays, not offers.
-- Off the `external` channel, `launchMobileLink`, assistant document links and
-  Mastermind catch-up links refuse first-party purchase URLs: any
-  `tuturuuu.com` path with a `pricing`, `billing`, `upgrade`, `subscribe`,
-  `subscription(s)` or `top-up` segment, every `pay.tuturuuu.com` page and
-  Polar hosts. Other links, including storefront and inventory checkouts that
-  sell a workspace's own goods, are unaffected.
-- On the `unavailable` channel, a locked feature says it is not available on
-  the current plan without naming a plan to buy. Mira Live uses
+- Render purchase calls to action through `PurchaseEntryPoint`. Its first frame
+  uses the synchronous `isAvailable` answer, then follows the `changes` stream,
+  so the check never blocks a frame and the call to action stays hidden on iOS
+  and macOS until availability resolves to true.
+- On iOS and macOS, `launchMobileLink`, assistant document links and Mastermind
+  catch-up links refuse first-party purchase URLs: any `tuturuuu.com` path with
+  a `pricing`, `billing`, `upgrade`, `subscribe`, `subscription(s)` or `top-up`
+  segment, every `pay.tuturuuu.com` page and Polar hosts. Other links,
+  including storefront and inventory checkouts that sell a workspace's own
+  goods, are unaffected.
+- On iOS and macOS, a locked feature says it is not available on the current
+  plan without naming a plan to buy. Mira Live uses
   `assistantLiveTierUnavailable` for this.
-- Show an upgrade, plan or credits call to action only when
-  `showsPurchaseEntryPoints(resolvePurchaseChannel())` is true.
 
 ## Regression coverage
 
 - `apps/mobile/test/core/platform/purchase_channel_test.dart`: channel per
-  platform, the native switch, purchase URL matching and link refusal on iOS
-  and macOS.
+  platform and store availability, and the unavailable defaults.
+- `apps/mobile/test/core/platform/purchase_entry_point_test.dart`: the call to
+  action hidden until availability resolves, the native launcher, and the
+  external channel elsewhere.
+- `apps/mobile/test/core/platform/purchase_links_test.dart`: purchase URL
+  matching and link refusal on iOS and macOS.
 - `apps/mobile/test/features/assistant/widgets/assistant_live_purchase_gating_test.dart`:
   the Live tier message on iOS and macOS versus Android and Windows.
