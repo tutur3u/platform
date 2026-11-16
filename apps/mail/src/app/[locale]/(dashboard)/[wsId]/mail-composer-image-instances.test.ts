@@ -17,7 +17,10 @@ import { createElement } from 'react';
 import { afterEach, beforeAll, describe, expect, it, vi } from 'vitest';
 import type { MailImageNodes } from './mail-composer-image-nodes';
 import type { MailMediaOwner } from './mail-composer-upload-state';
-import { MailUploadStore } from './mail-composer-upload-store';
+import {
+  type MailUploadDeps,
+  MailUploadStore,
+} from './mail-composer-upload-store';
 import {
   attachment,
   flush,
@@ -88,7 +91,7 @@ async function open({
       mailboxId: OWNER.mailboxId,
       workspaceId: OWNER.workspaceId,
     }),
-    upload: vi.fn(async ({ inline }: { inline: boolean }) =>
+    upload: vi.fn<MailUploadDeps['upload']>(async ({ inline }) =>
       attachment(`att${++uploaded}`, inline ? 'inline' : 'attachment')
     ),
   };
