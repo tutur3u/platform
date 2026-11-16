@@ -1,0 +1,51 @@
+---
+title: 'Citation helper'
+description: 'Create APA 7 and Harvard citations from source metadata or manual fields.'
+---
+
+The Tuturuuu citation helper lives at `/cite` in `apps/web`. It accepts a DOI,
+ISBN, source URL, or manual fields and formats a reference-list entry and an
+in-text citation. APA 7 is the default; Harvard uses the official RMIT University
+Harvard CSL style. Formatting runs locally with citeproc-js and requires no AI
+credits. Reference and in-text outputs can each be copied.
+
+The compatibility label is **Compatible with RMIT Easy Cite styles**. This is an
+independent Tuturuuu tool. RMIT Easy Cite prose and examples are not included.
+Tests use synthetic works. Style and engine attribution accompanies the tool.
+
+## Source metadata
+
+The shared internal API client calls `POST /api/v1/cite/lookup`. DOI metadata comes
+from Crossref and ISBN metadata from Open Library. Webpage metadata fetches use
+the exact HTTPS hosts `en.wikipedia.org`, `www.nature.com` and `arxiv.org`;
+unsupported URLs require manual entry. Review
+imported authors, titles and dates before copying a citation. Missing metadata
+must be completed manually rather than inferred by AI.
+
+Network lookup runs on the server without provider keys. Requests have bounded
+input and streamed response sizes, an aggregate timeout and no automatic retry.
+Redirects are rejected. Allowed webpage hosts resolve to public addresses and
+connections pin the validated address. Upstream failures leave manual entry
+available. Lookup does not create a saved citation library or upload a document.
+
+Anonymous lookup is allowed. Before a lookup, an atomic shared-store reservation
+enforces 10 requests per Cloudflare client IP per minute and 120 requests globally
+per minute. Only `CF-Connecting-IP` supplies the client identity; other forwarding
+headers are ignored. Missing client identity or an exhausted limit returns `429`;
+unavailable budget storage returns `503`. Both include `Retry-After`. The lookup
+fails closed and manual formatting remains available. Counter keys use a digest
+of the normalized IP and expire after two minutes. Lookup logs contain fixed
+categories only, never source URLs or titles.
+
+## Scope and verification
+
+This slice supports books, journal articles and webpages. It does not include
+document-wide disambiguation, saved libraries, browser extensions, Office add-ins,
+or AI revision. Additional styles and integrations are follow-up slices. EduFest
+timing and its Tuturuuu surface remain an open product decision.
+
+Regression coverage lives in `apps/web/src/lib/cite/format.test.ts`, the metadata
+tests beside it, `apps/web/src/app/api/v1/cite/lookup/route.test.ts`, and the public
+route tests. Release acceptance also requires the real web build and browser
+checks at 390px and 1440px in light and dark themes, including lookup failures,
+manual recovery, style switching and copy actions.

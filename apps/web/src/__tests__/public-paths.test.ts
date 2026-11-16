@@ -2,6 +2,11 @@ import { describe, expect, it } from 'vitest';
 import { APP_PUBLIC_PATHS } from '@/constants/public_paths';
 
 describe('app public paths', () => {
+  it('allows anonymous access to the citation helper in both locales', () => {
+    expect(APP_PUBLIC_PATHS).toEqual(
+      expect.arrayContaining(['/cite', '/en/cite', '/vi/cite'])
+    );
+  });
   it('allows anonymous crawlers to reach actual localized legal document URLs', () => {
     for (const document of ['dpa', 'sla', 'subprocessors']) {
       for (const locale of ['', '/en', '/vi']) {

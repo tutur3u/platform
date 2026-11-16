@@ -4286,6 +4286,101 @@
     "visitor_name": "Name",
     "visitor_phone": "Phone"
   },
+  "cite": {
+    "attribution": {
+      "engine_license": "Used under the Common Public Attribution License.",
+      "engine_license_link": "CPAL license",
+      "engine_notice": "citeproc-js (c) Frank Bennett. citeproc-js implements the Citation Style Language.",
+      "engine_source": "citeproc-js source",
+      "heading": "Credits",
+      "independence": "Independent Tuturuuu tool, not affiliated with or endorsed by RMIT.",
+      "styles": "Styles from the Citation Style Language project, licensed under CC BY-SA 3.0.",
+      "styles_source": "CSL styles"
+    },
+    "authors": {
+      "add": "Add author",
+      "family": "Family name or organisation",
+      "given": "Given names",
+      "hint": "Use the family name field for an organisation. Leave it blank when no author is listed.",
+      "invalid": "Each author needs a family name or organisation.",
+      "legend": "Authors",
+      "remove": "Remove author {number}"
+    },
+    "compatibility": "Compatible with RMIT Easy Cite styles",
+    "details": {
+      "heading": "Source details",
+      "invalid_value": "Check this value.",
+      "invalid_year": "Enter a year with up to four digits.",
+      "reset": "Clear all",
+      "type_label": "Source type",
+      "types": {
+        "article-journal": "Journal article",
+        "book": "Book",
+        "webpage": "Web page"
+      }
+    },
+    "fields": {
+      "accessed": "Date accessed",
+      "DOI": "DOI",
+      "ISBN": "ISBN",
+      "issue": "Issue",
+      "journal": "Journal",
+      "pages": "Pages",
+      "publisher": "Publisher",
+      "publisherPlace": "Place of publication",
+      "title": "Title",
+      "URL": "URL",
+      "volume": "Volume",
+      "website": "Website name",
+      "year": "Year"
+    },
+    "lookup": {
+      "dismiss": "Keep my edits",
+      "errors": {
+        "INVALID_INPUT": "Enter a DOI, ISBN or web address.",
+        "LOOKUP_UNAVAILABLE": "Lookup is unavailable right now. Enter the details manually.",
+        "NOT_FOUND": "No source matched. Check the identifier or enter the details manually.",
+        "RATE_LIMITED": "Too many lookups for now. Wait a minute or enter the details manually.",
+        "RESPONSE_TOO_LARGE": "That source is too large to read. Enter the details manually.",
+        "TIMEOUT": "The lookup took too long. Try again or enter the details manually.",
+        "UPSTREAM_ERROR": "The source service didn’t respond correctly. Try again or enter the details manually."
+      },
+      "label": "DOI, ISBN or URL",
+      "loading": "Looking up source…",
+      "manual": "This page can’t be read automatically. Complete the details below.",
+      "manual_entry": "Enter details manually",
+      "placeholder": "10.1234/example.5678 or https://…",
+      "retry": "Try again",
+      "review": "Details imported. Check them against the source before copying.",
+      "stale": "The lookup finished after you edited the details. Your edits are kept.",
+      "stale_apply": "Replace with lookup",
+      "submit": "Find source"
+    },
+    "metadata": {
+      "description": "Create APA 7 and Harvard references and in-text citations from a DOI, ISBN or URL, or from details you enter.",
+      "title": "Citation generator"
+    },
+    "output": {
+      "copied": "Copied",
+      "copy": "Copy",
+      "copy_failed": "Copying was blocked. Select the text and press Ctrl+C (⌘C on Mac).",
+      "copy_in_text": "Copy in-text citation",
+      "copy_reference": "Copy reference",
+      "failed": "This citation couldn’t be formatted. Check the details.",
+      "heading": "Citation",
+      "in_text": "In-text citation",
+      "incomplete": "Add a title to create the citation.",
+      "invalid": "Fix the highlighted details to update the citation.",
+      "reference": "Reference list",
+      "review": "Check the imported details before you copy.",
+      "style_label": "Citation style",
+      "styles": {
+        "apa": "APA 7th",
+        "harvard": "Harvard"
+      }
+    },
+    "title": "Citation generator"
+  },
   "command_launcher": {
     "aliases_slot": "Also matches: {aliases}",
     "app_categories": {

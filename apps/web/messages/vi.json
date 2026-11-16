@@ -4286,6 +4286,101 @@
     "visitor_name": "Tên",
     "visitor_phone": "Số điện thoại"
   },
+  "cite": {
+    "attribution": {
+      "engine_license": "Sử dụng theo Giấy phép Common Public Attribution License.",
+      "engine_license_link": "Giấy phép CPAL",
+      "engine_notice": "citeproc-js (c) Frank Bennett. citeproc-js implements the Citation Style Language.",
+      "engine_source": "Mã nguồn citeproc-js",
+      "heading": "Ghi công",
+      "independence": "Công cụ độc lập của Tuturuuu, không liên kết hay được RMIT chứng thực.",
+      "styles": "Kiểu trích dẫn từ dự án Citation Style Language, cấp phép theo CC BY-SA 3.0.",
+      "styles_source": "Kho kiểu CSL"
+    },
+    "authors": {
+      "add": "Thêm tác giả",
+      "family": "Họ hoặc tên tổ chức",
+      "given": "Tên",
+      "hint": "Dùng ô họ cho tên tổ chức. Để trống nếu nguồn không ghi tác giả.",
+      "invalid": "Mỗi tác giả cần có họ hoặc tên tổ chức.",
+      "legend": "Tác giả",
+      "remove": "Xóa tác giả {number}"
+    },
+    "compatibility": "Compatible with RMIT Easy Cite styles",
+    "details": {
+      "heading": "Thông tin nguồn",
+      "invalid_value": "Hãy kiểm tra giá trị này.",
+      "invalid_year": "Hãy nhập năm có tối đa bốn chữ số.",
+      "reset": "Xóa tất cả",
+      "type_label": "Loại nguồn",
+      "types": {
+        "article-journal": "Bài báo khoa học",
+        "book": "Sách",
+        "webpage": "Trang web"
+      }
+    },
+    "fields": {
+      "accessed": "Ngày truy cập",
+      "DOI": "DOI",
+      "ISBN": "ISBN",
+      "issue": "Số",
+      "journal": "Tạp chí",
+      "pages": "Trang",
+      "publisher": "Nhà xuất bản",
+      "publisherPlace": "Nơi xuất bản",
+      "title": "Tiêu đề",
+      "URL": "URL",
+      "volume": "Tập",
+      "website": "Tên trang web",
+      "year": "Năm"
+    },
+    "lookup": {
+      "dismiss": "Giữ nội dung đã sửa",
+      "errors": {
+        "INVALID_INPUT": "Hãy nhập DOI, ISBN hoặc địa chỉ web.",
+        "LOOKUP_UNAVAILABLE": "Tính năng tìm kiếm hiện không khả dụng. Hãy nhập thông tin thủ công.",
+        "NOT_FOUND": "Không tìm thấy nguồn phù hợp. Hãy kiểm tra mã định danh hoặc nhập thông tin thủ công.",
+        "RATE_LIMITED": "Bạn đã tìm kiếm quá nhiều lần. Hãy đợi một phút hoặc nhập thông tin thủ công.",
+        "RESPONSE_TOO_LARGE": "Nguồn này quá lớn để đọc. Hãy nhập thông tin thủ công.",
+        "TIMEOUT": "Tìm kiếm mất quá nhiều thời gian. Hãy thử lại hoặc nhập thông tin thủ công.",
+        "UPSTREAM_ERROR": "Dịch vụ nguồn phản hồi không đúng. Hãy thử lại hoặc nhập thông tin thủ công."
+      },
+      "label": "DOI, ISBN hoặc URL",
+      "loading": "Đang tìm nguồn…",
+      "manual": "Không thể tự đọc trang này. Hãy điền thông tin bên dưới.",
+      "manual_entry": "Nhập thông tin thủ công",
+      "placeholder": "10.1234/example.5678 hoặc https://…",
+      "retry": "Thử lại",
+      "review": "Đã nhập thông tin. Hãy đối chiếu với nguồn trước khi sao chép.",
+      "stale": "Kết quả tìm kiếm đến sau khi bạn đã sửa thông tin. Nội dung bạn sửa vẫn được giữ.",
+      "stale_apply": "Thay bằng kết quả tìm kiếm",
+      "submit": "Tìm nguồn"
+    },
+    "metadata": {
+      "description": "Tạo tài liệu tham khảo và trích dẫn trong bài theo APA 7 và Harvard từ DOI, ISBN, URL hoặc thông tin bạn nhập.",
+      "title": "Tạo trích dẫn"
+    },
+    "output": {
+      "copied": "Đã sao chép",
+      "copy": "Sao chép",
+      "copy_failed": "Không thể sao chép tự động. Hãy chọn văn bản và nhấn Ctrl+C (⌘C trên Mac).",
+      "copy_in_text": "Sao chép trích dẫn trong bài",
+      "copy_reference": "Sao chép tài liệu tham khảo",
+      "failed": "Không thể định dạng trích dẫn này. Hãy kiểm tra thông tin.",
+      "heading": "Trích dẫn",
+      "in_text": "Trích dẫn trong bài",
+      "incomplete": "Thêm tiêu đề để tạo trích dẫn.",
+      "invalid": "Hãy sửa các thông tin được đánh dấu để cập nhật trích dẫn.",
+      "reference": "Danh mục tài liệu tham khảo",
+      "review": "Hãy kiểm tra thông tin đã nhập trước khi sao chép.",
+      "style_label": "Kiểu trích dẫn",
+      "styles": {
+        "apa": "APA 7",
+        "harvard": "Harvard"
+      }
+    },
+    "title": "Tạo trích dẫn"
+  },
   "command_launcher": {
     "aliases_slot": "Cũng khớp: {aliases}",
     "app_categories": {

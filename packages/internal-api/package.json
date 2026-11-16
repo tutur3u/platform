@@ -26,6 +26,11 @@
     "type-check": "tsc --project tsconfig.typecheck.json"
   },
   "exports": {
+    "./cite": {
+      "types": "./dist/cite.d.ts",
+      "import": "./dist/cite.js",
+      "require": "./dist/cite.js"
+    },
     ".": {
       "types": "./dist/index.d.ts",
       "import": "./dist/index.js",

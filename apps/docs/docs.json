@@ -95,6 +95,7 @@
             "group": "Features",
             "pages": [
               "platform/features/search-indexing",
+              "platform/features/citation-helper",
               "platform/features/legal-publications",
               "platform/features/command-center-dashboard",
               "platform/features/document-hierarchy",

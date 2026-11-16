@@ -1,0 +1,22 @@
+[
+  {
+    "file": "apa.csl",
+    "source": "https://raw.githubusercontent.com/citation-style-language/styles/bcae404e9f8130cc2b94b0749d53514212a15a4a/apa.csl",
+    "sha256": "3917def5fc951b104d64216c3373096042368b9704ba269ca83c14ebaba889fc"
+  },
+  {
+    "file": "rmit-university-harvard.csl",
+    "source": "https://raw.githubusercontent.com/citation-style-language/styles/bcae404e9f8130cc2b94b0749d53514212a15a4a/rmit-university-harvard.csl",
+    "sha256": "49c82478ba5c2a5dc7617aa60862e56e7af859ab5f0edb99d5040daff413142c"
+  },
+  {
+    "file": "locales-en-US.xml",
+    "source": "https://raw.githubusercontent.com/citation-style-language/locales/14940e56f7c783e4173cafbd92e0f5856f2caa14/locales-en-US.xml",
+    "sha256": "ac864c7c21166b4390d82c31792cdc509400727fa0060b43d8aa17e07f9cb079"
+  },
+  {
+    "file": "locales-en-GB.xml",
+    "source": "https://raw.githubusercontent.com/citation-style-language/locales/14940e56f7c783e4173cafbd92e0f5856f2caa14/locales-en-GB.xml",
+    "sha256": "e4a1fed9cec04b5fed5e9027b4055925cd4d8f7c9fe233eb0ceca6d4be3999f6"
+  }
+]
