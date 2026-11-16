@@ -550,6 +550,27 @@
     "switch_failed_description": "Tài khoản này đã bị xóa. Vui lòng thêm lại để tiếp tục sử dụng.",
     "unknown_user": "Người dùng không xác định"
   },
+  "account-deletion-public": {
+    "cannot-sign-in": "Không thể đăng nhập? Gửi email đến <email>privacy@tuturuuu.com</email> để yêu cầu xóa. Xem <policy>Chính sách quyền riêng tư</policy> để biết chi tiết.",
+    "deleted-memberships": "Tư cách thành viên không gian làm việc và chỗ ngồi của bạn trong các không gian làm việc chung.",
+    "deleted-sign-in": "Tài khoản đăng nhập của bạn. Bạn sẽ không thể đăng nhập bằng tài khoản này nữa.",
+    "deleted-title": "Dữ liệu bị xóa",
+    "deleted-workspaces": "Các không gian làm việc nhóm mà bạn là thành viên duy nhất, cùng các gói đăng ký của chúng.",
+    "description": "Áp dụng cho các ứng dụng Tuturuuu và tuturuuu.com, do Công ty Cổ phần Tuturuuu (Tuturuuu JSC) cung cấp.",
+    "kept-ai-metadata": "Siêu dữ liệu yêu cầu AI được lưu giữ 365 ngày theo mặc định.",
+    "kept-backups": "Dữ liệu đã xóa có thể còn trong bản sao lưu được mã hóa trong một chu kỳ luân chuyển có giới hạn.",
+    "kept-billing": "Hồ sơ thanh toán và thuế được lưu giữ trong thời hạn pháp luật yêu cầu.",
+    "kept-profile": "Hồ sơ và địa chỉ email của bạn được đánh dấu là đã xóa thay vì bị xóa hẳn.",
+    "kept-security-logs": "Nhật ký bảo mật và chống lạm dụng được lưu giữ theo mức độ rủi ro và nhu cầu vận hành.",
+    "kept-shared-content": "Nội dung bạn đã thêm vào các không gian làm việc chung với người khác vẫn ở lại trong các không gian đó.",
+    "kept-title": "Dữ liệu được giữ lại",
+    "sign-in": "Đăng nhập để xóa tài khoản",
+    "step-confirm": "Nhập địa chỉ email để xác nhận, sau đó chọn Xóa vĩnh viễn tài khoản của tôi.",
+    "step-sign-in": "Đăng nhập vào tài khoản bạn muốn xóa.",
+    "step-subscriptions": "Hủy mọi gói trả phí trên không gian làm việc nhóm mà bạn là thành viên duy nhất.",
+    "steps-title": "Cách xóa tài khoản",
+    "title": "Xóa tài khoản Tuturuuu của bạn"
+  },
   "admin-holidays": {
     "actions": "Thao tác",
     "add": "Thêm",

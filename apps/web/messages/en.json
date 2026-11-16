@@ -550,6 +550,27 @@
     "switch_failed_description": "This account has been removed. Please add it again to continue using it.",
     "unknown_user": "Unknown User"
   },
+  "account-deletion-public": {
+    "cannot-sign-in": "Can't sign in? Email <email>privacy@tuturuuu.com</email> to request deletion. See the <policy>Privacy Policy</policy> for details.",
+    "deleted-memberships": "Your workspace memberships, and your seats in shared workspaces.",
+    "deleted-sign-in": "Your sign-in account. You can no longer sign in with it.",
+    "deleted-title": "What is deleted",
+    "deleted-workspaces": "Team workspaces where you are the only member, and their subscriptions.",
+    "description": "For the Tuturuuu apps and tuturuuu.com, provided by Tuturuuu JSC.",
+    "kept-ai-metadata": "AI request metadata is kept for 365 days by default.",
+    "kept-backups": "Deleted data may remain in encrypted backups for a limited rotation period.",
+    "kept-billing": "Billing and tax records are kept for the periods the law requires.",
+    "kept-profile": "Your profile record and email address are marked as deleted rather than erased.",
+    "kept-security-logs": "Security and abuse logs are kept according to risk and operational need.",
+    "kept-shared-content": "Content you added to workspaces shared with others stays in those workspaces.",
+    "kept-title": "What is kept",
+    "sign-in": "Sign in to delete your account",
+    "step-confirm": "Type your email address to confirm, then select Permanently Delete My Account.",
+    "step-sign-in": "Sign in to the account you want to delete.",
+    "step-subscriptions": "Cancel any paid subscription on a team workspace where you are the only member.",
+    "steps-title": "How to delete your account",
+    "title": "Delete your Tuturuuu account"
+  },
   "admin-holidays": {
     "actions": "Actions",
     "add": "Add",

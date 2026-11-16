@@ -75,7 +75,7 @@ const womenInTechPageSource = source(
   'src/app/[locale]/(marketing)/women-in-tech/page.tsx'
 );
 const accountDeletePageSource = source(
-  'src/app/[locale]/(marketing)/account/delete/page.tsx'
+  'src/app/[locale]/(marketing)/account/delete/delete-account-flow.tsx'
 );
 const brandingClientSource = source(
   'src/app/[locale]/(marketing)/branding/branding-client.tsx'

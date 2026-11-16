@@ -2,8 +2,18 @@
 title: "Account and workspace deletion"
 description: "Deletion behavior, billing cleanup and privacy-request limits."
 audience: developers
-updatedAt: "2026-11-01"
+updatedAt: "2026-11-16"
 ---
+
+## Public deletion page
+
+`/account/delete` on `apps/web` is the account-deletion URL in every store listing (`urls.accountDeletion` in `apps/mobile/store/metadata/*.json`), so it must work without signing in.
+
+- **Signed out (default):** a static page names Tuturuuu and Tuturuuu JSC, lists the deletion steps, what is deleted and what is kept, and links to `/login?nextUrl=/account/delete`. It links `privacy@tuturuuu.com` for people who cannot sign in. The render makes no account, user or workspace lookups and reflects nothing from the request URL.
+- **Signed in:** the page renders the existing deletion flow unchanged. The `/api/v1/users/me/delete` pre-check and deletion stay behind session auth, email confirmation, the paid-subscription block and the rate limit.
+- **Retention copy:** the "what is kept" list restates the Privacy Policy retention terms (`packages/legal/src/documents.ts`, served at `/privacy`) and the current database behavior: deleting the auth user marks `user_private_details` as deleted and removes workspace memberships, while the `public.users` profile row remains. Update the copy in `account-deletion-public` (en and vi) whenever either changes.
+
+The route stays on the existing `APP_PUBLIC_PATHS` entry; no proxy allowlist changes. Regression coverage: `apps/web/src/app/[locale]/(marketing)/account/delete/page.test.tsx`.
 
 ## Billing cleanup before deletion
 
