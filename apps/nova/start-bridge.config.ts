@@ -3,7 +3,8 @@ import { defineBridgeAppConfig } from '@tuturuuu/start-bridge/start/app-config';
 export default defineBridgeAppConfig({
   mounts: {
     rootHosts: ['nova.tuturuuu.com', 'nova.ai.vn', 'nova.tutur3u.com'],
-    mountHosts: [],
+    mountHosts: ['tuturuuu.com'],
+    basePath: '/nova',
     unknownHost: 'reject',
   },
   async wrapResponse(response, { request }) {

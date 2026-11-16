@@ -200,8 +200,8 @@ jobs:
       VITE_NOVA_NATIVE_PROFILE: production
       NEXT_PUBLIC_SUPABASE_URL: ${{ vars.PRODUCTION_SUPABASE_URL }}
       NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY: ${{ vars.PRODUCTION_SUPABASE_PUBLISHABLE_KEY }}
-      NEXT_PUBLIC_APP_URL: https://nova.ai.vn
-      NEXT_PUBLIC_NOVA_APP_URL: https://nova.ai.vn
+      NEXT_PUBLIC_APP_URL: https://tuturuuu.com/nova
+      NEXT_PUBLIC_NOVA_APP_URL: https://tuturuuu.com/nova
       NEXT_PUBLIC_WEB_APP_URL: https://tuturuuu.com
       WRANGLER_SEND_METRICS: 'false'
     steps:
@@ -218,8 +218,11 @@ jobs:
       - run: bun install --frozen-lockfile --ignore-scripts
       - name: Require production public build inputs
         run: |
-          test -n "$NEXT_PUBLIC_SUPABASE_URL"
+          test "$NEXT_PUBLIC_APP_URL" = "https://tuturuuu.com/nova"
+          test "$NEXT_PUBLIC_NOVA_APP_URL" = "https://tuturuuu.com/nova"
+          test "$NEXT_PUBLIC_SUPABASE_URL" = "https://nzamlzqfdwaaxdefwraj.supabase.co"
           test -n "$NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY"
+          test "$NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY" != "sb_publishable_nova_ci_placeholder"
       - name: Build app suppliers
         uses: ./.github/actions/run-with-turbo-remote-cache
         with:
@@ -274,9 +277,9 @@ jobs:
     env:
       SOURCE_SHA: ${{ github.event.pull_request.head.sha || github.sha }}
       TRUSTED: ${{ github.ref == 'refs/heads/main' && (github.event_name == 'push' || github.event_name == 'workflow_dispatch') }}
-      NEXT_PUBLIC_SUPABASE_URL: ${{ (github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository) && vars.PRODUCTION_SUPABASE_URL || 'https://nova-ci.supabase.invalid' }}
-      NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY: ${{ (github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository) && vars.PRODUCTION_SUPABASE_PUBLISHABLE_KEY || 'sb_publishable_nova_ci_placeholder' }}
-      NEXT_PUBLIC_APP_URL: https://nova.tuturuuu.com
+      NEXT_PUBLIC_SUPABASE_URL: ${{ (github.ref == 'refs/heads/main' && (github.event_name == 'push' || github.event_name == 'workflow_dispatch')) && vars.PRODUCTION_SUPABASE_URL || 'https://nova-ci.supabase.invalid' }}
+      NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY: ${{ (github.ref == 'refs/heads/main' && (github.event_name == 'push' || github.event_name == 'workflow_dispatch')) && vars.PRODUCTION_SUPABASE_PUBLISHABLE_KEY || 'sb_publishable_nova_ci_placeholder' }}
+      NEXT_PUBLIC_APP_URL: ${{ (github.ref == 'refs/heads/main' && (github.event_name == 'push' || github.event_name == 'workflow_dispatch')) && 'https://tuturuuu.com/nova' || 'https://nova.tuturuuu.com' }}
       NEXT_PUBLIC_WEB_APP_URL: https://tuturuuu.com
       WRANGLER_SEND_METRICS: 'false'
       NODE_OPTIONS: --max-old-space-size=8192
@@ -291,6 +294,13 @@ jobs:
       - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
         with:
           node-version: 24.22.0
+      - name: Require the trusted production public URL and host
+        if: env.TRUSTED == 'true'
+        run: |
+          test "$NEXT_PUBLIC_APP_URL" = "https://tuturuuu.com/nova"
+          test "$NEXT_PUBLIC_SUPABASE_URL" = "https://nzamlzqfdwaaxdefwraj.supabase.co"
+          test -n "$NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY"
+          test "$NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY" != "sb_publishable_nova_ci_placeholder"
       - run: bash scripts/ci/run-with-backoff.sh bun install --frozen-lockfile --ignore-scripts
       - name: Generate build metadata
         env:
@@ -323,11 +333,16 @@ jobs:
           c.preview_urls = false;
           c.upload_source_maps = false;
           c.topLevelName = 'tuturuuu-nova';
+          const appUrl = process.env.NEXT_PUBLIC_APP_URL;
+          if (process.env.TRUSTED === 'true' && appUrl !== 'https://tuturuuu.com/nova') {
+            throw new Error('production artifact must bake https://tuturuuu.com/nova');
+          }
+          if (!appUrl) throw new Error('NEXT_PUBLIC_APP_URL is empty');
           c.vars = {
             TUTURUUU_NOINDEX: '0',
             NODE_ENV: 'production',
             TUTURUUU_REQUIRE_SECRETS: '1',
-            NEXT_PUBLIC_APP_URL: 'https://nova.tuturuuu.com',
+            NEXT_PUBLIC_APP_URL: appUrl,
             NEXT_PUBLIC_WEB_APP_URL: 'https://tuturuuu.com',
           };
           writeFileSync(path, `${JSON.stringify(c, null, 2)}\n`);
@@ -339,7 +354,12 @@ jobs:
           test -d apps/nova/dist/client
       - name: Pre-seal doctor on the production Host header
         timeout-minutes: 3
-        run: node scripts/ci/pre-seal-doctor.mjs nova apps/nova nova.tuturuuu.com "$SOURCE_SHA"
+        run: |
+          if [ "$TRUSTED" = true ]; then
+            node scripts/ci/pre-seal-doctor.mjs nova apps/nova nova.tuturuuu.com "$SOURCE_SHA" --expect-location https://tuturuuu.com/nova
+          else
+            node scripts/ci/pre-seal-doctor.mjs nova apps/nova nova.tuturuuu.com "$SOURCE_SHA"
+          fi
       - name: Validate, seal and pack the final production output
         env:
           NOVA_SOURCE_SHA: ${{ env.SOURCE_SHA }}

@@ -104,7 +104,7 @@ class NovaProductionCutoverTest(NovaServiceSealTest):
             "TUTURUUU_NOINDEX": "0",
             "NODE_ENV": "production",
             "TUTURUUU_REQUIRE_SECRETS": "1",
-            "NEXT_PUBLIC_APP_URL": "https://nova.tuturuuu.com",
+            "NEXT_PUBLIC_APP_URL": "https://tuturuuu.com/nova",
             "NEXT_PUBLIC_WEB_APP_URL": "https://tuturuuu.com",
         })
         self.assertEqual(self.production.NORMALIZED_DEFAULTS["services"], artifact.NORMALIZED_DEFAULTS["services"])

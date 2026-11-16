@@ -18,6 +18,7 @@ test('parseArgs reads the four positionals and defaults', () => {
     host: HOST,
     sha: SHA,
     expectRedirect: false,
+    expectLocation: null,
     config: DEFAULT_CONFIG,
   });
 });
@@ -57,6 +58,26 @@ test('parseArgs rejects malformed input', () => {
     () => parseArgs(['nova', 'apps/nova', HOST, 'abc123']),
     /40 lowercase hex/u
   );
+});
+
+test('judgeRoot accepts only the exact apex location when asked', () => {
+  const options = {
+    host: HOST,
+    expectRedirect: false,
+    expectLocation: 'https://tuturuuu.com/nova',
+  };
+  assert.deepEqual(
+    judgeRoot({ status: 307, location: 'https://tuturuuu.com/nova' }, options),
+    []
+  );
+  assert.match(
+    judgeRoot(
+      { status: 307, location: 'https://tuturuuu.com/nova/' },
+      options
+    )[0],
+    /expected https:\/\/tuturuuu.com\/nova/u
+  );
+  assert.match(judgeRoot({ status: 200 }, options)[0], /expected a redirect/u);
 });
 
 test('judgeRoot passes a 200 and fails 404, 503, 401 and 5xx naming the status and host', () => {

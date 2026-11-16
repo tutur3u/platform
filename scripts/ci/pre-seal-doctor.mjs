@@ -20,7 +20,7 @@ import { fileURLToPath } from 'node:url';
 // gateway variable (503) before bytes are sealed, not after a DNS flip.
 
 const USAGE =
-  'Usage: pre-seal-doctor.mjs <app> <artifact-dir> <production-host> <expected-commit-sha> [--expect-redirect] [--wave1 | --config <path-inside-artifact-dir>]';
+  'Usage: pre-seal-doctor.mjs <app> <artifact-dir> <production-host> <expected-commit-sha> [--expect-redirect] [--expect-location <https-url>] [--wave1 | --config <path-inside-artifact-dir>]';
 export const DEFAULT_CONFIG = 'dist/server/wrangler.json';
 // The wave-1 profile writes its sealed publication config here.
 export const WAVE1_CONFIG = 'dist/wave1/wrangler.json';
@@ -46,10 +46,38 @@ const SYNTHETIC_NAMES = [
 
 export function parseArgs(argv) {
   const positional = [];
-  const options = { expectRedirect: false, config: DEFAULT_CONFIG };
+  const options = {
+    expectRedirect: false,
+    expectLocation: null,
+    config: DEFAULT_CONFIG,
+  };
   for (let index = 0; index < argv.length; index += 1) {
     const arg = argv[index];
     if (arg === '--expect-redirect') options.expectRedirect = true;
+    else if (arg === '--expect-location') {
+      const value = argv[(index += 1)];
+      if (!value || value.startsWith('--'))
+        throw new Error(`--expect-location needs an https URL\n${USAGE}`);
+      let location;
+      try {
+        location = new URL(value);
+      } catch {
+        throw new Error(`--expect-location must be an https URL\n${USAGE}`);
+      }
+      if (
+        location.protocol !== 'https:' ||
+        location.username ||
+        location.password ||
+        location.search ||
+        location.hash ||
+        location.port ||
+        (location.pathname.length > 1 && location.pathname.endsWith('/'))
+      )
+        throw new Error(
+          `--expect-location must be an https URL with no query, hash, userinfo, or trailing slash\n${USAGE}`
+        );
+      options.expectLocation = location.href;
+    }
     else if (arg === '--wave1') options.config = WAVE1_CONFIG;
     else if (arg === '--config') {
       const value = argv[(index += 1)];
@@ -78,9 +106,21 @@ const describe = (response) =>
   `${response.status}${response.location ? ` -> ${response.location}` : ''}`;
 
 /** Judge the response to `GET /`. Returns a list of problems (empty = pass). */
-export function judgeRoot(response, { host, expectRedirect }) {
+export function judgeRoot(response, { host, expectRedirect, expectLocation }) {
   const where = `GET / with Host ${host}`;
   const { status } = response;
+  if (expectLocation) {
+    if (status < 300 || status >= 400)
+      return [
+        `${where} answered ${status}; expected a redirect to ${expectLocation}`,
+      ];
+    const location = response.location ?? '';
+    return location === expectLocation
+      ? []
+      : [
+          `${where} redirected to "${location}", expected ${expectLocation}`,
+        ];
+  }
   if (status === 200) return [];
   if (status >= 300 && status < 400) {
     if (!expectRedirect)

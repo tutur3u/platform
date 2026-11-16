@@ -4,6 +4,7 @@ import {
   PRODUCTION_INTERNAL_APP_DOMAINS,
 } from '@tuturuuu/utils/internal-domains';
 import { supportedLocales } from '@/i18n/routing';
+import { novaBakedApexUrl } from '../start-bridge/legacy-redirect.mjs';
 
 export const DEV_MODE = process.env.NODE_ENV === 'development';
 export const PROD_MODE = process.env.NODE_ENV === 'production';
@@ -18,16 +19,23 @@ const DEFAULT_WEB_APP_URL = PROD_MODE
   ? 'https://tuturuuu.com'
   : getLocalInternalAppUrl('platform', `http://localhost:${CENTRAL_PORT}`);
 
-export const BASE_URL = resolveInternalAppUrl({
-  appName: 'nova',
-  candidates: [
-    process.env.NOVA_APP_URL,
-    process.env.NEXT_PUBLIC_NOVA_APP_URL,
-    process.env.NEXT_PUBLIC_APP_URL,
-    process.env.BASE_URL,
-  ],
-  fallback: DEFAULT_NOVA_APP_URL,
-});
+const NOVA_URL_CANDIDATES = [
+  process.env.NOVA_APP_URL,
+  process.env.NEXT_PUBLIC_NOVA_APP_URL,
+  process.env.NEXT_PUBLIC_APP_URL,
+  process.env.BASE_URL,
+];
+
+// The shared resolver classifies https://tuturuuu.com/nova as the platform
+// origin and skips it. Accept that exact root here so the cutover profile
+// wins. Every other candidate still goes through the shared resolver.
+export const BASE_URL =
+  novaBakedApexUrl(NOVA_URL_CANDIDATES) ??
+  resolveInternalAppUrl({
+    appName: 'nova',
+    candidates: NOVA_URL_CANDIDATES,
+    fallback: DEFAULT_NOVA_APP_URL,
+  });
 
 /** Registered production Nova origins (`nova.tuturuuu.com`, `nova.ai.vn`). */
 export const NOVA_PUBLIC_ORIGINS = PRODUCTION_INTERNAL_APP_DOMAINS.filter(

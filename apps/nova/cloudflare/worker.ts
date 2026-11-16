@@ -11,6 +11,7 @@ import { proxy, config as proxyConfig } from '../src/proxy';
 import { centralFirst } from '../src/start-bridge/central-first';
 import { publicAssets } from '../src/start-bridge/public-assets.bridge.gen';
 import appConfig from '../start-bridge.config';
+import { novaLegacyRedirect } from '../src/start-bridge/legacy-redirect.mjs';
 import { configureNovaAbuseGuard } from '../src/runtime/abuse-guard';
 
 import {
@@ -21,6 +22,7 @@ import {
 export interface NovaEnvironment extends RuntimeEnvironment {
   ASSETS: AssetsBinding;
   INTERNAL_WEB_API_ORIGIN?: string;
+  NEXT_PUBLIC_APP_URL?: string;
   TUTURUUU_NOINDEX?: string;
 }
 
@@ -73,6 +75,8 @@ export default {
     async (request: Request, env: NovaEnvironment, ctx: WorkerContext) => {
       assertRuntimeEnvironment(env);
       configureNovaAbuseGuard(env);
+      const legacy = novaLegacyRedirect(request, env.NEXT_PUBLIC_APP_URL);
+      if (legacy) return legacy;
       const response = await (await handler)(request, env, ctx);
       return appConfig.wrapResponse
         ? appConfig.wrapResponse(response, { request, env })

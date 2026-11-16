@@ -19,6 +19,7 @@ import {
   PUBLIC_PATHS,
   TTR_URL,
 } from './constants/common';
+import { novaLegacyRedirect } from './start-bridge/legacy-redirect.mjs';
 import { defaultLocale, type Locale, supportedLocales } from './i18n/routing';
 
 // Create the centralized auth middleware
@@ -35,6 +36,14 @@ const authProxy = createCentralizedAuthProxy({
 const LOCAL_AUTH_API_PREFIX = '/api/auth/';
 
 async function handleProxy(req: NextRequest): Promise<NextResponse> {
+  const legacy = novaLegacyRedirect(req);
+  if (legacy) {
+    return new NextResponse(null, {
+      status: legacy.status,
+      headers: { Location: legacy.headers.get('Location') ?? '' },
+    });
+  }
+
   if (req.nextUrl.pathname.startsWith('/api')) {
     const isLocalAuthApi = req.nextUrl.pathname.startsWith(
       LOCAL_AUTH_API_PREFIX
