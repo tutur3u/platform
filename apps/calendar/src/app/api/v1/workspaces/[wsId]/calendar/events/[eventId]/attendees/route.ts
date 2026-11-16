@@ -10,6 +10,7 @@ import {
 } from '@/lib/calendar/legacy-provider-generation-guard';
 import { resolveCalendarSourceForEvent } from '@/lib/calendar/source-resolver';
 import { authorizeCalendarEventManagement } from '@/lib/calendar-event-permission';
+import { checkRateLimit } from '@/lib/rate-limit';
 
 export async function GET(
   request: Request,
@@ -18,17 +19,25 @@ export async function GET(
   await connection();
   const { wsId: rawWsId, eventId } = await params;
   const access = await authorizeCalendarEventManagement(request, rawWsId);
-  if ('error' in access) return access.error;
+  if ('error' in access) {
+    access.error.headers.set('Cache-Control', 'private, no-store');
+    return access.error;
+  }
   if (
     !z.guid().safeParse(eventId).success ||
     new URL(request.url).searchParams.size
   )
     return NextResponse.json(
       { error: 'Invalid attendee snapshot request' },
-      { status: 400 }
+      { status: 400, headers: { 'Cache-Control': 'private, no-store' } }
     );
   try {
     const { sbAdmin, wsId, userId } = access;
+    const quota = await checkRateLimit(
+      `calendar:attendee-snapshot:user:${userId}`,
+      { windowMs: 60_000, maxRequests: 10 }
+    );
+    if (!('allowed' in quota)) return quota;
     await assertLegacyCalendarWriteAllowed({
       ...access,
       eventIds: [eventId],
@@ -89,6 +98,7 @@ export async function GET(
     return NextResponse.json(
       { error: 'Calendar attendee snapshot is unavailable' },
       {
+        headers: { 'Cache-Control': 'private, no-store' },
         status:
           error instanceof AttendeeSnapshotError ||
           error instanceof LegacyCalendarWriteError

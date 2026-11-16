@@ -1,6 +1,11 @@
 import type { TypedSupabaseClient } from '@tuturuuu/supabase/types';
 import { beforeEach, expect, it, vi } from 'vitest';
+import { resetRateLimitMemoryStoreForTests } from '@/lib/rate-limit';
 const mocks = vi.hoisted(() => ({ authorize: vi.fn(), get: vi.fn() }));
+vi.mock('@tuturuuu/utils/upstash-rest', () => ({
+  hasUpstashRestEnv: () => false,
+  getUpstashRestRedisClient: vi.fn(),
+}));
 vi.mock('next/server', async (original) => ({
   ...(await original<typeof import('next/server')>()),
   connection: vi.fn(),
@@ -36,7 +41,7 @@ const providerEvent = {
     },
   ],
 };
-function access(variant = '') {
+function access(variant = '', userId = 'actor') {
   const rows: Record<string, Record<string, unknown>[]> = {
     workspace_calendar_events: [
       {
@@ -59,7 +64,7 @@ function access(variant = '') {
       {
         id: 'token',
         ws_id: variant === 'foreign source workspace' ? 'foreign' : wsId,
-        user_id: variant === 'foreign actor' ? 'foreign' : 'actor',
+        user_id: variant === 'foreign actor' ? 'foreign' : userId,
         provider: 'google',
         access_token: 'private-fixture',
         account_email: 'host@example.invalid',
@@ -114,12 +119,13 @@ function access(variant = '') {
   }));
   return {
     wsId,
-    userId: 'actor',
+    userId,
     sbAdmin: { from, rpc } as unknown as TypedSupabaseClient,
   };
 }
 beforeEach(() => {
   vi.clearAllMocks();
+  resetRateLimitMemoryStoreForTests();
   vi.stubEnv('CALENDAR_GOOGLE_COLOR_OPERATIONS_ENABLED', 'false');
   mocks.authorize.mockResolvedValue(access());
   mocks.get.mockResolvedValue({ data: providerEvent });
@@ -155,6 +161,39 @@ it.each([401, 403])('preserves authorization denial %s', async (status) => {
     (await GET(new Request(`https://calendar.test${path}`), params)).status
   ).toBe(status);
   expect(mocks.get).not.toHaveBeenCalled();
+});
+it('limits an actor to ten provider reads across events and IP addresses', async () => {
+  for (let index = 0; index < 10; index++) {
+    const response = await GET(
+      new Request(`https://calendar.test${path}`),
+      params
+    );
+    expect(response.status).toBe(200);
+  }
+  const otherEventId = '00000000-0000-4000-8000-000000000003';
+  const response = await GET(
+    new Request(`https://calendar.test${path}`, {
+      headers: { 'x-forwarded-for': '192.0.2.2' },
+    }),
+    { params: Promise.resolve({ wsId, eventId: otherEventId }) }
+  );
+  expect(response.status).toBe(429);
+  expect(response.headers.get('retry-after')).toMatch(/^[1-9]\d*$/);
+  expect(response.headers.get('cache-control')).toBe('private, no-store');
+  expect(mocks.get).toHaveBeenCalledTimes(10);
+  expect(JSON.stringify(await response.json())).not.toContain('actor');
+});
+it('keeps separate actors in separate provider-read quotas', async () => {
+  for (let index = 0; index < 10; index++) {
+    expect(
+      (await GET(new Request(`https://calendar.test${path}`), params)).status
+    ).toBe(200);
+  }
+  mocks.authorize.mockResolvedValue(access('', 'other-actor'));
+  expect(
+    (await GET(new Request(`https://calendar.test${path}`), params)).status
+  ).toBe(200);
+  expect(mocks.get).toHaveBeenCalledTimes(11);
 });
 it.each([
   'foreign event workspace',
@@ -207,6 +246,7 @@ it('sanitizes provider errors without exposing account or tokens', async () => {
     params
   );
   expect(response.status).toBe(503);
+  expect(response.headers.get('cache-control')).toBe('private, no-store');
   expect(await response.json()).toEqual({
     error: 'Calendar attendee snapshot is unavailable',
   });
