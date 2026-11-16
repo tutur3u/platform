@@ -43,8 +43,8 @@ test('every committed store listing passes', () => {
 
 // Each store is submitted on its own date; all go live together.
 const TARGET_SUBMIT_DATES = {
-  ios: '2026-11-28T23:59:00+07:00',
-  macos: '2026-11-28T23:59:00+07:00',
+  ios: '2026-11-27T23:59:00+07:00',
+  macos: '2026-11-27T23:59:00+07:00',
   android: '2026-11-25T23:59:00+07:00',
   windows: '2026-11-20T23:59:00+07:00',
 };
