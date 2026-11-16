@@ -14,6 +14,7 @@ import {
 import { withAiMemory } from '../../memory';
 import type { CreditSource as SharedCreditSource } from '../credit-source';
 import { shouldPresentWorkspaceArtifact } from '../mira-artifact-intent';
+import { shouldUseDayOverviewForLatestUserMessage } from '../mira-day-overview-intent';
 import {
   shouldForceGoogleSearchForLatestUserMessage,
   shouldForceRenderUiForLatestUserMessage,
@@ -530,9 +531,14 @@ export function createPOST(
 
       const stepsRef: { current: unknown[] } = { current: [] };
 
+      const effectiveSource = isMiraMode ? 'Mira' : 'Rewise';
+      const needsDayOverview =
+        isMiraMode &&
+        shouldUseDayOverviewForLatestUserMessage(processedMessages);
+      // After the credit check: the memory consent read overlaps context.
       const contextStartedAt = stageStartedAt();
-      const { miraSystemPrompt, miraTools, prepareMiraDiscoveryStep } =
-        await prepareMiraRuntime({
+      const [miraRuntime, resolvedGatewayModel] = await Promise.all([
+        prepareMiraRuntime({
           isMiraMode,
           wsId: normalizedWsId ?? undefined,
           workspaceContextId,
@@ -547,24 +553,21 @@ export function createPOST(
           taskBoardContext,
           clientCapabilities: parsedBody.data.clientCapabilities,
           getSteps: () => stepsRef.current,
-        });
-      recordStage('context', contextStartedAt);
-
-      const effectiveSource = isMiraMode ? 'Mira' : 'Rewise';
-
-      const modelStartStartedAt = stageStartedAt();
-      const resolvedGatewayModel =
+          prefetchDayOverview: needsDayOverview,
+        }).finally(() => recordStage('context', contextStartedAt)),
         subscriptionModel ??
-        (await withAiMemory({
-          customId: chatId,
-          model: google(resolvedModelId.split('/').slice(-1)[0]!),
-          product: isMiraMode ? 'mira' : 'rewise',
-          source: effectiveSource,
-          surface: 'shared_chat',
-          userId: user.id,
-          wsId: billingWsId ?? normalizedWsId,
-        }));
-      recordStage('model-start', modelStartStartedAt);
+          withAiMemory({
+            customId: chatId,
+            model: google(resolvedModelId.split('/').slice(-1)[0]!),
+            product: isMiraMode ? 'mira' : 'rewise',
+            source: effectiveSource,
+            surface: 'shared_chat',
+            userId: user.id,
+            wsId: billingWsId ?? normalizedWsId,
+          }).finally(() => recordStage('model-start', contextStartedAt)),
+      ]);
+      const { miraSystemPrompt, miraTools, prepareMiraDiscoveryStep } =
+        miraRuntime;
 
       const reasoningSettings = resolveChatReasoningSettings(thinkingMode);
       const forceWorkspaceArtifact =
@@ -589,6 +592,7 @@ export function createPOST(
         stepsRef.current = steps;
         const policy = prepareMiraToolStep({
           forceWorkspaceArtifact,
+          needsDayOverview,
           steps,
           forceGoogleSearch,
           forceRenderUi,

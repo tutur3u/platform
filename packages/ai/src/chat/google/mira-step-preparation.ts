@@ -17,6 +17,7 @@ export type PrepareMiraToolStepInput = {
   forceGoogleSearch: boolean;
   forceRenderUi: boolean;
   forceWorkspaceArtifact?: boolean;
+  needsDayOverview?: boolean;
   needsParallelChecks: boolean;
   needsWorkspaceContextResolution: boolean;
   needsWorkspaceMembersTool: boolean;
@@ -28,6 +29,7 @@ export function prepareMiraToolStep({
   forceGoogleSearch,
   forceRenderUi,
   forceWorkspaceArtifact,
+  needsDayOverview,
   needsParallelChecks,
   needsWorkspaceContextResolution,
   needsWorkspaceMembersTool,
@@ -56,6 +58,10 @@ export function prepareMiraToolStep({
         toolChoice: 'required',
         activeTools: ['google_search'],
       };
+    }
+
+    if (needsDayOverview && !needsWorkspaceContextResolution) {
+      return { toolChoice: 'required', activeTools: ['get_day_overview'] };
     }
 
     if (needsParallelChecks) {

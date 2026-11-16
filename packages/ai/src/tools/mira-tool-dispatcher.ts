@@ -8,6 +8,7 @@ import {
 } from './executors/calendar';
 import { executeCalendarAutomation } from './executors/calendar-automation';
 import { executeSetImmersiveMode } from './executors/chat';
+import { takePrefetchedDayOverview } from './day-overview-prefetch';
 import { executeGetDayOverview } from './executors/day-overview';
 import {
   executeCreateTransactionCategory,
@@ -311,6 +312,11 @@ export async function executeMiraTool(
 
   if (!(toolName in toolHandlers))
     return { error: `Unknown tool: ${toolName}` };
+
+  if (toolName === 'get_day_overview') {
+    const prefetched = await takePrefetchedDayOverview(ctx, args);
+    if (prefetched.hit) return prefetched.value;
+  }
 
   const handler = toolHandlers[toolName as keyof typeof toolHandlers];
 

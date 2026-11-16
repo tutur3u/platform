@@ -7,6 +7,7 @@ import {
   buildMiraClientCapabilityInstruction,
   resolveMiraClientCapabilities,
 } from '../../tools/mira-client-capabilities';
+import { startDayOverviewPrefetch } from '../../tools/day-overview-prefetch';
 import { createMiraSdkToolSearch } from '../../tools/mira-sdk-tool-search';
 import {
   createMiraStreamTools,
@@ -62,6 +63,8 @@ type PrepareMiraRuntimeParams = {
   clientCapabilities?: readonly string[];
   /** Optional callback for render_ui context-aware fallback. */
   getSteps?: () => unknown[];
+  /** Start today's day overview now for read-only agenda asks. */
+  prefetchDayOverview?: boolean;
 };
 
 function safeJsonForPrompt(value: unknown) {
@@ -167,6 +170,7 @@ export async function prepareMiraRuntime({
   taskBoardContext,
   clientCapabilities,
   getSteps,
+  prefetchDayOverview,
 }: PrepareMiraRuntimeParams): Promise<{
   miraSystemPrompt?: string;
   miraTools?: ReturnType<typeof createMiraStreamTools>;
@@ -267,6 +271,8 @@ export async function prepareMiraRuntime({
       }
     },
   };
+  // Overlaps the overview reads with prompt building and the first model call.
+  if (prefetchDayOverview) startDayOverviewPrefetch(ctx);
 
   let miraSystemPrompt: string;
   try {

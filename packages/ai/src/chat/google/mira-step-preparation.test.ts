@@ -50,6 +50,26 @@ describe('prepareMiraToolStep', () => {
     expect(result.activeTools).toEqual(['google_search']);
   });
 
+  it('calls get_day_overview first for read-only agenda asks', () => {
+    const base = {
+      steps: [],
+      forceGoogleSearch: false,
+      forceRenderUi: false,
+      needsDayOverview: true,
+      needsParallelChecks: false,
+      needsWorkspaceMembersTool: false,
+      preferMarkdownTables: false,
+    };
+    expect(
+      prepareMiraToolStep({ ...base, needsWorkspaceContextResolution: false })
+    ).toEqual({ toolChoice: 'required', activeTools: ['get_day_overview'] });
+    // A named other workspace must be resolved before reading its agenda.
+    expect(
+      prepareMiraToolStep({ ...base, needsWorkspaceContextResolution: true })
+        .activeTools
+    ).toContain('set_workspace_context');
+  });
+
   it('forces parallel checks for explicit verification requests', () => {
     const result = prepareMiraToolStep({
       steps: [],

@@ -19,6 +19,8 @@ export interface MiraToolContext {
     wsId: string,
     permissions: PermissionId[]
   ) => Promise<boolean>;
+  /** Speculative get_day_overview result started before the model asked. */
+  dayOverviewPrefetch?: { wsId: string; result: Promise<unknown> };
   canReadUserGroupStorage?: (input: {
     groupId: string;
     storagePath: string;

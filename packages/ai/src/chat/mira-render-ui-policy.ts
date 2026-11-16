@@ -143,7 +143,7 @@ function isAutoPopulatedFallback(output: unknown): boolean {
   return output.autoPopulatedFallback === true;
 }
 
-function extractTextFromUserMessage(message: ModelMessage): string {
+export function extractTextFromUserMessage(message: ModelMessage): string {
   if (typeof message.content === 'string') return message.content;
   if (!Array.isArray(message.content)) return '';
 
