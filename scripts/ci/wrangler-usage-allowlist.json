@@ -1581,6 +1581,16 @@
       },
       "digest": "48ca5c86212153d8453634f1858ce3959303f9191bbf8c6c7da6cc0663c4fc20"
     },
+    "apps/nova/cloudflare/route-modules.runtime.mjs": {
+      "lines": 1,
+      "uses": 1,
+      "gap": "void-wave1-publication",
+      "admitted": {
+        "decision": "https://github.com/tutur3u/platform/pull/8366",
+        "reason": "Nova native route-module runtime test starts the Void-emitted Worker with the Wrangler SDK, as its sibling runtime tests do, until the Void publication gap closes."
+      },
+      "digest": "48ca5c86212153d8453634f1858ce3959303f9191bbf8c6c7da6cc0663c4fc20"
+    },
     "apps/nova/package.json": {
       "lines": 1,
       "uses": 1,
