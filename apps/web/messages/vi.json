@@ -5396,10 +5396,19 @@
     "pharmacies": "Nhà thuốc",
     "pharmacies-description": "Chuẩn hóa việc quản lý và dịch vụ nhà thuốc.",
     "pick_a_date": "Chọn một ngày",
+    "picker_internal_meta": "Quản trị nền tảng",
+    "picker_more_actions": "Thêm thao tác",
+    "picker_personal_meta": "Chỉ mình bạn",
     "picker_pin": "Ghim không gian làm việc",
     "picker_pinned": "Đã ghim",
     "picker_recent": "Gần đây",
     "picker_section_all": "Tất cả không gian làm việc",
+    "picker_section_internal": "Nội bộ",
+    "picker_section_personal": "Cá nhân",
+    "picker_section_workspaces": "Không gian làm việc",
+    "picker_set_default": "Đặt làm không gian mặc định",
+    "picker_state_default": "Mặc định",
+    "picker_state_hidden": "Đã ẩn",
     "picker_unpin": "Bỏ ghim không gian làm việc",
     "pink": "Hồng",
     "pitch": "Kế hoạch kinh doanh",
@@ -12343,7 +12352,12 @@
     "estimate": "Tạm tính minh họa · USD · chưa gồm thuế và tiện ích bổ sung",
     "exitFullscreen": "Thoát toàn màn hình",
     "explore": "Khám phá Tuturuuu",
-    "families": ["Tổ chức", "Cộng tác", "Vận hành", "Học và sáng tạo"],
+    "families": [
+      "Tổ chức",
+      "Cộng tác",
+      "Vận hành",
+      "Học và sáng tạo"
+    ],
     "feedback": "Góp ý",
     "free": "Miễn phí",
     "friction": [
@@ -12371,10 +12385,20 @@
     "next": "Trang tiếp",
     "noClaims": "Định hướng sản phẩm, không cam kết phát hành hoặc hiệu suất.",
     "notes": "Ghi chú thuyết trình",
-    "orbitLabels": ["Công việc", "Con người", "Kiến thức", "Học tập"],
+    "orbitLabels": [
+      "Công việc",
+      "Con người",
+      "Kiến thức",
+      "Học tập"
+    ],
     "overview": "Tất cả trang",
     "pause": "Tạm dừng",
-    "people": ["Cá nhân", "Đội nhóm nhỏ", "Nhà giáo dục", "Nhà vận hành"],
+    "people": [
+      "Cá nhân",
+      "Đội nhóm nhỏ",
+      "Nhà giáo dục",
+      "Nhà vận hành"
+    ],
     "perMonth": "mỗi tháng",
     "perYear": "mỗi năm",
     "planDetails": [
@@ -13347,10 +13371,20 @@
       }
     },
     "sourceLabel": "Nguồn",
-    "stages": ["Lập kế hoạch", "Kết nối", "Hoàn thành", "Nhìn lại"],
+    "stages": [
+      "Lập kế hoạch",
+      "Kết nối",
+      "Hoàn thành",
+      "Nhìn lại"
+    ],
     "title": "Tuturuuu — kỷ nguyên cộng sự thông minh",
     "visuals": {
-      "audience": ["Cá nhân", "Đội nhóm", "MSME", "Nhà nghiên cứu"],
+      "audience": [
+        "Cá nhân",
+        "Đội nhóm",
+        "MSME",
+        "Nhà nghiên cứu"
+      ],
       "boundary": "Con người duyệt hành động có tác động lớn",
       "calendar": [
         "T2",
@@ -13372,7 +13406,12 @@
         "Năng lực: 32 giờ",
         "Khối lượng tuần minh họa · không phải kết quả khách hàng"
       ],
-      "chat": ["Đội ngũ", "Hội thoại chung", "Mira", "Duyệt bước tiếp theo"],
+      "chat": [
+        "Đội ngũ",
+        "Hội thoại chung",
+        "Mira",
+        "Duyệt bước tiếp theo"
+      ],
       "collaboration": [
         "Cùng khám phá",
         "Hoàn thiện tài liệu",
@@ -13421,7 +13460,11 @@
         "Ngữ cảnh & phân quyền chung",
         "API, dữ liệu & hạ tầng"
       ],
-      "loop": ["Sản phẩm hữu ích", "Nền tảng chung", "Tái đầu tư"],
+      "loop": [
+        "Sản phẩm hữu ích",
+        "Nền tảng chung",
+        "Tái đầu tư"
+      ],
       "mail": [
         "Hộp thư",
         "Tách đầu việc",
@@ -13430,14 +13473,23 @@
         "Calendar",
         "Theo dõi"
       ],
-      "onboarding": ["Tìm kiến thức", "Hỏi Mira", "Thực hành", "Phản hồi"],
+      "onboarding": [
+        "Tìm kiến thức",
+        "Hỏi Mira",
+        "Thực hành",
+        "Phản hồi"
+      ],
       "pilot": [
         "Phạm vi & quản trị",
         "Cấu hình & thử nghiệm",
         "Đánh giá & quyết định",
         "Phạm vi 12 tuần minh họa"
       ],
-      "readiness": ["Đã triển khai", "Đang phát triển", "Hướng nghiên cứu"],
+      "readiness": [
+        "Đã triển khai",
+        "Đang phát triển",
+        "Hướng nghiên cứu"
+      ],
       "research": [
         "Tạo kịch bản",
         "Phối hợp tác tử",
@@ -13465,7 +13517,11 @@
         "Hành động đã duyệt",
         "Cùng bạn học hỏi, dưới quyền kiểm soát của bạn"
       ],
-      "workforce": ["Năng lực", "Kỹ năng", "Hội nhập"]
+      "workforce": [
+        "Năng lực",
+        "Kỹ năng",
+        "Hội nhập"
+      ]
     }
   },
   "platform-role-data-table": {
