@@ -278,11 +278,9 @@ extension _ShellPageLayout on _ShellPageState {
     );
   }
 
-  double _floatingNavBodyInset() {
-    // 48px island + 12px bottom margin + 8px content gap. The caller adds
-    // the system safe area once; including it here creates a second gap.
-    return 68;
-  }
+  // The dock pill plus the gap below and above it. The dock host adds the
+  // system safe area once; including it here creates a second gap.
+  double _floatingNavBodyInset() => ShellDockMetrics.clearance;
 
   Widget _buildCompactLayout(
     BuildContext context,
@@ -351,11 +349,19 @@ extension _ShellPageLayout on _ShellPageState {
     final navContent = MorphingNavigationBar(
       selectedKey: selectedKey,
       paintSurface: false,
+      fixedFrame: true,
+      labelled: !isMiniAppRoute,
+      backKey: useInjectedMiniNav
+          ? _injectedMiniNavKey(injectedMiniNavRegistration.ownerId, 'back')
+          : _ShellPageState._backToRootKey,
+      onBackLongPress: () => unawaited(_returnToDestinationRoot()),
       onSelected: (key) => useInjectedMiniNav
           ? _onInjectedMiniNavItemTapped(key, injectedMiniNavRegistration)
           : isMiniAppRoute
           ? _onMiniAppItemTapped(key, context, activeModule, activeMiniNavItems)
-          : _onItemTapped(_ShellPageState._indexForKey(key), context),
+          : key == _ShellPageState._backToRootKey
+          ? _runBackNavigation(context)
+          : _onItemTapped(_ShellPageState._routeForKey(key), context),
       children: isMiniAppRoute ? miniItems : globalItems,
     );
     final navigationBar = _buildNavigationBarContainer(
@@ -409,7 +415,9 @@ extension _ShellPageLayout on _ShellPageState {
               : const SizedBox.shrink(),
           bodyBottomInset: floatingNavInset,
           composerVisible: composerVisible,
-          navigationWidth: dockItems.length * 52.0 + 4,
+          navigationWidth: ShellDockMetrics.widthFor(
+            MediaQuery.sizeOf(context).width,
+          ),
           hideIdleNavigation: railMode,
         ),
       ),
@@ -504,7 +512,7 @@ extension _ShellPageLayout on _ShellPageState {
                                 vertical: 4,
                               ),
                               onSelected: (key) => _onItemTapped(
-                                _ShellPageState._indexForKey(key),
+                                _ShellPageState._routeForKey(key),
                                 context,
                               ),
                               children: _buildNavItems(
@@ -517,7 +525,7 @@ extension _ShellPageLayout on _ShellPageState {
                               key: _ShellPageState._globalLayerKey,
                               selectedKey: globalSelectedKey,
                               onSelected: (key) => _onItemTapped(
-                                _ShellPageState._indexForKey(key),
+                                _ShellPageState._routeForKey(key),
                                 context,
                               ),
                               expandItems: false,
@@ -592,7 +600,7 @@ extension _ShellPageLayout on _ShellPageState {
             location: widget.matchedLocation,
           ),
         ),
-        padding: mobileSectionAppBarPadding,
+        padding: shellTopBarPaddingFor(MediaQuery.sizeOf(context).width),
         backgroundColor: Colors.transparent,
         child: ShellSearchField(
           key: ValueKey(searchAction.id),
@@ -613,9 +621,9 @@ extension _ShellPageLayout on _ShellPageState {
           location: widget.matchedLocation,
         ),
       ),
-      padding: mobileSectionAppBarPadding,
+      padding: shellTopBarPaddingFor(MediaQuery.sizeOf(context).width),
       backgroundColor: Colors.transparent,
-      trailingGap: 6,
+      trailingGap: 4,
       trailing: [
         SizedBox(
           height: mobileSectionAppBarHeight,

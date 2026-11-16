@@ -154,6 +154,21 @@ extension _ShellPageInteractions on _ShellPageState {
     unawaited(showAppsPicker(context, searchInitially: true));
   }
 
+  /// Long-press on the dock's Back: leaves every drill-down level at once,
+  /// for the module's origin destination or Home.
+  Future<void> _returnToDestinationRoot() async {
+    final current = _normalizeRouteLocation(widget.matchedLocation);
+    if (Routes.miniAppRootForLocation(current) != null ||
+        AppRegistry.moduleFromLocation(current) != null) {
+      await _returnToAppOrigin();
+      return;
+    }
+    if (!mounted || current == Routes.home) return;
+    _routeHistory.clear();
+    _isHandlingBackNavigation = true;
+    context.go(Routes.home);
+  }
+
   Future<void> _returnToAppOrigin() async {
     final current = _normalizeRouteLocation(widget.matchedLocation);
     final tabs = context.read<AppTabCubit>();
@@ -169,26 +184,17 @@ extension _ShellPageInteractions on _ShellPageState {
     context.go(origin);
   }
 
-  Future<void> _onItemTapped(int index, BuildContext context) async {
+  Future<void> _onItemTapped(String route, BuildContext context) async {
     final appTabCubit = context.read<AppTabCubit>();
 
-    final route = switch (index) {
-      2 => Routes.apps,
-      1 => Routes.assistant,
-      3 => Routes.notifications,
-      4 => Routes.profileRoot,
-      _ => Routes.home,
-    };
     final currentRoute = _normalizeRouteLocation(widget.matchedLocation);
-    if (currentRoute == route ||
-        (route == Routes.notifications &&
-            currentRoute == Routes.notificationsArchive)) {
+    if (currentRoute == route) {
       _reselectPage(currentRoute);
       return;
     }
     _debugBack(
       'rootNav.tap',
-      'index=$index route=$route selectedApp=${appTabCubit.state.selectedId}',
+      'route=$route selectedApp=${appTabCubit.state.selectedId}',
     );
     if (route == Routes.apps) {
       _suppressPointerEventsDuringTransition();

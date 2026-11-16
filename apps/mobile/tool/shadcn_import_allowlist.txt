@@ -83,7 +83,6 @@ lib/features/mobile_versions/view/mobile_version_settings_page.dart
 lib/features/notes/notes_page.dart
 lib/features/notifications/view/notifications_page.dart
 lib/features/notifications/widgets/notification_read_feedback.dart
-lib/features/notifications/widgets/notifications_action_button.dart
 lib/features/notifications/widgets/notifications_sheet.dart
 lib/features/onboarding/view/onboarding_page.dart
 lib/features/onboarding/widgets/onboarding_backdrop.dart
@@ -126,7 +125,6 @@ lib/features/shell/view/account_switcher_sheet.dart
 lib/features/shell/view/avatar_dropdown.dart
 lib/features/shell/view/avatar_dropdown_menu.dart
 lib/features/shell/view/custom_navigation_bar.dart
-lib/features/shell/view/floating_shell_dock.dart
 lib/features/shell/view/manage_accounts_page.dart
 lib/features/shell/view/mobile_section_app_bar.dart
 lib/features/shell/view/shell_chrome_actions.dart

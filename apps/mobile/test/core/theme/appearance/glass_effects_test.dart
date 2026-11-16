@@ -18,6 +18,15 @@ Widget _dock({bool highContrast = false}) => MaterialApp(
   ),
 );
 
+Widget _glass({bool highContrast = false}) => MaterialApp(
+  home: MediaQuery(
+    data: MediaQueryData(highContrast: highContrast),
+    child: const Center(
+      child: ClipRect(child: GlassBlur(sigma: 24, child: Text('glass'))),
+    ),
+  ),
+);
+
 double _fillAlpha(WidgetTester tester) {
   final box = tester.widget<Container>(
     find.descendant(
@@ -52,34 +61,47 @@ int _backdropLayers(WidgetTester tester) {
 void main() {
   tearDown(() => GlassEffects.debugBlurOverride = null);
 
-  testWidgets('dock glass blurs only where the platform keeps it', (
+  testWidgets('the dock is solid on every platform (mobile.dockBlur 0)', (
     tester,
   ) async {
     await tester.pumpWidget(_dock());
-    final android = defaultTargetPlatform == TargetPlatform.android;
-    expect(
-      find.byType(BackdropFilter),
-      android ? findsNothing : findsOneWidget,
-    );
-    expect(_backdropLayers(tester), android ? 0 : 1);
-    expect(_fillAlpha(tester), closeTo(android ? 0.93 : 0.72, 0.001));
+    expect(find.byType(BackdropFilter), findsNothing);
+    expect(_backdropLayers(tester), 0);
+    expect(_fillAlpha(tester), 1);
   }, variant: TargetPlatformVariant.all());
 
-  testWidgets('high contrast is opaque and never blurs', (tester) async {
+  testWidgets('high contrast keeps the dock opaque', (tester) async {
     GlassEffects.debugBlurOverride = true;
     await tester.pumpWidget(_dock(highContrast: true));
     expect(find.byType(BackdropFilter), findsNothing);
     expect(_fillAlpha(tester), 1);
   });
 
+  testWidgets('glass blurs only where the platform keeps it', (tester) async {
+    await tester.pumpWidget(_glass());
+    final android = defaultTargetPlatform == TargetPlatform.android;
+    expect(
+      find.byType(BackdropFilter),
+      android ? findsNothing : findsOneWidget,
+    );
+    expect(_backdropLayers(tester), android ? 0 : 1);
+  }, variant: TargetPlatformVariant.all());
+
   testWidgets('the debug override restores the blur on Android', (
     tester,
   ) async {
     GlassEffects.debugBlurOverride = true;
-    await tester.pumpWidget(_dock());
+    await tester.pumpWidget(_glass());
     expect(defaultTargetPlatform, TargetPlatform.android);
     expect(find.byType(BackdropFilter), findsOneWidget);
     expect(_backdropLayers(tester), 1);
-    expect(_fillAlpha(tester), closeTo(0.72, 0.001));
+  });
+
+  testWidgets('high contrast glass is opaque and never blurs', (tester) async {
+    GlassEffects.debugBlurOverride = true;
+    await tester.pumpWidget(_glass(highContrast: true));
+    expect(find.byType(BackdropFilter), findsNothing);
+    final context = tester.element(find.text('glass'));
+    expect(GlassEffects.fillAlpha(context, 0.72), 1);
   });
 }

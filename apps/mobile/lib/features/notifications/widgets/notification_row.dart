@@ -1,13 +1,14 @@
 import 'package:flutter/material.dart';
 import 'package:mobile/core/layout/layout.dart';
+import 'package:mobile/core/theme/sorbet/sorbet_tokens.dart';
 import 'package:mobile/core/ui/ui.dart';
 import 'package:mobile/data/models/app_notification.dart';
 import 'package:mobile/features/notifications/notification_display_copy.dart';
 import 'package:mobile/features/notifications/widgets/notifications_relative_time.dart';
 import 'package:mobile/l10n/l10n.dart';
 
-/// Leading tile size of a notification row.
-const double notificationLeadingSize = 40;
+/// Leading tone tile size of a notification row.
+const double notificationLeadingSize = 36;
 
 /// Divider inset that aligns with the text column of [NotificationRow].
 const double notificationDividerInset =
@@ -15,9 +16,9 @@ const double notificationDividerInset =
     notificationLeadingSize +
     AppLayout.rowLeadingGap;
 
-/// One notification inside a grouped card: a type tile (with an unread dot),
-/// title, body, workspace and age, plus invite actions or an open hint and a
-/// read toggle.
+/// One notification inside a grouped card: a type tone tile, title (bold
+/// while unread), body and workspace, the age and an unread dot, plus invite
+/// actions or an open hint and a read toggle.
 class NotificationRow extends StatelessWidget {
   const NotificationRow({
     required this.notification,
@@ -46,11 +47,8 @@ class NotificationRow extends StatelessWidget {
     final unread = notification.isUnread;
     final hasPrimaryAction = onAcceptInvite != null || onDeclineInvite != null;
     final display = notificationDisplayCopy(notification, l10n);
-    final meta = [
-      if (notification.workspaceName case final name? when name.isNotEmpty)
-        name,
-      formatNotificationRelativeTime(context, notification.createdAt),
-    ].join(' · ');
+    final workspace = notification.workspaceName;
+    final unreadColor = SorbetTokens.maybeOf(context)?.hues.blue.ink ?? c.info;
 
     final content = Padding(
       padding: const EdgeInsetsDirectional.fromSTEB(
@@ -66,20 +64,63 @@ class NotificationRow extends StatelessWidget {
             icon: notificationTypeIcon(notification.type),
             tone: notificationTypeTone(notification.type),
             size: notificationLeadingSize,
-            badge: unread,
           ),
           const SizedBox(width: AppLayout.rowLeadingGap),
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(
-                  display.title,
-                  style: tokens.typography.base.copyWith(
-                    color: c.foreground,
-                    fontWeight: unread ? FontWeight.w600 : FontWeight.w500,
-                    height: 1.3,
-                  ),
+                Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Expanded(
+                      child: Text(
+                        display.title,
+                        style: tokens.typography.base.copyWith(
+                          color: c.foreground,
+                          fontSize: 15,
+                          fontWeight: unread
+                              ? FontWeight.w700
+                              : FontWeight.w400,
+                          height: 20 / 15,
+                        ),
+                      ),
+                    ),
+                    const SizedBox(width: AppSpacing.sm),
+                    Padding(
+                      padding: const EdgeInsets.only(top: 2),
+                      child: Text(
+                        formatNotificationRelativeTime(
+                          context,
+                          notification.createdAt,
+                        ),
+                        style: tokens.typography.xSmall.copyWith(
+                          color: c.mutedForeground,
+                          fontSize: 11.5,
+                          height: 16 / 11.5,
+                          fontFeatures: const [FontFeature.tabularFigures()],
+                        ),
+                      ),
+                    ),
+                    if (unread) ...[
+                      const SizedBox(width: AppSpacing.sm),
+                      Padding(
+                        padding: const EdgeInsets.only(top: 5),
+                        child: Semantics(
+                          label: l10n.notificationsUnreadLabel,
+                          child: Container(
+                            key: const ValueKey('notification-unread-dot'),
+                            width: 10,
+                            height: 10,
+                            decoration: BoxDecoration(
+                              color: unreadColor,
+                              shape: BoxShape.circle,
+                            ),
+                          ),
+                        ),
+                      ),
+                    ],
+                  ],
                 ),
                 if (display.body case final String body) ...[
                   const SizedBox(height: AppSpacing.xxs),
@@ -93,16 +134,18 @@ class NotificationRow extends StatelessWidget {
                     ),
                   ),
                 ],
-                const SizedBox(height: AppSpacing.xs + AppSpacing.xxs),
-                Text(
-                  meta,
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                  style: tokens.typography.xSmall.copyWith(
-                    color: c.mutedForeground,
-                    fontWeight: FontWeight.w500,
+                if (workspace != null && workspace.isNotEmpty) ...[
+                  const SizedBox(height: AppSpacing.xs),
+                  Text(
+                    workspace,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: tokens.typography.xSmall.copyWith(
+                      color: c.mutedForeground,
+                      fontWeight: FontWeight.w500,
+                    ),
                   ),
-                ),
+                ],
                 if (notification.type == 'workspace_invite' &&
                     notification.actionTaken != null) ...[
                   const SizedBox(height: AppSpacing.sm),

@@ -89,15 +89,20 @@ class AppTextField extends StatelessWidget {
   Widget build(BuildContext context) {
     final tokens = AppTokens.of(context);
     final c = tokens.colorScheme;
+    final shapes = tokens.shapes;
+    final multiline = expands || maxLines != 1 || (minLines ?? 1) > 1;
+    final corners = BorderRadius.circular(
+      multiline ? shapes.textArea : shapes.field,
+    );
     OutlineInputBorder outline(Color color, [double width = 1]) =>
         OutlineInputBorder(
-          borderRadius: tokens.borderRadiusLg,
+          borderRadius: corners,
           borderSide: borderless || (filled && width == 1)
               ? BorderSide.none
               : BorderSide(color: color, width: width),
         );
     final resolvedStyle =
-        style ?? tokens.typography.base.copyWith(color: c.foreground);
+        style ?? tokens.typography.body.copyWith(color: c.foreground);
     final field = TextField(
       controller: controller,
       expands: expands,
@@ -133,8 +138,10 @@ class AppTextField extends StatelessWidget {
         errorText: errorText,
         helperText: helperText,
         helperMaxLines: 3,
-        helperStyle: tokens.typography.small.copyWith(color: c.mutedForeground),
-        counterStyle: tokens.typography.small.copyWith(
+        helperStyle: tokens.typography.bodySm.copyWith(
+          color: c.mutedForeground,
+        ),
+        counterStyle: tokens.typography.bodySm.copyWith(
           color: c.mutedForeground,
         ),
         hintStyle: resolvedStyle.copyWith(color: c.mutedForeground),
@@ -145,9 +152,10 @@ class AppTextField extends StatelessWidget {
         filled: true,
         fillColor: filled ? c.muted : c.card.withValues(alpha: 0),
         isDense: true,
-        contentPadding:
-            contentPadding ??
-            const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+        constraints: shapes.fieldMinHeight == 0 || expands
+            ? null
+            : BoxConstraints(minHeight: shapes.fieldMinHeight),
+        contentPadding: contentPadding ?? shapes.fieldPadding,
         border: outline(c.input),
         enabledBorder: outline(c.input),
         disabledBorder: outline(c.input.withValues(alpha: 0.5)),
@@ -165,7 +173,7 @@ class AppTextField extends StatelessWidget {
         ExcludeSemantics(
           child: Text(
             fieldLabel,
-            style: tokens.typography.small.copyWith(color: c.foreground),
+            style: tokens.typography.bodySm.copyWith(color: c.foreground),
           ),
         ),
         const SizedBox(height: AppSpacing.xs),

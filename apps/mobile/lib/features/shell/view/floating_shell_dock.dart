@@ -2,18 +2,20 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:mobile/core/interaction/app_haptics.dart';
+import 'package:mobile/core/layout/page_insets.dart';
 import 'package:mobile/core/theme/appearance/appearance_scope.dart';
 import 'package:mobile/core/theme/appearance/glass_effects.dart';
 import 'package:mobile/features/shell/cubit/shell_chrome_actions_cubit.dart';
 import 'package:mobile/features/shell/view/floating_dock_rail.dart';
 import 'package:mobile/features/shell/view/mobile_section_app_bar.dart';
 import 'package:mobile/features/shell/view/persistent_shell_dock.dart';
+import 'package:mobile/features/shell/view/shell_chrome_style.dart';
 import 'package:mobile/features/shell/view/shell_dock_action_button.dart';
 import 'package:mobile/features/shell/view/shell_dock_slot.dart';
+import 'package:mobile/features/shell/view/shell_dock_surface.dart';
 import 'package:mobile/features/shell/view/shell_keyboard_chrome.dart';
 import 'package:mobile/features/workspace/cubit/workspace_cubit.dart';
 import 'package:mobile/l10n/l10n.dart';
-import 'package:shadcn_flutter/shadcn_flutter.dart' as shad;
 
 /// The floating header includes the system status bar and the section bar.
 double floatingShellHeaderInset(
@@ -25,7 +27,7 @@ double floatingShellHeaderInset(
       context,
       minimumContentHeight: minimumContentHeight,
     ) +
-    mobileSectionAppBarPadding.vertical;
+    shellTopBarPadding.vertical;
 
 /// Overlays the dock without shortening the page viewport.
 /// Pages consume bottom MediaQuery padding inside their scrollable content.
@@ -80,6 +82,7 @@ class FloatingShellDock extends StatefulWidget {
 class _FloatingShellDockState extends State<FloatingShellDock> {
   Timer? _returnTimer;
   bool _hidden = false;
+  bool _scrolledUnder = false;
   double _travel = 0;
   late double _headerInset;
   late bool _accessibleNavigation;
@@ -159,7 +162,17 @@ class _FloatingShellDockState extends State<FloatingShellDock> {
     _travel = 0;
   }
 
+  void _trackScrolledUnder(ScrollNotification notification) {
+    if (notification.depth != 0 || notification.metrics.axis != Axis.vertical) {
+      return;
+    }
+    final scrolled =
+        notification.metrics.pixels > notification.metrics.minScrollExtent;
+    if (scrolled != _scrolledUnder) setState(() => _scrolledUnder = scrolled);
+  }
+
   bool _onScroll(ScrollNotification notification) {
+    _trackScrolledUnder(notification);
     if (notification.depth != 0 ||
         notification.metrics.axis != Axis.vertical ||
         (widget.bottomInset == 0 && widget.header == null) ||
@@ -197,9 +210,26 @@ class _FloatingShellDockState extends State<FloatingShellDock> {
   /// content scrolls underneath. Solid appearances keep the opaque surface.
   Widget _headerSurface(BuildContext context, Color color, Widget child) {
     if (!AppearanceScope.hasAmbientBackground(context)) {
-      return ColoredBox(
+      final style = ShellChromeStyle.of(context);
+      // Sticky elevation once content scrolls under the bar: `shadow.sm` in
+      // Sorbet, a hairline in classic.
+      return AnimatedContainer(
         key: const ValueKey('floating-shell-header-surface'),
-        color: color,
+        duration: style.motion(context, style.fast),
+        decoration: BoxDecoration(
+          color: color,
+          boxShadow: _scrolledUnder ? style.stickyShadow : const [],
+        ),
+        // A foreground hairline adds no height to the bar.
+        foregroundDecoration: BoxDecoration(
+          border: Border(
+            bottom: BorderSide(
+              color: _scrolledUnder && style.raisedShadow.isEmpty
+                  ? style.border
+                  : style.border.withValues(alpha: 0),
+            ),
+          ),
+        ),
         child: child,
       );
     }
@@ -225,13 +255,8 @@ class _FloatingShellDockState extends State<FloatingShellDock> {
   @override
   Widget build(BuildContext context) {
     final media = MediaQuery.of(context);
-    final headerColor =
-        context
-            .dependOnInheritedWidgetOfExactType<shad.Theme>()
-            ?.data
-            .colorScheme
-            .background ??
-        Theme.of(context).colorScheme.surface;
+    final style = ShellChromeStyle.of(context);
+    final headerColor = style.page;
     final active = widget.bottomInset > 0;
     final editorAction =
         context
@@ -295,6 +320,31 @@ class _FloatingShellDockState extends State<FloatingShellDock> {
                       SafeArea(bottom: false, child: widget.header!),
                     ),
                   ),
+                ),
+              ),
+            ),
+          if (active && !widget.hideIdleNavigation)
+            Positioned(
+              left: 0,
+              right: 0,
+              bottom: 0,
+              height:
+                  ShellDockMetrics.clearance -
+                  ShellDockMetrics.inset +
+                  ShellDockMetrics.dockFadeHeight +
+                  media.padding.bottom,
+              child: IgnorePointer(
+                child: AnimatedOpacity(
+                  key: const ValueKey('shell-dock-fade'),
+                  duration: style.motion(context, style.base),
+                  opacity:
+                      navigationHidden ||
+                          (widget.keyboardVisible &&
+                              !widget.composerVisible &&
+                              !editorAction)
+                      ? 0
+                      : 1,
+                  child: ShellDockFade(color: style.page),
                 ),
               ),
             ),

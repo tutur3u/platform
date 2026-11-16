@@ -17,7 +17,8 @@ class AppSegment<T> {
 /// as Day / Week / Month or Self / Team. Use `AppFilterBar` instead when the
 /// choices filter a list or there are more than four.
 ///
-/// The selected segment is a raised pill on a muted track. Selection changes
+/// The selected segment is raised on a muted track, with the design's
+/// control corners. Selection changes
 /// repaint only the control; there is no sliding animation to keep it cheap.
 class AppSegmentedControl<T> extends StatelessWidget {
   const AppSegmentedControl({
@@ -42,7 +43,7 @@ class AppSegmentedControl<T> extends StatelessWidget {
     return DecoratedBox(
       decoration: BoxDecoration(
         color: c.muted.withValues(alpha: solid ? 1 : 0.8),
-        borderRadius: BorderRadius.circular(AppRadius.pill),
+        borderRadius: BorderRadius.circular(tokens.shapes.segment),
         border: solid ? Border.all(color: c.border) : null,
       ),
       child: Padding(
@@ -82,12 +83,14 @@ class _Segment extends StatelessWidget {
     final tokens = AppTokens.of(context);
     final c = tokens.colorScheme;
     final foreground = selected ? c.foreground : c.mutedForeground;
+    final outline = tokens.depth.outlined || MediaQuery.highContrastOf(context);
     return Semantics(
       selected: selected,
       inMutuallyExclusiveGroup: true,
       button: true,
       child: AppControlTarget(
         onTap: onTap,
+        radius: AppShapes.inset(tokens.shapes.segment, AppSpacing.xs),
         child: Container(
           height: 36,
           alignment: Alignment.center,
@@ -95,8 +98,11 @@ class _Segment extends StatelessWidget {
           decoration: selected
               ? BoxDecoration(
                   color: c.background,
-                  borderRadius: BorderRadius.circular(AppRadius.pill),
-                  border: Border.all(color: c.border),
+                  borderRadius: BorderRadius.circular(
+                    AppShapes.inset(tokens.shapes.segment, AppSpacing.xs),
+                  ),
+                  border: outline ? Border.all(color: c.border) : null,
+                  boxShadow: tokens.depth.selection,
                 )
               : null,
           child: Row(
@@ -111,7 +117,7 @@ class _Segment extends StatelessWidget {
                   segment.label,
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
-                  style: tokens.typography.small.copyWith(
+                  style: tokens.typography.uiCompact.copyWith(
                     color: foreground,
                     fontWeight: selected ? FontWeight.w600 : FontWeight.w500,
                   ),

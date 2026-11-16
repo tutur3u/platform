@@ -121,7 +121,7 @@ void main() {
       final roles = SorbetPalettes.roles(SorbetPreset.matcha, Brightness.light);
       expect(ambient, isFalse);
       expect(scoped, sorbet);
-      expect(theme.scaffoldBackgroundColor, roles.ground);
+      expect(theme.scaffoldBackgroundColor, roles.background);
       expect(theme.colorScheme.surface, roles.background);
       expect(theme.colorScheme.surfaceContainerLowest, roles.surface);
       expect(theme.colorScheme.surfaceContainerLow, roles.surfaceSunken);

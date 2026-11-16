@@ -15331,4 +15331,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get assistantVoiceMessagePrompt => 'Listen to this voice message and respond.';
+
+  @override
+  String get notificationsUnreadLabel => 'Unread';
 }

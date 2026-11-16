@@ -3683,8 +3683,8 @@
   "appearanceSorbetPresetRose": "Hồng",
   "appearanceSorbetPresetSorbet": "Sorbet",
   "appearanceSorbetRadiusRound": "Tròn",
-  "appearanceSorbetRadiusSharp": "Sắc cạnh",
-  "appearanceSorbetRadiusSoft": "Mềm mại",
+  "appearanceSorbetRadiusSharp": "Vuông",
+  "appearanceSorbetRadiusSoft": "Mềm",
   "appearanceSorbetToggle": "Dùng giao diện Sorbet",
   "appearanceStyleDescription": "Thay đổi cách trang chuyển và danh sách cuộn. Màu sắc và bố cục giữ nguyên trên mọi thiết bị.",
   "appearanceStyleIos": "Kiểu iOS",
@@ -6734,5 +6734,6 @@
   "settingsTelemetrySummary": "Giúp cải thiện ứng dụng",
   "settingsStorageSummary": "Quản lý dữ liệu trên thiết bị này",
   "settingsLearnMore": "Tìm hiểu thêm",
-  "assistantVoiceMessagePrompt": "Hãy nghe tin nhắn thoại này và trả lời."
+  "assistantVoiceMessagePrompt": "Hãy nghe tin nhắn thoại này và trả lời.",
+  "notificationsUnreadLabel": "Chưa đọc"
 }

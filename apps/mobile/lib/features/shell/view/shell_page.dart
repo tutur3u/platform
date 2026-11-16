@@ -7,8 +7,10 @@ import 'package:flutter/rendering.dart' show ScrollDirection;
 import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
+import 'package:mobile/core/layout/page_insets.dart';
 import 'package:mobile/core/router/routes.dart';
 import 'package:mobile/core/theme/appearance/appearance_scope.dart';
+import 'package:mobile/core/ui/icons/app_icons.dart';
 import 'package:mobile/features/apps/cubit/app_tab_cubit.dart';
 import 'package:mobile/features/apps/cubit/app_tab_state.dart';
 import 'package:mobile/features/apps/models/app_module.dart';
@@ -20,7 +22,6 @@ import 'package:mobile/features/assistant/widgets/assistant_header_geometry.dart
 import 'package:mobile/features/dashboard/view/dashboard_page.dart';
 import 'package:mobile/features/dashboard/view/home_page.dart';
 import 'package:mobile/features/notifications/view/notifications_page.dart';
-import 'package:mobile/features/profile/view/profile_navigation_avatar.dart';
 import 'package:mobile/features/profile/view/profile_overview_page.dart';
 import 'package:mobile/features/shell/cubit/shell_chrome_actions_cubit.dart';
 import 'package:mobile/features/shell/view/android_modal_back_bridge.dart';
@@ -29,6 +30,7 @@ import 'package:mobile/features/shell/view/floating_shell_dock.dart';
 import 'package:mobile/features/shell/view/mobile_section_app_bar.dart';
 import 'package:mobile/features/shell/view/shell_chrome_actions.dart';
 import 'package:mobile/features/shell/view/shell_dock_slot.dart';
+import 'package:mobile/features/shell/view/shell_home_actions.dart';
 import 'package:mobile/features/shell/view/shell_keyboard_chrome.dart';
 import 'package:mobile/features/shell/view/shell_mini_nav.dart';
 import 'package:mobile/features/shell/view/shell_navigation_rail.dart';
@@ -88,8 +90,8 @@ class _ShellPageState extends State<ShellPage> with WidgetsBindingObserver {
   static const ValueKey<String> _globalLayerKey = ValueKey('global-layer');
   static const ValueKey<String> _miniLayerKey = ValueKey('mini-layer');
   static const ValueKey<String> _backToRootKey = ValueKey('back-to-root');
-  static const ValueKey<String> _notificationsKey = ValueKey('notifications');
-  static const ValueKey<String> _profileKey = ValueKey('profile');
+  static const ValueKey<String> _tasksKey = ValueKey('tasks');
+  static const ValueKey<String> _calendarKey = ValueKey('calendar');
   static const double _miniNavItemSpacing = 1;
   static const double _floatingNavMinItemWidth = 52;
   static const double _compactBottomNavHeight = 54;
@@ -660,12 +662,13 @@ class _ShellPageState extends State<ShellPage> with WidgetsBindingObserver {
     super.dispose();
   }
 
-  static int _indexForKey(Key? key) {
-    if (key == _notificationsKey) return 3;
-    if (key == _profileKey) return 4;
-    if (key == _assistantKey) return 1;
-    if (key == _appsKey || key is GlobalKey) return 2;
-    return 0;
+  /// Route of a fixed dock destination.
+  static String _routeForKey(Key? key) {
+    if (key == _tasksKey) return Routes.tasks;
+    if (key == _calendarKey) return Routes.calendar;
+    if (key == _assistantKey) return Routes.assistant;
+    if (key == _appsKey || key is GlobalKey) return Routes.apps;
+    return Routes.home;
   }
 
   static int _calculateSelectedIndex(String location) {

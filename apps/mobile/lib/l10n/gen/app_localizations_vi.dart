@@ -7589,10 +7589,10 @@ class AppLocalizationsVi extends AppLocalizations {
   String get appearanceSorbetRadiusRound => 'Tròn';
 
   @override
-  String get appearanceSorbetRadiusSharp => 'Sắc cạnh';
+  String get appearanceSorbetRadiusSharp => 'Vuông';
 
   @override
-  String get appearanceSorbetRadiusSoft => 'Mềm mại';
+  String get appearanceSorbetRadiusSoft => 'Mềm';
 
   @override
   String get appearanceSorbetToggle => 'Dùng giao diện Sorbet';
@@ -15162,4 +15162,7 @@ class AppLocalizationsVi extends AppLocalizations {
 
   @override
   String get assistantVoiceMessagePrompt => 'Hãy nghe tin nhắn thoại này và trả lời.';
+
+  @override
+  String get notificationsUnreadLabel => 'Chưa đọc';
 }

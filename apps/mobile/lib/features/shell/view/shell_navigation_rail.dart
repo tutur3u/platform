@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:mobile/core/interaction/app_haptics.dart';
 import 'package:mobile/core/layout/layout_tokens.dart';
 import 'package:mobile/core/responsive/breakpoints.dart';
+import 'package:mobile/features/shell/view/shell_chrome_style.dart';
 import 'package:mobile/features/shell/view/shell_dock_surface.dart';
 import 'package:shadcn_flutter/shadcn_flutter.dart' as shad;
 
@@ -26,8 +27,8 @@ ShellNavigationMode shellNavigationModeFor(Size size) =>
     ? ShellNavigationMode.rail
     : ShellNavigationMode.dock;
 
-/// Horizontal space the rail occupies: slot, 2dp inner padding and 1dp
-/// surface border per side, plus the outer margin.
+/// Horizontal space the rail occupies: slot, 2dp inner padding and the 1dp
+/// edge per side, plus the outer margin.
 const double shellNavigationRailExtent =
     shellNavigationRailSlot + 2 * 2 + 1 * 2 + AppSpacing.md * 2;
 
@@ -98,9 +99,9 @@ class _RailDestination extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final foreground = shad.Theme.of(context).colorScheme.foreground;
+    final style = ShellChromeStyle.of(context);
     final enabled = item.enabled ?? true;
-    final radius = BorderRadius.circular(AppRadius.sheet);
+    final radius = BorderRadius.circular(shellNavigationRailSlot / 2);
     final label = shellNavigationItemLabel(item);
     final destination = Semantics(
       selected: selected,
@@ -118,16 +119,19 @@ class _RailDestination extends StatelessWidget {
             decoration: BoxDecoration(
               borderRadius: radius,
               color: selected
-                  ? foreground.withValues(alpha: 0.12)
-                  : Colors.transparent,
-              border: Border.all(
-                color: selected
-                    ? foreground.withValues(alpha: 0.2)
-                    : Colors.transparent,
-              ),
+                  ? style.navSelectedFill
+                  : style.navSelectedFill.withValues(alpha: 0),
             ),
             child: Center(
-              child: Opacity(opacity: enabled ? 1 : 0.4, child: item.child),
+              child: IconTheme.merge(
+                data: IconThemeData(
+                  size: 22,
+                  color: selected
+                      ? style.navSelectedInk
+                      : style.mutedForeground,
+                ),
+                child: Opacity(opacity: enabled ? 1 : 0.4, child: item.child),
+              ),
             ),
           ),
         ),

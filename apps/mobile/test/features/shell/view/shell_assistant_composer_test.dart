@@ -190,7 +190,7 @@ void main() {
         );
         expect(find.byType(PersistentShellDock), findsOneWidget);
         expect(
-          find.byKey(const ValueKey('navigation-morph-bounds')),
+          find.byKey(const ValueKey('shell-dock-bar')),
           rail ? findsNothing : findsOneWidget,
         );
         final navigationDock = tester.widget<FloatingShellDock>(
@@ -260,7 +260,7 @@ void main() {
         expect(chrome.state.navigationExpanded, isFalse);
         expect(chrome.state.composerVisible, isFalse);
         expect(
-          find.byKey(const ValueKey('navigation-morph-bounds')),
+          find.byKey(const ValueKey('shell-dock-bar')),
           rail ? findsNothing : findsOneWidget,
         );
         expect(find.byKey(railKey), rail ? findsOneWidget : findsNothing);

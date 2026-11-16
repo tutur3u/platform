@@ -51,13 +51,16 @@ void registerShellViewportChecks(
           await _expectRailViewport(tester, size);
           return;
         }
-        expect(
-          find.descendant(
-            of: find.byType(MorphingNavigationBar),
-            matching: find.byType(Text),
-          ),
-          findsNothing,
-        );
+        // The five fixed destinations carry visible labels.
+        for (final label in ['Home', 'Tasks', 'Calendar', 'Mira', 'Apps']) {
+          expect(
+            find.descendant(
+              of: find.byType(MorphingNavigationBar),
+              matching: find.text(label),
+            ),
+            findsOneWidget,
+          );
+        }
         expect(find.bySemanticsLabel('Home'), findsOneWidget);
         expect(find.bySemanticsLabel('Mira'), findsOneWidget);
         expect(
@@ -82,25 +85,18 @@ void registerShellViewportChecks(
           findsOneWidget,
         );
         final dock = tester.getRect(find.byType(MorphingNavigationBar));
-        if (size.width == 390) {
-          final press = await tester.startGesture(dock.center);
-          await tester.pump();
-          final scale = find.descendant(
-            of: find.byType(MorphingNavigationBar),
-            matching: find.byType(AnimatedScale),
-          );
-          expect(tester.widget<AnimatedScale>(scale).scale, 1.018);
-          expect(
-            find.byKey(const ValueKey('navigation-drag-preview')),
-            findsNothing,
-          );
-          expect(
-            find.byKey(const ValueKey('navigation-selection-indicator')),
-            findsOneWidget,
-          );
-          await press.cancel();
-          await tester.pumpAndSettle();
-        }
+        // The pill keeps the dock height; Sorbet and classic share it.
+        expect(
+          tester
+              .getRect(
+                find.ancestor(
+                  of: find.byType(MorphingNavigationBar),
+                  matching: find.byType(ShellDockSurface),
+                ),
+              )
+              .height,
+          ShellDockMetrics.height,
+        );
         expect(dock.height, lessThan(100));
         expect(
           find.byKey(const ValueKey('compact-shell-footer')),
@@ -191,10 +187,7 @@ void registerShellViewportChecks(
     );
     expect(
       header.height,
-      closeTo(
-        44 + mobileSectionAppBarHeight + mobileSectionAppBarPadding.vertical,
-        1,
-      ),
+      closeTo(44 + mobileSectionAppBarHeight + shellTopBarPadding.vertical, 1),
     );
     // The page primitive starts content one page-top gap below the header.
     final firstContent = find

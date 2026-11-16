@@ -3,10 +3,19 @@ import 'package:flutter/services.dart';
 import 'package:mobile/core/ui/components/app_tap_target.dart';
 import 'package:mobile/core/ui/tokens/app_tokens.dart';
 
+/// Keyboard-activatable tap region with a focus ring. The ring takes
+/// `AppShapes.focusRadius` when the design fixes one, else [radius] (the
+/// control's own corners), else 8.
 class AppControlTarget extends StatefulWidget {
-  const AppControlTarget({required this.child, required this.onTap, super.key});
+  const AppControlTarget({
+    required this.child,
+    required this.onTap,
+    this.radius,
+    super.key,
+  });
   final Widget child;
   final VoidCallback? onTap;
+  final double? radius;
   @override
   State<AppControlTarget> createState() => _AppControlTargetState();
 }
@@ -39,7 +48,9 @@ class _AppControlTargetState extends State<AppControlTarget> {
         child: AppTapTarget(
           child: DecoratedBox(
             decoration: BoxDecoration(
-              borderRadius: BorderRadius.circular(8),
+              borderRadius: BorderRadius.circular(
+                AppTokens.of(context).shapes.focusRadius ?? widget.radius ?? 8,
+              ),
               border: Border.all(
                 color: _focused
                     ? AppTokens.of(context).colorScheme.ring

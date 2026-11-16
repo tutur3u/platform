@@ -39,7 +39,8 @@ class AppButtonStyle {
     final (background, foreground, border) = switch (variant) {
       AppButtonVariant.primary => (c.primary, c.primaryForeground, null),
       AppButtonVariant.secondary => (c.secondary, c.secondaryForeground, null),
-      AppButtonVariant.outline => (null, c.foreground, c.border),
+      // Outlines use the input stroke, which reads on every surface.
+      AppButtonVariant.outline => (null, c.foreground, c.input),
       AppButtonVariant.ghost => (null, c.foreground, null),
       AppButtonVariant.destructive => (
         c.destructive,
@@ -77,10 +78,10 @@ class AppButtonStyle {
       },
       iconSize: size == AppButtonSize.large ? 18 : 16,
       gap: size == AppButtonSize.small ? 6 : 8,
-      radius: tokens.radiusMd,
+      radius: tokens.shapes.button,
       textStyle: size == AppButtonSize.small
-          ? tokens.typography.xSmall.merge(tokens.typography.medium)
-          : tokens.typography.textSmall,
+          ? tokens.typography.uiSm
+          : tokens.typography.ui,
       square: square,
     );
   }

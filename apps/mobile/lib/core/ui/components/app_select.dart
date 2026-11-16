@@ -56,6 +56,8 @@ class AppSelect<T> extends StatelessWidget {
     final tokens = AppTokens.of(context);
     final c = tokens.colorScheme;
     final current = options.where((o) => o.value == value).firstOrNull;
+    final shapes = tokens.shapes;
+    final corners = BorderRadius.circular(shapes.field);
     final enabled = onChanged != null;
     return Semantics(
       button: true,
@@ -68,19 +70,17 @@ class AppSelect<T> extends StatelessWidget {
         child: Material(
           color: c.card.withValues(alpha: 0),
           shape: RoundedRectangleBorder(
-            borderRadius: tokens.borderRadiusLg,
+            borderRadius: corners,
             side: BorderSide(color: c.input),
           ),
           child: InkWell(
             onTap: enabled ? () => _open(context) : null,
-            customBorder: RoundedRectangleBorder(
-              borderRadius: tokens.borderRadiusLg,
-            ),
+            customBorder: RoundedRectangleBorder(borderRadius: corners),
             child: ConstrainedBox(
               constraints: const BoxConstraints(minHeight: kAppMinTapTarget),
               child: Padding(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: AppSpacing.md + 2,
+                padding: EdgeInsets.symmetric(
+                  horizontal: shapes.fieldPadding.left,
                   vertical: AppSpacing.sm,
                 ),
                 child: Row(
@@ -88,7 +88,7 @@ class AppSelect<T> extends StatelessWidget {
                     Expanded(
                       child: Text(
                         current?.label ?? placeholder ?? '',
-                        style: tokens.typography.base.copyWith(
+                        style: tokens.typography.body.copyWith(
                           color: current == null
                               ? c.mutedForeground
                               : c.foreground,

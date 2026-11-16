@@ -1,7 +1,8 @@
 part of 'show_app_sheet.dart';
 
-/// The one sheet surface: popover fill, top radius, overlay shadow and the
-/// drag handle. `showAppSheet` and the compact `showAdaptiveSheet` path both
+/// The one sheet surface: popover fill, the design's sheet radius and
+/// overlay shadow, and the drag handle (`AppShapes.handleSize`, 8 from the
+/// top). `showAppSheet` and the compact `showAdaptiveSheet` path both
 /// draw it, so every sheet in the app looks and drags the same way.
 class AppSheetSurface extends StatelessWidget {
   const AppSheetSurface({
@@ -30,14 +31,14 @@ class AppSheetSurface extends StatelessWidget {
   Widget build(BuildContext context) {
     final tokens = AppTokens.of(context);
     final c = tokens.colorScheme;
-    final corner = tokens.interface.radius(AppRadius.sheet);
+    final corner = tokens.shapes.sheet;
     final radius = dialog
         ? BorderRadius.circular(corner)
         : BorderRadius.vertical(top: Radius.circular(corner));
     return DecoratedBox(
       decoration: BoxDecoration(
         borderRadius: radius,
-        boxShadow: AppElevation.overlay(c),
+        boxShadow: tokens.depth.overlay,
       ),
       child: Material(
         color: c.popover,
@@ -112,14 +113,14 @@ class _HandleBar extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final c = AppTokens.of(context).colorScheme;
+    final shapes = AppTokens.of(context).shapes;
     return Center(
       child: Container(
         key: const ValueKey('app-sheet-handle'),
-        width: 40,
-        height: 5,
+        width: shapes.handleSize.width,
+        height: shapes.handleSize.height,
         decoration: BoxDecoration(
-          color: c.mutedForeground.withValues(alpha: 0.35),
+          color: shapes.handleColor,
           borderRadius: BorderRadius.circular(AppRadius.pill),
         ),
       ),

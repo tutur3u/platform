@@ -4,6 +4,7 @@ import 'package:mobile/core/theme/appearance/appearance_scope.dart';
 import 'package:mobile/core/theme/appearance/glass_effects.dart';
 import 'package:mobile/core/ui/overlays/app_modal_scope.dart';
 import 'package:mobile/core/ui/overlays/show_app_sheet.dart';
+import 'package:mobile/core/ui/tokens/app_tokens.dart';
 import 'package:mobile/core/widgets/shadcn_flutter_compat.dart' as shad;
 import 'package:mobile/widgets/app_dialog_scaffold.dart';
 
@@ -104,7 +105,7 @@ Widget _sheetSurface(BuildContext context, Widget child, Color surface) {
   }
   return ClipRRect(
     key: const ValueKey('adaptive-sheet-glass'),
-    borderRadius: BorderRadius.circular(24),
+    borderRadius: BorderRadius.circular(AppTokens.of(context).shapes.dialog),
     child: GlassBlur(
       sigma: 20,
       child: Material(

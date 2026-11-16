@@ -51,11 +51,11 @@ class AppChip extends StatelessWidget {
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
       decoration: BoxDecoration(
         color: isSelected ? c.accent : c.muted,
-        borderRadius: BorderRadius.circular(10),
+        borderRadius: BorderRadius.circular(tokens.shapes.chip),
         border: Border.all(color: isSelected ? c.primary : c.border),
       ),
       child: DefaultTextStyle.merge(
-        style: tokens.typography.small.copyWith(
+        style: tokens.typography.uiCompact.copyWith(
           color: isSelected ? c.accentForeground : c.foreground,
         ),
         child: Row(
@@ -88,7 +88,11 @@ class AppChip extends StatelessWidget {
                 : null,
             child: activate == null
                 ? Opacity(opacity: selected == null ? 1 : 0.5, child: content)
-                : AppControlTarget(onTap: activate, child: content),
+                : AppControlTarget(
+                    onTap: activate,
+                    radius: tokens.shapes.chip,
+                    child: content,
+                  ),
           ),
         ),
         if (onDeleted != null)

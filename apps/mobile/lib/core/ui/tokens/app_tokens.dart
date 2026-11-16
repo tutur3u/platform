@@ -1,8 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:mobile/core/layout/layout_tokens.dart';
+import 'package:mobile/core/theme/sorbet/sorbet_tokens.dart';
 import 'package:mobile/core/ui/tokens/app_color_tokens.dart';
 import 'package:mobile/core/ui/tokens/app_interface_tokens.dart';
+import 'package:mobile/core/ui/tokens/app_shapes.dart';
 import 'package:mobile/core/ui/tokens/app_typography.dart';
+
+export 'package:mobile/core/ui/tokens/app_shapes.dart';
 
 /// Elevation recipes. Mobile surfaces are mostly flat; shadows are reserved
 /// for floating layers.
@@ -43,12 +47,20 @@ abstract final class AppMotion {
 /// Resolved design tokens for a [BuildContext].
 ///
 /// `AppTokens.of(context)` replaces `shad.Theme.of(context)`: it exposes the
-/// same `colorScheme` and `typography` member names plus radius, spacing and
-/// elevation. Colours come from the appearance theme's [AppColorTokens]
-/// extension, falling back to Classic for the ambient brightness.
+/// same `colorScheme` and `typography` member names plus radius, spacing,
+/// shapes and depth. Colours come from the appearance theme's
+/// [AppColorTokens] extension, falling back to Classic for the ambient
+/// brightness. A Sorbet theme ([SorbetTokens]) supplies its typography,
+/// shapes and depth; every other theme gets the classic ones.
 @immutable
 class AppTokens {
-  const AppTokens._(this.colorScheme, this.typography, this.interface);
+  const AppTokens._(
+    this.colorScheme,
+    this.typography,
+    this.interface,
+    this.shapes,
+    this.depth,
+  );
 
   factory AppTokens.of(BuildContext context) {
     final theme = Theme.of(context);
@@ -57,13 +69,35 @@ class AppTokens {
         AppColorTokens.fallback(theme.brightness);
     final interface =
         theme.extension<AppInterfaceTokens>() ?? AppInterfaceTokens.standard;
-    return AppTokens._(colors, _typography, interface);
+    final sorbet = theme.extension<SorbetTokens>();
+    if (sorbet == null) {
+      return AppTokens._(
+        colors,
+        _typography,
+        interface,
+        AppShapes.classic(interface, colors),
+        AppDepth.classic(colors),
+      );
+    }
+    return AppTokens._(
+      colors,
+      sorbet.typography,
+      interface,
+      AppShapes.sorbet(sorbet, colors),
+      AppDepth.sorbet(sorbet),
+    );
   }
 
   static const _typography = AppTypography();
 
   final AppColorTokens colorScheme;
   final AppTypography typography;
+
+  /// Control and surface corners, the sheet handle and field metrics.
+  final AppShapes shapes;
+
+  /// Shadows and outlines.
+  final AppDepth depth;
 
   /// Style, density and corner choices from Appearance.
   final AppInterfaceTokens interface;

@@ -1,148 +1,25 @@
-import 'dart:ui' show lerpDouble;
-
 import 'package:flutter/material.dart';
 import 'package:mobile/core/theme/sorbet/sorbet_palette_types.dart';
 import 'package:mobile/core/theme/sorbet/sorbet_palettes.dart';
 import 'package:mobile/core/theme/sorbet/sorbet_preferences.dart';
+import 'package:mobile/core/theme/sorbet/sorbet_scales.dart';
+import 'package:mobile/core/ui/tokens/app_typography.dart';
 
-/// Corner radii for one Sorbet radius option (`radius` in
-/// `sorbet-tokens.json`; the soft option carries the token values).
-@immutable
-class SorbetRadii {
-  const SorbetRadii({
-    required this.small,
-    required this.control,
-    required this.card,
-    required this.panel,
-    required this.popover,
-    this.full = 9999,
-  });
+export 'package:mobile/core/theme/sorbet/sorbet_scales.dart';
 
-  factory SorbetRadii.of(SorbetRadius radius) => switch (radius) {
-    SorbetRadius.soft => const SorbetRadii(
-      small: 8,
-      control: 12,
-      card: 18,
-      panel: 24,
-      popover: 18,
-    ),
-    SorbetRadius.sharp => const SorbetRadii(
-      small: 4,
-      control: 6,
-      card: 8,
-      panel: 12,
-      popover: 6,
-    ),
-    SorbetRadius.round => const SorbetRadii(
-      small: 12,
-      control: 16,
-      card: 24,
-      panel: 32,
-      popover: 20,
-    ),
+/// Bundled font families (`type.families`). The `font` setting swaps the
+/// sans family only.
+abstract final class SorbetFonts {
+  static const nunito = 'Nunito';
+  static const noto = 'NotoSans';
+  static const mono = 'JetBrainsMono';
+
+  /// The sans family for [font], or null for the platform default.
+  static String? sans(SorbetFont font) => switch (font) {
+    SorbetFont.nunito => nunito,
+    SorbetFont.noto => noto,
+    SorbetFont.system => null,
   };
-
-  factory SorbetRadii.lerp(SorbetRadii a, SorbetRadii b, double t) =>
-      SorbetRadii(
-        small: lerpDouble(a.small, b.small, t)!,
-        control: lerpDouble(a.control, b.control, t)!,
-        card: lerpDouble(a.card, b.card, t)!,
-        panel: lerpDouble(a.panel, b.panel, t)!,
-        popover: lerpDouble(a.popover, b.popover, t)!,
-        full: lerpDouble(a.full, b.full, t)!,
-      );
-
-  final double small;
-  final double control;
-  final double card;
-  final double panel;
-  final double popover;
-
-  /// Pills and circles.
-  final double full;
-}
-
-/// Control heights for one density (`control.<density>`).
-@immutable
-class SorbetControlSizes {
-  const SorbetControlSizes({
-    required this.xs,
-    required this.sm,
-    required this.md,
-    required this.lg,
-  });
-
-  factory SorbetControlSizes.of(SorbetDensity density) => switch (density) {
-    SorbetDensity.comfortable => const SorbetControlSizes(
-      xs: 28,
-      sm: 32,
-      md: 38,
-      lg: 44,
-    ),
-    SorbetDensity.compact => const SorbetControlSizes(
-      xs: 24,
-      sm: 28,
-      md: 32,
-      lg: 40,
-    ),
-    SorbetDensity.spacious => const SorbetControlSizes(
-      xs: 32,
-      sm: 36,
-      md: 44,
-      lg: 48,
-    ),
-  };
-
-  final double xs;
-  final double sm;
-  final double md;
-  final double lg;
-}
-
-/// Motion durations (`motion.duration`).
-@immutable
-class SorbetMotion {
-  const SorbetMotion({
-    this.instant = const Duration(milliseconds: 80),
-    this.fast = const Duration(milliseconds: 120),
-    this.base = const Duration(milliseconds: 180),
-    this.slow = const Duration(milliseconds: 280),
-    this.sheet = const Duration(milliseconds: 320),
-  });
-
-  final Duration instant;
-  final Duration fast;
-  final Duration base;
-  final Duration slow;
-  final Duration sheet;
-}
-
-/// Fixed mobile metrics (`mobile`).
-@immutable
-class SorbetMetrics {
-  const SorbetMetrics({
-    this.touchTarget = 44,
-    this.inputFontSize = 16,
-    this.gutter = 16,
-    this.headerHeight = 56,
-    this.dockHeight = 64,
-    this.dockInset = 12,
-    this.dockRadius = 9999,
-    this.sheetRadius = 24,
-    this.sheetHandle = const Size(36, 4),
-    this.listRowMinHeight = 52,
-  });
-
-  final double touchTarget;
-  final double inputFontSize;
-  final double gutter;
-  final double headerHeight;
-  final double dockHeight;
-  final double dockInset;
-  final double dockRadius;
-  final double sheetRadius;
-  final Size sheetHandle;
-  final double listRowMinHeight;
 }
 
 /// Sorbet-only design tokens, carried by the Sorbet Material theme. Classic
@@ -157,8 +34,21 @@ class SorbetTokens extends ThemeExtension<SorbetTokens> {
     required this.ring,
     required this.scrim,
     required this.hover,
+    required this.navSelectedFill,
+    required this.navSelectedInk,
+    required this.dockSurface,
+    required this.skeleton,
     required this.radii,
     required this.controls,
+    this.eventTone = SorbetHueTone.calm,
+    this.tagTone = SorbetHueTone.fill,
+    this.focus = const SorbetFocusRing(),
+    this.typography = const AppTypography(
+      fontFamily: SorbetFonts.nunito,
+      monoFamily: SorbetFonts.mono,
+      scale: AppTypeScale.sorbet,
+    ),
+    this.shadows = SorbetShadows.light,
     this.space = defaultSpace,
     this.motion = const SorbetMotion(),
     this.metrics = const SorbetMetrics(),
@@ -180,8 +70,18 @@ class SorbetTokens extends ThemeExtension<SorbetTokens> {
       ring: ring,
       scrim: roles.scrim,
       hover: roles.hover,
+      navSelectedFill: roles.accent,
+      navSelectedInk: roles.foreground,
+      dockSurface: roles.surface,
+      skeleton: roles.surfaceSunken,
       radii: SorbetRadii.of(theme.radius),
       controls: SorbetControlSizes.of(theme.density),
+      typography: AppTypography(
+        fontFamily: SorbetFonts.sans(theme.font),
+        monoFamily: SorbetFonts.mono,
+        scale: AppTypeScale.sorbet,
+      ),
+      shadows: SorbetShadows.of(brightness),
     );
   }
 
@@ -201,11 +101,45 @@ class SorbetTokens extends ThemeExtension<SorbetTokens> {
   final Color ring;
   final Color scrim;
   final Color hover;
+
+  /// Selected dock and navigation items (`roles.navSelectedFill`, the soft
+  /// accent) and their label and icon (`roles.navSelectedInk`).
+  final Color navSelectedFill;
+  final Color navSelectedInk;
+
+  /// The floating dock (`roles.dockSurface`).
+  final Color dockSurface;
+
+  /// Loading placeholders (`roles.skeleton`); they pulse once per
+  /// [SorbetMotion.skeletonPulse] and stay static under reduced motion.
+  final Color skeleton;
   final SorbetRadii radii;
   final SorbetControlSizes controls;
+
+  /// Hue variant for calendar event blocks (`roles.eventFill`).
+  final SorbetHueTone eventTone;
+
+  /// Hue variant for tags and status chips (`roles.tagFill`).
+  final SorbetHueTone tagTone;
+  final SorbetFocusRing focus;
+
+  /// The contract type roles in the chosen sans family and the mono family.
+  final AppTypography typography;
+  final SorbetShadows shadows;
   final List<double> space;
   final SorbetMotion motion;
   final SorbetMetrics metrics;
+
+  /// The fill of [hue] for an event block.
+  Color eventFill(SorbetHue hue) => _tone(hue, eventTone);
+
+  /// The fill of [hue] for a tag or status chip.
+  Color tagFill(SorbetHue hue) => _tone(hue, tagTone);
+
+  static Color _tone(SorbetHue hue, SorbetHueTone tone) => switch (tone) {
+    SorbetHueTone.fill => hue.fill,
+    SorbetHueTone.calm => hue.calm,
+  };
 
   @override
   SorbetTokens copyWith({
@@ -216,8 +150,17 @@ class SorbetTokens extends ThemeExtension<SorbetTokens> {
     Color? ring,
     Color? scrim,
     Color? hover,
+    Color? navSelectedFill,
+    Color? navSelectedInk,
+    Color? dockSurface,
+    Color? skeleton,
     SorbetRadii? radii,
     SorbetControlSizes? controls,
+    SorbetHueTone? eventTone,
+    SorbetHueTone? tagTone,
+    SorbetFocusRing? focus,
+    AppTypography? typography,
+    SorbetShadows? shadows,
     List<double>? space,
     SorbetMotion? motion,
     SorbetMetrics? metrics,
@@ -229,8 +172,17 @@ class SorbetTokens extends ThemeExtension<SorbetTokens> {
     ring: ring ?? this.ring,
     scrim: scrim ?? this.scrim,
     hover: hover ?? this.hover,
+    navSelectedFill: navSelectedFill ?? this.navSelectedFill,
+    navSelectedInk: navSelectedInk ?? this.navSelectedInk,
+    dockSurface: dockSurface ?? this.dockSurface,
+    skeleton: skeleton ?? this.skeleton,
     radii: radii ?? this.radii,
     controls: controls ?? this.controls,
+    eventTone: eventTone ?? this.eventTone,
+    tagTone: tagTone ?? this.tagTone,
+    focus: focus ?? this.focus,
+    typography: typography ?? this.typography,
+    shadows: shadows ?? this.shadows,
     space: space ?? this.space,
     motion: motion ?? this.motion,
     metrics: metrics ?? this.metrics,
@@ -250,8 +202,17 @@ class SorbetTokens extends ThemeExtension<SorbetTokens> {
       ring: mix(ring, other.ring),
       scrim: mix(scrim, other.scrim),
       hover: mix(hover, other.hover),
+      navSelectedFill: mix(navSelectedFill, other.navSelectedFill),
+      navSelectedInk: mix(navSelectedInk, other.navSelectedInk),
+      dockSurface: mix(dockSurface, other.dockSurface),
+      skeleton: mix(skeleton, other.skeleton),
       radii: SorbetRadii.lerp(radii, other.radii, t),
       controls: near.controls,
+      eventTone: near.eventTone,
+      tagTone: near.tagTone,
+      focus: near.focus,
+      typography: near.typography,
+      shadows: SorbetShadows.lerp(shadows, other.shadows, t),
       space: near.space,
       motion: near.motion,
       metrics: near.metrics,

@@ -9,6 +9,8 @@ import 'package:mobile/core/responsive/adaptive_sheet.dart';
 import 'package:mobile/core/router/routes.dart';
 import 'package:mobile/features/notifications/widgets/notifications_action_button.dart';
 import 'package:mobile/features/shell/cubit/shell_chrome_actions_cubit.dart';
+import 'package:mobile/features/shell/view/shell_chrome_style.dart';
+import 'package:mobile/features/shell/view/shell_top_bar_button.dart';
 import 'package:mobile/l10n/l10n.dart';
 import 'package:mobile/widgets/app_dialog_scaffold.dart';
 import 'package:mobile/widgets/nova_loading_indicator.dart';
@@ -297,6 +299,7 @@ class _ShellActionSegments extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final colors = shad.Theme.of(context).colorScheme;
+    final style = ShellChromeStyle.of(context);
     return Container(
       key: ValueKey<String>(actions.first.segmentGroup!),
       padding: const EdgeInsets.all(3),
@@ -321,8 +324,8 @@ class _ShellActionSegments extends StatelessWidget {
                   duration: const Duration(milliseconds: 200),
                   decoration: BoxDecoration(
                     color: action.highlighted
-                        ? colors.primary
-                        : Colors.transparent,
+                        ? style.navSelectedFill
+                        : style.navSelectedFill.withValues(alpha: 0),
                     borderRadius: BorderRadius.circular(16),
                   ),
                   child: IconButton(
@@ -340,8 +343,8 @@ class _ShellActionSegments extends StatelessWidget {
                       action.icon,
                       size: 20,
                       color: action.highlighted
-                          ? colors.primaryForeground
-                          : colors.mutedForeground,
+                          ? style.navSelectedInk
+                          : style.mutedForeground,
                     ),
                     onPressed: action.enabled
                         ? () => _invokeShellAction(action)
@@ -369,10 +372,10 @@ class _ShellActionsOverflow extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return IconButton(
+    return ShellTopBarButton(
       key: const ValueKey<String>('shell-actions-overflow'),
       tooltip: MaterialLocalizations.of(context).showMenuTooltip,
-      icon: const Icon(Icons.more_horiz_rounded, size: 22),
+      icon: const Icon(Icons.more_horiz_rounded),
       onPressed: () async {
         final id = await showAdaptiveSheet<String>(
           context: context,
@@ -448,10 +451,8 @@ class _ShellActionButton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final theme = shad.Theme.of(context);
-    final iconColor = action.highlighted ? theme.colorScheme.primary : null;
     final iconChild = SizedBox.square(
-      dimension: 18,
+      dimension: 22,
       child: AnimatedSwitcher(
         duration: const Duration(milliseconds: 180),
         switchInCurve: Curves.easeOutCubic,
@@ -463,37 +464,28 @@ class _ShellActionButton extends StatelessWidget {
             ? const Center(
                 key: ValueKey<String>('loading'),
                 child: SizedBox.square(
-                  dimension: 14,
+                  dimension: 16,
                   child: NovaLoadingIndicator(size: 20),
                 ),
               )
-            : Icon(
-                action.icon,
-                key: ValueKey<String>('icon-${action.id}'),
-                size: 18,
-                color: iconColor,
-              ),
+            : Icon(action.icon, key: ValueKey<String>('icon-${action.id}')),
       ),
     );
 
-    final button = KeyedSubtree(
+    return KeyedSubtree(
       key: ValueKey<String>('shell-action-button-${action.id}'),
       child: AnimatedOpacity(
         duration: const Duration(milliseconds: 180),
         opacity: action.enabled && !action.isLoading ? 1 : 0.6,
-        child: shad.IconButton.ghost(
+        child: ShellTopBarButton(
+          icon: iconChild,
+          tooltip: action.tooltip,
+          highlighted: action.highlighted,
           onPressed: action.enabled && !action.isLoading
               ? () => _invokeShellAction(action)
               : null,
-          icon: iconChild,
         ),
       ),
     );
-
-    if (action.tooltip == null || action.tooltip!.trim().isEmpty) {
-      return button;
-    }
-
-    return Tooltip(message: action.tooltip, child: button);
   }
 }

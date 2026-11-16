@@ -1,9 +1,10 @@
 import 'package:flutter/material.dart';
+import 'package:mobile/core/layout/page_insets.dart';
 import 'package:mobile/core/router/routes.dart';
 import 'package:mobile/features/shell/view/dock_action_transition.dart';
 
-const floatingDockHorizontalInset = 12.0;
-const floatingDockBottomGap = 8.0;
+const floatingDockHorizontalInset = ShellDockMetrics.inset;
+const floatingDockBottomGap = ShellDockMetrics.inset;
 const floatingDockActionSize = 52.0;
 
 bool usesRootDockSlots(String location) =>

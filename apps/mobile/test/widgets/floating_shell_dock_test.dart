@@ -35,8 +35,8 @@ void main() {
             header: showHeader
                 ? Padding(
                     padding: EdgeInsets.only(
-                      top: mobileSectionAppBarPadding.top,
-                      bottom: mobileSectionAppBarPadding.bottom,
+                      top: shellTopBarPadding.top,
+                      bottom: shellTopBarPadding.bottom,
                     ),
                     child: const SizedBox(
                       key: Key('floating-header'),

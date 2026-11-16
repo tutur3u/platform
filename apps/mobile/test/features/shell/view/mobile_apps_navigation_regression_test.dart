@@ -230,7 +230,7 @@ void main() {
     testWidgets('selecting an app ${tapIcon ? 'icon' : 'label'} exits reorder '
         'and navigates normally', (tester) async {
       await mount(tester);
-      await tester.longPress(find.text('Tasks'));
+      await tester.longPress(_appTile('Tasks'));
       await _pump(tester);
       expect(find.byTooltip('Hide app'), findsWidgets);
       final target = tapIcon
@@ -240,7 +240,7 @@ void main() {
                   matching: find.byType(Icon),
                 )
                 .first
-          : find.text('Calendar');
+          : _appTile('Calendar');
       await tester.tap(target);
       await _pump(tester);
       expect(router.routeInformationProvider.value.uri.path, Routes.calendar);
@@ -255,7 +255,7 @@ void main() {
     ) async {
       await mount(tester);
       final state = tester.state(find.byType(AppsHubPage));
-      await tester.longPress(find.text('Tasks'));
+      await tester.longPress(_appTile('Tasks'));
       await _pump(tester);
       expect(find.byTooltip('Hide app'), findsWidgets);
       router.go(destination);
@@ -282,7 +282,7 @@ void main() {
     await tester.tapAt(Offset(cell.center.dx, cell.top + 5));
     await _pump(tester);
     expect(router.routeInformationProvider.value.uri.path, Routes.apps);
-    await tester.longPress(find.text('Tasks'));
+    await tester.longPress(_appTile('Tasks'));
     await _pump(tester);
     final semantics = tester.ensureSemantics();
     expect(
@@ -300,3 +300,9 @@ void main() {
     semantics.dispose();
   });
 }
+
+/// An app tile label; the dock carries the same destination labels.
+Finder _appTile(String label) => find.descendant(
+  of: find.byKey(const ValueKey('apps-screen')),
+  matching: find.text(label),
+);

@@ -1,60 +1,74 @@
 part of 'shell_page.dart';
 
 extension _ShellPageNavigation on _ShellPageState {
+  /// The five fixed dock destinations. Root pages without a dock slot
+  /// (Notifications and You) lead with Back and leave every slot inactive.
   List<shad.NavigationItem> _buildNavItems(
     BuildContext context,
     AppTabState state,
     AppLocalizations l10n,
   ) => [
+    if (_showsGlobalBack(widget.matchedLocation))
+      shad.NavigationItem(
+        key: _ShellPageState._backToRootKey,
+        child: _buildCompactNavIcon(
+          icon: AppIcons.back,
+          semanticLabel: l10n.navBack,
+          itemIndex: 0,
+        ),
+      ),
     shad.NavigationItem(
       key: _ShellPageState._homeKey,
       child: _buildCompactNavIcon(
-        icon: Icons.home_outlined,
+        icon: LucideIcons.house,
         semanticLabel: l10n.navHome,
         itemIndex: 0,
       ),
     ),
     shad.NavigationItem(
-      key: _ShellPageState._appsKey,
+      key: _ShellPageState._tasksKey,
       child: _buildCompactNavIcon(
-        icon: Icons.apps_outlined,
-        semanticLabel: l10n.navApps,
+        icon: LucideIcons.squareCheckBig,
+        semanticLabel: l10n.navTasks,
+        itemIndex: 1,
+      ),
+    ),
+    shad.NavigationItem(
+      key: _ShellPageState._calendarKey,
+      child: _buildCompactNavIcon(
+        icon: LucideIcons.calendar,
+        semanticLabel: l10n.navCalendar,
         itemIndex: 2,
       ),
     ),
     shad.NavigationItem(
       key: _ShellPageState._assistantKey,
       child: _buildCompactNavIcon(
-        icon: Icons.auto_awesome_outlined,
+        icon: LucideIcons.sparkles,
         image: NovaLoadingIndicator(
           key: ValueKey(_rootTabReplayTokens[Routes.assistant] ?? 0),
-          size: 24,
+          size: 22,
           repeat: false,
           play: widget.matchedLocation == Routes.assistant,
         ),
         semanticLabel: l10n.navMira,
-        itemIndex: 1,
-      ),
-    ),
-
-    shad.NavigationItem(
-      key: _ShellPageState._notificationsKey,
-      child: _buildCompactNavIcon(
-        icon: Icons.notifications_outlined,
-        semanticLabel: l10n.navInbox,
         itemIndex: 3,
       ),
     ),
     shad.NavigationItem(
-      key: _ShellPageState._profileKey,
+      key: _ShellPageState._appsKey,
       child: _buildCompactNavIcon(
-        icon: Icons.person_outline_rounded,
-        image: const ProfileNavigationAvatar(),
-        semanticLabel: l10n.navYou,
+        icon: LucideIcons.layoutGrid,
+        semanticLabel: l10n.navApps,
         itemIndex: 4,
       ),
     ),
   ];
+
+  bool _showsGlobalBack(String location) =>
+      location == Routes.notifications ||
+      location == Routes.notificationsArchive ||
+      location == Routes.profileRoot;
 
   Widget _buildCompactNavIcon({
     required IconData icon,
@@ -67,17 +81,17 @@ extension _ShellPageNavigation on _ShellPageState {
     button: true,
     child: ExcludeSemantics(
       child: SizedBox(
-        width: dropdown ? 36 : 24,
-        height: 24,
+        width: dropdown ? 36 : 22,
+        height: 22,
         child: dropdown
             ? Row(
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  Icon(icon, size: 22),
+                  Icon(icon, size: 20),
                   const Icon(Icons.expand_more, size: 14),
                 ],
               )
-            : image ?? Icon(icon, size: 24),
+            : image ?? Icon(icon, size: 22),
       ),
     ),
   );
@@ -185,13 +199,6 @@ extension _ShellPageNavigation on _ShellPageState {
     }
     if (location == Routes.assistant) {
       return _ShellPageState._assistantKey;
-    }
-    if (location == Routes.notifications ||
-        location == Routes.notificationsArchive) {
-      return _ShellPageState._notificationsKey;
-    }
-    if (location == Routes.profileRoot) {
-      return _ShellPageState._profileKey;
     }
     if (location == Routes.apps ||
         AppRegistry.moduleFromLocation(location) != null) {

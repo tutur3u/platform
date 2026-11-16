@@ -10,10 +10,11 @@ import 'package:mobile/features/auth/cubit/auth_cubit.dart';
 import 'package:mobile/features/auth/cubit/auth_state.dart';
 import 'package:mobile/features/notifications/cubit/notifications_cubit.dart';
 import 'package:mobile/features/notifications/push/push_notification_service.dart';
+import 'package:mobile/core/ui/icons/app_icons.dart';
+import 'package:mobile/features/shell/view/shell_top_bar_button.dart';
 import 'package:mobile/features/workspace/cubit/workspace_cubit.dart';
 import 'package:mobile/features/workspace/cubit/workspace_state.dart';
 import 'package:mobile/l10n/l10n.dart';
-import 'package:shadcn_flutter/shadcn_flutter.dart' as shad;
 
 bool shouldShowNotificationsActionForLocation(String matchedLocation) {
   return matchedLocation == Routes.home ||
@@ -165,37 +166,16 @@ class _NotificationsActionButtonState extends State<NotificationsActionButton>
             return Semantics(
               button: true,
               label: context.l10n.notificationsTitle,
-              child: SizedBox(
+              value: unreadCount > 0
+                  ? context.l10n.notificationsSubtitle(unreadCount)
+                  : null,
+              excludeSemantics: true,
+              onTap: _openPage,
+              child: ShellTopBarButton(
                 key: const ValueKey('notifications-action-button'),
-                width: 40,
-                height: 40,
-                child: Stack(
-                  clipBehavior: Clip.none,
-                  children: [
-                    Positioned.fill(
-                      child: shad.IconButton.ghost(
-                        icon: Icon(
-                          unreadCount > 0
-                              ? Icons.notifications_active_outlined
-                              : Icons.notifications_none_rounded,
-                          size: 21,
-                        ),
-                        onPressed: _openPage,
-                      ),
-                    ),
-                    if (unreadCount > 0)
-                      Positioned(
-                        top: 3,
-                        right: 4,
-                        child: IgnorePointer(
-                          child: _UnreadBadge(
-                            key: const ValueKey('notifications-unread-badge'),
-                            count: unreadCount,
-                          ),
-                        ),
-                      ),
-                  ],
-                ),
+                icon: const Icon(LucideIcons.bell),
+                onPressed: _openPage,
+                badge: unreadCount > 0 ? const ShellUnreadDot() : null,
               ),
             );
           },
@@ -218,38 +198,6 @@ class _NotificationsActionButtonState extends State<NotificationsActionButton>
                 },
                 child: notificationsButton,
               ),
-      ),
-    );
-  }
-}
-
-class _UnreadBadge extends StatelessWidget {
-  const _UnreadBadge({required this.count, super.key});
-
-  final int count;
-
-  @override
-  Widget build(BuildContext context) {
-    final colorScheme = Theme.of(context).colorScheme;
-    final theme = shad.Theme.of(context);
-    final label = count > 99 ? '99+' : '$count';
-
-    return Container(
-      constraints: const BoxConstraints(minWidth: 16, minHeight: 16),
-      padding: const EdgeInsets.symmetric(horizontal: 4),
-      decoration: BoxDecoration(
-        color: colorScheme.error,
-        borderRadius: BorderRadius.circular(999),
-        border: Border.all(color: colorScheme.surface, width: 1.5),
-      ),
-      alignment: Alignment.center,
-      child: Text(
-        label,
-        style: theme.typography.xSmall.copyWith(
-          color: colorScheme.onError,
-          fontWeight: FontWeight.w700,
-          height: 1,
-        ),
       ),
     );
   }

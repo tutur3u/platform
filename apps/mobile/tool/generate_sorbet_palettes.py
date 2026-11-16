@@ -1,10 +1,13 @@
 """Writes apps/mobile/lib/core/theme/sorbet/sorbet_palettes.dart.
 
-The default roles and hues come from packages/ui/src/sorbet-tokens.json and
-the preset source colours and High Contrast inks from
-packages/ui/src/sorbet-presets.css. Run from anywhere, then format:
+Everything comes from packages/ui/src/sorbet-tokens.json: the default roles
+(`color`), the hues (`hues`), the preset source colours
+(`presets.palettes.<id>.<mode>`, keys in `presets.sources`) and the High
+Contrast inks (`presets.palettes.high-contrast.<mode>.inks`). The parity test
+cross-checks the presets against sorbet-presets.css. Run from anywhere, with
+an optional path to another tokens file, then format:
 
-    python3 apps/mobile/tool/generate_sorbet_palettes.py
+    python3 apps/mobile/tool/generate_sorbet_palettes.py [tokens.json]
     dart format apps/mobile/lib/core/theme/sorbet/sorbet_palettes.dart
 """
 
@@ -17,20 +20,14 @@ root = Path(__file__).resolve().parents[3]
 tokens_path = sys.argv[1] if len(sys.argv) > 1 else root / 'packages/ui/src/sorbet-tokens.json'
 target = root / 'apps/mobile/lib/core/theme/sorbet/sorbet_palettes.dart'
 tokens = json.load(open(tokens_path))
-presets = open(f'{root}/packages/ui/src/sorbet-presets.css').read()
-presets = re.sub(r'/\*.*?\*/', '', presets, flags=re.S)
+palettes = tokens['presets']['palettes']
 
 order = ['sorbet','matcha','blueberry','mango','lavender','lagoon','rose','graphite','midnight','high-contrast']
 hue_names = ['blue','green','orange','red','yellow','purple','pink','teal','gray']
-src = {}; hc_inks = {}
-for m in re.finditer(r'([^{}]+)\{([^{}]*)\}', presets):
-    sel = ' '.join(m.group(1).split())
-    d = {k.removeprefix('sorbet-'): v for k, v in re.findall(r'--([\w-]+):\s*(#[0-9a-fA-F]{6})\s*;', m.group(2))}
-    mm = re.search(r'\[data-sorbet-preview="([\w-]+)"\](\[data-sorbet-preview-mode="dark"\])?', sel)
-    if not mm or 'ground' not in d: continue
-    mode = 'dark' if mm.group(2) else 'light'
-    src[(mm.group(1), mode)] = d
-    if mm.group(1) == 'high-contrast': hc_inks[mode] = [d[k] for k in hue_names]
+if list(palettes) != order:
+    sys.exit(f'presets.palettes ids {list(palettes)} differ from {order}')
+src = {(p, mode): palettes[p][mode] for p in order for mode in ['light', 'dark']}
+hc_inks = {mode: [palettes['high-contrast'][mode]['inks'][h] for h in hue_names] for mode in ['light', 'dark']}
 
 def c(v):
     v = v.strip()
@@ -39,12 +36,12 @@ def c(v):
     return f'Color.fromRGBO({r}, {g}, {b}, {a})'
 def camel(s):
     p = s.split('-'); return p[0] + ''.join(x.title() for x in p[1:])
-src_keys = ['ground','surface','card','ink','muted-ink','hairline','input','accent','accent-ink','accent-soft','ring']
+src_keys = tokens['presets']['sources']
 role_keys = list(tokens['color']['light'].keys())
 out = []; w = out.append
 w("""// Sorbet colour data. Generated from packages/ui/src/sorbet-tokens.json
-// (default roles and hues) and packages/ui/src/sorbet-presets.css (preset
-// source colours and the High Contrast inks) by\n// apps/mobile/tool/generate_sorbet_palettes.py; regenerate rather than edit.
+// (default roles, hues, preset source colours and the High Contrast inks) by
+// apps/mobile/tool/generate_sorbet_palettes.py; regenerate rather than edit.
 // test/core/theme/sorbet/sorbet_palette_parity_test.dart fails on drift.
 
 import 'dart:ui';

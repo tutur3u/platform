@@ -22,6 +22,7 @@ import 'package:mobile/core/startup/optional_startup.dart';
 import 'package:mobile/core/startup/startup_state.dart';
 import 'package:mobile/core/theme/app_theme.dart';
 import 'package:mobile/core/theme/appearance/appearance_settings.dart';
+import 'package:mobile/core/theme/sorbet/sorbet_font_licenses.dart';
 import 'package:mobile/core/ui/icons/lucide_licenses.dart';
 import 'package:mobile/data/repositories/auth_repository.dart';
 import 'package:mobile/data/repositories/settings_repository.dart';
@@ -66,6 +67,7 @@ Future<void> bootstrap(
   // Release builds must never fall back to cleartext localhost backends.
   Env.assertSecureForRelease();
   registerLucideLicenses();
+  registerSorbetFontLicenses();
   ApiConfig.configure(appFlavor);
 
   final settingsRepository = SettingsRepository();

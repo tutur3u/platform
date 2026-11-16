@@ -28452,6 +28452,12 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Listen to this voice message and respond.'**
   String get assistantVoiceMessagePrompt;
+
+  /// No description provided for @notificationsUnreadLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Unread'**
+  String get notificationsUnreadLabel;
 }
 
 class _AppLocalizationsDelegate extends LocalizationsDelegate<AppLocalizations> {

@@ -448,7 +448,7 @@ void main() {
     tester,
   ) async {
     await mount(tester);
-    await tester.longPress(find.text('Tasks'));
+    await tester.longPress(_appTile('Tasks'));
     await _pump(tester);
     expect(find.byTooltip('Hide app'), findsWidgets);
     await search(tester, 'calendar');
@@ -462,3 +462,9 @@ void main() {
     expect(tester.takeException(), isNull);
   });
 }
+
+/// An app tile label; the dock carries the same destination labels.
+Finder _appTile(String label) => find.descendant(
+  of: find.byKey(const ValueKey('apps-screen')),
+  matching: find.text(label),
+);

@@ -33,7 +33,10 @@ class AppPanel extends StatelessWidget {
     final c = tokens.colorScheme;
     final type = tokens.typography;
     final solid = MediaQuery.highContrastOf(context);
-    final radius = tokens.interface.borderRadius(AppRadius.card);
+    final radius = BorderRadius.circular(tokens.shapes.panel);
+    final depth = tokens.depth;
+    // Shadowed surfaces stay opaque so the shadow never shows through.
+    final opaque = solid || !depth.outlined;
     final hasAction = actionLabel != null && onAction != null;
     final hasHeader = title != null || hasAction;
     final header = !hasHeader
@@ -87,9 +90,12 @@ class AppPanel extends StatelessWidget {
           );
     return DecoratedBox(
       decoration: BoxDecoration(
-        color: c.card.withValues(alpha: solid ? 1 : 0.86),
+        color: c.card.withValues(alpha: opaque ? 1 : 0.86),
         borderRadius: radius,
-        border: Border.all(color: c.border.withValues(alpha: solid ? 1 : 0.7)),
+        border: depth.outlined || solid
+            ? Border.all(color: c.border.withValues(alpha: solid ? 1 : 0.7))
+            : null,
+        boxShadow: depth.card,
       ),
       child: ClipRRect(
         borderRadius: radius,

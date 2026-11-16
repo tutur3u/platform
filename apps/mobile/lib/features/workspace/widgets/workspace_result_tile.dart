@@ -4,14 +4,15 @@ import 'package:mobile/core/ui/components/app_badge.dart';
 import 'package:mobile/core/ui/icons/app_icons.dart';
 import 'package:mobile/core/ui/tokens/app_tokens.dart';
 import 'package:mobile/data/models/workspace.dart';
+import 'package:mobile/features/shell/view/shell_chrome_style.dart';
 import 'package:mobile/features/workspace/widgets/workspace_avatar.dart';
-import 'package:mobile/features/workspace/widgets/workspace_selection_mark.dart';
 import 'package:mobile/features/workspace/widgets/workspace_tier_badge.dart';
 import 'package:mobile/features/workspace/workspace_presentation.dart';
 import 'package:mobile/l10n/l10n.dart';
 
 /// One workspace in the picker or the selection page: identity tile, name,
-/// tier and status badges, and a selection mark in the workspace's colour.
+/// tier and status badges, and a check on the selected row (a radio group
+/// member).
 ///
 /// Place it in an `AppGroupedSlice` so consecutive rows draw one card.
 class WorkspaceResultTile extends StatelessWidget {
@@ -44,7 +45,7 @@ class WorkspaceResultTile extends StatelessWidget {
     final l10n = context.l10n;
     final tokens = AppTokens.of(context);
     final c = tokens.colorScheme;
-    final accent = workspaceAccent(workspace);
+    final style = ShellChromeStyle.of(context);
     final name = displayWorkspacePickerName(context, workspace);
     final restore = actionLabel == l10n.workspaceRestoreAction;
     final row = Container(
@@ -70,7 +71,8 @@ class WorkspaceResultTile extends StatelessWidget {
                   overflow: TextOverflow.ellipsis,
                   style: tokens.typography.base.copyWith(
                     color: c.foreground,
-                    fontWeight: selected ? FontWeight.w600 : FontWeight.w500,
+                    fontSize: 16,
+                    fontWeight: FontWeight.w700,
                     height: 1.3,
                   ),
                 ),
@@ -99,7 +101,12 @@ class WorkspaceResultTile extends StatelessWidget {
           else if (selected)
             Padding(
               padding: const EdgeInsetsDirectional.only(end: AppSpacing.sm),
-              child: WorkspaceSelectionMark(accent: accent),
+              child: Icon(
+                LucideIcons.check,
+                key: const ValueKey('workspace-selected-check'),
+                size: 20,
+                color: style.selected,
+              ),
             ),
         ],
       ),
@@ -109,11 +116,13 @@ class WorkspaceResultTile extends StatelessWidget {
         : InkWell(onTap: pending || loading ? null : onSelect, child: row);
     return Semantics(
       selected: selected,
+      checked: onSelect == null ? null : selected,
+      inMutuallyExclusiveGroup: onSelect != null,
       button: onSelect != null,
       child: AnimatedContainer(
         duration: AppMotion.fast,
         curve: AppMotion.standard,
-        color: selected ? accent.tint(c.brightness) : Colors.transparent,
+        color: selected ? style.accent : style.accent.withValues(alpha: 0),
         child: Row(
           children: [
             Expanded(child: tappable),

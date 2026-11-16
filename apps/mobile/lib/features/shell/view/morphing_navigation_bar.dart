@@ -3,12 +3,20 @@ part of 'custom_navigation_bar.dart';
 /// One continuous layout for the island. Retained buttons move, new buttons
 /// fade
 /// in, and removed buttons fade out without holding the island's old width.
+///
+/// With [fixedFrame] the bar renders the shell dock instead: labelled slots
+/// that share the width the dock gives them, and the [backKey] item as a
+/// leading Back circle ([ShellDockBar]).
 class MorphingNavigationBar extends StatefulWidget {
   const MorphingNavigationBar({
     required this.children,
     required this.selectedKey,
     required this.onSelected,
     this.paintSurface = true,
+    this.fixedFrame = false,
+    this.backKey,
+    this.onBackLongPress,
+    this.labelled = true,
     super.key,
   });
 
@@ -16,6 +24,14 @@ class MorphingNavigationBar extends StatefulWidget {
   final bool paintSurface;
   final Key? selectedKey;
   final ValueChanged<Key?> onSelected;
+  final bool fixedFrame;
+
+  /// The child rendered as the dock's Back circle in [fixedFrame] mode.
+  final Key? backKey;
+  final VoidCallback? onBackLongPress;
+
+  /// Whether [fixedFrame] slots show labels.
+  final bool labelled;
 
   @override
   State<MorphingNavigationBar> createState() => _MorphingNavigationBarState();
@@ -174,8 +190,40 @@ class _MorphingNavigationBarState extends State<MorphingNavigationBar>
     super.dispose();
   }
 
+  ShellDockEntry _entry(shad.NavigationItem item) {
+    final child = item.child;
+    final label = child is Semantics ? child.properties.label : null;
+    return ShellDockEntry(
+      key: item.key!,
+      label: label ?? '',
+      glyph: ExcludeSemantics(child: Center(child: child)),
+      enabled: item.enabled ?? true,
+    );
+  }
+
+  Widget _buildFixedFrame() {
+    shad.NavigationItem? back;
+    final destinations = <ShellDockEntry>[];
+    for (final item in widget.children) {
+      if (widget.backKey != null && item.key == widget.backKey) {
+        back = item;
+      } else {
+        destinations.add(_entry(item));
+      }
+    }
+    return ShellDockBar(
+      entries: destinations,
+      selectedKey: widget.selectedKey,
+      onSelected: widget.onSelected,
+      back: back == null ? null : _entry(back),
+      onBackLongPress: widget.onBackLongPress,
+      labelled: widget.labelled,
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
+    if (widget.fixedFrame) return _buildFixedFrame();
     final theme = shad.Theme.of(context);
     return LayoutBuilder(
       builder: (context, constraints) {

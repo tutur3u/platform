@@ -8,6 +8,7 @@ import 'package:mobile/core/theme/sorbet/sorbet_preferences.dart';
 import 'package:mobile/core/theme/sorbet/sorbet_tokens.dart';
 import 'package:mobile/core/ui/tokens/app_color_tokens.dart';
 import 'package:mobile/core/ui/tokens/app_interface_tokens.dart';
+import 'package:mobile/core/ui/tokens/app_typography.dart';
 
 /// Derives the colour roles and Material theme of the Sorbet design; the
 /// shad theme is built from the same roles by `AppearanceTheme.shadThemeFor`.
@@ -27,12 +28,8 @@ abstract final class SorbetAppTheme {
     SorbetRadius.round => 4 / 3,
   };
 
-  /// The bundled family for [font], or null for the platform default. Nunito
-  /// falls back to Noto Sans until the Nunito font ships with the app.
-  static String? fontFamily(SorbetFont font) => switch (font) {
-    SorbetFont.nunito || SorbetFont.noto => 'NotoSans',
-    SorbetFont.system => null,
-  };
+  /// The bundled sans family for [font], or null for the platform default.
+  static String? fontFamily(SorbetFont font) => SorbetFonts.sans(font);
 
   /// A custom accent lifted to AA text contrast on every Sorbet surface, the
   /// same way the classic path lifts its accents.
@@ -145,17 +142,20 @@ abstract final class SorbetAppTheme {
       inversePrimary: roles.background,
     );
     const pill = WidgetStatePropertyAll<OutlinedBorder>(StadiumBorder());
+    final tokens = SorbetTokens.resolve(theme, b, ring: scheme.ring);
     final field = material.OutlineInputBorder(
-      borderRadius: BorderRadius.circular(radii.control),
+      borderRadius: BorderRadius.circular(radii.interactive),
       borderSide: BorderSide(color: roles.borderStrong),
     );
     return base.copyWith(
-      scaffoldBackgroundColor: roles.ground,
+      // Pages sit on background; ground is the app frame. Muted and secondary
+      // fills share ground's colour, so they stay visible on pages.
+      scaffoldBackgroundColor: roles.background,
       colorScheme: colors,
-      textTheme: _textTheme(base.textTheme, fontFamily(theme.font)),
+      textTheme: _textTheme(base.textTheme, tokens.typography),
       dividerTheme: material.DividerThemeData(color: roles.border),
       appBarTheme: base.appBarTheme.copyWith(
-        backgroundColor: roles.ground,
+        backgroundColor: roles.background,
         foregroundColor: roles.foreground,
       ),
       // Selected states use the accent and foreground until the tokens
@@ -184,6 +184,15 @@ abstract final class SorbetAppTheme {
       textButtonTheme: const material.TextButtonThemeData(
         style: material.ButtonStyle(shape: pill),
       ),
+      bottomSheetTheme: base.bottomSheetTheme.copyWith(
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.vertical(
+            top: Radius.circular(radii.sheet),
+          ),
+        ),
+        dragHandleColor: roles.borderStrong,
+        dragHandleSize: tokens.metrics.sheetHandle,
+      ),
       inputDecorationTheme: material.InputDecorationTheme(
         border: field,
         enabledBorder: field,
@@ -191,30 +200,33 @@ abstract final class SorbetAppTheme {
           borderSide: BorderSide(color: scheme.ring, width: 2),
         ),
       ),
-      extensions: [
-        colorTokens(theme, b),
-        SorbetTokens.resolve(theme, b, ring: scheme.ring),
-      ],
+      extensions: [colorTokens(theme, b), tokens],
     );
   }
 
-  /// The listed roles keep their sizes and take the Sorbet family.
+  /// Every style takes the Sorbet sans family, and the mapped roles take
+  /// the contract metrics; colours and decorations stay from [base].
   static material.TextTheme _textTheme(
     material.TextTheme base,
-    String? family,
+    AppTypography type,
   ) {
-    if (family == null) return base;
-    TextStyle? withFamily(TextStyle? style) =>
-        style?.copyWith(fontFamily: family);
-    return base.copyWith(
-      titleLarge: withFamily(base.titleLarge),
-      titleMedium: withFamily(base.titleMedium),
-      bodyLarge: withFamily(base.bodyLarge),
-      bodyMedium: withFamily(base.bodyMedium),
-      bodySmall: withFamily(base.bodySmall),
-      labelLarge: withFamily(base.labelLarge),
-      labelMedium: withFamily(base.labelMedium),
-      labelSmall: withFamily(base.labelSmall),
+    final themed = base.apply(fontFamily: type.fontFamily);
+    TextStyle? metrics(TextStyle? style, TextStyle role) => style?.copyWith(
+      fontFamily: role.fontFamily,
+      fontSize: role.fontSize,
+      fontWeight: role.fontWeight,
+      height: role.height,
+      letterSpacing: role.letterSpacing ?? 0,
+    );
+    return themed.copyWith(
+      titleLarge: metrics(themed.titleLarge, type.title),
+      titleMedium: metrics(themed.titleMedium, type.heading),
+      bodyLarge: metrics(themed.bodyLarge, type.bodyLg),
+      bodyMedium: metrics(themed.bodyMedium, type.body),
+      bodySmall: metrics(themed.bodySmall, type.bodySm),
+      labelLarge: metrics(themed.labelLarge, type.ui),
+      labelMedium: metrics(themed.labelMedium, type.uiSm),
+      labelSmall: metrics(themed.labelSmall, type.caption),
     );
   }
 

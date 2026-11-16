@@ -10,6 +10,17 @@ const double mobileSectionAppBarLogoSize = 26;
 const double mobileSectionAppBarHeight = 46;
 const EdgeInsets mobileSectionAppBarPadding = EdgeInsets.fromLTRB(16, 4, 16, 4);
 
+/// Padding of the shell top bar: a 56dp bar at the default text size, with
+/// the title at the gutter plus 4 and the trailing 44dp actions 8 from the
+/// edge.
+const EdgeInsets shellTopBarPadding = EdgeInsets.fromLTRB(20, 5, 8, 5);
+
+/// [shellTopBarPadding] for a bar [width] wide; narrow phones (under 360dp)
+/// keep the title at the plain gutter so trailing actions fit.
+EdgeInsets shellTopBarPaddingFor(double width) => width < 360
+    ? shellTopBarPadding.copyWith(left: 16, right: 4)
+    : shellTopBarPadding;
+
 /// Fit the scaled title line plus the brand control's vertical padding without
 /// reducing accessibility text. Default text keeps the normal compact height.
 double mobileSectionAppBarHeightFor(

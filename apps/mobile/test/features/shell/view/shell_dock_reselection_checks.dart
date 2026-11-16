@@ -38,7 +38,7 @@ void _registerDockReselectionChecks(
     );
     await _pumpForTransitions(tester);
 
-    await tester.tap(find.byIcon(Icons.apps_outlined).first);
+    await tester.tap(find.byKey(const ValueKey('apps')));
     await _pumpForTransitions(tester);
 
     _expectAppsScreen(tester, router);

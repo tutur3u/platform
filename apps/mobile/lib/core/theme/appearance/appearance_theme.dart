@@ -9,6 +9,7 @@ import 'package:mobile/core/theme/mobile_shad_theme.dart';
 import 'package:mobile/core/theme/sorbet/sorbet_palettes.dart';
 import 'package:mobile/core/theme/sorbet/sorbet_preferences.dart';
 import 'package:mobile/core/theme/sorbet/sorbet_theme.dart';
+import 'package:mobile/core/theme/sorbet/sorbet_tokens.dart';
 import 'package:mobile/core/ui/tokens/app_color_tokens.dart';
 import 'package:shadcn_flutter/shadcn_flutter.dart' as shad;
 
@@ -47,7 +48,8 @@ abstract final class AppearanceTheme {
   }
 
   /// The app's shad theme: [shadTheme] itself without [sorbet], otherwise
-  /// the Sorbet roles, radius and font on the mobile shad base.
+  /// the Sorbet roles, radius, sans family and mono family on the mobile
+  /// shad base.
   static shad.ThemeData shadThemeFor(
     AppearanceSettings settings,
     SorbetTheme? sorbet,
@@ -88,9 +90,10 @@ abstract final class AppearanceTheme {
           chart5: () => hues.pink.ink,
         ),
         radius: () => SorbetAppTheme.radiusScale(sorbet.radius),
-        typography: family == null
-            ? () => base.typography.copyWith(sans: () => const TextStyle())
-            : null,
+        typography: () => base.typography.copyWith(
+          sans: () => TextStyle(fontFamily: family),
+          mono: () => const TextStyle(fontFamily: SorbetFonts.mono),
+        ),
       );
     });
   }

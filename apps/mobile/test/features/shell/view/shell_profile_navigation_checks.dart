@@ -91,13 +91,26 @@ void _registerProfileNavigationChecks(
       );
       expect(rootNav.children.map((item) => item.key), const [
         ValueKey('home'),
-        ValueKey('apps'),
+        ValueKey('tasks'),
+        ValueKey('calendar'),
         ValueKey('assistant'),
-        ValueKey('notifications'),
-        ValueKey('profile'),
+        ValueKey('apps'),
       ]);
       expect(find.byType(AvatarDropdown), findsNothing);
       expect(find.byType(NotificationsActionButton), findsNothing);
+
+      // Notifications and You have no dock slot: Back leads and no slot is
+      // active.
+      router.go(Routes.notifications);
+      await _pumpForTransitions(tester);
+      final inboxNav = tester.widget<MorphingNavigationBar>(
+        find.byType(MorphingNavigationBar),
+      );
+      expect(
+        inboxNav.children.first.key,
+        const ValueKey<String>('back-to-root'),
+      );
+      expect(inboxNav.selectedKey, isNull);
 
       router.go(Routes.tasks);
       await _pumpForTransitions(tester);

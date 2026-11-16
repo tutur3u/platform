@@ -43,7 +43,7 @@ class AppBadge extends StatelessWidget {
     return DecoratedBox(
       decoration: BoxDecoration(
         color: fill,
-        borderRadius: BorderRadius.circular(999),
+        borderRadius: BorderRadius.circular(tokens.shapes.badge),
         border: border == null ? null : Border.all(color: border),
       ),
       child: Padding(
@@ -51,7 +51,7 @@ class AppBadge extends StatelessWidget {
         child: IconTheme.merge(
           data: IconThemeData(color: foreground, size: 12),
           child: DefaultTextStyle.merge(
-            style: tokens.typography.label.copyWith(color: foreground),
+            style: tokens.typography.caption.copyWith(color: foreground),
             maxLines: 1,
             overflow: TextOverflow.ellipsis,
             child: Row(

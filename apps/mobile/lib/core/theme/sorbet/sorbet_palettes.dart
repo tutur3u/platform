@@ -1,6 +1,5 @@
 // Sorbet colour data. Generated from packages/ui/src/sorbet-tokens.json
-// (default roles and hues) and packages/ui/src/sorbet-presets.css (preset
-// source colours and the High Contrast inks) by
+// (default roles, hues, preset source colours and the High Contrast inks) by
 // apps/mobile/tool/generate_sorbet_palettes.py; regenerate rather than edit.
 // test/core/theme/sorbet/sorbet_palette_parity_test.dart fails on drift.
 

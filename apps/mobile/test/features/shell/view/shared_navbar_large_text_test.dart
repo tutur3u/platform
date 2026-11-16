@@ -389,7 +389,7 @@ void main() {
               reason: '$title must paint a real title glyph, not only ellipsis',
             );
           }
-          if (scale == 1 || baseline) expect(bar.height, 54);
+          if (scale == 1 || baseline) expect(bar.height, 56);
           Rect? content;
           if (!assistantSection) {
             content = tester.getRect(

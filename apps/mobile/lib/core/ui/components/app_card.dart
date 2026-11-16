@@ -2,8 +2,10 @@ import 'package:flutter/material.dart';
 import 'package:mobile/core/layout/layout_tokens.dart';
 import 'package:mobile/core/ui/tokens/app_tokens.dart';
 
-/// Bordered content surface. Replaces `shad.Card` and `shad.SurfaceCard`
-/// (`elevated: true`). For settings-style rows use `AppGroupedCard`.
+/// Content surface: outlined in classic, separated by shadow in Sorbet (and
+/// outlined there too under high contrast). Replaces `shad.Card` and
+/// `shad.SurfaceCard` (`elevated: true`). For settings-style rows use
+/// `AppGroupedCard`.
 class AppCard extends StatelessWidget {
   const AppCard({
     required this.child,
@@ -32,8 +34,14 @@ class AppCard extends StatelessWidget {
   Widget build(BuildContext context) {
     final tokens = AppTokens.of(context);
     final c = tokens.colorScheme;
-    final radius = borderRadius ?? tokens.interface.borderRadius(AppRadius.md);
+    final radius = borderRadius ?? BorderRadius.circular(tokens.shapes.card);
     final solid = MediaQuery.highContrastOf(context);
+    final depth = tokens.depth;
+    final outline =
+        borderColor ??
+        (depth.outlined || solid
+            ? c.border.withValues(alpha: solid ? 1 : 0.8)
+            : null);
     Widget content = Padding(padding: padding, child: child);
     if (onTap != null) {
       content = InkWell(onTap: onTap, borderRadius: radius, child: content);
@@ -45,10 +53,8 @@ class AppCard extends StatelessWidget {
       child: DecoratedBox(
         decoration: BoxDecoration(
           borderRadius: radius,
-          border: Border.all(
-            color: borderColor ?? c.border.withValues(alpha: solid ? 1 : 0.8),
-          ),
-          boxShadow: elevated ? AppElevation.raised(c) : null,
+          border: outline == null ? null : Border.all(color: outline),
+          boxShadow: elevated ? depth.raised : depth.card,
         ),
         child: Material(
           color: fillColor ?? c.card,

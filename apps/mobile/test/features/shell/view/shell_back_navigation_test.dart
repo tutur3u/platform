@@ -5,6 +5,7 @@ import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:go_router/go_router.dart';
+import 'package:mobile/core/layout/page_insets.dart';
 import 'package:mobile/core/router/routes.dart';
 import 'package:mobile/data/models/user_profile.dart';
 import 'package:mobile/data/repositories/settings_repository.dart';
@@ -231,11 +232,10 @@ void main() {
         rects.every((rect) => rect.left >= 0 && rect.right <= 320),
         isTrue,
       );
-      expect(
-        rects.map((rect) => rect.width).reduce((a, b) => a > b ? a : b) -
-            rects.map((rect) => rect.width).reduce((a, b) => a < b ? a : b),
-        lessThanOrEqualTo(2.01),
-      );
+      // Back is a fixed circle; the sections share the rest equally.
+      final sections = rects.skip(1).map((rect) => rect.width);
+      expect(sections.map((w) => w.toStringAsFixed(2)).toSet(), hasLength(1));
+      expect(rects.first.size, const Size.square(ShellDockMetrics.slot));
       expect(tester.takeException(), isNull);
     });
 
@@ -375,16 +375,15 @@ void main() {
       router.go(Routes.apps);
       await _pumpForTransitions(tester);
       final appsState = tester.state(find.byType(AppsHubPage));
-      final island = find.byKey(const ValueKey('navigation-morph-bounds'));
-      final initialWidth = tester.getSize(island).width;
+      // The dock frame never moves or resizes between destinations.
+      final dock = find.byKey(const ValueKey('shell-dock-bar'));
+      final initialRect = tester.getRect(dock);
       router.go(Routes.tasks);
       await tester.pump();
-      await tester.pump(const Duration(milliseconds: 120));
-      final halfwayWidth = tester.getSize(island).width;
+      await tester.pump(const Duration(milliseconds: 90));
+      expect(tester.getRect(dock), initialRect);
       await _pumpForTransitions(tester);
-      final finalWidth = tester.getSize(island).width;
-      expect(halfwayWidth, lessThan(initialWidth));
-      expect(halfwayWidth, greaterThan(finalWidth));
+      expect(tester.getRect(dock), initialRect);
 
       expect(router.routeInformationProvider.value.uri.path, Routes.tasks);
 
