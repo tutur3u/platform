@@ -124,11 +124,13 @@ test('non-web apps fall back unmatched API routes to the central web app', () =>
   }
 });
 
-test('shared satellite logout clears the local app-session cookie before central logout', () => {
+test('shared satellite logout asks for confirmation before clearing sessions', () => {
   const source = read('packages/satellite/src/components/user-nav-client.tsx');
 
-  assert.match(source, /fetch\('\/api\/auth\/logout'/);
-  assert.match(source, /window\.location\.assign\(`\$\{centralUrl\}\/logout/);
+  assert.match(source, /createLogoutConfirmationUrl\(\{/);
+  assert.match(source, /appOrigin: window\.location\.origin/);
+  assert.doesNotMatch(source, /fetch\('\/api\/auth\/logout'/);
+  assert.match(source, /router\.push\(/);
   assert.doesNotMatch(source, /@tuturuuu\/supabase\/next\/auth-browser/);
   assert.doesNotMatch(source, /@tuturuuu\/supabase\/next\/client/);
 });

@@ -199,7 +199,7 @@ describe('unscoped admin controls', () => {
       expect(mocks.env).toHaveBeenCalledExactlyOnceWith();
       expect(mocks.browser).not.toHaveBeenCalled();
       expect(mocks.cookies).toHaveBeenCalledTimes(1);
-      expect(mocks.headers).toHaveBeenCalledTimes(1);
+      expect(mocks.headers).toHaveBeenCalledTimes(2);
       expect(mocks.server).toHaveBeenCalledExactlyOnceWith(url, key, {
         cookieOptions: { name: 'test-auth', path: '/' },
         cookies: {

@@ -269,11 +269,12 @@ describe('AccountSwitcherProvider', () => {
         'tuturuuu_multi_session_store',
         'synthetic-legacy'
       );
+      const revocationError = new Error('revoke failed');
       mocks.logoutAllWebAccountsWithInternalApi.mockRejectedValue(
-        new Error('revoke failed')
+        revocationError
       );
 
-      await expect(result.current.logoutAll()).rejects.toThrow('revoke failed');
+      await expect(result.current.logoutAll()).rejects.toBe(revocationError);
 
       expect(window.localStorage.getItem('tuturuuu_multi_session_store')).toBe(
         null

@@ -362,7 +362,7 @@ describe('satellite app-session route inventory', () => {
     expect(unexpectedRoutes).toEqual([]);
   });
 
-  it('keeps satellite browser logout routes redirecting after local cleanup', () => {
+  it('delegates satellite logout methods to the app-only host fence', () => {
     for (const file of [
       'apps/learn/src/app/api/auth/logout/route.ts',
       'apps/teach/src/app/api/auth/logout/route.ts',
@@ -372,8 +372,12 @@ describe('satellite app-session route inventory', () => {
     ]) {
       const source = readFileSync(resolve(repoRoot, file), 'utf8');
 
-      expect(source, file).toContain('createAppSessionLogoutResponse');
-      expect(source, file).toContain("new URL('/logout'");
+      expect(source, file).toContain('createAppOnlyLogoutHandlers');
+      for (const method of ['GET', 'OPTIONS', 'POST']) {
+        expect(source, file).toContain(
+          `export const ${method} = handlers.${method}`
+        );
+      }
     }
   });
 
