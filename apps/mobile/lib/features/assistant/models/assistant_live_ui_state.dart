@@ -187,25 +187,18 @@ AssistantLiveUiState deriveAssistantLiveUiState({
   );
 }
 
-/// Live sessions are authorized against the current workspace on the server.
-/// Selecting personal chat credits must not change that workspace entitlement.
+/// Live sessions are authorized against the current workspace's tier on the
+/// server, with PLUS as the minimum; feature lists in the credits payload do
+/// not grant Live on their own. Selecting personal chat credits must not
+/// change that workspace entitlement.
 bool hasAssistantLiveWorkspaceAccess(
   AssistantCredits credits, {
   String? workspaceTier,
-}) =>
-    const {
-      'PLUS',
-      'PRO',
-      'ENTERPRISE',
-    }.contains((workspaceTier ?? credits.tier).toUpperCase()) ||
-    credits.allowedFeatures.any(
-      const {
-        'voice_assistant',
-        'voice-assistant',
-        'live_assistant',
-        'live-assistant',
-      }.contains,
-    );
+}) => const {
+  'PLUS',
+  'PRO',
+  'ENTERPRISE',
+}.contains((workspaceTier ?? credits.tier).toUpperCase());
 
 /// Use the same bounded, localized error in the Live stage and chat summary.
 String assistantLiveErrorLabel(AppLocalizations l10n, String error) =>

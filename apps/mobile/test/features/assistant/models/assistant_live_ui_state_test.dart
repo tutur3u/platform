@@ -39,6 +39,21 @@ void main() {
     expect(hasAssistantLiveWorkspaceAccess(shell.activeCredits), isFalse);
   });
 
+  test('Live needs PLUS or higher; feature grants alone do not count', () {
+    expect(
+      hasAssistantLiveWorkspaceAccess(const AssistantCredits(tier: 'PLUS')),
+      isTrue,
+    );
+    for (final feature in ['voice_assistant', 'live_assistant']) {
+      expect(
+        hasAssistantLiveWorkspaceAccess(
+          AssistantCredits(allowedFeatures: [feature]),
+        ),
+        isFalse,
+      );
+    }
+  });
+
   test('workspace plan remains Pro while credits are unavailable', () {
     const shell = AssistantShellState(
       workspace: Workspace(id: 'pro-workspace', tier: 'PRO'),
