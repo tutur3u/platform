@@ -302,7 +302,13 @@ test('Calendar, Meet, Mail and Apps admissions open only their publishers while 
       ['meet-cloudflare.yaml', 'vercel-production-meet.yaml'],
       event
     );
-    assert.equal(meetNative.shouldRun, true);
+    // Admission opens the native publisher. Without a success marker, a
+    // commit-driven push still fails closed; operator dispatch selects it.
+    if (event === 'push') {
+      assert.equal(meetNative.shouldRun, false);
+      assert.equal(meetNative.held, true);
+      assert.match(meetNative.reason, /fails closed/u);
+    } else assert.equal(meetNative.shouldRun, true);
     assert.equal(meetLegacy.shouldRun, false);
   }
   for (const app of ['mail', 'apps'])

@@ -12,6 +12,15 @@ import {
 } from './resolve-changed-files-core.ts';
 import { readWorkspaceManifests } from './workflow-config-core.ts';
 
+const cloudflareProductionWorkflows = new Set<string>(
+  cloudflareProductionTargets.map(
+    ({ productionWorkflow }) => productionWorkflow
+  )
+);
+
+export const MISSING_CLOUDFLARE_MARKER_REASON =
+  'no successful deployment marker proves the serving baseline; commit-driven selection fails closed until a release records code plus health proof or an operator dispatches it';
+
 type ProductionTargetDecision = {
   held?: boolean;
   changeResult: ChangedFilesResult;
@@ -127,6 +136,25 @@ export async function resolveProductionVercelTargets({
         rootDir,
         workflowName: productionWorkflow,
       });
+      // A Cloudflare Worker without a successful marker has no proven serving
+      // baseline (a failed or partial release records none). Ordinary
+      // commit-driven selection fails closed instead of reselecting it;
+      // operator dispatch and exact package recovery stay explicit admissions.
+      if (
+        commitDriven &&
+        !packageResume &&
+        cloudflareProductionWorkflows.has(productionWorkflow) &&
+        changeResult.source === 'deployment-marker-unavailable'
+      ) {
+        return {
+          held: true,
+          changeResult,
+          matchedPaths: [],
+          reason: MISSING_CLOUDFLARE_MARKER_REASON,
+          shouldRun: false,
+          workflowName: productionWorkflow,
+        };
+      }
       // An exact deployment marker is positive coverage evidence, not an
       // unavailable empty changed-file list. Ordinary dispatch semantics stay intact.
       if (

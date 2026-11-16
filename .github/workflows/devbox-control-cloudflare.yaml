@@ -208,8 +208,9 @@ jobs:
           secrets_file="$RUNNER_TEMP/devbox-control-secrets.json"
           trap 'rm -f "$secrets_file"' EXIT
           node -e 'const fs = require("node:fs"); const names = ["SUPABASE_URL", "SUPABASE_SECRET_KEY", "DEVBOX_CONTROL_INTERNAL_TOKEN"]; fs.writeFileSync(process.argv[1], JSON.stringify(Object.fromEntries(names.map((name) => [name, process.env[name]]))), { mode: 0o600 });' "$secrets_file"
-          bun x --no-install wrangler secret bulk "$secrets_file" -c .cloudflare/wrangler-publication.json
-          bun x --no-install wrangler deploy --no-bundle -c .cloudflare/wrangler-publication.json --message "$GITHUB_SHA"
+          # One version: a separate secret write first would deploy the previous
+          # code with new secrets, which stays live if this upload fails.
+          bun x --no-install wrangler deploy --no-bundle -c .cloudflare/wrangler-publication.json --message "$GITHUB_SHA" --secrets-file "$secrets_file"
       - name: Capture and compare settings after publication
         env:
           CLOUDFLARE_API_TOKEN: ${{ secrets.COLAB_CLOUDFLARE_API_TOKEN }}
@@ -222,6 +223,14 @@ jobs:
           path: ${{ runner.temp }}/devbox-control-settings-*.json
           retention-days: 7
           if-no-files-found: error
+      # A success marker needs code plus health proof; without it the planner
+      # fails closed for this Worker instead of reselecting it.
+      - name: Verify the published Worker answers health
+        env:
+          WORKERS_SUBDOMAIN: ${{ vars.CLOUDFLARE_WORKERS_SUBDOMAIN }}
+        run: |
+          test -n "$WORKERS_SUBDOMAIN" || { echo 'Missing workers.dev subdomain; no success marker is recorded'; exit 1; }
+          curl --fail --silent --show-error --retry 5 --retry-delay 5 --connect-timeout 5 --max-time 20 --retry-max-time 120 "https://tuturuuu-devbox-control.${WORKERS_SUBDOMAIN}.workers.dev/health" | jq -e '.ok == true' > /dev/null
       - name: Record successful Cloudflare deployment
         continue-on-error: true
         env:

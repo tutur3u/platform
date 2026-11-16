@@ -149,12 +149,14 @@ test('all command, import, argv and dependency spellings count without subcomman
 });
 
 test('existing Meet dry-run and Lettin identity argv uses cannot count as zero', () => {
-  const files = [
-    'scripts/ci/meet-dry-run-scratch.mjs',
-    'apps/lettin/scripts/configure-identity.ts',
-  ];
+  const files = ['scripts/ci/meet-dry-run-scratch.mjs'];
   const usage = scanWranglerUsage({ files });
   for (const file of files) assert.ok(usage[file]?.uses > 0, file);
+  // The retired Lettin identity script spawned this exact argv; an argv array
+  // must still count as usage after the file itself was removed.
+  const lettinIdentityArgv =
+    "spawnSync('bun', ['x', '--no-install', 'wrangler', 'secret', 'bulk'], {";
+  assert.ok(countWranglerUsage(lettinIdentityArgv).uses > 0);
 });
 
 test('multiple invocations on one line cannot hide behind a mention count', () => {
