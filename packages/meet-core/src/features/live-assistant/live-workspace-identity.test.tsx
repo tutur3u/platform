@@ -10,9 +10,11 @@ import {
 import { NextIntlClientProvider } from 'next-intl';
 import { afterEach, expect, it, vi } from 'vitest';
 import messages from '../../../../../apps/meet/messages/en.json';
+import vietnamese from '../../../../../apps/meet/messages/vi.json';
 import type { MeetRoomController } from '../call/lib/room-controller';
 const f = vi.hoisted(() => ({
   start: vi.fn(),
+  error: undefined as string | undefined,
   read: vi.fn(),
   choice: vi.fn(),
 }));
@@ -23,6 +25,7 @@ vi.mock('@tuturuuu/internal-api', () => ({
 vi.mock('./use-live-assistant', () => ({
   useLiveAssistant: () => ({
     status: 'idle',
+    error: f.error,
     mode: 'personal',
     start: f.start,
     send: vi.fn(),
@@ -35,6 +38,7 @@ import { MeetLivePanel } from './live-panel';
 afterEach(() => {
   cleanup();
   vi.clearAllMocks();
+  f.error = undefined;
 });
 function syntheticRoom() {
   return {
@@ -51,14 +55,19 @@ function syntheticRoom() {
     toggleMicrophone: vi.fn(),
   } as unknown as MeetRoomController & { leave: ReturnType<typeof vi.fn> };
 }
-function showPanel(room: MeetRoomController, onLeave = vi.fn()) {
+function showPanel(
+  room: MeetRoomController,
+  onLeave = vi.fn(),
+  locale: 'en' | 'vi' = 'en'
+) {
+  const localizedMessages = locale === 'en' ? messages : vietnamese;
   render(
     <QueryClientProvider
       client={
         new QueryClient({ defaultOptions: { queries: { retry: false } } })
       }
     >
-      <NextIntlClientProvider locale="en" messages={messages}>
+      <NextIntlClientProvider locale={locale} messages={localizedMessages}>
         <MeetLivePanel
           accountId="synthetic-account"
           room={room}
@@ -72,7 +81,7 @@ function showPanel(room: MeetRoomController, onLeave = vi.fn()) {
     </QueryClientProvider>
   );
   fireEvent.click(
-    screen.getByRole('button', { name: messages.meet.live.title })
+    screen.getByRole('button', { name: localizedMessages.meet.live.title })
   );
 }
 it('offers only private own-microphone start after a confirmed choice for a distinct account/device', async () => {
@@ -241,3 +250,21 @@ it('disables personal start until a fresh Continue after disconnect or a policy 
   await waitFor(() => expect(personal().disabled).toBe(true));
   expect(f.start).not.toHaveBeenCalled();
 });
+
+for (const locale of ['en', 'vi'] as const) {
+  it(`shows localized unavailable feedback through the shared mapper in ${locale}`, async () => {
+    f.error = 'service_unavailable';
+    f.read.mockResolvedValue({
+      version: 'synthetic-v1',
+      available: true,
+      choice: null,
+    });
+    showPanel(syntheticRoom(), vi.fn(), locale);
+    expect((await screen.findByRole('alert')).textContent).toBe(
+      locale === 'en'
+        ? 'Mira Live is temporarily unavailable. No assistant joined the meeting.'
+        : 'Mira Live tạm thời không khả dụng. Chưa có trợ lý nào tham gia cuộc họp.'
+    );
+    expect(f.start).not.toHaveBeenCalled();
+  });
+}

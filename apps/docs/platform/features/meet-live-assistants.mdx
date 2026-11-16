@@ -55,6 +55,16 @@ left screen with Rejoin and Back. Token issuance and reconnect recheck the durab
 120 seconds and bind the account, meeting, app and private mode. Audio frames
 must identify that same account and the microphone source.
 
+## Unavailable invitations
+
+Meet and Parley show localized unavailable feedback when a Live start is denied
+by the AI availability gate or missing Live service configuration. No assistant
+joins on those denials. The shared Live error mapper retains specific device
+feedback and the existing fallback for other failures. This feedback does not
+enable Live or bypass its authorization, audio consent, or limits. Synthetic
+regression coverage: `invite-unavailable.test.tsx`, `live-errors.test.ts` and
+`live-workspace-identity.test.tsx`.
+
 ## Room features deliberately unavailable
 
 Room Live input and output are denied on the server, independent of environment
