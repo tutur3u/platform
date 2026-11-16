@@ -20,7 +20,7 @@
   border-color: color-mix(in oklab, var(--border) 70%, transparent);
 }
 
-/* Navigation: the current page is a filled row with an accent edge. */
+/* Navigation: the current page is a filled accent row, in the accent ink at 600 weight. */
 :root[data-ui="sorbet"]
   :where([data-settings-pane="nav"] [data-slot="sidebar-menu-button"]) {
   border-radius: var(--radius);
@@ -34,7 +34,6 @@
   background-color: var(--sidebar-accent);
   color: var(--sidebar-accent-foreground);
   font-weight: 600;
-  box-shadow: inset 3px 0 0 var(--sidebar-primary);
 }
 
 /* Settings sections are raised surfaces with quiet dividers. */
