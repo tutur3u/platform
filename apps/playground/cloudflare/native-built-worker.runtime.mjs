@@ -110,13 +110,27 @@ test(
         "connect-src 'self'",
         "object-src 'none'",
         "base-uri 'self'",
-        "frame-ancestors 'self'",
+        "form-action 'none'",
+        "worker-src 'none'",
       ])
         assert.ok(csp.includes(part), part);
       assert.ok(
         csp.includes(
           'connect-src http://tuturuuu.com/playground/api/build-info'
         )
+      );
+      const framing = Array.from(
+        csp.matchAll(/(?:^|[;,])\s*frame-ancestors\s+([^;,]+)/g),
+        (match) => match[1].trim()
+      );
+      assert.deepEqual(framing, ["'none'"]);
+      assert.equal(res.headers['x-frame-options'], 'DENY');
+      t.diagnostic(
+        JSON.stringify({
+          path: '/playground' + suffix,
+          contentSecurityPolicy: csp,
+          xFrameOptions: res.headers['x-frame-options'],
+        })
       );
       assert.match(res.body, /playground/i);
     }
