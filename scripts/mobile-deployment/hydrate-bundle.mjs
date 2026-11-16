@@ -230,6 +230,41 @@ async function main() {
   );
   exportEnv('APP_STORE_CONNECT_PRIVATE_KEY_PATH', p8Path);
   exportEnv('API_PRIVATE_KEYS_DIR', privateKeysDirectory);
+  await hydrateMacAppStore(bundle, runnerTemp);
+}
+
+// The Mac App Store reuses the Apple Distribution identity and API key above.
+// Its installer identity and macOS profile are optional bundle entries; the
+// macOS store job stays a no-op until all three are present.
+const MAC_APP_STORE_FILES = [
+  'apple_mac_installer_certificate_p12',
+  'apple_mac_app_store_provisioning_profile',
+];
+
+async function hydrateMacAppStore(bundle, runnerTemp) {
+  const password = bundle.scalarValues.APPLE_MAC_INSTALLER_CERTIFICATE_PASSWORD;
+  const present = MAC_APP_STORE_FILES.filter((kind) => bundle.files[kind]);
+  if (present.length === 0 && !password) {
+    exportEnv('MAC_APP_STORE_READY', 'false');
+    return;
+  }
+  if (present.length !== MAC_APP_STORE_FILES.length || !password) {
+    fail('Mac App Store bundle entries are incomplete');
+  }
+  const installerPath = await writeBundleFile(
+    bundle,
+    'apple_mac_installer_certificate_p12',
+    join(runnerTemp, 'mobile-deployment/apple-mac-installer.p12')
+  );
+  const profilePath = await writeBundleFile(
+    bundle,
+    'apple_mac_app_store_provisioning_profile',
+    join(runnerTemp, 'mobile-deployment/mac-app-store.provisionprofile')
+  );
+  exportEnv('APPLE_MAC_INSTALLER_CERTIFICATE_P12_PATH', installerPath);
+  exportEnv('APPLE_MAC_INSTALLER_CERTIFICATE_PASSWORD', password);
+  exportEnv('APPLE_MAC_APPSTORE_PROVISIONING_PROFILE_PATH', profilePath);
+  exportEnv('MAC_APP_STORE_READY', 'true');
 }
 
 await main();
