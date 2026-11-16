@@ -14,6 +14,10 @@ import { EditorContent, useEditor } from '@tiptap/react';
 import StarterKit from '@tiptap/starter-kit';
 import type { ReactNode } from 'react';
 import { useEffect, useMemo, useRef } from 'react';
+import {
+  PassiveCitation,
+  PassiveCitationBibliography,
+} from './citation-extension.js';
 import { extractPlainText } from './codec.js';
 import { Collapsible, CollapsibleSummary } from './collapsible.js';
 import { EditorToolbar } from './editor-toolbar.js';
@@ -93,6 +97,8 @@ export function RichTextEditor({
         orderedList: full ? undefined : false,
       }),
       Link.configure({ openOnClick: false }),
+      PassiveCitation,
+      PassiveCitationBibliography,
       ...(full ? [Image] : []),
       ...(preset === 'full'
         ? [

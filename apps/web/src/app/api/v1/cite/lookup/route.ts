@@ -46,7 +46,7 @@ export async function POST(request: Request) {
     const body = await readBoundedText(
       request.body,
       4096,
-      AbortSignal.timeout(5000)
+      AbortSignal.any([request.signal, AbortSignal.timeout(2000)])
     );
     let parsed: unknown;
     try {
@@ -63,7 +63,10 @@ export async function POST(request: Request) {
         { error: 'INVALID_INPUT' },
         { status: 400, headers }
       );
-    return Response.json(await lookupCitation(result.data.input), { headers });
+    return Response.json(
+      await lookupCitation(result.data.input, undefined, request.signal),
+      { headers }
+    );
   } catch (error) {
     if (error instanceof CitationLookupError) {
       return Response.json(

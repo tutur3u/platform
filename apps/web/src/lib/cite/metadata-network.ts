@@ -118,18 +118,37 @@ export async function readBoundedText(
 export async function fetchMetadataText(
   url: URL,
   kind: 'json' | 'html',
-  network: MetadataNetwork = defaultNetwork
+  network: MetadataNetwork = defaultNetwork,
+  limits: { deadline?: number; maxBytes?: number; signal?: AbortSignal } = {}
 ) {
+  if (limits.signal?.aborted)
+    throw new DOMException('Citation lookup aborted', 'AbortError');
   if (
     url.protocol !== 'https:' ||
     url.username ||
     url.password ||
     url.port ||
-    !new Set(['api.crossref.org', 'openlibrary.org', ...WEBPAGE_HOSTS]).has(
-      url.hostname
-    )
+    !new Set([
+      'api.crossref.org',
+      'openlibrary.org',
+      'api.openalex.org',
+      ...WEBPAGE_HOSTS,
+    ]).has(url.hostname)
   )
     throw new CitationLookupError('INVALID_INPUT', 400);
+
+  const timeoutMs = Math.min(
+    network.timeoutMs ?? METADATA_TIMEOUT_MS,
+    limits.deadline === undefined
+      ? METADATA_TIMEOUT_MS
+      : limits.deadline - Date.now()
+  );
+  if (timeoutMs <= 0) throw new CitationLookupError('TIMEOUT', 504);
+  const maxBytes = Math.min(
+    limits.maxBytes ?? METADATA_MAX_BYTES,
+    METADATA_MAX_BYTES
+  );
+  if (maxBytes <= 0) throw new CitationLookupError('RESPONSE_TOO_LARGE', 502);
 
   const controller = new AbortController();
   let dispatcher: Dispatcher | undefined;
@@ -138,7 +157,16 @@ export async function fetchMetadataText(
     timer = setTimeout(() => {
       controller.abort();
       reject(new CitationLookupError('TIMEOUT', 504));
-    }, network.timeoutMs ?? METADATA_TIMEOUT_MS);
+    }, timeoutMs);
+  });
+  let onCallerAbort = () => {};
+  const cancellation = new Promise<never>((_, reject) => {
+    onCallerAbort = () => {
+      controller.abort();
+      reject(new DOMException('Citation lookup aborted', 'AbortError'));
+    };
+    limits.signal?.addEventListener('abort', onCallerAbort, { once: true });
+    if (limits.signal?.aborted) onCallerAbort();
   });
   const work = async () => {
     const records = await network.resolve(url.hostname);
@@ -182,23 +210,22 @@ export async function fetchMetadataText(
       await response.body?.cancel().catch(() => undefined);
       throw new CitationLookupError('UPSTREAM_ERROR', 502);
     }
-    if (Number(response.headers.get('content-length')) > METADATA_MAX_BYTES) {
+    if (Number(response.headers.get('content-length')) > maxBytes) {
       await response.body?.cancel().catch(() => undefined);
       throw new CitationLookupError('RESPONSE_TOO_LARGE', 502);
     }
-    return readBoundedText(
-      response.body,
-      METADATA_MAX_BYTES,
-      controller.signal
-    );
+    return readBoundedText(response.body, maxBytes, controller.signal);
   };
   try {
-    return await Promise.race([work(), deadline]);
+    return await Promise.race([work(), deadline, cancellation]);
   } catch (error) {
+    if (limits.signal?.aborted)
+      throw new DOMException('Citation lookup aborted', 'AbortError');
     if (error instanceof CitationLookupError) throw error;
     throw new CitationLookupError('UPSTREAM_ERROR', 502);
   } finally {
     clearTimeout(timer);
+    limits.signal?.removeEventListener('abort', onCallerAbort);
     controller.abort();
     void dispatcher?.destroy().catch(() => undefined);
   }

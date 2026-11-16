@@ -1,5 +1,9 @@
 # Citation engine and style assets
 
+The portable `@tuturuuu/cite` implementation and its derived Phase 1 Harvard
+style are documented in `packages/cite/src/LICENSES.md`. Standalone legacy
+formatting keeps the official style output described below.
+
 Server metadata text extraction uses `htmlparser2` 12.0.0 under the MIT license.
 Its parser is already part of the dependency graph through `@types/sanitize-html`;
 the owning web app pins a direct runtime dependency. Upstream source and license:

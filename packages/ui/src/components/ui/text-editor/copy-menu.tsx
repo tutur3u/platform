@@ -18,6 +18,7 @@ import {
   serializeClipboardText,
 } from './clipboard-serialization';
 import { TOOLBAR_BUTTON_CLASS_NAME } from './toolbar-controls';
+import { citationClipboardScope } from './citation-clipboard-scope';
 
 export interface EditorCopyLabels {
   copy?: string;
@@ -53,10 +54,11 @@ export function EditorCopyMenu({ editor, labels }: EditorCopyMenuProps) {
       try {
         if (!navigator.clipboard?.writeText) throw new Error('Unavailable');
         const slice = editor.state.doc.slice(0, editor.state.doc.content.size);
+        const scope = citationClipboardScope(editor);
         const content =
           format === 'markdown'
-            ? serializeClipboardText(slice)
-            : serializeClipboardPlainText(slice);
+            ? serializeClipboardText(slice, scope)
+            : serializeClipboardPlainText(slice, scope);
         await navigator.clipboard.writeText(content);
         toast.success(
           format === 'markdown'

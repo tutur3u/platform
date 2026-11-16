@@ -40,6 +40,7 @@ import { useRouter } from 'next/navigation';
 import { useTranslations } from 'next-intl';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import DocumentShareDialog from '../document-share-dialog';
+import { useDocumentCitations } from './citations/use-document-citations';
 import { resolveDocumentImageSources } from './document-image-sources';
 
 interface DocumentEditorProps {
@@ -105,6 +106,7 @@ export function DocumentEditor({
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
   const router = useRouter();
   const queryClient = useQueryClient();
+  const citations = useDocumentCitations(wsId);
 
   // Debounced sync status update
   const updateSyncStatus = useMemo(
@@ -489,6 +491,7 @@ export function DocumentEditor({
           workspaceId={wsId}
           onImageUpload={handleImageUpload}
           flushPendingRef={flushPendingRef}
+          citations={citations}
         />
       </div>
 

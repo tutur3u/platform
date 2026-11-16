@@ -1,0 +1,18 @@
+{
+  "derivedFrom": "rmit-university-harvard.csl",
+  "license": "CC-BY-SA-3.0",
+  "author": "Katie Finch",
+  "modifier": "Tuturuuu",
+  "scope": "Phase 1 abstract-rule overrides; synthetic fixture evidence required",
+  "changes": [
+    "text conjunctions",
+    "three-author in-text et al.",
+    "colon locators",
+    "given-name and year-suffix disambiguation",
+    "article single quotes and sentence case",
+    "DOI output and place fallback",
+    "website label and accessed date",
+    "dataset/software/community medium and version fields"
+  ],
+  "sha256": "2127a4d280f1b5a0748680d13e9f8d63fbaf3fc250e5b2eeacd5b8230f9b7f91"
+}

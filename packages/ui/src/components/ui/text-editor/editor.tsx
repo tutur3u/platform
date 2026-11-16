@@ -1,6 +1,5 @@
 'use client';
 
-import type { QueryClient } from '@tanstack/react-query';
 import { TextSelection } from '@tiptap/pm/state';
 import {
   type Editor,
@@ -8,19 +7,21 @@ import {
   type JSONContent,
   useEditor,
 } from '@tiptap/react';
-import type { TaskList } from '@tuturuuu/types/primitives/TaskList';
 import { debounce } from 'lodash';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { flushSync } from 'react-dom';
-import type { Awareness } from 'y-protocols/awareness';
-import type * as Y from 'yjs';
 import { migrateInlineImagesToBlock } from './content-migration';
-import type { EditorCopyLabels } from './copy-menu';
+import {
+  CitationLayer,
+  CitationToolbarButton,
+} from './citation/citation-layer';
 import { getRichTextEditorClasses } from './editor-classes';
 import { getEditorExtensions } from './extensions';
 import { handleListIndentation, handlePlainEnterFallback } from './keyboard';
-import type { TaskMentionNodeViewRenderer } from './mention-extension';
+import type { RichTextEditorProps } from './editor-props';
 import { FixedToolbar, ToolBar } from './tool-bar';
+
+export type { RichTextEditorProps } from './editor-props';
 
 const hasContent = (node: JSONContent): boolean => {
   // Check for text content
@@ -29,9 +30,15 @@ const hasContent = (node: JSONContent): boolean => {
   // Check for media content (images, videos, YouTube embeds, tables, etc.)
   if (
     node.type &&
-    ['image', 'imageResize', 'youtube', 'video', 'mention', 'table'].includes(
-      node.type
-    )
+    [
+      'image',
+      'imageResize',
+      'youtube',
+      'video',
+      'mention',
+      'table',
+      'citation',
+    ].includes(node.type)
   ) {
     return true;
   }
@@ -73,76 +80,6 @@ function serializeEditorContent(content: JSONContent | null) {
   return JSON.stringify(content ?? { type: 'doc', content: [] });
 }
 
-export interface RichTextEditorProps {
-  content: JSONContent | null;
-  onChange?: (content: JSONContent | null) => void;
-  onImmediateChange?: (content: JSONContent | null) => void;
-  readOnly?: boolean;
-  titlePlaceholder?: string;
-  writePlaceholder?: string;
-  saveButtonLabel?: string;
-  savedButtonLabel?: string;
-  className?: string;
-  workspaceId?: string;
-  allowEmbeds?: boolean;
-  onImageUpload?: (file: File) => Promise<string>;
-  flushPendingRef?: { current: (() => JSONContent | null) | undefined };
-  onArrowUp?: (cursorOffset?: number) => void;
-  onArrowLeft?: () => void;
-  editorRef?: { current: Editor | null };
-  initialCursorOffset?: number | null;
-  onEditorReady?: (editor: Editor) => void;
-  yjsDoc?: Y.Doc;
-  yjsProvider?: { awareness: Awareness };
-  /** User info for collaboration cursor labels. */
-  collaborationUser?: { id?: string; name: string; color: string };
-  boardId?: string;
-  availableLists?: TaskList[];
-  queryClient?: QueryClient;
-  onConvertToTask?: () => void | Promise<void>;
-  allowCollaboration?: boolean;
-  /**
-   * Keep the formatting toolbar transparent until focus is somewhere inside the
-   * editor, so a read-first surface (like the task dialog) is not fronted by a
-   * row of controls. Focus-within — not editor focus — because clicking a
-   * toolbar button moves focus out of the text and would otherwise hide the
-   * toolbar mid-click.
-   */
-  revealToolbarOnFocus?: boolean;
-  /**
-   * Stretch the editable surface to the host's full height so a click anywhere
-   * below the last line still places the caret. The host must give the editor a
-   * bounded, scrollable box; the toolbar keeps its natural height.
-   */
-  fillHeight?: boolean;
-  /** Translations for mention chip dialogs */
-  mentionTranslations?: {
-    delete_task?: string;
-    delete_task_confirmation?: string | ((name: string) => string);
-    cancel?: string;
-    deleting?: string;
-    set_custom_due_date?: string;
-    custom_due_date_description?: string;
-    remove_due_date?: string;
-    create_new_label?: string;
-    create_new_label_description?: string;
-    label_name?: string;
-    color?: string;
-    preview?: string;
-    creating?: string;
-    create_label?: string;
-    create_new_project?: string;
-    create_new_project_description?: string;
-    project_name?: string;
-    create_project?: string;
-  };
-  renderTaskMention?: TaskMentionNodeViewRenderer;
-  toolbarLeadingContent?: React.ReactNode;
-  toolbarToolsLabel?: string;
-  toggleBlockLabel?: string;
-  copyLabels?: EditorCopyLabels;
-}
-
 export function RichTextEditor({
   content,
   onChange,
@@ -175,6 +112,7 @@ export function RichTextEditor({
   toolbarToolsLabel,
   toggleBlockLabel,
   copyLabels,
+  citations,
 }: RichTextEditorProps) {
   // Use refs to ensure we have stable references for handlers
   const onImageUploadRef = useRef(onImageUpload);
@@ -269,6 +207,7 @@ export function RichTextEditor({
         mentionTranslations,
         renderTaskMention,
         readOnly,
+        citations: Boolean(citations),
       }),
       // Migrate inline images to block-level for backward compatibility
       content: allowCollaboration
@@ -651,48 +590,78 @@ export function RichTextEditor({
         editor.commands.focus();
       }}
     >
-      {!readOnly && (
-        <FixedToolbar
-          ref={fixedToolbarRef}
+      <CitationScope editor={editor} config={citations} readOnly={readOnly}>
+        {!readOnly && (
+          <FixedToolbar
+            ref={fixedToolbarRef}
+            className={
+              revealToolbarOnFocus
+                ? REVEAL_TOOLBAR_ON_FOCUS_CLASS_NAME
+                : undefined
+            }
+            editor={editor}
+            workspaceId={workspaceId}
+            onImageUpload={onImageUpload}
+            onConvertToTask={onConvertToTask}
+            leadingContent={
+              citations ? (
+                <>
+                  <CitationToolbarButton />
+                  {toolbarLeadingContent}
+                </>
+              ) : (
+                toolbarLeadingContent
+              )
+            }
+            toolsLabel={toolbarToolsLabel}
+            toggleBlockLabel={toggleBlockLabel}
+            copyLabels={copyLabels}
+          />
+        )}
+        {!readOnly && (
+          <ToolBar
+            editor={editor}
+            fixedToolbarVisible={fixedToolbarVisible}
+            allowEmbeds={allowEmbeds}
+            saveButtonLabel={saveButtonLabel}
+            savedButtonLabel={savedButtonLabel}
+            workspaceId={workspaceId}
+            onImageUpload={onImageUpload}
+            onConvertToTask={onConvertToTask}
+            toggleBlockLabel={toggleBlockLabel}
+          />
+        )}
+        {/* Temporarily hide drag handle to resolve 'removeChild' error until finding a more robust solution
+      !readOnly && <EditorDragHandle editor={editor} /> */}
+        <EditorContent
+          editor={editor}
           className={
-            revealToolbarOnFocus
-              ? REVEAL_TOOLBAR_ON_FOCUS_CLASS_NAME
+            fillHeight
+              ? 'flex min-h-0 flex-1 flex-col [&>.ProseMirror]:flex-1'
               : undefined
           }
-          editor={editor}
-          workspaceId={workspaceId}
-          onImageUpload={onImageUpload}
-          onConvertToTask={onConvertToTask}
-          leadingContent={toolbarLeadingContent}
-          toolsLabel={toolbarToolsLabel}
-          toggleBlockLabel={toggleBlockLabel}
-          copyLabels={copyLabels}
         />
-      )}
-      {!readOnly && (
-        <ToolBar
-          editor={editor}
-          fixedToolbarVisible={fixedToolbarVisible}
-          allowEmbeds={allowEmbeds}
-          saveButtonLabel={saveButtonLabel}
-          savedButtonLabel={savedButtonLabel}
-          workspaceId={workspaceId}
-          onImageUpload={onImageUpload}
-          onConvertToTask={onConvertToTask}
-          toggleBlockLabel={toggleBlockLabel}
-        />
-      )}
-      {/* Temporarily hide drag handle to resolve 'removeChild' error until finding a more robust solution
-      !readOnly && <EditorDragHandle editor={editor} /> */}
-      <EditorContent
-        editor={editor}
-        className={
-          fillHeight
-            ? 'flex min-h-0 flex-1 flex-col [&>.ProseMirror]:flex-1'
-            : undefined
-        }
-      />
+      </CitationScope>
     </div>
+  );
+}
+
+function CitationScope({
+  editor,
+  config,
+  readOnly,
+  children,
+}: {
+  editor: Editor | null;
+  config: RichTextEditorProps['citations'];
+  readOnly: boolean;
+  children: React.ReactNode;
+}) {
+  if (!config) return children;
+  return (
+    <CitationLayer editor={editor} config={config} readOnly={readOnly}>
+      {children}
+    </CitationLayer>
   );
 }
 
