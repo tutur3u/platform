@@ -63,7 +63,7 @@
 {"file":"[locale]/(dashboard)/[wsId]/workspaces/page.tsx","path":"/[wsId]/workspaces","methods":[{"method":"GET","classification":"ADMIN"}]}
 {"file":"[locale]/page.tsx","path":"/","methods":[{"method":"GET","classification":"ADMIN"}]}
 {"file":"api/ai/translate/route.ts","path":"/api/ai/translate","methods":[{"method":"POST","classification":"ADMIN"}]}
-{"file":"api/auth/logout/route.ts","path":"/api/auth/logout","methods":[{"method":"GET","classification":"ADMIN"},{"method":"POST","classification":"PRELOGIN"}]}
+{"file":"api/auth/logout/route.ts","path":"/api/auth/logout","methods":[{"method":"GET","classification":"ADMIN"},{"method":"POST","classification":"PRELOGIN"},{"method":"OPTIONS","classification":"ADMIN"}]}
 {"file":"api/auth/refresh-app-session/route.ts","path":"/api/auth/refresh-app-session","methods":[{"method":"POST","classification":"ADMIN"}]}
 {"file":"api/auth/verify-app-token/route.ts","path":"/api/auth/verify-app-token","methods":[{"method":"POST","classification":"ADMIN"}]}
 {"file":"api/build-info/route.ts","path":"/api/build-info","methods":[{"method":"GET","classification":"ADMIN"}]}

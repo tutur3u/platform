@@ -1,12 +1,11 @@
+import { staticImportModules } from './static-import-modules';
 import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { describe, expect, it } from 'vitest';
-
 const source = (path: string) =>
   readFileSync(join(process.cwd(), path), {
     encoding: 'utf8',
   });
-
 const menuSource = source('src/app/[locale]/menu.tsx');
 const mobileMenuSource = source('src/app/[locale]/mobile-menu.tsx');
 const footerSource = source('src/components/layouts/Footer.tsx');
@@ -30,6 +29,9 @@ const loginContentSource = source(
 const loginFormSource = source('src/app/[locale]/(auth)/login/form.tsx');
 const loginPageSource = source('src/app/[locale]/(auth)/login/page.tsx');
 const logoutPageSource = source('src/app/[locale]/(marketing)/logout/page.tsx');
+const logoutChoicesSource = source(
+  'src/app/[locale]/(marketing)/logout/logout-choices.tsx'
+);
 const loginConfirmationPartsSource = source(
   'src/app/[locale]/(auth)/login/internal-app-account-confirmation-parts.tsx'
 );
@@ -313,25 +315,11 @@ const legalSharedUiBoundarySources = [
   source('src/components/legal/third-party-services-section.tsx'),
   source('src/data/legal/privacy-summary.tsx'),
 ] as const;
-
-function staticImportPattern(modulePath: string) {
-  const escapedModulePath = modulePath.replace(
-    /[.*+?^${}()|[\]\\]/gu,
-    String.raw`\$&`
-  );
-
-  return new RegExp(
-    String.raw`^\s*import\s+(?!type\b)[\s\S]*?\sfrom\s+['"]${escapedModulePath}['"];`,
-    'mu'
-  );
-}
-
 describe('public shell compile graph', () => {
   it('keeps the prerendered changelog page free of Radix-backed UI primitives', () => {
     expect(changelogPageSource).not.toContain('@tuturuuu/ui/badge');
     expect(changelogPageSource).not.toContain('@tuturuuu/ui/button');
   });
-
   // The entry page was the hole in the rule above: the index was pinned, but
   // /changelog/<slug> still pulled Badge and Card — both client boundaries —
   // into the same public route graph.
@@ -343,10 +331,9 @@ describe('public shell compile graph', () => {
       expect(sourceText).not.toContain('@tuturuuu/ui/badge');
       expect(sourceText).not.toContain('@tuturuuu/ui/button');
       expect(sourceText).not.toContain('@tuturuuu/ui/card');
-      expect(sourceText).not.toMatch(staticImportPattern('@tuturuuu/icons'));
+      expect(staticImportModules(sourceText)).not.toContain('@tuturuuu/icons');
     }
   });
-
   // Category colours are looked up in an authored table rather than assembled
   // as `bg-dynamic-${category}`, which Tailwind's scanner cannot see.
   it('keeps changelog category accents out of interpolated class names', () => {
@@ -354,7 +341,6 @@ describe('public shell compile graph', () => {
       expect(sourceText).not.toMatch(/(?:bg|text|border)-dynamic-\$\{/u);
     }
   });
-
   // The GitHub release feed must stay cached. Fetching it per request would
   // spend the repository's unauthenticated quota (sixty calls an hour, shared
   // across every visitor) within minutes of any real traffic.
@@ -362,19 +348,16 @@ describe('public shell compile graph', () => {
     expect(githubReleasesSource).toContain('next: { revalidate: 3600 }');
     expect(githubReleasesSource).not.toContain("cache: 'no-store'");
   });
-
   it('marks the shared Radix-backed button as a client boundary', () => {
     expect(sharedButtonSource.trimStart().startsWith("'use client';")).toBe(
       true
     );
   });
-
   it('keeps desktop marketing dropdowns visible outside the navbar pill', () => {
     expect(marketingNavShellSource).toContain('overflow-visible');
     expect(marketingNavShellSource).not.toContain('overflow-hidden');
     expect(marketingNavDropdownSource).not.toContain('rotate-180');
   });
-
   it('keeps the mobile menu drawer graph behind a dynamic import', () => {
     for (const modulePath of [
       '@tuturuuu/ui/accordion',
@@ -382,26 +365,25 @@ describe('public shell compile graph', () => {
       './auth-button',
       './shared/navigation-config',
     ] as const) {
-      expect(menuSource).not.toMatch(staticImportPattern(modulePath));
+      expect(staticImportModules(menuSource)).not.toContain(modulePath);
     }
-
     expect(menuSource).toMatch(/import\(["']\.\/mobile-menu["']\)/u);
-    expect(mobileMenuSource).toMatch(staticImportPattern('@tuturuuu/ui/sheet'));
-    expect(mobileMenuSource).toMatch(
-      staticImportPattern('@tuturuuu/ui/accordion')
+    expect(staticImportModules(mobileMenuSource)).toContain(
+      '@tuturuuu/ui/sheet'
+    );
+    expect(staticImportModules(mobileMenuSource)).toContain(
+      '@tuturuuu/ui/accordion'
     );
   });
-
   it('does not preload the full marketing footer on login routes', () => {
-    expect(footerSource).not.toMatch(
-      staticImportPattern('@tuturuuu/ui/custom/common-footer')
+    expect(staticImportModules(footerSource)).not.toContain(
+      '@tuturuuu/ui/custom/common-footer'
     );
     expect(footerSource).toMatch(
       /import\(\s*['"]@tuturuuu\/ui\/custom\/common-footer['"]\s*\)/u
     );
     expect(footerSource).toContain("pathname.startsWith('/login')");
   });
-
   it('does not construct inactive product or solution navigation sections', () => {
     expect(navigationConfigSource).not.toContain('landing.features.apps');
     expect(navigationConfigSource).not.toContain(
@@ -418,7 +400,9 @@ describe('public shell compile graph', () => {
       '@tuturuuu/ui/navigation-menu',
       'next/link',
     ] as const) {
-      expect(navigationMenuSource).not.toMatch(staticImportPattern(modulePath));
+      expect(staticImportModules(navigationMenuSource)).not.toContain(
+        modulePath
+      );
     }
   });
 
@@ -427,9 +411,9 @@ describe('public shell compile graph', () => {
       dropdownMenuSource,
       userNavClientSource,
     ] as const) {
-      expect(sourceText).not.toMatch(staticImportPattern('@tuturuuu/icons'));
-      expect(sourceText).not.toMatch(
-        staticImportPattern('@tuturuuu/icons/lucide')
+      expect(staticImportModules(sourceText)).not.toContain('@tuturuuu/icons');
+      expect(staticImportModules(sourceText)).not.toContain(
+        '@tuturuuu/icons/lucide'
       );
       expect(sourceText).toContain('@tuturuuu/icons/lucide-static');
     }
@@ -437,9 +421,9 @@ describe('public shell compile graph', () => {
 
   it('keeps common UI primitive icons on the static lucide subpath', () => {
     for (const sourceText of commonPrimitiveSources) {
-      expect(sourceText).not.toMatch(staticImportPattern('@tuturuuu/icons'));
-      expect(sourceText).not.toMatch(
-        staticImportPattern('@tuturuuu/icons/lucide')
+      expect(staticImportModules(sourceText)).not.toContain('@tuturuuu/icons');
+      expect(staticImportModules(sourceText)).not.toContain(
+        '@tuturuuu/icons/lucide'
       );
       expect(sourceText).toContain('@tuturuuu/icons/lucide-static');
     }
@@ -447,9 +431,9 @@ describe('public shell compile graph', () => {
 
   it('keeps public marketing page icons on the static lucide subpath', () => {
     for (const sourceText of [aboutPageSource, ...aboutComponentSources]) {
-      expect(sourceText).not.toMatch(staticImportPattern('@tuturuuu/icons'));
-      expect(sourceText).not.toMatch(
-        staticImportPattern('@tuturuuu/icons/lucide')
+      expect(staticImportModules(sourceText)).not.toContain('@tuturuuu/icons');
+      expect(staticImportModules(sourceText)).not.toContain(
+        '@tuturuuu/icons/lucide'
       );
     }
 
@@ -459,7 +443,7 @@ describe('public shell compile graph', () => {
   });
 
   it('keeps the about page off next link', () => {
-    expect(aboutPageSource).not.toMatch(staticImportPattern('next/link'));
+    expect(staticImportModules(aboutPageSource)).not.toContain('next/link');
   });
 
   it('keeps the public security page off the icon package root', () => {
@@ -467,7 +451,7 @@ describe('public shell compile graph', () => {
       securityPageSource,
       ...securityComponentSources,
     ]) {
-      expect(sourceText).not.toMatch(staticImportPattern('@tuturuuu/icons'));
+      expect(staticImportModules(sourceText)).not.toContain('@tuturuuu/icons');
     }
 
     expect(securityComponentSources.join('\n')).toContain(
@@ -482,7 +466,7 @@ describe('public shell compile graph', () => {
       securityBugBountyPageSource,
       securityBugBountyComponentsSource,
     ] as const) {
-      expect(sourceText).not.toMatch(staticImportPattern('@tuturuuu/icons'));
+      expect(staticImportModules(sourceText)).not.toContain('@tuturuuu/icons');
       expect(sourceText).toContain('@tuturuuu/icons/lucide');
     }
   });
@@ -492,7 +476,7 @@ describe('public shell compile graph', () => {
       securityPolicyPageSource,
       securityBugBountyPageSource,
     ] as const) {
-      expect(sourceText).not.toMatch(staticImportPattern('next/link'));
+      expect(staticImportModules(sourceText)).not.toContain('next/link');
     }
   });
 
@@ -512,7 +496,7 @@ describe('public shell compile graph', () => {
         '@tuturuuu/ui/button',
         '@tuturuuu/ui/card',
       ] as const) {
-        expect(sourceText).not.toMatch(staticImportPattern(modulePath));
+        expect(staticImportModules(sourceText)).not.toContain(modulePath);
       }
     }
   });
@@ -526,7 +510,7 @@ describe('public shell compile graph', () => {
         '@tuturuuu/ui/card',
         'next/link',
       ] as const) {
-        expect(sourceText).not.toMatch(staticImportPattern(modulePath));
+        expect(staticImportModules(sourceText)).not.toContain(modulePath);
       }
 
       // Every legal section card used to build `bg-dynamic-${color}` at
@@ -546,7 +530,7 @@ describe('public shell compile graph', () => {
         '@tuturuuu/ui/card',
         'next/link',
       ] as const) {
-        expect(sourceText).not.toMatch(staticImportPattern(modulePath));
+        expect(staticImportModules(sourceText)).not.toContain(modulePath);
       }
     }
   });
@@ -556,7 +540,7 @@ describe('public shell compile graph', () => {
       partnersPageSource,
       ...partnersComponentSources,
     ]) {
-      expect(sourceText).not.toMatch(staticImportPattern('@tuturuuu/icons'));
+      expect(staticImportModules(sourceText)).not.toContain('@tuturuuu/icons');
 
       for (const modulePath of [
         '@tuturuuu/ui/button',
@@ -564,7 +548,7 @@ describe('public shell compile graph', () => {
         'next/image',
         'next/link',
       ] as const) {
-        expect(sourceText).not.toMatch(staticImportPattern(modulePath));
+        expect(staticImportModules(sourceText)).not.toContain(modulePath);
       }
     }
 
@@ -575,8 +559,8 @@ describe('public shell compile graph', () => {
 
   it('keeps the public careers page off the icon package root', () => {
     for (const sourceText of [careersPageSource, ...careersComponentSources]) {
-      expect(sourceText).not.toMatch(staticImportPattern('@tuturuuu/icons'));
-      expect(sourceText).not.toMatch(staticImportPattern('next/link'));
+      expect(staticImportModules(sourceText)).not.toContain('@tuturuuu/icons');
+      expect(staticImportModules(sourceText)).not.toContain('next/link');
     }
 
     expect(careersComponentSources.join('\n')).toContain(
@@ -586,8 +570,8 @@ describe('public shell compile graph', () => {
 
   it('keeps the public blog page off Next link', () => {
     for (const sourceText of [blogPageSource, ...blogComponentSources]) {
-      expect(sourceText).not.toMatch(staticImportPattern('@tuturuuu/icons'));
-      expect(sourceText).not.toMatch(staticImportPattern('next/link'));
+      expect(staticImportModules(sourceText)).not.toContain('@tuturuuu/icons');
+      expect(staticImportModules(sourceText)).not.toContain('next/link');
     }
 
     expect(blogComponentSources.join('\n')).toContain('@tuturuuu/icons/lucide');
@@ -604,14 +588,14 @@ describe('public shell compile graph', () => {
         'next/link',
         'framer-motion',
       ] as const) {
-        expect(sourceText).not.toMatch(staticImportPattern(modulePath));
+        expect(staticImportModules(sourceText)).not.toContain(modulePath);
       }
     }
   });
 
   it('keeps the public contact page off the icon package root', () => {
     for (const sourceText of [contactPageSource, ...contactComponentSources]) {
-      expect(sourceText).not.toMatch(staticImportPattern('@tuturuuu/icons'));
+      expect(staticImportModules(sourceText)).not.toContain('@tuturuuu/icons');
     }
 
     expect(contactComponentSources.join('\n')).toContain(
@@ -620,8 +604,8 @@ describe('public shell compile graph', () => {
   });
 
   it('keeps the public women-in-tech page off the icon package root', () => {
-    expect(womenInTechPageSource).not.toMatch(
-      staticImportPattern('@tuturuuu/icons')
+    expect(staticImportModules(womenInTechPageSource)).not.toContain(
+      '@tuturuuu/icons'
     );
     expect(womenInTechPageSource).toContain('@tuturuuu/icons/lucide');
   });
@@ -631,21 +615,21 @@ describe('public shell compile graph', () => {
       '@tuturuuu/ui/badge',
       '@tuturuuu/ui/card',
     ] as const) {
-      expect(womenInTechPageSource).not.toMatch(
-        staticImportPattern(modulePath)
+      expect(staticImportModules(womenInTechPageSource)).not.toContain(
+        modulePath
       );
     }
 
-    expect(womenInTechPageSource).toMatch(
-      staticImportPattern('@tuturuuu/ui/button')
+    expect(staticImportModules(womenInTechPageSource)).toContain(
+      '@tuturuuu/ui/button'
     );
   });
 
   it('keeps the UI docs overview shell off the icon package root', () => {
     for (const sourceText of uiDocsOverviewIconBoundarySources) {
-      expect(sourceText).not.toMatch(staticImportPattern('@tuturuuu/icons'));
-      expect(sourceText).not.toMatch(
-        staticImportPattern('@tuturuuu/icons/lucide')
+      expect(staticImportModules(sourceText)).not.toContain('@tuturuuu/icons');
+      expect(staticImportModules(sourceText)).not.toContain(
+        '@tuturuuu/icons/lucide'
       );
       expect(sourceText).toContain('@tuturuuu/icons/lucide-static');
     }
@@ -653,27 +637,27 @@ describe('public shell compile graph', () => {
 
   it('keeps the UI docs components index off the icon package root', () => {
     for (const sourceText of uiDocsComponentsIconBoundarySources) {
-      expect(sourceText).not.toMatch(staticImportPattern('@tuturuuu/icons'));
-      expect(sourceText).not.toMatch(
-        staticImportPattern('@tuturuuu/icons/lucide')
+      expect(staticImportModules(sourceText)).not.toContain('@tuturuuu/icons');
+      expect(staticImportModules(sourceText)).not.toContain(
+        '@tuturuuu/icons/lucide'
       );
       expect(sourceText).toContain('@tuturuuu/icons/lucide-static');
     }
   });
 
   it('keeps the UI docs pager UI behind a client boundary', () => {
-    expect(uiDocsServerNavigationSource).not.toMatch(
-      staticImportPattern('@tuturuuu/ui/button')
+    expect(staticImportModules(uiDocsServerNavigationSource)).not.toContain(
+      '@tuturuuu/ui/button'
     );
-    expect(uiDocsServerNavigationSource).not.toMatch(
-      staticImportPattern('@tuturuuu/ui/separator')
+    expect(staticImportModules(uiDocsServerNavigationSource)).not.toContain(
+      '@tuturuuu/ui/separator'
     );
     expect(uiDocsPrevNextPagerSource).toMatch(/^'use client';/u);
-    expect(uiDocsPrevNextPagerSource).toMatch(
-      staticImportPattern('@tuturuuu/ui/button')
+    expect(staticImportModules(uiDocsPrevNextPagerSource)).toContain(
+      '@tuturuuu/ui/button'
     );
-    expect(uiDocsPrevNextPagerSource).toMatch(
-      staticImportPattern('@tuturuuu/ui/separator')
+    expect(staticImportModules(uiDocsPrevNextPagerSource)).toContain(
+      '@tuturuuu/ui/separator'
     );
   });
 
@@ -694,8 +678,8 @@ describe('public shell compile graph', () => {
   });
 
   it('keeps the account deletion page off the icon package root', () => {
-    expect(accountDeletePageSource).not.toMatch(
-      staticImportPattern('@tuturuuu/icons')
+    expect(staticImportModules(accountDeletePageSource)).not.toContain(
+      '@tuturuuu/icons'
     );
     expect(accountDeletePageSource).toContain('@tuturuuu/icons/lucide');
   });
@@ -706,27 +690,29 @@ describe('public shell compile graph', () => {
       '@tuturuuu/ui/card',
       '@tuturuuu/ui/separator',
     ] as const) {
-      expect(accountDeletePageSource).not.toMatch(
-        staticImportPattern(modulePath)
+      expect(staticImportModules(accountDeletePageSource)).not.toContain(
+        modulePath
       );
     }
 
-    expect(accountDeletePageSource).toMatch(
-      staticImportPattern('@tuturuuu/ui/button')
+    expect(staticImportModules(accountDeletePageSource)).toContain(
+      '@tuturuuu/ui/button'
     );
   });
 
   it('keeps the branding page off the icon package root', () => {
-    expect(brandingClientSource).not.toMatch(
-      staticImportPattern('@tuturuuu/icons')
+    expect(staticImportModules(brandingClientSource)).not.toContain(
+      '@tuturuuu/icons'
     );
-    expect(brandingClientSource).not.toMatch(staticImportPattern('next/image'));
+    expect(staticImportModules(brandingClientSource)).not.toContain(
+      'next/image'
+    );
     expect(brandingClientSource).toContain('@tuturuuu/icons/lucide');
   });
 
   it('keeps the models page off the icon package root', () => {
-    expect(modelsClientSource).not.toMatch(
-      staticImportPattern('@tuturuuu/icons')
+    expect(staticImportModules(modelsClientSource)).not.toContain(
+      '@tuturuuu/icons'
     );
     expect(modelsClientSource).toContain('@tuturuuu/icons/lucide');
   });
@@ -736,15 +722,15 @@ describe('public shell compile graph', () => {
       contributorsPageSource,
       ...contributorsComponentSources,
     ]) {
-      expect(sourceText).not.toMatch(staticImportPattern('recharts'));
+      expect(staticImportModules(sourceText)).not.toContain('recharts');
     }
 
     // The dynamic boundary moved into the section that renders the charts.
     expect(contributorsComponentSources.join('\n')).toContain(
       "import('../contribution-analytics')"
     );
-    expect(contributorsAnalyticsSource).toMatch(
-      staticImportPattern('recharts')
+    expect(staticImportModules(contributorsAnalyticsSource)).toContain(
+      'recharts'
     );
   });
 
@@ -753,8 +739,8 @@ describe('public shell compile graph', () => {
       contributorsPageSource,
       ...contributorsComponentSources,
     ]) {
-      expect(sourceText).not.toMatch(staticImportPattern('next/link'));
-      expect(sourceText).not.toMatch(staticImportPattern('next/image'));
+      expect(staticImportModules(sourceText)).not.toContain('next/link');
+      expect(staticImportModules(sourceText)).not.toContain('next/image');
     }
   });
 
@@ -773,14 +759,14 @@ describe('public shell compile graph', () => {
 
   it('keeps the Facebook mockup widget off the icon package root', () => {
     for (const sourceText of facebookMockupIconBoundarySources) {
-      expect(sourceText).not.toMatch(staticImportPattern('@tuturuuu/icons'));
+      expect(staticImportModules(sourceText)).not.toContain('@tuturuuu/icons');
       expect(sourceText).toContain('@tuturuuu/icons/lucide');
     }
   });
 
   it('keeps the meet rich text editor out of the initial route graph', () => {
-    expect(meetCreatePlanDialogSource).not.toMatch(
-      staticImportPattern('@tuturuuu/ui/text-editor/editor')
+    expect(staticImportModules(meetCreatePlanDialogSource)).not.toContain(
+      '@tuturuuu/ui/text-editor/editor'
     );
     expect(meetCreatePlanDialogSource).toMatch(
       /import\(\s*['"]@tuturuuu\/ui\/text-editor\/editor['"]\s*\)/u
@@ -795,8 +781,8 @@ describe('public shell compile graph', () => {
       './algorithm-insights',
       './benchmark-runner',
     ] as const) {
-      expect(horseRacingVisualizationSource).not.toMatch(
-        staticImportPattern(modulePath)
+      expect(staticImportModules(horseRacingVisualizationSource)).not.toContain(
+        modulePath
       );
       expect(horseRacingVisualizationSource).toContain(
         `import('${modulePath}')`
@@ -806,7 +792,7 @@ describe('public shell compile graph', () => {
 
   it('keeps horse-racing icons off the icon package root', () => {
     for (const sourceText of horseRacingIconBoundarySources) {
-      expect(sourceText).not.toMatch(staticImportPattern('@tuturuuu/icons'));
+      expect(staticImportModules(sourceText)).not.toContain('@tuturuuu/icons');
       expect(sourceText).toContain('@tuturuuu/icons/lucide');
     }
   });
@@ -823,7 +809,7 @@ describe('public shell compile graph', () => {
       pharmaciesSolutionPageSource,
       realEstateSolutionPageSource,
     ] as const) {
-      expect(sourceText).not.toMatch(staticImportPattern('@tuturuuu/icons'));
+      expect(staticImportModules(sourceText)).not.toContain('@tuturuuu/icons');
       expect(sourceText).toContain('@tuturuuu/icons/lucide');
 
       for (const modulePath of [
@@ -833,7 +819,7 @@ describe('public shell compile graph', () => {
         '@tuturuuu/ui/custom/gradient-headline',
         'next/link',
       ] as const) {
-        expect(sourceText).not.toMatch(staticImportPattern(modulePath));
+        expect(staticImportModules(sourceText)).not.toContain(modulePath);
       }
     }
   });
@@ -852,8 +838,8 @@ describe('public shell compile graph', () => {
   });
 
   it('keeps legal policy pages off the shared markdown renderer', () => {
-    expect(legalSectionCardSource).not.toMatch(
-      staticImportPattern('@tuturuuu/ui/markdown')
+    expect(staticImportModules(legalSectionCardSource)).not.toContain(
+      '@tuturuuu/ui/markdown'
     );
   });
 
@@ -882,14 +868,14 @@ describe('public shell compile graph', () => {
         '@tuturuuu/ui/button',
         '@tuturuuu/ui/card',
       ] as const) {
-        expect(sourceText).not.toMatch(staticImportPattern(modulePath));
+        expect(staticImportModules(sourceText)).not.toContain(modulePath);
       }
 
       expect(sourceText).toContain('../product-page-primitives');
     }
 
-    expect(productPagePrimitivesSource).not.toMatch(
-      staticImportPattern('next/link')
+    expect(staticImportModules(productPagePrimitivesSource)).not.toContain(
+      'next/link'
     );
   });
 
@@ -904,8 +890,8 @@ describe('public shell compile graph', () => {
   });
 
   it('loads the internal-app confirmation UI only after login needs it', () => {
-    expect(loginFormSource).not.toMatch(
-      staticImportPattern('./internal-app-account-confirmation')
+    expect(staticImportModules(loginFormSource)).not.toContain(
+      './internal-app-account-confirmation'
     );
     expect(loginFormSource).toMatch(
       /import\(\s*['"]\.\/internal-app-account-confirmation['"]\s*\)/u
@@ -919,11 +905,11 @@ describe('public shell compile graph', () => {
       'next/headers',
       'next/navigation',
     ] as const) {
-      expect(loginPageSource).not.toMatch(staticImportPattern(modulePath));
+      expect(staticImportModules(loginPageSource)).not.toContain(modulePath);
       expect(loginPageSource).not.toContain(`import('${modulePath}')`);
     }
 
-    expect(loginPageSource).not.toMatch(staticImportPattern('next/server'));
+    expect(staticImportModules(loginPageSource)).not.toContain('next/server');
     expect(loginPageSource).not.toContain('await connection()');
     expect(loginPageSource).not.toContain('searchParams');
     expect(loginPageSource).not.toContain('export const dynamic');
@@ -931,21 +917,28 @@ describe('public shell compile graph', () => {
   });
 
   it('lazy loads the heavy login form from the static shell', () => {
-    expect(loginContentSource).not.toMatch(staticImportPattern('./form'));
+    expect(staticImportModules(loginContentSource)).not.toContain('./form');
     expect(loginContentSource).toContain("lazy(() => import('./form'))");
   });
 
   it('keeps the login shell off Next link and image primitives', () => {
-    expect(loginContentSource).not.toMatch(staticImportPattern('next/link'));
-    expect(loginContentSource).not.toMatch(staticImportPattern('next/image'));
-    expect(loginFormSource).not.toMatch(staticImportPattern('next/image'));
+    expect(staticImportModules(loginContentSource)).not.toContain('next/link');
+    expect(staticImportModules(loginContentSource)).not.toContain('next/image');
+    expect(staticImportModules(loginFormSource)).not.toContain('next/image');
   });
 
   it('keeps the logout page off the icon package root', () => {
-    expect(logoutPageSource).not.toMatch(
-      staticImportPattern('@tuturuuu/icons')
+    expect(staticImportModules(logoutPageSource)).not.toContain(
+      '@tuturuuu/icons'
     );
-    expect(logoutPageSource).toContain('@tuturuuu/icons/lucide');
+    expect(logoutPageSource).toContain('<LogoutChoices');
+    expect(staticImportModules(logoutPageSource)).toContain('./logout-choices');
+    expect(staticImportModules(logoutChoicesSource)).not.toContain(
+      '@tuturuuu/icons'
+    );
+    expect(staticImportModules(logoutChoicesSource)).toContain(
+      '@tuturuuu/icons/lucide'
+    );
   });
 
   it('keeps the landing hero off shared UI and Next primitives', () => {
@@ -954,17 +947,17 @@ describe('public shell compile graph', () => {
       '@tuturuuu/ui/button',
       'next/link',
     ] as const) {
-      expect(landingHeroSource).not.toMatch(staticImportPattern(modulePath));
+      expect(staticImportModules(landingHeroSource)).not.toContain(modulePath);
     }
 
-    expect(landingVideoHeroSource).not.toMatch(
-      staticImportPattern('next/image')
+    expect(staticImportModules(landingVideoHeroSource)).not.toContain(
+      'next/image'
     );
   });
 
   it('loads OTP input UI only after login needs it', () => {
-    expect(loginFormSource).not.toMatch(
-      staticImportPattern('@tuturuuu/ui/input-otp')
+    expect(staticImportModules(loginFormSource)).not.toContain(
+      '@tuturuuu/ui/input-otp'
     );
     expect(loginFormSource).toMatch(
       /import\(\s*['"]@tuturuuu\/ui\/input-otp['"]\s*\)/u
@@ -972,8 +965,8 @@ describe('public shell compile graph', () => {
   });
 
   it('keeps the login Turnstile widget behind a dynamic import', () => {
-    expect(loginFormSource).not.toMatch(
-      staticImportPattern('@marsidev/react-turnstile')
+    expect(staticImportModules(loginFormSource)).not.toContain(
+      '@marsidev/react-turnstile'
     );
     expect(loginFormSource).toMatch(
       /import\(\s*['"]@marsidev\/react-turnstile['"]\s*\)/u
@@ -981,8 +974,8 @@ describe('public shell compile graph', () => {
   });
 
   it('loads the report-problem dialog only after an open intent', () => {
-    expect(reportProblemHostSource).not.toMatch(
-      staticImportPattern('@tuturuuu/ui/report-problem-dialog')
+    expect(staticImportModules(reportProblemHostSource)).not.toContain(
+      '@tuturuuu/ui/report-problem-dialog'
     );
     expect(reportProblemHostSource).toMatch(
       /import\(\s*['"]@tuturuuu\/ui\/report-problem-dialog['"]\s*\)/u
