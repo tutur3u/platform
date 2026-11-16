@@ -102,6 +102,15 @@ export class MailUploadStore {
   /** Abort every request, drop every item and release every preview URL. */
   cancelAll(notify = true) {
     this.deletedAttachments.clear();
+    for (const item of this.items()) {
+      if (
+        item.attachment &&
+        item.owner &&
+        item.status !== 'uploaded' &&
+        !this.controllers.has(item.id)
+      )
+        this.discardLate(item.owner, item.attachment);
+    }
     for (const controller of this.controllers.values()) controller.abort();
     this.controllers.clear();
     this.files.clear();
@@ -173,6 +182,10 @@ export class MailUploadStore {
   remove(id: string) {
     const item = this.find(id);
     if (!item || item.status === 'removing') return;
+    if (item.status === 'failed' && item.attachment) {
+      this.removeUploaded(item, item.kind === 'inline' ? id : null);
+      return;
+    }
     if (item.status !== 'uploaded') {
       // Not on the server (or its outcome is unknown): cancel locally only.
       this.controllers.get(id)?.abort();
@@ -313,10 +326,12 @@ export class MailUploadStore {
         // Same item, same list position: only its status changes back.
         this.update(
           id,
-          { status: 'uploaded' },
+          { status: item.status },
           { kind: 'restored', name: item.name }
         );
         if (instanceId) this.deps.nodes()?.setRemoving(instanceId, false);
+        if (instanceId && item.status === 'failed')
+          this.deps.nodes()?.setState(instanceId, 'failed');
         this.deps.onRemoveFailed(item, () =>
           instanceId ? this.removeImage(instanceId) : this.remove(id)
         );
@@ -385,24 +400,31 @@ export class MailUploadStore {
     this.update(id, { status: 'uploading' });
     this.deps.nodes()?.setState(id, 'uploading');
     try {
-      const draftId = this.deps.draftId() ?? (await this.deps.ensureDraft());
+      const draftId =
+        item.owner?.draftId ??
+        this.deps.draftId() ??
+        (await this.deps.ensureDraft());
       if (!alive()) return;
       if (!draftId) throw new Error('Draft was not saved');
-      const owner: MailMediaOwner = { ...scope, draftId };
+      const owner: MailMediaOwner = item.owner ?? { ...scope, draftId };
       const inline = item.kind === 'inline';
-      const attachment = await this.deps.upload({
-        contentId: inline ? `${this.deps.newId()}@tuturuuu.mail` : null,
-        file,
-        inline,
-        owner,
-        signal: controller.signal,
-      });
+      const attachment =
+        item.attachment ??
+        (await this.deps.upload({
+          contentId: inline ? `${this.deps.newId()}@tuturuuu.mail` : null,
+          file,
+          inline,
+          owner,
+          signal: controller.signal,
+        }));
       if (!alive()) return this.discardLate(owner, attachment);
+      this.update(id, { attachment, owner });
       const source = this.deps.imageSource(owner, attachment.id);
       if (inline) {
         // Swap only once the server image has decoded, so nothing flashes.
-        await this.deps.decodeImage(source);
+        const decoded = await this.deps.decodeImage(source);
         if (!alive()) return this.discardLate(owner, attachment);
+        if (!decoded) throw new Error('Uploaded image could not be decoded');
         this.deps.nodes()?.resolve(id, source);
       }
       this.controllers.delete(id);

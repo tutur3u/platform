@@ -61,6 +61,48 @@ describe('immediate placeholders', () => {
 });
 
 describe('replace by id after decode', () => {
+  it('keeps a failed server decode preview and retries the same attachment', async () => {
+    const t = setup();
+    t.store.addFiles([png('a.png')], true);
+    await flush();
+    t.deps.decodeImage.mockResolvedValueOnce(null);
+    t.uploads[0]?.succeed();
+    await flush();
+    expect(t.statuses()).toEqual(['failed']);
+    expect(t.find('id1')?.attachment?.id).toBe('att1');
+    expect(t.find('id1')?.previewUrl).toBe('blob:a.png');
+    expect(t.fake.calls.some((call) => call.startsWith('resolve'))).toBe(false);
+    expect(t.deps.revokeObjectUrl).not.toHaveBeenCalled();
+    t.store.retry('id1');
+    await flush();
+    expect(t.statuses()).toEqual(['uploaded']);
+    expect(t.uploads).toHaveLength(1);
+    expect(t.find('id1')?.attachment?.id).toBe('att1');
+    expect(t.deps.revokeObjectUrl).toHaveBeenCalledExactlyOnceWith(
+      'blob:a.png'
+    );
+  });
+
+  it.each(['remove', 'close'] as const)(
+    'cleans up the known upload after decode failure on %s',
+    async (action) => {
+      const t = setup();
+      t.store.addFiles([png('a.png')], true);
+      await flush();
+      t.deps.decodeImage.mockResolvedValueOnce(null);
+      t.uploads[0]?.succeed();
+      await flush();
+      if (action === 'remove') t.store.remove('id1');
+      else t.store.cancelAll();
+      await flush();
+      expect(t.deps.remove).toHaveBeenCalledExactlyOnceWith(OWNER, 'att1');
+      expect(t.store.getSnapshot().items).toEqual([]);
+      expect(t.deps.revokeObjectUrl).toHaveBeenCalledExactlyOnceWith(
+        'blob:a.png'
+      );
+    }
+  );
+
   it('swaps the same node only once the server image has decoded', async () => {
     const t = setup();
     t.holdDecode.enabled = true;

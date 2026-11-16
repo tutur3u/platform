@@ -129,7 +129,7 @@ export function setup({
         })
     ),
     draftId: () => draft.id,
-    ensureDraft: vi.fn(async () => {
+    ensureDraft: vi.fn(async (): Promise<string | null> => {
       draft.id = 'draft';
       return 'draft';
     }),
