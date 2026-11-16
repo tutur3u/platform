@@ -1,5 +1,3 @@
 {
-  "ignoredFiles": [
-    "apps/roadmap/src/assets/brands/cloudflare-mark.svg"
-  ]
+  "ignoredFiles": ["apps/roadmap/src/assets/brands/cloudflare-mark.svg"]
 }
