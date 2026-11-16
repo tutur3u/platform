@@ -413,7 +413,6 @@ export async function WorkspaceNavigationLinks({
         `/${personalOrWsId}/finance/tags`,
         `/${personalOrWsId}/finance/invoices`,
         `/${personalOrWsId}/finance/debts`,
-        `/${personalOrWsId}/finance/settings`,
       ],
       external: true,
       children: [

@@ -78,11 +78,6 @@ export default async function FinanceLayout({
       href: `/${wsId}${financePrefix}/invoices`,
       disabled: withoutPermission('manage_finance'),
     },
-    {
-      title: t('settings'),
-      href: `/${wsId}${financePrefix}/settings`,
-      disabled: true,
-    },
   ];
 
   return (
