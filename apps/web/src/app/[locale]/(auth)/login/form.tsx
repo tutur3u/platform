@@ -42,6 +42,7 @@ import { Separator } from '@tuturuuu/ui/separator';
 import { toast } from '@tuturuuu/ui/sonner';
 import { getMountedAppVerifyTokenMatch } from '@tuturuuu/utils/internal-app-mounts';
 import { getAppDomainByUrl } from '@tuturuuu/utils/internal-domains';
+import { resolveUserDisplayName } from '@tuturuuu/utils/name-helper';
 import { requiresAccountMfa } from '@tuturuuu/utils/required-mfa-browser';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useLocale, useTranslations } from 'next-intl';
@@ -1728,9 +1729,10 @@ export default function LoginForm({
           appName={returnAppName}
           confirming={confirmingReturn}
           currentAvatarUrl={currentUserProfile?.avatar_url}
-          currentDisplayName={
-            currentUserProfile?.display_name ?? currentUserProfile?.full_name
-          }
+          currentDisplayName={resolveUserDisplayName({
+            display_name: currentUserProfile?.display_name,
+            full_name: currentUserProfile?.full_name,
+          })}
           currentEmail={currentUserProfile?.email}
           currentUserId={user.id}
           isAccountSwitcherReady={accountSwitcherInitialized}

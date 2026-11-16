@@ -7,6 +7,7 @@ import { Button } from '@tuturuuu/ui/button';
 import { Card, CardContent } from '@tuturuuu/ui/card';
 import { LoadingIndicator } from '@tuturuuu/ui/custom/loading-indicator';
 import { Separator } from '@tuturuuu/ui/separator';
+import { resolveUserDisplayName } from '@tuturuuu/utils/name-helper';
 import { useTranslations } from 'next-intl';
 import type { ReactNode } from 'react';
 
@@ -21,7 +22,7 @@ export function getDisplayName({
   email?: string | null;
   fallback: string;
 }) {
-  return displayName?.trim() || email?.trim() || fallback;
+  return resolveUserDisplayName({ displayName, email }, { fallback });
 }
 
 export function getAvatarUrl(avatarUrl?: string | null) {
