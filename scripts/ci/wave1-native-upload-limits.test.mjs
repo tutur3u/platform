@@ -102,6 +102,10 @@ test('main-module maps use their sealed original path and canonical encoding', (
     mappings: '',
   };
   writeFileSync(
+    join(p.root, 'source/index.mjs'),
+    'export default {};\n//# sourceMappingURL=index.mjs.map'
+  );
+  writeFileSync(
     join(p.root, 'source/index.mjs.map'),
     JSON.stringify(map, null, 2)
   );
