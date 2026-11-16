@@ -63,17 +63,17 @@ export function useMeetingPages({
   const query = useInfiniteQuery({
     enabled: enabled && Boolean(accountId),
     gcTime: 15 * 60_000,
-    getNextPageParam: (last, _pages, lastPage) =>
-      lastPage * MEETINGS_PAGE_SIZE < last.totalCount
-        ? lastPage + 1
-        : undefined,
     initialPageParam: 1,
-    queryFn: ({ pageParam }) =>
+    queryFn: ({ pageParam }): Promise<MeetingsResponse> =>
       getWorkspaceMeetings<MeetingsResponse>(wsId, {
         page: pageParam,
         pageSize: MEETINGS_PAGE_SIZE,
         search,
       }),
+    getNextPageParam: (last, _pages, lastPage) =>
+      lastPage * MEETINGS_PAGE_SIZE < last.totalCount
+        ? lastPage + 1
+        : undefined,
     queryKey: [...meetingsQueryPrefix(wsId, accountId), search],
     staleTime: 30_000,
   });

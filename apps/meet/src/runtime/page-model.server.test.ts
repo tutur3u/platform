@@ -124,6 +124,7 @@ function table(name: string, result: unknown) {
     query[method] = () => query;
   query.maybeSingle = settle;
   query.single = settle;
+  query.range = settle;
   mocks.tables[name] = settle;
   return query;
 }
@@ -341,6 +342,21 @@ describe('workspace pages', () => {
 
   it('loads the meetings list with one read of each workspace source', async () => {
     signIn('member');
+    const queries: Record<string, unknown> = {
+      workspace_meetings: table('workspace_meetings', {
+        data: [],
+        error: null,
+      }),
+      user_workspace_configs: table('user_workspace_configs', {
+        data: null,
+        error: null,
+      }),
+      user_private_details: table('user_private_details', {
+        data: { timezone: 'UTC' },
+        error: null,
+      }),
+    };
+    mocks.from.mockImplementation((name: string) => queries[name]);
     const model = await loadPageModel('/workspace/meetings');
     expect(model).toMatchObject({
       kind: 'meetings',
@@ -354,6 +370,9 @@ describe('workspace pages', () => {
     expect(mocks.invitation).toHaveBeenCalledTimes(1);
     expect(mocks.workspaceContext).toHaveBeenCalledTimes(1);
     expect(mocks.currentUser).toHaveBeenCalledTimes(1);
+    expect(reads('workspace_meetings')).toBe(1);
+    expect(reads('user_workspace_configs')).toBe(1);
+    expect(reads('user_private_details')).toBe(1);
   });
 
   it('keeps a non-member out when there is no invitation', async () => {

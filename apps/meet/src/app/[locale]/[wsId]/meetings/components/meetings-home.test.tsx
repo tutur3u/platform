@@ -281,7 +281,7 @@ describe('Meetings home sections', () => {
         current={{
           current: [
             {
-              ...meeting('live', NOW),
+              ...meeting('00000000-0000-4000-8000-000000000001', NOW),
               participantCount: 3,
               viewerJoined: true,
             },
