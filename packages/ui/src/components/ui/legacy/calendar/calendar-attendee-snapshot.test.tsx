@@ -23,7 +23,7 @@ vi.mock('@tuturuuu/internal-api', () => ({
   getGoogleCalendarColorOptions: async () => ({ providerColorWrites: false }),
 }));
 vi.mock('next-intl', () => ({ useTranslations: () => (key: string) => key }));
-const source: CalendarSourceOption = {
+const source = {
   provider: 'google',
   connectionId: 'connection',
   externalCalendarId: 'calendar',
@@ -35,7 +35,7 @@ const source: CalendarSourceOption = {
   accessRole: 'writer',
   accountName: null,
   accountEmail: 'host@example.invalid',
-};
+} satisfies CalendarSourceOption;
 const snapshot: CalendarAttendeeSnapshot = {
   eventId: 'saved',
   provider: 'google',
