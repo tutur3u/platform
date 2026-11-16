@@ -1,6 +1,14 @@
 const fs = require('node:fs');
 const os = require('node:os');
 const path = require('node:path');
+// Finance's emitted production config (apps/finance/void.config.ts).
+const financeVars = {
+  INTERNAL_WEB_API_ORIGIN: 'https://tuturuuu.com',
+  NEXT_PUBLIC_WEB_APP_URL: 'https://tuturuuu.com',
+  NEXT_PUBLIC_APP_URL: 'https://finance.tuturuuu.com',
+  FINANCE_APP_URL: 'https://finance.tuturuuu.com',
+  NEXT_PUBLIC_SUPABASE_URL: 'https://nzamlzqfdwaaxdefwraj.supabase.co',
+};
 function fixture(t, app = 'mail') {
   const dir = fs.realpathSync(
     fs.mkdtempSync(path.join(os.tmpdir(), 'wave1-artifact-'))
@@ -34,7 +42,8 @@ function fixture(t, app = 'mail') {
             : `tuturuuu-${app}`,
       no_bundle: true,
       main: './index.js',
-      compatibility_date: app === 'apps' ? '2026-10-12' : '2026-10-19',
+      compatibility_date:
+        app === 'apps' || app === 'finance' ? '2026-10-12' : '2026-10-19',
       compatibility_flags:
         app === 'apps'
           ? ['nodejs_compat']
@@ -57,7 +66,9 @@ function fixture(t, app = 'mail') {
                   NEXT_PUBLIC_MAIL_APP_URL: 'https://mail.tuturuuu.com',
                   NEXT_PUBLIC_WEB_APP_URL: 'https://tuturuuu.com',
                 }
-              : {},
+              : app === 'finance'
+                ? financeVars
+                : {},
       rules: [{ type: 'ESModule', globs: ['**/*.js'] }],
       assets: {
         directory: '../client',
@@ -69,4 +80,4 @@ function fixture(t, app = 'mail') {
   );
   return dir;
 }
-module.exports = { fixture };
+module.exports = { financeVars, fixture };

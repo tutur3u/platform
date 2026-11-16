@@ -187,6 +187,13 @@ test('staging configs reject production resource identities derived from every p
     await import('./wave1-native-profile.mjs');
   const { prepare, verify } = await import('./wave1-native-artifact.mjs');
   for (const app of Object.keys(profiles.apps)) {
+    if (profiles.apps[app].productionOnly) {
+      assert.throws(
+        () => profileFor(app, 'staging', 'owner-example'),
+        /publishes production only/
+      );
+      continue;
+    }
     const dir = fixture(t, app);
     prepare(dir, app, 'staging', 'owner-example', sha);
     const config = JSON.parse(

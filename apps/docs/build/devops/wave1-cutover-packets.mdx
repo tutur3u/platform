@@ -1,7 +1,7 @@
 ---
-title: "Wave-1 cutover packets: Calendar, Mail, Apps, Meet, Roadmap"
+title: "Wave-1 cutover packets: Calendar, Mail, Apps, Finance, Meet, Roadmap"
 description: "Per-app Worker identity, routes, bindings, build command, Vercel rollback target and smoke commands for the wave-1 Cloudflare cutover."
-updatedAt: "2026-11-09"
+updatedAt: "2026-11-17"
 audience: developers
 ---
 
@@ -16,17 +16,22 @@ only produces the sealed Worker bytes. Secret values never appear here, only nam
   `node scripts/ci/wave1-native-artifact.mjs prepare <app> production <sha> <workers-subdomain>`,
   `node scripts/ci/wave1-native-runtime.mjs <app> production <sha>` (needs `CI=true`) and
   `node scripts/ci/wave1-native-publish.mjs dry-run <app> production <sha>`.
+- Finance's package `build` is its Vercel Next build, so its producer build is
+  `bun turbo:local run build --filter="@tuturuuu/finance^..." --concurrency=2`, then
+  `VITE_FINANCE_NATIVE_PROFILE=production bun run build:cloudflare` in `apps/finance`, then
+  `VITE_FINANCE_NATIVE_PROFILE=production python3 scripts/ci/finance-native-artifact.py config apps/finance`
+  before the shared prepare step. Its publication config keeps the emitted vars exactly.
 - The production publication profile (`scripts/ci/wave1-native-profiles.json`) uploads a
   route-free Worker (`workers_dev: false`, `routes: []`). Binding the canonical host is a
   separate provider step, so uploading never moves traffic.
 - Production publication is gated by `productionPublicationPolicy` in `tuturuuu.ci.ts`
-  and the `wave1-native-production.yaml` dispatch, which lists `calendar`, `mail` and
-  `apps`. All three are admitted. Each run uses the protected GitHub environment
+  and the `wave1-native-production.yaml` dispatch, which lists `calendar`, `mail`, `apps`
+  and `finance`. All four are admitted. Each run uses the protected GitHub environment
   `wave1-<app>-production` (`publish` only succeeds when `PUBLICATION_ENVIRONMENT` equals that
   exact name) and must be dispatched from the `production` ref.
 - Environments the release owner creates (restrict each to the `production` branch and add a
   required reviewer): `wave1-calendar-production`,
-  `wave1-mail-production`, `wave1-apps-production`. Each holds the same four secrets,
+  `wave1-mail-production`, `wave1-apps-production`, `wave1-finance-production`. Each holds the same four secrets,
   by name: `PRODUCTION_SUPABASE_URL`, `PRODUCTION_SUPABASE_PUBLISHABLE_KEY` (public build
   inputs), `WAVE1_PRODUCTION_CLOUDFLARE_READ_TOKEN` (read-only topology, used by the
   preflight and verify steps) and `WAVE1_PRODUCTION_CLOUDFLARE_API_TOKEN` (upload only, used
@@ -101,6 +106,18 @@ unauthenticated workspace route. Meet and Roadmap use their own workflows and ar
 | Vars | `INTERNAL_WEB_API_ORIGIN=https://tuturuuu.com`; `/api/*` proxies to Web |
 | Publication | Admitted in `tuturuuu.ci.ts`; dispatch `wave1-native-production.yaml` with `app=apps` from `production` (environment `wave1-apps-production`) |
 | Vercel rollback | `dpl_7jwSj1yvqqtjxagQqsVr8kZ97ByS` (`apps-mlvxr7mpd-tuturuuu.vercel.app`, READY, aliased to `apps.tuturuuu.com`) |
+
+## Finance
+
+| Field | Value |
+| --- | --- |
+| Worker | `tuturuuu-finance` (production only; `finance-cloudflare.yaml` qualifies staging) |
+| Canonical host | `finance.tuturuuu.com`; the artifact answers 404 on every other host, including `tuturuuu.com/finance` |
+| Secrets (names) | `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY`, `SUPABASE_SECRET_KEY`, `TUTURUUU_APP_COORDINATION_SECRET`; the Worker refuses to start without the last two |
+| Vars | The production entry of `apps/finance/cloudflare/native-profiles.json`: `INTERNAL_WEB_API_ORIGIN`, `NEXT_PUBLIC_WEB_APP_URL`, `NEXT_PUBLIC_APP_URL`, `FINANCE_APP_URL` and `NEXT_PUBLIC_SUPABASE_URL`. The Supabase URL is a var, so it is not a Worker secret |
+| Compatibility | `2026-10-12`, `nodejs_compat` and `global_fetch_strictly_public`, from `apps/finance/void.config.ts` |
+| Publication | Admitted in `tuturuuu.ci.ts`; dispatch `wave1-native-production.yaml` with `app=finance` from `production` (environment `wave1-finance-production`) |
+| Anonymous `/` | 307 to `https://tuturuuu.com/login`; the pre-seal doctor runs with `--expect-redirect` |
 
 ## Meet
 

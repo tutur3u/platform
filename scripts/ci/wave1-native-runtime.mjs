@@ -57,12 +57,15 @@ async function runRuntimeAcceptance() {
   const access =
     app === 'calendar' && environment === 'staging' ? accessFixture() : null;
   // N8/N9: each Calendar artifact must 404 the other environment's host.
+  // The production Finance artifact admits only its own root host.
   const foreignHost =
     app === 'calendar'
       ? environment === 'production'
         ? 'calendar.tutur3u.com'
         : 'calendar.tuturuuu.com'
-      : null;
+      : app === 'finance'
+        ? 'finance.tutur3u.com'
+        : null;
   let clean = false;
   try {
     const hosts = [receipt.profile.host];
@@ -209,9 +212,10 @@ async function runRuntimeAcceptance() {
         assert.equal(info.environment, environment);
         assert.match(identity.headers.get('cache-control'), /no-store/);
         const post = await fetchWorker('/api/build-info', { method: 'POST' });
+        // Finance's proxy refuses every unregistered anonymous API request.
         assert.equal(
           post.status,
-          405,
+          app === 'finance' ? 401 : 405,
           'Identity route must not accept mutations'
         );
         const head = await fetchWorker('/api/build-info', { method: 'HEAD' });
@@ -251,7 +255,7 @@ async function runRuntimeAcceptance() {
           Buffer.from(await response.arrayBuffer()),
           await readFile(join(appRoot, 'dist', file))
         );
-        if (app === 'mail' || app === 'calendar') {
+        if (app === 'mail' || app === 'calendar' || app === 'finance') {
           const page = await fetchWorker(
             '/en/00000000-0000-4000-8000-000000000001'
           );

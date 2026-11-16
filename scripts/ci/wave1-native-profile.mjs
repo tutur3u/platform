@@ -84,6 +84,10 @@ export function profileFor(app, environment, subdomain) {
     'Unknown publication environment'
   );
   const settings = profiles.apps[app];
+  // A production-only app has no wave-1 staging identity; its staging artifact
+  // is qualified by the app's own native workflow.
+  if (settings.productionOnly)
+    assert.equal(environment, 'production', `${app} publishes production only`);
   if (environment === 'staging' && !settings.stagingHost)
     assert.match(
       subdomain ?? '',
@@ -166,9 +170,73 @@ export function assertStagingIsolation(config) {
   };
   check(config);
 }
+// Finance's emitted config is its reviewed production profile
+// (apps/finance/void.config.ts, cloudflare/native-profiles.json). The upload
+// keeps those exact vars, so the published Worker matches the bytes and config
+// that finance-cloudflare.yaml qualifies; secret names never repeat a var.
+function financePublicationConfig(base, profile, { main, assets, sourceSha }) {
+  const finance = profiles.apps.finance;
+  assert.equal(profile.environment, 'production', 'Finance is production only');
+  assert.match(
+    sourceSha ?? '',
+    /^[a-f0-9]{40}$/u,
+    'Exact Finance production source required'
+  );
+  assert.equal(
+    base.name,
+    finance.productionWorker,
+    'Unexpected original Worker identity'
+  );
+  assert.equal(
+    base.no_bundle,
+    true,
+    'Only prebundled native output may publish'
+  );
+  assert.equal(base.assets?.binding, 'ASSETS');
+  assert.equal(base.assets.run_worker_first, true);
+  assert.equal(base.assets.not_found_handling, 'none');
+  assert.deepEqual(base.compatibility_flags, [
+    'nodejs_compat',
+    'global_fetch_strictly_public',
+  ]);
+  assert.equal(base.compatibility_date, finance.compatibilityDate);
+  assert.deepEqual(
+    base.vars ?? {},
+    finance.sourceVars,
+    'Source vars require explicit profile review'
+  );
+  for (const key of resourceKeys)
+    assert.ok(empty(base[key]), `Unadmitted source resource: ${key}`);
+  assert.ok(empty(base.env), 'Named source environments are not admitted');
+  if (base.account_id) assert.equal(base.account_id, profile.accountId);
+  for (const name of profile.secrets)
+    assert.ok(
+      !Object.hasOwn(finance.sourceVars, name),
+      `Secret name duplicates a source var: ${name}`
+    );
+  return {
+    name: profile.name,
+    account_id: profile.accountId,
+    main,
+    no_bundle: true,
+    upload_source_maps: false,
+    compatibility_date: base.compatibility_date,
+    compatibility_flags: base.compatibility_flags,
+    rules: base.rules,
+    assets: { ...base.assets, directory: assets },
+    workers_dev: false,
+    preview_urls: false,
+    routes: [],
+    secrets: { required: profile.secrets },
+    vars: { ...finance.sourceVars },
+    observability: { enabled: true, head_sampling_rate: 0.05 },
+  };
+}
 export function publicationConfig(base, profile, { main, assets, sourceSha }) {
   if (profile.app === 'web')
     return webPublicationConfig(base, profile, { main, assets, sourceSha });
+  if (profile.app === 'finance')
+    return financePublicationConfig(base, profile, { main, assets, sourceSha });
   const originalName =
     profile.app === 'apps'
       ? 'tuturuuu-apps-vite-staging'

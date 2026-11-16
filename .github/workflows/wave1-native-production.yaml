@@ -5,7 +5,7 @@ on:
       app:
         description: App admitted by its separate cutover PR
         type: choice
-        options: [calendar, mail, apps]
+        options: [calendar, mail, apps, finance]
         required: true
       release-artifact:
         description: Build and seal only. The publish job does not run.
@@ -108,7 +108,9 @@ jobs:
             const { assertReleaseInputs } = await import('./scripts/ci/wave1-release-inputs.mjs');
             assertReleaseInputs(process.env);
           }
-          appendFileSync(process.env.GITHUB_ENV, `NEXT_PUBLIC_APP_URL=https://${p.host}\nNEXT_PUBLIC_${p.app.toUpperCase()}_APP_URL=https://${p.host}\nNEXT_PUBLIC_WEB_APP_URL=https://tuturuuu.com\n`);
+          // Finance's native profile pins its own public URLs; the build env matches finance-cloudflare.yaml.
+          const appUrl = p.app === 'finance' ? '' : `NEXT_PUBLIC_${p.app.toUpperCase()}_APP_URL=https://${p.host}\n`;
+          appendFileSync(process.env.GITHUB_ENV, `NEXT_PUBLIC_APP_URL=https://${p.host}\n${appUrl}NEXT_PUBLIC_WEB_APP_URL=https://tuturuuu.com\n`);
           JS
       - name: Generate exact source metadata
         env:
@@ -117,11 +119,35 @@ jobs:
           PLATFORM_BUILD_ENVIRONMENT: production
         run: bun run --silent scripts/ci/generate-build-metadata.ts
       - name: Build admitted production frontend and transitive suppliers
+        if: ${{ inputs.app != 'finance' }}
         uses: ./.github/actions/run-with-turbo-remote-cache
         with:
           command: bun turbo:local run build --filter=@tuturuuu/${{ inputs.app }} --concurrency=2
           token: ''
           team: ''
+      # Finance's package build is its Vercel Next build; the Worker is its Void build.
+      - name: Build Finance workspace suppliers
+        if: ${{ inputs.app == 'finance' }}
+        uses: ./.github/actions/run-with-turbo-remote-cache
+        with:
+          command: bun turbo:local run build --filter="@tuturuuu/finance^..." --concurrency=2
+          token: ''
+          team: ''
+      - name: Build the Finance production native Worker
+        if: ${{ inputs.app == 'finance' }}
+        env:
+          VITE_FINANCE_NATIVE_PROFILE: production
+        uses: ./.github/actions/run-with-turbo-remote-cache
+        with:
+          command: cd apps/finance && bun run build:cloudflare
+          token: ''
+          team: ''
+      - name: Qualify the emitted Finance production profile
+        if: ${{ inputs.app == 'finance' }}
+        timeout-minutes: 2
+        env:
+          VITE_FINANCE_NATIVE_PROFILE: production
+        run: python3 scripts/ci/finance-native-artifact.py config apps/finance
       - name: Prepare the production profile and receipt
         timeout-minutes: 2
         run: |
@@ -143,7 +169,7 @@ jobs:
         run: |
           HOST="$(node --input-type=module -e "import { profileFor } from './scripts/ci/wave1-native-profile.mjs'; console.log(profileFor(process.env.APP, 'production').host)")"
           FLAGS=()
-          if [ "$APP" = calendar ] || [ "$APP" = mail ]; then FLAGS+=(--expect-redirect); fi
+          if [ "$APP" = calendar ] || [ "$APP" = mail ] || [ "$APP" = finance ]; then FLAGS+=(--expect-redirect); fi
           node scripts/ci/pre-seal-doctor.mjs "$APP" "apps/$APP" "$HOST" "$SOURCE_SHA" --wave1 "${FLAGS[@]}"
       - name: Seal and exercise the original route-free production bytes
         timeout-minutes: 5
