@@ -1,16 +1,38 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
-const { upsert } = vi.hoisted(() => ({ upsert: vi.fn() }));
+const { upsert, rpc } = vi.hoisted(() => ({ upsert: vi.fn(), rpc: vi.fn() }));
 
 vi.mock('@tuturuuu/supabase/next/server', () => ({
   createAdminClient: async () => ({
-    schema: () => ({ from: () => ({ upsert }) }),
+    schema: () => ({ from: () => ({ upsert }), rpc }),
   }),
 }));
 
-import { recordAiStudioRunStep } from './metering';
+import { calculateAiStudioUsageCost, recordAiStudioRunStep } from './metering';
 
 describe('AI Studio step timing persistence', () => {
+  it.each([0, 4, 10])(
+    'prices total output once with %i reasoning tokens',
+    async (reasoningTokens) => {
+      rpc.mockResolvedValue({
+        data: [{ billed_credits: 1, provider_cost_usd: 0.0001 }],
+        error: null,
+      });
+      await calculateAiStudioUsageCost({
+        workspaceId: 'workspace-1',
+        modelId: 'openai/gpt-5',
+        outputTokens: 10,
+        reasoningTokens,
+      });
+      expect(rpc).toHaveBeenLastCalledWith(
+        'calculate_ai_studio_usage_cost',
+        expect.objectContaining({
+          p_output_tokens: 10 - reasoningTokens,
+          p_reasoning_tokens: reasoningTokens,
+        })
+      );
+    }
+  );
   beforeEach(() => {
     upsert.mockReset().mockResolvedValue({ error: null });
   });

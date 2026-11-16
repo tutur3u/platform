@@ -98,7 +98,9 @@ export interface DeductCreditsParams {
   userId?: string;
   modelId: string;
   inputTokens: number;
+  /** Total SDK output, including reasoning. Do not subtract reasoning here. */
   outputTokens: number;
+  /** Subset of outputTokens, retained for display and ledger attribution. */
   reasoningTokens?: number;
   imageCount?: number;
   searchCount?: number;

@@ -2,6 +2,22 @@
 
 AI utilities and helpers for Tuturuuu Platform.
 
+## Token accounting
+
+Pass the AI SDK's total `outputTokens` to credit helpers. Reasoning is a subset
+of that total; keep `reasoningTokens` separately for display and attribution.
+Do not subtract it before calling `deductAiCredits` or
+`calculateAiStudioUsageCost`.
+
+`credits/token-usage` owns normalization and the adapter for the SQL pricing
+contract. The SQL functions and execution ledger use disjoint output and
+reasoning buckets, so `toLegacyTokenPricing` subtracts reasoning exactly once
+at that boundary. For example, 20 SDK output tokens including 8 reasoning tokens
+become 12 output plus 8 reasoning tokens in the pricing RPC. API responses and
+chat completion counts retain the total of 20. Do not normalize those disjoint
+buckets a second time. Native provider usage with separate candidate and thought
+counts must first be converted to the SDK total-output convention.
+
 ## Chat SDK
 
 `@tuturuuu/ai/chat-sdk` exposes the Vercel Chat SDK core, `chat/ai`

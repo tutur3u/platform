@@ -60,6 +60,52 @@ describe('stream finish persistence', () => {
     });
   });
 
+  it.each(['total', 'steps', 'aborted'])(
+    'preserves nested reasoning and total output for %s usage',
+    async (source) => {
+      const insert = vi.fn().mockReturnValue({
+        select: () => ({
+          single: async () => ({
+            data: { id: 'assistant-1' },
+            error: null,
+          }),
+        }),
+      });
+      const usage = {
+        inputTokens: 10,
+        outputTokens: 8,
+        outputTokenDetails: { reasoningTokens: 5 },
+      };
+      const steps = [{ text: 'Done.', usage }];
+      const response =
+        source === 'aborted'
+          ? buildAbortedStreamFinishResponse(steps)
+          : {
+              text: 'Done.',
+              finishReason: 'stop',
+              ...(source === 'total' ? { totalUsage: usage } : { steps }),
+            };
+      await persistAssistantResponse({
+        chatId: 'chat-1',
+        effectiveSource: 'Mira',
+        model: 'google/gemini-2.5-flash',
+        response,
+        sbAdmin: { from: vi.fn().mockReturnValue({ insert }) },
+        userId: 'user-1',
+        wsId: 'workspace-1',
+      });
+      expect(mocks.deductAiCredits).toHaveBeenLastCalledWith(
+        expect.objectContaining({
+          outputTokens: 8,
+          reasoningTokens: 5,
+        })
+      );
+      expect(insert).toHaveBeenCalledWith(
+        expect.objectContaining({ completion_tokens: 8 })
+      );
+    }
+  );
+
   it.each(['google_search', 'server:GOOGLE_SEARCH_WEB'])(
     'persists and accounts for completed %s calls',
     async (toolName) => {

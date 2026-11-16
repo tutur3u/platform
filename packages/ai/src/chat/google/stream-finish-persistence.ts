@@ -1,4 +1,5 @@
 import { deductAiCredits } from '@tuturuuu/ai/credits/check-credits';
+import { normalizeAiTokenUsage } from '../../credits/token-usage';
 import type { CreditDeductionResult } from '../../credits/types';
 import { assistantMessageContentPreview } from '../assistant-message-content';
 import { collectAssistantMessageParts } from './assistant-message-parts';
@@ -134,7 +135,7 @@ function collectUsageTotals(response: StreamFinishResponseLike): UsageTotals {
   let cachedOutputTokens = getCachedTokenCount(usage.outputTokenDetails);
   let inputTokens = usage.inputTokens ?? 0;
   let outputTokens = usage.outputTokens ?? 0;
-  let reasoningTokens = usage.reasoningTokens ?? 0;
+  let reasoningTokens = normalizeAiTokenUsage(usage).reasoningTokens;
 
   if ((response.steps?.length ?? 0) > 0) {
     let stepInputSum = 0;
@@ -149,7 +150,7 @@ function collectUsageTotals(response: StreamFinishResponseLike): UsageTotals {
 
       stepInputSum += stepUsage.inputTokens ?? 0;
       stepOutputSum += stepUsage.outputTokens ?? 0;
-      stepReasoningSum += stepUsage.reasoningTokens ?? 0;
+      stepReasoningSum += normalizeAiTokenUsage(stepUsage).reasoningTokens;
       stepCachedInputSum += getCachedTokenCount(stepUsage.inputTokenDetails);
       stepCachedOutputSum += getCachedTokenCount(stepUsage.outputTokenDetails);
     }
@@ -174,9 +175,7 @@ function collectUsageTotals(response: StreamFinishResponseLike): UsageTotals {
   return {
     cachedInputTokens,
     cachedOutputTokens,
-    inputTokens,
-    outputTokens,
-    reasoningTokens,
+    ...normalizeAiTokenUsage({ inputTokens, outputTokens, reasoningTokens }),
   };
 }
 
@@ -283,7 +282,8 @@ function sumStepUsage(steps: ReadonlyArray<StepLike>): UsageLike {
       total.outputTokens =
         (total.outputTokens ?? 0) + (usage.outputTokens ?? 0);
       total.reasoningTokens =
-        (total.reasoningTokens ?? 0) + (usage.reasoningTokens ?? 0);
+        (total.reasoningTokens ?? 0) +
+        normalizeAiTokenUsage(usage).reasoningTokens;
       return total;
     },
     { inputTokens: 0, outputTokens: 0, reasoningTokens: 0 }

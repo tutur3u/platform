@@ -6,6 +6,10 @@ import {
 } from '@tuturuuu/ai/credits/check-credits';
 import { toBareModelName } from '@tuturuuu/ai/credits/model-mapping';
 import {
+  normalizeAiTokenUsage,
+  toLegacyTokenPricing,
+} from '../credits/token-usage';
+import {
   PlanModelResolutionError,
   resolvePlanModel,
 } from '@tuturuuu/ai/credits/resolve-plan-model';
@@ -256,13 +260,13 @@ export function createPOST(
         system: configs.systemPrompt,
         ...(cappedMaxOutput ? { maxOutputTokens: cappedMaxOutput } : {}),
         onFinish: async ({ text, finishReason, usage }) => {
+          const normalizedUsage = normalizeAiTokenUsage(usage);
+          const pricingUsage = toLegacyTokenPricing(normalizedUsage);
           result = {
             input: prompt,
             output: text,
             usage: {
-              inputTokens: usage.inputTokens ?? 0,
-              outputTokens: usage.outputTokens ?? 0,
-              reasoningTokens: usage.outputTokenDetails?.reasoningTokens ?? 0,
+              ...normalizedUsage,
               totalTokens: usage.totalTokens ?? 0,
             },
             finishReason,
@@ -275,9 +279,9 @@ export function createPOST(
             input: prompt,
             output: text,
             finish_reason: String(finishReason),
-            input_tokens: usage.inputTokens ?? 0,
-            output_tokens: usage.outputTokens ?? 0,
-            reasoning_tokens: usage.outputTokenDetails?.reasoningTokens ?? 0,
+            input_tokens: pricingUsage.inputTokens,
+            output_tokens: pricingUsage.outputTokens,
+            reasoning_tokens: pricingUsage.reasoningTokens,
             total_tokens: usage.totalTokens ?? 0,
             system_prompt: configs.systemPrompt ?? '',
           };
@@ -297,9 +301,7 @@ export function createPOST(
           deductAiCredits({
             wsId: configs.wsId,
             modelId: effectiveModel,
-            inputTokens: usage.inputTokens ?? 0,
-            outputTokens: usage.outputTokens ?? 0,
-            reasoningTokens: usage.outputTokenDetails?.reasoningTokens ?? 0,
+            ...normalizedUsage,
             feature: 'generate',
             executionId: execData?.id,
           }).catch((err) => console.error('Failed to deduct AI credits:', err));
@@ -346,12 +348,13 @@ export function createPOST(
         finishReason: FinishReason;
       };
 
+      const pricingUsage = toLegacyTokenPricing(typedResult.usage);
       const cost = {
         inputCost:
           (typedResult.usage.inputTokens / 1_000_000) *
           model.price.per1MInputTokens,
         outputCost:
-          (typedResult.usage.outputTokens / 1_000_000) *
+          (pricingUsage.outputTokens / 1_000_000) *
           model.price.per1MOutputTokens,
         reasoningCost:
           (typedResult.usage.reasoningTokens / 1_000_000) *

@@ -3,6 +3,7 @@ import type {
   CreditErrorCode,
 } from '@tuturuuu/ai/credits/constants';
 import { resolveGatewayModelId } from '@tuturuuu/ai/credits/model-mapping';
+import { toLegacyTokenPricing } from './token-usage';
 import type {
   CreditCheckResult,
   CreditDeductionResult,
@@ -137,12 +138,13 @@ export async function deductAiCredits(
   let error: RpcError = null;
 
   try {
+    const pricingUsage = toLegacyTokenPricing(params);
     const response = await sbAdmin.rpc('deduct_ai_credits', {
       p_ws_id: wsId,
       p_model_id: gatewayModelId,
-      p_input_tokens: params.inputTokens,
-      p_output_tokens: params.outputTokens,
-      p_reasoning_tokens: params.reasoningTokens ?? 0,
+      p_input_tokens: pricingUsage.inputTokens,
+      p_output_tokens: pricingUsage.outputTokens,
+      p_reasoning_tokens: pricingUsage.reasoningTokens,
       p_feature: params.feature,
       ...(params.executionId ? { p_execution_id: params.executionId } : {}),
       ...(params.chatMessageId

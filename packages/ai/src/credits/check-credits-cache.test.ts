@@ -44,6 +44,29 @@ import {
 } from './reservations';
 
 describe('AI credit Redis snapshot cache', () => {
+  it.each([0, 8, 20])(
+    'prices total output once with %i reasoning tokens',
+    async (reasoningTokens) => {
+      mocks.createAdminClient.mockResolvedValue({ rpc: mocks.rpc });
+      mocks.rpc.mockResolvedValue({ data: [{ success: true }], error: null });
+      await deductAiCredits({
+        wsId: 'workspace-1',
+        modelId: 'google/gemini-2.5-flash',
+        inputTokens: 100,
+        outputTokens: 20,
+        reasoningTokens,
+        feature: 'generate',
+      });
+      expect(mocks.rpc).toHaveBeenCalledWith(
+        'deduct_ai_credits',
+        expect.objectContaining({
+          p_input_tokens: 100,
+          p_output_tokens: 20 - reasoningTokens,
+          p_reasoning_tokens: reasoningTokens,
+        })
+      );
+    }
+  );
   beforeEach(() => {
     vi.clearAllMocks();
     mocks.createAdminClient.mockResolvedValue({ rpc: mocks.rpc });

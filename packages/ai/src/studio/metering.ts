@@ -1,5 +1,6 @@
 import { createAdminClient } from '@tuturuuu/supabase/next/server';
 import type { Json } from '@tuturuuu/types';
+import { toLegacyTokenPricing } from '../credits/token-usage';
 import { AiStudioError } from './errors';
 
 export type AiStudioMeteringIo = { fetch?: typeof globalThis.fetch };
@@ -90,7 +91,9 @@ export type CalculateAiStudioUsageCostInput = {
   imageCount?: number;
   inputTokens?: number;
   modelId: string;
+  /** Total SDK output, including reasoning. */
   outputTokens?: number;
+  /** Subset of outputTokens, not additional billable output. */
   reasoningTokens?: number;
   searchCount?: number;
   workspaceId: string;
@@ -100,6 +103,7 @@ export async function calculateAiStudioUsageCost(
   input: CalculateAiStudioUsageCostInput,
   io: AiStudioMeteringIo = {}
 ): Promise<AiStudioUsageCost> {
+  const pricingUsage = toLegacyTokenPricing(input);
   const sbAdmin = await createAdminClient({ noCookie: true, fetch: io.fetch });
   const { data, error } = await sbAdmin
     .schema('private')
@@ -107,8 +111,8 @@ export async function calculateAiStudioUsageCost(
       p_image_count: input.imageCount ?? 0,
       p_input_tokens: input.inputTokens ?? 0,
       p_model_id: input.modelId,
-      p_output_tokens: input.outputTokens ?? 0,
-      p_reasoning_tokens: input.reasoningTokens ?? 0,
+      p_output_tokens: pricingUsage.outputTokens,
+      p_reasoning_tokens: pricingUsage.reasoningTokens,
       p_search_count: input.searchCount ?? 0,
       p_ws_id: input.workspaceId,
     });
