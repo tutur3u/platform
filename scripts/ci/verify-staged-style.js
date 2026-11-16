@@ -45,21 +45,31 @@ const FAILURE_REASONS = [
 // Only a bounded integer reaches evidence; anything else is recorded as null.
 const scrubbedHeight = (value) =>
   Number.isInteger(value) && value >= 0 && value <= 10_000_000 ? value : null;
-// A tall mobile page can exceed what Chromium captures in one image (a 390x8000
-// viewport still failed on hosted runners), so the screenshot covers at most
-// this many CSS pixels from the top.
-const MAX_CAPTURE_HEIGHT = 4000;
-// The height each page loads at; the last-resort capture is a clip inside it.
-const LOAD_VIEWPORT_HEIGHT = 900;
+// Phone and desktop shots stay viewport-sized. A 4000px clip of a 20k page
+// is what Chromium rejected. At most one scrolled tile follows the top shot.
+const STYLE_VIEWPORTS = [
+  { width: 390, height: 844 },
+  { width: 1440, height: 900 },
+];
 const SCREENSHOT_TIMEOUT_MS = 30_000;
-// Screenshot failures reach evidence only as `<ErrorName>:<class>` from this
-// fixed list: raw Playwright messages can carry URLs or page text.
+// Classified failures stay `<ErrorName>:<class>`. An unclassified failure
+// also keeps a scrubbed slice of the message: URLs and secret-shaped tokens
+// are removed, and the slice is bounded.
 const SCREENSHOT_ERROR_CLASSES = [
   ['timeout', /timeout|timed out/iu],
   ['target-closed', /closed|crashed|disconnected/iu],
   ['memory', /out of memory|\boom\b|allocation/iu],
   ['protocol', /protocol error/iu],
 ];
+function scrubScreenshotDetail(message) {
+  return String(message)
+    .replace(/https?:\/\/\S+/giu, '[url]')
+    .replace(/[A-Za-z0-9._%+-]*SECRET[A-Za-z0-9._%+-]*/gu, '[redacted]')
+    .replace(/[^A-Za-z0-9:.,_() /+-]/gu, ' ')
+    .replace(/\s+/gu, ' ')
+    .trim()
+    .slice(0, 120);
+}
 function classifyScreenshotError(error) {
   const message = String(error?.message ?? '');
   const match = SCREENSHOT_ERROR_CLASSES.find(([, pattern]) =>
@@ -68,7 +78,9 @@ function classifyScreenshotError(error) {
   const name = /^[A-Za-z]{1,40}$/u.test(error?.name ?? '')
     ? error.name
     : 'Error';
-  return `${name}:${match ? match[0] : 'other'}`;
+  if (match) return `${name}:${match[0]}`;
+  const detail = scrubScreenshotDetail(message);
+  return detail ? `${name}:other:${detail}` : `${name}:other`;
 }
 
 // Default Next.js image optimization (`apps/web/next.config.ts` uses the
@@ -571,14 +583,15 @@ async function main({ env = process.env, runCommand = run, browserType } = {}) {
       }
     });
     const viewports = [];
-    for (const width of [390, 1440]) {
+    for (const { width, height } of STYLE_VIEWPORTS) {
       await markStage(`viewport-${width}`);
       navigation = undefined;
       viewport = { width, scrollHeight: null };
-      const page = await context.newPage();
-      await page.setViewportSize({ width, height: 900 });
+      let page = await context.newPage();
+      await page.setViewportSize({ width, height });
       documentResponse = await request('/en');
-      const response = await page.goto(documentResponse.finalUrl, {
+      const pageUrl = documentResponse.finalUrl;
+      const response = await page.goto(pageUrl, {
         waitUntil: 'load',
         timeout: 60000,
       });
@@ -686,77 +699,75 @@ async function main({ env = process.env, runCommand = run, browserType } = {}) {
           metrics.utility.radius > 0,
         'Candidate utility styles are missing'
       );
-      const screenshot = `platform-${width}.png`;
-      const partial = join(
-        evidence,
-        `.${screenshot}.${randomBytes(8).toString('hex')}.part`
-      );
-      const fullHeight = viewport.scrollHeight;
-      const capturedHeight = Math.max(
-        1,
-        Math.min(fullHeight ?? MAX_CAPTURE_HEIGHT, MAX_CAPTURE_HEIGHT)
-      );
-      const truncated = fullHeight === null || fullHeight > capturedHeight;
-      // One clipped image, never tiles; an unknown height counts as clipped.
+      const tiled =
+        viewport.scrollHeight !== null && viewport.scrollHeight > height;
+      // Top of the viewport, plus at most one scrolled tile. Never a tall clip.
+      const shots = [
+        { name: `platform-${width}.png`, y: 0 },
+        ...(tiled ? [{ name: `platform-${width}-tile.png`, y: height }] : []),
+      ];
       Object.assign(viewport, {
-        captureMode: truncated ? 'clipped' : 'full',
-        tileCount: 1,
-        clipHeight: capturedHeight,
+        captureMode: tiled ? 'viewport-plus-tile' : 'viewport',
+        tileCount: shots.length,
+        clipHeight: height,
         screenshotErrors: [],
       });
-      // Size the viewport to the capture and take a plain viewport image:
-      // fullPage asks Chromium to render beyond the viewport (the whole
-      // document), which fails on very tall pages even with a small clip.
-      // A failed capture is retried once, then falls back to a clip of the
-      // load viewport. The style checks above already ran in full. The image
-      // is evidence only: a failed capture is logged and uploaded, and it
-      // does not block promotion. Stylesheet, computed-style, resource, and
-      // navigation failures still do.
-      const attempts = [
-        { height: capturedHeight },
-        { height: capturedHeight },
-        {
-          height: Math.min(capturedHeight, LOAD_VIEWPORT_HEIGHT),
-          fallback: true,
-        },
-      ];
-      let captured;
-      for (const attempt of attempts) {
-        try {
-          await page.setViewportSize({ width, height: attempt.height });
-          await page.screenshot({
-            path: partial,
-            animations: 'disabled',
-            timeout: SCREENSHOT_TIMEOUT_MS,
-            ...(attempt.fallback
-              ? { clip: { x: 0, y: 0, width, height: attempt.height } }
-              : {}),
-          });
-          captured = attempt;
-          break;
-        } catch (error) {
-          viewport.screenshotErrors.push(classifyScreenshotError(error));
-          await rm(partial, { force: true }).catch(() => {});
+      let saved = 0;
+      for (const shot of shots) {
+        let took = false;
+        for (let attempt = 0; attempt < 2 && !took; attempt += 1) {
+          if (attempt === 1) {
+            await page.close().catch(() => {});
+            page = await context.newPage();
+            await page.setViewportSize({ width, height });
+            const retry = await page.goto(pageUrl, {
+              waitUntil: 'load',
+              timeout: 60000,
+            });
+            if (
+              !retry ||
+              retry.status() !== 200 ||
+              new URL(page.url()).origin !== origin
+            ) {
+              viewport.screenshotErrors.push(
+                'Error:other:fresh page was not the candidate'
+              );
+              break;
+            }
+          }
+          const partial = join(
+            evidence,
+            `.${shot.name}.${randomBytes(8).toString('hex')}.part`
+          );
+          try {
+            if (shot.y > 0)
+              await page.evaluate((y) => window.scrollTo(0, y), shot.y);
+            await page.screenshot({
+              path: partial,
+              animations: 'disabled',
+              timeout: SCREENSHOT_TIMEOUT_MS,
+            });
+            await rename(partial, join(evidence, shot.name));
+            took = true;
+            saved += 1;
+          } catch (error) {
+            viewport.screenshotErrors.push(classifyScreenshotError(error));
+            await rm(partial, { force: true }).catch(() => {});
+          }
         }
+        if (!took) break;
       }
-      if (!captured) {
+      if (saved !== shots.length) {
         console.error(
           `Staged viewport screenshot advisory at ${width}px: ${viewport.screenshotErrors.join(', ') || 'Error:other'}. Style checks passed. Promotion is not blocked.`
         );
-      } else {
-        if (captured.fallback)
-          Object.assign(viewport, {
-            captureMode: 'viewport-fallback',
-            clipHeight: captured.height,
-          });
-        await rename(partial, join(evidence, screenshot));
       }
       viewports.push({
         width,
-        height: 900,
+        height,
         path: '/en',
-        screenshot: captured ? 'PASS' : 'FAILED_ADVISORY',
-        ...(captured ? { image: screenshot } : {}),
+        screenshot: saved === shots.length ? 'PASS' : 'FAILED_ADVISORY',
+        ...(saved > 0 ? { image: shots[0].name } : {}),
         scrollHeight: viewport.scrollHeight,
         captureMode: viewport.captureMode,
         tileCount: viewport.tileCount,

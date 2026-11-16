@@ -295,7 +295,7 @@ for (const [name, status, host, accepted] of [
     let closed = 0;
     const page = {
       setViewportSize: async (size) => {
-        assert.deepEqual(size, { width: 390, height: 900 });
+        assert.deepEqual(size, { width: 390, height: 844 });
       },
       goto: async (url, options) => {
         assert.equal(url, `${origin}/en`);
@@ -592,7 +592,6 @@ test('a viewport screenshot failure is advisory and does not fail the proof', as
     assert.deepEqual(view.screenshotErrors, [
       'Error:protocol',
       'Error:protocol',
-      'Error:protocol',
     ]);
   }
   assert.ok(!JSON.stringify(proof).includes('SECRET'));
@@ -721,10 +720,13 @@ test('an out-of-range page height is recorded as null', async (t) => {
     {
       width: 390,
       scrollHeight: null,
-      captureMode: 'clipped',
+      captureMode: 'viewport',
       tileCount: 1,
-      clipHeight: 4000,
-      screenshotErrors: ['Error:other', 'Error:other', 'Error:other'],
+      clipHeight: 844,
+      screenshotErrors: [
+        'Error:other:capture failed',
+        'Error:other:capture failed',
+      ],
     }
   );
 });
@@ -755,7 +757,7 @@ const recordCapture = () => {
   };
 };
 
-test('a page within the capture bound is screenshotted in full', async (t) => {
+test('a tall page is the viewport plus one scrolled tile', async (t) => {
   const capture = recordCapture();
   const f = await transportFixture(t, () => undefined, undefined, {
     evaluate: pageMetrics(1800),
@@ -763,51 +765,64 @@ test('a page within the capture bound is screenshotted in full', async (t) => {
     screenshot: capture.screenshot,
   });
   const proof = await f.run();
-  // Each viewport loads at 900 px tall, then is sized to the capture height.
   assert.deepEqual(capture.sizes, [
-    { width: 390, height: 900 },
-    { width: 390, height: 1800 },
+    { width: 390, height: 844 },
     { width: 1440, height: 900 },
-    { width: 1440, height: 1800 },
   ]);
-  // A plain viewport image: never fullPage or a clip beyond the viewport.
-  for (const shot of capture.shots)
-    assert.deepEqual(shot, { animations: 'disabled', timeout: 30000 });
-  for (const view of proof.viewports) {
-    assert.equal(view.scrollHeight, 1800);
-    assert.equal(view.captureMode, 'full');
-    assert.equal(view.tileCount, 1);
-    assert.equal(view.clipHeight, 1800);
-    assert.equal(view.screenshot, 'PASS');
+  assert.equal(capture.shots.length, 4);
+  for (const shot of capture.shots) {
+    assert.equal(shot.clip, undefined);
+    assert.equal(shot.fullPage, undefined);
+    assert.deepEqual(
+      { animations: shot.animations, timeout: shot.timeout },
+      { animations: 'disabled', timeout: 30000 }
+    );
   }
+  assert.deepEqual(
+    proof.viewports.map((view) => ({
+      captureMode: view.captureMode,
+      tileCount: view.tileCount,
+      clipHeight: view.clipHeight,
+      screenshot: view.screenshot,
+    })),
+    [
+      {
+        captureMode: 'viewport-plus-tile',
+        tileCount: 2,
+        clipHeight: 844,
+        screenshot: 'PASS',
+      },
+      {
+        captureMode: 'viewport-plus-tile',
+        tileCount: 2,
+        clipHeight: 900,
+        screenshot: 'PASS',
+      },
+    ]
+  );
 });
 
-test('a page taller than the bound passes with one clipped capture', async (t) => {
+test('a 21881px page stays at the viewport and one tile', async (t) => {
   const capture = recordCapture();
   const f = await transportFixture(t, () => undefined, undefined, {
-    evaluate: pageMetrics(24000),
+    evaluate: pageMetrics(21881),
     setViewportSize: capture.setViewportSize,
     screenshot: capture.screenshot,
   });
   const proof = await f.run();
-  assert.equal(proof.viewports.length, 2);
-  assert.deepEqual(
-    capture.sizes.filter((size) => size.height !== 900),
-    [
-      { width: 390, height: 4000 },
-      { width: 1440, height: 4000 },
-    ]
-  );
-  for (const shot of capture.shots)
-    assert.deepEqual(shot, { animations: 'disabled', timeout: 30000 });
+  assert.deepEqual(capture.sizes, [
+    { width: 390, height: 844 },
+    { width: 1440, height: 900 },
+  ]);
+  assert.equal(capture.shots.length, 4);
+  for (const shot of capture.shots) assert.equal(shot.clip, undefined);
   for (const view of proof.viewports) {
-    assert.equal(view.scrollHeight, 24000);
-    assert.equal(view.captureMode, 'clipped');
-    assert.equal(view.tileCount, 1);
-    assert.equal(view.clipHeight, 4000);
+    assert.equal(view.scrollHeight, 21881);
+    assert.equal(view.captureMode, 'viewport-plus-tile');
+    assert.equal(view.tileCount, 2);
+    assert.ok(view.clipHeight === 844 || view.clipHeight === 900);
     assert.equal(view.screenshot, 'PASS');
     assert.deepEqual(view.screenshotErrors, []);
-    // The style checks still ran in full before the capture.
     assert.equal(view.ruleCount, 1);
     assert.equal(view.utility.display, 'flex');
   }
@@ -833,41 +848,39 @@ test('a failed capture is retried once at the same bounded height', async (t) =>
   });
   const proof = await f.run();
   assert.deepEqual(
-    capture.sizes.filter((size) => size.width === 390 && size.height !== 900),
+    capture.sizes.filter((size) => size.width === 390),
     [
-      { width: 390, height: 4000 },
-      { width: 390, height: 4000 },
+      { width: 390, height: 844 },
+      { width: 390, height: 844 },
     ]
   );
   const [mobile, desktop] = proof.viewports;
-  assert.equal(mobile.captureMode, 'clipped');
-  assert.equal(mobile.clipHeight, 4000);
+  assert.equal(mobile.captureMode, 'viewport-plus-tile');
+  assert.equal(mobile.clipHeight, 844);
+  assert.equal(mobile.screenshot, 'PASS');
   assert.deepEqual(mobile.screenshotErrors, ['TimeoutError:timeout']);
   assert.deepEqual(desktop.screenshotErrors, []);
   assert.ok(!JSON.stringify(proof).includes('SECRET'));
 });
 
-test('a capture that fails twice falls back to a clip of the load viewport', async (t) => {
+test('a capture that fails on the fresh page stays advisory and never clips', async (t) => {
   const capture = recordCapture();
   const f = await transportFixture(t, () => undefined, undefined, {
     evaluate: pageMetrics(24000),
     setViewportSize: capture.setViewportSize,
-    screenshot: async (options) => {
-      if (!options.clip)
-        throw new Error('Target page, context or browser has been closed');
-      await capture.screenshot(options);
+    screenshot: async () => {
+      throw new Error('Target page, context or browser has been closed');
     },
   });
   const proof = await f.run();
-  for (const shot of capture.shots) assert.deepEqual(shot.clip.height, 900);
+  assert.equal(capture.shots.length, 0);
   for (const view of proof.viewports) {
-    assert.equal(view.captureMode, 'viewport-fallback');
-    assert.equal(view.clipHeight, 900);
+    assert.equal(view.screenshot, 'FAILED_ADVISORY');
+    assert.equal(view.captureMode, 'viewport-plus-tile');
     assert.deepEqual(view.screenshotErrors, [
       'Error:target-closed',
       'Error:target-closed',
     ]);
-    // The fallback image never replaces the style proof.
     assert.equal(view.ruleCount, 1);
     assert.equal(view.utility.display, 'flex');
   }
