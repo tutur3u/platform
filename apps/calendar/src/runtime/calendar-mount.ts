@@ -4,12 +4,14 @@ import {
   resolveAppBase,
 } from '@tuturuuu/start-bridge/mounts';
 import appConfig from '../../start-bridge.config';
-export const calendarMounts = {
+// Explicit annotation: the inferred spread type would name the start-bridge
+// internal MountIsolationConfig, which declaration emit cannot reference (TS2883).
+export const calendarMounts: AppMountConfig = {
   app: 'calendar',
   rootHosts: [],
   basePath: '/calendar',
   ...appConfig.mounts,
-} satisfies AppMountConfig;
+};
 export function calendarBase(url: URL) {
   const mount = resolveAppBase(url, calendarMounts);
   return mount
