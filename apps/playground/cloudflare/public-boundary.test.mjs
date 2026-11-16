@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
-import { publicBoundary } from './public-boundary.mjs';
+import { mountRootUrl, publicBoundary } from './public-boundary.mjs';
 
 const env = { PLATFORM_BUILD_COMMIT_HASH: 'a'.repeat(40) };
 const request = (path, options) =>
@@ -110,4 +110,46 @@ test('canonical page redirects preserve query bytes and never redirect API paths
     publicBoundary(request('/playground/api/build-info/'), env).status,
     404
   );
+});
+
+test('the bare apex mount reaches the bridge in its canonical form', () => {
+  assert.equal(
+    mountRootUrl(request('/playground')),
+    'https://tuturuuu.com/playground/'
+  );
+  assert.equal(
+    mountRootUrl(request('/playground?q=%2F%26&a=1&a=2')),
+    'https://tuturuuu.com/playground/?q=%2F%26&a=1&a=2'
+  );
+  assert.equal(
+    mountRootUrl(request('/playground', { headers: { Cookie: 'a=b' } })),
+    'https://tuturuuu.com/playground/'
+  );
+});
+
+test('only the bare apex mount root is rewritten for the bridge', () => {
+  for (const url of [
+    'https://tuturuuu.com/playground/',
+    'https://tuturuuu.com/playground/demo/tasks',
+    'https://tuturuuu.com/playground/assets/a.js',
+    'https://tuturuuu.com/playground/api/build-info',
+    'https://tuturuuu.com/playgroundful',
+    'https://tuturuuu.com/',
+    'https://playground.tuturuuu.com/playground',
+    'https://playground.tuturuuu.com/',
+    'https://evil.example/playground',
+  ])
+    assert.equal(mountRootUrl(new Request(url)), null, url);
+});
+
+test('the bare mount is served, and its slash form redirects to it', () => {
+  for (const suffix of ['', '?x=1'])
+    assert.equal(publicBoundary(request('/playground' + suffix), env), null);
+  const redirected = publicBoundary(request('/playground/?x=1'), env);
+  assert.equal(redirected.status, 301);
+  assert.equal(
+    redirected.headers.get('Location'),
+    'https://tuturuuu.com/playground?x=1'
+  );
+  assert.equal(redirected.headers.get('Cache-Control'), 'private, no-store');
 });

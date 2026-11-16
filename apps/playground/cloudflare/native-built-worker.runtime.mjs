@@ -175,6 +175,25 @@ test(
         assert.ok(emitted.body.length > 0, asset);
       }
     }
+    const query = await call('/playground?x=1');
+    assert.equal(
+      query.status,
+      200,
+      `/playground?x=1 -> ${query.status} ${query.headers.location ?? ''}`
+    );
+    assert.match(query.headers['content-type'], /text\/html/);
+    assert.equal(query.headers['cache-control'], 'private, no-store');
+    for (const [path, location] of [
+      ['/playground/', 'http://tuturuuu.com/playground'],
+      ['/playground/?x=1', 'http://tuturuuu.com/playground?x=1'],
+      ['/playground/demo/tasks/', 'http://tuturuuu.com/playground/demo/tasks'],
+    ]) {
+      const res = await call(path);
+      assert.equal(res.status, 301, path);
+      assert.equal(res.headers.location, location, path);
+      assert.equal(res.headers['cache-control'], 'private, no-store', path);
+      assert.equal(res.headers['set-cookie'], undefined, path);
+    }
     for (const headers of [
       {},
       { cookie: 'sb-demo-auth-token=synthetic' },

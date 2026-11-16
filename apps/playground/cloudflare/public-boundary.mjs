@@ -9,6 +9,19 @@ const demos = new Set([
 const hosts = new Set(['playground.tuturuuu.com', 'playground.tutur3u.com']);
 const noStore = { 'Cache-Control': 'private, no-store' };
 
+// The production build bakes `/playground` as the router basepath, and the
+// router canonicalizes the mount root to `/playground/` with a redirect. The
+// bridge receives that canonical form for the bare apex mount so the page
+// answers directly; the visible URL stays `/playground`. `null` when the
+// request needs no rewrite.
+export function mountRootUrl(request) {
+  const url = new URL(request.url);
+  if (url.hostname !== 'tuturuuu.com' || url.pathname !== '/playground')
+    return null;
+  url.pathname = '/playground/';
+  return url.href;
+}
+
 export function publicBoundary(request, env) {
   const url = new URL(request.url);
   const path = url.pathname;

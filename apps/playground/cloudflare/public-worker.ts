@@ -1,7 +1,7 @@
 import { withHstsResponsePolicy } from '@tuturuuu/start-bridge/response-policy';
 import type { PlaygroundEnvironment } from './worker';
 import bridge from './worker';
-import { publicBoundary } from './public-boundary.mjs';
+import { mountRootUrl, publicBoundary } from './public-boundary.mjs';
 
 interface PublicEnvironment extends PlaygroundEnvironment {
   PLATFORM_BUILD_COMMIT_HASH: string;
@@ -19,8 +19,12 @@ export default {
       const headers = new Headers(request.headers);
       headers.delete('cookie');
       headers.delete('authorization');
+      const canonicalUrl = mountRootUrl(request);
+      const source = canonicalUrl
+        ? new Request(canonicalUrl, request)
+        : request;
       const response = await bridge.fetch(
-        new Request(request, { headers }),
+        new Request(source, { headers }),
         env,
         ctx
       );
