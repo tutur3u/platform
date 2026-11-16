@@ -30,6 +30,9 @@ For assigned ongoing idea/bug/feature intake, read `references/request-backlog.m
 capture each outcome before dispatch, recover durable requests on every wake, and
 keep implemented work distinct from verified delivery.
 
+On fleet machines, `ttr git guard` refuses new remote branches and pull requests
+on the platform repos; read `references/git-guard.md` before working around a refusal.
+
 ## On DONE
 
 When the item is done, blocked for good, or handed to another owner, send Atlas one handover, then settle yourself. Never complete silently.

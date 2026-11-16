@@ -1,0 +1,139 @@
+---
+title: "Git guard"
+description: "Refuse new remote branches and pull requests on configured machines with ttr git guard, keeping fleet work on the direct-to-main flow."
+updatedAt: "2026-11-16"
+---
+
+## Why this exists
+
+Fleet machines publish `tutur3u/platform` and `upskii/platform` work directly to
+`main`: review locally, rebase onto `origin/main`, commit as the configured
+identity with a DCO sign-off, push fast-forward only, then run `bun git-sync`.
+Pull requests and new remote branches from fleet machines are not part of that
+flow. `ttr git guard` enforces it on each opted-in machine. Pushes are refused
+before Git makes any network write, and PR creation is refused before `gh`
+contacts GitHub.
+
+## What it enforces
+
+The guard applies only to pushes whose remote resolves to a guarded repository
+(default: `tutur3u/platform`, `upskii/platform`). It matches on the last two
+path segments of the remote URL, so https, ssh and scp-style remotes all match.
+Credentials in a URL are never logged.
+
+| Push | Result |
+| --- | --- |
+| `main` / `production`, fast-forward | allowed |
+| `main` / `production`, non-fast-forward, create or delete | refused; no override |
+| new branch (anything else) | refused; overridable |
+| existing non-main branch | refused by default (`existingBranches: "allow"` to permit); overridable |
+| existing `release-please--branches--*` | allowed; creating one is refused |
+| branch matching `allowBranches` | allowed |
+| deleting a non-protected branch, any tag | allowed and logged |
+| other refs (`refs/notes/*`, …) | refused; overridable |
+
+The ancestry check runs locally (`git merge-base --is-ancestor`). A stale clone
+that lacks the remote commit is refused until you fetch and rebase.
+
+The gh guard refuses these on guarded repositories:
+
+- `gh pr create` (and its alias `gh pr new`)
+- `gh api` POSTs to `repos/<owner>/<repo>/pulls`
+- `gh api graphql` with `createPullRequest`
+- `gh stack submit`
+
+The repository comes from `-R/--repo`, `GH_REPO`, the REST path, or the
+working directory's remotes. A GraphQL creation whose repository cannot be
+resolved is refused. Every other `gh` command passes straight to the real `gh`
+without starting Bun.
+
+### Release flows that keep working
+
+- release-please, Dependabot and the `release-*-package` workflows push from
+  GitHub Actions, so client hooks never see them.
+- `bun git-sync` pushes `main` and `production` as fast-forwards.
+- `bun git-release-please` merges locally into `main`, then pushes `main` as a
+  fast-forward.
+- `scripts/tuturuuu-bot-token.js` (task-branch push plus `gh pr create`) is
+  refused on guarded machines by design. A real exception uses a one-shot
+  override.
+
+## Install and operate
+
+```bash
+ttr git guard install --shell zsh          # or bash / none
+ttr git guard status                       # add --json for receipts
+ttr git guard log --limit 20
+```
+
+`install` writes `~/.tuturuuu/git-guard/` (honours `TTR_GIT_GUARD_HOME`):
+
+- `config.json`: opt-in config (`enabled`, `machine`, `repos`,
+  `ffOnlyBranches`, `existingOnlyPrefixes`, `allowBranches`,
+  `existingBranches`).
+- `hooks/`: managed dispatchers. The global `core.hooksPath` points here.
+  Each dispatcher chains to the hook the repository would otherwise run: the
+  repo's recorded `ttr-guard.chainHooksPath` (for example `.githooks`), the
+  previous global hooksPath, or `.git/hooks`. `.githooks/pre-push`, Git LFS and
+  similar hooks keep working.
+- `bin/gh`: the gh shim. A managed shell block puts it first on `PATH`.
+  A gh alias cannot do this, because aliases cannot shadow built-in commands.
+- `log.jsonl`: every refusal, guarded allow, override creation and
+  consumption, install and uninstall.
+
+A clone with a local `core.hooksPath` (this repository sets `.githooks` on
+`bun install`) would bypass a global hooksPath. Two mechanisms close that gap:
+
+- `install --repo <path>` repoints such clones and records the previous value.
+- `scripts/install-git-hooks.js` keeps a clone on the guard's directory whenever
+  `git config --global ttr-guard.hooksPath` names an installed guard.
+
+`ttr git guard status` flags any listed clone that still bypasses the guard.
+
+`ttr upgrade` and `ttr upgrade activate` refresh the hook and shim through the
+new release. `ttr git guard uninstall` restores the previous hooksPath values and
+shell files, and keeps the log.
+
+## Exceptions
+
+There is no environment-variable bypass. A real exception (release-please,
+Dependabot, a USER-approved stack) uses an explicit override:
+
+```bash
+ttr git guard allow-once --kind push --repo tutur3u/platform \
+  --ref <branch> --reason "<why>" --approved-by <who>
+ttr git guard allow-once --kind pr --repo tutur3u/platform \
+  --reason "<why>" --approved-by <who>
+```
+
+Overrides:
+
+- need a reason and an approver
+- expire after 15 minutes by default (`--ttl-minutes`, at most 120)
+- are consumed by an atomic rename, so exactly one push or PR creation uses each
+  one
+- are logged both when created and when consumed
+
+Protected-branch rewrites and deletions cannot be overridden.
+
+## Limits and server-side backstop
+
+Client hooks are advisory: `git push --no-verify` skips them, and the GitHub MCP
+server talks to the API directly instead of through `gh`. On guarded machines,
+agent configurations should deny MCP pull-request creation tools. The durable
+backstop is a GitHub repository ruleset that restricts branch creation, with
+bypass for the release-please, Dependabot and Actions identities. That ruleset
+is a repository-administration decision and is not applied by the CLI.
+
+## Rollout check
+
+On each machine, after `ttr upgrade` and `ttr git guard install`:
+
+1. `git push origin HEAD:guard-probe/<machine>` from a guarded clone is refused,
+   and no remote branch appears.
+2. `gh pr create --head guard-probe/<machine>` in the same clone is refused.
+3. `ttr git guard status --json` shows the hook current, global hooksPath active,
+   the gh guard active, and both refusals in `lastRefusals`.
+
+Regression coverage lives in `packages/sdk/src/cli/git-guard-*.test.ts` and
+`scripts/install-git-hooks.test.js`.
