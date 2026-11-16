@@ -1,5 +1,6 @@
 {
   "account_switcher": {
+    "switch_account_error": "Failed to switch account. Please try again.",
     "accounts": "Accounts",
     "current_account": "Current Account",
     "manage_accounts": "Manage Accounts",

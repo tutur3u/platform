@@ -6,6 +6,7 @@
     "please_wait": "Please wait...",
     "remove_account": "Remove account",
     "switch_account": "Switch Account",
+    "switch_account_error": "Failed to switch account. Please try again.",
     "unknown_user": "Unknown User"
   },
   "calendar": {

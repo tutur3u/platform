@@ -6,6 +6,7 @@
     "please_wait": "Vui lòng chờ...",
     "remove_account": "Xóa tài khoản",
     "switch_account": "Chuyển tài khoản",
+    "switch_account_error": "Không thể chuyển tài khoản. Vui lòng thử lại.",
     "unknown_user": "Người dùng không xác định"
   },
   "ai_chat": {

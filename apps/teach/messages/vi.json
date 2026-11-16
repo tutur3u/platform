@@ -1,5 +1,6 @@
 {
   "account_switcher": {
+    "switch_account_error": "Không thể chuyển tài khoản. Vui lòng thử lại.",
     "accounts": "Tài khoản",
     "current_account": "Tài khoản hiện tại",
     "manage_accounts": "Quản lý tài khoản",
