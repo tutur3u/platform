@@ -29,6 +29,7 @@ const reviewCategories = [
     owner: 'platform-auth',
     patterns: [
       /^packages\/(?:auth|sso|satellite|cloudflare|start-bridge)\//u,
+      /(?:^|[\/._-])oauth2?(?:[\/._-]|$)/iu,
       /(?:^|\/)(?:auth|sso|oauth2?|sessions?|login|logout|sign-?in|sign-?up|mfa|otp|2fa|passkeys?|webauthn)(?:\/|[._-][^/]*$|$)/iu,
       /(?:^|\/)(?:proxy|middleware|api-middleware|authorization)\.(?:c|m)?[jt]s$/u,
       /(?:^|\/)(?:oidc|external-apps)[^/]*\.(?:c|m)?[jt]sx?$/iu,
@@ -42,7 +43,18 @@ const reviewCategories = [
     patterns: [
       /^apps\/database\//u,
       /^packages\/supabase\//u,
-      /(?:^|\/)[^/]*(?:rls|polic(?:y|ies))[^/]*$/iu,
+      /[a-z0-9](?:Rls|RLS)(?:[A-Z._-]|$)/u,
+      // An RLS filename token. The letters rls inside "urls" are not RLS.
+      // A filename that only contains "policy" is security-policy, below.
+      /(?:^|\/)(?:[^/]*[^A-Za-z0-9])?rls(?:[^A-Za-z0-9][^/]*)?$/iu,
+    ],
+  },
+  {
+    category: 'security-policy',
+    owner: 'platform-auth',
+    patterns: [
+      // Keeps policy files in review without calling them database RLS.
+      /(?:^|\/)[^/]*polic(?:y|ies)[^/]*$/iu,
     ],
   },
   {

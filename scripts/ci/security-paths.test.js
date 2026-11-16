@@ -77,6 +77,39 @@ test('security-sensitive paths require review by category', () => {
   }
 });
 
+test('policy filenames stay reviewed and are not labeled rls-database', () => {
+  for (const filePath of [
+    'apps/roadmap/src/cache-policy.ts',
+    'apps/calendar/src/runtime/response-policy.ts',
+    'apps/finance/src/lib/api-route-policies.ts',
+    'apps/mobile/lib/features/auth/required_mfa_policy.dart',
+  ]) {
+    const categories = categoriesOf([filePath]);
+    assert.ok(categories.includes('security-policy'), filePath);
+    assert.equal(categories.includes('rls-database'), false, filePath);
+  }
+  for (const filePath of [
+    'apps/calendar/src/lib/calendar/google-oauth-urls.ts',
+    'apps/web/src/lib/use-image-urls.ts',
+  ]) {
+    assert.equal(
+      categoriesOf([filePath]).includes('rls-database'),
+      false,
+      filePath
+    );
+  }
+  assert.ok(
+    categoriesOf([
+      'supabase/migrations/20260101000000_enable_rls.sql',
+    ]).includes('rls-database')
+  );
+  assert.ok(
+    categoriesOf([
+      'apps/database/supabase/migrations/20261023000000_x.sql',
+    ]).includes('rls-database')
+  );
+});
+
 test('ordinary product, docs and translation changes need no security review', () => {
   for (const filePath of [
     'apps/calendar/src/components/event-card.tsx',
@@ -243,5 +276,34 @@ test('trust-boundary runner requires its core suites', () => {
   assert.throws(
     () => trustSuites(['workflow-x.test.js']),
     /missing trust suite/u
+  );
+});
+
+test('OAuth filename tokens retain auth coverage without false RLS hits', () => {
+  for (const app of ['web', 'tasks', 'calendar']) {
+    const result = classifyReview([
+      `apps/${app}/src/constants/google-oauth-urls.ts`,
+    ]);
+    assert.ok(result.categories.some(({ category }) => category === 'auth'));
+    assert.ok(
+      !result.categories.some(({ category }) => category === 'rls-database')
+    );
+  }
+});
+
+test('camel-case Rls filenames remain database-sensitive', () => {
+  for (const file of [
+    'workspaceRls.ts',
+    'workspaceRlsPolicy.ts',
+    'workspaceRLS.ts',
+  ]) {
+    const result = classifyReview([`packages/example/${file}`]);
+    assert.ok(
+      result.categories.some(({ category }) => category === 'rls-database')
+    );
+  }
+  const result = classifyReview(['packages/example/workspaceUrls.ts']);
+  assert.ok(
+    !result.categories.some(({ category }) => category === 'rls-database')
   );
 });
