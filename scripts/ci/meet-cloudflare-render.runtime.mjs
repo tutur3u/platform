@@ -323,6 +323,36 @@ test(
 );
 
 test(
+  'native local auth handler refuses a logout POST without a trusted Origin',
+  {
+    timeout: 30000,
+  },
+  async () => {
+    const forwardedBefore = forwarded.length;
+    const assuranceBefore = policies.app.assurance.length;
+    const response = await fetchWorker('/api/auth/logout', {
+      method: 'POST',
+      headers: { Accept: 'application/json' },
+    });
+    assert.equal(response.status, 403);
+    await response.text();
+    const cookies = response.headers.getSetCookie();
+    for (const name of [
+      'tuturuuu_app_session',
+      'tuturuuu_web_app_session',
+      'tuturuuu_app_session_refresh',
+      'tuturuuu_web_app_session_refresh',
+    ]) {
+      assert.ok(!cookies.some((value) => value.startsWith(`${name}=`)), name);
+    }
+    assert.equal(response.headers.get('access-control-allow-origin'), null);
+    assert.equal(forwarded.length, forwardedBefore);
+    assert.equal(policies.app.assurance.length, assuranceBefore);
+    assert.deepEqual(unexpected, []);
+  }
+);
+
+test(
   'authenticated unknown API forwards method, query, body and cookies and preserves upstream response',
   {
     timeout: 30000,
