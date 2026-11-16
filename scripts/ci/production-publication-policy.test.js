@@ -20,6 +20,7 @@ const apps = [
   'inventory',
   'nova',
   'mind',
+  'finance',
   'meet',
   'calendar',
   'mail',

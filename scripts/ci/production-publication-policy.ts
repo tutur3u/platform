@@ -14,6 +14,7 @@ const protectedSurfaces = {
   inventory: ['frontend'],
   nova: ['frontend'],
   mind: ['frontend'],
+  finance: ['frontend'],
   mastermind: ['frontend'],
   meet: ['frontend', 'realtime-do'],
   calendar: ['frontend'],
