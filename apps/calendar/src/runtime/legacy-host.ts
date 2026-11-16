@@ -39,7 +39,7 @@ function mountPath(pathname: string, basePath: string) {
 
 /**
  * In an artifact with an apex mount, the subdomain only moves visitors to
- * `https://<mount host><base><path>?<query>` (307, method kept), before any
+ * `https://<mount host><base><path>?<query>` (301 for GET/HEAD; 307 preserves other methods), before any
  * auth, locale or app handling. Its build identity stays served, and its
  * service-worker path answers with a worker that removes itself.
  */
@@ -69,7 +69,7 @@ export function legacyHostResponse(
   );
   target.search = url.search;
   return new Response(null, {
-    status: 307,
+    status: request.method === 'GET' || request.method === 'HEAD' ? 301 : 307,
     headers: { Location: target.href },
   });
 }

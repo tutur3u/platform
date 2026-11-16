@@ -98,7 +98,7 @@ describe('Calendar cutover boundary', () => {
         ctx,
         telemetry
       );
-      expect(response.status).toBe(307);
+      expect(response.status).toBe(301);
       expect(response.headers.get('location')).toBe(
         'https://tuturuuu.com/calendar/.well-known/acme-challenge/probe'
       );
@@ -157,7 +157,15 @@ describe('Calendar cutover boundary', () => {
 });
 
 describe('legacy calendar.tuturuuu.com host', () => {
-  const methods = ['GET', 'HEAD', 'POST'] as const;
+  const methods = [
+    'GET',
+    'HEAD',
+    'POST',
+    'PUT',
+    'PATCH',
+    'DELETE',
+    'OPTIONS',
+  ] as const;
   it.each([
     ['/', '/calendar'],
     ['/en/personal', '/calendar/en/personal'],
@@ -165,7 +173,10 @@ describe('legacy calendar.tuturuuu.com host', () => {
       '/00000000-0000-4000-8000-000000000001?date=2026-11-15',
       '/calendar/00000000-0000-4000-8000-000000000001?date=2026-11-15',
     ],
-    ['/settings?x=1', '/calendar/settings?x=1'],
+    [
+      '/settings?x=1&x=2&next=%2Fabc%3Fa%3D1&empty=',
+      '/calendar/settings?x=1&x=2&next=%2Fabc%3Fa%3D1&empty=',
+    ],
     ['/login?next=%2Fabc', '/calendar/login?next=%2Fabc'],
     ['/verify-token?nextUrl=%2Fabc', '/calendar/verify-token?nextUrl=%2Fabc'],
     ['/api/v1/calendar/connections', '/calendar/api/v1/calendar/connections'],
@@ -182,7 +193,9 @@ describe('legacy calendar.tuturuuu.com host', () => {
         ctx,
         telemetry
       );
-      expect(response.status).toBe(307);
+      expect(response.status).toBe(
+        method === 'GET' || method === 'HEAD' ? 301 : 307
+      );
       expect(response.headers.get('location')).toBe(
         `https://tuturuuu.com${to}`
       );
