@@ -18,7 +18,10 @@ for (const width of [390, 728, 1024, 1440]) {
           const row = element.closest('[data-picker-row]') ?? element;
           const badge = row.querySelector('[data-slot="badge"]');
           if (!(badge instanceof HTMLElement)) {
-            return { name: element.getAttribute('title'), errors: ['no badge'] };
+            return {
+              name: element.getAttribute('title'),
+              errors: ['no badge'],
+            };
           }
           const bounds = row.getBoundingClientRect();
           const plan = badge.getBoundingClientRect();
@@ -51,7 +54,9 @@ for (const width of [390, 728, 1024, 1440]) {
           }
           return { name: element.getAttribute('title'), errors };
         });
-        failures.push(...result.errors.map((error) => `${result.name}: ${error}`));
+        failures.push(
+          ...result.errors.map((error) => `${result.name}: ${error}`)
+        );
       }
       expect(failures).toEqual([]);
 
@@ -60,9 +65,7 @@ for (const width of [390, 728, 1024, 1440]) {
       });
       await longName.scrollIntoViewIfNeeded();
       await page.mouse.move(0, 0);
-      const badge = longName
-        .locator('..')
-        .locator('[data-slot="badge"]');
+      const badge = longName.locator('..').locator('[data-slot="badge"]');
       const before = await badge.boundingBox();
       await longName.hover();
       const after = await badge.boundingBox();

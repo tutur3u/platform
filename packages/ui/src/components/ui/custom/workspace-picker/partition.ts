@@ -78,7 +78,9 @@ export function partitionWorkspaces({
   query: string;
 }): WorkspacePickerPartition {
   const unique = [
-    ...new Map(workspaces.map((workspace) => [workspace.id, workspace])).values(),
+    ...new Map(
+      workspaces.map((workspace) => [workspace.id, workspace])
+    ).values(),
   ].filter((workspace) => matchesWorkspaceQuery(workspace, query));
   const hiddenSet = new Set(hiddenIds);
   const visible = unique.filter((workspace) => !hiddenSet.has(workspace.id));
@@ -102,7 +104,9 @@ export function partitionWorkspaces({
     rest: [...flexible.values()]
       .filter((workspace) => !placed.has(workspace.id))
       .sort(byName),
-    hidden: unique.filter((workspace) => hiddenSet.has(workspace.id)).sort(byName),
+    hidden: unique
+      .filter((workspace) => hiddenSet.has(workspace.id))
+      .sort(byName),
   };
 }
 

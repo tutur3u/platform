@@ -39,7 +39,6 @@ export const PICKER_ROW_LAYOUT = {
 
 export function pickerRowColumns(variant: PickerVariant) {
   const layout = PICKER_ROW_LAYOUT[variant];
-  const badge =
-    layout.badge === 'auto' ? 'auto' : `${layout.badge}px`;
+  const badge = layout.badge === 'auto' ? 'auto' : `${layout.badge}px`;
   return `minmax(0,1fr) ${badge} ${layout.state}px ${layout.actions}px`;
 }
