@@ -8,6 +8,10 @@
 @source "components";
 /* The shared marketing layout renders in every app that imports this file. */
 @source "../../marketing-shell/src";
+/* Satellite command launcher sizing classes (arbitrary values) only exist in
+   packages/satellite, which consumer apps do not scan automatically. Without
+   this the dialog loses its viewport height bound and overflows. */
+@source "../../satellite/src/components/command-launcher";
 @source "../../../node_modules/streamdown/dist/*.js";
 @source "../../../node_modules/@streamdown/math/dist/*.js";
 
