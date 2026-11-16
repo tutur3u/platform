@@ -59,7 +59,8 @@ export function mountedAppBinding(
   env: Env
 ): ServiceBinding | null {
   const url = new URL(request.url);
-  if (env.PUBLIC_HOST && url.host !== env.PUBLIC_HOST) return null;
+  // Fail closed: without a configured public host nothing mounts.
+  if (!env.PUBLIC_HOST || url.host !== env.PUBLIC_HOST) return null;
   const { pathname } = url;
   const mount = `/${pathname.split('/')[1] ?? ''}`;
   if (!MOUNT_PATH_PATTERN.test(mount) || mount === '/api') return null;

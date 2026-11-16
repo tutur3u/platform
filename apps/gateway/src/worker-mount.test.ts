@@ -135,10 +135,7 @@ describe('mounted app ingress', () => {
           });
         })
       );
-      const response = await handle(request, {
-        ...env,
-        PUBLIC_HOST: undefined,
-      });
+      const response = await handle(request, env);
       expect(fetch).toHaveBeenCalledTimes(1);
       expect(response.status).toBe(307);
       expect(response.headers.get('x-gateway-cache')).toBe('MOUNT');
@@ -237,6 +234,18 @@ describe('mount admission', () => {
     expect(subtree.fetch).not.toHaveBeenCalled();
     await handle(new Request('https://tuturuuu.com/mind/boards'), subtree.env);
     expect(subtree.fetch).toHaveBeenCalledTimes(1);
+  });
+
+  it('mounts nothing when the public host is not configured', async () => {
+    const { handle } = handler();
+    const { env, fetch, origin } = mindEnv('/mind,/mind/*', {
+      PUBLIC_HOST: undefined,
+    });
+    for (const path of ['/mind', '/mind/boards?x=1']) {
+      await handle(new Request(`https://tuturuuu.com${path}`), env);
+    }
+    expect(fetch).not.toHaveBeenCalled();
+    expect(origin).toHaveBeenCalledTimes(2);
   });
 
   it('does not mount encoded, normalized, lookalike, API or alias-host paths', async () => {
