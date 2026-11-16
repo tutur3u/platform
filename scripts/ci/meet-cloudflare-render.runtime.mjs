@@ -287,9 +287,14 @@ test(
     timeout: 30000,
   },
   async () => {
+    // Logout POSTs must come from the app's own origin (logout scope contract).
     const response = await fetchWorker('/api/auth/logout', {
       method: 'POST',
-      headers: { Cookie: signedCookie() },
+      headers: {
+        Cookie: signedCookie(),
+        Origin: 'https://meet.tuturuuu.com',
+        'Sec-Fetch-Site': 'same-origin',
+      },
     });
     assert.equal(response.status, 200);
     assert.deepEqual(await response.json(), { success: true });
