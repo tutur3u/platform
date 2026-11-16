@@ -8,9 +8,8 @@ export default defineBridgeAppConfig({
     unknownHost: 'reject',
   },
   async wrapResponse(response, { request }) {
-    const { stampNovaWorkerBuildInfo } = await import(
-      './cloudflare/worker-build-info'
-    );
+    const { stampNovaWorkerBuildInfo } =
+      await import('./cloudflare/worker-build-info');
     const stamped = await stampNovaWorkerBuildInfo(request, response);
     const { applyResponsePolicy } =
       await import('./src/start-bridge/response-policy');
