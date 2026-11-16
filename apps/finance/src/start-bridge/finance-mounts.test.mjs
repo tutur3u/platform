@@ -18,6 +18,21 @@ test('a production root host stays the subdomain and does not claim the apex', (
   });
 });
 
+test('every native profile serves its public URL from its root host', () => {
+  const profiles = JSON.parse(
+    readFileSync(
+      new URL('../../cloudflare/native-profiles.json', import.meta.url),
+      'utf8'
+    )
+  );
+  for (const [name, profile] of Object.entries(profiles)) {
+    const root = `https://${profile.rootHost}`;
+    assert.equal(profile.vars.NEXT_PUBLIC_APP_URL, root, name);
+    assert.equal(profile.vars.FINANCE_APP_URL, root, name);
+    assert.equal(financeBakedApexUrl(Object.values(profile.vars)), null, name);
+  }
+});
+
 test('the Vite base stays empty so the subdomain root is not prefixed', () => {
   assert.equal(financeBuildBasePath(), '');
   const viteConfig = readFileSync(
