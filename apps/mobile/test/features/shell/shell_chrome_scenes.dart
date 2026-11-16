@@ -16,6 +16,7 @@ enum ShellChromeScene { topBar, dockRest, dockBack, notifications, switcher }
 
 const sceneWorkspace = Workspace(id: 'ws-1', name: 'Tuturuuu');
 
+/// The root dock: Home, Apps, Mira, Notifications and Profile, as icons.
 List<ShellDockEntry> _destinations() => const [
   ShellDockEntry(
     key: ValueKey('home'),
@@ -23,14 +24,9 @@ List<ShellDockEntry> _destinations() => const [
     glyph: Icon(LucideIcons.house),
   ),
   ShellDockEntry(
-    key: ValueKey('tasks'),
-    label: 'Tasks',
-    glyph: Icon(LucideIcons.squareCheckBig),
-  ),
-  ShellDockEntry(
-    key: ValueKey('calendar'),
-    label: 'Calendar',
-    glyph: Icon(LucideIcons.calendar),
+    key: ValueKey('apps'),
+    label: 'Apps',
+    glyph: Icon(LucideIcons.layoutGrid),
   ),
   ShellDockEntry(
     key: ValueKey('assistant'),
@@ -38,9 +34,14 @@ List<ShellDockEntry> _destinations() => const [
     glyph: Icon(LucideIcons.sparkles),
   ),
   ShellDockEntry(
-    key: ValueKey('apps'),
-    label: 'Apps',
-    glyph: Icon(LucideIcons.layoutGrid),
+    key: ValueKey('notifications'),
+    label: 'Notifications',
+    glyph: Icon(LucideIcons.bell),
+  ),
+  ShellDockEntry(
+    key: ValueKey('profile'),
+    label: 'Profile',
+    glyph: Icon(LucideIcons.circleUserRound),
   ),
 ];
 
@@ -53,7 +54,14 @@ class ShellChromeSceneView extends StatelessWidget {
     final style = ShellChromeStyle.of(context);
     final media = MediaQuery.of(context);
     final back =
-        scene != ShellChromeScene.dockRest && scene != ShellChromeScene.topBar;
+        scene == ShellChromeScene.dockBack ||
+        scene == ShellChromeScene.switcher;
+    final selected = switch (scene) {
+      ShellChromeScene.notifications => const ValueKey('notifications'),
+      ShellChromeScene.topBar ||
+      ShellChromeScene.dockRest => const ValueKey('home'),
+      _ => null,
+    };
     final title = switch (scene) {
       ShellChromeScene.notifications => 'Notifications',
       _ => 'Home',
@@ -73,30 +81,34 @@ class ShellChromeSceneView extends StatelessWidget {
             top: 0,
             left: 0,
             right: 0,
-            child: _TopBar(title: title, home: !back),
+            child: _TopBar(
+              title: title,
+              home:
+                  scene == ShellChromeScene.topBar ||
+                  scene == ShellChromeScene.dockRest,
+            ),
           ),
           Positioned(
             left: 0,
             right: 0,
             bottom: 0,
             height:
-                ShellDockMetrics.clearance -
-                ShellDockMetrics.inset +
-                ShellDockMetrics.dockFadeHeight +
-                media.padding.bottom,
+                ShellDockMetrics.bottomOffset(media.padding.bottom) +
+                ShellDockMetrics.height / 2,
             child: ShellDockFade(color: style.page),
           ),
           Positioned(
             left: ShellDockMetrics.inset,
             right: ShellDockMetrics.inset,
-            bottom: ShellDockMetrics.inset + media.padding.bottom,
+            bottom: ShellDockMetrics.bottomOffset(media.padding.bottom),
             child: Center(
               child: SizedBox(
                 width: ShellDockMetrics.widthFor(media.size.width),
                 child: ShellDockSurface(
                   child: ShellDockBar(
                     entries: _destinations(),
-                    selectedKey: back ? null : const ValueKey('home'),
+                    labelled: false,
+                    selectedKey: selected,
                     onSelected: (_) {},
                     back: back
                         ? const ShellDockEntry(
@@ -151,18 +163,10 @@ class _TopBar extends StatelessWidget {
                 ),
                 if (home) ...[
                   ShellTopBarButton(
-                    icon: const Icon(LucideIcons.circleUserRound),
-                    onPressed: () {},
-                  ),
-                  ShellTopBarButton(
-                    icon: const Icon(LucideIcons.bell),
-                    badge: const ShellUnreadDot(),
-                    onPressed: () {},
-                  ),
-                  ShellTopBarButton(
                     icon: const WorkspaceAvatar(
                       workspace: sceneWorkspace,
                       radius: 16,
+                      circular: true,
                     ),
                     onPressed: () {},
                   ),

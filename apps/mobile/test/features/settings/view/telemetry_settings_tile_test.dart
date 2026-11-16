@@ -1,6 +1,7 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mobile/core/observability/telemetry_preference.dart';
 import 'package:mobile/core/ui/ui.dart';
+import 'package:mobile/features/settings/view/settings_tile_details_link.dart';
 import 'package:mobile/features/settings/view/telemetry_settings_tile.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
@@ -33,8 +34,11 @@ void main() {
     await tester.pumpAndSettle();
     expect(tester.widget<AppSwitch>(find.byType(AppSwitch)).value, isFalse);
     expect(applied, [false, true, false]);
-    expect(find.text('Help improve the app'), findsOneWidget);
-    await tester.tap(find.byType(AppIconButton));
+    expect(
+      find.textContaining('Help improve the app', findRichText: true),
+      findsOneWidget,
+    );
+    await tester.tap(find.byType(SettingsTileDetailsLink));
     await tester.pumpAndSettle();
     expect(
       find.textContaining('Send usage data and crash reports to Google'),

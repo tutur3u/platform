@@ -11,10 +11,19 @@ import 'package:mobile/features/workspace/workspace_presentation.dart';
 /// internal root workspace shows the Tuturuuu logo. The tile is decorative;
 /// rows announce the workspace name.
 class WorkspaceAvatar extends StatelessWidget {
-  const WorkspaceAvatar({required this.workspace, this.radius = 18, super.key});
+  const WorkspaceAvatar({
+    required this.workspace,
+    this.radius = 18,
+    this.circular = false,
+    super.key,
+  });
 
   final Workspace workspace;
   final double radius;
+
+  /// Draws a circle instead of the rounded square, for round containers
+  /// such as the top bar's avatar button.
+  final bool circular;
 
   @override
   Widget build(BuildContext context) {
@@ -22,7 +31,9 @@ class WorkspaceAvatar extends StatelessWidget {
     final c = tokens.colorScheme;
     final accent = workspaceAccent(workspace);
     final size = radius * 2;
-    final borderRadius = BorderRadius.circular(radius * 0.64);
+    final borderRadius = BorderRadius.circular(
+      circular ? radius : radius * 0.64,
+    );
     final initials = workspaceInitials(
       displayWorkspacePickerName(context, workspace),
     );

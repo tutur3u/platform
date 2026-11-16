@@ -52,13 +52,21 @@ void registerShellViewportChecks(
           return;
         }
         // The five fixed destinations carry visible labels.
-        for (final label in ['Home', 'Tasks', 'Calendar', 'Mira', 'Apps']) {
+        // Root destinations are icons: no visible labels, but each keeps
+        // its accessible name.
+        for (final label in [
+          'Home',
+          'Apps',
+          'Mira',
+          'Notifications',
+          'Profile',
+        ]) {
           expect(
             find.descendant(
               of: find.byType(MorphingNavigationBar),
               matching: find.text(label),
             ),
-            findsOneWidget,
+            findsNothing,
           );
         }
         expect(find.bySemanticsLabel('Home'), findsOneWidget);
@@ -104,6 +112,18 @@ void registerShellViewportChecks(
         );
         expect(dock.top, greaterThan(size.height - 180));
         expect(dock.width, lessThan(size.width));
+        // The pill rests just above the home indicator.
+        expect(
+          tester
+              .getRect(
+                find.ancestor(
+                  of: find.byType(MorphingNavigationBar),
+                  matching: find.byType(ShellDockSurface),
+                ),
+              )
+              .bottom,
+          closeTo(size.height - ShellDockMetrics.bottomOffset(34), 0.5),
+        );
         expect(
           find.byWidgetPredicate(
             (widget) =>

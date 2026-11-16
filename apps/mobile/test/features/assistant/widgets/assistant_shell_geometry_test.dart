@@ -1,10 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:mobile/core/layout/page_insets.dart';
 import 'package:mobile/core/router/routes.dart';
 import 'package:mobile/features/assistant/widgets/assistant_composer_geometry.dart';
 import 'package:mobile/features/assistant/widgets/assistant_composer_launcher.dart';
 import 'package:mobile/features/assistant/widgets/assistant_scroll_to_bottom_overlay.dart';
-import 'package:mobile/features/shell/view/floating_dock_rail.dart';
 import 'package:mobile/features/shell/view/floating_shell_dock.dart';
 import 'package:mobile/features/shell/view/shell_dock_slot.dart';
 import 'package:shadcn_flutter/shadcn_flutter.dart' as shad;
@@ -105,8 +105,7 @@ void main() {
               closeTo(
                 900 -
                     keyboard -
-                    (keyboard == 0 ? 34 : 0) -
-                    floatingDockBottomGap,
+                    ShellDockMetrics.bottomOffset(keyboard == 0 ? 34 : 0),
                 0.1,
               ),
             );

@@ -328,11 +328,13 @@ class _FloatingShellDockState extends State<FloatingShellDock> {
               left: 0,
               right: 0,
               bottom: 0,
+              // From the pill's vertical centre to the screen's bottom edge:
+              // the veil covers content passing under the dock and below it,
+              // never the content above the pill.
               height:
-                  ShellDockMetrics.clearance -
-                  ShellDockMetrics.inset +
-                  ShellDockMetrics.dockFadeHeight +
-                  media.padding.bottom,
+                  ShellDockMetrics.bottomOffset(media.padding.bottom) +
+                  ShellDockMetrics.height / 2 +
+                  widget.navigationBottomOffset,
               child: IgnorePointer(
                 child: AnimatedOpacity(
                   key: const ValueKey('shell-dock-fade'),
@@ -352,9 +354,12 @@ class _FloatingShellDockState extends State<FloatingShellDock> {
             Positioned(
               left: floatingDockHorizontalInset,
               right: floatingDockHorizontalInset,
-              bottom: floatingDockBottomGap + widget.navigationBottomOffset,
+              bottom:
+                  ShellDockMetrics.bottomOffset(media.padding.bottom) +
+                  widget.navigationBottomOffset,
               child: SafeArea(
                 top: false,
+                bottom: false,
                 child: ShellKeyboardChrome(
                   keyboardVisible: widget.keyboardVisible,
                   keepVisible: widget.composerVisible || editorAction,

@@ -46,9 +46,25 @@ abstract final class ShellDockMetrics {
   /// Backdrop blur behind the dock; 0 paints it solid (`mobile.dockBlur`).
   static double get dockBlur => _contract.dockBlur;
 
-  /// Space the dock occupies above the safe area: the pill plus its gap
-  /// below and the same gap above it.
+  /// Space the dock occupies on a screen without a bottom safe area: the
+  /// pill plus its gap below and the same gap above it.
   static const double clearance = height + inset * 2;
+
+  /// How far the pill sits inside a bottom safe area (the home indicator
+  /// zone), so it rests just above the indicator instead of a full [inset]
+  /// over it.
+  static const double safeAreaTuck = 8;
+
+  /// Distance from the screen's bottom edge to the pill for a bottom
+  /// [safeBottom] inset: [inset] without one, otherwise the safe area less
+  /// [safeAreaTuck], never closer than [inset].
+  static double bottomOffset(double safeBottom) =>
+      safeBottom <= 0 ? inset : math.max(inset, safeBottom - safeAreaTuck);
+
+  /// Space scroll content reserves above a [safeBottom] inset: the pill, its
+  /// bottom offset and a gap of [inset] above it.
+  static double clearanceFor(double safeBottom) =>
+      height + inset + bottomOffset(safeBottom) - math.max(0, safeBottom);
 
   /// Pill width for a window [width]: full width minus the side insets on
   /// phones, centred and capped from the tablet breakpoint.
@@ -108,8 +124,8 @@ abstract final class AppPageInsets {
       );
 
   /// Bottom padding every scroll view inside the shell reserves:
-  /// `dockHeight + dockInset * 2 + safeArea.bottom` (122 on a phone whose
-  /// bottom safe area is 34).
+  /// `dockHeight + dockInset + ShellDockMetrics.bottomOffset(safeArea.bottom)`
+  /// (102 on a phone whose bottom safe area is 34, 88 without one).
   ///
   /// The shell publishes this value as `MediaQuery.padding.bottom` for its
   /// body while the dock shows, so inside the shell the ambient padding is
@@ -120,7 +136,7 @@ abstract final class AppPageInsets {
     double? safeBottom,
   }) => safeBottom == null
       ? MediaQuery.paddingOf(context).bottom
-      : ShellDockMetrics.clearance + safeBottom;
+      : ShellDockMetrics.clearanceFor(safeBottom) + safeBottom;
 
   /// Resolves insets for [width] using the ambient [MediaQuery].
   ///

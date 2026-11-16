@@ -22,6 +22,7 @@ import 'package:mobile/features/assistant/widgets/assistant_header_geometry.dart
 import 'package:mobile/features/dashboard/view/dashboard_page.dart';
 import 'package:mobile/features/dashboard/view/home_page.dart';
 import 'package:mobile/features/notifications/view/notifications_page.dart';
+import 'package:mobile/features/profile/view/profile_navigation_avatar.dart';
 import 'package:mobile/features/profile/view/profile_overview_page.dart';
 import 'package:mobile/features/shell/cubit/shell_chrome_actions_cubit.dart';
 import 'package:mobile/features/shell/view/android_modal_back_bridge.dart';
@@ -90,8 +91,8 @@ class _ShellPageState extends State<ShellPage> with WidgetsBindingObserver {
   static const ValueKey<String> _globalLayerKey = ValueKey('global-layer');
   static const ValueKey<String> _miniLayerKey = ValueKey('mini-layer');
   static const ValueKey<String> _backToRootKey = ValueKey('back-to-root');
-  static const ValueKey<String> _tasksKey = ValueKey('tasks');
-  static const ValueKey<String> _calendarKey = ValueKey('calendar');
+  static const ValueKey<String> _notificationsKey = ValueKey('notifications');
+  static const ValueKey<String> _profileKey = ValueKey('profile');
   static const double _miniNavItemSpacing = 1;
   static const double _floatingNavMinItemWidth = 52;
   static const double _compactBottomNavHeight = 54;
@@ -664,8 +665,8 @@ class _ShellPageState extends State<ShellPage> with WidgetsBindingObserver {
 
   /// Route of a fixed dock destination.
   static String _routeForKey(Key? key) {
-    if (key == _tasksKey) return Routes.tasks;
-    if (key == _calendarKey) return Routes.calendar;
+    if (key == _notificationsKey) return Routes.notifications;
+    if (key == _profileKey) return Routes.profileRoot;
     if (key == _assistantKey) return Routes.assistant;
     if (key == _appsKey || key is GlobalKey) return Routes.apps;
     return Routes.home;

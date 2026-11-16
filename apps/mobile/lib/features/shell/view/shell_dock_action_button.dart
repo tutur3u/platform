@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 import 'package:mobile/core/interaction/app_haptics.dart';
+import 'package:mobile/core/layout/page_insets.dart';
 import 'package:mobile/features/shell/cubit/shell_chrome_actions_cubit.dart';
 import 'package:mobile/widgets/nova_loading_indicator.dart';
 
@@ -31,8 +32,12 @@ class ShellDockActionButton extends StatelessWidget {
           foregroundColor: primary
               ? Theme.of(context).colorScheme.surface
               : Theme.of(context).colorScheme.onSurface,
-          minimumSize: const Size(48, 48),
-          padding: const EdgeInsets.symmetric(horizontal: 12),
+          // The size of a dock slot, so the action lines up with the
+          // destinations beside it.
+          minimumSize: const Size.square(ShellDockMetrics.slot),
+          fixedSize: const Size.fromHeight(ShellDockMetrics.slot),
+          tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+          padding: const EdgeInsets.symmetric(horizontal: 14),
           shape: const StadiumBorder(),
         ),
         onPressed: action.enabled && !action.isLoading

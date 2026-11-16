@@ -91,31 +91,33 @@ void _registerProfileNavigationChecks(
       );
       expect(rootNav.children.map((item) => item.key), const [
         ValueKey('home'),
-        ValueKey('tasks'),
-        ValueKey('calendar'),
-        ValueKey('assistant'),
         ValueKey('apps'),
+        ValueKey('assistant'),
+        ValueKey('notifications'),
+        ValueKey('profile'),
       ]);
       expect(find.byType(AvatarDropdown), findsNothing);
+      // Notifications is a dock destination, not a top bar bell.
       expect(find.byType(NotificationsActionButton), findsNothing);
 
-      // Notifications and You have no dock slot: Back leads and no slot is
-      // active.
-      router.go(Routes.notifications);
-      await _pumpForTransitions(tester);
-      final inboxNav = tester.widget<MorphingNavigationBar>(
-        find.byType(MorphingNavigationBar),
-      );
-      expect(
-        inboxNav.children.first.key,
-        const ValueKey<String>('back-to-root'),
-      );
-      expect(inboxNav.selectedKey, isNull);
+      // Notifications and You are dock destinations: their slot is active
+      // and no Back leads.
+      for (final (route, key) in const [
+        (Routes.notifications, ValueKey<String>('notifications')),
+        (Routes.profileRoot, ValueKey<String>('profile')),
+      ]) {
+        router.go(route);
+        await _pumpForTransitions(tester);
+        final nav = tester.widget<MorphingNavigationBar>(
+          find.byType(MorphingNavigationBar),
+        );
+        expect(nav.children.first.key, const ValueKey<String>('home'));
+        expect(nav.selectedKey, key);
+      }
 
       router.go(Routes.tasks);
       await _pumpForTransitions(tester);
       expect(find.byType(AvatarDropdown), findsNothing);
-      expect(find.byType(NotificationsActionButton), findsNothing);
     },
   );
 

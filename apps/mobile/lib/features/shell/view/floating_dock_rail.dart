@@ -21,11 +21,17 @@ class FloatingDockRail extends StatelessWidget {
     required this.navigation,
     this.primary,
     this.secondary,
+    this.actionLift = 0,
     super.key,
   });
   final Widget navigation;
   final Widget? primary;
   final Widget? secondary;
+
+  /// Raises the actions off the row's bottom edge. Beside the navigation
+  /// pill this is its inner padding, so 52dp actions share the slots' centre
+  /// line; beside a composer it is 0, so they stay on its last line.
+  final double actionLift;
 
   @override
   Widget build(BuildContext context) => LayoutBuilder(
@@ -41,19 +47,26 @@ class FloatingDockRail extends StatelessWidget {
               key: const ValueKey('floating-dock-navigation-slot'),
               child: Center(widthFactor: 1, child: navigation),
             ),
-            DockActionTransition(
-              key: const ValueKey('floating-dock-primary-transition'),
-              slotKey: const ValueKey('floating-dock-primary-slot'),
-              identity: primary?.key ?? primary?.runtimeType,
-              child: primary,
+            Padding(
+              padding: EdgeInsets.only(bottom: actionLift),
+              child: DockActionTransition(
+                key: const ValueKey('floating-dock-primary-transition'),
+                slotKey: const ValueKey('floating-dock-primary-slot'),
+                identity: primary?.key ?? primary?.runtimeType,
+                child: primary,
+              ),
             ),
-            DockActionTransition(
-              key: const ValueKey('floating-dock-secondary-transition'),
-              slotKey: const ValueKey('floating-dock-secondary-slot'),
-              identity: secondary?.key ?? secondary?.runtimeType,
-              // A narrower viewport must not retain an unusable second column.
-              immediate: !twoActions,
-              child: twoActions ? secondary : null,
+            Padding(
+              padding: EdgeInsets.only(bottom: actionLift),
+              child: DockActionTransition(
+                key: const ValueKey('floating-dock-secondary-transition'),
+                slotKey: const ValueKey('floating-dock-secondary-slot'),
+                identity: secondary?.key ?? secondary?.runtimeType,
+                // A narrower viewport must not retain an unusable second
+                // column.
+                immediate: !twoActions,
+                child: twoActions ? secondary : null,
+              ),
             ),
           ],
         ),

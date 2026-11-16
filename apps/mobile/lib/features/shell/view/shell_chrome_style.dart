@@ -68,7 +68,7 @@ class ShellChromeStyle {
       alert: sorbet?.hues.red.ink ?? colors.destructive,
       unread: sorbet?.hues.blue.ink ?? colors.info,
       selected: sorbet?.hues.green.ink ?? colors.success,
-      // `shadow.md` and `shadow.lg` from the Sorbet contract.
+      // Cards use `shadow.md` from the Sorbet contract.
       raisedShadow: sorbet == null
           ? const []
           : [
@@ -81,16 +81,18 @@ class ShellChromeStyle {
                 spreadRadius: -18,
               ),
             ],
+      // The dock's shadow falls below the pill: inset by its spread and
+      // pushed down past its blur, so none of it reaches the content above.
       floatingShadow: sorbet == null
           ? const []
           : [
               BoxShadow(
                 color: dark
-                    ? const Color(0xCC000000)
-                    : ink.withValues(alpha: 0.35),
-                offset: const Offset(0, 24),
-                blurRadius: 48,
-                spreadRadius: -24,
+                    ? const Color(0x99000000)
+                    : ink.withValues(alpha: 0.22),
+                offset: const Offset(0, 12),
+                blurRadius: 24,
+                spreadRadius: -10,
               ),
             ],
       // Sorbet pairs the shadow with a 5% ink hairline; classic has no
@@ -149,7 +151,7 @@ class ShellChromeStyle {
   /// Cards (`shadow.md`); empty in classic.
   final List<BoxShadow> raisedShadow;
 
-  /// The dock (`shadow.lg`); empty in classic.
+  /// The dock, offset below the pill; empty in classic.
   final List<BoxShadow> floatingShadow;
 
   /// Edge of floating surfaces: an ink hairline or the classic outline.

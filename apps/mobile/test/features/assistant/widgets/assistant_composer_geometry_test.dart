@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:mobile/core/layout/page_insets.dart';
 import 'package:mobile/features/assistant/cubit/assistant_chat_cubit.dart';
 import 'package:mobile/features/assistant/cubit/assistant_live_cubit.dart';
 import 'package:mobile/features/assistant/cubit/assistant_shell_cubit.dart';
@@ -10,7 +11,6 @@ import 'package:mobile/features/assistant/widgets/assistant_composer_geometry.da
 import 'package:mobile/features/assistant/widgets/assistant_composer_launcher.dart';
 import 'package:mobile/features/assistant/widgets/assistant_composer_primary_action.dart';
 import 'package:mobile/features/assistant/widgets/assistant_scroll_to_bottom_overlay.dart';
-import 'package:mobile/features/shell/view/floating_dock_rail.dart';
 import 'package:mobile/features/shell/view/persistent_shell_dock.dart';
 import 'package:mobile/l10n/l10n.dart';
 import 'package:shadcn_flutter/shadcn_flutter.dart' as shad;
@@ -146,7 +146,7 @@ void main() {
                 );
                 expect(
                   (keyboard ? 600 : 900) - composer.bottom,
-                  (keyboard ? 0 : safeArea) + floatingDockBottomGap,
+                  ShellDockMetrics.bottomOffset(keyboard ? 0 : safeArea),
                 );
                 expect(composer.top - fab.bottom, closeTo(16, 0.01));
                 expect(

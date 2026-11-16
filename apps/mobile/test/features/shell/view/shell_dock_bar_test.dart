@@ -216,7 +216,14 @@ void main() {
 
   test('dock clearance is the pill plus both insets above the safe area', () {
     expect(ShellDockMetrics.clearance, 88);
-    expect(ShellDockMetrics.clearance + 34, 122);
+    expect(ShellDockMetrics.clearanceFor(0), 88);
+    // Over a home indicator the pill tucks into the safe area: it rests
+    // 26dp above the screen edge and content reserves 102dp in total.
+    expect(ShellDockMetrics.bottomOffset(0), ShellDockMetrics.inset);
+    expect(ShellDockMetrics.bottomOffset(34), 26);
+    expect(ShellDockMetrics.clearanceFor(34) + 34, 102);
+    // A thin gesture-bar inset never brings the pill closer than the inset.
+    expect(ShellDockMetrics.bottomOffset(16), ShellDockMetrics.inset);
     expect(ShellDockMetrics.widthFor(390), 366);
     // Below the tablet breakpoint the pill spans the width; from it on, the
     // pill is centred and capped.
@@ -231,7 +238,7 @@ void main() {
     late double computed;
     await tester.pumpWidget(
       MediaQuery(
-        data: const MediaQueryData(padding: EdgeInsets.only(bottom: 122)),
+        data: const MediaQueryData(padding: EdgeInsets.only(bottom: 102)),
         child: Builder(
           builder: (context) {
             inside = AppPageInsets.contentBottomClearance(context);
@@ -244,7 +251,7 @@ void main() {
         ),
       ),
     );
-    expect(inside, 122);
-    expect(computed, 122);
+    expect(inside, 102);
+    expect(computed, 102);
   });
 }

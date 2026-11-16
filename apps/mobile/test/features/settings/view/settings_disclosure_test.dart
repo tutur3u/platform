@@ -4,6 +4,7 @@ import 'package:mobile/core/observability/telemetry_preference.dart';
 import 'package:mobile/core/ui/ui.dart';
 import 'package:mobile/features/settings/view/push_settings_tile.dart';
 import 'package:mobile/features/settings/view/settings_tile.dart';
+import 'package:mobile/features/settings/view/settings_tile_details_link.dart';
 import 'package:mobile/features/settings/view/telemetry_settings_tile.dart';
 import 'package:mobile/l10n/l10n.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -81,10 +82,14 @@ void main() {
               themeMode: mode,
             );
             await tester.pumpAndSettle();
-            final text = tester.widget<Text>(find.text(summary));
-            expect(text.maxLines, 1);
+            final link = find.byType(SettingsTileDetailsLink);
+            expect(tester.widget<SettingsTileDetailsLink>(link).text, summary);
+            final text = tester.widget<Text>(
+              find.descendant(of: link, matching: find.byType(Text)),
+            );
+            expect(text.maxLines, 2);
             expect(tester.takeException(), isNull);
-            await tester.tap(find.byType(AppIconButton));
+            await tester.tap(link);
             await tester.pumpAndSettle();
             expect(
               find.descendant(

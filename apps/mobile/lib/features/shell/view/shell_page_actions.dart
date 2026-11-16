@@ -1,7 +1,7 @@
 part of 'shell_page.dart';
 
-/// Trailing top bar actions: the page's registered actions, plus the bell,
-/// You and the workspace avatar on Home.
+/// Trailing top bar actions: the page's registered actions, plus the
+/// workspace avatar on Home. Notifications and You live in the dock.
 class _ShellTrailingActions extends StatelessWidget {
   const _ShellTrailingActions({required this.matchedLocation});
 
@@ -9,19 +9,11 @@ class _ShellTrailingActions extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final home = matchedLocation == Routes.home;
-    final actions = ShellInjectedActionsHost(
-      matchedLocation: matchedLocation,
-      includeNotifications: home,
-    );
-    if (!home) return actions;
+    final actions = ShellInjectedActionsHost(matchedLocation: matchedLocation);
+    if (matchedLocation != Routes.home) return actions;
     return Row(
       mainAxisSize: MainAxisSize.min,
-      children: [
-        const ShellYouButton(),
-        actions,
-        const ShellWorkspaceAvatarButton(),
-      ],
+      children: [actions, const ShellWorkspaceAvatarButton()],
     );
   }
 }

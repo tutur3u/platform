@@ -8,7 +8,10 @@ import 'package:shadcn_flutter/shadcn_flutter.dart' as shad;
 abstract final class SettingsRowLayout {
   /// Horizontal padding inside a grouped card.
   static const double inset = AppLayout.rowHorizontalPadding;
-  static const double iconWidth = 24;
+
+  /// Leading icon tile: a rounded square on the muted surface.
+  static const double iconWidth = 32;
+  static const double iconSize = 18;
   static const double textGap = 14;
   static const double actionWidth = 44;
   static const double minHeight = AppLayout.rowMinHeight;

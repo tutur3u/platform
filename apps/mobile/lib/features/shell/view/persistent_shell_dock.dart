@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:mobile/core/layout/page_insets.dart';
 import 'package:mobile/features/shell/view/floating_dock_rail.dart';
 import 'package:mobile/features/shell/view/shell_dock_surface.dart';
 
@@ -71,6 +72,9 @@ class _PersistentShellDockState extends State<PersistentShellDock> {
                 ),
           primary: widget.primary,
           secondary: widget.secondary,
+          actionLift: widget.composing || widget.hideIdleNavigation
+              ? 0
+              : ShellDockMetrics.padding,
         ),
       );
     },

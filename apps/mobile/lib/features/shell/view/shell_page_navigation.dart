@@ -1,8 +1,8 @@
 part of 'shell_page.dart';
 
 extension _ShellPageNavigation on _ShellPageState {
-  /// The five fixed dock destinations. Root pages without a dock slot
-  /// (Notifications and You) lead with Back and leave every slot inactive.
+  /// The five fixed dock destinations, shown as icons: Home, Apps, Mira,
+  /// Notifications and You. The archive below Notifications leads with Back.
   List<shad.NavigationItem> _buildNavItems(
     BuildContext context,
     AppTabState state,
@@ -26,19 +26,11 @@ extension _ShellPageNavigation on _ShellPageState {
       ),
     ),
     shad.NavigationItem(
-      key: _ShellPageState._tasksKey,
+      key: _ShellPageState._appsKey,
       child: _buildCompactNavIcon(
-        icon: LucideIcons.squareCheckBig,
-        semanticLabel: l10n.navTasks,
+        icon: LucideIcons.layoutGrid,
+        semanticLabel: l10n.navApps,
         itemIndex: 1,
-      ),
-    ),
-    shad.NavigationItem(
-      key: _ShellPageState._calendarKey,
-      child: _buildCompactNavIcon(
-        icon: LucideIcons.calendar,
-        semanticLabel: l10n.navCalendar,
-        itemIndex: 2,
       ),
     ),
     shad.NavigationItem(
@@ -52,23 +44,30 @@ extension _ShellPageNavigation on _ShellPageState {
           play: widget.matchedLocation == Routes.assistant,
         ),
         semanticLabel: l10n.navMira,
+        itemIndex: 2,
+      ),
+    ),
+    shad.NavigationItem(
+      key: _ShellPageState._notificationsKey,
+      child: _buildCompactNavIcon(
+        icon: LucideIcons.bell,
+        semanticLabel: l10n.notificationsTitle,
         itemIndex: 3,
       ),
     ),
     shad.NavigationItem(
-      key: _ShellPageState._appsKey,
+      key: _ShellPageState._profileKey,
       child: _buildCompactNavIcon(
-        icon: LucideIcons.layoutGrid,
-        semanticLabel: l10n.navApps,
+        icon: LucideIcons.circleUserRound,
+        image: const ProfileNavigationAvatar(),
+        semanticLabel: l10n.profileTitle,
         itemIndex: 4,
       ),
     ),
   ];
 
   bool _showsGlobalBack(String location) =>
-      location == Routes.notifications ||
-      location == Routes.notificationsArchive ||
-      location == Routes.profileRoot;
+      location == Routes.notificationsArchive;
 
   Widget _buildCompactNavIcon({
     required IconData icon,
@@ -196,6 +195,13 @@ extension _ShellPageNavigation on _ShellPageState {
   Key? _selectedKeyForLocation(String location) {
     if (location == Routes.home) {
       return _ShellPageState._homeKey;
+    }
+    if (location == Routes.notifications ||
+        location == Routes.notificationsArchive) {
+      return _ShellPageState._notificationsKey;
+    }
+    if (location == Routes.profileRoot) {
+      return _ShellPageState._profileKey;
     }
     if (location == Routes.assistant) {
       return _ShellPageState._assistantKey;

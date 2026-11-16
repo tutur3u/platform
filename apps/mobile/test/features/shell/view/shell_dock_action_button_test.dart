@@ -50,7 +50,10 @@ void main() {
         final tooltip = tester.widget<Tooltip>(find.byType(Tooltip));
         expect(tooltip.excludeFromSemantics, isTrue);
         expect(find.text(label), findsNothing);
-        expect(tester.getSize(find.byType(FilledButton)).width, 48);
+        expect(
+          tester.getSize(find.byType(FilledButton)),
+          const Size.square(52),
+        );
         semantics.dispose();
       });
     }

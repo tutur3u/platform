@@ -1,6 +1,7 @@
 import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
+import 'package:mobile/core/layout/page_insets.dart';
 import 'package:mobile/features/shell/view/floating_dock_rail.dart';
 
 /// Shared by the composer and shell so large text never overlaps navigation.
@@ -17,8 +18,14 @@ double assistantBottomSafeArea(BuildContext context) =>
     ? 0
     : MediaQuery.paddingOf(context).bottom;
 
-double assistantComposerBottomOffset(BuildContext context) =>
-    assistantBottomSafeArea(context) + assistantComposerBottomGap;
+/// The composer rests where the dock does: [ShellDockMetrics.bottomOffset]
+/// over a bottom safe area, [assistantComposerBottomGap] above the keyboard.
+double assistantComposerBottomOffset(BuildContext context) {
+  final safeBottom = assistantBottomSafeArea(context);
+  return safeBottom > 0
+      ? ShellDockMetrics.bottomOffset(safeBottom)
+      : assistantComposerBottomGap;
+}
 
 /// Shell Scaffold consumes the IME inset before this viewport. Its inherited
 /// padding already includes navigation clearance when the composer is hidden.

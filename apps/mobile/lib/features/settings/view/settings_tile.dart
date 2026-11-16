@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:mobile/core/ui/overlays/app_info_sheet.dart';
 import 'package:mobile/core/ui/ui.dart';
 import 'package:mobile/features/settings/view/settings_row_layout.dart';
+import 'package:mobile/features/settings/view/settings_tile_details_link.dart';
 import 'package:mobile/l10n/l10n.dart';
 
 class SettingsTile extends StatelessWidget {
@@ -60,7 +61,7 @@ class SettingsTile extends StatelessWidget {
         (subtitle?.trim().isNotEmpty ?? false);
     final end = trailingValue?.trim() ?? '';
     final titleStyle = theme.typography.base.copyWith(
-      fontWeight: FontWeight.w500,
+      fontWeight: FontWeight.w600,
       color: textColor,
     );
     final badgeStyle = theme.typography.xSmall.copyWith(
@@ -112,23 +113,34 @@ class SettingsTile extends StatelessWidget {
                 // on the title line only, so the value keeps the full width.
                 final endInTitle = endInline && hasSupportingLine;
                 final supporting = hasSupportingLine || endBelow;
+                // The icon tile, text and trailing control share the row's
+                // centre line, however many supporting lines the text has.
                 return Row(
-                  crossAxisAlignment: supporting && trailingWidth == null
-                      ? CrossAxisAlignment.start
-                      : CrossAxisAlignment.center,
                   children: [
-                    SizedBox(
-                      width: SettingsRowLayout.iconWidth,
-                      height: SettingsRowLayout.actionWidth,
-                      child: Align(
-                        alignment: Alignment.centerLeft,
-                        child: Icon(icon, size: 21, color: iconColor),
+                    DecoratedBox(
+                      decoration: BoxDecoration(
+                        color: isDestructive
+                            ? theme.colorScheme.destructive.withValues(
+                                alpha: 0.12,
+                              )
+                            : theme.colorScheme.muted,
+                        borderRadius: BorderRadius.circular(10),
+                      ),
+                      child: SizedBox.square(
+                        dimension: SettingsRowLayout.iconWidth,
+                        child: Icon(
+                          icon,
+                          size: SettingsRowLayout.iconSize,
+                          color: iconColor,
+                        ),
                       ),
                     ),
                     const AppGap(SettingsRowLayout.textGap),
                     Expanded(
                       child: Padding(
-                        padding: EdgeInsets.only(top: supporting ? 2 : 0),
+                        padding: EdgeInsets.symmetric(
+                          vertical: supporting ? 4 : 0,
+                        ),
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
@@ -197,6 +209,8 @@ class SettingsTile extends StatelessWidget {
                                     final fullText = details ?? subtitle!;
                                     final learnMore =
                                         context.l10n.settingsLearnMore;
+                                    // Two lines show in place; longer text
+                                    // and separate details open the sheet.
                                     final needsInfo =
                                         details != null ||
                                         SettingsRowLayout.textWidth(
@@ -204,28 +218,24 @@ class SettingsTile extends StatelessWidget {
                                               subtitle!,
                                               style,
                                             ) >
-                                            constraints.maxWidth;
-                                    return Row(
-                                      children: [
-                                        Expanded(
-                                          child: Text(
-                                            subtitle!,
-                                            maxLines: 1,
-                                            overflow: TextOverflow.ellipsis,
-                                            style: style,
-                                          ),
-                                        ),
-                                        if (needsInfo)
-                                          AppIconButton(
-                                            icon: const Icon(LucideIcons.info),
-                                            tooltip: '$learnMore: $title',
-                                            onPressed: () => showAppInfoSheet(
-                                              context: context,
-                                              title: title,
-                                              body: fullText,
-                                            ),
-                                          ),
-                                      ],
+                                            constraints.maxWidth * 2 - 24;
+                                    if (!needsInfo) {
+                                      return Text(
+                                        subtitle!,
+                                        maxLines: 2,
+                                        overflow: TextOverflow.ellipsis,
+                                        style: style,
+                                      );
+                                    }
+                                    return SettingsTileDetailsLink(
+                                      label: '$learnMore: $title',
+                                      text: subtitle!,
+                                      style: style,
+                                      onTap: () => showAppInfoSheet(
+                                        context: context,
+                                        title: title,
+                                        body: fullText,
+                                      ),
                                     );
                                   },
                                 ),

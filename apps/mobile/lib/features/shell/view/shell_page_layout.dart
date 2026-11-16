@@ -278,9 +278,11 @@ extension _ShellPageLayout on _ShellPageState {
     );
   }
 
-  // The dock pill plus the gap below and above it. The dock host adds the
-  // system safe area once; including it here creates a second gap.
-  double _floatingNavBodyInset() => ShellDockMetrics.clearance;
+  // The dock pill plus the gap below and above it, above the system safe
+  // area. The dock host adds the safe area once; including it here creates a
+  // second gap.
+  double _floatingNavBodyInset() =>
+      ShellDockMetrics.clearanceFor(MediaQuery.paddingOf(context).bottom);
 
   Widget _buildCompactLayout(
     BuildContext context,
@@ -350,7 +352,7 @@ extension _ShellPageLayout on _ShellPageState {
       selectedKey: selectedKey,
       paintSurface: false,
       fixedFrame: true,
-      labelled: !isMiniAppRoute,
+      labelled: false,
       backKey: useInjectedMiniNav
           ? _injectedMiniNavKey(injectedMiniNavRegistration.ownerId, 'back')
           : _ShellPageState._backToRootKey,
