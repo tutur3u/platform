@@ -1,5 +1,8 @@
 import { describe, expect, it } from 'vitest';
-import { buildSettingsNavItems } from './settings-dialog-nav-items';
+import {
+  buildSettingsNavItems,
+  isSettingsTabVisible,
+} from './settings-dialog-nav-items';
 import type { SettingsTranslator } from './settings-dialog-nav-types';
 import type { SettingsDialogAvailability } from './settings-dialog-permissions';
 
@@ -100,5 +103,28 @@ describe('settings dialog nav items', () => {
     expect(names).not.toContain('infrastructure_external_apps');
     expect(names).not.toContain('infrastructure_mobile_deployment');
     expect(names).not.toContain('infrastructure_changelog');
+  });
+});
+
+describe('isSettingsTabVisible', () => {
+  const navItems = buildSettingsNavItems({
+    availability: baseAvailability,
+    isBillingPermissionLoading: false,
+    t,
+    wsId: 'ws_1',
+  });
+
+  it('keeps the shell-injected guidance tab active', () => {
+    expect(
+      navItems.some((group) =>
+        group.items.some((item) => item.name === 'onboarding_guide')
+      )
+    ).toBe(false);
+    expect(isSettingsTabVisible(navItems, 'onboarding_guide')).toBe(true);
+  });
+
+  it('accepts enabled app tabs and rejects unknown ones', () => {
+    expect(isSettingsTabVisible(navItems, 'profile')).toBe(true);
+    expect(isSettingsTabVisible(navItems, 'not_a_tab')).toBe(false);
   });
 });

@@ -11,7 +11,10 @@ import { useEffect, useState } from 'react';
 import { useUserBooleanConfig } from '@/hooks/use-user-config';
 import { apiFetch } from '@/lib/api-fetch';
 import { SettingsDialogContent } from './settings-dialog-content';
-import { buildSettingsNavItems } from './settings-dialog-nav-items';
+import {
+  buildSettingsNavItems,
+  isSettingsTabVisible,
+} from './settings-dialog-nav-items';
 import { getSettingsDialogAvailability } from './settings-dialog-permissions';
 import { SettingsWorkspaceBreadcrumb } from './settings-workspace-breadcrumb';
 
@@ -110,9 +113,7 @@ export function SettingsDialog({
     t,
     wsId,
   });
-  const activeTabIsVisible = navItems.some((group) =>
-    group.items.some((item) => item.name === activeTab && !item.disabled)
-  );
+  const activeTabIsVisible = isSettingsTabVisible(navItems, activeTab);
   const fallbackTab = navItems
     .flatMap((group) => group.items)
     .find((item) => !item.disabled)?.name;

@@ -26,7 +26,10 @@ import {
 } from '@tuturuuu/ui/sidebar';
 import type { ComponentType, KeyboardEvent, ReactNode } from 'react';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { resolveSettingsTab } from '../../../hooks/settings-dialog-url';
+import {
+  resolveSettingsTab,
+  SHARED_SETTINGS_TAB_IDS,
+} from '../../../hooks/settings-dialog-url';
 import type { createSettingsSearchEngine } from './settings-dialog-search';
 import { loadSettingsSearchEngine } from './settings-dialog-search-loader';
 import { SettingsMobileNav } from './settings-mobile-nav';
@@ -143,7 +146,7 @@ export function SatelliteSettingsDialogShell({
         label: t('onboarding_guide.title'),
         items: [
           {
-            name: 'onboarding_guide',
+            name: SHARED_SETTINGS_TAB_IDS.onboardingGuide,
             label: t('onboarding_guide.title'),
             description: t('onboarding_guide.description'),
             icon: Compass,

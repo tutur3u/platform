@@ -10,11 +10,11 @@ import { useTranslations } from 'next-intl';
 import { useState } from 'react';
 import { SatelliteOnboardingSettingsPanel } from './satellite-onboarding-settings-panel';
 
+// Resolve with host (including port): localhost apps are distinguished only
+// by port, and the guide overlay resolves the app the same way.
 function currentAppSlug() {
   if (typeof window === 'undefined') return 'platform';
-  return (
-    getLaunchableAppByHostname(window.location.hostname)?.slug ?? 'platform'
-  );
+  return getLaunchableAppByHostname(window.location.host)?.slug ?? 'platform';
 }
 
 function closeSettingsDialog() {
@@ -52,7 +52,10 @@ export function OnboardingSettingsPanel() {
     }).catch(() => null);
 
     const platform = getLaunchableApp('platform');
-    if (!platform) return;
+    if (!platform) {
+      setPending(null);
+      return;
+    }
     window.location.assign(
       resolveLaunchableAppUrl({
         app: platform,
