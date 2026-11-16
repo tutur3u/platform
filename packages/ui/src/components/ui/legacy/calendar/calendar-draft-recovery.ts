@@ -1,9 +1,10 @@
 import type { CalendarEvent } from '@tuturuuu/types/primitives/calendar-event';
+import type { CalendarEventCreationDraft } from '../../../../hooks/calendar-event-create-payload';
 
 export function createCalendarDraftRecovery() {
   let submitted:
     | {
-        payload: Partial<CalendarEvent>;
+        payload: CalendarEventCreationDraft;
         requestId: string;
         recoverable: boolean;
       }
@@ -13,7 +14,7 @@ export function createCalendarDraftRecovery() {
     original: () => recovered,
     submitted: () => submitted,
     capture(
-      payload: Partial<CalendarEvent>,
+      payload: CalendarEventCreationDraft,
       requestId: string,
       recoverable: boolean
     ) {

@@ -1,4 +1,6 @@
+import type { MeetingInvitationInput } from '@tuturuuu/types/primitives/meeting-invitations';
 import { z } from 'zod';
+export type { MeetingInvitationInput } from '@tuturuuu/types/primitives/meeting-invitations';
 
 export const MeetingResponseSchema = z.enum([
   'needsAction',
@@ -44,10 +46,7 @@ export const MeetingInvitationInputSchema = z
         });
       emails.add(guest.email);
     });
-  });
-export type MeetingInvitationInput = z.infer<
-  typeof MeetingInvitationInputSchema
->;
+  }) satisfies z.ZodType<MeetingInvitationInput>;
 
 export type MeetingAttendee = z.infer<typeof MeetingGuestSchema> & {
   response: MeetingResponse;

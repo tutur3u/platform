@@ -1,14 +1,16 @@
 import type { CalendarEvent } from '@tuturuuu/types/primitives/calendar-event';
+import type { CalendarEventCreationDraft } from '../../../../hooks/calendar-event-create-payload';
 import { newCalendarCreationRequestId } from '../../../../hooks/calendar-creation-request';
 
 /** Existing edits send only changed fields so a color-only command neither
  * broadcasts invitations nor accidentally becomes a calendar transfer. */
 export function eventSavePayload(
-  draft: Partial<CalendarEvent>,
+  draft: CalendarEventCreationDraft,
   original?: Partial<CalendarEvent>,
   sourceChanged = false
 ) {
   if (!original || original.id === 'new') return draft;
+  if (draft.invitation) throw new Error('Attendee editing is not supported for saved events');
   const updates: Partial<CalendarEvent> = {};
   for (const field of [
     'title',
@@ -31,7 +33,7 @@ export function eventSavePayload(
 }
 
 export function eventModalSavePayload(
-  draft: Partial<CalendarEvent>,
+  draft: CalendarEventCreationDraft,
   original: Partial<CalendarEvent> | undefined,
   source: CalendarEvent['source'],
   sourceChanged: boolean
@@ -47,6 +49,7 @@ export function eventModalSavePayload(
       locked: draft.locked || false,
       source,
       providerColor: draft.providerColor,
+      invitation: draft.invitation,
     },
     original,
     sourceChanged

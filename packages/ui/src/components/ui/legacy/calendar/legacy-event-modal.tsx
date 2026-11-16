@@ -79,14 +79,14 @@ import {
   COLOR_OPTIONS,
   DateError,
   EventDateTimePicker,
-  EventDescriptionInput,
-  EventLocationInput,
   EventTitleInput,
   EventToggleSwitch,
   OverlapWarning,
 } from './event-form-components';
 import { EventModalHeader } from './event-modal-header';
 import { eventEndPickerBounds } from './event-picker-bounds';
+import { CalendarEventDetails } from './calendar-event-guests';
+import type { CalendarEventCreationDraft } from '../../../../hooks/calendar-event-create-payload';
 import { eventModalDraft, eventModalSavePayload } from './event-save-payload';
 import {
   eventSourceChanged,
@@ -132,7 +132,7 @@ export function LegacyEventModal() {
 
   const tz = settings?.timezone?.timezone;
 
-  const [event, setEvent] = useState<Partial<CalendarEvent>>({
+  const [event, setEvent] = useState<CalendarEventCreationDraft>({
     title: '',
     description: '',
     start_at: new Date().toISOString(),
@@ -1000,18 +1000,9 @@ export function LegacyEventModal() {
 
                     {/* Location and Description */}
                     <div className="space-y-2">
-                      <EventLocationInput
-                        value={event.location || ''}
-                        onChange={(value) =>
-                          setEvent({ ...event, location: value })
-                        }
-                      />
-                      <EventDescriptionInput
-                        value={event.description || ''}
-                        onChange={(value) =>
-                          setEvent({ ...event, description: value })
-                        }
-                      />
+                      <CalendarEventDetails event={event} onChange={setEvent}
+                        source={selectedSourceOption} workspaceId={wsId}
+                        isEditing={isEditing} timeZone={tz} />
 
                       {/* Color and Options Row */}
                       <div className="flex items-end justify-between gap-4">

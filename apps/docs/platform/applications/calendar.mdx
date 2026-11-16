@@ -653,3 +653,33 @@ modified-key rejection and duplicate identity rejection, under StrictMode.
 These DOM checks do not establish browser/screen-reader, SSR/hydration or bundle
 acceptance. Exact-commit CI and manual accessibility review are required before
 any live enablement. No agent bridge, adapter package or global SDK CSS is used.
+
+## Contacts attendees proposal
+
+Contacts attendee selection is under development for new events on supported
+connected Google calendars. The shared picker reads only workspace-authorized,
+visible contact/member names and email addresses. Selecting a person adds a guest
+chip; it does not create a workspace member or send an invitation immediately.
+Saving the event uses the existing invitation API and its provider authorization.
+
+The first slice offers guests only after a successful capability read confirms
+a writable Google source with an organizer email, a timezone and disabled Google
+provider-color write operations. Unknown, failed or changing capability reads,
+native calendars, Outlook calendars and provider-color event commands do not
+offer attendee selection. If a draft already has guests when its source becomes
+unsupported, the guests stay visible and removable, and save refuses the
+unsupported invitation. Outlook capability support remains unimplemented.
+
+Guest data is carried through the modal, recovery snapshot and actual create
+payload. An uncertain submission retains its original UUIDv7 and immutable guest
+list for an explicit retry; editing a pending draft cannot replace the original
+operation. There is no automatic invitation retry. The server reauthorizes the
+request and applies its existing idempotency and provider-saga restrictions.
+Existing-event attendee editing remains unsupported and is rejected rather than
+silently discarded. No migration or new invitation-delivery service is added.
+
+Regression coverage is in
+`packages/ui/src/hooks/calendar-event-create-payload.test.ts`, alongside the
+existing event-save, draft-recovery and draft-save suites. Source checks alone
+do not establish sent-invitation or provider acceptance; exact-source validation
+and signed-in runtime proof are required before marking this slice delivered.

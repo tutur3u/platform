@@ -1,4 +1,5 @@
 import type { GoogleProviderColorChoice } from '@tuturuuu/types/primitives/google-calendar-color';
+import type { MeetingInvitationInput } from '@tuturuuu/types/primitives/meeting-invitations';
 import type { CalendarSourceInput } from './calendar';
 
 export interface WorkspaceCalendarEventUpdatePayload {
@@ -14,6 +15,7 @@ export interface WorkspaceCalendarEventUpdatePayload {
 }
 
 export interface WorkspaceCalendarEventCreatePayload {
+  invitation?: MeetingInvitationInput;
   requestId?: string;
   providerColor?: GoogleProviderColorChoice;
   title: string;

@@ -2,7 +2,6 @@ import {
   createWorkspaceCalendarEvent,
   deleteWorkspaceCalendarEvent,
   updateWorkspaceCalendarEvent,
-  type WorkspaceCalendarEventCreatePayload,
 } from '@tuturuuu/internal-api';
 import { createClient } from '@tuturuuu/supabase/next/client';
 import type {
@@ -33,6 +32,7 @@ import {
   createOptimisticEventId,
 } from './calendar-creation-request';
 import { roundToNearest15Minutes } from './calendar-date-utils';
+import { calendarEventCreatePayload, type CalendarEventCreationInput } from './calendar-event-create-payload';
 import { createCalendarEventLookup } from './calendar-event-lookup';
 import type { PendingEventUpdate } from './calendar-event-update-queue-types';
 import {
@@ -101,7 +101,7 @@ const CalendarContext = createContext<{
   getGoogleEvents: () => CalendarEvent[];
   getEventLevel: (eventId: string) => number;
   addEvent: (
-    event: Omit<CalendarEvent, 'id'>,
+    event: CalendarEventCreationInput,
     options?: { requestId?: string }
   ) => Promise<CalendarEvent | undefined>;
   addEmptyEvent: (date: Date, isAllDay?: boolean) => CalendarEvent;
@@ -566,7 +566,7 @@ export const CalendarProvider = ({
   // CRUD operations with Supabase
   const addEvent = useCallback(
     async (
-      event: Omit<CalendarEvent, 'id'>,
+      event: CalendarEventCreationInput,
       options?: { requestId?: string }
     ) => {
       if (readOnly) {
@@ -579,6 +579,7 @@ export const CalendarProvider = ({
 
       const eventColor = event.color || 'BLUE';
 
+      if (event.invitation && eventAdapter?.onCreate) throw new Error('This calendar does not support invitations');
       if (eventAdapter?.onCreate) {
         const created = await eventAdapter.onCreate({
           ...event,
@@ -593,19 +594,7 @@ export const CalendarProvider = ({
 
       if (!ws) throw new Error('No workspace selected');
 
-      const payload: WorkspaceCalendarEventCreatePayload = {
-        title: event.title || '',
-        description: event.description || '',
-        start_at: startDate.toISOString(),
-        end_at: endDate.toISOString(),
-        color: eventColor as SupportedColor,
-        location: event.location || '',
-        locked: true,
-        task_id: (event as CalendarEvent & { task_id?: string | null }).task_id,
-        source: event.source,
-        ...(event.providerColor && { providerColor: event.providerColor }),
-      };
-      if (event.providerColor) delete payload.color;
+      const payload = calendarEventCreatePayload(event, startDate.toISOString(), endDate.toISOString());
       payload.requestId = creationRequests.current.forAttempt(
         { wsId: ws.id, ...payload },
         options?.requestId
