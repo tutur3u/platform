@@ -5,7 +5,11 @@ const mocks = vi.hoisted(() => ({
   installRelease: vi.fn(),
   listReleases: vi.fn(),
   pruneReleases: vi.fn(),
+  refreshGuardAfterUpgrade: vi.fn(),
   upgradeCli: vi.fn(),
+}));
+vi.mock('./git-guard-upgrade', () => ({
+  refreshGuardAfterUpgrade: mocks.refreshGuardAfterUpgrade,
 }));
 vi.mock('./upgrade', () => ({ upgradeCli: mocks.upgradeCli }));
 vi.mock('./cli-versions', () => ({
@@ -14,6 +18,8 @@ vi.mock('./cli-versions', () => ({
   installRelease: mocks.installRelease,
   listReleases: mocks.listReleases,
   pruneReleases: mocks.pruneReleases,
+  releaseEntry: (dir: string) =>
+    `${dir}/node_modules/tuturuuu/dist/cli/index.js`,
 }));
 
 import { runUpgrade } from './cli-versions-command';
@@ -98,6 +104,22 @@ describe('ttr upgrade routing', () => {
     );
     expect(mocks.activateRelease).not.toHaveBeenCalled();
     expect(mocks.upgradeCli).not.toHaveBeenCalled();
+  });
+
+  it('refreshes the git guard through the activated release', async () => {
+    const write = vi
+      .spyOn(process.stdout, 'write')
+      .mockImplementation(() => true);
+    mocks.activateRelease.mockResolvedValue({
+      release: { version: '1.2.3' },
+      previous: '1.2.2',
+      shims: false,
+    });
+    await runUpgrade('activate', ['1.2.3'], true);
+    write.mockRestore();
+    expect(mocks.refreshGuardAfterUpgrade).toHaveBeenCalledWith(
+      '/home/me/.tuturuuu/cli/current/node_modules/tuturuuu/dist/cli/index.js'
+    );
   });
 
   it('documents the side-by-side subcommands in scoped help', () => {

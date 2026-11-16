@@ -9,6 +9,7 @@ const run =
   args[0] !== 'resources' &&
   args[0] !== 'storage' &&
   args[0] !== 'balancer' &&
+  args[0] !== 'git' &&
   !local &&
   (globalArgs.includes('--version') || globalArgs.includes('-v'))
     ? Promise.resolve().then(() => {
@@ -26,11 +27,15 @@ const run =
           ? import('./balancer-cli.js').then(({ runBalancerCommand }) =>
               runBalancerCommand(args.slice(1))
             )
-          : local
-            ? import('./operational-cli.js').then(({ runOperationalCli }) =>
-                runOperationalCli(args)
+          : args[0] === 'git'
+            ? import('./git-guard.js').then(({ runGitCommand }) =>
+                runGitCommand(args.slice(1))
               )
-            : import('./commands.js').then(({ runCli }) => runCli());
+            : local
+              ? import('./operational-cli.js').then(({ runOperationalCli }) =>
+                  runOperationalCli(args)
+                )
+              : import('./commands.js').then(({ runCli }) => runCli());
 run.catch((error) => {
   process.stderr.write(
     `${error instanceof Error ? error.message : String(error)}\n`

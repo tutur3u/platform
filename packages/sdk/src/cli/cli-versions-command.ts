@@ -1,3 +1,4 @@
+import { join } from 'node:path';
 import type { FlagValue } from './args';
 import {
   activateRelease,
@@ -5,7 +6,9 @@ import {
   installRelease,
   listReleases,
   pruneReleases,
+  releaseEntry,
 } from './cli-versions';
+import { refreshGuardAfterUpgrade } from './git-guard-upgrade';
 import { upgradeCli } from './upgrade';
 
 export const cliVersionActions = ['install', 'activate', 'list', 'prune'];
@@ -64,6 +67,7 @@ export async function runCliVersionsCommand(
   if (action === 'activate') {
     if (!args[0]) throw new Error('Use ttr upgrade activate <version>.');
     const result = await activateRelease({ version: args[0] });
+    refreshGuardAfterUpgrade(releaseEntry(join(cliStore(), 'current')));
     write(
       result,
       `Activated tuturuuu@${result.release.version}${result.previous ? ` (previous: ${result.previous})` : ''}${result.shims ? '; resource shims now run it' : ''}.\nLaunchers: ${cliStore()}/bin\n`

@@ -47,6 +47,8 @@ export default defineConfig({
       TTR_STORAGE_AUTO_RECLAIM: '0',
       TTR_STORAGE_HOME: resolve(tmpdir(), 'ttr-sdk-test-storage'),
       TTR_RESOURCES_IGNORE_DISK: '1',
+      // Never touch this machine's real git guard (hook, shim, log).
+      TTR_GIT_GUARD_HOME: resolve(tmpdir(), 'ttr-sdk-test-git-guard'),
     },
     coverage: {
       provider: 'v8',
