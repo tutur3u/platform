@@ -4,6 +4,8 @@ import 'package:go_router/go_router.dart';
 import 'package:mobile/core/theme/appearance/appearance_scope.dart';
 import 'package:mobile/core/theme/appearance/appearance_settings.dart';
 import 'package:mobile/core/theme/appearance/appearance_theme.dart';
+import 'package:mobile/core/theme/sorbet/sorbet_preferences.dart';
+import 'package:mobile/core/theme/sorbet/sorbet_scope.dart';
 import 'package:mobile/core/widgets/shadcn_localizations_fallback.dart';
 import 'package:mobile/core/widgets/shadcn_material_bridge.dart';
 import 'package:mobile/l10n/l10n.dart';
@@ -138,4 +140,40 @@ Widget appearanceTestApp({
     child: ShadcnMaterialBridge.appBuilder(context, child),
   ),
   home: shad.Scaffold(child: home),
+);
+
+/// [home] through the app's theme pipeline: the classic or [sorbet] shad
+/// theme, the appearance host and the Material bridge, with animations off.
+/// [boundaryKey] marks a repaint boundary around the app for goldens.
+Widget sorbetTestApp({
+  required Widget home,
+  AppearanceSettings appearance = const AppearanceSettings(),
+  SorbetTheme? sorbet,
+  Brightness brightness = Brightness.light,
+  Key? boundaryKey,
+}) => shad.ShadcnApp(
+  debugShowCheckedModeBanner: false,
+  theme: AppearanceTheme.shadThemeFor(appearance, sorbet, Brightness.light),
+  darkTheme: AppearanceTheme.shadThemeFor(appearance, sorbet, Brightness.dark),
+  themeMode: brightness == Brightness.dark
+      ? shad.ThemeMode.dark
+      : shad.ThemeMode.light,
+  enableThemeAnimation: false,
+  localizationsDelegates: const [
+    ...AppLocalizations.localizationsDelegates,
+    AppShadcnLocalizationsDelegate(),
+  ],
+  supportedLocales: AppLocalizations.supportedLocales,
+  builder: (context, child) => RepaintBoundary(
+    key: boundaryKey,
+    child: MediaQuery(
+      data: MediaQuery.of(context).copyWith(disableAnimations: true),
+      child: SorbetAppearanceHost(
+        appearance: appearance,
+        sorbet: sorbet,
+        child: ShadcnMaterialBridge.appBuilder(context, child),
+      ),
+    ),
+  ),
+  home: home,
 );

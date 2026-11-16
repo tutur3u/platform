@@ -6,6 +6,7 @@ import 'package:flutter/material.dart'
     hide NavigationBar, NavigationBarTheme, ThemeData, ThemeMode;
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
+import 'package:mobile/app/view/app_appearance.dart';
 import 'package:mobile/app/view/auth_session_boundary.dart';
 import 'package:mobile/core/cache/cache_store.dart';
 import 'package:mobile/core/cache/cache_warmup_coordinator.dart';
@@ -19,12 +20,13 @@ import 'package:mobile/core/observability/telemetry_preference.dart';
 import 'package:mobile/core/router/app_router.dart';
 import 'package:mobile/core/router/deep_link_launcher.dart';
 import 'package:mobile/core/router/deep_links.dart';
+import 'package:mobile/core/router/router_location.dart';
 import 'package:mobile/core/router/routes.dart';
 import 'package:mobile/core/startup/optional_startup.dart';
 import 'package:mobile/core/startup/startup_state.dart';
-import 'package:mobile/core/theme/appearance/appearance_scope.dart';
 import 'package:mobile/core/theme/appearance/appearance_settings.dart';
 import 'package:mobile/core/theme/appearance/appearance_theme.dart';
+import 'package:mobile/core/theme/sorbet/sorbet_scope.dart';
 import 'package:mobile/core/widgets/dismiss_keyboard_on_pointer_down.dart';
 import 'package:mobile/core/widgets/shadcn_localizations_fallback.dart';
 import 'package:mobile/core/widgets/shadcn_material_bridge.dart';
@@ -162,7 +164,7 @@ class _AppState extends State<App> {
   late final AppVersionCubit _appVersionCubit;
   late final WorkspaceCubit _workspaceCubit;
   late final LocaleCubit _localeCubit;
-  late final ThemeCubit _themeCubit;
+  late final AppAppearance _appearance;
   late final void Function() _unregisterAssistantActions;
   late final CalendarSettingsCubit _calendarSettingsCubit;
   late final ExperimentalAppsCubit _experimentalAppsCubit;
@@ -234,13 +236,14 @@ class _AppState extends State<App> {
     );
     _workspaceCubit = WorkspaceCubit(workspaceRepository: _workspaceRepo);
     _localeCubit = LocaleCubit(settingsRepository: _settingsRepo);
-    _themeCubit = ThemeCubit(
-      settingsRepository: _settingsRepo,
-      accountAppearanceRepository: AccountAppearanceRepository(),
-      initialThemeMode: widget.initialThemeMode,
-      initialAppearance: widget.initialAppearance,
-    );
-    unawaited(_themeCubit.bindAccount(_appearanceAccountId(_authCubit.state)));
+    _appearance = AppAppearance(
+      ThemeCubit(
+        settingsRepository: _settingsRepo,
+        accountAppearanceRepository: AccountAppearanceRepository(),
+        initialThemeMode: widget.initialThemeMode,
+        initialAppearance: widget.initialAppearance,
+      ),
+    )..bindAccount(AppAppearance.accountId(_authCubit.state));
     _calendarSettingsCubit = CalendarSettingsCubit();
     _experimentalAppsCubit = ExperimentalAppsCubit(
       settingsRepository: _settingsRepo,
@@ -303,7 +306,7 @@ class _AppState extends State<App> {
     _unregisterAssistantActions = AssistantClientActions.register(
       AppAssistantClientActionBridge(
         go: _router.go,
-        setTheme: (theme, isCurrent) => _themeCubit.setThemeMode(
+        setTheme: (theme, isCurrent) => _appearance.theme.setThemeMode(
           ThemeCubit.parseThemeMode(theme),
           isCurrent: isCurrent,
         ),
@@ -348,7 +351,7 @@ class _AppState extends State<App> {
   Future<void> _startPushAfterFirstFrame() async {
     if (!mounted) return;
     await startPushForCurrentAccount(
-      currentUserId: () => _appearanceAccountId(_authCubit.state),
+      currentUserId: () => AppAppearance.accountId(_authCubit.state),
       initialize: PushNotificationService.instance.initialize,
       startSession: _startPushSession,
       sessionAlreadyStarted: (id) => _pushSessionUserId == id,
@@ -364,17 +367,6 @@ class _AppState extends State<App> {
         wsId: _workspaceCubit.state.currentWorkspace?.id,
       ),
     );
-  }
-
-  static String? _appearanceAccountId(AuthState state) =>
-      state.status == AuthStatus.authenticated ? state.user?.id : null;
-
-  String _currentMatchedLocation() {
-    final configuration = _router.routerDelegate.currentConfiguration;
-    if (configuration.matches.isEmpty) {
-      return configuration.uri.path;
-    }
-    return configuration.matches.last.matchedLocation;
   }
 
   void _initializeDeepLinks() {
@@ -504,7 +496,7 @@ class _AppState extends State<App> {
     unawaited(_appVersionCubit.close());
     unawaited(_workspaceCubit.close());
     unawaited(_localeCubit.close());
-    unawaited(_themeCubit.close());
+    _appearance.close();
     unawaited(_calendarSettingsCubit.close());
     unawaited(_experimentalAppsCubit.close());
     unawaited(_financePreferencesCubit.close());
@@ -534,7 +526,7 @@ class _AppState extends State<App> {
         BlocProvider.value(value: _appVersionCubit),
         BlocProvider.value(value: _workspaceCubit),
         BlocProvider.value(value: _localeCubit),
-        BlocProvider.value(value: _themeCubit),
+        ..._appearance.providers,
         BlocProvider.value(value: _calendarSettingsCubit),
         BlocProvider.value(value: _experimentalAppsCubit),
         BlocProvider.value(value: _financePreferencesCubit),
@@ -563,8 +555,7 @@ class _AppState extends State<App> {
                 _syncOfflinePreparationScope(resetWorkspace: true);
                 _bindAudienceMode();
                 ProfileCubit.clearMemoryCache();
-                // Appearance follows the account unless this device overrides.
-                unawaited(_themeCubit.bindAccount(_appearanceAccountId(state)));
+                _appearance.bindAccount(AppAppearance.accountId(state));
                 // The device Pomodoro belongs to one account.
                 unawaited(_pomodoroController.restore(state.user?.id));
                 if (state.status != AuthStatus.authenticated) {
@@ -648,14 +639,17 @@ class _AppState extends State<App> {
               return BlocBuilder<ThemeCubit, ThemeState>(
                 builder: (context, themeState) {
                   final appearance = themeState.appearance;
+                  final sorbet = AppAppearance.sorbetOf(context);
                   return shad.ShadcnApp.router(
                     debugShowCheckedModeBanner: false,
-                    theme: AppearanceTheme.shadTheme(
+                    theme: AppearanceTheme.shadThemeFor(
                       appearance,
+                      sorbet,
                       Brightness.light,
                     ),
-                    darkTheme: AppearanceTheme.shadTheme(
+                    darkTheme: AppearanceTheme.shadThemeFor(
                       appearance,
+                      sorbet,
                       Brightness.dark,
                     ),
                     themeMode: themeState.themeMode,
@@ -670,8 +664,9 @@ class _AppState extends State<App> {
                       final authIdentity = context.select<AuthCubit, String?>(
                         (cubit) => cubit.state.user?.id,
                       );
-                      return AppearanceBackdrop(
-                        settings: appearance,
+                      return SorbetAppearanceHost(
+                        appearance: appearance,
+                        sorbet: sorbet,
                         child: ShadcnMaterialBridge(
                           child: MastermindPrivacyShield(
                             location: () => _router
@@ -685,7 +680,7 @@ class _AppState extends State<App> {
                               child: DismissKeyboardOnPointerDown(
                                 child: AppLockBoundary(
                                   excluded: isAppLockExcludedRoute(
-                                    _currentMatchedLocation(),
+                                    _router.currentMatchedLocation,
                                   ),
                                   child: MobileMfaApprovalListener(
                                     child: AppVersionGate(child: child!),

@@ -36,7 +36,7 @@ extension _AppPushNavigation on _AppState {
         DateTime.now().difference(backgroundedAt) >=
             _appLockCubit.state.delay.duration &&
         _authCubit.state.status == AuthStatus.authenticated &&
-        !isAppLockExcludedRoute(_currentMatchedLocation())) {
+        !isAppLockExcludedRoute(_router.currentMatchedLocation)) {
       _appLockCubit.lock();
     }
 

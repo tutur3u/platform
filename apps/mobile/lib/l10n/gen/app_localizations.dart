@@ -14455,6 +14455,12 @@ abstract class AppLocalizations {
   /// **'Changes here stay on this device and don\'t sync to your account.'**
   String get appearanceDeviceOverrideDescription;
 
+  /// No description provided for @appearanceExperimentalTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Experimental design'**
+  String get appearanceExperimentalTitle;
+
   /// No description provided for @appearanceFeedbackTitle.
   ///
   /// In en, this message translates to:
@@ -14520,6 +14526,96 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Softness'**
   String get appearanceSoftness;
+
+  /// No description provided for @appearanceSorbetPaletteTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Palette'**
+  String get appearanceSorbetPaletteTitle;
+
+  /// No description provided for @appearanceSorbetPresetBlueberry.
+  ///
+  /// In en, this message translates to:
+  /// **'Blueberry'**
+  String get appearanceSorbetPresetBlueberry;
+
+  /// No description provided for @appearanceSorbetPresetGraphite.
+  ///
+  /// In en, this message translates to:
+  /// **'Graphite'**
+  String get appearanceSorbetPresetGraphite;
+
+  /// No description provided for @appearanceSorbetPresetHighContrast.
+  ///
+  /// In en, this message translates to:
+  /// **'High contrast'**
+  String get appearanceSorbetPresetHighContrast;
+
+  /// No description provided for @appearanceSorbetPresetLagoon.
+  ///
+  /// In en, this message translates to:
+  /// **'Lagoon'**
+  String get appearanceSorbetPresetLagoon;
+
+  /// No description provided for @appearanceSorbetPresetLavender.
+  ///
+  /// In en, this message translates to:
+  /// **'Lavender'**
+  String get appearanceSorbetPresetLavender;
+
+  /// No description provided for @appearanceSorbetPresetMango.
+  ///
+  /// In en, this message translates to:
+  /// **'Mango'**
+  String get appearanceSorbetPresetMango;
+
+  /// No description provided for @appearanceSorbetPresetMatcha.
+  ///
+  /// In en, this message translates to:
+  /// **'Matcha'**
+  String get appearanceSorbetPresetMatcha;
+
+  /// No description provided for @appearanceSorbetPresetMidnight.
+  ///
+  /// In en, this message translates to:
+  /// **'Midnight'**
+  String get appearanceSorbetPresetMidnight;
+
+  /// No description provided for @appearanceSorbetPresetRose.
+  ///
+  /// In en, this message translates to:
+  /// **'Rosé'**
+  String get appearanceSorbetPresetRose;
+
+  /// No description provided for @appearanceSorbetPresetSorbet.
+  ///
+  /// In en, this message translates to:
+  /// **'Sorbet'**
+  String get appearanceSorbetPresetSorbet;
+
+  /// No description provided for @appearanceSorbetRadiusRound.
+  ///
+  /// In en, this message translates to:
+  /// **'Round'**
+  String get appearanceSorbetRadiusRound;
+
+  /// No description provided for @appearanceSorbetRadiusSharp.
+  ///
+  /// In en, this message translates to:
+  /// **'Sharp'**
+  String get appearanceSorbetRadiusSharp;
+
+  /// No description provided for @appearanceSorbetRadiusSoft.
+  ///
+  /// In en, this message translates to:
+  /// **'Soft'**
+  String get appearanceSorbetRadiusSoft;
+
+  /// No description provided for @appearanceSorbetToggle.
+  ///
+  /// In en, this message translates to:
+  /// **'Use Sorbet design'**
+  String get appearanceSorbetToggle;
 
   /// No description provided for @appearanceStyleDescription.
   ///

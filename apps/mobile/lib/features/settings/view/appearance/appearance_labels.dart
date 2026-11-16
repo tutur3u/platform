@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:mobile/core/theme/appearance/appearance_settings.dart';
+import 'package:mobile/core/theme/sorbet/sorbet_preferences.dart';
 import 'package:mobile/core/ui/tokens/app_interface_tokens.dart';
 import 'package:mobile/l10n/l10n.dart';
 
@@ -57,5 +58,24 @@ extension AppearanceLabels on AppLocalizations {
     AppCornerStyle.rounded => appearanceCornersRounded,
     AppCornerStyle.soft => appearanceCornersSoft,
     AppCornerStyle.square => appearanceCornersSquare,
+  };
+
+  String sorbetPreset(SorbetPreset preset) => switch (preset) {
+    SorbetPreset.sorbet => appearanceSorbetPresetSorbet,
+    SorbetPreset.matcha => appearanceSorbetPresetMatcha,
+    SorbetPreset.blueberry => appearanceSorbetPresetBlueberry,
+    SorbetPreset.mango => appearanceSorbetPresetMango,
+    SorbetPreset.lavender => appearanceSorbetPresetLavender,
+    SorbetPreset.lagoon => appearanceSorbetPresetLagoon,
+    SorbetPreset.rose => appearanceSorbetPresetRose,
+    SorbetPreset.graphite => appearanceSorbetPresetGraphite,
+    SorbetPreset.midnight => appearanceSorbetPresetMidnight,
+    SorbetPreset.highContrast => appearanceSorbetPresetHighContrast,
+  };
+
+  String sorbetRadius(SorbetRadius radius) => switch (radius) {
+    SorbetRadius.soft => appearanceSorbetRadiusSoft,
+    SorbetRadius.sharp => appearanceSorbetRadiusSharp,
+    SorbetRadius.round => appearanceSorbetRadiusRound,
   };
 }

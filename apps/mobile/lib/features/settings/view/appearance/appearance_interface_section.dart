@@ -18,11 +18,15 @@ class AppearanceInterfaceSection extends StatefulWidget {
   const AppearanceInterfaceSection({
     required this.settings,
     required this.onChanged,
+    this.showShape = true,
     super.key,
   });
 
   final AppearanceSettings settings;
   final ValueChanged<AppearanceSettings> onChanged;
+
+  /// Whether density and corners show; Sorbet sets its own.
+  final bool showShape;
 
   @override
   State<AppearanceInterfaceSection> createState() =>
@@ -90,37 +94,39 @@ class _AppearanceInterfaceSectionState
           ),
           note: l10n.appearanceStyleDescription,
         ),
-        block(
-          l10n.appearanceDensityTitle,
-          AppearanceSegmented<AppDensity>(
-            key: const ValueKey('appearance-density'),
-            values: AppDensity.values,
-            selected: settings.density,
-            label: l10n.appearanceDensity,
-            icon: (density) => switch (density) {
-              AppDensity.comfortable => LucideIcons.rows2,
-              AppDensity.compact => LucideIcons.rows4,
-            },
-            onSelected: (density) =>
-                widget.onChanged(settings.copyWith(density: density)),
+        if (widget.showShape) ...[
+          block(
+            l10n.appearanceDensityTitle,
+            AppearanceSegmented<AppDensity>(
+              key: const ValueKey('appearance-density'),
+              values: AppDensity.values,
+              selected: settings.density,
+              label: l10n.appearanceDensity,
+              icon: (density) => switch (density) {
+                AppDensity.comfortable => LucideIcons.rows2,
+                AppDensity.compact => LucideIcons.rows4,
+              },
+              onSelected: (density) =>
+                  widget.onChanged(settings.copyWith(density: density)),
+            ),
           ),
-        ),
-        block(
-          l10n.appearanceCornersTitle,
-          AppearanceSegmented<AppCornerStyle>(
-            key: const ValueKey('appearance-corners'),
-            values: AppCornerStyle.values,
-            selected: settings.corners,
-            label: l10n.appearanceCorners,
-            icon: (corners) => switch (corners) {
-              AppCornerStyle.rounded => LucideIcons.squircle,
-              AppCornerStyle.soft => LucideIcons.squareRoundCorner,
-              AppCornerStyle.square => LucideIcons.square,
-            },
-            onSelected: (corners) =>
-                widget.onChanged(settings.copyWith(corners: corners)),
+          block(
+            l10n.appearanceCornersTitle,
+            AppearanceSegmented<AppCornerStyle>(
+              key: const ValueKey('appearance-corners'),
+              values: AppCornerStyle.values,
+              selected: settings.corners,
+              label: l10n.appearanceCorners,
+              icon: (corners) => switch (corners) {
+                AppCornerStyle.rounded => LucideIcons.squircle,
+                AppCornerStyle.soft => LucideIcons.squareRoundCorner,
+                AppCornerStyle.square => LucideIcons.square,
+              },
+              onSelected: (corners) =>
+                  widget.onChanged(settings.copyWith(corners: corners)),
+            ),
           ),
-        ),
+        ],
         block(
           l10n.appearanceFeedbackTitle,
           SettingsGroup(

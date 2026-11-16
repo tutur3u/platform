@@ -7517,6 +7517,9 @@ class AppLocalizationsVi extends AppLocalizations {
   String get appearanceDeviceOverrideDescription => 'Thay đổi tại đây chỉ áp dụng cho thiết bị này, không đồng bộ với tài khoản.';
 
   @override
+  String get appearanceExperimentalTitle => 'Giao diện thử nghiệm';
+
+  @override
   String get appearanceFeedbackTitle => 'Phản hồi và chuyển động';
 
   @override
@@ -7548,6 +7551,51 @@ class AppLocalizationsVi extends AppLocalizations {
 
   @override
   String get appearanceSoftness => 'Độ mềm';
+
+  @override
+  String get appearanceSorbetPaletteTitle => 'Bảng màu';
+
+  @override
+  String get appearanceSorbetPresetBlueberry => 'Việt quất';
+
+  @override
+  String get appearanceSorbetPresetGraphite => 'Than chì';
+
+  @override
+  String get appearanceSorbetPresetHighContrast => 'Tương phản cao';
+
+  @override
+  String get appearanceSorbetPresetLagoon => 'Đầm phá';
+
+  @override
+  String get appearanceSorbetPresetLavender => 'Oải hương';
+
+  @override
+  String get appearanceSorbetPresetMango => 'Xoài';
+
+  @override
+  String get appearanceSorbetPresetMatcha => 'Trà xanh';
+
+  @override
+  String get appearanceSorbetPresetMidnight => 'Nửa đêm';
+
+  @override
+  String get appearanceSorbetPresetRose => 'Hồng';
+
+  @override
+  String get appearanceSorbetPresetSorbet => 'Sorbet';
+
+  @override
+  String get appearanceSorbetRadiusRound => 'Tròn';
+
+  @override
+  String get appearanceSorbetRadiusSharp => 'Sắc cạnh';
+
+  @override
+  String get appearanceSorbetRadiusSoft => 'Mềm mại';
+
+  @override
+  String get appearanceSorbetToggle => 'Dùng giao diện Sorbet';
 
   @override
   String get appearanceStyleDescription => 'Thay đổi cách trang chuyển và danh sách cuộn. Màu sắc và bố cục giữ nguyên trên mọi thiết bị.';

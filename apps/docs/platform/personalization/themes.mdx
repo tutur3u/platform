@@ -1,7 +1,7 @@
 ---
 title: 'Themes'
 description: 'Enhance your experience with themes.'
-updatedAt: "2026-11-15"
+updatedAt: "2026-11-16"
 audience: users
 ---
 
@@ -73,7 +73,11 @@ soft shadows and the Nunito typeface. You can try it before it becomes the defau
   (the roadmap's boot script), and a palette chosen on the device still applies.
   The roadmap's own colours read Sorbet's role names (`--primary`, `--card`,
   `--ring` and the status inks), never a palette's source colours.
-- **Not covered:** the mobile app, Colab, and web apps without a theme provider
+- **Mobile app:** the same switch appears under Settings → Appearance →
+  **Experimental design**, with Palette and Corners while it is on. It reads and
+  writes the same two account settings, so turning Sorbet on in the app turns it
+  on in the web apps and back again. See [Mobile app](#mobile-app).
+- **Not covered:** Colab, and web apps without a theme provider
   (Hive, Tulletin, the link shortener and external embeds) keep their current
   design.
 
@@ -126,7 +130,23 @@ an accent colour and a background style (Solid, Gradient or Blobs). For gradient
 and blob backgrounds, you can tune intensity, blob softness and card opacity, and
 optionally animate blobs. Animation stays off when your device's Reduce Motion
 setting is on. Changes apply across the app immediately. **Reset to default**
-restores Classic with the system mode. See
+restores Classic with the system mode.
+
+**Experimental design** at the top of Appearance turns on Sorbet for your
+account (off by default). It is the same switch as on the web
+(`EXPERIMENTAL_SORBET_UI`), and its **Palette** and **Corners** choices are the
+web's `SORBET_THEME` values, so both follow you across the app and the web apps.
+An accent and density set on the web apply in the app too (Spacious renders as
+Comfortable); the Nunito font choice renders in Noto Sans, which the app bundles. While Sorbet is on,
+the classic theme, accent, background, density and corner controls are hidden
+because Sorbet sets them; mode, interface style, haptics and Reduce Motion still
+apply. The app remembers the last values per account on the device, so Sorbet
+shows on the next launch before the account answers, and a change made offline
+uploads when the app is back online without overwriting the other setting. The
+app's Sorbet colours mirror `packages/ui/src/sorbet-tokens.json` and
+`sorbet-presets.css`; `apps/mobile/test/core/theme/sorbet/sorbet_palette_parity_test.dart`
+fails on any drift, and `sorbet_contrast_test.dart` checks every palette's text
+contrast in both modes. See
 [Mobile settings shell](/platform/features/mobile-settings-shell#settings-overview-and-appearance)
 for defaults and behaviour.
 

@@ -65,6 +65,32 @@ gives 432dp fields on medium bodies and 416dp on expanded bodies. Auth screens
 `ResponsivePadding` is a compatibility layer that derives from these tokens;
 its names and values are unchanged.
 
+### Sorbet (experimental design)
+
+Settings > Appearance > Experimental design turns on Sorbet, the same opt-in as
+the web apps: the account configs `EXPERIMENTAL_SORBET_UI` and `SORBET_THEME`,
+read and written through `/api/v1/users/me/configs/{id}` by
+`SorbetPreferencesRepository`. `SorbetCubit` shows the per-user device cache
+first, then the account values; a local change is cached, marked pending and
+uploaded, and a field changed locally is never replaced by an older load.
+
+- `lib/core/theme/sorbet/sorbet_palettes.dart` mirrors
+  `packages/ui/src/sorbet-tokens.json` (default roles and hues) and
+  `sorbet-presets.css` (preset colours, High Contrast inks). Regenerate it with
+  `python3 apps/mobile/tool/generate_sorbet_palettes.py`, then `dart format`
+  the file; `test/core/theme/sorbet/sorbet_palette_parity_test.dart` fails on
+  drift, including the radius, space, motion, control and mobile metrics.
+- While Sorbet is on, `AppearanceTheme.shadThemeFor` and
+  `SorbetAppTheme.materialTheme` replace the classic themes, the backdrop is
+  solid, and `SorbetScope.maybeOf` returns the active theme. The Material
+  theme carries `SorbetTokens` (hues, scrim, hover, radii, control sizes,
+  space, motion and mobile metrics); read it with `SorbetTokens.maybeOf`,
+  which is null on classic themes. With Sorbet off every theme object is the
+  classic one (`sorbet_theme_test.dart`).
+- Goldens for classic and Sorbet, light and dark, phone and tablet live in
+  `test/core/theme/sorbet/goldens/`; render compositions through
+  `sorbetTestApp` in `test/helpers/pump_app.dart`.
+
 ## Page primitives
 
 | Widget | Use |

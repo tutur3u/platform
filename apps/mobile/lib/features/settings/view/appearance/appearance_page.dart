@@ -10,6 +10,7 @@ import 'package:mobile/core/theme/appearance/appearance_palettes.dart';
 import 'package:mobile/core/theme/appearance/appearance_settings.dart';
 import 'package:mobile/core/ui/ui.dart';
 import 'package:mobile/data/repositories/settings_repository.dart';
+import 'package:mobile/features/settings/cubit/sorbet_cubit.dart';
 import 'package:mobile/features/settings/cubit/theme_cubit.dart';
 import 'package:mobile/features/settings/cubit/theme_state.dart';
 import 'package:mobile/features/settings/view/appearance/appearance_accent_picker.dart';
@@ -18,6 +19,7 @@ import 'package:mobile/features/settings/view/appearance/appearance_interface_se
 import 'package:mobile/features/settings/view/appearance/appearance_labels.dart';
 import 'package:mobile/features/settings/view/appearance/appearance_pickers.dart';
 import 'package:mobile/features/settings/view/appearance/appearance_preview.dart';
+import 'package:mobile/features/settings/view/appearance/appearance_sorbet_section.dart';
 import 'package:mobile/features/settings/view/appearance/appearance_theme_gallery.dart';
 import 'package:mobile/features/settings/view/settings_profile_parts.dart';
 import 'package:mobile/features/settings/view/settings_row_layout.dart';
@@ -51,6 +53,9 @@ class _AppearancePageState extends State<AppearancePage> {
     final cubit = context.read<ThemeCubit>();
     final state = context.watch<ThemeCubit>().state;
     final settings = state.appearance;
+    // Sorbet replaces the classic colours, background and corners.
+    final sorbet = context.watch<SorbetCubit?>();
+    final classic = !(sorbet?.state.enabled ?? false);
     final brightness = AppTokens.of(context).brightness;
     final horizontal = ResponsivePadding.horizontal(context.deviceClass);
 
@@ -85,10 +90,13 @@ class _AppearancePageState extends State<AppearancePage> {
           key: const ValueKey('appearance-page'),
           padding: SettingsRowLayout.scrollPadding(context, horizontal),
           children: [
-            section(
-              l10n.appearancePreviewTitle,
-              AppearancePreview(settings: settings),
-            ),
+            if (sorbet != null)
+              AppearanceSorbetSection(state: sorbet.state, cubit: sorbet),
+            if (classic)
+              section(
+                l10n.appearancePreviewTitle,
+                AppearancePreview(settings: settings),
+              ),
             if (state.hasAccount)
               Padding(
                 padding: const EdgeInsets.only(
@@ -126,58 +134,61 @@ class _AppearancePageState extends State<AppearancePage> {
                 ),
               ),
             ),
-            section(
-              l10n.appearanceThemesTitle,
-              AppearanceThemeGallery(
-                settings: settings,
-                brightness: brightness,
-                highlight: widget.highlight,
-                onSelected: (id) => choose(() => cubit.selectTheme(id)),
-              ),
-            ),
-            section(
-              l10n.appearanceAccentTitle,
-              trailing: l10n.appearanceAccent(
-                AppearancePalettes.effectiveAccentId(settings),
-              ),
-              AppearanceAccentPicker(
-                settings: settings,
-                brightness: brightness,
-                onSelected: (id) => choose(
-                  () => cubit.setAppearance(settings.copyWith(accent: id)),
+            if (classic) ...[
+              section(
+                l10n.appearanceThemesTitle,
+                AppearanceThemeGallery(
+                  settings: settings,
+                  brightness: brightness,
+                  highlight: widget.highlight,
+                  onSelected: (id) => choose(() => cubit.selectTheme(id)),
                 ),
               ),
-            ),
-            section(
-              l10n.appearanceBackgroundTitle,
-              AppearanceSegmented<AppearanceBackgroundStyle>(
-                key: const ValueKey('appearance-background'),
-                values: AppearanceBackgroundStyle.values,
-                selected: settings.backgroundStyle,
-                label: l10n.appearanceBackground,
-                icon: (style) => switch (style) {
-                  AppearanceBackgroundStyle.solid => LucideIcons.square,
-                  AppearanceBackgroundStyle.gradient => LucideIcons.rainbow,
-                  AppearanceBackgroundStyle.blobs => LucideIcons.blend,
-                },
-                onSelected: (style) => choose(
-                  () => cubit.setAppearance(
-                    settings.copyWith(backgroundStyle: style),
+              section(
+                l10n.appearanceAccentTitle,
+                trailing: l10n.appearanceAccent(
+                  AppearancePalettes.effectiveAccentId(settings),
+                ),
+                AppearanceAccentPicker(
+                  settings: settings,
+                  brightness: brightness,
+                  onSelected: (id) => choose(
+                    () => cubit.setAppearance(settings.copyWith(accent: id)),
                   ),
                 ),
               ),
-            ),
-            if (settings.hasAmbientBackground)
               section(
-                l10n.appearanceSurfacesTitle,
-                AppearanceAdjustments(
-                  settings: settings,
-                  onPreview: cubit.previewAppearance,
-                  onCommit: (next) => unawaited(cubit.setAppearance(next)),
+                l10n.appearanceBackgroundTitle,
+                AppearanceSegmented<AppearanceBackgroundStyle>(
+                  key: const ValueKey('appearance-background'),
+                  values: AppearanceBackgroundStyle.values,
+                  selected: settings.backgroundStyle,
+                  label: l10n.appearanceBackground,
+                  icon: (style) => switch (style) {
+                    AppearanceBackgroundStyle.solid => LucideIcons.square,
+                    AppearanceBackgroundStyle.gradient => LucideIcons.rainbow,
+                    AppearanceBackgroundStyle.blobs => LucideIcons.blend,
+                  },
+                  onSelected: (style) => choose(
+                    () => cubit.setAppearance(
+                      settings.copyWith(backgroundStyle: style),
+                    ),
+                  ),
                 ),
               ),
+              if (settings.hasAmbientBackground)
+                section(
+                  l10n.appearanceSurfacesTitle,
+                  AppearanceAdjustments(
+                    settings: settings,
+                    onPreview: cubit.previewAppearance,
+                    onCommit: (next) => unawaited(cubit.setAppearance(next)),
+                  ),
+                ),
+            ],
             AppearanceInterfaceSection(
               settings: settings,
+              showShape: classic,
               onChanged: (next) => choose(() => cubit.setAppearance(next)),
             ),
             _ResetButton(state: state, cubit: cubit),

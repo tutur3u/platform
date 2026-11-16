@@ -6,6 +6,9 @@ import 'package:mobile/core/theme/appearance/appearance_palettes.dart';
 import 'package:mobile/core/theme/appearance/appearance_settings.dart';
 import 'package:mobile/core/theme/colors.dart';
 import 'package:mobile/core/theme/mobile_shad_theme.dart';
+import 'package:mobile/core/theme/sorbet/sorbet_palettes.dart';
+import 'package:mobile/core/theme/sorbet/sorbet_preferences.dart';
+import 'package:mobile/core/theme/sorbet/sorbet_theme.dart';
 import 'package:mobile/core/ui/tokens/app_color_tokens.dart';
 import 'package:shadcn_flutter/shadcn_flutter.dart' as shad;
 
@@ -21,6 +24,7 @@ abstract final class AppearanceTheme {
       <(AppearanceSettings, Brightness), shad.ThemeData>{};
   static final _materialCache =
       <(AppearanceSettings, Brightness), material.ThemeData>{};
+  static final _sorbetCache = <(SorbetTheme, Brightness), shad.ThemeData>{};
 
   static bool _usesBaseScheme(AppearanceSettings settings, Brightness b) =>
       b == Brightness.dark &&
@@ -40,6 +44,55 @@ abstract final class AppearanceTheme {
       key,
       () => base.copyWith(colorScheme: () => colorScheme(settings, b)),
     );
+  }
+
+  /// The app's shad theme: [shadTheme] itself without [sorbet], otherwise
+  /// the Sorbet roles, radius and font on the mobile shad base.
+  static shad.ThemeData shadThemeFor(
+    AppearanceSettings settings,
+    SorbetTheme? sorbet,
+    Brightness b,
+  ) {
+    if (sorbet == null) return shadTheme(settings, b);
+    return _remember(_sorbetCache, (sorbet, b), () {
+      final base = b == Brightness.dark
+          ? MobileShadTheme.dark
+          : MobileShadTheme.light;
+      final roles = SorbetAppTheme.colorTokens(sorbet, b);
+      final hues = SorbetPalettes.hues(sorbet.preset, b);
+      final family = SorbetAppTheme.fontFamily(sorbet.font);
+      return base.copyWith(
+        colorScheme: () => base.colorScheme.copyWith(
+          background: () => roles.background,
+          foreground: () => roles.foreground,
+          card: () => roles.card,
+          cardForeground: () => roles.cardForeground,
+          popover: () => roles.popover,
+          popoverForeground: () => roles.popoverForeground,
+          primary: () => roles.primary,
+          primaryForeground: () => roles.primaryForeground,
+          secondary: () => roles.secondary,
+          secondaryForeground: () => roles.secondaryForeground,
+          muted: () => roles.muted,
+          mutedForeground: () => roles.mutedForeground,
+          accent: () => roles.accent,
+          accentForeground: () => roles.accentForeground,
+          destructive: () => roles.destructive,
+          border: () => roles.border,
+          input: () => roles.input,
+          ring: () => roles.ring,
+          chart1: () => hues.blue.ink,
+          chart2: () => hues.green.ink,
+          chart3: () => hues.orange.ink,
+          chart4: () => hues.purple.ink,
+          chart5: () => hues.pink.ink,
+        ),
+        radius: () => SorbetAppTheme.radiusScale(sorbet.radius),
+        typography: family == null
+            ? () => base.typography.copyWith(sans: () => const TextStyle())
+            : null,
+      );
+    });
   }
 
   static material.ThemeData materialTheme(

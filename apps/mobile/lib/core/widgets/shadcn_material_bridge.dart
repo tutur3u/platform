@@ -5,6 +5,9 @@ import 'package:mobile/core/theme/appearance/appearance_scope.dart';
 import 'package:mobile/core/theme/appearance/appearance_settings.dart';
 import 'package:mobile/core/theme/appearance/appearance_theme.dart';
 import 'package:mobile/core/theme/appearance/interface_theme.dart';
+import 'package:mobile/core/theme/sorbet/sorbet_scope.dart';
+import 'package:mobile/core/theme/sorbet/sorbet_theme.dart';
+import 'package:mobile/core/ui/tokens/app_interface_tokens.dart';
 import 'package:shadcn_flutter/shadcn_flutter.dart' as shad;
 
 /// Restores the Material infrastructure intentionally removed from
@@ -22,16 +25,28 @@ class ShadcnMaterialBridge extends StatelessWidget {
   Widget build(BuildContext context) {
     final theme = shad.Theme.of(context);
     final appearance = AppearanceScope.maybeOf(context)?.settings;
+    final sorbet = SorbetScope.maybeOf(context);
 
-    final base = appearance != null
+    final base = sorbet != null
+        ? SorbetAppTheme.materialTheme(sorbet, theme.brightness)
+        : appearance != null
         ? AppearanceTheme.materialTheme(appearance, theme.brightness)
         : theme.brightness == Brightness.light
         ? AppTheme.light
         : AppTheme.dark;
+    final interface = appearance?.interfaceTokens;
     return Theme(
-      data: appearance == null
+      data: interface == null && sorbet == null
           ? base
-          : AppInterfaceTheme.apply(base, appearance.interfaceTokens),
+          : AppInterfaceTheme.apply(
+              base,
+              sorbet == null
+                  ? interface!
+                  : SorbetAppTheme.interfaceTokens(
+                      sorbet,
+                      interface ?? AppInterfaceTokens.standard,
+                    ),
+            ),
       child: AppInterfaceScope(
         settings: appearance ?? const AppearanceSettings(),
         child: Material(

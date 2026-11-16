@@ -7604,6 +7604,9 @@ class AppLocalizationsEn extends AppLocalizations {
   String get appearanceDeviceOverrideDescription => 'Changes here stay on this device and don\'t sync to your account.';
 
   @override
+  String get appearanceExperimentalTitle => 'Experimental design';
+
+  @override
   String get appearanceFeedbackTitle => 'Feedback and motion';
 
   @override
@@ -7635,6 +7638,51 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get appearanceSoftness => 'Softness';
+
+  @override
+  String get appearanceSorbetPaletteTitle => 'Palette';
+
+  @override
+  String get appearanceSorbetPresetBlueberry => 'Blueberry';
+
+  @override
+  String get appearanceSorbetPresetGraphite => 'Graphite';
+
+  @override
+  String get appearanceSorbetPresetHighContrast => 'High contrast';
+
+  @override
+  String get appearanceSorbetPresetLagoon => 'Lagoon';
+
+  @override
+  String get appearanceSorbetPresetLavender => 'Lavender';
+
+  @override
+  String get appearanceSorbetPresetMango => 'Mango';
+
+  @override
+  String get appearanceSorbetPresetMatcha => 'Matcha';
+
+  @override
+  String get appearanceSorbetPresetMidnight => 'Midnight';
+
+  @override
+  String get appearanceSorbetPresetRose => 'Rosé';
+
+  @override
+  String get appearanceSorbetPresetSorbet => 'Sorbet';
+
+  @override
+  String get appearanceSorbetRadiusRound => 'Round';
+
+  @override
+  String get appearanceSorbetRadiusSharp => 'Sharp';
+
+  @override
+  String get appearanceSorbetRadiusSoft => 'Soft';
+
+  @override
+  String get appearanceSorbetToggle => 'Use Sorbet design';
 
   @override
   String get appearanceStyleDescription => 'Changes how pages slide and lists scroll. Colors and layout stay the same on every device.';
