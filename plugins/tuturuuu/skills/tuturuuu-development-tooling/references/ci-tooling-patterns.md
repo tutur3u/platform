@@ -1536,3 +1536,16 @@ required. Run `calendar-native-artifact.test.mjs` (including the suite-step
 negative controls) and `mail-calendar-tasks-affected.test.js` after edits. See
 [the CI runbook](../../../../../apps/docs/build/devops/github-actions-runbook.mdx#calendar-owning-suite-timings)
 before proposing a generated-output handoff or parallel suites.
+
+
+## Web shard Redis fixture
+
+The shared `scripts/ci/run-test-shard.js` runner owns disposable Redis for web
+shards in both regular and public merged-main unit CI. Keep fixture setup out of
+individual tests and duplicate workflow services. Automatic provisioning is
+restricted to ephemeral GitHub-hosted Linux; local runs require an explicit
+owned-fixture opt-in. Preserve bounded readiness, digest pinning, loopback-only
+publication, exact owner cleanup and Turbo fixture environment propagation.
+See the [unit fixture runbook](../../../../../apps/docs/build/devops/github-actions-runbook.mdx#disposable-redis-for-web-unit-shards)
+and `scripts/ci/disposable-redis.test.js`. Mocked Docker commands prove control
+flow; live container startup and signal teardown need ephemeral Linux evidence.

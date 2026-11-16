@@ -115,3 +115,38 @@ and artifact-transfer costs. Preserve the generated route tree used by the accep
 build in any future handoff. OAuth tests skipped without integration credentials
 provide no integration coverage. Regression coverage is in
 `scripts/ci/calendar-suite-steps.test.mjs`, loaded by the artifact regressions.
+
+
+## Disposable Redis for web unit shards
+
+`scripts/ci/run-test-shard.js` owns one disposable Redis lifecycle when its
+computed shard includes `@tuturuuu/web`. Both Test workflow shard jobs and the
+public merged-main unit path call this runner; neither needs a separate service.
+Non-web shards and paused runtimes do not provision a fixture.
+
+Automatic provisioning requires GitHub-hosted Linux. The helper pulls the official
+`library/redis` image by immutable digest, publishes only an ephemeral loopback
+port, disables persistence, and caps Redis memory at 16 MiB inside a 64 MiB
+container. Readiness has 30 bounded attempts. Cleanup matches the random owner
+name and label, removes only that container and its volumes, and fails the run
+when cleanup fails. SIGINT/SIGTERM terminate the owned test process group before
+cleanup. Forced host termination still relies on the ephemeral runner teardown.
+
+Local execution requires an independently owned fixture and explicit
+`LIVE_MINT_TEST_REDIS_DISPOSABLE=1`, plus exactly one
+`LIVE_MINT_TEST_REDIS_PORT` (loopback) or absolute
+`LIVE_MINT_TEST_REDIS_SOCKET`. Production Redis URLs and credentials never select
+this endpoint. Local execution does not start Docker or pull an image. Turbo
+hashes the disposable opt-in and passes the ephemeral endpoint to test tasks.
+The real Redis suite retains its refusal without explicit opt-in.
+
+Verify lifecycle controls with `node --test scripts/ci/disposable-redis.test.js
+scripts/ci/test-shards.test.js`. On an admitted local fixture, run the real web
+`src/lib/live/mint-cap.redis.test.ts` suite with one worker. Docker startup and
+signal cleanup require an ephemeral Linux CI receipt before claiming live
+container coverage; injected command tests cover local failure paths.
+
+Image provenance: [official Redis image](https://hub.docker.com/_/redis) and
+[Docker port publication](https://docs.docker.com/reference/cli/docker/container/run/).
+The helper pins the SHA-256 verified from the registry manifest index for
+`7.4-alpine`; review and reverify the digest before updating it.

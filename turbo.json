@@ -244,7 +244,11 @@
     },
     "test": {
       "dependsOn": ["transit"],
-      "env": ["CHECK_DETAILS", "CI"],
+      "env": ["CHECK_DETAILS", "CI", "LIVE_MINT_TEST_REDIS_DISPOSABLE"],
+      "passThroughEnv": [
+        "LIVE_MINT_TEST_REDIS_PORT",
+        "LIVE_MINT_TEST_REDIS_SOCKET"
+      ],
       "outputs": ["coverage/**"],
       "inputs": ["$TURBO_DEFAULT$", ".env*"]
     },
