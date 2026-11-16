@@ -5,6 +5,9 @@ import {
 import { NextRequest } from 'next/server';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
+// image-transform (via product-feedback-input) is server-only since #8439.
+vi.mock('server-only', () => ({}));
+
 const ACTOR_AUTH_ID = '11111111-1111-4111-8111-111111111111';
 const CREATOR_ID = '22222222-2222-4222-8222-222222222222';
 const FEEDBACK_ID = '33333333-3333-4333-8333-333333333333';

@@ -7,6 +7,9 @@ import {
   submitProductFeedbackRequest,
 } from './product-feedback-service';
 
+// image-transform (via product-feedback-input) is server-only since #8439.
+vi.mock('server-only', () => ({}));
+
 const mocks = vi.hoisted(() => ({
   admin: vi.fn(),
   request: vi.fn(),

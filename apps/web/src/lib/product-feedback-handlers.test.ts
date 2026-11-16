@@ -7,6 +7,9 @@ import {
   type FeedbackSubmissionDependencies,
 } from './product-feedback-handlers';
 
+// image-transform (via product-feedback-input) is server-only since #8439.
+vi.mock('server-only', () => ({}));
+
 const actor = '11111111-1111-4111-8111-111111111111';
 const receipt = {
   id: '22222222-2222-4222-8222-222222222222',

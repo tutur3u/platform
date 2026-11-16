@@ -1,5 +1,8 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
+// image-transform (via product-feedback-input) is server-only since #8439.
+vi.mock('server-only', () => ({}));
+
 const mocks = vi.hoisted(() => ({
   admin: vi.fn(),
   permissions: vi.fn(),
