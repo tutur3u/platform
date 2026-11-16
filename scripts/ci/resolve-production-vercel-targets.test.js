@@ -46,6 +46,7 @@ function resolveFixtureTargets({
   workflowMarkers,
   platformEnabled,
   includeEvidence = false,
+  liftExclusions = [],
   // Hold semantics are exercised against Meet; admission has its own test.
   publicationPolicy = { meet: { state: 'held', reason: 'held for test' } },
 }) {
@@ -56,7 +57,8 @@ function resolveFixtureTargets({
       `
         import { resolveProductionVercelTargets } from './scripts/ci/resolve-production-vercel-targets.ts';
         import { ci } from './tuturuuu.ts';
-        import { productionPublicationPolicy } from './tuturuuu.ci.ts';
+        import { productionAppExclusions, productionPublicationPolicy } from './tuturuuu.ci.ts';
+        for (const app of ${JSON.stringify(liftExclusions)}) delete productionAppExclusions[app];
         const publicationPolicy = ${JSON.stringify(publicationPolicy)};
         if (publicationPolicy) Object.assign(productionPublicationPolicy, publicationPolicy);
         if (${JSON.stringify(platformEnabled)} !== undefined) {
@@ -316,6 +318,14 @@ test('commit-driven selection fails closed for Cloudflare Workers without a succ
   for (const decision of decisions) {
     assert.equal(decision.shouldRun, false, decision.workflowName);
     assert.equal(decision.held, true, decision.workflowName);
+    if (
+      decision.workflowName === 'lettin-cloudflare.yaml' ||
+      decision.workflowName === 'parley-cloudflare.yaml'
+    ) {
+      assert.equal(decision.changeResult.source, 'publication-hold');
+      assert.match(decision.reason, /^held: /u);
+      continue;
+    }
     assert.equal(
       decision.changeResult.source,
       'deployment-marker-unavailable',
@@ -330,7 +340,7 @@ test('a recorded success marker restores commit-driven Cloudflare selection', ()
   const baseSha = initializeGitRepo(rootDir);
   const headSha = commitFile(
     rootDir,
-    'apps/lettin/src/app/page.tsx',
+    'apps/devbox-control/src/app/page.tsx',
     'export default function Page() {}\n',
     'runtime change after a recorded release'
   );
@@ -338,11 +348,11 @@ test('a recorded success marker restores commit-driven Cloudflare selection', ()
     baseSha,
     headSha,
     rootDir,
-    targets: [{ productionWorkflow: 'lettin-cloudflare.yaml' }],
-    workflowMarkers: { 'lettin-cloudflare.yaml': { sha: baseSha } },
+    targets: [{ productionWorkflow: 'devbox-control-cloudflare.yaml' }],
+    workflowMarkers: { 'devbox-control-cloudflare.yaml': { sha: baseSha } },
   });
   assert.deepEqual(decisions, [
-    { shouldRun: true, workflowName: 'lettin-cloudflare.yaml' },
+    { shouldRun: true, workflowName: 'devbox-control-cloudflare.yaml' },
   ]);
 });
 
@@ -358,9 +368,126 @@ test('operator dispatch remains an explicit admission without Cloudflare markers
     workflowMarkers: {},
   });
   assert.deepEqual(
-    decisions.map(({ shouldRun }) => shouldRun),
-    secretSyncTargets.map(() => true)
+    decisions.map(({ shouldRun, workflowName }) => ({ shouldRun, workflowName })),
+    [
+      { shouldRun: false, workflowName: 'lettin-cloudflare.yaml' },
+      { shouldRun: false, workflowName: 'parley-cloudflare.yaml' },
+      { shouldRun: true, workflowName: 'devbox-control-cloudflare.yaml' },
+      { shouldRun: true, workflowName: 'cron-control-cloudflare.yaml' },
+    ]
   );
+});
+
+const slotExclusions = [
+  ['lettin', 'lettin-cloudflare.yaml', 'apps/lettin/src/app/page.tsx'],
+  ['parley', 'parley-cloudflare.yaml', 'apps/parley/src/app/page.tsx'],
+  ['colab', 'colab-cloudflare.yaml', 'apps/colab/src/app/page.tsx'],
+  ['track', 'vercel-production-track.yaml', 'apps/track/src/app/page.tsx'],
+  ['mind', 'vercel-production-mind.yaml', 'apps/mind/src/app/page.tsx'],
+];
+
+for (const [app, workflow, changedPath] of slotExclusions) {
+  test(`${app} affected change stays held on push and dispatch until its exclusion line is removed`, () => {
+    const rootDir = createFixtureRoot();
+    const baseSha = initializeGitRepo(rootDir);
+    const headSha = commitFile(
+      rootDir,
+      changedPath,
+      'export default function Page() {}\n',
+      `${app} affected change`
+    );
+    const targets = [{ productionWorkflow: workflow }];
+    const workflowMarkers = { [workflow]: { sha: baseSha } };
+    for (const eventName of ['push', 'workflow_dispatch']) {
+      const [decision] = resolveFixtureTargets({
+        baseSha,
+        headSha,
+        rootDir,
+        eventName,
+        targets,
+        workflowMarkers,
+        includeEvidence: true,
+      });
+      assert.equal(decision.shouldRun, false, eventName);
+      assert.equal(decision.held, true, eventName);
+      assert.equal(decision.changeResult.source, 'publication-hold', eventName);
+      assert.match(decision.reason, new RegExp(`^held: ${app[0].toUpperCase()}${app.slice(1)} `, 'u'));
+    }
+    const [liftedPush] = resolveFixtureTargets({
+      baseSha,
+      headSha,
+      rootDir,
+      targets,
+      workflowMarkers,
+      liftExclusions: [app],
+    });
+    assert.deepEqual(liftedPush, { shouldRun: true, workflowName: workflow });
+    const [liftedDispatch] = resolveFixtureTargets({
+      baseSha,
+      headSha,
+      rootDir,
+      eventName: 'workflow_dispatch',
+      targets,
+      workflowMarkers,
+      liftExclusions: [app],
+    });
+    assert.deepEqual(liftedDispatch, { shouldRun: true, workflowName: workflow });
+  });
+}
+
+test('a non-held app still runs beside the slot exclusions, and Web is not listed', () => {
+  const rootDir = createFixtureRoot();
+  const baseSha = initializeGitRepo(rootDir);
+  commitFile(
+    rootDir,
+    'apps/lettin/src/app/page.tsx',
+    'export default function Page() {}\n',
+    'lettin change'
+  );
+  const headSha = commitFile(
+    rootDir,
+    'apps/storefront/src/app/page.tsx',
+    'export default function Page() { return null; }\n',
+    'storefront change'
+  );
+  const decisions = resolveFixtureTargets({
+    baseSha,
+    headSha,
+    rootDir,
+    targets: [
+      { productionWorkflow: 'lettin-cloudflare.yaml' },
+      { productionWorkflow: 'vercel-production-storefront.yaml' },
+    ],
+    workflowMarkers: { 'lettin-cloudflare.yaml': { sha: baseSha } },
+    includeEvidence: true,
+  });
+  assert.equal(decisions[0].shouldRun, false);
+  assert.equal(decisions[0].changeResult.source, 'publication-hold');
+  assert.equal(decisions[1].shouldRun, true);
+  assert.equal(decisions[1].workflowName, 'vercel-production-storefront.yaml');
+  const [web] = resolveFixtureTargets({
+    baseSha,
+    headSha,
+    rootDir,
+    eventName: 'workflow_dispatch',
+    targets: [{ productionWorkflow: 'vercel-production-platform.yaml' }],
+  });
+  assert.deepEqual(web, {
+    shouldRun: true,
+    workflowName: 'vercel-production-platform.yaml',
+  });
+  const listed = execFileSync(
+    'bun',
+    [
+      '--eval',
+      `import { productionAppExclusions } from './tuturuuu.ci.ts';
+       const keys = Object.keys(productionAppExclusions).sort();
+       if (keys.includes('web') || keys.includes('platform')) throw new Error(keys.join(','));
+       console.log(keys.join(','));`,
+    ],
+    { cwd: repoRoot, encoding: 'utf8' }
+  );
+  assert.equal(listed.trim(), 'colab,lettin,mind,parley,track');
 });
 
 test('control recovery without deployment markers still fails open safely', () => {

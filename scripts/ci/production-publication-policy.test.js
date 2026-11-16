@@ -176,7 +176,7 @@ const mutations = {
   },
   'explicit hold'() {},
 };
-for (const app of apps) {
+for (const app of apps.filter((name) => name !== 'mind')) {
   for (const [label, mutate] of Object.entries(mutations)) {
     test(`${app}: ${label} holds native/legacy planner targets and CLI`, (t) => {
       const policy = structuredClone(heldPolicy);
@@ -254,7 +254,7 @@ for (const invalidPolicy of [
   });
 }
 
-for (const app of apps) {
+for (const app of apps.filter((name) => name !== 'mind')) {
   test(`${app}: explicit reviewed admission permits planner selection and native CLI`, (t) => {
     const policy = structuredClone(heldPolicy);
     policy[app] = {
@@ -403,7 +403,12 @@ for (const { workflow, job } of publishers) {
     );
     const result = runPolicy(fixture(t, heldPolicy), workflow, policy.run);
     assert.equal(result.output, 'allowed=false\n');
-    assert.match(result.summary, heldReason);
+    assert.match(
+      result.summary,
+      workflow === 'vercel-production-mind.yaml'
+        ? /held: Mind stays with its dedicated owner/
+        : heldReason
+    );
   });
 }
 

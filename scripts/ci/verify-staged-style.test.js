@@ -563,7 +563,7 @@ test('exported verifier follows relative and absolute page hops through authenti
   assert.equal(f.blocked.length, 3);
 });
 
-test('a viewport screenshot failure keeps a fixed reason and only scrubbed scalars', async (t) => {
+test('a viewport screenshot failure is advisory and does not fail the proof', async (t) => {
   const f = await transportFixture(t, () => undefined, undefined, {
     evaluate: async () => ({
       ruleCount: 1,
@@ -584,21 +584,83 @@ test('a viewport screenshot failure keeps a fixed reason and only scrubbed scala
       );
     },
   });
-  await assert.rejects(f.run());
-  const failure = JSON.parse(await f.failure());
-  assert.equal(failure.stage, 'viewport-390');
-  assert.equal(failure.reason, 'Staged viewport screenshot failed');
-  assert.deepEqual(failure.viewport, {
-    width: 390,
-    scrollHeight: 24000,
-    captureMode: 'clipped',
-    tileCount: 1,
-    clipHeight: 4000,
-    // Bounded capture, one retry, then the load-viewport clip: all failed.
-    screenshotErrors: ['Error:protocol', 'Error:protocol', 'Error:protocol'],
+  const proof = await f.run();
+  assert.equal(proof.viewports.length, 2);
+  for (const view of proof.viewports) {
+    assert.equal(view.screenshot, 'FAILED_ADVISORY');
+    assert.equal(view.image, undefined);
+    assert.deepEqual(view.screenshotErrors, [
+      'Error:protocol',
+      'Error:protocol',
+      'Error:protocol',
+    ]);
+  }
+  assert.ok(!JSON.stringify(proof).includes('SECRET'));
+  assert.ok(!JSON.stringify(proof).includes('Protocol error'));
+  await assert.rejects(f.failure());
+});
+
+test('a screenshot failure plus a later stylesheet failure still fails the proof', async (t) => {
+  let evaluations = 0;
+  const f = await transportFixture(t, () => undefined, undefined, {
+    evaluate: async () => {
+      evaluations += 1;
+      return {
+        ruleCount: 1,
+        fontFailures: 0,
+        compared: [
+          {
+            path: '/_next/static/chunks/site.css',
+            expectedRules: 1,
+            servedRules: evaluations > 1 ? 0 : 1,
+          },
+        ],
+        utility: { display: 'flex', gap: 16, padding: 16, radius: 8 },
+        scrollHeight: 900,
+      };
+    },
+    screenshot: async () => {
+      throw new Error(
+        'page.screenshot: Protocol error (Page.captureScreenshot): SECRET-RAW'
+      );
+    },
   });
+  await assert.rejects(
+    f.run(),
+    (error) =>
+      error.stagedReason ===
+      'Staged stylesheet rule inventory differs from built CSS'
+  );
+  const failure = JSON.parse(await f.failure());
+  assert.equal(
+    failure.reason,
+    'Staged stylesheet rule inventory differs from built CSS'
+  );
   assert.ok(!JSON.stringify(failure).includes('SECRET'));
-  assert.ok(!JSON.stringify(failure).includes('Protocol error'));
+});
+
+test('a stylesheet failure still fails when the screenshot would have passed', async (t) => {
+  const f = await transportFixture(t, () => undefined, undefined, {
+    evaluate: async () => ({
+      ruleCount: 1,
+      fontFailures: 0,
+      compared: [
+        {
+          path: '/_next/static/chunks/site.css',
+          expectedRules: 1,
+          servedRules: 0,
+        },
+      ],
+      utility: { display: 'flex', gap: 16, padding: 16, radius: 8 },
+      scrollHeight: 900,
+    }),
+  });
+  await assert.rejects(
+    f.run(),
+    (error) =>
+      error.stagedReason ===
+      'Staged stylesheet rule inventory differs from built CSS'
+  );
 });
 
 test('a page evaluation failure keeps a fixed reason without raw page text', async (t) => {
@@ -645,15 +707,26 @@ test('an out-of-range page height is recorded as null', async (t) => {
       throw new Error('capture failed');
     },
   });
-  await assert.rejects(f.run());
-  assert.deepEqual(JSON.parse(await f.failure()).viewport, {
-    width: 390,
-    scrollHeight: null,
-    captureMode: 'clipped',
-    tileCount: 1,
-    clipHeight: 4000,
-    screenshotErrors: ['Error:other', 'Error:other', 'Error:other'],
-  });
+  const proof = await f.run();
+  assert.equal(proof.viewports[0].screenshot, 'FAILED_ADVISORY');
+  assert.deepEqual(
+    {
+      width: proof.viewports[0].width,
+      scrollHeight: proof.viewports[0].scrollHeight,
+      captureMode: proof.viewports[0].captureMode,
+      tileCount: proof.viewports[0].tileCount,
+      clipHeight: proof.viewports[0].clipHeight,
+      screenshotErrors: proof.viewports[0].screenshotErrors,
+    },
+    {
+      width: 390,
+      scrollHeight: null,
+      captureMode: 'clipped',
+      tileCount: 1,
+      clipHeight: 4000,
+      screenshotErrors: ['Error:other', 'Error:other', 'Error:other'],
+    }
+  );
 });
 
 const pageMetrics = (scrollHeight) => async () => ({
@@ -705,6 +778,7 @@ test('a page within the capture bound is screenshotted in full', async (t) => {
     assert.equal(view.captureMode, 'full');
     assert.equal(view.tileCount, 1);
     assert.equal(view.clipHeight, 1800);
+    assert.equal(view.screenshot, 'PASS');
   }
 });
 
@@ -731,6 +805,7 @@ test('a page taller than the bound passes with one clipped capture', async (t) =
     assert.equal(view.captureMode, 'clipped');
     assert.equal(view.tileCount, 1);
     assert.equal(view.clipHeight, 4000);
+    assert.equal(view.screenshot, 'PASS');
     assert.deepEqual(view.screenshotErrors, []);
     // The style checks still ran in full before the capture.
     assert.equal(view.ruleCount, 1);

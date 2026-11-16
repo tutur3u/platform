@@ -1,5 +1,9 @@
 import { appendFileSync } from 'node:fs';
-import { ci, productionPublicationPolicy } from '../../tuturuuu.ci.ts';
+import {
+  ci,
+  productionAppExclusions,
+  productionPublicationPolicy,
+} from '../../tuturuuu.ci.ts';
 import {
   cloudflareProductionTargets,
   vercelWorkflowTargets,
@@ -99,9 +103,25 @@ function switchboardHold(workflowName: string): string | undefined {
   return 'held: publisher disabled in the tuturuuu.ci.ts switchboard';
 }
 
+function exclusionHold(workflowName: string): string | undefined {
+  const app =
+    [...vercelWorkflowTargets, ...cloudflareProductionTargets].find(
+      (entry) => entry.productionWorkflow === workflowName
+    )?.app ?? protectedWorkflows.get(workflowName);
+  if (!app || !Object.hasOwn(productionAppExclusions, app)) return undefined;
+  const reason = productionAppExclusions[app];
+  if (typeof reason !== 'string' || !reason.trim() || /[\r\n]/.test(reason)) {
+    return 'held: malformed production app exclusion';
+  }
+  return reason;
+}
+
 export function productionPublicationHold(
   workflowName: string
 ): string | undefined {
+  // The app-id deny-list wins over admission, markers, and dispatch.
+  const excluded = exclusionHold(workflowName);
+  if (excluded) return excluded;
   const app = protectedWorkflows.get(workflowName);
   if (!app) {
     return knownWorkflows.has(workflowName)

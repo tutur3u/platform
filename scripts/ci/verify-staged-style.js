@@ -708,8 +708,10 @@ async function main({ env = process.env, runCommand = run, browserType } = {}) {
       // fullPage asks Chromium to render beyond the viewport (the whole
       // document), which fails on very tall pages even with a small clip.
       // A failed capture is retried once, then falls back to a clip of the
-      // load viewport. The style checks above already ran in full, so the
-      // image is evidence only; every attempt failing still blocks promotion.
+      // load viewport. The style checks above already ran in full. The image
+      // is evidence only: a failed capture is logged and uploaded, and it
+      // does not block promotion. Stylesheet, computed-style, resource, and
+      // navigation failures still do.
       const attempts = [
         { height: capturedHeight },
         { height: capturedHeight },
@@ -737,18 +739,24 @@ async function main({ env = process.env, runCommand = run, browserType } = {}) {
           await rm(partial, { force: true }).catch(() => {});
         }
       }
-      if (!captured) throw new Error('Staged viewport screenshot failed');
-      if (captured.fallback)
-        Object.assign(viewport, {
-          captureMode: 'viewport-fallback',
-          clipHeight: captured.height,
-        });
-      await rename(partial, join(evidence, screenshot));
+      if (!captured) {
+        console.error(
+          `Staged viewport screenshot advisory at ${width}px: ${viewport.screenshotErrors.join(', ') || 'Error:other'}. Style checks passed. Promotion is not blocked.`
+        );
+      } else {
+        if (captured.fallback)
+          Object.assign(viewport, {
+            captureMode: 'viewport-fallback',
+            clipHeight: captured.height,
+          });
+        await rename(partial, join(evidence, screenshot));
+      }
       viewports.push({
         width,
         height: 900,
         path: '/en',
-        screenshot,
+        screenshot: captured ? 'PASS' : 'FAILED_ADVISORY',
+        ...(captured ? { image: screenshot } : {}),
         scrollHeight: viewport.scrollHeight,
         captureMode: viewport.captureMode,
         tileCount: viewport.tileCount,
@@ -775,7 +783,9 @@ async function main({ env = process.env, runCommand = run, browserType } = {}) {
       `${JSON.stringify(receipt, null, 2)}\n`
     );
     console.log(
-      'Verified staged CSS bytes, utility rendering and 390/1440 screenshots.'
+      viewports.some((view) => view.screenshot === 'FAILED_ADVISORY')
+        ? 'Verified staged CSS bytes and utility rendering. Screenshot capture is advisory and did not block promotion.'
+        : 'Verified staged CSS bytes, utility rendering and 390/1440 screenshots.'
     );
     return receipt;
   } catch (error) {

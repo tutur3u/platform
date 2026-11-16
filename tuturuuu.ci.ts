@@ -153,6 +153,19 @@ export const ci = {
   'workspace-cloudflare.yaml': true,
 };
 
+// Production planner deny-list, keyed by app id. A listed app resolves
+// shouldRun false on push and on workflow_dispatch, whatever the marker or
+// affected paths say. Delete one line to re-admit that app. Web (platform)
+// is absent: D227 one-slot waiver. These entries do not flip the workflow
+// switchboard above, so non-production CI selection stays as it is.
+export const productionAppExclusions: Record<string, string> = {
+  lettin: 'held: Lettin excluded until the R2 timeout fix is tested',
+  parley: 'held: Parley excluded until the R2 timeout fix is tested',
+  colab: 'held: Colab stays with its dedicated owner',
+  track: 'held: Track stays with its dedicated owner',
+  mind: 'held: Mind stays with its dedicated owner',
+};
+
 // Publication only: native build and original/restored acceptance remain enabled.
 // Admit each app only in an explicitly reviewed wave cutover PR.
 export const productionPublicationPolicy = {
