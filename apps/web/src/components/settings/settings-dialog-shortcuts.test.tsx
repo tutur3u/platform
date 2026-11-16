@@ -219,23 +219,7 @@ vi.mock(
   })
 );
 
-vi.mock('../../app/[locale]/dashboard-menu-item', () => ({
-  default: () => null,
-}));
-
-vi.mock('../../app/[locale]/invite-members-menu-item', () => ({
-  default: () => null,
-}));
-
-vi.mock('../../app/[locale]/meet-together-menu-item', () => ({
-  default: () => null,
-}));
-
-vi.mock('../../app/[locale]/report-problem-menu-item', () => ({
-  default: () => null,
-}));
-
-vi.mock('../../app/[locale]/rewise-menu-item', () => ({
+vi.mock('../../app/[locale]/report-problem-host', () => ({
   default: () => null,
 }));
 

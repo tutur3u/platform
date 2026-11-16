@@ -21,8 +21,8 @@ const marketingNavDropdownSource = source(
   'src/app/[locale]/marketing-nav/nav-dropdown.tsx'
 );
 const userNavClientSource = source('src/app/[locale]/user-nav-client.tsx');
-const reportProblemMenuItemSource = source(
-  'src/app/[locale]/report-problem-menu-item.tsx'
+const reportProblemHostSource = source(
+  'src/app/[locale]/report-problem-host.tsx'
 );
 const loginContentSource = source(
   'src/app/[locale]/(auth)/login/login-content.tsx'
@@ -426,7 +426,6 @@ describe('public shell compile graph', () => {
     for (const sourceText of [
       dropdownMenuSource,
       userNavClientSource,
-      reportProblemMenuItemSource,
     ] as const) {
       expect(sourceText).not.toMatch(staticImportPattern('@tuturuuu/icons'));
       expect(sourceText).not.toMatch(
@@ -981,14 +980,14 @@ describe('public shell compile graph', () => {
     );
   });
 
-  it('loads the report-problem dialog only after the menu action opens it', () => {
-    expect(reportProblemMenuItemSource).not.toMatch(
+  it('loads the report-problem dialog only after an open intent', () => {
+    expect(reportProblemHostSource).not.toMatch(
       staticImportPattern('@tuturuuu/ui/report-problem-dialog')
     );
-    expect(reportProblemMenuItemSource).toMatch(
+    expect(reportProblemHostSource).toMatch(
       /import\(\s*['"]@tuturuuu\/ui\/report-problem-dialog['"]\s*\)/u
     );
-    expect(reportProblemMenuItemSource).toContain('{open && (');
+    expect(reportProblemHostSource).toContain('return open ? (');
   });
 
   it('keeps Mantine styles out of the public root layout', () => {

@@ -62,11 +62,7 @@ import { SystemLanguageWrapper } from './(dashboard)/_components/system-language
 import { ThemeDropdownItems } from './(dashboard)/_components/theme-dropdown-items';
 import { fetchWorkspaces } from './(dashboard)/[wsId]/workspace-list-actions';
 import { useWorkspaceSelectorVisibility } from './(dashboard)/[wsId]/workspace-selector-visibility-context';
-import DashboardMenuItem from './dashboard-menu-item';
-import InviteMembersMenuItem from './invite-members-menu-item';
-import MeetTogetherMenuItem from './meet-together-menu-item';
-import ReportProblemMenuItem from './report-problem-menu-item';
-import RewiseMenuItem from './rewise-menu-item';
+import ReportProblemHost from './report-problem-host';
 import type { UserNavSettingsDialogProps } from './user-nav-settings-dialog';
 import UserPresenceIndicator from './user-presence-indicator';
 
@@ -228,6 +224,7 @@ export default function UserNavClient({
             <SettingsDialogFullscreenSkeleton />
           </Dialog>
         )}
+      <ReportProblemHost />
       {accountSwitcherOpen && (
         <AccountSwitcherModal
           open={accountSwitcherOpen}
@@ -311,15 +308,14 @@ export default function UserNavClient({
             </>
           )}
           {user && getPublicProfilePath(user.handle) && (
-            <PublicProfileMenuItem
-              href={getPublicProfilePath(user.handle)!}
-              label={t('common.public_profile')}
-            />
+            <>
+              <PublicProfileMenuItem
+                href={getPublicProfilePath(user.handle)!}
+                label={t('common.profile')}
+              />
+              <DropdownMenuSeparator />
+            </>
           )}
-          <DashboardMenuItem />
-          <RewiseMenuItem />
-          <MeetTogetherMenuItem />
-          <DropdownMenuSeparator />
           <DropdownMenuGroup>
             {wsId && (
               <>
@@ -416,14 +412,7 @@ export default function UserNavClient({
                 </DropdownMenuSubContent>
               </DropdownMenuPortal>
             </DropdownMenuSub>
-            <ReportProblemMenuItem />
           </DropdownMenuGroup>
-          {wsId && (
-            <>
-              <DropdownMenuSeparator />
-              <InviteMembersMenuItem />
-            </>
-          )}
           <DropdownMenuSeparator />
           {accounts.length >= 2 ? (
             <DropdownMenuItem
