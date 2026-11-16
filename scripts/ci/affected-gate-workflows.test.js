@@ -16,7 +16,10 @@ const scopedCallers = {
   'git-cloudflare.yaml': { app: 'git', jobs: ['build'] },
   'external-cloudflare.yaml': { app: 'external', jobs: ['build'] },
   'roadmap-cloudflare.yaml': { app: 'roadmap', jobs: ['build'] },
-  'rewise-cloudflare.yaml': { app: 'rewise', jobs: ['cutover-artifact'] },
+  'rewise-cloudflare.yaml': {
+    app: 'rewise',
+    jobs: ['cutover-artifact', 'native'],
+  },
   'meet-cloudflare.yaml': {
     app: 'meet',
     jobs: ['validate', 'restored-artifact'],
@@ -91,9 +94,18 @@ for (const [file, { app, jobs }] of Object.entries(scopedCallers)) {
 test('manual and production-only jobs retain their event and ref boundaries', () => {
   const dispatch = admittedPrContext('true');
   dispatch.github.event_name = 'workflow_dispatch';
+  // Rewise restored-bytes qualification runs on dispatch and on every
+  // affected main push, but never on an unaffected or unlabeled change.
   const rewise = workflows['rewise-cloudflare.yaml'].jobs.native.if;
   assert.equal(evaluateExpression(rewise, dispatch), true);
-  assert.equal(evaluateExpression(rewise, admittedPrContext('true')), false);
+  const mainPush = admittedPrContext('true');
+  mainPush.github.event_name = 'push';
+  mainPush.github.ref = 'refs/heads/main';
+  assert.equal(evaluateExpression(rewise, mainPush), true);
+  assert.equal(evaluateExpression(rewise, admittedPrContext('false')), false);
+  const unlabeled = admittedPrContext('true');
+  unlabeled.github.event.pull_request.labels = [];
+  assert.equal(evaluateExpression(rewise, unlabeled), false);
 
   const production = admittedPrContext('true');
   production.github.event_name = 'push';

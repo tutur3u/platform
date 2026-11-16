@@ -157,11 +157,12 @@ jobs:
       deployments: read
     with:
       workflow_name: rewise-cloudflare.yaml
-  # Staging-profile qualification runs on demand until the app declares its
-  # signed-out runtime outcomes and its proxy admits /api/build-info.
+  # Staging/production-profile qualification runs on every affected main push:
+  # the app declares its signed-out runtime outcomes and its proxy admits
+  # /api/build-info, so restored-bytes acceptance no longer needs a dispatch.
   native:
     needs: [check-ci, affected-gate]
-    if: ${{ (needs.affected-gate.outputs.run == 'true' && (needs.check-ci.outputs.should_run == 'true' && github.event_name == 'workflow_dispatch')) && (github.event_name != 'pull_request' || contains(github.event.pull_request.labels.*.name, 'ready-for-ci')) }}
+    if: ${{ (needs.affected-gate.outputs.run == 'true' && (needs.check-ci.outputs.should_run == 'true')) && (github.event_name != 'pull_request' || contains(github.event.pull_request.labels.*.name, 'ready-for-ci')) }}
     uses: ./.github/workflows/native-start-app.yaml
     permissions:
       contents: read
