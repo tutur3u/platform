@@ -1,7 +1,12 @@
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import { createBasePath } from '../../../packages/start-bridge/src/core/base-path';
+import { assertMountIsolationConfig } from '../../../packages/start-bridge/src/core/mount-isolation';
 import { resolveAppBase } from '../../../packages/start-bridge/src/core/mounts';
+import {
+  HIVE_MOUNTED_REPORT_ONLY_POLICY,
+  hiveContentSecurityPolicy,
+} from './apex-csp';
 import { hiveApexMounts } from './apex-mount';
 
 const shipped = { app: 'hive', ...hiveApexMounts };
@@ -113,6 +118,63 @@ check('the app-owned config is what the generated worker spreads', () => {
   );
   assert.match(workflow, /NEXT_PUBLIC_APP_URL=https:\/\/hive\.tuturuuu\.com/);
   assert.match(workflow, /NEXT_PUBLIC_APP_URL: https:\/\/hive\.tuturuuu\.com/);
+});
+
+check('the mount is isolated and owns only NEXT_LOCALE (D360 R3/R4)', () => {
+  assert.deepEqual(hiveApexMounts.isolation, { ownedCookies: ['NEXT_LOCALE'] });
+  assertMountIsolationConfig(hiveApexMounts.isolation);
+  const config = readFileSync(
+    new URL('../start-bridge.config.ts', import.meta.url),
+    'utf8'
+  );
+  assert.match(config, /csp: hiveContentSecurityPolicy/);
+});
+
+check('a strict nonce CSP on tuturuuu.com/hive only (D360 R2)', () => {
+  const nonce = 'bm9uY2UtZml4dHVyZQ==';
+  const mounted = hiveContentSecurityPolicy(nonce, {
+    request: new Request('https://tuturuuu.com/hive/en/dashboard'),
+  });
+  assert.ok(mounted);
+  const directives = new Map(
+    mounted.split(';').map((directive) => {
+      const [name = '', ...values] = directive.trim().split(/\s+/u);
+      return [name, values] as const;
+    })
+  );
+  assert.deepEqual(directives.get('script-src'), [
+    `'nonce-${nonce}'`,
+    "'strict-dynamic'",
+  ]);
+  assert.deepEqual(directives.get('object-src'), ["'none'"]);
+  assert.deepEqual(directives.get('base-uri'), ["'none'"]);
+  assert.deepEqual(directives.get('frame-ancestors'), ["'none'"]);
+  for (const forbidden of [
+    "'unsafe-inline'",
+    "'unsafe-eval'",
+    "'unsafe-hashes'",
+    "'wasm-unsafe-eval'",
+    '*',
+    'http:',
+    'https:',
+    'data:',
+  ])
+    assert.ok(
+      !mounted.split(/\s+/u).includes(forbidden),
+      `${forbidden} in ${mounted}`
+    );
+  assert.equal(
+    HIVE_MOUNTED_REPORT_ONLY_POLICY,
+    "require-trusted-types-for 'script'"
+  );
+  for (const url of [
+    'https://hive.tuturuuu.com/en/dashboard',
+    'https://tuturuuu.com/hiveful',
+  ])
+    assert.equal(
+      hiveContentSecurityPolicy(nonce, { request: new Request(url) }),
+      null
+    );
 });
 
 console.log(`executed ${executed}`);

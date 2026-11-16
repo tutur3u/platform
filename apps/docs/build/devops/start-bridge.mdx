@@ -286,6 +286,44 @@ Whole-handler tests run through `createBridgeHandler`:
 - root-mode controls behave exactly as today;
 - a client-sent `x-tuturuuu-app-base` never switches modes.
 
+### Mounted isolation (opt-in)
+
+A mount may opt into same-origin isolation with `mounts.isolation` (Hive does:
+`apps/hive/cloudflare/apex-mount.ts`). It narrows what app code on
+`tuturuuu.com/<app>` can see and write, so a defect in the app cannot read or
+rewrite central cookies through its own server:
+
+- **Request cookies.** App code (`proxy.ts`, endpoints, server functions,
+  SSR, central forwards) receives only the app's `ownedCookies`, the read-only
+  `__Host-tuturuuu_app_signed_out` fence, and the Supabase session reduced to
+  an access-token-only value (`refresh_token` emptied, provider tokens
+  removed). A mounted app can verify the user but can never rotate, extend or
+  clear the central session; an expired access token fails closed to the
+  app's login path. Per-app and Web app sessions, device, SSO, MFA approval,
+  PKCE and other apps' cookies never reach it.
+- **Response cookies.** Every `Set-Cookie` the app does not own is dropped,
+  including Supabase rotations and deletions. Owned cookies are rewritten
+  host-only (`Domain` removed), `Path=<base>` and `Secure`. `__Host-` names,
+  Supabase names and the fence cannot be owned. Client navigation writes
+  `NEXT_LOCALE` at the mount base too (`localeCookieString`).
+- **Upstreams.** A forward to any origin other than the central Web API
+  carries no `Cookie` or `Authorization`.
+
+Root (subdomain) requests are unchanged. Isolation does not make the browser
+session cookie `HttpOnly`: `sb-<ref>-auth-token` stays readable by
+`document.cookie` on every `*.tuturuuu.com` origin until Stage A. Same-origin
+script can still call Web's `/api/*` with the session, so pair isolation with
+a strict nonce CSP on the mount (Hive: `apps/hive/cloudflare/apex-csp.ts`,
+plus report-only Trusted Types). Coverage:
+`packages/start-bridge/src/core/mount-isolation.test.ts`,
+`packages/start-bridge/src/start/mount-isolation-handler.test.ts` and
+`apps/hive/cloudflare/apex-mount.check.ts`.
+
+The logout fence exemptions (`/verify-token`, `/api/auth/verify-app-token`,
+`/api/auth/logout`) are base-aware: the bridge builds requests with Next
+`basePath`, and `appLogoutFenceResponse` also accepts an explicit `basePath`
+(`packages/auth/src/proxy/logout-fence-mount.test.ts`).
+
 ### CSRF
 
 Cookie-authenticated unsafe requests (no `Authorization: Bearer`) pass only

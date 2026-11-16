@@ -1,4 +1,5 @@
 import { normalizeBasePath } from './base-path';
+import type { MountIsolationConfig } from './mount-isolation';
 
 /**
  * Where one compiled app artifact is served. A request's base is derived from
@@ -25,6 +26,13 @@ export interface AppMountConfig {
    * (default) serves them at `/`; `reject` answers 404.
    */
   unknownHost?: 'root' | 'reject';
+  /**
+   * Same-origin isolation for mounted (apex) requests: request cookies are
+   * narrowed to the app's own, the logout fence and an access-token-only
+   * Supabase session; only owned cookies are written, at `Path=<base>`.
+   * Unset keeps the shared-session behaviour (see `mount-isolation`).
+   */
+  isolation?: MountIsolationConfig;
 }
 
 export interface ResolvedMount {

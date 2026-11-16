@@ -46,11 +46,12 @@ function setLocaleCookie(
   response.cookies.set(
     LOCALE_COOKIE_NAME,
     locale,
-    getCanonicalLocaleCookieOptions(
-      request,
-      LOCALE_COOKIE_ORIGINS,
-      LOCALE_COOKIE_OPTIONS
-    )
+    getCanonicalLocaleCookieOptions(request, LOCALE_COOKIE_ORIGINS, {
+      ...LOCALE_COOKIE_OPTIONS,
+      // On the tuturuuu.com/hive mount the cookie stays under /hive, so it
+      // never changes Web's apex locale (the bridge also enforces this).
+      path: request.nextUrl.basePath || '/',
+    })
   );
 }
 

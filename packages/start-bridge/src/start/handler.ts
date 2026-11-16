@@ -4,11 +4,17 @@ import {
   decideOneOriginRequest,
   readOneOriginEnv,
 } from '@tuturuuu/utils/one-origin-routing';
-import type { NextRequest } from 'next/dist/server/web/spec-extension/request';
+import { NextRequest } from 'next/dist/server/web/spec-extension/request';
 import { forwardToCentralApi } from '../core/api-forward';
 import { type AssetsBinding, fetchAsset } from '../core/assets';
 import { type BasePath, createBasePath } from '../core/base-path';
 import { createNonce } from '../core/csp';
+import {
+  assertMountIsolationConfig,
+  isolateMountedRequest,
+  scopeMountedResponseCookies,
+  withoutCredentials,
+} from '../core/mount-isolation';
 import { type BridgeEndpoint, dispatchEndpoint } from '../core/endpoints';
 import {
   APP_BASE_HEADER,
@@ -120,6 +126,8 @@ export function createBridgeHandler<
         return false;
       }
     });
+  const isolation = options.mounts?.isolation;
+  if (isolation) assertMountIsolationConfig(isolation);
   const publicAssets = options.publicAssets ?? new Set<string>();
   const isFramable = createFramablePathMatcher(options.framablePaths);
   const inBase = (path: string, prefix: string) =>
@@ -174,7 +182,13 @@ export function createBridgeHandler<
     const headers = new Headers(incoming.headers);
     headers.delete(APP_BASE_HEADER);
     if (!base.isRoot) headers.set(APP_BASE_HEADER, base.basePath);
-    const request = new Request(incoming, { headers });
+    // An isolated mount sees only its own cookies, the logout fence and an
+    // access-token-only Supabase session; admission below still reads the
+    // incoming request's own headers.
+    const isolated = !base.isRoot && isolation ? isolation : undefined;
+    const request = isolated
+      ? isolateMountedRequest(new Request(incoming, { headers }), isolated)
+      : new Request(incoming, { headers });
     // A mounted app shares the root session: it never mints or refreshes a
     // per-app session, so those endpoints are refused before anything runs.
     if (!base.isRoot) {
@@ -225,13 +239,20 @@ export function createBridgeHandler<
             : null;
         if (endpoint) return endpoint;
         if (central || pathname === '/api' || pathname.startsWith('/api/')) {
+          const centralOrigin = options.centralApiOrigin(env);
           const origin =
             options.apiOrigin?.(forwarded, { env, path: pathname }) ??
-            options.centralApiOrigin(env);
-          if (options.forwardApi) return options.forwardApi(forwarded, origin);
+            centralOrigin;
+          // An isolated mount sends credentials only to the central Web API,
+          // which owns the shared session; any other upstream gets none.
+          const upstream =
+            isolated && origin !== centralOrigin
+              ? new NextRequest(withoutCredentials(forwarded))
+              : forwarded;
+          if (options.forwardApi) return options.forwardApi(upstream, origin);
           // The central API sees the app-relative path, never the base.
           return forwardToCentralApi(
-            base.stripRequest(forwarded) ?? forwarded,
+            base.stripRequest(upstream) ?? upstream,
             origin,
             // Under a mount the app owns only its base; at a host root it
             // owns every path, so a same-origin central API is a loop.
@@ -266,7 +287,13 @@ export function createBridgeHandler<
     const finalized = base.finalizeResponse(response);
     const final = base.isRoot
       ? finalized
-      : stripMountedSessionWrites(finalized);
+      : isolated
+        ? scopeMountedResponseCookies(
+            stripMountedSessionWrites(finalized),
+            base.basePath,
+            isolated
+          )
+        : stripMountedSessionWrites(finalized);
     if (!nonce || !options.csp) return final;
     // A framable path's upstream policy (Web's `sandbox` CSP for uploaded
     // WebGL builds) must reach the browser untouched, or the uploaded

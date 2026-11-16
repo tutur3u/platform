@@ -11,5 +11,5 @@ test('hive apex mount contract', () => {
   const result = spawnSync('bun', [checker], { encoding: 'utf8' });
   const output = `${result.stdout ?? ''}${result.stderr ?? ''}`;
   assert.equal(result.status, 0, output);
-  assert.match(output, /executed 4/);
+  assert.match(output, /executed 6/);
 });

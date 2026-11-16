@@ -42,6 +42,16 @@ function getSafeRequestOrigin(request: NextRequest) {
 
 export function createHivePublicUrl(path: string, request?: NextRequest) {
   const requestOrigin = request ? getSafeRequestOrigin(request) : null;
-
-  return new URL(path, requestOrigin ?? HIVE_PUBLIC_APP_URL);
+  const url = new URL(path, requestOrigin ?? HIVE_PUBLIC_APP_URL);
+  // On the tuturuuu.com/hive mount the request carries Next basePath '/hive';
+  // a same-origin app URL stays inside it instead of landing on Web's path.
+  const basePath = requestOrigin ? request?.nextUrl.basePath : '';
+  if (
+    basePath &&
+    url.origin === requestOrigin &&
+    url.pathname !== basePath &&
+    !url.pathname.startsWith(`${basePath}/`)
+  )
+    url.pathname = `${basePath}${url.pathname === '/' ? '' : url.pathname}`;
+  return url;
 }

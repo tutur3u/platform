@@ -653,13 +653,13 @@ describe('mounted no-writer guard', () => {
         expect(refused.status).toBe(405);
         expect(refused.headers.get('allow')).toBe('POST');
       }
-      for (const headers of <Record<string, string>[]>[
+      for (const headers of [
         { cookie: 'sb-ref-auth-token=x', 'sec-fetch-site': 'cross-site' },
         { 'sec-fetch-site': 'cross-site' },
         { 'sec-fetch-site': 'same-site' },
         { origin: 'https://evil.tuturuuu.com' },
         {},
-      ]) {
+      ] as Record<string, string>[]) {
         const forged = await call(url, { method: 'POST', headers });
         expect(forged.status).toBe(403);
       }

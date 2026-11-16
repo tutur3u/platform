@@ -14,6 +14,7 @@
     "./locale-cookie": "./src/locale-cookie.ts",
     "./supabase-session-user": "./src/supabase-session-user.ts",
     "./proxy": "./src/proxy/index.ts",
+    "./proxy/logout-fence": "./src/proxy/logout-fence.ts",
     "./cross-app": "./src/cross-app/index.ts",
     "./cross-app/server": "./src/cross-app/server.ts",
     "./cross-app/token-verifier": "./src/cross-app/token-verifier.tsx",

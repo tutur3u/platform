@@ -2,6 +2,7 @@
 
 import { type ComponentProps, forwardRef } from 'react';
 import { useLocale } from 'use-intl';
+import { runtimeAppBase } from '../core/app-url';
 import Link from '../next/link';
 import {
   permanentRedirect as rawPermanentRedirect,
@@ -11,6 +12,16 @@ import {
 } from '../next/navigation';
 import { createLocalizedPaths, type Href } from './localized-path';
 import type { BridgeRouting } from './routing';
+
+/**
+ * The `NEXT_LOCALE` write for a locale switch. On a mount (`/hive`) it is
+ * scoped to the base, so a mounted app never changes the apex (Web) locale
+ * cookie; at a host root it keeps `path=/`.
+ */
+export function localeCookieString(locale: string, basePath: string) {
+  const path = basePath || '/';
+  return `NEXT_LOCALE=${encodeURIComponent(locale)}; path=${path}; max-age=31536000; samesite=lax${basePath ? '; secure' : ''}`;
+}
 
 /**
  * `next-intl/navigation` `createNavigation(routing)` on the bridge's
@@ -26,7 +37,7 @@ export function createNavigation<const Locales extends readonly string[]>(
   function rememberLocale(locale: string | undefined, current: string) {
     if (mode !== 'never' || !locale || locale === current) return;
     if (typeof document !== 'undefined')
-      document.cookie = `NEXT_LOCALE=${locale}; path=/; max-age=31536000; samesite=lax`;
+      document.cookie = localeCookieString(locale, runtimeAppBase());
   }
 
   const LocalizedLink = forwardRef<
