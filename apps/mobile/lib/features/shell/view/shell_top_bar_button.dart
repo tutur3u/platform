@@ -51,7 +51,6 @@ class ShellTopBarButton extends StatelessWidget {
         child: InkResponse(
           onTap: onPressed,
           containedInkWell: true,
-          highlightShape: BoxShape.circle,
           hoverColor: style.foreground.withValues(alpha: 0.06),
           highlightColor: style.foreground.withValues(alpha: 0.08),
           splashFactory: NoSplash.splashFactory,

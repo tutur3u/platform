@@ -64,7 +64,7 @@ class _ShellDockBarState extends State<ShellDockBar> {
   ShellDockEntry? _lastBack;
 
   static const _gap = 4.0;
-  static const _backExtent = ShellDockMetrics.slot + _gap * 2 + 1;
+  static const double _backExtent = ShellDockMetrics.slot + _gap * 2 + 1;
 
   /// Narrower slots show glyphs only; the label stays in semantics.
   static const _minLabelledSlot = 44.0;

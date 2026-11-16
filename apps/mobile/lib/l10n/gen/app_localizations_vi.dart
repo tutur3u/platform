@@ -7427,6 +7427,9 @@ class AppLocalizationsVi extends AppLocalizations {
   String get settingsAccountSectionTitle => 'Tài khoản';
 
   @override
+  String get settingsDeleteAccount => 'Xóa tài khoản';
+
+  @override
   String get settingsAccountTab => 'Tài khoản';
 
   @override

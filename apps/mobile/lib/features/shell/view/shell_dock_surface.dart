@@ -32,7 +32,7 @@ class ShellDockSurface extends StatelessWidget {
           decoration: BoxDecoration(
             color: style.dockSurface,
             borderRadius: shape,
-            border: Border.all(color: style.floatingOutline, width: edge),
+            border: Border.all(color: style.floatingOutline),
           ),
           child: Material(color: Colors.transparent, child: child),
         ),

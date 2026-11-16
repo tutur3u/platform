@@ -14275,6 +14275,12 @@ abstract class AppLocalizations {
   /// **'Account'**
   String get settingsAccountSectionTitle;
 
+  /// No description provided for @settingsDeleteAccount.
+  ///
+  /// In en, this message translates to:
+  /// **'Delete account'**
+  String get settingsDeleteAccount;
+
   /// No description provided for @settingsAccountTab.
   ///
   /// In en, this message translates to:

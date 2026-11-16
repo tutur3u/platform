@@ -7514,6 +7514,9 @@ class AppLocalizationsEn extends AppLocalizations {
   String get settingsAccountSectionTitle => 'Account';
 
   @override
+  String get settingsDeleteAccount => 'Delete account';
+
+  @override
   String get settingsAccountTab => 'Account';
 
   @override

@@ -3,8 +3,8 @@ import 'package:mobile/core/layout/page_insets.dart';
 import 'package:mobile/core/router/routes.dart';
 import 'package:mobile/features/shell/view/dock_action_transition.dart';
 
-const floatingDockHorizontalInset = ShellDockMetrics.inset;
-const floatingDockBottomGap = ShellDockMetrics.inset;
+const double floatingDockHorizontalInset = ShellDockMetrics.inset;
+const double floatingDockBottomGap = ShellDockMetrics.inset;
 const floatingDockActionSize = 52.0;
 
 bool usesRootDockSlots(String location) =>

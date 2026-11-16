@@ -11,7 +11,7 @@ import 'shell_chrome_scenes.dart';
 
 /// Notifications feed rows grouped under day captions.
 class ShellSceneNotificationsBody extends StatelessWidget {
-  const ShellSceneNotificationsBody();
+  const ShellSceneNotificationsBody({super.key});
 
   AppNotification _item(
     String id,
@@ -101,7 +101,7 @@ class ShellSceneNotificationsBody extends StatelessWidget {
 
 /// The workspace switcher's rows on the shared sheet surface over the scrim.
 class ShellSceneSwitcherSheet extends StatelessWidget {
-  const ShellSceneSwitcherSheet();
+  const ShellSceneSwitcherSheet({super.key});
 
   @override
   Widget build(BuildContext context) {
