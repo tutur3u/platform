@@ -1,5 +1,6 @@
 import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
+import { createTranslator } from 'next-intl';
 import { describe, expect, it } from 'vitest';
 import en from '../../messages/en.json';
 import vi from '../../messages/vi.json';
@@ -16,6 +17,35 @@ import {
 } from './client-messages';
 
 describe('getPublicClientMessages', () => {
+  it.each([
+    { locale: 'en' as const, messages: en },
+    { locale: 'vi' as const, messages: vi },
+  ])(
+    'renders logout choices without raw keys in $locale',
+    ({ locale, messages }) => {
+      const catalog = getClientMessages(messages, [
+        ...ROOT_CLIENT_MESSAGE_NAMESPACES,
+        ...MARKETING_CLIENT_MESSAGE_NAMESPACES,
+      ]);
+      if (!catalog.logout) throw new Error('Missing logout namespace');
+      const t = createTranslator({ locale, messages: { logout: catalog.logout } });
+      expect(t('logout.logged-out-from', { app: 'App' })).not.toBe(
+        'logout.logged-out-from'
+      );
+      for (const key of [
+        'also-logout-question',
+        'logout-of-tuturuuu',
+        'go-to-dashboard',
+        'confirm-title',
+        'description',
+      ] as const) {
+        const path = `logout.${key}` as const;
+        expect(t(path)).not.toBe(path);
+        expect(t(path)).not.toBe('');
+      }
+    }
+  );
+
   it('keeps only explicitly client-visible root paths', () => {
     const messages = {
       common: { about: 'About', save: 'Save' },
