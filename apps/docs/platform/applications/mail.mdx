@@ -312,6 +312,14 @@ Outgoing inline images replace the entire draft attachment URL with a CID URL.
 The reader also recognizes stored CID references prefixed by a Mail draft path,
 resolving only to an attachment belonging to the displayed message.
 
+The mobile reader applies the same Content-ID matching rules
+(`mail_inline_images.dart`). It fetches each referenced raster image (at most
+4 MB each, 8 MB per message) through the authenticated attachment API and
+embeds it as a data URI, so no attachment URL or credential reaches the
+WebView. A placeholder holds the image's place until the bytes arrive, and
+tapping a resolved image opens the full-screen attachment viewer. Coverage:
+`test/features/mail/mail_inline_images_test.dart`.
+
 Each web message's more menu offers View source, Copy raw message, and Copy headers.
 These actions read the original stored RFC822 message, including duplicate and
 folded headers, only after the existing mailbox membership and message visibility

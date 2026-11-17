@@ -1,5 +1,6 @@
 import 'package:html/dom.dart' as dom;
 import 'package:html/parser.dart' as html;
+import 'package:mobile/features/mail/view/mail_inline_images.dart';
 
 /// The isolated reader counterpart of apps/mail/lib/mail/html.ts.
 /// Styles are retained only here, behind the reader's CSP and disabled scripts.
@@ -148,14 +149,15 @@ Iterable<dom.Node> _sanitizeNode(
     }
     var value = attribute.value;
     if (name == 'src') {
-      if (value.startsWith('cid:')) {
-        final cid = value.substring(4).replaceAll(RegExp(r'^<|>$'), '');
+      final cid = mailContentIdFromSource(value);
+      if (cid != null) {
         final replacement = inlineImages[cid];
         if (replacement != null && _isInlineImage(replacement)) {
           value = replacement;
+          clean.attributes[mailInlineImageAttribute] = cid;
         } else {
           // Keep the placeholder until authenticated attachment bytes arrive.
-          value = 'cid:$cid';
+          value = 'cid:${Uri.encodeComponent(cid)}';
         }
       } else if (!_isAllowedUrl(value, image: true)) {
         continue;
@@ -186,6 +188,6 @@ bool _isAllowedUrl(String value, {required bool image}) {
 }
 
 bool _isInlineImage(String value) => RegExp(
-  r'^data:image/(?:png|jpeg|gif|webp|avif);base64,[A-Za-z0-9+/=]+$',
+  r'^data:image/(?:png|jpeg|gif|webp|avif|bmp);base64,[A-Za-z0-9+/=]+$',
   caseSensitive: false,
 ).hasMatch(value);

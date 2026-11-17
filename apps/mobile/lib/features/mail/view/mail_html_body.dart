@@ -8,6 +8,7 @@ import 'package:mobile/core/router/mobile_link_launcher.dart';
 import 'package:mobile/features/mail/view/mail_appearance_control.dart';
 import 'package:mobile/features/mail/view/mail_html_document.dart';
 import 'package:mobile/features/mail/view/mail_image_preference.dart';
+import 'package:mobile/features/mail/view/mail_inline_images.dart';
 import 'package:mobile/features/mail/view/mail_rendered_documents.dart';
 import 'package:mobile/l10n/l10n.dart';
 import 'package:mobile/widgets/nova_loading_indicator.dart';
@@ -18,6 +19,7 @@ class MailHtmlBody extends StatefulWidget {
   const MailHtmlBody({
     required this.html,
     this.inlineImages = const {},
+    this.onInlineImageTap,
     this.fallbackText = '',
     this.embedded = true,
     this.onViewOriginal,
@@ -36,6 +38,9 @@ class MailHtmlBody extends StatefulWidget {
   final ValueChanged<bool>? onImagesChanged;
   final bool showControls;
   final Map<String, String> inlineImages;
+
+  /// Opens a resolved inline image, identified by its normalized Content-ID.
+  final ValueChanged<String>? onInlineImageTap;
   final String fallbackText;
   final bool embedded;
   final VoidCallback? onViewOriginal;
@@ -234,6 +239,11 @@ class _MailHtmlBodyState extends State<MailHtmlBody> {
                         value.startsWith('about:blank#')) &&
                     action.isForMainFrame) {
                   return NavigationActionPolicy.ALLOW;
+                }
+                if (uri?.scheme == mailInlineImageScheme) {
+                  final contentId = Uri.decodeComponent(uri!.path);
+                  widget.onInlineImageTap?.call(contentId);
+                  return NavigationActionPolicy.CANCEL;
                 }
                 if (uri != null &&
                     ['https', 'http', 'mailto', 'tel'].contains(uri.scheme) &&

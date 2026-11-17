@@ -3,7 +3,9 @@ import 'dart:convert';
 
 import 'package:flutter/material.dart';
 import 'package:mobile/features/mail/data/mail_repository.dart';
+import 'package:mobile/features/mail/view/mail_attachment_preview.dart';
 import 'package:mobile/features/mail/view/mail_html_body.dart';
+import 'package:mobile/features/mail/view/mail_inline_images.dart';
 import 'package:mobile/features/mail/view/mail_invitation_card.dart';
 import 'package:mobile/features/mail/view/mail_rendered_documents.dart';
 
@@ -38,11 +40,14 @@ class MailMessageContent extends StatefulWidget {
 
 class _MailMessageContentState extends State<MailMessageContent> {
   Map<String, String> _images = const {};
+  Map<String, Map<String, dynamic>> _imageFiles = const {};
   int _generation = 0;
-  String get _html =>
-      widget.message['bodyHtml'] as String? ??
-      widget.message['sanitizedHtml'] as String? ??
-      '';
+  String get _html => rewriteMailInlineAttachmentUrls(
+    widget.message['bodyHtml'] as String? ??
+        widget.message['sanitizedHtml'] as String? ??
+        '',
+    mailAttachmentContentIds(mailRows(widget.message['attachments'])),
+  );
 
   @override
   void initState() {
@@ -59,6 +64,7 @@ class _MailMessageContentState extends State<MailMessageContent> {
         oldWidget.threadId != widget.threadId ||
         oldWidget.repository != widget.repository) {
       _images = const {};
+      _imageFiles = const {};
       unawaited(_loadImages());
     }
   }
@@ -70,26 +76,15 @@ class _MailMessageContentState extends State<MailMessageContent> {
     final mailboxId = widget.mailboxId;
     final repository = widget.repository;
     final images = <String, String>{};
+    final sources = <String, Map<String, dynamic>>{};
     var totalBytes = 0;
-    var requests = 0;
-    for (final file in mailRows(message['attachments'])) {
-      final cid = (file['contentId'] as String?)?.replaceAll(
-        RegExp(r'^<|>$'),
-        '',
-      );
-      final type = (file['contentType'] as String? ?? '').toLowerCase();
-      final size = file['sizeBytes'] as num?;
-      if (cid == null ||
-          !_html.contains('cid:$cid') ||
-          !RegExp(r'^image/(png|jpeg|gif|webp|avif)$').hasMatch(type) ||
-          size == null ||
-          size <= 0 ||
-          size > 4 * 1024 * 1024 ||
-          totalBytes + size > 8 * 1024 * 1024) {
-        continue;
-      }
-      if (!mounted || generation != _generation || requests >= 12) break;
-      requests++;
+    for (final inline in mailInlineImageFiles(
+      _html,
+      mailRows(message['attachments']),
+    )) {
+      final file = inline.file;
+      final cid = inline.contentId;
+      if (!mounted || generation != _generation) return;
       try {
         final bytes = await repository.attachment(
           workspaceId,
@@ -104,14 +99,38 @@ class _MailMessageContentState extends State<MailMessageContent> {
         if (bytes.length > 4 * 1024 * 1024 || totalBytes > 8 * 1024 * 1024) {
           break;
         }
-        images[cid] = 'data:$type;base64,${base64Encode(bytes)}';
+        images[cid] =
+            'data:${inline.contentType};base64,${base64Encode(bytes)}';
+        sources[cid] = file;
       } on Object {
         // The reader's download action remains available.
       }
     }
     if (mounted && generation == _generation && images.isNotEmpty) {
-      setState(() => _images = images);
+      setState(() {
+        _images = images;
+        _imageFiles = sources;
+      });
     }
+  }
+
+  void _openInlineImage(String contentId) {
+    final file = _imageFiles[normalizeMailContentId(contentId)];
+    if (file == null) return;
+    unawaited(
+      Navigator.of(context, rootNavigator: true).push(
+        MaterialPageRoute<void>(
+          fullscreenDialog: true,
+          builder: (_) => MailAttachmentPreview(
+            repository: widget.repository,
+            workspaceId: widget.workspaceId,
+            mailboxId: widget.mailboxId,
+            messageId: widget.message['id'] as String,
+            file: file,
+          ),
+        ),
+      ),
+    );
   }
 
   @override
@@ -125,6 +144,7 @@ class _MailMessageContentState extends State<MailMessageContent> {
         : MailHtmlBody(
             html: _html,
             inlineImages: _images,
+            onInlineImageTap: _openInlineImage,
             fallbackText: text,
             imagesVisible: widget.imagesVisible,
             onImagesChanged: widget.onImagesChanged,

@@ -1,6 +1,7 @@
 import 'package:html/dom.dart' as dom;
 import 'package:html/parser.dart' as html_parser;
 import 'package:mobile/features/mail/view/mail_html_sanitizer.dart';
+import 'package:mobile/features/mail/view/mail_inline_images.dart';
 
 enum MailMessageAppearance { original, light, dark }
 
@@ -40,6 +41,7 @@ String buildMailHtmlDocument(
   var body = sanitizeIsolatedMailHtml(html, inlineImages: inlineImages);
   final fragment = html_parser.parseFragment(body);
   _fitNewsletterForMobile(fragment);
+  _linkInlineImages(fragment);
   final dark = appearance == MailMessageAppearance.dark;
   final scheme = dark ? 'dark' : 'light';
   final background =
@@ -103,11 +105,35 @@ body{padding:12px;font:14px/1.6 ui-sans-serif,system-ui,sans-serif;overflow-wrap
 #mail-content>table{margin-inline:auto}
 img,video,svg,canvas{max-width:100%;object-fit:contain}
 img:not([height]){height:auto}table{max-width:100%!important}
+img[src^="cid:"]{display:inline-block;min-width:96px;min-height:72px;border-radius:8px;background:${dark ? '#ffffff14' : '#0000000d'};color:transparent}
 td,th{word-break:normal;overflow-wrap:anywhere}
 pre{max-width:100%;white-space:pre-wrap;word-break:break-word}
 blockquote{margin-inline:0;padding-inline-start:12px;border-inline-start:3px solid #737373}
 a[href^="mailto:"]{color:${dark ? '#8ab4ff' : '#2458b8'}!important;text-decoration:none!important}
 </style></head><body data-mail-preview="${appearance.name}"><div id="mail-scroll"><div id="mail-content">$body</div></div><style>$themeStyles$responsiveStyles</style></body></html>''';
+}
+
+/// Resolved inline images open the full-screen viewer when tapped. Scripts stay
+/// disabled, so the tap is a navigation the reader intercepts.
+void _linkInlineImages(dom.DocumentFragment fragment) {
+  for (final image in fragment.querySelectorAll(
+    'img[$mailInlineImageAttribute]',
+  )) {
+    var linked = false;
+    for (var parent = image.parent; parent != null; parent = parent.parent) {
+      if (parent.localName == 'a') {
+        linked = true;
+        break;
+      }
+    }
+    if (linked) continue;
+    final cid = image.attributes[mailInlineImageAttribute]!;
+    final link = dom.Element.tag('a')
+      ..attributes['href'] =
+          '$mailInlineImageScheme:${Uri.encodeComponent(cid)}';
+    image.replaceWith(link);
+    link.append(image);
+  }
 }
 
 void _fitNewsletterForMobile(dom.DocumentFragment fragment) {
