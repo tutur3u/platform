@@ -24,7 +24,6 @@ import SharedSidebarSettings from '@tuturuuu/ui/custom/settings/sidebar-settings
 import { SettingsDialogShell } from '@tuturuuu/ui/custom/settings-dialog-shell';
 import { SettingItemTab } from '@tuturuuu/ui/custom/settings-item-tab';
 import { SettingsSection } from '@tuturuuu/ui/custom/settings-section';
-import { useUserBooleanConfig } from '@tuturuuu/ui/hooks/use-user-config';
 import { toast } from '@tuturuuu/ui/sonner';
 import { Switch } from '@tuturuuu/ui/switch';
 import { isExactTuturuuuDotComEmail } from '@tuturuuu/utils/email/client';
@@ -83,11 +82,6 @@ export function SettingsDialog({
     wsId,
     ENABLE_CMS_GAMES_CONFIG_ID,
   ];
-
-  const { value: expandAllAccordions } = useUserBooleanConfig(
-    'EXPAND_SETTINGS_ACCORDIONS',
-    true
-  );
 
   // Fetch workspace for settings
   const { data: workspace } = useQuery({
@@ -214,8 +208,6 @@ export function SettingsDialog({
       navItems={navItems}
       activeTab={activeTab}
       onActiveTabChange={setActiveTab}
-      primaryGroupLabels={[cmsLabel]}
-      expandAllAccordions={expandAllAccordions}
       keyboardNavigation
     >
       <SatelliteWorkspaceSettingsPanel

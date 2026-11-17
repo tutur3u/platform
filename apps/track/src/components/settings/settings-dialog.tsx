@@ -26,7 +26,6 @@ import { KeyboardShortcutsSettings } from '@tuturuuu/ui/custom/settings/keyboard
 import { LunarCalendarSettings } from '@tuturuuu/ui/custom/settings/lunar-calendar-settings';
 import SharedSidebarSettings from '@tuturuuu/ui/custom/settings/sidebar-settings';
 import { SettingsDialogShell } from '@tuturuuu/ui/custom/settings-dialog-shell';
-import { useUserBooleanConfig } from '@tuturuuu/ui/hooks/use-user-config';
 import { isExactTuturuuuDotComEmail } from '@tuturuuu/utils/email/client';
 import { useTranslations } from 'next-intl';
 import { useState } from 'react';
@@ -52,11 +51,6 @@ export function SettingsDialog({
 }: SettingsDialogProps) {
   const t = useTranslations();
   const [activeTab, setActiveTab] = useState(defaultTab);
-
-  const { value: expandAllAccordions } = useUserBooleanConfig(
-    'EXPAND_SETTINGS_ACCORDIONS',
-    true
-  );
 
   const navItems = [
     ...(wsId
@@ -159,8 +153,6 @@ export function SettingsDialog({
       navItems={navItems}
       activeTab={activeTab}
       onActiveTabChange={setActiveTab}
-      primaryGroupLabels={[]}
-      expandAllAccordions={expandAllAccordions}
       keyboardNavigation
     >
       <SatelliteWorkspaceSettingsPanel

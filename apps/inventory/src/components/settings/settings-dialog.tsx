@@ -28,7 +28,6 @@ import SharedSidebarSettings from '@tuturuuu/ui/custom/settings/sidebar-settings
 import { SettingsDialogShell } from '@tuturuuu/ui/custom/settings-dialog-shell';
 import { SettingItemTab } from '@tuturuuu/ui/custom/settings-item-tab';
 import { SettingsSection } from '@tuturuuu/ui/custom/settings-section';
-import { useUserBooleanConfig } from '@tuturuuu/ui/hooks/use-user-config';
 import { isExactTuturuuuDotComEmail } from '@tuturuuu/utils/email/client';
 import { useTranslations } from 'next-intl';
 import { useState } from 'react';
@@ -58,11 +57,6 @@ export function SettingsDialog({
       ? 'inventory_payments'
       : defaultTab
   );
-  const { value: expandAllAccordions } = useUserBooleanConfig(
-    'EXPAND_SETTINGS_ACCORDIONS',
-    true
-  );
-
   const { data: workspace } = useQuery({
     queryKey: ['workspace', wsId],
     queryFn: async () => {
@@ -164,8 +158,6 @@ export function SettingsDialog({
       navItems={navItems}
       activeTab={activeTab}
       onActiveTabChange={setActiveTab}
-      primaryGroupLabels={[inventoryLabel]}
-      expandAllAccordions={expandAllAccordions}
       keyboardNavigation
     >
       <SatelliteWorkspaceSettingsPanel

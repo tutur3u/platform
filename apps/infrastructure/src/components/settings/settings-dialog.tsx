@@ -17,7 +17,6 @@ import { AppearanceSettings } from '@tuturuuu/ui/custom/settings/appearance-sett
 import { KeyboardShortcutsSettings } from '@tuturuuu/ui/custom/settings/keyboard-shortcuts-settings';
 import SharedSidebarSettings from '@tuturuuu/ui/custom/settings/sidebar-settings';
 import { SettingsDialogShell } from '@tuturuuu/ui/custom/settings-dialog-shell';
-import { useUserBooleanConfig } from '@tuturuuu/ui/hooks/use-user-config';
 import { isExactTuturuuuDotComEmail } from '@tuturuuu/utils/email/client';
 import { useTranslations } from 'next-intl';
 import { useState } from 'react';
@@ -37,10 +36,6 @@ export function SettingsDialog({
 }: SettingsDialogProps) {
   const t = useTranslations();
   const [activeTab, setActiveTab] = useState(defaultTab);
-  const { value: expandAllAccordions } = useUserBooleanConfig(
-    'EXPAND_SETTINGS_ACCORDIONS',
-    true
-  );
   const { data: workspace } = useQuery({
     enabled: Boolean(wsId),
     queryFn: () => getWorkspace(wsId ?? ''),
@@ -82,7 +77,6 @@ export function SettingsDialog({
   return (
     <SettingsDialogShell
       activeTab={activeTab}
-      expandAllAccordions={expandAllAccordions}
       keyboardNavigation
       navItems={navItems}
       onActiveTabChange={setActiveTab}

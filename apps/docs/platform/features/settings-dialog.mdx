@@ -18,6 +18,13 @@ have a visible active state and an accessible current-page marker. Exactly one
 entry is current: the active tab name matched exactly within the first group that
 owns it. Closing, search shortcuts and URL state keep their behavior.
 
+Navigation groups are fixed labels that never collapse, so every tab is one
+click away and search results always land on a visible entry. This applies to
+the shared shell in apps/web and every satellite; there is no per-user
+"expand all sections" preference, and a stored `EXPAND_SETTINGS_ACCORDIONS`
+user config is ignored. The fixed-label case is covered by
+`settings-dialog-shell.test.tsx` ("shows every group as a fixed label").
+
 On mobile, a section selector opens a navigation drawer. The drawer shows one
 highlight, which starts on the current section and also carries a check mark.
 Touch and hover never move that highlight; the keyboard and search do, and
@@ -296,7 +303,7 @@ Rules:
 
 `.settings-surface` in `packages/ui/src/globals.css` scopes the contrast tokens to the dialog. Dark mode's global `--border`, `--input`, `--muted` and `--accent` share one value, which hides form controls against a panel, so settings overrides them locally and leaves the rest of the product untouched. Disabled inputs and select triggers stay readable because a disabled value, such as a user ID, is often what someone came to read or copy.
 
-The sidebar shows group labels as plain text while the expand-all preference keeps groups open, because a chevron there would promise a toggle that does nothing. Turning the preference off restores collapsible groups. A group label that only repeats its single item is hidden.
+The sidebar shows group labels as plain text with no chevron, because groups never collapse. A group label that only repeats its single item is hidden.
 
 Regression coverage: `packages/ui/src/components/ui/custom/__tests__/settings-dialog-shell.test.tsx` and `packages/ui/src/components/ui/custom/__tests__/settings-section.test.tsx`.
 

@@ -19,7 +19,6 @@ import { isExactTuturuuuDotComEmail } from '@tuturuuu/utils/email/client';
 import { useTranslations } from 'next-intl';
 import { useState } from 'react';
 import { useSidebar } from '@/context/sidebar-context';
-import { useUserBooleanConfig } from '@/hooks/use-user-config';
 import { FormsAutosaveSettings } from './forms-autosave-settings';
 
 interface SettingsDialogProps {
@@ -37,11 +36,6 @@ export function SettingsDialog({
 }: SettingsDialogProps) {
   const t = useTranslations();
   const [activeTab, setActiveTab] = useState(defaultTab);
-  const { value: expandAllAccordions } = useUserBooleanConfig(
-    'EXPAND_SETTINGS_ACCORDIONS',
-    true
-  );
-
   const navItems = [
     {
       label: t('settings.preferences.forms'),
@@ -97,7 +91,6 @@ export function SettingsDialog({
         ) : undefined
       }
       activeTab={activeTab}
-      expandAllAccordions={expandAllAccordions}
       keyboardNavigation
       navItems={navItems}
       onActiveTabChange={setActiveTab}

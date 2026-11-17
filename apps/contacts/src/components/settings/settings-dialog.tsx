@@ -31,7 +31,6 @@ import { AppearanceSettings } from '@tuturuuu/ui/custom/settings/appearance-sett
 import { KeyboardShortcutsSettings } from '@tuturuuu/ui/custom/settings/keyboard-shortcuts-settings';
 import SharedSidebarSettings from '@tuturuuu/ui/custom/settings/sidebar-settings';
 import { SettingsDialogShell } from '@tuturuuu/ui/custom/settings-dialog-shell';
-import { useUserBooleanConfig } from '@tuturuuu/ui/hooks/use-user-config';
 import { useWorkspaceConfigs } from '@tuturuuu/ui/hooks/use-workspace-config';
 import { ContactLabelsSettings } from '@tuturuuu/users-ui/components/contact-labels-settings';
 import { isExactTuturuuuDotComEmail } from '@tuturuuu/utils/email/client';
@@ -61,11 +60,6 @@ export function SettingsDialog({
 }: SettingsDialogProps) {
   const t = useTranslations();
   const [activeTab, setActiveTab] = useState(defaultTab);
-  const { value: expandAllAccordions } = useUserBooleanConfig(
-    'EXPAND_SETTINGS_ACCORDIONS',
-    true
-  );
-
   const {
     data: workspaceCustomConfigs = {},
     isLoading: isLoadingWorkspaceCustomConfigs,
@@ -221,11 +215,9 @@ export function SettingsDialog({
         ) : undefined
       }
       activeTab={activeTab}
-      expandAllAccordions={expandAllAccordions}
       keyboardNavigation
       navItems={navItems}
       onActiveTabChange={setActiveTab}
-      primaryGroupLabels={[userManagementLabel]}
     >
       <SatelliteWorkspaceSettingsPanel
         activeTab={activeTab}

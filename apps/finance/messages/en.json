@@ -7342,8 +7342,6 @@
     "preferences": {
       "appearance": "Appearance & Theme",
       "appearance_ws_description": "Customize the look and feel of your interface and calendar",
-      "expand_settings_accordions": "Expand All Settings Sections",
-      "expand_settings_accordions_description": "Always keep all accordion sections in the settings dialog open",
       "keyboard_shortcuts": "Keyboard Shortcuts",
       "keyboard_shortcuts_description": "Review keyboard shortcuts for app and sidebar actions",
       "notifications": "Notifications",

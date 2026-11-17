@@ -42,7 +42,6 @@ import { CalendarDefaultViewSettings } from '@tuturuuu/ui/custom/settings/calend
 import { LunarCalendarSettings } from '@tuturuuu/ui/custom/settings/lunar-calendar-settings';
 import SharedSidebarSettings from '@tuturuuu/ui/custom/settings/sidebar-settings';
 import { SettingsDialogShell } from '@tuturuuu/ui/custom/settings-dialog-shell';
-import { useUserBooleanConfig } from '@tuturuuu/ui/hooks/use-user-config';
 import { PwaStatus } from '@tuturuuu/ui/pwa-status';
 import { isExactTuturuuuDotComEmail } from '@tuturuuu/utils/email/client';
 import { useTranslations } from 'next-intl';
@@ -96,11 +95,6 @@ export function SettingsDialog({
   const keyboardShortcutsT = useTranslations('settings.keyboard_shortcuts');
   const normalizedDefaultTab = normalizeSettingsTab(defaultTab);
   const [activeTab, setActiveTab] = useState(normalizedDefaultTab);
-
-  const { value: expandAllAccordions } = useUserBooleanConfig(
-    'EXPAND_SETTINGS_ACCORDIONS',
-    true
-  );
 
   const { data: fetchedWorkspace } = useQuery({
     queryKey: ['workspace', wsId],
@@ -298,8 +292,6 @@ export function SettingsDialog({
       navItems={navItems}
       activeTab={activeTab}
       onActiveTabChange={setActiveTab}
-      primaryGroupLabels={[tasksLabel]}
-      expandAllAccordions={expandAllAccordions}
       keyboardNavigation
     >
       <SatelliteWorkspaceSettingsPanel

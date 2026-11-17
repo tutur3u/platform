@@ -66,14 +66,6 @@ export interface SettingsDialogShellProps {
   activeTab: string;
   /** Callback when active tab changes */
   onActiveTabChange: (tab: string) => void;
-  /**
-   * Group labels that should be expanded by default.
-   * Used when expandAllAccordions is false.
-   * If not provided in that mode, only the first group expands.
-   */
-  primaryGroupLabels?: string[];
-  /** Override to expand all accordions (user preference). Defaults to expanded. */
-  expandAllAccordions?: boolean;
   /** Enable dialog-scoped keyboard shortcuts for search and tab navigation */
   keyboardNavigation?: boolean;
   /** Optional context control that replaces the active group breadcrumb */
@@ -85,10 +77,9 @@ export interface SettingsDialogShellProps {
 /**
  * Shared settings dialog shell providing the layout framework.
  *
- * Each app provides its own `navItems` (ordered by priority) and
- * renders tab-specific content via `children`. The `primaryGroupLabels`
- * prop controls which groups expand when `expandAllAccordions` is false,
- * enabling apps to highlight their domain while preserving a compact mode.
+ * Each app provides its own `navItems` (ordered by priority) and renders
+ * tab-specific content via `children`. Navigation groups are fixed labels
+ * that always show their tabs, so every tab stays one click away.
  */
 export function SatelliteSettingsDialogShell({
   t,
@@ -98,8 +89,6 @@ export function SatelliteSettingsDialogShell({
   navItems,
   activeTab,
   onActiveTabChange,
-  primaryGroupLabels,
-  expandAllAccordions = true,
   keyboardNavigation = false,
   activeGroupBreadcrumb,
   children,
@@ -129,12 +118,6 @@ export function SatelliteSettingsDialogShell({
   // Only the first group that owns the active tab marks it current, so a tab
   // name repeated in another group never renders a second highlight.
   const activeGroupLabel = activeGroup?.label;
-
-  const isGroupExpandedByDefault = (groupLabel: string, index: number) => {
-    if (expandAllAccordions || searchQuery) return true;
-    if (primaryGroupLabels) return primaryGroupLabels.includes(groupLabel);
-    return index === 0;
-  };
 
   const focusSearch = useCallback(() => {
     if (isMobile) {
@@ -215,11 +198,9 @@ export function SatelliteSettingsDialogShell({
                 {t('common.no_results_found')}
               </p>
             )}
-            {filteredNavItems.map((group, index) => (
+            {filteredNavItems.map((group) => (
               <SettingsSidebarGroup
                 activeTab={group.label === activeGroupLabel ? activeTab : ''}
-                collapsible={!expandAllAccordions && !searchQuery}
-                defaultOpen={isGroupExpandedByDefault(group.label, index)}
                 group={group}
                 key={group.label}
                 onSelect={selectActiveTab}

@@ -4809,8 +4809,6 @@
     "preferences": {
       "appearance": "Giao diện & Chủ đề",
       "appearance_ws_description": "Tùy chỉnh giao diện hiển thị và lịch",
-      "expand_settings_accordions": "Mở rộng tất cả phần cài đặt",
-      "expand_settings_accordions_description": "Luôn giữ tất cả các phần accordion trong hộp thoại cài đặt mở",
       "forms": "Biểu mẫu",
       "forms_autosave": "Tự động lưu",
       "forms_autosave_description": "Tự động lưu chỉnh sửa biểu mẫu khi bạn làm việc. Bật theo mặc định.",

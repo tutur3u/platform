@@ -62,7 +62,6 @@ const navItems: SettingsNavGroup[] = [
 function renderShell(
   activeGroupBreadcrumb?: ReactNode,
   options?: {
-    expandAllAccordions?: boolean;
     navItems?: SettingsNavGroup[];
     onUrlUpdate?: OnUrlUpdateFunction;
     searchParams?: string;
@@ -76,7 +75,6 @@ function renderShell(
         <SettingsDialogShell
           activeTab={activeTab}
           activeGroupBreadcrumb={activeGroupBreadcrumb}
-          expandAllAccordions={options?.expandAllAccordions}
           keyboardNavigation
           navItems={options?.navItems ?? navItems}
           onActiveTabChange={setActiveTab}
@@ -184,33 +182,15 @@ describe('SettingsDialogShell keyboard navigation', () => {
     expect(currentEntries[0]).not.toHaveTextContent('Profile links');
   });
 
-  it('keeps settings groups expanded by default', () => {
-    renderShell();
-
-    expect(screen.getAllByText('Profile').length).toBeGreaterThan(0);
-    expect(screen.getByText('Appearance')).toBeVisible();
-    expect(screen.getByText('Forms')).toBeVisible();
-  });
-
-  it('renders plain group labels while the expand-all preference keeps groups open', () => {
+  it('shows every group as a fixed label with its tabs listed', () => {
     renderShell();
 
     expect(
       screen.queryByRole('button', { name: 'Preferences' })
     ).not.toBeInTheDocument();
     expect(screen.getByText('Preferences')).toBeVisible();
-  });
-
-  it('keeps groups collapsible when the expand-all preference is off', () => {
-    renderShell(undefined, { expandAllAccordions: false });
-
-    const trigger = screen.getByRole('button', { name: 'Preferences' });
-
-    expect(screen.queryByText('Appearance')).not.toBeInTheDocument();
-    fireEvent.click(trigger);
     expect(screen.getByText('Appearance')).toBeVisible();
-    fireEvent.click(trigger);
-    expect(screen.queryByText('Appearance')).not.toBeInTheDocument();
+    expect(screen.getByText('Forms')).toBeVisible();
   });
 
   it('hides a group label that only repeats its single item', () => {

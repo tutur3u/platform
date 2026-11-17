@@ -3,7 +3,6 @@
 import { SettingItemTab } from '@tuturuuu/ui/custom/settings-item-tab';
 import { SettingsSection } from '@tuturuuu/ui/custom/settings-section';
 import { useLocalStorage } from '@tuturuuu/ui/hooks/use-local-storage';
-import { useUserBooleanConfig } from '@tuturuuu/ui/hooks/use-user-config';
 import { Label } from '@tuturuuu/ui/label';
 import { RadioGroup, RadioGroupItem } from '@tuturuuu/ui/radio-group';
 import { Switch } from '@tuturuuu/ui/switch';
@@ -37,12 +36,6 @@ export default function SidebarSettings({
     'sidebar-hide-experimental',
     false
   );
-
-  const {
-    value: expandSettingsAccordions,
-    setValue: setExpandSettingsAccordions,
-    isLoading: isLoadingExpandAccordions,
-  } = useUserBooleanConfig('EXPAND_SETTINGS_ACCORDIONS', true);
 
   return (
     <SettingsSection>
@@ -104,19 +97,6 @@ export default function SidebarSettings({
         )}
       >
         <Switch checked={localOverride} onCheckedChange={setLocalOverride} />
-      </SettingItemTab>
-
-      <SettingItemTab
-        title={t('settings.preferences.expand_settings_accordions')}
-        description={t(
-          'settings.preferences.expand_settings_accordions_description'
-        )}
-      >
-        <Switch
-          checked={expandSettingsAccordions}
-          onCheckedChange={setExpandSettingsAccordions}
-          disabled={isLoadingExpandAccordions}
-        />
       </SettingItemTab>
 
       <SettingItemTab

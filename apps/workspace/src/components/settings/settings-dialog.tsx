@@ -8,7 +8,6 @@ import { SettingsDialogShell } from '@tuturuuu/ui/custom/settings-dialog-shell';
 import { isExactTuturuuuDotComEmail } from '@tuturuuu/utils/email/client';
 import { useTranslations } from 'next-intl';
 import { useEffect, useState } from 'react';
-import { useUserBooleanConfig } from '@/hooks/use-user-config';
 import { apiFetch } from '@/lib/api-fetch';
 import { SettingsDialogContent } from './settings-dialog-content';
 import {
@@ -43,11 +42,6 @@ export function SettingsDialog({
 
   const normalizedDefaultTab = normalizeSettingsTab(defaultTab);
   const [activeTab, setActiveTab] = useState(normalizedDefaultTab);
-
-  const { value: expandAllAccordions } = useUserBooleanConfig(
-    'EXPAND_SETTINGS_ACCORDIONS',
-    true
-  );
 
   const {
     data: fetchedWorkspace,
@@ -141,7 +135,6 @@ export function SettingsDialog({
       navItems={navItems}
       activeTab={activeTab}
       onActiveTabChange={setActiveTab}
-      expandAllAccordions={expandAllAccordions}
       keyboardNavigation
     >
       <SettingsDialogContent
