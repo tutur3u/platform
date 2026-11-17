@@ -158,12 +158,18 @@ describe('citation library store', () => {
     [23514, 'citation_library_items_work_size_check', 'INVALID_INPUT', 413],
     [42501, 'access denied', 'FORBIDDEN', 403],
     ['PGRST202', 'missing RPC', 'LIBRARY_UNAVAILABLE', 503],
-  ])('maps database error %s (%s)', async (code, message, expectedCode, status) => {
-    const { store } = fixture({ code: String(code), message: `"${message}"` }, 400);
-    await expect(
-      store.insert(scope, { ...write, id: itemId })
-    ).rejects.toMatchObject({ code: expectedCode, status });
-  });
+  ])(
+    'maps database error %s (%s)',
+    async (code, message, expectedCode, status) => {
+      const { store } = fixture(
+        { code: String(code), message: `"${message}"` },
+        400
+      );
+      await expect(
+        store.insert(scope, { ...write, id: itemId })
+      ).rejects.toMatchObject({ code: expectedCode, status });
+    }
+  );
 
   it.each([
     { name: 'foreign workspace', rows: [{ ...row, ws_id: otherWs }] },

@@ -338,10 +338,11 @@ describe('citation AI operation protocol', () => {
 
   it('reserves grounding before the SDK and charges for output when the registry fails', async () => {
     const { dependencies, service } = fixture();
-    dependencies.generate = vi.fn(async () => ({
+    const generate = vi.fn(async () => ({
       value: { ...work, doi: '10.1234/synthetic' },
       usage,
     }));
+    dependencies.generate = generate;
     dependencies.ground = vi.fn(async () => {
       throw new Error('Registry unavailable');
     });
@@ -359,9 +360,7 @@ describe('citation AI operation protocol', () => {
       billing: { status: 'settled' },
     });
     expect(dependencies.reserveGrounding).toHaveBeenCalledTimes(1);
-    expect(dependencies.reserveGrounding).toHaveBeenCalledBefore(
-      dependencies.generate
-    );
+    expect(dependencies.reserveGrounding).toHaveBeenCalledBefore(generate);
     expect(dependencies.ground).toHaveBeenCalledTimes(1);
     expect(dependencies.deduct).toHaveBeenCalledTimes(1);
   });

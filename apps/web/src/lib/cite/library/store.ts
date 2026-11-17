@@ -41,7 +41,11 @@ export type CitationLibraryDatabase = Omit<Database, 'private'> & {
   private: Omit<PrivateSchema, 'Functions'> & {
     Functions: PrivateSchema['Functions'] & {
       list_citation_library_items: {
-        Args: AccessArgs & { p_limit: number; p_offset: number; p_search: string };
+        Args: AccessArgs & {
+          p_limit: number;
+          p_offset: number;
+          p_search: string;
+        };
         Returns: Row[];
       };
       lookup_citation_library_items: {
@@ -67,7 +71,9 @@ function checkError(error: { code: string; message: string } | null) {
   if (error.code === '42501') throw new CitationLibraryError('FORBIDDEN', 403);
   if (error.code === '23505') {
     if (
-      error.message.includes('"citation_library_items_workspace_fingerprint_key"')
+      error.message.includes(
+        '"citation_library_items_workspace_fingerprint_key"'
+      )
     ) {
       throw new CitationLibraryError('DUPLICATE_SOURCE', 409);
     }
