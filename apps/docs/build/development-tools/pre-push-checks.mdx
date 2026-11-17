@@ -103,6 +103,13 @@ project and classifies diagnostics:
   block. A changed file importing a missing package still blocks on real type
   errors such as TS2322; only implicit-any follow-ons (7005/7006/7031/7034)
   in that file are advisory. Diagnostics in unchanged files remain advisory.
+- Unknown-value errors (`TS18046`) in a changed file with a confirmed missing
+  workspace import appear separately as environment-gap candidates, with the
+  same-file missing-import diagnostic as evidence. They remain blocking:
+  diagnostic text cannot prove whether the unknown value depends on that import.
+  Build the missing workspace declarations on an admitted validation host and
+  rerun the gate to distinguish a cascade from a real type error. Unrelated
+  unknown values in the same file retain their diagnostics and blocking status.
 
 Shared-package changes select affected packages from the Turbo dry graph.
 When that command fails, the gate keeps transitive reverse dependents from
@@ -168,6 +175,9 @@ a passing frozen install alone does not prove a normal install leaves it stable.
 and `scripts/ts-diagnostics.test.js` cover path mapping, the branch pattern's parity with the workflow, hook opt-in,
 ttr queueing, cold-declaration classification and tsc confirmation of tsrs
 failures.
+`scripts/check-changed/environment-gap.test.js` verifies that same-file unknown
+values retain blocking status, including an unrelated value beside a missing
+import, and that the report separates unverified environment-gap candidates.
 
 Related native `node:test` files, including database script `.test.mjs` siblings, run through `node --test` even in packages whose default is Vitest. The classifier parses actual runtime imports, including CommonJS `require` and dynamic imports. Fixture strings, template text, comments, regular expressions and type-only imports cannot choose a runner. An explicit runtime Vitest import still takes precedence when a file also imports Node test helpers. Without a runner import, the owning package test script supplies the existing fallback. This runner partition avoids false “No test suite found” failures. `scripts/check-changed-runners.test.js` covers the SDK portable-build fixture and both runner directions.
 

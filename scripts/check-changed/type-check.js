@@ -85,22 +85,30 @@ function citesMissingPackage(message, missing) {
 }
 
 /**
- * Split diagnostics into blocking, advisory and ignored groups. Paths are
+ * Split diagnostics into blocking, advisory and ignored groups, with an
+ * evidence-bearing subset of blocking environment-gap candidates. Paths are
  * repository-relative because checkers run from the repository root.
  */
 function classifyDiagnostics(diagnostics, { changedFiles, missing }) {
-  const result = { blocking: [], advisory: [], ignored: [] };
+  const result = {
+    blocking: [],
+    advisory: [],
+    ignored: [],
+    environmentGapCandidates: [],
+  };
   if (!missing.size) {
     result.blocking.push(...diagnostics);
     return result;
   }
-  const filesWithMissingImports = new Set();
+  const filesWithMissingImports = new Map();
   for (const diagnostic of diagnostics) {
     if (
       MISSING_MODULE_CODES.has(diagnostic.code) &&
       citesMissingPackage(diagnostic.message, missing)
     ) {
-      filesWithMissingImports.add(diagnostic.file);
+      const imports = filesWithMissingImports.get(diagnostic.file) ?? [];
+      imports.push(diagnostic);
+      filesWithMissingImports.set(diagnostic.file, imports);
     }
   }
   for (const diagnostic of diagnostics) {
@@ -123,6 +131,18 @@ function classifyDiagnostics(diagnostics, { changedFiles, missing }) {
       )
     ) {
       result.blocking.push(diagnostic);
+      // Text diagnostics establish co-occurrence, not a causal type dependency.
+      // Keep unknown-value errors blocking and expose the missing declarations
+      // as evidence for a qualified rerun, including unrelated unknowns here.
+      if (
+        diagnostic.code === 18046 &&
+        filesWithMissingImports.has(diagnostic.file)
+      ) {
+        result.environmentGapCandidates.push({
+          diagnostic,
+          missingImports: filesWithMissingImports.get(diagnostic.file),
+        });
+      }
     } else {
       result.advisory.push(diagnostic);
     }

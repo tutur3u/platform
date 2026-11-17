@@ -291,7 +291,12 @@ function runTypeCheck(step, context) {
   );
   if (!projects.length)
     return { status: 'skip', detail: 'no tsc type-check script' };
-  const totals = { blocking: [], advisory: 0, ignored: 0 };
+  const totals = {
+    blocking: [],
+    advisory: 0,
+    ignored: 0,
+    environmentGapCandidates: [],
+  };
   const used = { tsc: 0, tsrs: 0 };
   let shadowCount = 0;
   const parityOutput = [];
@@ -345,6 +350,7 @@ function runTypeCheck(step, context) {
       };
     }
     totals.blocking.push(...groups.blocking);
+    totals.environmentGapCandidates.push(...groups.environmentGapCandidates);
     totals.advisory += groups.advisory.length;
     totals.ignored += groups.ignored.length;
   }
@@ -358,14 +364,45 @@ function runTypeCheck(step, context) {
   if (totals.ignored) notes.push(`${totals.ignored} missing-dist ignored`);
   if (totals.advisory)
     notes.push(`${totals.advisory} advisory outside changed files`);
+  if (totals.environmentGapCandidates.length)
+    notes.push(
+      `${totals.environmentGapCandidates.length} environment-gap candidate(s), still blocking`
+    );
+  const candidates = new Map(
+    totals.environmentGapCandidates.map((entry) => [
+      entry.diagnostic,
+      entry.missingImports,
+    ])
+  );
+  const printed = totals.blocking.slice(0, MAX_PRINTED_DIAGNOSTICS);
+  const environment = printed.filter((entry) => candidates.has(entry));
+  const output = printed
+    .filter((entry) => !candidates.has(entry))
+    .map(diagnosticKey);
+  if (environment.length) {
+    output.push(
+      'Environment-gap candidates (still blocking; causality unverified):'
+    );
+    for (const diagnostic of environment) {
+      output.push(diagnosticKey(diagnostic));
+      output.push(
+        ...candidates
+          .get(diagnostic)
+          .map(
+            (entry) =>
+              `  Same-file missing declaration: ${diagnosticKey(entry)}`
+          )
+      );
+    }
+    output.push(
+      'Build the missing workspace declarations and rerun to qualify these diagnostics.'
+    );
+  }
   return {
     status: totals.blocking.length ? 'fail' : 'pass',
     detail: notes.join(', '),
     parityOutput: parityOutput.join('\n'),
-    output: totals.blocking
-      .slice(0, MAX_PRINTED_DIAGNOSTICS)
-      .map(diagnosticKey)
-      .join('\n'),
+    output: output.join('\n'),
   };
 }
 
