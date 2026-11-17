@@ -69,8 +69,23 @@ export const aliasLockKey = (target) =>
     project: target.project,
     alias: target.alias,
   });
+function secretField(value, seen = new Set()) {
+  if (!value || typeof value !== 'object') return false;
+  if (seen.has(value)) return true;
+  seen.add(value);
+  return Object.entries(value).some(
+    ([key, child]) =>
+      /PASSWORD|TOKEN|SECRET|KEY|CREDENTIAL/iu.test(key) ||
+      secretField(child, seen)
+  );
+}
 export function validateQueuePayload(payload, reviewedTarget) {
   const bad = () => refuse('QUEUE_PAYLOAD_INVALID');
+  if (
+    secretField(payload) ||
+    (payload?.checkpointRef !== undefined && !id(payload.checkpointRef))
+  )
+    bad();
   if (
     !closed(
       payload,
@@ -242,6 +257,7 @@ export async function executeVercelPhase({
       replay.sourceSha !== job.sourceSha ||
       replay.configSha256 !== job.configSha256 ||
       replay.recipeSha256 !== job.recipeSha256 ||
+      replay.artifactSha256 !== (job.artifact?.sha256 ?? null) ||
       canonical(replay.canonicalTarget) !== canonical(job.target)
     )
       refuse('QUEUE_GRANT_INVALID', phase);

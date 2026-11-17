@@ -190,6 +190,7 @@ test('unknown receipt blocks replay until authority reconciles readback', async 
   port.state.status = 'succeeded';
   port.state.receipts.push({
     operationId: 'release-1',
+    artifactSha256: null,
     phase: 'stage',
     sourceSha: payload().sourceSha,
     configSha256: payload().configSha256,
@@ -335,4 +336,21 @@ test('alias lock covers the shared resource across stage and production', () => 
     aliasLockKey(target),
     aliasLockKey({ ...target, alias: 'other.tuturuuu.com' })
   );
+});
+
+test('checkpoint references and array extras cannot carry secret fields', async () => {
+  for (const alter of [
+    (p) => {
+      p.checkpointRef = { secrets: 'fixture' };
+    },
+    (p) => {
+      p.requirements.capabilities.TOKEN = 'fixture';
+    },
+  ]) {
+    const p = payload();
+    alter(p);
+    await assert.rejects(submitVercelRelease(authority(), p, target), {
+      guardCode: 'QUEUE_PAYLOAD_INVALID',
+    });
+  }
 });
