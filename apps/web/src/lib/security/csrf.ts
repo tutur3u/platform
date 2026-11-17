@@ -32,7 +32,7 @@ export const WEB_SESSION_CLEARING_PATHS: ReadonlySet<string> = new Set([
 /**
  * Origins of satellite apps whose `/api/*` requests are forwarded verbatim to
  * Web. A forwarded request arrives on Web's own host, so a client that sends
- * no `Sec-Fetch-Site` identifies itself by the satellite's `Origin` instead.
+ * no `Sec-Fetch-Site` or `same-site` proves trust with its exact `Origin`.
  * The `tuturuuu.com/<app>` mounts share Web's origin and need no entry.
  */
 export const WEB_CSRF_TRUSTED_ORIGINS: readonly string[] = [
@@ -66,6 +66,7 @@ export function guardWebApiCsrf(
     // TTR_CSRF_MODE: hits are only reported until `enforce`.
     bearerRequiresNoSessionCookie: true,
     exemptions: WEB_CSRF_EXEMPTIONS,
+    trustedSameSiteOrigins: WEB_CSRF_TRUSTED_ORIGINS,
     headers: req.headers,
     method: req.method,
     pathname: req.nextUrl.pathname,

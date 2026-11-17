@@ -136,7 +136,7 @@ describe('guardWebApiCsrf', () => {
   });
 
   it('does not let a bearer string exempt a cross-origin cookie mutation', () => {
-    for (const headers of <Record<string, string>[]>[
+    for (const headers of [
       {
         authorization: 'Bearer junk',
         cookie: SESSION_COOKIE,
@@ -148,7 +148,7 @@ describe('guardWebApiCsrf', () => {
         cookie: SESSION_COOKIE,
         origin: 'https://evil.tuturuuu.com',
       },
-    ]) {
+    ] as Record<string, string>[]) {
       const response = guardWebApiCsrf(
         request('/api/v1/auth/accounts/switch', headers),
         { configuredOrigin: 'https://tuturuuu.com', mode: 'enforce' }
@@ -163,10 +163,10 @@ describe('guardWebApiCsrf', () => {
     '/api/v1/auth/accounts/logout',
     '/api/v1/auth/accounts/logout-all//',
   ])('holds %s to same-origin even without a session cookie', (path) => {
-    for (const headers of <Record<string, string>[]>[
+    for (const headers of [
       { 'sec-fetch-site': 'cross-site' },
       { origin: 'https://evil.example' },
-    ]) {
+    ] as Record<string, string>[]) {
       expect(
         guardWebApiCsrf(request(path, headers), {
           configuredOrigin: 'https://tuturuuu.com',
@@ -262,7 +262,7 @@ describe('guardWebApiCsrf', () => {
     }
   });
 
-  it('keeps a same-site Fetch Metadata request from the workspace subdomain rejected', () => {
+  it('accepts an exact trusted workspace origin with same-site metadata', () => {
     expect(
       guardWebApiCsrf(
         request('/api/v1/workspaces/ws/tasks', {
@@ -271,7 +271,73 @@ describe('guardWebApiCsrf', () => {
           'sec-fetch-site': 'same-site',
         }),
         { configuredOrigin: 'https://tuturuuu.com', mode: 'enforce' }
-      )?.status
-    ).toBe(403);
+      )
+    ).toBeNull();
+  });
+  it.each([
+    undefined,
+    'null',
+    'https://other.tuturuuu.com',
+    'https://workspace.tuturuuu.com.evil.example',
+    'http://workspace.tuturuuu.com',
+    'https://workspace.tuturuuu.com:8443',
+    'https://workspace.tuturuuu.com/path',
+    'https://user@workspace.tuturuuu.com',
+    'https://workspace.tuturuuu.com https://evil.example',
+  ])(
+    'rejects untrusted same-site Origin %s even with a bearer and cookie',
+    (origin) => {
+      expect(
+        guardWebApiCsrf(
+          request('/api/v1/things', {
+            cookie: SESSION_COOKIE,
+            authorization: 'Bearer synthetic-junk',
+            'sec-fetch-site': 'same-site',
+            ...(origin === undefined ? {} : { origin }),
+          }),
+          { configuredOrigin: 'https://tuturuuu.com', mode: 'enforce' }
+        )?.status
+      ).toBe(403);
+    }
+  );
+
+  it.each(['cross-site', 'none', 'unexpected'])(
+    'does not let a trusted Origin override %s metadata',
+    (site) => {
+      expect(
+        guardWebApiCsrf(
+          request('/api/v1/things', {
+            cookie: SESSION_COOKIE,
+            origin: 'https://workspace.tuturuuu.com',
+            'sec-fetch-site': site,
+          }),
+          { configuredOrigin: 'https://tuturuuu.com', mode: 'enforce' }
+        )?.status
+      ).toBe(403);
+    }
+  );
+
+  it('requires exact trusted proof for cookie-less logout from a satellite', () => {
+    for (const path of [
+      '/api/auth/logout',
+      '/api/v1/auth/accounts/logout',
+      '/api/v1/auth/accounts/logout-all',
+    ]) {
+      for (const origin of [
+        'https://workspace.tuturuuu.com',
+        'https://other.tuturuuu.com',
+      ]) {
+        const response = guardWebApiCsrf(
+          request(path, { origin, 'sec-fetch-site': 'same-site' }),
+          {
+            configuredOrigin: 'https://tuturuuu.com',
+            mode: 'enforce',
+          }
+        );
+        expect(response?.status ?? 200).toBe(
+          origin === 'https://workspace.tuturuuu.com' ? 200 : 403
+        );
+      }
+    }
   });
 });

@@ -42,6 +42,32 @@ Customer sign-in supports configured OAuth providers. Staff sign-in has a separa
 
 Browser sign-in uses the browser session flow. Raw access and refresh tokens are reserved for supported native-client authentication flows; browser requests to those native token flows are refused. Native-client compatibility and browser session behavior require separate verification.
 
+## Web CSRF and forwarded workspace requests
+
+Web's CSRF rollout is controlled by `TTR_CSRF_MODE`: unset or invalid values
+leave it off, `report` logs rejected checks without blocking, and `enforce`
+returns 403. Cookie-bearing mutations from same-site sibling origins are denied
+unless the Web adapter explicitly trusts the exact serialized origin. The sole
+satellite entry is `https://workspace.tuturuuu.com`, whose API requests forward
+to Web. Same-origin mounts need no satellite entry. Other subdomains, alternate
+schemes or ports, userinfo, paths, and missing or opaque origins do not qualify
+for the same-site exception. Cross-site, `none`, and unknown Fetch Metadata
+remain rejected even with that trusted origin.
+
+A bearer string cannot exempt a mutation carrying a session cookie. Cookie-less
+bearer clients retain their existing exemption; ordinary cookie-less mutations
+remain admitted. The three session-clearing logout endpoints still require
+origin proof without a session cookie. Shared CSRF callers reject same-site
+requests by default; only an explicit adapter opt-in enables this exception.
+
+Regression coverage lives in `apps/web/src/lib/security/csrf.test.ts` and
+`packages/auth/src/csrf.test.ts`. The dispatch probe in
+`apps/web/src/lib/security/csrf-dispatch.test.ts` exercises the installed Next
+production filesystem and render matchers with synthetic logout manifests. A
+decoded filesystem hit is not a handler dispatch: route metadata and the render
+match must also select the endpoint. This probe does not replace a built Web
+artifact or hosting-provider routing acceptance check.
+
 ## Further reading
 
 Read the [security overview](/platform/architecture/system-design/security-architecture) and [one-origin session design](/platform/architecture/one-origin-security#session-cookies). Authentication does not replace feature-specific consent or the [data protection standard](/platform/data-protection-standard).

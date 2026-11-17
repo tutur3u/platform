@@ -28,6 +28,12 @@ export interface CsrfCheckInput {
   /** Origins that count as this request's own, e.g. `https://tuturuuu.com`. */
   allowedOrigins: readonly string[];
   exemptions?: readonly CsrfExemption[];
+  /**
+   * Explicit same-site opt-in for adapters forwarding trusted satellite requests.
+   * Values must be exact serialized origins; the default rejects all same-site
+   * requests, including origins otherwise allowed without Fetch Metadata.
+   */
+  trustedSameSiteOrigins?: readonly string[];
   isSessionCookieName?: (name: string) => boolean;
   /**
    * When true, an `Authorization: Bearer` header exempts only a request that
@@ -165,7 +171,11 @@ export function checkCsrf(input: CsrfCheckInput): CsrfVerdict {
       case 'same-origin':
         return { ok: true, reason: 'same-origin' };
       case 'same-site':
-        return reject('same-site');
+        return origin !== null &&
+          normalizeOrigin(origin) === origin &&
+          input.trustedSameSiteOrigins?.includes(origin)
+          ? { ok: true, reason: 'origin-match' }
+          : reject('same-site');
       case 'cross-site':
         return reject('cross-site');
       case 'none':

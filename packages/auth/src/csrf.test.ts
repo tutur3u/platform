@@ -222,6 +222,50 @@ describe('checkCsrf', () => {
     });
   });
 
+  describe('explicit same-site origin opt-in', () => {
+    const trusted = 'https://workspace.tuturuuu.com';
+    const forwarded = (origin: string | undefined, optIn = true) =>
+      checkCsrf({
+        allowedOrigins: [APEX, trusted],
+        trustedSameSiteOrigins: optIn ? [trusted] : undefined,
+        bearerRequiresNoSessionCookie: true,
+        method: 'POST',
+        pathname: '/api/v1/things',
+        headers: new Headers({
+          cookie: SESSION_COOKIE,
+          authorization: 'Bearer synthetic-junk',
+          'sec-fetch-site': 'same-site',
+          ...(origin === undefined ? {} : { origin }),
+        }),
+      });
+
+    it('requires adapter opt-in even when the origin is otherwise allowed', () => {
+      expect(forwarded(trusted, false)).toMatchObject({
+        ok: false,
+        reason: 'same-site',
+      });
+      expect(forwarded(trusted)).toEqual({ ok: true, reason: 'origin-match' });
+    });
+
+    it.each([
+      undefined,
+      'null',
+      APEX,
+      'https://other.tuturuuu.com',
+      `${trusted}/`,
+      `${trusted}/path`,
+      'https://user@workspace.tuturuuu.com',
+      `${trusted}:8443`,
+      'http://workspace.tuturuuu.com',
+      `${trusted}.evil.example`,
+    ])('refuses non-exact same-site origin %s', (origin) => {
+      expect(forwarded(origin)).toMatchObject({
+        ok: false,
+        reason: 'same-site',
+      });
+    });
+  });
+
   describe('without Fetch Metadata (older browsers)', () => {
     it.each([
       [APEX, { ok: true, reason: 'origin-match' }],
