@@ -154,7 +154,7 @@ try {
   );
   check(
     'host is notified of the waiting guest',
-    pending?.participants[0]?.displayName === 'Guest'
+    pending?.participants[0]?.displayName === 'Guest (guest)'
   );
 
   guest.send({ body: 'let me in', type: 'chat.message' });
@@ -178,7 +178,10 @@ try {
   guest.send({ body: 'hello room', type: 'chat.message' });
   const chat = await host.waitFor('chat.message');
   check('chat reaches the other participant', chat?.body === 'hello room');
-  check('chat carries the sender display name', chat?.displayName === 'Guest');
+  check(
+    'chat carries the sender display name',
+    chat?.displayName === 'Guest (guest)'
+  );
 
   guest.send({ raised: true, type: 'hand.raise' });
   const stage = await host.waitFor(
