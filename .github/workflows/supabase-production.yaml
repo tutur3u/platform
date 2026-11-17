@@ -332,9 +332,13 @@ jobs:
               echo "::notice::Skipping production migration because the production deployment planner for $TARGET_SHA has conclusion '$VERCEL_CONCLUSION'."
             else
               echo "Checking successful production platform deployment marker..."
-              DEPLOYMENT_MARKER_DEPLOYMENT=$(gh api \
+              DEPLOYMENT_MARKER_DIR="$RUNNER_TEMP/deployment-marker"
+              mkdir -p "$DEPLOYMENT_MARKER_DIR"
+              gh api \
                 "repos/${{ github.repository }}/deployments?environment=vercel-production-platform&per_page=100" \
-                | jq --arg sha "$TARGET_SHA" '
+                > "$DEPLOYMENT_MARKER_DIR/deployments.json"
+              chmod 600 "$DEPLOYMENT_MARKER_DIR/deployments.json"
+              DEPLOYMENT_MARKER_DEPLOYMENT=$(jq --arg sha "$TARGET_SHA" '
                   def payload_obj:
                     (.payload // {}) as $payload
                     | if ($payload | type) == "object" then $payload
@@ -355,7 +359,7 @@ jobs:
                   | sort_by(.created_at // "")
                   | reverse
                   | .[0] // {}
-                  | {id: .id, sha: .sha}')
+                  | {id: .id, sha: .sha}' "$DEPLOYMENT_MARKER_DIR/deployments.json")
 
               DEPLOYMENT_MARKER_DEPLOYMENT_ID=$(echo "$DEPLOYMENT_MARKER_DEPLOYMENT" | jq -r '.id // ""')
               DEPLOYMENT_MARKER_SHA=$(echo "$DEPLOYMENT_MARKER_DEPLOYMENT" | jq -r '.sha // "missing"')
@@ -366,16 +370,25 @@ jobs:
               if [ -z "$DEPLOYMENT_MARKER_DEPLOYMENT_ID" ]; then
                 echo "::notice::Skipping production migration because no production platform deployment marker was found for $TARGET_SHA."
               else
-                DEPLOYMENT_MARKER_STATUSES=$(gh api \
-                  "repos/${{ github.repository }}/deployments/$DEPLOYMENT_MARKER_DEPLOYMENT_ID/statuses")
-                DEPLOYMENT_MARKER_STATE=$(echo "$DEPLOYMENT_MARKER_STATUSES" | jq -r '.[0].state // "missing"')
-                DEPLOYMENT_MARKER_HAS_SUCCESS=$(echo "$DEPLOYMENT_MARKER_STATUSES" | jq -r '.[0].state == "success"')
+                gh api \
+                  "repos/${{ github.repository }}/deployments/$DEPLOYMENT_MARKER_DEPLOYMENT_ID/statuses?per_page=100" \
+                  > "$DEPLOYMENT_MARKER_DIR/statuses.json"
+                chmod 600 "$DEPLOYMENT_MARKER_DIR/statuses.json"
+                DEPLOYMENT_MARKER_VERDICT=$(MARKER_STATUSES_FILE="$DEPLOYMENT_MARKER_DIR/statuses.json" \
+                  MARKER_DEPLOYMENTS_FILE="$DEPLOYMENT_MARKER_DIR/deployments.json" \
+                  MARKER_DEPLOYMENT_ID="$DEPLOYMENT_MARKER_DEPLOYMENT_ID" \
+                  TARGET_SHA="$TARGET_SHA" \
+                  node scripts/ci/deployment-marker-status.mjs)
+                DEPLOYMENT_MARKER_STATE=$(echo "$DEPLOYMENT_MARKER_VERDICT" | jq -r '.state // "missing"')
+                DEPLOYMENT_MARKER_HAS_SUCCESS=$(echo "$DEPLOYMENT_MARKER_VERDICT" | jq -r '.accepted')
+                DEPLOYMENT_MARKER_REASON=$(echo "$DEPLOYMENT_MARKER_VERDICT" | jq -r '.reason // "unknown"')
 
                 echo "Production platform deployment marker latest state: $DEPLOYMENT_MARKER_STATE"
                 echo "Production platform deployment marker has success status: $DEPLOYMENT_MARKER_HAS_SUCCESS"
+                echo "Production platform deployment marker verdict: $DEPLOYMENT_MARKER_REASON"
 
                 if [ "$DEPLOYMENT_MARKER_HAS_SUCCESS" != "true" ]; then
-                  echo "::notice::Skipping production migration because the production platform deployment marker for $TARGET_SHA does not have a current success status. Latest state is '$DEPLOYMENT_MARKER_STATE'."
+                  echo "::notice::Skipping production migration because the production platform deployment marker for $TARGET_SHA does not have a current success status. Latest effective state is '$DEPLOYMENT_MARKER_STATE' ($DEPLOYMENT_MARKER_REASON)."
                 else
                   node scripts/ci/verify-staging-migration-marker.mjs
                   SHOULD_DEPLOY=true

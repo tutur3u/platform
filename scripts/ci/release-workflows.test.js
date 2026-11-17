@@ -579,11 +579,11 @@ test('CI workflows use main instead of retired staging branch filters', () => {
   );
   assert.match(
     supabaseProductionWorkflow,
-    /DEPLOYMENT_MARKER_HAS_SUCCESS=.*\.\[0\]\.state == "success"/
+    /DEPLOYMENT_MARKER_HAS_SUCCESS=.*\.accepted/
   );
   assert.match(
     supabaseProductionWorkflow,
-    /does not have a current success status\. Latest state is/
+    /does not have a current success status\. Latest effective state is/
   );
   assert.doesNotMatch(supabaseProductionWorkflow, /runs\?branch=staging/);
 });

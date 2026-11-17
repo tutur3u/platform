@@ -125,7 +125,7 @@ if (request.endsWith('/git/ref/heads/production')) {
     }
   });
   response = [
-    marker(99, process.env.UNRELATED_SHA, '2026-01-05'),
+    marker(99, process.env.UNRELATED_SHA, '2025-12-31'),
     marker(16, process.env.MARKER_SHA, '2026-01-01'),
     marker(17, process.env.MARKER_SHA, '2026-01-02'),
     marker(98, sha, '2026-01-04', {workflowName: 'other-workflow.yaml'}),
@@ -138,7 +138,7 @@ if (request.endsWith('/git/ref/heads/production')) {
   } else {
     response.push({id: 96, sha, created_at: '2026-01-06', payload: {}});
   }
-} else if (request.endsWith('/deployments/17/statuses')) {
+} else if (request.includes('/deployments/17/statuses')) {
   response = [{state: process.env.MARKER_STATE}];
   if (process.env.OLD_SUCCESS === 'true') response.push({state: 'success'});
 } else process.exit(8);
@@ -154,6 +154,7 @@ process.stdout.write(projection < 0 ? json : execFileSync('jq',
     PATH: `${directory}${path.delimiter}${process.env.PATH}`,
     GITHUB_OUTPUT: output,
     GITHUB_ENV: environment,
+    RUNNER_TEMP: directory,
     REQUEST_LOG: log,
     GH_TOKEN: 'synthetic-test-only',
     REPOSITORY: 'example/platform',

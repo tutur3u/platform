@@ -291,6 +291,14 @@ async function fixture(t, change = () => {}) {
     state: 'success',
     environment: profile.environment,
     log_url: p.runUrl,
+    created_at: '2026-11-17T00:03:05Z',
+  };
+  const inactive = {
+    id: 98,
+    state: 'inactive',
+    environment: profile.environment,
+    log_url: `${server}/${repo}/actions/runs/999`,
+    created_at: '2026-11-17T00:03:20Z',
   };
   const replies = new Map([
     [base, { ...repository, default_branch: 'main' }],
@@ -303,7 +311,11 @@ async function fixture(t, change = () => {}) {
       [marker],
     ],
     [`${base}/actions/runs/301`, run],
-    [`${base}/deployments/96/statuses?per_page=1&page=1`, [status]],
+    [`${base}/deployments/96/statuses?per_page=100&page=1`, [status]],
+    [
+      `${base}/deployments?environment=${profile.environment}&per_page=100&page=1`,
+      [marker],
+    ],
     [
       `${base}/actions/runs/301/attempts/1/jobs?per_page=100&page=1`,
       { total_count: jobs.length, jobs },
@@ -344,6 +356,7 @@ async function fixture(t, change = () => {}) {
     run,
     marker,
     status,
+    inactive,
     jobs,
     replies,
     env,
@@ -513,5 +526,87 @@ for (const [label, change] of [
         result.phase
       )
     );
+  });
+}
+
+const statusRoute = `/repos/${repo}/deployments/96/statuses?per_page=100&page=1`;
+const environmentRoute = `/repos/${repo}/deployments?environment=${profile.environment}&per_page=100&page=1`;
+
+test('a success later auto-inactivated by the same SHA deployment is accepted', async (t) => {
+  const { result } = await fixture(t, (world) => {
+    world.replies.set(statusRoute, [world.inactive, world.status]);
+    world.replies.set(environmentRoute, [
+      {
+        id: 95,
+        sha: source,
+        environment: profile.environment,
+        created_at: '2026-11-17T00:03:10Z',
+      },
+      world.marker,
+    ]);
+  });
+  assert.equal(result.status, 'success');
+});
+
+for (const [name, statusRows, deployments] of [
+  [
+    'an inactive marker without any prior success is refused',
+    (w) => [w.inactive],
+    undefined,
+  ],
+  [
+    'a failure after the success is refused even before the inactive row',
+    (w) => [
+      w.inactive,
+      {
+        ...w.status,
+        id: 99,
+        state: 'failure',
+        created_at: '2026-11-17T00:03:10Z',
+      },
+      w.status,
+    ],
+    undefined,
+  ],
+  [
+    'an error status is refused',
+    (w) => [
+      {
+        ...w.status,
+        id: 100,
+        state: 'error',
+        created_at: '2026-11-17T00:03:10Z',
+      },
+      w.status,
+    ],
+    undefined,
+  ],
+  [
+    'a success from another environment or run is refused',
+    (w) => [{ ...w.status, log_url: `${server}/${repo}/actions/runs/777` }],
+    undefined,
+  ],
+  [
+    'a newer deployment of a different SHA supersedes the marker',
+    (w) => [w.inactive, w.status],
+    (w) => [
+      {
+        id: 120,
+        sha: 'f'.repeat(40),
+        environment: profile.environment,
+        created_at: '2026-11-17T00:04:00Z',
+      },
+      w.marker,
+    ],
+  ],
+]) {
+  test(name, async (t) => {
+    const { result } = await fixture(t, (world) => {
+      world.replies.set(statusRoute, statusRows(world));
+      if (deployments) world.replies.set(environmentRoute, deployments(world));
+    });
+    assert.equal(result.status, 'denied');
+    assert.equal(result.guard, 'MARKER_PROVENANCE_DENIED');
+    assert.equal(result.phase, 'marker');
   });
 }

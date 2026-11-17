@@ -9,6 +9,10 @@ import {
   heldAppSummary,
 } from './production-planner-job-classes.mjs';
 import { checkProductionMigrationRecovery } from './check-production-migration-recovery.ts';
+import {
+  effectiveMarkerStatus,
+  markerSuperseded,
+} from './deployment-marker-status.mjs';
 
 const assert = (ok, code) => {
   if (!ok) throw new Error(code);
@@ -392,17 +396,22 @@ export async function verifyMarker({
     }
   }
   assert(marker && p && callerRun, 'eligible-marker-missing');
-  const { data: statusRows } = await get(
-    `${base}/deployments/${marker.id}/statuses?per_page=1&page=1`
-  );
+  const statusRoute = `${base}/deployments/${marker.id}/statuses`;
+  const statusRows = await inventory(statusRoute);
+  const effectiveStatus = effectiveMarkerStatus(statusRows);
   assert(
-    Array.isArray(statusRows) &&
-      statusRows.length === 1 &&
-      positive(statusRows[0].id) &&
-      statusRows[0].state === 'success' &&
-      statusRows[0].environment === profile.environment &&
-      statusRows[0].log_url === p.runUrl,
+    effectiveStatus &&
+      positive(effectiveStatus.id) &&
+      effectiveStatus.state === 'success' &&
+      effectiveStatus.environment === profile.environment &&
+      effectiveStatus.log_url === p.runUrl,
     'marker-latest-status'
+  );
+  const environmentRoute = `${base}/deployments?environment=${profile.environment}`;
+  const environmentDeployments = await inventory(environmentRoute);
+  assert(
+    !markerSuperseded({ marker, environmentDeployments }),
+    'marker-superseded'
   );
   setPhase(PHASE.CONTRACTS);
   const sourceContracts = new Map();
@@ -513,12 +522,15 @@ export async function verifyMarker({
   const { data: rereadMarker } = await get(`${base}/deployments/${marker.id}`);
   checkMarkerPayload(rereadMarker, payload(rereadMarker), profile, source);
   assert(snapshot(rereadMarker) === snapshot(marker), 'marker-changed');
-  const { data: rereadStatus } = await get(
-    `${base}/deployments/${marker.id}/statuses?per_page=1&page=1`
-  );
+  const rereadStatus = await inventory(statusRoute);
   assert(
-    snapshot(rereadStatus[0]) === snapshot(statusRows[0]),
+    snapshot(effectiveMarkerStatus(rereadStatus)) === snapshot(effectiveStatus),
     'marker-status-changed'
+  );
+  const rereadEnvironment = await inventory(environmentRoute);
+  assert(
+    !markerSuperseded({ marker, environmentDeployments: rereadEnvironment }),
+    'marker-superseded'
   );
   const { data: rereadRun } = await get(`${base}/actions/runs/${p.runId}`);
   checkCallerProducerIdentity(
