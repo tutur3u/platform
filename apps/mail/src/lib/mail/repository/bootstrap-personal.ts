@@ -4,6 +4,7 @@ import {
   type AnyRecord,
   getCanonicalUserDisplayName,
   getConfirmedOwnerAddress,
+  linkPersonalMailboxWorkspace,
   privateTable,
   SYSTEM_LABELS,
 } from './shared';
@@ -60,6 +61,7 @@ export async function resolvePersonalMailbox(
       );
     }
   }
+  if (!existing) await linkPersonalMailboxWorkspace(admin, mailbox.id);
 
   return {
     displayName,

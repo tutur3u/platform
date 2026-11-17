@@ -6,6 +6,8 @@ import { resolveForwardingMailbox } from '../automation/forwarding';
 import { autoLabelMessage } from '../automation/labels';
 import { deliverGroupMessage } from '../groups/delivery';
 import { createSnippet, sanitizeMailHtml, stripHtml } from '../html';
+import { linkPersonalMailboxWorkspace } from '../repository/shared';
+import { isSenderBlocked } from '../sender-blocks/store';
 import { resolveInternalMailboxName } from '../identity';
 import { normalizeAddress, parseRawEmail } from './parser';
 import type { AnyRecord, ParsedEmail, SesNotification } from './types';
@@ -98,6 +100,7 @@ export async function ensureMailboxForRecipient(
     },
     { onConflict: 'mailbox_id,user_id' }
   );
+  await linkPersonalMailboxWorkspace(admin, mailbox.id);
 
   return mailbox;
 }
@@ -285,7 +288,8 @@ async function persistInboundMessage({
       .eq('provider_message_id', providerMessageId)
       .maybeSingle();
   if (existingMessageError) throw existingMessageError;
-  if (existingMessage) return existingMessage;
+  if (existingMessage)
+    return { message: existingMessage, senderBlocked: false };
 
   if (parsed.internetMessageId) {
     const {
@@ -311,10 +315,15 @@ async function persistInboundMessage({
         );
         if (error) throw error;
       }
-      return existingInternetMessage;
+      return { message: existingInternetMessage, senderBlocked: false };
     }
   }
 
+  const senderBlocked = await isSenderBlocked(
+    admin,
+    mailbox.id,
+    parsed.from?.address
+  );
   const sanitizedHtml = parsed.bodyHtml
     ? sanitizeMailHtml(parsed.bodyHtml)
     : null;
@@ -407,7 +416,13 @@ async function persistInboundMessage({
     );
   }
 
-  const inboxLabel = await ensureLabel(admin, mailbox.id, 'inbox');
+  // Blocked senders land in Blocked; the incoming-mail push only fires for
+  // the inbox label.
+  const inboxLabel = await ensureLabel(
+    admin,
+    mailbox.id,
+    senderBlocked ? 'blocked' : 'inbox'
+  );
   await privateTable(admin, 'mail_message_labels').upsert(
     {
       label_id: inboxLabel.id,
@@ -424,19 +439,23 @@ async function persistInboundMessage({
     })
     .eq('id', thread.id);
 
-  return message;
+  return { message, senderBlocked };
 }
 
 export async function createInboundMessage(
   args: Parameters<typeof persistInboundMessage>[0]
 ) {
-  const message = await persistInboundMessage(args);
+  const { message, senderBlocked } = await persistInboundMessage(args);
+  // Blocked mail is kept but never forwarded or auto-labelled.
+  if (senderBlocked) return message;
   const target = await resolveForwardingMailbox(args.admin, args.mailbox);
   if (target) {
     // One internal hop only. Retain the source copy and original headers/body/
     // attachments. Never invoke target forwarding or send an SMTP message.
     const forwarded = await persistInboundMessage({ ...args, mailbox: target });
-    await autoLabelMessage(args.admin, target, forwarded);
+    if (!forwarded.senderBlocked) {
+      await autoLabelMessage(args.admin, target, forwarded.message);
+    }
   }
   await autoLabelMessage(args.admin, args.mailbox, message);
   return message;

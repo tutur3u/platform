@@ -44,8 +44,10 @@ export {
   getMailAttachmentText,
 } from './mail-attachment-preview';
 export * from './mail-blacklist';
+export * from './mail-correspondents';
 export { getMailBootstrap, getMailUnreadCounts } from './mail-bootstrap';
 export * from './mail-invitation';
+export * from './mail-sender-blocks';
 export { bulkUpdateMailThreads, markMailFolderRead } from './mail-read';
 export { getMailMessageSource, getMailSourceHeaders } from './mail-source';
 export * from './mail-types';

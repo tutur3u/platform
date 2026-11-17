@@ -26,6 +26,7 @@ export type MailTableName =
   | 'mail_message_folders'
   | 'mail_message_user_state'
   | 'mail_messages'
+  | 'mail_sender_blocks'
   | 'mail_outbound_jobs'
   | 'mail_raw_messages'
   | 'mail_recipients'
@@ -41,10 +42,31 @@ export const SYSTEM_LABELS = [
   { kind: 'system', name: 'Trash', slug: 'trash' },
   { kind: 'system', name: 'Starred', slug: 'starred' },
   { kind: 'system', name: 'Spam', slug: 'spam' },
+  { kind: 'system', name: 'Blocked', slug: 'blocked' },
 ] as const;
 
 export function privateTable(client: AnyRecord, table: MailTableName) {
   return client.schema('private').from(table);
+}
+
+/**
+ * Links a newly created personal mailbox to its owner's personal workspace
+ * through the database rule (single owner who is the creator, not an
+ * employee-provisioned or adopted mailbox). The link is optional metadata,
+ * so a failure never blocks mailbox setup.
+ */
+export async function linkPersonalMailboxWorkspace(
+  admin: AnyRecord,
+  mailboxId: string
+) {
+  try {
+    const { error } = await admin
+      .schema('private')
+      .rpc('link_personal_mailbox_workspaces', { p_mailbox_id: mailboxId });
+    if (error) throw error;
+  } catch {
+    console.warn('Mailbox workspace link failed; leaving mailbox unlinked');
+  }
 }
 
 export async function getAdminClient(): Promise<SupabaseClient<Database>> {
@@ -95,6 +117,7 @@ export function toMailbox(
     domainId: row.domain_id,
     effectiveOutboundProvider,
     id: row.id,
+    wsId: row.ws_id ?? null,
     outboundProviderOverride: row.outbound_provider_override ?? null,
     providerLimits: {
       maxMessageBytes:

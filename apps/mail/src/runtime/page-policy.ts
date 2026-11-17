@@ -10,6 +10,7 @@ const pageKinds = {
   '/not-available': 'not-available',
   '/[wsId]': 'workspace-index',
   '/[wsId]/archive': 'folder',
+  '/[wsId]/blocked': 'folder',
   '/[wsId]/drafts': 'folder',
   '/[wsId]/inbox': 'folder',
   '/[wsId]/muted': 'folder',

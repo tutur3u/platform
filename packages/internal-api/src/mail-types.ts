@@ -73,6 +73,8 @@ export interface MailMailbox {
   status: MailMailboxStatus;
   type: MailMailboxType;
   unreadCount: number | null;
+  /** Workspace whose Contacts this mailbox uses by default, when linked. */
+  wsId?: string | null;
 }
 
 export interface MailGroupPolicy {
@@ -210,6 +212,7 @@ export interface MailBootstrapResponse {
 export interface ListMailMessagesParams {
   folder?:
     | 'archive'
+    | 'blocked'
     | 'drafts'
     | 'inbox'
     | 'snoozed'

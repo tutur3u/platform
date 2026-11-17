@@ -4420,7 +4420,22 @@ export type Database = {
           suspended?: boolean;
           user_id?: string;
         };
-        Relationships: [];
+        Relationships: [
+          {
+            foreignKeyName: 'devbox_personal_pool_grants_user_id_fkey';
+            columns: ['user_id'];
+            isOneToOne: true;
+            referencedRelation: 'nova_user_challenge_leaderboard';
+            referencedColumns: ['user_id'];
+          },
+          {
+            foreignKeyName: 'devbox_personal_pool_grants_user_id_fkey';
+            columns: ['user_id'];
+            isOneToOne: true;
+            referencedRelation: 'nova_user_leaderboard';
+            referencedColumns: ['user_id'];
+          },
+        ];
       };
       devbox_preview_requests: {
         Row: {
@@ -12035,6 +12050,7 @@ export type Database = {
           status: string;
           type: string;
           updated_at: string;
+          ws_id: string | null;
         };
         ComputedFields: never;
         Insert: {
@@ -12056,6 +12072,7 @@ export type Database = {
           status?: string;
           type?: string;
           updated_at?: string;
+          ws_id?: string | null;
         };
         Update: {
           address?: string;
@@ -12076,6 +12093,7 @@ export type Database = {
           status?: string;
           type?: string;
           updated_at?: string;
+          ws_id?: string | null;
         };
         Relationships: [
           {
@@ -12731,6 +12749,59 @@ export type Database = {
             columns: ['message_id'];
             isOneToOne: false;
             referencedRelation: 'mail_messages';
+            referencedColumns: ['id'];
+          },
+        ];
+      };
+      mail_sender_blocks: {
+        Row: {
+          contact_id: string | null;
+          created_at: string;
+          created_by: string | null;
+          id: string;
+          kind: string;
+          mailbox_id: string;
+          value: string;
+        };
+        ComputedFields: never;
+        Insert: {
+          contact_id?: string | null;
+          created_at?: string;
+          created_by?: string | null;
+          id?: string;
+          kind: string;
+          mailbox_id: string;
+          value: string;
+        };
+        Update: {
+          contact_id?: string | null;
+          created_at?: string;
+          created_by?: string | null;
+          id?: string;
+          kind?: string;
+          mailbox_id?: string;
+          value?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'mail_sender_blocks_created_by_fkey';
+            columns: ['created_by'];
+            isOneToOne: false;
+            referencedRelation: 'nova_user_challenge_leaderboard';
+            referencedColumns: ['user_id'];
+          },
+          {
+            foreignKeyName: 'mail_sender_blocks_created_by_fkey';
+            columns: ['created_by'];
+            isOneToOne: false;
+            referencedRelation: 'nova_user_leaderboard';
+            referencedColumns: ['user_id'];
+          },
+          {
+            foreignKeyName: 'mail_sender_blocks_mailbox_id_fkey';
+            columns: ['mailbox_id'];
+            isOneToOne: false;
+            referencedRelation: 'mail_mailboxes';
             referencedColumns: ['id'];
           },
         ];
@@ -14828,6 +14899,209 @@ export type Database = {
           },
         ];
       };
+      newsletter_deliveries: {
+        Row: {
+          accepted_on: string | null;
+          actor_id: string;
+          created_at: string;
+          domain_id: string;
+          id: string;
+          local_part: string;
+          recipient: string;
+          reserved_on: string;
+          status: string;
+          updated_at: string;
+          ws_id: string;
+        };
+        ComputedFields: never;
+        Insert: {
+          accepted_on?: string | null;
+          actor_id: string;
+          created_at?: string;
+          domain_id: string;
+          id?: string;
+          local_part: string;
+          recipient: string;
+          reserved_on?: string;
+          status: string;
+          updated_at?: string;
+          ws_id: string;
+        };
+        Update: {
+          accepted_on?: string | null;
+          actor_id?: string;
+          created_at?: string;
+          domain_id?: string;
+          id?: string;
+          local_part?: string;
+          recipient?: string;
+          reserved_on?: string;
+          status?: string;
+          updated_at?: string;
+          ws_id?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'newsletter_deliveries_domain_fk';
+            columns: ['ws_id', 'domain_id'];
+            isOneToOne: false;
+            referencedRelation: 'newsletter_sending_domains';
+            referencedColumns: ['ws_id', 'id'];
+          },
+        ];
+      };
+      newsletter_domain_audit: {
+        Row: {
+          action: string;
+          actor: string;
+          domain_id: string | null;
+          id: string;
+          occurred_at: string;
+          subject: string;
+          ws_id: string;
+        };
+        ComputedFields: never;
+        Insert: {
+          action: string;
+          actor: string;
+          domain_id?: string | null;
+          id?: string;
+          occurred_at?: string;
+          subject: string;
+          ws_id: string;
+        };
+        Update: {
+          action?: string;
+          actor?: string;
+          domain_id?: string | null;
+          id?: string;
+          occurred_at?: string;
+          subject?: string;
+          ws_id?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'newsletter_domain_audit_domain_id_fkey';
+            columns: ['domain_id'];
+            isOneToOne: false;
+            referencedRelation: 'newsletter_sending_domains';
+            referencedColumns: ['id'];
+          },
+        ];
+      };
+      newsletter_sender_addresses: {
+        Row: {
+          approval: string;
+          created_at: string;
+          domain_id: string;
+          id: string;
+          local_part: string;
+          updated_at: string;
+          ws_id: string;
+        };
+        ComputedFields: never;
+        Insert: {
+          approval?: string;
+          created_at?: string;
+          domain_id: string;
+          id?: string;
+          local_part: string;
+          updated_at?: string;
+          ws_id: string;
+        };
+        Update: {
+          approval?: string;
+          created_at?: string;
+          domain_id?: string;
+          id?: string;
+          local_part?: string;
+          updated_at?: string;
+          ws_id?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'newsletter_sender_addresses_domain_fk';
+            columns: ['ws_id', 'domain_id'];
+            isOneToOne: false;
+            referencedRelation: 'newsletter_sending_domains';
+            referencedColumns: ['ws_id', 'id'];
+          },
+        ];
+      };
+      newsletter_sending_domains: {
+        Row: {
+          approval: string;
+          created_at: string;
+          dkim_verified: boolean;
+          dns_records: NonNullable<Json>;
+          id: string;
+          mail_from_domain: string | null;
+          mail_from_verified: boolean;
+          ownership_token_hash: string;
+          subdomain: string;
+          txt_verified: boolean;
+          updated_at: string;
+          ws_id: string;
+        };
+        ComputedFields: never;
+        Insert: {
+          approval?: string;
+          created_at?: string;
+          dkim_verified?: boolean;
+          dns_records: NonNullable<Json>;
+          id?: string;
+          mail_from_domain?: string | null;
+          mail_from_verified?: boolean;
+          ownership_token_hash: string;
+          subdomain: string;
+          txt_verified?: boolean;
+          updated_at?: string;
+          ws_id: string;
+        };
+        Update: {
+          approval?: string;
+          created_at?: string;
+          dkim_verified?: boolean;
+          dns_records?: NonNullable<Json>;
+          id?: string;
+          mail_from_domain?: string | null;
+          mail_from_verified?: boolean;
+          ownership_token_hash?: string;
+          subdomain?: string;
+          txt_verified?: boolean;
+          updated_at?: string;
+          ws_id?: string;
+        };
+        Relationships: [];
+      };
+      newsletter_subscribers: {
+        Row: {
+          created_at: string;
+          email: string;
+          id: string;
+          unsubscribe_token_hash: string;
+          unsubscribed_at: string | null;
+          ws_id: string;
+        };
+        ComputedFields: never;
+        Insert: {
+          created_at?: string;
+          email: string;
+          id?: string;
+          unsubscribe_token_hash: string;
+          unsubscribed_at?: string | null;
+          ws_id: string;
+        };
+        Update: {
+          created_at?: string;
+          email?: string;
+          id?: string;
+          unsubscribe_token_hash?: string;
+          unsubscribed_at?: string | null;
+          ws_id?: string;
+        };
+        Relationships: [];
+      };
       note_voice_jobs: {
         Row: {
           artifact: Json | null;
@@ -16034,6 +16308,61 @@ export type Database = {
           },
         ];
       };
+      periodic_report_held_actions: {
+        Row: {
+          action: string;
+          actor_user_id: string;
+          affected_count: number;
+          cadence: string | null;
+          completed_at: string | null;
+          created_at: string;
+          group_id: string | null;
+          id: string;
+          idempotency_key: string;
+          period_end: string | null;
+          period_start: string | null;
+          report_ids: string[];
+          requested_count: number;
+          status: string;
+          ws_id: string;
+        };
+        ComputedFields: never;
+        Insert: {
+          action: string;
+          actor_user_id: string;
+          affected_count?: number;
+          cadence?: string | null;
+          completed_at?: string | null;
+          created_at?: string;
+          group_id?: string | null;
+          id?: string;
+          idempotency_key: string;
+          period_end?: string | null;
+          period_start?: string | null;
+          report_ids?: string[];
+          requested_count: number;
+          status?: string;
+          ws_id: string;
+        };
+        Update: {
+          action?: string;
+          actor_user_id?: string;
+          affected_count?: number;
+          cadence?: string | null;
+          completed_at?: string | null;
+          created_at?: string;
+          group_id?: string | null;
+          id?: string;
+          idempotency_key?: string;
+          period_end?: string | null;
+          period_start?: string | null;
+          report_ids?: string[];
+          requested_count?: number;
+          status?: string;
+          ws_id?: string;
+        };
+        Relationships: [];
+      };
       personal_journal_entries: {
         Row: {
           actor_id: string;
@@ -16191,6 +16520,177 @@ export type Database = {
             referencedColumns: ['user_id'];
           },
         ];
+      };
+      platform_feature_flag_audit: {
+        Row: {
+          actor_id: string;
+          environment: string;
+          flag_key: string;
+          id: string;
+          new_override: boolean | null;
+          new_revision: number;
+          occurred_at: string;
+          old_override: boolean | null;
+          old_revision: number;
+          operation_id: string;
+        };
+        ComputedFields: never;
+        Insert: {
+          actor_id: string;
+          environment: string;
+          flag_key: string;
+          id?: string;
+          new_override?: boolean | null;
+          new_revision: number;
+          occurred_at?: string;
+          old_override?: boolean | null;
+          old_revision: number;
+          operation_id: string;
+        };
+        Update: {
+          actor_id?: string;
+          environment?: string;
+          flag_key?: string;
+          id?: string;
+          new_override?: boolean | null;
+          new_revision?: number;
+          occurred_at?: string;
+          old_override?: boolean | null;
+          old_revision?: number;
+          operation_id?: string;
+        };
+        Relationships: [];
+      };
+      platform_feature_flag_state: {
+        Row: {
+          environment: string;
+          flag_key: string;
+          override_enabled: boolean | null;
+          revision: number;
+          updated_at: string;
+          updated_by: string;
+        };
+        ComputedFields: never;
+        Insert: {
+          environment: string;
+          flag_key: string;
+          override_enabled?: boolean | null;
+          revision: number;
+          updated_at?: string;
+          updated_by: string;
+        };
+        Update: {
+          environment?: string;
+          flag_key?: string;
+          override_enabled?: boolean | null;
+          revision?: number;
+          updated_at?: string;
+          updated_by?: string;
+        };
+        Relationships: [];
+      };
+      policy_notice_deliveries: {
+        Row: {
+          created_at: string;
+          mode: string;
+          notice_id: string;
+          notice_version: string;
+          recipient_hash: string;
+          run_id: string;
+          ses_message_id: string | null;
+          status: string;
+          suppression: string | null;
+          updated_at: string;
+        };
+        ComputedFields: never;
+        Insert: {
+          created_at?: string;
+          mode: string;
+          notice_id: string;
+          notice_version: string;
+          recipient_hash: string;
+          run_id: string;
+          ses_message_id?: string | null;
+          status: string;
+          suppression?: string | null;
+          updated_at?: string;
+        };
+        Update: {
+          created_at?: string;
+          mode?: string;
+          notice_id?: string;
+          notice_version?: string;
+          recipient_hash?: string;
+          run_id?: string;
+          ses_message_id?: string | null;
+          status?: string;
+          suppression?: string | null;
+          updated_at?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'policy_notice_deliveries_run_id_fkey';
+            columns: ['run_id'];
+            isOneToOne: false;
+            referencedRelation: 'policy_notice_runs';
+            referencedColumns: ['id'];
+          },
+        ];
+      };
+      policy_notice_runs: {
+        Row: {
+          already_sent: number | null;
+          eligible: number | null;
+          failed: number | null;
+          finished_at: string | null;
+          id: string;
+          mode: string;
+          notice_id: string;
+          notice_version: string;
+          sent: number | null;
+          started_at: string;
+          started_by: string | null;
+          status: string;
+          stop_reason: string | null;
+          suppressed: number | null;
+          unknown: number | null;
+        };
+        ComputedFields: never;
+        Insert: {
+          already_sent?: number | null;
+          eligible?: number | null;
+          failed?: number | null;
+          finished_at?: string | null;
+          id?: string;
+          mode: string;
+          notice_id: string;
+          notice_version: string;
+          sent?: number | null;
+          started_at?: string;
+          started_by?: string | null;
+          status?: string;
+          stop_reason?: string | null;
+          suppressed?: number | null;
+          unknown?: number | null;
+        };
+        Update: {
+          already_sent?: number | null;
+          eligible?: number | null;
+          failed?: number | null;
+          finished_at?: string | null;
+          id?: string;
+          mode?: string;
+          notice_id?: string;
+          notice_version?: string;
+          sent?: number | null;
+          started_at?: string;
+          started_by?: string | null;
+          status?: string;
+          stop_reason?: string | null;
+          suppressed?: number | null;
+          unknown?: number | null;
+        };
+        Relationships: [];
       };
       product_feedback_media: {
         Row: {
@@ -16656,6 +17156,28 @@ export type Database = {
         Update: {
           key?: string;
           value?: string | null;
+        };
+        Relationships: [];
+      };
+      ses_notification_receipts: {
+        Row: {
+          kind: string;
+          received_at: string;
+          sns_message_id: string;
+          topic_arn: string;
+        };
+        ComputedFields: never;
+        Insert: {
+          kind: string;
+          received_at?: string;
+          sns_message_id: string;
+          topic_arn: string;
+        };
+        Update: {
+          kind?: string;
+          received_at?: string;
+          sns_message_id?: string;
+          topic_arn?: string;
         };
         Relationships: [];
       };
@@ -19903,7 +20425,7 @@ export type Database = {
           action: string;
           actor_id: string | null;
           created_at: string;
-          detail: Json;
+          detail: NonNullable<Json>;
           domain_id: string | null;
           entitlement_source: string | null;
           hostname: string;
@@ -19915,7 +20437,7 @@ export type Database = {
           action: string;
           actor_id?: string | null;
           created_at?: string;
-          detail?: Json;
+          detail?: NonNullable<Json>;
           domain_id?: string | null;
           entitlement_source?: string | null;
           hostname: string;
@@ -19926,7 +20448,7 @@ export type Database = {
           action?: string;
           actor_id?: string | null;
           created_at?: string;
-          detail?: Json;
+          detail?: NonNullable<Json>;
           domain_id?: string | null;
           entitlement_source?: string | null;
           hostname?: string;
@@ -19958,7 +20480,22 @@ export type Database = {
           updated_by?: string | null;
           ws_id?: string;
         };
-        Relationships: [];
+        Relationships: [
+          {
+            foreignKeyName: 'workspace_domain_caps_updated_by_fkey';
+            columns: ['updated_by'];
+            isOneToOne: false;
+            referencedRelation: 'nova_user_challenge_leaderboard';
+            referencedColumns: ['user_id'];
+          },
+          {
+            foreignKeyName: 'workspace_domain_caps_updated_by_fkey';
+            columns: ['updated_by'];
+            isOneToOne: false;
+            referencedRelation: 'nova_user_leaderboard';
+            referencedColumns: ['user_id'];
+          },
+        ];
       };
       workspace_domain_settings: {
         Row: {
@@ -19992,7 +20529,22 @@ export type Database = {
           updated_at?: string;
           updated_by?: string | null;
         };
-        Relationships: [];
+        Relationships: [
+          {
+            foreignKeyName: 'workspace_domain_settings_updated_by_fkey';
+            columns: ['updated_by'];
+            isOneToOne: false;
+            referencedRelation: 'nova_user_challenge_leaderboard';
+            referencedColumns: ['user_id'];
+          },
+          {
+            foreignKeyName: 'workspace_domain_settings_updated_by_fkey';
+            columns: ['updated_by'];
+            isOneToOne: false;
+            referencedRelation: 'nova_user_leaderboard';
+            referencedColumns: ['user_id'];
+          },
+        ];
       };
       workspace_education_access_requests: {
         Row: {
@@ -20140,6 +20692,34 @@ export type Database = {
           created_at?: string;
           quiz_id?: string;
           updated_at?: string;
+        };
+        Relationships: [];
+      };
+      workspace_role_permissions_orphans_20261031: {
+        Row: {
+          created_at: string;
+          enabled: boolean;
+          permission: Database['public']['Enums']['workspace_role_permission'];
+          quarantined_at: string;
+          role_id: string;
+          ws_id: string;
+        };
+        ComputedFields: never;
+        Insert: {
+          created_at: string;
+          enabled: boolean;
+          permission: Database['public']['Enums']['workspace_role_permission'];
+          quarantined_at?: string;
+          role_id: string;
+          ws_id: string;
+        };
+        Update: {
+          created_at?: string;
+          enabled?: boolean;
+          permission?: Database['public']['Enums']['workspace_role_permission'];
+          quarantined_at?: string;
+          role_id?: string;
+          ws_id?: string;
         };
         Relationships: [];
       };
@@ -24876,6 +25456,10 @@ export type Database = {
         Args: { p_allow_xwf?: boolean; p_user_id?: string };
         Returns: boolean;
       };
+      link_personal_mailbox_workspaces: {
+        Args: { p_mailbox_id?: string };
+        Returns: number;
+      };
       list_account_benefits: { Args: { p_user_id: string }; Returns: Json };
       list_ai_studio_consumption_events: {
         Args: {
@@ -25489,6 +26073,51 @@ export type Database = {
         Args: { p_version: string };
         Returns: Json;
       };
+      newsletter_finish_staff_delivery: {
+        Args: { p_delivery_id: string; p_status: string; p_ws_id: string };
+        Returns: Json;
+      };
+      newsletter_insert_domain: {
+        Args: {
+          p_actor: string;
+          p_dkim_verified: boolean;
+          p_dns: Json;
+          p_mail_from_domain: string;
+          p_mail_from_verified: boolean;
+          p_subdomain: string;
+          p_token_hash: string;
+          p_txt_verified: boolean;
+          p_write_verify: boolean;
+          p_ws_id: string;
+        };
+        Returns: Json;
+      };
+      newsletter_insert_subscriber: {
+        Args: { p_email: string; p_token_hash: string; p_ws_id: string };
+        Returns: Json;
+      };
+      newsletter_read_claim: { Args: { p_ws_id: string }; Returns: Json };
+      newsletter_reserve_staff_delivery: {
+        Args: {
+          p_actor: string;
+          p_actor_email: string;
+          p_flag_enabled: boolean;
+          p_local_part: string;
+          p_recipient: string;
+          p_ws_id: string;
+        };
+        Returns: Json;
+      };
+      newsletter_set_approval: {
+        Args: {
+          p_action: string;
+          p_actor: string;
+          p_local_part: string;
+          p_ws_id: string;
+        };
+        Returns: Json;
+      };
+      newsletter_unsubscribe: { Args: { p_token_hash: string }; Returns: Json };
       normalize_user_group_search_text: {
         Args: { input: string };
         Returns: string;
@@ -25538,10 +26167,135 @@ export type Database = {
         Args: { p_document: Json };
         Returns: boolean;
       };
+      platform_feature_flag_family: {
+        Args: { p_key: string };
+        Returns: string;
+      };
+      platform_feature_flag_mutate: {
+        Args: {
+          p_actor: string;
+          p_environment: string;
+          p_expected_revision: number;
+          p_flag_key: string;
+          p_operation_id: string;
+          p_override_enabled: boolean;
+        };
+        Returns: Json;
+      };
+      platform_feature_flag_read_audit: {
+        Args: {
+          p_actor: string;
+          p_before?: string;
+          p_limit?: number;
+          p_operation_id?: string;
+        };
+        Returns: Json;
+      };
+      platform_feature_flag_read_state: {
+        Args: { p_actor: string };
+        Returns: Json;
+      };
+      platform_feature_flag_require_permission: {
+        Args: { p_actor: string; p_permission: string };
+        Returns: undefined;
+      };
+      platform_feature_flag_runtime_read: {
+        Args: { p_environment: string };
+        Returns: Json;
+      };
       playground_collaboration_scope: {
         Args: { p_actor_id: string; p_id: string };
         Returns: Json;
       };
+      policy_notice_accounts: {
+        Args: Record<PropertyKey, never>;
+        Returns: {
+          business: boolean;
+          email: string;
+        }[];
+      };
+      policy_notice_claim: {
+        Args: {
+          p_recipient_hash: string;
+          p_run_id: string;
+          p_suppression: string;
+        };
+        Returns: boolean;
+      };
+      policy_notice_classify: {
+        Args: { p_emails: string[] };
+        Returns: {
+          email: string;
+          recipient_hash: string;
+          suppression: string;
+        }[];
+      };
+      policy_notice_counts: {
+        Args: { p_notice_id: string; p_notice_version: string };
+        Returns: {
+          already_sent: number;
+          eligible: number;
+          excluded_personal_only: number;
+          previously_failed: number;
+          suppressed: number;
+        }[];
+      };
+      policy_notice_finish_run: {
+        Args: {
+          p_counts: Json;
+          p_run_id: string;
+          p_status: string;
+          p_stop_reason: string;
+        };
+        Returns: boolean;
+      };
+      policy_notice_health: {
+        Args: { p_notice_id: string; p_notice_version: string };
+        Returns: {
+          attempted: number;
+          complaints: number;
+          hard_bounces: number;
+          rejected: number;
+          unknown: number;
+        }[];
+      };
+      policy_notice_next_recipients: {
+        Args: {
+          p_limit: number;
+          p_notice_id: string;
+          p_notice_version: string;
+        };
+        Returns: {
+          email: string;
+          recipient_hash: string;
+          suppression: string;
+        }[];
+      };
+      policy_notice_purge: { Args: { p_notice_id: string }; Returns: number };
+      policy_notice_recipient_hash: {
+        Args: { p_email: string };
+        Returns: string;
+      };
+      policy_notice_record: {
+        Args: {
+          p_recipient_hash: string;
+          p_run_id: string;
+          p_ses_message_id: string;
+          p_status: string;
+          p_suppression: string;
+        };
+        Returns: boolean;
+      };
+      policy_notice_start_run: {
+        Args: {
+          p_actor: string;
+          p_mode: string;
+          p_notice_id: string;
+          p_notice_version: string;
+        };
+        Returns: string;
+      };
+      policy_notice_suppression: { Args: { p_email: string }; Returns: string };
       prepare_inventory_pos_operator_access: {
         Args: { p_actor_id: string; p_ws_id: string };
         Returns: Json;
@@ -25781,6 +26535,18 @@ export type Database = {
         };
         Returns: undefined;
       };
+      record_ses_notification: {
+        Args: {
+          p_bounce_type: string;
+          p_detail: string;
+          p_kind: string;
+          p_recipients: string[];
+          p_ses_message_id: string;
+          p_sns_message_id: string;
+          p_topic_arn: string;
+        };
+        Returns: string;
+      };
       redeem_cross_app_token: {
         Args: {
           p_code_verifier: string;
@@ -25870,10 +26636,27 @@ export type Database = {
         Args: { p_report_id: string };
         Returns: boolean;
       };
+      request_held_periodic_report_delivery: {
+        Args: {
+          p_delivery_enabled?: boolean;
+          p_report_id: string;
+          p_ws_id: string;
+        };
+        Returns: Json;
+      };
       request_periodic_report_delivery: {
         Args: {
           p_action: string;
           p_delivery_enabled?: boolean;
+          p_report_id: string;
+          p_ws_id: string;
+        };
+        Returns: Json;
+      };
+      request_periodic_report_resend: {
+        Args: {
+          p_delivery_enabled?: boolean;
+          p_expected_status: string;
           p_report_id: string;
           p_ws_id: string;
         };
@@ -26174,6 +26957,10 @@ export type Database = {
           error_code: string;
           success: boolean;
         }[];
+      };
+      skip_held_periodic_reports: {
+        Args: { p_report_ids: string[]; p_ws_id: string };
+        Returns: string[];
       };
       skip_rejected_post_email_queue: {
         Args: Record<PropertyKey, never>;
@@ -26717,6 +27504,14 @@ export type Database = {
         };
         Returns: Json;
       };
+      workspace_domain_entitlement: {
+        Args: { p_actor_id: string; p_ws_id: string };
+        Returns: Json;
+      };
+      workspace_domain_serving_allowed: {
+        Args: { p_domain_id: string };
+        Returns: boolean;
+      };
       workspace_role_creator_grants_owned_by_actor:
         | { Args: { p_actor_id: string; p_role_id: string }; Returns: boolean }
         | {
@@ -26727,14 +27522,6 @@ export type Database = {
             };
             Returns: boolean;
           };
-      workspace_domain_entitlement: {
-        Args: { p_actor_id: string; p_ws_id: string };
-        Returns: Json;
-      };
-      workspace_domain_serving_allowed: {
-        Args: { p_domain_id: string };
-        Returns: boolean;
-      };
       workspace_role_has_creator_grant: {
         Args: { p_role_id: string };
         Returns: boolean;
@@ -29698,7 +30485,7 @@ export type Database = {
           event_type: string;
           fee_lock_id: string | null;
           id: number;
-          metadata: Json;
+          metadata: NonNullable<Json>;
           reason: string | null;
           revision: number | null;
           ws_id: string;
@@ -29712,7 +30499,7 @@ export type Database = {
           event_type: string;
           fee_lock_id?: string | null;
           id?: never;
-          metadata?: Json;
+          metadata?: NonNullable<Json>;
           reason?: string | null;
           revision?: number | null;
           ws_id: string;
@@ -29725,7 +30512,7 @@ export type Database = {
           event_type?: string;
           fee_lock_id?: string | null;
           id?: never;
-          metadata?: Json;
+          metadata?: NonNullable<Json>;
           reason?: string | null;
           revision?: number | null;
           ws_id?: string;
@@ -29758,6 +30545,13 @@ export type Database = {
             isOneToOne: false;
             referencedRelation: 'entity_limit_source__workspaces';
             referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'fee_lock_events_ws_id_fkey';
+            columns: ['ws_id'];
+            isOneToOne: false;
+            referencedRelation: 'entity_limit_source__workspaces';
+            referencedColumns: ['personal_ws_id'];
           },
           {
             foreignKeyName: 'fee_lock_events_ws_id_fkey';
@@ -29838,6 +30632,13 @@ export type Database = {
             isOneToOne: false;
             referencedRelation: 'entity_limit_source__workspaces';
             referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'fee_lock_invoice_links_ws_id_fkey';
+            columns: ['ws_id'];
+            isOneToOne: false;
+            referencedRelation: 'entity_limit_source__workspaces';
+            referencedColumns: ['personal_ws_id'];
           },
           {
             foreignKeyName: 'fee_lock_invoice_links_ws_id_fkey';
@@ -29932,6 +30733,20 @@ export type Database = {
             foreignKeyName: 'fee_lock_lines_group_id_fkey';
             columns: ['group_id'];
             isOneToOne: false;
+            referencedRelation: 'group_users_with_post_checks';
+            referencedColumns: ['group_id'];
+          },
+          {
+            foreignKeyName: 'fee_lock_lines_group_id_fkey';
+            columns: ['group_id'];
+            isOneToOne: false;
+            referencedRelation: 'group_with_attendance';
+            referencedColumns: ['group_id'];
+          },
+          {
+            foreignKeyName: 'fee_lock_lines_group_id_fkey';
+            columns: ['group_id'];
+            isOneToOne: false;
             referencedRelation: 'user_groups_with_tags';
             referencedColumns: ['id'];
           },
@@ -29974,6 +30789,13 @@ export type Database = {
             foreignKeyName: 'fee_lock_lines_ws_id_fkey';
             columns: ['ws_id'];
             isOneToOne: false;
+            referencedRelation: 'entity_limit_source__workspaces';
+            referencedColumns: ['personal_ws_id'];
+          },
+          {
+            foreignKeyName: 'fee_lock_lines_ws_id_fkey';
+            columns: ['ws_id'];
+            isOneToOne: false;
             referencedRelation: 'workspace_link_counts';
             referencedColumns: ['id'];
           },
@@ -29993,7 +30815,7 @@ export type Database = {
           locked_at: string;
           locked_by: string | null;
           revision: number;
-          snapshot: Json;
+          snapshot: NonNullable<Json>;
           total_amount: number;
           ws_id: string;
         };
@@ -30004,7 +30826,7 @@ export type Database = {
           locked_at?: string;
           locked_by?: string | null;
           revision: number;
-          snapshot: Json;
+          snapshot: NonNullable<Json>;
           total_amount: number;
           ws_id: string;
         };
@@ -30014,7 +30836,7 @@ export type Database = {
           locked_at?: string;
           locked_by?: string | null;
           revision?: number;
-          snapshot?: Json;
+          snapshot?: NonNullable<Json>;
           total_amount?: number;
           ws_id?: string;
         };
@@ -30046,6 +30868,13 @@ export type Database = {
             isOneToOne: false;
             referencedRelation: 'entity_limit_source__workspaces';
             referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'fee_lock_revisions_ws_id_fkey';
+            columns: ['ws_id'];
+            isOneToOne: false;
+            referencedRelation: 'entity_limit_source__workspaces';
+            referencedColumns: ['personal_ws_id'];
           },
           {
             foreignKeyName: 'fee_lock_revisions_ws_id_fkey';
@@ -30166,6 +30995,13 @@ export type Database = {
             foreignKeyName: 'fee_locks_student_id_fkey';
             columns: ['student_id'];
             isOneToOne: false;
+            referencedRelation: 'group_user_with_attendance';
+            referencedColumns: ['user_id'];
+          },
+          {
+            foreignKeyName: 'fee_locks_student_id_fkey';
+            columns: ['student_id'];
+            isOneToOne: false;
             referencedRelation: 'workspace_users';
             referencedColumns: ['id'];
           },
@@ -30196,6 +31032,13 @@ export type Database = {
             isOneToOne: false;
             referencedRelation: 'entity_limit_source__workspaces';
             referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'fee_locks_ws_id_fkey';
+            columns: ['ws_id'];
+            isOneToOne: false;
+            referencedRelation: 'entity_limit_source__workspaces';
+            referencedColumns: ['personal_ws_id'];
           },
           {
             foreignKeyName: 'fee_locks_ws_id_fkey';
@@ -30278,6 +31121,13 @@ export type Database = {
             isOneToOne: false;
             referencedRelation: 'entity_limit_source__workspaces';
             referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'fee_notice_templates_ws_id_fkey';
+            columns: ['ws_id'];
+            isOneToOne: false;
+            referencedRelation: 'entity_limit_source__workspaces';
+            referencedColumns: ['personal_ws_id'];
           },
           {
             foreignKeyName: 'fee_notice_templates_ws_id_fkey';
@@ -35925,28 +36775,19 @@ export type Database = {
       };
       task_cycle_tasks: {
         Row: {
-          added_after_start: boolean;
-          carry_count: number;
           created_at: string | null;
           cycle_id: string;
-          end_decision: string | null;
           task_id: string;
         };
         ComputedFields: never;
         Insert: {
-          added_after_start?: boolean;
-          carry_count?: number;
           created_at?: string | null;
           cycle_id: string;
-          end_decision?: string | null;
           task_id: string;
         };
         Update: {
-          added_after_start?: boolean;
-          carry_count?: number;
           created_at?: string | null;
           cycle_id?: string;
-          end_decision?: string | null;
           task_id?: string;
         };
         Relationships: [
@@ -35976,20 +36817,14 @@ export type Database = {
       task_cycles: {
         Row: {
           archived: boolean | null;
-          board_id: string | null;
           created_at: string | null;
           creator_id: string;
           deleted: boolean | null;
           description: string | null;
           end_date: string | null;
-          ended_at: string | null;
-          goal: string | null;
-          goal_result: string | null;
           id: string;
           name: string;
-          sequence_number: number | null;
           start_date: string | null;
-          started_at: string | null;
           status: string | null;
           updated_at: string | null;
           ws_id: string;
@@ -35997,52 +36832,33 @@ export type Database = {
         ComputedFields: never;
         Insert: {
           archived?: boolean | null;
-          board_id?: string | null;
           created_at?: string | null;
           creator_id?: string;
           deleted?: boolean | null;
           description?: string | null;
           end_date?: string | null;
-          ended_at?: string | null;
-          goal?: string | null;
-          goal_result?: string | null;
           id?: string;
           name: string;
-          sequence_number?: number | null;
           start_date?: string | null;
-          started_at?: string | null;
           status?: string | null;
           updated_at?: string | null;
           ws_id: string;
         };
         Update: {
           archived?: boolean | null;
-          board_id?: string | null;
           created_at?: string | null;
           creator_id?: string;
           deleted?: boolean | null;
           description?: string | null;
           end_date?: string | null;
-          ended_at?: string | null;
-          goal?: string | null;
-          goal_result?: string | null;
           id?: string;
           name?: string;
-          sequence_number?: number | null;
           start_date?: string | null;
-          started_at?: string | null;
           status?: string | null;
           updated_at?: string | null;
           ws_id?: string;
         };
         Relationships: [
-          {
-            foreignKeyName: 'task_cycles_board_id_fkey';
-            columns: ['board_id'];
-            isOneToOne: false;
-            referencedRelation: 'workspace_boards';
-            referencedColumns: ['id'];
-          },
           {
             foreignKeyName: 'task_cycles_creator_id_fkey';
             columns: ['creator_id'];
@@ -38514,106 +39330,6 @@ export type Database = {
             columns: ['task_id'];
             isOneToOne: false;
             referencedRelation: 'tasks';
-            referencedColumns: ['id'];
-          },
-        ];
-      };
-      task_sprint_reports: {
-        Row: {
-          added_points: number;
-          added_tasks: number;
-          backlog_tasks: number;
-          board_id: string;
-          carried_in_tasks: number;
-          carried_tasks: number;
-          committed_points: number;
-          cycle_id: string;
-          done_points: number;
-          done_tasks: number;
-          ended_at: string;
-          ended_by: string | null;
-          goal: string | null;
-          goal_result: string | null;
-          next_cycle_id: string | null;
-          people: Json;
-          total_tasks: number;
-          ws_id: string;
-        };
-        ComputedFields: never;
-        Insert: {
-          added_points?: number;
-          added_tasks?: number;
-          backlog_tasks?: number;
-          board_id: string;
-          carried_in_tasks?: number;
-          carried_tasks?: number;
-          committed_points?: number;
-          cycle_id: string;
-          done_points?: number;
-          done_tasks?: number;
-          ended_at?: string;
-          ended_by?: string | null;
-          goal?: string | null;
-          goal_result?: string | null;
-          next_cycle_id?: string | null;
-          people?: Json;
-          total_tasks?: number;
-          ws_id: string;
-        };
-        Update: {
-          added_points?: number;
-          added_tasks?: number;
-          backlog_tasks?: number;
-          board_id?: string;
-          carried_in_tasks?: number;
-          carried_tasks?: number;
-          committed_points?: number;
-          cycle_id?: string;
-          done_points?: number;
-          done_tasks?: number;
-          ended_at?: string;
-          ended_by?: string | null;
-          goal?: string | null;
-          goal_result?: string | null;
-          next_cycle_id?: string | null;
-          people?: Json;
-          total_tasks?: number;
-          ws_id?: string;
-        };
-        Relationships: [
-          {
-            foreignKeyName: 'task_sprint_reports_board_id_fkey';
-            columns: ['board_id'];
-            isOneToOne: false;
-            referencedRelation: 'workspace_boards';
-            referencedColumns: ['id'];
-          },
-          {
-            foreignKeyName: 'task_sprint_reports_cycle_id_fkey';
-            columns: ['cycle_id'];
-            isOneToOne: true;
-            referencedRelation: 'task_cycles';
-            referencedColumns: ['id'];
-          },
-          {
-            foreignKeyName: 'task_sprint_reports_ended_by_fkey';
-            columns: ['ended_by'];
-            isOneToOne: false;
-            referencedRelation: 'users';
-            referencedColumns: ['id'];
-          },
-          {
-            foreignKeyName: 'task_sprint_reports_next_cycle_id_fkey';
-            columns: ['next_cycle_id'];
-            isOneToOne: false;
-            referencedRelation: 'task_cycles';
-            referencedColumns: ['id'];
-          },
-          {
-            foreignKeyName: 'task_sprint_reports_ws_id_fkey';
-            columns: ['ws_id'];
-            isOneToOne: false;
-            referencedRelation: 'workspaces';
             referencedColumns: ['id'];
           },
         ];
@@ -42152,7 +42868,6 @@ export type Database = {
           id: string;
           name: string | null;
           next_task_number: number;
-          sprint_length_weeks: number | null;
           template_id: string | null;
           ticket_prefix: string | null;
           ws_id: string;
@@ -42176,7 +42891,6 @@ export type Database = {
           id?: string;
           name?: string | null;
           next_task_number?: number;
-          sprint_length_weeks?: number | null;
           template_id?: string | null;
           ticket_prefix?: string | null;
           ws_id: string;
@@ -42199,7 +42913,6 @@ export type Database = {
           id?: string;
           name?: string | null;
           next_task_number?: number;
-          sprint_length_weeks?: number | null;
           template_id?: string | null;
           ticket_prefix?: string | null;
           ws_id?: string;
@@ -43653,7 +44366,7 @@ export type Database = {
           cloudflare_worker_route_id: string | null;
           created_at: string;
           created_by: string | null;
-          dns_records: Json;
+          dns_records: NonNullable<Json>;
           entitlement_source: string;
           error: string | null;
           hostname: string;
@@ -43677,7 +44390,7 @@ export type Database = {
           cloudflare_worker_route_id?: string | null;
           created_at?: string;
           created_by?: string | null;
-          dns_records?: Json;
+          dns_records?: NonNullable<Json>;
           entitlement_source: string;
           error?: string | null;
           hostname: string;
@@ -43700,7 +44413,7 @@ export type Database = {
           cloudflare_worker_route_id?: string | null;
           created_at?: string;
           created_by?: string | null;
-          dns_records?: Json;
+          dns_records?: NonNullable<Json>;
           entitlement_source?: string;
           error?: string | null;
           hostname?: string;
@@ -43716,7 +44429,50 @@ export type Database = {
           verification_txt_value?: string;
           ws_id?: string;
         };
-        Relationships: [];
+        Relationships: [
+          {
+            foreignKeyName: 'workspace_domains_created_by_fkey';
+            columns: ['created_by'];
+            isOneToOne: false;
+            referencedRelation: 'shortened_links_creator_stats';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'workspace_domains_created_by_fkey';
+            columns: ['created_by'];
+            isOneToOne: false;
+            referencedRelation: 'users';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'workspace_domains_ws_id_fkey';
+            columns: ['ws_id'];
+            isOneToOne: false;
+            referencedRelation: 'entity_limit_source__workspaces';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'workspace_domains_ws_id_fkey';
+            columns: ['ws_id'];
+            isOneToOne: false;
+            referencedRelation: 'entity_limit_source__workspaces';
+            referencedColumns: ['personal_ws_id'];
+          },
+          {
+            foreignKeyName: 'workspace_domains_ws_id_fkey';
+            columns: ['ws_id'];
+            isOneToOne: false;
+            referencedRelation: 'workspace_link_counts';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'workspace_domains_ws_id_fkey';
+            columns: ['ws_id'];
+            isOneToOne: false;
+            referencedRelation: 'workspaces';
+            referencedColumns: ['id'];
+          },
+        ];
       };
       workspace_email_credentials: {
         Row: {
@@ -44504,6 +45260,7 @@ export type Database = {
           metadata: NonNullable<Json>;
           profile_data: NonNullable<Json>;
           published_at: string | null;
+          published_page_version_id: string | null;
           scheduled_for: string | null;
           slug: string;
           sort_order: number;
@@ -44528,6 +45285,7 @@ export type Database = {
           metadata?: NonNullable<Json>;
           profile_data?: NonNullable<Json>;
           published_at?: string | null;
+          published_page_version_id?: string | null;
           scheduled_for?: string | null;
           slug: string;
           sort_order?: number;
@@ -44551,6 +45309,7 @@ export type Database = {
           metadata?: NonNullable<Json>;
           profile_data?: NonNullable<Json>;
           published_at?: string | null;
+          published_page_version_id?: string | null;
           scheduled_for?: string | null;
           slug?: string;
           sort_order?: number;
@@ -44587,6 +45346,13 @@ export type Database = {
             isOneToOne: false;
             referencedRelation: 'users';
             referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'workspace_external_project_entries_published_page_version_fkey';
+            columns: ['published_page_version_id', 'id'];
+            isOneToOne: false;
+            referencedRelation: 'workspace_external_project_page_versions';
+            referencedColumns: ['id', 'entry_id'];
           },
           {
             foreignKeyName: 'workspace_external_project_entries_updated_by_fkey';
@@ -45142,6 +45908,116 @@ export type Database = {
           },
           {
             foreignKeyName: 'workspace_external_project_import_jobs_ws_id_fkey';
+            columns: ['ws_id'];
+            isOneToOne: false;
+            referencedRelation: 'workspaces';
+            referencedColumns: ['id'];
+          },
+        ];
+      };
+      workspace_external_project_page_versions: {
+        Row: {
+          created_at: string;
+          created_by: string | null;
+          data: NonNullable<Json>;
+          entry_id: string;
+          id: string;
+          note: string | null;
+          published_at: string | null;
+          published_by: string | null;
+          schema_version: number;
+          status: string;
+          version_number: number;
+          ws_id: string;
+        };
+        ComputedFields: never;
+        Insert: {
+          created_at?: string;
+          created_by?: string | null;
+          data: NonNullable<Json>;
+          entry_id: string;
+          id?: string;
+          note?: string | null;
+          published_at?: string | null;
+          published_by?: string | null;
+          schema_version: number;
+          status?: string;
+          version_number: number;
+          ws_id: string;
+        };
+        Update: {
+          created_at?: string;
+          created_by?: string | null;
+          data?: NonNullable<Json>;
+          entry_id?: string;
+          id?: string;
+          note?: string | null;
+          published_at?: string | null;
+          published_by?: string | null;
+          schema_version?: number;
+          status?: string;
+          version_number?: number;
+          ws_id?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'workspace_external_project_page_versions_created_by_fkey';
+            columns: ['created_by'];
+            isOneToOne: false;
+            referencedRelation: 'shortened_links_creator_stats';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'workspace_external_project_page_versions_created_by_fkey';
+            columns: ['created_by'];
+            isOneToOne: false;
+            referencedRelation: 'users';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'workspace_external_project_page_versions_entry_fkey';
+            columns: ['ws_id', 'entry_id'];
+            isOneToOne: false;
+            referencedRelation: 'workspace_external_project_entries';
+            referencedColumns: ['ws_id', 'id'];
+          },
+          {
+            foreignKeyName: 'workspace_external_project_page_versions_published_by_fkey';
+            columns: ['published_by'];
+            isOneToOne: false;
+            referencedRelation: 'shortened_links_creator_stats';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'workspace_external_project_page_versions_published_by_fkey';
+            columns: ['published_by'];
+            isOneToOne: false;
+            referencedRelation: 'users';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'workspace_external_project_page_versions_ws_id_fkey';
+            columns: ['ws_id'];
+            isOneToOne: false;
+            referencedRelation: 'entity_limit_source__workspaces';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'workspace_external_project_page_versions_ws_id_fkey';
+            columns: ['ws_id'];
+            isOneToOne: false;
+            referencedRelation: 'entity_limit_source__workspaces';
+            referencedColumns: ['personal_ws_id'];
+          },
+          {
+            foreignKeyName: 'workspace_external_project_page_versions_ws_id_fkey';
+            columns: ['ws_id'];
+            isOneToOne: false;
+            referencedRelation: 'workspace_link_counts';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'workspace_external_project_page_versions_ws_id_fkey';
             columns: ['ws_id'];
             isOneToOne: false;
             referencedRelation: 'workspaces';
@@ -48798,6 +49674,7 @@ export type Database = {
           gender: string | null;
           guardian: string | null;
           id: string;
+          mail_blocked: boolean;
           national_id: string | null;
           note: string | null;
           phone: string | null;
@@ -48823,6 +49700,7 @@ export type Database = {
           gender?: string | null;
           guardian?: string | null;
           id?: string;
+          mail_blocked?: boolean;
           national_id?: string | null;
           note?: string | null;
           phone?: string | null;
@@ -48847,6 +49725,7 @@ export type Database = {
           gender?: string | null;
           guardian?: string | null;
           id?: string;
+          mail_blocked?: boolean;
           national_id?: string | null;
           note?: string | null;
           phone?: string | null;
@@ -50687,16 +51566,6 @@ export type Database = {
         Args: Record<PropertyKey, never>;
         Returns: boolean;
       };
-      add_board_sprint: {
-        Args: { p_actor_id?: string; p_board_id: string; p_ws_id: string };
-        Returns: Database['public']['Tables']['task_cycles']['Row'];
-        SetofOptions: {
-          from: '*';
-          to: 'task_cycles';
-          isOneToOne: true;
-          isSetofReturn: false;
-        };
-      };
       add_platform_entity_creation_limit_table: {
         Args: {
           p_notes?: string;
@@ -50740,6 +51609,7 @@ export type Database = {
           gender: string | null;
           guardian: string | null;
           id: string;
+          mail_blocked: boolean;
           national_id: string | null;
           note: string | null;
           phone: string | null;
@@ -50777,6 +51647,7 @@ export type Database = {
           gender: string | null;
           guardian: string | null;
           id: string;
+          mail_blocked: boolean;
           national_id: string | null;
           note: string | null;
           phone: string | null;
@@ -50900,6 +51771,7 @@ export type Database = {
           gender: string | null;
           guardian: string | null;
           id: string;
+          mail_blocked: boolean;
           national_id: string | null;
           note: string | null;
           phone: string | null;
@@ -51150,6 +52022,10 @@ export type Database = {
       can_create_workspace: { Args: { p_user_id: string }; Returns: boolean };
       can_edit_task_assignees: {
         Args: { p_task_id: string };
+        Returns: boolean;
+      };
+      can_edit_workspace_external_projects: {
+        Args: { p_user_id?: string; p_ws_id: string };
         Returns: boolean;
       };
       can_manage_indicator: {
@@ -51591,21 +52467,6 @@ export type Database = {
       disconnect_sepay_integration: {
         Args: { p_now: string; p_ws_id: string };
         Returns: undefined;
-      };
-      end_board_sprint: {
-        Args: {
-          p_actor_id?: string;
-          p_cycle_id: string;
-          p_decisions?: Json;
-          p_goal_result?: string;
-        };
-        Returns: Database['public']['Tables']['task_sprint_reports']['Row'];
-        SetofOptions: {
-          from: '*';
-          to: 'task_sprint_reports';
-          isOneToOne: true;
-          isSetofReturn: false;
-        };
       };
       ensure_discord_guild_member_identity_index: {
         Args: Record<PropertyKey, never>;
@@ -52693,6 +53554,29 @@ export type Database = {
       get_product_feedback_staff: {
         Args: { p_actor: string; p_id: string };
         Returns: Json;
+      };
+      get_published_workspace_external_project_page_version: {
+        Args: { p_entry_id: string; p_ws_id: string };
+        Returns: {
+          created_at: string;
+          created_by: string | null;
+          data: NonNullable<Json>;
+          entry_id: string;
+          id: string;
+          note: string | null;
+          published_at: string | null;
+          published_by: string | null;
+          schema_version: number;
+          status: string;
+          version_number: number;
+          ws_id: string;
+        }[];
+        SetofOptions: {
+          from: '*';
+          to: 'workspace_external_project_page_versions';
+          isOneToOne: false;
+          isSetofReturn: true;
+        };
       };
       get_rate_limit_trust_decision: {
         Args: {
@@ -53998,6 +54882,7 @@ export type Database = {
           created_at: string | null;
           project_id: string;
           task_id: string;
+          ticket_number: number | null;
         }[];
         SetofOptions: {
           from: '*';
@@ -54005,10 +54890,6 @@ export type Database = {
           isOneToOne: false;
           isSetofReturn: true;
         };
-      };
-      list_board_unplanned_task_ids: {
-        Args: { p_board_id: string; p_ws_id: string };
-        Returns: string[];
       };
       list_deferred_calendar_google_imports: {
         Args: {
@@ -54266,14 +55147,6 @@ export type Database = {
         };
         Returns: Json;
       };
-      move_tasks_to_board_sprint: {
-        Args: {
-          p_board_id: string;
-          p_cycle_id?: string;
-          p_task_ids: string[];
-        };
-        Returns: number;
-      };
       normalize_task_sort_keys: {
         Args: Record<PropertyKey, never>;
         Returns: undefined;
@@ -54332,6 +55205,16 @@ export type Database = {
       profile_banner_operation_status: {
         Args: { p_operation_id: string; p_user_id: string };
         Returns: Json;
+      };
+      publish_workspace_external_project_page_version: {
+        Args: { p_actor_id?: string; p_version_id: string; p_ws_id: string };
+        Returns: Database['public']['CompositeTypes']['workspace_external_project_page_publication'];
+        SetofOptions: {
+          from: '*';
+          to: 'workspace_external_project_page_publication';
+          isOneToOne: true;
+          isSetofReturn: false;
+        };
       };
       quarantine_calendar_auth_token: {
         Args: {
@@ -54464,21 +55347,6 @@ export type Database = {
           remaining_credits: number;
           success: boolean;
         }[];
-      };
-      remove_board_sprint: {
-        Args: {
-          p_actor_id?: string;
-          p_board_id: string;
-          p_cycle_id: string;
-          p_ws_id: string;
-        };
-        Returns: Database['public']['Tables']['task_cycles']['Row'];
-        SetofOptions: {
-          from: '*';
-          to: 'task_cycles';
-          isOneToOne: true;
-          isSetofReturn: false;
-        };
       };
       remove_task_label_with_actor: {
         Args: {
@@ -54729,16 +55597,6 @@ export type Database = {
           relevance: number;
         }[];
       };
-      set_board_sprint_length: {
-        Args: { p_actor_id?: string; p_board_id: string; p_weeks: number };
-        Returns: Database['public']['Tables']['task_cycles']['Row'];
-        SetofOptions: {
-          from: '*';
-          to: 'task_cycles';
-          isOneToOne: true;
-          isSetofReturn: false;
-        };
-      };
       set_default_break_type: {
         Args: { p_target_id: string; p_ws_id: string };
         Returns: {
@@ -54973,16 +55831,6 @@ export type Database = {
         };
         Returns: Json;
       };
-      start_board_sprint: {
-        Args: { p_actor_id?: string; p_cycle_id: string };
-        Returns: Database['public']['Tables']['task_cycles']['Row'];
-        SetofOptions: {
-          from: '*';
-          to: 'task_cycles';
-          isOneToOne: true;
-          isSetofReturn: false;
-        };
-      };
       strict_payload_field_byte_limit: {
         Args: { _column_name: string; _table_name: string };
         Returns: number;
@@ -55097,6 +55945,7 @@ export type Database = {
           created_at: string | null;
           project_id: string;
           task_id: string;
+          ticket_number: number | null;
         }[];
         SetofOptions: {
           from: '*';
@@ -57592,6 +58441,21 @@ export type Database = {
         email: string | null;
         is_blocked: boolean | null;
         reason: string | null;
+      };
+      workspace_external_project_page_publication: {
+        id: string | null;
+        ws_id: string | null;
+        entry_id: string | null;
+        version_number: number | null;
+        schema_version: number | null;
+        data: Json | null;
+        status: string | null;
+        note: string | null;
+        created_by: string | null;
+        created_at: string | null;
+        published_by: string | null;
+        published_at: string | null;
+        replaced_page_version_id: string | null;
       };
     };
   };

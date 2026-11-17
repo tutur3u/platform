@@ -5,6 +5,7 @@ export const pages = [
   { pattern: "/login", file: "src/app/[locale]/(auth)/login/page.tsx", defaults: { "locale": "en" } },
   { pattern: "/verify-token", file: "src/app/[locale]/(auth)/verify-token/page.tsx", defaults: { "locale": "en" } },
   { pattern: "/[wsId]/archive", file: "src/app/[locale]/(dashboard)/[wsId]/archive/page.tsx", defaults: { "locale": "en" } },
+  { pattern: "/[wsId]/blocked", file: "src/app/[locale]/(dashboard)/[wsId]/blocked/page.tsx", defaults: { "locale": "en" } },
   { pattern: "/[wsId]/drafts", file: "src/app/[locale]/(dashboard)/[wsId]/drafts/page.tsx", defaults: { "locale": "en" } },
   { pattern: "/[wsId]/inbox", file: "src/app/[locale]/(dashboard)/[wsId]/inbox/page.tsx", defaults: { "locale": "en" } },
   { pattern: "/[wsId]/muted", file: "src/app/[locale]/(dashboard)/[wsId]/muted/page.tsx", defaults: { "locale": "en" } },

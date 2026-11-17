@@ -99,26 +99,30 @@ async function labelMessageIds({
   admin,
   mailboxId,
   value,
+  systemOnly = false,
 }: {
   admin: AnyRecord;
   mailboxId: string;
   value: string;
+  /** Match only the system label with this slug, never a user label name. */
+  systemOnly?: boolean;
 }) {
   const { data: labels, error: labelError } = await privateTable(
     admin,
     'mail_labels'
   )
-    .select('id, name, slug')
+    .select('id, name, slug, kind')
     .eq('mailbox_id', mailboxId);
   if (labelError)
     throw new Error(`Failed to search mail labels: ${labelError.message}`);
 
   const normalized = value.trim().toLowerCase();
   const labelIds = (labels ?? [])
-    .filter(
-      (row: AnyRecord) =>
-        row.slug?.toLowerCase() === normalized ||
-        row.name?.toLowerCase() === normalized
+    .filter((row: AnyRecord) =>
+      systemOnly
+        ? row.kind === 'system' && row.slug === normalized
+        : row.slug?.toLowerCase() === normalized ||
+          row.name?.toLowerCase() === normalized
     )
     .map((row: AnyRecord) => row.id as string);
   if (labelIds.length === 0) return [];
@@ -197,7 +201,21 @@ export async function queryMailMessageRows({
   const starredIds = idsWithTimestamp(states, 'starred_at');
   const archivedIds = idsWithTimestamp(states, 'archived_at');
   const trashedIds = idsWithTimestamp(states, 'trashed_at');
-  let includedIds: Set<string> | null = null;
+  // Mail from blocked senders carries the system `blocked` label: it is
+  // listed only in the Blocked folder and never in the inbox.
+  const blockedFolder = params.folder === 'blocked';
+  const blockedIds =
+    blockedFolder || params.folder === 'inbox' || !params.folder
+      ? await labelMessageIds({
+          admin,
+          mailboxId,
+          value: 'blocked',
+          systemOnly: true,
+        })
+      : [];
+  let includedIds: Set<string> | null = blockedFolder
+    ? new Set(blockedIds)
+    : null;
   const excludedIds = new Set<string>();
 
   if (params.folderId) {
@@ -238,6 +256,7 @@ export async function queryMailMessageRows({
     includedIds = intersectIds(includedIds, ids);
 
   if (params.folder === 'inbox' || !params.folder) {
+    for (const id of blockedIds) excludedIds.add(id);
     if (!parsed.states.includes('archived')) {
       for (const id of archivedIds) excludedIds.add(id);
     }
@@ -277,7 +296,7 @@ export async function queryMailMessageRows({
       query = trashedIds.length
         ? query.or(`status.eq.quarantined,id.in.(${trashedIds.join(',')})`)
         : query.eq('status', 'quarantined');
-    } else if (params.folder === 'inbox' || !params.folder) {
+    } else if (params.folder === 'inbox' || !params.folder || blockedFolder) {
       query = query
         .eq('direction', 'inbound')
         .neq('status', 'draft')
