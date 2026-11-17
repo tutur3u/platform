@@ -126,7 +126,7 @@ export function validateReleaseRecipe(record, { validateVercelSection } = {}) {
   );
   for (const item of record.smokeSpec.cases) {
     closedRecord(item, ['path', 'status', 'redirectOrigin', 'noStore']);
-    assert.match(item.path, /^\/(?![\/\\])[^\s#]*$/);
+    assert.match(item.path, /^\/(?![/\\])[^\s#]*$/);
     assert.ok(!/\\|%2f|%5c|\.\./i.test(item.path));
     const origin = record.canonicalHosts[0];
     assert.equal(new URL(item.path, origin).origin, origin);
