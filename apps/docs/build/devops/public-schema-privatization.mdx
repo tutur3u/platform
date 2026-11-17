@@ -349,6 +349,9 @@ Tables: `tasks`, `task_*`, `workspace_boards`, `board_template*`,
 `workspace_break_types`, `habit_*`, `workspace_habit*`,
 `workspace_calendar_*`, `workspace_cron_*`, `calendar_event_colors`.
 
+- The held board-sprint migrations create `task_sprint_reports` (recorded under
+  `typesAhead`) and any other sprint table in `private`; the sprint routes
+  read them through `.schema('private')`. The guard fails a `public` creation.
 - Largest code surface (`apps/tasks`, `packages/tasks-api`, `packages/tasks-ui`,
   `apps/calendar`, `apps/track`). Browser modules in `apps/tasks` and
   `packages/tasks-ui` move to internal-api first.

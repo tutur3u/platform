@@ -27,6 +27,16 @@ those pins requires independent review. With no profile argument, the driver
 runs the full board-sprint fixtures unchanged; those fixtures require the
 separately admitted sprint schema.
 
+Admitting the held sprint migrations must create `task_sprint_reports`, and
+any other new sprint table, in the `private` schema, and the sprint routes must
+read and write it through `.schema('private')` on an authorized admin client.
+The generated types declare `task_sprint_reports` in `public` ahead of its
+migration; it is recorded under `typesAhead` in
+`apps/database/public-schema-allowlist.json`, and `public-schema-guard.yaml`
+fails if the migration creates it in `public`. Remove that entry when the types
+are regenerated. See
+[public schema privatization](/build/devops/public-schema-privatization#guard-no-new-public-relations).
+
 A sprint is a task cycle with a `board_id`. A board has at most five open
 sprints: one running and the sprints planned after it. The earliest planned
 sprint is the next one. Sprints run Monday to Friday of their last week, and
