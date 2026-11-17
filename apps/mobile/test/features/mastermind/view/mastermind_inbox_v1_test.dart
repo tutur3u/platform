@@ -250,9 +250,12 @@ void main() {
       await tester.pumpAndSettle();
       expect(find.byType(TextField), findsOneWidget);
       expect(action().icon, AppIcons.close);
-      await _segment(tester, 'Resolved');
+      // A query keeps the field open across segments; an empty field folds
+      // away once a tap elsewhere dismisses the keyboard.
       await tester.enterText(find.byType(TextField), 'ship it');
       await tester.pumpAndSettle();
+      await _segment(tester, 'Resolved');
+      expect(find.byType(TextField), findsOneWidget);
       expect(find.byType(InboxItemTile), findsOneWidget);
       expect(find.text('Resolved · Ship it · 22:32'), findsOneWidget);
 
