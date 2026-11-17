@@ -11,6 +11,7 @@
   "apps/database/supabase/": ["packages/utils"],
   "apps/database/supabase/migrations/": ["apps/web"],
   "apps/devbox-control/src/": ["packages/sdk"],
+  "apps/drive/src/app/[locale]/(dashboard)/[wsId]/drive/": ["packages/ui"],
   "apps/finance/messages/": ["packages/ui"],
   "apps/infrastructure/e2e/fixtures/": ["apps/database"],
   "apps/infrastructure/src/lib/mobile-calendar/": ["apps/calendar"],
@@ -46,6 +47,7 @@
   "apps/web/messages/": ["apps/contacts", "apps/tanstack-web", "packages/ui"],
   "apps/web/src/": ["packages/users-core"],
   "apps/web/src/lib/seo/": ["apps/gateway", "packages/utils"],
+  "packages/hive-ui/src/components/hive/": ["packages/ui"],
   "packages/internal-api/src/": [
     "packages/apis",
     "packages/education-core",
@@ -55,6 +57,7 @@
   "packages/inventory-core/src/lib/infrastructure/employee-sql/": [
     "apps/infrastructure"
   ],
+  "packages/mind-ui/src/components/mind/": ["packages/ui"],
   "packages/realtime/src/": ["apps/chat-realtime"],
   "packages/satellite/src/": ["packages/users-core"],
   "packages/satellite/src/components/command-launcher/": ["packages/ui"],
