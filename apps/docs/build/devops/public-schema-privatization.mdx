@@ -450,6 +450,8 @@ Two layers share the allowlist `apps/database/public-schema-allowlist.json`:
   `target: "private.<name>"`.
 - `defaultAclExemptOwners` lists default-ACL owners the migration role cannot
   alter, each with a reason; their client grants are reported as warnings.
+  `platformObjects` and `clientViewExceptions` are shrink-only; the change
+  that introduces either field may populate it.
 - The allowlist path is listed in `CODEOWNERS` for database and security
   owners.
 
@@ -467,7 +469,14 @@ One read-only statement reads `pg_class`, `pg_depend` and `pg_default_acl`
    ACL grants those roles on tables or sequences, or function EXECUTE to
    `anon` or `PUBLIC`. Default EXECUTE for `authenticated` is a warning until
    `functions.enforced` is true, then an error. Exempt owners warn.
-3. **G5, compat views.** Each `serviceRoleCompatViews` entry exists as a plain
+3. **F1, platform owners.** Any `public` relation or function owned by a
+   `defaultAclExemptOwners` role is an error unless recorded in
+   `platformObjects` (`relation:<name>` or `function:<name>(<args>)`, each with
+   a reason). Stale records fail.
+4. **F2, client views.** A `public` view granted to a client role must have
+   `security_invoker=true` or a reasoned `clientViewExceptions` entry. Stale
+   entries fail.
+5. **G5, compat views.** Each `serviceRoleCompatViews` entry exists as a plain
    view, grants no client role, reads only its `target`, and has not expired
    (`expiresAfterWave` ≥ `currentWave`).
 
@@ -528,7 +537,11 @@ resolved in the allowlist:
   `authenticated` on tables, sequences and functions; the owner is exempt
   pending the hosted catalog result.
 
-Every replayed `public` table has RLS enabled.
+Every replayed `public` table has RLS enabled. In the replay all 320 `public`
+relations and 650 functions are owned by `postgres`, and all 26 client-granted
+views use `security_invoker`, so `platformObjects` and `clientViewExceptions`
+start empty. 228 `public` tables still grant client roles behind RLS; the
+waves remove those grants.
 
 ## Appendix: table inventory
 

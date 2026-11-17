@@ -350,6 +350,8 @@
       "reason": "Platform-owned default ACL in public; migrations run as postgres and cannot alter it. Objects created by supabase_admin are platform objects."
     }
   },
+  "platformObjects": {},
+  "clientViewExceptions": {},
   "functions": {
     "enforced": false,
     "names": {}

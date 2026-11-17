@@ -26,6 +26,10 @@ select json_build_object(
       'name', c.relname,
       'relkind', c.relkind,
       'rls', c.relrowsecurity,
+      'owner', pg_catalog.pg_get_userbyid(c.relowner),
+      'security_invoker', coalesce(
+        c.reloptions && array['security_invoker=true', 'security_invoker=on',
+          'security_invoker=1', 'security_invoker=yes'], false),
       'grantees', coalesce((
         select json_agg(distinct case a.grantee when 0 then 'PUBLIC'
           else pg_catalog.pg_get_userbyid(a.grantee) end)
@@ -49,6 +53,20 @@ select json_build_object(
         select 1 from pg_catalog.pg_depend e
         where e.classid = 'pg_catalog.pg_class'::regclass
           and e.objid = c.oid and e.deptype = 'e'
+      )
+  ), '[]'::json),
+  'functions', coalesce((
+    select json_agg(json_build_object(
+      'signature', p.proname || '(' ||
+        pg_catalog.pg_get_function_identity_arguments(p.oid) || ')',
+      'owner', pg_catalog.pg_get_userbyid(p.proowner)
+    ) order by p.proname, p.oid)
+    from pg_catalog.pg_proc p
+    where p.pronamespace = 'public'::regnamespace
+      and not exists (
+        select 1 from pg_catalog.pg_depend e
+        where e.classid = 'pg_catalog.pg_proc'::regclass
+          and e.objid = p.oid and e.deptype = 'e'
       )
   ), '[]'::json),
   'private_relations', coalesce((
@@ -161,6 +179,50 @@ export function evaluatePublicSchemaCatalog(catalog, allowlist) {
     }
   }
 
+  // F1: objects owned by an exempt default-ACL owner inherit its client
+  // grants, so each one needs an explicit platformObjects record.
+  const exemptOwners = allowlist.defaultAclExemptOwners ?? {};
+  const platform = allowlist.platformObjects ?? {};
+  const owned = [
+    ...catalog.relations.map((r) => [`relation:${r.name}`, r.owner]),
+    ...catalog.functions.map((f) => [`function:${f.signature}`, f.owner]),
+  ];
+  const seenPlatform = new Set();
+  for (const [key, owner] of owned) {
+    if (!Object.hasOwn(exemptOwners, owner)) continue;
+    seenPlatform.add(key);
+    if (!Object.hasOwn(platform, key))
+      errors.push(
+        `${key} is owned by exempt owner ${owner}; record it under platformObjects with a reason or change its owner`
+      );
+  }
+  for (const key of Object.keys(platform))
+    if (!seenPlatform.has(key))
+      errors.push(
+        `platformObjects.${key} is stale: no such object owned by an exempt owner`
+      );
+
+  // F2: client-readable views run with the caller's privileges unless an
+  // explicit, reasoned exception records why they cannot.
+  const viewExceptions = allowlist.clientViewExceptions ?? {};
+  const seenViews = new Set();
+  for (const relation of catalog.relations) {
+    if (relation.relkind !== 'v' && relation.relkind !== 'm') continue;
+    if (Object.hasOwn(compat, relation.name)) continue;
+    const clients = relation.grantees.filter((g) => CLIENT_ROLES.has(g));
+    if (!clients.length || relation.security_invoker) continue;
+    seenViews.add(relation.name);
+    if (!Object.hasOwn(viewExceptions, relation.name))
+      errors.push(
+        `public.${relation.name} is a view granted to ${clients.join(', ')} without security_invoker=true`
+      );
+  }
+  for (const name of Object.keys(viewExceptions))
+    if (!seenViews.has(name))
+      errors.push(
+        `clientViewExceptions.${name} is stale: the view is security_invoker or no longer client-granted`
+      );
+
   // G5: compat views are service-role only and read their private target.
   for (const message of expiredCompatViews(allowlist)) errors.push(message);
   for (const [name, entry] of Object.entries(compat)) {
@@ -192,7 +254,12 @@ export function parseCatalogOutput(stdout) {
     .find((value) => value.startsWith('{'));
   if (!line) throw new Error('Catalog query returned no JSON document');
   const catalog = JSON.parse(line);
-  for (const key of ['relations', 'private_relations', 'default_acl'])
+  for (const key of [
+    'relations',
+    'functions',
+    'private_relations',
+    'default_acl',
+  ])
     if (!Array.isArray(catalog[key]))
       throw new Error(`Catalog document lacks ${key}`);
   return catalog;

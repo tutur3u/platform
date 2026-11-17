@@ -27,6 +27,8 @@ const relation = (name, extra = {}) => ({
   rls: true,
   grantees: ['postgres', 'service_role'],
   depends_on: [],
+  owner: 'postgres',
+  security_invoker: false,
   ...extra,
 });
 
@@ -35,6 +37,7 @@ const catalog = (overrides = {}) => ({
     relation('notes'),
     relation('note_stats', { relkind: 'v', depends_on: ['public.notes'] }),
   ],
+  functions: [{ signature: 'touch_updated_at()', owner: 'postgres' }],
   private_relations: ['secrets'],
   default_acl: [],
   ...overrides,
@@ -113,6 +116,7 @@ test('G2: RLS-off tables fail, and client grants on them fail separately', () =>
           relkind: 'v',
           rls: false,
           grantees: ['authenticated'],
+          security_invoker: true,
         }),
       ],
     }),
@@ -178,6 +182,89 @@ test('G2: exempt default ACL owners warn instead of failing', () => {
   assert.match(result.warnings[0], /exempt owner/u);
 });
 
+test('F1: objects owned by an exempt owner need a platformObjects record', () => {
+  const exempt = {
+    defaultAclExemptOwners: { supabase_admin: { reason: 'platform' } },
+  };
+  const doc = catalog({
+    relations: [
+      ...catalog().relations,
+      relation('pg_stat_helper', { owner: 'supabase_admin' }),
+    ],
+    functions: [{ signature: 'graphql(text, jsonb)', owner: 'supabase_admin' }],
+  });
+  const strict = evaluatePublicSchemaCatalog(
+    doc,
+    allowlist({
+      ...exempt,
+      relations: {
+        ...allowlist().relations,
+        pg_stat_helper: { kind: 'table', wave: 8 },
+      },
+    })
+  );
+  assert.deepEqual(strict.errors, [
+    'relation:pg_stat_helper is owned by exempt owner supabase_admin; record it under platformObjects with a reason or change its owner',
+    'function:graphql(text, jsonb) is owned by exempt owner supabase_admin; record it under platformObjects with a reason or change its owner',
+  ]);
+  const recorded = evaluatePublicSchemaCatalog(
+    doc,
+    allowlist({
+      ...exempt,
+      relations: {
+        ...allowlist().relations,
+        pg_stat_helper: { kind: 'table', wave: 8 },
+      },
+      platformObjects: {
+        'relation:pg_stat_helper': { reason: 'platform' },
+        'function:graphql(text, jsonb)': { reason: 'platform' },
+      },
+    })
+  );
+  assert.deepEqual(recorded.errors, []);
+  const stale = evaluatePublicSchemaCatalog(
+    catalog(),
+    allowlist({
+      ...exempt,
+      platformObjects: { 'function:gone()': { reason: 'x' } },
+    })
+  );
+  assert.match(stale.errors[0], /platformObjects\.function:gone\(\) is stale/u);
+});
+
+test('F2: client-granted views must be security_invoker or a reasoned exception', () => {
+  const view = (extra) =>
+    catalog({
+      relations: [
+        relation('notes'),
+        relation('note_stats', {
+          relkind: 'v',
+          grantees: ['authenticated'],
+          depends_on: ['public.notes'],
+          ...extra,
+        }),
+      ],
+    });
+  assert.match(
+    evaluatePublicSchemaCatalog(view({}), allowlist()).errors[0],
+    /note_stats is a view granted to authenticated without security_invoker=true/u
+  );
+  assert.deepEqual(
+    evaluatePublicSchemaCatalog(view({ security_invoker: true }), allowlist())
+      .errors,
+    []
+  );
+  const excepted = allowlist({
+    clientViewExceptions: { note_stats: { reason: 'aggregate only' } },
+  });
+  assert.deepEqual(evaluatePublicSchemaCatalog(view({}), excepted).errors, []);
+  assert.match(
+    evaluatePublicSchemaCatalog(view({ security_invoker: true }), excepted)
+      .errors[0],
+    /clientViewExceptions\.note_stats is stale/u
+  );
+});
+
 test('G5: compat views must exist, stay service-role only, read only their target and expire', () => {
   const compat = allowlist({
     serviceRoleCompatViews: {
@@ -215,7 +302,12 @@ test('G5: compat views must exist, stay service-role only, read only their targe
 });
 
 test('catalog output parsing and SQL shape fail closed', () => {
-  const doc = { relations: [], private_relations: [], default_acl: [] };
+  const doc = {
+    relations: [],
+    functions: [],
+    private_relations: [],
+    default_acl: [],
+  };
   assert.deepEqual(
     parseCatalogOutput(`BEGIN\nSET\n${JSON.stringify(doc)}\nROLLBACK\n`),
     doc
@@ -226,7 +318,7 @@ test('catalog output parsing and SQL shape fail closed', () => {
   );
   assert.throws(
     () => parseCatalogOutput('{"relations":[]}'),
-    /lacks private_relations/u
+    /lacks functions/u
   );
   assert.match(CATALOG_SQL, /^begin read only;/u);
   assert.match(CATALOG_SQL, /rollback;\s*$/u);

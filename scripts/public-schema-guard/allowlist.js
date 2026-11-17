@@ -8,6 +8,9 @@ const NAME = /^[a-z_][a-z0-9_]*$/u;
 const VERSION = /^\d{14}$/u;
 const KINDS = new Set(['table', 'view']);
 
+const INTRODUCED = Symbol('fieldsMissingFromSource');
+const LATER_FIELDS = ['platformObjects', 'clientViewExceptions'];
+
 class AllowlistError extends Error {}
 
 function isWave(value) {
@@ -28,6 +31,16 @@ function requireNames(record, label, check) {
       );
     requireObject(entry, `${label}.${name}`);
     check(name, entry);
+  }
+}
+
+function requireReasons(record, label, keyPattern) {
+  for (const [key, entry] of Object.entries(requireObject(record, label))) {
+    if (!keyPattern.test(key))
+      throw new AllowlistError(`${label}: invalid key ${JSON.stringify(key)}`);
+    requireObject(entry, `${label}.${key}`);
+    if (typeof entry.reason !== 'string' || !entry.reason.trim())
+      throw new AllowlistError(`${label}.${key} needs a reason`);
   }
 }
 
@@ -71,6 +84,21 @@ function parseAllowlist(text) {
         );
     }
   );
+  // Fields added after the guard landed: a base without them is read as
+  // empty, and the change that introduces a field may populate it.
+  value[INTRODUCED] = new Set();
+  for (const label of LATER_FIELDS) {
+    if (value[label] === undefined) {
+      value[label] = {};
+      value[INTRODUCED].add(label);
+    }
+  }
+  requireReasons(
+    value.platformObjects,
+    'platformObjects',
+    /^(?:relation:[a-z_][a-z0-9_]*|function:[a-z_][a-z0-9_]*\([^()]*\))$/u
+  );
+  requireReasons(value.clientViewExceptions, 'clientViewExceptions', NAME);
   requireNames(value.moved, 'moved', (name, entry) => {
     if (!isWave(entry.wave) || entry.schema !== 'private')
       throw new AllowlistError(
@@ -133,6 +161,14 @@ function compareWithBase(current, base) {
       violations.push(
         `defaultAclExemptOwners.${name} was added; exemptions need security review in a dedicated change`
       );
+  for (const label of LATER_FIELDS) {
+    if (base[INTRODUCED]?.has(label)) continue;
+    for (const key of Object.keys(current[label]))
+      if (!Object.hasOwn(base[label], key))
+        violations.push(
+          `${label}.${key} was added; exceptions need security review in a dedicated change`
+        );
+  }
   for (const name of Object.keys(base.moved))
     if (!Object.hasOwn(current.moved, name))
       violations.push(

@@ -30,6 +30,8 @@ function allowlist(overrides = {}) {
     moved: {},
     serviceRoleCompatViews: {},
     defaultAclExemptOwners: {},
+    platformObjects: {},
+    clientViewExceptions: {},
     functions: { enforced: false, names: {} },
     ...overrides,
   };
@@ -134,6 +136,52 @@ test('compareWithBase allows shrinking with a moved record and rejects growth', 
         )
       ),
     /retained must be true/u
+  );
+});
+
+test('fields introduced after the base may be populated, then only shrink', () => {
+  const { platformObjects, clientViewExceptions, ...legacy } = allowlist();
+  const base = parseAllowlist(JSON.stringify(legacy));
+  assert.deepEqual(base.platformObjects, {});
+  const populated = parseAllowlist(
+    JSON.stringify(
+      allowlist({
+        platformObjects: { 'function:graphql(text)': { reason: 'platform' } },
+        clientViewExceptions: { note_stats: { reason: 'aggregate' } },
+      })
+    )
+  );
+  assert.deepEqual(compareWithBase(populated, base), []);
+  const grown = parseAllowlist(
+    JSON.stringify(
+      allowlist({
+        platformObjects: {
+          'function:graphql(text)': { reason: 'platform' },
+          'relation:extra': { reason: 'platform' },
+        },
+        clientViewExceptions: { note_stats: { reason: 'aggregate' } },
+      })
+    )
+  );
+  assert.match(
+    compareWithBase(grown, populated).join('\n'),
+    /platformObjects\.relation:extra was added/u
+  );
+  assert.throws(
+    () =>
+      parseAllowlist(
+        JSON.stringify(
+          allowlist({ platformObjects: { 'table:x': { reason: 'r' } } })
+        )
+      ),
+    /invalid key/u
+  );
+  assert.throws(
+    () =>
+      parseAllowlist(
+        JSON.stringify(allowlist({ clientViewExceptions: { notes: {} } }))
+      ),
+    /needs a reason/u
   );
 });
 
