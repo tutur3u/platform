@@ -132,6 +132,27 @@ export const fixtures = [
   },
   {
     pattern:
+      '/api/v1/workspaces/[wsId]/mail/mailboxes/[mailboxId]/correspondents',
+    methods: ['GET'],
+    params: ['wsId', 'mailboxId'],
+    zeroMethods: [],
+  },
+  {
+    pattern:
+      '/api/v1/workspaces/[wsId]/mail/mailboxes/[mailboxId]/sender-blocks',
+    methods: ['GET', 'POST'],
+    params: ['wsId', 'mailboxId'],
+    zeroMethods: [],
+  },
+  {
+    pattern:
+      '/api/v1/workspaces/[wsId]/mail/mailboxes/[mailboxId]/sender-blocks/[blockId]',
+    methods: ['DELETE'],
+    params: ['wsId', 'mailboxId', 'blockId'],
+    zeroMethods: [],
+  },
+  {
+    pattern:
       '/api/v1/workspaces/[wsId]/mail/mailboxes/[mailboxId]/labels/[labelId]',
     methods: ['PATCH', 'DELETE'],
     params: ['wsId', 'mailboxId', 'labelId'],

@@ -192,6 +192,36 @@ vi.mock(
     })
 );
 vi.mock(
+  '../app/api/v1/workspaces/[wsId]/mail/mailboxes/[mailboxId]/correspondents/route',
+  () =>
+    mocks.module({
+      GET: mocks.make(
+        '/api/v1/workspaces/[wsId]/mail/mailboxes/[mailboxId]/correspondents GET'
+      ),
+    })
+);
+vi.mock(
+  '../app/api/v1/workspaces/[wsId]/mail/mailboxes/[mailboxId]/sender-blocks/route',
+  () =>
+    mocks.module({
+      GET: mocks.make(
+        '/api/v1/workspaces/[wsId]/mail/mailboxes/[mailboxId]/sender-blocks GET'
+      ),
+      POST: mocks.make(
+        '/api/v1/workspaces/[wsId]/mail/mailboxes/[mailboxId]/sender-blocks POST'
+      ),
+    })
+);
+vi.mock(
+  '../app/api/v1/workspaces/[wsId]/mail/mailboxes/[mailboxId]/sender-blocks/[blockId]/route',
+  () =>
+    mocks.module({
+      DELETE: mocks.make(
+        '/api/v1/workspaces/[wsId]/mail/mailboxes/[mailboxId]/sender-blocks/[blockId] DELETE'
+      ),
+    })
+);
+vi.mock(
   '../app/api/v1/workspaces/[wsId]/mail/mailboxes/[mailboxId]/labels/[labelId]/route',
   () =>
     mocks.module({
@@ -409,11 +439,11 @@ beforeEach(() => {
 import { fixtures } from './api-registry-fixtures';
 
 describe('Mail API registrations', () => {
-  it('keeps all 42 filesystem endpoints distinct from method helpers', () => {
-    expect(mailEndpoints).toHaveLength(42);
+  it('keeps all 45 filesystem endpoints distinct from method helpers', () => {
+    expect(mailEndpoints).toHaveLength(45);
     expect(
       new Set(mailEndpoints.map((endpoint) => endpoint.pattern)).size
-    ).toBe(42);
+    ).toBe(45);
   });
   for (const fixture of fixtures)
     for (const method of fixture.methods)

@@ -63,6 +63,7 @@ vi.mock('next/navigation', () => ({
   useRouter: () => ({ push: vi.fn(), replace: vi.fn() }),
 }));
 vi.mock('@tuturuuu/internal-api/people', () => ({
+  resolveWorkspacePeople: vi.fn(async () => ({ people: [] })),
   searchWorkspacePeople: vi.fn(async () => ({ data: [] })),
 }));
 vi.mock('next-intl', () => ({

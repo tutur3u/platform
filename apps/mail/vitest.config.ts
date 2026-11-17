@@ -35,11 +35,15 @@ export default defineConfig({
       },
       { find: '@', replacement: resolve(__dirname, './src') },
       {
-        find: '@tuturuuu/internal-api',
+        find: /^@tuturuuu\/internal-api$/u,
         replacement: resolve(
           __dirname,
           '../../packages/internal-api/src/index.ts'
         ),
+      },
+      {
+        find: /^@tuturuuu\/internal-api\/(.+)$/u,
+        replacement: `${resolve(__dirname, '../../packages/internal-api/src')}/$1.ts`,
       },
     ],
   },
