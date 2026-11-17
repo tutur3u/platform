@@ -222,7 +222,7 @@ export function TaskNameInput({
           onBlur={handleBlur}
           onKeyDown={handleKeyDown}
           placeholder={t('task_name_placeholder')}
-          className="max-h-32 min-h-11 resize-none overflow-y-auto border-0 bg-transparent px-0 py-0 font-semibold text-base text-foreground leading-tight shadow-none transition-colors placeholder:text-muted-foreground/40 focus-visible:outline-0 focus-visible:ring-0 disabled:opacity-100 md:text-lg"
+          className="field-sizing-content max-h-32 min-h-8 resize-none overflow-y-auto border-0 bg-transparent px-0 py-0 font-bold text-base text-foreground leading-tight shadow-none transition-colors placeholder:text-muted-foreground/60 focus-visible:outline-0 focus-visible:ring-0 disabled:opacity-100 sm:text-xl"
           autoFocus
         />
       </div>

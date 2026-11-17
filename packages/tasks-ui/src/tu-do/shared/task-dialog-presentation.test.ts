@@ -4,6 +4,7 @@ import {
   getTaskDialogContentClassName,
   getTaskDialogContentPresentation,
   resolveTaskDialogOpeningPresentation,
+  TASK_DIALOG_COMPACT_CONTENT_CLASS_NAME,
   TASK_DIALOG_CONTENT_COLUMN_CLASS_NAME,
   TASK_DIALOG_FOCUSED_CONTENT_CLASS_NAME,
 } from './task-dialog-presentation';
@@ -28,6 +29,48 @@ describe('TASK_DIALOG_FOCUSED_CONTENT_CLASS_NAME', () => {
       'h-[min(92dvh,60rem)]'
     );
     expect(TASK_DIALOG_FOCUSED_CONTENT_CLASS_NAME).toContain('overflow-hidden');
+  });
+});
+
+describe('TASK_DIALOG_COMPACT_CONTENT_CLASS_NAME', () => {
+  // The shared dialog centres itself; centring the quick dialog put it over
+  // a board column and pushed its top out of view once its content grew.
+  const sharedDialogClassName =
+    'fixed top-[50%] left-[50%] grid w-full max-w-[calc(100%-2rem)] translate-x-[-50%] translate-y-[-50%] gap-4 rounded-lg p-6 sm:max-w-lg';
+  const resolved = cn(
+    sharedDialogClassName,
+    TASK_DIALOG_COMPACT_CONTENT_CLASS_NAME
+  ).split(' ');
+
+  it('anchors the quick dialog near the top instead of centring it', () => {
+    expect(resolved).toContain('top-[12dvh]');
+    expect(resolved).toContain('translate-y-0');
+    expect(resolved).not.toContain('top-[50%]');
+    expect(resolved).not.toContain('translate-y-[-50%]');
+  });
+
+  it('keeps the whole dialog inside the viewport and lets the panel scroll', () => {
+    expect(resolved).toContain(
+      'max-h-[min(720px,calc(100dvh-32px),calc(88dvh-16px))]'
+    );
+    expect(resolved).toContain('flex');
+    expect(resolved).toContain('flex-col');
+    expect(resolved).not.toContain('grid');
+    expect(resolved).toContain('sm:max-w-[40rem]');
+    expect(resolved).not.toContain('sm:max-w-lg');
+  });
+
+  it('becomes a bottom sheet on phones', () => {
+    expect(resolved).toEqual(
+      expect.arrayContaining([
+        'max-sm:top-auto',
+        'max-sm:bottom-0',
+        'max-sm:left-0',
+        'max-sm:translate-x-0',
+        'max-sm:w-full',
+        'max-sm:rounded-t-(--sorbet-sheet-radius)',
+      ])
+    );
   });
 });
 
@@ -133,7 +176,7 @@ describe('getTaskDialogContentClassName', () => {
   it('picks one class set per presentation', () => {
     const pick = (compact: boolean, focused: boolean, panel: boolean) =>
       getTaskDialogContentClassName({ compact, focused, panel });
-    expect(pick(true, true, true)).toContain('max-w-[30rem]');
+    expect(pick(true, true, true)).toBe(TASK_DIALOG_COMPACT_CONTENT_CLASS_NAME);
     expect(pick(false, true, true)).toBe(
       TASK_DIALOG_FOCUSED_CONTENT_CLASS_NAME
     );

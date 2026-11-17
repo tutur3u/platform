@@ -4,6 +4,7 @@ import type { Editor } from '@tiptap/react';
 import { useEffect } from 'react';
 import type { MentionOption } from '../../mention-system/types';
 import type { SlashCommandDefinition } from '../../slash-commands/definitions';
+import { isTaskSaveShortcutHandled } from '../components/quick-create/quick-create-shortcut';
 
 export interface UseTaskDialogKeyboardShortcutsProps {
   isOpen: boolean;
@@ -90,6 +91,8 @@ export function useTaskDialogKeyboardShortcuts({
 
     const handleKeyDown = (e: KeyboardEvent) => {
       if ((e.metaKey || e.ctrlKey) && e.key === 'Enter') {
+        // The compact create panel saves on its own and marks the event.
+        if (isTaskSaveShortcutHandled(e)) return;
         e.preventDefault();
         // Don't allow save shortcut in edit mode with collaboration (realtime sync)
         // Also skip if the dialog is in disabled/read-only mode (shared tasks)

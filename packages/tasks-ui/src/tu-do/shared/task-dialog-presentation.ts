@@ -27,8 +27,14 @@ export interface TaskDialogPresentationPreferences {
 export const TASK_DIALOG_FOCUSED_CONTENT_CLASS_NAME =
   'h-[min(92dvh,60rem)] w-[min(calc(100vw-1.5rem),92rem)] max-w-[92rem] gap-0 overflow-hidden rounded-xl border p-0 shadow-2xl sm:max-w-5xl';
 
-const TASK_DIALOG_COMPACT_CONTENT_CLASS_NAME =
-  'w-[min(calc(100vw-2rem),30rem)] max-w-[30rem] gap-0 overflow-visible rounded-lg border p-0 shadow-xl';
+/**
+ * The quick dialog is anchored near the top instead of centred, so it never
+ * sits over the middle of a board column and grows downward as chips wrap. Its
+ * height stays inside the viewport from that anchor, and the panel scrolls its
+ * own body between a fixed header and footer. Phones get a bottom sheet.
+ */
+export const TASK_DIALOG_COMPACT_CONTENT_CLASS_NAME =
+  'top-[12dvh] flex max-h-[min(720px,calc(100dvh-32px),calc(88dvh-16px))] w-[min(calc(100vw-2rem),40rem)] max-w-[40rem] translate-y-0 flex-col gap-0 overflow-visible rounded-(--radius-popover) border bg-popover p-0 shadow-xl sm:max-w-[40rem] max-sm:top-auto max-sm:bottom-0 max-sm:left-0 max-sm:max-h-[calc(100dvh-env(safe-area-inset-top)-1rem)] max-sm:w-full max-sm:max-w-none max-sm:translate-x-0 max-sm:rounded-b-none max-sm:rounded-t-(--sorbet-sheet-radius) max-sm:border-x-0 max-sm:border-b-0';
 // The side panel's width follows the drag exactly; the slide-in is an animation.
 const TASK_PANEL_CONTENT_CLASS_NAME =
   'transition-none sm:w-[var(--task-panel-width,36rem)]';
