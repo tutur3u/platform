@@ -110,12 +110,10 @@ export function reportedCitationUsage(usage: LanguageModelUsage | undefined) {
     throw new CitationAiError('BILLING_PENDING', 503, 'unknown');
   if (parsed.data.reasoningTokens > parsed.data.outputTokens)
     throw new CitationAiError('BILLING_PENDING', 503, 'unknown');
-  // SDK completion totals include reasoning; the credit RPC prices the two
-  // buckets separately. Keep them disjoint rather than charging reasoning twice.
-  return {
-    ...parsed.data,
-    outputTokens: parsed.data.outputTokens - parsed.data.reasoningTokens,
-  };
+  // outputTokens is the provider's TOTAL completion count with reasoning as a
+  // subset. deductAiCredits splits the reasoning bucket out itself, so the
+  // total must pass through unmodified or reasoning is subtracted twice.
+  return parsed.data;
 }
 
 /** One text-only provider call, with existing plan model routing and no memory/tools. */

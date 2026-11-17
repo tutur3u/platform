@@ -57,7 +57,7 @@ describe('one metered citation generation', () => {
     const result = await generateCitationFix(request);
     expect(result.usage).toEqual({
       inputTokens: 120,
-      outputTokens: 80,
+      outputTokens: 90,
       reasoningTokens: 10,
     });
     expect(mocked.generate).toHaveBeenCalledExactlyOnceWith(
@@ -88,7 +88,7 @@ describe('one metered citation generation', () => {
     mocked.generate.mockRejectedValue(mocked.invalidObject);
     expect(await generateCitationFix(input())).toEqual({
       value: null,
-      usage: { inputTokens: 120, outputTokens: 80, reasoningTokens: 10 },
+      usage: { inputTokens: 120, outputTokens: 90, reasoningTokens: 10 },
     });
     expect(mocked.generate).toHaveBeenCalledTimes(1);
   });
@@ -118,12 +118,34 @@ describe('one metered citation generation', () => {
     expect(mocked.generate).toHaveBeenCalledTimes(1);
   });
 
-  it('counts completion tokens once across text and reasoning billing buckets', () => {
+  it('reports the provider total output with reasoning as a subset, never pre-subtracted', () => {
     const normalized = reportedCitationUsage(usage);
-    expect(normalized.outputTokens + normalized.reasoningTokens).toBe(90);
+    expect(normalized.outputTokens).toBe(90);
+    expect(normalized.reasoningTokens).toBe(10);
     expect(() => reportedCitationUsage({ ...usage, outputTokens: 9 })).toThrow(
       'BILLING_PENDING'
     );
+  });
+
+  // Raw usage shapes recorded per provider path, converted by the SDK into
+  // LanguageModelUsage; the total must reach billing unchanged.
+  it.each([
+    ['google direct (candidates + thoughts)', 100, 60],
+    ['gateway openai reasoning', 100, 40],
+    ['gateway anthropic thinking', 100, 20],
+    ['reasoning-only output', 100, 100],
+    ['no reasoning details', 100, undefined],
+  ])('%s keeps total output untouched', (_path, total, reasoning) => {
+    const normalized = reportedCitationUsage({
+      ...usage,
+      outputTokens: total,
+      outputTokenDetails: {
+        textTokens: reasoning === undefined ? total : total - reasoning,
+        reasoningTokens: reasoning,
+      },
+    });
+    expect(normalized.outputTokens).toBe(total);
+    expect(normalized.reasoningTokens).toBe(reasoning ?? 0);
   });
 
   it.each(['gemini-2.5-flash', 'google/gemini-2.5-flash-lite'])(
@@ -190,7 +212,10 @@ describe('one metered citation generation', () => {
           },
         })
       );
-      expect(result.usage.outputTokens + result.usage.reasoningTokens).toBe(90);
+      expect(result.usage).toMatchObject({
+        outputTokens: 90,
+        reasoningTokens: 10,
+      });
       expect(mocked.gateway).not.toHaveBeenCalled();
     }
   );
