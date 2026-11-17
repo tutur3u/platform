@@ -171,6 +171,10 @@ void main() {
   }
 
   final searchField = find.byKey(const ValueKey('shell-search-query'));
+  final searchInput = find.descendant(
+    of: searchField,
+    matching: find.byType(TextField),
+  );
   Future<void> search(WidgetTester tester, String query) async {
     await tester.tap(find.byIcon(AppIcons.search).first);
     await _pump(tester);
@@ -210,7 +214,7 @@ void main() {
     expect(searchField, findsNothing);
     await tester.tap(find.byIcon(AppIcons.search).first);
     await _pump(tester);
-    expect(tester.widget<TextField>(searchField).controller!.text, isEmpty);
+    expect(tester.widget<TextField>(searchInput).controller!.text, isEmpty);
   });
 
   testWidgets('Home tabs retain Dashboard cubits and Grid precedes List', (
@@ -286,7 +290,7 @@ void main() {
     (tester) async {
       await mount(tester);
       await search(tester, '  CaLeNdAr  ');
-      final field = tester.widget<TextField>(searchField);
+      final field = tester.widget<TextField>(searchInput);
       field.onSubmitted!('  CaLeNdAr  ');
       field.onSubmitted!('  CaLeNdAr  ');
       await _pump(tester);
@@ -299,7 +303,7 @@ void main() {
       expect(router.routeInformationProvider.value.uri.path, Routes.apps);
       expect(searchField, findsNothing);
       await search(tester, '');
-      expect(tester.widget<TextField>(searchField).controller!.text, isEmpty);
+      expect(tester.widget<TextField>(searchInput).controller!.text, isEmpty);
       expect(tester.takeException(), isNull);
     },
   );
@@ -343,9 +347,9 @@ void main() {
         );
       } else {
         expect(searchField, findsOneWidget);
-        expect(tester.widget<TextField>(searchField).controller!.text, query);
+        expect(tester.widget<TextField>(searchInput).controller!.text, query);
         expect(
-          tester.widget<TextField>(searchField).focusNode!.hasFocus,
+          tester.widget<TextField>(searchInput).focusNode!.hasFocus,
           isFalse,
         );
       }
@@ -358,13 +362,13 @@ void main() {
   ) async {
     await mount(tester);
     await search(tester, 'calendar');
-    final oldSubmit = tester.widget<TextField>(searchField).onSubmitted!;
+    final oldSubmit = tester.widget<TextField>(searchInput).onSubmitted!;
     await tester.enterText(searchField, 'no-such-module');
     oldSubmit('calendar');
     await _pump(tester);
     expect(router.routeInformationProvider.value.uri.path, Routes.apps);
     expect(
-      tester.widget<TextField>(searchField).controller!.text,
+      tester.widget<TextField>(searchInput).controller!.text,
       'no-such-module',
     );
     expect(apps.state.selectedId, isNull);
@@ -375,12 +379,12 @@ void main() {
       await experiments.setModuleEnabled(moduleId: 'chat', enabled: true);
       await mount(tester);
       await search(tester, 'chat');
-      final submit = tester.widget<TextField>(searchField).onSubmitted!;
+      final submit = tester.widget<TextField>(searchInput).onSubmitted!;
       submit('chat');
       await experiments.setModuleEnabled(moduleId: 'chat', enabled: false);
       await _pump(tester);
       expect(router.routeInformationProvider.value.uri.path, Routes.apps);
-      expect(tester.widget<TextField>(searchField).controller!.text, 'chat');
+      expect(tester.widget<TextField>(searchInput).controller!.text, 'chat');
       expect(apps.state.selectedId, isNull);
       expect(tester.takeException(), isNull);
     },
@@ -391,7 +395,7 @@ void main() {
       await experiments.setModuleEnabled(moduleId: 'chat', enabled: true);
       await mount(tester);
       await search(tester, 'chat');
-      final field = tester.widget<TextField>(searchField);
+      final field = tester.widget<TextField>(searchInput);
       var changedAfterBuild = false;
       tester.binding.addPostFrameCallback((_) {
         // Registered before the Apps build queues its launch. The match has
@@ -418,7 +422,7 @@ void main() {
     (tester) async {
       await mount(tester);
       await search(tester, 'calendar');
-      final field = tester.widget<TextField>(searchField);
+      final field = tester.widget<TextField>(searchInput);
       var exercisedQueuedPhase = false;
       tester.binding.addPostFrameCallback((_) {
         // The build consumed pendingSubmit and set launchQueued.
