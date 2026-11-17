@@ -402,4 +402,13 @@ void main() {
     expect(inside, 102);
     expect(computed, 102);
   });
+
+  test('phone slots get a rounded-rectangle highlight, wide slots a pill', () {
+    // A ~47dp phone slot caps the radius below half its width.
+    expect(highlightRadius(47), closeTo(19.5, 0.001));
+    expect(highlightRadius(47), lessThan(47 / 2));
+    // Wide tablet slots keep the concentric inner radius (half of 52dp).
+    expect(highlightRadius(96), ShellDockMetrics.slot / 2);
+    expect(highlightRadius(4), 0);
+  });
 }

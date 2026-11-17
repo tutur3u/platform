@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
 import 'package:mobile/core/interaction/app_haptics.dart';
@@ -260,6 +261,15 @@ class _ShellDockBackZoneState extends State<ShellDockBackZone> {
 
 /// The one selection fill, which slides between slots instead of each slot
 /// growing its own.
+/// Corner radius of the selection highlight in a slot [slotWidth] wide.
+///
+/// The concentric inner radius (half the slot height) when the slot is wide
+/// enough to read as a pill; narrower phone slots cap it so the highlight is a
+/// rounded rectangle around icon and label instead of a circle through the
+/// label.
+double highlightRadius(double slotWidth) =>
+    math.min(ShellDockMetrics.slot / 2, math.max(0, slotWidth / 2 - 4));
+
 class _SlidingHighlight extends StatelessWidget {
   const _SlidingHighlight({
     required this.index,
@@ -288,7 +298,9 @@ class _SlidingHighlight extends StatelessWidget {
         child: DecoratedBox(
           decoration: ShapeDecoration(
             color: style.navSelectedFill,
-            shape: const StadiumBorder(),
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(highlightRadius(slotWidth)),
+            ),
           ),
         ),
       ),
