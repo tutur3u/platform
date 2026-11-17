@@ -38,3 +38,16 @@ preimage as the sole rollback target. The authority lock must cover the alias
 across environments: Vercel does not provide an atomic alias CAS. Re-entry at the
 verified target is read-only. Repeated fake-clock tests include 1500ms green
 probes and early timers; no probe receives a shortened timeout at the window edge.
+
+For combined Calendar/Mail diagnostics, install workspace dependency links as well
+as root dependencies: CF fixture supplier resolution starts under `apps/calendar`.
+A root-only node_modules link does not make `cf/package.json` available there.
+Run Python tests with Python, separately from Node's test runner.
+
+Use `node --test --test-concurrency=2` for the combined Node suite under host
+admission. The Mail namespace-termination tests launch a fresh Node process with
+a two-second wall-clock timeout; unrestricted file parallelism can consume that
+budget in child startup/execution. Preserve the termination assertion and timeout.
+Capture the unrestricted failure separately and compare the exact failing file
+alone before attributing it to shared state. Bounded-concurrency success does not
+erase a recorded unrestricted failure.
