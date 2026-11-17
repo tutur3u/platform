@@ -100,3 +100,21 @@ describe('bounded calendar diagnostics', () => {
     ).toBeLessThanOrEqual(503);
   });
 });
+
+describe('complete credential redaction', () => {
+  it.each([
+    'password="synthetic space; suffix"',
+    "secret='synthetic space, suffix'",
+    String.raw`token="synthetic \" suffix"`,
+    String.raw`password='synthetic \' suffix'`,
+    'client_secret="synthetic unfinished suffix',
+    'password="synthetic private suffix\\',
+    "secret='synthetic private suffix\\",
+    'https://synthetic:suffix@example.test/path?token=hidden',
+  ])('removes complete credentials from %s', (input) => {
+    const output = sanitizeSyncErrorMessage(input);
+    expect(output).not.toContain('synthetic');
+    expect(output).not.toContain('suffix');
+    expect(output).toContain('[redacted]');
+  });
+});
