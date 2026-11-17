@@ -204,9 +204,10 @@ export async function runCfPhase({
   const timeout = new Promise((_, reject) => {
     rejectTimeout = reject;
   });
-  let deadline = performance.now() + payload.requirements.maxDurationMs;
+  const jobDeadline = performance.now() + payload.requirements.maxDurationMs;
+  let deadline = jobDeadline;
   function arm(leaseMs) {
-    deadline = Math.min(deadline, performance.now() + leaseMs);
+    deadline = Math.min(jobDeadline, performance.now() + leaseMs);
     clearTimeout(timer);
     timer = setTimeout(
       () => {
@@ -228,6 +229,7 @@ export async function runCfPhase({
     try {
       const current = await Promise.race([authority.renew(grant), timeout]);
       arm(confirmGrant(grant, current, phase));
+      grant = current;
     } catch (error) {
       fenceValid = false;
       fenceRejected = true;
@@ -250,6 +252,7 @@ export async function runCfPhase({
       return begun.receipt;
     }
     arm(confirmGrant(grant, begun.grant, phase));
+    grant = begun.grant;
     intent = true;
     fenceValid = true;
     await checkFence();

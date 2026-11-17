@@ -3,7 +3,7 @@ export class RecipeFailure extends Error {
     guardCode,
     guardPhase,
     failureClass,
-    { terminal = true, providerContacted = false } = {}
+    { terminal = true, providerContacted } = {}
   ) {
     super(guardCode);
     Object.assign(this, {
@@ -33,14 +33,21 @@ export function failureCause(error, phase, contacted) {
       'validation',
     ].includes(failureClass) &&
     typeof error.terminal === 'boolean' &&
-    typeof error.providerContacted === 'boolean'
+    (error.providerContacted === undefined ||
+      typeof error.providerContacted === 'boolean')
   )
     return {
       guardCode: error.guardCode,
       guardPhase: error.guardPhase,
       failureClass,
       terminal: error.terminal,
-      providerContacted: error.providerContacted,
+      providerContacted:
+        contacted &&
+        !['policy', 'validation', 'approval', 'lock', 'worker'].includes(
+          failureClass
+        )
+          ? true
+          : (error.providerContacted ?? contacted),
     };
   return {
     guardCode: contacted ? 'EXECUTOR_UNCERTAIN' : 'AUTHORITY_UNAVAILABLE',

@@ -33,6 +33,10 @@ only produces the sealed Worker bytes. Secret values never appear here, only nam
   Legacy secret lists and identities are cross-checked against recipe records.
   Staging URLs must resolve to staging hosts; smoke paths remain on the fixed
   admitted origin.
+- Executor errors inherit provider-contact state. Only explicit, proven pre-contact
+  policy/validation/admission refusals may report no contact; upload and verification
+  uncertainty requires reconciliation. Lease renewals extend the lease budget while
+  retaining the fixed maximum job duration.
 - The `cf-wave1` queue adapter is offline and accepts only an injected deploy
   authority. Missing authority prevents execution. It provides explicit seal,
   publish, doctor and rollback phase identities; rollback requires an authorized

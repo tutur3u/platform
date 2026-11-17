@@ -198,3 +198,31 @@ Terminal typed refusals before provider contact retain guard code, phase and
 failure class. Existing phase receipts are returned unchanged, and rejected grants
 never checkpoint a replacement result. Payload and receipt schemas refuse nested
 credentials; secret-name metadata remains distinct from credential values.
+
+### Executor error and lease contract
+
+`RecipeFailure.providerContacted` defaults to the adapter's effect state, including
+when the error is typed. Entering the executor makes omitted contact metadata
+conservative: executor/verification/fence/timeout/authority failures reconcile as
+UNKNOWN, even if they explicitly claim no contact. Only policy, validation,
+approval, lock or worker refusals with explicit `providerContacted: false` may be
+terminal pre-contact failures. The executor must establish that refusal before
+any provider call or child publication process. Never infer no contact from a
+message match or an arbitrary subprocess exit code; a repeated guard after a
+provider call must retain contacted/unknown semantics.
+
+Executors must translate local producer guards into fixed typed failures before
+the effect boundary: publication holds; app/mode/profile and exact source/ref/event
+admission; protected environment identity; credential-name/scope and missing or
+forbidden credential checks; artifact/seal/lock/policy digest verification;
+route-free config and public-input equality/provisioning; sensitive-path, secret,
+mail import and upload-budget checks. Topology, secret readback, version-history,
+rollback-baseline, existing-operation and post-upload verification failures occur
+after provider contact and cannot be relabeled pre-contact. Keep their original
+cause codes and require reconciliation whenever acceptance is uncertain.
+
+Lease renewal replaces the lease deadline while retaining a fixed monotonic job
+budget. Executors call `checkFence` after blocking steps to renew that lease;
+renewal cannot extend the maximum job duration. Payload/receipt credential scans
+recognize provider prefixes, JWTs and long high-entropy token alphabets; known hex
+identifier and digest fields are explicitly allowlisted by field and shape.

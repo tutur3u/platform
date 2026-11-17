@@ -20,7 +20,9 @@ import {
 test('terminal producer policy refusal preserves its cause and does not reconcile', async () => {
   const port = authority();
   const result = await run(port, async () => {
-    throw new RecipeFailure('PRODUCTION_HELD', 'policy', 'policy');
+    throw new RecipeFailure('PRODUCTION_HELD', 'policy', 'policy', {
+      providerContacted: false,
+    });
   });
   assert.equal(result.status, 'failed');
   assert.equal(result.guardCode, 'PRODUCTION_HELD');

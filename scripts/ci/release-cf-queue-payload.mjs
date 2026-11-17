@@ -48,28 +48,79 @@ export function recipeDigest() {
     hash.update(file).update(readFileSync(new URL(file, import.meta.url)));
   return hash.digest('hex');
 }
-export function safeData(value, depth = 0, field = '') {
+const hexIds = new Set([
+  'operationId',
+  'jobId',
+  'attemptId',
+  'workerId',
+  'targetLockId',
+  'executorHost',
+  'providerOperationId',
+  'deploymentId',
+  'id',
+  'authorizationRefs',
+  'approvalRefs',
+  'verificationRefs',
+  'checkpointRef',
+]);
+const digestFields = new Set([
+  'recipeSha256',
+  'configSha256',
+  'sha256',
+  'artifactDigest',
+]);
+function allowedHex(value, field, parent) {
+  return (
+    (field === 'account' && value === policy.accountId) ||
+    (field === 'sourceSha' && /^[a-f0-9]{40}$/i.test(value)) ||
+    (digestFields.has(field) && /^[a-f0-9]{64}$/i.test(value)) ||
+    (hexIds.has(field) && /^[a-f0-9]{32}$/i.test(value)) ||
+    (parent === 'artifact' && field === 'id' && /^[a-f0-9]{64}$/i.test(value))
+  );
+}
+function credentialValue(value) {
+  if (
+    /^(?:sk[-_]|vercel_|vcp_|vcr_|vcs_|vc_|gh[pousr]_|github_pat_|cf(?:at|ut|t)?_|cloudflare[_-]|AKIA|ASIA|bearer |-----BEGIN)/.test(
+      value
+    )
+  )
+    return true;
+  if (/^[A-Za-z0-9_-]+\.[A-Za-z0-9_-]+\.[A-Za-z0-9_-]+$/.test(value)) {
+    try {
+      const [header, body] = value
+        .split('.')
+        .slice(0, 2)
+        .map((part) =>
+          JSON.parse(Buffer.from(part, 'base64url').toString('utf8'))
+        );
+      if (
+        header &&
+        typeof header === 'object' &&
+        body &&
+        typeof body === 'object'
+      )
+        return true;
+    } catch {
+      /* A dotted identifier is not a JWT without JSON header and payload. */
+    }
+  }
+  if (value.length < 32 || !/^[A-Za-z0-9_\-./+=]+$/.test(value)) return false;
+  const frequencies = new Map();
+  for (const character of value)
+    frequencies.set(character, (frequencies.get(character) ?? 0) + 1);
+  let entropy = 0;
+  for (const count of frequencies.values()) {
+    const probability = count / value.length;
+    entropy -= probability * Math.log2(probability);
+  }
+  return entropy >= 4;
+}
+export function safeData(value, depth = 0, field = '', parent = '') {
   assert.ok(depth < 16);
   if (typeof value === 'string') {
     assert.ok(value.length <= 256);
-    if (
-      !(field === 'account' && value === policy.accountId) &&
-      ![
-        'sourceSha',
-        'recipeSha256',
-        'configSha256',
-        'sha256',
-        'artifactDigest',
-      ].includes(field)
-    )
-      assert.ok(
-        !/^[A-Za-z0-9_=]{32,}$/.test(value),
-        'Opaque credential-shaped value'
-      );
     assert.ok(
-      !/^(?:sk[-_]|gh[pousr]_|github_pat_|eyJ[\w-]*\.|bearer |-----BEGIN)/i.test(
-        value
-      ),
+      allowedHex(value, field, parent) || !credentialValue(value),
       'Credential-shaped value'
     );
     assert.ok(
@@ -78,7 +129,7 @@ export function safeData(value, depth = 0, field = '') {
     );
   } else if (Array.isArray(value)) {
     assert.ok(value.length <= 64);
-    value.forEach((item) => safeData(item, depth + 1, field));
+    value.forEach((item) => safeData(item, depth + 1, field, parent));
   } else if (value && typeof value === 'object') {
     for (const [key, item] of Object.entries(value)) {
       assert.ok(
@@ -86,7 +137,7 @@ export function safeData(value, depth = 0, field = '') {
           !credentialName.test(key),
         'Credential-shaped key'
       );
-      safeData(item, depth + 1, key);
+      safeData(item, depth + 1, key, field);
     }
   } else
     assert.ok(
