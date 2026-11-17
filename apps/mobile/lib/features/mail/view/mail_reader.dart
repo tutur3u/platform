@@ -22,6 +22,7 @@ import 'package:mobile/features/mail/view/mail_message_date.dart';
 import 'package:mobile/features/mail/view/mail_message_details.dart';
 import 'package:mobile/features/mail/view/mail_primary_action_preference.dart';
 import 'package:mobile/features/mail/view/mail_reader_identity.dart';
+import 'package:mobile/features/mail/view/mail_recipient_summary.dart';
 import 'package:mobile/features/mail/view/mail_rendered_documents.dart';
 import 'package:mobile/features/mail/view/mail_swipe_preferences.dart';
 import 'package:mobile/features/shell/cubit/shell_chrome_actions_cubit.dart';

@@ -116,32 +116,15 @@ extension _MailReaderBody on _MailReaderState {
   }
 
   Widget _recipientSummary(Map<String, dynamic> message) {
-    final recipients = mailRows(
+    final first = mailRows(
       message['recipients'],
-    ).where((row) => row['kind'] == 'to').toList();
-    return Padding(
-      padding: const EdgeInsets.only(top: AppSpacing.sm),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          if (recipients.isNotEmpty)
-            Row(
-              children: [
-                Text('${context.l10n.mailTo} '),
-                Flexible(
-                  child: MailReaderIdentity(
-                    address: recipients.first['address'] as String? ?? '',
-                    name: recipients.first['displayName'] as String?,
-                    profile: _person(recipients.first['address'] as String?),
-                    compact: true,
-                  ),
-                ),
-              ],
-            ),
-          if (mailMessageDate(message) case final date?)
-            Text(formatMailMessageDate(context, date)),
-        ],
-      ),
+    ).where((row) => row['kind'] == 'to').firstOrNull;
+    final address = first?['address'] as String?;
+    return MailRecipientSummary(
+      address: address,
+      name: first?['displayName'] as String?,
+      profile: _person(address),
+      date: mailMessageDate(message),
     );
   }
 
