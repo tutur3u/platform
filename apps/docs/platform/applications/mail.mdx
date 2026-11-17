@@ -1150,7 +1150,8 @@ app tab. The redundant “Open in Mail” action is hidden there; other apps ret
 that action. Notification reads do not mark email read.
 
 The shared bell panel has a 400 px width clamped to the viewport and a fixed
-height of the smaller of 560 px or the viewport height minus 24 px. Its list
+height bounded by 560 px, the viewport height minus 24 px, and the available
+space at its anchor. Its list
 scrolls inside that frame. Loading, errors, empty states, filter switches and
 read mutations retain the same frame across apps. Regression coverage lives in
 `packages/ui/src/components/ui/custom/__tests__/notification-popover.test.tsx`;

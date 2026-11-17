@@ -167,7 +167,8 @@ export default function SatelliteNotificationPopover({
         data-notification-frame
         style={{
           width: 'min(400px, calc(100vw - 24px))',
-          height: 'min(560px, calc(100dvh - 24px))',
+          height:
+            'min(560px, calc(100dvh - 24px), var(--radix-popover-content-available-height, calc(100dvh - 24px)))',
         }}
         className="flex flex-col overflow-hidden p-0 shadow-lg [--popover-padding:0]"
       >

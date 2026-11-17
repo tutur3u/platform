@@ -476,6 +476,7 @@ describe('notification frame first-load states', () => {
 function frameDimensions() {
   const style = document.createElement('div').style;
   style.width = 'min(400px, calc(100vw - 24px))';
-  style.height = 'min(560px, calc(100dvh - 24px))';
+  style.height =
+    'min(560px, calc(100dvh - 24px), var(--radix-popover-content-available-height, calc(100dvh - 24px)))';
   return { width: style.width, height: style.height };
 }
