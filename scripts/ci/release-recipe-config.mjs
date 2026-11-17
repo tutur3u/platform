@@ -175,8 +175,25 @@ export function validateReleaseRecipe(record, { validateVercelSection } = {}) {
         record.cf.sourceVars,
         'Production-only recipes publish exactly emitted vars'
       );
-    for (const value of Object.values(record.cf.stagingPublicationVars)) {
-      assert.ok(!value.includes('tuturuuu.com'), 'Production value in staging');
+    for (const [name, value] of Object.entries(
+      record.cf.stagingPublicationVars
+    )) {
+      const normalized = value.trim().toLowerCase();
+      assert.ok(
+        !normalized.includes('tuturuuu.com'),
+        'Production value in staging'
+      );
+      if (
+        !normalized.includes(':') &&
+        !normalized.startsWith('//') &&
+        (normalized.includes('.') || /(?:URL|ORIGIN|HOST|DOMAIN)$/.test(name))
+      ) {
+        const host = normalized.replace(/^\./, '').replace(/\.$/, '');
+        assert.ok(
+          /^[a-z0-9.-]+$/.test(host) && domain(host, 'tutur3u.com'),
+          'Unadmitted staging host'
+        );
+      }
       if (value.includes(':') || value.startsWith('//')) {
         const url = new URL(
           value.replaceAll('{{host}}', 'fixture.tutur3u.com')

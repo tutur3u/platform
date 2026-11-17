@@ -233,3 +233,20 @@ test('legacy secrets and identities are independently cross-checked', async () =
     assert.throws(() => assertRecipeSettings(settings, settings.releaseRecipe));
   }
 });
+
+test('non-URL staging hosts are normalized and restricted to staging domains', () => {
+  for (const [name, value] of [
+    ['NEXT_PUBLIC_TUTURUUU_SHARED_COOKIE_DOMAIN', '.TUTURUUU.COM'],
+    ['NEXT_PUBLIC_WEB_APP_URL', 'evil.example'],
+    ['NEXT_PUBLIC_WEB_APP_URL', ' evil '],
+    ['NEXT_PUBLIC_WEB_APP_URL', 'WEB.TUTURUUU.COM'],
+  ]) {
+    const candidate = structuredClone(policy.apps.calendar.releaseRecipe);
+    candidate.cf.stagingPublicationVars[name] = value;
+    assert.throws(() => validateReleaseRecipe(candidate));
+  }
+  const candidate = structuredClone(policy.apps.calendar.releaseRecipe);
+  candidate.cf.stagingPublicationVars.NEXT_PUBLIC_TUTURUUU_SHARED_COOKIE_DOMAIN =
+    ' .STAGING.TUTUR3U.COM. ';
+  assert.doesNotThrow(() => validateReleaseRecipe(candidate));
+});
