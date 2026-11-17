@@ -1,0 +1,76 @@
+name: Calendar exact-SHA Vercel stage
+on:
+  workflow_dispatch:
+    inputs:
+      main_sha:
+        description: Full lowercase main commit to stage
+        required: true
+        type: string
+      alias_preimage:
+        description: Full source SHA or dpl_ id the production alias must keep serving
+        required: true
+        type: string
+
+permissions:
+  contents: read
+
+concurrency:
+  group: calendar-vercel-exact-sha-${{ github.ref }}-${{ inputs.main_sha }}
+  cancel-in-progress: false
+  queue: max
+
+jobs:
+  stage:
+    name: Stage one exact main SHA
+    if: github.event_name == 'workflow_dispatch' && github.ref == 'refs/heads/main'
+    environment: vercel-stage-calendar
+    runs-on: ubuntu-latest
+    timeout-minutes: 90
+    permissions:
+      contents: read
+      deployments: write
+    steps:
+      - name: Check out main
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+
+      - name: Block Vercel publication after native Calendar cutover
+        shell: bash
+        env:
+          CALENDAR_NATIVE_CUTOVER: ${{ vars.CALENDAR_NATIVE_CUTOVER }}
+        run: |
+          if [ "$CALENDAR_NATIVE_CUTOVER" = "active" ]; then
+            echo 'Native Calendar cutover is active (CALENDAR_NATIVE_CUTOVER=active). Vercel publication is disabled; Calendar is served by the native Cloudflare deployment.' >&2
+            exit 1
+          fi
+
+      - name: Setup bun
+        uses: ./.github/actions/setup-bun-with-retry
+        with:
+          bun-version: 1.4.4
+
+      - name: Use Node.js 24
+        uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version: 24
+
+      - name: Install dependencies
+        run: bash scripts/ci/run-with-backoff.sh bun install --frozen-lockfile
+
+      - name: Install Vercel CLI
+        # unfrozen-bun-install: pinned global CLI has no project lockfile
+        run: bash scripts/ci/run-with-backoff.sh bun install --global vercel@59.25.0 --ignore-scripts
+
+      - name: Stage the exact SHA once
+        env:
+          CALENDAR_ALIAS_PREIMAGE: ${{ inputs.alias_preimage }}
+          CALENDAR_DEPLOYMENT_PROFILE: production
+          CALENDAR_MAIN_SHA: ${{ inputs.main_sha }}
+          NODE_OPTIONS: --max-old-space-size=8192
+          TURBO_CONCURRENCY: "2"
+          VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
+          VERCEL_PROJECT_ID: ${{ secrets.VERCEL_CALENDAR_PROJECT_ID }}
+          VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
+        run: node scripts/ci/calendar-exact-sha-publisher.mjs stage
