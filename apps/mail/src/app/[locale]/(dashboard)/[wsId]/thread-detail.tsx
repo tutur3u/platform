@@ -31,6 +31,7 @@ import { useTranslations } from 'next-intl';
 import { type ReactNode, useState } from 'react';
 import { MailAppearanceControls } from './mail-appearance-controls';
 import { MailAttachmentCard } from './mail-attachment-card';
+import { MailBlockedSenderBanner } from './mail-blocked-sender-banner';
 import { MailContentState } from './mail-content-state';
 import type { MailFolder } from './mail-folders';
 import { MailIconButton } from './mail-icon-button';
@@ -144,6 +145,15 @@ export function ThreadDetail({
   return (
     <div className="relative flex h-full min-h-0 min-w-0 flex-1 flex-col bg-muted/20">
       {header}
+      {workspaceId ? (
+        <MailBlockedSenderBanner
+          mailboxId={thread.thread.mailboxId}
+          senders={thread.messages
+            .filter((message) => message.direction !== 'outbound')
+            .map((message) => message.fromAddress)}
+          workspaceId={workspaceId}
+        />
+      ) : null}
 
       <Tabs
         className="min-h-0 min-w-0 flex-1 gap-0"

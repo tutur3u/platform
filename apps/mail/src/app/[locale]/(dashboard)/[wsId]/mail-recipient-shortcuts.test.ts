@@ -6,8 +6,11 @@ import {
   screen,
   waitFor,
 } from '@testing-library/react';
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import { NextIntlClientProvider } from 'next-intl';
 import { createElement as h, useState } from 'react';
 import { afterEach, expect, it, vi } from 'vitest';
+import messages from '../../../../../messages/en.json';
 import { RecipientField } from './recipient-field';
 import { useMailComposerKeyboard } from './use-mail-composer-keyboard';
 
@@ -37,7 +40,13 @@ function setup() {
       })
     );
   }
-  render(h(App));
+  render(
+    h(
+      QueryClientProvider,
+      { client: new QueryClient() },
+      h(NextIntlClientProvider, { locale: 'en', messages, children: h(App) })
+    )
+  );
   return { send, save, close };
 }
 it.each([
@@ -46,7 +55,7 @@ it.each([
   ['Escape', 'close'],
 ] as const)('commits typed recipients before %s', async (key, action) => {
   const actions = setup();
-  const input = screen.getByRole('textbox', { name: 'To' });
+  const input = screen.getByRole('combobox', { name: 'To' });
   fireEvent.change(input, { target: { value: 'friend@example.com' } });
   fireEvent.keyDown(input, { key, ctrlKey: key !== 'Escape' });
   await waitFor(() =>
@@ -55,7 +64,7 @@ it.each([
 });
 it('keeps invalid recipients open instead of sending or losing input', async () => {
   const actions = setup();
-  const input = screen.getByRole('textbox', { name: 'To' });
+  const input = screen.getByRole('combobox', { name: 'To' });
   fireEvent.change(input, { target: { value: 'not-an-email' } });
   fireEvent.keyDown(input, { key: 'Enter', ctrlKey: true });
   fireEvent.keyDown(input, { key: 'Escape' });

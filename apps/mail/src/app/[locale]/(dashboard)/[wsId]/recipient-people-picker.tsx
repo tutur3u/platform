@@ -18,6 +18,7 @@ export function RecipientPeoplePicker({
   }) => void;
 }) {
   const t = useTranslations('mail.recipient_people');
+  const tSuggestions = useTranslations('mail.recipient_suggestions');
   return (
     <div className="w-32 shrink-0">
       <WorkspacePeoplePicker
@@ -25,7 +26,7 @@ export function RecipientPeoplePicker({
         emailRequired
         excludedEmails={excludedAddresses}
         labels={{
-          trigger: t('trigger', { field: fieldLabel }),
+          trigger: tSuggestions('browse_people', { field: fieldLabel }),
           search: t('search'),
           minimumQuery: t('minimum_query'),
           loading: t('loading'),

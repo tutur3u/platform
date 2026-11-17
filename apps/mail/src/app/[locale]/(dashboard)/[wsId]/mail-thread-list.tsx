@@ -5,13 +5,14 @@ import type { MailThreadSummary } from '@tuturuuu/internal-api';
 import { Checkbox } from '@tuturuuu/ui/checkbox';
 import { cn } from '@tuturuuu/utils/format';
 import { useLocale, useTranslations } from 'next-intl';
-import { useEffect, useRef } from 'react';
+import { type ReactNode, useEffect, useRef } from 'react';
 
 import { isMailDeliveryFailure } from '@/lib/mail/failed-recipients';
 import { MailBlacklistControl } from './mail-blacklist-control';
 import type { MailFolder } from './mail-folders';
 import { MailLabelBadges } from './mail-label-badges';
 import { MailParticipantAvatar } from './mail-participant-avatar';
+import { MailPersonName } from './mail-person-name';
 import { mailSnippetText } from './mail-snippet-text';
 import {
   formatMailThreadDate,
@@ -21,6 +22,7 @@ import { visibleMailLabels } from './mail-visible-labels';
 
 export function MailThreadRow({
   active,
+  footer,
   workspaceId,
   folder,
   onClick,
@@ -30,6 +32,8 @@ export function MailThreadRow({
   thread,
 }: {
   active: boolean;
+  /** Extra row content below the labels, such as the Blocked marker. */
+  footer?: ReactNode;
   workspaceId?: string;
   folder?: MailFolder;
   onClick: () => void;
@@ -44,10 +48,6 @@ export function MailThreadRow({
   const labels = visibleMailLabels(thread.labels, folder);
   const unread = thread.unreadCount > 0;
   const participant = thread.participants[0];
-  const participantLabel =
-    participant?.displayName?.trim() ||
-    participant?.address ||
-    t('unknown_sender');
   const cancelPrefetch = () => {
     if (prefetchTimer.current) clearTimeout(prefetchTimer.current);
     prefetchTimer.current = null;
@@ -106,16 +106,25 @@ export function MailThreadRow({
           ) : null}
           <span
             className={cn(
-              'min-w-0 flex-1 truncate text-sm',
-              unread ? 'font-semibold' : 'text-foreground/80',
-              !participant?.displayName?.trim() &&
-                'text-dynamic-blue underline-offset-2 hover:underline'
+              'flex min-w-0 flex-1 text-sm',
+              unread ? 'font-semibold' : 'text-foreground/80'
             )}
           >
-            {participantLabel}
-            {thread.participants.length > 1
-              ? ` +${thread.participants.length - 1}`
-              : ''}
+            {participant?.address ? (
+              <MailPersonName
+                workspaceId={workspaceId}
+                address={participant.address}
+                name={participant.displayName}
+                addressClassName="text-dynamic-blue underline-offset-2 hover:underline"
+              />
+            ) : (
+              <span className="truncate">{t('unknown_sender')}</span>
+            )}
+            {thread.participants.length > 1 ? (
+              <span className="shrink-0">
+                {` +${thread.participants.length - 1}`}
+              </span>
+            ) : null}
           </span>
           {thread.messageCount > 1 ? (
             <span
@@ -157,11 +166,15 @@ export function MailThreadRow({
           {mailSnippetText(thread.latestSnippet ?? '')}
         </p>
         {thread.deliveryRecipient ? (
-          <p
-            title={thread.deliveryRecipient}
-            className="mt-1 truncate text-dynamic-blue text-xs underline-offset-2 hover:underline"
-          >
-            {t('to')}: {thread.deliveryRecipient}
+          <p className="mt-1 flex min-w-0 items-center gap-1 text-muted-foreground text-xs">
+            <span className="shrink-0">{t('to')}:</span>
+            <MailPersonName
+              workspaceId={workspaceId}
+              address={thread.deliveryRecipient}
+              name={null}
+              className="text-foreground/80"
+              addressClassName="text-dynamic-blue underline-offset-2 hover:underline"
+            />
           </p>
         ) : null}
       </button>
@@ -183,6 +196,7 @@ export function MailThreadRow({
           />
         </div>
       ) : null}
+      {footer}
     </div>
   );
 }

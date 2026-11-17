@@ -29,6 +29,7 @@ import { parseAsString, useQueryState } from 'nuqs';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { LazyFloatingComposer } from './lazy-floating-composer';
 import { MailBulkToolbar } from './mail-bulk-toolbar';
+import { MailComposeProvider } from './mail-compose-context';
 import type {
   ComposeInitialDraft,
   MailComposerHandle,
@@ -212,7 +213,8 @@ export function MailAppClient({ folder, workspaceId }: MailAppClientProps) {
     }: {
       nextMailboxId: string;
       payload: SendMailMessagePayload;
-    }) => sendMailMessage(workspaceId, nextMailboxId, payload),
+    }): Promise<{ message: { threadId?: string | null } }> =>
+      sendMailMessage(workspaceId, nextMailboxId, payload),
     onError: (error) =>
       toast.error(error instanceof Error ? error.message : t('send_failed')),
     onSuccess: async ({ message }, variables) => {
@@ -601,94 +603,96 @@ export function MailAppClient({ folder, workspaceId }: MailAppClientProps) {
   );
 
   return (
-    <div
-      ref={keyboard.rootRef}
-      className="h-full min-h-0 min-w-0 max-w-full overflow-hidden bg-background text-foreground"
-    >
-      <div className="h-full min-w-0 max-w-full lg:hidden">
-        {threadId ? detailPanel : listPanel}
-      </div>
-      <div className="hidden h-full min-w-0 lg:block">
-        <ResizablePanelGroup
-          className="min-w-0"
-          direction="horizontal"
-          key={layout.join('-')}
-          onLayout={(sizes) => {
-            if (!layoutReadyRef.current) return;
-            // `layout` controls this group's key so the persisted layout can be
-            // applied after hydration. Updating it from the group's own layout
-            // notification remounts the group and creates an infinite loop.
-            const next = setCurrentMailPaneLayout(sizes);
-            window.localStorage.setItem(
-              'tuturuuu-mail-pane-layout',
-              JSON.stringify(next)
-            );
-          }}
-        >
-          <ResizablePanel
-            defaultSize={layout[0]}
-            id="mail-thread-list"
-            maxSize={48}
-            minSize={28}
+    <MailComposeProvider openCompose={openCompose} mailbox={activeMailbox}>
+      <div
+        ref={keyboard.rootRef}
+        className="h-full min-h-0 min-w-0 max-w-full overflow-hidden bg-background text-foreground"
+      >
+        <div className="h-full min-w-0 max-w-full lg:hidden">
+          {threadId ? detailPanel : listPanel}
+        </div>
+        <div className="hidden h-full min-w-0 lg:block">
+          <ResizablePanelGroup
+            className="min-w-0"
+            direction="horizontal"
+            key={layout.join('-')}
+            onLayout={(sizes) => {
+              if (!layoutReadyRef.current) return;
+              // `layout` controls this group's key so the persisted layout can be
+              // applied after hydration. Updating it from the group's own layout
+              // notification remounts the group and creates an infinite loop.
+              const next = setCurrentMailPaneLayout(sizes);
+              window.localStorage.setItem(
+                'tuturuuu-mail-pane-layout',
+                JSON.stringify(next)
+              );
+            }}
           >
-            {listPanel}
-          </ResizablePanel>
-          <ResizableHandle aria-label={t('resize_message_list')} withHandle />
-          <ResizablePanel
-            defaultSize={layout[1]}
-            id="mail-thread-detail"
-            minSize={45}
-          >
-            {detailPanel}
-          </ResizablePanel>
-        </ResizablePanelGroup>
-      </div>
-      <MailKeyboardHelp
-        open={keyboard.helpOpen}
-        onOpenChange={keyboard.setHelpOpen}
-      />
-      <MeetMailHandoffPreview
-        workspaceId={workspaceId}
-        sourceKey={activeMailboxId ?? ''}
-        blocked={composerMounted}
-        canImport={Boolean(
-          activeMailbox && getSendableMailboxes([activeMailbox]).length
-        )}
-        onImport={(draft) => {
-          void openCompose({
-            to: draft.to,
-            subject: draft.subject,
-            bodyText: draft.text,
-          });
-        }}
-      />
-      {composerMounted && (
-        <LazyFloatingComposer
-          key={composeSession}
-          ref={composerRef}
-          initialDraft={composeDraft}
-          mailboxes={mailboxes}
-          onOpenChange={(nextOpen) => {
-            setComposerVisible(nextOpen);
-            if (!nextOpen) {
-              setComposeDraft(null);
-              void queryClient.invalidateQueries({
-                queryKey: ['mail', workspaceId],
-              });
-            }
-            void setComposeParam(nextOpen ? '1' : null);
-          }}
-          onSend={(nextMailboxId, payload) =>
-            sendMutation
-              .mutateAsync({ nextMailboxId, payload })
-              .then(() => undefined)
-          }
-          open={composerVisible}
-          selectedMailboxId={activeMailboxId}
-          sending={sendMutation.isPending}
-          workspaceId={workspaceId}
+            <ResizablePanel
+              defaultSize={layout[0]}
+              id="mail-thread-list"
+              maxSize={48}
+              minSize={28}
+            >
+              {listPanel}
+            </ResizablePanel>
+            <ResizableHandle aria-label={t('resize_message_list')} withHandle />
+            <ResizablePanel
+              defaultSize={layout[1]}
+              id="mail-thread-detail"
+              minSize={45}
+            >
+              {detailPanel}
+            </ResizablePanel>
+          </ResizablePanelGroup>
+        </div>
+        <MailKeyboardHelp
+          open={keyboard.helpOpen}
+          onOpenChange={keyboard.setHelpOpen}
         />
-      )}
-    </div>
+        <MeetMailHandoffPreview
+          workspaceId={workspaceId}
+          sourceKey={activeMailboxId ?? ''}
+          blocked={composerMounted}
+          canImport={Boolean(
+            activeMailbox && getSendableMailboxes([activeMailbox]).length
+          )}
+          onImport={(draft) => {
+            void openCompose({
+              to: draft.to,
+              subject: draft.subject,
+              bodyText: draft.text,
+            });
+          }}
+        />
+        {composerMounted && (
+          <LazyFloatingComposer
+            key={composeSession}
+            ref={composerRef}
+            initialDraft={composeDraft}
+            mailboxes={mailboxes}
+            onOpenChange={(nextOpen) => {
+              setComposerVisible(nextOpen);
+              if (!nextOpen) {
+                setComposeDraft(null);
+                void queryClient.invalidateQueries({
+                  queryKey: ['mail', workspaceId],
+                });
+              }
+              void setComposeParam(nextOpen ? '1' : null);
+            }}
+            onSend={(nextMailboxId, payload) =>
+              sendMutation
+                .mutateAsync({ nextMailboxId, payload })
+                .then(() => undefined)
+            }
+            open={composerVisible}
+            selectedMailboxId={activeMailboxId}
+            sending={sendMutation.isPending}
+            workspaceId={workspaceId}
+          />
+        )}
+      </div>
+    </MailComposeProvider>
   );
 }

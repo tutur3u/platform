@@ -3,6 +3,7 @@
 import { ChevronRight } from '@tuturuuu/icons';
 import type { MailThreadSummary } from '@tuturuuu/internal-api';
 import { useTranslations } from 'next-intl';
+import { MailBlockedRowMarker } from './mail-blocked-row-marker';
 import { MailDeliveryDisclosure } from './mail-delivery-disclosure';
 import { groupMailDeliveries } from './mail-delivery-groups';
 import type { MailFolder } from './mail-folders';
@@ -36,6 +37,11 @@ export function MailDeliveryList({
       workspaceId={workspaceId}
       folder={folder}
       active={thread.id === threadId}
+      footer={
+        folder === 'blocked' && workspaceId ? (
+          <MailBlockedRowMarker thread={thread} workspaceId={workspaceId} />
+        ) : null
+      }
       onClick={() => onOpen(thread)}
       onPrefetch={() => onPrefetch(thread.id)}
       onSelect={(selected) => onSelect(thread.id, selected)}

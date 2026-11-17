@@ -522,6 +522,7 @@ export function FloatingComposer({
             </Select>
           </div>
           <RecipientField
+            mailboxId={mailboxId || undefined}
             workspaceId={workspaceId}
             actions={
               <>
@@ -562,6 +563,7 @@ export function FloatingComposer({
           />
           {showCc ? (
             <RecipientField
+              mailboxId={mailboxId || undefined}
               workspaceId={workspaceId}
               disabledAddresses={[...to, ...bcc]}
               displayNames={recipientDisplayNames}
@@ -583,6 +585,7 @@ export function FloatingComposer({
           ) : null}
           {showBcc ? (
             <RecipientField
+              mailboxId={mailboxId || undefined}
               workspaceId={workspaceId}
               disabledAddresses={[...to, ...cc]}
               displayNames={recipientDisplayNames}

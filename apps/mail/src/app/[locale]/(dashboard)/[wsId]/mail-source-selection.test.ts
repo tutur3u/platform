@@ -19,7 +19,7 @@ describe('connected folders', () => {
       'spam',
       'trash',
     ]);
-    for (const folder of ['snoozed', 'muted', 'starred']) {
+    for (const folder of ['snoozed', 'muted', 'starred', 'blocked']) {
       expect(isConnectedMailFolder(folder)).toBe(false);
     }
     expect(isConnectedMailFolder(undefined)).toBe(false);
@@ -28,6 +28,7 @@ describe('connected folders', () => {
   it('falls back to the inbox for managed-only or unknown routes', () => {
     expect(resolveConnectedMailFolder('trash')).toBe('trash');
     expect(resolveConnectedMailFolder('starred')).toBe('inbox');
+    expect(resolveConnectedMailFolder('blocked')).toBe('inbox');
     expect(resolveConnectedMailFolder(null)).toBe('inbox');
   });
 });

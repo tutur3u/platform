@@ -56,7 +56,7 @@ it('collapses similar deliveries and preserves recipient-specific open actions',
   expect(container.querySelector('details')?.open).toBe(true);
   fireEvent.click(container.querySelector('[data-mail-thread-open="b"]')!);
   expect(onOpen).toHaveBeenCalledWith(threads[1]);
-  expect(screen.getByText('to: b@example.com')).toBeTruthy();
+  expect(screen.getByText('b@example.com')).toBeTruthy();
 });
 
 it('retains keyboard expansion through selection and unrelated rerenders', () => {

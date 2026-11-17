@@ -1,7 +1,7 @@
 'use client';
 
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { Bot, Inbox, Mail, Route, Tag, Users } from '@tuturuuu/icons';
+import { Ban, Bot, Inbox, Mail, Route, Tag, Users } from '@tuturuuu/icons';
 import {
   getMailCatchAllConfiguration,
   getMailMailboxSettings,
@@ -36,6 +36,7 @@ import { parseAsString, useQueryState } from 'nuqs';
 import { useEffect, useMemo, useState } from 'react';
 import { MailAccountsSettings } from './mail-accounts-settings';
 import { MailAutomationSettings } from './mail-automation-settings';
+import { MailBlockedSenderSettings } from './mail-blocked-sender-settings';
 import { MailContentState } from './mail-content-state';
 import { MailGroupSettings } from './mail-group-settings';
 import { MailLabelSettings } from './mail-label-settings';
@@ -221,6 +222,12 @@ export function MailSettingsDialog({
             name: 'members',
           },
           {
+            description: t('blocked_senders.description'),
+            icon: Ban,
+            label: t('blocked_senders.title'),
+            name: 'blocked-senders',
+          },
+          {
             description: t('delivery_description'),
             disabled: !operator,
             icon: Route,
@@ -244,6 +251,7 @@ export function MailSettingsDialog({
     tab !== 'source' &&
     tab !== 'reading' &&
     tab !== 'labels' &&
+    tab !== 'blocked-senders' &&
     (activeQuery.isLoading || activeQuery.isError);
 
   return (
@@ -418,6 +426,14 @@ export function MailSettingsDialog({
               <MailLabelSettings
                 automaticSuggestions={settings?.labelSuggestions ?? []}
                 canManage={mailbox.role === 'owner' || mailbox.role === 'admin'}
+                mailboxId={mailbox.id}
+                workspaceId={workspaceId}
+              />
+            ) : null}
+            {tab === 'blocked-senders' && mailbox ? (
+              <MailBlockedSenderSettings
+                canManage={['owner', 'admin'].includes(mailbox.role)}
+                key={mailbox.id}
                 mailboxId={mailbox.id}
                 workspaceId={workspaceId}
               />

@@ -1,5 +1,6 @@
 import {
   Archive,
+  Ban,
   Clock,
   Inbox,
   PenLine,
@@ -19,6 +20,7 @@ export const MAIL_FOLDERS = [
   'drafts',
   'archive',
   'spam',
+  'blocked',
   'trash',
 ] as const;
 
@@ -28,6 +30,7 @@ export const DEFAULT_MAIL_FOLDER = 'inbox' satisfies MailFolder;
 
 export const mailFolderIcons = {
   archive: Archive,
+  blocked: Ban,
   snoozed: Clock,
   muted: VolumeX,
   drafts: PenLine,

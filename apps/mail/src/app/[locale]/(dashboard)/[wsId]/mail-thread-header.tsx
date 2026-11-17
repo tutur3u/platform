@@ -37,11 +37,11 @@ export function MailThreadHeader({
           <h1 className="text-pretty break-words font-semibold text-lg leading-tight md:text-xl">
             {subject || t('no_subject')}
           </h1>
-          <p className="mt-2 inline-flex items-center rounded-md bg-muted px-2 py-0.5 font-medium text-foreground text-sm tabular-nums">
+          <p className="mt-2 inline-flex items-center rounded-full bg-muted px-2.5 py-0.5 font-medium text-muted-foreground text-xs tabular-nums">
             {t('message_count', { count: messageCount })}
           </p>
         </div>
-        <div className="flex items-center gap-1">
+        <div className="flex items-center gap-0.5 rounded-full bg-muted/60 p-1 [&_button]:rounded-full">
           {labelActions}
           {!isDraft && onRead ? (
             <MailIconButton

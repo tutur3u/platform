@@ -16,6 +16,10 @@ const api = vi.hoisted(() => ({
   capability: vi.fn(),
   create: vi.fn(),
   status: vi.fn(),
+  workspaces: vi.fn(),
+}));
+vi.mock('@tuturuuu/internal-api', () => ({
+  listWorkspaces: api.workspaces,
 }));
 vi.mock('@tuturuuu/internal-api/people', () => ({
   getContactCreateCapability: api.capability,
@@ -29,11 +33,16 @@ beforeEach(() => {
   api.capability.mockResolvedValue({ canCreate: true });
   api.create.mockResolvedValue({ state: 'unknown' });
   api.status.mockResolvedValue({ state: 'unknown' });
+  api.workspaces.mockResolvedValue([
+    { id: 'workspace', name: 'Team', personal: false },
+  ]);
 });
 afterEach(() => {
   cleanup();
   vi.clearAllMocks();
 });
+
+const onCreated = vi.fn();
 
 function setup(actorId = 'actor') {
   const client = new QueryClient({
@@ -47,22 +56,47 @@ function setup(actorId = 'actor') {
         MailActorProvider,
         { actorId },
         h(MailSenderContactCreate, {
-          workspaceId: 'workspace',
+          routeWorkspaceId: 'workspace',
           email: 'sender@example.com',
-          displayName: 'Sender',
-          contactsHref: 'https://contacts.example/en/workspace/users/database',
-          onCreated: vi.fn(),
+          headerName: 'Nguyễn Thị Lan',
+          contactsHref: (workspaceId: string) =>
+            `https://contacts.example/en/${workspaceId}/users/database`,
+          onCreated,
         })
       )
     )
   );
 }
 
+async function openForm() {
+  fireEvent.click(
+    await screen.findByRole('button', { name: 'add_to_contacts' })
+  );
+  const submit = await screen.findByRole('button', { name: 'create' });
+  await waitFor(() => expect(submit.hasAttribute('disabled')).toBe(false));
+  return submit;
+}
+
+it('prefills the form from the From header', async () => {
+  setup();
+  await openForm();
+  expect((screen.getByLabelText('name') as HTMLInputElement).value).toBe(
+    'Nguyễn Thị Lan'
+  );
+  expect((screen.getByLabelText('email') as HTMLInputElement).readOnly).toBe(
+    true
+  );
+});
+
 it('submits once, retains UNKNOWN and only reads status on checks and reopen', async () => {
   const view = setup();
-  fireEvent.click(await screen.findByRole('button', { name: 'add' }));
+  fireEvent.click(await openForm());
   await screen.findByText('outcome_unknown');
   expect(api.create).toHaveBeenCalledTimes(1);
+  expect(api.create.mock.calls[0]?.[1]).toMatchObject({
+    email: 'sender@example.com',
+    displayName: 'Nguyễn Thị Lan',
+  });
   const operationId = api.create.mock.calls[0]?.[1].operationId;
   expect(operationId).toEqual(expect.any(String));
   fireEvent.click(screen.getByRole('button', { name: 'check_status' }));
@@ -72,21 +106,25 @@ it('submits once, retains UNKNOWN and only reads status on checks and reopen', a
   expect(api.create).toHaveBeenCalledTimes(1);
   view.unmount();
   setup();
-  fireEvent.click(await screen.findByRole('button', { name: 'add' }));
+  fireEvent.click(await openForm());
   await screen.findByText('outcome_unknown');
   expect(api.create).toHaveBeenCalledTimes(1);
   expect(api.status).toHaveBeenCalledTimes(2);
 });
 
-it('opens a late-confirmed contact without replaying the mutation', async () => {
+it('reports a late-confirmed contact without replaying the mutation', async () => {
   setup();
-  fireEvent.click(await screen.findByRole('button', { name: 'add' }));
+  fireEvent.click(await openForm());
   await screen.findByText('outcome_unknown');
   api.status.mockResolvedValue({ state: 'created', contactId: 'contact/id' });
   fireEvent.click(screen.getByRole('button', { name: 'check_status' }));
-  expect(
-    (await screen.findByRole('link', { name: 'open' })).getAttribute('href')
-  ).toBe('https://contacts.example/en/workspace/users/database/contact%2Fid');
+  await waitFor(() =>
+    expect(onCreated).toHaveBeenCalledWith({
+      workspaceId: 'workspace',
+      contactId: 'contact/id',
+      workspaceName: 'Team',
+    })
+  );
   expect(api.create).toHaveBeenCalledTimes(1);
 });
 

@@ -1,68 +1,68 @@
 'use client';
 
-import { useQuery } from '@tanstack/react-query';
-import { UserRound } from '@tuturuuu/icons';
-import { searchWorkspacePeople } from '@tuturuuu/internal-api/people';
-import { Avatar, AvatarFallback, AvatarImage } from '@tuturuuu/ui/avatar';
-import { Button } from '@tuturuuu/ui/button';
 import { Popover, PopoverContent, PopoverTrigger } from '@tuturuuu/ui/popover';
-import { resolveInternalAppUrl } from '@tuturuuu/utils/app-url';
-import { getLocalInternalAppUrl } from '@tuturuuu/utils/internal-domains';
-import { useLocale, useTranslations } from 'next-intl';
-import { useEffect, useRef, useState } from 'react';
-import { MailSenderContactCreate } from './mail-sender-contact-create';
+import { cn } from '@tuturuuu/utils/format';
+import { useTranslations } from 'next-intl';
+import { type ReactNode, useEffect, useRef, useState } from 'react';
+import { MailParticipantAvatar } from './mail-participant-avatar';
+import {
+  MAIL_PROFILE_HOVER_DELAY_MS,
+  useMailPersonProfile,
+} from './mail-person-name';
+import { MailProfileCard } from './mail-profile-card';
+import {
+  MailProfileHoldProvider,
+  useMailProfileHoldState,
+} from './mail-profile-context';
 
-const contactsOrigin = resolveInternalAppUrl({
-  appName: 'contacts',
-  candidates: [process.env.NEXT_PUBLIC_CONTACTS_APP_URL],
-  fallback:
-    process.env.NODE_ENV === 'production'
-      ? 'https://contacts.tuturuuu.com'
-      : getLocalInternalAppUrl('contacts', 'http://localhost:7827'),
-});
+type OpenedBy = 'hover' | 'press';
 
+/**
+ * A participant's avatar and resolved name. The profile card opens after a
+ * 300 ms hover, on click, or on Enter; Escape closes it and returns focus to
+ * the name. It stays open while the card holds it (a dirty form or an open
+ * dialog).
+ */
 export function MailSenderContactCard({
   workspaceId,
   address,
   name,
+  variant = 'sender',
+  unknownActions,
 }: {
   workspaceId?: string;
   address: string;
   name: string | null;
+  variant?: 'sender' | 'inline';
+  unknownActions?: ReactNode;
 }) {
-  const t = useTranslations('mail.sender_contact');
-  const locale = useLocale();
+  const t = useTranslations('mail.profile');
+  const profile = useMailPersonProfile(workspaceId, address, name);
   const [open, setOpen] = useState(false);
+  const hold = useMailProfileHoldState();
+  const openedBy = useRef<OpenedBy>('press');
   const trigger = useRef<HTMLButtonElement>(null);
   const content = useRef<HTMLDivElement>(null);
-  const restoringFocus = useRef(false);
+  const openTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const closeTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const email = address.trim().toLowerCase();
-  const validEmail =
-    email.length <= 100 && /^[^\s@<>]+@[^\s@<>]+\.[^\s@<>]+$/u.test(email);
-  const lookup = useQuery({
-    queryKey: ['mail', 'sender-people-v1', workspaceId, email],
-    queryFn: () =>
-      searchWorkspacePeople(workspaceId ?? '', { query: email, limit: 20 }),
-    enabled: open && Boolean(workspaceId) && validEmail,
-    retry: false,
-    staleTime: 0,
-    gcTime: 0,
-  });
-  const matches = (lookup.data?.data ?? []).filter(
-    (person) => person.email?.trim().toLowerCase() === email
-  );
 
-  function cancelClose() {
+  function clearTimers() {
+    if (openTimer.current) clearTimeout(openTimer.current);
     if (closeTimer.current) clearTimeout(closeTimer.current);
+    openTimer.current = null;
     closeTimer.current = null;
   }
-  function reveal() {
-    cancelClose();
-    setOpen(true);
+  function openOnHover() {
+    clearTimers();
+    if (open) return;
+    openTimer.current = setTimeout(() => {
+      openedBy.current = 'hover';
+      setOpen(true);
+    }, MAIL_PROFILE_HOVER_DELAY_MS);
   }
   function closeAfterPointerLeave() {
-    cancelClose();
+    clearTimers();
+    if (!open || hold.held || openedBy.current !== 'hover') return;
     closeTimer.current = setTimeout(() => {
       if (
         !trigger.current?.contains(document.activeElement) &&
@@ -71,48 +71,61 @@ export function MailSenderContactCard({
         setOpen(false);
     }, 150);
   }
-  useEffect(
-    () => () => {
-      if (closeTimer.current) clearTimeout(closeTimer.current);
-    },
-    []
-  );
+  function openOnPress() {
+    clearTimers();
+    openedBy.current = 'press';
+    if (open) content.current?.focus();
+    else setOpen(true);
+  }
+  useEffect(() => clearTimers, []);
 
   return (
-    <Popover open={open} onOpenChange={setOpen}>
+    <Popover
+      open={open}
+      onOpenChange={(next) => {
+        clearTimers();
+        if (!next && hold.held) return;
+        setOpen(next);
+      }}
+    >
       <PopoverTrigger asChild>
         <button
           ref={trigger}
           type="button"
-          aria-label={t('show', { sender: name?.trim() || address })}
-          className="flex min-w-0 flex-1 items-center gap-1.5 rounded-md text-left outline-ring/50 hover:bg-muted/50 focus-visible:outline-2"
+          aria-label={t('show', { name: profile.label })}
+          className={cn(
+            'flex min-w-0 items-center gap-1.5 rounded-full text-left outline-ring/50 transition-colors hover:bg-muted/60 focus-visible:outline-2',
+            variant === 'sender' ? 'max-w-full py-0.5 pr-2' : 'max-w-56 pr-1.5'
+          )}
           onPointerEnter={(event) => {
-            if (event.pointerType === 'mouse') reveal();
+            if (event.pointerType === 'mouse') openOnHover();
           }}
           onPointerLeave={closeAfterPointerLeave}
-          onFocus={() => {
-            if (restoringFocus.current) restoringFocus.current = false;
-            else reveal();
-          }}
           onClick={(event) => {
             event.preventDefault();
-            reveal();
-            content.current?.focus();
+            openOnPress();
           }}
           onKeyDown={(event) => {
             if (event.key === 'ArrowDown') {
               event.preventDefault();
-              reveal();
-              content.current?.focus();
+              openOnPress();
             }
           }}
         >
-          <UserRound
-            className="size-5 shrink-0 text-muted-foreground"
-            aria-hidden="true"
+          <MailParticipantAvatar
+            workspaceId={workspaceId}
+            address={address}
+            name={name}
           />
-          <span className="truncate font-semibold text-primary text-sm">
-            {name?.trim() || address}
+          <span
+            className={cn(
+              'truncate',
+              variant === 'sender'
+                ? 'font-semibold text-foreground text-sm'
+                : 'text-foreground/80 text-xs'
+            )}
+          >
+            {profile.label}
           </span>
         </button>
       </PopoverTrigger>
@@ -120,101 +133,27 @@ export function MailSenderContactCard({
         ref={content}
         align="start"
         tabIndex={-1}
-        aria-label={t('title')}
-        className="max-h-[min(24rem,var(--radix-popover-content-available-height))] w-80 max-w-[calc(100vw-2rem)] space-y-3 overflow-y-auto"
-        onOpenAutoFocus={(event) => event.preventDefault()}
-        onCloseAutoFocus={() => {
-          restoringFocus.current = document.activeElement !== trigger.current;
+        aria-label={t('card', { name: profile.label })}
+        className="max-h-[min(30rem,var(--radix-popover-content-available-height))] w-[min(21.25rem,calc(100vw-2rem))] overflow-y-auto rounded-2xl p-0 outline-none"
+        onOpenAutoFocus={(event) => {
+          event.preventDefault();
+          if (openedBy.current === 'press') content.current?.focus();
         }}
-        onPointerEnter={cancelClose}
+        onCloseAutoFocus={(event) => {
+          if (openedBy.current === 'hover') event.preventDefault();
+        }}
+        onPointerEnter={clearTimers}
         onPointerLeave={closeAfterPointerLeave}
       >
-        <div>
-          <p className="font-medium text-sm">{t('message_sender')}</p>
-          {name?.trim() ? (
-            <p className="break-words text-sm">{name.trim()}</p>
-          ) : null}
-          <p className="break-all text-muted-foreground text-xs">{address}</p>
-        </div>
-        <div className="space-y-2 border-t pt-3">
-          <p className="font-medium text-sm">{t('title')}</p>
-          {!workspaceId || !validEmail ? (
-            <p className="text-muted-foreground text-xs">{t('unavailable')}</p>
-          ) : lookup.isFetching || lookup.isPending ? (
-            <p role="status" className="text-muted-foreground text-xs">
-              {t('loading')}
-            </p>
-          ) : lookup.isError ? (
-            <div className="space-y-2">
-              <p role="status" className="text-muted-foreground text-xs">
-                {t('unavailable')}
-              </p>
-              <Button
-                type="button"
-                variant="outline"
-                size="sm"
-                onClick={() => void lookup.refetch()}
-              >
-                {t('retry')}
-              </Button>
-            </div>
-          ) : matches.length ? (
-            matches.map((person) => (
-              <div
-                className="flex items-center gap-2"
-                key={`${person.kind}:${person.id}`}
-              >
-                <Avatar className="size-8">
-                  {person.avatarUrl ? (
-                    <AvatarImage
-                      src={person.avatarUrl}
-                      alt=""
-                      referrerPolicy="no-referrer"
-                    />
-                  ) : null}
-                  <AvatarFallback>
-                    <UserRound className="size-4" aria-hidden="true" />
-                  </AvatarFallback>
-                </Avatar>
-                <div className="min-w-0 flex-1">
-                  <p className="truncate text-sm">
-                    {person.displayName || person.email}
-                  </p>
-                  <p className="text-muted-foreground text-xs">
-                    {person.kind === 'contact' ? t('contact') : t('member')}
-                  </p>
-                  {person.kind === 'contact' ? (
-                    <a
-                      className="text-primary text-xs underline underline-offset-2"
-                      href={`${contactsOrigin}/${encodeURIComponent(locale)}/${encodeURIComponent(workspaceId)}/users/database/${encodeURIComponent(person.id)}`}
-                    >
-                      {t('open')}
-                    </a>
-                  ) : null}
-                </div>
-              </div>
-            ))
-          ) : (
-            <p className="text-muted-foreground text-xs">
-              {t('no_visible_match')}
-            </p>
-          )}
-        </div>
-        {workspaceId &&
-        validEmail &&
-        !lookup.isError &&
-        !lookup.isFetching &&
-        !lookup.isPending &&
-        !matches.some((person) => person.kind === 'contact') ? (
-          <MailSenderContactCreate
-            key={`${workspaceId}:${email}`}
+        <MailProfileHoldProvider report={hold.report}>
+          <MailProfileCard
             workspaceId={workspaceId}
-            email={email}
-            displayName={name?.trim() || null}
-            contactsHref={`${contactsOrigin}/${encodeURIComponent(locale)}/${encodeURIComponent(workspaceId)}/users/database`}
-            onCreated={() => void lookup.refetch()}
+            address={address}
+            name={name}
+            state={profile.state}
+            unknownActions={unknownActions}
           />
-        ) : null}
+        </MailProfileHoldProvider>
       </PopoverContent>
     </Popover>
   );

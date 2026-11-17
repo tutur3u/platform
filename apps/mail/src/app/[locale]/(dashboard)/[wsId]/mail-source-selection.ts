@@ -18,7 +18,10 @@ export function isConnectedMailFolder(
   return (CONNECTED_MAIL_FOLDERS as readonly string[]).includes(folder ?? '');
 }
 
-/** Managed-only folders (snoozed, muted, starred) fall back to the inbox. */
+/**
+ * Managed-only folders (snoozed, muted, starred, blocked) fall back to the
+ * inbox.
+ */
 export function resolveConnectedMailFolder(
   folder: string | null | undefined
 ): ConnectedMailFolder {

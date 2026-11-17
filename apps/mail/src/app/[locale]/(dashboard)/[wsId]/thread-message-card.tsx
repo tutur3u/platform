@@ -1,6 +1,5 @@
 'use client';
 
-import { ArrowRight, ChevronDown } from '@tuturuuu/icons';
 import type { MailMessageDetail } from '@tuturuuu/internal-api';
 import {
   AccordionContent,
@@ -8,27 +7,21 @@ import {
   AccordionTrigger,
 } from '@tuturuuu/ui/accordion';
 import { Badge } from '@tuturuuu/ui/badge';
-import { Popover, PopoverContent, PopoverTrigger } from '@tuturuuu/ui/popover';
-import { Tooltip, TooltipContent, TooltipTrigger } from '@tuturuuu/ui/tooltip';
 import { useLocale, useTranslations } from 'next-intl';
+import { useId, useRef, useState } from 'react';
 import { getFailedMailRecipients } from '@/lib/mail/failed-recipients';
 import { MailAttachmentCard } from './mail-attachment-card';
 import { MailBlacklistControl } from './mail-blacklist-control';
-import { MailEmailText } from './mail-email-text';
 import type { MailFolder } from './mail-folders';
 import { MailInvitationCard } from './mail-invitation-card';
 import { MailLabelBadges } from './mail-label-badges';
-import {
-  formatMailRecipients,
-  formatMailSender,
-} from './mail-message-addresses';
 import { MailMessagePreview } from './mail-message-preview';
 import { MailMessageSourceMenu } from './mail-message-source-menu';
-import { MailParticipantAvatar } from './mail-participant-avatar';
 import { MailPlainTextBody } from './mail-plain-text-body';
-import { MailSenderContactCard } from './mail-sender-contact-card';
 import { mailSnippetText } from './mail-snippet-text';
 import { visibleMailLabels } from './mail-visible-labels';
+import { MessageDetailsPanel } from './message-details-panel';
+import { MessageHeaderPeople } from './message-header-people';
 
 function formatDate(value: string | null, locale: string) {
   if (!value || !Number.isFinite(new Date(value).getTime())) return '';
@@ -49,95 +42,25 @@ export function ThreadMessageCard({
 }) {
   const t = useTranslations('mail');
   const locale = useLocale();
-  const sender = formatMailSender(message);
-  const recipient = formatMailRecipients(message, 'to');
-  const firstRecipient = message.recipients.find((item) => item.kind === 'to');
+  const [detailsOpen, setDetailsOpen] = useState(false);
+  const detailsId = useId();
+  const detailsToggle = useRef<HTMLButtonElement>(null);
 
   return (
     <AccordionItem
       className="group/message min-w-0 max-w-full overflow-hidden rounded-2xl border-0 bg-background shadow-foreground/5 shadow-sm transition-shadow data-[state=open]:shadow-foreground/8 data-[state=open]:shadow-md"
       value={message.id}
     >
-      <div className="px-4 py-3 md:px-6">
+      <div className="px-4 py-3 md:px-5 md:py-4">
         <div className="flex min-w-0 items-center gap-2">
-          <MailSenderContactCard
+          <MessageHeaderPeople
+            message={message}
             workspaceId={workspaceId}
-            address={message.fromAddress}
-            name={message.fromName}
+            detailsOpen={detailsOpen}
+            detailsId={detailsId}
+            toggleRef={detailsToggle}
+            onToggleDetails={() => setDetailsOpen((current) => !current)}
           />
-          <Popover>
-            <PopoverTrigger asChild>
-              <button
-                type="button"
-                aria-label={`${t('message_details')}: ${sender}${recipient ? ` → ${recipient}` : ''}`}
-                className="flex min-w-0 max-w-[45%] items-center gap-1.5 rounded-md text-left outline-ring/50 transition-colors hover:bg-muted/50 focus-visible:outline-2"
-              >
-                {recipient ? (
-                  <>
-                    <ArrowRight
-                      aria-hidden="true"
-                      className="size-3 shrink-0 text-muted-foreground"
-                    />
-                    {firstRecipient ? (
-                      <MailParticipantAvatar
-                        workspaceId={workspaceId}
-                        address={firstRecipient.address}
-                        name={firstRecipient.displayName}
-                      />
-                    ) : null}
-                    <Address
-                      value={recipient}
-                      label={formatMailRecipients(message, 'to', true)}
-                      muted
-                    />
-                  </>
-                ) : null}
-                <ChevronDown
-                  aria-hidden="true"
-                  className="size-3 shrink-0 text-muted-foreground"
-                />
-              </button>
-            </PopoverTrigger>
-            <PopoverContent
-              align="start"
-              aria-label={t('message_details')}
-              className="max-h-[min(28rem,var(--radix-popover-content-available-height))] w-[min(30rem,calc(100vw-2rem))] overflow-y-auto rounded-xl"
-            >
-              <dl className="grid gap-2 text-xs">
-                <Detail label={t('from')} value={sender} />
-                <Detail
-                  label={t('to')}
-                  value={formatMailRecipients(message, 'to')}
-                />
-                <Detail
-                  label={t('cc')}
-                  value={formatMailRecipients(message, 'cc')}
-                />
-                <Detail
-                  label={t('bcc')}
-                  value={formatMailRecipients(message, 'bcc')}
-                />
-                {message.observedRecipient ? (
-                  <Detail
-                    label={t('original_recipient')}
-                    value={message.observedRecipient}
-                  />
-                ) : null}
-                {Object.entries(message.safeHeaders)
-                  .filter(
-                    ([key]) =>
-                      !['from', 'to', 'cc', 'bcc', 'subject'].includes(
-                        key.toLowerCase()
-                      )
-                  )
-                  .map(([key, value]) =>
-                    typeof value === 'string' ? (
-                      <Detail key={key} label={key} value={value} />
-                    ) : null
-                  )}
-              </dl>
-            </PopoverContent>
-          </Popover>
           <div className="flex max-w-[30%] shrink-0 flex-wrap items-center justify-end gap-1 empty:hidden">
             {message.deliveryRoute === 'catch_all' ? (
               <Badge className="px-1.5 py-0 text-[10px]" variant="outline">
@@ -148,9 +71,12 @@ export function ThreadMessageCard({
               labels={visibleMailLabels(message.labels, folder)}
             />
           </div>
-          <span className="hidden shrink-0 text-muted-foreground text-xs sm:block">
+          <time
+            dateTime={message.receivedAt ?? message.sentAt ?? undefined}
+            className="hidden shrink-0 font-mono text-muted-foreground text-xs tabular-nums sm:block"
+          >
             {formatDate(message.receivedAt ?? message.sentAt, locale)}
-          </span>
+          </time>
           {workspaceId ? (
             <MailMessageSourceMenu
               key={message.id}
@@ -167,6 +93,17 @@ export function ThreadMessageCard({
         <div className="mt-1 line-clamp-2 whitespace-normal break-words text-muted-foreground text-xs group-data-[state=open]/message:hidden">
           {mailSnippetText(message.snippet || message.bodyText || '')}
         </div>
+        {detailsOpen ? (
+          <MessageDetailsPanel
+            id={detailsId}
+            message={message}
+            workspaceId={workspaceId}
+            onClose={() => {
+              setDetailsOpen(false);
+              detailsToggle.current?.focus();
+            }}
+          />
+        ) : null}
       </div>
       <AccordionContent className="p-0 pb-0">
         {workspaceId && message.direction === 'inbound' ? (
@@ -208,40 +145,5 @@ export function ThreadMessageCard({
         </div>
       </AccordionContent>
     </AccordionItem>
-  );
-}
-
-function Address({
-  value,
-  label = value,
-  muted = false,
-}: {
-  value: string;
-  label?: string;
-  muted?: boolean;
-}) {
-  return (
-    <Tooltip>
-      <TooltipTrigger asChild>
-        <span
-          className={`min-w-0 truncate text-dynamic-blue underline-offset-2 hover:underline ${muted ? 'shrink font-normal text-xs' : 'shrink font-semibold text-sm'}`}
-        >
-          {label}
-        </span>
-      </TooltipTrigger>
-      <TooltipContent className="max-w-sm break-all">{value}</TooltipContent>
-    </Tooltip>
-  );
-}
-
-function Detail({ label, value }: { label: string; value: string }) {
-  if (!value) return null;
-  return (
-    <div className="grid gap-1 sm:grid-cols-[8rem_minmax(0,1fr)]">
-      <dt className="font-medium text-muted-foreground">{label}</dt>
-      <dd className="min-w-0 break-all">
-        <MailEmailText text={value} />
-      </dd>
-    </div>
   );
 }
