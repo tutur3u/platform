@@ -30,7 +30,7 @@ test('dependency caches retain the trusted-main job admission and exact inputs',
     restore.map((step) => step.with.path).sort(),
     ['~/.bun/install/cache', '~/.cache/ms-playwright'].sort()
   );
-  for (const step of restore) {
+  for (const step of [...restore, ...save]) {
     assert.match(step.with.key, /runner\.os/);
     assert.match(step.with.key, /runner\.arch/);
     assert.match(step.with.key, /hashFiles\('bun\.lock'/);
@@ -38,7 +38,10 @@ test('dependency caches retain the trusted-main job admission and exact inputs',
   }
   const bun = restore.find((step) => step.id === 'bun-packages');
   assert.match(bun.with.key, /1\.4\.4/);
-  assert.match(bun.with.key, /'\*\*\/package\.json', 'patches\/\*\*'/);
+  assert.match(
+    bun.with.key,
+    /'package\.json', 'apps\/\*\/package\.json', 'packages\/\*\/package\.json', 'patches\/\*\*'/
+  );
   const setup = steps.find((step) =>
     step.uses?.startsWith('./.github/actions/setup-bun-with-retry')
   );
@@ -100,7 +103,7 @@ test('only bounded cache misses from main pushes may write', () => {
       : 'bun-packages';
     assert.equal(
       step.with.key,
-      `\${{ steps.${id}.outputs.cache-primary-key }}`
+      restore.find((item) => item.id === id).with.key
     );
     assert.ok(
       steps.indexOf(step) >

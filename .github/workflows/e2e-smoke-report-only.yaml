@@ -58,7 +58,7 @@ jobs:
         uses: actions/cache/restore@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
         with:
           path: ~/.bun/install/cache
-          key: web-e2e-bun-v1-${{ runner.os }}-${{ runner.arch }}-1.4.4-${{ hashFiles('bun.lock', '**/package.json', 'patches/**') }}
+          key: web-e2e-bun-v1-${{ runner.os }}-${{ runner.arch }}-1.4.4-${{ hashFiles('bun.lock', 'package.json', 'apps/*/package.json', 'packages/*/package.json', 'patches/**') }}
       - name: Install dependencies
         run: bash scripts/ci/run-with-backoff.sh bun install --frozen-lockfile
       - name: Expose retained E2E CLI compatibility
@@ -106,13 +106,13 @@ jobs:
         uses: actions/cache/save@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
         with:
           path: ~/.bun/install/cache
-          key: ${{ steps.bun-packages.outputs.cache-primary-key }}
+          key: web-e2e-bun-v1-${{ runner.os }}-${{ runner.arch }}-1.4.4-${{ hashFiles('bun.lock', 'package.json', 'apps/*/package.json', 'packages/*/package.json', 'patches/**') }}
       - name: Save exact trusted E2E Chromium
         if: github.ref == 'refs/heads/main' && github.event_name == 'push' && github.actor != 'dependabot[bot]' && steps.chromium.outputs.cache-hit != 'true' && steps.cache-budget.outputs.chromium == 'true'
         uses: actions/cache/save@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
         with:
           path: ~/.cache/ms-playwright
-          key: ${{ steps.chromium.outputs.cache-primary-key }}
+          key: web-e2e-chromium-v1-${{ runner.os }}-${{ runner.arch }}-${{ hashFiles('bun.lock', 'apps/web/package.json') }}
       - name: Smoke (six-minute Playwright budget, excluding provisioning)
         if: github.event_name != 'schedule'
         timeout-minutes: 45
