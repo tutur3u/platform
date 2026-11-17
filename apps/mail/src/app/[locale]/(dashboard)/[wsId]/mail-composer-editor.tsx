@@ -4,6 +4,9 @@ import Link from '@tiptap/extension-link';
 import Placeholder from '@tiptap/extension-placeholder';
 import { EditorContent, type Editor, useEditor } from '@tiptap/react';
 import StarterKit from '@tiptap/starter-kit';
+import { DOMParser as ProseMirrorDOMParser } from '@tiptap/pm/model';
+import { toast } from '@tuturuuu/ui/sonner';
+import { embeddedMailImages } from './mail-composer-paste';
 import {
   Bold,
   Italic,
@@ -50,6 +53,7 @@ export interface MailComposerEditorProps {
   onImageNodesChange?: () => void;
   /** Hands the composer the node operations for this editor, or null on unmount. */
   onImageNodes?: (nodes: MailImageNodes | null) => void;
+  onPasteImages?: (files: File[], inline: boolean) => void;
   onRemoveImage?: (id: string) => void;
   onRetryImage?: (id: string) => void;
   onSelectionChange: (selection: ComposerSelection | null) => void;
@@ -68,12 +72,13 @@ export const MailComposerEditor = memo(function MailComposerEditor({
   onImageNodes,
   onImageNodesChange,
   onRemoveImage,
+  onPasteImages,
   onRetryImage,
   onSelectionChange,
 }: MailComposerEditorProps) {
   const t = useTranslations('mail');
-  const actions = useRef({ onImageNodesChange, onRemoveImage, onRetryImage });
-  actions.current = { onImageNodesChange, onRemoveImage, onRetryImage };
+  const actions = useRef({ onImageNodesChange, onRemoveImage, onRetryImage, onPasteImages });
+  actions.current = { onImageNodesChange, onRemoveImage, onRetryImage, onPasteImages };
   const lastEmitted = useRef<string | null>(null);
   const parts = useMemo(() => splitComposerQuote(initialHtml), [initialHtml]);
   const [quoteOpen, setQuoteOpen] = useState(false);
@@ -111,6 +116,31 @@ export const MailComposerEditor = memo(function MailComposerEditor({
       }),
       Placeholder.configure({ placeholder: t('write_message') }),
     ],
+    editorProps: {
+      handleDOMEvents: {
+        paste: (view, event) => {
+          const html = event.clipboardData?.getData('text/html');
+          if (!html || !actions.current.onPasteImages) return false;
+          try {
+            const media = embeddedMailImages(html);
+            if (!media.files.length) return false;
+            event.preventDefault();
+            const container = document.createElement('div');
+            container.innerHTML = media.html;
+            const slice = ProseMirrorDOMParser.fromSchema(view.state.schema).parseSlice(container);
+            view.dispatch(view.state.tr.replaceSelection(slice));
+            actions.current.onPasteImages(media.files, true);
+            return true;
+          } catch {
+            event.preventDefault();
+            toast.error(t('upload_failed'), {
+              description: t('clipboard_image_invalid'),
+            });
+            return true;
+          }
+        },
+      },
+    },
     immediatelyRender: false,
     onUpdate: ({ editor: nextEditor }) => {
       // Repairing identities dispatches again, and that update does the rest.

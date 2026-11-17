@@ -92,6 +92,10 @@ export function useMailComposerUploads({
           `/api/v1/workspaces/${owner.workspaceId}/mail/mailboxes/${owner.mailboxId}/drafts/${owner.draftId}/attachments/${attachmentId}`,
         newId: () => crypto.randomUUID(),
         nodes: () => nodesRef.current,
+        onUploadFailed: (item, error) =>
+          toast.error(latest.current.t('upload_failed'), {
+            description: `${item.name}: ${error instanceof Error ? error.message : latest.current.t('upload_failed')}`,
+          }),
         onRemoveFailed: (item, retry) =>
           toast.error(latest.current.t('remove_failed', { name: item.name }), {
             action: { label: latest.current.t('retry'), onClick: retry },

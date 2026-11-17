@@ -26,6 +26,7 @@ export interface MailUploadDeps {
   imageSource: (owner: MailMediaOwner, attachmentId: string) => string;
   newId: () => string;
   nodes: () => MailImageNodes | null;
+  onUploadFailed?: (item: MailMediaItem, error: unknown) => void;
   onRemoveFailed: (item: MailMediaItem, retry: () => void) => void;
   /** Delete an attachment from the draft that owns it, whatever is open now. */
   remove: (owner: MailMediaOwner, attachmentId: string) => Promise<void>;
@@ -454,7 +455,7 @@ export class MailUploadStore {
         { attachment, owner, previewUrl: null, status: 'uploaded' },
         { kind: 'uploaded', name: item.name }
       );
-    } catch {
+    } catch (error) {
       if (!alive()) return;
       this.controllers.delete(id);
       this.update(
@@ -463,6 +464,7 @@ export class MailUploadStore {
         { kind: 'failed', name: item.name }
       );
       this.deps.nodes()?.setState(id, 'failed');
+      this.deps.onUploadFailed?.(item, error);
     }
   }
 }

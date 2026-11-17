@@ -361,6 +361,7 @@
     "setting_toggle_label": "Dùng giao diện thử nghiệm Sorbet"
   },
   "mail": {
+    "clipboard_image_invalid": "Ảnh trong bộ nhớ tạm không được hỗ trợ hoặc quá lớn. Hãy dán ảnh PNG, JPEG, GIF hoặc WebP nhỏ hơn 15 MB.",
     "accounts": "Tài khoản",
     "accounts_description": "Hộp thư và tài khoản Gmail hoặc Outlook bạn có thể chuyển đổi.",
     "add": "Thêm",

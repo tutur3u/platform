@@ -361,6 +361,7 @@
     "setting_toggle_label": "Use the experimental Sorbet design"
   },
   "mail": {
+    "clipboard_image_invalid": "This clipboard image is unsupported or too large. Paste a PNG, JPEG, GIF or WebP image smaller than 15 MB.",
     "accounts": "Accounts",
     "accounts_description": "Mailboxes and Gmail or Outlook accounts you can switch between.",
     "add": "Add",

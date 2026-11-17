@@ -1502,3 +1502,12 @@ Regression coverage: `workspace-people-resolve.test.ts`,
 `recipient-ranking.test.ts`, `sender-blocks/match.test.ts`,
 `sender-blocks/store.test.ts`, `message-details-model.test.ts`, and the pgTAP
 suite `mail-contacts-sender-blocks.sql`.
+
+### Composer clipboard media
+
+The Mail composer queues pasted image files inline and other pasted files as
+attachments. Embedded PNG, JPEG, GIF and WebP images in rich HTML use the same
+upload queue; surrounding formatted text is retained. Remote HTML image URLs
+remain image references. Upload failures retain retry controls and show their
+reason in a toast. This applies to both classic and Sorbet themes.
+Clipboard regression coverage lives in `mail-composer-paste.test.ts`.

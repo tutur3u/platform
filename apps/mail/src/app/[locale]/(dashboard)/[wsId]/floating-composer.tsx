@@ -26,6 +26,7 @@ import {
   useRef,
   useState,
 } from 'react';
+import { pasteMailFiles } from './mail-composer-paste';
 import { MailComposerAttachments } from './mail-composer-attachments';
 import { MailComposerEditor } from './mail-composer-editor';
 import { MailComposerFooter } from './mail-composer-footer';
@@ -462,14 +463,8 @@ export function FloatingComposer({
           event.dataTransfer.dropEffect = 'copy';
         }}
         onKeyDown={composerKeyboard.onKeyDown}
-        onPaste={(event) => {
-          const files = event.clipboardData.files;
-          if (!files.length) return;
-          event.preventDefault();
-          uploads.addFiles(
-            files,
-            Array.from(files).every((file) => file.type.startsWith('image/'))
-          );
+        onPasteCapture={(event) => {
+          pasteMailFiles(event, uploads.addFiles);
         }}
         role="dialog"
       >
@@ -619,6 +614,7 @@ export function FloatingComposer({
             initialHtml={bodyHtml}
             onChange={handleEditorChange}
             onEnhance={openAi}
+            onPasteImages={uploads.addFiles}
             onImageNodes={uploads.setNodes}
             onImageNodesChange={uploads.onNodesChange}
             onRemoveImage={uploads.removeImage}
