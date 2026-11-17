@@ -102,6 +102,12 @@ describe('bounded calendar diagnostics', () => {
 });
 
 describe('complete credential redaction', () => {
+  it('omits oversized diagnostics without exposing truncated userinfo', () => {
+    const input = `https://${'synthetic'.repeat(25000)}:private@example.test`;
+    expect(sanitizeSyncErrorMessage(input)).toBe(
+      'Calendar sync error omitted: diagnostic input exceeds limit'
+    );
+  });
   it.each([
     'password="synthetic space; suffix"',
     "secret='synthetic space, suffix'",

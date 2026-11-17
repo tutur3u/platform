@@ -27,6 +27,7 @@ export function readSyncFailures(
 // would fail the whole run record, so stored diagnostics stay well under it.
 export const SYNC_DIAGNOSTICS_MAX_CHARS = 900;
 const SYNC_ERROR_MESSAGE_MAX_CHARS = 500;
+const SYNC_ERROR_INPUT_MAX_CHARS = 8192;
 const CALENDAR_NAME_MAX_CHARS = 80;
 
 export function serializeSyncFailures(
@@ -73,6 +74,9 @@ const REDACTIONS: Array<[RegExp, string]> = [
 // codes or request URLs with query secrets; redact them and cap the length
 // before the message is stored or returned.
 export function sanitizeSyncErrorMessage(message: string): string {
+  // Do not cut through a credential before redacting it.
+  if (message.length > SYNC_ERROR_INPUT_MAX_CHARS)
+    return 'Calendar sync error omitted: diagnostic input exceeds limit';
   let text = message;
   for (const [pattern, replacement] of REDACTIONS)
     text = text.replace(pattern, replacement);
