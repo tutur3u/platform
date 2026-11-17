@@ -37,6 +37,14 @@ class MailReaderIdentity extends StatelessWidget {
     return hidden ? hiddenFallback : address;
   }
 
+  static String? avatarUrl(Object? value) {
+    if (value is! String) return null;
+    final uri = Uri.tryParse(value);
+    return uri != null && uri.scheme == 'https' && uri.host.isNotEmpty
+        ? uri.toString()
+        : null;
+  }
+
   @override
   Widget build(BuildContext context) {
     final label = visibleName(address, name, profile, context.l10n.mailMember);
@@ -47,7 +55,7 @@ class MailReaderIdentity extends StatelessWidget {
         .map((word) => word.characters.first)
         .join()
         .toUpperCase();
-    final avatar = profile?['avatarUrl'] as String?;
+    final avatar = avatarUrl(profile?['avatarUrl']);
     final colors = Theme.of(context).colorScheme;
     return Row(
       mainAxisSize: MainAxisSize.min,

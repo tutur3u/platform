@@ -39,6 +39,23 @@ void main() {
     );
   });
 
+  test('avatar URLs permit HTTPS and otherwise retain initials', () {
+    for (final value in [
+      null,
+      '',
+      'http://example.test/a.png',
+      'data:image/png;base64,AAAA',
+      'file:///tmp/a.png',
+      '/avatar.png',
+    ]) {
+      expect(MailReaderIdentity.avatarUrl(value), isNull);
+    }
+    expect(
+      MailReaderIdentity.avatarUrl('https://example.test/a.png'),
+      'https://example.test/a.png',
+    );
+  });
+
   for (final brightness in Brightness.values) {
     for (final scale in [1.0, 2.0]) {
       testWidgets('${brightness.name} reader at ${scale}x text', (
