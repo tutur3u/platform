@@ -2,7 +2,7 @@ import {
   DRIVE_AUTO_EXTRACT_PROXY_TOKEN_SECRET,
   DRIVE_AUTO_EXTRACT_PROXY_URL_SECRET,
 } from '@tuturuuu/storage-core/workspace-storage-config';
-import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 const mocks = vi.hoisted(() => ({
   getSecrets: vi.fn(),
@@ -21,7 +21,23 @@ vi.mock('@/lib/workspace-helper', () => ({
     mocks.getWorkspaceConfig(...args),
 }));
 
+const policyKey = Symbol.for('tuturuuu.internalApi.webApiOriginPolicy');
+afterEach(() => {
+  delete (globalThis as Record<symbol, unknown>)[policyKey];
+  vi.unstubAllEnvs();
+});
+
 describe('resolveWebglPackageExtractConfig', () => {
+  it('rejects an untrusted callback origin without falling back to the request', async () => {
+    vi.stubEnv('INTERNAL_WEB_API_ORIGIN', 'https://evil.example');
+    (globalThis as Record<symbol, unknown>)[policyKey] = () => {
+      throw new Error('Untrusted Web origin');
+    };
+    const { resolveWebglCallbackOrigin } = await import('./shared');
+    expect(() => resolveWebglCallbackOrigin('https://tuturuuu.com')).toThrow(
+      'Untrusted Web origin'
+    );
+  });
   beforeEach(() => {
     vi.resetModules();
     vi.clearAllMocks();

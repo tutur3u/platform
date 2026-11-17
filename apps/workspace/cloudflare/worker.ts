@@ -55,6 +55,7 @@ const handler = (
     mounts,
     csp: appConfig.csp,
     apiOrigin: appConfig.apiOrigin,
+    webApiOrigin: appConfig.webApiOrigin,
     framablePaths: appConfig.framablePaths,
     start: createBridgeStartHandler(),
     serverFnBase: '/_serverFn',

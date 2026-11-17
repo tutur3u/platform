@@ -27,6 +27,12 @@ export interface BridgeAppConfig<Env = unknown> {
   /** Overrides of the generated mounts: hosts, `basePath`, `unknownHost`. */
   mounts?: Partial<Omit<AppMountConfig, 'app'>>;
   /**
+   * Trusted Web origin resolver. Throws on invalid bindings before app code
+   * runs, and supplies the shared internal-api credentialed-read policy.
+   * Apps without this hook retain their configured-origin behavior.
+   */
+  webApiOrigin?: (env: Env) => string;
+  /**
    * Origin for one unowned `/api/*` request (`createBridgeHandler`
    * `apiOrigin`); `undefined` keeps the central Web API. Forwarding keeps the
    * central forward's base stripping, loop guard and header removal.

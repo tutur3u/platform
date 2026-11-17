@@ -13,6 +13,10 @@ export default defineConfig({
     // source the way tasks-api, tasks-ui, and ui already do.
     alias: [
       {
+        find: '@tuturuuu/internal-api/client',
+        replacement: resolve(__dirname, '../internal-api/src/client.ts'),
+      },
+      {
         find: /^@tuturuuu\/types\/primitives\/(.+)$/,
         replacement: `${resolve(__dirname, '../types/src/primitives')}/$1.ts`,
       },

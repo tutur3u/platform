@@ -11,14 +11,16 @@
  * Schedule: Runs every hour at minute 0
  */
 
+import { getValidatedInternalWebApiOrigin } from '@tuturuuu/internal-api/client';
 import { createAdminClient } from '@tuturuuu/supabase/next/server';
 import { getLocalInternalAppUrl } from '@tuturuuu/utils/internal-domains';
 import { type NextRequest, NextResponse } from 'next/server';
 import { withCronLogDrain } from '@/lib/infrastructure/log-drain';
 
 function resolveCalendarScheduleOrigin() {
-  if (process.env.INTERNAL_WEB_API_ORIGIN) {
-    return process.env.INTERNAL_WEB_API_ORIGIN;
+  const internalOrigin = getValidatedInternalWebApiOrigin();
+  if (internalOrigin) {
+    return internalOrigin;
   }
 
   if (process.env.VERCEL_URL) {
@@ -76,8 +78,14 @@ async function handleGET(req: NextRequest) {
 
     // Combine and deduplicate workspace IDs
     const habitsResult = await habitsQuery;
-    const habitWsIds = habitsResult.data?.map((h) => h.ws_id) ?? [];
-    const allWsIds = [...new Set(habitWsIds)];
+    const habitWsIds: unknown[] = habitsResult.data?.map((h) => h.ws_id) ?? [];
+    const allWsIds = [
+      ...new Set(
+        habitWsIds.filter(
+          (id): id is string => typeof id === 'string' && id.length > 0
+        )
+      ),
+    ];
 
     console.info(
       `Found ${allWsIds.length} workspaces with auto-schedule habits`

@@ -420,6 +420,7 @@ test('emitted ${app} Worker serves its root, mount and unknown paths', {
     sendMetrics: false,
     bindings: {
       INTERNAL_WEB_API_ORIGIN: { type: 'plain_text', value: 'https://central.invalid' },
+      TUTURUUU_WEB_API_HOSTS: { type: 'plain_text', value: 'central.invalid' },
     },
     build: { bundle: false, processEntrypoint: false },
     dev: {

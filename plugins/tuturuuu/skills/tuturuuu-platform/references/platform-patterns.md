@@ -214,6 +214,12 @@ and its focused regression coverage before adding a reason or changing middlewar
   `useEffect`.
 - Client/shared UI app API calls should go through `packages/internal-api/src/*`
   helpers instead of scattered raw `fetch('/api/...')` calls.
+- Apps with a strict Web allowlist expose it as `webApiOrigin` in their bridge
+  config. Credentialed reads of `INTERNAL_WEB_API_ORIGIN` use
+  `getValidatedInternalWebApiOrigin` from `@tuturuuu/internal-api/client` before
+  URL normalization or fallback. Keep the resolver independent of requests and
+  read live bindings on each call. Cover refusal with a zero-fetch assertion;
+  see `apps/workspace/start-bridge.config.test.ts`.
 - Mounted app adapters register `registerDefaultAppBaseResolver` from `@tuturuuu/internal-api/client`
   once for helpers without options. Read request context in the callback; SSR returns an absolute URL.
   Never capture a request. Select app-owned routes when central APIs are also used.

@@ -88,6 +88,7 @@ export const selectWorkspaceApiOrigin: NonNullable<
 
 export default defineBridgeAppConfig<WorkspaceApiEnv>({
   apiOrigin: selectWorkspaceApiOrigin,
+  webApiOrigin: resolveWebApiOrigin,
   // Production serves Workspace at its own subdomain root and under the
   // tuturuuu.com/workspace mount; every other host gets the bridge's 404.
   mounts: { unknownHost: 'reject' },

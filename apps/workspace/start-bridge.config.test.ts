@@ -1,3 +1,7 @@
+import {
+  createInternalApiClient,
+  getConfiguredInternalApiBaseUrl,
+} from '@tuturuuu/internal-api/client';
 import { readFileSync } from 'node:fs';
 import { NextResponse } from '@tuturuuu/start-bridge/next/server';
 import {
@@ -134,6 +138,7 @@ function handlerFor() {
     proxy: async () => NextResponse.next(),
     start: { fetch: page },
     apiOrigin: config.apiOrigin,
+    webApiOrigin: config.webApiOrigin,
     assets: (env) => env.ASSETS,
     centralApiOrigin: (env) => resolveWebApiOrigin(env),
   });
@@ -143,7 +148,12 @@ function handlerFor() {
 const request = (path: string) =>
   new Request(`https://workspace.tuturuuu.com${path}`);
 
-afterEach(() => vi.unstubAllGlobals());
+const policyKey = Symbol.for('tuturuuu.internalApi.webApiOriginPolicy');
+afterEach(() => {
+  vi.unstubAllGlobals();
+  vi.unstubAllEnvs();
+  delete (globalThis as Record<symbol, unknown>)[policyKey];
+});
 
 describe('web API origin on the Worker', () => {
   it('forwards /api to the canonical Web origin when unset', async () => {
@@ -205,7 +215,11 @@ describe('web API origin on the Worker', () => {
       const env = { ASSETS: assets, INTERNAL_WEB_API_ORIGIN: origin };
       const refusal = await bridgeErrorResponse().text();
 
-      for (const path of ['/api/v1/mobile/version', '/login']) {
+      for (const path of [
+        '/api/v1/mobile/version',
+        '/login',
+        '/assets/probe.js',
+      ]) {
         const response = await handler(request(path), env, worker);
 
         expect(response.status).toBe(500);
@@ -229,6 +243,7 @@ describe('web API origin on the Worker', () => {
     expect(source).toContain(
       'centralApiOrigin: (env) => resolveWebApiOrigin(env)'
     );
+    expect(source).toContain('webApiOrigin: appConfig.webApiOrigin');
     expect(source).not.toMatch(/env\.INTERNAL_WEB_API_ORIGIN\s*\?\?/u);
     // The startup gate runs before the handler inside the failure boundary.
     const gate = source.indexOf('resolveWebApiOrigin(env);');
@@ -236,6 +251,45 @@ describe('web API origin on the Worker', () => {
     expect(gate).toBeGreaterThan(source.indexOf('try {'));
     expect(gate).toBeLessThan(call);
     expect(source.slice(call)).toContain('bridgeErrorResponse()');
+  });
+});
+
+describe('shared credentialed origin policy', () => {
+  it.each([
+    'https://evil.example',
+    '',
+    'https://tuturuuu.com:443',
+    ' https://tuturuuu.com ',
+  ])(
+    'rejects the server binding %j even with an allowed Worker binding',
+    async (origin) => {
+      const { handler, fetcher } = handlerFor();
+      await handler(request('/login'), { ASSETS: assets }, worker);
+      vi.stubEnv('INTERNAL_WEB_API_ORIGIN', origin);
+      const client = createInternalApiClient({
+        defaultHeaders: {
+          Cookie: 'session=fixture',
+          Authorization: 'Bearer fixture',
+        },
+      });
+      await expect(client.json('/api/v1/probe')).rejects.toThrow(
+        /INTERNAL_WEB_API_ORIGIN/u
+      );
+      expect(fetcher).not.toHaveBeenCalled();
+    }
+  );
+
+  it('shares the allowlist with server reads and never falls back when unset', () => {
+    handlerFor();
+    vi.stubEnv('INTERNAL_WEB_API_ORIGIN', 'https://web.fixture.example');
+    vi.stubEnv('TUTURUUU_WEB_API_HOSTS', 'web.fixture.example');
+    expect(getConfiguredInternalApiBaseUrl()).toBe(
+      'https://web.fixture.example'
+    );
+    vi.stubEnv('INTERNAL_WEB_API_ORIGIN', undefined);
+    vi.stubEnv('WEB_APP_URL', 'https://unintended.example');
+    expect(getConfiguredInternalApiBaseUrl()).toBe(DEFAULT_WEB_API_ORIGIN);
+    expect(config.webApiOrigin).toBe(resolveWebApiOrigin);
   });
 });
 

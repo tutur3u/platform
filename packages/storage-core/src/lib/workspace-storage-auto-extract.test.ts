@@ -1,4 +1,4 @@
-import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { EXTERNAL_PROJECT_ENABLED_SECRET } from './external-projects/constants';
 import {
   DRIVE_AUTO_EXTRACT_PROXY_TOKEN_SECRET,
@@ -10,6 +10,18 @@ const mocks = vi.hoisted(() => ({
 }));
 
 vi.mock('server-only', () => ({}));
+vi.mock('./workspace-storage-provider', () => ({
+  createWorkspaceStorageSignedReadUrl: vi.fn(
+    async () => 'https://storage.example/archive.zip'
+  ),
+}));
+
+const policyKey = Symbol.for('tuturuuu.internalApi.webApiOriginPolicy');
+afterEach(() => {
+  delete (globalThis as Record<symbol, unknown>)[policyKey];
+  vi.unstubAllGlobals();
+  vi.unstubAllEnvs();
+});
 
 vi.mock('@tuturuuu/utils/workspace-helper', () => ({
   getSecrets: (...args: Parameters<typeof mocks.getSecrets>) =>
@@ -17,6 +29,31 @@ vi.mock('@tuturuuu/utils/workspace-helper', () => ({
 }));
 
 describe('workspace storage auto extract config', () => {
+  it('does not send a callback token when the Web origin policy refuses', async () => {
+    mocks.getSecrets.mockResolvedValue([
+      { name: EXTERNAL_PROJECT_ENABLED_SECRET, value: 'true' },
+      {
+        name: DRIVE_AUTO_EXTRACT_PROXY_URL_SECRET,
+        value: 'https://zip.example/extract',
+      },
+      { name: DRIVE_AUTO_EXTRACT_PROXY_TOKEN_SECRET, value: 'fixture-token' },
+    ]);
+    vi.stubEnv('INTERNAL_WEB_API_ORIGIN', 'https://evil.example');
+    (globalThis as Record<symbol, unknown>)[policyKey] = () => {
+      throw new Error('Untrusted Web origin');
+    };
+    const fetch = vi.fn();
+    vi.stubGlobal('fetch', fetch);
+    const { triggerWorkspaceStorageAutoExtract } =
+      await import('./workspace-storage-auto-extract');
+    const result = await triggerWorkspaceStorageAutoExtract('ws-1', {
+      path: 'archive.zip',
+      requestOrigin: 'https://tuturuuu.com',
+    });
+    expect(result.status).toBe('error');
+    expect(result.message).toBe('Untrusted Web origin');
+    expect(fetch).not.toHaveBeenCalled();
+  });
   beforeEach(() => {
     vi.resetModules();
     vi.clearAllMocks();

@@ -1,6 +1,7 @@
 import 'server-only';
 
 import { posix } from 'node:path';
+import { getValidatedInternalWebApiOrigin } from '@tuturuuu/internal-api/client';
 import { ENABLE_CMS_GAMES_CONFIG_ID } from '@tuturuuu/internal-api/workspace-configs';
 import {
   DRIVE_AUTO_EXTRACT_PROXY_TOKEN_SECRET,
@@ -65,7 +66,7 @@ function createSecretsMap(
 
 export function resolveWebglCallbackOrigin(requestOrigin: string) {
   return (
-    resolveConfiguredOrigin(process.env.INTERNAL_WEB_API_ORIGIN) ||
+    resolveConfiguredOrigin(getValidatedInternalWebApiOrigin()) ||
     resolveConfiguredOrigin(process.env.WEB_APP_URL) ||
     resolveConfiguredOrigin(process.env.NEXT_PUBLIC_WEB_APP_URL) ||
     resolveConfiguredOrigin(process.env.NEXT_PUBLIC_APP_URL) ||

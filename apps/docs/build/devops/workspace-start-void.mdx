@@ -67,6 +67,14 @@ That protection holds only while the forward target runs Web's proxy.
 `resolveWebApiOrigin`, and every Worker read of `INTERNAL_WEB_API_ORIGIN` goes
 through it: the `/api` forward, the proxy rewrite allowlist (`centralApiOrigin`
 in `cloudflare/worker.ts`) and a gate at the top of the Worker's `fetch`.
+The `webApiOrigin` bridge hook publishes that resolver across the SSR and RSC
+module graphs. Shared credentialed callers use
+`getValidatedInternalWebApiOrigin` from `@tuturuuu/internal-api/client` before
+normalization, fallback or forwarding. The resolver reads the current environment
+on each call; it does not cache a validated binding. An unset binding returns the
+policy's production default instead of falling back to another configured URL.
+`start-bridge.config.test.ts` covers rejected server bindings with zero outbound
+fetches even when the Worker binding is allowed.
 
 - `INTERNAL_WEB_API_ORIGIN` unset forwards to `https://tuturuuu.com`.
 - A set value must be exactly an `https` origin, optionally with one trailing

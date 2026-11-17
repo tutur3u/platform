@@ -1,6 +1,7 @@
 import 'server-only';
 
 import { posix } from 'node:path';
+import { getValidatedInternalWebApiOrigin } from '@tuturuuu/utils/web-api-origin';
 import { DEV_MODE } from '@tuturuuu/utils/constants';
 import { getLocalInternalAppUrl } from '@tuturuuu/utils/internal-domains';
 import { getSecrets } from '@tuturuuu/utils/workspace-helper';
@@ -62,7 +63,7 @@ function resolveConfiguredOrigin(value?: string) {
 
 function resolveAutoExtractCallbackOrigin(requestOrigin: string) {
   return (
-    resolveConfiguredOrigin(process.env.INTERNAL_WEB_API_ORIGIN) ||
+    resolveConfiguredOrigin(getValidatedInternalWebApiOrigin()) ||
     resolveConfiguredOrigin(process.env.WEB_APP_URL) ||
     resolveConfiguredOrigin(process.env.NEXT_PUBLIC_WEB_APP_URL) ||
     resolveConfiguredOrigin(process.env.NEXT_PUBLIC_APP_URL) ||

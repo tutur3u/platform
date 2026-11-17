@@ -7,6 +7,10 @@ import {
   resolveInternalApiUrlWithAppBase,
   withAppApiBaseUrl,
 } from './internal-api-url';
+import {
+  getValidatedInternalWebApiOrigin,
+  resolveConfiguredOrigin,
+} from './origin-policy';
 import { mergeHeaders } from './request-headers';
 
 export type InternalApiQueryValue =
@@ -35,10 +39,6 @@ type HeaderAccessor = Pick<Headers, 'get'>;
 const APP_SESSION_COOKIE_NAME = 'tuturuuu_app_session';
 const SUPABASE_AUTH_COOKIE_PATTERN = /^sb-[a-z0-9-]+-auth-token(?:\.\d+)?$/i;
 const KNOWN_CUSTOM_SATELLITE_HOSTS = new Set(['nova.ai.vn']);
-// Mirrors RETIRED_APP_HOSTNAMES in @tuturuuu/utils/retired-app-hosts, which
-// this package does not depend on. A stale env value naming one must never
-// receive forwarded auth.
-const RETIRED_APP_HOSTNAMES = ['rewise.me', 'rewise.school'];
 const KNOWN_NON_PLATFORM_TUTURUUU_HOSTS = new Set([
   'apps.tuturuuu.com',
   'cms.tuturuuu.com',
@@ -93,6 +93,7 @@ const KNOWN_NON_PLATFORM_LOCALHOST_PORTS = new Set([
   '7833',
 ]);
 
+export { getValidatedInternalWebApiOrigin } from './origin-policy';
 export { InternalApiError } from './internal-api-error';
 export {
   hasAppBaseResolverFor,
@@ -107,37 +108,6 @@ function tryParseAbsoluteUrl(value: string): URL | null {
   } catch {
     return null;
   }
-}
-
-function resolveConfiguredOrigin(value?: string): string | null {
-  if (!value) {
-    return null;
-  }
-
-  const [firstValue] = value
-    .split(/[,\n]/u)
-    .map((entry) => entry.trim())
-    .filter(Boolean);
-
-  if (!firstValue) {
-    return null;
-  }
-
-  const normalized = /^[a-z]+:\/\//iu.test(firstValue)
-    ? firstValue
-    : `https://${firstValue}`;
-
-  const url = tryParseAbsoluteUrl(normalized);
-
-  return url && !isRetiredAppHostname(url.hostname) ? url.origin : null;
-}
-
-function isRetiredAppHostname(hostname: string) {
-  const host = hostname.toLowerCase().replace(/\.+$/u, '');
-
-  return RETIRED_APP_HOSTNAMES.some(
-    (retired) => host === retired || host.endsWith(`.${retired}`)
-  );
 }
 
 function isKnownNonPlatformSatelliteOrigin(origin: string) {
@@ -216,7 +186,7 @@ function appendQuery(path: string, query?: InternalApiQuery): string {
 
 export function getConfiguredInternalApiBaseUrl() {
   return normalizeBaseUrl(
-    resolveConfiguredOrigin(process.env.INTERNAL_WEB_API_ORIGIN) ||
+    resolveConfiguredOrigin(getValidatedInternalWebApiOrigin()) ||
       resolveConfiguredOrigin(process.env.WEB_APP_URL) ||
       resolveConfiguredOrigin(process.env.NEXT_PUBLIC_WEB_APP_URL) ||
       resolveNextPublicAppUrlAsWebOrigin() ||

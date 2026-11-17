@@ -22,6 +22,7 @@ import {
   resolveAppBase,
 } from '../core/mounts';
 import { fromNextSourcePattern, matchRoute } from '../core/route-match';
+import { publishWebApiOriginPolicy } from '../core/web-api-origin-policy';
 import {
   type BridgeDispatch,
   dispatchThroughProxy,
@@ -59,6 +60,8 @@ export interface BridgeHandlerOptions<Env, Ctx> {
   assets: (env: Env) => AssetsBinding | undefined;
   /** Central Web API origin for unowned `/api/*` paths. */
   centralApiOrigin: (env: Env) => string;
+  /** Validates every request and credentialed Web origin read; throws on refusal. */
+  webApiOrigin?: (env: Env) => string;
   /**
    * Paths the central Web API owns ahead of the app's own routes (Next
    * `beforeFiles` rewrites). Accepts Next sources (`/api/v1/:wsId/x`) or
@@ -128,6 +131,11 @@ export function createBridgeHandler<
     });
   const isolation = options.mounts?.isolation;
   if (isolation) assertMountIsolationConfig(isolation);
+  const centralApiOrigin = options.webApiOrigin ?? options.centralApiOrigin;
+  if (options.webApiOrigin) {
+    const resolve = options.webApiOrigin;
+    publishWebApiOriginPolicy((env) => resolve(env as Env));
+  }
   const publicAssets = options.publicAssets ?? new Set<string>();
   const isFramable = createFramablePathMatcher(options.framablePaths);
   const inBase = (path: string, prefix: string) =>
@@ -239,7 +247,7 @@ export function createBridgeHandler<
             : null;
         if (endpoint) return endpoint;
         if (central || pathname === '/api' || pathname.startsWith('/api/')) {
-          const centralOrigin = options.centralApiOrigin(env);
+          const centralOrigin = centralApiOrigin(env);
           const origin =
             options.apiOrigin?.(forwarded, { env, path: pathname }) ??
             centralOrigin;
@@ -293,7 +301,7 @@ export function createBridgeHandler<
         observeNavigation: options.observeNavigation,
         matches: options.matches,
         requestInit: options.requestInit,
-        rewriteOrigins: [options.centralApiOrigin(env)],
+        rewriteOrigins: [centralApiOrigin(env)],
         nonce,
       });
     }
@@ -346,6 +354,7 @@ export function createBridgeHandler<
     ctx: Ctx
   ): Promise<Response> {
     try {
+      options.webApiOrigin?.(env);
       const oneOrigin = decideOneOrigin(incoming, env);
       if (oneOrigin && oneOrigin.action !== 'serve') return oneOrigin.response;
       const response = await handleRequest(incoming, env, ctx);
