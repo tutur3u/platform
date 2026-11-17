@@ -1,7 +1,7 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { lookupEmail, ACCOUNTS, newReceipt } from './fleet-qa.mjs';
-import { config, ids, fixture } from './fleet-qa-fixture.mjs';
+import { config, ids, fixture, clock } from './fleet-qa-fixture.mjs';
 const origin = 'https://abcdefghijklmnopqrst.supabase.co';
 const secret = 'synthetic-service-credential';
 function transport(body, status = 200) {
@@ -99,7 +99,7 @@ test('unapproved or wildcard aliases stop before transport', async () => {
   assert.equal(count, 0);
 });
 test('receipt records UNKNOWN access-token lifetime without a config read', () => {
-  assert.equal(newReceipt(config).accessTokenLifetime, 'UNKNOWN');
+  assert.equal(newReceipt(config, clock()).accessTokenLifetime, 'UNKNOWN');
 });
 test('all-false platform role tombstone is counted without profile-column assumptions', async () => {
   const f = fixture();

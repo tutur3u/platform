@@ -109,7 +109,11 @@ test('ACK file is executor-owned 0600 regular nlink1 with O_NOFOLLOW, closed on 
     assert.equal(closed, true);
   }
 });
-test('real on-disk O_EXCL intent is separate from admission and cannot replay', async () => {
+test('real on-disk O_EXCL intent is separate from admission and cannot replay', async (t) => {
+  t.mock.timers.enable({
+    apis: ['Date'],
+    now: new Date('2026-11-16T10:00:00Z'),
+  });
   const copy = await syntheticCopy();
   try {
     const module = await copy.import();
@@ -125,6 +129,23 @@ test('real on-disk O_EXCL intent is separate from admission and cannot replay', 
     await assert.rejects(module.admit('cleanup', copy.dir));
     await writeFile(join(copy.folder, 'fleet-qa-receipt.schema.json'), '{}');
     await assert.rejects(module.admit('execution', copy.dir), /REFUSED/);
+  } finally {
+    await copy.close();
+  }
+});
+test('expired synthetic admission still refuses before consuming an intent', async (t) => {
+  t.mock.timers.enable({
+    apis: ['Date'],
+    now: new Date('2026-11-18T00:00:00Z'),
+  });
+  const copy = await syntheticCopy();
+  try {
+    const module = await copy.import();
+    await copy.writeAck(copy.ack());
+    await assert.rejects(module.admit('execution', copy.dir), /REFUSED/);
+    await assert.rejects(stat(join(copy.dir, `${EXEC_ACK}.intent`)), {
+      code: 'ENOENT',
+    });
   } finally {
     await copy.close();
   }

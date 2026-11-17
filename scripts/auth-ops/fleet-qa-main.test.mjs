@@ -37,9 +37,16 @@ async function prepareCleanup(copy, settings) {
 function run(copy, receipt, phase) {
   return spawnSync(
     process.execPath,
-    [copy.path, '--custody-directory', copy.dir, receipt, phase],
+    [
+      ...copy.clockArgs,
+      copy.path,
+      '--custody-directory',
+      copy.dir,
+      receipt,
+      phase,
+    ],
     {
-      env,
+      env: { ...env, ...copy.clockEnv },
       encoding: 'utf8',
       timeout: 8000,
     }
@@ -172,6 +179,7 @@ test('SIGTERM closes both synthetic handoff listeners, records stopped logins an
     child = spawn(
       process.execPath,
       [
+        ...copy.clockArgs,
         copy.path,
         '--custody-directory',
         copy.dir,
@@ -179,7 +187,7 @@ test('SIGTERM closes both synthetic handoff listeners, records stopped logins an
         'execution',
       ],
       {
-        env,
+        env: { ...env, ...copy.clockEnv },
         stdio: ['ignore', 'pipe', 'pipe'],
       }
     );

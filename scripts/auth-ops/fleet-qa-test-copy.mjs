@@ -10,14 +10,13 @@ import {
 } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
-import { pathToFileURL } from 'node:url';
+import { pathToFileURL, fileURLToPath } from 'node:url';
 
 export const sha = (bytes) => createHash('sha256').update(bytes).digest('hex');
 
 export async function syntheticCopy({ nullPins = false } = {}) {
-  const dir = await mkdtemp(
-    join(await realpath(tmpdir()), 'd241-synthetic-copy-')
-  );
+  const temporaryRoot = await realpath(tmpdir());
+  const dir = await mkdtemp(join(temporaryRoot, 'd241-synthetic-copy-'));
   await chmod(dir, 0o700);
   const folder = join(dir, 'verified/scripts/auth-ops');
   await mkdir(folder, { recursive: true, mode: 0o700 });
@@ -60,6 +59,10 @@ export async function syntheticCopy({ nullPins = false } = {}) {
     { mode: 0o600 }
   );
   return {
+    clockEnv: { TMPDIR: temporaryRoot },
+    clockArgs: [
+      fileURLToPath(new URL('./fleet-qa-clock-fixture.mjs', import.meta.url)),
+    ],
     dir,
     folder,
     path,
