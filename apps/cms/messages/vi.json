@@ -1868,6 +1868,20 @@
     "connect_microsoft_desc": "Kết nối tài khoản Microsoft của bạn",
     "connected_accounts": "Tài khoản đã kết nối",
     "connected_calendars": "Lịch đã kết nối",
+    "contact_guests": {
+      "add": "Thêm người tham dự",
+      "contact": "Liên hệ",
+      "empty": "Không có liên hệ phù hợp với địa chỉ email hiển thị.",
+      "error": "Không thể tìm người tham dự.",
+      "loading": "Đang tìm…",
+      "member": "Thành viên",
+      "minimum_query": "Nhập ít nhất 2 ký tự để tìm.",
+      "remove": "Xóa {email}",
+      "retry": "Thử lại",
+      "search": "Tìm tên hoặc email",
+      "title": "Người tham dự",
+      "unavailable": "Lịch này chưa hỗ trợ mời người tham dự. Hãy xóa người tham dự hoặc chọn lịch Google được hỗ trợ."
+    },
     "create": "Tạo",
     "create_calendar": "Tạo lịch mới",
     "create_description": "Chọn loại bạn muốn tạo.",
@@ -2052,6 +2066,15 @@
     "reset_calendar_confirm_desc": "Thao tác này sẽ xóa vĩnh viễn tất cả sự kiện lịch, ngắt kết nối tất cả tài khoản đã liên kết (Google, Microsoft), và xóa lịch tùy chỉnh. Lịch hệ thống sẽ được giữ lại nhưng dữ liệu sẽ bị xóa. Hành động này không thể hoàn tác.",
     "reset_calendar_confirm_title": "Đặt lại toàn bộ dữ liệu lịch?",
     "reset_calendar_data": "Đặt lại dữ liệu lịch",
+    "saved_guests": {
+      "empty": "Không có khách mời",
+      "loading": "Đang tải khách mời…",
+      "read_only": "Thông tin khách mời chỉ đọc. Quản lý khách mời trong dịch vụ lịch của bạn.",
+      "refresh": "Tải lại khách mời",
+      "title": "Khách mời",
+      "unavailable": "Không thể xem thông tin khách mời của sự kiện này.",
+      "view": "Xem khách mời"
+    },
     "schedule": "Lên lịch",
     "settings_updated_error": "Không thể cập nhật cài đặt lịch không gian làm việc",
     "settings_updated_success": "Cập nhật cài đặt lịch không gian làm việc thành công",
@@ -7234,11 +7257,11 @@
           "proactive": "Chủ động"
         },
         "description": "Mira là AI thực sự hiểu bạn. Cô ấy lên kế hoạch, suy nghĩ và hành động thay bạn—đồng bộ lịch, mục tiêu và tin nhắn để gợi ý đúng lúc bạn cần.",
-        "prompts": [
-          "Đặt lịch standup 9h sáng mai",
-          "Tóm tắt việc tuần này",
-          "Giúp mình ưu tiên deadline"
-        ],
+        "prompts": {
+          "0": "Đặt lịch standup 9h sáng mai",
+          "1": "Tóm tắt việc tuần này",
+          "2": "Giúp mình ưu tiên deadline"
+        },
         "title": "Gặp Mira - Trợ Lý AI Của Bạn",
         "tryAsking": "Thử hỏi Mira..."
       },
@@ -7935,11 +7958,11 @@
       "payAsYouGo": {
         "badge": "Sắp Ra Mắt",
         "description": "Cần thêm? Mở rộng linh hoạt theo nhu cầu.",
-        "features": [
-          "Thêm AI credits",
-          "Thời gian xử lý workflow",
-          "Ưu tiên hàng đợi"
-        ],
+        "features": {
+          "0": "Thêm AI credits",
+          "1": "Thời gian xử lý workflow",
+          "2": "Ưu tiên hàng đợi"
+        },
         "title": "Trả theo nhu cầu sử dụng"
       },
       "subtitle": "Mỗi không gian làm việc có gói riêng, tính phí theo thành viên. Tài khoản thông thường có thể tạo tối đa 10 không gian làm việc; nâng cấp không tăng giới hạn này.",
@@ -7947,27 +7970,27 @@
         "enterprise": {
           "cta": "Liên Hệ Tư Vấn",
           "description": "Dành cho tổ chức lớn",
-          "features": [
-            "Mọi thứ của Pro +",
-            "Tùy chỉnh theo nhu cầu",
-            "Đội ngũ support riêng",
-            "SLA theo hợp đồng đã ký",
-            "Tự host được"
-          ],
+          "features": {
+            "0": "Mọi thứ của Pro +",
+            "1": "Tùy chỉnh theo nhu cầu",
+            "2": "Đội ngũ support riêng",
+            "3": "SLA theo hợp đồng đã ký",
+            "4": "Tự host được"
+          },
           "name": "Doanh Nghiệp",
           "price": "Liên hệ"
         },
         "free": {
           "cta": "Dùng Ngay",
           "description": "Khởi đầu nhẹ nhàng",
-          "features": [
-            "Quản lý công việc cơ bản",
-            "Đồng bộ lịch (có giới hạn)",
-            "Chat AI trong hạn mức tín dụng",
-            "Tạo mã QR",
-            "CRM & Kho hàng (beta)",
-            "100 MiB Drive cho mỗi không gian làm việc"
-          ],
+          "features": {
+            "0": "Quản lý công việc cơ bản",
+            "1": "Đồng bộ lịch (có giới hạn)",
+            "2": "Chat AI trong hạn mức tín dụng",
+            "3": "Tạo mã QR",
+            "4": "CRM & Kho hàng (beta)",
+            "5": "100 MiB Drive cho mỗi không gian làm việc"
+          },
           "name": "Miễn Phí",
           "period": "miễn phí mãi",
           "price": "$0"
@@ -7976,15 +7999,15 @@
           "badge": "Phổ Biến Nhất",
           "cta": "Chọn Plus",
           "description": "Khi team cần phối hợp",
-          "features": [
-            "Mọi thứ của Free +",
-            "Bảng trắng có giới hạn bảo vệ tài nguyên",
-            "20 GiB Drive cho mỗi không gian làm việc",
-            "Chấm công & Yêu cầu",
-            "Phân quyền chi tiết",
-            "Tuwrite & Tuchat (sắp ra mắt)",
-            "Tạo cuộc họp Meet: thử nghiệm giới hạn"
-          ],
+          "features": {
+            "0": "Mọi thứ của Free +",
+            "1": "Bảng trắng có giới hạn bảo vệ tài nguyên",
+            "2": "20 GiB Drive cho mỗi không gian làm việc",
+            "3": "Chấm công & Yêu cầu",
+            "4": "Phân quyền chi tiết",
+            "5": "Tuwrite & Tuchat (sắp ra mắt)",
+            "6": "Tạo cuộc họp Meet: thử nghiệm giới hạn"
+          },
           "name": "Plus",
           "period": {
             "monthly": "/thành viên/tháng",
@@ -7995,14 +8018,14 @@
           "badge": "Mạnh Nhất",
           "cta": "Chọn Pro",
           "description": "Cho team cần sức mạnh tối đa",
-          "features": [
-            "Mọi thứ của Plus +",
-            "Tín dụng AI dồi dào; có thể mua thêm",
-            "Hỗ trợ ưu tiên",
-            "Báo cáo & Analytics",
-            "Tích hợp tùy chỉnh",
-            "100 GiB Drive cho mỗi không gian làm việc"
-          ],
+          "features": {
+            "0": "Mọi thứ của Plus +",
+            "1": "Tín dụng AI dồi dào; có thể mua thêm",
+            "2": "Hỗ trợ ưu tiên",
+            "3": "Báo cáo & Analytics",
+            "4": "Tích hợp tùy chỉnh",
+            "5": "100 GiB Drive cho mỗi không gian làm việc"
+          },
           "name": "Pro",
           "period": {
             "monthly": "/thành viên/tháng",

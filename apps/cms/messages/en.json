@@ -1868,6 +1868,20 @@
     "connect_microsoft_desc": "Connect your Microsoft account",
     "connected_accounts": "Connected Accounts",
     "connected_calendars": "Connected Calendars",
+    "contact_guests": {
+      "add": "Add attendee",
+      "contact": "Contact",
+      "empty": "No matching contacts with a visible email address.",
+      "error": "Could not search attendees.",
+      "loading": "Searching…",
+      "member": "Member",
+      "minimum_query": "Enter at least 2 characters to search.",
+      "remove": "Remove {email}",
+      "retry": "Try again",
+      "search": "Search name or email",
+      "title": "Attendees",
+      "unavailable": "Attendees are unavailable for this calendar. Remove them or choose a supported Google calendar."
+    },
     "create": "Create",
     "create_calendar": "Create Calendar",
     "create_description": "Choose what you'd like to create.",
@@ -2052,6 +2066,15 @@
     "reset_calendar_confirm_desc": "This will permanently delete all calendar events, disconnect all linked accounts (Google, Microsoft), and remove custom calendars. System calendars will be preserved but emptied. This action cannot be undone.",
     "reset_calendar_confirm_title": "Reset all calendar data?",
     "reset_calendar_data": "Reset Calendar Data",
+    "saved_guests": {
+      "empty": "No guests",
+      "loading": "Loading guests…",
+      "read_only": "Guest details are read only. Manage guests in your calendar provider.",
+      "refresh": "Refresh guests",
+      "title": "Guests",
+      "unavailable": "Guest details are unavailable for this event.",
+      "view": "View guests"
+    },
     "schedule": "Schedule",
     "settings_updated_error": "Failed to update workspace calendar settings",
     "settings_updated_success": "Workspace calendar settings updated successfully",
@@ -7234,11 +7257,11 @@
           "proactive": "Proactive AI"
         },
         "description": "Mira is your proactive AI companion. She plans, reasons, and acts on your behalf, synchronizing calendars, goals, and communications to surface proactive recommendations.",
-        "prompts": [
-          "Schedule my standup for tomorrow at 9am",
-          "Summarize my tasks for this week",
-          "Help me prioritize my project deadlines"
-        ],
+        "prompts": {
+          "0": "Schedule my standup for tomorrow at 9am",
+          "1": "Summarize my tasks for this week",
+          "2": "Help me prioritize my project deadlines"
+        },
         "title": "Mira: Your AI Partner",
         "tryAsking": "Try asking Mira..."
       },
@@ -7935,11 +7958,11 @@
       "payAsYouGo": {
         "badge": "Coming Soon",
         "description": "Need more? Extend your usage with flexible options.",
-        "features": [
-          "Extended AI usage",
-          "Workflow processing time",
-          "Priority queue access"
-        ],
+        "features": {
+          "0": "Extended AI usage",
+          "1": "Workflow processing time",
+          "2": "Priority queue access"
+        },
         "title": "Pay As You Go"
       },
       "subtitle": "Each workspace has its own plan, billed per member. Standard accounts can create up to 10 workspaces; upgrading does not increase this account limit.",
@@ -7947,27 +7970,27 @@
         "enterprise": {
           "cta": "Contact Sales",
           "description": "For large organizations",
-          "features": [
-            "Everything in Pro",
-            "Custom solutions",
-            "Dedicated support",
-            "SLA where agreed in your contract",
-            "Self-hosting options"
-          ],
+          "features": {
+            "0": "Everything in Pro",
+            "1": "Custom solutions",
+            "2": "Dedicated support",
+            "3": "SLA where agreed in your contract",
+            "4": "Self-hosting options"
+          },
           "name": "Enterprise",
           "price": "Custom"
         },
         "free": {
           "cta": "Get Started",
           "description": "For individuals exploring Tuturuuu",
-          "features": [
-            "Basic task management",
-            "Calendar sync (limited)",
-            "AI chat within your credit allowance",
-            "QR Generator",
-            "CRM & Inventory (beta)",
-            "100 MiB Drive storage per workspace"
-          ],
+          "features": {
+            "0": "Basic task management",
+            "1": "Calendar sync (limited)",
+            "2": "AI chat within your credit allowance",
+            "3": "QR Generator",
+            "4": "CRM & Inventory (beta)",
+            "5": "100 MiB Drive storage per workspace"
+          },
           "name": "Free",
           "period": "forever",
           "price": "$0"
@@ -7976,15 +7999,15 @@
           "badge": "Best Value",
           "cta": "Get Plus",
           "description": "For teams that need collaboration",
-          "features": [
-            "Everything in Free +",
-            "Whiteboards with usage safeguards",
-            "20 GiB Drive storage per workspace",
-            "Time Tracker & Requests",
-            "Granular permissions",
-            "Tuwrite & Tuchat (coming soon)",
-            "Meet hosting: restricted preview"
-          ],
+          "features": {
+            "0": "Everything in Free +",
+            "1": "Whiteboards with usage safeguards",
+            "2": "20 GiB Drive storage per workspace",
+            "3": "Time Tracker & Requests",
+            "4": "Granular permissions",
+            "5": "Tuwrite & Tuchat (coming soon)",
+            "6": "Meet hosting: restricted preview"
+          },
           "name": "Plus",
           "period": {
             "monthly": "/member/mo",
@@ -7995,14 +8018,14 @@
           "badge": "Most Powerful",
           "cta": "Get Pro",
           "description": "For power teams that need it all",
-          "features": [
-            "Everything in Plus +",
-            "Generous AI credits; top-ups available",
-            "Priority support",
-            "Reports & Analytics",
-            "Custom integrations",
-            "100 GiB Drive storage per workspace"
-          ],
+          "features": {
+            "0": "Everything in Plus +",
+            "1": "Generous AI credits; top-ups available",
+            "2": "Priority support",
+            "3": "Reports & Analytics",
+            "4": "Custom integrations",
+            "5": "100 GiB Drive storage per workspace"
+          },
           "name": "Pro",
           "period": {
             "monthly": "/member/mo",

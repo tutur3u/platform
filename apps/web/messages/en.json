@@ -3827,11 +3827,11 @@
       "calendar": "Calendar",
       "done": "Deliver",
       "inbox": "Capture",
-      "items": [
-        "Prepare the research brief",
-        "Review the prototype",
-        "Plan the next experiment"
-      ],
+      "items": {
+        "0": "Prepare the research brief",
+        "1": "Review the prototype",
+        "2": "Plan the next experiment"
+      },
       "planned": "Plan",
       "reset": "Reset illustration",
       "review": "Review suggestions",
@@ -9172,11 +9172,11 @@
           "proactive": "Takes action"
         },
         "description": "Mira is your AI assistant inside Tuturuuu. Ask her to plan your day, schedule tasks into your calendar, draft email replies or log your spending, all from what's already in your workspace.",
-        "prompts": [
-          "Schedule my standup for tomorrow at 9am",
-          "Summarize my tasks for this week",
-          "Help me prioritize my project deadlines"
-        ],
+        "prompts": {
+          "0": "Schedule my standup for tomorrow at 9am",
+          "1": "Summarize my tasks for this week",
+          "2": "Help me prioritize my project deadlines"
+        },
         "title": "Mira: Your AI Partner",
         "tryAsking": "Try asking Mira..."
       }
@@ -9788,11 +9788,11 @@
       "payAsYouGo": {
         "badge": "Coming Soon",
         "description": "Need more? Extend your usage with flexible options.",
-        "features": [
-          "Extended AI usage",
-          "Workflow processing time",
-          "Priority queue access"
-        ],
+        "features": {
+          "0": "Extended AI usage",
+          "1": "Workflow processing time",
+          "2": "Priority queue access"
+        },
         "title": "Pay As You Go"
       },
       "pricesLoading": "Loading current prices…",
@@ -9802,27 +9802,27 @@
         "enterprise": {
           "cta": "Contact Sales",
           "description": "For large organizations",
-          "features": [
-            "Everything in Pro",
-            "Custom solutions",
-            "Dedicated support",
-            "SLA where agreed in your contract",
-            "Self-hosting options"
-          ],
+          "features": {
+            "0": "Everything in Pro",
+            "1": "Custom solutions",
+            "2": "Dedicated support",
+            "3": "SLA where agreed in your contract",
+            "4": "Self-hosting options"
+          },
           "name": "Enterprise",
           "price": "Custom"
         },
         "free": {
           "cta": "Get Started",
           "description": "For individuals exploring Tuturuuu",
-          "features": [
-            "Tasks, calendar and notes",
-            "Whiteboards and time tracking",
-            "AI within a finite credit allowance",
-            "Core finance, contacts and inventory",
-            "Workspace permissions and export",
-            "100 MiB Drive storage per workspace"
-          ],
+          "features": {
+            "0": "Tasks, calendar and notes",
+            "1": "Whiteboards and time tracking",
+            "2": "AI within a finite credit allowance",
+            "3": "Core finance, contacts and inventory",
+            "4": "Workspace permissions and export",
+            "5": "100 MiB Drive storage per workspace"
+          },
           "name": "Free",
           "period": "forever",
           "price": "$0"
@@ -9831,15 +9831,15 @@
           "badge": "Best Value",
           "cta": "Get Plus",
           "description": "For teams that need collaboration",
-          "features": [
-            "Core tools across the suite",
-            "Seat-based team billing",
-            "20 GiB Drive storage per workspace",
-            "Shared workspace AI credits",
-            "Chat collaboration",
-            "Optional eligible AI credit top-ups",
-            "Meet hosting: restricted preview"
-          ],
+          "features": {
+            "0": "Core tools across the suite",
+            "1": "Seat-based team billing",
+            "2": "20 GiB Drive storage per workspace",
+            "3": "Shared workspace AI credits",
+            "4": "Chat collaboration",
+            "5": "Optional eligible AI credit top-ups",
+            "6": "Meet hosting: restricted preview"
+          },
           "name": "Plus",
           "period": {
             "monthly": "/member/mo",
@@ -9850,14 +9850,14 @@
           "badge": "Most Powerful",
           "cta": "Get Pro",
           "description": "For power teams that need it all",
-          "features": [
-            "Everything in Plus",
-            "Larger finite workspace AI budget",
-            "Priority support",
-            "AI lab and Mira",
-            "Workforce administration",
-            "100 GiB Drive storage per workspace"
-          ],
+          "features": {
+            "0": "Everything in Plus",
+            "1": "Larger finite workspace AI budget",
+            "2": "Priority support",
+            "3": "AI lab and Mira",
+            "4": "Workforce administration",
+            "5": "100 GiB Drive storage per workspace"
+          },
           "name": "Pro",
           "period": {
             "monthly": "/member/mo",
@@ -12401,11 +12401,11 @@
     "contract": "Contracted scope",
     "core": "Core work included",
     "credits": "AI credits / month",
-    "creditValues": [
-      "1,000 / person",
-      "10,000 / paid seat",
-      "30,000 / paid seat"
-    ],
+    "creditValues": {
+      "0": "1,000 / person",
+      "1": "10,000 / paid seat",
+      "2": "30,000 / paid seat"
+    },
     "custom": "Custom",
     "description": "A connected ecosystem for work, learning, and human potential. Explore our workforce AI direction and long-term vision.",
     "diagramNote": "Concept illustration · not measured results",
@@ -12415,26 +12415,31 @@
     "estimate": "Illustrative subscription subtotal · USD · excludes tax and add-ons",
     "exitFullscreen": "Exit fullscreen",
     "explore": "Explore Tuturuuu",
-    "families": ["Organize", "Collaborate", "Operate", "Learn & create"],
+    "families": {
+      "0": "Organize",
+      "1": "Collaborate",
+      "2": "Operate",
+      "3": "Learn & create"
+    },
     "feedback": "Share feedback",
     "free": "Free",
-    "friction": [
-      "Scattered context",
-      "Repeated setup",
-      "Broken handoffs",
-      "Hidden costs"
-    ],
+    "friction": {
+      "0": "Scattered context",
+      "1": "Repeated setup",
+      "2": "Broken handoffs",
+      "3": "Hidden costs"
+    },
     "fullscreen": "Fullscreen",
     "fullscreenError": "Fullscreen is unavailable in this browser.",
     "help": "Arrow keys navigate · Home / End jump · Space plays or pauses",
     "livePricingProposal": "Current prices · capacity changes awaiting rollout",
     "members": "Full members",
-    "metrics": [
-      "Activation",
-      "Paid conversion",
-      "Retained seats",
-      "Cost to serve"
-    ],
+    "metrics": {
+      "0": "Activation",
+      "1": "Paid conversion",
+      "2": "Retained seats",
+      "3": "Cost to serve"
+    },
     "monthly": "Monthly billing",
     "motion": {
       "pause": "Pause visual motion",
@@ -12443,71 +12448,81 @@
     "next": "Next slide",
     "noClaims": "Product direction, not a launch or performance guarantee.",
     "notes": "Presenter notes",
-    "orbitLabels": ["Work", "People", "Knowledge", "Learning"],
+    "orbitLabels": {
+      "0": "Work",
+      "1": "People",
+      "2": "Knowledge",
+      "3": "Learning"
+    },
     "overview": "All slides",
     "pause": "Pause",
-    "people": ["Individuals", "Small teams", "Educators", "Operators"],
+    "people": {
+      "0": "Individuals",
+      "1": "Small teams",
+      "2": "Educators",
+      "3": "Operators"
+    },
     "perMonth": "per month",
     "perYear": "per year",
-    "planDetails": [
-      "5 members · 1 GiB / workspace",
-      "20 GiB + 10,000 AI credits / paid seat",
-      "100 GiB + 30,000 AI credits / paid seat",
-      "Explicit capacity and support terms"
-    ],
+    "planDetails": {
+      "0": "5 members · 1 GiB / workspace",
+      "1": "20 GiB + 10,000 AI credits / paid seat",
+      "2": "100 GiB + 30,000 AI credits / paid seat",
+      "3": "Explicit capacity and support terms"
+    },
     "play": "Autoplay",
     "plus": "Plus",
     "portfolio": "Explore our portfolio",
     "previous": "Previous slide",
     "pricesLoading": "Loading current prices…",
     "pricesUnavailable": "Current prices are unavailable. Please try again shortly.",
-    "principles": [
-      "Clear permissions",
-      "Visible usage",
-      "Predictable spending",
-      "Preserved access"
-    ],
+    "principles": {
+      "0": "Clear permissions",
+      "1": "Visible usage",
+      "2": "Predictable spending",
+      "3": "Preserved access"
+    },
     "print": "Print deck",
     "pro": "Pro",
-    "products": [
-      "Tasks · Calendar · Track",
-      "Chat · Drive · Meet",
-      "Finance · Contacts · Inventory",
-      "Learn · Teach · CMS · AI"
-    ],
+    "products": {
+      "0": "Tasks · Calendar · Track",
+      "1": "Chat · Drive · Meet",
+      "2": "Finance · Contacts · Inventory",
+      "3": "Learn · Teach · CMS · AI"
+    },
     "proposal": "Product direction",
-    "references": [
-      {
-        "label": "Stanford HAI · AI Index 2026",
-        "detail": "Reports 2025 organizational AI adoption at 88% of surveyed organizations; this is survey evidence, not a census of all businesses."
+    "references": {
+      "0": {
+        "detail": "Reports 2025 organizational AI adoption at 88% of surveyed organizations; this is survey evidence, not a census of all businesses.",
+        "label": "Stanford HAI · AI Index 2026"
       },
-      {
-        "label": "Microsoft · Work Trend Index 2026",
-        "detail": "15× growth in unique active agents on Microsoft 365 Copilot Agents and SharePoint, measured in rolling 28-day windows, March 2025–March 2026. Vendor telemetry, not all agents worldwide."
+      "1": {
+        "detail": "15× growth in unique active agents on Microsoft 365 Copilot Agents and SharePoint, measured in rolling 28-day windows, March 2025–March 2026. Vendor telemetry, not all agents worldwide.",
+        "label": "Microsoft · Work Trend Index 2026"
       },
-      {
-        "label": "World Economic Forum · Future of Jobs 2025",
-        "detail": "Employers expect 39% of core skills to change by 2030. The broader survey covers over 1,000 employers across 55 economies; this is an expectation, not an observed outcome."
+      "2": {
+        "detail": "Employers expect 39% of core skills to change by 2030. The broader survey covers over 1,000 employers across 55 economies; this is an expectation, not an observed outcome.",
+        "label": "World Economic Forum · Future of Jobs 2025"
       },
-      {
-        "label": "OECD · Generative AI and the SME Workforce (2025)",
-        "detail": "Late-2024 survey of over 5,000 SMEs in seven countries: 31% use generative AI; 65% of users report improved employee performance. Self-reported, not a causal trial or ASEAN-wide estimate."
+      "3": {
+        "detail": "Late-2024 survey of over 5,000 SMEs in seven countries: 31% use generative AI; 65% of users report improved employee performance. Self-reported, not a causal trial or ASEAN-wide estimate.",
+        "label": "OECD · Generative AI and the SME Workforce (2025)"
       },
-      {
-        "label": "Anthropic · Trustworthy agents in practice (2026)",
-        "detail": "Primary developer discussion of agent permissions, oversight, and prompt-injection risks. Referenced as design context, not independent validation of Tuturuuu."
+      "4": {
+        "detail": "Primary developer discussion of agent permissions, oversight, and prompt-injection risks. Referenced as design context, not independent validation of Tuturuuu.",
+        "label": "Anthropic · Trustworthy agents in practice (2026)"
       },
-      {
-        "label": "Tuturuuu · Platform source and license",
-        "detail": "Public source, Apache 2.0 license, and product implementation. Code availability does not imply every component is ready for independent deployment."
+      "5": {
+        "detail": "Public source, Apache 2.0 license, and product implementation. Code availability does not imply every component is ready for independent deployment.",
+        "label": "Tuturuuu · Platform source and license"
       }
-    ],
-    "roadmap": [
-      "Unify pricing & policy",
-      "Verify every boundary",
-      "Pilot the new model",
-      "Expand with evidence"
-    ],
+    },
+    "roadmap": {
+      "0": "Unify pricing & policy",
+      "1": "Verify every boundary",
+      "2": "Pilot the new model",
+      "3": "Expand with evidence"
+    },
     "seat": "per member",
     "simulation": {
       "baseline": "Compare with baseline",
@@ -12529,20 +12544,20 @@
         "chapter": "03 / CONNECT THE INTELLIGENCE",
         "kicker": "Meet Mira",
         "note": "A natural conversation can become the front door to tools, knowledge, and coordinated workflows. The long-term aim is an assistant that knows which capability to use, explains its reasoning, and asks for the authority it needs. Existing AI surface → expanding vision.",
-        "panels": [
-          {
-            "label": "Ask naturally",
-            "detail": "Bring a question, a document, or an idea."
+        "panels": {
+          "0": {
+            "detail": "Bring a question, a document, or an idea.",
+            "label": "Ask naturally"
           },
-          {
-            "label": "Explore together",
-            "detail": "Compare options and inspect the reasoning and sources."
+          "1": {
+            "detail": "Compare options and inspect the reasoning and sources.",
+            "label": "Explore together"
           },
-          {
-            "label": "Keep control",
-            "detail": "Cross-app orchestration is a development direction, with approval at consequential steps."
+          "2": {
+            "detail": "Cross-app orchestration is a development direction, with approval at consequential steps.",
+            "label": "Keep control"
           }
-        ],
+        },
         "status": "Existing AI surface → expanding vision",
         "title": "Mira is the doorway.\nThe ecosystem is the capability."
       },
@@ -12551,20 +12566,20 @@
         "chapter": "04 / EARN THE TRUST",
         "kicker": "A practical architecture",
         "note": "Keep data access, calculations, model reasoning, workflow execution, and human approval as distinct layers. This makes a bounded prototype easier to evaluate—and creates a path toward replacing components as the ecosystem matures. Proposed technical design.",
-        "panels": [
-          {
-            "label": "Permissioned inputs",
-            "detail": "Approved imports or connectors → validation → workspace-scoped storage."
+        "panels": {
+          "0": {
+            "detail": "Approved imports or connectors → validation → workspace-scoped storage.",
+            "label": "Permissioned inputs"
           },
-          {
-            "label": "Decision-support layer",
-            "detail": "Deterministic metrics + grounded AI explanations + configurable scenarios."
+          "1": {
+            "detail": "Deterministic metrics + grounded AI explanations + configurable scenarios.",
+            "label": "Decision-support layer"
           },
-          {
-            "label": "Human review & evaluation",
-            "detail": "Dashboard or Mira interaction → approval and feedback → versioned evaluation records."
+          "2": {
+            "detail": "Dashboard or Mira interaction → approval and feedback → versioned evaluation records.",
+            "label": "Human review & evaluation"
           }
-        ],
+        },
         "status": "Proposed technical design",
         "title": "Turn an ambition\ninto an inspectable system."
       },
@@ -12573,20 +12588,20 @@
         "chapter": "05 / SUSTAIN THE JOURNEY",
         "kicker": "A focused way into a broad market",
         "note": "Build with individuals, small teams, educators, and operators in Vietnam. Learn what works in their language and daily reality. Extend proven patterns across Southeast Asia and beyond through local partnerships and adaptable products. Market-entry strategy.",
-        "panels": [
-          {
-            "label": "Initial focus",
-            "detail": "Service businesses, education teams, and knowledge-intensive MSMEs."
+        "panels": {
+          "0": {
+            "detail": "Service businesses, education teams, and knowledge-intensive MSMEs.",
+            "label": "Initial focus"
           },
-          {
-            "label": "Distribution",
-            "detail": "Product-led adoption, implementation partners, and learning communities."
+          "1": {
+            "detail": "Product-led adoption, implementation partners, and learning communities.",
+            "label": "Distribution"
           },
-          {
-            "label": "Expansion gate",
-            "detail": "Repeatable activation, retained use, support capacity, and locally validated workflows."
+          "2": {
+            "detail": "Repeatable activation, retained use, support capacity, and locally validated workflows.",
+            "label": "Expansion gate"
           }
-        ],
+        },
         "status": "Market-entry strategy",
         "title": "Start in Vietnam.\nGrow through understanding."
       },
@@ -12595,20 +12610,20 @@
         "chapter": "05 / SUSTAIN THE JOURNEY",
         "kicker": "A business designed to compound",
         "note": "Everyday products create the reason to stay. Subscriptions and scoped technical collaborations fund delivery, maintenance, and research. Our aim is an ecosystem that can keep improving because its value and operating economics support each other. Commercial strategy.",
-        "panels": [
-          {
-            "label": "Adoption",
-            "detail": "Accessible core workflows help individuals and small teams get started."
+        "panels": {
+          "0": {
+            "detail": "Accessible core workflows help individuals and small teams get started.",
+            "label": "Adoption"
           },
-          {
-            "label": "Expansion",
-            "detail": "Paid workspace capacity and advanced capabilities support growing teams."
+          "1": {
+            "detail": "Paid workspace capacity and advanced capabilities support growing teams.",
+            "label": "Expansion"
           },
-          {
-            "label": "Partnerships",
-            "detail": "Scoped implementation and support can turn validated pilots into repeatable offerings."
+          "2": {
+            "detail": "Scoped implementation and support can turn validated pilots into repeatable offerings.",
+            "label": "Partnerships"
           }
-        ],
+        },
         "status": "Commercial strategy",
         "title": "Useful products.\nA business built to last."
       },
@@ -12617,7 +12632,7 @@
         "chapter": "05 / SUSTAIN THE JOURNEY",
         "kicker": "Explore the subscription",
         "note": "Explore the workspace subscription subtotal using the current public catalog. This is a starting point for a team conversation; implementation, evaluation, taxes, and add-ons are scoped separately. Current prices · capacity changes awaiting rollout.",
-        "panels": [],
+        "panels": {},
         "status": "Current prices · capacity changes awaiting rollout",
         "title": "Find a starting budget."
       },
@@ -12626,20 +12641,20 @@
         "chapter": "02 / BUILD THE WORLD",
         "kicker": "CALENDAR × TASKS",
         "note": "Smart Calendar brings tasks and habits into the reality of working hours, events, priorities, and deadlines. Automatic scheduling helps turn intention into time you can use; you can review and adjust the result. Smart scheduling capabilities implemented · configuration and availability apply.",
-        "panels": [
-          {
-            "label": "Respect reality",
-            "detail": "Availability, working hours, and existing events."
+        "panels": {
+          "0": {
+            "detail": "Availability, working hours, and existing events.",
+            "label": "Respect reality"
           },
-          {
-            "label": "Make a useful plan",
-            "detail": "Priority-aware scheduling for tasks and habits."
+          "1": {
+            "detail": "Priority-aware scheduling for tasks and habits.",
+            "label": "Make a useful plan"
           },
-          {
-            "label": "Keep adapting",
-            "detail": "Review the schedule as priorities change."
+          "2": {
+            "detail": "Review the schedule as priorities change.",
+            "label": "Keep adapting"
           }
-        ],
+        },
         "status": "Smart scheduling capabilities implemented · configuration and availability apply",
         "title": "A plan that fits your day."
       },
@@ -12648,20 +12663,20 @@
         "chapter": "03 / CONNECT THE INTELLIGENCE",
         "kicker": "Use case 01 / Workload planning",
         "note": "Start with agreed availability, estimates, and deadlines. Show where a proposed commitment creates pressure. Compare timing, scope, and support before deciding what the team can responsibly take on. Proposed pilot module.",
-        "panels": [
-          {
-            "label": "Inputs",
-            "detail": "Task estimates, due dates, working calendars, and declared availability."
+        "panels": {
+          "0": {
+            "detail": "Task estimates, due dates, working calendars, and declared availability.",
+            "label": "Inputs"
           },
-          {
-            "label": "Configurable outputs",
-            "detail": "Team capacity views, scheduling conflicts, and alternative allocations."
+          "1": {
+            "detail": "Team capacity views, scheduling conflicts, and alternative allocations.",
+            "label": "Configurable outputs"
           },
-          {
-            "label": "Evaluation",
-            "detail": "Planning time, missed commitments, and staff feedback against a baseline."
+          "2": {
+            "detail": "Planning time, missed commitments, and staff feedback against a baseline.",
+            "label": "Evaluation"
           }
-        ],
+        },
         "status": "Proposed pilot module",
         "title": "See the trade-offs\nbefore taking on more."
       },
@@ -12670,20 +12685,20 @@
         "chapter": "02 / BUILD THE WORLD",
         "kicker": "CHAT × MIRA",
         "note": "People, channels, shared files, and AI conversations belong in the same working context. Smart Chat is our path toward humans and AI coordinating in the conversation where a decision actually begins. Chat foundations implemented · deeper coordination in development.",
-        "panels": [
-          {
-            "label": "Talk together",
-            "detail": "Direct messages, groups, channels, and AI conversations."
+        "panels": {
+          "0": {
+            "detail": "Direct messages, groups, channels, and AI conversations.",
+            "label": "Talk together"
           },
-          {
-            "label": "Keep the context",
-            "detail": "Conversation history and Drive-backed attachments."
+          "1": {
+            "detail": "Conversation history and Drive-backed attachments.",
+            "label": "Keep the context"
           },
-          {
-            "label": "Coordinate the next step",
-            "detail": "The direction: humans and AI collaborating across workflows."
+          "2": {
+            "detail": "The direction: humans and AI collaborating across workflows.",
+            "label": "Coordinate the next step"
           }
-        ],
+        },
         "status": "Chat foundations implemented · deeper coordination in development",
         "title": "People and AI,\nworking in the same conversation."
       },
@@ -12692,20 +12707,20 @@
         "chapter": "06 / PUT THE FUTURE IN YOUR HANDS",
         "kicker": "Build the next era with us",
         "note": "We are building toward an open, independently operable ecosystem and an extraordinarily capable assistant within it. Bring a meaningful problem, a research question, or a team ready to build. Help us make that future useful—and make it yours. Let’s start with one meaningful problem.",
-        "panels": [
-          {
-            "label": "For people",
-            "detail": "More space to create."
+        "panels": {
+          "0": {
+            "detail": "More space to create.",
+            "label": "For people"
           },
-          {
-            "label": "For teams",
-            "detail": "More confidence to grow."
+          "1": {
+            "detail": "More confidence to grow.",
+            "label": "For teams"
           },
-          {
-            "label": "For partners",
-            "detail": "A foundation to build on."
+          "2": {
+            "detail": "A foundation to build on.",
+            "label": "For partners"
           }
-        ],
+        },
         "status": "Let’s start with one meaningful problem",
         "title": "Build a future\nyou can make your own."
       },
@@ -12714,20 +12729,20 @@
         "chapter": "02 / BUILD THE WORLD",
         "kicker": "DOCUMENTS × WHITEBOARDS",
         "note": "Realtime whiteboards make thinking visible. Collaborative documents turn it into shared knowledge. Google Docs-like editing, files, and workspace context form another part of the memory an intelligent partner will need. Existing collaboration foundations · cross-product depth continues to grow.",
-        "panels": [
-          {
-            "label": "Sketch together",
-            "detail": "Shared canvases and realtime whiteboard collaboration."
+        "panels": {
+          "0": {
+            "detail": "Shared canvases and realtime whiteboard collaboration.",
+            "label": "Sketch together"
           },
-          {
-            "label": "Write together",
-            "detail": "Collaborative rich-text editing and shared knowledge."
+          "1": {
+            "detail": "Collaborative rich-text editing and shared knowledge.",
+            "label": "Write together"
           },
-          {
-            "label": "Connect the outcome",
-            "detail": "Files, people, tasks, and conversations in one product direction."
+          "2": {
+            "detail": "Files, people, tasks, and conversations in one product direction.",
+            "label": "Connect the outcome"
           }
-        ],
+        },
         "status": "Existing collaboration foundations · cross-product depth continues to grow",
         "title": "Think together.\nBuild on what you learn."
       },
@@ -12736,20 +12751,20 @@
         "chapter": "03 / CONNECT THE INTELLIGENCE",
         "kicker": "Why an ecosystem matters",
         "note": "A task becomes more useful when connected to the promise behind it, the knowledge needed, the people involved, and the time available. Our next layer is permission-aware context that helps Mira understand relationships across work. Connected-context strategy.",
-        "panels": [
-          {
-            "label": "Shared context",
-            "detail": "People, projects, knowledge, and workspace permissions."
+        "panels": {
+          "0": {
+            "detail": "People, projects, knowledge, and workspace permissions.",
+            "label": "Shared context"
           },
-          {
-            "label": "Useful decisions",
-            "detail": "Relate commitments to capacity and learning needs."
+          "1": {
+            "detail": "Relate commitments to capacity and learning needs.",
+            "label": "Useful decisions"
           },
-          {
-            "label": "Compounding value",
-            "detail": "Each useful workflow makes the next connection more valuable."
+          "2": {
+            "detail": "Each useful workflow makes the next connection more valuable.",
+            "label": "Compounding value"
           }
-        ],
+        },
         "status": "Connected-context strategy",
         "title": "An assistant with\nthe context to help."
       },
@@ -12758,20 +12773,20 @@
         "chapter": "02 / BUILD THE WORLD",
         "kicker": "Why an ecosystem?",
         "note": "This is our strategic belief, not a claim that focused products cannot succeed. AI can reduce the cost of making an initial app; it does not automatically solve operating a coherent system over years. We choose a maintained ecosystem so that engineering improvements, shared context, and reusable infrastructure can benefit many workflows. Breadth is not the goal by itself: prioritize real needs, prove reuse, and account for the cost of supporting each product.",
-        "panels": [
-          {
-            "label": "Build the first version",
-            "detail": "Help anyone create and customize useful tools. Lower barriers are an opportunity."
+        "panels": {
+          "0": {
+            "detail": "Help anyone create and customize useful tools. Lower barriers are an opportunity.",
+            "label": "Build the first version"
           },
-          {
-            "label": "Maintain the whole system",
-            "detail": "Permissions, security, reliability, migrations, and interoperability need ongoing care."
+          "1": {
+            "detail": "Permissions, security, reliability, migrations, and interoperability need ongoing care.",
+            "label": "Maintain the whole system"
           },
-          {
-            "label": "Compound the investment",
-            "detail": "Ship focused products on shared foundations. Expand where reuse and customer value justify the maintenance."
+          "2": {
+            "detail": "Ship focused products on shared foundations. Expand where reuse and customer value justify the maintenance.",
+            "label": "Compound the investment"
           }
-        ],
+        },
         "status": "Our strategic thesis · durability must be earned in operation",
         "title": "Better together.\nStronger over time."
       },
@@ -12780,20 +12795,20 @@
         "chapter": "04 / EARN THE TRUST",
         "kicker": "Scope before scale",
         "note": "Agree the technical contact, data boundaries, deliverables, timeline, and budget before building. Define configurable outputs, interaction tracking, evaluation criteria, and handover so everyone knows what progress will mean. Proposed engagement structure · quotation after discovery.",
-        "panels": [
-          {
-            "label": "Scope & outputs",
-            "detail": "Choose 1–3 issues, agreed data sources, configurable reports, simulation, and evaluation deliverables."
+        "panels": {
+          "0": {
+            "detail": "Choose 1–3 issues, agreed data sources, configurable reports, simulation, and evaluation deliverables.",
+            "label": "Scope & outputs"
           },
-          {
-            "label": "Budget & cost controls",
-            "detail": "Separate discovery, adaptation, testing, and support. Set model/hosting limits and milestone payments."
+          "1": {
+            "detail": "Separate discovery, adaptation, testing, and support. Set model/hosting limits and milestone payments.",
+            "label": "Budget & cost controls"
           },
-          {
-            "label": "Handover & next decision",
-            "detail": "Provide documentation, limitations, evaluation results, and an explicit support or exit plan."
+          "2": {
+            "detail": "Provide documentation, limitations, evaluation results, and an explicit support or exit plan.",
+            "label": "Handover & next decision"
           }
-        ],
+        },
         "status": "Proposed engagement structure · quotation after discovery",
         "title": "Bring the problem.\nBuild the solution together."
       },
@@ -12802,20 +12817,20 @@
         "chapter": "04 / EARN THE TRUST",
         "kicker": "Make the proof measurable",
         "note": "Agree a baseline before a pilot. Track task success, corrections, review effort, user experience, and operating cost. A compelling demonstration starts the conversation; dependable performance in the intended setting earns expansion. Proposed evaluation framework.",
-        "panels": [
-          {
-            "label": "Decision quality",
-            "detail": "Compare recommendations with expert review; inspect errors and unsupported answers."
+        "panels": {
+          "0": {
+            "detail": "Compare recommendations with expert review; inspect errors and unsupported answers.",
+            "label": "Decision quality"
           },
-          {
-            "label": "Workflow value",
-            "detail": "Measure task completion time and user feedback against the current process."
+          "1": {
+            "detail": "Measure task completion time and user feedback against the current process.",
+            "label": "Workflow value"
           },
-          {
-            "label": "Responsible adoption",
-            "detail": "Track accepted, edited, and rejected suggestions with consent and minimal telemetry."
+          "2": {
+            "detail": "Track accepted, edited, and rejected suggestions with consent and minimal telemetry.",
+            "label": "Responsible adoption"
           }
-        ],
+        },
         "status": "Proposed evaluation framework",
         "title": "Measure what\nactually improves."
       },
@@ -12824,20 +12839,20 @@
         "chapter": "06 / PUT THE FUTURE IN YOUR HANDS",
         "kicker": "Beyond the screen",
         "note": "For us, the ambition reaches beyond productivity: learning, discovery, and eventually assistance in the physical world. Success means people can do more, understand more, and remain authors of their own direction as the technology improves. Long-term research vision.",
-        "panels": [
-          {
-            "label": "Mira / The relationship",
-            "detail": "An approachable partner across the ecosystem."
+        "panels": {
+          "0": {
+            "detail": "An approachable partner across the ecosystem.",
+            "label": "Mira / The relationship"
           },
-          {
-            "label": "Connected intelligence / The foundation",
-            "detail": "Context, knowledge, evaluation, and orchestration working together."
+          "1": {
+            "detail": "Context, knowledge, evaluation, and orchestration working together.",
+            "label": "Connected intelligence / The foundation"
           },
-          {
-            "label": "Beyond software / The horizon",
-            "detail": "Explore physical-world assistance only as safety and research maturity allow."
+          "2": {
+            "detail": "Explore physical-world assistance only as safety and research maturity allow.",
+            "label": "Beyond software / The horizon"
           }
-        ],
+        },
         "status": "Long-term research vision",
         "title": "From Vietnam\nto a wider world."
       },
@@ -12846,20 +12861,20 @@
         "chapter": "06 / PUT THE FUTURE IN YOUR HANDS",
         "kicker": "The independence roadmap",
         "note": "Full independence is our direction, not today’s deployment claim. We aim to make the ecosystem independently operable through portable data, replaceable services, verified deployment paths, and model/runtime choice—while remaining open to the wider world. Strategic roadmap · current services still depend on external infrastructure and model providers.",
-        "panels": [
-          {
-            "label": "Now / own the product",
-            "detail": "Maintain our code, contracts, user experience, and release process."
+        "panels": {
+          "0": {
+            "detail": "Maintain our code, contracts, user experience, and release process.",
+            "label": "Now / own the product"
           },
-          {
-            "label": "Next / own the options",
-            "detail": "Prove export and restore, document dependencies, and test replaceable integrations."
+          "1": {
+            "detail": "Prove export and restore, document dependencies, and test replaceable integrations.",
+            "label": "Next / own the options"
           },
-          {
-            "label": "Horizon / own the operation",
-            "detail": "Expand self-managed deployment and local or open-model paths where they are viable."
+          "2": {
+            "detail": "Expand self-managed deployment and local or open-model paths where they are viable.",
+            "label": "Horizon / own the operation"
           }
-        ],
+        },
         "status": "Strategic roadmap · current services still depend on external infrastructure and model providers",
         "title": "Independence is built\none dependency at a time."
       },
@@ -12868,28 +12883,28 @@
         "chapter": "06 / PUT THE FUTURE IN YOUR HANDS",
         "kicker": "The long-term intelligence architecture",
         "note": "Our long-term vision brings together reasoning, memory, creativity, learning, and action around a person’s goals. The original Tuturuuu concepts describe complementary research directions—not a claim that a general-purpose autonomous system already exists. Conceptual architecture · not a claim of five completed systems.",
-        "panels": [
-          {
-            "label": "Mira / The relationship",
-            "detail": "A natural way to think and work with intelligence."
+        "panels": {
+          "0": {
+            "detail": "A natural way to think and work with intelligence.",
+            "label": "Mira / The relationship"
           },
-          {
-            "label": "Aurora / The coordination",
-            "detail": "Context and permissioned action across the ecosystem."
+          "1": {
+            "detail": "Context and permissioned action across the ecosystem.",
+            "label": "Aurora / The coordination"
           },
-          {
-            "label": "Rewise / The knowledge",
-            "detail": "Bring relevant knowledge into the right moment."
+          "2": {
+            "detail": "Bring relevant knowledge into the right moment.",
+            "label": "Rewise / The knowledge"
           },
-          {
-            "label": "Nova / The refinement",
-            "detail": "Explore how intelligence is instructed, evaluated, and improved."
+          "3": {
+            "detail": "Explore how intelligence is instructed, evaluated, and improved.",
+            "label": "Nova / The refinement"
           },
-          {
-            "label": "Crystal / The physical horizon",
-            "detail": "Research a future where assistance reaches beyond the screen."
+          "4": {
+            "detail": "Research a future where assistance reaches beyond the screen.",
+            "label": "Crystal / The physical horizon"
           }
-        ],
+        },
         "status": "Conceptual architecture · not a claim of five completed systems",
         "title": "What a truly helpful\nassistant will need."
       },
@@ -12898,20 +12913,20 @@
         "chapter": "02 / BUILD THE WORLD",
         "kicker": "MAIL × MIRA",
         "note": "Smart labels, assisted drafting, and follow-ups are the foundation. We are building toward Mira extracting action items and connecting commitments to tasks and time—so inbox zero means fewer loose ends, not merely fewer unread messages. Mail AI foundations implemented · Mira action extraction is a development direction.",
-        "panels": [
-          {
-            "label": "Understand",
-            "detail": "Smart labels and contextual drafting foundations."
+        "panels": {
+          "0": {
+            "detail": "Smart labels and contextual drafting foundations.",
+            "label": "Understand"
           },
-          {
-            "label": "Extract",
-            "detail": "Building toward Mira-powered action items and commitments."
+          "1": {
+            "detail": "Building toward Mira-powered action items and commitments.",
+            "label": "Extract"
           },
-          {
-            "label": "Follow through",
-            "detail": "Reviewed replies, follow-ups, and a path toward inbox zero."
+          "2": {
+            "detail": "Reviewed replies, follow-ups, and a path toward inbox zero.",
+            "label": "Follow through"
           }
-        ],
+        },
         "status": "Mail AI foundations implemented · Mira action extraction is a development direction",
         "title": "Fewer loose ends.\nA clearer inbox."
       },
@@ -12920,20 +12935,20 @@
         "chapter": "02 / BUILD THE WORLD",
         "kicker": "Product in focus / Meet",
         "note": "Mira can participate in Tuturuuu Meet through room chat and opt-in Live voice. Private assistance and reviewed workspace actions create a bridge from discussion to action, while keeping participants aware of when and how AI is involved. Implemented product capabilities · availability and permissions apply.",
-        "panels": [
-          {
-            "label": "Visible AI presence",
-            "detail": "Mira has a participant tile, speaking state, and independent audio controls."
+        "panels": {
+          "0": {
+            "detail": "Mira has a participant tile, speaking state, and independent audio controls.",
+            "label": "Visible AI presence"
           },
-          {
-            "label": "Private when it matters",
-            "detail": "Room context and personal assistance have separate boundaries."
+          "1": {
+            "detail": "Room context and personal assistance have separate boundaries.",
+            "label": "Private when it matters"
           },
-          {
-            "label": "From conversation to action",
-            "detail": "Review suggested tasks and calendar follow-ups before creating them."
+          "2": {
+            "detail": "Review suggested tasks and calendar follow-ups before creating them.",
+            "label": "From conversation to action"
           }
-        ],
+        },
         "status": "Implemented product capabilities · availability and permissions apply",
         "title": "Meet your AI colleague."
       },
@@ -12942,20 +12957,20 @@
         "chapter": "01 / WHY NOW",
         "kicker": "The world in motion",
         "note": "AI adoption is broad, agent use is accelerating, and skill requirements are changing. These signals point to a need for better ways to organize work, learn, and stay in control—not merely another place to ask a question. External evidence · different populations and measures; not directly comparable.",
-        "panels": [
-          {
-            "label": "88%",
-            "detail": "Surveyed organizations reported AI use in 2025."
+        "panels": {
+          "0": {
+            "detail": "Surveyed organizations reported AI use in 2025.",
+            "label": "88%"
           },
-          {
-            "label": "15×",
-            "detail": "Growth in active agents in Microsoft’s ecosystem, March 2025–March 2026."
+          "1": {
+            "detail": "Growth in active agents in Microsoft’s ecosystem, March 2025–March 2026.",
+            "label": "15×"
           },
-          {
-            "label": "39%",
-            "detail": "Core skills employers expect to change by 2030."
+          "2": {
+            "detail": "Core skills employers expect to change by 2030.",
+            "label": "39%"
           }
-        ],
+        },
         "status": "External evidence · different populations and measures; not directly comparable",
         "title": "The shift is already here.\nThe operating model is still forming."
       },
@@ -12964,20 +12979,20 @@
         "chapter": "03 / CONNECT THE INTELLIGENCE",
         "kicker": "Use case 03 / Knowledge transfer",
         "note": "The same connected knowledge can help a new teammate understand the work, find trusted answers, and build confidence. The aim is a shorter path from joining a team to making a meaningful contribution. Proposed pilot module.",
-        "panels": [
-          {
-            "label": "Inputs",
-            "detail": "Approved policies, role guides, and onboarding tasks."
+        "panels": {
+          "0": {
+            "detail": "Approved policies, role guides, and onboarding tasks.",
+            "label": "Inputs"
           },
-          {
-            "label": "Configurable outputs",
-            "detail": "Source-linked answers, role checklists, and escalation to a human mentor."
+          "1": {
+            "detail": "Source-linked answers, role checklists, and escalation to a human mentor.",
+            "label": "Configurable outputs"
           },
-          {
-            "label": "Evaluation",
-            "detail": "Time to find an answer, answer correctness, and new-starter feedback."
+          "2": {
+            "detail": "Time to find an answer, answer correctness, and new-starter feedback.",
+            "label": "Evaluation"
           }
-        ],
+        },
         "status": "Proposed pilot module",
         "title": "Let new people\ninherit the context."
       },
@@ -12986,20 +13001,20 @@
         "chapter": "01 / WHY NOW",
         "kicker": "An ecosystem for human potential",
         "note": "Our ambition is to build the smartest assistant we can imagine: an intelligent partner that understands your world, helps you act, and makes you more capable. Tuturuuu is building the open ecosystem that can make it possible. The Tuturuuu vision.",
-        "panels": [
-          {
-            "label": "Work",
-            "detail": "Make meaningful progress."
+        "panels": {
+          "0": {
+            "detail": "Make meaningful progress.",
+            "label": "Work"
           },
-          {
-            "label": "Life",
-            "detail": "Protect what matters."
+          "1": {
+            "detail": "Protect what matters.",
+            "label": "Life"
           },
-          {
-            "label": "Intelligence",
-            "detail": "Bring it all together."
+          "2": {
+            "detail": "Bring it all together.",
+            "label": "Intelligence"
           }
-        ],
+        },
         "status": "The Tuturuuu vision",
         "title": "Technology that works\nwith your world."
       },
@@ -13008,20 +13023,20 @@
         "chapter": "06 / PUT THE FUTURE IN YOUR HANDS",
         "kicker": "Open by design",
         "note": "Tuturuuu’s platform source is available under Apache 2.0. We want openness to extend beyond code: understandable interfaces, portable knowledge, extensible workflows, and choices about where and how your technology runs. Open-source platform today · wider portability and deployment choice are ongoing work.",
-        "panels": [
-          {
-            "label": "Inspect and extend",
-            "detail": "Read the source, build on documented APIs, and adapt the software under its license."
+        "panels": {
+          "0": {
+            "detail": "Read the source, build on documented APIs, and adapt the software under its license.",
+            "label": "Inspect and extend"
           },
-          {
-            "label": "Keep your knowledge",
-            "detail": "Develop reliable export, import, and interoperable workflows across the ecosystem."
+          "1": {
+            "detail": "Develop reliable export, import, and interoperable workflows across the ecosystem.",
+            "label": "Keep your knowledge"
           },
-          {
-            "label": "Choose your future",
-            "detail": "Work toward more deployment and model options without abandoning useful integrations."
+          "2": {
+            "detail": "Work toward more deployment and model options without abandoning useful integrations.",
+            "label": "Choose your future"
           }
-        ],
+        },
         "status": "Open-source platform today · wider portability and deployment choice are ongoing work",
         "title": "Open source.\nA path to greater independence."
       },
@@ -13030,20 +13045,20 @@
         "chapter": "01 / WHY NOW",
         "kicker": "A very human beginning",
         "note": "Every idea asks for time. Every tool asks for attention. Tuturuuu began by helping people organize their work; the bigger question became how technology could give people more room to think, learn, and create. Our founding purpose.",
-        "panels": [
-          {
-            "label": "A personal problem",
-            "detail": "Digital complexity was consuming the energy meant for building."
+        "panels": {
+          "0": {
+            "detail": "Digital complexity was consuming the energy meant for building.",
+            "label": "A personal problem"
           },
-          {
-            "label": "A shared purpose",
-            "detail": "Help people turn intention into progress, together."
+          "1": {
+            "detail": "Help people turn intention into progress, together.",
+            "label": "A shared purpose"
           },
-          {
-            "label": "A bigger question",
-            "detail": "What could we achieve with a partner that understands our world?"
+          "2": {
+            "detail": "What could we achieve with a partner that understands our world?",
+            "label": "A bigger question"
           }
-        ],
+        },
         "status": "Our founding purpose",
         "title": "It began with\na wish for more focus."
       },
@@ -13052,20 +13067,20 @@
         "chapter": "02 / BUILD THE WORLD",
         "kicker": "TUTURUUU / ONE ECOSYSTEM",
         "note": "We are building and operating our own products across files, meetings, mail, chat, documents, CRM, contacts, finance, and operations. This gives Tuturuuu responsibility for how the pieces evolve together—and a foundation for people to own more of their technology. Tuturuuu-owned product ecosystem · individual capabilities and access vary.",
-        "panels": [
-          {
-            "label": "Our products",
-            "detail": "A coherent alternative across communication, collaboration, and operations."
+        "panels": {
+          "0": {
+            "detail": "A coherent alternative across communication, collaboration, and operations.",
+            "label": "Our products"
           },
-          {
-            "label": "Our operating responsibility",
-            "detail": "We build, operate, and evolve the Tuturuuu product ecosystem."
+          "1": {
+            "detail": "We build, operate, and evolve the Tuturuuu product ecosystem.",
+            "label": "Our operating responsibility"
           },
-          {
-            "label": "Compounding value",
-            "detail": "Each new capability strengthens the context available to the whole."
+          "2": {
+            "detail": "Each new capability strengthens the context available to the whole.",
+            "label": "Compounding value"
           }
-        ],
+        },
         "status": "Tuturuuu-owned product ecosystem · individual capabilities and access vary",
         "title": "One ecosystem.\nOne long-term responsibility."
       },
@@ -13074,20 +13089,20 @@
         "chapter": "04 / EARN THE TRUST",
         "kicker": "A bounded path to proof",
         "note": "An indicative 12-week engagement starts with one workforce question and a clear evaluation plan. Adapt the relevant components, test with users, and decide together whether the evidence supports expanding to additional use cases. Illustrative delivery plan · subject to scoping.",
-        "panels": [
-          {
-            "label": "Weeks 01–03 / Define",
-            "detail": "Choose the use case, appoint a technical lead and domain owner, agree data access and evaluation."
+        "panels": {
+          "0": {
+            "detail": "Choose the use case, appoint a technical lead and domain owner, agree data access and evaluation.",
+            "label": "Weeks 01–03 / Define"
           },
-          {
-            "label": "Weeks 04–08 / Adapt",
-            "detail": "Build the bounded prototype, configure outputs, test scenarios, and review safety and usability."
+          "1": {
+            "detail": "Build the bounded prototype, configure outputs, test scenarios, and review safety and usability.",
+            "label": "Weeks 04–08 / Adapt"
           },
-          {
-            "label": "Weeks 09–12 / Evaluate",
-            "detail": "Run a supervised pilot, report results and limitations, and recommend a scale-or-stop decision."
+          "2": {
+            "detail": "Run a supervised pilot, report results and limitations, and recommend a scale-or-stop decision.",
+            "label": "Weeks 09–12 / Evaluate"
           }
-        ],
+        },
         "status": "Illustrative delivery plan · subject to scoping",
         "title": "Start small.\nLearn before expanding."
       },
@@ -13096,20 +13111,20 @@
         "chapter": "02 / BUILD THE WORLD",
         "kicker": "The foundation exists",
         "note": "Tasks reveal intent. Calendars reveal constraints. Conversations reveal decisions. Documents preserve knowledge. Finance and contacts connect work to real relationships. Our ecosystem is the foundation for joining those signals responsibly. Existing product foundations · availability varies.",
-        "panels": [
-          {
-            "label": "Work & collaboration",
-            "detail": "Tasks · Calendar · Track · Meet · Mail · Chat · Drive · Colab"
+        "panels": {
+          "0": {
+            "detail": "Tasks · Calendar · Track · Meet · Mail · Chat · Drive · Colab",
+            "label": "Work & collaboration"
           },
-          {
-            "label": "Business & people",
-            "detail": "Contacts · Finance · Pay · Inventory · Forms · CMS"
+          "1": {
+            "detail": "Contacts · Finance · Pay · Inventory · Forms · CMS",
+            "label": "Business & people"
           },
-          {
-            "label": "Learning & intelligence",
-            "detail": "Learn · Teach · Mira · Rewise · Nova"
+          "2": {
+            "detail": "Learn · Teach · Mira · Rewise · Nova",
+            "label": "Learning & intelligence"
           }
-        ],
+        },
         "status": "Existing product foundations · availability varies",
         "title": "Your work is connected.\nYour tools should be too."
       },
@@ -13118,7 +13133,7 @@
         "chapter": "05 / SUSTAIN THE JOURNEY",
         "kicker": "Workspace economics",
         "note": "Workspace subscriptions make the everyday ecosystem accessible. A tailored research or analytics engagement has its own agreed scope and budget. Start where the product is useful, then expand when the next layer earns its place. Current prices · capacity changes awaiting rollout.",
-        "panels": [],
+        "panels": {},
         "status": "Current prices · capacity changes awaiting rollout",
         "title": "A practical way\nto start the relationship."
       },
@@ -13127,20 +13142,20 @@
         "chapter": "01 / WHY NOW",
         "kicker": "The invisible work",
         "note": "A customer promise arrives by email. Its plan lives on a board. Its decision happens in a meeting. Its context disappears into a document. People become the integration layer—and even a powerful AI sees only fragments. A familiar operating challenge.",
-        "panels": [
-          {
-            "label": "09:00 / The promise",
-            "detail": "A new project arrives. Who has the time and skills?"
+        "panels": {
+          "0": {
+            "detail": "A new project arrives. Who has the time and skills?",
+            "label": "09:00 / The promise"
           },
-          {
-            "label": "13:00 / The scramble",
-            "detail": "Plans change. The schedule and the task board disagree."
+          "1": {
+            "detail": "Plans change. The schedule and the task board disagree.",
+            "label": "13:00 / The scramble"
           },
-          {
-            "label": "18:00 / The cost",
-            "detail": "The team worked all day. The most important work is still waiting."
+          "2": {
+            "detail": "The team worked all day. The most important work is still waiting.",
+            "label": "18:00 / The cost"
           }
-        ],
+        },
         "status": "A familiar operating challenge",
         "title": "The work connects.\nThe tools often don’t."
       },
@@ -13149,20 +13164,20 @@
         "chapter": "04 / EARN THE TRUST",
         "kicker": "Ambition with a clear starting point",
         "note": "We have product surfaces, workspace permissions, AI tooling, collaboration, and simulation foundations. Cross-product context and workforce decision support still need bounded implementation and evaluation. That is the bridge we are ready to build with partners. Capability and delivery boundaries.",
-        "panels": [
-          {
-            "label": "Existing foundations",
-            "detail": "Workspace products, task and calendar tools, learning surfaces, and conversational AI."
+        "panels": {
+          "0": {
+            "detail": "Workspace products, task and calendar tools, learning surfaces, and conversational AI.",
+            "label": "Existing foundations"
           },
-          {
-            "label": "To adapt and validate",
-            "detail": "Workforce data mapping, analytics, scenario testing, interaction tracking, and pilot-specific governance."
+          "1": {
+            "detail": "Workforce data mapping, analytics, scenario testing, interaction tracking, and pilot-specific governance.",
+            "label": "To adapt and validate"
           },
-          {
-            "label": "Long-term research",
-            "detail": "Proactive cross-domain coordination and physical-world assistance."
+          "2": {
+            "detail": "Proactive cross-domain coordination and physical-world assistance.",
+            "label": "Long-term research"
           }
-        ],
+        },
         "status": "Capability and delivery boundaries",
         "title": "The foundations are here.\nThe integration is the work."
       },
@@ -13171,7 +13186,7 @@
         "chapter": "06 / PUT THE FUTURE IN YOUR HANDS",
         "kicker": "Evidence & references",
         "note": "The statistics in this deck describe the world around Tuturuuu. They are not Tuturuuu performance results. Read each source with its date, sample, and methodology; our strategy is an interpretation of those signals. Sources reviewed September 2026 · projections and self-reports are labeled.",
-        "panels": [],
+        "panels": {},
         "status": "Sources reviewed September 2026 · projections and self-reports are labeled",
         "title": "Big ambitions deserve\ntraceable evidence."
       },
@@ -13180,20 +13195,20 @@
         "chapter": "04 / EARN THE TRUST",
         "kicker": "HIVE × MIND",
         "note": "Before scaling complex agent behavior, we research it in simulation. Hive and Mind bring together roles, interaction workflows, environments, and research-session histories. These experiments help us study coordination, handoffs, and failure recovery. Active research and experimentation · simulation is not real-world validation.",
-        "panels": [
-          {
-            "label": "Set the scene",
-            "detail": "Roles, world context, and scenario conditions."
+        "panels": {
+          "0": {
+            "detail": "Roles, world context, and scenario conditions.",
+            "label": "Set the scene"
           },
-          {
-            "label": "Coordinate agents",
-            "detail": "Interaction pairs and authored workflows."
+          "1": {
+            "detail": "Interaction pairs and authored workflows.",
+            "label": "Coordinate agents"
           },
-          {
-            "label": "Observe and learn",
-            "detail": "Run histories, simulation ticks, and research sessions."
+          "2": {
+            "detail": "Run histories, simulation ticks, and research sessions.",
+            "label": "Observe and learn"
           }
-        ],
+        },
         "status": "Active research and experimentation · simulation is not real-world validation",
         "title": "Test coordination\nin simulated worlds."
       },
@@ -13202,20 +13217,20 @@
         "chapter": "06 / PUT THE FUTURE IN YOUR HANDS",
         "kicker": "Progress through evidence",
         "note": "Make the products dependable. Connect permissioned context. Validate reviewed workflows. Coordinate specialized agents. Expand deployment and model choice. Each stage should leave users with more useful capability and more control. Strategic roadmap · no fixed launch promises.",
-        "panels": [
-          {
-            "label": "Now / Strengthen the foundation",
-            "detail": "Improve connected workflows, product reliability, and access boundaries."
+        "panels": {
+          "0": {
+            "detail": "Improve connected workflows, product reliability, and access boundaries.",
+            "label": "Now / Strengthen the foundation"
           },
-          {
-            "label": "Next / Prove focused intelligence",
-            "detail": "Validate workforce use cases and supervised coordination with partners."
+          "1": {
+            "detail": "Validate workforce use cases and supervised coordination with partners.",
+            "label": "Next / Prove focused intelligence"
           },
-          {
-            "label": "Beyond / Expand the partnership",
-            "detail": "Broaden context-aware assistance and research more proactive, permissioned action."
+          "2": {
+            "detail": "Broaden context-aware assistance and research more proactive, permissioned action.",
+            "label": "Beyond / Expand the partnership"
           }
-        ],
+        },
         "status": "Strategic roadmap · no fixed launch promises",
         "title": "Connect. Validate.\nThen expand."
       },
@@ -13224,20 +13239,20 @@
         "chapter": "01 / WHY NOW",
         "kicker": "The next era of work",
         "note": "AI is moving from isolated conversations toward tools and agents that can act across workflows. Our thesis: lasting value comes from connecting that capability to real context, clear permissions, and people who keep learning. Our strategic thesis.",
-        "panels": [
-          {
-            "label": "01 / Tools",
-            "detail": "You operate each feature."
+        "panels": {
+          "0": {
+            "detail": "You operate each feature.",
+            "label": "01 / Tools"
           },
-          {
-            "label": "02 / Platforms",
-            "detail": "You connect the work."
+          "1": {
+            "detail": "You connect the work.",
+            "label": "02 / Platforms"
           },
-          {
-            "label": "03 / Partners",
-            "detail": "You set direction. Intelligence helps coordinate the next step."
+          "2": {
+            "detail": "You set direction. Intelligence helps coordinate the next step.",
+            "label": "03 / Partners"
           }
-        ],
+        },
         "status": "Our strategic thesis",
         "title": "From answering questions\nto helping carry the work."
       },
@@ -13246,20 +13261,20 @@
         "chapter": "03 / CONNECT THE INTELLIGENCE",
         "kicker": "Explore before you commit",
         "note": "A good assistant should help examine assumptions. This capacity sandbox makes one simple relationship visible: people, available hours, and demand. It illustrates how a proposed decision-support tool could invite discussion before action. Interactive illustration · synthetic data.",
-        "panels": [
-          {
-            "label": "Demand",
-            "detail": "Estimated work for one week."
+        "panels": {
+          "0": {
+            "detail": "Estimated work for one week.",
+            "label": "Demand"
           },
-          {
-            "label": "Capacity",
-            "detail": "Agreed time available for that work."
+          "1": {
+            "detail": "Agreed time available for that work.",
+            "label": "Capacity"
           },
-          {
-            "label": "Judgment",
-            "detail": "Numbers inform the discussion. People make the decision."
+          "2": {
+            "detail": "Numbers inform the discussion. People make the decision.",
+            "label": "Judgment"
           }
-        ],
+        },
         "status": "Interactive illustration · synthetic data",
         "title": "Explore the options\nbefore you decide."
       },
@@ -13268,20 +13283,20 @@
         "chapter": "03 / CONNECT THE INTELLIGENCE",
         "kicker": "Use case 02 / Workforce development",
         "note": "Employers surveyed by the World Economic Forum expect 39% of core skills to change by 2030. We want work and learning to reinforce each other: voluntary skills profiles, mentoring, and practical development paths tied to real projects. Proposed pilot module.",
-        "panels": [
-          {
-            "label": "Inputs",
-            "detail": "Role requirements, self-declared skills, and agreed learning goals."
+        "panels": {
+          "0": {
+            "detail": "Role requirements, self-declared skills, and agreed learning goals.",
+            "label": "Inputs"
           },
-          {
-            "label": "Configurable outputs",
-            "detail": "Skills maps and learning suggestions with evidence and uncertainty."
+          "1": {
+            "detail": "Skills maps and learning suggestions with evidence and uncertainty.",
+            "label": "Configurable outputs"
           },
-          {
-            "label": "Evaluation",
-            "detail": "Learning completion, practical assessments, and employee usefulness ratings."
+          "2": {
+            "detail": "Learning completion, practical assessments, and employee usefulness ratings.",
+            "label": "Evaluation"
           }
-        ],
+        },
         "status": "Proposed pilot module",
         "title": "Make learning part\nof the work."
       },
@@ -13290,20 +13305,20 @@
         "chapter": "02 / BUILD THE WORLD",
         "kicker": "Product in focus / Tasks",
         "note": "A thought becomes a task, then a plan. Boards, projects, cycles, and smart suggestions help people decide what matters. This is the first building block of an assistant that can understand what you are trying to accomplish. Implemented product capabilities · availability and permissions apply.",
-        "panels": [
-          {
-            "label": "Capture without friction",
-            "detail": "Boards, projects, cycles, and a fast capture inbox."
+        "panels": {
+          "0": {
+            "detail": "Boards, projects, cycles, and a fast capture inbox.",
+            "label": "Capture without friction"
           },
-          {
-            "label": "Review intelligent suggestions",
-            "detail": "Keep people in charge of proposed task details."
+          "1": {
+            "detail": "Keep people in charge of proposed task details.",
+            "label": "Review intelligent suggestions"
           },
-          {
-            "label": "Make time for the work",
-            "detail": "Connect tasks, habits, and scheduling preferences."
+          "2": {
+            "detail": "Connect tasks, habits, and scheduling preferences.",
+            "label": "Make time for the work"
           }
-        ],
+        },
         "status": "Implemented product capabilities · availability and permissions apply",
         "title": "Make the next step clear."
       },
@@ -13312,20 +13327,20 @@
         "chapter": "04 / EARN THE TRUST",
         "kicker": "A partner that builds with you",
         "note": "Founded by Võ Hoàng Phúc, Tuturuuu contributes product and engineering capability and maintains the ecosystem. Partners contribute domain expertise, real workflows, and evaluation contexts. Together, we can turn a research question into something people can use. Proposed collaboration model.",
-        "panels": [
-          {
-            "label": "Tuturuuu technical lead",
-            "detail": "Architecture, adaptation, technical testing, documentation, and a named contact agreed at kickoff."
+        "panels": {
+          "0": {
+            "detail": "Architecture, adaptation, technical testing, documentation, and a named contact agreed at kickoff.",
+            "label": "Tuturuuu technical lead"
           },
-          {
-            "label": "Domain & research partners",
-            "detail": "Use-case selection, expert evaluation, participant engagement, and interpretation."
+          "1": {
+            "detail": "Use-case selection, expert evaluation, participant engagement, and interpretation.",
+            "label": "Domain & research partners"
           },
-          {
-            "label": "Joint delivery ownership",
-            "detail": "Regular demos, milestone acceptance, a risk register, and agreed data/IP responsibilities."
+          "2": {
+            "detail": "Regular demos, milestone acceptance, a risk register, and agreed data/IP responsibilities.",
+            "label": "Joint delivery ownership"
           }
-        ],
+        },
         "status": "Proposed collaboration model",
         "title": "A shared mission.\nClear responsibility."
       },
@@ -13334,20 +13349,20 @@
         "chapter": "04 / EARN THE TRUST",
         "kicker": "Human agency is the design principle",
         "note": "Useful autonomy needs clear boundaries: what the assistant may access, what it may do, and when it must involve a person. We want people to understand, challenge, correct, and stop consequential actions—not lose their voice as the system becomes more capable. Pilot governance requirements.",
-        "panels": [
-          {
-            "label": "Use only what is needed",
-            "detail": "Agree purpose, access, retention, deletion, and consent or another appropriate basis before ingestion."
+        "panels": {
+          "0": {
+            "detail": "Agree purpose, access, retention, deletion, and consent or another appropriate basis before ingestion.",
+            "label": "Use only what is needed"
           },
-          {
-            "label": "Make outputs contestable",
-            "detail": "Show sources and assumptions, test errors and bias, and support correction and escalation."
+          "1": {
+            "detail": "Show sources and assumptions, test errors and bias, and support correction and escalation.",
+            "label": "Make outputs contestable"
           },
-          {
-            "label": "Keep people accountable",
-            "detail": "No autonomous hiring, firing, pay, or disciplinary decisions. No covert monitoring or inferred emotion scoring."
+          "2": {
+            "detail": "No autonomous hiring, firing, pay, or disciplinary decisions. No covert monitoring or inferred emotion scoring.",
+            "label": "Keep people accountable"
           }
-        ],
+        },
         "status": "Pilot governance requirements",
         "title": "More capable AI.\nClearer human control."
       },
@@ -13356,20 +13371,20 @@
         "chapter": "01 / WHY NOW",
         "kicker": "Our north star",
         "note": "Imagine describing an outcome instead of navigating ten tools. Your assistant brings together the relevant knowledge, explores options, and helps execute an approved plan. We start with everyday work because that is where understanding is earned. Long-term vision.",
-        "panels": [
-          {
-            "label": "Understand",
-            "detail": "Ground assistance in the context you choose to share."
+        "panels": {
+          "0": {
+            "detail": "Ground assistance in the context you choose to share.",
+            "label": "Understand"
           },
-          {
-            "label": "Anticipate",
-            "detail": "Surface opportunities and constraints before they become urgent."
+          "1": {
+            "detail": "Surface opportunities and constraints before they become urgent.",
+            "label": "Anticipate"
           },
-          {
-            "label": "Act with you",
-            "detail": "Propose, explain, ask for approval, and learn from outcomes."
+          "2": {
+            "detail": "Propose, explain, ask for approval, and learn from outcomes.",
+            "label": "Act with you"
           }
-        ],
+        },
         "status": "A global-scale ambition, earned one useful capability at a time",
         "title": "Built in Vietnam.\nThinking far beyond it."
       },
@@ -13378,20 +13393,20 @@
         "chapter": "03 / CONNECT THE INTELLIGENCE",
         "kicker": "A day in the future",
         "note": "Follow one future workflow: Mira connects a customer request with delivery commitments, available capacity, and skills the team wants to develop. It proposes options for people to review. The value is a better decision with the relevant context in reach. Illustrative future workflow.",
-        "panels": [
-          {
-            "label": "Understand the commitment",
-            "detail": "Bring together the brief, deadlines, and agreed requirements."
+        "panels": {
+          "0": {
+            "detail": "Bring together the brief, deadlines, and agreed requirements.",
+            "label": "Understand the commitment"
           },
-          {
-            "label": "Compare the options",
-            "detail": "Explore workload, skills gaps, and schedule trade-offs."
+          "1": {
+            "detail": "Explore workload, skills gaps, and schedule trade-offs.",
+            "label": "Compare the options"
           },
-          {
-            "label": "Turn a decision into progress",
-            "detail": "Approve a plan, coordinate the work, and review what actually happened."
+          "2": {
+            "detail": "Approve a plan, coordinate the work, and review what actually happened.",
+            "label": "Turn a decision into progress"
           }
-        ],
+        },
         "status": "Illustrative future workflow",
         "title": "“Can we take on\nthis project?”"
       },
@@ -13400,137 +13415,176 @@
         "chapter": "03 / CONNECT THE INTELLIGENCE",
         "kicker": "Start where the stakes are real",
         "note": "In an OECD survey, 31% of SMEs used generative AI; among users, 65% reported improved employee performance. That is a reason to test practical support for smaller teams—not evidence that every workflow or product will deliver the same result. Proposed workforce decision-support prototype.",
-        "panels": [
-          {
-            "label": "01 / Capacity",
-            "detail": "Where is work at risk, and how could we rebalance it?"
+        "panels": {
+          "0": {
+            "detail": "Where is work at risk, and how could we rebalance it?",
+            "label": "01 / Capacity"
           },
-          {
-            "label": "02 / Skills",
-            "detail": "What should the team learn to deliver the next opportunity?"
+          "1": {
+            "detail": "What should the team learn to deliver the next opportunity?",
+            "label": "02 / Skills"
           },
-          {
-            "label": "03 / Onboarding",
-            "detail": "How can a new teammate become confident and effective sooner?"
+          "2": {
+            "detail": "How can a new teammate become confident and effective sooner?",
+            "label": "03 / Onboarding"
           }
-        ],
+        },
         "status": "Proposed workforce decision-support prototype",
         "title": "Start with everyday\nteam decisions."
       }
     },
     "sourceLabel": "Sources",
-    "stages": ["Plan", "Connect", "Deliver", "Reflect"],
+    "stages": {
+      "0": "Plan",
+      "1": "Connect",
+      "2": "Deliver",
+      "3": "Reflect"
+    },
     "title": "Tuturuuu — the age of intelligent partners",
     "visuals": {
-      "audience": ["Individuals", "Teams", "MSMEs", "Researchers"],
+      "audience": {
+        "0": "Individuals",
+        "1": "Teams",
+        "2": "MSMEs",
+        "3": "Researchers"
+      },
       "boundary": "Human review before consequential action",
-      "calendar": [
-        "Mon",
-        "Tue",
-        "Wed",
-        "Thu",
-        "Fri",
-        "Focus",
-        "Meet",
-        "Review",
-        "Work within your constraints"
-      ],
-      "capacity": [
-        "Design",
-        "Engineering",
-        "Research",
-        "Operations",
-        "Planned hours",
-        "Capacity: 32 h",
-        "Illustrative weekly workload · not customer results"
-      ],
-      "chat": ["Your team", "Shared conversation", "Mira", "Review next steps"],
-      "collaboration": [
-        "Explore together",
-        "Refine the document",
-        "Save shared knowledge"
-      ],
-      "context": [
-        "Conversation",
-        "Commitments",
-        "Knowledge",
-        "Relationships",
-        "Time",
-        "Operations"
-      ],
+      "calendar": {
+        "0": "Mon",
+        "1": "Tue",
+        "2": "Wed",
+        "3": "Thu",
+        "4": "Fri",
+        "5": "Focus",
+        "6": "Meet",
+        "7": "Review",
+        "8": "Work within your constraints"
+      },
+      "capacity": {
+        "0": "Design",
+        "1": "Engineering",
+        "2": "Research",
+        "3": "Operations",
+        "4": "Planned hours",
+        "5": "Capacity: 32 h",
+        "6": "Illustrative weekly workload · not customer results"
+      },
+      "chat": {
+        "0": "Your team",
+        "1": "Shared conversation",
+        "2": "Mira",
+        "3": "Review next steps"
+      },
+      "collaboration": {
+        "0": "Explore together",
+        "1": "Refine the document",
+        "2": "Save shared knowledge"
+      },
+      "context": {
+        "0": "Conversation",
+        "1": "Commitments",
+        "2": "Knowledge",
+        "3": "Relationships",
+        "4": "Time",
+        "5": "Operations"
+      },
       "contextTitle": "Permission-aware context",
-      "evidence": [
-        "Baseline",
-        "Pilot",
-        "Review",
-        "Time to finish",
-        "Correction rate",
-        "User confidence",
-        "Agree success criteria before testing"
-      ],
-      "flow": ["Capture", "Understand", "Review", "Plan", "Act", "Learn"],
-      "independence": [
-        "Open source",
-        "Replaceable services",
-        "Independent operation"
-      ],
-      "intelligence": [
-        "Assistant",
-        "Orchestration",
-        "Learning",
-        "Experimentation",
-        "Knowledge"
-      ],
-      "layers": [
-        "Focused products",
-        "Shared context & permissions",
-        "APIs, data & infrastructure"
-      ],
-      "loop": ["Useful products", "Shared foundations", "Reinvestment"],
-      "mail": [
-        "Inbox",
-        "Extract actions",
-        "Your approval",
-        "Tasks",
-        "Calendar",
-        "Follow-up"
-      ],
-      "onboarding": ["Find knowledge", "Ask Mira", "Practice", "Give feedback"],
-      "pilot": [
-        "Frame & govern",
-        "Configure & test",
-        "Evaluate & decide",
-        "Illustrative 12-week scope"
-      ],
-      "readiness": ["Implemented", "In development", "Research direction"],
-      "research": [
-        "Define a scenario",
-        "Coordinate agents",
-        "Inspect the trace",
-        "Evaluate outcomes"
-      ],
-      "roadmap": [
-        "Connect useful tools",
-        "Prove reviewed actions",
-        "Scale trusted coordination"
-      ],
+      "evidence": {
+        "0": "Baseline",
+        "1": "Pilot",
+        "2": "Review",
+        "3": "Time to finish",
+        "4": "Correction rate",
+        "5": "User confidence",
+        "6": "Agree success criteria before testing"
+      },
+      "flow": {
+        "0": "Capture",
+        "1": "Understand",
+        "2": "Review",
+        "3": "Plan",
+        "4": "Act",
+        "5": "Learn"
+      },
+      "independence": {
+        "0": "Open source",
+        "1": "Replaceable services",
+        "2": "Independent operation"
+      },
+      "intelligence": {
+        "0": "Assistant",
+        "1": "Orchestration",
+        "2": "Learning",
+        "3": "Experimentation",
+        "4": "Knowledge"
+      },
+      "layers": {
+        "0": "Focused products",
+        "1": "Shared context & permissions",
+        "2": "APIs, data & infrastructure"
+      },
+      "loop": {
+        "0": "Useful products",
+        "1": "Shared foundations",
+        "2": "Reinvestment"
+      },
+      "mail": {
+        "0": "Inbox",
+        "1": "Extract actions",
+        "2": "Your approval",
+        "3": "Tasks",
+        "4": "Calendar",
+        "5": "Follow-up"
+      },
+      "onboarding": {
+        "0": "Find knowledge",
+        "1": "Ask Mira",
+        "2": "Practice",
+        "3": "Give feedback"
+      },
+      "pilot": {
+        "0": "Frame & govern",
+        "1": "Configure & test",
+        "2": "Evaluate & decide",
+        "3": "Illustrative 12-week scope"
+      },
+      "readiness": {
+        "0": "Implemented",
+        "1": "In development",
+        "2": "Research direction"
+      },
+      "research": {
+        "0": "Define a scenario",
+        "1": "Coordinate agents",
+        "2": "Inspect the trace",
+        "3": "Evaluate outcomes"
+      },
+      "roadmap": {
+        "0": "Connect useful tools",
+        "1": "Prove reviewed actions",
+        "2": "Scale trusted coordination"
+      },
       "sample": "Illustrative workflow · roadmap integrations are not an availability promise",
-      "skills": [
-        "Analysis",
-        "Writing",
-        "AI tools",
-        "Planning",
-        "Explore",
-        "Practice",
-        "Coach",
-        "Illustrative learning needs · self-assessed, not ranking"
-      ],
-      "vision": [
-        "Your intention",
-        "Reviewed action",
-        "Learn with you, under your control"
-      ],
-      "workforce": ["Capacity", "Skills", "Onboarding"]
+      "skills": {
+        "0": "Analysis",
+        "1": "Writing",
+        "2": "AI tools",
+        "3": "Planning",
+        "4": "Explore",
+        "5": "Practice",
+        "6": "Coach",
+        "7": "Illustrative learning needs · self-assessed, not ranking"
+      },
+      "vision": {
+        "0": "Your intention",
+        "1": "Reviewed action",
+        "2": "Learn with you, under your control"
+      },
+      "workforce": {
+        "0": "Capacity",
+        "1": "Skills",
+        "2": "Onboarding"
+      }
     }
   },
   "platform-role-data-table": {
@@ -13594,32 +13648,32 @@
       "flowBody": "See how the products could work together, with people reviewing the important decisions.",
       "flowNote": "Illustrative connected workflow · integrations mature at different speeds",
       "flowTitle": "Follow a request from conversation to action.",
-      "steps": [
-        {
-          "title": "A request arrives",
-          "body": "Mail captures the promise and the conversation behind it. Mira can help turn the message into a proposed next step."
+      "steps": {
+        "0": {
+          "body": "Mail captures the promise and the conversation behind it. Mira can help turn the message into a proposed next step.",
+          "title": "A request arrives"
         },
-        {
-          "title": "The team aligns",
-          "body": "Meet brings people and Mira into the same discussion, with visible AI participation and room-wide context."
+        "1": {
+          "body": "Meet brings people and Mira into the same discussion, with visible AI participation and room-wide context.",
+          "title": "The team aligns"
         },
-        {
-          "title": "A plan takes shape",
-          "body": "Tasks connects priorities, owners, and dependencies. Suggestions become a plan people can inspect and adjust."
+        "2": {
+          "body": "Tasks connects priorities, owners, and dependencies. Suggestions become a plan people can inspect and adjust.",
+          "title": "A plan takes shape"
         },
-        {
-          "title": "Time becomes real",
-          "body": "Calendar works with availability, habits, and deadlines to make a realistic schedule."
+        "3": {
+          "body": "Calendar works with availability, habits, and deadlines to make a realistic schedule.",
+          "title": "Time becomes real"
         },
-        {
-          "title": "Knowledge stays",
-          "body": "Collaborative documents and shared files preserve the reasoning, decisions, and work for the next person."
+        "4": {
+          "body": "Collaborative documents and shared files preserve the reasoning, decisions, and work for the next person.",
+          "title": "Knowledge stays"
         },
-        {
-          "title": "Understanding grows",
-          "body": "Mira connects permissioned context across the work. Reviewed outcomes can guide the next useful action."
+        "5": {
+          "body": "Mira connects permissioned context across the work. Reviewed outcomes can guide the next useful action.",
+          "title": "Understanding grows"
         }
-      ],
+      },
       "title": "A connected product family."
     },
     "categories": {
@@ -13736,71 +13790,71 @@
     "innovation": {
       "artNote": "AI concept illustration · not an existing facility or product screenshot",
       "body": "We want to build the next Google of Vietnam in our reach and capacity to invent: useful products, strong engineering, and research that opens new possibilities.",
-      "chapters": [
-        {
-          "tab": "Useful products",
-          "title": "Make everyday work easier.",
-          "body": "A clear task list. A meeting with useful follow-ups. A calendar with room to focus. We start with practical tools that help people get through the day.",
+      "chapters": {
+        "0": {
           "alt": "Imagined Vietnamese innovation studio with people building connected glass models at dawn.",
+          "body": "A clear task list. A meeting with useful follow-ups. A calendar with room to focus. We start with practical tools that help people get through the day.",
           "proof": "Product foundations span work, communication, learning, and business operations.",
-          "steps": [
-            {
-              "title": "Solve a real friction",
-              "body": "Meet people in their actual workflow, with a useful tool and a clear reason to return."
+          "steps": {
+            "0": {
+              "body": "Meet people in their actual workflow, with a useful tool and a clear reason to return.",
+              "title": "Solve a real friction"
             },
-            {
-              "title": "Connect the next step",
-              "body": "Turn isolated moments into continuity: a conversation, a commitment, a plan."
+            "1": {
+              "body": "Turn isolated moments into continuity: a conversation, a commitment, a plan.",
+              "title": "Connect the next step"
             },
-            {
-              "title": "Earn everyday trust",
-              "body": "Keep improving reliability, accessibility, and the details people feel every day."
+            "2": {
+              "body": "Keep improving reliability, accessibility, and the details people feel every day.",
+              "title": "Earn everyday trust"
             }
-          ]
+          },
+          "tab": "Useful products",
+          "title": "Make everyday work easier."
         },
-        {
-          "tab": "Shared foundations",
-          "title": "Build on shared foundations.",
-          "body": "Files, people, permissions, and knowledge connect across the workplace. A common architecture lets each product use that context without asking people to enter everything again.",
+        "1": {
           "alt": "A conceptual glass knowledge garden with connected learning, collaboration, and planning islands.",
+          "body": "Files, people, permissions, and knowledge connect across the workplace. A common architecture lets each product use that context without asking people to enter everything again.",
           "proof": "Our advantage must be maintained: architecture, infrastructure, engineering, and coherent experiences.",
-          "steps": [
-            {
-              "title": "Reuse the foundation",
-              "body": "Identity, workspace boundaries, APIs, storage, and delivery support many focused products."
+          "steps": {
+            "0": {
+              "body": "Identity, workspace boundaries, APIs, storage, and delivery support many focused products.",
+              "title": "Reuse the foundation"
             },
-            {
-              "title": "Preserve the context",
-              "body": "Connect information with permission and purpose, so the next tool can understand the work."
+            "1": {
+              "body": "Connect information with permission and purpose, so the next tool can understand the work.",
+              "title": "Preserve the context"
             },
-            {
-              "title": "Compound the investment",
-              "body": "Improve one shared capability and bring that improvement to more of the ecosystem."
+            "2": {
+              "body": "Improve one shared capability and bring that improvement to more of the ecosystem.",
+              "title": "Compound the investment"
             }
-          ]
+          },
+          "tab": "Shared foundations",
+          "title": "Build on shared foundations."
         },
-        {
-          "tab": "New intelligence",
-          "title": "Give intelligence a world to understand.",
-          "body": "A JARVIS-like assistant needs context, memory, tools, and ways to coordinate with people and other agents. That is the research path we are exploring with Mira.",
+        "2": {
           "alt": "A miniature simulation world with colored agent paths converging in a shared courtyard.",
+          "body": "A JARVIS-like assistant needs context, memory, tools, and ways to coordinate with people and other agents. That is the research path we are exploring with Mira.",
           "proof": "Research direction: multi-agent coordination, simulation, learning, and reviewed action.",
-          "steps": [
-            {
-              "title": "Explore in simulation",
-              "body": "Compare agent behaviors and workflow alternatives inside bounded environments."
+          "steps": {
+            "0": {
+              "body": "Compare agent behaviors and workflow alternatives inside bounded environments.",
+              "title": "Explore in simulation"
             },
-            {
-              "title": "Learn from evidence",
-              "body": "Inspect outcomes, failures, user feedback, and the assumptions behind decisions."
+            "1": {
+              "body": "Inspect outcomes, failures, user feedback, and the assumptions behind decisions.",
+              "title": "Learn from evidence"
             },
-            {
-              "title": "Keep people in command",
-              "body": "Move toward greater capability with explicit permissions and human review where it matters."
+            "2": {
+              "body": "Move toward greater capability with explicit permissions and human review where it matters.",
+              "title": "Keep people in command"
             }
-          ]
+          },
+          "tab": "New intelligence",
+          "title": "Give intelligence a world to understand."
         }
-      ],
+      },
       "cycle": "How each investment creates the next opportunity",
       "explore": "Explore our approach",
       "eyebrow": "A VIETNAMESE COMPANY. A GLOBAL-SCALE AMBITION.",
@@ -13814,43 +13868,43 @@
       "body": "We begin with the people and teams around us. Open technology gives what we learn a chance to help people far beyond Vietnam.",
       "eyebrow": "VIETNAM → WORLD → STARWARD",
       "imageAlt": "An imagined Vietnamese coastal landscape meeting the illuminated horizon of Earth.",
-      "stages": [
-        {
-          "title": "Vietnam",
+      "stages": {
+        "0": {
+          "body": "Build close to real people, real teams, and the everyday work that deserves better tools.",
           "tag": "OUR ROOTS",
-          "body": "Build close to real people, real teams, and the everyday work that deserves better tools."
+          "title": "Vietnam"
         },
-        {
-          "title": "The world",
+        "1": {
+          "body": "Open source, shared foundations, and local partnerships make room for different languages and ways of working.",
           "tag": "OUR REACH, BY DESIGN",
-          "body": "Open source, shared foundations, and local partnerships make room for different languages and ways of working."
+          "title": "The world"
         },
-        {
-          "title": "Starward",
+        "2": {
+          "body": "Explore intelligence that expands what people can imagine and accomplish. An ambition to earn, not a destination already reached.",
           "tag": "OUR DIRECTION",
-          "body": "Explore intelligence that expands what people can imagine and accomplish. An ambition to earn, not a destination already reached."
+          "title": "Starward"
         }
-      ],
+      },
       "title": "From local needs\nto global possibilities."
     },
-    "layers": [
-      {
-        "title": "Human interfaces",
-        "detail": "Web applications, Flutter clients, accessible interaction, English and Vietnamese experiences."
+    "layers": {
+      "0": {
+        "detail": "Web applications, Flutter clients, accessible interaction, English and Vietnamese experiences.",
+        "title": "Human interfaces"
       },
-      {
-        "title": "Intelligent workflows",
-        "detail": "Model integration, streaming tools, smart scheduling, voice assistants, explicit human review."
+      "1": {
+        "detail": "Model integration, streaming tools, smart scheduling, voice assistants, explicit human review.",
+        "title": "Intelligent workflows"
       },
-      {
-        "title": "Collaborative systems",
-        "detail": "Realtime rooms, shared state, meeting context, collaborative editing, workspace permissions."
+      "2": {
+        "detail": "Realtime rooms, shared state, meeting context, collaborative editing, workspace permissions.",
+        "title": "Collaborative systems"
       },
-      {
-        "title": "Data & delivery",
-        "detail": "PostgreSQL, row-level access controls, APIs and SDKs, edge workers, tested release pipelines."
+      "3": {
+        "detail": "PostgreSQL, row-level access controls, APIs and SDKs, edge workers, tested release pipelines.",
+        "title": "Data & delivery"
       }
-    ],
+    },
     "meetBody": "Bring Mira into room chat or opt-in Live voice. Ask for help during the meeting, use private assistance, and review follow-ups before acting.",
     "meetTitle": "Meet your AI colleague.",
     "motion": {
@@ -13867,80 +13921,80 @@
     },
     "openProduct": "Explore product",
     "pitch": "View the vision",
-    "process": [
-      "Frame the question",
-      "Agree data & governance",
-      "Build a bounded prototype",
-      "Evaluate with real users",
-      "Document and decide"
-    ],
+    "process": {
+      "0": "Frame the question",
+      "1": "Agree data & governance",
+      "2": "Build a bounded prototype",
+      "3": "Evaluate with real users",
+      "4": "Document and decide"
+    },
     "processTitle": "A practical route from question to evidence.",
     "readDocs": "Read the technical guide",
     "research": "Turn a research question\ninto a working prototype.",
-    "researchAreas": [
-      {
-        "title": "Workforce decision support",
-        "detail": "Study capacity planning, skills development, and onboarding with transparent assumptions and human review."
+    "researchAreas": {
+      "0": {
+        "detail": "Study capacity planning, skills development, and onboarding with transparent assumptions and human review.",
+        "title": "Workforce decision support"
       },
-      {
-        "title": "Human–AI collaboration",
-        "detail": "Explore AI colleagues in meetings, consent-aware voice interaction, and transitions from conversation to reviewed action."
+      "1": {
+        "detail": "Explore AI colleagues in meetings, consent-aware voice interaction, and transitions from conversation to reviewed action.",
+        "title": "Human–AI collaboration"
       },
-      {
-        "title": "Learning & knowledge",
-        "detail": "Investigate knowledge retrieval, learning workflows, and how teams build confidence with AI."
+      "2": {
+        "detail": "Investigate knowledge retrieval, learning workflows, and how teams build confidence with AI.",
+        "title": "Learning & knowledge"
       },
-      {
-        "title": "Multi-agent coordination",
-        "detail": "We research multi-agent behavior and workflow coordination through simulation scenarios. Hive and Mind connect agents, interaction workflows, shared environments, and inspectable histories—so ideas can be tested before wider use."
+      "3": {
+        "detail": "We research multi-agent behavior and workflow coordination through simulation scenarios. Hive and Mind connect agents, interaction workflows, shared environments, and inspectable histories—so ideas can be tested before wider use.",
+        "title": "Multi-agent coordination"
       }
-    ],
+    },
     "researchBody": "We welcome universities, research teams, enterprises, and public-interest partners exploring applied AI, workforce development, and digital productivity. Tuturuuu can contribute product engineering and a configurable software foundation to joint research, grant-funded pilots, and consortium proposals.",
     "researchNote": "These are areas for future collaboration. Any project, funding, or evaluation is agreed separately.",
     "source": "Explore the source",
     "suite": {
       "body": "We are building a complete Tuturuuu alternative to the categories served by Google Drive, Meet, Mail, Chat, and Docs—alongside CRM, Contacts, Finance, and operational systems. One product ecosystem, built, operated, and evolved by Tuturuuu. Our platform is open source under Apache 2.0. We actively maintain it while working toward greater portability, replaceable services, and independently operable deployments.",
-      "domains": [
-        "Files & knowledge",
-        "Meetings & conversations",
-        "Mail & commitments",
-        "Tasks & time",
-        "CRM & contacts",
-        "Finance & operations"
-      ],
+      "domains": {
+        "0": "Files & knowledge",
+        "1": "Meetings & conversations",
+        "2": "Mail & commitments",
+        "3": "Tasks & time",
+        "4": "CRM & contacts",
+        "5": "Finance & operations"
+      },
       "eyebrow": "ONE ECOSYSTEM. OUR LONG-TERM COMMITMENT.",
-      "items": [
-        {
-          "id": "chat",
-          "title": "Humans and AI. In the same conversation.",
+      "items": {
+        "0": {
           "body": "Smart Chat brings people, channels, shared context, and AI conversations into one workspace. We are building toward colleagues who can turn conversation into coordinated work.",
-          "status": "Chat foundations implemented · deeper coordination in development"
+          "id": "chat",
+          "status": "Chat foundations implemented · deeper coordination in development",
+          "title": "Humans and AI. In the same conversation."
         },
-        {
-          "id": "mail",
-          "title": "Inbox zero. Without losing the thread.",
+        "1": {
           "body": "Smart Mail starts with intelligent labels, assisted drafting, and follow-ups. Our next horizon is Mira extracting action items, connecting commitments to tasks, and helping the inbox become a place of resolution.",
-          "status": "Mail AI foundations implemented · Mira action extraction is a development direction"
+          "id": "mail",
+          "status": "Mail AI foundations implemented · Mira action extraction is a development direction",
+          "title": "Inbox zero. Without losing the thread."
         },
-        {
-          "id": "calendar",
-          "title": "A calendar that makes room for your priorities.",
+        "2": {
           "body": "Tasks, habits, working hours, and deadlines compete for the same finite day. Smart Calendar helps automatically schedule the work around your constraints—and gives you a plan you can adjust.",
-          "status": "Smart scheduling capabilities implemented · configuration and availability apply"
+          "id": "calendar",
+          "status": "Smart scheduling capabilities implemented · configuration and availability apply",
+          "title": "A calendar that makes room for your priorities."
         },
-        {
-          "id": "collaboration",
-          "title": "Think on a canvas. Build in a document.",
+        "3": {
           "body": "Realtime whiteboards and collaborative documents give teams shared surfaces to think, write, and refine together. Google Docs-like collaboration belongs inside the same ecosystem as the work it informs.",
-          "status": "Existing collaboration foundations · cross-product depth continues to grow"
+          "id": "collaboration",
+          "status": "Existing collaboration foundations · cross-product depth continues to grow",
+          "title": "Think on a canvas. Build in a document."
         },
-        {
-          "id": "research",
-          "title": "Before agents run work, let them run worlds.",
+        "4": {
           "body": "We research multi-agent behavior and workflow coordination through simulation scenarios. Hive and Mind connect agents, interaction workflows, shared environments, and inspectable histories—so ideas can be tested before wider use.",
-          "status": "Active research and experimentation · simulation is not real-world validation"
+          "id": "research",
+          "status": "Active research and experimentation · simulation is not real-world validation",
+          "title": "Before agents run work, let them run worlds."
         }
-      ],
+      },
       "note": "Our long-term direction spans the whole suite. Feature coverage, maturity, and access differ by application.",
       "strategy": "Why an ecosystem? When AI makes the first version of an app easier to build, we believe lasting value shifts toward the system around it. Shared architecture, permissions, infrastructure, and ongoing engineering let focused products improve together. We expand where reuse and customer value justify the responsibility of maintaining more software.",
       "title": "The workplace suite.\nThe business backbone.\nThe intelligence between."
@@ -13948,12 +14002,12 @@
     "taskBody": "Organize tasks across boards and projects. Use smart suggestions and priority-aware scheduling to build a plan you can review and adjust.",
     "taskTitle": "A smarter way to move work forward.",
     "technology": "Technology",
-    "ticker": [
-      "Product engineering",
-      "Human × AI",
-      "Realtime systems",
-      "Applied research"
-    ],
+    "ticker": {
+      "0": "Product engineering",
+      "1": "Human × AI",
+      "2": "Realtime systems",
+      "3": "Applied research"
+    },
     "title": "Technology with a world around it.",
     "work": "Selected product work",
     "workIntro": "See how the products work together."
@@ -14145,30 +14199,30 @@
       "useCases": {
         "eyebrow": "Where it fits",
         "inbox": {
-          "items": [
-            "Long threads reduced to what was decided",
-            "Replies drafted in your own context",
-            "Commitments in a thread turned into tasks",
-            "Meetings proposed at times you can make"
-          ],
+          "items": {
+            "0": "Long threads reduced to what was decided",
+            "1": "Replies drafted in your own context",
+            "2": "Commitments in a thread turned into tasks",
+            "3": "Meetings proposed at times you can make"
+          },
           "title": "Getting through the inbox"
         },
         "knowledge": {
-          "items": [
-            "Summaries of documents you have not read yet",
-            "Key details pulled out of a long file",
-            "Answers grounded in your workspace, with the source",
-            "Notes turned into an outline you can edit"
-          ],
+          "items": {
+            "0": "Summaries of documents you have not read yet",
+            "1": "Key details pulled out of a long file",
+            "2": "Answers grounded in your workspace, with the source",
+            "3": "Notes turned into an outline you can edit"
+          },
           "title": "Working with your own material"
         },
         "planning": {
-          "items": [
-            "Focus blocks scheduled around the meetings you cannot move",
-            "A plan that shifts when the day does",
-            "Priorities read from your actual tasks",
-            "A realistic answer to what fits before Friday"
-          ],
+          "items": {
+            "0": "Focus blocks scheduled around the meetings you cannot move",
+            "1": "A plan that shifts when the day does",
+            "2": "Priorities read from your actual tasks",
+            "3": "A realistic answer to what fits before Friday"
+          },
           "title": "Planning the day"
         },
         "subtitle": "Ordinary work, handled with the context your workspace already holds.",
@@ -14223,32 +14277,32 @@
       "title": "A calendar that defends your day",
       "useCases": {
         "clients": {
-          "items": [
-            "Bookable slots you control",
-            "Consultations confirmed without an exchange of emails",
-            "Follow-ups scheduled before the call ends",
-            "Reminders sent so fewer meetings are missed"
-          ],
+          "items": {
+            "0": "Bookable slots you control",
+            "1": "Consultations confirmed without an exchange of emails",
+            "2": "Follow-ups scheduled before the call ends",
+            "3": "Reminders sent so fewer meetings are missed"
+          },
           "title": "Working with clients"
         },
         "events": {
-          "items": [
-            "Sessions and speakers on one schedule",
-            "Venue and equipment booked against the same dates",
-            "Attendee lists attached to the event",
-            "A calendar you can share read-only"
-          ],
+          "items": {
+            "0": "Sessions and speakers on one schedule",
+            "1": "Venue and equipment booked against the same dates",
+            "2": "Attendee lists attached to the event",
+            "3": "A calendar you can share read-only"
+          },
           "title": "Running an event"
         },
         "eyebrow": "In practice",
         "subtitle": "Internal coordination, client bookings and events all run on the same calendar.",
         "team": {
-          "items": [
-            "Meetings placed where the team is actually free",
-            "Shared availability without a spreadsheet",
-            "Project milestones on the same timeline",
-            "Rooms and shared resources booked once"
-          ],
+          "items": {
+            "0": "Meetings placed where the team is actually free",
+            "1": "Shared availability without a spreadsheet",
+            "2": "Project milestones on the same timeline",
+            "3": "Rooms and shared resources booked once"
+          },
           "title": "Working with a team"
         },
         "title": "Whoever you are scheduling with"
@@ -14303,31 +14357,31 @@
       "useCases": {
         "eyebrow": "In practice",
         "personal": {
-          "items": [
-            "Notes to yourself in the same app",
-            "Direct messages without a separate tool",
-            "Personal and work conversations kept apart",
-            "Search that covers both"
-          ],
+          "items": {
+            "0": "Notes to yourself in the same app",
+            "1": "Direct messages without a separate tool",
+            "2": "Personal and work conversations kept apart",
+            "3": "Search that covers both"
+          },
           "title": "Your own thread"
         },
         "projects": {
-          "items": [
-            "A channel per project, closed when it ships",
-            "Decisions written where the work lives",
-            "Files kept with the discussion",
-            "Context available to whoever picks it up next"
-          ],
+          "items": {
+            "0": "A channel per project, closed when it ships",
+            "1": "Decisions written where the work lives",
+            "2": "Files kept with the discussion",
+            "3": "Context available to whoever picks it up next"
+          },
           "title": "Project threads"
         },
         "subtitle": "Everyday team talk, project threads, and the notes you send yourself.",
         "team": {
-          "items": [
-            "One place instead of three group chats",
-            "A reaction instead of another reply",
-            "Pinned conversations for the ones that matter",
-            "New joiners can read what happened"
-          ],
+          "items": {
+            "0": "One place instead of three group chats",
+            "1": "A reaction instead of another reply",
+            "2": "Pinned conversations for the ones that matter",
+            "3": "New joiners can read what happened"
+          },
           "title": "Everyday team talk"
         },
         "title": "Three conversations worth keeping"
@@ -14382,30 +14436,30 @@
       "useCases": {
         "eyebrow": "Who it is for",
         "growth": {
-          "items": [
-            "See which customers actually drive revenue",
-            "Spot the segments worth more of your time",
-            "Track revenue per account over time",
-            "Plan capacity against real demand"
-          ],
+          "items": {
+            "0": "See which customers actually drive revenue",
+            "1": "Spot the segments worth more of your time",
+            "2": "Track revenue per account over time",
+            "3": "Plan capacity against real demand"
+          },
           "title": "Growth and planning"
         },
         "sales": {
-          "items": [
-            "Track leads from first contact to signed",
-            "See the whole pipeline without asking for an update",
-            "Get reminded before a deal goes cold",
-            "Forecast from stages rather than optimism"
-          ],
+          "items": {
+            "0": "Track leads from first contact to signed",
+            "1": "See the whole pipeline without asking for an update",
+            "2": "Get reminded before a deal goes cold",
+            "3": "Forecast from stages rather than optimism"
+          },
           "title": "Sales"
         },
         "service": {
-          "items": [
-            "Open a case against the full customer history",
-            "Track what was promised and by when",
-            "Keep feedback where the next conversation will find it",
-            "See which accounts need attention this week"
-          ],
+          "items": {
+            "0": "Open a case against the full customer history",
+            "1": "Track what was promised and by when",
+            "2": "Keep feedback where the next conversation will find it",
+            "3": "See which accounts need attention this week"
+          },
           "title": "Customer service"
         },
         "subtitle": "Selling, supporting and planning all draw on the same customer history.",
@@ -14460,31 +14514,31 @@
       "title": "Write it down where the work already lives",
       "useCases": {
         "business": {
-          "items": [
-            "Contracts and their revision history",
-            "Proposals drafted from a previous one",
-            "Policies with controlled access",
-            "Reports written next to the numbers"
-          ],
+          "items": {
+            "0": "Contracts and their revision history",
+            "1": "Proposals drafted from a previous one",
+            "2": "Policies with controlled access",
+            "3": "Reports written next to the numbers"
+          },
           "title": "Business paperwork"
         },
         "eyebrow": "Where it fits",
         "knowledge": {
-          "items": [
-            "Onboarding guides new hires read on day one",
-            "Process documentation kept in one place",
-            "Internal FAQs instead of answering it again",
-            "Research notes with their sources attached"
-          ],
+          "items": {
+            "0": "Onboarding guides new hires read on day one",
+            "1": "Process documentation kept in one place",
+            "2": "Internal FAQs instead of answering it again",
+            "3": "Research notes with their sources attached"
+          },
           "title": "Team knowledge"
         },
         "specs": {
-          "items": [
-            "Specs that link to the tasks they created",
-            "Meeting notes with decisions and owners",
-            "Runbooks the on-call person can follow",
-            "Retrospectives that stay findable"
-          ],
+          "items": {
+            "0": "Specs that link to the tasks they created",
+            "1": "Meeting notes with decisions and owners",
+            "2": "Runbooks the on-call person can follow",
+            "3": "Retrospectives that stay findable"
+          },
           "title": "Project and product docs"
         },
         "subtitle": "Three shapes of writing that stop drifting once they live in the workspace.",
@@ -14539,32 +14593,32 @@
       "title": "Your files, where the rest of the work is",
       "useCases": {
         "delivery": {
-          "items": [
-            "A link instead of an attachment that bounces",
-            "Access you can revoke after the handover",
-            "Large files without the compression ritual",
-            "A clear record of what was sent and when"
-          ],
+          "items": {
+            "0": "A link instead of an attachment that bounces",
+            "1": "Access you can revoke after the handover",
+            "2": "Large files without the compression ritual",
+            "3": "A clear record of what was sent and when"
+          },
           "title": "Sending work to clients"
         },
         "eyebrow": "Where it fits",
         "records": {
-          "items": [
-            "Version history for anything that gets revised",
-            "Originals preserved alongside the current file",
-            "Restore a file someone replaced by mistake",
-            "A tidy archive instead of a folder on one desktop"
-          ],
+          "items": {
+            "0": "Version history for anything that gets revised",
+            "1": "Originals preserved alongside the current file",
+            "2": "Restore a file someone replaced by mistake",
+            "3": "A tidy archive instead of a folder on one desktop"
+          },
           "title": "Records you have to keep"
         },
         "subtitle": "Three jobs storage has to do before anyone trusts it.",
         "team": {
-          "items": [
-            "One place for the assets everyone reuses",
-            "Folders scoped to a project or a client",
-            "Access that follows the workspace, not one person's inbox",
-            "New members see the history, not an empty folder"
-          ],
+          "items": {
+            "0": "One place for the assets everyone reuses",
+            "1": "Folders scoped to a project or a client",
+            "2": "Access that follows the workspace, not one person's inbox",
+            "3": "New members see the history, not an empty folder"
+          },
           "title": "Shared team files"
         },
         "title": "What teams keep in Drive"
@@ -14618,31 +14672,31 @@
       "title": "Know where the money went, without the spreadsheet",
       "useCases": {
         "business": {
-          "items": [
-            "Keep team spend in categories you chose, not the bank's",
-            "Invoice, track and follow up without a second tool",
-            "Close the month from records that were already tidy",
-            "See margin per project rather than per bank account"
-          ],
+          "items": {
+            "0": "Keep team spend in categories you chose, not the bank's",
+            "1": "Invoice, track and follow up without a second tool",
+            "2": "Close the month from records that were already tidy",
+            "3": "See margin per project rather than per bank account"
+          },
           "title": "Running a business"
         },
         "eyebrow": "Who it is for",
         "personal": {
-          "items": [
-            "See where the month actually went, by category",
-            "Give every savings goal a number and a date",
-            "Track accounts and investments in one balance",
-            "Set a budget you will still be following in March"
-          ],
+          "items": {
+            "0": "See where the month actually went, by category",
+            "1": "Give every savings goal a number and a date",
+            "2": "Track accounts and investments in one balance",
+            "3": "Set a budget you will still be following in March"
+          },
           "title": "Personal money"
         },
         "planning": {
-          "items": [
-            "Project the next few months from real history",
-            "Test a decision before it becomes an expense",
-            "Spot the months where cash gets tight early",
-            "Compare a plan against what actually happened"
-          ],
+          "items": {
+            "0": "Project the next few months from real history",
+            "1": "Test a decision before it becomes an expense",
+            "2": "Spot the months where cash gets tight early",
+            "3": "Compare a plan against what actually happened"
+          },
           "title": "Planning ahead"
         },
         "subtitle": "A freelancer, a small team and a household all want to know the same thing: what is left, and what is coming.",
@@ -14698,30 +14752,30 @@
       "useCases": {
         "eyebrow": "In practice",
         "feedback": {
-          "items": [
-            "Surveys after a purchase or an event",
-            "Ratings you can read as a chart",
-            "Open answers kept next to the numbers",
-            "Drop-off shown at the question people stopped on"
-          ],
+          "items": {
+            "0": "Surveys after a purchase or an event",
+            "1": "Ratings you can read as a chart",
+            "2": "Open answers kept next to the numbers",
+            "3": "Drop-off shown at the question people stopped on"
+          },
           "title": "Asking customers"
         },
         "intake": {
-          "items": [
-            "Registration for an event or a class",
-            "Client intake before the first call",
-            "Applications collected in one queue",
-            "A public link that needs no account to answer"
-          ],
+          "items": {
+            "0": "Registration for an event or a class",
+            "1": "Client intake before the first call",
+            "2": "Applications collected in one queue",
+            "3": "A public link that needs no account to answer"
+          },
           "title": "Requests and sign-ups"
         },
         "internal": {
-          "items": [
-            "Requests routed with conditional questions",
-            "Checklists filled the same way every time",
-            "Answers reviewed without a shared inbox",
-            "Results summarised for the next meeting"
-          ],
+          "items": {
+            "0": "Requests routed with conditional questions",
+            "1": "Checklists filled the same way every time",
+            "2": "Answers reviewed without a shared inbox",
+            "3": "Results summarised for the next meeting"
+          },
           "title": "Running the team"
         },
         "subtitle": "Collecting requests, asking customers, and running something internal.",
@@ -14776,32 +14830,32 @@
       "title": "A lab for swarm agents",
       "useCases": {
         "design": {
-          "items": [
-            "A multi-agent setup tried before it is built",
-            "Pairing strategies compared on the same world",
-            "Prompt changes seen in behavior, not in theory",
-            "Failure modes found in simulation"
-          ],
+          "items": {
+            "0": "A multi-agent setup tried before it is built",
+            "1": "Pairing strategies compared on the same world",
+            "2": "Prompt changes seen in behavior, not in theory",
+            "3": "Failure modes found in simulation"
+          },
           "title": "Designing a system"
         },
         "eyebrow": "In practice",
         "research": {
-          "items": [
-            "One variable changed between two runs",
-            "Memory and backstory isolated as conditions",
-            "Conversation turns kept for review",
-            "Named sessions, so results stay attributable"
-          ],
+          "items": {
+            "0": "One variable changed between two runs",
+            "1": "Memory and backstory isolated as conditions",
+            "2": "Conversation turns kept for review",
+            "3": "Named sessions, so results stay attributable"
+          },
           "title": "Agent research"
         },
         "subtitle": "Agent research, designing a multi-agent system, and showing others how one behaves.",
         "teaching": {
-          "items": [
-            "A shared world several people can watch",
-            "Live state as the tick runs",
-            "A scenario replayed for a discussion",
-            "Agent decisions traceable to their prompt"
-          ],
+          "items": {
+            "0": "A shared world several people can watch",
+            "1": "Live state as the tick runs",
+            "2": "A scenario replayed for a discussion",
+            "3": "Agent decisions traceable to their prompt"
+          },
           "title": "Showing how it behaves"
         },
         "title": "What people run in it"
@@ -14855,31 +14909,31 @@
       "title": "Stock counts that match the shelf",
       "useCases": {
         "distribution": {
-          "items": [
-            "Organise stock by location and bin",
-            "Pick and fulfil against live availability",
-            "Follow transfers between sites",
-            "See what is inbound and when it lands"
-          ],
+          "items": {
+            "0": "Organise stock by location and bin",
+            "1": "Pick and fulfil against live availability",
+            "2": "Follow transfers between sites",
+            "3": "See what is inbound and when it lands"
+          },
           "title": "Distribution"
         },
         "eyebrow": "Who it is for",
         "manufacturing": {
-          "items": [
-            "Track raw materials against planned runs",
-            "Plan production around what you actually hold",
-            "Keep a movement record for quality checks",
-            "Watch unit cost as input prices change"
-          ],
+          "items": {
+            "0": "Track raw materials against planned runs",
+            "1": "Plan production around what you actually hold",
+            "2": "Keep a movement record for quality checks",
+            "3": "Watch unit cost as input prices change"
+          },
           "title": "Production"
         },
         "retail": {
-          "items": [
-            "Keep shelf and system counts in agreement",
-            "Reorder before a best seller runs out",
-            "Track supplier prices and lead times",
-            "Tie stock movements back to sales"
-          ],
+          "items": {
+            "0": "Keep shelf and system counts in agreement",
+            "1": "Reorder before a best seller runs out",
+            "2": "Track supplier prices and lead times",
+            "3": "Tie stock movements back to sales"
+          },
           "title": "Retail"
         },
         "subtitle": "Retail, distribution and production ask the same question in different words: do we have enough, and where is it?",
@@ -14934,31 +14988,31 @@
       "title": "Courses, assignments and where each learner stands",
       "useCases": {
         "centers": {
-          "items": [
-            "Manage a catalogue of courses and cohorts",
-            "Run certification programmes end to end",
-            "Monitor progress across every active group",
-            "See which courses actually finish well"
-          ],
+          "items": {
+            "0": "Manage a catalogue of courses and cohorts",
+            "1": "Run certification programmes end to end",
+            "2": "Monitor progress across every active group",
+            "3": "See which courses actually finish well"
+          },
           "title": "Training providers"
         },
         "corporate": {
-          "items": [
-            "Onboard new hires with a path they can follow",
-            "Run professional development without a scheduler",
-            "Track compliance training to completion",
-            "Assess skills before and after the programme"
-          ],
+          "items": {
+            "0": "Onboard new hires with a path they can follow",
+            "1": "Run professional development without a scheduler",
+            "2": "Track compliance training to completion",
+            "3": "Assess skills before and after the programme"
+          },
           "title": "Teams and training"
         },
         "eyebrow": "Who it is for",
         "institutions": {
-          "items": [
-            "Deliver a course online with the material in order",
-            "See performance per student, not just per class",
-            "Run virtual classrooms alongside the coursework",
-            "Keep readings and resources in one library"
-          ],
+          "items": {
+            "0": "Deliver a course online with the material in order",
+            "1": "See performance per student, not just per class",
+            "2": "Run virtual classrooms alongside the coursework",
+            "3": "Keep readings and resources in one library"
+          },
           "title": "Schools and universities"
         },
         "subtitle": "A classroom, an onboarding programme and a certification course run on the same three things: material, work, and progress.",
@@ -15013,32 +15067,32 @@
       "title": "An inbox that hands work to the rest of your day",
       "useCases": {
         "clients": {
-          "items": [
-            "Threads that carry the project's context",
-            "Scheduling without the four-message dance",
-            "Follow-ups that fire without you remembering",
-            "Attachments that land in Drive, not a downloads folder"
-          ],
+          "items": {
+            "0": "Threads that carry the project's context",
+            "1": "Scheduling without the four-message dance",
+            "2": "Follow-ups that fire without you remembering",
+            "3": "Attachments that land in Drive, not a downloads folder"
+          },
           "title": "Client correspondence"
         },
         "eyebrow": "Where it fits",
         "followups": {
-          "items": [
-            "Reply drafts waiting for your edit",
-            "Scheduled sending across time zones",
-            "Reminders when nobody answered",
-            "Mail turned into a task with a due date"
-          ],
+          "items": {
+            "0": "Reply drafts waiting for your edit",
+            "1": "Scheduled sending across time zones",
+            "2": "Reminders when nobody answered",
+            "3": "Mail turned into a task with a due date"
+          },
           "title": "Keeping your day intact"
         },
         "subtitle": "Three kinds of correspondence that stop leaking once mail sits in the workspace.",
         "team": {
-          "items": [
-            "One address several people can answer",
-            "Handover without a chain of forwards",
-            "Internal updates that become tasks",
-            "A record new teammates can read back"
-          ],
+          "items": {
+            "0": "One address several people can answer",
+            "1": "Handover without a chain of forwards",
+            "2": "Internal updates that become tasks",
+            "3": "A record new teammates can read back"
+          },
           "title": "Team and shared inboxes"
         },
         "title": "The mail that actually costs you time"
@@ -15088,32 +15142,32 @@
       "title": "Find the time before you send the invite",
       "useCases": {
         "clients": {
-          "items": [
-            "Candidate times offered in one message",
-            "No access to your internal calendar required",
-            "Several attendees reconciled at once",
-            "A record of what was agreed and why"
-          ],
+          "items": {
+            "0": "Candidate times offered in one message",
+            "1": "No access to your internal calendar required",
+            "2": "Several attendees reconciled at once",
+            "3": "A record of what was agreed and why"
+          },
           "title": "Clients and externals"
         },
         "eyebrow": "In practice",
         "groups": {
-          "items": [
-            "Study sessions arranged around classes",
-            "Volunteer shifts matched to who is free",
-            "Recurring plans reused week to week",
-            "Anyone can respond without signing up"
-          ],
+          "items": {
+            "0": "Study sessions arranged around classes",
+            "1": "Volunteer shifts matched to who is free",
+            "2": "Recurring plans reused week to week",
+            "3": "Anyone can respond without signing up"
+          },
           "title": "Groups and communities"
         },
         "subtitle": "The more calendars in play, the more the thread costs. This replaces it.",
         "teams": {
-          "items": [
-            "A workable hour found without a chain of replies",
-            "Local time shown to every participant",
-            "Contractors and partners included by link",
-            "The agenda ready before the slot is booked"
-          ],
+          "items": {
+            "0": "A workable hour found without a chain of replies",
+            "1": "Local time shown to every participant",
+            "2": "Contractors and partners included by link",
+            "3": "The agenda ready before the slot is booked"
+          },
           "title": "Teams across time zones"
         },
         "title": "Whenever more than three people are involved"
@@ -15173,30 +15227,30 @@
       "title": "A code for the thing you keep repeating",
       "useCases": {
         "business": {
-          "items": [
-            "A menu opened without an app",
-            "Payment details on a card by the till",
-            "An ordering or review link at the table",
-            "A link printed on a receipt or a bag"
-          ],
+          "items": {
+            "0": "A menu opened without an app",
+            "1": "Payment details on a card by the till",
+            "2": "An ordering or review link at the table",
+            "3": "A link printed on a receipt or a bag"
+          },
           "title": "On the counter"
         },
         "events": {
-          "items": [
-            "A registration link on a poster",
-            "Directions to the room or the venue",
-            "Slides and materials after a talk",
-            "A contact card people can scan"
-          ],
+          "items": {
+            "0": "A registration link on a poster",
+            "1": "Directions to the room or the venue",
+            "2": "Slides and materials after a talk",
+            "3": "A contact card people can scan"
+          },
           "title": "At an event"
         },
         "everyday": {
-          "items": [
-            "A long link passed to a phone without typing",
-            "A form link people can scan and fill in",
-            "A profile or portfolio on a business card",
-            "A code sized for a sticker or a badge"
-          ],
+          "items": {
+            "0": "A long link passed to a phone without typing",
+            "1": "A form link people can scan and fill in",
+            "2": "A profile or portfolio on a business card",
+            "3": "A code sized for a sticker or a badge"
+          },
           "title": "Everyday handoffs"
         },
         "eyebrow": "In practice",
@@ -15252,31 +15306,31 @@
       "title": "Your inventory, open to buyers",
       "useCases": {
         "buyers": {
-          "items": [
-            "Browsing by category on a phone",
-            "A cart that remembers what was added",
-            "A checkout that ends at a real payment page",
-            "An order they can look up later"
-          ],
+          "items": {
+            "0": "Browsing by category on a phone",
+            "1": "A cart that remembers what was added",
+            "2": "A checkout that ends at a real payment page",
+            "3": "An order they can look up later"
+          },
           "title": "The people buying"
         },
         "eyebrow": "In practice",
         "operators": {
-          "items": [
-            "Stock counted once, shown everywhere",
-            "Product visibility set per store",
-            "Orders in the same workspace as inventory",
-            "Catalog and payment settings kept in Inventory"
-          ],
+          "items": {
+            "0": "Stock counted once, shown everywhere",
+            "1": "Product visibility set per store",
+            "2": "Orders in the same workspace as inventory",
+            "3": "Catalog and payment settings kept in Inventory"
+          },
           "title": "Behind the counter"
         },
         "shops": {
-          "items": [
-            "A shop without rebuilding the catalog",
-            "Prices maintained in one place",
-            "A link you can put on a receipt or a poster",
-            "No second system to reconcile"
-          ],
+          "items": {
+            "0": "A shop without rebuilding the catalog",
+            "1": "Prices maintained in one place",
+            "2": "A link you can put on a receipt or a poster",
+            "3": "No second system to reconcile"
+          },
           "title": "Small shops"
         },
         "subtitle": "Small shops, the team behind the counter, and the people buying.",
@@ -15332,31 +15386,31 @@
       "useCases": {
         "eyebrow": "In practice",
         "operations": {
-          "items": [
-            "Repeatable checklists for routine work",
-            "Deadlines tracked across several projects",
-            "Workload visible before you commit to more",
-            "Status reports assembled from real activity"
-          ],
+          "items": {
+            "0": "Repeatable checklists for routine work",
+            "1": "Deadlines tracked across several projects",
+            "2": "Workload visible before you commit to more",
+            "3": "Status reports assembled from real activity"
+          },
           "title": "Recurring operations"
         },
         "personal": {
-          "items": [
-            "A daily list you can finish, not an inbox",
-            "Goals broken down into tasks with dates",
-            "Habits and routines that repeat on schedule",
-            "Priorities set once, in the morning"
-          ],
+          "items": {
+            "0": "A daily list you can finish, not an inbox",
+            "1": "Goals broken down into tasks with dates",
+            "2": "Habits and routines that repeat on schedule",
+            "3": "Priorities set once, in the morning"
+          },
           "title": "Your own week"
         },
         "subtitle": "Personal lists, team delivery and recurring operations all sit in one workspace.",
         "team": {
-          "items": [
-            "Project work split into owned tasks",
-            "Handoffs with a state everyone can see",
-            "Progress readable without a status meeting",
-            "Comments and context on the task itself"
-          ],
+          "items": {
+            "0": "Project work split into owned tasks",
+            "1": "Handoffs with a state everyone can see",
+            "2": "Progress readable without a status meeting",
+            "3": "Comments and context on the task itself"
+          },
           "title": "Team delivery"
         },
         "title": "The same board, three ways to use it"
@@ -15411,31 +15465,31 @@
       "useCases": {
         "eyebrow": "In practice",
         "freelance": {
-          "items": [
-            "Hours per client, ready to invoice",
-            "Sessions tied to the task you delivered",
-            "Estimates checked against what it took",
-            "An export your invoice can cite"
-          ],
+          "items": {
+            "0": "Hours per client, ready to invoice",
+            "1": "Sessions tied to the task you delivered",
+            "2": "Estimates checked against what it took",
+            "3": "An export your invoice can cite"
+          },
           "title": "Billing clients"
         },
         "review": {
-          "items": [
-            "A week reviewed in one screen",
-            "Time by task, project and person",
-            "Gaps found while you can still fix them",
-            "A record for the next planning round"
-          ],
+          "items": {
+            "0": "A week reviewed in one screen",
+            "1": "Time by task, project and person",
+            "2": "Gaps found while you can still fix them",
+            "3": "A record for the next planning round"
+          },
           "title": "Closing the week"
         },
         "subtitle": "Billing a client, running a team, or closing out a week.",
         "team": {
-          "items": [
-            "Who is working on what, right now",
-            "Workload visible before you assign more",
-            "Break time separated from focused time",
-            "Approvals for entries someone forgot"
-          ],
+          "items": {
+            "0": "Who is working on what, right now",
+            "1": "Workload visible before you assign more",
+            "2": "Break time separated from focused time",
+            "3": "Approvals for entries someone forgot"
+          },
           "title": "Running a team"
         },
         "title": "Three reasons people keep it running"
@@ -15489,32 +15543,32 @@
       "title": "The routine parts, handled without you",
       "useCases": {
         "approvals": {
-          "items": [
-            "Approvals routed to whoever should decide",
-            "Documents moved through review in order",
-            "New hires set up from the same checklist",
-            "Purchase requests tracked to a decision"
-          ],
+          "items": {
+            "0": "Approvals routed to whoever should decide",
+            "1": "Documents moved through review in order",
+            "2": "New hires set up from the same checklist",
+            "3": "Purchase requests tracked to a decision"
+          },
           "title": "Business processes"
         },
         "eyebrow": "In practice",
         "subtitle": "Approvals, handoffs and system chores are the parts that quietly cost a week each month.",
         "systems": {
-          "items": [
-            "Data kept in step between tools",
-            "Scheduled jobs run on time",
-            "Custom triggers for your own events",
-            "Runs logged so failures are findable"
-          ],
+          "items": {
+            "0": "Data kept in step between tools",
+            "1": "Scheduled jobs run on time",
+            "2": "Custom triggers for your own events",
+            "3": "Runs logged so failures are findable"
+          },
           "title": "System chores"
         },
         "team": {
-          "items": [
-            "Tasks assigned as work reaches a stage",
-            "Handoffs that carry their context along",
-            "Status updates posted without a reminder",
-            "Notifications only for people who need them"
-          ],
+          "items": {
+            "0": "Tasks assigned as work reaches a stage",
+            "1": "Handoffs that carry their context along",
+            "2": "Status updates posted without a reminder",
+            "3": "Notifications only for people who need them"
+          },
           "title": "Team automation"
         },
         "title": "Where the manual work usually hides"

@@ -1615,78 +1615,78 @@
   },
   "landing": {
     "ai_features": {
-      "features": [
-        {
-          "title": "Tự động hóa Thông minh",
-          "description": "Tự động hóa quy trình phức tạp với AI học hỏi từ sở thích của bạn"
+      "features": {
+        "0": {
+          "description": "Tự động hóa quy trình phức tạp với AI học hỏi từ sở thích của bạn",
+          "title": "Tự động hóa Thông minh"
         },
-        {
-          "title": "Thông tin Chi tiết Thông minh",
-          "description": "Nhận các đề xuất hữu ích dựa trên dữ liệu và xu hướng ngành của bạn"
+        "1": {
+          "description": "Nhận các đề xuất hữu ích dựa trên dữ liệu và xu hướng ngành của bạn",
+          "title": "Thông tin Chi tiết Thông minh"
         },
-        {
-          "title": "Hợp tác Tự nhiên",
-          "description": "Làm việc với AI hiểu ngữ cảnh và giao tiếp tự nhiên"
+        "2": {
+          "description": "Làm việc với AI hiểu ngữ cảnh và giao tiếp tự nhiên",
+          "title": "Hợp tác Tự nhiên"
         },
-        {
-          "title": "Phân tích Dự đoán",
-          "description": "Dự đoán thách thức và cơ hội với dự báo được hỗ trợ bởi AI"
+        "3": {
+          "description": "Dự đoán thách thức và cơ hội với dự báo được hỗ trợ bởi AI",
+          "title": "Phân tích Dự đoán"
         },
-        {
-          "title": "Học hỏi Thích nghi",
-          "description": "AI liên tục cải thiện dựa trên mô hình sử dụng của đội ngũ bạn"
+        "4": {
+          "description": "AI liên tục cải thiện dựa trên mô hình sử dụng của đội ngũ bạn",
+          "title": "Học hỏi Thích nghi"
         },
-        {
-          "title": "Trí tuệ Toàn cầu",
-          "description": "Truy cập thông tin từ dữ liệu toàn cầu trong khi vẫn đảm bảo quyền riêng tư"
+        "5": {
+          "description": "Truy cập thông tin từ dữ liệu toàn cầu trong khi vẫn đảm bảo quyền riêng tư",
+          "title": "Trí tuệ Toàn cầu"
         }
-      ],
+      },
       "subtitle": "Mọi tính năng đều được nâng cao bởi trí tuệ nhân tạo tiên tiến",
       "title": "AI là Cốt lõi"
     },
     "ai_revolution": {
-      "items": [
-        {
-          "title": "Tư duy Nhanh hơn",
-          "description": "Thông tin chi tiết và tự động hóa được hỗ trợ bởi AI giúp bạn ra quyết định nhanh hơn 10 lần"
+      "items": {
+        "0": {
+          "description": "Thông tin chi tiết và tự động hóa được hỗ trợ bởi AI giúp bạn ra quyết định nhanh hơn 10 lần",
+          "title": "Tư duy Nhanh hơn"
         },
-        {
-          "title": "Làm việc Thông minh hơn",
-          "description": "Để AI xử lý các công việc lặp lại trong khi bạn tập trung vào những điều quan trọng nhất"
+        "1": {
+          "description": "Để AI xử lý các công việc lặp lại trong khi bạn tập trung vào những điều quan trọng nhất",
+          "title": "Làm việc Thông minh hơn"
         },
-        {
-          "title": "Phát triển Lớn mạnh hơn",
-          "description": "Mở rộng hoạt động một cách dễ dàng với AI học hỏi và thích nghi"
+        "2": {
+          "description": "Mở rộng hoạt động một cách dễ dàng với AI học hỏi và thích nghi",
+          "title": "Phát triển Lớn mạnh hơn"
         },
-        {
-          "title": "Luôn Dẫn đầu",
-          "description": "Luôn ở vị trí dẫn đầu với khả năng AI không ngừng phát triển"
+        "3": {
+          "description": "Luôn ở vị trí dẫn đầu với khả năng AI không ngừng phát triển",
+          "title": "Luôn Dẫn đầu"
         }
-      ],
+      },
       "subtitle": "Trải nghiệm tương lai của công việc với AI hiểu, thích nghi và phát triển cùng bạn",
       "title": "Cuộc Cách Mạng AI"
     },
     "benefits": {
       "for_businesses": {
-        "items": [
-          "Giảm chi phí vận hành",
-          "Cải thiện hiệu quả và năng suất",
-          "Ra quyết định tốt hơn với thông tin chi tiết từ AI",
-          "Tăng cường hợp tác nhóm",
-          "Tối ưu hóa quy trình làm việc",
-          "Giải pháp có thể mở rộng cho sự phát triển"
-        ],
+        "items": {
+          "0": "Giảm chi phí vận hành",
+          "1": "Cải thiện hiệu quả và năng suất",
+          "2": "Ra quyết định tốt hơn với thông tin chi tiết từ AI",
+          "3": "Tăng cường hợp tác nhóm",
+          "4": "Tối ưu hóa quy trình làm việc",
+          "5": "Giải pháp có thể mở rộng cho sự phát triển"
+        },
         "title": "Cho Doanh nghiệp"
       },
       "for_teams": {
-        "items": [
-          "Giao tiếp liền mạch",
-          "Hợp tác thời gian thực",
-          "Quản lý công việc tự động",
-          "Truy cập thông tin tập trung",
-          "Công cụ và tính năng tích hợp",
-          "Nâng cao năng suất"
-        ],
+        "items": {
+          "0": "Giao tiếp liền mạch",
+          "1": "Hợp tác thời gian thực",
+          "2": "Quản lý công việc tự động",
+          "3": "Truy cập thông tin tập trung",
+          "4": "Công cụ và tính năng tích hợp",
+          "5": "Nâng cao năng suất"
+        },
         "title": "Cho Đội ngũ"
       },
       "subtitle": "Trải nghiệm những ưu điểm của nền tảng tất cả trong một được thiết kế cho doanh nghiệp hiện đại",
@@ -1810,104 +1810,104 @@
     },
     "subheadline": "Kiểm soát quy trình làm việc, được tăng cường bởi AI",
     "success_metrics": {
-      "metrics": [
-        {
-          "value": "10x",
-          "label": "Ra quyết định Nhanh hơn"
+      "metrics": {
+        "0": {
+          "label": "Ra quyết định Nhanh hơn",
+          "value": "10x"
         },
-        {
-          "value": "80%",
-          "label": "Thời gian Tiết kiệm cho Công việc Thường xuyên"
+        "1": {
+          "label": "Thời gian Tiết kiệm cho Công việc Thường xuyên",
+          "value": "80%"
         },
-        {
-          "value": "50%",
-          "label": "Giảm Chi phí Hoạt động"
+        "2": {
+          "label": "Giảm Chi phí Hoạt động",
+          "value": "50%"
         },
-        {
-          "value": "3x",
-          "label": "Tăng Năng suất Đội ngũ"
+        "3": {
+          "label": "Tăng Năng suất Đội ngũ",
+          "value": "3x"
         }
-      ],
+      },
       "subtitle": "Tham gia cùng hàng nghìn tổ chức đạt được kết quả đáng kinh ngạc",
       "title": "Tác động Thực tế"
     },
     "testimonials": {
-      "items": [
-        {
-          "quote": "Tuturuuu đã thay đổi cách chúng tôi làm việc. Các tính năng AI thật đáng kinh ngạc!",
+      "items": {
+        "0": {
           "author": "Sarah Chen",
-          "role": "Quản lý Sản phẩm",
-          "company": "TechCorp"
+          "company": "TechCorp",
+          "quote": "Tuturuuu đã thay đổi cách chúng tôi làm việc. Các tính năng AI thật đáng kinh ngạc!",
+          "role": "Quản lý Sản phẩm"
         },
-        {
-          "quote": "Giải pháp tất cả trong một tốt nhất mà chúng tôi từng tìm thấy cho nhu cầu của đội ngũ.",
+        "1": {
           "author": "Michael Rodriguez",
-          "role": "Giám đốc Điều hành",
-          "company": "StartupX"
+          "company": "StartupX",
+          "quote": "Giải pháp tất cả trong một tốt nhất mà chúng tôi từng tìm thấy cho nhu cầu của đội ngũ.",
+          "role": "Giám đốc Điều hành"
         },
-        {
-          "quote": "Giao diện trực quan và tính năng mạnh mẽ. Rất đáng để giới thiệu!",
+        "2": {
           "author": "Emily Johnson",
-          "role": "Trưởng nhóm",
-          "company": "DesignPro"
+          "company": "DesignPro",
+          "quote": "Giao diện trực quan và tính năng mạnh mẽ. Rất đáng để giới thiệu!",
+          "role": "Trưởng nhóm"
         }
-      ],
+      },
       "subtitle": "Tham gia cùng hàng nghìn người dùng hài lòng tin tưởng Tuturuuu",
       "title": "Người Dùng Nói Gì"
     },
     "transformation": {
-      "steps": [
-        {
-          "title": "Bắt đầu Ngay lập tức",
-          "description": "Bắt đầu và vận hành trong vài phút với hướng dẫn trực quan"
+      "steps": {
+        "0": {
+          "description": "Bắt đầu và vận hành trong vài phút với hướng dẫn trực quan",
+          "title": "Bắt đầu Ngay lập tức"
         },
-        {
-          "title": "Mở rộng Dễ dàng",
-          "description": "Phát triển từ một đến hàng nghìn người dùng mà không gặp trở ngại"
+        "1": {
+          "description": "Phát triển từ một đến hàng nghìn người dùng mà không gặp trở ngại",
+          "title": "Mở rộng Dễ dàng"
         },
-        {
-          "title": "Phát triển Liên tục",
-          "description": "Luôn dẫn đầu với AI học hỏi và cải thiện mỗi ngày"
+        "2": {
+          "description": "Luôn dẫn đầu với AI học hỏi và cải thiện mỗi ngày",
+          "title": "Phát triển Liên tục"
         }
-      ],
+      },
       "subtitle": "Trải nghiệm sức mạnh của chuyển đổi được hỗ trợ bởi AI",
       "title": "Chuyển đổi Công việc"
     },
     "universal_value": {
       "categories": {
         "business_size": {
-          "items": [
-            "Doanh nhân & Freelancer",
-            "Doanh nghiệp Vừa và Nhỏ",
-            "Doanh nghiệp Lớn",
-            "Tổ chức Toàn cầu"
-          ],
+          "items": {
+            "0": "Doanh nhân & Freelancer",
+            "1": "Doanh nghiệp Vừa và Nhỏ",
+            "2": "Doanh nghiệp Lớn",
+            "3": "Tổ chức Toàn cầu"
+          },
           "title": "Mọi Quy mô"
         },
         "industries": {
-          "items": [
-            "Công nghệ & Đổi mới",
-            "Y tế & Sức khỏe",
-            "Giáo dục & Học tập",
-            "Bán lẻ & Thương mại điện tử",
-            "Sản xuất & Chế tạo",
-            "Dịch vụ & Tư vấn",
-            "Sáng tạo & Giải trí",
-            "Phi lợi nhuận & Tác động xã hội"
-          ],
+          "items": {
+            "0": "Công nghệ & Đổi mới",
+            "1": "Y tế & Sức khỏe",
+            "2": "Giáo dục & Học tập",
+            "3": "Bán lẻ & Thương mại điện tử",
+            "4": "Sản xuất & Chế tạo",
+            "5": "Dịch vụ & Tư vấn",
+            "6": "Sáng tạo & Giải trí",
+            "7": "Phi lợi nhuận & Tác động xã hội"
+          },
           "title": "Mọi Ngành nghề"
         },
         "use_cases": {
-          "items": [
-            "Tối ưu hóa Hoạt động",
-            "Tăng Năng suất",
-            "Nâng cao Hợp tác",
-            "Thúc đẩy Đổi mới",
-            "Cải thiện Trải nghiệm Khách hàng",
-            "Mở rộng Toàn cầu",
-            "Giảm Chi phí",
-            "Đạt được Tính bền vững"
-          ],
+          "items": {
+            "0": "Tối ưu hóa Hoạt động",
+            "1": "Tăng Năng suất",
+            "2": "Nâng cao Hợp tác",
+            "3": "Thúc đẩy Đổi mới",
+            "4": "Cải thiện Trải nghiệm Khách hàng",
+            "5": "Mở rộng Toàn cầu",
+            "6": "Giảm Chi phí",
+            "7": "Đạt được Tính bền vững"
+          },
           "title": "Mọi Mục tiêu"
         }
       },

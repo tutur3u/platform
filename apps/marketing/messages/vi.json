@@ -1234,11 +1234,11 @@
       "calendar": "Lịch",
       "done": "Hoàn thành",
       "inbox": "Ghi lại",
-      "items": [
-        "Chuẩn bị đề cương nghiên cứu",
-        "Đánh giá nguyên mẫu",
-        "Lên kế hoạch thử nghiệm"
-      ],
+      "items": {
+        "0": "Chuẩn bị đề cương nghiên cứu",
+        "1": "Đánh giá nguyên mẫu",
+        "2": "Lên kế hoạch thử nghiệm"
+      },
       "planned": "Lên kế hoạch",
       "reset": "Đặt lại minh họa",
       "review": "Xem xét gợi ý",
@@ -1647,6 +1647,70 @@
     "visitor_phone": "Số điện thoại"
   },
   "command_launcher": {
+    "app_descriptions": {
+      "ai": "Xây dựng, kiểm thử và quan sát câu lệnh, tác nhân cùng quy trình mô hình AI.",
+      "apps": "Duyệt và mở mọi ứng dụng có trong không gian làm việc của bạn.",
+      "calendar": "Lên lịch, quản lý sự kiện và chia sẻ thời gian rảnh.",
+      "chat": "Nhắn tin với đồng đội và tập trung các cuộc trò chuyện trong không gian làm việc.",
+      "cms": "Tạo và xuất bản nội dung có cấu trúc cho trang web và sản phẩm.",
+      "colab": "Cùng học cách viết prompt với công cụ mô phỏng an toàn.",
+      "contacts": "Sắp xếp khách hàng, thành viên và lịch sử tương tác.",
+      "docs": "Đọc hướng dẫn sản phẩm, tài liệu tham khảo và hướng dẫn thiết lập.",
+      "drive": "Lưu trữ, sắp xếp và chia sẻ tệp trong không gian làm việc.",
+      "finance": "Quản lý ví, giao dịch, hóa đơn và ngân sách.",
+      "forms": "Tạo, chia sẻ và phân tích biểu mẫu cùng phản hồi của workspace.",
+      "git": "Duyệt các kho mã GitHub đã được phê duyệt với giao diện mã nguồn, vấn đề, pull request và Actions nhanh, nguyên bản.",
+      "hive": "Khám phá các mô phỏng cộng tác và trải nghiệm không gian.",
+      "inventory": "Quản lý sản phẩm, tồn kho, nhập hàng và bán hàng.",
+      "learn": "Theo dõi khóa học, bài tập và tiến độ học tập.",
+      "lettin": "Xây dựng và khám phá thế giới, nhân vật, địa điểm và truyền thuyết liên kết.",
+      "mail": "Đọc và gửi email của không gian làm việc trong một hộp thư.",
+      "meet": "Lên lịch họp và tìm thời gian phù hợp cho mọi người.",
+      "mind": "Tạo sơ đồ tư duy và kết nối ý tưởng với AI.",
+      "nova": "Tạo và giải các thử thách AI dựa trên câu lệnh.",
+      "parley": "Kịch bản AI nhiều người và nghiên cứu",
+      "pay": "Quản lý thanh toán, gói đăng ký và hoạt động chi trả.",
+      "platform": "Quản lý không gian làm việc, cài đặt và toàn bộ nền tảng Tuturuuu.",
+      "rewise": "Luyện tập, ôn tập và ghi nhớ kiến thức với AI.",
+      "shortener": "Tạo liên kết ngắn gọn và quản lý chuyển hướng.",
+      "storefront": "Bán sản phẩm qua cửa hàng trực tuyến dành cho khách hàng.",
+      "tasks": "Lập kế hoạch dự án, giao việc và theo dõi tiến độ.",
+      "teach": "Lập kế hoạch khóa học, quản lý lớp và hỗ trợ học viên.",
+      "tools": "Mở các tiện ích chuyên biệt cho mã QR và tác vụ nhanh.",
+      "track": "Ghi nhận thời gian và hiểu thời gian làm việc được sử dụng ra sao."
+    },
+    "app_names": {
+      "ai": "AI Studio",
+      "apps": "Ứng dụng",
+      "calendar": "Lịch",
+      "chat": "Trò chuyện",
+      "cms": "CMS",
+      "colab": "Colab",
+      "contacts": "Danh bạ",
+      "docs": "Tài liệu",
+      "drive": "Tệp",
+      "finance": "Tài chính",
+      "forms": "Biểu mẫu",
+      "git": "Git",
+      "hive": "Hive",
+      "inventory": "Kho hàng",
+      "learn": "Học tập",
+      "lettin": "(Tu)lettin",
+      "mail": "Thư",
+      "meet": "Họp",
+      "mind": "Mind",
+      "nova": "Nova",
+      "parley": "Parley",
+      "pay": "Thanh toán",
+      "platform": "Nền tảng",
+      "rewise": "Rewise",
+      "shortener": "Rút gọn liên kết",
+      "storefront": "Cửa hàng",
+      "tasks": "Công việc",
+      "teach": "Giảng dạy",
+      "tools": "Công cụ",
+      "track": "Theo dõi"
+    },
     "error_workspaces": "Không thể tải workspace"
   },
   "commercialComparison": {
@@ -3366,11 +3430,11 @@
           "proactive": "Làm việc thực tế"
         },
         "description": "Mira là trợ lý AI ngay trong Tuturuuu. Bạn chỉ cần nhờ, Mira sẽ sắp xếp ngày làm việc, xếp task vào lịch, soạn thư trả lời hay ghi lại chi tiêu, dựa trên những gì đã có trong workspace của bạn.",
-        "prompts": [
-          "Đặt lịch standup 9h sáng mai",
-          "Tóm tắt việc tuần này",
-          "Giúp mình ưu tiên deadline"
-        ],
+        "prompts": {
+          "0": "Đặt lịch standup 9h sáng mai",
+          "1": "Tóm tắt việc tuần này",
+          "2": "Giúp mình ưu tiên deadline"
+        },
         "title": "Gặp Mira - Trợ Lý AI Của Bạn",
         "tryAsking": "Thử hỏi Mira..."
       }
@@ -3982,11 +4046,11 @@
       "payAsYouGo": {
         "badge": "Sắp Ra Mắt",
         "description": "Cần thêm? Mở rộng linh hoạt theo nhu cầu.",
-        "features": [
-          "Thêm AI credits",
-          "Thời gian xử lý workflow",
-          "Ưu tiên hàng đợi"
-        ],
+        "features": {
+          "0": "Thêm AI credits",
+          "1": "Thời gian xử lý workflow",
+          "2": "Ưu tiên hàng đợi"
+        },
         "title": "Trả theo nhu cầu sử dụng"
       },
       "pricesLoading": "Đang tải giá hiện tại…",
@@ -3996,27 +4060,27 @@
         "enterprise": {
           "cta": "Liên Hệ Tư Vấn",
           "description": "Dành cho tổ chức lớn",
-          "features": [
-            "Mọi thứ của Pro +",
-            "Tùy chỉnh theo nhu cầu",
-            "Đội ngũ support riêng",
-            "SLA theo hợp đồng đã ký",
-            "Tự host được"
-          ],
+          "features": {
+            "0": "Mọi thứ của Pro +",
+            "1": "Tùy chỉnh theo nhu cầu",
+            "2": "Đội ngũ support riêng",
+            "3": "SLA theo hợp đồng đã ký",
+            "4": "Tự host được"
+          },
           "name": "Doanh Nghiệp",
           "price": "Liên hệ"
         },
         "free": {
           "cta": "Dùng Ngay",
           "description": "Khởi đầu nhẹ nhàng",
-          "features": [
-            "Công việc, lịch và ghi chú",
-            "Bảng trắng và theo dõi thời gian",
-            "AI trong hạn mức tín dụng hữu hạn",
-            "Tài chính, danh bạ và kho cơ bản",
-            "Quyền trong không gian và xuất dữ liệu",
-            "100 MiB Drive mỗi không gian"
-          ],
+          "features": {
+            "0": "Công việc, lịch và ghi chú",
+            "1": "Bảng trắng và theo dõi thời gian",
+            "2": "AI trong hạn mức tín dụng hữu hạn",
+            "3": "Tài chính, danh bạ và kho cơ bản",
+            "4": "Quyền trong không gian và xuất dữ liệu",
+            "5": "100 MiB Drive mỗi không gian"
+          },
           "name": "Miễn Phí",
           "period": "miễn phí mãi",
           "price": "$0"
@@ -4025,15 +4089,15 @@
           "badge": "Phổ Biến Nhất",
           "cta": "Chọn Plus",
           "description": "Khi team cần phối hợp",
-          "features": [
-            "Công cụ cốt lõi trong bộ ứng dụng",
-            "Thanh toán theo chỗ cho đội nhóm",
-            "20 GiB Drive mỗi không gian",
-            "Tín dụng AI dùng chung trong không gian",
-            "Cộng tác qua Chat",
-            "Tùy chọn mua thêm tín dụng AI phù hợp",
-            "Chủ trì Meet: thử nghiệm giới hạn"
-          ],
+          "features": {
+            "0": "Công cụ cốt lõi trong bộ ứng dụng",
+            "1": "Thanh toán theo chỗ cho đội nhóm",
+            "2": "20 GiB Drive mỗi không gian",
+            "3": "Tín dụng AI dùng chung trong không gian",
+            "4": "Cộng tác qua Chat",
+            "5": "Tùy chọn mua thêm tín dụng AI phù hợp",
+            "6": "Chủ trì Meet: thử nghiệm giới hạn"
+          },
           "name": "Plus",
           "period": {
             "monthly": "/thành viên/tháng",
@@ -4044,14 +4108,14 @@
           "badge": "Mạnh Nhất",
           "cta": "Chọn Pro",
           "description": "Cho team cần sức mạnh tối đa",
-          "features": [
-            "Mọi tính năng Plus",
-            "Ngân sách AI hữu hạn lớn hơn",
-            "Hỗ trợ ưu tiên",
-            "Phòng thí nghiệm AI và Mira",
-            "Quản trị nhân sự",
-            "100 GiB Drive mỗi không gian"
-          ],
+          "features": {
+            "0": "Mọi tính năng Plus",
+            "1": "Ngân sách AI hữu hạn lớn hơn",
+            "2": "Hỗ trợ ưu tiên",
+            "3": "Phòng thí nghiệm AI và Mira",
+            "4": "Quản trị nhân sự",
+            "5": "100 GiB Drive mỗi không gian"
+          },
           "name": "Pro",
           "period": {
             "monthly": "/thành viên/tháng",
@@ -4858,30 +4922,30 @@
       "useCases": {
         "eyebrow": "Dùng vào việc gì",
         "inbox": {
-          "items": [
-            "Chuỗi thư dài rút lại còn điều đã quyết",
-            "Thư trả lời soạn theo ngữ cảnh của bạn",
-            "Cam kết trong thư chuyển thành công việc",
-            "Cuộc họp đề xuất vào giờ bạn có thể dự"
-          ],
+          "items": {
+            "0": "Chuỗi thư dài rút lại còn điều đã quyết",
+            "1": "Thư trả lời soạn theo ngữ cảnh của bạn",
+            "2": "Cam kết trong thư chuyển thành công việc",
+            "3": "Cuộc họp đề xuất vào giờ bạn có thể dự"
+          },
           "title": "Đi hết hộp thư"
         },
         "knowledge": {
-          "items": [
-            "Tóm tắt những tài liệu bạn chưa kịp đọc",
-            "Rút ra chi tiết quan trọng từ một tệp dài",
-            "Câu trả lời dựa trên dữ liệu trong không gian làm việc, kèm nguồn",
-            "Ghi chú biến thành dàn ý bạn có thể sửa"
-          ],
+          "items": {
+            "0": "Tóm tắt những tài liệu bạn chưa kịp đọc",
+            "1": "Rút ra chi tiết quan trọng từ một tệp dài",
+            "2": "Câu trả lời dựa trên dữ liệu trong không gian làm việc, kèm nguồn",
+            "3": "Ghi chú biến thành dàn ý bạn có thể sửa"
+          },
           "title": "Làm việc với tài liệu của chính bạn"
         },
         "planning": {
-          "items": [
-            "Khoảng tập trung xếp quanh những cuộc họp không thể dời",
-            "Kế hoạch tự dịch chuyển khi ngày thay đổi",
-            "Ưu tiên đọc từ danh sách công việc thật của bạn",
-            "Câu trả lời thực tế cho việc gì kịp trước thứ Sáu"
-          ],
+          "items": {
+            "0": "Khoảng tập trung xếp quanh những cuộc họp không thể dời",
+            "1": "Kế hoạch tự dịch chuyển khi ngày thay đổi",
+            "2": "Ưu tiên đọc từ danh sách công việc thật của bạn",
+            "3": "Câu trả lời thực tế cho việc gì kịp trước thứ Sáu"
+          },
           "title": "Lên kế hoạch cho ngày"
         },
         "subtitle": "Công việc thường ngày, xử lý bằng ngữ cảnh mà không gian làm việc của bạn đã có.",
@@ -4936,32 +5000,32 @@
       "title": "Cuốn lịch biết giữ ngày của bạn",
       "useCases": {
         "clients": {
-          "items": [
-            "Khung giờ đặt hẹn do bạn kiểm soát",
-            "Buổi tư vấn chốt được mà không cần trao đổi email",
-            "Buổi kế tiếp đặt xong trước khi cuộc gọi kết thúc",
-            "Lời nhắc gửi đi để bớt buổi hẹn bị quên"
-          ],
+          "items": {
+            "0": "Khung giờ đặt hẹn do bạn kiểm soát",
+            "1": "Buổi tư vấn chốt được mà không cần trao đổi email",
+            "2": "Buổi kế tiếp đặt xong trước khi cuộc gọi kết thúc",
+            "3": "Lời nhắc gửi đi để bớt buổi hẹn bị quên"
+          },
           "title": "Làm việc với khách hàng"
         },
         "events": {
-          "items": [
-            "Các phiên và diễn giả trên một lịch trình",
-            "Địa điểm và thiết bị đặt theo đúng ngày",
-            "Danh sách người tham dự gắn với sự kiện",
-            "Một cuốn lịch có thể chia sẻ ở chế độ chỉ xem"
-          ],
+          "items": {
+            "0": "Các phiên và diễn giả trên một lịch trình",
+            "1": "Địa điểm và thiết bị đặt theo đúng ngày",
+            "2": "Danh sách người tham dự gắn với sự kiện",
+            "3": "Một cuốn lịch có thể chia sẻ ở chế độ chỉ xem"
+          },
           "title": "Tổ chức sự kiện"
         },
         "eyebrow": "Trong thực tế",
         "subtitle": "Phối hợp nội bộ, đặt hẹn với khách và tổ chức sự kiện đều chạy trên cùng một cuốn lịch.",
         "team": {
-          "items": [
-            "Họp đặt vào lúc cả nhóm thật sự rảnh",
-            "Thời gian rảnh chung mà không cần bảng tính",
-            "Các mốc dự án nằm trên cùng dòng thời gian",
-            "Phòng họp và thiết bị dùng chung đặt một lần"
-          ],
+          "items": {
+            "0": "Họp đặt vào lúc cả nhóm thật sự rảnh",
+            "1": "Thời gian rảnh chung mà không cần bảng tính",
+            "2": "Các mốc dự án nằm trên cùng dòng thời gian",
+            "3": "Phòng họp và thiết bị dùng chung đặt một lần"
+          },
           "title": "Làm việc với nhóm"
         },
         "title": "Dù bạn đang xếp lịch với ai"
@@ -5016,31 +5080,31 @@
       "useCases": {
         "eyebrow": "Trong thực tế",
         "personal": {
-          "items": [
-            "Ghi chú cho chính mình trong cùng ứng dụng",
-            "Nhắn tin riêng mà không cần công cụ khác",
-            "Việc riêng và việc chung tách bạch",
-            "Tìm kiếm bao trùm cả hai"
-          ],
+          "items": {
+            "0": "Ghi chú cho chính mình trong cùng ứng dụng",
+            "1": "Nhắn tin riêng mà không cần công cụ khác",
+            "2": "Việc riêng và việc chung tách bạch",
+            "3": "Tìm kiếm bao trùm cả hai"
+          },
           "title": "Mạch riêng của bạn"
         },
         "projects": {
-          "items": [
-            "Mỗi dự án một kênh, đóng lại khi bàn giao xong",
-            "Quyết định được viết ngay nơi công việc diễn ra",
-            "Tệp giữ cùng phần thảo luận",
-            "Người tiếp nhận sau vẫn có đủ bối cảnh"
-          ],
+          "items": {
+            "0": "Mỗi dự án một kênh, đóng lại khi bàn giao xong",
+            "1": "Quyết định được viết ngay nơi công việc diễn ra",
+            "2": "Tệp giữ cùng phần thảo luận",
+            "3": "Người tiếp nhận sau vẫn có đủ bối cảnh"
+          },
           "title": "Mạch thảo luận theo dự án"
         },
         "subtitle": "Trao đổi hằng ngày, mạch thảo luận theo dự án, và những ghi chú bạn gửi cho chính mình.",
         "team": {
-          "items": [
-            "Một chỗ thay vì ba nhóm chat",
-            "Một biểu tượng cảm xúc thay cho một câu trả lời nữa",
-            "Ghim lại những cuộc trò chuyện quan trọng",
-            "Người mới vào đọc lại được chuyện đã xảy ra"
-          ],
+          "items": {
+            "0": "Một chỗ thay vì ba nhóm chat",
+            "1": "Một biểu tượng cảm xúc thay cho một câu trả lời nữa",
+            "2": "Ghim lại những cuộc trò chuyện quan trọng",
+            "3": "Người mới vào đọc lại được chuyện đã xảy ra"
+          },
           "title": "Trao đổi hằng ngày"
         },
         "title": "Ba cuộc trò chuyện đáng giữ lại"
@@ -5095,30 +5159,30 @@
       "useCases": {
         "eyebrow": "Dành cho ai",
         "growth": {
-          "items": [
-            "Biết khách hàng nào thật sự tạo ra doanh thu",
-            "Nhận ra nhóm khách đáng dành thêm thời gian",
-            "Theo dõi doanh thu theo từng khách qua thời gian",
-            "Bố trí nguồn lực theo nhu cầu thật"
-          ],
+          "items": {
+            "0": "Biết khách hàng nào thật sự tạo ra doanh thu",
+            "1": "Nhận ra nhóm khách đáng dành thêm thời gian",
+            "2": "Theo dõi doanh thu theo từng khách qua thời gian",
+            "3": "Bố trí nguồn lực theo nhu cầu thật"
+          },
           "title": "Tăng trưởng và kế hoạch"
         },
         "sales": {
-          "items": [
-            "Theo dõi khách tiềm năng từ lần chạm đầu đến khi chốt",
-            "Nhìn toàn bộ tiến trình mà không phải đi hỏi cập nhật",
-            "Được nhắc trước khi một cơ hội nguội đi",
-            "Dự báo dựa trên giai đoạn thay vì sự lạc quan"
-          ],
+          "items": {
+            "0": "Theo dõi khách tiềm năng từ lần chạm đầu đến khi chốt",
+            "1": "Nhìn toàn bộ tiến trình mà không phải đi hỏi cập nhật",
+            "2": "Được nhắc trước khi một cơ hội nguội đi",
+            "3": "Dự báo dựa trên giai đoạn thay vì sự lạc quan"
+          },
           "title": "Đội bán hàng"
         },
         "service": {
-          "items": [
-            "Mở một yêu cầu ngay trên lịch sử đầy đủ của khách",
-            "Ghi rõ đã hứa điều gì và đến khi nào",
-            "Giữ phản hồi ở nơi cuộc trò chuyện kế tiếp sẽ thấy",
-            "Biết tài khoản nào cần được để mắt trong tuần này"
-          ],
+          "items": {
+            "0": "Mở một yêu cầu ngay trên lịch sử đầy đủ của khách",
+            "1": "Ghi rõ đã hứa điều gì và đến khi nào",
+            "2": "Giữ phản hồi ở nơi cuộc trò chuyện kế tiếp sẽ thấy",
+            "3": "Biết tài khoản nào cần được để mắt trong tuần này"
+          },
           "title": "Chăm sóc khách hàng"
         },
         "subtitle": "Bán hàng, chăm sóc và lập kế hoạch đều dựa trên cùng một lịch sử khách hàng.",
@@ -5173,31 +5237,31 @@
       "title": "Viết ngay tại nơi công việc đang diễn ra",
       "useCases": {
         "business": {
-          "items": [
-            "Hợp đồng cùng lịch sử chỉnh sửa",
-            "Đề xuất soạn lại từ một bản trước",
-            "Chính sách với quyền truy cập được kiểm soát",
-            "Báo cáo viết ngay cạnh số liệu"
-          ],
+          "items": {
+            "0": "Hợp đồng cùng lịch sử chỉnh sửa",
+            "1": "Đề xuất soạn lại từ một bản trước",
+            "2": "Chính sách với quyền truy cập được kiểm soát",
+            "3": "Báo cáo viết ngay cạnh số liệu"
+          },
           "title": "Giấy tờ kinh doanh"
         },
         "eyebrow": "Dùng vào việc gì",
         "knowledge": {
-          "items": [
-            "Hướng dẫn nhập môn người mới đọc ngay ngày đầu",
-            "Tài liệu quy trình gom về một chỗ",
-            "Câu hỏi thường gặp nội bộ thay cho việc trả lời lại",
-            "Ghi chú nghiên cứu kèm nguồn"
-          ],
+          "items": {
+            "0": "Hướng dẫn nhập môn người mới đọc ngay ngày đầu",
+            "1": "Tài liệu quy trình gom về một chỗ",
+            "2": "Câu hỏi thường gặp nội bộ thay cho việc trả lời lại",
+            "3": "Ghi chú nghiên cứu kèm nguồn"
+          },
           "title": "Kiến thức của đội"
         },
         "specs": {
-          "items": [
-            "Bản mô tả liên kết tới công việc mà nó sinh ra",
-            "Biên bản họp kèm quyết định và người phụ trách",
-            "Quy trình xử lý sự cố để người trực làm theo",
-            "Tổng kết dự án vẫn tìm lại được"
-          ],
+          "items": {
+            "0": "Bản mô tả liên kết tới công việc mà nó sinh ra",
+            "1": "Biên bản họp kèm quyết định và người phụ trách",
+            "2": "Quy trình xử lý sự cố để người trực làm theo",
+            "3": "Tổng kết dự án vẫn tìm lại được"
+          },
           "title": "Tài liệu dự án và sản phẩm"
         },
         "subtitle": "Ba dạng tài liệu thôi trôi dạt khi chúng nằm trong không gian làm việc.",
@@ -5252,32 +5316,32 @@
       "title": "Tệp của bạn, ở nơi công việc đang diễn ra",
       "useCases": {
         "delivery": {
-          "items": [
-            "Một đường link thay cho tệp đính kèm bị chặn",
-            "Quyền truy cập có thể thu hồi sau khi bàn giao",
-            "Tệp lớn mà không cần nghi thức nén",
-            "Ghi nhận rõ ràng đã gửi gì và gửi khi nào"
-          ],
+          "items": {
+            "0": "Một đường link thay cho tệp đính kèm bị chặn",
+            "1": "Quyền truy cập có thể thu hồi sau khi bàn giao",
+            "2": "Tệp lớn mà không cần nghi thức nén",
+            "3": "Ghi nhận rõ ràng đã gửi gì và gửi khi nào"
+          },
           "title": "Gửi kết quả cho khách hàng"
         },
         "eyebrow": "Dùng vào việc gì",
         "records": {
-          "items": [
-            "Lịch sử phiên bản cho mọi thứ được sửa nhiều lần",
-            "Bản gốc nằm cạnh bản hiện tại",
-            "Khôi phục tệp bị ai đó thay nhầm",
-            "Một kho lưu trữ gọn gàng thay cho thư mục trên màn hình một người"
-          ],
+          "items": {
+            "0": "Lịch sử phiên bản cho mọi thứ được sửa nhiều lần",
+            "1": "Bản gốc nằm cạnh bản hiện tại",
+            "2": "Khôi phục tệp bị ai đó thay nhầm",
+            "3": "Một kho lưu trữ gọn gàng thay cho thư mục trên màn hình một người"
+          },
           "title": "Hồ sơ phải giữ lại"
         },
         "subtitle": "Ba việc kho lưu trữ phải làm được trước khi ai đó tin tưởng nó.",
         "team": {
-          "items": [
-            "Một nơi cho những tài nguyên ai cũng dùng lại",
-            "Thư mục gói gọn theo dự án hoặc khách hàng",
-            "Quyền truy cập gắn với không gian làm việc, không gắn với hộp thư một người",
-            "Người mới thấy được cả lịch sử, không phải thư mục trống"
-          ],
+          "items": {
+            "0": "Một nơi cho những tài nguyên ai cũng dùng lại",
+            "1": "Thư mục gói gọn theo dự án hoặc khách hàng",
+            "2": "Quyền truy cập gắn với không gian làm việc, không gắn với hộp thư một người",
+            "3": "Người mới thấy được cả lịch sử, không phải thư mục trống"
+          },
           "title": "Tệp dùng chung của đội"
         },
         "title": "Các đội giữ gì trong Drive"
@@ -5331,31 +5395,31 @@
       "title": "Biết tiền đã đi đâu, không cần bảng tính",
       "useCases": {
         "business": {
-          "items": [
-            "Phân loại chi tiêu của nhóm theo cách bạn chọn, không theo ngân hàng",
-            "Xuất hoá đơn, theo dõi và nhắc nợ mà không cần công cụ thứ hai",
-            "Khép sổ cuối tháng từ dữ liệu vốn đã gọn gàng",
-            "Xem biên lợi nhuận theo dự án, không theo tài khoản ngân hàng"
-          ],
+          "items": {
+            "0": "Phân loại chi tiêu của nhóm theo cách bạn chọn, không theo ngân hàng",
+            "1": "Xuất hoá đơn, theo dõi và nhắc nợ mà không cần công cụ thứ hai",
+            "2": "Khép sổ cuối tháng từ dữ liệu vốn đã gọn gàng",
+            "3": "Xem biên lợi nhuận theo dự án, không theo tài khoản ngân hàng"
+          },
           "title": "Điều hành doanh nghiệp"
         },
         "eyebrow": "Dành cho ai",
         "personal": {
-          "items": [
-            "Thấy rõ tháng vừa rồi tiền đi đâu, theo từng nhóm",
-            "Gắn cho mỗi mục tiêu tiết kiệm một con số và một mốc thời gian",
-            "Theo dõi tài khoản và khoản đầu tư trong một số dư chung",
-            "Đặt một ngân sách mà tháng Ba bạn vẫn còn theo được"
-          ],
+          "items": {
+            "0": "Thấy rõ tháng vừa rồi tiền đi đâu, theo từng nhóm",
+            "1": "Gắn cho mỗi mục tiêu tiết kiệm một con số và một mốc thời gian",
+            "2": "Theo dõi tài khoản và khoản đầu tư trong một số dư chung",
+            "3": "Đặt một ngân sách mà tháng Ba bạn vẫn còn theo được"
+          },
           "title": "Tài chính cá nhân"
         },
         "planning": {
-          "items": [
-            "Dự phóng vài tháng tới từ lịch sử thật",
-            "Thử một quyết định trước khi nó thành khoản chi",
-            "Phát hiện sớm những tháng dòng tiền căng",
-            "So kế hoạch với những gì đã thật sự diễn ra"
-          ],
+          "items": {
+            "0": "Dự phóng vài tháng tới từ lịch sử thật",
+            "1": "Thử một quyết định trước khi nó thành khoản chi",
+            "2": "Phát hiện sớm những tháng dòng tiền căng",
+            "3": "So kế hoạch với những gì đã thật sự diễn ra"
+          },
           "title": "Nhìn về phía trước"
         },
         "subtitle": "Người làm tự do, một nhóm nhỏ hay một gia đình đều muốn biết cùng một điều: còn lại bao nhiêu, và sắp tới là gì.",
@@ -5411,30 +5475,30 @@
       "useCases": {
         "eyebrow": "Trong thực tế",
         "feedback": {
-          "items": [
-            "Khảo sát sau khi mua hoặc sau một sự kiện",
-            "Điểm đánh giá đọc được ngay dưới dạng biểu đồ",
-            "Câu trả lời mở nằm cạnh các con số",
-            "Thấy rõ người ta dừng lại ở câu hỏi nào"
-          ],
+          "items": {
+            "0": "Khảo sát sau khi mua hoặc sau một sự kiện",
+            "1": "Điểm đánh giá đọc được ngay dưới dạng biểu đồ",
+            "2": "Câu trả lời mở nằm cạnh các con số",
+            "3": "Thấy rõ người ta dừng lại ở câu hỏi nào"
+          },
           "title": "Hỏi khách hàng"
         },
         "intake": {
-          "items": [
-            "Đăng ký cho một sự kiện hoặc một lớp học",
-            "Thu thập thông tin khách trước buổi trao đổi đầu tiên",
-            "Hồ sơ ứng tuyển gom về một hàng đợi",
-            "Đường liên kết công khai, người trả lời không cần tài khoản"
-          ],
+          "items": {
+            "0": "Đăng ký cho một sự kiện hoặc một lớp học",
+            "1": "Thu thập thông tin khách trước buổi trao đổi đầu tiên",
+            "2": "Hồ sơ ứng tuyển gom về một hàng đợi",
+            "3": "Đường liên kết công khai, người trả lời không cần tài khoản"
+          },
           "title": "Yêu cầu và đăng ký"
         },
         "internal": {
-          "items": [
-            "Yêu cầu được phân luồng bằng câu hỏi điều kiện",
-            "Danh sách kiểm tra điền theo cùng một cách mỗi lần",
-            "Xem xét câu trả lời mà không cần hộp thư chung",
-            "Kết quả tóm tắt sẵn cho buổi họp kế tiếp"
-          ],
+          "items": {
+            "0": "Yêu cầu được phân luồng bằng câu hỏi điều kiện",
+            "1": "Danh sách kiểm tra điền theo cùng một cách mỗi lần",
+            "2": "Xem xét câu trả lời mà không cần hộp thư chung",
+            "3": "Kết quả tóm tắt sẵn cho buổi họp kế tiếp"
+          },
           "title": "Vận hành đội nhóm"
         },
         "subtitle": "Thu thập yêu cầu, hỏi khách hàng, và phục vụ việc nội bộ.",
@@ -5489,32 +5553,32 @@
       "title": "Phòng thí nghiệm cho bầy tác nhân",
       "useCases": {
         "design": {
-          "items": [
-            "Thử một thiết lập nhiều tác nhân trước khi dựng thật",
-            "So sánh các cách ghép cặp trên cùng một thế giới",
-            "Thấy thay đổi chỉ dẫn qua hành vi, không phải qua lý thuyết",
-            "Phát hiện kiểu hỏng ngay trong mô phỏng"
-          ],
+          "items": {
+            "0": "Thử một thiết lập nhiều tác nhân trước khi dựng thật",
+            "1": "So sánh các cách ghép cặp trên cùng một thế giới",
+            "2": "Thấy thay đổi chỉ dẫn qua hành vi, không phải qua lý thuyết",
+            "3": "Phát hiện kiểu hỏng ngay trong mô phỏng"
+          },
           "title": "Thiết kế một hệ thống"
         },
         "eyebrow": "Trong thực tế",
         "research": {
-          "items": [
-            "Chỉ đổi một biến giữa hai lượt chạy",
-            "Tách riêng trí nhớ và tiểu sử thành điều kiện thí nghiệm",
-            "Giữ lại các lượt hội thoại để xem lại",
-            "Phiên có tên, nên kết quả còn quy được về nguồn"
-          ],
+          "items": {
+            "0": "Chỉ đổi một biến giữa hai lượt chạy",
+            "1": "Tách riêng trí nhớ và tiểu sử thành điều kiện thí nghiệm",
+            "2": "Giữ lại các lượt hội thoại để xem lại",
+            "3": "Phiên có tên, nên kết quả còn quy được về nguồn"
+          },
           "title": "Nghiên cứu tác nhân"
         },
         "subtitle": "Nghiên cứu tác nhân, thiết kế một hệ nhiều tác nhân, và cho người khác thấy nó hành xử ra sao.",
         "teaching": {
-          "items": [
-            "Một thế giới chung nhiều người cùng xem",
-            "Trạng thái cập nhật ngay khi nhịp đang chạy",
-            "Dựng lại một kịch bản để cùng thảo luận",
-            "Truy được quyết định của tác nhân về đúng chỉ dẫn của nó"
-          ],
+          "items": {
+            "0": "Một thế giới chung nhiều người cùng xem",
+            "1": "Trạng thái cập nhật ngay khi nhịp đang chạy",
+            "2": "Dựng lại một kịch bản để cùng thảo luận",
+            "3": "Truy được quyết định của tác nhân về đúng chỉ dẫn của nó"
+          },
           "title": "Cho thấy nó hành xử ra sao"
         },
         "title": "Người ta chạy gì trong đó"
@@ -5568,31 +5632,31 @@
       "title": "Số liệu tồn kho khớp với hàng trên kệ",
       "useCases": {
         "distribution": {
-          "items": [
-            "Sắp xếp hàng theo kho và theo vị trí",
-            "Soạn và giao hàng dựa trên tồn kho thực tế",
-            "Theo dõi các lần điều chuyển giữa các kho",
-            "Biết hàng nào đang về và về lúc nào"
-          ],
+          "items": {
+            "0": "Sắp xếp hàng theo kho và theo vị trí",
+            "1": "Soạn và giao hàng dựa trên tồn kho thực tế",
+            "2": "Theo dõi các lần điều chuyển giữa các kho",
+            "3": "Biết hàng nào đang về và về lúc nào"
+          },
           "title": "Phân phối"
         },
         "eyebrow": "Dành cho ai",
         "manufacturing": {
-          "items": [
-            "Theo dõi nguyên vật liệu theo kế hoạch sản xuất",
-            "Lên kế hoạch dựa trên lượng hàng đang thật sự có",
-            "Giữ lịch sử luân chuyển phục vụ kiểm tra chất lượng",
-            "Theo dõi giá thành khi giá đầu vào thay đổi"
-          ],
+          "items": {
+            "0": "Theo dõi nguyên vật liệu theo kế hoạch sản xuất",
+            "1": "Lên kế hoạch dựa trên lượng hàng đang thật sự có",
+            "2": "Giữ lịch sử luân chuyển phục vụ kiểm tra chất lượng",
+            "3": "Theo dõi giá thành khi giá đầu vào thay đổi"
+          },
           "title": "Sản xuất"
         },
         "retail": {
-          "items": [
-            "Giữ số trên hệ thống khớp với hàng trên kệ",
-            "Đặt lại hàng trước khi mã bán chạy hết",
-            "Theo dõi giá và thời gian giao của nhà cung cấp",
-            "Nối luân chuyển hàng với doanh số"
-          ],
+          "items": {
+            "0": "Giữ số trên hệ thống khớp với hàng trên kệ",
+            "1": "Đặt lại hàng trước khi mã bán chạy hết",
+            "2": "Theo dõi giá và thời gian giao của nhà cung cấp",
+            "3": "Nối luân chuyển hàng với doanh số"
+          },
           "title": "Bán lẻ"
         },
         "subtitle": "Bán lẻ, phân phối và sản xuất hỏi cùng một câu bằng những cách khác nhau: còn đủ không, và đang nằm ở đâu?",
@@ -5647,31 +5711,31 @@
       "title": "Khoá học, bài tập và vị trí của từng người học",
       "useCases": {
         "centers": {
-          "items": [
-            "Quản lý danh mục khoá học và các lớp đang mở",
-            "Vận hành chương trình cấp chứng chỉ từ đầu đến cuối",
-            "Theo dõi tiến độ của mọi lớp đang chạy",
-            "Biết khoá học nào thật sự kết thúc tốt"
-          ],
+          "items": {
+            "0": "Quản lý danh mục khoá học và các lớp đang mở",
+            "1": "Vận hành chương trình cấp chứng chỉ từ đầu đến cuối",
+            "2": "Theo dõi tiến độ của mọi lớp đang chạy",
+            "3": "Biết khoá học nào thật sự kết thúc tốt"
+          },
           "title": "Trung tâm đào tạo"
         },
         "corporate": {
-          "items": [
-            "Đón người mới bằng một lộ trình họ tự theo được",
-            "Chạy chương trình phát triển chuyên môn mà không cần người điều phối",
-            "Theo dõi đào tạo tuân thủ đến khi hoàn thành",
-            "Đánh giá năng lực trước và sau chương trình"
-          ],
+          "items": {
+            "0": "Đón người mới bằng một lộ trình họ tự theo được",
+            "1": "Chạy chương trình phát triển chuyên môn mà không cần người điều phối",
+            "2": "Theo dõi đào tạo tuân thủ đến khi hoàn thành",
+            "3": "Đánh giá năng lực trước và sau chương trình"
+          },
           "title": "Đội nhóm và đào tạo nội bộ"
         },
         "eyebrow": "Dành cho ai",
         "institutions": {
-          "items": [
-            "Đưa khoá học lên trực tuyến với nội dung đúng thứ tự",
-            "Xem kết quả theo từng sinh viên, không chỉ theo lớp",
-            "Tổ chức lớp học trực tuyến song song với bài vở",
-            "Gom tài liệu và học liệu vào một thư viện"
-          ],
+          "items": {
+            "0": "Đưa khoá học lên trực tuyến với nội dung đúng thứ tự",
+            "1": "Xem kết quả theo từng sinh viên, không chỉ theo lớp",
+            "2": "Tổ chức lớp học trực tuyến song song với bài vở",
+            "3": "Gom tài liệu và học liệu vào một thư viện"
+          },
           "title": "Trường học và đại học"
         },
         "subtitle": "Một lớp học, một chương trình hội nhập hay một khoá cấp chứng chỉ đều chạy trên ba thứ: nội dung, bài làm và tiến độ.",
@@ -5726,32 +5790,32 @@
       "title": "Hộp thư biết chuyển việc sang phần còn lại của ngày",
       "useCases": {
         "clients": {
-          "items": [
-            "Chuỗi thư mang theo ngữ cảnh của dự án",
-            "Hẹn lịch mà không cần bốn lượt qua lại",
-            "Nhắc theo dõi tự chạy mà bạn không phải nhớ",
-            "Tệp đính kèm nằm trong Drive, không nằm trong thư mục tải về"
-          ],
+          "items": {
+            "0": "Chuỗi thư mang theo ngữ cảnh của dự án",
+            "1": "Hẹn lịch mà không cần bốn lượt qua lại",
+            "2": "Nhắc theo dõi tự chạy mà bạn không phải nhớ",
+            "3": "Tệp đính kèm nằm trong Drive, không nằm trong thư mục tải về"
+          },
           "title": "Trao đổi với khách hàng"
         },
         "eyebrow": "Dùng vào việc gì",
         "followups": {
-          "items": [
-            "Bản nháp trả lời chờ bạn chỉnh",
-            "Hẹn giờ gửi qua các múi giờ",
-            "Nhắc lại khi chưa ai trả lời",
-            "Thư được chuyển thành công việc có hạn chót"
-          ],
+          "items": {
+            "0": "Bản nháp trả lời chờ bạn chỉnh",
+            "1": "Hẹn giờ gửi qua các múi giờ",
+            "2": "Nhắc lại khi chưa ai trả lời",
+            "3": "Thư được chuyển thành công việc có hạn chót"
+          },
           "title": "Giữ nguyên vẹn một ngày của bạn"
         },
         "subtitle": "Ba dạng trao đổi thôi rò rỉ khi thư nằm trong không gian làm việc.",
         "team": {
-          "items": [
-            "Một địa chỉ nhiều người cùng trả lời",
-            "Bàn giao mà không cần chuyển tiếp lòng vòng",
-            "Cập nhật nội bộ trở thành công việc",
-            "Một bản ghi người mới có thể đọc lại"
-          ],
+          "items": {
+            "0": "Một địa chỉ nhiều người cùng trả lời",
+            "1": "Bàn giao mà không cần chuyển tiếp lòng vòng",
+            "2": "Cập nhật nội bộ trở thành công việc",
+            "3": "Một bản ghi người mới có thể đọc lại"
+          },
           "title": "Đội nhóm và hộp thư dùng chung"
         },
         "title": "Những loại thư thật sự tốn thời gian của bạn"
@@ -5801,32 +5865,32 @@
       "title": "Tìm ra giờ họp trước khi gửi lời mời",
       "useCases": {
         "clients": {
-          "items": [
-            "Đưa ra nhiều giờ khả dĩ trong một tin nhắn",
-            "Không cần mở lịch nội bộ cho người ngoài",
-            "Nhiều người tham dự được gom về một lần",
-            "Còn lại bản ghi về điều đã thống nhất"
-          ],
+          "items": {
+            "0": "Đưa ra nhiều giờ khả dĩ trong một tin nhắn",
+            "1": "Không cần mở lịch nội bộ cho người ngoài",
+            "2": "Nhiều người tham dự được gom về một lần",
+            "3": "Còn lại bản ghi về điều đã thống nhất"
+          },
           "title": "Khách hàng và đối tác ngoài"
         },
         "eyebrow": "Trong thực tế",
         "groups": {
-          "items": [
-            "Buổi học chung xếp quanh lịch lên lớp",
-            "Ca tình nguyện khớp với người đang rảnh",
-            "Kế hoạch định kỳ dùng lại từ tuần này sang tuần khác",
-            "Ai cũng trả lời được mà không phải đăng ký"
-          ],
+          "items": {
+            "0": "Buổi học chung xếp quanh lịch lên lớp",
+            "1": "Ca tình nguyện khớp với người đang rảnh",
+            "2": "Kế hoạch định kỳ dùng lại từ tuần này sang tuần khác",
+            "3": "Ai cũng trả lời được mà không phải đăng ký"
+          },
           "title": "Nhóm và cộng đồng"
         },
         "subtitle": "Càng nhiều cuốn lịch tham gia, chuỗi tin nhắn càng tốn kém. Đây là thứ thay thế nó.",
         "teams": {
-          "items": [
-            "Tìm được giờ khả thi mà không cần chuỗi trả lời",
-            "Giờ địa phương hiển thị cho từng người",
-            "Cộng tác viên và đối tác tham gia bằng liên kết",
-            "Nội dung họp sẵn sàng trước khi chốt giờ"
-          ],
+          "items": {
+            "0": "Tìm được giờ khả thi mà không cần chuỗi trả lời",
+            "1": "Giờ địa phương hiển thị cho từng người",
+            "2": "Cộng tác viên và đối tác tham gia bằng liên kết",
+            "3": "Nội dung họp sẵn sàng trước khi chốt giờ"
+          },
           "title": "Nhóm ở nhiều múi giờ"
         },
         "title": "Bất cứ khi nào có hơn ba người"
@@ -5886,30 +5950,30 @@
       "title": "Một mã cho thứ bạn phải lặp đi lặp lại",
       "useCases": {
         "business": {
-          "items": [
-            "Thực đơn mở ra mà không cần ứng dụng",
-            "Thông tin thanh toán trên tấm thẻ cạnh quầy thu ngân",
-            "Đường liên kết đặt món hoặc đánh giá ngay tại bàn",
-            "Một đường liên kết in trên hóa đơn hoặc túi đựng"
-          ],
+          "items": {
+            "0": "Thực đơn mở ra mà không cần ứng dụng",
+            "1": "Thông tin thanh toán trên tấm thẻ cạnh quầy thu ngân",
+            "2": "Đường liên kết đặt món hoặc đánh giá ngay tại bàn",
+            "3": "Một đường liên kết in trên hóa đơn hoặc túi đựng"
+          },
           "title": "Trên quầy"
         },
         "events": {
-          "items": [
-            "Đường liên kết đăng ký in trên áp phích",
-            "Chỉ đường tới phòng hoặc địa điểm",
-            "Slide và tài liệu sau buổi nói chuyện",
-            "Một danh thiếp người khác quét được"
-          ],
+          "items": {
+            "0": "Đường liên kết đăng ký in trên áp phích",
+            "1": "Chỉ đường tới phòng hoặc địa điểm",
+            "2": "Slide và tài liệu sau buổi nói chuyện",
+            "3": "Một danh thiếp người khác quét được"
+          },
           "title": "Tại sự kiện"
         },
         "everyday": {
-          "items": [
-            "Đưa một đường liên kết dài sang điện thoại mà không phải gõ",
-            "Đường liên kết biểu mẫu để người khác quét và điền",
-            "Trang cá nhân hoặc hồ sơ năng lực trên danh thiếp",
-            "Mã in vừa một miếng dán hoặc một thẻ đeo"
-          ],
+          "items": {
+            "0": "Đưa một đường liên kết dài sang điện thoại mà không phải gõ",
+            "1": "Đường liên kết biểu mẫu để người khác quét và điền",
+            "2": "Trang cá nhân hoặc hồ sơ năng lực trên danh thiếp",
+            "3": "Mã in vừa một miếng dán hoặc một thẻ đeo"
+          },
           "title": "Trao đổi hằng ngày"
         },
         "eyebrow": "Trong thực tế",
@@ -5965,31 +6029,31 @@
       "title": "Kho hàng của bạn, mở ra cho người mua",
       "useCases": {
         "buyers": {
-          "items": [
-            "Xem theo nhóm sản phẩm trên điện thoại",
-            "Giỏ hàng nhớ những gì đã thêm",
-            "Thanh toán kết thúc ở một trang thanh toán thật",
-            "Đơn hàng tra lại được sau này"
-          ],
+          "items": {
+            "0": "Xem theo nhóm sản phẩm trên điện thoại",
+            "1": "Giỏ hàng nhớ những gì đã thêm",
+            "2": "Thanh toán kết thúc ở một trang thanh toán thật",
+            "3": "Đơn hàng tra lại được sau này"
+          },
           "title": "Người đi mua"
         },
         "eyebrow": "Trong thực tế",
         "operators": {
-          "items": [
-            "Tồn kho đếm một lần, hiển thị ở mọi nơi",
-            "Bật tắt hiển thị sản phẩm theo từng cửa hàng",
-            "Đơn hàng nằm cùng không gian làm việc với kho",
-            "Danh mục và thiết lập thanh toán giữ trong Inventory"
-          ],
+          "items": {
+            "0": "Tồn kho đếm một lần, hiển thị ở mọi nơi",
+            "1": "Bật tắt hiển thị sản phẩm theo từng cửa hàng",
+            "2": "Đơn hàng nằm cùng không gian làm việc với kho",
+            "3": "Danh mục và thiết lập thanh toán giữ trong Inventory"
+          },
           "title": "Phía sau quầy"
         },
         "shops": {
-          "items": [
-            "Có cửa hàng mà không phải dựng lại danh mục",
-            "Giá duy trì ở một nơi duy nhất",
-            "Đường liên kết in được lên hóa đơn hay áp phích",
-            "Không thêm hệ thống thứ hai phải đối soát"
-          ],
+          "items": {
+            "0": "Có cửa hàng mà không phải dựng lại danh mục",
+            "1": "Giá duy trì ở một nơi duy nhất",
+            "2": "Đường liên kết in được lên hóa đơn hay áp phích",
+            "3": "Không thêm hệ thống thứ hai phải đối soát"
+          },
           "title": "Cửa hàng nhỏ"
         },
         "subtitle": "Cửa hàng nhỏ, đội đứng sau quầy, và người đi mua.",
@@ -6045,31 +6109,31 @@
       "useCases": {
         "eyebrow": "Trong thực tế",
         "operations": {
-          "items": [
-            "Danh sách kiểm tra dùng lại cho việc thường kỳ",
-            "Theo dõi hạn trên nhiều dự án cùng lúc",
-            "Nhìn thấy khối lượng việc trước khi nhận thêm",
-            "Báo cáo trạng thái dựng từ hoạt động thật"
-          ],
+          "items": {
+            "0": "Danh sách kiểm tra dùng lại cho việc thường kỳ",
+            "1": "Theo dõi hạn trên nhiều dự án cùng lúc",
+            "2": "Nhìn thấy khối lượng việc trước khi nhận thêm",
+            "3": "Báo cáo trạng thái dựng từ hoạt động thật"
+          },
           "title": "Vận hành lặp lại"
         },
         "personal": {
-          "items": [
-            "Một danh sách trong ngày có thể làm hết, không phải hộp thư",
-            "Mục tiêu chia nhỏ thành việc có hạn cụ thể",
-            "Thói quen và việc định kỳ tự lặp lại",
-            "Ưu tiên đặt một lần vào buổi sáng"
-          ],
+          "items": {
+            "0": "Một danh sách trong ngày có thể làm hết, không phải hộp thư",
+            "1": "Mục tiêu chia nhỏ thành việc có hạn cụ thể",
+            "2": "Thói quen và việc định kỳ tự lặp lại",
+            "3": "Ưu tiên đặt một lần vào buổi sáng"
+          },
           "title": "Tuần của riêng bạn"
         },
         "subtitle": "Việc cá nhân, việc của nhóm và việc lặp lại hằng tháng đều nằm trong một không gian làm việc.",
         "team": {
-          "items": [
-            "Dự án chia thành các việc có người phụ trách",
-            "Bàn giao kèm trạng thái ai cũng nhìn thấy",
-            "Tiến độ đọc được mà không cần họp báo cáo",
-            "Bình luận và bối cảnh nằm ngay trong công việc"
-          ],
+          "items": {
+            "0": "Dự án chia thành các việc có người phụ trách",
+            "1": "Bàn giao kèm trạng thái ai cũng nhìn thấy",
+            "2": "Tiến độ đọc được mà không cần họp báo cáo",
+            "3": "Bình luận và bối cảnh nằm ngay trong công việc"
+          },
           "title": "Nhóm bàn giao công việc"
         },
         "title": "Cùng một bảng, ba cách dùng"
@@ -6124,31 +6188,31 @@
       "useCases": {
         "eyebrow": "Trong thực tế",
         "freelance": {
-          "items": [
-            "Số giờ theo từng khách, sẵn sàng lập hóa đơn",
-            "Phiên làm việc gắn với công việc đã bàn giao",
-            "Ước lượng được đối chiếu với thời gian thực tế",
-            "Bản xuất dữ liệu để hóa đơn dẫn chiếu"
-          ],
+          "items": {
+            "0": "Số giờ theo từng khách, sẵn sàng lập hóa đơn",
+            "1": "Phiên làm việc gắn với công việc đã bàn giao",
+            "2": "Ước lượng được đối chiếu với thời gian thực tế",
+            "3": "Bản xuất dữ liệu để hóa đơn dẫn chiếu"
+          },
           "title": "Lập hóa đơn cho khách"
         },
         "review": {
-          "items": [
-            "Xem lại cả tuần trong một màn hình",
-            "Thời gian theo công việc, dự án và người",
-            "Phát hiện chỗ thiếu khi vẫn còn sửa được",
-            "Một bản ghi cho lần lập kế hoạch tiếp theo"
-          ],
+          "items": {
+            "0": "Xem lại cả tuần trong một màn hình",
+            "1": "Thời gian theo công việc, dự án và người",
+            "2": "Phát hiện chỗ thiếu khi vẫn còn sửa được",
+            "3": "Một bản ghi cho lần lập kế hoạch tiếp theo"
+          },
           "title": "Chốt lại một tuần"
         },
         "subtitle": "Lập hóa đơn cho khách, điều phối một nhóm, hoặc chốt lại một tuần.",
         "team": {
-          "items": [
-            "Ai đang làm gì, ngay lúc này",
-            "Thấy rõ khối lượng công việc trước khi giao thêm",
-            "Thời gian nghỉ tách khỏi thời gian tập trung",
-            "Duyệt những mục ai đó quên ghi"
-          ],
+          "items": {
+            "0": "Ai đang làm gì, ngay lúc này",
+            "1": "Thấy rõ khối lượng công việc trước khi giao thêm",
+            "2": "Thời gian nghỉ tách khỏi thời gian tập trung",
+            "3": "Duyệt những mục ai đó quên ghi"
+          },
           "title": "Điều phối một nhóm"
         },
         "title": "Ba lý do người dùng để bộ đếm chạy"
@@ -6202,32 +6266,32 @@
       "title": "Phần lặp đi lặp lại, chạy mà không cần bạn",
       "useCases": {
         "approvals": {
-          "items": [
-            "Phê duyệt tự đi đến đúng người có quyền quyết",
-            "Tài liệu đi qua các vòng xem xét theo thứ tự",
-            "Nhân sự mới được thiết lập theo cùng một danh sách",
-            "Đề nghị mua sắm theo dõi được đến khi có quyết định"
-          ],
+          "items": {
+            "0": "Phê duyệt tự đi đến đúng người có quyền quyết",
+            "1": "Tài liệu đi qua các vòng xem xét theo thứ tự",
+            "2": "Nhân sự mới được thiết lập theo cùng một danh sách",
+            "3": "Đề nghị mua sắm theo dõi được đến khi có quyết định"
+          },
           "title": "Quy trình nghiệp vụ"
         },
         "eyebrow": "Trong thực tế",
         "subtitle": "Phê duyệt, bàn giao và các việc vặt giữa hệ thống là phần âm thầm ngốn cả tuần mỗi tháng.",
         "systems": {
-          "items": [
-            "Dữ liệu giữ đồng bộ giữa các công cụ",
-            "Tác vụ theo lịch chạy đúng giờ",
-            "Tác nhân kích hoạt riêng cho sự kiện của bạn",
-            "Mỗi lần chạy đều có nhật ký để tìm ra lỗi"
-          ],
+          "items": {
+            "0": "Dữ liệu giữ đồng bộ giữa các công cụ",
+            "1": "Tác vụ theo lịch chạy đúng giờ",
+            "2": "Tác nhân kích hoạt riêng cho sự kiện của bạn",
+            "3": "Mỗi lần chạy đều có nhật ký để tìm ra lỗi"
+          },
           "title": "Việc vặt giữa các hệ thống"
         },
         "team": {
-          "items": [
-            "Việc được giao khi công việc tới một giai đoạn",
-            "Bàn giao mang theo bối cảnh của chính nó",
-            "Cập nhật trạng thái đăng đi mà không cần nhắc",
-            "Thông báo chỉ gửi cho người thật sự cần"
-          ],
+          "items": {
+            "0": "Việc được giao khi công việc tới một giai đoạn",
+            "1": "Bàn giao mang theo bối cảnh của chính nó",
+            "2": "Cập nhật trạng thái đăng đi mà không cần nhắc",
+            "3": "Thông báo chỉ gửi cho người thật sự cần"
+          },
           "title": "Tự động hóa cho nhóm"
         },
         "title": "Nơi việc thủ công thường trốn"

@@ -4678,11 +4678,11 @@
           "proactive": "Proactive AI"
         },
         "description": "Mira is your proactive AI companion. She plans, reasons, and acts on your behalf, synchronizing calendars, goals, and communications to surface proactive recommendations.",
-        "prompts": [
-          "Schedule my standup for tomorrow at 9am",
-          "Summarize my tasks for this week",
-          "Help me prioritize my project deadlines"
-        ],
+        "prompts": {
+          "0": "Schedule my standup for tomorrow at 9am",
+          "1": "Summarize my tasks for this week",
+          "2": "Help me prioritize my project deadlines"
+        },
         "title": "Mira: Your AI Partner",
         "tryAsking": "Try asking Mira..."
       },
@@ -5379,11 +5379,11 @@
       "payAsYouGo": {
         "badge": "Coming Soon",
         "description": "Need more? Extend your usage with flexible options.",
-        "features": [
-          "Extended AI usage",
-          "Workflow processing time",
-          "Priority queue access"
-        ],
+        "features": {
+          "0": "Extended AI usage",
+          "1": "Workflow processing time",
+          "2": "Priority queue access"
+        },
         "title": "Pay As You Go"
       },
       "subtitle": "Each workspace has its own plan, billed per member. Standard accounts can create up to 10 workspaces; upgrading does not increase this account limit.",
@@ -5391,26 +5391,26 @@
         "enterprise": {
           "cta": "Contact Sales",
           "description": "For large organizations",
-          "features": [
-            "Everything in Pro",
-            "Custom solutions",
-            "Dedicated support",
-            "SLA by signed order only",
-            "Self-hosting options"
-          ],
+          "features": {
+            "0": "Everything in Pro",
+            "1": "Custom solutions",
+            "2": "Dedicated support",
+            "3": "SLA by signed order only",
+            "4": "Self-hosting options"
+          },
           "name": "Enterprise",
           "price": "Custom"
         },
         "free": {
           "cta": "Get Started",
           "description": "For individuals exploring Tuturuuu",
-          "features": [
-            "Basic task management",
-            "Calendar sync (limited)",
-            "AI within your credit allowance",
-            "QR Generator",
-            "100 MiB Drive storage / workspace"
-          ],
+          "features": {
+            "0": "Basic task management",
+            "1": "Calendar sync (limited)",
+            "2": "AI within your credit allowance",
+            "3": "QR Generator",
+            "4": "100 MiB Drive storage / workspace"
+          },
           "name": "Free",
           "period": "forever",
           "price": "$0"
@@ -5419,15 +5419,15 @@
           "badge": "Best Value",
           "cta": "Get Plus",
           "description": "For teams that need collaboration",
-          "features": [
-            "Everything in Free +",
-            "Shared whiteboards (usage limits apply)",
-            "20 GiB Drive storage / workspace",
-            "Time Tracker & Requests",
-            "Granular permissions",
-            "Preview apps: availability varies",
-            "Meet: hosting access currently restricted"
-          ],
+          "features": {
+            "0": "Everything in Free +",
+            "1": "Shared whiteboards (usage limits apply)",
+            "2": "20 GiB Drive storage / workspace",
+            "3": "Time Tracker & Requests",
+            "4": "Granular permissions",
+            "5": "Preview apps: availability varies",
+            "6": "Meet: hosting access currently restricted"
+          },
           "name": "Plus",
           "period": {
             "monthly": "/member/mo",
@@ -5438,13 +5438,13 @@
           "badge": "Most Powerful",
           "cta": "Get Pro",
           "description": "For power teams that need it all",
-          "features": [
-            "Everything in Plus +",
-            "Generous AI credits; top-ups available",
-            "Priority support",
-            "Reports & Analytics",
-            "100 GiB Drive storage / workspace"
-          ],
+          "features": {
+            "0": "Everything in Plus +",
+            "1": "Generous AI credits; top-ups available",
+            "2": "Priority support",
+            "3": "Reports & Analytics",
+            "4": "100 GiB Drive storage / workspace"
+          },
           "name": "Pro",
           "period": {
             "monthly": "/member/mo",
