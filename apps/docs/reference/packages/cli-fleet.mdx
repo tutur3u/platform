@@ -1,0 +1,25 @@
+---
+title: Fleet inventory
+description: Read-only trusted host broker inventory
+---
+
+`ttr fleet ls [--json]` and `ttr fleet health [--json]` collect the same
+read-only snapshot from the trusted resources host registry. No registry is
+created automatically. M3 identities and transport aliases are excluded before
+transport. The commands never move work or change provider settings.
+
+JSON schema version 1 includes collection timestamps, host IDs, aggregate broker
+running/waiting counts, load per CPU and free disk GiB. Broker jobs are not T3
+threads; thread inventory is UNKNOWN. Missing, malformed, failed or expired
+collection telemetry is UNKNOWN, never an empty workload claim. Raw errors,
+commands, environments and private paths are omitted.
+
+Execution eligibility remains UNKNOWN for every host. Linux remains visible;
+this slice does not establish enforcement or PKTM health. CURRENT means a live
+probe completed within the registry TTL, not that execution is authorized.
+The existing remote probe has no producer timestamp; collection timestamps do
+not prove freshness of underlying broker records. Probe transports retain their
+existing timeouts, with at most four hosts collected concurrently.
+
+On an admitted remote verification host, run the focused SDK fleet test and
+`bun check:changed`; require applicable exact-source CI before integration.
