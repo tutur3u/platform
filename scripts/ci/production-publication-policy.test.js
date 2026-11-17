@@ -78,6 +78,7 @@ function fixture(t, policy) {
     'scripts/ci/wave1-native-profiles.json',
     'scripts/ci/wave1-native-artifact.mjs',
     'scripts/ci/mail-node-imports.mjs',
+    'scripts/ci/mail-node-scopes.mjs',
     'scripts/ci/calendar-native-inventory.mjs',
     'scripts/ci/mobile-build-selection.ts',
     'scripts/ci/production-test-only-paths.ts',
