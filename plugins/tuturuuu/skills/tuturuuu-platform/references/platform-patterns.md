@@ -221,6 +221,13 @@ and its focused regression coverage before adding a reason or changing middlewar
   Prefix rendered href/src separately, including CID image replacements. See the
   [bridge resolver contract](../../../../../apps/docs/build/devops/start-bridge.mdx#internal-api-resolver-registration)
   for browser setup, teardown and regression coverage.
+- Mail inline-image diagnosis starts with the rendered frame's `img.src` and the
+  message's stored attachment metadata. A working attachment preview does not
+  prove that the body URL is valid. Replace the entire outgoing attachment URL,
+  preserve the MIME Content-ID's case when sending, and normalize only reader
+  lookup. Verify the authenticated preview inside the existing sandbox before
+  considering CSP changes. Use synthetic multipart/related fixtures; keep private
+  message bodies out of regression files. See [Mail reading and source access](../../../../../apps/docs/platform/applications/mail.mdx#reading-and-attachment-previews).
 - Every `fetch` inside a query function should include `{ cache: 'no-store' }`.
 - Web mounts the Sonner toaster. Client mutations should import `toast` from
   `@tuturuuu/ui/sonner`; the legacy `hooks/use-toast` store has no mounted Web
