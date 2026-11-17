@@ -1,4 +1,5 @@
 // Provider-neutral, offline phase implementation. No CLI or HTTP transport.
+import { runStage } from './calendar-exact-sha-publisher.mjs';
 import { readFileSync } from 'node:fs';
 import { spawnSync } from 'node:child_process';
 import { createHash } from 'node:crypto';
@@ -63,13 +64,20 @@ export function verifyProductionAncestry(sha, ref) {
   );
   return result.status === 0;
 }
-export function runningReleaseDigests(config = CALENDAR_RELEASE_MODES) {
+export function releaseConfigForApp(app) {
+  if (app !== 'calendar') fail('RELEASE_CONFIG_INVALID', 'inputs');
+  return CALENDAR_RELEASE_MODES;
+}
+export function runningReleaseDigests(app = 'calendar') {
+  const config = releaseConfigForApp(app);
   const recipe = createHash('sha256');
   for (const file of [
     'release-vercel-modes.mjs',
     'release-vercel-queue.mjs',
     'release-vercel-errors.mjs',
     'release-vercel-config.mjs',
+    'release-vercel-values.mjs',
+    'calendar-exact-sha-publisher.mjs',
   ])
     recipe.update(file).update(readFileSync(new URL(file, import.meta.url)));
   return {
@@ -81,7 +89,7 @@ export function runningReleaseDigests(config = CALENDAR_RELEASE_MODES) {
   };
 }
 function bindReceipt(payload, config, receipt, context, mode) {
-  const actual = runningReleaseDigests(config);
+  const actual = runningReleaseDigests(config.app);
   if (
     !receipt ||
     receipt.schemaVersion !== 1 ||
@@ -234,6 +242,14 @@ export async function runReleaseMode({
     await context.checkFence();
     aliasMatches(after, to, payload, config);
     return {
+      lifecycle: {
+        candidate: receipt.candidate,
+        preimage: receipt.preimage,
+        alias: receipt.alias,
+        projectId: receipt.projectId,
+        qualification: receipt.qualification,
+        artifactSha256: receipt.artifactSha256,
+      },
       terminalState: mode === 'promote' ? 'promoted' : 'rolled-back',
       deploymentId: to,
       alias: config.alias,
@@ -309,23 +325,101 @@ export async function runReleaseMode({
   };
 }
 
-export async function dispatchReleaseMode(options) {
+async function dispatch(options, runtime) {
   const mode = options.payload?.requestedPhases?.[0];
-  if (!['promote', 'watch', 'rollback'].includes(mode))
+  if (!['stage', 'promote', 'watch', 'rollback'].includes(mode))
     fail('RELEASE_CONFIG_INVALID', 'inputs');
-  const config = validateReleaseModes(options.config);
-  const reviewedTarget = {
-    ...options.receipt?.canonicalTarget,
-    environment: config.promoteEnvironment,
-  };
+  const config = releaseConfigForApp(options.payload.target.app);
+  if (
+    options.config !== undefined &&
+    payloadDigest(options.config) !== payloadDigest(config)
+  )
+    fail('RELEASE_CONFIG_INVALID', 'inputs');
+  const actual = runningReleaseDigests(config.app);
+  if (
+    options.payload.configSha256 !== actual.configSha256 ||
+    options.payload.recipeSha256 !== actual.recipeSha256
+  )
+    fail('RELEASE_RECEIPT_MISMATCH', 'inputs');
+  const reviewedTarget =
+    mode === 'stage'
+      ? options.reviewedTarget
+      : {
+          ...options.receipt?.canonicalTarget,
+          environment: config.promoteEnvironment,
+        };
   return executeVercelPhase({
-    ...options,
+    port: options.port,
+    payload: options.payload,
+    host: options.host,
     reviewedTarget,
-    execute: (context) =>
-      runReleaseMode({
-        ...options,
-        mode: options.payload.requestedPhases[0],
+    execute: async (context) => {
+      if (mode === 'stage') {
+        let preimage;
+        const deps = options.stageDependencies;
+        if (
+          !deps ||
+          options.payload.target.environment !==
+            CALENDAR_VERCEL.stageEnvironment
+        )
+          fail('RELEASE_CONFIG_INVALID', 'inputs');
+        const staged = await runStage({
+          ...deps,
+          recordPreimage: async (value) => {
+            if (value.id !== context.payload.rollback.deploymentId)
+              fail('RELEASE_RECEIPT_MISMATCH', 'alias-preimage');
+            preimage = value;
+            await deps.recordPreimage(value);
+          },
+          stage: (seal) =>
+            context.effect('stage-upload', () => deps.stage(seal)),
+        });
+        if (
+          staged.source !== context.payload.sourceSha ||
+          preimage?.id !== context.payload.rollback.deploymentId
+        )
+          fail('RELEASE_RECEIPT_MISMATCH', 'stage');
+        const lifecycle = await context.qualifyLifecycle({
+          candidate: { id: staged.staged.id },
+          preimage: { id: preimage.id },
+          alias: config.alias,
+          projectId: context.payload.target.project,
+          artifactSha256: staged.seal,
+        });
+        return {
+          deploymentId: staged.staged.id,
+          terminalState: 'staged',
+          lifecycle,
+        };
+      }
+      return runReleaseMode({
+        mode,
+        config,
         context,
-      }),
+        provider: options.provider,
+        probe: options.probe,
+        sourceRef: runtime.sourceRef,
+        verifySourceAncestry: runtime.verifySourceAncestry,
+        now: runtime.now,
+        delay: runtime.delay,
+      });
+    },
   });
+}
+export async function dispatchReleaseMode(options) {
+  return dispatch(options, {
+    sourceRef: process.env.GITHUB_REF,
+    verifySourceAncestry: verifyProductionAncestry,
+    now: () => performance.now(),
+    delay: (ms) => new Promise((resolve) => setTimeout(resolve, ms)),
+  });
+}
+// Node's test runner context is required; caller options cannot activate hooks.
+export async function dispatchReleaseModeForTest(options, hooks) {
+  if (
+    !process.env.NODE_TEST_CONTEXT ||
+    process.env.GITHUB_EVENT_NAME === 'workflow_dispatch'
+  )
+    fail('RELEASE_CONFIG_INVALID', 'test-hook');
+  return dispatch(options, hooks);
 }

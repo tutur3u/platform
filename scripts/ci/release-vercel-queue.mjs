@@ -1,5 +1,6 @@
 // Proposed offline D395 port: b6f205d528b091b1dbe5fc27e48cadb8b7c402a4a16a82c4a02730ddaab4901e.
 import { createHash } from 'node:crypto';
+import { unsafeValues } from './release-vercel-values.mjs';
 import { ReleaseStop } from './release-vercel-errors.mjs';
 
 export const QUEUE_CODES = Object.freeze([
@@ -73,16 +74,19 @@ function secretField(value, seen = new Set()) {
   if (!value || typeof value !== 'object') return false;
   if (seen.has(value)) return true;
   seen.add(value);
-  return Object.entries(value).some(
+  const unsafe = Object.entries(value).some(
     ([key, child]) =>
       /PASSWORD|TOKEN|SECRET|KEY|CREDENTIAL/iu.test(key) ||
       secretField(child, seen)
   );
+  seen.delete(value);
+  return unsafe;
 }
 export function validateQueuePayload(payload, reviewedTarget) {
   const bad = () => refuse('QUEUE_PAYLOAD_INVALID');
   if (
     secretField(payload) ||
+    unsafeValues(payload) ||
     (payload?.checkpointRef !== undefined && !id(payload.checkpointRef))
   )
     bad();
@@ -237,7 +241,8 @@ export async function executeVercelPhase({
     g.aliasLockKey === aliasLockKey(job.target) &&
     Number.isSafeInteger(g.stopRevision) &&
     g.stopRevision >= 0 &&
-    Number.isFinite(g.leaseDeadline);
+    Number.isFinite(g.leaseDeadline) &&
+    !unsafeValues(g);
   if (!valid(grant)) refuse('QUEUE_GRANT_INVALID', phase);
   const key = {
     operationId: job.operationId,
@@ -252,12 +257,22 @@ export async function executeVercelPhase({
     if (
       !replay ||
       replay.status !== 'succeeded' ||
+      replay.jobId !== grant.jobId ||
+      replay.attemptId !== grant.attemptId ||
+      replay.epoch !== grant.epoch ||
+      replay.guardCode !== null ||
+      unsafeValues(replay) ||
+      replay.evidenceSha256 !== payloadDigest(replay.evidence) ||
+      replay.providerOperationId !== (replay.evidence?.deploymentId ?? null) ||
       replay.operationId !== job.operationId ||
       replay.phase !== phase ||
       replay.sourceSha !== job.sourceSha ||
       replay.configSha256 !== job.configSha256 ||
       replay.recipeSha256 !== job.recipeSha256 ||
-      replay.artifactSha256 !== (job.artifact?.sha256 ?? null) ||
+      replay.artifactSha256 !==
+        (job.artifact?.sha256 ??
+          replay.evidence?.lifecycle?.artifactSha256 ??
+          null) ||
       canonical(replay.canonicalTarget) !== canonical(job.target)
     )
       refuse('QUEUE_GRANT_INVALID', phase);
@@ -266,6 +281,7 @@ export async function executeVercelPhase({
   if (intent?.status === 'unknown' || intent?.status === 'reconciling')
     refuse('QUEUE_PHASE_UNKNOWN', phase);
   if (intent?.status !== 'running') refuse('QUEUE_GRANT_INVALID', phase);
+  let finalCheckpointSent = false;
   let startedEffect = false;
   let unknown = false;
   let sequence = 0;
@@ -311,9 +327,22 @@ export async function executeVercelPhase({
     guardPhase: phase,
     executorHost: host,
     authorizationRefs: job.authorizationRefs,
-    approvalVerificationId: intent.approvalVerificationId ?? null,
+    approvalVerificationId: unsafeValues(intent.approvalVerificationId)
+      ? null
+      : (intent.approvalVerificationId ?? null),
     rollback: job.rollback,
     evidence,
+    evidenceSha256: payloadDigest(evidence),
+    ...(evidence?.lifecycle
+      ? {
+          candidate: evidence.lifecycle.candidate,
+          preimage: evidence.lifecycle.preimage,
+          alias: evidence.lifecycle.alias,
+          projectId: evidence.lifecycle.projectId,
+          qualification: evidence.lifecycle.qualification,
+          artifactSha256: evidence.lifecycle.artifactSha256,
+        }
+      : {}),
     nextAllowedPhase: null,
   });
   try {
@@ -324,18 +353,43 @@ export async function executeVercelPhase({
       predecessorSha256: intent.predecessorSha256,
       approval: intent.approval,
       approvalVerificationId: intent.approvalVerificationId,
+      async qualifyLifecycle(lifecycle) {
+        const ack = await authorityCall(
+          port,
+          'checkpoint',
+          [grant, { ...key, status: 'qualification-request', lifecycle }],
+          phase
+        );
+        if (
+          ack?.status !== 'running' ||
+          ack.lifecycleSha256 !== payloadDigest(lifecycle) ||
+          ['c1', 'staticAuth', 'delta', 'qualification'].some(
+            (k) => ack.qualification?.[k] !== 'passed'
+          )
+        )
+          refuse('QUEUE_GRANT_INVALID', phase);
+        return { ...lifecycle, qualification: ack.qualification };
+      },
       async checkFence() {
         await fence();
       },
       async effect(label, action) {
         if (unknown) refuse('QUEUE_EFFECT_UNKNOWN', phase);
         await fence();
-        const allowed = await port.checkpoint(grant, {
-          ...key,
-          sequence: sequence++,
-          label,
-          status: 'intent',
-        });
+        const allowed = await authorityCall(
+          port,
+          'checkpoint',
+          [
+            grant,
+            {
+              ...key,
+              sequence: sequence++,
+              label,
+              status: 'intent',
+            },
+          ],
+          phase
+        );
         if (allowed?.status !== 'running') refuse('QUEUE_GRANT_INVALID', phase);
         startedEffect = true;
         try {
@@ -350,7 +404,11 @@ export async function executeVercelPhase({
     });
     await fence();
     if (unknown) refuse('QUEUE_EFFECT_UNKNOWN', phase);
+    if (unsafeValues(evidence) || secretField(evidence))
+      refuse('QUEUE_PAYLOAD_INVALID', phase);
     const result = receipt('succeeded', null, evidence);
+    if (unsafeValues(result)) refuse('QUEUE_PAYLOAD_INVALID', phase);
+    finalCheckpointSent = true;
     const checkpoint = await authorityCall(
       port,
       'checkpoint',
@@ -387,7 +445,8 @@ export async function executeVercelPhase({
     // A lost authority cannot acknowledge this receipt; the caller must retain
     // it for reconciliation. No retries or second mutation are attempted.
     try {
-      await port.checkpoint(grant, result);
+      if (!finalCheckpointSent)
+        await authorityCall(port, 'checkpoint', [grant, result], phase);
     } catch {
       /* caller retains receipt */
     }

@@ -189,6 +189,12 @@ test('unknown receipt blocks replay until authority reconciles readback', async 
   assert.equal(effects, 0);
   port.state.status = 'succeeded';
   port.state.receipts.push({
+    jobId: 'job-1',
+    attemptId: 'attempt-1',
+    epoch: 1,
+    guardCode: null,
+    evidenceSha256: payloadDigest({ deploymentId: 'dpl_verified' }),
+    providerOperationId: 'dpl_verified',
     operationId: 'release-1',
     artifactSha256: null,
     phase: 'stage',
@@ -352,5 +358,77 @@ test('checkpoint references and array extras cannot carry secret fields', async 
     await assert.rejects(submitVercelRelease(authority(), p, target), {
       guardCode: 'QUEUE_PAYLOAD_INVALID',
     });
+  }
+});
+
+test('intent checkpoint transport errors retain authority-unavailable identity', async () => {
+  const port = authority();
+  port.checkpoint = async () => {
+    throw new Error('offline');
+  };
+  const r = await run(port, async (ctx) =>
+    ctx.effect('mutation', async () => {
+      throw new Error('unreachable');
+    })
+  );
+  assert.equal(r.guardCode, 'QUEUE_AUTHORITY_UNAVAILABLE');
+  assert.equal(r.status, 'failed');
+});
+test('finish refusal does not append a contradictory second terminal checkpoint', async () => {
+  const port = authority();
+  port.finish = async () => ({ status: 'refused' });
+  const r = await run(port, async (ctx) =>
+    ctx.effect('mutation', async () => ({ deploymentId: 'dpl_result' }))
+  );
+  assert.equal(r.status, 'unknown');
+  assert.equal(
+    port.state.receipts.filter((r) => r.status === 'succeeded').length,
+    1
+  );
+  assert.equal(
+    port.state.receipts.some((r) => r.status === 'unknown'),
+    false
+  );
+});
+test('replay validates job, epoch, attempt, guard and evidence identity', async () => {
+  const port = authority();
+  const first = await run(port, async () => ({ deploymentId: 'dpl_result' }));
+  for (const patch of [
+    { jobId: 'foreign' },
+    { epoch: 2 },
+    { attemptId: 'other' },
+    { guardCode: 'QUEUE_STOPPED' },
+    { evidence: { deploymentId: 'dpl_forged' } },
+    { providerOperationId: 'dpl_forged' },
+  ]) {
+    port.state.receipts.push({ ...first, ...patch });
+    await assert.rejects(
+      run(port, async () => {}),
+      { guardCode: 'QUEUE_GRANT_INVALID' }
+    );
+  }
+});
+test('token-shaped values are refused in payloads and receipts without disclosure', async () => {
+  const tokens = [
+    'ghp_' + 'a'.repeat(36),
+    'vca_' + 'b'.repeat(32),
+    'github_pat_' + 'c'.repeat(35),
+    'eyJhbGciOiJIUzI1NiJ9.eyJzdWIiOiIxMjM0NTY3ODkwIn0.SflKxwRJSMeKKF2QT4fwpMeJf36POk6yJV_adQssw5c',
+    'Ab3dEf7hIj9kLm1nOp3qRs5tUv7wXy9zAb3dEf7hIj9k',
+  ];
+  for (const token of tokens) {
+    const p = payload();
+    p.authorizationRefs = [token];
+    await assert.rejects(submitVercelRelease(authority(), p, target), {
+      guardCode: 'QUEUE_PAYLOAD_INVALID',
+    });
+    const port = authority();
+    const r = await run(port, async () => ({ detail: token }));
+    assert.equal(r.guardCode, 'QUEUE_PAYLOAD_INVALID');
+    assert.equal(JSON.stringify(r).includes(token), false);
+    assert.equal(
+      port.state.receipts.some((v) => JSON.stringify(v).includes(token)),
+      false
+    );
   }
 });
