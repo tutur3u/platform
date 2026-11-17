@@ -10,6 +10,7 @@ import {
   useState,
   useSyncExternalStore,
 } from 'react';
+import { buildMailInlineImages } from '@/lib/mail/inline-images';
 import { buildMailMessagePreviewDocument } from './mail-message-preview-utils';
 import {
   resolveMailPreviewAppearance,
@@ -44,19 +45,7 @@ export function MailMessagePreview({
   const [height, setHeight] = useState<string | number>(
     'max(20rem, calc(100dvh - 13rem))'
   );
-  const inlineImages = Object.fromEntries(
-    attachments
-      .filter(
-        (attachment) =>
-          attachment.contentId &&
-          attachment.protectedUrl &&
-          /^image\/(png|jpeg|gif|webp|avif)$/i.test(attachment.contentType)
-      )
-      .map((attachment) => [
-        attachment.contentId!.replace(/^<|>$/g, ''),
-        attachment.protectedUrl!,
-      ])
-  );
+  const inlineImages = buildMailInlineImages(attachments);
   const previewDocument = buildMailMessagePreviewDocument(
     content,
     mode,

@@ -1,0 +1,26 @@
+From: Sender <sender@example.test>
+To: Reader <reader@example.test>
+Subject: Inline image regression
+MIME-Version: 1.0
+Content-Type: multipart/related; boundary="related"
+
+--related
+Content-Type: multipart/alternative; boundary="alternative"
+
+--alternative
+Content-Type: text/plain; charset=utf-8
+
+An inline image follows.
+--alternative
+Content-Type: text/html; charset=utf-8
+
+<p>An inline image follows.</p><img src="CID:%3CIMAGE001%40example.test%3E" alt="Inline fixture">
+--alternative--
+--related
+Content-Type: image/png; name="image.png"
+Content-Transfer-Encoding: base64
+Content-Disposition: inline; filename="image.png"
+Content-ID: <image001@EXAMPLE.test>
+
+iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+jRZkAAAAASUVORK5CYII=
+--related--

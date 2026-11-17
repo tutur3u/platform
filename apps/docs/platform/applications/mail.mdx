@@ -287,6 +287,17 @@ both the conversation and Attachments tab, with a separate download action. Text
 previews use the internal API client, render escaped text in the reader theme, and
 fall back to download on authorization failures or files larger than 1 MiB.
 
+The web message reader resolves `cid:` image references against that message's
+stored raster attachments through the same authenticated preview endpoint.
+Content-ID matching accepts angle brackets, case differences, and percent-encoded
+CID URLs. MIME parameters do not exclude supported images. Missing parts and
+unsupported image formats never receive a public URL fallback. The email frame's
+sandbox and CSP remain in force. `inline-images.test.ts` covers this path with a
+multipart/related RFC822 fixture, including subdomain and `/mail` mounts.
+Outgoing inline images replace the entire draft attachment URL with a CID URL.
+The reader also recognizes stored CID references prefixed by a Mail draft path,
+resolving only to an attachment belonging to the displayed message.
+
 ## Composing and draft recovery
 
 Close saves the latest draft before dismissing the composer; offline or failed saves

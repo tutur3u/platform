@@ -1,5 +1,6 @@
 import { withAppBase } from '@tuturuuu/start-bridge/app-url';
 import sanitizeHtml from 'sanitize-html';
+import { mailContentIdFromUrl, normalizeMailContentId } from './inline-images';
 import { cleanSnippetSource } from './snippet-source';
 
 const FORBIDDEN_MAIL_TAGS = [
@@ -52,6 +53,12 @@ export function sanitizeMailHtml(
     inlineImages?: Record<string, string>;
   } = {}
 ) {
+  const inlineImages = new Map(
+    Object.entries(options.inlineImages ?? {}).map(([id, url]) => [
+      normalizeMailContentId(id),
+      url,
+    ])
+  );
   return sanitizeHtml(value, {
     allowedTags: [
       ...sanitizeHtml.defaults.allowedTags,
@@ -84,10 +91,8 @@ export function sanitizeMailHtml(
         },
       }),
       img: (_tagName, attributes) => {
-        const cid = attributes.src?.startsWith('cid:')
-          ? attributes.src.slice(4).replace(/^<|>$/g, '')
-          : null;
-        const source = cid ? options.inlineImages?.[cid] : undefined;
+        const cid = mailContentIdFromUrl(attributes.src);
+        const source = cid ? inlineImages.get(cid) : undefined;
         return {
           tagName: 'img',
           attribs: {

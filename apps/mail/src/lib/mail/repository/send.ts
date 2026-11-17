@@ -1,6 +1,7 @@
 import { EmailService, sendWorkspaceEmail } from '@tuturuuu/email-service';
 import type { SendMailMessagePayload } from '@tuturuuu/internal-api';
 import { ROOT_WORKSPACE_ID } from '@tuturuuu/utils/constants';
+import { replaceMailInlineAttachmentUrls } from '../inline-images';
 import type { MailRouteContext } from '../types';
 import { loadOutboundAttachments } from './attachments';
 import { requireMailboxAccess } from './bootstrap';
@@ -123,18 +124,9 @@ export async function sendMailMessage({
     mailboxId,
     message.id
   );
-  const outboundHtml = attachments.reduce(
-    (html, attachment) =>
-      attachment.disposition === 'inline' && attachment.contentId
-        ? html.replaceAll(
-            new RegExp(
-              `(?:https?:\\/\\/[^"']+)?\\/attachments\\/${attachment.id}(?=["'])`,
-              'gu'
-            ),
-            `cid:${attachment.contentId}`
-          )
-        : html,
-    message.sanitizedHtml || message.bodyHtml || ''
+  const outboundHtml = replaceMailInlineAttachmentUrls(
+    message.sanitizedHtml || message.bodyHtml || '',
+    attachments
   );
   const replyHeaders = {
     ...(payload.inReplyTo ? { 'In-Reply-To': payload.inReplyTo } : {}),
