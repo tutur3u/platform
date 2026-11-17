@@ -2861,10 +2861,10 @@
       "uses": 1,
       "gap": "void-wave1-publication",
       "admitted": {
-        "decision": "https://github.com/tutur3u/platform/commit/7f1c24a138cdb576760fa6555a7c8eec4e3c5ecc",
-        "reason": "Qualified Meet publication retains the admitted Wrangler artifact, version capture and paired rollback operations. Shell extraction and regression assertions move existing operations into focused helpers; no cf replacement has qualified emitted-artifact and rollback parity."
+        "decision": "https://github.com/tutur3u/platform/commit/6cadfc4367ad5c3409bd08a79b67f33e90619541",
+        "reason": "The reviewed realtime artifact reader opens the existing worker/wrangler.json configuration through the same-file-descriptor safe reader. The configuration path remains one non-executing reference; no Wrangler operations are added."
       },
-      "digest": "9522fdfa748b93c85f1e58280d467d91429d986c007d867e7cf4eec5e9af51ea"
+      "digest": "6432691d8070ea9f794cb5cb5c5277cf1a7af9f7336f148cf85afd6f82343718"
     },
     "scripts/ci/meet-release-operations.sh": {
       "lines": 5,
