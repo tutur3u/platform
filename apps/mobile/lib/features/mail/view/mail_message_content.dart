@@ -1,7 +1,9 @@
 import 'dart:async';
 import 'dart:convert';
 
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
+import 'package:mobile/core/cache/cache_context.dart';
 import 'package:mobile/features/mail/data/mail_repository.dart';
 import 'package:mobile/features/mail/view/mail_attachment_preview.dart';
 import 'package:mobile/features/mail/view/mail_html_body.dart';
@@ -42,6 +44,7 @@ class _MailMessageContentState extends State<MailMessageContent> {
   Map<String, String> _images = const {};
   Map<String, Map<String, dynamic>> _imageFiles = const {};
   int _generation = 0;
+  String? _actorId;
   String get _html => rewriteMailInlineAttachmentUrls(
     widget.message['bodyHtml'] as String? ??
         widget.message['sanitizedHtml'] as String? ??
@@ -52,17 +55,43 @@ class _MailMessageContentState extends State<MailMessageContent> {
   @override
   void initState() {
     super.initState();
+    _actorId = currentCacheUserId();
     unawaited(_loadImages());
   }
+
+  String _body(Map<String, dynamic> message) =>
+      message['bodyHtml'] as String? ??
+      message['sanitizedHtml'] as String? ??
+      '';
+
+  List<(Object?, Object?, Object?, Object?, Object?)> _attachmentIdentity(
+    Map<String, dynamic> message,
+  ) => [
+    for (final file in mailRows(message['attachments']))
+      (
+        file['id'],
+        file['contentId'],
+        file['contentType'],
+        file['sizeBytes'],
+        file['disposition'],
+      ),
+  ];
 
   @override
   void didUpdateWidget(covariant MailMessageContent oldWidget) {
     super.didUpdateWidget(oldWidget);
-    if (oldWidget.message != widget.message ||
+    if (_actorId != currentCacheUserId() ||
+        oldWidget.message['id'] != widget.message['id'] ||
+        _body(oldWidget.message) != _body(widget.message) ||
+        !listEquals(
+          _attachmentIdentity(oldWidget.message),
+          _attachmentIdentity(widget.message),
+        ) ||
         oldWidget.workspaceId != widget.workspaceId ||
         oldWidget.mailboxId != widget.mailboxId ||
         oldWidget.threadId != widget.threadId ||
         oldWidget.repository != widget.repository) {
+      _actorId = currentCacheUserId();
       _images = const {};
       _imageFiles = const {};
       unawaited(_loadImages());

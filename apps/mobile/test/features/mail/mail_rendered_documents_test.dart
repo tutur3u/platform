@@ -13,6 +13,45 @@ MailDocumentRequest _request(
 );
 
 void main() {
+  test('height follows content, width and inline bytes', () {
+    final documents = MailRenderedDocuments();
+    final request = _request('body', inlineImages: {'cat': 'data:one'});
+    documents.storeHeight(request, 390, 640);
+    expect(
+      documents.lookupHeight(
+        _request('body', inlineImages: {'cat': 'data:one'}),
+        390,
+      ),
+      640,
+    );
+    expect(documents.lookupHeight(request, 840), isNull);
+    expect(documents.lookupHeight(_request('other'), 390), isNull);
+    expect(
+      documents.lookupHeight(
+        _request('body', inlineImages: {'cat': 'data:two'}),
+        390,
+      ),
+      isNull,
+    );
+    documents.clear();
+    expect(documents.lookupHeight(request, 390), isNull);
+    documents
+      ..dispose()
+      ..storeHeight(request, 390, 800);
+    expect(documents.lookupHeight(request, 390), isNull);
+  });
+
+  test('height memo bounds entries and rejects nonfinite geometry', () {
+    final documents = MailRenderedDocuments(capacity: 1)
+      ..storeHeight(_request('a'), 390, 500)
+      ..storeHeight(_request('b'), 390, 600);
+    expect(documents.lookupHeight(_request('a'), 390), isNull);
+    documents
+      ..storeHeight(_request('b'), double.infinity, 700)
+      ..storeHeight(_request('b'), 390, double.nan);
+    expect(documents.lookupHeight(_request('b'), 390), 600);
+  });
+
   test('returns a document only for the same HTML and options', () {
     final documents = MailRenderedDocuments()
       ..store(_request('<p>a</p>'), 'doc-a');

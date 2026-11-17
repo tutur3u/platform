@@ -4,6 +4,23 @@ import 'package:mobile/features/mail/view/mail_html_document.dart';
 import 'package:mobile/features/mail/view/mail_html_sanitizer.dart';
 
 void main() {
+  test('inline dimensions reserve aspect ratio before loading', () {
+    final document = parse(
+      buildMailHtmlDocument(
+        '<img src="cid:cat" width="640" height="480">',
+        loadImages: false,
+      ),
+    );
+    final image = document.querySelector('img')!;
+    expect(image.attributes.containsKey('data-mail-known-size'), isTrue);
+    expect(image.attributes['style'], contains('aspect-ratio:640.0 / 480.0'));
+    expect(image.classes, contains('mail-fluid-image'));
+    expect(
+      document.querySelector('style')!.text,
+      contains('img[src^="cid:"]:not([data-mail-known-size])'),
+    );
+  });
+
   test('fits a wide newsletter table and oversized spacing on mobile', () {
     final document = parse(
       buildMailHtmlDocument('''

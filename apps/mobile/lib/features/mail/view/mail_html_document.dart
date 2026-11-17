@@ -105,7 +105,7 @@ body{padding:12px;font:14px/1.6 ui-sans-serif,system-ui,sans-serif;overflow-wrap
 #mail-content>table{margin-inline:auto}
 img,video,svg,canvas{max-width:100%;object-fit:contain}
 img:not([height]){height:auto}table{max-width:100%!important}
-img[src^="cid:"]{display:inline-block;min-width:96px;min-height:72px;border-radius:8px;background:${dark ? '#ffffff14' : '#0000000d'};color:transparent}
+img[src^="cid:"]:not([data-mail-known-size]){display:inline-block;min-width:96px;min-height:72px;border-radius:8px;background:${dark ? '#ffffff14' : '#0000000d'};color:transparent}
 td,th{word-break:normal;overflow-wrap:anywhere}
 pre{max-width:100%;white-space:pre-wrap;word-break:break-word}
 blockquote{margin-inline:0;padding-inline-start:12px;border-inline-start:3px solid #737373}
@@ -148,10 +148,28 @@ void _fitNewsletterForMobile(dom.DocumentFragment fragment) {
       if (description.contains('logo') || description.contains('icon')) {
         element.classes.add('mail-compact-icon');
       }
+      final knownWidth = double.tryParse(element.attributes['width'] ?? '');
+      final knownHeight = double.tryParse(element.attributes['height'] ?? '');
+      if (knownWidth != null &&
+          knownHeight != null &&
+          knownWidth.isFinite &&
+          knownHeight.isFinite &&
+          knownWidth > 0 &&
+          knownHeight > 0 &&
+          knownWidth <= 32768 &&
+          knownHeight <= 32768) {
+        element.attributes['data-mail-known-size'] = '';
+        element.attributes['style'] =
+            '${element.attributes['style'] ?? ''};aspect-ratio:$knownWidth / $knownHeight';
+      }
       final imageWidth = double.tryParse(
         (width ?? '').replaceAll(RegExp(r'[^\d.]'), ''),
       );
       if (imageWidth != null && imageWidth > 420) {
+        if (element.attributes.containsKey('data-mail-known-size')) {
+          element.attributes['style'] =
+              '${element.attributes['style'] ?? ''};width:100%;height:auto';
+        }
         element
           ..attributes.remove('width')
           ..attributes.remove('height')

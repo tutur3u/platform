@@ -56,6 +56,11 @@ class _MailHtmlBodyState extends State<MailHtmlBody> {
   int _generation = 0;
   String? _document;
   MailMessageAppearance? _appearance;
+  MailDocumentRequest? _request;
+  double _layoutWidth = 0;
+  bool _measured = false;
+  InAppWebViewController? _controller;
+  Widget? _webView;
 
   MailMessageAppearance get _effectiveAppearance =>
       MailAppearancePreference.instance.value ?? MailMessageAppearance.original;
@@ -111,13 +116,16 @@ class _MailHtmlBodyState extends State<MailHtmlBody> {
     }
     if (oldWidget.imagesVisible != widget.imagesVisible ||
         oldWidget.html != widget.html ||
-        oldWidget.inlineImages != widget.inlineImages) {
+        !mapEquals(oldWidget.inlineImages, widget.inlineImages)) {
       unawaited(_prepare());
     }
   }
 
   Future<void> _prepare() async {
     final generation = ++_generation;
+    _measured = false;
+    _controller = null;
+    _webView = null;
     _document = null;
     _failed = false;
     try {
@@ -132,6 +140,15 @@ class _MailHtmlBodyState extends State<MailHtmlBody> {
             ? shad.Theme.of(context).colorScheme.background.toARGB32()
             : null,
       );
+      _request = request;
+      final cachedHeight = widget.renderedDocuments?.lookupHeight(
+        request,
+        _layoutWidth,
+      );
+      if (cachedHeight != null) {
+        _height = cachedHeight;
+        _measured = true;
+      }
       final documents = widget.renderedDocuments;
       final memo = documents?.lookup(request);
       final document =
@@ -158,6 +175,14 @@ class _MailHtmlBodyState extends State<MailHtmlBody> {
       return;
     }
     final next = height.clamp(80.0, 30000.0);
+    // Native content size can report the old viewport after a resize.
+    // Keep a settled document from oscillating between those two heights.
+    if (_measured && next < _height) return;
+    _measured = true;
+    final request = _request;
+    if (request != null && _layoutWidth > 0) {
+      widget.renderedDocuments?.storeHeight(request, _layoutWidth, next);
+    }
     if ((next - _height).abs() > 1) setState(() => _height = next);
   }
 
@@ -166,8 +191,10 @@ class _MailHtmlBodyState extends State<MailHtmlBody> {
     int generation,
   ) async {
     if (controller == null) return;
+    final width = _layoutWidth;
     try {
       final height = await controller.getContentHeight();
+      if (width != _layoutWidth) return;
       if (height != null) _resize(height.toDouble(), generation);
     } on Object {
       // A dismissed native view may finish loading late. Native scrolling is
@@ -176,7 +203,29 @@ class _MailHtmlBodyState extends State<MailHtmlBody> {
   }
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context) => LayoutBuilder(
+    builder: (context, constraints) {
+      final width = constraints.maxWidth;
+      if (width.isFinite && width > 0 && width != _layoutWidth) {
+        _layoutWidth = width;
+        _measured = false;
+        final request = _request;
+        if (request != null) {
+          _height =
+              widget.renderedDocuments?.lookupHeight(request, width) ?? _height;
+        }
+        final generation = _generation;
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          if (mounted && width == _layoutWidth && generation == _generation) {
+            unawaited(_measure(_controller, generation));
+          }
+        });
+      }
+      return _buildBody(context);
+    },
+  );
+
+  Widget _buildBody(BuildContext context) {
     final generation = _generation;
     final document = _document;
     final content = document == null
@@ -197,13 +246,14 @@ class _MailHtmlBodyState extends State<MailHtmlBody> {
               ],
             ),
           )
-        : InAppWebView(
+        : (_webView ??= InAppWebView(
             key: ValueKey(generation),
             gestureRecognizers: const {
               Factory<HorizontalDragGestureRecognizer>(
                 HorizontalDragGestureRecognizer.new,
               ),
             },
+            onWebViewCreated: (controller) => _controller = controller,
             initialSettings: InAppWebViewSettings(
               transparentBackground: true,
               javaScriptEnabled: false,
@@ -239,7 +289,7 @@ class _MailHtmlBodyState extends State<MailHtmlBody> {
               }
               return NavigationActionPolicy.CANCEL;
             },
-          );
+          ));
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [

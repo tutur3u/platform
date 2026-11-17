@@ -11,6 +11,23 @@ import 'package:mocktail/mocktail.dart';
 class _Repository extends Mock implements MailRepository {}
 
 void main() {
+  test('thumbnail uses known dimensions or safe fallback', () {
+    expect(mailAttachmentAspectRatio({'width': 640, 'height': 480}), 4 / 3);
+    expect(
+      mailAttachmentAspectRatio({
+        'contentType': 'image/png; width="800"; height=400',
+      }),
+      2,
+    );
+    for (final file in <Map<String, dynamic>>[
+      {},
+      {'width': 0, 'height': 400},
+      {'width': double.infinity, 'height': 400},
+    ]) {
+      expect(mailAttachmentAspectRatio(file), 3 / 2);
+    }
+  });
+
   late _Repository repository;
   setUp(() => repository = _Repository());
 
@@ -45,6 +62,20 @@ void main() {
       ),
     ),
   );
+
+  testWidgets('extreme dimension metadata keeps the preview frame bounded', (
+    tester,
+  ) async {
+    final attachment = file()..addAll({'width': 1, 'height': 32768});
+    await tester.pumpWidget(
+      harness(workspace: 'ws', attachment: attachment, thumbnail: false),
+    );
+    await tester.pumpAndSettle();
+    final frame = tester.getSize(find.byType(AspectRatio));
+    expect(frame.height, lessThanOrEqualTo(240));
+    expect(frame.height, greaterThanOrEqualTo(80));
+    expect(tester.takeException(), isNull);
+  });
 
   testWidgets('failed thumbnail retries the authenticated read', (
     tester,

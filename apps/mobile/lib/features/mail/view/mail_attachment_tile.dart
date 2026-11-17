@@ -23,6 +23,35 @@ bool mailAttachmentHasImageThumbnail(Map<String, dynamic> file) => const {
   'image/avif',
 }.contains(mailAttachmentMimeType(file));
 
+double mailAttachmentAspectRatio(Map<String, dynamic> file) {
+  double? number(Object? value) => value is num
+      ? value.toDouble()
+      : value is String
+      ? double.tryParse(value)
+      : null;
+  final type = file['contentType'] as String? ?? '';
+  double? parameter(String name) => double.tryParse(
+    RegExp(
+          '(?:^|;)\\s*$name=\\s*"?([0-9.]+)',
+          caseSensitive: false,
+        ).firstMatch(type)?.group(1) ??
+        '',
+  );
+  final width = number(file['width']) ?? parameter('width');
+  final height = number(file['height']) ?? parameter('height');
+  if (width != null &&
+      height != null &&
+      width.isFinite &&
+      height.isFinite &&
+      width > 0 &&
+      height > 0 &&
+      width <= 32768 &&
+      height <= 32768) {
+    return width / height;
+  }
+  return 3 / 2;
+}
+
 /// Authenticated attachment presentation without exposing a protected URL.
 class MailAttachmentTile extends StatefulWidget {
   const MailAttachmentTile({
@@ -155,23 +184,25 @@ class _MailAttachmentTileState extends State<MailAttachmentTile> {
     final bytes = _bytes;
     return ColoredBox(
       color: colors.muted,
-      child: SizedBox(
-        height: 152,
-        width: double.infinity,
-        child: _loading
-            ? const Center(child: AppLoadingIndicator())
-            : bytes != null
-            ? Image.memory(
-                bytes,
-                fit: BoxFit.cover,
-                cacheWidth: 720,
-                cacheHeight: 360,
-                excludeFromSemantics: true,
-                errorBuilder: (_, _, _) => _thumbnailFailure(context),
-              )
-            : _failed
-            ? _thumbnailFailure(context)
-            : Icon(_typeIcon, size: 36, color: colors.mutedForeground),
+      child: ConstrainedBox(
+        constraints: const BoxConstraints(minHeight: 80, maxHeight: 240),
+        child: AspectRatio(
+          aspectRatio: mailAttachmentAspectRatio(widget.file),
+          child: _loading
+              ? const Center(child: AppLoadingIndicator())
+              : bytes != null
+              ? Image.memory(
+                  bytes,
+                  fit: BoxFit.contain,
+                  cacheWidth: 720,
+                  cacheHeight: 360,
+                  excludeFromSemantics: true,
+                  errorBuilder: (_, _, _) => _thumbnailFailure(context),
+                )
+              : _failed
+              ? _thumbnailFailure(context)
+              : Icon(_typeIcon, size: 36, color: colors.mutedForeground),
+        ),
       ),
     );
   }

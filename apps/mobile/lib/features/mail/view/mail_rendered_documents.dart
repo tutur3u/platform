@@ -21,6 +21,46 @@ class MailRenderedDocuments {
   final int capacity;
   final Map<_DocumentKey, String> _documents = {};
   bool _disposed = false;
+  final Map<(_DocumentKey, int, double), double> _heights = {};
+
+  (_DocumentKey, int, double) _heightKey(
+    MailDocumentRequest request,
+    double width,
+  ) => (
+    (
+      request.html,
+      request.loadImages,
+      request.appearance,
+      request.backgroundArgb,
+    ),
+    Object.hashAllUnordered(
+      request.inlineImages.entries.map(
+        (entry) => Object.hash(entry.key, entry.value),
+      ),
+    ),
+    width,
+  );
+
+  double? lookupHeight(MailDocumentRequest request, double width) =>
+      _disposed ? null : _heights[_heightKey(request, width)];
+
+  void storeHeight(MailDocumentRequest request, double width, double height) {
+    if (_disposed ||
+        !width.isFinite ||
+        width <= 0 ||
+        !height.isFinite ||
+        height < 80 ||
+        height > 30000) {
+      return;
+    }
+    final key = _heightKey(request, width);
+    _heights
+      ..remove(key)
+      ..[key] = height;
+    while (_heights.length > capacity) {
+      _heights.remove(_heights.keys.first);
+    }
+  }
 
   static _DocumentKey? _keyFor(MailDocumentRequest request) =>
       request.inlineImages.isEmpty
@@ -55,10 +95,13 @@ class MailRenderedDocuments {
     }
   }
 
-  void clear() => _documents.clear();
+  void clear() {
+    _documents.clear();
+    _heights.clear();
+  }
 
   void dispose() {
     _disposed = true;
-    _documents.clear();
+    clear();
   }
 }
