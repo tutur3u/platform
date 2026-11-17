@@ -608,6 +608,25 @@
   }
 }
 
+/* The close mirrors the reveal: same duration and easing, clipped back to the rail. */
+@keyframes sidebar-overlay-conceal {
+  from {
+    clip-path: inset(0 0 0 0);
+  }
+  to {
+    clip-path: inset(0 calc(100% - var(--sidebar-collapsed-width, 4rem)) 0 0);
+  }
+}
+
+@keyframes sidebar-overlay-content-out {
+  from {
+    opacity: 1;
+  }
+  to {
+    opacity: 0;
+  }
+}
+
 @media (min-width: 48rem) {
   .sidebar-overlay-reveal {
     animation: sidebar-overlay-reveal 180ms ease-out both;
@@ -616,11 +635,21 @@
   .sidebar-overlay-content {
     animation: sidebar-overlay-content 180ms ease-out both;
   }
+
+  .sidebar-overlay-conceal {
+    animation: sidebar-overlay-conceal 180ms ease-out both;
+  }
+
+  .sidebar-overlay-content-out {
+    animation: sidebar-overlay-content-out 180ms ease-out both;
+  }
 }
 
 @media (prefers-reduced-motion: reduce) {
   .sidebar-overlay-reveal,
-  .sidebar-overlay-content {
+  .sidebar-overlay-content,
+  .sidebar-overlay-conceal,
+  .sidebar-overlay-content-out {
     animation: none;
   }
 }

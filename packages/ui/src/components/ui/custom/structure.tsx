@@ -13,6 +13,7 @@ import {
   useRef,
 } from 'react';
 import { observeMobileHeaderHeight } from './mobile-header-height';
+import { useSidebarOverlayClose } from './use-sidebar-overlay-close';
 
 interface StructureProps {
   sidebarLabels?: { open: string; close: string };
@@ -68,6 +69,12 @@ export function Structure({
   sidebarHeaderHeight,
 }: StructureProps) {
   const isMobile = useIsMobile();
+  const overlayClose = useSidebarOverlayClose({
+    enabled: overlayOnExpand,
+    isCollapsed,
+    onMouseEnter,
+    onMouseLeave,
+  });
   const mobileNavRef = useRef<HTMLElement>(null);
   const mainRef = useRef<HTMLElement>(null);
   useLayoutEffect(() => {
@@ -164,10 +171,20 @@ export function Structure({
                 mobileSidebarOpen === false && 'max-md:hidden',
                 overlayOnExpand &&
                   !isCollapsed &&
-                  'sidebar-overlay-reveal md:z-40'
+                  (overlayClose.isClosing
+                    ? 'sidebar-overlay-conceal md:z-40'
+                    : 'sidebar-overlay-reveal md:z-40')
               )}
-              onMouseEnter={onMouseEnter}
-              onMouseLeave={onMouseLeave}
+              data-overlay-state={
+                overlayOnExpand && !isCollapsed
+                  ? overlayClose.isClosing
+                    ? 'closing'
+                    : 'open'
+                  : undefined
+              }
+              ref={overlayClose.panelRef}
+              onMouseEnter={overlayClose.onMouseEnter}
+              onMouseLeave={overlayClose.onMouseLeave}
               style={sidebarStyle}
             >
               {/* In overlay mode the rail and the expanded panel are different
@@ -180,7 +197,11 @@ export function Structure({
                 }
                 className={cn(
                   'flex min-h-0 flex-1 flex-col',
-                  overlayOnExpand && !isCollapsed && 'sidebar-overlay-content'
+                  overlayOnExpand &&
+                    !isCollapsed &&
+                    (overlayClose.isClosing
+                      ? 'sidebar-overlay-content-out'
+                      : 'sidebar-overlay-content')
                 )}
               >
                 <div

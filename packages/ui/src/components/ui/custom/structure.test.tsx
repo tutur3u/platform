@@ -1,5 +1,5 @@
 import '@testing-library/jest-dom';
-import { render, screen, within } from '@testing-library/react';
+import { act, fireEvent, render, screen, within } from '@testing-library/react';
 import { useEffect } from 'react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { Structure } from './structure';
@@ -143,6 +143,102 @@ describe('Structure', () => {
       expect(mounts).toHaveBeenCalledTimes(2);
       rerender(renderStructure(true, true));
       expect(mounts).toHaveBeenCalledTimes(3);
+    });
+
+    const renderHoverStructure = (
+      isCollapsed: boolean,
+      handlers: { onMouseEnter?: () => void; onMouseLeave?: () => void }
+    ) => (
+      <Structure
+        isCollapsed={isCollapsed}
+        overlayOnExpand
+        setIsCollapsed={vi.fn()}
+        sidebarContent={<span>Nav</span>}
+        {...handlers}
+      >
+        <span>Page content</span>
+      </Structure>
+    );
+
+    it('animates the expanded overlay closed before collapsing', () => {
+      const onMouseLeave = vi.fn();
+      const { container } = render(
+        renderHoverStructure(false, { onMouseLeave })
+      );
+      const aside = container.querySelector('aside') as HTMLElement;
+
+      fireEvent.mouseLeave(aside);
+      expect(onMouseLeave).not.toHaveBeenCalled();
+      expect(aside).toHaveAttribute('data-overlay-state', 'closing');
+      expect(aside).toHaveClass('sidebar-overlay-conceal');
+      expect(aside).not.toHaveClass('sidebar-overlay-reveal');
+
+      const content = aside.querySelector(
+        '.sidebar-overlay-content-out'
+      ) as HTMLElement;
+      fireEvent.animationEnd(content);
+      expect(onMouseLeave).not.toHaveBeenCalled();
+
+      fireEvent.animationEnd(aside, {
+        animationName: 'sidebar-overlay-conceal',
+      });
+      expect(onMouseLeave).toHaveBeenCalledTimes(1);
+      expect(aside).toHaveAttribute('data-overlay-state', 'open');
+    });
+
+    it('cancels the close when the pointer comes back', () => {
+      const onMouseEnter = vi.fn();
+      const onMouseLeave = vi.fn();
+      const { container } = render(
+        renderHoverStructure(false, { onMouseEnter, onMouseLeave })
+      );
+      const aside = container.querySelector('aside') as HTMLElement;
+
+      fireEvent.mouseLeave(aside);
+      fireEvent.mouseEnter(aside);
+      fireEvent.animationEnd(aside, {
+        animationName: 'sidebar-overlay-conceal',
+      });
+
+      expect(onMouseEnter).toHaveBeenCalledTimes(1);
+      expect(onMouseLeave).not.toHaveBeenCalled();
+      expect(aside).toHaveAttribute('data-overlay-state', 'open');
+    });
+
+    it('collapses at once when reduced motion is preferred', () => {
+      vi.stubGlobal(
+        'matchMedia',
+        vi.fn((query: string) => ({
+          addEventListener: vi.fn(),
+          matches: query.includes('prefers-reduced-motion'),
+          removeEventListener: vi.fn(),
+        }))
+      );
+      const onMouseLeave = vi.fn();
+      const { container } = render(
+        renderHoverStructure(false, { onMouseLeave })
+      );
+
+      fireEvent.mouseLeave(container.querySelector('aside') as HTMLElement);
+      expect(onMouseLeave).toHaveBeenCalledTimes(1);
+    });
+
+    it('closes even if the animation never reports its end', () => {
+      vi.useFakeTimers();
+      try {
+        const onMouseLeave = vi.fn();
+        const { container } = render(
+          renderHoverStructure(false, { onMouseLeave })
+        );
+
+        fireEvent.mouseLeave(container.querySelector('aside') as HTMLElement);
+        act(() => {
+          vi.advanceTimersByTime(300);
+        });
+        expect(onMouseLeave).toHaveBeenCalledTimes(1);
+      } finally {
+        vi.useRealTimers();
+      }
     });
 
     it('keeps the animated reflow and mounted body for non-overlay sidebars', () => {
