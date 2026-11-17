@@ -130,6 +130,7 @@ export async function runReleaseMode({
   provider,
   probe,
   now = () => performance.now(),
+  delay = (ms) => new Promise((resolve) => setTimeout(resolve, ms)),
   sourceRef,
 }) {
   config = validateReleaseModes(config);
@@ -225,6 +226,16 @@ export async function runReleaseMode({
         rollbackDeploymentId: receipt.preimage.id,
         reason: result.errorRate > config.maxErrorRate ? 'error-rate' : 'smoke',
       };
+    const beforeWait = now();
+    if (!Number.isFinite(beforeWait) || beforeWait < previous)
+      fail('RELEASE_PROBE_INVALID', 'watch');
+    const remaining = config.watchDurationMs - (beforeWait - start);
+    if (remaining > 0) {
+      await delay(
+        Math.min(config.watchDurationMs / config.maxSamples, remaining)
+      );
+      await context.checkFence();
+    }
     const after = now();
     if (!Number.isFinite(after) || after < previous)
       fail('RELEASE_PROBE_INVALID', 'watch');

@@ -81,6 +81,7 @@ function fixture(mode) {
     context,
     provider,
     sourceRef: 'refs/heads/production',
+    delay: async () => {},
     calls,
     payload,
   };
@@ -274,4 +275,24 @@ test('invalid config and stage dispatch cannot reach any provider', async () => 
   const f = fixture('stage');
   await assert.rejects(runReleaseMode(f));
   assert.equal(f.calls.length, 0);
+});
+
+test('fast green probes are spaced across the full observation window', async () => {
+  const f = fixture('watch');
+  let time = 0;
+  const waits = [];
+  f.config = { ...f.config, watchDurationMs: 100, maxSamples: 4 };
+  f.now = () => time;
+  f.delay = async (ms) => {
+    waits.push(ms);
+    time += ms;
+  };
+  f.probe = async () => ({
+    smokeOk: true,
+    errorRate: 0,
+    sourceSha: sha,
+    deploymentId: 'dpl_candidate',
+  });
+  assert.equal((await runReleaseMode(f)).terminalState, 'watched');
+  assert.deepEqual(waits, [25, 25, 25, 25]);
 });
