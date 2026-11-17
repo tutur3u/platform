@@ -458,3 +458,13 @@ test('opaque low-entropy and digest-looking values cannot hide in approval refs'
     });
   }
 });
+
+test('replay refuses secret-named extras even when their values look public', async () => {
+  const port = authority();
+  const first = await run(port, async () => ({ deploymentId: 'dpl_result' }));
+  port.state.receipts.push({ ...first, secrets: { note: 'fixture' } });
+  await assert.rejects(
+    run(port, async () => {}),
+    { guardCode: 'QUEUE_GRANT_INVALID' }
+  );
+});

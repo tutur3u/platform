@@ -281,6 +281,7 @@ export async function executeVercelPhase({
             canonical(replay[key]) !== canonical(replay.evidence.lifecycle[key])
         )) ||
       unsafeValues(replay) ||
+      secretField(replay) ||
       replay.evidenceSha256 !== payloadDigest(replay.evidence) ||
       replay.providerOperationId !== (replay.evidence?.deploymentId ?? null) ||
       replay.operationId !== job.operationId ||
