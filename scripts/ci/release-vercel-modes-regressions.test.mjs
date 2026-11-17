@@ -268,3 +268,17 @@ test('typed queue checkpoint failures survive the publisher normalizer', async (
   assert.equal(r.guardPhase, 'stage');
   assert.equal(f.state.calls.length, 0);
 });
+
+test('stage upload uses one fenced intent', async () => {
+  const f = fixture();
+  let intents = 0;
+  const checkpoint = f.port.checkpoint;
+  f.port.checkpoint = async (...args) => {
+    if (args[1].status === 'intent') intents++;
+    return checkpoint(...args);
+  };
+  const r = await f.run('stage');
+  assert.equal(r.status, 'succeeded');
+  assert.equal(intents, 1);
+  assert.deepEqual(f.state.calls, ['stage-upload']);
+});

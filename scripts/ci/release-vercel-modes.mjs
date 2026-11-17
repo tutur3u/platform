@@ -406,15 +406,12 @@ async function dispatch(options, runtime) {
           fail('RELEASE_APPROVAL_REQUIRED', 'verify-source');
         const staged = await runStage({
           ...deps,
-          verifySource: () => runtime.stageSource(context.payload.sourceSha),
           recordPreimage: async (value) => {
             if (value.id !== context.payload.rollback.deploymentId)
               throw stop('ALIAS_PREIMAGE_MISMATCH', 'Alias preimage mismatch');
             preimage = value;
             await deps.recordPreimage(value);
           },
-          stage: (seal) =>
-            context.effect('stage-upload', () => deps.stage(seal)),
         });
         if (
           staged.source !== context.payload.sourceSha ||
