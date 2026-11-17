@@ -1,6 +1,7 @@
 'use client';
 
 import {
+  AlertTriangle,
   Calendar,
   CalendarCheck,
   Flag,
@@ -10,6 +11,7 @@ import {
 import type { TaskPriority } from '@tuturuuu/types/primitives/Priority';
 import type { TaskList } from '@tuturuuu/types/primitives/TaskList';
 import dayjs from 'dayjs';
+import { useCalendarPreferences } from '@tuturuuu/ui/hooks/use-calendar-preferences';
 import { useTranslations } from 'next-intl';
 import { useState } from 'react';
 import {
@@ -25,6 +27,7 @@ import { QuickCreateListChip } from './quick-create-list-chip';
 import { QuickCreateOptionPicker } from './quick-create-option-picker';
 import {
   getPriorityOptions,
+  priorityLabelKey,
   type QuickCreateAssignee,
   type QuickCreateProject,
 } from './quick-create-property-options';
@@ -81,6 +84,10 @@ export function QuickCreatePropertyChips(props: QuickCreatePropertyChipsProps) {
   const tq = useTranslations('ws-task-boards.dialog.quick_create');
   const [openChip, setOpenChip] = useState<QuickCreateChipId | null>(null);
   const { startDate, endDate, estimationPoints, boardConfig, disabled } = props;
+  const { timezone } = useCalendarPreferences();
+  const timeZone = timezone && timezone !== 'auto' ? timezone : undefined;
+  const formatDate = (date: Date) =>
+    formatQuickCreateDate(date, props.locale, timeZone);
   const none = tq('none');
   const chipState = (id: QuickCreateChipId) => ({
     open: openChip === id,
@@ -111,7 +118,7 @@ export function QuickCreatePropertyChips(props: QuickCreatePropertyChipsProps) {
   return (
     <div
       data-testid="quick-create-property-chips"
-      className="flex flex-wrap items-center gap-1.5 max-sm:grid max-sm:grid-cols-2 max-sm:gap-2"
+      className="flex w-full flex-wrap items-center gap-1.5 max-sm:grid max-sm:grid-cols-2 max-sm:gap-2"
     >
       <QuickCreateListChip
         wsId={props.wsId}
@@ -125,18 +132,19 @@ export function QuickCreatePropertyChips(props: QuickCreatePropertyChipsProps) {
         id="priority"
         icon={Flag}
         label={tq('priority')}
-        value={props.priority ? t(`tasks.priority_${props.priority}`) : null}
+        value={props.priority ? t(priorityLabelKey(props.priority)) : null}
         emptyValue={none}
         {...chipState('priority')}
       >
         <QuickCreateOptionPicker
           options={getPriorityOptions((priority) =>
-            t(`tasks.priority_${priority}`)
+            t(priorityLabelKey(priority))
           )}
           selectedIds={props.priority ? [props.priority] : []}
           searchPlaceholder={search}
           emptyLabel={noResults}
-          numericShortcuts
+          numericShortcuts="position"
+          onDismiss={close}
           onSelect={(id) => {
             props.onPriorityChange(id as TaskPriority);
             close();
@@ -152,9 +160,7 @@ export function QuickCreatePropertyChips(props: QuickCreatePropertyChipsProps) {
         id="start"
         icon={Calendar}
         label={tq('start')}
-        value={
-          startDate ? formatQuickCreateDate(startDate, props.locale) : null
-        }
+        value={startDate ? formatDate(startDate) : null}
         emptyValue={none}
         contentClassName="w-auto"
         {...chipState('start')}
@@ -169,7 +175,7 @@ export function QuickCreatePropertyChips(props: QuickCreatePropertyChipsProps) {
         id="due"
         icon={CalendarCheck}
         label={tq('due')}
-        value={endDate ? formatQuickCreateDate(endDate, props.locale) : null}
+        value={endDate ? formatDate(endDate) : null}
         emptyValue={none}
         contentClassName="w-auto"
         {...chipState('due')}
@@ -213,7 +219,8 @@ export function QuickCreatePropertyChips(props: QuickCreatePropertyChipsProps) {
               ? noResults
               : t('ws-task-boards.dialog.no_estimation_configured')
           }
-          numericShortcuts
+          numericShortcuts="label"
+          onDismiss={close}
           onSelect={(id) => {
             props.onEstimationChange(Number(id));
             close();
@@ -245,6 +252,15 @@ export function QuickCreatePropertyChips(props: QuickCreatePropertyChipsProps) {
         searchPlaceholder={search}
         noResults={noResults}
       />
+      {startDate && endDate && startDate > endDate ? (
+        <p
+          role="alert"
+          className="flex w-full items-center gap-1.5 text-dynamic-orange text-xs max-sm:col-span-2"
+        >
+          <AlertTriangle aria-hidden="true" className="size-3.5 shrink-0" />
+          {t('ws-task-boards.dialog.start_date_after_due_date')}
+        </p>
+      ) : null}
     </div>
   );
 }

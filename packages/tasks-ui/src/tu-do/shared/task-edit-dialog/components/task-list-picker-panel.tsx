@@ -16,6 +16,7 @@ import { useTranslations } from 'next-intl';
 import { useMemo, useState } from 'react';
 import { EmptyStateCard } from '../../empty-state-card';
 import { TaskCommandSearchInput } from '../../task-command-search-input';
+import { useCommandModifierEnterGuard } from './command-modifier-enter';
 import {
   handleTaskOptionShortcut,
   TaskOptionShortcutHint,
@@ -68,6 +69,11 @@ export interface TaskListPickerPanelProps {
   searchQuery?: string;
   onSearchQueryChange?: (value: string) => void;
   enableNumericShortcuts?: boolean;
+  /**
+   * When set, Cmd/Ctrl+Enter skips the highlighted list and calls this
+   * instead; other callers keep the default Enter selection.
+   */
+  onModifierEnter?: () => void;
 }
 
 export function TaskListPickerPanel({
@@ -80,8 +86,10 @@ export function TaskListPickerPanel({
   searchQuery: controlledSearchQuery,
   onSearchQueryChange,
   enableNumericShortcuts = false,
+  onModifierEnter,
 }: TaskListPickerPanelProps) {
   const t = useTranslations();
+  const modifierEnter = useCommandModifierEnterGuard(onModifierEnter);
   const [internalSearchQuery, setInternalSearchQuery] = useState('');
   const searchQuery = controlledSearchQuery ?? internalSearchQuery;
   const setSearchQuery = onSearchQueryChange ?? setInternalSearchQuery;
@@ -160,14 +168,17 @@ export function TaskListPickerPanel({
     <Command
       shouldFilter={false}
       className={cn('w-full min-w-0 rounded-none border-0', className)}
-      onKeyDownCapture={(event) =>
+      onKeyDownCapture={(event) => {
+        if (onModifierEnter && modifierEnter.handleKeyDownCapture(event)) {
+          return;
+        }
         handleTaskOptionShortcut(event, enableNumericShortcuts, (digit) => {
           const list = digit > 0 ? shortcutLists[digit - 1] : undefined;
           if (!list || disabled) return false;
           onSelectList(list.id);
           return true;
-        })
-      }
+        });
+      }}
     >
       <TaskCommandSearchInput
         value={searchQuery}
@@ -219,7 +230,11 @@ export function TaskListPickerPanel({
                     key={list.id}
                     value={`${displayName} ${list.id}`}
                     disabled={disabled}
-                    onSelect={() => onSelectList(list.id)}
+                    onSelect={
+                      onModifierEnter
+                        ? modifierEnter.guard(() => onSelectList(list.id))
+                        : () => onSelectList(list.id)
+                    }
                     aria-current={isSelected ? 'true' : undefined}
                     className={cn(
                       'mb-1 flex w-full cursor-pointer items-center gap-2.5 rounded-lg py-2 pr-2.5 pl-2.5 text-left text-sm shadow-sm transition-colors',
@@ -258,7 +273,7 @@ export function TaskListPickerPanel({
             value={addNewListLabel}
             className="cursor-pointer text-muted-foreground"
             disabled={disabled}
-            onSelect={openCreateDialog}
+            onSelect={modifierEnter.guard(openCreateDialog)}
           >
             <Plus className="h-3.5 w-3.5" />
             {addNewListLabel}

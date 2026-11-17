@@ -64,7 +64,7 @@ describe('TASK_DIALOG_COMPACT_CONTENT_CLASS_NAME', () => {
     expect(resolved).toEqual(
       expect.arrayContaining([
         'max-sm:top-auto',
-        'max-sm:bottom-0',
+        'max-sm:bottom-[var(--quick-create-keyboard-inset,0px)]',
         'max-sm:left-0',
         'max-sm:translate-x-0',
         'max-sm:w-full',

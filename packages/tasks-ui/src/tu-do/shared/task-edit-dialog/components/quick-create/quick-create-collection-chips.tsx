@@ -55,6 +55,7 @@ export function QuickCreateCollectionChips({
         {...chipState('labels')}
       >
         <QuickCreateOptionPicker
+          onDismiss={close}
           options={getLabelOptions(props.availableLabels)}
           selectedIds={props.selectedLabels.map((label) => label.id)}
           searchPlaceholder={searchPlaceholder}
@@ -90,6 +91,7 @@ export function QuickCreateCollectionChips({
           {...chipState('project')}
         >
           <QuickCreateOptionPicker
+            onDismiss={close}
             options={getProjectOptions(props.taskProjects)}
             selectedIds={props.selectedProjects.map((project) => project.id)}
             searchPlaceholder={searchPlaceholder}
@@ -129,6 +131,7 @@ export function QuickCreateCollectionChips({
           {...chipState('assignees')}
         >
           <QuickCreateOptionPicker
+            onDismiss={close}
             options={getAssigneeOptions(
               props.workspaceMembers,
               t('ws-task-boards.dialog.unknown_user')

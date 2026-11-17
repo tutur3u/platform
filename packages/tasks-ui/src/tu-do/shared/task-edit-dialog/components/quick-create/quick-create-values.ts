@@ -14,19 +14,37 @@ export const QUICK_CREATE_CHIP_IDS = [
 
 export type QuickCreateChipId = (typeof QUICK_CREATE_CHIP_IDS)[number];
 
-/** A chip value such as "Fri, Nov 20" in the reader's locale. */
-export function formatQuickCreateDate(date: Date, locale: string) {
+/**
+ * A chip value such as "Fri, Nov 20" in the reader's locale and, when set,
+ * the calendar timezone preference the date picker also uses.
+ */
+export function formatQuickCreateDate(
+  date: Date,
+  locale: string,
+  timeZone?: string
+) {
   const options: Intl.DateTimeFormatOptions = {
     weekday: 'short',
     month: 'short',
     day: 'numeric',
   };
 
-  try {
-    return new Intl.DateTimeFormat(locale, options).format(date);
-  } catch {
-    return new Intl.DateTimeFormat('en-US', options).format(date);
+  for (const candidate of [
+    { locale, timeZone },
+    { locale, timeZone: undefined },
+    { locale: 'en-US', timeZone: undefined },
+  ]) {
+    try {
+      return new Intl.DateTimeFormat(candidate.locale, {
+        ...options,
+        timeZone: candidate.timeZone,
+      }).format(date);
+    } catch {
+      // Unknown locale or timezone: try the next, more general format.
+    }
   }
+
+  return date.toDateString();
 }
 
 /** A due date picked without a time means the end of that day. */

@@ -6,10 +6,11 @@ import { Button } from '@tuturuuu/ui/button';
 import { DialogDescription, DialogTitle } from '@tuturuuu/ui/dialog';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@tuturuuu/ui/tooltip';
 import { useTranslations } from 'next-intl';
-import type { KeyboardEvent, ReactNode } from 'react';
+import { type KeyboardEvent, type ReactNode, useRef } from 'react';
 import { QuickCreateDescriptionInput } from './quick-create/quick-create-description-input';
 import { QuickCreateFooter } from './quick-create/quick-create-footer';
 import { markTaskSaveShortcutHandled } from './quick-create/quick-create-shortcut';
+import { useQuickCreateKeyboardInset } from './quick-create/use-quick-create-keyboard-inset';
 
 interface CompactTaskDialogPanelProps {
   /** The dialog's accessible name; the header itself stays visual-only. */
@@ -27,6 +28,8 @@ interface CompactTaskDialogPanelProps {
   descriptionPreviewLabel?: string;
   taskStatus?: ReactNode;
   propertyControls: ReactNode;
+  /** Disables the description line along with the property controls. */
+  disabled?: boolean;
   editActions?: ReactNode;
   saveAsDraft?: boolean;
   createMultiple?: boolean;
@@ -36,6 +39,7 @@ interface CompactTaskDialogPanelProps {
   onCreateMultipleChange?: (value: boolean) => void;
   onClose: () => void;
   onFullscreen: () => void;
+  /** Defaults to expanding the dialog. */
   onDescriptionPreviewClick?: () => void;
   onSave?: () => void;
 }
@@ -86,6 +90,7 @@ export function CompactTaskDialogPanel({
   descriptionPreviewLabel,
   taskStatus,
   propertyControls,
+  disabled = false,
   editActions,
   saveAsDraft,
   createMultiple,
@@ -99,6 +104,8 @@ export function CompactTaskDialogPanel({
   onSave,
 }: CompactTaskDialogPanelProps) {
   const t = useTranslations();
+  const panelRef = useRef<HTMLDivElement>(null);
+  useQuickCreateKeyboardInset(panelRef);
   const createActions =
     typeof saveAsDraft === 'boolean' &&
     typeof createMultiple === 'boolean' &&
@@ -136,6 +143,7 @@ export function CompactTaskDialogPanel({
 
   return (
     <div
+      ref={panelRef}
       className="relative flex min-h-0 flex-1 flex-col"
       onKeyDown={handleKeyDown}
     >
@@ -186,13 +194,16 @@ export function CompactTaskDialogPanel({
             {taskDescription !== undefined && onTaskDescriptionChange ? (
               <QuickCreateDescriptionInput
                 description={taskDescription}
+                disabled={disabled}
                 onDescriptionChange={onTaskDescriptionChange}
                 onOpenEditor={onFullscreen}
               />
             ) : null}
           </div>
           {taskStatus}
-          {propertyControls}
+          <div className="flex flex-wrap items-center gap-1.5">
+            {propertyControls}
+          </div>
         </div>
 
         {createActions ? (
@@ -200,7 +211,7 @@ export function CompactTaskDialogPanel({
         ) : null}
       </div>
 
-      {descriptionPreview && onDescriptionPreviewClick && (
+      {descriptionPreview && (
         <button
           type="button"
           data-testid="compact-task-description-preview"
@@ -208,7 +219,7 @@ export function CompactTaskDialogPanel({
             descriptionPreviewLabel ?? t('ws-task-boards.dialog.enlarge_dialog')
           }
           className="absolute top-full left-1/2 mt-2 w-full max-w-[30rem] -translate-x-1/2 rounded-lg border bg-background/95 px-4 py-3 text-left opacity-70 shadow-xl ring-1 ring-border/60 backdrop-blur transition hover:bg-muted/70 hover:opacity-100 focus-visible:opacity-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring max-sm:hidden"
-          onClick={onDescriptionPreviewClick}
+          onClick={onDescriptionPreviewClick ?? onFullscreen}
         >
           <div className="text-muted-foreground text-sm leading-relaxed">
             {descriptionPreview}

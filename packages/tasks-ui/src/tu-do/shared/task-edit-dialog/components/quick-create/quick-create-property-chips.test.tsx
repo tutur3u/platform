@@ -26,7 +26,7 @@ vi.mock('../../../create-list-dialog', () => ({
 vi.mock('@tuturuuu/ui/hooks/use-calendar-preferences', () => ({
   useCalendarPreferences: () => ({
     weekStartsOn: 1,
-    timezone: 'UTC',
+    timezone: 'auto',
     timeFormat: '24h',
   }),
 }));
@@ -211,6 +211,38 @@ describe('QuickCreatePropertyChips', () => {
     expect(
       screen.queryByPlaceholderText(`${Q}.search`)
     ).not.toBeInTheDocument();
+  });
+
+  it('picks a numeric estimate by its label, not its position', () => {
+    const { props } = renderChips();
+
+    fireEvent.click(chip('estimate'));
+    // Fibonacci shows 1, 2, 3, 5, 8: the fourth option is labeled 5.
+    fireEvent.keyDown(screen.getByPlaceholderText(`${Q}.search`), {
+      key: '5',
+    });
+
+    expect(props.onEstimationChange).toHaveBeenCalledWith(4);
+  });
+
+  it('warns when the start date is after the due date', () => {
+    renderChips({
+      startDate: new Date(2026, 10, 21),
+      endDate: new Date(2026, 10, 20),
+    });
+
+    expect(screen.getByRole('alert')).toHaveTextContent(
+      'ws-task-boards.dialog.start_date_after_due_date'
+    );
+  });
+
+  it('shows no date warning for an ordered range', () => {
+    renderChips({
+      startDate: new Date(2026, 10, 19),
+      endDate: new Date(2026, 10, 20),
+    });
+
+    expect(screen.queryByRole('alert')).not.toBeInTheDocument();
   });
 
   it('closes the open picker on Escape before the dialog', () => {

@@ -2,7 +2,7 @@
  * @vitest-environment jsdom
  */
 
-import { fireEvent, render, screen, within } from '@testing-library/react';
+import { act, fireEvent, render, screen, within } from '@testing-library/react';
 import type { TaskList } from '@tuturuuu/types/primitives/TaskList';
 import { Dialog, DialogContent } from '@tuturuuu/ui/dialog';
 import type { ComponentProps } from 'react';
@@ -25,6 +25,46 @@ const Q = 'ws-task-boards.dialog.quick_create';
 const CREATE = 'ws-task-boards.dialog.create_task';
 
 type PanelProps = ComponentProps<typeof CompactTaskCreatePopover>;
+type ChipProps = ComponentProps<typeof QuickCreatePropertyChips>;
+
+function renderChips(overrides: Partial<ChipProps> = {}) {
+  const lists = [
+    { id: 'list-1', name: 'In Progress', status: 'active', position: 0 },
+  ] as unknown as TaskList[];
+  return (
+    <QuickCreatePropertyChips
+      wsId="ws-1"
+      boardId="board-1"
+      locale="en"
+      priority={null}
+      startDate={undefined}
+      endDate={undefined}
+      estimationPoints={null}
+      selectedLabels={[]}
+      selectedProjects={[]}
+      selectedListId="list-1"
+      selectedAssignees={[]}
+      isPersonalWorkspace={false}
+      availableLists={lists}
+      availableLabels={[]}
+      taskProjects={[]}
+      workspaceMembers={[]}
+      onPriorityChange={vi.fn()}
+      onStartDateChange={vi.fn()}
+      onEndDateChange={vi.fn()}
+      onEstimationChange={vi.fn()}
+      onLabelToggle={vi.fn()}
+      onProjectToggle={vi.fn()}
+      onListChange={vi.fn()}
+      onAssigneeToggle={vi.fn()}
+      onQuickDueDate={vi.fn()}
+      onShowNewLabelDialog={vi.fn()}
+      onShowNewProjectDialog={vi.fn()}
+      onShowEstimationConfigDialog={vi.fn()}
+      {...overrides}
+    />
+  );
+}
 
 function createProps(overrides: Partial<PanelProps> = {}): PanelProps {
   return {
@@ -183,19 +223,83 @@ describe('CompactTaskCreatePopover', () => {
     expect(props.onSave).not.toHaveBeenCalled();
   });
 
-  it('closes the dialog on Escape', () => {
+  it('closes the dialog on Escape from the focused title', () => {
     const onOpenChange = vi.fn();
+    // The real title input focuses itself on open. Without that, the dialog's
+    // focus trap lands on Expand, which opens its tooltip, and the first
+    // Escape correctly dismisses that tooltip layer instead of the dialog.
     render(
       <Dialog open={true} onOpenChange={onOpenChange}>
         <DialogContent>
-          <CompactTaskCreatePopover {...createProps()} />
+          <CompactTaskCreatePopover
+            {...createProps({
+              titleInput: <textarea aria-label="Task title" autoFocus />,
+            })}
+          />
         </DialogContent>
       </Dialog>
     );
+    const title = screen.getByLabelText('Task title');
 
-    fireEvent.keyDown(screen.getByLabelText('Task title'), { key: 'Escape' });
+    expect(document.activeElement).toBe(title);
+    fireEvent.keyDown(title, { key: 'Escape' });
 
     expect(onOpenChange).toHaveBeenCalledWith(false);
+  });
+
+  it('lifts the phone sheet above the on-screen keyboard', () => {
+    const viewport = Object.assign(new EventTarget(), {
+      height: 800,
+      offsetTop: 0,
+    });
+    const original = window.visualViewport;
+    const originalInnerHeight = window.innerHeight;
+    Object.defineProperty(window, 'visualViewport', {
+      configurable: true,
+      value: viewport,
+    });
+    Object.defineProperty(window, 'innerHeight', {
+      configurable: true,
+      value: 800,
+    });
+
+    try {
+      render(
+        <Dialog open={true}>
+          <DialogContent>
+            <CompactTaskCreatePopover {...createProps()} />
+          </DialogContent>
+        </Dialog>
+      );
+      const sheet = document.querySelector<HTMLElement>(
+        '[data-slot="dialog-content"]'
+      );
+      const inset = () =>
+        sheet?.style.getPropertyValue('--quick-create-keyboard-inset');
+
+      expect(inset()).toBe('0px');
+
+      act(() => {
+        viewport.height = 460;
+        viewport.dispatchEvent(new Event('resize'));
+      });
+      expect(inset()).toBe('340px');
+
+      act(() => {
+        viewport.offsetTop = 40;
+        viewport.dispatchEvent(new Event('scroll'));
+      });
+      expect(inset()).toBe('300px');
+    } finally {
+      Object.defineProperty(window, 'visualViewport', {
+        configurable: true,
+        value: original,
+      });
+      Object.defineProperty(window, 'innerHeight', {
+        configurable: true,
+        value: originalInnerHeight,
+      });
+    }
   });
 
   it('renders the optional description line and writes plain text back', () => {
@@ -214,45 +318,56 @@ describe('CompactTaskCreatePopover', () => {
     });
   });
 
-  it('moves focus title, description, then each property chip in order', () => {
-    const lists = [
-      { id: 'list-1', name: 'In Progress', status: 'active', position: 0 },
-    ] as unknown as TaskList[];
+  it('disables the description line with the other controls', () => {
     renderPanel({
       taskDescription: null,
       onTaskDescriptionChange: vi.fn(),
-      propertyControls: (
-        <QuickCreatePropertyChips
-          wsId="ws-1"
-          boardId="board-1"
-          locale="en"
-          priority={null}
-          startDate={undefined}
-          endDate={undefined}
-          estimationPoints={null}
-          selectedLabels={[]}
-          selectedProjects={[]}
-          selectedListId="list-1"
-          selectedAssignees={[]}
-          isPersonalWorkspace={false}
-          availableLists={lists}
-          availableLabels={[]}
-          taskProjects={[]}
-          workspaceMembers={[]}
-          onPriorityChange={vi.fn()}
-          onStartDateChange={vi.fn()}
-          onEndDateChange={vi.fn()}
-          onEstimationChange={vi.fn()}
-          onLabelToggle={vi.fn()}
-          onProjectToggle={vi.fn()}
-          onListChange={vi.fn()}
-          onAssigneeToggle={vi.fn()}
-          onQuickDueDate={vi.fn()}
-          onShowNewLabelDialog={vi.fn()}
-          onShowNewProjectDialog={vi.fn()}
-          onShowEstimationConfigDialog={vi.fn()}
-        />
-      ),
+      disabled: true,
+    });
+
+    expect(screen.getByLabelText(`${Q}.add_description`)).toBeDisabled();
+  });
+
+  it('wraps property controls in a wrapping row for compact edit', () => {
+    renderPanel();
+
+    expect(screen.getByLabelText('Priority: High').parentElement).toHaveClass(
+      'flex',
+      'flex-wrap',
+      'items-center',
+      'gap-1.5'
+    );
+  });
+
+  it('saves once on Cmd+Enter in an open picker without picking its item', () => {
+    const onLabelToggle = vi.fn();
+    const props = renderPanel({
+      propertyControls: renderChips({
+        availableLabels: [
+          { id: 'label-ci', name: 'ci', color: 'blue', created_at: '' },
+        ],
+        onLabelToggle,
+      }),
+    });
+
+    fireEvent.click(
+      document.querySelector('[data-quick-create-chip="labels"]') as Element
+    );
+    const search = screen.getByPlaceholderText(`${Q}.search`);
+    fireEvent.keyDown(search, { key: 'Enter', metaKey: true });
+
+    expect(onLabelToggle).not.toHaveBeenCalled();
+    expect(props.onSave).toHaveBeenCalledTimes(1);
+    expect(
+      screen.queryByPlaceholderText(`${Q}.search`)
+    ).not.toBeInTheDocument();
+  });
+
+  it('moves focus title, description, then each property chip in order', () => {
+    renderPanel({
+      taskDescription: null,
+      onTaskDescriptionChange: vi.fn(),
+      propertyControls: renderChips(),
     });
 
     const panel = screen.getByTestId('compact-task-dialog-panel');

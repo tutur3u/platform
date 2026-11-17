@@ -31,10 +31,11 @@ export const TASK_DIALOG_FOCUSED_CONTENT_CLASS_NAME =
  * The quick dialog is anchored near the top instead of centred, so it never
  * sits over the middle of a board column and grows downward as chips wrap. Its
  * height stays inside the viewport from that anchor, and the panel scrolls its
- * own body between a fixed header and footer. Phones get a bottom sheet.
+ * own body between a fixed header and footer. Phones get a bottom sheet that
+ * rises above the on-screen keyboard (see useQuickCreateKeyboardInset).
  */
 export const TASK_DIALOG_COMPACT_CONTENT_CLASS_NAME =
-  'top-[12dvh] flex max-h-[min(720px,calc(100dvh-32px),calc(88dvh-16px))] w-[min(calc(100vw-2rem),40rem)] max-w-[40rem] translate-y-0 flex-col gap-0 overflow-visible rounded-(--radius-popover) border bg-popover p-0 shadow-xl sm:max-w-[40rem] max-sm:top-auto max-sm:bottom-0 max-sm:left-0 max-sm:max-h-[calc(100dvh-env(safe-area-inset-top)-1rem)] max-sm:w-full max-sm:max-w-none max-sm:translate-x-0 max-sm:rounded-b-none max-sm:rounded-t-(--sorbet-sheet-radius) max-sm:border-x-0 max-sm:border-b-0';
+  'top-[12dvh] flex max-h-[min(720px,calc(100dvh-32px),calc(88dvh-16px))] w-[min(calc(100vw-2rem),40rem)] max-w-[40rem] translate-y-0 flex-col gap-0 overflow-visible rounded-(--radius-popover) border bg-popover p-0 shadow-xl sm:max-w-[40rem] max-sm:top-auto max-sm:bottom-[var(--quick-create-keyboard-inset,0px)] max-sm:left-0 max-sm:max-h-[calc(100dvh-env(safe-area-inset-top)-1rem-var(--quick-create-keyboard-inset,0px))] max-sm:w-full max-sm:max-w-none max-sm:translate-x-0 max-sm:rounded-b-none max-sm:rounded-t-(--sorbet-sheet-radius) max-sm:border-x-0 max-sm:border-b-0';
 // The side panel's width follows the drag exactly; the slide-in is an animation.
 const TASK_PANEL_CONTENT_CLASS_NAME =
   'transition-none sm:w-[var(--task-panel-width,36rem)]';

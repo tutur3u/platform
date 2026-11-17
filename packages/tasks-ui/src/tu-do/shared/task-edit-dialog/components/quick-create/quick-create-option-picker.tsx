@@ -14,6 +14,7 @@ import {
   handleTaskOptionShortcut,
   TaskOptionShortcutHint,
 } from '../../../task-option-shortcuts';
+import { useCommandModifierEnterGuard } from '../command-modifier-enter';
 import { filterQuickCreateOptions } from './quick-create-values';
 
 export interface QuickCreateOption {
@@ -39,8 +40,13 @@ interface QuickCreateOptionPickerProps {
   clearLabel?: string;
   onClear?: () => void;
   action?: QuickCreatePickerAction;
-  /** Digits 1-9 pick the matching visible option. */
-  numericShortcuts?: boolean;
+  /**
+   * Digits pick an option: `position` takes the nth visible option (1-9),
+   * `label` the option whose label is that digit (numeric estimates).
+   */
+  numericShortcuts?: 'position' | 'label';
+  /** Cmd/Ctrl+Enter closes the picker so the dialog can save. */
+  onDismiss?: () => void;
 }
 
 /**
@@ -56,9 +62,12 @@ export function QuickCreateOptionPicker({
   clearLabel,
   onClear,
   action,
-  numericShortcuts = false,
+  numericShortcuts,
+  onDismiss,
 }: QuickCreateOptionPickerProps) {
   const [query, setQuery] = useState('');
+  const modifierEnter = useCommandModifierEnterGuard(onDismiss);
+  const select = modifierEnter.guard(onSelect);
   const visibleOptions = filterQuickCreateOptions(
     options,
     query,
@@ -71,14 +80,20 @@ export function QuickCreateOptionPicker({
     <Command
       shouldFilter={false}
       className="rounded-none border-0"
-      onKeyDownCapture={(event) =>
-        handleTaskOptionShortcut(event, numericShortcuts, (digit) => {
-          const option = digit > 0 ? visibleOptions[digit - 1] : undefined;
+      onKeyDownCapture={(event) => {
+        if (modifierEnter.handleKeyDownCapture(event)) return;
+        handleTaskOptionShortcut(event, !!numericShortcuts, (digit) => {
+          const option =
+            numericShortcuts === 'label'
+              ? visibleOptions.find((item) => item.label === String(digit))
+              : digit > 0
+                ? visibleOptions[digit - 1]
+                : undefined;
           if (!option) return false;
           onSelect(option.id);
           return true;
-        })
-      }
+        });
+      }}
     >
       <CommandInput
         autoFocus
@@ -101,7 +116,7 @@ export function QuickCreateOptionPicker({
                   key={option.id}
                   value={option.id}
                   data-checked={selected ? 'true' : undefined}
-                  onSelect={() => onSelect(option.id)}
+                  onSelect={() => select(option.id)}
                   className="min-h-9 gap-2"
                 >
                   {option.leading}
@@ -110,7 +125,7 @@ export function QuickCreateOptionPicker({
                   </span>
                   <TaskOptionShortcutHint
                     digit={index + 1}
-                    visible={numericShortcuts && index < 9}
+                    visible={numericShortcuts === 'position' && index < 9}
                   />
                   {selected ? (
                     <Check
@@ -130,7 +145,7 @@ export function QuickCreateOptionPicker({
               {showClear ? (
                 <CommandItem
                   value="__clear__"
-                  onSelect={onClear}
+                  onSelect={modifierEnter.guard(() => onClear?.())}
                   className="gap-2 text-muted-foreground"
                 >
                   <X aria-hidden="true" className="size-4" />
@@ -140,7 +155,7 @@ export function QuickCreateOptionPicker({
               {action && ActionIcon ? (
                 <CommandItem
                   value="__action__"
-                  onSelect={action.onSelect}
+                  onSelect={modifierEnter.guard(action.onSelect)}
                   className="gap-2 text-muted-foreground"
                 >
                   <ActionIcon className="size-4" />

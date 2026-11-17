@@ -2691,6 +2691,7 @@ export function TaskEditDialog({
                 )
               }
               taskStatus={taskHydrationNotice}
+              disabled={taskControlsDisabled}
               saveAsDraft={isCreateMode ? saveAsDraft : undefined}
               createMultiple={isCreateMode ? createMultiple : undefined}
               canSave={
@@ -2706,7 +2707,6 @@ export function TaskEditDialog({
               }
               onClose={handleAttemptClose}
               onFullscreen={() => setPresentation('focused')}
-              onDescriptionPreviewClick={() => setPresentation('focused')}
               onSave={compactCreateSave}
             />
           ) : (

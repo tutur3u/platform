@@ -65,6 +65,7 @@ export function QuickCreateListChip({
           availableLists={availableLists}
           disabled={disabled}
           enableNumericShortcuts
+          onModifierEnter={() => onOpenChange(false)}
           onSelectList={(listId) => {
             onListChange(listId);
             onOpenChange(false);
