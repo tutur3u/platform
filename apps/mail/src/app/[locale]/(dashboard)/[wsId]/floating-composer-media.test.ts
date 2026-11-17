@@ -299,12 +299,46 @@ beforeEach(() => {
 });
 afterEach(() => {
   cleanup();
+  vi.restoreAllMocks();
   vi.clearAllTimers();
   vi.useRealTimers();
   vi.unstubAllGlobals();
 });
 
 describe('send waits for media', () => {
+  it('uploads prepared bytes when a PNG over 5 MiB is pasted into the body', async () => {
+    mount();
+    vi.stubGlobal(
+      'createImageBitmap',
+      vi.fn(async () => ({ width: 2400, height: 1800, close: vi.fn() }))
+    );
+    vi.spyOn(HTMLCanvasElement.prototype, 'getContext').mockReturnValue({
+      drawImage: vi.fn(),
+    } as unknown as CanvasRenderingContext2D);
+    vi.spyOn(HTMLCanvasElement.prototype, 'toBlob').mockImplementation(
+      (callback) =>
+        callback(new Blob([new Uint8Array(400 * 1024)], { type: 'image/webp' }))
+    );
+    const file = new File([new Uint8Array(6 * 1024 * 1024)], 'image.png', {
+      type: 'image/png',
+    });
+    fireEvent.paste(screen.getByLabelText('Body'), {
+      clipboardData: { files: [file], items: [] },
+    });
+    await act(async () => {
+      await vi.waitFor(() => expect(api.upload).toHaveBeenCalledOnce());
+    });
+    const prepared = api.upload.mock.calls[0]?.[3];
+    expect(file.size).toBeGreaterThan(5 * 1024 * 1024);
+    expect(prepared).toBeInstanceOf(File);
+    expect(prepared.size).toBeLessThanOrEqual(448 * 1024);
+    expect(prepared.type).toBe('image/webp');
+    expect(nodes.insertPending).toHaveBeenCalledOnce();
+    uploads[0]?.succeed();
+    await settle();
+    expect(api.toast).not.toHaveBeenCalled();
+  });
+
   it('disables Send while queued or uploading and enables it once settled', async () => {
     mount();
     fireEvent.click(screen.getByText('Add image'));

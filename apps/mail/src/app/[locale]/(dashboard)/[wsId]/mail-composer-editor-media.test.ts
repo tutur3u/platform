@@ -90,13 +90,23 @@ describe('image placeholders', () => {
   it('starts large inline images at 320px, persists the width and retains resizing', async () => {
     const view = await open();
     act(() => {
-      view.nodes().insertPending({ name: 'large.png', src: 'blob:large', state: 'queued', uploadId: 'large' });
+      view
+        .nodes()
+        .insertPending({
+          name: 'large.png',
+          src: 'blob:large',
+          state: 'queued',
+          uploadId: 'large',
+        });
       view.nodes().setSize('large', 2400, 1800);
       view.nodes().resolve('large', raw);
     });
     expect(view.editor.getHTML()).toContain('width="320"');
     expect(lastHtml(view.changed)).toContain('width="320"');
-    act(() => view.editor.commands.updateAttributes('image', { width: '480' }));
+    act(() => {
+      view.editor.commands.setNodeSelection(0);
+      view.editor.commands.updateAttributes('image', { width: '480' });
+    });
     act(() => view.nodes().setSize('large', 2400, 1800));
     expect(view.editor.getHTML()).toContain('width="480"');
   });

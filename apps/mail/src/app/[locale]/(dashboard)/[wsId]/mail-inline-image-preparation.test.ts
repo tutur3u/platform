@@ -23,6 +23,31 @@ afterEach(() => {
 });
 
 describe('inline image upload preparation', () => {
+  it.each(['image/png', 'image/webp'])(
+    'rejects large animated %s without flattening it',
+    async (type) => {
+      const bytes = new Uint8Array(500 * 1024);
+      bytes.set(
+        new TextEncoder().encode(type === 'image/png' ? 'acTL' : 'ANIM'),
+        12
+      );
+      const file = new File([bytes], 'animated', { type });
+      await expect(prepareMailInlineImage(file)).rejects.toMatchObject({
+        code: 'image_prepare_too_large',
+      });
+      expect(decode).not.toHaveBeenCalled();
+    }
+  );
+
+  it('rejects large AVIF until animation-safe conversion is available', async () => {
+    const file = new File([new Uint8Array(500 * 1024)], 'animated.avif', {
+      type: 'image/avif',
+    });
+    await expect(prepareMailInlineImage(file)).rejects.toMatchObject({
+      code: 'image_prepare_too_large',
+    });
+    expect(decode).not.toHaveBeenCalled();
+  });
   it('keeps a small PNG byte-for-byte without encoding', async () => {
     const file = new File(['png'], 'diagram.png', { type: 'image/png' });
     expect(await prepareMailInlineImage(file)).toBe(file);
@@ -34,7 +59,8 @@ describe('inline image upload preparation', () => {
       type: 'image/png',
     });
     vi.spyOn(HTMLCanvasElement.prototype, 'toBlob').mockImplementation(
-      (callback) => callback(new Blob([new Uint8Array(400 * 1024)], { type: 'image/webp' }))
+      (callback) =>
+        callback(new Blob([new Uint8Array(400 * 1024)], { type: 'image/webp' }))
     );
     const prepared = await prepareMailInlineImage(file);
     expect(file.size).toBeGreaterThan(5 * 1024 * 1024);
@@ -49,9 +75,11 @@ describe('inline image upload preparation', () => {
     const file = new File([new Uint8Array(6 * 1024 * 1024)], 'image.png', {
       type: 'image/png',
     });
-    const encode = vi.spyOn(HTMLCanvasElement.prototype, 'toBlob').mockImplementation(
-      (callback) => callback(new Blob([new Uint8Array(500 * 1024)], { type: 'image/webp' }))
-    );
+    const encode = vi
+      .spyOn(HTMLCanvasElement.prototype, 'toBlob')
+      .mockImplementation((callback) =>
+        callback(new Blob([new Uint8Array(500 * 1024)], { type: 'image/webp' }))
+      );
     await expect(prepareMailInlineImage(file)).rejects.toMatchObject({
       code: 'image_prepare_too_large',
     });
@@ -67,7 +95,9 @@ describe('inline image upload preparation', () => {
     await expect(prepareMailInlineImage(file)).rejects.toMatchObject({
       code: 'image_prepare_failed',
     });
-    vi.spyOn(HTMLCanvasElement.prototype, 'toBlob').mockImplementation((callback) => callback(null));
+    vi.spyOn(HTMLCanvasElement.prototype, 'toBlob').mockImplementation(
+      (callback) => callback(null)
+    );
     await expect(prepareMailInlineImage(file)).rejects.toMatchObject({
       code: 'image_prepare_failed',
     });
@@ -86,8 +116,9 @@ describe('inline image upload preparation', () => {
   it('honors cancellation before decoding or returning a prepared file', async () => {
     const controller = new AbortController();
     controller.abort();
-    await expect(prepareMailInlineImage(new File(['x'], 'image.png'), controller.signal))
-      .rejects.toMatchObject({ name: 'AbortError' });
+    await expect(
+      prepareMailInlineImage(new File(['x'], 'image.png'), controller.signal)
+    ).rejects.toMatchObject({ name: 'AbortError' });
     expect(decode).not.toHaveBeenCalled();
   });
 });

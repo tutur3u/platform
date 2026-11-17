@@ -49,6 +49,30 @@ async function decode(file: File, signal?: AbortSignal) {
   }
 }
 
+async function rejectAnimation(file: File) {
+  if (file.type !== 'image/png' && file.type !== 'image/webp') return;
+  const buffer = await new Promise<ArrayBuffer>((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () =>
+      reader.result instanceof ArrayBuffer
+        ? resolve(reader.result)
+        : reject(new MailInlineImageError('image_prepare_failed'));
+    reader.onerror = () =>
+      reject(new MailInlineImageError('image_prepare_failed'));
+    reader.readAsArrayBuffer(file);
+  });
+  const view = new DataView(buffer);
+  const png = file.type === 'image/png';
+  for (let offset = png ? 8 : 12; offset + 8 <= view.byteLength;) {
+    const typeOffset = png ? offset + 4 : offset;
+    const type = String.fromCharCode(...new Uint8Array(buffer, typeOffset, 4));
+    if (type === 'acTL' || type === 'ANIM' || type === 'ANMF')
+      throw new MailInlineImageError('image_prepare_too_large');
+    const length = view.getUint32(png ? offset : offset + 4, !png);
+    offset += png ? length + 12 : length + 8 + (length % 2);
+  }
+}
+
 function encode(canvas: HTMLCanvasElement, type: string, quality: number) {
   return new Promise<Blob>((resolve, reject) => {
     const timer = setTimeout(
@@ -81,10 +105,12 @@ export async function prepareMailInlineImage(
   if (file.size <= MAIL_INLINE_IMAGE_MAX_BYTES) return file;
   if (
     file.size > MAX_INPUT_BYTES ||
-    !/^image\/(png|jpeg|webp|avif|bmp)$/u.test(file.type)
+    !/^image\/(png|jpeg|webp|bmp)$/u.test(file.type)
   )
     throw new MailInlineImageError('image_prepare_too_large');
 
+  await rejectAnimation(file);
+  checkAbort(signal);
   const bitmap = await decode(file, signal);
   try {
     checkAbort(signal);
@@ -115,8 +141,12 @@ export async function prepareMailInlineImage(
           const blob = await encode(canvas, type, quality);
           checkAbort(signal);
           if (blob.size > 0 && blob.size <= MAIL_INLINE_IMAGE_MAX_BYTES) {
-            const extension = blob.type === 'image/jpeg' ? 'jpg' :
-              blob.type === 'image/webp' ? 'webp' : 'png';
+            const extension =
+              blob.type === 'image/jpeg'
+                ? 'jpg'
+                : blob.type === 'image/webp'
+                  ? 'webp'
+                  : 'png';
             return new File(
               [blob],
               `${file.name.replace(/\.[^.]*$/u, '')}.${extension}`,
