@@ -30,7 +30,14 @@ vi.mock('./shared', () => ({
 
 import { sendMailMessage } from './send';
 
-it('only the atomic draft claim winner creates a job and invokes the provider', async () => {
+it.each([
+  'accepted',
+  'unknown',
+  'unclassified',
+  'exception',
+  'rejected',
+  'persistence',
+])('preserves the atomic send fence for %s outcomes', async (outcome) => {
   let status = 'draft';
   let jobs = 0;
   const filters: [string, unknown][][] = [];
@@ -43,7 +50,19 @@ it('only the atomic draft claim winner creates a job and invokes the provider', 
   mocks.get.mockImplementation(async () => ({ ...message, status }));
   mocks.draft.mockResolvedValue(message);
   mocks.attachments.mockResolvedValue([]);
-  mocks.send.mockResolvedValue({ success: true, messageId: 'synthetic' });
+  mocks.send.mockReset();
+  if (outcome === 'exception') {
+    mocks.send.mockRejectedValue(
+      new Error('synthetic private provider exception')
+    );
+  } else {
+    mocks.send.mockResolvedValue({
+      success: outcome === 'accepted' || outcome === 'persistence',
+      deliveryOutcome: outcome === 'unclassified' ? undefined : outcome,
+      messageId: 'synthetic',
+      error: 'synthetic private provider details',
+    });
+  }
   mocks.rows.mockImplementation(() => {
     let update: { status?: string } = {};
     const eq: [string, unknown][] = [];
@@ -67,7 +86,12 @@ it('only the atomic draft claim winner creates a job and invokes the provider', 
       },
       then(resolve: (value: unknown) => void) {
         if (update.status) status = update.status;
-        resolve({ error: null });
+        resolve({
+          error:
+            outcome === 'persistence'
+              ? { message: 'private persistence error' }
+              : null,
+        });
       },
     };
     return b;
@@ -114,7 +138,28 @@ it('only the atomic draft claim winner creates a job and invokes the provider', 
       bodyText: 'Accepted',
     },
   };
-  await Promise.all([sendMailMessage(payload), sendMailMessage(payload)]);
+  const results = await Promise.allSettled([
+    sendMailMessage(payload),
+    sendMailMessage(payload),
+  ]);
+  const uncertain = ['unknown', 'unclassified', 'exception'].includes(outcome);
+  expect(status).toBe(
+    uncertain ? 'sending' : outcome === 'rejected' ? 'failed' : 'sent'
+  );
+  if (uncertain || outcome === 'persistence') {
+    const failure = results.find((result) => result.status === 'rejected');
+    expect(failure?.status).toBe('rejected');
+    if (failure?.status === 'rejected') {
+      expect(failure.reason.message).toBe(
+        'Mail delivery could not be confirmed'
+      );
+      expect(String(failure.reason)).not.toContain('private');
+    }
+  } else {
+    expect(results.every((result) => result.status === 'fulfilled')).toBe(true);
+  }
+  await sendMailMessage(payload);
+
   expect(filters).toHaveLength(2);
   for (const filter of filters)
     expect(filter).toContainEqual(['status', 'draft']);

@@ -11,6 +11,20 @@ auth to `apps/web`, and preserves Tuturuuu workspace and mailbox-role checks.
 Platform operators may configure additional managed domains; a mailbox address
 must match its linked `private.mail_domains` row.
 
+## Managed send outcomes
+
+Managed mailbox sends reserve the draft atomically before provider dispatch.
+An exception or an unknown delivery outcome retains the `sending` claim; the
+message is not marked failed and replaying its ID cannot dispatch it again.
+Only a confirmed rejection is marked `failed`. Provider acceptance is recorded
+as `sent`; persistence errors never release the claim for another delivery.
+Public send exceptions return `MAIL_SEND_UNCONFIRMED` without provider details.
+Operators must reconcile uncertain messages with provider records before any
+manual recovery. This applies to managed Mail API consumers; connected accounts
+retain their separate `uncertain` claim contract.
+
+Regression coverage: `apps/mail/src/lib/mail/repository/send-claim.test.ts`.
+
 ## Flutter Mail
 
 The mobile Apps hub exposes Mail to exact `@tuturuuu.com` accounts, genuine

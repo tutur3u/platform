@@ -2,6 +2,7 @@ import { EmailService, sendWorkspaceEmail } from '@tuturuuu/email-service';
 import type { SendMailMessagePayload } from '@tuturuuu/internal-api';
 import { ROOT_WORKSPACE_ID } from '@tuturuuu/utils/constants';
 import { replaceMailInlineAttachmentUrls } from '../inline-images';
+import { MailSendError } from '../send-error';
 import type { MailRouteContext } from '../types';
 import { loadOutboundAttachments } from './attachments';
 import { requireMailboxAccess } from './bootstrap';
@@ -9,7 +10,17 @@ import { createMailDraft, updateMailDraft } from './drafts';
 import { getMailMessage } from './messages';
 import { mailMessageTable, privateTable } from './shared';
 
-export async function sendMailMessage({
+export async function sendMailMessage(
+  args: Parameters<typeof sendClaimedMailMessage>[0]
+) {
+  try {
+    return await sendClaimedMailMessage(args);
+  } catch {
+    throw new MailSendError();
+  }
+}
+
+async function sendClaimedMailMessage({
   ctx,
   mailboxId,
   payload,
@@ -213,10 +224,14 @@ export async function sendMailMessage({
           credentialWorkspaceId: ROOT_WORKSPACE_ID,
         });
 
+  // Retain the durable sending claim unless the provider proves an outcome.
+  if (!result.success && result.deliveryOutcome !== 'rejected') {
+    throw new MailSendError();
+  }
   const nextStatus = result.success ? 'sent' : 'failed';
   const now = new Date().toISOString();
 
-  await Promise.all([
+  const writes = await Promise.all([
     mailMessageTable(access, ctx)
       .update({
         provider: outboundProvider,
@@ -227,7 +242,9 @@ export async function sendMailMessage({
       .eq('id', message.id),
     privateTable(access.admin, 'mail_outbound_jobs')
       .update({
-        error_message: result.error ?? null,
+        error_message: result.success
+          ? null
+          : 'Email provider rejected delivery',
         provider_message_id: result.messageId ?? null,
         sent_at: result.success ? now : null,
         status: nextStatus,
@@ -235,9 +252,11 @@ export async function sendMailMessage({
       .eq('id', outboundJob.id),
   ]);
 
+  if (writes.some((write) => write.error)) throw new MailSendError();
+
   if (!result.success) {
     console.warn('[mail] outbound send failed', {
-      error: result.error,
+      error: 'Email provider rejected delivery',
       mailboxId,
       messageId: message.id,
       wsId: ctx.normalizedWsId,

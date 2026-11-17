@@ -2,6 +2,7 @@ import type { NextRequest } from 'next/server';
 import { NextResponse } from 'next/server';
 import type { z } from 'zod';
 import { resolveMailRouteContext } from './auth';
+import { MAIL_SEND_PUBLIC_MESSAGE, MailSendError } from './send-error';
 import type { MailRouteContext } from './types';
 
 export async function parseJsonBody<T extends z.ZodType>(
@@ -49,6 +50,12 @@ export async function withMailContext(
 
     return await handler(resolved.context);
   } catch (error) {
+    if (error instanceof MailSendError) {
+      return NextResponse.json(
+        { error: MAIL_SEND_PUBLIC_MESSAGE, code: 'MAIL_SEND_UNCONFIRMED' },
+        { status: 502 }
+      );
+    }
     console.error('[mail] route failed', {
       error,
       wsId,
