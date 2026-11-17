@@ -66,6 +66,21 @@ The job runs on GitHub-hosted Ubuntu and installs Chromium with its Linux system
 
 Inspect the Smoke or Nightly step and its reports for browser acceptance. A successful report-only workflow can contain a failed job, and a provisioning failure does not prove that browser tests ran. The dependency image must copy every workspace manifest and file-backed dependency before its frozen install; the focused CI dependency-context test checks that inventory.
 
+The admitted job restores E2E-owned Bun and Chromium download caches using exact
+lockfile, platform and dependency inputs without fallback keys. Bun also includes
+its pinned version, workspace manifests and patches. Frozen dependency install
+and Chromium's Linux system-dependency install run on both hits and misses.
+Only non-Dependabot main pushes save these archives, after successful installs;
+the uncompressed limits are 512 MiB for Bun and 1 GiB for Chromium. Missing,
+oversized or malformed size measurements skip the save. Scheduled and manual
+runs restore matching archives without creating new generations.
+
+These caches contain downloaded dependencies, not built applications, credentials,
+browser auth state or database volumes. Runtime setup, disposable identities,
+database reset and health checks remain required. Inspect restore hit outputs and
+the individual install-step durations when comparing cold and warm runs. A cache
+hit does not establish browser acceptance or a measured performance improvement.
+
 ## Repository cache budget
 
 CI caches reduce repeated downloads and setup work. Cache availability is not guaranteed, and eviction can require fresh downloads. Reusing a cache never substitutes for checking the candidate source and dependency identity.

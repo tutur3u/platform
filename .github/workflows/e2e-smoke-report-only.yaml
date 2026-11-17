@@ -52,6 +52,13 @@ jobs:
       - uses: ./.github/actions/setup-bun-with-retry
         with:
           bun-version: 1.4.4
+          package-cache-enabled: "false"
+      - name: Restore exact E2E Bun packages
+        id: bun-packages
+        uses: actions/cache/restore@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: ~/.bun/install/cache
+          key: web-e2e-bun-v1-${{ runner.os }}-${{ runner.arch }}-1.4.4-${{ hashFiles('bun.lock', '**/package.json', 'patches/**') }}
       - name: Install dependencies
         run: bash scripts/ci/run-with-backoff.sh bun install --frozen-lockfile
       - name: Expose retained E2E CLI compatibility
@@ -67,9 +74,45 @@ jobs:
           node-version: 24
           package-manager-cache: false
       - uses: ./.github/actions/setup-supabase-cli-with-retry
+      - name: Restore exact E2E Chromium
+        id: chromium
+        uses: actions/cache/restore@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: ~/.cache/ms-playwright
+          key: web-e2e-chromium-v1-${{ runner.os }}-${{ runner.arch }}-${{ hashFiles('bun.lock', 'apps/web/package.json') }}
       - name: Install Chromium
         working-directory: apps/web
         run: bun x playwright install --with-deps chromium
+      - name: Bound E2E dependency archives
+        id: cache-budget
+        shell: bash
+        run: |
+          bound_cache() {
+            local name="$1" directory="$2" limit="$3" size
+            if ! size=$(du -sk "$directory" 2>/dev/null | cut -f1); then
+              echo "$name=false" >> "$GITHUB_OUTPUT"
+              return
+            fi
+            if [[ "$size" =~ ^[0-9]+$ ]] && (( size <= limit )); then
+              echo "$name=true" >> "$GITHUB_OUTPUT"
+            else
+              echo "$name=false" >> "$GITHUB_OUTPUT"
+            fi
+          }
+          bound_cache bun "$HOME/.bun/install/cache" 524288
+          bound_cache chromium "$HOME/.cache/ms-playwright" 1048576
+      - name: Save exact trusted E2E Bun packages
+        if: github.ref == 'refs/heads/main' && github.event_name == 'push' && github.actor != 'dependabot[bot]' && steps.bun-packages.outputs.cache-hit != 'true' && steps.cache-budget.outputs.bun == 'true'
+        uses: actions/cache/save@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: ~/.bun/install/cache
+          key: ${{ steps.bun-packages.outputs.cache-primary-key }}
+      - name: Save exact trusted E2E Chromium
+        if: github.ref == 'refs/heads/main' && github.event_name == 'push' && github.actor != 'dependabot[bot]' && steps.chromium.outputs.cache-hit != 'true' && steps.cache-budget.outputs.chromium == 'true'
+        uses: actions/cache/save@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: ~/.cache/ms-playwright
+          key: ${{ steps.chromium.outputs.cache-primary-key }}
       - name: Smoke (six-minute Playwright budget, excluding provisioning)
         if: github.event_name != 'schedule'
         timeout-minutes: 45
