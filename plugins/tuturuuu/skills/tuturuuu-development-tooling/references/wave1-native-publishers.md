@@ -228,16 +228,19 @@ recognize provider prefixes and separator-delimited token runs. Identifier and
 digest exceptions use exact field, shape and reviewed reference formats.
 
 Credential scanning splits on colon, slash, hyphen, underscore, dot, equals, plus,
-at-sign and whitespace, and also scans maximal hex/base64/base64url runs. There
-is no entropy threshold or charset early return. Runs of 32 or more hex characters
-and single alphanumeric segments of 32 or more characters are refused except in
-the exact declared identifier/digest positions. Canonical UUID tokens are admitted
-in any position, including `job-<UUID>` and provenance. Ordinary kebab-case words
-are judged segment by segment; separators never concatenate UUID groups into a
-hex run. Digit/year segments and readable camelCase words are admitted. Mixed token
-segments of 30 or more characters with high character entropy, opaque compound
-base64/base64url runs and Origin-CA-shaped values are refused. Only committed worker names and origins
-are exempt in target fields. An arbitrary `id` key grants no exception.
+at-sign and whitespace, and also scans maximal hex/base64/base64url runs.
+Hex runs of 32 or more characters are refused independently of entropy outside
+exact declared identifier/digest positions. Other alphanumeric segments of 32 or
+more characters are refused unless they match readable camelCase/PascalCase,
+with each word capped at 24 letters including its initial capital. This readable
+casing exception runs before the mixed-token entropy check. Other mixed token
+segments of 30 or more characters are refused at character entropy >=3.5;
+opaque compound base64/base64url runs and Origin-CA-shaped values are also refused.
+Canonical UUID tokens are admitted anywhere, including `job-<UUID>` and provenance.
+Ordinary kebab-case words are judged segment by segment; separators never
+concatenate UUID groups into a hex run. Short digit/year and digit-bearing word
+segments are admitted. Only committed worker names and origins are exempt in
+target fields. An arbitrary `id` key grants no exception.
 
 Reviewed reference formats are `workers/<reviewed-worker>/{deployments,versions}/<UUID-or-32hex>`,
 `cf-wave1/<reviewed-app-or-worker>/{version-readback,deployment-readback}/<UUID-or-32hex>`,
@@ -258,7 +261,11 @@ authority-issued records, never from free-form caller data or credentials. The
 live authority must verify reference ownership, source and target before storing
 receipts. This filter is defense in depth, not proof that metadata contains no
 secret. UUID-shaped secrets in any position and ordinary-word-shaped compound
-values remain ambiguous. Unprefixed opaque values of 30 characters or fewer
+values remain ambiguous. Random letters-only strings can accidentally match
+bounded camelCase: a synthetic 32-character base52 sample observed a rate near
+4×10⁻⁴; a base62 sample observed about 2×10⁻⁵, only for digit-free matches.
+These distribution-specific measurements
+are not a bound on adversarial input. Unprefixed opaque values of 30 characters or fewer
 remain a residual risk. Secrets fragmented into runs of 30 or fewer characters
 and chained UUIDs can also pass; reference provenance remains mandatory.
 Recognized credential prefixes are rejected even at shorter lengths.
