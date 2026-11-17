@@ -6,7 +6,7 @@ import { EditorContent, type Editor, useEditor } from '@tiptap/react';
 import StarterKit from '@tiptap/starter-kit';
 import { DOMParser as ProseMirrorDOMParser } from '@tiptap/pm/model';
 import { toast } from '@tuturuuu/ui/sonner';
-import { embeddedMailImages } from './mail-composer-paste';
+import { embeddedMailImages, mailClipboardFiles } from './mail-composer-paste';
 import {
   Bold,
   Italic,
@@ -77,8 +77,18 @@ export const MailComposerEditor = memo(function MailComposerEditor({
   onSelectionChange,
 }: MailComposerEditorProps) {
   const t = useTranslations('mail');
-  const actions = useRef({ onImageNodesChange, onRemoveImage, onRetryImage, onPasteImages });
-  actions.current = { onImageNodesChange, onRemoveImage, onRetryImage, onPasteImages };
+  const actions = useRef({
+    onImageNodesChange,
+    onRemoveImage,
+    onRetryImage,
+    onPasteImages,
+  });
+  actions.current = {
+    onImageNodesChange,
+    onRemoveImage,
+    onRetryImage,
+    onPasteImages,
+  };
   const lastEmitted = useRef<string | null>(null);
   const parts = useMemo(() => splitComposerQuote(initialHtml), [initialHtml]);
   const [quoteOpen, setQuoteOpen] = useState(false);
@@ -122,14 +132,26 @@ export const MailComposerEditor = memo(function MailComposerEditor({
           const html = event.clipboardData?.getData('text/html');
           if (!html || !actions.current.onPasteImages) return false;
           try {
-            const media = embeddedMailImages(html);
+            const media = embeddedMailImages(
+              html,
+              event.clipboardData ? mailClipboardFiles(event.clipboardData) : []
+            );
             if (!media.files.length) return false;
             event.preventDefault();
-            const container = document.createElement('div');
-            container.innerHTML = media.html;
-            const slice = ProseMirrorDOMParser.fromSchema(view.state.schema).parseSlice(container);
-            view.dispatch(view.state.tr.replaceSelection(slice));
-            actions.current.onPasteImages(media.files, true);
+            const parser = ProseMirrorDOMParser.fromSchema(view.state.schema);
+            for (const segment of media.segments) {
+              view.dispatch(
+                view.state.tr.replaceSelection(
+                  parser.parseSlice(segment.content)
+                )
+              );
+              actions.current.onPasteImages([segment.file], true);
+            }
+            view.dispatch(
+              view.state.tr.replaceSelection(parser.parseSlice(media.tail))
+            );
+            for (const file of media.attachments)
+              actions.current.onPasteImages([file], false);
             return true;
           } catch {
             event.preventDefault();
@@ -337,7 +359,8 @@ export const MailComposerEditor = memo(function MailComposerEditor({
             target === event.currentTarget ||
             target === event.currentTarget.firstElementChild ||
             target === editor.view.dom
-          ) editor.commands.focus('end');
+          )
+            editor.commands.focus('end');
         }}
       >
         <EditorContent

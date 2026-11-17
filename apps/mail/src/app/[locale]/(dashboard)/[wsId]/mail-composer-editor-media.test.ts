@@ -1,6 +1,12 @@
 // @vitest-environment jsdom
 
-import { act, cleanup, fireEvent, render, waitFor } from '@testing-library/react';
+import {
+  act,
+  cleanup,
+  fireEvent,
+  render,
+  waitFor,
+} from '@testing-library/react';
 import type { Editor } from '@tiptap/react';
 import { createElement } from 'react';
 import { afterEach, beforeAll, describe, expect, it, vi } from 'vitest';
@@ -269,7 +275,6 @@ describe('image placeholders', () => {
   });
 });
 
-
 describe('composer body focus and height', () => {
   it('focuses the end on empty body space without changing text clicks', async () => {
     const view = await open('<p>Hello world</p>');
@@ -278,7 +283,9 @@ describe('composer body focus and height', () => {
     act(() => view.editor.commands.setTextSelection(2));
     fireEvent.click(body);
     await waitFor(() => expect(view.editor.isFocused).toBe(true));
-    expect(view.editor.state.selection.from).toBe(view.editor.state.doc.content.size - 1);
+    expect(view.editor.state.selection.from).toBe(
+      view.editor.state.doc.content.size - 1
+    );
     act(() => view.editor.commands.setTextSelection(2));
     const paragraph = view.editor.view.dom.querySelector('p');
     if (!paragraph) throw new Error('Missing paragraph');
@@ -293,7 +300,45 @@ describe('composer body focus and height', () => {
     expect(body?.className).toContain('overflow-y-auto');
     expect(body?.className).toContain('flex-1');
     expect(view.editor.view.dom.parentElement?.className).toContain('flex-1');
-    expect(view.editor.view.dom.parentElement?.className).toContain('[&_.ProseMirror]:flex-1');
+    expect(view.editor.view.dom.parentElement?.className).toContain(
+      '[&_.ProseMirror]:flex-1'
+    );
     expect(view.editor.getText()).toContain('Long content');
+  });
+});
+
+describe('rich clipboard image placement', () => {
+  it('retains text around images and filters executable clipboard attributes', async () => {
+    const view = await open('<p></p>');
+    let index = 0;
+    const onPasteImages = vi.fn((files: File[]) => {
+      for (const file of files)
+        view.nodes().insertPending({
+          name: file.name,
+          src: `blob:paste-${++index}`,
+          state: 'queued',
+          uploadId: `paste-${index}`,
+        });
+    });
+    view.rerender(
+      createElement(MailComposerEditor, { ...view.props, onPasteImages })
+    );
+    fireEvent.paste(view.editor.view.dom, {
+      clipboardData: {
+        files: [],
+        items: [],
+        getData: (type: string) =>
+          type === 'text/html'
+            ? '<p>before</p><img src="data:image/png;base64,aGVsbG8="><p>between</p><img src="data:image/png;base64,aGVsbG8="><p>after</p><img src="https://example.com/invalid.png" onerror="window.clipboardExecuted=true">'
+            : '',
+      },
+    });
+    const html = view.editor.getHTML();
+    expect(onPasteImages).toHaveBeenCalledTimes(2);
+    expect(html.indexOf('before')).toBeLessThan(html.indexOf('blob:paste-1'));
+    expect(html.indexOf('blob:paste-1')).toBeLessThan(html.indexOf('between'));
+    expect(html.indexOf('between')).toBeLessThan(html.indexOf('blob:paste-2'));
+    expect(html.indexOf('blob:paste-2')).toBeLessThan(html.indexOf('after'));
+    expect(html).not.toContain('onerror');
   });
 });

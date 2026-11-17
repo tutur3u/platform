@@ -1,4 +1,4 @@
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
 import {
   attachment,
   flush,
@@ -480,4 +480,18 @@ describe('derived state', () => {
     expect(snapshot.announcement).toEqual({ kind: 'uploaded', name: 'a.pdf' });
     expect(snapshot.announcementSeq).toBeGreaterThanOrEqual(2);
   });
+});
+
+
+it('reports upload errors with the original reason while retaining retry state', async () => {
+  const test = setup();
+  const failed = vi.fn();
+  test.deps.onUploadFailed = failed;
+  test.store.addFiles([png('failed.png')], true);
+  await flush();
+  const error = new Error('Upload rejected: file too large');
+  test.uploads[0]?.fail(error);
+  await flush();
+  expect(failed).toHaveBeenCalledWith(expect.objectContaining({ name: 'failed.png' }), error);
+  expect(test.statuses()).toEqual(['failed']);
 });
