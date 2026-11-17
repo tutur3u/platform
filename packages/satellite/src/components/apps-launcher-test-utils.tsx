@@ -4,6 +4,10 @@ import { NextIntlClientProvider } from 'next-intl';
 import { useState } from 'react';
 import { vi } from 'vitest';
 import { AppsLauncherDialog } from './apps-launcher';
+import {
+  APP_FAVORITES_PREFERENCE_KEY,
+  APP_RECENT_PREFERENCE_KEY,
+} from './apps-launcher-favorites';
 import { APP_OPEN_MODE_PREFERENCE_KEY } from './apps-launcher-preference';
 
 const appNames = Object.fromEntries(
@@ -62,17 +66,28 @@ const messages = {
     apps: 'Apps',
     apps_count: '{count, plural, one {# app} other {# apps}}',
     apps_description: 'Open another Tuturuuu app from this workspace.',
+    current: 'Current',
     current_workspace: 'Current workspace',
     default_destination: 'Default app home',
+    favorite_add: 'Add {app} to favorites',
+    favorite_remove: 'Remove {app} from favorites',
+    favorites: 'Favorites',
+    hint_close: 'Close',
+    hint_favorite: 'Favorite',
+    hint_navigate: 'Navigate',
+    hint_open: 'Open',
     no_apps_found: 'No apps found',
     no_apps_found_description: 'Try a different app name or keyword.',
     navigate: 'navigate',
+    no_results: 'No apps match “{query}”',
     open_apps_in: 'Open apps in',
     open_current_tab: 'This tab',
     open_here: 'Open here',
     open_in_new_tab: 'Open in new tab',
     open_new_tab: 'New tab',
     open_options: 'Open options',
+    recent: 'Recent',
+    results: 'Results',
     search_apps: 'Search apps',
     select: 'select',
     workspace_destination: '{workspace} workspace',
@@ -101,13 +116,23 @@ export function renderAppsLauncherDialog({ open = true } = {}) {
     );
   }
 
-  render(
+  const result = render(
     <NextIntlClientProvider locale="en" messages={messages}>
       <AppsLauncherHarness />
     </NextIntlClientProvider>
   );
 
-  return { onOpenChange };
+  return { onOpenChange, unmount: result.unmount };
+}
+
+export function clearAppsLauncherCookies() {
+  for (const key of [
+    APP_FAVORITES_PREFERENCE_KEY,
+    APP_OPEN_MODE_PREFERENCE_KEY,
+    APP_RECENT_PREFERENCE_KEY,
+  ]) {
+    document.cookie = `${key}=; Max-Age=0; path=/`;
+  }
 }
 
 export function setupAppsLauncherTestEnvironment() {
@@ -116,7 +141,7 @@ export function setupAppsLauncherTestEnvironment() {
     configurable: true,
     value: 1024,
   });
-  document.cookie = `${APP_OPEN_MODE_PREFERENCE_KEY}=; Max-Age=0; path=/`;
+  clearAppsLauncherCookies();
   Object.defineProperty(window, 'localStorage', {
     configurable: true,
     value: localStorageMock,

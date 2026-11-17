@@ -1,14 +1,59 @@
-import { fireEvent, screen, waitFor, within } from '@testing-library/react';
+import { cleanup, fireEvent, screen, waitFor } from '@testing-library/react';
 import { LAUNCHABLE_APPS } from '@tuturuuu/utils/launchable-apps';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import {
+  APP_FAVORITES_PREFERENCE_KEY,
+  APP_RECENT_PREFERENCE_KEY,
+} from './apps-launcher-favorites';
 import {
   renderAppsLauncherDialog as renderDialog,
   setupAppsLauncherTestEnvironment,
   teardownAppsLauncherTestEnvironment,
 } from './apps-launcher-test-utils';
 
-beforeEach(setupAppsLauncherTestEnvironment);
+const currentApp = vi.hoisted(() => ({
+  slug: 'platform' as string | undefined,
+}));
+
+vi.mock('./apps-launcher-current', () => ({
+  getCurrentLaunchableAppSlug: () => currentApp.slug,
+}));
+
+beforeEach(() => {
+  currentApp.slug = 'platform';
+  setupAppsLauncherTestEnvironment();
+});
 afterEach(teardownAppsLauncherTestEnvironment);
+
+const productivityApps = LAUNCHABLE_APPS.filter(
+  (app) => app.category === 'productivity'
+);
+
+function search() {
+  return screen.getByRole('combobox', { name: 'Search apps' });
+}
+
+function option(id: string) {
+  const element = document.getElementById(`apps-launcher-${id}`);
+  expect(element).toBeTruthy();
+  return element as HTMLElement;
+}
+
+function activeOptionId() {
+  return search().getAttribute('aria-activedescendant');
+}
+
+function openFromFreshDialog(id: string) {
+  cleanup();
+  renderDialog();
+  fireEvent.click(option(id));
+}
+
+function sectionHeadings() {
+  return Array.from(
+    document.querySelectorAll('[data-slot="apps-launcher-section-heading"]')
+  ).map((heading) => heading.textContent);
+}
 
 describe('AppsLauncherDialog', () => {
   it('opens with Cmd/Ctrl+Shift+K without accepting extra modifiers', async () => {
@@ -23,556 +68,244 @@ describe('AppsLauncherDialog', () => {
     });
     expect(onOpenChange).not.toHaveBeenCalled();
 
-    fireEvent.keyDown(document, {
-      key: 'K',
-      metaKey: true,
-      shiftKey: true,
-    });
+    fireEvent.keyDown(document, { key: 'K', metaKey: true, shiftKey: true });
     expect(await screen.findByRole('dialog')).toBeTruthy();
     expect(onOpenChange).toHaveBeenLastCalledWith(true);
 
     fireEvent.click(screen.getByRole('button', { name: 'Close' }));
     await waitFor(() => expect(screen.queryByRole('dialog')).toBeNull());
 
-    fireEvent.keyDown(document, {
-      ctrlKey: true,
-      key: 'k',
-      shiftKey: true,
-    });
+    fireEvent.keyDown(document, { ctrlKey: true, key: 'k', shiftKey: true });
     expect(await screen.findByRole('dialog')).toBeTruthy();
-    expect(onOpenChange).toHaveBeenLastCalledWith(true);
   });
 
-  it('renders the shared launchable app catalog in a bounded dialog', () => {
-    const { onOpenChange } = renderDialog();
+  it('renders a content-sized command palette with footer key hints', () => {
+    renderDialog();
 
-    expect(screen.getByRole('dialog')).toBeTruthy();
+    const content = document.querySelector('[data-slot="dialog-content"]');
+    expect(content?.className).toContain('w-[min(640px,calc(100%-1rem))]');
+    expect(content?.className).toContain('rounded-(--radius-popover)');
+    expect(content?.className).toContain('bg-popover');
+    expect(content?.className).not.toMatch(/(^|\s)(sm:)?h-\[/);
+    expect(content?.className).not.toMatch(/d?vh/);
+    expect(content?.getAttribute('style') ?? '').not.toContain('height');
+
+    const body = document.querySelector('[data-slot="apps-launcher-body"]');
+    expect(body?.className).toContain('max-h-[440px]');
+    expect(body?.className).toContain('overflow-y-auto');
+
     expect(screen.getByRole('heading', { name: 'Apps' })).toBeTruthy();
-    expect(screen.queryByRole('tab')).toBeNull();
-    expect(screen.getByText('Calendar')).toBeTruthy();
-    expect(screen.getByText('Tasks')).toBeTruthy();
-    expect(
-      screen.queryByText(
-        'Every routable Tuturuuu app available from this launcher.'
-      )
-    ).toBeNull();
-    expect(screen.getByText(`${LAUNCHABLE_APPS.length} apps`)).toBeTruthy();
-
-    const dialogContent = document.querySelector(
-      '[data-slot="dialog-content"]'
-    );
-    expect(dialogContent?.className).not.toContain(
-      'h-[min(760px,calc(100dvh-2rem))]'
-    );
-    expect(dialogContent?.className).not.toContain('max-h-[calc(100dvh-2rem)]');
-    expect(dialogContent?.className).not.toContain('h-[calc(100dvh-2rem)]');
-    expect(dialogContent?.className).not.toContain('sm:h-[calc(100dvh-3rem)]');
-    expect(dialogContent?.className).not.toContain('max-h-[760px]');
-    expect(dialogContent?.className).not.toContain('!top-4');
-    expect(dialogContent?.className).not.toContain('!bottom-4');
-    expect(dialogContent?.className).not.toContain('h-auto');
-    expect(dialogContent?.className).not.toContain(
-      'h-[var(--apps-launcher-height)]'
-    );
-    expect(dialogContent?.className).toContain('flex');
-    expect(dialogContent?.className).toContain('flex-col');
-    expect(dialogContent?.className).not.toContain('w-[calc(100vw-2rem)]');
-    expect(dialogContent?.className).not.toContain('max-w-[1120px]');
-    expect(dialogContent?.className).not.toContain('xl:max-w-[1240px]');
-    expect(dialogContent?.className).toContain('max-w-none');
-    expect(dialogContent?.className).toContain('sm:max-w-none');
-    expect(dialogContent?.className).toContain('overflow-hidden');
-    expect(dialogContent?.getAttribute('style')).not.toContain(
-      '--apps-launcher-height'
-    );
-    expect(dialogContent?.getAttribute('style')).not.toContain(
-      'grid-template-rows'
-    );
-    expect(dialogContent?.getAttribute('style')).toContain('height: 680px');
-    expect(dialogContent?.getAttribute('style')).toContain(
-      'max-height: calc(100dvh - 1rem)'
-    );
-    expect(dialogContent?.getAttribute('style')).toContain('max-width: 1320px');
-    expect(dialogContent?.getAttribute('style')).toContain(
-      'width: calc(100vw - 1rem)'
+    expect(screen.getByRole('listbox', { name: 'Apps' })).toBeTruthy();
+    expect(search().getAttribute('aria-controls')).toBe(
+      'apps-launcher-results'
     );
     expect(
-      document.querySelector('[data-slot="apps-launcher-mark"]')
-    ).toBeTruthy();
-    const launcherMark = document.querySelector(
-      '[data-slot="apps-launcher-mark"]'
+      document.querySelector('[data-slot="apps-launcher-esc"]')?.textContent
+    ).toBe('Esc');
+
+    const hints = document.querySelector(
+      '[data-slot="apps-launcher-keyboard-hints"]'
     );
-    expect(launcherMark?.className).toContain('rounded-xl');
-    expect(
-      Array.from(launcherMark?.children ?? []).every((child) =>
-        child.className.includes('rounded-[4px]')
-      )
-    ).toBe(true);
-    expect(
-      document.querySelector('[data-slot="apps-launcher-open-mode"]')
-    ).toBeTruthy();
-    const launcherToolbar = document.querySelector(
-      '[data-slot="apps-launcher-toolbar"]'
-    );
-    expect(launcherToolbar).toBeTruthy();
-    expect(
-      document
-        .querySelector('[data-slot="dialog-header"]')
-        ?.contains(launcherToolbar)
-    ).toBe(true);
-    const dialogHeader = document.querySelector('[data-slot="dialog-header"]');
-    expect(dialogHeader?.className).toContain('flex-row');
-    expect(dialogHeader?.className).not.toContain('flex-col');
-    expect(
-      document.querySelector('[data-slot="apps-launcher-search-trigger"]')
-    ).toBeTruthy();
-    expect(
-      document.querySelector('[data-slot="apps-launcher-preference-trigger"]')
-    ).toBeTruthy();
-    expect(
-      screen.getByRole('radiogroup', { name: 'Open options' })
-    ).toBeTruthy();
-    expect(
-      screen.getByRole('radiogroup', { name: 'Open options' }).className
-    ).toContain('gap-1');
-    expect(screen.getByText('Open apps in')).toBeTruthy();
-    expect(screen.getByRole('searchbox', { name: 'Search apps' })).toBeTruthy();
-    const closeButton = screen.getByRole('button', { name: 'Close' });
-    expect(
-      document
-        .querySelector('[data-slot="dialog-header"]')
-        ?.contains(closeButton)
-    ).toBe(true);
-
-    const launcherBody = document.querySelector(
-      '[data-slot="apps-launcher-body"]'
-    );
-    expect(launcherBody?.className).toContain('min-h-0');
-    expect(launcherBody?.className).toContain('w-full');
-    expect(launcherBody?.className).toContain('flex-1');
-    expect(launcherBody?.className).toContain('overflow-hidden');
-
-    const launcherPanel = document.querySelector(
-      '[data-slot="apps-launcher-panel"]'
-    );
-    expect(launcherPanel?.className).toContain('flex');
-    expect(launcherPanel?.className).toContain('h-full');
-    expect(launcherPanel?.className).toContain('min-h-0');
-    expect(launcherPanel?.className).toContain('w-full');
-    expect(launcherPanel?.className).toContain('flex-col');
-
-    const scrollRegion = document.querySelector(
-      '[data-slot="apps-launcher-scroll"]'
-    );
-    expect(scrollRegion?.className).toContain('min-h-0');
-    expect(scrollRegion?.className).toContain('w-full');
-    expect(scrollRegion?.className).toContain('flex-1');
-    expect(scrollRegion?.className).toContain('overflow-y-auto');
-
-    const launcherGrid = document.querySelector(
-      '[data-slot="apps-launcher-grid"]'
-    );
-    expect(launcherGrid?.className).toContain('w-full');
-    expect(launcherGrid?.className).toContain('grid-cols-1');
-    expect(launcherGrid?.className).toContain('sm:grid-cols-2');
-    expect(launcherGrid?.className).toContain('lg:grid-cols-3');
-    expect(launcherGrid?.className).not.toContain('xl:grid-cols-4');
-
-    fireEvent.click(closeButton);
-    expect(onOpenChange).toHaveBeenCalledWith(false);
-  });
-
-  it('focuses app search when the dialog opens', async () => {
-    renderDialog();
-
-    await waitFor(() => {
-      expect(document.activeElement).toBe(
-        screen.getByRole('searchbox', { name: 'Search apps' })
-      );
-    });
-
-    expect(
-      screen
-        .getByRole('link', { name: 'Workspace Platform' })
-        .getAttribute('data-active')
-    ).toBe('true');
-    expect(
-      screen
-        .getByRole('searchbox', { name: 'Search apps' })
-        .getAttribute('aria-activedescendant')
-    ).toBe('apps-launcher-app-platform');
-  });
-
-  it('auto-selects the best search match and opens it with Enter', () => {
-    const { onOpenChange } = renderDialog();
-    const search = screen.getByRole('searchbox', { name: 'Search apps' });
-
-    fireEvent.change(search, { target: { value: 'tasks' } });
-
-    const tasksCard = screen.getByRole('link', { name: 'Tasks' });
-    expect(tasksCard.getAttribute('data-active')).toBe('true');
-    expect(document.activeElement).toBe(search);
-
-    fireEvent.keyDown(search, { key: 'Enter' });
-    expect(onOpenChange).toHaveBeenCalledWith(false);
-  });
-
-  it('navigates the grid in every direction from search', () => {
-    renderDialog();
-    const search = screen.getByRole('searchbox', { name: 'Search apps' });
-
-    fireEvent.keyDown(search, { key: 'ArrowDown' });
-    expect(
-      screen.getByRole('link', { name: 'Drive' }).getAttribute('data-active')
-    ).toBe('true');
-    expect(document.activeElement).toBe(search);
-
-    fireEvent.keyDown(search, { key: 'ArrowUp' });
-    expect(
-      screen
-        .getByRole('link', { name: 'Workspace Platform' })
-        .getAttribute('data-active')
-    ).toBe('true');
-
-    fireEvent.keyDown(search, { key: 'ArrowRight' });
-    expect(
-      screen.getByRole('link', { name: 'Calendar' }).getAttribute('data-active')
-    ).toBe('true');
-
-    fireEvent.keyDown(search, { key: 'ArrowLeft' });
-    expect(
-      screen
-        .getByRole('link', { name: 'Workspace Platform' })
-        .getAttribute('data-active')
-    ).toBe('true');
-    expect(document.activeElement).toBe(search);
-  });
-
-  it('supports spatial arrow, Home, and End navigation between app cards', () => {
-    renderDialog();
-    const calendarCard = screen.getByRole('link', { name: 'Calendar' });
-    calendarCard.focus();
-
-    fireEvent.keyDown(calendarCard, { key: 'ArrowDown' });
-    expect(document.activeElement).toBe(
-      screen.getByRole('link', { name: 'Git' })
-    );
-
-    fireEvent.keyDown(document.activeElement as HTMLElement, {
-      key: 'ArrowUp',
-    });
-    expect(document.activeElement).toBe(calendarCard);
-
-    fireEvent.keyDown(calendarCard, { key: 'Home' });
-    expect(document.activeElement).toBe(
-      screen.getByRole('link', { name: 'Workspace Platform' })
-    );
-
-    fireEvent.keyDown(document.activeElement as HTMLElement, { key: 'End' });
-    expect(document.activeElement).toBe(
-      screen.getByRole('link', { name: 'Shortener' })
-    );
-  });
-
-  it('preserves the visual column across category and incomplete-row boundaries', () => {
-    renderDialog();
-    const trackCard = screen.getByRole('link', { name: 'Track' });
-    trackCard.focus();
-
-    for (const name of ['(Tu)lettin', 'CMS', 'Storefront', 'Forms']) {
-      fireEvent.keyDown(document.activeElement as HTMLElement, {
-        key: 'ArrowDown',
-      });
-      expect(document.activeElement).toBe(screen.getByRole('link', { name }));
+    for (const label of ['Navigate', 'Open', 'Favorite', 'Close']) {
+      expect(hints?.textContent).toContain(label);
     }
-  });
-
-  it('uses the responsive two-column grid for vertical movement', () => {
-    Object.defineProperty(window, 'innerWidth', {
-      configurable: true,
-      value: 800,
-    });
-    renderDialog();
-    const calendarCard = screen.getByRole('link', { name: 'Calendar' });
-    calendarCard.focus();
-
-    fireEvent.keyDown(calendarCard, { key: 'ArrowDown' });
-    expect(document.activeElement).toBe(
-      screen.getByRole('link', { name: 'Drive' })
-    );
-  });
-
-  it('uses a single navigation column on mobile', () => {
-    Object.defineProperty(window, 'innerWidth', {
-      configurable: true,
-      value: 390,
-    });
-    renderDialog();
-    const calendarCard = screen.getByRole('link', { name: 'Calendar' });
-    calendarCard.focus();
-
-    fireEvent.keyDown(calendarCard, { key: 'ArrowDown' });
-    expect(document.activeElement).toBe(
-      screen.getByRole('link', { name: 'Chat' })
-    );
-  });
-
-  it('keeps mobile search collapsed without auto-focus and opens both popovers', async () => {
-    Object.defineProperty(window, 'innerWidth', {
-      configurable: true,
-      value: 390,
-    });
-    renderDialog();
-
-    const searchTrigger = screen.getByRole('button', { name: 'Search apps' });
-    await waitFor(() => {
-      expect(document.activeElement).not.toBe(searchTrigger);
-      expect(document.activeElement).not.toBe(
-        screen.getByRole('searchbox', { name: 'Search apps' })
-      );
-    });
-
-    fireEvent.click(searchTrigger);
-    const mobileSearch = await waitFor(() => {
-      const input = document.querySelector<HTMLInputElement>(
-        '[data-slot="apps-launcher-search"][data-mobile="true"]'
-      );
-      expect(input).toBeTruthy();
-      return input;
-    });
-    expect(mobileSearch?.getAttribute('data-mobile')).toBe('true');
-
-    fireEvent.click(searchTrigger);
-    await waitFor(() => {
-      expect(
-        document.querySelector(
-          '[data-slot="apps-launcher-search"][data-mobile="true"]'
-        )
-      ).toBeNull();
-    });
-    fireEvent.click(screen.getByRole('button', { name: 'Open options' }));
-    const preferencePopover = await waitFor(() => {
-      const content = document.querySelector<HTMLElement>(
-        '[data-slot="popover-content"][data-state="open"]'
-      );
-      expect(content).toBeTruthy();
-      return content;
-    });
-    expect(
-      within(preferencePopover as HTMLElement).getByRole('radiogroup', {
-        name: 'Open options',
-      })
-    ).toBeTruthy();
-    expect(
-      within(preferencePopover as HTMLElement).getByText('Open apps in')
-    ).toBeTruthy();
-  });
-
-  it('groups apps by localized category sections', () => {
-    renderDialog();
-
-    const sections = document.querySelectorAll(
-      '[data-slot="apps-launcher-section"]'
-    );
-    expect(sections).toHaveLength(5);
-    expect(
-      document.querySelector('[data-slot="apps-launcher-sections"]')
-    ).toBeTruthy();
-    expect(
-      document.querySelector('[data-slot="apps-launcher-keyboard-hints"]')
-    ).toBeTruthy();
-    expect(screen.getByText(`${LAUNCHABLE_APPS.length} apps`)).toBeTruthy();
-    expect(
-      Array.from(sections).map(
-        (section) => section.querySelector('h3')?.textContent
-      )
-    ).toEqual([
+    expect(sectionHeadings()).toEqual([
       'Productivity',
       'Operations',
       'Learning',
       'AI',
       'Miscellaneous',
     ]);
-    expect(
-      sections[0]?.querySelector('[data-slot="app-card-title"]')?.textContent
-    ).toBe('Workspace Platform');
-    expect(screen.queryByText('External')).toBeNull();
-    expect(screen.queryByText('Playground')).toBeNull();
-
-    const getSectionTitles = (label: string) => {
-      const section = Array.from(sections).find(
-        (item) => item.querySelector('h3')?.textContent === label
-      );
-
-      return Array.from(
-        section?.querySelectorAll('[data-slot="app-card-title"]') ?? []
-      ).map((item) => item.textContent);
-    };
-
-    expect(getSectionTitles('Productivity')[0]).toBe('Workspace Platform');
-    expect(getSectionTitles('Operations')).toContain('CMS');
-    expect(getSectionTitles('Operations')).not.toContain('Apps');
-    expect(getSectionTitles('Operations')).toContain('Storefront');
-    expect(getSectionTitles('Operations')).toContain('Pay');
-    expect(getSectionTitles('AI')).toContain('Rewise');
-    expect(getSectionTitles('Miscellaneous')).toEqual([
-      'Apps',
-      'Docs',
-      'Tools',
-      'Shortener',
-    ]);
+    expect(document.querySelectorAll('[data-slot="app-option"]')).toHaveLength(
+      LAUNCHABLE_APPS.length
+    );
   });
 
-  it('renders descriptive app cards with calmer category accents', () => {
+  it('marks the current app and starts on the next app for Enter', async () => {
     renderDialog();
 
-    expect(screen.getByText('Finance')).toBeTruthy();
-    expect(screen.queryByLabelText('Open options: Finance')).toBeNull();
-    expect(screen.queryByLabelText('Open here: Finance')).toBeNull();
-    expect(screen.queryByLabelText('Open in new tab: Finance')).toBeNull();
-    const financeCard = screen.getByRole('link', { name: 'Finance' });
-    expect(financeCard.getAttribute('data-slot')).toBe('app-card');
-    expect(financeCard.tagName).toBe('A');
-    expect(financeCard.getAttribute('href')).toBe(
-      'http://localhost:7808/personal?source=sidebar-apps'
-    );
-    expect(financeCard.getAttribute('target')).toBe('_blank');
-    expect(financeCard.getAttribute('rel')).toBe('noopener noreferrer');
-    expect(financeCard?.className).toContain('flex');
-    expect(financeCard?.className).toContain('flex-col');
-    expect(financeCard?.className).toContain('items-center');
-    expect(financeCard?.className).toContain('justify-center');
-    expect(financeCard?.className).toContain('text-center');
-    expect(financeCard?.className).toContain('min-h-36');
-    expect(financeCard?.className).toContain('cursor-pointer');
-    expect(financeCard?.className).toContain('hover:-translate-y-px');
-    expect(financeCard?.className).toContain('focus-visible:ring-2');
-    expect(financeCard?.className).toContain('motion-reduce:transition-none');
-    expect(financeCard?.className).toContain('border-border/70');
-    expect(financeCard?.className).toContain('bg-card/40');
-    expect(financeCard?.className).not.toContain('border-dynamic-green/50');
-    expect(financeCard?.className).not.toContain('grid-cols-');
-    const financeIcon = financeCard.querySelector(
-      '[data-slot="app-card-icon"]'
-    );
-    expect(financeIcon?.className).toContain('size-14');
-    expect(financeIcon?.className).toContain('rounded-2xl');
-    expect(financeIcon?.className).toContain('text-dynamic-green');
-    expect(financeIcon?.querySelector('svg')?.getAttribute('class')).toContain(
-      'size-7'
-    );
+    await waitFor(() => expect(document.activeElement).toBe(search()));
+    const platformRow = option('category-productivity-platform');
+    expect(platformRow.textContent).toContain('Current');
     expect(
-      financeCard.querySelector('[data-slot="app-card-title"]')?.className
-    ).toContain('text-base');
-    expect(
-      financeCard.querySelector('[data-slot="app-card-description"]')
-        ?.textContent
-    ).toBe('Manage wallets, transactions, invoices, and budgets.');
-    expect(
-      financeCard.querySelector('[data-slot="app-card-description"]')?.className
-    ).toContain('text-center');
-    expect(
-      document.querySelectorAll('[data-slot="app-card-description"]')
-    ).toHaveLength(LAUNCHABLE_APPS.length);
-    expect(
-      financeCard.querySelector('[data-slot="app-card-affordance"]')
-    ).toBeTruthy();
-    expect(
-      financeCard.querySelector('[data-slot="app-card-affordance"]')?.className
-    ).toContain('absolute');
-    const tasksCard = screen.getByRole('link', { name: 'Tasks' });
-    expect(tasksCard.className).toContain('border-border/70');
-    expect(
-      screen
-        .getByRole('link', { name: 'Learn' })
-        .querySelector('[data-slot="app-card-icon"]')?.className
-    ).toContain('text-dynamic-orange');
-    expect(
-      screen
-        .getByRole('link', { name: 'Hive' })
-        .querySelector('[data-slot="app-card-icon"]')?.className
-    ).toContain('text-dynamic-cyan');
-    expect(
-      document.querySelector('[data-slot="app-card-affordance"]')
-    ).toBeTruthy();
-    expect(
-      financeCard?.querySelector('[data-slot="app-card-actions"]')
-    ).toBeNull();
-    expect(document.querySelector('[data-slot="app-card-actions"]')).toBeNull();
-    expect(screen.queryByRole('menuitem', { name: 'Open here' })).toBeNull();
-    expect(
-      screen.queryByRole('menuitem', { name: 'Open in new tab' })
-    ).toBeNull();
-    expect(
-      screen.queryByText('Also matches: Money, Wallets, Invoices')
-    ).toBeNull();
-    expect(screen.queryByText('finance.tuturuuu.com')).toBeNull();
-    expect(screen.queryByText('Personal Space workspace')).toBeNull();
-    expect(screen.queryByText('Default app home')).toBeNull();
-    expect(
-      document.querySelector('[data-slot="app-card-category"]')
-    ).toBeNull();
-    expect(
-      document.querySelector('[data-slot="app-card-slot-text"]')
-    ).toBeNull();
-    expect(
-      document.querySelector('[data-slot="app-card-destination"]')
-    ).toBeNull();
-    expect(document.querySelector('[data-slot="app-card-domain"]')).toBeNull();
-
-    expect(screen.getByRole('link', { name: 'Finance' })).toBeTruthy();
-    expect(screen.getByRole('link', { name: 'Storefront' })).toBeTruthy();
-    expect(screen.getByRole('link', { name: 'Apps' })).toBeTruthy();
-    expect(screen.getByText('Tools')).toBeTruthy();
-    expect(screen.getByText('Calendar')).toBeTruthy();
-    expect(screen.queryByLabelText('Open options: Apps')).toBeNull();
-    expect(
-      document.querySelector('[data-slot="apps-launcher-sections"]')
-    ).toBeTruthy();
-    expect(
-      document.querySelectorAll('[data-slot="apps-launcher-grid"]')
-    ).toHaveLength(5);
-    expect(screen.getByText('Docs')).toBeTruthy();
-    expect(screen.getByText('Tools')).toBeTruthy();
-    expect(screen.getByText('Shortener')).toBeTruthy();
-  });
-
-  it('filters by app name, description, and aliases with a helpful empty state', () => {
-    renderDialog();
-
-    const search = screen.getByRole('searchbox', { name: 'Search apps' });
-    fireEvent.change(search, { target: { value: 'Money' } });
-
-    expect(screen.getByRole('link', { name: 'Finance' })).toBeTruthy();
-    expect(screen.queryByRole('link', { name: 'Tasks' })).toBeNull();
-    expect(
-      document.querySelectorAll('[data-slot="apps-launcher-section"]')
+      document.querySelectorAll('[data-slot="app-option-current"]')
     ).toHaveLength(1);
 
-    fireEvent.change(search, { target: { value: 'budgets' } });
-    expect(screen.getByRole('link', { name: 'Finance' })).toBeTruthy();
-
-    fireEvent.change(search, { target: { value: 'not-a-tuturuuu-app' } });
-    expect(screen.getByText('No apps found')).toBeTruthy();
+    const nextApp = productivityApps[1];
+    expect(activeOptionId()).toBe(
+      `apps-launcher-category-productivity-${nextApp?.slug}`
+    );
     expect(
-      screen.getByText('Try a different app name or keyword.')
-    ).toBeTruthy();
+      option(`category-productivity-${nextApp?.slug}`).getAttribute(
+        'aria-selected'
+      )
+    ).toBe('true');
     expect(
-      document.querySelector('[data-slot="apps-launcher-empty"]')
-    ).toBeTruthy();
+      option(`category-productivity-${nextApp?.slug}`).className
+    ).toContain('bg-accent');
   });
 
-  it('renders new-tab links by default and closes on card click', () => {
+  it('moves through one flat list with arrows, opens with Enter and closes with Esc', async () => {
+    const { onOpenChange } = renderDialog();
+    const input = search();
+
+    fireEvent.keyDown(input, { key: 'ArrowUp' });
+    expect(activeOptionId()).toBe(
+      'apps-launcher-category-productivity-platform'
+    );
+    fireEvent.keyDown(input, { key: 'ArrowUp' });
+    expect(activeOptionId()).toBe(
+      'apps-launcher-category-productivity-platform'
+    );
+    fireEvent.keyDown(input, { key: 'ArrowDown' });
+    fireEvent.keyDown(input, { key: 'ArrowDown' });
+    expect(activeOptionId()).toBe(
+      `apps-launcher-category-productivity-${productivityApps[2]?.slug}`
+    );
+    expect(document.activeElement).toBe(input);
+
+    fireEvent.keyDown(input, { key: 'Enter' });
+    expect(onOpenChange).toHaveBeenCalledWith(false);
+    expect(document.cookie).toContain(
+      `${APP_RECENT_PREFERENCE_KEY}=${productivityApps[2]?.slug}`
+    );
+
+    cleanup();
+    const reopened = renderDialog();
+    fireEvent.keyDown(search(), { key: 'Escape' });
+    await waitFor(() => expect(screen.queryByRole('dialog')).toBeNull());
+    expect(reopened.onOpenChange).toHaveBeenCalledWith(false);
+  });
+
+  it('lists recent apps as chips with the most recently opened first', () => {
+    openFromFreshDialog('category-productivity-tasks');
+    openFromFreshDialog('category-operations-finance');
+    openFromFreshDialog('category-productivity-tasks');
+    cleanup();
+
+    renderDialog();
+    expect(sectionHeadings()[0]).toBe('Recent');
+    const chips = Array.from(
+      document.querySelectorAll('[data-slot="app-chip"]')
+    ).map((chip) => chip.getAttribute('data-app-slug'));
+    expect(chips).toEqual(['tasks', 'finance']);
+    expect(activeOptionId()).toBe('apps-launcher-recent-tasks');
+
+    fireEvent.keyDown(search(), { key: 'ArrowDown' });
+    expect(activeOptionId()).toBe('apps-launcher-recent-finance');
+    fireEvent.keyDown(search(), { key: 'ArrowDown' });
+    expect(activeOptionId()).toBe(
+      'apps-launcher-category-productivity-platform'
+    );
+  });
+
+  it('keeps at most five recent apps', () => {
+    for (const app of LAUNCHABLE_APPS.slice(0, 7)) {
+      openFromFreshDialog(`category-${app.category}-${app.slug}`);
+    }
+    cleanup();
+
+    renderDialog();
+    expect(document.querySelectorAll('[data-slot="app-chip"]')).toHaveLength(5);
+    expect(
+      document
+        .querySelector('[data-slot="app-chip"]')
+        ?.getAttribute('data-app-slug')
+    ).toBe(LAUNCHABLE_APPS[6]?.slug);
+  });
+
+  it('toggles favorites with the star and persists them', () => {
+    renderDialog();
+    const star = screen.getByRole('button', { name: 'Add Tasks to favorites' });
+    expect(star.getAttribute('aria-pressed')).toBe('false');
+
+    fireEvent.click(star);
+    expect(sectionHeadings()[0]).toBe('Favorites');
+    expect(option('favorites-tasks')).toBeTruthy();
+    expect(
+      screen
+        .getAllByRole('button', { name: 'Remove Tasks from favorites' })
+        .every((button) => button.getAttribute('aria-pressed') === 'true')
+    ).toBe(true);
+    expect(document.cookie).toContain(`${APP_FAVORITES_PREFERENCE_KEY}=tasks`);
+    cleanup();
+
+    renderDialog();
+    expect(option('favorites-tasks')).toBeTruthy();
+    fireEvent.click(
+      screen.getAllByRole('button', { name: 'Remove Tasks from favorites' })[0]!
+    );
+    expect(document.getElementById('apps-launcher-favorites-tasks')).toBeNull();
+    expect(sectionHeadings()).not.toContain('Favorites');
+  });
+
+  it('toggles the active app favorite with Cmd+S and Ctrl+S', () => {
+    renderDialog();
+    const input = search();
+    const activeSlug = productivityApps[1]?.slug;
+
+    const saveEvent = fireEvent.keyDown(input, { key: 's', metaKey: true });
+    expect(saveEvent).toBe(false);
+    expect(option(`favorites-${activeSlug}`)).toBeTruthy();
+    expect(activeOptionId()).toBe(
+      `apps-launcher-category-productivity-${activeSlug}`
+    );
+
+    fireEvent.keyDown(input, { key: 'ArrowUp' });
+    fireEvent.keyDown(input, { key: 'ArrowUp' });
+    expect(activeOptionId()).toBe(`apps-launcher-favorites-${activeSlug}`);
+
+    fireEvent.keyDown(input, { ctrlKey: true, key: 's' });
+    expect(
+      document.getElementById(`apps-launcher-favorites-${activeSlug}`)
+    ).toBeNull();
+    expect(activeOptionId()).toBe(
+      `apps-launcher-category-productivity-${activeSlug}`
+    );
+  });
+
+  it('ranks matches in one list and highlights the matched text', () => {
+    renderDialog();
+    const input = search();
+
+    fireEvent.change(input, { target: { value: 'Money' } });
+    expect(sectionHeadings()).toEqual(['Results']);
+    expect(
+      Array.from(document.querySelectorAll('[data-slot="app-option"]')).map(
+        (row) => row.getAttribute('data-app-slug')
+      )
+    ).toEqual(['finance']);
+
+    fireEvent.change(input, { target: { value: 'budgets' } });
+    expect(option('results-finance')).toBeTruthy();
+
+    fireEvent.change(input, { target: { value: 'tas' } });
+    const first = document.querySelector('[data-slot="app-option"]');
+    expect(first?.getAttribute('data-app-slug')).toBe('tasks');
+    expect(activeOptionId()).toBe('apps-launcher-results-tasks');
+    expect(
+      first?.querySelector('[data-slot="app-option-match"]')?.textContent
+    ).toBe('Tas');
+
+    fireEvent.change(input, { target: { value: 'not-a-tuturuuu-app' } });
+    expect(screen.getByText('No apps match “not-a-tuturuuu-app”')).toBeTruthy();
+    expect(screen.queryByRole('listbox')).toBeNull();
+  });
+
+  it('renders new-tab links by default and closes on click', () => {
     const open = vi.fn();
     vi.stubGlobal('open', open);
     const { onOpenChange } = renderDialog();
-    const financeCard = screen.getByRole('link', { name: 'Finance' });
+    const financeRow = option('category-operations-finance');
 
-    expect(financeCard.getAttribute('href')).toBe(
+    expect(financeRow.tagName).toBe('A');
+    expect(financeRow.getAttribute('role')).toBe('option');
+    expect(financeRow.getAttribute('href')).toBe(
       'http://localhost:7808/personal?source=sidebar-apps'
     );
-    expect(financeCard.getAttribute('target')).toBe('_blank');
-    fireEvent.click(financeCard);
+    expect(financeRow.getAttribute('target')).toBe('_blank');
+    expect(financeRow.getAttribute('rel')).toBe('noopener noreferrer');
+    fireEvent.click(financeRow);
 
     expect(onOpenChange).toHaveBeenCalledWith(false);
     expect(open).not.toHaveBeenCalled();

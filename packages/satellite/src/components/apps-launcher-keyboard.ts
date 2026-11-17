@@ -1,76 +1,8 @@
 import { isShortcutEventIgnored } from '@tuturuuu/utils/keyboard-shortcuts';
-import type { LaunchableApp } from '@tuturuuu/utils/launchable-apps';
 import { type KeyboardEvent, type RefObject, useEffect, useState } from 'react';
+import type { AppsLauncherEntry } from './apps-launcher-view';
 
-type GridNavigationKey =
-  | 'ArrowDown'
-  | 'ArrowLeft'
-  | 'ArrowRight'
-  | 'ArrowUp'
-  | 'End'
-  | 'Home';
-
-function getGridRows(apps: readonly LaunchableApp[], columnCount: number) {
-  const rows: LaunchableApp[][] = [];
-  let categoryApps: LaunchableApp[] = [];
-
-  for (const app of apps) {
-    if (categoryApps.length > 0 && categoryApps[0]?.category !== app.category) {
-      for (let index = 0; index < categoryApps.length; index += columnCount) {
-        rows.push(categoryApps.slice(index, index + columnCount));
-      }
-      categoryApps = [];
-    }
-    categoryApps.push(app);
-  }
-
-  for (let index = 0; index < categoryApps.length; index += columnCount) {
-    rows.push(categoryApps.slice(index, index + columnCount));
-  }
-
-  return rows;
-}
-
-export function getAppsLauncherGridTarget({
-  apps,
-  columnCount,
-  currentApp,
-  key,
-}: {
-  apps: readonly LaunchableApp[];
-  columnCount: number;
-  currentApp: LaunchableApp | undefined;
-  key: GridNavigationKey;
-}) {
-  if (apps.length === 0) return undefined;
-  if (key === 'Home') return apps[0];
-  if (key === 'End') return apps.at(-1);
-
-  const currentIndex = currentApp
-    ? apps.findIndex((app) => app.slug === currentApp.slug)
-    : 0;
-
-  if (key === 'ArrowLeft' || key === 'ArrowRight') {
-    const offset = key === 'ArrowLeft' ? -1 : 1;
-    return apps[(currentIndex + offset + apps.length) % apps.length];
-  }
-
-  const rows = getGridRows(apps, columnCount);
-  const rowIndex = rows.findIndex((row) =>
-    row.some((app) => app.slug === currentApp?.slug)
-  );
-  const safeRowIndex = rowIndex === -1 ? 0 : rowIndex;
-  const columnIndex = Math.max(
-    0,
-    rows[safeRowIndex]?.findIndex((app) => app.slug === currentApp?.slug) ?? 0
-  );
-  const rowOffset = key === 'ArrowUp' ? -1 : 1;
-  const targetRow =
-    rows[(safeRowIndex + rowOffset + rows.length) % rows.length];
-
-  return targetRow?.[Math.min(columnIndex, targetRow.length - 1)];
-}
-
+/** Opens the launcher on Cmd/Ctrl+Shift+K from anywhere on the page. */
 export function useAppsLauncherShortcut(onOpen: () => void) {
   useEffect(() => {
     const handleShortcut = (event: globalThis.KeyboardEvent) => {
@@ -95,81 +27,91 @@ export function useAppsLauncherShortcut(onOpen: () => void) {
   }, [onOpen]);
 }
 
+function isFavoriteShortcut(event: KeyboardEvent) {
+  return (
+    event.key.toLocaleLowerCase() === 's' &&
+    (event.metaKey || event.ctrlKey) &&
+    !event.altKey &&
+    !event.shiftKey
+  );
+}
+
+type ActiveTarget = { id: string; slug: string };
+
+/**
+ * Tracks the active option of the launcher listbox while focus stays in the
+ * search input. Up/Down walk the flat option list without wrapping, Enter
+ * activates the option's link, and Cmd/Ctrl+S toggles its favorite. When
+ * the active option leaves the list (for example after unstarring a
+ * favorite) the last option for the same app takes over.
+ */
 export function useAppsLauncherKeyboard({
   contentRef,
-  navigationApps,
-  rankedApps,
+  defaultEntry,
+  entries,
+  onToggleFavorite,
 }: {
   contentRef: RefObject<HTMLDivElement | null>;
-  navigationApps: readonly LaunchableApp[];
-  rankedApps: readonly LaunchableApp[];
+  defaultEntry: AppsLauncherEntry | undefined;
+  entries: readonly AppsLauncherEntry[];
+  onToggleFavorite: (slug: string) => void;
 }) {
-  const [activeAppSlug, setActiveAppSlug] = useState<string | null>(null);
-  const activeApp =
-    rankedApps.find((app) => app.slug === activeAppSlug) ?? rankedApps[0];
+  const [target, setTarget] = useState<ActiveTarget | null>(null);
 
-  function setActiveApp(app: LaunchableApp, focus = false) {
-    setActiveAppSlug(app.slug);
-    const element = contentRef.current?.querySelector<HTMLElement>(
-      `#apps-launcher-app-${app.slug}`
+  function resolveActive() {
+    if (!target) return defaultEntry;
+    const exact = entries.find((entry) => entry.id === target.id);
+    if (exact) return exact;
+    for (let index = entries.length - 1; index >= 0; index -= 1) {
+      if (entries[index]?.app.slug === target.slug) return entries[index];
+    }
+    return defaultEntry;
+  }
+
+  const activeEntry = resolveActive();
+
+  function getOptionElement(id: string) {
+    return contentRef.current?.ownerDocument.getElementById(id) ?? null;
+  }
+
+  function setActiveEntry(entry: AppsLauncherEntry, scroll = false) {
+    setTarget({ id: entry.id, slug: entry.app.slug });
+    if (scroll)
+      getOptionElement(entry.id)?.scrollIntoView?.({ block: 'nearest' });
+  }
+
+  function move(offset: number) {
+    if (entries.length === 0) return;
+    const index = activeEntry ? entries.indexOf(activeEntry) : -1;
+    const nextIndex = Math.min(
+      entries.length - 1,
+      Math.max(0, index === -1 ? 0 : index + offset)
     );
-    element?.scrollIntoView?.({ block: 'nearest' });
-    if (focus) element?.focus();
-  }
-
-  function getColumnCount() {
-    return window.innerWidth >= 1024 ? 3 : window.innerWidth >= 640 ? 2 : 1;
-  }
-
-  function navigate(key: GridNavigationKey, focus: boolean, app = activeApp) {
-    const target = getAppsLauncherGridTarget({
-      apps: navigationApps,
-      columnCount: getColumnCount(),
-      currentApp: app,
-      key,
-    });
-    if (target) setActiveApp(target, focus);
+    const next = entries[nextIndex];
+    if (next) setActiveEntry(next, true);
   }
 
   function handleSearchKeyDown(event: KeyboardEvent<HTMLInputElement>) {
-    if (
-      event.key === 'ArrowDown' ||
-      event.key === 'ArrowLeft' ||
-      event.key === 'ArrowRight' ||
-      event.key === 'ArrowUp'
-    ) {
+    if (event.nativeEvent.isComposing) return;
+    if (event.key === 'ArrowDown' || event.key === 'ArrowUp') {
       event.preventDefault();
-      navigate(event.key, false);
-    } else if (event.key === 'Enter' && activeApp) {
+      move(event.key === 'ArrowDown' ? 1 : -1);
+    } else if (event.key === 'Enter' && activeEntry) {
       event.preventDefault();
-      contentRef.current
-        ?.querySelector<HTMLElement>(`#apps-launcher-app-${activeApp.slug}`)
-        ?.click();
-    }
-  }
-
-  function handleAppKeyDown(
-    event: KeyboardEvent<HTMLAnchorElement>,
-    app: LaunchableApp
-  ) {
-    if (
-      event.key === 'ArrowDown' ||
-      event.key === 'ArrowLeft' ||
-      event.key === 'ArrowRight' ||
-      event.key === 'ArrowUp' ||
-      event.key === 'Home' ||
-      event.key === 'End'
-    ) {
+      getOptionElement(activeEntry.id)?.click();
+    } else if (isFavoriteShortcut(event)) {
       event.preventDefault();
-      navigate(event.key, true, app);
+      if (!activeEntry) return;
+      // Pin the row so the highlight stays put when Favorites changes size.
+      setActiveEntry(activeEntry);
+      onToggleFavorite(activeEntry.app.slug);
     }
   }
 
   return {
-    activeApp,
-    handleAppKeyDown,
+    activeEntry,
     handleSearchKeyDown,
-    resetActiveApp: () => setActiveAppSlug(null),
-    setActiveApp,
+    resetActiveEntry: () => setTarget(null),
+    setActiveEntry,
   };
 }

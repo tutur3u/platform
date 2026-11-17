@@ -1,195 +1,140 @@
 import { Search } from '@tuturuuu/icons';
-import { cn } from '@tuturuuu/utils/format';
+import type { LaunchableApp } from '@tuturuuu/utils/launchable-apps';
+import type { ElementType } from 'react';
+import { AppLauncherChip, AppLauncherRow } from './apps-launcher-item';
 import type {
-  LaunchableApp,
-  LaunchableAppCategory,
-} from '@tuturuuu/utils/launchable-apps';
-import { LAUNCHABLE_APP_CATEGORIES } from '@tuturuuu/utils/launchable-apps';
-import type { ElementType, KeyboardEvent } from 'react';
-import {
-  APP_LAUNCHER_CATEGORY_TONES,
-  AppLauncherItem,
-} from './apps-launcher-item';
-import { AppsLauncherKeyboardHints } from './apps-launcher-keyboard-hints';
+  AppsLauncherEntry,
+  AppsLauncherSection,
+} from './apps-launcher-view';
 
 export type AppOpenMode = 'current-tab' | 'new-tab';
 
-export function AppsLauncherCatalog({
-  apps,
-  activeAppSlug,
-  appsCountLabel,
-  emptyDescription,
-  emptyTitle,
-  getAppDescription,
-  getAppTitle,
-  getAppUrl,
-  getCategoryLabel,
-  linkComponent,
-  navigateLabel,
-  onActiveAppChange,
-  onAppKeyDown,
-  onOpen,
-  openMode,
-  selectLabel,
-}: {
-  apps: readonly LaunchableApp[];
-  activeAppSlug?: string;
-  appsCountLabel: string;
-  emptyDescription: string;
-  emptyTitle: string;
-  getAppDescription: (app: LaunchableApp) => string;
+export const APPS_LAUNCHER_LISTBOX_ID = 'apps-launcher-results';
+
+export type AppsLauncherCatalogProps = {
+  activeEntryId?: string;
+  currentSlug?: string;
+  emptyLabel: string;
+  favorites: readonly string[];
   getAppTitle: (app: LaunchableApp) => string;
   getAppUrl: (app: LaunchableApp) => string;
-  getCategoryLabel: (category: LaunchableAppCategory) => string;
+  getCategoryLabel: (app: LaunchableApp) => string;
+  getFavoriteLabel: (app: LaunchableApp, isFavorite: boolean) => string;
+  getSectionLabel: (section: AppsLauncherSection) => string;
+  currentLabel: string;
   linkComponent?: ElementType;
-  navigateLabel: string;
-  onActiveAppChange: (app: LaunchableApp) => void;
-  onAppKeyDown: (
-    event: KeyboardEvent<HTMLAnchorElement>,
-    app: LaunchableApp
-  ) => void;
-  onOpen: () => void;
+  listLabel: string;
+  onActiveEntryChange: (entry: AppsLauncherEntry) => void;
+  onOpen: (app: LaunchableApp) => void;
+  onToggleFavorite: (slug: string) => void;
   openMode: AppOpenMode;
-  selectLabel: string;
-}) {
+  sections: readonly AppsLauncherSection[];
+};
+
+/**
+ * The launcher listbox: Recent chips, Favorites rows and category rows, or a
+ * single Results list while searching. Options are links so the open mode
+ * and modifier clicks behave like any other link.
+ */
+export function AppsLauncherCatalog(props: AppsLauncherCatalogProps) {
+  const { sections } = props;
+
+  if (sections.length === 0) {
+    return (
+      <div
+        aria-live="polite"
+        className="flex flex-col items-center gap-3 px-6 py-10 text-center text-muted-foreground text-sm"
+        data-slot="apps-launcher-empty"
+      >
+        <Search aria-hidden="true" className="size-4" />
+        <p className="font-medium">{props.emptyLabel}</p>
+      </div>
+    );
+  }
+
   return (
     <div
-      className="flex h-full min-h-0 w-full flex-col"
-      data-slot="apps-launcher-panel"
+      aria-label={props.listLabel}
+      className="flex flex-col gap-1"
+      data-slot="apps-launcher-sections"
+      id={APPS_LAUNCHER_LISTBOX_ID}
+      role="listbox"
     >
-      <div
-        className="min-h-0 w-full flex-1 overflow-y-auto overscroll-contain p-3 sm:p-4"
-        data-slot="apps-launcher-scroll"
-        id="apps-launcher-results"
-      >
-        {apps.length === 0 ? (
-          <div
-            aria-live="polite"
-            className="flex min-h-full flex-col items-center justify-center px-6 py-12 text-center"
-            data-slot="apps-launcher-empty"
-          >
-            <span className="mb-3 flex size-10 items-center justify-center rounded-full border bg-muted/40 text-muted-foreground">
-              <Search aria-hidden="true" className="size-4" />
-            </span>
-            <p className="font-semibold text-sm">{emptyTitle}</p>
-            <p className="mt-1 max-w-xs text-muted-foreground text-xs leading-relaxed">
-              {emptyDescription}
-            </p>
-          </div>
-        ) : (
-          <div className="w-full space-y-4" data-slot="apps-launcher-sections">
-            {LAUNCHABLE_APP_CATEGORIES.map((category) => {
-              const categoryApps = apps.filter(
-                (app) => app.category === category
-              );
-
-              if (categoryApps.length === 0) return null;
-
-              return (
-                <AppCategorySection
-                  apps={categoryApps}
-                  activeAppSlug={activeAppSlug}
-                  category={category}
-                  getAppDescription={getAppDescription}
-                  getAppTitle={getAppTitle}
-                  getAppUrl={getAppUrl}
-                  key={category}
-                  label={getCategoryLabel(category)}
-                  linkComponent={linkComponent}
-                  onActiveAppChange={onActiveAppChange}
-                  onAppKeyDown={onAppKeyDown}
-                  onOpen={onOpen}
-                  openMode={openMode}
-                />
-              );
-            })}
-          </div>
-        )}
-      </div>
-      {apps.length > 0 ? (
-        <AppsLauncherKeyboardHints
-          appsCountLabel={appsCountLabel}
-          navigateLabel={navigateLabel}
-          selectLabel={selectLabel}
-        />
-      ) : null}
+      {sections.map((section) => (
+        <CatalogSection {...props} key={section.id} section={section} />
+      ))}
     </div>
   );
 }
 
-function AppCategorySection({
-  apps,
-  activeAppSlug,
-  category,
-  getAppDescription,
-  getAppTitle,
-  getAppUrl,
-  label,
-  linkComponent,
-  onActiveAppChange,
-  onAppKeyDown,
-  onOpen,
-  openMode,
-}: {
-  apps: readonly LaunchableApp[];
-  activeAppSlug?: string;
-  category: LaunchableAppCategory;
-  getAppDescription: (app: LaunchableApp) => string;
-  getAppTitle: (app: LaunchableApp) => string;
-  getAppUrl: (app: LaunchableApp) => string;
-  label: string;
-  linkComponent?: ElementType;
-  onActiveAppChange: (app: LaunchableApp) => void;
-  onAppKeyDown: (
-    event: KeyboardEvent<HTMLAnchorElement>,
-    app: LaunchableApp
-  ) => void;
-  onOpen: () => void;
-  openMode: AppOpenMode;
-}) {
-  const headingId = `apps-launcher-section-${category}`;
+function CatalogSection({
+  section,
+  ...props
+}: AppsLauncherCatalogProps & { section: AppsLauncherSection }) {
+  const headingId = `apps-launcher-heading-${section.id}`;
 
   return (
-    <section
+    <div
       aria-labelledby={headingId}
-      className="w-full"
+      data-section={section.id}
       data-slot="apps-launcher-section"
+      role="group"
     >
-      <div className="mb-2 flex items-center gap-2 px-1">
-        <span
-          aria-hidden="true"
-          className={cn(
-            'size-1.5 rounded-full',
-            APP_LAUNCHER_CATEGORY_TONES[category].dot
-          )}
-        />
-        <h3
-          className="font-medium text-muted-foreground text-xs"
-          id={headingId}
-        >
-          {label}
-        </h3>
+      <div
+        className="px-2 pt-2.5 pb-1.5 font-semibold text-muted-foreground text-xs"
+        data-slot="apps-launcher-section-heading"
+        id={headingId}
+      >
+        {props.getSectionLabel(section)}
       </div>
       <div
-        className="grid w-full grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3"
-        data-slot="apps-launcher-grid"
+        className={
+          section.kind === 'chips'
+            ? 'flex gap-1.5 overflow-x-auto px-1 pb-1 [scrollbar-width:none]'
+            : 'flex flex-col'
+        }
+        data-slot={
+          section.kind === 'chips'
+            ? 'apps-launcher-chips'
+            : 'apps-launcher-rows'
+        }
+        role="none"
       >
-        {apps.map((app) => (
-          <AppLauncherItem
-            app={app}
-            description={getAppDescription(app)}
-            getAppUrl={getAppUrl}
-            isActive={activeAppSlug === app.slug}
-            key={app.slug}
-            linkComponent={linkComponent}
-            onFocus={() => onActiveAppChange(app)}
-            onKeyDown={(event) => onAppKeyDown(event, app)}
-            onOpen={onOpen}
-            openMode={openMode}
-            title={getAppTitle(app)}
-          />
-        ))}
+        {section.entries.map((entry) => {
+          const optionProps = {
+            entry,
+            href: props.getAppUrl(entry.app),
+            isActive: entry.id === props.activeEntryId,
+            isCurrent: entry.app.slug === props.currentSlug,
+            linkComponent: props.linkComponent,
+            onActivate: () => props.onActiveEntryChange(entry),
+            onOpen: () => props.onOpen(entry.app),
+            openMode: props.openMode,
+            title: props.getAppTitle(entry.app),
+          };
+
+          if (section.kind === 'chips') {
+            return <AppLauncherChip {...optionProps} key={entry.id} />;
+          }
+
+          const isFavorite = props.favorites.includes(entry.app.slug);
+          return (
+            <AppLauncherRow
+              {...optionProps}
+              categoryLabel={
+                section.id === 'results'
+                  ? props.getCategoryLabel(entry.app)
+                  : undefined
+              }
+              currentLabel={props.currentLabel}
+              favoriteLabel={props.getFavoriteLabel(entry.app, isFavorite)}
+              isFavorite={isFavorite}
+              key={entry.id}
+              onToggleFavorite={() => props.onToggleFavorite(entry.app.slug)}
+            />
+          );
+        })}
       </div>
-    </section>
+    </div>
   );
 }

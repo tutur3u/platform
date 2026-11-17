@@ -1,197 +1,215 @@
-import {
-  ArrowRight,
-  BookOpen,
-  BookText,
-  BookUser,
-  Boxes,
-  Brain,
-  Calendar,
-  CheckCircle2,
-  ClipboardList,
-  CreditCard,
-  ExternalLink,
-  FileText,
-  Folder,
-  Globe,
-  GraduationCap,
-  History,
-  type LucideIcon,
-  Mail,
-  MessageSquare,
-  Package,
-  QrCode,
-  Server,
-  Smartphone,
-  Sparkles,
-  SquareTerminal,
-  Store,
-  Wallet,
-} from '@tuturuuu/icons';
+import { Star } from '@tuturuuu/icons';
 import { cn } from '@tuturuuu/utils/format';
-import type {
-  LaunchableApp,
-  LaunchableAppCategory,
-} from '@tuturuuu/utils/launchable-apps';
 import type {
   ComponentPropsWithoutRef,
   ComponentType,
   ElementType,
-  KeyboardEventHandler,
+  ReactNode,
 } from 'react';
 import type { AppOpenMode } from './apps-launcher-catalog';
+import { getAppLauncherIcon } from './apps-launcher-icons';
+import type { AppsLauncherHighlight } from './apps-launcher-search';
+import type { AppsLauncherEntry } from './apps-launcher-view';
 
-type AppLauncherLinkProps = ComponentPropsWithoutRef<'a'> & {
+type OptionLinkProps = ComponentPropsWithoutRef<'a'> & {
+  'aria-selected': boolean;
   'data-active'?: boolean;
   'data-app-slug': string;
   'data-slot': string;
 };
 
-const APP_ICONS: Partial<Record<LaunchableApp['slug'], LucideIcon>> = {
-  apps: Boxes,
-  calendar: Calendar,
-  chat: MessageSquare,
-  cms: FileText,
-  contacts: BookUser,
-  docs: BookText,
-  drive: Folder,
-  finance: Wallet,
-  forms: ClipboardList,
-  lettin: ClipboardList,
-  hive: Server,
-  inventory: Package,
-  learn: GraduationCap,
-  mail: Mail,
-  meet: Smartphone,
-  mind: Brain,
-  nova: Sparkles,
-  pay: CreditCard,
-  platform: SquareTerminal,
-  rewise: BookOpen,
-  shortener: Globe,
-  storefront: Store,
-  tasks: CheckCircle2,
-  teach: BookText,
-  tools: QrCode,
-  track: History,
-};
-
-export const APP_LAUNCHER_CATEGORY_TONES: Record<
-  LaunchableAppCategory,
-  { dot: string; icon: string }
-> = {
-  ai: {
-    dot: 'bg-dynamic-cyan',
-    icon: 'border-dynamic-cyan/40 bg-dynamic-cyan/10 text-dynamic-cyan',
-  },
-  learning: {
-    dot: 'bg-dynamic-orange',
-    icon: 'border-dynamic-orange/40 bg-dynamic-orange/10 text-dynamic-orange',
-  },
-  miscellaneous: {
-    dot: 'bg-dynamic-red',
-    icon: 'border-dynamic-red/40 bg-dynamic-red/10 text-dynamic-red',
-  },
-  operations: {
-    dot: 'bg-dynamic-green',
-    icon: 'border-dynamic-green/40 bg-dynamic-green/10 text-dynamic-green',
-  },
-  productivity: {
-    dot: 'bg-dynamic-blue',
-    icon: 'border-dynamic-blue/40 bg-dynamic-blue/10 text-dynamic-blue',
-  },
-};
-
-export function AppLauncherItem({
-  app,
-  description,
-  getAppUrl,
-  isActive,
-  linkComponent,
-  onFocus,
-  onKeyDown,
-  onOpen,
-  openMode,
-  title,
-}: {
-  app: LaunchableApp;
-  description: string;
-  getAppUrl: (app: LaunchableApp) => string;
+export type AppLauncherOptionProps = {
+  entry: AppsLauncherEntry;
+  href: string;
   isActive: boolean;
+  isCurrent: boolean;
   linkComponent?: ElementType;
-  onFocus: () => void;
-  onKeyDown: KeyboardEventHandler<HTMLAnchorElement>;
+  onActivate: () => void;
   onOpen: () => void;
   openMode: AppOpenMode;
   title: string;
+};
+
+function OptionLink({
+  children,
+  className,
+  entry,
+  href,
+  isActive,
+  linkComponent,
+  onActivate,
+  onOpen,
+  openMode,
+  slot,
+  title,
+}: AppLauncherOptionProps & {
+  children: ReactNode;
+  className: string;
+  slot: string;
 }) {
-  const Icon = APP_ICONS[app.slug] ?? Boxes;
-  const tone = APP_LAUNCHER_CATEGORY_TONES[app.category];
-  const href = getAppUrl(app);
-  const descriptionId = `apps-launcher-description-${app.slug}`;
-  const linkProps: AppLauncherLinkProps = {
-    'aria-describedby': descriptionId,
+  const props: OptionLinkProps = {
     'aria-label': title,
-    className: cn(
-      'group relative flex min-h-36 w-full cursor-pointer flex-col items-center justify-center gap-3 overflow-hidden rounded-2xl border border-border/70 bg-card/40 px-5 py-4 text-center text-card-foreground outline-none transition-[background-color,border-color,transform] duration-200 ease-out hover:-translate-y-px hover:border-foreground/20 hover:bg-muted/45 focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background active:translate-y-0 active:scale-[0.99] motion-reduce:transition-none motion-reduce:hover:translate-y-0',
-      isActive &&
-        'border-foreground/25 bg-muted/60 ring-2 ring-ring/70 ring-offset-2 ring-offset-background'
-    ),
+    'aria-selected': isActive,
+    className,
     'data-active': isActive || undefined,
-    'data-app-slug': app.slug,
-    'data-slot': 'app-card',
+    'data-app-slug': entry.app.slug,
+    'data-slot': slot,
     href,
-    id: `apps-launcher-app-${app.slug}`,
+    id: entry.id,
     onClick: onOpen,
-    onFocus,
-    onKeyDown,
-    onPointerEnter: onFocus,
+    onPointerMove: isActive ? undefined : onActivate,
     rel: openMode === 'new-tab' ? 'noopener noreferrer' : undefined,
+    role: 'option',
+    tabIndex: -1,
     target: openMode === 'new-tab' ? '_blank' : undefined,
   };
-  const content = (
-    <>
-      <span
-        className={cn(
-          'flex size-14 shrink-0 items-center justify-center rounded-2xl border shadow-xs transition-transform duration-200 ease-out group-hover:-translate-y-0.5 group-hover:scale-105 group-focus-visible:-translate-y-0.5 group-focus-visible:scale-105 motion-reduce:transition-none',
-          tone.icon
-        )}
-        data-slot="app-card-icon"
-      >
-        <Icon className="size-7" />
-      </span>
-      <span className="flex w-full min-w-0 flex-col items-center">
-        <span
-          className="block max-w-full truncate font-semibold text-base tracking-tight"
-          data-slot="app-card-title"
-        >
-          {title}
-        </span>
-        <span
-          className="mt-1.5 line-clamp-2 block max-w-[34ch] text-center text-muted-foreground text-xs leading-relaxed"
-          data-slot="app-card-description"
-          id={descriptionId}
-        >
-          {description}
-        </span>
-      </span>
-      <span
-        aria-hidden="true"
-        className="absolute top-3 right-3 flex size-7 shrink-0 items-center justify-center rounded-full border border-transparent text-muted-foreground/70 opacity-60 transition-[background-color,border-color,color,opacity,transform] duration-200 group-hover:translate-x-0.5 group-hover:border-border/70 group-hover:bg-background/80 group-hover:text-foreground group-hover:opacity-100 group-focus-visible:border-border/70 group-focus-visible:bg-background/80 group-focus-visible:text-foreground group-focus-visible:opacity-100 motion-reduce:transition-none"
-        data-slot="app-card-affordance"
-      >
-        {openMode === 'new-tab' ? (
-          <ExternalLink className="size-3.5" />
-        ) : (
-          <ArrowRight className="size-3.5" />
-        )}
-      </span>
-    </>
-  );
 
   if (linkComponent) {
-    const LinkComponent = linkComponent as ComponentType<AppLauncherLinkProps>;
-    return <LinkComponent {...linkProps}>{content}</LinkComponent>;
+    const LinkComponent = linkComponent as ComponentType<OptionLinkProps>;
+    return <LinkComponent {...props}>{children}</LinkComponent>;
   }
+  return <a {...props}>{children}</a>;
+}
 
-  return <a {...linkProps}>{content}</a>;
+function AppIcon({
+  entry,
+  chip,
+}: {
+  chip?: boolean;
+  entry: AppsLauncherEntry;
+}) {
+  const Icon = getAppLauncherIcon(entry.app);
+  return (
+    <span
+      aria-hidden="true"
+      className={cn(
+        'flex shrink-0 items-center justify-center bg-muted text-foreground',
+        chip ? 'size-7 rounded-full' : 'size-8 rounded-(--radius-inner)'
+      )}
+      data-slot="app-option-icon"
+    >
+      <Icon className={chip ? 'size-3.5' : 'size-4'} />
+    </span>
+  );
+}
+
+function HighlightedText({
+  ranges,
+  text,
+}: {
+  ranges: readonly AppsLauncherHighlight[];
+  text: string;
+}) {
+  if (ranges.length === 0) return text;
+  const parts: ReactNode[] = [];
+  let cursor = 0;
+  for (const [start, end] of ranges) {
+    const safeStart = Math.max(cursor, Math.min(start, text.length));
+    const safeEnd = Math.min(end, text.length);
+    if (safeEnd <= safeStart) continue;
+    if (safeStart > cursor) parts.push(text.slice(cursor, safeStart));
+    parts.push(
+      <mark
+        className="rounded-sm bg-primary/15 text-inherit"
+        data-slot="app-option-match"
+        key={safeStart}
+      >
+        {text.slice(safeStart, safeEnd)}
+      </mark>
+    );
+    cursor = safeEnd;
+  }
+  if (cursor < text.length) parts.push(text.slice(cursor));
+  return parts;
+}
+
+export function AppLauncherChip(props: AppLauncherOptionProps) {
+  return (
+    <OptionLink
+      {...props}
+      className={cn(
+        'inline-flex h-9 shrink-0 cursor-pointer items-center gap-2 rounded-full border py-1 pr-3.5 pl-1 font-medium text-sm outline-none transition-colors motion-reduce:transition-none',
+        props.isActive
+          ? 'border-border bg-accent text-accent-foreground'
+          : 'border-border/70 bg-muted/40 hover:bg-muted',
+        props.isCurrent && !props.isActive && 'text-muted-foreground'
+      )}
+      slot="app-chip"
+    >
+      <AppIcon chip entry={props.entry} />
+      <span className="truncate">{props.title}</span>
+    </OptionLink>
+  );
+}
+
+export function AppLauncherRow({
+  categoryLabel,
+  currentLabel,
+  favoriteLabel,
+  isFavorite,
+  onToggleFavorite,
+  ...props
+}: AppLauncherOptionProps & {
+  categoryLabel?: string;
+  currentLabel: string;
+  favoriteLabel: string;
+  isFavorite: boolean;
+  onToggleFavorite: () => void;
+}) {
+  return (
+    <div className="group/app-row relative" data-slot="app-row" role="none">
+      <OptionLink
+        {...props}
+        className={cn(
+          'flex min-h-11 w-full cursor-pointer items-center gap-3 rounded-(--radius-inner) py-1.5 pr-11 pl-1.5 text-sm outline-none transition-colors motion-reduce:transition-none',
+          props.isActive
+            ? 'bg-accent text-accent-foreground'
+            : 'hover:bg-muted/60'
+        )}
+        slot="app-option"
+      >
+        <AppIcon entry={props.entry} />
+        <span
+          className="min-w-0 flex-1 truncate font-medium"
+          data-slot="app-option-title"
+        >
+          <HighlightedText ranges={props.entry.highlight} text={props.title} />
+        </span>
+        {props.isCurrent ? (
+          <span
+            className="shrink-0 rounded-full border px-2 py-px font-medium text-muted-foreground text-xs"
+            data-slot="app-option-current"
+          >
+            {currentLabel}
+          </span>
+        ) : null}
+        {categoryLabel ? (
+          <span className="hidden shrink-0 text-muted-foreground text-xs sm:inline">
+            {categoryLabel}
+          </span>
+        ) : null}
+      </OptionLink>
+      <button
+        aria-label={favoriteLabel}
+        aria-pressed={isFavorite}
+        className={cn(
+          'absolute top-1/2 right-1 flex size-8 -translate-y-1/2 cursor-pointer items-center justify-center rounded-(--radius-inner) text-muted-foreground transition-opacity hover:bg-background/60 hover:text-foreground focus-visible:opacity-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring motion-reduce:transition-none',
+          isFavorite || props.isActive
+            ? 'opacity-100'
+            : 'opacity-0 group-hover/app-row:opacity-100',
+          isFavorite && 'text-foreground'
+        )}
+        data-slot="app-favorite-toggle"
+        onClick={onToggleFavorite}
+        onMouseDown={(event) => event.preventDefault()}
+        tabIndex={-1}
+        type="button"
+      >
+        <Star
+          aria-hidden
+          className={cn('size-4', isFavorite && 'fill-current')}
+        />
+      </button>
+    </div>
+  );
 }

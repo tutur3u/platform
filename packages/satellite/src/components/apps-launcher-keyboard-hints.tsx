@@ -1,35 +1,64 @@
-import { ArrowDown, ArrowUp } from '@tuturuuu/icons';
+import { ArrowDown, ArrowUp, CornerDownLeft } from '@tuturuuu/icons';
+import { Kbd, KbdGroup } from '@tuturuuu/ui/kbd';
+import type { ReactNode } from 'react';
 
+function isApplePlatform() {
+  if (typeof navigator === 'undefined') return false;
+  return /Mac|iPhone|iPad|iPod/i.test(navigator.userAgent);
+}
+
+function Hint({ children, label }: { children: ReactNode; label: string }) {
+  return (
+    <span className="inline-flex items-center gap-1.5">
+      {children}
+      <span>{label}</span>
+    </span>
+  );
+}
+
+/** Footer with the launcher key hints and a trailing slot for controls. */
 export function AppsLauncherKeyboardHints({
-  appsCountLabel,
+  children,
+  closeLabel,
+  favoriteLabel,
   navigateLabel,
-  selectLabel,
+  openLabel,
 }: {
-  appsCountLabel: string;
+  children?: ReactNode;
+  closeLabel: string;
+  favoriteLabel: string;
   navigateLabel: string;
-  selectLabel: string;
+  openLabel: string;
 }) {
   return (
     <div
-      className="flex shrink-0 items-center justify-between gap-3 border-t bg-muted/20 px-3 py-2 text-muted-foreground text-xs sm:px-4"
+      className="flex shrink-0 items-center gap-4 border-t px-3 py-2 font-medium text-muted-foreground text-xs"
       data-slot="apps-launcher-keyboard-hints"
     >
-      <span aria-live="polite">{appsCountLabel}</span>
-      <div className="hidden items-center gap-3 sm:flex">
-        <span className="flex items-center gap-1.5">
-          <kbd className="inline-flex h-5 items-center gap-0.5 rounded border bg-background px-1.5 font-sans shadow-xs">
-            <ArrowUp aria-hidden className="size-3" />
-            <ArrowDown aria-hidden className="size-3" />
-          </kbd>
-          {navigateLabel}
-        </span>
-        <span className="flex items-center gap-1.5">
-          <kbd className="inline-flex h-5 items-center rounded border bg-background px-1.5 font-sans shadow-xs">
-            Enter
-          </kbd>
-          {selectLabel}
-        </span>
+      <div className="hidden flex-wrap items-center gap-4 sm:flex">
+        <Hint label={navigateLabel}>
+          <KbdGroup>
+            <Kbd>
+              <ArrowUp aria-hidden />
+            </Kbd>
+            <Kbd>
+              <ArrowDown aria-hidden />
+            </Kbd>
+          </KbdGroup>
+        </Hint>
+        <Hint label={openLabel}>
+          <Kbd>
+            <CornerDownLeft aria-hidden />
+          </Kbd>
+        </Hint>
+        <Hint label={favoriteLabel}>
+          <Kbd>{isApplePlatform() ? '⌘S' : 'Ctrl+S'}</Kbd>
+        </Hint>
+        <Hint label={closeLabel}>
+          <Kbd>Esc</Kbd>
+        </Hint>
       </div>
+      {children}
     </div>
   );
 }

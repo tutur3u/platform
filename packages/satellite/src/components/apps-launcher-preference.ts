@@ -2,7 +2,7 @@
 
 import { getTuturuuuSharedCookieOptions } from '@tuturuuu/utils/shared-cookie';
 import { setCookie } from 'cookies-next';
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useState, useSyncExternalStore } from 'react';
 import type { AppOpenMode } from './apps-launcher-catalog';
 
 export const APP_OPEN_MODE_PREFERENCE_KEY = 'tuturuuu-apps-launcher-open-mode';
@@ -13,7 +13,7 @@ function isAppOpenMode(value: unknown): value is AppOpenMode {
   return value === 'current-tab' || value === 'new-tab';
 }
 
-function readCookie(name: string) {
+export function readAppsLauncherCookie(name: string) {
   if (typeof document === 'undefined') return null;
 
   const encodedName = `${encodeURIComponent(name)}=`;
@@ -58,19 +58,48 @@ export function getAppsLauncherPreferenceCookieOptions(source?: string | URL) {
   );
 }
 
-function persistPreference(mode: AppOpenMode) {
+const cookieListeners = new Set<() => void>();
+
+/**
+ * Writes a launcher preference to the shared cross-subdomain cookie and
+ * notifies subscribers of {@link useAppsLauncherCookie}.
+ */
+export function writeAppsLauncherCookie(name: string, value: string) {
   setCookie(
-    APP_OPEN_MODE_PREFERENCE_KEY,
-    mode,
+    name,
+    value,
     getAppsLauncherPreferenceCookieOptions(window.location.href)
   );
+  for (const listener of cookieListeners) listener();
+}
+
+function subscribeToCookies(listener: () => void) {
+  cookieListeners.add(listener);
+  return () => {
+    cookieListeners.delete(listener);
+  };
+}
+
+/** Raw value of a launcher preference cookie; `null` on the server. */
+export function useAppsLauncherCookie(name: string) {
+  return useSyncExternalStore(
+    subscribeToCookies,
+    () => readAppsLauncherCookie(name),
+    () => null
+  );
+}
+
+function persistPreference(mode: AppOpenMode) {
+  writeAppsLauncherCookie(APP_OPEN_MODE_PREFERENCE_KEY, mode);
 }
 
 export function useAppsLauncherOpenMode() {
   const [openMode, setOpenModeState] = useState<AppOpenMode>('new-tab');
 
   useEffect(() => {
-    const cookiePreference = readCookie(APP_OPEN_MODE_PREFERENCE_KEY);
+    const cookiePreference = readAppsLauncherCookie(
+      APP_OPEN_MODE_PREFERENCE_KEY
+    );
     if (isAppOpenMode(cookiePreference)) {
       setOpenModeState(cookiePreference);
       return;
