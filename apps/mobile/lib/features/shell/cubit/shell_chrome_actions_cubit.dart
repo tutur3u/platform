@@ -40,12 +40,13 @@ class ShellActionSpec extends Equatable {
     this.enabled = true,
     this.onSearchChanged,
     this.onSearchSubmitted,
+    bool keepVisibleWithKeyboard = true,
   }) : icon = active ? AppIcons.close : AppIcons.search,
        callbackToken = (active, hasQuery, callbackToken),
        isLoading = false,
        highlighted = active || hasQuery,
        inDock = true,
-       keepVisibleWithKeyboard = active,
+       keepVisibleWithKeyboard = active && keepVisibleWithKeyboard,
        segmentGroup = null,
        searchController = active ? controller : null;
 
