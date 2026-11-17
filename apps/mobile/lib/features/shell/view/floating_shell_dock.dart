@@ -258,16 +258,18 @@ class _FloatingShellDockState extends State<FloatingShellDock> {
     final style = ShellChromeStyle.of(context);
     final headerColor = style.page;
     final active = widget.bottomInset > 0;
+    final chrome = context.watch<ShellChromeActionsCubit?>()?.state;
     final editorAction =
-        context
-            .watch<ShellChromeActionsCubit?>()
-            ?.state
-            .resolveForLocation(widget.location)
+        chrome
+            ?.resolveForLocation(widget.location)
             .any((action) => action.inDock && action.keepVisibleWithKeyboard) ??
         false;
     final editing = editorAction && widget.keyboardVisible;
     final navigationHidden =
         _hidden && !widget.keepNavigationVisible && !editing;
+    // An open sheet or dialog takes the dock's room; the dock returns as soon
+    // as the overlay starts closing (its registration retires on pop).
+    final dockHidden = navigationHidden || (chrome?.modalHidesDock ?? false);
     final reserveClearance =
         widget.reserveNavigationClearance &&
         (!widget.hideIdleNavigation || _dockHasContent(context)) &&
@@ -340,7 +342,7 @@ class _FloatingShellDockState extends State<FloatingShellDock> {
                   key: const ValueKey('shell-dock-fade'),
                   duration: style.motion(context, style.base),
                   opacity:
-                      navigationHidden ||
+                      dockHidden ||
                           (widget.keyboardVisible &&
                               !widget.composerVisible &&
                               !editorAction)
@@ -365,15 +367,15 @@ class _FloatingShellDockState extends State<FloatingShellDock> {
                   keepVisible: widget.composerVisible || editorAction,
                   builder: (context, {required hidden, required settled}) =>
                       ExcludeSemantics(
-                        excluding: navigationHidden || hidden,
+                        excluding: dockHidden || hidden,
                         child: IgnorePointer(
-                          ignoring: navigationHidden || hidden,
+                          ignoring: dockHidden || hidden,
                           child: AnimatedSlide(
                             duration: media.disableAnimations
                                 ? Duration.zero
                                 : const Duration(milliseconds: 240),
                             curve: Curves.easeOutCubic,
-                            offset: navigationHidden || hidden
+                            offset: dockHidden || hidden
                                 ? const Offset(0, 1.3)
                                 : Offset.zero,
                             child: AnimatedOpacity(
@@ -383,7 +385,7 @@ class _FloatingShellDockState extends State<FloatingShellDock> {
                               duration: media.disableAnimations
                                   ? Duration.zero
                                   : const Duration(milliseconds: 180),
-                              opacity: navigationHidden || hidden ? 0 : 1,
+                              opacity: dockHidden || hidden ? 0 : 1,
                               child: Offstage(
                                 offstage: hidden && settled,
                                 child: _DockActions(

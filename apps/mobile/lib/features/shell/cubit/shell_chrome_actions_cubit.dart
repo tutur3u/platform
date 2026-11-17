@@ -110,6 +110,23 @@ class ShellChromeActionsState extends Equatable {
     return owner;
   }
 
+  /// Whether [ownerId] places any action in the floating dock.
+  bool ownerUsesDock(String ownerId) => registrations.values.any(
+    (registration) =>
+        registration.ownerId == ownerId &&
+        registration.actions.any((action) => action.inDock),
+  );
+
+  /// Whether the topmost sheet or dialog hides the floating dock.
+  ///
+  /// Every overlay gets the full height down to the safe area, unless it
+  /// places its own action in the dock (such as an in-sheet search), which
+  /// keeps the dock visible above it.
+  bool get modalHidesDock {
+    final owner = topmostModalOwner;
+    return owner != null && !ownerUsesDock(owner);
+  }
+
   List<ShellActionSpec> resolveForLocation(String matchedLocation) {
     final resolved = <ShellActionSpec>[];
     final seenActionIds = <String>{};

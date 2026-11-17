@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
@@ -188,6 +189,35 @@ class _AppModalBindingState extends State<AppModalBinding> {
     super.dispose();
   }
 
+  /// An overlay on the shell's nested navigator inherits the floating dock's
+  /// clearance as bottom padding. The dock hides while the overlay is open
+  /// (unless the overlay places an action in it), so the overlay pads only
+  /// for the system safe area.
+  Widget _safeAreaOnly(Widget child) {
+    final chrome = _chrome;
+    if (!_shellChromeVisible || chrome == null) return child;
+    return BlocSelector<ShellChromeActionsCubit, ShellChromeActionsState, bool>(
+      bloc: chrome,
+      selector: (state) => state.ownerUsesDock(_ownerId),
+      // Always the same MediaQuery wrapper, only its padding changes: an
+      // early `return child` would reparent the overlay's content, remounting
+      // it (and its dock registrations) whenever usesDock flips.
+      builder: (context, usesDock) {
+        final media = MediaQuery.of(context);
+        final bottom = usesDock
+            ? media.padding.bottom
+            : math.max<double>(
+                0,
+                media.viewPadding.bottom - media.viewInsets.bottom,
+              );
+        return MediaQuery(
+          data: media.copyWith(padding: media.padding.copyWith(bottom: bottom)),
+          child: child,
+        );
+      },
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final scope = AppModalScope(
@@ -197,7 +227,7 @@ class _AppModalBindingState extends State<AppModalBinding> {
       shellChromeVisible: _shellChromeVisible,
       scrollController: widget.scrollController,
       expands: widget.expands,
-      child: widget.child,
+      child: _safeAreaOnly(widget.child),
     );
     // Without a Router, system Back already pops the topmost route.
     if (Router.maybeOf(context)?.backButtonDispatcher == null) return scope;
