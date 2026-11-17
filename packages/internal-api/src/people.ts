@@ -82,3 +82,29 @@ export function getSenderContactOperation(
     { cache: 'no-store' }
   );
 }
+
+export type ResolvedWorkspacePerson = {
+  email: string;
+  displayName: string | null;
+  avatarUrl: string | null;
+} & (
+  | { kind: 'member'; id: string; emailVisible: boolean }
+  | { kind: 'contact'; id: string; emailVisible: boolean; mailBlocked: boolean }
+  | { kind: 'unknown' }
+);
+
+/** Resolves up to 50 addresses to same-workspace members and contacts. */
+export function resolveWorkspacePeople(
+  workspaceId: string,
+  emails: string[],
+  options?: InternalApiClientOptions
+) {
+  return getInternalApiClient(options).json<{
+    data: ResolvedWorkspacePerson[];
+  }>(`/api/v1/workspaces/${encodePathSegment(workspaceId)}/people/resolve`, {
+    method: 'POST',
+    cache: 'no-store',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ emails }),
+  });
+}
