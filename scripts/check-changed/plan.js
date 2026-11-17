@@ -363,6 +363,16 @@ function planChecks(changes, context) {
       ])
     );
   }
+  if (
+    selected.has('public-schema') &&
+    !steps.some((step) => step.id === 'public-schema')
+  ) {
+    steps.push(
+      nodeStep('public-schema', 'no new public relations', [
+        'scripts/check-public-schema-objects.js',
+      ])
+    );
+  }
   if (selected.has('api-route-wrappers')) {
     steps.push(
       nodeStep('api-route-wrappers', 'legacy API route wrappers', [

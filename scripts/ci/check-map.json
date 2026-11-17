@@ -103,6 +103,7 @@
     "package-release-dependencies": "^packages/[^/]+/package\\.json$|^\\.github/workflows/release-.+-package\\.ya?ml$|^scripts/ci/package-release-(dependency-guard|readiness)\\.js$",
     "i18n": "^apps/[^/]+/messages/.*\\.json$",
     "migration-timestamps": "^apps/database/supabase/migrations/",
+    "public-schema": "^(apps/database/(supabase/migrations/|public-schema-allowlist\\.json$|scripts/(verify-)?public-schema-catalog)|packages/types/src/supabase\\.ts$|scripts/(check-public-schema-objects|public-schema-guard/)|apps/mobile/lib/|apps/discord/|apps/[^/]+/src/|packages/[^/]+/src/)",
     "api-route-wrappers": "^apps/web/src/(app/api|legacy-api-routes)/",
     "mobile-lucide-sync": "^(bun\\.lock$|apps/mobile/(lib/core/ui/icons/generated|assets/fonts/lucide|test/fixtures/lucide)/|scripts/(mobile-lucide/|check-mobile-lucide-sync\\.js$))",
     "mobile-shadcn-ratchet": "^(apps/mobile/(lib|test)/|apps/mobile/tool/shadcn_import_allowlist\\.txt$|scripts/(check-mobile-shadcn-imports|dart-directive-uris)\\.js$)",

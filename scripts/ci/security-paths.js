@@ -43,6 +43,8 @@ const reviewCategories = [
     patterns: [
       /^apps\/database\//u,
       /^packages\/supabase\//u,
+      // The shrink-only public schema guard and its allowlist evaluation.
+      /^scripts\/(?:check-public-schema-objects\.js$|public-schema-guard\/)/u,
       /[a-z0-9](?:Rls|RLS)(?:[A-Z._-]|$)/u,
       // An RLS filename token. The letters rls inside "urls" are not RLS.
       // A filename that only contains "policy" is security-policy, below.

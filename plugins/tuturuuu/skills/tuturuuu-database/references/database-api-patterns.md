@@ -14,6 +14,12 @@ review prove baseline equivalence. Existing migration history stays immutable.
 
 ## Schema And Typegen
 
+- New application relations go in `private`. The shrink-only allowlist
+  `apps/database/public-schema-allowlist.json` lists what may remain in
+  `public`; `bun db:public-guard` checks it statically and
+  `public-schema-guard.yaml` compares it with the reset-database catalog.
+  Moving a relation removes its entry and records it under `moved`. See
+  [public schema privatization](../../../../../apps/docs/build/devops/public-schema-privatization.mdx).
 - Remote `db reset --linked` retains managed storage tables. Bucket creation
   defaults must tolerate existing IDs; preserve intentional configuration upserts.
   See [storage replay verification](../../../../../apps/docs/build/development-tools/local-supabase-development.mdx#replaying-migrations-with-existing-storage-buckets).

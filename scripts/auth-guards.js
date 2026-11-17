@@ -1,6 +1,7 @@
 /**
- * Static auth-surface guards. `bun check` always runs them; `check:changed`
- * runs them when app or package source changes.
+ * Static auth and data-exposure guards. `bun check` always runs them;
+ * `check:changed` runs them when app or package source changes. The public
+ * schema guard also runs for migration, allowlist and type changes.
  */
 const AUTH_GUARDS = [
   {
@@ -22,6 +23,11 @@ const AUTH_GUARDS = [
     name: 'browser-session-surface',
     script: 'scripts/check-browser-session-surface.js',
     summary: 'Browser session surfaces stay within the allowlist',
+  },
+  {
+    name: 'public-schema',
+    script: 'scripts/check-public-schema-objects.js',
+    summary: 'No new public relations; client access stays off moved tables',
   },
 ];
 

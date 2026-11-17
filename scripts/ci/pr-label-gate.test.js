@@ -83,6 +83,7 @@ const PROTECTED_TRIGGERS = {
   'playground-cloudflare.yaml': '7c22fc6d616e6d01',
   'playground-runtime-acceptance.yaml': '0a3cc2c97958f5cd',
   'programming-database-contract.yaml': '0a3cc2c97958f5cd',
+  'public-schema-guard.yaml': '966a703a0bb0ee75',
   'report-review-receipts-contract.yaml': '433352a4fb0e56e6',
   'required-account-mfa-contract.yaml': 'f803778bc2859492',
   'roadmap-cloudflare.yaml': '226a232389cbc09b',

@@ -259,6 +259,7 @@
     "type-check:playground": "bun turbo:local run type-check -F @tuturuuu/playground",
     "type-check:tools": "bun turbo:local run type-check -F @tuturuuu/tools",
     "migration:timestamps:check": "node scripts/check-migration-timestamps.js",
+    "db:public-guard": "node scripts/check-public-schema-objects.js",
     "migration:tanstack:manifest": "node scripts/paused-runtimes.js migration",
     "migration:tanstack:check": "node scripts/paused-runtimes.js migration",
     "migration:tanstack:cutover-check": "node scripts/paused-runtimes.js migration",

@@ -50,6 +50,7 @@ const heavy = {
   'periodic-report-delivery-contract.yaml': ['contract'],
   'playground-runtime-acceptance.yaml': ['acceptance'],
   'programming-database-contract.yaml': ['contract'],
+  'public-schema-guard.yaml': ['contract'],
   'report-review-receipts-contract.yaml': ['contract'],
   'sdk-package-qualification.yaml': ['qualify'],
   'shortener-cloudflare.yaml': ['native', 'native-production'],

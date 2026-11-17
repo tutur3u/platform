@@ -6,11 +6,16 @@ audience: developers
 ---
 
 The `public` schema is reachable by every browser, mobile client and holder of
-the anon key through PostgREST. Row Level Security is its only fence, and the
-schema still carries the original default privileges
-(`20230202082703_remote_commit.sql`): every new `public` table is granted
-`ALL` to `anon` and `authenticated` at creation. One missing or permissive
-policy exposes a table.
+the anon key through PostgREST. Row Level Security is the fence for every
+table that still grants client roles, so one missing or permissive policy
+exposes a table. `20260522172925_harden_proxy_only_public_tables.sql` revoked
+the `public` default privileges on tables, sequences and functions for
+`current_user`, `postgres` and the `supabase_*` owner roles the migration role
+belongs to. `20261027151200_restrict_anon_definer_execute.sql` can re-grant
+default function EXECUTE to `authenticated` or `service_role` where that access
+came from the implicit global `PUBLIC` default. Platform-owned default ACLs
+(owner `supabase_admin`) still grant client roles in a full local replay; those
+apply only to objects that role creates.
 
 The target is a `public` schema with no application relations. Application data
 lives in `private`, which `anon` and `authenticated` cannot use, and clients
@@ -225,7 +230,7 @@ can run in parallel lanes after Wave 4.
 
 | Wave | Scope | Relations | Notable callers | Mobile | ETA |
 | --- | --- | --- | --- | --- | --- |
-| 0 | Guard, default-privilege hardening, denial tests, fallback helper | 0 moved | — | M1 started | 2 days |
+| 0 | Guard, catalog checks, denial tests, fallback helper | 0 moved | — | M1 started | 2 days |
 | 1 | Secrets, credentials, abuse controls | 31 | `workspace_secrets` (63 files), calendar tokens, SePay, API keys | — | 4 days |
 | 2 | Billing, credits, finance | 41 | `apps/finance` on user client; `wallet_transactions` | `wallet_transactions` (M1) | 7 days |
 | 3 | Mail, notifications, inquiries | 12 | `post_email_queue`, `notifications` publication | — | 3 days |
@@ -244,15 +249,17 @@ during Waves 0–1.
 
 - Land the [guard](#guard-no-new-public-relations) with the full current
   allowlist (no table moves).
-- Migration: `ALTER DEFAULT PRIVILEGES FOR ROLE postgres IN SCHEMA public
-  REVOKE ALL ON TABLES FROM anon, authenticated` (and sequences, functions).
-  Existing objects are unchanged; new objects stop inheriting client grants.
-  Snapshot effective privileges first; approval required.
+- Run the read-only hosted catalog check (default ACLs in `public`, RLS-off
+  tables, and client grants on them) on staging, then production. Add a
+  default-privilege migration only if the hosted result shows client grants
+  the guard cannot exempt. It loops over the same owner roles as
+  `20260522172925`, snapshots `pg_default_acl` before and after, and needs
+  approval.
 - Add the pgTAP denial test, the HTTP denial check and the private-first
   fallback helper in `@tuturuuu/supabase` (with tests).
 - Start mobile M1: endpoints for the 6 mobile tables, Flutter repository
   switch, minimum-version plan.
-- Security review of the guard spec and default-privilege migration.
+- Security review of the guard and any default-privilege migration.
 
 ### Wave 1: secrets, credentials, abuse controls
 
@@ -393,7 +400,7 @@ Tables: `workspaces`, `workspace_members`, `workspace_members_and_invites`,
   wave's Phase B and C migrations, rollback migration and helper-schema
   changes; any allowlist addition. Review uses the exact migration SHA.
 - **User approval (D138)** for every production database change. Batch to
-  limit dialogs: Wave 0 default privileges; then one dialog per batch of
+  limit dialogs: Wave 0 default privileges (only if needed); then one dialog per batch of
   "Phase C of wave N + Phase B of wave N+1". Each dialog states the tables,
   the exact SHA, the staging marker, the rollback migration and the evidence
   (pgTAP, HTTP denial, exact-commit CI).
@@ -406,89 +413,122 @@ Tables: `workspaces`, `workspace_members`, `workspace_members_and_invites`,
 
 ## Guard: no new public relations
 
-`scripts/check-public-schema-objects.js` fails when a migration creates an
-application relation in `public` that is not on a shrink-only allowlist. It is
-enforced from the first migration version after security approval.
+Two layers share the allowlist `apps/database/public-schema-allowlist.json`:
+
+| Layer | Runs | Authority |
+| --- | --- | --- |
+| Catalog: `apps/database/scripts/verify-public-schema-catalog.mjs` | `.github/workflows/public-schema-guard.yaml` on the reset CI database (full tracked migration chain in an isolated stack) | Authoritative |
+| Static: `scripts/check-public-schema-objects.js` (`bun db:public-guard`) | `bun check:changed`, `bun check`, and the same workflow before the replay | Early signal, plus the shrink-only and caller rules |
 
 ### Allowlist
 
-`apps/database/public-schema-allowlist.json`:
-
 ```json
 {
-  "effectiveFromVersion": "<first migration version after approval>",
+  "version": 1,
+  "currentWave": 0,
+  "lintAfterVersion": "20261117063000",
   "relations": {
     "workspaces": { "kind": "table", "wave": 8 },
-    "notes": { "kind": "table", "wave": 5 }
+    "task_sprint_reports": { "kind": "table", "wave": 6, "retained": true }
   },
+  "moved": {},
   "serviceRoleCompatViews": {},
+  "defaultAclExemptOwners": {
+    "supabase_admin": { "reason": "Platform-owned default ACL in public" }
+  },
   "functions": { "enforced": false, "names": {} }
 }
 ```
 
-- `relations` starts as every current `public` table and view (320 entries),
-  each tagged with its planned wave.
-- Shrink-only: in PR or push context, the guard compares with the allowlist at
-  the merge base (`GITHUB_BASE_REF`, local default `origin/main`, deepening
-  shallow clones as `check-migration-timestamps.js` does). An added key fails;
-  `serviceRoleCompatViews` entries need an `expiresAfterWave`.
-- Stale entries fail: an allowlisted name absent from the generated `public`
-  types must be removed.
+- `relations` holds every application table and view in `public` (321), each
+  tagged with its wave. `retained` marks a relation that exists in hosted
+  databases and the generated types but that the migration chain does not
+  create, so a replay lacks it.
+- Moving a relation removes it from `relations` and records it in `moved`
+  (`{ "wave": n, "schema": "private" }`). Moved records are permanent.
+- `serviceRoleCompatViews` entries carry `expiresAfterWave` and
+  `target: "private.<name>"`.
+- `defaultAclExemptOwners` lists default-ACL owners the migration role cannot
+  alter, each with a reason; their client grants are reported as warnings.
 - The allowlist path is listed in `CODEOWNERS` for database and security
   owners.
 
-### Checks
+### Catalog checks (authoritative)
 
-1. **Generated types**: every key under `public.Tables` and `public.Views` in
-   `packages/types/src/supabase.ts` is on the allowlist.
-2. **Migration lint** over migrations with version ≥ `effectiveFromVersion`
-   (all such files, not only the diff, so a rebase cannot skip one). After
-   removing SQL comments, and scanning dollar-quoted bodies as well (to catch
-   `EXECUTE 'create table …'` text), fail on a target that resolves to
-   `public` (qualified `public.`, quoted `"public".`, or unqualified) and is
-   not allowlisted:
-   - `CREATE [UNLOGGED] TABLE [IF NOT EXISTS]`, including `PARTITION OF` and
-     `AS SELECT`;
-   - `CREATE [OR REPLACE] [MATERIALIZED|RECURSIVE] VIEW`;
-   - `SELECT … INTO` a new table;
-   - `ALTER TABLE|VIEW … SET SCHEMA public`;
-   - `ALTER TABLE|VIEW public.<allowlisted> RENAME TO <name>` where the new
-     name is not allowlisted;
-   - `CREATE FOREIGN TABLE`;
-   - `GRANT … ON [TABLE] public.<t> | ALL TABLES IN SCHEMA public TO anon |
-     authenticated | PUBLIC`, and `ALTER DEFAULT PRIVILEGES … IN SCHEMA public
-     GRANT … TO anon | authenticated | PUBLIC`.
-   Temporary tables (`CREATE TEMP|TEMPORARY TABLE`) are allowed. Unqualified
-   names are treated as `public` unless the same file sets
-   `search_path` to a schema list that does not start with `public`.
-3. **Direct client access** for relations not on the allowlist (moved):
-   fail on any browser-module reference, any Dart `.from('<t>')` in
-   `apps/mobile/lib`, any Python `.table("<t>")` in `apps/discord` without
-   `schema("private")`, and any TypeScript `.from('<t>')` not preceded within
-   the same call chain by `.schema('private')` or the fallback helper.
-4. **Functions** (from Wave 9, `functions.enforced: true`): `CREATE [OR
-   REPLACE] FUNCTION|PROCEDURE public.<name>` fails unless allowlisted.
-   Before then the guard prints new public functions as a warning.
+One read-only statement reads `pg_class`, `pg_depend` and `pg_default_acl`
+(extension-owned relations excluded) and fails on:
 
-Output names the file, line, statement kind and fix ("create it in
-`private`", "remove the stale entry"). Exit 0 pass, 1 violation, 2 parse or
-setup error.
+1. **G1, equality.** Every application table and view in `public` is in
+   `relations` with the matching kind, and every non-retained entry exists.
+   A `retained` entry that the chain creates must drop the flag. Every `moved`
+   name exists in `private` and not in `public`.
+2. **G2, exposure.** Every `public` table has RLS enabled. No RLS-off table
+   grants `anon`, `authenticated` or `PUBLIC`. No `public` or global default
+   ACL grants those roles on tables or sequences, or function EXECUTE to
+   `anon` or `PUBLIC`. Default EXECUTE for `authenticated` is a warning until
+   `functions.enforced` is true, then an error. Exempt owners warn.
+3. **G5, compat views.** Each `serviceRoleCompatViews` entry exists as a plain
+   view, grants no client role, reads only its `target`, and has not expired
+   (`expiresAfterWave` ≥ `currentWave`).
 
-### Wiring
+The workflow uploads the catalog JSON as an artifact for review.
 
-- `package.json`: `"db:public-guard": "node scripts/check-public-schema-objects.js"`.
-- `scripts/check-changed/plan.js`: select the step when migrations, the
-  allowlist, generated types, `apps/mobile/lib`, `apps/discord` or
-  `apps/*/src` / `packages/*/src` change.
-- `.github/workflows/check-migrations.yml`: run after the timestamp checks.
-- `bun check` runs it unconditionally.
-- Tests: `scripts/check-public-schema-objects.test.js` with fixtures for every
-  statement kind above, quoted identifiers, dollar-quoted bodies, comments,
-  temp tables, `search_path` handling, allowlist additions (fail), stale
-  entries (fail), shrinking (pass), compat-view expiry, and each caller rule.
-- Docs: add the guard to
-  [pre-push checks](/build/development-tools/pre-push-checks) and the
-  database skill reference when it lands.
+### Static checks
+
+1. **Shrink-only (G3 fail closed).** The allowlist is compared with the one at
+   the base: `PUBLIC_SCHEMA_BASE_SHA` (CI pushes pass the previous main SHA),
+   else the pull request base, else the merge-base with `origin/main`. Adding
+   a relation, function or exempt owner fails; removing a relation without a
+   `moved` record fails; `currentWave` cannot decrease; `lintAfterVersion`
+   cannot move later; function enforcement cannot be turned off. An unreadable
+   base or base allowlist exits 2. The only exception is the introducing
+   change, whose base has neither the allowlist nor the guard script.
+2. **Generated types.** Every `public` table and view in
+   `packages/types/src/supabase.ts` is allowlisted with the matching kind.
+   Absence from the types is not treated as staleness: committed types can
+   lag the chain, so the catalog owns that direction.
+3. **Migration lint** over migrations after `lintAfterVersion`, comments
+   removed. It fails on a `public` (qualified, quoted or unqualified) target
+   that is not allowlisted for `CREATE [UNLOGGED] TABLE` (including
+   `PARTITION OF` and `AS`), `CREATE [MATERIALIZED|RECURSIVE] VIEW`,
+   `CREATE FOREIGN TABLE`, `SELECT … INTO`, `SET SCHEMA public` and
+   `RENAME TO`; on literal client-role `GRANT`s on `public` relations or
+   `ALL TABLES IN SCHEMA public`; and on client default privileges in `public`.
+   Text inside dollar-quoted bodies is scanned for creation (`EXECUTE 'create
+   table …'`). Temporary relations, `search_path`-qualified private targets
+   and dynamic `%I` targets are left to the catalog check. New public
+   functions warn until `functions.enforced`.
+4. **Direct client access** to `moved` relations: any browser-module
+   reference, any Dart `.from()` in `apps/mobile/lib`, any Python `.table()` in
+   `apps/discord` without `schema("private")`, and any TypeScript `.from()` not
+   immediately chained from `.schema('private')`.
+
+Exit codes for both layers: 0 pass, 1 violation, 2 setup or parse error.
+
+### Tests
+
+`scripts/check-public-schema-objects.test.js` covers each statement kind,
+quoting, comments, dollar-quoted bodies, temporary relations, `search_path`,
+dynamic targets, grants and default privileges, function warnings, every
+shrink rule, compat-view expiry, the caller rules, and fail-closed base
+resolution in a temporary repository.
+`apps/database/scripts/public-schema-catalog.test.mjs` covers G1, G2 and G5
+on catalog fixtures and fail-closed output parsing.
+
+### Replay findings
+
+The first full replay matched the allowlist except for three findings, all
+resolved in the allowlist:
+
+- `workspace_external_project_page_versions` is created in `public` by
+  `20261109010100` and is missing from the committed types.
+- `task_sprint_reports` is in the types as retained schema and has no
+  migration, so it is marked `retained`.
+- `supabase_admin` default ACLs in `public` grant `anon` and
+  `authenticated` on tables, sequences and functions; the owner is exempt
+  pending the hosted catalog result.
+
+Every replayed `public` table has RLS enabled.
 
 ## Appendix: table inventory
 

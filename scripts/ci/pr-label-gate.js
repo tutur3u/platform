@@ -86,6 +86,7 @@ const HEAVY_PR_WORKFLOWS = [
   'playground-cloudflare.yaml',
   'playground-runtime-acceptance.yaml',
   'programming-database-contract.yaml',
+  'public-schema-guard.yaml',
   'report-review-receipts-contract.yaml',
   'required-account-mfa-contract.yaml',
   'rewise-cloudflare.yaml',

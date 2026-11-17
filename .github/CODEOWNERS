@@ -83,6 +83,10 @@
 /apps/database/supabase/config.toml @vhpx
 /apps/database/supabase/tests/required-account-mfa.sql @vhpx
 /apps/database/scripts/verify-required-account-mfa-contract.mjs @vhpx
+/apps/database/public-schema-allowlist.json @vhpx
+/apps/database/scripts/*public-schema-catalog* @vhpx
+/scripts/check-public-schema-objects.js @vhpx
+/scripts/public-schema-guard/ @vhpx
 
 # Code-execution infrastructure (devbox and Judge runners)
 /apps/devbox-control/              @vhpx

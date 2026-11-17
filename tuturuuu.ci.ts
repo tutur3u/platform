@@ -17,6 +17,7 @@ export const ci = {
   'fee-lock-database-contract.yaml': true,
   'external-project-page-versions-contract.yaml': true,
   'connected-mail-accounts-contract.yaml': true,
+  'public-schema-guard.yaml': true,
   'mail-profile-runtime-contract.yaml': true,
   'check-and-bump-versions.yaml': true,
   'check-docs-links.yml': true,
