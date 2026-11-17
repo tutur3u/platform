@@ -41,8 +41,9 @@ vi.mock('../../../shared/board-broadcast-context', () => ({
   useBoardBroadcast: () => broadcastMock,
 }));
 
-vi.mock('../board-selector', () => ({
-  BoardSelector: () => null,
+vi.mock('../../board-selector', () => ({
+  BoardSelector: ({ open }: { open: boolean }) =>
+    open ? <div data-testid="board-selector" /> : null,
 }));
 
 vi.mock('../../capacity-rules-settings', () => ({
@@ -78,21 +79,38 @@ vi.mock('@tuturuuu/ui/dropdown-menu', () => ({
   DropdownMenuTrigger: ({ children }: { children: React.ReactNode }) => (
     <>{children}</>
   ),
-  DropdownMenuContent: ({ children }: { children: React.ReactNode }) => (
-    <>{children}</>
+  DropdownMenuContent: ({
+    children,
+    onKeyDown,
+  }: {
+    children: React.ReactNode;
+    onKeyDown?: React.KeyboardEventHandler<HTMLDivElement>;
+  }) => (
+    <div data-testid="list-menu" onKeyDown={onKeyDown}>
+      {children}
+    </div>
   ),
   DropdownMenuItem: ({
     children,
-    onClick,
+    onSelect,
+    'aria-keyshortcuts': keyShortcuts,
   }: {
     children: React.ReactNode;
-    onClick?: () => void;
+    onSelect?: () => void;
+    'aria-keyshortcuts'?: string;
   }) => (
-    <button type="button" onClick={onClick}>
+    <button
+      type="button"
+      aria-keyshortcuts={keyShortcuts}
+      onClick={() => onSelect?.()}
+    >
       {children}
     </button>
   ),
   DropdownMenuSeparator: () => null,
+  DropdownMenuShortcut: ({ children }: { children: React.ReactNode }) => (
+    <span>{children}</span>
+  ),
 }));
 
 const baseList: TaskList = {
@@ -226,7 +244,7 @@ describe('ListActions', () => {
     const onEditOpenChange = vi.fn();
     renderListActions({ onEditOpenChange });
 
-    fireEvent.click(screen.getByRole('button', { name: 'list_settings' }));
+    fireEvent.click(screen.getByRole('button', { name: /list_settings/ }));
 
     expect(onEditOpenChange).toHaveBeenCalledWith(true);
   });
@@ -238,8 +256,10 @@ describe('ListActions', () => {
       tasks: [baseTask],
     });
 
-    fireEvent.click(screen.getAllByRole('button', { name: 'delete' })[0]!);
-    fireEvent.click(screen.getAllByRole('button', { name: 'delete' }).at(-1)!);
+    fireEvent.click(screen.getByRole('button', { name: /^delete_list/ }));
+    fireEvent.click(
+      screen.getAllByRole('button', { name: /^delete_list/ }).at(-1)!
+    );
 
     await waitFor(() => {
       expect(
@@ -289,8 +309,10 @@ describe('ListActions', () => {
       </QueryClientProvider>
     );
 
-    fireEvent.click(screen.getByRole('button', { name: 'archive_all_tasks' }));
-    fireEvent.click(screen.getByRole('button', { name: 'archive_tasks' }));
+    fireEvent.click(screen.getByRole('button', { name: /archive_all_tasks/ }));
+    fireEvent.click(
+      screen.getByRole('button', { name: 'archive_n_tasks_action' })
+    );
 
     await waitFor(() => {
       expect(
@@ -380,8 +402,10 @@ describe('ListActions', () => {
       </QueryClientProvider>
     );
 
-    fireEvent.click(screen.getByRole('button', { name: 'archive_all_tasks' }));
-    fireEvent.click(screen.getByRole('button', { name: 'archive_tasks' }));
+    fireEvent.click(screen.getByRole('button', { name: /archive_all_tasks/ }));
+    fireEvent.click(
+      screen.getByRole('button', { name: 'archive_n_tasks_action' })
+    );
 
     await waitFor(() => {
       expect(toast.error).toHaveBeenCalledWith(
@@ -392,5 +416,39 @@ describe('ListActions', () => {
     expect(queryClient.getQueryData<Task[]>(['tasks', 'board-1'])).toEqual([
       baseTask,
     ]);
+  });
+  it('runs menu actions from their single-letter shortcuts', () => {
+    renderListActions({ tasks: [baseTask] });
+
+    expect(
+      screen.getByRole('button', { name: /^delete_list/ })
+    ).toHaveAttribute('aria-keyshortcuts', 'D');
+
+    fireEvent.keyDown(screen.getByTestId('list-menu'), {
+      key: 'd',
+      metaKey: true,
+    });
+    expect(screen.queryByText('delete_list_title')).not.toBeInTheDocument();
+
+    fireEvent.keyDown(screen.getByTestId('list-menu'), { key: 'd' });
+    expect(screen.getByText('delete_list_title')).toBeInTheDocument();
+  });
+
+  it('focuses Cancel first and offers moving tasks before deleting', async () => {
+    renderListActions({ tasks: [baseTask] });
+
+    fireEvent.click(screen.getByRole('button', { name: /^delete_list/ }));
+
+    await waitFor(() => {
+      expect(
+        screen.getAllByRole('button', { name: /^cancel/ }).at(-1)
+      ).toHaveFocus();
+    });
+    expect(screen.getByText('delete_list_task_warning')).toBeInTheDocument();
+
+    fireEvent.click(screen.getByRole('button', { name: 'move_tasks_first' }));
+
+    expect(screen.getByTestId('board-selector')).toBeInTheDocument();
+    expect(updateWorkspaceTaskListMock).not.toHaveBeenCalled();
   });
 });

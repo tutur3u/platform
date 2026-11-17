@@ -1,33 +1,9 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query';
-import {
-  Archive,
-  ArrowRightLeft,
-  CheckSquare,
-  MoreHorizontal,
-  Settings2,
-  Trash,
-} from '@tuturuuu/icons';
 import { updateWorkspaceTaskList } from '@tuturuuu/internal-api/tasks';
 import type { SupportedColor } from '@tuturuuu/types/primitives/SupportedColors';
 import type { Task } from '@tuturuuu/types/primitives/Task';
 import type { TaskBoardStatus } from '@tuturuuu/types/primitives/TaskBoard';
 import type { TaskList } from '@tuturuuu/types/primitives/TaskList';
-import { Button } from '@tuturuuu/ui/button';
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from '@tuturuuu/ui/dialog';
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger,
-} from '@tuturuuu/ui/dropdown-menu';
 import { toast } from '@tuturuuu/ui/sonner';
 import { useTranslations } from 'next-intl';
 import { useMemo, useState } from 'react';
@@ -35,6 +11,8 @@ import { useBoardBroadcast } from '../../shared/board-broadcast-context';
 import { ListSettingsDialog } from '../../shared/list-settings-dialog';
 import { isTaskListNameExistsError } from '../../shared/task-board-errors';
 import { BoardSelector } from '../board-selector';
+import { ArchiveTasksDialog, DeleteListDialog } from './list-action-dialogs';
+import { ListActionsMenu } from './list-actions-menu';
 import { useListBulkMove } from './use-list-bulk-move';
 
 interface Props {
@@ -292,99 +270,38 @@ export function ListActions({
 
   return (
     <>
-      <DropdownMenu>
-        <DropdownMenuTrigger asChild>
-          <Button variant="ghost" className="h-8 w-8 p-0 text-muted-foreground">
-            <span className="sr-only">{t('open_menu')}</span>
-            <MoreHorizontal className="h-4 w-4" />
-          </Button>
-        </DropdownMenuTrigger>
-        <DropdownMenuContent align="end" className="w-56">
-          {canManageList && (
-            <DropdownMenuItem onClick={() => onEditOpenChange(true)}>
-              <div className="h-4 w-4">
-                <Settings2 className="h-4 w-4" />
-              </div>
-              {t('list_settings')}
-            </DropdownMenuItem>
-          )}
-          {tasks.length > 0 && onSelectAll && (
-            <>
-              <DropdownMenuSeparator />
-              <DropdownMenuItem onClick={onSelectAll}>
-                <div className="h-4 w-4">
-                  <CheckSquare className="h-4 w-4 text-dynamic-green" />
-                </div>
-                {t('select_all_tasks')}
-                <span className="ml-auto text-muted-foreground text-xs">
-                  ({tasks.length})
-                </span>
-              </DropdownMenuItem>
-            </>
-          )}
-          {canManageList && tasks.length > 0 && (
-            <>
-              <DropdownMenuSeparator />
-              <DropdownMenuItem onClick={handleMoveAllTasks}>
-                <div className="h-4 w-4">
-                  <ArrowRightLeft className="h-4 w-4 text-dynamic-blue" />
-                </div>
-                {t('move_all_tasks')}
-                <span className="ml-auto text-muted-foreground text-xs">
-                  ({tasks.length})
-                </span>
-              </DropdownMenuItem>
-            </>
-          )}
-          {canManageList && listStatus === 'done' && tasks.length > 0 && (
-            <>
-              <DropdownMenuSeparator />
-              <DropdownMenuItem onClick={() => setIsArchiveDialogOpen(true)}>
-                <div className="h-4 w-4">
-                  <Archive className="h-4 w-4 text-dynamic-purple" />
-                </div>
-                {t('archive_all_tasks')}
-              </DropdownMenuItem>
-            </>
-          )}
-          {canManageList && (
-            <>
-              <DropdownMenuSeparator />
-              <DropdownMenuItem onClick={() => setIsDeleteDialogOpen(true)}>
-                <div className="h-4 w-4">
-                  <Trash className="h-4 w-4 text-dynamic-red" />
-                </div>
-                {t('delete')}
-              </DropdownMenuItem>
-            </>
-          )}
-        </DropdownMenuContent>
-      </DropdownMenu>
+      <ListActionsMenu
+        taskCount={tasks.length}
+        onOpenSettings={
+          canManageList ? () => onEditOpenChange(true) : undefined
+        }
+        onSelectAll={tasks.length > 0 ? onSelectAll : undefined}
+        onMoveAll={
+          canManageList && tasks.length > 0 ? handleMoveAllTasks : undefined
+        }
+        onArchiveAll={
+          canManageList && listStatus === 'done' && tasks.length > 0
+            ? () => setIsArchiveDialogOpen(true)
+            : undefined
+        }
+        onDelete={canManageList ? () => setIsDeleteDialogOpen(true) : undefined}
+      />
 
-      <Dialog
-        open={canManageList && isDeleteDialogOpen}
+      <DeleteListDialog
+        count={tasks.length}
+        listName={listName}
+        onConfirm={handleDelete}
+        onMoveFirst={
+          tasks.length > 0
+            ? () => {
+                setIsDeleteDialogOpen(false);
+                setIsMoveAllDialogOpen(true);
+              }
+            : undefined
+        }
         onOpenChange={setIsDeleteDialogOpen}
-      >
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>{t('delete_list')}</DialogTitle>
-            <DialogDescription>
-              {t('delete_list_confirmation')}
-            </DialogDescription>
-          </DialogHeader>
-          <DialogFooter>
-            <Button
-              variant="ghost"
-              onClick={() => setIsDeleteDialogOpen(false)}
-            >
-              {t('cancel')}
-            </Button>
-            <Button variant="destructive" onClick={handleDelete}>
-              {t('delete')}
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+        open={canManageList && isDeleteDialogOpen}
+      />
 
       <ListSettingsDialog
         allowedStatuses={allowedStatuses}
@@ -413,33 +330,19 @@ export function ListActions({
         wsId={wsId}
       />
 
-      <Dialog
-        open={canManageList && isArchiveDialogOpen}
+      <ArchiveTasksDialog
+        closedListName={
+          (
+            queryClient.getQueryData<TaskList[]>(['task_lists', boardId]) ??
+            lists
+          ).find((list) => list.status === 'closed' && !list.deleted)?.name
+        }
+        count={tasks.length}
+        listName={listName}
+        onConfirm={handleArchiveAllTasks}
         onOpenChange={setIsArchiveDialogOpen}
-      >
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>{t('archive_all_tasks')}</DialogTitle>
-            <DialogDescription>
-              {t('archive_tasks_confirmation', { count: tasks.length })}
-            </DialogDescription>
-          </DialogHeader>
-          <DialogFooter>
-            <Button
-              variant="ghost"
-              onClick={() => setIsArchiveDialogOpen(false)}
-            >
-              {t('cancel')}
-            </Button>
-            <Button
-              onClick={handleArchiveAllTasks}
-              className="bg-dynamic-purple hover:bg-dynamic-purple/90"
-            >
-              {t('archive_tasks')}
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+        open={canManageList && isArchiveDialogOpen}
+      />
 
       {/* Board Selector for Moving All Tasks */}
       {canManageList && wsId && (
