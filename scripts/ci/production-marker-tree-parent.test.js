@@ -15,8 +15,8 @@ const other = 'f'.repeat(40);
 const base = '/repos/example/platform';
 const workflowPath = '.github/workflows/supabase-staging.yaml';
 const markerPath = 'scripts/ci/record-deployment-marker.ts';
-const proof = workflow.split("<<'STAGING_SOURCE_PROOF'\n")[1];
-const code = proof.slice(0, proof.indexOf('          main().catch('));
+const { readStagingProof } = require('./fixtures/staging-proof-source.cjs');
+const { code } = readStagingProof(workflow);
 
 async function verify(options = {}) {
   const selected = options.exact ? target : source;

@@ -1,4 +1,5 @@
 const assert = require('node:assert/strict');
+const { readStagingProof } = require('./staging-proof-source.cjs');
 const { installFetchFixture } = require('./staging-workflow-fixture.cjs');
 const { spawnSync } = require('node:child_process');
 const { createHash } = require('node:crypto');
@@ -16,6 +17,7 @@ const workflow = fs.readFileSync(
 const productionSha = 'a'.repeat(40);
 const stagingSha = 'b'.repeat(40);
 const workflowSha = 'c'.repeat(40);
+const { source: proof, command } = readStagingProof(workflow);
 
 function stepScript(name, source = workflow) {
   const block = source.split(`      - name: ${name}\n`)[1];
@@ -34,8 +36,8 @@ function stepScript(name, source = workflow) {
     .join('\n')
     .replaceAll(/\$\{\{ github\.repository \}\}/g, 'example/platform')
     .replace(
-      'node scripts/ci/verify-staging-migration-marker.mjs',
-      `node --input-type=module <<'STAGING_SOURCE_PROOF'\n${fs.readFileSync(path.join(__dirname, '../verify-staging-migration-marker.mjs'), 'utf8')}\nSTAGING_SOURCE_PROOF`
+      command,
+      `node --input-type=module <<'STAGING_PROOF_FIXTURE'\n${proof}\nSTAGING_PROOF_FIXTURE`
     );
 }
 

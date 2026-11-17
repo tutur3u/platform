@@ -1,6 +1,7 @@
 const assert = require('node:assert/strict');
 const { test } = require('node:test');
 const { runInNewContext } = require('node:vm');
+const { readStagingProof } = require('./fixtures/staging-proof-source.cjs');
 const {
   fixture,
   productionSha,
@@ -82,11 +83,9 @@ for (const kind of ['previous', 'old']) {
 
 test('producer validation rejects manual dispatch with a different head', () => {
   // Exercise checkRun independently: latestMarker normally rejects this first.
-  const proof = workflow.split("<<'STAGING_SOURCE_PROOF'\n")[1];
-  const startMain = proof.indexOf('          main().catch(');
-  assert.ok(startMain > 0, 'inline source verifier entry point exists');
+  const { code } = readStagingProof(workflow);
   const checkRun = runInNewContext(
-    `${proof.slice(0, startMain)}\ncheckRun`,
+    `${code}\ncheckRun`,
     {
       process: {
         env: {

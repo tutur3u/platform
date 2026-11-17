@@ -4,6 +4,7 @@ const {
 const {
   assertPackagePreparation,
 } = require('./sdk-qualification-workflow-controls');
+const { readStagingProof } = require('./fixtures/staging-proof-source.cjs');
 const test = require('node:test');
 const assert = require('node:assert/strict');
 const fs = require('node:fs');
@@ -569,10 +570,11 @@ test('CI workflows use main instead of retired staging branch filters', () => {
     path.join(repoRoot, '.github', 'workflows', 'supabase-production.yaml'),
     'utf8'
   );
+  const { source: proof } = readStagingProof(supabaseProductionWorkflow);
 
   assert.match(supabaseStagingWorkflow, /\n {4}branches:\n {6}- main\n/);
   assert.match(
-    supabaseProductionWorkflow,
+    proof,
     /deployments\?environment=\$\{environment\}&sha=\$\{source\}/
   );
   assert.match(
@@ -982,6 +984,7 @@ test('Supabase production migration requires production platform deploy and succ
     'evaluate-prerequisites'
   );
   const deployJob = readWorkflowJobBlock('supabase-production.yaml', 'deploy');
+  const { source: proof } = readStagingProof(workflow);
 
   assert.match(
     workflow,
@@ -1036,26 +1039,20 @@ test('Supabase production migration requires production platform deploy and succ
   assert.match(evaluateJob, /\(\$payload\.markerKind == "deployment"\)/);
   assert.match(evaluateJob, /DEPLOYMENT_MARKER_HAS_SUCCESS" != "true"/);
   assert.match(evaluateJob, /does not have a current success status/);
-  assert.match(
-    evaluateJob,
-    /deployments\?environment=\$\{environment\}&sha=\$\{source\}/
-  );
-  assert.match(evaluateJob, /d\.sha === source && d\.ref === source/);
-  assert.match(evaluateJob, /p\.sha === source && p\.markerKind/);
-  assert.match(evaluateJob, /run\.status === 'completed'/);
-  assert.match(evaluateJob, /run\.conclusion === 'success'/);
-  assert.match(evaluateJob, /run\.run_attempt === Number\(p\.runAttempt\)/);
-  assert.match(evaluateJob, /step\.status === 'completed'/);
-  assert.match(evaluateJob, /step\.conclusion === 'success'/);
-  assert.doesNotMatch(evaluateJob, /run\.conclusion === 'skipped'/);
-  assert.match(
-    evaluateJob,
-    /Production platform deployment marker and staging migration are bound to \$\{target\}/
-  );
-  assert.match(
-    evaluateJob,
-    /staging migration is bound to its tree-equal parent \$\{source\}/
-  );
+  for (const pattern of [
+    /deployments\?environment=\$\{environment\}&sha=\$\{source\}/,
+    /d\.sha === source\s*&&\s*d\.ref === source/,
+    /p\.sha === source\s*&&\s*p\.markerKind/,
+    /run\.status === 'completed'/,
+    /run\.conclusion === 'success'/,
+    /run\.run_attempt === Number\(p\.runAttempt\)/,
+    /step\.status === 'completed'/,
+    /step\.conclusion === 'success'/,
+    /Production platform deployment marker and staging migration are bound to \$\{target\}/,
+    /staging migration is bound to its tree-equal parent \$\{source\}/,
+  ])
+    assert.match(proof, pattern);
+  assert.doesNotMatch(proof, /run\.conclusion === 'skipped'/);
 
   assert.match(evaluateJob, /ref: \$\{\{ github\.sha \}\}/);
   assert.match(

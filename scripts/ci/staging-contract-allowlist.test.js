@@ -8,6 +8,7 @@ const { createHash } = require('node:crypto');
 const fs = require('node:fs');
 const path = require('node:path');
 const { test } = require('node:test');
+const { readStagingProof } = require('./fixtures/staging-proof-source.cjs');
 
 const root = path.resolve(__dirname, '../..');
 const read = (file) => fs.readFileSync(path.join(root, file));
@@ -23,13 +24,7 @@ test('the staging contract allowlist is exactly current plus main history', () =
   const production = read(
     '.github/workflows/supabase-production.yaml'
   ).toString('utf8');
-  assert.match(
-    production,
-    /node scripts\/ci\/verify-staging-migration-marker\.mjs/
-  );
-  const proof = read('scripts/ci/verify-staging-migration-marker.mjs').toString(
-    'utf8'
-  );
+  const { source: proof } = readStagingProof(production);
   const match = /\[\s*workflowPath,\s*\[([^\]]*)\]\s*,?\s*\]/u.exec(proof);
   assert.ok(match, 'staging contract allowlist not found');
   const allowed = [...match[1].matchAll(/'([0-9a-f]{40})'/gu)].map(

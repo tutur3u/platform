@@ -1,4 +1,5 @@
 const test = require('node:test');
+const { readStagingProof } = require('./fixtures/staging-proof-source.cjs');
 const assert = require('node:assert/strict');
 const { readFileSync, mkdtempSync, writeFileSync, rmSync } = require('node:fs');
 const { tmpdir } = require('node:os');
@@ -259,10 +260,7 @@ test('workflow keeps default-off manual opt-in and full normal marker/staging/ap
     yaml,
     /node --experimental-strip-types scripts\/ci\/check-production-migration-recovery.ts/
   );
-  const proof = readFileSync(
-    join(__dirname, 'verify-staging-migration-marker.mjs'),
-    'utf8'
-  );
+  const { source: proof, command: proofCommand } = readStagingProof(yaml);
   assert.match(yaml, /DEPLOYMENT_MARKER_HAS_SUCCESS.*!= "true"/);
   assert.match(
     proof,
@@ -283,10 +281,7 @@ test('workflow keeps default-off manual opt-in and full normal marker/staging/ap
     proof,
     /step\.status === 'completed'\s*&&\s*step\.conclusion === 'success'/
   );
-  assert.ok(
-    yaml.indexOf('node scripts/ci/verify-staging-migration-marker.mjs') <
-      yaml.indexOf('SHOULD_DEPLOY=true')
-  );
+  assert.ok(yaml.indexOf(proofCommand) < yaml.indexOf('SHOULD_DEPLOY=true'));
   assert.match(proof, /process\.exitCode = 1/);
   assert.match(yaml, /supabase db push --include-all/);
   assert.match(yaml, /expected_project_ref:/);
