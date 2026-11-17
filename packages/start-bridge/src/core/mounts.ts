@@ -1,4 +1,4 @@
-import { normalizeBasePath } from './base-path';
+import { normalizeBasePath } from '@tuturuuu/start-bridge/base-path';
 import type { MountIsolationConfig } from './mount-isolation';
 
 /**
