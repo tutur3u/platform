@@ -37,10 +37,10 @@ export function HiveServerSelect({
     >
       <SelectTrigger
         aria-label={labels.select}
-        className="h-9 w-[9.75rem] justify-start rounded-md border-0 bg-transparent px-1.5 shadow-none transition-[background-color,transform,width] duration-200 ease-out hover:bg-muted/50 focus-visible:ring-0 sm:w-[12.5rem]"
+        className="h-(--bar-control-height) w-[9.75rem] justify-start rounded-(--radius-bar-inner) border-0 bg-transparent px-1.5 shadow-none transition-[background-color,transform,width] duration-200 ease-out hover:bg-muted/50 focus-visible:ring-0 sm:w-[12.5rem]"
       >
         <div className="flex min-w-0 flex-1 items-center gap-1.5">
-          <span className="grid h-9 w-9 shrink-0 place-items-center rounded-md border border-dynamic-green bg-dynamic-green/10 text-dynamic-green shadow-dynamic-green/20 shadow-inner transition-[background-color,border-color,color,transform] duration-200 ease-out">
+          <span className="grid size-7 shrink-0 place-items-center rounded-full border border-dynamic-green bg-dynamic-green/10 text-dynamic-green shadow-dynamic-green/20 shadow-inner transition-[background-color,border-color,color,transform] duration-200 ease-out">
             <Server className="h-3.5 w-3.5" />
           </span>
           <span className="min-w-0 truncate text-left font-medium text-sm leading-none">

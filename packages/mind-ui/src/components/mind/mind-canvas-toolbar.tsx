@@ -25,6 +25,7 @@ import {
   AlertDialogTitle,
 } from '@tuturuuu/ui/alert-dialog';
 import { Button } from '@tuturuuu/ui/button';
+import { FloatingBar } from '@tuturuuu/ui/floating-bar';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -154,7 +155,7 @@ export function MindCanvasToolbar({
       <Input
         aria-label={t('actions.renameBoard')}
         autoFocus
-        className="h-8 w-[min(18rem,calc(100vw-9rem))] border-border/70 bg-background/80 px-2 font-semibold text-base"
+        className="h-(--bar-control-height) w-[min(18rem,calc(100vw-9rem))] rounded-(--radius-bar-inner) border-border/70 bg-background/80 px-2 font-semibold text-base"
         disabled={disabled || renamingBoard}
         onChange={(event) => setTitleDraft(event.target.value)}
         onKeyDown={(event) => {
@@ -168,7 +169,7 @@ export function MindCanvasToolbar({
   ) : (
     <button
       aria-label={t('actions.editBoardTitle')}
-      className="group flex h-8 min-w-0 max-w-[min(18rem,calc(100vw-9rem))] items-center gap-2 rounded-md px-2 text-left transition hover:bg-muted/70"
+      className="group flex h-(--bar-control-height) min-w-0 max-w-[min(18rem,calc(100vw-9rem))] items-center gap-2 rounded-(--radius-bar-inner) px-3 text-left transition hover:bg-muted/70"
       disabled={disabled || !onRenameBoard}
       onClick={() => {
         setActionError(null);
@@ -339,7 +340,10 @@ export function MindCanvasToolbar({
 
   return (
     <>
-      <div className="absolute top-3 left-3 z-30 flex max-w-[calc(100vw-6rem)] flex-wrap items-center gap-1 rounded-xl border border-border bg-background/90 p-1 shadow-lg backdrop-blur">
+      <FloatingBar
+        aria-label={t('actions.boardToolbar')}
+        className="absolute top-3 left-3 z-30 max-w-[calc(100vw-6rem)] flex-wrap bg-background/90"
+      >
         {titleEditor}
         {titleSaveButton}
         <MindAutoSaveIsland
@@ -358,7 +362,7 @@ export function MindCanvasToolbar({
           aria-label={
             collapsed ? t('actions.openToolbar') : t('actions.closeToolbar')
           }
-          className="h-8 w-8 shrink-0 touch-manipulation"
+          className="shrink-0 touch-manipulation"
           onClick={() => onCollapsedChange(!collapsed)}
           size="icon"
           type="button"
@@ -368,7 +372,7 @@ export function MindCanvasToolbar({
         </Button>
         {toolbarActions}
         {boardActionsMenu}
-      </div>
+      </FloatingBar>
       {actionError ? (
         <div className="absolute top-14 left-3 z-30 max-w-[min(26rem,calc(100vw-1.5rem))] rounded-md border border-dynamic-red/30 bg-dynamic-red/10 px-3 py-2 text-dynamic-red text-xs shadow-lg backdrop-blur">
           {actionError}

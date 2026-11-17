@@ -53,6 +53,7 @@ function Button({
       <Slot
         data-slot="button"
         data-variant={variant ?? 'default'}
+        data-size={size ?? 'default'}
         className={classNames}
         {...(props as React.ComponentProps<typeof Slot>)}
       />
@@ -63,6 +64,7 @@ function Button({
     <button
       data-slot="button"
       data-variant={variant ?? 'default'}
+      data-size={size ?? 'default'}
       className={classNames}
       {...props}
     />

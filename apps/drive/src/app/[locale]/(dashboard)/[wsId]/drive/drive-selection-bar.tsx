@@ -2,6 +2,7 @@
 
 import { CheckSquare } from '@tuturuuu/icons';
 import { Button } from '@tuturuuu/ui/button';
+import { FloatingBar } from '@tuturuuu/ui/floating-bar';
 import { useTranslations } from 'next-intl';
 
 interface DriveSelectionBarProps {
@@ -23,17 +24,22 @@ export function DriveSelectionBar({
     return null;
   }
 
+  const selection = t('bulk_selection_count', { count });
+
+  // Inline in the page, so it keeps the bar's shape without floating chrome.
   return (
-    <div className="flex flex-wrap items-center gap-3 rounded-2xl border border-dynamic-border/80 bg-muted/20 px-3 py-3">
-      <div className="flex items-center gap-2 font-medium text-foreground text-sm">
+    <FloatingBar
+      aria-label={selection}
+      className="w-fit flex-wrap bg-muted/20 shadow-none ring-dynamic-border/80 backdrop-blur-none"
+    >
+      <div className="flex items-center gap-2 px-2 font-medium text-foreground text-sm">
         <CheckSquare className="h-4 w-4 text-dynamic-blue" />
-        {t('bulk_selection_count', { count })}
+        {selection}
       </div>
       <Button
         type="button"
         variant="outline"
         size="sm"
-        className="rounded-xl"
         onClick={onSelectAllVisible}
       >
         {t('select_all_visible')}
@@ -42,20 +48,13 @@ export function DriveSelectionBar({
         type="button"
         variant="outline"
         size="sm"
-        className="rounded-xl"
         onClick={onClearSelection}
       >
         {t('deselect_all')}
       </Button>
-      <Button
-        type="button"
-        variant="destructive"
-        size="sm"
-        className="rounded-xl"
-        onClick={onDelete}
-      >
+      <Button type="button" variant="destructive" size="sm" onClick={onDelete}>
         {t('bulk_delete_action')}
       </Button>
-    </div>
+    </FloatingBar>
   );
 }

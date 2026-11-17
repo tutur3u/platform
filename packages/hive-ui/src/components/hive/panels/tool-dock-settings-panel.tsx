@@ -98,7 +98,7 @@ export function ToolDockSettingsPanel(props: ToolDockSettingsPanelProps) {
         />
         <label
           aria-label={t('time_of_day', { time: clock })}
-          className="grid h-10 min-w-44 grid-cols-[auto_1fr_auto] items-center gap-2 rounded-md border border-border bg-background px-2 text-muted-foreground"
+          className="grid h-(--bar-control-height) min-w-44 grid-cols-[auto_1fr_auto] items-center gap-2 rounded-(--radius-bar-inner) border border-border bg-background px-3 text-muted-foreground"
         >
           <Clock3 className="h-4 w-4" />
           <input
@@ -118,7 +118,7 @@ export function ToolDockSettingsPanel(props: ToolDockSettingsPanelProps) {
         </label>
         <label
           aria-label={t('speed')}
-          className="grid h-10 min-w-28 grid-cols-[auto_1fr] items-center gap-2 rounded-md border border-border bg-background px-2 text-muted-foreground"
+          className="grid h-(--bar-control-height) min-w-28 grid-cols-[auto_1fr] items-center gap-2 rounded-(--radius-bar-inner) border border-border bg-background px-3 text-muted-foreground"
         >
           <Gauge className="h-4 w-4" />
           <input
@@ -224,7 +224,7 @@ function SettingsIconButton({
           aria-label={label}
           aria-pressed={active}
           className={[
-            'inline-flex h-10 w-10 items-center justify-center rounded-md border transition disabled:cursor-wait disabled:opacity-60',
+            'inline-flex size-(--bar-control-height) items-center justify-center rounded-(--radius-bar-inner) border transition disabled:cursor-wait disabled:opacity-60',
             active
               ? 'border-dynamic-green bg-dynamic-green/10 text-foreground'
               : 'border-border bg-background text-muted-foreground hover:border-foreground/25 hover:text-foreground',

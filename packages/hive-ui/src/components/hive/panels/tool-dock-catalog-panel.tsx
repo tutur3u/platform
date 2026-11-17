@@ -65,7 +65,7 @@ export function ToolDockCatalogPanel(props: ToolDockCatalogPanelProps) {
                 aria-label={label}
                 aria-pressed={folder === id}
                 className={[
-                  'inline-flex h-10 w-10 items-center justify-center rounded-md border transition',
+                  'inline-flex size-(--bar-control-height) items-center justify-center rounded-(--radius-bar-inner) border transition',
                   folder === id
                     ? 'border-dynamic-green bg-dynamic-green/10 text-foreground shadow-dynamic-green/20 shadow-inner'
                     : 'border-border bg-background text-muted-foreground hover:border-foreground/25 hover:text-foreground',
@@ -105,7 +105,7 @@ export function ToolDockCatalogPanel(props: ToolDockCatalogPanelProps) {
                   aria-label={`${item.label} ${item.shortcut ?? index + 1}`}
                   aria-pressed={selected}
                   className={[
-                    'relative grid h-10 min-w-12 place-items-center rounded-md border px-1.5 transition',
+                    'relative grid h-(--bar-control-height) min-w-12 place-items-center rounded-(--radius-bar-inner) border px-2.5 transition',
                     selected
                       ? 'border-dynamic-green bg-dynamic-green/10 text-foreground shadow-dynamic-green/20 shadow-inner'
                       : 'border-border bg-background text-muted-foreground hover:border-foreground/25',

@@ -125,7 +125,7 @@ export function WorkspaceDetailDialog({
               </div>
             </DialogHeader>
 
-            <TabsList className="mx-8 mb-5 grid h-12 w-[min(100%,640px)] grid-cols-3 rounded-2xl bg-foreground/10 p-1">
+            <TabsList className="mx-8 mb-5 grid h-12 w-[min(100%,640px)] grid-cols-3 bg-foreground/10 [--radius-segment:1rem]">
               <TabsTrigger value="overview">
                 {t('detail_tab_overview')}
               </TabsTrigger>

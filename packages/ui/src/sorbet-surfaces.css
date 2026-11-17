@@ -64,15 +64,21 @@
   line-height: 1.25rem;
 }
 
-/* Segmented tabs: a recessed track with a raised thumb. */
+/*
+  Segmented tabs: a recessed track with a raised thumb. Sorbet sets only the
+  track radius; floating-bar.css derives the concentric trigger radius.
+*/
+:root[data-ui="sorbet"] {
+  --radius-segment: var(--sorbet-control-radius);
+}
+
 :root[data-ui="sorbet"] :where([data-slot="tabs-list"]) {
-  border-radius: var(--sorbet-control-radius);
+  border-radius: var(--radius-segment);
   background-color: var(--muted);
 }
 
-/* Triggers nest inside the track's 4px padding, so corners stay concentric. */
 :root[data-ui="sorbet"] :where([data-slot="tabs-trigger"]) {
-  border-radius: max(0px, calc(var(--sorbet-control-radius) - 4px));
+  border-radius: var(--radius-segment-inner);
 }
 
 :root[data-ui="sorbet"]

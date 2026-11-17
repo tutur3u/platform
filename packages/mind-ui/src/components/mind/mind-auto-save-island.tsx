@@ -2,6 +2,7 @@
 
 import { Check, CircleAlert, LoaderCircle, Save } from '@tuturuuu/icons';
 import { Button } from '@tuturuuu/ui/button';
+import { FloatingBar } from '@tuturuuu/ui/floating-bar';
 import { cn } from '@tuturuuu/utils/format';
 import { useTranslations } from 'next-intl';
 
@@ -21,10 +22,7 @@ export function MindAutoSaveIsland({ inline, onSaveNow, status }: Props) {
   const button = (
     <Button
       aria-label={label}
-      className={cn(
-        inline ? 'h-8 w-8' : 'h-9 w-9 touch-manipulation',
-        config.className
-      )}
+      className={cn(!inline && 'touch-manipulation', config.className)}
       disabled={status === 'saving'}
       onClick={onSaveNow}
       size="icon"
@@ -40,9 +38,14 @@ export function MindAutoSaveIsland({ inline, onSaveNow, status }: Props) {
 
   return (
     <div className="pointer-events-none absolute top-16 right-3 z-30">
-      <div className="pointer-events-auto rounded-xl border border-border bg-background/90 p-1 shadow-foreground/5 shadow-lg backdrop-blur">
+      <FloatingBar
+        // One control: a labelled group, not a toolbar.
+        role="group"
+        aria-label={label}
+        className="pointer-events-auto bg-background/90"
+      >
         {button}
-      </div>
+      </FloatingBar>
     </div>
   );
 }

@@ -1,0 +1,82 @@
+/*
+  Concentric corners for floating bars, docks, toolbars and segmented tracks.
+  A control's radius is the container radius minus the container padding, so
+  both corners share one centre. Change a shape here only; components read
+  these variables and never hardcode a second radius.
+
+  Floating bar: --radius-bar is half the control height plus the padding, so
+  the bar is a capsule and every control inside is a full pill (the shape of
+  the mobile dock). For a rounded rectangle, set --bar-radius-max to a length
+  (for example 1rem); --radius-bar-inner follows.
+
+  Segmented track (Tabs list): the same rule with its own padding.
+*/
+
+:root {
+  --bar-padding: 0.375rem;
+  --bar-gap: 0.25rem;
+  --bar-control-height: 2rem;
+  --bar-separator-height: 1.25rem;
+  /* With --bar-gap on both sides, the separator gets --bar-padding of space. */
+  --bar-separator-margin: calc(var(--bar-padding) - var(--bar-gap));
+  /* Caps the capsule; a length such as 1rem gives a rounded rectangle. */
+  --bar-radius-max: 9999px;
+  --radius-bar: min(
+    var(--bar-radius-max),
+    calc(var(--bar-control-height) / 2 + var(--bar-padding))
+  );
+  --radius-bar-inner: max(
+    0.125rem,
+    calc(var(--radius-bar) - var(--bar-padding))
+  );
+
+  --segment-padding: 0.25rem;
+  --radius-segment: var(--radius-lg);
+  --radius-segment-inner: max(
+    0.125rem,
+    calc(var(--radius-segment) - var(--segment-padding))
+  );
+}
+
+/*
+  A custom property that uses var() resolves where it is declared, so the
+  :root values above only see the :root inputs. Redeclare every derived value
+  on each container, so a bar that sets its own control height or padding
+  (for example [--bar-control-height:2.5rem]) gets the matching radii. In the
+  base layer, so a utility on the container still overrides any of them.
+*/
+@layer base {
+  :where([data-slot="floating-bar"]) {
+    --bar-separator-margin: calc(var(--bar-padding) - var(--bar-gap));
+    --radius-bar: min(
+      var(--bar-radius-max),
+      calc(var(--bar-control-height) / 2 + var(--bar-padding))
+    );
+    --radius-bar-inner: max(
+      0.125rem,
+      calc(var(--radius-bar) - var(--bar-padding))
+    );
+  }
+
+  :where([data-slot="tabs-list"]) {
+    --radius-segment-inner: max(
+      0.125rem,
+      calc(var(--radius-segment) - var(--segment-padding))
+    );
+  }
+}
+
+/*
+  Sorbet makes buttons, inputs and select triggers pills with an unlayered
+  rule (sorbet.css), which outranks the bar's utilities. Same specificity,
+  later in the cascade, so controls inside a bar keep the concentric radius.
+*/
+:root[data-ui="sorbet"]
+  :where([data-slot="floating-bar"])
+  :where(
+    [data-slot="button"],
+    [data-slot="input"],
+    [data-slot="select-trigger"]
+  ) {
+  border-radius: var(--radius-bar-inner);
+}

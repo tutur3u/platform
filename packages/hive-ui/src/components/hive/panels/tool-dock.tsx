@@ -10,6 +10,7 @@ import {
   RotateCw,
   Settings2,
 } from '@tuturuuu/icons';
+import { FloatingBar, FloatingBarSeparator } from '@tuturuuu/ui/floating-bar';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@tuturuuu/ui/tooltip';
 import { useTranslations } from 'next-intl';
 import { useState } from 'react';
@@ -82,12 +83,11 @@ export function ToolDock(props: ToolDockProps) {
 
   return (
     <div className="pointer-events-auto flex justify-center">
-      <div
+      <FloatingBar
         aria-label="Hive tool dock"
-        className="flex max-w-[calc(100vw-2rem)] items-center gap-1.5 overflow-hidden rounded-xl border border-white/60 bg-background/84 p-1.5 text-foreground shadow-2xl shadow-foreground/15 ring-1 ring-foreground/5 backdrop-blur-xl transition-[box-shadow,opacity,transform,width] duration-300 ease-out hover:shadow-foreground/20"
-        role="toolbar"
+        className="max-w-[calc(100vw-2rem)] overflow-hidden bg-background/84 text-foreground shadow-2xl shadow-foreground/15 backdrop-blur-xl transition-[box-shadow,opacity,transform,width] duration-300 ease-out [--bar-control-height:2.5rem] hover:shadow-foreground/20"
       >
-        <div className="flex items-center gap-1.5">
+        <div className="flex items-center gap-(--bar-gap)">
           {toolItems.map(({ icon: Icon, id, labelKey }) => {
             const label = t(labelKey);
 
@@ -97,7 +97,7 @@ export function ToolDock(props: ToolDockProps) {
                   <button
                     aria-label={label}
                     className={[
-                      'inline-flex h-10 w-10 items-center justify-center rounded-md border transition',
+                      'inline-flex size-(--bar-control-height) items-center justify-center rounded-(--radius-bar-inner) border transition',
                       props.tool === id
                         ? 'border-dynamic-green bg-dynamic-green/10 text-dynamic-green shadow-dynamic-green/20 shadow-inner'
                         : 'border-border bg-background text-muted-foreground hover:border-foreground/25 hover:text-foreground',
@@ -117,16 +117,16 @@ export function ToolDock(props: ToolDockProps) {
             );
           })}
         </div>
-        <div className="flex min-w-0 items-center gap-1.5">
-          <div className="my-1 w-px shrink-0 bg-border" />
-          <div className="flex items-center gap-1.5">
+        <div className="flex min-w-0 items-center gap-(--bar-gap)">
+          <FloatingBarSeparator />
+          <div className="flex items-center gap-(--bar-gap)">
             <Tooltip>
               <TooltipTrigger asChild>
                 <button
                   aria-label={t('build_catalog')}
                   aria-pressed={panel === 'build'}
                   className={[
-                    'inline-flex h-10 w-10 items-center justify-center rounded-md border transition',
+                    'inline-flex size-(--bar-control-height) items-center justify-center rounded-(--radius-bar-inner) border transition',
                     panel === 'build'
                       ? 'border-dynamic-green bg-dynamic-green/10 text-foreground'
                       : 'border-border bg-background text-muted-foreground hover:border-foreground/25 hover:text-foreground',
@@ -148,7 +148,7 @@ export function ToolDock(props: ToolDockProps) {
                   aria-label={t('editor_settings')}
                   aria-pressed={panel === 'settings'}
                   className={[
-                    'inline-flex h-10 w-10 items-center justify-center rounded-md border transition',
+                    'inline-flex size-(--bar-control-height) items-center justify-center rounded-(--radius-bar-inner) border transition',
                     panel === 'settings'
                       ? 'border-dynamic-green bg-dynamic-green/10 text-foreground'
                       : 'border-border bg-background text-muted-foreground hover:border-foreground/25 hover:text-foreground',
@@ -172,7 +172,7 @@ export function ToolDock(props: ToolDockProps) {
                 aria-label={t('live_operations')}
                 aria-pressed={panel === 'operations'}
                 className={[
-                  'inline-flex h-10 w-10 items-center justify-center rounded-md border transition',
+                  'inline-flex size-(--bar-control-height) items-center justify-center rounded-(--radius-bar-inner) border transition',
                   panel === 'operations'
                     ? 'border-dynamic-green bg-dynamic-green/10 text-foreground'
                     : 'border-border bg-background text-muted-foreground hover:border-foreground/25 hover:text-foreground',
@@ -236,12 +236,12 @@ export function ToolDock(props: ToolDockProps) {
               worldCounts={props.worldCounts}
             />
           ) : null}
-          <div className="my-1 w-px shrink-0 bg-border" />
+          <FloatingBarSeparator />
           <Tooltip>
             <TooltipTrigger asChild>
               <button
                 aria-label={t('collapse')}
-                className="inline-flex h-10 w-10 items-center justify-center rounded-md border border-border bg-background text-muted-foreground hover:text-foreground"
+                className="inline-flex size-(--bar-control-height) items-center justify-center rounded-(--radius-bar-inner) border border-border bg-background text-muted-foreground hover:text-foreground"
                 onClick={props.onToggle}
                 type="button"
               >
@@ -251,7 +251,7 @@ export function ToolDock(props: ToolDockProps) {
             <TooltipContent side="top">{t('collapse')}</TooltipContent>
           </Tooltip>
         </div>
-      </div>
+      </FloatingBar>
     </div>
   );
 }

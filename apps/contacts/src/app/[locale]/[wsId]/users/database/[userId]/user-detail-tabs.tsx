@@ -12,7 +12,7 @@ export function UserDetailTabs({ tabs }: { tabs: UserDetailTab[] }) {
   return (
     <Tabs defaultValue={defaultValue} className="gap-4">
       <div className="overflow-x-auto">
-        <TabsList className="h-auto w-max min-w-full justify-start gap-1 rounded-xl border border-dynamic-border bg-muted/40 p-1 sm:min-w-0">
+        <TabsList className="h-auto w-max min-w-full justify-start gap-1 bg-muted/40 ring-1 ring-dynamic-border [--radius-segment:0.75rem] sm:min-w-0">
           {tabs.map((tab) => (
             <TabsTrigger
               key={tab.value}

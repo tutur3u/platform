@@ -84,6 +84,47 @@ Light and dark screenshots are separate acceptance cases. A semantic token name
 alone does not prove sufficient contrast, especially for focus indicators,
 disabled values, validation messages, and selected navigation.
 
+## Concentric corners
+
+A control nested in a padded container uses **inner radius = outer radius −
+padding**, so both corners share one centre. The values live only in
+`packages/ui/src/floating-bar.css` (bars and segmented tracks) and
+`floating-surface.css` (menus, popovers, toasts). Components read the
+variables; do not hardcode a second radius.
+
+| Token | Value | Use |
+| --- | --- | --- |
+| `--bar-padding` | 6px | Equal on all four sides of a floating bar |
+| `--bar-gap` | 4px | Between controls |
+| `--bar-control-height` | 32px | Every control in a bar has this height |
+| `--radius-bar` | min(`--bar-radius-max`, control ÷ 2 + padding) = 22px | A capsule, matching the mobile dock |
+| `--radius-bar-inner` | radius − padding = 16px | Controls are full pills; icon controls are circles |
+| `--bar-separator-height` / `--bar-separator-margin` | 20px / padding − gap | Centred divider with padding-sized space on both sides |
+| `--radius-segment` / `--segment-padding` | `--radius-lg` (Sorbet: control radius) / 4px | Tabs track; triggers take `--radius-segment-inner` |
+
+- Use `FloatingBar`, `FloatingBarGroup` and `FloatingBarSeparator` from
+  `@tuturuuu/ui/floating-bar` for floating action bars, docks and canvas
+  toolbars. Every `Button` inside gets the inner radius and control height, and
+  the active (filled) control sits flush with the inset. Raw buttons use
+  `size-(--bar-control-height) rounded-(--radius-bar-inner)`.
+- A bar that needs larger controls sets `[--bar-control-height:2.5rem]` on the
+  bar; the radii follow.
+- Draw a bar's outline with a ring or shadow, never a layout border: a border
+  adds to the inset and breaks the relation.
+- Light, dark and Sorbet use the same geometry; only colour tokens change.
+- For a rounded-rectangle bar, set `--bar-radius-max` to a length (for
+  example `1rem`); `--radius-bar` and `--radius-bar-inner` follow.
+- A Tabs list with a different track sets `[--radius-segment:…]` and
+  `[--segment-padding:…]` instead of `rounded-*` and `p-*` classes, so its
+  triggers stay concentric. Outline a track with a ring, not a border.
+- The Flutter dock and segmented control follow the same rule (Mobile).
+
+Regression coverage: `packages/ui/src/components/ui/floating-bar.test.tsx`
+(tokens, component and converted surfaces) and
+`apps/web/e2e/floating-bar-geometry.fixture.ts`, which measures computed radii,
+padding, control heights and divider spacing in light, dark and Sorbet against
+`packages/ui/fixtures/floating-bar`.
+
 ## Hover-expand sidebar
 
 The shared `Structure` in hover mode (`overlayOnExpand`) is a pure overlay. The

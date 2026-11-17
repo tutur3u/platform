@@ -12,6 +12,7 @@ import {
   updateMindBoard,
 } from '@tuturuuu/internal-api/mind';
 import { Button } from '@tuturuuu/ui/button';
+import { FloatingBar } from '@tuturuuu/ui/floating-bar';
 import { Skeleton } from '@tuturuuu/ui/skeleton';
 import { useRouter } from 'next/navigation';
 import { useTranslations } from 'next-intl';
@@ -147,7 +148,10 @@ export function MindDashboard({
   return (
     <MindShell>
       <div className="pointer-events-none absolute top-3 right-3 z-40 flex items-start gap-2">
-        <div className="pointer-events-auto isolate flex items-center gap-1 rounded-xl border border-border bg-background/90 p-1 shadow-foreground/5 shadow-xl backdrop-blur">
+        <FloatingBar
+          aria-label={t('actions.canvasTools')}
+          className="pointer-events-auto isolate bg-background/90"
+        >
           {hiveHref ? (
             <MindHiveLauncher
               boardId={activeBoardId}
@@ -158,7 +162,7 @@ export function MindDashboard({
           ) : null}
           <Button
             aria-label={t('actions.openAi')}
-            className="h-9 w-9 touch-manipulation"
+            className="touch-manipulation"
             onClick={() => setAiOpen((value) => !value)}
             size="icon"
             type="button"
@@ -166,7 +170,7 @@ export function MindDashboard({
           >
             <Bot className="h-4 w-4" />
           </Button>
-        </div>
+        </FloatingBar>
       </div>
       {boardLoadFailed ? (
         <CanvasErrorState

@@ -107,10 +107,10 @@ function AiContextTrigger({
         <PopoverTrigger asChild>
           <button
             aria-label={t('toggle_context')}
-            className="inline-flex h-9 min-w-9 max-w-[13rem] items-center gap-2 rounded-md border border-border bg-background px-1.5 text-left transition-[background-color,border-color,box-shadow,color,transform] duration-200 ease-out hover:-translate-y-0.5 hover:border-foreground/25 hover:text-foreground"
+            className="inline-flex h-(--bar-control-height) min-w-(--bar-control-height) max-w-[13rem] items-center gap-2 rounded-(--radius-bar-inner) border border-border bg-background px-1.5 text-left transition-[background-color,border-color,box-shadow,color,transform] duration-200 ease-out hover:-translate-y-0.5 hover:border-foreground/25 hover:text-foreground"
             type="button"
           >
-            <span className="grid h-7 w-7 shrink-0 place-items-center rounded-md border border-dynamic-purple/50 bg-dynamic-purple/10 text-dynamic-purple shadow-dynamic-purple/20 shadow-inner">
+            <span className="grid h-7 w-7 shrink-0 place-items-center rounded-full border border-dynamic-purple/50 bg-dynamic-purple/10 text-dynamic-purple shadow-dynamic-purple/20 shadow-inner">
               <Bot className="h-3.5 w-3.5" />
             </span>
             <span className="hidden min-w-0 flex-col leading-none sm:flex">

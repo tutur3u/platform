@@ -36,7 +36,7 @@ export function HiveAccountMenu({
         {variant === 'icon' ? (
           <button
             aria-label="Hive account"
-            className="inline-flex h-10 w-10 items-center justify-center rounded-full text-foreground transition hover:bg-muted/70"
+            className="inline-flex size-(--bar-control-height) items-center justify-center rounded-(--radius-bar-inner) text-foreground transition hover:bg-muted/70"
             type="button"
           >
             <Avatar className="h-8 w-8 border border-border/40">
