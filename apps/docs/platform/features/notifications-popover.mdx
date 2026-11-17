@@ -1,0 +1,108 @@
+---
+updatedAt: "2026-11-17"
+title: 'Notifications popover'
+description: 'Read state, open in context, grouping, mark all read, keyboard model and loading boundaries of the shared notification bell.'
+audience: users
+---
+
+Every app that shows a notification bell renders the same shared popover from
+`@tuturuuu/ui/custom/satellite-notification-popover`. Web and Workspace mount it
+through their `notification-popover.tsx` wrappers; satellites mount
+`@tuturuuu/satellite/notification-popover` (server) or
+`@tuturuuu/satellite/notification-popover-view` (client-rendered apps). Apps do
+not ship their own popover. Who may see a notification is unchanged and
+described in [Notification access](/platform/features/notification-access).
+
+## Read state
+
+- Read state is the only state. The popover shows **Unread** (default) and
+  **All**. There is no separate archive: the API has no archive state distinct
+  from `read_at`.
+- Each row has one toggle that names its effect (Mark as read / Mark as
+  unread). Opening a row that leads somewhere also marks it read; rows with
+  nothing to open keep their state. Accepting or declining a workspace invite marks
+  it read.
+- Toggles are optimistic. A failed request restores only rows that still show
+  the optimistic value and only in lists that have not received newer server
+  data since, and counts that still show the optimistic value. Polling and
+  window-focus refreshes pause while a change is in flight, and overlapping
+  changes reconcile once, after the last one settles, across every scope they
+  touched.
+
+## Scope
+
+- Inside a workspace route the popover lists that workspace. **All workspaces**
+  switches the list, counts and Mark all read to every notification the
+  account can access. Outside a workspace route it is always account-wide.
+- Optimistic updates and refreshes touch only caches that can contain the
+  changed workspace, and only for the signed-in account.
+
+## Mark all read
+
+- **Mark all read** applies to the current scope only and zeroes the matching
+  counts at once; a failed request restores the rows and counts that still
+  show the optimistic value.
+- `PATCH /api/v1/notifications` with `{ action: 'mark_all_read' | 'mark_all_unread', wsId?, scope? }`
+  returns `{ success }`. Each route keeps its own authentication and every
+  statement is bounded by the account's notification access filter. Clients
+  call it through `@tuturuuu/internal-api/notification-popover`, never raw
+  `fetch`.
+- Undo is not offered. The client shows Undo only when the server returns
+  changed ids with per-row read revisions, which the current route does not.
+
+## Grouping
+
+- **Needs action** (unresolved workspace invites) stays on top until resolved.
+- Then **Today**, **Yesterday** and **Earlier** by the viewer's local day.
+- Repeated events of one type on one entity within a section collapse into one
+  row with an expandable count. A stack is unread while any member is unread,
+  and marking it read marks every unread member.
+
+## Placement, focus and touch
+
+- A bell in the shared sidebar opens beside the rail (right, end-aligned) and
+  never covers it; on narrow screens, where the sidebar is a sheet, it opens
+  above the footer. A navbar bell opens below, end-aligned. Hosts can override
+  with `side`/`align`.
+- Opening focuses the first row once rows load; Escape closes and returns focus
+  to the bell. After Mark all read, focus stays in the dialog.
+- Rows use roving focus: ↑/↓, Home and End move; **E** toggles read state;
+  Enter opens. Tab reaches row controls. Read changes are announced in a polite
+  live region.
+- Every read toggle is visible and labelled, with a 44px hit area around a
+  32px visual. Other controls grow to 44px on coarse pointers.
+- The header, filters and footer stay fixed; only the list scrolls, with sticky
+  section labels. Height is clamped to the space available next to the bell.
+
+## Loading and freshness
+
+- A closed bell runs only the unread-count query. The list query and the panel
+  code load when the bell is hovered or focused (intent prefetch of the first
+  Unread page) or opened.
+- Lists page by 20 rows as the end scrolls into view. Reopening refetches only
+  the first page of a list closed with more pages loaded.
+- Freshness uses the existing per-user shared refresh registry (one interval per
+  user per document, paused while hidden or offline). It skips a refresh while a
+  read change is pending. Apps without the registry keep their explicit polling
+  interval.
+
+## States
+
+Loading skeleton, first-load error with Retry, refresh failure banner that keeps
+earlier results, loading more, load-more error with Retry, all caught up (with
+Show all) and no notifications yet.
+
+## Regression coverage
+
+- `packages/users-core/src/lib/notifications/bulk-read-state.test.ts`
+- `apps/web/src/app/api/v1/notifications/list-notifications.test.ts`
+- `packages/internal-api/src/notification-popover.test.ts`
+- `packages/ui/src/components/ui/custom/notification-placement.test.tsx`
+- `apps/web/e2e/notification-popover-layout.fixture.ts` (390/728/1024/1440,
+  sidebar and navbar, EN/VI; fixture in `packages/ui/fixtures/notification-popover`)
+- `packages/ui/src/hooks/__tests__/notification-cache.test.ts`
+- `packages/ui/src/hooks/__tests__/use-notifications-mutations.test.tsx`
+- `packages/ui/src/components/ui/custom/__tests__/notification-popover.test.tsx`
+- `packages/ui/src/components/ui/custom/notification-grouping.test.ts`
+- `packages/ui/src/components/ui/custom/notification-card.test.tsx`
+- `packages/satellite/src/components/notification-popover.test.tsx`

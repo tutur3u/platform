@@ -41,21 +41,13 @@ describe('satellite freshness policy', () => {
             <SatelliteNotificationPopover
               userId="actor"
               pollIntervalMs={pollIntervalMs}
-              noNotificationsText="Empty"
-              notificationsText="Notifications"
-              viewAllText="View all"
-              markAsReadText="Read"
-              markAsUnreadText="Unread"
             />
           </NotificationRuntime>
         </QueryClientProvider>
       );
       expect(unread.mock.calls[0]?.[1].refetchInterval).toBe(expected);
-      expect(
-        list.mock.calls.every(
-          ([options]) => options.refetchInterval === expected
-        )
-      ).toBe(true);
+      // A closed bell runs only the unread count query.
+      expect(list).not.toHaveBeenCalled();
     }
   );
 });

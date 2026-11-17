@@ -1,7 +1,8 @@
 import { useQueryClient } from '@tanstack/react-query';
+import { notificationLabelsFromMessages } from '@tuturuuu/ui/custom/notification-labels';
 import { NotificationRuntime } from '@tuturuuu/ui/custom/notification-runtime';
 import SatelliteNotificationPopover from '@tuturuuu/ui/custom/satellite-notification-popover';
-import type { AnchorHTMLAttributes } from 'react';
+import { type AnchorHTMLAttributes, useMemo } from 'react';
 import { useCopy } from './i18n';
 
 function CentralLink({
@@ -12,7 +13,7 @@ function CentralLink({
 }
 export function ColabNotifications({ userId }: { userId: string }) {
   const copy = useCopy();
-  const c = copy.notifications;
+  const labels = useMemo(() => notificationLabelsFromMessages(copy), [copy]);
   const cache = useQueryClient();
   return (
     <NotificationRuntime
@@ -34,21 +35,7 @@ export function ColabNotifications({ userId }: { userId: string }) {
         userId={userId}
         pollIntervalMs={30_000}
         webAppUrl="https://tuturuuu.com"
-        notificationsText={c.notifications}
-        noNotificationsText={c['no-notifications']}
-        viewAllText={c['view-all']}
-        markAsReadText={c['mark-as-read']}
-        markAsUnreadText={c['mark-as-unread']}
-        inboxText={c.inbox}
-        archiveText={c.archive}
-        archiveAllText={c['archive-all']}
-        emptyArchiveText={c['empty-archive']}
-        loadingMoreText={c['loading-more']}
-        retryText={copy.common.retry}
-        acceptText={c.accept}
-        declineText={c.decline}
-        acceptedText={copy['workspace-invitation']['accept-success']}
-        declinedText={copy['workspace-invitation']['decline-success']}
+        labels={labels}
       />
     </NotificationRuntime>
   );

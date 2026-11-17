@@ -26,12 +26,21 @@ describe('NotificationPopoverTriggerButton', () => {
   it('enables the trigger after hydration and opens the popover on the first click', async () => {
     render(<TriggerHarness unreadCount={1} />);
 
-    const trigger = screen.getByRole('button', { name: 'Notifications' });
+    const trigger = screen.getByRole('button', {
+      name: 'Notifications, 1 unread',
+    });
     await waitFor(() => expect(trigger).toBeEnabled());
     fireEvent.click(trigger);
 
     await waitFor(() =>
       expect(trigger).toHaveAttribute('aria-expanded', 'true')
     );
+  });
+
+  it('names the bell without a count when nothing is unread', () => {
+    render(<TriggerHarness />);
+    expect(
+      screen.getByRole('button', { name: 'Notifications' })
+    ).toBeInTheDocument();
   });
 });

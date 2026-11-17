@@ -26,3 +26,21 @@ export function notificationDisplayText(
     description: localized?.description ?? notification.description,
   };
 }
+
+/** Code text for the codes an app bundle translates; others keep stored text. */
+export function notificationCodeTextFrom(t: {
+  (key: any): string;
+  has(key: any): boolean;
+}): NotificationCodeText {
+  return Object.fromEntries(
+    LOCALIZED_NOTIFICATION_CODES.filter((code) =>
+      t.has(`notifications.codes.${code}.title`)
+    ).map((code) => [
+      code,
+      {
+        title: t(`notifications.codes.${code}.title`),
+        description: t(`notifications.codes.${code}.description`),
+      },
+    ])
+  );
+}

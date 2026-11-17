@@ -1,7 +1,10 @@
 'use client';
 
+import { notificationCodeTextFrom } from '@tuturuuu/ui/custom/notification-code-text';
+import { notificationLabelsFrom } from '@tuturuuu/ui/custom/notification-labels';
 import NotificationPopoverClient from '@tuturuuu/ui/custom/notification-popover-client';
 import { useTranslations } from 'next-intl';
+import { useMemo } from 'react';
 
 /**
  * Client counterpart of `notification-popover` for satellites rendered
@@ -16,25 +19,13 @@ export default function NotificationPopoverView({
   webAppUrl: string;
 }) {
   const t = useTranslations();
+  const labels = useMemo(() => notificationLabelsFrom(t), [t]);
+  const codeText = useMemo(() => notificationCodeTextFrom(t), [t]);
   return (
     <NotificationPopoverClient
       userId={userId}
-      noNotificationsText={t('notifications.no-notifications')}
-      notificationsText={t('notifications.notifications')}
-      viewAllText={t('notifications.view-all')}
-      markAsReadText={t('notifications.mark-as-read')}
-      markAsUnreadText={t('notifications.mark-as-unread')}
-      updateErrorText={t('notifications.update-error')}
-      inboxText={t('notifications.inbox')}
-      archiveText={t('notifications.archive')}
-      archiveAllText={t('notifications.archive-all')}
-      emptyArchiveText={t('notifications.empty-archive')}
-      loadingMoreText={t('notifications.loading-more')}
-      retryText={t('common.retry')}
-      acceptText={t('notifications.accept')}
-      declineText={t('notifications.decline')}
-      acceptedText={t('workspace-invitation.accept-success')}
-      declinedText={t('workspace-invitation.decline-success')}
+      labels={labels}
+      codeText={codeText}
       webAppUrl={webAppUrl}
     />
   );

@@ -10,21 +10,38 @@ vi.mock('../auth', () => ({
 }));
 
 // Models an app bundle that ships the calendar notification keys.
+// Models an app bundle that ships the calendar code keys and part of the
+// popover labels, with ICU placeholders kept raw.
+const messages = vi.hoisted<Record<string, string>>(() => ({
+  'notifications.unread': 'Chưa đọc',
+  'notifications.popover-unread-count': '{count} chưa đọc',
+}));
 vi.mock('next-intl/server', () => ({
   getTranslations: vi.fn(async () =>
     Object.assign((key: string) => key, {
       has: (key: string) =>
+        key in messages ||
         key.startsWith('notifications.codes.calendar_reconnect_required.'),
+      raw: (key: string) => messages[key] ?? key,
     })
   ),
 }));
 
 vi.mock('@tuturuuu/ui/custom/notification-popover-client', () => ({
-  default: ({ userId, codeText }: { userId?: string; codeText?: unknown }) => (
+  default: ({
+    userId,
+    codeText,
+    labels,
+  }: {
+    userId?: string;
+    codeText?: unknown;
+    labels?: unknown;
+  }) => (
     <div
       data-testid="notification-popover"
       data-user-id={userId}
       data-code-text={JSON.stringify(codeText)}
+      data-labels={JSON.stringify(labels)}
     />
   ),
 }));
@@ -73,5 +90,17 @@ describe('NotificationPopover', () => {
           'notifications.codes.calendar_reconnect_required.description',
       },
     });
+  });
+
+  it('passes bundle labels raw and falls back to English for missing keys', async () => {
+    render(await NotificationPopover({ userId: 'user-1' }));
+
+    const labels = JSON.parse(
+      screen.getByTestId('notification-popover').getAttribute('data-labels') ??
+        '{}'
+    );
+    expect(labels.unread).toBe('Chưa đọc');
+    expect(labels.unreadCount).toBe('{count} chưa đọc');
+    expect(labels.markAllRead).toBe('Mark all as read');
   });
 });

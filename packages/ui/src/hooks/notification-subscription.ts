@@ -1,5 +1,6 @@
 import { type QueryClient, useQueryClient } from '@tanstack/react-query';
 import { useEffect } from 'react';
+import { NOTIFICATION_MUTATION_KEY } from './notification-cache';
 
 export const NOTIFICATION_REFRESH_INTERVAL_MS = 120_000;
 
@@ -15,7 +16,11 @@ function invalidateVisibleNotifications(entry: NotificationSubscriptionEntry) {
   if (document.visibilityState === 'hidden' || navigator.onLine === false)
     return;
   for (const queryClient of entry.queryClients.keys()) {
-    // Only active queries refetch; closed inboxes remain lazy.
+    // A pending read change reconciles its own scope when it settles; an
+    // earlier refresh would briefly show the pre-change server state.
+    if (queryClient.isMutating({ mutationKey: NOTIFICATION_MUTATION_KEY }) > 0)
+      continue;
+    // Only active queries refetch; closed lists remain lazy.
     void queryClient.invalidateQueries({ queryKey: ['notifications'] });
   }
 }

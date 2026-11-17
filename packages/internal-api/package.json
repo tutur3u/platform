@@ -485,6 +485,16 @@
       "types": "./dist/calendar-settings-server.d.ts",
       "import": "./dist/calendar-settings-server.js",
       "require": "./dist/calendar-settings-server.js"
+    },
+    "./notification-limits": {
+      "types": "./dist/notification-limits.d.ts",
+      "import": "./dist/notification-limits.js",
+      "require": "./dist/notification-limits.js"
+    },
+    "./notification-popover": {
+      "types": "./dist/notification-popover.d.ts",
+      "import": "./dist/notification-popover.js",
+      "require": "./dist/notification-popover.js"
     }
   },
   "devDependencies": {

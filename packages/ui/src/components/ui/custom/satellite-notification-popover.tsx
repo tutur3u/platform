@@ -1,283 +1,198 @@
 'use client';
 
 import { useQueryClient } from '@tanstack/react-query';
-import { Archive, ChevronRight, Inbox, Loader2 } from '@tuturuuu/icons';
-import { Button } from '@tuturuuu/ui/button';
 import {
-  dedupeNotifications,
-  useInfiniteNotifications,
-  useMarkAllAsRead,
+  notificationListOptions,
   useNotificationSubscription,
   useUnreadCount,
-  useUpdateNotification,
 } from '@tuturuuu/ui/hooks/use-notifications';
 import { Popover, PopoverContent } from '@tuturuuu/ui/popover';
-import { toast } from '@tuturuuu/ui/sonner';
-import { cn } from '@tuturuuu/utils/format';
-import dayjs from 'dayjs';
-import relativeTime from 'dayjs/plugin/relativeTime';
-import { useState } from 'react';
+import { Skeleton } from '@tuturuuu/ui/skeleton';
+import {
+  lazy,
+  Suspense,
+  useCallback,
+  useId,
+  useMemo,
+  useRef,
+  useState,
+} from 'react';
+import {
+  actorLists,
+  trimClosedList,
+} from '@tuturuuu/ui/hooks/notification-cache';
 import type { NotificationCodeText } from './notification-code-text';
-import { NotificationList } from './notification-list';
+import {
+  DEFAULT_NOTIFICATION_LABELS,
+  type NotificationLabels,
+} from './notification-labels';
+import {
+  type NotificationAlign,
+  type NotificationPlacement,
+  type NotificationSide,
+  resolveNotificationPlacement,
+} from './notification-placement';
 import { NotificationPopoverTriggerButton } from './notification-popover-trigger';
 import { useNotificationRuntime } from './notification-runtime';
 
-dayjs.extend(relativeTime);
 const NOTIFICATION_POLL_INTERVAL_MS = 2 * 60_000;
-type TabType = 'inbox' | 'archive';
+const PAGE_SIZE = 20;
+
+// The panel (list, rows, grouping, invite actions) is its own chunk; a closed
+// bell ships only the trigger and the unread count query.
+const loadPanel = () => import('@tuturuuu/ui/custom/notification-panel');
+const NotificationPanel = lazy(() =>
+  loadPanel().then((module) => ({ default: module.NotificationPanel }))
+);
 
 export interface NotificationPopoverClientProps {
   userId?: string;
   /** Optional app-specific freshness policy for non-subscription consumers. */
   pollIntervalMs?: number;
-  noNotificationsText: string;
-  notificationsText: string;
-  viewAllText: string;
-  markAsReadText: string;
-  markAsUnreadText: string;
-  updateErrorText?: string;
-  inboxText?: string;
-  archiveText?: string;
-  archiveAllText?: string;
-  emptyArchiveText?: string;
-  loadingMoreText?: string;
-  retryText?: string;
-  acceptText?: string;
-  declineText?: string;
-  acceptedText?: string;
-  declinedText?: string;
+  labels?: Partial<NotificationLabels>;
   /** Localized text for notifications rendered by code. */
   codeText?: NotificationCodeText;
-  /** Base URL for external redirect (e.g. 'https://tuturuuu.com'). When set, "View All" links to {webAppUrl}/{wsId}/notifications. */
+  /** Base URL of the web app; "View all" links to {webAppUrl}/{wsId}/notifications. */
   webAppUrl?: string;
+  /** Overrides the placement resolved from where the bell is mounted. */
+  side?: NotificationSide;
+  align?: NotificationAlign;
 }
 
-// Workspace identifier validation regex
 const UUID_REGEX =
   /^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}$/;
 const SPECIAL_WORKSPACE_SLUGS = new Set(['personal', 'internal']);
 
-function isValidWorkspaceIdentifier(value: unknown): value is string {
-  return (
-    typeof value === 'string' &&
-    (UUID_REGEX.test(value) || SPECIAL_WORKSPACE_SLUGS.has(value))
-  );
-}
-
-function isValidWorkspaceFilterId(value: unknown): value is string {
-  return typeof value === 'string' && UUID_REGEX.test(value);
-}
-
 export default function SatelliteNotificationPopover({
   userId,
   pollIntervalMs = NOTIFICATION_POLL_INTERVAL_MS,
-  noNotificationsText,
-  notificationsText,
-  viewAllText,
-  markAsReadText,
-  markAsUnreadText,
-  updateErrorText = 'Failed to update notification',
-  inboxText = 'Inbox',
-  archiveText = 'Archive',
-  archiveAllText = 'Archive all',
-  emptyArchiveText = 'No archived notifications yet.',
-  loadingMoreText = 'Loading more...',
-  retryText = 'Retry',
-  acceptText = 'Accept',
-  declineText = 'Decline',
-  acceptedText = 'Joined',
-  declinedText = 'Declined',
+  labels: labelOverrides,
   codeText,
   webAppUrl,
+  side,
+  align,
 }: NotificationPopoverClientProps) {
   const [open, setOpen] = useState(false);
-  const [activeTab, setActiveTab] = useState<TabType>('inbox');
-  const { params, Link, realtime } = useNotificationRuntime();
+  const [placement, setPlacement] = useState<NotificationPlacement>({
+    side: 'bottom',
+    align: 'end',
+  });
+  const { params, realtime, apiOptions } = useNotificationRuntime();
+  const triggerRef = useRef<HTMLButtonElement>(null);
   const queryClient = useQueryClient();
+  const titleId = useId();
+  const contentRef = useRef<HTMLDivElement>(null);
+  const labels = useStableLabels(labelOverrides);
 
-  const workspaceIdParam =
-    typeof params.wsId === 'string' ? params.wsId : undefined;
-  const wsIdForFiltering = isValidWorkspaceFilterId(workspaceIdParam)
-    ? workspaceIdParam
-    : undefined;
-  const wsIdForTaskContext = isValidWorkspaceIdentifier(workspaceIdParam)
-    ? workspaceIdParam
-    : undefined;
+  const param = typeof params.wsId === 'string' ? params.wsId : undefined;
+  const routeWsId = param && UUID_REGEX.test(param) ? param : undefined;
+  const taskWsId =
+    param && (UUID_REGEX.test(param) || SPECIAL_WORKSPACE_SLUGS.has(param))
+      ? param
+      : undefined;
+  const refetchInterval = realtime ? undefined : pollIntervalMs;
 
-  // Accurate unread count from dedicated endpoint
-  const { data: unreadCount = 0 } = useUnreadCount(wsIdForFiltering, {
+  const { data: unreadCount = 0 } = useUnreadCount(routeWsId, {
     cacheScope: userId,
     enabled: Boolean(userId),
-    refetchInterval: realtime ? undefined : pollIntervalMs,
+    refetchInterval,
+    apiOptions,
   });
+  useNotificationSubscription(routeWsId || '', realtime ? userId || '' : '');
 
-  // Infinite scroll for inbox (unread) and archive (read)
-  const inboxQuery = useInfiniteNotifications({
-    cacheScope: userId,
-    wsId: wsIdForFiltering,
-    unreadOnly: true,
-    pageSize: 15,
-    refetchInterval: realtime ? undefined : pollIntervalMs,
-    enabled: Boolean(userId) && open && activeTab === 'inbox',
-  });
+  const onIntent = useCallback(() => {
+    if (!userId) return;
+    void loadPanel();
+    void queryClient.prefetchInfiniteQuery(
+      notificationListOptions({
+        cacheScope: userId,
+        wsId: routeWsId,
+        unreadOnly: true,
+        pageSize: PAGE_SIZE,
+        apiOptions,
+      })
+    );
+  }, [queryClient, userId, routeWsId, apiOptions]);
 
-  const archiveQuery = useInfiniteNotifications({
-    cacheScope: userId,
-    wsId: wsIdForFiltering,
-    readOnly: true,
-    pageSize: 15,
-    refetchInterval: realtime ? undefined : pollIntervalMs,
-    enabled: Boolean(userId) && open && activeTab === 'archive',
-  });
-
-  const markAllAsRead = useMarkAllAsRead();
-  const updateNotification = useUpdateNotification();
-
-  // Subscribe to realtime updates
-  useNotificationSubscription(
-    wsIdForFiltering || '',
-    realtime ? userId || '' : ''
-  );
-
-  const activeQuery = activeTab === 'inbox' ? inboxQuery : archiveQuery;
-  const allNotifications = dedupeNotifications(
-    activeQuery.data?.pages.flatMap((p) => p.notifications) ?? []
-  );
-  const hasNotifications = allNotifications.length > 0;
-
-  // When webAppUrl is set, link to the external web app's notifications page
-  const baseUrl = webAppUrl ?? '';
-  const notificationsPageUrl = params.wsId
-    ? `${baseUrl}/${params.wsId}/notifications`
-    : `${baseUrl}/notifications`;
-
-  const handleMarkAsRead = async (id: string, isUnread: boolean) => {
-    try {
-      await updateNotification.mutateAsync({ id, read: isUnread });
-    } catch (error) {
-      console.error('Failed to update notification:', error);
-      toast.error(updateErrorText);
+  const onOpenChange = (next: boolean) => {
+    if (next) {
+      setPlacement(
+        resolveNotificationPlacement(triggerRef.current, window.innerWidth)
+      );
     }
+    if (next && userId) {
+      // Closed lists reopen on their first page instead of refetching every
+      // page they had loaded.
+      for (const { queryKey } of actorLists(queryClient, userId)) {
+        const observers = queryClient
+          .getQueryCache()
+          .find({ queryKey, exact: true })
+          ?.getObserversCount();
+        if (!observers) trimClosedList(queryClient, queryKey);
+      }
+    }
+    setOpen(next);
   };
 
-  const handleArchiveAll = async () => {
-    try {
-      await markAllAsRead.mutateAsync(wsIdForFiltering);
-      toast.success('All notifications archived');
-    } catch (error) {
-      console.error('Failed to archive all:', error);
-      toast.error('Failed to archive notifications');
-    }
-  };
+  if (!userId) return null;
 
-  if (!userId) {
-    return null;
-  }
+  const base = webAppUrl ?? '';
+  const pageUrl = param
+    ? `${base}/${param}/notifications`
+    : `${base}/notifications`;
 
   return (
-    <Popover open={open} onOpenChange={setOpen}>
+    <Popover open={open} onOpenChange={onOpenChange}>
       <NotificationPopoverTriggerButton
-        notificationsText={notificationsText}
+        notificationsText={labels.notifications}
         unreadCount={unreadCount}
+        unreadCountText={labels.unreadCount}
+        onIntent={onIntent}
+        triggerRef={triggerRef}
       />
       <PopoverContent
-        className="w-100 max-w-[calc(100vw-1rem)] overflow-hidden rounded-xl border p-0 shadow-xl"
-        align="end"
+        ref={contentRef}
+        tabIndex={-1}
+        side={side ?? placement.side}
+        align={align ?? placement.align}
+        aria-labelledby={titleId}
+        collisionPadding={12}
+        onOpenAutoFocus={(event) => {
+          event.preventDefault();
+          contentRef.current?.focus();
+        }}
+        className="flex max-h-[min(600px,calc(var(--radix-popover-content-available-height)-12px))] w-100 max-w-[calc(100vw-1rem)] flex-col overflow-hidden p-0 shadow-lg [--popover-padding:0]"
       >
-        {/* Header */}
-        <div className="flex items-center justify-between border-b bg-background px-4 py-3">
-          <h3 className="font-semibold text-base">{notificationsText}</h3>
-          <div className="flex items-center gap-2">
-            {unreadCount > 0 && (
-              <Button
-                variant="ghost"
-                size="sm"
-                className="h-7 gap-1 text-foreground/60 text-xs hover:text-foreground"
-                onClick={handleArchiveAll}
-                disabled={markAllAsRead.isPending}
-              >
-                {markAllAsRead.isPending ? (
-                  <Loader2 className="h-3 w-3 animate-spin" />
-                ) : (
-                  <Archive className="h-3 w-3" />
-                )}
-                {archiveAllText}
-              </Button>
-            )}
-          </div>
-        </div>
-
-        {/* Tabs */}
-        <div className="flex border-b bg-background">
-          <button
-            type="button"
-            onClick={() => setActiveTab('inbox')}
-            className={cn(
-              'flex flex-1 items-center justify-center gap-1.5 px-4 py-2.5 font-medium text-sm transition-colors',
-              activeTab === 'inbox'
-                ? 'border-primary border-b-2 text-primary'
-                : 'text-foreground/50 hover:text-foreground/80'
-            )}
-          >
-            <Inbox className="h-3.5 w-3.5" />
-            {inboxText}
-            {unreadCount > 0 && (
-              <span className="rounded-full bg-dynamic-red/10 px-1.5 py-0.5 font-semibold text-[10px] text-dynamic-red leading-none">
-                {unreadCount > 99 ? '99+' : unreadCount}
-              </span>
-            )}
-          </button>
-          <button
-            type="button"
-            onClick={() => setActiveTab('archive')}
-            className={cn(
-              'flex flex-1 items-center justify-center gap-1.5 px-4 py-2.5 font-medium text-sm transition-colors',
-              activeTab === 'archive'
-                ? 'border-primary border-b-2 text-primary'
-                : 'text-foreground/50 hover:text-foreground/80'
-            )}
-          >
-            <Archive className="h-3.5 w-3.5" />
-            {archiveText}
-          </button>
-        </div>
-
-        {/* Notification List with Infinite Scroll — key forces remount on tab switch to reset scroll */}
-        <NotificationList
-          key={activeTab}
-          query={activeQuery}
-          notifications={allNotifications}
-          hasNotifications={hasNotifications}
-          activeTab={activeTab}
-          wsId={wsIdForTaskContext}
-          noNotificationsText={noNotificationsText}
-          emptyArchiveText={emptyArchiveText}
-          loadingMoreText={loadingMoreText}
-          retryText={retryText}
-          acceptText={acceptText}
-          declineText={declineText}
-          acceptedText={acceptedText}
-          declinedText={declinedText}
-          codeText={codeText}
-          markAsReadText={markAsReadText}
-          markAsUnreadText={markAsUnreadText}
-          onMarkAsRead={handleMarkAsRead}
-          queryClient={queryClient}
-          onActionComplete={() => setOpen(false)}
-        />
-
-        {/* Footer with View All */}
-        <div className="border-t bg-background">
-          <Link
-            href={notificationsPageUrl}
-            onClick={() => setOpen(false)}
-            className="flex items-center justify-center gap-1.5 px-4 py-2.5 font-medium text-sm transition-colors hover:rounded-b-xl hover:bg-foreground/5"
-          >
-            {viewAllText}
-            <ChevronRight className="h-4 w-4" />
-          </Link>
-        </div>
+        <Suspense
+          fallback={
+            <div className="space-y-2 p-4" aria-busy>
+              <Skeleton className="h-4 w-32" />
+              <Skeleton className="h-16 w-full" />
+            </div>
+          }
+        >
+          <NotificationPanel
+            userId={userId}
+            routeWsId={routeWsId}
+            taskWsId={taskWsId}
+            labels={labels}
+            codeText={codeText}
+            pageUrl={pageUrl}
+            refetchInterval={refetchInterval}
+            apiOptions={apiOptions}
+            titleId={titleId}
+            onClose={() => setOpen(false)}
+          />
+        </Suspense>
       </PopoverContent>
     </Popover>
+  );
+}
+
+/** Merged labels keep one identity per host label object so rows stay memoized. */
+function useStableLabels(overrides?: Partial<NotificationLabels>) {
+  return useMemo<NotificationLabels>(
+    () => ({ ...DEFAULT_NOTIFICATION_LABELS, ...overrides }),
+    [overrides]
   );
 }

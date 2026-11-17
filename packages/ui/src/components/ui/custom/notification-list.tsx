@@ -1,180 +1,206 @@
 'use client';
-import { Archive, Bell, Inbox, Loader2, RotateCcw } from '@tuturuuu/icons';
+
+import { CircleAlert, Loader2, RotateCcw } from '@tuturuuu/icons';
 import { Button } from '@tuturuuu/ui/button';
 import type {
-  Notification,
+  NotificationFilter,
   useInfiniteNotifications,
 } from '@tuturuuu/ui/hooks/use-notifications';
-import { useCallback, useEffect, useRef } from 'react';
+import { useCallback, useId, useMemo } from 'react';
 import { NotificationCard } from './notification-card';
+import { useNotificationOpen } from './notification-card-actions';
 import type { NotificationCodeText } from './notification-code-text';
+import {
+  groupNotifications,
+  type NotificationStack,
+} from './notification-grouping';
+import type { NotificationLabels } from './notification-labels';
+import { NotificationListState } from './notification-list-state';
+import { useNotificationRoving } from './notification-roving';
 
-type TabType = 'inbox' | 'archive';
+export type ListQuery = ReturnType<typeof useInfiniteNotifications>;
+
 export function NotificationList({
   query,
-  notifications,
-  hasNotifications,
-  activeTab,
-  wsId,
-  noNotificationsText,
-  emptyArchiveText,
-  loadingMoreText,
-  retryText,
-  acceptText,
-  declineText,
-  acceptedText,
-  declinedText,
+  filter,
+  labels,
   codeText,
-  markAsReadText,
-  markAsUnreadText,
-  onMarkAsRead,
-  queryClient,
-  onActionComplete,
+  routeWsId,
+  onToggle,
+  onShowAll,
+  onNavigate,
+  autoFocusFirst = true,
 }: {
-  query: ReturnType<typeof useInfiniteNotifications>;
-  notifications: Notification[];
-  hasNotifications: boolean;
-  activeTab: TabType;
-  wsId?: string;
-  noNotificationsText: string;
-  emptyArchiveText: string;
-  loadingMoreText: string;
-  retryText: string;
-  acceptText: string;
-  declineText: string;
-  acceptedText: string;
-  declinedText: string;
+  query: ListQuery;
+  filter: NotificationFilter;
+  labels: NotificationLabels;
   codeText?: NotificationCodeText;
-  markAsReadText: string;
-  markAsUnreadText: string;
-  onMarkAsRead: (id: string, isUnread: boolean) => void;
-  queryClient: any;
-  onActionComplete: () => void;
+  routeWsId?: string;
+  onToggle: (stack: NotificationStack, read: boolean) => void;
+  onShowAll: () => void;
+  onNavigate: () => void;
+  /** Focus the first row when rows first appear while the dialog holds focus. */
+  autoFocusFirst?: boolean;
 }) {
-  const scrollRef = useRef<HTMLDivElement>(null);
-  const sentinelRef = useRef<HTMLDivElement>(null);
+  const sections = useMemo(
+    () =>
+      groupNotifications(
+        query.data?.pages.flatMap((page) => page.notifications) ?? []
+      ),
+    [query.data]
+  );
+  const stacks = useMemo(
+    () => sections.flatMap((section) => section.stacks),
+    [sections]
+  );
+  const rowIds = useMemo(() => stacks.map((s) => s.lead.id), [stacks]);
+  const byId = useMemo(
+    () => new Map(stacks.map((s) => [s.lead.id, s])),
+    [stacks]
+  );
+  const { target, open, opening } = useNotificationOpen(routeWsId);
+  const idPrefix = useId();
 
-  // Infinite scroll via IntersectionObserver
-  const handleIntersect = useCallback(
-    (entries: IntersectionObserverEntry[]) => {
-      const entry = entries[0];
-      if (
-        entry?.isIntersecting &&
-        query.hasNextPage &&
-        !query.isFetchingNextPage
-      ) {
-        query.fetchNextPage();
-      }
+  const toggle = useCallback(
+    (stack: NotificationStack) => onToggle(stack, stack.unread),
+    [onToggle]
+  );
+  const openStack = useCallback(
+    async (stack: NotificationStack) => {
+      // Only a row that opens something is marked read; a pending invite
+      // keeps its Accept/Decline in view.
+      if (!target(stack.lead)) return;
+      if (stack.unread) onToggle(stack, true);
+      if (await open(stack.lead)) onNavigate();
     },
-    [query]
+    [onToggle, open, onNavigate, target]
+  );
+  const resolveInvite = useCallback(
+    (stack: NotificationStack) => {
+      if (stack.unread) onToggle(stack, true);
+      onNavigate();
+    },
+    [onToggle, onNavigate]
+  );
+  const roving = useNotificationRoving({
+    rowIds,
+    onToggle: (id) => {
+      const stack = byId.get(id);
+      if (!stack) return;
+      // In Unread, a read row leaves the list; keep keyboard focus in place.
+      if (filter === 'unread' && stack.unread) roving.focusNeighbor(id);
+      toggle(stack);
+    },
+    onOpen: (id) => {
+      const stack = byId.get(id);
+      if (stack) void openStack(stack);
+    },
+  });
+
+  const attachRows = useCallback(
+    (node: HTMLDivElement | null) => {
+      roving.containerRef.current = node;
+      if (!node || !autoFocusFirst) return;
+      const dialog = node.closest('[role="dialog"]');
+      if (dialog && document.activeElement === dialog)
+        node.querySelector<HTMLElement>('[data-notification-row]')?.focus();
+    },
+    [autoFocusFirst]
   );
 
-  useEffect(() => {
-    const sentinel = sentinelRef.current;
-    if (!sentinel) return;
+  // Loads the next page when the end of the list scrolls into view.
+  const sentinel = useCallback(
+    (node: HTMLDivElement | null) => {
+      if (!node || !query.hasNextPage) return;
+      const observer = new IntersectionObserver(
+        ([entry]) => {
+          if (entry?.isIntersecting && !query.isFetchingNextPage)
+            void query.fetchNextPage();
+        },
+        {
+          root: node.closest('[data-notification-scroll]'),
+          rootMargin: '120px',
+        }
+      );
+      observer.observe(node);
+      return () => observer.disconnect();
+    },
+    [query.hasNextPage, query.isFetchingNextPage, query.fetchNextPage]
+  );
 
-    const observer = new IntersectionObserver(handleIntersect, {
-      root: scrollRef.current,
-      rootMargin: '100px',
-    });
-
-    observer.observe(sentinel);
-    return () => observer.disconnect();
-  }, [handleIntersect]);
-
-  const emptyText =
-    activeTab === 'inbox' ? noNotificationsText : emptyArchiveText;
-
-  if (query.error) {
+  if (!query.data || stacks.length === 0) {
     return (
-      <div className="flex h-90 flex-col items-center justify-center text-center">
-        <Bell className="mb-3 h-10 w-10 text-dynamic-red/30" />
-        <p className="text-foreground/60 text-sm">
-          Failed to load notifications
-        </p>
-        <p className="mt-1 text-foreground/40 text-xs">
-          {query.error instanceof Error ? query.error.message : 'Unknown error'}
-        </p>
-        <Button
-          className="mt-3"
-          disabled={query.isFetching}
-          onClick={() => query.refetch()}
-          size="sm"
-          type="button"
-          variant="outline"
-        >
-          {query.isFetching ? (
-            <Loader2 className="mr-1.5 h-3.5 w-3.5 animate-spin" />
-          ) : (
-            <RotateCcw className="mr-1.5 h-3.5 w-3.5" />
-          )}
-          {retryText}
-        </Button>
-      </div>
-    );
-  }
-
-  if (query.isLoading) {
-    return (
-      <div className="space-y-2 p-2">
-        {[...Array(3)].map((_, i) => (
-          <div key={i} className="rounded-xl border bg-foreground/2 p-3">
-            <div className="flex items-start gap-3">
-              <div className="h-8 w-8 flex-none animate-pulse rounded-full bg-foreground/10" />
-              <div className="min-w-0 flex-1 space-y-2">
-                <div className="h-3 w-24 animate-pulse rounded bg-foreground/10" />
-                <div className="h-4 w-full animate-pulse rounded bg-foreground/10" />
-                <div className="h-3 w-3/4 animate-pulse rounded bg-foreground/10" />
-              </div>
-            </div>
-          </div>
-        ))}
-      </div>
-    );
-  }
-
-  if (!hasNotifications) {
-    return (
-      <div className="flex h-90 flex-col items-center justify-center text-center">
-        {activeTab === 'inbox' ? (
-          <Inbox className="mb-3 h-10 w-10 text-foreground/20" />
-        ) : (
-          <Archive className="mb-3 h-10 w-10 text-foreground/20" />
-        )}
-        <p className="text-foreground/60 text-sm">{emptyText}</p>
-      </div>
+      <NotificationListState
+        query={query}
+        filter={filter}
+        labels={labels}
+        onShowAll={onShowAll}
+      />
     );
   }
 
   return (
-    <div ref={scrollRef} className="max-h-90 overflow-y-auto">
-      <div className="space-y-1.5 p-2">
-        {notifications.map((notification) => (
-          <NotificationCard
-            key={notification.id}
-            notification={notification}
-            wsId={wsId}
-            onMarkAsRead={onMarkAsRead}
-            markAsReadText={markAsReadText}
-            markAsUnreadText={markAsUnreadText}
-            queryClient={queryClient}
-            onActionComplete={onActionComplete}
-            acceptText={acceptText}
-            declineText={declineText}
-            acceptedText={acceptedText}
-            declinedText={declinedText}
-            codeText={codeText}
-          />
-        ))}
-
-        {/* Sentinel for infinite scroll */}
-        <div ref={sentinelRef} className="h-1" />
-
-        {query.isFetchingNextPage && (
-          <div className="flex items-center justify-center gap-2 py-3 text-foreground/40 text-xs">
-            <Loader2 className="h-3 w-3 animate-spin" />
-            {loadingMoreText}
-          </div>
+    <div ref={attachRows} onKeyDown={roving.onKeyDown}>
+      {query.isRefetchError && (
+        <div
+          role="status"
+          className="mx-3 mt-2 flex items-center gap-2 rounded-lg border border-dynamic-red/40 px-2.5 py-1.5 text-xs"
+        >
+          <CircleAlert aria-hidden className="size-3.5 text-dynamic-red" />
+          <span className="flex-1">{labels.refreshError}</span>
+          <Button size="sm" variant="ghost" onClick={() => query.refetch()}>
+            {labels.retry}
+          </Button>
+        </div>
+      )}
+      {sections.map((section) => (
+        <section
+          key={section.key}
+          aria-labelledby={`${idPrefix}-${section.key}`}
+        >
+          <h3
+            id={`${idPrefix}-${section.key}`}
+            className="sticky top-0 z-1 bg-popover px-4 pt-2.5 pb-1 font-semibold text-muted-foreground text-xs"
+          >
+            {labels[section.key]}
+          </h3>
+          <ul className="px-1.5">
+            {section.stacks.map((stack) => (
+              <NotificationCard
+                key={stack.lead.id}
+                stack={stack}
+                labels={labels}
+                codeText={codeText}
+                tabbable={roving.activeId === stack.lead.id}
+                canOpen={!!target(stack.lead)}
+                opening={opening === stack.lead.id}
+                onFocusRow={roving.setActiveId}
+                onToggle={toggle}
+                onOpen={openStack}
+                onInviteResolved={resolveInvite}
+              />
+            ))}
+          </ul>
+        </section>
+      ))}
+      <div ref={sentinel} className="h-px" />
+      <div className="flex items-center justify-center gap-2 p-2.5 text-muted-foreground text-xs">
+        {query.isFetchingNextPage ? (
+          <span role="status" className="inline-flex items-center gap-2">
+            <Loader2 aria-hidden className="size-3 animate-spin" />
+            {labels.loadingMore}
+          </span>
+        ) : query.isFetchNextPageError ? (
+          <Button
+            size="sm"
+            variant="ghost"
+            onClick={() => query.fetchNextPage()}
+          >
+            <RotateCcw aria-hidden className="size-3.5" />
+            {labels.retry}
+          </Button>
+        ) : (
+          !query.hasNextPage && filter === 'all' && labels.noOlder
         )}
       </div>
     </div>

@@ -1,3 +1,5 @@
+import { notificationCodeTextFrom } from '@tuturuuu/ui/custom/notification-code-text';
+import { notificationLabelsFrom } from '@tuturuuu/ui/custom/notification-labels';
 import { getTranslations } from 'next-intl/server';
 import NotificationPopoverClient from './notification-popover-client';
 
@@ -6,28 +8,13 @@ export default async function NotificationPopover({
 }: {
   userId: string;
 }) {
-  const t = await getTranslations('notifications');
-  const tCommon = await getTranslations('common');
+  const t = await getTranslations();
 
   return (
     <NotificationPopoverClient
       userId={userId}
-      noNotificationsText={t('no-notifications')}
-      notificationsText={t('notifications')}
-      viewAllText={t('view-all')}
-      markAsReadText={t('mark-as-read')}
-      markAsUnreadText={t('mark-as-unread')}
-      updateErrorText={t('update-error')}
-      inboxText={t('inbox')}
-      archiveText={t('archive')}
-      archiveAllText={t('archive-all')}
-      emptyArchiveText={t('empty-archive')}
-      loadingMoreText={t('loading-more')}
-      retryText={tCommon('retry')}
-      acceptText={t('accept')}
-      declineText={t('decline')}
-      acceptedText={t('workspace-invite-accepted')}
-      declinedText={t('workspace-invite-declined')}
+      labels={notificationLabelsFrom(t)}
+      codeText={notificationCodeTextFrom(t)}
     />
   );
 }

@@ -1,6 +1,10 @@
 import { existsSync, readdirSync, readFileSync } from 'node:fs';
 import { dirname, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { NotificationPopoverTriggerButton } from '@tuturuuu/ui/custom/notification-popover-trigger';
+import { Popover } from '@tuturuuu/ui/popover';
+import { createElement } from 'react';
+import { renderToString } from 'react-dom/server';
 import { describe, expect, it } from 'vitest';
 
 const repoRoot = resolve(
@@ -38,7 +42,19 @@ describe('notification and invitation shell coverage', () => {
     expect(trigger).not.toContain('hidden flex-none transition-all md:flex');
     expect(trigger).toContain('disabled={!isHydrated}');
     expect(popover).toContain('onClick={() => query.refetch()}');
-    expect(trigger).toContain('aria-label={notificationsText}');
+    // The bell's accessible name comes from the shared trigger itself.
+    expect(
+      renderToString(
+        createElement(
+          Popover,
+          null,
+          createElement(NotificationPopoverTriggerButton, {
+            notificationsText: 'Notifications',
+            unreadCount: 3,
+          })
+        )
+      )
+    ).toContain('aria-label="Notifications, 3 unread"');
   });
 
   it('keeps pending invitation actions in the shared workspace picker', () => {

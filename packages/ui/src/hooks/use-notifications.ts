@@ -1,74 +1,54 @@
 import {
+  infiniteQueryOptions,
   useInfiniteQuery,
   useMutation,
   useQuery,
   useQueryClient,
 } from '@tanstack/react-query';
+import {
+  deleteNotification,
+  fetchNotificationsPage,
+  fetchUnreadCount,
+  type NotificationApiOptions,
+} from './notification-api';
+import {
+  NOTIFICATION_MUTATION_KEY,
+  notificationKeys,
+} from './notification-cache';
+import type { NotificationType } from './notification-types';
 
+export {
+  dedupeNotifications,
+  type NotificationApiOptions,
+} from './notification-api';
+export {
+  NOTIFICATION_MUTATION_KEY,
+  notificationKeys,
+} from './notification-cache';
 export {
   __resetNotificationSubscriptionRegistryForTests,
   useNotificationSubscription,
 } from './notification-subscription';
-export type NotificationType =
-  | 'task_assigned'
-  | 'task_updated'
-  | 'task_completed'
-  | 'task_reopened'
-  | 'task_priority_changed'
-  | 'task_due_date_changed'
-  | 'task_start_date_changed'
-  | 'task_estimation_changed'
-  | 'task_moved'
-  | 'task_mention'
-  | 'task_title_changed'
-  | 'task_description_changed'
-  | 'task_label_added'
-  | 'task_label_removed'
-  | 'task_project_linked'
-  | 'task_project_unlinked'
-  | 'task_assignee_removed'
-  | 'deadline_reminder'
-  | 'workspace_invite'
-  | 'system_announcement'
-  | 'account_update'
-  | 'security_alert'
-  | 'report_approved'
-  | 'report_rejected'
-  | 'post_approved'
-  | 'post_rejected'
-  | 'time_tracking_request_submitted'
-  | 'time_tracking_request_resubmitted'
-  | 'time_tracking_request_approved'
-  | 'time_tracking_request_rejected'
-  | 'time_tracking_request_needs_info'
-  | 'topic_assigned';
-export interface NotificationActor {
-  id: string;
-  display_name: string | null;
-  avatar_url: string | null;
-}
-export interface Notification {
-  id: string;
-  ws_id: string | null; // Can be null for user-scoped notifications
-  user_id: string;
-  type: NotificationType;
-  title: string;
-  description: string | null;
-  code?: string | null;
-  data: Record<string, any>;
-  entity_type: string | null;
-  entity_id: string | null;
-  read_at: string | null;
-  created_at: string;
-  created_by: string | null;
-  actor: NotificationActor | null;
-}
-interface NotificationsPage {
-  notifications: Notification[];
-  count: number;
-  limit: number;
-  offset: number;
-}
+export type {
+  MarkAllReadResult,
+  Notification,
+  NotificationActor,
+  NotificationFilter,
+  NotificationsPage,
+  NotificationType,
+  UndoMarkAllResult,
+} from './notification-types';
+export {
+  useMarkAllAsRead,
+  useUndoMarkAllAsRead,
+  useUpdateNotification,
+} from './use-notification-mutations';
+
+export const UNREAD_COUNT_STALE_TIME_MS = 5 * 60 * 1000;
+export const UNREAD_COUNT_FALLBACK_INTERVAL_MS = 15 * 60 * 1000;
+const LIST_STALE_TIME_MS = 30_000;
+const LIST_GC_TIME_MS = 5 * 60 * 1000;
+
 interface UseNotificationsOptions {
   cacheScope?: string;
   wsId?: string;
@@ -77,24 +57,12 @@ interface UseNotificationsOptions {
   unreadOnly?: boolean;
   readOnly?: boolean;
   type?: NotificationType;
+  apiOptions?: NotificationApiOptions;
 }
-export const UNREAD_COUNT_STALE_TIME_MS = 5 * 60 * 1000;
-export const UNREAD_COUNT_FALLBACK_INTERVAL_MS = 15 * 60 * 1000;
-export function dedupeNotifications(
-  notifications: Notification[]
-): Notification[] {
-  const seen = new Set<string>();
-  return notifications.filter((notification) => {
-    if (seen.has(notification.id)) {
-      return false;
-    }
-    seen.add(notification.id);
-    return true;
-  });
-}
+
 /**
- * Hook to fetch notifications with pagination
- * @param wsId - If provided, filters to specific workspace. If omitted, fetches all notifications across all workspaces.
+ * One page of notifications.
+ * @param wsId - Filters to one workspace; omitted means every accessible one.
  */
 export function useNotifications({
   cacheScope,
@@ -104,6 +72,7 @@ export function useNotifications({
   unreadOnly = false,
   readOnly = false,
   type,
+  apiOptions,
 }: UseNotificationsOptions) {
   return useQuery({
     queryKey: [
@@ -116,469 +85,139 @@ export function useNotifications({
       type,
       ...(cacheScope ? [cacheScope] : []),
     ],
-    queryFn: async () => {
-      const params = new URLSearchParams({
-        limit: limit.toString(),
-        offset: offset.toString(),
-        unreadOnly: unreadOnly.toString(),
-        readOnly: readOnly.toString(),
-        ...(wsId && { wsId }),
-        ...(type && { type }),
-      });
-
-      const url = `/api/v1/notifications?${params}`;
-      const response = await fetch(url, { cache: 'no-store' });
-
-      if (!response.ok) {
-        throw new Error(
-          `Failed to fetch notifications: ${response.status} ${response.statusText}`
-        );
-      }
-
-      const data = await response.json();
-      return {
-        ...(data as NotificationsPage),
-        notifications: dedupeNotifications(
-          ((data as NotificationsPage).notifications ?? []) as Notification[]
-        ),
-      } satisfies NotificationsPage;
-    },
-    staleTime: 30000,
-    gcTime: 5 * 60 * 1000,
+    queryFn: ({ signal }) =>
+      fetchNotificationsPage(
+        { wsId, limit, offset, unreadOnly, readOnly, type, signal },
+        apiOptions
+      ),
+    staleTime: LIST_STALE_TIME_MS,
+    gcTime: LIST_GC_TIME_MS,
   });
 }
 
-/**
- * Hook to fetch notifications with infinite scroll support
- */
-export function useInfiniteNotifications({
-  cacheScope,
-  wsId,
-  unreadOnly = false,
-  readOnly = false,
-  pageSize = 20,
-  enabled = true,
-  refetchInterval,
-}: {
+export interface NotificationListOptions {
   cacheScope?: string;
   wsId?: string;
   unreadOnly?: boolean;
   readOnly?: boolean;
   pageSize?: number;
+  /** Transport injected by the host runtime; same-origin when omitted. */
+  apiOptions?: NotificationApiOptions;
+}
+
+/** Shared by the list hook and intent prefetch so both hit one cache entry. */
+export function notificationListOptions({
+  cacheScope,
+  wsId,
+  unreadOnly = false,
+  readOnly = false,
+  pageSize = 20,
+  apiOptions,
+}: NotificationListOptions) {
+  return infiniteQueryOptions({
+    queryKey: notificationKeys.infinite({
+      wsId,
+      unreadOnly,
+      readOnly,
+      cacheScope,
+    }),
+    queryFn: ({ pageParam, signal }) =>
+      fetchNotificationsPage(
+        {
+          wsId,
+          limit: pageSize,
+          offset: pageParam,
+          unreadOnly,
+          readOnly,
+          signal,
+        },
+        apiOptions
+      ),
+    initialPageParam: 0,
+    // Offsets follow the loaded rows, so optimistic removals and insertions
+    // do not skip or repeat a row at the page boundary.
+    getNextPageParam: (lastPage, pages) => {
+      const loaded = pages.reduce((n, p) => n + p.notifications.length, 0);
+      return loaded < lastPage.count && lastPage.notifications.length > 0
+        ? loaded
+        : undefined;
+    },
+    staleTime: LIST_STALE_TIME_MS,
+    gcTime: LIST_GC_TIME_MS,
+  });
+}
+
+/**
+ * Background refreshes wait while a read-state change is in flight: a poll
+ * that starts before the server applies the change would briefly restore the
+ * old state. Each change refreshes its scope once it settles.
+ */
+function useIdleRefresh(interval?: number) {
+  const queryClient = useQueryClient();
+  const idle = () =>
+    queryClient.isMutating({ mutationKey: NOTIFICATION_MUTATION_KEY }) === 0;
+  return {
+    refetchInterval:
+      interval === undefined ? undefined : () => (idle() ? interval : false),
+    refetchOnWindowFocus: idle,
+  };
+}
+
+/** Paginated notifications; disabled lists make no request. */
+export function useInfiniteNotifications({
+  enabled = true,
+  refetchInterval,
+  ...options
+}: NotificationListOptions & {
   enabled?: boolean;
   refetchInterval?: number;
 }) {
+  const refresh = useIdleRefresh(refetchInterval);
   return useInfiniteQuery({
-    queryKey: [
-      'notifications',
-      'infinite',
-      wsId || 'all',
-      unreadOnly,
-      readOnly,
-      ...(cacheScope ? [cacheScope] : []),
-    ],
-    queryFn: async ({ pageParam = 0 }) => {
-      const params = new URLSearchParams({
-        limit: pageSize.toString(),
-        offset: pageParam.toString(),
-        unreadOnly: unreadOnly.toString(),
-        readOnly: readOnly.toString(),
-        ...(wsId && { wsId }),
-      });
-
-      const response = await fetch(`/api/v1/notifications?${params}`, {
-        cache: 'no-store',
-      });
-      if (!response.ok) throw new Error('Failed to fetch notifications');
-      const data = (await response.json()) as NotificationsPage;
-      return {
-        ...data,
-        notifications: dedupeNotifications(data.notifications ?? []),
-      } satisfies NotificationsPage;
-    },
-    initialPageParam: 0,
+    ...notificationListOptions(options),
     enabled,
-    refetchInterval,
+    ...refresh,
     refetchIntervalInBackground: false,
-    getNextPageParam: (lastPage) => {
-      const nextOffset = lastPage.offset + lastPage.limit;
-      return nextOffset < lastPage.count ? nextOffset : undefined;
-    },
-    staleTime: 30000,
-    gcTime: 5 * 60 * 1000,
   });
 }
 
 /**
- * Hook to get unread notification count.
- * If wsId is provided, scopes to that workspace. Otherwise returns total unread count.
+ * Unread count for a workspace, or for every accessible notification. This is
+ * the only notification query a closed bell runs.
  */
 export function useUnreadCount(
   wsId?: string,
-  options?: { cacheScope?: string; enabled?: boolean; refetchInterval?: number }
+  options?: {
+    cacheScope?: string;
+    enabled?: boolean;
+    refetchInterval?: number;
+    apiOptions?: NotificationApiOptions;
+  }
 ) {
+  const refresh = useIdleRefresh(
+    options?.refetchInterval ?? UNREAD_COUNT_FALLBACK_INTERVAL_MS
+  );
   return useQuery({
-    queryKey: [
-      'notifications',
-      'unread-count',
-      wsId || 'all',
-      ...(options?.cacheScope ? [options.cacheScope] : []),
-    ],
-    queryFn: async () => {
-      const params = wsId ? `?wsId=${wsId}` : '';
-      const response = await fetch(
-        `/api/v1/notifications/unread-count${params}`,
-        { cache: 'no-store' }
-      );
-      if (!response.ok) {
-        throw new Error('Failed to fetch unread count');
-      }
-
-      const data = (await response.json()) as { count: number };
-      return data.count;
-    },
+    queryKey: notificationKeys.unreadCount(wsId, options?.cacheScope),
+    queryFn: ({ signal }) =>
+      fetchUnreadCount(wsId, signal, options?.apiOptions),
     enabled: options?.enabled ?? true,
     staleTime: UNREAD_COUNT_STALE_TIME_MS,
-    // Realtime invalidation is the primary update path. Keep a low-frequency
-    // refresh as a safety net for disconnected or suspended browser sessions.
-    refetchInterval:
-      options?.refetchInterval ?? UNREAD_COUNT_FALLBACK_INTERVAL_MS,
+    // Shared refreshes are the primary update path; this is a safety net for
+    // disconnected or suspended sessions.
+    ...refresh,
     refetchIntervalInBackground: false,
     refetchOnReconnect: true,
-    refetchOnWindowFocus: true,
   });
 }
 
-/**
- * Hook to mark a notification as read/unread.
- * Optimistically moves the notification between Inbox and Archive tabs.
- */
-export function useUpdateNotification() {
+export function useDeleteNotification({
+  apiOptions,
+}: { apiOptions?: NotificationApiOptions } = {}) {
   const queryClient = useQueryClient();
-
   return useMutation({
-    mutationFn: async ({ id, read }: { id: string; read: boolean }) => {
-      const response = await fetch(`/api/v1/notifications/${id}`, {
-        method: 'PATCH',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ read }),
-      });
-
-      if (!response.ok) {
-        const data = (await response.json().catch(() => null)) as {
-          error?: unknown;
-        } | null;
-        throw new Error(
-          typeof data?.error === 'string'
-            ? data.error
-            : `Failed to update notification (${response.status})`
-        );
-      }
-
-      return response.json();
-    },
-    onMutate: async ({ id, read }) => {
-      await queryClient.cancelQueries({ queryKey: ['notifications'] });
-
-      const previousData = queryClient.getQueriesData({
-        queryKey: ['notifications'],
-      });
-
-      // Find the notification from any cached infinite query
-      type InfiniteData = {
-        pages: NotificationsPage[];
-        pageParams: number[];
-      };
-      let targetNotification: Notification | undefined;
-      const allInfiniteQueries = queryClient.getQueriesData<InfiniteData>({
-        queryKey: ['notifications', 'infinite'],
-      });
-
-      for (const [, data] of allInfiniteQueries) {
-        if (!data?.pages) continue;
-        for (const page of data.pages) {
-          const found = page.notifications.find((n) => n.id === id);
-          if (found) {
-            targetNotification = found;
-            break;
-          }
-        }
-        if (targetNotification) break;
-      }
-
-      if (targetNotification) {
-        const updatedNotification: Notification = {
-          ...targetNotification,
-          read_at: read ? new Date().toISOString() : null,
-        };
-
-        // Move notification between tabs optimistically.
-        // Query key shape: ['notifications', 'infinite', wsId, unreadOnly, readOnly]
-        for (const [queryKey, data] of allInfiniteQueries) {
-          if (!data?.pages) continue;
-
-          const key = queryKey as readonly unknown[];
-          const isInboxQuery = key[3] === true; // unreadOnly
-          const isArchiveQuery = key[4] === true; // readOnly
-
-          if (read && isInboxQuery) {
-            // Marking as read → remove from inbox
-            queryClient.setQueryData<InfiniteData>(queryKey, {
-              ...data,
-              pages: data.pages.map((page) => ({
-                ...page,
-                count: Math.max(0, page.count - 1),
-                notifications: page.notifications.filter((n) => n.id !== id),
-              })),
-            });
-          } else if (read && isArchiveQuery) {
-            // Marking as read → prepend to archive
-            queryClient.setQueryData<InfiniteData>(queryKey, {
-              ...data,
-              pages: data.pages.map((page, i) =>
-                i === 0
-                  ? {
-                      ...page,
-                      count: page.count + 1,
-                      notifications: [
-                        updatedNotification,
-                        ...page.notifications,
-                      ],
-                    }
-                  : page
-              ),
-            });
-          } else if (!read && isInboxQuery) {
-            // Marking as unread → prepend to inbox
-            queryClient.setQueryData<InfiniteData>(queryKey, {
-              ...data,
-              pages: data.pages.map((page, i) =>
-                i === 0
-                  ? {
-                      ...page,
-                      count: page.count + 1,
-                      notifications: [
-                        updatedNotification,
-                        ...page.notifications,
-                      ],
-                    }
-                  : page
-              ),
-            });
-          } else if (!read && isArchiveQuery) {
-            // Marking as unread → remove from archive
-            queryClient.setQueryData<InfiniteData>(queryKey, {
-              ...data,
-              pages: data.pages.map((page) => ({
-                ...page,
-                count: Math.max(0, page.count - 1),
-                notifications: page.notifications.filter((n) => n.id !== id),
-              })),
-            });
-          } else {
-            // Generic infinite query → update in place
-            queryClient.setQueryData<InfiniteData>(queryKey, {
-              ...data,
-              pages: data.pages.map((page) => ({
-                ...page,
-                notifications: page.notifications.map((n) =>
-                  n.id === id ? updatedNotification : n
-                ),
-              })),
-            });
-          }
-        }
-      }
-
-      // Update regular (non-infinite) notification queries
-      queryClient.setQueriesData<NotificationsPage>(
-        { queryKey: ['notifications'] },
-        (old) => {
-          if (!old || typeof old !== 'object' || !('notifications' in old))
-            return old;
-          return {
-            ...old,
-            notifications: old.notifications.map((n) =>
-              n.id === id
-                ? { ...n, read_at: read ? new Date().toISOString() : null }
-                : n
-            ),
-          };
-        }
-      );
-
-      // Optimistically update unread count
-      queryClient.setQueriesData<number>(
-        { queryKey: ['notifications', 'unread-count'] },
-        (old) => {
-          if (typeof old !== 'number') return old;
-          return read ? Math.max(0, old - 1) : old + 1;
-        }
-      );
-
-      return { previousData };
-    },
-    onError: (_err, _variables, context) => {
-      if (context?.previousData) {
-        context.previousData.forEach(([queryKey, data]) => {
-          queryClient.setQueryData(queryKey, data);
-        });
-      }
-    },
-    onSettled: async () => {
-      // Background refetch to ensure server consistency across all tabs
-      await queryClient.invalidateQueries({
-        queryKey: ['notifications'],
-        refetchType: 'active',
-      });
-    },
-  });
-}
-
-/**
- * Hook to mark all notifications as read (archive all).
- * Optimistically clears inbox and moves items to archive.
- */
-export function useMarkAllAsRead() {
-  const queryClient = useQueryClient();
-
-  return useMutation({
-    mutationFn: async (wsId?: string) => {
-      const response = await fetch('/api/v1/notifications', {
-        method: 'PATCH',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          ...(wsId && { wsId }),
-          action: 'mark_all_read',
-        }),
-      });
-
-      if (!response.ok) {
-        throw new Error('Failed to mark all as read');
-      }
-
-      return response.json();
-    },
-    onMutate: async () => {
-      await queryClient.cancelQueries({ queryKey: ['notifications'] });
-
-      const previousData = queryClient.getQueriesData({
-        queryKey: ['notifications'],
-      });
-
-      type InfiniteData = {
-        pages: NotificationsPage[];
-        pageParams: number[];
-      };
-
-      // Collect all unread notifications from inbox queries
-      const archivedNotifications: Notification[] = [];
-      const allInfiniteQueries = queryClient.getQueriesData<InfiniteData>({
-        queryKey: ['notifications', 'infinite'],
-      });
-
-      const now = new Date().toISOString();
-
-      for (const [queryKey, data] of allInfiniteQueries) {
-        if (!data?.pages) continue;
-
-        const key = queryKey as readonly unknown[];
-        const isInboxQuery = key[3] === true; // unreadOnly
-
-        if (isInboxQuery) {
-          // Collect notifications and mark them as read
-          for (const page of data.pages) {
-            for (const n of page.notifications) {
-              archivedNotifications.push({ ...n, read_at: now });
-            }
-          }
-          // Clear the inbox
-          queryClient.setQueryData<InfiniteData>(queryKey, {
-            ...data,
-            pages: data.pages.map((page) => ({
-              ...page,
-              count: 0,
-              notifications: [],
-            })),
-          });
-        }
-      }
-
-      // Prepend archived notifications to archive queries
-      if (archivedNotifications.length > 0) {
-        for (const [queryKey, data] of allInfiniteQueries) {
-          if (!data?.pages) continue;
-
-          const key = queryKey as readonly unknown[];
-          const isArchiveQuery = key[4] === true; // readOnly
-
-          if (isArchiveQuery) {
-            queryClient.setQueryData<InfiniteData>(queryKey, {
-              ...data,
-              pages: data.pages.map((page, i) =>
-                i === 0
-                  ? {
-                      ...page,
-                      count: page.count + archivedNotifications.length,
-                      notifications: [
-                        ...archivedNotifications,
-                        ...page.notifications,
-                      ],
-                    }
-                  : page
-              ),
-            });
-          }
-        }
-      }
-
-      // Set unread count to 0
-      queryClient.setQueriesData<number>(
-        { queryKey: ['notifications', 'unread-count'] },
-        (old) => {
-          if (typeof old !== 'number') return old;
-          return 0;
-        }
-      );
-
-      return { previousData };
-    },
-    onError: (_err, _variables, context) => {
-      if (context?.previousData) {
-        context.previousData.forEach(([queryKey, data]) => {
-          queryClient.setQueryData(queryKey, data);
-        });
-      }
-    },
-    onSettled: async () => {
-      await queryClient.invalidateQueries({
-        queryKey: ['notifications'],
-        refetchType: 'active',
-      });
-    },
-  });
-}
-
-/**
- * Hook to delete a notification
- */
-export function useDeleteNotification() {
-  const queryClient = useQueryClient();
-
-  return useMutation({
-    mutationFn: async (id: string) => {
-      const response = await fetch(`/api/v1/notifications/${id}`, {
-        method: 'DELETE',
-      });
-
-      if (!response.ok) {
-        throw new Error('Failed to delete notification');
-      }
-
-      return response.json();
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['notifications'] });
-    },
+    mutationFn: (id: string) => deleteNotification(id, apiOptions),
+    onSuccess: () =>
+      queryClient.invalidateQueries({ queryKey: notificationKeys.root }),
   });
 }

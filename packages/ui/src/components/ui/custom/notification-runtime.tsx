@@ -1,4 +1,5 @@
 'use client';
+import type { InternalApiClientOptions } from '@tuturuuu/internal-api/client';
 import {
   type AnchorHTMLAttributes,
   type ComponentType,
@@ -13,6 +14,11 @@ export interface NotificationRuntimeValue {
     AnchorHTMLAttributes<HTMLAnchorElement> & { href: string }
   >;
   realtime: boolean;
+  /**
+   * Notification API transport. Omitted means the page's own origin, which
+   * every host proxies to the owning notification routes.
+   */
+  apiOptions?: InternalApiClientOptions;
 }
 export const NotificationRuntime =
   createContext<NotificationRuntimeValue | null>(null);

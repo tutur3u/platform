@@ -3,16 +3,25 @@
 import { Bell } from '@tuturuuu/icons';
 import { Button } from '@tuturuuu/ui/button';
 import { PopoverTrigger } from '@tuturuuu/ui/popover';
-import { useEffect, useState } from 'react';
+import { type Ref, useEffect, useState } from 'react';
+import { fillCount } from './notification-labels';
 
 interface NotificationPopoverTriggerProps {
   notificationsText: string;
   unreadCount: number;
+  /** `{count} unread`; appended to the accessible name when non-zero. */
+  unreadCountText?: string;
+  /** Fires on hover or focus so the panel chunk and first page can preload. */
+  onIntent?: () => void;
+  triggerRef?: Ref<HTMLButtonElement>;
 }
 
 export function NotificationPopoverTriggerButton({
   notificationsText,
   unreadCount,
+  unreadCountText = '{count} unread',
+  onIntent,
+  triggerRef,
 }: NotificationPopoverTriggerProps) {
   const [isHydrated, setIsHydrated] = useState(false);
 
@@ -20,23 +29,32 @@ export function NotificationPopoverTriggerButton({
     setIsHydrated(true);
   }, []);
 
+  const label =
+    unreadCount > 0
+      ? `${notificationsText}, ${fillCount(unreadCountText, unreadCount)}`
+      : notificationsText;
+
   return (
     <PopoverTrigger asChild>
       <Button
+        ref={triggerRef}
         variant="ghost"
         size="icon"
-        aria-label={notificationsText}
+        aria-label={label}
         title={notificationsText}
         disabled={!isHydrated}
-        className="group relative flex size-10 flex-none transition-all"
+        onPointerEnter={onIntent}
+        onFocus={onIntent}
+        className="group relative flex size-10 flex-none"
       >
-        <Bell className="h-6 w-6" />
+        <Bell aria-hidden className="size-5" />
         {unreadCount > 0 && (
-          <div className="absolute top-1 right-2 flex h-1.5 w-1.5 flex-none items-center justify-center rounded-full bg-dynamic-red p-1 text-center font-semibold text-xs transition-all group-hover:-top-2 group-hover:-right-1 group-hover:h-5 group-hover:w-auto group-hover:px-1.5 group-hover:text-background">
-            <div className="relative opacity-0 group-hover:opacity-100">
-              {unreadCount > 99 ? '99+' : unreadCount}
-            </div>
-          </div>
+          <span
+            aria-hidden
+            className="absolute top-1 right-1 min-w-4 rounded-full bg-dynamic-red px-1 text-center font-semibold text-[10px] text-background leading-4 tabular-nums"
+          >
+            {unreadCount > 99 ? '99+' : unreadCount}
+          </span>
         )}
       </Button>
     </PopoverTrigger>
