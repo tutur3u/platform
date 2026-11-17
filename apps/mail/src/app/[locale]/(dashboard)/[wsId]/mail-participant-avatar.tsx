@@ -37,6 +37,8 @@ export function MailParticipantAvatar({
   const { data: person } = useMailPerson(workspaceId, address);
   const label = mailPersonDisplayName(person, name, address, t('member'));
   const initialsSource = mailPersonEmailVisible(person) ? address : label;
+  const initialsName =
+    label.trim().toLowerCase() === address.trim().toLowerCase() ? null : label;
   return (
     <Avatar className="size-6 shrink-0" aria-hidden="true">
       {person?.avatarUrl ? (
@@ -47,7 +49,7 @@ export function MailParticipantAvatar({
         />
       ) : null}
       <AvatarFallback className="bg-muted font-medium text-[10px]">
-        {mailParticipantInitials(label, initialsSource)}
+        {mailParticipantInitials(initialsName, initialsSource)}
       </AvatarFallback>
     </Avatar>
   );

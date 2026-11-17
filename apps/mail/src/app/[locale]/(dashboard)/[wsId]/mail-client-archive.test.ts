@@ -55,6 +55,7 @@ vi.mock('next/navigation', () => ({
 }));
 vi.mock('next-intl', () => ({
   useLocale: () => 'en',
+  useTimeZone: () => 'UTC',
   useTranslations: () => (key: MailTextKey, values?: Record<string, string>) =>
     Object.entries(values ?? {}).reduce(
       (text, [name, value]) => text.replace(`{${name}}`, value),
@@ -119,6 +120,16 @@ function deferred() {
   return { promise, resolve, reject };
 }
 beforeEach(() => {
+  window.matchMedia ??= (query: string) => ({
+    matches: false,
+    media: query,
+    onchange: null,
+    addEventListener() {},
+    removeEventListener() {},
+    addListener() {},
+    removeListener() {},
+    dispatchEvent: () => false,
+  });
   serverRows = [thread];
   api.list.mockImplementation(async () => page(serverRows));
   api.detail.mockResolvedValue({

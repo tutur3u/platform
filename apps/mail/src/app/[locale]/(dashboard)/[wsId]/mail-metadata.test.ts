@@ -17,8 +17,8 @@ import {
 } from './mail-participant-avatar';
 
 vi.mock('next-intl', () => ({
-  useTranslations: () => (_key: string, values: { count: number }) =>
-    `${values.count} tags`,
+  useTranslations: () => (key: string, values?: { count: number }) =>
+    values ? `${values.count} tags` : key,
 }));
 vi.mock('@tuturuuu/internal-api', () => ({
   listWorkspaceMembers: vi.fn(async () => []),
