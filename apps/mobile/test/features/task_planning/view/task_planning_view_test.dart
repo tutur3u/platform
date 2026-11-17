@@ -17,6 +17,7 @@ import 'package:mobile/features/shell/cubit/shell_mini_nav_cubit.dart';
 import 'package:mobile/features/shell/cubit/shell_profile_cubit.dart';
 import 'package:mobile/features/shell/cubit/shell_profile_state.dart';
 import 'package:mobile/features/shell/cubit/shell_title_override_cubit.dart';
+import 'package:mobile/features/shell/view/custom_navigation_bar.dart';
 import 'package:mobile/features/shell/view/shell_page.dart';
 import 'package:mobile/features/task_planning/view/task_planning_page.dart';
 import 'package:mobile/features/task_portfolio/cubit/task_portfolio_cubit.dart';
@@ -356,10 +357,15 @@ void main() {
         ),
         findsOneWidget,
       );
-      expect(find.text('Estimations'), findsOneWidget);
-      expect(find.text('Labels'), findsNothing);
-      expect(find.text('Projects'), findsNothing);
-      expect(find.text('Initiatives'), findsNothing);
+      Finder inDock(String text) => find.descendant(
+        of: find.byType(MorphingNavigationBar),
+        matching: find.text(text),
+      );
+      // The top bar titles the selected mode; the dock labels every slot.
+      expect(find.text('Estimations'), findsNWidgets(2));
+      expect(inDock('Labels'), findsOneWidget);
+      expect(inDock('Projects'), findsOneWidget);
+      expect(inDock('Initiatives'), findsOneWidget);
       expect(find.bySemanticsLabel('Labels'), findsOneWidget);
       expect(find.bySemanticsLabel('Projects'), findsOneWidget);
       expect(find.bySemanticsLabel('Initiatives'), findsOneWidget);
@@ -382,7 +388,7 @@ void main() {
       );
       await _pumpForTransitions(tester);
       expect(tester.takeException(), isNull);
-      expect(find.text('Projects'), findsOneWidget);
+      expect(find.text('Projects'), findsNWidgets(2));
       expect(
         shellMiniNavCubit.state
             .resolveForLocation(Routes.taskPlanning)
@@ -401,7 +407,7 @@ void main() {
       );
       await _pumpForTransitions(tester);
       expect(tester.takeException(), isNull);
-      expect(find.text('Initiatives'), findsOneWidget);
+      expect(find.text('Initiatives'), findsNWidgets(2));
       expect(
         shellMiniNavCubit.state
             .resolveForLocation(Routes.taskPlanning)

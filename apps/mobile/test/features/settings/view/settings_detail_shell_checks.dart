@@ -16,7 +16,19 @@ void registerSettingsDetailShellChecks() {
       expect(h.router.state.matchedLocation, Routes.settingsOffline);
       expect(find.byType(OfflinePage), findsOneWidget);
       expect(find.text('Offline'), findsOneWidget);
-      expect(find.text('Settings'), findsNothing);
+      // One shell title: "Settings" appears only as the dock's section label.
+      expect(
+        find.text('Settings'),
+        findsNWidgets(
+          find
+              .descendant(
+                of: find.byType(MorphingNavigationBar),
+                matching: find.text('Settings'),
+              )
+              .evaluate()
+              .length,
+        ),
+      );
       expect(find.byType(AppBar), findsNothing);
       expect(find.byKey(const ValueKey('shell-settings-back')), findsNothing);
       final list = find
