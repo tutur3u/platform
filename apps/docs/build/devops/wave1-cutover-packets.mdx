@@ -21,6 +21,11 @@ only produces the sealed Worker bytes. Secret values never appear here, only nam
   `VITE_FINANCE_NATIVE_PROFILE=production bun run build:cloudflare` in `apps/finance`, then
   `VITE_FINANCE_NATIVE_PROFILE=production python3 scripts/ci/finance-native-artifact.py config apps/finance`
   before the shared prepare step. Its publication config keeps the emitted vars exactly.
+- Finance's release recipe record is validated as a closed schema inside
+  `scripts/ci/wave1-native-profiles.json`. It declares public origins, allowed vars,
+  secret names, committed build recipe, compatibility settings and bounded smoke
+  expectations. The sealed policy digest covers the record. Reseal sealed unpublished
+  artifacts after policy edits, even when the emitted publication config is identical.
 - The production publication profile (`scripts/ci/wave1-native-profiles.json`) uploads a
   route-free Worker (`workers_dev: false`, `routes: []`). Binding the canonical host is a
   separate provider step, so uploading never moves traffic.

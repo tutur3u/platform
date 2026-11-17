@@ -149,3 +149,20 @@ When adding a Worker to CODEOWNERS, register its folder in
 `scripts/ci/security-paths.js` and run `security-codeowners-sync.test.js` plus
 `security-paths.test.js`. The cross-check guards native ownership against security
 classification drift; the changed-file planner may not select it for a CODEOWNERS edit.
+
+## Validated release recipe records
+
+Release recipe records belong inside `wave1-native-profiles.json` so the existing
+artifact `policySha256` binds their bytes. The shared closed-record validator in
+`release-recipe-config.mjs` validates public inputs, secret names, bounded smoke
+cases and the platform extension. The Finance publication path asserts its build
+script against the committed package manifest and compatibility date against Void.
+A record changes policy bytes even when emitted publication config stays identical;
+reseal sealed unpublished artifacts after any policy change. Compare serialized
+profiles and publication configs against the base with deterministic emitted-config
+fixtures, then run wave-1 tests individually on an admitted secretless host.
+
+Queue adapters use the injected deploy authority port. Missing authority fails
+closed; recipe scripts must not create a scheduler, queue directory or direct
+provider fallback. Queue admission and source qualification do not authorize route
+attachment or promotion.

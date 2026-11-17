@@ -1,9 +1,17 @@
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
+import {
+  assertCommittedRecipe,
+  validateReleaseRecipe,
+} from './release-recipe-config.mjs';
 
 export const profiles = JSON.parse(
   readFileSync(new URL('./wave1-native-profiles.json', import.meta.url), 'utf8')
 );
+const financeRecipe = validateReleaseRecipe(
+  profiles.apps.finance.releaseRecipe
+);
+assertCommittedRecipe(financeRecipe);
 function webProfileFor(environment) {
   assert.equal(environment, 'staging', 'Web publishes to staging only');
   const web = profiles.webStaging;
@@ -175,7 +183,12 @@ export function assertStagingIsolation(config) {
 // keeps those exact vars, so the published Worker matches the bytes and config
 // that finance-cloudflare.yaml qualifies; secret names never repeat a var.
 function financePublicationConfig(base, profile, { main, assets, sourceSha }) {
-  const finance = profiles.apps.finance;
+  const finance = {
+    productionWorker: financeRecipe.cf.productionWorker,
+    compatibilityDate: financeRecipe.cf.compatibilityDate,
+    sourceVars: financeRecipe.allowedVars,
+  };
+  assert.deepEqual(financeRecipe.requiredSecretNames, profile.secrets);
   assert.equal(profile.environment, 'production', 'Finance is production only');
   assert.match(
     sourceSha ?? '',
@@ -195,10 +208,10 @@ function financePublicationConfig(base, profile, { main, assets, sourceSha }) {
   assert.equal(base.assets?.binding, 'ASSETS');
   assert.equal(base.assets.run_worker_first, true);
   assert.equal(base.assets.not_found_handling, 'none');
-  assert.deepEqual(base.compatibility_flags, [
-    'nodejs_compat',
-    'global_fetch_strictly_public',
-  ]);
+  assert.deepEqual(
+    base.compatibility_flags,
+    financeRecipe.cf.compatibilityFlags
+  );
   assert.equal(base.compatibility_date, finance.compatibilityDate);
   assert.deepEqual(
     base.vars ?? {},
