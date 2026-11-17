@@ -85,6 +85,18 @@ hit does not establish browser acceptance or a measured performance improvement.
 
 CI caches reduce repeated downloads and setup work. Cache availability is not guaranteed, and eviction can require fresh downloads. Reusing a cache never substitutes for checking the candidate source and dependency identity.
 
+Fixed Supabase seed-catalog callers can opt into `pin-cache-key` to bind image
+pins as well as the service list and platform; default producer/consumer keys
+remain compatible. Fixed-catalog restores verify the source-pinned image config
+digest and Linux/amd64 platform before use. That config digest identifies runtime
+settings and filesystem-layer content under the
+[OCI image configuration model](https://specs.opencontainers.org/image-spec/config/).
+Registry pulls additionally require the pinned registry manifest reference.
+[Docker save/load does not guarantee preserved registry references](https://github.com/moby/moby/issues/43570),
+so archive verification uses the content identity instead of relying on tag
+presence or restored `RepoDigests`. Ordinary non-catalog consumers retain their
+existing cache behavior. Hosted restore acceptance is separate from static tests.
+
 ## Frozen workflow installs
 
 Workflow dependency installs use `bun install --frozen-lockfile`, and the retry helper adds the flag to project installs. Deliberate lockfile regeneration and pinned global CLI installs must match an exact workflow file, step name and full command in `scripts/ci/frozen-bun-install-exceptions.json`, and every exception disables lifecycle scripts. Run `node --test scripts/ci/frozen-bun-install-guard.test.js` to check the policy. Release credentials are scoped to the steps that push; operator details are maintained privately.

@@ -346,6 +346,20 @@ if (args[0] === 'save') fs.writeFileSync(args[2], 'test archive');
     fs.readFileSync(env.GITHUB_OUTPUT, 'utf8'),
     /key=supabase-images-v1-1f27e9c5ae4e1b32fe7e337cfb66488d653f2ca75e5d70920ef07e45f37a9cf0/
   );
+  env.IMAGE_PIN_CACHE_KEY = 'true';
+  run('key');
+  assert.ok(
+    fs.readFileSync(env.GITHUB_OUTPUT, 'utf8').includes(
+      `key=${cacheKey({
+        images: seedCatalog('cli-2.121.0', futureContext),
+        registry: 'public.ecr.aws',
+        platform: 'linux',
+        arch: 'x64',
+        catalog: 'cli-2.121.0',
+      })}`
+    )
+  );
+  delete env.IMAGE_PIN_CACHE_KEY;
   const before = calls().length;
   run('pull');
   const futureCalls = calls().slice(before);

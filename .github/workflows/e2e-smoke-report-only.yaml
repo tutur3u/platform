@@ -33,6 +33,7 @@ on:
 
 permissions:
   contents: read
+  packages: read
 
 concurrency:
   group: e2e-report-only-${{ github.event_name }}-${{ github.ref }}-${{ (github.run_attempt > 1 || github.event_name != 'push') && format('{0}-{1}-{2}', github.sha, github.run_id, github.run_attempt) || 'latest' }}
@@ -113,6 +114,35 @@ jobs:
         with:
           path: ~/.cache/ms-playwright
           key: web-e2e-chromium-v1-${{ runner.os }}-${{ runner.arch }}-${{ hashFiles('bun.lock', 'apps/web/package.json') }}
+      - name: Derive pinned E2E Supabase image identity
+        id: supabase-images-identity
+        run: node scripts/ci/web-e2e-supabase-cache.js key
+      - name: Restore exact E2E Supabase images
+        id: supabase-images
+        uses: actions/cache/restore@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: ${{ runner.temp }}/web-e2e-supabase-images/images.tar
+          key: web-e2e-supabase-v1-${{ runner.os }}-${{ runner.arch }}-${{ steps.supabase-images-identity.outputs.digest }}
+      - name: Authenticate official Supabase mirror
+        if: steps.supabase-images.outputs.cache-hit != 'true'
+        env:
+          GHCR_TOKEN: ${{ github.token }}
+        run: node scripts/ci/web-e2e-supabase-cache.js login
+      - name: Prepare pinned E2E Supabase images
+        id: supabase-images-prepare
+        timeout-minutes: 11
+        env:
+          IMAGE_CACHE_HIT: ${{ steps.supabase-images.outputs.cache-hit }}
+        run: node scripts/ci/web-e2e-supabase-cache.js prepare
+      - name: Save exact trusted E2E Supabase images
+        if: github.ref == 'refs/heads/main' && github.event_name == 'push' && github.actor != 'dependabot[bot]' && steps.supabase-images.outputs.cache-hit != 'true' && steps.supabase-images-prepare.outputs.archive-ready == 'true'
+        uses: actions/cache/save@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: ${{ runner.temp }}/web-e2e-supabase-images/images.tar
+          key: web-e2e-supabase-v1-${{ runner.os }}-${{ runner.arch }}-${{ steps.supabase-images-identity.outputs.digest }}
+      - name: Remove owned image archive and registry credentials
+        if: always()
+        run: node scripts/ci/web-e2e-supabase-cache.js cleanup
       - name: Smoke (six-minute Playwright budget, excluding provisioning)
         if: github.event_name != 'schedule'
         timeout-minutes: 45

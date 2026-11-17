@@ -10,6 +10,7 @@ const {
   fallbackPin,
   digestReference,
   verifyPinned,
+  verifyPinnedContent,
   tagPinned,
 } = require('./supabase-image-cache-seed.js');
 
@@ -85,7 +86,7 @@ function imageList({ services, cliVersion, registry, profile, config = '' }) {
   });
 }
 
-function cacheKey({ images, registry, platform, arch }) {
+function cacheKey({ images, registry, platform, arch, catalog }) {
   if (!images.length || !registry || !platform || !arch)
     throw new Error('Missing image cache identity');
   return `supabase-images-v1-${createHash('sha256')
@@ -95,9 +96,30 @@ function cacheKey({ images, registry, platform, arch }) {
         registry,
         platform,
         arch,
+        ...(catalog && catalog !== 'current'
+          ? { catalog: catalogIdentity(catalog, images) }
+          : {}),
       })
     )
     .digest('hex')}`;
+}
+
+function catalogIdentity(catalog, images) {
+  return {
+    name: catalog,
+    images: [...new Set(images)].sort().map((image) => ({
+      image,
+      ...catalogPin(catalog, image),
+    })),
+  };
+}
+
+function verifyLoadedImages(images, catalog, options = {}) {
+  for (const image of images) {
+    if (catalog && catalog !== 'current')
+      verifyPinnedContent(image, catalogPin(catalog, image), options);
+    else (options.command || command)('docker', ['image', 'inspect', image]);
+  }
 }
 
 function subsetImages(options) {
@@ -311,6 +333,9 @@ async function main(mode) {
           ),
         };
     const images = fixed || imageList(options);
+    const pinKey = process.env.IMAGE_PIN_CACHE_KEY === 'true';
+    if (pinKey && !fixed)
+      throw new Error('Pin-sensitive cache identity requires a fixed catalog');
     const subset = fixed
       ? seedCatalog(catalog, {
           trusted,
@@ -327,6 +352,7 @@ async function main(mode) {
       'key',
       cacheKey({
         images,
+        catalog: pinKey ? catalog : undefined,
         registry,
         platform: process.platform,
         arch: process.arch,
@@ -341,6 +367,7 @@ async function main(mode) {
         'subset-key',
         cacheKey({
           images: subset,
+          catalog: pinKey ? catalog : undefined,
           registry,
           platform: process.platform,
           arch: process.arch,
@@ -366,10 +393,29 @@ async function main(mode) {
       !loadedImages.every((image) => images.includes(image))
     )
       throw new Error('Invalid image subset');
+    const catalog = process.env.IMAGE_SEED_CATALOG;
+    const fixed = seedCatalog(catalog, {
+      trusted: trustedSave(
+        process.env.GITHUB_EVENT_NAME,
+        process.env.GITHUB_REF
+      ),
+      budget: pullBudget(
+        process.env.IMAGE_PULL_BUDGET_SECONDS,
+        process.env.GITHUB_EVENT_NAME,
+        process.env.GITHUB_REF
+      ),
+      registry: process.env.SUPABASE_INTERNAL_IMAGE_REGISTRY,
+      platform: process.platform,
+      arch: process.arch,
+      profile: process.env.IMAGE_PROFILE,
+    });
+    if (fixed && JSON.stringify(fixed) !== JSON.stringify(images))
+      throw new Error('Seed image catalog changed between steps');
     archiveSize(archive);
     command('docker', ['load', '--input', archive], { timeout: 180_000 });
-    for (const image of loadedImages)
-      command('docker', ['image', 'inspect', image]);
+    verifyLoadedImages(loadedImages, fixed ? catalog : undefined, {
+      deadline: Date.now() + 120_000,
+    });
     console.log(
       `Loaded and verified ${loadedImages.length} cached Supabase images.`
     );
@@ -491,6 +537,7 @@ module.exports = {
   configurationDiagnostic,
   imageList,
   cacheKey,
+  verifyLoadedImages,
   subsetImages,
   missingImages,
   trustedSave,

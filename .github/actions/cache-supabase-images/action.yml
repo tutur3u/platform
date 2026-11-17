@@ -16,6 +16,9 @@ inputs:
   seed-image-catalog:
     description: Fixed trusted seed catalog (current or cli-2.121.0)
     default: current
+  pin-cache-key:
+    description: Bind fixed-catalog content pins into the archive key
+    default: "false"
 runs:
   using: composite
   steps:
@@ -27,6 +30,7 @@ runs:
         IMAGE_DATABASE: ${{ inputs.database }}
         IMAGE_PULL_BUDGET_SECONDS: ${{ inputs.pull-budget-seconds }}
         IMAGE_SEED_CATALOG: ${{ inputs.seed-image-catalog }}
+        IMAGE_PIN_CACHE_KEY: ${{ inputs.pin-cache-key }}
       run: node scripts/ci/supabase-image-cache.js key
     - name: Restore exact image archive
       id: cache
@@ -37,6 +41,10 @@ runs:
     - name: Load cached images
       if: steps.cache.outputs.cache-hit == 'true'
       shell: bash
+      env:
+        IMAGE_PROFILE: ${{ inputs.profile }}
+        IMAGE_PULL_BUDGET_SECONDS: ${{ inputs.pull-budget-seconds }}
+        IMAGE_SEED_CATALOG: ${{ inputs.seed-image-catalog }}
       run: node scripts/ci/supabase-image-cache.js load
     - name: Restore exact smaller profile archive
       id: subset
@@ -48,6 +56,10 @@ runs:
     - name: Load smaller profile images
       if: steps.subset.outputs.cache-hit == 'true'
       shell: bash
+      env:
+        IMAGE_PROFILE: ${{ inputs.profile }}
+        IMAGE_PULL_BUDGET_SECONDS: ${{ inputs.pull-budget-seconds }}
+        IMAGE_SEED_CATALOG: ${{ inputs.seed-image-catalog }}
       run: node scripts/ci/supabase-image-cache.js load-subset
     - name: Pull missing images within a short budget
       if: steps.cache.outputs.cache-hit != 'true'
