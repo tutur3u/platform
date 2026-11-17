@@ -180,9 +180,9 @@ jobs:
       public-env: |
         NEXT_PUBLIC_SUPABASE_URL=${{ (github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository) && vars.STAGING_SUPABASE_URL || 'https://nova-ci.supabase.invalid' }}
         NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY=${{ (github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository) && vars.STAGING_SUPABASE_PUBLISHABLE_KEY || 'sb_publishable_nova_ci_placeholder' }}
-        NEXT_PUBLIC_APP_URL=https://nova.ai.vn
+        NEXT_PUBLIC_APP_URL=${{ matrix.profile == 'production' && 'https://tuturuuu.com/nova' || 'https://nova.ai.vn' }}
         NEXT_PUBLIC_WEB_APP_URL=https://tuturuuu.com
-        TUTURUUU_NOINDEX=1
+        TUTURUUU_NOINDEX=${{ matrix.profile == 'production' && '0' || '1' }}
       format-paths: >-
         apps/nova/src/start-bridge apps/nova/src/routes apps/nova/src/router.tsx apps/nova/src/start.ts apps/nova/cloudflare apps/nova/vite.config.mts apps/nova/void.config.ts apps/nova/tsconfig.json apps/nova/package.json apps/nova/start-bridge.routes.json
 

@@ -1,11 +1,14 @@
 import { defineBridgeAppConfig } from '@tuturuuu/start-bridge/start/app-config';
 
-import { deploymentMountHosts } from './cloudflare/deployment-profile';
+import { deploymentMountHosts } from './cloudflare/deployment-profile.ts';
 
 export default defineBridgeAppConfig({
   mounts: {
     rootHosts: ['nova.tuturuuu.com', 'nova.ai.vn', 'nova.tutur3u.com'],
-    mountHosts: deploymentMountHosts(import.meta.env.VITE_NOVA_NATIVE_PROFILE),
+    mountHosts: deploymentMountHosts(
+      import.meta.env?.VITE_NOVA_NATIVE_PROFILE ??
+        process.env.VITE_NOVA_NATIVE_PROFILE
+    ),
     basePath: '/nova',
     unknownHost: 'reject',
   },

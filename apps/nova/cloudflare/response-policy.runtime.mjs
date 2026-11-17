@@ -186,7 +186,14 @@ test(
               assert.equal(redirect.headers['cache-control'], 'no-store');
             }
           } else {
-            assert.equal(root.status, 200, root.body.toString());
+            assert.equal(
+              root.status,
+              200,
+              JSON.stringify({
+                location: root.headers.location,
+                body: root.body.toString(),
+              })
+            );
             assertHeaders(root, { publicPage: host === hosts[0] });
           }
           const info = await served('/api/build-info');
