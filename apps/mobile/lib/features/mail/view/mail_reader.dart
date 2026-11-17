@@ -22,6 +22,7 @@ import 'package:mobile/features/mail/view/mail_message_date.dart';
 import 'package:mobile/features/mail/view/mail_message_details.dart';
 import 'package:mobile/features/mail/view/mail_move_destinations.dart';
 import 'package:mobile/features/mail/view/mail_primary_action_preference.dart';
+import 'package:mobile/features/mail/view/mail_reader_dock_plan.dart';
 import 'package:mobile/features/mail/view/mail_reader_identity.dart';
 import 'package:mobile/features/mail/view/mail_recipient_summary.dart';
 import 'package:mobile/features/mail/view/mail_rendered_documents.dart';
@@ -168,6 +169,7 @@ class _MailReaderState extends State<MailReader> {
     widget.repository.accessRevoked?.addListener(_onAccessRevoked);
     MailImagePreference.instance.addListener(_imagePreferenceChanged);
     MailPrimaryActionPreference.instance.addListener(_primaryActionChanged);
+    MailAppearancePreference.instance.addListener(_primaryActionChanged);
     unawaited(MailImagePreference.instance.load());
     unawaited(MailPrimaryActionPreference.instance.load());
     if (_detail != null) {
@@ -248,6 +250,7 @@ class _MailReaderState extends State<MailReader> {
     widget.repository.accessRevoked?.removeListener(_onAccessRevoked);
     MailImagePreference.instance.removeListener(_imagePreferenceChanged);
     MailPrimaryActionPreference.instance.removeListener(_primaryActionChanged);
+    MailAppearancePreference.instance.removeListener(_primaryActionChanged);
     _peopleGeneration++;
     _contentGeneration++;
     _peopleResolver.dispose();
@@ -358,8 +361,7 @@ class _MailReaderState extends State<MailReader> {
     return Stack(
       fit: StackFit.expand,
       children: [
-        if (sharedShell && !pane && !_childRouteOpen)
-          _readerChrome(title, actions),
+        if (sharedShell && !pane && !_childRouteOpen) _readerChrome(title),
         Scaffold(
           backgroundColor: sharedShell
               ? Colors.transparent

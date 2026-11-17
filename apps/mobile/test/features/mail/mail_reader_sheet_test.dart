@@ -68,10 +68,8 @@ void main() {
       final chrome = tester.widget<ShellChromeActions>(
         find.byType(ShellChromeActions),
       );
-      final primary = chrome.actions.singleWhere(
-        (action) => action.id == 'mail-primary-action',
-      );
-      expect(primary.tooltip, expected);
+      final primary = chrome.actionGroup!.primary!;
+      expect(primary.label, expected);
       if (folder != 'inbox' && !quarantined) {
         primary.onPressed!();
         await tester.pumpAndSettle();
@@ -217,11 +215,16 @@ void main() {
             if (reversed) 'snooze' else 'unsnooze',
             if (reversed) 'mute' else 'unmute',
             if (reversed) 'archive' else 'restore',
-            'reply',
-            'forward',
           ]) {
             expect(values, isNot(contains(value)));
           }
+          // The inline reply row is gone; without a dock the menu carries the
+          // replies for a mailbox that can send. Quarantined mail already has
+          // Reply as its primary command.
+          expect(
+            values,
+            containsAll([if (!quarantined) 'reply', 'reply_all', 'forward']),
+          );
           if (quarantined) {
             expect(
               values.intersection({'restore', 'archive', 'trash'}),

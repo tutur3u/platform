@@ -3090,6 +3090,7 @@
   "mailInvitationWhen": "When",
   "mailLabels": "Labels",
   "mailLoadImages": "Load remote images",
+  "mailHideImages": "Hide remote images",
   "mailLoadImagesDescription": "Show images by default. Senders may know when you open a message.",
   "mailLoadMore": "Load more",
   "mailMailbox": "Mailbox",

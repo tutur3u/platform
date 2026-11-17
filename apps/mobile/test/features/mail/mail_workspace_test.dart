@@ -346,8 +346,8 @@ void main() {
     await tester.pumpAndSettle();
     expect(find.byType(MailReader), findsOneWidget);
     expect(
-      actions.state.resolveForLocation(Routes.mail).map((action) => action.id),
-      contains('mail-primary-action'),
+      actions.state.actionGroupForLocation(Routes.mail)?.primary,
+      isNotNull,
     );
     expect(
       actions.state.resolveForLocation(Routes.mail).map((action) => action.id),

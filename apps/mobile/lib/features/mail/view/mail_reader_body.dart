@@ -129,7 +129,6 @@ extension _MailReaderBody on _MailReaderState {
   }
 
   Widget _messageCard(Map<String, dynamic> message, bool headerControls) {
-    final l10n = context.l10n;
     return Card(
       color: Colors.transparent,
       surfaceTintColor: Colors.transparent,
@@ -176,26 +175,6 @@ extension _MailReaderBody on _MailReaderState {
                       ? (_) => _toggleReaderImages()
                       : null,
                 ),
-                if (widget.canSend)
-                  Wrap(
-                    spacing: 8,
-                    children: [
-                      if (!headerControls ||
-                          _primaryAction != MailPrimaryAction.reply)
-                        TextButton(
-                          onPressed: () => _reply(message),
-                          child: Text(l10n.mailReply),
-                        ),
-                      TextButton(
-                        onPressed: () => _reply(message, all: true),
-                        child: Text(l10n.mailReplyAll),
-                      ),
-                      TextButton(
-                        onPressed: () => _reply(message, forward: true),
-                        child: Text(l10n.mailForward),
-                      ),
-                    ],
-                  ),
               ],
             ),
           ],

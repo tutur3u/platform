@@ -5555,6 +5555,9 @@ class AppLocalizationsEn extends AppLocalizations {
   String get mailLoadImages => 'Load remote images';
 
   @override
+  String get mailHideImages => 'Hide remote images';
+
+  @override
   String get mailLoadImagesDescription => 'Show images by default. Senders may know when you open a message.';
 
   @override

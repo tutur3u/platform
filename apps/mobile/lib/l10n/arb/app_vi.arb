@@ -3012,6 +3012,7 @@
   "mailInvitationWhen": "Thời gian",
   "mailLabels": "Nhãn",
   "mailLoadImages": "Hiển thị ảnh từ bên ngoài",
+  "mailHideImages": "Ẩn ảnh từ bên ngoài",
   "mailLoadImagesDescription": "Mặc định hiển thị ảnh. Người gửi có thể biết khi bạn mở thư.",
   "mailLoadMore": "Xem thêm",
   "mailMailbox": "Hộp thư",

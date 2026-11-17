@@ -10573,6 +10573,12 @@ abstract class AppLocalizations {
   /// **'Load remote images'**
   String get mailLoadImages;
 
+  /// No description provided for @mailHideImages.
+  ///
+  /// In en, this message translates to:
+  /// **'Hide remote images'**
+  String get mailHideImages;
+
   /// No description provided for @mailLoadImagesDescription.
   ///
   /// In en, this message translates to:
