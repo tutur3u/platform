@@ -342,3 +342,26 @@ describe('rich clipboard image placement', () => {
     expect(html).not.toContain('onerror');
   });
 });
+
+it('preserves remote-image HTML while uploading accompanying non-image files', async () => {
+  const view = await open('<p></p>');
+  const onPasteImages = vi.fn();
+  view.rerender(
+    createElement(MailComposerEditor, { ...view.props, onPasteImages })
+  );
+  const file = new File(['pdf'], 'document.pdf', { type: 'application/pdf' });
+  fireEvent.paste(view.editor.view.dom, {
+    clipboardData: {
+      files: [file],
+      items: [],
+      getData: (type: string) =>
+        type === 'text/html'
+          ? '<p>before<img src="https://example.com/image.png">after</p>'
+          : '',
+    },
+  });
+  expect(onPasteImages).toHaveBeenCalledWith([file], false);
+  expect(view.editor.getText()).toContain('before');
+  expect(view.editor.getText()).toContain('after');
+  expect(view.editor.getHTML()).toContain('https://example.com/image.png');
+});

@@ -136,7 +136,7 @@ export const MailComposerEditor = memo(function MailComposerEditor({
               html,
               event.clipboardData ? mailClipboardFiles(event.clipboardData) : []
             );
-            if (!media.files.length) return false;
+            if (!media.files.length && !media.attachments.length) return false;
             event.preventDefault();
             const parser = ProseMirrorDOMParser.fromSchema(view.state.schema);
             for (const segment of media.segments) {
