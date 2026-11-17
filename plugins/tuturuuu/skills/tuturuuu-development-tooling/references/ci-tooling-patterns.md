@@ -376,6 +376,9 @@ for the diagnostic collector's legacy comparison field and remaining gates.
   hard-coded `apps/*/messages` lists to i18n scripts; use `bun i18n:add` and
   its bulk `--mode add|remove|replace` paths for translation key operations,
   and reserve manual JSON edits for broad prose rewrites or value-only updates.
+  Preserve array shapes and element order when sorting or assigning nested keys.
+  Run `node --test scripts/i18n-array-shape.test.js` to verify indexed copy
+  contracts; numeric dictionaries such as duration options remain objects.
 - For Mind shared-UI translation coverage, run
   `bun scripts/i18n-rendered-keys.js` through the resource broker. Its import
   graph covers both locales, including literal lazy imports and explicitly

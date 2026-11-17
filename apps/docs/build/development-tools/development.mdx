@@ -12,6 +12,15 @@ audience: developers
 
 ## Installation
 
+### Translation array contracts
+
+Message bundles contain arrays used by product copy as well as numeric-key
+dictionaries used for options. Translation tooling must preserve that distinction
+and array element order. Use the shared `scripts/i18n-common.js` helpers for
+sorting and nested updates. Run `node --test scripts/i18n-array-shape.test.js`
+after bulk message edits; its EN/VI contracts cover indexed copy consumed by
+Colab and the web Pitch, Portfolio, and Capabilities surfaces.
+
 ### Supabase Auth declaration compatibility
 
 The repository pins a Bun patch for `@supabase/auth-js@2.117.1`. Its credential

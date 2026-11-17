@@ -3813,11 +3813,11 @@
       "calendar": "Lịch",
       "done": "Hoàn thành",
       "inbox": "Ghi lại",
-      "items": {
-        "0": "Chuẩn bị đề cương nghiên cứu",
-        "1": "Đánh giá nguyên mẫu",
-        "2": "Lên kế hoạch thử nghiệm"
-      },
+      "items": [
+        "Chuẩn bị đề cương nghiên cứu",
+        "Đánh giá nguyên mẫu",
+        "Lên kế hoạch thử nghiệm"
+      ],
       "planned": "Lên kế hoạch",
       "reset": "Đặt lại minh họa",
       "review": "Xem xét gợi ý",
@@ -9005,11 +9005,11 @@
           "proactive": "Làm việc thực tế"
         },
         "description": "Mira là trợ lý AI ngay trong Tuturuuu. Bạn chỉ cần nhờ, Mira sẽ sắp xếp ngày làm việc, xếp task vào lịch, soạn thư trả lời hay ghi lại chi tiêu, dựa trên những gì đã có trong workspace của bạn.",
-        "prompts": {
-          "0": "Đặt lịch standup 9h sáng mai",
-          "1": "Tóm tắt việc tuần này",
-          "2": "Giúp mình ưu tiên deadline"
-        },
+        "prompts": [
+          "Đặt lịch standup 9h sáng mai",
+          "Tóm tắt việc tuần này",
+          "Giúp mình ưu tiên deadline"
+        ],
         "title": "Gặp Mira - Trợ Lý AI Của Bạn",
         "tryAsking": "Thử hỏi Mira..."
       }
@@ -9621,11 +9621,11 @@
       "payAsYouGo": {
         "badge": "Sắp Ra Mắt",
         "description": "Cần thêm? Mở rộng linh hoạt theo nhu cầu.",
-        "features": {
-          "0": "Thêm AI credits",
-          "1": "Thời gian xử lý workflow",
-          "2": "Ưu tiên hàng đợi"
-        },
+        "features": [
+          "Thêm AI credits",
+          "Thời gian xử lý workflow",
+          "Ưu tiên hàng đợi"
+        ],
         "title": "Trả theo nhu cầu sử dụng"
       },
       "pricesLoading": "Đang tải giá hiện tại…",
@@ -9635,27 +9635,27 @@
         "enterprise": {
           "cta": "Liên Hệ Tư Vấn",
           "description": "Dành cho tổ chức lớn",
-          "features": {
-            "0": "Mọi thứ của Pro +",
-            "1": "Tùy chỉnh theo nhu cầu",
-            "2": "Đội ngũ support riêng",
-            "3": "SLA theo hợp đồng đã ký",
-            "4": "Tự host được"
-          },
+          "features": [
+            "Mọi thứ của Pro +",
+            "Tùy chỉnh theo nhu cầu",
+            "Đội ngũ support riêng",
+            "SLA theo hợp đồng đã ký",
+            "Tự host được"
+          ],
           "name": "Doanh Nghiệp",
           "price": "Liên hệ"
         },
         "free": {
           "cta": "Dùng Ngay",
           "description": "Khởi đầu nhẹ nhàng",
-          "features": {
-            "0": "Công việc, lịch và ghi chú",
-            "1": "Bảng trắng và theo dõi thời gian",
-            "2": "AI trong hạn mức tín dụng hữu hạn",
-            "3": "Tài chính, danh bạ và kho cơ bản",
-            "4": "Quyền trong không gian và xuất dữ liệu",
-            "5": "100 MiB Drive mỗi không gian"
-          },
+          "features": [
+            "Công việc, lịch và ghi chú",
+            "Bảng trắng và theo dõi thời gian",
+            "AI trong hạn mức tín dụng hữu hạn",
+            "Tài chính, danh bạ và kho cơ bản",
+            "Quyền trong không gian và xuất dữ liệu",
+            "100 MiB Drive mỗi không gian"
+          ],
           "name": "Miễn Phí",
           "period": "miễn phí mãi",
           "price": "$0"
@@ -9664,15 +9664,15 @@
           "badge": "Phổ Biến Nhất",
           "cta": "Chọn Plus",
           "description": "Khi team cần phối hợp",
-          "features": {
-            "0": "Công cụ cốt lõi trong bộ ứng dụng",
-            "1": "Thanh toán theo chỗ cho đội nhóm",
-            "2": "20 GiB Drive mỗi không gian",
-            "3": "Tín dụng AI dùng chung trong không gian",
-            "4": "Cộng tác qua Chat",
-            "5": "Tùy chọn mua thêm tín dụng AI phù hợp",
-            "6": "Chủ trì Meet: thử nghiệm giới hạn"
-          },
+          "features": [
+            "Công cụ cốt lõi trong bộ ứng dụng",
+            "Thanh toán theo chỗ cho đội nhóm",
+            "20 GiB Drive mỗi không gian",
+            "Tín dụng AI dùng chung trong không gian",
+            "Cộng tác qua Chat",
+            "Tùy chọn mua thêm tín dụng AI phù hợp",
+            "Chủ trì Meet: thử nghiệm giới hạn"
+          ],
           "name": "Plus",
           "period": {
             "monthly": "/thành viên/tháng",
@@ -9683,14 +9683,14 @@
           "badge": "Mạnh Nhất",
           "cta": "Chọn Pro",
           "description": "Cho team cần sức mạnh tối đa",
-          "features": {
-            "0": "Mọi tính năng Plus",
-            "1": "Ngân sách AI hữu hạn lớn hơn",
-            "2": "Hỗ trợ ưu tiên",
-            "3": "Phòng thí nghiệm AI và Mira",
-            "4": "Quản trị nhân sự",
-            "5": "100 GiB Drive mỗi không gian"
-          },
+          "features": [
+            "Mọi tính năng Plus",
+            "Ngân sách AI hữu hạn lớn hơn",
+            "Hỗ trợ ưu tiên",
+            "Phòng thí nghiệm AI và Mira",
+            "Quản trị nhân sự",
+            "100 GiB Drive mỗi không gian"
+          ],
           "name": "Pro",
           "period": {
             "monthly": "/thành viên/tháng",
@@ -12216,11 +12216,11 @@
     "contract": "Phạm vi thỏa thuận",
     "core": "Công việc cơ bản",
     "credits": "Tín dụng AI / tháng",
-    "creditValues": {
-      "0": "1.000 / người",
-      "1": "10.000 / thành viên trả phí",
-      "2": "30.000 / thành viên trả phí"
-    },
+    "creditValues": [
+      "1.000 / người",
+      "10.000 / thành viên trả phí",
+      "30.000 / thành viên trả phí"
+    ],
     "custom": "Theo thỏa thuận",
     "description": "Hệ sinh thái kết nối công việc, học tập và tiềm năng con người. Khám phá hướng phát triển AI nhân lực và tầm nhìn dài hạn.",
     "diagramNote": "Minh họa ý tưởng · không phải kết quả đo lường",
@@ -12230,31 +12230,26 @@
     "estimate": "Tạm tính minh họa · USD · chưa gồm thuế và tiện ích bổ sung",
     "exitFullscreen": "Thoát toàn màn hình",
     "explore": "Khám phá Tuturuuu",
-    "families": {
-      "0": "Tổ chức",
-      "1": "Cộng tác",
-      "2": "Vận hành",
-      "3": "Học và sáng tạo"
-    },
+    "families": ["Tổ chức", "Cộng tác", "Vận hành", "Học và sáng tạo"],
     "feedback": "Góp ý",
     "free": "Miễn phí",
-    "friction": {
-      "0": "Ngữ cảnh phân tán",
-      "1": "Thiết lập lặp lại",
-      "2": "Bàn giao rời rạc",
-      "3": "Chi phí khó thấy"
-    },
+    "friction": [
+      "Ngữ cảnh phân tán",
+      "Thiết lập lặp lại",
+      "Bàn giao rời rạc",
+      "Chi phí khó thấy"
+    ],
     "fullscreen": "Toàn màn hình",
     "fullscreenError": "Trình duyệt không hỗ trợ toàn màn hình.",
     "help": "Phím mũi tên chuyển trang · Home / End đến đầu / cuối · Space phát hoặc dừng",
     "livePricingProposal": "Giá hiện tại · thay đổi hạn mức chờ triển khai",
     "members": "Thành viên chính thức",
-    "metrics": {
-      "0": "Kích hoạt",
-      "1": "Chuyển đổi trả phí",
-      "2": "Thành viên duy trì",
-      "3": "Chi phí phục vụ"
-    },
+    "metrics": [
+      "Kích hoạt",
+      "Chuyển đổi trả phí",
+      "Thành viên duy trì",
+      "Chi phí phục vụ"
+    ],
     "monthly": "Thanh toán tháng",
     "motion": {
       "pause": "Tạm dừng chuyển động",
@@ -12263,81 +12258,71 @@
     "next": "Trang tiếp",
     "noClaims": "Định hướng sản phẩm, không cam kết phát hành hoặc hiệu suất.",
     "notes": "Ghi chú thuyết trình",
-    "orbitLabels": {
-      "0": "Công việc",
-      "1": "Con người",
-      "2": "Kiến thức",
-      "3": "Học tập"
-    },
+    "orbitLabels": ["Công việc", "Con người", "Kiến thức", "Học tập"],
     "overview": "Tất cả trang",
     "pause": "Tạm dừng",
-    "people": {
-      "0": "Cá nhân",
-      "1": "Đội nhóm nhỏ",
-      "2": "Nhà giáo dục",
-      "3": "Nhà vận hành"
-    },
+    "people": ["Cá nhân", "Đội nhóm nhỏ", "Nhà giáo dục", "Nhà vận hành"],
     "perMonth": "mỗi tháng",
     "perYear": "mỗi năm",
-    "planDetails": {
-      "0": "5 thành viên · 1 GiB / không gian",
-      "1": "20 GiB + 10.000 tín dụng AI / thành viên trả phí",
-      "2": "100 GiB + 30.000 tín dụng AI / thành viên trả phí",
-      "3": "Thỏa thuận dung lượng và hỗ trợ rõ ràng"
-    },
+    "planDetails": [
+      "5 thành viên · 1 GiB / không gian",
+      "20 GiB + 10.000 tín dụng AI / thành viên trả phí",
+      "100 GiB + 30.000 tín dụng AI / thành viên trả phí",
+      "Thỏa thuận dung lượng và hỗ trợ rõ ràng"
+    ],
     "play": "Tự động trình chiếu",
     "plus": "Plus",
     "portfolio": "Khám phá năng lực",
     "previous": "Trang trước",
     "pricesLoading": "Đang tải giá hiện tại…",
     "pricesUnavailable": "Chưa thể tải giá hiện tại. Vui lòng thử lại sau.",
-    "principles": {
-      "0": "Quyền rõ ràng",
-      "1": "Mức dùng minh bạch",
-      "2": "Chi phí dễ dự tính",
-      "3": "Giữ quyền dữ liệu"
-    },
+    "principles": [
+      "Quyền rõ ràng",
+      "Mức dùng minh bạch",
+      "Chi phí dễ dự tính",
+      "Giữ quyền dữ liệu"
+    ],
     "print": "In bản trình bày",
     "pro": "Pro",
-    "products": {
-      "0": "Tasks · Calendar · Track",
-      "1": "Chat · Drive · Meet",
-      "2": "Finance · Contacts · Inventory",
-      "3": "Learn · Teach · CMS · AI"
-    },
+    "products": [
+      "Tasks · Calendar · Track",
+      "Chat · Drive · Meet",
+      "Finance · Contacts · Inventory",
+      "Learn · Teach · CMS · AI"
+    ],
     "proposal": "Hướng phát triển sản phẩm",
-    "references": {
-      "0": {
+    "references": [
+      {
         "detail": "Ghi nhận 88% tổ chức được khảo sát dùng AI năm 2025; đây là dữ liệu khảo sát, không phải điều tra mọi doanh nghiệp.",
         "label": "Stanford HAI · AI Index 2026"
       },
-      "1": {
+      {
         "detail": "Tác tử hoạt động riêng biệt trên Microsoft 365 Copilot Agents và SharePoint tăng 15×, theo cửa sổ 28 ngày, 3/2025–3/2026. Dữ liệu nhà cung cấp, không phải toàn cầu.",
         "label": "Microsoft · Work Trend Index 2026"
       },
-      "2": {
+      {
         "detail": "Nhà tuyển dụng dự báo 39% kỹ năng cốt lõi thay đổi tới 2030. Khảo sát hơn 1.000 nhà tuyển dụng ở 55 nền kinh tế; đây là kỳ vọng, chưa phải kết quả quan sát.",
         "label": "Diễn đàn Kinh tế Thế giới · Future of Jobs 2025"
       },
-      "3": {
+      {
         "detail": "Khảo sát cuối 2024 với hơn 5.000 doanh nghiệp nhỏ và vừa ở bảy quốc gia: 31% dùng AI tạo sinh; 65% nhóm dùng báo cáo hiệu suất tăng. Không phải thử nghiệm nhân quả hay ước lượng ASEAN.",
         "label": "OECD · Generative AI and the SME Workforce (2025)"
       },
-      "4": {
+      {
         "detail": "Thảo luận từ nhà phát triển về quyền tác tử, giám sát và rủi ro prompt injection. Dùng làm bối cảnh thiết kế, không kiểm chứng Tuturuuu.",
         "label": "Anthropic · Trustworthy agents in practice (2026)"
       },
-      "5": {
+      {
         "detail": "Mã nguồn công khai, Apache 2.0 và triển khai sản phẩm. Có mã nguồn không đồng nghĩa mọi thành phần đã sẵn sàng tự vận hành.",
         "label": "Tuturuuu · Mã nguồn và giấy phép nền tảng"
       }
-    },
-    "roadmap": {
-      "0": "Thống nhất giá và chính sách",
-      "1": "Kiểm chứng mọi giới hạn",
-      "2": "Thử nghiệm mô hình mới",
-      "3": "Mở rộng bằng bằng chứng"
-    },
+    ],
+    "roadmap": [
+      "Thống nhất giá và chính sách",
+      "Kiểm chứng mọi giới hạn",
+      "Thử nghiệm mô hình mới",
+      "Mở rộng bằng bằng chứng"
+    ],
     "seat": "mỗi thành viên",
     "simulation": {
       "baseline": "So sánh với ban đầu",
@@ -12359,20 +12344,20 @@
         "chapter": "03 / KẾT NỐI TRÍ TUỆ",
         "kicker": "Gặp Mira",
         "note": "Một cuộc trò chuyện tự nhiên có thể mở ra công cụ, tri thức và quy trình phối hợp. Mục tiêu dài hạn là trợ lý biết dùng khả năng nào, giải thích cơ sở đề xuất và xin đúng quyền hạn cần thiết. Giao diện AI hiện có → tầm nhìn mở rộng.",
-        "panels": {
-          "0": {
+        "panels": [
+          {
             "detail": "Mang đến một câu hỏi, tài liệu hay ý tưởng.",
             "label": "Hỏi tự nhiên"
           },
-          "1": {
+          {
             "detail": "So sánh phương án, xem lập luận và nguồn thông tin.",
             "label": "Cùng khám phá"
           },
-          "2": {
+          {
             "detail": "Điều phối liên ứng dụng là hướng phát triển, có phê duyệt ở bước quan trọng.",
             "label": "Giữ quyền kiểm soát"
           }
-        },
+        ],
         "status": "Giao diện AI hiện có → tầm nhìn mở rộng",
         "title": "Mira là cánh cửa.\nHệ sinh thái là năng lực."
       },
@@ -12381,20 +12366,20 @@
         "chapter": "04 / XÂY DỰNG NIỀM TIN",
         "kicker": "Kiến trúc thực tế",
         "note": "Tách truy cập dữ liệu, tính toán, suy luận mô hình, thực thi quy trình và phê duyệt thành các lớp rõ ràng. Mẫu thử giới hạn sẽ dễ đánh giá hơn—đồng thời mở đường thay thế từng thành phần khi hệ sinh thái trưởng thành. Thiết kế kỹ thuật đề xuất.",
-        "panels": {
-          "0": {
+        "panels": [
+          {
             "detail": "Nhập dữ liệu hoặc kết nối được duyệt → kiểm tra → lưu theo không gian làm việc.",
             "label": "Đầu vào được cấp quyền"
           },
-          "1": {
+          {
             "detail": "Chỉ số tính toán xác định + giải thích AI có căn cứ + kịch bản cấu hình được.",
             "label": "Lớp hỗ trợ quyết định"
           },
-          "2": {
+          {
             "detail": "Bảng điều khiển hoặc Mira → phê duyệt và phản hồi → hồ sơ đánh giá có phiên bản.",
             "label": "Xem xét & đánh giá"
           }
-        },
+        ],
         "status": "Thiết kế kỹ thuật đề xuất",
         "title": "Biến khát vọng thành\nhệ thống có thể kiểm tra."
       },
@@ -12403,20 +12388,20 @@
         "chapter": "05 / ĐỒNG HÀNH BỀN VỮNG",
         "kicker": "Thị trường rộng, điểm bắt đầu rõ",
         "note": "Xây dựng cùng cá nhân, đội nhóm nhỏ, nhà giáo dục và người vận hành tại Việt Nam. Học điều gì hiệu quả trong ngôn ngữ và thực tế của họ. Mở rộng mô hình đã kiểm chứng tới Đông Nam Á và xa hơn qua đối tác địa phương. Chiến lược tiếp cận thị trường.",
-        "panels": {
-          "0": {
+        "panels": [
+          {
             "detail": "Doanh nghiệp dịch vụ, đội ngũ giáo dục và doanh nghiệp nhỏ dựa trên tri thức.",
             "label": "Trọng tâm ban đầu"
           },
-          "1": {
+          {
             "detail": "Tăng trưởng từ sản phẩm, đối tác triển khai và cộng đồng học tập.",
             "label": "Phân phối"
           },
-          "2": {
+          {
             "detail": "Kích hoạt lặp lại được, duy trì sử dụng, năng lực hỗ trợ và quy trình được kiểm chứng tại địa phương.",
             "label": "Điều kiện mở rộng"
           }
-        },
+        ],
         "status": "Chiến lược tiếp cận thị trường",
         "title": "Bắt đầu tại Việt Nam.\nMở rộng từ sự thấu hiểu."
       },
@@ -12425,20 +12410,20 @@
         "chapter": "05 / ĐỒNG HÀNH BỀN VỮNG",
         "kicker": "Mô hình kinh doanh tích lũy giá trị",
         "note": "Sản phẩm hằng ngày tạo lý do gắn bó. Thuê bao và hợp tác kỹ thuật có phạm vi tài trợ cho triển khai, bảo trì và nghiên cứu. Chúng tôi hướng tới hệ sinh thái tiếp tục cải thiện nhờ giá trị và hiệu quả vận hành hỗ trợ nhau. Chiến lược thương mại.",
-        "panels": {
-          "0": {
+        "panels": [
+          {
             "detail": "Quy trình cốt lõi dễ tiếp cận giúp cá nhân và đội nhỏ bắt đầu.",
             "label": "Tiếp cận"
           },
-          "1": {
+          {
             "detail": "Dung lượng trả phí và khả năng nâng cao hỗ trợ đội ngũ phát triển.",
             "label": "Mở rộng"
           },
-          "2": {
+          {
             "detail": "Triển khai và hỗ trợ có phạm vi biến thí điểm đã kiểm chứng thành giải pháp lặp lại được.",
             "label": "Đối tác"
           }
-        },
+        ],
         "status": "Chiến lược thương mại",
         "title": "Sản phẩm hữu ích.\nDoanh nghiệp bền vững."
       },
@@ -12447,7 +12432,7 @@
         "chapter": "05 / ĐỒNG HÀNH BỀN VỮNG",
         "kicker": "Khám phá chi phí thuê bao",
         "note": "Khám phá tổng tiền thuê bao theo bảng giá công khai hiện tại. Đây là điểm bắt đầu trao đổi cho đội nhóm; triển khai, đánh giá, thuế và tiện ích bổ sung được xác định riêng. Giá hiện tại · thay đổi hạn mức chờ triển khai.",
-        "panels": {},
+        "panels": [],
         "status": "Giá hiện tại · thay đổi hạn mức chờ triển khai",
         "title": "Ước tính ngân sách ban đầu."
       },
@@ -12456,20 +12441,20 @@
         "chapter": "02 / XÂY DỰNG THẾ GIỚI",
         "kicker": "CALENDAR × TASKS",
         "note": "Smart Calendar đưa nhiệm vụ và thói quen vào thực tế của giờ làm, sự kiện, ưu tiên và hạn chót. Tự động xếp lịch giúp biến ý định thành thời gian có thể sử dụng; bạn có thể xem lại và điều chỉnh kết quả. Đã có khả năng xếp lịch thông minh · tùy cấu hình và phạm vi sử dụng.",
-        "panels": {
-          "0": {
+        "panels": [
+          {
             "detail": "Thời gian rảnh, giờ làm việc và sự kiện hiện có.",
             "label": "Tôn trọng thực tế"
           },
-          "1": {
+          {
             "detail": "Xếp lịch theo ưu tiên cho nhiệm vụ và thói quen.",
             "label": "Lập kế hoạch hữu ích"
           },
-          "2": {
+          {
             "detail": "Xem lại lịch khi các ưu tiên thay đổi.",
             "label": "Liên tục thích ứng"
           }
-        },
+        ],
         "status": "Đã có khả năng xếp lịch thông minh · tùy cấu hình và phạm vi sử dụng",
         "title": "Kế hoạch phù hợp\nvới ngày của bạn."
       },
@@ -12478,20 +12463,20 @@
         "chapter": "03 / KẾT NỐI TRÍ TUỆ",
         "kicker": "Ứng dụng 01 / Lập kế hoạch",
         "note": "Bắt đầu từ thời gian sẵn có, ước lượng và hạn chót đã thống nhất. Chỉ ra áp lực của một cam kết mới. So sánh thời điểm, phạm vi và nguồn hỗ trợ trước khi quyết định đội nhóm có thể nhận thêm điều gì. Mô-đun thí điểm đề xuất.",
-        "panels": {
-          "0": {
+        "panels": [
+          {
             "detail": "Ước lượng công việc, hạn chót, lịch làm việc và thời gian khả dụng tự khai báo.",
             "label": "Dữ liệu đầu vào"
           },
-          "1": {
+          {
             "detail": "Góc nhìn năng lực đội ngũ, xung đột lịch và phương án phân bổ.",
             "label": "Đầu ra cấu hình được"
           },
-          "2": {
+          {
             "detail": "Thời gian lập kế hoạch, cam kết bị trễ và phản hồi nhân viên so với ban đầu.",
             "label": "Đánh giá"
           }
-        },
+        ],
         "status": "Mô-đun thí điểm đề xuất",
         "title": "Thấy rõ lựa chọn\ntrước khi nhận thêm việc."
       },
@@ -12500,20 +12485,20 @@
         "chapter": "02 / XÂY DỰNG THẾ GIỚI",
         "kicker": "CHAT × MIRA",
         "note": "Con người, kênh, tệp chung và hội thoại AI cần cùng một ngữ cảnh làm việc. Smart Chat là con đường để con người và AI phối hợp ngay trong cuộc trao đổi nơi quyết định bắt đầu. Nền tảng Chat đã có · đang phát triển khả năng phối hợp sâu hơn.",
-        "panels": {
-          "0": {
+        "panels": [
+          {
             "detail": "Tin nhắn trực tiếp, nhóm, kênh và hội thoại AI.",
             "label": "Cùng trao đổi"
           },
-          "1": {
+          {
             "detail": "Lịch sử hội thoại và tệp đính kèm từ Drive.",
             "label": "Giữ ngữ cảnh"
           },
-          "2": {
+          {
             "detail": "Định hướng: con người và AI cộng tác xuyên suốt quy trình.",
             "label": "Phối hợp bước tiếp theo"
           }
-        },
+        ],
         "status": "Nền tảng Chat đã có · đang phát triển khả năng phối hợp sâu hơn",
         "title": "Con người và AI,\ncùng làm việc trong hội thoại."
       },
@@ -12522,20 +12507,20 @@
         "chapter": "06 / TƯƠNG LAI TRONG TAY BẠN",
         "kicker": "Cùng xây kỷ nguyên tiếp theo",
         "note": "Chúng tôi hướng tới hệ sinh thái mở có thể vận hành độc lập và một trợ lý đặc biệt mạnh mẽ bên trong. Hãy mang đến vấn đề có ý nghĩa, câu hỏi nghiên cứu hoặc đội nhóm sẵn sàng xây dựng. Cùng biến tương lai đó thành điều hữu ích—và thuộc về bạn. Bắt đầu từ một vấn đề có ý nghĩa.",
-        "panels": {
-          "0": {
+        "panels": [
+          {
             "detail": "Thêm không gian sáng tạo.",
             "label": "Cho mỗi người"
           },
-          "1": {
+          {
             "detail": "Thêm tự tin phát triển.",
             "label": "Cho đội ngũ"
           },
-          "2": {
+          {
             "detail": "Nền tảng để cùng xây.",
             "label": "Cho đối tác"
           }
-        },
+        ],
         "status": "Bắt đầu từ một vấn đề có ý nghĩa",
         "title": "Cùng xây tương lai\nbạn có thể làm chủ."
       },
@@ -12544,20 +12529,20 @@
         "chapter": "02 / XÂY DỰNG THẾ GIỚI",
         "kicker": "DOCUMENTS × WHITEBOARDS",
         "note": "Bảng trắng thời gian thực làm rõ suy nghĩ. Tài liệu cộng tác biến chúng thành tri thức chung. Soạn thảo như Google Docs, tệp và ngữ cảnh không gian làm việc tạo nên một phần bộ nhớ mà cộng sự thông minh cần có. Đã có nền tảng cộng tác · tiếp tục kết nối sâu hơn giữa các sản phẩm.",
-        "panels": {
-          "0": {
+        "panels": [
+          {
             "detail": "Không gian vẽ chung và bảng trắng thời gian thực.",
             "label": "Cùng phác thảo"
           },
-          "1": {
+          {
             "detail": "Soạn thảo văn bản cộng tác và tri thức dùng chung.",
             "label": "Cùng viết"
           },
-          "2": {
+          {
             "detail": "Tệp, con người, nhiệm vụ và hội thoại trong một định hướng sản phẩm.",
             "label": "Kết nối kết quả"
           }
-        },
+        ],
         "status": "Đã có nền tảng cộng tác · tiếp tục kết nối sâu hơn giữa các sản phẩm",
         "title": "Cùng suy nghĩ.\nCùng phát triển ý tưởng."
       },
@@ -12566,20 +12551,20 @@
         "chapter": "03 / KẾT NỐI TRÍ TUỆ",
         "kicker": "Vì sao cần hệ sinh thái",
         "note": "Nhiệm vụ hữu ích hơn khi gắn với cam kết phía sau, tri thức cần có, người tham gia và thời gian sẵn có. Lớp tiếp theo là ngữ cảnh tuân thủ quyền truy cập, giúp Mira hiểu các mối liên hệ trong công việc. Chiến lược kết nối bối cảnh.",
-        "panels": {
-          "0": {
+        "panels": [
+          {
             "detail": "Con người, dự án, kiến thức và quyền trong không gian làm việc.",
             "label": "Bối cảnh chung"
           },
-          "1": {
+          {
             "detail": "Liên hệ cam kết với năng lực và nhu cầu học tập.",
             "label": "Quyết định hữu ích"
           },
-          "2": {
+          {
             "detail": "Mỗi quy trình hữu ích làm kết nối tiếp theo có giá trị hơn.",
             "label": "Giá trị tích lũy"
           }
-        },
+        ],
         "status": "Chiến lược kết nối bối cảnh",
         "title": "Trợ lý hiểu ngữ cảnh\nđể hỗ trợ đúng việc."
       },
@@ -12588,20 +12573,20 @@
         "chapter": "02 / XÂY DỰNG THẾ GIỚI",
         "kicker": "Vì sao là một hệ sinh thái?",
         "note": "Đây là niềm tin chiến lược, không phải khẳng định sản phẩm tập trung không thể thành công. AI có thể giảm chi phí tạo ứng dụng ban đầu nhưng không tự giải quyết việc vận hành hệ thống nhất quán qua nhiều năm. Chúng tôi chọn hệ sinh thái được duy trì chủ động để cải tiến kỹ thuật, ngữ cảnh chung và hạ tầng tái sử dụng mang lại lợi ích cho nhiều quy trình. Độ rộng không phải mục tiêu tự thân: ưu tiên nhu cầu thực, chứng minh khả năng tái sử dụng và tính đủ chi phí hỗ trợ từng sản phẩm.",
-        "panels": {
-          "0": {
+        "panels": [
+          {
             "detail": "Giúp mọi người tạo và tùy chỉnh công cụ hữu ích. Rào cản thấp hơn mở ra cơ hội.",
             "label": "Tạo phiên bản đầu tiên"
           },
-          "1": {
+          {
             "detail": "Phân quyền, bảo mật, độ tin cậy, chuyển đổi dữ liệu và khả năng tương tác cần được chăm sóc liên tục.",
             "label": "Duy trì toàn hệ thống"
           },
-          "2": {
+          {
             "detail": "Xây sản phẩm tập trung trên nền tảng chung. Mở rộng khi giá trị sử dụng và khả năng tái sử dụng xứng đáng với chi phí duy trì.",
             "label": "Tích lũy giá trị đầu tư"
           }
-        },
+        ],
         "status": "Luận điểm chiến lược · giá trị bền vững cần được chứng minh qua vận hành",
         "title": "Kết nối để hữu ích hơn.\nCải tiến để bền vững hơn."
       },
@@ -12610,20 +12595,20 @@
         "chapter": "04 / XÂY DỰNG NIỀM TIN",
         "kicker": "Rõ phạm vi trước khi mở rộng",
         "note": "Thống nhất đầu mối kỹ thuật, ranh giới dữ liệu, sản phẩm bàn giao, thời gian và ngân sách trước khi xây dựng. Xác định đầu ra tùy chỉnh, theo dõi tương tác, tiêu chí đánh giá và bàn giao để mọi người hiểu tiến bộ nghĩa là gì. Cấu trúc hợp tác đề xuất · báo giá sau khảo sát.",
-        "panels": {
-          "0": {
+        "panels": [
+          {
             "detail": "Chọn 1–3 vấn đề, nguồn dữ liệu thống nhất, báo cáo cấu hình được, mô phỏng và kết quả đánh giá.",
             "label": "Phạm vi & đầu ra"
           },
-          "1": {
+          {
             "detail": "Tách khảo sát, điều chỉnh, kiểm thử và hỗ trợ. Đặt giới hạn mô hình, hạ tầng và thanh toán theo mốc.",
             "label": "Ngân sách & kiểm soát chi phí"
           },
-          "2": {
+          {
             "detail": "Cung cấp tài liệu, giới hạn, kết quả đánh giá và kế hoạch hỗ trợ hoặc kết thúc rõ ràng.",
             "label": "Bàn giao & quyết định tiếp theo"
           }
-        },
+        ],
         "status": "Cấu trúc hợp tác đề xuất · báo giá sau khảo sát",
         "title": "Mang đến bài toán.\nCùng xây giải pháp."
       },
@@ -12632,20 +12617,20 @@
         "chapter": "04 / XÂY DỰNG NIỀM TIN",
         "kicker": "Chứng minh bằng đo lường",
         "note": "Thống nhất đường cơ sở trước thử nghiệm. Theo dõi thành công nhiệm vụ, sửa lỗi, công sức duyệt, trải nghiệm và chi phí. Bản trình diễn mở đầu cuộc trao đổi; kết quả đáng tin trong bối cảnh thực mới là cơ sở mở rộng. Khung đánh giá đề xuất.",
-        "panels": {
-          "0": {
+        "panels": [
+          {
             "detail": "So sánh đề xuất với chuyên gia; kiểm tra lỗi và câu trả lời thiếu căn cứ.",
             "label": "Chất lượng quyết định"
           },
-          "1": {
+          {
             "detail": "Đo thời gian hoàn thành và phản hồi so với quy trình hiện tại.",
             "label": "Giá trị quy trình"
           },
-          "2": {
+          {
             "detail": "Ghi nhận gợi ý được chấp nhận, chỉnh sửa hoặc từ chối với đồng thuận và dữ liệu tối thiểu.",
             "label": "Sử dụng có trách nhiệm"
           }
-        },
+        ],
         "status": "Khung đánh giá đề xuất",
         "title": "Đo lường\nđiều thực sự tốt hơn."
       },
@@ -12654,20 +12639,20 @@
         "chapter": "06 / TƯƠNG LAI TRONG TAY BẠN",
         "kicker": "Vượt khỏi màn hình",
         "note": "Khát vọng vượt xa năng suất: học tập, khám phá và cuối cùng là hỗ trợ trong thế giới vật lý. Thành công là con người làm được nhiều hơn, hiểu sâu hơn và vẫn tự định hướng khi công nghệ tiến bộ. Tầm nhìn nghiên cứu dài hạn.",
-        "panels": {
-          "0": {
+        "panels": [
+          {
             "detail": "Cộng sự gần gũi xuyên suốt hệ sinh thái.",
             "label": "Mira / Mối quan hệ"
           },
-          "1": {
+          {
             "detail": "Bối cảnh, kiến thức, đánh giá và điều phối cùng hoạt động.",
             "label": "Trí tuệ kết nối / Nền tảng"
           },
-          "2": {
+          {
             "detail": "Chỉ khám phá hỗ trợ vật lý khi an toàn và nghiên cứu đủ trưởng thành.",
             "label": "Ngoài phần mềm / Chân trời"
           }
-        },
+        ],
         "status": "Tầm nhìn nghiên cứu dài hạn",
         "title": "Từ Việt Nam\nđến những chân trời mới."
       },
@@ -12676,20 +12661,20 @@
         "chapter": "06 / TƯƠNG LAI TRONG TAY BẠN",
         "kicker": "Lộ trình tự chủ",
         "note": "Độc lập hoàn toàn là định hướng, chưa phải tuyên bố về triển khai hiện tại. Chúng tôi hướng tới hệ sinh thái tự vận hành qua dữ liệu di chuyển được, dịch vụ thay thế được, triển khai kiểm chứng và lựa chọn mô hình—vẫn kết nối với thế giới. Lộ trình chiến lược · hiện vẫn dùng hạ tầng và nhà cung cấp mô hình bên ngoài.",
-        "panels": {
-          "0": {
+        "panels": [
+          {
             "detail": "Duy trì mã nguồn, giao ước, trải nghiệm và quy trình phát hành.",
             "label": "Hiện tại / làm chủ sản phẩm"
           },
-          "1": {
+          {
             "detail": "Kiểm chứng xuất và phục hồi, ghi rõ phụ thuộc và thử tích hợp thay thế.",
             "label": "Tiếp theo / làm chủ lựa chọn"
           },
-          "2": {
+          {
             "detail": "Mở rộng tự triển khai và mô hình cục bộ hoặc mở khi khả thi.",
             "label": "Tầm nhìn / làm chủ vận hành"
           }
-        },
+        ],
         "status": "Lộ trình chiến lược · hiện vẫn dùng hạ tầng và nhà cung cấp mô hình bên ngoài",
         "title": "Tự chủ được xây\nqua từng phụ thuộc."
       },
@@ -12698,28 +12683,28 @@
         "chapter": "06 / TƯƠNG LAI TRONG TAY BẠN",
         "kicker": "Kiến trúc trí tuệ dài hạn",
         "note": "Tầm nhìn dài hạn kết hợp suy luận, bộ nhớ, sáng tạo, học hỏi và hành động quanh mục tiêu của con người. Các khái niệm Tuturuuu ban đầu mô tả hướng nghiên cứu bổ trợ, chưa phải hệ thống tự chủ tổng quát đã hoàn thiện. Kiến trúc ý tưởng · không có nghĩa cả năm hệ thống đã hoàn thiện.",
-        "panels": {
-          "0": {
+        "panels": [
+          {
             "detail": "Cách tự nhiên để tư duy và làm việc cùng trí tuệ.",
             "label": "Mira / Mối quan hệ"
           },
-          "1": {
+          {
             "detail": "Bối cảnh và hành động được cấp quyền xuyên hệ sinh thái.",
             "label": "Aurora / Điều phối"
           },
-          "2": {
+          {
             "detail": "Đưa kiến thức phù hợp đến đúng thời điểm.",
             "label": "Rewise / Kiến thức"
           },
-          "3": {
+          {
             "detail": "Khám phá cách hướng dẫn, đánh giá và cải thiện trí tuệ.",
             "label": "Nova / Tinh chỉnh"
           },
-          "4": {
+          {
             "detail": "Nghiên cứu tương lai hỗ trợ vượt khỏi màn hình.",
             "label": "Crystal / Chân trời vật lý"
           }
-        },
+        ],
         "status": "Kiến trúc ý tưởng · không có nghĩa cả năm hệ thống đã hoàn thiện",
         "title": "Một trợ lý hữu ích\ncần những gì?"
       },
@@ -12728,20 +12713,20 @@
         "chapter": "02 / XÂY DỰNG THẾ GIỚI",
         "kicker": "MAIL × MIRA",
         "note": "Nhãn thông minh, hỗ trợ soạn thư và theo dõi phản hồi là nền tảng. Chúng tôi hướng tới Mira trích xuất việc cần làm, gắn cam kết với nhiệm vụ và lịch—để hộp thư về không đồng nghĩa với ít việc dang dở hơn. Nền tảng AI cho Mail đã có · Mira trích xuất nhiệm vụ là hướng phát triển.",
-        "panels": {
-          "0": {
+        "panels": [
+          {
             "detail": "Nền tảng nhãn thông minh và soạn thư theo ngữ cảnh.",
             "label": "Thấu hiểu"
           },
-          "1": {
+          {
             "detail": "Hướng tới việc Mira nhận diện nhiệm vụ và cam kết.",
             "label": "Trích xuất"
           },
-          "2": {
+          {
             "detail": "Duyệt phản hồi, theo dõi và tiến tới hộp thư không tồn đọng.",
             "label": "Theo sát"
           }
-        },
+        ],
         "status": "Nền tảng AI cho Mail đã có · Mira trích xuất nhiệm vụ là hướng phát triển",
         "title": "Hộp thư gọn hơn.\nCông việc rõ hơn."
       },
@@ -12750,20 +12735,20 @@
         "chapter": "02 / XÂY DỰNG THẾ GIỚI",
         "kicker": "Sản phẩm nổi bật / Meet",
         "note": "Mira có thể tham gia Tuturuuu Meet qua chat phòng và giọng nói Live theo lựa chọn của người dùng. Hỗ trợ riêng và thao tác được duyệt nối thảo luận với hành động, đồng thời giúp mọi người biết AI đang tham gia như thế nào. Năng lực đã triển khai · tùy quyền và khả năng cung cấp.",
-        "panels": {
-          "0": {
+        "panels": [
+          {
             "detail": "Mira có ô người tham gia, trạng thái nói và điều khiển âm thanh riêng.",
             "label": "AI hiện diện rõ ràng"
           },
-          "1": {
+          {
             "detail": "Ngữ cảnh phòng và hỗ trợ cá nhân có ranh giới riêng.",
             "label": "Riêng tư khi cần"
           },
-          "2": {
+          {
             "detail": "Xem xét nhiệm vụ và lịch hẹn được gợi ý trước khi tạo.",
             "label": "Từ trao đổi đến hành động"
           }
-        },
+        ],
         "status": "Năng lực đã triển khai · tùy quyền và khả năng cung cấp",
         "title": "Gặp cộng sự AI của bạn."
       },
@@ -12772,20 +12757,20 @@
         "chapter": "01 / VÌ SAO LÚC NÀY",
         "kicker": "Thế giới chuyển động",
         "note": "AI được dùng rộng rãi, tác tử tăng nhanh và yêu cầu kỹ năng thay đổi. Những tín hiệu này cho thấy nhu cầu tổ chức công việc, học hỏi và giữ quyền kiểm soát tốt hơn—vượt ra ngoài một nơi để đặt câu hỏi. Bằng chứng bên ngoài · khác mẫu và thước đo, không so sánh trực tiếp.",
-        "panels": {
-          "0": {
+        "panels": [
+          {
             "detail": "Tổ chức được khảo sát cho biết có dùng AI trong năm 2025.",
             "label": "88%"
           },
-          "1": {
+          {
             "detail": "Mức tăng tác tử hoạt động trong hệ sinh thái Microsoft, 3/2025–3/2026.",
             "label": "15×"
           },
-          "2": {
+          {
             "detail": "Kỹ năng cốt lõi được nhà tuyển dụng dự báo sẽ thay đổi tới 2030.",
             "label": "39%"
           }
-        },
+        ],
         "status": "Bằng chứng bên ngoài · khác mẫu và thước đo, không so sánh trực tiếp",
         "title": "Làn sóng đã đến.\nCách vận hành vẫn đang hình thành."
       },
@@ -12794,20 +12779,20 @@
         "chapter": "03 / KẾT NỐI TRÍ TUỆ",
         "kicker": "Ứng dụng 03 / Chuyển giao kiến thức",
         "note": "Tri thức được kết nối có thể giúp đồng đội mới hiểu công việc, tìm câu trả lời đáng tin và xây dựng tự tin. Mục tiêu là rút ngắn con đường từ gia nhập đội nhóm đến đóng góp có ý nghĩa. Mô-đun thí điểm đề xuất.",
-        "panels": {
-          "0": {
+        "panels": [
+          {
             "detail": "Chính sách được duyệt, hướng dẫn vai trò và công việc hội nhập.",
             "label": "Dữ liệu đầu vào"
           },
-          "1": {
+          {
             "detail": "Câu trả lời dẫn nguồn, danh sách theo vai trò và chuyển tiếp đến người hướng dẫn.",
             "label": "Đầu ra cấu hình được"
           },
-          "2": {
+          {
             "detail": "Thời gian tìm câu trả lời, độ chính xác và phản hồi của nhân viên mới.",
             "label": "Đánh giá"
           }
-        },
+        ],
         "status": "Mô-đun thí điểm đề xuất",
         "title": "Để người mới\ntiếp nối ngữ cảnh."
       },
@@ -12816,20 +12801,20 @@
         "chapter": "01 / VÌ SAO LÚC NÀY",
         "kicker": "Tương lai của tiềm năng con người",
         "note": "Khát vọng của chúng tôi là xây dựng trợ lý thông minh nhất có thể hình dung: một cộng sự hiểu thế giới của bạn, giúp bạn hành động và trở nên giỏi hơn. Tuturuuu đang xây dựng hệ sinh thái mở để hiện thực hóa điều đó. Tầm nhìn Tuturuuu.",
-        "panels": {
-          "0": {
+        "panels": [
+          {
             "detail": "Tiến bộ có ý nghĩa.",
             "label": "Công việc"
           },
-          "1": {
+          {
             "detail": "Bảo vệ điều quan trọng.",
             "label": "Cuộc sống"
           },
-          "2": {
+          {
             "detail": "Kết nối tất cả.",
             "label": "Trí tuệ"
           }
-        },
+        ],
         "status": "Tầm nhìn Tuturuuu",
         "title": "Công nghệ đồng hành\ncùng bạn."
       },
@@ -12838,20 +12823,20 @@
         "chapter": "06 / TƯƠNG LAI TRONG TAY BẠN",
         "kicker": "Thiết kế mở",
         "note": "Mã nguồn nền tảng Tuturuuu được cung cấp theo Apache 2.0. Chúng tôi muốn sự mở rộng ra ngoài mã: giao diện dễ hiểu, tri thức có thể di chuyển, quy trình có thể mở rộng và lựa chọn nơi, cách vận hành công nghệ. Nền tảng mã nguồn mở đã có · khả năng di chuyển và lựa chọn triển khai đang phát triển.",
-        "panels": {
-          "0": {
+        "panels": [
+          {
             "detail": "Đọc mã nguồn, xây trên API có tài liệu và điều chỉnh theo giấy phép.",
             "label": "Kiểm tra và mở rộng"
           },
-          "1": {
+          {
             "detail": "Phát triển xuất, nhập và quy trình tương tác đáng tin xuyên hệ sinh thái.",
             "label": "Giữ tri thức của bạn"
           },
-          "2": {
+          {
             "detail": "Hướng tới nhiều lựa chọn triển khai, mô hình và tiếp tục kết nối hữu ích.",
             "label": "Chọn tương lai"
           }
-        },
+        ],
         "status": "Nền tảng mã nguồn mở đã có · khả năng di chuyển và lựa chọn triển khai đang phát triển",
         "title": "Mã nguồn mở.\nTừng bước tự chủ."
       },
@@ -12860,20 +12845,20 @@
         "chapter": "01 / VÌ SAO LÚC NÀY",
         "kicker": "Khởi đầu từ con người",
         "note": "Mỗi ý tưởng cần thời gian. Mỗi công cụ đòi hỏi sự chú ý. Tuturuuu bắt đầu bằng việc giúp mọi người tổ chức công việc; rồi câu hỏi lớn hơn xuất hiện: công nghệ có thể mở thêm không gian để suy nghĩ, học hỏi và sáng tạo như thế nào? Mục đích khởi đầu.",
-        "panels": {
-          "0": {
+        "panels": [
+          {
             "detail": "Sự phức tạp của công nghệ lấy đi năng lượng dành cho sáng tạo.",
             "label": "Vấn đề cá nhân"
           },
-          "1": {
+          {
             "detail": "Giúp mọi người cùng biến ý định thành tiến bộ.",
             "label": "Mục đích chung"
           },
-          "2": {
+          {
             "detail": "Ta có thể làm được gì nếu có một cộng sự hiểu thế giới của mình?",
             "label": "Câu hỏi lớn hơn"
           }
-        },
+        ],
         "status": "Mục đích khởi đầu",
         "title": "Bắt đầu từ mong muốn\nđược tập trung hơn."
       },
@@ -12882,20 +12867,20 @@
         "chapter": "02 / XÂY DỰNG THẾ GIỚI",
         "kicker": "TUTURUUU / ONE ECOSYSTEM",
         "note": "Chúng tôi xây dựng và vận hành sản phẩm riêng cho tệp, họp, thư, chat, tài liệu, CRM, danh bạ, tài chính và vận hành. Tuturuuu chịu trách nhiệm về cách các mảnh ghép cùng phát triển—và tạo nền tảng để mọi người làm chủ công nghệ nhiều hơn. Hệ sinh thái sản phẩm do Tuturuuu sở hữu · khả năng và quyền truy cập tùy ứng dụng.",
-        "panels": {
-          "0": {
+        "panels": [
+          {
             "detail": "Một lựa chọn nhất quán cho giao tiếp, cộng tác và vận hành.",
             "label": "Sản phẩm của chúng tôi"
           },
-          "1": {
+          {
             "detail": "Tuturuuu xây dựng, vận hành và phát triển hệ sinh thái sản phẩm.",
             "label": "Trách nhiệm vận hành"
           },
-          "2": {
+          {
             "detail": "Mỗi khả năng mới làm phong phú ngữ cảnh cho toàn hệ thống.",
             "label": "Giá trị tích lũy"
           }
-        },
+        ],
         "status": "Hệ sinh thái sản phẩm do Tuturuuu sở hữu · khả năng và quyền truy cập tùy ứng dụng",
         "title": "Một hệ sinh thái.\nMột trách nhiệm dài hạn."
       },
@@ -12904,20 +12889,20 @@
         "chapter": "04 / XÂY DỰNG NIỀM TIN",
         "kicker": "Lộ trình kiểm chứng có giới hạn",
         "note": "Hợp tác dự kiến 12 tuần bắt đầu với một câu hỏi nhân sự và kế hoạch đánh giá rõ ràng. Điều chỉnh thành phần phù hợp, thử với người dùng và cùng quyết định liệu bằng chứng có đủ để mở rộng tình huống sử dụng. Kế hoạch minh họa · cần thống nhất phạm vi.",
-        "panels": {
-          "0": {
+        "panels": [
+          {
             "detail": "Chọn bài toán, chỉ định đầu mối kỹ thuật và nghiệp vụ, thống nhất dữ liệu và đánh giá.",
             "label": "Tuần 01–03 / Xác định"
           },
-          "1": {
+          {
             "detail": "Xây nguyên mẫu có giới hạn, cấu hình đầu ra, thử kịch bản, rà soát an toàn và trải nghiệm.",
             "label": "Tuần 04–08 / Điều chỉnh"
           },
-          "2": {
+          {
             "detail": "Thí điểm có giám sát, báo cáo kết quả và giới hạn, đề xuất mở rộng hoặc dừng.",
             "label": "Tuần 09–12 / Đánh giá"
           }
-        },
+        ],
         "status": "Kế hoạch minh họa · cần thống nhất phạm vi",
         "title": "Bắt đầu gọn.\nHọc trước khi mở rộng."
       },
@@ -12926,20 +12911,20 @@
         "chapter": "02 / XÂY DỰNG THẾ GIỚI",
         "kicker": "Đã có nền móng",
         "note": "Nhiệm vụ thể hiện ý định. Lịch thể hiện ràng buộc. Hội thoại ghi lại quyết định. Tài liệu lưu tri thức. Tài chính và danh bạ gắn công việc với quan hệ thực. Hệ sinh thái là nền tảng để kết nối các tín hiệu này có trách nhiệm. Nền tảng sản phẩm hiện có · mức độ cung cấp tùy ứng dụng.",
-        "panels": {
-          "0": {
+        "panels": [
+          {
             "detail": "Tasks · Calendar · Track · Meet · Mail · Chat · Drive · Colab",
             "label": "Công việc & cộng tác"
           },
-          "1": {
+          {
             "detail": "Contacts · Finance · Pay · Inventory · Forms · CMS",
             "label": "Kinh doanh & con người"
           },
-          "2": {
+          {
             "detail": "Learn · Teach · Mira · Rewise · Nova",
             "label": "Học tập & trí tuệ"
           }
-        },
+        ],
         "status": "Nền tảng sản phẩm hiện có · mức độ cung cấp tùy ứng dụng",
         "title": "Công việc luôn liên quan.\nCông cụ cũng nên kết nối."
       },
@@ -12948,7 +12933,7 @@
         "chapter": "05 / ĐỒNG HÀNH BỀN VỮNG",
         "kicker": "Kinh tế không gian làm việc",
         "note": "Thuê bao không gian làm việc giúp tiếp cận hệ sinh thái hằng ngày. Hợp tác nghiên cứu hoặc phân tích chuyên biệt có phạm vi và ngân sách riêng. Bắt đầu ở nơi sản phẩm hữu ích, rồi mở rộng khi lớp tiếp theo chứng minh giá trị. Giá hiện tại · thay đổi hạn mức chờ triển khai.",
-        "panels": {},
+        "panels": [],
         "status": "Giá hiện tại · thay đổi hạn mức chờ triển khai",
         "title": "Một cách thực tế\nđể bắt đầu đồng hành."
       },
@@ -12957,20 +12942,20 @@
         "chapter": "01 / VÌ SAO LÚC NÀY",
         "kicker": "Những việc không tên",
         "note": "Cam kết với khách hàng đến qua email. Kế hoạch nằm trên bảng nhiệm vụ. Quyết định được đưa ra trong cuộc họp. Ngữ cảnh nằm sâu trong tài liệu. Con người phải nối mọi thứ lại—còn AI mạnh đến đâu cũng chỉ thấy từng mảnh. Thách thức vận hành quen thuộc.",
-        "panels": {
-          "0": {
+        "panels": [
+          {
             "detail": "Dự án mới đến. Ai có thời gian và kỹ năng phù hợp?",
             "label": "09:00 / Cam kết"
           },
-          "1": {
+          {
             "detail": "Kế hoạch thay đổi. Lịch và bảng công việc không còn khớp.",
             "label": "13:00 / Xoay xở"
           },
-          "2": {
+          {
             "detail": "Cả đội làm việc cả ngày. Việc quan trọng nhất vẫn đang chờ.",
             "label": "18:00 / Cái giá"
           }
-        },
+        ],
         "status": "Thách thức vận hành quen thuộc",
         "title": "Công việc kết nối.\nCông cụ thường rời rạc."
       },
@@ -12979,20 +12964,20 @@
         "chapter": "04 / XÂY DỰNG NIỀM TIN",
         "kicker": "Tham vọng có điểm xuất phát rõ ràng",
         "note": "Chúng tôi có bề mặt sản phẩm, quyền không gian làm việc, công cụ AI, cộng tác và mô phỏng. Ngữ cảnh xuyên sản phẩm và hỗ trợ quyết định nhân sự vẫn cần triển khai, đánh giá có giới hạn. Đó là cây cầu chúng tôi sẵn sàng xây cùng đối tác. Ranh giới năng lực và bàn giao.",
-        "panels": {
-          "0": {
+        "panels": [
+          {
             "detail": "Sản phẩm không gian làm việc, công cụ quản lý việc và lịch, giao diện học tập và AI hội thoại.",
             "label": "Nền tảng hiện có"
           },
-          "1": {
+          {
             "detail": "Ánh xạ dữ liệu nhân lực, phân tích, thử kịch bản, ghi nhận tương tác và quản trị riêng cho thí điểm.",
             "label": "Cần điều chỉnh và kiểm chứng"
           },
-          "2": {
+          {
             "detail": "Điều phối chủ động liên lĩnh vực và hỗ trợ trong thế giới vật lý.",
             "label": "Nghiên cứu dài hạn"
           }
-        },
+        ],
         "status": "Ranh giới năng lực và bàn giao",
         "title": "Nền tảng đã có.\nKết nối là việc tiếp theo."
       },
@@ -13001,7 +12986,7 @@
         "chapter": "06 / TƯƠNG LAI TRONG TAY BẠN",
         "kicker": "Bằng chứng & tài liệu",
         "note": "Thống kê trong bài mô tả thế giới quanh Tuturuuu, không phải kết quả hiệu suất của Tuturuuu. Hãy đọc cùng thời điểm, mẫu và phương pháp; chiến lược của chúng tôi là cách diễn giải các tín hiệu đó. Nguồn được xem xét tháng 9/2026 · ghi rõ dự báo và tự báo cáo.",
-        "panels": {},
+        "panels": [],
         "status": "Nguồn được xem xét tháng 9/2026 · ghi rõ dự báo và tự báo cáo",
         "title": "Khát vọng lớn cần\nbằng chứng truy xuất được."
       },
@@ -13010,20 +12995,20 @@
         "chapter": "04 / XÂY DỰNG NIỀM TIN",
         "kicker": "HIVE × MIND",
         "note": "Trước khi mở rộng hành vi tác tử phức tạp, chúng tôi nghiên cứu bằng mô phỏng. Hive và Mind kết nối vai trò, quy trình tương tác, môi trường và lịch sử phiên nghiên cứu để khảo sát phối hợp, bàn giao và phục hồi khi lỗi. Đang nghiên cứu và thử nghiệm · mô phỏng chưa chứng minh hiệu quả thực tế.",
-        "panels": {
-          "0": {
+        "panels": [
+          {
             "detail": "Vai trò, ngữ cảnh thế giới và điều kiện kịch bản.",
             "label": "Tạo bối cảnh"
           },
-          "1": {
+          {
             "detail": "Các cặp tương tác và quy trình được thiết kế.",
             "label": "Điều phối tác tử"
           },
-          "2": {
+          {
             "detail": "Lịch sử chạy, nhịp mô phỏng và phiên nghiên cứu.",
             "label": "Quan sát và học hỏi"
           }
-        },
+        ],
         "status": "Đang nghiên cứu và thử nghiệm · mô phỏng chưa chứng minh hiệu quả thực tế",
         "title": "Thử phối hợp\ntrong thế giới mô phỏng."
       },
@@ -13032,20 +13017,20 @@
         "chapter": "06 / TƯƠNG LAI TRONG TAY BẠN",
         "kicker": "Tiến lên bằng bằng chứng",
         "note": "Làm sản phẩm đáng tin. Kết nối ngữ cảnh theo quyền. Kiểm chứng quy trình có duyệt. Phối hợp tác tử chuyên biệt. Mở rộng lựa chọn triển khai và mô hình. Mỗi bước cần đem lại năng lực hữu ích và quyền kiểm soát lớn hơn. Lộ trình chiến lược · chưa cam kết ngày ra mắt.",
-        "panels": {
-          "0": {
+        "panels": [
+          {
             "detail": "Cải thiện quy trình kết nối, độ tin cậy và ranh giới truy cập.",
             "label": "Hiện tại / Củng cố nền móng"
           },
-          "1": {
+          {
             "detail": "Xác thực bài toán nhân lực và điều phối có giám sát cùng đối tác.",
             "label": "Tiếp theo / Kiểm chứng trí tuệ"
           },
-          "2": {
+          {
             "detail": "Mở rộng hỗ trợ theo bối cảnh, nghiên cứu hành động chủ động có cấp quyền.",
             "label": "Xa hơn / Mở rộng cộng sự"
           }
-        },
+        ],
         "status": "Lộ trình chiến lược · chưa cam kết ngày ra mắt",
         "title": "Kết nối. Kiểm chứng.\nRồi mở rộng."
       },
@@ -13054,20 +13039,20 @@
         "chapter": "01 / VÌ SAO LÚC NÀY",
         "kicker": "Kỷ nguyên làm việc tiếp theo",
         "note": "AI đang chuyển từ hội thoại riêng lẻ sang công cụ và tác tử có thể hành động qua nhiều quy trình. Chúng tôi tin giá trị lâu dài đến từ ngữ cảnh thực, quyền hạn rõ ràng và những con người không ngừng học hỏi. Luận điểm chiến lược.",
-        "panels": {
-          "0": {
+        "panels": [
+          {
             "detail": "Bạn vận hành từng tính năng.",
             "label": "01 / Công cụ"
           },
-          "1": {
+          {
             "detail": "Bạn kết nối công việc.",
             "label": "02 / Nền tảng"
           },
-          "2": {
+          {
             "detail": "Bạn định hướng. Trí tuệ hỗ trợ điều phối bước tiếp theo.",
             "label": "03 / Cộng sự"
           }
-        },
+        ],
         "status": "Luận điểm chiến lược",
         "title": "Từ trả lời câu hỏi\nđến cùng gánh vác công việc."
       },
@@ -13076,20 +13061,20 @@
         "chapter": "03 / KẾT NỐI TRÍ TUỆ",
         "kicker": "Khám phá trước khi cam kết",
         "note": "Trợ lý hữu ích cần giúp xem xét giả định. Mô phỏng năng lực này làm rõ một quan hệ đơn giản: số người, giờ sẵn có và nhu cầu. Nó minh họa cách công cụ hỗ trợ quyết định có thể mở ra thảo luận trước hành động. Minh họa tương tác · dữ liệu giả lập.",
-        "panels": {
-          "0": {
+        "panels": [
+          {
             "detail": "Khối lượng công việc ước tính trong một tuần.",
             "label": "Nhu cầu"
           },
-          "1": {
+          {
             "detail": "Thời gian đã thống nhất dành cho công việc.",
             "label": "Năng lực"
           },
-          "2": {
+          {
             "detail": "Con số hỗ trợ thảo luận. Con người quyết định.",
             "label": "Phán đoán"
           }
-        },
+        ],
         "status": "Minh họa tương tác · dữ liệu giả lập",
         "title": "Thử các phương án\ntrước khi quyết định."
       },
@@ -13098,20 +13083,20 @@
         "chapter": "03 / KẾT NỐI TRÍ TUỆ",
         "kicker": "Ứng dụng 02 / Phát triển đội ngũ",
         "note": "Nhà tuyển dụng trong khảo sát Diễn đàn Kinh tế Thế giới dự báo 39% kỹ năng cốt lõi sẽ thay đổi tới năm 2030. Chúng tôi muốn công việc và học tập bổ trợ nhau: hồ sơ kỹ năng tự nguyện, hướng dẫn và lộ trình phát triển gắn với dự án thực. Mô-đun thí điểm đề xuất.",
-        "panels": {
-          "0": {
+        "panels": [
+          {
             "detail": "Yêu cầu vai trò, kỹ năng tự khai báo và mục tiêu học tập đã thống nhất.",
             "label": "Dữ liệu đầu vào"
           },
-          "1": {
+          {
             "detail": "Bản đồ kỹ năng và gợi ý học tập có căn cứ, nêu rõ mức độ chưa chắc chắn.",
             "label": "Đầu ra cấu hình được"
           },
-          "2": {
+          {
             "detail": "Mức hoàn thành học tập, đánh giá thực hành và phản hồi về tính hữu ích.",
             "label": "Đánh giá"
           }
-        },
+        ],
         "status": "Mô-đun thí điểm đề xuất",
         "title": "Đưa việc học\nvào công việc."
       },
@@ -13120,20 +13105,20 @@
         "chapter": "02 / XÂY DỰNG THẾ GIỚI",
         "kicker": "Sản phẩm nổi bật / Tasks",
         "note": "Một suy nghĩ trở thành nhiệm vụ, rồi thành kế hoạch. Bảng việc, dự án, chu kỳ và gợi ý thông minh giúp mọi người xác định điều quan trọng. Đây là viên gạch đầu tiên để trợ lý hiểu điều bạn muốn hoàn thành. Năng lực đã triển khai · tùy quyền và khả năng cung cấp.",
-        "panels": {
-          "0": {
+        "panels": [
+          {
             "detail": "Bảng, dự án, chu kỳ và hộp ghi nhanh.",
             "label": "Ghi lại dễ dàng"
           },
-          "1": {
+          {
             "detail": "Con người quyết định thông tin nhiệm vụ được đề xuất.",
             "label": "Xem xét gợi ý thông minh"
           },
-          "2": {
+          {
             "detail": "Kết nối nhiệm vụ, thói quen và tùy chọn lịch.",
             "label": "Dành thời gian thực hiện"
           }
-        },
+        ],
         "status": "Năng lực đã triển khai · tùy quyền và khả năng cung cấp",
         "title": "Biết rõ bước tiếp theo."
       },
@@ -13142,20 +13127,20 @@
         "chapter": "04 / XÂY DỰNG NIỀM TIN",
         "kicker": "Cộng sự cùng xây dựng",
         "note": "Do Võ Hoàng Phúc sáng lập, Tuturuuu đóng góp năng lực sản phẩm, kỹ thuật và duy trì hệ sinh thái. Đối tác mang đến chuyên môn lĩnh vực, quy trình thực và bối cảnh đánh giá. Cùng nhau, chúng ta biến câu hỏi nghiên cứu thành công cụ hữu ích. Mô hình hợp tác đề xuất.",
-        "panels": {
-          "0": {
+        "panels": [
+          {
             "detail": "Kiến trúc, điều chỉnh, kiểm thử, tài liệu và đầu mối được chỉ định khi khởi động.",
             "label": "Đầu mối kỹ thuật Tuturuuu"
           },
-          "1": {
+          {
             "detail": "Chọn bài toán, đánh giá chuyên môn, kết nối người tham gia và diễn giải kết quả.",
             "label": "Đối tác nghiệp vụ & nghiên cứu"
           },
-          "2": {
+          {
             "detail": "Demo định kỳ, nghiệm thu mốc, sổ rủi ro và thỏa thuận trách nhiệm dữ liệu, sở hữu trí tuệ.",
             "label": "Trách nhiệm chung"
           }
-        },
+        ],
         "status": "Mô hình hợp tác đề xuất",
         "title": "Sứ mệnh chung.\nTrách nhiệm rõ ràng."
       },
@@ -13164,20 +13149,20 @@
         "chapter": "04 / XÂY DỰNG NIỀM TIN",
         "kicker": "Quyền chủ động của con người",
         "note": "Tự động hóa hữu ích cần ranh giới rõ: trợ lý được đọc gì, làm gì và khi nào cần con người. Chúng tôi muốn mọi người hiểu, chất vấn, sửa và dừng hành động quan trọng, đồng thời giữ tiếng nói khi hệ thống ngày càng mạnh. Yêu cầu quản trị thí điểm.",
-        "panels": {
-          "0": {
+        "panels": [
+          {
             "detail": "Thống nhất mục đích, quyền, lưu giữ, xóa và đồng thuận hoặc cơ sở phù hợp trước khi nhập.",
             "label": "Chỉ dùng dữ liệu cần thiết"
           },
-          "1": {
+          {
             "detail": "Hiển thị nguồn và giả định, kiểm tra lỗi và thiên lệch, hỗ trợ sửa và chuyển cấp.",
             "label": "Cho phép phản biện đầu ra"
           },
-          "2": {
+          {
             "detail": "Không tự động tuyển dụng, sa thải, quyết định lương hay kỷ luật. Không giám sát ngầm hoặc suy đoán cảm xúc.",
             "label": "Con người chịu trách nhiệm"
           }
-        },
+        ],
         "status": "Yêu cầu quản trị thí điểm",
         "title": "AI mạnh hơn.\nCon người làm chủ rõ hơn."
       },
@@ -13186,20 +13171,20 @@
         "chapter": "01 / VÌ SAO LÚC NÀY",
         "kicker": "Đích đến dài hạn",
         "note": "Hãy hình dung bạn mô tả kết quả mong muốn thay vì thao tác qua mười công cụ. Trợ lý tập hợp tri thức cần thiết, khảo sát lựa chọn và hỗ trợ thực hiện kế hoạch đã duyệt. Chúng tôi bắt đầu từ công việc hằng ngày để xây dựng sự thấu hiểu. Tầm nhìn dài hạn.",
-        "panels": {
-          "0": {
+        "panels": [
+          {
             "detail": "Hỗ trợ dựa trên bối cảnh bạn chọn chia sẻ.",
             "label": "Thấu hiểu"
           },
-          "1": {
+          {
             "detail": "Làm rõ cơ hội và giới hạn trước khi chúng trở nên cấp bách.",
             "label": "Chủ động"
           },
-          "2": {
+          {
             "detail": "Đề xuất, giải thích, xin phê duyệt và học từ kết quả.",
             "label": "Đồng hành"
           }
-        },
+        ],
         "status": "Khát vọng toàn cầu, được chứng minh qua từng năng lực hữu ích",
         "title": "Xây dựng tại Việt Nam.\nHướng đến thế giới."
       },
@@ -13208,20 +13193,20 @@
         "chapter": "03 / KẾT NỐI TRÍ TUỆ",
         "kicker": "Một ngày trong tương lai",
         "note": "Theo dõi một quy trình tương lai: Mira kết nối yêu cầu khách hàng với cam kết giao hàng, năng lực và kỹ năng đội nhóm muốn phát triển. Trợ lý đề xuất lựa chọn để mọi người xem xét. Giá trị nằm ở quyết định tốt hơn với đầy đủ ngữ cảnh. Tình huống tương lai minh họa.",
-        "panels": {
-          "0": {
+        "panels": [
+          {
             "detail": "Tổng hợp yêu cầu, thời hạn và tiêu chí đã thống nhất.",
             "label": "Hiểu cam kết"
           },
-          "1": {
+          {
             "detail": "Khám phá khối lượng công việc, khoảng trống kỹ năng và đánh đổi về lịch.",
             "label": "So sánh phương án"
           },
-          "2": {
+          {
             "detail": "Duyệt kế hoạch, điều phối công việc và nhìn lại kết quả thực tế.",
             "label": "Biến quyết định thành tiến bộ"
           }
-        },
+        ],
         "status": "Tình huống tương lai minh họa",
         "title": "“Chúng ta có thể\nnhận dự án này không?”"
       },
@@ -13230,176 +13215,144 @@
         "chapter": "03 / KẾT NỐI TRÍ TUỆ",
         "kicker": "Bắt đầu từ nhu cầu thật",
         "note": "Trong khảo sát OECD, 31% doanh nghiệp nhỏ và vừa dùng AI tạo sinh; trong nhóm sử dụng, 65% cho biết hiệu suất nhân viên được cải thiện. Đây là lý do để thử nghiệm hỗ trợ thực tế, không phải bằng chứng mọi sản phẩm đều đạt kết quả tương tự. Đề xuất nguyên mẫu hỗ trợ quyết định nhân lực.",
-        "panels": {
-          "0": {
+        "panels": [
+          {
             "detail": "Công việc nào có rủi ro và có thể cân bằng lại ra sao?",
             "label": "01 / Năng lực"
           },
-          "1": {
+          {
             "detail": "Đội ngũ cần học gì để nắm bắt cơ hội tiếp theo?",
             "label": "02 / Kỹ năng"
           },
-          "2": {
+          {
             "detail": "Làm sao giúp đồng đội mới tự tin và làm việc hiệu quả sớm hơn?",
             "label": "03 / Hội nhập"
           }
-        },
+        ],
         "status": "Đề xuất nguyên mẫu hỗ trợ quyết định nhân lực",
         "title": "Bắt đầu từ quyết định\nhằng ngày của nhóm."
       }
     },
     "sourceLabel": "Nguồn",
-    "stages": {
-      "0": "Lập kế hoạch",
-      "1": "Kết nối",
-      "2": "Hoàn thành",
-      "3": "Nhìn lại"
-    },
+    "stages": ["Lập kế hoạch", "Kết nối", "Hoàn thành", "Nhìn lại"],
     "title": "Tuturuuu — kỷ nguyên cộng sự thông minh",
     "visuals": {
-      "audience": {
-        "0": "Cá nhân",
-        "1": "Đội nhóm",
-        "2": "MSME",
-        "3": "Nhà nghiên cứu"
-      },
+      "audience": ["Cá nhân", "Đội nhóm", "MSME", "Nhà nghiên cứu"],
       "boundary": "Con người duyệt hành động có tác động lớn",
-      "calendar": {
-        "0": "T2",
-        "1": "T3",
-        "2": "T4",
-        "3": "T5",
-        "4": "T6",
-        "5": "Tập trung",
-        "6": "Họp",
-        "7": "Đánh giá",
-        "8": "Lập lịch theo ràng buộc của bạn"
-      },
-      "capacity": {
-        "0": "Thiết kế",
-        "1": "Kỹ thuật",
-        "2": "Nghiên cứu",
-        "3": "Vận hành",
-        "4": "Giờ dự kiến",
-        "5": "Năng lực: 32 giờ",
-        "6": "Khối lượng tuần minh họa · không phải kết quả khách hàng"
-      },
-      "chat": {
-        "0": "Đội ngũ",
-        "1": "Hội thoại chung",
-        "2": "Mira",
-        "3": "Duyệt bước tiếp theo"
-      },
-      "collaboration": {
-        "0": "Cùng khám phá",
-        "1": "Hoàn thiện tài liệu",
-        "2": "Lưu kiến thức chung"
-      },
-      "context": {
-        "0": "Hội thoại",
-        "1": "Cam kết",
-        "2": "Kiến thức",
-        "3": "Quan hệ",
-        "4": "Thời gian",
-        "5": "Vận hành"
-      },
+      "calendar": [
+        "T2",
+        "T3",
+        "T4",
+        "T5",
+        "T6",
+        "Tập trung",
+        "Họp",
+        "Đánh giá",
+        "Lập lịch theo ràng buộc của bạn"
+      ],
+      "capacity": [
+        "Thiết kế",
+        "Kỹ thuật",
+        "Nghiên cứu",
+        "Vận hành",
+        "Giờ dự kiến",
+        "Năng lực: 32 giờ",
+        "Khối lượng tuần minh họa · không phải kết quả khách hàng"
+      ],
+      "chat": ["Đội ngũ", "Hội thoại chung", "Mira", "Duyệt bước tiếp theo"],
+      "collaboration": [
+        "Cùng khám phá",
+        "Hoàn thiện tài liệu",
+        "Lưu kiến thức chung"
+      ],
+      "context": [
+        "Hội thoại",
+        "Cam kết",
+        "Kiến thức",
+        "Quan hệ",
+        "Thời gian",
+        "Vận hành"
+      ],
       "contextTitle": "Ngữ cảnh theo quyền truy cập",
-      "evidence": {
-        "0": "Ban đầu",
-        "1": "Thử nghiệm",
-        "2": "Đánh giá",
-        "3": "Thời gian hoàn thành",
-        "4": "Tỷ lệ sửa lỗi",
-        "5": "Sự tin tưởng",
-        "6": "Thống nhất tiêu chí trước khi thử nghiệm"
-      },
-      "flow": {
-        "0": "Ghi nhận",
-        "1": "Hiểu ngữ cảnh",
-        "2": "Duyệt",
-        "3": "Lập kế hoạch",
-        "4": "Thực hiện",
-        "5": "Học hỏi"
-      },
-      "independence": {
-        "0": "Mã nguồn mở",
-        "1": "Dịch vụ thay thế được",
-        "2": "Vận hành độc lập"
-      },
-      "intelligence": {
-        "0": "Trợ lý",
-        "1": "Điều phối",
-        "2": "Học tập",
-        "3": "Thử nghiệm",
-        "4": "Kiến thức"
-      },
-      "layers": {
-        "0": "Sản phẩm tập trung",
-        "1": "Ngữ cảnh & phân quyền chung",
-        "2": "API, dữ liệu & hạ tầng"
-      },
-      "loop": {
-        "0": "Sản phẩm hữu ích",
-        "1": "Nền tảng chung",
-        "2": "Tái đầu tư"
-      },
-      "mail": {
-        "0": "Hộp thư",
-        "1": "Tách đầu việc",
-        "2": "Bạn phê duyệt",
-        "3": "Tasks",
-        "4": "Calendar",
-        "5": "Theo dõi"
-      },
-      "onboarding": {
-        "0": "Tìm kiến thức",
-        "1": "Hỏi Mira",
-        "2": "Thực hành",
-        "3": "Phản hồi"
-      },
-      "pilot": {
-        "0": "Phạm vi & quản trị",
-        "1": "Cấu hình & thử nghiệm",
-        "2": "Đánh giá & quyết định",
-        "3": "Phạm vi 12 tuần minh họa"
-      },
-      "readiness": {
-        "0": "Đã triển khai",
-        "1": "Đang phát triển",
-        "2": "Hướng nghiên cứu"
-      },
-      "research": {
-        "0": "Tạo kịch bản",
-        "1": "Phối hợp tác tử",
-        "2": "Xem dấu vết",
-        "3": "Đánh giá kết quả"
-      },
-      "roadmap": {
-        "0": "Kết nối công cụ hữu ích",
-        "1": "Kiểm chứng hành động",
-        "2": "Mở rộng phối hợp"
-      },
+      "evidence": [
+        "Ban đầu",
+        "Thử nghiệm",
+        "Đánh giá",
+        "Thời gian hoàn thành",
+        "Tỷ lệ sửa lỗi",
+        "Sự tin tưởng",
+        "Thống nhất tiêu chí trước khi thử nghiệm"
+      ],
+      "flow": [
+        "Ghi nhận",
+        "Hiểu ngữ cảnh",
+        "Duyệt",
+        "Lập kế hoạch",
+        "Thực hiện",
+        "Học hỏi"
+      ],
+      "independence": [
+        "Mã nguồn mở",
+        "Dịch vụ thay thế được",
+        "Vận hành độc lập"
+      ],
+      "intelligence": [
+        "Trợ lý",
+        "Điều phối",
+        "Học tập",
+        "Thử nghiệm",
+        "Kiến thức"
+      ],
+      "layers": [
+        "Sản phẩm tập trung",
+        "Ngữ cảnh & phân quyền chung",
+        "API, dữ liệu & hạ tầng"
+      ],
+      "loop": ["Sản phẩm hữu ích", "Nền tảng chung", "Tái đầu tư"],
+      "mail": [
+        "Hộp thư",
+        "Tách đầu việc",
+        "Bạn phê duyệt",
+        "Tasks",
+        "Calendar",
+        "Theo dõi"
+      ],
+      "onboarding": ["Tìm kiến thức", "Hỏi Mira", "Thực hành", "Phản hồi"],
+      "pilot": [
+        "Phạm vi & quản trị",
+        "Cấu hình & thử nghiệm",
+        "Đánh giá & quyết định",
+        "Phạm vi 12 tuần minh họa"
+      ],
+      "readiness": ["Đã triển khai", "Đang phát triển", "Hướng nghiên cứu"],
+      "research": [
+        "Tạo kịch bản",
+        "Phối hợp tác tử",
+        "Xem dấu vết",
+        "Đánh giá kết quả"
+      ],
+      "roadmap": [
+        "Kết nối công cụ hữu ích",
+        "Kiểm chứng hành động",
+        "Mở rộng phối hợp"
+      ],
       "sample": "Luồng minh họa · tích hợp theo lộ trình chưa phải cam kết sẵn có",
-      "skills": {
-        "0": "Phân tích",
-        "1": "Viết",
-        "2": "Công cụ AI",
-        "3": "Lập kế hoạch",
-        "4": "Khám phá",
-        "5": "Thực hành",
-        "6": "Hướng dẫn",
-        "7": "Nhu cầu học tập minh họa · tự đánh giá, không xếp hạng"
-      },
-      "vision": {
-        "0": "Ý định của bạn",
-        "1": "Hành động đã duyệt",
-        "2": "Cùng bạn học hỏi, dưới quyền kiểm soát của bạn"
-      },
-      "workforce": {
-        "0": "Năng lực",
-        "1": "Kỹ năng",
-        "2": "Hội nhập"
-      }
+      "skills": [
+        "Phân tích",
+        "Viết",
+        "Công cụ AI",
+        "Lập kế hoạch",
+        "Khám phá",
+        "Thực hành",
+        "Hướng dẫn",
+        "Nhu cầu học tập minh họa · tự đánh giá, không xếp hạng"
+      ],
+      "vision": [
+        "Ý định của bạn",
+        "Hành động đã duyệt",
+        "Cùng bạn học hỏi, dưới quyền kiểm soát của bạn"
+      ],
+      "workforce": ["Năng lực", "Kỹ năng", "Hội nhập"]
     }
   },
   "platform-role-data-table": {
@@ -13463,32 +13416,32 @@
       "flowBody": "Xem các sản phẩm có thể phối hợp thế nào, với con người xem xét những quyết định quan trọng.",
       "flowNote": "Quy trình kết nối minh họa · mức độ hoàn thiện tùy tích hợp",
       "flowTitle": "Theo một yêu cầu từ trao đổi đến hành động.",
-      "steps": {
-        "0": {
+      "steps": [
+        {
           "body": "Mail lưu cam kết và cuộc trao đổi phía sau. Mira có thể giúp chuyển thư thành đề xuất bước tiếp theo.",
           "title": "Yêu cầu xuất hiện"
         },
-        "1": {
+        {
           "body": "Meet đưa con người và Mira vào cùng cuộc thảo luận, với sự hiện diện AI rõ ràng và ngữ cảnh chung.",
           "title": "Đội ngũ thống nhất"
         },
-        "2": {
+        {
           "body": "Tasks kết nối ưu tiên, người phụ trách và quan hệ phụ thuộc. Con người xem xét và điều chỉnh kế hoạch từ gợi ý.",
           "title": "Kế hoạch hình thành"
         },
-        "3": {
+        {
           "body": "Calendar kết hợp thời gian rảnh, thói quen và hạn chót để xây dựng lịch khả thi.",
           "title": "Thời gian cụ thể"
         },
-        "4": {
+        {
           "body": "Tài liệu cộng tác và tệp dùng chung giữ lại lý do, quyết định và kết quả cho người tiếp theo.",
           "title": "Tri thức ở lại"
         },
-        "5": {
+        {
           "body": "Mira kết nối ngữ cảnh được cấp quyền trong công việc. Kết quả đã xem xét giúp định hướng hành động hữu ích tiếp theo.",
           "title": "Hiểu biết sâu hơn"
         }
-      },
+      ],
       "title": "Một gia đình sản phẩm kết nối."
     },
     "categories": {
@@ -13605,71 +13558,71 @@
     "innovation": {
       "artNote": "Minh họa ý tưởng bằng AI · không phải cơ sở hiện có hay ảnh chụp sản phẩm",
       "body": "Chúng tôi muốn trở thành Google tiếp theo của Việt Nam về tầm vóc và khả năng sáng tạo: sản phẩm hữu ích, kỹ thuật vững chắc và nghiên cứu mở ra cơ hội mới.",
-      "chapters": {
-        "0": {
+      "chapters": [
+        {
           "alt": "Xưởng đổi mới Việt Nam tưởng tượng với con người xây các mô hình kính kết nối lúc bình minh.",
           "body": "Danh sách việc rõ ràng. Cuộc họp có bước tiếp theo hữu ích. Lịch có khoảng trống để tập trung. Chúng tôi bắt đầu từ công cụ thực tế giúp mọi người làm việc mỗi ngày.",
           "proof": "Nền tảng sản phẩm trải rộng từ công việc, giao tiếp, học tập đến vận hành doanh nghiệp.",
-          "steps": {
-            "0": {
+          "steps": [
+            {
               "body": "Đến với quy trình thực tế bằng công cụ hữu ích và lý do rõ ràng để quay lại.",
               "title": "Giải quyết vướng mắc thật"
             },
-            "1": {
+            {
               "body": "Nối những khoảnh khắc riêng lẻ: cuộc trò chuyện, lời hứa và kế hoạch.",
               "title": "Kết nối bước tiếp theo"
             },
-            "2": {
+            {
               "body": "Liên tục cải thiện độ tin cậy, khả năng tiếp cận và những chi tiết người dùng cảm nhận.",
               "title": "Xây niềm tin hằng ngày"
             }
-          },
+          ],
           "tab": "Sản phẩm hữu ích",
           "title": "Giúp công việc hằng ngày dễ hơn."
         },
-        "1": {
+        {
           "alt": "Khu vườn tri thức bằng kính tưởng tượng kết nối các đảo học tập, cộng tác và lập kế hoạch.",
           "body": "Tệp, con người, quyền truy cập và tri thức luôn liên quan trong công việc. Kiến trúc chung giúp mỗi sản phẩm dùng được ngữ cảnh đó mà không bắt người dùng nhập lại mọi thứ.",
           "proof": "Lợi thế cần được duy trì: kiến trúc, hạ tầng, kỹ thuật và trải nghiệm nhất quán.",
-          "steps": {
-            "0": {
+          "steps": [
+            {
               "body": "Danh tính, ranh giới không gian làm việc, API, lưu trữ và triển khai phục vụ nhiều sản phẩm.",
               "title": "Tái sử dụng nền tảng"
             },
-            "1": {
+            {
               "body": "Kết nối thông tin đúng quyền và mục đích để công cụ kế tiếp hiểu công việc.",
               "title": "Giữ liền mạch ngữ cảnh"
             },
-            "2": {
+            {
               "body": "Cải thiện một năng lực chung và đưa lợi ích tới nhiều phần của hệ sinh thái.",
               "title": "Tích lũy giá trị đầu tư"
             }
-          },
+          ],
           "tab": "Nền tảng chung",
           "title": "Xây trên nền tảng dùng chung."
         },
-        "2": {
+        {
           "alt": "Thế giới mô phỏng thu nhỏ với các đường đi tác tử nhiều màu hội tụ tại sân chung.",
           "body": "Trợ lý như JARVIS cần ngữ cảnh, trí nhớ, công cụ và khả năng phối hợp với con người cùng tác tử khác. Đó là hướng nghiên cứu chúng tôi khám phá cùng Mira.",
           "proof": "Hướng nghiên cứu: phối hợp đa tác tử, mô phỏng, học hỏi và hành động có kiểm duyệt.",
-          "steps": {
-            "0": {
+          "steps": [
+            {
               "body": "So sánh hành vi tác tử và phương án quy trình trong môi trường có giới hạn.",
               "title": "Khám phá qua mô phỏng"
             },
-            "1": {
+            {
               "body": "Xem xét kết quả, thất bại, phản hồi và giả định phía sau quyết định.",
               "title": "Học từ bằng chứng"
             },
-            "2": {
+            {
               "body": "Tiến tới năng lực cao hơn với quyền rõ ràng và con người xem xét ở nơi cần thiết.",
               "title": "Con người giữ quyền quyết định"
             }
-          },
+          ],
           "tab": "Trí tuệ mới",
           "title": "Cho trí tuệ một thế giới để hiểu."
         }
-      },
+      ],
       "cycle": "Mỗi khoản đầu tư tạo cơ hội tiếp theo như thế nào",
       "explore": "Khám phá cách chúng tôi xây dựng",
       "eyebrow": "DOANH NGHIỆP VIỆT NAM. KHÁT VỌNG TOÀN CẦU.",
@@ -13683,43 +13636,43 @@
       "body": "Chúng tôi bắt đầu với những người và nhóm quanh mình. Công nghệ mở giúp những gì học được có thể hữu ích cho nhiều người ngoài Việt Nam.",
       "eyebrow": "VIỆT NAM → THẾ GIỚI → VƯƠN TỚI VÌ SAO",
       "imageAlt": "Phong cảnh ven biển Việt Nam tưởng tượng nối với đường chân trời rực sáng của Trái Đất.",
-      "stages": {
-        "0": {
+      "stages": [
+        {
           "body": "Xây dựng gần con người, đội ngũ và những công việc hằng ngày đang cần công cụ tốt hơn.",
           "tag": "CỘI NGUỒN",
           "title": "Việt Nam"
         },
-        "1": {
+        {
           "body": "Mã nguồn mở, nền tảng chung và đối tác địa phương tạo chỗ cho nhiều ngôn ngữ và cách làm việc.",
           "tag": "THIẾT KẾ ĐỂ VƯƠN XA",
           "title": "Thế giới"
         },
-        "2": {
+        {
           "body": "Khám phá trí tuệ mở rộng điều con người có thể hình dung và thực hiện. Khát vọng cần từng bước chứng minh, chưa phải đích đến đã đạt được.",
           "tag": "HƯỚNG ĐI",
           "title": "Vươn tới vì sao"
         }
-      },
+      ],
       "title": "Từ nhu cầu gần gũi\nđến cơ hội toàn cầu."
     },
-    "layers": {
-      "0": {
+    "layers": [
+      {
         "detail": "Ứng dụng web, Flutter, tương tác dễ tiếp cận, trải nghiệm tiếng Anh và tiếng Việt.",
         "title": "Giao diện cho con người"
       },
-      "1": {
+      {
         "detail": "Tích hợp mô hình, công cụ streaming, xếp lịch thông minh, trợ lý giọng nói, con người xem xét.",
         "title": "Quy trình thông minh"
       },
-      "2": {
+      {
         "detail": "Phòng thời gian thực, trạng thái chia sẻ, ngữ cảnh họp, biên tập cộng tác, quyền không gian làm việc.",
         "title": "Hệ thống cộng tác"
       },
-      "3": {
+      {
         "detail": "PostgreSQL, kiểm soát theo hàng, API và SDK, edge worker, quy trình phát hành có kiểm thử.",
         "title": "Dữ liệu & triển khai"
       }
-    },
+    ],
     "meetBody": "Mời Mira vào trò chuyện trong phòng hoặc bật giọng nói Live. Nhờ hỗ trợ trong cuộc họp, trao đổi riêng và xem lại việc cần làm trước khi hành động.",
     "meetTitle": "Gặp cộng sự AI của bạn.",
     "motion": {
@@ -13736,80 +13689,80 @@
     },
     "openProduct": "Khám phá sản phẩm",
     "pitch": "Xem tầm nhìn",
-    "process": {
-      "0": "Xác định câu hỏi",
-      "1": "Thống nhất dữ liệu & quản trị",
-      "2": "Xây nguyên mẫu có phạm vi",
-      "3": "Đánh giá cùng người dùng",
-      "4": "Ghi nhận và quyết định"
-    },
+    "process": [
+      "Xác định câu hỏi",
+      "Thống nhất dữ liệu & quản trị",
+      "Xây nguyên mẫu có phạm vi",
+      "Đánh giá cùng người dùng",
+      "Ghi nhận và quyết định"
+    ],
     "processTitle": "Từ câu hỏi đến bằng chứng theo lộ trình thực tế.",
     "readDocs": "Đọc hướng dẫn kỹ thuật",
     "research": "Từ câu hỏi nghiên cứu\nđến nguyên mẫu hoạt động.",
-    "researchAreas": {
-      "0": {
+    "researchAreas": [
+      {
         "detail": "Nghiên cứu năng lực làm việc, phát triển kỹ năng và hội nhập với giả định minh bạch và con người xem xét.",
         "title": "Hỗ trợ quyết định nhân lực"
       },
-      "1": {
+      {
         "detail": "Khám phá cộng sự AI trong họp, giọng nói có sự đồng thuận và chuyển trao đổi thành hành động được xem xét.",
         "title": "Cộng tác người–AI"
       },
-      "2": {
+      {
         "detail": "Nghiên cứu truy xuất kiến thức, quy trình học tập và cách đội ngũ xây dựng sự tự tin với AI.",
         "title": "Học tập & tri thức"
       },
-      "3": {
+      {
         "detail": "Chúng tôi nghiên cứu hành vi đa tác tử và điều phối quy trình qua các kịch bản mô phỏng. Hive và Mind kết nối tác tử, quy trình tương tác, môi trường chung và lịch sử có thể kiểm tra—để thử nghiệm ý tưởng trước khi mở rộng.",
         "title": "Điều phối đa tác tử"
       }
-    },
+    ],
     "researchBody": "Chúng tôi chào đón trường đại học, nhóm nghiên cứu, doanh nghiệp và đối tác vì cộng đồng cùng khám phá AI ứng dụng, phát triển nhân lực và năng suất số. Tuturuuu có thể đóng góp kỹ thuật sản phẩm và nền tảng phần mềm có thể cấu hình cho nghiên cứu chung, thí điểm được tài trợ và đề xuất liên danh.",
     "researchNote": "Đây là các hướng hợp tác trong tương lai. Dự án, tài trợ và đánh giá cụ thể sẽ được thống nhất riêng.",
     "source": "Khám phá mã nguồn",
     "suite": {
       "body": "Chúng tôi đang xây dựng lựa chọn Tuturuuu toàn diện cho các nhóm sản phẩm như Google Drive, Meet, Mail, Chat và Docs—cùng CRM, Contacts, Finance và hệ thống vận hành. Một hệ sinh thái sản phẩm do Tuturuuu xây dựng, vận hành và phát triển. Nền tảng mở theo Apache 2.0. Chúng tôi chủ động duy trì và phát triển khả năng di chuyển dữ liệu, thay thế dịch vụ và triển khai có thể vận hành độc lập.",
-      "domains": {
-        "0": "Tệp & tri thức",
-        "1": "Họp & hội thoại",
-        "2": "Thư & cam kết",
-        "3": "Nhiệm vụ & thời gian",
-        "4": "CRM & danh bạ",
-        "5": "Tài chính & vận hành"
-      },
+      "domains": [
+        "Tệp & tri thức",
+        "Họp & hội thoại",
+        "Thư & cam kết",
+        "Nhiệm vụ & thời gian",
+        "CRM & danh bạ",
+        "Tài chính & vận hành"
+      ],
       "eyebrow": "MỘT HỆ SINH THÁI. CAM KẾT DÀI HẠN.",
-      "items": {
-        "0": {
+      "items": [
+        {
           "body": "Smart Chat kết nối con người, các kênh, ngữ cảnh chung và hội thoại AI trong một không gian làm việc. Chúng tôi đang xây dựng những đồng nghiệp có thể biến trao đổi thành công việc được phối hợp.",
           "id": "chat",
           "status": "Nền tảng Chat đã có · đang phát triển khả năng phối hợp sâu hơn",
           "title": "Con người và AI. Trong cùng cuộc trò chuyện."
         },
-        "1": {
+        {
           "body": "Smart Mail bắt đầu từ nhãn thông minh, hỗ trợ soạn thư và theo dõi phản hồi. Bước tiếp theo là Mira trích xuất việc cần làm, kết nối cam kết với nhiệm vụ và giúp xử lý dứt điểm công việc trong hộp thư.",
           "id": "mail",
           "status": "Nền tảng AI cho Mail đã có · Mira trích xuất nhiệm vụ là hướng phát triển",
           "title": "Hộp thư về không. Cam kết vẫn được theo sát."
         },
-        "2": {
+        {
           "body": "Nhiệm vụ, thói quen, giờ làm và hạn chót cùng chia sẻ một ngày hữu hạn. Smart Calendar giúp tự động xếp lịch theo ràng buộc của bạn—và đưa ra kế hoạch để bạn điều chỉnh.",
           "id": "calendar",
           "status": "Đã có khả năng xếp lịch thông minh · tùy cấu hình và phạm vi sử dụng",
           "title": "Lịch dành chỗ cho điều bạn ưu tiên."
         },
-        "3": {
+        {
           "body": "Bảng trắng thời gian thực và tài liệu cộng tác mang đến không gian chung để suy nghĩ, viết và hoàn thiện. Trải nghiệm cộng tác như Google Docs cần nằm trong cùng hệ sinh thái với công việc mà nó hỗ trợ.",
           "id": "collaboration",
           "status": "Đã có nền tảng cộng tác · tiếp tục kết nối sâu hơn giữa các sản phẩm",
           "title": "Tư duy trên bảng. Cùng xây dựng tài liệu."
         },
-        "4": {
+        {
           "body": "Chúng tôi nghiên cứu hành vi đa tác tử và điều phối quy trình qua các kịch bản mô phỏng. Hive và Mind kết nối tác tử, quy trình tương tác, môi trường chung và lịch sử có thể kiểm tra—để thử nghiệm ý tưởng trước khi mở rộng.",
           "id": "research",
           "status": "Đang nghiên cứu và thử nghiệm · mô phỏng chưa chứng minh hiệu quả thực tế",
           "title": "Trước khi giao việc cho tác tử, hãy để chúng vận hành thế giới."
         }
-      },
+      ],
       "note": "Định hướng dài hạn bao trùm toàn bộ hệ sinh thái. Tính năng, mức độ hoàn thiện và quyền truy cập tùy từng ứng dụng.",
       "strategy": "Vì sao là hệ sinh thái? Khi AI giúp tạo phiên bản đầu tiên của ứng dụng dễ hơn, chúng tôi tin giá trị lâu dài sẽ chuyển dần sang hệ thống xung quanh. Kiến trúc, phân quyền, hạ tầng chung và kỹ thuật được duy trì liên tục giúp các sản phẩm tập trung cùng tiến bộ. Chúng tôi mở rộng khi giá trị sử dụng và khả năng tái sử dụng xứng đáng với trách nhiệm duy trì thêm phần mềm.",
       "title": "Bộ công cụ làm việc.\nNền tảng doanh nghiệp.\nTrí tuệ kết nối tất cả."
@@ -13817,12 +13770,12 @@
     "taskBody": "Sắp xếp nhiệm vụ trên các bảng và dự án. Dùng gợi ý thông minh và xếp lịch theo ưu tiên để tạo kế hoạch có thể xem lại, điều chỉnh.",
     "taskTitle": "Cách thông minh hơn để tiến hành công việc.",
     "technology": "Công nghệ",
-    "ticker": {
-      "0": "Kỹ thuật sản phẩm",
-      "1": "Con người × AI",
-      "2": "Hệ thống thời gian thực",
-      "3": "Nghiên cứu ứng dụng"
-    },
+    "ticker": [
+      "Kỹ thuật sản phẩm",
+      "Con người × AI",
+      "Hệ thống thời gian thực",
+      "Nghiên cứu ứng dụng"
+    ],
     "title": "Công nghệ cùng cả một hệ sinh thái.",
     "work": "Sản phẩm tiêu biểu",
     "workIntro": "Xem các sản phẩm phối hợp thế nào."
@@ -14014,30 +13967,30 @@
       "useCases": {
         "eyebrow": "Dùng vào việc gì",
         "inbox": {
-          "items": {
-            "0": "Chuỗi thư dài rút lại còn điều đã quyết",
-            "1": "Thư trả lời soạn theo ngữ cảnh của bạn",
-            "2": "Cam kết trong thư chuyển thành công việc",
-            "3": "Cuộc họp đề xuất vào giờ bạn có thể dự"
-          },
+          "items": [
+            "Chuỗi thư dài rút lại còn điều đã quyết",
+            "Thư trả lời soạn theo ngữ cảnh của bạn",
+            "Cam kết trong thư chuyển thành công việc",
+            "Cuộc họp đề xuất vào giờ bạn có thể dự"
+          ],
           "title": "Đi hết hộp thư"
         },
         "knowledge": {
-          "items": {
-            "0": "Tóm tắt những tài liệu bạn chưa kịp đọc",
-            "1": "Rút ra chi tiết quan trọng từ một tệp dài",
-            "2": "Câu trả lời dựa trên dữ liệu trong không gian làm việc, kèm nguồn",
-            "3": "Ghi chú biến thành dàn ý bạn có thể sửa"
-          },
+          "items": [
+            "Tóm tắt những tài liệu bạn chưa kịp đọc",
+            "Rút ra chi tiết quan trọng từ một tệp dài",
+            "Câu trả lời dựa trên dữ liệu trong không gian làm việc, kèm nguồn",
+            "Ghi chú biến thành dàn ý bạn có thể sửa"
+          ],
           "title": "Làm việc với tài liệu của chính bạn"
         },
         "planning": {
-          "items": {
-            "0": "Khoảng tập trung xếp quanh những cuộc họp không thể dời",
-            "1": "Kế hoạch tự dịch chuyển khi ngày thay đổi",
-            "2": "Ưu tiên đọc từ danh sách công việc thật của bạn",
-            "3": "Câu trả lời thực tế cho việc gì kịp trước thứ Sáu"
-          },
+          "items": [
+            "Khoảng tập trung xếp quanh những cuộc họp không thể dời",
+            "Kế hoạch tự dịch chuyển khi ngày thay đổi",
+            "Ưu tiên đọc từ danh sách công việc thật của bạn",
+            "Câu trả lời thực tế cho việc gì kịp trước thứ Sáu"
+          ],
           "title": "Lên kế hoạch cho ngày"
         },
         "subtitle": "Công việc thường ngày, xử lý bằng ngữ cảnh mà không gian làm việc của bạn đã có.",
@@ -14092,32 +14045,32 @@
       "title": "Cuốn lịch biết giữ ngày của bạn",
       "useCases": {
         "clients": {
-          "items": {
-            "0": "Khung giờ đặt hẹn do bạn kiểm soát",
-            "1": "Buổi tư vấn chốt được mà không cần trao đổi email",
-            "2": "Buổi kế tiếp đặt xong trước khi cuộc gọi kết thúc",
-            "3": "Lời nhắc gửi đi để bớt buổi hẹn bị quên"
-          },
+          "items": [
+            "Khung giờ đặt hẹn do bạn kiểm soát",
+            "Buổi tư vấn chốt được mà không cần trao đổi email",
+            "Buổi kế tiếp đặt xong trước khi cuộc gọi kết thúc",
+            "Lời nhắc gửi đi để bớt buổi hẹn bị quên"
+          ],
           "title": "Làm việc với khách hàng"
         },
         "events": {
-          "items": {
-            "0": "Các phiên và diễn giả trên một lịch trình",
-            "1": "Địa điểm và thiết bị đặt theo đúng ngày",
-            "2": "Danh sách người tham dự gắn với sự kiện",
-            "3": "Một cuốn lịch có thể chia sẻ ở chế độ chỉ xem"
-          },
+          "items": [
+            "Các phiên và diễn giả trên một lịch trình",
+            "Địa điểm và thiết bị đặt theo đúng ngày",
+            "Danh sách người tham dự gắn với sự kiện",
+            "Một cuốn lịch có thể chia sẻ ở chế độ chỉ xem"
+          ],
           "title": "Tổ chức sự kiện"
         },
         "eyebrow": "Trong thực tế",
         "subtitle": "Phối hợp nội bộ, đặt hẹn với khách và tổ chức sự kiện đều chạy trên cùng một cuốn lịch.",
         "team": {
-          "items": {
-            "0": "Họp đặt vào lúc cả nhóm thật sự rảnh",
-            "1": "Thời gian rảnh chung mà không cần bảng tính",
-            "2": "Các mốc dự án nằm trên cùng dòng thời gian",
-            "3": "Phòng họp và thiết bị dùng chung đặt một lần"
-          },
+          "items": [
+            "Họp đặt vào lúc cả nhóm thật sự rảnh",
+            "Thời gian rảnh chung mà không cần bảng tính",
+            "Các mốc dự án nằm trên cùng dòng thời gian",
+            "Phòng họp và thiết bị dùng chung đặt một lần"
+          ],
           "title": "Làm việc với nhóm"
         },
         "title": "Dù bạn đang xếp lịch với ai"
@@ -14172,31 +14125,31 @@
       "useCases": {
         "eyebrow": "Trong thực tế",
         "personal": {
-          "items": {
-            "0": "Ghi chú cho chính mình trong cùng ứng dụng",
-            "1": "Nhắn tin riêng mà không cần công cụ khác",
-            "2": "Việc riêng và việc chung tách bạch",
-            "3": "Tìm kiếm bao trùm cả hai"
-          },
+          "items": [
+            "Ghi chú cho chính mình trong cùng ứng dụng",
+            "Nhắn tin riêng mà không cần công cụ khác",
+            "Việc riêng và việc chung tách bạch",
+            "Tìm kiếm bao trùm cả hai"
+          ],
           "title": "Mạch riêng của bạn"
         },
         "projects": {
-          "items": {
-            "0": "Mỗi dự án một kênh, đóng lại khi bàn giao xong",
-            "1": "Quyết định được viết ngay nơi công việc diễn ra",
-            "2": "Tệp giữ cùng phần thảo luận",
-            "3": "Người tiếp nhận sau vẫn có đủ bối cảnh"
-          },
+          "items": [
+            "Mỗi dự án một kênh, đóng lại khi bàn giao xong",
+            "Quyết định được viết ngay nơi công việc diễn ra",
+            "Tệp giữ cùng phần thảo luận",
+            "Người tiếp nhận sau vẫn có đủ bối cảnh"
+          ],
           "title": "Mạch thảo luận theo dự án"
         },
         "subtitle": "Trao đổi hằng ngày, mạch thảo luận theo dự án, và những ghi chú bạn gửi cho chính mình.",
         "team": {
-          "items": {
-            "0": "Một chỗ thay vì ba nhóm chat",
-            "1": "Một biểu tượng cảm xúc thay cho một câu trả lời nữa",
-            "2": "Ghim lại những cuộc trò chuyện quan trọng",
-            "3": "Người mới vào đọc lại được chuyện đã xảy ra"
-          },
+          "items": [
+            "Một chỗ thay vì ba nhóm chat",
+            "Một biểu tượng cảm xúc thay cho một câu trả lời nữa",
+            "Ghim lại những cuộc trò chuyện quan trọng",
+            "Người mới vào đọc lại được chuyện đã xảy ra"
+          ],
           "title": "Trao đổi hằng ngày"
         },
         "title": "Ba cuộc trò chuyện đáng giữ lại"
@@ -14251,30 +14204,30 @@
       "useCases": {
         "eyebrow": "Dành cho ai",
         "growth": {
-          "items": {
-            "0": "Biết khách hàng nào thật sự tạo ra doanh thu",
-            "1": "Nhận ra nhóm khách đáng dành thêm thời gian",
-            "2": "Theo dõi doanh thu theo từng khách qua thời gian",
-            "3": "Bố trí nguồn lực theo nhu cầu thật"
-          },
+          "items": [
+            "Biết khách hàng nào thật sự tạo ra doanh thu",
+            "Nhận ra nhóm khách đáng dành thêm thời gian",
+            "Theo dõi doanh thu theo từng khách qua thời gian",
+            "Bố trí nguồn lực theo nhu cầu thật"
+          ],
           "title": "Tăng trưởng và kế hoạch"
         },
         "sales": {
-          "items": {
-            "0": "Theo dõi khách tiềm năng từ lần chạm đầu đến khi chốt",
-            "1": "Nhìn toàn bộ tiến trình mà không phải đi hỏi cập nhật",
-            "2": "Được nhắc trước khi một cơ hội nguội đi",
-            "3": "Dự báo dựa trên giai đoạn thay vì sự lạc quan"
-          },
+          "items": [
+            "Theo dõi khách tiềm năng từ lần chạm đầu đến khi chốt",
+            "Nhìn toàn bộ tiến trình mà không phải đi hỏi cập nhật",
+            "Được nhắc trước khi một cơ hội nguội đi",
+            "Dự báo dựa trên giai đoạn thay vì sự lạc quan"
+          ],
           "title": "Đội bán hàng"
         },
         "service": {
-          "items": {
-            "0": "Mở một yêu cầu ngay trên lịch sử đầy đủ của khách",
-            "1": "Ghi rõ đã hứa điều gì và đến khi nào",
-            "2": "Giữ phản hồi ở nơi cuộc trò chuyện kế tiếp sẽ thấy",
-            "3": "Biết tài khoản nào cần được để mắt trong tuần này"
-          },
+          "items": [
+            "Mở một yêu cầu ngay trên lịch sử đầy đủ của khách",
+            "Ghi rõ đã hứa điều gì và đến khi nào",
+            "Giữ phản hồi ở nơi cuộc trò chuyện kế tiếp sẽ thấy",
+            "Biết tài khoản nào cần được để mắt trong tuần này"
+          ],
           "title": "Chăm sóc khách hàng"
         },
         "subtitle": "Bán hàng, chăm sóc và lập kế hoạch đều dựa trên cùng một lịch sử khách hàng.",
@@ -14329,31 +14282,31 @@
       "title": "Viết ngay tại nơi công việc đang diễn ra",
       "useCases": {
         "business": {
-          "items": {
-            "0": "Hợp đồng cùng lịch sử chỉnh sửa",
-            "1": "Đề xuất soạn lại từ một bản trước",
-            "2": "Chính sách với quyền truy cập được kiểm soát",
-            "3": "Báo cáo viết ngay cạnh số liệu"
-          },
+          "items": [
+            "Hợp đồng cùng lịch sử chỉnh sửa",
+            "Đề xuất soạn lại từ một bản trước",
+            "Chính sách với quyền truy cập được kiểm soát",
+            "Báo cáo viết ngay cạnh số liệu"
+          ],
           "title": "Giấy tờ kinh doanh"
         },
         "eyebrow": "Dùng vào việc gì",
         "knowledge": {
-          "items": {
-            "0": "Hướng dẫn nhập môn người mới đọc ngay ngày đầu",
-            "1": "Tài liệu quy trình gom về một chỗ",
-            "2": "Câu hỏi thường gặp nội bộ thay cho việc trả lời lại",
-            "3": "Ghi chú nghiên cứu kèm nguồn"
-          },
+          "items": [
+            "Hướng dẫn nhập môn người mới đọc ngay ngày đầu",
+            "Tài liệu quy trình gom về một chỗ",
+            "Câu hỏi thường gặp nội bộ thay cho việc trả lời lại",
+            "Ghi chú nghiên cứu kèm nguồn"
+          ],
           "title": "Kiến thức của đội"
         },
         "specs": {
-          "items": {
-            "0": "Bản mô tả liên kết tới công việc mà nó sinh ra",
-            "1": "Biên bản họp kèm quyết định và người phụ trách",
-            "2": "Quy trình xử lý sự cố để người trực làm theo",
-            "3": "Tổng kết dự án vẫn tìm lại được"
-          },
+          "items": [
+            "Bản mô tả liên kết tới công việc mà nó sinh ra",
+            "Biên bản họp kèm quyết định và người phụ trách",
+            "Quy trình xử lý sự cố để người trực làm theo",
+            "Tổng kết dự án vẫn tìm lại được"
+          ],
           "title": "Tài liệu dự án và sản phẩm"
         },
         "subtitle": "Ba dạng tài liệu thôi trôi dạt khi chúng nằm trong không gian làm việc.",
@@ -14408,32 +14361,32 @@
       "title": "Tệp của bạn, ở nơi công việc đang diễn ra",
       "useCases": {
         "delivery": {
-          "items": {
-            "0": "Một đường link thay cho tệp đính kèm bị chặn",
-            "1": "Quyền truy cập có thể thu hồi sau khi bàn giao",
-            "2": "Tệp lớn mà không cần nghi thức nén",
-            "3": "Ghi nhận rõ ràng đã gửi gì và gửi khi nào"
-          },
+          "items": [
+            "Một đường link thay cho tệp đính kèm bị chặn",
+            "Quyền truy cập có thể thu hồi sau khi bàn giao",
+            "Tệp lớn mà không cần nghi thức nén",
+            "Ghi nhận rõ ràng đã gửi gì và gửi khi nào"
+          ],
           "title": "Gửi kết quả cho khách hàng"
         },
         "eyebrow": "Dùng vào việc gì",
         "records": {
-          "items": {
-            "0": "Lịch sử phiên bản cho mọi thứ được sửa nhiều lần",
-            "1": "Bản gốc nằm cạnh bản hiện tại",
-            "2": "Khôi phục tệp bị ai đó thay nhầm",
-            "3": "Một kho lưu trữ gọn gàng thay cho thư mục trên màn hình một người"
-          },
+          "items": [
+            "Lịch sử phiên bản cho mọi thứ được sửa nhiều lần",
+            "Bản gốc nằm cạnh bản hiện tại",
+            "Khôi phục tệp bị ai đó thay nhầm",
+            "Một kho lưu trữ gọn gàng thay cho thư mục trên màn hình một người"
+          ],
           "title": "Hồ sơ phải giữ lại"
         },
         "subtitle": "Ba việc kho lưu trữ phải làm được trước khi ai đó tin tưởng nó.",
         "team": {
-          "items": {
-            "0": "Một nơi cho những tài nguyên ai cũng dùng lại",
-            "1": "Thư mục gói gọn theo dự án hoặc khách hàng",
-            "2": "Quyền truy cập gắn với không gian làm việc, không gắn với hộp thư một người",
-            "3": "Người mới thấy được cả lịch sử, không phải thư mục trống"
-          },
+          "items": [
+            "Một nơi cho những tài nguyên ai cũng dùng lại",
+            "Thư mục gói gọn theo dự án hoặc khách hàng",
+            "Quyền truy cập gắn với không gian làm việc, không gắn với hộp thư một người",
+            "Người mới thấy được cả lịch sử, không phải thư mục trống"
+          ],
           "title": "Tệp dùng chung của đội"
         },
         "title": "Các đội giữ gì trong Drive"
@@ -14487,31 +14440,31 @@
       "title": "Biết tiền đã đi đâu, không cần bảng tính",
       "useCases": {
         "business": {
-          "items": {
-            "0": "Phân loại chi tiêu của nhóm theo cách bạn chọn, không theo ngân hàng",
-            "1": "Xuất hoá đơn, theo dõi và nhắc nợ mà không cần công cụ thứ hai",
-            "2": "Khép sổ cuối tháng từ dữ liệu vốn đã gọn gàng",
-            "3": "Xem biên lợi nhuận theo dự án, không theo tài khoản ngân hàng"
-          },
+          "items": [
+            "Phân loại chi tiêu của nhóm theo cách bạn chọn, không theo ngân hàng",
+            "Xuất hoá đơn, theo dõi và nhắc nợ mà không cần công cụ thứ hai",
+            "Khép sổ cuối tháng từ dữ liệu vốn đã gọn gàng",
+            "Xem biên lợi nhuận theo dự án, không theo tài khoản ngân hàng"
+          ],
           "title": "Điều hành doanh nghiệp"
         },
         "eyebrow": "Dành cho ai",
         "personal": {
-          "items": {
-            "0": "Thấy rõ tháng vừa rồi tiền đi đâu, theo từng nhóm",
-            "1": "Gắn cho mỗi mục tiêu tiết kiệm một con số và một mốc thời gian",
-            "2": "Theo dõi tài khoản và khoản đầu tư trong một số dư chung",
-            "3": "Đặt một ngân sách mà tháng Ba bạn vẫn còn theo được"
-          },
+          "items": [
+            "Thấy rõ tháng vừa rồi tiền đi đâu, theo từng nhóm",
+            "Gắn cho mỗi mục tiêu tiết kiệm một con số và một mốc thời gian",
+            "Theo dõi tài khoản và khoản đầu tư trong một số dư chung",
+            "Đặt một ngân sách mà tháng Ba bạn vẫn còn theo được"
+          ],
           "title": "Tài chính cá nhân"
         },
         "planning": {
-          "items": {
-            "0": "Dự phóng vài tháng tới từ lịch sử thật",
-            "1": "Thử một quyết định trước khi nó thành khoản chi",
-            "2": "Phát hiện sớm những tháng dòng tiền căng",
-            "3": "So kế hoạch với những gì đã thật sự diễn ra"
-          },
+          "items": [
+            "Dự phóng vài tháng tới từ lịch sử thật",
+            "Thử một quyết định trước khi nó thành khoản chi",
+            "Phát hiện sớm những tháng dòng tiền căng",
+            "So kế hoạch với những gì đã thật sự diễn ra"
+          ],
           "title": "Nhìn về phía trước"
         },
         "subtitle": "Người làm tự do, một nhóm nhỏ hay một gia đình đều muốn biết cùng một điều: còn lại bao nhiêu, và sắp tới là gì.",
@@ -14567,30 +14520,30 @@
       "useCases": {
         "eyebrow": "Trong thực tế",
         "feedback": {
-          "items": {
-            "0": "Khảo sát sau khi mua hoặc sau một sự kiện",
-            "1": "Điểm đánh giá đọc được ngay dưới dạng biểu đồ",
-            "2": "Câu trả lời mở nằm cạnh các con số",
-            "3": "Thấy rõ người ta dừng lại ở câu hỏi nào"
-          },
+          "items": [
+            "Khảo sát sau khi mua hoặc sau một sự kiện",
+            "Điểm đánh giá đọc được ngay dưới dạng biểu đồ",
+            "Câu trả lời mở nằm cạnh các con số",
+            "Thấy rõ người ta dừng lại ở câu hỏi nào"
+          ],
           "title": "Hỏi khách hàng"
         },
         "intake": {
-          "items": {
-            "0": "Đăng ký cho một sự kiện hoặc một lớp học",
-            "1": "Thu thập thông tin khách trước buổi trao đổi đầu tiên",
-            "2": "Hồ sơ ứng tuyển gom về một hàng đợi",
-            "3": "Đường liên kết công khai, người trả lời không cần tài khoản"
-          },
+          "items": [
+            "Đăng ký cho một sự kiện hoặc một lớp học",
+            "Thu thập thông tin khách trước buổi trao đổi đầu tiên",
+            "Hồ sơ ứng tuyển gom về một hàng đợi",
+            "Đường liên kết công khai, người trả lời không cần tài khoản"
+          ],
           "title": "Yêu cầu và đăng ký"
         },
         "internal": {
-          "items": {
-            "0": "Yêu cầu được phân luồng bằng câu hỏi điều kiện",
-            "1": "Danh sách kiểm tra điền theo cùng một cách mỗi lần",
-            "2": "Xem xét câu trả lời mà không cần hộp thư chung",
-            "3": "Kết quả tóm tắt sẵn cho buổi họp kế tiếp"
-          },
+          "items": [
+            "Yêu cầu được phân luồng bằng câu hỏi điều kiện",
+            "Danh sách kiểm tra điền theo cùng một cách mỗi lần",
+            "Xem xét câu trả lời mà không cần hộp thư chung",
+            "Kết quả tóm tắt sẵn cho buổi họp kế tiếp"
+          ],
           "title": "Vận hành đội nhóm"
         },
         "subtitle": "Thu thập yêu cầu, hỏi khách hàng, và phục vụ việc nội bộ.",
@@ -14645,32 +14598,32 @@
       "title": "Phòng thí nghiệm cho bầy tác nhân",
       "useCases": {
         "design": {
-          "items": {
-            "0": "Thử một thiết lập nhiều tác nhân trước khi dựng thật",
-            "1": "So sánh các cách ghép cặp trên cùng một thế giới",
-            "2": "Thấy thay đổi chỉ dẫn qua hành vi, không phải qua lý thuyết",
-            "3": "Phát hiện kiểu hỏng ngay trong mô phỏng"
-          },
+          "items": [
+            "Thử một thiết lập nhiều tác nhân trước khi dựng thật",
+            "So sánh các cách ghép cặp trên cùng một thế giới",
+            "Thấy thay đổi chỉ dẫn qua hành vi, không phải qua lý thuyết",
+            "Phát hiện kiểu hỏng ngay trong mô phỏng"
+          ],
           "title": "Thiết kế một hệ thống"
         },
         "eyebrow": "Trong thực tế",
         "research": {
-          "items": {
-            "0": "Chỉ đổi một biến giữa hai lượt chạy",
-            "1": "Tách riêng trí nhớ và tiểu sử thành điều kiện thí nghiệm",
-            "2": "Giữ lại các lượt hội thoại để xem lại",
-            "3": "Phiên có tên, nên kết quả còn quy được về nguồn"
-          },
+          "items": [
+            "Chỉ đổi một biến giữa hai lượt chạy",
+            "Tách riêng trí nhớ và tiểu sử thành điều kiện thí nghiệm",
+            "Giữ lại các lượt hội thoại để xem lại",
+            "Phiên có tên, nên kết quả còn quy được về nguồn"
+          ],
           "title": "Nghiên cứu tác nhân"
         },
         "subtitle": "Nghiên cứu tác nhân, thiết kế một hệ nhiều tác nhân, và cho người khác thấy nó hành xử ra sao.",
         "teaching": {
-          "items": {
-            "0": "Một thế giới chung nhiều người cùng xem",
-            "1": "Trạng thái cập nhật ngay khi nhịp đang chạy",
-            "2": "Dựng lại một kịch bản để cùng thảo luận",
-            "3": "Truy được quyết định của tác nhân về đúng chỉ dẫn của nó"
-          },
+          "items": [
+            "Một thế giới chung nhiều người cùng xem",
+            "Trạng thái cập nhật ngay khi nhịp đang chạy",
+            "Dựng lại một kịch bản để cùng thảo luận",
+            "Truy được quyết định của tác nhân về đúng chỉ dẫn của nó"
+          ],
           "title": "Cho thấy nó hành xử ra sao"
         },
         "title": "Người ta chạy gì trong đó"
@@ -14724,31 +14677,31 @@
       "title": "Số liệu tồn kho khớp với hàng trên kệ",
       "useCases": {
         "distribution": {
-          "items": {
-            "0": "Sắp xếp hàng theo kho và theo vị trí",
-            "1": "Soạn và giao hàng dựa trên tồn kho thực tế",
-            "2": "Theo dõi các lần điều chuyển giữa các kho",
-            "3": "Biết hàng nào đang về và về lúc nào"
-          },
+          "items": [
+            "Sắp xếp hàng theo kho và theo vị trí",
+            "Soạn và giao hàng dựa trên tồn kho thực tế",
+            "Theo dõi các lần điều chuyển giữa các kho",
+            "Biết hàng nào đang về và về lúc nào"
+          ],
           "title": "Phân phối"
         },
         "eyebrow": "Dành cho ai",
         "manufacturing": {
-          "items": {
-            "0": "Theo dõi nguyên vật liệu theo kế hoạch sản xuất",
-            "1": "Lên kế hoạch dựa trên lượng hàng đang thật sự có",
-            "2": "Giữ lịch sử luân chuyển phục vụ kiểm tra chất lượng",
-            "3": "Theo dõi giá thành khi giá đầu vào thay đổi"
-          },
+          "items": [
+            "Theo dõi nguyên vật liệu theo kế hoạch sản xuất",
+            "Lên kế hoạch dựa trên lượng hàng đang thật sự có",
+            "Giữ lịch sử luân chuyển phục vụ kiểm tra chất lượng",
+            "Theo dõi giá thành khi giá đầu vào thay đổi"
+          ],
           "title": "Sản xuất"
         },
         "retail": {
-          "items": {
-            "0": "Giữ số trên hệ thống khớp với hàng trên kệ",
-            "1": "Đặt lại hàng trước khi mã bán chạy hết",
-            "2": "Theo dõi giá và thời gian giao của nhà cung cấp",
-            "3": "Nối luân chuyển hàng với doanh số"
-          },
+          "items": [
+            "Giữ số trên hệ thống khớp với hàng trên kệ",
+            "Đặt lại hàng trước khi mã bán chạy hết",
+            "Theo dõi giá và thời gian giao của nhà cung cấp",
+            "Nối luân chuyển hàng với doanh số"
+          ],
           "title": "Bán lẻ"
         },
         "subtitle": "Bán lẻ, phân phối và sản xuất hỏi cùng một câu bằng những cách khác nhau: còn đủ không, và đang nằm ở đâu?",
@@ -14803,31 +14756,31 @@
       "title": "Khoá học, bài tập và vị trí của từng người học",
       "useCases": {
         "centers": {
-          "items": {
-            "0": "Quản lý danh mục khoá học và các lớp đang mở",
-            "1": "Vận hành chương trình cấp chứng chỉ từ đầu đến cuối",
-            "2": "Theo dõi tiến độ của mọi lớp đang chạy",
-            "3": "Biết khoá học nào thật sự kết thúc tốt"
-          },
+          "items": [
+            "Quản lý danh mục khoá học và các lớp đang mở",
+            "Vận hành chương trình cấp chứng chỉ từ đầu đến cuối",
+            "Theo dõi tiến độ của mọi lớp đang chạy",
+            "Biết khoá học nào thật sự kết thúc tốt"
+          ],
           "title": "Trung tâm đào tạo"
         },
         "corporate": {
-          "items": {
-            "0": "Đón người mới bằng một lộ trình họ tự theo được",
-            "1": "Chạy chương trình phát triển chuyên môn mà không cần người điều phối",
-            "2": "Theo dõi đào tạo tuân thủ đến khi hoàn thành",
-            "3": "Đánh giá năng lực trước và sau chương trình"
-          },
+          "items": [
+            "Đón người mới bằng một lộ trình họ tự theo được",
+            "Chạy chương trình phát triển chuyên môn mà không cần người điều phối",
+            "Theo dõi đào tạo tuân thủ đến khi hoàn thành",
+            "Đánh giá năng lực trước và sau chương trình"
+          ],
           "title": "Đội nhóm và đào tạo nội bộ"
         },
         "eyebrow": "Dành cho ai",
         "institutions": {
-          "items": {
-            "0": "Đưa khoá học lên trực tuyến với nội dung đúng thứ tự",
-            "1": "Xem kết quả theo từng sinh viên, không chỉ theo lớp",
-            "2": "Tổ chức lớp học trực tuyến song song với bài vở",
-            "3": "Gom tài liệu và học liệu vào một thư viện"
-          },
+          "items": [
+            "Đưa khoá học lên trực tuyến với nội dung đúng thứ tự",
+            "Xem kết quả theo từng sinh viên, không chỉ theo lớp",
+            "Tổ chức lớp học trực tuyến song song với bài vở",
+            "Gom tài liệu và học liệu vào một thư viện"
+          ],
           "title": "Trường học và đại học"
         },
         "subtitle": "Một lớp học, một chương trình hội nhập hay một khoá cấp chứng chỉ đều chạy trên ba thứ: nội dung, bài làm và tiến độ.",
@@ -14882,32 +14835,32 @@
       "title": "Hộp thư biết chuyển việc sang phần còn lại của ngày",
       "useCases": {
         "clients": {
-          "items": {
-            "0": "Chuỗi thư mang theo ngữ cảnh của dự án",
-            "1": "Hẹn lịch mà không cần bốn lượt qua lại",
-            "2": "Nhắc theo dõi tự chạy mà bạn không phải nhớ",
-            "3": "Tệp đính kèm nằm trong Drive, không nằm trong thư mục tải về"
-          },
+          "items": [
+            "Chuỗi thư mang theo ngữ cảnh của dự án",
+            "Hẹn lịch mà không cần bốn lượt qua lại",
+            "Nhắc theo dõi tự chạy mà bạn không phải nhớ",
+            "Tệp đính kèm nằm trong Drive, không nằm trong thư mục tải về"
+          ],
           "title": "Trao đổi với khách hàng"
         },
         "eyebrow": "Dùng vào việc gì",
         "followups": {
-          "items": {
-            "0": "Bản nháp trả lời chờ bạn chỉnh",
-            "1": "Hẹn giờ gửi qua các múi giờ",
-            "2": "Nhắc lại khi chưa ai trả lời",
-            "3": "Thư được chuyển thành công việc có hạn chót"
-          },
+          "items": [
+            "Bản nháp trả lời chờ bạn chỉnh",
+            "Hẹn giờ gửi qua các múi giờ",
+            "Nhắc lại khi chưa ai trả lời",
+            "Thư được chuyển thành công việc có hạn chót"
+          ],
           "title": "Giữ nguyên vẹn một ngày của bạn"
         },
         "subtitle": "Ba dạng trao đổi thôi rò rỉ khi thư nằm trong không gian làm việc.",
         "team": {
-          "items": {
-            "0": "Một địa chỉ nhiều người cùng trả lời",
-            "1": "Bàn giao mà không cần chuyển tiếp lòng vòng",
-            "2": "Cập nhật nội bộ trở thành công việc",
-            "3": "Một bản ghi người mới có thể đọc lại"
-          },
+          "items": [
+            "Một địa chỉ nhiều người cùng trả lời",
+            "Bàn giao mà không cần chuyển tiếp lòng vòng",
+            "Cập nhật nội bộ trở thành công việc",
+            "Một bản ghi người mới có thể đọc lại"
+          ],
           "title": "Đội nhóm và hộp thư dùng chung"
         },
         "title": "Những loại thư thật sự tốn thời gian của bạn"
@@ -14957,32 +14910,32 @@
       "title": "Tìm ra giờ họp trước khi gửi lời mời",
       "useCases": {
         "clients": {
-          "items": {
-            "0": "Đưa ra nhiều giờ khả dĩ trong một tin nhắn",
-            "1": "Không cần mở lịch nội bộ cho người ngoài",
-            "2": "Nhiều người tham dự được gom về một lần",
-            "3": "Còn lại bản ghi về điều đã thống nhất"
-          },
+          "items": [
+            "Đưa ra nhiều giờ khả dĩ trong một tin nhắn",
+            "Không cần mở lịch nội bộ cho người ngoài",
+            "Nhiều người tham dự được gom về một lần",
+            "Còn lại bản ghi về điều đã thống nhất"
+          ],
           "title": "Khách hàng và đối tác ngoài"
         },
         "eyebrow": "Trong thực tế",
         "groups": {
-          "items": {
-            "0": "Buổi học chung xếp quanh lịch lên lớp",
-            "1": "Ca tình nguyện khớp với người đang rảnh",
-            "2": "Kế hoạch định kỳ dùng lại từ tuần này sang tuần khác",
-            "3": "Ai cũng trả lời được mà không phải đăng ký"
-          },
+          "items": [
+            "Buổi học chung xếp quanh lịch lên lớp",
+            "Ca tình nguyện khớp với người đang rảnh",
+            "Kế hoạch định kỳ dùng lại từ tuần này sang tuần khác",
+            "Ai cũng trả lời được mà không phải đăng ký"
+          ],
           "title": "Nhóm và cộng đồng"
         },
         "subtitle": "Càng nhiều cuốn lịch tham gia, chuỗi tin nhắn càng tốn kém. Đây là thứ thay thế nó.",
         "teams": {
-          "items": {
-            "0": "Tìm được giờ khả thi mà không cần chuỗi trả lời",
-            "1": "Giờ địa phương hiển thị cho từng người",
-            "2": "Cộng tác viên và đối tác tham gia bằng liên kết",
-            "3": "Nội dung họp sẵn sàng trước khi chốt giờ"
-          },
+          "items": [
+            "Tìm được giờ khả thi mà không cần chuỗi trả lời",
+            "Giờ địa phương hiển thị cho từng người",
+            "Cộng tác viên và đối tác tham gia bằng liên kết",
+            "Nội dung họp sẵn sàng trước khi chốt giờ"
+          ],
           "title": "Nhóm ở nhiều múi giờ"
         },
         "title": "Bất cứ khi nào có hơn ba người"
@@ -15042,30 +14995,30 @@
       "title": "Một mã cho thứ bạn phải lặp đi lặp lại",
       "useCases": {
         "business": {
-          "items": {
-            "0": "Thực đơn mở ra mà không cần ứng dụng",
-            "1": "Thông tin thanh toán trên tấm thẻ cạnh quầy thu ngân",
-            "2": "Đường liên kết đặt món hoặc đánh giá ngay tại bàn",
-            "3": "Một đường liên kết in trên hóa đơn hoặc túi đựng"
-          },
+          "items": [
+            "Thực đơn mở ra mà không cần ứng dụng",
+            "Thông tin thanh toán trên tấm thẻ cạnh quầy thu ngân",
+            "Đường liên kết đặt món hoặc đánh giá ngay tại bàn",
+            "Một đường liên kết in trên hóa đơn hoặc túi đựng"
+          ],
           "title": "Trên quầy"
         },
         "events": {
-          "items": {
-            "0": "Đường liên kết đăng ký in trên áp phích",
-            "1": "Chỉ đường tới phòng hoặc địa điểm",
-            "2": "Slide và tài liệu sau buổi nói chuyện",
-            "3": "Một danh thiếp người khác quét được"
-          },
+          "items": [
+            "Đường liên kết đăng ký in trên áp phích",
+            "Chỉ đường tới phòng hoặc địa điểm",
+            "Slide và tài liệu sau buổi nói chuyện",
+            "Một danh thiếp người khác quét được"
+          ],
           "title": "Tại sự kiện"
         },
         "everyday": {
-          "items": {
-            "0": "Đưa một đường liên kết dài sang điện thoại mà không phải gõ",
-            "1": "Đường liên kết biểu mẫu để người khác quét và điền",
-            "2": "Trang cá nhân hoặc hồ sơ năng lực trên danh thiếp",
-            "3": "Mã in vừa một miếng dán hoặc một thẻ đeo"
-          },
+          "items": [
+            "Đưa một đường liên kết dài sang điện thoại mà không phải gõ",
+            "Đường liên kết biểu mẫu để người khác quét và điền",
+            "Trang cá nhân hoặc hồ sơ năng lực trên danh thiếp",
+            "Mã in vừa một miếng dán hoặc một thẻ đeo"
+          ],
           "title": "Trao đổi hằng ngày"
         },
         "eyebrow": "Trong thực tế",
@@ -15121,31 +15074,31 @@
       "title": "Kho hàng của bạn, mở ra cho người mua",
       "useCases": {
         "buyers": {
-          "items": {
-            "0": "Xem theo nhóm sản phẩm trên điện thoại",
-            "1": "Giỏ hàng nhớ những gì đã thêm",
-            "2": "Thanh toán kết thúc ở một trang thanh toán thật",
-            "3": "Đơn hàng tra lại được sau này"
-          },
+          "items": [
+            "Xem theo nhóm sản phẩm trên điện thoại",
+            "Giỏ hàng nhớ những gì đã thêm",
+            "Thanh toán kết thúc ở một trang thanh toán thật",
+            "Đơn hàng tra lại được sau này"
+          ],
           "title": "Người đi mua"
         },
         "eyebrow": "Trong thực tế",
         "operators": {
-          "items": {
-            "0": "Tồn kho đếm một lần, hiển thị ở mọi nơi",
-            "1": "Bật tắt hiển thị sản phẩm theo từng cửa hàng",
-            "2": "Đơn hàng nằm cùng không gian làm việc với kho",
-            "3": "Danh mục và thiết lập thanh toán giữ trong Inventory"
-          },
+          "items": [
+            "Tồn kho đếm một lần, hiển thị ở mọi nơi",
+            "Bật tắt hiển thị sản phẩm theo từng cửa hàng",
+            "Đơn hàng nằm cùng không gian làm việc với kho",
+            "Danh mục và thiết lập thanh toán giữ trong Inventory"
+          ],
           "title": "Phía sau quầy"
         },
         "shops": {
-          "items": {
-            "0": "Có cửa hàng mà không phải dựng lại danh mục",
-            "1": "Giá duy trì ở một nơi duy nhất",
-            "2": "Đường liên kết in được lên hóa đơn hay áp phích",
-            "3": "Không thêm hệ thống thứ hai phải đối soát"
-          },
+          "items": [
+            "Có cửa hàng mà không phải dựng lại danh mục",
+            "Giá duy trì ở một nơi duy nhất",
+            "Đường liên kết in được lên hóa đơn hay áp phích",
+            "Không thêm hệ thống thứ hai phải đối soát"
+          ],
           "title": "Cửa hàng nhỏ"
         },
         "subtitle": "Cửa hàng nhỏ, đội đứng sau quầy, và người đi mua.",
@@ -15201,31 +15154,31 @@
       "useCases": {
         "eyebrow": "Trong thực tế",
         "operations": {
-          "items": {
-            "0": "Danh sách kiểm tra dùng lại cho việc thường kỳ",
-            "1": "Theo dõi hạn trên nhiều dự án cùng lúc",
-            "2": "Nhìn thấy khối lượng việc trước khi nhận thêm",
-            "3": "Báo cáo trạng thái dựng từ hoạt động thật"
-          },
+          "items": [
+            "Danh sách kiểm tra dùng lại cho việc thường kỳ",
+            "Theo dõi hạn trên nhiều dự án cùng lúc",
+            "Nhìn thấy khối lượng việc trước khi nhận thêm",
+            "Báo cáo trạng thái dựng từ hoạt động thật"
+          ],
           "title": "Vận hành lặp lại"
         },
         "personal": {
-          "items": {
-            "0": "Một danh sách trong ngày có thể làm hết, không phải hộp thư",
-            "1": "Mục tiêu chia nhỏ thành việc có hạn cụ thể",
-            "2": "Thói quen và việc định kỳ tự lặp lại",
-            "3": "Ưu tiên đặt một lần vào buổi sáng"
-          },
+          "items": [
+            "Một danh sách trong ngày có thể làm hết, không phải hộp thư",
+            "Mục tiêu chia nhỏ thành việc có hạn cụ thể",
+            "Thói quen và việc định kỳ tự lặp lại",
+            "Ưu tiên đặt một lần vào buổi sáng"
+          ],
           "title": "Tuần của riêng bạn"
         },
         "subtitle": "Việc cá nhân, việc của nhóm và việc lặp lại hằng tháng đều nằm trong một không gian làm việc.",
         "team": {
-          "items": {
-            "0": "Dự án chia thành các việc có người phụ trách",
-            "1": "Bàn giao kèm trạng thái ai cũng nhìn thấy",
-            "2": "Tiến độ đọc được mà không cần họp báo cáo",
-            "3": "Bình luận và bối cảnh nằm ngay trong công việc"
-          },
+          "items": [
+            "Dự án chia thành các việc có người phụ trách",
+            "Bàn giao kèm trạng thái ai cũng nhìn thấy",
+            "Tiến độ đọc được mà không cần họp báo cáo",
+            "Bình luận và bối cảnh nằm ngay trong công việc"
+          ],
           "title": "Nhóm bàn giao công việc"
         },
         "title": "Cùng một bảng, ba cách dùng"
@@ -15280,31 +15233,31 @@
       "useCases": {
         "eyebrow": "Trong thực tế",
         "freelance": {
-          "items": {
-            "0": "Số giờ theo từng khách, sẵn sàng lập hóa đơn",
-            "1": "Phiên làm việc gắn với công việc đã bàn giao",
-            "2": "Ước lượng được đối chiếu với thời gian thực tế",
-            "3": "Bản xuất dữ liệu để hóa đơn dẫn chiếu"
-          },
+          "items": [
+            "Số giờ theo từng khách, sẵn sàng lập hóa đơn",
+            "Phiên làm việc gắn với công việc đã bàn giao",
+            "Ước lượng được đối chiếu với thời gian thực tế",
+            "Bản xuất dữ liệu để hóa đơn dẫn chiếu"
+          ],
           "title": "Lập hóa đơn cho khách"
         },
         "review": {
-          "items": {
-            "0": "Xem lại cả tuần trong một màn hình",
-            "1": "Thời gian theo công việc, dự án và người",
-            "2": "Phát hiện chỗ thiếu khi vẫn còn sửa được",
-            "3": "Một bản ghi cho lần lập kế hoạch tiếp theo"
-          },
+          "items": [
+            "Xem lại cả tuần trong một màn hình",
+            "Thời gian theo công việc, dự án và người",
+            "Phát hiện chỗ thiếu khi vẫn còn sửa được",
+            "Một bản ghi cho lần lập kế hoạch tiếp theo"
+          ],
           "title": "Chốt lại một tuần"
         },
         "subtitle": "Lập hóa đơn cho khách, điều phối một nhóm, hoặc chốt lại một tuần.",
         "team": {
-          "items": {
-            "0": "Ai đang làm gì, ngay lúc này",
-            "1": "Thấy rõ khối lượng công việc trước khi giao thêm",
-            "2": "Thời gian nghỉ tách khỏi thời gian tập trung",
-            "3": "Duyệt những mục ai đó quên ghi"
-          },
+          "items": [
+            "Ai đang làm gì, ngay lúc này",
+            "Thấy rõ khối lượng công việc trước khi giao thêm",
+            "Thời gian nghỉ tách khỏi thời gian tập trung",
+            "Duyệt những mục ai đó quên ghi"
+          ],
           "title": "Điều phối một nhóm"
         },
         "title": "Ba lý do người dùng để bộ đếm chạy"
@@ -15358,32 +15311,32 @@
       "title": "Phần lặp đi lặp lại, chạy mà không cần bạn",
       "useCases": {
         "approvals": {
-          "items": {
-            "0": "Phê duyệt tự đi đến đúng người có quyền quyết",
-            "1": "Tài liệu đi qua các vòng xem xét theo thứ tự",
-            "2": "Nhân sự mới được thiết lập theo cùng một danh sách",
-            "3": "Đề nghị mua sắm theo dõi được đến khi có quyết định"
-          },
+          "items": [
+            "Phê duyệt tự đi đến đúng người có quyền quyết",
+            "Tài liệu đi qua các vòng xem xét theo thứ tự",
+            "Nhân sự mới được thiết lập theo cùng một danh sách",
+            "Đề nghị mua sắm theo dõi được đến khi có quyết định"
+          ],
           "title": "Quy trình nghiệp vụ"
         },
         "eyebrow": "Trong thực tế",
         "subtitle": "Phê duyệt, bàn giao và các việc vặt giữa hệ thống là phần âm thầm ngốn cả tuần mỗi tháng.",
         "systems": {
-          "items": {
-            "0": "Dữ liệu giữ đồng bộ giữa các công cụ",
-            "1": "Tác vụ theo lịch chạy đúng giờ",
-            "2": "Tác nhân kích hoạt riêng cho sự kiện của bạn",
-            "3": "Mỗi lần chạy đều có nhật ký để tìm ra lỗi"
-          },
+          "items": [
+            "Dữ liệu giữ đồng bộ giữa các công cụ",
+            "Tác vụ theo lịch chạy đúng giờ",
+            "Tác nhân kích hoạt riêng cho sự kiện của bạn",
+            "Mỗi lần chạy đều có nhật ký để tìm ra lỗi"
+          ],
           "title": "Việc vặt giữa các hệ thống"
         },
         "team": {
-          "items": {
-            "0": "Việc được giao khi công việc tới một giai đoạn",
-            "1": "Bàn giao mang theo bối cảnh của chính nó",
-            "2": "Cập nhật trạng thái đăng đi mà không cần nhắc",
-            "3": "Thông báo chỉ gửi cho người thật sự cần"
-          },
+          "items": [
+            "Việc được giao khi công việc tới một giai đoạn",
+            "Bàn giao mang theo bối cảnh của chính nó",
+            "Cập nhật trạng thái đăng đi mà không cần nhắc",
+            "Thông báo chỉ gửi cho người thật sự cần"
+          ],
           "title": "Tự động hóa cho nhóm"
         },
         "title": "Nơi việc thủ công thường trốn"

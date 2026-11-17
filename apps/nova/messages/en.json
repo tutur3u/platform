@@ -1615,78 +1615,78 @@
   },
   "landing": {
     "ai_features": {
-      "features": {
-        "0": {
+      "features": [
+        {
           "description": "Automate complex workflows with AI that learns your preferences",
           "title": "Smart Automation"
         },
-        "1": {
+        {
           "description": "Get actionable recommendations based on your data and industry trends",
           "title": "Intelligent Insights"
         },
-        "2": {
+        {
           "description": "Work with AI that understands context and communicates naturally",
           "title": "Natural Collaboration"
         },
-        "3": {
+        {
           "description": "Anticipate challenges and opportunities with AI-powered forecasting",
           "title": "Predictive Analytics"
         },
-        "4": {
+        {
           "description": "AI that continuously improves based on your team's usage patterns",
           "title": "Adaptive Learning"
         },
-        "5": {
+        {
           "description": "Access insights from worldwide data while maintaining privacy",
           "title": "Global Intelligence"
         }
-      },
+      ],
       "subtitle": "Every feature is enhanced by cutting-edge artificial intelligence",
       "title": "AI at Its Core"
     },
     "ai_revolution": {
-      "items": {
-        "0": {
+      "items": [
+        {
           "description": "AI-powered insights and automation help you make decisions 10x faster",
           "title": "Think Faster"
         },
-        "1": {
+        {
           "description": "Let AI handle repetitive tasks while you focus on what matters most",
           "title": "Work Smarter"
         },
-        "2": {
+        {
           "description": "Scale your operations effortlessly with AI that learns and adapts",
           "title": "Grow Bigger"
         },
-        "3": {
+        {
           "description": "Always be at the cutting edge with continuously evolving AI capabilities",
           "title": "Stay Ahead"
         }
-      },
+      ],
       "subtitle": "Experience the future of work with AI that understands, adapts, and grows with you",
       "title": "AI Revolution"
     },
     "benefits": {
       "for_businesses": {
-        "items": {
-          "0": "Reduced operational costs",
-          "1": "Improved efficiency and productivity",
-          "2": "Better decision-making with AI insights",
-          "3": "Enhanced team collaboration",
-          "4": "Streamlined workflows",
-          "5": "Scalable solutions for growth"
-        },
+        "items": [
+          "Reduced operational costs",
+          "Improved efficiency and productivity",
+          "Better decision-making with AI insights",
+          "Enhanced team collaboration",
+          "Streamlined workflows",
+          "Scalable solutions for growth"
+        ],
         "title": "For Businesses"
       },
       "for_teams": {
-        "items": {
-          "0": "Seamless communication",
-          "1": "Real-time collaboration",
-          "2": "Automated task management",
-          "3": "Centralized information access",
-          "4": "Integrated tools and features",
-          "5": "Enhanced productivity"
-        },
+        "items": [
+          "Seamless communication",
+          "Real-time collaboration",
+          "Automated task management",
+          "Centralized information access",
+          "Integrated tools and features",
+          "Enhanced productivity"
+        ],
         "title": "For Teams"
       },
       "subtitle": "Experience the advantages of an all-in-one platform designed for modern businesses.",
@@ -1810,104 +1810,104 @@
     },
     "subheadline": "Take control of workflows, supercharged by AI",
     "success_metrics": {
-      "metrics": {
-        "0": {
+      "metrics": [
+        {
           "label": "Faster Decision Making",
           "value": "10x"
         },
-        "1": {
+        {
           "label": "Time Saved on Routine Tasks",
           "value": "80%"
         },
-        "2": {
+        {
           "label": "Reduction in Operating Costs",
           "value": "50%"
         },
-        "3": {
+        {
           "label": "Increase in Team Productivity",
           "value": "3x"
         }
-      },
+      ],
       "subtitle": "Join thousands of organizations achieving remarkable results",
       "title": "Real Impact"
     },
     "testimonials": {
-      "items": {
-        "0": {
+      "items": [
+        {
           "author": "Sarah Chen",
           "company": "TechCorp",
           "quote": "Tuturuuu has transformed how we work. The AI features are incredible!",
           "role": "Product Manager"
         },
-        "1": {
+        {
           "author": "Michael Rodriguez",
           "company": "StartupX",
           "quote": "The best all-in-one solution we've found for our team's needs.",
           "role": "CEO"
         },
-        "2": {
+        {
           "author": "Emily Johnson",
           "company": "DesignPro",
           "quote": "Intuitive interface and powerful features. Highly recommended!",
           "role": "Team Lead"
         }
-      },
+      ],
       "subtitle": "Join thousands of satisfied users who trust Tuturuuu",
       "title": "What Our Users Say"
     },
     "transformation": {
-      "steps": {
-        "0": {
+      "steps": [
+        {
           "description": "Get up and running in minutes with intuitive onboarding",
           "title": "Start Instantly"
         },
-        "1": {
+        {
           "description": "Grow from one to thousands of users without friction",
           "title": "Scale Effortlessly"
         },
-        "2": {
+        {
           "description": "Stay ahead with AI that learns and improves every day",
           "title": "Evolve Continuously"
         }
-      },
+      ],
       "subtitle": "Experience the power of AI-driven transformation",
       "title": "Transform Your Work"
     },
     "universal_value": {
       "categories": {
         "business_size": {
-          "items": {
-            "0": "Solopreneurs & Freelancers",
-            "1": "Small & Medium Businesses",
-            "2": "Large Enterprises",
-            "3": "Global Organizations"
-          },
+          "items": [
+            "Solopreneurs & Freelancers",
+            "Small & Medium Businesses",
+            "Large Enterprises",
+            "Global Organizations"
+          ],
           "title": "Any Size"
         },
         "industries": {
-          "items": {
-            "0": "Technology & Innovation",
-            "1": "Healthcare & Wellness",
-            "2": "Education & Learning",
-            "3": "Retail & E-commerce",
-            "4": "Manufacturing & Production",
-            "5": "Services & Consulting",
-            "6": "Creative & Entertainment",
-            "7": "Non-profit & Social Impact"
-          },
+          "items": [
+            "Technology & Innovation",
+            "Healthcare & Wellness",
+            "Education & Learning",
+            "Retail & E-commerce",
+            "Manufacturing & Production",
+            "Services & Consulting",
+            "Creative & Entertainment",
+            "Non-profit & Social Impact"
+          ],
           "title": "Any Industry"
         },
         "use_cases": {
-          "items": {
-            "0": "Streamline Operations",
-            "1": "Boost Productivity",
-            "2": "Enhance Collaboration",
-            "3": "Drive Innovation",
-            "4": "Improve Customer Experience",
-            "5": "Scale Globally",
-            "6": "Reduce Costs",
-            "7": "Achieve Sustainability"
-          },
+          "items": [
+            "Streamline Operations",
+            "Boost Productivity",
+            "Enhance Collaboration",
+            "Drive Innovation",
+            "Improve Customer Experience",
+            "Scale Globally",
+            "Reduce Costs",
+            "Achieve Sustainability"
+          ],
           "title": "Any Goal"
         }
       },

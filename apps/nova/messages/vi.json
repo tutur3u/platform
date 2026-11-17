@@ -1615,78 +1615,78 @@
   },
   "landing": {
     "ai_features": {
-      "features": {
-        "0": {
+      "features": [
+        {
           "description": "Tự động hóa quy trình phức tạp với AI học hỏi từ sở thích của bạn",
           "title": "Tự động hóa Thông minh"
         },
-        "1": {
+        {
           "description": "Nhận các đề xuất hữu ích dựa trên dữ liệu và xu hướng ngành của bạn",
           "title": "Thông tin Chi tiết Thông minh"
         },
-        "2": {
+        {
           "description": "Làm việc với AI hiểu ngữ cảnh và giao tiếp tự nhiên",
           "title": "Hợp tác Tự nhiên"
         },
-        "3": {
+        {
           "description": "Dự đoán thách thức và cơ hội với dự báo được hỗ trợ bởi AI",
           "title": "Phân tích Dự đoán"
         },
-        "4": {
+        {
           "description": "AI liên tục cải thiện dựa trên mô hình sử dụng của đội ngũ bạn",
           "title": "Học hỏi Thích nghi"
         },
-        "5": {
+        {
           "description": "Truy cập thông tin từ dữ liệu toàn cầu trong khi vẫn đảm bảo quyền riêng tư",
           "title": "Trí tuệ Toàn cầu"
         }
-      },
+      ],
       "subtitle": "Mọi tính năng đều được nâng cao bởi trí tuệ nhân tạo tiên tiến",
       "title": "AI là Cốt lõi"
     },
     "ai_revolution": {
-      "items": {
-        "0": {
+      "items": [
+        {
           "description": "Thông tin chi tiết và tự động hóa được hỗ trợ bởi AI giúp bạn ra quyết định nhanh hơn 10 lần",
           "title": "Tư duy Nhanh hơn"
         },
-        "1": {
+        {
           "description": "Để AI xử lý các công việc lặp lại trong khi bạn tập trung vào những điều quan trọng nhất",
           "title": "Làm việc Thông minh hơn"
         },
-        "2": {
+        {
           "description": "Mở rộng hoạt động một cách dễ dàng với AI học hỏi và thích nghi",
           "title": "Phát triển Lớn mạnh hơn"
         },
-        "3": {
+        {
           "description": "Luôn ở vị trí dẫn đầu với khả năng AI không ngừng phát triển",
           "title": "Luôn Dẫn đầu"
         }
-      },
+      ],
       "subtitle": "Trải nghiệm tương lai của công việc với AI hiểu, thích nghi và phát triển cùng bạn",
       "title": "Cuộc Cách Mạng AI"
     },
     "benefits": {
       "for_businesses": {
-        "items": {
-          "0": "Giảm chi phí vận hành",
-          "1": "Cải thiện hiệu quả và năng suất",
-          "2": "Ra quyết định tốt hơn với thông tin chi tiết từ AI",
-          "3": "Tăng cường hợp tác nhóm",
-          "4": "Tối ưu hóa quy trình làm việc",
-          "5": "Giải pháp có thể mở rộng cho sự phát triển"
-        },
+        "items": [
+          "Giảm chi phí vận hành",
+          "Cải thiện hiệu quả và năng suất",
+          "Ra quyết định tốt hơn với thông tin chi tiết từ AI",
+          "Tăng cường hợp tác nhóm",
+          "Tối ưu hóa quy trình làm việc",
+          "Giải pháp có thể mở rộng cho sự phát triển"
+        ],
         "title": "Cho Doanh nghiệp"
       },
       "for_teams": {
-        "items": {
-          "0": "Giao tiếp liền mạch",
-          "1": "Hợp tác thời gian thực",
-          "2": "Quản lý công việc tự động",
-          "3": "Truy cập thông tin tập trung",
-          "4": "Công cụ và tính năng tích hợp",
-          "5": "Nâng cao năng suất"
-        },
+        "items": [
+          "Giao tiếp liền mạch",
+          "Hợp tác thời gian thực",
+          "Quản lý công việc tự động",
+          "Truy cập thông tin tập trung",
+          "Công cụ và tính năng tích hợp",
+          "Nâng cao năng suất"
+        ],
         "title": "Cho Đội ngũ"
       },
       "subtitle": "Trải nghiệm những ưu điểm của nền tảng tất cả trong một được thiết kế cho doanh nghiệp hiện đại",
@@ -1810,104 +1810,104 @@
     },
     "subheadline": "Kiểm soát quy trình làm việc, được tăng cường bởi AI",
     "success_metrics": {
-      "metrics": {
-        "0": {
+      "metrics": [
+        {
           "label": "Ra quyết định Nhanh hơn",
           "value": "10x"
         },
-        "1": {
+        {
           "label": "Thời gian Tiết kiệm cho Công việc Thường xuyên",
           "value": "80%"
         },
-        "2": {
+        {
           "label": "Giảm Chi phí Hoạt động",
           "value": "50%"
         },
-        "3": {
+        {
           "label": "Tăng Năng suất Đội ngũ",
           "value": "3x"
         }
-      },
+      ],
       "subtitle": "Tham gia cùng hàng nghìn tổ chức đạt được kết quả đáng kinh ngạc",
       "title": "Tác động Thực tế"
     },
     "testimonials": {
-      "items": {
-        "0": {
+      "items": [
+        {
           "author": "Sarah Chen",
           "company": "TechCorp",
           "quote": "Tuturuuu đã thay đổi cách chúng tôi làm việc. Các tính năng AI thật đáng kinh ngạc!",
           "role": "Quản lý Sản phẩm"
         },
-        "1": {
+        {
           "author": "Michael Rodriguez",
           "company": "StartupX",
           "quote": "Giải pháp tất cả trong một tốt nhất mà chúng tôi từng tìm thấy cho nhu cầu của đội ngũ.",
           "role": "Giám đốc Điều hành"
         },
-        "2": {
+        {
           "author": "Emily Johnson",
           "company": "DesignPro",
           "quote": "Giao diện trực quan và tính năng mạnh mẽ. Rất đáng để giới thiệu!",
           "role": "Trưởng nhóm"
         }
-      },
+      ],
       "subtitle": "Tham gia cùng hàng nghìn người dùng hài lòng tin tưởng Tuturuuu",
       "title": "Người Dùng Nói Gì"
     },
     "transformation": {
-      "steps": {
-        "0": {
+      "steps": [
+        {
           "description": "Bắt đầu và vận hành trong vài phút với hướng dẫn trực quan",
           "title": "Bắt đầu Ngay lập tức"
         },
-        "1": {
+        {
           "description": "Phát triển từ một đến hàng nghìn người dùng mà không gặp trở ngại",
           "title": "Mở rộng Dễ dàng"
         },
-        "2": {
+        {
           "description": "Luôn dẫn đầu với AI học hỏi và cải thiện mỗi ngày",
           "title": "Phát triển Liên tục"
         }
-      },
+      ],
       "subtitle": "Trải nghiệm sức mạnh của chuyển đổi được hỗ trợ bởi AI",
       "title": "Chuyển đổi Công việc"
     },
     "universal_value": {
       "categories": {
         "business_size": {
-          "items": {
-            "0": "Doanh nhân & Freelancer",
-            "1": "Doanh nghiệp Vừa và Nhỏ",
-            "2": "Doanh nghiệp Lớn",
-            "3": "Tổ chức Toàn cầu"
-          },
+          "items": [
+            "Doanh nhân & Freelancer",
+            "Doanh nghiệp Vừa và Nhỏ",
+            "Doanh nghiệp Lớn",
+            "Tổ chức Toàn cầu"
+          ],
           "title": "Mọi Quy mô"
         },
         "industries": {
-          "items": {
-            "0": "Công nghệ & Đổi mới",
-            "1": "Y tế & Sức khỏe",
-            "2": "Giáo dục & Học tập",
-            "3": "Bán lẻ & Thương mại điện tử",
-            "4": "Sản xuất & Chế tạo",
-            "5": "Dịch vụ & Tư vấn",
-            "6": "Sáng tạo & Giải trí",
-            "7": "Phi lợi nhuận & Tác động xã hội"
-          },
+          "items": [
+            "Công nghệ & Đổi mới",
+            "Y tế & Sức khỏe",
+            "Giáo dục & Học tập",
+            "Bán lẻ & Thương mại điện tử",
+            "Sản xuất & Chế tạo",
+            "Dịch vụ & Tư vấn",
+            "Sáng tạo & Giải trí",
+            "Phi lợi nhuận & Tác động xã hội"
+          ],
           "title": "Mọi Ngành nghề"
         },
         "use_cases": {
-          "items": {
-            "0": "Tối ưu hóa Hoạt động",
-            "1": "Tăng Năng suất",
-            "2": "Nâng cao Hợp tác",
-            "3": "Thúc đẩy Đổi mới",
-            "4": "Cải thiện Trải nghiệm Khách hàng",
-            "5": "Mở rộng Toàn cầu",
-            "6": "Giảm Chi phí",
-            "7": "Đạt được Tính bền vững"
-          },
+          "items": [
+            "Tối ưu hóa Hoạt động",
+            "Tăng Năng suất",
+            "Nâng cao Hợp tác",
+            "Thúc đẩy Đổi mới",
+            "Cải thiện Trải nghiệm Khách hàng",
+            "Mở rộng Toàn cầu",
+            "Giảm Chi phí",
+            "Đạt được Tính bền vững"
+          ],
           "title": "Mọi Mục tiêu"
         }
       },

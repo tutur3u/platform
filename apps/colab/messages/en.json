@@ -391,98 +391,98 @@
     "analyze": "Prompt analysis",
     "back": "Previous lesson",
     "completed": "lessons explored",
-    "deliverables": {
-      "0": "Reusable system prompt",
-      "1": "Tested skills",
-      "2": "English + Vietnamese caption",
-      "3": "Artwork brief + alt text",
-      "4": "Sources + final review"
-    },
+    "deliverables": [
+      "Reusable system prompt",
+      "Tested skills",
+      "English + Vietnamese caption",
+      "Artwork brief + alt text",
+      "Sources + final review"
+    ],
     "emptyAnalysis": "Write a few instructions to see how they map to the framework.",
     "evidence": "Your words",
     "example": "RISE example",
     "eyebrow": "RISE FIELD GUIDE",
-    "flow": {
-      "0": "Team instructions",
-      "1": "Source knowledge",
-      "2": "Reusable skills",
-      "3": "Draft + evidence",
-      "4": "Member review"
-    },
+    "flow": [
+      "Team instructions",
+      "Source knowledge",
+      "Reusable skills",
+      "Draft + evidence",
+      "Member review"
+    ],
     "found": "Evidence found",
     "frameworkHelp": "Use RISE for reusable team instructions. Use CRAFT to shape a communication brief. These are memory aids, not magic formulas; a strong prompt still needs accurate sources and testing.",
     "frameworkLabel": "Prompt framework",
     "frameworks": {
       "craft": {
         "name": "CRAFT · content brief",
-        "sections": {
-          "0": {
+        "sections": [
+          {
             "id": "context",
             "sample": "## Context\nRISE needs an Induction Day invitation that helps new students find their place.",
             "title": "Context",
             "why": "Explain the situation and purpose."
           },
-          "1": {
+          {
             "id": "role",
             "sample": "## Role\nAct as a welcoming student communications editor for RMIT newcomers.",
             "title": "Role",
             "why": "Define the perspective and audience."
           },
-          "2": {
+          {
             "id": "action",
             "sample": "## Action\nRead the approved event records, draft the invitation, then verify all factual claims.",
             "title": "Action",
             "why": "Say which work to complete, in order."
           },
-          "3": {
+          {
             "id": "format",
             "sample": "## Format\nProvide English and Vietnamese plain-text captions, source notes, and artwork alt text separately.",
             "title": "Format",
             "why": "Make the handoff easy to use."
           },
-          "4": {
+          {
             "id": "tone",
             "sample": "## Tone\nBe warm, concrete, inclusive, and student-to-student. Avoid hype and unexplained jargon.",
             "title": "Tone",
             "why": "Choose a voice that fits the readers."
           }
-        }
+        ]
       },
       "rise": {
         "name": "RISE · reusable system",
-        "sections": {
-          "0": {
+        "sections": [
+          {
             "id": "role",
             "sample": "## Role & readers\nYou are RISE’s communications assistant. Write for RMIT students who are curious but new to entrepreneurship.",
             "title": "Role & readers",
             "why": "Give the assistant a job and the people it serves."
           },
-          "1": {
+          {
             "id": "inputs",
             "sample": "## Inputs & evidence\nSearch the approved event brief, voice guide, department notes, and partner review. Use the latest approved facts; ask about missing or conflicting details.",
             "title": "Inputs & evidence",
             "why": "Name trusted sources and what to do when they disagree."
           },
-          "2": {
+          {
             "id": "steps",
             "sample": "## Steps & safeguards\nGather sources, compare facts, draft, and check both languages. Never invent a speaker, sponsor, date, or link. Ask a member to approve publishing.",
             "title": "Steps & safeguards",
             "why": "Give a repeatable method and clear decision boundaries."
           },
-          "3": {
+          {
             "id": "output",
             "sample": "## Expected output\nReturn separate English and Vietnamese plain-text Facebook captions, an artwork brief, alt text, source notes, and a readiness checklist.",
             "title": "Expected output",
             "why": "Describe a result a teammate can actually use."
           }
-        }
+        ]
       }
     },
     "frameworkTitle": "A clear prompt has a job for every section",
     "heading": "Build an assistant your team can trust.",
     "intro": "Learn one idea, try it, then use it in your Induction Day system. No coding experience needed.",
-    "lessons": {
-      "0": {
+    "lessons": [
+      {
         "body": "A useful AI system combines instructions, relevant knowledge, and a way to check its work. A model predicts a response from what it receives; it does not automatically know your club’s latest plans. Your job is to give it a clear job and a reliable route to the facts.",
         "example": "For Induction Day: start with the team’s system prompt → gather the approved event brief and voice guide → follow a bilingual drafting skill → produce a caption → check facts and ask a member to approve it.",
         "subtitle": "An assistant is a teammate with a written brief.",
@@ -490,7 +490,7 @@
         "title": "The big picture",
         "why": "One vague request may produce a good-looking post with a wrong date. A repeatable workflow helps every department get consistent work and catch gaps before sharing it."
       },
-      "1": {
+      {
         "body": "Markdown is ordinary text with a few readable shortcuts. A # starts a heading, - starts a bullet, **word** adds emphasis, and [label](https://example.com) describes a link. A .md file is just a text file using these conventions. You can read it even without special software.",
         "example": "Edit the example below and watch its preview. Keep system prompts and SKILL.md files structured. For the final Facebook caption, ask for plain text: Facebook may display the Markdown punctuation instead of formatting it.",
         "subtitle": "Simple marks that give your writing structure.",
@@ -498,7 +498,7 @@
         "title": "Markdown",
         "why": "Headings separate role, evidence, workflow, and output. Bullets turn a long paragraph into instructions teammates can scan and maintain. Markdown organizes meaning; it does not make a claim true or force a model to obey."
       },
-      "2": {
+      {
         "body": "A system prompt describes how an assistant should behave across requests: its role, audience, evidence rules, working steps, and expected output. A task prompt is today’s assignment. Context is the information it needs for that assignment. In Colab, your saved team instructions are turned into skills and used with the current scenario.",
         "example": "Standing instruction: “Use the latest approved event brief. If required facts are missing, list the questions before calling a caption ready.” Today’s task: “Prepare the Induction Day invitation.” Context: the approved brief, newcomer questions, and tone guide.",
         "subtitle": "The standing brief, not today’s task.",
@@ -506,7 +506,7 @@
         "title": "System prompts",
         "why": "You can change the event or audience without rebuilding your assistant. Clear boundaries also help when source documents contain outdated notes or text that tries to tell the assistant what to do."
       },
-      "3": {
+      {
         "body": "A skill packages one repeatable workflow with a name, a description of when to use it, and instructions. Think of your system prompt as a team charter and a skill as a recipe: fact-check an event, adapt English copy into Vietnamese, or review an accessible caption. SKILL.md is the readable file containing that recipe.",
         "example": "Save your prompt, choose Generate skills, inspect each recipe, then Test your agent in Results. In Colab all generated team skills are supplied to the practice agent. Other AI products may load skills differently; check their setup before reusing the downloaded file.",
         "subtitle": "Reusable recipes for jobs your team repeats.",
@@ -514,7 +514,7 @@
         "title": "Skills",
         "why": "A focused recipe is easier to test and update than a giant prompt. A bilingual-copy skill can help with Induction Day, recruitment, and a project showcase. Skills do not grant new app access or ensure correct answers by themselves."
       },
-      "4": {
+      {
         "body": "Tools let the assistant search and read connected practice app records, then create or update practice records when allowed. Source content is evidence, not a new instruction. A polished message is not necessarily an approved message. Ask who owns a fact, when it changed, and whether it is approved.",
         "example": "The calendar still says Thursday, but the approved rehearsal brief v2 says Saturday. Use the current approved source and explain the conflict in the review notes. A link in a practice record is a reference; these tools do not open the live web or publish to Facebook.",
         "subtitle": "Find the facts before finding the perfect words.",
@@ -522,7 +522,7 @@
         "title": "Evidence & tools",
         "why": "Knowledge is scattered: a Drive brief holds logistics, Messenger reveals newcomer concerns, Teams explains departments, Gmail rules out an unconfirmed speaker, and Figma gives the artwork direction. Your prompt should tell the agent how to reconcile them."
       },
-      "5": {
+      {
         "body": "Run the same task with a clear checklist: accurate facts, newcomer clarity, matching English/Vietnamese meaning, a clear next step, and accessible artwork notes. Change one instruction at a time and compare the results. An AI coach’s feedback is a suggestion; members remain the reviewers.",
         "example": "In Live showcase, the host puts a team on stage. Everyone follows its system, skills, and results while the team demonstrates the same challenge. Explain what changed and which evidence improved the post, then hand the stage to the next team.",
         "subtitle": "Judge the work, then improve the instructions.",
@@ -530,7 +530,7 @@
         "title": "Test, improve & showcase",
         "why": "A single good response can hide a fragile prompt. Test a missing registration link, a venue change, or an unapproved sponsor. A dependable assistant should ask useful questions instead of filling gaps with confident guesses."
       }
-    },
+    ],
     "local": "Your practice here stays in this browser. It does not change your team’s saved prompt.",
     "mark": "Mark as explored",
     "markdownLabel": "Edit the Markdown example",
@@ -549,38 +549,38 @@
     "source": "Markdown source",
     "sourceMapHelp": "Try searching “Induction” in these apps. Each source answers a different question.",
     "sourceMapTitle": "A story worth telling starts in more than one app",
-    "sources": {
-      "0": {
+    "sources": [
+      {
         "app": "drive",
         "name": "The event brief",
         "question": "What is happening, when, and where?"
       },
-      "1": {
+      {
         "app": "notion",
         "name": "The voice guide",
         "question": "How does RISE sound?"
       },
-      "2": {
+      {
         "app": "messenger",
         "name": "Newcomer questions",
         "question": "What will make someone feel welcome?"
       },
-      "3": {
+      {
         "app": "teams",
         "name": "Department notes",
         "question": "What can members learn and try?"
       },
-      "4": {
+      {
         "app": "gmail",
         "name": "Partner review",
         "question": "Which claims are actually approved?"
       },
-      "5": {
+      {
         "app": "figma",
         "name": "Artwork direction",
         "question": "How will people see and access the story?"
       }
-    },
+    ],
     "suggestion": "Try adding",
     "takeaway": "Take this into your team",
     "title": "Learning",

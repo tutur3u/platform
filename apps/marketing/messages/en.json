@@ -1234,11 +1234,11 @@
       "calendar": "Calendar",
       "done": "Deliver",
       "inbox": "Capture",
-      "items": {
-        "0": "Prepare the research brief",
-        "1": "Review the prototype",
-        "2": "Plan the next experiment"
-      },
+      "items": [
+        "Prepare the research brief",
+        "Review the prototype",
+        "Plan the next experiment"
+      ],
       "planned": "Plan",
       "reset": "Reset illustration",
       "review": "Review suggestions",
@@ -3446,11 +3446,11 @@
           "proactive": "Takes action"
         },
         "description": "Mira is your AI assistant inside Tuturuuu. Ask her to plan your day, schedule tasks into your calendar, draft email replies or log your spending, all from what's already in your workspace.",
-        "prompts": {
-          "0": "Schedule my standup for tomorrow at 9am",
-          "1": "Summarize my tasks for this week",
-          "2": "Help me prioritize my project deadlines"
-        },
+        "prompts": [
+          "Schedule my standup for tomorrow at 9am",
+          "Summarize my tasks for this week",
+          "Help me prioritize my project deadlines"
+        ],
         "title": "Mira: Your AI Partner",
         "tryAsking": "Try asking Mira..."
       }
@@ -4062,11 +4062,11 @@
       "payAsYouGo": {
         "badge": "Coming Soon",
         "description": "Need more? Extend your usage with flexible options.",
-        "features": {
-          "0": "Extended AI usage",
-          "1": "Workflow processing time",
-          "2": "Priority queue access"
-        },
+        "features": [
+          "Extended AI usage",
+          "Workflow processing time",
+          "Priority queue access"
+        ],
         "title": "Pay As You Go"
       },
       "pricesLoading": "Loading current prices…",
@@ -4076,27 +4076,27 @@
         "enterprise": {
           "cta": "Contact Sales",
           "description": "For large organizations",
-          "features": {
-            "0": "Everything in Pro",
-            "1": "Custom solutions",
-            "2": "Dedicated support",
-            "3": "SLA where agreed in your contract",
-            "4": "Self-hosting options"
-          },
+          "features": [
+            "Everything in Pro",
+            "Custom solutions",
+            "Dedicated support",
+            "SLA where agreed in your contract",
+            "Self-hosting options"
+          ],
           "name": "Enterprise",
           "price": "Custom"
         },
         "free": {
           "cta": "Get Started",
           "description": "For individuals exploring Tuturuuu",
-          "features": {
-            "0": "Tasks, calendar and notes",
-            "1": "Whiteboards and time tracking",
-            "2": "AI within a finite credit allowance",
-            "3": "Core finance, contacts and inventory",
-            "4": "Workspace permissions and export",
-            "5": "100 MiB Drive storage per workspace"
-          },
+          "features": [
+            "Tasks, calendar and notes",
+            "Whiteboards and time tracking",
+            "AI within a finite credit allowance",
+            "Core finance, contacts and inventory",
+            "Workspace permissions and export",
+            "100 MiB Drive storage per workspace"
+          ],
           "name": "Free",
           "period": "forever",
           "price": "$0"
@@ -4105,15 +4105,15 @@
           "badge": "Best Value",
           "cta": "Get Plus",
           "description": "For teams that need collaboration",
-          "features": {
-            "0": "Core tools across the suite",
-            "1": "Seat-based team billing",
-            "2": "20 GiB Drive storage per workspace",
-            "3": "Shared workspace AI credits",
-            "4": "Chat collaboration",
-            "5": "Optional eligible AI credit top-ups",
-            "6": "Meet hosting: restricted preview"
-          },
+          "features": [
+            "Core tools across the suite",
+            "Seat-based team billing",
+            "20 GiB Drive storage per workspace",
+            "Shared workspace AI credits",
+            "Chat collaboration",
+            "Optional eligible AI credit top-ups",
+            "Meet hosting: restricted preview"
+          ],
           "name": "Plus",
           "period": {
             "monthly": "/member/mo",
@@ -4124,14 +4124,14 @@
           "badge": "Most Powerful",
           "cta": "Get Pro",
           "description": "For power teams that need it all",
-          "features": {
-            "0": "Everything in Plus",
-            "1": "Larger finite workspace AI budget",
-            "2": "Priority support",
-            "3": "AI lab and Mira",
-            "4": "Workforce administration",
-            "5": "100 GiB Drive storage per workspace"
-          },
+          "features": [
+            "Everything in Plus",
+            "Larger finite workspace AI budget",
+            "Priority support",
+            "AI lab and Mira",
+            "Workforce administration",
+            "100 GiB Drive storage per workspace"
+          ],
           "name": "Pro",
           "period": {
             "monthly": "/member/mo",
@@ -4938,30 +4938,30 @@
       "useCases": {
         "eyebrow": "Where it fits",
         "inbox": {
-          "items": {
-            "0": "Long threads reduced to what was decided",
-            "1": "Replies drafted in your own context",
-            "2": "Commitments in a thread turned into tasks",
-            "3": "Meetings proposed at times you can make"
-          },
+          "items": [
+            "Long threads reduced to what was decided",
+            "Replies drafted in your own context",
+            "Commitments in a thread turned into tasks",
+            "Meetings proposed at times you can make"
+          ],
           "title": "Getting through the inbox"
         },
         "knowledge": {
-          "items": {
-            "0": "Summaries of documents you have not read yet",
-            "1": "Key details pulled out of a long file",
-            "2": "Answers grounded in your workspace, with the source",
-            "3": "Notes turned into an outline you can edit"
-          },
+          "items": [
+            "Summaries of documents you have not read yet",
+            "Key details pulled out of a long file",
+            "Answers grounded in your workspace, with the source",
+            "Notes turned into an outline you can edit"
+          ],
           "title": "Working with your own material"
         },
         "planning": {
-          "items": {
-            "0": "Focus blocks scheduled around the meetings you cannot move",
-            "1": "A plan that shifts when the day does",
-            "2": "Priorities read from your actual tasks",
-            "3": "A realistic answer to what fits before Friday"
-          },
+          "items": [
+            "Focus blocks scheduled around the meetings you cannot move",
+            "A plan that shifts when the day does",
+            "Priorities read from your actual tasks",
+            "A realistic answer to what fits before Friday"
+          ],
           "title": "Planning the day"
         },
         "subtitle": "Ordinary work, handled with the context your workspace already holds.",
@@ -5016,32 +5016,32 @@
       "title": "A calendar that defends your day",
       "useCases": {
         "clients": {
-          "items": {
-            "0": "Bookable slots you control",
-            "1": "Consultations confirmed without an exchange of emails",
-            "2": "Follow-ups scheduled before the call ends",
-            "3": "Reminders sent so fewer meetings are missed"
-          },
+          "items": [
+            "Bookable slots you control",
+            "Consultations confirmed without an exchange of emails",
+            "Follow-ups scheduled before the call ends",
+            "Reminders sent so fewer meetings are missed"
+          ],
           "title": "Working with clients"
         },
         "events": {
-          "items": {
-            "0": "Sessions and speakers on one schedule",
-            "1": "Venue and equipment booked against the same dates",
-            "2": "Attendee lists attached to the event",
-            "3": "A calendar you can share read-only"
-          },
+          "items": [
+            "Sessions and speakers on one schedule",
+            "Venue and equipment booked against the same dates",
+            "Attendee lists attached to the event",
+            "A calendar you can share read-only"
+          ],
           "title": "Running an event"
         },
         "eyebrow": "In practice",
         "subtitle": "Internal coordination, client bookings and events all run on the same calendar.",
         "team": {
-          "items": {
-            "0": "Meetings placed where the team is actually free",
-            "1": "Shared availability without a spreadsheet",
-            "2": "Project milestones on the same timeline",
-            "3": "Rooms and shared resources booked once"
-          },
+          "items": [
+            "Meetings placed where the team is actually free",
+            "Shared availability without a spreadsheet",
+            "Project milestones on the same timeline",
+            "Rooms and shared resources booked once"
+          ],
           "title": "Working with a team"
         },
         "title": "Whoever you are scheduling with"
@@ -5096,31 +5096,31 @@
       "useCases": {
         "eyebrow": "In practice",
         "personal": {
-          "items": {
-            "0": "Notes to yourself in the same app",
-            "1": "Direct messages without a separate tool",
-            "2": "Personal and work conversations kept apart",
-            "3": "Search that covers both"
-          },
+          "items": [
+            "Notes to yourself in the same app",
+            "Direct messages without a separate tool",
+            "Personal and work conversations kept apart",
+            "Search that covers both"
+          ],
           "title": "Your own thread"
         },
         "projects": {
-          "items": {
-            "0": "A channel per project, closed when it ships",
-            "1": "Decisions written where the work lives",
-            "2": "Files kept with the discussion",
-            "3": "Context available to whoever picks it up next"
-          },
+          "items": [
+            "A channel per project, closed when it ships",
+            "Decisions written where the work lives",
+            "Files kept with the discussion",
+            "Context available to whoever picks it up next"
+          ],
           "title": "Project threads"
         },
         "subtitle": "Everyday team talk, project threads, and the notes you send yourself.",
         "team": {
-          "items": {
-            "0": "One place instead of three group chats",
-            "1": "A reaction instead of another reply",
-            "2": "Pinned conversations for the ones that matter",
-            "3": "New joiners can read what happened"
-          },
+          "items": [
+            "One place instead of three group chats",
+            "A reaction instead of another reply",
+            "Pinned conversations for the ones that matter",
+            "New joiners can read what happened"
+          ],
           "title": "Everyday team talk"
         },
         "title": "Three conversations worth keeping"
@@ -5175,30 +5175,30 @@
       "useCases": {
         "eyebrow": "Who it is for",
         "growth": {
-          "items": {
-            "0": "See which customers actually drive revenue",
-            "1": "Spot the segments worth more of your time",
-            "2": "Track revenue per account over time",
-            "3": "Plan capacity against real demand"
-          },
+          "items": [
+            "See which customers actually drive revenue",
+            "Spot the segments worth more of your time",
+            "Track revenue per account over time",
+            "Plan capacity against real demand"
+          ],
           "title": "Growth and planning"
         },
         "sales": {
-          "items": {
-            "0": "Track leads from first contact to signed",
-            "1": "See the whole pipeline without asking for an update",
-            "2": "Get reminded before a deal goes cold",
-            "3": "Forecast from stages rather than optimism"
-          },
+          "items": [
+            "Track leads from first contact to signed",
+            "See the whole pipeline without asking for an update",
+            "Get reminded before a deal goes cold",
+            "Forecast from stages rather than optimism"
+          ],
           "title": "Sales"
         },
         "service": {
-          "items": {
-            "0": "Open a case against the full customer history",
-            "1": "Track what was promised and by when",
-            "2": "Keep feedback where the next conversation will find it",
-            "3": "See which accounts need attention this week"
-          },
+          "items": [
+            "Open a case against the full customer history",
+            "Track what was promised and by when",
+            "Keep feedback where the next conversation will find it",
+            "See which accounts need attention this week"
+          ],
           "title": "Customer service"
         },
         "subtitle": "Selling, supporting and planning all draw on the same customer history.",
@@ -5253,31 +5253,31 @@
       "title": "Write it down where the work already lives",
       "useCases": {
         "business": {
-          "items": {
-            "0": "Contracts and their revision history",
-            "1": "Proposals drafted from a previous one",
-            "2": "Policies with controlled access",
-            "3": "Reports written next to the numbers"
-          },
+          "items": [
+            "Contracts and their revision history",
+            "Proposals drafted from a previous one",
+            "Policies with controlled access",
+            "Reports written next to the numbers"
+          ],
           "title": "Business paperwork"
         },
         "eyebrow": "Where it fits",
         "knowledge": {
-          "items": {
-            "0": "Onboarding guides new hires read on day one",
-            "1": "Process documentation kept in one place",
-            "2": "Internal FAQs instead of answering it again",
-            "3": "Research notes with their sources attached"
-          },
+          "items": [
+            "Onboarding guides new hires read on day one",
+            "Process documentation kept in one place",
+            "Internal FAQs instead of answering it again",
+            "Research notes with their sources attached"
+          ],
           "title": "Team knowledge"
         },
         "specs": {
-          "items": {
-            "0": "Specs that link to the tasks they created",
-            "1": "Meeting notes with decisions and owners",
-            "2": "Runbooks the on-call person can follow",
-            "3": "Retrospectives that stay findable"
-          },
+          "items": [
+            "Specs that link to the tasks they created",
+            "Meeting notes with decisions and owners",
+            "Runbooks the on-call person can follow",
+            "Retrospectives that stay findable"
+          ],
           "title": "Project and product docs"
         },
         "subtitle": "Three shapes of writing that stop drifting once they live in the workspace.",
@@ -5332,32 +5332,32 @@
       "title": "Your files, where the rest of the work is",
       "useCases": {
         "delivery": {
-          "items": {
-            "0": "A link instead of an attachment that bounces",
-            "1": "Access you can revoke after the handover",
-            "2": "Large files without the compression ritual",
-            "3": "A clear record of what was sent and when"
-          },
+          "items": [
+            "A link instead of an attachment that bounces",
+            "Access you can revoke after the handover",
+            "Large files without the compression ritual",
+            "A clear record of what was sent and when"
+          ],
           "title": "Sending work to clients"
         },
         "eyebrow": "Where it fits",
         "records": {
-          "items": {
-            "0": "Version history for anything that gets revised",
-            "1": "Originals preserved alongside the current file",
-            "2": "Restore a file someone replaced by mistake",
-            "3": "A tidy archive instead of a folder on one desktop"
-          },
+          "items": [
+            "Version history for anything that gets revised",
+            "Originals preserved alongside the current file",
+            "Restore a file someone replaced by mistake",
+            "A tidy archive instead of a folder on one desktop"
+          ],
           "title": "Records you have to keep"
         },
         "subtitle": "Three jobs storage has to do before anyone trusts it.",
         "team": {
-          "items": {
-            "0": "One place for the assets everyone reuses",
-            "1": "Folders scoped to a project or a client",
-            "2": "Access that follows the workspace, not one person's inbox",
-            "3": "New members see the history, not an empty folder"
-          },
+          "items": [
+            "One place for the assets everyone reuses",
+            "Folders scoped to a project or a client",
+            "Access that follows the workspace, not one person's inbox",
+            "New members see the history, not an empty folder"
+          ],
           "title": "Shared team files"
         },
         "title": "What teams keep in Drive"
@@ -5411,31 +5411,31 @@
       "title": "Know where the money went, without the spreadsheet",
       "useCases": {
         "business": {
-          "items": {
-            "0": "Keep team spend in categories you chose, not the bank's",
-            "1": "Invoice, track and follow up without a second tool",
-            "2": "Close the month from records that were already tidy",
-            "3": "See margin per project rather than per bank account"
-          },
+          "items": [
+            "Keep team spend in categories you chose, not the bank's",
+            "Invoice, track and follow up without a second tool",
+            "Close the month from records that were already tidy",
+            "See margin per project rather than per bank account"
+          ],
           "title": "Running a business"
         },
         "eyebrow": "Who it is for",
         "personal": {
-          "items": {
-            "0": "See where the month actually went, by category",
-            "1": "Give every savings goal a number and a date",
-            "2": "Track accounts and investments in one balance",
-            "3": "Set a budget you will still be following in March"
-          },
+          "items": [
+            "See where the month actually went, by category",
+            "Give every savings goal a number and a date",
+            "Track accounts and investments in one balance",
+            "Set a budget you will still be following in March"
+          ],
           "title": "Personal money"
         },
         "planning": {
-          "items": {
-            "0": "Project the next few months from real history",
-            "1": "Test a decision before it becomes an expense",
-            "2": "Spot the months where cash gets tight early",
-            "3": "Compare a plan against what actually happened"
-          },
+          "items": [
+            "Project the next few months from real history",
+            "Test a decision before it becomes an expense",
+            "Spot the months where cash gets tight early",
+            "Compare a plan against what actually happened"
+          ],
           "title": "Planning ahead"
         },
         "subtitle": "A freelancer, a small team and a household all want to know the same thing: what is left, and what is coming.",
@@ -5491,30 +5491,30 @@
       "useCases": {
         "eyebrow": "In practice",
         "feedback": {
-          "items": {
-            "0": "Surveys after a purchase or an event",
-            "1": "Ratings you can read as a chart",
-            "2": "Open answers kept next to the numbers",
-            "3": "Drop-off shown at the question people stopped on"
-          },
+          "items": [
+            "Surveys after a purchase or an event",
+            "Ratings you can read as a chart",
+            "Open answers kept next to the numbers",
+            "Drop-off shown at the question people stopped on"
+          ],
           "title": "Asking customers"
         },
         "intake": {
-          "items": {
-            "0": "Registration for an event or a class",
-            "1": "Client intake before the first call",
-            "2": "Applications collected in one queue",
-            "3": "A public link that needs no account to answer"
-          },
+          "items": [
+            "Registration for an event or a class",
+            "Client intake before the first call",
+            "Applications collected in one queue",
+            "A public link that needs no account to answer"
+          ],
           "title": "Requests and sign-ups"
         },
         "internal": {
-          "items": {
-            "0": "Requests routed with conditional questions",
-            "1": "Checklists filled the same way every time",
-            "2": "Answers reviewed without a shared inbox",
-            "3": "Results summarised for the next meeting"
-          },
+          "items": [
+            "Requests routed with conditional questions",
+            "Checklists filled the same way every time",
+            "Answers reviewed without a shared inbox",
+            "Results summarised for the next meeting"
+          ],
           "title": "Running the team"
         },
         "subtitle": "Collecting requests, asking customers, and running something internal.",
@@ -5569,32 +5569,32 @@
       "title": "A lab for swarm agents",
       "useCases": {
         "design": {
-          "items": {
-            "0": "A multi-agent setup tried before it is built",
-            "1": "Pairing strategies compared on the same world",
-            "2": "Prompt changes seen in behavior, not in theory",
-            "3": "Failure modes found in simulation"
-          },
+          "items": [
+            "A multi-agent setup tried before it is built",
+            "Pairing strategies compared on the same world",
+            "Prompt changes seen in behavior, not in theory",
+            "Failure modes found in simulation"
+          ],
           "title": "Designing a system"
         },
         "eyebrow": "In practice",
         "research": {
-          "items": {
-            "0": "One variable changed between two runs",
-            "1": "Memory and backstory isolated as conditions",
-            "2": "Conversation turns kept for review",
-            "3": "Named sessions, so results stay attributable"
-          },
+          "items": [
+            "One variable changed between two runs",
+            "Memory and backstory isolated as conditions",
+            "Conversation turns kept for review",
+            "Named sessions, so results stay attributable"
+          ],
           "title": "Agent research"
         },
         "subtitle": "Agent research, designing a multi-agent system, and showing others how one behaves.",
         "teaching": {
-          "items": {
-            "0": "A shared world several people can watch",
-            "1": "Live state as the tick runs",
-            "2": "A scenario replayed for a discussion",
-            "3": "Agent decisions traceable to their prompt"
-          },
+          "items": [
+            "A shared world several people can watch",
+            "Live state as the tick runs",
+            "A scenario replayed for a discussion",
+            "Agent decisions traceable to their prompt"
+          ],
           "title": "Showing how it behaves"
         },
         "title": "What people run in it"
@@ -5648,31 +5648,31 @@
       "title": "Stock counts that match the shelf",
       "useCases": {
         "distribution": {
-          "items": {
-            "0": "Organise stock by location and bin",
-            "1": "Pick and fulfil against live availability",
-            "2": "Follow transfers between sites",
-            "3": "See what is inbound and when it lands"
-          },
+          "items": [
+            "Organise stock by location and bin",
+            "Pick and fulfil against live availability",
+            "Follow transfers between sites",
+            "See what is inbound and when it lands"
+          ],
           "title": "Distribution"
         },
         "eyebrow": "Who it is for",
         "manufacturing": {
-          "items": {
-            "0": "Track raw materials against planned runs",
-            "1": "Plan production around what you actually hold",
-            "2": "Keep a movement record for quality checks",
-            "3": "Watch unit cost as input prices change"
-          },
+          "items": [
+            "Track raw materials against planned runs",
+            "Plan production around what you actually hold",
+            "Keep a movement record for quality checks",
+            "Watch unit cost as input prices change"
+          ],
           "title": "Production"
         },
         "retail": {
-          "items": {
-            "0": "Keep shelf and system counts in agreement",
-            "1": "Reorder before a best seller runs out",
-            "2": "Track supplier prices and lead times",
-            "3": "Tie stock movements back to sales"
-          },
+          "items": [
+            "Keep shelf and system counts in agreement",
+            "Reorder before a best seller runs out",
+            "Track supplier prices and lead times",
+            "Tie stock movements back to sales"
+          ],
           "title": "Retail"
         },
         "subtitle": "Retail, distribution and production ask the same question in different words: do we have enough, and where is it?",
@@ -5727,31 +5727,31 @@
       "title": "Courses, assignments and where each learner stands",
       "useCases": {
         "centers": {
-          "items": {
-            "0": "Manage a catalogue of courses and cohorts",
-            "1": "Run certification programmes end to end",
-            "2": "Monitor progress across every active group",
-            "3": "See which courses actually finish well"
-          },
+          "items": [
+            "Manage a catalogue of courses and cohorts",
+            "Run certification programmes end to end",
+            "Monitor progress across every active group",
+            "See which courses actually finish well"
+          ],
           "title": "Training providers"
         },
         "corporate": {
-          "items": {
-            "0": "Onboard new hires with a path they can follow",
-            "1": "Run professional development without a scheduler",
-            "2": "Track compliance training to completion",
-            "3": "Assess skills before and after the programme"
-          },
+          "items": [
+            "Onboard new hires with a path they can follow",
+            "Run professional development without a scheduler",
+            "Track compliance training to completion",
+            "Assess skills before and after the programme"
+          ],
           "title": "Teams and training"
         },
         "eyebrow": "Who it is for",
         "institutions": {
-          "items": {
-            "0": "Deliver a course online with the material in order",
-            "1": "See performance per student, not just per class",
-            "2": "Run virtual classrooms alongside the coursework",
-            "3": "Keep readings and resources in one library"
-          },
+          "items": [
+            "Deliver a course online with the material in order",
+            "See performance per student, not just per class",
+            "Run virtual classrooms alongside the coursework",
+            "Keep readings and resources in one library"
+          ],
           "title": "Schools and universities"
         },
         "subtitle": "A classroom, an onboarding programme and a certification course run on the same three things: material, work, and progress.",
@@ -5806,32 +5806,32 @@
       "title": "An inbox that hands work to the rest of your day",
       "useCases": {
         "clients": {
-          "items": {
-            "0": "Threads that carry the project's context",
-            "1": "Scheduling without the four-message dance",
-            "2": "Follow-ups that fire without you remembering",
-            "3": "Attachments that land in Drive, not a downloads folder"
-          },
+          "items": [
+            "Threads that carry the project's context",
+            "Scheduling without the four-message dance",
+            "Follow-ups that fire without you remembering",
+            "Attachments that land in Drive, not a downloads folder"
+          ],
           "title": "Client correspondence"
         },
         "eyebrow": "Where it fits",
         "followups": {
-          "items": {
-            "0": "Reply drafts waiting for your edit",
-            "1": "Scheduled sending across time zones",
-            "2": "Reminders when nobody answered",
-            "3": "Mail turned into a task with a due date"
-          },
+          "items": [
+            "Reply drafts waiting for your edit",
+            "Scheduled sending across time zones",
+            "Reminders when nobody answered",
+            "Mail turned into a task with a due date"
+          ],
           "title": "Keeping your day intact"
         },
         "subtitle": "Three kinds of correspondence that stop leaking once mail sits in the workspace.",
         "team": {
-          "items": {
-            "0": "One address several people can answer",
-            "1": "Handover without a chain of forwards",
-            "2": "Internal updates that become tasks",
-            "3": "A record new teammates can read back"
-          },
+          "items": [
+            "One address several people can answer",
+            "Handover without a chain of forwards",
+            "Internal updates that become tasks",
+            "A record new teammates can read back"
+          ],
           "title": "Team and shared inboxes"
         },
         "title": "The mail that actually costs you time"
@@ -5881,32 +5881,32 @@
       "title": "Find the time before you send the invite",
       "useCases": {
         "clients": {
-          "items": {
-            "0": "Candidate times offered in one message",
-            "1": "No access to your internal calendar required",
-            "2": "Several attendees reconciled at once",
-            "3": "A record of what was agreed and why"
-          },
+          "items": [
+            "Candidate times offered in one message",
+            "No access to your internal calendar required",
+            "Several attendees reconciled at once",
+            "A record of what was agreed and why"
+          ],
           "title": "Clients and externals"
         },
         "eyebrow": "In practice",
         "groups": {
-          "items": {
-            "0": "Study sessions arranged around classes",
-            "1": "Volunteer shifts matched to who is free",
-            "2": "Recurring plans reused week to week",
-            "3": "Anyone can respond without signing up"
-          },
+          "items": [
+            "Study sessions arranged around classes",
+            "Volunteer shifts matched to who is free",
+            "Recurring plans reused week to week",
+            "Anyone can respond without signing up"
+          ],
           "title": "Groups and communities"
         },
         "subtitle": "The more calendars in play, the more the thread costs. This replaces it.",
         "teams": {
-          "items": {
-            "0": "A workable hour found without a chain of replies",
-            "1": "Local time shown to every participant",
-            "2": "Contractors and partners included by link",
-            "3": "The agenda ready before the slot is booked"
-          },
+          "items": [
+            "A workable hour found without a chain of replies",
+            "Local time shown to every participant",
+            "Contractors and partners included by link",
+            "The agenda ready before the slot is booked"
+          ],
           "title": "Teams across time zones"
         },
         "title": "Whenever more than three people are involved"
@@ -5966,30 +5966,30 @@
       "title": "A code for the thing you keep repeating",
       "useCases": {
         "business": {
-          "items": {
-            "0": "A menu opened without an app",
-            "1": "Payment details on a card by the till",
-            "2": "An ordering or review link at the table",
-            "3": "A link printed on a receipt or a bag"
-          },
+          "items": [
+            "A menu opened without an app",
+            "Payment details on a card by the till",
+            "An ordering or review link at the table",
+            "A link printed on a receipt or a bag"
+          ],
           "title": "On the counter"
         },
         "events": {
-          "items": {
-            "0": "A registration link on a poster",
-            "1": "Directions to the room or the venue",
-            "2": "Slides and materials after a talk",
-            "3": "A contact card people can scan"
-          },
+          "items": [
+            "A registration link on a poster",
+            "Directions to the room or the venue",
+            "Slides and materials after a talk",
+            "A contact card people can scan"
+          ],
           "title": "At an event"
         },
         "everyday": {
-          "items": {
-            "0": "A long link passed to a phone without typing",
-            "1": "A form link people can scan and fill in",
-            "2": "A profile or portfolio on a business card",
-            "3": "A code sized for a sticker or a badge"
-          },
+          "items": [
+            "A long link passed to a phone without typing",
+            "A form link people can scan and fill in",
+            "A profile or portfolio on a business card",
+            "A code sized for a sticker or a badge"
+          ],
           "title": "Everyday handoffs"
         },
         "eyebrow": "In practice",
@@ -6045,31 +6045,31 @@
       "title": "Your inventory, open to buyers",
       "useCases": {
         "buyers": {
-          "items": {
-            "0": "Browsing by category on a phone",
-            "1": "A cart that remembers what was added",
-            "2": "A checkout that ends at a real payment page",
-            "3": "An order they can look up later"
-          },
+          "items": [
+            "Browsing by category on a phone",
+            "A cart that remembers what was added",
+            "A checkout that ends at a real payment page",
+            "An order they can look up later"
+          ],
           "title": "The people buying"
         },
         "eyebrow": "In practice",
         "operators": {
-          "items": {
-            "0": "Stock counted once, shown everywhere",
-            "1": "Product visibility set per store",
-            "2": "Orders in the same workspace as inventory",
-            "3": "Catalog and payment settings kept in Inventory"
-          },
+          "items": [
+            "Stock counted once, shown everywhere",
+            "Product visibility set per store",
+            "Orders in the same workspace as inventory",
+            "Catalog and payment settings kept in Inventory"
+          ],
           "title": "Behind the counter"
         },
         "shops": {
-          "items": {
-            "0": "A shop without rebuilding the catalog",
-            "1": "Prices maintained in one place",
-            "2": "A link you can put on a receipt or a poster",
-            "3": "No second system to reconcile"
-          },
+          "items": [
+            "A shop without rebuilding the catalog",
+            "Prices maintained in one place",
+            "A link you can put on a receipt or a poster",
+            "No second system to reconcile"
+          ],
           "title": "Small shops"
         },
         "subtitle": "Small shops, the team behind the counter, and the people buying.",
@@ -6125,31 +6125,31 @@
       "useCases": {
         "eyebrow": "In practice",
         "operations": {
-          "items": {
-            "0": "Repeatable checklists for routine work",
-            "1": "Deadlines tracked across several projects",
-            "2": "Workload visible before you commit to more",
-            "3": "Status reports assembled from real activity"
-          },
+          "items": [
+            "Repeatable checklists for routine work",
+            "Deadlines tracked across several projects",
+            "Workload visible before you commit to more",
+            "Status reports assembled from real activity"
+          ],
           "title": "Recurring operations"
         },
         "personal": {
-          "items": {
-            "0": "A daily list you can finish, not an inbox",
-            "1": "Goals broken down into tasks with dates",
-            "2": "Habits and routines that repeat on schedule",
-            "3": "Priorities set once, in the morning"
-          },
+          "items": [
+            "A daily list you can finish, not an inbox",
+            "Goals broken down into tasks with dates",
+            "Habits and routines that repeat on schedule",
+            "Priorities set once, in the morning"
+          ],
           "title": "Your own week"
         },
         "subtitle": "Personal lists, team delivery and recurring operations all sit in one workspace.",
         "team": {
-          "items": {
-            "0": "Project work split into owned tasks",
-            "1": "Handoffs with a state everyone can see",
-            "2": "Progress readable without a status meeting",
-            "3": "Comments and context on the task itself"
-          },
+          "items": [
+            "Project work split into owned tasks",
+            "Handoffs with a state everyone can see",
+            "Progress readable without a status meeting",
+            "Comments and context on the task itself"
+          ],
           "title": "Team delivery"
         },
         "title": "The same board, three ways to use it"
@@ -6204,31 +6204,31 @@
       "useCases": {
         "eyebrow": "In practice",
         "freelance": {
-          "items": {
-            "0": "Hours per client, ready to invoice",
-            "1": "Sessions tied to the task you delivered",
-            "2": "Estimates checked against what it took",
-            "3": "An export your invoice can cite"
-          },
+          "items": [
+            "Hours per client, ready to invoice",
+            "Sessions tied to the task you delivered",
+            "Estimates checked against what it took",
+            "An export your invoice can cite"
+          ],
           "title": "Billing clients"
         },
         "review": {
-          "items": {
-            "0": "A week reviewed in one screen",
-            "1": "Time by task, project and person",
-            "2": "Gaps found while you can still fix them",
-            "3": "A record for the next planning round"
-          },
+          "items": [
+            "A week reviewed in one screen",
+            "Time by task, project and person",
+            "Gaps found while you can still fix them",
+            "A record for the next planning round"
+          ],
           "title": "Closing the week"
         },
         "subtitle": "Billing a client, running a team, or closing out a week.",
         "team": {
-          "items": {
-            "0": "Who is working on what, right now",
-            "1": "Workload visible before you assign more",
-            "2": "Break time separated from focused time",
-            "3": "Approvals for entries someone forgot"
-          },
+          "items": [
+            "Who is working on what, right now",
+            "Workload visible before you assign more",
+            "Break time separated from focused time",
+            "Approvals for entries someone forgot"
+          ],
           "title": "Running a team"
         },
         "title": "Three reasons people keep it running"
@@ -6282,32 +6282,32 @@
       "title": "The routine parts, handled without you",
       "useCases": {
         "approvals": {
-          "items": {
-            "0": "Approvals routed to whoever should decide",
-            "1": "Documents moved through review in order",
-            "2": "New hires set up from the same checklist",
-            "3": "Purchase requests tracked to a decision"
-          },
+          "items": [
+            "Approvals routed to whoever should decide",
+            "Documents moved through review in order",
+            "New hires set up from the same checklist",
+            "Purchase requests tracked to a decision"
+          ],
           "title": "Business processes"
         },
         "eyebrow": "In practice",
         "subtitle": "Approvals, handoffs and system chores are the parts that quietly cost a week each month.",
         "systems": {
-          "items": {
-            "0": "Data kept in step between tools",
-            "1": "Scheduled jobs run on time",
-            "2": "Custom triggers for your own events",
-            "3": "Runs logged so failures are findable"
-          },
+          "items": [
+            "Data kept in step between tools",
+            "Scheduled jobs run on time",
+            "Custom triggers for your own events",
+            "Runs logged so failures are findable"
+          ],
           "title": "System chores"
         },
         "team": {
-          "items": {
-            "0": "Tasks assigned as work reaches a stage",
-            "1": "Handoffs that carry their context along",
-            "2": "Status updates posted without a reminder",
-            "3": "Notifications only for people who need them"
-          },
+          "items": [
+            "Tasks assigned as work reaches a stage",
+            "Handoffs that carry their context along",
+            "Status updates posted without a reminder",
+            "Notifications only for people who need them"
+          ],
           "title": "Team automation"
         },
         "title": "Where the manual work usually hides"
