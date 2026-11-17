@@ -1,3 +1,5 @@
+import { type CommitWindow, parseCommits } from './commits.ts';
+
 /**
  * Build-time activity: what production runs and what merged, observed by
  * scripts/generate-roadmap-data.mjs into the untracked
@@ -11,6 +13,9 @@
  *   timeline history), as [number, Vietnam day, track index]. Null when the
  *   build could not read GitHub. `complete` is false when the search hit its
  *   page cap, so counts may be low.
+ * - commits: first-parent commits to main over 90 days from the build's own
+ *   git history, counted per day and product (src/insights/commits.ts).
+ *   Null when the checkout had no history.
  *
  * Anything this build did not observe is "not available", never a value
  * from an earlier build. Pure and portable.
@@ -36,6 +41,7 @@ export type ActivitySnapshot = {
   mode: 'observed' | 'offline' | 'missing';
   deploys: DeployFact[];
   merged: MergedWindow | null;
+  commits?: CommitWindow | null;
 };
 
 export const MISSING_ACTIVITY: ActivitySnapshot = {
@@ -99,6 +105,11 @@ function parseMerged(value: unknown): MergedWindow | null {
   };
 }
 
+/** Snapshots without commit history keep the shape they always had. */
+function withCommits(commits: CommitWindow | null) {
+  return commits ? { commits } : {};
+}
+
 /** Validate a snapshot; anything malformed reads as missing. */
 export function parseActivity(value: unknown): ActivitySnapshot {
   if (!value || typeof value !== 'object') return MISSING_ACTIVITY;
@@ -128,6 +139,7 @@ export function parseActivity(value: unknown): ActivitySnapshot {
     mode: 'observed',
     deploys,
     merged: parseMerged(raw.merged),
+    ...withCommits(parseCommits(raw.commits)),
   };
 }
 

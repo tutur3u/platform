@@ -94,6 +94,10 @@ jobs:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           ref: ${{ github.sha }}
+          # Full history without file contents: the commit metrics read
+          # main's log and the production branch locally (apps/roadmap/scripts/commit-log.mjs).
+          fetch-depth: 0
+          filter: blob:none
           persist-credentials: false
       - name: Verify checkout identity
         run: 'test "$(git rev-parse HEAD)" = "$SOURCE_SHA"'

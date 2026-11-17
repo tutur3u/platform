@@ -46,6 +46,8 @@ import {
   isNoise,
 } from '@tuturuuu/roadmap-core/history/classify.ts';
 import { localDay } from '@tuturuuu/roadmap-core/live/feed.ts';
+import { commitWindow } from '@tuturuuu/roadmap-core/insights/commits.ts';
+import { readCommits } from './commit-log.mjs';
 
 const root = dirname(dirname(fileURLToPath(import.meta.url)));
 const target = join(
@@ -121,6 +123,33 @@ const activity = {
   merged: null,
 };
 
+/** Commits to main shown by the pulse: the 90-day range it offers. */
+const COMMIT_WINDOW_DAYS = 90;
+
+/**
+ * Commits to main from this checkout's git history, marked against the
+ * production branch and every production build observed above. Null when the
+ * history is not available (a shallow checkout), never a partial count.
+ */
+function observeCommits() {
+  try {
+    const { commits, production } = readCommits({
+      cwd: join(root, '../..'),
+      deployCommits: activity.deploys.map((deploy) => deploy.commit),
+      sinceMs: now - (COMMIT_WINDOW_DAYS + 1) * 86_400_000,
+    });
+    return commitWindow(commits, {
+      now,
+      days: COMMIT_WINDOW_DAYS,
+      trackIds: HISTORY_TRACKS,
+      production,
+    });
+  } catch (error) {
+    log(`commits not available (${error.message})`);
+    return null;
+  }
+}
+
 function writeActivity() {
   const snapshot =
     process.env.ROADMAP_OFFLINE === '1'
@@ -131,6 +160,7 @@ function writeActivity() {
           mode: 'observed',
           deploys: activity.deploys,
           merged: activity.merged,
+          commits: observeCommits(),
         };
   mkdirSync(dirname(activityTarget), { recursive: true });
   writeFileSync(activityTarget, `${JSON.stringify(snapshot)}\n`);
@@ -139,6 +169,10 @@ function writeActivity() {
       snapshot.merged
         ? `${snapshot.merged.entries.length} merged PRs ${snapshot.merged.from}..${snapshot.merged.to}${snapshot.merged.complete ? '' : ' (capped)'}`
         : 'merged PRs not available'
+    }, ${
+      snapshot.commits
+        ? `${snapshot.commits.days.reduce((sum, day) => sum + day[1], 0)} commits ${snapshot.commits.from}..${snapshot.commits.to}, ${snapshot.commits.production?.waiting ?? 'unknown'} waiting for production`
+        : 'commits not available'
     }`
   );
 }
