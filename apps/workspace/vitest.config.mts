@@ -3,6 +3,7 @@ import react from '@vitejs/plugin-react';
 import { defineConfig } from 'vitest/config';
 
 export default defineConfig({
+  oxc: { tsconfig: new URL('./tsconfig.json', import.meta.url).pathname },
   plugins: [react()],
   test: {
     server: {
