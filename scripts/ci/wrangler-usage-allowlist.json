@@ -3287,6 +3287,16 @@
       },
       "digest": "21483c0dcd7291dffcd7a7277ef38f24f7b492b9ac4aba4375ae365be36dde03"
     },
+    "scripts/ci/wave1-native-finance-profile.test.mjs": {
+      "lines": 1,
+      "uses": 1,
+      "gap": "void-wave1-publication",
+      "admitted": {
+        "decision": "https://github.com/tutur3u/platform/commit/0d464f2c4763c57c39eb23797202caacba8af416",
+        "reason": "The Finance wave-1 profile test reads the Void-emitted dist/server/wrangler.json to assert the production publication config. It reads a file path only; no Wrangler CLI or SDK is invoked and nothing is published. The existing publication gap and its removal condition remain."
+      },
+      "digest": "a51f22c1c38b2cb295ffc065b1e7eb451f62d9d0565d11b39d422e5903ab829d"
+    },
     "scripts/ci/wave1-native-production-test-helper.mjs": {
       "gap": "void-wave1-publication",
       "lines": 1,
