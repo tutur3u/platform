@@ -473,11 +473,7 @@ export async function installedResourceShims(
     const runtime = content
       ? quotedShimRuntime(content, home, entry, name)
       : undefined;
-    if (
-      runtime &&
-      canonical(runtime) === canonical(process.execPath)
-    )
-      continue;
+    if (runtime && canonical(runtime) === canonical(process.execPath)) continue;
     if (runtime)
       throw new Error(
         `Resource shims are valid for their own runtime ${runtime}. This process is ${process.execPath}. Do not run ttr resources setup. Invoke the shim runtime.`
