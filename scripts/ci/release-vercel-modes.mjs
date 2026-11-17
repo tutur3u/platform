@@ -359,6 +359,7 @@ async function dispatch(options, runtime) {
         const deps = options.stageDependencies;
         if (
           !deps ||
+          deps.projectId !== context.payload.target.project ||
           options.payload.target.environment !==
             CALENDAR_VERCEL.stageEnvironment
         )

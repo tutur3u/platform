@@ -268,6 +268,18 @@ export async function executeVercelPhase({
       replay.attemptId !== grant.attemptId ||
       replay.epoch !== grant.epoch ||
       replay.guardCode !== null ||
+      (replay.evidence?.lifecycle &&
+        [
+          'candidate',
+          'preimage',
+          'alias',
+          'projectId',
+          'qualification',
+          'artifactSha256',
+        ].some(
+          (key) =>
+            canonical(replay[key]) !== canonical(replay.evidence.lifecycle[key])
+        )) ||
       unsafeValues(replay) ||
       replay.evidenceSha256 !== payloadDigest(replay.evidence) ||
       replay.providerOperationId !== (replay.evidence?.deploymentId ?? null) ||

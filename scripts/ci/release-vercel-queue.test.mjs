@@ -448,3 +448,13 @@ test('authority predecessor credentials are refused before executor entry', asyn
   );
   assert.equal(calls, 0);
 });
+
+test('opaque low-entropy and digest-looking values cannot hide in approval refs', async () => {
+  for (const value of ['A'.repeat(80), 'a'.repeat(64), 'a'.repeat(40)]) {
+    const p = payload();
+    p.authorizationRefs = [value];
+    await assert.rejects(submitVercelRelease(authority(), p, target), {
+      guardCode: 'QUEUE_PAYLOAD_INVALID',
+    });
+  }
+});
