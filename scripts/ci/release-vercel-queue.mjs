@@ -1,8 +1,8 @@
 // Proposed offline D395 port: b6f205d528b091b1dbe5fc27e48cadb8b7c402a4a16a82c4a02730ddaab4901e.
 import { createHash } from 'node:crypto';
 import { unsafeValues } from './release-vercel-values.mjs';
-import { StageStop } from './calendar-exact-sha-stop.mjs';
-import { ReleaseStop } from './release-vercel-errors.mjs';
+import { GUARD_CODES, StageStop } from './calendar-exact-sha-stop.mjs';
+import { RELEASE_CODES, ReleaseStop } from './release-vercel-errors.mjs';
 
 export const QUEUE_CODES = Object.freeze([
   'QUEUE_AUTHORITY_UNAVAILABLE',
@@ -13,6 +13,28 @@ export const QUEUE_CODES = Object.freeze([
   'QUEUE_EXECUTION_FAILED',
   'QUEUE_STOPPED',
   'QUEUE_CONFLICT',
+]);
+export const QUEUE_GUARD_PHASES = Object.freeze([
+  'submit',
+  'stage',
+  'promote',
+  'watch',
+  'rollback',
+  'inputs',
+  'approval',
+  'source-ancestry',
+  'target-readback',
+  'alias-readback',
+  'verify-source',
+  'verify-legacy-build',
+  'alias-preimage',
+  'pull',
+  'build',
+  'sensitive-output',
+  'seal',
+  'guard',
+  'record',
+  'test-hook',
 ]);
 export class QueueStop extends Error {
   constructor(code, phase = 'submit') {
@@ -280,6 +302,7 @@ export async function executeVercelPhase({
       (intent.originalAttempt &&
         intent.originalAttempt.receiptSha256 !== payloadDigest(replay)) ||
       replay.guardCode !== null ||
+      !QUEUE_GUARD_PHASES.includes(replay.guardPhase) ||
       (replay.evidence?.lifecycle &&
         [
           'candidate',
@@ -387,6 +410,8 @@ export async function executeVercelPhase({
       approval: intent.approval,
       approvalVerificationId: intent.approvalVerificationId,
       async qualifyLifecycle(lifecycle) {
+        if (unsafeValues({ lifecycle }) || secretField(lifecycle))
+          refuse('QUEUE_PAYLOAD_INVALID', phase);
         const ack = await authorityCall(
           port,
           'checkpoint',
@@ -472,12 +497,17 @@ export async function executeVercelPhase({
       (error.cause instanceof QueueStop || error.cause instanceof ReleaseStop)
         ? error.cause
         : error;
-    const code =
+    const failureCode =
       failure instanceof QueueStop ||
       failure instanceof ReleaseStop ||
       failure instanceof StageStop
         ? failure.guardCode
         : 'QUEUE_EXECUTION_FAILED';
+    const code = [...QUEUE_CODES, ...RELEASE_CODES, ...GUARD_CODES].includes(
+      failureCode
+    )
+      ? failureCode
+      : 'QUEUE_EXECUTION_FAILED';
     const result = receipt(
       startedEffect
         ? 'unknown'
@@ -486,12 +516,16 @@ export async function executeVercelPhase({
           : 'failed',
       code
     );
-    result.guardPhase =
-      failure instanceof QueueStop ||
-      failure instanceof ReleaseStop ||
-      failure instanceof StageStop
-        ? (failure.guardPhase ?? failure.phase)
-        : phase;
+    const failurePhase = failure?.guardPhase ?? failure?.phase;
+    result.guardPhase = QUEUE_GUARD_PHASES.includes(failurePhase)
+      ? failurePhase
+      : phase;
+    if (unsafeValues(result) || secretField(result))
+      return {
+        status: startedEffect ? 'unknown' : 'failed',
+        guardCode: 'QUEUE_PAYLOAD_INVALID',
+        guardPhase: phase,
+      };
     // A lost authority cannot acknowledge this receipt; the caller must retain
     // it for reconciliation. No retries or second mutation are attempted.
     try {

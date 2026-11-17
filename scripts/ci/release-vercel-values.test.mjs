@@ -41,7 +41,7 @@ test('digest exemptions apply only at declared authority paths', () => {
 });
 test('declared provider and queue identifiers remain accepted', () => {
   for (let i = 0; i < 2000; i++) {
-    const suffix = randomBytes(24).toString('hex');
+    const suffix = randomBytes(14).toString('hex');
     assert.equal(unsafeValues({ projectId: `prj_${suffix}` }), false);
     assert.equal(unsafeValues({ candidate: { id: `dpl_${suffix}` } }), false);
     assert.equal(unsafeValues({ jobId: randomUUID() }), false);
@@ -54,5 +54,52 @@ test('declared provider and queue identifiers remain accepted', () => {
   assert.equal(
     unsafeValues({ executorHost: 'runner-01.studio-ci.tuturuuu' }),
     false
+  );
+});
+
+test('canonical UUID tokens and ordinary kebab references are safe at every position', () => {
+  const uuid = randomUUID();
+  for (const value of [
+    uuid,
+    uuid.toUpperCase(),
+    `job-stage-${uuid}`,
+    `approval:${uuid}`,
+    'environment:vercel-production-calendar-approval',
+    'release-desk-calendar-production-operator',
+  ]) {
+    for (const record of [
+      { provenance: { thread: value } },
+      { approvalVerificationId: value },
+      { approval: { reference: value } },
+      { targetLockId: value },
+      { jobId: value },
+      { authorizationRefs: [value] },
+      { executorHost: `${value}.runner.local` },
+    ])
+      assert.equal(unsafeValues(record), false, value);
+  }
+});
+test('provider IDs have path-specific real formats and cannot wrap a credential', () => {
+  assert.equal(
+    unsafeValues({
+      target: {
+        account: 'team_' + 'a'.repeat(24),
+        project: 'prj_' + 'b'.repeat(28),
+      },
+    }),
+    false
+  );
+  for (const value of [
+    'dpl_' + 'a'.repeat(64),
+    'dpl_' + 'b'.repeat(96),
+    'team_' + 'c'.repeat(64),
+  ]) {
+    assert.equal(unsafeValues({ candidate: { id: value } }), true);
+    assert.equal(unsafeValues({ rollback: { deploymentId: value } }), true);
+  }
+  assert.equal(unsafeValues({ projectId: 'dpl_' + 'a'.repeat(28) }), true);
+  assert.equal(
+    unsafeValues({ candidate: { id: 'prj_' + 'a'.repeat(28) } }),
+    true
   );
 });

@@ -92,3 +92,12 @@ Scan credential values as complete encoded strings and as separator-delimited
 runs, including hostname labels. Digest and provider-ID exemptions apply only at
 declared paths. Authority targetLockId and originalAttempt receiptSha256 are
 context-specific; identical keys in nested evidence do not grant an exemption.
+
+Canonical UUID tokens are public identifiers at every string position, including
+provenance, approval references and target locks. Lowercase kebab labels are
+checked segment by segment; opaque base64/base64url values retain whole-run
+checks. A 32-character credential segment cannot hide behind a short prefix.
+Provider-ID exemptions require the path's own prefix and length: deployment and
+project suffixes are 28 base62 characters; account suffixes are 24. Lifecycle
+qualification records are scanned before authority checkpoints. Failure receipts
+are scanned, and guardPhase is selected from a closed vocabulary before writing.

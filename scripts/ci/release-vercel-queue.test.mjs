@@ -1,7 +1,10 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
+import { randomUUID } from 'node:crypto';
 import {
   executeVercelPhase,
+  QueueStop,
+  QUEUE_GUARD_PHASES,
   aliasLockKey,
   payloadDigest,
   requestVercelStop,
@@ -193,6 +196,7 @@ test('unknown receipt blocks replay until authority reconciles readback', async 
     attemptId: 'attempt-1',
     epoch: 1,
     guardCode: null,
+    guardPhase: 'stage',
     evidenceSha256: payloadDigest({ deploymentId: 'dpl_verified' }),
     providerOperationId: 'dpl_verified',
     operationId: 'release-1',
@@ -581,4 +585,80 @@ test('credential-bearing host labels refuse before claim and receipt persistence
     assert.equal(claims, 0);
     assert.equal(port.state.receipts.length, 0);
   }
+});
+
+test('lifecycle credentials never reach the qualification checkpoint', async () => {
+  for (const id of ['a'.repeat(64), 'dpl_' + 'a'.repeat(64)]) {
+    const port = authority();
+    const result = await run(port, async (ctx) =>
+      ctx.qualifyLifecycle({ candidate: { id } })
+    );
+    assert.equal(result.guardCode, 'QUEUE_PAYLOAD_INVALID');
+    assert.equal(
+      port.state.receipts.some((r) => r.status === 'qualification-request'),
+      false
+    );
+    assert.equal(JSON.stringify(port.state.receipts).includes(id), false);
+  }
+});
+test('failure phases are closed and failure receipts cannot persist credentials', async () => {
+  const port = authority();
+  const secret = 'a'.repeat(64);
+  const result = await run(port, async () => {
+    throw new QueueStop('QUEUE_STOPPED', secret);
+  });
+  assert.equal(result.guardPhase, 'stage');
+  assert.equal(QUEUE_GUARD_PHASES.includes(result.guardPhase), true);
+  assert.equal(JSON.stringify(port.state.receipts).includes(secret), false);
+  const forged = await run(authority(), async () => {
+    const error = new QueueStop('QUEUE_STOPPED', 'stage');
+    error.guardCode = secret;
+    throw error;
+  });
+  assert.equal(forged.guardCode, 'QUEUE_EXECUTION_FAILED');
+});
+
+test('UUID provenance, approvals, lock IDs and prefixed jobs reach a safe receipt', async () => {
+  const port = authority();
+  const uuid = randomUUID().toUpperCase();
+  const claim = port.claim;
+  const grant = async () => ({
+    ...(await claim()),
+    jobId: `job-stage-${uuid}`,
+    targetLockId: uuid,
+  });
+  port.claim = grant;
+  port.renew = grant;
+  port.beginPhase = async () => ({
+    status: 'running',
+    approval: { reference: uuid },
+    approvalVerificationId: uuid,
+  });
+  const job = payload();
+  job.provenance.thread = uuid;
+  job.provenance.actor = 'release-desk-calendar-production-operator';
+  job.authorizationRefs = ['environment:vercel-production-calendar-approval'];
+  const result = await run(
+    port,
+    async () => ({ deploymentId: 'dpl_verified' }),
+    job
+  );
+  assert.equal(result.status, 'succeeded');
+  assert.equal(result.jobId, `job-stage-${uuid}`);
+  assert.equal(result.approvalVerificationId, uuid);
+});
+
+test('failure receipt scanning refuses authority identity mutation without persisting it', async () => {
+  const port = authority();
+  const claim = port.claim;
+  let granted;
+  port.claim = async () => (granted = await claim());
+  const secret = 'f'.repeat(64);
+  const result = await run(port, async () => {
+    granted.jobId = secret;
+    throw new Error('executor failure');
+  });
+  assert.equal(result.guardCode, 'QUEUE_PAYLOAD_INVALID');
+  assert.equal(JSON.stringify(result).includes(secret), false);
+  assert.equal(port.state.receipts.length, 0);
 });
