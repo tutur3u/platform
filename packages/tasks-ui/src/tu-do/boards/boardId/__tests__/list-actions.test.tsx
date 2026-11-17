@@ -24,10 +24,9 @@ vi.mock('@tuturuuu/internal-api/tasks', () => ({
 }));
 
 vi.mock('@tuturuuu/utils/task-helper', () => ({
-  useMoveAllTasksFromList: () => ({
-    isPending: false,
-    mutateAsync: (...args: unknown[]) => moveAllTasksFromListMock(...args),
-  }),
+  moveAllActiveListTasks: (...args: unknown[]) =>
+    moveAllTasksFromListMock(...args),
+  moveTaskIdsInBatches: vi.fn(),
 }));
 
 vi.mock('../../../shared/board-broadcast-context', () => ({
@@ -58,6 +57,7 @@ vi.mock('@tuturuuu/ui/sonner', () => ({
   toast: {
     error: vi.fn(),
     info: vi.fn(),
+    loading: vi.fn(),
     success: vi.fn(),
     warning: vi.fn(),
   },
@@ -163,6 +163,7 @@ describe('ListActions', () => {
     vi.mocked(toast.success).mockReset();
     vi.mocked(toast.info).mockReset();
     vi.mocked(toast.warning).mockReset();
+    vi.mocked(toast.loading).mockReset();
   });
 
   it('rolls back an optimistic rename when the mutation fails', async () => {
@@ -243,5 +244,113 @@ describe('ListActions', () => {
     expect(broadcastMock).toHaveBeenCalledWith('list:delete', {
       listId: 'list-1',
     });
+  });
+  it('archives optimistically, reports progress and offers undo', async () => {
+    let finish: (value: unknown) => void = () => {};
+    moveAllTasksFromListMock.mockImplementationOnce(
+      (_ws, _list, _target, onProgress?: (p: object) => void) =>
+        new Promise((resolve) => {
+          onProgress?.({ done: 1, total: 1 });
+          finish = resolve;
+        })
+    );
+    const closedList: TaskList = {
+      ...baseList,
+      id: 'list-closed',
+      status: 'closed',
+    };
+    const doneList: TaskList = { ...baseList, status: 'done' };
+    const queryClient = new QueryClient();
+    queryClient.setQueryData(['task_lists', 'board-1'], [doneList, closedList]);
+    queryClient.setQueryData(['tasks', 'board-1'], [baseTask]);
+
+    render(
+      <QueryClientProvider client={queryClient}>
+        <ListActions
+          listId="list-1"
+          listName="Done"
+          listStatus="done"
+          tasks={[baseTask]}
+          boardId="board-1"
+          wsId="ws-1"
+          onUpdate={vi.fn()}
+          isEditOpen={false}
+          onEditOpenChange={vi.fn()}
+        />
+      </QueryClientProvider>
+    );
+
+    fireEvent.click(screen.getByRole('button', { name: 'archive_all_tasks' }));
+    fireEvent.click(screen.getByRole('button', { name: 'archive_tasks' }));
+
+    await waitFor(() => {
+      expect(
+        queryClient.getQueryData<Task[]>(['tasks', 'board-1'])?.[0]?.list_id
+      ).toBe('list-closed');
+    });
+    expect(toast.loading).toHaveBeenCalled();
+    expect(moveAllTasksFromListMock).toHaveBeenCalledWith(
+      'ws-1',
+      'list-1',
+      { listId: 'list-closed', targetBoardId: undefined },
+      expect.any(Function)
+    );
+
+    finish({
+      success: true,
+      movedCount: 1,
+      movedTaskIds: ['task-1'],
+      failedTaskIds: [],
+    });
+
+    await waitFor(() => {
+      expect(toast.success).toHaveBeenCalledWith(
+        'archived_tasks_successfully',
+        expect.objectContaining({
+          action: expect.objectContaining({ label: 'undo' }),
+        })
+      );
+    });
+  });
+
+  it('rolls the cards back when archiving fails', async () => {
+    moveAllTasksFromListMock.mockRejectedValueOnce(new Error('offline'));
+    const closedList: TaskList = {
+      ...baseList,
+      id: 'list-closed',
+      status: 'closed',
+    };
+    const queryClient = new QueryClient();
+    queryClient.setQueryData(['task_lists', 'board-1'], [baseList, closedList]);
+    queryClient.setQueryData(['tasks', 'board-1'], [baseTask]);
+
+    render(
+      <QueryClientProvider client={queryClient}>
+        <ListActions
+          listId="list-1"
+          listName="Done"
+          listStatus="done"
+          tasks={[baseTask]}
+          boardId="board-1"
+          wsId="ws-1"
+          onUpdate={vi.fn()}
+          isEditOpen={false}
+          onEditOpenChange={vi.fn()}
+        />
+      </QueryClientProvider>
+    );
+
+    fireEvent.click(screen.getByRole('button', { name: 'archive_all_tasks' }));
+    fireEvent.click(screen.getByRole('button', { name: 'archive_tasks' }));
+
+    await waitFor(() => {
+      expect(toast.error).toHaveBeenCalledWith(
+        'failed_to_archive_tasks',
+        expect.objectContaining({ id: expect.any(String) })
+      );
+    });
+    expect(queryClient.getQueryData<Task[]>(['tasks', 'board-1'])).toEqual([
+      baseTask,
+    ]);
   });
 });

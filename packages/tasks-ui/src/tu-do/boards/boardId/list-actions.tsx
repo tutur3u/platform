@@ -7,11 +7,7 @@ import {
   Settings2,
   Trash,
 } from '@tuturuuu/icons';
-import {
-  createWorkspaceTaskList,
-  listWorkspaceTaskLists,
-  updateWorkspaceTaskList,
-} from '@tuturuuu/internal-api/tasks';
+import { updateWorkspaceTaskList } from '@tuturuuu/internal-api/tasks';
 import type { SupportedColor } from '@tuturuuu/types/primitives/SupportedColors';
 import type { Task } from '@tuturuuu/types/primitives/Task';
 import type { TaskBoardStatus } from '@tuturuuu/types/primitives/TaskBoard';
@@ -33,13 +29,13 @@ import {
   DropdownMenuTrigger,
 } from '@tuturuuu/ui/dropdown-menu';
 import { toast } from '@tuturuuu/ui/sonner';
-import { useMoveAllTasksFromList } from '@tuturuuu/utils/task-helper';
 import { useTranslations } from 'next-intl';
 import { useMemo, useState } from 'react';
 import { useBoardBroadcast } from '../../shared/board-broadcast-context';
 import { ListSettingsDialog } from '../../shared/list-settings-dialog';
 import { isTaskListNameExistsError } from '../../shared/task-board-errors';
 import { BoardSelector } from '../board-selector';
+import { useListBulkMove } from './use-list-bulk-move';
 
 interface Props {
   listId: string;
@@ -104,11 +100,11 @@ export function ListActions({
     [boardId, listColor, listId, listName, listStatus, lists]
   );
 
-  const moveAllTasksFromListMutation = useMoveAllTasksFromList(
-    boardId,
+  const listBulkMove = useListBulkMove({
     wsId,
-    broadcast
-  );
+    broadcast,
+    onSettled: onUpdate,
+  });
 
   const deleteListMutation = useMutation({
     mutationFn: async () => {
@@ -161,7 +157,6 @@ export function ListActions({
     },
     onSuccess: () => {
       broadcast?.('list:delete', { listId });
-      setIsDeleteDialogOpen(false);
       onUpdate();
     },
     onError: (error, _, context) => {
@@ -247,87 +242,28 @@ export function ListActions({
     },
   });
 
-  const archiveAllTasksMutation = useMutation({
-    mutationFn: async () => {
-      if (!wsId || !boardId || tasks.length === 0) {
-        return {
-          success: true,
-          movedCount: 0,
-          movedTaskIds: [] as string[],
-          failedTaskIds: [] as string[],
-        };
-      }
-
-      const options = {
-        baseUrl:
-          typeof window !== 'undefined' ? window.location.origin : undefined,
-      };
-
-      const { lists } = await listWorkspaceTaskLists(wsId, boardId, options);
-      const existingClosedList = lists.find(
-        (list) => list.status === 'closed' && !list.deleted
-      );
-
-      const closedListId = existingClosedList
-        ? existingClosedList.id
-        : (
-            await createWorkspaceTaskList(
-              wsId,
-              boardId,
-              {
-                name: t('archived'),
-                status: 'closed',
-                color: 'PURPLE',
-              },
-              options
-            )
-          ).list.id;
-
-      return moveAllTasksFromListMutation.mutateAsync({
-        sourceListId: listId,
-        targetListId: closedListId,
-      });
-    },
-    onSuccess: (result) => {
-      if (result.movedCount > 0 && result.failedTaskIds.length > 0) {
-        toast.warning(
-          t('archived_tasks_partially', {
-            moved: result.movedCount,
-            failed: result.failedTaskIds.length,
-          })
-        );
-      } else if (result.movedCount > 0) {
-        toast.success(
-          t('archived_tasks_successfully', {
-            count: result.movedCount,
-          })
-        );
-      }
-
-      onUpdate();
-      setIsArchiveDialogOpen(false);
-    },
-    onError: (error) => {
-      console.error('Failed to archive tasks:', error);
-      toast.error(
-        isTaskListNameExistsError(error)
-          ? taskBoardT('ws-task-boards.layout_settings.list_name_exists')
-          : t('failed_to_archive_tasks')
-      );
-    },
-  });
-
   function handleDelete() {
+    setIsDeleteDialogOpen(false);
     deleteListMutation.mutate();
   }
 
   function handleArchiveAllTasks() {
-    if (!wsId || !boardId || tasks.length === 0) {
-      setIsArchiveDialogOpen(false);
-      return;
-    }
+    setIsArchiveDialogOpen(false);
+    if (!wsId || !boardId || tasks.length === 0) return;
 
-    archiveAllTasksMutation.mutate();
+    const closedList = (
+      queryClient.getQueryData<TaskList[]>(['task_lists', boardId]) ?? lists
+    ).find((list) => list.status === 'closed' && !list.deleted);
+
+    listBulkMove.mutate({
+      kind: 'archive',
+      toastId: `list-archive-${listId}-${Date.now()}`,
+      total: tasks.length,
+      fromBoardId: boardId,
+      sourceListId: listId,
+      toBoardId: boardId,
+      toListId: closedList?.id,
+    });
   }
 
   // Handler for bulk moving all tasks from this list
@@ -339,39 +275,19 @@ export function ListActions({
     setIsMoveAllDialogOpen(true);
   }
 
-  // Handle the actual bulk move operation
-  async function handleBulkMove(targetBoardId: string, targetListId: string) {
+  function handleBulkMove(targetBoardId: string, targetListId: string) {
+    setIsMoveAllDialogOpen(false);
     if (tasks.length === 0) return;
 
-    try {
-      const result = await moveAllTasksFromListMutation.mutateAsync({
-        sourceListId: listId,
-        targetListId,
-        targetBoardId: targetBoardId !== boardId ? targetBoardId : undefined,
-      });
-
-      if (result.movedCount > 0 && result.failedTaskIds.length > 0) {
-        toast.warning(
-          t('moved_tasks_partially', {
-            moved: result.movedCount,
-            failed: result.failedTaskIds.length,
-          })
-        );
-      } else if (result.movedCount > 0) {
-        toast.success(
-          t('moved_tasks_successfully', {
-            count: result.movedCount,
-          })
-        );
-      }
-
-      // Close dialog and refresh
-      setIsMoveAllDialogOpen(false);
-      onUpdate();
-    } catch (error) {
-      console.error('Failed to move all tasks:', error);
-      // Don't close dialog on error so user can retry
-    }
+    listBulkMove.mutate({
+      kind: 'move',
+      toastId: `list-move-${listId}-${Date.now()}`,
+      total: tasks.length,
+      fromBoardId: boardId,
+      sourceListId: listId,
+      toBoardId: targetBoardId || boardId,
+      toListId: targetListId,
+    });
   }
 
   return (
@@ -512,18 +428,14 @@ export function ListActions({
             <Button
               variant="ghost"
               onClick={() => setIsArchiveDialogOpen(false)}
-              disabled={archiveAllTasksMutation.isPending}
             >
               {t('cancel')}
             </Button>
             <Button
               onClick={handleArchiveAllTasks}
-              disabled={archiveAllTasksMutation.isPending}
               className="bg-dynamic-purple hover:bg-dynamic-purple/90"
             >
-              {archiveAllTasksMutation.isPending
-                ? t('archiving')
-                : t('archive_tasks')}
+              {t('archive_tasks')}
             </Button>
           </DialogFooter>
         </DialogContent>
@@ -539,7 +451,6 @@ export function ListActions({
           currentListId={listId}
           taskCount={tasks.length}
           onMove={handleBulkMove}
-          isMoving={moveAllTasksFromListMutation.isPending}
         />
       )}
     </>

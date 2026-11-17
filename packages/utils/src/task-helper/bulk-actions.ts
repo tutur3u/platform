@@ -1,10 +1,11 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query';
-import {
-  moveWorkspaceTask,
-  updateWorkspaceTask,
-} from '@tuturuuu/internal-api/tasks';
+import { updateWorkspaceTask } from '@tuturuuu/internal-api/tasks';
 import type { Task } from '@tuturuuu/types/primitives/Task';
 
+import {
+  type BulkListMoveProgress,
+  moveAllActiveListTasks,
+} from './bulk-list-move';
 import { getBrowserApiOptions, listAllActiveTasksForList } from './shared';
 import { moveTaskToBoard } from './task-operations';
 
@@ -32,67 +33,31 @@ export function useMoveAllTasksFromList(
       sourceListId,
       targetListId,
       targetBoardId,
+      onProgress,
     }: {
       sourceListId: string;
       targetListId: string;
       targetBoardId?: string;
+      onProgress?: (progress: BulkListMoveProgress) => void;
     }) => {
       if (!wsId) {
         throw new Error('Workspace ID is required to move tasks');
       }
 
-      const tasksToMove = await listAllActiveTasksForList(wsId, sourceListId);
-      if (tasksToMove.length === 0) {
-        return {
-          success: true,
-          movedCount: 0,
-          movedTaskIds: [] as string[],
-          failedTaskIds: [] as string[],
-        } satisfies MoveAllTasksResult;
-      }
+      const result = await moveAllActiveListTasks(
+        wsId,
+        sourceListId,
+        { listId: targetListId, targetBoardId },
+        onProgress
+      );
 
-      const results = [] as {
-        status: 'fulfilled' | 'rejected';
-        taskId: string;
-      }[];
-
-      for (const task of tasksToMove) {
-        try {
-          await moveWorkspaceTask(
-            wsId,
-            task.id,
-            {
-              list_id: targetListId,
-              target_board_id: targetBoardId,
-            },
-            getBrowserApiOptions()
-          );
-          results.push({ status: 'fulfilled', taskId: task.id });
-        } catch (error) {
-          console.error('Failed to move task:', task.id, error);
-          results.push({ status: 'rejected', taskId: task.id });
-        }
-      }
-
-      const movedTaskIds = results
-        .filter((result) => result.status === 'fulfilled')
-        .map((result) => result.taskId);
-      const failedTaskIds = results
-        .filter((result) => result.status === 'rejected')
-        .map((result) => result.taskId);
-
-      if (movedTaskIds.length === 0) {
+      if (result.movedCount === 0 && result.failedTaskIds.length > 0) {
         throw new Error(
-          `Failed to move all ${tasksToMove.length} tasks from list ${sourceListId}`
+          `Failed to move all ${result.failedTaskIds.length} tasks from list ${sourceListId}`
         );
       }
 
-      return {
-        success: true,
-        movedCount: movedTaskIds.length,
-        movedTaskIds,
-        failedTaskIds,
-      } satisfies MoveAllTasksResult;
+      return result satisfies MoveAllTasksResult;
     },
     onMutate: async ({ sourceListId, targetListId, targetBoardId }) => {
       await queryClient.cancelQueries({ queryKey: ['tasks', currentBoardId] });
