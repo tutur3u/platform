@@ -139,6 +139,7 @@ function fixture() {
   };
   const hooks = {
     sourceRef: 'refs/heads/production',
+    stageSource: async () => sha,
     verifySourceAncestry: async () => true,
     now: () => state.time,
     delay: async (ms) => {
@@ -207,7 +208,10 @@ function fixture() {
     };
   }
   const run = async (phase, alter = (o) => o) =>
-    dispatchReleaseModeForTest(alter(options(phase)), hooks);
+    dispatchReleaseModeForTest(alter(options(phase)), {
+      ...hooks,
+      sourceRef: phase === 'stage' ? 'refs/heads/main' : hooks.sourceRef,
+    });
   return { state, port, hooks, options, run, provider };
 }
 async function promoted() {
@@ -394,6 +398,7 @@ test('production dispatch ignores caller ancestry/ref/clock substitutions', asyn
   const result = await dispatchReleaseMode({
     ...o,
     sourceRef: 'refs/heads/production',
+    stageSource: async () => sha,
     verifySourceAncestry: async () => {
       called++;
       return true;
@@ -428,4 +433,22 @@ test('source ancestry refusal remains a lifecycle STOP', async () => {
   const r = await f.run('promote');
   assert.equal(r.guardPhase, 'source-ancestry');
   assert.equal(r.status, 'failed');
+});
+
+test('stage source verification cannot be replaced through caller dependencies', async () => {
+  const f = fixture();
+  let calls = 0;
+  const stage = await f.run('stage', (o) => ({
+    ...o,
+    stageDependencies: {
+      ...o.stageDependencies,
+      verifySource: async () => {
+        calls++;
+        return 'd'.repeat(40);
+      },
+    },
+  }));
+  assert.equal(stage.status, 'succeeded');
+  assert.equal(stage.sourceSha, sha);
+  assert.equal(calls, 0);
 });

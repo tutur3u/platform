@@ -64,6 +64,22 @@ export function verifyProductionAncestry(sha, ref) {
   );
   return result.status === 0;
 }
+function checkoutMainSource(sha) {
+  if (!/^[a-f0-9]{40}$/u.test(sha))
+    fail('RELEASE_RECEIPT_MISMATCH', 'verify-source');
+  for (const args of [
+    ['rev-parse', '--verify', `${sha}^{commit}`],
+    ['merge-base', '--is-ancestor', sha, 'refs/remotes/origin/main'],
+    ['checkout', '--detach', sha],
+  ]) {
+    if (spawnSync('git', args, { encoding: 'utf8' }).status !== 0)
+      fail('RELEASE_RECEIPT_MISMATCH', 'verify-source');
+  }
+  const head = spawnSync('git', ['rev-parse', 'HEAD'], { encoding: 'utf8' });
+  if (head.status !== 0 || head.stdout.trim() !== sha)
+    fail('RELEASE_RECEIPT_MISMATCH', 'verify-source');
+  return sha;
+}
 export function releaseConfigForApp(app) {
   if (app !== 'calendar') fail('RELEASE_CONFIG_INVALID', 'inputs');
   return CALENDAR_RELEASE_MODES;
@@ -370,8 +386,11 @@ async function dispatch(options, runtime) {
             CALENDAR_VERCEL.stageEnvironment
         )
           fail('RELEASE_CONFIG_INVALID', 'inputs');
+        if (runtime.sourceRef !== 'refs/heads/main')
+          fail('RELEASE_APPROVAL_REQUIRED', 'verify-source');
         const staged = await runStage({
           ...deps,
+          verifySource: () => runtime.stageSource(context.payload.sourceSha),
           recordPreimage: async (value) => {
             if (value.id !== context.payload.rollback.deploymentId)
               fail('RELEASE_RECEIPT_MISMATCH', 'alias-preimage');
@@ -416,6 +435,7 @@ async function dispatch(options, runtime) {
 export async function dispatchReleaseMode(options) {
   return dispatch(options, {
     sourceRef: process.env.GITHUB_REF,
+    stageSource: checkoutMainSource,
     verifySourceAncestry: verifyProductionAncestry,
     now: () => performance.now(),
     delay: (ms) => new Promise((resolve) => setTimeout(resolve, ms)),
