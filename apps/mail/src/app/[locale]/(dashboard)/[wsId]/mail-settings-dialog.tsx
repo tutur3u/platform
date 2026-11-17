@@ -298,6 +298,7 @@ export function MailSettingsDialog({
                     aria-label={t('sender_name')}
                     disabled={usesManagedIdentity}
                     onChange={(event) => setSenderName(event.target.value)}
+                    placeholder={t('sender_name_placeholder')}
                     readOnly={usesManagedIdentity}
                     value={senderName}
                   />
@@ -360,7 +361,9 @@ export function MailSettingsDialog({
                     value={outboundProvider}
                   >
                     <SelectTrigger aria-label={t('outbound_provider')}>
-                      <SelectValue />
+                      <SelectValue
+                        placeholder={t('outbound_provider_placeholder')}
+                      />
                     </SelectTrigger>
                     <SelectContent>
                       <SelectItem value="default">
@@ -399,6 +402,7 @@ export function MailSettingsDialog({
                       onChange={(event) =>
                         setAiInstructions(event.target.value)
                       }
+                      placeholder={t('ai_instructions_placeholder')}
                       value={aiInstructions}
                     />
                   </SettingItemTab>
@@ -464,7 +468,9 @@ export function MailSettingsDialog({
                     value={domainId ?? undefined}
                   >
                     <SelectTrigger aria-label={t('managed_domain')}>
-                      <SelectValue />
+                      <SelectValue
+                        placeholder={t('managed_domain_placeholder')}
+                      />
                     </SelectTrigger>
                     <SelectContent>
                       {domainsQuery.data?.domains.map((domain) => (

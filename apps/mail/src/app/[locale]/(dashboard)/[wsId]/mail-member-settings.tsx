@@ -81,6 +81,7 @@ export function MailMemberSettings({
                 id="member-email"
                 type="email"
                 required
+                placeholder={t('group_member_email_placeholder')}
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
               />
@@ -91,7 +92,9 @@ export function MailMemberSettings({
                 onValueChange={(next) => setRole(next as MailMailboxRole)}
               >
                 <SelectTrigger aria-label={t('group_member_role')}>
-                  <SelectValue />
+                  <SelectValue
+                    placeholder={t('group_member_role_placeholder')}
+                  />
                 </SelectTrigger>
                 <SelectContent>
                   {options.map((item) => (
@@ -140,7 +143,9 @@ export function MailMemberSettings({
                     className="w-40"
                     aria-label={t('group_member_role')}
                   >
-                    <SelectValue />
+                    <SelectValue
+                      placeholder={t('group_member_role_placeholder')}
+                    />
                   </SelectTrigger>
                   <SelectContent>
                     {options.map((item) => (

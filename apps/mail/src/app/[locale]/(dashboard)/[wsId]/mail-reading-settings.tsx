@@ -32,7 +32,7 @@ export function MailReadingSettings() {
           }}
         >
           <SelectTrigger id="mail-after-archive">
-            <SelectValue />
+            <SelectValue placeholder={t('after_archive_placeholder')} />
           </SelectTrigger>
           <SelectContent>
             <SelectItem value="next">{t('archive_next')}</SelectItem>
@@ -56,7 +56,7 @@ export function MailReadingSettings() {
           }}
         >
           <SelectTrigger id="mail-content-appearance">
-            <SelectValue />
+            <SelectValue placeholder={t('message_appearance_placeholder')} />
           </SelectTrigger>
           <SelectContent>
             <SelectItem value="auto">{t('app_theme_view')}</SelectItem>

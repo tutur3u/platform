@@ -64,7 +64,7 @@ export function MailGroupSettings({
             onValueChange={(next) => setValue({ ...value, [field]: next })}
           >
             <SelectTrigger id={`group-${field}`}>
-              <SelectValue />
+              <SelectValue placeholder={t('group_policy_placeholder')} />
             </SelectTrigger>
             <SelectContent>
               {(field === 'sendAs'

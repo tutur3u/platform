@@ -282,9 +282,11 @@ function LabelEditor({
       <AccordionContent className="space-y-4 pb-5">
         <div className="grid gap-3 sm:grid-cols-[minmax(0,1fr)_minmax(0,1fr)_3rem]">
           <Input
+            aria-label={t('label_name')}
             className={fieldClass}
             disabled={!canManage}
             onChange={(event) => setName(event.target.value)}
+            placeholder={t('label_name')}
             value={name}
           />
           <Input

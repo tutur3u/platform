@@ -106,7 +106,7 @@ export function MailAutomationSettings({
             }}
           >
             <SelectTrigger id="mail-forwarding" className="w-full min-w-0">
-              <SelectValue />
+              <SelectValue placeholder={t('forwarding_placeholder')} />
             </SelectTrigger>
             <SelectContent>
               <SelectItem value="off">{t('forwarding_off')}</SelectItem>
