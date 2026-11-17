@@ -29,6 +29,10 @@ only produces the sealed Worker bytes. Secret values never appear here, only nam
 - The production publication profile (`scripts/ci/wave1-native-profiles.json`) uploads a
   route-free Worker (`workers_dev: false`, `routes: []`). Binding the canonical host is a
   separate provider step, so uploading never moves traffic.
+- Finance production-only records publish the qualified emitted vars exactly.
+  Legacy secret lists and identities are cross-checked against recipe records.
+  Staging URLs must resolve to staging hosts; smoke paths remain on the fixed
+  admitted origin.
 - The `cf-wave1` queue adapter is offline and accepts only an injected deploy
   authority. Missing authority prevents execution. It provides explicit seal,
   publish, doctor and rollback phase identities; rollback requires an authorized

@@ -180,3 +180,21 @@ restored qualification, token and scan guards. No executor or live authority is
 installed by importing this adapter. Run `release-cf-queue.test.mjs` separately for
 the fake-authority boundary; these tests do not certify a distributed queue or a
 production rollback.
+
+Release record validation binds production-only vars to qualified source vars,
+rejects production origins in staging vars and cross-checks legacy identity/secret
+fields against the recipe. Smoke paths resolve against a fixed admitted origin;
+backslashes, encoded slashes and foreign origins are refused. Public Supabase
+origins require an explicit pin.
+
+Queue payloads derive account and shared target aliases from committed policy;
+caller records must equal that policy. `recipeDigest()` binds the adapter, payload,
+error, validator and profile modules. Rollback is a standalone job. Executors get
+an AbortSignal and `checkFence`; call the fence after blocking steps and before
+another provider effect. A monotonic deadline bounded by the job duration and
+lease aborts local execution and requests durable stop. UNKNOWN keeps the target
+fenced for reconciliation; worker capacity release does not permit replay.
+Terminal typed refusals before provider contact retain guard code, phase and
+failure class. Existing phase receipts are returned unchanged, and rejected grants
+never checkpoint a replacement result. Payload and receipt schemas refuse nested
+credentials; secret-name metadata remains distinct from credential values.

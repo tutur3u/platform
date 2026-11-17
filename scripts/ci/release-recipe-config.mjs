@@ -8,13 +8,21 @@ export function closedRecord(value, keys) {
   for (const key of keys)
     assert.ok(Object.hasOwn(value, key), `Missing field: ${key}`);
 }
-export function productionOrigin(value) {
+export const credentialName =
+  /KEY|CREDENTIAL|JWT|PASSWORD|TOKEN|SECRET|PRIVATE|COOKIE|SESSION|AUTH|PASS|CERT|SIGN|DSN/i;
+const domain = (host, suffix) => host === suffix || host.endsWith(`.${suffix}`);
+export function productionOrigin(value, pinned = false) {
   assert.equal(typeof value, 'string');
   const url = new URL(value);
   assert.equal(url.protocol, 'https:');
   assert.equal(url.origin, value);
   assert.ok(!url.username && !url.password && !value.includes('*'));
   assert.ok(!/staging|tutur3u\.com|fxefojytwimjiqxseqag/i.test(value));
+  assert.ok(
+    domain(url.hostname, 'tuturuuu.com') ||
+      (pinned && url.hostname === 'nzamlzqfdwaaxdefwraj.supabase.co'),
+    'Unadmitted host'
+  );
   return value;
 }
 function strings(values, pattern) {
@@ -60,7 +68,9 @@ export function validateReleaseRecipe(record, { validateVercelSection } = {}) {
     record.publicInputPins,
   ]) {
     strings(hosts, /^https:\/\//);
-    hosts.forEach(productionOrigin);
+    hosts.forEach((value) =>
+      productionOrigin(value, hosts === record.publicInputPins)
+    );
   }
   assert.ok(record.canonicalHosts.length > 0);
   strings(record.requiredSecretNames, /^[A-Z][A-Z0-9_]*$/);
@@ -73,14 +83,16 @@ export function validateReleaseRecipe(record, { validateVercelSection } = {}) {
     assert.match(name, /^[A-Z][A-Z0-9_]*$/);
     assert.ok(!record.requiredSecretNames.includes(name));
     assert.ok(
-      !/SECRET|TOKEN|PASSWORD|PRIVATE|API_KEY|PUBLISHABLE_KEY/.test(name)
+      !credentialName.test(name) ||
+        name === 'NEXT_PUBLIC_TUTURUUU_SHARED_COOKIE_DOMAIN'
     );
     assert.equal(typeof value, 'string');
     assert.ok(!/staging|tutur3u\.com|fxefojytwimjiqxseqag/i.test(value));
-    if (/^[a-z]+:\/\//i.test(value)) {
+    if (value.includes(':') || value.startsWith('//')) {
       const url = new URL(value);
       assert.ok(!url.username && !url.password);
-      productionOrigin(url.origin);
+      assert.equal(url.protocol, 'https:');
+      productionOrigin(url.origin, record.publicInputPins.includes(url.origin));
     }
   }
   assert.ok(
@@ -114,7 +126,10 @@ export function validateReleaseRecipe(record, { validateVercelSection } = {}) {
   );
   for (const item of record.smokeSpec.cases) {
     closedRecord(item, ['path', 'status', 'redirectOrigin', 'noStore']);
-    assert.match(item.path, /^\/(?!\/)[^\s#]*$/);
+    assert.match(item.path, /^\/(?![\/\\])[^\s#]*$/);
+    assert.ok(!/\\|%2f|%5c|\.\./i.test(item.path));
+    const origin = record.canonicalHosts[0];
+    assert.equal(new URL(item.path, origin).origin, origin);
     assert.ok(
       Number.isInteger(item.status) && item.status >= 200 && item.status <= 599
     );
@@ -147,10 +162,31 @@ export function validateReleaseRecipe(record, { validateVercelSection } = {}) {
       for (const [name, value] of Object.entries(vars)) {
         assert.match(name, /^[A-Z][A-Z0-9_]*$/);
         assert.ok(
-          !/SECRET|TOKEN|PASSWORD|PRIVATE|API_KEY|PUBLISHABLE_KEY/.test(name)
+          !credentialName.test(name) ||
+            name === 'NEXT_PUBLIC_TUTURUUU_SHARED_COOKIE_DOMAIN'
         );
         assert.equal(typeof value, 'string');
         assert.ok(!value.replaceAll('{{host}}', '').includes('{{'));
+      }
+    }
+    if (record.cf.productionOnly)
+      assert.deepEqual(
+        record.allowedVars,
+        record.cf.sourceVars,
+        'Production-only recipes publish exactly emitted vars'
+      );
+    for (const value of Object.values(record.cf.stagingPublicationVars)) {
+      assert.ok(!value.includes('tuturuuu.com'), 'Production value in staging');
+      if (value.includes(':') || value.startsWith('//')) {
+        const url = new URL(
+          value.replaceAll('{{host}}', 'fixture.tutur3u.com')
+        );
+        assert.equal(url.protocol, 'https:');
+        assert.ok(!url.username && !url.password && !value.includes('*'));
+        assert.ok(
+          domain(url.hostname, 'tutur3u.com'),
+          'Staging URL must use staging hosts'
+        );
       }
     }
     assert.match(record.cf.productionWorker, /^[a-z][a-z0-9-]*$/);
@@ -185,5 +221,32 @@ export function assertCommittedRecipe(
     assert.ok(
       config.includes(`compatibility_date: '${record.cf.compatibilityDate}'`)
     );
+  }
+}
+
+export function assertRecipeSettings(settings, recipe) {
+  const extras = { calendar: ['GOOGLE_REDIRECT_URI'] };
+  assert.deepEqual(
+    recipe.requiredSecretNames,
+    [...settings.secrets, ...(extras[recipe.app] ?? [])],
+    'Profile secret lists differ'
+  );
+  assert.equal(
+    settings.canonicalHost,
+    new URL(recipe.canonicalHosts[0]).hostname
+  );
+  const productionOverrides = { calendar: 'tuturuuu-calendar-path-candidate' };
+  assert.equal(
+    recipe.cf.productionWorker,
+    productionOverrides[recipe.app] ?? settings.productionWorker,
+    'Legacy production Worker differs'
+  );
+  for (const [legacy, value] of [
+    ['productionOnly', recipe.cf.productionOnly],
+    ['compatibilityDate', recipe.cf.compatibilityDate],
+    ['sourceVars', recipe.cf.sourceVars],
+  ]) {
+    if (Object.hasOwn(settings, legacy))
+      assert.deepEqual(settings[legacy], value, `Legacy ${legacy} differs`);
   }
 }

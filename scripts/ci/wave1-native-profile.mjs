@@ -2,6 +2,7 @@ import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import {
   assertCommittedRecipe,
+  assertRecipeSettings,
   validateReleaseRecipe,
 } from './release-recipe-config.mjs';
 
@@ -12,6 +13,7 @@ export const releaseRecipes = Object.fromEntries(
   Object.entries(profiles.apps).map(([app, settings]) => {
     const recipe = validateReleaseRecipe(settings.releaseRecipe);
     assert.equal(recipe.app, app);
+    assertRecipeSettings(settings, recipe);
     return [app, recipe];
   })
 );
@@ -226,7 +228,18 @@ export function publicationConfig(base, profile, { main, assets, sourceSha }) {
       !Object.hasOwn(vars, name),
       `Secret name duplicates a source var: ${name}`
     );
-  if (production) assert.deepEqual(recipe.requiredSecretNames, profile.secrets);
+  const settings = profiles.apps[profile.app];
+  assertRecipeSettings(settings, recipe);
+  assert.deepEqual(
+    profile.secrets,
+    production
+      ? [
+          ...settings.secrets,
+          ...(profile.app === 'calendar' ? ['GOOGLE_REDIRECT_URI'] : []),
+        ]
+      : [...settings.secrets, ...(settings.stagingSecrets ?? [])],
+    'Publication secrets differ'
+  );
   assertCommittedRecipe(recipe);
   const config = {
     name: profile.name,

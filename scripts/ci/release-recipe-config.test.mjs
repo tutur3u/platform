@@ -147,3 +147,89 @@ for (const [label, mutate] of [
     mutate(candidate);
     assert.throws(() => validateReleaseRecipe(candidate));
   });
+
+const policy = JSON.parse(
+  readFileSync(new URL('./wave1-native-profiles.json', import.meta.url))
+);
+for (const [label, change] of [
+  [
+    'Finance record edit changes emitted vars',
+    (r) => {
+      r.allowedVars.FINANCE_FEATURE = 'on';
+    },
+  ],
+  [
+    'credential key',
+    (r) => {
+      r.allowedVars.CONNECTED_ACCOUNTS_KEY = 'value';
+    },
+  ],
+  [
+    'JWT key',
+    (r) => {
+      r.allowedVars.SESSION_JWT = 'value';
+    },
+  ],
+  [
+    'foreign canonical host',
+    (r) => {
+      r.canonicalHosts = ['https://calendar.tuturuuu.com.evil.example'];
+    },
+  ],
+  [
+    'backslash smoke host',
+    (r) => {
+      r.smokeSpec.cases[0].path = '/\\evil.example';
+    },
+  ],
+  [
+    'encoded smoke host',
+    (r) => {
+      r.smokeSpec.cases[0].path = '/%2fexample.com';
+    },
+  ],
+  [
+    'scheme-relative var',
+    (r) => {
+      r.allowedVars.FINANCE_APP_URL = '//evil.example';
+    },
+  ],
+  [
+    'non-HTTPS var',
+    (r) => {
+      r.allowedVars.FINANCE_APP_URL = 'http:evil.example';
+    },
+  ],
+])
+  test(`review regression: ${label}`, () => {
+    const candidate = structuredClone(record);
+    change(candidate);
+    assert.throws(() => validateReleaseRecipe(candidate));
+  });
+test('Calendar staging rejects the production apex and arbitrary hosts', () => {
+  for (const value of [
+    'https://tuturuuu.com',
+    'https://evil.example',
+    'http://web.tutur3u.com',
+  ]) {
+    const candidate = structuredClone(policy.apps.calendar.releaseRecipe);
+    candidate.cf.stagingPublicationVars.NEXT_PUBLIC_WEB_APP_URL = value;
+    assert.throws(() => validateReleaseRecipe(candidate));
+  }
+});
+test('legacy secrets and identities are independently cross-checked', async () => {
+  const { assertRecipeSettings } = await import('./release-recipe-config.mjs');
+  for (const change of [
+    (s) => s.secrets.push('NEW_REQUIRED_SECRET'),
+    (s) => {
+      s.canonicalHost = 'other.tuturuuu.com';
+    },
+    (s) => {
+      s.compatibilityDate = '2026-01-01';
+    },
+  ]) {
+    const settings = structuredClone(policy.apps.finance);
+    change(settings);
+    assert.throws(() => assertRecipeSettings(settings, settings.releaseRecipe));
+  }
+});
