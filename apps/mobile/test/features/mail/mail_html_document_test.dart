@@ -29,7 +29,7 @@ void main() {
     );
     expect(
       document.querySelectorAll('style').last.text,
-      contains('table-layout:fixed'),
+      contains('table-layout:auto'),
     );
     expect(document.querySelector('#mail-scroll'), isNotNull);
   });

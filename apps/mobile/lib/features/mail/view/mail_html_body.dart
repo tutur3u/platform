@@ -55,14 +55,10 @@ class _MailHtmlBodyState extends State<MailHtmlBody> {
   double _height = 320;
   int _generation = 0;
   String? _document;
-  InAppWebViewController? _controller;
   MailMessageAppearance? _appearance;
 
   MailMessageAppearance get _effectiveAppearance =>
-      MailAppearancePreference.instance.value ??
-      (Theme.of(context).brightness == Brightness.dark
-          ? MailMessageAppearance.dark
-          : MailMessageAppearance.light);
+      MailAppearancePreference.instance.value ?? MailMessageAppearance.original;
 
   @override
   void initState() {
@@ -123,7 +119,6 @@ class _MailHtmlBodyState extends State<MailHtmlBody> {
   Future<void> _prepare() async {
     final generation = ++_generation;
     _document = null;
-    _controller = null;
     _failed = false;
     try {
       final request = MailDocumentRequest(
@@ -202,57 +197,48 @@ class _MailHtmlBodyState extends State<MailHtmlBody> {
               ],
             ),
           )
-        : Listener(
-            onPointerUp: (_) => unawaited(
-              Future<void>.delayed(
-                const Duration(milliseconds: 100),
-                () => _measure(_controller, generation),
+        : InAppWebView(
+            key: ValueKey(generation),
+            gestureRecognizers: const {
+              Factory<HorizontalDragGestureRecognizer>(
+                HorizontalDragGestureRecognizer.new,
               ),
+            },
+            initialSettings: InAppWebViewSettings(
+              transparentBackground: true,
+              javaScriptEnabled: false,
+              incognito: true,
+              allowFileAccess: false,
+              allowContentAccess: false,
+              useShouldOverrideUrlLoading: true,
             ),
-            child: InAppWebView(
-              key: ValueKey(generation),
-              gestureRecognizers: const {
-                Factory<HorizontalDragGestureRecognizer>(
-                  HorizontalDragGestureRecognizer.new,
-                ),
-              },
-              initialSettings: InAppWebViewSettings(
-                transparentBackground: true,
-                javaScriptEnabled: false,
-                incognito: true,
-                allowFileAccess: false,
-                allowContentAccess: false,
-                useShouldOverrideUrlLoading: true,
-              ),
-              initialData: InAppWebViewInitialData(
-                baseUrl: WebUri('about:blank'),
-                data: document,
-              ),
-              onWebViewCreated: (controller) => _controller = controller,
-              onContentSizeChanged: (_, previous, next) =>
-                  _resize(next.height, generation),
-              onLoadStop: (controller, _) => _measure(controller, generation),
-              shouldOverrideUrlLoading: (_, action) async {
-                final uri = action.request.url;
-                final value = uri?.toString() ?? '';
-                if ((value == 'about:blank' ||
-                        value.startsWith('about:blank#')) &&
-                    action.isForMainFrame) {
-                  return NavigationActionPolicy.ALLOW;
-                }
-                if (uri?.scheme == mailInlineImageScheme) {
-                  final contentId = Uri.decodeComponent(uri!.path);
-                  widget.onInlineImageTap?.call(contentId);
-                  return NavigationActionPolicy.CANCEL;
-                }
-                if (uri != null &&
-                    ['https', 'http', 'mailto', 'tel'].contains(uri.scheme) &&
-                    action.isForMainFrame) {
-                  await openMobileLink(context, Uri.parse(value));
-                }
+            initialData: InAppWebViewInitialData(
+              baseUrl: WebUri('about:blank'),
+              data: document,
+            ),
+            onContentSizeChanged: (_, previous, next) =>
+                _resize(next.height, generation),
+            onLoadStop: (controller, _) => _measure(controller, generation),
+            shouldOverrideUrlLoading: (_, action) async {
+              final uri = action.request.url;
+              final value = uri?.toString() ?? '';
+              if ((value == 'about:blank' ||
+                      value.startsWith('about:blank#')) &&
+                  action.isForMainFrame) {
+                return NavigationActionPolicy.ALLOW;
+              }
+              if (uri?.scheme == mailInlineImageScheme) {
+                final contentId = Uri.decodeComponent(uri!.path);
+                widget.onInlineImageTap?.call(contentId);
                 return NavigationActionPolicy.CANCEL;
-              },
-            ),
+              }
+              if (uri != null &&
+                  ['https', 'http', 'mailto', 'tel'].contains(uri.scheme) &&
+                  action.isForMainFrame) {
+                await openMobileLink(context, Uri.parse(value));
+              }
+              return NavigationActionPolicy.CANCEL;
+            },
           );
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,

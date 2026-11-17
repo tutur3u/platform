@@ -1117,6 +1117,26 @@ loading still fails, the reader shows the error with an inline Retry. A failed
 draft open still shows a Retry action above the floating dock. The reader leaves
 enough bottom scroll space to reveal the end of long messages above that dock.
 
+HTML messages in Flutter default to the sender's original colors on light paper,
+including when the surrounding app uses a dark theme. An explicitly saved
+Original, Light or Dark appearance remains authoritative. The isolated WebView
+retains safe sender CSS, the viewport meta tag, disabled JavaScript and the remote
+image consent policy. Authenticated CID images remain embedded data URIs.
+
+Wide newsletter tables use automatic column allocation so un-sized spacer cells
+do not divide the text into equal narrow columns. The reader captures inherited
+shell dock clearance before Scaffold adjusts its body insets. Height updates come
+from load and content-size callbacks rather than pointer-up events.
+
+Regression coverage includes `mail_html_document_test.dart`,
+`mail_appearance_test.dart`, `mail_inline_images_test.dart`,
+`mail_reader_clearance_test.dart` and the native
+`integration_test/mail_html_layout_test.dart`. The native corpus contains synthetic
+layout structures, including an old fixed-layout negative control; it does not
+represent captured vendor messages. Native WebView results, Studio unit results
+and CI-pinned Linux golden results are separate evidence.
+
+
 ## Mobile incoming-mail notifications
 
 See [Incoming Mail notifications](/platform/applications/mail-inbound-notifications)

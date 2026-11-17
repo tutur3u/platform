@@ -393,6 +393,8 @@ class _MailReaderState extends State<MailReader> {
         : l10n.mailNoSubject;
     final pane = AppMasterDetail.inDetailPaneOf(context);
     final sharedShell = lookupShellTitleOverrideCubit(context) != null;
+    // Capture the shell inset before Scaffold adjusts its body MediaQuery.
+    final readerBottomClearance = AppPageInsets.contentBottomClearance(context);
     // A pane header (split layouts) or the shell owns the message controls.
     final headerControls = sharedShell || pane;
     return Stack(
@@ -410,12 +412,15 @@ class _MailReaderState extends State<MailReader> {
               Expanded(
                 child: LayoutBuilder(
                   builder: (context, constraints) => ListView(
-                    padding: AppPageInsets.of(
-                      context,
-                      width: constraints.maxWidth,
-                      kind: AppPageKind.reading,
-                      endGap: _mailReaderEndGap,
-                    ),
+                    padding:
+                        AppPageInsets.of(
+                          context,
+                          width: constraints.maxWidth,
+                          kind: AppPageKind.reading,
+                          endGap: _mailReaderEndGap,
+                        ).copyWith(
+                          bottom: readerBottomClearance + _mailReaderEndGap,
+                        ),
                     children: _detail == null
                         ? [_summaryPreview()]
                         : [

@@ -553,3 +553,29 @@ Pull gestures retain the current error message while refreshing. Explicit Retry
 returns to loading feedback. Compact sheet empty/error states use a plain
 indicator with a shrink-wrapped scroll view. Regression coverage includes
 calendar_cubit_test.dart and nova_refresh_indicator_test.dart.
+
+
+## Mail HTML renderer verification
+
+The isolated Mail WebView preserves sender styling, defaults to original colors
+on light paper and keeps JavaScript disabled. Use automatic layout for fluid
+newsletter tables: fixed layout can give unspecified spacer cells equal width
+with the text column. Keep the sanitizer, CSP, image consent and authenticated
+CID embedding unchanged during layout work.
+
+Run document, appearance, CID and dock-clearance widget tests before native
+verification. `integration_test/mail_html_layout_test.dart` measures eight
+synthetic newsletter structures at 320 and 390 pixels on Android/iOS WebViews.
+Run its Stripe-like case with `--dart-define=MAIL_LAYOUT_FIXED_CONTROL=true` to
+prove the width assertion rejects the old fixed layout, then run the normal
+corpus. A setup failure is not a successful negative control. Native snapshots
+measure a diagnostic background applied only to the synthetic fixture paragraph.
+This keeps measurement independent of DOM script evaluation, which can return
+null with JavaScript disabled. Never enable sender scripts to pass the test.
+
+Use the existing resource broker on the admitted host and Device tools for
+simulator interaction. macOS native unit/simulator checks are correctness
+receipts; CI-pinned Linux goldens and real-phone performance remain distinct.
+Capture shell dock clearance above Scaffold because its body can receive an
+adjusted MediaQuery. Keep content-size/load height callbacks and avoid scheduling
+native height queries for every pointer event.

@@ -26,7 +26,7 @@ class MailAppearancePreference extends ValueNotifier<MailMessageAppearance?> {
             .firstOrNull;
       }
     } on Exception {
-      // Follow the app theme when preferences are unavailable.
+      // Original email colors remain readable when preferences are unavailable.
     }
   }
 

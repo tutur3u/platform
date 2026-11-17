@@ -84,7 +84,7 @@ body a{color:${dark ? '#8ab4ff' : '#2458b8'}!important}
 #mail-content :is(p,div,span,td,th,h1,h2,h3){overflow-wrap:anywhere!important}
 #mail-content :is([nowrap],[style*="nowrap" i]){white-space:normal!important}
 #mail-content .mail-compact-icon{display:block;max-width:min(100%,220px)!important;max-height:220px!important;margin-inline:auto!important}
-#mail-content .mail-fluid-table{width:100%!important;max-width:100%!important;table-layout:fixed;margin-inline:auto!important}
+#mail-content .mail-fluid-table{width:100%!important;max-width:100%!important;table-layout:auto;margin-inline:auto!important}
 #mail-content .mail-fluid-container{width:100%!important;max-width:100%!important;overflow:visible!important;margin-inline:auto!important}
 #mail-content .mail-fluid-table td,#mail-content .mail-fluid-table th{overflow-wrap:anywhere;word-break:break-word}
 #mail-content :is(h1,h2){font-size:clamp(22px,7vw,28px)!important;line-height:1.25!important}
