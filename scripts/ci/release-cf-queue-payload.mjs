@@ -126,7 +126,10 @@ function containsJwt(value) {
   return false;
 }
 function readableCamelCase(value) {
-  return /^(?:[a-z]{2,24}|[A-Z][a-z]{1,23})(?:[A-Z][a-z]{1,23})+$/.test(value);
+  return (
+    value.length <= 48 &&
+    /^(?:[a-z]{2,24}|[A-Z][a-z]{1,23})(?:[A-Z][a-z]{1,23}){1,7}$/.test(value)
+  );
 }
 function readableSegment(value) {
   return (

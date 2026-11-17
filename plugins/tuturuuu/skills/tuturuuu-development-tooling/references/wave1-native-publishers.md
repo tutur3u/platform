@@ -232,7 +232,9 @@ at-sign and whitespace, and also scans maximal hex/base64/base64url runs.
 Hex runs of 32 or more characters are refused independently of entropy outside
 exact declared identifier/digest positions. Other alphanumeric segments of 32 or
 more characters are refused unless they match readable camelCase/PascalCase,
-with each word capped at 24 letters including its initial capital. This readable
+with at most 8 words and 48 characters total, and each word capped at 24 letters
+including its initial capital. Runs over either total limit fall through to the
+opaque/token checks. This readable
 casing exception runs before the mixed-token entropy check. Other mixed token
 segments of 30 or more characters are refused at character entropy >=3.5;
 opaque compound base64/base64url runs and Origin-CA-shaped values are also refused.
@@ -265,7 +267,8 @@ values remain ambiguous. Random letters-only strings can accidentally match
 bounded camelCase: a synthetic 32-character base52 sample observed a rate near
 4×10⁻⁴; a base62 sample observed about 2×10⁻⁵, only for digit-free matches.
 These distribution-specific measurements
-are not a bound on adversarial input. Unprefixed opaque values of 30 characters or fewer
+are not a bound on adversarial input. Values inside both caps remain ambiguous;
+for example, two 24-letter words fit the readable exemption. Unprefixed opaque values of 30 characters or fewer
 remain a residual risk. Secrets fragmented into runs of 30 or fewer characters
 and chained UUIDs can also pass; reference provenance remains mandatory.
 Recognized credential prefixes are rejected even at shorter lengths.
