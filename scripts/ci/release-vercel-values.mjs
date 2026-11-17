@@ -8,6 +8,8 @@ const digestFields = new Set([
   'lifecycleSha256',
   'predecessorSha256',
   'aliasLockKey',
+  'targetLockId',
+  'receiptSha256',
 ]);
 export function tokenShaped(value) {
   if (typeof value !== 'string') return false;
@@ -23,6 +25,11 @@ export function tokenShaped(value) {
 export function unsafeValues(value, seen = new Set(), path = []) {
   const field = path.at(-1);
   if (typeof value === 'string') {
+    if (
+      field === 'executorHost' &&
+      /^(?:[a-z0-9][a-z0-9-]*\.)+[a-z]{2,24}$/u.test(value)
+    )
+      return false;
     if (
       (digestFields.has(field) ||
         (path.length === 2 && path[0] === 'artifact' && field === 'sha256')) &&

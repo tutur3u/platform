@@ -480,3 +480,74 @@ test('replay without evidence has a fixed refusal instead of a raw hash error', 
     { guardCode: 'QUEUE_GRANT_INVALID' }
   );
 });
+
+test('NV5 invalid host refuses before claim; a typed DNS host remains valid', async () => {
+  const port = authority();
+  let claims = 0;
+  const claim = port.claim;
+  port.claim = async (...args) => {
+    claims++;
+    return claim(...args);
+  };
+  await assert.rejects(
+    executeVercelPhase({
+      port,
+      payload: payload(),
+      reviewedTarget: target,
+      host: 'ghp_' + 'a'.repeat(36),
+      execute: async () => {
+        throw new Error('unreachable');
+      },
+    }),
+    { guardCode: 'QUEUE_PAYLOAD_INVALID' }
+  );
+  assert.equal(claims, 0);
+  const r = await executeVercelPhase({
+    port,
+    payload: payload(),
+    reviewedTarget: target,
+    host: 'runner-01.studio-ci.tuturuuu',
+    execute: async () => ({ deploymentId: 'dpl_result' }),
+  });
+  assert.equal(r.status, 'succeeded');
+});
+test('NV8 replay binds original receipt across a newly issued epoch', async () => {
+  const port = authority();
+  let effects = 0;
+  const first = await run(port, async (ctx) =>
+    ctx.effect('mutation', async () => {
+      effects++;
+      return { deploymentId: 'dpl_result' };
+    })
+  );
+  port.state.epoch = 2;
+  port.beginPhase = async () => ({
+    status: 'succeeded',
+    receipt: first,
+    originalAttempt: {
+      attemptId: first.attemptId,
+      epoch: first.epoch,
+      receiptSha256: payloadDigest(first),
+    },
+  });
+  assert.deepEqual(
+    await run(port, async () => {
+      effects++;
+    }),
+    first
+  );
+  assert.equal(effects, 1);
+  port.beginPhase = async () => ({
+    status: 'succeeded',
+    receipt: { ...first, jobId: 'foreign' },
+    originalAttempt: {
+      attemptId: first.attemptId,
+      epoch: first.epoch,
+      receiptSha256: payloadDigest(first),
+    },
+  });
+  await assert.rejects(
+    run(port, async () => {}),
+    { guardCode: 'QUEUE_GRANT_INVALID' }
+  );
+});

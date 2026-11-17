@@ -1,4 +1,7 @@
 // Provider-neutral, offline phase implementation. No CLI or HTTP transport.
+import { stageDependencies } from './release-vercel-stage.mjs';
+import { CALENDAR_RELEASE_IDENTITY } from './release-vercel-identity.mjs';
+import { stop } from './calendar-exact-sha-stop.mjs';
 import { runStage } from './calendar-exact-sha-publisher.mjs';
 import { readFileSync } from 'node:fs';
 import { spawnSync } from 'node:child_process';
@@ -66,18 +69,25 @@ export function verifyProductionAncestry(sha, ref) {
 }
 function checkoutMainSource(sha) {
   if (!/^[a-f0-9]{40}$/u.test(sha))
-    fail('RELEASE_RECEIPT_MISMATCH', 'verify-source');
-  for (const args of [
-    ['rev-parse', '--verify', `${sha}^{commit}`],
-    ['merge-base', '--is-ancestor', sha, 'refs/remotes/origin/main'],
-    ['checkout', '--detach', sha],
-  ]) {
-    if (spawnSync('git', args, { encoding: 'utf8' }).status !== 0)
-      fail('RELEASE_RECEIPT_MISMATCH', 'verify-source');
-  }
-  const head = spawnSync('git', ['rev-parse', 'HEAD'], { encoding: 'utf8' });
-  if (head.status !== 0 || head.stdout.trim() !== sha)
-    fail('RELEASE_RECEIPT_MISMATCH', 'verify-source');
+    throw stop('SOURCE_SHA_INVALID', 'A full lowercase SHA is required');
+  const git = (args) => {
+    const result = spawnSync('git', args, { encoding: 'utf8' });
+    if (result.status !== 0)
+      throw stop('GIT_COMMAND_FAILED', 'Git command failed');
+    return result.stdout.trim();
+  };
+  git(['rev-parse', '--verify', `${sha}^{commit}`]);
+  if (
+    spawnSync(
+      'git',
+      ['merge-base', '--is-ancestor', sha, 'refs/remotes/origin/main'],
+      { encoding: 'utf8' }
+    ).status !== 0
+  )
+    throw stop('SOURCE_NOT_ON_MAIN', 'Requested SHA is not on origin/main');
+  git(['checkout', '--detach', sha]);
+  if (git(['rev-parse', 'HEAD']) !== sha)
+    throw stop('SOURCE_HEAD_MISMATCH', 'Checkout differs from source');
   return sha;
 }
 export function releaseConfigForApp(app) {
@@ -93,6 +103,8 @@ export function runningReleaseDigests(app = 'calendar') {
     'release-vercel-errors.mjs',
     'release-vercel-config.mjs',
     'release-vercel-values.mjs',
+    'release-vercel-stage.mjs',
+    'release-vercel-identity.mjs',
     'calendar-exact-sha-publisher.mjs',
     'calendar-exact-sha-output.mjs',
     'calendar-exact-sha-stop.mjs',
@@ -104,6 +116,7 @@ export function runningReleaseDigests(app = 'calendar') {
   }
   return {
     configSha256: payloadDigest({
+      identity: CALENDAR_RELEASE_IDENTITY,
       vercel: CALENDAR_VERCEL,
       modes: validateReleaseModes(config),
     }),
@@ -113,6 +126,9 @@ export function runningReleaseDigests(app = 'calendar') {
 function bindReceipt(payload, config, receipt, context, mode) {
   const actual = runningReleaseDigests(config.app);
   if (
+    Object.keys(CALENDAR_RELEASE_IDENTITY).some(
+      (key) => payload.target[key] !== CALENDAR_RELEASE_IDENTITY[key]
+    ) ||
     !receipt ||
     receipt.schemaVersion !== 1 ||
     ['c1', 'staticAuth', 'delta', 'qualification'].some(
@@ -203,8 +219,8 @@ export async function runReleaseMode({
   sourceRef = process.env.GITHUB_REF,
   verifySourceAncestry = verifyProductionAncestry,
 }) {
-  config = validateReleaseModes(config);
   const { payload } = context;
+  config = releaseConfigForApp(payload.target.app);
   if (
     !['promote', 'watch', 'rollback'].includes(mode) ||
     payload.requestedPhases[0] !== mode
@@ -348,10 +364,10 @@ export async function runReleaseMode({
 }
 
 async function dispatch(options, runtime) {
-  const mode = options.payload?.requestedPhases?.[0];
+  const mode = options?.payload?.requestedPhases?.[0];
   if (!['stage', 'promote', 'watch', 'rollback'].includes(mode))
     fail('RELEASE_CONFIG_INVALID', 'inputs');
-  const config = releaseConfigForApp(options.payload.target.app);
+  const config = releaseConfigForApp(options.payload?.target?.app);
   if (
     options.config !== undefined &&
     payloadDigest(options.config) !== payloadDigest(config)
@@ -363,13 +379,13 @@ async function dispatch(options, runtime) {
     options.payload.recipeSha256 !== actual.recipeSha256
   )
     fail('RELEASE_RECEIPT_MISMATCH', 'inputs');
-  const reviewedTarget =
-    mode === 'stage'
-      ? options.reviewedTarget
-      : {
-          ...options.receipt?.canonicalTarget,
-          environment: config.promoteEnvironment,
-        };
+  const reviewedTarget = {
+    ...CALENDAR_RELEASE_IDENTITY,
+    environment:
+      mode === 'stage'
+        ? CALENDAR_VERCEL.stageEnvironment
+        : config.promoteEnvironment,
+  };
   return executeVercelPhase({
     port: options.port,
     payload: options.payload,
@@ -378,14 +394,14 @@ async function dispatch(options, runtime) {
     execute: async (context) => {
       if (mode === 'stage') {
         let preimage;
-        const deps = options.stageDependencies;
-        if (
-          !deps ||
-          deps.projectId !== context.payload.target.project ||
-          options.payload.target.environment !==
-            CALENDAR_VERCEL.stageEnvironment
-        )
-          fail('RELEASE_CONFIG_INVALID', 'inputs');
+        const transport = options.stageTransport;
+        if (!transport) fail('RELEASE_CONFIG_INVALID', 'inputs');
+        const deps = stageDependencies({
+          transport,
+          workspaceRoot: runtime.workspaceRoot,
+          context,
+          source: runtime.stageSource,
+        });
         if (runtime.sourceRef !== 'refs/heads/main')
           fail('RELEASE_APPROVAL_REQUIRED', 'verify-source');
         const staged = await runStage({
@@ -393,7 +409,7 @@ async function dispatch(options, runtime) {
           verifySource: () => runtime.stageSource(context.payload.sourceSha),
           recordPreimage: async (value) => {
             if (value.id !== context.payload.rollback.deploymentId)
-              fail('RELEASE_RECEIPT_MISMATCH', 'alias-preimage');
+              throw stop('ALIAS_PREIMAGE_MISMATCH', 'Alias preimage mismatch');
             preimage = value;
             await deps.recordPreimage(value);
           },
@@ -435,6 +451,7 @@ async function dispatch(options, runtime) {
 export async function dispatchReleaseMode(options) {
   return dispatch(options, {
     sourceRef: process.env.GITHUB_REF,
+    workspaceRoot: process.cwd(),
     stageSource: checkoutMainSource,
     verifySourceAncestry: verifyProductionAncestry,
     now: () => performance.now(),
@@ -445,7 +462,8 @@ export async function dispatchReleaseMode(options) {
 export async function dispatchReleaseModeForTest(options, hooks) {
   if (
     !process.env.NODE_TEST_CONTEXT ||
-    process.env.GITHUB_EVENT_NAME === 'workflow_dispatch'
+    Boolean(process.env.GITHUB_ACTIONS) ||
+    Boolean(process.env.GITHUB_EVENT_NAME)
   )
     fail('RELEASE_CONFIG_INVALID', 'test-hook');
   return dispatch(options, hooks);
