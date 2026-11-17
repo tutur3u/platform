@@ -8,6 +8,14 @@ must use the `main` ref and supply its full 40-character commit as `source_sha`.
 The workflow rejects a mismatch between that input and `github.sha`; a moving
 branch cannot silently select another release candidate.
 
+Build identity acceptance requires the Meet app name, exact source SHA, production
+environment, and production ref name. A mismatch reports only allowlisted identity
+fields and valid source hashes; arbitrary response bodies are excluded. Compare
+that receipt with the sealed artifact before attributing a failure to caching or
+propagation. The restored production runtime checks the same identity fields before
+publication. A failed promotion restores the captured pair and requires fresh
+release authorization before another dispatch or rerun.
+
 ## Prepare the release
 
 The existing `meet-production` GitHub environment must permit exactly the

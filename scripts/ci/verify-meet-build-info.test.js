@@ -117,3 +117,47 @@ test('reports only a validated numeric failure status without private response c
     );
   }
 });
+
+test('identity mismatch reports only allowlisted fields and valid source hashes', () => {
+  const modifiedMetadata = {
+    ...metadata,
+    commitHash: 'b'.repeat(40),
+    refName: 'main',
+  };
+  assert.throws(
+    () => verify(modifiedMetadata),
+    (error) => {
+      const diagnostic = JSON.parse(error.message.split(': ')[1]);
+      assert.deepEqual(diagnostic.expected, metadata);
+      assert.deepEqual(diagnostic.observed, modifiedMetadata);
+      assert.deepEqual(diagnostic.mismatches, ['commitHash', 'refName']);
+      return true;
+    }
+  );
+  for (const value of [
+    'private-response\nsecret',
+    { secret: 'private-response' },
+    null,
+  ]) {
+    assert.throws(
+      () =>
+        verify({
+          appName: value,
+          commitHash: value,
+          environment: value,
+          refName: value,
+          token: 'private-response',
+        }),
+      (error) => {
+        assert.doesNotMatch(error.message, /private-response|secret|token/);
+        const diagnostic = JSON.parse(error.message.split(': ')[1]);
+        assert.deepEqual(
+          Object.values(diagnostic.observed),
+          Array(4).fill('unrecognized')
+        );
+        assert.deepEqual(diagnostic.mismatches, Object.keys(metadata));
+        return true;
+      }
+    );
+  }
+});

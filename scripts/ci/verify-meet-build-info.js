@@ -2,6 +2,42 @@ const { execFileSync } = require('node:child_process');
 const { parseCurlOutput } = require('./verify-staged-critical-app');
 
 const BUILD_INFO_URL = 'https://meet.tuturuuu.com/api/build-info';
+function identityDiagnostic(metadata, sha) {
+  const expected = {
+    appName: 'meet',
+    commitHash: sha,
+    environment: 'production',
+    refName: 'production',
+  };
+  const classify = (value, allowed) =>
+    allowed.includes(value) ? value : 'unrecognized';
+  const observed = {
+    appName: classify(metadata?.appName, ['meet', 'web']),
+    commitHash:
+      typeof metadata?.commitHash === 'string' &&
+      /^[a-f0-9]{40}$/.test(metadata.commitHash)
+        ? metadata.commitHash
+        : 'unrecognized',
+    environment: classify(metadata?.environment, [
+      'production',
+      'preview',
+      'local',
+    ]),
+    refName: classify(metadata?.refName, [
+      'production',
+      'main',
+      'ci-fixture',
+      'local',
+    ]),
+  };
+  return JSON.stringify({
+    expected,
+    observed,
+    mismatches: Object.keys(expected).filter(
+      (key) => metadata?.[key] !== expected[key]
+    ),
+  });
+}
 function verifyMeetBuildInfo({ sha, status, body }) {
   if (!/^[a-f0-9]{40}$/.test(sha ?? ''))
     throw new Error('A full source SHA is required');
@@ -27,7 +63,7 @@ function verifyMeetBuildInfo({ sha, status, body }) {
     metadata?.refName !== 'production'
   )
     throw new Error(
-      'Meet canonical build identity does not match the production candidate'
+      `Meet canonical build identity does not match the production candidate: ${identityDiagnostic(metadata, sha)}`
     );
 }
 

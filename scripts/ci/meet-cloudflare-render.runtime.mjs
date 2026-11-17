@@ -417,6 +417,10 @@ test(
     assert.equal(info.appName, 'meet');
     assert.equal(info.commitHash, process.env.GITHUB_SHA);
     assert.equal(
+      info.refName,
+      process.env.GITHUB_REF?.replace(/^refs\/heads\//u, '')
+    );
+    assert.equal(
       info.environment,
       process.env.GITHUB_REF === 'refs/heads/production'
         ? 'production'
