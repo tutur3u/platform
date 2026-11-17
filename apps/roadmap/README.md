@@ -6,7 +6,11 @@ Start, Vite+ and Void on Cloudflare Workers. The canonical app mount is
 asset base is root (omitted in source); the post-build packaging step moves
 client files beneath `dist/client/roadmap/`. Thus `/roadmap/assets/example.js`
 maps to the physical `dist/client/roadmap/assets/example.js` through the
-`ASSETS` binding. Wrangler must be at least 4.148.0. There are no accounts,
+`ASSETS` binding. Wrangler must be at least 4.148.0. The Worker's
+`compatibility_date` (`void.config.ts`) stays at or below the newest date the
+locked dev workerd supports, or `vp dev` refuses to start;
+`scripts/dev-runtime.test.mjs` checks it against the workerd that
+`@cloudflare/vite-plugin` resolves through `void` and miniflare. There are no accounts,
 database bindings, analytics, forms, provider credentials or private fleet
 dependencies.
 

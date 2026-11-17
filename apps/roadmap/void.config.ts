@@ -10,7 +10,10 @@ export default defineConfig({
   cloudflare: {
     name: 'tuturuuu-roadmap',
     main: './src/worker.ts',
-    compatibility_date: '2026-11-07',
+    // At or below the locked dev workerd's date (vp dev refuses a later one;
+    // scripts/dev-runtime.test.mjs). No runtime flag defaults on between
+    // 2026-10-12 and 2026-11-17.
+    compatibility_date: '2026-10-12',
     compatibility_flags: ['nodejs_compat'],
     routes: [
       { pattern: 'tuturuuu.com/roadmap', zone_name: 'tuturuuu.com' },
