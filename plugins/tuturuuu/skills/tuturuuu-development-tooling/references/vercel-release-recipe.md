@@ -24,3 +24,17 @@ rollback-required evidence; cancellation itself never triggers rollback. Preserv
 active dispatch blob pins, adding imported configuration to the reviewed pin set
 before activating a config-driven publisher. Source tests do not prove authority
 authentication, durable storage, worker eligibility or provider fencing.
+
+Verify lifecycle dispatch receipts retain ReleaseStop codes/phases. Policy
+failures are failed; cancellation is stopped; accepted-but-uncertain effects are
+unknown. Test final authority acknowledgement refusals and forged replayed
+receipts. Reject unknown fields at every payload object boundary, including
+secret-shaped extras. Input env names reject credential words anywhere.
+
+Bind the authority-provided predecessor digest, phase/status, exact approval,
+qualification evidence and canonical target. Compute config/recipe digests from
+the running records/source. Check production ancestry and preserve the recorded
+preimage as the sole rollback target. The authority lock must cover the alias
+across environments: Vercel does not provide an atomic alias CAS. Re-entry at the
+verified target is read-only. Repeated fake-clock tests include 1500ms green
+probes and early timers; no probe receives a shortened timeout at the window edge.

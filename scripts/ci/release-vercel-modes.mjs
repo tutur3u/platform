@@ -1,5 +1,6 @@
 // Provider-neutral, offline phase implementation. No CLI or HTTP transport.
 import { readFileSync } from 'node:fs';
+import { spawnSync } from 'node:child_process';
 import { createHash } from 'node:crypto';
 import { CALENDAR_VERCEL } from './release-vercel-config.mjs';
 import { payloadDigest } from './release-vercel-queue.mjs';
@@ -52,6 +53,16 @@ export function validateReleaseModes(config) {
     fail('RELEASE_CONFIG_INVALID', 'inputs');
   return Object.freeze({ ...config });
 }
+export function verifyProductionAncestry(sha, ref) {
+  if (!/^[a-f0-9]{40}$/u.test(sha) || ref !== CALENDAR_RELEASE_MODES.promoteRef)
+    return false;
+  const result = spawnSync(
+    'git',
+    ['merge-base', '--is-ancestor', sha, 'refs/remotes/origin/production'],
+    { encoding: 'utf8' }
+  );
+  return result.status === 0;
+}
 export function runningReleaseDigests(config = CALENDAR_RELEASE_MODES) {
   const recipe = createHash('sha256');
   for (const file of [
@@ -74,6 +85,9 @@ function bindReceipt(payload, config, receipt, context, mode) {
   if (
     !receipt ||
     receipt.schemaVersion !== 1 ||
+    ['c1', 'staticAuth', 'delta', 'qualification'].some(
+      (key) => receipt.qualification?.[key] !== 'passed'
+    ) ||
     receipt.status !== 'succeeded' ||
     receipt.phase !== (mode === 'promote' ? 'stage' : 'promote') ||
     context.predecessorSha256 !== payloadDigest(receipt) ||
@@ -156,8 +170,8 @@ export async function runReleaseMode({
   probe,
   now = () => performance.now(),
   delay = (ms) => new Promise((resolve) => setTimeout(resolve, ms)),
-  sourceRef,
-  verifySourceAncestry,
+  sourceRef = process.env.GITHUB_REF,
+  verifySourceAncestry = verifyProductionAncestry,
 }) {
   config = validateReleaseModes(config);
   const { payload } = context;

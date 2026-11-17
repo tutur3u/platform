@@ -40,6 +40,12 @@ function fixture(mode) {
   };
   const receipt = {
     schemaVersion: 1,
+    qualification: {
+      c1: 'passed',
+      staticAuth: 'passed',
+      delta: 'passed',
+      qualification: 'passed',
+    },
     status: 'succeeded',
     phase: mode === 'promote' ? 'stage' : 'promote',
     canonicalTarget: structuredClone(payload.target),

@@ -233,3 +233,22 @@ separate gates.
 When an exact-source dispatch pins publisher files, preserve that pin set until
 the dispatch is consumed or expires. A config-driven publisher also requires its
 imported record in the reviewed blob set.
+
+Lifecycle receipts preserve their fixed failure code and phase through the queue
+boundary. Pre-effect policy failures are failed, cancellation fences are stopped,
+and uncertain effects remain unknown. Success requires verified final authority
+acknowledgements. Canonical locks cover the shared alias across environments;
+Vercel alias writes are not atomic compare-and-swap operations, so exclusion
+requires the authority lock.
+
+Promotion consumes a succeeded stage receipt; watch and rollback consume a
+succeeded promote receipt. The authority supplies the predecessor digest and
+exact approval verification. Running source files and validated configuration
+produce the recipe/config digests; caller-supplied digest agreement alone is
+insufficient. Qualification evidence and the recorded rollback preimage remain
+bound to that predecessor. Production ancestry is checked against the fetched
+`origin/production` ref, and the runtime ref defaults to `GITHUB_REF`. Fetch that
+ref in an approved workflow before activation. An already-applied alias is
+verified without another write. Watch schedules fixed offsets and gives every
+started probe its full timeout, allowing at most one probe timeout beyond the
+observation window.
