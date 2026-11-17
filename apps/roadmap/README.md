@@ -235,6 +235,24 @@ Every figure comes from the same public sources, derived at build time and in
 the page (`packages/roadmap-core/src/insights`); anything not observed reads "not available", never
 zero or an earlier build's value.
 
+- **Commits to main lead.** Work lands on main directly, so the Activity tab
+  counts commits first. `scripts/commit-log.mjs` reads first-parent commits
+  to main over 90 days from the build checkout (`fetch-depth: 0`,
+  `filter: blob:none`, `--no-renames`, so no file contents are fetched) and
+  marks each in production when `origin/production` or an observed app
+  build contains it. `packages/roadmap-core/src/insights/commits.ts` counts
+  them per Vietnam day and product (`apps/<dir>/` paths first, then the
+  conventional scope, then tooling paths as developer tools) into
+  `activity.json`; only counts leave the build, never subjects, authors or
+  paths. Bots, releases and dependency updates are dropped; a squash
+  `(#123)` or a pull-request merge counts as via a pull request. The tiles
+  show shipped this week (landed in the last 7 days and in production now),
+  commits this week against last, commits waiting for production with the
+  oldest one's age, and the direct-to-main share. The pulse defaults to
+  commits (in production under waiting, 7-day average, totals, breakdown);
+  a switch shows the pull-request view below as the earlier flow. A shallow
+  checkout writes no commit window, and the tab falls back to the
+  deliverables tile and the pull-request pulse.
 - **Two scopes, labelled.** *All merged PRs* are every merged pull request in
   tutur3u/platform without bots and dependency updates (the history rule).
   *Roadmap-tracked PRs* are the ones the deliverables list. The chart nests

@@ -5,7 +5,7 @@ import type { Lang, Messages } from '../shared';
 import { Delta, Flow, plural } from './delta';
 import { fill, formatDuration, formatNumber } from './format';
 
-type Tile = {
+export type Tile = {
   id: string;
   label: string;
   value: string;
@@ -20,7 +20,7 @@ type Tile = {
  * Three headline figures with equal weight. Merged PRs carry a week-over-week
  * change; live and waiting deliverables carry this week's flow into that
  * state as a count, since a percentage of the running total misleads.
- * Deliverables shipped this week lead the Activity tab (ShippedTile).
+ * Commits shipped this week lead the Activity tab (CommitTiles).
  */
 export function KpiTiles({
   t,
@@ -94,8 +94,8 @@ export function KpiTiles({
 }
 
 /**
- * Deliverables shipped in the last 7 days against the 7 before, as a
- * compact stat at the top of the Activity tab (the pulse below counts PRs).
+ * Deliverables shipped in the last 7 days against the 7 before: the Activity
+ * tab's headline when the build has no commit history (CommitTiles).
  */
 export function ShippedTile({
   t,
@@ -123,7 +123,7 @@ export function ShippedTile({
   );
 }
 
-function Tiles({
+export function Tiles({
   list,
   className = 'kpis',
 }: {

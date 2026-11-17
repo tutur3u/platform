@@ -228,6 +228,28 @@
     "days": "{n} d",
     "otherWork": "Internal, client and unscoped work"
   },
+  "commits": {
+    "flow": "Count",
+    "flowCommits": "Commits",
+    "flowPrs": "Pull requests",
+    "commits": "Commits to main",
+    "inProd": "In production",
+    "waiting": "On main, waiting",
+    "viaPr": "Via pull request",
+    "scope": "Every commit that landed on main in tutur3u/platform, without bots, releases and dependency updates. It is in production once the production branch or a production build contains it.",
+    "chart": "Daily commits to main. Use the arrow keys to move between days.",
+    "shippedNote": "Landed on main in the last 7 days and in production now",
+    "landedWeek": "Commits to main this week",
+    "waitingNow": "Waiting for production",
+    "oldest": "Oldest waiting {age}",
+    "noneWaiting": "Production has everything on main",
+    "direct": "Direct to main",
+    "directNote": "{direct} direct, {viaPr} via pull request",
+    "prodBranch": "Production branch",
+    "prsLegacy": "Pull requests are the earlier flow: most work now lands on main directly.",
+    "unavailable": "Commit counts aren't available in this build.",
+    "asOf": "Commit counts as of {date}."
+  },
   "glance": {
     "title": "Every product at a glance",
     "subtitle": "How much of each track has shipped. Tap a track to jump to its details.",

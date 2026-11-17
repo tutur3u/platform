@@ -34,6 +34,7 @@ import { buildInsights } from '../insights/model';
 import { useLazyHistory } from '../insights/use-lazy-history';
 import { changelog } from '../changelog/data';
 import { ShippedTile } from '../components/insights/kpis';
+import { CommitTiles } from '../components/insights/commit-tiles';
 import { PulseSection } from '../components/insights/pulse-section';
 import {
   ProductionUpdates,
@@ -160,7 +161,17 @@ const RoadmapMain = memo(function RoadmapMain({
     ),
     activity: (
       <>
-        <ShippedTile t={t} lang={lang} insights={insights} />
+        {BUILD_ACTIVITY.commits ? (
+          <CommitTiles
+            t={t}
+            lang={lang}
+            commits={BUILD_ACTIVITY.commits}
+            today={view.today}
+            now={now}
+          />
+        ) : (
+          <ShippedTile t={t} lang={lang} insights={insights} />
+        )}
         <Suspense>
           <PulseSection
             t={t}

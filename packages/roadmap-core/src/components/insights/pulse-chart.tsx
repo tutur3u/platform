@@ -21,10 +21,57 @@ function productNames(ids: readonly string[]) {
   return ids.map((id) => TRACK_NAMES[id] ?? id);
 }
 
-/** The words a tooltip and the live region read for one day. */
-export function dayRows(point: PulsePoint, t: Messages, lang: Lang) {
-  const n = (value: number) => formatNumber(value, lang);
+/** What the bars count: merged pull requests or commits to main. */
+export type PulseFlow = 'prs' | 'commits';
+
+function productsValue(point: PulsePoint, t: Messages) {
   const products = productNames(point.products);
+  return products.length
+    ? products.length > 4
+      ? `${products.slice(0, 4).join(', ')} +${products.length - 4}`
+      : products.join(', ')
+    : t.pulse.none;
+}
+
+/** A commits-flow day: commits, in production, waiting, via a PR. */
+function commitRows(point: PulsePoint, t: Messages, lang: Lang) {
+  const n = (value: number) => formatNumber(value, lang);
+  const known = point.all !== null;
+  const value = (count: number) => (known ? n(count) : t.pulse.notAvailable);
+  return [
+    { key: 'all', label: t.commits.commits, value: value(point.all ?? 0) },
+    { key: 'inProd', label: t.commits.inProd, value: value(point.inProd) },
+    {
+      key: 'tracked',
+      label: t.commits.waiting,
+      value: value((point.all ?? 0) - point.inProd),
+    },
+    { key: 'viaPr', label: t.commits.viaPr, value: value(point.viaPr ?? 0) },
+    {
+      key: 'average',
+      label: t.pulse.average,
+      value:
+        point.ma === null
+          ? t.pulse.notAvailable
+          : formatNumber(point.ma, lang, 1),
+    },
+    {
+      key: 'products',
+      label: t.pulse.products,
+      value: productsValue(point, t),
+    },
+  ];
+}
+
+/** The words a tooltip and the live region read for one day. */
+export function dayRows(
+  point: PulsePoint,
+  t: Messages,
+  lang: Lang,
+  flow: PulseFlow = 'prs'
+) {
+  if (flow === 'commits') return commitRows(point, t, lang);
+  const n = (value: number) => formatNumber(value, lang);
   return [
     {
       key: 'all',
@@ -45,18 +92,19 @@ export function dayRows(point: PulsePoint, t: Messages, lang: Lang) {
     {
       key: 'products',
       label: t.pulse.products,
-      value: products.length
-        ? products.length > 4
-          ? `${products.slice(0, 4).join(', ')} +${products.length - 4}`
-          : products.join(', ')
-        : t.pulse.none,
+      value: productsValue(point, t),
     },
   ];
 }
 
 /** The hidden table's figures (products touched stay in the tooltip). */
-function tableRows(point: PulsePoint, t: Messages, lang: Lang) {
-  return dayRows(point, t, lang).filter((row) => row.key !== 'products');
+function tableRows(
+  point: PulsePoint,
+  t: Messages,
+  lang: Lang,
+  flow: PulseFlow
+) {
+  return dayRows(point, t, lang, flow).filter((row) => row.key !== 'products');
 }
 
 const round = (value: number) => Math.round(value * 10) / 10;
@@ -117,11 +165,13 @@ export function PulseChart({
   t,
   lang,
   today,
+  flow = 'prs',
 }: {
   points: readonly PulsePoint[];
   t: Messages;
   lang: Lang;
   today: string;
+  flow?: PulseFlow;
 }) {
   const count = points.length;
   const [focusIndex, setFocusIndex] = useState(count - 1);
@@ -247,7 +297,7 @@ export function PulseChart({
         <div
           className="pchart-hits"
           role="group"
-          aria-label={t.pulse.chart}
+          aria-label={flow === 'commits' ? t.commits.chart : t.pulse.chart}
           onKeyDown={onKeyDown}
           onPointerDown={onPointerDown}
           onPointerMove={onPointerMove}
@@ -280,7 +330,7 @@ export function PulseChart({
         </div>
         <p id={tooltipId} className="sr-only" role="status" aria-live="polite">
           {shown
-            ? `${longDay(shown.day, lang)}: ${dayRows(shown, t, lang)
+            ? `${longDay(shown.day, lang)}: ${dayRows(shown, t, lang, flow)
                 .map((row) => `${row.label} ${row.value}`)
                 .join('; ')}`
             : ''}
@@ -305,7 +355,7 @@ export function PulseChart({
                 {longDay(shown.day, lang)}
               </strong>
               <dl>
-                {dayRows(shown, t, lang).map((row) => (
+                {dayRows(shown, t, lang, flow).map((row) => (
                   <div key={row.key} className={`tip-${row.key}`}>
                     <dt>{row.label}</dt>
                     <dd>{row.value}</dd>
@@ -339,7 +389,7 @@ export function PulseChart({
         <thead>
           <tr>
             <th scope="col">{t.pulse.day}</th>
-            {tableRows(points[0] as PulsePoint, t, lang).map((row) => (
+            {tableRows(points[0] as PulsePoint, t, lang, flow).map((row) => (
               <th scope="col" key={row.key}>
                 {row.label}
               </th>
@@ -350,7 +400,7 @@ export function PulseChart({
           {points.map((point) => (
             <tr key={point.day}>
               <th scope="row">{shortDay(point.day, lang)}</th>
-              {tableRows(point, t, lang).map((row) => (
+              {tableRows(point, t, lang, flow).map((row) => (
                 <td key={row.key}>{row.value}</td>
               ))}
             </tr>

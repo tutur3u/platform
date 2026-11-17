@@ -88,6 +88,12 @@
   justify-content: space-between;
   gap: 12px 24px;
 }
+/* Commits or pull requests: beside the range switch on wider screens. */
+@media (min-width: 720px) {
+  .pulse-head > .flow-switch {
+    margin-inline-start: auto;
+  }
+}
 .pulse-layout {
   display: grid;
   gap: 16px;

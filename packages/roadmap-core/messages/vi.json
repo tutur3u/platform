@@ -228,6 +228,28 @@
     "days": "{n} ngày",
     "otherWork": "Việc nội bộ, dự án khách hàng và thay đổi chưa phân loại"
   },
+  "commits": {
+    "flow": "Đếm theo",
+    "flowCommits": "Commit",
+    "flowPrs": "Pull request",
+    "commits": "Commit lên main",
+    "inProd": "Đang chạy trên bản chính thức",
+    "waiting": "Đã lên main, đang chờ",
+    "viaPr": "Qua pull request",
+    "scope": "Mọi commit được đưa lên main của tutur3u/platform, không tính bot, bản phát hành và cập nhật thư viện phụ thuộc. Commit chạy trên bản chính thức khi nhánh production hoặc một bản chính thức đã chứa nó.",
+    "chart": "Số commit lên main mỗi ngày. Dùng phím mũi tên để chuyển giữa các ngày.",
+    "shippedNote": "Lên main trong 7 ngày qua và đang chạy trên bản chính thức",
+    "landedWeek": "Commit lên main tuần này",
+    "waitingNow": "Đang chờ lên bản chính thức",
+    "oldest": "Lâu nhất đã chờ {age}",
+    "noneWaiting": "Bản chính thức đã có mọi thay đổi trên main",
+    "direct": "Thẳng lên main",
+    "directNote": "{direct} thẳng lên main, {viaPr} qua pull request",
+    "prodBranch": "Nhánh production",
+    "prsLegacy": "Pull request là cách làm trước đây: phần lớn thay đổi giờ đi thẳng lên main.",
+    "unavailable": "Phiên bản trang này chưa có số commit.",
+    "asOf": "Số commit tính đến {date}."
+  },
   "glance": {
     "title": "Toàn cảnh mọi sản phẩm",
     "subtitle": "Mỗi mảng đã phát hành được bao nhiêu. Chạm vào một mảng để xem chi tiết.",

@@ -210,11 +210,21 @@
   text-align: start;
 }
 
-/* Activity: deliverables shipped this week, one compact tile above the
-   pulse (which counts PRs). */
+/* Activity: what shipped this week above the pulse. One compact tile
+   (deliverables) without commit history; four commit tiles with it. */
 .activity-kpis {
   margin: 0;
   grid-template-columns: minmax(0, 1fr);
+}
+@media (min-width: 720px) {
+  .activity-kpis.activity-commits {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+@media (min-width: 1024px) {
+  .activity-kpis.activity-commits {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+  }
 }
 
 /* Overview: the latest production updates, linking to the full list. */

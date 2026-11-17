@@ -71,6 +71,8 @@ export type PulsePoint = {
   tracked: number;
   /** Of those, how many production contains now. */
   inProd: number;
+  /** Commits flow only: of the day's commits, how many came via a PR. */
+  viaPr?: number;
   /** Production builds serving now that were built that day. */
   deploys: number;
   /** Tracks (products) touched that day. */
