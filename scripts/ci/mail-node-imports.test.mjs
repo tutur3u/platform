@@ -100,6 +100,136 @@ test('allows computed calls to non-helper re-exports', (t) => {
   })();
 });
 
+const shadowingBodies = {
+  'private-field listener':
+    'class Observer { #t = []; notify(e) { e(this.#t); } }',
+  'function parameter': 'function notify(e) { e(value); }',
+  'arrow parameter': 'const notify = e => e(value);',
+  'destructured parameter': 'const notify = ({ listener: e }) => e(value);',
+  'array parameter': 'const notify = ([e]) => e(value);',
+  'rest parameter': 'const notify = (...e) => e(value);',
+  'default parameter': 'const notify = (e = listener) => e(value);',
+  'catch binding': 'try {} catch (e) { e(value); }',
+  'block let': '{ let e = listener; e(value); }',
+  'block const': '{ const e = listener; e(value); }',
+  'hoisted var': 'function notify() { e(value); var e = listener; }',
+  'later lexical declaration': '{ e(value); let e = listener; }',
+  'loop binding': 'for (const e of listeners) { e(value); }',
+  'named function expression': 'const notify = function e() { e(value); };',
+  'class expression': 'const Notify = class e { notify() { e(value); } };',
+  'function declaration': '{ e(value); function e() {} }',
+  'class declaration': '{ class e {} e(value); }',
+  'object method': '({ notify(e) { e(value); } });',
+  'setter parameter': '({ set notify(e) { e(value); } });',
+  'getter local': '({ get notify() { const e = listener; e(value); } });',
+  'class static block':
+    'class Observer { static { let e = listener; e(value); } }',
+  'classic for binding': 'for (let e = listener; false;) e(value);',
+  'for-in binding': 'for (const e in listeners) e(value);',
+};
+
+// Assignment-based aliases and multiple initializers for one var binding are not
+// tracked; helper provenance through those writes needs a separate dataflow pass.
+
+for (const [label, body] of Object.entries(shadowingBodies)) {
+  test(`allows a lexically shadowed helper: ${label}`, (t) => {
+    chunks(t, {
+      'entry.js': `import { i as e } from './rolldown-runtime.js'; ${body}`,
+    })();
+  });
+  test(`retains the real helper outside a shadow: ${label}`, (t) => {
+    assert.throws(
+      chunks(t, {
+        'entry.js': `import { i as e } from './rolldown-runtime.js'; ${body} e(value);`,
+      }),
+      /CommonJS Node builtin require/
+    );
+  });
+}
+
+test('allows a shadowed namespace but rejects the imported namespace', (t) => {
+  const shadow = 'function notify(rt) { rt.i(value); }';
+  chunks(t, {
+    'entry.js': `import * as rt from './rolldown-runtime.js'; ${shadow}`,
+  })();
+  assert.throws(
+    chunks(t, {
+      'entry.js': `import * as rt from './rolldown-runtime.js'; ${shadow} rt.i(value);`,
+    }),
+    /CommonJS Node builtin require/
+  );
+});
+
+test('allows computed members of a helper-free namespace', (t) => {
+  chunks(t, {
+    'plain.js': 'export const identity = value => value;',
+    'entry.js': `import * as plain from './plain.js'; plain[key](value);`,
+  })();
+});
+
+for (const expression of [
+  '(0, e)(value)',
+  '(0, e)("node:fs")',
+  'const alias = e; alias(value)',
+  'const alias = e; (0, alias)(value)',
+  'const alias = rt; alias.i(value)',
+  '(0, rt.i)(value)',
+  'rt[key](value)',
+  '(0, require)("node:fs")',
+  'require(value)',
+  '(0, require)(value)',
+])
+  test(`rejects genuine helper identity: ${expression}`, (t) => {
+    assert.throws(
+      chunks(t, {
+        'entry.js': `import { i as e } from './rolldown-runtime.js'; import * as rt from './rolldown-runtime.js'; ${expression};`,
+      }),
+      /CommonJS Node builtin require/
+    );
+  });
+
+test('a sibling declaration cannot shadow a real helper call', (t) => {
+  assert.throws(
+    chunks(t, {
+      'entry.js': `import { i as e } from './rolldown-runtime.js'; function first() { e(value); } function second() { let e = listener; }`,
+    }),
+    /CommonJS Node builtin require/
+  );
+});
+
+test('parameter defaults do not inherit body var bindings', (t) => {
+  assert.throws(
+    chunks(t, {
+      'entry.js': `import { i as e } from './rolldown-runtime.js'; function notify(value = e(name)) { var e = listener; }`,
+    }),
+    /CommonJS Node builtin require/
+  );
+});
+
+test('switch discriminants use the enclosing binding', (t) => {
+  assert.throws(
+    chunks(t, {
+      'entry.js': `import { i as e } from './rolldown-runtime.js'; switch (e(value)) { case 1: let e = listener; }`,
+    }),
+    /CommonJS Node builtin require/
+  );
+});
+
+test('nested helper declarations retain their own identity', (t) => {
+  assert.throws(
+    chunks(t, {
+      'entry.js': `function load() { const e = value => { throw Error('https://rolldown.rs/in-depth/bundling-cjs#require-external-modules'); }; e(name); }`,
+    }),
+    /CommonJS Node builtin require/
+  );
+});
+
+test('nested helper names do not label unrelated sibling callbacks', (t) => {
+  chunks(t, {
+    'entry.js': `function load() { const e = value => { throw Error('https://rolldown.rs/in-depth/bundling-cjs#require-external-modules'); }; } function notify(e) { e(value); }`,
+  })();
+});
+
 for (const [label, middle] of Object.entries({
   'two star-exported namespaces': `export * from './first.js'; export * from './second.js';`,
   'explicit and star-exported namespaces': `export * as ns from './rolldown-runtime.js'; export * from './second.js';`,

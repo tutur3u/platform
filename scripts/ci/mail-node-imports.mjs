@@ -2,6 +2,7 @@ import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import { createRequire, isBuiltin } from 'node:module';
 import { dirname, resolve } from 'node:path';
+import { mailNodeScopes } from './mail-node-scopes.mjs';
 
 // Resolve acorn lazily: dependency-free policy jobs import the artifact helpers
 // without installing workspace packages and never scan a Mail bundle.
@@ -27,19 +28,53 @@ const specifierName = (node) => node.name ?? node.value;
 const requireNamed = (callee) =>
   callee.type === 'Identifier' && requireName.test(callee.name);
 
-function isHelperCall(module, callee) {
-  if (callee.type === 'Identifier') return module.names.has(callee.name);
-  if (
-    callee.type !== 'MemberExpression' ||
-    callee.object.type !== 'Identifier' ||
-    !module.namespaces.has(callee.object.name)
-  )
+function callTarget(node) {
+  if (node?.type === 'SequenceExpression')
+    return callTarget(node.expressions.at(-1));
+  if (node?.type === 'ChainExpression') return callTarget(node.expression);
+  return node;
+}
+
+function namespaceOf(module, identifier, seen = new Set()) {
+  if (identifier.type !== 'Identifier') return;
+  const binding = module.scopes.resolve(identifier);
+  if (!binding) return module.namespaces.get(identifier.name);
+  if (seen.has(binding)) return;
+  seen.add(binding);
+  if (binding === module.scopes.root(identifier.name)) {
+    const supplier = module.namespaces.get(identifier.name);
+    if (supplier) return supplier;
+  }
+  const alias = module.aliases.get(binding);
+  if (alias) return namespaceOf(module, callTarget(alias), seen);
+}
+
+function isHelperCall(module, target, seen = new Set()) {
+  const callee = callTarget(target);
+  if (callee.type === 'Identifier') {
+    const binding = module.scopes.resolve(callee);
+    if (!binding) return module.names.has(callee.name);
+    if (seen.has(binding)) return false;
+    seen.add(binding);
+    if (module.helperBindings.has(binding)) return true;
+    if (
+      binding === module.scopes.root(callee.name) &&
+      module.names.has(callee.name)
+    )
+      return true;
+    const alias = module.aliases.get(binding);
+    return alias ? isHelperCall(module, alias, seen) : false;
+  }
+  if (callee.type !== 'MemberExpression' || callee.object.type !== 'Identifier')
     return false;
-  const supplier = module.namespaces.get(callee.object.name);
+  const supplier = namespaceOf(module, callee.object);
+  if (!supplier) return false;
   const property = callee.computed
     ? staticString(callee.property)
     : callee.property.name;
-  return property !== undefined && supplier.exports.has(property);
+  return property === undefined
+    ? supplier.exports.size > 0
+    : supplier.exports.has(property);
 }
 
 // Follow helper identity through imports and value-level named, star and
@@ -98,7 +133,10 @@ function resolveHelperBindings(modules) {
                   exported,
                   supplier.namespaceExports.get(local)
                 );
-            } else if (module.names.has(local) || requireName.test(local))
+            } else if (
+              isHelperCall(module, specifier.local) ||
+              requireName.test(local)
+            )
               add(module.exports, exported);
             else if (module.namespaces.has(local))
               link(
@@ -144,8 +182,17 @@ export function assertMailNodeImports(dist, app, files) {
         `Mail Worker contains a CommonJS Node builtin require: ${file} (${name})`
       );
     const ast = parse(code, { ecmaVersion: 'latest', sourceType: 'module' });
+    const scopes = mailNodeScopes(ast);
     const names = new Set();
+    const helperBindings = new Set();
+    const aliases = new Map();
     walk(ast, (node) => {
+      if (
+        node.type === 'VariableDeclarator' &&
+        node.id.type === 'Identifier' &&
+        node.init
+      )
+        aliases.set(scopes.resolve(node.id), node.init);
       if (
         node.type === 'VariableDeclarator' &&
         node.id.type === 'Identifier' &&
@@ -155,13 +202,19 @@ export function assertMailNodeImports(dist, app, files) {
           .includes(
             'https://rolldown.rs/in-depth/bundling-cjs#require-external-modules'
           )
-      )
-        names.add(node.id.name);
+      ) {
+        const binding = scopes.resolve(node.id);
+        helperBindings.add(binding);
+        if (binding === scopes.root(node.id.name)) names.add(node.id.name);
+      }
     });
     modules.set(path, {
       file,
       ast,
+      scopes,
       names,
+      helperBindings,
+      aliases,
       exports: new Set(),
       namespaces: new Map(),
       namespaceExports: new Map(),
@@ -172,11 +225,12 @@ export function assertMailNodeImports(dist, app, files) {
     walk(module.ast, (node) => {
       if (node.type !== 'CallExpression') return;
       const helper = isHelperCall(module, node.callee);
-      if (!helper && !requireNamed(node.callee)) return;
+      const directRequire = requireNamed(callTarget(node.callee));
+      if (!helper && !directRequire) return;
       const name = staticString(node.arguments[0]);
       // A proven Rolldown helper throws for any computed specifier as well.
       assert.ok(
-        name === undefined ? !helper : !isBuiltin(name),
+        name === undefined ? !(helper || directRequire) : !isBuiltin(name),
         `Mail Worker contains a CommonJS Node builtin require: ${module.file} (${name ?? 'computed'})`
       );
     });
