@@ -138,7 +138,14 @@ class _FinanceHeroChip extends StatelessWidget {
         children: [
           Icon(icon, size: 16, color: palette.accent),
           const SizedBox(width: 6),
-          Text(label, style: theme.typography.xSmall),
+          Flexible(
+            child: Text(
+              label,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              style: theme.typography.xSmall,
+            ),
+          ),
         ],
       ),
     );

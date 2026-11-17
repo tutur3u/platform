@@ -265,20 +265,27 @@ class _WalletHighlights extends StatelessWidget {
             ),
           )
         else
-          SizedBox(
-            height: 236,
-            child: ListView.separated(
-              scrollDirection: Axis.horizontal,
-              itemCount: state.wallets.length,
-              separatorBuilder: (_, _) => const shad.Gap(12),
-              itemBuilder: (context, index) {
-                return _WalletHighlightCard(
-                  wallet: state.wallets[index],
-                  workspaceCurrency: state.workspaceCurrency,
-                  exchangeRates: state.exchangeRates,
-                  showAmounts: showAmounts,
-                );
-              },
+          // The row takes the height of its tallest card, so long names,
+          // descriptions, converted totals and larger text sizes grow the
+          // cards instead of overflowing them. Cards never drop below the
+          // 236 baseline, which keeps short wallets aligned.
+          SingleChildScrollView(
+            scrollDirection: Axis.horizontal,
+            child: IntrinsicHeight(
+              child: Row(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  for (final (index, wallet) in state.wallets.indexed) ...[
+                    if (index > 0) const shad.Gap(12),
+                    _WalletHighlightCard(
+                      wallet: wallet,
+                      workspaceCurrency: state.workspaceCurrency,
+                      exchangeRates: state.exchangeRates,
+                      showAmounts: showAmounts,
+                    ),
+                  ],
+                ],
+              ),
             ),
           ),
       ],
@@ -322,8 +329,10 @@ class _WalletHighlightCard extends StatelessWidget {
       exchangeRates: exchangeRates,
     );
 
-    return SizedBox(
-      width: 224,
+    return ConstrainedBox(
+      constraints: const BoxConstraints.tightFor(
+        width: 224,
+      ).copyWith(minHeight: 236),
       child: Opacity(
         opacity: isZeroNet ? 0.58 : 1,
         child: FinancePanel(
