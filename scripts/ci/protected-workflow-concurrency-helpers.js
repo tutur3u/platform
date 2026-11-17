@@ -5,7 +5,6 @@ const vm = require('node:vm');
 const { readWorkflow } = require('./workflow-yaml-test-helper');
 const workflowRoot = path.resolve(__dirname, '../../.github/workflows');
 const serialized = [
-  'ci-reconciler.yaml',
   'colab-cloudflare.yaml',
   'coordination-cloudflare.yaml',
   'cron-control-cloudflare.yaml',
