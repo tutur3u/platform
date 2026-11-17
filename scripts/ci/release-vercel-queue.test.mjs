@@ -2,6 +2,7 @@ import assert from 'node:assert/strict';
 import test from 'node:test';
 import {
   executeVercelPhase,
+  aliasLockKey,
   payloadDigest,
   requestVercelStop,
   submitVercelRelease,
@@ -12,6 +13,7 @@ const target = {
   project: 'calendar',
   app: 'calendar',
   environment: 'vercel-stage-calendar',
+  alias: 'calendar.tuturuuu.com',
 };
 const payload = () => ({
   schemaVersion: 1,
@@ -57,6 +59,7 @@ function authority() {
     workerId: 'worker-1',
     epoch: state.epoch,
     targetLockId: 'lock-1',
+    aliasLockKey: aliasLockKey(target),
     stopRevision: state.stopRevision,
     leaseDeadline: 200,
     authorityNow: 100,
@@ -66,7 +69,9 @@ function authority() {
     async submit(value) {
       const old = state.jobs.get(value.operationId);
       if (old && old !== payloadDigest(value))
-        throw new Error('payload conflict');
+        throw Object.assign(new Error('payload conflict'), {
+          code: 'CONFLICT',
+        });
       state.jobs.set(value.operationId, payloadDigest(value));
       return { jobId: 'job-1', status: 'queued' };
     },
@@ -86,6 +91,7 @@ function authority() {
     },
     async finish() {
       state.status = 'succeeded';
+      return { status: 'succeeded' };
     },
     async requestStop(_job, expected) {
       assert.equal(expected, state.stopRevision);
@@ -119,7 +125,7 @@ test('duplicate submit is stable; changed payload conflicts at authority', async
       { ...payload(), sourceSha: 'd'.repeat(40) },
       target
     ),
-    /conflict/u
+    { guardCode: 'QUEUE_CONFLICT' }
   );
 });
 test('no stage to promote chaining or unreviewed target', async () => {
@@ -183,6 +189,12 @@ test('unknown receipt blocks replay until authority reconciles readback', async 
   assert.equal(effects, 0);
   port.state.status = 'succeeded';
   port.state.receipts.push({
+    operationId: 'release-1',
+    phase: 'stage',
+    sourceSha: payload().sourceSha,
+    configSha256: payload().configSha256,
+    recipeSha256: payload().recipeSha256,
+    canonicalTarget: target,
     status: 'succeeded',
     evidence: { deploymentId: 'dpl_verified' },
   });
@@ -241,4 +253,86 @@ test('phase receipts retain timestamps and provider identity without raw excepti
   });
   assert.equal(refused.guardCode, 'QUEUE_EXECUTION_FAILED');
   assert.equal(JSON.stringify(refused).includes('private details'), false);
+});
+
+test('closed payload refuses unknown and secret-shaped fields at every boundary', async () => {
+  for (const alter of [
+    (p) => {
+      p.secrets = { VERCEL_TOKEN: 'fixture' };
+    },
+    (p) => {
+      p.token = 'fixture';
+    },
+    (p) => {
+      p.requirements.env = {};
+    },
+    (p) => {
+      p.rollback.secrets = {};
+    },
+    (p) => {
+      p.provenance.apiKey = 'fixture';
+    },
+    (p) => {
+      p.artifact = { id: 'fixture', sha256: 'a'.repeat(64), secret: 'fixture' };
+    },
+  ]) {
+    const p = payload();
+    alter(p);
+    await assert.rejects(submitVercelRelease(authority(), p, target), {
+      guardCode: 'QUEUE_PAYLOAD_INVALID',
+    });
+  }
+});
+test('throwing authority transports carry fixed guard identity', async () => {
+  const port = authority();
+  port.submit = async () => {
+    throw new Error('offline');
+  };
+  await assert.rejects(submitVercelRelease(port, payload(), target), {
+    guardCode: 'QUEUE_AUTHORITY_UNAVAILABLE',
+    guardPhase: 'submit',
+  });
+  port.claim = async () => {
+    throw new Error('offline');
+  };
+  await assert.rejects(
+    run(port, async () => {}),
+    { guardCode: 'QUEUE_AUTHORITY_UNAVAILABLE', guardPhase: 'stage' }
+  );
+  port.requestStop = async () => {
+    throw new Error('offline');
+  };
+  await assert.rejects(requestVercelStop(port, 'job-1', 0), {
+    guardCode: 'QUEUE_AUTHORITY_UNAVAILABLE',
+    guardPhase: 'stop',
+  });
+});
+test('refused final acknowledgements and forged replay never report success', async () => {
+  for (const name of ['checkpoint', 'finish']) {
+    const port = authority();
+    const original = port[name];
+    port[name] = async (...args) =>
+      args[1]?.status === 'intent' ? original(...args) : { status: 'refused' };
+    const result = await run(port, async (ctx) =>
+      ctx.effect('mutation', async () => ({ deploymentId: 'dpl_result' }))
+    );
+    assert.equal(result.status, 'unknown');
+  }
+  const port = authority();
+  port.state.status = 'succeeded';
+  port.state.receipts.push({ status: 'succeeded', operationId: 'wrong' });
+  await assert.rejects(
+    run(port, async () => {}),
+    { guardCode: 'QUEUE_GRANT_INVALID' }
+  );
+});
+test('alias lock covers the shared resource across stage and production', () => {
+  assert.equal(
+    aliasLockKey(target),
+    aliasLockKey({ ...target, environment: 'vercel-production-calendar' })
+  );
+  assert.notEqual(
+    aliasLockKey(target),
+    aliasLockKey({ ...target, alias: 'other.tuturuuu.com' })
+  );
 });

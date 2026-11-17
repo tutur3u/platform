@@ -4,7 +4,7 @@ export class VercelConfigError extends Error {
   constructor() {
     super('Invalid Vercel config');
     this.guardCode = 'VERCEL_CONFIG_INVALID';
-    this.phase = 'config-import';
+    this.guardPhase = 'config-import';
   }
 }
 
@@ -42,7 +42,9 @@ export function validateVercelSection(value) {
     !/^VERCEL_[A-Z0-9_]+_PROJECT_ID$/u.test(value.projectSecretName) ||
     inputs[0] === inputs[1] ||
     inputs.some(
-      (key) => !key.startsWith(prefix) || /_(TOKEN|SECRET|KEY)$/u.test(key)
+      (key) =>
+        !key.startsWith(prefix) ||
+        /PASSWORD|TOKEN|SECRET|KEY|CREDENTIAL/iu.test(key)
     ) ||
     !host.test(value.productionAlias) ||
     !host.test(value.supabaseHost) ||

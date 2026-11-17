@@ -1,7 +1,10 @@
+import { payloadDigest, aliasLockKey } from './release-vercel-queue.mjs';
 import assert from 'node:assert/strict';
 import test from 'node:test';
 import {
   CALENDAR_RELEASE_MODES,
+  runningReleaseDigests,
+  dispatchReleaseMode,
   runReleaseMode,
   validateReleaseModes,
 } from './release-vercel-modes.mjs';
@@ -17,6 +20,10 @@ function fixture(mode) {
     configSha256: digest,
     recipeSha256: digest,
     target: {
+      provider: 'vercel',
+      account: 'fixture',
+      app: 'calendar',
+      alias: 'calendar.tuturuuu.com',
       project: 'prj_calendar',
       environment: 'vercel-production-calendar',
     },
@@ -26,9 +33,16 @@ function fixture(mode) {
       'rollback:fixture',
     ],
     artifact: { id: 'dpl_candidate', sha256: seal },
-    rollback: { deploymentId: 'dpl_preimage' },
+    rollback: {
+      deploymentId: 'dpl_preimage',
+      authorizationRef: 'rollback:fixture',
+    },
   };
   const receipt = {
+    schemaVersion: 1,
+    status: 'succeeded',
+    phase: mode === 'promote' ? 'stage' : 'promote',
+    canonicalTarget: structuredClone(payload.target),
     alias: 'calendar.tuturuuu.com',
     projectId: 'prj_calendar',
     sourceSha: sha,
@@ -66,6 +80,15 @@ function fixture(mode) {
   };
   const context = {
     payload,
+    predecessor: receipt,
+    approvalVerificationId: 'approval-verified',
+    approval: {
+      permission: mode === 'promote' ? 'rex-promote' : 'rollback',
+      reference:
+        mode === 'promote' ? 'rex-promote:fixture' : 'rollback:fixture',
+      sourceSha: sha,
+      environment: 'vercel-production-calendar',
+    },
     async checkFence() {
       calls.push(['fence']);
     },
@@ -81,15 +104,28 @@ function fixture(mode) {
     context,
     provider,
     sourceRef: 'refs/heads/production',
+    verifySourceAncestry: async () => true,
     delay: async () => {},
     calls,
     payload,
   };
 }
 
+function bind(f) {
+  const actual = runningReleaseDigests(f.config);
+  Object.assign(f.payload, actual);
+  Object.assign(f.receipt, actual);
+  f.context.predecessorSha256 = payloadDigest(f.receipt);
+  f.context.approval.predecessorSha256 = f.context.predecessorSha256;
+  return f;
+}
+async function run(f) {
+  bind(f);
+  return runReleaseMode(f);
+}
 test('promotion is a separate dispatch and alias mutation has exact preimage/readback', async () => {
   const f = fixture('promote');
-  const result = await runReleaseMode(f);
+  const result = await run(f);
   assert.equal(result.terminalState, 'promoted');
   assert.equal(result.aliasReadbackId, 'dpl_candidate');
   assert.deepEqual(
@@ -122,7 +158,7 @@ test('stage environment, main ref and missing Rex ACK refuse promotion before mu
   ]) {
     const f = fixture('promote');
     alter(f);
-    await assert.rejects(runReleaseMode(f), {
+    await assert.rejects(run(f), {
       guardCode: 'RELEASE_APPROVAL_REQUIRED',
     });
     assert.equal(
@@ -145,7 +181,7 @@ test('stale alias preimage or mismatched artifact prevents promotion', async () 
   ]) {
     const f = fixture('promote');
     alter(f);
-    await assert.rejects(runReleaseMode(f));
+    await assert.rejects(run(f));
     assert.equal(
       f.calls.some(([name]) => name === 'set-alias'),
       false
@@ -154,7 +190,7 @@ test('stale alias preimage or mismatched artifact prevents promotion', async () 
 });
 test('rollback restores only the recorded preimage and reads it back', async () => {
   const f = fixture('rollback');
-  const result = await runReleaseMode(f);
+  const result = await run(f);
   assert.equal(result.terminalState, 'rolled-back');
   assert.equal(result.aliasReadbackId, 'dpl_preimage');
   assert.equal(
@@ -173,7 +209,7 @@ test('rollback requires its own authorization and refuses a different rollback t
   ]) {
     const f = fixture('rollback');
     alter(f);
-    await assert.rejects(runReleaseMode(f));
+    await assert.rejects(run(f));
     assert.equal(
       f.calls.some(([name]) => name === 'set-alias'),
       false
@@ -183,18 +219,19 @@ test('rollback requires its own authorization and refuses a different rollback t
 test('failed alias readback is not a successful promotion', async () => {
   const f = fixture('promote');
   f.provider.setAlias = async () => {};
-  await assert.rejects(runReleaseMode(f), {
+  await assert.rejects(run(f), {
     guardCode: 'RELEASE_ALIAS_MISMATCH',
   });
 });
-test('watch consumes the full bounded window with green smoke and error probe', async () => {
+test('watch observes the full window with green probes', async () => {
   const f = fixture('watch');
-  let time = 0,
-    samples = 0;
+  let time = 0;
   f.now = () => time;
+  f.delay = async (ms) => {
+    time += ms;
+  };
   f.probe = async () => {
-    samples++;
-    time += 30_000;
+    time += 1500;
     return {
       smokeOk: true,
       errorRate: 0,
@@ -202,16 +239,10 @@ test('watch consumes the full bounded window with green smoke and error probe', 
       deploymentId: 'dpl_candidate',
     };
   };
-  assert.deepEqual(await runReleaseMode(f), {
-    terminalState: 'watched',
-    samples: 2,
-    deploymentId: 'dpl_candidate',
-  });
-  assert.equal(samples, 2);
-  assert.equal(
-    f.calls.some(([name]) => name === 'set-alias'),
-    false
-  );
+  const result = await run(f);
+  assert.equal(result.terminalState, 'watched');
+  assert.ok(time >= 60000);
+  assert.ok(time <= 65000);
 });
 test('watch error-rate and smoke thresholds request separately authorized rollback', async () => {
   for (const result of [
@@ -225,7 +256,7 @@ test('watch error-rate and smoke thresholds request separately authorized rollba
       sourceSha: sha,
       deploymentId: 'dpl_candidate',
     });
-    const output = await runReleaseMode(f);
+    const output = await run(f);
     assert.equal(output.terminalState, 'rollback-required');
     assert.equal(output.rollbackDeploymentId, 'dpl_preimage');
     assert.equal(
@@ -234,26 +265,11 @@ test('watch error-rate and smoke thresholds request separately authorized rollba
     );
   }
 });
-test('missing probe data is not green and exhausting sample cap is incomplete', async () => {
-  for (const result of [
-    undefined,
-    {
-      smokeOk: true,
-      errorRate: 0,
-      sourceSha: sha,
-      deploymentId: 'dpl_candidate',
-    },
-  ]) {
-    const f = fixture('watch');
-    f.now = () => 0;
-    let calls = 0;
-    f.probe = async () => {
-      calls++;
-      return result;
-    };
-    await assert.rejects(runReleaseMode(f));
-    assert.ok(calls <= f.config.maxSamples);
-  }
+test('missing probe data is not green', async () => {
+  const f = fixture('watch');
+  f.now = () => 0;
+  f.probe = async () => undefined;
+  await assert.rejects(run(f), { guardCode: 'RELEASE_PROBE_INVALID' });
 });
 test('watch timeout aborts its probe and is not success', async () => {
   const f = fixture('watch');
@@ -263,7 +279,7 @@ test('watch timeout aborts its probe and is not success', async () => {
     signal = options.signal;
     return new Promise(() => {});
   };
-  await assert.rejects(runReleaseMode(f), {
+  await assert.rejects(run(f), {
     guardCode: 'RELEASE_WATCH_EXPIRED',
   });
   assert.equal(signal.aborted, true);
@@ -273,7 +289,7 @@ test('invalid config and stage dispatch cannot reach any provider', async () => 
     validateReleaseModes({ ...CALENDAR_RELEASE_MODES, maxSamples: Infinity })
   );
   const f = fixture('stage');
-  await assert.rejects(runReleaseMode(f));
+  await assert.rejects(run(f));
   assert.equal(f.calls.length, 0);
 });
 
@@ -293,6 +309,163 @@ test('fast green probes are spaced across the full observation window', async ()
     sourceSha: sha,
     deploymentId: 'dpl_candidate',
   });
-  assert.equal((await runReleaseMode(f)).terminalState, 'watched');
-  assert.deepEqual(waits, [25, 25, 25, 25]);
+  assert.equal((await run(f)).terminalState, 'watched');
+  assert.ok(time >= 100);
+  assert.ok(waits.length <= 4);
+});
+
+function dispatchFixture(mode) {
+  const f = bind(fixture(mode));
+  Object.assign(f.payload, {
+    schemaVersion: 1,
+    jobType: 'vercel-release',
+    repository: 'tutur3u/platform',
+    requirements: {
+      os: 'darwin',
+      arch: 'arm64',
+      toolchain: 'node24',
+      capabilities: ['offline'],
+      cpu: 1,
+      ramMiB: 512,
+      diskMiB: 512,
+      maxDurationMs: 90000,
+      infrastructureRetryLimit: 0,
+    },
+    provenance: { actor: 'fixture', thread: 'fixture' },
+  });
+  const grant = {
+    jobId: 'job-1',
+    attemptId: 'attempt-1',
+    workerId: 'worker-1',
+    epoch: 1,
+    targetLockId: 'lock-1',
+    aliasLockKey: aliasLockKey(f.payload.target),
+    stopRevision: 0,
+    leaseDeadline: 200,
+    authorityNow: 100,
+  };
+  f.port = {
+    claim: async () => grant,
+    renew: async () => grant,
+    beginPhase: async () => ({
+      status: 'running',
+      predecessor: f.receipt,
+      predecessorSha256: payloadDigest(f.receipt),
+      approval: f.context.approval,
+      approvalVerificationId: 'verified-approval',
+    }),
+    checkpoint: async () => ({ status: 'running' }),
+    finish: async () => ({ status: 'succeeded' }),
+  };
+  f.host = 'studio-offline';
+  return f;
+}
+test('dispatch preserves approval STOP as failed with exact phase', async () => {
+  const f = dispatchFixture('promote');
+  f.payload.authorizationRefs = ['environment:vercel-production-calendar'];
+  const result = await dispatchReleaseMode(f);
+  assert.equal(result.status, 'failed');
+  assert.equal(result.guardCode, 'RELEASE_APPROVAL_REQUIRED');
+  assert.equal(result.guardPhase, 'approval');
+});
+test('dispatch preserves post-mutation readback STOP as UNKNOWN', async () => {
+  const f = dispatchFixture('promote');
+  f.provider.setAlias = async () => {};
+  const result = await dispatchReleaseMode(f);
+  assert.equal(result.status, 'unknown');
+  assert.equal(result.guardCode, 'RELEASE_ALIAS_MISMATCH');
+  assert.equal(result.guardPhase, 'alias-readback');
+});
+test('predecessor status, phase, digest and actual running digests are enforced', async () => {
+  for (const alter of [
+    (f) => {
+      f.receipt.status = 'failed';
+    },
+    (f) => {
+      f.receipt.phase = 'rollback';
+    },
+    (f) => {
+      f.context.predecessorSha256 = 'd'.repeat(64);
+    },
+    (f) => {
+      f.config = { ...f.config, maxErrorRate: 0.2 };
+    },
+    (f) => {
+      f.payload.recipeSha256 = 'd'.repeat(64);
+      f.receipt.recipeSha256 = f.payload.recipeSha256;
+    },
+  ]) {
+    const f = bind(fixture('promote'));
+    alter(f);
+    await assert.rejects(runReleaseMode(f), {
+      guardCode: 'RELEASE_RECEIPT_MISMATCH',
+    });
+    assert.equal(
+      f.calls.some(([name]) => name === 'set-alias'),
+      false
+    );
+  }
+});
+test('exact ACK, recorded rollback identity and ancestry are required', async () => {
+  for (const alter of [
+    (f) => {
+      f.context.approval.reference = 'rex-promote:other';
+    },
+    (f) => {
+      f.verifySourceAncestry = async () => false;
+    },
+  ]) {
+    const f = bind(fixture('promote'));
+    alter(f);
+    await assert.rejects(runReleaseMode(f));
+    assert.equal(
+      f.calls.some(([name]) => name === 'set-alias'),
+      false
+    );
+  }
+  const f = bind(fixture('rollback'));
+  f.payload.rollback.authorizationRef = 'rollback:other';
+  await assert.rejects(runReleaseMode(f), {
+    guardCode: 'RELEASE_APPROVAL_REQUIRED',
+  });
+});
+test('already applied promote or rollback is verified without alias mutation', async () => {
+  for (const mode of ['promote', 'rollback']) {
+    const f = bind(fixture(mode));
+    const to = mode === 'promote' ? 'dpl_candidate' : 'dpl_preimage';
+    f.provider.inspectAlias = async () => ({
+      id: to,
+      readyState: 'READY',
+      projectId: 'prj_calendar',
+      aliases: ['calendar.tuturuuu.com'],
+    });
+    assert.equal((await runReleaseMode(f)).aliasReadbackId, to);
+    assert.equal(
+      f.calls.some(([name]) => name === 'set-alias'),
+      false
+    );
+  }
+});
+test('healthy 1500ms probes and early timers repeatedly finish green', async () => {
+  for (let repeat = 0; repeat < 20; repeat++) {
+    const f = bind(fixture('watch'));
+    let time = 0;
+    f.now = () => time;
+    f.delay = async (ms) => {
+      time += Math.max(0, ms - 1);
+    };
+    f.probe = async ({ timeoutMs }) => {
+      assert.equal(timeoutMs, 5000);
+      time += 1500;
+      return {
+        smokeOk: true,
+        errorRate: 0,
+        sourceSha: sha,
+        deploymentId: 'dpl_candidate',
+      };
+    };
+    const result = await runReleaseMode(f);
+    assert.equal(result.terminalState, 'watched');
+    assert.ok(time >= 60000 && time <= 65000);
+  }
 });

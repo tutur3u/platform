@@ -1,23 +1,12 @@
 // Provider-neutral, offline phase implementation. No CLI or HTTP transport.
+import { readFileSync } from 'node:fs';
+import { createHash } from 'node:crypto';
+import { CALENDAR_VERCEL } from './release-vercel-config.mjs';
+import { payloadDigest } from './release-vercel-queue.mjs';
 import { executeVercelPhase } from './release-vercel-queue.mjs';
 
-export const RELEASE_CODES = Object.freeze([
-  'RELEASE_CONFIG_INVALID',
-  'RELEASE_RECEIPT_MISMATCH',
-  'RELEASE_APPROVAL_REQUIRED',
-  'RELEASE_ALIAS_MISMATCH',
-  'RELEASE_PROBE_INVALID',
-  'RELEASE_WATCH_EXPIRED',
-]);
-export class ReleaseStop extends Error {
-  constructor(code, phase) {
-    super(code);
-    if (!RELEASE_CODES.includes(code))
-      throw new TypeError('Unknown release guard');
-    this.guardCode = code;
-    this.guardPhase = phase;
-  }
-}
+import { ReleaseStop } from './release-vercel-errors.mjs';
+export { RELEASE_CODES, ReleaseStop } from './release-vercel-errors.mjs';
 const fail = (code, phase) => {
   throw new ReleaseStop(code, phase);
 };
@@ -63,21 +52,50 @@ export function validateReleaseModes(config) {
     fail('RELEASE_CONFIG_INVALID', 'inputs');
   return Object.freeze({ ...config });
 }
-function bindReceipt(payload, config, receipt) {
+export function runningReleaseDigests(config = CALENDAR_RELEASE_MODES) {
+  const recipe = createHash('sha256');
+  for (const file of [
+    'release-vercel-modes.mjs',
+    'release-vercel-queue.mjs',
+    'release-vercel-errors.mjs',
+    'release-vercel-config.mjs',
+  ])
+    recipe.update(file).update(readFileSync(new URL(file, import.meta.url)));
+  return {
+    configSha256: payloadDigest({
+      vercel: CALENDAR_VERCEL,
+      modes: validateReleaseModes(config),
+    }),
+    recipeSha256: recipe.digest('hex'),
+  };
+}
+function bindReceipt(payload, config, receipt, context, mode) {
+  const actual = runningReleaseDigests(config);
   if (
     !receipt ||
+    receipt.schemaVersion !== 1 ||
+    receipt.status !== 'succeeded' ||
+    receipt.phase !== (mode === 'promote' ? 'stage' : 'promote') ||
+    context.predecessorSha256 !== payloadDigest(receipt) ||
+    !context.approvalVerificationId ||
     receipt.alias !== config.alias ||
     receipt.projectId !== payload.target.project ||
     receipt.sourceSha !== payload.sourceSha ||
     receipt.configSha256 !== payload.configSha256 ||
     receipt.recipeSha256 !== payload.recipeSha256 ||
+    actual.configSha256 !== payload.configSha256 ||
+    actual.recipeSha256 !== payload.recipeSha256 ||
     !hex.test(receipt.artifactSha256) ||
     receipt.artifactSha256 !== payload.artifact?.sha256 ||
     receipt.candidate?.id !== payload.artifact?.id ||
     !deployment.test(receipt.candidate?.id) ||
     !deployment.test(receipt.preimage?.id) ||
     receipt.preimage.id !== payload.rollback.deploymentId ||
-    receipt.preimage.id === receipt.candidate.id
+    receipt.preimage.id === receipt.candidate.id ||
+    !receipt.canonicalTarget ||
+    ['provider', 'account', 'project', 'app', 'alias'].some(
+      (k) => receipt.canonicalTarget[k] !== payload.target[k]
+    )
   )
     fail('RELEASE_RECEIPT_MISMATCH', 'inputs');
 }
@@ -91,7 +109,7 @@ function aliasMatches(live, id, payload, config) {
   )
     fail('RELEASE_ALIAS_MISMATCH', 'alias-readback');
 }
-function approval(payload, config, permission) {
+function approval(payload, config, permission, context) {
   // The injected authority resolves and verifies these references against
   // protected environment rules; a caller boolean never grants approval.
   if (
@@ -99,7 +117,14 @@ function approval(payload, config, permission) {
     !payload.authorizationRefs.includes(
       `environment:${config.promoteEnvironment}`
     ) ||
-    !payload.authorizationRefs.some((v) => v.startsWith(`${permission}:`))
+    !context.approval ||
+    context.approval.permission !== permission ||
+    !payload.authorizationRefs.includes(context.approval.reference) ||
+    context.approval.sourceSha !== payload.sourceSha ||
+    context.approval.environment !== config.promoteEnvironment ||
+    context.approval.predecessorSha256 !== context.predecessorSha256 ||
+    (permission === 'rollback' &&
+      context.approval.reference !== payload.rollback.authorizationRef)
   )
     fail('RELEASE_APPROVAL_REQUIRED', 'approval');
 }
@@ -132,6 +157,7 @@ export async function runReleaseMode({
   now = () => performance.now(),
   delay = (ms) => new Promise((resolve) => setTimeout(resolve, ms)),
   sourceRef,
+  verifySourceAncestry,
 }) {
   config = validateReleaseModes(config);
   const { payload } = context;
@@ -140,18 +166,32 @@ export async function runReleaseMode({
     payload.requestedPhases[0] !== mode
   )
     fail('RELEASE_CONFIG_INVALID', 'inputs');
-  bindReceipt(payload, config, receipt);
+  receipt = context.predecessor;
+  bindReceipt(payload, config, receipt, context, mode);
   await context.checkFence();
   if (mode === 'promote' || mode === 'rollback') {
-    approval(payload, config, mode === 'promote' ? 'rex-promote' : 'rollback');
+    approval(
+      payload,
+      config,
+      mode === 'promote' ? 'rex-promote' : 'rollback',
+      context
+    );
     if (sourceRef !== config.promoteRef)
       fail('RELEASE_APPROVAL_REQUIRED', 'approval');
+    if (
+      typeof verifySourceAncestry !== 'function' ||
+      (await verifySourceAncestry(payload.sourceSha, config.promoteRef)) !==
+        true
+    )
+      fail('RELEASE_RECEIPT_MISMATCH', 'source-ancestry');
+    await context.checkFence();
     const from =
       mode === 'promote' ? receipt.preimage.id : receipt.candidate.id;
     const to = mode === 'promote' ? receipt.candidate.id : receipt.preimage.id;
     const before = await provider.inspectAlias(config.alias);
     await context.checkFence();
-    aliasMatches(before, from, payload, config);
+    if (before?.id !== to) aliasMatches(before, from, payload, config);
+    else aliasMatches(before, to, payload, config);
     // Read candidate/preimage identity before mutation; the recorded preimage
     // is the only rollback target, regardless of caller-supplied host labels.
     const target = await provider.inspectDeployment(to);
@@ -165,14 +205,17 @@ export async function runReleaseMode({
           target.outputSeal !== receipt.artifactSha256))
     )
       fail('RELEASE_RECEIPT_MISMATCH', 'target-readback');
-    await context.effect('set-alias', () =>
-      provider.setAlias({
-        alias: config.alias,
-        deploymentId: to,
-        expectedCurrentId: from,
-        operationId: payload.operationId,
-      })
-    );
+    // Vercel alias set has no CAS: expectedCurrentId is advisory. The
+    // authority alias lock provides exclusion across stage/production envs.
+    if (before.id !== to)
+      await context.effect('set-alias', () =>
+        provider.setAlias({
+          alias: config.alias,
+          deploymentId: to,
+          expectedCurrentId: from,
+          operationId: payload.operationId,
+        })
+      );
     const after = await provider.inspectAlias(config.alias);
     await context.checkFence();
     aliasMatches(after, to, payload, config);
@@ -187,23 +230,32 @@ export async function runReleaseMode({
   if (typeof probe !== 'function') fail('RELEASE_PROBE_INVALID', 'watch');
   const start = now();
   if (!Number.isFinite(start)) fail('RELEASE_PROBE_INVALID', 'watch');
-  let failures = 0;
-  let previous = start;
-  for (let samples = 1; samples <= config.maxSamples; samples++) {
+  let failures = 0,
+    previous = start,
+    samples = 0;
+  const end = start + config.watchDurationMs;
+  async function waitUntil(deadline) {
+    for (let attempt = 0; now() < deadline; attempt++) {
+      if (attempt >= 100) fail('RELEASE_WATCH_EXPIRED', 'watch');
+      await delay(Math.ceil(deadline - now()) + 1);
+      await context.checkFence();
+    }
+  }
+  for (let index = 0; index < config.maxSamples; index++) {
+    const offset = (index * config.watchDurationMs) / config.maxSamples;
+    if (offset + config.probeTimeoutMs > config.watchDurationMs && samples > 0)
+      break;
+    await waitUntil(start + offset);
     await context.checkFence();
-    const elapsed = now() - start;
-    if (
-      !Number.isFinite(elapsed) ||
-      elapsed < previous - start ||
-      elapsed >= config.watchDurationMs
-    )
-      fail('RELEASE_WATCH_EXPIRED', 'watch');
-    previous = start + elapsed;
-    const result = await boundedProbe(
-      probe,
-      Math.min(config.probeTimeoutMs, config.watchDurationMs - elapsed)
-    );
+    const before = now();
+    if (!Number.isFinite(before) || before < previous)
+      fail('RELEASE_PROBE_INVALID', 'watch');
+    if (before >= end && samples > 0) break;
+    // Every started probe gets its full budget. At most one probe timeout may
+    // extend past the observation deadline due to scheduling delay.
+    const result = await boundedProbe(probe, config.probeTimeoutMs);
     await context.checkFence();
+    samples++;
     if (
       !result ||
       typeof result.smokeOk !== 'boolean' ||
@@ -226,34 +278,35 @@ export async function runReleaseMode({
         rollbackDeploymentId: receipt.preimage.id,
         reason: result.errorRate > config.maxErrorRate ? 'error-rate' : 'smoke',
       };
-    const beforeWait = now();
-    if (!Number.isFinite(beforeWait) || beforeWait < previous)
-      fail('RELEASE_PROBE_INVALID', 'watch');
-    const remaining = config.watchDurationMs - (beforeWait - start);
-    if (remaining > 0) {
-      await delay(
-        Math.min(config.watchDurationMs / config.maxSamples, remaining)
-      );
-      await context.checkFence();
-    }
-    const after = now();
-    if (!Number.isFinite(after) || after < previous)
-      fail('RELEASE_PROBE_INVALID', 'watch');
-    previous = after;
-    if (after - start >= config.watchDurationMs)
-      return {
-        terminalState: 'watched',
-        samples,
-        deploymentId: receipt.candidate.id,
-      };
+    previous = now();
+    if (
+      !Number.isFinite(previous) ||
+      previous < before ||
+      previous > end + config.probeTimeoutMs
+    )
+      fail('RELEASE_WATCH_EXPIRED', 'watch');
   }
-  // Exhausting samples before the configured observation window is incomplete.
-  fail('RELEASE_WATCH_EXPIRED', 'watch');
+  await waitUntil(end);
+  if (!samples) fail('RELEASE_PROBE_INVALID', 'watch');
+  return {
+    terminalState: 'watched',
+    samples,
+    deploymentId: receipt.candidate.id,
+  };
 }
 
 export async function dispatchReleaseMode(options) {
+  const mode = options.payload?.requestedPhases?.[0];
+  if (!['promote', 'watch', 'rollback'].includes(mode))
+    fail('RELEASE_CONFIG_INVALID', 'inputs');
+  const config = validateReleaseModes(options.config);
+  const reviewedTarget = {
+    ...options.receipt?.canonicalTarget,
+    environment: config.promoteEnvironment,
+  };
   return executeVercelPhase({
     ...options,
+    reviewedTarget,
     execute: (context) =>
       runReleaseMode({
         ...options,

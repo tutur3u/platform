@@ -99,6 +99,9 @@ test('input names are distinct, app-prefixed and cannot name credentials', () =>
   for (const patch of [
     { sourceShaEnv: 'VERCEL_TOKEN' },
     { sourceShaEnv: 'CALENDAR_TOKEN' },
+    { sourceShaEnv: 'CALENDAR_PRIVATE_KEY_ID' },
+    { sourceShaEnv: 'CALENDAR_PASSWORD' },
+    { sourceShaEnv: 'CALENDAR_CREDENTIAL_ID' },
     { sourceShaEnv: 'CALENDAR_SECRET' },
     { sourceShaEnv: 'CALENDAR_KEY' },
     { sourceShaEnv: 'MAIL_MAIN_SHA' },
@@ -108,6 +111,6 @@ test('input names are distinct, app-prefixed and cannot name credentials', () =>
   ])
     assert.throws(
       () => validateVercelSection({ ...CALENDAR_VERCEL, ...patch }),
-      { guardCode: 'VERCEL_CONFIG_INVALID', phase: 'config-import' }
+      { guardCode: 'VERCEL_CONFIG_INVALID', guardPhase: 'config-import' }
     );
 });
