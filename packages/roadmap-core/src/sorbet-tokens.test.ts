@@ -51,7 +51,7 @@ const STABLE =
   /^--(background|foreground|card|primary|muted-foreground|border|input|ring|accent|sidebar-[a-z-]+|blue|green|orange|red|yellow|purple|pink|teal|gray|calendar-bg-[a-z]+|radius|radius-xl|radius-2xl|sorbet-shadow-sm|sorbet-shadow-md|sorbet-(ground|surface|card|ink|muted-ink|hairline|input|accent|accent-ink|accent-soft|ring))$/;
 
 const PINNED = {
-  light: '8457b19f1468a8129bffcfb0db830a123179d5a770a615410cd22de568fe3aa6',
+  light: 'c4e1190c028f8511b75282957d544b3d2353a023688c949a67cdfc0cf7097642',
   dark: 'cadd5776d0b88b95bf79f7e787bf3c6c2e240acb0065d91d0807e6377dbe8a3b',
 };
 
