@@ -223,7 +223,7 @@ async function runRuntimeAcceptance() {
         );
         assert.ok(file, 'Native client asset missing');
         if (calendarPathTarget && host !== calendarPathTarget.host) {
-          // The Calendar subdomain moves every request to the apex mount.
+          // Legacy Calendar browser GETs permanently move to the apex mount.
           const apex = `https://${calendarPathTarget.host}${calendarPathTarget.basePath}`;
           const asset = `/${file.slice('client/'.length)}`;
           for (const [path, location] of [
@@ -235,7 +235,7 @@ async function runRuntimeAcceptance() {
             ['/?view=week', `${apex}?view=week`],
           ]) {
             const moved = await fetchWorker(path);
-            assert.equal(moved.status, 307, `${host}${path} must move`);
+            assert.equal(moved.status, 301, `${host}${path} must move`);
             assert.equal(moved.headers.get('location'), location);
             assert.deepEqual(moved.headers.getSetCookie(), []);
           }
