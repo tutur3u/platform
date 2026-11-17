@@ -615,6 +615,18 @@ by `supabase/tests/finance-invoice-totals-definer-acl.sql`.
 The guard prints each covered signature as a reviewed exception. Never add
 entries without a security review.
 
+**Reviewed finding dispositions.** The same trusted module also carries an
+exact source-bound inventory for intentionally anonymous caller-bound permission
+helpers, a paired storage ACL rollback, and the applied legacy token function
+that requires its reviewed forward hardening migration. Each entry binds the
+whole file hash and the exact rule, line, and finding-text digest. Paired forward
+contracts must be present with their exact hash. These dispositions do not relax
+the same-file cutoff, trust review comments generally, or cover a new grant in
+another file. The CLI reports every covered finding as a source-bound reviewed
+disposition; `sql-grant-end-state-dispositions.test.js` retains mutation,
+missing-contract, and later-grant negative controls. Inventory changes require
+independent security review; they do not authorize applying a rollback or migration.
+
 **Default EXECUTE on new `private` functions.** A function that `postgres`
 creates in `private` is closed to `public` and `anon` but open to `authenticated`
 and `service_role`, through the global default privilege that

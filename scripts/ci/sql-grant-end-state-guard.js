@@ -20,7 +20,10 @@ const {
   judgeDefinerAcl,
 } = require('./sql-grant-acl');
 const { FROZEN_DEFINERS_CUTOFF } = require('./sql-grant-frozen-definers');
-const { matchReviewedException } = require('./sql-grant-reviewed-exceptions');
+const {
+  matchReviewedException,
+  matchEndStateFinding,
+} = require('./sql-grant-reviewed-exceptions');
 const {
   readRoutine,
   roleList,
@@ -306,7 +309,8 @@ function evaluateSqlFiles({ files, readFile, cutoff = MIGRATION_CUTOFF }) {
     const enforced = version === null || version >= cutoff;
     const position = ordered.indexOf(file);
     const withHistory = definerRule && enforced && position >= 0;
-    for (const finding of scanSql(readFile(file), {
+    const sql = readFile(file);
+    for (const finding of scanSql(sql, {
       definerRule,
       file,
       priorStatements: withHistory
@@ -326,6 +330,20 @@ function evaluateSqlFiles({ files, readFile, cutoff = MIGRATION_CUTOFF }) {
         message:
           `${file}:${finding.line} ${finding.detail}. ${GUIDANCE[finding.rule]} ${finding.hint ?? ''}`.trim(),
       };
+      const reviewed =
+        enforced &&
+        matchEndStateFinding({ file, sql, finding, files, readFile });
+      if (reviewed) {
+        satisfied.push({
+          file,
+          line: finding.line,
+          signature: finding.detail,
+          mode: 'reviewed-disposition',
+          evidence: [],
+          note: reviewed.reason,
+        });
+        continue;
+      }
       (enforced ? violations : legacy).push(entry);
     }
   }
@@ -335,6 +353,8 @@ function evaluateSqlFiles({ files, readFile, cutoff = MIGRATION_CUTOFF }) {
 // Evidence worth printing: inherited passes, and passes that rest on a revoke
 // in another migration. Same-file revokes are visible in the file itself.
 function formatSatisfied(entry) {
+  if (entry.mode === 'reviewed-disposition')
+    return `${entry.file}:${entry.line} ${entry.signature} reviewed disposition (source-bound): ${entry.note}`;
   // Group roles by the revoke statement that evidences them.
   const bySource = new Map();
   for (const { role, file, line } of entry.evidence) {
