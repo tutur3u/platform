@@ -2,6 +2,9 @@ import 'package:bloc/bloc.dart';
 import 'package:equatable/equatable.dart';
 import 'package:flutter/material.dart';
 import 'package:mobile/core/ui/icons/app_icons.dart';
+import 'package:mobile/features/shell/cubit/shell_dock_action_group.dart';
+
+export 'package:mobile/features/shell/cubit/shell_dock_action_group.dart';
 
 class ShellActionSpec extends Equatable {
   const ShellActionSpec({
@@ -127,6 +130,25 @@ class ShellChromeActionsState extends Equatable {
     return owner != null && !ownerUsesDock(owner);
   }
 
+  /// The dock action group shown at [location], if any.
+  ///
+  /// The latest registration for the location wins. An open overlay that
+  /// places its own action in the dock takes the dock, so the page's group
+  /// yields to it; any other overlay hides the dock (see [modalHidesDock])
+  /// and leaves the group in place for when it closes.
+  ShellDockActionGroup? actionGroupForLocation(String location) {
+    final modalOwner = topmostModalOwner;
+    if (modalOwner != null && ownerUsesDock(modalOwner)) return null;
+    for (final registration in registrations.values.toList().reversed) {
+      if (!registration.modal &&
+          registration.actionGroup != null &&
+          registration.locations.contains(location)) {
+        return registration.actionGroup;
+      }
+    }
+    return null;
+  }
+
   List<ShellActionSpec> resolveForLocation(String matchedLocation) {
     final resolved = <ShellActionSpec>[];
     final seenActionIds = <String>{};
@@ -211,9 +233,14 @@ class ShellChromeActionRegistration extends Equatable {
     this.modal = false,
     this.onBack,
     this.onResetSection,
+    this.actionGroup,
   });
 
   final bool immersive;
+
+  /// Replaces the dock's navigation pill and page action at [locations];
+  /// see [ShellChromeActionsState.actionGroupForLocation].
+  final ShellDockActionGroup? actionGroup;
 
   /// Registered by an open sheet or dialog; see
   /// [ShellChromeActionsState.topmostModalOwner].
@@ -233,6 +260,7 @@ class ShellChromeActionRegistration extends Equatable {
     modal,
     onBack,
     onResetSection,
+    actionGroup,
   ];
 }
 
@@ -254,6 +282,7 @@ class ShellChromeActionsCubit extends Cubit<ShellChromeActionsState> {
     bool modal = false,
     Future<void> Function()? onBack,
     VoidCallback? onResetSection,
+    ShellDockActionGroup? actionGroup,
   }) {
     if (isClosed || _retiredOwners.contains(ownerId)) return;
     final nextRegistration = ShellChromeActionRegistration(
@@ -264,6 +293,7 @@ class ShellChromeActionsCubit extends Cubit<ShellChromeActionsState> {
       actions: List<ShellActionSpec>.from(actions),
       onBack: onBack,
       onResetSection: onResetSection,
+      actionGroup: actionGroup,
     );
     final currentRegistration = state.registrations[registrationId];
     if (currentRegistration == nextRegistration) {

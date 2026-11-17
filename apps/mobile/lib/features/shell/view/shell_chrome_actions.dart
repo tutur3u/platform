@@ -20,14 +20,19 @@ class ShellChromeActions extends StatefulWidget {
   const ShellChromeActions({
     required this.ownerId,
     required this.locations,
-    required this.actions,
+    this.actions = const [],
     this.immersive = false,
     this.onBack,
     this.onResetSection,
+    this.actionGroup,
     super.key,
   });
 
   final bool immersive;
+
+  /// Replaces the dock's navigation pill and page action while this widget
+  /// is mounted; the previous dock returns when it is disposed.
+  final ShellDockActionGroup? actionGroup;
   final String ownerId;
   final Set<String> locations;
   final List<ShellActionSpec> actions;
@@ -62,6 +67,7 @@ class _ShellChromeActionsState extends State<ShellChromeActions> {
         oldWidget.onBack != widget.onBack ||
         oldWidget.onResetSection != widget.onResetSection ||
         oldWidget.immersive != widget.immersive ||
+        oldWidget.actionGroup != widget.actionGroup ||
         !listEquals(oldWidget.actions, widget.actions)) {
       _syncRegistration();
     }
@@ -76,6 +82,7 @@ class _ShellChromeActionsState extends State<ShellChromeActions> {
       actions: widget.actions,
       onBack: widget.onBack,
       onResetSection: widget.onResetSection,
+      actionGroup: widget.actionGroup,
     );
   }
 

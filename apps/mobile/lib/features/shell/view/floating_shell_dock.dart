@@ -10,6 +10,7 @@ import 'package:mobile/features/shell/view/mobile_section_app_bar.dart';
 import 'package:mobile/features/shell/view/persistent_shell_dock.dart';
 import 'package:mobile/features/shell/view/shell_chrome_style.dart';
 import 'package:mobile/features/shell/view/shell_dock_action_button.dart';
+import 'package:mobile/features/shell/view/shell_dock_action_group_bar.dart';
 import 'package:mobile/features/shell/view/shell_dock_slot.dart';
 import 'package:mobile/features/shell/view/shell_dock_surface.dart';
 import 'package:mobile/features/shell/view/shell_keyboard_chrome.dart';
@@ -153,6 +154,9 @@ class _FloatingShellDockState extends State<FloatingShellDock> {
     if (widget.allowDockSlot && slot?.location == widget.location) return true;
     final actions = context.watch<ShellChromeActionsCubit?>();
     if (actions == null) return false;
+    if (actions.state.actionGroupForLocation(widget.location) != null) {
+      return true;
+    }
     return actions.state
             .resolveForLocation(widget.location)
             .any((action) => action.inDock) ||
@@ -474,6 +478,7 @@ class _DockActionsState extends State<_DockActions> {
     Widget navigation, {
     required String? workspaceId,
     Widget? primary,
+    bool grouped = false,
   }) {
     final controller = ShellDockScope.maybeOf(context);
     Widget dock() {
@@ -486,7 +491,8 @@ class _DockActionsState extends State<_DockActions> {
         content: active && slot!.composing ? slot.content : navigation,
         composing: active && slot!.composing,
         expandContent: !active || slot!.expandContent,
-        hideIdleNavigation: widget.hideIdleNavigation,
+        // A registered action group shows its pill even beside a rail.
+        hideIdleNavigation: widget.hideIdleNavigation && !grouped,
         fixedZones: widget.fixedZones,
         leading: widget.leading,
         navigationWidth: widget.navigationWidth,
@@ -515,6 +521,29 @@ class _DockActionsState extends State<_DockActions> {
     return BlocBuilder<ShellChromeActionsCubit, ShellChromeActionsState>(
       bloc: cubit,
       builder: (context, state) {
+        final group = state.actionGroupForLocation(widget.location);
+        if (group != null) {
+          final primary = group.primary;
+          // The group replaces navigation and the page action; Back stays.
+          return _registeredDock(
+            ShellDockActionGroupBar(group: group),
+            workspaceId: workspaceId,
+            grouped: true,
+            primary: primary == null
+                ? null
+                : ShellDockActionButton(
+                    key: ValueKey(('dock-primary', primary.id)),
+                    action: ShellActionSpec(
+                      id: primary.id,
+                      icon: primary.icon,
+                      tooltip: primary.label,
+                      onPressed: primary.onPressed,
+                      enabled: primary.enabled && primary.onPressed != null,
+                      inDock: true,
+                    ),
+                  ),
+          );
+        }
         final registered = state.registrations.values.any(
           (item) => item.modal || item.locations.contains(widget.location),
         );

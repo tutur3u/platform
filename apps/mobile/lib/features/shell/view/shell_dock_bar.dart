@@ -111,7 +111,7 @@ class ShellDockBar extends StatelessWidget {
                 children: [
                   for (final entry in slots)
                     Expanded(
-                      child: _DockSlot(
+                      child: ShellDockSlotButton(
                         key: entry.key,
                         entry: entry,
                         selected: entry.key == shellDockMoreKey
@@ -296,8 +296,10 @@ class _SlidingHighlight extends StatelessWidget {
   }
 }
 
-class _DockSlot extends StatelessWidget {
-  const _DockSlot({
+/// One labelled dock slot: a 22dp glyph over its label, muted unless
+/// [selected]. Narrow slots hide the label; semantics always carry it.
+class ShellDockSlotButton extends StatelessWidget {
+  const ShellDockSlotButton({
     required this.entry,
     required this.selected,
     required this.showLabel,
