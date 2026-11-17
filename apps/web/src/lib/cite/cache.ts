@@ -2,7 +2,6 @@ import 'server-only';
 
 import { createHash } from 'node:crypto';
 import { type CiteWork, CiteWorkSchema } from '@tuturuuu/cite';
-import { Redis } from '@upstash/redis';
 import type { CaptureSource } from './source-resolver';
 
 export const CITATION_CACHE_TTL_SECONDS = 86_400;
@@ -20,23 +19,9 @@ export interface CitationCache {
   ) => Promise<unknown>;
 }
 
-function client(signal: AbortSignal) {
-  if (
-    !process.env.UPSTASH_REDIS_REST_URL ||
-    !process.env.UPSTASH_REDIS_REST_TOKEN
-  )
-    return null;
-  return Redis.fromEnv({
-    retry: { retries: 0 },
-    signal,
-    enableAutoPipelining: false,
-  });
-}
-
 export const publicCitationCache: CitationCache = {
-  get: async (key, signal) => client(signal)?.get(key) ?? null,
-  set: async (key, value, ttlSeconds, signal) =>
-    client(signal)?.set(key, value, { ex: ttlSeconds }) ?? null,
+  get: async () => null,
+  set: async () => null,
 };
 
 export function citationCacheKey(source: CaptureSource) {

@@ -6,6 +6,7 @@ const mocks = vi.hoisted(() => ({
   wrapped: [] as { handler: unknown; options: unknown }[],
   fix: vi.fn(),
   createService: vi.fn(),
+  createGrounding: vi.fn(),
 }));
 vi.mock('server-only', () => ({}));
 vi.mock('@/lib/api-auth', () => ({
@@ -19,7 +20,7 @@ vi.mock('@/lib/api-auth', () => ({
   },
 }));
 vi.mock('@/lib/cite/ai/grounding', () => ({
-  createCitationAiGrounding: () => vi.fn(),
+  createCitationAiGrounding: mocks.createGrounding,
 }));
 vi.mock('@/lib/cite/ai/runtime', () => ({
   createSessionCitationAiService: mocks.createService,
@@ -34,6 +35,11 @@ const request = (body: unknown, type = 'application/json') =>
 
 beforeEach(() => {
   mocks.fix.mockReset();
+  mocks.createGrounding.mockReset();
+  mocks.createGrounding.mockReturnValue({
+    ground: vi.fn(),
+    reserveGrounding: vi.fn(),
+  });
   mocks.createService.mockReset();
   mocks.createService.mockReturnValue({ fix: mocks.fix });
 });
@@ -54,6 +60,7 @@ describe('POST /api/v1/cite/ai/fix-ref', () => {
     );
     expect(response.status).toBe(200);
     expect(response.headers.get('cache-control')).toBe('private, no-store');
+    expect(mocks.createGrounding).toHaveBeenCalledExactlyOnceWith('user-1');
     expect(mocks.fix.mock.calls[0]?.[0]).toBe('user-1');
   });
 

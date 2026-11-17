@@ -22,7 +22,7 @@ import { boundedCitationOperation } from './timeout';
 
 export function createSessionCitationAiService(
   client: TypedSupabaseClient,
-  ground: CitationAiDependencies['ground']
+  grounding: Pick<CitationAiDependencies, 'ground' | 'reserveGrounding'>
 ) {
   return createCitationAiService({
     operations: createCitationAiOperationStore(),
@@ -42,7 +42,7 @@ export function createSessionCitationAiService(
     },
     admit: admitCitationAi,
     generate: generateCitationFix,
-    ground,
+    ...grounding,
     deduct: deductCitationAi,
     recoverCharge: recoverCitationCharge,
     readDurableCharge: readCitationDurableCharge,

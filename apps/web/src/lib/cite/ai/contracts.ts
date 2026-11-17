@@ -5,6 +5,7 @@ export const CITE_AI_FEATURE = 'cite_fix_ref';
 export const CITE_AI_OPERATION_MAX_AGE_MS = 15 * 60 * 1000;
 export const CITE_AI_OPERATION_FUTURE_TOLERANCE_MS = 60 * 1000;
 export const CITE_AI_RECEIPT_SECONDS = 60 * 60;
+export const CITE_AI_RECONCILE_AFTER_MS = 3 * 60 * 1000;
 export const citationFixRequestSchema = z
   .object({
     operationId: z
@@ -67,16 +68,19 @@ const checkpointSchema = z.object({
   ]),
 });
 export type CitationAiCheckpoint = z.infer<typeof checkpointSchema>;
+const attemptId = z.uuid();
 export const citationAiOperationSchema = z.discriminatedUnion('stage', [
-  z.object({ stage: z.literal('running'), binding: bindingSchema }),
-  checkpointSchema.extend({ stage: z.literal('checkpoint') }),
-  checkpointSchema.extend({ stage: z.literal('settling') }),
+  z.object({ stage: z.literal('running'), binding: bindingSchema, attemptId }),
+  checkpointSchema.extend({ stage: z.literal('checkpoint'), attemptId }),
+  checkpointSchema.extend({ stage: z.literal('settling'), attemptId }),
   checkpointSchema.extend({
     stage: z.literal('settled'),
+    attemptId,
     creditsDeducted: z.number().finite().nonnegative(),
   }),
   z.object({
     stage: z.literal('failed'),
+    attemptId,
     binding: bindingSchema,
     code: z.enum([
       'GENERATION_FAILED',
@@ -90,6 +94,10 @@ export const citationAiOperationSchema = z.discriminatedUnion('stage', [
   }),
 ]);
 export type CitationAiOperation = z.infer<typeof citationAiOperationSchema>;
+export type CitationAiUnsettled = Extract<
+  CitationAiOperation,
+  { stage: 'checkpoint' | 'settling' }
+>;
 
 export class CitationAiError extends Error {
   constructor(
@@ -113,18 +121,23 @@ export class CitationAiError extends Error {
   }
 }
 
-export function validateCitationOperationTime(
-  operationId: string,
-  now: number
-) {
-  const timestamp = Number.parseInt(
+export function citationOperationTimestamp(operationId: string) {
+  return Number.parseInt(
     operationId.slice(0, 8) + operationId.slice(9, 13),
     16
   );
+}
+
+export function validateCitationOperationTime(
+  operationId: string,
+  now: number,
+  maxAge = CITE_AI_OPERATION_MAX_AGE_MS
+) {
+  const timestamp = citationOperationTimestamp(operationId);
   if (
     !Number.isSafeInteger(timestamp) ||
     timestamp > now + CITE_AI_OPERATION_FUTURE_TOLERANCE_MS ||
-    now - timestamp > CITE_AI_OPERATION_MAX_AGE_MS
+    now - timestamp > maxAge
   )
     throw new CitationAiError('OPERATION_EXPIRED', 409);
 }
@@ -132,7 +145,8 @@ export function validateCitationOperationTime(
 export interface CitationAiOperationStore {
   claim(
     operationId: string,
-    binding: CitationAiBinding
+    binding: CitationAiBinding,
+    retryOnly?: boolean
   ): Promise<
     | { claimed: true; record: CitationAiOperation }
     | { claimed: false; record: CitationAiOperation }
@@ -140,8 +154,11 @@ export interface CitationAiOperationStore {
   transition(
     operationId: string,
     previous: CitationAiOperation,
-    next: CitationAiOperation,
-    releaseActor?: boolean
+    next: CitationAiOperation
+  ): Promise<boolean>;
+  claimDeduction(
+    operationId: string,
+    record: CitationAiUnsettled
   ): Promise<boolean>;
   read(
     operationId: string,

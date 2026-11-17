@@ -3,13 +3,17 @@ import type { CiteWork } from '@tuturuuu/cite';
 import {
   CitationAiError,
   CITE_AI_FEATURE,
+  CITE_AI_OPERATION_MAX_AGE_MS,
+  CITE_AI_RECONCILE_AFTER_MS,
   type CitationAiBinding,
   type CitationAiCheckpoint,
   type CitationAiOperation,
   type CitationAiOperationStore,
+  type CitationAiUnsettled,
   type CitationAiUsage,
   type CitationDurableChargeRead,
   citationFixRequestSchema,
+  citationOperationTimestamp,
   usageSchema,
   validateCitationOperationTime,
 } from './contracts';
@@ -23,6 +27,7 @@ export interface CitationAiDependencies {
     binding: CitationAiBinding,
     estimatedInputTokens: number
   ) => Promise<{ modelId: string; maxOutputTokens: number }>;
+  reserveGrounding: () => Promise<boolean>;
   /** AI_UNAVAILABLE without billingStatus is reserved for explicit refusal before any SDK call. */
   generate: (input: {
     input: string;
@@ -42,7 +47,8 @@ export interface CitationAiDependencies {
   ) => Promise<number | null>;
   readDurableCharge: (
     operationId: string,
-    binding: CitationAiBinding
+    binding: CitationAiBinding,
+    retainedReceipt?: boolean
   ) => Promise<CitationDurableChargeRead>;
   now?: () => number;
 }
@@ -91,72 +97,117 @@ function failed(
 
 export function createCitationAiService(dependencies: CitationAiDependencies) {
   const { operations } = dependencies;
-  async function settlement(operationId: string, record: CitationAiOperation) {
+  function pending() {
+    return new CitationAiError('BILLING_PENDING', 503, 'unknown');
+  }
+
+  async function readDurableCharge(
+    operationId: string,
+    binding: CitationAiBinding,
+    retainedReceipt?: true
+  ): Promise<CitationDurableChargeRead> {
+    try {
+      return await dependencies.readDurableCharge(
+        operationId,
+        binding,
+        retainedReceipt
+      );
+    } catch {
+      return { kind: 'unavailable' };
+    }
+  }
+
+  async function settle(
+    operationId: string,
+    record: CitationAiUnsettled,
+    creditsDeducted: number
+  ) {
+    if (!Number.isFinite(creditsDeducted) || creditsDeducted < 0)
+      throw pending();
+    const settled = { ...record, stage: 'settled', creditsDeducted } as const;
+    try {
+      await operations.transition(operationId, record, settled);
+    } catch {
+      /* A confirmed charge can be returned even when receipt storage fails. */
+    }
+    return present(operationId, settled);
+  }
+
+  async function deduct(
+    operationId: string,
+    record: CitationAiUnsettled,
+    reconcile = false
+  ) {
+    let charge: { success: boolean; creditsDeducted: number };
+    try {
+      if (!(await operations.claimDeduction(operationId, record)))
+        throw pending();
+      if (
+        reconcile &&
+        (await readDurableCharge(operationId, record.binding, true)).kind !==
+          'absent'
+      )
+        throw pending();
+      charge = await dependencies.deduct(operationId, record);
+    } catch {
+      throw pending();
+    }
+    if (!charge.success) throw pending();
+    return settle(operationId, record, charge.creditsDeducted);
+  }
+
+  async function replay(operationId: string, record: CitationAiOperation) {
     if (record.stage === 'settled') return present(operationId, record);
     if (record.stage === 'failed') return failed(record);
     if (record.stage === 'running')
       throw new CitationAiError('GENERATION_IN_PROGRESS', 409, 'unknown');
-    if (record.stage === 'settling') {
-      let charged: number | null = null;
-      try {
-        charged = await dependencies.recoverCharge(operationId, record.binding);
-      } catch {
-        /* Unknown charge state is never permission to repeat deduction. */
-      }
-      if (charged === null || !Number.isFinite(charged) || charged < 0)
-        throw new CitationAiError('BILLING_PENDING', 503, 'unknown');
-      const settled = {
-        ...record,
-        stage: 'settled',
-        creditsDeducted: charged,
-      } as const;
-      try {
-        await operations.transition(operationId, record, settled, true);
-      } catch {
-        /* Readback has already confirmed the charge. */
-      }
-      return present(operationId, settled);
+    let charged: number | null;
+    try {
+      charged = await dependencies.recoverCharge(operationId, record.binding);
+    } catch {
+      throw pending();
     }
+    if (charged !== null) return settle(operationId, record, charged);
+    const now = (dependencies.now ?? Date.now)();
+    if (
+      now - citationOperationTimestamp(operationId) <
+      CITE_AI_RECONCILE_AFTER_MS
+    )
+      throw pending();
+    if (
+      (await readDurableCharge(operationId, record.binding, true)).kind !==
+      'absent'
+    )
+      throw pending();
+    return deduct(operationId, record, true);
+  }
+
+  async function settleInitial(
+    operationId: string,
+    record: Extract<CitationAiOperation, { stage: 'checkpoint' }>
+  ) {
     const settling = { ...record, stage: 'settling' } as const;
     let acquired: boolean;
     try {
       acquired = await operations.transition(operationId, record, settling);
     } catch {
-      throw new CitationAiError('BILLING_PENDING', 503, 'unknown');
+      throw pending();
     }
     if (!acquired) {
       let current: CitationAiOperation | null;
       try {
         current = await operations.read(operationId, record.binding.userId);
       } catch {
-        throw new CitationAiError('BILLING_PENDING', 503, 'unknown');
+        throw pending();
       }
-      if (current?.stage === 'settled') return present(operationId, current);
-      throw new CitationAiError('BILLING_PENDING', 503, 'unknown');
+      if (
+        current?.stage === 'settled' &&
+        current.attemptId === record.attemptId
+      )
+        return present(operationId, current);
+      throw pending();
     }
-    let charge: { success: boolean; creditsDeducted: number };
-    try {
-      charge = await dependencies.deduct(operationId, record);
-    } catch {
-      throw new CitationAiError('BILLING_PENDING', 503, 'unknown');
-    }
-    if (
-      !charge.success ||
-      !Number.isFinite(charge.creditsDeducted) ||
-      charge.creditsDeducted < 0
-    )
-      throw new CitationAiError('BILLING_PENDING', 503, 'unknown');
-    const settled = {
-      ...record,
-      stage: 'settled',
-      creditsDeducted: charge.creditsDeducted,
-    } as const;
-    try {
-      await operations.transition(operationId, settling, settled, true);
-    } catch {
-      /* A confirmed charge may return its result; the settling fence prevents a second deduction. */
-    }
-    return present(operationId, settled);
+    return deduct(operationId, settling);
   }
 
   return {
@@ -183,30 +234,31 @@ export function createCitationAiService(dependencies: CitationAiDependencies) {
       if (existing) {
         if (!sameBinding(existing.binding, binding))
           throw new CitationAiError('OPERATION_CONFLICT', 409);
-        return settlement(input.operationId, existing);
+        return replay(input.operationId, existing);
       }
-      validateCitationOperationTime(input.operationId, now);
-      let durable: CitationDurableChargeRead;
-      try {
-        durable = await dependencies.readDurableCharge(
-          input.operationId,
-          binding
-        );
-      } catch {
-        durable = { kind: 'unavailable' };
+      const retryOnly =
+        now - citationOperationTimestamp(input.operationId) >
+        CITE_AI_OPERATION_MAX_AGE_MS;
+      if (!retryOnly) {
+        validateCitationOperationTime(input.operationId, now);
+        const durable = await readDurableCharge(input.operationId, binding);
+        if (durable.kind === 'unavailable')
+          throw new CitationAiError('CREDIT_CHECK_FAILED', 503, 'unknown');
+        if (durable.kind === 'charged') {
+          if (!durable.bindingMatches)
+            throw new CitationAiError('OPERATION_CONFLICT', 409);
+          // The durable charge survives a lost proposal and fences regeneration.
+          throw new CitationAiError('INVALID_AI_OUTPUT', 502, 'settled');
+        }
       }
-      if (durable.kind === 'unavailable')
-        throw new CitationAiError('CREDIT_CHECK_FAILED', 503, 'unknown');
-      if (durable.kind === 'charged') {
-        if (!durable.bindingMatches)
-          throw new CitationAiError('OPERATION_CONFLICT', 409);
-        // The durable charge survives the lost proposal; it never admits reconstruction by another provider call.
-        throw new CitationAiError('INVALID_AI_OUTPUT', 502, 'settled');
-      }
-      const claim = await operations.claim(input.operationId, binding);
+      const claim = await operations.claim(
+        input.operationId,
+        binding,
+        retryOnly
+      );
       if (!sameBinding(claim.record.binding, binding))
         throw new CitationAiError('OPERATION_CONFLICT', 409);
-      if (!claim.claimed) return settlement(input.operationId, claim.record);
+      if (!claim.claimed) return replay(input.operationId, claim.record);
       if (claim.record.stage !== 'running')
         throw new CitationAiError('AI_UNAVAILABLE', 503);
       let providerStarted = false;
@@ -226,6 +278,9 @@ export function createCitationAiService(dependencies: CitationAiDependencies) {
           admission.maxOutputTokens > 8192
         )
           throw new CitationAiError('CREDIT_CHECK_FAILED', 503);
+        requestSignal.throwIfAborted();
+        if (!(await dependencies.reserveGrounding()))
+          throw new CitationAiError('AI_UNAVAILABLE', 503);
         requestSignal.throwIfAborted();
         if (
           !(await operations.transition(
@@ -267,12 +322,11 @@ export function createCitationAiService(dependencies: CitationAiDependencies) {
             ? safe.code
             : 'GENERATION_FAILED';
         try {
-          await operations.transition(
-            input.operationId,
-            claim.record,
-            { stage: 'failed', binding, code },
-            code !== 'BILLING_PENDING'
-          );
+          await operations.transition(input.operationId, claim.record, {
+            ...claim.record,
+            stage: 'failed',
+            code,
+          });
         } catch {
           /* The existing running receipt still forbids a second provider call. */
         }
@@ -282,8 +336,8 @@ export function createCitationAiService(dependencies: CitationAiDependencies) {
       if (!usage.success) {
         try {
           await operations.transition(input.operationId, claim.record, {
+            ...claim.record,
             stage: 'failed',
-            binding,
             code: 'BILLING_PENDING',
           });
         } catch {
@@ -299,8 +353,8 @@ export function createCitationAiService(dependencies: CitationAiDependencies) {
         now
       );
       const checkpoint: CitationAiOperation = {
+        ...claim.record,
         stage: 'checkpoint',
-        binding,
         modelId: admission.modelId,
         usage: usage.data,
         outcome: proposal
@@ -319,7 +373,7 @@ export function createCitationAiService(dependencies: CitationAiDependencies) {
       }
       if (!checkpointed)
         throw new CitationAiError('BILLING_PENDING', 503, 'unknown');
-      return settlement(input.operationId, checkpoint);
+      return settleInitial(input.operationId, checkpoint);
     },
   };
 }

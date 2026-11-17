@@ -4,13 +4,13 @@ import { POST as lookup } from './route';
 
 const spies = vi.hoisted(() => ({
   store: vi.fn(),
-  eval: vi.fn(),
+  rpc: vi.fn(),
   lookup: vi.fn(),
   capture: vi.fn(),
 }));
 vi.mock('server-only', () => ({}));
-vi.mock('@tuturuuu/utils/upstash-rest', () => ({
-  getUpstashRestRedisClient: spies.store,
+vi.mock('@/lib/cite/runtime-db', () => ({
+  getCitationRuntimeDb: spies.store,
 }));
 vi.mock('@/lib/cite/metadata', () => ({ lookupCitation: spies.lookup }));
 vi.mock('@/lib/cite/capture', () => ({ captureCitation: spies.capture }));
@@ -19,8 +19,8 @@ beforeEach(() => {
   vi.clearAllMocks();
   vi.stubEnv('TRUSTED_PROXY', 'cloudflare-origin');
   vi.stubEnv('TRUSTED_PROXY_ORIGIN_SECRET', syntheticOriginSecret);
-  spies.store.mockResolvedValue({ eval: spies.eval });
-  spies.eval.mockResolvedValue(1);
+  spies.store.mockResolvedValue({ rpc: spies.rpc });
+  spies.rpc.mockResolvedValue({ data: true, error: null });
   spies.lookup.mockResolvedValue({ fields: { title: 'Synthetic source' } });
   spies.capture.mockResolvedValue({ kind: 'manual', fields: { title: '' } });
 });
@@ -48,7 +48,7 @@ describe.each([
   ['lookup', lookup],
   ['capture', capture],
 ] as const)('%s authenticated origin admission', (_name, handler) => {
-  it('rejects a spoofed CF header without proof before Redis or source/cache access', async () => {
+  it('rejects a spoofed CF header without proof before the budget RPC or source/cache access', async () => {
     expect((await handler(request())).status).toBe(429);
     expect(spies.store).not.toHaveBeenCalled();
     expect(spies.lookup).not.toHaveBeenCalled();
@@ -58,7 +58,7 @@ describe.each([
   it('admits the existing trusted origin proof before one budget claim', async () => {
     const incoming = request(syntheticOriginSecret);
     expect((await handler(incoming)).status).toBe(200);
-    expect(spies.eval).toHaveBeenCalledTimes(1);
+    expect(spies.rpc).toHaveBeenCalledTimes(1);
     expect(
       spies.lookup.mock.calls.length + spies.capture.mock.calls.length
     ).toBe(1);

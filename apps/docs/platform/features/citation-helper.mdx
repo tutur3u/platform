@@ -35,9 +35,10 @@ proof before resolving the client IP from that proof or `CF-Connecting-IP`.
 Other forwarding headers cannot substitute for origin authentication. Missing
 proof, missing trusted client identity or an exhausted limit returns `429`;
 unavailable budget storage returns `503`. Both include `Retry-After`. The lookup
-fails closed and manual formatting remains available. Counter keys use a digest
-of the normalized IP and expire after two minutes. Lookup logs contain fixed
-categories only, never source URLs or titles.
+fails closed and manual formatting remains available. Postgres counts each
+minute separately and prunes older windows during reservations. The budget
+stores a digest of the normalized IP. Lookup logs contain fixed categories
+without source URLs or titles.
 
 ## Documents integration
 
@@ -79,9 +80,9 @@ completion remains available without inventing a source title.
 
 A capture permits at most two upstream reads, a combined 256 KiB response budget,
 and a five-second deadline. Grounding sessions share these limits across their
-identifier checks and bypass the public cache. Public DOI/ISBN capture caching
-stores only validated bibliographic fields for 24 hours. URLs, title searches,
-private annotations, abstracts and AI inputs are not cached there.
+identifier checks and bypass the public cache. The default public capture cache
+returns a miss. An injected store can cache validated DOI and ISBN bibliographic
+fields for 24 hours.
 
 Authenticated clients can use `POST /api/v1/cite/format` and `/validate` for server
 parity without AI credits. They accept strict JSON up to 96 KiB. Formatting is
@@ -122,41 +123,43 @@ Within an open editor session, repair retains its operation ID and original inpu
 when a response is lost. Closing and reopening its panel preserves an unapplied
 proposal; a full page reload does not preserve that client draft. Accepted
 document snapshots and saved library items have separate persistence.
-Shared-store receipts bind it to the actor, billing pool, feature and input.
-Provider work and an uncertain deduction are never automatically replayed. A
-pending settlement is reported as unknown; an invalid proposal can still have
-settled token usage. On a receipt miss, an expired operation is rejected before
-a ledger read or new claim. A fresh operation checks matching transactions in
-the billing workspace or belonging to the authenticated actor. This includes
-personal deductions whose transaction `ws_id` is empty. A confirmed prior charge
-prevents generation and deduction even when its proposal receipt was lost.
-Failed or ambiguous lookup is unavailable, never permission to retry. Receipt
-retention and readback do not establish durable exactly-once behavior for an
-in-flight call before any charge row exists.
+Postgres receipts bind each operation to the actor, billing pool, feature and
+input. A pending settlement is reported as unknown. An invalid proposal can
+still have settled token usage. An eligible retry can recover a confirmed
+charge or dispatch an unclaimed checkpoint once through the database fence.
+An ambiguous ledger read holds billing pending. A confirmed prior charge
+prevents regeneration even if the proposal receipt is unavailable.
 
-Registry grounding checks identifiers within the bounded capture budget. A
-matching registry record alone does not establish that it belongs to the user's
-reference. AI-generated source details remain marked for review.
+Authenticated repair reserves a separate grounding budget before calling the
+model. It allows 30 operations per actor and 600 globally each minute. If the
+budget is exhausted or unavailable, the repair returns `503` before generation
+and billing. Registry failures during an admitted grounding session leave the
+affected identifiers unverified. The model output remains billable and the
+proposal still requires review.
 
 ### Operation lifetime and quotas
 
 New repair operations use UUIDv7 identifiers no older than 15 minutes, with
-one minute of allowed future clock skew. Retained receipts can still settle
-older work. A missing receipt for an expired identifier returns `409`; it does
-not claim the old operation was uncharged. Receipts expire after one hour and
-omit raw input. A new paid operation always requires a new explicit confirmation.
+one minute of allowed future clock skew. An operation that fails before storing
+billable usage releases its pending receipt and active lease within 15 minutes.
+The original binding can reopen that operation within one hour of its initial
+claim. Other expired identifiers without a live receipt return `409`.
+
+Only one repair can hold an actor's active lease. The running lease lasts two
+minutes and an uncertain settlement holds it for up to 15 minutes. Settlement
+receipts retain the proposal for one hour and omit raw input. After three
+minutes, a retry can use a retained usage checkpoint if two ledger reads confirm
+absence and it wins the same dispatch fence used by the initial request. An
+unknown dispatch outcome retains the fence for the life of the receipt.
+Credit-feature access and request allowances follow the existing plan policy.
 
 The charge lookup uses validated workspace and actor UUIDs, operation metadata,
 and an inclusive timestamp interval from the operation time minus two minutes
-through lookup time plus one minute. The widest admitted interval is 18 minutes.
-Actor or nonempty workspace mismatches remain conflicts. Qualification must
+through lookup time plus one minute. New operations have a maximum 18-minute
+lookup interval. A retained checkpoint permits a longer interval for billing
+recovery. Actor or nonempty workspace mismatches cannot authorize a deduction.
+Personal deductions may have an empty transaction `ws_id`. Qualification must
 show the workspace/date and user/date indexes serving the query on seeded data.
-
-Only one repair can hold an actor's active operation lease. A running lease is
-two minutes; uncertain settlement extends it to the one-hour receipt lifetime.
-This is a concurrency and replay fence, not a fixed allowance of one successful
-repair per hour. Credit-feature access and request allowances follow the
-existing plan policy. No fixed per-repair price or automatic retry is introduced.
 
 Supported Gemini 2.5 Flash models disable thinking; supported Gemini 3 Flash
 models request minimal thinking, and supported Gemini 3 Pro models request low
@@ -168,8 +171,9 @@ plan models against those sets instead of silently substituting a model.
 
 | Rule and affected surface | Default and exception | Regression coverage |
 | --- | --- | --- |
-| Repair receipts in Documents | Reuse the same operation for recovery; an expired missing receipt returns `409` | [Repair service tests](https://github.com/tutur3u/platform/blob/main/apps/web/src/lib/cite/ai/service.test.ts) |
-| Durable charge lookup | Workspace-or-actor scope, nullable personal charges and at most 18 minutes | [Billing tests](https://github.com/tutur3u/platform/blob/main/apps/web/src/lib/cite/ai/billing.test.ts) |
+| Repair receipts in Documents | A bound, expired no-usage failure can reopen. A retained checkpoint can dispatch one deduction. | [Recovery tests](https://github.com/tutur3u/platform/blob/main/apps/web/src/lib/cite/ai/service-recovery.test.ts) |
+| AI registry grounding | Budget admission precedes model calls and charges. Registry failures leave affected fields unverified. | [Grounding budget tests](https://github.com/tutur3u/platform/blob/main/apps/web/src/lib/cite/ai/grounding-budget.test.ts) |
+| Durable charge lookup | Workspace-or-actor scope and nullable personal charges. New IDs use at most 18 minutes. | [Billing tests](https://github.com/tutur3u/platform/blob/main/apps/web/src/lib/cite/ai/billing.test.ts) |
 | Repair model and usage controls | Explicit thinking options; unknown models refuse, and reasoning is not counted twice | [Provider tests](https://github.com/tutur3u/platform/blob/main/apps/web/src/lib/cite/ai/provider.test.ts) |
 | Anonymous lookup and capture | Trusted-origin proof, 10 requests per IP and 120 globally per minute; manual formatting stays available | [Budget tests](https://github.com/tutur3u/platform/blob/main/apps/web/src/lib/cite/lookup-budget.test.ts) |
 | Authenticated formatting and validation | 10 requests per actor and 120 globally per minute; no metadata read or AI charge | [Deterministic API tests](https://github.com/tutur3u/platform/blob/main/apps/web/src/lib/cite/format-api.test.ts) |

@@ -17,7 +17,10 @@ import {
   type CitationAiCheckpoint,
   type CitationDurableChargeRead,
   citationFixRequestSchema,
+  citationOperationTimestamp,
   CITE_AI_OPERATION_FUTURE_TOLERANCE_MS,
+  CITE_AI_OPERATION_MAX_AGE_MS,
+  CITE_AI_RECEIPT_SECONDS,
   validateCitationOperationTime,
 } from './contracts';
 import { boundedCitationOperation } from './timeout';
@@ -150,11 +153,17 @@ const durableChargeQuerySchema = z.object({
   error: z.null(),
 });
 const LEDGER_CLOCK_MARGIN_MS = 60 * 1000;
+// A bound retry may reopen after the admission window and keep a new receipt.
+const RETAINED_LEDGER_MAX_AGE_MS =
+  CITE_AI_OPERATION_MAX_AGE_MS +
+  2 * CITE_AI_RECEIPT_SECONDS * 1000 +
+  LEDGER_CLOCK_MARGIN_MS;
 
 /** Pool-or-actor identity covers paid workspace rows and nullable personal-balance rows. */
 export async function readCitationDurableCharge(
   operationId: string,
-  binding: CitationAiBinding
+  binding: CitationAiBinding,
+  retainedReceipt = false
 ): Promise<CitationDurableChargeRead> {
   try {
     const parsedId =
@@ -167,11 +176,12 @@ export async function readCitationDurableCharge(
     const billingWsId = pool.data.toLowerCase();
     const canonicalId = parsedId.data;
     const now = Date.now();
-    validateCitationOperationTime(canonicalId, now);
-    const issuedAt = Number.parseInt(
-      canonicalId.slice(0, 8) + canonicalId.slice(9, 13),
-      16
+    validateCitationOperationTime(
+      canonicalId,
+      now,
+      retainedReceipt ? RETAINED_LEDGER_MAX_AGE_MS : undefined
     );
+    const issuedAt = citationOperationTimestamp(canonicalId);
     const from = new Date(
       issuedAt - CITE_AI_OPERATION_FUTURE_TOLERANCE_MS - LEDGER_CLOCK_MARGIN_MS
     ).toISOString();
@@ -238,7 +248,7 @@ const chargeQuerySchema = z.object({
   data: chargeRowsSchema,
   error: z.null(),
 });
-/** Absence and ambiguity never authorize another deduction. User balances may have no ws_id. */
+/** Recover a single bound amount. User balances may have no ws_id. */
 export async function recoverCitationCharge(
   operationId: string,
   binding: CitationAiBinding

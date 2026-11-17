@@ -7,7 +7,7 @@ const mocks = vi.hoisted(() => ({
   auth: vi.fn(),
   options: vi.fn(),
   store: vi.fn(),
-  evaluate: vi.fn(),
+  rpc: vi.fn(),
 }));
 vi.mock('server-only', () => ({}));
 vi.mock('@/lib/api-auth', () => ({
@@ -24,8 +24,8 @@ vi.mock('@/lib/api-auth', () => ({
         : session.response;
     },
 }));
-vi.mock('@tuturuuu/utils/upstash-rest', () => ({
-  getUpstashRestRedisClient: mocks.store,
+vi.mock('@/lib/cite/runtime-db', () => ({
+  getCitationRuntimeDb: mocks.store,
 }));
 const work = CiteWorkSchema.parse({
   id: 'synthetic-web',
@@ -46,8 +46,8 @@ function request(style: 'apa' | 'harvard') {
 beforeEach(() => {
   vi.clearAllMocks();
   mocks.auth.mockResolvedValue({ ok: true, user: { id: 'verified-actor' } });
-  mocks.store.mockResolvedValue({ eval: mocks.evaluate });
-  mocks.evaluate.mockResolvedValue(1);
+  mocks.store.mockResolvedValue({ rpc: mocks.rpc });
+  mocks.rpc.mockResolvedValue({ data: true, error: null });
 });
 describe('POST /api/v1/cite/validate', () => {
   it.each(['apa', 'harvard'] as const)(
@@ -64,15 +64,18 @@ describe('POST /api/v1/cite/validate', () => {
     }
   );
   it('shares the actor/global formatting budget and returns Retry-After', async () => {
-    mocks.evaluate.mockResolvedValue(0);
+    mocks.rpc.mockResolvedValue({ data: false, error: null });
     const response = await POST(request('harvard'));
     expect(response.status).toBe(429);
     expect(await response.json()).toEqual({ error: 'RATE_LIMITED' });
     expect(response.headers.get('retry-after')).toMatch(/^\d+$/);
-    expect(mocks.evaluate.mock.calls[0]?.[1]).toEqual([
-      expect.stringMatching(/^cite:format:\{budget\}:\d+:actor:[a-f0-9]{64}$/),
-      expect.stringMatching(/^cite:format:\{budget\}:\d+:global$/),
-    ]);
+    expect(mocks.rpc).toHaveBeenCalledExactlyOnceWith('reserve_cite_budget', {
+      p_scope: 'format',
+      p_actor_hash: expect.stringMatching(/^[a-f0-9]{64}$/),
+      p_window: expect.any(Number),
+      p_actor_limit: 10,
+      p_global_limit: 120,
+    });
   });
   it('requires a current authenticated actor', async () => {
     mocks.auth.mockResolvedValue({

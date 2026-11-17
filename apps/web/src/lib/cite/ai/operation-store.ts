@@ -1,124 +1,127 @@
 import 'server-only';
 
-import { createHash } from 'node:crypto';
-import { getUpstashRestRedisClient } from '@tuturuuu/utils/upstash-rest';
 import { z } from 'zod';
-import { boundedCitationOperation } from './timeout';
+import { getCitationRuntimeDb } from '../runtime-db';
 import {
   CitationAiError,
+  type CitationAiOperation,
   type CitationAiOperationStore,
   citationAiOperationSchema,
-  CITE_AI_RECEIPT_SECONDS,
 } from './contracts';
+import { boundedCitationOperation } from './timeout';
 
-const claimScript = `
-local existing = redis.call('GET', KEYS[1])
-if existing then return {0,existing} end
-if redis.call('EXISTS', KEYS[2]) == 1 then return {-1,''} end
-redis.call('SET', KEYS[1], ARGV[1], 'EX', ARGV[2])
-redis.call('SET', KEYS[2], ARGV[3], 'EX', 120)
-return {1,ARGV[1]}`;
-const transitionScript = `
-if redis.call('GET', KEYS[1]) ~= ARGV[1] then return 0 end
-if redis.call('GET', KEYS[2]) ~= ARGV[4] then return 0 end
-redis.call('SET', KEYS[1], ARGV[2], 'EX', ARGV[3])
-if redis.call('GET', KEYS[2]) == ARGV[4] then redis.call('EXPIRE', KEYS[2], ARGV[6]) end
-if ARGV[5] == '1' and redis.call('GET', KEYS[2]) == ARGV[4] then redis.call('DEL', KEYS[2]) end
-return 1`;
-const claimResultSchema = z.tuple([
-  z.union([z.literal(-1), z.literal(0), z.literal(1)]),
-  z.string(),
+const operationResultSchema = z.discriminatedUnion('kind', [
+  z.object({
+    kind: z.enum(['claimed', 'existing']),
+    record: citationAiOperationSchema,
+  }),
+  z.object({ kind: z.literal('busy') }),
+  z.object({ kind: z.literal('expired') }),
+  z.object({ kind: z.literal('conflict') }),
 ]);
 
-function keys(operationId: string, userId: string) {
-  const actor = createHash('sha256').update(userId).digest('hex');
-  return [
-    `cite:ai:{operations}:operation:${operationId}`,
-    `cite:ai:{operations}:actor:${actor}:active`,
-  ];
-}
-function encoded(record: unknown) {
-  const text = JSON.stringify(citationAiOperationSchema.parse(record));
-  if (new TextEncoder().encode(text).byteLength > 96000)
-    throw new CitationAiError('AI_UNAVAILABLE', 503);
-  return text;
-}
-function decode(value: unknown) {
-  try {
-    return citationAiOperationSchema.parse(
-      typeof value === 'string' ? JSON.parse(value) : value
-    );
-  } catch {
-    throw new CitationAiError('AI_UNAVAILABLE', 503);
-  }
-}
-async function store() {
-  const client = await boundedCitationOperation(
-    getUpstashRestRedisClient(),
-    5000
-  );
-  if (!client) throw new CitationAiError('AI_UNAVAILABLE', 503);
-  return client;
+function unavailable() {
+  return new CitationAiError('AI_UNAVAILABLE', 503);
 }
 
-/** Receipts bind global operation IDs to an actor, omit raw prompts, and outlive new-operation acceptance. */
-export function createCitationAiOperationStore(): CitationAiOperationStore {
+async function rpcResult<T>(
+  response: PromiseLike<{ data: unknown; error: unknown }>,
+  schema: z.ZodType<T>
+): Promise<T> {
+  const { data, error } = await boundedCitationOperation(response, 5000).catch(
+    () => {
+      throw unavailable();
+    }
+  );
+  if (error) throw unavailable();
+  const parsed = schema.safeParse(data);
+  if (!parsed.success) throw unavailable();
+  return parsed.data;
+}
+
+function encode(record: CitationAiOperation) {
+  const parsed = citationAiOperationSchema.parse(record);
+  if (new TextEncoder().encode(JSON.stringify(parsed)).byteLength > 96000)
+    throw unavailable();
+  return parsed;
+}
+
+/** Service-only receipts bind the operation and attempt to the authenticated actor. */
+export function createCitationAiOperationStore(
+  getDb = getCitationRuntimeDb
+): CitationAiOperationStore {
+  async function db() {
+    try {
+      return await boundedCitationOperation(getDb(), 5000);
+    } catch {
+      throw unavailable();
+    }
+  }
+
   return {
-    async claim(operationId, binding) {
-      const record = { stage: 'running', binding } satisfies ReturnType<
-        typeof citationAiOperationSchema.parse
-      >;
-      const client = await store();
-      const [status, value] = claimResultSchema.parse(
-        await boundedCitationOperation(
-          client.eval(claimScript, keys(operationId, binding.userId), [
-            encoded(record),
-            CITE_AI_RECEIPT_SECONDS,
-            operationId,
-          ]),
-          5000
-        )
+    async claim(operationId, binding, retryOnly = false) {
+      const client = await db();
+      const result = await rpcResult(
+        client.rpc('claim_cite_ai_operation', {
+          p_operation_id: operationId,
+          p_actor_id: binding.userId,
+          p_binding: binding,
+          p_retry_only: retryOnly,
+        }),
+        operationResultSchema
       );
-      if (status === -1)
-        throw new CitationAiError('GENERATION_IN_PROGRESS', 409);
-      return status === 1
-        ? { claimed: true, record: decode(value) }
-        : { claimed: false, record: decode(value) };
+      switch (result.kind) {
+        case 'busy':
+          throw new CitationAiError('GENERATION_IN_PROGRESS', 409);
+        case 'expired':
+          throw new CitationAiError('OPERATION_EXPIRED', 409);
+        case 'conflict':
+          throw new CitationAiError('OPERATION_CONFLICT', 409);
+        case 'claimed':
+          return { claimed: true, record: result.record };
+        case 'existing':
+          return { claimed: false, record: result.record };
+      }
     },
-    async transition(operationId, previous, next, releaseActor = false) {
-      const client = await store();
-      return (
-        (await boundedCitationOperation(
-          client.eval(
-            transitionScript,
-            keys(operationId, previous.binding.userId),
-            [
-              encoded(previous),
-              encoded(next),
-              CITE_AI_RECEIPT_SECONDS,
-              operationId,
-              releaseActor ? '1' : '0',
-              next.stage === 'settling' ||
-              (next.stage === 'failed' && next.code === 'BILLING_PENDING')
-                ? CITE_AI_RECEIPT_SECONDS
-                : 120,
-            ]
-          ),
-          5000
-        )) === 1
+    async transition(operationId, previous, next) {
+      const client = await db();
+      return rpcResult(
+        client.rpc('transition_cite_ai_operation', {
+          p_operation_id: operationId,
+          p_actor_id: previous.binding.userId,
+          p_previous: encode(previous),
+          p_next: encode(next),
+        }),
+        z.boolean()
+      );
+    },
+    async claimDeduction(operationId, record) {
+      const client = await db();
+      return rpcResult(
+        client.rpc('claim_cite_ai_deduction', {
+          p_operation_id: operationId,
+          p_actor_id: record.binding.userId,
+          p_checkpoint: encode(record),
+        }),
+        z.boolean()
       );
     },
     async read(operationId, userId) {
-      const client = await store();
-      const value = await boundedCitationOperation(
-        client.get(keys(operationId, userId)[0] ?? ''),
-        5000
+      const client = await db();
+      const result = await rpcResult(
+        client.rpc('read_cite_ai_operation', {
+          p_operation_id: operationId,
+          p_actor_id: userId,
+        }),
+        operationResultSchema.nullable()
       );
-      if (value === null) return null;
-      const record = decode(value);
-      if (record.binding.userId !== userId)
+      if (result === null) return null;
+      if (result.kind === 'conflict')
         throw new CitationAiError('OPERATION_CONFLICT', 409);
-      return record;
+      if (result.kind !== 'existing') throw unavailable();
+      if (result.record.binding.userId !== userId)
+        throw new CitationAiError('OPERATION_CONFLICT', 409);
+      return result.record;
     },
   };
 }

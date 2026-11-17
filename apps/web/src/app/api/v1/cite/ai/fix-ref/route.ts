@@ -14,7 +14,7 @@ export const POST = withSessionAuth(
       const input = await readCitationFixBody(request);
       const service = createSessionCitationAiService(
         auth.supabase,
-        createCitationAiGrounding(request.headers)
+        createCitationAiGrounding(auth.user.id)
       );
       const result = await service.fix(auth.user.id, input, request.signal);
       return NextResponse.json(result, { headers: CITE_AI_HEADERS });

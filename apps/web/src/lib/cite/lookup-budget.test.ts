@@ -1,12 +1,10 @@
+import { createHash } from 'node:crypto';
 import { describe, expect, it, vi } from 'vitest';
 import { createOriginClientIpProof } from '@tuturuuu/utils/abuse-protection/origin-ip-proof';
+import type { CitationBudgetStore } from './budget-store';
 import { reserveCitationLookup } from './lookup-budget';
 
 vi.mock('server-only', () => ({}));
-vi.mock('@tuturuuu/utils/upstash-rest', () => ({
-  getUpstashRestRedisClient: vi.fn(),
-}));
-
 const syntheticOriginSecret = 'synthetic-citation-origin-proof-fixture-only';
 const proxyOptions = {
   env: {
@@ -21,14 +19,13 @@ function trustedHeaders(ip = '198.51.100.1') {
     'x-tuturuuu-origin-auth': syntheticOriginSecret,
   });
 }
-function fixture(admitted: unknown = 1) {
-  const evalBudget = vi.fn(
-    async (_script: string, _keys: string[], _args: (string | number)[]) =>
-      admitted
-  );
+function fixture(admitted = true) {
+  const reserve = vi
+    .fn<CitationBudgetStore['reserve']>()
+    .mockResolvedValue(admitted);
   return {
-    evalBudget,
-    store: vi.fn(async () => ({ eval: evalBudget })),
+    reserve,
+    store: vi.fn(async () => ({ reserve })),
     proxyOptions,
   };
 }
@@ -50,10 +47,10 @@ describe('anonymous citation lookup budget', () => {
         },
       })
     ).toEqual({ kind: 'allowed' });
-    expect(test.evalBudget).toHaveBeenCalledTimes(1);
+    expect(test.reserve).toHaveBeenCalledTimes(1);
   });
 
-  it('rejects spoofed Cloudflare client headers before Redis without origin proof', async () => {
+  it('rejects spoofed Cloudflare client headers before the budget RPC without origin proof', async () => {
     const test = fixture();
     const headers = new Headers({
       'cf-connecting-ip': '198.51.100.1',
@@ -65,7 +62,7 @@ describe('anonymous citation lookup budget', () => {
       status: 429,
     });
     expect(test.store).not.toHaveBeenCalled();
-    expect(test.evalBudget).not.toHaveBeenCalled();
+    expect(test.reserve).not.toHaveBeenCalled();
   });
 
   it('rejects absent, invalid or weak origin configuration even with client headers', async () => {
@@ -108,8 +105,8 @@ describe('anonymous citation lookup budget', () => {
         )
       ).toEqual({ kind: 'allowed' });
     }
-    expect(test.evalBudget.mock.calls[0]?.[1]).toEqual(
-      test.evalBudget.mock.calls[1]?.[1]
+    expect(test.reserve.mock.calls[0]?.[0]).toEqual(
+      test.reserve.mock.calls[1]?.[0]
     );
   });
 
@@ -139,7 +136,7 @@ describe('anonymous citation lookup budget', () => {
         kind: 'rejected',
         status: 429,
       });
-      expect(test.evalBudget).not.toHaveBeenCalled();
+      expect(test.reserve).not.toHaveBeenCalled();
     }
   });
 
@@ -149,20 +146,19 @@ describe('anonymous citation lookup budget', () => {
     expect(
       await reserveCitationLookup(headers, { ...test, now: () => 120_000 })
     ).toEqual({ kind: 'allowed' });
-    expect(test.evalBudget).toHaveBeenCalledTimes(1);
-    expect(test.evalBudget).toHaveBeenCalledWith(
-      expect.any(String),
-      [
-        expect.stringMatching(/^cite:lookup:\{budget\}:2:ip:[a-f0-9]{64}$/),
-        'cite:lookup:{budget}:2:global',
-      ],
-      [10, 120, 120]
-    );
+    expect(test.reserve).toHaveBeenCalledTimes(1);
+    expect(test.reserve).toHaveBeenCalledExactlyOnceWith({
+      scope: 'lookup',
+      actorHash: createHash('sha256').update('198.51.100.1').digest('hex'),
+      window: 2,
+      actorLimit: 10,
+      globalLimit: 120,
+    });
   });
 
   it('rejects a denied claim and fails closed on missing or failed storage', async () => {
     const headers = trustedHeaders();
-    expect(await reserveCitationLookup(headers, fixture(0))).toMatchObject({
+    expect(await reserveCitationLookup(headers, fixture(false))).toMatchObject({
       status: 429,
     });
     expect(

@@ -1,3 +1,4 @@
+import { createHash } from 'node:crypto';
 import { CiteWorkSchema } from '@tuturuuu/cite';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import {
@@ -9,9 +10,6 @@ import {
 
 vi.mock('server-only', () => ({}));
 vi.mock('@/lib/api-auth', () => ({ resolveSessionAuthContext: vi.fn() }));
-vi.mock('@tuturuuu/utils/upstash-rest', () => ({
-  getUpstashRestRedisClient: vi.fn(),
-}));
 
 const work = CiteWorkSchema.parse({
   id: 'synthetic-book',
@@ -310,37 +308,26 @@ describe('bounded deterministic citation requests', () => {
 });
 
 describe('distributed deterministic citation budget', () => {
-  it('uses one atomic reservation with hashed actor keys, shared global key and expiring counters', async () => {
-    const evaluate = vi
-      .fn<
-        (
-          script: string,
-          keys: string[],
-          args: (string | number)[]
-        ) => Promise<number>
-      >()
-      .mockResolvedValue(1);
-    const deps = {
-      store: async () => ({ eval: evaluate }),
-      now: () => 600_000,
-    };
-    expect(await reserveCitationFormatting('private-actor', deps)).toEqual({
-      kind: 'allowed',
+  it('sends a hashed actor, window and both limits in one reservation', async () => {
+    const reserve = vi.fn().mockResolvedValue(true);
+    expect(
+      await reserveCitationFormatting('private-actor', {
+        store: async () => ({ reserve }),
+        now: () => 600_000,
+      })
+    ).toEqual({ kind: 'allowed' });
+    expect(reserve).toHaveBeenCalledExactlyOnceWith({
+      scope: 'format',
+      actorHash: createHash('sha256').update('private-actor').digest('hex'),
+      window: 10,
+      actorLimit: 10,
+      globalLimit: 120,
     });
-    expect(evaluate).toHaveBeenCalledTimes(1);
-    const [script, keys, args] = evaluate.mock.calls[0] ?? [];
-    expect(script).toContain("redis.call('INCR', KEYS[1])");
-    expect(keys).toEqual([
-      expect.stringMatching(/^cite:format:\{budget\}:10:actor:[a-f0-9]{64}$/),
-      'cite:format:{budget}:10:global',
-    ]);
-    expect(JSON.stringify(keys)).not.toContain('private-actor');
-    expect(args).toEqual([10, 120, 120]);
   });
-  it('returns retry timing on rejection and fails closed on missing or unreachable Redis', async () => {
+  it('returns retry timing on rejection and fails closed on missing or unreachable storage', async () => {
     expect(
       await reserveCitationFormatting('actor', {
-        store: async () => ({ eval: async () => 0 }),
+        store: async () => ({ reserve: async () => false }),
         now: () => 619_000,
       })
     ).toEqual({ kind: 'rejected', status: 429, retryAfter: 41 });
@@ -350,7 +337,7 @@ describe('distributed deterministic citation budget', () => {
     expect(
       await reserveCitationFormatting('actor', {
         store: async () => {
-          throw new Error('Redis unavailable');
+          throw new Error('Storage unavailable');
         },
       })
     ).toEqual({ kind: 'rejected', status: 503, retryAfter: 60 });

@@ -1,6 +1,5 @@
 import 'server-only';
 
-import { createHash } from 'node:crypto';
 import {
   CiteWorkSchema,
   citationItemSchema,
@@ -10,9 +9,12 @@ import {
   provenanceSchema,
   validateCitation,
 } from '@tuturuuu/cite';
-import { getUpstashRestRedisClient } from '@tuturuuu/utils/upstash-rest';
 import { z } from 'zod';
 import { resolveSessionAuthContext } from '@/lib/api-auth';
+import {
+  type CitationBudgetDependencies,
+  reserveCitationBudget,
+} from './budget-store';
 
 export const CITE_FORMAT_MAX_BYTES = 96 * 1024;
 export const CITE_FORMAT_TIMEOUT_MS = 5000;
@@ -79,19 +81,9 @@ const validateInputSchema = z
 type ActorResolution =
   | { ok: true; actorId: string }
   | { ok: false; response: Response };
-type BudgetResult =
-  | { kind: 'allowed' }
-  | { kind: 'rejected'; status: 429 | 503; retryAfter: number };
-type BudgetStore = {
-  eval(
-    script: string,
-    keys: string[],
-    args: (string | number)[]
-  ): Promise<unknown>;
-};
 type Dependencies = {
   authenticate?: (request: Request) => Promise<ActorResolution>;
-  reserve?: (actorId: string) => Promise<BudgetResult>;
+  reserve?: (actorId: string) => ReturnType<typeof reserveCitationFormatting>;
   format?: typeof formatDocument;
   validate?: typeof validateCitation;
 };
@@ -101,46 +93,20 @@ async function authenticateActor(request: Request): Promise<ActorResolution> {
   return result.ok ? { ok: true, actorId: result.user.id } : result;
 }
 
-const reserveScript = `
-local actor = tonumber(redis.call('GET', KEYS[1]) or '0')
-local total = tonumber(redis.call('GET', KEYS[2]) or '0')
-if actor >= tonumber(ARGV[1]) or total >= tonumber(ARGV[2]) then return 0 end
-redis.call('INCR', KEYS[1])
-redis.call('INCR', KEYS[2])
-redis.call('EXPIRE', KEYS[1], ARGV[3])
-redis.call('EXPIRE', KEYS[2], ARGV[3])
-return 1`;
-
 /** Both deterministic endpoints share the verified actor and global CPU budget. */
-export async function reserveCitationFormatting(
+export function reserveCitationFormatting(
   actorId: string,
-  dependencies: {
-    store?: () => Promise<BudgetStore | null>;
-    now?: () => number;
-  } = {}
-): Promise<BudgetResult> {
-  if (!actorId) return { kind: 'rejected', status: 503, retryAfter: 60 };
-  const now = (dependencies.now ?? Date.now)();
-  const minute = Math.floor(now / 60_000);
-  const retryAfter = Math.max(1, 60 - Math.floor((now % 60_000) / 1000));
-  const actor = createHash('sha256').update(actorId).digest('hex');
-  try {
-    const store = await (dependencies.store ?? getUpstashRestRedisClient)();
-    if (!store) return { kind: 'rejected', status: 503, retryAfter: 60 };
-    const result = await store.eval(
-      reserveScript,
-      [
-        `cite:format:{budget}:${minute}:actor:${actor}`,
-        `cite:format:{budget}:${minute}:global`,
-      ],
-      [CITE_FORMAT_ACTOR_LIMIT, CITE_FORMAT_GLOBAL_LIMIT, 120]
-    );
-    return result === 1
-      ? { kind: 'allowed' }
-      : { kind: 'rejected', status: 429, retryAfter };
-  } catch {
-    return { kind: 'rejected', status: 503, retryAfter: 60 };
-  }
+  dependencies: CitationBudgetDependencies = {}
+) {
+  return reserveCitationBudget(
+    {
+      scope: 'format',
+      actor: actorId,
+      actorLimit: CITE_FORMAT_ACTOR_LIMIT,
+      globalLimit: CITE_FORMAT_GLOBAL_LIMIT,
+    },
+    dependencies
+  );
 }
 
 class CitationRequestError extends Error {

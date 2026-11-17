@@ -7,7 +7,7 @@ const mocks = vi.hoisted(() => ({
   auth: vi.fn(),
   options: vi.fn(),
   store: vi.fn(),
-  evaluate: vi.fn(),
+  rpc: vi.fn(),
 }));
 vi.mock('server-only', () => ({}));
 vi.mock('@/lib/api-auth', () => ({
@@ -24,8 +24,8 @@ vi.mock('@/lib/api-auth', () => ({
         : session.response;
     },
 }));
-vi.mock('@tuturuuu/utils/upstash-rest', () => ({
-  getUpstashRestRedisClient: mocks.store,
+vi.mock('@/lib/cite/runtime-db', () => ({
+  getCitationRuntimeDb: mocks.store,
 }));
 const work = CiteWorkSchema.parse({
   id: 'synthetic-book',
@@ -55,8 +55,8 @@ function request(style: 'apa' | 'harvard', authorization?: string) {
 beforeEach(() => {
   vi.clearAllMocks();
   mocks.auth.mockResolvedValue({ ok: true, user: { id: 'verified-actor' } });
-  mocks.store.mockResolvedValue({ eval: mocks.evaluate });
-  mocks.evaluate.mockResolvedValue(1);
+  mocks.store.mockResolvedValue({ rpc: mocks.rpc });
+  mocks.rpc.mockResolvedValue({ data: true, error: null });
 });
 describe('POST /api/v1/cite/format', () => {
   it.each(['apa', 'harvard'] as const)(
@@ -86,7 +86,7 @@ describe('POST /api/v1/cite/format', () => {
       'Bearer synthetic-access-token'
     );
   });
-  it('refuses unauthenticated and Redis-unavailable requests', async () => {
+  it('refuses unauthenticated and database-unavailable requests', async () => {
     mocks.auth.mockResolvedValue({
       ok: false,
       response: Response.json({ error: 'Unauthorized' }, { status: 401 }),

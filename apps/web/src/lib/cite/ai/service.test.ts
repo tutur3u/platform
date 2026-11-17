@@ -1,132 +1,17 @@
-import { CiteWorkSchema } from '@tuturuuu/cite';
 import { describe, expect, it, vi } from 'vitest';
+import { CitationAiError, type CitationDurableChargeRead } from './contracts';
 import {
-  CitationAiError,
-  citationAiOperationSchema,
-  type CitationAiOperation,
-  type CitationAiOperationStore,
-  type CitationAiBinding,
-  type CitationAiCheckpoint,
-  type CitationDurableChargeRead,
-} from './contracts';
-import {
-  createCitationAiService,
-  type CitationAiDependencies,
-} from './service';
-
-const actorId = '00000000-0000-4000-8000-00000000a101';
-const billingWsId = '00000000-0000-4000-8000-00000000a102';
-const otherId = '00000000-0000-4000-8000-00000000a103';
-const now = Date.parse('2026-11-16T08:00:00Z');
-const signal = () => new AbortController().signal;
-function operationId(timestamp = now, suffix = '1') {
-  const hex = timestamp.toString(16).padStart(12, '0');
-  return `${hex.slice(0, 8)}-${hex.slice(8)}-7000-8000-${suffix.padStart(12, '0')}`;
-}
-const work = CiteWorkSchema.parse({
-  id: 'synthetic-model-id',
-  type: 'book',
-  title: 'Atlas of imagined estuaries',
-  authors: [{ kind: 'person', family: 'Vale', given: 'Mira' }],
-  issued: { year: 2024 },
-  provenance: { sourceCaptureMethod: 'manual', verificationStatus: 'manual' },
-});
-const usage = { inputTokens: 140, outputTokens: 90, reasoningTokens: 0 };
-const request = () => ({
-  operationId: operationId(),
-  input: 'Vale, M. (2024). Atlas of imagined estuaries.',
-});
-
-/** In-memory protocol fixture. Real Redis atomicity remains an integration boundary. */
-function fixture() {
-  const records = new Map<string, CitationAiOperation>();
-  const active = new Map<string, string>();
-  const charges = new Map<
-    string,
-    { wsId: string | null; binding: CitationAiBinding }
-  >();
-  const operations: CitationAiOperationStore = {
-    async claim(id, binding) {
-      const existing = records.get(id);
-      if (existing) return { claimed: false, record: existing };
-      if (active.has(binding.userId))
-        throw new CitationAiError('GENERATION_IN_PROGRESS', 409);
-      const record = citationAiOperationSchema.parse({
-        stage: 'running',
-        binding,
-      });
-      records.set(id, record);
-      active.set(binding.userId, id);
-      return { claimed: true, record };
-    },
-    async transition(id, previous, next, releaseActor) {
-      if (
-        JSON.stringify(records.get(id)) !==
-        JSON.stringify(citationAiOperationSchema.parse(previous))
-      )
-        return false;
-      records.set(id, citationAiOperationSchema.parse(next));
-      if (releaseActor && active.get(previous.binding.userId) === id)
-        active.delete(previous.binding.userId);
-      return true;
-    },
-    async read(id, userId) {
-      const record = records.get(id) ?? null;
-      if (record && record.binding.userId !== userId)
-        throw new CitationAiError('OPERATION_CONFLICT', 409);
-      return record;
-    },
-  };
-  const dependencies: CitationAiDependencies = {
-    operations,
-    resolveBillingWorkspace: vi.fn(async () => billingWsId),
-    admit: vi.fn(async () => ({
-      modelId: 'google/synthetic-plan-model',
-      maxOutputTokens: 1024,
-    })),
-    generate: vi.fn(async () => ({ value: work, usage })),
-    ground: vi.fn(async () => null),
-    deduct: vi.fn(async (id: string, checkpoint: CitationAiCheckpoint) => {
-      charges.set(id, {
-        wsId: checkpoint.binding.billingWsId,
-        binding: checkpoint.binding,
-      });
-      return { success: true, creditsDeducted: 0.54 };
-    }),
-    recoverCharge: vi.fn(async () => null),
-    readDurableCharge: vi.fn(
-      async (
-        id: string,
-        binding: CitationAiBinding
-      ): Promise<CitationDurableChargeRead> => {
-        const charged = charges.get(id);
-        if (
-          !charged ||
-          (charged.wsId !== binding.billingWsId &&
-            charged.binding.userId !== binding.userId)
-        )
-          return { kind: 'absent' };
-        return {
-          kind: 'charged',
-          bindingMatches:
-            charged.binding.userId === binding.userId &&
-            (charged.wsId === null || charged.wsId === binding.billingWsId) &&
-            charged.binding.billingWsId === binding.billingWsId &&
-            charged.binding.feature === binding.feature &&
-            charged.binding.inputHash === binding.inputHash,
-        };
-      }
-    ),
-    now: () => now,
-  };
-  return {
-    dependencies,
-    records,
-    charges,
-    operations,
-    service: createCitationAiService(dependencies),
-  };
-}
+  actorId,
+  billingWsId,
+  fixture,
+  now,
+  operationId,
+  otherId,
+  request,
+  signal,
+  usage,
+  work,
+} from './service-test-fixture';
 
 describe('citation AI operation protocol', () => {
   it('bills the server-resolved personal pool and returns a reviewable settled proposal', async () => {
@@ -178,7 +63,7 @@ describe('citation AI operation protocol', () => {
     expect(dependencies.deduct).toHaveBeenCalledTimes(1);
   });
 
-  it('does not generate or deduct again when a settled operation loses its Redis receipt', async () => {
+  it('does not generate or deduct again when a settled operation loses its database receipt', async () => {
     const { dependencies, service, records } = fixture();
     await service.fix(actorId, request(), signal());
     records.clear();
@@ -220,7 +105,7 @@ describe('citation AI operation protocol', () => {
     }
   );
 
-  it('rejects an expired lost receipt without a durable query, claim or second provider call', async () => {
+  it('rejects an expired lost receipt without a durable query or second provider call', async () => {
     const { dependencies, service, records } = fixture();
     await service.fix(actorId, request(), signal());
     records.clear();
@@ -255,7 +140,7 @@ describe('citation AI operation protocol', () => {
   });
 
   it.each(['actor', 'pool', 'input'])(
-    'preserves %s binding within pool-or-actor scope when the Redis receipt is lost',
+    'preserves %s binding within pool-or-actor scope when the database receipt is lost',
     async (change) => {
       const { dependencies, service, records } = fixture();
       await service.fix(actorId, request(), signal());
@@ -305,10 +190,10 @@ describe('citation AI operation protocol', () => {
   it('stops before provider when the post-admission lease cannot be renewed', async () => {
     const { dependencies, service, operations } = fixture();
     const transition = operations.transition;
-    operations.transition = async (id, previous, next, release) => {
+    operations.transition = async (id, previous, next) => {
       if (previous.stage === 'running' && next.stage === 'running')
         return false;
-      return transition(id, previous, next, release);
+      return transition(id, previous, next);
     };
     await expect(
       service.fix(actorId, request(), signal())
@@ -424,6 +309,63 @@ describe('citation AI operation protocol', () => {
     expect(dependencies.deduct).not.toHaveBeenCalled();
   });
 
+  it.each(['denied', 'unavailable'])(
+    'releases the actor without provider or billing work when grounding is %s',
+    async (reason) => {
+      const { actorLocks, dependencies, service } = fixture();
+      const reserve = vi.mocked(dependencies.reserveGrounding);
+      if (reason === 'denied') reserve.mockResolvedValueOnce(false);
+      else reserve.mockRejectedValueOnce(new Error('Storage unavailable'));
+      await expect(
+        service.fix(actorId, request(), signal())
+      ).rejects.toMatchObject({
+        code: 'AI_UNAVAILABLE',
+        status: 503,
+        billingStatus: undefined,
+      });
+      expect(actorLocks.has(actorId)).toBe(false);
+      expect(dependencies.generate).not.toHaveBeenCalled();
+      expect(dependencies.deduct).not.toHaveBeenCalled();
+      await expect(
+        service.fix(
+          actorId,
+          { ...request(), operationId: operationId(now, '2') },
+          signal()
+        )
+      ).resolves.toMatchObject({ billing: { status: 'settled' } });
+    }
+  );
+
+  it('reserves grounding before the SDK and charges for output when the registry fails', async () => {
+    const { dependencies, service } = fixture();
+    dependencies.generate = vi.fn(async () => ({
+      value: { ...work, doi: '10.1234/synthetic' },
+      usage,
+    }));
+    dependencies.ground = vi.fn(async () => {
+      throw new Error('Registry unavailable');
+    });
+    await expect(
+      service.fix(
+        actorId,
+        {
+          ...request(),
+          input: 'Check DOI 10.1234/synthetic',
+        },
+        signal()
+      )
+    ).resolves.toMatchObject({
+      grounding: [{ field: 'doi', status: 'unverified' }],
+      billing: { status: 'settled' },
+    });
+    expect(dependencies.reserveGrounding).toHaveBeenCalledTimes(1);
+    expect(dependencies.reserveGrounding).toHaveBeenCalledBefore(
+      dependencies.generate
+    );
+    expect(dependencies.ground).toHaveBeenCalledTimes(1);
+    expect(dependencies.deduct).toHaveBeenCalledTimes(1);
+  });
+
   it('cancels before provider start without charging', async () => {
     const { dependencies, service } = fixture();
     const controller = new AbortController();
@@ -506,6 +448,7 @@ describe('citation AI operation protocol', () => {
     await expect(
       service.fix(actorId, request(), signal())
     ).rejects.toMatchObject({ code: 'BILLING_PENDING' });
+    dependencies.now = () => now + 180_000;
     await expect(
       service.fix(actorId, request(), signal())
     ).rejects.toMatchObject({ code: 'BILLING_PENDING' });
@@ -523,10 +466,8 @@ describe('citation AI operation protocol', () => {
   it('does not deduct if it cannot acquire the settling fence', async () => {
     const { dependencies, service, operations } = fixture();
     const transition = operations.transition;
-    operations.transition = async (id, previous, next, release) =>
-      next.stage === 'settling'
-        ? false
-        : transition(id, previous, next, release);
+    operations.transition = async (id, previous, next) =>
+      next.stage === 'settling' ? false : transition(id, previous, next);
     await expect(
       service.fix(actorId, request(), signal())
     ).rejects.toMatchObject({ code: 'BILLING_PENDING' });
@@ -537,9 +478,9 @@ describe('citation AI operation protocol', () => {
   it('reports billing uncertainty if storage fails after reported provider usage', async () => {
     const { dependencies, service, operations } = fixture();
     const transition = operations.transition;
-    operations.transition = async (id, previous, next, release) => {
+    operations.transition = async (id, previous, next) => {
       if (next.stage === 'checkpoint') throw new Error('store unreachable');
-      return transition(id, previous, next, release);
+      return transition(id, previous, next);
     };
     await expect(
       service.fix(actorId, request(), signal())

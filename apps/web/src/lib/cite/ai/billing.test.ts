@@ -269,6 +269,23 @@ describe('citation feature and personal credit admission', () => {
     expect(mocked.deduct).not.toHaveBeenCalled();
   });
 
+  it('checks the ledger for an older retained receipt within the recovery window', async () => {
+    const id = operationIdAt(lookupNow - 60 * 60_000);
+    const query = row([]);
+    mocked.from.mockReturnValue(query);
+    expect(await readCitationDurableCharge(id, binding)).toEqual({
+      kind: 'unavailable',
+    });
+    expect(mocked.from).not.toHaveBeenCalled();
+    expect(await readCitationDurableCharge(id, binding, true)).toEqual({
+      kind: 'absent',
+    });
+    expect(query.gte).toHaveBeenCalledWith(
+      'created_at',
+      '2026-11-16T10:58:00.000Z'
+    );
+  });
+
   it('keeps the original admissible operation timestamp as the lower bound on same-ID replay', async () => {
     const oldestAccepted = operationIdAt(lookupNow - 15 * 60000);
     const query = timedLedger('2026-11-16T11:46:00.000Z', oldestAccepted);
