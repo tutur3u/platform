@@ -1,5 +1,6 @@
 import 'server-only';
 
+import { createAdminClient } from '@tuturuuu/supabase/next/server';
 import {
   normalizeWorkspaceId,
   verifyWorkspaceMembershipType,
@@ -10,6 +11,8 @@ import { NextResponse } from 'next/server';
 import { z } from 'zod';
 import type { SessionAuthContext } from '@/lib/api-auth';
 import type { CitationLibraryScope } from './contracts';
+import { createCitationLibraryService } from './service';
+import { type CitationLibraryDatabase, getCitationLibraryStore } from './store';
 
 type ScopeResult =
   | { ok: true; scope: CitationLibraryScope }
@@ -61,5 +64,17 @@ export async function authorizeCitationLibrary(
       ok: false,
       response: NextResponse.json({ error: 'FORBIDDEN' }, { status: 403 }),
     };
-  return { ok: true, scope: { wsId, actorId: auth.user.id } };
+  return {
+    ok: true,
+    scope: { wsId: wsId.toLowerCase(), actorId: auth.user.id },
+  };
+}
+
+export async function createAuthorizedCitationLibraryService(
+  scope: CitationLibraryScope
+) {
+  const admin = await createAdminClient<CitationLibraryDatabase>({
+    noCookie: true,
+  });
+  return createCitationLibraryService(getCitationLibraryStore(admin, scope));
 }

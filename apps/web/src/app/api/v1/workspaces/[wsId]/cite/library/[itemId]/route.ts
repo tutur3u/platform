@@ -1,7 +1,10 @@
 import { connection, NextResponse } from 'next/server';
 import { z } from 'zod';
 import { withSessionAuth } from '@/lib/api-auth';
-import { authorizeCitationLibrary } from '@/lib/cite/library/authorization';
+import {
+  authorizeCitationLibrary,
+  createAuthorizedCitationLibraryService,
+} from '@/lib/cite/library/authorization';
 import {
   CitationLibraryError,
   deleteLibraryItemSchema,
@@ -11,8 +14,6 @@ import {
   LIBRARY_RESPONSE_HEADERS,
   readLibraryBody,
 } from '@/lib/cite/library/http';
-import { createCitationLibraryService } from '@/lib/cite/library/service';
-import { getCitationLibraryStore } from '@/lib/cite/library/store';
 
 type Params = { wsId: string; itemId: string };
 const options = { allowAppSessionAuth: true, maxPayloadSize: 65536 };
@@ -27,9 +28,8 @@ export const GET = withSessionAuth<Params>(async (request, auth, params) => {
     await connection();
     const access = await authorizeCitationLibrary(request, auth, params.wsId);
     if (!access.ok) return access.response;
-    const item = await createCitationLibraryService(
-      getCitationLibraryStore(auth.supabase)
-    ).get(access.scope, itemId(params.itemId));
+    const service = await createAuthorizedCitationLibraryService(access.scope);
+    const item = await service.get(access.scope, itemId(params.itemId));
     return NextResponse.json({ item }, { headers: LIBRARY_RESPONSE_HEADERS });
   } catch (error) {
     return citationLibraryErrorResponse(error);
@@ -40,9 +40,8 @@ export const PATCH = withSessionAuth<Params>(async (request, auth, params) => {
   try {
     const access = await authorizeCitationLibrary(request, auth, params.wsId);
     if (!access.ok) return access.response;
-    const item = await createCitationLibraryService(
-      getCitationLibraryStore(auth.supabase)
-    ).update(
+    const service = await createAuthorizedCitationLibraryService(access.scope);
+    const item = await service.update(
       access.scope,
       itemId(params.itemId),
       await readLibraryBody(request)
@@ -61,9 +60,12 @@ export const DELETE = withSessionAuth<Params>(async (request, auth, params) => {
       await readLibraryBody(request)
     );
     if (!body.success) throw new CitationLibraryError('INVALID_INPUT', 400);
-    await createCitationLibraryService(
-      getCitationLibraryStore(auth.supabase)
-    ).remove(access.scope, itemId(params.itemId), body.data.expectedVersion);
+    const service = await createAuthorizedCitationLibraryService(access.scope);
+    await service.remove(
+      access.scope,
+      itemId(params.itemId),
+      body.data.expectedVersion
+    );
     return new NextResponse(null, {
       status: 204,
       headers: LIBRARY_RESPONSE_HEADERS,
