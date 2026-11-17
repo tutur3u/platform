@@ -145,12 +145,12 @@ async function completeTeamOnboarding(
   await workspaceSelector.click();
   // Revealing the sidebar section opens the picker once workspaces load.
   const workspacePicker = page.getByRole('dialog', {
-    name: 'Workspaces',
+    name: 'Select workspace',
     exact: true,
   });
   await expect(workspacePicker).toBeVisible({ timeout: 60_000 });
   await workspacePicker
-    .getByRole('button', { name: 'Create', exact: true })
+    .getByRole('button', { name: 'Create Workspace', exact: true })
     .click();
 
   const createWorkspaceDialog = page.getByRole('dialog', {
