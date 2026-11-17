@@ -1,187 +1,37 @@
 import assert from 'node:assert/strict';
-import { createHash } from 'node:crypto';
+import { closedRecord } from './release-recipe-config.mjs';
+import { performance } from 'node:perf_hooks';
 import {
-  closedRecord,
-  validateReleaseRecipe,
-} from './release-recipe-config.mjs';
+  safeData,
+  validateCfPayload,
+  cfPhaseKey,
+} from './release-cf-queue-payload.mjs';
+import { RecipeFailure, failureCause } from './release-cf-queue-errors.mjs';
+export {
+  cfQueueJob,
+  cfPhaseKey,
+  payloadDigest,
+  recipeDigest,
+  submitCfJob,
+  stopCfJob,
+} from './release-cf-queue-payload.mjs';
+export { RecipeFailure } from './release-cf-queue-errors.mjs';
 
-const phases = ['seal', 'publish', 'doctor', 'rollback'];
-const digestPattern = /^[a-f0-9]{64}$/;
-function canonical(value) {
-  if (Array.isArray(value)) return value.map(canonical);
-  if (value && typeof value === 'object')
-    return Object.fromEntries(
-      Object.keys(value)
-        .sort()
-        .map((key) => [key, canonical(value[key])])
-    );
-  return value;
-}
-export function payloadDigest(value) {
-  return createHash('sha256')
-    .update(JSON.stringify(canonical(value)))
-    .digest('hex');
-}
-function requirePort(authority, methods) {
-  assert.ok(authority, 'Deploy authority unavailable');
-  for (const method of methods)
-    assert.equal(
-      typeof authority[method],
-      'function',
-      `Deploy authority unavailable: ${method}`
-    );
-}
-export function cfQueueJob(record, account, input) {
-  validateReleaseRecipe(record);
-  assert.equal(record.platform, 'cf-wave1');
-  closedRecord(input, [
-    'operationId',
-    'repository',
-    'sourceSha',
-    'recipeSha256',
-    'configSha256',
-    'requestedPhases',
-    'artifact',
-    'requirements',
-    'authorizationRefs',
-    'rollback',
-    'provenance',
-    'checkpointRef',
-  ]);
-  closedRecord(input.requirements, [
-    'os',
-    'arch',
-    'toolchain',
-    'capabilities',
-    'cpu',
-    'ramMiB',
-    'diskMiB',
-    'maxDurationMs',
-    'maxInfrastructureRetries',
-  ]);
-  for (const key of ['os', 'arch', 'toolchain'])
-    assert.ok(
-      typeof input.requirements[key] === 'string' &&
-        input.requirements[key].length > 0
-    );
-  assert.ok(
-    Array.isArray(input.requirements.capabilities) &&
-      input.requirements.capabilities.every(
-        (value) => typeof value === 'string'
-      )
-  );
-  for (const key of ['cpu', 'ramMiB', 'diskMiB'])
-    assert.ok(
-      Number.isInteger(input.requirements[key]) && input.requirements[key] > 0
-    );
-  closedRecord(input.provenance, ['actor', 'owningThread']);
-  assert.match(account, /^[a-f0-9]{32}$/);
-  assert.match(input.sourceSha, /^[a-f0-9]{40}$/);
-  assert.match(input.recipeSha256, digestPattern);
-  assert.match(input.configSha256, digestPattern);
-  assert.equal(
-    input.configSha256,
-    payloadDigest(record),
-    'Config digest differs'
-  );
-  assert.match(input.operationId, /^[A-Za-z0-9:_-]{1,128}$/);
-  assert.match(input.repository, /^[A-Za-z0-9_.-]+\/[A-Za-z0-9_.-]+$/);
-  assert.ok(
-    Array.isArray(input.requestedPhases) && input.requestedPhases.length > 0
-  );
-  assert.deepEqual(
-    input.requestedPhases,
-    phases.filter((phase) => input.requestedPhases.includes(phase)),
-    'Unknown, duplicate or reordered phases'
-  );
-  assert.ok(
-    input.authorizationRefs?.length > 0,
-    'Authorization references required'
-  );
-  assert.ok(input.provenance?.actor && input.provenance?.owningThread);
-  assert.ok(
-    input.requirements &&
-      Number.isInteger(input.requirements.maxDurationMs) &&
-      input.requirements.maxDurationMs > 0 &&
-      input.requirements.maxDurationMs <= 3600000
-  );
-  assert.ok(
-    Number.isInteger(input.requirements.maxInfrastructureRetries) &&
-      input.requirements.maxInfrastructureRetries >= 0 &&
-      input.requirements.maxInfrastructureRetries <= 2
-  );
-  if (input.requestedPhases.some((phase) => phase !== 'seal')) {
-    closedRecord(input.artifact, ['id', 'sha256']);
-    assert.ok(input.artifact?.id, 'Immutable artifact required');
-    assert.match(input.artifact.sha256, digestPattern);
-  }
-  if (input.requestedPhases.includes('rollback')) {
-    closedRecord(input.rollback, ['deploymentId', 'authorizationRef', 'scope']);
-    assert.equal(input.rollback.scope, 'recorded-preimage');
-    assert.ok(
-      input.rollback.deploymentId && input.rollback.authorizationRef,
-      'Authorized recorded rollback target required'
-    );
-  }
-  return structuredClone({
-    schemaVersion: 1,
-    operationId: input.operationId,
-    jobType: 'cf-wave1',
-    repository: input.repository,
-    sourceSha: input.sourceSha,
-    recipeSha256: input.recipeSha256,
-    configSha256: input.configSha256,
-    target: {
-      provider: 'cloudflare',
-      account,
-      project: record.cf.productionWorker,
-      app: record.app,
-      environment: 'production',
-    },
-    requestedPhases: [...input.requestedPhases],
-    artifact: input.artifact ?? null,
-    requirements: input.requirements,
-    authorizationRefs: input.authorizationRefs,
-    rollback: input.rollback ?? null,
-    provenance: input.provenance,
-    checkpointRef: input.checkpointRef ?? null,
-  });
-}
-export async function submitCfJob(authority, payload) {
-  requirePort(authority, ['submit']);
-  return authority.submit(structuredClone(payload));
-}
-export async function stopCfJob(authority, jobId, expectedRevision) {
-  requirePort(authority, ['requestStop']);
-  assert.ok(Number.isInteger(expectedRevision) && expectedRevision >= 0);
-  return authority.requestStop(jobId, expectedRevision);
-}
-export function cfPhaseKey(payload, phase) {
-  assert.ok(phases.includes(phase) && payload.requestedPhases.includes(phase));
-  return payloadDigest({
-    operationId: payload.operationId,
-    canonicalTarget: payload.target,
-    sourceSha: payload.sourceSha,
-    artifactDigest: payload.artifact?.sha256 ?? null,
-    phase,
-  });
-}
-function sameGrant(previous, current) {
-  for (const key of [
-    'jobId',
-    'attemptId',
-    'workerId',
-    'targetLockId',
-    'leaseDeadline',
-  ])
-    assert.ok(
-      typeof current?.[key] === 'string' && current[key].length > 0,
-      `Missing authority grant: ${key}`
-    );
-  assert.ok(Number.isInteger(current.epoch) && current.epoch > 0);
-  assert.ok(
-    Number.isInteger(current.stopRevision) && current.stopRevision >= 0
-  );
+function confirmGrant(previous, current, phase) {
+  safeData(current);
+  for (const key of ['jobId', 'attemptId', 'workerId', 'targetLockId'])
+    if (
+      typeof current?.[key] !== 'string' ||
+      !/^[A-Za-z0-9:._/-]{1,256}$/.test(current[key])
+    )
+      throw new RecipeFailure('GRANT_INVALID', phase, 'fence');
+  if (
+    !Number.isInteger(current?.epoch) ||
+    current.epoch < 1 ||
+    !Number.isInteger(current?.stopRevision) ||
+    current.stopRevision < 0
+  )
+    throw new RecipeFailure('GRANT_INVALID', phase, 'fence');
   for (const key of [
     'jobId',
     'attemptId',
@@ -189,23 +39,122 @@ function sameGrant(previous, current) {
     'epoch',
     'targetLockId',
     'stopRevision',
-  ])
-    assert.equal(current?.[key], previous[key], `Rejected fence: ${key}`);
-  assert.ok(current.leaseDeadline, 'Authority lease confirmation required');
+  ]) {
+    if (!current?.[key] || (key === 'stopRevision' && current[key] === 0)) {
+      if (key !== 'stopRevision' || current?.[key] !== 0)
+        throw new RecipeFailure('GRANT_INVALID', phase, 'fence');
+    }
+    if (current[key] !== previous[key])
+      throw new RecipeFailure('STALE_GRANT', phase, 'fence');
+  }
+  const lease = Date.parse(current.leaseDeadline);
+  if (!Number.isFinite(lease) || lease <= Date.now())
+    throw new RecipeFailure('LEASE_EXPIRED', phase, 'fence');
+  return lease - Date.now();
 }
 function matchesReceipt(receipt, payload, phase, grant) {
-  assert.equal(receipt.operationId, payload.operationId);
-  assert.equal(receipt.sourceSha, payload.sourceSha);
-  assert.equal(receipt.recipeSha256, payload.recipeSha256);
-  assert.equal(receipt.configSha256, payload.configSha256);
+  safeData(receipt);
+  closedRecord(receipt, [
+    'schemaVersion',
+    'jobId',
+    'operationId',
+    'attemptId',
+    'epoch',
+    'sourceSha',
+    'recipeSha256',
+    'configSha256',
+    'artifactDigest',
+    'canonicalTarget',
+    'phase',
+    'status',
+    'guardCode',
+    'guardPhase',
+    'failureClass',
+    'cause',
+    'startedAt',
+    'finishedAt',
+    'executorHost',
+    'approvalRefs',
+    'providerOperationId',
+    'deploymentId',
+    'verificationRefs',
+    'rollback',
+    'nextAllowedPhase',
+  ]);
+  assert.equal(receipt.schemaVersion, 1);
+  for (const key of ['jobId', 'attemptId', 'executorHost', 'guardPhase']) {
+    assert.equal(typeof receipt[key], 'string');
+    assert.match(receipt[key], /^[A-Za-z0-9:._/-]{1,256}$/);
+  }
+  assert.ok(Number.isInteger(receipt.epoch) && receipt.epoch > 0);
+  assert.ok(
+    [
+      'queued',
+      'admitted',
+      'running',
+      'awaiting_approval',
+      'reconciling',
+      'succeeded',
+      'failed',
+      'stopped',
+      'unknown',
+    ].includes(receipt.status)
+  );
+  assert.match(receipt.guardCode, /^[A-Z][A-Z0-9_]{0,63}$/);
+  assert.ok(Number.isFinite(Date.parse(receipt.startedAt)));
+  assert.ok(
+    receipt.finishedAt === null ||
+      Number.isFinite(Date.parse(receipt.finishedAt))
+  );
+  assert.ok(
+    receipt.failureClass === null || typeof receipt.failureClass === 'string'
+  );
+  if (receipt.cause !== null) {
+    closedRecord(receipt.cause, [
+      'guardCode',
+      'guardPhase',
+      'failureClass',
+      'terminal',
+      'providerContacted',
+    ]);
+    assert.match(receipt.cause.guardCode, /^[A-Z][A-Z0-9_]{0,63}$/);
+    for (const key of ['guardPhase', 'failureClass']) {
+      assert.equal(typeof receipt.cause[key], 'string');
+      assert.match(receipt.cause[key], /^[A-Za-z0-9_-]{1,64}$/);
+    }
+    assert.equal(typeof receipt.cause.terminal, 'boolean');
+    assert.equal(typeof receipt.cause.providerContacted, 'boolean');
+  }
+  for (const key of ['providerOperationId', 'deploymentId'])
+    if (receipt[key] !== null) {
+      assert.equal(typeof receipt[key], 'string');
+      assert.match(receipt[key], /^[A-Za-z0-9:._/-]{1,256}$/);
+    }
+  assert.ok(Array.isArray(receipt.verificationRefs));
+  for (const ref of receipt.verificationRefs) {
+    assert.equal(typeof ref, 'string');
+    assert.match(ref, /^[A-Za-z0-9:._/-]{1,256}$/);
+  }
+  assert.deepEqual(receipt.approvalRefs, payload.authorizationRefs);
+  assert.deepEqual(receipt.rollback, payload.rollback);
+  assert.ok(
+    receipt.nextAllowedPhase === null ||
+      ['seal', 'publish', 'doctor', 'rollback'].includes(
+        receipt.nextAllowedPhase
+      )
+  );
+  for (const key of [
+    'operationId',
+    'sourceSha',
+    'recipeSha256',
+    'configSha256',
+  ])
+    assert.equal(receipt[key], payload[key]);
   assert.equal(receipt.artifactDigest, payload.artifact?.sha256 ?? null);
   assert.deepEqual(receipt.canonicalTarget, payload.target);
   assert.equal(receipt.phase, phase);
   assert.equal(receipt.jobId, grant.jobId);
 }
-// beginPhase confirms current authority time, approval scope, immutable inputs,
-// predecessor receipt, worker eligibility, target lock and durable stop revision.
-// A grant alone is not permission to invoke an executor.
 export async function runCfPhase({
   authority,
   payload,
@@ -214,8 +163,9 @@ export async function runCfPhase({
   execute,
   now = () => new Date().toISOString(),
 }) {
+  validateCfPayload(payload);
+  safeData(grant);
   const phaseKey = cfPhaseKey(payload, phase);
-  const startedAt = now();
   const receipt = {
     schemaVersion: 1,
     jobId: grant.jobId,
@@ -231,7 +181,9 @@ export async function runCfPhase({
     status: 'running',
     guardCode: 'PHASE_RUNNING',
     guardPhase: phase,
-    startedAt,
+    failureClass: null,
+    cause: null,
+    startedAt: new Date(now()).toISOString(),
     finishedAt: null,
     executorHost: grant.workerId,
     approvalRefs: payload.authorizationRefs,
@@ -241,69 +193,161 @@ export async function runCfPhase({
     rollback: payload.rollback,
     nextAllowedPhase: null,
   };
-  let effectStarted = false;
+  let intent = false,
+    fenceValid = false,
+    effectStarted = false,
+    executorCompleted = false,
+    fenceRejected = false;
+  const controller = new AbortController();
+  let timer;
+  let rejectTimeout;
+  const timeout = new Promise((_, reject) => {
+    rejectTimeout = reject;
+  });
+  let deadline = performance.now() + payload.requirements.maxDurationMs;
+  function arm(leaseMs) {
+    deadline = Math.min(deadline, performance.now() + leaseMs);
+    clearTimeout(timer);
+    timer = setTimeout(
+      () => {
+        const error = new RecipeFailure('DEADLINE_EXCEEDED', phase, 'timeout', {
+          terminal: false,
+          providerContacted: effectStarted,
+        });
+        controller.abort(error);
+        Promise.resolve()
+          .then(() => authority.requestStop(grant.jobId, grant.stopRevision))
+          .catch(() => {});
+        rejectTimeout(error);
+      },
+      Math.max(0, deadline - performance.now())
+    );
+  }
+  async function checkFence() {
+    if (controller.signal.aborted) throw controller.signal.reason;
+    try {
+      const current = await Promise.race([authority.renew(grant), timeout]);
+      arm(confirmGrant(grant, current, phase));
+    } catch (error) {
+      fenceValid = false;
+      fenceRejected = true;
+      controller.abort(error);
+      throw error;
+    }
+  }
   try {
-    requirePort(authority, ['beginPhase', 'renew', 'checkpoint']);
+    for (const method of ['beginPhase', 'renew', 'checkpoint'])
+      if (typeof authority?.[method] !== 'function')
+        throw new RecipeFailure('AUTHORITY_UNAVAILABLE', phase, 'authority');
     assert.equal(typeof execute, 'function');
-    const begun = await authority.beginPhase({
-      grant,
-      payload,
-      phase,
-      phaseKey,
-    });
-    sameGrant(grant, begun.grant);
+    arm(confirmGrant(grant, grant, phase));
+    const begun = await Promise.race([
+      authority.beginPhase({ grant, payload, phase, phaseKey }),
+      timeout,
+    ]);
     if (begun.receipt) {
       matchesReceipt(begun.receipt, payload, phase, grant);
-      assert.ok(['succeeded', 'unknown'].includes(begun.receipt.status));
       return begun.receipt;
     }
-    sameGrant(grant, await authority.renew(grant));
+    arm(confirmGrant(grant, begun.grant, phase));
+    intent = true;
+    fenceValid = true;
+    await checkFence();
     effectStarted = true;
-    const outcome = await execute({
-      payload: structuredClone(payload),
-      phase,
-      phaseKey,
-    });
+    const outcome = await Promise.race([
+      execute({
+        payload: structuredClone(payload),
+        phase,
+        phaseKey,
+        signal: controller.signal,
+        checkFence,
+      }),
+      timeout,
+    ]);
+    executorCompleted = true;
+    safeData(outcome);
     assert.ok(outcome && typeof outcome === 'object');
-    if (outcome.providerOperationId !== undefined) {
-      assert.equal(typeof outcome.providerOperationId, 'string');
-      receipt.providerOperationId = outcome.providerOperationId;
-    }
-    if (outcome.deploymentId !== undefined) {
-      assert.equal(typeof outcome.deploymentId, 'string');
-      receipt.deploymentId = outcome.deploymentId;
-    }
-    if (phase === 'rollback')
-      assert.equal(
-        outcome.deploymentId,
-        payload.rollback.deploymentId,
-        'Rollback readback differs from recorded target'
-      );
+    const keys = Object.keys(outcome);
     assert.ok(
-      Array.isArray(outcome.verificationRefs) &&
-        outcome.verificationRefs.length > 0,
-      'Readback evidence required'
+      keys.every((key) =>
+        ['providerOperationId', 'deploymentId', 'verificationRefs'].includes(
+          key
+        )
+      )
     );
+    for (const key of ['providerOperationId', 'deploymentId'])
+      if (outcome[key] !== undefined) {
+        assert.equal(typeof outcome[key], 'string');
+        assert.match(outcome[key], /^[A-Za-z0-9:._/-]{1,256}$/);
+        receipt[key] = outcome[key];
+      }
+    if (
+      !Array.isArray(outcome.verificationRefs) ||
+      outcome.verificationRefs.length === 0
+    )
+      throw new RecipeFailure('READBACK_MISSING', phase, 'verification', {
+        providerContacted: true,
+      });
+    for (const ref of outcome.verificationRefs) {
+      assert.equal(typeof ref, 'string');
+      assert.match(ref, /^[A-Za-z0-9:._/-]{1,256}$/);
+    }
+    if (
+      phase === 'rollback' &&
+      outcome.deploymentId !== payload.rollback.deploymentId
+    )
+      throw new RecipeFailure(
+        'ROLLBACK_READBACK_MISMATCH',
+        phase,
+        'verification',
+        { providerContacted: true }
+      );
     receipt.verificationRefs = outcome.verificationRefs;
-    sameGrant(grant, await authority.renew(grant));
-    receipt.status = 'succeeded';
-    receipt.guardCode = 'PHASE_VERIFIED';
-    receipt.finishedAt = now();
-    const committed = await authority.checkpoint({ grant, phaseKey, receipt });
+    await checkFence();
+    Object.assign(receipt, {
+      status: 'succeeded',
+      guardCode: 'PHASE_VERIFIED',
+      finishedAt: new Date(now()).toISOString(),
+    });
+    matchesReceipt(receipt, payload, phase, grant);
+    const committed = await Promise.race([
+      authority.checkpoint({ grant, phaseKey, receipt }),
+      timeout,
+    ]);
     matchesReceipt(committed, payload, phase, grant);
     assert.deepEqual(committed, receipt);
     return committed;
-  } catch {
-    receipt.status = effectStarted ? 'unknown' : 'stopped';
-    receipt.guardCode = effectStarted
-      ? 'RECONCILIATION_REQUIRED'
-      : 'AUTHORITY_FENCE_REJECTED';
-    receipt.finishedAt = now();
-    try {
-      await authority.checkpoint({ grant, phaseKey, receipt });
-    } catch {
-      /* The durable intent remains unresolved at the authority. */
+  } catch (error) {
+    const cause = failureCause(error, phase, effectStarted);
+    safeData(cause);
+    const uncertain =
+      executorCompleted ||
+      fenceRejected ||
+      cause.providerContacted ||
+      (!cause.terminal && effectStarted) ||
+      (!intent && (cause.failureClass === 'fence' || !cause.terminal));
+    Object.assign(receipt, {
+      status: uncertain ? 'unknown' : 'failed',
+      guardCode: uncertain ? 'RECONCILIATION_REQUIRED' : cause.guardCode,
+      guardPhase: cause.guardPhase,
+      failureClass: cause.failureClass,
+      cause,
+      finishedAt: new Date(now()).toISOString(),
+    });
+    // Rejected or expired grants cannot report results against another attempt's intent.
+    if (intent && fenceValid && !controller.signal.aborted) {
+      try {
+        matchesReceipt(receipt, payload, phase, grant);
+        await Promise.race([
+          authority.checkpoint({ grant, phaseKey, receipt }),
+          timeout,
+        ]);
+      } catch {
+        /* The authority retains the unresolved intent. */
+      }
     }
     return receipt;
+  } finally {
+    clearTimeout(timer);
   }
 }
