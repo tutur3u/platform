@@ -46,6 +46,7 @@ import {
   meetRequest,
   withMeetRequest,
 } from './request-context';
+import { recordMeetPhase, timeMeetPhase } from './ssr-timing';
 
 /**
  * The public preview and the call access check read the same meeting row and
@@ -155,11 +156,17 @@ async function workspaceModel(id: string) {
   // The invitation check, the workspace lookup and the member's profile read
   // are independent network calls; running them in sequence added all three
   // latencies to TTFB. The invitation still decides first.
-  const invitationPromise = headers().then((requestHeaders) =>
-    getPendingWorkspaceInvitation(id, requestHeaders)
+  const invitationPromise = timeMeetPhase(
+    'invitation',
+    headers().then((requestHeaders) =>
+      getPendingWorkspaceInvitation(id, requestHeaders)
+    )
   );
-  const userPromise = getSatelliteCurrentUser('meet').catch(() => null);
-  const contextPromise = getMeetWorkspaceContext(id);
+  const userPromise = timeMeetPhase(
+    'profile',
+    getSatelliteCurrentUser('meet').catch(() => null)
+  );
+  const contextPromise = timeMeetPhase('context', getMeetWorkspaceContext(id));
   contextPromise.catch(() => undefined);
   const invitation = await invitationPromise.catch(async (error: unknown) => {
     await Promise.allSettled([userPromise, contextPromise]);
@@ -305,7 +312,9 @@ async function loadResolvedPageModel(url: URL) {
         ? 'en'
         : await getLocale();
   if (segments[0] === 'en' || segments[0] === 'vi') segments.shift();
+  const actorStartedAt = performance.now();
   const actor = await getSatelliteAppSessionUser('meet');
+  if (actor) recordMeetPhase('actor', performance.now() - actorStartedAt);
   const params: Record<string, string> = { locale };
   if (segments[0] === 'r' && segments[1]) params.code = segments[1];
   else if (segments[0] === 'plans' && segments[1]) params.planId = segments[1];
@@ -395,7 +404,7 @@ async function loadResolvedPageModel(url: URL) {
   // the workspace instead of after it.
   const hostingPromise =
     segments[1] === 'meetings' && segments.length === 2 && actor
-      ? hostingModel(actor.id)
+      ? timeMeetPhase('hosting', hostingModel(actor.id))
       : Promise.resolve({ canCreate: false, unavailable: false });
   hostingPromise.catch(() => undefined);
   const workspace = await workspaceModel(workspaceId).catch(

@@ -13,6 +13,7 @@ import { nativeFunctionProxy } from './native-function-proxy';
 import { dispatchThroughMeetProxy } from './proxy-bridge';
 import { publicAssets } from './public-assets';
 import { classifyMeetSsrRequest, observeMeetSsr } from './ssr-diagnostics';
+import { withMeetServerTiming } from './ssr-timing';
 import type { MeetExecutionContext, MeetRuntimeBindings } from './worker-port';
 
 export function handleMeetRequest(
@@ -88,6 +89,7 @@ function dispatchMeetRequest(
       return observeMeetSsr(
         'handler',
         async () => {
+          const startedAt = performance.now();
           const response = await start.fetch(
             new Request(request.url, forwarded)
           );
@@ -96,7 +98,7 @@ function dispatchMeetRequest(
           } catch {
             /* Diagnostic inspection cannot replace Start's returned Response. */
           }
-          return response;
+          return withMeetServerTiming(response, performance.now() - startedAt);
         },
         { scope, stage: 'start' }
       );
