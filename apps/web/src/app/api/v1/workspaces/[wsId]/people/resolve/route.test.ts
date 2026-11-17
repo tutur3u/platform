@@ -11,11 +11,16 @@ const state = vi.hoisted(() => ({
   filters: [] as string[],
   conditions: [] as [string, unknown][],
   tables: [] as string[],
+  missingMailBlocked: false,
+  contactSelects: [] as string[],
 }));
 
 class Query {
+  private columns = '';
   constructor(private table: string) {}
-  select() {
+  select(columns = '') {
+    this.columns = columns;
+    if (this.table === 'workspace_users') state.contactSelects.push(columns);
     return this;
   }
   eq(field: string, value: unknown) {
@@ -35,7 +40,20 @@ class Query {
   limit() {
     return this;
   }
-  then(resolve: (value: { data: unknown[]; error: Error | null }) => unknown) {
+  then(
+    resolve: (value: {
+      data: unknown[] | null;
+      error: Error | { code: string } | null;
+    }) => unknown
+  ) {
+    if (
+      state.missingMailBlocked &&
+      this.table === 'workspace_users' &&
+      this.columns.includes('mail_blocked')
+    )
+      return Promise.resolve({ data: null, error: { code: '42703' } }).then(
+        resolve
+      );
     const data =
       this.table === 'workspace_secrets'
         ? state.hidden.map((name) => ({ name }))
@@ -127,6 +145,8 @@ describe('workspace people resolve route', () => {
     state.filters = [];
     state.conditions = [];
     state.tables = [];
+    state.missingMailBlocked = false;
+    state.contactSelects = [];
   });
 
   it('leaves unauthenticated requests to the session boundary', async () => {
@@ -199,5 +219,17 @@ describe('workspace people resolve route', () => {
     const response = await resolve({ emails: ['test@example.com'] });
     expect(response.status).toBe(500);
     expect(state.tables).toEqual(['workspace_secrets']);
+  });
+
+  it('resolves contacts without the blocked flag before its migration applies', async () => {
+    state.missingMailBlocked = true;
+    const response = await resolve({ emails: ['test@example.com'] });
+    expect(response.status).toBe(200);
+    expect(state.contactSelects).toEqual([
+      'id, display_name, full_name, email, avatar_url, mail_blocked',
+      'id, display_name, full_name, email, avatar_url',
+    ]);
+    const { data } = await response.json();
+    expect(data[0].kind).toBe('member');
   });
 });

@@ -9,6 +9,7 @@ import { normalizeWorkspaceId } from '@/lib/workspace-helper';
 import type { PersonCandidate } from '@/lib/workspace-people';
 import {
   exactEmailPattern,
+  isMissingColumnError,
   parsePeopleResolve,
   projectResolvedPeople,
 } from '@/lib/workspace-people-resolve';
@@ -95,19 +96,28 @@ export const POST = withSessionAuth<{ wsId: string }>(
         }
       }
       if (privateContacts && !visibility.hideEmail) {
-        const contacts = await supabase
-          .from('workspace_users')
-          .select(
-            'id, display_name, full_name, email, avatar_url, mail_blocked'
-          )
-          .eq('ws_id', wsId)
-          .eq('archived', false)
-          .or(emailFilter)
-          .order('created_at')
-          .limit(500);
+        const selectContacts = (columns: string) =>
+          supabase
+            .from('workspace_users')
+            .select(columns)
+            .eq('ws_id', wsId)
+            .eq('archived', false)
+            .or(emailFilter)
+            .order('created_at')
+            .limit(500);
+        const baseColumns = 'id, display_name, full_name, email, avatar_url';
+        let contacts = await selectContacts(`${baseColumns}, mail_blocked`);
+        // mail_blocked arrives with a Mail migration; until it is applied,
+        // contacts resolve without the blocked flag instead of failing.
+        if (contacts.error && isMissingColumnError(contacts.error))
+          contacts = await selectContacts(baseColumns);
         if (contacts.error) throw contacts.error;
+        const contactRows = (contacts.data ?? []) as unknown as (Omit<
+          PersonCandidate,
+          'kind'
+        > & { mail_blocked?: boolean })[];
         candidates.push(
-          ...contacts.data.map((contact) => ({
+          ...contactRows.map((contact) => ({
             ...contact,
             kind: 'contact' as const,
           }))

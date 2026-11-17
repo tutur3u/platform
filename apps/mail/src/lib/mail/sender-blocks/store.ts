@@ -10,6 +10,7 @@ import {
   senderBlockCandidates,
   senderDomain,
 } from './match';
+import { isMissingSchemaError } from '../schema-compat';
 
 const MAX_BLOCKS_PER_MAILBOX = 1_000;
 const MAX_MOVED_MESSAGES = 5_000;
@@ -73,6 +74,8 @@ export async function listSenderBlocks({
     .eq('mailbox_id', mailboxId)
     .order('created_at', { ascending: false })
     .limit(MAX_BLOCKS_PER_MAILBOX);
+  // Before the sender-block migration applies, the mailbox has no blocks.
+  if (error && isMissingSchemaError(error)) return [];
   if (error) throw new Error('Failed to load sender blocks');
   return (data ?? []).map(toBlock);
 }

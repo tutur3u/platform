@@ -2,7 +2,9 @@ import { describe, expect, it, vi } from 'vitest';
 
 vi.mock('../repository/bootstrap', () => ({ requireMailboxAccess: vi.fn() }));
 
-import { isSenderBlocked } from './store';
+import { requireMailboxAccess } from '../repository/bootstrap';
+import { isMissingSchemaError } from '../schema-compat';
+import { isSenderBlocked, listSenderBlocks } from './store';
 
 function adminReturning(result: { data: unknown; error: unknown }) {
   const calls: Array<[string, unknown]> = [];
@@ -63,5 +65,46 @@ describe('isSenderBlocked', () => {
     await expect(isSenderBlocked(admin, 'm', null)).resolves.toBe(false);
     await expect(isSenderBlocked(admin, 'm', 'nope')).resolves.toBe(false);
     expect(calls).toEqual([]);
+  });
+});
+
+function listAdmin(result: { data: unknown; error: unknown }) {
+  const builder = {
+    select: () => builder,
+    eq: () => builder,
+    order: () => builder,
+    limit: () => Promise.resolve(result),
+  };
+  return { schema: () => ({ from: () => builder }) };
+}
+
+describe('listSenderBlocks before its migration applies', () => {
+  const ctx = {} as Parameters<typeof listSenderBlocks>[0]['ctx'];
+
+  it('lists no blocks when the table does not exist', async () => {
+    vi.mocked(requireMailboxAccess).mockResolvedValue({
+      admin: listAdmin({ data: null, error: { code: 'PGRST205' } }),
+    } as never);
+    await expect(listSenderBlocks({ ctx, mailboxId: 'm' })).resolves.toEqual(
+      []
+    );
+  });
+
+  it('still fails on other read errors', async () => {
+    vi.mocked(requireMailboxAccess).mockResolvedValue({
+      admin: listAdmin({ data: null, error: { code: '57014' } }),
+    } as never);
+    await expect(listSenderBlocks({ ctx, mailboxId: 'm' })).rejects.toThrow(
+      'Failed to load sender blocks'
+    );
+  });
+});
+
+describe('isMissingSchemaError', () => {
+  it('matches missing tables, columns and functions only', () => {
+    for (const code of ['42P01', '42703', '42883', 'PGRST202', 'PGRST204', 'PGRST205'])
+      expect(isMissingSchemaError({ code })).toBe(true);
+    for (const value of [{ code: '42501' }, { code: '57014' }, new Error('x'), null])
+      expect(isMissingSchemaError(value)).toBe(false);
   });
 });

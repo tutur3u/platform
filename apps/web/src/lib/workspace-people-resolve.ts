@@ -25,6 +25,15 @@ export function parsePeopleResolve(body: unknown) {
   return [...new Set(parsed.data.emails)];
 }
 
+/**
+ * Whether a query failed because a column it names does not exist yet, as
+ * when an app deploys ahead of the migration that adds the column.
+ */
+export function isMissingColumnError(error: unknown) {
+  const code = (error as { code?: unknown } | null)?.code;
+  return code === '42703' || code === 'PGRST204';
+}
+
 /** An exact, case-insensitive PostgREST `ilike` value for one address. */
 export function exactEmailPattern(email: string) {
   return `"${email.replaceAll('\\', '\\\\').replaceAll('%', '\\%').replaceAll('_', '\\_').replaceAll('"', '\\"')}"`;
