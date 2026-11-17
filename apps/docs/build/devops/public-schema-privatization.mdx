@@ -1,0 +1,654 @@
+---
+title: "Public schema privatization"
+description: "Staged plan that moves every application table, view and RPC out of the PostgREST-exposed public schema into the service-only private schema."
+updatedAt: '2026-11-17'
+audience: developers
+---
+
+The `public` schema is reachable by every browser, mobile client and holder of
+the anon key through PostgREST. Row Level Security is its only fence, and the
+schema still carries the original default privileges
+(`20230202082703_remote_commit.sql`): every new `public` table is granted
+`ALL` to `anon` and `authenticated` at creation. One missing or permissive
+policy exposes a table.
+
+The target is a `public` schema with no application relations. Application data
+lives in `private`, which `anon` and `authenticated` cannot use, and clients
+reach it only through server routes that authorize the actor first.
+
+This page is the plan. It applies no migration and is not production
+authorization: every production database change in it needs its own approval
+(see [Approvals](#approvals-and-review)).
+
+## Current state
+
+Inventory from checked-in source on 2026-11-17 (generated types in
+`packages/types/src/supabase.ts`, migrations in
+`apps/database/supabase/migrations`). Generated types are a source snapshot;
+confirm hosted catalog state on a disposable replay before each wave.
+
+| Schema | Tables | Views | Functions |
+| --- | --- | --- | --- |
+| `public` | 293 | 27 | 454 |
+| `private` | 390 | 14 | 547 |
+
+The move is an established pattern: 65 migrations named `*private*` (for
+example `20260521155712_move_more_tables_private.sql` and
+`20260528141100_move_inventory_tables_private.sql`) moved tables with
+`ALTER TABLE … SET SCHEMA private`, revoked client roles, added a
+`service_role` policy and re-pinned dependent function `search_path`s.
+`private` is listed in `[api].schemas` (`apps/database/supabase/config.toml`)
+so the server can call `.schema('private')`, while `USAGE` is revoked from
+`public`, `anon` and `authenticated`. 569 source files already use
+`.schema('private')`.
+
+### Direct callers
+
+Lexical scan of `.from('<table>')` and `.rpc('<fn>')` in `apps/*` and
+`packages/*` (TypeScript, excluding tests, `backend`, `tanstack-web`), Dart in
+`apps/mobile/lib`, and Python in `apps/discord`. A file is classified as:
+
+- **browser**: a `'use client'` module or one that imports the browser
+  Supabase client;
+- **rls**: a server module without an admin client, so the query runs as the
+  user and depends on RLS;
+- **admin**: a server module that creates a service-role client.
+
+| Surface | Direct public access today | Migration impact |
+| --- | --- | --- |
+| Web and satellite browser modules | 35 tables in modules of 15 apps/packages, 9 RPCs (`generate_cross_app_token`, `has_workspace_permission`, `get_user_workspace_subscription_info`, three `get_finance_invoice_*_by_workspace`, cross-app token validate/revoke, `get_user_whitelist_status`) | Replace with `@tuturuuu/internal-api` calls to owning routes. The [browser session-surface guard](/build/development-tools/browser-session-surface) already blocks new browser clients. |
+| Server modules on the user client (rls) | 199 tables across 31 apps/packages; heaviest in `apps/web`, `apps/tasks`, `apps/infrastructure`, `apps/finance`, `apps/teach` | Authorize with the request client, then read/write through the admin client on `private`, following the workspace-scoped write rules in the database skill. Satellites resolve actors with `getSatelliteAppSessionUser`. |
+| Server modules on the admin client | 217 tables across 40 apps/packages | Mechanical: `.from(x)` becomes `.schema('private').from(x)`. |
+| Mobile (Flutter `supabase_flutter`) | `user_private_details`, `workspace_members`, `workspaces`, `wallet_transactions`, `workspace_role_members`, `workspace_default_permissions` (11 call sites in 4 files); no RPCs, no `postgres_changes` | New `/api/v1` endpoints, a store release, and a minimum-version gate before revocation. |
+| Discord bot (Python, service role) | `workspace_boards`, `task_lists`, `tasks`, `task_assignees`, `discord_integrations`, `discord_guild_members`, `workspace_members`, `shortened_links`, `time_tracking_sessions`, `meet_together_plans` | Switch to `supabase.schema("private").table(...)` per wave; no client exposure. |
+| SDK and CLI (`packages/sdk`) | None; all calls go through `@tuturuuu/internal-api` | API contract stability only. |
+| Realtime | 0 `postgres_changes` subscriptions in TS and Dart; broadcast channels use server-issued tickets (`apps/web/src/app/api/v1/realtime/channels/route.ts`) and the Cloudflare `chat-realtime`, `hive-realtime`, `meet-realtime` Durable Objects | Drop moved tables from the `supabase_realtime` publication (notifications, task labels, legacy chat tables are still members). |
+| Workers and Edge Functions | No Worker touches `public` tables directly; there are no Supabase Edge Functions | None. |
+| Storage policies | `workspaces` bucket policies call `workspace_storage.*` helpers that read membership and role tables | Helpers must keep working for `authenticated` after Wave 8 (see [RLS helpers](#rls-helpers-and-storage-policies)). |
+
+The per-table classification is in the [appendix](#appendix-table-inventory).
+`no-ts-caller` means no lexical TypeScript, Dart or Python caller; such tables
+can still be read by SQL functions, triggers or views, so check `pg_depend` and
+function bodies before treating them as dead.
+
+### Sensitivity classes
+
+1. **Secrets, credentials and auth state**: encrypted secrets, OAuth tokens,
+   API keys, mail credentials, payment provider connections, QR login,
+   abuse/suspension controls, platform roles.
+2. **Billing and money**: subscriptions, credit balances, invoices, wallets,
+   transactions, payroll/compensation.
+3. **Mail and PII**: sent mail, audit, blacklists, notifications and push
+   devices, inquiries and feedback, user and workspace-user profiles.
+4. **Workspace content**: AI chats, meeting AI, Mira, tasks, time tracking,
+   calendars, courses, quizzes, external projects.
+5. **Public catalogs**: changelog, holidays, exchange rates, short links,
+   public polls and Meet Together plans.
+
+## Target pattern
+
+### Data access
+
+- **Tables and views** live in `private`, `ENABLE ROW LEVEL SECURITY`, with one
+  `FOR ALL TO service_role` policy and `REVOKE ALL … FROM public, anon,
+  authenticated`. Views are `security_invoker`.
+- **Server routes own access.** Each route resolves the actor, checks
+  workspace membership and permission with the request-scoped client, then uses
+  the admin client on `private` and keeps every child read and write scoped to
+  the verified workspace. Shared data access stays in `packages/internal-api`
+  and the domain `*-core` packages; framework adapters inject the client.
+  New handlers go under `apps/web/src/app/api/**`, not `legacy-api-routes/**`.
+- **RPCs.** A function that touches only private tables moves to `private`,
+  executable by `service_role` only. Functions that rely on `auth.uid()` take an
+  explicit `p_actor_id` the server resolves, and keep their internal workspace
+  checks. A `public` function survives only on the guard's function allowlist
+  (see [Guard](#guard-no-new-public-relations)) with an `auth.uid()` check,
+  pinned `search_path` ending in `pg_temp`, and explicit grants.
+- **Rollout fallback.** Production migrations apply after the production
+  deployment marker, so code ships before the move. Each moved table is read
+  through a helper that targets `private` first and falls back to `public` on
+  `42P01`, `PGRST106` or `PGRST205`, caching the resolved schema per process
+  (precedent: `packages/education-core/src/education/private-quiz-answers.ts`).
+  The fallback is removed in the next wave once the move is confirmed in
+  production. Rollback of a move therefore needs no code deploy.
+
+### Compatibility views
+
+Do not create client-granted compatibility views in `public`. A
+`security_invoker` view fails once the client loses `private` access, and a
+definer view re-creates the exposure. The only allowed form is a
+`service_role`-only `public.<name>` view over `private.<name>` when a
+service-role caller (for example the Discord bot) cannot ship in time, recorded
+on the allowlist with an expiry wave. Mobile compatibility comes from the
+release window, not from views.
+
+### Realtime
+
+Clients keep subscribing to private Broadcast channels with the server-issued
+join ticket. Mutating routes publish after commit (server fan-out through
+Realtime broadcast or the owning Durable Object). Moving a table never adds a
+`postgres_changes` subscription; the browser session-surface guard keeps that
+count at 0. Each wave removes its moved tables from the `supabase_realtime`
+publication after confirming no subscriber in the realtime log aggregation.
+
+### Mobile and SDK
+
+- Each mobile table gets a versioned `/api/v1/...` endpoint and a
+  `check-mobile-api-mappings` entry. The app switches in one release (Mobile
+  release M1) shipped before Wave 2.
+- Revocation of a mobile table waits until the `version-check` minimum
+  supported version is at or above M1 and the old-version share of authenticated
+  traffic is below the agreed threshold (default: under 2% for 14 days).
+- The SDK is unaffected at the data layer. Any route whose response shape
+  changes keeps the old shape for one minor SDK release.
+
+### RLS helpers and storage policies
+
+Policies run as the querying role. Once a table is private, any `public`
+policy, view or invoker function that reads it fails for `authenticated`. Per
+wave:
+
+1. On a disposable full replay, list dependents with `pg_depend` and scan
+   `pg_proc.prosrc` for the table name (PL/pgSQL bodies are not tracked by
+   `pg_depend`).
+2. Re-pin dependent function `search_path` to `public, private, pg_temp` or
+   qualify references.
+3. Membership and permission helpers that client-facing policies still need
+   (storage `workspaces` bucket, any remaining client RLS) move to a
+   non-exposed helper schema, following `workspace_storage`: not in
+   `[api].schemas`, `USAGE` granted to `authenticated`, functions
+   `SECURITY DEFINER` with pinned path and EXECUTE only for the roles their
+   policies run as.
+4. Re-run `security-definer-search-paths.sql`,
+   `security-definer-policy-callers.sql` and
+   `workspace-storage-least-privilege-rls.sql`.
+
+### Generated types
+
+`bun sb:typegen` already emits `public,private,storage`. After each local apply,
+regenerate and commit; shared row aliases in `packages/types/src/db.ts` point at
+`Database['private']['Tables'][…]`. Never hand-edit generated files.
+
+## Wave mechanics
+
+Every wave runs the same three phases. Each phase is a separate commit set.
+
+| Phase | Change | Production DB change | Rollback |
+| --- | --- | --- | --- |
+| A. Server-first code | Callers move to server routes / admin client with the private-first fallback; mobile endpoints added | None | Revert commit |
+| B. Revoke | `REVOKE ALL ON public.<t> FROM anon, authenticated`; drop client policies; remove from `supabase_realtime` | Yes (approval) | Prepared `rollbacks/` migration re-grants the captured ACLs and recreates the captured policies |
+| C. Move | `ALTER TABLE public.<t> SET SCHEMA private`; service-role policy; dependent `search_path` fixes; move wave RPCs; `NOTIFY pgrst, 'reload schema'`; typegen | Yes (approval) | `SET SCHEMA public` and recreate prior function definitions from the full-chain catalog; fallback keeps code working |
+
+Phase B of wave N+1 and phase C of wave N can share one migration batch and one
+approval. Migration rules:
+
+- `SET SCHEMA` takes an `ACCESS EXCLUSIVE` lock briefly: set `lock_timeout`
+  (for example `'3s'`) and keep each table move short. Keep DDL, constraint
+  validation and concurrent index work in separate files.
+- Capture ACLs including grantors and grant options, policy definitions and
+  function definitions before the change so the rollback restores exactly.
+  Never re-grant `PUBLIC` or `anon` in a rollback that did not have them.
+- Migrations that touch pg_cron targets execute the stored `cron.job.command`
+  on the disposable chain.
+- Apply locally (`bun sb:reset`) through `ttr resources run`, then typegen.
+  Production runs only through `supabase-production.yaml` after the staging
+  marker; never `bun sb:push`.
+
+### Tests per wave
+
+- **pgTAP `private-schema-client-denial.sql`** (new, extended each wave): for
+  every relation in `private`, `has_table_privilege` is false for `anon` and
+  `authenticated` on SELECT, INSERT, UPDATE, DELETE; `has_schema_privilege`
+  on `private` USAGE is false for both; every function in `private` is not
+  executable by `PUBLIC`, `anon` or `authenticated`; each wave's tables exist in
+  `private` and not in `public`.
+- **HTTP denial check** against local PostgREST: anon key and a user JWT get
+  `PGRST205`/404 for `/rest/v1/<t>` and a permission error with
+  `Accept-Profile: private`.
+- **Source "no direct client access" check** (part of the guard): no moved
+  table appears in a browser module, a Dart `.from(...)`, a Python
+  `.table(...)` without `schema("private")`, or a TypeScript `.from(...)`
+  without a preceding `.schema('private')` or the fallback helper.
+- Focused route tests for every changed route (authorization 401/403/500
+  mapping, workspace scoping, actor stamping) and the existing domain pgTAP
+  suites for moved RPCs.
+- Mobile: repository tests against the new endpoints; `flutter gen-l10n` only
+  if strings change.
+- Exact-commit CI: Web build and each touched satellite build, type-check,
+  lint, test. No local builds.
+
+## Waves
+
+ETAs are focused agent-days for implementation, review and verification,
+excluding store review and approval waits. Waves 5, 6 and 7 are independent and
+can run in parallel lanes after Wave 4.
+
+| Wave | Scope | Relations | Notable callers | Mobile | ETA |
+| --- | --- | --- | --- | --- | --- |
+| 0 | Guard, default-privilege hardening, denial tests, fallback helper | 0 moved | — | M1 started | 2 days |
+| 1 | Secrets, credentials, abuse controls | 31 | `workspace_secrets` (63 files), calendar tokens, SePay, API keys | — | 4 days |
+| 2 | Billing, credits, finance | 41 | `apps/finance` on user client; `wallet_transactions` | `wallet_transactions` (M1) | 7 days |
+| 3 | Mail, notifications, inquiries | 12 | `post_email_queue`, `notifications` publication | — | 3 days |
+| 4 | People and identity PII | 29 | `users` (68 files), `user_private_details` (51), `workspace_users` (77) | `user_private_details` (M1) | 9 days |
+| 5 | AI, meetings, memory content | 50 | AI chat, Meet AI, Mira; 15 `no-ts-caller` legacy tables | — | 4 days |
+| 6 | Tasks, time, calendar content | 77 | `tasks` (81 files), browser modules in `apps/tasks`, Discord | — | 11 days |
+| 7 | Education, external projects, public catalogs | 59 | Public reads (changelog, short links, Meet Together, polls) need cached server endpoints | — | 7 days |
+| 8 | Workspace core and RBAC | 21 | `workspaces` (193 files), `workspace_members`, roles; RLS and storage helpers | 4 tables (M1) | 12 days |
+| 9 | Function and view sweep | remaining public functions | 246 RPC names called from TS | — | 5 days |
+
+Total: about 64 agent-days serial; about 40 with Waves 5–7 parallel. Add
+production approval latency per batch and one mobile store cycle (M1) that runs
+during Waves 0–1.
+
+### Wave 0: guard and foundations
+
+- Land the [guard](#guard-no-new-public-relations) with the full current
+  allowlist (no table moves).
+- Migration: `ALTER DEFAULT PRIVILEGES FOR ROLE postgres IN SCHEMA public
+  REVOKE ALL ON TABLES FROM anon, authenticated` (and sequences, functions).
+  Existing objects are unchanged; new objects stop inheriting client grants.
+  Snapshot effective privileges first; approval required.
+- Add the pgTAP denial test, the HTTP denial check and the private-first
+  fallback helper in `@tuturuuu/supabase` (with tests).
+- Start mobile M1: endpoints for the 6 mobile tables, Flutter repository
+  switch, minimum-version plan.
+- Security review of the guard spec and default-privilege migration.
+
+### Wave 1: secrets, credentials, abuse controls
+
+Tables: `workspace_secrets`, `workspace_encryption_keys`,
+`calendar_auth_tokens`, `calendar_connections`, `calendar_sync_*`,
+`workspace_calendar_sync_coordination`, `workspace_email_credentials`,
+`workspace_api_keys`, `workspace_api_key_usage_logs`, `sepay_*`,
+`discord_integrations`, `qr_login_challenges`, `live_api_sessions`,
+`blocked_ips`, `abuse_*`, `rate_limit_appeals`, `user_suspensions`,
+`platform_*`, `workspace_domains`, `realtime_log_aggregations`,
+`internal_emails`.
+
+- Most callers are already admin-backed; user-client readers of
+  `workspace_secrets` (in 9 apps/packages) move to a shared server helper that returns
+  only the needed non-secret flags.
+- Keep the credential-filter rule: never filter by token values in PostgREST
+  URLs (`oauth-credential-url-filter.test.ts`).
+- `platform_user_roles` has one browser reader; replace with a server-resolved
+  capability.
+- Discord bot switches `discord_integrations` to `schema("private")`.
+
+### Wave 2: billing, credits, finance
+
+Tables: subscriptions, credit packs, orders, `credit_wallets`, `ai_credit_*`,
+`workspace_ai_credit_balances`, `workspace_ai_executions`, `fee_lock*`,
+`finance_*`, `wallet_*`, `transaction_*`, `recurring_transactions`,
+`workspace_wallet_transfers`, `workspace_role_wallet_whitelist`,
+`currency_exchange_rates`, products and stock, `workforce_*`, and the finance
+views.
+
+- `apps/finance` reads mostly on the user client; move those reads to
+  `packages/finance-core` / `packages/apis` services that authorize then use the
+  admin client. Browser readers (`finance_invoices`, `wallet_transactions`,
+  subscriptions, credit packs, orders) use internal-api routes.
+- The three `get_finance_invoice_*_by_workspace` browser RPCs and
+  `get_user_workspace_subscription_info` move behind routes.
+- Payment webhooks (Polar, SePay) are already service-role; only the schema
+  qualifier changes.
+- Phase B for `wallet_transactions` waits for the M1 minimum-version gate.
+
+### Wave 3: mail, notifications, inbound messages
+
+Tables: `sent_emails`, `email_audit`, `email_blacklist`, `post_email_queue`,
+`notifications`, `notification_preferences`, `notification_push_devices`,
+`workspace_email_invites`, `workspace_email_invite_roles`,
+`support_inquiries`, `user_feedbacks`, `group_users_with_post_checks`.
+
+- Remove `notifications` and `notification_preferences` from
+  `supabase_realtime`; notification delivery is server-owned
+  (`packages/ui/src/hooks/notification-subscription.ts`).
+- Email invite browser modules move to the invite routes shared with Wave 8.
+
+### Wave 4: people and identity PII
+
+Tables: `users`, `user_private_details`, `handles`, `onboarding_progress`,
+`user_configs`, `workspace_users`, `workspace_user_*`, `user_group_*`,
+`workspace_user_groups*`, `user_indicators`, `guest_users_lead_generation`,
+`tulearn_parent_*`, and the attendance/group views.
+
+- Largest PII surface. `users` and `user_private_details` have browser readers
+  in shared UI (profile, settings, account switcher); serve them from
+  `packages/users-core` routes.
+- Auth triggers that write `users` / `user_private_details` on sign-up must be
+  re-pinned and tested on the full replay with GoTrue fixtures.
+- Phase B for `user_private_details` waits for the M1 gate.
+- `workspace_user_linked_users` is read by RLS policies on other tables; move
+  its lookups into the helper schema first.
+
+### Wave 5: AI, meetings, memory content
+
+Tables: `ai_chat*`, `ai_model_favorites`, `workspace_ai_models`,
+`workspace_ai_prompts`, `meet_ai_*`, `mira_*`, `audio_chunks`,
+`recording_sessions`, `workspace_meetings`, `workspace_meet_settings`,
+`hive_*`, `aurora_*`, `crawled_*`, `notes`, `workspace_documents`,
+`workspace_whiteboards`, `workspace_dataset*`, `workspace_chat_*`.
+
+- Memory tables keep provenance, consent and deletion fences; the move changes
+  location only.
+- 15 tables have no application caller (`hive_*` runtime tables, legacy
+  `workspace_chat_*`). Confirm with `pg_depend` and function-body scans; move
+  them (not drop) in this wave, and propose drops separately.
+
+### Wave 6: tasks, time, calendar content
+
+Tables: `tasks`, `task_*`, `workspace_boards`, `board_template*`,
+`workspace_task_*`, `user_board_list_overrides`, `time_tracking_*`,
+`workspace_break_types`, `habit_*`, `workspace_habit*`,
+`workspace_calendar_*`, `workspace_cron_*`, `calendar_event_colors`.
+
+- Largest code surface (`apps/tasks`, `packages/tasks-api`, `packages/tasks-ui`,
+  `apps/calendar`, `apps/track`). Browser modules in `apps/tasks` and
+  `packages/tasks-ui` move to internal-api first.
+- Remove `workspace_task_labels` and other task tables from
+  `supabase_realtime`; board updates use broadcast fan-out.
+- Task share links and `task_board_public_links` serve anonymous readers
+  through server routes.
+- Discord bot switches boards, lists, tasks, assignees and time tracking.
+
+### Wave 7: education, external projects, public catalogs
+
+Tables: `course_*`, `workspace_course_*`, `workspace_quiz*`, `quiz_*`,
+`workspace_flashcards`, `tulearn_*`, `canonical_external_projects`,
+`workspace_external_project_*`, `discord_guild_members`, `meet_together_*`,
+`poll*`, `shortened_links*`, `link_analytics*`, `workspace_link_counts`,
+`changelog_entries`, `vietnamese_holidays`.
+
+- Anonymous readers (changelog, short-link redirects, Meet Together guests,
+  polls, published external projects) get cached server endpoints. Short-link
+  redirects keep their latency budget; verify on staging.
+
+### Wave 8: workspace core and RBAC
+
+Tables: `workspaces`, `workspace_members`, `workspace_members_and_invites`,
+`workspace_invites`, `workspace_invite_*`, `workspace_guests`,
+`workspace_guest_permissions`, `workspace_roles`, `workspace_role_*`,
+`workspace_default_permissions`, `workspace_settings`, `workspace_configs`,
+`user_workspace_configs`, `workspace_ownership_transfers`, `workspace_teams`,
+`audit_logs`.
+
+- Every remaining client policy and storage policy depends on these. Move the
+  membership and permission helpers (including `has_workspace_permission`,
+  called from browser modules) to the helper schema before Phase B.
+- Phase B for the four mobile tables waits for the M1 gate.
+- Run the full storage RLS suite and an exact-commit E2E pass on staging
+  before approval.
+
+### Wave 9: functions and views sweep
+
+- Every remaining `public` function either moves to `private` or is on the
+  function allowlist with a reason.
+- The guard enables function enforcement and the relation allowlist is empty.
+- Remove the private-first fallback helper callers; the guard then fails on
+  any fallback use.
+
+## Approvals and review
+
+- **Security review (Selene)** for: the guard spec and Wave 0 migration; each
+  wave's Phase B and C migrations, rollback migration and helper-schema
+  changes; any allowlist addition. Review uses the exact migration SHA.
+- **User approval (D138)** for every production database change. Batch to
+  limit dialogs: Wave 0 default privileges; then one dialog per batch of
+  "Phase C of wave N + Phase B of wave N+1". Each dialog states the tables,
+  the exact SHA, the staging marker, the rollback migration and the evidence
+  (pgTAP, HTTP denial, exact-commit CI).
+- Batch migration merges per wave: one combined disposable rehearsal,
+  back-to-back merges, one staging marker, one production sync.
+- Production evidence: the `supabase-production.yaml` exact-SHA result, a
+  post-apply catalog check (tables in `private`, no client privileges), and a
+  watch of 4xx/5xx rates on the affected routes. A skipped or failed workflow
+  is a blocker.
+
+## Guard: no new public relations
+
+`scripts/check-public-schema-objects.js` fails when a migration creates an
+application relation in `public` that is not on a shrink-only allowlist. It is
+enforced from the first migration version after security approval.
+
+### Allowlist
+
+`apps/database/public-schema-allowlist.json`:
+
+```json
+{
+  "effectiveFromVersion": "<first migration version after approval>",
+  "relations": {
+    "workspaces": { "kind": "table", "wave": 8 },
+    "notes": { "kind": "table", "wave": 5 }
+  },
+  "serviceRoleCompatViews": {},
+  "functions": { "enforced": false, "names": {} }
+}
+```
+
+- `relations` starts as every current `public` table and view (320 entries),
+  each tagged with its planned wave.
+- Shrink-only: in PR or push context, the guard compares with the allowlist at
+  the merge base (`GITHUB_BASE_REF`, local default `origin/main`, deepening
+  shallow clones as `check-migration-timestamps.js` does). An added key fails;
+  `serviceRoleCompatViews` entries need an `expiresAfterWave`.
+- Stale entries fail: an allowlisted name absent from the generated `public`
+  types must be removed.
+- The allowlist path is listed in `CODEOWNERS` for database and security
+  owners.
+
+### Checks
+
+1. **Generated types**: every key under `public.Tables` and `public.Views` in
+   `packages/types/src/supabase.ts` is on the allowlist.
+2. **Migration lint** over migrations with version ≥ `effectiveFromVersion`
+   (all such files, not only the diff, so a rebase cannot skip one). After
+   removing SQL comments, and scanning dollar-quoted bodies as well (to catch
+   `EXECUTE 'create table …'` text), fail on a target that resolves to
+   `public` (qualified `public.`, quoted `"public".`, or unqualified) and is
+   not allowlisted:
+   - `CREATE [UNLOGGED] TABLE [IF NOT EXISTS]`, including `PARTITION OF` and
+     `AS SELECT`;
+   - `CREATE [OR REPLACE] [MATERIALIZED|RECURSIVE] VIEW`;
+   - `SELECT … INTO` a new table;
+   - `ALTER TABLE|VIEW … SET SCHEMA public`;
+   - `ALTER TABLE|VIEW public.<allowlisted> RENAME TO <name>` where the new
+     name is not allowlisted;
+   - `CREATE FOREIGN TABLE`;
+   - `GRANT … ON [TABLE] public.<t> | ALL TABLES IN SCHEMA public TO anon |
+     authenticated | PUBLIC`, and `ALTER DEFAULT PRIVILEGES … IN SCHEMA public
+     GRANT … TO anon | authenticated | PUBLIC`.
+   Temporary tables (`CREATE TEMP|TEMPORARY TABLE`) are allowed. Unqualified
+   names are treated as `public` unless the same file sets
+   `search_path` to a schema list that does not start with `public`.
+3. **Direct client access** for relations not on the allowlist (moved):
+   fail on any browser-module reference, any Dart `.from('<t>')` in
+   `apps/mobile/lib`, any Python `.table("<t>")` in `apps/discord` without
+   `schema("private")`, and any TypeScript `.from('<t>')` not preceded within
+   the same call chain by `.schema('private')` or the fallback helper.
+4. **Functions** (from Wave 9, `functions.enforced: true`): `CREATE [OR
+   REPLACE] FUNCTION|PROCEDURE public.<name>` fails unless allowlisted.
+   Before then the guard prints new public functions as a warning.
+
+Output names the file, line, statement kind and fix ("create it in
+`private`", "remove the stale entry"). Exit 0 pass, 1 violation, 2 parse or
+setup error.
+
+### Wiring
+
+- `package.json`: `"db:public-guard": "node scripts/check-public-schema-objects.js"`.
+- `scripts/check-changed/plan.js`: select the step when migrations, the
+  allowlist, generated types, `apps/mobile/lib`, `apps/discord` or
+  `apps/*/src` / `packages/*/src` change.
+- `.github/workflows/check-migrations.yml`: run after the timestamp checks.
+- `bun check` runs it unconditionally.
+- Tests: `scripts/check-public-schema-objects.test.js` with fixtures for every
+  statement kind above, quoted identifiers, dollar-quoted bodies, comments,
+  temp tables, `search_path` handling, allowlist additions (fail), stale
+  entries (fail), shrinking (pass), compat-view expiry, and each caller rule.
+- Docs: add the guard to
+  [pre-push checks](/build/development-tools/pre-push-checks) and the
+  database skill reference when it lands.
+
+## Appendix: table inventory
+
+Counts are distinct apps or packages per caller class from the lexical scan.
+`mobile` and `discord` mark direct Flutter and Python access.
+
+<AccordionGroup>
+<Accordion title="Wave 1: secrets, credentials and abuse controls (31)">
+
+`abuse_activity_signals` (rls:1); `abuse_events` (rls:2, admin:2); `abuse_reputation_subjects` (rls:1);
+`abuse_step_up_challenges` (rls:1, admin:1); `abuse_trust_overrides` (rls:1); `blocked_ips` (rls:2, admin:1);
+`calendar_auth_tokens` (rls:4, admin:4); `calendar_connections` (rls:3, admin:4); `calendar_sync_dashboard` (rls:3,
+admin:1); `calendar_sync_states` (no-ts-caller); `discord_integrations` (discord, rls:2, admin:2); `internal_emails`
+(rls:1, admin:1); `live_api_sessions` (rls:1, admin:1); `platform_email_roles` (admin:2);
+`platform_entity_creation_limits` (admin:1); `platform_user_roles` (browser:1, rls:3, admin:4); `qr_login_challenges`
+(admin:4); `rate_limit_appeals` (rls:1, admin:1); `realtime_log_aggregations` (rls:1); `sepay_connections` (rls:2,
+admin:2); `sepay_wallet_links` (admin:2); `sepay_webhook_endpoints` (rls:2, admin:2); `sepay_webhook_events` (admin:2);
+`user_suspensions` (admin:2); `workspace_api_key_usage_logs` (rls:2, admin:3); `workspace_api_keys` (rls:2, admin:4);
+`workspace_calendar_sync_coordination` (browser:1); `workspace_domains` (rls:1); `workspace_email_credentials` (rls:4,
+admin:4); `workspace_encryption_keys` (admin:8); `workspace_secrets` (rls:9, admin:17).
+
+</Accordion>
+<Accordion title="Wave 2: billing, credits and finance (41)">
+
+`ai_credit_feature_access` (rls:1); `ai_credit_plan_allocations` (rls:2, admin:5); `ai_credit_transactions` (rls:4,
+admin:2); `credit_wallets` (rls:1); `currency_exchange_rates` (rls:1, admin:3); `distinct_invoice_creators` (view,
+no-ts-caller); `distinct_transaction_creators` (view, rls:1); `fee_lock_events` (rls:1); `fee_lock_invoice_links`
+(rls:1); `fee_lock_lines` (rls:1); `fee_lock_revisions` (rls:1); `fee_locks` (rls:1); `fee_notice_templates` (rls:1);
+`finance_budgets` (rls:1); `finance_invoice_products` (rls:2, admin:4); `finance_invoice_promotions` (rls:1, admin:3);
+`finance_invoice_user_groups` (rls:1); `finance_invoices` (browser:1, rls:3, admin:8); `product_categories` (rls:3,
+admin:4); `product_stock_changes` (rls:4, admin:2); `recurring_transactions` (rls:1); `transaction_categories` (rls:7,
+admin:6); `transaction_tags` (rls:2, admin:2); `user_group_linked_products` (rls:1, admin:3); `wallet_interest_configs`
+(rls:1); `wallet_interest_rates` (rls:1); `wallet_transaction_tags` (rls:1, admin:4); `wallet_transactions` (mobile,
+browser:1, rls:4, admin:7); `wallet_transactions_secure` (view, no-ts-caller); `wallet_types` (no-ts-caller);
+`workforce_benefits` (no-ts-caller); `workforce_compensation` (no-ts-caller); `workforce_contracts` (rls:1);
+`workspace_ai_credit_balances` (rls:1, admin:1); `workspace_ai_executions` (admin:3); `workspace_credit_pack_purchases`
+(browser:1, rls:1, admin:1); `workspace_orders` (browser:1, rls:1); `workspace_products` (rls:4, admin:4);
+`workspace_role_wallet_whitelist` (rls:2, admin:1); `workspace_subscriptions` (browser:3, rls:3, admin:5);
+`workspace_wallet_transfers` (rls:1, admin:2).
+
+</Accordion>
+<Accordion title="Wave 3: mail, notifications and inbound messages (12)">
+
+`email_audit` (browser:1, rls:3, admin:3); `email_blacklist` (browser:1, rls:3, admin:1); `group_users_with_post_checks`
+(view, no-ts-caller); `notification_preferences` (rls:1, admin:1); `notification_push_devices` (rls:1, admin:2);
+`notifications` (rls:2, admin:2); `post_email_queue` (rls:3, admin:3); `sent_emails` (rls:3, admin:3);
+`support_inquiries` (admin:3); `user_feedbacks` (rls:1, admin:3); `workspace_email_invite_roles` (no-ts-caller);
+`workspace_email_invites` (browser:2, rls:4, admin:2).
+
+</Accordion>
+<Accordion title="Wave 4: people and identity PII (29)">
+
+`group_user_with_attendance` (view, no-ts-caller); `group_with_attendance` (view, no-ts-caller);
+`guest_users_lead_generation` (no-ts-caller); `handles` (no-ts-caller); `onboarding_progress` (browser:1, rls:1,
+admin:1); `tulearn_parent_invites` (rls:1); `tulearn_parent_student_links` (rls:1, admin:2); `user_configs` (admin:3);
+`user_group_attendance` (rls:3, admin:4); `user_group_metrics` (rls:2, admin:4); `user_groups_with_tags` (view,
+no-ts-caller); `user_indicators` (rls:1, admin:5); `user_private_details` (mobile, browser:6, rls:12, admin:11); `users`
+(browser:5, rls:10, admin:13); `workspace_default_included_user_groups` (no-ts-caller); `workspace_user_fields`
+(admin:2); `workspace_user_group_tag_groups` (rls:1, admin:3); `workspace_user_group_tags` (rls:3, admin:3);
+`workspace_user_groups` (rls:5, admin:10); `workspace_user_groups_users` (rls:5, admin:5);
+`workspace_user_groups_with_amount` (view, admin:1); `workspace_user_groups_with_guest` (view, admin:2);
+`workspace_user_linked_users` (rls:11, admin:10); `workspace_user_profile_link_submissions` (admin:1);
+`workspace_user_profile_links` (admin:1); `workspace_user_profile_links_with_stats` (view, admin:1);
+`workspace_user_status_changes` (admin:3); `workspace_users` (browser:1, rls:9, admin:8); `workspace_users_with_groups`
+(view, no-ts-caller).
+
+</Accordion>
+<Accordion title="Wave 5: AI, meetings and memory content (50)">
+
+`ai_chat_messages` (rls:3, admin:5); `ai_chats` (browser:1, rls:4, admin:4); `ai_model_favorites` (rls:1);
+`audio_chunks` (admin:1); `aurora_ml_forecast` (admin:1); `aurora_ml_metrics` (admin:1); `aurora_statistical_forecast`
+(admin:1); `aurora_statistical_metrics` (admin:1); `crawled_url_next_urls` (rls:1, admin:2); `crawled_urls` (rls:1,
+admin:2); `entity_limit_source__workspace_whiteboards` (view, no-ts-caller); `hive_members` (admin:2);
+`hive_npc_memories` (no-ts-caller); `hive_npc_runs` (no-ts-caller); `hive_npcs` (no-ts-caller);
+`hive_research_session_events` (no-ts-caller); `hive_research_sessions` (no-ts-caller); `hive_servers` (no-ts-caller);
+`hive_workflow_runs` (no-ts-caller); `hive_workflows` (no-ts-caller); `hive_world_events` (no-ts-caller);
+`hive_world_states` (no-ts-caller); `meet_ai_chunks` (rls:1, admin:1); `meet_ai_memories` (admin:1); `meet_ai_sessions`
+(rls:1, admin:1); `meet_ai_user_preferences` (admin:1); `mira_daily_stats` (rls:2, admin:1); `mira_focus_sessions`
+(rls:1, admin:1); `mira_memories` (admin:1); `mira_pets` (rls:2, admin:1); `mira_soul` (rls:2); `mira_user_accessories`
+(admin:1); `mira_user_achievements` (admin:1); `notes` (rls:2, admin:2); `recording_sessions` (rls:1, admin:1);
+`workspace_ai_models` (rls:2, admin:2); `workspace_ai_prompts` (rls:1, admin:2); `workspace_chat_channels`
+(no-ts-caller); `workspace_chat_messages` (no-ts-caller); `workspace_chat_participants` (no-ts-caller);
+`workspace_chat_typing_indicators` (no-ts-caller); `workspace_dataset_cells` (rls:2); `workspace_dataset_columns`
+(rls:2, admin:1); `workspace_dataset_row_cells` (view, rls:2); `workspace_dataset_rows` (rls:2, admin:1);
+`workspace_datasets` (rls:2, admin:2); `workspace_documents` (rls:2, admin:2); `workspace_meet_settings` (no-ts-caller);
+`workspace_meetings` (rls:2, admin:4); `workspace_whiteboards` (rls:1, admin:1).
+
+</Accordion>
+<Accordion title="Wave 6: tasks, time and calendar content (77)">
+
+`board_template_shares` (rls:2); `board_templates` (browser:1, rls:3, admin:3); `calendar_event_colors` (no-ts-caller);
+`entity_limit_source__tasks` (view, no-ts-caller); `habit_calendar_events` (rls:3, admin:2); `habit_completions` (rls:3,
+admin:1); `habit_skipped_occurrences` (rls:3); `task_assignees` (discord, browser:1, rls:4, admin:3);
+`task_board_public_links` (admin:1); `task_board_shares` (browser:1, rls:4, admin:4); `task_board_status_templates`
+(admin:1); `task_calendar_events` (browser:1, rls:3, admin:3); `task_capacity_rule_labels` (no-ts-caller);
+`task_capacity_rule_lists` (no-ts-caller); `task_capacity_rule_projects` (no-ts-caller); `task_capacity_rules` (rls:1);
+`task_cycle_tasks` (admin:1); `task_cycles` (rls:2, admin:1); `task_drafts` (rls:1, admin:1); `task_history` (rls:1,
+admin:1); `task_initiatives` (admin:2); `task_labels` (browser:1, rls:2, admin:2); `task_leaderboard_members` (rls:1,
+admin:1); `task_leaderboard_teams` (rls:1); `task_leaderboards` (rls:1); `task_lists` (discord, browser:2, rls:5,
+admin:5); `task_plan_items` (rls:1); `task_plan_shares` (rls:1); `task_plan_workspaces` (rls:1, admin:1); `task_plans`
+(rls:1, admin:1); `task_profile_progress_settings` (no-ts-caller); `task_progress_achievements` (rls:1, admin:1);
+`task_progress_entries` (rls:1, admin:1); `task_progress_goals` (rls:1, admin:1); `task_progress_metrics` (rls:1,
+admin:1); `task_progress_user_achievements` (rls:1, admin:1); `task_progress_user_stats` (admin:1);
+`task_project_initiatives` (admin:1); `task_project_tasks` (browser:1, rls:2, admin:2);
+`task_project_update_attachments` (rls:1); `task_project_update_comments` (rls:1, admin:1);
+`task_project_update_reactions` (rls:1); `task_project_updates` (rls:1, admin:1); `task_projects` (browser:1, rls:3,
+admin:5); `task_relationships` (rls:1, admin:1); `task_share_link_uses` (admin:1); `task_share_links` (rls:1, admin:1);
+`task_shares` (rls:1, admin:1); `task_sprint_reports` (rls:1); `task_templates` (no-ts-caller);
+`task_user_override_labels` (rls:1); `task_user_override_projects` (rls:1); `task_user_overrides` (rls:3, admin:2);
+`task_user_scheduling_settings` (browser:2, rls:3, admin:3); `task_watchers` (no-ts-caller); `tasks` (discord,
+browser:3, rls:6, admin:4); `time_tracker_daily_activity` (view, no-ts-caller); `time_tracking_breaks` (rls:2, admin:3);
+`time_tracking_categories` (rls:4, admin:2); `time_tracking_goals` (rls:2, admin:2); `time_tracking_session_analytics`
+(view, no-ts-caller); `time_tracking_sessions` (discord, rls:4, admin:4); `user_board_list_overrides` (rls:1, admin:1);
+`workspace_boards` (discord, browser:3, rls:4, admin:3); `workspace_break_types` (rls:2, admin:2);
+`workspace_calendar_categories` (admin:1); `workspace_calendar_events` (browser:1, rls:6, admin:10);
+`workspace_calendar_hour_settings` (rls:3); `workspace_cron_executions` (rls:1); `workspace_cron_jobs` (rls:1, admin:2);
+`workspace_habit_tracker_entries` (rls:1); `workspace_habit_tracker_entry_receipts` (no-ts-caller);
+`workspace_habit_tracker_streak_actions` (rls:1); `workspace_habit_trackers` (rls:1); `workspace_habits` (rls:3,
+admin:4); `workspace_task_labels` (browser:1, rls:3, admin:3); `workspace_task_reminder_settings` (admin:1).
+
+</Accordion>
+<Accordion title="Wave 7: education, external projects and public catalogs (59)">
+
+`canonical_external_projects` (rls:2, admin:3); `changelog_entries` (rls:2, admin:2); `course_certificates`
+(no-ts-caller); `course_module_completion_status` (rls:1, admin:1); `course_module_flashcards` (rls:1, admin:3);
+`course_module_quiz_sets` (rls:1, admin:3); `course_module_quiz_submissions` (rls:2, admin:2); `course_module_quizzes`
+(rls:2, admin:3); `course_test_attempt_answers` (rls:1); `course_test_attempts` (rls:1, admin:1); `course_test_modules`
+(no-ts-caller); `course_test_quizzes` (rls:2); `course_tests` (rls:1, admin:1); `discord_guild_members` (discord,
+rls:3); `link_analytics` (admin:2); `link_analytics_device_insights` (view, no-ts-caller); `link_analytics_geo_insights`
+(view, no-ts-caller); `link_analytics_summary` (view, admin:1); `meet_together_finalized_timeframes` (admin:1);
+`meet_together_guest_timeblocks` (admin:3); `meet_together_guests` (rls:1, admin:1); `meet_together_plans` (discord,
+rls:1, admin:4); `meet_together_user_timeblocks` (admin:3); `meet_together_users` (view, admin:2); `poll_guest_votes`
+(admin:3); `poll_options` (admin:3); `poll_user_votes` (admin:3); `polls` (admin:3); `quiz_options` (rls:1, admin:2);
+`quiz_set_quizzes` (rls:1, admin:1); `shortened_links` (discord, admin:3); `shortened_links_creator_stats` (view,
+admin:1); `shortened_links_domain_stats` (view, admin:1); `tulearn_gamification_events` (no-ts-caller);
+`tulearn_learner_state` (admin:1); `vietnamese_holidays` (rls:2); `workspace_course_module_groups` (rls:1, admin:1);
+`workspace_course_modules` (browser:2, rls:2, admin:3); `workspace_external_project_assets` (rls:1, admin:3);
+`workspace_external_project_binding_audits` (rls:2, admin:3); `workspace_external_project_bindings` (rls:2, admin:3);
+`workspace_external_project_blocks` (admin:3); `workspace_external_project_collections` (admin:3);
+`workspace_external_project_entries` (rls:1, admin:3); `workspace_external_project_entry_placements` (no-ts-caller);
+`workspace_external_project_entry_relations` (admin:3); `workspace_external_project_entry_taxonomy_assignments`
+(no-ts-caller); `workspace_external_project_field_definitions` (admin:2); `workspace_external_project_import_jobs`
+(admin:2); `workspace_external_project_publish_events` (admin:2);
+`workspace_external_project_relation_definition_targets` (admin:2); `workspace_external_project_relation_definitions`
+(admin:2); `workspace_external_project_taxonomies` (no-ts-caller); `workspace_flashcards` (rls:1, admin:3);
+`workspace_link_counts` (view, admin:1); `workspace_quiz_attempt_answers` (rls:1, admin:1); `workspace_quiz_attempts`
+(rls:1, admin:1); `workspace_quiz_sets` (rls:1, admin:1); `workspace_quizzes` (rls:2, admin:3).
+
+</Accordion>
+<Accordion title="Wave 8: workspace core and RBAC (21)">
+
+`audit_logs` (view, no-ts-caller); `entity_limit_source__workspaces` (view, no-ts-caller); `user_workspace_configs`
+(rls:3, admin:1); `workspace_configs` (rls:9, admin:10); `workspace_default_permissions` (mobile, browser:1, rls:3,
+admin:4); `workspace_guest_permissions` (admin:1); `workspace_guests` (admin:1); `workspace_invite_link_uses` (admin:1);
+`workspace_invite_links` (admin:1); `workspace_invite_links_with_stats` (view, admin:1); `workspace_invite_roles`
+(no-ts-caller); `workspace_invites` (browser:2, rls:4, admin:2); `workspace_members` (mobile, discord, browser:3,
+rls:13, admin:12); `workspace_members_and_invites` (view, browser:1, rls:3, admin:1); `workspace_ownership_transfers`
+(no-ts-caller); `workspace_role_members` (mobile, browser:1, rls:4, admin:3); `workspace_role_permissions` (rls:1,
+admin:2); `workspace_roles` (rls:1, admin:2); `workspace_settings` (rls:6, admin:4); `workspace_teams` (no-ts-caller);
+`workspaces` (mobile, browser:7, rls:16, admin:23).
+
+</Accordion>
+</AccordionGroup>

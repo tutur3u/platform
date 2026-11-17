@@ -262,6 +262,7 @@
                   "build/devops/cutover-smoke-harness",
                   "build/devops/marketing-start-void",
                   "build/devops/background-work-inventory",
+                  "build/devops/public-schema-privatization",
                   "build/devops/cloudflare-processor-migration",
                   "build/devops/web-cloudflare-migration",
                   "build/devops/mobile-store-deployment",
