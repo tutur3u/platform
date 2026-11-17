@@ -36,7 +36,13 @@ vi.mock('@tuturuuu/utils/workspace-helper', () => ({
 vi.mock('@tuturuuu/satellite/workspace-invitation', () => ({
   getPendingWorkspaceInvitation: vi.fn(),
 }));
-vi.mock('next-intl', () => ({ useTranslations: () => (key: string) => key }));
+vi.mock('next-intl', () => ({
+  useTranslations: () =>
+    Object.assign((key: string) => key, {
+      has: () => false,
+      raw: (key: string) => key,
+    }),
+}));
 vi.mock('@tuturuuu/ui/custom/notification-popover-client', () => ({
   default: ({ webAppUrl }: { webAppUrl: string }) => {
     mocks.urls.push(webAppUrl);
