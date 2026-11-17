@@ -1,4 +1,10 @@
-import { cleanup, fireEvent, screen, waitFor } from '@testing-library/react';
+import {
+  act,
+  cleanup,
+  fireEvent,
+  screen,
+  waitFor,
+} from '@testing-library/react';
 import {
   NOTIFICATION_MUTATION_KEY,
   notificationKeys,
@@ -32,6 +38,9 @@ async function openPopover() {
   const bell = await screen.findByRole('button', { name: /^Notifications/ });
   await waitFor(() => expect(bell).toBeEnabled());
   fireEvent.click(bell);
+  await act(async () => {
+    await vi.dynamicImportSettled();
+  });
   await screen.findByRole('dialog');
   return bell;
 }
