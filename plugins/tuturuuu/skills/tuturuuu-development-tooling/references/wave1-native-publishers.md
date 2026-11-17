@@ -234,17 +234,20 @@ and single alphanumeric segments of 32 or more characters are refused except in
 the exact declared identifier/digest positions. Canonical UUID tokens are admitted
 in any position, including `job-<UUID>` and provenance. Ordinary kebab-case words
 are judged segment by segment; separators never concatenate UUID groups into a
-hex run. Compound mixed-alphabet token runs of 31 or more characters and
-Origin-CA-shaped values are also refused. Only committed worker names and origins
+hex run. Digit/year segments and readable camelCase words are admitted. Mixed token
+segments of 30 or more characters with high character entropy, opaque compound
+base64/base64url runs and Origin-CA-shaped values are refused. Only committed worker names and origins
 are exempt in target fields. An arbitrary `id` key grants no exception.
 
 Reviewed reference formats are `workers/<reviewed-worker>/{deployments,versions}/<UUID-or-32hex>`,
 `cf-wave1/<reviewed-app-or-worker>/{version-readback,deployment-readback}/<UUID-or-32hex>`,
-and `readback/<reviewed-app>/<UUID-or-32hex-or-64hex>`. The workers form may have the
+and `readback/<reviewed-app>/<UUID-or-32hex-or-64hex>`. All three forms may have the
 fixed `cloudflare:` prefix. Only readback/checkpoint reference fields admit these
 paths; approval references and provider IDs do not admit arbitrary hash paths.
-Artifact IDs admit UUID/32-hex/64-hex or the fixed HTTPS org-domain
-`/sealed/<64hex>` path, without userinfo, query or fragment.
+Artifact IDs admit UUID/32-hex/64-hex or canonical HTTPS on the app record's exact
+canonical origin with the exact `/sealed/<64hex>` path. Stored URL bytes must
+equal their canonical serialization; ports, encoded path segments, dot segments,
+userinfo, query and fragment are refused.
 
 Residual risk: syntax cannot distinguish a credential from a genuine identifier
 with the identical bytes. A secret shaped as an admitted 32-hex/UUID ID, a SHA
@@ -256,8 +259,9 @@ live authority must verify reference ownership, source and target before storing
 receipts. This filter is defense in depth, not proof that metadata contains no
 secret. UUID-shaped secrets in any position and ordinary-word-shaped compound
 values remain ambiguous. Unprefixed opaque values of 30 characters or fewer
-remain a residual risk;
-recognized credential prefixes are rejected even at shorter lengths.
+remain a residual risk. Secrets fragmented into runs of 30 or fewer characters
+and chained UUIDs can also pass; reference provenance remains mandatory.
+Recognized credential prefixes are rejected even at shorter lengths.
 
 Unsupported reference shapes fail safe to UNKNOWN and retain a validated provider
 ID: unreviewed hash paths, `readback:` hash refs and dashboard URLs. UUID-bearing

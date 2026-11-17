@@ -109,7 +109,7 @@ test('typed structured readback refs with UUIDs and hex identifiers succeed', as
   assert.throws(() => safeData({ unreviewed: `readback/finance/${hex64}` }));
   assert.doesNotThrow(() =>
     safeData({
-      artifact: { id: `https://artifacts.tuturuuu.com/sealed/${hex64}` },
+      artifact: { id: `https://finance.tuturuuu.com/sealed/${hex64}` },
     })
   );
 });

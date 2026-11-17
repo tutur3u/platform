@@ -125,72 +125,96 @@ function containsJwt(value) {
   }
   return false;
 }
+function readableCamelCase(value) {
+  return /^(?:[a-z]{2,}|[A-Z][a-z]+)(?:[A-Z][a-z]+){1,}$/.test(value);
+}
+function readableSegment(value) {
+  return (
+    /^[a-z]{1,24}(?:[0-9]{1,4}[a-z]{1,24})*[0-9]{0,4}$/.test(value) ||
+    /^[0-9]{1,12}$/.test(value) ||
+    /^[A-Z]{1,24}$/.test(value) ||
+    /^[A-Z][a-z]{1,23}$/.test(value) ||
+    readableCamelCase(value)
+  );
+}
+const artifactOrigins = new Set(
+  Object.values(policy.apps).flatMap(
+    (settings) => settings.releaseRecipe.canonicalHosts
+  )
+);
+function artifactUrl(value, origins = artifactOrigins) {
+  try {
+    const url = new URL(value);
+    return (
+      value === url.href &&
+      url.protocol === 'https:' &&
+      !url.port &&
+      !url.username &&
+      !url.password &&
+      !url.search &&
+      !url.hash &&
+      origins.has(url.origin) &&
+      !credentialValue(url.hostname) &&
+      /^\/sealed\/[a-f0-9]{64}$/.test(url.pathname)
+    );
+  } catch {
+    return false;
+  }
+}
 function credentialValue(value) {
   if (containsJwt(value)) return true;
   if (
-    /^(?:sk[-_]|vercel_|vcp_|vcr_|vcs_|vc_|gh[pousr]_|github_pat_|sbp_|npm_|cf(?:at|ut|t)?_|cloudflare[_-]|AKIA|ASIA|-----BEGIN)/.test(
+    /^(?:sk[-_]|vercel_|vcp_|vcr_|vcs_|vc_|gh[pousr]_|github_pat_|sbp_|npm_|cf(?:at|ut|t)?_|cloudflare_|AKIA|ASIA|-----BEGIN)/.test(
       value
     ) ||
     /^bearer\s/i.test(value)
   )
     return true;
-  // Separator tokenization and maximal runs are both required: '-' and '_' can
-  // delimit a value or belong to a base64url credential.
-  const tokens = value.split(/[:/\-_.=+@\s]+/);
-  if (
-    tokens.some(
-      (token) =>
-        /^[a-f0-9]{32,}$/i.test(token) || /^[A-Za-z0-9]{32,}$/.test(token)
-    )
-  )
-    return true;
-  if (/[a-f0-9]{32,}/i.test(value)) return true;
-  if (/v1\.0-[a-f0-9]+-[a-f0-9]+/i.test(value)) return true;
   const withoutUuids = value.replace(
     /(?<![A-Za-z0-9])[a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12}(?![A-Za-z0-9])/gi,
     ' uuid '
   );
-  for (const [run] of withoutUuids.matchAll(/[A-Za-z0-9+/_-]{31,}={0,2}/g)) {
-    const words = run.split(/[-_/+]+/).filter(Boolean);
+  const tokens = withoutUuids.split(/[:/\-_.=+@\s]+/);
+  for (const token of tokens) {
+    if (/^[a-f0-9]{32,}$/i.test(token)) return true;
+    if (readableCamelCase(token)) continue;
+    if (/^[A-Za-z0-9]{32,}$/.test(token)) return true;
     if (
-      !words.length ||
-      !words.every(
-        (word) =>
-          /^[a-z]{1,24}$/.test(word) ||
-          /^[A-Z]{1,8}$/.test(word) ||
-          /^[A-Z][a-z]{1,23}$/.test(word)
-      )
+      token.length >= 30 &&
+      ((/[A-Z]/.test(token) && /[a-z0-9]/.test(token)) ||
+        (/[a-z]/.test(token) && /[0-9]/.test(token)))
+    ) {
+      const counts = new Map();
+      for (const char of token) counts.set(char, (counts.get(char) ?? 0) + 1);
+      const entropy = [...counts.values()].reduce((sum, count) => {
+        const probability = count / token.length;
+        return sum - probability * Math.log2(probability);
+      }, 0);
+      if (entropy >= 3.5) return true;
+    }
+  }
+  if (/[a-f0-9]{32,}/i.test(withoutUuids)) return true;
+  if (/v1\.0-[a-f0-9]+-[a-f0-9]+/i.test(withoutUuids)) return true;
+  for (const [run] of withoutUuids.matchAll(
+    /(?:[a-f0-9]{8,}[-_/])+[a-f0-9]{8,}/gi
+  )) {
+    if (run.replace(/[-_/]/g, '').length >= 32) return true;
+  }
+  for (const [run] of withoutUuids.matchAll(/[A-Za-z0-9+/_-]{31,}={0,2}/g)) {
+    if (
+      !run
+        .split(/[-_/+]+/)
+        .filter(Boolean)
+        .every(readableSegment)
     )
       return true;
   }
   return false;
 }
-function structuredReference(value, field, parent) {
+function structuredReference(value, field) {
   const uuidOrId = (segment) =>
     uuidPattern.test(segment) || /^[a-f0-9]{32}$/i.test(segment);
   const digest = (segment) => /^[a-f0-9]{64}$/i.test(segment);
-  if (parent === 'artifact' && field === 'id' && value.startsWith('https://')) {
-    try {
-      const url = new URL(value);
-      if (
-        url.username ||
-        url.password ||
-        url.search ||
-        url.hash ||
-        !(
-          url.hostname === 'tuturuuu.com' ||
-          url.hostname.endsWith('.tuturuuu.com')
-        )
-      )
-        return false;
-      const segments = url.pathname.split('/');
-      return (
-        segments.length === 3 && segments[1] === 'sealed' && digest(segments[2])
-      );
-    } catch {
-      return false;
-    }
-  }
   if (!['verificationRefs', 'checkpointRef'].includes(field)) return false;
   const path = value.startsWith('cloudflare:')
     ? value.slice('cloudflare:'.length)
@@ -222,6 +246,12 @@ function structuredReference(value, field, parent) {
 }
 export function metadataStringIsSafe(value, field = '', parent = '') {
   if (typeof value !== 'string' || value.length > 256) return false;
+  if (
+    parent === 'artifact' &&
+    field === 'id' &&
+    /^[a-z][a-z0-9+.-]*:/i.test(value)
+  )
+    return artifactUrl(value);
   if (/(?:password|token|secret|credential|api[_-]?key)\s*[:=]/i.test(value))
     return false;
   const reviewedTarget =
@@ -231,7 +261,7 @@ export function metadataStringIsSafe(value, field = '', parent = '') {
   return (
     reviewedTarget ||
     allowedHex(value, field, parent) ||
-    structuredReference(value, field, parent) ||
+    structuredReference(value, field) ||
     !credentialValue(value)
   );
 }
@@ -361,6 +391,11 @@ export function cfQueueJob(record, input) {
   if (input.requestedPhases.some((phase) => phase !== 'seal')) {
     closedRecord(input.artifact, ['id', 'sha256']);
     id(input.artifact.id);
+    if (/^[a-z][a-z0-9+.-]*:/i.test(input.artifact.id))
+      assert.ok(
+        artifactUrl(input.artifact.id, new Set(record.canonicalHosts)),
+        'Artifact URL differs from reviewed app origin'
+      );
     assert.match(input.artifact.sha256, digestPattern);
   } else assert.equal(input.artifact, null);
   if (input.requestedPhases.includes('rollback')) {
