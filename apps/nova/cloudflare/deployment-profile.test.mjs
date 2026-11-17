@@ -1,7 +1,10 @@
 import assert from 'node:assert/strict';
 import { execFileSync } from 'node:child_process';
 import test from 'node:test';
-import { deploymentProfile } from './deployment-profile.ts';
+import {
+  deploymentMountHosts,
+  deploymentProfile,
+} from './deployment-profile.ts';
 
 test('staging and production use isolated route-free Worker identities', () => {
   assert.deepEqual(deploymentProfile('staging'), {
@@ -34,4 +37,11 @@ test('artifact seal enforces the selected Worker identity', () => {
     assert.equal(result.name, deploymentProfile(profile).name);
     assert.deepEqual(result.vars, deploymentProfile(profile).vars);
   }
+});
+
+test('only the production artifact accepts apex mounts', () => {
+  assert.deepEqual(deploymentMountHosts(undefined), []);
+  assert.deepEqual(deploymentMountHosts('staging'), []);
+  assert.deepEqual(deploymentMountHosts('production'), ['tuturuuu.com']);
+  assert.throws(() => deploymentMountHosts('prod'), /Expected/);
 });

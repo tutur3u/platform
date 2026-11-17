@@ -48,7 +48,7 @@ afterEach(() => {
   vi.restoreAllMocks();
 });
 
-describe('nova root-only response policy', () => {
+describe('nova response policy', () => {
   it.each([canonical, staging, production])(
     'admits only the declared root %s',
     (host) => {
@@ -66,7 +66,7 @@ describe('nova root-only response policy', () => {
     }
   );
 
-  it('mounts the apex only under /nova', () => {
+  it('accepts the apex mount only in the production profile', () => {
     const mounts = {
       app: 'nova',
       rootHosts: [canonical],
@@ -76,10 +76,11 @@ describe('nova root-only response policy', () => {
     };
     expect(
       resolveAppBase(new URL('https://tuturuuu.com/nova'), mounts)
-    ).toEqual({
-      mode: 'mounted',
-      basePath: '/nova',
-    });
+    ).toEqual(
+      import.meta.env.VITE_NOVA_NATIVE_PROFILE === 'production'
+        ? { mode: 'mounted', basePath: '/nova' }
+        : null
+    );
     expect(
       resolveAppBase(new URL('https://tuturuuu.com/other'), mounts)
     ).toBeNull();

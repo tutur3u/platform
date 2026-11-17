@@ -55,24 +55,29 @@ through an anonymous request.
 
 ## Root hosts and response policy
 
-Both native apps are root-only while apex cutover is held. Their app-owned
-`start-bridge.config.ts` sets `mountHosts: []` and `unknownHost: 'reject'`:
+Inventory remains root-only with `mountHosts: []` and `unknownHost: 'reject'`.
+Nova's staging artifact is also root-only. Its production profile accepts
+`tuturuuu.com/nova` alongside the explicit Nova root hosts; other apex paths,
+mount lookalikes, suffix hosts and unknown hosts return 404 before app dispatch.
 
-| App | Production root | Staging root |
+| App | Production entry | Staging root |
 | --- | --- | --- |
-| Nova | `nova.ai.vn` | `<app>.tutur3u.com` |
+| Nova | `tuturuuu.com/nova` | `nova.tutur3u.com` |
 | Inventory | `inventory.tuturuuu.com` | `<app>.tutur3u.com` |
 
-Nova's `nova.tuturuuu.com` alias is a routing-layer 307 redirect to
-`nova.ai.vn`, not a Worker root. Preserve that redirect at cutover, including
-the requested path and query; the native Worker rejects the alias host.
+When Nova's public app URL is baked as `https://tuturuuu.com/nova`, legacy
+GET/HEAD navigations on `nova.ai.vn`, `nova.tutur3u.com` and
+`nova.tuturuuu.com` return a fixed-apex 307 with `no-store`, preserving path
+and query. Machine paths remain served on their host. Generic native fixtures
+baked with `nova.ai.vn` continue serving root pages. Permanent redirects remain
+held pending signed-in QA. Artifact mount capability does not activate the
+gateway, `GATEWAY_MOUNTED_PATHS`, bindings or DNS routing.
 
-Apex paths, suffix lookalikes and unlisted hosts, including Workers preview
-hosts, return the bridge's 404 before app dispatch. The generated runtime gate
-uses raw Host headers to test each allowed root and the rejected hosts.
+The response-policy runtime gate checks served pages, assets and APIs, the
+production apex mount, staging apex rejection and unowned/lookalike paths.
 Inventory declares its anonymous root outcome as 307; Nova declares 200.
 
-Every response receives the app's robots policy; ordinary paths also receive anti-framing CSP,
+Served app responses receive the app's robots policy; ordinary paths also receive anti-framing CSP,
 `X-Frame-Options: DENY`, `X-Content-Type-Options: nosniff` and
 `Referrer-Policy: strict-origin-when-cross-origin`. The CSP retains the existing
 Next `frame-ancestors 'none'` policy from `packages/utils/src/next-config.ts`.

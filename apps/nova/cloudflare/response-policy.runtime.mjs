@@ -8,11 +8,14 @@ import { join, relative } from 'node:path';
 import test from 'node:test';
 import { fileURLToPath } from 'node:url';
 import { readNativeRuntimeConfig } from '../../../scripts/ci/apps-native-runtime-pointer.mjs';
+import { isNovaApexRoot } from '../src/start-bridge/legacy-redirect.mjs';
 import { REQUIRED_RUNTIME_NAMES } from './runtime-environment.ts';
 
 const app = fileURLToPath(new URL('../', import.meta.url));
 const require = createRequire(join(app, 'package.json'));
 const hosts = ['nova.ai.vn', 'nova.tutur3u.com', 'nova.tuturuuu.com'];
+const legacyCanary = isNovaApexRoot(process.env.NEXT_PUBLIC_APP_URL);
+const mounted = process.env.VITE_NOVA_NATIVE_PROFILE === 'production';
 const privateRobots = 'noindex, nofollow, nosnippet';
 
 function assertHeaders(response, { asset = false, publicPage = false } = {}) {
@@ -162,40 +165,58 @@ test(
     const firstScript = assetNames.sort().find((name) => name.endsWith('.js'));
     assert.ok(firstScript, 'Compiled browser asset required');
     const scriptPath = `/assets/${firstScript.split('\\').join('/')}`;
-    for (const host of hosts) {
+    for (const host of [...hosts, ...(mounted ? ['tuturuuu.com'] : [])]) {
+      const prefix = host === 'tuturuuu.com' ? '/nova' : '';
+      const served = (path, method) => get(host, `${prefix}${path}`, method);
       await t.test(
         `${host} headers cover pages, APIs and method-limited assets`,
         async () => {
-          const root = await get(host, '/');
-          assert.equal(root.status, 200, root.body.toString());
-          assertHeaders(root, { publicPage: host === hosts[0] });
-          const info = await get(host, '/api/build-info');
+          const root = await served('/');
+          if (legacyCanary && host !== 'tuturuuu.com') {
+            assert.equal(root.status, 307);
+            assert.equal(root.headers.location, 'https://tuturuuu.com/nova');
+            assert.equal(root.headers['cache-control'], 'no-store');
+            for (const method of ['GET', 'HEAD']) {
+              const redirect = await served('/home?canary=1', method);
+              assert.equal(redirect.status, 307);
+              assert.equal(
+                redirect.headers.location,
+                'https://tuturuuu.com/nova/home?canary=1'
+              );
+              assert.equal(redirect.headers['cache-control'], 'no-store');
+            }
+          } else {
+            assert.equal(root.status, 200, root.body.toString());
+            assertHeaders(root, { publicPage: host === hosts[0] });
+          }
+          const info = await served('/api/build-info');
           assert.equal(info.status, 200);
           assertHeaders(info);
           assert.equal(
             JSON.parse(info.body).commitHash,
             process.env.CI_SOURCE_SHA
           );
-          const head = await get(host, '/api/build-info', 'HEAD');
+          const head = await served('/api/build-info', 'HEAD');
           assert.equal(head.status, 200);
           assert.equal(head.body.length, 0);
           assertHeaders(head);
-          const privatePage = await get(host, '/home');
+          const privatePage = await served('/home');
           assert.equal(privatePage.status, 307);
-          assertHeaders(privatePage);
+          if (!legacyCanary || host === 'tuturuuu.com')
+            assertHeaders(privatePage);
           for (const method of ['GET', 'HEAD']) {
-            const asset = await get(host, scriptPath, method);
+            const asset = await served(scriptPath, method);
             assert.equal(asset.status, 200);
             assertHeaders(asset, { asset: true });
             assert.notEqual(
               asset.headers['cache-control'],
               'private, no-store'
             );
-            const robots = await get(host, '/robots.txt', method);
+            const robots = await served('/robots.txt', method);
             assert.equal(robots.status, 200);
             assertHeaders(robots, { asset: true });
           }
-          const mutation = await get(host, scriptPath, 'POST');
+          const mutation = await served(scriptPath, 'POST');
           assert.ok(
             mutation.status < 500,
             `Asset-path mutation: ${mutation.status}`
@@ -205,11 +226,18 @@ test(
       );
     }
     for (const host of [
-      'tuturuuu.com',
+      ...(!mounted ? ['tuturuuu.com'] : []),
+      'tuturuuu.com.attacker.invalid',
       'nova.ai.vn.attacker.invalid',
+      'attacker.nova.ai.vn',
       'unknown.invalid',
     ]) {
       const rejected = await get(host, '/nova');
+      assert.equal(rejected.status, 404);
+      assertHeaders(rejected);
+    }
+    for (const path of ['/', '/novax', '/inventory', '/nova-lookalike']) {
+      const rejected = await get('tuturuuu.com', path);
       assert.equal(rejected.status, 404);
       assertHeaders(rejected);
     }

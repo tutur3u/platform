@@ -10,3 +10,8 @@ export function deploymentProfile(
     vars: { TUTURUUU_NOINDEX: value === 'production' ? '0' : '1' },
   };
 }
+
+export function deploymentMountHosts(value: string | undefined) {
+  deploymentProfile(value);
+  return value === 'production' ? ['tuturuuu.com'] : [];
+}
