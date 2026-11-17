@@ -214,7 +214,7 @@ test('validation supersedes main/PR runs while protected pushes and qualificatio
   assertValidationConcurrency(concurrencyPolicy(workflow));
 });
 
-test('PR label admission separates concurrency groups without changing cancellation', () => {
+test('PR label admission retains one supersession group without changing cancellation', () => {
   const policy = concurrencyPolicy(
     read('../../../.github/workflows/topic-delivery-foundation-contract.yaml')
   );
@@ -226,7 +226,7 @@ test('PR label admission separates concurrency groups without changing cancellat
     });
   const admitted = pr([{ name: 'bug' }, { name: 'ready-for-ci' }]);
   assert.equal(admitted.cancel, true);
-  assert.ok(admitted.group.endsWith('-latest'));
+  assert.equal(admitted.group, 'Topic Delivery Foundation Contract-pr-99');
   for (const labels of [
     [],
     [{ name: 'bug' }],
@@ -234,7 +234,7 @@ test('PR label admission separates concurrency groups without changing cancellat
   ]) {
     const unadmitted = pr(labels);
     assert.equal(unadmitted.cancel, true);
-    assert.equal(unadmitted.group, `${admitted.group}-unadmitted`);
+    assert.equal(unadmitted.group, admitted.group);
   }
   assert.deepEqual(pr([{ name: 'READY-FOR-CI' }]), admitted);
 });

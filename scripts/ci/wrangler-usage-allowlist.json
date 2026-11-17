@@ -3417,6 +3417,17 @@
       },
       "digest": "d74417773f1b71014c5cebea5eedad445d536e323dd2c16b92d46de3e21627b4"
     },
+    "scripts/public-schema-guard/callers.js": {
+      "kind": "script",
+      "lines": 1,
+      "uses": 1,
+      "digest": "5dbac457454fda41e20d3ce0dbb2d0229bb9b67fd5ec222f1f955d3b02b033e9",
+      "gap": "shared-toolchain",
+      "admitted": {
+        "decision": "https://github.com/tutur3u/platform/commit/8359354a2123bce544a784e9693006bab8c40725",
+        "reason": "The public-schema caller scanner skips the literal .wrangler generated-output directory. This exact path contains one non-executing directory-name token; it invokes no CLI or SDK. Remove the entry when that skip-directory token is removed."
+      }
+    },
     "scripts/smoke-cloudflare-workers.js": {
       "lines": 1,
       "uses": 1,
