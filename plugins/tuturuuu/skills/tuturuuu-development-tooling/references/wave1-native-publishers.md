@@ -226,3 +226,13 @@ budget. Executors call `checkFence` after blocking steps to renew that lease;
 renewal cannot extend the maximum job duration. Payload/receipt credential scans
 recognize provider prefixes, JWTs and long high-entropy token alphabets; known hex
 identifier and digest fields are explicitly allowlisted by field and shape.
+
+Hex credential detection is independent of entropy: long hex is refused unless
+its field and shape identify an allowed ID or digest. Structured reference paths
+are accepted only in declared identifier fields, with validated labels and
+UUID/hex identifier segments; a 37-character API-key-shaped segment is not an ID.
+Provider identities are validated and retained before other outcome fields are
+checked so malformed readback data cannot erase reconciliation evidence.
+Thrown error metadata is read defensively. Once an effect completes or loses its
+fence after entry, renew/checkpoint errors always record providerContacted true,
+including typed errors that incorrectly claim a pre-contact refusal.

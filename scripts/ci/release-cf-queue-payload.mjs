@@ -69,18 +69,23 @@ const digestFields = new Set([
   'sha256',
   'artifactDigest',
 ]);
+const uuidPattern =
+  /^[a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12}$/i;
 function allowedHex(value, field, parent) {
   return (
     (field === 'account' && value === policy.accountId) ||
     (field === 'sourceSha' && /^[a-f0-9]{40}$/i.test(value)) ||
     (digestFields.has(field) && /^[a-f0-9]{64}$/i.test(value)) ||
-    (hexIds.has(field) && /^[a-f0-9]{32}$/i.test(value)) ||
+    (hexIds.has(field) &&
+      (/^[a-f0-9]{32}$/i.test(value) || uuidPattern.test(value))) ||
     (parent === 'artifact' && field === 'id' && /^[a-f0-9]{64}$/i.test(value))
   );
 }
 function credentialValue(value) {
+  if (value.split('/').some((segment) => /^[a-f0-9]{32,}$/i.test(segment)))
+    return true;
   if (
-    /^(?:sk[-_]|vercel_|vcp_|vcr_|vcs_|vc_|gh[pousr]_|github_pat_|cf(?:at|ut|t)?_|cloudflare[_-]|AKIA|ASIA|bearer |-----BEGIN)/.test(
+    /^(?:sk[-_]|vercel_|vcp_|vcr_|vcs_|vc_|gh[pousr]_|github_pat_|sbp_|npm_|cf(?:at|ut|t)?_|cloudflare[_-]|AKIA|ASIA|[Bb]earer |-----BEGIN)/.test(
       value
     )
   )
@@ -104,7 +109,7 @@ function credentialValue(value) {
       /* A dotted identifier is not a JWT without JSON header and payload. */
     }
   }
-  if (value.length < 32 || !/^[A-Za-z0-9_\-./+=]+$/.test(value)) return false;
+  if (value.length < 31 || !/^[A-Za-z0-9_\-./+=]+$/.test(value)) return false;
   const frequencies = new Map();
   for (const character of value)
     frequencies.set(character, (frequencies.get(character) ?? 0) + 1);
@@ -115,12 +120,43 @@ function credentialValue(value) {
   }
   return entropy >= 4;
 }
+function structuredReference(value, field, parent) {
+  if (!hexIds.has(field)) return false;
+  let path = value;
+  if (parent === 'artifact' && field === 'id' && value.startsWith('https://')) {
+    try {
+      const url = new URL(value);
+      if (url.username || url.password || url.search || url.hash) return false;
+      path = `${url.hostname}${url.pathname}`;
+    } catch {
+      return false;
+    }
+  }
+  if (!/^[A-Za-z0-9._/-]+$/.test(path)) return false;
+  const segments = path.split('/');
+  if (
+    segments.length < 3 ||
+    segments.some((segment) => !segment || segment === '.' || segment === '..')
+  )
+    return false;
+  const identifier = (segment) =>
+    uuidPattern.test(segment) ||
+    /^(?:[a-f0-9]{32}|[a-f0-9]{64})$/i.test(segment);
+  if (!identifier(segments.at(-1))) return false;
+  return segments.every(
+    (segment) =>
+      identifier(segment) ||
+      (/^[A-Za-z0-9._-]{1,64}$/.test(segment) && !credentialValue(segment))
+  );
+}
 export function safeData(value, depth = 0, field = '', parent = '') {
   assert.ok(depth < 16);
   if (typeof value === 'string') {
     assert.ok(value.length <= 256);
     assert.ok(
-      allowedHex(value, field, parent) || !credentialValue(value),
+      allowedHex(value, field, parent) ||
+        structuredReference(value, field, parent) ||
+        !credentialValue(value),
       'Credential-shaped value'
     );
     assert.ok(

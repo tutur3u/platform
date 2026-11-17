@@ -268,22 +268,24 @@ export async function runCfPhase({
       timeout,
     ]);
     executorCompleted = true;
-    safeData(outcome);
     assert.ok(outcome && typeof outcome === 'object');
-    const keys = Object.keys(outcome);
+    for (const key of ['providerOperationId', 'deploymentId']) {
+      const identity = outcome[key];
+      if (identity !== undefined) {
+        assert.equal(typeof identity, 'string');
+        assert.match(identity, /^[A-Za-z0-9:._/-]{1,256}$/);
+        safeData(identity, 0, key);
+        receipt[key] = identity;
+      }
+    }
+    safeData(outcome);
     assert.ok(
-      keys.every((key) =>
+      Object.keys(outcome).every((key) =>
         ['providerOperationId', 'deploymentId', 'verificationRefs'].includes(
           key
         )
       )
     );
-    for (const key of ['providerOperationId', 'deploymentId'])
-      if (outcome[key] !== undefined) {
-        assert.equal(typeof outcome[key], 'string');
-        assert.match(outcome[key], /^[A-Za-z0-9:._/-]{1,256}$/);
-        receipt[key] = outcome[key];
-      }
     if (
       !Array.isArray(outcome.verificationRefs) ||
       outcome.verificationRefs.length === 0
@@ -321,8 +323,15 @@ export async function runCfPhase({
     assert.deepEqual(committed, receipt);
     return committed;
   } catch (error) {
-    const cause = failureCause(error, phase, effectStarted);
-    safeData(cause);
+    let cause;
+    const forceContacted =
+      executorCompleted || (fenceRejected && effectStarted);
+    try {
+      cause = failureCause(error, phase, effectStarted, forceContacted);
+      safeData(cause);
+    } catch {
+      cause = failureCause(undefined, phase, effectStarted, forceContacted);
+    }
     const uncertain =
       executorCompleted ||
       fenceRejected ||

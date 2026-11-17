@@ -1,5 +1,6 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
+import { randomBytes } from 'node:crypto';
 import { setTimeout as delay } from 'node:timers/promises';
 import { RecipeFailure, cfQueueJob } from './release-cf-queue.mjs';
 import { safeData } from './release-cf-queue-payload.mjs';
@@ -70,18 +71,22 @@ for (const value of forbidden)
   });
 test('known hex IDs and digests are admitted by field and shape', async () => {
   const values = input();
-  values.operationId = '0123456789abcdef'.repeat(2);
-  values.artifact.id = '0123456789abcdef'.repeat(4);
+  values.operationId = randomBytes(16).toString('hex');
+  values.artifact.id = randomBytes(32).toString('hex');
   const payload = cfQueueJob(structuredClone(record), values);
   const current = {
     ...grant,
-    jobId: 'fedcba9876543210'.repeat(2),
-    attemptId: 'abcdef0123456789'.repeat(2),
+    jobId: randomBytes(16).toString('hex'),
+    attemptId: randomBytes(16).toString('hex'),
   };
   const result = await run(authority(), successful, payload, current);
   assert.equal(result.status, 'succeeded');
-  assert.doesNotThrow(() => safeData({ sha256: '0123456789abcdef'.repeat(4) }));
-  assert.throws(() => safeData({ unreviewed: '0123456789abcdef'.repeat(4) }));
+  assert.doesNotThrow(() =>
+    safeData({ sha256: randomBytes(32).toString('hex') })
+  );
+  assert.throws(() =>
+    safeData({ unreviewed: randomBytes(32).toString('hex') })
+  );
 });
 test('lease renewal extends an initial short lease within the job budget', async () => {
   const port = authority();
