@@ -8,11 +8,19 @@ const { readWorkflow } = require('./workflow-yaml-test-helper');
 
 const job = readWorkflow('e2e-smoke-report-only.yaml').jobs.e2e;
 const steps = job.steps;
-const restore = steps.filter((step) =>
-  step.uses?.startsWith('actions/cache/restore@')
+const dependencyCachePaths = new Set([
+  '~/.bun/install/cache',
+  '~/.cache/ms-playwright',
+]);
+const restore = steps.filter(
+  (step) =>
+    step.uses?.startsWith('actions/cache/restore@') &&
+    dependencyCachePaths.has(step.with?.path)
 );
-const save = steps.filter((step) =>
-  step.uses?.startsWith('actions/cache/save@')
+const save = steps.filter(
+  (step) =>
+    step.uses?.startsWith('actions/cache/save@') &&
+    dependencyCachePaths.has(step.with?.path)
 );
 
 test('dependency caches retain the trusted-main job admission and exact inputs', () => {
