@@ -10006,9 +10006,6 @@ class AppLocalizationsEn extends AppLocalizations {
   String get taskLabelsUpdated => 'Label updated.';
 
   @override
-  String get taskPlanningTitle => 'Planning';
-
-  @override
   String get taskPortfolioAccessDeniedDescription => 'You need project management permission in this workspace to manage projects and initiatives.';
 
   @override
@@ -10348,6 +10345,18 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get taskQuickActionsUnassigned => 'Unassigned';
+
+  @override
+  String get taskSettingsDockLabel => 'Settings';
+
+  @override
+  String get taskSettingsEstimateNotSet => 'Not set';
+
+  @override
+  String get taskSettingsOrganiseSection => 'Organise';
+
+  @override
+  String get taskSettingsTitle => 'Task settings';
 
   @override
   String get taskTimelineLoadingTasks => 'Loading tasks…';

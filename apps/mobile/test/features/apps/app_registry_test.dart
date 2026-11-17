@@ -65,17 +65,14 @@ void main() {
       expect(routes.length, greaterThanOrEqualTo(3));
     });
 
-    test('tasks module consolidates planning nav item', () {
+    test('tasks module dock ends with Task settings', () {
       final tasks = AppRegistry.moduleById('tasks');
 
       expect(tasks, isNotNull);
       final routes = tasks!.miniAppNavItems.map((item) => item.route).toList();
 
-      expect(routes, contains(Routes.tasks));
-      expect(routes, contains(Routes.taskBoards));
-      expect(routes, contains(Routes.taskPlanning));
-      expect(routes, isNot(contains(Routes.taskEstimates)));
-      expect(routes, isNot(contains(Routes.taskPortfolio)));
+      expect(routes, [Routes.tasks, Routes.taskBoards, Routes.taskSettings]);
+      expect(tasks.miniAppNavItems.last.id, 'tasks_settings');
     });
 
     test('habits module exposes today, activity, and library nav items', () {

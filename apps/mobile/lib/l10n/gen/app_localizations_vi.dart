@@ -9894,9 +9894,6 @@ class AppLocalizationsVi extends AppLocalizations {
   String get taskLabelsUpdated => 'Đã cập nhật nhãn.';
 
   @override
-  String get taskPlanningTitle => 'Lập kế hoạch';
-
-  @override
   String get taskPortfolioAccessDeniedDescription => 'Bạn cần quyền quản lý dự án trong không gian làm việc này để quản lý dự án và sáng kiến.';
 
   @override
@@ -10236,6 +10233,18 @@ class AppLocalizationsVi extends AppLocalizations {
 
   @override
   String get taskQuickActionsUnassigned => 'Chưa giao cho ai';
+
+  @override
+  String get taskSettingsDockLabel => 'Cài đặt';
+
+  @override
+  String get taskSettingsEstimateNotSet => 'Chưa đặt';
+
+  @override
+  String get taskSettingsOrganiseSection => 'Sắp xếp';
+
+  @override
+  String get taskSettingsTitle => 'Cài đặt công việc';
 
   @override
   String get taskTimelineLoadingTasks => 'Đang tải công việc…';

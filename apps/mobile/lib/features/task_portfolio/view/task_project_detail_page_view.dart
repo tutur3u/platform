@@ -53,14 +53,14 @@ class _TaskProjectDetailViewState extends State<_TaskProjectDetailView> {
           ShellMiniNav(
             ownerId: 'task-project-mini-nav-${widget.projectId}',
             locations: {projectLocation},
-            deepLinkBackRoute: Routes.taskPortfolio,
+            deepLinkBackRoute: Routes.taskSettingsProjects,
             items: [
               ShellMiniNavItemSpec(
                 id: 'back',
                 icon: Icons.chevron_left,
                 label: l10n.navBack,
                 callbackToken: 'back',
-                onPressed: () => context.go(Routes.taskPortfolio),
+                onPressed: () => context.go(Routes.taskSettingsProjects),
               ),
             ],
           ),

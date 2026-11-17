@@ -141,18 +141,24 @@ void main() {
       );
     });
 
-    test('maps legacy task estimates links to consolidated planning', () {
+    test('maps planning and estimates links to Task settings', () {
       expect(
         resolveMobileDeepLink(
           Uri.parse('https://tuturuuu.com/workspace-1/tasks/estimates'),
         )?.location,
-        Routes.taskPlanning,
+        Routes.taskSettings,
       );
       expect(
         resolveMobileDeepLink(
           Uri.parse('https://tuturuuu.com/workspace-1/tasks/planning'),
         )?.location,
-        Routes.taskPlanning,
+        Routes.taskSettings,
+      );
+      expect(
+        resolveMobileDeepLink(
+          Uri.parse('https://tuturuuu.com/workspace-1/tasks/portfolio'),
+        )?.location,
+        Routes.taskSettingsProjects,
       );
     });
 

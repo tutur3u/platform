@@ -18979,12 +18979,6 @@ abstract class AppLocalizations {
   /// **'Label updated.'**
   String get taskLabelsUpdated;
 
-  /// No description provided for @taskPlanningTitle.
-  ///
-  /// In en, this message translates to:
-  /// **'Planning'**
-  String get taskPlanningTitle;
-
   /// No description provided for @taskPortfolioAccessDeniedDescription.
   ///
   /// In en, this message translates to:
@@ -19662,6 +19656,30 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Unassigned'**
   String get taskQuickActionsUnassigned;
+
+  /// No description provided for @taskSettingsDockLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Settings'**
+  String get taskSettingsDockLabel;
+
+  /// No description provided for @taskSettingsEstimateNotSet.
+  ///
+  /// In en, this message translates to:
+  /// **'Not set'**
+  String get taskSettingsEstimateNotSet;
+
+  /// No description provided for @taskSettingsOrganiseSection.
+  ///
+  /// In en, this message translates to:
+  /// **'Organise'**
+  String get taskSettingsOrganiseSection;
+
+  /// No description provided for @taskSettingsTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Task settings'**
+  String get taskSettingsTitle;
 
   /// No description provided for @taskTimelineLoadingTasks.
   ///

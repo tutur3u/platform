@@ -89,10 +89,10 @@ void main() {
     expect(find.byIcon(Icons.arrow_back), findsNothing);
     // Until the project resolves, the shell shows the portfolio title.
     expect(titles.state.resolveForLocation(location), 'Portfolio');
-    // Dock/rail Back returns to the portfolio, including from deep links.
+    // Dock/rail Back returns to the projects list, including from deep links.
     expect(
       miniNav.state.deepLinkBackRouteForLocation(location),
-      Routes.taskPortfolio,
+      Routes.taskSettingsProjects,
     );
     await tester.pumpWidget(const SizedBox.shrink());
   });

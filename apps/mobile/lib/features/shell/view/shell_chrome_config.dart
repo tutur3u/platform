@@ -72,9 +72,13 @@ class ShellChromeConfig {
       Routes.habits => l10n.habitsTitle,
       Routes.habitsActivity => l10n.habitsActivityTitle,
       Routes.taskBoards => l10n.taskBoardsTitle,
-      Routes.taskPlanning => l10n.taskPlanningTitle,
-      Routes.taskEstimates => l10n.taskPlanningTitle,
-      Routes.taskPortfolio => l10n.taskPlanningTitle,
+      Routes.taskSettings ||
+      Routes.taskPlanning ||
+      Routes.taskEstimates => l10n.taskSettingsTitle,
+      Routes.taskSettingsProjects ||
+      Routes.taskPortfolio => l10n.taskPortfolioProjectsTab,
+      Routes.taskSettingsInitiatives => l10n.taskPortfolioInitiativesTab,
+      Routes.taskSettingsLabels => l10n.taskLabelsTab,
       Routes.profileRoot => l10n.navYou,
       Routes.profileEdit || Routes.settingsProfile => l10n.settingsProfileEdit,
       Routes.profileAccounts ||

@@ -681,11 +681,11 @@ class _TaskBoardDetailPageViewState extends State<_TaskBoardDetailPageView> {
             _openBoardViewRoute(context, TaskBoardDetailView.timeline),
       ),
       ShellMiniNavItemSpec(
-        id: 'planning',
-        icon: Icons.route_outlined,
-        label: context.l10n.taskPlanningTitle,
-        callbackToken: 'planning',
-        onPressed: () => _goIfMounted(context, Routes.taskPlanning),
+        id: 'settings',
+        icon: LucideIcons.settings,
+        label: context.l10n.taskSettingsDockLabel,
+        callbackToken: 'settings',
+        onPressed: () => _goIfMounted(context, Routes.taskSettings),
       ),
     ];
   }

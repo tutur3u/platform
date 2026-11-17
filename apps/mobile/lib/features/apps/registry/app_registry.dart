@@ -226,10 +226,10 @@ class AppRegistry {
       labelBuilder: _labelTaskBoards,
     ),
     MiniAppNavItem(
-      id: 'tasks_planning',
-      route: Routes.taskPlanning,
-      icon: LucideIcons.route,
-      labelBuilder: _labelTaskPlanning,
+      id: 'tasks_settings',
+      route: Routes.taskSettings,
+      icon: LucideIcons.settings,
+      labelBuilder: _labelTaskSettings,
     ),
   ];
 
@@ -585,8 +585,8 @@ class AppRegistry {
       l10n.habitsActivityLabel;
   static String _labelHabitsLibrary(AppLocalizations l10n) =>
       l10n.habitsLibraryLabel;
-  static String _labelTaskPlanning(AppLocalizations l10n) =>
-      l10n.taskPlanningTitle;
+  static String _labelTaskSettings(AppLocalizations l10n) =>
+      l10n.taskSettingsDockLabel;
   static String _labelTaskBoards(AppLocalizations l10n) => l10n.taskBoardsTitle;
   static String _labelCalendar(AppLocalizations l10n) => l10n.navCalendar;
   static String _labelCalendarAgenda(AppLocalizations l10n) =>

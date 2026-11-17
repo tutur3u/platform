@@ -236,12 +236,12 @@ String? _tasksLocation(Uri uri, List<String> segments) {
 
   return switch (segments[1]) {
     'boards' => _taskBoardsLocation(uri, segments),
-    'planning' || 'estimates' => Routes.taskPlanning,
+    'planning' || 'estimates' => Routes.taskSettings,
     'portfolio' => _taskPortfolioLocation(segments),
     'projects' =>
       segments.length > 2
           ? Routes.taskPortfolioProjectPath(segments[2])
-          : Routes.taskPortfolio,
+          : Routes.taskSettingsProjects,
     'habits' => Routes.habits,
     _ => null,
   };
@@ -267,7 +267,7 @@ String _taskPortfolioLocation(List<String> segments) {
   if (segments.length > 2 && segments[2] == 'projects' && segments.length > 3) {
     return Routes.taskPortfolioProjectPath(segments[3]);
   }
-  return Routes.taskPortfolio;
+  return Routes.taskSettingsProjects;
 }
 
 String? _taskIdFromQuery(Uri uri) {

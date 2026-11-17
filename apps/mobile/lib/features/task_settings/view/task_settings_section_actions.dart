@@ -1,77 +1,10 @@
-part of 'task_planning_page.dart';
+part of 'task_settings_section_page.dart';
 
-extension _TaskPlanningActions on _TaskPlanningViewState {
-  Future<void> _loadPermissions() async {
-    final wsId = context.read<WorkspaceCubit>().state.currentWorkspace?.id;
-    final capturedWsId = wsId;
-    final currentUserId = context.read<AuthCubit>().state.user?.id;
-    final capturedUserId = currentUserId;
-
-    if (!mounted) return;
-    _updateState(() => _isCheckingPermissions = true);
-
-    if (wsId == null || currentUserId == null) {
-      if (!_canUpdatePermissionsState(capturedWsId, capturedUserId)) return;
-      _updateState(() {
-        _canManageProjects = false;
-        _isCheckingPermissions = false;
-        _hasResolvedPermissions = true;
-      });
-      return;
-    }
-
-    try {
-      final permissions = await _permissionsRepository.getPermissions(
-        wsId: wsId,
-        userId: currentUserId,
-      );
-      if (!_canUpdatePermissionsState(capturedWsId, capturedUserId)) return;
-      _updateState(() {
-        _canManageProjects = permissions.containsPermission('manage_projects');
-        _isCheckingPermissions = false;
-        _hasResolvedPermissions = true;
-      });
-    } on Exception {
-      if (!_canUpdatePermissionsState(capturedWsId, capturedUserId)) return;
-      _updateState(() {
-        _canManageProjects = false;
-        _isCheckingPermissions = false;
-        _hasResolvedPermissions = true;
-      });
-    }
-  }
-
-  bool _canUpdatePermissionsState(
-    String? capturedWsId,
-    String? capturedUserId,
-  ) {
-    if (!mounted) return false;
-
-    final currentWsId = context
-        .read<WorkspaceCubit>()
-        .state
-        .currentWorkspace
-        ?.id;
-    final latestUserId = context.read<AuthCubit>().state.user?.id;
-    return currentWsId == capturedWsId && latestUserId == capturedUserId;
-  }
-
+extension _TaskSettingsSectionActions on _TaskSettingsSectionViewState {
   Future<void> _reload() async {
     final wsId = context.read<WorkspaceCubit>().state.currentWorkspace?.id;
     if (wsId == null) return;
-
-    switch (_activeTab) {
-      case _TaskPlanningTab.estimates:
-        await context.read<TaskEstimatesCubit>().loadBoards(wsId);
-      case _TaskPlanningTab.labels:
-        await context.read<TaskLabelsCubit>().loadLabels(
-          wsId,
-          forceRefresh: true,
-        );
-      case _TaskPlanningTab.projects:
-      case _TaskPlanningTab.initiatives:
-        await context.read<TaskPortfolioCubit>().load(wsId, forceRefresh: true);
-    }
+    await reloadTaskSettingsData(context, wsId, forceRefresh: true);
   }
 
   Future<void> _openCreateLabel() async {
@@ -99,21 +32,19 @@ extension _TaskPlanningActions on _TaskPlanningViewState {
             final message = error.message.isNotEmpty
                 ? error.message
                 : l10n.commonSomethingWentWrong;
-            shad.showToast(
-              context: rootNavigator.context,
-              builder: (_, overlay) => shad.Alert.destructive(
-                title: Text(l10n.commonSomethingWentWrong),
-                content: Text(message),
-              ),
+            showAppToast(
+              rootNavigator.context,
+              title: l10n.commonSomethingWentWrong,
+              message: message,
+              variant: AppAlertVariant.destructive,
             );
             return false;
           } on Exception {
             if (!mounted || !rootNavigator.mounted) return false;
-            shad.showToast(
-              context: rootNavigator.context,
-              builder: (_, overlay) => shad.Alert.destructive(
-                content: Text(l10n.commonSomethingWentWrong),
-              ),
+            showAppToast(
+              rootNavigator.context,
+              message: l10n.commonSomethingWentWrong,
+              variant: AppAlertVariant.destructive,
             );
             return false;
           }
@@ -123,12 +54,7 @@ extension _TaskPlanningActions on _TaskPlanningViewState {
 
     if (created != true || !mounted || !rootNavigator.mounted) return;
 
-    shad.showToast(
-      context: rootNavigator.context,
-      builder: (_, overlay) =>
-          shad.Alert(content: Text(l10n.taskLabelsCreated)),
-    );
-    _selectTab(_TaskPlanningTab.labels);
+    showAppToast(rootNavigator.context, message: l10n.taskLabelsCreated);
   }
 
   Future<void> _openEditLabel(TaskLabel label) async {
@@ -159,21 +85,19 @@ extension _TaskPlanningActions on _TaskPlanningViewState {
             final message = error.message.isNotEmpty
                 ? error.message
                 : l10n.commonSomethingWentWrong;
-            shad.showToast(
-              context: rootNavigator.context,
-              builder: (_, overlay) => shad.Alert.destructive(
-                title: Text(l10n.commonSomethingWentWrong),
-                content: Text(message),
-              ),
+            showAppToast(
+              rootNavigator.context,
+              title: l10n.commonSomethingWentWrong,
+              message: message,
+              variant: AppAlertVariant.destructive,
             );
             return false;
           } on Exception {
             if (!mounted || !rootNavigator.mounted) return false;
-            shad.showToast(
-              context: rootNavigator.context,
-              builder: (_, overlay) => shad.Alert.destructive(
-                content: Text(l10n.commonSomethingWentWrong),
-              ),
+            showAppToast(
+              rootNavigator.context,
+              message: l10n.commonSomethingWentWrong,
+              variant: AppAlertVariant.destructive,
             );
             return false;
           }
@@ -183,11 +107,7 @@ extension _TaskPlanningActions on _TaskPlanningViewState {
 
     if (updated != true || !mounted || !rootNavigator.mounted) return;
 
-    shad.showToast(
-      context: rootNavigator.context,
-      builder: (_, overlay) =>
-          shad.Alert(content: Text(l10n.taskLabelsUpdated)),
-    );
+    showAppToast(rootNavigator.context, message: l10n.taskLabelsUpdated);
   }
 
   Future<void> _deleteLabel(TaskLabel label) async {
@@ -216,15 +136,10 @@ extension _TaskPlanningActions on _TaskPlanningViewState {
         false;
 
     if (!deleted || !mounted || !rootNavigator.mounted) return;
-    shad.showToast(
-      context: rootNavigator.context,
-      builder: (_, overlay) =>
-          shad.Alert(content: Text(context.l10n.taskLabelsDeleted)),
+    showAppToast(
+      rootNavigator.context,
+      message: context.l10n.taskLabelsDeleted,
     );
-  }
-
-  Future<void> _openCreateProject() async {
-    await _portfolioActions.openCreateProject();
   }
 
   Future<void> _openEditProject(TaskProjectSummary project) async {
@@ -233,10 +148,6 @@ extension _TaskPlanningActions on _TaskPlanningViewState {
 
   Future<void> _deleteProject(TaskProjectSummary project) async {
     await _portfolioActions.deleteProject(project);
-  }
-
-  Future<void> _openCreateInitiative() async {
-    await _portfolioActions.openCreateInitiative();
   }
 
   Future<void> _openEditInitiative(TaskInitiativeSummary initiative) async {

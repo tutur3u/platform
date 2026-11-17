@@ -11,6 +11,7 @@ import 'package:mobile/core/router/app_settings_routes.dart';
 import 'package:mobile/core/router/inventory_catalog_routes.dart';
 import 'package:mobile/core/router/routes.dart';
 import 'package:mobile/core/router/settings_routes.dart';
+import 'package:mobile/core/router/task_settings_routes.dart';
 import 'package:mobile/core/validation/uuid.dart';
 import 'package:mobile/data/sources/api_verification.dart';
 import 'package:mobile/features/apps/cubit/app_tab_cubit.dart';
@@ -51,8 +52,8 @@ import 'package:mobile/features/security/qr_login/view/qr_login_sign_in_page.dar
 import 'package:mobile/features/shell/view/shell_page.dart';
 import 'package:mobile/features/storefront/view/storefront_detail_page.dart';
 import 'package:mobile/features/storefront/view/storefronts_page.dart';
-import 'package:mobile/features/task_planning/view/task_planning_page.dart';
 import 'package:mobile/features/task_portfolio/view/task_project_detail_page.dart';
+import 'package:mobile/features/task_settings/view/task_settings_section_page.dart';
 import 'package:mobile/features/tasks_boards/cubit/task_board_detail_cubit.dart';
 import 'package:mobile/features/tasks_boards/view/task_board_detail_page.dart';
 import 'package:mobile/features/tasks_boards/view/task_boards_page.dart';
@@ -428,24 +429,15 @@ GoRouter createAppRouter(
               );
             },
           ),
-          GoRoute(
-            path: Routes.taskPlanning,
-            builder: (context, state) => const TaskPlanningPage(),
-          ),
-          GoRoute(
-            path: Routes.taskEstimates,
-            redirect: (context, state) => Routes.taskPlanning,
-          ),
-          GoRoute(
-            path: Routes.taskPortfolio,
-            redirect: (context, state) => Routes.taskPlanning,
-          ),
+          ...taskSettingsRoutes(),
           GoRoute(
             path: Routes.taskPortfolioProject,
             builder: (context, state) {
               final projectId = state.pathParameters['projectId'];
               if (projectId == null || projectId.isEmpty) {
-                return const TaskPlanningPage();
+                return const TaskSettingsSectionPage(
+                  section: TaskSettingsSection.projects,
+                );
               }
               return TaskProjectDetailPage(projectId: projectId);
             },

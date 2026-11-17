@@ -29,6 +29,12 @@ abstract final class Routes {
   static const habitsLibrary = '/habits/library';
   static const taskBoards = '/tasks/boards';
   static const taskBoardDetail = '/tasks/boards/:boardId';
+  // Workspace task settings. `/tasks/settings` stays the alias for the
+  // central device preferences at `/settings/apps/tasks`.
+  static const taskSettings = '/tasks/manage';
+  static const taskSettingsProjects = '/tasks/manage/projects';
+  static const taskSettingsInitiatives = '/tasks/manage/initiatives';
+  static const taskSettingsLabels = '/tasks/manage/labels';
   static const taskPlanning = '/tasks/planning';
   static const taskEstimates = '/tasks/estimates';
   static const taskPortfolio = '/tasks/portfolio';

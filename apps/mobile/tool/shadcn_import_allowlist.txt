@@ -132,7 +132,6 @@ lib/features/shell/view/shell_page.dart
 lib/features/shell/view/shell_top_bar_title.dart
 lib/features/storefront/view/storefront_detail_page.dart
 lib/features/storefront/view/storefronts_page.dart
-lib/features/task_planning/view/task_planning_page.dart
 lib/features/task_portfolio/view/task_portfolio_actions.dart
 lib/features/task_portfolio/view/task_portfolio_view.dart
 lib/features/task_portfolio/view/task_project_detail_page.dart
@@ -272,7 +271,6 @@ test/features/shell/view/shell_back_navigation_test.dart
 test/features/shell/view/shell_navigation_rail_test.dart
 test/features/shell/view/shell_rail_harness.dart
 test/features/shell/view/tablet_navigation_test.dart
-test/features/task_planning/view/task_planning_view_test.dart
 test/features/tasks/widgets/task_section_accordion_test.dart
 test/features/tasks_boards/view/task_board_relationship_navigation_test.dart
 test/features/time_tracker/widgets/threshold_settings_dialog_test.dart
