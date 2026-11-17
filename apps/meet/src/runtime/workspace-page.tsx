@@ -2,9 +2,11 @@ import { useTranslations } from 'next-intl';
 import { lazy, Suspense } from 'react';
 import { MeetingsContent } from '../app/[locale]/[wsId]/meetings/meetings-content';
 import type { MeetPageModel } from './page-model.server';
-import { PlansView } from './plans-view';
 import { WorkspaceView } from './workspace-view';
 
+const PlansView = lazy(() =>
+  import('./plans-view').then((module) => ({ default: module.PlansView }))
+);
 const MeetingView = lazy(() =>
   import('./meeting-view').then((module) => ({ default: module.MeetingView }))
 );
@@ -30,7 +32,9 @@ export default function WorkspacePage({
       return (
         <WorkspaceView workspace={model.workspace} locale={model.locale}>
           <div className="-m-4">
-            <PlansView model={model} />
+            <Suspense fallback={null}>
+              <PlansView model={model} />
+            </Suspense>
           </div>
         </WorkspaceView>
       );

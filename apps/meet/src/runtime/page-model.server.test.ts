@@ -340,26 +340,16 @@ describe('workspace pages', () => {
     expect(mocks.invitation).toHaveBeenCalledTimes(1);
   });
 
-  it('loads the meetings list with one read of each workspace source', async () => {
+  it('renders the authorized list shell without loading unused schedule data', async () => {
     signIn('member');
-    const queries: Record<string, unknown> = {
-      workspace_meetings: table('workspace_meetings', {
-        data: [],
-        error: null,
-      }),
-      user_workspace_configs: table('user_workspace_configs', {
-        data: null,
-        error: null,
-      }),
-      user_private_details: table('user_private_details', {
-        data: { timezone: 'UTC' },
-        error: null,
-      }),
-    };
-    mocks.from.mockImplementation((name: string) => queries[name]);
-    const model = await loadPageModel('/workspace/meetings');
+    mocks.from.mockImplementation(() => {
+      throw new Error('Schedule storage unavailable');
+    });
+    const model = await loadPageModel('/workspace/meetings?search=weekly');
     expect(model).toMatchObject({
       kind: 'meetings',
+      paging: { search: 'weekly' },
+      hosting: { canCreate: true, unavailable: false },
       workspace: {
         kind: 'workspace',
         wsId: 'workspace',
@@ -370,9 +360,10 @@ describe('workspace pages', () => {
     expect(mocks.invitation).toHaveBeenCalledTimes(1);
     expect(mocks.workspaceContext).toHaveBeenCalledTimes(1);
     expect(mocks.currentUser).toHaveBeenCalledTimes(1);
-    expect(reads('workspace_meetings')).toBe(1);
-    expect(reads('user_workspace_configs')).toBe(1);
-    expect(reads('user_private_details')).toBe(1);
+    expect(mocks.hostIdentity).toHaveBeenCalledTimes(1);
+    expect(mocks.canHost).toHaveBeenCalledTimes(1);
+    expect(mocks.from).not.toHaveBeenCalled();
+    expect(model).not.toHaveProperty('schedule');
   });
 
   it('keeps a non-member out when there is no invitation', async () => {

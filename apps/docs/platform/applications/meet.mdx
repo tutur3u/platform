@@ -229,6 +229,24 @@ Regression coverage: `packages/utils/src/__tests__/crypto.test.ts`,
 
 ## Runtime boundaries
 
+### Signed-in list loading
+
+The native meetings route resolves workspace membership, profile and hosting
+eligibility before rendering its shell. Meeting rows load through the paginated
+internal API in `use-meeting-pages.ts`; the page model does not also read and
+serialize the full schedule. This keeps unused history, Calendar, timezone and
+preference reads out of the document's critical path. The loader regression in
+`page-model.server.test.ts` verifies that unavailable schedule storage cannot
+block the authorized shell and that workspace and hosting checks still run.
+
+Workspace plans load their view on demand. Meetings do not wait for the plans
+form and its dependencies to download. When profiling, record a first visit and
+a cached repeat separately, including document TTFB, compressed and decoded
+JavaScript bytes, workspace chunk discovery, the first meetings request, and
+per-room state requests. A list-page trace does not measure a login callback or
+a realtime connection; capture those flows separately using an approved test
+account and redact tokens, cookies and account identifiers from receipts.
+
 Meet shares behavior through `packages/meet-core` and `packages/meet-ui`.
 Realtime, signaling, provider connectivity, and hosted SFU/TURN are separate
 boundaries. A local Worker fixture does not establish hosted media-network
