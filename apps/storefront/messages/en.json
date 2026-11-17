@@ -796,6 +796,7 @@
     "restore_tasks_title": "Restore {count} task(s)?",
     "restore_workspace": "Restore workspace",
     "restored_tasks": "Restored {count} task(s)",
+    "restored_tasks_partially": "{moved, plural, one {Restored 1 task} other {Restored # tasks}}, {failed, plural, one {1 task failed} other {# tasks failed}}",
     "restoring": "Restoring...",
     "restoring_tasks_progress": "Restoring tasks",
     "result(s)": "result(s)",

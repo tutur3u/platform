@@ -16,6 +16,7 @@ import {
   moveTaskIdsInBatches,
 } from '@tuturuuu/utils/task-helper';
 import { useTranslations } from 'next-intl';
+import { isTaskListNameExistsError } from '../../shared/task-board-errors';
 import { BulkProgressToast } from './bulk-progress-toast';
 
 export type ListBulkMoveKind = 'archive' | 'move' | 'undo';
@@ -63,14 +64,17 @@ function applyOptimisticMove(
   const matches = matchesVariables(variables);
   const fromTasks = queryClient.getQueryData<Task[]>(tasksKey(fromBoardId));
   const moving = (fromTasks ?? []).filter(matches);
+  // Board revalidation keeps rows with a fresh local mutation, so a refetch
+  // during a long batch does not snap moved cards back.
+  const localMutationAt = Date.now();
+  const moved = (task: Task, listId: string) =>
+    ({ ...task, list_id: listId, _localMutationAt: localMutationAt }) as Task;
 
   if (fromBoardId === toBoardId) {
     queryClient.setQueryData<Task[]>(tasksKey(fromBoardId), (old) => {
       if (!old) return old;
       if (!toListId) return old.filter((task) => !matches(task));
-      return old.map((task) =>
-        matches(task) ? { ...task, list_id: toListId } : task
-      );
+      return old.map((task) => (matches(task) ? moved(task, toListId) : task));
     });
     return;
   }
@@ -85,7 +89,7 @@ function applyOptimisticMove(
       if (!old) return old;
       return [
         ...old.filter((task) => !movingIds.has(task.id)),
-        ...moving.map((task) => ({ ...task, list_id: toListId })),
+        ...moving.map((task) => moved(task, toListId)),
       ];
     });
   }
@@ -104,10 +108,9 @@ function restoreFailedTasks(
     failed.has(task.id)
   );
 
-  queryClient.setQueryData<Task[]>(tasksKey(variables.fromBoardId), (old) => [
-    ...(old ?? []).filter((task) => !failed.has(task.id)),
-    ...originals,
-  ]);
+  queryClient.setQueryData<Task[]>(tasksKey(variables.fromBoardId), (old) =>
+    old ? [...old.filter((task) => !failed.has(task.id)), ...originals] : old
+  );
 
   if (variables.toBoardId !== variables.fromBoardId) {
     queryClient.setQueryData<Task[]>(tasksKey(variables.toBoardId), (old) =>
@@ -162,7 +165,7 @@ const SUCCESS_KEYS = {
 const PARTIAL_KEYS = {
   archive: 'archived_tasks_partially',
   move: 'moved_tasks_partially',
-  undo: 'moved_tasks_partially',
+  undo: 'restored_tasks_partially',
 } as const;
 
 const ERROR_KEYS = {
@@ -188,6 +191,7 @@ export function useListBulkMove({
   onSettled?: () => void;
 }) {
   const t = useTranslations('common');
+  const tRoot = useTranslations();
   const queryClient = useQueryClient();
 
   const showProgress = (
@@ -288,7 +292,12 @@ export function useListBulkMove({
         }
       }
       console.error('Bulk list move failed:', error);
-      toast.error(t(ERROR_KEYS[variables.kind]), { id: variables.toastId });
+      toast.error(
+        isTaskListNameExistsError(error)
+          ? tRoot('ws-task-boards.layout_settings.list_name_exists')
+          : t(ERROR_KEYS[variables.kind]),
+        { id: variables.toastId }
+      );
     },
     onSuccess: (result, variables, snapshot) => {
       if (snapshot) {
@@ -300,9 +309,12 @@ export function useListBulkMove({
         );
       }
 
+      // The broadcast channel belongs to the board this hook is mounted on:
+      // the source board for archive/move, the destination board for Undo.
       const crossBoard = variables.toBoardId !== variables.fromBoardId;
+      const leavesHostBoard = crossBoard && variables.kind !== 'undo';
       for (const taskId of result.movedTaskIds) {
-        if (crossBoard) {
+        if (leavesHostBoard) {
           broadcast?.('task:delete', { taskId });
         } else {
           broadcast?.('task:upsert', {
@@ -319,7 +331,7 @@ export function useListBulkMove({
               onClick: () =>
                 mutation.mutate({
                   kind: 'undo',
-                  toastId: variables.toastId,
+                  toastId: `${variables.toastId}-undo`,
                   total: result.movedCount,
                   fromBoardId: variables.toBoardId,
                   sourceListId: result.toListId,

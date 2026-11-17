@@ -1,6 +1,12 @@
 import '@testing-library/jest-dom';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import { fireEvent, render, screen, waitFor } from '@testing-library/react';
+import {
+  act,
+  fireEvent,
+  render,
+  screen,
+  waitFor,
+} from '@testing-library/react';
 import type { Task } from '@tuturuuu/types/primitives/Task';
 import type { TaskList } from '@tuturuuu/types/primitives/TaskList';
 import { toast } from '@tuturuuu/ui/sonner';
@@ -11,6 +17,7 @@ import { ListActions } from '../list-actions';
 const updateWorkspaceTaskListMock = vi.fn();
 const broadcastMock = vi.fn();
 const moveAllTasksFromListMock = vi.fn();
+const moveTaskIdsInBatchesMock = vi.fn();
 
 vi.mock('next-intl', () => ({
   useTranslations: () => (key: string) => key,
@@ -26,7 +33,8 @@ vi.mock('@tuturuuu/internal-api/tasks', () => ({
 vi.mock('@tuturuuu/utils/task-helper', () => ({
   moveAllActiveListTasks: (...args: unknown[]) =>
     moveAllTasksFromListMock(...args),
-  moveTaskIdsInBatches: vi.fn(),
+  moveTaskIdsInBatches: (...args: unknown[]) =>
+    moveTaskIdsInBatchesMock(...args),
 }));
 
 vi.mock('../../../shared/board-broadcast-context', () => ({
@@ -159,6 +167,7 @@ describe('ListActions', () => {
     updateWorkspaceTaskListMock.mockReset();
     broadcastMock.mockReset();
     moveAllTasksFromListMock.mockReset();
+    moveTaskIdsInBatchesMock.mockReset();
     vi.mocked(toast.error).mockReset();
     vi.mocked(toast.success).mockReset();
     vi.mocked(toast.info).mockReset();
@@ -311,6 +320,37 @@ describe('ListActions', () => {
         })
       );
     });
+
+    moveTaskIdsInBatchesMock.mockResolvedValueOnce({
+      success: true,
+      movedCount: 1,
+      movedTaskIds: ['task-1'],
+      failedTaskIds: [],
+    });
+    const [, archiveToast] = vi.mocked(toast.success).mock.calls[0]!;
+    const options = archiveToast as unknown as {
+      id: string;
+      action: { onClick: () => void };
+    };
+    act(() => {
+      options.action.onClick();
+    });
+
+    await waitFor(() => {
+      expect(moveTaskIdsInBatchesMock).toHaveBeenCalledWith(
+        'ws-1',
+        ['task-1'],
+        { listId: 'list-1', targetBoardId: undefined },
+        expect.any(Function)
+      );
+      expect(toast.success).toHaveBeenCalledWith(
+        'tasks_restored',
+        expect.objectContaining({ id: `${options.id}-undo` })
+      );
+    });
+    expect(
+      queryClient.getQueryData<Task[]>(['tasks', 'board-1'])?.[0]?.list_id
+    ).toBe('list-1');
   });
 
   it('rolls the cards back when archiving fails', async () => {

@@ -786,6 +786,7 @@
     "restore_tasks_title": "Khôi phục {count} công việc?",
     "restore_workspace": "Khôi phục không gian làm việc",
     "restored_tasks": "Đã khôi phục {count} công việc",
+    "restored_tasks_partially": "Đã khôi phục {moved} công việc, {failed} công việc thất bại",
     "restoring": "Đang khôi phục...",
     "restoring_tasks_progress": "Đang khôi phục công việc",
     "result(s)": "kết quả",
