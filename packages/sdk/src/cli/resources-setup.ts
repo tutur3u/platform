@@ -381,8 +381,56 @@ export async function uninstallResources(home: string) {
   });
 }
 
+function resourceLauncherFor(
+  home: string,
+  entry: string,
+  name: string,
+  runtime: string
+) {
+  return `#!/bin/sh\n# Managed by ttr resources\n${budgetLauncherProtocol}\nTTR_RESOURCES_HOME=${shellQuote(home)} exec ${shellQuote(runtime)} ${shellQuote(entry)} shim ${shellQuote(name)} -- "$@"\n`;
+}
+
 function resourceLauncher(home: string, entry: string, name: string) {
-  return `#!/bin/sh\n# Managed by ttr resources\n${budgetLauncherProtocol}\nTTR_RESOURCES_HOME=${shellQuote(home)} exec ${shellQuote(process.execPath)} ${shellQuote(entry)} shim ${shellQuote(name)} -- "$@"\n`;
+  return resourceLauncherFor(home, entry, name, process.execPath);
+}
+
+// A managed shim names its own runtime. Compare the caller to that runtime
+// before calling the shim stale: a different process.execPath string for the
+// same binary is still valid, and a different binary must not be told to setup.
+function quotedShimRuntime(
+  content: string,
+  home: string,
+  entry: string,
+  name: string
+) {
+  const suffix = ` ${shellQuote(entry)} shim ${shellQuote(name)} -- "$@"\n`;
+  const prefix = `#!/bin/sh\n# Managed by ttr resources\n${budgetLauncherProtocol}\nTTR_RESOURCES_HOME=${shellQuote(home)} exec `;
+  if (!content.startsWith(prefix) || !content.endsWith(suffix)) return;
+  const quoted = content.slice(prefix.length, -suffix.length);
+  if (!/^'(?:[^']|'\\'')*'$/u.test(quoted)) return;
+  const runtime = quoted.slice(1, -1).replaceAll("'\\''", "'");
+  if (shellQuote(runtime) !== quoted) return;
+  if (content !== resourceLauncherFor(home, entry, name, runtime)) return;
+  return runtime;
+}
+
+async function readResourceShim(path: string) {
+  try {
+    const file = await open(
+      path,
+      constants.O_RDONLY | constants.O_NONBLOCK | constants.O_NOFOLLOW
+    );
+    try {
+      const stat = await file.stat();
+      if (!stat.isFile() || stat.size > 4096 || (stat.mode & 0o111) === 0)
+        return;
+      return await file.readFile('utf8');
+    } finally {
+      await file.close();
+    }
+  } catch {
+    return;
+  }
 }
 
 async function validResourceShim(path: string, expected: string) {
@@ -419,14 +467,24 @@ export async function installedResourceShims(
   const bin = join(home, 'bin');
   for (const name of resourceShims) {
     const path = join(bin, name);
-    const valid = await validResourceShim(
-      path,
-      resourceLauncher(home, entry, name)
-    );
-    if (!valid)
+    if (await validResourceShim(path, resourceLauncher(home, entry, name)))
+      continue;
+    const content = await readResourceShim(path);
+    const runtime = content
+      ? quotedShimRuntime(content, home, entry, name)
+      : undefined;
+    if (
+      runtime &&
+      canonical(runtime) === canonical(process.execPath)
+    )
+      continue;
+    if (runtime)
       throw new Error(
-        'Resource shims are missing, stale, or malformed. Run ttr resources setup --shell none explicitly before retrying; inspect queue occupancy before updating an installation.'
+        `Resource shims are valid for their own runtime ${runtime}. This process is ${process.execPath}. Do not run ttr resources setup. Invoke the shim runtime.`
       );
+    throw new Error(
+      'Resource shims are missing, stale, or malformed. Run ttr resources setup --shell none explicitly before retrying; inspect queue occupancy before updating an installation.'
+    );
   }
   return bin;
 }

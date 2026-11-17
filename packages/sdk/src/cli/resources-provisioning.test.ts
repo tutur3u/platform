@@ -114,6 +114,48 @@ it.each(['missing', 'stale', 'malformed', 'nonexecutable', 'symlink'])(
       expect(operation).not.toHaveBeenCalled();
   }
 );
+it('accepts the same runtime through another path and refuses a different runtime without calling the shims stale', async () => {
+  const home = await fixture();
+  const link = join(home, 'node-link');
+  await fs.symlink(process.execPath, link);
+  const quoted = `'${process.execPath.replaceAll("'", "'\\''")}'`;
+  const originals = await Promise.all(
+    resourceShims.map(async (name) => {
+      const text = await fs.readFile(join(home, 'bin', name), 'utf8');
+      return [name, text] as [string, string];
+    })
+  );
+  const rewrite = async (runtime: string) => {
+    for (const [name, text] of originals) {
+      await fs.writeFile(
+        join(home, 'bin', name),
+        text.replace(quoted, `'${runtime}'`)
+      );
+    }
+  };
+  await rewrite(link);
+  await expect(installedResourceShims(home)).resolves.toBe(join(home, 'bin'));
+  await rewrite('/usr/bin/false');
+  vi.clearAllMocks();
+  const marker = join(home, 'marker');
+  await expect(
+    runResourcesCommand([
+      'run',
+      '--ignore-disk',
+      '--',
+      process.execPath,
+      '-e',
+      `require('fs').writeFileSync(${JSON.stringify(marker)},'bad')`,
+    ])
+  ).rejects.toThrow(
+    'Resource shims are valid for their own runtime /usr/bin/false.'
+  );
+  const files = await fs.readdir(home);
+  for (const name of ['queue', 'lock', 'slots', 'admission', 'marker'])
+    expect(files).not.toContain(name);
+  expectNoShimWrites(home);
+});
+
 it('validates every installed shim, including the last one', async () => {
   const home = await fixture();
   await fs.rm(join(home, 'bin', resourceShims.at(-1)!));
