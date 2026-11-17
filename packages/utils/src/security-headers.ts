@@ -11,7 +11,7 @@
  * Portable: no framework or runtime imports.
  */
 
-import { isRetiredAppHostname } from './retired-app-hosts';
+import { isRetiredAppHostname } from '@tuturuuu/utils/retired-app-hosts';
 
 export type PermissionFeature =
   | 'autoplay'

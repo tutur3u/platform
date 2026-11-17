@@ -23,6 +23,21 @@ Vercel deployment keeps serving until the route is flipped.
   `TUTURUUU_APP_COORDINATION_SECRET`. Compare with the Vercel project
   environment list before the flip.
 
+## Document script policy
+
+The Learn Worker enforces a fresh request nonce with `strict-dynamic` on both
+`learn.tuturuuu.com` and `tuturuuu.com/learn`. The full document policy, including
+Trusted Types, is report-only. Theme and Sorbet prepaint scripts receive the
+request nonce during server rendering; client rendering omits it. The router
+and bridge head scripts use the same request context. Regression coverage lives
+in `apps/learn/start-bridge.config.test.ts` and the client-provider SSR and
+hydration tests.
+
+Runtime qualification requires the owning CI build and its package outputs.
+A fresh source-only worktree can fail module resolution before serving a request;
+that failure does not establish the root or mounted route's HTTP status. Preserve
+the expected `200` assertions and qualify the emitted Worker in CI.
+
 ## Build and qualification
 
 ```bash
