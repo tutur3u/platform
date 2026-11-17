@@ -1,13 +1,16 @@
 'use client';
 
 import { Settings } from '@tuturuuu/icons';
-import { Button } from '@tuturuuu/ui/button';
+import { satelliteNavigationItemClass } from '@tuturuuu/ui/custom/satellite-navigation';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@tuturuuu/ui/tooltip';
-import { cn } from '@tuturuuu/utils/format';
 
 const SETTINGS_DIALOG_OPEN_INTENT_EVENT =
   'tuturuuu:settings-dialog-open-intent';
 
+/**
+ * Opens the settings dialog from the sidebar footer. It shares the nav item
+ * class, so its hover and focus shape matches every sidebar link.
+ */
 export function SidebarSettingsButton({
   isCollapsed,
   label,
@@ -16,12 +19,10 @@ export function SidebarSettingsButton({
   label: string;
 }) {
   const button = (
-    <Button
+    <button
       aria-label={label}
-      className={cn(
-        'h-9 rounded-lg',
-        isCollapsed ? 'w-9 px-0' : 'w-full justify-start px-3'
-      )}
+      className={satelliteNavigationItemClass({ isCollapsed })}
+      data-slot="sidebar-settings-button"
       onClick={() =>
         window.dispatchEvent(
           new CustomEvent(SETTINGS_DIALOG_OPEN_INTENT_EVENT, {
@@ -29,11 +30,13 @@ export function SidebarSettingsButton({
           })
         )
       }
-      variant="ghost"
+      type="button"
     >
-      <Settings className="size-4 shrink-0" />
-      {isCollapsed ? null : <span>{label}</span>}
-    </Button>
+      <span className="flex min-w-0 items-center gap-2">
+        <Settings className="size-4 shrink-0" />
+        {isCollapsed ? null : <span className="truncate">{label}</span>}
+      </span>
+    </button>
   );
 
   if (!isCollapsed) return button;

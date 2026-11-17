@@ -1,4 +1,5 @@
-import { fireEvent, render, screen } from '@testing-library/react';
+import { fireEvent, render, screen, within } from '@testing-library/react';
+import { satelliteNavigationItemClass } from '@tuturuuu/ui/custom/satellite-navigation';
 import { describe, expect, it, vi } from 'vitest';
 import { SidebarSettingsButton } from './sidebar-settings-button';
 
@@ -16,4 +17,18 @@ describe('SidebarSettingsButton', () => {
       listener
     );
   });
+
+  it.each([false, true])(
+    'uses the sidebar nav item shape (collapsed: %s)',
+    (isCollapsed) => {
+      const { container, unmount } = render(
+        <SidebarSettingsButton isCollapsed={isCollapsed} label="Settings" />
+      );
+
+      expect(
+        within(container).getByRole('button', { name: 'Settings' }).className
+      ).toBe(satelliteNavigationItemClass({ isCollapsed }));
+      unmount();
+    }
+  );
 });
