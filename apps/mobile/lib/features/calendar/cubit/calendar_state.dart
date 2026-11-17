@@ -6,6 +6,10 @@ enum CalendarStatus { initial, loading, loaded, error }
 
 enum CalendarViewMode { day, threeDays, week, month, agenda, year }
 
+/// Projected events per source list; entries go away with their list.
+final Expando<({String? zone, List<CalendarEvent> events})>
+_displayEventsCache = Expando('calendar-display-events');
+
 class CalendarState extends Equatable {
   const CalendarState({
     this.status = CalendarStatus.initial,
@@ -41,8 +45,17 @@ class CalendarState extends Equatable {
   final String? timezone;
   final double timelineZoom;
 
-  List<CalendarEvent> get displayEvents =>
-      events.map((event) => calendarProjectEvent(event, timezone)).toList();
+  /// [events] projected into [timezone]; computed once per events list and
+  /// zone, so views and rebuilds share one list instead of re-projecting.
+  List<CalendarEvent> get displayEvents {
+    final cached = _displayEventsCache[events];
+    if (cached != null && cached.zone == timezone) return cached.events;
+    final projected = List<CalendarEvent>.unmodifiable(
+      events.map((event) => calendarProjectEvent(event, timezone)),
+    );
+    _displayEventsCache[events] = (zone: timezone, events: projected);
+    return projected;
+  }
 
   DateTime get effectiveSelectedDate => selectedDate == null
       ? calendarNow(timezone)

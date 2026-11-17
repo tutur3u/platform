@@ -215,6 +215,10 @@ localization changes.
   through `ShellRootTabsCubit`, and keep the tablet rail on its fixed five
   destinations. Module tabs reuse the Apps origin flow, so Back returns to
   the root that opened them; `shell_root_tabs_test.dart` covers it.
+- Timeline grids build their day columns lazily (`ListView` with a fixed
+  item extent and a key-to-index callback); never lay out a whole scrollable
+  date window eagerly, and memoize derived event lists such as
+  `CalendarState.displayEvents` so rebuilds share one list.
 - Overlay wrappers that change only padding must always return the same
   wrapper widget; an early `return child` reparents the overlay content and
   drops its dock registrations.

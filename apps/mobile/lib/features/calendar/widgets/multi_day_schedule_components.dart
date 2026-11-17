@@ -165,16 +165,16 @@ class _MultiDayTimelineColumn extends StatelessWidget {
 
             return Stack(
               children: [
-                for (var hour = 0; hour < 24; hour++)
-                  Positioned(
-                    top: hour * hourHeight,
-                    left: 0,
-                    right: 0,
-                    child: Container(
-                      height: 0.6,
+                // One painter draws all 24 hour lines, so an eagerly built
+                // date window does not pay for 24 widgets per day.
+                Positioned.fill(
+                  child: CustomPaint(
+                    painter: _HourLinesPainter(
+                      hourHeight: hourHeight,
                       color: colorScheme.outlineVariant.withValues(alpha: 0.8),
                     ),
                   ),
+                ),
                 for (final layout in layouts)
                   _MultiDayEventCard(
                     layoutInfo: layout,
@@ -190,6 +190,28 @@ class _MultiDayTimelineColumn extends StatelessWidget {
       ),
     );
   }
+}
+
+class _HourLinesPainter extends CustomPainter {
+  const _HourLinesPainter({required this.hourHeight, required this.color});
+
+  final double hourHeight;
+  final Color color;
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final paint = Paint()..color = color;
+    for (var hour = 0; hour < 24; hour++) {
+      canvas.drawRect(
+        Rect.fromLTWH(0, hour * hourHeight, size.width, 0.6),
+        paint,
+      );
+    }
+  }
+
+  @override
+  bool shouldRepaint(_HourLinesPainter oldDelegate) =>
+      oldDelegate.hourHeight != hourHeight || oldDelegate.color != color;
 }
 
 class _MultiDayEventCard extends StatelessWidget {

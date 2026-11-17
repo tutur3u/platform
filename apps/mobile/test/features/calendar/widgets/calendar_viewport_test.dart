@@ -5,6 +5,7 @@ import 'package:mobile/features/calendar/utils/event_layout.dart';
 import 'package:mobile/features/calendar/widgets/multi_day_schedule_view.dart';
 
 import '../../../helpers/helpers.dart';
+import 'horizontal_date_scrollers.dart';
 
 final day = DateTime(2030, 1, 15);
 CalendarEvent event(String id, int start, int end) => CalendarEvent(
@@ -65,19 +66,12 @@ void main() {
       final initialRect = tester.getRect(label);
       expect(initialRect.left, greaterThanOrEqualTo(52));
       expect(initialRect.right, lessThanOrEqualTo(390));
-      final scroller = find
-          .byWidgetPredicate(
-            (w) =>
-                w is SingleChildScrollView &&
-                w.scrollDirection == Axis.horizontal,
-          )
-          .first;
+      final scroller = horizontalDateScrollers.first;
       await tester.drag(scroller, const Offset(-53, 0));
       await tester.pumpAndSettle();
       final offsets = tester
-          .widgetList<SingleChildScrollView>(find.byType(SingleChildScrollView))
-          .where((w) => w.scrollDirection == Axis.horizontal)
-          .map((w) => w.controller!.offset)
+          .widgetList(horizontalDateScrollers)
+          .map((w) => dateScrollerController(w).offset)
           .toList();
       final width = count == 3 ? (390 - 52) / 3 : 112.0;
       expect(
@@ -194,10 +188,7 @@ void main() {
         ),
       );
       await tester.pumpAndSettle();
-      final horizontal = find.byWidgetPredicate(
-        (w) =>
-            w is SingleChildScrollView && w.scrollDirection == Axis.horizontal,
-      );
+      final horizontal = horizontalDateScrollers;
       final scroll = horizontal.at(surface);
       final gesture = await tester.startGesture(tester.getCenter(scroll));
       await gesture.moveBy(const Offset(-20, 0));
@@ -205,36 +196,35 @@ void main() {
       await gesture.moveBy(const Offset(-60, 0));
       await tester.pump();
       expect(calls, 0);
-      final during = tester
-          .widget<SingleChildScrollView>(scroll)
-          .controller!
-          .offset;
+      final during = dateScrollerController(tester.widget(scroll)).offset;
       expect((during / 112 - (during / 112).round()).abs(), greaterThan(0.01));
       await gesture.up();
       await tester.pumpAndSettle();
-      for (final view in tester.widgetList<SingleChildScrollView>(horizontal)) {
+      for (final view in tester.widgetList(horizontal)) {
         expect(
-          view.controller!.offset / 112,
-          closeTo((view.controller!.offset / 112).roundToDouble(), 0.001),
+          dateScrollerController(view).offset / 112,
+          closeTo(
+            (dateScrollerController(view).offset / 112).roundToDouble(),
+            0.001,
+          ),
         );
       }
       expect(calls, 1);
-      final extent = tester
-          .widget<SingleChildScrollView>(horizontal.last)
-          .controller!
-          .position
-          .maxScrollExtent;
+      final extent = dateScrollerController(
+        tester.widget(horizontal.last),
+      ).position.maxScrollExtent;
       // Explicit date navigation centers the window.
       // It must not emit a swipe callback.
       update(() => selected = day.add(const Duration(days: 35)));
       await tester.pumpAndSettle();
-      final views = tester
-          .widgetList<SingleChildScrollView>(horizontal)
-          .toList();
+      final views = tester.widgetList(horizontal).toList();
       for (final view in views) {
-        expect(view.controller!.offset, closeTo(14 * 112, 0.001));
+        expect(dateScrollerController(view).offset, closeTo(14 * 112, 0.001));
       }
-      expect(views.last.controller!.position.maxScrollExtent, extent);
+      expect(
+        dateScrollerController(views.last).position.maxScrollExtent,
+        extent,
+      );
       expect(calls, 1);
       expect(tester.takeException(), isNull);
     });
@@ -262,12 +252,8 @@ void main() {
       ),
     );
     await tester.pumpAndSettle();
-    final horizontal = find.byWidgetPredicate(
-      (w) => w is SingleChildScrollView && w.scrollDirection == Axis.horizontal,
-    );
-    final grid = tester
-        .widget<SingleChildScrollView>(horizontal.last)
-        .controller!;
+    final horizontal = horizontalDateScrollers;
+    final grid = dateScrollerController(tester.widget(horizontal.last));
     final extent = grid.position.maxScrollExtent;
     grid.jumpTo(extent);
     await tester.pumpAndSettle();
@@ -278,7 +264,7 @@ void main() {
     expect(grid.position.maxScrollExtent, extent);
     expect(selected.isAfter(day), isTrue);
     expect(
-      tester.widget<SingleChildScrollView>(horizontal.first).controller!.offset,
+      dateScrollerController(tester.widget(horizontal.first)).offset,
       closeTo(grid.offset, 0.001),
     );
     expect(tester.takeException(), isNull);

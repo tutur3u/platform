@@ -4,18 +4,12 @@ import 'package:mobile/data/models/calendar_event.dart';
 import 'package:mobile/features/calendar/widgets/multi_day_schedule_view.dart';
 
 import '../../../helpers/helpers.dart';
+import 'horizontal_date_scrollers.dart';
 
 final _day = DateTime.utc(2030, 1, 15);
 
-List<SingleChildScrollView> _horizontal(WidgetTester tester) => tester
-    .widgetList<SingleChildScrollView>(
-      find.byWidgetPredicate(
-        (widget) =>
-            widget is SingleChildScrollView &&
-            widget.scrollDirection == Axis.horizontal,
-      ),
-    )
-    .toList();
+List<Widget> _horizontal(WidgetTester tester) =>
+    tester.widgetList(horizontalDateScrollers).toList();
 
 Rect _eventRect(WidgetTester tester, String title) => tester.getRect(
   find.ancestor(of: find.text(title), matching: find.byType(Positioned)).first,
@@ -70,10 +64,14 @@ void main() {
         await tester.pumpAndSettle();
         const width = 338 / 3;
         final top = _eventRect(tester, 'timed-0').top;
-        final element = tester.element(find.text('timed-5'));
+        // Day +5 sits in the grid's lazily built cache region, so it is
+        // built (and must keep its element) while still offstage.
+        final element = tester.element(
+          find.text('timed-5', skipOffstage: false),
+        );
         final header = tester.element(find.text('20'));
         final span = tester.element(find.text('retained-span'));
-        final controller = _horizontal(tester).last.controller!;
+        final controller = dateScrollerController(_horizontal(tester).last);
         final painted = await _move(
           tester,
           controller,
@@ -95,7 +93,10 @@ void main() {
         await tester.pump();
         expect(_eventRect(tester, 'timed-5'), first);
         for (final view in _horizontal(tester)) {
-          expect(view.controller!.offset, closeTo(controller.offset, 0.01));
+          expect(
+            dateScrollerController(view).offset,
+            closeTo(controller.offset, 0.01),
+          );
         }
         final reverse = await _move(
           tester,
@@ -157,8 +158,8 @@ Future<Rect> _move(
         tester.getCenter(
           find.byWidgetPredicate(
             (widget) =>
-                widget is SingleChildScrollView &&
-                widget.controller == controller,
+                isHorizontalDateScroller(widget) &&
+                dateScrollerController(widget) == controller,
           ),
         ),
       );

@@ -33,6 +33,45 @@ void main() {
   });
   tearDown(() => cubit.close());
 
+  // displayEvents is memoized per events list instance, so every event change
+  // must emit a new list; an in-place edit would serve a stale projection.
+  test('every event change yields a fresh projected list', () async {
+    final loaded = cubit.state.displayEvents;
+    expect(cubit.state.displayEvents, same(loaded));
+    when(
+      () => repository.createEvent('origin', any()),
+    ).thenAnswer((_) async => const CalendarEvent(id: 'created', title: 'New'));
+    when(
+      () => repository.updateEvent('origin', 'first', any()),
+    ).thenAnswer((_) async => const CalendarEvent(id: 'first', title: 'Edit'));
+    when(
+      () => repository.deleteEvent('origin', 'second'),
+    ).thenAnswer((_) async {});
+
+    await cubit.createEvent(
+      'origin',
+      title: 'New',
+      startAt: DateTime(2026),
+      endAt: DateTime(2026, 1, 1, 1),
+    );
+    final created = cubit.state.displayEvents;
+    expect(created, isNot(same(loaded)));
+    expect(created.map((event) => event.id), contains('created'));
+
+    await cubit.updateEvent('origin', 'first', title: 'Edit');
+    final updated = cubit.state.displayEvents;
+    expect(updated, isNot(same(created)));
+    expect(
+      updated.firstWhere((event) => event.id == 'first').title,
+      'Edit',
+    );
+
+    await cubit.deleteEvent('origin', 'second');
+    final deleted = cubit.state.displayEvents;
+    expect(deleted, isNot(same(updated)));
+    expect(deleted.map((event) => event.id), isNot(contains('second')));
+  });
+
   test('late create updates only the originating workspace cache', () async {
     final response = Completer<CalendarEvent>();
     when(

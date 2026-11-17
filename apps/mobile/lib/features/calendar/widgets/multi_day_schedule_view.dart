@@ -2,6 +2,7 @@ import 'dart:async';
 import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
+import 'package:flutter/rendering.dart' show ScrollCacheExtent;
 import 'package:intl/intl.dart';
 import 'package:mobile/core/responsive/responsive_values.dart';
 import 'package:mobile/data/models/calendar_event.dart';
@@ -228,21 +229,32 @@ class _MultiDayScheduleViewState extends State<MultiDayScheduleView> {
         date.day == now.day;
   }
 
+  List<CalendarEvent>? _bucketedFor;
+  List<CalendarEvent> _timedEvents = const [];
+
+  /// Timed events, filtered once per events list instead of once per day
+  /// column; each column then scans only these.
+  List<CalendarEvent> get _timedEventsSource {
+    if (!identical(_bucketedFor, widget.events)) {
+      _bucketedFor = widget.events;
+      _timedEvents = [
+        for (final event in widget.events)
+          if (!event.isAllDay && event.startAt != null) event,
+      ];
+    }
+    return _timedEvents;
+  }
+
   List<CalendarEvent> _timedEventsForDay(DateTime date) {
     final dayStart = calendarDate(date.year, date.month, date.day);
     final dayEnd = dayStart.add(const Duration(days: 1));
 
-    return widget.events.where((event) {
-      if (event.isAllDay) {
-        return false;
-      }
-      final start = event.startAt;
-      final end = event.endAt ?? start;
-      if (start == null) {
-        return false;
-      }
-      return start.isBefore(dayEnd) && end!.isAfter(dayStart);
-    }).toList();
+    return [
+      for (final event in _timedEventsSource)
+        if (event.startAt!.isBefore(dayEnd) &&
+            (event.endAt ?? event.startAt)!.isAfter(dayStart))
+          event,
+    ];
   }
 
   List<CalendarEvent> get _allDayEvents =>
@@ -387,44 +399,55 @@ class _MultiDayScheduleViewState extends State<MultiDayScheduleView> {
                   ),
                   child: Stack(
                     children: [
-                      SingleChildScrollView(
-                        controller: _gridController,
-                        scrollDirection: Axis.horizontal,
-                        physics: DateSnapScrollPhysics(
-                          dayWidth: dayColumnWidth,
-                        ),
-                        child: SizedBox(
-                          width: gutterWidth + dayAreaWidth,
-                          child: SizedBox(
-                            height: 24 * hourHeight,
-                            child: Row(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                SizedBox(width: gutterWidth),
-                                for (final date in visibleDates)
-                                  SizedBox(
-                                    key: ValueKey((widget.zoomScope, date)),
-                                    width: dayColumnWidth,
-                                    child: _MultiDayTimelineColumn(
-                                      date: date,
-                                      selectedDate: widget.selectedDate,
-                                      hourHeight: hourHeight,
-                                      events: _timedEventsForDay(date),
-                                      isToday: _isToday(date),
-                                      onEventTap: (event) {
-                                        if (!_zoomBlocked()) {
-                                          widget.onEventTap(event);
-                                        }
-                                      },
-                                      onCreateAtTime: (time) {
-                                        if (!_zoomBlocked()) {
-                                          widget.onCreateAtTime(time);
-                                        }
-                                      },
-                                    ),
-                                  ),
-                              ],
-                            ),
+                      // Day columns build lazily: the visible days plus one
+                      // screen of days either side lay out their events. A
+                      // column keeps its element when the date window
+                      // recentres, because its key maps back to its index.
+                      SizedBox(
+                        height: 24 * hourHeight,
+                        child: ListView.custom(
+                          controller: _gridController,
+                          scrollDirection: Axis.horizontal,
+                          physics: DateSnapScrollPhysics(
+                            dayWidth: dayColumnWidth,
+                          ),
+                          padding: EdgeInsets.only(left: gutterWidth),
+                          itemExtent: dayColumnWidth,
+                          scrollCacheExtent: ScrollCacheExtent.pixels(
+                            dayColumnWidth * widget.visibleDayCount,
+                          ),
+                          childrenDelegate: SliverChildBuilderDelegate(
+                            (context, index) {
+                              final date = visibleDates[index];
+                              return KeyedSubtree(
+                                key: ValueKey((widget.zoomScope, date)),
+                                child: _MultiDayTimelineColumn(
+                                  date: date,
+                                  selectedDate: widget.selectedDate,
+                                  hourHeight: hourHeight,
+                                  events: _timedEventsForDay(date),
+                                  isToday: _isToday(date),
+                                  onEventTap: (event) {
+                                    if (!_zoomBlocked()) {
+                                      widget.onEventTap(event);
+                                    }
+                                  },
+                                  onCreateAtTime: (time) {
+                                    if (!_zoomBlocked()) {
+                                      widget.onCreateAtTime(time);
+                                    }
+                                  },
+                                ),
+                              );
+                            },
+                            childCount: visibleDates.length,
+                            findChildIndexCallback: (key) {
+                              if (key is! ValueKey<(Object?, DateTime)>) {
+                                return null;
+                              }
+                              final index = visibleDates.indexOf(key.value.$2);
+                              return index < 0 ? null : index;
+                            },
                           ),
                         ),
                       ),
