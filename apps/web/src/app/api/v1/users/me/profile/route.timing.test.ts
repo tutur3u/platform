@@ -66,6 +66,6 @@ describe('profile GET Server-Timing', () => {
   it('carries the header through HEAD', async () => {
     f.from.mockImplementation(query);
     const response = await HEAD(request('HEAD'), undefined as never);
-    expect(response.headers.get('Server-Timing')).toContain('total;dur=');
+    expect(response?.headers.get('Server-Timing')).toContain('total;dur=');
   });
 });
