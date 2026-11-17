@@ -62,7 +62,7 @@ PR verification can use a separately admitted runner pool. Routing follows trust
 
 The report-only Web browser workflow runs smoke or broader browser verification according to its trigger. It supplies browser evidence; it does not deploy the application. Its workflow-specific runtime exception does not resume other paused runtimes.
 
-The job runs on GitHub-hosted Ubuntu and installs Chromium with its Linux system dependencies. The scoped launcher admits only the trusted main workflow on GitHub-hosted Linux. Keep fleet verification static; Docker and browser execution belong to the hosted job.
+The job runs on GitHub-hosted Ubuntu and installs Chromium with its Linux system dependencies. The scoped launcher admits only the trusted main workflow on GitHub-hosted Linux. The launcher carries only allowlisted nonsecret admission fields through the synthetic BuildKit `web_env`. The build entrypoint rechecks those fields before selecting Turbo Web `build:docker` with dependency builds at concurrency 1; missing context retains the paused root alias and invalid context is rejected. Keep fleet verification static; Docker and browser execution belong to the hosted job.
 
 Inspect the Smoke or Nightly step and its reports for browser acceptance. A successful report-only workflow can contain a failed job, and a provisioning failure does not prove that browser tests ran. The dependency image must copy every workspace manifest and file-backed dependency before its frozen install; the focused CI dependency-context test checks that inventory.
 

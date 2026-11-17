@@ -208,3 +208,11 @@ test('workflow compatibility launcher forwards retained Bun CLI arguments intact
     'auth smoke',
   ]);
 });
+
+test('workflow directories remain required outside the build context', () => {
+  for (const key of ['GITHUB_WORKSPACE', 'RUNNER_TEMP'])
+    assert.throws(
+      () => plan({ ...trusted, [key]: '' }),
+      /Missing workflow directories/
+    );
+});

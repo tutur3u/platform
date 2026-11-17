@@ -3,29 +3,12 @@ const os = require('node:os');
 const path = require('node:path');
 const { execFileSync } = require('node:child_process');
 
-const WORKFLOW =
-  'tutur3u/platform/.github/workflows/e2e-smoke-report-only.yaml@refs/heads/main';
+const { assertAdmission } = require('./hosted-web-e2e-admission');
 
 function plan(env = process.env, home = os.homedir()) {
-  if (
-    env.CI !== 'true' ||
-    env.GITHUB_REPOSITORY !== 'tutur3u/platform' ||
-    env.GITHUB_WORKFLOW_REF !== WORKFLOW ||
-    env.GITHUB_REF !== 'refs/heads/main' ||
-    env.RUNNER_ENVIRONMENT !== 'github-hosted' ||
-    env.RUNNER_OS !== 'Linux' ||
-    !['push', 'schedule', 'workflow_dispatch'].includes(
-      env.GITHUB_EVENT_NAME
-    ) ||
-    !/^\d+$/.test(env.GITHUB_RUN_ID || '') ||
-    !/^\d+$/.test(env.GITHUB_RUN_ATTEMPT || '') ||
-    !env.GITHUB_WORKSPACE ||
-    !env.RUNNER_TEMP
-  ) {
-    throw new Error(
-      'Docker exception is limited to the trusted main Web E2E fleet workflow'
-    );
-  }
+  assertAdmission(env);
+  if (!env.GITHUB_WORKSPACE || !env.RUNNER_TEMP)
+    throw new Error('Missing workflow directories');
   const identity = `${env.GITHUB_RUN_ID}-${env.GITHUB_RUN_ATTEMPT}`;
   const project = `ttr-e2e-report-${identity}`;
   return {

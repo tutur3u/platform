@@ -5,6 +5,8 @@ const {
   applyCoolifyAppUrlFallbacks,
 } = require('../apps/web/docker/coolify-env.js');
 
+const { buildAdmissionContext } = require('./ci/hosted-web-e2e-admission');
+
 const DEFAULT_DOCKER_WEB_TURBO_CONCURRENCY = 1;
 
 function parsePositiveInteger(value) {
@@ -28,6 +30,17 @@ function resolveDockerWebTurboConcurrency(env = process.env) {
 }
 
 function getBuildWebDockerArgs(env = process.env) {
+  if (Object.keys(buildAdmissionContext(env)).length) {
+    return [
+      'x',
+      '--no-install',
+      'turbo',
+      'run',
+      'build:docker',
+      '--filter=@tuturuuu/web',
+      '--concurrency=1',
+    ];
+  }
   return [
     'run',
     'build:web:docker',

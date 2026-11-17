@@ -1,5 +1,6 @@
 #!/usr/bin/env node
 
+const { ensureLocalE2EEnvFile } = require('./ci/hosted-web-e2e-admission');
 const { spawn } = require('node:child_process');
 const fs = require('node:fs');
 const https = require('node:https');
@@ -15,7 +16,6 @@ const {
 const { PROD_COMPOSE_FILE } = require('./docker-web/compose.js');
 const {
   assertSafeE2EEnvironment,
-  createLocalE2EEnvFileContent,
   createLocalE2EProcessEnv,
   LOCAL_E2E_BASE_URL,
   LOCAL_E2E_TANSTACK_BASE_URL,
@@ -1290,14 +1290,6 @@ async function ensurePortlessRoute({
   } finally {
     endDiagnosticGroup({ env, output });
   }
-}
-
-function ensureLocalE2EEnvFile(envFilePath, overrides = {}) {
-  fs.mkdirSync(path.dirname(envFilePath), { recursive: true });
-  fs.writeFileSync(envFilePath, createLocalE2EEnvFileContent(overrides), {
-    encoding: 'utf8',
-    mode: 0o600,
-  });
 }
 
 function isTruthyEnvValue(value) {
