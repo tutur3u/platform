@@ -16,3 +16,20 @@ it('preserves addresses and ordinary punctuation', () => {
     'Contact first_last@example.com. 2 * 3 = 6.'
   );
 });
+it('hides stylesheet text already stored in snippets', () => {
+  expect(
+    mailSnippetText(
+      '@media only screen and (max-width: 600px) { .inner-body { width: 100%...'
+    )
+  ).toBe('');
+  expect(
+    mailSnippetText(
+      '@media only screen and (max-width: 600px) { .inner-body { width: 100% !important; } } Hello **team**'
+    )
+  ).toBe('Hello team');
+});
+it('keeps list and quote cleanup for multi-line stored snippets', () => {
+  expect(mailSnippetText('Hi\n- item one\n> quoted')).toBe(
+    'Hi item one quoted'
+  );
+});

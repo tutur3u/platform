@@ -1,5 +1,6 @@
 import { withAppBase } from '@tuturuuu/start-bridge/app-url';
 import sanitizeHtml from 'sanitize-html';
+import { cleanSnippetSource } from './snippet-source';
 
 const FORBIDDEN_MAIL_TAGS = [
   'base',
@@ -179,6 +180,7 @@ export function createSnippet({
   html?: string | null;
   text?: string | null;
 }) {
-  const source = text?.trim() || (html ? stripHtml(html) : '');
+  const source =
+    cleanSnippetSource(text) || cleanSnippetSource(html, { html: true });
   return source.length > 180 ? `${source.slice(0, 177)}...` : source;
 }
