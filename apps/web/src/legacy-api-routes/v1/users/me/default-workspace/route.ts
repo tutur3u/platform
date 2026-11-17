@@ -5,26 +5,31 @@ import {
 import { NextResponse } from 'next/server';
 import { z } from 'zod';
 import { withSessionAuth } from '@/lib/api-auth';
+import { timeServerPhase, withServerTiming } from '@/lib/server-timing';
 import { CURRENT_USER_APP_SESSION_AUTH } from '../session-auth';
 
-export const GET = withSessionAuth(
-  async (_req, { supabase }) => {
-    try {
-      const defaultWorkspace = await getUserDefaultWorkspace(supabase);
+export const GET = withServerTiming(
+  withSessionAuth(
+    async (_req, { supabase }) => {
+      try {
+        const defaultWorkspace = await timeServerPhase('db', () =>
+          getUserDefaultWorkspace(supabase)
+        );
 
-      return NextResponse.json(defaultWorkspace);
-    } catch (error) {
-      console.error('Error getting default workspace:', error);
-      return NextResponse.json(
-        { error: 'Internal server error' },
-        { status: 500 }
-      );
+        return NextResponse.json(defaultWorkspace);
+      } catch (error) {
+        console.error('Error getting default workspace:', error);
+        return NextResponse.json(
+          { error: 'Internal server error' },
+          { status: 500 }
+        );
+      }
+    },
+    {
+      allowAppSessionAuth: CURRENT_USER_APP_SESSION_AUTH,
+      cache: { maxAge: 300, swr: 60 },
     }
-  },
-  {
-    allowAppSessionAuth: CURRENT_USER_APP_SESSION_AUTH,
-    cache: { maxAge: 300, swr: 60 },
-  }
+  )
 );
 
 export const PATCH = withSessionAuth(async (req, { user, supabase }) => {

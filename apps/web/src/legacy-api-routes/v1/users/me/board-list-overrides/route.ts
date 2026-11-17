@@ -3,6 +3,7 @@ import { NextResponse } from 'next/server';
 import { validate } from 'uuid';
 import { z } from 'zod';
 import { withSessionAuth } from '@/lib/api-auth';
+import { timeServerPhase, withServerTiming } from '@/lib/server-timing';
 
 const upsertSchema = z.object({
   scope_type: z.enum(['board', 'list']),
@@ -12,32 +13,36 @@ const upsertSchema = z.object({
   notes: z.string().max(MAX_MEDIUM_TEXT_LENGTH).nullable().optional(),
 });
 
-export const GET = withSessionAuth(
-  async (_req, { user, supabase }) => {
-    try {
-      const { data, error } = await (supabase as any)
-        .from('user_board_list_overrides')
-        .select('*')
-        .eq('user_id', user.id);
+export const GET = withServerTiming(
+  withSessionAuth(
+    async (_req, { user, supabase }) => {
+      try {
+        const { data, error } = await timeServerPhase('db', () =>
+          (supabase as any)
+            .from('user_board_list_overrides')
+            .select('*')
+            .eq('user_id', user.id)
+        );
 
-      if (error) {
-        console.error('Error fetching board/list overrides:', error);
+        if (error) {
+          console.error('Error fetching board/list overrides:', error);
+          return NextResponse.json(
+            { error: 'Failed to fetch overrides' },
+            { status: 500 }
+          );
+        }
+
+        return NextResponse.json({ data: data ?? [] });
+      } catch (error) {
+        console.error('Error in board-list-overrides GET:', error);
         return NextResponse.json(
-          { error: 'Failed to fetch overrides' },
+          { error: 'Internal server error' },
           { status: 500 }
         );
       }
-
-      return NextResponse.json({ data: data ?? [] });
-    } catch (error) {
-      console.error('Error in board-list-overrides GET:', error);
-      return NextResponse.json(
-        { error: 'Internal server error' },
-        { status: 500 }
-      );
-    }
-  },
-  { cache: { maxAge: 10, swr: 20 } }
+    },
+    { cache: { maxAge: 10, swr: 20 } }
+  )
 );
 
 export const PUT = withSessionAuth(async (req, { user, supabase }) => {

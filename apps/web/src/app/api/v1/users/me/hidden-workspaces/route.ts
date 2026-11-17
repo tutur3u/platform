@@ -7,6 +7,7 @@ import { verifyWorkspaceMembershipType } from '@tuturuuu/utils/workspace-helper'
 import { connection, NextResponse } from 'next/server';
 import { z } from 'zod';
 import { withSessionAuth } from '@/lib/api-auth';
+import { timeServerPhase, withServerTiming } from '@/lib/server-timing';
 import { getDefaultAppSessionVerificationOptions } from '@/lib/api-auth-audiences';
 import { hasBoardShareWorkspaceAccess } from './board-share-access';
 
@@ -23,56 +24,65 @@ const bodySchema = z
 
 // This owner-only preference must never be joined into workspace/member payloads.
 // Canonical workspace membership remains the source for access and services.
-export const GET = withSessionAuth(
-  async (req, { user, supabase }) => {
-    await connection();
-    const expectedActor = new URL(req.url).searchParams.get('expectedActorId');
-    if (expectedActor !== user.id) {
-      return NextResponse.json(
-        { message: 'Account changed' },
-        { status: 409, headers }
+export const GET = withServerTiming(
+  withSessionAuth(
+    async (req, { user, supabase }) => {
+      await connection();
+      const expectedActor = new URL(req.url).searchParams.get(
+        'expectedActorId'
       );
-    }
-    const { data, error } = await supabase
-      .from('user_workspace_configs')
-      .select('ws_id')
-      .eq('user_id', user.id)
-      .eq('id', preferenceKey)
-      .eq('value', 'true');
-    const { data: guestPreferences, error: guestError } = await supabase
-      .from('user_configs')
-      .select('id')
-      .eq('user_id', user.id)
-      .like('id', 'HIDDEN\\_WORKSPACE:%')
-      .eq('value', 'true');
-    if (error || guestError) {
-      return NextResponse.json(
-        { message: 'Unable to read Hidden workspaces' },
-        { status: 500, headers }
+      if (expectedActor !== user.id) {
+        return NextResponse.json(
+          { message: 'Account changed' },
+          { status: 409, headers }
+        );
+      }
+      const { data, error } = await timeServerPhase('db', () =>
+        supabase
+          .from('user_workspace_configs')
+          .select('ws_id')
+          .eq('user_id', user.id)
+          .eq('id', preferenceKey)
+          .eq('value', 'true')
       );
+      const { data: guestPreferences, error: guestError } =
+        await timeServerPhase('db', () =>
+          supabase
+            .from('user_configs')
+            .select('id')
+            .eq('user_id', user.id)
+            .like('id', 'HIDDEN\\_WORKSPACE:%')
+            .eq('value', 'true')
+        );
+      if (error || guestError) {
+        return NextResponse.json(
+          { message: 'Unable to read Hidden workspaces' },
+          { status: 500, headers }
+        );
+      }
+      return NextResponse.json(
+        {
+          hiddenWorkspaceIds: [
+            ...new Set([
+              ...(data ?? []).map((row) => row.ws_id),
+              ...(guestPreferences ?? [])
+                .map((row) => row.id.slice(guestPreferencePrefix.length))
+                .filter((id) => z.uuid().safeParse(id).success),
+            ]),
+          ],
+        },
+        { headers }
+      );
+    },
+    {
+      allowAppSessionAuth: [
+        getDefaultAppSessionVerificationOptions(
+          '/api/v1/users/me/hidden-workspaces'
+        ),
+        { targetApp: CLI_APP_TARGET_APP, requiredScope: CLI_APP_ACCESS_SCOPE },
+      ],
     }
-    return NextResponse.json(
-      {
-        hiddenWorkspaceIds: [
-          ...new Set([
-            ...(data ?? []).map((row) => row.ws_id),
-            ...(guestPreferences ?? [])
-              .map((row) => row.id.slice(guestPreferencePrefix.length))
-              .filter((id) => z.uuid().safeParse(id).success),
-          ]),
-        ],
-      },
-      { headers }
-    );
-  },
-  {
-    allowAppSessionAuth: [
-      getDefaultAppSessionVerificationOptions(
-        '/api/v1/users/me/hidden-workspaces'
-      ),
-      { targetApp: CLI_APP_TARGET_APP, requiredScope: CLI_APP_ACCESS_SCOPE },
-    ],
-  }
+  )
 );
 
 export const PUT = withSessionAuth(

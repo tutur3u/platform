@@ -8,7 +8,6 @@ import {
   CLI_APP_ACCESS_SCOPE,
   CLI_APP_TARGET_APP,
 } from '@tuturuuu/auth/cli-session';
-import { resolveAuthenticatedSessionUser } from '@tuturuuu/supabase/next/auth-session-user';
 import type { TypedSupabaseClient } from '@tuturuuu/supabase/next/client';
 import {
   createAdminClient,
@@ -42,6 +41,7 @@ import {
   type AppSessionAuthOptions,
   verifyConfiguredAppSessionRequest,
 } from './api-auth-app-session';
+import { resolveTimedSessionUser } from './server-timing';
 import { supabaseSessionRequest } from './supabase-session-request';
 import { setLogDrainUserContext } from './infrastructure/log-drain';
 import { checkRateLimit, type RateLimitConfig } from './rate-limit';
@@ -188,7 +188,7 @@ export interface SessionAuthContext {
 }
 
 async function resolveAuthenticatedUser(supabase: TypedSupabaseClient) {
-  const resolution = await resolveAuthenticatedSessionUser(supabase);
+  const resolution = await resolveTimedSessionUser(supabase);
   if (resolution.user) {
     setLogDrainUserContext({
       userEmail: resolution.user.email,

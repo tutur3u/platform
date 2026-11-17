@@ -7,43 +7,48 @@ import { isVerifiedTuturuuuStaffSession } from '@tuturuuu/utils/email/staff-sess
 import { NextResponse } from 'next/server';
 import { z } from 'zod';
 import { withSessionAuth } from '@/lib/api-auth';
+import { timeServerPhase, withServerTiming } from '@/lib/server-timing';
 import { buildPostgrestRateLimitResponse } from '@/lib/postgrest-rate-limit';
 import { safeParseBody } from '@/lib/safe-parse-body';
 
-export const GET = withSessionAuth<{ configId: string }>(
-  async (_req, { user, supabase }, { configId: id }) => {
-    if (
-      id === SHOW_VERSION_BADGE_CONFIG_ID &&
-      (!isExactTuturuuuDotComEmail(user.email) ||
-        !isVerifiedTuturuuuStaffSession(
-          user &&
-            (await getVerifiedAuthUser(
-              await createAdminClient({ noCookie: true }),
-              user.id
-            ))
-        ))
-    ) {
-      return NextResponse.json({ message: 'Forbidden' }, { status: 403 });
-    }
+export const GET = withServerTiming(
+  withSessionAuth<{ configId: string }>(
+    async (_req, { user, supabase }, { configId: id }) => {
+      if (
+        id === SHOW_VERSION_BADGE_CONFIG_ID &&
+        (!isExactTuturuuuDotComEmail(user.email) ||
+          !isVerifiedTuturuuuStaffSession(
+            user &&
+              (await getVerifiedAuthUser(
+                await createAdminClient({ noCookie: true }),
+                user.id
+              ))
+          ))
+      ) {
+        return NextResponse.json({ message: 'Forbidden' }, { status: 403 });
+      }
 
-    const { data, error } = await supabase
-      .from('user_configs')
-      .select('value')
-      .eq('user_id', user.id)
-      .eq('id', id)
-      .maybeSingle();
-
-    if (error) {
-      console.error('Error fetching user config:', error);
-      return NextResponse.json(
-        { message: 'Error fetching user config' },
-        { status: 500 }
+      const { data, error } = await timeServerPhase('db', () =>
+        supabase
+          .from('user_configs')
+          .select('value')
+          .eq('user_id', user.id)
+          .eq('id', id)
+          .maybeSingle()
       );
-    }
 
-    return NextResponse.json({ value: data?.value ?? null });
-  },
-  { allowAppSessionAuth: true, cache: { maxAge: 60, swr: 30 } }
+      if (error) {
+        console.error('Error fetching user config:', error);
+        return NextResponse.json(
+          { message: 'Error fetching user config' },
+          { status: 500 }
+        );
+      }
+
+      return NextResponse.json({ value: data?.value ?? null });
+    },
+    { allowAppSessionAuth: true, cache: { maxAge: 60, swr: 30 } }
+  )
 );
 
 export const PUT = withSessionAuth<{ configId: string }>(
