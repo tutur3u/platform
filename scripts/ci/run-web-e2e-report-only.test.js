@@ -12,8 +12,8 @@ const trusted = {
   GITHUB_WORKFLOW_REF:
     'tutur3u/platform/.github/workflows/e2e-smoke-report-only.yaml@refs/heads/main',
   GITHUB_REF: 'refs/heads/main',
-  RUNNER_ENVIRONMENT: 'self-hosted',
-  RUNNER_OS: 'macOS',
+  RUNNER_ENVIRONMENT: 'github-hosted',
+  RUNNER_OS: 'Linux',
   GITHUB_EVENT_NAME: 'push',
   GITHUB_RUN_ID: '123',
   GITHUB_RUN_ATTEMPT: '1',
@@ -35,7 +35,8 @@ test('entrypoint refuses ordinary local execution before touching Docker', () =>
   for (const change of [
     { GITHUB_REF: 'refs/pull/1/merge' },
     { GITHUB_EVENT_NAME: 'pull_request' },
-    { RUNNER_ENVIRONMENT: 'github-hosted' },
+    { RUNNER_ENVIRONMENT: 'self-hosted' },
+    { RUNNER_OS: 'macOS' },
     { GITHUB_REPOSITORY: 'fork/platform' },
     {
       GITHUB_WORKFLOW_REF: trusted.GITHUB_WORKFLOW_REF.replace('main', 'other'),

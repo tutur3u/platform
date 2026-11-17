@@ -12,8 +12,8 @@ function plan(env = process.env, home = os.homedir()) {
     env.GITHUB_REPOSITORY !== 'tutur3u/platform' ||
     env.GITHUB_WORKFLOW_REF !== WORKFLOW ||
     env.GITHUB_REF !== 'refs/heads/main' ||
-    env.RUNNER_ENVIRONMENT !== 'self-hosted' ||
-    env.RUNNER_OS !== 'macOS' ||
+    env.RUNNER_ENVIRONMENT !== 'github-hosted' ||
+    env.RUNNER_OS !== 'Linux' ||
     !['push', 'schedule', 'workflow_dispatch'].includes(
       env.GITHUB_EVENT_NAME
     ) ||
