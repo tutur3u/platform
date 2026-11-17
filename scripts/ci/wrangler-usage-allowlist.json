@@ -279,14 +279,14 @@
       "digest": "ecd7cdb3ecc244b40fc2d16e412b82af9287148a79307beba4a0758f3e070257"
     },
     ".github/workflows/meet-cloudflare.yaml": {
-      "lines": 35,
-      "uses": 39,
+      "lines": 30,
+      "uses": 34,
       "gap": "void-wave1-publication",
       "admitted": {
-        "decision": "https://github.com/tutur3u/platform/pull/8443",
-        "reason": "Atomic Meet pair release: a failed or cancelled release restores signaling and frontend to the versions pinned before the first write and proves the pair (2 more Wrangler lines: versions deploy and deployments list)."
+        "decision": "https://github.com/tutur3u/platform/commit/7f1c24a138cdb576760fa6555a7c8eec4e3c5ecc",
+        "reason": "Qualified Meet publication retains the admitted Wrangler artifact, version capture and paired rollback operations. Shell extraction and regression assertions move existing operations into focused helpers; no cf replacement has qualified emitted-artifact and rollback parity."
       },
-      "digest": "5f4ba1b4fd21b3095fb87a18c4da5c905a973b2bd7bf2af3b719dda1c6214c89"
+      "digest": "ee957b704ff8be5faa5a6934beea41f55b010f9a34c7f88ea424c275a8ce1851"
     },
     ".github/workflows/mind-cloudflare.yaml": {
       "lines": 6,
@@ -2691,10 +2691,10 @@
       "uses": 17,
       "gap": "void-wave1-publication",
       "admitted": {
-        "decision": "https://github.com/tutur3u/platform/pull/8394",
-        "reason": "#8333 applied the pinned oxfmt to Meet release CI scripts; Wrangler lines re-wrapped, counts unchanged."
+        "decision": "https://github.com/tutur3u/platform/commit/7f1c24a138cdb576760fa6555a7c8eec4e3c5ecc",
+        "reason": "Qualified Meet publication retains the admitted Wrangler artifact, version capture and paired rollback operations. Shell extraction and regression assertions move existing operations into focused helpers; no cf replacement has qualified emitted-artifact and rollback parity."
       },
-      "digest": "0f9de927a868d3438b3dc50edbf88a0246eda2aab355f1f4af13903c238155f4"
+      "digest": "e0717aad2e4345a397cde84e69fe0896e2ad383db78b5377ebe4095374ea51eb"
     },
     "scripts/ci/meet-cloudflare-render.runtime.mjs": {
       "lines": 2,
@@ -2741,8 +2741,8 @@
       "uses": 3,
       "gap": "void-wave1-publication",
       "admitted": {
-        "decision": "https://github.com/tutur3u/platform/pull/6485",
-        "reason": "REV-6485-1..7: reviewed token/digest scanner, explicit settings, and fixture harness corrections."
+        "decision": "https://github.com/tutur3u/platform/commit/7f1c24a138cdb576760fa6555a7c8eec4e3c5ecc",
+        "reason": "Qualified Meet publication retains the admitted Wrangler artifact, version capture and paired rollback operations. Shell extraction and regression assertions move existing operations into focused helpers; no cf replacement has qualified emitted-artifact and rollback parity."
       },
       "digest": "5c80a8469be6f1c051770f0c5f4abe672697edd591775f555fe12b21a20bb9ef"
     },
@@ -2856,6 +2856,26 @@
       },
       "digest": "6edbc36230f9007f395609f7565a04e90659f5fb959b138f668d236053a81116"
     },
+    "scripts/ci/meet-realtime-release.mjs": {
+      "lines": 1,
+      "uses": 1,
+      "gap": "void-wave1-publication",
+      "admitted": {
+        "decision": "https://github.com/tutur3u/platform/commit/7f1c24a138cdb576760fa6555a7c8eec4e3c5ecc",
+        "reason": "Qualified Meet publication retains the admitted Wrangler artifact, version capture and paired rollback operations. Shell extraction and regression assertions move existing operations into focused helpers; no cf replacement has qualified emitted-artifact and rollback parity."
+      },
+      "digest": "9522fdfa748b93c85f1e58280d467d91429d986c007d867e7cf4eec5e9af51ea"
+    },
+    "scripts/ci/meet-release-operations.sh": {
+      "lines": 5,
+      "uses": 5,
+      "gap": "void-wave1-publication",
+      "admitted": {
+        "decision": "https://github.com/tutur3u/platform/commit/7f1c24a138cdb576760fa6555a7c8eec4e3c5ecc",
+        "reason": "Qualified Meet publication retains the admitted Wrangler artifact, version capture and paired rollback operations. Shell extraction and regression assertions move existing operations into focused helpers; no cf replacement has qualified emitted-artifact and rollback parity."
+      },
+      "digest": "8175e7ebaa82531fca38d52cccaeadfc5d65e88dfe0ebf5eb40997b4741f04c9"
+    },
     "scripts/ci/meet-ssr-capture.test.mjs": {
       "lines": 1,
       "uses": 1,
@@ -2865,6 +2885,16 @@
         "reason": "REV-6485-1..7: reviewed token/digest scanner, explicit settings, and fixture harness corrections."
       },
       "digest": "6d5307a70cba9f3e0b46e661415f77a3ec285dc135980df299839f07e80a387c"
+    },
+    "scripts/ci/meet-standalone-release.test.mjs": {
+      "lines": 4,
+      "uses": 5,
+      "gap": "void-wave1-publication",
+      "admitted": {
+        "decision": "https://github.com/tutur3u/platform/commit/7f1c24a138cdb576760fa6555a7c8eec4e3c5ecc",
+        "reason": "Qualified Meet publication retains the admitted Wrangler artifact, version capture and paired rollback operations. Shell extraction and regression assertions move existing operations into focused helpers; no cf replacement has qualified emitted-artifact and rollback parity."
+      },
+      "digest": "155ef21b253f374d9300075ae63478acb659121b4d2402bb06c39600dc1f25c8"
     },
     "scripts/ci/mind-native-artifact.test.py": {
       "lines": 5,

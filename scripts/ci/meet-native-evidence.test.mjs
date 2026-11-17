@@ -8,6 +8,7 @@ import {
   mkdtemp,
   readdir,
   readlink,
+  readFile,
   rm,
   symlink,
   writeFile,
@@ -16,12 +17,14 @@ import { createRequire } from 'node:module';
 import { tmpdir } from 'node:os';
 import { dirname, join } from 'node:path';
 import { test } from 'node:test';
+import { fileURLToPath } from 'node:url';
 import { readFileSnapshot } from '../safe-fs.js';
 
 const { readWorkflow } = createRequire(import.meta.url)(
   './workflow-yaml-test-helper.js'
 );
 const workflow = readWorkflow('meet-cloudflare.yaml');
+const workspace = fileURLToPath(new URL('../../', import.meta.url));
 
 async function inventory(root) {
   const result = [];
@@ -115,10 +118,18 @@ for (const [job, suffix] of [
       'unselected sentinel'
     );
     const archive = upload.with.path.replace('${{ runner.temp }}', runner);
-    async function packAndExtract(command, destination) {
+    async function packAndExtract(
+      command,
+      destination,
+      selectedWorkspace = workspace
+    ) {
       execFileSync('bash', ['-eu', '-c', command], {
         cwd: runner,
-        env: { ...process.env, RUNNER_TEMP: runner },
+        env: {
+          ...process.env,
+          RUNNER_TEMP: runner,
+          GITHUB_WORKSPACE: selectedWorkspace,
+        },
       });
       await mkdir(destination);
       execFileSync('tar', ['-xzf', archive, '-C', destination]);
@@ -136,17 +147,26 @@ for (const [job, suffix] of [
         'foreign-workspace'
       )
     );
-    const negative = pack.run.replace(
+    assert.equal(
+      pack.run,
+      'bash "$GITHUB_WORKSPACE/scripts/ci/meet-release-operations.sh" pack-graph'
+    );
+    const helper = 'scripts/ci/meet-release-operations.sh';
+    const original = await readFile(join(workspace, helper), 'utf8');
+    const negative = original.replace(
       'tar -czf',
       "tar --exclude='*/.wrangler' -czf"
     );
     assert.notEqual(
       negative,
-      pack.run,
+      original,
       'Hidden omission control must change the selected packaging command'
     );
     const omitted = join(root, 'omitted');
-    await packAndExtract(negative, omitted);
+    const mutant = join(root, 'mutant');
+    await mkdir(join(mutant, 'scripts/ci'), { recursive: true });
+    await writeFile(join(mutant, helper), negative);
+    await packAndExtract(pack.run, omitted, mutant);
     const actual = await inventory(omitted);
     assert.ok(!actual.some((entry) => entry.name.includes('/.wrangler')));
     assert.throws(

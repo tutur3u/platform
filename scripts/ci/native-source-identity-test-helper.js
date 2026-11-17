@@ -10,7 +10,7 @@ const {
   writeFileSync,
 } = require('node:fs');
 const { tmpdir } = require('node:os');
-const { join } = require('node:path');
+const { join, resolve } = require('node:path');
 const test = require('node:test');
 const { readWorkflow } = require('./workflow-yaml-test-helper');
 
@@ -23,8 +23,28 @@ function sourceIdentityTests({ app, workflowName, jobName, source }) {
     assert.equal(matches.length, 1, name);
     return matches[0];
   };
-  const debug = () =>
-    step('Verify and pack failed-job sealed source for debugging');
+  const debug = () => {
+    const selected = step(
+      'Verify and pack failed-job sealed source for debugging'
+    );
+    if (app !== 'meet') return selected;
+    assert.equal(
+      selected.run,
+      'bash scripts/ci/meet-release-operations.sh debug-pack'
+    );
+    const operations = readFileSync(
+      resolve(__dirname, 'meet-release-operations.sh'),
+      'utf8'
+    );
+    const run = operations
+      .split('  debug-pack)\n')[1]
+      .split('    ;;')[0]
+      .split('\n')
+      .map((line) => line.replace(/^    /, ''))
+      .join('\n')
+      .trim();
+    return { ...selected, run };
+  };
   const prefix = app.toUpperCase();
 
   test(`${app} selects the PR head and preserves separate workflow supplier identity`, () => {
@@ -79,7 +99,7 @@ function sourceIdentityTests({ app, workflowName, jobName, source }) {
       );
       assert.equal(
         workflow.jobs.deploy.if,
-        "github.ref == 'refs/heads/production' && needs.production-policy.outputs.allowed == 'true'"
+        "(github.ref == 'refs/heads/production' || (github.event_name == 'workflow_dispatch' && inputs.release == true)) && needs.production-policy.outputs.allowed == 'true'"
       );
       const marker = workflow.jobs.deploy.steps.find(
         (item) => item.env?.DEPLOYMENT_MARKER_SHA
@@ -97,6 +117,13 @@ function sourceIdentityTests({ app, workflowName, jobName, source }) {
       event = 'b'.repeat(40),
       supplier = 'c'.repeat(40);
     mkdirSync(join(root, 'bin'));
+    if (app === 'meet') {
+      mkdirSync(join(root, 'scripts/ci'), { recursive: true });
+      writeFileSync(
+        join(root, 'scripts/ci/meet-release-operations.sh'),
+        readFileSync(resolve(__dirname, 'meet-release-operations.sh'))
+      );
+    }
     // Command sinks exercise workflow shell plumbing without a Worker or build.
     const fakeGit = join(root, 'bin/git');
     writeFileSync(
@@ -209,10 +236,10 @@ function sourceIdentityTests({ app, workflowName, jobName, source }) {
     writeFileSync(join(root, 'bun.lock'), 'fixture');
     const title =
       app === 'apps' ? 'Apps' : app === 'meet' ? 'Meet' : 'Calendar';
-    assert.equal(
-      run(step(`Capture generated ${title} route tree evidence`).run).status,
-      0
+    const routeResult = run(
+      step(`Capture generated ${title} route tree evidence`).run
     );
+    assert.equal(routeResult.status, 0, routeResult.stderr);
     const routeReceipt = readFileSync(
       join(root, `${app}-route-tree-${head}-123-2/source-receipt.txt`),
       'utf8'

@@ -1,5 +1,6 @@
 import assert from 'node:assert/strict';
 import { createHash } from 'node:crypto';
+import * as actualFs from 'node:fs';
 import {
   mkdtempSync,
   mkdirSync,
@@ -19,7 +20,11 @@ import {
   validateInvocation,
   validateProductionProducer,
 } from './meet-standalone-release.mjs';
-import { verifyArchive, verifyRealtime } from './meet-realtime-release.mjs';
+import {
+  emittedFiles,
+  verifyArchive,
+  verifyRealtime,
+} from './meet-realtime-release.mjs';
 import workflowHelper from './workflow-yaml-test-helper.js';
 
 const source = 'a'.repeat(40);
@@ -149,7 +154,9 @@ test('admission checks ancestry and every exact workflow, with a fixed stop rece
       ok: true,
       text: async () =>
         JSON.stringify(
-          url.includes('api.github.com') ? { workflow_runs: [green] } : metadata
+          new URL(url).origin === 'https://api.github.com'
+            ? { workflow_runs: [green] }
+            : metadata
         ),
     };
   };
@@ -336,6 +343,34 @@ test('realtime publication rejects altered bytes, source, hooks and symlink supp
     assert.throws(() => verifyRealtime('seal', source, root));
   } finally {
     rmSync(root, { recursive: true, force: true });
+  }
+});
+
+test('artifact hashing rejects file, symlink and directory substitutions at open', () => {
+  for (const replacement of ['file', 'symlink', 'directory']) {
+    const root = mkdtempSync(join(tmpdir(), 'meet-artifact-swap-'));
+    try {
+      const target = join(root, 'entry.js');
+      writeFileSync(target, 'qualified bytes');
+      let swapped = false;
+      const fsImpl = {
+        ...actualFs,
+        openSync(path, flags) {
+          if (path === target && !swapped) {
+            swapped = true;
+            actualFs.renameSync(target, join(root, 'retained.js'));
+            if (replacement === 'file') writeFileSync(target, 'replacement');
+            else if (replacement === 'directory') mkdirSync(target);
+            else symlinkSync(join(root, 'retained.js'), target);
+          }
+          return actualFs.openSync(path, flags);
+        },
+      };
+      assert.throws(() => emittedFiles(root, { fsImpl }));
+      assert.equal(swapped, true);
+    } finally {
+      rmSync(root, { recursive: true, force: true });
+    }
   }
 });
 
