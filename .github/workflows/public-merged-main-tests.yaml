@@ -50,8 +50,46 @@ jobs:
             core.setOutput('main', main);
             // admission:end
 
-  shards:
+  trust:
     needs: admit
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    permissions:
+      contents: read
+      actions: read
+    outputs:
+      main: ${{ steps.trust.outputs.main }}
+    env:
+      SOURCE_SHA: ${{ needs.admit.outputs.sha }}
+      CONTROL_SHA: ${{ github.workflow_sha }}
+    steps:
+      - name: Checkout immutable admission controls
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ github.workflow_sha }}
+          path: control
+          persist-credentials: false
+      - name: Verify fresh dispatch identity and policy
+        id: trust
+        uses: actions/github-script@3a2844b7e9c422d3c10d287c895573f7108da1b3 # v9.0.0
+        with:
+          script: |
+            const { execFileSync } = require('node:child_process');
+            if (execFileSync('git', ['-C', 'control', 'rev-parse', 'HEAD'], { encoding: 'utf8' }).trim() !== process.env.CONTROL_SHA) throw new Error('PUBLIC_DISPATCH_CONTROL');
+            const { admitDispatch } = require(`${process.env.GITHUB_WORKSPACE}/control/scripts/ci/trusted-public-admission.js`);
+            try {
+              const decision = await admitDispatch({ github, context, sourceSha: process.env.SOURCE_SHA, controlSha: process.env.CONTROL_SHA, workflowPath: '.github/workflows/public-merged-main-tests.yaml', runAttempt: Number(process.env.GITHUB_RUN_ATTEMPT) });
+              core.setOutput('main', decision.mainSHA);
+              core.info(JSON.stringify(decision));
+            } catch (error) {
+              core.setFailed(JSON.stringify({ phase: 'dispatch-admission', code: error.code || 'PUBLIC_DISPATCH_CONTROL' }));
+            }
+
+  shards:
+    needs: [admit, trust]
+    permissions:
+      contents: read
+      actions: read
     runs-on: ubuntu-latest
     timeout-minutes: 40
     strategy:
@@ -88,7 +126,7 @@ jobs:
     env:
       SOURCE_SHA: ${{ needs.admit.outputs.sha }}
       CONTROL_SHA: ${{ github.workflow_sha }}
-      MAIN_SHA: ${{ needs.admit.outputs.main }}
+      MAIN_SHA: ${{ needs.trust.outputs.main }}
       CI: 'true'
       NEXT_TELEMETRY_DISABLED: '1'
       WRANGLER_SEND_METRICS: 'false'
@@ -98,7 +136,6 @@ jobs:
       NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY: sb_publishable_public_ci_fixture
       PROXY_API_KEY: ''
       NEXT_PUBLIC_PROXY_API_KEY: ''
-      NODE_PATH: ${{ github.workspace }}/source/apps/web/node_modules
       SHARD_KIND: ${{ matrix.kind }}
       SHARD_INDEX: ${{ matrix.shard }}
     steps:
@@ -108,24 +145,40 @@ jobs:
           ref: ${{ github.workflow_sha }}
           path: control
           persist-credentials: false
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version: 24.22.3
+          package-manager-cache: false
+      - name: Verify immutable controls before setup
+        run: test "$(git -C control rev-parse HEAD)" = "$CONTROL_SHA"
+      - name: Revalidate dispatch before source execution
+        uses: actions/github-script@3a2844b7e9c422d3c10d287c895573f7108da1b3 # v9.0.0
+        with:
+          script: |
+            const { execFileSync } = require('node:child_process');
+            if (execFileSync('git', ['-C', 'control', 'rev-parse', 'HEAD'], { encoding: 'utf8' }).trim() !== process.env.CONTROL_SHA) throw new Error('PUBLIC_DISPATCH_CONTROL');
+            const { admitDispatch } = require(`${process.env.GITHUB_WORKSPACE}/control/scripts/ci/trusted-public-admission.js`);
+            try {
+              const decision = await admitDispatch({ github, context, sourceSha: process.env.SOURCE_SHA, controlSha: process.env.CONTROL_SHA, workflowPath: '.github/workflows/public-merged-main-tests.yaml', runAttempt: Number(process.env.GITHUB_RUN_ATTEMPT) });
+              core.info(JSON.stringify(decision));
+            } catch (error) {
+              core.setFailed(JSON.stringify({ phase: 'dispatch-admission', code: error.code || 'PUBLIC_DISPATCH_CONTROL' }));
+            }
+      - name: Setup pinned Bun without shared caches
+        working-directory: control
+        run: bash scripts/ci/setup-bun-with-backoff.sh 1.4.4
       - name: Checkout admitted source
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           ref: ${{ needs.admit.outputs.sha }}
           path: source
           persist-credentials: false
-      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
-        with:
-          node-version: 24.22.3
-      - name: Verify both immutable checkout identities before repository commands
-        run: |
-          test "$(git -C control rev-parse HEAD)" = "$CONTROL_SHA"
-          test "$(git -C source rev-parse HEAD)" = "$SOURCE_SHA"
-      - name: Setup pinned Bun without shared caches
-        working-directory: control
-        run: bash scripts/ci/setup-bun-with-backoff.sh 1.4.4
+      - name: Verify admitted source before execution
+        run: test "$(git -C source rev-parse HEAD)" = "$SOURCE_SHA"
       - name: Run disjoint canonical shard and retain command exits/counts
         working-directory: source
+        env:
+          NODE_PATH: ${{ github.workspace }}/source/apps/web/node_modules
         run: node ../control/scripts/ci/public-test-shard.js "$SHARD_KIND" "$SHARD_INDEX" "$RUNNER_TEMP/public-receipt"
       - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         if: always()
@@ -137,10 +190,39 @@ jobs:
 
   summary:
     if: always() && github.event_name == 'workflow_dispatch'
-    needs: [admit, shards]
+    needs: [admit, trust, shards]
     runs-on: ubuntu-latest
     timeout-minutes: 5
+    permissions:
+      contents: read
+      actions: read
+    env:
+      SOURCE_SHA: ${{ needs.admit.outputs.sha }}
+      CONTROL_SHA: ${{ github.workflow_sha }}
+      MAIN_SHA: ${{ needs.trust.outputs.main }}
     steps:
+      - name: Checkout immutable consumer controls
+        if: always() && needs.trust.result == 'success'
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ github.workflow_sha }}
+          path: control
+          persist-credentials: false
+      - name: Revalidate dispatch before artifact consumption
+        id: revalidate
+        if: always() && needs.trust.result == 'success'
+        uses: actions/github-script@3a2844b7e9c422d3c10d287c895573f7108da1b3 # v9.0.0
+        with:
+          script: |
+            const { execFileSync } = require('node:child_process');
+            if (execFileSync('git', ['-C', 'control', 'rev-parse', 'HEAD'], { encoding: 'utf8' }).trim() !== process.env.CONTROL_SHA) throw new Error('PUBLIC_DISPATCH_CONTROL');
+            const { admitDispatch } = require(`${process.env.GITHUB_WORKSPACE}/control/scripts/ci/trusted-public-admission.js`);
+            try {
+              const decision = await admitDispatch({ github, context, sourceSha: process.env.SOURCE_SHA, controlSha: process.env.CONTROL_SHA, workflowPath: '.github/workflows/public-merged-main-tests.yaml', runAttempt: Number(process.env.GITHUB_RUN_ATTEMPT) });
+              core.info(JSON.stringify(decision));
+            } catch (error) {
+              core.setFailed(JSON.stringify({ phase: 'dispatch-admission', code: error.code || 'PUBLIC_DISPATCH_CONTROL' }));
+            }
       - name: Always summarize admission and complete matrix outcome
         uses: actions/github-script@3a2844b7e9c422d3c10d287c895573f7108da1b3 # v9.0.0
         env:
@@ -153,25 +235,15 @@ jobs:
             await core.summary.addHeading('Public merged-main tests').addRaw(`Source: ${process.env.SOURCE_SHA || 'REJECTED'}; control: ${context.sha}. [Run](${url})\n`)
               .addTable([['Job', 'Actual outcome'], ...Object.entries(results).map(([k,v]) => [k,v.result])])
               .addRaw('13 disjoint shards requested. Counts, exact commands, exits and runtime identities are in each receipt artifact; missing/cancelled/skipped shards are not PASS.\n').write();
-            if (results.admit.result !== 'success' || results.shards.result !== 'success') core.setFailed('Incomplete or failed public qualification');
+            if (results.admit.result !== 'success' || results.trust.result !== 'success' || results.shards.result !== 'success') core.setFailed('Incomplete or failed public qualification');
       - uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
-        if: always() && needs.admit.result == 'success'
+        if: always() && needs.trust.result == 'success' && steps.revalidate.outcome == 'success'
         with:
           pattern: public-tests-${{ needs.admit.outputs.sha }}-*-${{ github.run_attempt }}
           path: receipts
-      - name: Verify all thirteen receipts and aggregate executed counts
-        if: always() && needs.admit.result == 'success'
-        env:
-          SOURCE_SHA: ${{ needs.admit.outputs.sha }}
-          CONTROL_SHA: ${{ github.workflow_sha }}
+      - name: Verify all thirteen bounded identity receipts
+        if: always() && needs.trust.result == 'success' && steps.revalidate.outcome == 'success'
         run: |
-          node <<'NODE'
-          const fs = require('node:fs');
-          const expected = ['unit','root','types'].flatMap(k => [0,1,2,3].map(i => `${k}-${i}`)).concat('lint-0');
-          const receipts = fs.existsSync('receipts') ? fs.readdirSync('receipts').map(p => JSON.parse(fs.readFileSync(`receipts/${p}/receipt.json`))) : [];
-          const keys = receipts.map(r => `${r.kind}-${r.shard}`).sort();
-          const valid = JSON.stringify(keys) === JSON.stringify(expected.sort()) && receipts.every(r => r.status === 'PASS' && r.sourceSHA === process.env.SOURCE_SHA && r.controlSHA === process.env.CONTROL_SHA && r.run === process.env.GITHUB_RUN_ID && r.attempt === process.env.GITHUB_RUN_ATTEMPT && r.commands.length > 0 && r.commands.every(c => c.qualified));
-          const tests = receipts.flatMap(r => r.commands).reduce((n,c) => n + (c.counts?.tests || 0), 0);
-          fs.appendFileSync(process.env.GITHUB_STEP_SUMMARY, `\nReceipts present: ${receipts.length}/13; reported executed tests: ${tests}; aggregate: ${valid && tests > 0 ? 'PASS' : 'NOT QUALIFIED'}.\n`);
-          if (!valid || !tests) process.exitCode = 1;
-          NODE
+          test "$(git -C control rev-parse HEAD)" = "$CONTROL_SHA"
+          git -C control diff --no-ext-diff --no-textconv --exit-code HEAD -- scripts/ci/trusted-public-receipts.js
+          node control/scripts/ci/trusted-public-receipts.js tests receipts

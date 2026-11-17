@@ -55,14 +55,52 @@ jobs:
             core.setOutput('main', main);
             // admission:end
 
-  build:
+  trust:
     needs: admit
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    permissions:
+      contents: read
+      actions: read
+    outputs:
+      main: ${{ steps.trust.outputs.main }}
+    env:
+      SOURCE_SHA: ${{ needs.admit.outputs.sha }}
+      CONTROL_SHA: ${{ github.workflow_sha }}
+    steps:
+      - name: Checkout immutable admission controls
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ github.workflow_sha }}
+          path: control
+          persist-credentials: false
+      - name: Verify fresh dispatch identity and policy
+        id: trust
+        uses: actions/github-script@3a2844b7e9c422d3c10d287c895573f7108da1b3 # v9.0.0
+        with:
+          script: |
+            const { execFileSync } = require('node:child_process');
+            if (execFileSync('git', ['-C', 'control', 'rev-parse', 'HEAD'], { encoding: 'utf8' }).trim() !== process.env.CONTROL_SHA) throw new Error('PUBLIC_DISPATCH_CONTROL');
+            const { admitDispatch } = require(`${process.env.GITHUB_WORKSPACE}/control/scripts/ci/trusted-public-admission.js`);
+            try {
+              const decision = await admitDispatch({ github, context, sourceSha: process.env.SOURCE_SHA, controlSha: process.env.CONTROL_SHA, workflowPath: '.github/workflows/public-build-artifact.yaml', runAttempt: Number(process.env.GITHUB_RUN_ATTEMPT) });
+              core.setOutput('main', decision.mainSHA);
+              core.info(JSON.stringify(decision));
+            } catch (error) {
+              core.setFailed(JSON.stringify({ phase: 'dispatch-admission', code: error.code || 'PUBLIC_DISPATCH_CONTROL' }));
+            }
+
+  build:
+    needs: [admit, trust]
+    permissions:
+      contents: read
+      actions: read
     runs-on: ubuntu-latest
     timeout-minutes: 45
     env:
       SOURCE_SHA: ${{ needs.admit.outputs.sha }}
       CONTROL_SHA: ${{ github.workflow_sha }}
-      MAIN_SHA: ${{ needs.admit.outputs.main }}
+      MAIN_SHA: ${{ needs.trust.outputs.main }}
       CI: 'true'
       NEXT_TELEMETRY_DISABLED: '1'
       WRANGLER_SEND_METRICS: 'false'
@@ -80,22 +118,36 @@ jobs:
           ref: ${{ github.workflow_sha }}
           path: control
           persist-credentials: false
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version: 24.22.3
+          package-manager-cache: false
+      - name: Verify immutable controls before setup
+        run: test "$(git -C control rev-parse HEAD)" = "$CONTROL_SHA"
+      - name: Revalidate dispatch before source execution
+        uses: actions/github-script@3a2844b7e9c422d3c10d287c895573f7108da1b3 # v9.0.0
+        with:
+          script: |
+            const { execFileSync } = require('node:child_process');
+            if (execFileSync('git', ['-C', 'control', 'rev-parse', 'HEAD'], { encoding: 'utf8' }).trim() !== process.env.CONTROL_SHA) throw new Error('PUBLIC_DISPATCH_CONTROL');
+            const { admitDispatch } = require(`${process.env.GITHUB_WORKSPACE}/control/scripts/ci/trusted-public-admission.js`);
+            try {
+              const decision = await admitDispatch({ github, context, sourceSha: process.env.SOURCE_SHA, controlSha: process.env.CONTROL_SHA, workflowPath: '.github/workflows/public-build-artifact.yaml', runAttempt: Number(process.env.GITHUB_RUN_ATTEMPT) });
+              core.info(JSON.stringify(decision));
+            } catch (error) {
+              core.setFailed(JSON.stringify({ phase: 'dispatch-admission', code: error.code || 'PUBLIC_DISPATCH_CONTROL' }));
+            }
+      - name: Setup pinned Bun without shared caches
+        working-directory: control
+        run: bash scripts/ci/setup-bun-with-backoff.sh 1.4.4
       - name: Checkout admitted source
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           ref: ${{ needs.admit.outputs.sha }}
           path: source
           persist-credentials: false
-      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
-        with:
-          node-version: 24.22.3
-      - name: Verify both immutable checkout identities before repository commands
-        run: |
-          test "$(git -C control rev-parse HEAD)" = "$CONTROL_SHA"
-          test "$(git -C source rev-parse HEAD)" = "$SOURCE_SHA"
-      - name: Setup pinned Bun without shared caches
-        working-directory: control
-        run: bash scripts/ci/setup-bun-with-backoff.sh 1.4.4
+      - name: Verify admitted source before execution
+        run: test "$(git -C source rev-parse HEAD)" = "$SOURCE_SHA"
       - name: Compile public outputs or record the exact missing adapter contract
         working-directory: source
         run: node ../control/scripts/ci/public-build.js "$APP" "$RUNNER_TEMP/public-build"
@@ -110,10 +162,40 @@ jobs:
 
   summary:
     if: always()
-    needs: [admit, build]
+    needs: [admit, trust, build]
     runs-on: ubuntu-latest
     timeout-minutes: 5
+    permissions:
+      contents: read
+      actions: read
+    env:
+      SOURCE_SHA: ${{ needs.admit.outputs.sha }}
+      CONTROL_SHA: ${{ github.workflow_sha }}
+      MAIN_SHA: ${{ needs.trust.outputs.main }}
+      APP: ${{ inputs.app }}
     steps:
+      - name: Checkout immutable consumer controls
+        if: always() && needs.trust.result == 'success'
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ github.workflow_sha }}
+          path: control
+          persist-credentials: false
+      - name: Revalidate dispatch before artifact consumption
+        id: revalidate
+        if: always() && needs.trust.result == 'success'
+        uses: actions/github-script@3a2844b7e9c422d3c10d287c895573f7108da1b3 # v9.0.0
+        with:
+          script: |
+            const { execFileSync } = require('node:child_process');
+            if (execFileSync('git', ['-C', 'control', 'rev-parse', 'HEAD'], { encoding: 'utf8' }).trim() !== process.env.CONTROL_SHA) throw new Error('PUBLIC_DISPATCH_CONTROL');
+            const { admitDispatch } = require(`${process.env.GITHUB_WORKSPACE}/control/scripts/ci/trusted-public-admission.js`);
+            try {
+              const decision = await admitDispatch({ github, context, sourceSha: process.env.SOURCE_SHA, controlSha: process.env.CONTROL_SHA, workflowPath: '.github/workflows/public-build-artifact.yaml', runAttempt: Number(process.env.GITHUB_RUN_ATTEMPT) });
+              core.info(JSON.stringify(decision));
+            } catch (error) {
+              core.setFailed(JSON.stringify({ phase: 'dispatch-admission', code: error.code || 'PUBLIC_DISPATCH_CONTROL' }));
+            }
       - uses: actions/github-script@3a2844b7e9c422d3c10d287c895573f7108da1b3 # v9.0.0
         env:
           OUTCOMES: ${{ toJSON(needs) }}
@@ -123,4 +205,16 @@ jobs:
             await core.summary.addHeading('Public compiler artifact').addTable([['Job', 'Actual outcome'], ...Object.entries(results).map(([k,v]) => [k,v.result])])
               .addLink('Run and public artifacts', `${context.serverUrl}/${context.repo.owner}/${context.repo.repo}/actions/runs/${context.runId}`)
               .addRaw('\nA failure receipt is not a deployable artifact. Compiler success is not runtime, staging or production acceptance.\n').write();
-            if (results.admit.result !== 'success' || results.build.result !== 'success') core.setFailed('Public artifact not produced');
+            if (results.admit.result !== 'success' || results.trust.result !== 'success' || results.build.result !== 'success') core.setFailed('Public artifact not produced');
+      - name: Download only the expected public build artifact
+        if: always() && needs.trust.result == 'success' && steps.revalidate.outcome == 'success'
+        uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
+        with:
+          name: public-build-${{ needs.admit.outputs.sha }}-${{ inputs.app }}-${{ github.run_attempt }}
+          path: public-artifact
+      - name: Verify bounded public archive and identity receipt
+        if: always() && needs.trust.result == 'success' && steps.revalidate.outcome == 'success'
+        run: |
+          test "$(git -C control rev-parse HEAD)" = "$CONTROL_SHA"
+          git -C control diff --no-ext-diff --no-textconv --exit-code HEAD -- scripts/ci/trusted-public-receipts.js
+          node control/scripts/ci/trusted-public-receipts.js build public-artifact
