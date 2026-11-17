@@ -1,5 +1,5 @@
 import assert from 'node:assert/strict';
-import { test } from 'node:test';
+import { test } from 'vitest';
 import { runCheckCommand } from './check-command.ts';
 
 test('ttr check refuses an injected M4 hub hostname and does not run', async () => {
