@@ -1511,3 +1511,9 @@ upload queue; surrounding formatted text is retained. Remote HTML image URLs
 remain image references. Upload failures retain retry controls and show their
 reason in a toast. This applies to both classic and Sorbet themes.
 Clipboard regression coverage lives in `mail-composer-paste.test.ts`.
+
+The body editor fills the remaining composer height in the dialog, full-screen
+and mobile layouts. Empty body-space clicks focus the end of the message;
+text selections and toolbar or attachment actions retain their own behavior.
+Long messages scroll within the body. Coverage is in
+`mail-composer-editor-media.test.ts`.

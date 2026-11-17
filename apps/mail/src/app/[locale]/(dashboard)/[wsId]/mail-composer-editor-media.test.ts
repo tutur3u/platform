@@ -1,6 +1,6 @@
 // @vitest-environment jsdom
 
-import { act, cleanup, render, waitFor } from '@testing-library/react';
+import { act, cleanup, fireEvent, render, waitFor } from '@testing-library/react';
 import type { Editor } from '@tiptap/react';
 import { createElement } from 'react';
 import { afterEach, beforeAll, describe, expect, it, vi } from 'vitest';
@@ -266,5 +266,34 @@ describe('image placeholders', () => {
     view.rerender(createElement(MailComposerEditor, view.props));
     expect(observed.editor).toBe(editor);
     expect(observed.editors.size).toBe(1);
+  });
+});
+
+
+describe('composer body focus and height', () => {
+  it('focuses the end on empty body space without changing text clicks', async () => {
+    const view = await open('<p>Hello world</p>');
+    const body = view.container.querySelector('[data-mail-editor-body]');
+    if (!body) throw new Error('Missing editor body');
+    act(() => view.editor.commands.setTextSelection(2));
+    fireEvent.click(body);
+    await waitFor(() => expect(view.editor.isFocused).toBe(true));
+    expect(view.editor.state.selection.from).toBe(view.editor.state.doc.content.size - 1);
+    act(() => view.editor.commands.setTextSelection(2));
+    const paragraph = view.editor.view.dom.querySelector('p');
+    if (!paragraph) throw new Error('Missing paragraph');
+    fireEvent.click(paragraph);
+    expect(view.editor.state.selection.from).toBe(2);
+  });
+
+  it('gives the editor remaining flex height with an internal scroll boundary', async () => {
+    const view = await open('<p>Long content</p>'.repeat(100));
+    const body = view.container.querySelector('[data-mail-editor-body]');
+    expect(body?.className).toContain('min-h-0');
+    expect(body?.className).toContain('overflow-y-auto');
+    expect(body?.className).toContain('flex-1');
+    expect(view.editor.view.dom.parentElement?.className).toContain('flex-1');
+    expect(view.editor.view.dom.parentElement?.className).toContain('[&_.ProseMirror]:flex-1');
+    expect(view.editor.getText()).toContain('Long content');
   });
 });

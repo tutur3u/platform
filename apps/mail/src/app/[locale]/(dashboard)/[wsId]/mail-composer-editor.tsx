@@ -327,9 +327,21 @@ export const MailComposerEditor = memo(function MailComposerEditor({
           </Button>
         )}
       </div>
-      <div className="min-h-0 flex-1 overflow-y-auto">
+      <div
+        data-mail-editor-body
+        className="flex min-h-0 flex-1 flex-col overflow-y-auto"
+        role="presentation"
+        onClick={(event) => {
+          const target = event.target;
+          if (
+            target === event.currentTarget ||
+            target === event.currentTarget.firstElementChild ||
+            target === editor.view.dom
+          ) editor.commands.focus('end');
+        }}
+      >
         <EditorContent
-          className="[&_.ProseMirror]:min-h-56 [&_.ProseMirror]:px-5 [&_.ProseMirror]:py-5 [&_.ProseMirror]:text-sm [&_.ProseMirror]:leading-6 [&_.ProseMirror]:outline-none [&_.ProseMirror_a]:underline [&_.ProseMirror_img]:max-w-full [&_.ProseMirror_.ProseMirror-selectednode_img]:outline [&_.ProseMirror_.ProseMirror-selectednode_img]:outline-2 [&_.ProseMirror_.ProseMirror-selectednode_img]:outline-ring [&_.ProseMirror_ol]:list-decimal [&_.ProseMirror_ol]:pl-5 [&_.ProseMirror_p]:my-2 [&_.ProseMirror_ul]:list-disc [&_.ProseMirror_ul]:pl-5 [&_.is-editor-empty:first-child:before]:pointer-events-none [&_.is-editor-empty:first-child:before]:float-left [&_.is-editor-empty:first-child:before]:h-0 [&_.is-editor-empty:first-child:before]:text-muted-foreground [&_.is-editor-empty:first-child:before]:content-[attr(data-placeholder)]"
+          className="flex flex-1 flex-col [&_.ProseMirror]:min-h-56 [&_.ProseMirror]:flex-1 [&_.ProseMirror]:px-5 [&_.ProseMirror]:py-5 [&_.ProseMirror]:text-sm [&_.ProseMirror]:leading-6 [&_.ProseMirror]:outline-none [&_.ProseMirror_a]:underline [&_.ProseMirror_img]:max-w-full [&_.ProseMirror_.ProseMirror-selectednode_img]:outline [&_.ProseMirror_.ProseMirror-selectednode_img]:outline-2 [&_.ProseMirror_.ProseMirror-selectednode_img]:outline-ring [&_.ProseMirror_ol]:list-decimal [&_.ProseMirror_ol]:pl-5 [&_.ProseMirror_p]:my-2 [&_.ProseMirror_ul]:list-disc [&_.ProseMirror_ul]:pl-5 [&_.is-editor-empty:first-child:before]:pointer-events-none [&_.is-editor-empty:first-child:before]:float-left [&_.is-editor-empty:first-child:before]:h-0 [&_.is-editor-empty:first-child:before]:text-muted-foreground [&_.is-editor-empty:first-child:before]:content-[attr(data-placeholder)]"
           editor={editor}
         />
         {parts.quoted && (
