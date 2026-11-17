@@ -171,26 +171,61 @@ describe('masonry: which sections use it', () => {
 });
 
 describe('masonry: no script layout', () => {
-  // Size observers, masonry libraries and script-set row spans or columns.
+  // Masonry libraries and script-set row spans or columns.
   const LAYOUT_JS =
-    /ResizeObserver|from ['"][^'"]*masonry|gridRowEnd|gridRow\b|columnCount|grid-template-rows:\s*masonry/;
+    /from ['"][^'"]*masonry|gridRowEnd|gridRow\b|columnCount|grid-template-rows:\s*masonry/;
   /** "masonry" outside a className attribute means script touches it. */
   const scriptMasonry = (source: string) =>
     source
       .replace(/className="[^"]*"/g, '')
       .replace(/\/\/.*|\/\*[\s\S]*?\*\//g, '')
       .includes('masonry');
+  /**
+   * Size observers that never touch card layout, with how many each file
+   * may create. tracks: docks the filter bar when its hidden tab panel
+   * appears. timeline: centres the selected period chip once its panel
+   * shows. Any other observer is treated as measuring cards.
+   */
+  const LAYOUT_FREE_OBSERVERS: Record<string, number> = {
+    'components/tracks.tsx': 1,
+    'components/timeline.tsx': 1,
+  };
+  const root = new URL('./', import.meta.url).pathname;
+  const observers = (source: string) =>
+    source.match(/new ResizeObserver\b/g)?.length ?? 0;
+  const unexpectedObservers = (file: string, source: string) =>
+    observers(source) > (LAYOUT_FREE_OBSERVERS[file.slice(root.length)] ?? 0);
 
   it('no page or boot script measures or positions cards', () => {
     const offenders = sourceFiles().filter((file) => {
       const source = readFileSync(file, 'utf8');
-      return LAYOUT_JS.test(source) || scriptMasonry(source);
+      return (
+        LAYOUT_JS.test(source) ||
+        scriptMasonry(source) ||
+        unexpectedObservers(file, source)
+      );
     });
     assert.deepEqual(offenders, []);
+    for (const file of Object.keys(LAYOUT_FREE_OBSERVERS))
+      assert.equal(
+        observers(readFileSync(`${root}${file}`, 'utf8')),
+        LAYOUT_FREE_OBSERVERS[file],
+        `${file} keeps its listed observer count`
+      );
     // Broken variants: a measuring effect, and script-set spans.
     assert.ok(
-      LAYOUT_JS.test('const ro = new ResizeObserver(() => place(cards));')
+      unexpectedObservers(
+        `${root}components/insights/pulse-section.tsx`,
+        'const ro = new ResizeObserver(() => place(cards));'
+      )
     );
+    assert.ok(
+      unexpectedObservers(
+        `${root}components/tracks.tsx`,
+        'new ResizeObserver(a); new ResizeObserver(b);'
+      )
+    );
+    assert.ok(LAYOUT_JS.test("card.style.gridRowEnd = 'span 3';"));
     assert.ok(
       scriptMasonry(
         "document.querySelector('.masonry').style.columnCount = '3';"
