@@ -1,5 +1,4 @@
 name: Meet Cloudflare
-
 on:
   pull_request:
     types: [opened, synchronize, reopened, ready_for_review, labeled, converted_to_draft]
@@ -16,6 +15,7 @@ on:
       - 'bun.lock'
       - 'patches/**'
       - 'scripts/ci/meet-cloudflare-render.runtime.mjs'
+      - 'scripts/ci/meet-*release*'
       - 'scripts/ci/meet-native-*.mjs'
       - 'scripts/ci/meet-dry-run-scratch.mjs'
       - 'scripts/ci/native-wrangler-evidence.mjs'
@@ -54,6 +54,7 @@ on:
       - 'bun.lock'
       - 'patches/**'
       - 'scripts/ci/meet-cloudflare-render.runtime.mjs'
+      - 'scripts/ci/meet-*release*'
       - 'scripts/ci/meet-native-*.mjs'
       - 'scripts/ci/meet-dry-run-scratch.mjs'
       - 'scripts/ci/native-wrangler-evidence.mjs'
@@ -82,27 +83,28 @@ on:
       - '.github/actions/**'
       - '.github/workflows/meet-cloudflare.yaml'
   workflow_dispatch:
+    inputs:
+      release:
+        description: Publish only Meet from an admitted exact main commit
+        type: boolean
+        default: false
+      source_sha:
+        description: Full immutable main SHA; required when release is true
+        type: string
+        default: ''
   workflow_call:
-
 permissions:
   contents: read
   deployments: read
-
-# Validation runs supersede per PR or branch; production and manual runs stay
-# unique. The literal prefix keeps workflow_call runs from one planner apart.
-# Only the deploy job serializes production with a non-cancelling queue.
 concurrency:
   group: meet-cloudflare-${{ github.event_name }}-${{ github.event.pull_request.number || github.ref }}-${{ (github.run_attempt > 1 || (github.event_name != 'pull_request' && github.event_name != 'pull_request_target' && (github.event_name != 'push' || github.ref == 'refs/heads/production' || startsWith(github.ref, 'refs/heads/release-please--branches--')))) && format('{0}-{1}-{2}', github.sha, github.run_id, github.run_attempt) || 'latest' }}${{ github.event_name == 'pull_request' && !contains(github.event.pull_request.labels.*.name, 'ready-for-ci') && '-unadmitted' || '' }}
   cancel-in-progress: ${{ !(github.run_attempt > 1) && (github.event_name == 'pull_request' || github.event_name == 'pull_request_target' || (github.event_name == 'push' && github.ref != 'refs/heads/production' && !startsWith(github.ref, 'refs/heads/release-please--branches--'))) }}
-
 env:
   SOURCE_SHA: ${{ github.event.pull_request.head.sha || github.sha }}
-
+  EXPECTED_SOURCE_SHA: ${{ inputs.source_sha }}
+  MEET_PRODUCTION: ${{ github.ref == 'refs/heads/production' || (github.event_name == 'workflow_dispatch' && inputs.release == true) }}
 jobs:
   affected-gate:
-    # Pull requests only: skip the heavy jobs when meet is unaffected.
-    # Other events never check out or run the gate: they resolve to run=true, so a
-    # gate failure can never block a production deploy. Any error also resolves to run=true.
     if: github.event_name != 'pull_request' || contains(github.event.pull_request.labels.*.name, 'ready-for-ci')
     runs-on: ubuntu-latest
     permissions:
@@ -144,8 +146,10 @@ jobs:
       workflow_name: meet-cloudflare.yaml
       check_pr_release_only: true
   validate:
+    outputs:
+      realtime_sha256: ${{ steps.realtime-seal.outputs.sha256 }}
     needs: [check-ci, production-policy, affected-gate]
-    if: ${{ (needs.affected-gate.outputs.run == 'true' && (!cancelled() && needs.check-ci.result == 'success' && needs.check-ci.outputs.should_run == 'true' && needs.check-ci.outputs.run_checks == 'true' && (github.ref != 'refs/heads/production' || (needs.production-policy.result == 'success' && needs.production-policy.outputs.allowed == 'true')))) && (github.event_name != 'pull_request' || contains(github.event.pull_request.labels.*.name, 'ready-for-ci')) }}
+    if: ${{ (needs.affected-gate.outputs.run == 'true' && (!cancelled() && needs.check-ci.result == 'success' && needs.check-ci.outputs.should_run == 'true' && needs.check-ci.outputs.run_checks == 'true' && ((github.ref != 'refs/heads/production' && inputs.release != true) || (needs.production-policy.result == 'success' && needs.production-policy.outputs.allowed == 'true')))) && (github.event_name != 'pull_request' || contains(github.event.pull_request.labels.*.name, 'ready-for-ci')) }}
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
@@ -163,8 +167,8 @@ jobs:
       - run: bun install --frozen-lockfile
       - name: Generate shared build metadata
         env:
-          PLATFORM_BUILD_ENVIRONMENT: ${{ github.ref == 'refs/heads/production' && 'production' || 'preview' }}
-          PLATFORM_BUILD_REF_NAME: ${{ github.ref_name }}
+          PLATFORM_BUILD_ENVIRONMENT: ${{ env.MEET_PRODUCTION == 'true' && 'production' || 'preview' }}
+          PLATFORM_BUILD_REF_NAME: ${{ env.MEET_PRODUCTION == 'true' && 'production' || github.ref_name }}
           PLATFORM_BUILD_COMMIT_HASH: ${{ env.SOURCE_SHA }}
         run: bun run --silent scripts/ci/generate-build-metadata.ts
       - name: Enforce SR-919 Meet AI containment
@@ -172,7 +176,7 @@ jobs:
           node --test scripts/check-meet-ai-containment.test.js
           node scripts/check-meet-ai-containment.js
       - name: Test build identity and workflow ordering
-        run: node --test scripts/ci/meet-build-metadata.test.js scripts/ci/verify-meet-build-info.test.js scripts/ci/generate-build-metadata.test.js scripts/ci/verify-meet-start-output.test.js scripts/ci/meet-native-source-identity.test.js scripts/ci/meet-native-admission.test.mjs scripts/ci/meet-native-abuse-guard-stub.test.mjs scripts/ci/meet-native-lifecycle.test.mjs scripts/ci/meet-native-supplier.test.mjs scripts/ci/meet-native-evidence.test.mjs scripts/ci/meet-native-hidden.test.mjs scripts/ci/meet-native-fixture-supplier.test.mjs scripts/ci/meet-native-assurance.test.mjs scripts/ci/meet-native-response-diagnostics.test.mjs scripts/ci/meet-ssr-capture.test.mjs
+        run: node --test scripts/ci/meet-build-metadata.test.js scripts/ci/verify-meet-build-info.test.js scripts/ci/generate-build-metadata.test.js scripts/ci/verify-meet-start-output.test.js scripts/ci/meet-native-source-identity.test.js scripts/ci/meet-native-admission.test.mjs scripts/ci/meet-native-abuse-guard-stub.test.mjs scripts/ci/meet-native-lifecycle.test.mjs scripts/ci/meet-native-supplier.test.mjs scripts/ci/meet-native-evidence.test.mjs scripts/ci/meet-native-hidden.test.mjs scripts/ci/meet-native-fixture-supplier.test.mjs scripts/ci/meet-native-assurance.test.mjs scripts/ci/meet-native-response-diagnostics.test.mjs scripts/ci/meet-ssr-capture.test.mjs scripts/ci/meet-standalone-release.test.mjs
       - name: Test Meet public callback and current account assurance
         working-directory: apps/meet
         run: bun x --no-install vitest run --config vitest.native-auth.config.ts --maxWorkers=1
@@ -257,15 +261,13 @@ jobs:
         id: meet-frontend-build
         uses: ./.github/actions/run-with-turbo-remote-cache
         env:
-          # Only the production ref builds a deployable artifact; PRs and main pushes
-          # validate the sealed public CI fixture.
-          NEXT_PUBLIC_SUPABASE_URL: ${{ github.ref != 'refs/heads/production' && 'https://meet-ci.supabase.invalid' || secrets.PRODUCTION_SUPABASE_URL }}
-          NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY: ${{ github.ref != 'refs/heads/production' && 'sb_publishable_meet_ci_placeholder' || secrets.PRODUCTION_SUPABASE_PUBLISHABLE_KEY }}
+          NEXT_PUBLIC_SUPABASE_URL: ${{ env.MEET_PRODUCTION != 'true' && 'https://meet-ci.supabase.invalid' || secrets.PRODUCTION_SUPABASE_URL }}
+          NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY: ${{ env.MEET_PRODUCTION != 'true' && 'sb_publishable_meet_ci_placeholder' || secrets.PRODUCTION_SUPABASE_PUBLISHABLE_KEY }}
           NEXT_PUBLIC_APP_URL: https://meet.tuturuuu.com
           NEXT_PUBLIC_WEB_APP_URL: https://tuturuuu.com
         with:
           command: >-
-            if [ "$GITHUB_REF" = refs/heads/production ]; then
+            if [ "$MEET_PRODUCTION" = true ]; then
               node scripts/ci/meet-native-fixture-supplier.mjs inputs "$SOURCE_SHA" "$RUNNER_TEMP/meet-production-inputs.json";
             fi && cd apps/meet && bun run build:cloudflare
           token: ${{ github.actor != 'dependabot[bot]' && github.event_name != 'pull_request' && (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/production') && secrets.TURBO_TOKEN || '' }}
@@ -275,36 +277,7 @@ jobs:
         env:
           MEET_ROUTE_TREE_BEFORE: ${{ steps.meet-route-tree-before.outputs.state || 'unknown' }}
           MEET_FRONTEND_BUILD_OUTCOME: ${{ steps.meet-frontend-build.outcome || 'unknown' }}
-        run: |
-          route_tree=apps/meet/src/routeTree.gen.ts
-          if [ ! -f "$route_tree" ]; then
-            echo '::notice::Meet route tree is absent; no generated evidence captured'
-            exit 0
-          fi
-          head_tracked=false
-          if git cat-file -e "HEAD:$route_tree" 2>/dev/null; then
-            head_tracked=true
-          fi
-          source_origin=unproven
-          if [ "$MEET_ROUTE_TREE_BEFORE" = absent ] && [ "$head_tracked" = false ]; then
-            case "$MEET_FRONTEND_BUILD_OUTCOME" in
-              success|failure) source_origin=fresh-bootstrap ;;
-            esac
-          fi
-          evidence="$RUNNER_TEMP/meet-route-tree-$SOURCE_SHA-$GITHUB_RUN_ID-$GITHUB_RUN_ATTEMPT"
-          mkdir "$evidence"
-          cp "$route_tree" "$evidence/routeTree.gen.ts"
-          {
-            printf 'expected_source_sha=%s\n' "$SOURCE_SHA"
-            printf 'source_head=%s\n' "$(git rev-parse HEAD)"
-            printf 'github_sha=%s\n' "$GITHUB_SHA"
-            printf 'prebuild_state=%s\n' "$MEET_ROUTE_TREE_BEFORE"
-            printf 'head_tracked=%s\n' "$head_tracked"
-            printf 'build_outcome=%s\n' "$MEET_FRONTEND_BUILD_OUTCOME"
-            printf 'source_origin=%s\n' "$source_origin"
-            printf 'bun_lock_sha256=%s\n' "$(sha256sum bun.lock | cut -d ' ' -f 1)"
-            printf 'route_tree_sha256=%s\n' "$(sha256sum "$evidence/routeTree.gen.ts" | cut -d ' ' -f 1)"
-          } > "$evidence/source-receipt.txt"
+        run: bash scripts/ci/meet-release-operations.sh route-tree
       - name: Retain generated Meet route tree evidence
         if: always()
         uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7
@@ -345,8 +318,10 @@ jobs:
           test "$(git rev-parse HEAD)" = "$SOURCE_SHA"
           GITHUB_SHA="$SOURCE_SHA" node scripts/ci/verify-meet-start-output.js seal apps/meet apps/meet/meet-artifact.json
       - name: Bind production compiler inputs to emitted graph
-        if: github.ref == 'refs/heads/production'
-        run: node scripts/ci/meet-native-fixture-supplier.mjs production-receipt "$SOURCE_SHA" "$RUNNER_TEMP/meet-production-inputs.json" "$RUNNER_TEMP/meet-production-receipt.json"
+        if: env.MEET_PRODUCTION == 'true'
+        run: |
+          node scripts/ci/meet-native-fixture-supplier.mjs production-receipt "$SOURCE_SHA" "$RUNNER_TEMP/meet-production-inputs.json" "$RUNNER_TEMP/meet-production-receipt.json"
+          node scripts/ci/meet-standalone-release.mjs bind
       - name: Supply exact-source Meet public fixture graph
         id: meet-fixture-supplier
         timeout-minutes: 25
@@ -367,16 +342,18 @@ jobs:
           test "$meet_status" -eq 0
           test "$sdk_status" -eq 0
       - name: Verify production emitted Start runtime
-        if: github.ref == 'refs/heads/production'
+        if: env.MEET_PRODUCTION == 'true'
         timeout-minutes: 3
         env: { WRANGLER_SEND_METRICS: 'false' }
-        run: TMPDIR="$RUNNER_TEMP" node scripts/ci/meet-native-launcher.mjs "$SOURCE_SHA" --production-receipt "$RUNNER_TEMP/meet-production-receipt.json"
+        run: |
+          node scripts/ci/meet-standalone-release.mjs verify
+          TMPDIR="$RUNNER_TEMP" node scripts/ci/meet-native-launcher.mjs "$SOURCE_SHA" --production-receipt "$RUNNER_TEMP/meet-production-receipt.json"
       - name: Retain production input and graph provenance
-        if: ${{ always() && github.ref == 'refs/heads/production' }}
+        if: ${{ always() && env.MEET_PRODUCTION == 'true' }}
         uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7
         with:
           name: meet-production-provenance-${{ env.SOURCE_SHA }}
-          path: "${{ runner.temp }}/meet-production-inputs.json\n${{ runner.temp }}/meet-production-receipt.json"
+          path: "${{ runner.temp }}/meet-production-inputs.json\n${{ runner.temp }}/meet-production-receipt.json\n${{ runner.temp }}/meet-release-intent.json"
           retention-days: 7
           if-no-files-found: warn
       - name: Retain Meet fixture supplier identity and progress
@@ -390,11 +367,7 @@ jobs:
       - name: Pack finite Meet graph evidence
         if: always()
         working-directory: ${{ runner.temp }}
-        run: |
-          set -- meet-native-run-*
-          if [ -d "$1" ]; then
-            tar -czf meet-native-evidence.tar.gz -- "$@"
-          fi
+        run: bash "$GITHUB_WORKSPACE/scripts/ci/meet-release-operations.sh" pack-graph
       - name: Retain finite Meet graph evidence
         if: always()
         uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7
@@ -405,7 +378,7 @@ jobs:
           if-no-files-found: warn
       - name: Validate both Worker bundles
         run: |
-          if [ "$GITHUB_REF" = refs/heads/production ]; then
+          if [ "$MEET_PRODUCTION" = true ]; then
             (cd apps/meet && node ../../scripts/ci/meet-dry-run-scratch.mjs "$SOURCE_SHA" --production-receipt "$RUNNER_TEMP/meet-production-receipt.json")
           else
             (cd apps/meet && node ../../scripts/ci/meet-dry-run-scratch.mjs "$SOURCE_SHA")
@@ -427,28 +400,25 @@ jobs:
           include-hidden-files: true
           retention-days: 7
           if-no-files-found: error
+      - name: Seal emitted realtime artifact
+        id: realtime-seal
+        run: |
+          node scripts/ci/meet-realtime-release.mjs seal "$SOURCE_SHA"
+          tar -czf "$RUNNER_TEMP/meet-realtime-worker.tar.gz" -C apps/meet-realtime dist meet-release.json
+          echo "sha256=$(sha256sum "$RUNNER_TEMP/meet-realtime-worker.tar.gz" | cut -d ' ' -f1)" >> "$GITHUB_OUTPUT"
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7
+        with:
+          name: meet-realtime-worker-${{ env.SOURCE_SHA }}
+          path: ${{ runner.temp }}/meet-realtime-worker.tar.gz
+          retention-days: 7
+          if-no-files-found: error
       - name: Verify and pack failed-job sealed source for debugging
         id: meet-debug-pack
         env:
           WORKFLOW_SOURCE_SHA: ${{ github.workflow_sha }}
         if: ${{ failure() && steps.meet-canonical-seal.outcome == 'success' }}
         shell: bash
-        run: |
-          test "$(git rev-parse HEAD)" = "$SOURCE_SHA"
-          GITHUB_SHA="$SOURCE_SHA" node scripts/ci/verify-meet-start-output.js verify apps/meet apps/meet/meet-artifact.json
-          pointer=.wrangler/deploy/config.json
-          if [ -f apps/meet/.void/preview-deploy-config.json ]; then
-            pointer=.void/preview-deploy-config.json
-          fi
-          tar -czf "$RUNNER_TEMP/meet-debug-sealed-source.tar.gz" -C apps/meet dist "$pointer" meet-artifact.json
-          verify_dir="$(mktemp -d "${RUNNER_TEMP:?}/meet-debug-verify.XXXXXX")"
-          trap 'rm -rf -- "$verify_dir"' EXIT
-          tar -xzf "$RUNNER_TEMP/meet-debug-sealed-source.tar.gz" -C "$verify_dir"
-          cmp "apps/meet/meet-artifact.json" "$verify_dir/meet-artifact.json"
-          GITHUB_SHA="$SOURCE_SHA" node scripts/ci/verify-meet-start-output.js verify "$verify_dir" "$verify_dir/meet-artifact.json"
-          GITHUB_SHA="$SOURCE_SHA" node scripts/ci/verify-meet-start-output.js verify apps/meet apps/meet/meet-artifact.json
-          printf 'classification=DEBUG sealed source; NOT qualified release\nexpected_source_sha=%s\ncheckout_head=%s\ngithub_sha=%s\nworkflow_source_sha=%s\nevent_name=%s\nrun_id=%s\nrun_attempt=%s\n' "$SOURCE_SHA" "$(git rev-parse HEAD)" "$GITHUB_SHA" "$WORKFLOW_SOURCE_SHA" "$GITHUB_EVENT_NAME" "$GITHUB_RUN_ID" "$GITHUB_RUN_ATTEMPT" > "$RUNNER_TEMP/meet-debug-sealed-source.txt"
-          sha256sum "$RUNNER_TEMP/meet-debug-sealed-source.tar.gz" "apps/meet/meet-artifact.json" >> "$RUNNER_TEMP/meet-debug-sealed-source.txt"
+        run: bash scripts/ci/meet-release-operations.sh debug-pack
       - name: Retain failed-job sealed source for debugging
         if: ${{ failure() && steps.meet-canonical-seal.outcome == 'success' && steps.meet-debug-pack.outcome == 'success' }}
         uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7
@@ -496,7 +466,7 @@ jobs:
         timeout-minutes: 8
         run: node scripts/ci/meet-native-fixture-supplier.mjs restore "$SOURCE_SHA" "$RUNNER_TEMP/meet-fixture-transport/fixture-transport.tar.gz" "$RUNNER_TEMP"
       - name: Download production provenance
-        if: github.ref == 'refs/heads/production'
+        if: env.MEET_PRODUCTION == 'true'
         uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8
         with: { name: "meet-production-provenance-${{ env.SOURCE_SHA }}", path: "${{ runner.temp }}" }
       - name: Discover restored native Void Start output
@@ -513,18 +483,16 @@ jobs:
           test "$meet_status" -eq 0
           test "$sdk_status" -eq 0
       - name: Verify restored production emitted runtime
-        if: github.ref == 'refs/heads/production'
+        if: env.MEET_PRODUCTION == 'true'
         timeout-minutes: 3
         env: { WRANGLER_SEND_METRICS: 'false' }
-        run: TMPDIR="$RUNNER_TEMP" node scripts/ci/meet-native-launcher.mjs "$SOURCE_SHA" --production-receipt "$RUNNER_TEMP/meet-production-receipt.json"
+        run: |
+          node scripts/ci/meet-standalone-release.mjs verify
+          TMPDIR="$RUNNER_TEMP" node scripts/ci/meet-native-launcher.mjs "$SOURCE_SHA" --production-receipt "$RUNNER_TEMP/meet-production-receipt.json"
       - name: Pack restored acceptance finite Meet graph evidence
         if: always()
         working-directory: ${{ runner.temp }}
-        run: |
-          set -- meet-native-run-*
-          if [ -d "$1" ]; then
-            tar -czf meet-native-evidence.tar.gz -- "$@"
-          fi
+        run: bash "$GITHUB_WORKSPACE/scripts/ci/meet-release-operations.sh" pack-graph
       - name: Retain restored acceptance finite Meet graph evidence
         if: always()
         uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7
@@ -537,31 +505,43 @@ jobs:
         run: GITHUB_SHA="$SOURCE_SHA" node scripts/ci/verify-meet-start-output.js verify apps/meet apps/meet/meet-artifact.json
   production-policy:
     name: Report wave-1 production publication hold
+    permissions: { contents: read, actions: read }
     needs: affected-gate
-    if: ${{ (needs.affected-gate.outputs.run == 'true' && (github.ref == 'refs/heads/production')) && (github.event_name != 'pull_request' || contains(github.event.pull_request.labels.*.name, 'ready-for-ci')) }}
+    if: ${{ (needs.affected-gate.outputs.run == 'true' && (github.ref == 'refs/heads/production' || (github.event_name == 'workflow_dispatch' && inputs.release == true))) && (github.event_name != 'pull_request' || contains(github.event.pull_request.labels.*.name, 'ready-for-ci')) }}
     runs-on: ubuntu-latest
     outputs:
-      allowed: ${{ steps.policy.outputs.allowed }}
+      allowed: ${{ steps.admission.outputs.superseded != 'true' && steps.policy.outputs.allowed == 'true' }}
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with: { fetch-depth: 0, persist-credentials: false }
       - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
         with:
           node-version: 24
+      - name: Admit exact Meet release
+        id: admission
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: node scripts/ci/meet-standalone-release.mjs
       - id: policy
         run: node scripts/ci/production-publication-policy.ts meet-cloudflare.yaml "$GITHUB_STEP_SUMMARY"
-
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7
+        if: always()
+        with:
+          name: meet-release-policy-${{ env.SOURCE_SHA }}-${{ github.run_id }}-${{ github.run_attempt }}
+          path: ${{ runner.temp }}/meet*release*.json
+          retention-days: 7
+          if-no-files-found: warn
   deploy:
     needs: [validate, restored-artifact, production-policy]
-    if: (github.ref == 'refs/heads/production' && needs.production-policy.outputs.allowed == 'true') && (github.event_name != 'pull_request' || contains(github.event.pull_request.labels.*.name, 'ready-for-ci'))
+    if: ((github.ref == 'refs/heads/production' || (github.event_name == 'workflow_dispatch' && inputs.release == true)) && needs.production-policy.outputs.allowed == 'true') && (github.event_name != 'pull_request' || contains(github.event.pull_request.labels.*.name, 'ready-for-ci'))
     permissions:
       contents: read
       deployments: write
+      actions: read
     runs-on: ubuntu-latest
     environment: meet-production
     env:
       CLOUDFLARE_ACCOUNT_ID: e8912e2867beecc673d171907bf09649
-      # The existing account deployment credential can bootstrap Meet; prefer its own credential when configured.
-      CLOUDFLARE_API_TOKEN: ${{ secrets.MEET_CLOUDFLARE_API_TOKEN || secrets.COLAB_CLOUDFLARE_API_TOKEN }}
     concurrency:
       group: meet-cloudflare-production-deploy
       cancel-in-progress: false
@@ -570,6 +550,7 @@ jobs:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
         with:
           ref: ${{ env.SOURCE_SHA }}
+          fetch-depth: 0
           persist-credentials: false
       - name: Verify immutable checkout identity
         run: test "$(git rev-parse HEAD)" = "$SOURCE_SHA"
@@ -596,7 +577,7 @@ jobs:
         timeout-minutes: 8
         run: node scripts/ci/meet-native-fixture-supplier.mjs restore "$SOURCE_SHA" "$RUNNER_TEMP/meet-fixture-transport/fixture-transport.tar.gz" "$RUNNER_TEMP"
       - name: Download production provenance
-        if: github.ref == 'refs/heads/production'
+        if: env.MEET_PRODUCTION == 'true'
         uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8
         with: { name: "meet-production-provenance-${{ env.SOURCE_SHA }}", path: "${{ runner.temp }}" }
       - name: Discover restored native Void Start output
@@ -612,15 +593,13 @@ jobs:
       - name: Verify restored Start runtime before production writes
         timeout-minutes: 3
         env: { WRANGLER_SEND_METRICS: 'false' }
-        run: TMPDIR="$RUNNER_TEMP" node scripts/ci/meet-native-launcher.mjs "$SOURCE_SHA" --production-receipt "$RUNNER_TEMP/meet-production-receipt.json"
+        run: |
+          node scripts/ci/meet-standalone-release.mjs verify
+          TMPDIR="$RUNNER_TEMP" node scripts/ci/meet-native-launcher.mjs "$SOURCE_SHA" --production-receipt "$RUNNER_TEMP/meet-production-receipt.json"
       - name: Pack restored finite Meet graph evidence
         if: always()
         working-directory: ${{ runner.temp }}
-        run: |
-          set -- meet-native-run-*
-          if [ -d "$1" ]; then
-            tar -czf meet-native-evidence.tar.gz -- "$@"
-          fi
+        run: bash "$GITHUB_WORKSPACE/scripts/ci/meet-release-operations.sh" pack-graph
       - name: Retain restored finite Meet graph evidence
         if: always()
         uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7
@@ -631,15 +610,34 @@ jobs:
           if-no-files-found: warn
       - name: Recheck artifact after restored runtime qualification
         run: GITHUB_SHA="$SOURCE_SHA" node scripts/ci/verify-meet-start-output.js verify apps/meet apps/meet/meet-artifact.json
+      - name: Admit exact Meet release
+        id: admission
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: node scripts/ci/meet-standalone-release.mjs
+      - uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8
+        if: steps.admission.outputs.superseded != 'true'
+        with: { name: "meet-realtime-worker-${{ env.SOURCE_SHA }}", path: "${{ runner.temp }}/meet-realtime-worker" }
+      - name: Restore verified realtime artifact
+        if: steps.admission.outputs.superseded != 'true'
+        env:
+          EXPECTED_REALTIME_SHA256: ${{ needs.validate.outputs.realtime_sha256 }}
+        run: |
+          node scripts/ci/meet-realtime-release.mjs archive "$RUNNER_TEMP/meet-realtime-worker/meet-realtime-worker.tar.gz" "$EXPECTED_REALTIME_SHA256"
+          tar -xzf "$RUNNER_TEMP/meet-realtime-worker/meet-realtime-worker.tar.gz" -C apps/meet-realtime
+          node scripts/ci/meet-realtime-release.mjs verify "$SOURCE_SHA"
       - name: Wait for shared meeting billing schema
+        if: steps.admission.outputs.superseded != 'true'
         env:
           NEXT_PUBLIC_SUPABASE_URL: ${{ secrets.PRODUCTION_SUPABASE_URL }}
           SUPABASE_SECRET_KEY: ${{ secrets.PRODUCTION_SUPABASE_SECRET_KEY }}
         run: bun packages/meet-core/scripts/verify-schema.ts
       - name: Verify required production secret names
+        if: steps.admission.outputs.superseded != 'true'
         working-directory: apps/meet
         env:
           MEET_REALTIME_TOKEN_SECRET: ${{ secrets.MEET_REALTIME_TOKEN_SECRET }}
+          CLOUDFLARE_API_TOKEN: ${{ secrets.MEET_CLOUDFLARE_API_TOKEN || secrets.COLAB_CLOUDFLARE_API_TOKEN }}
         run: |
           test -n "$MEET_REALTIME_TOKEN_SECRET" || { echo 'Missing production Meet smoke-test credential'; exit 1; }
           bun x --no-install wrangler secret list --name tuturuuu-meet --format json > "$RUNNER_TEMP/meet-secrets.json"
@@ -647,19 +645,12 @@ jobs:
           jq -e --argjson required '["MEET_REALTIME_TOKEN_SECRET","NEXT_PUBLIC_SUPABASE_URL","NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY","SUPABASE_SECRET_KEY","GOOGLE_GENERATIVE_AI_API_KEY","MEET_AI_DISABLED_WORKSPACE_IDS","MEET_AI_PROTECTED_WORKSPACE_IDS"]' 'map(.name) as $names | all($required[]; . as $name | $names | index($name) != null)' "$RUNNER_TEMP/meet-secrets.json" > /dev/null
           jq -e --argjson required '["MEET_REALTIME_TOKEN_SECRET","CLOUDFLARE_REALTIME_APP_ID","CLOUDFLARE_REALTIME_APP_SECRET","CLOUDFLARE_TURN_KEY_ID","CLOUDFLARE_TURN_API_TOKEN","MEET_AI_DISABLED_WORKSPACE_IDS","MEET_AI_PROTECTED_WORKSPACE_IDS"]' 'map(.name) as $names | all($required[]; . as $name | $names | index($name) != null)' "$RUNNER_TEMP/meet-realtime-secrets.json" > /dev/null
       - name: Capture existing frontend and realtime rollback versions
-        run: |
-          for service in frontend realtime; do
-            worker=tuturuuu-meet
-            if [ "$service" = realtime ]; then worker=tuturuuu-meet-realtime; fi
-            bun x --no-install wrangler versions list --name "$worker" --json > "$RUNNER_TEMP/meet-$service-versions-raw.json"
-            bun x --no-install wrangler deployments list --name "$worker" --json > "$RUNNER_TEMP/meet-$service-deployments-raw.json"
-            jq -e '[.[] | {id, created_on: .metadata.created_on}] | select(length > 0) | select(all(.[]; (.id | type == "string") and (.created_on | type == "string")))' "$RUNNER_TEMP/meet-$service-versions-raw.json" > "$RUNNER_TEMP/meet-rollback-$service-versions.json"
-            jq -e '[.[] | {id, created_on, versions}] | select(length > 0) | select(all(.[]; (.id | type == "string") and (.versions | length > 0)))' "$RUNNER_TEMP/meet-$service-deployments-raw.json" > "$RUNNER_TEMP/meet-rollback-$service-deployments.json"
-            # Pin the exact serving version before any write: the active
-            # deployment must be one version at 100%, or nothing is published.
-            jq -e '[.[] | select(.created_on | type == "string")] | max_by(.created_on) | select(.versions | length == 1) | .versions[0] | select(.percentage == 100) | .version_id | select(type == "string" and test("^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$")) | {versionId: .}' "$RUNNER_TEMP/meet-$service-deployments-raw.json" > "$RUNNER_TEMP/meet-rollback-$service-target.json"
-          done
+        if: steps.admission.outputs.superseded != 'true'
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.MEET_CLOUDFLARE_API_TOKEN || secrets.COLAB_CLOUDFLARE_API_TOKEN }}
+        run: bash scripts/ci/meet-release-operations.sh capture
       - name: Retain rollback version evidence
+        if: steps.admission.outputs.superseded != 'true'
         uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7
         with:
           name: meet-rollback-${{ github.sha }}-${{ github.run_id }}
@@ -667,52 +658,57 @@ jobs:
           retention-days: 7
           if-no-files-found: error
       - name: Deploy signaling before the frontend
+        if: steps.admission.outputs.superseded != 'true'
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.MEET_CLOUDFLARE_API_TOKEN || secrets.COLAB_CLOUDFLARE_API_TOKEN }}
         id: signaling
         run: |
           test -n "$CLOUDFLARE_API_TOKEN" || { echo 'Missing Cloudflare deployment credential'; exit 1; }
-          bun x --no-install wrangler deploy -c apps/meet-realtime/wrangler.jsonc --message "$GITHUB_SHA"
-      # Void 1.1.12 CLI rebuilds/wraps after build gates and rejects targeted
-      # placement with pinned secrets. Publish its qualified SDK output unchanged.
+          node scripts/ci/meet-realtime-release.mjs verify "$SOURCE_SHA"
+          bun x --no-install wrangler deploy --no-bundle -c apps/meet-realtime/dist/worker/wrangler.json --message "$SOURCE_SHA"
       - name: Deploy the verified frontend
+        if: steps.admission.outputs.superseded != 'true'
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.MEET_CLOUDFLARE_API_TOKEN || secrets.COLAB_CLOUDFLARE_API_TOKEN }}
         id: frontend
         working-directory: apps/meet
         timeout-minutes: 10
         run: |
           GITHUB_SHA="$SOURCE_SHA" node ../../scripts/ci/verify-meet-start-output.js verify . meet-artifact.json
-          bun x --no-install wrangler deploy -c "${{ steps.meet-output.outputs.config }}" --message "$GITHUB_SHA"
+          bun x --no-install wrangler deploy --no-bundle -c "${{ steps.meet-output.outputs.config }}" --message "$GITHUB_SHA"
       - name: Verify canonical routes
+        if: steps.admission.outputs.superseded != 'true'
         timeout-minutes: 8
         run: |
           curl --fail --retry 5 --retry-delay 5 --connect-timeout 5 --max-time 20 --retry-max-time 150 https://meet-realtime.tuturuuu.com/health
           curl --fail --retry 5 --retry-delay 5 --connect-timeout 5 --max-time 20 --retry-max-time 150 --output /dev/null https://meet.tuturuuu.com/login
       - name: Verify canonical frontend build identity
+        if: steps.admission.outputs.superseded != 'true'
         run: node scripts/ci/verify-meet-build-info.js
       - name: Verify authenticated realtime and SFU behavior
+        if: steps.admission.outputs.superseded != 'true'
         env:
           MEET_REALTIME_TOKEN_SECRET: ${{ secrets.MEET_REALTIME_TOKEN_SECRET }}
           MEET_CHECK_REALTIME_URL: wss://meet-realtime.tuturuuu.com/realtime
         run: |
           bun apps/meet-realtime/src/integration-check.ts
           bun apps/meet-realtime/src/room-controls-check.ts
-      # Signaling and the frontend release as a pair. Once any production write
-      # was attempted, a later failure restores BOTH to the versions pinned
-      # before the first write (frontend first), then proves the pair. The job
-      # stays failed and records no success marker.
       - name: Restore the previous Meet pair after a failed release
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.MEET_CLOUDFLARE_API_TOKEN || secrets.COLAB_CLOUDFLARE_API_TOKEN }}
         if: (failure() || cancelled()) && steps.signaling.outcome != 'skipped'
         timeout-minutes: 10
-        run: |
-          status=0
-          for service in frontend realtime; do
-            worker=tuturuuu-meet
-            if [ "$service" = realtime ]; then worker=tuturuuu-meet-realtime; fi
-            target=$(jq -r '.versionId' "$RUNNER_TEMP/meet-rollback-$service-target.json")
-            bun x --no-install wrangler versions deploy "$target@100%" --name "$worker" --message "Restore pair after failed $GITHUB_SHA" --yes || status=1
-            bun x --no-install wrangler deployments list --name "$worker" --json > "$RUNNER_TEMP/meet-restored-$service-deployments.json" || status=1
-            jq -e --arg target "$target" '[.[] | select(.created_on | type == "string")] | max_by(.created_on) | (.versions | length == 1) and .versions[0].version_id == $target and .versions[0].percentage == 100' "$RUNNER_TEMP/meet-restored-$service-deployments.json" > /dev/null || { echo "Meet $service is not serving its pinned version"; status=1; }
-          done
-          exit "$status"
+        run: bash scripts/ci/meet-release-operations.sh restore
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7
+        if: always()
+        continue-on-error: true
+        with:
+          name: meet-release-deploy-${{ env.SOURCE_SHA }}-${{ github.run_id }}-${{ github.run_attempt }}
+          path: ${{ runner.temp }}/meet*release*.json
+          retention-days: 7
+          if-no-files-found: warn
       - name: Record successful Cloudflare deployment
+        if: steps.admission.outputs.superseded != 'true'
         continue-on-error: true
         env:
           GITHUB_TOKEN: ${{ github.token }}

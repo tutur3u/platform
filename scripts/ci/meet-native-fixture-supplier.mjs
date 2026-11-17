@@ -6,6 +6,7 @@ import { chmod, mkdir, mkdtemp, realpath, writeFile } from 'node:fs/promises';
 import { dirname, join, relative } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { closed, hash, inspectMeetGraph } from './meet-native-profile.mjs';
+import { validateProductionProducer } from './meet-standalone-release.mjs';
 import { observeOwnedChild } from './native-wrangler-observable.mjs';
 import { readFileSnapshot } from '../safe-fs.js';
 import {
@@ -256,11 +257,7 @@ export async function readMeetFixtureReceipt(sourceSHA, receiptPath) {
   return plan;
 }
 export async function writeMeetProductionInputs(sourceSHA, destination, env) {
-  assert.equal(
-    env.GITHUB_REF,
-    'refs/heads/production',
-    'Production producer ref required'
-  );
+  validateProductionProducer(sourceSHA, env);
   const identity = committedIdentity(sourceSHA);
   const proof = createMeetProductionInputs(identity, {
     NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY:

@@ -644,6 +644,12 @@ Rules:
   waits for the chunk, so no layout shift. Preload the Noto Sans subsets and
   use `font-display: swap` with the metric-matched `Noto Sans Fallback` face in
   `typography.css` rather than `block`, which hid text until the font arrived.
+- For native Meet load investigations, follow the
+  [signed-in list loading contract](../../../../../apps/docs/platform/applications/meet.mdx#signed-in-list-loading).
+  Trace page-model fields through their actual consumers before retaining a
+  server query alongside client pagination. Verify emitted dependencies as well
+  as lazy declarations: a workspace module can eagerly import another view and
+  make unrelated routes wait for it. Preserve actor and workspace checks.
 - A satellite that renders broad shared UI must be in the **checked** `APPS` list
   in `scripts/i18n-namespace-check.js`, not `UNCHECKED_APPS`. Scanning only the
   app's own source cannot see namespaces used *inside* `@tuturuuu/ui` /

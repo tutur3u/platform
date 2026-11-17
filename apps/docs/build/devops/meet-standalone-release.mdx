@@ -1,0 +1,89 @@
+---
+title: Meet standalone Cloudflare release
+description: Qualify and publish an exact main commit with a captured rollback pair.
+---
+
+Meet can publish independently through `meet-cloudflare.yaml`. A release dispatch
+must use the `main` ref and supply its full 40-character commit as `source_sha`.
+The workflow rejects a mismatch between that input and `github.sha`; a moving
+branch cannot silently select another release candidate.
+
+## Prepare the release
+
+The existing `meet-production` GitHub environment must permit exactly the
+`production` and `main` branches and require approval by `vhpx` before dispatch.
+Both the train and standalone deploy jobs use this protected environment. Its
+existing secrets remain unchanged. Environment policy changes require the release
+authority's approval and execution by the credential custodian. Verify the policy
+readback before dispatch; a missing environment must never be auto-created by a
+release run. Never copy secret values into logs, command arguments, review packets
+or run artifacts.
+
+Record the exact candidate, live-to-candidate source-range review, current release
+holds and provider authorization. The candidate must include the accepted startup
+and authentication regression fixes. A source review or green build does not
+replace the per-dispatch authorization or source-range receipt.
+
+The admission gate requires the latest completed successful run for that exact
+main SHA of Types, Security, Test, CodeQL, Oxc and Meet Cloudflare. It excludes the
+current release run. A successful Meet workflow whose `validate` job was skipped
+by the affected-path gate counts as green for this historical CI predicate. It is
+not an emitted-artifact qualification receipt: the release dispatch must execute
+its own validation, restored-artifact checks and production-input provenance.
+
+## Dispatch and approve
+
+After the exact commit is on main and the release packet is approved:
+
+```sh
+gh workflow run meet-cloudflare.yaml --ref main \
+  -f release=true -f source_sha="$SOURCE_SHA"
+```
+
+Record the resulting run ID and confirm its `head_sha` matches the approved
+candidate. The reviewer approves only that run's pending
+`meet-production` deployment, after the release authority issues a provider ACK
+naming that run ID and the reviewer checks the candidate. If main advances before dispatch, the SHA equality guard stops the
+run; qualify the new candidate instead of changing the input silently.
+
+Both release paths use the fixed `meet-cloudflare-production-deploy` concurrency
+group. Admission repeats inside that group before provider operations. For a
+production-ref run, live equal to or descended from the source is a successful
+no-op with `MEET_RELEASE_SUPERSEDED`; it performs no deployment or success-marker
+write. Divergent sources stop with `MEET_RELEASE_DIVERGENT`. A stale standalone
+dispatch stops rather than replacing a newer live release.
+
+## Artifacts and rollback
+
+The validate job builds and seals the frontend and realtime output. Realtime's
+archive SHA-256 is exported as a validate-job output and checked before extraction
+in deploy, independently of the seal inside the archive. Publication uses the
+qualified realtime output with `--no-bundle`; Cloudflare credentials are scoped to
+provider steps, not dependency installation or compilation.
+
+Before the first publication, capture both currently serving Worker deployment
+and version IDs. Each must serve one version at 100 percent. Retain the resulting
+`meet-rollback-frontend-target.json` and `meet-rollback-realtime-target.json`
+alongside the authorized release receipt. A historical pair alone is insufficient.
+
+The workflow restores both captured versions if publication or smoke checks fail.
+With the same captured receipts and approved credential context, the one-command
+recovery is:
+
+```sh
+bash scripts/ci/meet-release-operations.sh restore
+```
+
+The helper verifies both serving versions after restoration. A failed release
+remains failed and does not emit a success marker. Retain rollback and admission
+results even when the deploy stops.
+
+## Live acceptance
+
+Check `/api/build-info` against the candidate and verify the frontend and realtime
+deployment identities. Using a consent-qualified disposable account and an approved
+empty meeting, verify opted-in Sorbet, the display-name and email/workspace footer,
+login, logout and realtime connection. Do not use another person's signed-in
+session for destructive account actions. Missing test custody is blocked/not run,
+not a product failure. Capture signed-in navigation and request timings using the
+[Meet loading contract](/platform/applications/meet#signed-in-list-loading).

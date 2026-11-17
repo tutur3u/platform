@@ -422,7 +422,7 @@ test('all production consumers select original graph provenance rather than fixt
     assert.doesNotMatch(actor.run, /--fixture-receipt/);
     assert.notEqual(actor['continue-on-error'], true);
     const expectedCondition =
-      job === 'deploy' ? undefined : "github.ref == 'refs/heads/production'";
+      job === 'deploy' ? undefined : "env.MEET_PRODUCTION == 'true'";
     const assertGate = (candidate) => {
       assert.equal(candidate.if, expectedCondition);
       assert.notEqual(candidate['continue-on-error'], true);

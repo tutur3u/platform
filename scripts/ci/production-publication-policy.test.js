@@ -372,7 +372,9 @@ for (const { workflow, job } of publishers) {
     assert.match(gate.if, /github\.ref == 'refs\/heads\/production'/);
     assert.equal(
       gate.outputs.allowed,
-      '$' + '{{ steps.policy.outputs.allowed }}'
+      workflow === 'meet-cloudflare.yaml'
+        ? "${{ steps.admission.outputs.superseded != 'true' && steps.policy.outputs.allowed == 'true' }}"
+        : '$' + '{{ steps.policy.outputs.allowed }}'
     );
     assert.equal(gate['continue-on-error'], undefined);
     const policy = gate.steps.find((step) => step.id === 'policy');
@@ -395,7 +397,9 @@ for (const { workflow, job } of publishers) {
     assert.ok(jobs[job].needs.includes('production-policy'));
     assert.equal(
       jobs[job].if,
-      "github.ref == 'refs/heads/production' && needs.production-policy.outputs.allowed == 'true'"
+      workflow === 'meet-cloudflare.yaml'
+        ? "(github.ref == 'refs/heads/production' || (github.event_name == 'workflow_dispatch' && inputs.release == true)) && needs.production-policy.outputs.allowed == 'true'"
+        : "github.ref == 'refs/heads/production' && needs.production-policy.outputs.allowed == 'true'"
     );
     const writes = publicationWrites(jobs);
     assert.deepEqual(

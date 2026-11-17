@@ -9,11 +9,31 @@ const { readWorkflow } = require('./workflow-yaml-test-helper');
 const { discoverScriptTests } = require('../run-script-tests');
 const root = resolve(__dirname, '../..');
 const workflow = readWorkflow('meet-cloudflare.yaml');
+const releaseOperations = readFileSync(
+  join(root, 'scripts/ci/meet-release-operations.sh'),
+  'utf8'
+);
+for (const job of Object.values(workflow.jobs)) {
+  for (const step of job.steps ?? []) {
+    const operation = step.run?.match(
+      /^bash scripts\/ci\/meet-release-operations\.sh ([a-z-]+)$/
+    )?.[1];
+    if (operation)
+      step.run =
+        releaseOperations
+          .split(`  ${operation})\n`)[1]
+          .split('    ;;')[0]
+          .split('\n')
+          .map((line) => line.replace(/^    /, ''))
+          .join('\n')
+          .trim() + '\n';
+  }
+}
 const runtimeGateCommands = {
   validate:
     'test -n "$MEET_FIXTURE_RECEIPT"\nGITHUB_SHA="$SOURCE_SHA" node scripts/ci/verify-meet-start-output.js verify apps/meet apps/meet/meet-artifact.json\nmeet_status=0\nTMPDIR="$RUNNER_TEMP" node scripts/ci/meet-native-launcher.mjs "$SOURCE_SHA" --fixture-receipt "$MEET_FIXTURE_RECEIPT" || meet_status=$?\nGITHUB_SHA="$SOURCE_SHA" node scripts/ci/verify-meet-start-output.js verify apps/meet apps/meet/meet-artifact.json\nsdk_status=0\nGITHUB_SHA="$SOURCE_SHA" node --test --test-concurrency=1 scripts/ci/native-wrangler-runtime.test.mjs scripts/ci/native-wrangler-runtime.runtime.mjs || sdk_status=$?\ntest "$meet_status" -eq 0\ntest "$sdk_status" -eq 0\n',
   deploy:
-    'TMPDIR="$RUNNER_TEMP" node scripts/ci/meet-native-launcher.mjs "$SOURCE_SHA" --production-receipt "$RUNNER_TEMP/meet-production-receipt.json"',
+    'node scripts/ci/meet-standalone-release.mjs verify\nTMPDIR="$RUNNER_TEMP" node scripts/ci/meet-native-launcher.mjs "$SOURCE_SHA" --production-receipt "$RUNNER_TEMP/meet-production-receipt.json"\n',
 };
 
 test('Meet generates source metadata before dependency and Worker builds', () => {
@@ -57,16 +77,19 @@ test('Meet generates source metadata before dependency and Worker builds', () =>
   const env = steps[index].env;
   assert.equal(
     env.PLATFORM_BUILD_ENVIRONMENT,
-    "${{ github.ref == 'refs/heads/production' && 'production' || 'preview' }}"
+    "${{ env.MEET_PRODUCTION == 'true' && 'production' || 'preview' }}"
   );
-  assert.equal(env.PLATFORM_BUILD_REF_NAME, '${{ github.ref_name }}');
+  assert.equal(
+    env.PLATFORM_BUILD_REF_NAME,
+    "${{ env.MEET_PRODUCTION == 'true' && 'production' || github.ref_name }}"
+  );
   assert.equal(env.PLATFORM_BUILD_COMMIT_HASH, '${{ env.SOURCE_SHA }}');
 });
 
 test('only the production deploy verifies canonical identity before its success marker', () => {
   assert.equal(
     workflow.jobs.deploy.if,
-    "github.ref == 'refs/heads/production' && needs.production-policy.outputs.allowed == 'true'"
+    "(github.ref == 'refs/heads/production' || (github.event_name == 'workflow_dispatch' && inputs.release == true)) && needs.production-policy.outputs.allowed == 'true'"
   );
   const steps = workflow.jobs.deploy.steps;
   const verify = steps.findIndex((step) =>
@@ -136,7 +159,7 @@ test('Meet qualifies the native artifact and restored runtime before publication
   assert.match(deploy[publish].run, /verify-meet-start-output\.js verify/);
   assert.match(
     deploy[publish].run,
-    /wrangler deploy -c "\$\{\{ steps\.meet-output\.outputs\.config \}\}" --message/
+    /wrangler deploy --no-bundle -c "\$\{\{ steps\.meet-output\.outputs\.config \}\}" --message/
   );
   assert.doesNotMatch(
     deploy[publish].run,
@@ -565,6 +588,7 @@ test('Meet workflow contracts run in a clean snapshot without Node dependencies'
       'scripts/ci/verify-meet-start-output.test.js',
       'scripts/ci/meet-cloudflare-render.runtime.mjs',
       'scripts/ci/meet-native-launcher.mjs',
+      'scripts/ci/meet-release-operations.sh',
       '.github/workflows/meet-cloudflare.yaml',
       'turbo.json',
       'packages/utils/src/generated/platform-build-metadata.ts',
@@ -645,8 +669,8 @@ test('Meet builds with production Supabase values only on the production ref', (
       key: build.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY,
     },
     {
-      url: "${{ github.ref != 'refs/heads/production' && 'https://meet-ci.supabase.invalid' || secrets.PRODUCTION_SUPABASE_URL }}",
-      key: "${{ github.ref != 'refs/heads/production' && 'sb_publishable_meet_ci_placeholder' || secrets.PRODUCTION_SUPABASE_PUBLISHABLE_KEY }}",
+      url: "${{ env.MEET_PRODUCTION != 'true' && 'https://meet-ci.supabase.invalid' || secrets.PRODUCTION_SUPABASE_URL }}",
+      key: "${{ env.MEET_PRODUCTION != 'true' && 'sb_publishable_meet_ci_placeholder' || secrets.PRODUCTION_SUPABASE_PUBLISHABLE_KEY }}",
     }
   );
 });
