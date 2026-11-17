@@ -4,6 +4,7 @@
 import importlib.util
 import json
 import shutil
+import subprocess
 import tempfile
 import unittest
 from pathlib import Path
@@ -90,7 +91,10 @@ class HarnessTest(unittest.TestCase):
         self.assertEqual(config_path.parent, self.app)
         config = json.loads(config_path.read_text())
         self.assertEqual(config["extends"], str(self.app / "tsconfig.json"))
-        self.assertEqual(config["compilerOptions"], {"noEmit": True})
+        self.assertEqual(
+            config["compilerOptions"],
+            {"noEmit": True, "allowImportingTsExtensions": True},
+        )
         self.assertNotIn("include", config)
         self.assertNotIn("types", config["compilerOptions"])
         check = (self.out / "native-env-check.ts").read_text()
@@ -100,6 +104,37 @@ class HarnessTest(unittest.TestCase):
     def test_reads_bindings_declared_on_the_interface_itself(self):
         self.generated.write_text("interface FinanceGeneratedEnv {\n\tASSETS: Fetcher;\n}\n")
         self.assertEqual(self.run_build()[0], ["Fetcher"])
+
+    def test_checks_typescript_extension_imports_and_binding_assignability(self):
+        (self.app / "tsconfig.json").write_text(json.dumps({
+            "compilerOptions": {
+                "module": "ESNext", "moduleResolution": "Bundler",
+                "types": [], "skipLibCheck": True,
+            }
+        }))
+        worker = self.app / "cloudflare/worker.ts"
+        worker.parent.mkdir()
+        (worker.parent / "binding.ts").write_text("export const marker = 1;\n")
+        worker.write_text(
+            "import { marker } from './binding.ts';\n"
+            "void marker;\n"
+            "export interface FinanceEnvironment { ASSETS: unknown }\n"
+        )
+        _, config = self.run_build()
+        compiler = HERE.parents[1] / "node_modules/.bin/tsc"
+        result = subprocess.run(
+            [str(compiler), "--project", str(config), "--pretty", "false"],
+            capture_output=True, text=True,
+        )
+        self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
+        self.assertFalse((worker.parent / "worker.js").exists())
+        worker.write_text(worker.read_text().replace("ASSETS: unknown", "ASSETS: number"))
+        mismatch = subprocess.run(
+            [str(compiler), "--project", str(config), "--pretty", "false"],
+            capture_output=True, text=True,
+        )
+        self.assertNotEqual(mismatch.returncode, 0)
+        self.assertIn("ASSETS", mismatch.stdout + mismatch.stderr)
 
     def module_source(self):
         return (self.out / "cloudflare-workers-types.d.ts").read_text()

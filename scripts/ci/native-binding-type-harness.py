@@ -129,7 +129,10 @@ def build(app, generated_path, env_interface, worker_type, worker_module, out):
         json.dumps(
             {
                 "extends": str(app / "tsconfig.json"),
-                "compilerOptions": {"noEmit": True},
+                "compilerOptions": {
+                    "noEmit": True,
+                    "allowImportingTsExtensions": True,
+                },
                 "files": [
                     str(out / "native-env.module.d.ts"),
                     str(out / "native-env-check.ts"),

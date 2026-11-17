@@ -145,6 +145,14 @@ they only redirect.
 
 ## Gates before cutover
 
+The generated binding-type harness extends the owning app's base tsconfig and
+checks its full source graph with `noEmit` and `allowImportingTsExtensions`.
+The latter admits explicit `.ts` imports in Worker configuration without emitting
+unbundled JavaScript. Keep inherited includes, type roots and paths intact;
+binding incompatibilities must still fail. Verify the harness with
+`python3 scripts/ci/native-binding-type-harness.test.py`, which compiles a
+fixture with extension imports and rejects an incompatible binding type.
+
 An app is cutover-ready only with all of the following for the exact commit:
 
 1. Exact-commit CI green: unit tests, type-check, lint, the registry check, a
