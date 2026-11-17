@@ -11,7 +11,6 @@ export const profiles = JSON.parse(
 const financeRecipe = validateReleaseRecipe(
   profiles.apps.finance.releaseRecipe
 );
-assertCommittedRecipe(financeRecipe);
 function webProfileFor(environment) {
   assert.equal(environment, 'staging', 'Web publishes to staging only');
   const web = profiles.webStaging;
@@ -188,7 +187,6 @@ function financePublicationConfig(base, profile, { main, assets, sourceSha }) {
     compatibilityDate: financeRecipe.cf.compatibilityDate,
     sourceVars: financeRecipe.allowedVars,
   };
-  assert.deepEqual(financeRecipe.requiredSecretNames, profile.secrets);
   assert.equal(profile.environment, 'production', 'Finance is production only');
   assert.match(
     sourceSha ?? '',
@@ -227,6 +225,8 @@ function financePublicationConfig(base, profile, { main, assets, sourceSha }) {
       !Object.hasOwn(finance.sourceVars, name),
       `Secret name duplicates a source var: ${name}`
     );
+  assert.deepEqual(financeRecipe.requiredSecretNames, profile.secrets);
+  assertCommittedRecipe(financeRecipe);
   return {
     name: profile.name,
     account_id: profile.accountId,
