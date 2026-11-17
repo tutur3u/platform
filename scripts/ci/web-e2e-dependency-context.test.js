@@ -34,3 +34,26 @@ test('report-only Web E2E receives file-backed dependencies before install', () 
     []
   );
 });
+
+for (const app of ['hive', 'hive-realtime', 'meet-realtime', 'supermemory']) {
+  test(`report-only support image ${app} receives the frozen dependency context`, () => {
+    const source = readFileSync(
+      path.join(__dirname, `../../apps/${app}/Dockerfile`),
+      'utf8'
+    );
+    const stage = getStageContent(source, 'deps');
+    assert.ok(stage, `${app} dependency stage must exist`);
+    const install = stage.indexOf('bun install --frozen-lockfile');
+    assert.ok(install >= 0, `${app} must retain frozen installs`);
+    const context = stage.slice(0, install);
+    assert.deepEqual(
+      getCopiedWorkspaceManifestPaths(context),
+      listWorkspacePackageJsonPaths()
+    );
+    const copied = new Set(getCopiedRelativePaths(context));
+    assert.deepEqual(
+      listFileDependencyPaths().filter((file) => !copied.has(file)),
+      []
+    );
+  });
+}
