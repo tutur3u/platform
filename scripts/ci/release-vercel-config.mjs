@@ -1,4 +1,12 @@
-import { stop } from './calendar-exact-sha-stop.mjs';
+// Invalid committed records fail during ESM import, before the publisher can
+// write a stage stop receipt. CI imports this module to enforce the boundary.
+export class VercelConfigError extends Error {
+  constructor() {
+    super('Invalid Vercel config');
+    this.guardCode = 'VERCEL_CONFIG_INVALID';
+    this.phase = 'config-import';
+  }
+}
 
 const fields = [
   'appDirectory',
@@ -16,7 +24,7 @@ const name = /^[A-Z][A-Z0-9_]*$/u;
 
 export function validateVercelSection(value) {
   const fail = () => {
-    throw stop('BUILD_RECIPE_NOT_LEGACY', 'Invalid Vercel config');
+    throw new VercelConfigError();
   };
   if (!value || typeof value !== 'object' || Array.isArray(value)) fail();
   if (
@@ -27,8 +35,15 @@ export function validateVercelSection(value) {
   )
     fail();
   const app = /^apps\/([a-z][a-z0-9-]*)$/u.exec(value.appDirectory)?.[1];
+  const prefix = app?.replaceAll('-', '_').toUpperCase() + '_';
+  const inputs = [value.sourceShaEnv, value.aliasPreimageEnv];
   if (
     !app ||
+    !/^VERCEL_[A-Z0-9_]+_PROJECT_ID$/u.test(value.projectSecretName) ||
+    inputs[0] === inputs[1] ||
+    inputs.some(
+      (key) => !key.startsWith(prefix) || /_(TOKEN|SECRET|KEY)$/u.test(key)
+    ) ||
     !host.test(value.productionAlias) ||
     !host.test(value.supabaseHost) ||
     value.stageEnvironment !== `vercel-stage-${app}` ||
