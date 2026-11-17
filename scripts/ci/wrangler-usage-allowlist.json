@@ -954,10 +954,10 @@
       "uses": 1,
       "gap": "pending-migration",
       "admitted": {
-        "decision": "https://github.com/tutur3u/platform/pull/8115",
-        "reason": "REV-8115: the gateway config documents the mounted-path variable and its service-binding rollout in comments, and a config file's digest covers every line. No Wrangler invocation and no value change beyond the already-merged mounted-path variable; the pending-migration gap and its removal condition remain."
+        "decision": "https://github.com/tutur3u/platform/commit/8208457d49b234080c2fc5b800247eee78dedb0c",
+        "reason": "The gateway config comments document exact and explicit-subtree mount entries for the mounted-path variable, and a config file's digest covers every line. Comment-only change: no Wrangler invocation and no value change (the committed mount list stays empty); the pending-migration gap and its removal condition remain."
       },
-      "digest": "83955808302a9db4572b556174019ac78f28f5b31f1579e83d0998debfaeb1bd"
+      "digest": "2bb14ad87a8a8197f34214f289fec54ce5522463a4b4c96e207bf9a71ba70efa"
     },
     "apps/git/.gitignore": {
       "lines": 1,
