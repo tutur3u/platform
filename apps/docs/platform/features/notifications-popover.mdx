@@ -112,6 +112,50 @@ Loading skeleton, first-load error with Retry, refresh failure banner that keeps
 earlier results, loading more, load-more error with Retry, all caught up (with
 Show all) and no notifications yet.
 
+## Notifications page
+
+Web's `/{wsId}/notifications` page (for example `/personal/notifications`, the
+popover's **View all**) is the full inbox. It renders
+`@tuturuuu/ui/custom/notification-page-client` with the same rows, read rules,
+open-in-context targets and caches as the popover.
+
+- **Default and filters:** opens on **Unread**. **All** shows every
+  notification. The personal inbox is account-wide. A workspace route lists
+  every accessible notification by default, and **All workspaces** narrows it
+  to the route's workspace.
+- **Grouping:** **Time** uses the popover sections. **App** puts Needs action
+  first, then Tasks, Mail, Chat, Track, Workspaces and Account (system
+  notices). A section's **Mark all read** marks only that section's loaded
+  rows.
+- **Selection:** a checkbox appears on hover or focus, always on touch, and on
+  every row once one is selected. Shift selects a range, and the header
+  checkbox selects every loaded row. While rows are selected, the toolbar shows
+  **Mark as read**, **Mark as unread** and **Clear selection** in the same bar.
+  **Mark as unread** is disabled in Unread, where every row is already unread.
+  Bulk changes use the per-row optimistic update rules. Afterwards focus moves
+  to the select-all checkbox, or to the page heading when the list is now
+  empty. Esc pressed on a row keeps focus on that row. Changing the filter or
+  scope clears the selection.
+- **Keyboard:**
+  - ↑/↓ or J/K, Home and End move between rows.
+  - Enter opens a row, and **E** toggles its read state.
+  - **X** or Space selects a row; Shift+**X** selects a range.
+  - Esc clears the selection, and **?** opens the shortcut sheet (shared
+    Dialog). Both keys work from anywhere on the page except text fields and
+    open overlays.
+- **Failed loads:** if a next page fails to load, loading stops until the user
+  presses **Retry**, so a visible list end does not retry in a loop. The
+  popover list uses the same rule.
+- **No layout shift:**
+  - The title row and the fixed-height toolbar always render. Controls stay
+    disabled until the first page loads, and the unread count has a reserved
+    slot.
+  - Skeleton rows use the selectable row grid.
+  - Empty and error states fill the same minimum-height region.
+  - Selection changes only the toolbar's contents and the row background.
+- Rows load 30 at a time as the end of the list scrolls into view.
+- Archive is not available. Read state is the only state (see Read state).
+
 ## Regression coverage
 
 - `packages/users-core/src/lib/notifications/bulk-read-state.test.ts`
@@ -124,5 +168,8 @@ Show all) and no notifications yet.
 - `packages/ui/src/hooks/__tests__/use-notifications-mutations.test.tsx`
 - `packages/ui/src/components/ui/custom/__tests__/notification-popover.test.tsx`
 - `packages/ui/src/components/ui/custom/notification-grouping.test.ts`
+- `packages/ui/src/components/ui/custom/__tests__/notification-page.test.tsx`
+  (page filters, grouping, selection, keyboard and the layout-stability
+  regression)
 - `packages/ui/src/components/ui/custom/notification-card.test.tsx`
 - `packages/satellite/src/components/notification-popover.test.tsx`

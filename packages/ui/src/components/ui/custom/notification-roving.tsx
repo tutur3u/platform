@@ -82,6 +82,7 @@ export function useNotificationRoving({
   return {
     activeId: current,
     setActiveId,
+    focusRow,
     onKeyDown,
     containerRef,
     focusNeighbor,

@@ -8,7 +8,7 @@ import type {
 } from '@tuturuuu/ui/hooks/use-notifications';
 import { useCallback, useId, useMemo } from 'react';
 import { NotificationCard } from './notification-card';
-import { useNotificationOpen } from './notification-card-actions';
+import { useNotificationRowActions } from './notification-card-actions';
 import { notificationTargetAppName } from './notification-targets';
 import type { NotificationCodeText } from './notification-code-text';
 import {
@@ -20,9 +20,6 @@ import { NotificationListState } from './notification-list-state';
 import { useNotificationRoving } from './notification-roving';
 
 export type ListQuery = ReturnType<typeof useInfiniteNotifications>;
-
-/** Longest wait for the read request before opening another app. */
-const MARK_READ_HEAD_START_MS = 1500;
 
 export function NotificationList({
   query,
@@ -62,39 +59,13 @@ export function NotificationList({
     () => new Map(stacks.map((s) => [s.lead.id, s])),
     [stacks]
   );
-  const { target, open, opening } = useNotificationOpen(routeWsId);
+  const { target, opening, openStack, resolveInvite } =
+    useNotificationRowActions({ routeWsId, onToggle, onNavigate });
   const idPrefix = useId();
 
   const toggle = useCallback(
     (stack: NotificationStack) => onToggle(stack, stack.unread),
     [onToggle]
-  );
-  const openStack = useCallback(
-    async (stack: NotificationStack) => {
-      // Only a row that opens something is marked read; a pending invite
-      // keeps its Accept/Decline in view.
-      const to = target(stack.lead);
-      if (!to) return;
-      const marking = stack.unread ? onToggle(stack, true) : undefined;
-      // Leaving the page can cancel the read request; give it a bounded head
-      // start before a cross-app navigation.
-      if (marking && to.kind === 'link')
-        await Promise.race([
-          marking,
-          new Promise((resolve) =>
-            setTimeout(resolve, MARK_READ_HEAD_START_MS)
-          ),
-        ]);
-      if (await open(stack.lead)) onNavigate();
-    },
-    [onToggle, open, onNavigate, target]
-  );
-  const resolveInvite = useCallback(
-    (stack: NotificationStack) => {
-      if (stack.unread) onToggle(stack, true);
-      onNavigate();
-    },
-    [onToggle, onNavigate]
   );
   const roving = useNotificationRoving({
     rowIds,
@@ -125,7 +96,9 @@ export function NotificationList({
   // Loads the next page when the end of the list scrolls into view.
   const sentinel = useCallback(
     (node: HTMLDivElement | null) => {
-      if (!node || !query.hasNextPage) return;
+      // After a failed page only Retry resumes, so a visible sentinel cannot
+      // retry in a loop.
+      if (!node || !query.hasNextPage || query.isFetchNextPageError) return;
       const observer = new IntersectionObserver(
         ([entry]) => {
           if (entry?.isIntersecting && !query.isFetchingNextPage)
@@ -139,7 +112,12 @@ export function NotificationList({
       observer.observe(node);
       return () => observer.disconnect();
     },
-    [query.hasNextPage, query.isFetchingNextPage, query.fetchNextPage]
+    [
+      query.hasNextPage,
+      query.isFetchingNextPage,
+      query.isFetchNextPageError,
+      query.fetchNextPage,
+    ]
   );
 
   if (!query.data || stacks.length === 0) {

@@ -1,6 +1,7 @@
 'use client';
 
 import { ArrowUpRight, ChevronDown, Mail, MailOpen } from '@tuturuuu/icons';
+import { Checkbox } from '@tuturuuu/ui/checkbox';
 import { cn } from '@tuturuuu/utils/format';
 import { memo, type MouseEvent, useState } from 'react';
 import { NotificationInviteActions } from './notification-card-actions';
@@ -27,6 +28,16 @@ export interface NotificationCardProps {
   onToggle: (stack: NotificationStack) => void;
   onOpen: (stack: NotificationStack) => void;
   onInviteResolved: (stack: NotificationStack) => void;
+  /** Adds a leading checkbox column; rows keep one grid in every state. */
+  selection?: NotificationRowSelection;
+}
+
+export interface NotificationRowSelection {
+  selected: boolean;
+  /** Show the checkbox without hover, e.g. while any row is selected. */
+  visible: boolean;
+  label: string;
+  onSelect: (stack: NotificationStack, range: boolean) => void;
 }
 
 export const NotificationCard = memo(function NotificationCard({
@@ -40,6 +51,7 @@ export const NotificationCard = memo(function NotificationCard({
   onToggle,
   onOpen,
   onInviteResolved,
+  selection,
 }: NotificationCardProps) {
   const { lead, unread } = stack;
   const [expanded, setExpanded] = useState(false);
@@ -64,12 +76,35 @@ export const NotificationCard = memo(function NotificationCard({
         event.target === event.currentTarget && onFocusRow(lead.id)
       }
       onClick={onClick}
+      data-selected={selection?.selected || undefined}
       className={cn(
-        'group relative grid cursor-default grid-cols-[0.5rem_2rem_minmax(0,1fr)_auto] items-start gap-2.5 rounded-lg py-2.5 pr-2 pl-1.5 outline-none',
+        'group relative grid cursor-default items-start gap-2.5 rounded-lg py-2.5 pr-2 pl-1.5 outline-none',
+        selection
+          ? 'grid-cols-[1.25rem_0.5rem_2rem_minmax(0,1fr)_auto]'
+          : 'grid-cols-[0.5rem_2rem_minmax(0,1fr)_auto]',
         'hover:bg-accent focus-visible:bg-accent focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-inset',
+        'data-selected:bg-dynamic-blue/10',
         openApp && 'cursor-pointer'
       )}
     >
+      {selection && (
+        <Checkbox
+          checked={selection.selected}
+          aria-label={`${selection.label}: ${text.title}`}
+          tabIndex={-1}
+          onClick={(event) => {
+            event.preventDefault();
+            selection.onSelect(stack, event.shiftKey);
+          }}
+          className={cn(
+            'mt-2 transition-opacity before:absolute before:-inset-3 before:content-[""]',
+            'relative pointer-coarse:opacity-100',
+            selection.visible || selection.selected
+              ? 'opacity-100'
+              : 'opacity-0 group-focus-within:opacity-100 group-hover:opacity-100'
+          )}
+        />
+      )}
       <span
         aria-hidden
         className={cn(
@@ -194,6 +229,10 @@ function sameRow(prev: NotificationCardProps, next: NotificationCardProps) {
     prev.onFocusRow === next.onFocusRow &&
     prev.onToggle === next.onToggle &&
     prev.onOpen === next.onOpen &&
-    prev.onInviteResolved === next.onInviteResolved
+    prev.onInviteResolved === next.onInviteResolved &&
+    prev.selection?.selected === next.selection?.selected &&
+    prev.selection?.visible === next.selection?.visible &&
+    prev.selection?.label === next.selection?.label &&
+    prev.selection?.onSelect === next.selection?.onSelect
   );
 }

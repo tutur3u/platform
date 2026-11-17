@@ -1,6 +1,10 @@
 import type { Notification } from '@tuturuuu/ui/hooks/use-notifications';
 import { describe, expect, it } from 'vitest';
-import { groupNotifications } from './notification-grouping';
+import {
+  groupNotifications,
+  groupNotificationsByApp,
+  notificationApp,
+} from './notification-grouping';
 
 const NOW = new Date(2026, 10, 16, 15, 0);
 
@@ -83,5 +87,59 @@ describe('groupNotifications', () => {
     );
     expect(today!.stacks).toHaveLength(2);
     expect(yesterday!.stacks.map((s) => s.lead.id)).toEqual(['c']);
+  });
+});
+
+describe('groupNotificationsByApp', () => {
+  it('keeps needs-action first and orders app sections', () => {
+    const at = new Date(2026, 10, 16, 9);
+    const sections = groupNotificationsByApp([
+      n('mail', at, {
+        type: 'mail_received',
+        entity_type: null,
+        entity_id: null,
+      }),
+      n('task', at),
+      n('invite', at, {
+        type: 'workspace_invite',
+        entity_type: 'workspace',
+        entity_id: 'w',
+        data: {},
+      }),
+      n('sec', at, {
+        type: 'security_alert',
+        entity_type: null,
+        entity_id: null,
+      }),
+    ]);
+    expect(sections.map((s) => s.key)).toEqual([
+      'needsAction',
+      'tasks',
+      'mail',
+      'account',
+    ]);
+  });
+
+  it('maps types and entities to their app', () => {
+    const at = new Date(2026, 10, 16, 9);
+    expect(notificationApp(n('a', at, { type: 'deadline_reminder' }))).toBe(
+      'tasks'
+    );
+    expect(
+      notificationApp(
+        n('b', at, {
+          type: 'system_announcement',
+          entity_type: 'chat_conversation',
+        })
+      )
+    ).toBe('chat');
+    expect(
+      notificationApp(
+        n('c', at, {
+          type: 'time_tracking_request_approved',
+          entity_type: null,
+        })
+      )
+    ).toBe('track');
   });
 });

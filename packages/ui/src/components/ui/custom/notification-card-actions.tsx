@@ -15,6 +15,7 @@ import {
 } from '@tuturuuu/ui/lib/task-open-events';
 import { toast } from '@tuturuuu/ui/sonner';
 import { useCallback, useState } from 'react';
+import type { NotificationStack } from './notification-grouping';
 import type { NotificationLabels } from './notification-labels';
 import { useNotificationRuntime } from './notification-runtime';
 import {
@@ -34,6 +35,51 @@ export function getWorkspaceInviteWorkspaceId(notification: Notification) {
         typeof candidate === 'string' && candidate.length > 0
     ) ?? null
   );
+}
+
+/** Longest wait for the read request before opening another app. */
+const MARK_READ_HEAD_START_MS = 1500;
+
+/**
+ * Open and invite handlers shared by every notification list. Opening a row
+ * marks it read, giving the read request a bounded head start before a
+ * cross-app navigation that could cancel it; a row with nothing to open
+ * keeps its state.
+ */
+export function useNotificationRowActions({
+  routeWsId,
+  onToggle,
+  onNavigate,
+}: {
+  routeWsId?: string;
+  onToggle: (stack: NotificationStack, read: boolean) => void | Promise<void>;
+  onNavigate: () => void;
+}) {
+  const { target, open, opening } = useNotificationOpen(routeWsId);
+  const openStack = useCallback(
+    async (stack: NotificationStack) => {
+      const to = target(stack.lead);
+      if (!to) return;
+      const marking = stack.unread ? onToggle(stack, true) : undefined;
+      if (marking && to.kind === 'link')
+        await Promise.race([
+          marking,
+          new Promise((resolve) =>
+            setTimeout(resolve, MARK_READ_HEAD_START_MS)
+          ),
+        ]);
+      if (await open(stack.lead)) onNavigate();
+    },
+    [onToggle, open, onNavigate, target]
+  );
+  const resolveInvite = useCallback(
+    (stack: NotificationStack) => {
+      if (stack.unread) onToggle(stack, true);
+      onNavigate();
+    },
+    [onToggle, onNavigate]
+  );
+  return { target, opening, openStack, resolveInvite };
 }
 
 /** Where a notification leads, if anywhere: the exact item in its app. */

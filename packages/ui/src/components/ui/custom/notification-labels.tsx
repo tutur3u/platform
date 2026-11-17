@@ -110,23 +110,33 @@ export interface NotificationTranslator {
 }
 
 /**
- * Builds labels from a root-namespace translator. Raw messages keep the
- * `{count}` placeholders; a missing key falls back to English so an app bundle
- * that has not shipped a key still renders.
+ * Fills a label set from a root-namespace translator. Raw messages keep their
+ * `{count}`-style placeholders; a missing key keeps the English default so an
+ * app bundle that has not shipped a key still renders.
  */
+export function labelsFromTranslator<L extends Record<string, string>>(
+  defaults: L,
+  keys: Record<keyof L, string[]>,
+  t: NotificationTranslator
+): L {
+  const labels = { ...defaults };
+  for (const name of Object.keys(keys) as (keyof L)[]) {
+    const key = keys[name].find((candidate) => t.has(candidate));
+    const value = key ? t.raw(key) : undefined;
+    if (typeof value === 'string') labels[name] = value as L[keyof L];
+  }
+  return labels;
+}
+
+/** Labels for the shared notification popover. */
 export function notificationLabelsFrom(
   t: NotificationTranslator
 ): NotificationLabels {
-  const labels = { ...DEFAULT_NOTIFICATION_LABELS } as NotificationLabels;
-  for (const [name, keys] of Object.entries(KEYS) as [
-    keyof NotificationLabels,
-    string[],
-  ][]) {
-    const key = keys.find((candidate) => t.has(candidate));
-    const value = key ? t.raw(key) : undefined;
-    if (typeof value === 'string') labels[name] = value;
-  }
-  return labels;
+  return labelsFromTranslator<NotificationLabels>(
+    DEFAULT_NOTIFICATION_LABELS,
+    KEYS,
+    t
+  );
 }
 
 /** Same as `notificationLabelsFrom` for hosts with a plain message object. */
