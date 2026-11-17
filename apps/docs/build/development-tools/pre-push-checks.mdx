@@ -1,7 +1,7 @@
 ---
 title: "Pre-push checks"
 description: "Run the build-free changed-files gate before pushing so cheap CI failures are caught locally in seconds."
-updatedAt: "2026-10-23"
+updatedAt: "2026-11-17"
 audience: developers
 ---
 
@@ -23,12 +23,22 @@ bun check:changed --committed     # committed changes only (the hook's mode)
 bun check:changed --files a.ts b.ts
 ```
 
-It never runs builds, `bun validate` or Turbo. Small repository scripts run directly;
+It never runs builds or `bun validate`. Turbo is used only as
+`turbo run type-check test --dry=json --filter=...[merge-base]` to choose
+packages. That dry run does not execute tasks, including any task whose
+`dependsOn` includes a build. If the dry command fails, selection falls back to
+transitive reverse dependents. Small repository scripts run directly;
 Vitest, type-check and `flutter analyze` are queued through `ttr resources run`
 when resource control is installed and enabled (`--no-ttr` opts out). Without
 the `~/.bun/bin/ttr` directory entry, the gate warns and runs sequentially with Vitest
 capped at two workers. An invalid installed global CLI or unsafe ancestor bin
 alias still fails closed; a workspace binary is never used as a fallback. A dangling global launcher symlink or missing package bin target is a broken installation, not an absent CLI: reinstall with `bun add -g tuturuuu` before retrying.
+
+`ttr check` runs this same gate with `VITEST_MAX_WORKERS=2`, `TURBO_CONCURRENCY=2`,
+and the gate's `node --test --test-concurrency=2`. It refuses hostname
+`Mac-Mini-M4` and host id `m4` with exit 2 and does not start the check.
+Remote Turbo cache is used only when `TURBO_TOKEN` and `TURBO_TEAM` are already
+set in the environment.
 
 ## What runs for which paths
 
@@ -38,8 +48,8 @@ alias still fails closed; a workspace binary is never used as a fallback. A dang
 | JS/TS/JSON/CSS outside `apps/mobile`                                                    | Oxfmt `--check` (0.74.0) and blocking Oxlint `--deny-warnings` (1.89.0)                                                                                                                                                                                                                                                                                                                                                  |
 | `packages/internal-api/**`, `packages/sdk/**`, `packages/utils/**`, `packages/types/**` | SDK portable source approval (`sdk-portable`): resolves the source closure and checks its allowlist without emitting files or running TypeScript. Utils and types are conservatively scoped to cover portable imports.                                                                                                                                                                                                   |
 | `apps/*` or `packages/*` source                                                         | App-session, satellite cookie and server-console guards                                                                                                                                                                                                                                                                                                                                                                  |
-| A workspace's source, `tsconfig*.json` or `package.json`                                | Type-check of the projects its `type-check` script checks                                                                                                                                                                                                                                                                                                                                                                |
-| A workspace's related tests                                                             | Changed and colocated tests use `node --test` when they import `node:test` or their package's `test` script uses `node --test`; explicit Vitest imports retain Vitest; files that import `bun:test` run with `bun test` from their workspace directory (the Meet realtime Durable Object suites, which Node cannot load). Other related tests use the owning workspace's Vitest config. Each file runs under one runner. |
+| A workspace's source, `tsconfig*.json` or `package.json`                                | Type-check with `tsc --noEmit` of the dry-graph packages (changed packages and dependents). A failed dry graph uses reverse dependents instead. The gate does not run the Turbo `type-check` task, because that task depends on `^build`.                                                                                                                                                                                      |
+| A workspace's related tests                                                             | Changed and colocated tests use `node --test --test-concurrency=2` when they import `node:test` or their package's `test` script uses `node --test`; explicit Vitest imports retain Vitest; files that import `bun:test` run with `bun test` from their workspace directory (the Meet realtime Durable Object suites, which Node cannot load). Vitest steps run `vitest related` on the changed source files with `--maxWorkers=2`. Each test file runs under one runner. Oxfmt and Oxlint stay on the changed files. |
 | `scripts/`, `.github/actions/`, `plugins/`                                              | Changed and sibling `node --test` files                                                                                                                                                                                                                                                                                                                                                                                  |
 | `.github/workflows/` or `.github/actions/`                                              | Workflow concurrency, Bun pin and workflow-config policy tests                                                                                                                                                                                                                                                                                                                                                           |
 | `apps/mobile/`                                                                          | `flutter gen-l10n` first when ARB files changed, `dart format` on changed Dart files, then `flutter analyze lib test` exactly as `mobile.yaml` runs it                                                                                                                                                                                                                                                                   |
@@ -94,8 +104,12 @@ project and classifies diagnostics:
   errors such as TS2322; only implicit-any follow-ons (7005/7006/7031/7034)
   in that file are advisory. Diagnostics in unchanged files remain advisory.
 
-Shared-package changes also select transitive reverse dependents from workspace
-manifests. Root/shared configuration changes (`package.json`, `bun.lock`, root
+Shared-package changes select affected packages from the Turbo dry graph.
+When that command fails, the gate keeps transitive reverse dependents from
+workspace manifests. `type-check:slice` is a build-free cached Turbo task with
+empty `dependsOn` and declared `*.tsbuildinfo` outputs. The gate does not
+execute it: packages keep their existing `type-check` script, and running the
+Turbo `type-check` task would build dependencies. Root/shared configuration changes (`package.json`, `bun.lock`, root
 `tsconfig.json`, `.oxfmtrc.json` and `.oxlintrc.json`, `turbo.json`, `bunfig.toml`, `.npmrc`,
 root `vitest.config.ts`, `.oxlintrc.json`, `.oxfmtrc.json`, and
 `packages/typescript-config`)

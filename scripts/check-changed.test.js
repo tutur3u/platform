@@ -607,3 +607,43 @@ test('forced tsrs uses only tsc in an unqualified project', (t) => {
   assert.equal(result.status, 'fail');
   assert.match(result.output, /real error/);
 });
+
+test('a successful turbo dry graph replaces reverse dependents', (t) => {
+  const root = fs.mkdtempSync(path.join(os.tmpdir(), 'check-dry-graph-'));
+  t.after(() => fs.rmSync(root, { recursive: true, force: true }));
+  for (const [workspace, manifest] of [
+    ['packages/types', { name: '@tuturuuu/types' }],
+    [
+      'apps/consumer',
+      { name: '@tuturuuu/consumer', dependencies: { '@tuturuuu/types': 'workspace:*' } },
+    ],
+  ]) {
+    fs.mkdirSync(path.join(root, workspace), { recursive: true });
+    fs.writeFileSync(
+      path.join(root, workspace, 'package.json'),
+      JSON.stringify(manifest)
+    );
+  }
+  const logs = [];
+  const sha = 'a'.repeat(40);
+  assert.equal(
+    main(['--dry-run', '--files', 'packages/types/src/a.ts'], {
+      root,
+      execFile: fakeGit({
+        'git merge-base': `${sha}\n`,
+        'git branch --show-current': 'chore/gate\n',
+      }),
+      log: (line) => logs.push(line),
+      selectAffected: () => ({
+        ok: true,
+        workspaces: ['packages/types'],
+        remote: 'unset',
+      }),
+    }),
+    0
+  );
+  const output = logs.join('\n');
+  assert.match(output, /type-check:packages\/types/);
+  assert.doesNotMatch(output, /type-check:apps\/consumer/);
+  assert.match(output, /remote cache unset/);
+});

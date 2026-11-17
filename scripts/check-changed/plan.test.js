@@ -97,6 +97,7 @@ test('TypeScript changes map to oxc, oxlint, guards, vitest and type-check', () 
     'satellite-cookie-auth',
     'browser-session-surface',
     'vitest:packages/utils',
+    'vitest:apps/web',
     'type-check:apps/web',
     'type-check:packages/utils',
   ]);
@@ -107,8 +108,16 @@ test('TypeScript changes map to oxc, oxlint, guards, vitest and type-check', () 
   assert.equal(Boolean(oxlint.advisory), false);
   const vitest = plan.steps.find((step) => step.id === 'vitest:packages/utils');
   assert.equal(vitest.cwd, 'packages/utils');
-  assert.deepEqual(vitest.args.slice(-1), ['src/date.test.ts']);
+  assert.deepEqual(vitest.args, [
+    'x',
+    'vitest',
+    'related',
+    '--maxWorkers=2',
+    'src/date.ts',
+  ]);
   assert.equal(vitest.heavy, true);
+  const web = plan.steps.find((step) => step.id === 'vitest:apps/web');
+  assert.deepEqual(web.args.slice(-1), ['src/app/page.tsx']);
 });
 
 test('bun:test suites run with bun test from their workspace, never Vitest or node --test', () => {
@@ -145,7 +154,13 @@ test('bun:test suites run with bun test from their workspace, never Vitest or no
   const vitest = plan.steps.find(
     (step) => step.id === 'vitest:apps/meet-realtime'
   );
-  assert.deepEqual(vitest.args.slice(-1), ['src/token.test.ts']);
+  assert.deepEqual(vitest.args, [
+    'x',
+    'vitest',
+    'related',
+    '--maxWorkers=2',
+    'src/token.ts',
+  ]);
   // A workspace without a Vitest config still runs its Bun suites.
   const bare = planChecks(
     changed('apps/no-vitest/src/room.ts'),
@@ -359,6 +374,33 @@ test('REV-6467-2: shared changes type-check transitive reverse dependents', () =
       'type-check:packages/types',
       'type-check:packages/utils',
     ]
+  );
+});
+
+test('a turbo dry scope replaces reverse-dependent expansion', () => {
+  const workspaces = [
+    { workspace: 'packages/types', name: '@tuturuuu/types', dependencies: [] },
+    {
+      workspace: 'packages/utils',
+      name: '@tuturuuu/utils',
+      dependencies: ['@tuturuuu/types'],
+    },
+    {
+      workspace: 'apps/web',
+      name: '@tuturuuu/web',
+      dependencies: ['@tuturuuu/utils'],
+    },
+  ];
+  const plan = planChecks(
+    changed('packages/types/src/task.ts'),
+    context([], {
+      workspaces,
+      affectedWorkspaces: ['packages/types', 'apps/web'],
+    })
+  );
+  assert.deepEqual(
+    ids(plan).filter((id) => id.startsWith('type-check:')),
+    ['type-check:apps/web', 'type-check:packages/types']
   );
 });
 

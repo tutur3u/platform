@@ -17,6 +17,9 @@ const { execFileSync, spawnSync } = require('node:child_process');
 const fs = require('node:fs');
 const path = require('node:path');
 const {
+  selectAffectedWorkspaces,
+} = require('./check-changed/affected.js');
+const {
   trustedTtr,
   inResourceLane,
   assertWorkspaceBins,
@@ -442,13 +445,33 @@ function main(argv = process.argv.slice(2), deps = {}) {
   }
   const root = deps.root ?? ROOT;
   const exists = (file) => fs.existsSync(path.join(root, file));
+  const workspaces = readWorkspaces(root);
+  let affectedWorkspaces;
+  if (hasTypeCandidates(changes) && base) {
+    const selection = (deps.selectAffected ?? selectAffectedWorkspaces)({
+      root,
+      mergeBase: base,
+      env: deps.env ?? process.env,
+      spawn: deps.spawnTurbo ?? spawnSync,
+      workspaces,
+    });
+    if (selection.ok) {
+      affectedWorkspaces = selection.workspaces;
+      log(
+        `  turbo dry graph selected ${selection.workspaces.length} package(s); remote cache ${selection.remote}`
+      );
+    } else {
+      log('  turbo dry graph unavailable; using reverse dependents');
+    }
+  }
   const plan = planChecks(changes, {
+    affectedWorkspaces,
     base,
     oxfmtBinary: localOxfmt(root),
     ...validationBranch(execFile, pushes),
     exists,
     readSource: (file) => fs.readFileSync(path.join(root, file), 'utf8'),
-    workspaces: readWorkspaces(root),
+    workspaces,
     hasVitest: (workspace) =>
       ['ts', 'mts', 'js', 'mjs'].some((ext) =>
         exists(`${workspace}/vitest.config.${ext}`)
@@ -562,6 +585,20 @@ function main(argv = process.argv.slice(2), deps = {}) {
     `check:changed: ${failed.length ? `${failed.length} failed` : 'all passed'} in ${((Date.now() - started) / 1000).toFixed(1)}s${failed.length ? ` (${failed.map((r) => r.step.id).join(', ')})` : ''}.`
   );
   return failed.length ? 1 : 0;
+}
+
+const TYPE_CANDIDATE = /\.(?:[cm]?tsx?|d\.ts)$/;
+
+function hasTypeCandidates(changes) {
+  return changes.some((change) => {
+    const workspace = workspaceOf(change.file);
+    return (
+      workspace &&
+      workspace !== 'apps/mobile' &&
+      (TYPE_CANDIDATE.test(change.file) ||
+        /\/(?:tsconfig[^/]*\.json|package\.json)$/.test(change.file))
+    );
+  });
 }
 
 function readStdin() {

@@ -89,6 +89,31 @@ function siblingTests(file, exists) {
   return candidates.filter(exists);
 }
 
+// Vitest receives changed source via `vitest related`. Node and Bun test files
+// stay on their own runners. A source file is included when it has a Vitest
+// sibling, or when it has no sibling test yet.
+function vitestRelatedInputs(files, relatedTests, context, exists) {
+  const inputs = [];
+  for (const file of files) {
+    if (!/\.[cm]?[jt]sx?$/.test(file)) continue;
+    if (TEST_FILE.test(file)) {
+      const runner = relatedTests.get(file) ?? testRunnerOf(file, context);
+      if (runner === 'vitest') inputs.push(file);
+      continue;
+    }
+    const siblings = siblingTests(file, exists);
+    if (!siblings.length) {
+      inputs.push(file);
+      continue;
+    }
+    const runners = siblings.map(
+      (sibling) => relatedTests.get(sibling) ?? testRunnerOf(sibling, context)
+    );
+    if (runners.includes('vitest')) inputs.push(file);
+  }
+  return inputs;
+}
+
 function nodeScriptTests(files, exists) {
   const selected = new Set();
   for (const file of files) {
@@ -483,20 +508,18 @@ function planChecks(changes, context) {
       });
     }
     if (!context.hasVitest(workspace)) continue;
-    const tests = related.filter(
-      (file) => (relatedTests.get(file) ?? 'vitest') === 'vitest'
-    );
-    if (!tests.length) continue;
+    const inputs = vitestRelatedInputs(files, relatedTests, context, exists);
+    if (!inputs.length) continue;
     steps.push({
       id: `vitest:${workspace}`,
-      label: `vitest ${workspace} (${tests.length} related files)`,
+      label: `vitest related ${workspace} (${inputs.length} changed files)`,
       command: 'bun',
       args: [
         'x',
         'vitest',
-        'run',
+        'related',
         '--maxWorkers=2',
-        ...tests.map((file) => path.posix.relative(workspace, file)),
+        ...inputs.map((file) => path.posix.relative(workspace, file)),
       ],
       cwd: workspace,
       heavy: true,
@@ -515,9 +538,19 @@ function planChecks(changes, context) {
       typeWorkspaces.add(workspace);
     }
   }
-  for (const workspace of [
-    ...reverseDependents(typeWorkspaces, context.workspaces),
-  ].sort()) {
+  const turboSelected = Array.isArray(context.affectedWorkspaces)
+    ? context.affectedWorkspaces.filter(
+        (workspace) => workspace && !isPausedPath(`${workspace}/keep`)
+      )
+    : null;
+  const typeTargets = (
+    turboSelected
+      ? [...new Set([...typeWorkspaces, ...turboSelected])]
+      : [...reverseDependents(typeWorkspaces, context.workspaces)]
+  )
+    .filter((workspace) => workspace !== 'apps/mobile')
+    .sort();
+  for (const workspace of typeTargets) {
     steps.push({
       id: `type-check:${workspace}`,
       label: `type-check ${workspace}`,

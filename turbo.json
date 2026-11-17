@@ -274,6 +274,10 @@
         ".next/cache/.tsbuildinfo"
       ]
     },
+    "type-check:slice": {
+      "dependsOn": [],
+      "outputs": ["*.tsbuildinfo"]
+    },
     "dart-format": {
       "inputs": [
         "$TURBO_DEFAULT$",
