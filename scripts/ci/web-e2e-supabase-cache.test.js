@@ -5,6 +5,7 @@ const {
   identity,
   mirrorFor,
   saveAllowed,
+  failureReport,
 } = require('./web-e2e-supabase-cache');
 const { catalogPin, digestReference } = require('./supabase-image-cache-seed');
 const { MAX_ARCHIVE_BYTES } = require('./supabase-image-cache');
@@ -418,6 +419,118 @@ test('login errors discard credential-bearing child output and cleanup still wor
     f.files.has('/owned/web-e2e-supabase-registry-auth/config.json'),
     false
   );
+});
+test('pull failures report only catalog identity and bounded classification, never child diagnostics', async () => {
+  const secret = 'synthetic-private-pull-output';
+  for (const [failure, result] of [
+    ['authentication', { status: 1, stderr: `unauthorized ${secret}` }],
+    ['rate-limit', { status: 1, stderr: `HTTP 429 ${secret}` }],
+    ['manifest', { status: 1, stderr: `manifest unknown ${secret}` }],
+    [
+      'daemon-unavailable',
+      { status: 1, stderr: `Cannot connect to the Docker daemon ${secret}` },
+    ],
+    [
+      'timeout',
+      { status: null, error: { code: 'ETIMEDOUT', message: secret } },
+    ],
+    [
+      'output-limit',
+      { status: null, error: { code: 'ENOBUFS', message: secret } },
+    ],
+    [
+      'command-unavailable',
+      { status: null, error: { code: 'ENOENT', message: secret } },
+    ],
+    ['process-failure', { status: 1, stderr: secret }],
+  ]) {
+    const f = fixture({ GHCR_TOKEN: secret });
+    await main('key', f.options);
+    const original = f.options.spawn;
+    f.options.spawn = (name, args, settings) =>
+      args[0] === 'pull'
+        ? { ...result, stdout: secret }
+        : original(name, args, settings);
+    f.options.pullImage = async (image, settings) => {
+      for (
+        let attempt = 0;
+        attempt < settings.retryOptions.maxAttempts;
+        attempt++
+      )
+        settings.spawn('docker', ['pull', image]);
+      return { code: 1, stderr: secret };
+    };
+    await assert.rejects(main('prepare', f.options), (error) => {
+      const image = identity(inputs).images[0];
+      assert.deepEqual(failureReport(error), {
+        code: 'E2E_IMAGES_PULL',
+        phase: 'image-pull',
+        imagePull: {
+          image,
+          transport: 'canonical',
+          operation: 'pull',
+          attempts: mirrorFor(image, catalogPin('cli-2.121.0', image)) ? 3 : 2,
+          failure,
+        },
+      });
+      assert.ok(!JSON.stringify(failureReport(error)).includes(secret));
+      assert.ok(!f.files.get('/output').includes(secret));
+      return true;
+    });
+  }
+});
+test('successful inspect followed by pin rejection remains verification, without exposing content', async () => {
+  const f = fixture({ GITHUB_EVENT_NAME: 'schedule' });
+  await main('key', f.options);
+  const original = f.options.spawn;
+  f.options.spawn = (name, args, settings) => {
+    const result = original(name, args, settings);
+    if (args[0] === 'image') result.stdout = 'untrusted-private-invalid-json';
+    return result;
+  };
+  await assert.rejects(main('prepare', f.options), (error) => {
+    const report = failureReport(error);
+    assert.equal(report.code, 'E2E_IMAGES_PULL');
+    assert.equal(report.imagePull.operation, 'inspect');
+    assert.equal(report.imagePull.failure, 'verification');
+    assert.equal(report.imagePull.transport, 'canonical');
+    assert.ok(
+      !JSON.stringify(report).includes('untrusted-private-invalid-json')
+    );
+    return true;
+  });
+});
+test('reporter excludes unvalidated fields and forged image identities', () => {
+  const report = failureReport({
+    message: 'untrusted-private-message',
+    phase: 'image-pull',
+    imagePull: {
+      image: 'https://untrusted.invalid/private',
+      transport: 'canonical',
+      operation: 'pull',
+      attempts: 1,
+      failure: 'process-failure',
+      stderr: 'untrusted-private-output',
+    },
+  });
+  assert.deepEqual(report, { code: 'E2E_IMAGES_FAILED', phase: 'image-pull' });
+});
+test('canonical tagging failure retains its operation without retaining Docker output', async () => {
+  const f = fixture({ GITHUB_EVENT_NAME: 'schedule' });
+  await main('key', f.options);
+  const original = f.options.spawn;
+  f.options.spawn = (name, args, settings) =>
+    args[0] === 'tag'
+      ? { status: 1, stderr: 'untrusted-private-tag-output' }
+      : original(name, args, settings);
+  await assert.rejects(main('prepare', f.options), (error) => {
+    const report = failureReport(error);
+    assert.equal(report.imagePull.operation, 'tag');
+    assert.equal(report.imagePull.failure, 'process-failure');
+    assert.equal(report.imagePull.transport, 'canonical');
+    assert.ok(!JSON.stringify(report).includes('untrusted-private-tag-output'));
+    return true;
+  });
 });
 test('workflow restores only the tar and saves with the same exact platform key before auth cleanup and smoke', () => {
   const workflow = require('node:fs').readFileSync(

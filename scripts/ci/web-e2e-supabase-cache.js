@@ -74,6 +74,80 @@ function mirrorFor(image, pin) {
     : null;
 }
 
+function pullFailure(result) {
+  if (result.error?.code === 'ENOBUFS') return 'output-limit';
+  if (result.error?.code === 'ENOENT') return 'command-unavailable';
+  if (result.error?.code === 'ETIMEDOUT' || result.signal === 'SIGTERM')
+    return 'timeout';
+  // Child output is classified in memory and is never retained in the report.
+  const diagnostic =
+    typeof result.stderr === 'string' ? result.stderr.slice(-8192) : '';
+  if (
+    /unauthorized|authentication required|access denied|denied:/i.test(
+      diagnostic
+    )
+  )
+    return 'authentication';
+  if (
+    /toomanyrequests|too many requests|rate exceeded|\b429\b/i.test(diagnostic)
+  )
+    return 'rate-limit';
+  if (
+    /manifest unknown|manifest[^\n]*not found|no matching manifest/i.test(
+      diagnostic
+    )
+  )
+    return 'manifest';
+  if (
+    /cannot connect to the docker daemon|is the docker daemon running|error during connect/i.test(
+      diagnostic
+    )
+  )
+    return 'daemon-unavailable';
+  if (/timeout|timed out/i.test(diagnostic)) return 'timeout';
+  return 'process-failure';
+}
+
+function failureReport(error) {
+  const code = /^E2E_IMAGES_[A-Z_]+$/.test(error.message)
+    ? error.message
+    : 'E2E_IMAGES_FAILED';
+  const report = { code, phase: error.phase || 'admission' };
+  const detail = error.imagePull;
+  if (
+    report.phase === 'image-pull' &&
+    detail &&
+    Object.values(data.catalogs).some((catalog) =>
+      Object.hasOwn(catalog.images, detail.image)
+    ) &&
+    ['mirror', 'canonical'].includes(detail.transport) &&
+    ['pull', 'inspect', 'tag', 'unknown'].includes(detail.operation) &&
+    Number.isInteger(detail.attempts) &&
+    detail.attempts >= 0 &&
+    detail.attempts <= 3 &&
+    [
+      'output-limit',
+      'command-unavailable',
+      'timeout',
+      'authentication',
+      'rate-limit',
+      'manifest',
+      'daemon-unavailable',
+      'process-failure',
+      'verification',
+      'unknown',
+    ].includes(detail.failure)
+  )
+    report.imagePull = {
+      image: detail.image,
+      transport: detail.transport,
+      operation: detail.operation,
+      attempts: detail.attempts,
+      failure: detail.failure,
+    };
+  return report;
+}
+
 async function execute(mode, options, progress) {
   const env = options.env || process.env;
   // Admission precedes filesystem, CLI, Docker and credential access.
@@ -197,12 +271,40 @@ async function execute(mode, options, progress) {
   if (io.readFileSync(manifest, 'utf8') !== JSON.stringify(current))
     stop('METADATA');
   output('archive-ready', 'false');
-  const imageSpawn = (name, args, settings = {}) =>
-    spawn(name, args, {
-      ...settings,
-      timeout: Math.min(settings.timeout || 10_000, remaining()),
-      env: { ...env, GHCR_TOKEN: '', DOCKER_CONFIG: auth },
-    });
+  const imageSpawn = (name, args, settings = {}) => {
+    const detail = progress.phase === 'image-pull' && progress.imagePull;
+    if (detail) {
+      detail.operation =
+        args[0] === 'pull'
+          ? 'pull'
+          : args[0] === 'image' && args[1] === 'inspect'
+            ? 'inspect'
+            : args[0] === 'tag'
+              ? 'tag'
+              : 'unknown';
+      if (detail.operation === 'pull') detail.attempts++;
+      detail.failure = 'unknown';
+    }
+    let result;
+    try {
+      result = spawn(name, args, {
+        ...settings,
+        timeout: Math.min(settings.timeout || 10_000, remaining()),
+        env: { ...env, GHCR_TOKEN: '', DOCKER_CONFIG: auth },
+      });
+    } catch (error) {
+      if (detail) detail.failure = 'process-failure';
+      throw error;
+    }
+    if (detail)
+      detail.failure =
+        result.status !== 0
+          ? pullFailure(result)
+          : detail.operation === 'inspect'
+            ? 'verification'
+            : 'unknown';
+    return result;
+  };
   const verifyOptions = { spawn: imageSpawn, deadline, now };
   if (env.IMAGE_CACHE_HIT === 'true') {
     progress.phase = 'archive-restore';
@@ -220,10 +322,18 @@ async function execute(mode, options, progress) {
   progress.phase = 'image-pull';
   for (const image of current.images) {
     remaining();
+    progress.imagePull = {
+      image,
+      transport: 'canonical',
+      operation: 'unknown',
+      attempts: 0,
+      failure: 'unknown',
+    };
     const pin = catalogPin(current.catalog, image);
     const mirror = mirrorFor(image, pin);
     let result;
     if (mirror) {
+      progress.imagePull.transport = 'mirror';
       const source = `${mirror.repository}:${image.slice(image.lastIndexOf(':') + 1)}`;
       result = await pull(source, {
         pin: mirror,
@@ -238,6 +348,9 @@ async function execute(mode, options, progress) {
     }
     if (!result || result.code !== 0) {
       remaining();
+      progress.imagePull.transport = 'canonical';
+      progress.imagePull.operation = 'unknown';
+      progress.imagePull.failure = 'unknown';
       result = await pull(image, {
         pin,
         deadline,
@@ -295,15 +408,14 @@ async function main(mode, options = {}) {
     return await execute(mode, options, progress);
   } catch (error) {
     error.phase = progress.phase;
+    if (progress.phase === 'image-pull' && progress.imagePull)
+      error.imagePull = { ...progress.imagePull };
     throw error;
   }
 }
 if (require.main === module)
   main(process.argv[2]).catch((error) => {
-    const code = /^E2E_IMAGES_[A-Z_]+$/.test(error.message)
-      ? error.message
-      : 'E2E_IMAGES_FAILED';
-    console.error(JSON.stringify({ code, phase: error.phase || 'admission' }));
+    console.error(JSON.stringify(failureReport(error)));
     process.exitCode = 1;
   });
-module.exports = { main, identity, mirrorFor, saveAllowed };
+module.exports = { main, identity, mirrorFor, saveAllowed, failureReport };
