@@ -139,10 +139,7 @@ for (const overrides of [
     );
     if (stagingRejected) {
       assert.notEqual(result.status, 0);
-      assert.match(
-        result.stderr,
-        /Exact-source staging proof unavailable or changed/
-      );
+      assert.match(result.stderr, /STAGING_PROVENANCE_DENIED/);
       assert.equal(setup.output(), '');
       assert.doesNotMatch(setup.requests(), /FETCH_FIXTURE_UNEXPECTED/);
       const fetches = setup
@@ -469,13 +466,14 @@ for (const [target, wrapper] of [
     const result = setup.run(evaluateStep, { TARGET_SHA: productionSha });
     const denied = [target, wrapper].includes('unknown') || wrapper === 'new';
     assert.equal(result.status === 0, !denied);
-    assert.equal(setup.output(), denied ? '' : 'should_deploy=true\n');
+    assert.equal(
+      setup.output(),
+      denied
+        ? ''
+        : 'planner_run_id=701\nplanner_run_attempt=1\nrecovery_allowed=false\nshould_deploy=true\n'
+    );
     assert.doesNotMatch(setup.requests(), /FETCH_FIXTURE_UNEXPECTED/);
-    if (denied)
-      assert.match(
-        result.stderr,
-        /Exact-source staging proof unavailable or changed/
-      );
+    if (denied) assert.match(result.stderr, /STAGING_PROVENANCE_DENIED/);
     else
       assert.equal(
         setup

@@ -21,8 +21,11 @@ const other = 'f'.repeat(40);
 const base = '/repos/example/platform';
 const workflowPath = '.github/workflows/supabase-staging.yaml';
 const markerPath = 'scripts/ci/record-deployment-marker.ts';
-const proof = workflow.split("<<'STAGING_SOURCE_PROOF'\n")[1];
-const code = proof.slice(0, proof.indexOf('          main().catch('));
+const proof = fs.readFileSync(
+  path.join(__dirname, 'verify-staging-migration-marker.mjs'),
+  'utf8'
+);
+const code = proof.slice(0, proof.indexOf('async function persistResult('));
 
 function blob(file) {
   const bytes = fs.readFileSync(path.resolve(__dirname, '../..', file));
@@ -351,7 +354,9 @@ test('log: fallback ids name the selected parent marker and keep the runbook pre
     `Production platform deployment marker and staging migration are bound to ${target}. Proceeding with migration.`,
   ]);
   assert.doesNotMatch(
-    workflow.slice(workflow.indexOf('          STAGING_SOURCE_PROOF\n')),
+    workflow.slice(
+      workflow.indexOf('node scripts/ci/verify-staging-migration-marker.mjs')
+    ),
     /staging migration are bound to \$TARGET_SHA/
   );
 });
@@ -359,7 +364,7 @@ test('log: fallback ids name the selected parent marker and keep the runbook pre
 test('rule 4: platform marker, checkout and production marker stay bound to the target', () => {
   const evaluate = workflow.slice(
     0,
-    workflow.indexOf("<<'STAGING_SOURCE_PROOF'")
+    workflow.indexOf('node scripts/ci/verify-staging-migration-marker.mjs')
   );
   assert.match(evaluate, /jq --arg sha "\$TARGET_SHA"/);
   assert.match(
@@ -367,7 +372,7 @@ test('rule 4: platform marker, checkout and production marker stay bound to the 
     /\$deployment\.sha == \$sha and \$payload\.sha == \$sha/
   );
   const after = workflow.slice(
-    workflow.indexOf('          STAGING_SOURCE_PROOF\n')
+    workflow.indexOf('node scripts/ci/verify-staging-migration-marker.mjs')
   );
   assert.match(
     after,

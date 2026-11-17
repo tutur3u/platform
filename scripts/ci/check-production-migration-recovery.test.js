@@ -259,31 +259,35 @@ test('workflow keeps default-off manual opt-in and full normal marker/staging/ap
     yaml,
     /node --experimental-strip-types scripts\/ci\/check-production-migration-recovery.ts/
   );
+  const proof = readFileSync(
+    join(__dirname, 'verify-staging-migration-marker.mjs'),
+    'utf8'
+  );
   assert.match(yaml, /DEPLOYMENT_MARKER_HAS_SUCCESS.*!= "true"/);
   assert.match(
-    yaml,
-    /d\.sha === source && d\.ref === source &&[\s\S]*p\.sha === source/
+    proof,
+    /d\.sha === source\s*&&\s*d\.ref === source\s*&&[\s\S]*p\.sha === source/
   );
   assert.match(
-    yaml,
-    /run\.status === 'completed' && run\.conclusion === 'success'/
+    proof,
+    /run\.status === 'completed'\s*&&\s*run\.conclusion === 'success'/
   );
-  assert.match(yaml, /run\.run_attempt === Number\(p\.runAttempt\)/);
-  assert.match(yaml, /run\.head_branch === 'main'/);
-  assert.match(yaml, /job\.run_attempt === run\.run_attempt/);
+  assert.match(proof, /run\.run_attempt === Number\(p\.runAttempt\)/);
+  assert.match(proof, /run\.head_branch === 'main'/);
+  assert.match(proof, /job\.run_attempt === run\.run_attempt/);
   assert.match(
-    yaml,
+    proof,
     /'Deploy migrations to staging',[\s\S]*'Record successful staging migration marker'/
   );
   assert.match(
-    yaml,
-    /step\.status === 'completed' && step\.conclusion === 'success'/
+    proof,
+    /step\.status === 'completed'\s*&&\s*step\.conclusion === 'success'/
   );
   assert.ok(
-    yaml.indexOf("node --input-type=module <<'STAGING_SOURCE_PROOF'") <
+    yaml.indexOf('node scripts/ci/verify-staging-migration-marker.mjs') <
       yaml.indexOf('SHOULD_DEPLOY=true')
   );
-  assert.match(yaml, /process\.exitCode = 1/);
+  assert.match(proof, /process\.exitCode = 1/);
   assert.match(yaml, /supabase db push --include-all/);
   assert.match(yaml, /expected_project_ref:/);
   assert.match(yaml, /PRODUCTION_PROJECT_ID.*!= "\$EXPECTED_PROJECT_REF"/);
@@ -292,6 +296,24 @@ test('workflow keeps default-off manual opt-in and full normal marker/staging/ap
       yaml.indexOf('supabase link --project-ref')
   );
   assert.match(yaml, /github.event.workflow_run.conclusion == 'success'/);
+  assert.match(
+    yaml,
+    /if: steps\.evaluate\.outputs\.should_deploy == 'true'[\s\S]*PLANNER_RUN_ID: \$\{\{ steps\.evaluate\.outputs\.planner_run_id \}\}/
+  );
+  assert.match(
+    yaml,
+    /ALLOW_FAILED_PLANNER: \$\{\{ steps\.evaluate\.outputs\.recovery_allowed \}\}/
+  );
+  assert.ok(
+    yaml.indexOf('Verify production marker producer') <
+      yaml.indexOf('  deploy:\n')
+  );
+  assert.match(yaml, /needs: \[evaluate-prerequisites\]/);
+  assert.match(
+    yaml,
+    /inputs\.user_ok_record_id != '' && inputs\.migration_patch_id != ''/
+  );
+  assert.match(yaml, /inputs\.list_only != true/);
 });
 
 test('actual project guard rejects a mismatched recovery secret without revealing either value', () => {

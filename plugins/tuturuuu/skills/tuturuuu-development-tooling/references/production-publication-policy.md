@@ -7,6 +7,18 @@ admission covers both `frontend` and `realtime-do`; the other protected apps use
 `frontend`. Known unrelated publishers keep their existing selection, and
 Supabase production migration eligibility keeps its existing gates.
 
+The migration prerequisite job additionally verifies production marker provenance
+with `verify-github-deployment-marker-producer.mjs`. Require the selected planner
+run/attempt, trusted marker creator, reviewed workflow/recorder blobs, successful
+nested platform job and marker step, then recheck mutable evidence. A reusable
+callee is a caller job, not a separate `workflow_call` run. Failed planners must
+also satisfy `check-production-migration-recovery.ts`; positive job classification
+must not expand that recovery policy. `verify-staging-migration-marker.mjs`
+retains exact-source and tree-equal direct-parent proof. Keep manual USER-OK,
+migration patch-id, project binding and list-only fences intact. Verify both
+helpers, recovery tests and tree-parent fixture tests through the resource broker
+without dispatching a migration.
+
 Keep the shared dependency-free policy check ahead of credential-bearing
 publication setup in direct legacy and native workflows, as well as the planner.
 Require `needs.production-policy.outputs.allowed == 'true'` on each publisher;

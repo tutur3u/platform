@@ -23,7 +23,14 @@ test('the staging contract allowlist is exactly current plus main history', () =
   const production = read(
     '.github/workflows/supabase-production.yaml'
   ).toString('utf8');
-  const match = /\[workflowPath, \[([^\]]*)\]\]/u.exec(production);
+  assert.match(
+    production,
+    /node scripts\/ci\/verify-staging-migration-marker\.mjs/
+  );
+  const proof = read('scripts/ci/verify-staging-migration-marker.mjs').toString(
+    'utf8'
+  );
+  const match = /\[\s*workflowPath,\s*\[([^\]]*)\]\s*,?\s*\]/u.exec(proof);
   assert.ok(match, 'staging contract allowlist not found');
   const allowed = [...match[1].matchAll(/'([0-9a-f]{40})'/gu)].map(
     ([, sha]) => sha

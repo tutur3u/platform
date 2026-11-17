@@ -32,7 +32,11 @@ function stepScript(name, source = workflow) {
     )
     .map((line) => line.slice(10))
     .join('\n')
-    .replaceAll(/\$\{\{ github\.repository \}\}/g, 'example/platform');
+    .replaceAll(/\$\{\{ github\.repository \}\}/g, 'example/platform')
+    .replace(
+      'node scripts/ci/verify-staging-migration-marker.mjs',
+      `node --input-type=module <<'STAGING_SOURCE_PROOF'\n${fs.readFileSync(path.join(__dirname, '../verify-staging-migration-marker.mjs'), 'utf8')}\nSTAGING_SOURCE_PROOF`
+    );
 }
 
 function fixture(t, overrides = {}) {
@@ -105,6 +109,7 @@ if (request.endsWith('/git/ref/heads/production')) {
   if (!request.includes('head_sha=' + sha)) process.exit(9);
   const staging = request.includes('supabase-staging');
   response = {workflow_runs: [{
+    id: 701, run_attempt: 1,
     head_sha: staging ? process.env.STAGING_SHA : process.env.PLANNER_SHA,
     head_branch: staging ? process.env.STAGING_BRANCH : process.env.PLANNER_BRANCH,
     conclusion: staging ? process.env.STAGING_RESULT : process.env.PLANNER_RESULT,
