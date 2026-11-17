@@ -592,6 +592,8 @@
     "group_scope_organization": "Active organization members",
     "identity": "Identity",
     "identity_description": "Sender name, signature, and mailbox defaults",
+    "image_prepare_failed": "This image could not be prepared for upload. Try a PNG, JPEG or WebP image.",
+    "image_prepare_too_large": "This image is too large to upload inline. Resize it or use a smaller image.",
     "image_resize": "Resize image",
     "image_resize_value": "{width} pixels wide",
     "image_size": "Image size",

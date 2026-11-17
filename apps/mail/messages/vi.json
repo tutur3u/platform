@@ -592,6 +592,8 @@
     "group_scope_organization": "Thành viên tổ chức đang hoạt động",
     "identity": "Danh tính",
     "identity_description": "Tên người gửi, chữ ký và mặc định hộp thư",
+    "image_prepare_failed": "Không thể chuẩn bị ảnh này để tải lên. Hãy thử ảnh PNG, JPEG hoặc WebP.",
+    "image_prepare_too_large": "Ảnh này quá lớn để tải lên trong nội dung. Hãy giảm kích thước hoặc dùng ảnh nhỏ hơn.",
     "image_resize": "Thay đổi kích thước ảnh",
     "image_resize_value": "Rộng {width} pixel",
     "image_size": "Kích thước ảnh",

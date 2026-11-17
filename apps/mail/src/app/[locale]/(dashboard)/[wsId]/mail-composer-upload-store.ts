@@ -438,7 +438,7 @@ export class MailUploadStore {
           signal: controller.signal,
         }));
       if (!alive()) return this.discardLate(owner, attachment);
-      this.update(id, { attachment, owner });
+      this.update(id, { attachment, owner, sizeBytes: attachment.sizeBytes });
       const source = this.deps.imageSource(owner, attachment.id);
       if (inline) {
         // Swap only once the server image has decoded, so nothing flashes.

@@ -87,6 +87,20 @@ const lastHtml = (changed: { mock: { calls: unknown[][] } }) =>
   (changed.mock.calls.at(-1)?.[0] as { html: string } | undefined)?.html ?? '';
 
 describe('image placeholders', () => {
+  it('starts large inline images at 320px, persists the width and retains resizing', async () => {
+    const view = await open();
+    act(() => {
+      view.nodes().insertPending({ name: 'large.png', src: 'blob:large', state: 'queued', uploadId: 'large' });
+      view.nodes().setSize('large', 2400, 1800);
+      view.nodes().resolve('large', raw);
+    });
+    expect(view.editor.getHTML()).toContain('width="320"');
+    expect(lastHtml(view.changed)).toContain('width="320"');
+    act(() => view.editor.commands.updateAttributes('image', { width: '480' }));
+    act(() => view.nodes().setSize('large', 2400, 1800));
+    expect(view.editor.getHTML()).toContain('width="480"');
+  });
+
   it('renders a placeholder at once and never serializes it into the draft', async () => {
     const view = await open();
     act(() => {

@@ -17,6 +17,10 @@ import {
 } from 'react';
 import type { MailImageNodes } from './mail-composer-image-nodes';
 import {
+  MailInlineImageError,
+  prepareMailInlineImage,
+} from './mail-inline-image-preparation';
+import {
   isMediaInFlight,
   isMediaSettled,
   type MailMediaOwner,
@@ -114,18 +118,29 @@ export function useMailComposerUploads({
         }),
         // The shared transport takes a custom fetch; wrapping it adds
         // cancellation without changing the transport.
-        upload: async ({ contentId, file, inline, owner, signal }) =>
-          (
+        upload: async ({ contentId, file, inline, owner, signal }) => {
+          let prepared = file;
+          if (inline) {
+            try {
+              prepared = await prepareMailInlineImage(file, signal);
+            } catch (error) {
+              if (error instanceof MailInlineImageError)
+                throw new Error(latest.current.t(error.code));
+              throw error;
+            }
+          }
+          return (
             await uploadMailDraftAttachment(
               owner.workspaceId,
               owner.mailboxId,
               owner.draftId,
-              file,
-              file.name,
+              prepared,
+              prepared.name,
               { contentId, disposition: inline ? 'inline' : 'attachment' },
               { fetch: (input, init) => fetch(input, { ...init, signal }) }
             )
-          ).attachment,
+          ).attachment;
+        },
       })
   );
   const snapshot = useSyncExternalStore(

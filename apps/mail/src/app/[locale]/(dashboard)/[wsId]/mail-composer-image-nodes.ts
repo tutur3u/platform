@@ -237,7 +237,14 @@ export function createMailImageNodes(editor: Editor): MailImageNodes {
       patch(id, { uploadState: removing ? 'removing' : null });
     },
     setSize: (uploadId, width, height) => {
-      patch(uploadId, { naturalHeight: height, naturalWidth: width });
+      const hit = find(uploadId);
+      patch(uploadId, {
+        naturalHeight: height,
+        naturalWidth: width,
+        ...(hit?.attrs.width == null
+          ? { width: String(Math.min(width, 320)) }
+          : {}),
+      });
     },
     setState: (uploadId, state) => {
       patch(uploadId, { uploadState: state });
