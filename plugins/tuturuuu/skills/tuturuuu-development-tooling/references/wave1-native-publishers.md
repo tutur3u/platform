@@ -166,3 +166,17 @@ Queue adapters use the injected deploy authority port. Missing authority fails
 closed; recipe scripts must not create a scheduler, queue directory or direct
 provider fallback. Queue admission and source qualification do not authorize route
 attachment or promotion.
+
+`release-cf-queue.mjs` is the offline `cf-wave1` port adapter. `cfQueueJob` derives
+production target identity from the reviewed record and account; submit/stop
+functions call only the injected authority. `runCfPhase` requires durable intent,
+a current grant and fresh confirmation before an injected phase effect, and another
+confirmation before checkpointing success. A completed receipt is reused; an unknown
+receipt requires authority reconciliation. A post-effect failure returns an unknown
+receipt even when authority persistence is unavailable. Rollback requires an
+explicit authorization reference and deployment readback equal to the recorded
+preimage. Phase executors must preserve the producer's policy/environment, seal,
+restored qualification, token and scan guards. No executor or live authority is
+installed by importing this adapter. Run `release-cf-queue.test.mjs` separately for
+the fake-authority boundary; these tests do not certify a distributed queue or a
+production rollback.

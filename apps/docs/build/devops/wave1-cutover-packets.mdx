@@ -29,6 +29,11 @@ only produces the sealed Worker bytes. Secret values never appear here, only nam
 - The production publication profile (`scripts/ci/wave1-native-profiles.json`) uploads a
   route-free Worker (`workers_dev: false`, `routes: []`). Binding the canonical host is a
   separate provider step, so uploading never moves traffic.
+- The `cf-wave1` queue adapter is offline and accepts only an injected deploy
+  authority. Missing authority prevents execution. It provides explicit seal,
+  publish, doctor and rollback phase identities; rollback requires an authorized
+  recorded deployment and matching readback. It does not attach routes, promote,
+  install a scheduler or activate provider execution.
 - Production publication is gated by `productionPublicationPolicy` in `tuturuuu.ci.ts`
   and the `wave1-native-production.yaml` dispatch, which lists `calendar`, `mail`, `apps`
   and `finance`. All four are admitted. Each run uses the protected GitHub environment
