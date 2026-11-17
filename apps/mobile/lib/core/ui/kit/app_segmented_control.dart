@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:mobile/core/layout/layout_tokens.dart';
 import 'package:mobile/core/ui/components/app_control_target.dart';
+import 'package:mobile/core/ui/components/app_tap_target.dart';
 import 'package:mobile/core/ui/tokens/app_tokens.dart';
 
 /// One segment of an [AppSegmentedControl].
@@ -18,8 +19,10 @@ class AppSegment<T> {
 /// choices filter a list or there are more than four.
 ///
 /// The selected segment is raised on a muted track, with the design's
-/// control corners. Selection changes
-/// repaint only the control; there is no sliding animation to keep it cheap.
+/// control corners. It fills the track inside an equal [trackPadding] on
+/// every side, and its corners are the track's minus that padding, so both
+/// curves share a centre. Selection changes repaint only the control; there
+/// is no sliding animation to keep it cheap.
 class AppSegmentedControl<T> extends StatelessWidget {
   const AppSegmentedControl({
     required this.segments,
@@ -35,6 +38,13 @@ class AppSegmentedControl<T> extends StatelessWidget {
   final T selected;
   final ValueChanged<T>? onChanged;
 
+  /// Gap between the track and the selected segment on every side.
+  static const double trackPadding = AppSpacing.xs;
+
+  /// Corners of the selected segment inside a track with [trackRadius].
+  static double selectedRadius(double trackRadius) =>
+      AppShapes.inset(trackRadius, trackPadding);
+
   @override
   Widget build(BuildContext context) {
     final tokens = AppTokens.of(context);
@@ -47,7 +57,7 @@ class AppSegmentedControl<T> extends StatelessWidget {
         border: solid ? Border.all(color: c.border) : null,
       ),
       child: Padding(
-        padding: const EdgeInsets.all(AppSpacing.xs),
+        padding: const EdgeInsets.all(trackPadding),
         child: Row(
           children: [
             for (final segment in segments)
@@ -84,46 +94,50 @@ class _Segment extends StatelessWidget {
     final c = tokens.colorScheme;
     final foreground = selected ? c.foreground : c.mutedForeground;
     final outline = tokens.depth.outlined || MediaQuery.highContrastOf(context);
+    final radius = AppSegmentedControl.selectedRadius(tokens.shapes.segment);
     return Semantics(
       selected: selected,
       inMutuallyExclusiveGroup: true,
       button: true,
       child: AppControlTarget(
         onTap: onTap,
-        radius: AppShapes.inset(tokens.shapes.segment, AppSpacing.xs),
+        radius: radius,
+        // The face spans the whole target so the gap to the track stays
+        // equal on every side.
         child: Container(
-          height: 36,
-          alignment: Alignment.center,
+          constraints: const BoxConstraints(minHeight: kAppMinTapTarget),
           padding: const EdgeInsets.symmetric(horizontal: AppSpacing.sm),
           decoration: selected
               ? BoxDecoration(
                   color: c.background,
-                  borderRadius: BorderRadius.circular(
-                    AppShapes.inset(tokens.shapes.segment, AppSpacing.xs),
-                  ),
+                  borderRadius: BorderRadius.circular(radius),
                   border: outline ? Border.all(color: c.border) : null,
                   boxShadow: tokens.depth.selection,
                 )
               : null,
-          child: Row(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              if (segment.icon case final icon?) ...[
-                Icon(icon, size: 16, color: foreground),
-                const SizedBox(width: AppSpacing.xs + 2),
-              ],
-              Flexible(
-                child: Text(
-                  segment.label,
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                  style: tokens.typography.uiCompact.copyWith(
-                    color: foreground,
-                    fontWeight: selected ? FontWeight.w600 : FontWeight.w500,
+          // Centred at the content's height, never stretched to the parent.
+          child: Align(
+            heightFactor: 1,
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                if (segment.icon case final icon?) ...[
+                  Icon(icon, size: 16, color: foreground),
+                  const SizedBox(width: AppSpacing.xs + 2),
+                ],
+                Flexible(
+                  child: Text(
+                    segment.label,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: tokens.typography.uiCompact.copyWith(
+                      color: foreground,
+                      fontWeight: selected ? FontWeight.w600 : FontWeight.w500,
+                    ),
                   ),
                 ),
-              ),
-            ],
+              ],
+            ),
           ),
         ),
       ),
