@@ -16,9 +16,7 @@
 const { execFileSync, spawnSync } = require('node:child_process');
 const fs = require('node:fs');
 const path = require('node:path');
-const {
-  selectAffectedWorkspaces,
-} = require('./check-changed/affected.js');
+const { selectAffectedWorkspaces } = require('./check-changed/affected.js');
 const {
   trustedTtr,
   inResourceLane,

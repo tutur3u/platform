@@ -615,7 +615,10 @@ test('a successful turbo dry graph replaces reverse dependents', (t) => {
     ['packages/types', { name: '@tuturuuu/types' }],
     [
       'apps/consumer',
-      { name: '@tuturuuu/consumer', dependencies: { '@tuturuuu/types': 'workspace:*' } },
+      {
+        name: '@tuturuuu/consumer',
+        dependencies: { '@tuturuuu/types': 'workspace:*' },
+      },
     ],
   ]) {
     fs.mkdirSync(path.join(root, workspace), { recursive: true });

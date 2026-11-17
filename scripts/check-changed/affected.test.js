@@ -26,7 +26,12 @@ test('dry selection stays dry, build-free, and local without both cache credenti
   assert.ok(args.includes('--cache=local:rw'));
   assert.ok(args.includes('--concurrency=2'));
   assert.ok(args.includes(`--filter=...[${sha}]`));
-  assert.deepEqual(args.slice(0, 4), ['run', 'type-check', 'test', '--dry=json']);
+  assert.deepEqual(args.slice(0, 4), [
+    'run',
+    'type-check',
+    'test',
+    '--dry=json',
+  ]);
 });
 
 test('remote cache is left to Turbo only when token and team are already non-empty', () => {
@@ -49,7 +54,12 @@ test('remote cache is left to Turbo only when token and team are already non-emp
 test('dry graph keeps scoped type-check and test packages and drops build prerequisites', () => {
   const selected = workspacesFromDry(
     dry(
-      ['@tuturuuu/types', '@tuturuuu/utils', '@tuturuuu/web', '@tuturuuu/upstream'],
+      [
+        '@tuturuuu/types',
+        '@tuturuuu/utils',
+        '@tuturuuu/web',
+        '@tuturuuu/upstream',
+      ],
       [
         {
           task: 'build',
@@ -72,17 +82,16 @@ test('dry graph keeps scoped type-check and test packages and drops build prereq
           task: 'test',
           package: '@tuturuuu/web',
           directory: 'apps/web',
-          dependencies: ['@tuturuuu/utils#type-check', '@tuturuuu/upstream#build'],
+          dependencies: [
+            '@tuturuuu/utils#type-check',
+            '@tuturuuu/upstream#build',
+          ],
         },
       ]
     ),
     workspaces
   );
-  assert.deepEqual(selected, [
-    'apps/web',
-    'packages/types',
-    'packages/utils',
-  ]);
+  assert.deepEqual(selected, ['apps/web', 'packages/types', 'packages/utils']);
 });
 
 test('packages outside the filter scope are not selected from prerequisite tasks', () => {
@@ -99,7 +108,10 @@ test('packages outside the filter scope are not selected from prerequisite tasks
           task: 'type-check',
           package: '@tuturuuu/web',
           directory: 'apps/web',
-          dependencies: ['@tuturuuu/upstream#type-check', '@tuturuuu/upstream#build'],
+          dependencies: [
+            '@tuturuuu/upstream#type-check',
+            '@tuturuuu/upstream#build',
+          ],
         },
       ]
     ),

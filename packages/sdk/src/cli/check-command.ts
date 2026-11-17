@@ -13,7 +13,10 @@ export function checkHostId(
   return fromEnv || null;
 }
 
-export function checkRefusal(host: { hostname: string; hostId: string | null }) {
+export function checkRefusal(host: {
+  hostname: string;
+  hostId: string | null;
+}) {
   if (host.hostname.includes(M4_HOSTNAME)) return 'hostname' as const;
   if (host.hostId === M4_HOST_ID) return 'host-id' as const;
   return null;
