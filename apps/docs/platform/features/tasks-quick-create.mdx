@@ -1,0 +1,56 @@
+---
+title: "Tasks quick create"
+description: "The compact create-task dialog: labeled property chips, keyboard-first, a bottom sheet on phones"
+---
+
+## Scope and default
+
+Creating a task with the compact presentation opens a quick dialog anchored
+about 12% from the top of the viewport instead of centered over a board column.
+Its height is capped at `min(720px, 100dvh - 32px)` and stays inside the
+viewport from that anchor; the header and footer stay fixed and only the body
+scrolls, so the top of the dialog is never cut off.
+
+The header shows only the board as a context chip (or the relationship, such as
+"Subtask of …"), Expand and Close. The body holds the title (focused on open),
+an optional plain-text description line and one labeled chip per property, in
+this order: List, Priority, Start, Due, Estimate, Labels, Project and Assignees.
+A set chip shows its icon, a muted label and the value; an empty chip is dashed
+with the label as its placeholder. Project is hidden for drafts and Assignees
+for boards without assignees. Pickers portal out of the dialog so the
+scrolling body never clips them.
+
+The footer has the Create more switch, Save draft, Tab and Esc hints and the
+Create task button with its Cmd+Enter hint (Ctrl+Enter outside macOS).
+
+Keyboard: Tab moves from the title to the description and then through each
+chip; Enter or Space opens the focused chip's picker; typing filters it, arrow
+keys move and Enter picks, and digits pick list, priority and estimate options;
+Cmd/Ctrl+Enter creates; Escape closes an open picker first, then the dialog.
+
+On phones (under 640 px) the dialog is a bottom sheet: properties form a
+two-column grid of labeled tiles at least 52 px tall, the Create button stays
+pinned above the safe area, text fields use 16 px type and keyboard hints are
+hidden on touch screens.
+
+Smart suggestions (AI) are not part of the quick dialog. Expand opens the
+focused editor, which carries the full property list, the rich description
+editor, smart suggestions and quick settings. Scheduling (duration, splitting,
+auto-schedule) is also set there.
+
+This applies to the shared task dialog used by Web and Tasks.
+
+## Exceptions
+
+Editing a task in the compact presentation keeps the existing compact property
+controls; only creation uses the labeled chips and the description line. A
+description with rich content (formatting, lists, media) shows a link to the
+full editor instead of the plain-text line. Tasks have no recurrence model, so
+the quick dialog has no Repeat property.
+
+Regression coverage:
+
+- `packages/tasks-ui/src/tu-do/shared/task-edit-dialog/components/compact-task-create-popover.test.tsx`
+- `packages/tasks-ui/src/tu-do/shared/task-edit-dialog/components/quick-create/quick-create-property-chips.test.tsx`
+- `packages/tasks-ui/src/tu-do/shared/task-edit-dialog/components/quick-create/quick-create-placement.test.ts`
+- `packages/tasks-ui/src/tu-do/shared/task-dialog-presentation.test.ts`
