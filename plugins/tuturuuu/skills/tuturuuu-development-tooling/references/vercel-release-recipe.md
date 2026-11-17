@@ -64,3 +64,17 @@ Token prefixes, JWTs and opaque base64-shaped values are refused before submissi
 or receipt persistence; SHA-shaped values are allowed only in typed digest fields.
 A failed final acknowledgement is returned as uncertain without appending a
 contradictory second terminal checkpoint.
+
+Dispatch derives provider account, project and alias from the committed identity
+record; queued labels and caller-reviewed targets cannot replace it. The stage
+module owns legacy-recipe validation, output-tree guards, seal computation and
+Supabase-host extraction. Only pull/build/deploy/inspect transports are injected.
+StageStop receipts retain their publisher code and phase; typed queue causes
+remain distinguishable across the publisher normalizer.
+
+Validate executor identity before claim/effects. DNS host identifiers are typed,
+so ordinary multi-label hosts are not mistaken for JWTs. A completed replay under
+a new epoch requires authority-supplied originalAttempt metadata, including its
+receipt digest, while job/phase/target and evidence remain bound. Test hooks reject
+workflow events and GITHUB_ACTIONS even with a spoofed Node test-context marker;
+offline test fixtures isolate those markers in their own test worker only.

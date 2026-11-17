@@ -11,7 +11,7 @@ import {
 import { payloadDigest } from './release-vercel-queue.mjs';
 import { stop } from './calendar-exact-sha-stop.mjs';
 
-test('NV1 publisher guard codes and phases survive stage dispatch', async () => {
+test('publisher guard codes and phases survive stage dispatch', async () => {
   const scenarios = [
     [
       'OUTPUT_ENV_FILE',
@@ -74,7 +74,7 @@ test('NV1 publisher guard codes and phases survive stage dispatch', async () => 
     assert.equal(r.status, status);
   }
 });
-test('NV2 alias/account/project relabelling is refused before source or transport', async () => {
+test('alias/account/project relabelling is refused before source or transport', async () => {
   for (const patch of [
     { alias: 'other.tuturuuu.com' },
     { account: 'fixture-b' },
@@ -98,7 +98,7 @@ test('NV2 alias/account/project relabelling is refused before source or transpor
     assert.equal(f.state.calls.length, 0);
   }
 });
-test('NV3 caller no-op guards cannot bypass real sensitive scan or Supabase pin', async () => {
+test('caller no-op guards cannot bypass real sensitive scan or Supabase pin', async () => {
   for (const file of ['output', 'env']) {
     const f = fixture();
     if (file === 'output')
@@ -127,7 +127,7 @@ test('NV3 caller no-op guards cannot bypass real sensitive scan or Supabase pin'
     );
   }
 });
-test('NV4 hung probe aborts its signal at the committed timeout', async () => {
+test('hung probe aborts its signal at the committed timeout', async () => {
   const f = await promoted();
   let signal;
   const r = await f.run('watch', (o) => ({
@@ -141,7 +141,7 @@ test('NV4 hung probe aborts its signal at the committed timeout', async () => {
   assert.equal(r.guardCode, 'RELEASE_WATCH_EXPIRED');
   assert.equal(signal.aborted, true);
 });
-test('NV4 missing probe data is never green', async () => {
+test('missing probe data is never green', async () => {
   const f = await promoted();
   const r = await f.run('watch', (o) => ({
     ...o,
@@ -150,7 +150,7 @@ test('NV4 missing probe data is never green', async () => {
   assert.equal(r.guardCode, 'RELEASE_PROBE_INVALID');
   assert.equal(r.status, 'failed');
 });
-test('NV4 stale alias and target readback mismatch prevent promotion writes', async () => {
+test('stale alias and target readback mismatch prevent promotion writes', async () => {
   for (const target of ['alias', 'deployment']) {
     const f = fixture();
     await f.run('stage');
@@ -169,7 +169,7 @@ test('NV4 stale alias and target readback mismatch prevent promotion writes', as
     assert.equal(f.state.calls.includes('set-alias'), false);
   }
 });
-test('NV4 stage environment and invalid config refuse promotion', async () => {
+test('stage environment and invalid config refuse promotion', async () => {
   const f = fixture();
   await f.run('stage');
   await assert.rejects(
@@ -191,7 +191,7 @@ test('NV4 stage environment and invalid config refuse promotion', async () => {
   );
   assert.equal(f.state.calls.includes('set-alias'), false);
 });
-test('NV4 fast green probes are spaced across the full observation window', async () => {
+test('fast green probes are spaced across the full observation window', async () => {
   const f = await promoted();
   const starts = [];
   const r = await f.run('watch', (o) => ({
@@ -211,7 +211,7 @@ test('NV4 fast green probes are spaced across the full observation window', asyn
   assert.ok(starts.at(-1) >= 55000);
   assert.ok(f.state.time >= 60000);
 });
-test('NV6 direct mode cannot replace committed safety thresholds', async () => {
+test('direct mode cannot replace committed safety thresholds', async () => {
   const f = await promoted();
   const o = f.options('watch');
   const predecessor = f.state.receipts.promote;
@@ -234,7 +234,7 @@ test('NV6 direct mode cannot replace committed safety thresholds', async () => {
   });
   assert.equal(r.terminalState, 'rollback-required');
 });
-test('NV7 spoofed Node test context cannot enable hooks on workflow events', () => {
+test('spoofed Node test context cannot enable hooks on workflow events', () => {
   for (const event of ['push', 'schedule', 'workflow_dispatch']) {
     const r = spawnSync(
       process.execPath,
@@ -257,7 +257,7 @@ test('NV7 spoofed Node test context cannot enable hooks on workflow events', () 
   }
 });
 
-test('NV1 typed queue checkpoint failures survive the publisher normalizer', async () => {
+test('typed queue checkpoint failures survive the publisher normalizer', async () => {
   const f = fixture();
   f.port.checkpoint = async () => {
     throw new Error('offline');

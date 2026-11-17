@@ -481,7 +481,7 @@ test('replay without evidence has a fixed refusal instead of a raw hash error', 
   );
 });
 
-test('NV5 invalid host refuses before claim; a typed DNS host remains valid', async () => {
+test('invalid host refuses before claim; a typed DNS host remains valid', async () => {
   const port = authority();
   let claims = 0;
   const claim = port.claim;
@@ -511,7 +511,7 @@ test('NV5 invalid host refuses before claim; a typed DNS host remains valid', as
   });
   assert.equal(r.status, 'succeeded');
 });
-test('NV8 replay binds original receipt across a newly issued epoch', async () => {
+test('replay binds original receipt across a newly issued epoch', async () => {
   const port = authority();
   let effects = 0;
   const first = await run(port, async (ctx) =>
@@ -521,6 +521,11 @@ test('NV8 replay binds original receipt across a newly issued epoch', async () =
     })
   );
   port.state.epoch = 2;
+  const claim = port.claim;
+  port.claim = async (...args) => ({
+    ...(await claim(...args)),
+    attemptId: 'attempt-2',
+  });
   port.beginPhase = async () => ({
     status: 'succeeded',
     receipt: first,
