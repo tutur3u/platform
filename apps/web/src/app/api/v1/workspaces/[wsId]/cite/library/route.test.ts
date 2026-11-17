@@ -28,12 +28,7 @@ vi.mock('@/lib/api-auth', () => ({
 }));
 vi.mock('@/lib/cite/library/authorization', () => ({
   authorizeCitationLibrary: mocks.authorize,
-}));
-vi.mock('@/lib/cite/library/store', () => ({
-  getCitationLibraryStore: () => ({}),
-}));
-vi.mock('@/lib/cite/library/service', () => ({
-  createCitationLibraryService: () => ({
+  createAuthorizedCitationLibraryService: async () => ({
     list: mocks.list,
     create: mocks.create,
   }),
@@ -89,7 +84,7 @@ describe('citation library collection route', () => {
     expect(mocks.list.mock.calls[0]?.[0]).toBe(scope);
   });
 
-  it('reports an unprovisioned store as a fixed 503 without internal detail', async () => {
+  it('reports a storage failure as a fixed 503 without internal detail', async () => {
     mocks.authorize.mockResolvedValue({
       ok: true,
       scope: { wsId: 'ws', actorId: 'user-1' },
