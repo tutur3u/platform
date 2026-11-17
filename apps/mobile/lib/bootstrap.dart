@@ -18,6 +18,7 @@ import 'package:mobile/core/interaction/app_haptics.dart';
 import 'package:mobile/core/observability/firebase_admission.dart';
 import 'package:mobile/core/observability/mobile_observability.dart';
 import 'package:mobile/core/observability/telemetry_preference.dart';
+import 'package:mobile/core/startup/local_preferences.dart';
 import 'package:mobile/core/startup/optional_startup.dart';
 import 'package:mobile/core/startup/startup_state.dart';
 import 'package:mobile/core/theme/app_theme.dart';
@@ -210,34 +211,32 @@ typedef _LocalPreferences = ({shad.ThemeMode themeMode, String? initialRoute});
 /// Does not touch Firebase or Supabase, so it can overlap their initialization.
 Future<_LocalPreferences> _loadLocalPreferences(
   SettingsRepository settingsRepository,
-) async {
-  await AppHaptics.initialize();
-
-  shad.ThemeMode themeMode;
-  try {
-    themeMode = _parseThemeMode(await settingsRepository.getThemeMode());
-  } on Object catch (e, st) {
-    log('Failed to load theme mode, defaulting to system: $e', stackTrace: st);
-    themeMode = shad.ThemeMode.system;
-  }
-  final resolvedBrightness = AppTheme.resolveBrightness(
-    themeMode,
-    WidgetsBinding.instance.platformDispatcher.platformBrightness,
-  );
-
-  // Ensure system UI is visible and properly configured
-  await SystemChrome.setEnabledSystemUIMode(SystemUiMode.edgeToEdge);
-  SystemChrome.setSystemUIOverlayStyle(
-    AppTheme.systemUiOverlayStyleFor(resolvedBrightness),
-  );
-
-  // Pre-load the user's last routes so the router starts there directly.
-  // Prefer the more specific tab route if it's a sub-route of a mini-app,
-  // otherwise fall back to the app route or generic tab route.
-  final lastTabRoute = await settingsRepository.getLastTabRoute();
-  final lastAppRoute = await settingsRepository.getLastAppRoute();
-  return (themeMode: themeMode, initialRoute: lastTabRoute ?? lastAppRoute);
-}
+) => loadStartupPreferences(
+  initializeHaptics: AppHaptics.initialize,
+  loadTheme: () async {
+    try {
+      return _parseThemeMode(await settingsRepository.getThemeMode());
+    } on Object catch (e, st) {
+      log(
+        'Failed to load theme mode, defaulting to system: $e',
+        stackTrace: st,
+      );
+      return shad.ThemeMode.system;
+    }
+  },
+  configureChrome: (themeMode) async {
+    final resolvedBrightness = AppTheme.resolveBrightness(
+      themeMode,
+      WidgetsBinding.instance.platformDispatcher.platformBrightness,
+    );
+    await SystemChrome.setEnabledSystemUIMode(SystemUiMode.edgeToEdge);
+    SystemChrome.setSystemUIOverlayStyle(
+      AppTheme.systemUiOverlayStyleFor(resolvedBrightness),
+    );
+  },
+  loadTabRoute: settingsRepository.getLastTabRoute,
+  loadAppRoute: settingsRepository.getLastAppRoute,
+);
 
 shad.ThemeMode _parseThemeMode(String mode) {
   switch (mode) {

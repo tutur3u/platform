@@ -457,14 +457,11 @@ class _DockActionsState extends State<_DockActions> {
 
   Widget _registeredDock(
     Widget navigation, {
+    required String? workspaceId,
     Widget? primary,
     Widget? secondary,
   }) {
     final controller = ShellDockScope.maybeOf(context);
-    final workspace = context.watch<WorkspaceCubit?>()?.state;
-    final workspaceId =
-        (workspace?.currentWorkspace ?? workspace?.personalWorkspaceOrCurrent)
-            ?.id;
     Widget dock() {
       final slot = controller?.slot;
       final active =
@@ -488,11 +485,17 @@ class _DockActionsState extends State<_DockActions> {
 
   @override
   Widget build(BuildContext context) {
+    final workspaceId = context.select<WorkspaceCubit?, String?>((cubit) {
+      final workspace = cubit?.state;
+      return (workspace?.currentWorkspace ??
+              workspace?.personalWorkspaceOrCurrent)
+          ?.id;
+    });
     ShellChromeActionsCubit? cubit;
     try {
       cubit = context.read<ShellChromeActionsCubit>();
     } on ProviderNotFoundException {
-      return _registeredDock(widget.navigation);
+      return _registeredDock(widget.navigation, workspaceId: workspaceId);
     }
     return BlocBuilder<ShellChromeActionsCubit, ShellChromeActionsState>(
       bloc: cubit,
@@ -510,6 +513,7 @@ class _DockActionsState extends State<_DockActions> {
         // one primary slot; wider docks add a second fixed slot.
         return _registeredDock(
           widget.navigation,
+          workspaceId: workspaceId,
           primary: actions.isEmpty
               ? null
               : ShellDockActionButton(

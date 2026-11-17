@@ -5,6 +5,20 @@ updatedAt: "2026-10-25"
 audience: developers
 ---
 
+## Preserve startup barriers while overlapping local reads
+
+`loadStartupPreferences` starts haptic policy, theme and saved-route reads together.
+System chrome waits for the resolved theme. Bootstrap waits for every read before
+rendering, retaining tab-route precedence and required cache, consent and identity
+barriers. `local_preferences_test.dart` controls pending reads and failures with
+completers; elapsed wall time is not a concurrency assertion.
+
+Dock workspace subscriptions select the effective workspace ID. Unrelated
+workspace metadata must retain the dock configuration, while switching workspace
+must remove the prior workspace's composer. Exercise both chrome-action provider
+presence and absence in widget coverage. These checks prove subscription behavior;
+real-device profile traces are required to quantify frame-time improvements.
+
 ## Separate repeated push handling from duplicate Mail events
 
 Mobile startup initializes push handling before a restored auth session starts.

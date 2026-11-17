@@ -219,6 +219,10 @@ For the source-linked diagnosis guide, read
   and `code == 'MFA_REQUIRED'`. Preserve the scoped snapshot and visible challenge,
   while definitive denials still clear it. Retention does not bypass mutation
   authorization.
+- Keep local startup preference reads independent while retaining theme-before-chrome
+  and settle-before-first-frame ordering. Select shell workspace identity in the
+  consuming widget build context; test with chrome-action providers present. See
+  [startup and dock regression coverage](../../../../../apps/docs/build/development-tools/mobile-state-regressions.mdx#preserve-startup-barriers-while-overlapping-local-reads).
 - Attach handlers to independent startup futures together before awaiting either.
   Default settle-all `Future.wait` handles a sibling failure while another task
   remains pending; connect only after all prerequisites succeed and scope is
