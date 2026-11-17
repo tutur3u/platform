@@ -579,3 +579,12 @@ receipts; CI-pinned Linux goldens and real-phone performance remain distinct.
 Capture shell dock clearance above Scaffold because its body can receive an
 adjusted MediaQuery. Keep content-size/load height callbacks and avoid scheduling
 native height queries for every pointer event.
+
+
+Reader action-placement changes must cover the archive settlement/refresh matrix
+in `mail_empty_inbox_regression_test.dart` and split-pane primary Reply in
+`mail_master_detail_test.dart`. Assert one visible target for an action rather
+than selecting the first duplicate. If attachment placement changes, navigate
+to its actual tab in `mail_reader_clearance_test.dart`, populate enough files to
+force scrolling, and retain the final-control geometry bound against the dock.
+A passing isolated reader render does not cover the composed split-pane header.

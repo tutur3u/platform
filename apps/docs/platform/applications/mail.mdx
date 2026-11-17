@@ -1605,6 +1605,23 @@ Raw Date remains under a separate Technical headers disclosure.
 
 Reader actions expose snooze, labels, read state, star, archive and trash using
 the existing mailbox mutation contracts. Concurrent read requests are deduplicated.
+The grouped action sheet uses the message subject and shows one applicable
+snooze, mute and read action for the supplied message state. Restore uses the
+folder from which the reader opened (Archive or Trash), because delivery status
+does not carry the current user's archive/trash state. Messages and threads that are entirely
+quarantined do not offer Restore, Archive or Trash: those mutations do not remove quarantine.
+Mixed threads keep organization actions for their legitimate messages. Removing
+a quarantined message from Spam requires a separate supported not-spam action.
+Reply and forwarding controls remain in the message footer when sending is
+permitted, without duplicating a primary Reply action owned by the shell.
+
+Equivalent same-scope message updates retain authenticated inline-image bytes
+and their viewer metadata. The isolated HTML body compares inline mappings by
+content, and a workspace-owned bounded memo retains measured heights by content,
+rendering options and pane width. Width changes remeasure the native view without
+recreating it. Image placeholders preserve supplied HTML dimensions or attachment
+and MIME dimensions; unknown thumbnails use a bounded fallback frame. These
+lifecycle rules do not enable scripts, remote image loads or new API access.
 Image thumbnail reads are limited to four automatic tiles with known sizes up to
 4 MiB; other attachments retain their type, name, available size and download.
 
@@ -1616,5 +1633,6 @@ impact and licence; this reader change adds no native PDF dependency.
 Regression coverage: `mail_reader_actions_test.dart`,
 `mail_reader_design_test.dart`, `mail_message_details_test.dart`,
 `mail_message_delivery_test.dart`, `mail_people_resolver_test.dart` and
-`mail_attachment_tile_test.dart`. Reader goldens use the CI-pinned Linux Flutter
-toolchain.
+`mail_attachment_tile_test.dart`, `mail_reader_sheet_test.dart`,
+`mail_html_lifecycle_test.dart` and `mail_reader_clearance_test.dart`. Golden
+generation requires the CI-pinned Linux Flutter toolchain.
