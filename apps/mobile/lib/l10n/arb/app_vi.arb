@@ -3023,6 +3023,7 @@
   "mailMessageDetails": "Thông tin thư",
   "mailMute": "Tắt thông báo chuỗi thư",
   "mailMuted": "Đã tắt thông báo",
+  "mailMove": "Chuyển",
   "mailName": "Tên",
   "mailNoSubject": "(Không có tiêu đề)",
   "mailOpenFailed": "Không thể mở thư này. Vui lòng thử lại.",

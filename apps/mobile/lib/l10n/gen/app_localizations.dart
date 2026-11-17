@@ -10639,6 +10639,12 @@ abstract class AppLocalizations {
   /// **'Muted'**
   String get mailMuted;
 
+  /// No description provided for @mailMove.
+  ///
+  /// In en, this message translates to:
+  /// **'Move'**
+  String get mailMove;
+
   /// No description provided for @mailName.
   ///
   /// In en, this message translates to:

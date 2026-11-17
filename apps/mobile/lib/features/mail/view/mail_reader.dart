@@ -20,6 +20,7 @@ import 'package:mobile/features/mail/view/mail_image_preference.dart';
 import 'package:mobile/features/mail/view/mail_message_content.dart';
 import 'package:mobile/features/mail/view/mail_message_date.dart';
 import 'package:mobile/features/mail/view/mail_message_details.dart';
+import 'package:mobile/features/mail/view/mail_move_destinations.dart';
 import 'package:mobile/features/mail/view/mail_primary_action_preference.dart';
 import 'package:mobile/features/mail/view/mail_reader_identity.dart';
 import 'package:mobile/features/mail/view/mail_recipient_summary.dart';
@@ -63,6 +64,7 @@ class MailReader extends StatefulWidget {
     this.signatureHtml,
     this.resolvePeople,
     this.sourceFolder,
+    this.folders = const [],
     super.key,
   });
   final MailRepository repository;
@@ -72,6 +74,10 @@ class MailReader extends StatefulWidget {
 
   /// Folder context supplies per-user archive/trash state.
   final String? sourceFolder;
+
+  /// The mailbox's own custom folders, already loaded by the owning view. They
+  /// are the only extra destinations the Move action lists.
+  final List<Map<String, dynamic>> folders;
   final String? signatureText;
   final String? signatureHtml;
   final Future<Map<String, Map<String, dynamic>>> Function(

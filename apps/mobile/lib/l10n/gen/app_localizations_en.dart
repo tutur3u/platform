@@ -5588,6 +5588,9 @@ class AppLocalizationsEn extends AppLocalizations {
   String get mailMuted => 'Muted';
 
   @override
+  String get mailMove => 'Move';
+
+  @override
   String get mailName => 'Name';
 
   @override

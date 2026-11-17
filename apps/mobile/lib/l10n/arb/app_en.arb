@@ -3101,6 +3101,7 @@
   "mailMessageDetails": "Message details",
   "mailMute": "Mute thread",
   "mailMuted": "Muted",
+  "mailMove": "Move",
   "mailName": "Name",
   "mailNoSubject": "(No subject)",
   "mailOpenFailed": "Could not open this message. Please try again.",

@@ -168,6 +168,7 @@ extension _MailWorkspaceOpen on _MailWorkspaceState {
       workspaceId: widget.workspaceId,
       mailboxId: box,
       sourceFolder: selection.folder,
+      folders: _folders,
       detail: cached?.detail,
       summary: selection.item,
       loadDetail: () =>

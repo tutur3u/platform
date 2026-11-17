@@ -154,6 +154,12 @@ extension _MailReaderChrome on _MailReaderState {
           icon: _mailMessageActionIcon(_starred ? 'unstar' : 'star'),
           value: _starred ? 'unstar' : 'star',
         ),
+        if (!_quarantined)
+          AppSheetAction(
+            label: context.l10n.mailMove,
+            icon: Icons.drive_file_move_outlined,
+            value: 'move',
+          ),
         for (final action in actions.entries)
           AppSheetAction(
             label: action.value,
@@ -167,6 +173,51 @@ extension _MailReaderChrome on _MailReaderState {
       ],
     );
     if (!mounted || value == null) return;
+    if (value == 'move') {
+      await _moveMessage();
+      return;
+    }
     await _action(value, close: value != 'star' && value != 'unstar');
+  }
+
+  /// Lists the destinations for the open message and applies the chosen one.
+  Future<void> _moveMessage() async {
+    if (_busy || _detail == null || _quarantined) return;
+    final l10n = context.l10n;
+    final destinations = mailMoveDestinations(
+      sourceFolder: widget.sourceFolder,
+      folders: widget.folders,
+    );
+    if (destinations.isEmpty) return;
+    final destination = await showAppActionSheet<MailMoveDestination>(
+      context: context,
+      useRootNavigator: true,
+      title: l10n.mailSwipeMove,
+      actions: [
+        for (final item in destinations)
+          AppSheetAction(
+            label: switch (item.action) {
+              'restore' => l10n.mailInbox,
+              'archive' => l10n.mailArchive,
+              'trash' => l10n.mailTrash,
+              _ => item.name!,
+            },
+            icon: switch (item.action) {
+              'restore' => Icons.inbox_outlined,
+              'archive' => Icons.archive_outlined,
+              'trash' => Icons.delete_outline,
+              _ => Icons.folder_outlined,
+            },
+            value: item,
+            destructive: item.action == 'trash',
+          ),
+      ],
+    );
+    if (!mounted || destination == null) return;
+    await _action(
+      destination.action,
+      close: true,
+      folderId: destination.folderId,
+    );
   }
 }

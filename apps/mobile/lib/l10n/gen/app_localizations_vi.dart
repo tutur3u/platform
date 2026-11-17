@@ -5531,6 +5531,9 @@ class AppLocalizationsVi extends AppLocalizations {
   String get mailMuted => 'Đã tắt thông báo';
 
   @override
+  String get mailMove => 'Chuyển';
+
+  @override
   String get mailName => 'Tên';
 
   @override

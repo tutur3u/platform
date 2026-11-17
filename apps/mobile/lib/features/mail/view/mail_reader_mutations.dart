@@ -1,7 +1,11 @@
 part of 'mail_reader.dart';
 
 extension _MailReaderMutations on _MailReaderState {
-  Future<void> _action(String action, {bool close = false}) async {
+  Future<void> _action(
+    String action, {
+    bool close = false,
+    String? folderId,
+  }) async {
     final generation = _contentGeneration;
     if (_detail == null || (_busy && action != 'mark_read')) return;
     if (action == 'mark_read' || action == 'mark_unread') {
@@ -21,7 +25,10 @@ extension _MailReaderMutations on _MailReaderState {
     final id = _id;
     final optimisticClose =
         close &&
-        (action == 'archive' || action == 'trash' || action == 'restore');
+        (action == 'archive' ||
+            action == 'trash' ||
+            action == 'restore' ||
+            (action == 'move_to_folder' && folderId != null));
     final onActionSettled = widget.onActionSettled;
     if (action != 'mark_read' && !optimisticClose) {
       _updateState(() {
@@ -42,14 +49,25 @@ extension _MailReaderMutations on _MailReaderState {
       _close();
     }
     try {
-      await widget.repository.changeState(
-        widget.workspaceId,
-        widget.mailboxId,
-        id,
-        action,
-        thread: widget.thread,
-        snoozedUntil: snoozedUntil,
-      );
+      if (folderId != null) {
+        await widget.repository.bulk(
+          widget.workspaceId,
+          widget.mailboxId,
+          [id],
+          action,
+          threads: widget.thread,
+          folderId: folderId,
+        );
+      } else {
+        await widget.repository.changeState(
+          widget.workspaceId,
+          widget.mailboxId,
+          id,
+          action,
+          thread: widget.thread,
+          snoozedUntil: snoozedUntil,
+        );
+      }
       if (optimisticClose) {
         onActionSettled?.call(action: action, id: id, success: true);
         return;
