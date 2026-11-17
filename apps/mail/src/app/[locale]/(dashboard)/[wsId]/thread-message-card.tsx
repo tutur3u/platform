@@ -23,6 +23,7 @@ import {
   formatMailSender,
 } from './mail-message-addresses';
 import { MailMessagePreview } from './mail-message-preview';
+import { MailMessageSourceMenu } from './mail-message-source-menu';
 import { MailParticipantAvatar } from './mail-participant-avatar';
 import { MailPlainTextBody } from './mail-plain-text-body';
 import { MailSenderContactCard } from './mail-sender-contact-card';
@@ -129,9 +130,11 @@ export function ThreadMessageCard({
                         key.toLowerCase()
                       )
                   )
-                  .map(([key, value]) => (
-                    <Detail key={key} label={key} value={value} />
-                  ))}
+                  .map(([key, value]) =>
+                    typeof value === 'string' ? (
+                      <Detail key={key} label={key} value={value} />
+                    ) : null
+                  )}
               </dl>
             </PopoverContent>
           </Popover>
@@ -148,6 +151,14 @@ export function ThreadMessageCard({
           <span className="hidden shrink-0 text-muted-foreground text-xs sm:block">
             {formatDate(message.receivedAt ?? message.sentAt, locale)}
           </span>
+          {workspaceId ? (
+            <MailMessageSourceMenu
+              key={message.id}
+              workspaceId={workspaceId}
+              mailboxId={message.mailboxId}
+              messageId={message.id}
+            />
+          ) : null}
           <AccordionTrigger
             aria-label={message.subject || t('no_subject')}
             className="shrink-0 items-center p-1 hover:bg-muted/50 hover:no-underline"

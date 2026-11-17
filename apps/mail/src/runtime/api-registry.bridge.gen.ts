@@ -33,17 +33,18 @@ import * as route26 from '../app/api/v1/workspaces/[wsId]/mail/mailboxes/[mailbo
 import * as route27 from '../app/api/v1/workspaces/[wsId]/mail/mailboxes/[mailboxId]/messages/[messageId]/calendar-link/route';
 import * as route28 from '../app/api/v1/workspaces/[wsId]/mail/mailboxes/[mailboxId]/messages/[messageId]/invitation/route';
 import * as route29 from '../app/api/v1/workspaces/[wsId]/mail/mailboxes/[mailboxId]/messages/[messageId]/route';
-import * as route30 from '../app/api/v1/workspaces/[wsId]/mail/mailboxes/[mailboxId]/messages/[messageId]/state/route';
-import * as route31 from '../app/api/v1/workspaces/[wsId]/mail/mailboxes/[mailboxId]/messages/bulk/route';
-import * as route32 from '../app/api/v1/workspaces/[wsId]/mail/mailboxes/[mailboxId]/messages/route';
-import * as route33 from '../app/api/v1/workspaces/[wsId]/mail/mailboxes/[mailboxId]/organization/route';
-import * as route34 from '../app/api/v1/workspaces/[wsId]/mail/mailboxes/[mailboxId]/read-all/route';
-import * as route35 from '../app/api/v1/workspaces/[wsId]/mail/mailboxes/[mailboxId]/settings/route';
-import * as route36 from '../app/api/v1/workspaces/[wsId]/mail/mailboxes/[mailboxId]/threads/[threadId]/route';
-import * as route37 from '../app/api/v1/workspaces/[wsId]/mail/mailboxes/[mailboxId]/threads/bulk/route';
-import * as route38 from '../app/api/v1/workspaces/[wsId]/mail/mailboxes/[mailboxId]/threads/route';
-import * as route39 from '../app/api/v1/workspaces/[wsId]/mail/route';
-import * as route40 from '../app/api/v1/workspaces/[wsId]/mail/send/route';
+import * as route30 from '../app/api/v1/workspaces/[wsId]/mail/mailboxes/[mailboxId]/messages/[messageId]/source/route';
+import * as route31 from '../app/api/v1/workspaces/[wsId]/mail/mailboxes/[mailboxId]/messages/[messageId]/state/route';
+import * as route32 from '../app/api/v1/workspaces/[wsId]/mail/mailboxes/[mailboxId]/messages/bulk/route';
+import * as route33 from '../app/api/v1/workspaces/[wsId]/mail/mailboxes/[mailboxId]/messages/route';
+import * as route34 from '../app/api/v1/workspaces/[wsId]/mail/mailboxes/[mailboxId]/organization/route';
+import * as route35 from '../app/api/v1/workspaces/[wsId]/mail/mailboxes/[mailboxId]/read-all/route';
+import * as route36 from '../app/api/v1/workspaces/[wsId]/mail/mailboxes/[mailboxId]/settings/route';
+import * as route37 from '../app/api/v1/workspaces/[wsId]/mail/mailboxes/[mailboxId]/threads/[threadId]/route';
+import * as route38 from '../app/api/v1/workspaces/[wsId]/mail/mailboxes/[mailboxId]/threads/bulk/route';
+import * as route39 from '../app/api/v1/workspaces/[wsId]/mail/mailboxes/[mailboxId]/threads/route';
+import * as route40 from '../app/api/v1/workspaces/[wsId]/mail/route';
+import * as route41 from '../app/api/v1/workspaces/[wsId]/mail/send/route';
 
 export const endpoints: readonly BridgeEndpoint[] = sortEndpoints([
   { pattern: "/api/ai/email-draft", module: route0 },
@@ -76,15 +77,16 @@ export const endpoints: readonly BridgeEndpoint[] = sortEndpoints([
   { pattern: "/api/v1/workspaces/[wsId]/mail/mailboxes/[mailboxId]/messages/[messageId]/calendar-link", module: route27 },
   { pattern: "/api/v1/workspaces/[wsId]/mail/mailboxes/[mailboxId]/messages/[messageId]/invitation", module: route28 },
   { pattern: "/api/v1/workspaces/[wsId]/mail/mailboxes/[mailboxId]/messages/[messageId]", module: route29 },
-  { pattern: "/api/v1/workspaces/[wsId]/mail/mailboxes/[mailboxId]/messages/[messageId]/state", module: route30 },
-  { pattern: "/api/v1/workspaces/[wsId]/mail/mailboxes/[mailboxId]/messages/bulk", module: route31 },
-  { pattern: "/api/v1/workspaces/[wsId]/mail/mailboxes/[mailboxId]/messages", module: route32 },
-  { pattern: "/api/v1/workspaces/[wsId]/mail/mailboxes/[mailboxId]/organization", module: route33 },
-  { pattern: "/api/v1/workspaces/[wsId]/mail/mailboxes/[mailboxId]/read-all", module: route34 },
-  { pattern: "/api/v1/workspaces/[wsId]/mail/mailboxes/[mailboxId]/settings", module: route35 },
-  { pattern: "/api/v1/workspaces/[wsId]/mail/mailboxes/[mailboxId]/threads/[threadId]", module: route36 },
-  { pattern: "/api/v1/workspaces/[wsId]/mail/mailboxes/[mailboxId]/threads/bulk", module: route37 },
-  { pattern: "/api/v1/workspaces/[wsId]/mail/mailboxes/[mailboxId]/threads", module: route38 },
-  { pattern: "/api/v1/workspaces/[wsId]/mail", module: route39 },
-  { pattern: "/api/v1/workspaces/[wsId]/mail/send", module: route40 },
+  { pattern: "/api/v1/workspaces/[wsId]/mail/mailboxes/[mailboxId]/messages/[messageId]/source", module: route30 },
+  { pattern: "/api/v1/workspaces/[wsId]/mail/mailboxes/[mailboxId]/messages/[messageId]/state", module: route31 },
+  { pattern: "/api/v1/workspaces/[wsId]/mail/mailboxes/[mailboxId]/messages/bulk", module: route32 },
+  { pattern: "/api/v1/workspaces/[wsId]/mail/mailboxes/[mailboxId]/messages", module: route33 },
+  { pattern: "/api/v1/workspaces/[wsId]/mail/mailboxes/[mailboxId]/organization", module: route34 },
+  { pattern: "/api/v1/workspaces/[wsId]/mail/mailboxes/[mailboxId]/read-all", module: route35 },
+  { pattern: "/api/v1/workspaces/[wsId]/mail/mailboxes/[mailboxId]/settings", module: route36 },
+  { pattern: "/api/v1/workspaces/[wsId]/mail/mailboxes/[mailboxId]/threads/[threadId]", module: route37 },
+  { pattern: "/api/v1/workspaces/[wsId]/mail/mailboxes/[mailboxId]/threads/bulk", module: route38 },
+  { pattern: "/api/v1/workspaces/[wsId]/mail/mailboxes/[mailboxId]/threads", module: route39 },
+  { pattern: "/api/v1/workspaces/[wsId]/mail", module: route40 },
+  { pattern: "/api/v1/workspaces/[wsId]/mail/send", module: route41 },
 ]);

@@ -1,5 +1,12 @@
 export const fixtures = [
   {
+    pattern:
+      '/api/v1/workspaces/[wsId]/mail/mailboxes/[mailboxId]/messages/[messageId]/source',
+    methods: ['GET'],
+    params: ['wsId', 'mailboxId', 'messageId'],
+    zeroMethods: [],
+  },
+  {
     pattern: '/api/ai/email-draft',
     methods: ['POST'],
     params: [],

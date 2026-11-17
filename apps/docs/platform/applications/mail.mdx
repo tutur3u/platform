@@ -298,6 +298,17 @@ Outgoing inline images replace the entire draft attachment URL with a CID URL.
 The reader also recognizes stored CID references prefixed by a Mail draft path,
 resolving only to an attachment belonging to the displayed message.
 
+Each web message's more menu offers View source, Copy raw message, and Copy headers.
+These actions read the original stored RFC822 message, including duplicate and
+folded headers, only after the existing mailbox membership and message visibility
+checks succeed. Source is served as private, uncached plain text and displayed in
+a read-only text field. Copies retain the original header block; they do not use
+the reader's filtered header summary. Messages without a retained raw object show
+an unavailable state rather than a reconstructed message. The browser limits
+source reads to 25 MiB and reports larger messages as unavailable for copying.
+Regression coverage lives in `repository/raw-source.test.ts`, the source route's
+`route.test.ts`, and `packages/internal-api/src/mail-source.test.ts`.
+
 ## Composing and draft recovery
 
 Close saves the latest draft before dismissing the composer; offline or failed saves

@@ -1,6 +1,16 @@
 import { NextRequest } from 'next/dist/server/web/spec-extension/request';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
+vi.mock(
+  '../app/api/v1/workspaces/[wsId]/mail/mailboxes/[mailboxId]/messages/[messageId]/source/route',
+  () =>
+    mocks.module({
+      GET: mocks.make(
+        '/api/v1/workspaces/[wsId]/mail/mailboxes/[mailboxId]/messages/[messageId]/source GET'
+      ),
+    })
+);
+
 const mocks = vi.hoisted(() => {
   const handlers = new Map<string, ReturnType<typeof vi.fn>>();
   return {
@@ -398,12 +408,12 @@ beforeEach(() => {
 
 import { fixtures } from './api-registry-fixtures';
 
-describe('every original Mail API registration', () => {
-  it('keeps the original 41 filesystem endpoints distinct from method helpers', () => {
-    expect(mailEndpoints).toHaveLength(41);
+describe('Mail API registrations', () => {
+  it('keeps all 42 filesystem endpoints distinct from method helpers', () => {
+    expect(mailEndpoints).toHaveLength(42);
     expect(
       new Set(mailEndpoints.map((endpoint) => endpoint.pattern)).size
-    ).toBe(41);
+    ).toBe(42);
   });
   for (const fixture of fixtures)
     for (const method of fixture.methods)
