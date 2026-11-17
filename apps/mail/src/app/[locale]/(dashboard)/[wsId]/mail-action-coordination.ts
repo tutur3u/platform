@@ -94,7 +94,10 @@ export function reconcileMailWhenIdle(
         })
       )
         return;
-      void reconcile();
+      void Promise.all([
+        reconcile(),
+        client.invalidateQueries({ queryKey: ['notifications'] }),
+      ]);
     }, 0)
   );
 }

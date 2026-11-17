@@ -98,3 +98,22 @@ Actual foreground/background notification arrival, permission behavior, system
 dismissal and tap timing require authorized fixtures and a device. A Firebase
 response alone does not prove device arrival. Source checks cannot establish
 production DNS/provider configuration or delivery.
+
+
+## Mail actions and notification reads
+
+Opening or marking a managed message read, archiving it, or moving it to Trash
+consumes only that user's matching incoming-mail notifications. Blocking a sender
+with existing-message movement consumes the acting administrator's notifications
+for the successfully moved messages. Other mailbox members retain their own
+notification state. Inbound quarantine has no acting user and does not consume
+existing alerts for every mailbox member.
+
+Consumption remains recorded when a message is restored or marked unread; it does
+not change the message's restored unread state. A late notification insert observes
+the same consumption record. Reading a notification never marks Mail read.
+
+Regression coverage: `apps/database/scripts/mail-notification-read-fixture.mjs`,
+`apps/database/scripts/mail-notification-read-concurrency.mjs` and the Mail
+notification-consumption helper tests. Database rollout requires the migration,
+its scoped repair count and the production migration approval gates.

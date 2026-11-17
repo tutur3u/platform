@@ -1,3 +1,4 @@
+import { moveBlockedMailAndConsumeNotifications } from '../repository/notification-consumption';
 import { requireMailboxAccess } from '../repository/bootstrap';
 import { type AnyRecord, privateTable } from '../repository/shared';
 import type { MailRouteContext } from '../types';
@@ -170,7 +171,8 @@ async function relabelSenderMail(
   admin: AnyRecord,
   mailboxId: string,
   rule: SenderBlockRule,
-  direction: 'block' | 'unblock'
+  direction: 'block' | 'unblock',
+  actorId?: string
 ) {
   let query = privateTable(admin, 'mail_messages')
     .select('id, from_address')
@@ -221,17 +223,22 @@ async function relabelSenderMail(
 
   for (let start = 0; start < ids.length; start += 500) {
     const chunk = ids.slice(start, start + 500);
-    const { error: writeError } =
-      direction === 'block'
-        ? await privateTable(admin, 'mail_message_labels').upsert(
-            chunk.map((id) => ({ label_id: label.id, message_id: id })),
-            { onConflict: 'message_id,label_id' }
-          )
-        : await privateTable(admin, 'mail_message_labels')
-            .delete()
-            .eq('label_id', label.id)
-            .in('message_id', chunk);
-    if (writeError) throw new Error('Failed to move sender mail');
+    if (direction === 'block') {
+      if (!actorId) throw new Error('Mailbox actor required');
+      await moveBlockedMailAndConsumeNotifications({
+        admin,
+        mailboxId,
+        userId: actorId,
+        labelId: label.id,
+        messageIds: chunk,
+      });
+    } else {
+      const { error } = await privateTable(admin, 'mail_message_labels')
+        .delete()
+        .eq('label_id', label.id)
+        .in('message_id', chunk);
+      if (error) throw new Error('Failed to move sender mail');
+    }
   }
   return ids.length;
 }
@@ -294,7 +301,7 @@ export async function addSenderBlock({
   if (error) throw new Error('Failed to save sender block');
 
   const moved = moveExisting
-    ? await relabelSenderMail(admin, mailboxId, rule, 'block')
+    ? await relabelSenderMail(admin, mailboxId, rule, 'block', ctx.user.id)
     : 0;
   await syncContactBlockFlags(admin, wsId, rule);
   return { status: 'created' as const, block: toBlock(data), moved };

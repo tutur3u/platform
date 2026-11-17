@@ -1,5 +1,9 @@
 // @vitest-environment jsdom
-import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import {
+  QueryClient,
+  QueryClientProvider,
+  useQuery,
+} from '@tanstack/react-query';
 import { act, cleanup, renderHook, waitFor } from '@testing-library/react';
 import type { MailThreadDetail } from '@tuturuuu/internal-api';
 import { createElement, type ReactNode } from 'react';
@@ -212,4 +216,38 @@ it('marks a new unread message beyond the reader cap even when the unread count 
     },
   });
   await waitFor(() => expect(mocks.update).toHaveBeenCalledTimes(2));
+});
+
+it('refreshes the live bell after opening a loaded thread persists its server read', async () => {
+  const client = new QueryClient({
+    defaultOptions: { queries: { retry: false } },
+  });
+  let serverUnreadNotifications = 1;
+  mocks.update.mockImplementation(async () => {
+    serverUnreadNotifications = 0;
+    return {};
+  });
+  const bell = vi.fn(async () => serverUnreadNotifications);
+  const hook = renderHook(
+    ({ blocked }) => {
+      useMailViewedThreadRead({ ...base, blocked });
+      return useQuery({
+        queryKey: ['notifications', 'unread-count', 'all', 'actor'],
+        queryFn: bell,
+      });
+    },
+    {
+      initialProps: { blocked: true },
+      wrapper: ({ children }: { children: ReactNode }) =>
+        createElement(QueryClientProvider, { client }, children),
+    }
+  );
+  await waitFor(() => expect(hook.result.current.data).toBe(1));
+  expect(mocks.update).not.toHaveBeenCalled();
+  hook.rerender({ blocked: false });
+  await waitFor(() => expect(hook.result.current.data).toBe(0));
+  expect(mocks.update).toHaveBeenCalledExactlyOnceWith('ws', 'mailbox', 'a', {
+    action: 'mark_read',
+  });
+  expect(bell).toHaveBeenCalledTimes(2);
 });

@@ -51,6 +51,7 @@ describe('background read coordination', () => {
 
   it('coalesces same-tick settlement and does not keep actions pending during refresh', async () => {
     const client = new QueryClient();
+    const invalidation = vi.spyOn(client, 'invalidateQueries');
     const a = deferred();
     const b = deferred();
     const refresh = deferred();
@@ -69,6 +70,7 @@ describe('background read coordination', () => {
     await Promise.all(requests);
     await vi.waitFor(() => expect(reconcile).toHaveBeenCalledOnce());
     expect(client.isMutating()).toBe(0);
+    expect(invalidation).toHaveBeenCalledWith({ queryKey: ['notifications'] });
     refresh.resolve();
   });
 });
