@@ -252,6 +252,13 @@ export async function executeVercelPhase({
     phase,
   };
   const intent = await authorityCall(port, 'beginPhase', [grant, key], phase);
+  if (
+    unsafeValues(intent?.predecessor) ||
+    secretField(intent?.predecessor) ||
+    unsafeValues(intent?.approval) ||
+    unsafeValues(intent?.approvalVerificationId)
+  )
+    refuse('QUEUE_PAYLOAD_INVALID', phase);
   if (intent?.status === 'succeeded') {
     const replay = intent.receipt;
     if (
@@ -368,7 +375,15 @@ export async function executeVercelPhase({
           )
         )
           refuse('QUEUE_GRANT_INVALID', phase);
-        return { ...lifecycle, qualification: ack.qualification };
+        return {
+          ...lifecycle,
+          qualification: Object.fromEntries(
+            ['c1', 'staticAuth', 'delta', 'qualification'].map((key) => [
+              key,
+              ack.qualification[key],
+            ])
+          ),
+        };
       },
       async checkFence() {
         await fence();

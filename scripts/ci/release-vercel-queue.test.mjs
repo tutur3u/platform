@@ -432,3 +432,19 @@ test('token-shaped values are refused in payloads and receipts without disclosur
     );
   }
 });
+
+test('authority predecessor credentials are refused before executor entry', async () => {
+  const port = authority();
+  let calls = 0;
+  port.beginPhase = async () => ({
+    status: 'running',
+    predecessor: { evidence: 'ghp_' + 'a'.repeat(36) },
+  });
+  await assert.rejects(
+    run(port, async () => {
+      calls++;
+    }),
+    { guardCode: 'QUEUE_PAYLOAD_INVALID' }
+  );
+  assert.equal(calls, 0);
+});
