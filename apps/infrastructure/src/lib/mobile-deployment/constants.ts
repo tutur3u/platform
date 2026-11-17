@@ -13,6 +13,18 @@ export const MOBILE_DEPLOYMENT_REPOSITORY =
 export const MOBILE_DEPLOYMENT_REF = 'refs/heads/production' as const;
 export const MOBILE_DEPLOYMENT_WORKFLOW_REF =
   `${MOBILE_DEPLOYMENT_REPOSITORY}/${MOBILE_DEPLOYMENT_WORKFLOW_FILE}@${MOBILE_DEPLOYMENT_REF}` as const;
+/** The signing job runs inline in the workflow, so both refs are identical. */
+export const MOBILE_DEPLOYMENT_JOB_WORKFLOW_REF =
+  MOBILE_DEPLOYMENT_WORKFLOW_REF;
+/** Immutable GitHub numeric ids; a renamed or recreated repository changes them. */
+export const MOBILE_DEPLOYMENT_REPOSITORY_ID = '536896722' as const;
+export const MOBILE_DEPLOYMENT_REPOSITORY_OWNER_ID = '107694301' as const;
+export const MOBILE_DEPLOYMENT_EVENT_NAMES = [
+  'push',
+  'workflow_dispatch',
+] as const;
+/** Store signing stays on GitHub-hosted runners; self-hosted runners are refused. */
+export const MOBILE_DEPLOYMENT_RUNNER_ENVIRONMENT = 'github-hosted' as const;
 
 export const MOBILE_DEPLOYMENT_DRIVE_PREFIX =
   '.tuturuuu/mobile-deployment-vault' as const;

@@ -97,6 +97,20 @@ the macOS job retrieves signing assets. Further requests in the same run and
 attempt receive `replay_detected`. If the macOS fetch returns HTTP 401 after a
 successful preflight, check the vault replay policy before rerunning the job.
 
+The bundle endpoint accepts an OIDC token only when every claim matches the
+production deployment workflow:
+
+| Claim | Required value |
+| --- | --- |
+| `repository`, `repository_id`, `repository_owner_id` | `tutur3u/platform` and its immutable numeric ids |
+| `ref` | `refs/heads/production` |
+| `environment` | `mobile-store-beta` |
+| `workflow_ref`, `job_workflow_ref` | `mobile-deploy-stores.yaml@refs/heads/production`, so a reusable workflow cannot mint the token |
+| `event_name` | present and one of `push` or `workflow_dispatch` |
+| `runner_environment` | `github-hosted`; store signing never runs on self-hosted runners |
+
+A missing or non-string claim is rejected the same way as a wrong one.
+
 ## Android Signing
 
 | Field | What it is | Where to get it |

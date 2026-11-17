@@ -2,10 +2,15 @@ import 'server-only';
 
 import { createRemoteJWKSet, errors, type JWTPayload, jwtVerify } from 'jose';
 import {
+  MOBILE_DEPLOYMENT_EVENT_NAMES,
   MOBILE_DEPLOYMENT_GITHUB_ENVIRONMENT,
+  MOBILE_DEPLOYMENT_JOB_WORKFLOW_REF,
   MOBILE_DEPLOYMENT_OIDC_AUDIENCE,
   MOBILE_DEPLOYMENT_REF,
   MOBILE_DEPLOYMENT_REPOSITORY,
+  MOBILE_DEPLOYMENT_REPOSITORY_ID,
+  MOBILE_DEPLOYMENT_REPOSITORY_OWNER_ID,
+  MOBILE_DEPLOYMENT_RUNNER_ENVIRONMENT,
   MOBILE_DEPLOYMENT_WORKFLOW_REF,
 } from './constants';
 
@@ -64,6 +69,18 @@ export function validateGitHubOidcClaims(
     MOBILE_DEPLOYMENT_REPOSITORY,
     'invalid_repository'
   );
+  assertClaim(
+    payload,
+    'repository_id',
+    MOBILE_DEPLOYMENT_REPOSITORY_ID,
+    'invalid_repository'
+  );
+  assertClaim(
+    payload,
+    'repository_owner_id',
+    MOBILE_DEPLOYMENT_REPOSITORY_OWNER_ID,
+    'invalid_repository'
+  );
   const ref = assertClaim(payload, 'ref', MOBILE_DEPLOYMENT_REF, 'invalid_ref');
   const environment = assertClaim(
     payload,
@@ -78,10 +95,27 @@ export function validateGitHubOidcClaims(
     'invalid_workflow'
   );
 
+  assertClaim(
+    payload,
+    'job_workflow_ref',
+    MOBILE_DEPLOYMENT_JOB_WORKFLOW_REF,
+    'invalid_workflow'
+  );
+
   const eventName = claimString(payload, 'event_name');
-  if (eventName && !['push', 'workflow_dispatch'].includes(eventName)) {
+  if (
+    !eventName ||
+    !(MOBILE_DEPLOYMENT_EVENT_NAMES as readonly string[]).includes(eventName)
+  ) {
     throw new MobileDeploymentOidcError('Unauthorized', 'invalid_event');
   }
+
+  assertClaim(
+    payload,
+    'runner_environment',
+    MOBILE_DEPLOYMENT_RUNNER_ENVIRONMENT,
+    'invalid_runner'
+  );
 
   const runId = claimString(payload, 'run_id');
   const runAttempt = claimString(payload, 'run_attempt');
