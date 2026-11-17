@@ -1432,3 +1432,59 @@ Signed-out resume is not guaranteed; a fresh handoff may be necessary after logi
 Client native loaders must project pathname/query before any server-function
 serialization, and the native workspace adapter must supply its verified UUID.
 These boundaries require explicit native acceptance in addition to component tests.
+
+## People, profiles and sender blocks
+
+Scope: the web Mail client (list rows, message header, message details and
+compose recipients). Flutter Mail is not covered.
+
+### Resolving addresses to people
+
+Mail resolves sender and recipient addresses through
+`POST /api/v1/workspaces/{wsId}/people/resolve` in Web. The caller must be a
+member of the workspace and hold `view_users_public_info` or
+`view_users_private_info`. A request carries 1 to 50 addresses and matches each
+one exactly, ignoring case. Only members and contacts of that one workspace are
+returned; other workspaces are never searched. `HIDE_MEMBER_EMAIL` and the other
+`HIDE_MEMBER_*` settings apply. If they cannot be read, the request fails
+instead of revealing data. An address with no match comes back as `unknown`.
+
+A resolved address shows its display name and avatar, with a profile card on
+hover or focus. An unknown address shows the email and an **Add to Contacts**
+action. That action follows
+[explicit Mail sender creation](contacts#explicit-mail-sender-creation).
+
+### Compose suggestions
+
+To, Cc and Bcc suggest workspace members, contacts and the mailbox's recent
+correspondents in one ranked list. Each address appears once, labelled as the
+strongest match (member, then contact, then recent). Rows are ordered by match
+quality, then recency score, then kind. The recency score covers 180 days: each
+message counts `exp(-age / 30 days)`, and mail the mailbox sent counts double.
+Matching ignores diacritics, so Vietnamese names match unaccented queries. A
+member whose email the workspace hides is shown as a disabled row. The
+correspondents route has the same access gate as drafts.
+
+### Sender blocks
+
+Mailbox owners and admins can block a sender address or a domain. A domain
+block also covers its subdomains. Shared providers such as `gmail.com` cannot be
+blocked as a whole domain. Ingest checks every new message against the blocks.
+A blocked message gets the system `blocked` label instead of `inbox`. It sends
+no push notification and is not forwarded or auto-labelled. Nothing is deleted.
+It is listed only in the **Blocked** folder. Adding a block can move existing
+mail into Blocked, and removing it can move that mail back.
+
+`workspace_users.mail_blocked` mirrors whether any mailbox linked to the
+contact's workspace blocks that contact. Only Mail can write this field; a
+trigger rejects any other write. A new personal mailbox is linked to its owner's
+personal workspace. It is linked only when it has exactly one owner, that owner
+created it and has exactly one personal workspace, and it is neither an employee
+mailbox nor an adopted one. Any other mailbox is left unlinked for an admin to
+link.
+
+Regression coverage: `workspace-people-resolve.test.ts`,
+`people/resolve/route.test.ts`, `correspondents-ranking.test.ts`,
+`recipient-ranking.test.ts`, `sender-blocks/match.test.ts`,
+`sender-blocks/store.test.ts`, `message-details-model.test.ts`, and the pgTAP
+suite `mail-contacts-sender-blocks.sql`.
