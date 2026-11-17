@@ -1,25 +1,6 @@
-import { getWorkspace } from '@tuturuuu/utils/workspace-helper';
 import { redirect } from 'next/navigation';
-import { connection } from 'next/server';
-import type React from 'react';
 
-interface LayoutProps {
-  params: Promise<{
-    wsId: string;
-  }>;
-  children: React.ReactNode;
-}
-
-export default async function MiraLayout({ children, params }: LayoutProps) {
-  await connection();
-
-  const { wsId: id } = await params;
-  const workspace = await getWorkspace(id);
-
-  // This page lives only in the personal workspace; elsewhere, open Mira.
-  if (!workspace?.personal) {
-    redirect('/personal');
-  }
-
-  return children;
+/** Mira lives on the personal workspace home; this path only redirects. */
+export default function MiraLayout(): never {
+  redirect('/personal');
 }
