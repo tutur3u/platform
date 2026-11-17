@@ -13,6 +13,7 @@ import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import test from 'node:test';
 import {
+  admissionOutputs,
   admitRelease,
   admitWorkflowRuns,
   bindProductionIntent,
@@ -446,4 +447,36 @@ test('workflow keeps admission, policy, serialization, token isolation and no-bu
     ),
     /versions deploy "\$target@100%"/
   );
+});
+
+test('canonical identity check tolerates only the admitted previous live commit within a bounded step', () => {
+  const workflow = workflowHelper.readWorkflow('meet-cloudflare.yaml', {
+    raw: true,
+  });
+  const identity = workflow.jobs.deploy.steps.find(
+    (step) => step.name === 'Verify canonical frontend build identity'
+  );
+  assert.equal(
+    identity.env.MEET_PREVIOUS_LIVE_SHA,
+    '${{ steps.admission.outputs.live }}'
+  );
+  assert.ok(identity['timeout-minutes'] <= 10);
+  assert.notEqual(identity['continue-on-error'], true);
+});
+
+test('admission outputs carry only a full previous live commit', () => {
+  const live = 'a'.repeat(40);
+  assert.equal(
+    admissionOutputs({ guardCode: 'MEET_RELEASE_ADMITTED', live }),
+    `superseded=false\nlive=${live}\n`
+  );
+  assert.equal(
+    admissionOutputs({ guardCode: 'MEET_RELEASE_SUPERSEDED', live }),
+    `superseded=true\nlive=${live}\n`
+  );
+  for (const value of [undefined, 'local', `${live}\nsuperseded=false`])
+    assert.equal(
+      admissionOutputs({ guardCode: 'MEET_RELEASE_ADMITTED', live: value }),
+      'superseded=false\n'
+    );
 });

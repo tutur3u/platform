@@ -92,6 +92,11 @@ export function liveSource(metadata) {
   return metadata.commitHash;
 }
 
+export function admissionOutputs(result) {
+  const live = SHA.test(result.live ?? '') ? `live=${result.live}\n` : '';
+  return `superseded=${result.guardCode === 'MEET_RELEASE_SUPERSEDED'}\n${live}`;
+}
+
 export function admitWorkflowRuns(payload, source, currentRun) {
   if (!Array.isArray(payload?.workflow_runs)) stop('MEET_RELEASE_CI_RESPONSE');
   const runs = payload.workflow_runs
@@ -234,10 +239,7 @@ if (
   action
     .then((result) => {
       if (process.env.GITHUB_OUTPUT && result)
-        appendFileSync(
-          process.env.GITHUB_OUTPUT,
-          `superseded=${result.guardCode === 'MEET_RELEASE_SUPERSEDED'}\n`
-        );
+        appendFileSync(process.env.GITHUB_OUTPUT, admissionOutputs(result));
       console.log(result?.guardCode ?? 'MEET_RELEASE_ADMITTED');
     })
     .catch((error) => {
