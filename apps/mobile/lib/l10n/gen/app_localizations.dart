@@ -28464,6 +28464,90 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Unread'**
   String get notificationsUnreadLabel;
+
+  /// No description provided for @mailConversation.
+  ///
+  /// In en, this message translates to:
+  /// **'Conversation'**
+  String get mailConversation;
+
+  /// No description provided for @mailAttachments.
+  ///
+  /// In en, this message translates to:
+  /// **'Attachments'**
+  String get mailAttachments;
+
+  /// No description provided for @mailNoAttachments.
+  ///
+  /// In en, this message translates to:
+  /// **'No attachments'**
+  String get mailNoAttachments;
+
+  /// No description provided for @mailMember.
+  ///
+  /// In en, this message translates to:
+  /// **'Member'**
+  String get mailMember;
+
+  /// No description provided for @mailReceived.
+  ///
+  /// In en, this message translates to:
+  /// **'Received'**
+  String get mailReceived;
+
+  /// No description provided for @mailReplyTo.
+  ///
+  /// In en, this message translates to:
+  /// **'Reply-to'**
+  String get mailReplyTo;
+
+  /// No description provided for @mailMessageId.
+  ///
+  /// In en, this message translates to:
+  /// **'Message ID'**
+  String get mailMessageId;
+
+  /// No description provided for @mailInReplyTo.
+  ///
+  /// In en, this message translates to:
+  /// **'In-reply-to'**
+  String get mailInReplyTo;
+
+  /// No description provided for @mailOriginalRecipient.
+  ///
+  /// In en, this message translates to:
+  /// **'Original recipient'**
+  String get mailOriginalRecipient;
+
+  /// No description provided for @mailTechnicalHeaders.
+  ///
+  /// In en, this message translates to:
+  /// **'Technical headers'**
+  String get mailTechnicalHeaders;
+
+  /// No description provided for @mailDateUnavailable.
+  ///
+  /// In en, this message translates to:
+  /// **'Date unavailable'**
+  String get mailDateUnavailable;
+
+  /// No description provided for @mailMarkRead.
+  ///
+  /// In en, this message translates to:
+  /// **'Mark as read'**
+  String get mailMarkRead;
+
+  /// No description provided for @mailRetryProfiles.
+  ///
+  /// In en, this message translates to:
+  /// **'Retry profiles'**
+  String get mailRetryProfiles;
+
+  /// No description provided for @mailFrom.
+  ///
+  /// In en, this message translates to:
+  /// **'From'**
+  String get mailFrom;
 }
 
 class _AppLocalizationsDelegate extends LocalizationsDelegate<AppLocalizations> {

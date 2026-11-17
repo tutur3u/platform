@@ -1586,3 +1586,35 @@ Regression coverage: `mail-inline-image-preparation.test.ts`,
 `mail-composer-editor-media.test.ts`, `attachment-upload-policy.test.ts` and
 `proxy-auth.test.ts`. A real browser decode check covers an input PNG over 5 MiB
 and validates that the prepared multipart body fits below the shared request cap.
+
+### Mobile message reader
+
+The Flutter reader uses the shell title and floating-dock Back control. Its
+Conversation tab retains message ordering and authenticated inline-image handling;
+the Attachments tab lists authorized files with image thumbnails and type icons.
+Image previews open above the shell with zoom controls. Scroll content consumes
+the shell bottom inset so the dock leaves the final controls accessible.
+
+Sender and recipient presentation uses the workspace-scoped people resolver when
+available, with visible header names and initials as fallbacks. Hidden profile
+emails do not supply labels, initials or detail addresses. Resolution failures
+retain the message and offer an explicit profile retry; they do not broaden the
+lookup to a member list. The collapsed Message details panel exposes only supplied
+recipient metadata, localized Sent/Received times and allowlisted delivery fields.
+Raw Date remains under a separate Technical headers disclosure.
+
+Reader actions expose snooze, labels, read state, star, archive and trash using
+the existing mailbox mutation contracts. Concurrent read requests are deduplicated.
+Image thumbnail reads are limited to four automatic tiles with known sizes up to
+4 MiB; other attachments retain their type, name, available size and download.
+
+PDF preview: deferred. PDFs retain a type icon, name, size and download/open-with
+through the platform share flow. First-page thumbnails and PDF page viewing need
+a separate renderer dependency review covering binary size, iOS/Android build
+impact and licence; this reader change adds no native PDF dependency.
+
+Regression coverage: `mail_reader_actions_test.dart`,
+`mail_reader_design_test.dart`, `mail_message_details_test.dart`,
+`mail_message_delivery_test.dart`, `mail_people_resolver_test.dart` and
+`mail_attachment_tile_test.dart`. Reader goldens use the CI-pinned Linux Flutter
+toolchain.

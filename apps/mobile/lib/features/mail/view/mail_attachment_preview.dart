@@ -5,6 +5,7 @@ import 'dart:typed_data';
 import 'package:flutter/material.dart';
 import 'package:mobile/core/ui/components/app_loading_indicator.dart';
 import 'package:mobile/features/mail/data/mail_repository.dart';
+import 'package:mobile/features/mail/view/mail_attachment_tile.dart';
 import 'package:mobile/l10n/l10n.dart';
 import 'package:share_plus/share_plus.dart';
 
@@ -15,9 +16,10 @@ bool canPreviewMailAttachment(Map<String, dynamic> file) =>
       'image/gif',
       'image/webp',
       'image/bmp',
+      'image/avif',
       'text/plain',
-    ].contains(file['contentType']) ||
-    (file['contentType'] == 'application/octet-stream' &&
+    ].contains(mailAttachmentMimeType(file)) ||
+    (mailAttachmentMimeType(file) == 'application/octet-stream' &&
         (file['filename'] as String).toLowerCase().endsWith('.txt'));
 
 class MailAttachmentPreview extends StatefulWidget {
@@ -89,7 +91,7 @@ class _MailAttachmentPreviewState extends State<MailAttachmentPreview> {
   @override
   Widget build(BuildContext context) {
     final bytes = _bytes;
-    final image = (widget.file['contentType'] as String).startsWith('image/');
+    final image = mailAttachmentMimeType(widget.file).startsWith('image/');
     return Scaffold(
       appBar: AppBar(
         title: Text(widget.file['filename'] as String),

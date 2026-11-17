@@ -15337,4 +15337,46 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get notificationsUnreadLabel => 'Unread';
+
+  @override
+  String get mailConversation => 'Conversation';
+
+  @override
+  String get mailAttachments => 'Attachments';
+
+  @override
+  String get mailNoAttachments => 'No attachments';
+
+  @override
+  String get mailMember => 'Member';
+
+  @override
+  String get mailReceived => 'Received';
+
+  @override
+  String get mailReplyTo => 'Reply-to';
+
+  @override
+  String get mailMessageId => 'Message ID';
+
+  @override
+  String get mailInReplyTo => 'In-reply-to';
+
+  @override
+  String get mailOriginalRecipient => 'Original recipient';
+
+  @override
+  String get mailTechnicalHeaders => 'Technical headers';
+
+  @override
+  String get mailDateUnavailable => 'Date unavailable';
+
+  @override
+  String get mailMarkRead => 'Mark as read';
+
+  @override
+  String get mailRetryProfiles => 'Retry profiles';
+
+  @override
+  String get mailFrom => 'From';
 }

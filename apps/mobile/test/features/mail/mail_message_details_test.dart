@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mobile/features/mail/view/mail_message_details.dart';
+import 'package:mobile/l10n/gen/app_localizations.dart';
+
 import '../../helpers/pump_app.dart';
 
 void main() {
@@ -31,10 +33,10 @@ void main() {
     await tester.tap(find.text('Message details'));
     await tester.pumpAndSettle();
     for (final value in [
-      'Linh Trần <host@example.test>',
-      'Phúc Võ Hoàng <guest@example.test>',
+      'host@example.test',
+      'guest@example.test',
       'another.very.long.address@example.test',
-      'Thanh Phạm <cc@example.test>',
+      'cc@example.test',
     ]) {
       expect(find.text(value), findsOneWidget);
       expect(
@@ -49,7 +51,7 @@ void main() {
       );
     }
     expect(find.text('Bcc'), findsNothing);
-    await tester.longPress(find.text('Phúc Võ Hoàng <guest@example.test>'));
+    await tester.longPress(find.text('guest@example.test'));
     await tester.pumpAndSettle();
     expect(find.text('Copy'), findsOneWidget);
   });
@@ -73,5 +75,92 @@ void main() {
     await tester.pumpAndSettle();
     expect(find.text('Bcc'), findsOneWidget);
     expect(find.text('authorized@example.test'), findsOneWidget);
+  });
+
+  Widget harness(
+    Map<String, dynamic> message, {
+    Map<String, Map<String, dynamic>> people = const {},
+  }) => MaterialApp(
+    localizationsDelegates: AppLocalizations.localizationsDelegates,
+    supportedLocales: AppLocalizations.supportedLocales,
+    home: Scaffold(
+      body: SingleChildScrollView(
+        child: MailMessageDetails(message: message, people: people),
+      ),
+    ),
+  );
+
+  testWidgets(
+    'details disclose authorized fields and keep raw date collapsed',
+    (tester) async {
+      await tester.pumpWidget(
+        harness({
+          'id': 'message',
+          'fromAddress': 'sender@example.com',
+          'fromName': 'Sender',
+          'subject': 'Review',
+          'receivedAt': '2026-11-17T13:32:00Z',
+          'safeHeaders': {'date': 'Tue, 17 Nov 2026 20:30:00 +0700'},
+          'recipients': <Map<String, dynamic>>[],
+        }),
+      );
+      expect(find.text('Sent'), findsNothing);
+      await tester.tap(find.text('Message details'));
+      await tester.pumpAndSettle();
+      expect(find.text('Sent'), findsOneWidget);
+      expect(find.text('Received'), findsOneWidget);
+      expect(find.text('Bcc'), findsNothing);
+      expect(find.text('Tue, 17 Nov 2026 20:30:00 +0700'), findsNothing);
+      await tester.ensureVisible(find.text('Technical headers'));
+      await tester.tap(find.text('Technical headers'));
+      await tester.pumpAndSettle();
+      expect(find.text('Tue, 17 Nov 2026 20:30:00 +0700'), findsOneWidget);
+    },
+  );
+
+  testWidgets('resolved people protect reply-to and original recipient', (
+    tester,
+  ) async {
+    await tester.pumpWidget(
+      harness(
+        {
+          'id': 'message',
+          'fromAddress': 'secret@example.com',
+          'fromName': 'Header name',
+          'observedRecipient': 'secret@example.com',
+          'safeHeaders': {'reply-to': 'Header name <secret@example.com>'},
+          'recipients': <Map<String, dynamic>>[],
+        },
+        people: {
+          'secret@example.com': {
+            'emailVisible': false,
+            'displayName': 'Resolved member',
+          },
+        },
+      ),
+    );
+    await tester.tap(find.text('Message details'));
+    await tester.pumpAndSettle();
+    expect(find.text('secret@example.com'), findsNothing);
+    expect(find.text('Header name'), findsNothing);
+    expect(find.text('Resolved member'), findsNWidgets(3));
+  });
+
+  testWidgets('hidden profile addresses never become visible details', (
+    tester,
+  ) async {
+    await tester.pumpWidget(
+      harness({
+        'id': 'message',
+        'fromAddress': 'secret@example.com',
+        'fromProfile': {'emailVisible': false, 'displayName': 'Private member'},
+        'recipients': <Map<String, dynamic>>[],
+      }),
+    );
+    await tester.tap(find.text('Message details'));
+    await tester.pumpAndSettle();
+    expect(find.text('secret@example.com'), findsNothing);
+    expect(find.text('Private member'), findsOneWidget);
+    expect(find.text('Date unavailable'), findsOneWidget);
   });
 }

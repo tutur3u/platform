@@ -22,24 +22,12 @@ extension _MailReaderBody on _MailReaderState {
     String title,
     Map<String, String> actions,
   ) {
-    final l10n = context.l10n;
-    final primary = _primaryAction;
     final idle = !_busy && _detail != null;
     return AppBar(
-      backgroundColor: shad.Theme.of(context).colorScheme.background,
+      backgroundColor: AppTokens.of(context).colorScheme.background,
       surfaceTintColor: Colors.transparent,
       title: Text(title),
       actions: [
-        IconButton(
-          tooltip: primary.label(context),
-          onPressed: idle ? _runPrimaryAction : null,
-          icon: Icon(primary.icon),
-        ),
-        IconButton(
-          tooltip: _starred ? l10n.mailUnstar : l10n.mailStar,
-          onPressed: idle ? () => _action(_starred ? 'unstar' : 'star') : null,
-          icon: Icon(_starred ? Icons.star : Icons.star_border),
-        ),
         PopupMenuButton<String>(
           enabled: idle,
           onSelected: (action) => _action(action, close: true),
@@ -47,11 +35,14 @@ extension _MailReaderBody on _MailReaderState {
               .map(
                 (a) => PopupMenuItem(
                   value: a.key,
+                  enabled:
+                      !_readPending ||
+                      (a.key != 'mark_read' && a.key != 'mark_unread'),
                   child: Row(
                     children: [
                       Icon(_mailMessageActionIcon(a.key)),
                       const SizedBox(width: 12),
-                      Text(a.value),
+                      Flexible(child: Text(a.value)),
                     ],
                   ),
                 ),
@@ -127,6 +118,36 @@ extension _MailReaderBody on _MailReaderState {
     );
   }
 
+  Widget _recipientSummary(Map<String, dynamic> message) {
+    final recipients = mailRows(
+      message['recipients'],
+    ).where((row) => row['kind'] == 'to').toList();
+    return Padding(
+      padding: const EdgeInsets.only(top: AppSpacing.sm),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          if (recipients.isNotEmpty)
+            Row(
+              children: [
+                Text('${context.l10n.mailTo} '),
+                Flexible(
+                  child: MailReaderIdentity(
+                    address: recipients.first['address'] as String? ?? '',
+                    name: recipients.first['displayName'] as String?,
+                    profile: _person(recipients.first['address'] as String?),
+                    compact: true,
+                  ),
+                ),
+              ],
+            ),
+          if (mailMessageDate(message) case final date?)
+            Text(formatMailMessageDate(context, date)),
+        ],
+      ),
+    );
+  }
+
   Widget _messageCard(Map<String, dynamic> message, bool headerControls) {
     final l10n = context.l10n;
     return Card(
@@ -134,7 +155,9 @@ extension _MailReaderBody on _MailReaderState {
       surfaceTintColor: Colors.transparent,
       margin: const EdgeInsets.only(bottom: 6),
       elevation: 0,
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+      shape: RoundedRectangleBorder(
+        borderRadius: AppTokens.of(context).borderRadiusMd,
+      ),
       child: Padding(
         padding: const EdgeInsets.symmetric(vertical: AppSpacing.md),
         child: Column(
@@ -149,28 +172,14 @@ extension _MailReaderBody on _MailReaderState {
                   _expandedMessages[message['id'] as String] = expanded,
               tilePadding: EdgeInsets.zero,
               dense: true,
-              title: Text(
-                message['fromName'] as String? ??
-                    message['fromAddress'] as String,
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
+              title: MailReaderIdentity(
+                address: message['fromAddress'] as String? ?? '',
+                name: message['fromName'] as String?,
+                profile: _person(message['fromAddress'] as String?),
               ),
-              subtitle: Text(
-                [
-                  if (message['fromName'] != null)
-                    message['fromAddress'] as String,
-                  ...mailRows(message['recipients'])
-                      .where((r) => r['kind'] == 'to')
-                      .take(1)
-                      .map((r) => r['address'] as String),
-                  if (mailMessageDate(message) != null)
-                    formatMailMessageDate(context, mailMessageDate(message)!),
-                ].join(' · '),
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
-              ),
+              subtitle: _recipientSummary(message),
               children: [
-                MailMessageDetails(message: message),
+                MailMessageDetails(message: message, people: _people),
                 MailMessageContent(
                   key: ValueKey(message['id']),
                   repository: widget.repository,
@@ -187,27 +196,6 @@ extension _MailReaderBody on _MailReaderState {
                       ? (_) => _toggleReaderImages()
                       : null,
                 ),
-                for (final file in mailRows(message['attachments']))
-                  ListTile(
-                    leading: const Icon(Icons.attach_file),
-                    title: Text(file['filename'] as String),
-                    onTap: _busy || !canPreviewMailAttachment(file)
-                        ? null
-                        : () => _openChild(
-                            MailAttachmentPreview(
-                              repository: widget.repository,
-                              workspaceId: widget.workspaceId,
-                              mailboxId: widget.mailboxId,
-                              messageId: message['id'] as String,
-                              file: file,
-                            ),
-                          ),
-                    trailing: IconButton(
-                      tooltip: l10n.mailDownload,
-                      onPressed: _busy ? null : () => _download(message, file),
-                      icon: const Icon(Icons.download_outlined),
-                    ),
-                  ),
                 if (widget.canSend && !headerControls)
                   Wrap(
                     spacing: 8,

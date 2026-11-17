@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
+import 'package:mobile/features/mail/view/mail_message_delivery.dart';
 
 DateTime? mailMessageDate(Map<String, dynamic> message, {bool thread = false}) {
   for (final field in [
@@ -9,8 +10,10 @@ DateTime? mailMessageDate(Map<String, dynamic> message, {bool thread = false}) {
     'createdAt',
   ]) {
     final value = message[field];
-    if (value is! String) continue;
-    final parsed = DateTime.tryParse(value);
+    if (value is! String && field != 'sentAt') continue;
+    final parsed = field == 'sentAt'
+        ? mailSentDate(message)
+        : parseMailDeliveryDate(value);
     if (parsed != null) return parsed.toLocal();
   }
   return null;

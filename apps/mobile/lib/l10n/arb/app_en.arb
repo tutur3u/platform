@@ -7262,5 +7262,19 @@
   "settingsStorageSummary": "Manage data on this device",
   "settingsLearnMore": "Learn more",
   "assistantVoiceMessagePrompt": "Listen to this voice message and respond.",
-  "notificationsUnreadLabel": "Unread"
+  "notificationsUnreadLabel": "Unread",
+  "mailConversation": "Conversation",
+  "mailAttachments": "Attachments",
+  "mailNoAttachments": "No attachments",
+  "mailMember": "Member",
+  "mailReceived": "Received",
+  "mailReplyTo": "Reply-to",
+  "mailMessageId": "Message ID",
+  "mailInReplyTo": "In-reply-to",
+  "mailOriginalRecipient": "Original recipient",
+  "mailTechnicalHeaders": "Technical headers",
+  "mailDateUnavailable": "Date unavailable",
+  "mailMarkRead": "Mark as read",
+  "mailRetryProfiles": "Retry profiles",
+  "mailFrom": "From"
 }

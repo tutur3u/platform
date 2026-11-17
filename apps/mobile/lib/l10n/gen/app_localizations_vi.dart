@@ -15168,4 +15168,46 @@ class AppLocalizationsVi extends AppLocalizations {
 
   @override
   String get notificationsUnreadLabel => 'Chưa đọc';
+
+  @override
+  String get mailConversation => 'Cuộc trò chuyện';
+
+  @override
+  String get mailAttachments => 'Tệp đính kèm';
+
+  @override
+  String get mailNoAttachments => 'Không có tệp đính kèm';
+
+  @override
+  String get mailMember => 'Thành viên';
+
+  @override
+  String get mailReceived => 'Đã nhận';
+
+  @override
+  String get mailReplyTo => 'Trả lời đến';
+
+  @override
+  String get mailMessageId => 'Mã thư';
+
+  @override
+  String get mailInReplyTo => 'Trả lời cho';
+
+  @override
+  String get mailOriginalRecipient => 'Người nhận ban đầu';
+
+  @override
+  String get mailTechnicalHeaders => 'Tiêu đề kỹ thuật';
+
+  @override
+  String get mailDateUnavailable => 'Không có ngày gửi';
+
+  @override
+  String get mailMarkRead => 'Đánh dấu đã đọc';
+
+  @override
+  String get mailRetryProfiles => 'Thử tải lại hồ sơ';
+
+  @override
+  String get mailFrom => 'Từ';
 }

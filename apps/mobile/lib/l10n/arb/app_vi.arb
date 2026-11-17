@@ -6736,5 +6736,19 @@
   "settingsStorageSummary": "Quản lý dữ liệu trên thiết bị này",
   "settingsLearnMore": "Tìm hiểu thêm",
   "assistantVoiceMessagePrompt": "Hãy nghe tin nhắn thoại này và trả lời.",
-  "notificationsUnreadLabel": "Chưa đọc"
+  "notificationsUnreadLabel": "Chưa đọc",
+  "mailConversation": "Cuộc trò chuyện",
+  "mailAttachments": "Tệp đính kèm",
+  "mailNoAttachments": "Không có tệp đính kèm",
+  "mailMember": "Thành viên",
+  "mailReceived": "Đã nhận",
+  "mailReplyTo": "Trả lời đến",
+  "mailMessageId": "Mã thư",
+  "mailInReplyTo": "Trả lời cho",
+  "mailOriginalRecipient": "Người nhận ban đầu",
+  "mailTechnicalHeaders": "Tiêu đề kỹ thuật",
+  "mailDateUnavailable": "Không có ngày gửi",
+  "mailMarkRead": "Đánh dấu đã đọc",
+  "mailRetryProfiles": "Thử tải lại hồ sơ",
+  "mailFrom": "Từ"
 }

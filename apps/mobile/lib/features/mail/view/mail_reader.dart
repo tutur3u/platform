@@ -5,11 +5,15 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:mobile/core/layout/layout.dart';
 import 'package:mobile/core/responsive/adaptive_sheet.dart';
 import 'package:mobile/core/router/routes.dart';
+import 'package:mobile/core/ui/kit/kit.dart';
+import 'package:mobile/core/ui/ui.dart';
 import 'package:mobile/data/sources/api_client.dart';
+import 'package:mobile/features/mail/data/mail_people_resolver.dart';
 import 'package:mobile/features/mail/data/mail_preview_store.dart';
 import 'package:mobile/features/mail/data/mail_repository.dart';
 import 'package:mobile/features/mail/view/mail_appearance_control.dart';
 import 'package:mobile/features/mail/view/mail_attachment_preview.dart';
+import 'package:mobile/features/mail/view/mail_attachment_tile.dart';
 import 'package:mobile/features/mail/view/mail_composer.dart';
 import 'package:mobile/features/mail/view/mail_html_document.dart';
 import 'package:mobile/features/mail/view/mail_image_preference.dart';
@@ -17,6 +21,7 @@ import 'package:mobile/features/mail/view/mail_message_content.dart';
 import 'package:mobile/features/mail/view/mail_message_date.dart';
 import 'package:mobile/features/mail/view/mail_message_details.dart';
 import 'package:mobile/features/mail/view/mail_primary_action_preference.dart';
+import 'package:mobile/features/mail/view/mail_reader_identity.dart';
 import 'package:mobile/features/mail/view/mail_rendered_documents.dart';
 import 'package:mobile/features/mail/view/mail_swipe_preferences.dart';
 import 'package:mobile/features/shell/cubit/shell_chrome_actions_cubit.dart';
@@ -25,16 +30,14 @@ import 'package:mobile/features/shell/view/shell_mini_nav.dart';
 import 'package:mobile/features/shell/view/shell_title_override.dart';
 import 'package:mobile/l10n/l10n.dart';
 import 'package:mobile/widgets/app_dialog_scaffold.dart';
-import 'package:shadcn_flutter/shadcn_flutter.dart' as shad;
 import 'package:share_plus/share_plus.dart';
 
+part 'mail_reader_actions.dart';
 part 'mail_reader_body.dart';
 part 'mail_reader_chrome.dart';
+part 'mail_reader_loading.dart';
+part 'mail_reader_mutations.dart';
 part 'mail_reader_pane_header.dart';
-
-/// Keeps the end of long messages clear of the floating Mail dock and its
-/// reader actions, on top of the shell dock clearance.
-const double _mailReaderEndGap = 128;
 
 class MailReader extends StatefulWidget {
   const MailReader({
@@ -57,6 +60,7 @@ class MailReader extends StatefulWidget {
     this.onActionSettled,
     this.signatureText,
     this.signatureHtml,
+    this.resolvePeople,
     super.key,
   });
   final MailRepository repository;
@@ -65,6 +69,11 @@ class MailReader extends StatefulWidget {
   final String fromAddress;
   final String? signatureText;
   final String? signatureHtml;
+  final Future<Map<String, Map<String, dynamic>>> Function(
+    String workspaceId,
+    List<String> emails,
+  )?
+  resolvePeople;
 
   /// The full detail when it is already cached; otherwise [summary] (the
   /// inbox row) renders immediately while [loadDetail] hydrates the body.
@@ -102,8 +111,18 @@ class MailReader extends StatefulWidget {
 }
 
 class _MailReaderState extends State<MailReader> {
+  late final _peopleResolver = MailPeopleResolver();
+  Map<String, Map<String, dynamic>> _people = {};
+  bool _peopleFailed = false;
+  bool _peopleLoading = false;
+  int _peopleGeneration = 0;
+  bool? _unreadOverride;
+  bool? _snoozedOverride;
+  int _contentGeneration = 0;
+  bool _attachmentsTab = false;
   bool _accessRevoked = false;
   bool _busy = false;
+  bool _readPending = false;
   bool _showImages = false;
   bool _childRouteOpen = false;
   final Map<String, bool> _expandedMessages = {};
@@ -127,6 +146,8 @@ class _MailReaderState extends State<MailReader> {
     return ValueKey('mail-thread-message-${message['id']}-$position');
   }
 
+  void _updateState(VoidCallback update) => setState(update);
+
   @override
   void initState() {
     super.initState();
@@ -145,6 +166,7 @@ class _MailReaderState extends State<MailReader> {
   }
 
   void _detailReady({required bool refresh}) {
+    unawaited(_resolvePeople());
     _starred = _messages.any((m) => m['starred'] == true);
     if (refresh) unawaited(_refresh());
     if (_messages.any((message) => message['unread'] == true)) {
@@ -152,24 +174,33 @@ class _MailReaderState extends State<MailReader> {
     }
   }
 
-  Future<void> _hydrate() async {
-    final load = widget.loadDetail;
-    if (load == null) return;
-    if (_loadError != null) setState(() => _loadError = null);
-    try {
-      final preview = await load();
-      if (!mounted) return;
-      setState(() => _detail = preview.detail);
-      _detailReady(refresh: widget.thread && !preview.fromNetwork);
-    } on ApiException catch (error) {
-      if (error.statusCode == 401 || error.statusCode == 403) {
-        await widget.repository.denyAccess(widget.workspaceId);
-        if (mounted) _close();
-      } else if (mounted) {
-        setState(() => _loadError = error);
+  @override
+  void didUpdateWidget(covariant MailReader oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.workspaceId != widget.workspaceId ||
+        oldWidget.mailboxId != widget.mailboxId ||
+        oldWidget.repository != widget.repository) {
+      _contentGeneration++;
+      _peopleGeneration++;
+      _people = {};
+      _peopleFailed = false;
+      _peopleLoading = false;
+      _readPending = false;
+      _busy = false;
+      _attachmentsTab = false;
+      _unreadOverride = null;
+      _snoozedOverride = null;
+      _expandedMessages.clear();
+      _detail = widget.detail;
+      _loadError = null;
+      oldWidget.repository.accessRevoked?.removeListener(_onAccessRevoked);
+      widget.repository.accessRevoked?.addListener(_onAccessRevoked);
+      _accessRevoked = false;
+      if (_detail != null) {
+        _detailReady(refresh: widget.refreshOnOpen);
+      } else {
+        unawaited(_hydrate());
       }
-    } on Object catch (error) {
-      if (mounted) setState(() => _loadError = error);
     }
   }
 
@@ -204,6 +235,9 @@ class _MailReaderState extends State<MailReader> {
     widget.repository.accessRevoked?.removeListener(_onAccessRevoked);
     MailImagePreference.instance.removeListener(_imagePreferenceChanged);
     MailPrimaryActionPreference.instance.removeListener(_primaryActionChanged);
+    _peopleGeneration++;
+    _contentGeneration++;
+    _peopleResolver.dispose();
     super.dispose();
   }
 
@@ -212,120 +246,15 @@ class _MailReaderState extends State<MailReader> {
         widget.repository.accessRevoked?.value != widget.workspaceId) {
       return;
     }
-    setState(() => _accessRevoked = true);
+    _peopleGeneration++;
+    setState(() {
+      _accessRevoked = true;
+      _people = {};
+    });
     if (widget.onClose case final close?) {
       close();
     } else {
       unawaited(Navigator.of(context).maybePop());
-    }
-  }
-
-  Future<void> _refresh() async {
-    try {
-      final detail = await widget.repository.refreshThread(
-        widget.workspaceId,
-        widget.mailboxId,
-        _id,
-      );
-      if (mounted) {
-        final previousLatestId = _messages.lastOrNull?['id'] as String?;
-        setState(() {
-          _detail = detail;
-          _starred = _messages.any((message) => message['starred'] == true);
-          final latestId = _messages.lastOrNull?['id'] as String?;
-          if (latestId != null && latestId != previousLatestId) {
-            if (previousLatestId != null) {
-              _expandedMessages[previousLatestId] = false;
-            }
-            _expandedMessages[latestId] = true;
-          }
-        });
-      }
-    } on ApiException catch (error) {
-      if (error.statusCode == 401 || error.statusCode == 403) {
-        await widget.repository.denyAccess(widget.workspaceId);
-        if (mounted) _close();
-      } else if (error.statusCode == 404 && mounted) {
-        _close();
-      }
-    } on Object {
-      // Keep the encrypted cached message readable during a network outage.
-    }
-  }
-
-  Future<void> _action(String action, {bool close = false}) async {
-    if (_detail == null || (_busy && action != 'mark_read')) return;
-    DateTime? snoozedUntil;
-    if (action == 'snooze') {
-      snoozedUntil = await chooseMailSnoozeTime(context);
-      if (!mounted || snoozedUntil == null) return;
-    }
-    final previousStarred = _starred;
-    final id = _id;
-    final optimisticClose =
-        close &&
-        (action == 'archive' || action == 'trash' || action == 'restore');
-    final onActionSettled = widget.onActionSettled;
-    if (action != 'mark_read' && !optimisticClose) {
-      setState(() {
-        _busy = true;
-        if (action == 'star' || action == 'unstar') _starred = action == 'star';
-      });
-    }
-    if (optimisticClose) {
-      // Hand the dock back to Mail now, before the reader's pop animation.
-      _busy = true;
-      widget.onOptimisticAction?.call(action, id);
-      lookupShellMiniNavCubit(context)?.dismissOwner('mail-reader');
-      try {
-        context.read<ShellChromeActionsCubit>().dismissOwner('mail-reader');
-      } on ProviderNotFoundException {
-        // Standalone reader tests and screens need no shared dock handoff.
-      }
-      _close();
-    }
-    try {
-      await widget.repository.changeState(
-        widget.workspaceId,
-        widget.mailboxId,
-        id,
-        action,
-        thread: widget.thread,
-        snoozedUntil: snoozedUntil,
-      );
-      if (optimisticClose) {
-        onActionSettled?.call(action: action, id: id, success: true);
-      }
-      if (!mounted) return;
-      if (close && !optimisticClose) {
-        _close();
-        return;
-      }
-    } on Object catch (error) {
-      if (optimisticClose) {
-        onActionSettled?.call(action: action, id: id, success: false);
-        return;
-      }
-      if (action == 'mark_read') widget.onReadFailed?.call();
-      if (error is ApiException &&
-          (error.statusCode == 401 || error.statusCode == 403)) {
-        await widget.repository.denyAccess(widget.workspaceId);
-        if (mounted) _close();
-        return;
-      }
-      if (action == 'mark_read') return;
-      if (mounted) {
-        if (action == 'star' || action == 'unstar') {
-          setState(() => _starred = previousStarred);
-        }
-        ScaffoldMessenger.of(
-          context,
-        ).showSnackBar(SnackBar(content: Text(context.l10n.mailActionFailed)));
-      }
-    } finally {
-      if (mounted && action != 'mark_read' && !optimisticClose) {
-        setState(() => _busy = false);
-      }
     }
   }
 
@@ -352,9 +281,14 @@ class _MailReaderState extends State<MailReader> {
   Future<void> _openChild(Widget child) async {
     if (_childRouteOpen) return;
     setState(() => _childRouteOpen = true);
-    final route = MaterialPageRoute<void>(builder: (_) => child);
+    final route = MaterialPageRoute<void>(
+      fullscreenDialog: child is MailAttachmentPreview,
+      builder: (_) => child,
+    );
     try {
-      if (widget.pushRoute case final push?) {
+      if (child is MailAttachmentPreview) {
+        await Navigator.of(context, rootNavigator: true).push<void>(route);
+      } else if (widget.pushRoute case final push?) {
         await push(route);
       } else {
         await Navigator.of(context).push<void>(route);
@@ -393,8 +327,9 @@ class _MailReaderState extends State<MailReader> {
         : l10n.mailNoSubject;
     final pane = AppMasterDetail.inDetailPaneOf(context);
     final sharedShell = lookupShellTitleOverrideCubit(context) != null;
-    // Capture the shell inset before Scaffold adjusts its body MediaQuery.
+    // Capture the shell inset before Scaffold adjusts its body's MediaQuery.
     final readerBottomClearance = AppPageInsets.contentBottomClearance(context);
+
     // A pane header (split layouts) or the shell owns the message controls.
     final headerControls = sharedShell || pane;
     return Stack(
@@ -403,7 +338,9 @@ class _MailReaderState extends State<MailReader> {
         if (sharedShell && !pane && !_childRouteOpen)
           _readerChrome(title, actions),
         Scaffold(
-          backgroundColor: shad.Theme.of(context).colorScheme.background,
+          backgroundColor: sharedShell
+              ? Colors.transparent
+              : AppTokens.of(context).colorScheme.background,
           appBar: sharedShell || pane ? null : _fallbackAppBar(title, actions),
           body: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -417,15 +354,20 @@ class _MailReaderState extends State<MailReader> {
                           context,
                           width: constraints.maxWidth,
                           kind: AppPageKind.reading,
-                          endGap: _mailReaderEndGap,
                         ).copyWith(
-                          bottom: readerBottomClearance + _mailReaderEndGap,
+                          bottom:
+                              readerBottomClearance + AppLayout.scrollEndGap,
                         ),
                     children: _detail == null
                         ? [_summaryPreview()]
                         : [
-                            for (final message in _messages)
-                              _messageCard(message, headerControls),
+                            _readerActions(),
+                            _readerTabs(),
+                            if (_attachmentsTab)
+                              _attachmentList()
+                            else
+                              for (final message in _messages)
+                                _messageCard(message, headerControls),
                           ],
                   ),
                 ),

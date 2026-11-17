@@ -173,7 +173,16 @@ extension _MailReaderChrome on _MailReaderState {
                   dense: true,
                   leading: Icon(_mailMessageActionIcon(action.key)),
                   title: Text(action.value),
-                  onTap: () => Navigator.of(sheetContext).pop(action.key),
+                  enabled:
+                      !_readPending ||
+                      (action.key != 'mark_read' &&
+                          action.key != 'mark_unread'),
+                  onTap:
+                      _readPending &&
+                          (action.key == 'mark_read' ||
+                              action.key == 'mark_unread')
+                      ? null
+                      : () => Navigator.of(sheetContext).pop(action.key),
                 ),
             ],
           ),
