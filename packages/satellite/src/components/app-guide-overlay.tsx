@@ -7,6 +7,7 @@ import {
   updateConnectedOnboardingProgress,
 } from '@tuturuuu/internal-api/onboarding';
 import { Button } from '@tuturuuu/ui/button';
+import { useAfterFirstPaint } from '@tuturuuu/ui/hooks/use-after-first-paint';
 import {
   Dialog,
   DialogContent,
@@ -36,9 +37,11 @@ export function AppGuideOverlay() {
   const queryClient = useQueryClient();
   const [appSlug, setAppSlug] = useState<string | null>(null);
   const [step, setStep] = useState(0);
+  const afterFirstPaint = useAfterFirstPaint();
   const progress = useQuery({
     queryKey: CONNECTED_ONBOARDING_QUERY_KEY,
     queryFn: () => getConnectedOnboardingProgress(),
+    enabled: afterFirstPaint,
     gcTime: 60 * 60_000,
     refetchOnWindowFocus: false,
     staleTime: 30 * 60_000,

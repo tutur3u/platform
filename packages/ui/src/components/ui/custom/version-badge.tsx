@@ -2,6 +2,7 @@
 
 import { SHOW_VERSION_BADGE_CONFIG_ID } from '@tuturuuu/internal-api/users';
 import { useUserBooleanConfig } from '@tuturuuu/ui/hooks/use-user-config';
+import { useAfterFirstPaint } from '@tuturuuu/ui/hooks/use-after-first-paint';
 import {
   HoverCard,
   HoverCardContent,
@@ -48,9 +49,11 @@ function DetailRow({
 
 export function VersionBadge({ className, release }: VersionBadgeProps) {
   const t = useTranslations('version-badge');
+  const afterFirstPaint = useAfterFirstPaint();
   const { isLoading, value: enabled } = useUserBooleanConfig(
     SHOW_VERSION_BADGE_CONFIG_ID,
-    false
+    false,
+    { enabled: afterFirstPaint }
   );
 
   if (isLoading || !enabled) {

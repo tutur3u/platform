@@ -27,6 +27,7 @@ import { useCallback, useState } from 'react';
 import { toast } from 'sonner';
 import { z } from 'zod';
 import { useForm } from '../../../hooks/use-form';
+import { useAfterFirstPaint } from '../../../hooks/use-after-first-paint';
 import { useWorkspaceUser } from '../../../hooks/use-workspace-user';
 import {
   useWorkspaceActor,
@@ -193,9 +194,10 @@ export function WorkspaceSelect({
 
   const [loading, setLoading] = useState(false);
   const [joiningByHandle, setJoiningByHandle] = useState(false);
+  const afterFirstPaint = useAfterFirstPaint();
   const invitationController = useWorkspaceInvitations({
     cacheScope: actorId,
-    enabled: Boolean(wsId && actorId),
+    enabled: Boolean(wsId && actorId) && afterFirstPaint,
     onAccepted: (invitation) => {
       setOpen(false);
       const slug = invitation.workspace.handle || invitation.workspace.id;

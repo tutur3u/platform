@@ -95,11 +95,13 @@ export function useUpdateUserConfig() {
  */
 export function useUserBooleanConfig(
   configId: string,
-  defaultValue: boolean = false
+  defaultValue: boolean = false,
+  options?: { enabled?: boolean }
 ) {
   const { data: rawValue, isLoading } = useUserConfig(
     configId,
-    defaultValue ? 'true' : 'false'
+    defaultValue ? 'true' : 'false',
+    options
   );
   const updateConfig = useUpdateUserConfig();
 

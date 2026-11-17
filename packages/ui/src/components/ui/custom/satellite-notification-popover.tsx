@@ -6,6 +6,7 @@ import {
   useNotificationSubscription,
   useUnreadCount,
 } from '@tuturuuu/ui/hooks/use-notifications';
+import { useAfterFirstPaint } from '@tuturuuu/ui/hooks/use-after-first-paint';
 import { Popover, PopoverContent } from '@tuturuuu/ui/popover';
 import { Skeleton } from '@tuturuuu/ui/skeleton';
 import {
@@ -92,9 +93,10 @@ export default function SatelliteNotificationPopover({
       : undefined;
   const refetchInterval = realtime ? undefined : pollIntervalMs;
 
+  const afterFirstPaint = useAfterFirstPaint();
   const { data: unreadCount = 0 } = useUnreadCount(routeWsId, {
     cacheScope: userId,
-    enabled: Boolean(userId),
+    enabled: Boolean(userId) && afterFirstPaint,
     refetchInterval,
     apiOptions,
   });

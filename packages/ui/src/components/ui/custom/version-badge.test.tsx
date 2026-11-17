@@ -1,5 +1,5 @@
 import '@testing-library/jest-dom';
-import { render, screen } from '@testing-library/react';
+import { act, render, screen } from '@testing-library/react';
 import type { ReactNode } from 'react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { VersionBadge, VersionBadgeSetting } from './version-badge';
@@ -50,6 +50,32 @@ describe('VersionBadge', () => {
     const { container } = render(<VersionBadge release={release} />);
 
     expect(container).toBeEmptyDOMElement();
+  });
+
+  it('reads the account config only after the first paint', () => {
+    vi.useFakeTimers();
+    try {
+      mockUseUserBooleanConfig.mockReturnValue({
+        isLoading: false,
+        value: false,
+      });
+      render(<VersionBadge release={release} />);
+      expect(mockUseUserBooleanConfig).toHaveBeenLastCalledWith(
+        'SHOW_VERSION_BADGE',
+        false,
+        { enabled: false }
+      );
+      act(() => {
+        vi.advanceTimersByTime(1500);
+      });
+      expect(mockUseUserBooleanConfig).toHaveBeenLastCalledWith(
+        'SHOW_VERSION_BADGE',
+        false,
+        { enabled: true }
+      );
+    } finally {
+      vi.useRealTimers();
+    }
   });
 
   it('renders compact version text and deployment details when enabled', () => {
