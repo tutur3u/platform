@@ -12,6 +12,7 @@
    packages/satellite, which consumer apps do not scan automatically. Without
    this the dialog loses its viewport height bound and overflows. */
 @source "../../satellite/src/components/command-launcher";
+@source "../../satellite/src/components/apps-launcher*.tsx";
 @source "../../../node_modules/streamdown/dist/*.js";
 @source "../../../node_modules/@streamdown/math/dist/*.js";
 
