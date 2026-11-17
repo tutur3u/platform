@@ -1,3 +1,4 @@
+import { readFileSync } from 'node:fs';
 import { expect, it, vi } from 'vitest';
 
 const transport = vi.hoisted(() => ({
@@ -30,13 +31,13 @@ import * as actions from './legacy-plan-actions';
 import { loadMeetPage } from './page-loader';
 import { fetchWorkspaces } from './workspace-actions';
 
-it('keeps all twelve Meet transports on POST, including the inputless workspace read', async () => {
+it('keeps all twelve Meet transports on POST and sends a JSON body for the workspace read', async () => {
   expect(transport.methods).toHaveLength(12);
   expect(transport.methods.every((method) => method === 'POST')).toBe(true);
   await fetchWorkspaces();
   expect(transport.send).toHaveBeenLastCalledWith({
     method: 'POST',
-    data: undefined,
+    data: {},
   });
 });
 
@@ -74,4 +75,17 @@ it('retains the page validator at the transport boundary', async () => {
   await expect(
     loadMeetPage({ data: { path: `/${'x'.repeat(8192)}` } })
   ).rejects.toThrow();
+});
+
+it('declares an input validator on every Meet POST transport so the client always sends a JSON body', () => {
+  for (const file of [
+    'legacy-plan-actions.ts',
+    'page-loader.ts',
+    'workspace-actions.ts',
+  ]) {
+    const source = readFileSync(new URL(`./${file}`, import.meta.url), 'utf8');
+    const transports = source.match(/createServerFn\(\{ method: 'POST' \}\)/g);
+    const validators = source.match(/\.validator\(/g);
+    expect(validators?.length ?? 0, file).toBe(transports?.length ?? 0);
+  }
 });
