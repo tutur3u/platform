@@ -4,6 +4,7 @@ import { describe, expect, it } from 'vitest';
 import {
   isMultiAddressInput,
   mergeRecipientSuggestions,
+  recipientKeyAction,
   typedAddressOption,
 } from './recipient-ranking';
 
@@ -130,5 +131,58 @@ describe('typedAddressOption', () => {
     expect(isMultiAddressInput('a@x.vn, b@x.vn')).toBe(true);
     expect(isMultiAddressInput('Tâm <t@x.vn>')).toBe(true);
     expect(isMultiAddressInput('phuc')).toBe(false);
+  });
+});
+
+describe('recipientKeyAction', () => {
+  const base = {
+    input: 'jo',
+    navigated: false,
+    optionType: 'suggestion' as const,
+    stale: false,
+  };
+
+  it('passes Enter and Tab through in an empty field until the user navigates', () => {
+    expect(recipientKeyAction({ ...base, key: 'Enter', input: '' })).toBe(
+      'pass'
+    );
+    expect(recipientKeyAction({ ...base, key: 'Tab', input: '  ' })).toBe(
+      'pass'
+    );
+    expect(
+      recipientKeyAction({ ...base, key: 'Enter', input: '', navigated: true })
+    ).toBe('pick');
+    expect(
+      recipientKeyAction({ ...base, key: 'Tab', input: '', navigated: true })
+    ).toBe('pass');
+  });
+
+  it('waits instead of picking a suggestion left over from an earlier query', () => {
+    expect(recipientKeyAction({ ...base, key: 'Enter', stale: true })).toBe(
+      'wait'
+    );
+    expect(recipientKeyAction({ ...base, key: 'Tab', stale: true })).toBe(
+      'wait'
+    );
+    expect(
+      recipientKeyAction({
+        ...base,
+        key: 'Enter',
+        stale: true,
+        navigated: true,
+      })
+    ).toBe('pick');
+  });
+
+  it('always picks the typed address and settled suggestions', () => {
+    expect(
+      recipientKeyAction({
+        ...base,
+        key: 'Enter',
+        optionType: 'address',
+        stale: true,
+      })
+    ).toBe('pick');
+    expect(recipientKeyAction({ ...base, key: 'Tab' })).toBe('pick');
   });
 });

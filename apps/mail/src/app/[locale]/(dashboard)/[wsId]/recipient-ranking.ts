@@ -127,3 +127,29 @@ export function typedAddressOption(
 export function isMultiAddressInput(input: string) {
   return /[,;<\n]/u.test(input);
 }
+
+export type RecipientKeyAction = 'pick' | 'wait' | 'pass';
+
+/**
+ * What Enter or Tab does with the highlighted option. An empty field picks
+ * only after the user has moved through the list, so a stray Enter adds no
+ * one. Suggestions still showing the previous query's results are not picked
+ * until the current query settles; the typed-address option is always current.
+ */
+export function recipientKeyAction({
+  key,
+  input,
+  navigated,
+  optionType,
+  stale,
+}: {
+  key: 'Enter' | 'Tab';
+  input: string;
+  navigated: boolean;
+  optionType: 'address' | 'suggestion';
+  stale: boolean;
+}): RecipientKeyAction {
+  if (!input.trim() && (key === 'Tab' || !navigated)) return 'pass';
+  if (optionType === 'suggestion' && stale && !navigated) return 'wait';
+  return 'pick';
+}

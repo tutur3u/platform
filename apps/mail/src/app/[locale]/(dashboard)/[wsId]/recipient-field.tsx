@@ -7,7 +7,11 @@ import { useTranslations } from 'next-intl';
 import { type ReactNode, useId, useRef, useState } from 'react';
 import { RecipientChip } from './recipient-chip';
 import { RecipientPeoplePicker } from './recipient-people-picker';
-import { isMultiAddressInput, typedAddressOption } from './recipient-ranking';
+import {
+  isMultiAddressInput,
+  recipientKeyAction,
+  typedAddressOption,
+} from './recipient-ranking';
 import {
   type RecipientOption,
   RecipientSuggestions,
@@ -45,6 +49,7 @@ export function RecipientField({
   const [invalid, setInvalid] = useState(false);
   const [listOpen, setListOpen] = useState(false);
   const [activeIndex, setActiveIndex] = useState(0);
+  const [navigated, setNavigated] = useState(false);
   const anchorRef = useRef<HTMLDivElement>(null);
   const listboxId = useId();
   const disabled = disabledAddresses.map((value) => value.toLowerCase());
@@ -94,6 +99,7 @@ export function RecipientField({
     setInput('');
     setInvalid(false);
     setActiveIndex(0);
+    setNavigated(false);
     setListOpen(false);
   };
   const select = (option: RecipientOption) => {
@@ -109,6 +115,7 @@ export function RecipientField({
     const next =
       (position + step + enabledIndexes.length) % enabledIndexes.length;
     setActiveIndex(enabledIndexes[next]!);
+    setNavigated(true);
   };
 
   const commit = () => {
@@ -185,6 +192,7 @@ export function RecipientField({
                 setInput(event.target.value);
                 setInvalid(false);
                 setActiveIndex(0);
+                setNavigated(false);
                 setListOpen(true);
               }}
               onFocus={() => setListOpen(true)}
@@ -204,11 +212,20 @@ export function RecipientField({
                   activeOption &&
                   !modifier &&
                   (event.key === 'Enter' ||
-                    (event.key === 'Tab' && !event.shiftKey && input.trim()))
+                    (event.key === 'Tab' && !event.shiftKey))
                 ) {
-                  event.preventDefault();
-                  select(activeOption);
-                  return;
+                  const action = recipientKeyAction({
+                    key: event.key,
+                    input,
+                    navigated,
+                    optionType: activeOption.type,
+                    stale: suggestions.kind === 'results' && suggestions.stale,
+                  });
+                  if (action !== 'pass') {
+                    event.preventDefault();
+                    if (action === 'pick') select(activeOption);
+                    return;
+                  }
                 }
                 if (event.key === 'Escape' && visible) {
                   event.preventDefault();

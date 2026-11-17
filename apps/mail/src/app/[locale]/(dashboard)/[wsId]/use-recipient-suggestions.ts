@@ -18,7 +18,13 @@ export type RecipientSuggestionsState =
   | { kind: 'loading' }
   | { kind: 'error' }
   | { kind: 'empty'; query: string }
-  | { kind: 'results'; query: string; rows: RecipientSuggestion[] };
+  | {
+      kind: 'results';
+      query: string;
+      rows: RecipientSuggestion[];
+      /** Rows still belong to an earlier query while the current one loads. */
+      stale: boolean;
+    };
 
 /**
  * Recent correspondents of the composing mailbox (from one typed character)
@@ -68,7 +74,16 @@ export function useRecipientSuggestions({
     query,
     excludedAddresses,
   });
-  if (rows.length) return { kind: 'results', query, rows };
+  if (rows.length)
+    return {
+      kind: 'results',
+      query,
+      rows,
+      stale:
+        query !== trimmed ||
+        (recentEnabled && recent.isPlaceholderData) ||
+        (peopleEnabled && people.isPlaceholderData),
+    };
 
   const settling =
     query !== trimmed ||
