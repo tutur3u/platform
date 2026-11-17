@@ -12131,7 +12131,8 @@
     "action-error": "Couldn’t complete that action",
     "scope-all": "All workspaces",
     "popover-unread-count": "{count} unread",
-    "popover-updates": "{count} updates"
+    "popover-updates": "{count} updates",
+    "open-in": "Open in {app}"
   },
   "onboarding": {
     "account-info": "Account Information",

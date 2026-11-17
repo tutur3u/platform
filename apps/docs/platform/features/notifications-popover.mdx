@@ -29,6 +29,26 @@ described in [Notification access](/platform/features/notification-access).
   changes reconcile once, after the last one settles, across every scope they
   touched.
 
+## Open in context
+
+App-sourced rows show **Open in &lt;app&gt;** and open the exact item in its app.
+Opening marks the row read. Rows with no target (system notices, pending
+workspace invites) show no Open action.
+
+| Notification | Opens |
+| --- | --- |
+| Task (`entity_type = 'task'`) | Tasks `/{wsId}/tasks/{taskId}`, in place when the current host already shows that workspace's tasks |
+| `mail_received` | Mail `/personal?mailbox={mailboxId}&thread={threadId}` |
+| Chat (`entity_type = 'chat_conversation'`) | Chat `/{wsId}?conversationId={id}` |
+| Time-tracking request | Track `/{wsId}/requests` |
+
+- Targets come only from UUID-checked row ids and the first-party app registry
+  (`resolveLaunchableAppUrl`). Stored URLs (`action_url`, `data.*`) are never
+  followed, so notification data cannot send the viewer to another origin.
+- The owning app authorizes the item when it loads; a revoked or deleted item
+  shows that app's own not-found or access state.
+- Resolver and tests: `packages/ui/src/components/ui/custom/notification-targets.ts`.
+
 ## Scope
 
 - Inside a workspace route the popover lists that workspace. **All workspaces**

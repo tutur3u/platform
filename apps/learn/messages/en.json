@@ -956,6 +956,7 @@
     "scope-all": "All workspaces",
     "popover-unread-count": "{count} unread",
     "popover-updates": "{count} updates",
+    "open-in": "Open in {app}",
     "mark-all-read": "Mark all as read",
     "workspace-invite-accepted": "Joined workspace",
     "workspace-invite-declined": "Invite declined"

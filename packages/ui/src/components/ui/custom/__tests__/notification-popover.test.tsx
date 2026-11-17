@@ -17,6 +17,12 @@ const toast = vi.hoisted(() =>
 );
 vi.mock('@tuturuuu/ui/sonner', () => ({ toast }));
 
+const navigation = vi.hoisted(() => ({ calls: [] as string[] }));
+vi.mock('../notification-targets', async (importOriginal) => ({
+  ...(await importOriginal<typeof import('../notification-targets')>()),
+  navigateToNotificationTarget: (href: string) => navigation.calls.push(href),
+}));
+
 const lists = (calls: { url: string; method: string }[]) =>
   calls.filter(
     (c) => c.method === 'GET' && c.url.startsWith('/api/v1/notifications?')
@@ -267,5 +273,39 @@ describe('notification refresh while a read change is in flight', () => {
     void pending.execute(undefined);
     await vi.waitFor(() => expect(interval(query)).toBe(false));
     expect(onFocus(query)).toBe(false);
+  });
+});
+
+describe('open in context', () => {
+  it('sends the read change before opening the mail thread in Mail', async () => {
+    navigation.calls.length = 0;
+    const mailbox = 'bbbbbbbb-0000-4000-8000-000000000001';
+    const thread = 'bbbbbbbb-0000-4000-8000-000000000002';
+    const api = fakeApi([
+      notification('m1', 1, {
+        type: 'mail_received',
+        ws_id: null,
+        entity_type: 'mail_message',
+        data: { mailboxId: mailbox, threadId: thread },
+      }),
+      notification('s1', 2, { type: 'system_announcement' }),
+    ]);
+    stubBrowser(api.fetch);
+    renderPopover();
+    await openPopover();
+    await screen.findByText('Title m1');
+    // System rows have nothing to open.
+    expect(screen.getAllByRole('button', { name: /^Open in / })).toHaveLength(
+      1
+    );
+    fireEvent.click(screen.getByRole('button', { name: 'Open in Mail' }));
+    await waitFor(() => expect(navigation.calls).toHaveLength(1));
+    const patch = api.calls.findIndex((c) => c.method === 'PATCH');
+    expect(patch).toBeGreaterThanOrEqual(0);
+    expect(api.calls[patch]?.body).toMatchObject({ read: true });
+    const url = new URL(navigation.calls[0]!);
+    expect(url.pathname.endsWith('/personal')).toBe(true);
+    expect(url.searchParams.get('mailbox')).toBe(mailbox);
+    expect(url.searchParams.get('thread')).toBe(thread);
   });
 });

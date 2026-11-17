@@ -6574,6 +6574,7 @@
     "no-older": "No older notifications",
     "notifications": "Notifications",
     "old_version": "Previous",
+    "open-in": "Open in {app}",
     "opening": "Opening…",
     "page": "Page",
     "popover-unread-count": "{count} unread",

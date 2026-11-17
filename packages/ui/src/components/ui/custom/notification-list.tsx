@@ -9,6 +9,7 @@ import type {
 import { useCallback, useId, useMemo } from 'react';
 import { NotificationCard } from './notification-card';
 import { useNotificationOpen } from './notification-card-actions';
+import { notificationTargetAppName } from './notification-targets';
 import type { NotificationCodeText } from './notification-code-text';
 import {
   groupNotifications,
@@ -19,6 +20,9 @@ import { NotificationListState } from './notification-list-state';
 import { useNotificationRoving } from './notification-roving';
 
 export type ListQuery = ReturnType<typeof useInfiniteNotifications>;
+
+/** Longest wait for the read request before opening another app. */
+const MARK_READ_HEAD_START_MS = 1500;
 
 export function NotificationList({
   query,
@@ -36,7 +40,7 @@ export function NotificationList({
   labels: NotificationLabels;
   codeText?: NotificationCodeText;
   routeWsId?: string;
-  onToggle: (stack: NotificationStack, read: boolean) => void;
+  onToggle: (stack: NotificationStack, read: boolean) => void | Promise<void>;
   onShowAll: () => void;
   onNavigate: () => void;
   /** Focus the first row when rows first appear while the dialog holds focus. */
@@ -69,8 +73,18 @@ export function NotificationList({
     async (stack: NotificationStack) => {
       // Only a row that opens something is marked read; a pending invite
       // keeps its Accept/Decline in view.
-      if (!target(stack.lead)) return;
-      if (stack.unread) onToggle(stack, true);
+      const to = target(stack.lead);
+      if (!to) return;
+      const marking = stack.unread ? onToggle(stack, true) : undefined;
+      // Leaving the page can cancel the read request; give it a bounded head
+      // start before a cross-app navigation.
+      if (marking && to.kind === 'link')
+        await Promise.race([
+          marking,
+          new Promise((resolve) =>
+            setTimeout(resolve, MARK_READ_HEAD_START_MS)
+          ),
+        ]);
       if (await open(stack.lead)) onNavigate();
     },
     [onToggle, open, onNavigate, target]
@@ -172,7 +186,7 @@ export function NotificationList({
                 labels={labels}
                 codeText={codeText}
                 tabbable={roving.activeId === stack.lead.id}
-                canOpen={!!target(stack.lead)}
+                openApp={notificationTargetAppName(target(stack.lead))}
                 opening={opening === stack.lead.id}
                 onFocusRow={roving.setActiveId}
                 onToggle={toggle}

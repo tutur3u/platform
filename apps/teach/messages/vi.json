@@ -603,6 +603,7 @@
     "scope-all": "Tất cả không gian làm việc",
     "popover-unread-count": "{count} chưa đọc",
     "popover-updates": "{count} cập nhật",
+    "open-in": "Mở trong {app}",
     "mark-all-read": "Đánh dấu tất cả đã đọc",
     "workspace-invite-accepted": "Đã tham gia",
     "workspace-invite-declined": "Đã từ chối lời mời"

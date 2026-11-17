@@ -809,6 +809,7 @@
     "no-notifications": "You have no notifications yet.",
     "no-older": "No older notifications",
     "notifications": "Notifications",
+    "open-in": "Open in {app}",
     "opening": "Opening…",
     "popover-unread-count": "{count} unread",
     "popover-updates": "{count} updates",

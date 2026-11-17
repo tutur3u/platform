@@ -17,6 +17,10 @@ import { toast } from '@tuturuuu/ui/sonner';
 import { useCallback, useState } from 'react';
 import type { NotificationLabels } from './notification-labels';
 import { useNotificationRuntime } from './notification-runtime';
+import {
+  navigateToNotificationTarget,
+  resolveNotificationTarget,
+} from './notification-targets';
 import { invalidateWorkspaceInvitationCaches } from './workspace-invitation-cache';
 
 export function getWorkspaceInviteWorkspaceId(notification: Notification) {
@@ -32,23 +36,17 @@ export function getWorkspaceInviteWorkspaceId(notification: Notification) {
   );
 }
 
-/** Where a notification leads, if anywhere. */
+/** Where a notification leads, if anywhere: the exact item in its app. */
 export function useNotificationOpen(routeWsId?: string) {
-  const { router, params, pathname } = useNotificationRuntime();
   const [opening, setOpening] = useState<string | null>(null);
 
   const target = useCallback(
-    (n: Notification) => {
-      const wsId = n.ws_id || routeWsId;
-      if (n.entity_type === 'task' && n.entity_id)
-        return { kind: 'task' as const, taskId: n.entity_id, wsId };
-      if (n.entity_type === 'time_tracking_request' && n.entity_id && wsId)
-        return {
-          kind: 'link' as const,
-          href: `/${wsId}/time-tracker/requests`,
-        };
-      return null;
-    },
+    (n: Notification) =>
+      resolveNotificationTarget(n, {
+        routeWsId,
+        currentOrigin:
+          typeof window === 'undefined' ? undefined : window.location.origin,
+      }),
     [routeWsId]
   );
 
@@ -56,34 +54,25 @@ export function useNotificationOpen(routeWsId?: string) {
     async (n: Notification) => {
       const to = target(n);
       if (!to) return false;
-      if (to.kind === 'link') {
-        router.push(to.href);
-        return true;
-      }
-      setOpening(n.id);
-      try {
-        const { handled, requestId } = dispatchRequestOpenTask({
-          taskId: to.taskId,
-          wsId: to.wsId,
-        });
-        const opened = handled
-          ? await waitForTaskOpenResult(requestId, 6000)
-          : false;
-        if (!opened && to.wsId) {
-          const locale =
-            typeof params?.locale === 'string' ? params.locale : '';
-          const base = locale ? `/${locale}/${to.wsId}` : `/${to.wsId}`;
-          const inWorkspace =
-            pathname === base || pathname.startsWith(`${base}/`);
-          const query = `openTaskId=${encodeURIComponent(to.taskId)}`;
-          router.push(`${inWorkspace ? pathname : base}?${query}`);
+      if (to.kind === 'task') {
+        // A host that already shows this workspace's tasks opens the task in
+        // place; otherwise the Tasks app opens it.
+        setOpening(n.id);
+        try {
+          const { handled, requestId } = dispatchRequestOpenTask({
+            taskId: to.taskId,
+            wsId: to.wsId,
+          });
+          if (handled && (await waitForTaskOpenResult(requestId, 6000)))
+            return true;
+        } finally {
+          setOpening(null);
         }
-        return true;
-      } finally {
-        setOpening(null);
       }
+      navigateToNotificationTarget(to.href);
+      return true;
     },
-    [target, router, params, pathname]
+    [target]
   );
 
   return { target, open, opening };

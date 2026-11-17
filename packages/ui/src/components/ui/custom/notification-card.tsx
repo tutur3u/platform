@@ -1,6 +1,6 @@
 'use client';
 
-import { ChevronDown, Mail, MailOpen } from '@tuturuuu/icons';
+import { ArrowUpRight, ChevronDown, Mail, MailOpen } from '@tuturuuu/icons';
 import { cn } from '@tuturuuu/utils/format';
 import { memo, type MouseEvent, useState } from 'react';
 import { NotificationInviteActions } from './notification-card-actions';
@@ -20,7 +20,8 @@ export interface NotificationCardProps {
   labels: NotificationLabels;
   codeText?: NotificationCodeText;
   tabbable: boolean;
-  canOpen: boolean;
+  /** Name of the app that opens this notification's item, if any. */
+  openApp: string | null;
   opening: boolean;
   onFocusRow: (id: string) => void;
   onToggle: (stack: NotificationStack) => void;
@@ -33,7 +34,7 @@ export const NotificationCard = memo(function NotificationCard({
   labels,
   codeText,
   tabbable,
-  canOpen,
+  openApp,
   opening,
   onFocusRow,
   onToggle,
@@ -45,6 +46,7 @@ export const NotificationCard = memo(function NotificationCard({
   const text = notificationDisplayText(lead, codeText);
   const toggleLabel = unread ? labels.markAsRead : labels.markAsUnread;
   const age = formatNotificationAge(lead.created_at);
+  const openLabel = openApp ? labels.openIn.replace('{app}', openApp) : null;
 
   const onClick = (event: MouseEvent<HTMLLIElement>) => {
     if ((event.target as HTMLElement).closest('button, a')) return;
@@ -57,7 +59,7 @@ export const NotificationCard = memo(function NotificationCard({
       tabIndex={tabbable ? 0 : -1}
       aria-label={`${unread ? `${labels.unread}. ` : ''}${text.title}, ${age}`}
       aria-keyshortcuts="E Enter"
-      title={canOpen ? labels.viewDetails : undefined}
+      title={openLabel ?? undefined}
       onFocus={(event) =>
         event.target === event.currentTarget && onFocusRow(lead.id)
       }
@@ -65,7 +67,7 @@ export const NotificationCard = memo(function NotificationCard({
       className={cn(
         'group relative grid cursor-default grid-cols-[0.5rem_2rem_minmax(0,1fr)_auto] items-start gap-2.5 rounded-lg py-2.5 pr-2 pl-1.5 outline-none',
         'hover:bg-accent focus-visible:bg-accent focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-inset',
-        canOpen && 'cursor-pointer'
+        openApp && 'cursor-pointer'
       )}
     >
       <span
@@ -126,6 +128,17 @@ export const NotificationCard = memo(function NotificationCard({
             onResolved={() => onInviteResolved(stack)}
           />
         )}
+        {openLabel && (
+          <button
+            type="button"
+            data-notification-open
+            onClick={() => onOpen(stack)}
+            className="mt-1.5 inline-flex min-h-6 items-center gap-1 rounded-md border px-2 font-medium text-foreground text-xs outline-none hover:bg-background focus-visible:ring-2 focus-visible:ring-ring pointer-coarse:min-h-11"
+          >
+            {openLabel}
+            <ArrowUpRight aria-hidden className="size-3.5" />
+          </button>
+        )}
         {opening && (
           <p role="status" className="mt-1 text-muted-foreground text-xs">
             {labels.opening}
@@ -176,7 +189,7 @@ function sameRow(prev: NotificationCardProps, next: NotificationCardProps) {
     prev.labels === next.labels &&
     prev.codeText === next.codeText &&
     prev.tabbable === next.tabbable &&
-    prev.canOpen === next.canOpen &&
+    prev.openApp === next.openApp &&
     prev.opening === next.opening &&
     prev.onFocusRow === next.onFocusRow &&
     prev.onToggle === next.onToggle &&

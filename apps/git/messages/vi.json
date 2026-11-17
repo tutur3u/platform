@@ -1347,7 +1347,8 @@
     "action-error": "Không thể hoàn tất thao tác",
     "scope-all": "Tất cả không gian làm việc",
     "popover-unread-count": "{count} chưa đọc",
-    "popover-updates": "{count} cập nhật"
+    "popover-updates": "{count} cập nhật",
+    "open-in": "Mở trong {app}"
   },
   "onboarding_guide": {
     "close": "Đóng hướng dẫn",

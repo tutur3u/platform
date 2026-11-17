@@ -672,6 +672,7 @@
     "scope-all": "All workspaces",
     "popover-unread-count": "{count} unread",
     "popover-updates": "{count} updates",
+    "open-in": "Open in {app}",
     "mark-all-read": "Mark all as read",
     "update-error": "Could not update notification",
     "workspace-invite-accepted": "Joined workspace",
