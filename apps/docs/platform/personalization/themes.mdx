@@ -126,7 +126,9 @@ calendar events use the calm fill of their hue while tags and chips use the
 vibrant fill; the selected navigation item is `accent` with `foreground` ink;
 skeletons use `surface-sunken`; the focus ring is 2px with a 2px offset (3px in
 High Contrast); each Corners option (soft, sharp, round) has its own radius
-scale for rows, cards, panels, controls, sheets and popovers; tablets use a
+scale for rows, cards, panels, controls, sheets and popovers; toasts are the
+topmost layer (Sonner's own z-index), above dialogs, app overlays and the corner
+badges, while the dock stays at 40 and overlays at 50; tablets use a
 24px gutter with the dock capped at 480px; and every palette's eleven source
 colours. `packages/ui/src/sorbet-tokens.test.ts` pins `sorbet.css` to the
 contract and the palettes to `sorbet-presets.css`, keeps the setting allowlists
