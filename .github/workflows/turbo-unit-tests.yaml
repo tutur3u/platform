@@ -5,6 +5,7 @@ name: Test
 # and every job stays on GitHub-hosted ubuntu-latest (the fork pull request
 # pool) with read-only permissions (scripts/ci/merge-group-workflow-policy.test.js).
 on:
+  workflow_dispatch: {}
   push:
     branches: [main, production, 'release-please--branches--**']
   pull_request:

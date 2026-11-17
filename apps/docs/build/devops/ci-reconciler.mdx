@@ -1,0 +1,126 @@
+---
+title: 'CI reconciler'
+description: 'Observe declared current-head CI gates and retain bounded recovery evidence.'
+---
+
+## Initial rollout: dry-run
+
+The CI reconciler initially observes only. The checked-in policy at
+`scripts/ci/ci-reconciler-policy.json` disables recovery. Missing or invalid policy
+fails closed; a workflow input cannot enable recovery. Mutation activation requires
+an exact-source Security ACK and the release owner's freeze lift after dry-run
+acceptance. Source review alone does not establish scheduled or hosted execution.
+
+The workflow `.github/workflows/ci-reconciler.yaml` runs on standard
+`ubuntu-latest` runners, with no dependency installation or application build.
+It uses GitHub's built-in job token; no provider credential is required. The
+fifteen-minute schedule is a desired observation cadence, not a recovery SLA.
+Hosted queue delays and schedule coalescing can delay execution.
+
+## Coverage and identity
+
+The trusted operational manifest explicitly names eight core producers:
+
+- Test
+- TypeScript Type Check
+- Oxc Check
+- i18n Check
+- Security Checks
+- CodeQL Manual Fallback
+- Codex Plugin Check
+- Required account MFA database contract
+
+The manifest covers `main` and `production` explicitly. It is not proof that all
+apps, builds, Mobile checks, or release requirements are green. App applicability
+and Mobile qualification remain with their owning release/check owners. New
+branches and gates require reviewed policy entries; historical release branches
+are not discovered and activated automatically.
+
+The controller reads the operational manifest and Actions history. Comparison
+with effective required-check rules is separate proposed work. Missing GitHub
+required-check configuration is a known enforcement gap, not proof of zero
+required coverage. External/manual gates remain outside this manifest; they are
+never replaced with synthetic success.
+
+Each Actions summary identifies the branch head and declared gate count:
+
+```text
+HEAD <sha>: <N> required, all terminal
+HEAD <sha>: <N> required, <M> missing
+```
+
+Failed terminal checks appear separately. **All terminal does not mean all
+green.** Deterministic failures stay failed and return to their source owner.
+Cancelled and missing checks are recovery candidates; queued or running matches
+are deduplicated.
+
+## Trust and recovery boundaries
+
+Only `tutur3u/platform` on the trusted `main` workflow ref can plan. Completion
+events must name an allowlisted producer in this repository on `main` or
+`production`; fork and pull-request events cannot authorize recovery. The
+reconciler excludes itself from completion triggers. Both jobs check out
+`github.workflow_sha`, never upstream branch code or artifact code.
+
+Planning has `actions: read` and `contents: read`. Recovery alone has
+`actions: write` and `contents: read`. Jobs have five-minute timeouts and the
+workflow serializes runs without cancellation. The recovery matrix contains only
+branches with actual admitted actions and executes one branch at a time.
+
+When recovery is enabled through reviewed source policy, the controller re-reads
+HEAD immediately before every mutation and stops an old plan if HEAD advances.
+It may rerun a cancelled allowlisted run at the exact current SHA or dispatch a
+supported allowlisted workflow after exact-head admission. It never cancels
+protected runs or retries deterministic failures into green. Dispatch identity
+requires API readback; an ambiguous write outcome requires reconciliation rather
+than blind replay.
+
+Recovery is capped at three attempts per branch/head/workflow/policy identity,
+with one-, five- and fifteen-minute backoff across subsequent ticks. No sleeping
+worker holds a runner. Bounded API history and pagination must be complete enough
+to establish eligibility; unavailable or truncated history blocks recovery.
+
+This workflow never starts releases, deployments, staging/production migrations,
+or provider publication. The disposable account-MFA CI contract is not a
+production migration. It does not write branch rulesets or provider settings.
+
+## Durable receipts
+
+Planning uploads an intent **before** the recovery job can start:
+
+| Artifact | Retention | Purpose |
+| --- | --- | --- |
+| `ci-reconcile-intent-<branch>-<sha>` | 30 days | Durable operation intent and dedupe identity |
+| `ci-reconcile-result-<branch>-<sha>` | 30 days | Recovery outcome and readback |
+| `ci-reconcile-observe-<run_id>-<run_attempt>` | 7 days | Read-only observation report |
+
+The recovery job downloads only the exact branch/SHA intent from its own workflow
+run. Artifact content is data for the trusted controller, never executable code.
+An observation artifact does not count as a recovery intent or attempt.
+
+The recovery head-age fence is 20 days, inside the 30-day receipt retention
+window. Recovery fails closed before an expired ledger could make an old attempt
+look new. Missing, expired, unavailable or incomplete durable history is a block,
+not an empty retry budget. Preserve receipts when investigating unknown outcomes.
+
+## Acceptance and stop procedure
+
+Before enabling recovery, require focused controller and workflow tests for
+head races, dedupe, concurrent events, retry caps and backoff, unknown outcomes,
+unsupported workflows, invalid policy, external contexts, recursive triggers and
+release/migration exclusions. Require exact-source independent Security review,
+then dry-run scheduled and producer-completion receipts. Verify that failed
+checks remain visible and that no mutation occurs with recovery disabled.
+
+Stop recovery by disabling it in trusted source policy. Stop observation through
+the repository's authorized workflow control if needed. Neither action grants
+permission to change release gates. After any source change, repeat the relevant
+exact-source review and hosted acceptance; old receipts do not prove a new head.
+
+A separate proposal can enforce the validated manifest through a public-repository
+GitHub Free ruleset. It needs a dry-run comparison of conditional checks and App
+identities and its own exact Security ACK before any ruleset write. This proposal
+is outside the initial rollout and is not performed by the reconciler.
+
+See the [GitHub Actions runbook](/build/devops/github-actions-runbook) for the
+remaining validation and delivery evidence requirements.
