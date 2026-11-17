@@ -1,5 +1,4 @@
 import { enforceStagingCookiePolicy } from '@tuturuuu/utils/staging-cookie-policy';
-import { installAppBaseResolver } from './app-url';
 
 /**
  * One request's server context, framework- and runtime-independent. The
@@ -58,20 +57,6 @@ export const REQUEST_STORE_KEY = Symbol.for(
   'tuturuuu.start-bridge.request-context'
 );
 type Anchor = { [REQUEST_STORE_KEY]?: BridgeRequestStore };
-
-/**
- * Installs the runtime store once; later bundles reuse the first one. Only a
- * server adapter calls this, so only the server swaps the app base global
- * for a per-request resolver: in the browser, importing this module leaves
- * the document head script's base (a string) untouched.
- */
-export function installRequestStore(store: BridgeRequestStore) {
-  const anchor = globalThis as Anchor;
-  anchor[REQUEST_STORE_KEY] ??= store;
-  // Server-side `runtimeAppBase()` reads the current request's base.
-  installAppBaseResolver(() => currentStore()?.getStore()?.appBase);
-  return anchor[REQUEST_STORE_KEY];
-}
 
 function currentStore(): BridgeRequestStore | undefined {
   return (globalThis as Anchor)[REQUEST_STORE_KEY];

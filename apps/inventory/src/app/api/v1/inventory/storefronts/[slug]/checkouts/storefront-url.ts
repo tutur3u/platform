@@ -1,6 +1,6 @@
 import 'server-only';
 
-import { maybeBridgeRequest } from '@tuturuuu/start-bridge/request-context/core';
+import { maybeBridgeRequest } from '@tuturuuu/start-bridge/request-context/reader';
 
 export function getStorefrontUrl(request: Request) {
   const configured =

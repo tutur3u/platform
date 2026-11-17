@@ -8,9 +8,9 @@ import {
 import {
   type BridgeRequestContext,
   bridgeRequest,
-  installRequestStore,
   withBridgeRequest,
 } from '../../start-bridge/src/core/request-context';
+import { installRequestStore } from '../../start-bridge/src/server/request-store';
 import {
   createInternalApiClient,
   internalApiClient,

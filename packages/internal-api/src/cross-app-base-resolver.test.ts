@@ -2,9 +2,9 @@ import { AsyncLocalStorage } from 'node:async_hooks';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import {
   type BridgeRequestContext,
-  installRequestStore,
   withBridgeRequest,
 } from '../../start-bridge/src/core/request-context';
+import { installRequestStore } from '../../start-bridge/src/server/request-store';
 import { createAppBaseResolver } from '../../start-bridge/src/start/app-base';
 import {
   createInternalApiClient,

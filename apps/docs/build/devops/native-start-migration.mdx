@@ -299,3 +299,19 @@ A positive mounted acceptance requires an explicitly admitted mount profile and
 its session, origin and cookie-isolation evidence. A 404 on an unadmitted apex
 host is a host-fence result, not evidence that the root build-info route is
 missing. Keep production publication held until the cutover gates are met.
+
+### Request reader qualification
+
+Use `@tuturuuu/start-bridge/request-context/reader` for request readers without
+store installation. The legacy `/core` entry retains the explicit installer
+export; server request-context bootstrapping remains unchanged. Reader graph
+tests cover local static/dynamic imports, forbidden installer edges and computed
+imports. They do not qualify external package graphs.
+
+The opt-in `@tuturuuu/start-bridge/vite/client-provenance` plugin belongs only in
+a client build environment. It rejects request-store modules, async_hooks,
+unresolved computed imports and external modules without transformed evidence.
+Its receipt binds transformed modules and emitted chunks to SHA-256 digests.
+Unit hook tests do not establish emitted artifact acceptance: exact-commit CI
+must run the real client build with the plugin and retain its receipt. Existing
+build and cutover gates remain required.

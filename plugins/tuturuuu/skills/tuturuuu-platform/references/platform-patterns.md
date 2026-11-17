@@ -1700,3 +1700,9 @@ header filter cannot prevent an ingress cookie-rule match. WAV upload parts are
 binary multipart and the chunks route denies transcription before input reads.
 See [Meet managed-WAF contracts](../../../../../apps/docs/platform/applications/meet.mdx#managed-waf-request-contracts)
 for the inventory, contributor-only exception proposal and hosted acceptance gaps.
+
+Request-only consumers use `@tuturuuu/start-bridge/request-context/reader`;
+store installation belongs in the server adapter. Preserve the legacy `/core`
+installer export. Run request-context graph and store-boundary tests after
+changes. Client provenance qualification is opt-in and requires real emitted
+artifact CI evidence; unit hook tests alone cannot establish client isolation.

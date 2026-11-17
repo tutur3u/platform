@@ -1,5 +1,5 @@
 import { appUrl } from '@tuturuuu/start-bridge/app-url';
-import { maybeBridgeRequest } from '@tuturuuu/start-bridge/request-context/core';
+import { maybeBridgeRequest } from '@tuturuuu/start-bridge/request-context/reader';
 import { BASE_URL } from '@/constants/common';
 
 export function createAiPublicUrl(path = '/', request?: Request) {

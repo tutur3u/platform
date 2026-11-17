@@ -1,4 +1,4 @@
-import { maybeBridgeRequest } from '@tuturuuu/start-bridge/request-context/core';
+import { maybeBridgeRequest } from '@tuturuuu/start-bridge/request-context/reader';
 import {
   MARKETING_CLIENT_MESSAGE_NAMESPACES,
   ROOT_CLIENT_MESSAGE_PATHS,

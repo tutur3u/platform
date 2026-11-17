@@ -10,7 +10,7 @@ const mocks = vi.hoisted(() => ({
   settle: vi.fn(),
   capture: vi.fn(),
 }));
-vi.mock('@tuturuuu/start-bridge/request-context/core', () => ({
+vi.mock('@tuturuuu/start-bridge/request-context/reader', () => ({
   maybeBridgeRequest: () => ({ waitUntil: mocks.waitUntil }),
 }));
 vi.mock('./observed-text-agent', () => ({
