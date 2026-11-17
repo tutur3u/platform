@@ -2,12 +2,15 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:mobile/core/layout/layout.dart';
 import 'package:mobile/core/router/routes.dart';
 import 'package:mobile/features/mail/data/mail_push_destination.dart';
 import 'package:mobile/features/mail/view/mail_page.dart';
+import 'package:mobile/features/mail/view/mail_primary_action_preference.dart';
 import 'package:mobile/features/mail/view/mail_reader.dart';
 import 'package:mobile/features/shell/cubit/shell_chrome_actions_cubit.dart';
 import 'package:mobile/features/shell/cubit/shell_title_override_cubit.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 import '../../helpers/pump_app.dart';
 import 'mail_preview_harness.dart';
@@ -47,6 +50,46 @@ bool _readable(String text) =>
     find.text(text).hitTestable().evaluate().isNotEmpty;
 
 void main() {
+  testWidgets('split reader retains its only primary Reply control', (
+    tester,
+  ) async {
+    setMailSurface(tester, _tablet);
+    final preference = MailPrimaryActionPreference.instance;
+    final previous = preference.value;
+    SharedPreferences.setMockInitialValues({
+      MailPrimaryActionPreference.storageKey: 'reply',
+    });
+    preference.value = MailPrimaryAction.reply;
+    addTearDown(() => preference.value = previous);
+    await tester.pumpApp(
+      AppMasterDetail(
+        master: const SizedBox(),
+        emptyDetail: const SizedBox(),
+        detail: MailReader(
+          repository: MailPreviewRepository(),
+          workspaceId: 'ws',
+          mailboxId: 'box',
+          thread: false,
+          canSend: true,
+          fromAddress: 'me@example.invalid',
+          resolvePeople: (_, _) async => {},
+          detail: const {
+            'id': 'm',
+            'subject': 'Reply available',
+            'fromAddress': 'sender@example.invalid',
+            'bodyText': 'Message body',
+            'unread': false,
+          },
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+    expect(find.byTooltip('Reply'), findsOneWidget);
+    expect(find.byTooltip('Archive'), findsOneWidget);
+    expect(find.byTooltip('Star'), findsOneWidget);
+    expect(tester.takeException(), isNull);
+  });
+
   for (final (name, size) in [
     ('landscape', _tablet),
     ('portrait', _portrait),

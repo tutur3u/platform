@@ -28,18 +28,12 @@ extension _MailReaderPaneHeader on _MailReaderState {
               ),
             ),
           ),
-          IconButton(
-            tooltip: primary.label(context),
-            onPressed: idle ? _runPrimaryAction : null,
-            icon: Icon(primary.icon),
-          ),
-          IconButton(
-            tooltip: _starred ? l10n.mailUnstar : l10n.mailStar,
-            onPressed: idle
-                ? () => _action(_starred ? 'unstar' : 'star')
-                : null,
-            icon: Icon(_starred ? Icons.star : Icons.star_border),
-          ),
+          if (primary == MailPrimaryAction.reply)
+            IconButton(
+              tooltip: primary.label(context),
+              onPressed: idle ? _runPrimaryAction : null,
+              icon: Icon(primary.icon),
+            ),
           IconButton(
             tooltip: l10n.mailLoadImages,
             isSelected: _showImages,

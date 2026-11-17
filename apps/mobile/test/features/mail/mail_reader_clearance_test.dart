@@ -37,8 +37,14 @@ void main() {
                 100,
                 'A readable message line.',
               ).join('\n'),
-              'attachments': const [
-                {
+              'attachments': [
+                for (var index = 0; index < 20; index++)
+                  {
+                    'id': 'file-$index',
+                    'filename': 'Attachment $index.txt',
+                    'contentType': 'text/plain',
+                  },
+                const {
                   'id': 'final',
                   'filename': 'Final attachment.txt',
                   'contentType': 'text/plain',
@@ -50,7 +56,21 @@ void main() {
       ),
     );
     await tester.pumpAndSettle();
+    expect(find.text('Final attachment.txt'), findsNothing);
+    await tester.tap(find.text('Attachments'));
+    await tester.pumpAndSettle();
     final scroll = find.byType(ListView).first;
+    expect(
+      tester
+          .state<ScrollableState>(
+            find
+                .descendant(of: scroll, matching: find.byType(Scrollable))
+                .first,
+          )
+          .position
+          .maxScrollExtent,
+      greaterThan(0),
+    );
     await tester.drag(scroll, const Offset(0, -10000));
     await tester.pumpAndSettle();
     expect(find.text('Final attachment.txt'), findsOneWidget);
