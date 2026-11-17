@@ -8,7 +8,7 @@ import {
   waitFor,
   within,
 } from '@testing-library/react';
-import { afterEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { NotificationPage } from '../notification-page';
 import { DEFAULT_NOTIFICATION_PAGE_ALL_LABELS } from '../notification-page-labels';
 import { NotificationRuntime } from '../notification-runtime';
@@ -23,8 +23,18 @@ const toast = vi.hoisted(() =>
 );
 vi.mock('@tuturuuu/ui/sonner', () => ({ toast }));
 
+// Fixture rows are minutes old; a midday clock keeps them in "Today" whenever
+// the suite runs, including just after local midnight.
+beforeEach(() => {
+  vi.useFakeTimers({ toFake: ['Date'] });
+  const midday = new Date();
+  midday.setHours(12, 0, 0, 0);
+  vi.setSystemTime(midday);
+});
+
 afterEach(() => {
   cleanup();
+  vi.useRealTimers();
   vi.unstubAllGlobals();
 });
 
