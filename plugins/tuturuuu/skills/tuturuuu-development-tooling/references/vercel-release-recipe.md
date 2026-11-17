@@ -51,3 +51,16 @@ budget in child startup/execution. Preserve the termination assertion and timeou
 Capture the unrestricted failure separately and compare the exact failing file
 alone before attributing it to shared state. Bounded-concurrency success does not
 erase a recorded unrestricted failure.
+
+Dispatch selects the committed record by app ID; caller-supplied thresholds or
+runtime functions cannot replace that record, ancestry, ref or clock. Explicit
+Node-test hooks refuse normal processes and production workflow dispatches.
+The stage adapter runs the guarded stage algorithm, then requests authority
+qualification bound to the candidate/preimage/artifact record. Adapter stage and
+promote receipts carry that record for later lifecycle modes; chain tests must
+consume those produced receipts rather than construct predecessor objects.
+Replay verifies job/attempt/epoch, null success guard and hashed evidence binding.
+Token prefixes, JWTs and opaque base64-shaped values are refused before submission
+or receipt persistence; SHA-shaped values are allowed only in typed digest fields.
+A failed final acknowledgement is returned as uncertain without appending a
+contradictory second terminal checkpoint.

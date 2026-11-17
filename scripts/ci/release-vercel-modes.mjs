@@ -78,8 +78,14 @@ export function runningReleaseDigests(app = 'calendar') {
     'release-vercel-config.mjs',
     'release-vercel-values.mjs',
     'calendar-exact-sha-publisher.mjs',
-  ])
-    recipe.update(file).update(readFileSync(new URL(file, import.meta.url)));
+    'calendar-exact-sha-output.mjs',
+    'calendar-exact-sha-stop.mjs',
+  ]) {
+    const bytes = readFileSync(new URL(file, import.meta.url));
+    recipe
+      .update(`${Buffer.byteLength(file)}:${file}:${bytes.length}:`)
+      .update(bytes);
+  }
   return {
     configSha256: payloadDigest({
       vercel: CALENDAR_VERCEL,
