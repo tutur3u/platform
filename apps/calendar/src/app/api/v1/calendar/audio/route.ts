@@ -94,9 +94,12 @@ async function transcribeAudio(
         result.usageMetadata?.promptTokenCount ?? estimatedInputTokens,
       metadata: { surface: 'calendar_audio_transcription' },
       modelId: MODEL,
+      // Gemini reports thoughts apart from candidates; billing expects the
+      // total output with reasoning as its subset.
       outputTokens:
-        result.usageMetadata?.candidatesTokenCount ??
-        Math.max(1, Math.ceil(text.length / 4)),
+        (result.usageMetadata?.candidatesTokenCount ??
+          Math.max(1, Math.ceil(text.length / 4))) +
+        (result.usageMetadata?.thoughtsTokenCount ?? 0),
       reasoningTokens: result.usageMetadata?.thoughtsTokenCount ?? 0,
       userId: user.id,
       wsId: billingWorkspaceId,

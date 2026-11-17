@@ -261,9 +261,12 @@ async function analyzePronunciation(
     inputTokens: usage?.promptTokenCount ?? estimatedInputTokens,
     metadata: { surface: 'learn_vocabulary_pronunciation' },
     modelId: PRONUNCIATION_MODEL,
+    // Gemini reports thoughts apart from candidates; billing expects the
+    // total output with reasoning as its subset.
     outputTokens:
-      usage?.candidatesTokenCount ??
-      Math.max(1, Math.ceil(outputText.length / 4)),
+      (usage?.candidatesTokenCount ??
+        Math.max(1, Math.ceil(outputText.length / 4))) +
+      (usage?.thoughtsTokenCount ?? 0),
     reasoningTokens: usage?.thoughtsTokenCount ?? 0,
     userId: user.id,
     wsId: billingWorkspaceId,

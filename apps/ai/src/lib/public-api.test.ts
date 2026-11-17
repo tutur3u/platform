@@ -286,7 +286,7 @@ describe('AI Studio billing policy', () => {
     });
   });
 
-  it('prices reasoning once while retaining the inclusive provider output total', async () => {
+  it('passes the inclusive provider output total to metering, which prices reasoning once', async () => {
     await settleMeteredExecution(
       {
         credential: {
@@ -308,7 +308,7 @@ describe('AI Studio billing policy', () => {
     expect(mocks.calculateAiStudioUsageCost).toHaveBeenCalledWith(
       expect.objectContaining({
         inputTokens: 100,
-        outputTokens: 50,
+        outputTokens: 80,
         reasoningTokens: 30,
       }),
       expect.objectContaining({ fetch: expect.any(Function) })

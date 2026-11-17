@@ -69,4 +69,51 @@ describe('pronunciation analysis AI credits', () => {
       })
     );
   });
+
+  it('bills Gemini thoughts as part of total output, not on top of it', async () => {
+    mocks.checkAiCredits.mockResolvedValue({ allowed: true });
+    mocks.deductAiCredits.mockResolvedValue({
+      errorCode: 'CREDITS_EXHAUSTED',
+      success: false,
+    });
+    vi.stubGlobal(
+      'fetch',
+      vi.fn().mockResolvedValue(
+        new Response(
+          JSON.stringify({
+            candidates: [{ content: { parts: [{ text: '{}' }] } }],
+            usageMetadata: {
+              candidatesTokenCount: 20,
+              promptTokenCount: 10,
+              thoughtsTokenCount: 30,
+            },
+          }),
+          { headers: { 'content-type': 'application/json' }, status: 200 }
+        )
+      )
+    );
+
+    await POST(
+      new NextRequest(
+        'https://learn.tuturuuu.com/api/v1/vocabulary/pronunciation',
+        {
+          body: JSON.stringify({
+            audioData: Buffer.from('audio').toString('base64'),
+            mimeType: 'audio/webm',
+            targetText: 'Hello.',
+          }),
+          headers: { 'content-type': 'application/json' },
+          method: 'POST',
+        }
+      )
+    );
+
+    expect(mocks.deductAiCredits).toHaveBeenCalledWith(
+      expect.objectContaining({
+        inputTokens: 10,
+        outputTokens: 50,
+        reasoningTokens: 30,
+      })
+    );
+  });
 });
