@@ -708,10 +708,13 @@
       "more_recipients": "{count, plural, one {# more recipient} other {# more recipients}}",
       "original_recipient": "Original recipient",
       "people": "People",
+      "received": "Received",
       "reply_to": "Reply-to",
+      "sent": "Sent",
       "show": "Show details",
       "show_all": "Show all",
       "show_less": "Show less",
+      "technical_headers": "Technical headers",
       "title": "Message details",
       "to": "To"
     },

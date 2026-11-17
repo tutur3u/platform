@@ -708,10 +708,13 @@
       "more_recipients": "{count, plural, other {thêm # người nhận}}",
       "original_recipient": "Người nhận ban đầu",
       "people": "Người liên quan",
+      "received": "Đã nhận",
       "reply_to": "Trả lời đến",
+      "sent": "Đã gửi",
       "show": "Xem chi tiết",
       "show_all": "Xem đầy đủ",
       "show_less": "Thu gọn",
+      "technical_headers": "Tiêu đề kỹ thuật",
       "title": "Chi tiết thư",
       "to": "Đến"
     },

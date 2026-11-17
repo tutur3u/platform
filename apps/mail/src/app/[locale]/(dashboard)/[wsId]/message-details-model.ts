@@ -138,15 +138,23 @@ export function messagePeopleGroups(
 }
 
 export type MessageDeliveryRow =
-  | { kind: 'date'; iso: string | null; raw: string | null }
+  | { kind: 'date'; key: 'sent' | 'received'; iso: string }
   | { kind: 'id'; key: 'message_id' | 'in_reply_to'; value: string }
   | { kind: 'person'; key: 'original_recipient'; person: MailAddress }
   | {
       kind: 'text';
       header: string;
-      label: MessageDetailLabelKey | null;
+      label: MessageDetailLabelKey;
       value: string;
     };
+
+/** A raw header shown only inside the Technical headers disclosure. */
+export type MessageTechnicalHeader = { header: string; value: string };
+
+export type MessageDeliveryDetails = {
+  rows: MessageDeliveryRow[];
+  technical: MessageTechnicalHeader[];
+};
 
 const HANDLED_HEADERS = new Set([
   'bcc',
@@ -160,14 +168,48 @@ const HANDLED_HEADERS = new Set([
   'to',
 ]);
 
-export function messageDeliveryRows(
+/** Receipt within this window of the sent time is not shown separately. */
+const DISTINCT_RECEIPT_MS = 60_000;
+
+function validIso(value: string | null | undefined) {
+  if (!value?.trim()) return null;
+  const time = Date.parse(value.trim());
+  return Number.isFinite(time) ? new Date(time).toISOString() : null;
+}
+
+/**
+ * Sent comes from the stored send time or the Date header; Received is added
+ * when it differs from Sent by at least a minute, or when nothing else dates
+ * the message.
+ */
+export function messageDateRows(
+  message: Pick<MailMessageDetail, 'receivedAt' | 'safeHeaders' | 'sentAt'>
+): Extract<MessageDeliveryRow, { kind: 'date' }>[] {
+  const sent = validIso(message.sentAt) ?? validIso(message.safeHeaders.date);
+  const received = validIso(message.receivedAt);
+  const rows: Extract<MessageDeliveryRow, { kind: 'date' }>[] = [];
+  if (sent) rows.push({ kind: 'date', key: 'sent', iso: sent });
+  if (
+    received &&
+    (!sent ||
+      Math.abs(Date.parse(received) - Date.parse(sent)) >= DISTINCT_RECEIPT_MS)
+  )
+    rows.push({ kind: 'date', key: 'received', iso: received });
+  return rows;
+}
+
+/**
+ * Readable delivery rows, plus the raw Date header and headers without a
+ * translated label for the nested Technical headers disclosure.
+ */
+export function messageDeliveryDetails(
   message: MailMessageDetail
-): MessageDeliveryRow[] {
+): MessageDeliveryDetails {
   const headers = message.safeHeaders;
-  const rows: MessageDeliveryRow[] = [];
-  const iso = message.receivedAt ?? message.sentAt;
-  const raw = headers.date?.trim() || null;
-  if (iso || raw) rows.push({ kind: 'date', iso, raw });
+  const rows: MessageDeliveryRow[] = [...messageDateRows(message)];
+  const technical: MessageTechnicalHeader[] = [];
+  const rawDate = headers.date?.trim();
+  if (rawDate) technical.push({ header: 'date', value: rawDate });
   const mailedBy = mailAddressDomain(message.envelopeFrom ?? '');
   if (mailedBy)
     rows.push({
@@ -192,14 +234,12 @@ export function messageDeliveryRows(
     const name = header.toLowerCase();
     if (HANDLED_HEADERS.has(name) || typeof value !== 'string' || !value.trim())
       continue;
-    rows.push({
-      kind: 'text',
-      header: name,
-      label: messageDetailLabelKey(name),
-      value: value.trim(),
-    });
+    const label = messageDetailLabelKey(name);
+    if (label)
+      rows.push({ kind: 'text', header: name, label, value: value.trim() });
+    else technical.push({ header: name, value: value.trim() });
   }
-  return rows;
+  return { rows, technical };
 }
 
 /** Local date and time with the zone, e.g. "Tue, Nov 17, 2026, 10:52 AM GMT+7". */

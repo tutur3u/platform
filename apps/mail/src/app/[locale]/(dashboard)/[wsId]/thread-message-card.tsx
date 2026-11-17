@@ -21,13 +21,16 @@ import { MailPlainTextBody } from './mail-plain-text-body';
 import { mailSnippetText } from './mail-snippet-text';
 import { visibleMailLabels } from './mail-visible-labels';
 import { MessageDetailsPanel } from './message-details-panel';
+import { formatMailDetailDate } from './message-details-model';
 import { MessageHeaderPeople } from './message-header-people';
+import { useMailTimeZone } from './use-mail-time-zone';
 
-function formatDate(value: string | null, locale: string) {
+function formatDate(value: string | null, locale: string, timeZone?: string) {
   if (!value || !Number.isFinite(new Date(value).getTime())) return '';
   return new Intl.DateTimeFormat(locale, {
     dateStyle: 'medium',
     timeStyle: 'short',
+    timeZone,
   }).format(new Date(value));
 }
 
@@ -42,6 +45,8 @@ export function ThreadMessageCard({
 }) {
   const t = useTranslations('mail');
   const locale = useLocale();
+  const timeZone = useMailTimeZone();
+  const deliveredAt = message.receivedAt ?? message.sentAt;
   const [detailsOpen, setDetailsOpen] = useState(false);
   const detailsId = useId();
   const detailsToggle = useRef<HTMLButtonElement>(null);
@@ -72,10 +77,11 @@ export function ThreadMessageCard({
             />
           </div>
           <time
-            dateTime={message.receivedAt ?? message.sentAt ?? undefined}
+            dateTime={deliveredAt ?? undefined}
+            title={formatMailDetailDate(deliveredAt, locale, timeZone)}
             className="hidden shrink-0 font-mono text-muted-foreground text-xs tabular-nums sm:block"
           >
-            {formatDate(message.receivedAt ?? message.sentAt, locale)}
+            {formatDate(deliveredAt, locale, timeZone)}
           </time>
           {workspaceId ? (
             <MailMessageSourceMenu

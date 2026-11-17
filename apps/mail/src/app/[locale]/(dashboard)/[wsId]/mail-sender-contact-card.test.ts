@@ -1,7 +1,6 @@
 // @vitest-environment jsdom
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import {
-  act,
   cleanup,
   fireEvent,
   render,
@@ -30,6 +29,18 @@ vi.mock('next-intl', () => ({
 }));
 
 beforeAll(() => {
+  // useIsMobile reads matchMedia, which jsdom lacks; the 1024 px jsdom
+  // viewport selects the desktop sheet.
+  window.matchMedia ??= ((query: string) => ({
+    matches: false,
+    media: query,
+    onchange: null,
+    addEventListener() {},
+    removeEventListener() {},
+    addListener() {},
+    removeListener() {},
+    dispatchEvent: () => false,
+  })) as unknown as typeof window.matchMedia;
   globalThis.ResizeObserver ??= class {
     observe() {}
     unobserve() {}
@@ -38,7 +49,6 @@ beforeAll(() => {
 });
 afterEach(() => {
   cleanup();
-  vi.useRealTimers();
   mocks.resolve.mockReset();
 });
 
@@ -123,18 +133,82 @@ it('links contacts to the Contacts app', async () => {
   );
 });
 
-it('opens after a 300 ms hover and closes on Escape', async () => {
+it('never opens on hover', async () => {
   resolveAs({ kind: 'unknown' });
-  vi.useFakeTimers();
   const trigger = setup();
   fireEvent.pointerEnter(trigger, { pointerType: 'mouse' });
-  act(() => vi.advanceTimersByTime(250));
+  fireEvent.pointerMove(trigger, { pointerType: 'mouse' });
+  fireEvent.mouseEnter(trigger);
+  await new Promise((resolve) => setTimeout(resolve, 400));
   expect(screen.queryByRole('dialog')).toBeNull();
-  act(() => vi.advanceTimersByTime(60));
-  expect(screen.getByRole('dialog')).toBeTruthy();
-  vi.useRealTimers();
-  fireEvent.keyDown(screen.getByRole('dialog'), { key: 'Escape' });
+  expect(trigger.getAttribute('aria-expanded')).toBe('false');
+});
+
+it('opens a sheet on click, closes on Escape and returns focus', async () => {
+  resolveAs({ kind: 'unknown' });
+  const trigger = setup();
+  trigger.focus();
+  fireEvent.click(trigger);
+  const dialog = await screen.findByRole('dialog');
+  expect(dialog.getAttribute('data-slot')).toBe('sheet-content');
+  expect(trigger.getAttribute('aria-expanded')).toBe('true');
+  await waitFor(() => expect(document.activeElement).toBe(dialog));
+  fireEvent.keyDown(dialog, { key: 'Escape' });
   await waitFor(() => expect(screen.queryByRole('dialog')).toBeNull());
+  await waitFor(() => expect(document.activeElement).toBe(trigger));
+});
+
+it('opens from the keyboard with ArrowDown', async () => {
+  resolveAs({ kind: 'unknown' });
+  const trigger = setup();
+  fireEvent.keyDown(trigger, { key: 'ArrowDown' });
+  expect(await screen.findByRole('dialog')).toBeTruthy();
+});
+
+it('falls back to the header name when lookup fails and recovers on retry', async () => {
+  mocks.resolve.mockRejectedValueOnce(new Error('HTTP 404'));
+  const trigger = setup();
+  fireEvent.click(trigger);
+  const retry = await screen.findByRole('button', { name: 'retry' });
+  expect(screen.getByText('unavailable')).toBeTruthy();
+  expect(trigger.textContent).toContain('Header name');
+  resolveAs({
+    kind: 'member',
+    id: 'member-3',
+    displayName: 'Lan Pham',
+    emailVisible: true,
+  });
+  fireEvent.click(retry);
+  await waitFor(() => expect(trigger.textContent).toContain('Lan Pham'));
+  expect(screen.queryByRole('button', { name: 'retry' })).toBeNull();
+  expect(screen.getByRole('dialog')).toBeTruthy();
+});
+
+it('shows initials from the visible name, never a hidden email', async () => {
+  resolveAs({
+    kind: 'member',
+    id: 'member-4',
+    displayName: null,
+    emailVisible: false,
+  });
+  const client = new QueryClient({
+    defaultOptions: { queries: { retry: false } },
+  });
+  render(
+    h(
+      QueryClientProvider,
+      { client },
+      h(MailSenderContactCard, {
+        workspaceId: 'workspace-1',
+        address: 'zed.hidden@example.com',
+        name: null,
+      })
+    )
+  );
+  const trigger = screen.getByRole('button', { name: 'show' });
+  await waitFor(() => expect(trigger.textContent).toContain('member'));
+  // Avatar fallback "M" from the visible label, then the label itself.
+  expect(trigger.textContent).toBe('Mmember');
 });
 
 it('keeps unknown senders as the header name with their domain', async () => {

@@ -284,8 +284,25 @@ to at least 4.5:1 contrast on resolved solid backgrounds, including calendar inv
 Dark mode keeps the same contrast floor. Regression coverage lives in
 `mail-preview-contrast-dom.test.ts` and `mail-preview-appearance.test.ts`. Neither mode enables scripts inside email HTML.
 
-Message headers use a single truncated sender-to-recipient row. The participant
-button opens full address details; the separate chevron collapses the message.
+Message headers use a single truncated sender-to-recipient row. The details
+chevron expands people and delivery details inline; the separate chevron
+collapses the message.
+
+Participant profiles open only on click, Enter, Space or ArrowDown, never on
+hover: a right-side sheet on desktop and a bottom drawer below 768 px. Escape
+or the overlay closes it and returns focus to the name, unless an open form or
+dialog inside the card holds it. Names and avatar initials come from the
+permission-checked workspace people lookup, then the message header name. A
+workspace-hidden email never appears, including as initials. A failed lookup
+keeps the header name and offers Try again in the card.
+
+The delivery details show Sent (stored send time, else the Date header) and add
+Received only when it differs from Sent by at least a minute, or is the only date. Dates
+use the viewer's browser time zone after hydration. The
+raw Date header and headers without a translated label stay in a collapsed
+Technical headers disclosure. Regression coverage lives in
+`mail-sender-contact-card.test.ts`, `message-details-model.test.ts` and
+`message-details-panel.test.ts`.
 The reader collapses recognized Gmail, Outlook, cite-style, and plain-text reply
 history into a native disclosure. Quote-only and unrecognized messages remain
 visible. Quote detection runs on the sanitized isolated document before it is

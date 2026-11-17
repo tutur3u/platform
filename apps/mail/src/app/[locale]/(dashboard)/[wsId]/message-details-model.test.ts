@@ -2,7 +2,8 @@ import type { MailMessageDetail } from '@tuturuuu/internal-api';
 import { describe, expect, it } from 'vitest';
 import {
   formatMailDetailDate,
-  messageDeliveryRows,
+  messageDateRows,
+  messageDeliveryDetails,
   messageDetailLabelKey,
   messageHeaderRecipients,
   messagePeopleGroups,
@@ -89,40 +90,94 @@ describe('message people and delivery rows', () => {
     expect(groups[2]?.people).toHaveLength(1);
   });
 
-  it('labels known headers and keeps unknown safe headers raw', () => {
-    const rows = messageDeliveryRows(
+  it('keeps labelled headers readable and moves raw ones to technical', () => {
+    const details = messageDeliveryDetails(
       message({
-        envelopeFrom: 'bounce@amazonses.com',
+        envelopeFrom: 'bounce@mailer.example',
         internetMessageId: '<id@mail>',
         safeHeaders: {
           date: 'Tue, 17 Nov 2026 03:52:07 +0000',
           subject: 'Hidden',
-          'x-failed-recipients': 'a@x.vn',
+          'x-failed-recipients': 'a@example.org',
           'x-custom': 'value',
         },
       })
     );
-    expect(rows).toEqual([
-      {
-        kind: 'date',
-        iso: '2026-11-17T03:52:07.000Z',
-        raw: 'Tue, 17 Nov 2026 03:52:07 +0000',
-      },
+    expect(details.rows).toEqual([
+      { kind: 'date', key: 'sent', iso: '2026-11-17T03:52:07.000Z' },
       {
         kind: 'text',
         header: 'mailed-by',
         label: 'mailed_by',
-        value: 'amazonses.com',
+        value: 'mailer.example',
       },
       { kind: 'id', key: 'message_id', value: '<id@mail>' },
       {
         kind: 'text',
         header: 'x-failed-recipients',
         label: 'failed_recipients',
-        value: 'a@x.vn',
+        value: 'a@example.org',
       },
-      { kind: 'text', header: 'x-custom', label: null, value: 'value' },
     ]);
+    expect(details.technical).toEqual([
+      { header: 'date', value: 'Tue, 17 Nov 2026 03:52:07 +0000' },
+      { header: 'x-custom', value: 'value' },
+    ]);
+  });
+
+  it('has no technical headers when every header is labelled', () => {
+    expect(messageDeliveryDetails(message()).technical).toEqual([]);
+  });
+});
+
+describe('messageDateRows', () => {
+  const sent = '2026-11-17T03:52:07.000Z';
+
+  it('shows only Sent when receipt is within a minute', () => {
+    expect(
+      messageDateRows(
+        message({ sentAt: sent, receivedAt: '2026-11-17T03:53:06.000Z' })
+      )
+    ).toEqual([{ kind: 'date', key: 'sent', iso: sent }]);
+  });
+
+  it('adds Received once it is a minute or more after Sent', () => {
+    expect(
+      messageDateRows(
+        message({ sentAt: sent, receivedAt: '2026-11-17T03:53:07.000Z' })
+      )
+    ).toEqual([
+      { kind: 'date', key: 'sent', iso: sent },
+      { kind: 'date', key: 'received', iso: '2026-11-17T03:53:07.000Z' },
+    ]);
+  });
+
+  it('reads Sent from the Date header when sentAt is missing', () => {
+    expect(
+      messageDateRows(
+        message({
+          sentAt: null,
+          receivedAt: '2026-11-17T05:00:00.000Z',
+          safeHeaders: { date: 'Tue, 17 Nov 2026 10:52:07 +0700' },
+        })
+      )
+    ).toEqual([
+      { kind: 'date', key: 'sent', iso: sent },
+      { kind: 'date', key: 'received', iso: '2026-11-17T05:00:00.000Z' },
+    ]);
+  });
+
+  it('falls back to Received alone and ignores invalid dates', () => {
+    expect(
+      messageDateRows(
+        message({ sentAt: 'not a date', safeHeaders: { date: 'garbage' } })
+      )
+    ).toEqual([
+      { kind: 'date', key: 'received', iso: '2026-11-17T03:52:07.000Z' },
+    ]);
+    expect(
+      messageDateRows(message({ sentAt: null, receivedAt: null }))
+    ).toEqual([]);
   });
 });
 
@@ -137,6 +192,16 @@ describe('formatMailDetailDate', () => {
     expect(value).toContain('Nov 17, 2026');
     expect(value).toContain('10:52');
     expect(value).toContain('GMT+7');
+  });
+
+  it('formats the same instant in the viewer zone and locale', () => {
+    const iso = '2026-11-17T03:52:07.000Z';
+    expect(formatMailDetailDate(iso, 'en-US', 'America/New_York')).toContain(
+      'Nov 16, 2026'
+    );
+    const vi = formatMailDetailDate(iso, 'vi-VN', 'Asia/Ho_Chi_Minh');
+    expect(vi).toContain('2026');
+    expect(vi).toContain('10:52');
   });
 
   it('returns an empty string for missing or invalid dates', () => {
