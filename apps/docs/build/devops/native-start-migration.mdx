@@ -315,3 +315,12 @@ Its receipt binds transformed modules and emitted chunks to SHA-256 digests.
 Unit hook tests do not establish emitted artifact acceptance: exact-commit CI
 must run the real client build with the plugin and retain its receipt. Existing
 build and cutover gates remain required.
+
+### Synthetic Linux isolation probes
+
+`scripts/acceptance-fixture/launcher.py` is a nonshipping, fixed-target canary
+launcher. It accepts no production endpoint or credentials and stops on macOS.
+Its portable tests cover refusal and timeout control flow; Linux namespace and
+teardown acceptance require a separately admitted Linux host. Read the fixture
+README for host-mount and source-mutation limits. A `SYNTHETIC_ONLY` result does
+not qualify an application runtime or establish a production exploit.

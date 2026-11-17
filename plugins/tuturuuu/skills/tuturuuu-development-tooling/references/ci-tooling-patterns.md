@@ -1568,3 +1568,11 @@ intent replay. Null-pin tests must prove no environment reads or SDK resolution.
 Negative controls cover type, creator, creation time, name, filters and ordering.
 See `scripts/auth-ops/fleet-qa-contract.md` for the command and proof boundaries.
 Mocks do not establish production session revocation or authorize execution.
+
+## Synthetic isolation fixture
+
+Run `scripts/acceptance-fixture` portable unittest checks through resource
+admission. Its fixed-target Linux launcher fails closed when unavailable; never
+substitute mocked subprocess results for kernel namespace or teardown evidence.
+Keep production endpoints, secrets and arbitrary command inputs out of this
+fixture. Its README records host-runtime mounts and source-mutation limitations.
