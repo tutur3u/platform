@@ -1,45 +1,11 @@
-import { createAdminClient } from '@tuturuuu/supabase/next/server';
-import type { TypedSupabaseClient } from '@tuturuuu/supabase/types';
-import { NextResponse } from 'next/server';
 import { CURRENT_USER_APP_SESSION_AUTH } from '@/legacy-api-routes/v1/users/me/session-auth';
 import { withSessionAuth } from '@/lib/api-auth';
-import { listPendingWorkspaceInvitations } from '@/lib/workspace-invitations/status';
+import { outcomeResponse } from '@/lib/current-user/context';
+import { readPendingInvitations } from '@/lib/current-user/invitations';
 
 export const GET = withSessionAuth(
-  async (_request, { user }) => {
-    const admin = (await createAdminClient({
-      noCookie: true,
-    })) as TypedSupabaseClient;
-
-    try {
-      const invitations = await listPendingWorkspaceInvitations(admin, {
-        authEmail: user.email ?? null,
-        userId: user.id,
-      });
-
-      return NextResponse.json(
-        { invitations },
-        {
-          headers: {
-            'Cache-Control': 'private, no-store',
-          },
-        }
-      );
-    } catch (error) {
-      console.error('Failed to list workspace invitations:', {
-        error,
-        userId: user.id,
-      });
-
-      return NextResponse.json(
-        {
-          error: 'Failed to list workspace invitations',
-          errorCode: 'WORKSPACE_INVITATIONS_LOOKUP_FAILED',
-        },
-        { status: 500 }
-      );
-    }
-  },
+  async (_request, { user }) =>
+    outcomeResponse(await readPendingInvitations({ user })),
   {
     allowAppSessionAuth: CURRENT_USER_APP_SESSION_AUTH,
     cache: { maxAge: 0 },

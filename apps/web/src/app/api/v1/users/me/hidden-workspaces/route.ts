@@ -7,12 +7,18 @@ import { verifyWorkspaceMembershipType } from '@tuturuuu/utils/workspace-helper'
 import { connection, NextResponse } from 'next/server';
 import { z } from 'zod';
 import { withSessionAuth } from '@/lib/api-auth';
-import { timeServerPhase, withServerTiming } from '@/lib/server-timing';
+import { outcomeResponse } from '@/lib/current-user/context';
+import {
+  HIDDEN_WORKSPACE_GUEST_PREFIX,
+  HIDDEN_WORKSPACE_PREFERENCE_KEY,
+  readHiddenWorkspaceIds,
+} from '@/lib/current-user/hidden-workspaces';
+import { withServerTiming } from '@/lib/server-timing';
 import { getDefaultAppSessionVerificationOptions } from '@/lib/api-auth-audiences';
 import { hasBoardShareWorkspaceAccess } from './board-share-access';
 
-const preferenceKey = 'HIDDEN_WORKSPACE';
-const guestPreferencePrefix = 'HIDDEN_WORKSPACE:';
+const preferenceKey = HIDDEN_WORKSPACE_PREFERENCE_KEY;
+const guestPreferencePrefix = HIDDEN_WORKSPACE_GUEST_PREFIX;
 const headers = { 'Cache-Control': 'private, no-store' };
 const bodySchema = z
   .object({
@@ -37,42 +43,10 @@ export const GET = withServerTiming(
           { status: 409, headers }
         );
       }
-      const { data, error } = await timeServerPhase('db', () =>
-        supabase
-          .from('user_workspace_configs')
-          .select('ws_id')
-          .eq('user_id', user.id)
-          .eq('id', preferenceKey)
-          .eq('value', 'true')
-      );
-      const { data: guestPreferences, error: guestError } =
-        await timeServerPhase('db', () =>
-          supabase
-            .from('user_configs')
-            .select('id')
-            .eq('user_id', user.id)
-            .like('id', 'HIDDEN\\_WORKSPACE:%')
-            .eq('value', 'true')
-        );
-      if (error || guestError) {
-        return NextResponse.json(
-          { message: 'Unable to read Hidden workspaces' },
-          { status: 500, headers }
-        );
-      }
-      return NextResponse.json(
-        {
-          hiddenWorkspaceIds: [
-            ...new Set([
-              ...(data ?? []).map((row) => row.ws_id),
-              ...(guestPreferences ?? [])
-                .map((row) => row.id.slice(guestPreferencePrefix.length))
-                .filter((id) => z.uuid().safeParse(id).success),
-            ]),
-          ],
-        },
-        { headers }
-      );
+      return outcomeResponse({
+        ...(await readHiddenWorkspaceIds({ supabase, user })),
+        headers,
+      });
     },
     {
       allowAppSessionAuth: [

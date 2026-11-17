@@ -1,6 +1,6 @@
-import { fetchWorkspaceSummaries } from '@tuturuuu/ui/lib/workspace-actions';
-import { NextResponse } from 'next/server';
 import { withSessionAuth } from '@/lib/api-auth';
+import { outcomeResponse } from '@/lib/current-user/context';
+import { readWorkspaceSummaries } from '@/lib/current-user/workspace-list';
 import { CURRENT_USER_APP_SESSION_AUTH } from '../users/me/session-auth';
 
 const MAX_WORKSPACE_QUERY_LENGTH = 120;
@@ -23,33 +23,13 @@ function parseWorkspaceSearchParams(request: Request) {
 }
 
 export const GET = withSessionAuth(
-  async (request, { supabase, user }) => {
-    try {
-      const workspaceSearchParams = parseWorkspaceSearchParams(request);
-
-      return NextResponse.json(
-        await fetchWorkspaceSummaries({
-          ...workspaceSearchParams,
-          request,
-          requireAuth: true,
-          supabase,
-          userId: user.id,
-        })
-      );
-    } catch (error) {
-      if (
-        error instanceof Error &&
-        error.message === 'WORKSPACE_SUMMARY_UNAUTHORIZED'
-      ) {
-        return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-      }
-      console.error('Error in workspaces API:', error);
-      return NextResponse.json(
-        { error: 'Internal server error' },
-        { status: 500 }
-      );
-    }
-  },
+  async (request, { supabase, user }) =>
+    outcomeResponse(
+      await readWorkspaceSummaries(
+        { supabase, user },
+        { ...parseWorkspaceSearchParams(request), request }
+      )
+    ),
   {
     allowAppSessionAuth: CURRENT_USER_APP_SESSION_AUTH,
     cache: { maxAge: 60, swr: 30 },

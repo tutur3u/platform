@@ -4,7 +4,9 @@ import { isVerifiedTuturuuuStaffSession } from '@tuturuuu/utils/email/staff-sess
 import { NextResponse } from 'next/server';
 import { CURRENT_USER_APP_SESSION_AUTH } from '@/legacy-api-routes/v1/users/me/session-auth';
 import { withSessionAuth } from '@/lib/api-auth';
-import { timeServerPhase, withServerTiming } from '@/lib/server-timing';
+import { outcomeResponse } from '@/lib/current-user/context';
+import { readOnboardingProgress } from '@/lib/current-user/onboarding';
+import { withServerTiming } from '@/lib/server-timing';
 
 export const PATCH = withSessionAuth(
   async (req, { supabase, user }) => {
@@ -103,23 +105,7 @@ export const PATCH = withSessionAuth(
 export const GET = withServerTiming(
   withSessionAuth(
     async (_req, { supabase, user }) => {
-      const { data, error } = await timeServerPhase('db', () =>
-        supabase
-          .from('onboarding_progress')
-          .select('*')
-          .eq('user_id', user.id)
-          .maybeSingle()
-      );
-
-      if (error) {
-        console.error('Error fetching onboarding progress:', error);
-        return NextResponse.json(
-          { message: 'Failed to fetch onboarding progress' },
-          { status: 500 }
-        );
-      }
-
-      return NextResponse.json(data);
+      return outcomeResponse(await readOnboardingProgress({ supabase, user }));
     },
     { allowAppSessionAuth: CURRENT_USER_APP_SESSION_AUTH }
   )

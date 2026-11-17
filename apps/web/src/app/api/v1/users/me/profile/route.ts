@@ -15,7 +15,9 @@ import {
   CURRENT_USER_PROFILE_WRITE_APP_SESSION_AUTH,
 } from '@/legacy-api-routes/v1/users/me/session-auth';
 import { withSessionAuth } from '@/lib/api-auth';
-import { timeServerPhase, withServerTiming } from '@/lib/server-timing';
+import { outcomeResponse } from '@/lib/current-user/context';
+import { readCurrentUserProfile } from '@/lib/current-user/profile';
+import { withServerTiming } from '@/lib/server-timing';
 import { allowedProfileAvatar } from '@/lib/profile-avatar-url';
 import {
   bannerStorageOrigin,
@@ -44,74 +46,9 @@ export const GET = withServerTiming(
     async (_req, { user, supabase }) => {
       try {
         await connection();
-        // Fetch user profile data
-        let { data: userData, error: userError } = await timeServerPhase(
-          'db',
-          () =>
-            supabase
-              .from('users')
-              .select(
-                'id, display_name, avatar_url, banner_url, bio, handle, created_at'
-              )
-              .eq('id', user.id)
-              .maybeSingle()
+        return outcomeResponse(
+          await readCurrentUserProfile({ supabase, user })
         );
-
-        if (userError && ['42703', 'PGRST204'].includes(userError.code)) {
-          const legacy = await timeServerPhase('db', () =>
-            supabase
-              .from('users')
-              .select('id,display_name,avatar_url,bio,handle,created_at')
-              .eq('id', user.id)
-              .maybeSingle()
-          );
-          userData = legacy.data ? { ...legacy.data, banner_url: null } : null;
-          userError = legacy.error;
-        }
-        if (userError) {
-          console.error('Error fetching user profile:', {
-            code: userError.code,
-          });
-          return NextResponse.json(
-            { message: 'Error fetching user profile' },
-            { status: 500 }
-          );
-        }
-
-        // Fetch private details (includes email)
-        const { data: privateData, error: privateError } =
-          await timeServerPhase('db', () =>
-            supabase
-              .from('user_private_details')
-              .select('full_name, new_email, email, default_workspace_id')
-              .eq('user_id', user.id)
-              .maybeSingle()
-          );
-
-        if (privateError) {
-          console.error('Error fetching user private profile details:', {
-            error: privateError.message,
-            userId: user.id,
-          });
-          return NextResponse.json(
-            { message: 'Error fetching user profile' },
-            { status: 500 }
-          );
-        }
-
-        return NextResponse.json({
-          id: userData?.id ?? user.id,
-          email: privateData?.email ?? null,
-          display_name: userData?.display_name ?? null,
-          avatar_url: userData?.avatar_url ?? null,
-          banner_url: userData?.banner_url ?? null,
-          bio: userData?.bio ?? null,
-          handle: userData?.handle ?? null,
-          full_name: privateData?.full_name ?? null,
-          new_email: privateData?.new_email ?? null,
-          created_at: userData?.created_at ?? user.created_at ?? null,
-          default_workspace_id: privateData?.default_workspace_id ?? null,
-        });
       } catch (error) {
         console.error('Request error while fetching user profile:', error);
         return NextResponse.json(
