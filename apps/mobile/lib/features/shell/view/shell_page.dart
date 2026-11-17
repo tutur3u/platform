@@ -139,6 +139,7 @@ class _ShellPageState extends State<ShellPage> with WidgetsBindingObserver {
     Routes.apps: 0,
   };
   final Map<String, WeakReference<ScrollableState>> _pageScrollables = {};
+  ValueKey<String>? _pageKey;
   String? _lastScrolledDockRoute;
   shad.ToastOverlay? _exitConfirmationToast;
 
@@ -192,6 +193,7 @@ class _ShellPageState extends State<ShellPage> with WidgetsBindingObserver {
     unawaited(_rootTabs.load());
     _hasVisitedRoot = _isRootTabLocation(widget.matchedLocation);
     if (_hasVisitedRoot) _lastRootLocation = widget.matchedLocation;
+    _pageKey = _currentPageKey();
   }
 
   @override
@@ -226,6 +228,7 @@ class _ShellPageState extends State<ShellPage> with WidgetsBindingObserver {
     }
     if (oldWidget.matchedLocation != widget.matchedLocation) {
       _lastScrolledDockRoute = null;
+      _resetReusedPageScroll(oldWidget.matchedLocation);
     }
     final isRoot = _isRootTabLocation(widget.matchedLocation);
     if (isRoot) {

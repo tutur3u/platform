@@ -91,6 +91,11 @@ class _FloatingShellDockState extends State<FloatingShellDock> {
   Timer? _returnTimer;
   bool _hidden = false;
   bool _scrolledUnder = false;
+
+  /// The page scrollable each location last reported. A revisited root tab
+  /// keeps its scroll position, so its separator follows that position; a
+  /// newly opened route starts without one.
+  final Map<String, WeakReference<ScrollableState>> _scrollables = {};
   double _travel = 0;
   late double _headerInset;
   late bool _accessibleNavigation;
@@ -122,6 +127,10 @@ class _FloatingShellDockState extends State<FloatingShellDock> {
         context,
         minimumContentHeight: widget.minimumHeaderContentHeight,
       );
+    }
+    if (oldWidget.location != widget.location) {
+      _scrollables.removeWhere((_, ref) => !(ref.target?.mounted ?? false));
+      _scrolledUnder = _isScrolledUnder(_scrollables[widget.location]?.target);
     }
     if (oldWidget.location != widget.location ||
         oldWidget.keepNavigationVisible != widget.keepNavigationVisible ||
@@ -173,17 +182,48 @@ class _FloatingShellDockState extends State<FloatingShellDock> {
     _travel = 0;
   }
 
-  void _trackScrolledUnder(ScrollNotification notification) {
-    if (notification.depth != 0 || notification.metrics.axis != Axis.vertical) {
-      return;
+  static bool _isScrolledUnder(ScrollableState? scrollable) {
+    if (scrollable == null || !scrollable.mounted) return false;
+    final position = scrollable.position;
+    return position.hasPixels && position.pixels > position.minScrollExtent;
+  }
+
+  /// Layout and scroll reports of the visible page drive the separator. A
+  /// route opened at rest reports only its first layout, which clears the
+  /// previous page's separator.
+  void _trackScrolledUnder(
+    ScrollMetrics metrics,
+    int depth,
+    BuildContext? scrollContext,
+  ) {
+    if (depth != 0 || metrics.axis != Axis.vertical) return;
+    if (scrollContext != null) {
+      // Offstage root tabs and covered routes keep reporting layout changes.
+      if (!TickerMode.getValuesNotifier(scrollContext).value.enabled) return;
+      final scrollable = Scrollable.maybeOf(scrollContext);
+      if (scrollable != null) {
+        _scrollables[widget.location] = WeakReference(scrollable);
+      }
     }
-    final scrolled =
-        notification.metrics.pixels > notification.metrics.minScrollExtent;
+    final scrolled = metrics.pixels > metrics.minScrollExtent;
     if (scrolled != _scrolledUnder) setState(() => _scrolledUnder = scrolled);
   }
 
+  bool _onScrollMetrics(ScrollMetricsNotification notification) {
+    _trackScrolledUnder(
+      notification.metrics,
+      notification.depth,
+      notification.context,
+    );
+    return false;
+  }
+
   bool _onScroll(ScrollNotification notification) {
-    _trackScrolledUnder(notification);
+    _trackScrolledUnder(
+      notification.metrics,
+      notification.depth,
+      notification.context,
+    );
     if (notification.depth != 0 ||
         notification.metrics.axis != Axis.vertical ||
         (widget.bottomInset == 0 && widget.header == null) ||
@@ -306,7 +346,10 @@ class _FloatingShellDockState extends State<FloatingShellDock> {
                       padding: media.padding.copyWith(bottom: clearance),
                     )
                   : media,
-              child: widget.child,
+              child: NotificationListener<ScrollMetricsNotification>(
+                onNotification: _onScrollMetrics,
+                child: widget.child,
+              ),
             ),
           ),
           if (widget.header != null)

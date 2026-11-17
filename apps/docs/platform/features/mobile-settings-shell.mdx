@@ -167,6 +167,11 @@ keeps the dock. Reduced motion settles every transition immediately.
 Switching root destinations retains one dock while bodies ease between tabs.
 Only the active body receives pointer input or semantics. Visited tabs remain
 mounted, preserving drafts and scroll positions.
+Every other newly opened route starts at the top, including a page the router
+reuses for another location of the same path (another wallet or board). The
+top bar's scrolled-under separator follows the visible page: hidden at the top,
+restored with a revisited tab's retained position, and never carried over from
+the previous route (`shell_route_scroll_test.dart`).
 Coverage: `shell_dock_bar_test.dart` (fixed zones, overflow, sliding highlight
 timing), `dock_action_choreography_test.dart`, `persistent_shell_dock_test.dart`,
 `floating_dock_rail_test.dart`, `shell_dock_modal_visibility_test.dart`,

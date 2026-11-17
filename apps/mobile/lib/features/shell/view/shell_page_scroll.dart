@@ -1,6 +1,36 @@
 part of 'shell_page.dart';
 
 extension _ShellPageScroll on _ShellPageState {
+  /// The shell navigator's leaf page key, which GoRouter derives from the
+  /// route's path template.
+  ValueKey<String>? _currentPageKey() => GoRouter.maybeOf(
+    context,
+  )?.routerDelegate.currentConfiguration.lastOrNull?.pageKey;
+
+  /// Two locations of one path template (two boards, two wallets) share a
+  /// page key, so the navigator keeps the outgoing page and its scroll
+  /// position for the new location. A newly opened location starts at the
+  /// top, like a fresh page.
+  void _resetReusedPageScroll(String previousLocation) {
+    final previousKey = _pageKey;
+    _pageKey = _currentPageKey();
+    if (previousKey == null ||
+        _pageKey != previousKey ||
+        _isRootTabLocation(widget.matchedLocation)) {
+      return;
+    }
+    final scrollable =
+        _pageScrollables[_normalizeRouteLocation(previousLocation)]?.target;
+    if (scrollable == null) return;
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted || !scrollable.mounted) return;
+      final position = scrollable.position;
+      if (position.hasPixels && position.pixels != position.minScrollExtent) {
+        position.jumpTo(position.minScrollExtent);
+      }
+    });
+  }
+
   void _reselectPage(String route) {
     final normalized = _normalizeRouteLocation(route);
     final previous = _lastScrolledDockRoute;
