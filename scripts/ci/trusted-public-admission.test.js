@@ -104,7 +104,7 @@ const mutations = [
   [
     'PUBLIC_DISPATCH_RUN',
     (f) => {
-      f.state.run.head_sha = source;
+      f.state.run.head_sha = 'e'.repeat(40);
     },
   ],
   [
@@ -229,6 +229,29 @@ test('invalid SHA and context fail before any API call', async () => {
     /PUBLIC_DISPATCH_CONTEXT/
   );
   assert.equal(fixture.calls.length, 0);
+});
+
+test('a caller-selected older merged commit is rejected before API access', async () => {
+  const fixture = dispatchFixture();
+  fixture.options.sourceSha = 'e'.repeat(40);
+  await assert.rejects(admitDispatch(fixture.options), {
+    code: 'PUBLIC_DISPATCH_SOURCE_IDENTITY',
+    phase: 'dispatch-admission',
+  });
+  assert.equal(fixture.calls.length, 0);
+});
+
+test('controls from a different commit cannot authorize the dispatch run', async () => {
+  const fixture = dispatchFixture();
+  fixture.options.controlSha = 'b'.repeat(40);
+  await assert.rejects(admitDispatch(fixture.options), {
+    code: 'PUBLIC_DISPATCH_RUN',
+    phase: 'dispatch-admission',
+  });
+  assert.equal(
+    fixture.calls.some((call) => call.method === 'content'),
+    false
+  );
 });
 
 test('API failures expose only a stable phase and code', async () => {

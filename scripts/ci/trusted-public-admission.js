@@ -61,6 +61,7 @@ async function checkDispatch({
 }) {
   exactSha(sourceSha);
   exactSha(controlSha);
+  requireEvidence(sourceSha === context.sha, 'PUBLIC_DISPATCH_SOURCE_IDENTITY');
   const profile = PROFILES[workflowPath];
   requireEvidence(
     profile &&
@@ -94,6 +95,7 @@ async function checkDispatch({
       run.head_repository?.id === repo.id &&
       run.event === 'workflow_dispatch' &&
       run.head_branch === 'main' &&
+      run.head_sha === sourceSha &&
       run.head_sha === controlSha &&
       run.path === workflowPath &&
       run.name === profile.name &&

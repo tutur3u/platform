@@ -55,6 +55,11 @@ for (const [stem, executor] of [
   );
   test(`${stem}: trusted setup precedes admitted source and cache access`, () => {
     const execution = job(text, executor);
+    const checkout = execution.match(
+      /- name: Checkout admitted source[\s\S]*?(?=      - name:)/
+    )[0];
+    assert.match(checkout, /ref: \$\{\{ github\.sha \}\}/);
+    assert.doesNotMatch(checkout, /ref: .*inputs\.|ref: .*needs\./);
     ordered(execution, [
       'path: control',
       'actions/setup-node@',

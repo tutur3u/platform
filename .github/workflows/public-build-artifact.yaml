@@ -4,7 +4,7 @@ on:
   workflow_dispatch:
     inputs:
       source_sha:
-        description: Exact merged-main 40-hex commit SHA
+        description: Exact 40-hex SHA of this main dispatch (must equal github.sha)
         required: true
         type: string
       app:
@@ -41,6 +41,7 @@ jobs:
             // admission:start
             const sha = process.env.REQUEST_SHA;
             const control = process.env.CONTROL_SHA;
+            if (sha !== context.sha) throw new Error('PUBLIC_DISPATCH_SOURCE_IDENTITY');
             if (sha?.length !== 40 || control?.length !== 40 || !/^[a-f0-9]{40}$/.test(sha) || !/^[a-f0-9]{40}$/.test(control)) throw new Error('Invalid immutable SHA');
             if (context.repo.owner !== 'tutur3u' || context.repo.repo !== 'platform' || context.ref !== 'refs/heads/main') throw new Error('Canonical main workflow required');
             const app = process.env.REQUEST_APP;
@@ -143,7 +144,7 @@ jobs:
       - name: Checkout admitted source
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
-          ref: ${{ needs.admit.outputs.sha }}
+          ref: ${{ github.sha }}
           path: source
           persist-credentials: false
       - name: Verify admitted source before execution

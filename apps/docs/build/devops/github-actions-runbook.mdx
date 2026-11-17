@@ -20,6 +20,14 @@ and tree-equal direct-parent checks. These checks do not grant migration approva
 or widen the existing manual recovery policy. A denied proof emits a fixed guard
 code and phase in its result receipt; unavailable or changed evidence blocks apply.
 
+Public build and merged-main test dispatches qualify the immutable dispatch
+revision. The requested `source_sha` must equal that revision; a new dispatch
+cannot select an older merged commit under newer workflow controls. Requalify a
+historical source by rerunning its original workflow run. Fresh operator,
+repository, run and current-policy checks still apply, so a policy change can
+deny a historical rerun. Source jobs use hosted runners and read-only permissions;
+this does not establish complete runtime-token isolation.
+
 ## Label-gated heavy PR CI (`ready-for-ci`)
 
 Heavy PR workflows require the `ready-for-ci` label. Non-draft pull requests from the same repository are eligible on `opened` and `ready_for_review`; forks are excluded from automatic admission. Independent review and green exact-head CI remain separate merge requirements. Run focused pre-push checks on an admitted development machine to reduce avoidable first-run failures. Skipped checks are not executed verification.

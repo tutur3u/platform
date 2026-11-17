@@ -59,6 +59,7 @@ function admission(name, overrides = {}) {
         overrides.context || {
           repo: { owner: 'tutur3u', repo: 'platform' },
           ref: 'refs/heads/main',
+          sha: source,
         },
         {
           setOutput: (key, value) => {
@@ -70,6 +71,12 @@ function admission(name, overrides = {}) {
   };
 }
 for (const name of workflows) {
+  test(`${name}: rejects a different merged source before ancestry reads`, async () => {
+    const f = admission(name, { env: { REQUEST_SHA: 'e'.repeat(40) } });
+    await assert.rejects(f.run(), /PUBLIC_DISPATCH_SOURCE_IDENTITY/);
+    assert.equal(f.calls(), 0);
+    assert.deepEqual(f.output, {});
+  });
   test(`${name}: exact immutable merged-main source and control are admitted`, async () => {
     const f = admission(name, {
       env: name === 'public-build-artifact' ? { REQUEST_APP: 'meet' } : {},
@@ -132,7 +139,8 @@ for (const name of workflows) {
       text.indexOf('// admission:start') <
         text.indexOf('uses: actions/checkout@')
     );
-    assert.match(text, /ref: \$\{\{ needs.admit.outputs.sha \}\}/);
+    assert.match(text, /ref: \$\{\{ github\.sha \}\}/);
+    assert.doesNotMatch(text, /ref: \$\{\{ needs\.admit\.outputs\.sha \}\}/);
     assert.match(text, /ref: \$\{\{ github.workflow_sha \}\}/);
     assert.ok(!/run:.*\$\{\{ inputs\./.test(text));
     assert.match(text, /cancel-in-progress: false/);

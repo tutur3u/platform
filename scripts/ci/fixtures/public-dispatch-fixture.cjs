@@ -1,7 +1,7 @@
 const assert = require('node:assert/strict');
 
 const source = 'a'.repeat(40);
-const control = 'b'.repeat(40);
+const control = source;
 const main = 'c'.repeat(40);
 const blob = 'd'.repeat(40);
 
@@ -28,7 +28,7 @@ function dispatchFixture(stem = 'public-build-artifact') {
       head_repository: { id: 13 },
       event: 'workflow_dispatch',
       head_branch: 'main',
-      head_sha: control,
+      head_sha: source,
       path: workflowPath,
       name: workflowName,
       workflow_id: 23,
@@ -94,6 +94,7 @@ function dispatchFixture(stem = 'public-build-artifact') {
     payload: { repository: { id: 13 } },
     eventName: 'workflow_dispatch',
     ref: 'refs/heads/main',
+    sha: source,
     runId: 1001,
     actor: 'operator',
   };
