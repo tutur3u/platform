@@ -151,3 +151,38 @@ test('a checkout without a resolvable base fails loudly rather than returning an
     fs.rmSync(dir, { recursive: true, force: true });
   }
 });
+
+test('CI base refresh preserves full detached checkout ancestry behind main', () => {
+  const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'sql-grant-full-base-'));
+  try {
+    const source = path.join(dir, 'source');
+    const remote = path.join(dir, 'remote.git');
+    const checkout = path.join(dir, 'checkout');
+    fs.mkdirSync(source);
+    git(source, 'init', '--quiet', '--initial-branch=main');
+    git(source, 'config', 'user.name', 'vhpx');
+    git(source, 'config', 'user.email', 'contact@vohoangphuc.com');
+    for (let i = 0; i < 3; i++)
+      git(source, 'commit', '--allow-empty', '-m', `fixture ${i}`);
+    git(dir, 'clone', '--bare', source, remote);
+    git(dir, 'clone', '--quiet', `file://${remote}`, checkout);
+    git(checkout, 'checkout', '--quiet', '--detach', 'HEAD^1');
+    const head = git(checkout, 'rev-parse', 'HEAD');
+    const parent = git(checkout, 'rev-parse', '--verify', 'HEAD^1');
+    assert.equal(
+      git(checkout, 'rev-parse', '--is-shallow-repository'),
+      'false'
+    );
+    git(checkout, 'update-ref', '-d', 'refs/remotes/origin/main');
+    assert.equal(resolveBase(checkout, { CI: 'true' }), head);
+    assert.equal(git(checkout, 'rev-parse', '--verify', 'HEAD^1'), parent);
+    assert.equal(
+      git(checkout, 'rev-parse', '--is-shallow-repository'),
+      'false'
+    );
+    assert.equal(baselineReference(checkout, head, {}), parent);
+    assert.equal(git(checkout, 'merge-base', 'HEAD', 'origin/main'), head);
+  } finally {
+    fs.rmSync(dir, { recursive: true, force: true });
+  }
+});

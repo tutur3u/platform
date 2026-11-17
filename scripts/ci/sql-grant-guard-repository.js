@@ -33,7 +33,7 @@ function resolveBase(root, env = process.env) {
       'origin',
       `+refs/heads/${branch}:${ref}`,
     ]);
-  if (env.CI || env.GITHUB_BASE_REF) fetch(['--depth=2']);
+  if (env.CI || env.GITHUB_BASE_REF) fetch([]);
   else if (!git(root, ['rev-parse', '--verify', ref]).ok) fetch([]);
   for (let attempt = 0; attempt <= 5; attempt++) {
     const base = git(root, ['merge-base', 'HEAD', ref]);
