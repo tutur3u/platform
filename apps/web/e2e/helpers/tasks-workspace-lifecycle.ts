@@ -83,14 +83,25 @@ export async function launchTasksFromAppsPicker(page: Page): Promise<string> {
     .click({ timeout: 30_000 });
   const dialog = page.getByRole('dialog', { name: 'Apps' });
   await expect(dialog).toBeVisible();
-  const currentTab = dialog.getByRole('radio', {
+  const options = dialog.getByRole('button', {
+    name: 'Open options',
+    exact: true,
+  });
+  await options.click();
+  const openingMode = page.getByRole('radiogroup', {
+    name: 'Open options',
+    exact: true,
+  });
+  const currentTab = openingMode.getByRole('radio', {
     name: 'This tab',
     exact: true,
   });
   await currentTab.click({ timeout: 30_000 });
   await expect(currentTab).toHaveAttribute('data-state', 'on');
+  await options.click();
+  await expect(openingMode).toBeHidden();
 
-  const tasksLink = dialog.getByRole('link', { name: 'Tasks', exact: true });
+  const tasksLink = dialog.getByRole('option', { name: 'Tasks', exact: true });
   await expect(tasksLink).not.toHaveAttribute('target', '_blank');
   const tasksHref = await tasksLink.getAttribute('href');
   expect(
