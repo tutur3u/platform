@@ -61,7 +61,7 @@ export function AppsLauncherCatalog(props: AppsLauncherCatalogProps) {
       role="listbox"
     >
       {sections.map((section) => (
-        <CatalogSection {...props} key={section.id} section={section} />
+        <CatalogSection key={section.id} {...props} section={section} />
       ))}
     </div>
   );
@@ -114,12 +114,13 @@ function CatalogSection({
           };
 
           if (section.kind === 'chips') {
-            return <AppLauncherChip {...optionProps} key={entry.id} />;
+            return <AppLauncherChip key={entry.id} {...optionProps} />;
           }
 
           const isFavorite = props.favorites.includes(entry.app.slug);
           return (
             <AppLauncherRow
+              key={entry.id}
               {...optionProps}
               categoryLabel={
                 section.id === 'results'
@@ -129,7 +130,6 @@ function CatalogSection({
               currentLabel={props.currentLabel}
               favoriteLabel={props.getFavoriteLabel(entry.app, isFavorite)}
               isFavorite={isFavorite}
-              key={entry.id}
               onToggleFavorite={() => props.onToggleFavorite(entry.app.slug)}
             />
           );
