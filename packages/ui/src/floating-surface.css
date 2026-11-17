@@ -111,19 +111,21 @@
 :root
   [data-sonner-toaster][data-sonner-theme]
   [data-sonner-toast][data-styled="true"] {
+  gap: 0.625rem;
+  padding: 0.75rem 0.75rem 0.75rem 0.875rem;
+  border-width: 1px;
   font-size: var(--text-sm, 0.875rem);
   line-height: var(--text-sm--line-height, 1.25rem);
+  /* Sorbet tokens exist only in Sorbet; classic uses the fallbacks. */
   box-shadow: var(
-    --shadow-lg,
-    0 10px 15px -3px rgb(0 0 0 / 0.1),
-    0 4px 6px -4px rgb(0 0 0 / 0.1)
+    --sorbet-shadow-lg,
+    var(
+      --shadow-lg,
+      0 10px 15px -3px rgb(0 0 0 / 0.1),
+      0 4px 6px -4px rgb(0 0 0 / 0.1)
+    )
   );
-}
-
-:root[data-ui="sorbet"]
-  [data-sonner-toaster][data-sonner-theme]
-  [data-sonner-toast][data-styled="true"] {
-  box-shadow: var(--sorbet-shadow-md);
+  transition-timing-function: var(--sorbet-ease-emphasized, ease-out);
 }
 
 :root
@@ -138,6 +140,42 @@
   [data-sonner-toast]:not([data-rich-colors="true"])
   [data-description] {
   color: var(--muted-foreground);
+}
+
+/* Title and description: one strong line, then quieter supporting copy. */
+:root
+  [data-sonner-toaster][data-sonner-theme]
+  [data-sonner-toast][data-styled="true"]
+  [data-title] {
+  font-weight: 600;
+  line-height: 1.25rem;
+}
+
+:root
+  [data-sonner-toaster][data-sonner-theme]
+  [data-sonner-toast][data-styled="true"]
+  [data-description] {
+  font-size: 0.8125rem;
+  line-height: 1.125rem;
+}
+
+/* Errors keep the neutral surface; only the edge picks up the colour. */
+:root
+  [data-sonner-toaster][data-sonner-theme]
+  [data-sonner-toast][data-type="error"]:not([data-rich-colors="true"]) {
+  border-color: color-mix(in oklab, var(--red) 35%, var(--border));
+}
+
+/* Lucide type icons (sonner.tsx) sit on the first text line. */
+:root
+  [data-sonner-toaster][data-sonner-theme]
+  [data-sonner-toast][data-styled="true"]
+  [data-icon] {
+  width: 1rem;
+  height: 1rem;
+  margin: 0;
+  align-self: flex-start;
+  margin-block-start: 0.125rem;
 }
 
 /* The type icon carries the semantic colour, rich colours or not. */
@@ -168,8 +206,11 @@
   [data-sonner-toaster][data-sonner-theme]
   [data-sonner-toast][data-styled="true"]
   [data-button] {
+  height: 1.75rem;
+  padding-inline: 0.75rem;
   border-radius: var(--radius-inner);
   font-size: var(--text-xs, 0.75rem);
+  font-weight: 600;
 }
 
 :root
@@ -204,6 +245,57 @@
   background: var(--popover);
   border-color: var(--border);
   color: var(--muted-foreground);
+}
+
+/*
+  The close button appears on hover or keyboard focus, not on every toast.
+  Touch screens have no hover, so it stays visible there; swipe-to-dismiss
+  also works.
+*/
+:root
+  [data-sonner-toaster][data-sonner-theme]
+  [data-sonner-toast][data-styled="true"]
+  [data-close-button] {
+  opacity: 0;
+  transition: opacity 120ms ease-out;
+}
+
+:root
+  [data-sonner-toaster][data-sonner-theme]
+  [data-sonner-toast][data-styled="true"]:is(:hover, :focus-within)
+  [data-close-button] {
+  opacity: 1;
+}
+
+/*
+  Phones and small tablets with the Sorbet dock: lift the stack above it.
+  Sonner keeps its own z-index, which already clears the dock, sheets and
+  every app overlay.
+*/
+@media (max-width: 767.98px) {
+  :root[data-ui="sorbet"]:has([data-slot="mobile-dock"])
+    [data-sonner-toaster][data-y-position="bottom"] {
+    bottom: calc(var(--sorbet-content-bottom-clearance) + 1rem);
+  }
+}
+
+@media (hover: none) {
+  :root
+    [data-sonner-toaster][data-sonner-theme]
+    [data-sonner-toast][data-styled="true"]
+    [data-close-button] {
+    opacity: 1;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  :root [data-sonner-toaster] [data-sonner-toast] {
+    transition: none;
+  }
+
+  :root [data-sonner-toaster] [data-sonner-toast] [data-icon] svg {
+    animation: none;
+  }
 }
 
 :root
