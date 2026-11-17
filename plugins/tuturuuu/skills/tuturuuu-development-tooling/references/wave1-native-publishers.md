@@ -224,13 +224,45 @@ cause codes and require reconciliation whenever acceptance is uncertain.
 Lease renewal replaces the lease deadline while retaining a fixed monotonic job
 budget. Executors call `checkFence` after blocking steps to renew that lease;
 renewal cannot extend the maximum job duration. Payload/receipt credential scans
-recognize provider prefixes, JWTs and long high-entropy token alphabets; known hex
-identifier and digest fields are explicitly allowlisted by field and shape.
+recognize provider prefixes and separator-delimited token runs. Identifier and
+digest exceptions use exact field, shape and reviewed reference formats.
 
-Hex credential detection is independent of entropy: long hex is refused unless
-its field and shape identify an allowed ID or digest. Structured reference paths
-are accepted only in declared identifier fields, with validated labels and
-UUID/hex identifier segments; a 37-character API-key-shaped segment is not an ID.
+Credential scanning splits on colon, slash, hyphen, underscore, dot, equals, plus,
+at-sign and whitespace, and also scans maximal hex/base64/base64url runs. There
+is no entropy threshold or charset early return. Runs of 32 or more hex characters
+and single alphanumeric segments of 32 or more characters are refused except in
+the exact declared identifier/digest positions. Canonical UUID tokens are admitted
+in any position, including `job-<UUID>` and provenance. Ordinary kebab-case words
+are judged segment by segment; separators never concatenate UUID groups into a
+hex run. Compound mixed-alphabet token runs of 31 or more characters and
+Origin-CA-shaped values are also refused. Only committed worker names and origins
+are exempt in target fields. An arbitrary `id` key grants no exception.
+
+Reviewed reference formats are `workers/<reviewed-worker>/{deployments,versions}/<UUID-or-32hex>`,
+`cf-wave1/<reviewed-app-or-worker>/{version-readback,deployment-readback}/<UUID-or-32hex>`,
+and `readback/<reviewed-app>/<UUID-or-32hex-or-64hex>`. The workers form may have the
+fixed `cloudflare:` prefix. Only readback/checkpoint reference fields admit these
+paths; approval references and provider IDs do not admit arbitrary hash paths.
+Artifact IDs admit UUID/32-hex/64-hex or the fixed HTTPS org-domain
+`/sealed/<64hex>` path, without userinfo, query or fragment.
+
+Residual risk: syntax cannot distinguish a credential from a genuine identifier
+with the identical bytes. A secret shaped as an admitted 32-hex/UUID ID, a SHA
+in its declared digest field, or a 64-hex readback/artifact digest can still pass
+in that exact position, including an R2 secret key deliberately mislabeled as a
+digest. Producers must derive these values from reviewed provider responses or
+authority-issued records, never from free-form caller data or credentials. The
+live authority must verify reference ownership, source and target before storing
+receipts. This filter is defense in depth, not proof that metadata contains no
+secret. UUID-shaped secrets in any position and ordinary-word-shaped compound
+values remain ambiguous. Unprefixed opaque values of 30 characters or fewer
+remain a residual risk;
+recognized credential prefixes are rejected even at shorter lengths.
+
+Unsupported reference shapes fail safe to UNKNOWN and retain a validated provider
+ID: unreviewed hash paths, `readback:` hash refs and dashboard URLs. UUID-bearing
+refs and ordinary readable slugs are admissible without a structured hash exception. Pin an executor's exact reference format
+before wiring it; no live authority/executor is activated by these checks.
 Provider identities are validated and retained before other outcome fields are
 checked so malformed readback data cannot erase reconciliation evidence.
 Thrown error metadata is read defensively. Once an effect completes or loses its

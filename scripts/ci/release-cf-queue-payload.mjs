@@ -57,11 +57,11 @@ const hexIds = new Set([
   'executorHost',
   'providerOperationId',
   'deploymentId',
-  'id',
   'authorizationRefs',
   'approvalRefs',
   'verificationRefs',
   'checkpointRef',
+  'authorizationRef',
 ]);
 const digestFields = new Set([
   'recipeSha256',
@@ -78,90 +78,169 @@ function allowedHex(value, field, parent) {
     (digestFields.has(field) && /^[a-f0-9]{64}$/i.test(value)) ||
     (hexIds.has(field) &&
       (/^[a-f0-9]{32}$/i.test(value) || uuidPattern.test(value))) ||
-    (parent === 'artifact' && field === 'id' && /^[a-f0-9]{64}$/i.test(value))
+    (parent === 'artifact' &&
+      field === 'id' &&
+      (/^(?:[a-f0-9]{32}|[a-f0-9]{64})$/i.test(value) ||
+        uuidPattern.test(value)))
   );
 }
+const reviewedApps = new Set(Object.keys(policy.apps));
+const reviewedOrigins = new Set(
+  Object.values(policy.apps).flatMap((settings) => [
+    ...settings.releaseRecipe.canonicalHosts,
+    ...settings.releaseRecipe.mountHosts,
+  ])
+);
+const reviewedWorkers = new Set(
+  Object.values(policy.apps).flatMap((settings) => [
+    settings.productionWorker,
+    settings.releaseRecipe.cf.productionWorker,
+  ])
+);
+function containsJwt(value) {
+  if (!value.includes('.')) return false;
+  for (const pattern of [
+    /[A-Za-z0-9_-]+\.[A-Za-z0-9_-]+\.[A-Za-z0-9_-]+/g,
+    /eyJ[A-Za-z0-9_-]*\.[A-Za-z0-9_-]+\.[A-Za-z0-9_-]+/g,
+  ]) {
+    for (const [candidate] of value.matchAll(pattern)) {
+      try {
+        const [header, body] = candidate
+          .split('.')
+          .slice(0, 2)
+          .map((part) =>
+            JSON.parse(Buffer.from(part, 'base64url').toString('utf8'))
+          );
+        if (
+          header &&
+          typeof header === 'object' &&
+          body &&
+          typeof body === 'object'
+        )
+          return true;
+      } catch {
+        /* Ordinary dotted labels do not decode as JWT JSON. */
+      }
+    }
+  }
+  return false;
+}
 function credentialValue(value) {
-  if (value.split('/').some((segment) => /^[a-f0-9]{32,}$/i.test(segment)))
-    return true;
+  if (containsJwt(value)) return true;
   if (
-    /^(?:sk[-_]|vercel_|vcp_|vcr_|vcs_|vc_|gh[pousr]_|github_pat_|sbp_|npm_|cf(?:at|ut|t)?_|cloudflare[_-]|AKIA|ASIA|[Bb]earer |-----BEGIN)/.test(
+    /^(?:sk[-_]|vercel_|vcp_|vcr_|vcs_|vc_|gh[pousr]_|github_pat_|sbp_|npm_|cf(?:at|ut|t)?_|cloudflare[_-]|AKIA|ASIA|-----BEGIN)/.test(
       value
+    ) ||
+    /^bearer\s/i.test(value)
+  )
+    return true;
+  // Separator tokenization and maximal runs are both required: '-' and '_' can
+  // delimit a value or belong to a base64url credential.
+  const tokens = value.split(/[:/\-_.=+@\s]+/);
+  if (
+    tokens.some(
+      (token) =>
+        /^[a-f0-9]{32,}$/i.test(token) || /^[A-Za-z0-9]{32,}$/.test(token)
     )
   )
     return true;
-  if (/^[A-Za-z0-9_-]+\.[A-Za-z0-9_-]+\.[A-Za-z0-9_-]+$/.test(value)) {
-    try {
-      const [header, body] = value
-        .split('.')
-        .slice(0, 2)
-        .map((part) =>
-          JSON.parse(Buffer.from(part, 'base64url').toString('utf8'))
-        );
-      if (
-        header &&
-        typeof header === 'object' &&
-        body &&
-        typeof body === 'object'
+  if (/[a-f0-9]{32,}/i.test(value)) return true;
+  if (/v1\.0-[a-f0-9]+-[a-f0-9]+/i.test(value)) return true;
+  const withoutUuids = value.replace(
+    /(?<![A-Za-z0-9])[a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12}(?![A-Za-z0-9])/gi,
+    ' uuid '
+  );
+  for (const [run] of withoutUuids.matchAll(/[A-Za-z0-9+/_-]{31,}={0,2}/g)) {
+    const words = run.split(/[-_/+]+/).filter(Boolean);
+    if (
+      !words.length ||
+      !words.every(
+        (word) =>
+          /^[a-z]{1,24}$/.test(word) ||
+          /^[A-Z]{1,8}$/.test(word) ||
+          /^[A-Z][a-z]{1,23}$/.test(word)
       )
-        return true;
-    } catch {
-      /* A dotted identifier is not a JWT without JSON header and payload. */
-    }
+    )
+      return true;
   }
-  if (value.length < 31 || !/^[A-Za-z0-9_\-./+=]+$/.test(value)) return false;
-  const frequencies = new Map();
-  for (const character of value)
-    frequencies.set(character, (frequencies.get(character) ?? 0) + 1);
-  let entropy = 0;
-  for (const count of frequencies.values()) {
-    const probability = count / value.length;
-    entropy -= probability * Math.log2(probability);
-  }
-  return entropy >= 4;
+  return false;
 }
 function structuredReference(value, field, parent) {
-  if (!hexIds.has(field)) return false;
-  let path = value;
+  const uuidOrId = (segment) =>
+    uuidPattern.test(segment) || /^[a-f0-9]{32}$/i.test(segment);
+  const digest = (segment) => /^[a-f0-9]{64}$/i.test(segment);
   if (parent === 'artifact' && field === 'id' && value.startsWith('https://')) {
     try {
       const url = new URL(value);
-      if (url.username || url.password || url.search || url.hash) return false;
-      path = `${url.hostname}${url.pathname}`;
+      if (
+        url.username ||
+        url.password ||
+        url.search ||
+        url.hash ||
+        !(
+          url.hostname === 'tuturuuu.com' ||
+          url.hostname.endsWith('.tuturuuu.com')
+        )
+      )
+        return false;
+      const segments = url.pathname.split('/');
+      return (
+        segments.length === 3 && segments[1] === 'sealed' && digest(segments[2])
+      );
     } catch {
       return false;
     }
   }
-  if (!/^[A-Za-z0-9._/-]+$/.test(path)) return false;
+  if (!['verificationRefs', 'checkpointRef'].includes(field)) return false;
+  const path = value.startsWith('cloudflare:')
+    ? value.slice('cloudflare:'.length)
+    : value;
   const segments = path.split('/');
   if (
-    segments.length < 3 ||
     segments.some((segment) => !segment || segment === '.' || segment === '..')
   )
     return false;
-  const identifier = (segment) =>
-    uuidPattern.test(segment) ||
-    /^(?:[a-f0-9]{32}|[a-f0-9]{64})$/i.test(segment);
-  if (!identifier(segments.at(-1))) return false;
-  return segments.every(
-    (segment) =>
-      identifier(segment) ||
-      (/^[A-Za-z0-9._-]{1,64}$/.test(segment) && !credentialValue(segment))
+  if (
+    segments.length === 3 &&
+    segments[0] === 'readback' &&
+    reviewedApps.has(segments[1])
+  )
+    return uuidOrId(segments[2]) || digest(segments[2]);
+  if (segments.length !== 4) return false;
+  if (segments[0] === 'workers')
+    return (
+      reviewedWorkers.has(segments[1]) &&
+      ['deployments', 'versions'].includes(segments[2]) &&
+      uuidOrId(segments[3])
+    );
+  return (
+    segments[0] === 'cf-wave1' &&
+    (reviewedApps.has(segments[1]) || reviewedWorkers.has(segments[1])) &&
+    ['version-readback', 'deployment-readback'].includes(segments[2]) &&
+    uuidOrId(segments[3])
+  );
+}
+export function metadataStringIsSafe(value, field = '', parent = '') {
+  if (typeof value !== 'string' || value.length > 256) return false;
+  if (/(?:password|token|secret|credential|api[_-]?key)\s*[:=]/i.test(value))
+    return false;
+  const reviewedTarget =
+    (field === 'project' && reviewedWorkers.has(value)) ||
+    (field === 'aliases' &&
+      (reviewedWorkers.has(value) || reviewedOrigins.has(value)));
+  return (
+    reviewedTarget ||
+    allowedHex(value, field, parent) ||
+    structuredReference(value, field, parent) ||
+    !credentialValue(value)
   );
 }
 export function safeData(value, depth = 0, field = '', parent = '') {
   assert.ok(depth < 16);
   if (typeof value === 'string') {
-    assert.ok(value.length <= 256);
     assert.ok(
-      allowedHex(value, field, parent) ||
-        structuredReference(value, field, parent) ||
-        !credentialValue(value),
+      metadataStringIsSafe(value, field, parent),
       'Credential-shaped value'
-    );
-    assert.ok(
-      !/(?:password|token|secret|credential|api[_-]?key)\s*[:=]/i.test(value),
-      'Credential assignment'
     );
   } else if (Array.isArray(value)) {
     assert.ok(value.length <= 64);
