@@ -92,6 +92,11 @@ class _FloatingShellDockState extends State<FloatingShellDock> {
   bool _hidden = false;
   bool _scrolledUnder = false;
 
+  /// Top of the scrolled viewport when page chrome (a week strip, a range
+  /// switcher) sits between it and the header. The separator then marks the
+  /// bottom of that composite header instead of the header's own edge.
+  double? _separatorEdge;
+
   /// The page scrollable each location last reported. A revisited root tab
   /// keeps its scroll position, so its separator follows that position; a
   /// newly opened route starts without one.
@@ -131,6 +136,7 @@ class _FloatingShellDockState extends State<FloatingShellDock> {
     if (oldWidget.location != widget.location) {
       _scrollables.removeWhere((_, ref) => !(ref.target?.mounted ?? false));
       _scrolledUnder = _isScrolledUnder(_scrollables[widget.location]?.target);
+      _separatorEdge = null;
     }
     if (oldWidget.location != widget.location ||
         oldWidget.keepNavigationVisible != widget.keepNavigationVisible ||
@@ -197,16 +203,38 @@ class _FloatingShellDockState extends State<FloatingShellDock> {
     BuildContext? scrollContext,
   ) {
     if (depth != 0 || metrics.axis != Axis.vertical) return;
+    double? edge;
     if (scrollContext != null) {
       // Offstage root tabs and covered routes keep reporting layout changes.
       if (!TickerMode.getValuesNotifier(scrollContext).value.enabled) return;
       final scrollable = Scrollable.maybeOf(scrollContext);
       if (scrollable != null) {
         _scrollables[widget.location] = WeakReference(scrollable);
+        edge = _viewportTopBelowHeader(scrollable);
       }
     }
     final scrolled = metrics.pixels > metrics.minScrollExtent;
-    if (scrolled != _scrolledUnder) setState(() => _scrolledUnder = scrolled);
+    if (scrolled != _scrolledUnder || edge != _separatorEdge) {
+      setState(() {
+        _scrolledUnder = scrolled;
+        _separatorEdge = edge;
+      });
+    }
+  }
+
+  /// The viewport's top in this dock, when it starts below a fixed header.
+  double? _viewportTopBelowHeader(ScrollableState scrollable) {
+    if (widget.header == null || widget.scrollableHeader) return null;
+    final viewport = scrollable.context.findRenderObject();
+    final dock = context.findRenderObject();
+    if (viewport is! RenderBox ||
+        dock is! RenderBox ||
+        !viewport.attached ||
+        !viewport.hasSize) {
+      return null;
+    }
+    final top = viewport.localToGlobal(Offset.zero, ancestor: dock).dy;
+    return top > _headerInset + 0.5 ? top : null;
   }
 
   bool _onScrollMetrics(ScrollMetricsNotification notification) {
@@ -262,20 +290,16 @@ class _FloatingShellDockState extends State<FloatingShellDock> {
   Widget _headerSurface(BuildContext context, Color color, Widget child) {
     if (!AppearanceScope.hasAmbientBackground(context)) {
       final style = ShellChromeStyle.of(context);
-      // Sticky elevation once content scrolls under the bar: `shadow.sm` in
-      // Sorbet, a hairline in classic.
+      // Content scrolling under the bar shows a hairline and no shadow. A
+      // foreground hairline adds no height to the bar.
       return AnimatedContainer(
         key: const ValueKey('floating-shell-header-surface'),
         duration: style.motion(context, style.fast),
-        decoration: BoxDecoration(
-          color: color,
-          boxShadow: _scrolledUnder ? style.stickyShadow : const [],
-        ),
-        // A foreground hairline adds no height to the bar.
+        decoration: BoxDecoration(color: color),
         foregroundDecoration: BoxDecoration(
           border: Border(
             bottom: BorderSide(
-              color: _scrolledUnder && style.raisedShadow.isEmpty
+              color: _scrolledUnder && _separatorEdge == null
                   ? style.border
                   : style.border.withValues(alpha: 0),
             ),
@@ -378,6 +402,18 @@ class _FloatingShellDockState extends State<FloatingShellDock> {
                   ),
                 ),
               ),
+            ),
+          // One hairline under the header and the page chrome below it.
+          if (_separatorEdge case final edge?
+              when _scrolledUnder &&
+                  !AppearanceScope.hasAmbientBackground(context))
+            Positioned(
+              key: const ValueKey('floating-shell-composite-separator'),
+              top: edge - 1,
+              left: 0,
+              right: 0,
+              height: 1,
+              child: IgnorePointer(child: ColoredBox(color: style.border)),
             ),
           if (active && !widget.hideIdleNavigation)
             Positioned(

@@ -172,6 +172,13 @@ reuses for another location of the same path (another wallet or board). The
 top bar's scrolled-under separator follows the visible page: hidden at the top,
 restored with a revisited tab's retained position, and never carried over from
 the previous route (`shell_route_scroll_test.dart`).
+
+Content scrolling under the top bar shows one hairline and no shadow. When page
+chrome such as the Calendar week strip or the Tasks timeline range sits between
+the bar and the scrolling content, that hairline marks the bottom of the whole
+composite header, never the edge between the bar and the strip. Ambient
+appearances keep their clear or frosted header without it
+(`floating_shell_dock_separator_test.dart`).
 Coverage: `shell_dock_bar_test.dart` (fixed zones, overflow, sliding highlight
 timing), `dock_action_choreography_test.dart`, `persistent_shell_dock_test.dart`,
 `floating_dock_rail_test.dart`, `shell_dock_modal_visibility_test.dart`,

@@ -168,24 +168,6 @@ class ShellChromeStyle {
   /// Presses, toggles and slot changes.
   final Duration base;
 
-  /// The top bar once content scrolls under it (`shadow.sm`); classic draws
-  /// a hairline instead.
-  List<BoxShadow> get stickyShadow => raisedShadow.isEmpty
-      ? const []
-      : [
-          BoxShadow(
-            color: foreground.withValues(alpha: 0.06),
-            offset: const Offset(0, 1),
-            blurRadius: 2,
-          ),
-          BoxShadow(
-            color: foreground.withValues(alpha: 0.12),
-            offset: const Offset(0, 2),
-            blurRadius: 8,
-            spreadRadius: -4,
-          ),
-        ];
-
   /// Card edge: Sorbet separates cards by shadow, classic by an outline.
   Border? get cardOutline =>
       raisedShadow.isEmpty ? Border.all(color: border) : null;
