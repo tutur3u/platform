@@ -1,7 +1,9 @@
 import { withBridgeRequest } from '@tuturuuu/start-bridge/request-context';
+import { guardApiProxyBody } from '@tuturuuu/utils/api-proxy-body';
 import { NextRequest, NextResponse } from 'next/server';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { proxy } from './proxy';
+import { MAIL_ATTACHMENT_REQUEST_BYTES } from './lib/mail/attachment-upload-policy';
 
 const mocks = vi.hoisted(() => {
   const authProxy = vi.fn();
@@ -144,6 +146,67 @@ describe('Mail proxy auth handoff', () => {
     expect(mocks.refreshAppSessionForRequest).not.toHaveBeenCalled();
     expect(mocks.guardApiProxyRequest).toHaveBeenCalledWith(request, {
       prefixBase: 'proxy:mail:api',
+    });
+  });
+
+  it('passes the scoped upload budget to the body guard for a 3 MiB PDF', async () => {
+    mocks.guardApiProxyRequest.mockImplementation(
+      (request: NextRequest, options: { maxPayloadBytes?: number }) =>
+        guardApiProxyBody(request, options.maxPayloadBytes)
+    );
+    const body = new FormData();
+    body.append(
+      'file',
+      new Blob(['%PDF-1.7\n', new Uint8Array(3 * 1024 * 1024)], {
+        type: 'application/pdf',
+      }),
+      'document.pdf'
+    );
+    const request = new NextRequest(
+      'https://mail.tuturuuu.com/api/v1/workspaces/personal/mail/mailboxes/box/drafts/draft/attachments',
+      {
+        method: 'POST',
+        headers: { authorization: 'Bearer mobile-session' },
+        body,
+      }
+    );
+    const response = await proxy(request);
+    expect(response.headers.get('x-middleware-next')).toBe('1');
+    expect(mocks.guardApiProxyRequest).toHaveBeenCalledWith(request, {
+      prefixBase: 'proxy:mail:api',
+      maxPayloadBytes: MAIL_ATTACHMENT_REQUEST_BYTES,
+    });
+    expect(mocks.refreshAppSessionForRequest).not.toHaveBeenCalled();
+  });
+
+  it('retains the generic body rejection for the same PDF on another route', async () => {
+    mocks.guardApiProxyRequest.mockImplementation(
+      (request: NextRequest, options: { maxPayloadBytes?: number }) =>
+        guardApiProxyBody(request, options.maxPayloadBytes)
+    );
+    const body = new FormData();
+    body.append(
+      'file',
+      new Blob([new Uint8Array(3 * 1024 * 1024)], {
+        type: 'application/pdf',
+      }),
+      'document.pdf'
+    );
+    const request = new NextRequest(
+      'https://mail.tuturuuu.com/api/v1/workspaces/personal/mail/mailboxes/box/drafts/draft',
+      {
+        method: 'POST',
+        headers: { authorization: 'Bearer mobile-session' },
+        body,
+      }
+    );
+    const response = await proxy(request);
+    expect(response.status).toBe(413);
+    expect(mocks.guardApiProxyRequest).toHaveBeenCalledWith(request, {
+      prefixBase: 'proxy:mail:api',
+    });
+    expect(await response.json()).toMatchObject({
+      message: 'Request body exceeds limit',
     });
   });
 

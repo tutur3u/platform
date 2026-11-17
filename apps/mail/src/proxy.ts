@@ -35,6 +35,7 @@ import {
   TTR_URL,
 } from './constants/common';
 import { defaultLocale, type Locale, supportedLocales } from './i18n/routing';
+import { mailAttachmentUploadPayloadPolicy } from './lib/mail/attachment-upload-policy';
 
 const AUTH_PUBLIC_PATHS = [
   ...PUBLIC_PATHS,
@@ -124,6 +125,7 @@ async function handleProxy(req: NextRequest): Promise<NextResponse> {
 
     const guardResponse = await guardApiProxyRequest(req, {
       prefixBase: 'proxy:mail:api',
+      ...mailAttachmentUploadPayloadPolicy(req),
     });
     if (guardResponse) {
       if (appSessionRefresh) {

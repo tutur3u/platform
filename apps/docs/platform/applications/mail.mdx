@@ -1517,3 +1517,27 @@ and mobile layouts. Empty body-space clicks focus the end of the message;
 text selections and toolbar or attachment actions retain their own behavior.
 Long messages scroll within the body. Coverage is in
 `mail-composer-editor-media.test.ts`.
+
+
+### Composer upload limits and inline image preparation
+
+Mail draft attachments use a 10 MiB per-file and combined attachment limit.
+Only the exact draft-attachment POST route admits that file budget plus 64 KiB
+of multipart metadata. Other API routes retain the shared 512 KiB request limit.
+The hosting platform can impose a smaller request limit: Vercel Functions accept
+at most 4.5 MB including the multipart envelope. The Cloudflare Worker path retains
+the Mail application limit even when its zone allows larger request bodies.
+
+Pasted inline images larger than 448 KiB are prepared in the browser before
+upload. Static images are resized to at most 1800 pixels on their longest edge
+and encoded with bounded quality and scale attempts. Small images retain their
+original bytes. Large animated or unsupported images are rejected with a localized
+message rather than silently flattened. The original local preview remains while
+preparation and upload run; failure keeps Retry and Remove available. New inline
+images initially display at no more than 320 pixels wide, retain their aspect
+ratio and remain resizable. Saved and sent HTML retains the chosen display width.
+
+Regression coverage: `mail-inline-image-preparation.test.ts`,
+`mail-composer-editor-media.test.ts`, `attachment-upload-policy.test.ts` and
+`proxy-auth.test.ts`. A real browser decode check covers an input PNG over 5 MiB
+and validates that the prepared multipart body fits below the shared request cap.

@@ -1,5 +1,6 @@
 import { createHash, randomUUID } from 'node:crypto';
 import type { EmailAttachment } from '@tuturuuu/email-service';
+import { MAIL_ATTACHMENT_FILE_BYTES } from '../attachment-upload-policy';
 import {
   deleteMailStoredObject,
   getMailR2BucketName,
@@ -11,7 +12,7 @@ import type { MailRouteContext } from '../types';
 import { requireMailboxAccess } from './bootstrap';
 import { type AnyRecord, mailMessageTable, privateTable } from './shared';
 
-export const MAX_MAIL_ATTACHMENT_BYTES = 10 * 1024 * 1024;
+export const MAX_MAIL_ATTACHMENT_BYTES = MAIL_ATTACHMENT_FILE_BYTES;
 export const MAX_MAIL_ATTACHMENTS = 32;
 const CONTENT_ID_PATTERN = /^[a-z0-9.!#$%&'*+/=?^_`{|}~@-]+$/iu;
 
