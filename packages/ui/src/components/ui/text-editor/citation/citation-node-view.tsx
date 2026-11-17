@@ -12,6 +12,7 @@ import {
 } from './citation-context';
 import { RECOVERY_ATTENTION } from './label-keys';
 import { citationFallbackText, readCitationAttrs } from './snapshot';
+import { citationInText } from './in-text';
 
 export function CitationNodeView({
   node,
@@ -32,10 +33,10 @@ export function CitationNodeView({
     ? resolveCitationRecovery(attrs, inspection, context.library)
     : null;
 
-  const formatted =
-    context?.format.status === 'ok' && attrs.citationId
-      ? context.format.result.inText[attrs.citationId]
-      : undefined;
+  const formatted = citationInText(
+    context?.format.status === 'ok' ? context.format.result.inText : undefined,
+    attrs.citationId
+  );
   const text = formatted ?? citationFallbackText(node.attrs);
   const validation = citationValidationLevel(inspection);
   const needsAttention =

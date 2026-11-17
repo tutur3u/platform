@@ -1,14 +1,29 @@
+import { NextRequest } from 'next/server';
 import { CiteWorkSchema, validateCitation } from '@tuturuuu/cite';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { POST } from './route';
 
 const mocks = vi.hoisted(() => ({
   auth: vi.fn(),
+  options: vi.fn(),
   store: vi.fn(),
   evaluate: vi.fn(),
 }));
 vi.mock('server-only', () => ({}));
-vi.mock('@/lib/api-auth', () => ({ resolveSessionAuthContext: mocks.auth }));
+vi.mock('@/lib/api-auth', () => ({
+  withSessionAuth:
+    (
+      handler: (r: Request, a: unknown) => Promise<Response>,
+      options: unknown
+    ) =>
+    async (request: Request) => {
+      mocks.options(options);
+      const session = await mocks.auth(request);
+      return session.ok
+        ? handler(request, { user: session.user, supabase: {} })
+        : session.response;
+    },
+}));
 vi.mock('@tuturuuu/utils/upstash-rest', () => ({
   getUpstashRestRedisClient: mocks.store,
 }));
@@ -22,7 +37,7 @@ const work = CiteWorkSchema.parse({
   },
 });
 function request(style: 'apa' | 'harvard') {
-  return new Request('https://tuturuuu.com/api/v1/cite/validate', {
+  return new NextRequest('https://tuturuuu.com/api/v1/cite/validate', {
     method: 'POST',
     headers: { 'content-type': 'application/json' },
     body: JSON.stringify({ style, work }),
@@ -66,5 +81,12 @@ describe('POST /api/v1/cite/validate', () => {
     });
     expect((await POST(request('apa'))).status).toBe(401);
     expect(mocks.store).not.toHaveBeenCalled();
+  });
+  it('runs behind the session wrapper with a bounded payload', async () => {
+    await POST(request('apa'));
+    expect(mocks.options).toHaveBeenCalledWith({
+      allowAppSessionAuth: true,
+      maxPayloadSize: 96 * 1024,
+    });
   });
 });

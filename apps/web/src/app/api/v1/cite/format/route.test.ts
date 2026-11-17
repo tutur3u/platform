@@ -1,14 +1,29 @@
+import { NextRequest } from 'next/server';
 import { CiteWorkSchema, formatDocument } from '@tuturuuu/cite';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { POST } from './route';
 
 const mocks = vi.hoisted(() => ({
   auth: vi.fn(),
+  options: vi.fn(),
   store: vi.fn(),
   evaluate: vi.fn(),
 }));
 vi.mock('server-only', () => ({}));
-vi.mock('@/lib/api-auth', () => ({ resolveSessionAuthContext: mocks.auth }));
+vi.mock('@/lib/api-auth', () => ({
+  withSessionAuth:
+    (
+      handler: (r: Request, a: unknown) => Promise<Response>,
+      options: unknown
+    ) =>
+    async (request: Request) => {
+      mocks.options(options);
+      const session = await mocks.auth(request);
+      return session.ok
+        ? handler(request, { user: session.user, supabase: {} })
+        : session.response;
+    },
+}));
 vi.mock('@tuturuuu/utils/upstash-rest', () => ({
   getUpstashRestRedisClient: mocks.store,
 }));
@@ -22,7 +37,7 @@ const work = CiteWorkSchema.parse({
   publisherPlace: 'Example City',
 });
 function request(style: 'apa' | 'harvard', authorization?: string) {
-  return new Request('https://tuturuuu.com/api/v1/cite/format', {
+  return new NextRequest('https://tuturuuu.com/api/v1/cite/format', {
     method: 'POST',
     headers: {
       'content-type': 'application/json',
@@ -81,5 +96,12 @@ describe('POST /api/v1/cite/format', () => {
     mocks.auth.mockResolvedValue({ ok: true, user: { id: 'verified-actor' } });
     mocks.store.mockResolvedValue(null);
     expect((await POST(request('apa'))).status).toBe(503);
+  });
+  it('runs behind the session wrapper with a bounded payload', async () => {
+    await POST(request('apa'));
+    expect(mocks.options).toHaveBeenCalledWith({
+      allowAppSessionAuth: true,
+      maxPayloadSize: 96 * 1024,
+    });
   });
 });
