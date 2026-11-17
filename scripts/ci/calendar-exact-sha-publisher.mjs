@@ -37,11 +37,12 @@ export {
   sealTree,
 } from './calendar-exact-sha-output.mjs';
 
-export const CALENDAR_PRODUCTION_ALIAS = 'calendar.tuturuuu.com';
-export const CALENDAR_SUPABASE_HOST = 'nzamlzqfdwaaxdefwraj.supabase.co';
+import { CALENDAR_VERCEL } from './release-vercel-config.mjs';
+
+export const CALENDAR_PRODUCTION_ALIAS = CALENDAR_VERCEL.productionAlias;
+export const CALENDAR_SUPABASE_HOST = CALENDAR_VERCEL.supabaseHost;
 // Bounded dependency builds first, then the legacy Next build.
-export const CALENDAR_LEGACY_BUILD_COMMAND =
-  "cd ../.. && bun turbo:local run build --filter='@tuturuuu/calendar^...' && bun run --cwd apps/calendar build:legacy";
+export const CALENDAR_LEGACY_BUILD_COMMAND = CALENDAR_VERCEL.buildCommand;
 export const MODES = ['stage'];
 export const VERCEL_SUBCOMMANDS = ['pull', 'build', 'deploy'];
 export const PHASES = [
@@ -504,14 +505,16 @@ function record(heading, lines) {
 
 async function stageReal(mode) {
   await inPhase('inputs', () => assertMode(mode), redact);
-  const appDir = path.join(process.cwd(), 'apps/calendar');
+  const appDir = path.join(process.cwd(), CALENDAR_VERCEL.appDirectory);
   const output = path.join(appDir, '.vercel', 'output');
   const { requested, aliasPreimage } = await inPhase(
     'inputs',
     () => {
-      const requested = assertExactSha(process.env.CALENDAR_MAIN_SHA);
+      const requested = assertExactSha(
+        process.env[CALENDAR_VERCEL.sourceShaEnv]
+      );
       const aliasPreimage = assertAliasPreimageInput(
-        process.env.CALENDAR_ALIAS_PREIMAGE
+        process.env[CALENDAR_VERCEL.aliasPreimageEnv]
       );
       if (!process.env.VERCEL_TOKEN || !process.env.VERCEL_ORG_ID) {
         throw stop('CREDENTIALS_MISSING', 'Vercel credentials are missing');
