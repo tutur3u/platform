@@ -19,9 +19,9 @@ import { useState } from 'react';
 import { resolveDockLocation } from './dashboard-mobile-dock-location';
 
 /**
- * The web dashboard's floating mobile dock: Home, Tasks, Calendar, Mira and
- * Apps, with Back below a destination's root. It shows on phones while Sorbet
- * is on (sorbet-surfaces.css).
+ * The web dashboard's floating mobile dock: Home, Tasks, Calendar, Mira (the
+ * personal workspace home) and Apps, with Back below a destination's root.
+ * It shows on phones while Sorbet is on (sorbet-surfaces.css).
  */
 export function DashboardMobileDock({ wsId }: { wsId: string }) {
   const t = useTranslations('common');
@@ -34,7 +34,7 @@ export function DashboardMobileDock({ wsId }: { wsId: string }) {
   const location = resolveDockLocation(pathname, params?.wsId ?? wsId);
   if (!location) return null;
 
-  const { base, destination, atRoot, rootHref } = location;
+  const { base, destination, atRoot, rootHref, miraHref } = location;
   const items: MobileDockItem[] = [
     {
       key: 'home',
@@ -61,8 +61,7 @@ export function DashboardMobileDock({ wsId }: { wsId: string }) {
       key: 'mira',
       label: 'Mira',
       icon: <Sparkles />,
-      href: `${base}/mira`,
-      active: !appsOpen && destination === 'mira',
+      href: miraHref,
     },
     {
       key: 'apps',

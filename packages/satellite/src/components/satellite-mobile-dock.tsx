@@ -35,13 +35,16 @@ const DESTINATIONS = {
   home: { app: 'platform', section: '' },
   tasks: { app: 'tasks', section: '/tasks' },
   calendar: { app: 'calendar', section: '' },
-  mira: { app: 'platform', section: '/mira' },
 } as const;
+
+/** Mira on the web is the personal workspace home on the platform app. */
+const MIRA_PATH = '/personal';
 
 /**
  * The product-wide mobile dock in every satellite: Home, Tasks, Calendar,
- * Mira and Apps. Tasks and Calendar mark their own slot; other apps keep Apps
- * active and show Back below their root. Links into this app stay in-app;
+ * Mira (the platform's personal workspace home) and Apps. Tasks and Calendar
+ * mark their own slot; other apps keep Apps active and show Back below their
+ * root. Links into this app stay in-app;
  * links to other apps resolve their origin for the current environment. It
  * shows on phones while Sorbet is on (sorbet-surfaces.css).
  */
@@ -83,6 +86,16 @@ function SatelliteMobileDockView({
   const [appsOpen, setAppsOpen] = useState(false);
 
   const hrefFor = (slot: Exclude<SatelliteDockSlot, 'apps'>) => {
+    if (slot === 'mira') {
+      const platform = getLaunchableApp('platform');
+      return platform
+        ? resolveLaunchableAppUrl({
+            app: platform,
+            currentOrigin: origin,
+            path: MIRA_PATH,
+          })
+        : undefined;
+    }
     const { app: slug, section } = DESTINATIONS[slot];
     // In-app links keep this URL's locale; the app adds its own base path.
     if (slug === currentApp) return `${location.base}${section}`;

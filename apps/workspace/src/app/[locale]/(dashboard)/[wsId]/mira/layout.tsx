@@ -16,9 +16,9 @@ export default async function MiraLayout({ children, params }: LayoutProps) {
   const { wsId: id } = await params;
   const workspace = await getWorkspace(id);
 
-  // Mira is only available in personal workspaces
+  // This page lives only in the personal workspace; elsewhere, open Mira.
   if (!workspace?.personal) {
-    redirect(`/personal/mira`);
+    redirect('/personal');
   }
 
   return children;

@@ -151,7 +151,17 @@ modes follow, and each has a test that keeps its rules under `data-ui`.
 
 On phones (below the `md` breakpoint) with Sorbet on, the web dashboard shows
 the mobile shell's floating dock (`MobileDock` in `@tuturuuu/ui`): Home, Tasks,
-Calendar, Mira and Apps, with the current destination in the `accent` fill.
+Calendar, Mira and Apps, matching the native app's dock. Destinations are
+icon-only 52px slots named for assistive technology (`aria-label`, English
+and Vietnamese), the current one in the `accent` fill. The 64px pill rests 8px
+inside a home-indicator safe area, never closer than the 12px dock inset, with
+its shadow falling below it. Mira opens `tuturuuu.com/personal` (the personal
+workspace home) from every app; the old `[wsId]/mira` pet module is not linked
+from navigation. WebKit can resume a page (after an app switch, in Safari and
+in in-app browsers such as Instagram's) with fixed content ending above the
+visible bottom; `dock-viewport-anchor.ts` compares a hidden fixed probe with
+`visualViewport` and moves the dock, its fade and bottom toasts back onto the
+visible edge.
 Below a destination's own page the dock adds a leading Back button; a long
 press returns to that destination's page, and the dock's frame never moves.
 Apps opens the apps launcher. The top bar keeps the page title and actions and
@@ -161,8 +171,9 @@ fade behind the dock keeps it legible. Every satellite app shows the same dock
 Tasks and Calendar mark their own slot, every other app keeps Apps active and
 shows Back below its root, and links to other apps resolve their address for
 the current environment. With Sorbet off, the classic mobile navigation is
-unchanged. `mobile-dock.test.tsx` covers the active slot, Back,
-long press and the fixed frame; `dashboard-mobile-dock-location.test.ts` and
+unchanged. `mobile-dock.test.tsx` covers the active slot, icon-only
+names, Back, long press and the fixed frame; `dock-viewport-anchor.test.ts`
+covers the resume correction; `dashboard-mobile-dock-location.test.ts` and
 `satellite-mobile-dock-location.test.ts` cover which destination and Back
 state each path gets.
 
