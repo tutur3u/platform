@@ -61,10 +61,7 @@ void main() {
     await cubit.updateEvent('origin', 'first', title: 'Edit');
     final updated = cubit.state.displayEvents;
     expect(updated, isNot(same(created)));
-    expect(
-      updated.firstWhere((event) => event.id == 'first').title,
-      'Edit',
-    );
+    expect(updated.firstWhere((event) => event.id == 'first').title, 'Edit');
 
     await cubit.deleteEvent('origin', 'second');
     final deleted = cubit.state.displayEvents;
