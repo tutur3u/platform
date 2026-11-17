@@ -466,16 +466,16 @@ export async function executeVercelPhase({
     if (finished?.status !== 'succeeded') refuse('QUEUE_GRANT_INVALID', phase);
     return result;
   } catch (error) {
-    if (
+    const failure =
       error instanceof StageStop &&
       (error.cause instanceof QueueStop || error.cause instanceof ReleaseStop)
-    )
-      error = error.cause;
+        ? error.cause
+        : error;
     const code =
-      error instanceof QueueStop ||
-      error instanceof ReleaseStop ||
-      error instanceof StageStop
-        ? error.guardCode
+      failure instanceof QueueStop ||
+      failure instanceof ReleaseStop ||
+      failure instanceof StageStop
+        ? failure.guardCode
         : 'QUEUE_EXECUTION_FAILED';
     const result = receipt(
       startedEffect
@@ -486,10 +486,10 @@ export async function executeVercelPhase({
       code
     );
     result.guardPhase =
-      error instanceof QueueStop ||
-      error instanceof ReleaseStop ||
-      error instanceof StageStop
-        ? (error.guardPhase ?? error.phase)
+      failure instanceof QueueStop ||
+      failure instanceof ReleaseStop ||
+      failure instanceof StageStop
+        ? (failure.guardPhase ?? failure.phase)
         : phase;
     // A lost authority cannot acknowledge this receipt; the caller must retain
     // it for reconciliation. No retries or second mutation are attempted.
