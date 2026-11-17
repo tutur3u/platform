@@ -7,6 +7,7 @@ export const QUEUE_CODES = Object.freeze([
   'QUEUE_GRANT_INVALID',
   'QUEUE_PHASE_UNKNOWN',
   'QUEUE_EFFECT_UNKNOWN',
+  'QUEUE_EXECUTION_FAILED',
   'QUEUE_STOPPED',
 ]);
 export class QueueStop extends Error {
@@ -178,7 +179,11 @@ export async function executeVercelPhase({
     )
       refuse('QUEUE_GRANT_INVALID', phase);
   }
+  const startedAt = new Date().toISOString();
   const receipt = (status, code, evidence = null) => ({
+    startedAt,
+    finishedAt: new Date().toISOString(),
+    providerOperationId: evidence?.deploymentId ?? null,
     schemaVersion: 1,
     jobId: grant.jobId,
     operationId: job.operationId,
@@ -235,9 +240,7 @@ export async function executeVercelPhase({
     return result;
   } catch (error) {
     const code =
-      error instanceof QueueStop
-        ? error.guardCode
-        : 'QUEUE_AUTHORITY_UNAVAILABLE';
+      error instanceof QueueStop ? error.guardCode : 'QUEUE_EXECUTION_FAILED';
     const result = receipt(startedEffect ? 'unknown' : 'stopped', code);
     // A lost authority cannot acknowledge this receipt; the caller must retain
     // it for reconciliation. No retries or second mutation are attempted.

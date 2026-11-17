@@ -228,3 +228,17 @@ test('restart returns durable completed receipt without another effect', async (
   assert.deepEqual(second, first);
   assert.equal(effects, 1);
 });
+
+test('phase receipts retain timestamps and provider identity without raw exceptions', async () => {
+  const result = await run(authority(), async () => ({
+    deploymentId: 'dpl_result',
+  }));
+  assert.ok(Number.isFinite(Date.parse(result.startedAt)));
+  assert.ok(Date.parse(result.finishedAt) >= Date.parse(result.startedAt));
+  assert.equal(result.providerOperationId, 'dpl_result');
+  const refused = await run(authority(), async () => {
+    throw new Error('private details');
+  });
+  assert.equal(refused.guardCode, 'QUEUE_EXECUTION_FAILED');
+  assert.equal(JSON.stringify(refused).includes('private details'), false);
+});
