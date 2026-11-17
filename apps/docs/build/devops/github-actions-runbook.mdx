@@ -205,3 +205,31 @@ Image provenance: [official Redis image](https://hub.docker.com/_/redis) and
 [Docker port publication](https://docs.docker.com/reference/cli/docker/container/run/).
 The helper pins the SHA-256 verified from the registry manifest index for
 `7.4-alpine`; review and reverify the digest before updating it.
+
+## Offline Vercel Release Recipe
+
+The Calendar stage publisher reads a committed record from
+`scripts/ci/release-vercel-config.mjs`. Tests pin its nine literal values,
+workflow environment, input mappings, project secret name and CLI version.
+Invalid records throw `VERCEL_CONFIG_INVALID` during module import, before a
+stage stop receipt can be written. The stage publisher retains its 37 runtime
+guard codes and permits only pull, build and skip-domain deploy commands.
+
+The queue adapter and lifecycle modes are offline mechanisms with injected ports;
+they provide no provider transport or active dispatch integration. Each job names
+one phase. Authority approval, canonical target locks, current epoch, stop revision
+and durable phase intent precede injected effects. An uncertain accepted effect
+requires reconciliation; it must never be replayed automatically.
+
+Calendar promote and rollback require the production-only environment and ref,
+separate from staging, plus their respective approval references. Watch checks
+smoke and error-rate evidence within duration, timeout and sample bounds. Fast
+probes are spaced across the observation window. A threshold emits
+`rollback-required`; restoring the recorded preimage requires a separately
+authorized rollback phase and alias readback. Queue admission alone does not
+authorize a release. Production activation and environment/path approvals remain
+separate gates.
+
+When an exact-source dispatch pins publisher files, preserve that pin set until
+the dispatch is consumed or expires. A config-driven publisher also requires its
+imported record in the reviewed blob set.

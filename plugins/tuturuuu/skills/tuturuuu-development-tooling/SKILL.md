@@ -37,6 +37,9 @@ placement decisions and realistic routing checks.
   `agents/openai.yaml`, and update `apps/docs/build/development-tools/codex-plugin.mdx`.
   Release Please owns version bumps.
 
+For the offline Calendar release mechanism and its validation boundaries, use
+`references/vercel-release-recipe.md`.
+
 For wave-1 native publication profiles, use
 `references/wave1-native-publishers.md` alongside the normal CI guidance.
 
