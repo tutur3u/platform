@@ -384,3 +384,98 @@ describe('open in context', () => {
     expect(url.searchParams.get('thread')).toBe(thread);
   });
 });
+
+describe('Mail host notifications', () => {
+  it('opens the exact thread through the host router without an Open in Mail action', async () => {
+    navigation.calls.length = 0;
+    const mailboxId = 'bbbbbbbb-0000-4000-8000-000000000001';
+    const threadId = 'bbbbbbbb-0000-4000-8000-000000000002';
+    const api = fakeApi([
+      notification('mail-row', 1, {
+        type: 'mail_received',
+        ws_id: null,
+        entity_type: 'mail_message',
+        data: { mailboxId, threadId },
+      }),
+    ]);
+    stubBrowser(api.fetch);
+    const { router } = renderPopover({ hostApp: 'mail' });
+    await openPopover();
+    const title = await screen.findByText('Title mail-row');
+    expect(screen.queryByRole('button', { name: 'Open in Mail' })).toBeNull();
+    fireEvent.click(title);
+    await waitFor(() => expect(router.push).toHaveBeenCalledOnce());
+    const destination = new URL(
+      router.push.mock.calls[0]![0],
+      'https://mail.tuturuuu.com'
+    );
+    expect(destination.pathname).toMatch(/\/personal$/);
+    expect(destination.searchParams.get('mailbox')).toBe(mailboxId);
+    expect(destination.searchParams.get('thread')).toBe(threadId);
+    expect(navigation.calls).toEqual([]);
+    expect(api.calls.find((call) => call.method === 'PATCH')?.body).toEqual({
+      read: true,
+    });
+  });
+});
+
+describe('stable notification frame', () => {
+  it('keeps the frame dimensions across rows, read mutations and Unread/All empty states', async () => {
+    const api = fakeApi([notification('stable-row', 1)]);
+    stubBrowser(api.fetch);
+    renderPopover();
+    await openPopover();
+    await screen.findByText('Title stable-row');
+    const frame = screen.getByRole('dialog');
+    const dimensions = () => ({
+      width: frame.style.width,
+      height: frame.style.height,
+    });
+    const expected = frameDimensions();
+    expect(dimensions()).toEqual(expected);
+    fireEvent.click(screen.getByRole('button', { name: 'Mark as read' }));
+    await screen.findByText('You’re all caught up');
+    expect(dimensions()).toEqual(expected);
+    fireEvent.click(screen.getByRole('tab', { name: 'All' }));
+    await screen.findByText('Title stable-row');
+    expect(dimensions()).toEqual(expected);
+  });
+});
+
+describe('notification frame first-load states', () => {
+  it.each(['loading', 'error', 'empty'] as const)(
+    'fills the same fixed frame for %s',
+    async (state) => {
+      const api = fakeApi([]);
+      stubBrowser(
+        vi.fn(async (input: RequestInfo | URL, init?: RequestInit) => {
+          const url = String(input);
+          if (
+            !url.includes('/unread-count') &&
+            (init?.method ?? 'GET') === 'GET'
+          ) {
+            if (state === 'loading') return new Promise<Response>(() => {});
+            if (state === 'error') return new Response('{}', { status: 503 });
+          }
+          return api.fetch(input, init);
+        })
+      );
+      renderPopover();
+      await openPopover();
+      if (state === 'error') await screen.findByRole('alert');
+      if (state === 'empty') await screen.findByText('You’re all caught up');
+      if (state === 'loading') await screen.findByRole('status');
+      const frame = screen.getByRole('dialog');
+      expect({ width: frame.style.width, height: frame.style.height }).toEqual(
+        frameDimensions()
+      );
+    }
+  );
+});
+
+function frameDimensions() {
+  const style = document.createElement('div').style;
+  style.width = 'min(400px, calc(100vw - 24px))';
+  style.height = 'min(560px, calc(100dvh - 24px))';
+  return { width: style.width, height: style.height };
+}

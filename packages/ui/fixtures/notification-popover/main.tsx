@@ -13,6 +13,7 @@ import '../../src/globals.css';
 // injected through the runtime transport, no network, auth or database.
 const params = new URLSearchParams(location.search);
 const locale = params.get('locale') === 'vi' ? 'vi' : 'en';
+const state = params.get('state');
 const anchor = params.get('anchor') === 'navbar' ? 'navbar' : 'sidebar';
 document.documentElement.lang = locale;
 document.documentElement.classList.toggle(
@@ -30,22 +31,25 @@ const titles = [
   'Weekly planning starts at 19:30',
   'Budget for regional tutoring cooperative reached 90 percent',
 ];
-const rows: Notification[] = Array.from({ length: 30 }, (_, i) => ({
-  id: `00000000-0000-4000-8000-${String(i).padStart(12, '0')}`,
-  ws_id: WS,
-  user_id: 'fixture-user',
-  type: i === 0 ? 'workspace_invite' : 'task_updated',
-  title: titles[i % titles.length]!,
-  description: i % 3 === 0 ? 'Paperboat community · Product roadmap' : null,
-  data: i === 0 ? { workspace_id: WS, workspace_name: 'Orchard design' } : {},
-  entity_type: i === 0 ? null : 'task',
-  // Rows 1-3 repeat one entity so the list shows a collapsed stack.
-  entity_id: i === 0 ? null : i <= 3 ? 'task-stacked' : `task-${i}`,
-  read_at: i % 4 === 3 ? new Date(now).toISOString() : null,
-  created_at: new Date(now - i * 3 * 3_600_000).toISOString(),
-  created_by: null,
-  actor: null,
-}));
+const rows: Notification[] = Array.from(
+  { length: state === 'empty' ? 0 : 30 },
+  (_, i) => ({
+    id: `00000000-0000-4000-8000-${String(i).padStart(12, '0')}`,
+    ws_id: WS,
+    user_id: 'fixture-user',
+    type: i === 0 ? 'workspace_invite' : 'task_updated',
+    title: titles[i % titles.length]!,
+    description: i % 3 === 0 ? 'Paperboat community · Product roadmap' : null,
+    data: i === 0 ? { workspace_id: WS, workspace_name: 'Orchard design' } : {},
+    entity_type: i === 0 ? null : 'task',
+    // Rows 1-3 repeat one entity so the list shows a collapsed stack.
+    entity_id: i === 0 ? null : i <= 3 ? 'task-stacked' : `task-${i}`,
+    read_at: i % 4 === 3 ? new Date(now).toISOString() : null,
+    created_at: new Date(now - i * 3 * 3_600_000).toISOString(),
+    created_by: null,
+    actor: null,
+  })
+);
 
 const json = (body: unknown) =>
   new Response(JSON.stringify(body), {
@@ -62,6 +66,8 @@ async function fakeApi(input: RequestInfo | URL, init?: RequestInit) {
   if (url.pathname.endsWith('/unread-count'))
     return json({ count: unread().length });
   if ((init?.method ?? 'GET') === 'GET') {
+    if (state === 'loading') return new Promise<Response>(() => {});
+    if (state === 'error') return new Response('{}', { status: 503 });
     const list =
       url.searchParams.get('unreadOnly') === 'true' ? unread() : rows;
     const offset = Number(url.searchParams.get('offset'));

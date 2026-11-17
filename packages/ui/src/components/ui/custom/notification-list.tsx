@@ -59,7 +59,7 @@ export function NotificationList({
     () => new Map(stacks.map((s) => [s.lead.id, s])),
     [stacks]
   );
-  const { target, opening, openStack, resolveInvite } =
+  const { target, opening, openStack, resolveInvite, hostApp } =
     useNotificationRowActions({ routeWsId, onToggle, onNavigate });
   const idPrefix = useId();
 
@@ -165,6 +165,9 @@ export function NotificationList({
                 codeText={codeText}
                 tabbable={roving.activeId === stack.lead.id}
                 openApp={notificationTargetAppName(target(stack.lead))}
+                hideOpenAction={
+                  hostApp === 'mail' && target(stack.lead)?.app === 'mail'
+                }
                 opening={opening === stack.lead.id}
                 onFocusRow={roving.setActiveId}
                 onToggle={toggle}

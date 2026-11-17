@@ -137,7 +137,7 @@ export function NotificationPanel({
       />
       <div
         data-notification-scroll
-        className="min-h-30 flex-1 overflow-y-auto overscroll-contain"
+        className="min-h-0 flex-1 overflow-y-auto overscroll-contain"
       >
         <NotificationList
           key={`${filter}:${wsId ?? 'all'}`}
@@ -151,7 +151,7 @@ export function NotificationPanel({
           onNavigate={onClose}
         />
       </div>
-      <div className="flex border-t bg-card px-2 py-1.5">
+      <div className="flex shrink-0 border-t bg-card px-2 py-1.5">
         <Link
           href={pageUrl}
           onClick={onClose}

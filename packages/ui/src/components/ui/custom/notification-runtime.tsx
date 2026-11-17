@@ -9,6 +9,7 @@ import {
 export interface NotificationRuntimeValue {
   params: { wsId?: string | string[]; locale?: string | string[] };
   pathname: string;
+  hostApp?: 'mail';
   router: { push: (url: string) => void; refresh: () => void };
   Link: ComponentType<
     AnchorHTMLAttributes<HTMLAnchorElement> & { href: string }

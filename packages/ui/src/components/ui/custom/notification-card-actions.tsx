@@ -55,7 +55,7 @@ export function useNotificationRowActions({
   onToggle: (stack: NotificationStack, read: boolean) => void | Promise<void>;
   onNavigate: () => void;
 }) {
-  const { target, open, opening } = useNotificationOpen(routeWsId);
+  const { target, open, opening, hostApp } = useNotificationOpen(routeWsId);
   const openStack = useCallback(
     async (stack: NotificationStack) => {
       const to = target(stack.lead);
@@ -79,11 +79,12 @@ export function useNotificationRowActions({
     },
     [onToggle, onNavigate]
   );
-  return { target, opening, openStack, resolveInvite };
+  return { target, opening, openStack, resolveInvite, hostApp };
 }
 
 /** Where a notification leads, if anywhere: the exact item in its app. */
 export function useNotificationOpen(routeWsId?: string) {
+  const { hostApp, router } = useNotificationRuntime();
   const [opening, setOpening] = useState<string | null>(null);
 
   const target = useCallback(
@@ -115,13 +116,18 @@ export function useNotificationOpen(routeWsId?: string) {
           setOpening(null);
         }
       }
+      if (hostApp === 'mail' && to.app === 'mail') {
+        const url = new URL(to.href, window.location.origin);
+        router.push(`${url.pathname}${url.search}${url.hash}`);
+        return true;
+      }
       navigateToNotificationTarget(to.href);
       return true;
     },
-    [target]
+    [target, hostApp, router]
   );
 
-  return { target, open, opening };
+  return { target, open, opening, hostApp };
 }
 
 export function NotificationInviteActions({

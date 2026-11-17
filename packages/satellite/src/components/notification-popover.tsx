@@ -17,13 +17,16 @@ function getTtrUrl(): string {
 
 export default async function NotificationPopover({
   userId,
+  hostApp,
 }: {
   userId?: string;
+  hostApp?: 'mail';
 } = {}) {
   const t = await getTranslations();
   const resolvedUserId = userId ?? (await getSatelliteAppSession())?.sub;
   return (
     <NotificationPopoverClient
+      hostApp={hostApp}
       userId={resolvedUserId}
       labels={notificationLabelsFrom(t)}
       codeText={notificationCodeTextFrom(t)}

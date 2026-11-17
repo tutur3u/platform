@@ -13,7 +13,14 @@ export default function NotificationPopoverClient(
   const router = useRouter();
   return (
     <NotificationRuntime
-      value={{ params, pathname, router, Link, realtime: true }}
+      value={{
+        params,
+        pathname,
+        router,
+        Link,
+        realtime: true,
+        hostApp: props.hostApp,
+      }}
     >
       <SatelliteNotificationPopover {...props} />
     </NotificationRuntime>

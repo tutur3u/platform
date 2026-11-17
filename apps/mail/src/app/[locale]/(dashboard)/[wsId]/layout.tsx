@@ -110,7 +110,9 @@ export default async function Layout({ children, params }: LayoutProps) {
             defaultCollapsed={defaultCollapsed}
             links={await getNavigationLinks({ personalOrWsId: workspaceSlug })}
             personalOrWsId={workspaceSlug}
-            notificationPopover={<NotificationPopover userId={user.id} />}
+            notificationPopover={
+              <NotificationPopover hostApp="mail" userId={user.id} />
+            }
             userPopover={
               <Suspense
                 key={user.id}

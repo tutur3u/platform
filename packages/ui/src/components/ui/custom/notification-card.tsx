@@ -23,6 +23,7 @@ export interface NotificationCardProps {
   tabbable: boolean;
   /** Name of the app that opens this notification's item, if any. */
   openApp: string | null;
+  hideOpenAction?: boolean;
   opening: boolean;
   onFocusRow: (id: string) => void;
   onToggle: (stack: NotificationStack) => void;
@@ -46,6 +47,7 @@ export const NotificationCard = memo(function NotificationCard({
   codeText,
   tabbable,
   openApp,
+  hideOpenAction = false,
   opening,
   onFocusRow,
   onToggle,
@@ -163,7 +165,7 @@ export const NotificationCard = memo(function NotificationCard({
             onResolved={() => onInviteResolved(stack)}
           />
         )}
-        {openLabel && (
+        {openLabel && !hideOpenAction && (
           <button
             type="button"
             data-notification-open
@@ -225,6 +227,7 @@ function sameRow(prev: NotificationCardProps, next: NotificationCardProps) {
     prev.codeText === next.codeText &&
     prev.tabbable === next.tabbable &&
     prev.openApp === next.openApp &&
+    prev.hideOpenAction === next.hideOpenAction &&
     prev.opening === next.opening &&
     prev.onFocusRow === next.onFocusRow &&
     prev.onToggle === next.onToggle &&

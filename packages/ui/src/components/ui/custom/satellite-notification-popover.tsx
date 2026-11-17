@@ -48,6 +48,7 @@ const NotificationPanel = lazy(() =>
 
 export interface NotificationPopoverClientProps {
   userId?: string;
+  hostApp?: 'mail';
   /** Optional app-specific freshness policy for non-subscription consumers. */
   pollIntervalMs?: number;
   labels?: Partial<NotificationLabels>;
@@ -163,13 +164,28 @@ export default function SatelliteNotificationPopover({
           event.preventDefault();
           contentRef.current?.focus();
         }}
-        className="flex max-h-[min(600px,calc(var(--radix-popover-content-available-height)-12px))] w-100 max-w-[calc(100vw-1rem)] flex-col overflow-hidden p-0 shadow-lg [--popover-padding:0]"
+        data-notification-frame
+        style={{
+          width: 'min(400px, calc(100vw - 24px))',
+          height: 'min(560px, calc(100dvh - 24px))',
+        }}
+        className="flex flex-col overflow-hidden p-0 shadow-lg [--popover-padding:0]"
       >
         <Suspense
           fallback={
-            <div className="space-y-2 p-4" aria-busy>
-              <Skeleton className="h-4 w-32" />
-              <Skeleton className="h-16 w-full" />
+            <div className="flex h-full flex-col" aria-busy>
+              <Skeleton className="m-4 h-8 w-32 shrink-0" />
+              <div className="min-h-0 flex-1 space-y-1 p-2">
+                {[0, 1, 2, 3].map((row) => (
+                  <div key={row} className="flex gap-2.5 px-2 py-2.5">
+                    <Skeleton className="size-8 shrink-0 rounded-full" />
+                    <div className="flex-1 space-y-1.5 pt-1">
+                      <Skeleton className="h-3 w-11/12" />
+                      <Skeleton className="h-2.5 w-2/5" />
+                    </div>
+                  </div>
+                ))}
+              </div>
             </div>
           }
         >

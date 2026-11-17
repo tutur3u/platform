@@ -17,6 +17,10 @@ export default defineConfig({
   resolve: {
     alias: [
       {
+        find: /^@tuturuuu\/internal-api$/,
+        replacement: `${internalApiSrc}index.ts`,
+      },
+      {
         find: /^@tuturuuu\/internal-api\/(.+)$/,
         replacement: `${internalApiSrc}$1.ts`,
       },

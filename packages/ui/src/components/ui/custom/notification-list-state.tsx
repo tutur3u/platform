@@ -10,7 +10,7 @@ import type { ListQuery } from './notification-list';
 
 function State({ icon, children }: { icon: ReactNode; children: ReactNode }) {
   return (
-    <div className="grid justify-items-center gap-2 px-6 py-9 text-center text-muted-foreground text-sm">
+    <div className="grid min-h-full content-center justify-items-center gap-2 px-6 py-9 text-center text-muted-foreground text-sm">
       {icon}
       {children}
     </div>
@@ -32,7 +32,7 @@ export function NotificationListState({
   if (!query.data) {
     if (query.isError) {
       return (
-        <div role="alert">
+        <div role="alert" className="h-full">
           <State icon={<CircleAlert aria-hidden className="size-6" />}>
             <span className="font-medium text-foreground">
               {labels.loadError}
@@ -51,9 +51,13 @@ export function NotificationListState({
       );
     }
     return (
-      <div className="space-y-1 p-2">
+      <div className="min-h-full space-y-1 p-2">
         {[0, 1, 2, 3].map((i) => (
-          <div key={i} aria-hidden className="flex items-start gap-2.5 p-2">
+          <div
+            key={i}
+            aria-hidden
+            className="flex items-start gap-2.5 px-2 py-2.5"
+          >
             <Skeleton className="size-8 rounded-full" />
             <div className="flex-1 space-y-1.5 pt-1">
               <Skeleton className="h-3 w-11/12" />

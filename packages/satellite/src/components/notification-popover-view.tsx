@@ -13,9 +13,11 @@ import { useMemo } from 'react';
  */
 export default function NotificationPopoverView({
   userId,
+  hostApp,
   webAppUrl,
 }: {
   userId?: string;
+  hostApp?: 'mail';
   webAppUrl: string;
 }) {
   const t = useTranslations();
@@ -23,6 +25,7 @@ export default function NotificationPopoverView({
   const codeText = useMemo(() => notificationCodeTextFrom(t), [t]);
   return (
     <NotificationPopoverClient
+      hostApp={hostApp}
       userId={userId}
       labels={labels}
       codeText={codeText}

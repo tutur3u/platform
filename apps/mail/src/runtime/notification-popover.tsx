@@ -7,5 +7,11 @@ export default function NotificationPopover({
   userId?: string;
   webAppUrl: string;
 }) {
-  return <NotificationPopoverView userId={userId} webAppUrl={webAppUrl} />;
+  return (
+    <NotificationPopoverView
+      hostApp="mail"
+      userId={userId}
+      webAppUrl={webAppUrl}
+    />
+  );
 }

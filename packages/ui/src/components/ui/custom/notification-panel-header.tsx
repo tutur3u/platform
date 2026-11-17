@@ -53,7 +53,7 @@ export function NotificationPanelHeader({
 
   return (
     <>
-      <div className="flex items-center gap-2 px-4 pt-3 pb-2">
+      <div className="flex shrink-0 items-center gap-2 px-4 pt-3 pb-2">
         <h2 id={titleId} className="font-semibold text-[15px]">
           {labels.notifications}
         </h2>
@@ -74,7 +74,7 @@ export function NotificationPanelHeader({
           </Button>
         )}
       </div>
-      <div className="flex items-center gap-1 border-b px-3 pb-2">
+      <div className="flex shrink-0 items-center gap-1 border-b px-3 pb-2">
         <div
           role="tablist"
           aria-label={labels.notifications}

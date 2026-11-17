@@ -132,11 +132,13 @@ export function renderPopover({
   pollIntervalMs,
   wsId = WS,
   wrap = (popover) => popover,
+  hostApp,
 }: {
   realtime?: boolean;
   pollIntervalMs?: number;
   wsId?: string;
   wrap?: (popover: ReactNode) => ReactNode;
+  hostApp?: 'mail';
 } = {}) {
   const client = new QueryClient({
     defaultOptions: { queries: { retry: false }, mutations: { retry: false } },
@@ -148,6 +150,7 @@ export function renderPopover({
         value={{
           params: { wsId },
           pathname: `/${wsId}`,
+          hostApp,
           router,
           Link: ({ children, ...props }) => <a {...props}>{children}</a>,
           realtime,
