@@ -2395,6 +2395,26 @@
       },
       "digest": "a82872ee01a2cf8dfbb4a7505a21e5cad5dd06bb2e79ec89e11c76fa2858cf0f"
     },
+    "scripts/ci/calendar-exact-sha-publisher.mjs": {
+      "lines": 2,
+      "uses": 2,
+      "gap": "security-path-classification",
+      "admitted": {
+        "decision": "https://github.com/tutur3u/platform/commit/c52c10419c99d85008b6798917c6b9573f3b7f57",
+        "reason": "Name-only `.wrangler` match so the Calendar exact-SHA Vercel publisher rejects Cloudflare/Void artifacts; no CLI/SDK invocation; landed direct-to-main under D353."
+      },
+      "digest": "fd2e53ca24788fde1171366dd2b7e0e043c7a6809e84d22c8cee2fc04278dee9"
+    },
+    "scripts/ci/calendar-exact-sha-publisher.test.mjs": {
+      "lines": 1,
+      "uses": 1,
+      "gap": "security-path-classification",
+      "admitted": {
+        "decision": "https://github.com/tutur3u/platform/commit/c52c10419c99d85008b6798917c6b9573f3b7f57",
+        "reason": "Name-only `.wrangler` match so the Calendar exact-SHA Vercel publisher rejects Cloudflare/Void artifacts; no CLI/SDK invocation; landed direct-to-main under D353."
+      },
+      "digest": "6bec6fdb3ffd070b430575568b1bcf45072bab1fa796741b032254c2b88fa52a"
+    },
     "scripts/ci/calendar-native-artifact.mjs": {
       "lines": 1,
       "uses": 1,
