@@ -90,14 +90,12 @@ describe('image placeholders', () => {
   it('starts large inline images at 320px, persists the width and retains resizing', async () => {
     const view = await open();
     act(() => {
-      view
-        .nodes()
-        .insertPending({
-          name: 'large.png',
-          src: 'blob:large',
-          state: 'queued',
-          uploadId: 'large',
-        });
+      view.nodes().insertPending({
+        name: 'large.png',
+        src: 'blob:large',
+        state: 'queued',
+        uploadId: 'large',
+      });
       view.nodes().setSize('large', 2400, 1800);
       view.nodes().resolve('large', raw);
     });
