@@ -55,7 +55,37 @@ function staticImportPattern(modulePath: string) {
   );
 }
 
+// The satellite shell and its navigation hook sit on the same dialog-open path.
+const shellGraphSources = [
+  'satellite-settings-dialog-shell.tsx',
+  'use-settings-dialog-navigation.ts',
+].map((file) => {
+  const path = settingsDialogShellPath.replace(
+    'settings-dialog-shell.tsx',
+    file
+  );
+  return {
+    file,
+    runtime: readFileSync(path, { encoding: 'utf8' }).replace(
+      /^\s*import\s+type\b[\s\S]*?\sfrom\s+['"][^'"]+['"];?/gmu,
+      ''
+    ),
+  };
+});
+
 describe('settings dialog shell compile graph', () => {
+  it.each(shellGraphSources)(
+    'keeps the search engine out of the static graph of $file',
+    ({ runtime }) => {
+      expect(runtime).not.toMatch(
+        staticImportPattern('./settings-dialog-search')
+      );
+      expect(runtime).not.toMatch(
+        staticImportPattern('@tuturuuu/utils/text-helper')
+      );
+    }
+  );
+
   it('keeps the settings search engine behind a dynamic import', () => {
     expect(runtimeSource).not.toMatch(
       staticImportPattern('./settings-dialog-search')

@@ -1,14 +1,6 @@
 'use client';
 
-import { ArrowLeft, Compass, Search, X } from '@tuturuuu/icons';
-import {
-  Breadcrumb,
-  BreadcrumbItem,
-  BreadcrumbLink,
-  BreadcrumbList,
-  BreadcrumbPage,
-  BreadcrumbSeparator,
-} from '@tuturuuu/ui/breadcrumb';
+import { ArrowLeft, Search } from '@tuturuuu/icons';
 import { Button } from '@tuturuuu/ui/button';
 import {
   DialogClose,
@@ -24,16 +16,13 @@ import {
   SidebarInput,
   SidebarProvider,
 } from '@tuturuuu/ui/sidebar';
-import type { ComponentType, KeyboardEvent, ReactNode } from 'react';
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import {
-  resolveSettingsTab,
-  SHARED_SETTINGS_TAB_IDS,
-} from '../../../hooks/settings-dialog-url';
-import type { createSettingsSearchEngine } from './settings-dialog-search';
-import { loadSettingsSearchEngine } from './settings-dialog-search-loader';
+import type { ComponentType, ReactNode } from 'react';
+import { useCallback, useRef, useState } from 'react';
+import { SettingsDialogHeader } from './settings-dialog-header';
 import { SettingsMobileNav } from './settings-mobile-nav';
 import { SettingsSidebarGroup } from './settings-sidebar-group';
+import { useSettingsDialogKeyboard } from './use-settings-dialog-keyboard';
+import { useSettingsDialogNavigation } from './use-settings-dialog-navigation';
 
 export interface SettingsNavItem {
   name: string;
@@ -93,22 +82,6 @@ export interface SettingsDialogShellProps {
   children: ReactNode;
 }
 
-type SettingsSearchEngine = ReturnType<typeof createSettingsSearchEngine>;
-type SettingsSearchEngineFactory = typeof createSettingsSearchEngine;
-
-function isEditableShortcutTarget(target: EventTarget | null) {
-  if (!(target instanceof HTMLElement)) return false;
-
-  const tagName = target.tagName.toLowerCase();
-
-  return (
-    target.isContentEditable ||
-    tagName === 'input' ||
-    tagName === 'textarea' ||
-    tagName === 'select'
-  );
-}
-
 /**
  * Shared settings dialog shell providing the layout framework.
  *
@@ -134,130 +107,28 @@ export function SatelliteSettingsDialogShell({
   const isMobile = useIsMobile();
   const desktopSearchInputRef = useRef<HTMLInputElement>(null);
   const mobileSearchInputRef = useRef<HTMLInputElement>(null);
-  const searchEngineLoadRef = useRef<Promise<void> | null>(null);
-  const [searchQuery, setSearchQuery] = useState('');
-  const [searchEngineFactory, setSearchEngineFactory] =
-    useState<SettingsSearchEngineFactory | null>(null);
   const [mobileNavOpen, setMobileNavOpen] = useState(false);
-  const extendedNavItems = useMemo<SettingsNavGroup[]>(
-    () => [
-      ...navItems,
-      {
-        label: t('onboarding_guide.title'),
-        items: [
-          {
-            name: SHARED_SETTINGS_TAB_IDS.onboardingGuide,
-            label: t('onboarding_guide.title'),
-            description: t('onboarding_guide.description'),
-            icon: Compass,
-            keywords: [
-              t('onboarding_guide.replay_app'),
-              t('onboarding_guide.restart_journey'),
-            ],
-          },
-        ],
-      },
-    ],
-    [navItems, t]
-  );
-
-  const searchEngine = useMemo<SettingsSearchEngine | null>(
-    () => searchEngineFactory?.(extendedNavItems) ?? null,
-    [extendedNavItems, searchEngineFactory]
-  );
-
-  const allNavItems = useMemo(
-    () =>
-      searchEngine?.allItems ??
-      extendedNavItems.flatMap((group) => group.items),
-    [extendedNavItems, searchEngine]
-  );
-
-  const activeGroup = extendedNavItems.find((group) =>
-    group.items.some((item) => item.name === activeTab)
-  );
-
-  const activeItem =
-    allNavItems.find((item) => item.name === activeTab) ||
-    allNavItems.find((item) => !item.disabled) ||
-    allNavItems[0];
+  const {
+    activeGroup,
+    activeItem,
+    ensureSearchEngine,
+    filteredNavItems,
+    keyboardEnabledItems,
+    searchQuery,
+    selectActiveTab,
+    updateSearchQuery,
+  } = useSettingsDialogNavigation({
+    activeTab,
+    navItems,
+    onActiveTabChange,
+    persistedTab,
+    setPersistedTab,
+    t,
+  });
   const showContentHeader = !activeItem?.hideContentHeader;
   // Only the first group that owns the active tab marks it current, so a tab
   // name repeated in another group never renders a second highlight.
   const activeGroupLabel = activeGroup?.label;
-  const persistedItem = allNavItems.find(
-    (item) => !item.disabled && item.name === persistedTab
-  );
-
-  useEffect(() => {
-    if (persistedItem && persistedItem.name !== activeTab) {
-      onActiveTabChange(persistedItem.name);
-    }
-  }, [activeTab, onActiveTabChange, persistedItem]);
-
-  // Unknown tabs (stale or mistyped deep links) fall back to the first enabled
-  // tab. The URL is left untouched so a tab that registers later still wins.
-  const activeTabIsKnown = allNavItems.some((item) => item.name === activeTab);
-  const fallbackTab = resolveSettingsTab(
-    null,
-    allNavItems
-      .filter((item) => !item.disabled && item.name !== 'onboarding_guide')
-      .map((item) => item.name)
-  );
-  useEffect(() => {
-    if (activeTabIsKnown || persistedItem || !fallbackTab) return;
-    onActiveTabChange(fallbackTab);
-  }, [activeTabIsKnown, fallbackTab, onActiveTabChange, persistedItem]);
-
-  const selectActiveTab = useCallback(
-    (tab: string) => {
-      onActiveTabChange(tab);
-      void setPersistedTab(tab);
-    },
-    [onActiveTabChange, setPersistedTab]
-  );
-
-  const ensureSearchEngine = useCallback(() => {
-    if (searchEngineFactory || searchEngineLoadRef.current) return;
-
-    searchEngineLoadRef.current = loadSettingsSearchEngine()
-      .then((module) => {
-        setSearchEngineFactory(() => module.createSettingsSearchEngine);
-      })
-      .finally(() => {
-        searchEngineLoadRef.current = null;
-      });
-  }, [searchEngineFactory]);
-
-  const filteredNavItems = useMemo(
-    () =>
-      searchQuery
-        ? (searchEngine?.search(searchQuery) ?? extendedNavItems)
-        : extendedNavItems,
-    [extendedNavItems, searchEngine, searchQuery]
-  );
-
-  const filteredEnabledItems = useMemo(
-    () =>
-      searchEngine?.getEnabledItems(searchQuery) ??
-      filteredNavItems.flatMap((group) =>
-        group.items.filter((item) => !item.disabled)
-      ),
-    [filteredNavItems, searchEngine, searchQuery]
-  );
-  const keyboardEnabledItems = useMemo(
-    () =>
-      filteredEnabledItems.filter((item) => item.name !== 'onboarding_guide'),
-    [filteredEnabledItems]
-  );
-
-  const updateSearchQuery = useCallback(
-    (value: string) => {
-      if (value) ensureSearchEngine();
-      setSearchQuery(value);
-    },
-    [ensureSearchEngine]
-  );
 
   const isGroupExpandedByDefault = (groupLabel: string, index: number) => {
     if (expandAllAccordions || searchQuery) return true;
@@ -279,92 +150,13 @@ export function SatelliteSettingsDialogShell({
     desktopSearchInputRef.current?.focus();
   }, [ensureSearchEngine, isMobile]);
 
-  const changeActiveItem = useCallback(
-    (targetIndex: number) => {
-      const targetItem = keyboardEnabledItems[targetIndex];
-      if (targetItem) selectActiveTab(targetItem.name);
-    },
-    [keyboardEnabledItems, selectActiveTab]
-  );
-
-  const moveActiveItem = useCallback(
-    (direction: 1 | -1) => {
-      if (keyboardEnabledItems.length === 0) return;
-
-      const currentIndex = keyboardEnabledItems.findIndex(
-        (item) => item.name === activeTab
-      );
-      const nextIndex =
-        currentIndex === -1
-          ? direction === 1
-            ? 0
-            : keyboardEnabledItems.length - 1
-          : (currentIndex + direction + keyboardEnabledItems.length) %
-            keyboardEnabledItems.length;
-
-      changeActiveItem(nextIndex);
-    },
-    [activeTab, changeActiveItem, keyboardEnabledItems]
-  );
-
-  const handleKeyboardNavigation = useCallback(
-    (event: KeyboardEvent<HTMLDivElement>) => {
-      if (!keyboardNavigation || event.defaultPrevented) return;
-
-      const key = event.key.toLowerCase();
-      const isModifierSearch =
-        (event.metaKey || event.ctrlKey) && !event.altKey && key === 'f';
-      const isSlashSearch =
-        !event.metaKey && !event.ctrlKey && !event.altKey && event.key === '/';
-
-      if (isModifierSearch || isSlashSearch) {
-        if (isSlashSearch && isEditableShortcutTarget(event.target)) return;
-
-        event.preventDefault();
-        focusSearch();
-        return;
-      }
-
-      if (
-        !event.altKey ||
-        event.metaKey ||
-        event.ctrlKey ||
-        isEditableShortcutTarget(event.target)
-      ) {
-        return;
-      }
-
-      if (event.key === 'ArrowDown') {
-        event.preventDefault();
-        moveActiveItem(1);
-        return;
-      }
-
-      if (event.key === 'ArrowUp') {
-        event.preventDefault();
-        moveActiveItem(-1);
-        return;
-      }
-
-      if (event.key === 'Home') {
-        event.preventDefault();
-        changeActiveItem(0);
-        return;
-      }
-
-      if (event.key === 'End') {
-        event.preventDefault();
-        changeActiveItem(keyboardEnabledItems.length - 1);
-      }
-    },
-    [
-      changeActiveItem,
-      keyboardEnabledItems.length,
-      focusSearch,
-      keyboardNavigation,
-      moveActiveItem,
-    ]
-  );
+  const handleKeyboardNavigation = useSettingsDialogKeyboard({
+    activeTab,
+    enabled: keyboardNavigation,
+    focusSearch,
+    items: keyboardEnabledItems,
+    selectTab: selectActiveTab,
+  });
 
   return (
     <DialogContent
@@ -439,12 +231,13 @@ export function SatelliteSettingsDialogShell({
           data-settings-pane="main"
           className="flex h-full min-w-0 flex-1 flex-col overflow-hidden bg-background"
         >
-          <header
-            data-settings-pane="header"
-            className="flex h-14 shrink-0 items-center gap-2 border-b px-2 transition-[width,height] ease-linear group-has-data-[collapsible=icon]/sidebar-wrapper:h-12 md:px-6"
-          >
-            <div className="flex flex-1 items-center gap-2 md:flex-initial">
-              {isMobile && (
+          <SettingsDialogHeader
+            activeGroup={activeGroup}
+            activeGroupBreadcrumb={activeGroupBreadcrumb}
+            activeItem={activeItem}
+            closeLabel={t('common.close')}
+            mobileNav={
+              isMobile && (
                 <SettingsMobileNav
                   activeGroup={activeGroup}
                   activeItem={activeItem}
@@ -466,49 +259,10 @@ export function SatelliteSettingsDialogShell({
                   searchInputRef={mobileSearchInputRef}
                   searchQuery={searchQuery}
                 />
-              )}
-
-              <Breadcrumb className="hidden md:flex">
-                <BreadcrumbList>
-                  <BreadcrumbItem>
-                    <BreadcrumbLink href="#" className="pointer-events-none">
-                      {t('common.settings')}
-                    </BreadcrumbLink>
-                  </BreadcrumbItem>
-                  <BreadcrumbSeparator />
-                  {activeGroup && (
-                    <>
-                      <BreadcrumbItem data-testid="settings-active-group-breadcrumb">
-                        {activeGroupBreadcrumb ?? (
-                          <BreadcrumbPage className="text-muted-foreground">
-                            {activeGroup.label}
-                          </BreadcrumbPage>
-                        )}
-                      </BreadcrumbItem>
-                      <BreadcrumbSeparator />
-                    </>
-                  )}
-                  <BreadcrumbItem>
-                    <BreadcrumbPage>{activeItem?.label}</BreadcrumbPage>
-                  </BreadcrumbItem>
-                </BreadcrumbList>
-              </Breadcrumb>
-            </div>
-            <DialogClose asChild>
-              <Button
-                type="button"
-                variant="ghost"
-                size="icon"
-                className="ml-auto size-11 shrink-0 text-muted-foreground md:size-9"
-              >
-                <X
-                  className="h-4 w-4"
-                  data-testid="settings-mobile-close-icon"
-                />
-                <span className="sr-only">{t('common.close')}</span>
-              </Button>
-            </DialogClose>
-          </header>
+              )
+            }
+            settingsLabel={t('common.settings')}
+          />
           <div className="flex min-h-0 flex-1 flex-col overscroll-contain overflow-y-auto px-4 py-6 md:px-10 md:py-10">
             <div className="mx-auto w-full max-w-3xl space-y-8">
               {showContentHeader && (
