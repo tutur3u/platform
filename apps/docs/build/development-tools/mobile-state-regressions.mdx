@@ -5,6 +5,19 @@ updatedAt: "2026-10-25"
 audience: developers
 ---
 
+## Keep search focus and keyboard dismissal together
+
+Shell and Settings search use `AppSearchField`, with the search icon and clear
+control inside the input decoration. The shell retains its focus node and close
+callback; fallback Settings fields retain their localized clear label.
+
+Closing, submitting, tapping outside, dragging content and opening a result must
+release search focus. Settings scroll padding reserves the larger of the current
+keyboard inset and safe-area bottom padding, plus the standard scroll-end gap.
+Use `shell_search_field_test.dart` and `settings_search_interaction_test.dart` for
+focus, controller, geometry and inset regressions. Dock visibility uses the shell
+keyboard policy; input widgets do not implement a second dock animation.
+
 ## Preserve startup barriers while overlapping local reads
 
 `loadStartupPreferences` starts haptic policy, theme and saved-route reads together.

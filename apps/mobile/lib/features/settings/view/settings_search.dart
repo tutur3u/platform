@@ -86,26 +86,14 @@ class SettingsSearchField extends StatelessWidget {
     return Semantics(
       textField: true,
       label: l10n.settingsSearchPlaceholder,
-      child: AppTextField(
+      child: AppSearchField(
         key: const ValueKey('settings-search-field'),
         controller: controller,
         placeholder: l10n.settingsSearchPlaceholder,
         onChanged: onChanged,
-        textInputAction: TextInputAction.search,
-        filled: true,
-        leading: const Icon(LucideIcons.search, size: 18),
-        trailing: controller.text.isEmpty
-            ? null
-            : AppIconButton(
-                key: const ValueKey('settings-search-clear'),
-                tooltip: l10n.commonClearSearch,
-                density: AppButtonDensity.iconDense,
-                icon: const Icon(LucideIcons.x, size: 18),
-                onPressed: () {
-                  controller.clear();
-                  onChanged('');
-                },
-              ),
+        clearTooltip: l10n.commonClearSearch,
+        clearButtonKey: const ValueKey('settings-search-clear'),
+        clearButtonDensity: AppButtonDensity.iconDense,
       ),
     );
   }
@@ -152,7 +140,10 @@ class SettingsSearchResults extends StatelessWidget {
             icon: entry.icon,
             title: entry.title,
             value: entry.section,
-            onTap: entry.onOpen,
+            onTap: () {
+              FocusManager.instance.primaryFocus?.unfocus();
+              entry.onOpen();
+            },
           ),
       ],
     );

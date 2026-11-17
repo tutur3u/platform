@@ -39,6 +39,7 @@ mixin _SettingsPageSearch on State<_SettingsView>, _SettingsPageActions {
   }
 
   void _jumpTo(String groupId) {
+    FocusManager.instance.primaryFocus?.unfocus();
     _searchController.clear();
     setState(() {
       _searchQuery = '';

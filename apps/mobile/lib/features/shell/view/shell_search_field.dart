@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:mobile/core/ui/components/app_search_field.dart';
 import 'package:mobile/features/shell/cubit/shell_chrome_actions_cubit.dart';
 import 'package:mobile/features/shell/view/mobile_section_app_bar.dart';
 
@@ -14,6 +15,7 @@ class ShellSearchField extends StatefulWidget {
 
 class _ShellSearchFieldState extends State<ShellSearchField> {
   final FocusNode _focusNode = FocusNode(debugLabel: 'shell-search');
+  final TextEditingController _fallbackController = TextEditingController();
 
   @override
   void initState() {
@@ -58,45 +60,25 @@ class _ShellSearchFieldState extends State<ShellSearchField> {
   @override
   void dispose() {
     _focusNode.dispose();
+    _fallbackController.dispose();
     super.dispose();
   }
 
   @override
   Widget build(BuildContext context) => SizedBox(
     height: mobileSectionAppBarHeightFor(context),
-    child: Row(
-      children: [
-        const SizedBox.square(
-          dimension: 40,
-          child: Center(child: Icon(Icons.search_rounded, size: 22)),
-        ),
-        Expanded(
-          child: TextField(
-            key: const ValueKey('shell-search-query'),
-            controller: widget.action.searchController,
-            focusNode: _focusNode,
-            textAlignVertical: TextAlignVertical.center,
-            onChanged: widget.action.onSearchChanged,
-            onSubmitted: _submit,
-            textInputAction: TextInputAction.search,
-            decoration: InputDecoration(
-              hintText: widget.action.searchHint,
-              border: InputBorder.none,
-              isCollapsed: true,
-              contentPadding: EdgeInsets.zero,
-            ),
-          ),
-        ),
-        SizedBox.square(
-          dimension: 40,
-          child: IconButton(
-            tooltip: MaterialLocalizations.of(context).closeButtonTooltip,
-            padding: EdgeInsets.zero,
-            onPressed: _close,
-            icon: const Icon(Icons.close_rounded, size: 22),
-          ),
-        ),
-      ],
+    child: Center(
+      child: AppSearchField(
+        key: const ValueKey('shell-search-query'),
+        controller: widget.action.searchController ?? _fallbackController,
+        focusNode: _focusNode,
+        placeholder: widget.action.searchHint,
+        onChanged: widget.action.onSearchChanged,
+        onSubmitted: _submit,
+        onClear: _close,
+        alwaysShowClear: true,
+        clearTooltip: MaterialLocalizations.of(context).closeButtonTooltip,
+      ),
     ),
   );
 }

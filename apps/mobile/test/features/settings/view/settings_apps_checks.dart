@@ -228,6 +228,12 @@ void registerSettingsAppsChecks() {
           await _settle(tester);
           Future<void> goBack() async {
             if (back == 'dock') {
+              if (tester.testTextInput.isVisible) {
+                await tester.testTextInput.receiveAction(
+                  TextInputAction.search,
+                );
+                await _settle(tester);
+              }
               await tester.tap(find.bySemanticsLabel('Back').last);
             } else {
               await tester.binding.handlePopRoute();

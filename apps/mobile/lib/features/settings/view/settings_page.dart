@@ -183,6 +183,8 @@ class _SettingsViewState extends State<_SettingsView>
                   context.deviceClass,
                 ),
                 child: ListView(
+                  keyboardDismissBehavior:
+                      ScrollViewKeyboardDismissBehavior.onDrag,
                   // Search jumps need every root group built, not only the
                   // visible ones; the root is a few dozen rows.
                   scrollCacheExtent:

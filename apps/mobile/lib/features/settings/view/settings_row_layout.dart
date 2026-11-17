@@ -32,7 +32,11 @@ abstract final class SettingsRowLayout {
         horizontal,
         AppLayout.pageTop,
         horizontal,
-        MediaQuery.paddingOf(context).bottom + AppLayout.scrollEndGap,
+        MediaQuery.viewInsetsOf(context).bottom.clamp(
+              MediaQuery.paddingOf(context).bottom,
+              double.infinity,
+            ) +
+            AppLayout.scrollEndGap,
       );
 
   /// Single-line width of [text] as rendered here: the inherited text style

@@ -29,6 +29,7 @@ class SettingsDockSearch extends StatelessWidget {
   final Widget fallback;
 
   void _close() {
+    FocusManager.instance.primaryFocus?.unfocus();
     controller.clear();
     onChanged('');
     onActiveChanged(false);
@@ -47,6 +48,7 @@ class SettingsDockSearch extends StatelessWidget {
         ShellActionSpec.search(
           id: '$location/search',
           active: active,
+          keepVisibleWithKeyboard: false,
           hasQuery: controller.text.isNotEmpty,
           callbackToken: controller.text,
           tooltip: hint,

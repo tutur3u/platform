@@ -85,6 +85,7 @@ import '../../assistant/local/assistant_local_chat_harness.dart';
 import '../../assistant/view/background_reply_harness.dart';
 
 part 'settings_compact_harness.dart';
+part 'settings_search_keyboard_checks.dart';
 part 'settings_render_fonts.dart';
 part 'settings_hidden_recovery_checks.dart';
 part 'settings_detail_shell_checks.dart';
@@ -104,6 +105,7 @@ part 'settings_timezone_picker_checks.dart';
 void main() {
   tearDown(() => GoRouter.optionURLReflectsImperativeAPIs = false);
   registerHiddenRecoveryChecks();
+  registerSettingsSearchKeyboardChecks();
   registerSettingsDetailShellChecks();
   registerProductEditorChecks();
   registerSettingsDesignChecks();
