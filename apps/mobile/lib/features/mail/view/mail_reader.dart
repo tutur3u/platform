@@ -61,12 +61,16 @@ class MailReader extends StatefulWidget {
     this.signatureText,
     this.signatureHtml,
     this.resolvePeople,
+    this.sourceFolder,
     super.key,
   });
   final MailRepository repository;
   final String workspaceId;
   final String mailboxId;
   final String fromAddress;
+
+  /// Folder context supplies per-user archive/trash state.
+  final String? sourceFolder;
   final String? signatureText;
   final String? signatureHtml;
   final Future<Map<String, Map<String, dynamic>>> Function(
@@ -118,6 +122,7 @@ class _MailReaderState extends State<MailReader> {
   int _peopleGeneration = 0;
   bool? _unreadOverride;
   bool? _snoozedOverride;
+  bool? _mutedOverride;
   int _contentGeneration = 0;
   bool _attachmentsTab = false;
   bool _accessRevoked = false;
@@ -190,6 +195,7 @@ class _MailReaderState extends State<MailReader> {
       _attachmentsTab = false;
       _unreadOverride = null;
       _snoozedOverride = null;
+      _mutedOverride = null;
       _expandedMessages.clear();
       _detail = widget.detail;
       _loadError = null;
@@ -302,15 +308,25 @@ class _MailReaderState extends State<MailReader> {
   Widget build(BuildContext context) {
     if (_accessRevoked) return const SizedBox.shrink();
     final l10n = context.l10n;
+    final snoozed = _messageSnoozed;
+    final muted = _mutedOverride ?? (_messageStateMetadata?['muted'] == true);
+    final archived = _canRestore;
+    final unread =
+        _unreadOverride ??
+        _messages.any((message) => message['unread'] == true);
     final actions = {
-      'snooze': l10n.mailSnooze,
-      'unsnooze': l10n.mailUnsnooze,
-      'mute': l10n.mailMute,
-      'unmute': l10n.mailUnmute,
-      'archive': l10n.mailArchive,
-      'mark_unread': l10n.mailMarkUnread,
-      'restore': l10n.mailRestore,
-      'trash': l10n.mailTrash,
+      if (snoozed) 'unsnooze': l10n.mailUnsnooze else 'snooze': l10n.mailSnooze,
+      if (widget.thread)
+        (muted ? 'unmute' : 'mute'): muted ? l10n.mailUnmute : l10n.mailMute,
+      if (archived)
+        'restore': l10n.mailRestore
+      else if (!_quarantined)
+        'archive': l10n.mailArchive,
+      (unread ? 'mark_read' : 'mark_unread'): unread
+          ? l10n.mailMarkRead
+          : l10n.mailMarkUnread,
+      if (widget.sourceFolder != 'trash' && !_quarantined)
+        'trash': l10n.mailTrash,
     };
     final subject = switch (_detail) {
       null => widget.summary?['subject'] as String?,

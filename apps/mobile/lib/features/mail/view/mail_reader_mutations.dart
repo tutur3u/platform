@@ -59,6 +59,9 @@ extension _MailReaderMutations on _MailReaderState {
         if (action == 'mark_read' || action == 'mark_unread') {
           _unreadOverride = action == 'mark_unread';
         }
+        if (action == 'mute' || action == 'unmute') {
+          _mutedOverride = action == 'mute';
+        }
         if (action == 'snooze' || action == 'unsnooze') {
           _snoozedOverride = action == 'snooze';
         }

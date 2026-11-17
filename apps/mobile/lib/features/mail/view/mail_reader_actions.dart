@@ -4,17 +4,24 @@ extension _MailReaderActions on _MailReaderState {
   Map<String, dynamic>? _person(String? address) =>
       _people[address?.trim().toLowerCase()];
 
+  Map<String, dynamic>? get _messageStateMetadata =>
+      widget.thread ? (_detail?['thread'] as Map<String, dynamic>?) : _detail;
+
+  bool get _messageSnoozed =>
+      _snoozedOverride ?? (_messageStateMetadata?['snoozedUntil'] != null);
+  bool get _quarantined =>
+      _messages.isNotEmpty &&
+      _messages.every((message) => message['status'] == 'quarantined');
+  bool get _canRestore =>
+      !_quarantined && const {'archive', 'trash'}.contains(widget.sourceFolder);
+
   Widget _readerActions() {
     final l10n = context.l10n;
     final unread =
         _unreadOverride ??
         _messages.any((message) => message['unread'] == true);
-    final snoozed =
-        _snoozedOverride ??
-        _messages.any((message) => message['snoozedUntil'] != null);
-    final archived =
-        _messages.isNotEmpty &&
-        _messages.every((message) => message['archived'] == true);
+    final snoozed = _messageSnoozed;
+    final archived = _canRestore;
     final actions = <(IconData, String, VoidCallback)>[
       (
         Icons.snooze_outlined,
@@ -32,16 +39,18 @@ extension _MailReaderActions on _MailReaderState {
         _starred ? l10n.mailUnstar : l10n.mailStar,
         () => _action(_starred ? 'unstar' : 'star'),
       ),
-      (
-        Icons.archive_outlined,
-        archived ? l10n.mailRestore : l10n.mailArchive,
-        () => _action(archived ? 'restore' : 'archive', close: true),
-      ),
-      (
-        Icons.delete_outline,
-        l10n.mailTrash,
-        () => _action('trash', close: true),
-      ),
+      if (!_quarantined)
+        (
+          Icons.archive_outlined,
+          archived ? l10n.mailRestore : l10n.mailArchive,
+          () => _action(archived ? 'restore' : 'archive', close: true),
+        ),
+      if (widget.sourceFolder != 'trash' && !_quarantined)
+        (
+          Icons.delete_outline,
+          l10n.mailTrash,
+          () => _action('trash', close: true),
+        ),
     ];
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,

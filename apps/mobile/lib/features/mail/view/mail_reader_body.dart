@@ -3,9 +3,19 @@ part of 'mail_reader.dart';
 extension _MailReaderBody on _MailReaderState {
   MailPrimaryAction get _primaryAction {
     final preferred = MailPrimaryActionPreference.instance.value;
-    return preferred == MailPrimaryAction.reply && !widget.canSend
+    final available = preferred == MailPrimaryAction.reply && !widget.canSend
         ? MailPrimaryAction.archive
         : preferred;
+    if ((_quarantined &&
+            (available == MailPrimaryAction.archive ||
+                available == MailPrimaryAction.trash)) ||
+        (widget.sourceFolder == 'trash' &&
+            available == MailPrimaryAction.trash)) {
+      return widget.canSend
+          ? MailPrimaryAction.reply
+          : MailPrimaryAction.markUnread;
+    }
+    return available;
   }
 
   void _runPrimaryAction() {
@@ -13,7 +23,10 @@ extension _MailReaderBody on _MailReaderState {
     if (primary == MailPrimaryAction.reply) {
       if (_messages.isNotEmpty) unawaited(_reply(_messages.last));
     } else {
-      unawaited(_action(primary.stateAction!, close: true));
+      final action = primary == MailPrimaryAction.archive && _canRestore
+          ? 'restore'
+          : primary.stateAction!;
+      unawaited(_action(action, close: true));
     }
   }
 
@@ -28,26 +41,10 @@ extension _MailReaderBody on _MailReaderState {
       surfaceTintColor: Colors.transparent,
       title: Text(title),
       actions: [
-        PopupMenuButton<String>(
-          enabled: idle,
-          onSelected: (action) => _action(action, close: true),
-          itemBuilder: (_) => actions.entries
-              .map(
-                (a) => PopupMenuItem(
-                  value: a.key,
-                  enabled:
-                      !_readPending ||
-                      (a.key != 'mark_read' && a.key != 'mark_unread'),
-                  child: Row(
-                    children: [
-                      Icon(_mailMessageActionIcon(a.key)),
-                      const SizedBox(width: 12),
-                      Flexible(child: Text(a.value)),
-                    ],
-                  ),
-                ),
-              )
-              .toList(),
+        IconButton(
+          tooltip: MaterialLocalizations.of(context).showMenuTooltip,
+          onPressed: idle ? () => _chooseAction(actions) : null,
+          icon: const Icon(Icons.more_horiz),
         ),
       ],
     );
@@ -196,14 +193,16 @@ extension _MailReaderBody on _MailReaderState {
                       ? (_) => _toggleReaderImages()
                       : null,
                 ),
-                if (widget.canSend && !headerControls)
+                if (widget.canSend)
                   Wrap(
                     spacing: 8,
                     children: [
-                      TextButton(
-                        onPressed: () => _reply(message),
-                        child: Text(l10n.mailReply),
-                      ),
+                      if (!headerControls ||
+                          _primaryAction != MailPrimaryAction.reply)
+                        TextButton(
+                          onPressed: () => _reply(message),
+                          child: Text(l10n.mailReply),
+                        ),
                       TextButton(
                         onPressed: () => _reply(message, all: true),
                         child: Text(l10n.mailReplyAll),

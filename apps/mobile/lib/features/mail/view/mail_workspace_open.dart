@@ -167,6 +167,7 @@ extension _MailWorkspaceOpen on _MailWorkspaceState {
       repository: _repository,
       workspaceId: widget.workspaceId,
       mailboxId: box,
+      sourceFolder: selection.folder,
       detail: cached?.detail,
       summary: selection.item,
       loadDetail: () =>

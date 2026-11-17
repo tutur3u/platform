@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:mobile/core/ui/ui.dart';
 import 'package:mobile/features/mail/data/mail_repository.dart';
 import 'package:mobile/features/mail/view/mail_reader.dart';
 import 'package:mocktail/mocktail.dart';
@@ -114,11 +115,25 @@ void main() {
       ),
     ).called(1);
     // The standalone More menu shares the read-state fence with the dock.
-    await tester.tap(find.byType(PopupMenuButton<String>));
+    await tester.tap(find.byTooltip('Show menu'));
     await tester.pumpAndSettle();
-    final item = find.widgetWithText(PopupMenuItem<String>, 'Mark unread');
-    expect(tester.widget<PopupMenuItem<String>>(item).enabled, isFalse);
-    await tester.tapAt(const Offset(5, 500));
+    final sheet = tester.widget<AppActionSheet<String>>(
+      find.byType(AppActionSheet<String>),
+    );
+    expect(sheet.title, 'Read state');
+    expect(
+      sheet.actions
+          .singleWhere((action) => action.value == 'mark_read')
+          .enabled,
+      isFalse,
+    );
+    expect(
+      sheet.actions.where((action) => action.value == 'unsnooze'),
+      isEmpty,
+    );
+    expect(sheet.actions.where((action) => action.value == 'restore'), isEmpty);
+    expect(sheet.actions.where((action) => action.value == 'reply'), isEmpty);
+    await tester.tap(find.byTooltip('Close'));
     await tester.pumpAndSettle();
     verifyNever(
       () => repository.changeState(

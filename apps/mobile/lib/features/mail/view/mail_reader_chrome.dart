@@ -6,6 +6,7 @@ IconData _mailMessageActionIcon(String action) => switch (action) {
   'mute' => Icons.volume_off_outlined,
   'unmute' => Icons.volume_up_outlined,
   'archive' => Icons.archive_outlined,
+  'mark_read' => Icons.mark_email_read_outlined,
   'mark_unread' => Icons.mark_email_unread_outlined,
   'restore' => Icons.inbox_outlined,
   'trash' => Icons.delete_outline,
@@ -73,11 +74,23 @@ extension _MailReaderChrome on _MailReaderState {
           actions: [
             ShellActionSpec(
               id: 'mail-primary-action',
-              icon: primary.icon,
-              tooltip: primary.label(context),
+              icon: primary == MailPrimaryAction.archive && _canRestore
+                  ? Icons.inbox_outlined
+                  : primary.icon,
+              tooltip: primary == MailPrimaryAction.archive && _canRestore
+                  ? l10n.mailRestore
+                  : primary.label(context),
               inDock: true,
-              enabled: !_busy && _detail != null,
-              callbackToken: (primary.name, _detail != null),
+              enabled:
+                  !_busy &&
+                  _detail != null &&
+                  !(_readPending && primary == MailPrimaryAction.markUnread),
+              callbackToken: (
+                primary.name,
+                _detail != null,
+                _canRestore,
+                _quarantined,
+              ),
               onPressed: _runPrimaryAction,
             ),
           ],
@@ -126,80 +139,34 @@ extension _MailReaderChrome on _MailReaderState {
 
   Future<void> _chooseAction(Map<String, String> actions) async {
     if (_busy || _detail == null) return;
-    final value = await showAdaptiveSheet<String>(
+    final subject = widget.thread
+        ? ((_detail?['thread'] as Map<String, dynamic>?)?['subject'] as String?)
+        : (_detail?['subject'] as String?);
+    final value = await showAppActionSheet<String>(
       context: context,
       useRootNavigator: true,
-      builder: (sheetContext) => AppDialogScaffold(
-        title: MaterialLocalizations.of(context).showMenuTooltip,
-        child: Material(
-          color: Colors.transparent,
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              ListTile(
-                dense: true,
-                leading: Icon(
-                  _mailMessageActionIcon(_starred ? 'unstar' : 'star'),
-                ),
-                title: Text(
-                  _starred ? context.l10n.mailUnstar : context.l10n.mailStar,
-                ),
-                onTap: () => Navigator.of(
-                  sheetContext,
-                ).pop(_starred ? 'unstar' : 'star'),
-              ),
-              if (widget.canSend && _messages.isNotEmpty) ...[
-                ListTile(
-                  dense: true,
-                  leading: const Icon(Icons.reply),
-                  title: Text(context.l10n.mailReply),
-                  onTap: () => Navigator.of(sheetContext).pop('reply'),
-                ),
-                ListTile(
-                  dense: true,
-                  leading: const Icon(Icons.reply_all),
-                  title: Text(context.l10n.mailReplyAll),
-                  onTap: () => Navigator.of(sheetContext).pop('reply_all'),
-                ),
-                ListTile(
-                  dense: true,
-                  leading: const Icon(Icons.forward),
-                  title: Text(context.l10n.mailForward),
-                  onTap: () => Navigator.of(sheetContext).pop('forward'),
-                ),
-              ],
-              for (final action in actions.entries)
-                ListTile(
-                  dense: true,
-                  leading: Icon(_mailMessageActionIcon(action.key)),
-                  title: Text(action.value),
-                  enabled:
-                      !_readPending ||
-                      (action.key != 'mark_read' &&
-                          action.key != 'mark_unread'),
-                  onTap:
-                      _readPending &&
-                          (action.key == 'mark_read' ||
-                              action.key == 'mark_unread')
-                      ? null
-                      : () => Navigator.of(sheetContext).pop(action.key),
-                ),
-            ],
-          ),
+      title: subject?.trim().isNotEmpty == true
+          ? subject!
+          : context.l10n.mailNoSubject,
+      actions: [
+        AppSheetAction(
+          label: _starred ? context.l10n.mailUnstar : context.l10n.mailStar,
+          icon: _mailMessageActionIcon(_starred ? 'unstar' : 'star'),
+          value: _starred ? 'unstar' : 'star',
         ),
-      ),
+        for (final action in actions.entries)
+          AppSheetAction(
+            label: action.value,
+            icon: _mailMessageActionIcon(action.key),
+            value: action.key,
+            destructive: action.key == 'trash',
+            enabled:
+                !_readPending ||
+                (action.key != 'mark_read' && action.key != 'mark_unread'),
+          ),
+      ],
     );
     if (!mounted || value == null) return;
-    if (value == 'reply' || value == 'reply_all' || value == 'forward') {
-      if (_messages.isNotEmpty) {
-        await _reply(
-          _messages.last,
-          all: value == 'reply_all',
-          forward: value == 'forward',
-        );
-      }
-      return;
-    }
     await _action(value, close: value != 'star' && value != 'unstar');
   }
 }
