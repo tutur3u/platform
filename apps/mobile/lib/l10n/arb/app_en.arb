@@ -2749,6 +2749,7 @@
   "homeWorkspaceEditPins": "Edit pinned workspaces",
   "homeWorkspaceFind": "Find workspace",
   "homeWorkspaceMore": "More",
+  "homeWorkspaceMoreLabel": "More workspaces",
   "homeWorkspaceNew": "New workspace",
   "homeWorkspacePin": "Pin to Home",
   "homeWorkspacePinsDescription": "Pinned workspaces appear as chips on Home.",

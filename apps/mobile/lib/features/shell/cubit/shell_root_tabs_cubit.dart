@@ -116,7 +116,33 @@ class SharedPreferencesShellRootTabsStore implements ShellRootTabsStore {
 class ShellRootTabsCubit extends Cubit<List<ShellRootTab>?> {
   ShellRootTabsCubit({ShellRootTabsStore? store})
     : _store = store ?? const SharedPreferencesShellRootTabsStore(),
-      super(null);
+      super(store == null ? _warmTabs() : null);
+
+  /// Saved tab ids read during startup, before the first frame.
+  static List<String>? _warmIds;
+
+  /// Reads the saved tabs during startup so a cubit using the default store
+  /// starts with the user's tabs instead of flashing the defaults.
+  static Future<void> warm({
+    ShellRootTabsStore store = const SharedPreferencesShellRootTabsStore(),
+  }) async {
+    try {
+      _warmIds = await store.read();
+    } on Object catch (error, stack) {
+      log('Failed to read dock tabs', error: error, stackTrace: stack);
+    }
+  }
+
+  static List<ShellRootTab>? _warmTabs() {
+    final ids = _warmIds;
+    if (ids == null) return null;
+    final tabs = _parse(ids);
+    return tabs.isEmpty ? null : tabs;
+  }
+
+  /// Forgets the startup read, for tests.
+  @visibleForTesting
+  static void resetWarmForTesting() => _warmIds = null;
 
   final ShellRootTabsStore _store;
   bool _changedLocally = false;

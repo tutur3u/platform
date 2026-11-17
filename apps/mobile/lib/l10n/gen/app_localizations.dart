@@ -8527,6 +8527,12 @@ abstract class AppLocalizations {
   /// **'More'**
   String get homeWorkspaceMore;
 
+  /// No description provided for @homeWorkspaceMoreLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'More workspaces'**
+  String get homeWorkspaceMoreLabel;
+
   /// No description provided for @homeWorkspaceNew.
   ///
   /// In en, this message translates to:

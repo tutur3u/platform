@@ -55,7 +55,8 @@ class HomeWorkspaceChip extends StatelessWidget {
   }
 }
 
-/// The trailing More chip.
+/// The trailing More chip. Screen readers hear "More workspaces", so it is
+/// never confused with the dock's own More destination.
 class HomeWorkspaceMoreChip extends StatelessWidget {
   const HomeWorkspaceMoreChip({required this.onTap, super.key});
 
@@ -66,7 +67,7 @@ class HomeWorkspaceMoreChip extends StatelessWidget {
     final label = context.l10n.homeWorkspaceMore;
     return Semantics(
       button: true,
-      label: label,
+      label: context.l10n.homeWorkspaceMoreLabel,
       excludeSemantics: true,
       onTap: onTap,
       child: _ChipFrame(

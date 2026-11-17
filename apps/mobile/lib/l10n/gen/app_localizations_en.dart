@@ -4448,6 +4448,9 @@ class AppLocalizationsEn extends AppLocalizations {
   String get homeWorkspaceMore => 'More';
 
   @override
+  String get homeWorkspaceMoreLabel => 'More workspaces';
+
+  @override
   String get homeWorkspaceNew => 'New workspace';
 
   @override

@@ -182,6 +182,18 @@ Future<void> _closeSheet(WidgetTester tester) async {
 }
 
 void main() {
+  test('tabs read during startup seed the first state', () async {
+    SharedPreferences.setMockInitialValues({
+      SharedPreferencesShellRootTabsStore.storageKey: ['calendar', 'home'],
+    });
+    addTearDown(ShellRootTabsCubit.resetWarmForTesting);
+    await ShellRootTabsCubit.warm();
+    final cubit = ShellRootTabsCubit();
+    addTearDown(cubit.close);
+    // No async load needed: the first frame already has the saved tabs.
+    expect(cubit.state, [ShellRootTab.calendar, ShellRootTab.home]);
+  });
+
   group('resolveShellRootTabs', () {
     test('fills an unavailable default with Mira, then Apps', () {
       expect(

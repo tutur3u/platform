@@ -225,21 +225,22 @@ void _homeRenderCases() {
       ),
     );
 
-    // The dock has its own More; these are the Home body's controls.
+    // The dock has its own More; the Home chip is "More workspaces", so a
+    // screen reader can tell the two apart.
     SemanticsNode homeNode(String label) => tester.getSemantics(
       find.descendant(
         of: find.byType(HomePage),
         matching: find.bySemanticsLabel(label),
       ),
     );
-    for (final label in ['More', 'See all Today']) {
+    for (final label in ['More workspaces', 'See all Today']) {
       final data = homeNode(label).getSemanticsData();
       expect(data.hasAction(SemanticsAction.tap), isTrue, reason: label);
       expect(data.flagsCollection.isButton, isTrue, reason: label);
     }
 
     // Screen-reader activation (not a pointer tap) opens the More menu...
-    final more = homeNode('More').id;
+    final more = homeNode('More workspaces').id;
     tester.semantics.tap(find.semantics.byPredicate((node) => node.id == more));
     await settleShell(tester);
     expect(find.byType(AppSheetScaffold), findsOneWidget);

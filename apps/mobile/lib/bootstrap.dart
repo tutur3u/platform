@@ -31,6 +31,7 @@ import 'package:mobile/data/sources/supabase_client.dart';
 import 'package:mobile/features/assistant/local/assistant_model_downloads.dart';
 import 'package:mobile/features/notifications/push/push_notification_service.dart';
 import 'package:mobile/features/settings/cubit/appearance_resolution.dart';
+import 'package:mobile/features/shell/cubit/shell_root_tabs_cubit.dart';
 import 'package:shadcn_flutter/shadcn_flutter.dart' as shad;
 
 class AppBlocObserver extends BlocObserver {
@@ -207,9 +208,20 @@ Future<void> bootstrap(
 typedef _LocalPreferences = ({shad.ThemeMode themeMode, String? initialRoute});
 
 /// Reads the local settings the first frame needs and applies system chrome.
+/// The saved dock tabs load alongside, so the shell's first frame shows them.
 ///
 /// Does not touch Firebase or Supabase, so it can overlap their initialization.
 Future<_LocalPreferences> _loadLocalPreferences(
+  SettingsRepository settingsRepository,
+) async {
+  final (preferences, _) = await (
+    _loadStartupPreferences(settingsRepository),
+    ShellRootTabsCubit.warm(),
+  ).wait;
+  return preferences;
+}
+
+Future<_LocalPreferences> _loadStartupPreferences(
   SettingsRepository settingsRepository,
 ) => loadStartupPreferences(
   initializeHaptics: AppHaptics.initialize,

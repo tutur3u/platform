@@ -4428,6 +4428,9 @@ class AppLocalizationsVi extends AppLocalizations {
   String get homeWorkspaceMore => 'Thêm';
 
   @override
+  String get homeWorkspaceMoreLabel => 'Thêm không gian làm việc';
+
+  @override
   String get homeWorkspaceNew => 'Không gian làm việc mới';
 
   @override
