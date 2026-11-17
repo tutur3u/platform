@@ -71,7 +71,8 @@ vi.mock('next-intl', () => ({
 }));
 
 // Mock icons
-vi.mock('@tuturuuu/icons/lucide-static', () => ({
+vi.mock('@tuturuuu/icons/lucide-static', async (importOriginal) => ({
+  ...(await importOriginal<typeof import('@tuturuuu/icons/lucide-static')>()),
   Check: () => <div>Check Icon</div>,
   Loader2: () => <div>Loading Icon</div>,
   Plus: () => <div>Plus Icon</div>,

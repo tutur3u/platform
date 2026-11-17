@@ -28,7 +28,8 @@ vi.mock('@marsidev/react-turnstile', () => ({
   ),
 }));
 
-vi.mock('@tuturuuu/icons/lucide-static', () => ({
+vi.mock('@tuturuuu/icons/lucide-static', async (importOriginal) => ({
+  ...(await importOriginal<typeof import('@tuturuuu/icons/lucide-static')>()),
   AlertTriangle: (props: Record<string, unknown>) => (
     <span aria-hidden="true" {...props}>
       alert
