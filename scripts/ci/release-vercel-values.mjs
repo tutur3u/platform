@@ -20,10 +20,12 @@ export function tokenShaped(value) {
   if (/^(?:dpl|prj)_[A-Za-z0-9_]{3,100}$/u.test(value)) return false;
   return /[A-Za-z0-9+/=]{32,}/u.test(value);
 }
-export function unsafeValues(value, seen = new Set(), field = '') {
+export function unsafeValues(value, seen = new Set(), path = []) {
+  const field = path.at(-1);
   if (typeof value === 'string') {
     if (
-      digestFields.has(field) &&
+      (digestFields.has(field) ||
+        (path.length === 2 && path[0] === 'artifact' && field === 'sha256')) &&
       /^(?:[a-f0-9]{40}|[a-f0-9]{64})$/u.test(value)
     )
       return false;
@@ -33,7 +35,7 @@ export function unsafeValues(value, seen = new Set(), field = '') {
   if (seen.has(value)) return true;
   seen.add(value);
   const unsafe = Object.entries(value).some(([key, child]) =>
-    unsafeValues(child, seen, key)
+    unsafeValues(child, seen, [...path, key])
   );
   seen.delete(value);
   return unsafe;

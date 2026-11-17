@@ -468,3 +468,15 @@ test('replay refuses secret-named extras even when their values look public', as
     { guardCode: 'QUEUE_GRANT_INVALID' }
   );
 });
+
+test('replay without evidence has a fixed refusal instead of a raw hash error', async () => {
+  const port = authority();
+  const first = await run(port, async () => ({ deploymentId: 'dpl_result' }));
+  const replay = { ...first };
+  delete replay.evidence;
+  port.state.receipts.push(replay);
+  await assert.rejects(
+    run(port, async () => {}),
+    { guardCode: 'QUEUE_GRANT_INVALID' }
+  );
+});
