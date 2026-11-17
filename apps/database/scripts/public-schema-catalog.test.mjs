@@ -68,21 +68,25 @@ test('G1: unallowlisted, stale and mis-kinded relations fail', () => {
   );
 });
 
-test('G1: retained relations may be absent from a replay but not present', () => {
-  const retained = allowlist({
-    relations: {
-      ...allowlist().relations,
-      hosted_only: { kind: 'table', wave: 6, retained: true },
+test('G1: typesAhead relations must stay out of public', () => {
+  const ahead = allowlist({
+    typesAhead: {
+      sprint_reports: {
+        wave: 6,
+        owner: 'tasks',
+        reason: 'typed ahead',
+        evidence: 'readback',
+      },
     },
   });
-  assert.deepEqual(evaluatePublicSchemaCatalog(catalog(), retained).errors, []);
+  assert.deepEqual(evaluatePublicSchemaCatalog(catalog(), ahead).errors, []);
   const created = catalog({
-    relations: [...catalog().relations, relation('hosted_only')],
+    relations: [...catalog().relations, relation('sprint_reports')],
   });
-  assert.match(
-    evaluatePublicSchemaCatalog(created, retained).errors[0],
-    /marked retained/u
-  );
+  assert.deepEqual(evaluatePublicSchemaCatalog(created, ahead).errors, [
+    'public.sprint_reports exists but is not allowlisted; create it in private',
+    'typesAhead.sprint_reports exists in public; create it in private (owner: tasks)',
+  ]);
 });
 
 test('G1: moved relations must be in private and absent from public', () => {

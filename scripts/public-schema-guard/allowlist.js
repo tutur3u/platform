@@ -9,7 +9,7 @@ const VERSION = /^\d{14}$/u;
 const KINDS = new Set(['table', 'view']);
 
 const INTRODUCED = Symbol('fieldsMissingFromSource');
-const LATER_FIELDS = ['platformObjects', 'clientViewExceptions'];
+const LATER_FIELDS = ['platformObjects', 'clientViewExceptions', 'typesAhead'];
 
 class AllowlistError extends Error {}
 
@@ -44,8 +44,12 @@ function requireReasons(record, label, keyPattern) {
   }
 }
 
-/** Parse and validate allowlist text. Throws AllowlistError on any defect. */
-function parseAllowlist(text) {
+/**
+ * Parse and validate allowlist text. Throws AllowlistError on any defect.
+ * `base: true` reads a merge-base copy, which may still carry fields this
+ * version no longer accepts in the working allowlist.
+ */
+function parseAllowlist(text, { base = false } = {}) {
   let value;
   try {
     value = JSON.parse(text);
@@ -69,9 +73,9 @@ function parseAllowlist(text) {
       throw new AllowlistError(
         `relations.${name} needs kind table|view and wave 0-9`
       );
-    if (entry.retained !== undefined && entry.retained !== true)
+    if (entry.retained !== undefined && !base)
       throw new AllowlistError(
-        `relations.${name}.retained must be true when present`
+        `relations.${name}.retained is not accepted; record schema the types declare ahead of its migration under typesAhead`
       );
   });
   requireNames(
@@ -99,6 +103,17 @@ function parseAllowlist(text) {
     /^(?:relation:[a-z_][a-z0-9_]*|function:[a-z_][a-z0-9_]*\([^()]*\))$/u
   );
   requireReasons(value.clientViewExceptions, 'clientViewExceptions', NAME);
+  requireNames(value.typesAhead, 'typesAhead', (name, entry) => {
+    for (const field of ['owner', 'reason', 'evidence'])
+      if (typeof entry[field] !== 'string' || !entry[field].trim())
+        throw new AllowlistError(`typesAhead.${name} needs ${field}`);
+    if (!isWave(entry.wave))
+      throw new AllowlistError(`typesAhead.${name} needs wave 0-9`);
+    if (Object.hasOwn(value.relations, name))
+      throw new AllowlistError(
+        `typesAhead.${name} is also allowlisted in relations`
+      );
+  });
   requireNames(value.moved, 'moved', (name, entry) => {
     if (!isWave(entry.wave) || entry.schema !== 'private')
       throw new AllowlistError(
@@ -161,7 +176,7 @@ function compareWithBase(current, base) {
       violations.push(
         `defaultAclExemptOwners.${name} was added; exemptions need security review in a dedicated change`
       );
-  for (const label of LATER_FIELDS) {
+  for (const label of ['platformObjects', 'clientViewExceptions']) {
     if (base[INTRODUCED]?.has(label)) continue;
     for (const key of Object.keys(current[label]))
       if (!Object.hasOwn(base[label], key))
@@ -169,6 +184,16 @@ function compareWithBase(current, base) {
           `${label}.${key} was added; exceptions need security review in a dedicated change`
         );
   }
+  // A typesAhead entry may only narrow an allowlisted relation; it never
+  // grants a new name.
+  for (const name of Object.keys(current.typesAhead))
+    if (
+      !Object.hasOwn(base.typesAhead, name) &&
+      !Object.hasOwn(base.relations, name)
+    )
+      violations.push(
+        `typesAhead.${name} was added; only an allowlisted relation can move to typesAhead`
+      );
   for (const name of Object.keys(base.moved))
     if (!Object.hasOwn(current.moved, name))
       violations.push(
@@ -177,10 +202,11 @@ function compareWithBase(current, base) {
   for (const name of Object.keys(base.relations))
     if (
       !Object.hasOwn(current.relations, name) &&
-      !Object.hasOwn(current.moved, name)
+      !Object.hasOwn(current.moved, name) &&
+      !Object.hasOwn(current.typesAhead, name)
     )
       violations.push(
-        `relations.${name} was removed without a moved.${name} record`
+        `relations.${name} was removed without a moved.${name} or typesAhead.${name} record`
       );
   if (current.currentWave < base.currentWave)
     violations.push('currentWave decreased');

@@ -150,7 +150,13 @@ function checkTypes(allowlist, types) {
   const permitted = new Set([
     ...Object.keys(allowlist.relations),
     ...Object.keys(allowlist.serviceRoleCompatViews),
+    ...Object.keys(allowlist.typesAhead),
   ]);
+  for (const name of Object.keys(allowlist.typesAhead))
+    if (!types.Tables.has(name) && !types.Views.has(name))
+      findings.push(
+        `${ALLOWLIST_PATH}: typesAhead.${name} is stale: the generated public types no longer declare it`
+      );
   for (const [section, names] of Object.entries(types))
     for (const name of names)
       if (!permitted.has(name))
@@ -220,7 +226,7 @@ function run({
         `public-schema guard: introducing change (base ${baseSha.slice(0, 12)} has no allowlist)`
       );
     } else {
-      base = parseAllowlist(baseText);
+      base = parseAllowlist(baseText, { base: true });
     }
   } catch (cause) {
     error(`public-schema guard: ${cause.message}`);

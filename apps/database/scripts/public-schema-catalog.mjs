@@ -121,18 +121,18 @@ export function evaluatePublicSchemaCatalog(catalog, allowlist) {
         `public.${relation.name} is a ${kindOf(relation.relkind)}, allowlisted as ${entry.kind}`
       );
   }
-  // Retained relations exist in hosted databases but not in the migration
-  // chain, so a replay lacks them; one that appears must drop the flag.
-  for (const [name, entry] of Object.entries(allowlist.relations)) {
-    if (entry.retained && actual.has(name))
-      errors.push(
-        `relations.${name} is marked retained but the migration chain creates it; remove the flag`
-      );
-    else if (!entry.retained && !actual.has(name))
+  for (const name of Object.keys(allowlist.relations))
+    if (!actual.has(name))
       errors.push(
         `relations.${name} is stale: public.${name} does not exist; remove it and record the move`
       );
-  }
+  // Schema the generated types declare ahead of its migration must be created
+  // in private when that migration lands.
+  for (const [name, entry] of Object.entries(allowlist.typesAhead ?? {}))
+    if (actual.has(name))
+      errors.push(
+        `typesAhead.${name} exists in public; create it in private (owner: ${entry.owner})`
+      );
   for (const name of Object.keys(allowlist.moved)) {
     if (actual.has(name)) errors.push(`moved.${name} still exists in public`);
     if (!privateNames.has(name))

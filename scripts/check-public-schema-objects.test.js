@@ -32,6 +32,7 @@ function allowlist(overrides = {}) {
     defaultAclExemptOwners: {},
     platformObjects: {},
     clientViewExceptions: {},
+    typesAhead: {},
     functions: { enforced: false, names: {} },
     ...overrides,
   };
@@ -108,7 +109,7 @@ test('compareWithBase allows shrinking with a moved record and rejects growth', 
   });
   assert.match(
     compareWithBase(dropped, base)[0],
-    /without a moved\.notes record/u
+    /without a moved\.notes or typesAhead\.notes record/u
   );
   assert.match(
     compareWithBase(allowlist({ lintAfterVersion: '20991231000000' }), base)[0],
@@ -126,16 +127,77 @@ test('compareWithBase allows shrinking with a moved record and rejects growth', 
     /defaultAclExemptOwners\.supabase_admin was added/u
   );
   assert.deepEqual(compareWithBase(base, exempt), []);
+  const legacy = JSON.stringify(
+    allowlist({
+      relations: { notes: { kind: 'table', wave: 5, retained: true } },
+    })
+  );
+  assert.throws(() => parseAllowlist(legacy), /retained is not accepted/u);
+  assert.equal(
+    parseAllowlist(legacy, { base: true }).relations.notes.retained,
+    true
+  );
+});
+
+test('typesAhead narrows an allowlisted relation and never adds a name', () => {
+  const ahead = {
+    wave: 5,
+    owner: 'notes',
+    reason: 'typed ahead of its migration',
+    evidence: 'absent from replay and hosted readback',
+  };
+  const base = parseAllowlist(JSON.stringify(allowlist()), { base: true });
+  const narrowed = parseAllowlist(
+    JSON.stringify(
+      allowlist({
+        relations: { workspaces: { kind: 'table', wave: 8 } },
+        typesAhead: { notes: ahead },
+      })
+    )
+  );
+  assert.deepEqual(compareWithBase(narrowed, base), []);
+  const invented = parseAllowlist(
+    JSON.stringify(allowlist({ typesAhead: { fresh: ahead } }))
+  );
+  assert.match(
+    compareWithBase(invented, base).join('\n'),
+    /typesAhead\.fresh was added/u
+  );
+  assert.deepEqual(compareWithBase(base, narrowed), [
+    'relations.notes was added; create the relation in private instead',
+  ]);
+  assert.throws(
+    () =>
+      parseAllowlist(
+        JSON.stringify(
+          allowlist({ typesAhead: { notes: { ...ahead, evidence: '' } } })
+        )
+      ),
+    /typesAhead\.notes is also allowlisted|needs evidence/u
+  );
   assert.throws(
     () =>
       parseAllowlist(
         JSON.stringify(
           allowlist({
-            relations: { notes: { kind: 'table', wave: 5, retained: false } },
+            relations: { workspaces: { kind: 'table', wave: 8 } },
+            typesAhead: { notes: { ...ahead, owner: ' ' } },
           })
         )
       ),
-    /retained must be true/u
+    /needs owner/u
+  );
+  const types = { Tables: new Set(['workspaces']), Views: new Set() };
+  assert.match(
+    checkTypes(narrowed, types).join('\n'),
+    /typesAhead\.notes is stale/u
+  );
+  assert.deepEqual(
+    checkTypes(narrowed, {
+      Tables: new Set(['workspaces', 'notes']),
+      Views: new Set(),
+    }),
+    []
   );
 });
 

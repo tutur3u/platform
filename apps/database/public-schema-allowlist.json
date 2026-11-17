@@ -179,7 +179,6 @@
     "task_share_link_uses": { "kind": "table", "wave": 6 },
     "task_share_links": { "kind": "table", "wave": 6 },
     "task_shares": { "kind": "table", "wave": 6 },
-    "task_sprint_reports": { "kind": "table", "wave": 6, "retained": true },
     "task_templates": { "kind": "table", "wave": 6 },
     "task_user_override_labels": { "kind": "table", "wave": 6 },
     "task_user_override_projects": { "kind": "table", "wave": 6 },
@@ -352,6 +351,14 @@
   },
   "platformObjects": {},
   "clientViewExceptions": {},
+  "typesAhead": {
+    "task_sprint_reports": {
+      "wave": 6,
+      "owner": "tasks board sprints",
+      "reason": "The generated types declare it ahead of the board sprints migration; the sprints route treats it as unavailable until that migration lands.",
+      "evidence": "Absent from the full migration replay and from the production public catalog readback (query sha256 7bb8e507, 2026-11-17)."
+    }
+  },
   "functions": {
     "enforced": false,
     "names": {}

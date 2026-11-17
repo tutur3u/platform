@@ -428,8 +428,15 @@ Two layers share the allowlist `apps/database/public-schema-allowlist.json`:
   "currentWave": 0,
   "lintAfterVersion": "20261117063000",
   "relations": {
-    "workspaces": { "kind": "table", "wave": 8 },
-    "task_sprint_reports": { "kind": "table", "wave": 6, "retained": true }
+    "workspaces": { "kind": "table", "wave": 8 }
+  },
+  "typesAhead": {
+    "task_sprint_reports": {
+      "wave": 6,
+      "owner": "tasks board sprints",
+      "reason": "Typed ahead of its migration",
+      "evidence": "Absent from the replay and the production readback"
+    }
   },
   "moved": {},
   "serviceRoleCompatViews": {},
@@ -440,10 +447,13 @@ Two layers share the allowlist `apps/database/public-schema-allowlist.json`:
 }
 ```
 
-- `relations` holds every application table and view in `public` (321), each
-  tagged with its wave. `retained` marks a relation that exists in hosted
-  databases and the generated types but that the migration chain does not
-  create, so a replay lacks it.
+- `relations` holds every application table and view in `public` (320), each
+  tagged with its wave.
+- `typesAhead` records relations the generated types declare ahead of their
+  migration, each with an owner, wave, reason and hosted evidence. The types
+  check accepts them; the catalog check fails if one appears in `public`, so
+  the migration that creates it must use `private`. An entry can only narrow
+  an allowlisted relation, and it becomes stale once the types drop it.
 - Moving a relation removes it from `relations` and records it in `moved`
   (`{ "wave": n, "schema": "private" }`). Moved records are permanent.
 - `serviceRoleCompatViews` entries carry `expiresAfterWave` and
@@ -461,9 +471,9 @@ One read-only statement reads `pg_class`, `pg_depend` and `pg_default_acl`
 (extension-owned relations excluded) and fails on:
 
 1. **G1, equality.** Every application table and view in `public` is in
-   `relations` with the matching kind, and every non-retained entry exists.
-   A `retained` entry that the chain creates must drop the flag. Every `moved`
-   name exists in `private` and not in `public`.
+   `relations` with the matching kind, and every entry exists. No
+   `typesAhead` name exists in `public`. Every `moved` name exists in
+   `private` and not in `public`.
 2. **G2, exposure.** Every `public` table has RLS enabled. No RLS-off table
    grants `anon`, `authenticated` or `PUBLIC`. No `public` or global default
    ACL grants those roles on tables or sequences, or function EXECUTE to
@@ -531,8 +541,9 @@ resolved in the allowlist:
 
 - `workspace_external_project_page_versions` is created in `public` by
   `20261109010100` and is missing from the committed types.
-- `task_sprint_reports` is in the types as retained schema and has no
-  migration, so it is marked `retained`.
+- `task_sprint_reports` is declared in the types and has no migration. The
+  production readback confirms it is absent there too, so it is recorded
+  under `typesAhead`.
 - `supabase_admin` default ACLs in `public` grant `anon` and
   `authenticated` on tables, sequences and functions; the owner is exempt
   pending the hosted catalog result.
@@ -540,8 +551,12 @@ resolved in the allowlist:
 Every replayed `public` table has RLS enabled. In the replay all 320 `public`
 relations and 650 functions are owned by `postgres`, and all 26 client-granted
 views use `security_invoker`, so `platformObjects` and `clientViewExceptions`
-start empty. 228 `public` tables still grant client roles behind RLS; the
-waves remove those grants.
+start empty. 254 `public` relations (228 tables and 26 views) still grant
+client roles behind RLS or `security_invoker`; the waves remove those grants.
+
+The production readback (2026-11-17) matches: 320 relations (293 tables and
+27 views), all owned by `postgres`, no RLS-off tables, and the same client
+grants relation for relation as the replay.
 
 ## Appendix: table inventory
 
