@@ -396,4 +396,14 @@ module.exports = [
     reason:
       'SECURITY DEFINER internal helper with search_path pg_catalog, pg_temp, called only from the reviewed private mutate/read functions private.platform_feature_flag_require_permission(uuid,text); the REVOKE ALL at :221 removes PUBLIC, anon, authenticated and service_role and no later statement grants it, so it ends with no client or service grant; only the no-grant marker is missing; preserve merged 20261109190002 bytes',
   },
+  {
+    path: 'apps/database/supabase/migrations/20261117063000_mail_contacts_sender_blocks.sql',
+    line: 123,
+    rule: 'function-acl',
+    fileDigest:
+      '802d92c0d6227acd3def70fb5658af81c93237f6beaa3d436a705646597ddab2',
+    digest: '7c506f9299a18d04830a93d73d60ae1a3a876a96815bf52962734bdf5a332949',
+    reason:
+      'SECURITY INVOKER trigger function public.guard_workspace_user_mail_blocked() with search_path empty, attached only by the BEFORE INSERT OR UPDATE OF mail_blocked trigger on public.workspace_users; the REVOKE ALL at :140 removes PUBLIC, anon and authenticated and no later statement grants it; a direct call fails because trigger functions run only as triggers; only the no-grant marker is missing; preserve merged 20261117063000 bytes',
+  },
 ];
