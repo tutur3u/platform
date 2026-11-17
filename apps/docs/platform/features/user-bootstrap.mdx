@@ -1,0 +1,90 @@
+---
+updatedAt: "2026-11-18"
+title: 'User bootstrap endpoint'
+description: 'One authenticated read that returns the signed-in shell data section by section.'
+audience: developers
+---
+
+`GET /api/v1/users/me/bootstrap` returns the data an app shell needs after
+sign-in in one request, so a satellite does not issue a dozen separate reads.
+It is owned by `apps/web` under `apps/web/src/app/api/v1/users/me/bootstrap`.
+The individual endpoints stay in place for mutations, refreshes and the
+per-key fallback.
+
+## Request
+
+| Parameter | Rule |
+| --- | --- |
+| `expectedActorId` | Required UUID. The request is refused with 409 when it is not the authenticated actor. |
+| `sections` | Required comma list of at most 8 values from `profile`, `workspace`, `configs`, `onboarding`, `unreadCount`, `invitations`, `hiddenWorkspaces`, `workspaces`. |
+| `configs` | Required with the `configs` section: only `SORBET_THEME`, `EXPERIMENTAL_SORBET_UI`, `SIDEBAR_BEHAVIOR`, `SHOW_VERSION_BADGE`. |
+| `wsId` | Required with the `workspace` section: one id or slug of at most 64 characters. |
+| `unreadWsId` | Optional with `unreadCount`: one workspace UUID. |
+
+Any other parameter, a repeated parameter or an out-of-range value returns a
+generic 400 `{ "error": "invalid_request" }`. Every section is a read; none
+writes, so a section that loses its deadline race leaves nothing in flight.
+
+## Response
+
+The response is HTTP 200 with `{ version: 1, actorId, sections }` whenever auth
+succeeds and the parameters are valid, even if every section failed. Each
+requested section is `{ ok: true, data }` or `{ ok: false, error: { code, status } }`.
+`data` is the JSON body the individual endpoint returns today, produced by the same
+function in `apps/web/src/lib/current-user`. `configs` is a record per config id,
+so a forbidden `SHOW_VERSION_BADGE` does not fail the other ids.
+
+`error.code` is one of `forbidden`, `not_found`, `failed`, `timeout`,
+`unavailable` or `workspace_unavailable`. Errors carry no message, id or stack.
+The bootstrap logs section names and error codes only; the shared readers do
+not log, and the individual routes keep their own log lines.
+
+A section that does not answer within 1200 ms (`BOOTSTRAP_SECTION_DEADLINE_MS`)
+returns `timeout` with status 504; the other sections are unaffected. Clients
+fall back to the individual endpoint for each failed section.
+
+### Workspace section
+
+A workspace the caller cannot read returns
+`{ ok: false, error: { code: "workspace_unavailable", status: 404 } }`. A
+non-member and a nonexistent workspace produce byte-identical responses, in
+UUID and slug form, so the section adds no existence oracle. Board-share guests
+keep the guest shape. A genuine lookup error on the member query or on a
+board-share guest's workspace read stays `failed` with status 500. The
+swallowed handle-lookup errors in the existing `normalizeWorkspaceId` helper
+surface as `workspace_unavailable` (404) for a slug; that reveals nothing about
+whether a workspace exists. The individual `GET /api/workspaces/:wsId` route is
+unchanged and still answers 500 for a non-member.
+
+## Authorization
+
+The request runs the same `withSessionAuth` pipeline as the individual
+endpoints, once. The app-session audience is the intersection of the covered
+routes' audiences (24 targets); `parley`, `cli`, `git` and scope-only grants are
+not accepted. A test imports the real route options and asserts the bootstrap
+audience is a subset of every covered route's audience.
+
+After auth and before any section, `expectedActorId !== user.id` returns 409
+`{ "message": "Account changed" }` for the whole response. The actor always comes
+from the verified session or token, so the parameter can only refuse a request.
+
+## Headers, limits and rollout
+
+- `Cache-Control: private, no-store`; no `Timing-Allow-Origin`.
+- `Server-Timing` labels are `auth`, `s-<section>` and `total` only; no `db`.
+- The route stays under the `users-me` read limits at both proxy guards. One
+  request performs up to 8 section reads (roughly 15 to 20 database queries in
+  total), bounded by the section list.
+- Kill switch: `USER_BOOTSTRAP_DISABLED=1` answers 404 before any auth work, and
+  clients fall back to per-key reads.
+
+## Regression coverage
+
+- Contract, parameter bounds, headers, kill switch, 409 and partial failure:
+  `apps/web/src/app/api/v1/users/me/bootstrap/route.test.ts`.
+- Per-section cross-user isolation, equivalence with the individual endpoints and
+  the `workspace_unavailable` bytes:
+  `apps/web/src/app/api/v1/users/me/bootstrap/isolation.test.ts`.
+- Audience subset: `apps/web/src/app/api/v1/users/me/bootstrap/audience.test.ts`.
+- Individual routes unchanged by the shared extraction:
+  `apps/web/src/lib/current-user/routes-equivalence.test.ts`.

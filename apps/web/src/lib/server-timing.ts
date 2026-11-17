@@ -1,13 +1,26 @@
 import { AsyncLocalStorage } from 'node:async_hooks';
+import {
+  BOOTSTRAP_SECTIONS,
+  type BootstrapSection,
+} from '@tuturuuu/internal-api/user-bootstrap';
 import { resolveAuthenticatedSessionUser } from '@tuturuuu/supabase/next/auth-session-user';
 
 /**
  * Phase names are a closed set so a header can never carry identifiers, emails
  * or any other request data: only a fixed label and a duration.
  */
-export type ServerTimingPhase = 'auth' | 'db' | 'cache';
+export type ServerTimingPhase =
+  | 'auth'
+  | 'db'
+  | 'cache'
+  | `s-${BootstrapSection}`;
 
-const PHASE_ORDER: readonly ServerTimingPhase[] = ['auth', 'db', 'cache'];
+const PHASE_ORDER: readonly ServerTimingPhase[] = [
+  'auth',
+  'db',
+  'cache',
+  ...BOOTSTRAP_SECTIONS.map((section) => `s-${section}` as const),
+];
 
 interface ServerTimingStore {
   readonly phases: Map<ServerTimingPhase, number>;
