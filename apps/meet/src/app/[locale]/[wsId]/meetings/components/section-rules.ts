@@ -78,26 +78,31 @@ export function dayKey(value: UtcInstant, timeZone: string) {
   }).format(new Date(value));
 }
 
-export type UpcomingDay = {
+type DayGroup = {
   key: string;
-  relative: 'today' | 'tomorrow' | null;
   /** First meeting start in the group, used for the day label. */
   anchor: UtcInstant;
   meetings: ScheduledMeeting[];
 };
 
-/** Groups soonest-first upcoming meetings by calendar day in `timeZone`. */
-export function groupUpcomingByDay(
+export type UpcomingDay = DayGroup & { relative: 'today' | 'tomorrow' | null };
+
+export type PastDay =
+  | (DayGroup & { relative: 'today' | 'yesterday' | null })
+  /** Meetings without a usable start; they are past but have no day. */
+  | {
+      key: 'undated';
+      anchor: null;
+      relative: null;
+      meetings: ScheduledMeeting[];
+    };
+
+/** Groups consecutive meetings that start on the same calendar day. */
+function groupAdjacentByDay(
   meetings: ScheduledMeeting[],
-  timeZone: string,
-  now: UtcInstant
-): UpcomingDay[] {
-  const today = dayKey(now, timeZone);
-  const tomorrow = dayKey(
-    new Date(Date.parse(now) + 24 * 60 * 60 * 1000).toISOString(),
-    timeZone
-  );
-  const groups: UpcomingDay[] = [];
+  timeZone: string
+): DayGroup[] {
+  const groups: DayGroup[] = [];
   for (const meeting of meetings) {
     const start = meetingStart(meeting);
     if (!start) continue;
@@ -107,12 +112,92 @@ export function groupUpcomingByDay(
       last.meetings.push(meeting);
       continue;
     }
-    groups.push({
-      anchor: start,
-      key,
-      meetings: [meeting],
-      relative: key === today ? 'today' : key === tomorrow ? 'tomorrow' : null,
-    });
+    groups.push({ anchor: start, key, meetings: [meeting] });
   }
   return groups;
+}
+
+function offsetDayKey(now: UtcInstant, timeZone: string, days: number) {
+  return dayKey(
+    new Date(Date.parse(now) + days * 24 * 60 * 60 * 1000).toISOString(),
+    timeZone
+  );
+}
+
+/** Groups soonest-first upcoming meetings by calendar day in `timeZone`. */
+export function groupUpcomingByDay(
+  meetings: ScheduledMeeting[],
+  timeZone: string,
+  now: UtcInstant
+): UpcomingDay[] {
+  const today = dayKey(now, timeZone);
+  const tomorrow = offsetDayKey(now, timeZone, 1);
+  return groupAdjacentByDay(meetings, timeZone).map((group) => ({
+    ...group,
+    relative:
+      group.key === today
+        ? 'today'
+        : group.key === tomorrow
+          ? 'tomorrow'
+          : null,
+  }));
+}
+
+/** Groups newest-first past meetings by calendar day in `timeZone`. */
+export function groupPastByDay(
+  meetings: ScheduledMeeting[],
+  timeZone: string,
+  now: UtcInstant
+): PastDay[] {
+  const today = dayKey(now, timeZone);
+  const yesterday = offsetDayKey(now, timeZone, -1);
+  const groups: PastDay[] = groupAdjacentByDay(meetings, timeZone).map(
+    (group) => ({
+      ...group,
+      relative:
+        group.key === today
+          ? 'today'
+          : group.key === yesterday
+            ? 'yesterday'
+            : null,
+    })
+  );
+  const undated = meetings.filter((meeting) => !meetingStart(meeting));
+  if (undated.length)
+    groups.push({
+      anchor: null,
+      key: 'undated',
+      meetings: undated,
+      relative: null,
+    });
+  return groups;
+}
+
+/** "45 min" or "1 hr 15 min" in the viewer's locale, or null without a valid range. */
+export function formatMeetingDuration(
+  meeting: ScheduledMeeting,
+  locale: string
+): string | null {
+  const calendar = meeting.calendar;
+  if (!calendar) return null;
+  const start = Date.parse(calendar.startAt);
+  const end = Date.parse(calendar.endAt);
+  if (!Number.isFinite(start) || !Number.isFinite(end) || end <= start)
+    return null;
+  const totalMinutes = Math.round((end - start) / 60_000);
+  if (totalMinutes < 1) return null;
+  const unit = (value: number, name: 'hour' | 'minute') =>
+    new Intl.NumberFormat(locale, {
+      style: 'unit',
+      unit: name,
+      unitDisplay: 'short',
+    }).format(value);
+  const hours = Math.floor(totalMinutes / 60);
+  const minutes = totalMinutes % 60;
+  return [
+    hours > 0 ? unit(hours, 'hour') : null,
+    minutes > 0 || hours === 0 ? unit(minutes, 'minute') : null,
+  ]
+    .filter(Boolean)
+    .join(' ');
 }

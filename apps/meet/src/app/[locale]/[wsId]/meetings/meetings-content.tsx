@@ -50,6 +50,7 @@ export function MeetingsContent({
   const [pastSearch, setPastSearch] = useState(initialSearch);
   const [pastFilter, setPastFilter] = useState<PastFilter>('all');
   const [target, setTarget] = useState<ManageTarget>({ kind: 'none' });
+  const [scheduleOpen, setScheduleOpen] = useState(false);
   const searchTerm = useDeferredValue(pastSearch.trim());
   const searching = searchTerm !== '';
 
@@ -131,12 +132,15 @@ export function MeetingsContent({
         <MeetingEntry
           canCreate={canCreate}
           onCreated={() => void refresh()}
+          onScheduleOpenChange={setScheduleOpen}
+          scheduleOpen={scheduleOpen}
           wsId={wsId}
         />
         <MeetingsHome
           accountId={accountId}
           management={management}
           onRetry={() => void base.query.refetch()}
+          onSchedule={canCreate ? () => setScheduleOpen(true) : undefined}
           past={past}
           state={state}
           wsId={wsId}

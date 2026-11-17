@@ -50,10 +50,15 @@ function defaultScheduledTime() {
 export function MeetingEntry({
   canCreate,
   onCreated,
+  onScheduleOpenChange,
+  scheduleOpen: controlledScheduleOpen,
   wsId,
 }: {
   canCreate: boolean;
   onCreated: () => void;
+  /** Lets the page open the schedule dialog from elsewhere (an empty state). */
+  onScheduleOpenChange?: (open: boolean) => void;
+  scheduleOpen?: boolean;
   wsId: string;
 }) {
   const t = useTranslations('meet.meetings');
@@ -61,7 +66,9 @@ export function MeetingEntry({
   const nameRef = useRef<HTMLInputElement>(null);
   const timeRef = useRef<HTMLInputElement>(null);
   const durationRef = useRef<HTMLInputElement>(null);
-  const [scheduleOpen, setScheduleOpen] = useState(false);
+  const [localScheduleOpen, setLocalScheduleOpen] = useState(false);
+  const scheduleOpen = controlledScheduleOpen ?? localScheduleOpen;
+  const setScheduleOpen = onScheduleOpenChange ?? setLocalScheduleOpen;
   const [joinOpen, setJoinOpen] = useState(false);
   const [code, setCode] = useState('');
   const [busy, setBusy] = useState(false);
@@ -148,9 +155,14 @@ export function MeetingEntry({
 
   return (
     <div className="flex shrink-0 items-center gap-2">
+      {/* One split button: the outer corners use the same rounded-md radius as
+          Join meeting (a dialog trigger, which Sorbet's button rule does not
+          reach) and the seam stays square. data-sorbet-shape keeps Sorbet's
+          four-corner pill rule off these buttons so the side radii apply. */}
       <div className="flex items-center">
         <Button
-          className="rounded-r-none pr-3"
+          className="rounded-l-md rounded-r-none pr-3 focus-visible:z-10"
+          data-sorbet-shape="keep"
           disabled={!canCreate || busy}
           onClick={() => void startMeeting()}
           size="sm"
@@ -162,7 +174,8 @@ export function MeetingEntry({
           <DropdownMenuTrigger asChild>
             <Button
               aria-label={t('create_options')}
-              className="rounded-l-none border-l border-l-primary-foreground/25 px-2"
+              className="rounded-l-none rounded-r-md border-l border-l-primary-foreground/25 px-2 focus-visible:z-10"
+              data-sorbet-shape="keep"
               disabled={!canCreate || busy}
               size="sm"
             >

@@ -23,6 +23,8 @@ interface MeetingsHomeProps {
   accountId: string;
   wsId: string;
   management: MeetingManagement;
+  /** Opens the schedule dialog; absent when the viewer cannot create meetings. */
+  onSchedule?: () => void;
 }
 
 /** Current (only with live evidence), then Upcoming, then Past. */
@@ -85,6 +87,7 @@ function ReadyHome({
   accountId,
   wsId,
   management,
+  onSchedule,
 }: Omit<MeetingsHomeProps, 'state'> & {
   schedule: MeetingsHomeSchedule;
   sync: ScheduleSync;
@@ -103,6 +106,7 @@ function ReadyHome({
         management={management}
         meetings={schedule.upcoming}
         now={schedule.evaluatedAt}
+        onSchedule={onSchedule}
         timeZone={timeZone}
         wsId={wsId}
       />
@@ -111,6 +115,7 @@ function ReadyHome({
           {...past}
           accountId={accountId}
           management={management}
+          now={schedule.evaluatedAt}
           timeZone={timeZone}
           wsId={wsId}
         />

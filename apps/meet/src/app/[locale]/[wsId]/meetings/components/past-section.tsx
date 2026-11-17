@@ -28,11 +28,13 @@ export function PastSection({
   accountId,
   wsId,
   timeZone,
+  now,
   management,
 }: PastController & {
   accountId: string;
   wsId: string;
   timeZone: string | undefined;
+  now: string;
   management: MeetingManagement;
 }) {
   const t = useTranslations('meet.meetings');
@@ -70,7 +72,7 @@ export function PastSection({
       </h2>
       {expanded && (
         <div className="space-y-3" id={panelId}>
-          <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
+          <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:gap-3">
             <div className="relative w-full sm:max-w-xs">
               <Search
                 aria-hidden
@@ -97,12 +99,14 @@ export function PastSection({
             </div>
             <ToggleGroup
               aria-label={t('filter_label')}
+              className="w-fit gap-0.5 bg-muted p-0.5"
               onValueChange={(value) => {
                 if (value === 'all' || value === 'mine') onFilterChange(value);
               }}
+              size="sm"
               type="single"
               value={filter}
-              variant="outline"
+              variant="default"
             >
               <ToggleGroupItem className="px-3" value="all">
                 {t('filter_all')}
@@ -129,6 +133,7 @@ export function PastSection({
               timeZone={timeZone}
               wsId={wsId}
               narrowed={Boolean(search) || filter !== 'all'}
+              now={now}
             />
           </div>
         </div>

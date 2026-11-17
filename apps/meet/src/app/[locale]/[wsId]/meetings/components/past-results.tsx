@@ -2,7 +2,9 @@
 
 import { Button } from '@tuturuuu/ui/button';
 import { useTranslations } from 'next-intl';
+import { PastDayGroups } from './day-groups';
 import { MeetingRow } from './meeting-row';
+import { groupPastByDay } from './section-rules';
 import type { MeetingManagement, PastResults, ScheduledMeeting } from './types';
 
 export function PastResultsBody({
@@ -17,6 +19,7 @@ export function PastResultsBody({
   accountId,
   wsId,
   timeZone,
+  now,
   management,
 }: {
   results: PastResults;
@@ -30,6 +33,7 @@ export function PastResultsBody({
   accountId: string;
   wsId: string;
   timeZone: string | undefined;
+  now: string;
   management: MeetingManagement;
 }) {
   const t = useTranslations('meet.meetings');
@@ -65,11 +69,21 @@ export function PastResultsBody({
                 </Button>
               )}
             </div>
+          ) : timeZone ? (
+            <PastDayGroups
+              accountId={accountId}
+              groups={groupPastByDay(meetings, timeZone, now)}
+              management={management}
+              now={now}
+              timeZone={timeZone}
+              wsId={wsId}
+            />
           ) : (
             <ul className="divide-y">
               {meetings.map((meeting) => (
                 <MeetingRow
                   accountId={accountId}
+                  compactAction
                   key={meeting.id}
                   management={management}
                   meeting={meeting}

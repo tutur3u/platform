@@ -64,7 +64,17 @@ vi.mock('@tuturuuu/ui/input', () => ({
   Input: (props: ComponentProps<'input'>) => <input {...props} />,
 }));
 vi.mock('@tuturuuu/ui/toggle-group', () => ({
-  ToggleGroup: ({ children }: { children: ReactNode }) => <div>{children}</div>,
+  ToggleGroup: ({
+    children,
+    variant,
+  }: {
+    children: ReactNode;
+    variant?: string;
+  }) => (
+    <div data-testid="filter-group" data-variant={variant}>
+      {children}
+    </div>
+  ),
   ToggleGroupItem: ({ children }: { children: ReactNode }) => (
     <button type="button">{children}</button>
   ),
@@ -293,5 +303,81 @@ describe('Meetings home sections', () => {
     expect(screen.getByText('Happening now')).toBeTruthy();
     const join = screen.getByText('Rejoin').closest('a');
     expect(join?.getAttribute('href')).toMatch(/^\/r\//);
+  });
+
+  const pastHeaders = () => {
+    const toggle = screen.getByRole('button', { name: /Past/ });
+    const panel = document.getElementById(
+      toggle.getAttribute('aria-controls') ?? ''
+    );
+    return [...(panel?.querySelectorAll('h3') ?? [])].map(
+      (node) => node.textContent
+    );
+  };
+
+  it('groups past meetings by day with a relative day header and no per-row date', () => {
+    render(
+      <Harness
+        pastMeetings={[
+          meeting('y1', '2026-03-09T09:00:00.000Z'),
+          meeting('y2', '2026-03-09T07:00:00.000Z'),
+          meeting('old', '2026-02-20T09:00:00.000Z'),
+        ]}
+      />
+    );
+    fireEvent.click(screen.getByRole('button', { name: /Past/ }));
+    expect(pastHeaders()).toEqual(['Yesterday', 'Fri, Feb 20']);
+    expect(
+      screen.getByText('Meeting y1').parentElement?.textContent
+    ).not.toMatch(/Mar 9/);
+  });
+
+  it('keeps a past meeting without a time under a no-time header', () => {
+    render(<Harness pastMeetings={[meeting('legacy', null)]} />);
+    fireEvent.click(screen.getByRole('button', { name: /Past/ }));
+    expect(pastHeaders()).toEqual(['No time set']);
+    expect(screen.getByText('Meeting legacy')).toBeTruthy();
+  });
+
+  it('uses the shared segmented control for the past filter', () => {
+    render(<Harness />);
+    fireEvent.click(screen.getByRole('button', { name: /Past/ }));
+    expect(
+      screen.getByTestId('filter-group').getAttribute('data-variant')
+    ).toBe('default');
+  });
+});
+
+describe('Upcoming empty state', () => {
+  const props = {
+    accountId: 'account-a',
+    calendarAccess: { status: 'unavailable' } as const,
+    management: { onDelete: () => {}, onEdit: () => {} },
+    meetings: [] as ScheduledMeeting[],
+    now: NOW,
+    timeZone: 'UTC',
+    wsId: 'workspace-1',
+  };
+
+  it('offers to schedule a meeting when the viewer can create one', () => {
+    const onSchedule = vi.fn();
+    render(<UpcomingSection {...props} onSchedule={onSchedule} />);
+    expect(screen.getByText('Nothing scheduled')).toBeTruthy();
+    fireEvent.click(screen.getByRole('button', { name: 'Schedule meeting' }));
+    expect(onSchedule).toHaveBeenCalledOnce();
+  });
+
+  it('shows no call to action without permission to create', () => {
+    render(<UpcomingSection {...props} />);
+    expect(screen.getByText('Nothing scheduled')).toBeTruthy();
+    expect(
+      screen.queryByRole('button', { name: 'Schedule meeting' })
+    ).toBeNull();
+  });
+
+  it('puts the zone label beside the heading', () => {
+    render(<UpcomingSection {...props} />);
+    const heading = screen.getByRole('heading', { name: 'Upcoming' });
+    expect(heading.parentElement?.textContent).toContain('Times in');
   });
 });

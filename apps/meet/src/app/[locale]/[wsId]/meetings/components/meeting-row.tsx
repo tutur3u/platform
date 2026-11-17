@@ -9,11 +9,13 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@tuturuuu/ui/dropdown-menu';
-import { useTranslations } from 'next-intl';
+import { cn } from '@tuturuuu/utils/format';
+import { useLocale, useTranslations } from 'next-intl';
 import { CALENDAR_URL } from '@/constants/common';
 import { MeetingRoomAction } from '@/features/call/components/meeting-room-action';
 import { buildCalendarEventUrl } from '@/features/call/lib/calendar-link';
 import { MeetingTimeRange } from './meeting-time';
+import { formatMeetingDuration } from './section-rules';
 import type { MeetingManagement, ScheduledMeeting } from './types';
 
 export function calendarEventHref(
@@ -37,6 +39,7 @@ export function MeetingRow({
   timeZone,
   withDate,
   management,
+  compactAction = false,
 }: {
   meeting: ScheduledMeeting;
   accountId: string;
@@ -44,13 +47,24 @@ export function MeetingRow({
   timeZone: string | undefined;
   withDate: boolean;
   management: MeetingManagement;
+  /** Icon-only room action with a tooltip, for long lists of past meetings. */
+  compactAction?: boolean;
 }) {
   const t = useTranslations('meet.meetings');
+  const locale = useLocale();
+  const duration = compactAction
+    ? formatMeetingDuration(meeting, locale)
+    : null;
   const calendarHref = meeting.calendar
     ? calendarEventHref(wsId, meeting.calendar)
     : null;
   return (
-    <li className="flex flex-col gap-3 px-4 py-3 sm:flex-row sm:items-center md:px-5">
+    <li
+      className={cn(
+        'flex gap-3 px-4 py-3 md:px-5',
+        compactAction ? 'items-center' : 'flex-col sm:flex-row sm:items-center'
+      )}
+    >
       <div className="min-w-0 flex-1">
         <p className="truncate font-medium text-sm">{meeting.name}</p>
         <p className="flex flex-wrap items-center gap-x-2 text-muted-foreground text-sm">
@@ -60,6 +74,7 @@ export function MeetingRow({
             timeZone={timeZone}
             withDate={withDate}
           />
+          {duration && <span className="tabular-nums">{duration}</span>}
           {calendarHref && (
             <a
               className="inline-flex items-center gap-1 rounded-sm underline-offset-4 hover:text-foreground hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
@@ -75,7 +90,11 @@ export function MeetingRow({
       </div>
       <div className="flex items-center gap-2">
         <div className="flex">
-          <MeetingRoomAction accountId={accountId} meetingId={meeting.id} />
+          <MeetingRoomAction
+            accountId={accountId}
+            compact={compactAction}
+            meetingId={meeting.id}
+          />
         </div>
         <DropdownMenu modal={false}>
           <DropdownMenuTrigger asChild>

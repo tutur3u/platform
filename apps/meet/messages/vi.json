@@ -4676,7 +4676,8 @@
       "tomorrow": "Ngày mai",
       "untitled": "Cuộc họp chưa đặt tên",
       "upcoming_empty": "Chưa có lịch họp",
-      "update_failed": "Không thể cập nhật cuộc họp. Vui lòng thử lại."
+      "update_failed": "Không thể cập nhật cuộc họp. Vui lòng thử lại.",
+      "yesterday": "Hôm qua"
     },
     "notes_page": {
       "action_items": "Việc cần làm",

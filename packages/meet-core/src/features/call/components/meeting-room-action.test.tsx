@@ -19,7 +19,7 @@ afterEach(() => {
   localStorage.clear();
   vi.clearAllMocks();
 });
-function mount(accountId: string) {
+function mount(accountId: string, compact = false) {
   const client = new QueryClient({
     defaultOptions: { queries: { retry: false } },
   });
@@ -27,7 +27,11 @@ function mount(accountId: string) {
   render(
     <QueryClientProvider client={client}>
       <NextIntlClientProvider locale="en" messages={messages}>
-        <MeetingRoomAction meetingId={meetingId} accountId={accountId} />
+        <MeetingRoomAction
+          accountId={accountId}
+          compact={compact}
+          meetingId={meetingId}
+        />
       </NextIntlClientProvider>
     </QueryClientProvider>
   );
@@ -150,4 +154,14 @@ it('late prior-account lookup cannot recreate an ended hint across actor ABA', a
   expect(
     screen.getByRole('link', { name: 'Join call' }).getAttribute('href')
   ).not.toContain('?notes=1');
+});
+
+it('compact mode keeps the same link and accessible name without visible text', () => {
+  mocks.state.mockReturnValue(new Promise(() => {}));
+  rememberEndedRoom('account-a', meetingId);
+  mount('account-a', true);
+  const link = screen.getByRole('link', { name: 'View notes & transcript' });
+  expect(link.getAttribute('href')).toContain('?notes=1');
+  expect(link.textContent).toBe('');
+  expect(link.getAttribute('aria-label')).toBe('View notes & transcript');
 });

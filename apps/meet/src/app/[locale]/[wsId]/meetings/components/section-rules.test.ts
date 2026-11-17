@@ -4,6 +4,8 @@ import {
   currentMeetingsToShow,
   DEFAULT_PAST_CHOICE,
   filterPastMeetings,
+  formatMeetingDuration,
+  groupPastByDay,
   groupUpcomingByDay,
 } from './section-rules';
 import type { ScheduledMeeting } from './types';
@@ -117,5 +119,94 @@ describe('Meetings home section rules', () => {
     const all = [mine, theirs];
     expect(filterPastMeetings(all, 'mine', 'account-a')).toEqual([mine]);
     expect(filterPastMeetings(all, 'all', 'account-a')).toEqual(all);
+  });
+});
+
+describe('Past meetings by day', () => {
+  it('labels today and yesterday, then older days, newest first', () => {
+    const groups = groupPastByDay(
+      [
+        meeting('a', '2026-03-10T08:00:00.000Z'),
+        meeting('b', '2026-03-10T06:00:00.000Z'),
+        meeting('c', '2026-03-09T20:00:00.000Z'),
+        meeting('d', '2026-03-01T09:00:00.000Z'),
+      ],
+      'UTC',
+      NOW
+    );
+    expect(
+      groups.map((group) => [
+        group.key,
+        group.relative,
+        group.meetings.map((m) => m.id),
+      ])
+    ).toEqual([
+      ['2026-03-10', 'today', ['a', 'b']],
+      ['2026-03-09', 'yesterday', ['c']],
+      ['2026-03-01', null, ['d']],
+    ]);
+  });
+
+  it('uses the viewer timezone for the day boundary', () => {
+    const groups = groupPastByDay(
+      [meeting('late', '2026-03-09T20:00:00.000Z')],
+      'Asia/Ho_Chi_Minh',
+      NOW
+    );
+    expect(groups.map((group) => [group.key, group.relative])).toEqual([
+      ['2026-03-10', 'today'],
+    ]);
+  });
+
+  it('keeps meetings without a start time in a final undated group', () => {
+    const groups = groupPastByDay(
+      [meeting('dated', '2026-03-09T09:00:00.000Z'), meeting('legacy', null)],
+      'UTC',
+      NOW
+    );
+    expect(groups.map((group) => group.key)).toEqual(['2026-03-09', 'undated']);
+    expect(groups.at(-1)?.meetings.map((m) => m.id)).toEqual(['legacy']);
+  });
+});
+
+describe('Meeting duration', () => {
+  const calendar = (startAt: string, endAt: string) =>
+    meeting('x', startAt, { calendar: { endAt, id: 'e', startAt } });
+
+  it('reads minutes and hours from the Calendar event', () => {
+    expect(
+      formatMeetingDuration(
+        calendar('2026-03-09T09:00:00.000Z', '2026-03-09T09:45:00.000Z'),
+        'en'
+      )
+    ).toBe('45 min');
+    expect(
+      formatMeetingDuration(
+        calendar('2026-03-09T09:00:00.000Z', '2026-03-09T10:15:00.000Z'),
+        'en'
+      )
+    ).toBe('1 hr 15 min');
+    expect(
+      formatMeetingDuration(
+        calendar('2026-03-09T09:00:00.000Z', '2026-03-09T11:00:00.000Z'),
+        'en'
+      )
+    ).toBe('2 hr');
+  });
+
+  it('has no duration without a valid Calendar range', () => {
+    expect(formatMeetingDuration(meeting('n', null), 'en')).toBeNull();
+    expect(
+      formatMeetingDuration(
+        calendar('2026-03-09T09:00:00.000Z', '2026-03-09T08:00:00.000Z'),
+        'en'
+      )
+    ).toBeNull();
+    expect(
+      formatMeetingDuration(
+        calendar('not-a-date', '2026-03-09T08:00:00.000Z'),
+        'en'
+      )
+    ).toBeNull();
   });
 });

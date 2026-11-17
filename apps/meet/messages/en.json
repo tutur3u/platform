@@ -4676,7 +4676,8 @@
       "tomorrow": "Tomorrow",
       "untitled": "Untitled meeting",
       "upcoming_empty": "Nothing scheduled",
-      "update_failed": "Could not update the meeting. Please try again."
+      "update_failed": "Could not update the meeting. Please try again.",
+      "yesterday": "Yesterday"
     },
     "notes_page": {
       "action_items": "Action items",

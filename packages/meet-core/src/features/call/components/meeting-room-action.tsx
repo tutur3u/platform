@@ -3,6 +3,7 @@ import { useQuery } from '@tanstack/react-query';
 import { FileText, Video } from '@tuturuuu/icons';
 import { getMeetCallRoomState } from '@tuturuuu/internal-api';
 import { Button } from '@tuturuuu/ui/button';
+import { Tooltip, TooltipContent, TooltipTrigger } from '@tuturuuu/ui/tooltip';
 import Link from 'next/link';
 import { useTranslations } from 'next-intl';
 import { useRef } from 'react';
@@ -13,9 +14,12 @@ import { encodeRoomCode } from '../lib/room-code';
 export function MeetingRoomAction({
   meetingId,
   accountId,
+  compact = false,
 }: {
   meetingId: string;
   accountId: string;
+  /** Icon-only button with a tooltip, for dense lists. Same link and label. */
+  compact?: boolean;
 }) {
   const t = useTranslations('meet.call');
   const scope = useRef({ accountId, meetingId });
@@ -47,6 +51,35 @@ export function MeetingRoomAction({
   const ended = knownEnded || data?.ended;
   // A cached terminal hint cannot decide permissions; the destination checks them.
   const notes = ended && data?.canReadNotes !== false;
+  const label = t(
+    notes
+      ? 'view_meeting_notes'
+      : ended
+        ? 'call_ended_title'
+        : data
+          ? 'join_call'
+          : 'open_meeting'
+  );
+  const href = `/r/${encodeRoomCode(meetingId)}${notes ? '?notes=1' : ''}`;
+  const Icon = ended ? FileText : Video;
+  if (compact)
+    return (
+      <Tooltip>
+        <TooltipTrigger asChild>
+          <Button
+            asChild
+            className="size-8"
+            size="icon"
+            variant={ended ? 'secondary' : 'default'}
+          >
+            <Link aria-label={label} href={href}>
+              <Icon className="size-4" />
+            </Link>
+          </Button>
+        </TooltipTrigger>
+        <TooltipContent>{label}</TooltipContent>
+      </Tooltip>
+    );
   return (
     <Button
       asChild
@@ -54,21 +87,9 @@ export function MeetingRoomAction({
       className="flex-1"
       variant={ended ? 'secondary' : 'default'}
     >
-      <Link href={`/r/${encodeRoomCode(meetingId)}${notes ? '?notes=1' : ''}`}>
-        {ended ? (
-          <FileText className="size-3.5" />
-        ) : (
-          <Video className="size-3.5" />
-        )}
-        {t(
-          notes
-            ? 'view_meeting_notes'
-            : ended
-              ? 'call_ended_title'
-              : data
-                ? 'join_call'
-                : 'open_meeting'
-        )}
+      <Link href={href}>
+        <Icon className="size-3.5" />
+        {label}
       </Link>
     </Button>
   );

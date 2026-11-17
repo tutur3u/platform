@@ -1,6 +1,8 @@
 'use client';
 
 import { Calendar, ExternalLink } from '@tuturuuu/icons';
+import { CalendarClock } from '@tuturuuu/icons/lucide-static';
+import { Button } from '@tuturuuu/ui/button';
 import { useLocale, useTranslations } from 'next-intl';
 import { CALENDAR_URL } from '@/constants/common';
 import { MeetingRow } from './meeting-row';
@@ -28,6 +30,7 @@ export function UpcomingSection({
   accountId,
   wsId,
   management,
+  onSchedule,
 }: {
   meetings: ScheduledMeeting[];
   calendarAccess: CalendarAccess;
@@ -36,44 +39,54 @@ export function UpcomingSection({
   accountId: string;
   wsId: string;
   management: MeetingManagement;
+  /** Opens the schedule dialog; absent when the viewer cannot create meetings. */
+  onSchedule?: () => void;
 }) {
   const t = useTranslations('meet.meetings');
   const locale = useLocale();
   const groups = timeZone ? groupUpcomingByDay(meetings, timeZone, now) : [];
   return (
     <section aria-labelledby="meetings-upcoming" className="space-y-3">
-      <div className="flex flex-wrap items-center justify-between gap-x-4 gap-y-1">
-        <h2
-          className="font-semibold text-base tracking-tight"
-          id="meetings-upcoming"
-        >
-          {t('section_upcoming')}
-        </h2>
-        <div className="flex items-center gap-3 text-muted-foreground text-xs">
+      <div className="flex flex-wrap items-baseline justify-between gap-x-4 gap-y-1">
+        <div className="flex items-baseline gap-2">
+          <h2
+            className="font-semibold text-base tracking-tight"
+            id="meetings-upcoming"
+          >
+            {t('section_upcoming')}
+          </h2>
           {timeZone && (
-            <span>
+            <span className="text-muted-foreground text-xs">
               {t('times_in', { zone: formatZoneName(locale, timeZone, now) })}
             </span>
           )}
-          {calendarAccess.status === 'available' && (
-            <a
-              className="inline-flex items-center gap-1 rounded-sm font-medium text-foreground underline-offset-4 hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
-              href={calendarHomeHref(wsId)}
-              rel="noreferrer"
-              target="_blank"
-            >
-              <Calendar aria-hidden className="size-3.5" />
-              {t('open_calendar')}
-              <ExternalLink aria-hidden className="size-3" />
-            </a>
-          )}
         </div>
+        {calendarAccess.status === 'available' && (
+          <a
+            className="inline-flex items-center gap-1 rounded-sm font-medium text-foreground text-xs underline-offset-4 hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+            href={calendarHomeHref(wsId)}
+            rel="noreferrer"
+            target="_blank"
+          >
+            <Calendar aria-hidden className="size-3.5" />
+            {t('open_calendar')}
+            <ExternalLink aria-hidden className="size-3" />
+          </a>
+        )}
       </div>
       <div className="overflow-hidden rounded-xl border bg-card">
         {meetings.length === 0 ? (
-          <p className="px-4 py-6 text-center text-muted-foreground text-sm md:px-5">
-            {t('upcoming_empty')}
-          </p>
+          <div className="flex flex-col items-center gap-3 px-4 py-6 text-center md:px-5">
+            <p className="text-muted-foreground text-sm">
+              {t('upcoming_empty')}
+            </p>
+            {onSchedule && (
+              <Button onClick={onSchedule} size="sm" variant="outline">
+                <CalendarClock aria-hidden className="size-4" />
+                {t('schedule')}
+              </Button>
+            )}
+          </div>
         ) : timeZone ? (
           groups.map((group) => (
             <div className="border-t first:border-t-0" key={group.key}>
