@@ -482,7 +482,6 @@ describe('derived state', () => {
   });
 });
 
-
 it('reports upload errors with the original reason while retaining retry state', async () => {
   const test = setup();
   const failed = vi.fn();
@@ -492,6 +491,9 @@ it('reports upload errors with the original reason while retaining retry state',
   const error = new Error('Upload rejected: file too large');
   test.uploads[0]?.fail(error);
   await flush();
-  expect(failed).toHaveBeenCalledWith(expect.objectContaining({ name: 'failed.png' }), error);
+  expect(failed).toHaveBeenCalledWith(
+    expect.objectContaining({ name: 'failed.png' }),
+    error
+  );
   expect(test.statuses()).toEqual(['failed']);
 });
