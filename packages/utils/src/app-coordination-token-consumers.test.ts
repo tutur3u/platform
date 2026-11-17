@@ -23,6 +23,12 @@ const TRANSFER_MODULE = 'packages/utils/src/session-assurance-transfer.ts';
  * A new call site fails this test until it is reviewed and listed here.
  */
 const REVIEWED_CONSUMERS: Record<string, { calls: number; gates: string[] }> = {
+  // Mounted-request refusal only: admits a cookie-less bearer solely when it
+  // carries no browser app-session scope; it never grants a session.
+  'apps/mind/src/runtime/mounted-bearer.ts': {
+    calls: 1,
+    gates: ['APP_SESSION_SCOPE', 'APP_SESSION_REFRESH_SCOPE'],
+  },
   'apps/web/src/app/api/v1/auth/app-token/exchange/route.ts': {
     calls: 1,
     gates: ['APP_TOKEN_REFRESH_SCOPE'],

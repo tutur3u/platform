@@ -88,6 +88,9 @@ const coordinatedCookieApps = [
 
 const supabaseFirstCookieApps = registeredSatelliteApps;
 
+/** Apps whose apex mount runs the strict shared-session check. */
+const apexMountedSessionApps = new Set<string>(['mind']);
+
 const allowedSatelliteLocalApiRoutes = new Set([
   // The build marker is deliberately local to every app. It answers "which
   // commit is this deployment actually running?", which cannot be proxied: the
@@ -426,6 +429,14 @@ describe('satellite app-session route inventory', () => {
       const proxyFile = `apps/${app}/src/proxy.ts`;
       const proxySource = readFileSync(resolve(repoRoot, proxyFile), 'utf8');
 
+      if (apexMountedSessionApps.has(app)) {
+        // The apex mount uses the strict shared session; every other request,
+        // including the subdomain, stays Supabase-first.
+        expect(proxySource, proxyFile).toMatch(
+          /isMounted\(request\)\s*\?\s*["']supabase-only["']\s*:\s*["']supabase-first["']/u
+        );
+        continue;
+      }
       expect(proxySource, proxyFile).toMatch(
         /sessionMode:\s*["']supabase-first["']/u
       );
