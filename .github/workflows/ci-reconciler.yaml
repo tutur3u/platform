@@ -1,0 +1,130 @@
+name: CI reconciler
+
+on:
+  schedule:
+    - cron: '*/15 * * * *'
+  workflow_dispatch: {}
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-reconciler
+  cancel-in-progress: false
+  queue: max
+
+jobs:
+  plan:
+    if: >-
+      github.repository == 'tutur3u/platform' &&
+      github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    permissions:
+      actions: read
+      contents: read
+    outputs:
+      has_actions: ${{ steps.plan.outputs.has_actions }}
+      matrix: ${{ steps.plan.outputs.matrix }}
+      main_sha: ${{ steps.plan.outputs.main_sha }}
+      production_sha: ${{ steps.plan.outputs.production_sha }}
+      main_intent: ${{ steps.plan.outputs.main_intent }}
+      production_intent: ${{ steps.plan.outputs.production_intent }}
+    steps:
+      - name: Checkout trusted workflow source
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ github.workflow_sha }}
+          persist-credentials: false
+      - name: Set up Node
+        uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version: '24.22.3'
+          package-manager-cache: false
+      - name: Plan current-head reconciliation
+        id: plan
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: node scripts/ci/ci-reconciler.js plan
+      - name: Persist main intent before recovery
+        if: steps.plan.outputs.main_intent == 'true'
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: ci-reconcile-intent-main-${{ steps.plan.outputs.main_sha }}
+          path: ${{ runner.temp }}/ci-reconciler/main/receipt.json
+          retention-days: 30
+          if-no-files-found: error
+      - name: Persist production intent before recovery
+        if: steps.plan.outputs.production_intent == 'true'
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: ci-reconcile-intent-production-${{ steps.plan.outputs.production_sha }}
+          path: ${{ runner.temp }}/ci-reconciler/production/receipt.json
+          retention-days: 30
+          if-no-files-found: error
+      - name: Locate observation report
+        id: observation
+        if: always()
+        run: |
+          if [ -f "$RUNNER_TEMP/ci-reconciler/report.json" ]; then
+            echo 'exists=true' >> "$GITHUB_OUTPUT"
+          fi
+      - name: Retain observation report
+        if: always() && steps.observation.outputs.exists == 'true'
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: ci-reconcile-observe-${{ github.run_id }}-${{ github.run_attempt }}
+          path: ${{ runner.temp }}/ci-reconciler/report.json
+          retention-days: 7
+          if-no-files-found: error
+
+  recover:
+    needs: plan
+    if: needs.plan.outputs.has_actions == 'true'
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    permissions:
+      actions: write
+      contents: read
+    strategy:
+      fail-fast: false
+      max-parallel: 1
+      matrix: ${{ fromJSON(needs.plan.outputs.matrix) }}
+    steps:
+      - name: Checkout trusted workflow source
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ github.workflow_sha }}
+          persist-credentials: false
+      - name: Set up Node
+        uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version: '24.22.3'
+          package-manager-cache: false
+      - name: Read this run's exact persisted intent
+        uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
+        with:
+          name: ci-reconcile-intent-${{ matrix.branch }}-${{ matrix.sha }}
+          path: ${{ runner.temp }}/ci-reconciler-input/${{ matrix.branch }}
+      - name: Apply bounded current-head recovery
+        env:
+          GH_TOKEN: ${{ github.token }}
+          RECONCILE_BRANCH: ${{ matrix.branch }}
+        run: node scripts/ci/ci-reconciler.js apply "$RECONCILE_BRANCH"
+      - name: Locate recovery result
+        id: result
+        if: always()
+        env:
+          RECONCILE_BRANCH: ${{ matrix.branch }}
+        run: |
+          if [ -f "$RUNNER_TEMP/ci-reconciler-result/$RECONCILE_BRANCH/receipt.json" ]; then
+            echo 'exists=true' >> "$GITHUB_OUTPUT"
+          fi
+      - name: Retain recovery result
+        if: always() && steps.result.outputs.exists == 'true'
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: ci-reconcile-result-${{ matrix.branch }}-${{ matrix.sha }}
+          path: ${{ runner.temp }}/ci-reconciler-result/${{ matrix.branch }}/receipt.json
+          retention-days: 30
+          if-no-files-found: error

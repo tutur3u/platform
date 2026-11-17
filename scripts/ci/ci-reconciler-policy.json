@@ -1,0 +1,39 @@
+{
+  "schema": 1,
+  "repository": "tutur3u/platform",
+  "recoveryEnabled": false,
+  "branches": ["main", "production"],
+  "maxAttempts": 3,
+  "maxHeadAgeSeconds": 1728000,
+  "backoffSeconds": [60, 300, 900],
+  "gates": [
+    {
+      "file": "type-check.yaml",
+      "name": "TypeScript Type Check",
+      "dispatch": true
+    },
+    {
+      "file": "security-checks.yaml",
+      "name": "Security Checks",
+      "dispatch": true
+    },
+    { "file": "turbo-unit-tests.yaml", "name": "Test", "dispatch": false },
+    {
+      "file": "codeql.yml",
+      "name": "CodeQL Manual Fallback",
+      "dispatch": true
+    },
+    { "file": "oxc-check.yaml", "name": "Oxc Check", "dispatch": true },
+    { "file": "i18n-check.yaml", "name": "i18n Check", "dispatch": true },
+    {
+      "file": "codex-plugin.yaml",
+      "name": "Codex Plugin Check",
+      "dispatch": true
+    },
+    {
+      "file": "required-account-mfa-contract.yaml",
+      "name": "Required account MFA database contract",
+      "dispatch": true
+    }
+  ]
+}
