@@ -64,6 +64,20 @@ describe('MobileDock', () => {
     expect(onBack).not.toHaveBeenCalled();
   });
 
+  it('shows icons only and names every destination', () => {
+    render(<MobileDock label="Nav" items={items} />);
+    const nav = screen.getByRole('navigation');
+    expect(nav).not.toHaveTextContent(/Home|Tasks|Apps/);
+    expect(screen.getByRole('link', { name: 'Tasks' })).toHaveAttribute(
+      'aria-label',
+      'Tasks'
+    );
+    expect(screen.getByRole('button', { name: 'Apps' })).toHaveAttribute(
+      'aria-label',
+      'Apps'
+    );
+  });
+
   it('keeps at most five destinations', () => {
     const many = Array.from({ length: 7 }, (_, i) => ({
       key: `k${i}`,

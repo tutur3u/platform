@@ -96,12 +96,17 @@
   --sorbet-header-height: 56px;
   --sorbet-dock-height: 64px;
   --sorbet-dock-inset: 12px;
+  --sorbet-dock-safe-area-tuck: 8px;
+  --sorbet-dock-bottom-offset: max(
+    var(--sorbet-dock-inset),
+    calc(env(safe-area-inset-bottom, 0px) - var(--sorbet-dock-safe-area-tuck))
+  );
   --sorbet-sheet-radius: 24px;
   --sorbet-control-radius: 9999px;
   --sorbet-list-row-min-height: 52px;
   --sorbet-content-bottom-clearance: calc(
-    var(--sorbet-dock-height) + var(--sorbet-dock-inset) * 2 +
-      env(safe-area-inset-bottom, 0px)
+    var(--sorbet-dock-height) + var(--sorbet-dock-inset) +
+      var(--sorbet-dock-bottom-offset)
   );
 }
 

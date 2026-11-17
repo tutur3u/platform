@@ -94,7 +94,10 @@
   for the frame only, and matches the sunken fills in light), and the floating dock
   (MobileDock) shows only while Sorbet is on. Its frame never moves or
   resizes; scrolling content reserves the dock clearance, and a short fade
-  behind the dock keeps content legible as it scrolls under.
+  behind the dock keeps content legible as it scrolls under. As in the native
+  app, the pill rests 8px inside a home-indicator safe area (never closer than
+  the dock inset) with its shadow below it; --mobile-dock-viewport-drop
+  (dock-viewport-anchor.ts) corrects WebKit's stale layout viewport on resume.
 */
 @media (max-width: 767.98px) {
   :root[data-ui="sorbet"] :where([data-slot="mobile-top-bar"]) {
@@ -109,8 +112,9 @@
     position: fixed;
     z-index: 40;
     right: var(--sorbet-dock-inset);
-    bottom: calc(var(--sorbet-dock-inset) + env(safe-area-inset-bottom, 0px));
+    bottom: var(--sorbet-dock-bottom-offset);
     left: var(--sorbet-dock-inset);
+    transform: translate3d(0, var(--mobile-dock-viewport-drop, 0px), 0);
     display: flex;
     align-items: center;
     gap: 4px;
@@ -121,7 +125,14 @@
     border-radius: 9999px;
     background-color: var(--card);
     box-shadow:
-      var(--sorbet-shadow-lg),
+      0 12px 24px -10px color-mix(in oklab, var(--foreground) 22%, transparent),
+      0 0 0 1px color-mix(in oklab, var(--foreground) 5%, transparent);
+  }
+
+  /* Dark shadows fall below the pill in black, as in the native dock. */
+  :root[data-ui="sorbet"].dark :where([data-slot="mobile-dock"]) {
+    box-shadow:
+      0 12px 24px -10px rgb(0 0 0 / 0.6),
       0 0 0 1px color-mix(in oklab, var(--foreground) 5%, transparent);
   }
 
@@ -130,6 +141,7 @@
     z-index: 39;
     inset-inline: 0;
     bottom: 0;
+    transform: translate3d(0, var(--mobile-dock-viewport-drop, 0px), 0);
     display: block;
     height: var(--sorbet-content-bottom-clearance);
     pointer-events: none;

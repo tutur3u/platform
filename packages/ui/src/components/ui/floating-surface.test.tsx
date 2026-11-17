@@ -152,7 +152,7 @@ describe('sonner toast skin', () => {
 
   it('lifts the stack above the Sorbet dock only where the dock shows', () => {
     expect(compact).toMatch(
-      /@media \(max-width: 767\.98px\) \{ :root\[data-ui="sorbet"\]:has\(\[data-slot="mobile-dock"\]\) \[data-sonner-toaster\]\[data-y-position="bottom"\] \{ bottom: calc\(var\(--sorbet-content-bottom-clearance\) \+ 1rem\);/
+      /@media \(max-width: 767\.98px\) \{ :root\[data-ui="sorbet"\]:has\(\[data-slot="mobile-dock"\]\) \[data-sonner-toaster\]\[data-y-position="bottom"\] \{ bottom: calc\( var\(--sorbet-content-bottom-clearance\) \+ 1rem - var\(--mobile-dock-viewport-drop, 0px\) \);/
     );
     // Sonner's own z-index already clears the dock and every app overlay.
     expect(compact).not.toMatch(/\[data-sonner-toaster\][^{]*\{[^}]*z-index/);

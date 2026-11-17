@@ -53,6 +53,7 @@ interface SorbetTokenContract {
     | 'headerHeight'
     | 'dockHeight'
     | 'dockInset'
+    | 'dockSafeAreaTuck'
     | 'sheetRadius'
     | 'listRowMinHeight',
     number
@@ -337,6 +338,7 @@ describe('Sorbet token contract', () => {
     expect(light['sorbet-header-height']).toBe(`${m.headerHeight}px`);
     expect(light['sorbet-dock-height']).toBe(`${m.dockHeight}px`);
     expect(light['sorbet-dock-inset']).toBe(`${m.dockInset}px`);
+    expect(light['sorbet-dock-safe-area-tuck']).toBe(`${m.dockSafeAreaTuck}px`);
     expect(light['sorbet-sheet-radius']).toBe(`${m.sheetRadius}px`);
     expect(light['sorbet-list-row-min-height']).toBe(`${m.listRowMinHeight}px`);
   });

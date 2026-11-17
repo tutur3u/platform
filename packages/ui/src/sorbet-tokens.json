@@ -478,6 +478,7 @@
     "headerHeight": 56,
     "dockHeight": 64,
     "dockInset": 12,
+    "dockSafeAreaTuck": 8,
     "dockRadius": 9999,
     "sheetRadius": 24,
     "sheetHandle": {
@@ -485,7 +486,7 @@
       "height": 4
     },
     "listRowMinHeight": 52,
-    "contentBottomClearance": "dockHeight + dockInset * 2 + safe-area bottom",
+    "contentBottomClearance": "dockHeight + dockInset + max(dockInset, safe-area bottom - dockSafeAreaTuck)",
     "breakpoint": 640,
     "tabletBreakpoint": 768,
     "tabletGutter": 24,

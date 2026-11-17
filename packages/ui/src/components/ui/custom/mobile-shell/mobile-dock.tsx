@@ -2,13 +2,15 @@
 
 import { ChevronLeft } from '@tuturuuu/icons';
 import { cn } from '@tuturuuu/utils/format';
-import { type ReactNode, useRef } from 'react';
+import { type ReactNode, useEffect, useRef } from 'react';
+import { attachDockViewportAnchor } from './dock-viewport-anchor';
 
 /** Hold time that turns a Back press into "return to the destination root". */
 export const MOBILE_DOCK_LONG_PRESS_MS = 500;
 
 export interface MobileDockItem {
   key: string;
+  /** Accessible name; the dock shows icons only, like the native app. */
   label: string;
   icon: ReactNode;
   active?: boolean;
@@ -27,6 +29,7 @@ export interface MobileDockBack {
 export interface MobileDockLinkProps {
   href: string;
   className: string;
+  'aria-label': string;
   'aria-current'?: 'page';
   children: ReactNode;
 }
@@ -36,14 +39,17 @@ const defaultRenderLink = ({ href, ...props }: MobileDockLinkProps) => (
 );
 
 const slotClassName =
-  'flex h-13 min-w-0 flex-1 flex-col items-center justify-center gap-0.5 rounded-full px-1 text-[0.6875rem] leading-[0.875rem] transition-colors duration-150 focus-visible:outline-2 focus-visible:outline-ring focus-visible:outline-offset-2 motion-reduce:transition-none [&_svg]:size-5.5 [&_svg]:shrink-0';
+  'flex h-13 min-w-0 flex-1 items-center justify-center rounded-full transition-colors duration-150 focus-visible:outline-2 focus-visible:outline-ring focus-visible:outline-offset-2 motion-reduce:transition-none [&_svg]:size-5.5 [&_svg]:shrink-0';
 
 /**
- * The floating bottom dock of the mobile shell: up to five destinations and,
- * below a destination's root, a leading Back slot. The frame keeps its place
- * and size in every state; only the slots inside it change. The shell decides
- * when the dock shows (sorbet-surfaces.css shows it on phones while Sorbet is
- * on) and reserves `--mobile-dock-clearance` under scrolling content.
+ * The floating bottom dock of the mobile shell, matching the native app's:
+ * up to five icon-only destinations (each named for assistive technology)
+ * and, below a destination's root, a leading Back slot. The frame keeps its
+ * place and size in every state; only the slots inside it change. The shell
+ * decides when the dock shows (sorbet-surfaces.css shows it on phones while
+ * Sorbet is on) and reserves the dock clearance under scrolling content;
+ * attachDockViewportAnchor keeps it on the visible bottom edge after an app
+ * switch or toolbar change.
  *
  * Framework-free: pass `renderLink` to route through the app's link component.
  */
@@ -58,6 +64,8 @@ export function MobileDock({
   label: string;
   renderLink?: (props: MobileDockLinkProps) => ReactNode;
 }) {
+  useEffect(() => attachDockViewportAnchor(window), []);
+
   return (
     <>
       <div aria-hidden data-slot="mobile-dock-fade" className="hidden" />
@@ -72,21 +80,17 @@ export function MobileDock({
           const className = cn(
             slotClassName,
             item.active
-              ? 'bg-accent font-extrabold text-foreground'
-              : 'font-semibold text-muted-foreground hover:bg-foreground/5 hover:text-foreground'
+              ? 'bg-accent text-foreground'
+              : 'text-muted-foreground hover:bg-foreground/5 hover:text-foreground'
           );
-          const content = (
-            <>
-              {item.icon}
-              <span className="max-w-full truncate">{item.label}</span>
-            </>
-          );
+          const content = item.icon;
           return (
             <div key={item.key} className="contents">
               {item.href ? (
                 renderLink({
                   href: item.href,
                   className,
+                  'aria-label': item.label,
                   'aria-current': item.active ? 'page' : undefined,
                   children: content,
                 })
@@ -94,6 +98,7 @@ export function MobileDock({
                 <button
                   type="button"
                   className={className}
+                  aria-label={item.label}
                   aria-current={item.active ? 'page' : undefined}
                   onClick={item.onSelect}
                 >

@@ -268,14 +268,18 @@
 }
 
 /*
-  Phones and small tablets with the Sorbet dock: lift the stack above it.
-  Sonner keeps its own z-index, which already clears the dock, sheets and
-  every app overlay.
+  Phones and small tablets with the Sorbet dock: lift the stack above it,
+  following the dock's resume correction (dock-viewport-anchor.ts). Sonner
+  keeps its own z-index, which already clears the dock, sheets and every app
+  overlay.
 */
 @media (max-width: 767.98px) {
   :root[data-ui="sorbet"]:has([data-slot="mobile-dock"])
     [data-sonner-toaster][data-y-position="bottom"] {
-    bottom: calc(var(--sorbet-content-bottom-clearance) + 1rem);
+    bottom: calc(
+      var(--sorbet-content-bottom-clearance) + 1rem -
+        var(--mobile-dock-viewport-drop, 0px)
+    );
   }
 }
 
