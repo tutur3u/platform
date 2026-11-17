@@ -78,3 +78,17 @@ a new epoch requires authority-supplied originalAttempt metadata, including its
 receipt digest, while job/phase/target and evidence remain bound. Test hooks reject
 workflow events and GITHUB_ACTIONS even with a spoofed Node test-context marker;
 offline test fixtures isolate those markers in their own test worker only.
+
+No production stage transport is implemented. The queue path's forbidden-command
+protection requires every eventual stage CLI transport to use the publisher's
+`runVercel`; an injected transport that spawns the CLI directly bypasses that
+boundary. Integration must independently verify this wiring before activation.
+Injected transports must not emit `QUEUE_STOPPED`: that identity is reserved for
+trusted durable cancellation guards. A transport can otherwise label a failure
+as stopped; this remains an integration requirement, not an enforced provenance
+boundary. Production wiring requires review before use.
+
+Scan credential values as complete encoded strings and as separator-delimited
+runs, including hostname labels. Digest and provider-ID exemptions apply only at
+declared paths. Authority targetLockId and originalAttempt receiptSha256 are
+context-specific; identical keys in nested evidence do not grant an exemption.

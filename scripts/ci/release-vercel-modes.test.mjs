@@ -53,7 +53,7 @@ test('committed config rejects caller thresholds even with a recomputed digest',
     { guardCode: 'RELEASE_RECEIPT_MISMATCH' }
   );
 });
-test('dispatch refuses failed/wrong predecessor and artifact tampering', async () => {
+test('dispatch refuses predecessor status, phase, source and qualification', async () => {
   for (const patch of [
     { status: 'failed' },
     { phase: 'rollback' },
@@ -239,4 +239,17 @@ test('stage source verification cannot be replaced through caller dependencies',
   assert.equal(stage.status, 'succeeded');
   assert.equal(stage.sourceSha, sha);
   assert.equal(calls, 0);
+});
+
+test('dispatch refuses artifact tampering before alias mutation', async () => {
+  const f = fixture();
+  await f.run('stage');
+  f.state.predecessorOverride = {
+    ...f.state.receipts.stage,
+    artifactSha256: 'f'.repeat(64),
+  };
+  const result = await f.run('promote');
+  assert.equal(result.status, 'failed');
+  assert.equal(result.guardCode, 'RELEASE_RECEIPT_MISMATCH');
+  assert.equal(f.state.calls.includes('set-alias'), false);
 });

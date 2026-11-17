@@ -556,3 +556,29 @@ test('replay binds original receipt across a newly issued epoch', async () => {
     { guardCode: 'QUEUE_GRANT_INVALID' }
   );
 });
+
+test('credential-bearing host labels refuse before claim and receipt persistence', async () => {
+  for (const host of [
+    `${'a'.repeat(64)}.runner.local`,
+    `x-${'b'.repeat(40)}.ci`,
+  ]) {
+    const port = authority();
+    let claims = 0;
+    port.claim = async () => {
+      claims++;
+      throw new Error('must not claim');
+    };
+    await assert.rejects(
+      executeVercelPhase({
+        port,
+        payload: payload(),
+        reviewedTarget: target,
+        host,
+        execute: async () => ({}),
+      }),
+      { guardCode: 'QUEUE_PAYLOAD_INVALID' }
+    );
+    assert.equal(claims, 0);
+    assert.equal(port.state.receipts.length, 0);
+  }
+});

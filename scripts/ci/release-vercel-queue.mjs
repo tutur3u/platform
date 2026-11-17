@@ -247,7 +247,7 @@ export async function executeVercelPhase({
     Number.isSafeInteger(g.stopRevision) &&
     g.stopRevision >= 0 &&
     Number.isFinite(g.leaseDeadline) &&
-    !unsafeValues(g);
+    !unsafeValues(g, 'grant');
   if (!valid(grant)) refuse('QUEUE_GRANT_INVALID', phase);
   const key = {
     operationId: job.operationId,
@@ -258,6 +258,7 @@ export async function executeVercelPhase({
   };
   const intent = await authorityCall(port, 'beginPhase', [grant, key], phase);
   if (
+    unsafeValues(intent?.originalAttempt, 'originalAttempt') ||
     unsafeValues(intent?.predecessor) ||
     secretField(intent?.predecessor) ||
     unsafeValues(intent?.approval) ||
