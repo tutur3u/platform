@@ -8,8 +8,12 @@ import {
 export const profiles = JSON.parse(
   readFileSync(new URL('./wave1-native-profiles.json', import.meta.url), 'utf8')
 );
-const financeRecipe = validateReleaseRecipe(
-  profiles.apps.finance.releaseRecipe
+export const releaseRecipes = Object.fromEntries(
+  Object.entries(profiles.apps).map(([app, settings]) => {
+    const recipe = validateReleaseRecipe(settings.releaseRecipe);
+    assert.equal(recipe.app, app);
+    return [app, recipe];
+  })
 );
 function webProfileFor(environment) {
   assert.equal(environment, 'staging', 'Web publishes to staging only');
@@ -91,9 +95,10 @@ export function profileFor(app, environment, subdomain) {
     'Unknown publication environment'
   );
   const settings = profiles.apps[app];
+  const recipe = releaseRecipes[app];
   // A production-only app has no wave-1 staging identity; its staging artifact
   // is qualified by the app's own native workflow.
-  if (settings.productionOnly)
+  if (recipe.cf.productionOnly)
     assert.equal(environment, 'production', `${app} publishes production only`);
   if (environment === 'staging' && !settings.stagingHost)
     assert.match(
@@ -104,13 +109,11 @@ export function profileFor(app, environment, subdomain) {
   const name =
     environment === 'staging'
       ? settings.stagingWorker
-      : app === 'calendar'
-        ? 'tuturuuu-calendar-path-candidate'
-        : settings.productionWorker;
+      : recipe.cf.productionWorker;
   const host =
     environment === 'staging'
       ? (settings.stagingHost ?? `${name}.${subdomain}.workers.dev`)
-      : settings.canonicalHost;
+      : new URL(recipe.canonicalHosts[0]).hostname;
   return {
     app,
     environment,
@@ -118,9 +121,7 @@ export function profileFor(app, environment, subdomain) {
     host,
     secrets:
       environment === 'production'
-        ? app === 'calendar'
-          ? [...settings.secrets, 'GOOGLE_REDIRECT_URI']
-          : settings.secrets
+        ? recipe.requiredSecretNames
         : // Staging-only names (Access JWT and service token) never reach production.
           [...settings.secrets, ...(settings.stagingSecrets ?? [])],
     accountId: profiles.accountId,
@@ -177,83 +178,20 @@ export function assertStagingIsolation(config) {
   };
   check(config);
 }
-// Finance's emitted config is its reviewed production profile
-// (apps/finance/void.config.ts, cloudflare/native-profiles.json). The upload
-// keeps those exact vars, so the published Worker matches the bytes and config
-// that finance-cloudflare.yaml qualifies; secret names never repeat a var.
-function financePublicationConfig(base, profile, { main, assets, sourceSha }) {
-  const finance = {
-    productionWorker: financeRecipe.cf.productionWorker,
-    compatibilityDate: financeRecipe.cf.compatibilityDate,
-    sourceVars: financeRecipe.allowedVars,
-  };
-  assert.equal(profile.environment, 'production', 'Finance is production only');
-  assert.match(
-    sourceSha ?? '',
-    /^[a-f0-9]{40}$/u,
-    'Exact Finance production source required'
-  );
-  assert.equal(
-    base.name,
-    finance.productionWorker,
-    'Unexpected original Worker identity'
-  );
-  assert.equal(
-    base.no_bundle,
-    true,
-    'Only prebundled native output may publish'
-  );
-  assert.equal(base.assets?.binding, 'ASSETS');
-  assert.equal(base.assets.run_worker_first, true);
-  assert.equal(base.assets.not_found_handling, 'none');
-  assert.deepEqual(
-    base.compatibility_flags,
-    financeRecipe.cf.compatibilityFlags
-  );
-  assert.equal(base.compatibility_date, finance.compatibilityDate);
-  assert.deepEqual(
-    base.vars ?? {},
-    finance.sourceVars,
-    'Source vars require explicit profile review'
-  );
-  for (const key of resourceKeys)
-    assert.ok(empty(base[key]), `Unadmitted source resource: ${key}`);
-  assert.ok(empty(base.env), 'Named source environments are not admitted');
-  if (base.account_id) assert.equal(base.account_id, profile.accountId);
-  for (const name of profile.secrets)
-    assert.ok(
-      !Object.hasOwn(finance.sourceVars, name),
-      `Secret name duplicates a source var: ${name}`
-    );
-  assert.deepEqual(financeRecipe.requiredSecretNames, profile.secrets);
-  assertCommittedRecipe(financeRecipe);
-  return {
-    name: profile.name,
-    account_id: profile.accountId,
-    main,
-    no_bundle: true,
-    upload_source_maps: false,
-    compatibility_date: base.compatibility_date,
-    compatibility_flags: base.compatibility_flags,
-    rules: base.rules,
-    assets: { ...base.assets, directory: assets },
-    workers_dev: false,
-    preview_urls: false,
-    routes: [],
-    secrets: { required: profile.secrets },
-    vars: { ...finance.sourceVars },
-    observability: { enabled: true, head_sampling_rate: 0.05 },
-  };
-}
 export function publicationConfig(base, profile, { main, assets, sourceSha }) {
   if (profile.app === 'web')
     return webPublicationConfig(base, profile, { main, assets, sourceSha });
-  if (profile.app === 'finance')
-    return financePublicationConfig(base, profile, { main, assets, sourceSha });
-  const originalName =
-    profile.app === 'apps'
-      ? 'tuturuuu-apps-vite-staging'
-      : `tuturuuu-${profile.app}`;
+  const recipe = releaseRecipes[profile.app];
+  assert.ok(recipe, 'Unknown release recipe');
+  if (recipe.cf.productionOnly) {
+    assert.equal(profile.environment, 'production', 'Production-only recipe');
+    assert.match(
+      sourceSha ?? '',
+      /^[a-f0-9]{40}$/u,
+      `Exact ${profile.app[0].toUpperCase() + profile.app.slice(1)} production source required`
+    );
+  }
+  const originalName = recipe.cf.sourceIdentity;
   assert.equal(base.name, originalName, 'Unexpected original Worker identity');
   assert.equal(
     base.no_bundle,
@@ -263,29 +201,11 @@ export function publicationConfig(base, profile, { main, assets, sourceSha }) {
   assert.equal(base.assets?.binding, 'ASSETS');
   assert.equal(base.assets.run_worker_first, true);
   assert.equal(base.assets.not_found_handling, 'none');
-  assert.deepEqual(
-    base.compatibility_flags,
-    profile.app === 'apps'
-      ? ['nodejs_compat']
-      : ['nodejs_compat', 'global_fetch_strictly_public']
-  );
-  assert.equal(
-    base.compatibility_date,
-    profile.app === 'apps' ? '2026-10-12' : '2026-10-19'
-  );
-  const vars =
-    profile.app === 'apps'
-      ? { TUTURUUU_NOINDEX: '1' }
-      : profile.app === 'mail'
-        ? {
-            NEXT_PUBLIC_APP_URL: 'https://mail.tuturuuu.com',
-            NEXT_PUBLIC_MAIL_APP_URL: 'https://mail.tuturuuu.com',
-            NEXT_PUBLIC_WEB_APP_URL: 'https://tuturuuu.com',
-          }
-        : {};
+  assert.deepEqual(base.compatibility_flags, recipe.cf.compatibilityFlags);
+  assert.equal(base.compatibility_date, recipe.cf.compatibilityDate);
   assert.deepEqual(
     base.vars ?? {},
-    vars,
+    recipe.cf.sourceVars,
     'Source vars require explicit profile review'
   );
   for (const key of resourceKeys)
@@ -293,10 +213,21 @@ export function publicationConfig(base, profile, { main, assets, sourceSha }) {
   assert.ok(empty(base.env), 'Named source environments are not admitted');
   if (base.account_id) assert.equal(base.account_id, profile.accountId);
   const production = profile.environment === 'production';
-  const publicAppUrl =
-    production && profile.app === 'calendar'
-      ? 'https://tuturuuu.com/calendar'
-      : `https://${profile.host}`;
+  const vars = production
+    ? recipe.allowedVars
+    : Object.fromEntries(
+        Object.entries(recipe.cf.stagingPublicationVars).map(([key, value]) => [
+          key,
+          value.replaceAll('{{host}}', profile.host),
+        ])
+      );
+  for (const name of profile.secrets)
+    assert.ok(
+      !Object.hasOwn(vars, name),
+      `Secret name duplicates a source var: ${name}`
+    );
+  if (production) assert.deepEqual(recipe.requiredSecretNames, profile.secrets);
+  assertCommittedRecipe(recipe);
   const config = {
     name: profile.name,
     account_id: profile.accountId,
@@ -311,42 +242,7 @@ export function publicationConfig(base, profile, { main, assets, sourceSha }) {
     preview_urls: false,
     routes: [],
     secrets: { required: profile.secrets },
-    vars: {
-      ...(!production
-        ? { NEXT_PUBLIC_TUTURUUU_SHARED_COOKIE_DOMAIN: '.staging.tutur3u.com' }
-        : {}),
-      NEXT_PUBLIC_APP_URL: publicAppUrl,
-      [`NEXT_PUBLIC_${profile.app.toUpperCase()}_APP_URL`]: publicAppUrl,
-      NEXT_PUBLIC_WEB_APP_URL: production
-        ? 'https://tuturuuu.com'
-        : 'https://web.tutur3u.com',
-      ...(profile.app === 'apps'
-        ? {
-            APPS_CANONICAL_HOST_ENABLED: production ? '1' : '0',
-            INTERNAL_WEB_API_ORIGIN: production
-              ? 'https://tuturuuu.com'
-              : 'https://web.tutur3u.com',
-          }
-        : {}),
-      ...(profile.app === 'calendar'
-        ? {
-            ...(!production
-              ? {
-                  GOOGLE_REDIRECT_URI: `https://${profile.host}/api/v1/calendar/auth/callback`,
-                }
-              : {}),
-            MICROSOFT_REDIRECT_URI: `${publicAppUrl}/api/v1/calendar/auth/microsoft/callback`,
-          }
-        : {}),
-      ...(profile.app === 'mail'
-        ? {
-            MAIL_R2_BUCKET_NAME: production
-              ? 'tuturuuu-mail'
-              : 'tuturuuu-mail-wave1-staging',
-          }
-        : {}),
-      TUTURUUU_NOINDEX: production ? '0' : '1',
-    },
+    vars: { ...vars },
     observability: { enabled: true, head_sampling_rate: 0.05 },
   };
   if (!production) assertStagingIsolation(config);

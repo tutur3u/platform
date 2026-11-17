@@ -155,7 +155,7 @@ classification drift; the changed-file planner may not select it for a CODEOWNER
 Release recipe records belong inside `wave1-native-profiles.json` so the existing
 artifact `policySha256` binds their bytes. The shared closed-record validator in
 `release-recipe-config.mjs` validates public inputs, secret names, bounded smoke
-cases and the platform extension. The Finance publication path asserts its build
+cases and the platform extension. Each publication path asserts its build
 script against the committed package manifest and compatibility date against Void.
 A record changes policy bytes even when emitted publication config stays identical;
 reseal sealed unpublished artifacts after any policy change. Compare serialized

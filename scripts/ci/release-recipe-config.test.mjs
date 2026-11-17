@@ -109,3 +109,41 @@ test('Finance build command matches the committed package and Void config', asyn
   candidate.buildRecipe.command = 'unreviewed-command';
   assert.throws(() => assertCommittedRecipe(candidate));
 });
+
+for (const app of ['calendar', 'mail', 'apps']) {
+  test(`${app} recipe matches its committed native build`, async () => {
+    const { profiles } = await import('./wave1-native-profile.mjs');
+    const { assertCommittedRecipe } =
+      await import('./release-recipe-config.mjs');
+    const recipe = validateReleaseRecipe(
+      structuredClone(profiles.apps[app].releaseRecipe)
+    );
+    assert.equal(recipe.app, app);
+    assertCommittedRecipe(recipe);
+  });
+}
+for (const [label, mutate] of [
+  [
+    'source secret binding',
+    (r) => {
+      r.cf.sourceVars.SUPABASE_SECRET_KEY = 'redacted';
+    },
+  ],
+  [
+    'unknown template',
+    (r) => {
+      r.cf.stagingPublicationVars.TEST_ORIGIN = 'https://{{unknown}}';
+    },
+  ],
+  [
+    'production staging flag',
+    (r) => {
+      r.allowedVars.TUTURUUU_NOINDEX = '1';
+    },
+  ],
+])
+  test(`rejects ${label}`, () => {
+    const candidate = structuredClone(record);
+    mutate(candidate);
+    assert.throws(() => validateReleaseRecipe(candidate));
+  });

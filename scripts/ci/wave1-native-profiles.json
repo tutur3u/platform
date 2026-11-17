@@ -25,7 +25,76 @@
         "CF_ACCESS_CLIENT_ID",
         "CF_ACCESS_CLIENT_SECRET"
       ],
-      "optionalSecretNames": ["TUTURUUU_APP_COORDINATION_SECRET"]
+      "optionalSecretNames": ["TUTURUUU_APP_COORDINATION_SECRET"],
+      "releaseRecipe": {
+        "schemaVersion": 1,
+        "app": "calendar",
+        "platform": "cf-wave1",
+        "canonicalHosts": ["https://calendar.tuturuuu.com"],
+        "mountHosts": ["https://tuturuuu.com"],
+        "requiredSecretNames": [
+          "NEXT_PUBLIC_SUPABASE_URL",
+          "NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY",
+          "SUPABASE_SECRET_KEY",
+          "GOOGLE_CLIENT_ID",
+          "GOOGLE_CLIENT_SECRET",
+          "MICROSOFT_CLIENT_ID",
+          "MICROSOFT_CLIENT_SECRET",
+          "CRON_SECRET",
+          "MICROSOFT_TENANT_ID",
+          "GOOGLE_REDIRECT_URI"
+        ],
+        "allowedVars": {
+          "NEXT_PUBLIC_APP_URL": "https://tuturuuu.com/calendar",
+          "NEXT_PUBLIC_CALENDAR_APP_URL": "https://tuturuuu.com/calendar",
+          "NEXT_PUBLIC_WEB_APP_URL": "https://tuturuuu.com",
+          "MICROSOFT_REDIRECT_URI": "https://tuturuuu.com/calendar/api/v1/calendar/auth/microsoft/callback",
+          "TUTURUUU_NOINDEX": "0"
+        },
+        "publicInputPins": [],
+        "publicationPolicyKey": "productionPublicationPolicy",
+        "rollbackTargetRule": "recorded-preimage",
+        "buildRecipe": {
+          "appConfig": "apps/calendar/void.config.ts",
+          "script": "build",
+          "command": "vp build"
+        },
+        "smokeSpec": {
+          "maxRequests": 3,
+          "timeoutMs": 10000,
+          "cases": [
+            {
+              "path": "/",
+              "status": 307,
+              "redirectOrigin": "https://tuturuuu.com",
+              "noStore": true
+            }
+          ]
+        },
+        "cf": {
+          "productionWorker": "tuturuuu-calendar-path-candidate",
+          "compatibilityDate": "2026-10-19",
+          "compatibilityFlags": [
+            "nodejs_compat",
+            "global_fetch_strictly_public"
+          ],
+          "sourceIdentity": "tuturuuu-calendar",
+          "productionOnly": false,
+          "doctorExpectations": {
+            "expectRedirect": true
+          },
+          "sourceVars": {},
+          "stagingPublicationVars": {
+            "NEXT_PUBLIC_TUTURUUU_SHARED_COOKIE_DOMAIN": ".staging.tutur3u.com",
+            "NEXT_PUBLIC_APP_URL": "https://{{host}}",
+            "NEXT_PUBLIC_CALENDAR_APP_URL": "https://{{host}}",
+            "NEXT_PUBLIC_WEB_APP_URL": "https://web.tutur3u.com",
+            "GOOGLE_REDIRECT_URI": "https://{{host}}/api/v1/calendar/auth/callback",
+            "MICROSOFT_REDIRECT_URI": "https://{{host}}/api/v1/calendar/auth/microsoft/callback",
+            "TUTURUUU_NOINDEX": "1"
+          }
+        }
+      }
     },
     "mail": {
       "stagingWorker": "tuturuuu-mail-wave1-staging",
@@ -54,7 +123,80 @@
         "MAIL_SES_REGION",
         "MAIL_SES_INBOUND_TOPIC_ARN",
         "MAIL_SES_INBOUND_BUCKET"
-      ]
+      ],
+      "releaseRecipe": {
+        "schemaVersion": 1,
+        "app": "mail",
+        "platform": "cf-wave1",
+        "canonicalHosts": ["https://mail.tuturuuu.com"],
+        "mountHosts": [],
+        "requiredSecretNames": [
+          "NEXT_PUBLIC_SUPABASE_URL",
+          "NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY",
+          "SUPABASE_SECRET_KEY",
+          "TUTURUUU_APP_COORDINATION_SECRET",
+          "MAIL_CONNECTED_ACCOUNTS_KEY",
+          "MAIL_R2_ACCOUNT_ID",
+          "MAIL_R2_ACCESS_KEY_ID",
+          "MAIL_R2_SECRET_ACCESS_KEY",
+          "MAIL_CLOUDFLARE_ACCOUNT_ID",
+          "MAIL_CLOUDFLARE_API_TOKEN",
+          "MAIL_CLOUDFLARE_INGEST_SECRET"
+        ],
+        "allowedVars": {
+          "NEXT_PUBLIC_APP_URL": "https://mail.tuturuuu.com",
+          "NEXT_PUBLIC_MAIL_APP_URL": "https://mail.tuturuuu.com",
+          "NEXT_PUBLIC_WEB_APP_URL": "https://tuturuuu.com",
+          "MAIL_R2_BUCKET_NAME": "tuturuuu-mail",
+          "TUTURUUU_NOINDEX": "0"
+        },
+        "publicInputPins": [],
+        "publicationPolicyKey": "productionPublicationPolicy",
+        "rollbackTargetRule": "recorded-preimage",
+        "buildRecipe": {
+          "appConfig": "apps/mail/void.config.ts",
+          "script": "build",
+          "command": "bun run bridge:check && vp build"
+        },
+        "smokeSpec": {
+          "maxRequests": 3,
+          "timeoutMs": 10000,
+          "cases": [
+            {
+              "path": "/",
+              "status": 307,
+              "redirectOrigin": "https://tuturuuu.com",
+              "noStore": true
+            }
+          ]
+        },
+        "cf": {
+          "productionWorker": "tuturuuu-mail",
+          "compatibilityDate": "2026-10-19",
+          "compatibilityFlags": [
+            "nodejs_compat",
+            "global_fetch_strictly_public"
+          ],
+          "sourceIdentity": "tuturuuu-mail",
+          "productionOnly": false,
+          "doctorExpectations": {
+            "expectRedirect": true
+          },
+          "sourceVars": {
+            "NEXT_PUBLIC_APP_URL": "https://mail.tuturuuu.com",
+            "NEXT_PUBLIC_MAIL_APP_URL": "https://mail.tuturuuu.com",
+            "NEXT_PUBLIC_WEB_APP_URL": "https://tuturuuu.com"
+          },
+          "stagingPublicationVars": {
+            "NEXT_PUBLIC_TUTURUUU_SHARED_COOKIE_DOMAIN": ".staging.tutur3u.com",
+            "NEXT_PUBLIC_APP_URL": "https://{{host}}",
+            "NEXT_PUBLIC_MAIL_APP_URL": "https://{{host}}",
+            "NEXT_PUBLIC_WEB_APP_URL": "https://web.tutur3u.com",
+            "MAIL_R2_BUCKET_NAME": "tuturuuu-mail-wave1-staging",
+            "TUTURUUU_NOINDEX": "1"
+          }
+        }
+      }
     },
     "apps": {
       "stagingWorker": "tuturuuu-apps-wave1-staging",
@@ -65,7 +207,70 @@
         "NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY",
         "SUPABASE_SECRET_KEY",
         "TUTURUUU_APP_COORDINATION_SECRET"
-      ]
+      ],
+      "releaseRecipe": {
+        "schemaVersion": 1,
+        "app": "apps",
+        "platform": "cf-wave1",
+        "canonicalHosts": ["https://apps.tuturuuu.com"],
+        "mountHosts": [],
+        "requiredSecretNames": [
+          "NEXT_PUBLIC_SUPABASE_URL",
+          "NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY",
+          "SUPABASE_SECRET_KEY",
+          "TUTURUUU_APP_COORDINATION_SECRET"
+        ],
+        "allowedVars": {
+          "NEXT_PUBLIC_APP_URL": "https://apps.tuturuuu.com",
+          "NEXT_PUBLIC_APPS_APP_URL": "https://apps.tuturuuu.com",
+          "NEXT_PUBLIC_WEB_APP_URL": "https://tuturuuu.com",
+          "APPS_CANONICAL_HOST_ENABLED": "1",
+          "INTERNAL_WEB_API_ORIGIN": "https://tuturuuu.com",
+          "TUTURUUU_NOINDEX": "0"
+        },
+        "publicInputPins": [],
+        "publicationPolicyKey": "productionPublicationPolicy",
+        "rollbackTargetRule": "recorded-preimage",
+        "buildRecipe": {
+          "appConfig": "apps/apps/void.config.ts",
+          "script": "build",
+          "command": "vp build"
+        },
+        "smokeSpec": {
+          "maxRequests": 3,
+          "timeoutMs": 10000,
+          "cases": [
+            {
+              "path": "/",
+              "status": 200,
+              "redirectOrigin": null,
+              "noStore": false
+            }
+          ]
+        },
+        "cf": {
+          "productionWorker": "tuturuuu-apps",
+          "compatibilityDate": "2026-10-12",
+          "compatibilityFlags": ["nodejs_compat"],
+          "sourceIdentity": "tuturuuu-apps-vite-staging",
+          "productionOnly": false,
+          "doctorExpectations": {
+            "expectRedirect": false
+          },
+          "sourceVars": {
+            "TUTURUUU_NOINDEX": "1"
+          },
+          "stagingPublicationVars": {
+            "NEXT_PUBLIC_TUTURUUU_SHARED_COOKIE_DOMAIN": ".staging.tutur3u.com",
+            "NEXT_PUBLIC_APP_URL": "https://{{host}}",
+            "NEXT_PUBLIC_APPS_APP_URL": "https://{{host}}",
+            "NEXT_PUBLIC_WEB_APP_URL": "https://web.tutur3u.com",
+            "APPS_CANONICAL_HOST_ENABLED": "0",
+            "INTERNAL_WEB_API_ORIGIN": "https://web.tutur3u.com",
+            "TUTURUUU_NOINDEX": "1"
+          }
+        }
+      }
     },
     "finance": {
       "productionOnly": true,
@@ -116,7 +321,15 @@
           "productionOnly": true,
           "doctorExpectations": {
             "expectRedirect": true
-          }
+          },
+          "sourceVars": {
+            "INTERNAL_WEB_API_ORIGIN": "https://tuturuuu.com",
+            "NEXT_PUBLIC_WEB_APP_URL": "https://tuturuuu.com",
+            "NEXT_PUBLIC_APP_URL": "https://finance.tuturuuu.com",
+            "FINANCE_APP_URL": "https://finance.tuturuuu.com",
+            "NEXT_PUBLIC_SUPABASE_URL": "https://nzamlzqfdwaaxdefwraj.supabase.co"
+          },
+          "stagingPublicationVars": {}
         },
         "buildRecipe": {
           "appConfig": "apps/finance/void.config.ts",

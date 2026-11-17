@@ -77,8 +77,17 @@ export function validateReleaseRecipe(record, { validateVercelSection } = {}) {
     );
     assert.equal(typeof value, 'string');
     assert.ok(!/staging|tutur3u\.com|fxefojytwimjiqxseqag/i.test(value));
-    if (/^https?:/.test(value)) productionOrigin(value);
+    if (/^[a-z]+:\/\//i.test(value)) {
+      const url = new URL(value);
+      assert.ok(!url.username && !url.password);
+      productionOrigin(url.origin);
+    }
   }
+  assert.ok(
+    !Object.hasOwn(record.allowedVars, 'TUTURUUU_NOINDEX') ||
+      record.allowedVars.TUTURUUU_NOINDEX === '0',
+    'Production noindex flag'
+  );
   closedRecord(record.buildRecipe, ['appConfig', 'script', 'command']);
   assert.equal(
     record.buildRecipe.appConfig,
@@ -127,7 +136,23 @@ export function validateReleaseRecipe(record, { validateVercelSection } = {}) {
       'sourceIdentity',
       'productionOnly',
       'doctorExpectations',
+      'sourceVars',
+      'stagingPublicationVars',
     ]);
+    for (const vars of [
+      record.cf.sourceVars,
+      record.cf.stagingPublicationVars,
+    ]) {
+      assert.ok(vars && typeof vars === 'object' && !Array.isArray(vars));
+      for (const [name, value] of Object.entries(vars)) {
+        assert.match(name, /^[A-Z][A-Z0-9_]*$/);
+        assert.ok(
+          !/SECRET|TOKEN|PASSWORD|PRIVATE|API_KEY|PUBLISHABLE_KEY/.test(name)
+        );
+        assert.equal(typeof value, 'string');
+        assert.ok(!value.replaceAll('{{host}}', '').includes('{{'));
+      }
+    }
     assert.match(record.cf.productionWorker, /^[a-z][a-z0-9-]*$/);
     assert.ok(!record.cf.productionWorker.includes('staging'));
     assert.match(record.cf.compatibilityDate, /^\d{4}-\d{2}-\d{2}$/);
