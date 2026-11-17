@@ -102,9 +102,21 @@ describe('listSenderBlocks before its migration applies', () => {
 
 describe('isMissingSchemaError', () => {
   it('matches missing tables, columns and functions only', () => {
-    for (const code of ['42P01', '42703', '42883', 'PGRST202', 'PGRST204', 'PGRST205'])
+    for (const code of [
+      '42P01',
+      '42703',
+      '42883',
+      'PGRST202',
+      'PGRST204',
+      'PGRST205',
+    ])
       expect(isMissingSchemaError({ code })).toBe(true);
-    for (const value of [{ code: '42501' }, { code: '57014' }, new Error('x'), null])
+    for (const value of [
+      { code: '42501' },
+      { code: '57014' },
+      new Error('x'),
+      null,
+    ])
       expect(isMissingSchemaError(value)).toBe(false);
   });
 });
