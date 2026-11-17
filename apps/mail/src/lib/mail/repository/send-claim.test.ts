@@ -30,6 +30,37 @@ vi.mock('./shared', () => ({
 
 import { sendMailMessage } from './send';
 
+it.each(['TypeError', 'private synthetic name'])(
+  'logs only a safe category for pre-send errors: %s',
+  async (name) => {
+    const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
+    const error = new Error('private synthetic details');
+    error.name = name;
+    mocks.access.mockRejectedValueOnce(error);
+    mocks.send.mockClear();
+    try {
+      await expect(
+        sendMailMessage({
+          ctx: {} as MailRouteContext,
+          mailboxId: 'mailbox',
+          payload: {
+            to: ['host@example.test'],
+            subject: 'Synthetic',
+            bodyText: 'Test',
+          },
+        })
+      ).rejects.toThrow('Mail delivery could not be confirmed');
+      expect(warn).toHaveBeenCalledWith('[mail] send failed', {
+        errorName: name === 'TypeError' ? 'TypeError' : 'UnknownError',
+      });
+      expect(JSON.stringify(warn.mock.calls)).not.toContain('private');
+      expect(mocks.send).not.toHaveBeenCalled();
+    } finally {
+      warn.mockRestore();
+    }
+  }
+);
+
 it.each([
   'accepted',
   'unknown',

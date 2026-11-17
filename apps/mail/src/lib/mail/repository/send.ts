@@ -15,7 +15,19 @@ export async function sendMailMessage(
 ) {
   try {
     return await sendClaimedMailMessage(args);
-  } catch {
+  } catch (error) {
+    const safeErrorNames = [
+      'Error',
+      'TypeError',
+      'RangeError',
+      'SyntaxError',
+      'MailSendError',
+    ];
+    const errorName =
+      error instanceof Error && safeErrorNames.includes(error.name)
+        ? error.name
+        : 'UnknownError';
+    console.warn('[mail] send failed', { errorName });
     throw new MailSendError();
   }
 }
