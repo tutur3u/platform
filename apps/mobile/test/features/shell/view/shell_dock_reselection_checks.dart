@@ -99,7 +99,6 @@ void _registerDockReselectionChecks(
               ShellChromeActions(
                 ownerId: 'test-notifications',
                 locations: const {Routes.taskPlanning},
-                actions: const [],
                 onResetSection: archived
                     ? () => update(() => archived = false)
                     : null,

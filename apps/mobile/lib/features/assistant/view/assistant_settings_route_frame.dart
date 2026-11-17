@@ -113,7 +113,6 @@ class _AssistantSettingsRouteFrameState
           ShellChromeActions(
             ownerId: _ownerId,
             locations: locations,
-            actions: const [],
             onBack: _back,
           ),
         ],

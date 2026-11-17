@@ -173,6 +173,33 @@ timing), `dock_action_choreography_test.dart`, `persistent_shell_dock_test.dart`
 `shared_navbar_large_text_test.dart`, `shell_back_navigation_test.dart` and
 `shell_assistant_composer_test.dart`.
 
+### Dock action groups
+
+A page whose own actions lead the screen, such as the Mail reader, registers a
+dock action group (`ShellDockActionGroup` through `ShellChromeActions
+.actionGroup`). While the page is shown, the group takes the dock's pill and
+its action circle; Back keeps its zone and the shell navigation returns as
+soon as the page leaves.
+
+- The pill holds the group's actions in order as momentary buttons, labelled
+  like destination slots but never highlighted. The shell appends More
+  whenever the group has More sections.
+- At most five slots show, none narrower than 44px; actions that do not fit
+  fold, in order, into the first More section.
+- The circle holds the group's primary. Any pill or More entry with the
+  primary's id is left out, so nothing appears twice.
+- More opens the shared sheet with the group's sections, separated by a
+  hairline. Rows are actions or a choice row with a segmented control, which
+  applies at once and keeps the sheet open. Destructive rows use the
+  destructive token. An action row closes the sheet before it runs.
+- The dock hides while the sheet is open and returns as it closes.
+- Disabled entries show but do not act, and announce as disabled.
+- An overlay that places its own action in the dock takes the dock over the
+  group. The newest registration for a location wins, so a pushed page's group
+  replaces the one beneath until it pops.
+
+Coverage: `shell_dock_action_group_test.dart`.
+
 ### Phone root tabs
 
 On phones the dock's root destinations are four tabs and More, which fills the

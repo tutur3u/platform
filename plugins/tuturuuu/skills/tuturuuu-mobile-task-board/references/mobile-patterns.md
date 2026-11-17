@@ -208,6 +208,14 @@ localization changes.
   `shell_viewport_checks.dart` asserts 44dp named slots. Home, Inbox and
   You have no Search action; a screen offers Search only for its own content,
   always through `ShellActionSpec.search` (one glyph, dock slot and target).
+- A page whose actions replace dock navigation (the Mail reader) passes a
+  `ShellDockActionGroup` to `ShellChromeActions(actionGroup:)`; never build a
+  second dock or a body action bar. The group renders inside the same
+  `PersistentShellDock` material (`ShellDockActionGroupBar`) with its
+  `primary` in the action circle. Ids are the identity: the primary's id is
+  dropped from the pill and the More sheet, and widget keys use
+  `shellDockGroupSlotKey(id)` / `shellDockMoreItemKey(id)`. More opens through
+  `showAppSheet`, whose modal registration hides the dock.
 - Root tabs: the phone dock pins up to four `ShellRootTab`s (default Home,
   Tasks, Calendar, Mail; Mira, then Apps, Notifications, You fill an
   unavailable Mail) plus a More destination that lists the rest and Edit tabs.
