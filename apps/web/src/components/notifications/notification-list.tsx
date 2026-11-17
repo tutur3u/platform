@@ -245,7 +245,7 @@ export default function NotificationList({
                       onMarkAsRead={handleMarkAsRead}
                       t={t}
                       wsId={currentWsId || wsId || ''}
-                      updateNotification={updateNotification}
+                      isUpdating={updateNotification.isPending}
                       onMarkAllAsRead={() =>
                         handleGroupMarkAllAsRead(
                           group.notifications.map((n) => n.id)

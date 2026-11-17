@@ -1,6 +1,5 @@
 'use client';
 
-import type { UseMutationResult } from '@tanstack/react-query';
 import { ChevronDown, Eye, EyeOff, Loader2, User } from '@tuturuuu/icons';
 import { Avatar, AvatarFallback, AvatarImage } from '@tuturuuu/ui/avatar';
 import { Button } from '@tuturuuu/ui/button';
@@ -32,11 +31,7 @@ interface NotificationGroupCardProps {
   onMarkAsRead: (id: string, isUnread: boolean) => void;
   t: TranslationFn;
   wsId: string;
-  updateNotification: UseMutationResult<
-    void,
-    Error,
-    { id: string; read: boolean }
-  >;
+  isUpdating: boolean;
   onMarkAllAsRead: () => Promise<void>;
   index?: number;
 }
@@ -46,7 +41,7 @@ export function NotificationGroupCard({
   onMarkAsRead,
   t,
   wsId,
-  updateNotification,
+  isUpdating,
   onMarkAllAsRead,
   index = 0,
 }: NotificationGroupCardProps) {
@@ -314,9 +309,7 @@ export function NotificationGroupCard({
             <div
               className={cn(
                 'flex flex-none transition-opacity duration-200',
-                updateNotification.isPending
-                  ? 'opacity-100'
-                  : 'opacity-0 group-hover:opacity-100'
+                isUpdating ? 'opacity-100' : 'opacity-0 group-hover:opacity-100'
               )}
             >
               <Button
@@ -325,9 +318,9 @@ export function NotificationGroupCard({
                 className="h-8 w-8 rounded-lg text-foreground/40 hover:bg-foreground/5 hover:text-foreground"
                 onClick={onMarkAllAsRead}
                 title={t('mark-all-read')}
-                disabled={updateNotification.isPending}
+                disabled={isUpdating}
               >
-                {updateNotification.isPending ? (
+                {isUpdating ? (
                   <Loader2 className="h-4 w-4 animate-spin" />
                 ) : (
                   <EyeOff className="h-4 w-4" />
