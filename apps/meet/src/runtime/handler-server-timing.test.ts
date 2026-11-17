@@ -16,6 +16,7 @@ vi.mock('@tuturuuu/utils/next-config', () => ({
   resolveTuturuuuWebAppUrl: () => 'https://tuturuuu.com',
 }));
 
+import { markSignedInDocument } from './document-cache';
 import { handleMeetRequest } from './handler';
 import {
   recordMeetPhase,
@@ -138,5 +139,48 @@ describe('Server-Timing on signed-in documents', () => {
     expect(value).not.toContain('user-email');
     for (const label of ['context', 'profile', 'hosting'])
       expect(value).not.toContain(`${label};`);
+  });
+});
+
+describe('document caching for signed-in responses', () => {
+  const signedInMark = (response: Response) => {
+    markSignedInDocument();
+    return response;
+  };
+
+  it.each([
+    ['document', () => new Response('x', { headers: html })],
+    [
+      'redirect',
+      () => new Response(null, { status: 302, headers: { location: '/x' } }),
+    ],
+    ['not found', () => new Response('x', { status: 404, headers: html })],
+    ['error page', () => new Response('x', { status: 500, headers: html })],
+  ])('sends private, no-store on a signed-in %s', async (_name, make) => {
+    const response = await serve(() => signedInMark(make()));
+    expect(response.headers.get('cache-control')).toBe('private, no-store');
+  });
+
+  it('replaces a shareable Cache-Control that Start set', async () => {
+    const response = await serve(() =>
+      signedInMark(
+        new Response('x', {
+          headers: { ...html, 'cache-control': 'public, max-age=3600' },
+        })
+      )
+    );
+    expect(response.headers.get('cache-control')).toBe('private, no-store');
+  });
+
+  it('leaves anonymous responses exactly as Start returned them', async () => {
+    const shareable = await serve(
+      () =>
+        new Response('x', {
+          headers: { ...html, 'cache-control': 'public, max-age=3600' },
+        })
+    );
+    expect(shareable.headers.get('cache-control')).toBe('public, max-age=3600');
+    const bare = await serve(() => new Response('x', { headers: html }));
+    expect(bare.headers.get('cache-control')).toBeNull();
   });
 });

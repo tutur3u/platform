@@ -37,6 +37,7 @@ import { canVerifiedAccountHostMeeting } from '@tuturuuu/utils/meet-hosting';
 import { getPermissions } from '@tuturuuu/utils/workspace-helper';
 import { loadMeetingCalendarEvent } from '../app/[locale]/[wsId]/meetings/[meetingId]/meeting-calendar-event';
 import { getMeetWorkspaceContext } from '../app/[locale]/[wsId]/workspace-context';
+import { markSignedInDocument } from './document-cache';
 import { getLocale, getTranslations } from './intl-server';
 import type { MeetPageMeta } from './page-head';
 import { meetPlanPolls } from './plan-polls';
@@ -314,7 +315,10 @@ async function loadResolvedPageModel(url: URL) {
   if (segments[0] === 'en' || segments[0] === 'vi') segments.shift();
   const actorStartedAt = performance.now();
   const actor = await getSatelliteAppSessionUser('meet');
-  if (actor) recordMeetPhase('actor', performance.now() - actorStartedAt);
+  if (actor) {
+    markSignedInDocument();
+    recordMeetPhase('actor', performance.now() - actorStartedAt);
+  }
   const params: Record<string, string> = { locale };
   if (segments[0] === 'r' && segments[1]) params.code = segments[1];
   else if (segments[0] === 'plans' && segments[1]) params.planId = segments[1];

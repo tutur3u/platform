@@ -18,6 +18,7 @@ const mocks = vi.hoisted(() => ({
   permissions: vi.fn(),
   calendarEvent: vi.fn(),
   duration: vi.fn(),
+  responseHeaders: new Headers(),
   tables: {} as Record<string, ReturnType<typeof vi.fn>>,
   from: vi.fn(),
 }));
@@ -92,7 +93,10 @@ vi.mock('./plan-polls', () => ({
 vi.mock('./request-context', () => ({
   cookies: async () => new Map(),
   headers: async () => new Headers(),
-  meetRequest: () => ({ request: new Request('https://meet.test/') }),
+  meetRequest: () => ({
+    request: new Request('https://meet.test/'),
+    responseHeaders: mocks.responseHeaders,
+  }),
   withMeetRequest: (_context: unknown, run: () => unknown) => run(),
 }));
 
@@ -140,6 +144,7 @@ function signIn(id: string | null) {
 }
 
 beforeEach(() => {
+  mocks.responseHeaders.delete('cache-control');
   vi.clearAllMocks();
   mocks.tables = {};
   const queries: Record<string, unknown> = {
@@ -424,5 +429,31 @@ describe('workspace pages', () => {
     await expect(
       loadPageModel(`/workspace/meetings/${meetingId}`)
     ).rejects.toThrow('permissions down');
+  });
+});
+
+describe('signed-in document caching', () => {
+  it('marks the response private and no-store once a session actor is read', async () => {
+    signIn('member');
+    await loadPageModel('/workspace/meetings');
+    expect(mocks.responseHeaders.get('cache-control')).toBe(
+      'private, no-store'
+    );
+  });
+
+  it('keeps the mark when the signed-in request ends in a not-found error', async () => {
+    signIn('member');
+    await expect(loadPageModel('/workspace/meetings/a/b')).rejects.toEqual({
+      notFound: true,
+    });
+    expect(mocks.responseHeaders.get('cache-control')).toBe(
+      'private, no-store'
+    );
+  });
+
+  it('leaves anonymous pages without the mark', async () => {
+    signIn(null);
+    await loadPageModel(`/r/${code}`);
+    expect(mocks.responseHeaders.get('cache-control')).toBeNull();
   });
 });
