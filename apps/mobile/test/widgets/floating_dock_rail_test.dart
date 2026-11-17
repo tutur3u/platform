@@ -8,7 +8,7 @@ import 'package:shadcn_flutter/shadcn_flutter.dart' as shad;
 void main() {
   for (final width in [320.0, 390.0, 430.0]) {
     for (final safe in [0.0, 34.0]) {
-      for (final actionCount in [0, 1, 2]) {
+      for (final actionCount in [0, 1]) {
         for (final keyboard in [false, true]) {
           testWidgets('Apps/Assistant width$width safe$safe '
               'actions$actionCount keyboard$keyboard', (tester) async {
@@ -63,9 +63,6 @@ void main() {
                                       primary: actionCount >= 1
                                           ? const Icon(Icons.add)
                                           : null,
-                                      secondary: actionCount >= 2
-                                          ? const Icon(Icons.search)
-                                          : null,
                                     ),
                             ),
                           ],
@@ -101,7 +98,7 @@ void main() {
             expect(assistantGroup.center.dx, closeTo(width / 2, 0.01));
             // Equal visible actions have identical geometry; missing actions
             // must not reserve invisible columns or shift the combined group.
-            if (actionCount == 1 || (actionCount == 2 && width < 400)) {
+            if (actionCount == 1) {
               expect(assistant, apps);
               expect(
                 tester.getRect(find.byKey(const ValueKey('icon-0'))),

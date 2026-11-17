@@ -248,6 +248,8 @@ extension _ShellPageLayout on _ShellPageState {
     double navigationWidth = 264,
     bool allowDockSlot = true,
     bool hideIdleNavigation = false,
+    bool fixedZones = false,
+    Widget? dockLeading,
   }) {
     return ShellDockScope(
       controller: _dockSlotController,
@@ -256,6 +258,8 @@ extension _ShellPageLayout on _ShellPageState {
         navigationWidth: navigationWidth,
         allowDockSlot: allowDockSlot,
         hideIdleNavigation: hideIdleNavigation,
+        fixedZones: fixedZones,
+        leading: dockLeading,
         keyboardVisible: MediaQuery.viewInsetsOf(context).bottom > 0,
         bottomInset: bodyBottomInset,
         navigationBottomOffset: navigationBottomOffset,
@@ -348,14 +352,16 @@ extension _ShellPageLayout on _ShellPageState {
         ((!widget.matchedLocation.startsWith(Routes.assistant) ||
                 !assistantChrome.isFullscreen) &&
             !immersive);
+    final backKey = useInjectedMiniNav
+        ? _injectedMiniNavKey(injectedMiniNavRegistration.ownerId, 'back')
+        : _ShellPageState._backToRootKey;
+    final navChildren = isMiniAppRoute ? miniItems : globalItems;
     final navContent = MorphingNavigationBar(
       selectedKey: selectedKey,
       paintSurface: false,
       fixedFrame: true,
-      labelled: false,
-      backKey: useInjectedMiniNav
-          ? _injectedMiniNavKey(injectedMiniNavRegistration.ownerId, 'back')
-          : _ShellPageState._backToRootKey,
+      ownsDockZones: false,
+      backKey: backKey,
       onBackLongPress: () => unawaited(_returnToDestinationRoot()),
       onSelected: (key) => useInjectedMiniNav
           ? _onInjectedMiniNavItemTapped(key, injectedMiniNavRegistration)
@@ -364,8 +370,9 @@ extension _ShellPageLayout on _ShellPageState {
           : key == _ShellPageState._backToRootKey
           ? _runBackNavigation(context)
           : _onItemTapped(_ShellPageState._routeForKey(key), context),
-      children: isMiniAppRoute ? miniItems : globalItems,
+      children: navChildren,
     );
+    final dockBack = _buildDockBack(context, navContent, navChildren, backKey);
     final navigationBar = _buildNavigationBarContainer(
       context: context,
       isCompact: isCompact,
@@ -421,6 +428,8 @@ extension _ShellPageLayout on _ShellPageState {
             MediaQuery.sizeOf(context).width,
           ),
           hideIdleNavigation: railMode,
+          fixedZones: true,
+          dockLeading: dockBack,
         ),
       ),
     );

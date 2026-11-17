@@ -37,6 +37,7 @@ import '../../../helpers/helpers.dart';
 import 'shell_viewport_checks.dart';
 
 part 'shell_dock_reselection_checks.dart';
+part 'shell_mini_nav_update_checks.dart';
 part 'shell_navigation_harness.dart';
 part 'shell_peer_section_checks.dart';
 part 'shell_profile_navigation_checks.dart';
@@ -186,58 +187,66 @@ void main() {
 
       expect(compactNavItems, isNotEmpty);
       expect(compactNavItems.every((item) => item.label == null), isTrue);
+      // Back is an unlabelled circle; the module's sections are labelled.
       expect(find.text(l10n.navBack), findsNothing);
-      expect(find.text(l10n.taskBoardsTitle), findsNothing);
-      expect(find.text(l10n.taskPlanningTitle), findsNothing);
-      expect(find.text(l10n.taskPortfolioTitle), findsNothing);
-    });
-
-    testWidgets('six-item compact mini nav stays within a narrow viewport', (
-      tester,
-    ) async {
-      tester.view.devicePixelRatio = 1;
-      tester.view.physicalSize = const Size(320, 720);
-      addTearDown(() {
-        tester.view.resetPhysicalSize();
-        tester.view.resetDevicePixelRatio();
-      });
-
-      final router = _buildRouter(initialLocation: Routes.inventoryManage);
-      addTearDown(router.dispose);
-
-      await tester.pumpWidget(
-        _buildTestApp(
-          router: router,
-          appTabCubit: appTabCubit,
-          authCubit: authCubit,
-          workspaceCubit: workspaceCubit,
-          shellProfileCubit: shellProfileCubit,
-        ),
-      );
-      await _pumpForTransitions(tester);
-
-      final navKeys = <Key>[
-        const ValueKey('back-to-root'),
-        const ValueKey('mini-nav-inventory-inventory_home'),
-        const ValueKey('mini-nav-inventory-inventory_products'),
-        const ValueKey('mini-nav-inventory-inventory_sales'),
-        const ValueKey('mini-nav-inventory-inventory_manage'),
-        const ValueKey('mini-nav-inventory-inventory_storefront'),
-      ];
-      final rects = navKeys
-          .map((key) => tester.getRect(find.byKey(key)))
-          .toList(growable: false);
-
       expect(
-        rects.every((rect) => rect.left >= 0 && rect.right <= 320),
-        isTrue,
+        find.descendant(
+          of: find.byType(MorphingNavigationBar),
+          matching: find.text(l10n.taskBoardsTitle),
+        ),
+        findsOneWidget,
       );
-      // Back is a fixed circle; the sections share the rest equally.
-      final sections = rects.skip(1).map((rect) => rect.width);
-      expect(sections.map((w) => w.toStringAsFixed(2)).toSet(), hasLength(1));
-      expect(rects.first.size, const Size.square(ShellDockMetrics.slot));
-      expect(tester.takeException(), isNull);
     });
+
+    testWidgets(
+      'six-section mini nav keeps 44dp slots and More in a narrow viewport',
+      (tester) async {
+        tester.view.devicePixelRatio = 1;
+        tester.view.physicalSize = const Size(320, 720);
+        addTearDown(() {
+          tester.view.resetPhysicalSize();
+          tester.view.resetDevicePixelRatio();
+        });
+
+        final router = _buildRouter(initialLocation: Routes.inventoryManage);
+        addTearDown(router.dispose);
+
+        await tester.pumpWidget(
+          _buildTestApp(
+            router: router,
+            appTabCubit: appTabCubit,
+            authCubit: authCubit,
+            workspaceCubit: workspaceCubit,
+            shellProfileCubit: shellProfileCubit,
+          ),
+        );
+        await _pumpForTransitions(tester);
+
+        // Back sits in its own zone; the pill shows as many sections as keep
+        // a 44dp target, then More for the rest.
+        final back = tester.getRect(find.byKey(const ValueKey('back-to-root')));
+        final more = tester.getRect(
+          find.byKey(const ValueKey('shell-dock-more')),
+        );
+        final first = tester.getRect(
+          find.byKey(const ValueKey('mini-nav-inventory-inventory_home')),
+        );
+        for (final rect in [back, more, first]) {
+          expect(rect.left >= 0 && rect.right <= 320, isTrue);
+        }
+        expect(back.width, lessThanOrEqualTo(ShellDockMetrics.zone));
+        expect(
+          first.width,
+          greaterThanOrEqualTo(ShellDockMetrics.minSlotWidth),
+        );
+        expect(more.width, closeTo(first.width, 0.01));
+        expect(
+          find.byKey(const ValueKey('mini-nav-inventory-inventory_storefront')),
+          findsNothing,
+        );
+        expect(tester.takeException(), isNull);
+      },
+    );
 
     testWidgets('rapid nested navigation does not reuse outgoing nav keys', (
       tester,
@@ -304,13 +313,18 @@ void main() {
       final l10n = AppLocalizations.of(shellContext);
 
       expect(find.text(l10n.navBack), findsNothing);
-      expect(find.text(l10n.taskPortfolioProjectsTab), findsOneWidget);
-      expect(find.text(l10n.taskPortfolioInitiativesTab), findsNothing);
+      expect(
+        find.descendant(
+          of: find.byType(MorphingNavigationBar),
+          matching: find.text(l10n.taskPortfolioProjectsTab),
+        ),
+        findsOneWidget,
+      );
       await _verifyInjectedPickerExit(tester, router);
     });
 
     testWidgets(
-      'compact mini-nav hides labels above four items and titles the selection',
+      'mini-nav labels its slots, collapses extras and titles the selection',
       (tester) async {
         tester.view.devicePixelRatio = 1;
         tester.view.physicalSize = const Size(390, 844);
@@ -336,11 +350,18 @@ void main() {
         final shellContext = tester.element(find.byType(ShellPage));
         final l10n = AppLocalizations.of(shellContext);
 
-        expect(find.text(l10n.inventorySalesLabel), findsOneWidget);
+        Finder inDock(String text) => find.descendant(
+          of: find.byType(MorphingNavigationBar),
+          matching: find.text(text),
+        );
+        // The top bar titles the selection; the dock labels it too.
+        expect(find.text(l10n.inventorySalesLabel), findsNWidgets(2));
         expect(find.text(l10n.navBack), findsNothing);
-        expect(find.text(l10n.inventoryProductsLabel), findsNothing);
-        expect(find.text(l10n.inventoryManageLabel), findsNothing);
-        expect(find.text(l10n.storefrontTitle), findsNothing);
+        expect(inDock(l10n.inventoryProductsLabel), findsOneWidget);
+        expect(inDock(l10n.inventoryManageLabel), findsOneWidget);
+        // Sections past the fourth sit behind More.
+        expect(inDock(l10n.storefrontTitle), findsNothing);
+        expect(find.byKey(const ValueKey('shell-dock-more')), findsOneWidget);
         expect(find.bySemanticsLabel(l10n.navBack), findsOneWidget);
         expect(
           find.bySemanticsLabel(l10n.inventoryProductsLabel),
@@ -916,60 +937,10 @@ void main() {
       expect(prefs.getString('last-tab-route'), Routes.home);
     });
 
-    testWidgets('updates same-owner mini nav items without staggered delays', (
-      tester,
-    ) async {
-      tester.view.devicePixelRatio = 1;
-      tester.view.physicalSize = const Size(390, 844);
-      addTearDown(() {
-        tester.view.resetPhysicalSize();
-        tester.view.resetDevicePixelRatio();
-      });
-
-      final showAlternateItems = ValueNotifier<bool>(false);
-      addTearDown(showAlternateItems.dispose);
-      final router = _buildRouter(
-        initialLocation: Routes.taskPlanning,
-        taskPlanningBuilder: (context) =>
-            _MutableMiniNavRoutePage(showAlternateItems: showAlternateItems),
-      );
-      addTearDown(router.dispose);
-
-      await tester.pumpWidget(
-        _buildTestApp(
-          router: router,
-          appTabCubit: appTabCubit,
-          authCubit: authCubit,
-          workspaceCubit: workspaceCubit,
-        ),
-      );
-      await _pumpForTransitions(tester);
-      await tester.pumpAndSettle();
-
-      expect(_textDataCount(tester, 'Alpha nav'), 1);
-      expect(_textDataCount(tester, 'Beta nav'), 0);
-
-      showAlternateItems.value = true;
-      await tester.pump();
-      await tester.pump();
-
-      expect(_textDataCount(tester, 'Alpha nav'), 0);
-      expect(_textDataCount(tester, 'Beta nav'), 1);
-      expect(_textDataCount(tester, 'Gamma nav'), 0);
-      expect(_textDataCount(tester, 'Delta nav'), 0);
-      await _pumpForTransitions(tester);
-
-      expect(_textDataCount(tester, 'Alpha nav'), 0);
-      expect(_textDataCount(tester, 'Beta nav'), 1);
-      expect(_textDataCount(tester, 'Gamma nav'), 0);
-      expect(_textDataCount(tester, 'Delta nav'), 0);
-    });
+    _registerMiniNavUpdateChecks(
+      () => appTabCubit,
+      () => authCubit,
+      () => workspaceCubit,
+    );
   });
-}
-
-int _textDataCount(WidgetTester tester, String value) {
-  return tester
-      .widgetList<Text>(find.byType(Text, skipOffstage: false))
-      .where((widget) => widget.data == value)
-      .length;
 }

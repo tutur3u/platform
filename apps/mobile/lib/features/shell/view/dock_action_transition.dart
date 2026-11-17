@@ -2,12 +2,16 @@ import 'package:flutter/material.dart';
 
 /// One reversible timeline: reserve space, reveal; hide, then release space.
 /// Retained outgoing controls cannot receive gestures or accessibility focus.
+///
+/// With [reserveSpace] the slot keeps its full width while empty and the
+/// control only fades and scales inside it, so nothing beside it moves.
 class DockActionTransition extends StatefulWidget {
   const DockActionTransition({
     required this.identity,
     required this.slotKey,
     required this.child,
     this.immediate = false,
+    this.reserveSpace = false,
     super.key,
   });
 
@@ -15,6 +19,7 @@ class DockActionTransition extends StatefulWidget {
   final Key slotKey;
   final Widget? child;
   final bool immediate;
+  final bool reserveSpace;
 
   @override
   State<DockActionTransition> createState() => _DockActionTransitionState();
@@ -24,14 +29,24 @@ class _DockActionTransitionState extends State<DockActionTransition>
     with SingleTickerProviderStateMixin {
   late final AnimationController _controller = AnimationController(
     vsync: this,
-    duration: const Duration(milliseconds: 360),
+    duration: _duration,
     value: _wanted ? 1 : 0,
   )..addStatusListener(_settled);
+
+  /// A reserved slot only fades, so it needs just the reveal's share of the
+  /// timeline; a full hide-and-reveal swap then takes as long as one entry.
+  Duration get _duration => widget.reserveSpace
+      ? const Duration(milliseconds: 180)
+      : const Duration(milliseconds: 360);
   Widget? _displayed;
   Object? _identity;
   bool _replacing = false;
   bool _reduced = false;
   bool get _wanted => widget.child != null;
+
+  /// Timeline value at which the control is fully hidden but its width is
+  /// still reserved.
+  double get _hiddenAt => widget.reserveSpace ? 0 : .6;
 
   @override
   void initState() {
@@ -50,6 +65,7 @@ class _DockActionTransitionState extends State<DockActionTransition>
   @override
   void didUpdateWidget(DockActionTransition oldWidget) {
     super.didUpdateWidget(oldWidget);
+    _controller.duration = _duration;
     _reconcile();
   }
 
@@ -64,11 +80,11 @@ class _DockActionTransitionState extends State<DockActionTransition>
     if (_displayed != null &&
         widget.child != null &&
         _identity != widget.identity &&
-        _controller.value > .6) {
+        _controller.value > _hiddenAt) {
       if (!_replacing) {
         _replacing = true;
         // Replacement needs only hide/reveal, retaining the reserved width.
-        _controller.animateBack(.6);
+        _controller.animateBack(_hiddenAt);
       }
       return;
     }
@@ -108,16 +124,22 @@ class _DockActionTransitionState extends State<DockActionTransition>
   Widget build(BuildContext context) => AnimatedBuilder(
     animation: _controller,
     builder: (context, _) {
-      final extent = const Interval(
-        0,
-        .6,
-        curve: Curves.easeInOutCubic,
-      ).transform(_controller.value);
-      final reveal = const Interval(
-        .6,
-        1,
-        curve: Curves.easeOutCubic,
-      ).transform(_controller.value);
+      final extent = widget.reserveSpace
+          ? 1.0
+          : const Interval(
+              0,
+              .6,
+              curve: Curves.easeInOutCubic,
+            ).transform(_controller.value);
+      // A reserved slot has no space to claim first, so the reveal uses the
+      // whole timeline.
+      final reveal = widget.reserveSpace
+          ? Curves.easeOutCubic.transform(_controller.value)
+          : const Interval(
+              .6,
+              1,
+              curve: Curves.easeOutCubic,
+            ).transform(_controller.value);
       final interactive =
           widget.child != null &&
           !_replacing &&
@@ -128,7 +150,9 @@ class _DockActionTransitionState extends State<DockActionTransition>
           ? displayed.preferredSize.height
           : 52.0;
       return SizedBox(
-        key: extent > 0 ? widget.slotKey : null,
+        key: extent > 0 && (!widget.reserveSpace || displayed != null)
+            ? widget.slotKey
+            : null,
         width: 60 * extent,
         height: extent > 0 ? height : 0,
         // The control only paints after full space is reserved. No size clip

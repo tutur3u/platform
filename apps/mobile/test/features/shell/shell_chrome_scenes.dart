@@ -104,20 +104,47 @@ class ShellChromeSceneView extends StatelessWidget {
             child: Center(
               child: SizedBox(
                 width: ShellDockMetrics.widthFor(media.size.width),
-                child: ShellDockSurface(
-                  child: ShellDockBar(
-                    entries: _destinations(),
-                    labelled: false,
-                    selectedKey: selected,
-                    onSelected: (_) {},
-                    back: back
-                        ? const ShellDockEntry(
-                            key: ValueKey('back-to-root'),
-                            label: 'Back',
-                            glyph: Icon(LucideIcons.chevronLeft),
-                          )
-                        : null,
-                  ),
+                // The shell dock's fixed zones: Back and the pill, then the
+                // page-action slot.
+                child: Row(
+                  crossAxisAlignment: CrossAxisAlignment.end,
+                  children: [
+                    Expanded(
+                      child: ShellDockBar(
+                        entries: _destinations(),
+                        selectedKey: selected,
+                        onSelected: (_) {},
+                        back: back
+                            ? const ShellDockEntry(
+                                key: ValueKey('back-to-root'),
+                                label: 'Back',
+                                glyph: Icon(LucideIcons.chevronLeft),
+                              )
+                            : null,
+                      ),
+                    ),
+                    const SizedBox(width: ShellDockMetrics.zoneGap),
+                    Padding(
+                      padding: const EdgeInsets.only(
+                        bottom: ShellDockMetrics.padding,
+                      ),
+                      child: DecoratedBox(
+                        key: const ValueKey('scene-dock-action'),
+                        decoration: ShapeDecoration(
+                          color: style.foreground,
+                          shape: const CircleBorder(),
+                        ),
+                        child: SizedBox.square(
+                          dimension: ShellDockMetrics.zone,
+                          child: Icon(
+                            LucideIcons.plus,
+                            color: style.page,
+                            size: 24,
+                          ),
+                        ),
+                      ),
+                    ),
+                  ],
                 ),
               ),
             ),

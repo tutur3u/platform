@@ -233,40 +233,6 @@ void main() {
     },
   );
 
-  testWidgets('narrower viewport removes the unsupported secondary slot', (
-    tester,
-  ) async {
-    final width = ValueNotifier<double>(430);
-    addTearDown(width.dispose);
-    await tester.pumpWidget(
-      MaterialApp(
-        home: Center(
-          child: ValueListenableBuilder<double>(
-            valueListenable: width,
-            builder: (_, value, _) => SizedBox(
-              width: value,
-              child: const PersistentShellDock(
-                content: SizedBox(height: 52, child: Text('Navigation')),
-                primary: Icon(Icons.add),
-                secondary: Icon(Icons.search),
-              ),
-            ),
-          ),
-        ),
-      ),
-    );
-    expect(find.byIcon(Icons.search), findsOneWidget);
-    width.value = 320;
-    await tester.pump();
-    expect(find.byIcon(Icons.search), findsNothing);
-    expect(
-      find.byKey(const ValueKey('floating-dock-secondary-slot')),
-      findsNothing,
-    );
-    _centered(tester);
-    await tester.pumpAndSettle();
-  });
-
   testWidgets(
     'reduced motion settles immediately and excludes hidden semantics',
     (tester) async {

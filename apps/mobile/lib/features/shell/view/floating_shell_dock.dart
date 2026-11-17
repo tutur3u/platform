@@ -1,7 +1,6 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:mobile/core/interaction/app_haptics.dart';
 import 'package:mobile/core/layout/page_insets.dart';
 import 'package:mobile/core/theme/appearance/appearance_scope.dart';
 import 'package:mobile/core/theme/appearance/glass_effects.dart';
@@ -15,7 +14,6 @@ import 'package:mobile/features/shell/view/shell_dock_slot.dart';
 import 'package:mobile/features/shell/view/shell_dock_surface.dart';
 import 'package:mobile/features/shell/view/shell_keyboard_chrome.dart';
 import 'package:mobile/features/workspace/cubit/workspace_cubit.dart';
-import 'package:mobile/l10n/l10n.dart';
 
 /// The floating header includes the system status bar and the section bar.
 double floatingShellHeaderInset(
@@ -52,10 +50,19 @@ class FloatingShellDock extends StatefulWidget {
     this.navigationWidth = 264,
     this.allowDockSlot = true,
     this.hideIdleNavigation = false,
+    this.fixedZones = false,
+    this.leading,
     super.key,
   });
 
   final double navigationBottomOffset;
+
+  /// Lays idle navigation out in fixed zones; see
+  /// [PersistentShellDock.fixedZones].
+  final bool fixedZones;
+
+  /// The Back zone before idle navigation in [fixedZones] mode.
+  final Widget? leading;
 
   /// Set when a leading rail owns navigation; see [PersistentShellDock].
   final bool hideIdleNavigation;
@@ -393,6 +400,8 @@ class _FloatingShellDockState extends State<FloatingShellDock> {
                                   navigationWidth: widget.navigationWidth,
                                   allowDockSlot: widget.allowDockSlot,
                                   hideIdleNavigation: widget.hideIdleNavigation,
+                                  fixedZones: widget.fixedZones,
+                                  leading: widget.leading,
                                   navigation: widget.navigation,
                                 ),
                               ),
@@ -416,8 +425,12 @@ class _DockActions extends StatefulWidget {
     required this.navigationWidth,
     required this.allowDockSlot,
     required this.hideIdleNavigation,
+    required this.fixedZones,
+    required this.leading,
   });
   final bool hideIdleNavigation;
+  final bool fixedZones;
+  final Widget? leading;
   final String location;
   final Widget navigation;
   final double navigationWidth;
@@ -461,7 +474,6 @@ class _DockActionsState extends State<_DockActions> {
     Widget navigation, {
     required String? workspaceId,
     Widget? primary,
-    Widget? secondary,
   }) {
     final controller = ShellDockScope.maybeOf(context);
     Widget dock() {
@@ -475,9 +487,10 @@ class _DockActionsState extends State<_DockActions> {
         composing: active && slot!.composing,
         expandContent: !active || slot!.expandContent,
         hideIdleNavigation: widget.hideIdleNavigation,
+        fixedZones: widget.fixedZones,
+        leading: widget.leading,
         navigationWidth: widget.navigationWidth,
         primary: active ? slot!.primary : primary,
-        secondary: active && slot!.composing ? null : secondary,
       );
     }
 
@@ -511,8 +524,7 @@ class _DockActionsState extends State<_DockActions> {
                   .resolveForLocation(widget.location)
                   .where((a) => a.inDock)
                   .toList();
-        // Narrow docks keep secondary actions in the top navbar and reserve
-        // one primary slot; wider docks add a second fixed slot.
+        // The dock holds one page action; the top bar shows the rest.
         return _registeredDock(
           widget.navigation,
           workspaceId: workspaceId,
@@ -521,34 +533,6 @@ class _DockActionsState extends State<_DockActions> {
               : ShellDockActionButton(
                   key: ValueKey(('dock-primary', actions.first.id)),
                   action: actions.first,
-                ),
-          secondary: actions.length < 2
-              ? null
-              : actions.length == 2
-              ? ShellDockActionButton(
-                  key: ValueKey(('dock-secondary', actions[1].id)),
-                  action: actions[1],
-                  primary: false,
-                )
-              : PopupMenuButton<ShellActionSpec>(
-                  tooltip: context.l10n.navMore,
-                  icon: const Icon(Icons.more_horiz),
-                  onSelected: (action) {
-                    unawaited(AppHaptics.selection());
-                    action.onPressed?.call();
-                  },
-                  itemBuilder: (context) => [
-                    for (final action in actions.skip(1))
-                      PopupMenuItem(
-                        value: action,
-                        enabled: action.enabled && !action.isLoading,
-                        child: ListTile(
-                          leading: Icon(action.icon),
-                          title: Text(action.tooltip ?? ''),
-                          dense: true,
-                        ),
-                      ),
-                  ],
                 ),
         );
       },

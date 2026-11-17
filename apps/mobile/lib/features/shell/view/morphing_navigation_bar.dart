@@ -1,5 +1,18 @@
 part of 'custom_navigation_bar.dart';
 
+/// The dock entry for a navigation [item]: its key, its semantics label as
+/// the visible label, and its child as the glyph.
+ShellDockEntry shellDockEntryFor(shad.NavigationItem item) {
+  final child = item.child;
+  final label = child is Semantics ? child.properties.label : null;
+  return ShellDockEntry(
+    key: item.key!,
+    label: label ?? '',
+    glyph: ExcludeSemantics(child: Center(child: child)),
+    enabled: item.enabled ?? true,
+  );
+}
+
 /// One continuous layout for the island. Retained buttons move, new buttons
 /// fade
 /// in, and removed buttons fade out without holding the island's old width.
@@ -17,10 +30,15 @@ class MorphingNavigationBar extends StatefulWidget {
     this.backKey,
     this.onBackLongPress,
     this.labelled = true,
+    this.ownsDockZones = true,
     super.key,
   });
 
   final List<shad.NavigationItem> children;
+
+  /// In [fixedFrame] mode, whether the bar draws its own Back zone and
+  /// material ([ShellDockBar.ownsZones]).
+  final bool ownsDockZones;
   final bool paintSurface;
   final Key? selectedKey;
   final ValueChanged<Key?> onSelected;
@@ -190,16 +208,7 @@ class _MorphingNavigationBarState extends State<MorphingNavigationBar>
     super.dispose();
   }
 
-  ShellDockEntry _entry(shad.NavigationItem item) {
-    final child = item.child;
-    final label = child is Semantics ? child.properties.label : null;
-    return ShellDockEntry(
-      key: item.key!,
-      label: label ?? '',
-      glyph: ExcludeSemantics(child: Center(child: child)),
-      enabled: item.enabled ?? true,
-    );
-  }
+  ShellDockEntry _entry(shad.NavigationItem item) => shellDockEntryFor(item);
 
   Widget _buildFixedFrame() {
     shad.NavigationItem? back;
@@ -218,6 +227,7 @@ class _MorphingNavigationBarState extends State<MorphingNavigationBar>
       back: back == null ? null : _entry(back),
       onBackLongPress: widget.onBackLongPress,
       labelled: widget.labelled,
+      ownsZones: widget.ownsDockZones,
     );
   }
 

@@ -66,6 +66,28 @@ extension _ShellPageNavigation on _ShellPageState {
     ),
   ];
 
+  /// The dock's Back zone, outside the pill. Narrow windows reserve it only
+  /// while [navChildren] has a Back item.
+  Widget? _buildDockBack(
+    BuildContext context,
+    MorphingNavigationBar navContent,
+    List<shad.NavigationItem> navChildren,
+    Key backKey,
+  ) {
+    final backItem = navChildren
+        .where((item) => item.key == backKey)
+        .firstOrNull;
+    final reserveEmptyBack =
+        MediaQuery.sizeOf(context).width >=
+        ShellDockMetrics.emptyBackZoneMinWidth;
+    if (backItem == null && !reserveEmptyBack) return null;
+    return ShellDockBackZone(
+      back: backItem == null ? null : shellDockEntryFor(backItem),
+      onTap: () => navContent.onSelected(backKey),
+      onLongPress: navContent.onBackLongPress,
+    );
+  }
+
   bool _showsGlobalBack(String location) =>
       location == Routes.notificationsArchive;
 

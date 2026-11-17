@@ -12,8 +12,9 @@ class PersistentShellDock extends StatefulWidget {
     this.composing = false,
     this.expandContent = true,
     this.hideIdleNavigation = false,
+    this.fixedZones = false,
+    this.leading,
     this.primary,
-    this.secondary,
     super.key,
   });
   final Widget content;
@@ -24,8 +25,15 @@ class PersistentShellDock extends StatefulWidget {
   /// The rail layout owns navigation; an idle dock then paints no surface and
   /// shows only page actions. Composer slots keep the [navigationWidth].
   final bool hideIdleNavigation;
+
+  /// Lays idle navigation out in fixed zones: [leading], the navigation
+  /// material filling the row, and a reserved action slot. See
+  /// [FloatingDockRail.fixedZones].
+  final bool fixedZones;
+
+  /// The Back zone before idle navigation in [fixedZones] mode.
+  final Widget? leading;
   final Widget? primary;
-  final Widget? secondary;
   @override
   State<PersistentShellDock> createState() => _PersistentShellDockState();
 }
@@ -34,10 +42,12 @@ class _PersistentShellDockState extends State<PersistentShellDock> {
   @override
   Widget build(BuildContext context) => LayoutBuilder(
     builder: (context, constraints) {
+      final fixedZones =
+          widget.fixedZones && !widget.composing && !widget.hideIdleNavigation;
       // Animate the unconstrained navigation/composer width independently.
-      // The rail's CURRENT occupied action slots supply the actual available
+      // The rail's CURRENT occupied action slot supplies the actual available
       // width below, so removal cannot widen the composer before actions hide.
-      final target = widget.composing && widget.expandContent
+      final target = (widget.composing && widget.expandContent) || fixedZones
           ? constraints.maxWidth
           : widget.navigationWidth.clamp(0.0, constraints.maxWidth);
       return TweenAnimationBuilder<double>(
@@ -46,36 +56,41 @@ class _PersistentShellDockState extends State<PersistentShellDock> {
             ? Duration.zero
             : const Duration(milliseconds: 320),
         curve: Curves.easeInOutCubic,
-        builder: (context, width, _) => FloatingDockRail(
-          navigation: widget.hideIdleNavigation && !widget.composing
-              ? const SizedBox.shrink()
-              : LayoutBuilder(
-                  builder: (context, available) => ShellDockSurface(
-                    key: const ValueKey('persistent-shell-dock-material'),
-                    child: SizedBox(
-                      width: width.clamp(0.0, available.maxWidth),
-                      child: AnimatedSwitcher(
-                        duration: MediaQuery.disableAnimationsOf(context)
-                            ? Duration.zero
-                            : const Duration(milliseconds: 180),
-                        // Fade the new slot in without retaining an outgoing
-                        // dock, input or interactive navigation subtree.
-                        layoutBuilder: (current, _) =>
-                            current ?? const SizedBox(),
-                        child: KeyedSubtree(
-                          key: ValueKey(widget.composing),
-                          child: widget.content,
-                        ),
+        builder: (context, width, _) {
+          final switcher = AnimatedSwitcher(
+            duration: MediaQuery.disableAnimationsOf(context)
+                ? Duration.zero
+                : const Duration(milliseconds: 180),
+            // Fade the new slot in without retaining an outgoing dock, input
+            // or interactive navigation subtree.
+            layoutBuilder: (current, _) => current ?? const SizedBox(),
+            child: KeyedSubtree(
+              key: ValueKey(widget.composing),
+              child: widget.content,
+            ),
+          );
+          // One material for navigation and composers alike, so it keeps its
+          // element (and never flashes) while their content swaps inside it.
+          return FloatingDockRail(
+            fixedZones: fixedZones,
+            leading: fixedZones ? widget.leading : null,
+            navigation: widget.hideIdleNavigation && !widget.composing
+                ? const SizedBox.shrink()
+                : LayoutBuilder(
+                    builder: (context, available) => ShellDockSurface(
+                      key: const ValueKey('persistent-shell-dock-material'),
+                      child: SizedBox(
+                        width: width.clamp(0.0, available.maxWidth),
+                        child: switcher,
                       ),
                     ),
                   ),
-                ),
-          primary: widget.primary,
-          secondary: widget.secondary,
-          actionLift: widget.composing || widget.hideIdleNavigation
-              ? 0
-              : ShellDockMetrics.padding,
-        ),
+            primary: widget.primary,
+            actionLift: widget.composing || widget.hideIdleNavigation
+                ? 0
+                : ShellDockMetrics.padding,
+          );
+        },
       );
     },
   );

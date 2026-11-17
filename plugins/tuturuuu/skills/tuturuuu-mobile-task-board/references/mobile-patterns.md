@@ -200,10 +200,17 @@ localization changes.
   a paused session (stopped with an open break, `type=paused`) like a running
   one and stops it before starting; a failed start resumes and re-pauses it
   rather than losing it.
-- Root tabs are Home, Apps, Mira, Inbox and You on an icon-only dock;
-  `shell_viewport_checks.dart` asserts the dock has no text. Home, Inbox and
+- The dock is three fixed zones (Back, a pill of at most five labelled 44dp+
+  slots with More for the rest, one page action); only the first `inDock`
+  action stays in the dock and the top bar shows the rest. Keep the dock
+  material owned by `PersistentShellDock` and the rail's widget tree identical
+  across navigation and composer modes, or the material and composer remount.
+  `shell_viewport_checks.dart` asserts 44dp named slots. Home, Inbox and
   You have no Search action; a screen offers Search only for its own content,
   always through `ShellActionSpec.search` (one glyph, dock slot and target).
+- Overlay wrappers that change only padding must always return the same
+  wrapper widget; an early `return child` reparents the overlay content and
+  drops its dock registrations.
 - Do not show bare count chips or badges; a count must open what it counts.
   Show a control only while it can act rather than registering it disabled.
 - Prompt composers lay out through `AppComposerRow` with

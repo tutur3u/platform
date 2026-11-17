@@ -212,12 +212,11 @@ class _ShellInjectedActionsHostState extends State<ShellInjectedActionsHost> {
         final dockActions = resolvedPlacement
             .where((action) => action.inDock)
             .toList();
-        final narrowDock = MediaQuery.sizeOf(context).width < 400;
+        // The dock holds one page action at every width; the top bar shows
+        // the rest.
         final actions = resolvedPlacement
             .where(
-              (action) =>
-                  !action.inDock ||
-                  (narrowDock && dockActions.indexOf(action) > 0),
+              (action) => !action.inDock || dockActions.indexOf(action) > 0,
             )
             .toList();
         final showNotifications =

@@ -25,6 +25,23 @@ abstract final class ShellDockMetrics {
   /// Height of one destination slot and diameter of the Back circle.
   static const double slot = 52;
 
+  /// Gap between the dock's fixed zones: Back, the destination pill and the
+  /// page action.
+  static const double zoneGap = 8;
+
+  /// Width of the Back zone and of the page-action zone, each a [slot]
+  /// circle. Both stay reserved while empty, so the pill never resizes.
+  static const double zone = slot;
+
+  /// Narrowest window that reserves the Back zone while it is empty.
+  /// Narrower windows give that room to the destinations; Back only appears
+  /// together with a section's own destinations, so nothing visibly shifts.
+  static const double emptyBackZoneMinWidth = 360;
+
+  /// Narrowest destination slot; the pill shows fewer slots (more behind
+  /// More) rather than shrink them below this target.
+  static const double minSlotWidth = 44;
+
   /// Widest the pill grows; tablets centre it (`mobile.dockMaxWidth`).
   static double get dockMaxWidth => _contract.dockMaxWidth;
 

@@ -140,27 +140,38 @@ text, system/dock back without a top Back button, and unknown module links;
 transitions, and `shell_profile_races_test.dart` covers delayed account/cache
 completion. These widget checks do not establish installed-device or production evidence.
 
-### Centered navigation and action group
+### Fixed dock zones
 
-Root and mini-app destinations center the combined visible navigation island and
-its actions whenever they fit. Empty action columns do not consume space after
-exit. Dynamic actions reserve width first, moving navigation left, then fade and scale into the free space. On
-exit, controls disappear before their width is released and navigation recenters.
-The combined navigation/action group stays centered at every intermediate frame;
-actions do not animate through a size clip. An interrupted transition reverses
-from its current geometry, and a replaced outgoing action cannot accept input or
-accessibility focus. Reduced motion settles both phases immediately. Actions
-keep 52px slots and share the bottom baseline, including when large text makes
-the composer taller; narrow layouts keep secondary actions in the top navbar.
-When the viewport becomes too narrow, the second dock column is removed
-immediately rather than retaining it while shrinking navigation touch targets. The navigation and Assistant dock share horizontal and safe-area bottom insets, and
-switching root destinations retains one dock while bodies ease between tabs.
+The phone dock has three fixed zones: a 52px Back zone, the destination pill
+and a 52px page-action zone, 8px apart. Each zone keeps its width while it is
+empty, so Back or an action appearing, changing or leaving never resizes or
+moves the pill. Back fades and scales inside its zone; an action fades and
+scales inside its slot. Below a 360px window the Back zone is reserved only
+while Back shows; Back appears together with a section's own destinations, so
+nothing visibly shifts.
+
+The pill shows at most five equal, labelled slots. A section with more
+destinations shows four and a More slot that lists the rest in the shared
+sheet; a cramped pill shows fewer slots rather than shrinking any below 44px.
+One highlight slides between slots instead of each slot growing its own, and
+an overflowed destination marks More as the active slot. The dock holds one
+page action at every width; the top navbar shows any further actions.
+
+Navigation and the Assistant composer share one dock material that stays the
+same element as their content swaps, so the dock never flashes; the composer
+takes the full row while the zones step aside. While a sheet or dialog on the
+shell navigator is open, the dock slides and fades away and the overlay pads
+only for the system safe area; it returns as the overlay starts closing. An
+overlay that places its own action in the dock, such as an in-sheet search,
+keeps the dock. Reduced motion settles every transition immediately.
+Switching root destinations retains one dock while bodies ease between tabs.
 Only the active body receives pointer input or semantics. Visited tabs remain
-mounted, preserving drafts and scroll positions; reduced-motion changes retain
-the same page elements. Navigation and prompt slots never paint two docks.
-Coverage: `dock_action_choreography_test.dart`, `persistent_shell_dock_test.dart`,
-`lazy_indexed_stack_test.dart`, `floating_dock_rail_test.dart`,
-`apps_search_submit_test.dart`, and `shell_assistant_composer_test.dart`.
+mounted, preserving drafts and scroll positions.
+Coverage: `shell_dock_bar_test.dart` (fixed zones, overflow, sliding highlight
+timing), `dock_action_choreography_test.dart`, `persistent_shell_dock_test.dart`,
+`floating_dock_rail_test.dart`, `shell_dock_modal_visibility_test.dart`,
+`shared_navbar_large_text_test.dart`, `shell_back_navigation_test.dart` and
+`shell_assistant_composer_test.dart`.
 
 Leaving Apps or launching a module clears Apps search so returning starts in
 navigation mode. Workspace picker search replaces the shell title, and its

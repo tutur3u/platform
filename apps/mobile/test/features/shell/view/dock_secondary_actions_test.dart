@@ -8,7 +8,7 @@ import '../../../helpers/helpers.dart';
 
 void main() {
   for (final width in [320.0, 430.0]) {
-    testWidgets('secondary action remains reachable width$width', (
+    testWidgets('the top bar shows the second dock action at width$width', (
       tester,
     ) async {
       tester.view.physicalSize = Size(width, 900);
@@ -40,13 +40,10 @@ void main() {
         ),
       );
       await tester.pumpAndSettle();
-      if (width < 400) {
-        expect(find.byIcon(Icons.search), findsOneWidget);
-        await tester.tap(find.byIcon(Icons.search));
-        expect(calls, 1);
-      } else {
-        expect(find.byIcon(Icons.search), findsNothing);
-      }
+      // The dock holds one page action at every width; the rest move here.
+      expect(find.byIcon(Icons.search), findsOneWidget);
+      await tester.tap(find.byIcon(Icons.search));
+      expect(calls, 1);
       expect(find.byIcon(Icons.add), findsNothing);
       expect(tester.takeException(), isNull);
     });

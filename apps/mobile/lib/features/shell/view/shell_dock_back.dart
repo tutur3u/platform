@@ -7,13 +7,15 @@ import 'package:mobile/core/ui/icons/app_icons.dart';
 import 'package:mobile/features/shell/view/shell_chrome_style.dart';
 import 'package:mobile/features/shell/view/shell_dock_bar.dart';
 
-/// The dock's 52dp Back circle; long-press returns to the destination root.
+/// The dock's Back circle; long-press returns to the destination root.
 class ShellDockBack extends StatelessWidget {
   const ShellDockBack({
     required this.entry,
     required this.style,
     required this.onTap,
     this.onLongPress,
+    this.diameter = ShellDockMetrics.slot,
+    this.filled = true,
     super.key,
   });
 
@@ -21,6 +23,11 @@ class ShellDockBack extends StatelessWidget {
   final ShellChromeStyle style;
   final VoidCallback onTap;
   final VoidCallback? onLongPress;
+  final double diameter;
+
+  /// Paints the accent fill. Off when the circle sits on its own dock
+  /// surface, which already provides the material.
+  final bool filled;
 
   @override
   Widget build(BuildContext context) => Semantics(
@@ -36,10 +43,10 @@ class ShellDockBack extends StatelessWidget {
       onLongPress: onLongPress,
       child: Container(
         key: const ValueKey('shell-dock-back'),
-        width: ShellDockMetrics.slot,
-        height: ShellDockMetrics.slot,
+        width: diameter,
+        height: diameter,
         decoration: ShapeDecoration(
-          color: style.accent,
+          color: filled ? style.accent : style.accent.withValues(alpha: 0),
           shape: const CircleBorder(),
         ),
         child: Icon(AppIcons.back, size: 24, color: style.foreground),

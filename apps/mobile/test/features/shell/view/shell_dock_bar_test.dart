@@ -16,8 +16,10 @@ const _back = ShellDockEntry(
   glyph: Icon(Icons.chevron_left),
 );
 
-List<ShellDockEntry> _entries() => [
-  for (final label in ['Home', 'Tasks', 'Calendar', 'Mira', 'Apps'])
+List<ShellDockEntry> _entries([
+  List<String> labels = const ['Home', 'Tasks', 'Calendar', 'Mira', 'Apps'],
+]) => [
+  for (final label in labels)
     ShellDockEntry(
       key: ValueKey(label),
       label: label,
@@ -25,14 +27,20 @@ List<ShellDockEntry> _entries() => [
     ),
 ];
 
+const ValueKey<String> _pill = ValueKey('persistent-shell-dock-material');
+const ValueKey<String> _highlight = ValueKey('shell-dock-highlight');
+
 Future<void> _pump(
   WidgetTester tester, {
   ShellDockEntry? back,
   bool labelled = true,
-  double width = 366,
+  double width = 306,
   SorbetTheme? sorbet,
+  List<ShellDockEntry>? entries,
+  Key? selectedKey = const ValueKey('Home'),
   ValueChanged<Key?>? onSelected,
   VoidCallback? onBackLongPress,
+  bool settle = true,
 }) async {
   await tester.pumpWidget(
     sorbetTestApp(
@@ -41,29 +49,26 @@ Future<void> _pump(
         alignment: Alignment.bottomCenter,
         child: SizedBox(
           width: width,
-          child: ShellDockSurface(
-            child: ShellDockBar(
-              entries: _entries(),
-              selectedKey: back == null ? const ValueKey('Home') : null,
-              onSelected: onSelected ?? (_) {},
-              back: back,
-              labelled: labelled,
-              onBackLongPress: onBackLongPress,
-            ),
+          child: ShellDockBar(
+            entries: entries ?? _entries(),
+            selectedKey: selectedKey,
+            onSelected: onSelected ?? (_) {},
+            back: back,
+            labelled: labelled,
+            onBackLongPress: onBackLongPress,
           ),
         ),
       ),
     ),
   );
-  await tester.pumpAndSettle();
+  if (settle) await tester.pumpAndSettle();
 }
 
 void main() {
-  testWidgets('five labelled slots share a 64dp pill; the active one fills', (
-    tester,
-  ) async {
+  testWidgets('five labelled slots share a 64dp pill; one highlight marks '
+      'the active slot', (tester) async {
     await _pump(tester);
-    final pill = tester.getRect(find.byType(ShellDockSurface));
+    final pill = tester.getRect(find.byKey(_pill));
     expect(pill.height, ShellDockMetrics.height);
     for (final label in ['Home', 'Tasks', 'Calendar', 'Mira', 'Apps']) {
       expect(find.text(label), findsOneWidget);
@@ -73,29 +78,34 @@ void main() {
     }
     final home = tester.getSemantics(find.bySemanticsLabel('Home'));
     expect(home.flagsCollection.isSelected, isNot(false));
-    final style = ShellChromeStyle.of(
-      tester.element(find.byKey(const ValueKey('Home'))),
+    expect(
+      tester.getRect(find.byKey(_highlight)),
+      tester.getRect(find.byKey(const ValueKey('Home'))),
     );
-    final fills = tester
-        .widgetList<AnimatedContainer>(
-          find.descendant(
-            of: find.byKey(const ValueKey('Home')),
-            matching: find.byType(AnimatedContainer),
-          ),
-        )
-        .map((box) => (box.decoration! as ShapeDecoration).color);
-    expect(fills, contains(style.navSelectedFill));
+    final style = ShellChromeStyle.of(tester.element(find.byKey(_highlight)));
+    final fill = tester.widget<DecoratedBox>(
+      find.descendant(
+        of: find.byKey(_highlight),
+        matching: find.byType(DecoratedBox),
+      ),
+    );
+    expect((fill.decoration as ShapeDecoration).color, style.navSelectedFill);
     expect(find.byKey(const ValueKey('shell-dock-back')), findsNothing);
   });
 
-  testWidgets('Back leads without moving or resizing the frame', (
+  testWidgets('Back shows in its reserved zone; the pill never moves', (
     tester,
   ) async {
     Key? selected;
     var longPressed = false;
     await _pump(tester, onSelected: (key) => selected = key);
-    final rest = tester.getRect(find.byKey(const ValueKey('shell-dock-bar')));
-    final homeAtRest = tester.getSize(find.byKey(const ValueKey('Home')));
+    final pillAtRest = tester.getRect(find.byKey(_pill));
+    final homeAtRest = tester.getRect(find.byKey(const ValueKey('Home')));
+    final zone = tester.getRect(
+      find.byKey(const ValueKey('shell-dock-back-zone')),
+    );
+    expect(zone.size, const Size.square(ShellDockMetrics.zone));
+    expect(pillAtRest.left - zone.right, ShellDockMetrics.zoneGap);
 
     await _pump(
       tester,
@@ -103,13 +113,10 @@ void main() {
       onSelected: (key) => selected = key,
       onBackLongPress: () => longPressed = true,
     );
-    expect(tester.getRect(find.byKey(const ValueKey('shell-dock-bar'))), rest);
-    final back = tester.getSize(find.byKey(const ValueKey('shell-dock-back')));
-    expect(back, const Size.square(ShellDockMetrics.slot));
-    expect(
-      tester.getSize(find.byKey(const ValueKey('Home'))).width,
-      lessThan(homeAtRest.width),
-    );
+    expect(tester.getRect(find.byKey(_pill)), pillAtRest);
+    expect(tester.getRect(find.byKey(const ValueKey('Home'))), homeAtRest);
+    final back = tester.getRect(find.byKey(const ValueKey('shell-dock-back')));
+    expect(zone.contains(back.center), isTrue);
 
     await tester.tap(find.byKey(const ValueKey('shell-dock-back')));
     expect(selected, const ValueKey('back'));
@@ -120,24 +127,165 @@ void main() {
     expect(selected, const ValueKey('Tasks'));
   });
 
-  testWidgets('Back eases out and leaves no control behind', (tester) async {
+  testWidgets('Back fades out in place and leaves no control behind', (
+    tester,
+  ) async {
     await _pump(tester, back: _back);
-    await _pump(tester);
+    final pill = tester.getRect(find.byKey(_pill));
+    await _pump(tester, settle: false);
+    for (var i = 0; i < 12; i++) {
+      await tester.pump(const Duration(milliseconds: 16));
+      expect(tester.getRect(find.byKey(_pill)), pill);
+    }
+    await tester.pumpAndSettle();
     expect(find.byKey(const ValueKey('shell-dock-back')), findsNothing);
     expect(tester.takeException(), isNull);
   });
 
-  testWidgets('module sections and cramped slots keep labels in semantics', (
-    tester,
-  ) async {
+  testWidgets('unlabelled slots keep labels in semantics; cramped pills '
+      'collapse behind More', (tester) async {
     await _pump(tester, labelled: false);
     expect(find.text('Tasks'), findsNothing);
     expect(find.bySemanticsLabel('Tasks'), findsOneWidget);
 
+    // A cramped pill shows fewer, still labelled 44dp slots plus More.
     await _pump(tester, back: _back, width: 240);
-    expect(find.text('Tasks'), findsNothing);
-    expect(find.bySemanticsLabel('Tasks'), findsOneWidget);
+    expect(find.byKey(const ValueKey('Calendar')), findsNothing);
+    expect(find.byKey(const ValueKey('shell-dock-more')), findsOneWidget);
+    for (final slot in ['Home', 'Tasks', 'shell-dock-more']) {
+      expect(
+        tester.getSize(find.byKey(ValueKey(slot))).width,
+        greaterThanOrEqualTo(ShellDockMetrics.minSlotWidth),
+      );
+    }
     expect(tester.takeException(), isNull);
+  });
+
+  testWidgets('more than five destinations collapse behind More', (
+    tester,
+  ) async {
+    Key? selected;
+    final labels = ['Boards', 'Mine', 'Timeline', 'Inbox', 'Labels', 'Cycles'];
+    await _pump(
+      tester,
+      entries: _entries(labels),
+      selectedKey: const ValueKey('Boards'),
+      onSelected: (key) => selected = key,
+    );
+    for (final label in labels.take(4)) {
+      expect(find.byKey(ValueKey(label)), findsOneWidget);
+    }
+    expect(find.byKey(const ValueKey('Labels')), findsNothing);
+    final more = find.byKey(const ValueKey('shell-dock-more'));
+    expect(more, findsOneWidget);
+    expect(tester.getSize(more).width, greaterThanOrEqualTo(44));
+
+    await tester.tap(more);
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Cycles'));
+    await tester.pumpAndSettle();
+    expect(selected, const ValueKey('Cycles'));
+
+    // An overflowed destination marks More as the active slot.
+    await _pump(
+      tester,
+      entries: _entries(labels),
+      selectedKey: const ValueKey('Cycles'),
+    );
+    expect(tester.getRect(find.byKey(_highlight)), tester.getRect(more));
+    final semantics = tester.getSemantics(more);
+    expect(semantics.flagsCollection.isSelected, isNot(false));
+  });
+
+  testWidgets('the highlight slides within the base duration and nothing '
+      'else moves', (tester) async {
+    final selected = ValueNotifier<Key?>(const ValueKey('Home'));
+    addTearDown(selected.dispose);
+    await tester.pumpWidget(
+      sorbetTestApp(
+        home: Align(
+          alignment: Alignment.bottomCenter,
+          child: SizedBox(
+            width: 306,
+            // The harness disables animations; this test needs them.
+            child: Builder(
+              builder: (context) => MediaQuery(
+                data: MediaQuery.of(context).copyWith(disableAnimations: false),
+                child: ValueListenableBuilder<Key?>(
+                  valueListenable: selected,
+                  builder: (context, key, _) => ShellDockBar(
+                    entries: _entries(),
+                    selectedKey: key,
+                    onSelected: (_) {},
+                  ),
+                ),
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+    final pill = tester.getRect(find.byKey(_pill));
+    final from = tester.getRect(find.byKey(const ValueKey('Home')));
+    final to = tester.getRect(find.byKey(const ValueKey('Calendar')));
+    final slots = {
+      for (final label in ['Home', 'Tasks', 'Calendar', 'Mira', 'Apps'])
+        label: tester.getRect(find.byKey(ValueKey(label))),
+    };
+    final style = ShellChromeStyle.of(tester.element(find.byKey(_pill)));
+    final budget = style.base.inMilliseconds;
+
+    selected.value = const ValueKey('Calendar');
+    await tester.pump();
+    var frames = 0;
+    var midway = false;
+    while (tester.binding.hasScheduledFrame) {
+      await tester.pump(const Duration(milliseconds: 16));
+      frames++;
+      final x = tester.getRect(find.byKey(_highlight)).left;
+      if (x > from.left && x < to.left) midway = true;
+      expect(tester.getRect(find.byKey(_pill)), pill);
+      for (final MapEntry(:key, :value) in slots.entries) {
+        expect(tester.getRect(find.byKey(ValueKey(key))), value);
+      }
+      expect(frames, lessThanOrEqualTo(budget ~/ 16 + 2));
+    }
+    expect(midway, isTrue);
+    expect(tester.getRect(find.byKey(_highlight)), to);
+  });
+
+  testWidgets('reduced motion moves the highlight at once', (tester) async {
+    tester.platformDispatcher.accessibilityFeaturesTestValue =
+        const FakeAccessibilityFeatures(disableAnimations: true);
+    addTearDown(tester.platformDispatcher.clearAccessibilityFeaturesTestValue);
+    final selected = ValueNotifier<Key?>(const ValueKey('Home'));
+    addTearDown(selected.dispose);
+    await tester.pumpWidget(
+      sorbetTestApp(
+        home: Align(
+          alignment: Alignment.bottomCenter,
+          child: SizedBox(
+            width: 306,
+            child: ValueListenableBuilder<Key?>(
+              valueListenable: selected,
+              builder: (context, key, _) => ShellDockBar(
+                entries: _entries(),
+                selectedKey: key,
+                onSelected: (_) {},
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+    selected.value = const ValueKey('Apps');
+    await tester.pump();
+    expect(
+      tester.getRect(find.byKey(_highlight)),
+      tester.getRect(find.byKey(const ValueKey('Apps'))),
+    );
   });
 
   testWidgets('classic outlines the pill; Sorbet casts the dock shadow', (

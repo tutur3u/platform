@@ -51,9 +51,8 @@ void registerShellViewportChecks(
           await _expectRailViewport(tester, size);
           return;
         }
-        // The five fixed destinations carry visible labels.
-        // Root destinations are icons: no visible labels, but each keeps
-        // its accessible name.
+        // Five destination slots, each a 44dp target that keeps its name in
+        // semantics; slots wide enough for text also show it.
         for (final label in [
           'Home',
           'Apps',
@@ -61,13 +60,8 @@ void registerShellViewportChecks(
           'Notifications',
           'Profile',
         ]) {
-          expect(
-            find.descendant(
-              of: find.byType(MorphingNavigationBar),
-              matching: find.text(label),
-            ),
-            findsNothing,
-          );
+          final node = tester.getSemantics(find.bySemanticsLabel(label).first);
+          expect(node.rect.width, greaterThanOrEqualTo(44), reason: label);
         }
         expect(find.bySemanticsLabel('Home'), findsOneWidget);
         expect(find.bySemanticsLabel('Mira'), findsOneWidget);
