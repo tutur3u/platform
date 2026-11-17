@@ -136,6 +136,32 @@ describe('nova response policy', () => {
     }
   );
 
+  it.each(['GET', 'HEAD'])(
+    'preserves asset caching under the production mount for %s',
+    async (method) => {
+      for (const path of ['/assets/chunk.js', publicFile]) {
+        const response = await apply(`/nova${path}`, method, 'tuturuuu.com');
+        expectSecurityHeaders(response);
+        expect(response.headers.get('Cache-Control')).toBe(
+          'private, max-age=600'
+        );
+        expect(response.headers.get('Vary')).toBe('Origin');
+      }
+    }
+  );
+
+  it('keeps neighbouring mounts and root-host lookalikes private', async () => {
+    for (const [host, path] of [
+      ['tuturuuu.com', '/novax/assets/chunk.js'],
+      ['tuturuuu.com', '/nova-other/favicon.ico'],
+      [canonical, '/nova/assets/chunk.js'],
+    ]) {
+      expect(
+        (await apply(path, 'GET', host)).headers.get('Cache-Control')
+      ).toBe('private, no-store');
+    }
+  });
+
   it.each(['POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'])(
     'does not grant asset caching to %s',
     async (method) => {
@@ -143,6 +169,9 @@ describe('nova response policy', () => {
         const response = await apply(path, method);
         expect(response.headers.get('Cache-Control')).toBe('private, no-store');
         expect(response.headers.get('Vary')).toContain('Cookie');
+        const mounted = await apply(`/nova${path}`, method, 'tuturuuu.com');
+        expect(mounted.headers.get('Cache-Control')).toBe('private, no-store');
+        expect(mounted.headers.get('Vary')).toContain('Cookie');
       }
     }
   );

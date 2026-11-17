@@ -12,8 +12,9 @@ import { readNativeRuntimeConfig } from '../../../scripts/ci/apps-native-runtime
 const app = fileURLToPath(new URL('../', import.meta.url));
 const require = createRequire(join(app, 'package.json'));
 
-// The canonical host and the host the Worker also serves as a root host.
-const HOSTS = ['nova.ai.vn', 'nova.tuturuuu.com'];
+const mounted = process.env.VITE_NOVA_NATIVE_PROFILE === 'production';
+const base = mounted ? '/nova' : '';
+const HOSTS = mounted ? ['tuturuuu.com'] : ['nova.ai.vn', 'nova.tuturuuu.com'];
 // One marker per top-level dashboard page, taken from that page module's own
 // server-rendered markup. Each marker appears in exactly one of these pages,
 // so a route that rendered another module (such as /home) cannot pass.
@@ -157,6 +158,10 @@ test(
       envFiles: [envFile],
       sendMetrics: false,
       bindings: {
+        NEXT_PUBLIC_APP_URL: {
+          type: 'plain_text',
+          value: process.env.NEXT_PUBLIC_APP_URL ?? 'https://nova.ai.vn',
+        },
         TUTURUUU_APP_COORDINATION_SECRET: {
           type: 'secret_text',
           value: coordinationSecret,
@@ -237,7 +242,7 @@ test(
           {
             hostname: origin.hostname,
             port: origin.port,
-            path,
+            path: `${base}${path}`,
             headers: { host, accept: 'text/html', ...headers },
           },
           (response) => {
@@ -310,7 +315,11 @@ test(
             assert.equal(response.status, 307, `${host}${path}`);
             const target = redirectTarget(host, response.location);
             assert.equal(target.host, host, `${host}${path}: redirect host`);
-            assert.equal(target.pathname, '/home', `${host}${path}: target`);
+            assert.equal(
+              target.pathname,
+              `${base}/home`,
+              `${host}${path}: target`
+            );
           }
           const open = await signedIn(host, '/challenges');
           assert.equal(open.status, 200, `${host}/challenges`);
@@ -323,7 +332,8 @@ test(
 
     await t.test('unknown hosts are rejected before app code', async () => {
       for (const host of [
-        'tuturuuu.com',
+        ...(mounted ? [] : ['tuturuuu.com']),
+        'tuturuuu.com.attacker.invalid',
         'nova.ai.vn.attacker.invalid',
         'unknown-host.invalid',
       ]) {

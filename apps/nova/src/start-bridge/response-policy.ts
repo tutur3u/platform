@@ -45,9 +45,13 @@ export function applyResponsePolicy(request: Request, response: Response) {
   }
   result.headers.set('X-Content-Type-Options', 'nosniff');
   result.headers.set('Referrer-Policy', 'strict-origin-when-cross-origin');
+  const assetPath =
+    url.host === 'tuturuuu.com' && url.pathname.startsWith('/nova/')
+      ? url.pathname.slice('/nova'.length)
+      : url.pathname;
   const isAsset =
     (request.method === 'GET' || request.method === 'HEAD') &&
-    (url.pathname.startsWith('/assets/') || publicAssets.has(url.pathname));
+    (assetPath.startsWith('/assets/') || publicAssets.has(assetPath));
   if (!isAsset) {
     result.headers.set('Cache-Control', 'private, no-store');
     const vary =

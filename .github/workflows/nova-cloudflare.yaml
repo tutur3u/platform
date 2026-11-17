@@ -161,6 +161,7 @@ jobs:
     needs: [check-ci, affected-gate]
     if: ${{ (needs.affected-gate.outputs.run == 'true' && (github.event_name != 'workflow_dispatch' && (needs.check-ci.outputs.should_run == 'true'))) && (github.event_name != 'pull_request' || contains(github.event.pull_request.labels.*.name, 'ready-for-ci')) }}
     strategy:
+      fail-fast: false
       matrix:
         profile: [staging, production]
     uses: ./.github/workflows/native-start-app.yaml

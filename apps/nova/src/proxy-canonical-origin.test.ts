@@ -1,12 +1,21 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { afterAll, beforeEach, describe, expect, it, vi } from 'vitest';
 import { AUTH_CANONICAL_ORIGINS } from './constants/common';
 import { proxy } from './proxy';
 
 const mocks = vi.hoisted(() => {
-  process.env.NOVA_APP_URL = 'https://nova.tuturuuu.com';
+  for (const name of [
+    'NOVA_APP_URL',
+    'NEXT_PUBLIC_NOVA_APP_URL',
+    'NEXT_PUBLIC_APP_URL',
+    'BASE_URL',
+  ]) {
+    vi.stubEnv(name, 'https://nova.tuturuuu.com');
+  }
   return { updateSession: vi.fn() };
 });
+
+afterAll(() => vi.unstubAllEnvs());
 
 vi.mock('@tuturuuu/supabase/next/proxy', () => ({
   updateSession: mocks.updateSession,

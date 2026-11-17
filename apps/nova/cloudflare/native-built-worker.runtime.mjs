@@ -23,6 +23,10 @@ import {
   runtimeOutcomeFailure,
 } from '../../../scripts/start-bridge-codemod/runtime-outcome.mjs';
 import { effectiveWorkerConfig } from '../../../scripts/start-bridge-codemod/worker-config.mjs';
+import {
+  isNovaApexRoot,
+  NOVA_APEX_URL,
+} from '../src/start-bridge/legacy-redirect.mjs';
 
 const app = await realpath(fileURLToPath(new URL('../', import.meta.url)));
 const require = createRequire(join(app, 'package.json'));
@@ -72,6 +76,26 @@ const PUBLIC_FILES = [
 ];
 // From start-bridge.routes.json `runtime`: a status, or a redirect prefix.
 const EXPECTED = { '/': 200 };
+const legacyCanary = isNovaApexRoot(process.env.NEXT_PUBLIC_APP_URL);
+
+function assertRootOutcome({ path, expected, response, host }) {
+  if (legacyCanary) {
+    assert.equal(response.status, 307, `${host}${path}: temporary canary`);
+    assert.equal(
+      response.location,
+      `${NOVA_APEX_URL}${path === '/' ? '' : path}`
+    );
+    assert.equal(response.cacheControl, 'no-store');
+    return;
+  }
+  const failure = runtimeOutcomeFailure({
+    path,
+    expected,
+    ...response,
+    origin: `http://${host}`,
+  });
+  assert.equal(failure, null, `${host}: ${failure}`);
+}
 // The Worker's mounts: the generated defaults plus the app-owned
 // start-bridge.config.ts overrides, exactly as cloudflare/worker.ts spreads
 // them (loaded with Node's type stripping).
@@ -168,6 +192,10 @@ test(
       envFiles: [staged.envFile],
       sendMetrics: false,
       bindings: {
+        NEXT_PUBLIC_APP_URL: {
+          type: 'plain_text',
+          value: process.env.NEXT_PUBLIC_APP_URL ?? 'https://nova.ai.vn',
+        },
         UPSTASH_REDIS_REST_URL: {
           type: 'plain_text',
           value: 'synthetic-runtime-only',
@@ -254,6 +282,7 @@ test(
               resolve({
                 status: response.statusCode ?? 0,
                 location: response.headers.location ?? null,
+                cacheControl: response.headers['cache-control'] ?? null,
                 body: Buffer.concat(chunks).toString('utf8'),
               });
             });
@@ -286,28 +315,21 @@ test(
         assert.deepEqual(runtimeExpectationProblems(EXPECTED), []);
         for (const [path, expected] of Object.entries(EXPECTED)) {
           const response = await get(path);
-          const failure = runtimeOutcomeFailure({
-            path,
-            expected,
-            ...response,
-            origin: `http://${ROOT_HOST}`,
-          });
-          assert.equal(failure, null, failure ?? '');
+          assertRootOutcome({ path, expected, response, host: ROOT_HOST });
         }
       }
     );
 
     await t.test(
-      'every configured root host serves the root page',
+      'every configured root host follows its profile contract',
       async () => {
         for (const host of MOUNTS.rootHosts) {
-          const failure = runtimeOutcomeFailure({
+          assertRootOutcome({
             path: '/',
             expected: EXPECTED['/'],
-            ...(await call('/', host)),
-            origin: `http://${host}`,
+            response: await call('/', host),
+            host,
           });
-          assert.equal(failure, null, `${host}: ${failure}`);
         }
       }
     );

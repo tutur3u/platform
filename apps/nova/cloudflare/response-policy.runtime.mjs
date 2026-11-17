@@ -73,6 +73,10 @@ test(
       envFiles: [envFile],
       sendMetrics: false,
       bindings: {
+        NEXT_PUBLIC_APP_URL: {
+          type: 'plain_text',
+          value: process.env.NEXT_PUBLIC_APP_URL ?? 'https://nova.ai.vn',
+        },
         // The Worker refuses every request unless each required runtime
         // binding is present. The values are random per run; the Redis URL is
         // deliberately not an absolute URL, so guard stores resolve as
@@ -167,7 +171,8 @@ test(
     const scriptPath = `/assets/${firstScript.split('\\').join('/')}`;
     for (const host of [...hosts, ...(mounted ? ['tuturuuu.com'] : [])]) {
       const prefix = host === 'tuturuuu.com' ? '/nova' : '';
-      const served = (path, method) => get(host, `${prefix}${path}`, method);
+      const served = (path, method) =>
+        get(host, prefix && path === '/' ? prefix : `${prefix}${path}`, method);
       await t.test(
         `${host} headers cover pages, APIs and method-limited assets`,
         async () => {
