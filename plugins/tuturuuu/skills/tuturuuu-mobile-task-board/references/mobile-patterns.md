@@ -208,6 +208,13 @@ localization changes.
   `shell_viewport_checks.dart` asserts 44dp named slots. Home, Inbox and
   You have no Search action; a screen offers Search only for its own content,
   always through `ShellActionSpec.search` (one glyph, dock slot and target).
+- Root tabs: the phone dock pins up to four `ShellRootTab`s (default Home,
+  Tasks, Calendar, Mail; Mira, then Apps, Notifications, You fill an
+  unavailable Mail) plus a More destination that lists the rest and Edit tabs.
+  Gate module tabs on `AppModule.visibleIn` during build, persist only ids
+  through `ShellRootTabsCubit`, and keep the tablet rail on its fixed five
+  destinations. Module tabs reuse the Apps origin flow, so Back returns to
+  the root that opened them; `shell_root_tabs_test.dart` covers it.
 - Overlay wrappers that change only padding must always return the same
   wrapper widget; an early `return child` reparents the overlay content and
   drops its dock registrations.

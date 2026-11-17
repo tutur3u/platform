@@ -1,8 +1,8 @@
 part of 'shell_page.dart';
 
 extension _ShellPageNavigation on _ShellPageState {
-  /// The five fixed dock destinations, shown as icons: Home, Apps, Mira,
-  /// Notifications and You. The archive below Notifications leads with Back.
+  /// Root destinations (see [_ShellPageRootTabs]). The archive below
+  /// Notifications leads with Back.
   List<shad.NavigationItem> _buildNavItems(
     BuildContext context,
     AppTabState state,
@@ -17,53 +17,7 @@ extension _ShellPageNavigation on _ShellPageState {
           itemIndex: 0,
         ),
       ),
-    shad.NavigationItem(
-      key: _ShellPageState._homeKey,
-      child: _buildCompactNavIcon(
-        icon: LucideIcons.house,
-        semanticLabel: l10n.navHome,
-        itemIndex: 0,
-      ),
-    ),
-    shad.NavigationItem(
-      key: _ShellPageState._appsKey,
-      child: _buildCompactNavIcon(
-        icon: LucideIcons.layoutGrid,
-        semanticLabel: l10n.navApps,
-        itemIndex: 1,
-      ),
-    ),
-    shad.NavigationItem(
-      key: _ShellPageState._assistantKey,
-      child: _buildCompactNavIcon(
-        icon: LucideIcons.sparkles,
-        image: NovaLoadingIndicator(
-          key: ValueKey(_rootTabReplayTokens[Routes.assistant] ?? 0),
-          size: 22,
-          repeat: false,
-          play: widget.matchedLocation == Routes.assistant,
-        ),
-        semanticLabel: l10n.navMira,
-        itemIndex: 2,
-      ),
-    ),
-    shad.NavigationItem(
-      key: _ShellPageState._notificationsKey,
-      child: _buildCompactNavIcon(
-        icon: LucideIcons.bell,
-        semanticLabel: l10n.notificationsTitle,
-        itemIndex: 3,
-      ),
-    ),
-    shad.NavigationItem(
-      key: _ShellPageState._profileKey,
-      child: _buildCompactNavIcon(
-        icon: LucideIcons.circleUserRound,
-        image: const ProfileNavigationAvatar(),
-        semanticLabel: l10n.profileTitle,
-        itemIndex: 4,
-      ),
-    ),
+    ..._rootNavItems(l10n),
   ];
 
   /// The dock's Back zone, outside the pill. Narrow windows reserve it only
@@ -215,25 +169,11 @@ extension _ShellPageNavigation on _ShellPageState {
       miniNavSelectedIndex(location, items);
 
   Key? _selectedKeyForLocation(String location) {
-    if (location == Routes.home) {
-      return _ShellPageState._homeKey;
+    if (!_usesRail) return _phoneRootSelectedKey(location);
+    if (AppRegistry.moduleFromLocation(location) != null) {
+      return ShellRootTab.apps.key;
     }
-    if (location == Routes.notifications ||
-        location == Routes.notificationsArchive) {
-      return _ShellPageState._notificationsKey;
-    }
-    if (location == Routes.profileRoot) {
-      return _ShellPageState._profileKey;
-    }
-    if (location == Routes.assistant) {
-      return _ShellPageState._assistantKey;
-    }
-    if (location == Routes.apps ||
-        AppRegistry.moduleFromLocation(location) != null) {
-      return _ShellPageState._appsKey;
-    }
-
-    return null;
+    return _rootTabForLocation(location)?.key;
   }
 
   bool _isRootTabLocation(String location) {

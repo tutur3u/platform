@@ -2,8 +2,11 @@ import 'package:flutter/material.dart';
 import 'package:mobile/core/layout/layout.dart';
 import 'package:mobile/core/ui/ui.dart';
 import 'package:mobile/data/models/workspace.dart';
+import 'package:mobile/features/apps/registry/app_registry.dart';
+import 'package:mobile/features/shell/cubit/shell_chrome_actions_cubit.dart';
 import 'package:mobile/features/shell/view/mobile_section_app_bar.dart';
 import 'package:mobile/features/shell/view/shell_chrome_style.dart';
+import 'package:mobile/features/shell/view/shell_dock_action_button.dart';
 import 'package:mobile/features/shell/view/shell_dock_bar.dart';
 import 'package:mobile/features/shell/view/shell_dock_surface.dart';
 import 'package:mobile/features/shell/view/shell_top_bar_button.dart';
@@ -16,32 +19,27 @@ enum ShellChromeScene { topBar, dockRest, dockBack, notifications, switcher }
 
 const sceneWorkspace = Workspace(id: 'ws-1', name: 'Tuturuuu');
 
-/// The root dock: Home, Apps, Mira, Notifications and Profile, as icons.
-List<ShellDockEntry> _destinations() => const [
-  ShellDockEntry(
+/// The phone root dock: Home, Tasks, Calendar and Mail, then More.
+List<ShellDockEntry> _destinations() => [
+  const ShellDockEntry(
     key: ValueKey('home'),
     label: 'Home',
     glyph: Icon(LucideIcons.house),
   ),
-  ShellDockEntry(
-    key: ValueKey('apps'),
-    label: 'Apps',
-    glyph: Icon(LucideIcons.layoutGrid),
-  ),
-  ShellDockEntry(
-    key: ValueKey('assistant'),
-    label: 'Mira',
-    glyph: Icon(LucideIcons.sparkles),
-  ),
-  ShellDockEntry(
-    key: ValueKey('notifications'),
-    label: 'Notifications',
-    glyph: Icon(LucideIcons.bell),
-  ),
-  ShellDockEntry(
-    key: ValueKey('profile'),
-    label: 'Profile',
-    glyph: Icon(LucideIcons.circleUserRound),
+  for (final (id, label) in const [
+    ('tasks', 'Tasks'),
+    ('calendar', 'Calendar'),
+    ('mail', 'Mail'),
+  ])
+    ShellDockEntry(
+      key: ValueKey(id),
+      label: label,
+      glyph: Icon(AppRegistry.moduleById(id)?.icon ?? LucideIcons.house),
+    ),
+  const ShellDockEntry(
+    key: ValueKey('more'),
+    label: 'More',
+    glyph: Icon(Icons.more_horiz),
   ),
 ];
 
@@ -57,7 +55,8 @@ class ShellChromeSceneView extends StatelessWidget {
         scene == ShellChromeScene.dockBack ||
         scene == ShellChromeScene.switcher;
     final selected = switch (scene) {
-      ShellChromeScene.notifications => const ValueKey('notifications'),
+      // Notifications lives behind More on the phone dock.
+      ShellChromeScene.notifications => const ValueKey('more'),
       ShellChromeScene.topBar ||
       ShellChromeScene.dockRest => const ValueKey('home'),
       _ => null,
@@ -88,67 +87,65 @@ class ShellChromeSceneView extends StatelessWidget {
                   scene == ShellChromeScene.dockRest,
             ),
           ),
-          Positioned(
-            left: 0,
-            right: 0,
-            bottom: 0,
-            height:
-                ShellDockMetrics.bottomOffset(media.padding.bottom) +
-                ShellDockMetrics.height / 2,
-            child: ShellDockFade(color: style.page),
-          ),
-          Positioned(
-            left: ShellDockMetrics.inset,
-            right: ShellDockMetrics.inset,
-            bottom: ShellDockMetrics.bottomOffset(media.padding.bottom),
-            child: Center(
-              child: SizedBox(
-                width: ShellDockMetrics.widthFor(media.size.width),
-                // The shell dock's fixed zones: Back and the pill, then the
-                // page-action slot.
-                child: Row(
-                  crossAxisAlignment: CrossAxisAlignment.end,
-                  children: [
-                    Expanded(
-                      child: ShellDockBar(
-                        entries: _destinations(),
-                        selectedKey: selected,
-                        onSelected: (_) {},
-                        back: back
-                            ? const ShellDockEntry(
-                                key: ValueKey('back-to-root'),
-                                label: 'Back',
-                                glyph: Icon(LucideIcons.chevronLeft),
-                              )
-                            : null,
-                      ),
-                    ),
-                    const SizedBox(width: ShellDockMetrics.zoneGap),
-                    Padding(
-                      padding: const EdgeInsets.only(
-                        bottom: ShellDockMetrics.padding,
-                      ),
-                      child: DecoratedBox(
-                        key: const ValueKey('scene-dock-action'),
-                        decoration: ShapeDecoration(
-                          color: style.foreground,
-                          shape: const CircleBorder(),
+          if (scene != ShellChromeScene.topBar)
+            Positioned(
+              left: 0,
+              right: 0,
+              bottom: 0,
+              height:
+                  ShellDockMetrics.bottomOffset(media.padding.bottom) +
+                  ShellDockMetrics.height / 2,
+              child: ShellDockFade(color: style.page),
+            ),
+          // The top-bar scene has scrolled the dock away.
+          if (scene != ShellChromeScene.topBar)
+            Positioned(
+              left: ShellDockMetrics.inset,
+              right: ShellDockMetrics.inset,
+              bottom: ShellDockMetrics.bottomOffset(media.padding.bottom),
+              child: Center(
+                child: SizedBox(
+                  width: ShellDockMetrics.widthFor(media.size.width),
+                  // The shell dock's fixed zones: Back and the pill, then the
+                  // page-action slot.
+                  child: Row(
+                    crossAxisAlignment: CrossAxisAlignment.end,
+                    children: [
+                      Expanded(
+                        child: ShellDockBar(
+                          entries: _destinations(),
+                          selectedKey: selected,
+                          onSelected: (_) {},
+                          back: back
+                              ? const ShellDockEntry(
+                                  key: ValueKey('back-to-root'),
+                                  label: 'Back',
+                                  glyph: Icon(LucideIcons.chevronLeft),
+                                )
+                              : null,
                         ),
-                        child: SizedBox.square(
-                          dimension: ShellDockMetrics.zone,
-                          child: Icon(
-                            LucideIcons.plus,
-                            color: style.page,
-                            size: 24,
+                      ),
+                      const SizedBox(width: ShellDockMetrics.zoneGap),
+                      Padding(
+                        padding: const EdgeInsets.only(
+                          bottom: ShellDockMetrics.padding,
+                        ),
+                        child: ShellDockActionButton(
+                          key: const ValueKey('scene-dock-action'),
+                          action: ShellActionSpec(
+                            id: 'scene-create',
+                            icon: LucideIcons.plus,
+                            inDock: true,
+                            tooltip: 'Create',
+                            onPressed: () {},
                           ),
                         ),
                       ),
-                    ),
-                  ],
+                    ],
+                  ),
                 ),
               ),
             ),
-          ),
           if (scene == ShellChromeScene.switcher)
             const ShellSceneSwitcherSheet(),
         ],

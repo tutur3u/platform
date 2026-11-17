@@ -185,7 +185,7 @@ void main() {
       await _settle(tester);
       expect(h.router.state.matchedLocation, Routes.apps);
       expect(find.bySemanticsLabel('Home'), findsOneWidget);
-      expect(find.bySemanticsLabel('Apps'), findsOneWidget);
+      expect(find.bySemanticsLabel('More'), findsOneWidget); // Apps' dock slot
       expect(tester.takeException(), isNull);
     },
   );

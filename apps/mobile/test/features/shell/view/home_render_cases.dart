@@ -225,16 +225,22 @@ void _homeRenderCases() {
       ),
     );
 
+    // The dock has its own More; these are the Home body's controls.
+    SemanticsNode homeNode(String label) => tester.getSemantics(
+      find.descendant(
+        of: find.byType(HomePage),
+        matching: find.bySemanticsLabel(label),
+      ),
+    );
     for (final label in ['More', 'See all Today']) {
-      final data = tester
-          .getSemantics(find.bySemanticsLabel(label))
-          .getSemanticsData();
+      final data = homeNode(label).getSemanticsData();
       expect(data.hasAction(SemanticsAction.tap), isTrue, reason: label);
       expect(data.flagsCollection.isButton, isTrue, reason: label);
     }
 
     // Screen-reader activation (not a pointer tap) opens the More menu...
-    tester.semantics.tap(find.semantics.byLabel('More'));
+    final more = homeNode('More').id;
+    tester.semantics.tap(find.semantics.byPredicate((node) => node.id == more));
     await settleShell(tester);
     expect(find.byType(AppSheetScaffold), findsOneWidget);
     Navigator.of(tester.element(find.byType(AppSheetScaffold))).pop();

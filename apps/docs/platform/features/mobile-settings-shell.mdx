@@ -173,6 +173,32 @@ timing), `dock_action_choreography_test.dart`, `persistent_shell_dock_test.dart`
 `shared_navbar_large_text_test.dart`, `shell_back_navigation_test.dart` and
 `shell_assistant_composer_test.dart`.
 
+### Phone root tabs
+
+On phones the dock's root destinations are four tabs and More, which fills the
+pill's five slots. The default tabs are Home, Tasks, Calendar and Mail. Mail is
+experimental; when the account cannot open it, the first available of Mira,
+Apps, Notifications and You takes its slot, so the dock never offers a tab the
+user cannot open. Tasks, Calendar and Mail open their module, whose own
+destinations and Back then fill the dock as when the module opens from Apps.
+Dock Back and system Back from that module return to the root destination
+that opened it, usually Home.
+
+More opens the shared sheet listing every root destination that is not a tab
+(Mira, Apps, Notifications, You and any removed default), followed by Edit
+tabs. More is the active slot while one of those destinations is open.
+Edit tabs picks up to four tabs from the openable destinations, in the order
+they were picked; the last tab cannot be removed and Reset to default returns
+to the defaults. The choice is stored on the device as tab ids; unknown or
+unavailable ids are ignored when read, and a choice left with no openable tab
+uses the defaults. The tablet rail keeps its fixed Home, Apps, Mira,
+Notifications and You destinations.
+
+Coverage: `shell_root_tabs_test.dart` (defaults, Mail fallback, More list and
+selection, editing, persistence and Reset, Back from a module tab, unchanged
+rail), `shell_viewport_checks.dart` (44px named slots at every phone size) and
+`shell_profile_navigation_checks.dart`.
+
 Leaving Apps or launching a module clears Apps search so returning starts in
 navigation mode. Workspace picker search replaces the shell title, and its
 visible footer actions are centered. Hiding and restoring workspace shortcuts

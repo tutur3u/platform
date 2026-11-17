@@ -3322,13 +3322,23 @@
   "navAssistant": "Assistant",
   "navBack": "Back",
   "navCalendar": "Calendar",
+  "navEditTabs": "Edit tabs",
   "navFinance": "Finance",
   "navHabits": "Habits",
   "navHome": "Home",
   "navInbox": "Inbox",
   "navMira": "Mira",
   "navMore": "More",
+  "navResetTabs": "Reset to default",
   "navSettings": "Settings",
+  "navTabsLimitHint": "Up to {count} tabs",
+  "@navTabsLimitHint": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
   "navTasks": "Tasks",
   "navTimer": "Timer",
   "navYou": "You",

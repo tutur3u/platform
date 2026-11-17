@@ -63,7 +63,7 @@ void _registerProfileNavigationChecks(
   );
 
   testWidgets(
-    'root dock owns Profile and Notifications without duplicate headers',
+    'root dock keeps Profile and Notifications behind More without headers',
     (tester) async {
       tester.view.devicePixelRatio = 1;
       tester.view.physicalSize = const Size(390, 844);
@@ -91,28 +91,25 @@ void _registerProfileNavigationChecks(
       );
       expect(rootNav.children.map((item) => item.key), const [
         ValueKey('home'),
-        ValueKey('apps'),
+        ValueKey('tasks'),
+        ValueKey('calendar'),
         ValueKey('assistant'),
-        ValueKey('notifications'),
-        ValueKey('profile'),
+        shellRootMoreKey,
       ]);
       expect(find.byType(AvatarDropdown), findsNothing);
       // Notifications is a dock destination, not a top bar bell.
       expect(find.byType(NotificationsActionButton), findsNothing);
 
-      // Notifications and You are dock destinations: their slot is active
-      // and no Back leads.
-      for (final (route, key) in const [
-        (Routes.notifications, ValueKey<String>('notifications')),
-        (Routes.profileRoot, ValueKey<String>('profile')),
-      ]) {
+      // Notifications and You are root destinations behind More: More is
+      // active and no Back leads.
+      for (final route in const [Routes.notifications, Routes.profileRoot]) {
         router.go(route);
         await _pumpForTransitions(tester);
         final nav = tester.widget<MorphingNavigationBar>(
           find.byType(MorphingNavigationBar),
         );
         expect(nav.children.first.key, const ValueKey<String>('home'));
-        expect(nav.selectedKey, key);
+        expect(nav.selectedKey, shellRootMoreKey);
       }
 
       router.go(Routes.tasks);

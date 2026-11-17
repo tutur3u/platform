@@ -6214,6 +6214,9 @@ class AppLocalizationsVi extends AppLocalizations {
   String get navCalendar => 'Lịch';
 
   @override
+  String get navEditTabs => 'Sửa thẻ điều hướng';
+
+  @override
   String get navFinance => 'Tài chính';
 
   @override
@@ -6232,7 +6235,15 @@ class AppLocalizationsVi extends AppLocalizations {
   String get navMore => 'Thêm';
 
   @override
+  String get navResetTabs => 'Khôi phục mặc định';
+
+  @override
   String get navSettings => 'Cài đặt';
+
+  @override
+  String navTabsLimitHint(int count) {
+    return 'Tối đa $count thẻ';
+  }
 
   @override
   String get navTasks => 'Công việc';

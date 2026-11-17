@@ -5,7 +5,8 @@ import 'package:mobile/core/ui/tokens/app_tokens.dart';
 
 /// Selectable row for pickers: title, optional subtitle and trailing detail,
 /// with a check mark when [selected]. Exposes selected/in-mutually-exclusive
-/// group semantics so screen readers announce it as a choice.
+/// group semantics so screen readers announce it as a choice; with
+/// [multiSelect] it is announced as a checkbox among independent options.
 class AppOptionTile extends StatelessWidget {
   const AppOptionTile({
     required this.title,
@@ -14,6 +15,7 @@ class AppOptionTile extends StatelessWidget {
     this.detail,
     this.leading,
     this.selected = false,
+    this.multiSelect = false,
     super.key,
   });
 
@@ -24,6 +26,9 @@ class AppOptionTile extends StatelessWidget {
   final String? detail;
   final Widget? leading;
   final bool selected;
+
+  /// Whether several options in the group can be selected at once.
+  final bool multiSelect;
   final VoidCallback? onTap;
 
   @override
@@ -31,8 +36,9 @@ class AppOptionTile extends StatelessWidget {
     final tokens = AppTokens.of(context);
     final c = tokens.colorScheme;
     return Semantics(
-      selected: selected,
-      inMutuallyExclusiveGroup: true,
+      selected: multiSelect ? null : selected,
+      checked: multiSelect ? selected : null,
+      inMutuallyExclusiveGroup: !multiSelect,
       button: true,
       child: Material(
         type: MaterialType.transparency,

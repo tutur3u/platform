@@ -316,6 +316,7 @@ extension _ShellPageLayout on _ShellPageState {
         : const <MiniAppNavItem>[];
     final useInjectedMiniNav = injectedMiniNavRegistration != null;
     final isCompact = _usesCompactNavigation(context);
+    _syncRootTabs(context);
     final selectedKey = useInjectedMiniNav
         ? _injectedMiniSelectedKey(injectedMiniNavRegistration)
         : isMiniAppRoute
@@ -369,7 +370,7 @@ extension _ShellPageLayout on _ShellPageState {
           ? _onMiniAppItemTapped(key, context, activeModule, activeMiniNavItems)
           : key == _ShellPageState._backToRootKey
           ? _runBackNavigation(context)
-          : _onItemTapped(_ShellPageState._routeForKey(key), context),
+          : _onRootItemTapped(key, context),
       children: navChildren,
     );
     final dockBack = _buildDockBack(context, navContent, navChildren, backKey);
@@ -522,10 +523,8 @@ extension _ShellPageLayout on _ShellPageState {
                                 horizontal: 8,
                                 vertical: 4,
                               ),
-                              onSelected: (key) => _onItemTapped(
-                                _ShellPageState._routeForKey(key),
-                                context,
-                              ),
+                              onSelected: (key) =>
+                                  _onItemTapped(_routeForRootKey(key), context),
                               children: _buildNavItems(
                                 context,
                                 state,
@@ -535,10 +534,8 @@ extension _ShellPageLayout on _ShellPageState {
                           : CustomNavigationBar(
                               key: _ShellPageState._globalLayerKey,
                               selectedKey: globalSelectedKey,
-                              onSelected: (key) => _onItemTapped(
-                                _ShellPageState._routeForKey(key),
-                                context,
-                              ),
+                              onSelected: (key) =>
+                                  _onItemTapped(_routeForRootKey(key), context),
                               expandItems: false,
                               minItemWidth:
                                   _ShellPageState._floatingNavMinItemWidth,

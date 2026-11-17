@@ -25,17 +25,20 @@ import 'package:mobile/features/notifications/view/notifications_page.dart';
 import 'package:mobile/features/profile/view/profile_navigation_avatar.dart';
 import 'package:mobile/features/profile/view/profile_overview_page.dart';
 import 'package:mobile/features/shell/cubit/shell_chrome_actions_cubit.dart';
+import 'package:mobile/features/shell/cubit/shell_root_tabs_cubit.dart';
 import 'package:mobile/features/shell/view/android_modal_back_bridge.dart';
 import 'package:mobile/features/shell/view/custom_navigation_bar.dart';
 import 'package:mobile/features/shell/view/floating_shell_dock.dart';
 import 'package:mobile/features/shell/view/mobile_section_app_bar.dart';
 import 'package:mobile/features/shell/view/shell_chrome_actions.dart';
 import 'package:mobile/features/shell/view/shell_dock_bar.dart';
+import 'package:mobile/features/shell/view/shell_dock_overflow.dart';
 import 'package:mobile/features/shell/view/shell_dock_slot.dart';
 import 'package:mobile/features/shell/view/shell_home_actions.dart';
 import 'package:mobile/features/shell/view/shell_keyboard_chrome.dart';
 import 'package:mobile/features/shell/view/shell_mini_nav.dart';
 import 'package:mobile/features/shell/view/shell_navigation_rail.dart';
+import 'package:mobile/features/shell/view/shell_root_tabs_editor.dart';
 import 'package:mobile/features/shell/view/shell_search_field.dart';
 import 'package:mobile/features/shell/view/shell_top_bar_title.dart';
 import 'package:mobile/features/workspace/cubit/workspace_cubit.dart';
@@ -49,6 +52,7 @@ part 'shell_page_actions.dart';
 part 'shell_page_interactions.dart';
 part 'shell_page_layout.dart';
 part 'shell_page_navigation.dart';
+part 'shell_page_root_tabs.dart';
 part 'shell_page_scroll.dart';
 
 /// Shell layout with adaptive navigation.
@@ -66,6 +70,7 @@ class ShellPage extends StatefulWidget {
     this.homePageBuilder,
     this.notificationsPageBuilder,
     this.profilePageBuilder,
+    this.rootTabsStore,
     super.key,
   });
 
@@ -81,19 +86,17 @@ class ShellPage extends StatefulWidget {
   @visibleForTesting
   final Widget Function(int replayToken)? profilePageBuilder;
 
+  /// Where the phone dock's chosen tabs persist; SharedPreferences if null.
+  final ShellRootTabsStore? rootTabsStore;
+
   @override
   State<ShellPage> createState() => _ShellPageState();
 }
 
 class _ShellPageState extends State<ShellPage> with WidgetsBindingObserver {
-  static const ValueKey<String> _homeKey = ValueKey('home');
-  static const ValueKey<String> _appsKey = ValueKey('apps');
-  static const ValueKey<String> _assistantKey = ValueKey('assistant');
   static const ValueKey<String> _globalLayerKey = ValueKey('global-layer');
   static const ValueKey<String> _miniLayerKey = ValueKey('mini-layer');
   static const ValueKey<String> _backToRootKey = ValueKey('back-to-root');
-  static const ValueKey<String> _notificationsKey = ValueKey('notifications');
-  static const ValueKey<String> _profileKey = ValueKey('profile');
   static const double _miniNavItemSpacing = 1;
   static const double _floatingNavMinItemWidth = 52;
   static const double _compactBottomNavHeight = 54;
@@ -106,6 +109,10 @@ class _ShellPageState extends State<ShellPage> with WidgetsBindingObserver {
   bool _usesCompactNavigation(BuildContext context) => false;
 
   final _dockSlotController = ShellDockSlotController();
+  late final _rootTabs = ShellRootTabsCubit(store: widget.rootTabsStore);
+  StreamSubscription<List<ShellRootTab>?>? _rootTabsSubscription;
+  Set<ShellRootTab> _availableRootTabs = ShellRootTab.values.toSet();
+  List<ShellRootTab> _phoneRootTabs = shellDefaultRootTabs;
 
   final Stopwatch _tapStopwatch = Stopwatch();
   Timer? _longPressTimer;
@@ -179,6 +186,10 @@ class _ShellPageState extends State<ShellPage> with WidgetsBindingObserver {
     unawaited(SystemNavigator.setFrameworkHandlesBack(true));
     AndroidModalBackBridge.install(_hasOpenModal);
     _layerController = PageController(initialPage: 1);
+    _rootTabsSubscription = _rootTabs.stream.listen(
+      (_) => _setShellState(() {}),
+    );
+    unawaited(_rootTabs.load());
     _hasVisitedRoot = _isRootTabLocation(widget.matchedLocation);
     if (_hasVisitedRoot) _lastRootLocation = widget.matchedLocation;
   }
@@ -661,16 +672,9 @@ class _ShellPageState extends State<ShellPage> with WidgetsBindingObserver {
     _suppressPointerTimer?.cancel();
     _layerController.dispose();
     _dockSlotController.dispose();
+    unawaited(_rootTabsSubscription?.cancel());
+    unawaited(_rootTabs.close());
     super.dispose();
-  }
-
-  /// Route of a fixed dock destination.
-  static String _routeForKey(Key? key) {
-    if (key == _notificationsKey) return Routes.notifications;
-    if (key == _profileKey) return Routes.profileRoot;
-    if (key == _assistantKey) return Routes.assistant;
-    if (key == _appsKey || key is GlobalKey) return Routes.apps;
-    return Routes.home;
   }
 
   static int _calculateSelectedIndex(String location) {
