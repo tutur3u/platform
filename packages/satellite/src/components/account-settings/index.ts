@@ -10,3 +10,4 @@ export {
 } from './account-settings-navigation';
 export { SatelliteAccountSettingsPanel } from './account-settings-panel';
 export { SatelliteDefaultSettingsDialog } from './default-settings-dialog';
+export { satelliteProfileQueryKey } from '../profile-settings/profile-avatar-editor';

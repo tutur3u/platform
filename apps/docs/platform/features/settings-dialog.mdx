@@ -96,12 +96,16 @@ so `?settingsTab=<tab>` means the same thing in every app.
 | `appearance` | Theme, language, timezone, time format | Theme and language. |
 
 Apps with their own dialog (ai, calendar, cms, contacts, drive, finance, forms,
-git, infrastructure, inventory, rewise, tasks, track) add the Account group with
+git, infrastructure, inventory, mail, rewise, tasks, track) add the Account group with
 `createAccountSettingsNavGroup` and render `SatelliteAccountSettingsPanel`, next
-to their app tabs. Apps without one (chat, learn, lettin, mail, meet, mind,
+to their app tabs. Apps without one (chat, learn, lettin, meet, mind,
 parley, storefront, teach) get `SatelliteDefaultSettingsDialog`: the Account
 group, appearance and the onboarding guide. The satellite user menu has a
 **Settings** item (Cmd/Ctrl+,) that opens the same dialog.
+
+Mail's settings dialog (`mailSettingsTab`) appends the shared Account and
+Workspace groups and Appearance after its Mail groups (`mail-settings-shared.tsx`),
+so profile, workspace and appearance are also reachable from Mail's own settings.
 
 App-specific tabs stay pluggable. An app adds its own nav groups and panels, and
 `SatelliteAccountSettingsPanel` renders nothing for tabs it does not own.

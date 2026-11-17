@@ -42,6 +42,11 @@ import { MailGroupSettings } from './mail-group-settings';
 import { MailLabelSettings } from './mail-label-settings';
 import { MailMemberSettings } from './mail-member-settings';
 import { MailReadingSettings } from './mail-reading-settings';
+import {
+  isMailSharedSettingsTab,
+  MailSharedSettingsPanels,
+  useMailSharedSettingsNav,
+} from './mail-settings-shared';
 import { MailSettingsShell } from './mail-settings-shell';
 import { MailSignaturePreview } from './mail-signature-preview';
 
@@ -181,6 +186,8 @@ export function MailSettingsDialog({
       catchAllEnabled !== catchAllQuery.data.enabled ||
       catchAllAutoDraft !== catchAllQuery.data.autoDraftEnabled)
   );
+  const sharedNavItems = useMailSharedSettingsNav();
+  const isSharedTab = isMailSharedSettingsTab(sharedNavItems, tab);
   const navItems = useMemo(
     () => [
       {
@@ -237,8 +244,9 @@ export function MailSettingsDialog({
         ],
         label: t('title'),
       },
+      ...sharedNavItems,
     ],
-    [operator, t]
+    [operator, sharedNavItems, t]
   );
 
   const activeQuery =
@@ -248,6 +256,7 @@ export function MailSettingsDialog({
         ? membersQuery
         : settingsQuery;
   const settingsUnavailable =
+    !isSharedTab &&
     tab !== 'source' &&
     tab !== 'reading' &&
     tab !== 'labels' &&
@@ -274,6 +283,12 @@ export function MailSettingsDialog({
             />
           ) : null}
           <div hidden={settingsUnavailable} className="space-y-8">
+            {isSharedTab ? (
+              <MailSharedSettingsPanels
+                activeTab={tab}
+                workspaceId={workspaceId}
+              />
+            ) : null}
             {tab === 'source' ? (
               <MailAccountsSettings
                 onOpenMailboxSettings={(mailboxId) => {
@@ -489,14 +504,23 @@ export function MailSettingsDialog({
                     onValueChange={setTargetMailboxId}
                     value={targetMailboxId ?? undefined}
                   >
-                    <SelectTrigger aria-label={t('catch_all_mailbox')}>
-                      <SelectValue placeholder={t('select_mailbox')} />
+                    <SelectTrigger
+                      aria-label={t('catch_all_mailbox')}
+                      className="min-w-0"
+                    >
+                      <SelectValue
+                        className="min-w-0 overflow-hidden"
+                        placeholder={t('select_mailbox')}
+                      />
                     </SelectTrigger>
                     <SelectContent>
                       {catchAllQuery.data?.eligibleMailboxes.map(
                         (candidate) => (
                           <SelectItem key={candidate.id} value={candidate.id}>
-                            {candidate.displayName} · {candidate.address}
+                            {/* One text node so the trigger truncates it on a single line. */}
+                            <span className="min-w-0 truncate text-left">
+                              {`${candidate.displayName} · ${candidate.address}`}
+                            </span>
                           </SelectItem>
                         )
                       )}
