@@ -136,6 +136,7 @@ export const ci = {
   'ai-cloudflare.yaml': true,
   'forms-cloudflare.yaml': true,
   'web-start-candidate.yaml': true,
+  'web-opennext.yaml': true,
   'nova-cloudflare.yaml': true,
   'inventory-cloudflare.yaml': true,
   'tools-cloudflare.yaml': true,

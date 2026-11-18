@@ -1,7 +1,7 @@
 ---
 title: "Web route families on Cloudflare"
 description: "apps/web route families built as OpenNext Workers and served behind the gateway: family manifest, pruning, build inputs, environment names and rollback."
-updatedAt: "2026-11-18"
+updatedAt: "2026-11-19"
 audience: developers
 ---
 
@@ -22,8 +22,11 @@ under the 10 MiB gzip upload limit (CI budget 9.5 MiB).
 
 | File | Purpose |
 | --- | --- |
-| `apps/web/cloudflare/opennext/families.json` | Family table: `id`, `worker`, `kind` (`api` or `pages`), `assetPrefix`, `wrangler`, `exact`, `prefix`, `exclude`, plus the global `deny` list. Must equal `webFamilies` in `apps/gateway/src/manifest.json` (test-enforced). |
-| `apps/web/cloudflare/opennext/prune.ts` | Deletes every app route entry (page, route, metadata route) the family does not own. Dry run by default; `--apply` refuses unless `apps/web/.opennext-disposable-checkout` exists, and writes `prune-receipt.json`. |
+| `apps/web/cloudflare/opennext/families.json` | Family table: `id`, `worker`, `kind` (`api` or `pages`), `enabled`, `held` (why a declared family is not enabled), `localized` (paths match after the `[locale]` segment), `assetPrefix`, `wrangler`, `exact`, `prefix`, `exclude`, plus the global `deny` list. Enabled families must equal `webFamilies` in `apps/gateway/src/manifest.json`, in order; every app route entry belongs to at most one declared family (test-enforced). |
+| `apps/web/cloudflare/opennext/prune.ts` | Deletes every app route entry (page, route, metadata route) the family does not own, except `api/build-info` (the build probe; the gateway routes it only to the family that owns it). Refuses held families. Dry run by default; `--apply` refuses unless `apps/web/.opennext-disposable-checkout` exists, and writes `prune-receipt.json`. |
+| `scripts/ci/web-opennext-size.mjs` | Whole-upload gzip size gate over the `wrangler deploy --dry-run --outdir` output; fails above 9.5 MiB. |
+| `scripts/ci/web-opennext-smoke.mjs` | Serves the built Worker locally with the production Host, no provider auth and all outbound requests refused; checks `/api/build-info` reports the commit, the emitted `deploymentId` is `web-<family>-<sha12>`, and the family probe paths answer as expected. |
+| `scripts/ci/gateway-deploy-config.mjs` | Gateway deploy config: committed `apps/gateway/wrangler.jsonc` merged with the live Worker's variables and service bindings, plus the origins and flagged family bindings. |
 | `apps/web/cloudflare/opennext/next-family-config.ts` | With `WEB_OPENNEXT_FAMILY` set: `deploymentId: web-<family>-<sha12>` (cross-family navigation becomes a hard navigation), `generateBuildId` = the full commit, `assetPrefix` for page families. Unset: no change to the Vercel build. |
 | `apps/web/open-next.config.ts` | `defineCloudflareConfig({})`: no incremental cache, tag cache or queue for API families. |
 | `apps/web/cloudflare/opennext/wrangler.<family>.jsonc` | Route-free Worker config (`workers_dev`/`preview_urls` false, `nodejs_compat`), secret names only. |
@@ -43,13 +46,45 @@ WEB_OPENNEXT_FAMILY=api-identity WEB_OPENNEXT_SHA=<sha> bun run --cwd apps/web b
 ```
 
 `build:opennext` runs `opennextjs-cloudflare build` with
-`cloudflare/opennext/wrangler.$WEB_OPENNEXT_FAMILY.jsonc`. The size gate,
-pre-seal doctor, seal and route-free upload belong to the CI producer workflow.
+`cloudflare/opennext/wrangler.$WEB_OPENNEXT_FAMILY.jsonc`.
 
-Toolchain prerequisite: `@opennextjs/cloudflare@1.20.17` as an `apps/web` dev
-dependency (`bun add -D` in `apps/web`) with the pinned OpenNext scheduler
-patch imported into `patches/` through `bun patch`. The proof builds used
-exactly that pair; Parley and Lettin keep their patched 1.20.6.
+Toolchain: `@opennextjs/cloudflare@1.20.17` (an `apps/web` dev dependency)
+with `patches/@opennextjs%2Fcloudflare@1.20.17.patch`, which runs Next's staged
+render tasks in sequence on workerd when `cacheComponents` is on. Parley and
+Lettin keep their patched 1.20.6.
+
+## Deploying
+
+`.github/workflows/web-opennext.yaml` runs on every `main` push that touches
+`apps/web`, `apps/gateway`, `packages` or the lockfile, and on dispatch (one
+`family`, and whether to deploy the gateway). Both deploy jobs run in the
+protected `web-opennext-production` environment:
+
+1. **family** (one job per enabled family): exact-commit checkout, workspace
+   package build, prune, family build, size gate, local smoke, then
+   `wrangler deploy` of the route-free Worker with the commit in the version
+   message. Public configuration comes from environment variables
+   (`NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY`,
+   `SUPABASE_URL`, `ROOT_WORKSPACE_ID`); the job passes no Worker secret.
+2. **gateway**: captures the live gateway settings, checks that every family in
+   the `GATEWAY_WEB_FAMILIES` repository variable has its Worker and every
+   secret name its wrangler config requires, writes the deploy config, then
+   `wrangler versions upload` and `versions deploy` at 100%. `WEB_ORIGIN` and
+   `MARKETING_ORIGIN` come from environment variables.
+
+Turning a family on: set its Worker secrets (names in `<family>.env.json`),
+add its id to `GATEWAY_WEB_FAMILIES`, rerun the gateway job.
+
+## public-docs
+
+Owns `/changelog/**`, `/docs`, `/ui/**` and `/visualizations/**`, with or
+without a locale prefix (`/docs` and `/ui/**` answer the same redirects as
+Vercel). Client assets load from `/_f/public-docs/_next/**`, which the gateway
+strips before the family sees it. The family requires no secrets: the changelog
+reads published entries with the publishable-key client. Without an Upstash
+store the proxy abuse guard logs `abuse-guard-store-missing` once per isolate.
+Server actions use a per-build key, so an action posted from a page built by
+another deployment fails closed.
 
 ## api-identity
 
@@ -73,8 +108,10 @@ client-IP trust; the Worker sets `TRUSTED_PROXY=cloudflare` and
 
 ## Rollback
 
-Remove the family id from the gateway's `GATEWAY_WEB_FAMILIES` (one variable
-change); `GATEWAY_MODE=passthrough` disables every family. The family Worker
+Remove the family id from the `GATEWAY_WEB_FAMILIES` repository variable and
+rerun the gateway job, or roll the gateway back to the previous version printed
+by that job (`wrangler rollback <version-id> --name tuturuuu-gateway`);
+`GATEWAY_MODE=passthrough` disables every family. The family Worker
 has no routes, so leaving it deployed serves nothing.
 
 Regression coverage: `apps/web/cloudflare/opennext/families.test.ts` (route

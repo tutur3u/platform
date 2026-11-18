@@ -1,6 +1,8 @@
 {
-  // Gateway Worker for tuturuuu.com. Not deployed from source control: the
-  // provider owner deploys it. See apps/docs/build/devops/gateway-worker.mdx.
+  // Gateway Worker for tuturuuu.com. The provider owner attaches the route;
+  // CI uploads versions (web-opennext.yaml, gateway job) from this file merged
+  // with the live Worker's variables and service bindings. See
+  // apps/docs/build/devops/gateway-worker.mdx.
   "name": "tuturuuu-gateway",
   "main": "src/worker.ts",
   "compatibility_date": "2026-09-28",

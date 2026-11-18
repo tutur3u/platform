@@ -1,0 +1,258 @@
+name: Web OpenNext families
+# apps/web route families built as their own Cloudflare Workers
+# (apps/web/cloudflare/opennext/families.json) and the tuturuuu.com gateway
+# that routes to them. See apps/docs/build/devops/web-opennext-families.mdx.
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'apps/web/**'
+      - 'apps/gateway/**'
+      - 'packages/**'
+      - 'bun.lock'
+      - 'patches/@opennextjs%2Fcloudflare@1.20.17.patch'
+      - '.github/workflows/web-opennext.yaml'
+      - 'scripts/ci/web-opennext-*.mjs'
+      - 'scripts/ci/gateway-deploy-config.mjs'
+      - 'tuturuuu.ci.ts'
+  workflow_dispatch:
+    inputs:
+      family:
+        description: 'Enabled family id to build and deploy; empty builds every enabled family'
+        required: false
+        default: ''
+        type: string
+      gateway:
+        description: 'Deploy the gateway after the families'
+        required: false
+        default: true
+        type: boolean
+permissions:
+  contents: read
+# One run per commit; production deploys queue instead of cancelling.
+concurrency:
+  group: web-opennext-${{ github.ref }}-${{ github.sha }}-${{ github.run_id }}
+  cancel-in-progress: false
+env:
+  CLOUDFLARE_ACCOUNT_ID: e8912e2867beecc673d171907bf09649
+  WRANGLER_SEND_METRICS: 'false'
+jobs:
+  check-ci:
+    uses: ./.github/workflows/ci-check.yml
+    permissions:
+      contents: read
+      deployments: read
+    with:
+      workflow_name: web-opennext.yaml
+  plan:
+    needs: check-ci
+    if: needs.check-ci.outputs.should_run == 'true' && github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    outputs:
+      families: ${{ steps.plan.outputs.families }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          persist-credentials: false
+          sparse-checkout: |
+            /apps/web/cloudflare/opennext/families.json
+          sparse-checkout-cone-mode: false
+      - id: plan
+        env:
+          FAMILY: ${{ inputs.family || '' }}
+        run: |
+          enabled=$(jq -c '[.families[] | select(.enabled) | .id]' apps/web/cloudflare/opennext/families.json)
+          if [ -n "$FAMILY" ]; then
+            echo "$enabled" | jq -e --arg f "$FAMILY" 'index($f) != null' > /dev/null \
+              || { echo "::error::$FAMILY is not an enabled family"; exit 1; }
+            enabled=$(jq -cn --arg f "$FAMILY" '[$f]')
+          fi
+          echo "families=$enabled" >> "$GITHUB_OUTPUT"
+          echo "Families: $enabled"
+  family:
+    needs: plan
+    if: needs.plan.outputs.families != '[]'
+    name: family (${{ matrix.family }})
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    environment: web-opennext-production
+    permissions:
+      contents: read
+    strategy:
+      fail-fast: false
+      max-parallel: 2
+      matrix:
+        family: ${{ fromJSON(needs.plan.outputs.families) }}
+    concurrency:
+      group: web-opennext-deploy-${{ matrix.family }}
+      cancel-in-progress: false
+      queue: max
+    env:
+      FAMILY: ${{ matrix.family }}
+      CI: '1'
+      NEXT_TELEMETRY_DISABLED: '1'
+      # Public build inputs, inlined into the client and server bundles.
+      NEXT_PUBLIC_SUPABASE_URL: ${{ vars.NEXT_PUBLIC_SUPABASE_URL }}
+      NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY: ${{ vars.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY }}
+      NEXT_PUBLIC_APP_URL: https://tuturuuu.com
+      NEXT_PUBLIC_WEB_APP_URL: https://tuturuuu.com
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          ref: ${{ github.sha }}
+          persist-credentials: false
+      - name: Require public configuration
+        env:
+          SUPABASE_URL: ${{ vars.SUPABASE_URL }}
+          ROOT_WORKSPACE_ID: ${{ vars.ROOT_WORKSPACE_ID }}
+        run: |
+          for name in NEXT_PUBLIC_SUPABASE_URL NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY SUPABASE_URL ROOT_WORKSPACE_ID; do
+            test -n "${!name}" || { echo "::error::environment variable $name is not set on web-opennext-production"; exit 1; }
+          done
+      - uses: ./.github/actions/setup-bun-with-retry
+        with:
+          bun-version: 1.4.4
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7
+        with:
+          node-version: 24
+      - run: bun install --frozen-lockfile
+      - name: Generate shared build metadata
+        env:
+          PLATFORM_BUILD_ENVIRONMENT: production
+          PLATFORM_BUILD_REF_NAME: ${{ github.ref_name }}
+          PLATFORM_BUILD_COMMIT_HASH: ${{ github.sha }}
+        run: bun run --silent scripts/ci/generate-build-metadata.ts
+      - run: bun x --no-install turbo run build --filter='@tuturuuu/web^...' --concurrency=2
+      - run: node --test scripts/ci/web-opennext-size.test.mjs scripts/ci/gateway-deploy-config.test.mjs
+      # The runner checkout is disposable: prune deletes every route entry the
+      # family does not own.
+      - name: Prune to the family routes
+        run: |
+          printf 'disposable checkout for an OpenNext family build\n' > apps/web/.opennext-disposable-checkout
+          bun run --cwd apps/web opennext:prune "$FAMILY" --apply
+      - name: Build the family Worker
+        env:
+          WEB_OPENNEXT_SHA: ${{ github.sha }}
+          WEB_OPENNEXT_FAMILY: ${{ matrix.family }}
+          PLATFORM_BUILD_COMMIT_HASH: ${{ github.sha }}
+        run: |
+          # API families define no server actions; page families get a
+          # per-build key until the shared key build lands.
+          NEXT_SERVER_ACTIONS_ENCRYPTION_KEY=$(openssl rand -base64 32)
+          export NEXT_SERVER_ACTIONS_ENCRYPTION_KEY
+          bun run --cwd apps/web build:opennext
+      - name: Size gate (whole upload, gzip)
+        working-directory: apps/web
+        run: |
+          bun x --no-install wrangler deploy --dry-run --outdir "$RUNNER_TEMP/upload" \
+            -c "cloudflare/opennext/wrangler.$FAMILY.jsonc" | tee "$RUNNER_TEMP/dry-run.log"
+          node ../../scripts/ci/web-opennext-size.mjs "$RUNNER_TEMP/upload" \
+            --log "$RUNNER_TEMP/dry-run.log" --receipt "$RUNNER_TEMP/size-$FAMILY.json"
+      - name: Local emitted-Worker smoke
+        timeout-minutes: 5
+        run: node scripts/ci/web-opennext-smoke.mjs "$FAMILY" "$GITHUB_SHA"
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7
+        if: always()
+        with:
+          name: web-opennext-${{ matrix.family }}-receipts-${{ github.sha }}
+          path: |
+            ${{ runner.temp }}/size-${{ matrix.family }}.json
+            apps/web/cloudflare/opennext/prune-receipt.json
+          retention-days: 30
+          if-no-files-found: warn
+      - name: Deploy the family Worker
+        working-directory: apps/web
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.COLAB_CLOUDFLARE_API_TOKEN }}
+          SUPABASE_URL: ${{ vars.SUPABASE_URL }}
+          ROOT_WORKSPACE_ID: ${{ vars.ROOT_WORKSPACE_ID }}
+        run: |
+          test -n "$CLOUDFLARE_API_TOKEN" || { echo "::error::COLAB_CLOUDFLARE_API_TOKEN is not set on web-opennext-production"; exit 1; }
+          # The family Worker has no routes; nothing serves it until the
+          # gateway binds and flags it.
+          bun x --no-install wrangler deploy -c "cloudflare/opennext/wrangler.$FAMILY.jsonc" \
+            --message "web-$FAMILY $GITHUB_SHA" \
+            --var "NEXT_PUBLIC_SUPABASE_URL:$NEXT_PUBLIC_SUPABASE_URL" \
+            --var "NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY:$NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY" \
+            --var "SUPABASE_URL:$SUPABASE_URL" \
+            --var "ROOT_WORKSPACE_ID:$ROOT_WORKSPACE_ID" \
+            --var "PLATFORM_BUILD_COMMIT_HASH:$GITHUB_SHA"
+  gateway:
+    needs: [plan, family]
+    # Runs after every family deploy succeeded, or when no family was built.
+    if: >-
+      always() && needs.plan.result == 'success' &&
+      (needs.family.result == 'success' || needs.family.result == 'skipped') &&
+      (github.event_name != 'workflow_dispatch' || inputs.gateway)
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    environment: web-opennext-production
+    permissions:
+      contents: read
+    concurrency:
+      group: web-opennext-gateway-deploy
+      cancel-in-progress: false
+      queue: max
+    env:
+      CLOUDFLARE_API_TOKEN: ${{ secrets.COLAB_CLOUDFLARE_API_TOKEN }}
+      WEB_ORIGIN: ${{ vars.WEB_ORIGIN }}
+      MARKETING_ORIGIN: ${{ vars.MARKETING_ORIGIN }}
+      GATEWAY_WEB_FAMILIES: ${{ vars.GATEWAY_WEB_FAMILIES }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          ref: ${{ github.sha }}
+          persist-credentials: false
+      - uses: ./.github/actions/setup-bun-with-retry
+        with:
+          bun-version: 1.4.4
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7
+        with:
+          node-version: 24
+      - run: bun install --frozen-lockfile
+      - run: bun run --cwd apps/gateway test
+      - name: Capture the live gateway settings
+        run: |
+          test -n "$CLOUDFLARE_API_TOKEN" || { echo "::error::COLAB_CLOUDFLARE_API_TOKEN is not set on web-opennext-production"; exit 1; }
+          curl --fail-with-body --silent --show-error --retry 3 \
+            -H "Authorization: Bearer $CLOUDFLARE_API_TOKEN" \
+            "https://api.cloudflare.com/client/v4/accounts/$CLOUDFLARE_ACCOUNT_ID/workers/scripts/tuturuuu-gateway/settings" \
+            > "$RUNNER_TEMP/gateway-settings.json"
+          # Names and types only in the log; values stay in the file.
+          jq -r '.result.bindings[] | "\(.type) \(.name)"' "$RUNNER_TEMP/gateway-settings.json"
+      # A flagged family must have its Worker and every secret name its config
+      # requires before the gateway sends traffic to it.
+      - name: Verify flagged family Workers and secret names
+        run: |
+          for id in $(echo "$GATEWAY_WEB_FAMILIES" | tr ',' ' '); do
+            worker="tuturuuu-web-$id"
+            config="apps/web/cloudflare/opennext/wrangler.$id.jsonc"
+            test -f "$config" || { echo "::error::$id has no committed wrangler config"; exit 1; }
+            bun x --no-install wrangler secret list --name "$worker" --format json > "$RUNNER_TEMP/secrets-$id.json"
+            required=$(node scripts/ci/gateway-deploy-config.mjs required-secrets "$config")
+            jq -e --argjson required "$required" 'map(.name) as $names | all($required[]; . as $n | $names | index($n) != null)' \
+              "$RUNNER_TEMP/secrets-$id.json" > /dev/null \
+              || { echo "::error::$worker is missing a required secret name: $required"; exit 1; }
+            echo "$worker: required secret names present ($required)"
+          done
+      - name: Write the gateway deploy config
+        run: |
+          node scripts/ci/gateway-deploy-config.mjs write \
+            "$RUNNER_TEMP/gateway-settings.json" apps/gateway/wrangler.deploy.json
+      - name: Upload and deploy the gateway version
+        working-directory: apps/gateway
+        run: |
+          bun x --no-install wrangler deployments status --name tuturuuu-gateway | tee "$RUNNER_TEMP/gateway-before.txt"
+          bun x --no-install wrangler versions upload -c wrangler.deploy.json \
+            --message "gateway $GITHUB_SHA families=${GATEWAY_WEB_FAMILIES:-none}" | tee "$RUNNER_TEMP/gateway-upload.txt"
+          version=$(grep -oE 'Worker Version ID: [0-9a-f-]{36}' "$RUNNER_TEMP/gateway-upload.txt" | awk '{print $4}')
+          test -n "$version" || { echo "::error::no version id in the upload output"; exit 1; }
+          bun x --no-install wrangler versions deploy "$version@100%" --name tuturuuu-gateway -y \
+            --message "gateway $GITHUB_SHA"
+          echo "Deployed gateway version $version. The previous deployment is above; roll back with: wrangler rollback <previous version id> --name tuturuuu-gateway"
+      - name: Verify the gateway answers
+        run: |
+          status=$(curl --silent --retry 5 --retry-delay 5 --max-time 30 --output /dev/null \
+            --write-out '%{http_code}' https://tuturuuu.com/api/build-info)
+          test "$status" = 200

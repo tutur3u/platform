@@ -10,8 +10,10 @@ anonymous public pages from the Workers Cache API and proxies everything else to
 the Vercel production web deployment unchanged. It exists to cut Vercel
 serverless and bandwidth cost for traffic that does not need a render.
 
-The Worker is not deployed from source control. The provider owner deploys it
-and attaches the route; more specific routes (for example the roadmap Worker on
+The route `tuturuuu.com/*` is attached by the provider owner. Versions are
+uploaded and deployed by the `gateway` job of `.github/workflows/web-opennext.yaml`
+(see [Web route families](/build/devops/web-opennext-families#deploying)); more
+specific routes (for example the roadmap Worker on
 `tuturuuu.com/roadmap*`) keep winning over `tuturuuu.com/*`.
 
 ## Behavior
@@ -255,5 +257,6 @@ per-family S3 header diff confirms them on family responses. Regression coverage
 lives in `apps/gateway/src/web-family.test.ts`.
 
 **Rollback for one family:** remove its id from `GATEWAY_WEB_FAMILIES`.
-**All families:** `GATEWAY_MODE=passthrough`. Enabling a family needs a
-gateway redeploy by the provider owner with the new binding.
+**All families:** `GATEWAY_MODE=passthrough`. Enabling a family is a change of the
+`GATEWAY_WEB_FAMILIES` repository variable followed by a run of the gateway job,
+which adds the family's service binding.
