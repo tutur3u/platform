@@ -33,9 +33,11 @@ export type ExternalAppRefreshResult =
  * `failClosed` refuses the refresh when a configured replay store is
  * unavailable. It is set for apps with a bearer cap; other apps keep the
  * legacy policy, which continues without the fence unless the guard store owns
- * replay fences. An environment with no replay store at all (local or preview
- * without Upstash and without an assigned guard) uses the legacy policy for
- * every app, so capped apps can still refresh there.
+ * replay fences. Outside production, an environment with no replay store at
+ * all (local, preview or staging without Upstash and without an assigned
+ * guard) uses the legacy policy for every app, so capped apps can still
+ * refresh there. Production never takes that exemption: a capped app refuses
+ * refresh whenever its replay fence cannot run.
  */
 export async function verifyExternalAppRefreshToken({
   failClosed = false,
@@ -114,10 +116,37 @@ export async function verifyExternalAppRefreshToken({
   if (
     consumeResult === 'unavailable' &&
     (isAbuseGuardFamilyAssigned('replay') ||
-      (failClosed && hasUpstashRestEnv()))
+      (failClosed && (hasUpstashRestEnv() || !isNonProductionDeployment())))
   ) {
     return 'unavailable';
   }
 
   return { claims, family };
+}
+
+/** Deploy markers that name a non-production runtime. */
+const NON_PRODUCTION_DEPLOY_ENVS = new Set([
+  'development',
+  'local',
+  'preview',
+  'staging',
+  'test',
+]);
+
+/**
+ * Whether this runtime is known not to be production. An explicit deploy
+ * marker wins (`TUTURUUU_DEPLOY_ENV`, then `VERCEL_ENV`) and counts only when
+ * it is an allow-listed non-production value; without one, only a development
+ * or test `NODE_ENV` counts. Anything else, including an unknown marker or an
+ * unmarked build, is treated as production.
+ */
+export function isNonProductionDeployment(
+  env: Record<string, string | undefined> = process.env
+) {
+  const deploy = (env.TUTURUUU_DEPLOY_ENV || env.VERCEL_ENV)
+    ?.trim()
+    .toLowerCase();
+  if (deploy) return NON_PRODUCTION_DEPLOY_ENVS.has(deploy);
+  const node = env.NODE_ENV?.trim().toLowerCase();
+  return node === 'development' || node === 'test';
 }

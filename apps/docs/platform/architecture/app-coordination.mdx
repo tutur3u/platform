@@ -288,9 +288,11 @@ same rules from `@tuturuuu/utils/external-app-registry-policy`. Coverage:
 - **Replay store outages.** Capped apps fail closed: a configured replay store
   that is unavailable answers their refresh with `503`. Apps without a cap keep
   the legacy replay policy, which continues without the fence and the family
-  check unless the guard store owns replay fences. An environment with no
-  replay store at all (no Upstash and no assigned guard, as in local or preview
-  setups) applies the legacy policy to every app.
+  check unless the guard store owns replay fences. Outside production, an
+  environment with no replay store at all (no Upstash and no assigned guard, as
+  in local, preview or staging setups) applies the legacy policy to every app.
+  Production never takes that exemption: without a replay store, capped apps
+  get `503` on refresh until the replay family is served by the guard store.
 - **Reserved app ids.** A registration may not use an internal app domain name
   or an internal token target without a domain (`managed-tuturuuu`,
   `mastermind`, `profile-media-upload`), case-folded.

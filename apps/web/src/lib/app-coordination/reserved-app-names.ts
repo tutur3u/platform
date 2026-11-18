@@ -11,11 +11,14 @@ import {
  * internal scopes.
  */
 export function isExternalAppClaims(claims: {
-  scopes: readonly string[];
+  scopes?: readonly string[] | null;
   target_app: string;
 }) {
+  // Claims without a scope list are treated as external, so they get the
+  // registry check rather than a first-party pass.
+  const scopes = Array.isArray(claims.scopes) ? claims.scopes : [];
   return (
-    !claims.scopes.includes(FIRST_PARTY_APP_SESSION_SCOPE) &&
+    !scopes.includes(FIRST_PARTY_APP_SESSION_SCOPE) &&
     !isReservedInternalAppName(claims.target_app)
   );
 }

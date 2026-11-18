@@ -44,4 +44,11 @@ describe('first-party app session boundary', () => {
       isExternalAppClaims({ scopes: ['users:profile:read'], target_app: 'cms' })
     ).toBe(false);
   });
+
+  it('treats claims without a scope list as external', () => {
+    expect(isExternalAppClaims({ target_app: 'fysh' })).toBe(true);
+    expect(isExternalAppClaims({ scopes: null, target_app: 'fysh' })).toBe(
+      true
+    );
+  });
 });

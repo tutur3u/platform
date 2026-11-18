@@ -239,16 +239,38 @@ describe('external app refresh lifetimes and families', () => {
     expect(response.status).toBe(503);
   });
 
-  it('lets a capped app refresh where no replay store is configured', async () => {
+  it('lets a capped app refresh outside production where no replay store is configured', async () => {
     optIn(900);
+    vi.stubEnv('VERCEL_ENV', 'preview');
     vi.mocked(hasUpstashRestEnv).mockReturnValueOnce(false);
     vi.mocked(getUpstashRestRedisClient).mockResolvedValueOnce(null);
 
-    const response = await refresh(
-      refreshTokenFor(['app-token:refresh', `app-token:family:${family}`])
-    );
+    try {
+      const response = await refresh(
+        refreshTokenFor(['app-token:refresh', `app-token:family:${family}`])
+      );
 
-    expect(response.status).toBe(200);
+      expect(response.status).toBe(200);
+    } finally {
+      vi.unstubAllEnvs();
+    }
+  });
+
+  it('fails closed for a capped app in production even without a replay store', async () => {
+    optIn(900);
+    vi.stubEnv('VERCEL_ENV', 'production');
+    vi.mocked(hasUpstashRestEnv).mockReturnValueOnce(false);
+    vi.mocked(getUpstashRestRedisClient).mockResolvedValueOnce(null);
+
+    try {
+      const response = await refresh(
+        refreshTokenFor(['app-token:refresh', `app-token:family:${family}`])
+      );
+
+      expect(response.status).toBe(503);
+    } finally {
+      vi.unstubAllEnvs();
+    }
   });
 
   it('keeps the legacy fail-open policy for an uncapped app', async () => {

@@ -15,7 +15,10 @@ vi.mock('@tuturuuu/utils/upstash-rest', () => ({
   hasUpstashRestEnv: vi.fn(() => true),
 }));
 
-import { verifyExternalAppRefreshToken } from './external-app-refresh';
+import {
+  isNonProductionDeployment,
+  verifyExternalAppRefreshToken,
+} from './external-app-refresh';
 
 const appServerIp = '203.0.113.7';
 
@@ -104,5 +107,40 @@ describe('external app refresh rate limiting', () => {
         targetApp: 'other-app',
       })
     ).toBeNull();
+  });
+});
+
+describe('isNonProductionDeployment', () => {
+  it('treats production markers and unmarked production builds as production', () => {
+    expect(isNonProductionDeployment({ VERCEL_ENV: 'production' })).toBe(false);
+    expect(
+      isNonProductionDeployment({ TUTURUUU_DEPLOY_ENV: 'Production' })
+    ).toBe(false);
+    expect(isNonProductionDeployment({ NODE_ENV: 'production' })).toBe(false);
+    expect(isNonProductionDeployment({})).toBe(false);
+    expect(isNonProductionDeployment({ VERCEL_ENV: 'prod' })).toBe(false);
+    expect(
+      isNonProductionDeployment({ NODE_ENV: 'test', VERCEL_ENV: 'canary' })
+    ).toBe(false);
+    expect(
+      isNonProductionDeployment({
+        TUTURUUU_DEPLOY_ENV: 'production',
+        VERCEL_ENV: 'preview',
+      })
+    ).toBe(false);
+  });
+
+  it('exempts preview, staging, development and test runtimes', () => {
+    expect(
+      isNonProductionDeployment({
+        NODE_ENV: 'production',
+        VERCEL_ENV: 'preview',
+      })
+    ).toBe(true);
+    expect(isNonProductionDeployment({ TUTURUUU_DEPLOY_ENV: 'staging' })).toBe(
+      true
+    );
+    expect(isNonProductionDeployment({ NODE_ENV: 'development' })).toBe(true);
+    expect(isNonProductionDeployment({ NODE_ENV: 'test' })).toBe(true);
   });
 });
