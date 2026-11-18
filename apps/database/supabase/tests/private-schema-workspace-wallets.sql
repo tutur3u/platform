@@ -237,10 +237,13 @@ select ok(
       and not exists (
         select 1
         from unnest(coalesce(p.proconfig, array[]::text[])) as config(value)
-        where config.value = 'search_path=private, public, pg_temp'
+        where config.value in (
+          'search_path=private, public, pg_temp',
+          'search_path=pg_catalog, pg_temp'
+        )
       )
   ),
-  'wallet-related functions resolve private before public in their search path'
+  'wallet-related functions resolve private before public or pin a qualified search path'
 );
 
 set local role service_role;
