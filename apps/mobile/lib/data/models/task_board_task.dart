@@ -1,4 +1,5 @@
 import 'package:equatable/equatable.dart';
+import 'package:mobile/data/models/task_external_link.dart';
 import 'package:mobile/data/models/task_relationships.dart';
 import 'package:mobile/data/utils/date_utils.dart';
 
@@ -131,6 +132,10 @@ class TaskBoardTask extends Equatable {
     this.relationships = TaskRelationshipsResponse.empty,
     this.relationshipsLoaded = false,
     this.relationshipSummary = const TaskRelationshipSummary(),
+    this.needsUser,
+    this.needsUserReason,
+    this.blockedReason,
+    this.externalLinks = const [],
   });
 
   factory TaskBoardTask.fromJson(Map<String, dynamic> json) {
@@ -202,6 +207,13 @@ class TaskBoardTask extends Equatable {
                 .map((id) => TaskBoardTaskProject(id: id))
                 .toList(growable: false),
       relationshipSummary: relationshipSummary,
+      needsUser: switch (json['needs_user']) {
+        final bool flag => flag,
+        _ => null,
+      },
+      needsUserReason: _parseText(json['needs_user_reason']),
+      blockedReason: _parseText(json['blocked_reason']),
+      externalLinks: _parseExternalLinks(json['external_links']),
     );
   }
 
@@ -253,6 +265,10 @@ class TaskBoardTask extends Equatable {
       relationships: relationships ?? this.relationships,
       relationshipsLoaded: relationshipsLoaded ?? this.relationshipsLoaded,
       relationshipSummary: relationshipSummary ?? this.relationshipSummary,
+      needsUser: needsUser,
+      needsUserReason: needsUserReason,
+      blockedReason: blockedReason,
+      externalLinks: externalLinks,
     );
   }
 
@@ -262,6 +278,19 @@ class TaskBoardTask extends Equatable {
     }
 
     return TaskRelationshipSummary.fromJson(rawSummary);
+  }
+
+  static String? _parseText(Object? value) {
+    final text = value is String ? value.trim() : '';
+    return text.isEmpty ? null : text;
+  }
+
+  static List<TaskExternalLink> _parseExternalLinks(Object? value) {
+    if (value is! List<dynamic>) return const [];
+    return value
+        .map(TaskExternalLink.tryFromJson)
+        .whereType<TaskExternalLink>()
+        .toList(growable: false);
   }
 
   static List<String> _parseIdList(dynamic value) {
@@ -327,6 +356,12 @@ class TaskBoardTask extends Equatable {
   final bool relationshipsLoaded;
   final TaskRelationshipSummary relationshipSummary;
 
+  /// First-class fleet fields; null or empty when the API does not send them.
+  final bool? needsUser;
+  final String? needsUserReason;
+  final String? blockedReason;
+  final List<TaskExternalLink> externalLinks;
+
   Map<String, dynamic> toJson() => {
     'id': id,
     'list_id': listId,
@@ -352,6 +387,13 @@ class TaskBoardTask extends Equatable {
         .map((project) => project.toJson())
         .toList(growable: false),
     'relationship_summary': relationshipSummary.toJson(),
+    if (needsUser != null) 'needs_user': needsUser,
+    if (needsUserReason != null) 'needs_user_reason': needsUserReason,
+    if (blockedReason != null) 'blocked_reason': blockedReason,
+    if (externalLinks.isNotEmpty)
+      'external_links': externalLinks
+          .map((link) => link.toJson())
+          .toList(growable: false),
   };
 
   @override
@@ -378,6 +420,10 @@ class TaskBoardTask extends Equatable {
     relationships,
     relationshipsLoaded,
     relationshipSummary,
+    needsUser,
+    needsUserReason,
+    blockedReason,
+    externalLinks,
   ];
 }
 

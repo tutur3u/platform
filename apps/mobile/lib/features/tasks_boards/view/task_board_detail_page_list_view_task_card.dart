@@ -88,7 +88,7 @@ class _TaskCard extends StatelessWidget {
     required Color titleColor,
   }) {
     final theme = shad.Theme.of(context);
-    final fleet = fleetMetaOrNull(task);
+    final fleet = fleetMetaOrNull(task, listStatus: list.status);
     return Material(
       color: Colors.transparent,
       child: InkWell(

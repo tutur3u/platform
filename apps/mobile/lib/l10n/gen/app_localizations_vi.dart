@@ -15592,4 +15592,9 @@ class AppLocalizationsVi extends AppLocalizations {
   String fleetEtaOverdueBy(String span) {
     return 'quá hạn $span';
   }
+
+  @override
+  String fleetBlockedByTasks(int count) {
+    return '$count tác vụ đang chặn';
+  }
 }

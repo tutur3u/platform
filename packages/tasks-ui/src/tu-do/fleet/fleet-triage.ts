@@ -31,7 +31,7 @@ export function getFleetBucket(item: FleetItem<unknown>): FleetBucket | null {
   if (meta.status === 'done' || (listStatus && TERMINAL_LISTS.has(listStatus)))
     return null;
   if (meta.needsUser) return 'needs_me';
-  if (meta.status === 'blocked' || meta.blockedBy) return 'blocked';
+  if (meta.blocked) return 'blocked';
   if (LIVE_STATUSES.has(meta.status)) return 'live';
   if (listStatus === 'active' || listStatus === 'review') return 'live';
   return null;

@@ -63,6 +63,24 @@ blocked_by: payments API key''');
       expect(find.text('Needs you'), findsNothing);
     });
 
+    testWidgets('names the blocking task count when no reason is given', (
+      tester,
+    ) async {
+      final meta = parseFleetTaskMeta(
+        const TaskBoardTask(
+          id: 'task-1',
+          listId: 'list-1',
+          relationshipSummary: TaskRelationshipSummary(blockedByCount: 2),
+        ),
+        listStatus: 'active',
+      );
+
+      await _pump(tester, FleetTaskTileBlock(meta: meta, now: _now));
+
+      expect(find.text('Running'), findsOneWidget);
+      expect(find.textContaining('2 blocking tasks'), findsOneWidget);
+    });
+
     testWidgets('renders missing values as words', (tester) async {
       final meta = _meta('priority: low');
 

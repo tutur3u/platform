@@ -38,11 +38,14 @@ export function buildFleetItems(
   );
   return tasks
     .filter((task) => !task.deleted_at)
-    .map((task) => ({
-      task,
-      meta: parseFleetTaskMeta(task),
-      listStatus: statusByList.get(task.list_id) ?? null,
-    }));
+    .map((task) => {
+      const listStatus = statusByList.get(task.list_id) ?? null;
+      return {
+        task,
+        listStatus,
+        meta: parseFleetTaskMeta(task, { listStatus }),
+      };
+    });
 }
 
 /**

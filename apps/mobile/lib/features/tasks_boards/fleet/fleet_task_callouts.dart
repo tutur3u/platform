@@ -71,9 +71,16 @@ class FleetNeedsYouCallout extends StatelessWidget {
 
 /// A "Blocked by" line with the reason.
 class FleetBlockedByRow extends StatelessWidget {
-  const FleetBlockedByRow({required this.blockedBy, this.maxLines, super.key});
+  const FleetBlockedByRow({
+    this.blockedBy,
+    this.blockedByCount = 0,
+    this.maxLines,
+    super.key,
+  });
 
-  final String blockedBy;
+  /// The reason; the blocking task count reads in its place when null.
+  final String? blockedBy;
+  final int blockedByCount;
   final int? maxLines;
 
   @override
@@ -98,7 +105,11 @@ class FleetBlockedByRow extends StatelessWidget {
                     text: '${context.l10n.fleetBlockedBy}  ',
                     style: TextStyle(color: red, fontWeight: FontWeight.w700),
                   ),
-                  TextSpan(text: blockedBy),
+                  TextSpan(
+                    text:
+                        blockedBy ??
+                        context.l10n.fleetBlockedByTasks(blockedByCount),
+                  ),
                 ],
               ),
               maxLines: maxLines,

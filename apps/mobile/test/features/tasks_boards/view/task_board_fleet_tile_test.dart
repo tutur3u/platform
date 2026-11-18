@@ -91,8 +91,9 @@ void main() {
     final title = tester.widget<Text>(find.text(_longTitle));
     expect(title.maxLines, 2);
     expect(title.overflow, TextOverflow.ellipsis);
-    // The status chip and the callout pill both read "Needs you".
-    expect(find.text('Needs you'), findsNWidgets(2));
+    // The list is active, so the chip reads Running; the callout stays.
+    expect(find.text('Running'), findsOneWidget);
+    expect(find.text('Needs you'), findsOneWidget);
     expect(find.text('Approve the cutover window'), findsOneWidget);
     expect(find.text('atlas'), findsOneWidget);
     expect(find.textContaining('overdue'), findsOneWidget);

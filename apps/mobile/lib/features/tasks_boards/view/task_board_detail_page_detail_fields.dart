@@ -143,7 +143,13 @@ class _TaskDetailFieldsCard extends StatelessWidget {
     );
 
     // Fleet tasks lead with their status, owner, ETA and freshness.
-    final fleet = fleetMetaOrNull(task);
+    final fleet = fleetMetaOrNull(
+      task,
+      listStatus: lists
+          .where((list) => list.id == task.listId)
+          .map((list) => list.status)
+          .firstOrNull,
+    );
     if (fleet == null) return fields;
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,

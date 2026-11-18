@@ -1,21 +1,23 @@
 ---
 title: Tasks fleet cockpit
 updatedAt: '2026-11-18'
-description: The Fleet view and fleet card face for boards that track agent work with the fleet:v1 card schema.
+description: The Fleet view and fleet card face for boards that track agent work, read from first-class task fields.
 audience: users
 ---
 
 ## What it is for
 
 The Fleet view answers one question first: what is going on, and what needs me?
-It is a read-only board view over a board's existing tasks. Slice 1 adds no
-database migration. Cards are fed by the fleet:v1 card schema that the board
-sync writes into each task.
+It is a read-only board view over a board's existing tasks, through the same
+permission-gated task source as the other views. Slice 1 adds no database
+migration and no endpoint.
 
 ## Scope and default
 
-- **Where:** a board offers the Fleet view when any of its tasks carries a
-  fleet:v1 block or a fleet label (`needs-user`, `state:`, `owner:` or `product:`).
+- **Where:** a board offers the Fleet view when any of its tasks carries a fleet
+  signal: a fleet label (`needs-user`, `state:`, `owner:` or `product:`), a
+  needs-user flag, an external key, an agent assignee, external links, or a legacy
+  fleet header.
   Such boards list Fleet first in the View menu, and it becomes the default view
   until the viewer picks another. The last choice is remembered per viewer, as for
   the other views. Boards without fleet tasks are unchanged.
@@ -56,35 +58,30 @@ stale at 24 hours or more. An ETA is due soon within 2 hours and overdue once
 past, unless the card is done. Stale and overdue add their word, so colour is
 never the only signal.
 
-## The fleet:v1 contract
+## Where card data comes from
 
-The board sync owns the data contract. The view reads a block at the top of the
-task description, in markdown or a rich-text document:
+Fleet state lives in first-class task fields. The view reads, for each value, the
+first source that has one:
 
-```text
-<!-- fleet:v1 -->
-status: running | needs_user | waiting_review | waiting_ci | blocked | queued | done
-owner: <slug>
-product: <slug>
-priority: critical | high | normal | low
-eta: <ISO-8601>
-last_update: <ISO-8601>
-needs_user: true | false
-needs_user_reason: <one line>
-blocked_by: <one line>
-links:
-- pr: <url>
-- commit: <sha>
-<!-- /fleet:v1 -->
-```
+| Value | Sources, in order |
+| --- | --- |
+| Status | task fleet status, then a `state:` label, then the list's status (not started = queued, active = running, review = in review, done or closed = done) |
+| Owner | an `owner:` label, then the first agent assignee, then the first human assignee |
+| Product | the first linked project, then a `product:` label |
+| Priority | the task priority |
+| ETA | the task end date |
+| Last update | the task `updated_at` |
+| Needs you | the task needs-user flag and reason, then the `needs-user` label |
+| Blocked | blocked-by task relationships, the task blocked reason, or a blocked status |
+| Links | the task's external links (http(s) only become links) |
+| Code | the task's external key, then the task number |
 
-When a key is missing, the view falls back to:
-
-- the labels `state:`, `owner:`, `product:` and `needs-user`;
-- the task's priority;
-- the task's end date for the ETA.
-
-An explicit `needs_user: false` wins over the label.
+The fleet task-fields work adds the fields that do not exist yet: fleet status,
+needs-user flag and reason, blocked reason, agent assignees, external links,
+external key and `updated_at`. Until each card is moved onto them, the view falls
+back to the legacy `<!-- fleet:v1 -->` block at the top of the description, but
+only for values the fields leave empty. The board sync removes each header once
+its fields are verified. Descriptions stay editable notes.
 
 ## Surfaces
 

@@ -35,11 +35,14 @@ enum FleetEtaState { overdue, dueSoon, onTrack, unknown }
 
 /// One entry of the `links:` list.
 class FleetTaskLink extends Equatable {
-  const FleetTaskLink({required this.kind, required this.value});
+  const FleetTaskLink({required this.kind, required this.value, this.label});
 
   /// `pr`, `commit`, `thread` or another lowercase kind.
   final String kind;
   final String value;
+
+  /// A display name sent with the link, shown in place of [shortValue].
+  final String? label;
 
   /// The web URL of the link, or null when [value] is a bare reference such
   /// as a commit SHA.
@@ -57,6 +60,7 @@ class FleetTaskLink extends Equatable {
   /// A short label for the value: `#7245` for a pull request URL, seven
   /// characters of a commit SHA, otherwise the value itself.
   String get shortValue {
+    if (label != null) return label!;
     if (kind == 'pr') {
       final match = RegExp(r'/pull/(\d+)').firstMatch(value);
       if (match != null) return '#${match.group(1)}';
@@ -68,7 +72,7 @@ class FleetTaskLink extends Equatable {
   }
 
   @override
-  List<Object?> get props => [kind, value];
+  List<Object?> get props => [kind, value, label];
 }
 
 /// The fleet:v1 metadata of a task. Missing or unknown values stay null.
@@ -85,10 +89,11 @@ class FleetTaskMeta extends Equatable {
     this.needsUser = false,
     this.needsUserReason,
     this.blockedBy,
+    this.blockedByCount = 0,
     this.links = const [],
   });
 
-  /// The block is present or a fleet label prefix is present.
+  /// A fleet label, the header block or a native fleet field is present.
   final bool isFleetTask;
 
   /// A `fleet:v1` block was found in the description.
@@ -102,7 +107,13 @@ class FleetTaskMeta extends Equatable {
   final bool needsUser;
   final String? needsUserReason;
   final String? blockedBy;
+
+  /// Open blocked-by relationships of the task.
+  final int blockedByCount;
   final List<FleetTaskLink> links;
+
+  /// The task has a blocked-by reason or an open blocked-by relationship.
+  bool get isBlocked => blockedBy != null || blockedByCount > 0;
 
   /// The status to show: the reported one, else needs-you when flagged.
   FleetStatus? get displayStatus =>
@@ -132,6 +143,7 @@ class FleetTaskMeta extends Equatable {
     needsUser,
     needsUserReason,
     blockedBy,
+    blockedByCount,
     links,
   ];
 }
@@ -165,9 +177,40 @@ FleetEtaState fleetEtaState(
 
 const _priorities = {'critical', 'high', 'normal', 'low'};
 
-/// Reads the fleet metadata of [task] from its description block, falling
-/// back to labels, the native priority and the end date.
-FleetTaskMeta parseFleetTaskMeta(TaskBoardTask task) {
+/// The fleet status a list status maps to; documents and unknown statuses
+/// map to none.
+FleetStatus? fleetStatusForListStatus(String? listStatus) =>
+    switch (listStatus?.trim().toLowerCase()) {
+      'not_started' => FleetStatus.queued,
+      'active' => FleetStatus.running,
+      'review' => FleetStatus.waitingReview,
+      'done' || 'closed' => FleetStatus.done,
+      _ => null,
+    };
+
+String? _firstText(Iterable<String?> candidates) {
+  for (final candidate in candidates) {
+    final text = candidate?.trim();
+    if (text != null && text.isNotEmpty) return text;
+  }
+  return null;
+}
+
+/// Reads the fleet metadata of [task]. Each value resolves from the first
+/// first-class source that has it, then from the temporary `fleet:v1`
+/// description header:
+///
+/// - status: `state:` label, the status of the task's list ([listStatus]),
+///   header;
+/// - owner: `owner:` label, first assignee, header;
+/// - product: first project, `product:` label, header;
+/// - priority and ETA: the native priority and end date, header;
+/// - last update: header only, because the task API does not send
+///   `updated_at`;
+/// - needs you and its reason: native fields, `needs-user` label, header;
+/// - blocked: a blocked-by relationship, `blocked_reason`, header;
+/// - links: native external links, header.
+FleetTaskMeta parseFleetTaskMeta(TaskBoardTask task, {String? listStatus}) {
   final block = readFleetBlock(task.description);
   final hasBlock = block != null;
   final fields = block?.fields ?? const <String, String>{};
@@ -190,40 +233,74 @@ FleetTaskMeta parseFleetTaskMeta(TaskBoardTask task) {
   final labelNeedsUser = task.labels.any(
     (label) => normalizeFleetKey(label.name) == 'needs_user',
   );
+  final nativeLinks = [
+    for (final link in task.externalLinks)
+      FleetTaskLink(kind: link.kind, value: link.url, label: link.label),
+  ];
   final hasFleetLabel =
       labelNeedsUser ||
       hasLabel('state:') ||
       hasLabel('owner:') ||
       hasLabel('product:');
 
+  final headerStatus =
+      FleetStatus.tryParse(fields['status']) ??
+      FleetStatus.tryParse(fields['state']);
   final status =
-      FleetStatus.tryParse(fields['status'] ?? fields['state']) ??
-      FleetStatus.tryParse(labelValue('state:'));
+      FleetStatus.tryParse(labelValue('state:')) ??
+      fleetStatusForListStatus(listStatus) ??
+      headerStatus;
   final needsUser =
+      task.needsUser ??
+      (labelNeedsUser ? true : null) ??
       _parseBool(fields['needs_user']) ??
-      (labelNeedsUser || status == FleetStatus.needsUser);
-  final priority = normalizeFleetKey(fields['priority']);
+      (status == FleetStatus.needsUser ||
+          headerStatus == FleetStatus.needsUser);
   final nativePriority = normalizeFleetKey(task.priority);
+  final headerPriority = normalizeFleetKey(fields['priority']);
+  final priority = _priorities.contains(nativePriority)
+      ? nativePriority
+      : (_priorities.contains(headerPriority) ? headerPriority : null);
 
   return FleetTaskMeta(
-    isFleetTask: hasBlock || hasFleetLabel,
+    isFleetTask:
+        hasBlock ||
+        hasFleetLabel ||
+        task.needsUser != null ||
+        nativeLinks.isNotEmpty,
     hasBlock: hasBlock,
     status: status,
-    owner: fields['owner'] ?? labelValue('owner:'),
-    product: fields['product'] ?? labelValue('product:'),
-    priority: _priorities.contains(priority)
-        ? priority
-        : (_priorities.contains(nativePriority) ? nativePriority : null),
-    eta: _parseDate(fields['eta']) ?? task.endDate,
+    owner: _firstText([
+      labelValue('owner:'),
+      for (final assignee in task.assignees.take(1)) ...[
+        assignee.displayName,
+        assignee.email,
+      ],
+      fields['owner'],
+    ]),
+    product: _firstText([
+      for (final project in task.projects.take(1)) project.name,
+      labelValue('product:'),
+      fields['product'],
+    ]),
+    priority: priority,
+    eta: task.endDate ?? _parseDate(fields['eta']),
+    // TODO(tasks): Prefer updated_at when the task API exposes it.
     lastUpdate: _parseDate(fields['last_update']),
     needsUser: needsUser,
-    needsUserReason: fields['needs_user_reason'],
-    blockedBy: fields['blocked_by'],
-    links: [
-      for (final link
-          in block?.links ?? const <({String kind, String value})>[])
-        FleetTaskLink(kind: link.kind, value: link.value),
-    ],
+    needsUserReason: _firstText([
+      task.needsUserReason,
+      fields['needs_user_reason'],
+    ]),
+    blockedBy: _firstText([task.blockedReason, fields['blocked_by']]),
+    blockedByCount: task.relationshipSummary.blockedByCount,
+    links: nativeLinks.isNotEmpty
+        ? nativeLinks
+        : [
+            for (final link
+                in block?.links ?? const <({String kind, String value})>[])
+              FleetTaskLink(kind: link.kind, value: link.value),
+          ],
   );
 }
 
@@ -241,7 +318,7 @@ DateTime? _parseDate(String? raw) =>
     raw == null ? null : DateTime.tryParse(raw);
 
 /// The metadata of [task] when it is a fleet card, else null.
-FleetTaskMeta? fleetMetaOrNull(TaskBoardTask task) {
-  final meta = parseFleetTaskMeta(task);
+FleetTaskMeta? fleetMetaOrNull(TaskBoardTask task, {String? listStatus}) {
+  final meta = parseFleetTaskMeta(task, listStatus: listStatus);
   return meta.isFleetTask ? meta : null;
 }

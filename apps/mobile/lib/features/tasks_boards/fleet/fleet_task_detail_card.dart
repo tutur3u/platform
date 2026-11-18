@@ -32,7 +32,6 @@ class FleetTaskDetailCard extends StatelessWidget {
     final stamp = DateFormat.MMMd(locale).add_jm();
     final eta = meta.eta;
     final lastUpdate = meta.lastUpdate;
-    final blockedBy = meta.blockedBy;
 
     return Container(
       key: const ValueKey('fleet-task-detail-card'),
@@ -106,9 +105,12 @@ class FleetTaskDetailCard extends StatelessWidget {
           if (meta.needsUser) ...[
             const SizedBox(height: 12),
             FleetNeedsYouCallout(reason: meta.needsUserReason),
-          ] else if (blockedBy != null) ...[
+          ] else if (meta.isBlocked) ...[
             const SizedBox(height: 12),
-            FleetBlockedByRow(blockedBy: blockedBy),
+            FleetBlockedByRow(
+              blockedBy: meta.blockedBy,
+              blockedByCount: meta.blockedByCount,
+            ),
           ],
           if (meta.links.isNotEmpty) ...[
             const SizedBox(height: 14),

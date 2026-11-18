@@ -28,7 +28,6 @@ class FleetTaskTileBlock extends StatelessWidget {
     final locale = Localizations.localeOf(context).toLanguageTag();
     final staleness = meta.staleness(now: clock);
     final etaState = meta.etaState(now: clock);
-    final blockedBy = meta.blockedBy;
 
     var updatedText = fleetUpdatedLabel(l10n, meta.lastUpdate, now: clock);
     if (staleness == FleetStaleness.stale) {
@@ -70,9 +69,13 @@ class FleetTaskTileBlock extends StatelessWidget {
         if (meta.needsUser) ...[
           const SizedBox(height: 8),
           FleetNeedsYouCallout(reason: meta.needsUserReason, maxLines: 2),
-        ] else if (blockedBy != null) ...[
+        ] else if (meta.isBlocked) ...[
           const SizedBox(height: 8),
-          FleetBlockedByRow(blockedBy: blockedBy, maxLines: 2),
+          FleetBlockedByRow(
+            blockedBy: meta.blockedBy,
+            blockedByCount: meta.blockedByCount,
+            maxLines: 2,
+          ),
         ],
       ],
     );

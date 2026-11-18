@@ -7473,5 +7473,13 @@
         "type": "String"
       }
     }
+  },
+  "fleetBlockedByTasks": "{count, plural, one{1 blocking task} other{{count} blocking tasks}}",
+  "@fleetBlockedByTasks": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
   }
 }

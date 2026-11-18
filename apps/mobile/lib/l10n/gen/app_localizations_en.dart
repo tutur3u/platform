@@ -15780,4 +15780,15 @@ class AppLocalizationsEn extends AppLocalizations {
   String fleetEtaOverdueBy(String span) {
     return '$span overdue';
   }
+
+  @override
+  String fleetBlockedByTasks(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count blocking tasks',
+      one: '1 blocking task',
+    );
+    return '$_temp0';
+  }
 }

@@ -108,7 +108,10 @@ export function FleetGroupSection({
           {group.items.map((item) => (
             <FleetTaskCard
               code={
-                item.task.display_number ? `#${item.task.display_number}` : null
+                item.meta.code ??
+                (item.task.display_number
+                  ? `#${item.task.display_number}`
+                  : null)
               }
               copy={copy}
               density={density}

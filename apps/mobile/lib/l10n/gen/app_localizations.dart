@@ -29214,6 +29214,12 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'{span} overdue'**
   String fleetEtaOverdueBy(String span);
+
+  /// No description provided for @fleetBlockedByTasks.
+  ///
+  /// In en, this message translates to:
+  /// **'{count, plural, one{1 blocking task} other{{count} blocking tasks}}'**
+  String fleetBlockedByTasks(int count);
 }
 
 class _AppLocalizationsDelegate extends LocalizationsDelegate<AppLocalizations> {

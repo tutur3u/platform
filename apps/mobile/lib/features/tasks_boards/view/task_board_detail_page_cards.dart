@@ -44,7 +44,7 @@ class _BoardTaskTile extends StatelessWidget {
     final startLabel = _taskStartLabel(context, task);
     final isOverdue = _taskIsOverdueForList(task, list);
     final relationshipIndicators = _taskRelationshipIndicators(task);
-    final fleet = fleetMetaOrNull(task);
+    final fleet = fleetMetaOrNull(task, listStatus: list.status);
     final borderColor = isSelected
         ? theme.colorScheme.primary
         : listStyle.surfaceBorder;

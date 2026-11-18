@@ -1,9 +1,17 @@
 /**
- * fleet:v1 card-schema parser. Pure and framework-free: it reads a task's
- * description (markdown or a TipTap JSON document), its labels, priority and
- * end date, and returns the structured fields the Fleet view renders.
- * Missing values stay null so the UI can say so instead of guessing.
+ * Fleet card parser. Pure and framework-free. First-class task fields are the
+ * source of truth (list status, labels, projects, assignees, priority, end
+ * date, relationships and, once added, updated_at, needs_user and external
+ * links). The legacy fleet:v1 description header only fills values a
+ * first-class field leaves empty. Missing values stay null so the UI can say so.
  */
+import {
+  clean,
+  readLegacyFleetHeader,
+  toSafeHref,
+} from './fleet-legacy-header';
+
+export { descriptionToText, toSafeHref } from './fleet-legacy-header';
 
 export const FLEET_STATUSES = [
   'needs_user',
@@ -33,7 +41,11 @@ export interface FleetLink {
 }
 
 export interface FleetTaskMeta {
+  /** The task's external key (e.g. N-163) when the fleet sync set one. */
+  code: string | null;
   isFleetTask: boolean;
+  /** True when any value still came from the legacy description header. */
+  usesLegacyHeader: boolean;
   hasBlock: boolean;
   status: FleetStatus;
   owner: string | null;
@@ -43,116 +55,91 @@ export interface FleetTaskMeta {
   lastUpdate: string | null;
   needsUser: boolean;
   needsUserReason: string | null;
+  blocked: boolean;
   blockedBy: string | null;
   links: FleetLink[];
 }
 
+/** The first-class fields the Fleet view reads; every one is optional. */
 export interface FleetTaskInput {
   description?: string | null;
   labels?: { name: string }[] | null;
   priority?: string | null;
   end_date?: string | null;
+  projects?: { name: string }[] | null;
+  assignees?:
+    | {
+        display_name?: string | null;
+        email?: string | null;
+        handle?: string | null;
+      }[]
+    | null;
+  relationship_summary?: { blocked_by_count?: number | null } | null;
+  /** Fields the fleet task-fields work (N-176) adds; read when present. */
+  fleet_status?: string | null;
+  status?: string | null;
+  external_key?: string | null;
+  /** Agent and contact identities, primary first (position, then id). */
+  virtual_assignees?: FleetIdentityInput[] | null;
+  /** Compatibility projection of virtual agent assignees. */
+  agent_assignees?: FleetIdentityInput[] | null;
+  updated_at?: string | null;
+  /** Read-only provenance of the legacy header's last_update after cutover. */
+  legacy_last_update?: string | null;
+  needs_user?: boolean | null;
+  needs_user_reason?: string | null;
+  blocked_reason?: string | null;
+  /** Task resources; only an http(s) `url` becomes a link. */
+  task_resources?: FleetResourceInput[] | null;
+  /** Compatibility projection of link-like resources. */
+  external_links?: FleetResourceInput[] | null;
+}
+
+export interface FleetIdentityInput {
+  key?: string | null;
+  kind?: string | null;
+  display_name?: string | null;
+  position?: number | null;
+}
+
+export interface FleetResourceInput {
+  kind?: string | null;
+  url?: string | null;
+  title?: string | null;
+  label?: string | null;
+}
+
+export interface FleetParseContext {
+  /** The task list's board status: not_started, active, review, done, closed, documents. */
+  listStatus?: string | null;
 }
 
 export const FLEET_TITLE_MAX = 72;
 const HOUR = 60 * 60 * 1000;
-const LINK_TYPES = new Set<string>([
-  'pr',
-  'commit',
-  'thread',
-  'issue',
-  'doc',
-  'run',
-]);
 const PRIORITIES = new Set<string>(['critical', 'high', 'normal', 'low']);
+/** task_resources kinds onto card link icons; unknown kinds read as plain links. */
+const RESOURCE_KIND: Record<string, FleetLinkType | 'link'> = {
+  pr: 'pr',
+  commit: 'commit',
+  ci_run: 'run',
+  run: 'run',
+  t3_thread: 'thread',
+  thread: 'thread',
+  issue: 'issue',
+  doc: 'doc',
+  document: 'doc',
+  markdown: 'doc',
+  url: 'link',
+};
+const LIST_STATUS: Record<string, FleetStatus> = {
+  not_started: 'queued',
+  active: 'running',
+  review: 'waiting_review',
+  done: 'done',
+  closed: 'done',
+};
 
-/** Flattens a TipTap/ProseMirror JSON document to text; returns markdown as is. */
-export function descriptionToText(description?: string | null): string {
-  if (!description) return '';
-  const trimmed = description.trim();
-  if (!trimmed.startsWith('{')) return description;
-  try {
-    const doc = JSON.parse(trimmed) as unknown;
-    const lines: string[] = [];
-    const walk = (node: unknown, line: string[]): void => {
-      if (!node || typeof node !== 'object') return;
-      const n = node as { type?: string; text?: string; content?: unknown[] };
-      if (typeof n.text === 'string') line.push(n.text);
-      if (n.type === 'hardBreak') line.push('\n');
-      const isBlock =
-        n.type === 'paragraph' ||
-        n.type === 'heading' ||
-        n.type === 'listItem' ||
-        n.type === 'codeBlock';
-      if (isBlock) {
-        const inner: string[] = [];
-        for (const child of n.content ?? []) walk(child, inner);
-        lines.push(...inner.join('').split('\n'));
-        return;
-      }
-      for (const child of n.content ?? []) walk(child, line);
-    };
-    const top: string[] = [];
-    walk(doc, top);
-    if (top.length) lines.push(top.join(''));
-    return lines.join('\n');
-  } catch {
-    return description;
-  }
-}
-
-function extractBlock(text: string): string[] | null {
-  const lines = text.split(/\r?\n/);
-  const start = lines.findIndex((l) =>
-    /^\s*(<!--\s*)?fleet:v1\s*(-->)?\s*$/.test(l)
-  );
-  if (start < 0) return null;
-  const body: string[] = [];
-  for (let i = start + 1; i < lines.length; i += 1) {
-    const line = lines[i] ?? '';
-    if (/^\s*(<!--\s*)?\/fleet:v1\s*(-->)?\s*$/.test(line)) break;
-    if (/^\s*##\s/.test(line)) break;
-    body.push(line);
-  }
-  return body;
-}
-
-function clean(value: string | undefined): string | null {
-  const v = value?.trim();
-  return v ? v : null;
-}
-
-/**
- * Only an http(s) URL written in the data becomes a link; nothing is built
- * from ids, and every other scheme stays plain text.
- */
-export function toSafeHref(value: string): string | null {
-  if (!/^https?:\/\//i.test(value) || /\s/.test(value)) return null;
-  try {
-    const url = new URL(value);
-    return url.protocol === 'http:' || url.protocol === 'https:'
-      ? url.href
-      : null;
-  } catch {
-    return null;
-  }
-}
-
-function parseLink(raw: string): FleetLink | null {
-  const text = raw.replace(/^\s*-\s*/, '').trim();
-  if (!text) return null;
-  if (/^https?:\/\//i.test(text)) {
-    return { type: 'link', value: text, href: toSafeHref(text) };
-  }
-  const m = text.match(/^([a-z]+)\s*:\s*(.+)$/i);
-  if (!m) return null;
-  const key = m[1]!.toLowerCase();
-  const value = m[2]!.trim();
-  const type = LINK_TYPES.has(key) ? (key as FleetLinkType) : 'link';
-  return { type, value, href: toSafeHref(value) };
-}
-
-function normalizeStatus(raw: string | null): FleetStatus | null {
+function normalizeStatus(raw: string | null | undefined): FleetStatus | null {
   if (!raw) return null;
   const v = raw.trim().toLowerCase().replace(/-/g, '_');
   return (FLEET_STATUSES as readonly string[]).includes(v)
@@ -160,28 +147,18 @@ function normalizeStatus(raw: string | null): FleetStatus | null {
     : null;
 }
 
-export function parseFleetTaskMeta(task: FleetTaskInput): FleetTaskMeta {
-  const fields: Record<string, string> = {};
-  const links: FleetLink[] = [];
-  const block = extractBlock(descriptionToText(task.description));
-  if (block) {
-    let inLinks = false;
-    for (const line of block) {
-      const kv = line.match(/^([a-z_]+)\s*:\s*(.*)$/i);
-      if (kv && !/^\s*-/.test(line)) {
-        const key = kv[1]!.toLowerCase();
-        inLinks = key === 'links';
-        if (inLinks) {
-          const inline = parseLink(kv[2] ?? '');
-          if (inline) links.push(inline);
-        } else fields[key] = kv[2] ?? '';
-      } else if (inLinks && /^\s*-/.test(line)) {
-        const link = parseLink(line);
-        if (link) links.push(link);
-      }
-    }
-  }
+function first<T>(...values: (T | null | undefined)[]): T | null {
+  for (const v of values)
+    if (v !== null && v !== undefined && v !== '') return v;
+  return null;
+}
 
+export function parseFleetTaskMeta(
+  task: FleetTaskInput,
+  context: FleetParseContext = {}
+): FleetTaskMeta {
+  const header = readLegacyFleetHeader(task.description);
+  const h = header.fields;
   const labels = (task.labels ?? []).map((l) => l.name.trim().toLowerCase());
   const label = (prefix: string) => {
     const hit = labels.find((l) => l.startsWith(prefix));
@@ -194,35 +171,134 @@ export function parseFleetTaskMeta(task: FleetTaskInput): FleetTaskMeta {
       l.startsWith('owner:') ||
       l.startsWith('product:')
   );
+  let legacy = false;
+  const fromHeader = <T>(value: T | null): T | null => {
+    if (value !== null) legacy = true;
+    return value;
+  };
 
   const status =
-    normalizeStatus(clean(fields.status) ?? clean(fields.state)) ??
-    normalizeStatus(label('state:')) ??
+    first(
+      normalizeStatus(task.fleet_status ?? task.status),
+      normalizeStatus(label('state:'))
+    ) ??
+    first(context.listStatus ? LIST_STATUS[context.listStatus] : null) ??
+    fromHeader(first(normalizeStatus(h.status), normalizeStatus(h.state))) ??
     'unknown';
-  const needsFlag = clean(fields.needs_user)?.toLowerCase();
-  const needsUser = needsFlag
-    ? needsFlag === 'true'
-    : labels.includes('needs-user') || status === 'needs_user';
-  const rawPriority = (
-    clean(fields.priority) ??
-    task.priority ??
-    ''
-  ).toLowerCase();
+
+  const assignee = task.assignees?.find(
+    (a) =>
+      clean(a.display_name ?? undefined) ||
+      clean(a.email ?? undefined) ||
+      clean(a.handle ?? undefined)
+  );
+  const identities = [
+    ...[...(task.virtual_assignees ?? [])].sort(
+      (a, b) => (a.position ?? 0) - (b.position ?? 0)
+    ),
+    ...(task.agent_assignees ?? []),
+  ];
+  const agent = identities.find(
+    (a) => clean(a.display_name ?? undefined) || clean(a.key ?? undefined)
+  );
+  const owner =
+    first(
+      label('owner:'),
+      agent
+        ? (clean(agent.display_name ?? undefined) ??
+            clean(agent.key ?? undefined))
+        : null,
+      assignee
+        ? (clean(assignee.display_name ?? undefined) ??
+            clean(assignee.email ?? undefined) ??
+            clean(assignee.handle ?? undefined))
+        : null
+    ) ?? fromHeader(clean(h.owner));
+  const product =
+    first(clean(task.projects?.[0]?.name), label('product:')) ??
+    fromHeader(clean(h.product));
+
+  const nativePriority = (task.priority ?? '').toLowerCase();
+  const headerPriority = (h.priority ?? '').trim().toLowerCase();
+  const priority = PRIORITIES.has(nativePriority)
+    ? (nativePriority as FleetPriority)
+    : PRIORITIES.has(headerPriority)
+      ? fromHeader(headerPriority as FleetPriority)
+      : null;
+
+  const eta = clean(task.end_date ?? undefined) ?? fromHeader(clean(h.eta));
+  const lastUpdate =
+    clean(task.updated_at ?? undefined) ??
+    clean(task.legacy_last_update ?? undefined) ??
+    fromHeader(clean(h.last_update));
+
+  const headerNeeds = clean(h.needs_user)?.toLowerCase() ?? null;
+  let needsUser = false;
+  if (typeof task.needs_user === 'boolean') needsUser = task.needs_user;
+  else if (labels.includes('needs-user') || status === 'needs_user')
+    needsUser = true;
+  else if (headerNeeds !== null)
+    needsUser = fromHeader(headerNeeds === 'true') === true;
+  else if (
+    normalizeStatus(h.status) === 'needs_user' ||
+    normalizeStatus(h.state) === 'needs_user'
+  )
+    needsUser = fromHeader(true) === true;
+  const needsUserReason = needsUser
+    ? (clean(task.needs_user_reason ?? undefined) ??
+      fromHeader(clean(h.needs_user_reason)))
+    : null;
+
+  const blockedBy =
+    clean(task.blocked_reason ?? undefined) ?? fromHeader(clean(h.blocked_by));
+  const blocked =
+    status !== 'done' &&
+    (status === 'blocked' ||
+      (task.relationship_summary?.blocked_by_count ?? 0) > 0 ||
+      blockedBy !== null);
+
+  const resources = task.task_resources?.length
+    ? task.task_resources
+    : (task.external_links ?? []);
+  const nativeLinks: FleetLink[] = resources
+    .filter((l) => typeof l?.url === 'string' && l.url.trim())
+    .map((l) => {
+      const url = (l.url ?? '').trim();
+      const kind = RESOURCE_KIND[(l.kind ?? '').toLowerCase()] ?? 'link';
+      return {
+        type: kind,
+        value:
+          clean(l.title ?? undefined) ?? clean(l.label ?? undefined) ?? url,
+        href: toSafeHref(url),
+      };
+    });
+  const links = nativeLinks.length
+    ? nativeLinks
+    : header.links.length
+      ? (fromHeader(header.links) ?? [])
+      : [];
 
   return {
-    isFleetTask: Boolean(block) || hasLabelSignal,
-    hasBlock: Boolean(block),
+    code: clean(task.external_key ?? undefined),
+    isFleetTask:
+      header.present ||
+      hasLabelSignal ||
+      typeof task.needs_user === 'boolean' ||
+      nativeLinks.length > 0 ||
+      Boolean(clean(task.external_key ?? undefined)) ||
+      Boolean(agent),
+    usesLegacyHeader: legacy,
+    hasBlock: header.present,
     status,
-    owner: clean(fields.owner) ?? label('owner:'),
-    product: clean(fields.product) ?? label('product:'),
-    priority: PRIORITIES.has(rawPriority)
-      ? (rawPriority as FleetPriority)
-      : null,
-    eta: clean(fields.eta) ?? clean(task.end_date ?? undefined),
-    lastUpdate: clean(fields.last_update),
+    owner,
+    product,
+    priority,
+    eta,
+    lastUpdate,
     needsUser,
-    needsUserReason: needsUser ? clean(fields.needs_user_reason) : null,
-    blockedBy: clean(fields.blocked_by),
+    needsUserReason,
+    blocked,
+    blockedBy,
     links,
   };
 }

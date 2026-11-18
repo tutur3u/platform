@@ -48,12 +48,14 @@ const items = [
   }),
   item('blocked', {
     status: 'blocked',
+    blocked: true,
     product: 'upskii',
     owner: 'cora',
     lastUpdate: '2026-11-16T09:00:00+07:00',
   }),
   item('blocked-by', {
     status: 'running',
+    blocked: true,
     blockedBy: 'Stripe export',
     product: 'upskii',
   }),

@@ -6880,5 +6880,6 @@
   "fleetSpanDays": "{count}n",
   "fleetUpdatedAgo": "{span} trước",
   "fleetEtaIn": "sau {span}",
-  "fleetEtaOverdueBy": "quá hạn {span}"
+  "fleetEtaOverdueBy": "quá hạn {span}",
+  "fleetBlockedByTasks": "{count} tác vụ đang chặn"
 }

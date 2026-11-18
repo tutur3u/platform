@@ -121,13 +121,100 @@ describe('parseFleetTaskMeta', () => {
     expect(parseFleetTaskMeta({}).isFleetTask).toBe(false);
   });
 
-  it('lets an explicit needs_user: false win over the label', () => {
-    const meta = parseFleetTaskMeta({
-      description: '<!-- fleet:v1 -->\nneeds_user: false\n<!-- /fleet:v1 -->',
-      labels: [{ name: 'needs-user' }],
+  it('reads first-class fields without any description header', () => {
+    const meta = parseFleetTaskMeta(
+      {
+        description: 'Plain notes only',
+        labels: [{ name: 'needs-user' }],
+        priority: 'high',
+        end_date: '2026-11-19T10:00:00+07:00',
+        projects: [{ name: 'Meet' }],
+        assignees: [{ display_name: 'Linh Tran' }],
+        relationship_summary: { blocked_by_count: 1 },
+        updated_at: '2026-11-18T13:00:00+07:00',
+        needs_user_reason: 'Pick the classroom cap',
+        external_key: 'N-171',
+        external_links: [
+          {
+            kind: 'pr',
+            url: 'https://github.com/tutur3u/platform/pull/7288',
+            title: '#7288',
+          },
+          { kind: 'doc', url: 'javascript:alert(1)' },
+        ],
+      },
+      { listStatus: 'review' }
+    );
+    expect(meta).toMatchObject({
+      code: 'N-171',
+      isFleetTask: true,
+      usesLegacyHeader: false,
+      status: 'waiting_review',
+      owner: 'Linh Tran',
+      product: 'Meet',
+      priority: 'high',
+      eta: '2026-11-19T10:00:00+07:00',
+      lastUpdate: '2026-11-18T13:00:00+07:00',
+      needsUser: true,
+      needsUserReason: 'Pick the classroom cap',
+      blocked: true,
     });
-    expect(meta.needsUser).toBe(false);
-    expect(meta.needsUserReason).toBeNull();
+    expect(meta.links).toEqual([
+      {
+        type: 'pr',
+        value: '#7288',
+        href: 'https://github.com/tutur3u/platform/pull/7288',
+      },
+      { type: 'doc', value: 'javascript:alert(1)', href: null },
+    ]);
+  });
+
+  it('lets first-class fields beat a conflicting header and uses the header only for gaps', () => {
+    const meta = parseFleetTaskMeta(
+      {
+        description: BLOCK,
+        priority: 'low',
+        end_date: '2026-11-20T09:00:00+07:00',
+        agent_assignees: [{ key: 'claude', display_name: 'Claude' }],
+        fleet_status: 'running',
+        needs_user: false,
+      },
+      { listStatus: 'active' }
+    );
+    expect(meta).toMatchObject({
+      status: 'running',
+      owner: 'Claude',
+      priority: 'low',
+      eta: '2026-11-20T09:00:00+07:00',
+      needsUser: false,
+      needsUserReason: null,
+      product: 'meet',
+      lastUpdate: '2026-11-18T13:54:00+07:00',
+      usesLegacyHeader: true,
+    });
+  });
+
+  it('prefers the list status over the header status, and state: labels over both', () => {
+    expect(
+      parseFleetTaskMeta({ description: BLOCK }, { listStatus: 'not_started' })
+        .status
+    ).toBe('queued');
+    expect(
+      parseFleetTaskMeta(
+        { description: BLOCK, labels: [{ name: 'state:waiting-ci' }] },
+        { listStatus: 'active' }
+      ).status
+    ).toBe('waiting_ci');
+  });
+
+  it('raises needs-you from a header status of needs_user when the list status wins', () => {
+    const meta = parseFleetTaskMeta(
+      { description: '<!-- fleet:v1 -->\nstatus: needs_user' },
+      { listStatus: 'active' }
+    );
+    expect(meta.status).toBe('running');
+    expect(meta.needsUser).toBe(true);
+    expect(meta.usesLegacyHeader).toBe(true);
   });
 });
 
