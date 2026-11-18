@@ -27,6 +27,7 @@ vi.mock('@tuturuuu/utils/internal-domains', () => ({
 
 vi.mock('@tuturuuu/utils/upstash-rest', () => ({
   getUpstashRestRedisClient: vi.fn(),
+  hasUpstashRestEnv: vi.fn(() => true),
 }));
 
 vi.mock('@/lib/app-coordination/external-apps', async (importOriginal) => {

@@ -274,7 +274,9 @@ same rules from `@tuturuuu/utils/external-app-registry-policy`. Coverage:
   use with the replay grace. Reusing one after the grace revokes its whole
   family in the replay store for the refresh-token lifetime, so the stolen
   token and every successor are refused with `401` and the user must sign in
-  again. A reuse inside the grace window is treated as a retry: it does not
+  again. Revocation stops refresh only: bearers already issued stay valid until
+  they expire, which is at most the app's bearer cap (the policy TTL for an app
+  without one). A reuse inside the grace window is treated as a retry: it does not
   revoke, and both branches stay valid until a later reuse outside the grace.
   If writing the revocation fails, the proven reuse is still refused.
 - **Tokens issued before families existed** join a family derived from their
@@ -283,10 +285,15 @@ same rules from `@tuturuuu/utils/external-app-registry-policy`. Coverage:
   this change and is then reused has no successor carrying its derived family;
   that chain stays exposed for at most one refresh-token lifetime after the
   change ships.
-- **Replay store outages.** Capped apps fail closed: an unavailable replay
-  store answers their refresh with `503`. Apps without a cap keep the legacy
-  replay policy, which continues without the fence and the family check unless
-  the guard store owns replay fences.
+- **Replay store outages.** Capped apps fail closed: a configured replay store
+  that is unavailable answers their refresh with `503`. Apps without a cap keep
+  the legacy replay policy, which continues without the fence and the family
+  check unless the guard store owns replay fences. An environment with no
+  replay store at all (no Upstash and no assigned guard, as in local or preview
+  setups) applies the legacy policy to every app.
+- **Reserved app ids.** A registration may not use an internal app domain name
+  or an internal token target without a domain (`managed-tuturuuu`,
+  `mastermind`, `profile-media-upload`), case-folded.
 - **Refresh rate limit.** The refresh pre-limit is keyed on the app and the
   refresh family (the user for tokens issued before families existed), not on
   the source IP. One app server refreshing for many users therefore does not

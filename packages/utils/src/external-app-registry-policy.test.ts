@@ -2,7 +2,9 @@ import { describe, expect, it } from 'vitest';
 import {
   assertExternalAppRegistrationAllowed,
   getReservedInternalAppNames,
+  INTERNAL_TOKEN_TARGETS,
   isInternalAppScope,
+  isReservedExternalAppId,
   isReservedInternalAppName,
   parseMaxBearerTtlSeconds,
   resolveMaxBearerTtlFieldValue,
@@ -18,6 +20,13 @@ describe('reserved internal app names', () => {
     }
     expect(isReservedInternalAppName('CMS')).toBe(true);
     expect(isReservedInternalAppName(' platform ')).toBe(true);
+  });
+
+  it('reserves internal token targets without a domain for registrations only', () => {
+    for (const target of INTERNAL_TOKEN_TARGETS) {
+      expect(isReservedExternalAppId(target.toUpperCase())).toBe(true);
+      expect(isReservedInternalAppName(target)).toBe(false);
+    }
   });
 
   it('does not reserve the registered production external app ids', () => {

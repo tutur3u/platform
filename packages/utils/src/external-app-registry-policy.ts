@@ -34,6 +34,25 @@ export function isReservedInternalAppName(name: string) {
   return getReservedInternalAppNames().has(name.trim().toLowerCase());
 }
 
+/**
+ * Internal token targets with no app domain entry. A registration may not use
+ * them either, so no external app can mint bearers shaped like their tokens.
+ */
+export const INTERNAL_TOKEN_TARGETS = [
+  'managed-tuturuuu',
+  'mastermind',
+  'profile-media-upload',
+] as const;
+
+/** Whether an external registration may not take this app id. */
+export function isReservedExternalAppId(appId: string) {
+  const name = appId.trim().toLowerCase();
+  return (
+    isReservedInternalAppName(name) ||
+    (INTERNAL_TOKEN_TARGETS as readonly string[]).includes(name)
+  );
+}
+
 export function isInternalAppScope(scope: string) {
   return scope.trim().toLowerCase().startsWith(INTERNAL_APP_SCOPE_PREFIX);
 }
@@ -90,7 +109,7 @@ export function assertExternalAppRegistrationAllowed({
   allowedScopes?: readonly string[];
   appId: string;
 }) {
-  if (isReservedInternalAppName(appId)) throw new Error('reserved_app_id');
+  if (isReservedExternalAppId(appId)) throw new Error('reserved_app_id');
   if (allowedScopes?.some(isInternalAppScope)) {
     throw new Error('internal_scope_not_allowed');
   }

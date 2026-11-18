@@ -3,6 +3,7 @@ import {
   verifyAppCoordinationToken,
 } from '@tuturuuu/auth/app-coordination';
 import { isAbuseGuardFamilyAssigned } from '@tuturuuu/utils/abuse-guard/select';
+import { hasUpstashRestEnv } from '@tuturuuu/utils/upstash-rest';
 import {
   APP_TOKEN_REFRESH_SCOPE,
   deriveLegacyRefreshFamily,
@@ -29,9 +30,12 @@ export type ExternalAppRefreshResult =
  * without a family gets one derived from its own id, so its successors and a
  * later reuse of it share the family.
  *
- * `failClosed` refuses the refresh when the replay store is unavailable. It is
- * set for apps with a bearer cap; other apps keep the legacy policy, which
- * continues without the fence unless the guard store owns replay fences.
+ * `failClosed` refuses the refresh when a configured replay store is
+ * unavailable. It is set for apps with a bearer cap; other apps keep the
+ * legacy policy, which continues without the fence unless the guard store owns
+ * replay fences. An environment with no replay store at all (local or preview
+ * without Upstash and without an assigned guard) uses the legacy policy for
+ * every app, so capped apps can still refresh there.
  */
 export async function verifyExternalAppRefreshToken({
   failClosed = false,
@@ -104,11 +108,13 @@ export async function verifyExternalAppRefreshToken({
   if (consumeResult === 'limited') {
     return 'limited';
   }
-  // Legacy policy continues without the fence; capped apps, and every app
-  // once the guard store owns replay fences, fail closed instead.
+  // Legacy policy continues without the fence. Every app fails closed once the
+  // guard store owns replay fences; capped apps also fail closed whenever a
+  // legacy store is configured but failing.
   if (
     consumeResult === 'unavailable' &&
-    (failClosed || isAbuseGuardFamilyAssigned('replay'))
+    (isAbuseGuardFamilyAssigned('replay') ||
+      (failClosed && hasUpstashRestEnv()))
   ) {
     return 'unavailable';
   }

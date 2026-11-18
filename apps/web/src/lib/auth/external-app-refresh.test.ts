@@ -12,6 +12,7 @@ vi.mock('@tuturuuu/utils/upstash-rest', () => ({
     get: mocks.get,
     set: mocks.set,
   })),
+  hasUpstashRestEnv: vi.fn(() => true),
 }));
 
 import { verifyExternalAppRefreshToken } from './external-app-refresh';

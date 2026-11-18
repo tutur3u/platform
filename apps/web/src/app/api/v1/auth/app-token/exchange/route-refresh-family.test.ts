@@ -4,7 +4,10 @@ import {
   verifyAppCoordinationToken,
 } from '@tuturuuu/auth/app-coordination';
 import { DEFAULT_APP_COORDINATION_SESSION_POLICY } from '@tuturuuu/auth/app-session-policy';
-import { getUpstashRestRedisClient } from '@tuturuuu/utils/upstash-rest';
+import {
+  getUpstashRestRedisClient,
+  hasUpstashRestEnv,
+} from '@tuturuuu/utils/upstash-rest';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { deriveLegacyRefreshFamily } from '@/lib/app-coordination/refresh-family';
 import { POST } from './route';
@@ -234,6 +237,18 @@ describe('external app refresh lifetimes and families', () => {
     );
 
     expect(response.status).toBe(503);
+  });
+
+  it('lets a capped app refresh where no replay store is configured', async () => {
+    optIn(900);
+    vi.mocked(hasUpstashRestEnv).mockReturnValueOnce(false);
+    vi.mocked(getUpstashRestRedisClient).mockResolvedValueOnce(null);
+
+    const response = await refresh(
+      refreshTokenFor(['app-token:refresh', `app-token:family:${family}`])
+    );
+
+    expect(response.status).toBe(200);
   });
 
   it('keeps the legacy fail-open policy for an uncapped app', async () => {
