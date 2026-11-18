@@ -3,6 +3,10 @@ import type { AppCoordinationSessionPolicy } from '@tuturuuu/auth/app-session-po
 import type { MfaSessionProof } from '@tuturuuu/utils/required-mfa-policy';
 import type { SessionAssurance } from '@tuturuuu/utils/session-assurance';
 import { NextResponse } from 'next/server';
+import {
+  newRefreshFamily,
+  refreshTokenScopes,
+} from '@/lib/app-coordination/refresh-family';
 
 export type ExchangeUserProfile = {
   avatarUrl: string | null;
@@ -17,26 +21,32 @@ export type ExchangeUserProfile = {
 };
 
 /**
- * Ceiling for an external-app bearer's lifetime, whatever the session policy
- * says. Bearers cannot be revoked individually, so this bounds how long one
- * outlives a logout, a removed membership or a leaked copy; the registry and
- * membership are re-checked whenever the app refreshes.
+ * Lifetime of an issued external-app bearer. Without a per-app cap the session
+ * policy's TTL and refresh-early window apply unchanged. An app registered
+ * with `maxBearerTtlSeconds` gets bearers no longer than the cap, and the
+ * refresh-early window shrinks to a third of that lifetime so most of it stays
+ * usable instead of refreshing on every call.
  */
-export const EXTERNAL_APP_BEARER_MAX_TTL_SECONDS = 900;
-
 export function getExternalAppBearerLifetime(
   policy: Pick<
     AppCoordinationSessionPolicy,
     'externalAppBearerTtlSeconds' | 'internalAppRefreshEarlySeconds'
-  >
+  >,
+  maxBearerTtlSeconds?: number | null
 ) {
+  if (!maxBearerTtlSeconds) {
+    return {
+      refreshEarlySeconds: policy.internalAppRefreshEarlySeconds,
+      ttlSeconds: policy.externalAppBearerTtlSeconds,
+    };
+  }
+
   const ttlSeconds = Math.min(
     policy.externalAppBearerTtlSeconds,
-    EXTERNAL_APP_BEARER_MAX_TTL_SECONDS
+    maxBearerTtlSeconds
   );
 
   return {
-    // Leave most of the lifetime usable instead of refreshing on every call.
     refreshEarlySeconds: Math.min(
       policy.internalAppRefreshEarlySeconds,
       Math.floor(ttlSeconds / 3)
@@ -48,9 +58,11 @@ export function getExternalAppBearerLifetime(
 export function createExchangeTokenBody({
   assurance,
   email,
+  maxBearerTtlSeconds,
   mfa,
   normalizedWorkspaceId,
   policy,
+  refreshFamily = newRefreshFamily(),
   scopes,
   targetApp,
   userProfile,
@@ -59,9 +71,13 @@ export function createExchangeTokenBody({
   /** Server-verified session assurance; null when unknown (treat as aal1). */
   assurance?: SessionAssurance | null;
   email: string | null;
+  /** The app registry's bearer cap; null or omitted applies the policy TTL. */
+  maxBearerTtlSeconds?: number | null;
   mfa: MfaSessionProof | null;
   normalizedWorkspaceId?: string | null;
   policy: AppCoordinationSessionPolicy;
+  /** Rotation family carried from the presented refresh token, if any. */
+  refreshFamily?: string;
   scopes: string[];
   targetApp: string;
   userProfile: ExchangeUserProfile;
@@ -70,7 +86,10 @@ export function createExchangeTokenBody({
   const assuranceClaims = assurance
     ? { aal: assurance.aal, amr: assurance.amr }
     : {};
-  const bearerLifetime = getExternalAppBearerLifetime(policy);
+  const bearerLifetime = getExternalAppBearerLifetime(
+    policy,
+    maxBearerTtlSeconds
+  );
   const accessToken = createAppCoordinationToken({
     ...assuranceClaims,
     email,
@@ -87,7 +106,7 @@ export function createExchangeTokenBody({
     mfa: mfa ?? undefined,
     expiresInSeconds: policy.internalAppRefreshTtlSeconds,
     originApp: 'web',
-    scopes: ['app-token:refresh'],
+    scopes: refreshTokenScopes(refreshFamily),
     targetApp,
     userId,
   });

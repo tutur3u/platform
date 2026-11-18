@@ -36,7 +36,9 @@ function request() {
   );
 }
 
-function adminWithRegistration() {
+function adminWithRegistration(
+  extraRows: { name: string; value: string }[] = []
+) {
   const rows = [
     {
       name: 'EXTERNAL_APP_REGISTRY:cybershield35:allowedScopes',
@@ -50,7 +52,11 @@ function adminWithRegistration() {
       name: 'EXTERNAL_APP_REGISTRY:cybershield35:enabled',
       value: 'true',
     },
-  ];
+    ...extraRows,
+  ].filter(
+    (row, index, all) =>
+      all.findLastIndex((other) => other.name === row.name) === index
+  );
   return {
     from: () => ({
       select: () => ({
@@ -122,5 +128,51 @@ describe('authenticateExternalAiRequest', () => {
       code: 'invalid_api_key',
       status: 403,
     });
+  });
+
+  it('rejects a token once the app is disabled', async () => {
+    mocks.createAdminClient.mockResolvedValue(
+      adminWithRegistration([
+        { name: 'EXTERNAL_APP_REGISTRY:cybershield35:enabled', value: 'false' },
+      ])
+    );
+
+    await expect(
+      authenticateExternalAiRequest(request())
+    ).rejects.toMatchObject({ code: 'invalid_api_key', status: 403 });
+    expect(mocks.verifyMembership).not.toHaveBeenCalled();
+  });
+
+  it('rejects a token minted before the app secret was rotated', async () => {
+    const rotatedAt = '2026-11-01T00:00:00.000Z';
+    const rotatedAtSeconds = Date.parse(rotatedAt) / 1000;
+    mocks.createAdminClient.mockResolvedValue(
+      adminWithRegistration([
+        {
+          name: 'EXTERNAL_APP_REGISTRY:cybershield35:secretIssuedAt',
+          value: rotatedAt,
+        },
+      ])
+    );
+    const claims = {
+      iat: rotatedAtSeconds - 60,
+      scopes: ['workspace:session', 'ai:use', 'tts:use'],
+      sub: 'user-1',
+      target_app: 'cybershield35',
+    };
+    mocks.verifyAppSessionRequest.mockReturnValue({ claims, ok: true });
+
+    await expect(
+      authenticateExternalAiRequest(request())
+    ).rejects.toMatchObject({ code: 'invalid_api_key', status: 401 });
+    expect(mocks.verifyMembership).not.toHaveBeenCalled();
+
+    mocks.verifyAppSessionRequest.mockReturnValue({
+      claims: { ...claims, iat: rotatedAtSeconds + 60 },
+      ok: true,
+    });
+    await expect(authenticateExternalAiRequest(request())).resolves.toEqual(
+      expect.objectContaining({ appId: 'cybershield35' })
+    );
   });
 });

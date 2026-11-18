@@ -90,7 +90,10 @@ describe('app token exchange route', () => {
     if (refreshVerification.ok) {
       expect(refreshVerification.claims.sub).toBe(victimUserId);
       expect(refreshVerification.claims.target_app).toBe('yoola');
-      expect(refreshVerification.claims.scopes).toEqual(['app-token:refresh']);
+      expect(refreshVerification.claims.scopes).toEqual([
+        'app-token:refresh',
+        expect.stringMatching(/^app-token:family:[0-9a-f-]{36}$/u),
+      ]);
     }
   });
 

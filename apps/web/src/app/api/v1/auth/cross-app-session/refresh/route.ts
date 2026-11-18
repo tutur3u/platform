@@ -88,6 +88,7 @@ async function verifyRefreshToken({
     case 'grace':
       return { kind: 'verified', claims: verification.claims };
     case 'replayed':
+    case 'revoked':
       return { kind: 'invalid' };
     case 'limited':
       return { kind: 'limited' };

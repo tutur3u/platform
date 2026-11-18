@@ -4,6 +4,7 @@ import {
   rotateExternalAppSecret,
   upsertExternalApp,
 } from '@/lib/app-coordination/external-apps';
+import { EXTERNAL_APP_BEARER_TTL_BOUNDS } from '@/lib/app-coordination/external-apps-utils';
 import { requireExternalControlPlaneAccess } from '@/lib/external-projects/root-access';
 
 const headers = { 'Cache-Control': 'no-store' };
@@ -20,6 +21,13 @@ const payloadSchema = z.discriminatedUnion('action', [
       allowedScopes: z.array(z.string().trim().min(1).max(80)).max(50),
       allowedWorkspaceIds: z.array(z.uuid()).min(1).max(50),
       requirePkce: z.boolean().optional(),
+      maxBearerTtlSeconds: z
+        .number()
+        .int()
+        .min(EXTERNAL_APP_BEARER_TTL_BOUNDS.min)
+        .max(EXTERNAL_APP_BEARER_TTL_BOUNDS.max)
+        .nullable()
+        .optional(),
       callbackPaths: z
         .array(z.string().trim().min(1).max(512))
         .max(20)

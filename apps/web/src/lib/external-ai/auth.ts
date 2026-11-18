@@ -7,6 +7,7 @@ import { verifyAppSessionRequest } from '@tuturuuu/auth/app-session';
 import { createAdminClient } from '@tuturuuu/supabase/next/server';
 import { ROOT_WORKSPACE_ID } from '@tuturuuu/utils/constants';
 import { verifyWorkspaceMembershipType } from '@tuturuuu/utils/workspace-helper';
+import { wasIssuedBeforeSecretRotation } from '@/lib/app-coordination/external-app-secret-rotation';
 
 const EXTERNAL_APP_SECRET_PREFIX = 'EXTERNAL_APP_REGISTRY';
 const WORKSPACE_SESSION_SCOPE = 'workspace:session';
@@ -100,6 +101,7 @@ export async function authenticateExternalAiRequest(
     externalAppField(appId, 'allowedScopes'),
     externalAppField(appId, 'allowedWorkspaceIds'),
     externalAppField(appId, 'enabled'),
+    externalAppField(appId, 'secretIssuedAt'),
   ];
   const sbAdmin = await createAdminClient({ noCookie: true });
   const { data: registrationRows, error: registrationError } = await sbAdmin
@@ -137,6 +139,19 @@ export async function authenticateExternalAiRequest(
   ) {
     throw invalidExternalCredential(
       'The external app is not enabled or linked for this AI request.'
+    );
+  }
+
+  const secretIssuedAt = fields.get(externalAppField(appId, 'secretIssuedAt'));
+  if (
+    wasIssuedBeforeSecretRotation(
+      claims,
+      typeof secretIssuedAt === 'string' ? secretIssuedAt : null
+    )
+  ) {
+    throw invalidExternalCredential(
+      'The external-app token was issued before the app secret was rotated.',
+      401
     );
   }
 

@@ -253,6 +253,7 @@ async function createAcceptedInvitationSessionResponse({
   allowedScopes,
   allowedWorkspaceIds,
   claims,
+  maxBearerTtlSeconds,
   requestedScopes,
   workspaceId,
 }: {
@@ -261,6 +262,7 @@ async function createAcceptedInvitationSessionResponse({
   allowedScopes: string[];
   allowedWorkspaceIds: string[];
   claims: AppCoordinationTokenClaims;
+  maxBearerTtlSeconds: number | null;
   requestedScopes: string[];
   workspaceId: string;
 }) {
@@ -310,6 +312,7 @@ async function createAcceptedInvitationSessionResponse({
     createExchangeTokenBody({
       mfa: claims.mfa ?? null,
       email: authIdentity.email,
+      maxBearerTtlSeconds,
       normalizedWorkspaceId: workspaceId,
       policy,
       scopes,
@@ -420,6 +423,7 @@ async function invitationDecision(request: NextRequest) {
         admin,
         allowedScopes: appVerification.app.allowedScopes,
         allowedWorkspaceIds: appVerification.app.allowedWorkspaceIds,
+        maxBearerTtlSeconds: appVerification.app.maxBearerTtlSeconds,
         appId: appVerification.app.id,
         claims,
         requestedScopes,
@@ -484,6 +488,7 @@ async function invitationDecision(request: NextRequest) {
     admin,
     allowedScopes: appVerification.app.allowedScopes,
     allowedWorkspaceIds: appVerification.app.allowedWorkspaceIds,
+    maxBearerTtlSeconds: appVerification.app.maxBearerTtlSeconds,
     appId: appVerification.app.id,
     claims,
     requestedScopes,

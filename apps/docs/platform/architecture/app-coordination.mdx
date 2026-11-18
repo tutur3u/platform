@@ -209,20 +209,53 @@ CLI-only APIs.
 8. Tuturuuu validates the app secret and cross-app token, then returns a
    short-lived bearer token for Tuturuuu APIs plus the normalized authorized
    `workspaceId` and, when known, the session's `aal` and `amr` (see
-   [Session assurance](#session-assurance)). Bearers live at most 900 seconds;
-   refresh before `expiresIn - refreshEarlySeconds` by calling the same route
-   with `refreshToken` and the app secret. Each refresh re-checks the app
+   [Session assurance](#session-assurance)). Refresh before
+   `expiresIn - refreshEarlySeconds` by calling the same route with
+   `refreshToken` and the app secret. Each refresh re-checks the app
    registration and, for external-project scopes, the workspace membership and
    EPM permission.
 
-Every external-project and external-app Drive call made with the bearer
-re-checks the app registry on top of its membership checks. Disabling the
-app answers its bearers with `403` immediately. Rotating the app secret answers
-bearers issued before the rotation with `401`; refresh tokens keep working
-because refresh requires the current secret. Coverage:
+Every `ttr_app_` bearer route (external-project CMS access and setup, and the
+external-app Drive, members, cron and AI routes) re-checks the app registry on
+top of its membership checks. Disabling the app answers its bearers with `403`
+immediately. Rotating the app secret answers bearers issued before the
+rotation with `401`; refresh tokens keep working because refresh requires the
+current secret. Coverage:
 `apps/web/src/lib/app-coordination/external-app-bearer.test.ts`,
-`apps/web/src/lib/external-projects/access-app-status.test.ts` and
-`apps/web/src/lib/auth/external-app-exchange-response.test.ts`.
+`apps/web/src/lib/external-projects/access-app-status.test.ts`,
+`apps/web/src/lib/external-apps/live-app-access.test.ts`,
+`apps/web/src/lib/external-apps/workspace-drive.test.ts` and
+`apps/web/src/lib/external-ai/auth.test.ts`.
+
+#### Bearer lifetime and refresh families
+
+- **Per-app cap.** The registry field `maxBearerTtlSeconds` (300 to 86,400)
+  caps the bearers issued to that app by the exchange, refresh and
+  invitation-decision routes, and shrinks `refreshEarlySeconds` to at most a
+  third of the bearer lifetime. A policy TTL shorter than the cap still wins.
+  Registering a new app writes a 900-second cap unless the save sets another
+  value. Apps registered before the field existed keep the policy TTL until an
+  admin sets one; sending `null` clears it. The admin API
+  (`POST /api/v1/admin/external-apps`, `save`) accepts the field; the
+  Infrastructure form does not show it yet.
+- **Refresh families.** Refresh tokens carry a rotation family
+  (`app-token:family:<uuid>` in their scopes). Each refresh token is single
+  use with the replay grace. Reusing one after the grace revokes its whole
+  family in the replay store for the refresh-token lifetime, so the stolen
+  token and every successor are refused with `401` and the user must sign in
+  again. Tokens issued before families existed start one on their next
+  refresh. Revocation needs the replay store: under the legacy replay policy
+  an unavailable store skips both the fence and the family check.
+- **Refresh rate limit.** The refresh pre-limit is keyed on the app and the
+  refresh family (the user for tokens without one), not on the source IP, so
+  one app server refreshing for many users does not trip
+  `429 Too many refresh attempts`. Requests without valid app credentials are
+  refused before the replay store is touched.
+
+Coverage: `apps/web/src/lib/auth/external-app-exchange-response.test.ts`,
+`apps/web/src/lib/auth/external-app-refresh.test.ts`,
+`apps/web/src/app/api/v1/auth/app-token/exchange/route-refresh-family.test.ts`
+and `apps/web/src/lib/app-coordination/external-apps-bearer-ttl.test.ts`.
 
 External apps should store only their own app secret and local session material.
 They should send Tuturuuu API calls with the returned bearer token and should
@@ -393,8 +426,8 @@ on auth paths. Defaults and caps are:
 - Internal app refresh-early window: 900 seconds default, min 60, max 7,200.
 - Browser refresh replay grace: 30 seconds default, min 0, max 300.
 - External app bearer TTL: 28,800 seconds default, min 300, max 86,400.
-  Issued bearers are capped at 900 seconds whatever this value says, and the
-  returned `refreshEarlySeconds` is at most a third of the bearer lifetime.
+  An app's `maxBearerTtlSeconds` registry field caps it further for that app
+  (see [Bearer lifetime and refresh families](#bearer-lifetime-and-refresh-families)).
 - CLI access TTL: 28,800 seconds default, min 300, max 86,400.
 - CLI refresh TTL: 7,776,000 seconds default, min 86,400, max 7,776,000.
 

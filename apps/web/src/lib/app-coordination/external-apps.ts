@@ -8,6 +8,7 @@ import {
   type ExternalAppSecretField,
   generateAppSecret,
   hashAppSecret,
+  DEFAULT_NEW_APP_MAX_BEARER_TTL_SECONDS,
   isCallbackPath,
   normalizeCallbackPaths,
   normalizeOrigin,
@@ -16,6 +17,7 @@ import {
   normalizeWorkspaceIds,
   parseAppFieldKey,
   parseJsonStringArray,
+  parseMaxBearerTtlSeconds,
   type SecretRow,
   safeEqual,
 } from './external-apps-utils';
@@ -30,6 +32,11 @@ export type ExternalAppRegistration = {
   displayName: string;
   enabled: boolean;
   id: string;
+  /**
+   * Upper bound on issued bearer lifetimes; null leaves the session policy's
+   * external bearer TTL in force.
+   */
+  maxBearerTtlSeconds: number | null;
   origins: string[];
   /** Handoffs must carry an S256 code challenge and redeem with its verifier. */
   requirePkce: boolean;
@@ -48,6 +55,8 @@ export type UpsertExternalAppPayload = {
   enabled: boolean;
   id: string;
   issueSecret?: boolean;
+  /** Null clears the cap; a new app without a value gets the default cap. */
+  maxBearerTtlSeconds?: number | null;
   origins: string[];
   requirePkce?: boolean;
 };
@@ -108,6 +117,9 @@ function buildExternalAppRegistrations(rows: SecretRow[]) {
         displayName,
         enabled: values.enabled !== 'false',
         id,
+        maxBearerTtlSeconds: parseMaxBearerTtlSeconds(
+          values.maxBearerTtlSeconds
+        ),
         origins,
         requirePkce: values.requirePkce === 'true',
         secretIssuedAt: values.secretIssuedAt || null,
@@ -293,6 +305,21 @@ export async function upsertExternalApp({
     updatedAt: now,
     updatedBy: actorUserId,
   };
+
+  if (payload.maxBearerTtlSeconds != null) {
+    if (
+      parseMaxBearerTtlSeconds(String(payload.maxBearerTtlSeconds)) === null
+    ) {
+      throw new Error('invalid_max_bearer_ttl');
+    }
+    fields.maxBearerTtlSeconds = String(payload.maxBearerTtlSeconds);
+  } else if (!existingApp) {
+    // Registration is the only place the default is written, so apps that
+    // existed before the field keep their stored behaviour.
+    fields.maxBearerTtlSeconds = String(DEFAULT_NEW_APP_MAX_BEARER_TTL_SECONDS);
+  } else if (payload.maxBearerTtlSeconds === null) {
+    fields.maxBearerTtlSeconds = '';
+  }
 
   if (payload.requirePkce !== undefined) {
     fields.requirePkce = payload.requirePkce ? 'true' : 'false';

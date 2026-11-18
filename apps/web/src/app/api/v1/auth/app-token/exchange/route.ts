@@ -1,14 +1,9 @@
-import {
-  type AppCoordinationTokenClaims,
-  createAppCoordinationToken,
-  verifyAppCoordinationToken,
-} from '@tuturuuu/auth/app-coordination';
+import { createAppCoordinationToken } from '@tuturuuu/auth/app-coordination';
 import {
   createAdminClient,
   createClient,
 } from '@tuturuuu/supabase/next/server';
 import type { TypedSupabaseClient } from '@tuturuuu/supabase/types';
-import { isAbuseGuardFamilyAssigned } from '@tuturuuu/utils/abuse-guard/select';
 import { extractIPFromRequest } from '@tuturuuu/utils/abuse-protection/edge';
 import { getAppDomainMap } from '@tuturuuu/utils/internal-domains';
 import { isRequiredMfaProofAllowed } from '@tuturuuu/utils/required-mfa-app-session';
@@ -31,7 +26,6 @@ import {
   INVITATION_ACTION_TOKEN_TTL_SECONDS,
   invitationWorkspaceScope,
 } from '@/lib/app-coordination/invitation-action-token';
-import { consumeRefreshTokenWithGrace } from '@/lib/app-coordination/refresh-replay';
 import { getAppCoordinationSessionPolicy } from '@/lib/app-coordination/session-policy';
 import { authorizeWorkspaceSessionAppTokenExchange } from '@/lib/app-coordination/workspace-session';
 import { PKCE_CODE_VERIFIER_PATTERN } from '@/lib/auth/cross-app-pkce';
@@ -41,13 +35,12 @@ import {
   getExchangeUserProfile,
 } from '@/lib/auth/external-app-exchange-profile';
 import { createExchangeTokenResponse } from '@/lib/auth/external-app-exchange-response';
+import { verifyExternalAppRefreshToken } from '@/lib/auth/external-app-refresh';
 import { authorizeExternalProjectAppTokenExchange } from '@/lib/external-projects/access';
 import { withRequestLogDrain } from '@/lib/infrastructure/log-drain';
 import type { WorkspaceInvitationRecord } from '@/lib/workspace-invitations/status';
 import { acceptIeeaiFreeInvite } from '@/lib/workspace-invitations/ieeai-free-invite';
 
-const APP_TOKEN_REFRESH_SCOPE = 'app-token:refresh';
-const APP_TOKEN_REFRESH_REPLAY_KEY_PREFIX = 'app-token:refresh:used';
 const WORKSPACE_SESSION_SCOPE = 'workspace:session';
 
 const exchangeSchema = z.object({
@@ -199,6 +192,7 @@ async function resolveExchangeTarget({
 
     return {
       allowedWorkspaceIds: verification.app.allowedWorkspaceIds,
+      maxBearerTtlSeconds: verification.app.maxBearerTtlSeconds,
       requirePkce: verification.app.requirePkce === true,
       scopes: getAllowedAppTokenScopesWithWorkspaceSession({
         allowedScopes: verification.app.allowedScopes,
@@ -326,66 +320,6 @@ function createPendingInvitationResponse({
   );
 }
 
-async function verifyExchangeRefreshToken({
-  ip,
-  replayGraceSeconds,
-  refreshToken,
-  targetApp,
-}: {
-  ip: string;
-  replayGraceSeconds: number;
-  refreshToken: string;
-  targetApp: string;
-}): Promise<AppCoordinationTokenClaims | 'limited' | 'unavailable' | null> {
-  let verification: ReturnType<typeof verifyAppCoordinationToken>;
-
-  try {
-    verification = verifyAppCoordinationToken(refreshToken);
-  } catch {
-    return null;
-  }
-
-  if (!verification.ok) {
-    return null;
-  }
-
-  const { claims } = verification;
-
-  if (
-    claims.target_app !== targetApp ||
-    !claims.scopes.includes(APP_TOKEN_REFRESH_SCOPE)
-  ) {
-    return null;
-  }
-
-  const consumeResult = await consumeRefreshTokenWithGrace({
-    keyPrefix: APP_TOKEN_REFRESH_REPLAY_KEY_PREFIX,
-    onError: (error) =>
-      console.warn('External app refresh replay check failed', {
-        error: error instanceof Error ? error.message : String(error),
-      }),
-    exp: claims.exp,
-    graceSeconds: replayGraceSeconds,
-    ip,
-    jti: claims.jti,
-    sub: claims.sub,
-  });
-
-  if (consumeResult === 'replayed') {
-    return null;
-  }
-  if (consumeResult === 'limited') {
-    return 'limited';
-  }
-  // Legacy policy continues without the fence; once the guard store owns
-  // replay fences, an unavailable store fails closed.
-  if (consumeResult === 'unavailable' && isAbuseGuardFamilyAssigned('replay')) {
-    return 'unavailable';
-  }
-
-  return claims;
-}
-
 async function exchangeAppToken(request: NextRequest) {
   const body = await request.json().catch(() => null);
   const parsed = exchangeSchema.safeParse(body);
@@ -450,34 +384,38 @@ async function exchangeAppToken(request: NextRequest) {
   let mfa: MfaSessionProof | null = null;
   // Only server-signed claims; never request or caller-writable session data.
   let assurance: SessionAssurance | null = null;
+  let refreshFamily: string | undefined;
 
   if (refreshToken) {
-    const refreshClaims = await verifyExchangeRefreshToken({
+    const refreshResult = await verifyExternalAppRefreshToken({
+      familyTtlSeconds: policy.internalAppRefreshTtlSeconds,
       ip: extractIPFromRequest(request.headers),
       replayGraceSeconds: policy.externalAppRefreshReplayGraceSeconds,
       refreshToken,
       targetApp: resolvedTarget.targetApp,
     });
 
-    if (refreshClaims === 'limited') {
+    if (refreshResult === 'limited') {
       return NextResponse.json(
         { error: 'Too many refresh attempts' },
         { status: 429, headers: { 'Retry-After': '60' } }
       );
     }
-    if (refreshClaims === 'unavailable') {
+    if (refreshResult === 'unavailable') {
       return NextResponse.json(
         { error: 'Refresh temporarily unavailable' },
         { status: 503, headers: { 'Retry-After': '30' } }
       );
     }
-    if (!refreshClaims) {
+    if (!refreshResult) {
       return NextResponse.json(
         { error: 'Invalid or expired refresh token' },
         { status: 401 }
       );
     }
 
+    const refreshClaims = refreshResult.claims;
+    refreshFamily = refreshResult.family ?? undefined;
     userId = refreshClaims.sub;
     mfa = refreshClaims.mfa ?? null;
     assurance = sessionAssuranceFromAppCoordinationClaims(refreshClaims);
@@ -664,6 +602,8 @@ async function exchangeAppToken(request: NextRequest) {
   });
 
   return createExchangeTokenResponse({
+    maxBearerTtlSeconds: resolvedTarget.maxBearerTtlSeconds,
+    refreshFamily,
     assurance,
     mfa,
     email: authIdentity.email,

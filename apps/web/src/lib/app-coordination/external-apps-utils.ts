@@ -14,6 +14,7 @@ export const FIELD_NAMES = [
   'createdBy',
   'displayName',
   'enabled',
+  'maxBearerTtlSeconds',
   'origins',
   'requirePkce',
   'secretHash',
@@ -144,6 +145,23 @@ export function parseJsonStringArray(value: string | null | undefined) {
   } catch {
     return [];
   }
+}
+
+export const EXTERNAL_APP_BEARER_TTL_BOUNDS = {
+  max: 86_400,
+  min: 300,
+} as const;
+/** Bearer lifetime cap written on every newly registered app. */
+export const DEFAULT_NEW_APP_MAX_BEARER_TTL_SECONDS = 900;
+
+/** A stored bearer cap in seconds, or null when unset or out of bounds. */
+export function parseMaxBearerTtlSeconds(value: string | null | undefined) {
+  if (!value || !/^\d+$/u.test(value.trim())) return null;
+  const seconds = Number(value.trim());
+  return seconds >= EXTERNAL_APP_BEARER_TTL_BOUNDS.min &&
+    seconds <= EXTERNAL_APP_BEARER_TTL_BOUNDS.max
+    ? seconds
+    : null;
 }
 
 export function generateAppSecret() {

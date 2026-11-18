@@ -1,10 +1,13 @@
 import type { AppCoordinationTokenClaims } from '@tuturuuu/auth/app-coordination';
 import type { TypedSupabaseClient } from '@tuturuuu/supabase/types';
 import { NextResponse } from 'next/server';
+import { wasIssuedBeforeSecretRotation } from './external-app-secret-rotation';
 import {
   type ExternalAppRegistration,
   getExternalAppById,
 } from './external-apps';
+
+export { wasIssuedBeforeSecretRotation } from './external-app-secret-rotation';
 
 export type ExternalAppBearerRejection =
   | 'app_disabled'
@@ -14,29 +17,6 @@ export type ExternalAppBearerRejection =
 export type ExternalAppBearerIssuerCheck =
   | { app: ExternalAppRegistration; ok: true }
   | { ok: false; reason: ExternalAppBearerRejection };
-
-/**
- * True when the bearer was minted before the app's current secret was issued.
- * Bearers do not carry the secret, so a rotation revokes them here; refresh
- * needs the current secret, so a client holding it mints a fresh bearer.
- * A missing `secretIssuedAt` means no secret was ever issued, so nothing to
- * compare; an unreadable one fails closed.
- */
-export function wasIssuedBeforeSecretRotation(
-  claims: Pick<AppCoordinationTokenClaims, 'iat'>,
-  secretIssuedAt: string | null
-) {
-  if (!secretIssuedAt) return false;
-
-  const secretIssuedAtMs = Date.parse(secretIssuedAt);
-  if (!Number.isFinite(secretIssuedAtMs) || typeof claims.iat !== 'number') {
-    return true;
-  }
-
-  // `iat` has whole-second precision; compare at the same precision so a
-  // bearer minted in the rotation's second, after it, stays valid.
-  return claims.iat < Math.floor(secretIssuedAtMs / 1000);
-}
 
 /**
  * Re-checks the registry for an external-app (`ttr_app_`) bearer: the issuing
@@ -98,4 +78,21 @@ export async function rejectStaleExternalAppBearer(
 ) {
   const check = await verifyExternalAppBearerIssuer({ admin, claims });
   return check.ok ? null : externalAppBearerRejectionResponse(check.reason);
+}
+
+/**
+ * The live registration for a bearer's app, or the denial response to return
+ * as-is from an access helper.
+ */
+export async function requireLiveExternalApp(
+  admin: TypedSupabaseClient,
+  claims: Pick<AppCoordinationTokenClaims, 'iat' | 'target_app'>
+) {
+  const check = await verifyExternalAppBearerIssuer({ admin, claims });
+  return check.ok
+    ? { app: check.app, ok: true as const }
+    : {
+        ok: false as const,
+        response: externalAppBearerRejectionResponse(check.reason),
+      };
 }

@@ -20,7 +20,7 @@ import cronstrue from 'cronstrue';
 import { NextResponse } from 'next/server';
 import { validate as validateUUID } from 'uuid';
 import { z } from 'zod';
-import { getExternalAppById } from '@/lib/app-coordination/external-apps';
+import { requireLiveExternalApp } from '@/lib/app-coordination/external-app-bearer';
 import {
   setLogDrainUserContext,
   withRequestLogDrain,
@@ -492,11 +492,9 @@ export async function requireExternalAppWorkspaceCronAccess({
   }
 
   const admin = (await createAdminClient()) as TypedSupabaseClient;
-  const app = await getExternalAppById(verification.claims.target_app, admin);
-
-  if (!app?.enabled) {
-    return accessError('Forbidden', 403);
-  }
+  const issuer = await requireLiveExternalApp(admin, verification.claims);
+  if (!issuer.ok) return issuer;
+  const { app } = issuer;
 
   let normalizedWorkspaceId: string;
   try {

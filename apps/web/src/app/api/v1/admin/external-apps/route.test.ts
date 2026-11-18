@@ -104,6 +104,24 @@ describe('CLI external registry authorization', () => {
     ).toBe(400);
     expect(mocks.save).not.toHaveBeenCalled();
   });
+  it('forwards a bounded bearer TTL cap, null to clear it', async () => {
+    for (const maxBearerTtlSeconds of [900, null]) {
+      expect(
+        (await POST(request({ ...app, maxBearerTtlSeconds }))).status
+      ).toBe(200);
+      expect(mocks.save).toHaveBeenLastCalledWith({
+        actorUserId: 'owner',
+        payload: expect.objectContaining({ maxBearerTtlSeconds }),
+      });
+    }
+    mocks.save.mockClear();
+    for (const maxBearerTtlSeconds of [60, 86_401, 900.5, '900']) {
+      expect(
+        (await POST(request({ ...app, maxBearerTtlSeconds }))).status
+      ).toBe(400);
+    }
+    expect(mocks.save).not.toHaveBeenCalled();
+  });
   it('only returns a new secret for an explicit rotation action', async () => {
     mocks.rotate.mockResolvedValue({ app, secret: 'test-only-secret' });
     const response = await POST(

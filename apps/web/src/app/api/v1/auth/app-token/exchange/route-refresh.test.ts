@@ -122,8 +122,10 @@ describe('app token exchange route', () => {
     }
     expect(nextRefreshVerification.ok).toBe(true);
     if (nextRefreshVerification.ok) {
+      // A token issued without a family starts one on its first rotation.
       expect(nextRefreshVerification.claims.scopes).toEqual([
         'app-token:refresh',
+        expect.stringMatching(/^app-token:family:[0-9a-f-]{36}$/u),
       ]);
     }
     expect(getUpstashRestRedisClient).toHaveBeenCalledWith({
