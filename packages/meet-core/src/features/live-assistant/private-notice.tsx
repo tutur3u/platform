@@ -9,6 +9,7 @@ import { Button } from '@tuturuuu/ui/button';
 import { Popover, PopoverContent, PopoverTrigger } from '@tuturuuu/ui/popover';
 import { useTranslations } from 'next-intl';
 import { useEffect, useRef, useState } from 'react';
+import { MiraWorkspaceSettingsLink } from './mira-workspace-settings-link';
 import { withDeadline } from './live-errors';
 import {
   confirmPrivateChoice,
@@ -46,6 +47,7 @@ function privateContinueAdmits(
 
 export function PrivateMiraNotice({
   meetingId,
+  wsId,
   accountId,
   connected = true,
   onStop,
@@ -53,6 +55,7 @@ export function PrivateMiraNotice({
   onAccepted,
 }: {
   meetingId: string;
+  wsId?: string;
   accountId: string;
   /** The room socket is open and this device is admitted, so the server can see its presence. */
   connected?: boolean;
@@ -61,6 +64,7 @@ export function PrivateMiraNotice({
   onAccepted: (accepted: boolean) => void;
 }) {
   const t = useTranslations('meet.live');
+  const callT = useTranslations('meet.call');
   const client = useQueryClient();
   const key = ['mira-private-choice', meetingId];
   const policy = useQuery({
@@ -162,8 +166,9 @@ export function PrivateMiraNotice({
         : policy.data && !policy.data.available
           ? 'unavailable'
           : null;
-  const retryable =
-    problem && !['not_connected', 'unavailable'].includes(problem);
+  const unavailable =
+    problem === 'unavailable' ? policy.data?.unavailableReason : undefined;
+  const retryable = problem && problem !== 'not_connected';
   const pending = choice.isPending ? choice.variables : undefined;
   const done =
     choice.isSuccess &&
@@ -175,7 +180,8 @@ export function PrivateMiraNotice({
         ? 'mute'
         : null;
   const retry = () => {
-    if (choice.isError && choice.variables) choice.mutate(choice.variables);
+    if (choice.isError && choice.variables && !unavailable)
+      choice.mutate(choice.variables);
     else void policy.refetch();
   };
   const action = (value: PrivateChoice, label: string) => (
@@ -238,7 +244,14 @@ export function PrivateMiraNotice({
           role="alert"
           className="flex flex-wrap items-center gap-2 text-destructive text-sm"
         >
-          <span className="min-w-0 flex-1">{t(`choice_${problem}`)}</span>
+          <span className="min-w-0 flex-1">
+            {unavailable
+              ? callT(`personal_${unavailable}_unavailable`)
+              : t(`choice_${problem}`)}
+          </span>
+          {wsId && unavailable === 'workspace' && (
+            <MiraWorkspaceSettingsLink wsId={wsId} />
+          )}
           {retryable && (
             <Button
               variant="outline"

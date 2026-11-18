@@ -381,6 +381,7 @@ function CallShellContent({
             outputDeviceId={outputDeviceId}
           />
           <MeetLivePanel
+            wsId={wsId}
             accountId={accountId}
             key="live-assistant"
             onOpenChat={askMira}
@@ -536,6 +537,7 @@ function CallShellContent({
         )}
         {panel && (
           <SidePanel
+            wsId={wsId}
             accountId={accountId}
             mentionRequest={mentionRequest}
             onMentionHandled={onMentionHandled}
@@ -687,7 +689,6 @@ function CallShellContent({
 }
 
 export { CallShell } from './device-session-gate';
-
 export function ConnectedCallShell(
   props: ComponentProps<typeof CallShellContent>
 ) {

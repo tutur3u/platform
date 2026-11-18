@@ -35,6 +35,7 @@ export function SidePanel({
   raisedHandUserIds,
   selfUserId,
   accountId,
+  wsId,
   waiting,
 }: {
   mentionRequest?: number;
@@ -57,6 +58,7 @@ export function SidePanel({
   raisedHandUserIds: string[];
   selfUserId: string | null;
   accountId: string;
+  wsId?: string;
   waiting: MeetRealtimeWaitingParticipant[];
 }) {
   const t = useTranslations('meet.call');
@@ -97,6 +99,7 @@ export function SidePanel({
           onSendChat={onSendChat}
           selfUserId={selfUserId}
           accountId={accountId}
+          wsId={wsId}
         />
       ) : (
         <ParticipantsPanel

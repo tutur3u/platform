@@ -85,8 +85,15 @@ export function reviewMeetLiveTool(
 }
 
 export type PrivateMiraPolicy = {
+  accountId?: string;
   version: string;
   available: boolean;
+  unavailableReason?:
+    | 'account'
+    | 'deployment'
+    | 'provider'
+    | 'service'
+    | 'workspace';
   choice: {
     choice: 'continue' | 'mute' | 'leave';
     version: string;
@@ -109,14 +116,20 @@ export function readPrivateMiraPolicy(meetingId: string) {
 export function setPrivateMiraChoice(
   meetingId: string,
   version: string,
-  choice: 'continue' | 'mute' | 'leave'
+  choice: 'continue' | 'mute' | 'leave',
+  expectedActorId?: string
 ) {
   return getInternalApiClient().json<PrivateMiraPolicy>(
     `/api/meet-live/${encodeURIComponent(meetingId)}`,
     {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ action: 'choice', choice, version }),
+      body: JSON.stringify({
+        action: 'choice',
+        choice,
+        version,
+        expectedActorId,
+      }),
     }
   );
 }

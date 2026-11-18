@@ -9,8 +9,9 @@ import { PersonalChat } from './personal-chat';
 
 export function ConversationPanel({
   solo: _solo,
+  wsId,
   ...props
-}: ComponentProps<typeof ChatPanel> & { solo: boolean }) {
+}: ComponentProps<typeof ChatPanel> & { solo: boolean; wsId?: string }) {
   const t = useTranslations('meet.call');
   // A room gaining participants never switches or publishes a private draft.
   const [mode, setMode] = useState('room');
@@ -51,7 +52,12 @@ export function ConversationPanel({
         forceMount
         className="flex min-h-0 flex-1 flex-col data-[state=inactive]:hidden"
       >
-        <PersonalChat meetingId={props.meetingId} onShare={props.onSendChat} />
+        <PersonalChat
+          meetingId={props.meetingId}
+          accountId={props.accountId}
+          wsId={wsId}
+          onShare={props.onSendChat}
+        />
       </TabsContent>
     </Tabs>
   );

@@ -45,6 +45,7 @@ export function MeetLivePanel({
   room,
   accountId,
   meetingId,
+  wsId,
   outputDeviceId,
   audioSuppressed = false,
   onOpenChat,
@@ -53,6 +54,7 @@ export function MeetLivePanel({
   room: MeetRoomController;
   accountId: string;
   meetingId: string;
+  wsId?: string;
   outputDeviceId: string;
   canManage: boolean;
   audioSuppressed?: boolean;
@@ -146,6 +148,7 @@ export function MeetLivePanel({
         </DialogHeader>
         <div className="min-h-0 space-y-4 overflow-y-auto">
           <PrivateMiraNotice
+            wsId={wsId}
             meetingId={meetingId}
             accountId={accountId}
             connected={roomAdmitted}

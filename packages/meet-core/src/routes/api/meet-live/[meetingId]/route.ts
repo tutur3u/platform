@@ -31,6 +31,7 @@ const schema = z.discriminatedUnion('action', [
     action: z.literal('choice'),
     choice: z.enum(['continue', 'mute', 'leave']),
     version: z.literal(MIRA_PRIVATE_NOTICE_VERSION),
+    expectedActorId: z.uuid().optional(),
   }),
   z.object({
     action: z.literal('start'),
@@ -65,7 +66,21 @@ export async function POST(
       MEET_AI_DISABLED?: string;
     };
     if (command.action === 'choice') {
+      if (command.expectedActorId && command.expectedActorId !== access.user.id)
+        throw new MeetCallAccessError(403, 'Private Mira account changed');
       const current = await readPrivateMiraChoice(access);
+      if (command.expectedActorId && command.choice === 'continue') {
+        const availability = await readMiraDemoAuthority({
+          accountId: access.user.id,
+          workspaceId: access.meeting.ws_id,
+          meetingId,
+          workspaceMember: access.canReadWorkspace,
+          admitted: current.admitted,
+          disabledBinding: env.MEET_AI_DISABLED,
+        });
+        if (!availability.allowed || !env.GOOGLE_GENERATIVE_AI_API_KEY)
+          throw new MeetCallAccessError(403, 'Private Mira is unavailable');
+      }
       if (command.choice !== 'continue') {
         for (const sessionId of current.sessions) {
           if (!env.MEET_LIVE)
@@ -112,14 +127,25 @@ export async function POST(
             admitted: currentChoice?.admitted === true,
             disabledBinding: env.MEET_AI_DISABLED,
           });
-    if (command.action === 'policy')
+    if (command.action === 'policy') {
+      const unavailableReason = !authority?.allowed
+        ? authority?.reason === 'disabled'
+          ? 'deployment'
+          : authority?.reason === 'workspace'
+            ? 'workspace'
+            : 'account'
+        : !env.GOOGLE_GENERATIVE_AI_API_KEY
+          ? 'provider'
+          : !env.MEET_LIVE
+            ? 'service'
+            : undefined;
       return {
         ...currentChoice,
-        available:
-          authority?.allowed === true &&
-          !!env.MEET_LIVE &&
-          !!env.GOOGLE_GENERATIVE_AI_API_KEY,
+        accountId: access.user.id,
+        available: unavailableReason === undefined,
+        unavailableReason,
       };
+    }
     if (command.action !== 'stop' && !authority?.allowed)
       throw new MeetCallAccessError(403, 'Meet AI is temporarily unavailable');
     if (

@@ -1,5 +1,6 @@
 import { expect, it, vi } from 'vitest';
 import {
+  actorId,
   bind,
   call,
   f,
@@ -140,4 +141,31 @@ it('denies every public and legacy private mention without forwarding any author
       ).toBe(403);
   expect(f.fetch).not.toHaveBeenCalled();
   expect(f.sign).not.toHaveBeenCalled();
+});
+
+it('rejects recovery consent for a different account before touching its choice', async () => {
+  const response = await call(live, {
+    action: 'choice',
+    choice: 'continue',
+    version,
+    expectedActorId: sessionId,
+  });
+  expect(sessionId).not.toBe(actorId);
+  expect(response.status).toBe(403);
+  expect(f.callRoom).not.toHaveBeenCalled();
+});
+
+it('does not record recovery consent for an ineligible workspace', async () => {
+  f.authorized = false;
+  const response = await call(live, {
+    action: 'choice',
+    choice: 'continue',
+    version,
+    expectedActorId: actorId,
+  });
+  expect(response.status).toBe(403);
+  expect(f.callRoom.mock.calls).toHaveLength(1);
+  expect(f.callRoom.mock.calls[0]?.[1]).toEqual({
+    action: 'mira.private.read',
+  });
 });

@@ -75,6 +75,13 @@ session remains available. The Private Mira tab in room chat uses the same
 current account choice and eligibility as Private Mira Live. It sends the
 requester’s question and bounded private history, charges their personal
 workspace, and shows the reply only to that requester unless they share it.
+An eligible requester can choose **Enable Mira** in private chat, confirm the
+current consent notice, and retry the same message. If the workspace is
+ineligible, Meet and Parley explain the restriction and link to workspace
+settings so the requester can identify a workspace administrator. That page
+provides workspace administration and has no Private Mira attestation control.
+See the [private chat regression tests](https://github.com/tutur3u/platform/blob/main/packages/meet-core/src/features/call/components/personal-chat.test.tsx).
+
 Meeting WAV transcription and notes are off. Room history and mixed audio stay
 outside provider requests. A
 denied room chat mention shows an inline notice that Room Mira is unavailable and
