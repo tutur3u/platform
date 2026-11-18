@@ -133,3 +133,97 @@ test('ordinary restored images retain tag inspection without fixed seed admissio
     ]);
   }
 });
+
+function containerdInspect(image, patch = {}) {
+  const pin = catalogPin(catalog, image);
+  const repository = image.replace(/:[^/]+$/, '');
+  return {
+    status: 0,
+    stdout: JSON.stringify([
+      {
+        Os: 'linux',
+        Architecture: 'amd64',
+        Id: pin.index,
+        RepoDigests: [`${repository}@${pin.index}`],
+        ...patch,
+      },
+    ]),
+  };
+}
+
+test('the containerd image store layout is accepted when bound to the pinned index', () => {
+  const options = (spawn) => ({ deadline: 100, now: () => 0, spawn });
+  for (const image of images) {
+    const pin = catalogPin(catalog, image);
+    assert.match(pin.index, /^sha256:[a-f0-9]{64}$/);
+    assert.doesNotThrow(() =>
+      verifyPinned(
+        image,
+        pin,
+        options(() => containerdInspect(image))
+      )
+    );
+  }
+  assert.doesNotThrow(() =>
+    verifyLoadedImages(
+      images,
+      catalog,
+      options((_command, args) => containerdInspect(args.at(-1)))
+    )
+  );
+});
+
+test('index-bound content is refused for a wrong id, index, platform or reference', () => {
+  const image = images[0];
+  const pin = catalogPin(catalog, image);
+  const zero = `sha256:${'0'.repeat(64)}`;
+  const repository = image.replace(/:[^/]+$/, '');
+  for (const patch of [
+    { Id: zero },
+    { Id: pin.index, Os: 'windows' },
+    { Id: pin.index, Architecture: 'arm64' },
+    { RepoDigests: [] },
+    { RepoDigests: [`${repository}@${zero}`] },
+    { RepoDigests: [`other/repository@${pin.index}`] },
+  ])
+    assert.throws(
+      () =>
+        verifyPinned(image, pin, {
+          deadline: 100,
+          now: () => 0,
+          spawn: () => containerdInspect(image, patch),
+        }),
+      /digest mismatch/
+    );
+  assert.throws(
+    () =>
+      verifyPinnedContent(
+        image,
+        { ...pin, index: 'sha256:short' },
+        { deadline: 100, now: () => 0, spawn: () => containerdInspect(image) }
+      ),
+    /Invalid seed content pin/
+  );
+  assert.throws(
+    () =>
+      verifyPinnedContent(
+        image,
+        { config: pin.config, amd64: pin.amd64 },
+        {
+          deadline: 100,
+          now: () => 0,
+          spawn: () => containerdInspect(image, { Id: undefined }),
+        }
+      ),
+    /digest mismatch/
+  );
+  assert.throws(
+    () =>
+      verifyPinnedContent(
+        image,
+        { config: pin.config, amd64: pin.amd64 },
+        { deadline: 100, now: () => 0, spawn: () => containerdInspect(image) }
+      ),
+    /digest mismatch/
+  );
+});
