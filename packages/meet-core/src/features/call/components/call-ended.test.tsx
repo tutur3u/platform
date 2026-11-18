@@ -40,6 +40,13 @@ vi.mock(
 vi.mock('./ended-meeting-settings', () => ({
   EndedMeetingSettings: () => null,
 }));
+vi.mock('./ended-meeting-facts-row', () => ({
+  EndedMeetingFactsRow: ({ canSeeNotes }: { canSeeNotes: boolean }) =>
+    canSeeNotes ? <div data-testid="facts-row" /> : null,
+}));
+vi.mock('./new-meeting-button', () => ({
+  NewMeetingButton: () => <button type="button">New meeting</button>,
+}));
 
 import { CallEnded } from './call-ended';
 
@@ -169,4 +176,20 @@ it('shows a left screen with Rejoin and Back, never the connection error, after 
       name: messages.meet.call.connection_refresh,
     })
   ).toBeNull();
+});
+
+it('offers New meeting only to viewers allowed to start one', () => {
+  renderEnded({ canStartMeeting: true });
+  expect(screen.getByRole('button', { name: 'New meeting' })).toBeTruthy();
+  cleanup();
+  renderEnded();
+  expect(screen.queryByRole('button', { name: 'New meeting' })).toBeNull();
+});
+
+it('shows meeting facts only to viewers who may read notes', () => {
+  renderEnded({ canReadNotes: true });
+  expect(screen.getByTestId('facts-row')).toBeTruthy();
+  cleanup();
+  renderEnded({ canReadNotes: false });
+  expect(screen.queryByTestId('facts-row')).toBeNull();
 });

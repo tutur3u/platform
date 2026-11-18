@@ -103,6 +103,7 @@ export default async function RoomPage({
           initialShowNotes={(await searchParams)?.notes === '1'}
           canManage={isHost}
           canReadNotes={policy.canReadNotes}
+          canStartMeeting={MEETING_APP !== 'parley' && canReadWorkspace}
           shareNotesAfterMeeting={policy.settings?.shareNotesAfterMeeting}
           meetingId={meetingId}
           wsId={wsId}

@@ -1028,9 +1028,20 @@ Scope: the in-call view and the ended-meeting screen in Meet and Parley.
   viewer may read them, otherwise Back to Meet. Restore, Meeting settings and
   Back to Meet sit in a compact secondary row. The share-notes row renders only
   for room admins; visibility rules are unchanged.
+- Viewers who may read notes see a facts row under the title: the span covered by
+  captured notes sessions and recordings, distinct transcript speakers, and
+  recording and transcript state (saved or processing). The row reuses the
+  notes reader's meet-ai query and the access-checked recordings list. A refused
+  recordings list is an unknown fact, not "no recording", and viewers without
+  notes access trigger neither request.
+- Workspace members outside Parley also get New meeting, which starts an instant
+  meeting through the same create route as the meetings home. The route keeps
+  checking hosting eligibility, so a refusal shows the create-failed toast.
+- Post-call feedback rating is not offered. No backend stores it yet.
 
 Regression coverage: `pip-layout.test.ts`, `self-preview-pip.test.tsx`,
-`call-ended.test.tsx`.
+`call-ended.test.tsx`, `ended-meeting-facts-row.test.tsx`,
+`ended-meeting-facts.test.ts`.
 
 ## Room settings, recordings, and devices
 

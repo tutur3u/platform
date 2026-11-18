@@ -10,7 +10,9 @@ import { useTranslations } from 'next-intl';
 import { type ReactNode, useState } from 'react';
 import { useEndedRoom } from '../hooks/use-ended-room';
 import type { CallLifecycle } from '../lib/call-state';
+import { EndedMeetingFactsRow } from './ended-meeting-facts-row';
 import { EndedMeetingSettings } from './ended-meeting-settings';
+import { NewMeetingButton } from './new-meeting-button';
 import { RestoreRoomButton } from './restore-room-button';
 
 export function CallEnded({
@@ -19,6 +21,7 @@ export function CallEnded({
   initialShowNotes = false,
   canManage,
   canReadNotes,
+  canStartMeeting = false,
   shareNotesAfterMeeting,
   wsId,
   meetingId,
@@ -33,6 +36,8 @@ export function CallEnded({
   initialShowNotes?: boolean;
   canManage: boolean;
   canReadNotes: boolean;
+  /** Workspace members outside Parley may start another meeting from here. */
+  canStartMeeting?: boolean;
   shareNotesAfterMeeting?: boolean;
   wsId: string;
   meetingId: string;
@@ -101,40 +106,42 @@ export function CallEnded({
     backLink(true)
   );
   return (
-    <main className="flex min-h-dvh flex-col items-center justify-center bg-background px-4 py-10">
+    <main className="flex min-h-dvh flex-col items-center bg-background px-4 py-10 sm:justify-center">
       <div
         className={cn(
-          'w-full space-y-8',
-          showNotes && canSeeNotes ? 'max-w-2xl' : 'max-w-sm'
+          'w-full space-y-6',
+          showNotes && canSeeNotes ? 'max-w-3xl' : 'max-w-xl'
         )}
       >
-        <section className="space-y-6 text-center">
-          <div className="mx-auto grid size-12 place-items-center rounded-full bg-muted">
-            <PhoneOff className="size-5 text-muted-foreground" />
-          </div>
-          <div className="space-y-2">
-            <p className="truncate font-medium text-muted-foreground text-sm">
-              {meetingName}
+        <section className="space-y-5">
+          <div className="space-y-3">
+            <p className="flex min-w-0 items-center gap-2 text-muted-foreground text-sm">
+              <PhoneOff className="size-4 shrink-0" />
+              <span className="truncate font-medium">{meetingName}</span>
             </p>
-            <h1 className="text-balance font-semibold text-2xl tracking-tight">
-              {t(ended ? 'call_ended_title' : 'call_left_title')}
-            </h1>
-            <p className="text-pretty text-muted-foreground text-sm">
-              {t(ended ? 'ended_hint' : 'call_left_hint')}
-            </p>
+            <div className="space-y-1.5">
+              <h1 className="text-balance font-semibold text-2xl tracking-tight">
+                {t(ended ? 'call_ended_title' : 'call_left_title')}
+              </h1>
+              <p className="text-pretty text-muted-foreground text-sm">
+                {t(ended ? 'ended_hint' : 'call_left_hint')}
+              </p>
+            </div>
+            <EndedMeetingFactsRow
+              wsId={wsId}
+              meetingId={meetingId}
+              canSeeNotes={canSeeNotes}
+            />
           </div>
           {saving && (
-            <p
-              role="status"
-              className="flex items-center justify-center gap-2 text-sm"
-            >
+            <p role="status" className="flex items-center gap-2 text-sm">
               <Loader2 className="size-4 animate-spin" />
               {t('saving_notes')}
             </p>
           )}
           <div className="space-y-2">
             {primary}
-            <div className="flex flex-wrap items-center justify-center gap-1">
+            <div className="flex flex-wrap items-center gap-1">
               {ended && canManage && (
                 <RestoreRoomButton
                   accountId={accountId}
@@ -145,6 +152,13 @@ export function CallEnded({
                 />
               )}
               {rejoinable && canSeeNotes && notesButton(false)}
+              {canStartMeeting && (
+                <NewMeetingButton
+                  wsId={wsId}
+                  disabled={saving}
+                  variant="ghost"
+                />
+              )}
               <EndedMeetingSettings
                 wsId={wsId}
                 meetingId={meetingId}

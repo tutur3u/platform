@@ -45,6 +45,7 @@ export function MeetingView({ model }: { model: DetailModel }) {
         accountId={user.id}
         canManage={isHost}
         canReadNotes={policy.canReadNotes}
+        canStartMeeting
         shareNotesAfterMeeting={policy.settings?.shareNotesAfterMeeting}
         meetingId={meetingId}
         wsId={wsId}

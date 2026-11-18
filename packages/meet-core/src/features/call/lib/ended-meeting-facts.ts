@@ -23,11 +23,7 @@ interface SessionInput {
 }
 interface ChunkInput {
   status: string;
-  speaker?:
-    | { accountId: string }
-    | { selector: string }
-    | null
-    | undefined;
+  speaker?: { accountId: string } | { selector: string } | null | undefined;
   segments?: Array<{ erased: true } | { speaker: ChunkInput['speaker'] }>;
 }
 interface RecordingInput {

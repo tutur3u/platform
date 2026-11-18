@@ -78,10 +78,7 @@ describe('endedMeetingFacts', () => {
       endedMeetingFacts({
         ai: {
           sessions: [],
-          chunks: [
-            { status: 'completed' },
-            { status: 'processing' },
-          ],
+          chunks: [{ status: 'completed' }, { status: 'processing' }],
         },
       }).transcript
     ).toBe('processing');
@@ -89,7 +86,11 @@ describe('endedMeetingFacts', () => {
       endedMeetingFacts({
         ai: {
           sessions: [
-            session('2026-11-18T10:00:00Z', '2026-11-18T10:01:00Z', 'processing'),
+            session(
+              '2026-11-18T10:00:00Z',
+              '2026-11-18T10:01:00Z',
+              'processing'
+            ),
           ],
           chunks: [],
         },
