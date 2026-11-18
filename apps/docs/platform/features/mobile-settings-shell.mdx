@@ -163,7 +163,8 @@ takes the full row while the zones step aside. While a sheet or dialog on the
 shell navigator is open, the dock slides and fades away and the overlay pads
 only for the system safe area; it returns as the overlay starts closing. An
 overlay that places its own action in the dock, such as an in-sheet search,
-keeps the dock. Reduced motion settles every transition immediately.
+keeps the dock. Reduced motion settles every dock transition immediately;
+pushes and pops cross-fade (see Push and pop).
 Switching root destinations retains one dock while bodies ease between tabs.
 Only the active body receives pointer input or semantics. Visited tabs remain
 mounted, preserving drafts and scroll positions.
@@ -184,6 +185,53 @@ timing), `dock_action_choreography_test.dart`, `persistent_shell_dock_test.dart`
 `floating_dock_rail_test.dart`, `shell_dock_modal_visibility_test.dart`,
 `shared_navbar_large_text_test.dart`, `shell_back_navigation_test.dart` and
 `shell_assistant_composer_test.dart`.
+
+### Push and pop
+
+Opening a page inside the shell, by push or by go, slides only its body; the
+shell's chrome stays in place and changes on the same 220ms timeline.
+
+- The new body slides in from the end edge with the emphasized curve
+  `Cubic(0.2, 0, 0, 1)`. The covered body moves a quarter of the width
+  towards the start edge and dims slightly.
+- The top bar title fades out over the first 90ms with a 12dp slide towards
+  the start edge. The next title fades in from 70ms, arriving 16dp from the
+  end edge.
+- The dock's material, its Back zone and the action circle never move or
+  resize. Only their contents (pill slots, labels, an action group, the
+  circle's icon) fade out over 0-90ms and the next contents fade in over
+  90-220ms. When both pages have a dock action, the circle keeps its
+  material and only the icon changes.
+- A pop runs the same timeline in reverse. Back from the dock or the system
+  button usually replaces the page rather than popping it; that arrival still
+  plays as a pop, with the leaving page sliding off towards the end edge.
+- The iOS edge swipe scrubs the body with the finger and settles from the
+  release point. The title and dock contents scrub with it only when the page
+  below is the one the shell showed before this page; otherwise they keep this
+  page's chrome during the swipe and change at once when the pop commits. The
+  swipe is off while Back at that page runs the shell's own handling: a
+  page's registered Back, an open sheet or dialog, or a deep link's Back
+  route.
+- Root destinations, sibling destinations of one mini app, and a change of
+  location within one route pattern (another board or wallet) swap in place
+  without this transition.
+- When both pages have the same dock action, the circle does not change. A
+  dock action that is not an icon button changes through the circle's own
+  hide and reveal.
+- Reduced motion (the system setting or Appearance) slides nothing: body,
+  title and dock contents cross-fade together in 100ms, linearly.
+
+Shell routes are `ShellTransitionPage`s (`shellTransitionRoutes`). The route
+reports its animation to the shell's `ShellRouteTransitionController`, and
+`ShellRouteFade` points opacity and paint-offset layers at it. Frames retarget
+those layers only; neither the title nor the dock contents rebuild per frame.
+Coverage: `shell_route_transition_test.dart` (unchanged dock geometry at 0, 70,
+140 and 220ms on push, pop and Back arrival; title and contents opacity
+windows; reduced motion; a half back-swipe; no per-frame dock rebuilds) and
+`shell_route_transition_shell_test.dart` (the real shell: chrome timing on a
+go between flat pages, swipe-pop history, instant root, sibling and
+same-pattern moves, a navigation during a pop, and no swipe over a registered
+Back).
 
 ### Dock action groups
 

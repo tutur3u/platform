@@ -216,6 +216,16 @@ localization changes.
   dropped from the pill and the More sheet, and widget keys use
   `shellDockGroupSlotKey(id)` / `shellDockMoreItemKey(id)`. More opens through
   `showAppSheet`, whose modal registration hides the dock.
+- Shell routes are `ShellTransitionPage`s (wrap new shell `GoRoute`s with
+  `shellTransitionRoutes`). Push/pop slides only the body; the title and dock
+  contents follow the route animation through `ShellRouteFade` /
+  `ShellRoutePrimaryFade`, which retarget opacity and paint offset only and
+  keep one tree shape, so a frame never rebuilds them and a back-swipe scrubs
+  them. The title is keyed per location, so each location's title is a new
+  element; the retained previous layer re-inflates while a transition shows
+  it. Chrome that changes per location inside the dock or title
+  needs no per-route animation of its own; give it equal heights so the
+  material never resizes (`shell_route_transition_test.dart`).
 - Root tabs: the phone dock pins up to four `ShellRootTab`s (default Home,
   Tasks, Calendar, Mail; Mira, then Apps, Notifications, You fill an
   unavailable Mail) plus a More destination that lists the rest and Edit tabs.
