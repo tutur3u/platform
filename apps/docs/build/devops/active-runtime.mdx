@@ -223,7 +223,7 @@ scheduled observation is missing or older than the build.
 The commit count covers commits reachable from the observed main SHA over
 seven Vietnam calendar days. It excludes bot and release noise and groups
 commits by conventional scope. The existing build-time deployment and PR
-history retain their respective sources. The scheduled read makes at most 25
+history retain their respective sources. The scheduled read makes at most 27
 GitHub requests per hour, with an eight-second request timeout and no retries.
 A response beyond the page cap leaves the prior snapshot intact.
 
@@ -235,6 +235,17 @@ slots, the object stops admitting outbound work until an operator diagnoses
 the cause and deploys a new singleton identity for both readers and writers.
 The previous snapshot retains its observation time until the next successful
 publish or a newer build.
+
+On a qualified Linux host, prepare the switch-off artifact with
+`node apps/roadmap/scripts/prepare-recovery-artifact.mjs <primary-dir> <exact-sha> <output-parent>`.
+It verifies the primary seal, keeps the Worker modules and SQLite migration,
+and reseals the artifact with the cron and snapshot reads disabled.
+
+The Overview tab renders store listings and WebP screenshot galleries from
+`apps/mobile/store/metadata` and `apps/mobile/store/screenshots`. Submission
+and approval dates come from the public listing metadata. Changes to those
+files ship with a new sealed roadmap artifact. The cron refreshes GitHub
+activity independently of those release assets.
 
 Run `node --test apps/roadmap/src/activity-fence.test.ts` for the admission
 rules. In the Worker acceptance run, exercise duplicate scheduled delivery,

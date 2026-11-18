@@ -1,4 +1,27 @@
 {
+  "storeReleases": {
+    "heading": "Phát hành trên cửa hàng",
+    "pending": "Chưa công bố",
+    "build": "bản dựng",
+    "listing": "Thông tin trên cửa hàng",
+    "screenshots": "Ảnh chụp màn hình",
+    "dates": {
+      "targetSubmitDate": "Dự kiến gửi duyệt",
+      "submittedAt": "Đã gửi duyệt",
+      "approvedAt": "Đã được duyệt",
+      "targetLiveDate": "Dự kiến phát hành",
+      "liveAt": "Đã phát hành"
+    },
+    "statuses": {
+      "planned": "Đã lên kế hoạch",
+      "preparing": "Đang chuẩn bị",
+      "submitted": "Đã gửi duyệt",
+      "in_review": "Đang xét duyệt",
+      "approved": "Đã được duyệt",
+      "live": "Đã phát hành",
+      "rejected": "Bị từ chối"
+    }
+  },
   "meta": {
     "title": "Lộ trình Tuturuuu: những gì đang xây dựng và ra mắt",
     "description": "Tuturuuu đang xây dựng gì: mọi dòng sản phẩm, cột mốc và hạng mục, kèm những gì vừa ra mắt trong tuần, cập nhật trực tiếp từ pull request công khai và kiểm tra triển khai.",

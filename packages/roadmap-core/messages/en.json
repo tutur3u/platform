@@ -1,4 +1,27 @@
 {
+  "storeReleases": {
+    "heading": "Store releases",
+    "pending": "Pending",
+    "build": "build",
+    "listing": "Store listing",
+    "screenshots": "Screenshots",
+    "dates": {
+      "targetSubmitDate": "Target submission",
+      "submittedAt": "Submitted",
+      "approvedAt": "Review approved",
+      "targetLiveDate": "Target release",
+      "liveAt": "Released"
+    },
+    "statuses": {
+      "planned": "Planned",
+      "preparing": "Preparing",
+      "submitted": "Submitted",
+      "in_review": "In review",
+      "approved": "Approved",
+      "live": "Live",
+      "rejected": "Rejected"
+    }
+  },
   "meta": {
     "title": "Tuturuuu Roadmap: what we're building and shipping",
     "description": "What Tuturuuu is building: every product track, milestone and deliverable, with what shipped this week, live from public pull requests and deploy checks.",

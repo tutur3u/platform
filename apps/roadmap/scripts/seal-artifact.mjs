@@ -2,6 +2,7 @@ import { createHash } from 'node:crypto';
 import fs from 'node:fs';
 import { isAbsolute, join, resolve, sep } from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { isDeepStrictEqual } from 'node:util';
 
 import { assertEmittedMapping } from './asset-mapping.mjs';
 
@@ -90,7 +91,7 @@ function openRoot(root) {
   }
 }
 
-export function sealArtifact(root, source) {
+function inspectArtifact(root, source, verify) {
   if (!/^[a-f0-9]{40}$/.test(source ?? ''))
     throw new Error('Supply the exact build source SHA');
   if (process.platform !== 'linux') {
@@ -171,6 +172,19 @@ export function sealArtifact(root, source) {
       emittedConfig: configs[0].path,
       files,
     };
+    if (verify) {
+      const fd = openArtifactEntry(
+        descriptorPath(appFd, 'roadmap-artifact.json')
+      );
+      try {
+        const { data } = readRegularFile(fd);
+        if (!isDeepStrictEqual(JSON.parse(data.toString('utf8')), manifest))
+          throw new Error('Artifact differs from its exact-source seal');
+        return { manifest, contents };
+      } finally {
+        fs.closeSync(fd);
+      }
+    }
     const output = fs.openSync(
       descriptorPath(appFd, 'roadmap-artifact.json'),
       fs.constants.O_WRONLY |
@@ -185,10 +199,18 @@ export function sealArtifact(root, source) {
     } finally {
       fs.closeSync(output);
     }
-    return manifest;
+    return { manifest, contents };
   } finally {
     for (const entry of ancestors.reverse()) fs.closeSync(entry.fd);
   }
+}
+
+export function sealArtifact(root, source) {
+  return inspectArtifact(root, source, false).manifest;
+}
+
+export function verifySealedArtifact(root, source) {
+  return inspectArtifact(root, source, true);
 }
 
 if (

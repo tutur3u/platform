@@ -21,6 +21,7 @@ import { HostingSection } from '../components/hosting';
 import { MigrationSection } from '../components/migration';
 import { TrackGlance } from '../components/pulse';
 import type { Lang } from '../components/shared';
+import { StoreReleases } from '../components/store-releases';
 import { TimelineSection } from '../components/timeline';
 import { TracksSection } from '../components/tracks';
 import { initialLiveData } from '../live/initial-data';
@@ -138,6 +139,7 @@ const RoadmapMain = memo(function RoadmapMain({
     [data, now]
   );
   const lazy = useLazyHistory();
+  const recentCommits = commits ?? BUILD_ACTIVITY.commits;
   const insights = useMemo(
     () => buildInsights(view, data, BUILD_ACTIVITY, now),
     [view, data, now]
@@ -150,6 +152,7 @@ const RoadmapMain = memo(function RoadmapMain({
       <>
         <TrackGlance t={t} view={view} />
         <ComingSoon t={t} lang={lang} />
+        <StoreReleases lang={lang} t={t.storeReleases} />
         <Suspense>
           <UpdatesTeaser t={t} lang={lang} updates={insights.updates} />
         </Suspense>
@@ -172,11 +175,11 @@ const RoadmapMain = memo(function RoadmapMain({
     ),
     activity: (
       <>
-        {BUILD_ACTIVITY.commits ? (
+        {recentCommits ? (
           <CommitTiles
             t={t}
             lang={lang}
-            commits={BUILD_ACTIVITY.commits}
+            commits={recentCommits}
             today={view.today}
             now={now}
           />

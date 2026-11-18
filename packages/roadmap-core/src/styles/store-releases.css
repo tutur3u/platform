@@ -1,0 +1,44 @@
+.rm-store-releases {
+  display: grid;
+  gap: 1rem;
+}
+
+.rm-store-release {
+  border: 1px solid currentColor;
+  border-radius: 1rem;
+  padding: 1rem;
+  min-width: 0;
+}
+
+.rm-store-release dl {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem 1.5rem;
+  margin-block: 1rem;
+}
+
+.rm-store-release summary {
+  cursor: pointer;
+}
+
+.rm-store-description {
+  white-space: pre-line;
+  margin-block: 0.75rem;
+}
+
+.rm-store-gallery {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 8rem), 1fr));
+  gap: 0.75rem;
+  padding: 0;
+  margin: 1rem 0 0;
+  list-style: none;
+}
+
+.rm-store-gallery img {
+  display: block;
+  max-width: 100%;
+  width: auto;
+  height: auto;
+  max-height: 16rem;
+}

@@ -8,8 +8,9 @@ export interface RoadmapEnv {
 }
 
 export class RoadmapActivity extends DurableObject<RoadmapEnv> {
-  async read() {
-    return (await this.ctx.storage.get<RoadmapObservation>('snapshot')) ?? null;
+  async readSnapshot(): Promise<string | null> {
+    const snapshot = await this.ctx.storage.get<RoadmapObservation>('snapshot');
+    return snapshot ? JSON.stringify(snapshot) : null;
   }
 
   async refresh(scheduledTime: number) {

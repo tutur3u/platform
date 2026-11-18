@@ -7,6 +7,7 @@ import {
 import { roadmapBoundary } from '@tuturuuu/roadmap-core/request-boundary.ts';
 import { assertEmittedMapping } from './asset-mapping.mjs';
 import { packageAssets } from './package-assets.mjs';
+import { prepareRecoveryArtifact } from './prepare-recovery-artifact.mjs';
 import assert from 'node:assert/strict';
 import { createHash } from 'node:crypto';
 import fs from 'node:fs';
@@ -17,6 +18,7 @@ import {
   openArtifactEntry,
   readRegularFile,
   sealArtifact,
+  verifySealedArtifact,
 } from './seal-artifact.mjs';
 
 const source = 'a'.repeat(40);
@@ -153,6 +155,49 @@ test(
     assert.throws(
       () => sealArtifact(bad, source),
       /base must be absent or root/
+    );
+  }
+);
+
+test(
+  'recovery verifies primary bytes and changes only the cron and refresh switch',
+  linux,
+  (t) => {
+    const root = artifact(t);
+    const configPath = 'dist/server/wrangler.json';
+    const configFile = join(root, configPath);
+    const live = {
+      ...JSON.parse(fs.readFileSync(configFile, 'utf8')),
+      vars: { ROADMAP_REFRESH_ENABLED: 'true', KEEP: 'value' },
+      triggers: { crons: ['17 * * * *'] },
+      durable_objects: {
+        bindings: [{ name: 'ROADMAP_ACTIVITY', class_name: 'RoadmapActivity' }],
+      },
+      migrations: [
+        { tag: 'roadmap-activity-v1', new_sqlite_classes: ['RoadmapActivity'] },
+      ],
+    };
+    fs.writeFileSync(configFile, JSON.stringify(live));
+    const primary = sealArtifact(root, source);
+    const recovery = prepareRecoveryArtifact(root, source, fixture(t));
+    const { manifest } = verifySealedArtifact(recovery, source);
+    assert.deepEqual(
+      manifest.files.filter(({ path }) => path !== configPath),
+      primary.files.filter(({ path }) => path !== configPath)
+    );
+    assert.deepEqual(
+      JSON.parse(fs.readFileSync(join(recovery, configPath), 'utf8')),
+      {
+        ...live,
+        vars: { ...live.vars, ROADMAP_REFRESH_ENABLED: 'false' },
+        triggers: { crons: [] },
+      }
+    );
+    assert.deepEqual(JSON.parse(fs.readFileSync(configFile, 'utf8')), live);
+    fs.appendFileSync(join(root, 'dist/server/worker.js'), '// modified');
+    assert.throws(
+      () => prepareRecoveryArtifact(root, source, fixture(t)),
+      /differs from its exact-source seal/
     );
   }
 );

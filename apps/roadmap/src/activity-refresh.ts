@@ -82,11 +82,17 @@ async function readActivity(
       });
     }
     if (!/rel="next"/.test(reply.headers.get('link') ?? '')) {
+      let mergedComplete = false;
       const prs = await fetchPullFacts(github, now, {
         days: 8,
         openPages: 1,
-        mergedPages: 2,
+        mergedPages: 4,
+        onMergedComplete: (complete) => {
+          mergedComplete = complete;
+        },
       });
+      if (!mergedComplete)
+        throw new Error('GitHub merged PR page limit reached');
       return {
         commits: commitWindow([...facts.values()], {
           now,
