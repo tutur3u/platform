@@ -18,6 +18,14 @@ describe('exportedMethods', () => {
     ).toEqual(['GET', 'POST', 'PUT', 'DELETE']);
   });
 
+  it('ignores consecutive completed block comments', () => {
+    expect(
+      exportedMethods(
+        '/* GET */ /* export const PUT = f */ export const POST = f'
+      )
+    ).toEqual(['POST']);
+  });
+
   it('cannot see through a star re-export', () => {
     expect(exportedMethods("export * from './shared';")).toBeNull();
   });

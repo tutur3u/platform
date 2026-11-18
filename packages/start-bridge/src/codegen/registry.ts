@@ -117,9 +117,18 @@ function importPath(fromFile: string, toFile: string) {
  * re-export (`export *`) hides them. Comments are ignored.
  */
 export function exportedMethods(source: string): HttpMethod[] | null {
-  const code = source
-    .replace(/\/\*[\s\S]*?\*\//gu, '')
-    .replace(/(^|[^:'"`\\])\/\/[^\n]*/gu, '$1');
+  const segments: string[] = [];
+  let start = 0;
+  for (;;) {
+    const open = source.indexOf('/*', start);
+    if (open < 0) break;
+    const close = source.indexOf('*/', open + 2);
+    if (close < 0) break;
+    segments.push(source.slice(start, open));
+    start = close + 2;
+  }
+  segments.push(source.slice(start));
+  const code = segments.join('').replace(/(^|[^:'"`\\])\/\/[^\n]*/gu, '$1');
   if (/\bexport\s*\*\s*from\b/u.test(code)) return null;
   const names = new Set<string>();
   for (const match of code.matchAll(
