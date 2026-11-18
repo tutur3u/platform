@@ -4380,12 +4380,6 @@ class AppLocalizationsVi extends AppLocalizations {
   String get homeHideWidget => 'Ẩn tiện ích';
 
   @override
-  String get homePersonalAgenda => 'Lịch trình';
-
-  @override
-  String get homePersonalAgendaUnavailable => 'Lịch cá nhân hiện không khả dụng.';
-
-  @override
   String get homeSectionCalendar => 'Lịch';
 
   @override

@@ -4400,12 +4400,6 @@ class AppLocalizationsEn extends AppLocalizations {
   String get homeHideWidget => 'Hide widget';
 
   @override
-  String get homePersonalAgenda => 'Agenda';
-
-  @override
-  String get homePersonalAgendaUnavailable => 'Personal calendar is unavailable.';
-
-  @override
   String get homeSectionCalendar => 'Calendar';
 
   @override

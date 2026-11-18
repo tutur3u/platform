@@ -2655,8 +2655,6 @@
   "homeGreetingMorningNamed": "Chào buổi sáng, {name}",
   "homeHiddenWidgets": "Tiện ích đã ẩn",
   "homeHideWidget": "Ẩn tiện ích",
-  "homePersonalAgenda": "Lịch trình",
-  "homePersonalAgendaUnavailable": "Lịch cá nhân hiện không khả dụng.",
   "homeSectionCalendar": "Lịch",
   "homeNotAvailableOffline": "Không khả dụng khi ngoại tuyến",
   "homeSectionLoadFailed": "Kéo xuống để thử lại.",

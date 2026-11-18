@@ -1,14 +1,11 @@
 part of 'dashboard_page.dart';
 
-/// Greeting, today's date and the workspace chips at the top of Home.
+/// Greeting, today's date and the workspace chip at the top of Home.
 ///
 /// The shell navbar already carries the "Home" title, so this is a greeting
 /// rather than a second page title.
 class _HomeHeader extends StatelessWidget {
   const _HomeHeader();
-
-  /// Below this content width the chips move under the greeting.
-  static const double _headerRowMinWidth = 560;
 
   @override
   Widget build(BuildContext context) {
@@ -62,34 +59,13 @@ class _HomeHeader extends StatelessWidget {
       ),
     );
 
-    // Chips sit under the greeting on narrow content and beside it from
-    // [_headerRowMinWidth]; the chip row scrolls in both layouts.
-    return LayoutBuilder(
-      builder: (context, constraints) {
-        if (constraints.maxWidth < _headerRowMinWidth) {
-          return Column(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              greetingBlock,
-              const SizedBox(height: AppSpacing.md),
-              const HomeWorkspaceChips(),
-            ],
-          );
-        }
-        return Row(
-          crossAxisAlignment: CrossAxisAlignment.end,
-          children: [
-            Expanded(child: greetingBlock),
-            const SizedBox(width: AppSpacing.lg),
-            ConstrainedBox(
-              constraints: BoxConstraints(
-                maxWidth: constraints.maxWidth * 0.45,
-              ),
-              child: const HomeWorkspaceChips(),
-            ),
-          ],
-        );
-      },
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        greetingBlock,
+        const SizedBox(height: AppSpacing.md),
+        const HomeWorkspaceChip(),
+      ],
     );
   }
 }

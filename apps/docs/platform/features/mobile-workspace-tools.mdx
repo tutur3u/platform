@@ -103,7 +103,7 @@ security prompts remain outside customization.
 
 The shell provides bottom scroll clearance, including for explicit-padding
 lists; pages must not add another dock inset. Downward scrolling hides the dock;
-reverse scrolling or idle restores it. Profile/Agenda reclaim hidden clearance;
+reverse scrolling or idle restores it. Profile, Home and Calendar reclaim hidden clearance;
 other pages keep it stable. Primary actions register with `ShellActionSpec.inDock`.
 `ExtendedFab` uses that registration inside the shell and remains standalone
 elsewhere. Actions use icons on phones and labels on tablets. Do not duplicate
@@ -1249,16 +1249,11 @@ Profile to Overview within at most three taps; scrolling manually restarts the
 sequence. Apps resets to Grid, Finance taxonomy to Categories, and Calendar to
 Three days on phones or Week on tablets. Notes returns to Inbox and Assistant
 to Chat through their existing guarded handlers. Time Tracker sections remain
-separate routed destinations. Home defaults to Home; its second tab, Personal
-Agenda, uses only the signed-in user's personal membership, with no shared fallback or global scope change.
-Agenda resolves user, personal workspace, then
-device timezone and reloads after preference changes; Home retains its mounted
-dashboard state across tabs. Agenda retains cached events during retry and offers
-read-only details; Calendar remains the editing surface. Apps defaults to Grid
-before List. Shared search replaces the top navbar; empty submission dismisses and unfocuses. IME visibility
+separate routed destinations. Home has one view; Calendar's own Agenda view is
+the agenda surface. Apps defaults to Grid before List. Shared search replaces the top navbar; empty submission dismisses and unfocuses. IME visibility
 and hardware search focus animate the whole dock and its actions out together;
 route changes clear focus. Workspace visibility has a subtle icon, a named tooltip,
-and a 44-pixel target. Regression coverage: `personal_agenda_test.dart`, `personal_agenda_scope_test.dart`, `shell_keyboard_chrome_test.dart`,
+and a 44-pixel target. Regression coverage: `shell_keyboard_chrome_test.dart`,
 and `apps_search_submit_test.dart`. Apps opens with one tap and keeps its picker on long press.
 
 Profile uses the shell title for Overview and Timeline, with no duplicate
@@ -1467,11 +1462,10 @@ label implies that the user's complete history has been loaded. Partial response
 retain existing rows and pause continuation; refresh starts a new paging session.
 Calendar attribution, device-local grouping, reduced motion and DST stay intact.
 
-Home's personal calendar tab is titled **Agenda** in English and **Lịch trình**
-in Vietnamese. Its header clearance scrolls away; all-day progress is clipped
-by the card's exact edge. Regression targets: `profile_personal_scope_test.dart`,
-`profile_timeline_incremental_test.dart`, existing Timeline race/date tests,
-`personal_agenda_test.dart` and `agenda_view_test.dart`; device proof is separate.
+All-day progress is clipped by the card's exact edge. Regression targets:
+`profile_personal_scope_test.dart`, `profile_timeline_incremental_test.dart`,
+existing Timeline race/date tests and `agenda_view_test.dart`; device proof is
+separate.
 The week strip reveals the selected date when opened or when the selected date,
 week, width or text scale changes; ordinary snapshot rebuilds retain the user's
 manual horizontal scroll. Browsing another week begins at its first day when

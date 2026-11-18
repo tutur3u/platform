@@ -35,7 +35,7 @@ import 'package:mobile/features/classes/view/classes_today_card.dart';
 import 'package:mobile/features/classes/view/classes_today_scope.dart';
 import 'package:mobile/features/dashboard/cubit/dashboard_layout_cubit.dart';
 import 'package:mobile/features/dashboard/view/home_offline_frame.dart';
-import 'package:mobile/features/dashboard/view/home_workspace_chips.dart';
+import 'package:mobile/features/dashboard/view/home_workspace_chip.dart';
 import 'package:mobile/features/mail/data/mail_access.dart';
 import 'package:mobile/features/mail/data/mail_repository.dart';
 import 'package:mobile/features/notes/note_repository.dart';

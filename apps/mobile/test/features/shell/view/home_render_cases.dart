@@ -120,16 +120,10 @@ void _homeRenderCases() {
           // Tablets and desktops lay the widgets out in columns.
           expect(lefts.length, greaterThan(1));
         }
-        for (final key in [
-          'home-workspace-chip-${renderWorkspace.id}',
-          'home-workspace-chip-more',
-        ]) {
-          expect(
-            tester.getSize(find.byKey(ValueKey(key))).height,
-            greaterThanOrEqualTo(44),
-            reason: key,
-          );
-        }
+        expect(
+          tester.getSize(find.byKey(homeWorkspaceChipKey)).height,
+          greaterThanOrEqualTo(44),
+        );
         await _capture(tester, 'home-${size.key}-${look.key}');
         expect(tester.takeException(), isNull);
       });
@@ -225,23 +219,23 @@ void _homeRenderCases() {
       ),
     );
 
-    // The dock has its own More; the Home chip is "More workspaces", so a
-    // screen reader can tell the two apart.
+    // The Home chip is named for its workspace, so a screen reader never
+    // confuses it with the dock's More.
     SemanticsNode homeNode(String label) => tester.getSemantics(
       find.descendant(
         of: find.byType(HomePage),
         matching: find.bySemanticsLabel(label),
       ),
     );
-    for (final label in ['More workspaces', 'See all Today']) {
+    for (final label in [renderWorkspace.name!, 'See all Today']) {
       final data = homeNode(label).getSemanticsData();
       expect(data.hasAction(SemanticsAction.tap), isTrue, reason: label);
       expect(data.flagsCollection.isButton, isTrue, reason: label);
     }
 
-    // Screen-reader activation (not a pointer tap) opens the More menu...
-    final more = homeNode('More workspaces').id;
-    tester.semantics.tap(find.semantics.byPredicate((node) => node.id == more));
+    // Screen-reader activation (not a pointer tap) opens the picker...
+    final chip = homeNode(renderWorkspace.name!).id;
+    tester.semantics.tap(find.semantics.byPredicate((node) => node.id == chip));
     await settleShell(tester);
     expect(find.byType(AppSheetScaffold), findsOneWidget);
     Navigator.of(tester.element(find.byType(AppSheetScaffold))).pop();

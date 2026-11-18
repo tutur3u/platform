@@ -9,7 +9,6 @@ import 'package:mobile/features/shell/view/shell_dock_action_button.dart';
 import 'package:mobile/features/shell/view/shell_dock_bar.dart';
 import 'package:mobile/features/shell/view/shell_dock_surface.dart';
 import 'package:mobile/features/shell/view/shell_top_bar_button.dart';
-import 'package:mobile/features/workspace/widgets/workspace_avatar.dart';
 
 import 'shell_chrome_scene_bodies.dart';
 
@@ -175,13 +174,11 @@ class _TopBar extends StatelessWidget {
                     ),
                   ),
                 ),
+                // Home keeps only Customise; the workspace lives on Home's
+                // chip and in More.
                 if (home) ...[
                   ShellTopBarButton(
-                    icon: const WorkspaceAvatar(
-                      workspace: sceneWorkspace,
-                      radius: 16,
-                      circular: true,
-                    ),
+                    icon: const Icon(Icons.tune_rounded),
                     onPressed: () {},
                   ),
                 ] else ...[

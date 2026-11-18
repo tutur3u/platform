@@ -8431,18 +8431,6 @@ abstract class AppLocalizations {
   /// **'Hide widget'**
   String get homeHideWidget;
 
-  /// No description provided for @homePersonalAgenda.
-  ///
-  /// In en, this message translates to:
-  /// **'Agenda'**
-  String get homePersonalAgenda;
-
-  /// No description provided for @homePersonalAgendaUnavailable.
-  ///
-  /// In en, this message translates to:
-  /// **'Personal calendar is unavailable.'**
-  String get homePersonalAgendaUnavailable;
-
   /// No description provided for @homeSectionCalendar.
   ///
   /// In en, this message translates to:

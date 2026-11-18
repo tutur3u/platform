@@ -357,6 +357,13 @@ void main() {
     expect(_path(router), Routes.settings);
   });
 
+  testWidgets('the Home header has no workspace switcher', (tester) async {
+    await _pumpShell(tester);
+    expect(find.byKey(const ValueKey('shell-workspace-avatar')), findsNothing);
+    expect(find.text('Studio'), findsNothing);
+    expect(find.bySemanticsLabel(RegExp('Workspaces')), findsNothing);
+  });
+
   testWidgets('More is selected on a root destination without a tab', (
     tester,
   ) async {

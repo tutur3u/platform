@@ -2733,8 +2733,6 @@
   "homeGreetingMorningNamed": "Good morning, {name}",
   "homeHiddenWidgets": "Hidden widgets",
   "homeHideWidget": "Hide widget",
-  "homePersonalAgenda": "Agenda",
-  "homePersonalAgendaUnavailable": "Personal calendar is unavailable.",
   "homeSectionCalendar": "Calendar",
   "homeNotAvailableOffline": "Not available offline",
   "homeSectionLoadFailed": "Pull down to try again.",
