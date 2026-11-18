@@ -44,7 +44,9 @@
     "type-check:candidate": "tsc --noEmit -p tsconfig.candidate.json",
     "routes:candidate": "bun cloudflare/generate-inventory.ts",
     "routes:candidate:check": "bun cloudflare/generate-inventory.ts --check",
-    "test:candidate:runtime": "node --test cloudflare/emitted.runtime.mjs"
+    "test:candidate:runtime": "node --test cloudflare/emitted.runtime.mjs",
+    "opennext:prune": "bun cloudflare/opennext/prune.ts",
+    "build:opennext": "test -n \"$WEB_OPENNEXT_FAMILY\" && opennextjs-cloudflare build --config \"cloudflare/opennext/wrangler.$WEB_OPENNEXT_FAMILY.jsonc\""
   },
   "dependencies": {
     "@ai-sdk/google": "^4.0.102",

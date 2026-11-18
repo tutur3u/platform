@@ -1,0 +1,43 @@
+{
+  // apps/web api-identity family Worker (see cloudflare/opennext/families.json
+  // and apps/docs/build/devops/web-opennext-families.mdx). It has no routes:
+  // tuturuuu.com reaches it only through the gateway service binding
+  // WEB_FAMILY_API_IDENTITY. Built by `bun run build:opennext` with
+  // WEB_OPENNEXT_FAMILY=api-identity in a pruned, disposable CI checkout.
+  "$schema": "../../../../node_modules/wrangler/config-schema.json",
+  "name": "tuturuuu-web-api-identity",
+  "main": "../../.open-next/worker.js",
+  "compatibility_date": "2026-10-12",
+  "compatibility_flags": ["nodejs_compat", "global_fetch_strictly_public"],
+  "workers_dev": false,
+  "preview_urls": false,
+  "assets": {
+    "directory": "../../.open-next/assets",
+    "binding": "ASSETS",
+  },
+  "services": [
+    {
+      "binding": "WORKER_SELF_REFERENCE",
+      "service": "tuturuuu-web-api-identity",
+    },
+  ],
+  "limits": { "cpu_ms": 30000 },
+  "observability": { "enabled": true, "head_sampling_rate": 0.05 },
+  // Names only. Values live in the Worker's secret store and match the Vercel
+  // `platform` project; api-identity.env.json lists every name the family reads.
+  "secrets": {
+    "required": [
+      "SUPABASE_SECRET_KEY",
+      "TUTURUUU_APP_COORDINATION_SECRET",
+      "UPSTASH_REDIS_REST_TOKEN",
+    ],
+  },
+  "vars": {
+    // Production identity without Vercel markers: VERCEL/VERCEL_ENV would
+    // select Vercel client-IP trust, so the deploy env is stated directly.
+    "TUTURUUU_DEPLOY_ENV": "production",
+    // Client IP comes only from cf-connecting-ip.
+    "TRUSTED_PROXY": "cloudflare",
+    "TUTURUUU_SERVICE_NAME": "web-api-identity",
+  },
+}

@@ -5,3 +5,7 @@ certificates
 # Serwist (PWA service worker)
 public/sw*
 public/swe-worker*
+# OpenNext family builds (disposable CI checkouts)
+.open-next/
+.opennext-disposable-checkout
+cloudflare/opennext/prune-receipt.json

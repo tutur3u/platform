@@ -9,6 +9,7 @@ import {
 } from '@tuturuuu/utils/next-config';
 import createNextIntlPlugin from 'next-intl/plugin';
 import { generate as generatePublicSeoRoutes } from '../../scripts/generate-public-seo-routes';
+import { openNextFamilyNextConfig } from './cloudflare/opennext/next-family-config';
 import {
   CLI_LOGIN_PAGE_SECURITY_HEADERS,
   CLI_LOGIN_START_PATH,
@@ -96,6 +97,8 @@ const nextConfig = createTuturuuuNextConfig({
     'changelog/[^/]+',
   ],
   ...offlineConfig,
+  // Empty unless WEB_OPENNEXT_FAMILY selects a Cloudflare family build.
+  ...openNextFamilyNextConfig(),
   ...(isDockerStandaloneBuild ? { output: 'standalone' } : {}),
   ...(staticPageGenerationTimeout ? { staticPageGenerationTimeout } : {}),
   outputFileTracingIncludes: offlineConfig.outputFileTracingIncludes,

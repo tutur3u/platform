@@ -210,9 +210,10 @@ precedes `GATEWAY_MODE`, so `passthrough` alone does not roll back a mount.
 
 ## Web route families
 
-Route families of `apps/web` built as their own Worker are reached through
-gateway service bindings on the existing `tuturuuu.com/*` route. Family
-Workers have no routes, so no zone or DNS change is involved.
+Route families of `apps/web` built as their own Worker (see
+[Web route families on Cloudflare](/build/devops/web-opennext-families)) are
+reached through gateway service bindings on the existing `tuturuuu.com/*`
+route. Family Workers have no routes, so no zone or DNS change is involved.
 
 - `webFamilies` in `apps/gateway/src/manifest.json` lists each family: `id`,
   `binding` (`WEB_FAMILY_<ID>`), `exact` paths, raw `prefix` entries (each

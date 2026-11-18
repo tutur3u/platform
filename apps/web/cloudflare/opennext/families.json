@@ -1,0 +1,42 @@
+{
+  "deny": [
+    "/api/v1/auth/accounts",
+    "/api/notifications/send-immediate",
+    "/api/cron",
+    "/api/v1/infrastructure",
+    "/api/v1/devboxes",
+    "/api/v1/users/chatgpt",
+    "/api/ai/chatgpt",
+    "/_next/image"
+  ],
+  "families": [
+    {
+      "id": "api-identity",
+      "worker": "tuturuuu-web-api-identity",
+      "kind": "api",
+      "assetPrefix": null,
+      "wrangler": "cloudflare/opennext/wrangler.api-identity.jsonc",
+      "exact": [
+        "/api/build-info",
+        "/api/health",
+        "/api/auth/me",
+        "/api/v1/workspaces",
+        "/api/v1/workspaces/limits",
+        "/api/v1/workspaces/personal",
+        "/api/workspaces/invitations",
+        "/api/v1/notifications"
+      ],
+      "prefix": ["/api/v1/users/", "/api/v1/user/", "/api/v1/notifications/"],
+      "exclude": [
+        "/api/v1/users/chatgpt",
+        "/api/v1/users/me/avatar/upload",
+        "/api/v1/users/me/banner/upload",
+        "/api/v1/users/me/playgrounds",
+        "/api/v1/users/me/password",
+        "/api/v1/users/me/delete",
+        "/api/v1/users/me/email",
+        "/api/v1/users/me/identities"
+      ]
+    }
+  ]
+}
