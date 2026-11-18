@@ -16,11 +16,37 @@ export interface ManifestRoute {
   prefix: string[];
 }
 
+/**
+ * A route family of apps/web built as its own Worker and reached through the
+ * service binding `binding`. Matching is method-agnostic.
+ */
+export interface WebFamily {
+  id: string;
+  /** Service binding name, `WEB_FAMILY_<ID>`. */
+  binding: string;
+  /** Paths may carry a leading `/<locale>` segment. */
+  localized: boolean;
+  /** Client asset prefix (`/_f/<id>`) stripped before the family sees it; null for API families. */
+  assetPrefix: string | null;
+  exact: string[];
+  /** Raw string prefixes; each ends with `/`. */
+  prefix: string[];
+  /** Path subtrees (the path itself and everything below it) kept on WEB_ORIGIN. */
+  exclude: string[];
+}
+
+export interface WebFamilies {
+  /** Path subtrees that never reach any family, whatever the flags say. */
+  deny: string[];
+  families: WebFamily[];
+}
+
 export interface Manifest {
   locales: string[];
   origins: Record<string, { env: string }>;
   default: { origin: string; cache: 'bypass' };
   routes: ManifestRoute[];
+  webFamilies?: WebFamilies;
 }
 
 export interface RouteMatch {

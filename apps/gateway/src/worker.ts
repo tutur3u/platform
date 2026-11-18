@@ -1,4 +1,6 @@
+import { HOP_HEADER, isClientForwardingHeader } from './forwarding-headers';
 import { applyMarketingRobots } from './marketing-robots';
+import { dispatchWebFamily, webFamilyTarget } from './web-family';
 import {
   bypassReason,
   hasAuthCookie,
@@ -49,6 +51,13 @@ export interface Env {
    * marker (builds older than the marker). Removing it is the rollback.
    */
   GATEWAY_MARKETING_LEGACY_ROBOTS?: string;
+  /**
+   * Comma-separated web family ids (`api-identity`). A listed family whose
+   * service binding (`WEB_FAMILY_<ID>`) exists serves its manifest paths;
+   * unlisted or unbound families stay on WEB_ORIGIN. Removing an id is that
+   * family's one-step rollback.
+   */
+  GATEWAY_WEB_FAMILIES?: string;
   [name: string]: string | undefined;
 }
 
@@ -99,7 +108,6 @@ export interface HandlerDeps {
   manifest: Manifest;
 }
 
-const HOP_HEADER = 'x-gateway-hop';
 const STORED_AT = 'x-gateway-stored-at';
 const PAGE_CLIENT_CACHE_CONTROL = 'public, max-age=0, must-revalidate';
 
@@ -115,16 +123,7 @@ function mountedRequest(request: Request): Request {
   const headers = new Headers(request.headers);
   let changed = false;
   for (const name of request.headers.keys()) {
-    if (
-      name.startsWith('x-forwarded-') ||
-      name.startsWith('x-original-') ||
-      name.startsWith('x-middleware-') ||
-      name.startsWith('x-nextjs-') ||
-      name.startsWith('x-next-intl-') ||
-      name.startsWith('x-tuturuuu-') ||
-      (name.startsWith('x-gateway-') && name !== HOP_HEADER) ||
-      ['forwarded', 'x-real-ip', 'x-rewrite-url'].includes(name)
-    ) {
+    if (isClientForwardingHeader(name)) {
       headers.delete(name);
       changed = true;
     }
@@ -455,6 +454,12 @@ export function createHandler(deps: HandlerDeps) {
       } catch {
         return plain(502, 'gateway mounted app unreachable');
       }
+    }
+    // Flagged and bound web families come next; passthrough mode disables them
+    // so the global rollback sends every web request to WEB_ORIGIN.
+    if (env.GATEWAY_MODE !== 'passthrough') {
+      const family = webFamilyTarget(request, env, deps.manifest);
+      if (family) return dispatchWebFamily(request, family, env);
     }
     const match = matchRoute(new URL(request.url).pathname, deps.manifest);
     const chosen = chooseOrigin(env, deps.manifest, match, request);

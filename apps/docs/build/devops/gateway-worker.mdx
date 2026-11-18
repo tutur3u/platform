@@ -54,6 +54,7 @@ and attaches the route; more specific routes (for example the roadmap Worker on
 | `TUTURUUU_NOINDEX` | variable | `1` forces private robots, including cached pages. |
 | `GATEWAY_MODE` | variable | `active` or `passthrough` (rollback flag). |
 | `GATEWAY_RESPECT_ORIGIN_CACHE_CONTROL` | variable | `true` honours origin `no-store`/`private`. |
+| `GATEWAY_WEB_FAMILIES` | variable | Comma-separated web family ids served by their `WEB_FAMILY_<ID>` binding. Default empty. |
 
 No secrets are used. The Vercel origin hostname has to accept requests for its
 own host; a custom origin hostname such as `origin.tuturuuu.com` must be added
@@ -206,3 +207,52 @@ to `WEB_ORIGIN`. Regression coverage lives in
 **Rollback for one app:** remove its two zone routes and its
 `GATEWAY_MOUNTED_PATHS` entries. Its subdomain serves again. Mount dispatch
 precedes `GATEWAY_MODE`, so `passthrough` alone does not roll back a mount.
+
+## Web route families
+
+Route families of `apps/web` built as their own Worker are reached through
+gateway service bindings on the existing `tuturuuu.com/*` route. Family
+Workers have no routes, so no zone or DNS change is involved.
+
+- `webFamilies` in `apps/gateway/src/manifest.json` lists each family: `id`,
+  `binding` (`WEB_FAMILY_<ID>`), `exact` paths, raw `prefix` entries (each
+  ending in `/`), `exclude` subtrees, `localized` and `assetPrefix` (`/_f/<id>`
+  for page families, stripped before the family sees the request). Matching is
+  method-agnostic.
+- `webFamilies.deny` lists subtrees that never reach a family, whatever the
+  flags say: `/api/v1/auth/accounts`, `/api/cron`,
+  `/api/notifications/send-immediate`, `/api/v1/infrastructure`,
+  `/api/v1/devboxes`, the ChatGPT file-store routes and `/_next/image`.
+- `GATEWAY_WEB_FAMILIES` (comma-separated ids, default empty) turns families
+  on. A listed family serves its paths only when its binding exists;
+  otherwise they stay on `WEB_ORIGIN`. Percent-encoded, doubled-slash and
+  non-`PUBLIC_HOST` requests always stay on `WEB_ORIGIN`.
+
+Order in the handler: loop check, mounts, then (unless `GATEWAY_MODE` is
+`passthrough`) deny list and the first flagged, bound family, then the cached
+manifest path. Families do not apply the signed-in/RSC/server-action bypass:
+those requests are what moves.
+
+The family request keeps method, body, query, cookies, `authorization` and
+`cf-connecting-ip`. Client forwarding headers (the list in the mounted-app
+section) are stripped, and the gateway sets `x-forwarded-host: PUBLIC_HOST`,
+`x-forwarded-proto: https` and `x-gateway-hop: 1`. Next's server-action origin
+check relies on this contract. Responses carry `x-gateway-cache: FAMILY` and
+`x-gateway-family: <id>`, are never stored in the gateway cache, and keep
+`Set-Cookie` and `cache-control` as the family sent them. A throwing binding
+answers `502 gateway family unreachable`.
+
+Security header parity: the gateway fills `Strict-Transport-Security:
+max-age=63072000` and `Referrer-Policy: same-origin` on family responses that
+lack them, matching the live Vercel responses. It never overrides a header the
+family sends (CSP, `X-Frame-Options`, route-specific `Referrer-Policy`) and
+adds no `Permissions-Policy`, which the live responses do not carry. The other
+live security headers (`X-Content-Type-Options`, `X-XSS-Protection`,
+`Expect-CT`, `X-Frame-Options: SAMEORIGIN`) match the zone's "Add security
+headers" managed transform and appear on every gateway response today; the
+per-family S3 header diff confirms them on family responses. Regression coverage
+lives in `apps/gateway/src/web-family.test.ts`.
+
+**Rollback for one family:** remove its id from `GATEWAY_WEB_FAMILIES`.
+**All families:** `GATEWAY_MODE=passthrough`. Enabling a family needs a
+gateway redeploy by the provider owner with the new binding.
