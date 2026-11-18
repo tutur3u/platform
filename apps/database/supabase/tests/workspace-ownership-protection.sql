@@ -484,7 +484,9 @@ select is(pg_temp.creator_of(pg_temp.w('team')), pg_temp.uid('member'),
 update public.workspaces set creator_id = pg_temp.uid('creator') where id = pg_temp.w('team');
 
 -- Invite acceptance into a workspace whose creator is not a member: the
--- joiner becomes the sole member and ownership does not move.
+-- joiner becomes the sole member and ownership does not move. Invitations are
+-- redeemed by the server accept-invite route with the service role; a direct
+-- client insert is refused.
 insert into public.workspaces (id, name, personal, creator_id) values
   (pg_temp.w('creatorless'), 'WOP creatorless', false, pg_temp.uid('creator'));
 delete from public.workspace_members where ws_id = pg_temp.w('creatorless');
@@ -492,8 +494,19 @@ insert into public.workspace_invites (ws_id, user_id, type)
 values (pg_temp.w('creatorless'), pg_temp.uid('joiner'), 'MEMBER');
 select is(pg_temp.as_err(pg_temp.uid('joiner'), format(
   $q$insert into public.workspace_members (ws_id, user_id, type) values (%L, %L, 'MEMBER')$q$,
-  pg_temp.w('creatorless'), pg_temp.uid('joiner'))), 'ok',
-  'invited user can accept into a workspace whose creator is not a member');
+  pg_temp.w('creatorless'), pg_temp.uid('joiner'))),
+  '42501: new row violates row-level security policy for table "workspace_members"',
+  'an invited user cannot redeem the invite with a direct client insert');
+-- The server accept-invite route finalizes membership through the private
+-- RPC with the service role, then deletes the redeemed invite itself.
+select is(pg_temp.as_err(null, format(
+  $q$select private.finalize_workspace_invitation_membership_v2(%L, %L, 'MEMBER')$q$,
+  pg_temp.w('creatorless'), pg_temp.uid('joiner')), 'service_role'), 'true',
+  'the server accept path admits the invited user into a workspace whose creator is not a member');
+select is(pg_temp.as_err(null, format(
+  $q$delete from public.workspace_invites where ws_id = %L and user_id = %L$q$,
+  pg_temp.w('creatorless'), pg_temp.uid('joiner')), 'service_role'), 'ok',
+  'the server accept path deletes the redeemed invite');
 select is((select array_agg(user_id) from public.workspace_members
   where ws_id = pg_temp.w('creatorless')), array[pg_temp.uid('joiner')],
   'the joiner is the sole member after accepting');
@@ -504,8 +517,8 @@ select is(pg_temp.creator_of(pg_temp.w('creatorless')), pg_temp.uid('creator'),
   'joining does not change creator_id');
 
 -- A definer trigger that claims creator_id on membership insert (the removed
--- claim path) is now rejected under the joiner's JWT, and the insert rolls
--- back with it.
+-- claim path) never runs under the joiner's JWT: the client insert is refused
+-- before it, and nothing is written.
 create function wop_probe.definer_claim() returns trigger
 language plpgsql security definer set search_path = pg_catalog, pg_temp as $$
 begin
@@ -526,7 +539,7 @@ values (pg_temp.w('definer'), pg_temp.uid('joiner'), 'MEMBER');
 select is(pg_temp.as_err(pg_temp.uid('joiner'), format(
   $q$insert into public.workspace_members (ws_id, user_id, type) values (%L, %L, 'MEMBER')$q$,
   pg_temp.w('definer'), pg_temp.uid('joiner'))),
-  '42501: Workspace ownership can only change through an ownership transfer',
+  '42501: new row violates row-level security policy for table "workspace_members"',
   'a definer claim trigger cannot change creator_id under the joiner JWT');
 select is(pg_temp.creator_of(pg_temp.w('definer')), pg_temp.uid('creator'),
   'creator_id is unchanged after the rejected definer claim');

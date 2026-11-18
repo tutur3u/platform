@@ -90,7 +90,10 @@ An invitation admits its recipient to the workspace that issued it, and only
 with the membership type the invitation grants.
 
 - Scope: workspace membership created from a direct (user) invite or an email
-  invite, through the web `accept-invite` route or a direct Data API insert.
+  invite. Invitations are redeemed only through the server `accept-invite`
+  route, which writes membership with the service role. A signed-in client
+  cannot insert an invited membership through the Data API; the
+  `workspace_members` client INSERT policy has no invite branch.
 - Matching: an email invite is redeemed only by the account whose confirmed
   Supabase Auth email equals the invited email. The editable profile email in
   `user_private_details` and an unconfirmed Auth email never redeem an invite.
@@ -103,8 +106,9 @@ with the membership type the invitation grants.
   invite their own email, and seat-based workspaces reject invites without a
   free seat.
 - Exception: the creator of a workspace with no members can add themselves
-  (workspace bootstrap). Invite links (`/invite/[code]`) and guest self-join
-  keep their own server-side checks.
+  (workspace bootstrap), which is the only client INSERT the policy allows.
+  Invite links (`/invite/[code]`) and guest self-join keep their own
+  server-side checks.
 - Regression coverage: `apps/database/supabase/tests/workspace-invite-scope.sql`
   and `apps/web/src/__tests__/workspace-accept-invite-route.test.ts`.
 

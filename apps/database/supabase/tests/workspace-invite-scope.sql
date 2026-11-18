@@ -4,7 +4,7 @@ create extension if not exists pgtap with schema extensions;
 
 set local search_path = public, extensions;
 
-select plan(26);
+select plan(28);
 
 -- Fixture
 --   a101 owner: creator of workspaces A, B and the seat-limited workspace F
@@ -134,12 +134,27 @@ select ok(
   and not has_function_privilege('anon', 'public.current_user_can_assign_workspace_role(uuid, uuid)', 'execute')
   and not has_function_privilege('anon', 'public.current_user_workspace_invite_type(uuid)', 'execute')
   and not has_function_privilege('anon', 'public.current_user_can_bootstrap_workspace(uuid)', 'execute')
-  and has_function_privilege('authenticated', 'public.current_user_workspace_invite_type(uuid)', 'execute')
+  and not has_function_privilege('authenticated', 'public.current_user_workspace_invite_type(uuid)', 'execute')
+  and has_function_privilege('service_role', 'public.current_user_workspace_invite_type(uuid)', 'execute')
   and has_function_privilege('authenticated', 'public.current_user_can_bootstrap_workspace(uuid)', 'execute'),
-  'invite helpers are not executable by anon'
+  'invite helpers are not executable by anon; the invite type helper is service-only'
 );
 
--- Joining via an invite ---------------------------------------------------------
+select ok(
+  (
+    select count(*) = 1
+      and bool_and(with_check not like '%current_user_workspace_invite_type%')
+      and bool_and(with_check like '%current_user_can_bootstrap_workspace%')
+    from pg_policies
+    where schemaname = 'public'
+      and tablename = 'workspace_members'
+      and cmd = 'INSERT'
+      and permissive = 'PERMISSIVE'
+  ),
+  'the only client INSERT policy on members is the creator bootstrap'
+);
+
+-- Joining via an invite (server-only) --------------------------------------------
 
 set local role authenticated;
 select pg_temp.act_as('00000000-0000-4000-8000-00000000a102', 'invite-target@example.test');
@@ -172,10 +187,11 @@ select throws_ok(
   'omitting the type cannot fall back to a higher column default'
 );
 
-select lives_ok(
+select throws_ok(
   $$insert into public.workspace_members (ws_id, user_id, type)
     values ('00000000-0000-4000-8000-00000000a1a0', '00000000-0000-4000-8000-00000000a102', 'GUEST')$$,
-  'the invitee can join the inviting workspace with the invited type'
+  '42501', null,
+  'a client cannot redeem an email invite directly, even with the invited type'
 );
 
 select pg_temp.act_as('00000000-0000-4000-8000-00000000a106', 'invite-unconfirmed@example.test');
@@ -201,10 +217,11 @@ select throws_ok(
   '42501', null,
   'a direct user invite also fixes the membership type'
 );
-select lives_ok(
+select throws_ok(
   $$insert into public.workspace_members (ws_id, user_id, type)
     values ('00000000-0000-4000-8000-00000000a1a0', '00000000-0000-4000-8000-00000000a107', 'GUEST')$$,
-  'a direct user invite still admits the invitee with the invited type'
+  '42501', null,
+  'a client cannot redeem a direct user invite directly'
 );
 
 -- Creating email invites ----------------------------------------------------------
@@ -272,14 +289,27 @@ select lives_ok(
 
 reset role;
 
+select ok(
+  not exists (
+    select 1 from public.workspace_members
+    where ws_id = '00000000-0000-4000-8000-00000000a1a0'
+      and user_id in (
+        '00000000-0000-4000-8000-00000000a102',
+        '00000000-0000-4000-8000-00000000a106',
+        '00000000-0000-4000-8000-00000000a107'
+      )
+  ),
+  'no client-created invite membership exists'
+);
+
 select is(
   (
     select type::text from public.workspace_members
-    where ws_id = '00000000-0000-4000-8000-00000000a1a0'
-      and user_id = '00000000-0000-4000-8000-00000000a102'
+    where ws_id = '00000000-0000-4000-8000-00000000a1e0'
+      and user_id = '00000000-0000-4000-8000-00000000a105'
   ),
-  'GUEST',
-  'the joined row carries the invited type'
+  'MEMBER',
+  'the creator bootstrap row was written'
 );
 
 select ok(
