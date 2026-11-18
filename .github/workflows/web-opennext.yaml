@@ -4,7 +4,7 @@ name: Web OpenNext families
 # that routes to them. See apps/docs/build/devops/web-opennext-families.mdx.
 on:
   push:
-    branches: [main]
+    branches: [production]
     paths:
       - 'apps/web/**'
       - 'apps/gateway/**'
@@ -46,7 +46,7 @@ jobs:
       workflow_name: web-opennext.yaml
   plan:
     needs: check-ci
-    if: needs.check-ci.outputs.should_run == 'true' && github.ref == 'refs/heads/main'
+    if: needs.check-ci.outputs.should_run == 'true' && github.ref == 'refs/heads/production'
     runs-on: ubuntu-latest
     timeout-minutes: 5
     outputs:
@@ -72,11 +72,11 @@ jobs:
           echo "Families: $enabled"
   family:
     needs: plan
-    if: needs.plan.outputs.families != '[]'
+    if: github.ref == 'refs/heads/production' && needs.plan.outputs.families != '[]'
     name: family (${{ matrix.family }})
     runs-on: ubuntu-latest
     timeout-minutes: 60
-    environment: web-opennext-production
+    environment: colab-production
     permissions:
       contents: read
     strategy:
@@ -93,8 +93,8 @@ jobs:
       CI: '1'
       NEXT_TELEMETRY_DISABLED: '1'
       # Public build inputs, inlined into the client and server bundles.
-      NEXT_PUBLIC_SUPABASE_URL: ${{ vars.NEXT_PUBLIC_SUPABASE_URL }}
-      NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY: ${{ vars.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY }}
+      NEXT_PUBLIC_SUPABASE_URL: ${{ vars.PRODUCTION_SUPABASE_URL }}
+      NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY: ${{ vars.PRODUCTION_SUPABASE_PUBLISHABLE_KEY }}
       NEXT_PUBLIC_APP_URL: https://tuturuuu.com
       NEXT_PUBLIC_WEB_APP_URL: https://tuturuuu.com
     steps:
@@ -104,11 +104,11 @@ jobs:
           persist-credentials: false
       - name: Require public configuration
         env:
-          SUPABASE_URL: ${{ vars.SUPABASE_URL }}
-          ROOT_WORKSPACE_ID: ${{ vars.ROOT_WORKSPACE_ID }}
+          SUPABASE_URL: ${{ vars.PRODUCTION_SUPABASE_URL }}
+          ROOT_WORKSPACE_ID: '00000000-0000-0000-0000-000000000000'
         run: |
           for name in NEXT_PUBLIC_SUPABASE_URL NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY SUPABASE_URL ROOT_WORKSPACE_ID; do
-            test -n "${!name}" || { echo "::error::environment variable $name is not set on web-opennext-production"; exit 1; }
+            test -n "${!name}" || { echo "::error::configuration $name is not set (repository variables PRODUCTION_SUPABASE_URL / PRODUCTION_SUPABASE_PUBLISHABLE_KEY)"; exit 1; }
           done
       - uses: ./.github/actions/setup-bun-with-retry
         with:
@@ -165,10 +165,10 @@ jobs:
         working-directory: apps/web
         env:
           CLOUDFLARE_API_TOKEN: ${{ secrets.COLAB_CLOUDFLARE_API_TOKEN }}
-          SUPABASE_URL: ${{ vars.SUPABASE_URL }}
-          ROOT_WORKSPACE_ID: ${{ vars.ROOT_WORKSPACE_ID }}
+          SUPABASE_URL: ${{ vars.PRODUCTION_SUPABASE_URL }}
+          ROOT_WORKSPACE_ID: '00000000-0000-0000-0000-000000000000'
         run: |
-          test -n "$CLOUDFLARE_API_TOKEN" || { echo "::error::COLAB_CLOUDFLARE_API_TOKEN is not set on web-opennext-production"; exit 1; }
+          test -n "$CLOUDFLARE_API_TOKEN" || { echo "::error::COLAB_CLOUDFLARE_API_TOKEN is not set on colab-production"; exit 1; }
           # The family Worker has no routes; nothing serves it until the
           # gateway binds and flags it.
           bun x --no-install wrangler deploy -c "cloudflare/opennext/wrangler.$FAMILY.jsonc" \
@@ -182,12 +182,13 @@ jobs:
     needs: [plan, family]
     # Runs after every family deploy succeeded, or when no family was built.
     if: >-
-      always() && needs.plan.result == 'success' &&
+      always() && github.ref == 'refs/heads/production' &&
+      needs.plan.result == 'success' &&
       (needs.family.result == 'success' || needs.family.result == 'skipped') &&
       (github.event_name != 'workflow_dispatch' || inputs.gateway)
     runs-on: ubuntu-latest
     timeout-minutes: 20
-    environment: web-opennext-production
+    environment: colab-production
     permissions:
       contents: read
     concurrency:
@@ -195,9 +196,8 @@ jobs:
       cancel-in-progress: false
       queue: max
     env:
-      CLOUDFLARE_API_TOKEN: ${{ secrets.COLAB_CLOUDFLARE_API_TOKEN }}
-      WEB_ORIGIN: ${{ vars.WEB_ORIGIN }}
-      MARKETING_ORIGIN: ${{ vars.MARKETING_ORIGIN }}
+      WEB_ORIGIN: ${{ vars.GATEWAY_WEB_ORIGIN }}
+      MARKETING_ORIGIN: https://marketing.tuturuuu.com
       GATEWAY_WEB_FAMILIES: ${{ vars.GATEWAY_WEB_FAMILIES }}
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
@@ -213,8 +213,10 @@ jobs:
       - run: bun install --frozen-lockfile
       - run: bun run --cwd apps/gateway test
       - name: Capture the live gateway settings
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.COLAB_CLOUDFLARE_API_TOKEN }}
         run: |
-          test -n "$CLOUDFLARE_API_TOKEN" || { echo "::error::COLAB_CLOUDFLARE_API_TOKEN is not set on web-opennext-production"; exit 1; }
+          test -n "$CLOUDFLARE_API_TOKEN" || { echo "::error::COLAB_CLOUDFLARE_API_TOKEN is not set on colab-production"; exit 1; }
           curl --fail-with-body --silent --show-error --retry 3 \
             -H "Authorization: Bearer $CLOUDFLARE_API_TOKEN" \
             "https://api.cloudflare.com/client/v4/accounts/$CLOUDFLARE_ACCOUNT_ID/workers/scripts/tuturuuu-gateway/settings" \
@@ -224,8 +226,11 @@ jobs:
       # A flagged family must have its Worker and every secret name its config
       # requires before the gateway sends traffic to it.
       - name: Verify flagged family Workers and secret names
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.COLAB_CLOUDFLARE_API_TOKEN }}
         run: |
           for id in $(echo "$GATEWAY_WEB_FAMILIES" | tr ',' ' '); do
+            [[ "$id" =~ ^[a-z0-9-]+$ ]] || { echo "::error::invalid family id in GATEWAY_WEB_FAMILIES"; exit 1; }
             worker="tuturuuu-web-$id"
             config="apps/web/cloudflare/opennext/wrangler.$id.jsonc"
             test -f "$config" || { echo "::error::$id has no committed wrangler config"; exit 1; }
@@ -242,6 +247,8 @@ jobs:
             "$RUNNER_TEMP/gateway-settings.json" apps/gateway/wrangler.deploy.json
       - name: Upload and deploy the gateway version
         working-directory: apps/gateway
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.COLAB_CLOUDFLARE_API_TOKEN }}
         run: |
           bun x --no-install wrangler deployments status --name tuturuuu-gateway | tee "$RUNNER_TEMP/gateway-before.txt"
           bun x --no-install wrangler versions upload -c wrangler.deploy.json \

@@ -55,22 +55,26 @@ Lettin keep their patched 1.20.6.
 
 ## Deploying
 
-`.github/workflows/web-opennext.yaml` runs on every `main` push that touches
-`apps/web`, `apps/gateway`, `packages` or the lockfile, and on dispatch (one
-`family`, and whether to deploy the gateway). Both deploy jobs run in the
-protected `web-opennext-production` environment:
+`.github/workflows/web-opennext.yaml` runs on every `production` push that
+touches `apps/web`, `apps/gateway`, `packages` or the lockfile, and on dispatch
+from `production` (one `family`, and whether to deploy the gateway). Both
+deploy jobs run only on `refs/heads/production`, in the `colab-production`
+environment that holds the account deployment token, so the production
+promotion is the human gate:
 
 1. **family** (one job per enabled family): exact-commit checkout, workspace
    package build, prune, family build, size gate, local smoke, then
    `wrangler deploy` of the route-free Worker with the commit in the version
-   message. Public configuration comes from environment variables
-   (`NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY`,
-   `SUPABASE_URL`, `ROOT_WORKSPACE_ID`); the job passes no Worker secret.
+   message. Public configuration comes from the `PRODUCTION_SUPABASE_URL` and
+   `PRODUCTION_SUPABASE_PUBLISHABLE_KEY` repository variables, and
+   `ROOT_WORKSPACE_ID` is the root workspace constant; the job passes no Worker
+   secret.
 2. **gateway**: captures the live gateway settings, checks that every family in
-   the `GATEWAY_WEB_FAMILIES` repository variable has its Worker and every
-   secret name its wrangler config requires, writes the deploy config, then
-   `wrangler versions upload` and `versions deploy` at 100%. `WEB_ORIGIN` and
-   `MARKETING_ORIGIN` come from environment variables.
+   the `GATEWAY_WEB_FAMILIES` variable has its Worker and every secret name its
+   wrangler config requires, writes the deploy config, then
+   `wrangler versions upload` and `versions deploy` at 100%. `WEB_ORIGIN` comes
+   from the `GATEWAY_WEB_ORIGIN` variable and `MARKETING_ORIGIN` is
+   `https://marketing.tuturuuu.com`.
 
 Turning a family on: set its Worker secrets (names in `<family>.env.json`),
 add its id to `GATEWAY_WEB_FAMILIES`, rerun the gateway job.
