@@ -2,11 +2,9 @@ import 'server-only';
 
 import {
   type ClientIpConfig,
-  isAuthenticatedCloudflareOrigin,
   resolveClientIp,
   resolveTrustedProxyConfig,
   type ResolveTrustedProxyOptions,
-  UNKNOWN_CLIENT_IP,
 } from '@tuturuuu/utils/abuse-protection/client-ip';
 import {
   type CitationBudgetDependencies,
@@ -17,7 +15,7 @@ import { reserveInstanceLookup } from './lookup-budget-fallback';
 export const LOOKUP_IP_LIMIT = 10;
 export const LOOKUP_GLOBAL_LIMIT = 120;
 
-/** Anonymous lookups require authenticated Cloudflare origin proof before trusting any IP; storage outages use a conservative per-instance budget. */
+/** Anonymous lookups are budgeted per trusted client identity; storage outages use a conservative per-instance budget. */
 export async function reserveCitationLookup(
   headers: Headers,
   dependencies: CitationBudgetDependencies & {
@@ -28,11 +26,10 @@ export async function reserveCitationLookup(
   const config =
     dependencies.proxyConfig ??
     resolveTrustedProxyConfig(dependencies.proxyOptions);
-  if (!isAuthenticatedCloudflareOrigin(headers, config))
-    return { kind: 'rejected', status: 429, retryAfter: 60 } as const;
+  // Client identity comes from the deployment's trusted-proxy resolution, which
+  // never honors a client-supplied Cloudflare IP without origin proof. Callers
+  // whose address cannot be resolved share one bucket instead of being refused.
   const ip = resolveClientIp(headers, config);
-  if (ip === UNKNOWN_CLIENT_IP)
-    return { kind: 'rejected', status: 429, retryAfter: 60 } as const;
   const shared = await reserveCitationBudget(
     {
       scope: 'lookup',

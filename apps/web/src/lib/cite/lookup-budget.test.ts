@@ -11,6 +11,7 @@ import {
 
 vi.mock('server-only', () => ({}));
 const syntheticOriginSecret = 'synthetic-citation-origin-proof-fixture-only';
+const unknownBucket = createHash('sha256').update('unknown').digest('hex');
 const proxyOptions = {
   env: {
     TRUSTED_PROXY: 'cloudflare-origin',
@@ -61,25 +62,24 @@ describe('anonymous citation lookup budget', () => {
     expect(test.reserve).toHaveBeenCalledTimes(1);
   });
 
-  it('rejects spoofed Cloudflare client headers before the budget RPC without origin proof', async () => {
+  it('does not honor a spoofed Cloudflare client IP without origin proof', async () => {
     const test = fixture();
     const headers = new Headers({
       'cf-connecting-ip': '198.51.100.1',
-      'x-forwarded-for': '198.51.100.2',
-      'x-real-ip': '198.51.100.3',
+      'x-tuturuuu-origin-auth': 'invalid-proof',
     });
-    expect(await reserveCitationLookup(headers, test)).toMatchObject({
-      kind: 'rejected',
-      status: 429,
-    });
-    expect(test.store).not.toHaveBeenCalled();
-    expect(test.reserve).not.toHaveBeenCalled();
+    expect(
+      await reserveCitationLookup(headers, { ...test, now: () => 120_000 })
+    ).toEqual({ kind: 'allowed' });
+    expect(test.reserve.mock.calls[0]?.[0].actorHash).toBe(unknownBucket);
+    expect(test.reserve.mock.calls[0]?.[0].actorHash).not.toBe(
+      createHash('sha256').update('198.51.100.1').digest('hex')
+    );
   });
 
-  it('rejects absent, invalid or weak origin configuration even with client headers', async () => {
+  it('never trusts the client-supplied Cloudflare IP under an unauthenticated configuration', async () => {
     for (const env of [
       {},
-      { TRUSTED_PROXY: 'cloudflare' },
       { TRUSTED_PROXY: 'vercel' },
       { TRUSTED_PROXY: 'cloudflare-origin' },
       {
@@ -92,9 +92,12 @@ describe('anonymous citation lookup budget', () => {
         await reserveCitationLookup(trustedHeaders(), {
           ...test,
           proxyOptions: { env, runtimeUserAgent: null },
+          now: () => 120_000,
         })
-      ).toMatchObject({ kind: 'rejected', status: 429 });
-      expect(test.store).not.toHaveBeenCalled();
+      ).toEqual({ kind: 'allowed' });
+      expect(test.reserve.mock.calls[0]?.[0].actorHash).not.toBe(
+        createHash('sha256').update('198.51.100.1').digest('hex')
+      );
     }
   });
 
@@ -121,34 +124,32 @@ describe('anonymous citation lookup budget', () => {
     );
   });
 
-  it('rejects a wrong origin proof without falling back to XFF', async () => {
-    const test = fixture();
-    const headers = trustedHeaders();
-    headers.set('x-tuturuuu-origin-auth', 'invalid-proof');
-    headers.set('x-forwarded-for', '198.51.100.2');
-    expect(await reserveCitationLookup(headers, test)).toMatchObject({
-      status: 429,
-    });
-    expect(test.store).not.toHaveBeenCalled();
-  });
-  it('requires CF-Connecting-IP and ignores forwarding header substitutes', async () => {
-    for (const headers of [
-      new Headers({ 'x-tuturuuu-origin-auth': syntheticOriginSecret }),
-      new Headers({
-        'x-tuturuuu-origin-auth': syntheticOriginSecret,
-        'x-forwarded-for': '198.51.100.1',
-        'x-real-ip': '198.51.100.2',
-      }),
-      trustedHeaders('invalid'),
-      trustedHeaders('198.51.100.1, 198.51.100.2'),
-    ]) {
-      const test = fixture();
-      expect(await reserveCitationLookup(headers, test)).toMatchObject({
-        kind: 'rejected',
-        status: 429,
-      });
-      expect(test.reserve).not.toHaveBeenCalled();
-    }
+  it('uses the platform-resolved client address under Vercel and shares one bucket when none resolves', async () => {
+    const vercel = fixture();
+    expect(
+      await reserveCitationLookup(
+        new Headers({ 'x-vercel-forwarded-for': '198.51.100.7' }),
+        {
+          ...vercel,
+          proxyOptions: {
+            env: { TRUSTED_PROXY: 'vercel' },
+            runtimeUserAgent: null,
+          },
+          now: () => 120_000,
+        }
+      )
+    ).toEqual({ kind: 'allowed' });
+    expect(vercel.reserve.mock.calls[0]?.[0].actorHash).toBe(
+      createHash('sha256').update('198.51.100.7').digest('hex')
+    );
+    const anonymous = fixture();
+    expect(
+      await reserveCitationLookup(new Headers(), {
+        ...anonymous,
+        now: () => 120_000,
+      })
+    ).toEqual({ kind: 'allowed' });
+    expect(anonymous.reserve.mock.calls[0]?.[0].actorHash).toBe(unknownBucket);
   });
 
   it('reserves per-IP and shared global counters in one atomic store operation', async () => {

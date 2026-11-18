@@ -1,3 +1,4 @@
+import { createHash } from 'node:crypto';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { POST as capture } from './capture';
 import { resetInstanceLookupBudget } from '@/lib/cite/lookup-budget-fallback';
@@ -51,11 +52,13 @@ describe.each([
   ['lookup', lookup],
   ['capture', capture],
 ] as const)('%s authenticated origin admission', (_name, handler) => {
-  it('rejects a spoofed CF header without proof before the budget RPC or source/cache access', async () => {
-    expect((await handler(request())).status).toBe(429);
-    expect(spies.store).not.toHaveBeenCalled();
-    expect(spies.lookup).not.toHaveBeenCalled();
-    expect(spies.capture).not.toHaveBeenCalled();
+  it('budgets a spoofed CF header without proof under the shared unknown bucket', async () => {
+    expect((await handler(request())).status).toBe(200);
+    const [name, args] = spies.rpc.mock.calls[0] ?? [];
+    expect(name).toBe('reserve_cite_budget');
+    expect(args.p_actor_hash).not.toBe(
+      createHash('sha256').update('198.51.100.1').digest('hex')
+    );
   });
 
   it('admits the existing trusted origin proof before one budget claim', async () => {
@@ -143,12 +146,5 @@ describe.each([
     expect(
       spies.lookup.mock.calls.length + spies.capture.mock.calls.length
     ).toBe(1);
-  });
-
-  it('keeps refusing a request without origin proof when storage is missing', async () => {
-    spies.store.mockResolvedValue(null);
-    expect((await handler(request())).status).toBe(429);
-    expect(spies.lookup).not.toHaveBeenCalled();
-    expect(spies.capture).not.toHaveBeenCalled();
   });
 });
