@@ -114,6 +114,42 @@ function makeGuard(alert = vi.fn().mockResolvedValue(undefined)) {
   };
 }
 
+// Free-tier reservations are capped at ICT midnight, so a budget assertion made
+// within the last lease of the day (180 s by default) reserves less than the
+// full lease. Budget tests therefore replace only the Redis TIME call with a
+// fixed instant; the production admission Lua still runs on the real server.
+const CLOCK_STATEMENT = "local clock = redis.call('TIME')";
+function clockedGuard(prefix: string, ms: number) {
+  return createLiveMintGuard({
+    alert: async () => {},
+    getStore: async () => createRedisLiveMintStore(clockedRedis(ms), prefix),
+  });
+}
+function clockedRedis(ms: number): LiveMintRedis {
+  return {
+    eval: async (script, keys, args) => {
+      if (!script.includes(CLOCK_STATEMENT))
+        throw new Error('Fixture clock hook changed');
+      return redis.eval(
+        script.replace(
+          CLOCK_STATEMENT,
+          `local clock = {'${Math.floor(ms / 1000)}','${(ms % 1000) * 1000}'}`
+        ),
+        keys,
+        args
+      );
+    },
+  };
+}
+/** ICT day number and 12:00 ICT of the Redis server's current ICT day. */
+async function ictDayAtNoon() {
+  const time = await redis.command('TIME');
+  if (!Array.isArray(time) || typeof time[0] !== 'string')
+    throw new Error('Invalid fixture time');
+  const day = Math.floor((Number(time[0]) + 25_200) / 86_400);
+  return { day, noon: day * 86_400_000 - 25_200_000 + 43_200_000 };
+}
+
 beforeAll(async () => {
   if (process.env.LIVE_MINT_TEST_REDIS_DISPOSABLE !== '1') {
     throw new Error(
@@ -181,7 +217,13 @@ describe('real Redis atomic Live admission', () => {
     );
   });
   it('shares the USD budget across many accounts and claims 80/100 alerts once', async () => {
-    const { guard, alert } = makeGuard();
+    const { prefix, alert } = makeGuard();
+    const { noon } = await ictDayAtNoon();
+    const guard = createLiveMintGuard({
+      getStore: async () =>
+        createRedisLiveMintStore(clockedRedis(noon), prefix),
+      alert,
+    });
     const result = await Promise.allSettled(
       Array.from({ length: 500 }, (_, index) =>
         guard({ actorId: actor(1000 + index), isFree: true, config: defaults })
@@ -235,11 +277,9 @@ describe('real Redis atomic Live admission', () => {
     ).rejects.toMatchObject({ code: 'LIVE_MINT_ACTOR_LIMIT' });
   });
   it('isolates ICT day budgets and rejects an exhausted current day', async () => {
-    const { guard, prefix } = makeGuard();
-    const time = await redis.command('TIME');
-    if (!Array.isArray(time) || typeof time[0] !== 'string')
-      throw new Error('Invalid fixture time');
-    const day = Math.floor((Number(time[0]) + 25_200) / 86_400);
+    const { prefix } = makeGuard();
+    const { day, noon } = await ictDayAtNoon();
+    const guard = clockedGuard(prefix, noon);
     await redis.command(
       'HSET',
       `${prefix}:free-budget:${day - 1}`,
@@ -268,29 +308,7 @@ describe('real Redis atomic Live admission', () => {
     const midnight = (today + 1) * 86_400_000 - 25_200_000;
     // Controlled TIME is the only substituted external input. The actual Redis
     // executes the production admission/ledger Lua; host time is never changed.
-    const clocked = (ms: number) =>
-      createLiveMintGuard({
-        alert: async () => {},
-        getStore: async () =>
-          createRedisLiveMintStore(
-            {
-              eval: async (script, keys, args) => {
-                const statement = "local clock = redis.call('TIME')";
-                if (!script.includes(statement))
-                  throw new Error('Fixture clock hook changed');
-                return redis.eval(
-                  script.replace(
-                    statement,
-                    `local clock = {'${Math.floor(ms / 1000)}','${(ms % 1000) * 1000}'}`
-                  ),
-                  keys,
-                  args
-                );
-              },
-            },
-            prefix
-          ),
-      });
+    const clocked = (ms: number) => clockedGuard(prefix, ms);
     const before = clocked(midnight - 1000);
     await redis.command(
       'HSET',
