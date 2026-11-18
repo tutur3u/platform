@@ -71,7 +71,7 @@ Per D74 security and operational policies:
   - `GUARD_SUBJECT`: Durable Object (`GuardSubject`).
   - `GUARD_CONTROL`: Durable Object (`GuardControl`).
 - **Durable Objects**: `GuardSubject` (SQLite storage), `GuardControl` (SQLite storage).
-- **Families**: `offline` 45%, `proxy` 20%, `replay`/`password`/`meet` 10% each, `live` 5% of the daily op budget. `live` serves Live voice mint admission from one `GuardSubject` partition; its Web callers fail closed for every tier.
+- **Families**: `offline` 35%, `proxy` 20%, `replay`/`password`/`meet`/`ratelimit` 10% each, `live` 5% of the daily op budget. `live` serves Live voice mint admission from one `GuardSubject` partition; its Web callers fail closed for every tier. `ratelimit` holds the Web request rate-limit counters (`apps/web/src/lib/rate-limit.ts`, three commands per check); once assigned it never falls back to Upstash, and each caller keeps its own fail policy (most fail open with the missing-store alert, SSO fails closed).
 - **Build & Test**: `vp build`, `vp test`, `cf workers types && tsc`.
 - **Workflow**: `abuse-guard-cloudflare.yaml` (build-only, on `main` pushes and dispatch) tests, type-checks and builds the Worker, asserts the publication shape (SQLite `GuardSubject`/`GuardControl` exports, `workersDev`/`previewUrls` off, secret-typed signing and operator bindings), and uploads `.cloudflare/output/v0` as a tarball with its SHA-256 digest. A publication pins that run id and re-verifies the digest before `cf deploy --prebuilt`. Publication itself stays a separate, approved provider action. Meet's stub verification remains in `meet-cloudflare.yaml`.
 - **Owner**: `@vhpx` (`.github/CODEOWNERS`).

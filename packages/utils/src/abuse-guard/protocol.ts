@@ -18,6 +18,7 @@ export const ABUSE_GUARD_FAMILIES = [
   'replay',
   'meet',
   'live',
+  'ratelimit',
 ] as const;
 export type AbuseGuardFamily = (typeof ABUSE_GUARD_FAMILIES)[number];
 

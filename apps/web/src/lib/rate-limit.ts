@@ -7,6 +7,7 @@
  */
 
 import type { ApiErrorResponse } from '@tuturuuu/types/sdk';
+import { isAbuseGuardFamilyAssigned } from '@tuturuuu/utils/abuse-guard/select';
 import {
   getUpstashRestRedisClient,
   hasUpstashRestEnv,
@@ -117,13 +118,26 @@ let redisClient: UpstashRestRedisClient | null = null;
 let redisInitialized = false;
 
 /**
- * Initialize Redis client for rate limiting.
+ * Initialize the rate-limit store. With the `ratelimit` abuse-guard family
+ * assigned, counts live in the abuse-guard Durable Object and never fall back
+ * to Upstash; otherwise the legacy Upstash client is used when configured.
  * Safe to call multiple times — only initializes once.
  */
 export async function getRedisClient() {
   if (redisInitialized) return redisClient;
 
   try {
+    if (isAbuseGuardFamilyAssigned('ratelimit')) {
+      redisClient = await getUpstashRestRedisClient({ family: 'ratelimit' });
+      redisInitialized = true;
+      if (!redisClient) {
+        console.warn(
+          'Rate limiting store unavailable: the ratelimit abuse-guard family is assigned but not usable; allowing requests'
+        );
+      }
+      return redisClient;
+    }
+
     if (!hasUpstashRestEnv()) {
       console.warn(
         'Redis rate limiting disabled: UPSTASH_REDIS_REST_URL or UPSTASH_REDIS_REST_TOKEN not configured; allowing requests'

@@ -32,7 +32,7 @@ const MAX_BUDGET = 1_000_000_000;
  * largest share but cannot spend another family's allowance.
  */
 export const FAMILY_BUDGET_SHARES: Record<AbuseGuardFamily, number> = {
-  offline: 0.45,
+  offline: 0.35,
   proxy: 0.2,
   replay: 0.1,
   password: 0.1,
@@ -43,6 +43,10 @@ export const FAMILY_BUDGET_SHARES: Record<AbuseGuardFamily, number> = {
   // (503), so an exhausted share pauses Live voice only; the shared 80%
   // warning log fires first.
   live: 0.05,
+  // Request rate limits (INCR, EXPIRE, TTL per check). Its callers keep their
+  // own fail policy: most fail open with the SR-951 alert, so an exhausted
+  // share stops counting rather than blocking requests.
+  ratelimit: 0.1,
 };
 
 /** Thrown when the budget configuration is invalid; RPCs return 503. */
