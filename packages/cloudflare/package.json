@@ -12,6 +12,9 @@
   },
   "main": "./src/index.ts",
   "types": "./src/index.ts",
+  "imports": {
+    "#turnstile-safari": "./src/turnstile/safari.ts"
+  },
   "exports": {
     ".": "./src/index.ts",
     "./turnstile": "./src/turnstile/index.ts",
