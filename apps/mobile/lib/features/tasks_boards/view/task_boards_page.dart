@@ -22,7 +22,8 @@ class TaskBoardsPage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return RepositoryProvider<TaskRepository>(
-      create: (_) => taskRepository ?? TaskRepository(),
+      create: (context) =>
+          taskRepository ?? context.read<TaskRepository?>() ?? TaskRepository(),
       child: BlocProvider(
         create: (context) {
           unawaited(CacheWarmupCoordinator.instance.prewarmModule('tasks'));
@@ -38,7 +39,11 @@ class TaskBoardsPage extends StatelessWidget {
                 : TaskBoardsCubit.seedStateFor(wsId),
           );
         },
-        child: TaskBoardsView(permissionsRepository: permissionsRepository),
+        child: TaskBoardsView(
+          permissionsRepository:
+              permissionsRepository ??
+              context.read<WorkspacePermissionsRepository?>(),
+        ),
       ),
     );
   }

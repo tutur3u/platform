@@ -5,6 +5,49 @@ void registerShellPeerSectionChecks({
   required AuthCubit Function() authCubit,
   required WorkspaceCubit Function() workspaceCubit,
 }) {
+  for (final useDock in [true, false]) {
+    testWidgets(
+      '${useDock ? 'Dock' : 'System'} Back restores Tasks from a board',
+      (tester) async {
+        tester.view.devicePixelRatio = 1;
+        tester.view.physicalSize = const Size(390, 844);
+        addTearDown(() {
+          tester.view.resetPhysicalSize();
+          tester.view.resetDevicePixelRatio();
+        });
+        final router = _buildRouter(initialLocation: Routes.tasks);
+        addTearDown(router.dispose);
+        await tester.pumpWidget(
+          _buildTestApp(
+            router: router,
+            appTabCubit: appTabCubit(),
+            authCubit: authCubit(),
+            workspaceCubit: workspaceCubit(),
+          ),
+        );
+        await _pumpForTransitions(tester);
+        router.push<void>(Routes.taskBoardDetailPath('board-1')).ignore();
+        await _pumpForTransitions(tester);
+        expect(find.text('task-board-board-1'), findsOneWidget);
+
+        if (useDock) {
+          await tester.tap(find.bySemanticsLabel('Back'));
+        } else {
+          await tester.binding.handlePopRoute();
+        }
+        await _pumpForTransitions(tester);
+
+        expect(find.text('tasks'), findsOneWidget);
+        expect(
+          router.routerDelegate.currentConfiguration.last.matchedLocation,
+          Routes.tasks,
+        );
+        expect(router.canPop(), isFalse);
+        expect(tester.takeException(), isNull);
+      },
+    );
+  }
+
   testWidgets('workspace settings Back reaches Settings before exiting', (
     tester,
   ) async {

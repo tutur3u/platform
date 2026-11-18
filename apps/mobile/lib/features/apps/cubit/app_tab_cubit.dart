@@ -151,7 +151,10 @@ class AppTabCubit extends Cubit<AppTabState> {
 
   Future<void> setLastTabRoute(String route) async {
     try {
-      await _settings.setLastTabRoute(route);
+      final launchRoute = Routes.isTaskBoardDetailLocation(route)
+          ? Routes.tasks
+          : route;
+      await _settings.setLastTabRoute(launchRoute);
     } on Exception catch (e, st) {
       log('Failed to persist last tab route', error: e, stackTrace: st);
     }

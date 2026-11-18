@@ -190,7 +190,6 @@ void main() {
     },
   );
 
-  // Finance and Tasks rows live on their central app sub-screens.
   for (final sample in [
     (
       'settings-finance-row',
@@ -205,13 +204,6 @@ void main() {
       'Off',
       false,
       Routes.settings,
-    ),
-    (
-      'settings-task-board-row',
-      'disable-default-task-board-navigation',
-      'Board picker',
-      true,
-      Routes.settingsAppPath('tasks'),
     ),
   ]) {
     testWidgets(

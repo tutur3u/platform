@@ -72,6 +72,7 @@ class ShellChromeConfig {
       Routes.habits => l10n.habitsTitle,
       Routes.habitsActivity => l10n.habitsActivityTitle,
       Routes.taskBoards => l10n.taskBoardsTitle,
+      Routes.taskAssigned => l10n.dashboardAssignedToMe,
       Routes.taskSettings ||
       Routes.taskPlanning ||
       Routes.taskEstimates => l10n.taskSettingsTitle,

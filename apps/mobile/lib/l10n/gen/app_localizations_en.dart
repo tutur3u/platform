@@ -7858,18 +7858,6 @@ class AppLocalizationsEn extends AppLocalizations {
   String get settingsDataStatusRefreshing => 'Refreshing';
 
   @override
-  String get settingsDefaultTaskBoardNavigation => 'Open Tasks board by default';
-
-  @override
-  String get settingsDefaultTaskBoardNavigationBoardPicker => 'Board picker';
-
-  @override
-  String get settingsDefaultTaskBoardNavigationDefaultBoard => 'Tasks board';
-
-  @override
-  String get settingsDefaultTaskBoardNavigationDescription => 'Open your personal Tasks board directly from Boards. Tasks always opens the board list view.';
-
-  @override
   String get settingsDefaultWorkspace => 'Default workspace';
 
   @override
@@ -11930,9 +11918,6 @@ class AppLocalizationsEn extends AppLocalizations {
   String get settingsAppOfflineDataDescription => 'Prepare and review what this device keeps offline';
 
   @override
-  String get settingsAppBoardsGroup => 'Boards';
-
-  @override
   String get settingsAppWeekGroup => 'Week';
 
   @override
@@ -12015,12 +12000,6 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get settingsFooterOffline => 'Data kept on this device for offline use.';
-
-  @override
-  String get settingsTasksSummaryBoardView => 'Board view';
-
-  @override
-  String get settingsTasksSummaryBoardList => 'Board list';
 
   @override
   String get settingsFinanceAmountsShown => 'Amounts shown';

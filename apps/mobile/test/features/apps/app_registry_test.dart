@@ -71,7 +71,7 @@ void main() {
       expect(tasks, isNotNull);
       final routes = tasks!.miniAppNavItems.map((item) => item.route).toList();
 
-      expect(routes, [Routes.tasks, Routes.taskBoards, Routes.taskSettings]);
+      expect(routes, [Routes.tasks, Routes.taskAssigned, Routes.taskSettings]);
       expect(tasks.miniAppNavItems.last.id, 'tasks_settings');
     });
 

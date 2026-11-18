@@ -7764,18 +7764,6 @@ class AppLocalizationsVi extends AppLocalizations {
   String get settingsDataStatusRefreshing => 'Đang làm mới';
 
   @override
-  String get settingsDefaultTaskBoardNavigation => 'Mở bảng Công việc theo mặc định';
-
-  @override
-  String get settingsDefaultTaskBoardNavigationBoardPicker => 'Bộ chọn bảng';
-
-  @override
-  String get settingsDefaultTaskBoardNavigationDefaultBoard => 'Bảng Công việc';
-
-  @override
-  String get settingsDefaultTaskBoardNavigationDescription => 'Mở thẳng bảng Công việc cá nhân từ Bảng. Công việc luôn mở chế độ danh sách của bảng.';
-
-  @override
   String get settingsDefaultWorkspace => 'Không gian mặc định';
 
   @override
@@ -11799,9 +11787,6 @@ class AppLocalizationsVi extends AppLocalizations {
   String get settingsAppOfflineDataDescription => 'Chuẩn bị và xem dữ liệu thiết bị này lưu ngoại tuyến';
 
   @override
-  String get settingsAppBoardsGroup => 'Bảng';
-
-  @override
   String get settingsAppWeekGroup => 'Tuần';
 
   @override
@@ -11883,12 +11868,6 @@ class AppLocalizationsVi extends AppLocalizations {
 
   @override
   String get settingsFooterOffline => 'Dữ liệu lưu trên thiết bị này để dùng ngoại tuyến.';
-
-  @override
-  String get settingsTasksSummaryBoardView => 'Xem dạng bảng';
-
-  @override
-  String get settingsTasksSummaryBoardList => 'Danh sách bảng';
 
   @override
   String get settingsFinanceAmountsShown => 'Đang hiện số tiền';

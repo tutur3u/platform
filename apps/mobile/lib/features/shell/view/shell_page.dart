@@ -429,7 +429,8 @@ class _ShellPageState extends State<ShellPage> with WidgetsBindingObserver {
       context.go(origin);
       return;
     }
-    if ((currentLocation.startsWith('${Routes.settings}/') ||
+    if ((Routes.isTaskBoardDetailLocation(currentLocation) ||
+            currentLocation.startsWith('${Routes.settings}/') ||
             Routes.isMastermindLaneLocation(currentLocation) ||
             Routes.isMastermindInboxItemLocation(currentLocation) ||
             Routes.isMastermindInboxDecisionLocation(currentLocation) ||
@@ -454,7 +455,7 @@ class _ShellPageState extends State<ShellPage> with WidgetsBindingObserver {
           (parentRoute == null &&
               injectedDeepLinkBackRoute == null &&
               _isPrimaryMiniAppDestination(currentLocation))) {
-        // Explicit app exits bypass inferred parents, including default boards.
+        // Explicit app exits bypass inferred parents.
         await _returnToAppOrigin();
         return;
       }

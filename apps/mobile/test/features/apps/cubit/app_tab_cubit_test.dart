@@ -64,6 +64,18 @@ void main() {
     });
   }
 
+  test('saving a board as the current tab persists the Tasks list', () async {
+    final settings = SettingsRepository();
+    final cubit = AppTabCubit(settingsRepository: settings);
+    addTearDown(cubit.close);
+
+    await cubit.setLastTabRoute(
+      Routes.taskBoardDetailViewPath('board-1', 'list'),
+    );
+
+    expect(await settings.getLastTabRoute(), Routes.tasks);
+  });
+
   test('app order, hidden apps and tab visibility survive a restart', () async {
     final first = AppTabCubit(settingsRepository: SettingsRepository());
     await first.setAppOrder(['calendar', 'mail', 'tasks']);

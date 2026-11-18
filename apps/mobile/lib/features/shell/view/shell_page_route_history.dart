@@ -196,14 +196,16 @@ extension _ShellPageRouteHistory on _ShellPageState {
 
   bool _isPrimaryMiniAppDestination(String location) {
     final normalized = _normalizeRouteLocation(location);
-    return AppRegistry.allModules.any(
-      (module) => module.miniAppNavItems.any(
-        (item) => _normalizeRouteLocation(item.route) == normalized,
-      ),
-    );
+    return normalized == Routes.taskBoards ||
+        AppRegistry.allModules.any(
+          (module) => module.miniAppNavItems.any(
+            (item) => _normalizeRouteLocation(item.route) == normalized,
+          ),
+        );
   }
 
   String? _parentRouteFor(String location, String root) {
+    if (Routes.isTaskBoardDetailLocation(location)) return Routes.taskBoards;
     if (Routes.isSettingsHubLocation(location)) {
       final slash = location.lastIndexOf('/');
       if (slash > 0) {

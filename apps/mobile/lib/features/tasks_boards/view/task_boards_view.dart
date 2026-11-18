@@ -11,12 +11,10 @@ import 'package:mobile/core/ui/icons/app_icons.dart';
 import 'package:mobile/core/ui/overlays/show_app_sheet.dart' show showAppDialog;
 import 'package:mobile/core/widgets/shadcn_flutter_compat.dart' as shad;
 import 'package:mobile/data/models/task_board_summary.dart';
-import 'package:mobile/data/repositories/settings_repository.dart';
 import 'package:mobile/data/repositories/workspace_permissions_repository.dart';
 import 'package:mobile/data/sources/api_client.dart';
 import 'package:mobile/features/shell/cubit/shell_chrome_actions_cubit.dart';
 import 'package:mobile/features/shell/view/shell_chrome_actions.dart';
-import 'package:mobile/features/tasks/utils/task_board_navigation.dart';
 import 'package:mobile/features/tasks/widgets/task_surface.dart';
 import 'package:mobile/features/tasks_boards/cubit/task_boards_cubit.dart';
 import 'package:mobile/features/tasks_boards/view/task_board_form_dialog.dart';
@@ -43,12 +41,8 @@ class TaskBoardsView extends StatefulWidget {
 
 class _TaskBoardsViewState extends State<TaskBoardsView> {
   late final WorkspacePermissionsRepository _permissionsRepository;
-  late final SettingsRepository _settingsRepository;
   final ScrollController _scrollController = ScrollController();
-  final Set<String> _defaultNavigationAttemptedWorkspaceIds = <String>{};
   String? _permissionsWorkspaceId;
-  bool _disableDefaultTaskBoardNavigation = false;
-  bool _defaultNavigationPreferenceLoaded = false;
   bool _canManageProjects = false;
   bool _isCheckingPermissions = false;
   bool _permissionsLoadFailed = false;
@@ -59,9 +53,7 @@ class _TaskBoardsViewState extends State<TaskBoardsView> {
     super.initState();
     _permissionsRepository =
         widget.permissionsRepository ?? WorkspacePermissionsRepository();
-    _settingsRepository = SettingsRepository();
     _scrollController.addListener(_onScroll);
-    unawaited(_loadDefaultNavigationPreference());
   }
 
   @override
@@ -100,36 +92,33 @@ class _TaskBoardsViewState extends State<TaskBoardsView> {
         _hasResolvedPermissions = false;
         unawaited(_loadPermissions());
       },
-      child: BlocListener<TaskBoardsCubit, TaskBoardsState>(
-        listenWhen: (previous, current) =>
-            previous.status != current.status ||
-            previous.boards != current.boards,
-        listener: (context, state) => _maybeOpenDefaultBoard(state),
-        child: Stack(
-          children: [
-            _buildContent(context),
-            if (_canManageProjects)
-              SpeedDialFab(
-                label: l10n.taskBoardsTitle,
-                icon: Icons.add,
-                includeBottomSafeArea: false,
-                actions: [
-                  FabAction(
-                    icon: Icons.add_box_outlined,
-                    label: l10n.taskBoardsCreate,
-                    onPressed: _openCreateBoard,
-                  ),
-                ],
-              ),
-          ],
-        ),
+      child: Stack(
+        children: [
+          _buildContent(context),
+          if (_canManageProjects)
+            SpeedDialFab(
+              label: l10n.taskBoardsTitle,
+              icon: Icons.add,
+              includeBottomSafeArea: false,
+              actions: [
+                FabAction(
+                  icon: Icons.add_box_outlined,
+                  label: l10n.taskBoardsCreate,
+                  onPressed: _openCreateBoard,
+                ),
+              ],
+            ),
+        ],
       ),
     );
   }
 
   Widget _buildContent(BuildContext context) {
     final taskBoardsState = context.watch<TaskBoardsCubit>().state;
-    final hasVisibleBoards = taskBoardsState.boards.isNotEmpty;
+    final isWorkspaceSnapshot =
+        taskBoardsState.workspaceId == _permissionsWorkspaceId;
+    final hasVisibleBoards =
+        isWorkspaceSnapshot && taskBoardsState.boards.isNotEmpty;
     final shellActions = [
       ShellActionSpec(
         id: 'task-boards-filter',
@@ -141,7 +130,7 @@ class _TaskBoardsViewState extends State<TaskBoardsView> {
     ];
     final shellActionRegistration = ShellChromeActions(
       ownerId: 'task-boards-root',
-      locations: const {Routes.taskBoards},
+      locations: const {Routes.tasks, Routes.taskBoards},
       actions: shellActions,
     );
 
@@ -177,7 +166,10 @@ class _TaskBoardsViewState extends State<TaskBoardsView> {
 
     return BlocBuilder<TaskBoardsCubit, TaskBoardsState>(
       builder: (context, state) {
-        if (state.status == TaskBoardsStatus.loading && state.boards.isEmpty) {
+        if ((state.workspaceId != null &&
+                state.workspaceId != _permissionsWorkspaceId) ||
+            (state.status == TaskBoardsStatus.loading &&
+                state.boards.isEmpty)) {
           return Stack(
             children: [
               shellActionRegistration,
@@ -242,7 +234,9 @@ class _TaskBoardsViewState extends State<TaskBoardsView> {
     if (!_scrollController.hasClients) return;
 
     final state = context.read<TaskBoardsCubit>().state;
-    if (!state.hasNextPage || state.isLoadingMore) {
+    if (state.workspaceId != _permissionsWorkspaceId ||
+        !state.hasNextPage ||
+        state.isLoadingMore) {
       return;
     }
 
@@ -300,41 +294,6 @@ class _TaskBoardsViewState extends State<TaskBoardsView> {
         _hasResolvedPermissions = true;
       });
     }
-  }
-
-  Future<void> _loadDefaultNavigationPreference() async {
-    final disabled = await _settingsRepository
-        .getDisableDefaultTaskBoardNavigation();
-    if (!mounted) return;
-    setState(() {
-      _disableDefaultTaskBoardNavigation = disabled;
-      _defaultNavigationPreferenceLoaded = true;
-    });
-    _maybeOpenDefaultBoard(context.read<TaskBoardsCubit>().state);
-  }
-
-  void _maybeOpenDefaultBoard(TaskBoardsState state) {
-    if (!_defaultNavigationPreferenceLoaded ||
-        _disableDefaultTaskBoardNavigation ||
-        state.status == TaskBoardsStatus.loading) {
-      return;
-    }
-
-    final workspace = context.read<WorkspaceCubit>().state.currentWorkspace;
-    if (workspace == null || !workspace.personal) return;
-    if (_defaultNavigationAttemptedWorkspaceIds.contains(workspace.id)) return;
-
-    final defaultBoard = preferredPersonalTaskBoard(state.boards);
-    if (defaultBoard == null) return;
-
-    _defaultNavigationAttemptedWorkspaceIds.add(workspace.id);
-    if (!context.mounted) return;
-    context.go(
-      taskBoardViewLocation(
-        boardId: defaultBoard.id,
-        view: taskBoardDetailViewList,
-      ),
-    );
   }
 
   bool _canUpdatePermissionsState(String? capturedWsId) {

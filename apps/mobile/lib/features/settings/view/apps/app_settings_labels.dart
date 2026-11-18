@@ -18,15 +18,6 @@ String calendarFirstDayLabel(
   };
 }
 
-String taskBoardNavigationLabel(
-  AppLocalizations l10n, {
-  required bool? boardPicker,
-}) => switch (boardPicker) {
-  null => l10n.commonLoading,
-  true => l10n.settingsDefaultTaskBoardNavigationBoardPicker,
-  false => l10n.settingsDefaultTaskBoardNavigationDefaultBoard,
-};
-
 String pomodoroSummary(PomodoroSettings settings, AppLocalizations l10n) => l10n
     .settingsPomodoroSummary(settings.focusMinutes, settings.shortBreakMinutes);
 
@@ -36,11 +27,3 @@ String financeAmountsLabel(
 }) => showAmounts
     ? l10n.settingsFinanceAmountsShown
     : l10n.settingsFinanceAmountsHidden;
-
-/// The Apps row says what Boards opens, not the setting's title again.
-String taskBoardSummary(AppLocalizations l10n, {required bool? boardPicker}) =>
-    switch (boardPicker) {
-      null => l10n.commonLoading,
-      true => l10n.settingsTasksSummaryBoardList,
-      false => l10n.settingsTasksSummaryBoardView,
-    };

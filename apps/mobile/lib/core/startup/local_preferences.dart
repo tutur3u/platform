@@ -1,3 +1,5 @@
+import 'package:mobile/core/router/routes.dart';
+
 /// Reads launch preferences together, preserving theme-dependent chrome.
 /// All work settles before returning so the first frame has its haptic policy,
 /// system chrome, and restored destination ready.
@@ -26,5 +28,10 @@ Future<({T themeMode, String? initialRoute})> loadStartupPreferences<T>({
       appRoute = await loadAppRoute();
     }(),
   ]);
-  return (themeMode: theme, initialRoute: tabRoute ?? appRoute);
+  final savedRoute = tabRoute ?? appRoute;
+  final initialRoute =
+      savedRoute != null && Routes.isTaskBoardDetailLocation(savedRoute)
+      ? Routes.tasks
+      : savedRoute;
+  return (themeMode: theme, initialRoute: initialRoute);
 }

@@ -147,6 +147,7 @@ class TaskBoardsCubit extends Cubit<TaskBoardsState> {
         key: cacheKey,
         decode: _decodeCacheJson,
       );
+      if (isClosed || requestToken != _loadRequestToken) return;
       if (cached.hasValue) {
         hasCachedReset = true;
         final json = cached.data!;
@@ -199,7 +200,7 @@ class TaskBoardsCubit extends Cubit<TaskBoardsState> {
         page: normalizedPage,
         pageSize: normalizedPageSize,
       );
-      if (requestToken != _loadRequestToken) return;
+      if (isClosed || requestToken != _loadRequestToken) return;
 
       emit(
         state.copyWith(
@@ -231,7 +232,7 @@ class TaskBoardsCubit extends Cubit<TaskBoardsState> {
         );
       }
     } on Exception catch (error) {
-      if (requestToken != _loadRequestToken) return;
+      if (isClosed || requestToken != _loadRequestToken) return;
       if (hasCachedReset) {
         emit(
           state.copyWith(

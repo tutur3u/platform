@@ -24,6 +24,7 @@ import 'package:mobile/features/notes/notes_page.dart';
 import 'package:mobile/features/settings/cubit/experimental_apps_cubit.dart';
 import 'package:mobile/features/settings/view/settings_page.dart';
 import 'package:mobile/features/tasks/view/task_list_page.dart';
+import 'package:mobile/features/tasks_boards/view/task_boards_page.dart';
 import 'package:mobile/features/time_tracker/view/time_tracker_page.dart';
 import 'package:mobile/features/workspace/cubit/workspace_cubit.dart';
 import 'package:mobile/l10n/l10n.dart';
@@ -41,6 +42,10 @@ class AppRegistry {
                   await notesPageKey.currentState?.savePending() ?? true
             : null,
       ),
+    GoRoute(
+      path: Routes.taskAssigned,
+      builder: (context, state) => const TaskListPage(),
+    ),
     GoRoute(
       path: Routes.calendarEventDetail,
       builder: (context, state) =>
@@ -216,14 +221,14 @@ class AppRegistry {
     MiniAppNavItem(
       id: 'tasks_home',
       route: Routes.tasks,
-      icon: LucideIcons.userCheck,
+      icon: LucideIcons.squareKanban,
       labelBuilder: _labelTasks,
     ),
     MiniAppNavItem(
-      id: 'tasks_boards',
-      route: Routes.taskBoards,
-      icon: LucideIcons.squareKanban,
-      labelBuilder: _labelTaskBoards,
+      id: 'tasks_assigned',
+      route: Routes.taskAssigned,
+      icon: LucideIcons.userCheck,
+      labelBuilder: _labelAssignedTasks,
     ),
     MiniAppNavItem(
       id: 'tasks_settings',
@@ -587,7 +592,8 @@ class AppRegistry {
       l10n.habitsLibraryLabel;
   static String _labelTaskSettings(AppLocalizations l10n) =>
       l10n.taskSettingsDockLabel;
-  static String _labelTaskBoards(AppLocalizations l10n) => l10n.taskBoardsTitle;
+  static String _labelAssignedTasks(AppLocalizations l10n) =>
+      l10n.dashboardAssignedToMe;
   static String _labelCalendar(AppLocalizations l10n) => l10n.navCalendar;
   static String _labelCalendarAgenda(AppLocalizations l10n) =>
       l10n.calendarAgendaView;
@@ -626,7 +632,7 @@ class AppRegistry {
   static String _timerRequestsTitle(AppLocalizations l10n) =>
       l10n.timerRequestsTitle;
 
-  static Widget _pageTasks(BuildContext context) => const TaskListPage();
+  static Widget _pageTasks(BuildContext context) => const TaskBoardsPage();
   static Widget _pageChat(BuildContext context) => const ChatPage();
   static Widget _pageHabits(BuildContext context) => const HabitsPage();
   static Widget _pageCalendar(BuildContext context) => const CalendarPage();

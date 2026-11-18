@@ -28,6 +28,7 @@ abstract final class Routes {
   static const habitsActivity = '/habits/activity';
   static const habitsLibrary = '/habits/library';
   static const taskBoards = '/tasks/boards';
+  static const taskAssigned = '/tasks/assigned';
   static const taskBoardDetail = '/tasks/boards/:boardId';
   // Workspace task settings. `/tasks/settings` stays the alias for the
   // central device preferences at `/settings/apps/tasks`.
@@ -207,6 +208,11 @@ abstract final class Routes {
       '/tasks/portfolio/projects/$projectId';
 
   static String taskBoardDetailPath(String boardId) => '/tasks/boards/$boardId';
+
+  static bool isTaskBoardDetailLocation(String location) {
+    final path = Uri.tryParse(location)?.path ?? location;
+    return normalizeLocation(path).startsWith('$taskBoards/');
+  }
 
   static String taskBoardDetailViewPath(String boardId, String view) => Uri(
     path: taskBoardDetailPath(boardId),

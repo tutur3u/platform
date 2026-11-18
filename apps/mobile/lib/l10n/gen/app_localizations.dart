@@ -14923,30 +14923,6 @@ abstract class AppLocalizations {
   /// **'Refreshing'**
   String get settingsDataStatusRefreshing;
 
-  /// No description provided for @settingsDefaultTaskBoardNavigation.
-  ///
-  /// In en, this message translates to:
-  /// **'Open Tasks board by default'**
-  String get settingsDefaultTaskBoardNavigation;
-
-  /// No description provided for @settingsDefaultTaskBoardNavigationBoardPicker.
-  ///
-  /// In en, this message translates to:
-  /// **'Board picker'**
-  String get settingsDefaultTaskBoardNavigationBoardPicker;
-
-  /// No description provided for @settingsDefaultTaskBoardNavigationDefaultBoard.
-  ///
-  /// In en, this message translates to:
-  /// **'Tasks board'**
-  String get settingsDefaultTaskBoardNavigationDefaultBoard;
-
-  /// No description provided for @settingsDefaultTaskBoardNavigationDescription.
-  ///
-  /// In en, this message translates to:
-  /// **'Open your personal Tasks board directly from Boards. Tasks always opens the board list view.'**
-  String get settingsDefaultTaskBoardNavigationDescription;
-
   /// No description provided for @settingsDefaultWorkspace.
   ///
   /// In en, this message translates to:
@@ -22549,12 +22525,6 @@ abstract class AppLocalizations {
   /// **'Prepare and review what this device keeps offline'**
   String get settingsAppOfflineDataDescription;
 
-  /// No description provided for @settingsAppBoardsGroup.
-  ///
-  /// In en, this message translates to:
-  /// **'Boards'**
-  String get settingsAppBoardsGroup;
-
   /// No description provided for @settingsAppWeekGroup.
   ///
   /// In en, this message translates to:
@@ -22692,18 +22662,6 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Data kept on this device for offline use.'**
   String get settingsFooterOffline;
-
-  /// No description provided for @settingsTasksSummaryBoardView.
-  ///
-  /// In en, this message translates to:
-  /// **'Board view'**
-  String get settingsTasksSummaryBoardView;
-
-  /// No description provided for @settingsTasksSummaryBoardList.
-  ///
-  /// In en, this message translates to:
-  /// **'Board list'**
-  String get settingsTasksSummaryBoardList;
 
   /// No description provided for @settingsFinanceAmountsShown.
   ///

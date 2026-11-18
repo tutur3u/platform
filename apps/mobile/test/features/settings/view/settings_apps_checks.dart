@@ -23,7 +23,7 @@ void registerSettingsAppsChecks() {
         tester.widget<SettingsTile>(find.byKey(ValueKey(id))).value;
     expect(find.text('Apps'), findsOneWidget);
     // Summaries state the value, not the setting's title again.
-    expect(summary('tasks'), 'Board view');
+    expect(summary('tasks'), isNull);
     expect(summary('calendar'), 'First day: Auto');
     expect(summary('finance'), 'Amounts hidden');
     // Timer is opt-in; without the experiment its row stays hidden.
@@ -42,7 +42,7 @@ void registerSettingsAppsChecks() {
 
     await _tapRow(tester, const ValueKey('tasks'));
     expect(h.router.state.matchedLocation, Routes.settingsAppPath('tasks'));
-    expect(find.byKey(const ValueKey('settings-task-board-row')), findsOne);
+    expect(find.byKey(const ValueKey('settings-task-board-row')), findsNothing);
     expect(
       find.byKey(const ValueKey('app-settings-tasks-offline')),
       findsOneWidget,

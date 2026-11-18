@@ -20,8 +20,7 @@ export 'package:mobile/features/settings/view/product_settings_section.dart';
 
 /// Current values behind the Apps rows, loaded once per Settings visit.
 class AppSettingsSummaries {
-  const AppSettingsSummaries({this.boardPicker, this.pomodoro});
-  final bool? boardPicker;
+  const AppSettingsSummaries({this.pomodoro});
   final PomodoroSettings? pomodoro;
 }
 
@@ -69,12 +68,7 @@ final productSettingsRegistry = <ProductSettingsEntry>[
     title: (context) => context.l10n.navTasks,
     visible: (_) => true,
     open: (context) => _push(context, 'tasks'),
-    summary: (context, values) =>
-        taskBoardSummary(context.l10n, boardPicker: values.boardPicker),
-    keywords: (l10n) => [
-      l10n.settingsDefaultTaskBoardNavigation,
-      l10n.taskBoardsTitle,
-    ],
+    keywords: (l10n) => [l10n.settingsAppOfflineData],
   ),
   ProductSettingsEntry(
     id: 'calendar',

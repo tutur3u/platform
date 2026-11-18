@@ -29,6 +29,9 @@ This reference is for `apps/mobile` task-board work in the Tuturuuu platform rep
 
 ## Routing
 
+- Tasks and Boards enter the current workspace's board list. Board details
+  open from an explicit selection or a direct link. Keep workspace changes and
+  list refreshes free of board-detail navigation.
 - Use the workspace-aware route boundary for opening task details across workspaces.
 - After async workspace switching, check that the widget context is still mounted before navigation.
 - Keep deep links and direct detail opens aligned with the same route helper.

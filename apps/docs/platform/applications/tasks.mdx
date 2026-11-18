@@ -468,11 +468,13 @@ Kanban-style task boards.
 Personal workspaces should always have a default active task board named
 `Tasks`. Web and mobile task-board listing APIs ensure that board exists before
 returning board data, so users should not see a prompt just to bootstrap their
-personal task workflow. Mobile opens that default board directly from both the
-Tasks and Boards surfaces unless the user disables default task-board navigation
-in mobile Settings. The web settings dialog exposes the same preference for the
-Boards page, keeping the board picker available for users who prefer the
-previous flow.
+personal task workflow. Mobile opens the current workspace's board list from
+both Tasks and Boards. Select a board to see its details, or open a direct board
+link. If the app last showed a board, reopening the app restores the list. The
+Tasks dock also provides My tasks for assigned work. The mobile
+`tasks_entry_navigation_test.dart` suite covers launch, entry, workspace switches
+and direct board navigation. The web Boards page has its own default-board
+preference.
 
 The Tasks board header also exposes a global create action. It lists only
 workspaces where the caller has `manage_projects`, including workspaces that do

@@ -1,7 +1,6 @@
 import 'package:flutter/widgets.dart';
 import 'package:go_router/go_router.dart';
 import 'package:mobile/core/router/routes.dart';
-import 'package:mobile/data/models/task_board_summary.dart';
 import 'package:mobile/data/models/task_board_task.dart';
 import 'package:mobile/data/models/user_task.dart';
 import 'package:mobile/features/workspace/cubit/workspace_cubit.dart';
@@ -21,32 +20,6 @@ String taskBoardDetailLocation({
 
 String taskBoardViewLocation({required String boardId, required String view}) {
   return Routes.taskBoardDetailViewPath(boardId, view);
-}
-
-bool isDefaultPersonalTaskBoard(TaskBoardSummary board) {
-  return board.name?.trim().toLowerCase() == 'tasks' &&
-      !board.isArchived &&
-      !board.isRecentlyDeleted;
-}
-
-bool isOpenTaskBoard(TaskBoardSummary board) {
-  return !board.isArchived && !board.isRecentlyDeleted;
-}
-
-TaskBoardSummary? preferredPersonalTaskBoard(
-  Iterable<TaskBoardSummary> boards,
-) {
-  TaskBoardSummary? firstOpenBoard;
-  for (final board in boards) {
-    if (!isOpenTaskBoard(board)) {
-      continue;
-    }
-    firstOpenBoard ??= board;
-    if (isDefaultPersonalTaskBoard(board)) {
-      return board;
-    }
-  }
-  return firstOpenBoard;
 }
 
 String? userTaskBoardDetailLocation(UserTask task) {

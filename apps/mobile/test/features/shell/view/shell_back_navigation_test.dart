@@ -192,7 +192,7 @@ void main() {
       expect(
         find.descendant(
           of: find.byType(MorphingNavigationBar),
-          matching: find.text(l10n.taskBoardsTitle),
+          matching: find.text(l10n.dashboardAssignedToMe),
         ),
         findsOneWidget,
       );

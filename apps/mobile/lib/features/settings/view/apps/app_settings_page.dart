@@ -4,7 +4,6 @@ import 'package:mobile/core/cache/cache_store.dart';
 import 'package:mobile/core/layout/layout.dart';
 import 'package:mobile/core/router/routes.dart';
 import 'package:mobile/core/ui/ui.dart';
-import 'package:mobile/data/repositories/settings_repository.dart';
 import 'package:mobile/data/repositories/time_tracker_repository.dart';
 import 'package:mobile/data/repositories/workspace_permissions_repository.dart';
 import 'package:mobile/features/settings/view/apps/app_settings_group.dart';
@@ -18,7 +17,6 @@ import 'package:mobile/l10n/l10n.dart';
 class AppSettingsPage extends StatelessWidget {
   const AppSettingsPage({
     required this.appId,
-    this.settingsRepository,
     this.timeTrackerRepository,
     this.permissionsRepository,
     this.cacheStore,
@@ -27,7 +25,6 @@ class AppSettingsPage extends StatelessWidget {
   });
 
   final String appId;
-  final SettingsRepository? settingsRepository;
   final ITimeTrackerRepository? timeTrackerRepository;
   final WorkspacePermissionsRepository? permissionsRepository;
   final CacheStore? cacheStore;
@@ -41,7 +38,6 @@ class AppSettingsPage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final groups = switch (appId) {
-      'tasks' => [TasksAppSettings(settingsRepository: settingsRepository)],
       'calendar' => const [CalendarAppSettings()],
       'finance' => const [FinanceAppSettings()],
       'timer' => [

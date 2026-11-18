@@ -41,11 +41,7 @@ class SettingsRepository {
   static const _accountAppearancePendingPrefix = 'appearance-account-pending';
   static const _calendarViewKey = 'calendar-view';
   static const _taskViewModeKey = 'task-view-mode';
-  static const _disableDefaultTaskBoardNavigationKey =
-      'disable-default-task-board-navigation';
   static const _enabledExperimentalAppsKey = 'enabled-experimental-apps';
-  static const _personalDefaultTaskBoardIdPrefix =
-      'personal-default-task-board-id';
   static const _financeAmountsVisibleKey = 'finance-amounts-visible';
   static const _localeKey = 'locale';
   static const _lastTabRouteKey = 'last-tab-route';
@@ -261,18 +257,6 @@ class SettingsRepository {
     await prefs.setString(_taskViewModeKey, mode);
   }
 
-  Future<bool> getDisableDefaultTaskBoardNavigation() async {
-    final prefs = await SharedPreferences.getInstance();
-    return prefs.getBool(_disableDefaultTaskBoardNavigationKey) ?? false;
-  }
-
-  Future<void> setDisableDefaultTaskBoardNavigation({
-    required bool value,
-  }) async {
-    final prefs = await SharedPreferences.getInstance();
-    await prefs.setBool(_disableDefaultTaskBoardNavigationKey, value);
-  }
-
   Future<Set<String>> getEnabledExperimentalAppIds() async {
     final prefs = await SharedPreferences.getInstance();
     return (prefs.getStringList(_enabledExperimentalAppsKey) ?? const [])
@@ -303,25 +287,6 @@ class SettingsRepository {
     }
     final sortedModuleIds = moduleIds.toList(growable: false)..sort();
     await prefs.setStringList(_enabledExperimentalAppsKey, sortedModuleIds);
-  }
-
-  Future<String?> getPersonalDefaultTaskBoardId(String wsId) async {
-    final prefs = await SharedPreferences.getInstance();
-    return prefs.getString('$_personalDefaultTaskBoardIdPrefix-$wsId');
-  }
-
-  Future<void> setPersonalDefaultTaskBoardId(
-    String wsId,
-    String? boardId,
-  ) async {
-    final prefs = await SharedPreferences.getInstance();
-    final key = '$_personalDefaultTaskBoardIdPrefix-$wsId';
-    final normalizedBoardId = boardId?.trim();
-    if (normalizedBoardId == null || normalizedBoardId.isEmpty) {
-      await prefs.remove(key);
-      return;
-    }
-    await prefs.setString(key, normalizedBoardId);
   }
 
   Future<bool> getFinanceAmountsVisible() async {
