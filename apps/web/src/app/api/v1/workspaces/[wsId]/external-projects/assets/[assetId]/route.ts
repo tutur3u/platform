@@ -20,6 +20,7 @@ import {
   requireWorkspaceExternalProjectAccess,
   resolveWorkspaceExternalProjectBinding,
 } from '@/lib/external-projects/access';
+import { resolveAllowedAssetRedirectUrl } from '@/lib/external-projects/asset-redirect-policy';
 import { guardExternalProjectAssetSourceUrl } from '@/lib/external-projects/asset-source-guard';
 import { EXTERNAL_PROJECT_PRIVATE_CACHE_CONTROL } from '@/lib/external-projects/cache';
 import {
@@ -167,11 +168,11 @@ export async function GET(
     }
 
     if (asset.source_url) {
+      const sourceUrl = resolveAllowedAssetRedirectUrl(asset.source_url);
+      if (!sourceUrl) {
+        return privateJson({ error: 'Asset not available' }, 404);
+      }
       try {
-        const sourceUrl = new URL(asset.source_url);
-        if (!['http:', 'https:'].includes(sourceUrl.protocol)) {
-          return privateJson({ error: 'Asset not available' }, 404);
-        }
         return redirect(
           guardExternalProjectAssetSourceUrl(sourceUrl.toString(), resolvedWsId)
         );
