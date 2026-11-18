@@ -1626,8 +1626,9 @@ check, 64 KiB body bound, call access check and `private, no-store` responses.
 - **Private Mira voice.** `draft_quiz_arena` and `pick_quiz_arena_tile` only
   propose. The host approves the exact board or tile in the Private Mira review
   card before anything changes, and approval fails if the board was replaced,
-  reset or the tile was played meanwhile. Both are host-only and personal-mode
-  only; an approved pick shows Mira's live tag.
+  reset or the tile was played meanwhile. The room service checks the approved
+  board version in the same operation as applying the change. Both tools are
+  host-only and personal-mode only. An approved pick shows Mira's live tag.
 - **Sync.** Clients poll every 1.2 s while a round is live or the drawer is open,
   otherwise every 5 s, and request only changes since their last sequence.
   A reset starts a new epoch so stale deltas fall back to a full read.
@@ -1636,8 +1637,8 @@ check, 64 KiB body bound, call access check and `private, no-store` responses.
 
 Coverage: `room-quiz-arena.test.ts` (modes, secrecy, host-only commands, teams,
 wagers, final round, exports, deltas and a 50-player scale run),
-`room-quiz-arena-integrity.test.ts` (immutable wagers, wager-before-answer and
-provenance),
+`room-quiz-arena-integrity.test.ts` (immutable wagers, wager-before-answer,
+provenance and stale approval rejection),
 `server/quiz-arena.test.ts` (Mira guards, starter fallback, Upskii scoping),
 `quiz-arena/route.test.ts`, `cloudflare/live/quiz-arena.test.ts`,
 `quiz-arena-panel.test.tsx` and the Meet worker `api-registry.test.ts`.

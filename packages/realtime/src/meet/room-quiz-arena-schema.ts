@@ -201,14 +201,21 @@ const mutationActions = new Set<string>(
 export const quizArenaRoomCommandSchema = z.union([
   readCommandSchema,
   z
-    .looseObject({ action: z.string().regex(/^arena\.[a-zA-Z]+$/u) })
+    .looseObject({
+      action: z.string().regex(/^arena\.[a-zA-Z]+$/u),
+      expectedEpoch: z.uuid().nullable().optional(),
+    })
     .refine((input) => mutationActions.has(input.action.slice(6)))
-    .transform((input, ctx) => {
+    .transform(({ expectedEpoch, ...input }, ctx) => {
       const parsed = quizArenaMutationSchema.safeParse({
         ...input,
         action: input.action.slice(6),
       });
-      if (parsed.success) return parsed.data;
+      if (parsed.success) {
+        if (parsed.data.action === 'setup' || parsed.data.action === 'pickTile')
+          return { ...parsed.data, expectedEpoch };
+        if (expectedEpoch === undefined) return parsed.data;
+      }
       ctx.addIssue({ code: 'custom', message: 'Invalid arena command' });
       return z.NEVER;
     }),

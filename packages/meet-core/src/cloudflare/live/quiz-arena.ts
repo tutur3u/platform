@@ -243,6 +243,7 @@ export async function applyQuizArenaProposal(
       action: 'arena.setup',
       board: proposal.board,
       config: proposal.config,
+      expectedEpoch: proposal.epoch,
     });
   const tile =
     view.kind === 'full'
@@ -253,5 +254,6 @@ export async function applyQuizArenaProposal(
     action: 'arena.pickTile',
     tileId: proposal.tileId,
     source: 'mira',
+    expectedEpoch: proposal.epoch,
   });
 }

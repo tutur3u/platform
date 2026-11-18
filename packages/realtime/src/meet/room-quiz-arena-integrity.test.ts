@@ -126,4 +126,39 @@ describe('wager integrity and provenance', () => {
       }).status
     ).toBe(403);
   });
+
+  it('rejects approved Mira writes after the board changes', () => {
+    const live = { ...host, scopes: [...host.scopes, 'meet:live-server'] };
+    const replace = {
+      action: 'arena.setup',
+      board: board(),
+      config: { answerMode: 'all_answer', playMode: 'individual' },
+    };
+    const first = ok(room(1), live, { ...replace, expectedEpoch: null });
+    const expectedEpoch = arena(first).epoch;
+    const current = ok(first, host, replace);
+    const pick = {
+      action: 'arena.pickTile',
+      tileId: arena(current).tiles[0]!.id,
+      source: 'mira',
+    };
+    for (const command of [
+      { ...replace, expectedEpoch: null },
+      { ...replace, expectedEpoch },
+      { ...pick, expectedEpoch },
+    ]) {
+      const result = run(current, live, command);
+      expect(result.status).toBe(409);
+      expect(result.body).toEqual({ error: 'quiz_arena_board_changed' });
+      expect(result.state).toBe(current);
+    }
+    expect(
+      run(current, host, { ...replace, expectedEpoch: arena(current).epoch })
+        .status
+    ).toBe(403);
+    expect(
+      arena(ok(current, live, { ...pick, expectedEpoch: arena(current).epoch }))
+        .pickedBy
+    ).toBe('mira');
+  });
 });

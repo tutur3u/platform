@@ -196,7 +196,12 @@ it('writes only the exact approved action, and nothing when the host denies it',
   await decide(approved, true);
   expect(approved.status).toBe('approved');
   expect(writes()).toEqual([
-    { action: 'arena.pickTile', tileId, source: 'mira' },
+    {
+      action: 'arena.pickTile',
+      tileId,
+      source: 'mira',
+      expectedEpoch: 'epoch-1',
+    },
   ]);
 });
 
@@ -258,6 +263,6 @@ it('proposes a starter board, or Mira’s own validated questions, for approval'
   expect(writes()).toEqual([]);
   await applyQuizArenaProposal(env, claims, identity, generated.args);
   expect(writes()).toMatchObject([
-    { action: 'arena.setup', board: { source: 'mira' } },
+    { action: 'arena.setup', board: { source: 'mira' }, expectedEpoch: null },
   ]);
 });

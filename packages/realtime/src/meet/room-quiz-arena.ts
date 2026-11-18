@@ -187,6 +187,14 @@ export function applyRoomQuizArena(
   if (snapshot.ended) return fail('Meeting has ended', 409);
   if (command.action === 'arena.authorize')
     return { state: snapshot, body: { ok: true } };
+  if (
+    (command.action === 'setup' || command.action === 'pickTile') &&
+    command.expectedEpoch !== undefined
+  ) {
+    if (!liveServer) return fail('Forbidden', 403);
+    if ((arena?.epoch ?? null) !== command.expectedEpoch)
+      return fail('quiz_arena_board_changed', 409);
+  }
 
   const save = (
     next: RoomQuizArenaState,
