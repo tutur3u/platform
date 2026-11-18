@@ -92,9 +92,46 @@ export function requireRollback(deployments) {
     versions: latest.versions,
   };
 }
+const CLOUDFLARE_ID_PARENTS = new Set([
+  'apps',
+  'buckets',
+  'database',
+  'domains',
+  'namespaces',
+  'policies',
+  'queues',
+  'routes',
+  'scripts',
+  'tokens',
+  'zones',
+]);
+const OPAQUE_ID = /^(?:[a-f0-9]{32}|[a-f0-9]{8}-[a-f0-9-]{27})$/iu;
+/**
+ * Method, host and a redacted path: no query string, body or credential, and
+ * no account, zone, database, script or other resource identifier, because the
+ * Actions log is public. Resource types and static segments stay readable.
+ */
+function observationTarget(method, url) {
+  try {
+    const { host, pathname } = new URL(url);
+    const cloudflare = host === 'api.cloudflare.com';
+    const segments = pathname.split('/');
+    const redacted = segments.map((segment, index) => {
+      if (!segment) return segment;
+      const parent = segments[index - 1];
+      if (cloudflare && parent === 'accounts') return '<account>';
+      if (cloudflare && CLOUDFLARE_ID_PARENTS.has(parent)) return '<id>';
+      return OPAQUE_ID.test(segment) ? '<id>' : segment;
+    });
+    return `${method} ${host}${redacted.join('/')}`;
+  } catch {
+    return `${method} (unparseable URL)`;
+  }
+}
 export async function boundedJson(url, token, fetcher = fetch, body) {
+  const method = body === undefined ? 'GET' : 'POST';
   const response = await fetcher(url, {
-    method: body === undefined ? 'GET' : 'POST',
+    method,
     ...(body === undefined ? {} : { body: JSON.stringify(body) }),
     headers: {
       ...(token ? { Authorization: `Bearer ${token}` } : {}),
@@ -106,7 +143,7 @@ export async function boundedJson(url, token, fetcher = fetch, body) {
   });
   assert.ok(
     response.ok,
-    `Required control-plane observation failed (${response.status})`
+    `Required control-plane observation failed (${response.status}): ${observationTarget(method, url)}`
   );
   const reader = response.body.getReader();
   let size = 0;
