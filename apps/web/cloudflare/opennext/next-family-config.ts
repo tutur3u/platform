@@ -26,6 +26,9 @@ export function openNextFamilyNextConfig(
     (candidate) => candidate.id === familyId
   );
   if (!family) throw new Error(`Unknown WEB_OPENNEXT_FAMILY: ${familyId}`);
+  if (!family.enabled) {
+    throw new Error(`WEB_OPENNEXT_FAMILY ${familyId} is declared but held.`);
+  }
   const sha = (env.WEB_OPENNEXT_SHA ?? env.GITHUB_SHA ?? '').trim();
   if (!SHA_PATTERN.test(sha)) {
     throw new Error(

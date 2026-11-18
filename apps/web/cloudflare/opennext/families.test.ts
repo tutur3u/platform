@@ -4,12 +4,16 @@ import path from 'node:path';
 import { describe, expect, it } from 'vitest';
 import { openNextFamilyNextConfig } from './next-family-config';
 import {
+  appRouteEntries,
   applyPrune,
   DISPOSABLE_MARKER,
   DISPOSABLE_MARKER_CONTENT,
+  enabledFamilies,
+  familyOwns,
   isRouteEntry,
   loadFamilies,
   planPrune,
+  PROBE_ENTRIES,
   routePathFor,
 } from './prune';
 
@@ -68,9 +72,13 @@ const API_IDENTITY_ROUTES = [
 ];
 
 describe('OpenNext family manifest', () => {
-  it('matches the gateway dispatch table', () => {
+  it('matches the gateway dispatch table for enabled families', () => {
     expect(config.deny).toEqual(gateway.webFamilies.deny);
-    for (const family of config.families) {
+    const enabled = enabledFamilies(config);
+    expect(gateway.webFamilies.families.map((family) => family.id)).toEqual(
+      enabled.map((family) => family.id)
+    );
+    for (const family of enabled) {
       const routed = gateway.webFamilies.families.find(
         (candidate) => candidate.id === family.id
       );
@@ -81,8 +89,55 @@ describe('OpenNext family manifest', () => {
     }
   });
 
-  it('names a committed route-free wrangler config per family', () => {
+  it('declares held families with a reason and no build config', () => {
+    const ids = config.families.map((family) => family.id);
+    expect(new Set(ids).size).toBe(ids.length);
     for (const family of config.families) {
+      expect(family.worker).toBe(`tuturuuu-web-${family.id}`);
+      if (family.enabled) {
+        expect(family.held, family.id).toBeNull();
+        expect(family.wrangler, family.id).toBeTypeOf('string');
+        // The gateway matches literal paths; dynamic segments need a matcher.
+        for (const entry of [
+          ...family.exact,
+          ...family.prefix,
+          ...family.exclude,
+        ]) {
+          expect(entry, family.id).not.toContain('[');
+        }
+      } else {
+        expect(family.held, family.id).toMatch(/\S/u);
+        expect(family.wrangler, family.id).toBeNull();
+        expect(() => planPrune(family.id)).toThrow(/held/u);
+        expect(() =>
+          openNextFamilyNextConfig({
+            WEB_OPENNEXT_FAMILY: family.id,
+            GITHUB_SHA: 'b'.repeat(40),
+          })
+        ).toThrow(/held/u);
+      }
+      if (family.kind === 'pages') {
+        expect(family.assetPrefix).toBe(`/_f/${family.id}`);
+      } else {
+        expect(family.assetPrefix).toBeNull();
+      }
+    }
+  });
+
+  it('gives every app route entry at most one family', () => {
+    for (const rel of appRouteEntries()) {
+      const routePath = routePathFor(rel);
+      if (routePath === null) continue;
+      if (PROBE_ENTRIES.includes(rel)) continue;
+      const owners = config.families
+        .filter((family) => familyOwns(family, config.deny, routePath))
+        .map((family) => family.id);
+      expect(owners.length, `${rel}: ${owners.join(', ')}`).toBeLessThan(2);
+    }
+  });
+
+  it('names a committed route-free wrangler config per enabled family', () => {
+    for (const family of enabledFamilies(config)) {
       const raw = readFileSync(
         new URL(`../../${family.wrangler}`, import.meta.url),
         'utf8'
@@ -108,11 +163,30 @@ describe('OpenNext family manifest', () => {
 });
 
 describe('family route pruning', () => {
+  it('keeps the public docs pages and the build probe', () => {
+    const plan = planPrune('public-docs');
+    expect(plan.keep).toContain('[locale]/(marketing)/changelog/page.tsx');
+    expect(plan.keep).toContain('[locale]/(marketing)/docs/page.tsx');
+    expect(plan.keep).toContain('[locale]/ui/components/page.tsx');
+    expect(plan.keep).toContain(
+      '[locale]/(marketing)/visualizations/horse-racing/page.tsx'
+    );
+    expect(plan.keep).toContain('api/build-info/route.ts');
+    expect(plan.keep).not.toContain(
+      '[locale]/(dashboard)/[wsId]/changelog/page.tsx'
+    );
+    expect(plan.keep).not.toContain('[locale]/(marketing)/documents/page.tsx');
+    expect(plan.keep.filter((rel) => rel.startsWith('api/'))).toEqual([
+      'api/build-info/route.ts',
+    ]);
+  });
+
   it('keeps exactly the api-identity routes', () => {
     const plan = planPrune('api-identity');
     expect(plan.keep).toEqual(API_IDENTITY_ROUTES);
     expect(plan.remove.length).toBeGreaterThan(500);
-    for (const rel of plan.remove) {
+    expect(plan.remove).toContain('api/v1/auth/accounts/[accountId]/route.ts');
+    for (const rel of plan.keep) {
       expect(rel.startsWith('api/v1/auth/accounts/'), rel).toBe(false);
     }
   });

@@ -28,8 +28,14 @@ export interface OpenNextFamily {
   id: string;
   worker: string;
   kind: 'api' | 'pages';
+  /** Only enabled families are built, pruned and routed by the gateway. */
+  enabled: boolean;
+  /** Why a declared family is not enabled yet; null when enabled. */
+  held: string | null;
+  /** Paths are matched after the leading `/[locale]` segment. */
+  localized: boolean;
   assetPrefix: string | null;
-  wrangler: string;
+  wrangler: string | null;
   exact: string[];
   prefix: string[];
   exclude: string[];
@@ -48,6 +54,13 @@ export interface PrunePlan {
   remove: string[];
 }
 
+/**
+ * Entries every family build keeps for the build smoke check, whether or not
+ * the family owns them. The gateway never routes them to a family that does
+ * not own them.
+ */
+export const PROBE_ENTRIES = ['api/build-info/route.ts'];
+
 const CODE_ENTRY =
   /^(page|route|default|sitemap|robots|manifest|opengraph-image|twitter-image|icon|apple-icon)\.(tsx|ts|jsx|js|mjs)$/u;
 const STATIC_METADATA =
@@ -63,6 +76,11 @@ export function loadFamilies(appDir = DEFAULT_APP_DIR) {
     'utf8'
   );
   return { config: JSON.parse(raw) as OpenNextFamilies, sha256: sha256(raw) };
+}
+
+/** Families admitted for build and gateway routing. */
+export function enabledFamilies(config: OpenNextFamilies) {
+  return config.families.filter((family) => family.enabled);
 }
 
 /** True when `pathname` is `entry` or lies below it. */
@@ -93,8 +111,14 @@ export function isRouteEntry(fileName: string) {
 export function familyOwns(
   family: OpenNextFamily,
   deny: string[],
-  routePath: string
+  entryPath: string
 ) {
+  const routePath =
+    family.localized && entryPath.startsWith('/[locale]/')
+      ? entryPath.slice('/[locale]'.length)
+      : family.localized && entryPath === '/[locale]'
+        ? '/'
+        : entryPath;
   if (deny.some((entry) => inSubtree(routePath, entry))) return false;
   if (family.exclude.some((entry) => inSubtree(routePath, entry))) {
     return false;
@@ -114,6 +138,11 @@ function walk(dir: string, relative: string, out: string[]) {
   return out;
 }
 
+/** Every app route entry, relative to src/app, sorted. */
+export function appRouteEntries(appDir = DEFAULT_APP_DIR) {
+  return walk(path.join(appDir, 'src/app'), '', []).sort();
+}
+
 /** Kept and removed app entries (paths relative to src/app) for one family. */
 export function planPrune(
   familyId: string,
@@ -122,16 +151,17 @@ export function planPrune(
   const { config, sha256: familiesSha256 } = loadFamilies(appDir);
   const family = config.families.find((candidate) => candidate.id === familyId);
   if (!family) throw new Error(`Unknown OpenNext family: ${familyId}`);
-  if (family.kind !== 'api') {
-    throw new Error(
-      `Family ${familyId} is kind "${family.kind}"; only API families can be pruned.`
-    );
+  if (!family.enabled) {
+    throw new Error(`Family ${familyId} is declared but held: ${family.held}`);
   }
   const keep: string[] = [];
   const remove: string[] = [];
-  for (const rel of walk(path.join(appDir, 'src/app'), '', []).sort()) {
+  for (const rel of appRouteEntries(appDir)) {
     const routePath = routePathFor(rel);
-    if (routePath !== null && familyOwns(family, config.deny, routePath)) {
+    if (
+      PROBE_ENTRIES.includes(rel) ||
+      (routePath !== null && familyOwns(family, config.deny, routePath))
+    ) {
       keep.push(rel);
     } else {
       remove.push(rel);

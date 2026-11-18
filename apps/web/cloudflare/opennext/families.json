@@ -11,9 +11,25 @@
   ],
   "families": [
     {
+      "id": "public-docs",
+      "worker": "tuturuuu-web-public-docs",
+      "kind": "pages",
+      "enabled": true,
+      "held": null,
+      "localized": true,
+      "assetPrefix": "/_f/public-docs",
+      "wrangler": "cloudflare/opennext/wrangler.public-docs.jsonc",
+      "exact": ["/changelog", "/docs", "/ui"],
+      "prefix": ["/changelog/", "/visualizations/", "/ui/"],
+      "exclude": []
+    },
+    {
       "id": "api-identity",
       "worker": "tuturuuu-web-api-identity",
       "kind": "api",
+      "enabled": true,
+      "held": null,
+      "localized": false,
       "assetPrefix": null,
       "wrangler": "cloudflare/opennext/wrangler.api-identity.jsonc",
       "exact": [
@@ -37,6 +53,160 @@
         "/api/v1/users/me/email",
         "/api/v1/users/me/identities"
       ]
+    },
+    {
+      "id": "dashboard-core",
+      "worker": "tuturuuu-web-dashboard-core",
+      "kind": "pages",
+      "enabled": false,
+      "held": "Page family: needs the protected-environment build for the shared server action key and the workspace segment table generated from the app tree.",
+      "localized": true,
+      "assetPrefix": "/_f/dashboard-core",
+      "wrangler": null,
+      "exact": [],
+      "prefix": [],
+      "exclude": []
+    },
+    {
+      "id": "finance-billing",
+      "worker": "tuturuuu-web-finance-billing",
+      "kind": "pages",
+      "enabled": false,
+      "held": "Page family: needs the protected-environment build for the shared server action key and gateway workspace matching for [locale]/[wsId] segments.",
+      "localized": true,
+      "assetPrefix": "/_f/finance-billing",
+      "wrangler": null,
+      "exact": ["/[wsId]/billing", "/[wsId]/link-shortener"],
+      "prefix": ["/[wsId]/billing/", "/[wsId]/link-shortener/"],
+      "exclude": []
+    },
+    {
+      "id": "api-workspace",
+      "worker": "tuturuuu-web-api-workspace",
+      "kind": "api",
+      "enabled": false,
+      "held": "Size unmeasured (education/business split prepared); Postgres TCP, node:dns and sharp paths still need excludes, and the gateway needs [wsId] segment matching.",
+      "localized": false,
+      "assetPrefix": null,
+      "wrangler": null,
+      "exact": [],
+      "prefix": ["/api/v1/workspaces/[wsId]/"],
+      "exclude": [
+        "/api/v1/workspaces/[wsId]/ai",
+        "/api/v1/workspaces/[wsId]/chat",
+        "/api/v1/workspaces/[wsId]/notes/voice-jobs"
+      ]
+    },
+    {
+      "id": "api-platform",
+      "worker": "tuturuuu-web-api-platform",
+      "kind": "api",
+      "enabled": false,
+      "held": "Size unmeasured; Postgres TCP and node:dns paths still need excludes.",
+      "localized": false,
+      "assetPrefix": null,
+      "wrangler": null,
+      "exact": [],
+      "prefix": [
+        "/api/v1/storage/",
+        "/api/v1/integrations/",
+        "/api/v1/admin/",
+        "/api/v1/product-feedback/",
+        "/api/v1/live/",
+        "/api/v1/meet/",
+        "/api/v1/meetings/",
+        "/api/v1/public/",
+        "/api/v1/inquiries/",
+        "/api/v1/link-shortener/",
+        "/api/v1/documents/",
+        "/api/workspaces/",
+        "/api/v2/",
+        "/api/trpc/",
+        "/api/share/",
+        "/api/invite/",
+        "/api/reports/",
+        "/api/time-tracking/",
+        "/api/sync-logs/",
+        "/api/[wsId]/"
+      ],
+      "exclude": ["/api/workspaces/invitations"]
+    },
+    {
+      "id": "api-auth",
+      "worker": "tuturuuu-web-api-auth",
+      "kind": "api",
+      "enabled": false,
+      "held": "Cookie-setting session flows: moves after the other API families with the sign-in round trip proven on staging.",
+      "localized": false,
+      "assetPrefix": null,
+      "wrangler": null,
+      "exact": [
+        "/api/v1/users/me/password",
+        "/api/v1/users/me/delete",
+        "/api/v1/users/me/email",
+        "/api/v1/users/me/identities"
+      ],
+      "prefix": [
+        "/api/auth/",
+        "/api/v1/auth/",
+        "/api/v1/sso/",
+        "/api/cli/",
+        "/api/v1/mobile/",
+        "/api/v1/users/me/password/",
+        "/api/v1/users/me/delete/",
+        "/api/v1/users/me/email/",
+        "/api/v1/users/me/identities/"
+      ],
+      "exclude": ["/api/auth/me"]
+    },
+    {
+      "id": "ai-api",
+      "worker": "tuturuuu-web-ai-api",
+      "kind": "api",
+      "enabled": false,
+      "held": "Size unmeasured without the AI pages; the gateway needs [wsId] segment matching.",
+      "localized": false,
+      "assetPrefix": null,
+      "wrangler": null,
+      "exact": [],
+      "prefix": [
+        "/api/ai/",
+        "/api/v1/ai/",
+        "/api/v1/mira/",
+        "/api/v1/assistant/",
+        "/api/v1/aurora/",
+        "/api/v1/external-ai/",
+        "/api/v1/workspaces/[wsId]/ai/",
+        "/api/v1/workspaces/[wsId]/chat/",
+        "/api/v1/workspaces/[wsId]/notes/voice-jobs/"
+      ],
+      "exclude": []
+    },
+    {
+      "id": "ai-chat",
+      "worker": "tuturuuu-web-ai-chat",
+      "kind": "pages",
+      "enabled": false,
+      "held": "Over the size budget until the server graph excludes the Shiki, Mermaid and Streamdown renderers.",
+      "localized": true,
+      "assetPrefix": "/_f/ai-chat",
+      "wrangler": null,
+      "exact": ["/[wsId]", "/[wsId]/ai-chat", "/[wsId]/mira"],
+      "prefix": ["/[wsId]/ai-chat/", "/[wsId]/mira/"],
+      "exclude": []
+    },
+    {
+      "id": "public-auth",
+      "worker": "tuturuuu-web-public-auth",
+      "kind": "pages",
+      "enabled": false,
+      "held": "Over the size budget until it is measured without the public docs renderers.",
+      "localized": true,
+      "assetPrefix": "/_f/public-auth",
+      "wrangler": null,
+      "exact": ["/login", "/signup", "/verify-token", "/add-account"],
+      "prefix": ["/auth/", "/sso/"],
+      "exclude": []
     }
   ]
 }
