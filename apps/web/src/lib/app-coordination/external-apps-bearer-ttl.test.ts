@@ -1,6 +1,6 @@
 import { ROOT_WORKSPACE_ID } from '@tuturuuu/utils/constants';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { parseMaxBearerTtlSeconds } from './external-apps-utils';
+import { parseMaxBearerTtlSeconds } from '@tuturuuu/utils/external-app-registry-policy';
 
 const mocks = vi.hoisted(() => ({
   rows: [] as { name: string; value: string | null }[],
@@ -45,7 +45,11 @@ vi.mock('@tuturuuu/supabase/next/server', () => ({
   createAdminClient: vi.fn(async () => createDb()),
 }));
 
-import { listExternalApps, upsertExternalApp } from './external-apps';
+import {
+  getAllowedAppTokenScopes,
+  listExternalApps,
+  upsertExternalApp,
+} from './external-apps';
 
 const key = (field: string) => `EXTERNAL_APP_REGISTRY:fysh:${field}`;
 const basePayload = {
@@ -143,5 +147,61 @@ describe('external app bearer TTL cap registry field', () => {
     ];
     const [app] = await listExternalApps(createDb() as never);
     expect(app?.maxBearerTtlSeconds).toBe(1800);
+  });
+});
+
+describe('external app registration boundary with first-party apps', () => {
+  beforeEach(() => {
+    mocks.rows = [];
+    mocks.inserted = [];
+    mocks.deleted = [];
+  });
+
+  it('refuses reserved internal app names on create and update', async () => {
+    for (const id of ['cms', 'CMS', 'platform', 'mira', 'infra']) {
+      await expect(
+        upsertExternalApp({
+          actorUserId: 'root-admin',
+          payload: { ...basePayload, id },
+        })
+      ).rejects.toThrow('reserved_app_id');
+    }
+    mocks.rows = [
+      { name: 'EXTERNAL_APP_REGISTRY:cms:origins', value: '["https://a.b"]' },
+    ];
+    await expect(
+      upsertExternalApp({
+        actorUserId: 'root-admin',
+        payload: { ...basePayload, id: 'cms' },
+      })
+    ).rejects.toThrow('reserved_app_id');
+    expect(mocks.inserted).toEqual([]);
+  });
+
+  it('refuses first-party session scopes in the registration', async () => {
+    for (const scope of ['internal-app:session', 'Internal-App:refresh']) {
+      await expect(
+        upsertExternalApp({
+          actorUserId: 'root-admin',
+          payload: { ...basePayload, allowedScopes: [scope] },
+        })
+      ).rejects.toThrow('internal_scope_not_allowed');
+    }
+    expect(mocks.inserted).toEqual([]);
+  });
+
+  it('never issues first-party session scopes, even under a wildcard grant', () => {
+    expect(() =>
+      getAllowedAppTokenScopes({
+        allowedScopes: ['*'],
+        requestedScopes: ['internal-app:session'],
+      })
+    ).toThrow('app_scope_not_allowed');
+    expect(
+      getAllowedAppTokenScopes({
+        allowedScopes: ['internal-app:session', 'workspace:session'],
+        requestedScopes: [],
+      })
+    ).toEqual(['workspace:session']);
   });
 });

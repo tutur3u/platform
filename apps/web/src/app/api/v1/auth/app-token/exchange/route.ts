@@ -388,6 +388,7 @@ async function exchangeAppToken(request: NextRequest) {
 
   if (refreshToken) {
     const refreshResult = await verifyExternalAppRefreshToken({
+      failClosed: resolvedTarget.maxBearerTtlSeconds != null,
       familyTtlSeconds: policy.internalAppRefreshTtlSeconds,
       ip: extractIPFromRequest(request.headers),
       replayGraceSeconds: policy.externalAppRefreshReplayGraceSeconds,
@@ -415,7 +416,7 @@ async function exchangeAppToken(request: NextRequest) {
     }
 
     const refreshClaims = refreshResult.claims;
-    refreshFamily = refreshResult.family ?? undefined;
+    refreshFamily = refreshResult.family;
     userId = refreshClaims.sub;
     mfa = refreshClaims.mfa ?? null;
     assurance = sessionAssuranceFromAppCoordinationClaims(refreshClaims);

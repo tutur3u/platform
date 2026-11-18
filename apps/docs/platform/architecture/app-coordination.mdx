@@ -215,17 +215,48 @@ CLI-only APIs.
    registration and, for external-project scopes, the workspace membership and
    EPM permission.
 
-Every `ttr_app_` bearer route (external-project CMS access and setup, and the
-external-app Drive, members, cron and AI routes) re-checks the app registry on
-top of its membership checks. Disabling the app answers its bearers with `403`
-immediately. Rotating the app secret answers bearers issued before the
-rotation with `401`; refresh tokens keep working because refresh requires the
-current secret. Coverage:
+Every external-app (`ttr_app_`) bearer route re-checks the app registry on top
+of its membership checks:
+
+- external-project CMS access and setup;
+- the external-app Drive, members, cron and AI routes in `apps/web`;
+- the `apps/ai` public routes (`/v1/models`, `/usage`, `/provider-costs`,
+  `/provider-invoices`);
+- every route that accepts a scope-only app session, such as the current-user
+  profile, banner, full-name, avatar and profile-media routes.
+
+Disabling the app answers its bearers with `403` immediately. Rotating the app
+secret answers bearers issued before the rotation with `401`; refresh tokens
+keep working because refresh requires the current secret. A bearer counts as an
+external app's when it lacks `internal-app:session` and its `target_app` is not
+a reserved internal app name. Coverage:
 `apps/web/src/lib/app-coordination/external-app-bearer.test.ts`,
 `apps/web/src/lib/external-projects/access-app-status.test.ts`,
 `apps/web/src/lib/external-apps/live-app-access.test.ts`,
-`apps/web/src/lib/external-apps/workspace-drive.test.ts` and
-`apps/web/src/lib/external-ai/auth.test.ts`.
+`apps/web/src/lib/external-apps/workspace-drive.test.ts`,
+`apps/web/src/lib/external-ai/auth.test.ts`,
+`apps/web/src/lib/profile-app-session-external-bearer.test.ts` and
+`apps/ai/src/lib/public-credential.test.ts`.
+
+#### Registration boundary with first-party apps
+
+App-session checks trust a token's `target_app` and the `internal-app:*` scopes
+to mean a first-party session, so external registrations may use neither:
+
+- Saving an app whose id is a reserved internal app name (case-insensitive) is
+  refused, on create and on update. Reserved names come from the internal app
+  domain registry (`APP_DOMAIN_MAP` plus configured internal domains), which
+  also covers every satellite session audience and the CLI target.
+- Saving an app whose `allowedScopes` include an `internal-app:*` scope is
+  refused.
+- The exchange never issues `internal-app:*` scopes to an external app, even
+  under a `*` grant or a registration saved before these checks.
+
+Both save paths (`POST /api/v1/admin/external-apps` in `apps/web` and
+`POST /api/v1/infrastructure/external-apps` in `apps/infrastructure`) apply the
+same rules from `@tuturuuu/utils/external-app-registry-policy`. Coverage:
+`packages/utils/src/external-app-registry-policy.test.ts` and
+`external-apps-bearer-ttl.test.ts` in both apps.
 
 #### Bearer lifetime and refresh families
 
@@ -233,28 +264,39 @@ current secret. Coverage:
   caps the bearers issued to that app by the exchange, refresh and
   invitation-decision routes, and shrinks `refreshEarlySeconds` to at most a
   third of the bearer lifetime. A policy TTL shorter than the cap still wins.
-  Registering a new app writes a 900-second cap unless the save sets another
-  value. Apps registered before the field existed keep the policy TTL until an
-  admin sets one; sending `null` clears it. The admin API
-  (`POST /api/v1/admin/external-apps`, `save`) accepts the field; the
-  Infrastructure form does not show it yet.
+- **Default for new apps.** Registering a new app through either save path
+  writes a 900-second cap unless the save sets another value. Apps registered
+  before the field existed keep the policy TTL until an admin sets one; a save
+  without the field keeps the stored value, and `null` clears it. Both save
+  APIs accept the field; the Infrastructure form does not show it yet.
 - **Refresh families.** Refresh tokens carry a rotation family
   (`app-token:family:<uuid>` in their scopes). Each refresh token is single
   use with the replay grace. Reusing one after the grace revokes its whole
   family in the replay store for the refresh-token lifetime, so the stolen
   token and every successor are refused with `401` and the user must sign in
-  again. Tokens issued before families existed start one on their next
-  refresh. Revocation needs the replay store: under the legacy replay policy
-  an unavailable store skips both the fence and the family check.
+  again. A reuse inside the grace window is treated as a retry: it does not
+  revoke, and both branches stay valid until a later reuse outside the grace.
+  If writing the revocation fails, the proven reuse is still refused.
+- **Tokens issued before families existed** join a family derived from their
+  own token id on their next refresh, so a later reuse of that same token also
+  revokes its successors. A pre-family token that was already rotated before
+  this change and is then reused has no successor carrying its derived family;
+  that chain stays exposed for at most one refresh-token lifetime after the
+  change ships.
+- **Replay store outages.** Capped apps fail closed: an unavailable replay
+  store answers their refresh with `503`. Apps without a cap keep the legacy
+  replay policy, which continues without the fence and the family check unless
+  the guard store owns replay fences.
 - **Refresh rate limit.** The refresh pre-limit is keyed on the app and the
-  refresh family (the user for tokens without one), not on the source IP, so
-  one app server refreshing for many users does not trip
-  `429 Too many refresh attempts`. Requests without valid app credentials are
-  refused before the replay store is touched.
+  refresh family (the user for tokens issued before families existed), not on
+  the source IP. One app server refreshing for many users therefore does not
+  trip `429 Too many refresh attempts`. Requests without valid app credentials
+  are refused before the replay store is touched.
 
 Coverage: `apps/web/src/lib/auth/external-app-exchange-response.test.ts`,
 `apps/web/src/lib/auth/external-app-refresh.test.ts`,
-`apps/web/src/app/api/v1/auth/app-token/exchange/route-refresh-family.test.ts`
+`apps/web/src/app/api/v1/auth/app-token/exchange/route-refresh-family.test.ts`,
+`apps/web/src/app/api/v1/auth/app-token/exchange/route-refresh-guard.test.ts`
 and `apps/web/src/lib/app-coordination/external-apps-bearer-ttl.test.ts`.
 
 External apps should store only their own app secret and local session material.

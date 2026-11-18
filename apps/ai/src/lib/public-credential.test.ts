@@ -47,10 +47,12 @@ function registryClient({
   allowedScopes = ['ai:use', 'tts:use'],
   allowedWorkspaceIds = [WORKSPACE_ID],
   enabled = 'true',
+  secretIssuedAt,
 }: {
   allowedScopes?: string[];
   allowedWorkspaceIds?: string[];
   enabled?: string;
+  secretIssuedAt?: string;
 } = {}) {
   const prefix = 'EXTERNAL_APP_REGISTRY:cybershield35';
   return {
@@ -69,6 +71,14 @@ function registryClient({
                   name: `${prefix}:allowedWorkspaceIds`,
                   value: JSON.stringify(allowedWorkspaceIds),
                 },
+                ...(secretIssuedAt
+                  ? [
+                      {
+                        name: `${prefix}:secretIssuedAt`,
+                        value: secretIssuedAt,
+                      },
+                    ]
+                  : []),
               ],
               error: null,
             }),
@@ -141,6 +151,45 @@ describe('public AI credential policy', () => {
     await expect(
       authenticatePublicAiRequest(externalRequest())
     ).rejects.toMatchObject({ status: 403 });
+  });
+
+  it('rejects an external app bearer once the app is disabled', async () => {
+    mocks.createAdminClient.mockResolvedValue(
+      registryClient({ enabled: 'false' })
+    );
+
+    await expect(
+      authenticatePublicAiRequest(externalRequest())
+    ).rejects.toMatchObject({ status: 403 });
+    expect(mocks.verifyWorkspaceMembershipType).not.toHaveBeenCalled();
+  });
+
+  it('rejects an external app bearer minted before the secret rotation', async () => {
+    const rotatedAt = '2026-11-01T00:00:00.000Z';
+    const rotatedAtSeconds = Date.parse(rotatedAt) / 1000;
+    mocks.createAdminClient.mockResolvedValue(
+      registryClient({ secretIssuedAt: rotatedAt })
+    );
+    const claims = {
+      iat: rotatedAtSeconds - 60,
+      scopes: ['ai:use', 'workspace:session'],
+      sub: '11111111-1111-4111-8111-111111111111',
+      target_app: 'cybershield35',
+    };
+    mocks.verifyAppSessionRequest.mockReturnValue({ claims, ok: true });
+
+    await expect(
+      authenticatePublicAiRequest(externalRequest())
+    ).rejects.toMatchObject({ status: 401 });
+    expect(mocks.verifyWorkspaceMembershipType).not.toHaveBeenCalled();
+
+    mocks.verifyAppSessionRequest.mockReturnValue({
+      claims: { ...claims, iat: rotatedAtSeconds + 60 },
+      ok: true,
+    });
+    await expect(
+      authenticatePublicAiRequest(externalRequest())
+    ).resolves.toMatchObject({ appId: 'cybershield35' });
   });
 
   it('fails closed when the registered app is not linked to the workspace', async () => {

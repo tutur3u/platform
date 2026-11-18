@@ -1,4 +1,5 @@
 import { type NextRequest, NextResponse } from 'next/server';
+import { EXTERNAL_APP_BEARER_TTL_BOUNDS } from '@tuturuuu/utils/external-app-registry-policy';
 import { z } from 'zod';
 import {
   listExternalApps,
@@ -21,6 +22,13 @@ const externalAppSchema = z.object({
     .toLowerCase()
     .regex(/^[a-z0-9_-]{1,64}$/u),
   issueSecret: z.boolean().optional(),
+  maxBearerTtlSeconds: z
+    .number()
+    .int()
+    .min(EXTERNAL_APP_BEARER_TTL_BOUNDS.min)
+    .max(EXTERNAL_APP_BEARER_TTL_BOUNDS.max)
+    .nullable()
+    .optional(),
   origins: z.array(z.string().trim().min(1).max(512)).min(1).max(20),
 });
 

@@ -6,8 +6,8 @@ import {
 import { verifyAppSessionRequest } from '@tuturuuu/auth/app-session';
 import { createAdminClient } from '@tuturuuu/supabase/next/server';
 import { ROOT_WORKSPACE_ID } from '@tuturuuu/utils/constants';
+import { wasIssuedBeforeSecretRotation } from '@tuturuuu/utils/external-app-registry-policy';
 import { verifyWorkspaceMembershipType } from '@tuturuuu/utils/workspace-helper';
-import { wasIssuedBeforeSecretRotation } from '@/lib/app-coordination/external-app-secret-rotation';
 
 const EXTERNAL_APP_SECRET_PREFIX = 'EXTERNAL_APP_REGISTRY';
 const WORKSPACE_SESSION_SCOPE = 'workspace:session';

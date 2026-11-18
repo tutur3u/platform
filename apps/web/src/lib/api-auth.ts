@@ -215,20 +215,12 @@ export async function resolveSessionAuthContext(
     const appSessionToken = getAppSessionTokenFromRequest(request);
 
     if (appSessionToken) {
-      const appSessionVerification = verifyConfiguredAppSessionRequest(
+      const appSessionVerification = await verifyConfiguredAppSessionRequest(
         request,
         options.allowAppSessionAuth
       );
 
-      if (!appSessionVerification) {
-        return {
-          ok: false,
-          response: NextResponse.json(
-            { error: 'Unauthorized' },
-            { status: 401 }
-          ),
-        };
-      }
+      if (!appSessionVerification.ok) return appSessionVerification;
 
       const appSessionUser = createAppSessionUser(
         appSessionVerification.claims
@@ -622,13 +614,13 @@ export function withSessionAuth<T = unknown>(
       const appSessionToken = getAppSessionTokenFromRequest(request);
 
       if (appSessionToken) {
-        const appSessionVerification = verifyConfiguredAppSessionRequest(
+        const appSessionVerification = await verifyConfiguredAppSessionRequest(
           request,
           options.allowAppSessionAuth
         );
 
-        if (!appSessionVerification) {
-          return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+        if (!appSessionVerification.ok) {
+          return appSessionVerification.response;
         }
 
         const appSessionUser = createAppSessionUser(

@@ -4,7 +4,9 @@ import {
   verifyAppCoordinationToken,
 } from '@tuturuuu/auth/app-coordination';
 import { DEFAULT_APP_COORDINATION_SESSION_POLICY } from '@tuturuuu/auth/app-session-policy';
+import { getUpstashRestRedisClient } from '@tuturuuu/utils/upstash-rest';
 import { afterEach, describe, expect, it, vi } from 'vitest';
+import { deriveLegacyRefreshFamily } from '@/lib/app-coordination/refresh-family';
 import { POST } from './route';
 import {
   createExchangeRequest,
@@ -161,5 +163,89 @@ describe('external app refresh lifetimes and families', () => {
       error: 'Invalid or expired refresh token',
     });
     expect(mocks.redisSet).not.toHaveBeenCalled();
+  });
+
+  it('revokes a legacy token family when the legacy token is reused', async () => {
+    optIn(900);
+    const legacy = refreshTokenFor(['app-token:refresh']);
+    const legacyClaims = verifyAppCoordinationToken(legacy, {
+      secret: 'test-secret',
+    });
+    if (!legacyClaims.ok) throw new Error('unsigned test token');
+    const derived = deriveLegacyRefreshFamily({
+      jti: legacyClaims.claims.jti,
+      sub: legacyClaims.claims.sub,
+      targetApp: 'yoola',
+    });
+
+    // First rotation: the successor joins the family derived from the token.
+    const first = await refresh(legacy);
+    expect(first.status).toBe(200);
+    const successor = verifyAppCoordinationToken(
+      ((await first.json()) as RefreshBody).refreshToken,
+      { secret: 'test-secret' }
+    );
+    expect(successor.ok && successor.claims.scopes).toContain(
+      `app-token:family:${derived}`
+    );
+
+    // Reusing the legacy token later revokes that derived family.
+    const familyKey = `app-token:refresh:family-revoked:yoola:${derived}`;
+    mocks.redisGet.mockImplementation(async (key: string) =>
+      key === familyKey ? null : Math.floor(Date.now() / 1000) - 3600
+    );
+    expect((await refresh(legacy)).status).toBe(401);
+    expect(mocks.redisSet).toHaveBeenCalledWith(
+      familyKey,
+      expect.any(String),
+      expect.any(Object)
+    );
+  });
+
+  it('still refuses a proven reuse when the revocation write fails', async () => {
+    optIn(null);
+    mocks.redisGet.mockImplementation(async (key: string) =>
+      key.startsWith('app-token:refresh:family-revoked:')
+        ? null
+        : Math.floor(Date.now() / 1000) - 3600
+    );
+    mocks.redisSet.mockRejectedValue(new Error('store write failed'));
+    const warn = vi.spyOn(console, 'warn').mockImplementation(() => undefined);
+
+    const response = await refresh(
+      refreshTokenFor(['app-token:refresh', `app-token:family:${family}`])
+    );
+
+    // Legacy replay policy: an `unavailable` result would have been let
+    // through, so the failed write must not downgrade the proven replay.
+    expect(response.status).toBe(401);
+    expect(warn).toHaveBeenCalled();
+    warn.mockRestore();
+  });
+
+  it('fails closed for a capped app when the replay store is unavailable', async () => {
+    optIn(900);
+    vi.mocked(getUpstashRestRedisClient).mockRejectedValueOnce(
+      new Error('store down')
+    );
+
+    const response = await refresh(
+      refreshTokenFor(['app-token:refresh', `app-token:family:${family}`])
+    );
+
+    expect(response.status).toBe(503);
+  });
+
+  it('keeps the legacy fail-open policy for an uncapped app', async () => {
+    optIn(null);
+    vi.mocked(getUpstashRestRedisClient).mockRejectedValueOnce(
+      new Error('store down')
+    );
+
+    const response = await refresh(
+      refreshTokenFor(['app-token:refresh', `app-token:family:${family}`])
+    );
+
+    expect(response.status).toBe(200);
   });
 });

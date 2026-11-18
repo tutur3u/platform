@@ -98,10 +98,16 @@ export async function consumeRefreshTokenWithGrace({
       if (firstUsedAtSeconds + graceSeconds >= nowSeconds) return 'grace';
       rememberReplay(key, exp);
       if (family) {
-        await redis.set(family.key, String(nowSeconds), {
-          ex: family.ttlSeconds,
-        });
-        rememberReplay(family.key, nowSeconds + family.ttlSeconds);
+        // The reuse is already proven: a failed revocation write must not turn
+        // it into `unavailable`, which the legacy policy lets through.
+        try {
+          await redis.set(family.key, String(nowSeconds), {
+            ex: family.ttlSeconds,
+          });
+          rememberReplay(family.key, nowSeconds + family.ttlSeconds);
+        } catch (error) {
+          onError(error);
+        }
       }
       return 'replayed';
     };

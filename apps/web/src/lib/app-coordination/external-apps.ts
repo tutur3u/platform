@@ -2,13 +2,18 @@ import { createAdminClient } from '@tuturuuu/supabase/next/server';
 import type { TypedSupabaseClient } from '@tuturuuu/supabase/types';
 import { ROOT_WORKSPACE_ID } from '@tuturuuu/utils/constants';
 import {
+  assertExternalAppRegistrationAllowed,
+  isInternalAppScope,
+  parseMaxBearerTtlSeconds,
+  resolveMaxBearerTtlFieldValue,
+} from '@tuturuuu/utils/external-app-registry-policy';
+import {
   appFieldKey,
   assertAppId,
   EXTERNAL_APP_SECRET_PREFIX,
   type ExternalAppSecretField,
   generateAppSecret,
   hashAppSecret,
-  DEFAULT_NEW_APP_MAX_BEARER_TTL_SECONDS,
   isCallbackPath,
   normalizeCallbackPaths,
   normalizeOrigin,
@@ -17,7 +22,6 @@ import {
   normalizeWorkspaceIds,
   parseAppFieldKey,
   parseJsonStringArray,
-  parseMaxBearerTtlSeconds,
   type SecretRow,
   safeEqual,
 } from './external-apps-utils';
@@ -243,8 +247,16 @@ export function getAllowedAppTokenScopes({
   allowedScopes: string[];
   requestedScopes: string[];
 }) {
-  const allowed = normalizeScopes(allowedScopes, []);
+  // First-party session scopes are never issued to an external app, even
+  // under a wildcard grant or a registration saved before they were refused.
+  const allowed = normalizeScopes(allowedScopes, []).filter(
+    (scope) => !isInternalAppScope(scope)
+  );
   const requested = normalizeScopes(requestedScopes, []);
+
+  if (requested.some(isInternalAppScope)) {
+    throw new Error('app_scope_not_allowed');
+  }
 
   if (requested.length === 0) {
     return allowed;
@@ -279,6 +291,10 @@ export async function upsertExternalApp({
   payload: UpsertExternalAppPayload;
 }): Promise<UpsertExternalAppResult> {
   const appId = assertAppId(payload.id);
+  assertExternalAppRegistrationAllowed({
+    allowedScopes: payload.allowedScopes,
+    appId,
+  });
   const origins = normalizeOrigins(payload.origins);
 
   if (origins.length === 0) {
@@ -306,19 +322,12 @@ export async function upsertExternalApp({
     updatedBy: actorUserId,
   };
 
-  if (payload.maxBearerTtlSeconds != null) {
-    if (
-      parseMaxBearerTtlSeconds(String(payload.maxBearerTtlSeconds)) === null
-    ) {
-      throw new Error('invalid_max_bearer_ttl');
-    }
-    fields.maxBearerTtlSeconds = String(payload.maxBearerTtlSeconds);
-  } else if (!existingApp) {
-    // Registration is the only place the default is written, so apps that
-    // existed before the field keep their stored behaviour.
-    fields.maxBearerTtlSeconds = String(DEFAULT_NEW_APP_MAX_BEARER_TTL_SECONDS);
-  } else if (payload.maxBearerTtlSeconds === null) {
-    fields.maxBearerTtlSeconds = '';
+  const maxBearerTtlSeconds = resolveMaxBearerTtlFieldValue({
+    isNewApp: !existingApp,
+    requested: payload.maxBearerTtlSeconds,
+  });
+  if (maxBearerTtlSeconds !== undefined) {
+    fields.maxBearerTtlSeconds = maxBearerTtlSeconds;
   }
 
   if (payload.requirePkce !== undefined) {

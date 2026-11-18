@@ -1,13 +1,13 @@
 import type { AppCoordinationTokenClaims } from '@tuturuuu/auth/app-coordination';
 import type { TypedSupabaseClient } from '@tuturuuu/supabase/types';
+import { wasIssuedBeforeSecretRotation } from '@tuturuuu/utils/external-app-registry-policy';
 import { NextResponse } from 'next/server';
-import { wasIssuedBeforeSecretRotation } from './external-app-secret-rotation';
 import {
   type ExternalAppRegistration,
   getExternalAppById,
 } from './external-apps';
 
-export { wasIssuedBeforeSecretRotation } from './external-app-secret-rotation';
+export { wasIssuedBeforeSecretRotation } from '@tuturuuu/utils/external-app-registry-policy';
 
 export type ExternalAppBearerRejection =
   | 'app_disabled'

@@ -8,6 +8,7 @@ import { verifyAppSessionRequest } from '@tuturuuu/auth/app-session';
 import { createAdminClient } from '@tuturuuu/supabase/next/server';
 import type { TypedSupabaseClient } from '@tuturuuu/supabase/types';
 import { ROOT_WORKSPACE_ID } from '@tuturuuu/utils/constants';
+import { wasIssuedBeforeSecretRotation } from '@tuturuuu/utils/external-app-registry-policy';
 import { verifyWorkspaceMembershipType } from '@tuturuuu/utils/workspace-helper';
 
 const EXTERNAL_APP_SECRET_PREFIX = 'EXTERNAL_APP_REGISTRY';
@@ -76,6 +77,8 @@ export type ExternalAppRegistration = {
   allowedScopes: string[];
   allowedWorkspaceIds: string[];
   enabled: boolean;
+  /** When the current app secret was issued; bearers older than it are void. */
+  secretIssuedAt: string | null;
 };
 
 /**
@@ -98,6 +101,7 @@ export async function loadExternalAppRegistration(
       externalAppField(appId, 'allowedScopes'),
       externalAppField(appId, 'allowedWorkspaceIds'),
       externalAppField(appId, 'enabled'),
+      externalAppField(appId, 'secretIssuedAt'),
     ]);
 
   if (error) {
@@ -112,6 +116,7 @@ export async function loadExternalAppRegistration(
   }
 
   const fields = new Map((data ?? []).map((row) => [row.name, row.value]));
+  const secretIssuedAt = fields.get(externalAppField(appId, 'secretIssuedAt'));
   return {
     allowedScopes: parseStringArray(
       fields.get(externalAppField(appId, 'allowedScopes'))
@@ -120,6 +125,10 @@ export async function loadExternalAppRegistration(
       fields.get(externalAppField(appId, 'allowedWorkspaceIds'))
     ).map((value) => value.trim().toLowerCase()),
     enabled: fields.get(externalAppField(appId, 'enabled')) === 'true',
+    secretIssuedAt:
+      typeof secretIssuedAt === 'string' && secretIssuedAt
+        ? secretIssuedAt
+        : null,
   };
 }
 
@@ -195,6 +204,13 @@ async function authenticateExternalAppRequest(
   ) {
     throw invalidExternalCredential(
       'The external app is not enabled or linked for this AI request.'
+    );
+  }
+
+  if (wasIssuedBeforeSecretRotation(claims, registration.secretIssuedAt)) {
+    throw invalidExternalCredential(
+      'The external-app token was issued before the app secret was rotated.',
+      401
     );
   }
 

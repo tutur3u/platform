@@ -2,7 +2,11 @@ import {
   type AppSessionTargetApp,
   verifyAppSessionRequest,
 } from '@tuturuuu/auth/app-session';
-import type { NextRequest } from 'next/server';
+import { createAdminClient } from '@tuturuuu/supabase/next/server';
+import type { TypedSupabaseClient } from '@tuturuuu/supabase/types';
+import { type NextRequest, NextResponse } from 'next/server';
+import { rejectStaleExternalAppBearer } from './app-coordination/external-app-bearer';
+import { isExternalAppClaims } from './app-coordination/reserved-app-names';
 import { getDefaultAppSessionVerificationOptions } from './api-auth-audiences';
 
 type StrictAppSessionAuthOptions = {
@@ -37,13 +41,24 @@ function isAppSessionAuthOptionsList(
   return Array.isArray(value);
 }
 
-export function verifyConfiguredAppSessionRequest(
+export type ConfiguredAppSessionResult =
+  | Extract<ReturnType<typeof verifyAppSessionRequest>, { ok: true }>
+  | { ok: false; response: NextResponse };
+
+/**
+ * Verifies the request's app session against the route's configured options.
+ * A bearer from an external app (no first-party session scope, no internal
+ * target) is also checked against the app registry, so a disabled app or a
+ * bearer issued before a secret rotation is refused here as on every other
+ * external-app route.
+ */
+export async function verifyConfiguredAppSessionRequest(
   request: Pick<NextRequest, 'headers' | 'url'>,
   allowAppSessionAuth:
     | true
     | StrictAppSessionAuthOptions
     | readonly StrictAppSessionAuthOptions[]
-): Extract<ReturnType<typeof verifyAppSessionRequest>, { ok: true }> | null {
+): Promise<ConfiguredAppSessionResult> {
   for (const verificationOptions of getAppSessionVerificationOptions(
     request,
     allowAppSessionAuth
@@ -51,9 +66,18 @@ export function verifyConfiguredAppSessionRequest(
     const verification = verifyAppSessionRequest(request, verificationOptions);
 
     if (verification.ok) {
-      return verification;
+      if (!isExternalAppClaims(verification.claims)) return verification;
+
+      const rejection = await rejectStaleExternalAppBearer(
+        (await createAdminClient({ noCookie: true })) as TypedSupabaseClient,
+        verification.claims
+      );
+      return rejection ? { ok: false, response: rejection } : verification;
     }
   }
 
-  return null;
+  return {
+    ok: false,
+    response: NextResponse.json({ error: 'Unauthorized' }, { status: 401 }),
+  };
 }

@@ -2,6 +2,12 @@ import { createAdminClient } from '@tuturuuu/supabase/next/server';
 import type { TypedSupabaseClient } from '@tuturuuu/supabase/types';
 import { ROOT_WORKSPACE_ID } from '@tuturuuu/utils/constants';
 import {
+  assertExternalAppRegistrationAllowed,
+  isInternalAppScope,
+  parseMaxBearerTtlSeconds,
+  resolveMaxBearerTtlFieldValue,
+} from '@tuturuuu/utils/external-app-registry-policy';
+import {
   appFieldKey,
   assertAppId,
   EXTERNAL_APP_SECRET_PREFIX,
@@ -26,6 +32,8 @@ export type ExternalAppRegistration = {
   displayName: string;
   enabled: boolean;
   id: string;
+  /** Bearer lifetime cap; null leaves the session policy TTL in force. */
+  maxBearerTtlSeconds: number | null;
   origins: string[];
   secretIssuedAt: string | null;
   secretLastFour: string | null;
@@ -40,6 +48,8 @@ export type UpsertExternalAppPayload = {
   enabled: boolean;
   id: string;
   issueSecret?: boolean;
+  /** Null clears the cap; a new app without a value gets the default cap. */
+  maxBearerTtlSeconds?: number | null;
   origins: string[];
 };
 
@@ -96,6 +106,9 @@ function buildExternalAppRegistrations(rows: SecretRow[]) {
         displayName,
         enabled: values.enabled !== 'false',
         id,
+        maxBearerTtlSeconds: parseMaxBearerTtlSeconds(
+          values.maxBearerTtlSeconds
+        ),
         origins,
         secretIssuedAt: values.secretIssuedAt || null,
         secretLastFour: values.secretLastFour || null,
@@ -218,8 +231,16 @@ export function getAllowedAppTokenScopes({
   allowedScopes: string[];
   requestedScopes: string[];
 }) {
-  const allowed = normalizeScopes(allowedScopes, []);
+  // First-party session scopes are never issued to an external app, even
+  // under a wildcard grant or a registration saved before they were refused.
+  const allowed = normalizeScopes(allowedScopes, []).filter(
+    (scope) => !isInternalAppScope(scope)
+  );
   const requested = normalizeScopes(requestedScopes, []);
+
+  if (requested.some(isInternalAppScope)) {
+    throw new Error('app_scope_not_allowed');
+  }
 
   if (requested.length === 0) {
     return allowed;
@@ -254,6 +275,10 @@ export async function upsertExternalApp({
   payload: UpsertExternalAppPayload;
 }): Promise<UpsertExternalAppResult> {
   const appId = assertAppId(payload.id);
+  assertExternalAppRegistrationAllowed({
+    allowedScopes: payload.allowedScopes,
+    appId,
+  });
   const origins = normalizeOrigins(payload.origins);
 
   if (origins.length === 0) {
@@ -280,6 +305,13 @@ export async function upsertExternalApp({
     updatedAt: now,
     updatedBy: actorUserId,
   };
+  const maxBearerTtlSeconds = resolveMaxBearerTtlFieldValue({
+    isNewApp: !existingApp,
+    requested: payload.maxBearerTtlSeconds,
+  });
+  if (maxBearerTtlSeconds !== undefined) {
+    fields.maxBearerTtlSeconds = maxBearerTtlSeconds;
+  }
 
   if (nextSecret) {
     fields.secretHash = hashAppSecret(nextSecret);

@@ -39,6 +39,15 @@ function exchange(token: string) {
 }
 
 const nowSeconds = () => Math.floor(Date.now() / 1000);
+const isFamilyKey = (key: string) =>
+  key.startsWith('app-token:refresh:family-revoked:');
+
+/** Answers family-revocation reads as "not revoked" and fence reads in order. */
+function fenceReads(...values: (number | null)[]) {
+  mocks.redisGet.mockImplementation(async (key: string) =>
+    isFamilyKey(key) ? null : (values.shift() ?? null)
+  );
+}
 
 describe('app token exchange replay guards with the store assigned', () => {
   registerExchangeTestSetup();
@@ -56,24 +65,30 @@ describe('app token exchange replay guards with the store assigned', () => {
   it('applies grace after losing a concurrent claim, and on retry', async () => {
     const token = refreshToken();
     // Both requests read absence; this one loses SET NX to the winner.
-    mocks.redisGet
-      .mockResolvedValueOnce(null)
-      .mockResolvedValueOnce(nowSeconds());
+    fenceReads(null, nowSeconds());
     mocks.redisSet.mockResolvedValueOnce(null);
     expect((await exchange(token)).status).toBe(200);
 
-    // A legitimate retry inside grace is not poisoned by a cached replay.
-    mocks.redisGet.mockResolvedValueOnce(nowSeconds());
+    // A legitimate retry inside grace is not poisoned by a cached replay,
+    // and does not revoke the token's family.
+    fenceReads(nowSeconds());
     expect((await exchange(token)).status).toBe(200);
+    expect(mocks.redisSet).not.toHaveBeenCalledWith(
+      expect.stringMatching(/^app-token:refresh:family-revoked:/u),
+      expect.anything(),
+      expect.anything()
+    );
   });
 
   it('caches only replays proven outside grace', async () => {
     const token = refreshToken();
-    mocks.redisGet.mockResolvedValue(nowSeconds() - 3600);
+    mocks.redisGet.mockImplementation(async (key: string) =>
+      isFamilyKey(key) ? null : nowSeconds() - 3600
+    );
     expect((await exchange(token)).status).toBe(401);
     expect((await exchange(token)).status).toBe(401);
-    // The repeat was answered from memory.
-    expect(mocks.redisGet).toHaveBeenCalledTimes(1);
+    // The repeat was answered from memory: one family read, one fence read.
+    expect(mocks.redisGet).toHaveBeenCalledTimes(2);
   });
 
   it('pre-limits one principal before spending store operations', async () => {
@@ -87,8 +102,9 @@ describe('app token exchange replay guards with the store assigned', () => {
       }
       expect(statuses.indexOf(429)).toBe(20);
       expect(mocks.redisSet).toHaveBeenCalledTimes(20);
-      // Denied attempts never read the store: 20 admitted attempts, 20 GETs.
-      expect(mocks.redisGet).toHaveBeenCalledTimes(20);
+      // Denied attempts never read the store: 20 admitted attempts, each with
+      // one family read and one fence read.
+      expect(mocks.redisGet).toHaveBeenCalledTimes(40);
     } finally {
       vi.useRealTimers();
     }

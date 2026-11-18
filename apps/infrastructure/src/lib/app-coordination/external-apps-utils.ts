@@ -12,6 +12,7 @@ export const FIELD_NAMES = [
   'createdBy',
   'displayName',
   'enabled',
+  'maxBearerTtlSeconds',
   'origins',
   'secretHash',
   'secretIssuedAt',

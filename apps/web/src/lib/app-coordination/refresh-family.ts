@@ -1,4 +1,4 @@
-import { randomUUID } from 'node:crypto';
+import { createHash, randomUUID } from 'node:crypto';
 
 /**
  * External-app refresh tokens carry their rotation family as a scope, so a
@@ -26,4 +26,30 @@ export function readRefreshFamily(scopes: readonly string[]) {
     return FAMILY_ID_PATTERN.test(family) ? family : null;
   }
   return null;
+}
+
+/**
+ * The family a refresh token issued without one joins on its first rotation.
+ * It is derived from the token itself rather than random, so a later reuse of
+ * that same token names the family its successors carry and revokes them.
+ */
+export function deriveLegacyRefreshFamily({
+  jti,
+  sub,
+  targetApp,
+}: {
+  jti: string;
+  sub: string;
+  targetApp: string;
+}) {
+  const hex = createHash('sha256')
+    .update(`app-token:legacy-family:${targetApp}:${sub}:${jti}`)
+    .digest('hex');
+  return [
+    hex.slice(0, 8),
+    hex.slice(8, 12),
+    hex.slice(12, 16),
+    hex.slice(16, 20),
+    hex.slice(20, 32),
+  ].join('-');
 }

@@ -1,10 +1,10 @@
+import { EXTERNAL_APP_BEARER_TTL_BOUNDS } from '@tuturuuu/utils/external-app-registry-policy';
 import { z } from 'zod';
 import {
   listExternalApps,
   rotateExternalAppSecret,
   upsertExternalApp,
 } from '@/lib/app-coordination/external-apps';
-import { EXTERNAL_APP_BEARER_TTL_BOUNDS } from '@/lib/app-coordination/external-apps-utils';
 import { requireExternalControlPlaneAccess } from '@/lib/external-projects/root-access';
 
 const headers = { 'Cache-Control': 'no-store' };
