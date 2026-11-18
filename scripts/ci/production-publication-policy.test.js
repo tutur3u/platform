@@ -93,6 +93,17 @@ function fixture(t, policy) {
     mkdirSync(dirname(join(root, file)), { recursive: true });
     copyFileSync(join(repoRoot, file), join(root, file));
   }
+  // Fixtures assert publication-policy states, so the deny-list entries for
+  // the policy-governed apps are cleared in the fixture copy.
+  const exclusionConfig = join(root, 'tuturuuu.ci.ts');
+  let exclusionSource = readFileSync(exclusionConfig, 'utf8');
+  for (const app of ['meet', 'mail', 'calendar', 'tasks']) {
+    exclusionSource = exclusionSource.replace(
+      new RegExp(`\\n  ${app}:\\s*'[^']*',`),
+      ''
+    );
+  }
+  writeFileSync(exclusionConfig, exclusionSource);
   if (policy !== undefined) {
     const config = join(root, 'tuturuuu.ci.ts');
     writeFileSync(
@@ -558,4 +569,22 @@ test('Mastermind has qualification jobs only and no production publisher', () =>
   const { jobs } = readWorkflow('mastermind-cloudflare.yaml');
   assert.deepEqual(Object.keys(jobs), ['affected-gate', 'artifact']);
   assert.match(jobs.artifact.env.MASTERMIND_SOURCE_SHA, /github\.sha/);
+});
+
+test('the production app deny-list holds exactly the listed apps and never web', () => {
+  const listed = execFileSync(
+    'bun',
+    [
+      '--eval',
+      `import { productionAppExclusions } from './tuturuuu.ci.ts';
+       const keys = Object.keys(productionAppExclusions).sort();
+       if (keys.includes('web') || keys.includes('platform')) throw new Error(keys.join(','));
+       console.log(keys.join(','));`,
+    ],
+    { cwd: repoRoot, encoding: 'utf8' }
+  );
+  assert.equal(
+    listed.trim(),
+    'calendar,colab,lettin,mail,meet,mind,parley,tasks,track'
+  );
 });

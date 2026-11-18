@@ -46,7 +46,7 @@ function resolveFixtureTargets({
   workflowMarkers,
   platformEnabled,
   includeEvidence = false,
-  liftExclusions = [],
+  liftExclusions = ['meet', 'mail', 'calendar', 'tasks'],
   // Hold semantics are exercised against Meet; admission has its own test.
   publicationPolicy = { meet: { state: 'held', reason: 'held for test' } },
 }) {
@@ -485,18 +485,6 @@ test('a non-held app still runs beside the slot exclusions, and Web is not liste
     shouldRun: true,
     workflowName: 'vercel-production-platform.yaml',
   });
-  const listed = execFileSync(
-    'bun',
-    [
-      '--eval',
-      `import { productionAppExclusions } from './tuturuuu.ci.ts';
-       const keys = Object.keys(productionAppExclusions).sort();
-       if (keys.includes('web') || keys.includes('platform')) throw new Error(keys.join(','));
-       console.log(keys.join(','));`,
-    ],
-    { cwd: repoRoot, encoding: 'utf8' }
-  );
-  assert.equal(listed.trim(), 'colab,lettin,mind,parley,track');
 });
 
 test('control recovery without deployment markers still fails open safely', () => {
