@@ -456,7 +456,12 @@ and short status for 90 seconds, and records each edit with its source, action,
 requester and bounded before/after excerpts (eight per room). Ask Mira in the
 document toolbar uses Private Mira: it requires the requester's current
 Continue choice, deployment and account authority, and their credits, then
-returns text that the requester's editor inserts. The requester can accept an
+returns text that the requester's editor inserts. After generation, including
+a recovered receipt, the server rechecks that choice before any room-visible
+write, and the room accepts Mira's edit and presence only while the choice is
+still Continue at the exact revision checked for the request. A refused write
+clears only that request's presence. The document API reads at most 64 KiB of
+request body, cancelling the stream at that bound. The requester can accept an
 edit or undo it while the inserted text is unchanged.
 
 Regression coverage: `packages/realtime/src/meet/room-documents.test.ts`,

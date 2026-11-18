@@ -62,14 +62,28 @@ export function documentAssistPrompt(
     .join('\n');
 }
 
+function consentChanged() {
+  return new MeetCallAccessError(
+    403,
+    'Private Mira choice changed',
+    'MIRA_CONSENT_REQUIRED'
+  );
+}
+
 /**
  * Generates with the requester's private Mira consent, authority and credits,
  * then records attribution in the room. Insertion stays with the requester.
+ * Every room-visible write after generation follows a fresh consent check and
+ * carries the checked revision, which the room verifies atomically.
  */
 export async function assistMeetingDocument(
   access: Access,
   input: MeetingDocumentAssist,
-  provider: { apiKey: string; checkConsent: () => Promise<void> }
+  provider: {
+    apiKey: string;
+    checkConsent: () => Promise<void>;
+    consentRevision: number;
+  }
 ) {
   const documents = await readMeetingDocuments(access);
   const tab = documents.tabs.find(
@@ -79,16 +93,28 @@ export async function assistMeetingDocument(
   const statusText = input.section
     ? `${tab.title ?? 'Document'} · ${input.section}`
     : tab.title;
-  await showMiraInDocument(access, {
+  const presence = {
+    requestId: input.requestId,
+    consentRevision: provider.consentRevision,
     tabId: tab.id,
-    source: 'chat',
-    status: 'editing',
+    source: 'chat' as const,
     section: input.section,
     statusText,
     cursor: input.cursor,
-  });
+  };
+  const release = () => hideMiraInDocument(access, tab.id, input.requestId);
+  await showMiraInDocument(access, { ...presence, status: 'editing' }).catch(
+    async (error) => {
+      await release();
+      throw error instanceof MeetCallAccessError && error.status === 403
+        ? consentChanged()
+        : error;
+    }
+  );
   let text: string;
   try {
+    // Fresh answers and recovered receipts both pass the check below before
+    // anything derived from them reaches the room.
     const answer = await requestPersonalMeetChat(
       access,
       {
@@ -101,20 +127,19 @@ export async function assistMeetingDocument(
         timezone: input.timezone,
         history: [],
       },
-      provider
+      { apiKey: provider.apiKey, checkConsent: provider.checkConsent }
     );
     text = answer.text.trim();
+    if (!text) throw new MeetCallAccessError(503, 'Mira returned no text');
+    await provider.checkConsent();
   } catch (error) {
-    await hideMiraInDocument(access, tab.id);
+    await release();
     throw error;
-  }
-  if (!text) {
-    await hideMiraInDocument(access, tab.id);
-    throw new MeetCallAccessError(503, 'Mira returned no text');
   }
   // A retried request reuses its receipt; the edit is recorded once.
   await callRoomService(access, {
     action: 'documents.mira.edit',
+    consentRevision: provider.consentRevision,
     edit: {
       id: input.requestId,
       tabId: tab.id,
@@ -123,17 +148,15 @@ export async function assistMeetingDocument(
       before: input.text,
       after: text,
     },
-  }).catch((error) => {
-    if (!(error instanceof MeetCallAccessError && error.status === 409))
-      throw error;
+  }).catch(async (error) => {
+    if (error instanceof MeetCallAccessError && error.status === 409) return;
+    await release();
+    throw error instanceof MeetCallAccessError && error.status === 403
+      ? consentChanged()
+      : error;
   });
-  await showMiraInDocument(access, {
-    tabId: tab.id,
-    source: 'chat',
-    status: 'reviewing',
-    section: input.section,
-    statusText,
-    cursor: input.cursor,
-  }).catch(() => undefined);
+  await showMiraInDocument(access, { ...presence, status: 'reviewing' }).catch(
+    () => undefined
+  );
   return { editId: input.requestId, source: 'chat' as const, text };
 }

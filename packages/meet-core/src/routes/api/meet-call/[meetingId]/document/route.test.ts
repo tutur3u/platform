@@ -216,6 +216,7 @@ it('runs a Mira assist through private consent, credits and attribution', async 
     expect.anything(),
     expect.objectContaining({
       action: 'documents.mira.edit',
+      consentRevision: 1,
       edit: expect.objectContaining({
         id: body.editId,
         tabId,
@@ -226,7 +227,13 @@ it('runs a Mira assist through private consent, credits and attribution', async 
   );
   expect(fixture.show).toHaveBeenCalledWith(
     expect.anything(),
-    expect.objectContaining({ tabId, source: 'chat', status: 'editing' })
+    expect.objectContaining({
+      tabId,
+      source: 'chat',
+      status: 'editing',
+      requestId: body.editId,
+      consentRevision: 1,
+    })
   );
   expect(fixture.choice).toHaveBeenCalledTimes(3);
 });
@@ -249,7 +256,114 @@ it('clears Mira presence when credits are unavailable', async () => {
   const response = await assist();
   expect(response.status).toBe(403);
   expect(await response.json()).toEqual({ code: 'MIRA_CREDITS_UNAVAILABLE' });
-  expect(fixture.hide).toHaveBeenCalledWith(expect.anything(), tabId);
+  expect(fixture.hide).toHaveBeenCalledWith(
+    expect.anything(),
+    tabId,
+    expect.any(String)
+  );
+});
+
+const roomWrites = () =>
+  fixture.room.mock.calls.map(
+    ([, command]) => (command as { action: string }).action
+  );
+const shownStatuses = () =>
+  fixture.show.mock.calls.map(
+    ([, input]) => (input as { status: string }).status
+  );
+
+it('denies a Continue choice changed during generation with no shared edit or reviewing state', async () => {
+  const requestId = crypto.randomUUID();
+  fixture.choice
+    .mockResolvedValueOnce({ revision: 1 })
+    .mockResolvedValueOnce({ revision: 1 })
+    .mockResolvedValue({ revision: 2 });
+  fixture.privateRequest.mockImplementation(
+    async (_access, _payload, provider) => {
+      await provider.checkConsent();
+      return { text: 'Answer produced before the choice changed.' };
+    }
+  );
+  const response = await assist({ requestId });
+  expect(response.status).toBe(403);
+  expect(await response.json()).toEqual({ code: 'MIRA_CONSENT_REQUIRED' });
+  expect(roomWrites()).not.toContain('documents.mira.edit');
+  expect(shownStatuses()).toEqual(['editing']);
+  expect(fixture.hide).toHaveBeenCalledWith(
+    expect.anything(),
+    tabId,
+    requestId
+  );
+});
+
+it('denies a recovered receipt when the choice changed before the room write', async () => {
+  fixture.choice
+    .mockResolvedValueOnce({ revision: 1 })
+    .mockResolvedValue({ revision: 3 });
+  // A retried request returns its stored answer without generating again.
+  fixture.privateRequest.mockResolvedValue({ text: 'Recovered answer.' });
+  const response = await assist();
+  expect(response.status).toBe(403);
+  expect(roomWrites()).not.toContain('documents.mira.edit');
+  expect(shownStatuses()).toEqual(['editing']);
+});
+
+it('maps a room revision-guard refusal to a consent failure and releases presence', async () => {
+  const requestId = crypto.randomUUID();
+  fixture.privateRequest.mockResolvedValue({ text: 'Answer.' });
+  fixture.room.mockRejectedValue(
+    new MeetCallAccessError(403, 'Room action is unavailable')
+  );
+  const response = await assist({ requestId });
+  expect(response.status).toBe(403);
+  expect(await response.json()).toEqual({ code: 'MIRA_CONSENT_REQUIRED' });
+  expect(shownStatuses()).toEqual(['editing']);
+  expect(fixture.hide).toHaveBeenCalledWith(
+    expect.anything(),
+    tabId,
+    requestId
+  );
+});
+
+it('cancels a streamed body past 64 KiB before parsing or forwarding it', async () => {
+  let pulled = 0;
+  let cancelled = false;
+  const chunk = new TextEncoder().encode(' '.repeat(16 * 1024));
+  const body = new ReadableStream<Uint8Array>({
+    pull(controller) {
+      pulled += 1;
+      if (pulled > 64) controller.close();
+      else controller.enqueue(chunk);
+    },
+    cancel() {
+      cancelled = true;
+    },
+  });
+  const response = await POST(
+    new Request(
+      `https://meet.example.invalid/api/meet-call/${meetingId}/document`,
+      {
+        method: 'POST',
+        body,
+        duplex: 'half',
+      } as RequestInit
+    ),
+    params
+  );
+  expect(response.status).toBe(413);
+  expect(cancelled).toBe(true);
+  expect(pulled).toBeLessThanOrEqual(6);
+  expect(fixture.run).not.toHaveBeenCalled();
+});
+
+it('rejects a known-length oversize body', async () => {
+  const response = await post({
+    action: 'create',
+    kind: 'notes',
+    title: 'x'.repeat(70 * 1024),
+  });
+  expect(response.status).toBe(413);
+  expect(fixture.run).not.toHaveBeenCalled();
 });
 
 it('rejects unknown tabs, empty refine selections and disabled deployments', async () => {

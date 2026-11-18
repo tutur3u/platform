@@ -1,5 +1,6 @@
 import { z } from 'zod';
 import type { MeetRealtimeTokenPayload } from './primitives';
+import { MIRA_PRIVATE_NOTICE_VERSION } from './room-mira-private';
 import type { RoomServiceState } from './room-service';
 
 /** The original room document keeps its channel and workspace checkpoint. */
@@ -54,6 +55,8 @@ export type RoomDocumentTab = {
   updatedAt: number;
 };
 export type MiraDocumentPresence = {
+  /** The assist request that owns this presence; only it may clear it. */
+  requestId: string;
   activeTabId: string;
   source: MiraDocumentSource;
   status: 'editing' | 'reviewing';
@@ -115,10 +118,13 @@ export const documentRoomCommandSchema = z.discriminatedUnion('action', [
     })
     .strict(),
 ]);
+const consentRevisionSchema = z.number().int().positive();
 export const miraDocumentServerCommandSchema = z.discriminatedUnion('action', [
   z
     .object({
       action: z.literal('documents.mira.presence'),
+      requestId: z.uuid(),
+      consentRevision: consentRevisionSchema.optional(),
       presence: z
         .object({
           activeTabId: roomDocumentTabIdSchema,
@@ -133,6 +139,7 @@ export const miraDocumentServerCommandSchema = z.discriminatedUnion('action', [
   z
     .object({
       action: z.literal('documents.mira.edit'),
+      consentRevision: consentRevisionSchema,
       edit: z
         .object({
           id: z.uuid(),
@@ -182,6 +189,28 @@ export function readRoomDocuments(
     mira: mira && mira.expiresAt > now ? mira : null,
     edits: state?.edits ?? [],
   };
+}
+
+/**
+ * Room-visible Mira output is written only while the requester's Private Mira
+ * Continue choice is the exact revision the server checked, so a choice that
+ * changes during generation cannot race the write.
+ */
+function privateMiraContinues(
+  snapshot: RoomServiceState,
+  token: MeetRealtimeTokenPayload,
+  account: string,
+  revision: number | undefined
+) {
+  const choice = snapshot.miraPrivate?.choices[account];
+  return (
+    revision !== undefined &&
+    choice?.choice === 'continue' &&
+    choice.version === MIRA_PRIVATE_NOTICE_VERSION &&
+    choice.accountId === account &&
+    choice.meetingId === token.meetingId &&
+    choice.revision === revision
+  );
 }
 
 function excerpt(value: string, limit: number) {
@@ -300,13 +329,26 @@ export function applyRoomDocuments(
     });
   }
   if (command.action === 'documents.mira.presence') {
-    if (!command.presence) return commit({ ...base, mira: null });
+    if (!command.presence) {
+      // A request clears only its own presence, never a newer request's.
+      if (
+        base.mira?.requestId !== command.requestId ||
+        base.mira.askedBy !== account
+      )
+        return { state: snapshot, body: current };
+      return commit({ ...base, mira: null });
+    }
+    if (
+      !privateMiraContinues(snapshot, token, account, command.consentRevision)
+    )
+      return fail('Private Mira choice changed');
     if (!find(command.presence.activeTabId))
       return fail('Document not found', 404);
     return commit({
       ...base,
       mira: {
         ...command.presence,
+        requestId: command.requestId,
         askedBy: account,
         updatedAt: now,
         expiresAt: now + MIRA_DOCUMENT_PRESENCE_TTL_MS,
@@ -314,6 +356,8 @@ export function applyRoomDocuments(
     });
   }
   const edit = command.edit;
+  if (!privateMiraContinues(snapshot, token, account, command.consentRevision))
+    return fail('Private Mira choice changed');
   if (!find(edit.tabId)) return fail('Document not found', 404);
   if (base.edits.some((entry) => entry.id === edit.id))
     return fail('Edit already recorded', 409);

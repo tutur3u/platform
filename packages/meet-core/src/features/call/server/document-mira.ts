@@ -64,11 +64,14 @@ async function publishAwareness(
 
 /**
  * Shows Mira in the room's tab state and, best effort, as a named caret in the
- * tab. Live voice tools and chat assist share this path with their source.
+ * tab. The room accepts it only while the requester's Private Mira Continue
+ * choice still has the revision checked for this request.
  */
 export async function showMiraInDocument(
   access: Access,
   input: {
+    requestId: string;
+    consentRevision: number;
     tabId: string;
     source: MiraDocumentSource;
     status: 'editing' | 'reviewing';
@@ -79,6 +82,8 @@ export async function showMiraInDocument(
 ) {
   await callRoomService(access, {
     action: 'documents.mira.presence',
+    requestId: input.requestId,
+    consentRevision: input.consentRevision,
     presence: {
       activeTabId: input.tabId,
       source: input.source,
@@ -100,12 +105,22 @@ export async function showMiraInDocument(
   });
 }
 
-export async function hideMiraInDocument(access: Access, tabId: string) {
-  await Promise.allSettled([
-    callRoomService(access, {
-      action: 'documents.mira.presence',
-      presence: null,
-    }),
-    publishAwareness(access, tabId, miraAwarenessRemoval()),
-  ]);
+/**
+ * Clears only this request's presence. The caret is removed only when no
+ * other request has since taken Mira's presence in the room.
+ */
+export async function hideMiraInDocument(
+  access: Access,
+  tabId: string,
+  requestId: string
+) {
+  const documents = await callRoomService<{ mira?: unknown }>(access, {
+    action: 'documents.mira.presence',
+    requestId,
+    presence: null,
+  }).catch(() => null);
+  if (!documents || documents.mira) return;
+  await publishAwareness(access, tabId, miraAwarenessRemoval()).catch(
+    () => undefined
+  );
 }

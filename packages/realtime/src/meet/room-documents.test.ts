@@ -14,6 +14,7 @@ import {
   ROOM_DOCUMENT_PRIMARY_TAB_ID,
   readRoomDocuments,
 } from './room-documents';
+import { MIRA_PRIVATE_NOTICE_VERSION } from './room-mira-private';
 import { type RoomServiceState, roomService } from './room-service';
 
 const account = '9b5c036d-d38d-4c12-b8e8-2e0b2b4a2691';
@@ -35,8 +36,27 @@ const token = meetRealtimeTokenPayloadSchema.parse({
 const host = { ...token, role: 'host' as const };
 const stranger = { ...token, userId: other, accountId: other };
 const now = 1_800_000_000_000;
-const initial = (): RoomServiceState =>
-  admitOrHold(createMeetRoomSnapshot(), token, '2026-09-09T00:00:00Z').state;
+const choice = (
+  value: 'continue' | 'mute' | 'leave',
+  revision: number
+): NonNullable<RoomServiceState['miraPrivate']> => ({
+  choices: {
+    [account]: {
+      choice: value,
+      version: MIRA_PRIVATE_NOTICE_VERSION,
+      meetingId,
+      accountId: account,
+      recordedAt: 1,
+      revision,
+    },
+  },
+  sessions: {},
+});
+const initial = (): RoomServiceState => ({
+  ...admitOrHold(createMeetRoomSnapshot(), token, '2026-09-09T00:00:00Z').state,
+  miraPrivate: choice('continue', 1),
+});
+const request = '3c4d5e6f-7a8b-4c9d-8e0f-1a2b3c4d5e6f';
 const uuid = (index: number) =>
   `00000000-0000-4000-8000-${index.toString().padStart(12, '0')}`;
 function run(
@@ -180,6 +200,8 @@ describe('room documents', () => {
     const created = create();
     const present = run(created.state, {
       action: 'documents.mira.presence',
+      requestId: request,
+      consentRevision: 1,
       presence: {
         activeTabId: tabId,
         source: 'chat',
@@ -202,6 +224,8 @@ describe('room documents', () => {
     expect(
       run(created.state, {
         action: 'documents.mira.presence',
+        requestId: request,
+        consentRevision: 1,
         presence: { activeTabId: uuid(5), source: 'chat', status: 'editing' },
       }).status
     ).toBe(404);
@@ -214,6 +238,7 @@ describe('room documents', () => {
     for (let index = 0; index <= ROOM_DOCUMENT_MAX_EDITS; index++)
       state = run(state, {
         action: 'documents.mira.edit',
+        consentRevision: 1,
         edit: {
           id: uuid(index + 1),
           tabId,
@@ -266,5 +291,75 @@ describe('room documents', () => {
         { action: 'documents.read' }
       ).status
     ).toBe(403);
+  });
+
+  it('writes Mira output only under the exact checked Private Mira revision', () => {
+    const created = create();
+    const edit = (state: RoomServiceState, consentRevision?: number) =>
+      run(state, {
+        action: 'documents.mira.edit',
+        ...(consentRevision === undefined ? {} : { consentRevision }),
+        edit: {
+          id: request,
+          tabId,
+          source: 'chat',
+          action: 'draft',
+          before: '',
+          after: 'Answer that must stay private.',
+        },
+      });
+    const presence = (state: RoomServiceState, consentRevision?: number) =>
+      run(state, {
+        action: 'documents.mira.presence',
+        requestId: request,
+        ...(consentRevision === undefined ? {} : { consentRevision }),
+        presence: { activeTabId: tabId, source: 'chat', status: 'reviewing' },
+      });
+    const changed: RoomServiceState = {
+      ...created.state,
+      miraPrivate: choice('continue', 2),
+    };
+    const muted: RoomServiceState = {
+      ...created.state,
+      miraPrivate: choice('mute', 2),
+    };
+    for (const state of [changed, muted]) {
+      const denied = edit(state, 1);
+      expect(denied.status).toBe(403);
+      expect(denied.state).toBe(state);
+      expect(presence(state, 1).status).toBe(403);
+    }
+    expect(edit(created.state).status).toBe(400);
+    expect(presence(created.state).status).toBe(403);
+    expect(edit({ ...created.state, miraPrivate: undefined }, 1).status).toBe(
+      403
+    );
+    const written = edit(created.state, 1);
+    expect(written.status).toBeUndefined();
+    expect(readRoomDocuments(written.state.documents).edits).toHaveLength(1);
+  });
+
+  it('lets a request clear only its own Mira presence', () => {
+    const present = run(create().state, {
+      action: 'documents.mira.presence',
+      requestId: request,
+      consentRevision: 1,
+      presence: { activeTabId: tabId, source: 'chat', status: 'editing' },
+    });
+    const otherRequest = run(present.state, {
+      action: 'documents.mira.presence',
+      requestId: uuid(7),
+      presence: null,
+    });
+    expect(otherRequest.state).toBe(present.state);
+    expect(
+      readRoomDocuments(otherRequest.state.documents, now).mira?.requestId
+    ).toBe(request);
+    const own = run(present.state, {
+      action: 'documents.mira.presence',
+      requestId: request,
+      presence: null,
+    });
+    expect(readRoomDocuments(own.state.documents, now).mira).toBeNull();
   });
 });

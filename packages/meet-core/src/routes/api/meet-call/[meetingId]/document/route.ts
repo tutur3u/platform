@@ -9,10 +9,9 @@ import {
 } from '@tuturuuu/meet-core/features/call/server/documents';
 import { roomRoute } from '@tuturuuu/meet-core/features/call/server/room-service';
 import { connection } from 'next/server';
+import { readDocumentBody } from '../../../../../features/call/server/document-body';
 import { readMiraDemoAuthority } from '../../../../../features/live-assistant/server/demo-authority';
 import { requirePrivateMiraChoice } from '../../../../../features/live-assistant/server/private-consent';
-
-const MAX_BODY_BYTES = 64 * 1024;
 
 export async function GET(
   request: Request,
@@ -26,13 +25,6 @@ export async function GET(
   );
 }
 
-async function readBody(request: Request) {
-  const text = await request.text();
-  if (new TextEncoder().encode(text).length > MAX_BODY_BYTES)
-    throw new MeetCallAccessError(413, 'Request is too large');
-  return JSON.parse(text) as unknown;
-}
-
 export async function POST(
   request: Request,
   { params }: { params: Promise<{ meetingId: string }> }
@@ -40,7 +32,7 @@ export async function POST(
   await connection();
   const { meetingId } = await params;
   return roomRoute(request, meetingId, async (access) => {
-    const body = await readBody(request);
+    const body = await readDocumentBody(request);
     if (
       !body ||
       typeof body !== 'object' ||
@@ -100,11 +92,12 @@ export async function POST(
           'MIRA_CONSENT_REQUIRED'
         );
     }
-    const result = await assistMeetingDocument(access, input.data, {
+    // The assist flow rechecks consent after generation and the room verifies
+    // this revision atomically with every room-visible write.
+    return assistMeetingDocument(access, input.data, {
       apiKey: env.GOOGLE_GENERATIVE_AI_API_KEY,
       checkConsent,
+      consentRevision: consent.revision,
     });
-    await checkConsent();
-    return result;
   });
 }

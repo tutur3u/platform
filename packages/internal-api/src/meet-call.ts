@@ -436,6 +436,7 @@ export interface MeetingDocumentTab {
   updatedAt: number;
 }
 export interface MeetingDocumentMiraPresence {
+  requestId?: string;
   activeTabId: string;
   source: MeetingDocumentSource;
   status: 'editing' | 'reviewing';
