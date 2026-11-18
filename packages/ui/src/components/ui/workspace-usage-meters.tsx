@@ -1,6 +1,8 @@
 import 'server-only';
 
 import { createAdminClient } from '@tuturuuu/supabase/next/server';
+import { canViewWorkspaceUsage } from '@tuturuuu/utils/workspace-usage-access';
+import { getPermissions } from '@tuturuuu/utils/workspace-helper';
 import { getFormatter, getTranslations } from 'next-intl/server';
 import { z } from 'zod';
 
@@ -14,6 +16,7 @@ const meterRow = z.object({
 
 /** Render only after the owning settings page has authorized workspace usage. */
 export async function WorkspaceUsageMeters({ wsId }: { wsId: string }) {
+  if (!canViewWorkspaceUsage(await getPermissions({ wsId }))) return null;
   const t = await getTranslations('workspace-usage-meters');
   const format = await getFormatter();
   const db = await createAdminClient({ noCookie: true });
