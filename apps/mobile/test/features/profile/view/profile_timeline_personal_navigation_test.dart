@@ -92,9 +92,6 @@ void main() {
                 BlocProvider<WorkspaceCubit>.value(value: workspaces),
               ],
               child: ProfileTimelineSection(
-                replayToken: 0,
-                fullSurface: true,
-                datesOpen: false,
                 cacheUserId: () => actor.user?.id,
                 repository: _Repository(),
               ),

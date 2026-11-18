@@ -48,6 +48,7 @@ import 'package:mobile/features/mastermind/access/mastermind_access_cubit.dart';
 import 'package:mobile/features/mastermind/view/mastermind_routes.dart';
 import 'package:mobile/features/notifications/view/notifications_page.dart';
 import 'package:mobile/features/profile/view/profile_overview_page.dart';
+import 'package:mobile/features/profile/view/profile_timeline_page.dart';
 import 'package:mobile/features/security/qr_login/view/qr_login_sign_in_page.dart';
 import 'package:mobile/features/shell/view/shell_page.dart';
 import 'package:mobile/features/shell/view/shell_route_transition.dart';
@@ -588,6 +589,10 @@ GoRouter createAppRouter(
           GoRoute(
             path: Routes.profileRoot,
             builder: (context, state) => const ProfileOverviewPage(),
+          ),
+          GoRoute(
+            path: Routes.timeline,
+            builder: (context, state) => const ProfileTimelinePage(),
           ),
         ]),
       ),

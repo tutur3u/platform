@@ -1,254 +1,117 @@
-import 'dart:async';
-
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:go_router/go_router.dart';
 import 'package:mobile/core/layout/layout.dart';
 import 'package:mobile/core/router/routes.dart';
-import 'package:mobile/core/ui/icons/app_icons.dart';
-import 'package:mobile/core/ui/kit/kit.dart';
+import 'package:mobile/core/ui/ui.dart';
 import 'package:mobile/features/auth/cubit/auth_cubit.dart';
-import 'package:mobile/features/profile/profile_timeline_repository.dart';
-import 'package:mobile/features/profile/view/profile_account_actions.dart';
-import 'package:mobile/features/profile/view/profile_activity_section.dart';
-import 'package:mobile/features/profile/view/profile_identity_card.dart';
-import 'package:mobile/features/profile/view/profile_timeline_section.dart';
-import 'package:mobile/features/profile/view/profile_you_rows.dart';
+import 'package:mobile/features/profile/view/profile_identity_header.dart';
+import 'package:mobile/features/profile/view/profile_sections.dart';
+import 'package:mobile/features/profile/view/profile_surface.dart';
 import 'package:mobile/features/shell/cubit/shell_chrome_actions_cubit.dart';
 import 'package:mobile/features/shell/cubit/shell_profile_cubit.dart';
 import 'package:mobile/features/shell/cubit/shell_profile_state.dart';
 import 'package:mobile/features/shell/view/floating_shell_dock.dart';
 import 'package:mobile/features/shell/view/shell_chrome_actions.dart';
 import 'package:mobile/features/shell/view/shell_title_override.dart';
+import 'package:mobile/features/workspace/widgets/workspace_picker_sheet.dart';
 import 'package:mobile/l10n/l10n.dart';
 import 'package:mobile/widgets/nova_refresh_indicator.dart';
 
-/// Account home. Opening personal activity never implies consent to share it.
-class ProfileOverviewPage extends StatefulWidget {
-  const ProfileOverviewPage({
-    this.replayToken = 0,
-    this.cacheUserId,
-    this.statsLoader,
-    this.timezoneLoader,
-    this.timelineRepository,
-    super.key,
-  });
+/// The Profile destination: who is signed in, account switching, shortcuts
+/// to settings, then Sign out and Delete account. The top bar carries the
+/// workspace picker.
+class ProfileOverviewPage extends StatelessWidget {
+  const ProfileOverviewPage({this.replayToken = 0, super.key});
 
+  /// Changes when the Profile dock item is re-selected.
   final int replayToken;
-  final String? Function()? cacheUserId;
 
-  /// Data sources for render tests; production uses the defaults.
-  @visibleForTesting
-  final ProfileStatsLoader? statsLoader;
-  @visibleForTesting
-  final Future<String> Function()? timezoneLoader;
-  @visibleForTesting
-  final ProfileTimelineRepository? timelineRepository;
-
-  @override
-  State<ProfileOverviewPage> createState() => _ProfileOverviewPageState();
-}
-
-class _ProfileOverviewPageState extends State<ProfileOverviewPage> {
-  final _activityKey = GlobalKey<ProfileActivitySectionState>();
-
-  bool _timeline = false;
-  bool _dates = false;
+  static const _ownerId = 'profile-overview';
+  static const Set<String> _locations = {Routes.profileRoot};
 
   @override
   Widget build(BuildContext context) {
     final l10n = context.l10n;
-    final userId = context.watch<AuthCubit>().state.user?.id;
-    return BlocBuilder<ShellProfileCubit, ShellProfileState>(
-      builder: (context, state) {
-        final profile = state.userId == userId && state.profile?.id == userId
-            ? state.profile
-            : null;
-        final avatarUrl = profile == null ? null : state.avatarUrl;
-        return Stack(
-          children: [
-            ShellTitleOverride(
-              ownerId: 'profile-overview',
-              locations: const {Routes.profileRoot},
-              title: _timeline
-                  ? l10n.profileTimelineTitle
-                  : l10n.profileOverviewTab,
-            ),
-            ShellChromeActions(
-              ownerId: 'profile-overview',
-              locations: const {Routes.profileRoot},
-              onResetSection: _timeline
-                  ? () => setState(() {
-                      _timeline = false;
-                      _dates = false;
-                    })
-                  : null,
-              actions: [
-                if (!_timeline)
-                  ShellActionSpec(
-                    id: 'profile-switch-account',
-                    icon: LucideIcons.users,
-                    tooltip: l10n.authSwitchAccount,
-                    onPressed: () =>
-                        unawaited(showProfileAccountSwitcher(context)),
-                  ),
-                if (_timeline)
-                  ShellActionSpec(
-                    id: 'profile-day-trail',
-                    icon: _dates
-                        ? LucideIcons.rows3
-                        : LucideIcons.calendarRange,
-                    tooltip: _dates
-                        ? l10n.profileTimelineHideDates
-                        : l10n.profileTimelineShowDates,
-                    highlighted: _dates,
-                    callbackToken: _dates,
-                    onPressed: () => setState(() => _dates = !_dates),
-                  ),
-                ShellActionSpec(
-                  id: 'profile-view-overview',
-                  segmentGroup: 'profile-views',
-                  icon: LucideIcons.user,
-                  tooltip: l10n.profileOverviewTab,
-                  highlighted: !_timeline,
-                  callbackToken: _timeline,
-                  onPressed: () => setState(() => _timeline = false),
-                ),
-                ShellActionSpec(
-                  id: 'profile-view-timeline',
-                  segmentGroup: 'profile-views',
-                  icon: LucideIcons.history,
-                  tooltip: l10n.profileTimelineTitle,
-                  highlighted: _timeline,
-                  callbackToken: _timeline,
-                  onPressed: () => setState(() => _timeline = true),
-                ),
-                ShellActionSpec(
-                  id: 'profile-settings',
-                  inDock: true,
-                  icon: LucideIcons.settings,
-                  tooltip: l10n.navSettings,
-                  onPressed: () => context.go(Routes.settings),
-                ),
-              ],
-            ),
-            if (_timeline)
-              LayoutBuilder(
-                builder: (context, constraints) => ProfileTimelineSection(
-                  replayToken: widget.replayToken,
-                  cacheUserId: widget.cacheUserId,
-                  repository: widget.timelineRepository,
-                  fullSurface: true,
-                  contentTopPadding:
-                      floatingShellHeaderInset(context) + AppLayout.pageTop,
-                  horizontalPadding: AppPageInsets.resolve(
-                    width: constraints.maxWidth,
-                    safeArea: MediaQuery.paddingOf(context),
-                  ),
-                  datesOpen: _dates,
-                  onDatesChanged: (open) => setState(() => _dates = open),
-                ),
-              )
-            else
-              NovaRefreshIndicator(
-                onRefresh: () async {
-                  final user = context.read<AuthCubit>().state.user;
-                  await Future.wait([
-                    if (user != null)
-                      context
-                          .read<ShellProfileCubit>()
-                          .loadFromAuthenticatedUser(user, forceRefresh: true),
-                    if (_activityKey.currentState case final activity?)
-                      activity.refresh(),
-                  ]);
-                },
-                child: AppPageListView(
-                  physics: const AlwaysScrollableScrollPhysics(),
-                  key: ValueKey(_timeline),
-                  kind: AppPageKind.root,
-                  topInset: floatingShellHeaderInset(context),
-                  children: [
-                    _OverviewLayout(
-                      identity: ProfileIdentityCard(
-                        profile: profile,
-                        avatarUrl: avatarUrl,
-                        userId: userId,
-                        loading: profile == null && state.error == null,
-                      ),
-                      activity: userId == null
-                          ? null
-                          : Column(
-                              crossAxisAlignment: CrossAxisAlignment.stretch,
-                              children: [
-                                // Focus Time is tracked time; See all opens the
-                                // Timer statistics.
-                                AppSectionHeader(
-                                  key: const ValueKey('you-focus-time'),
-                                  title: l10n.profileFocusTime,
-                                  actionLabel: l10n.homeSeeAll,
-                                  onAction: () => context.go(Routes.timerStats),
-                                ),
-                                ProfileActivitySection(
-                                  key: _activityKey,
-                                  showHeader: false,
-                                  // Focus Time is all task-linked tracked time.
-                                  taskLinked: true,
-                                  replayToken: widget.replayToken,
-                                  cacheUserId: widget.cacheUserId,
-                                  statsLoader: widget.statsLoader,
-                                  timezoneLoader: widget.timezoneLoader,
-                                ),
-                              ],
-                            ),
-                    ),
-                    const SizedBox(height: AppLayout.sectionGap),
-                    ProfileYouRows(
-                      onOpenTimeline: () => setState(() => _timeline = true),
-                    ),
-                  ],
+    final user = context.select<AuthCubit, ({String? id, String? email})>(
+      (cubit) => (id: cubit.state.user?.id, email: cubit.state.user?.email),
+    );
+    return Stack(
+      fit: StackFit.expand,
+      children: [
+        BlocBuilder<ShellProfileCubit, ShellProfileState>(
+          builder: (context, state) {
+            // A profile loaded for another account is never shown.
+            final profile =
+                state.userId == user.id && state.profile?.id == user.id
+                ? state.profile
+                : null;
+            return NovaRefreshIndicator(
+              onRefresh: () async {
+                final current = context.read<AuthCubit>().state.user;
+                if (current == null) return;
+                await context
+                    .read<ShellProfileCubit>()
+                    .loadFromAuthenticatedUser(current, forceRefresh: true);
+              },
+              child: ProfileOverviewList(
+                topInset: floatingShellHeaderInset(context),
+                header: ProfileIdentityHeader(
+                  profile: profile,
+                  loading:
+                      user.id != null && profile == null && state.error == null,
+                  fallbackEmail: user.email,
+                  avatarUrl: profile == null ? null : state.avatarUrl,
+                  avatarKey: state.avatarIdentityKey,
                 ),
               ),
+            );
+          },
+        ),
+        ShellTitleOverride(
+          ownerId: _ownerId,
+          locations: _locations,
+          title: l10n.profileTitle,
+        ),
+        ShellChromeActions(
+          ownerId: _ownerId,
+          locations: _locations,
+          actions: [
+            ShellActionSpec(
+              id: 'profile-workspace-picker',
+              icon: LucideIcons.building2,
+              tooltip: l10n.settingsSwitchWorkspace,
+              onPressed: () => showWorkspacePickerSheet(context),
+            ),
           ],
-        );
-      },
+        ),
+      ],
     );
   }
 }
 
-/// Identity above activity; side by side once the body is wide enough for a
-/// readable activity column next to the identity card.
-class _OverviewLayout extends StatelessWidget {
-  const _OverviewLayout({required this.identity, required this.activity});
+/// The Profile sections in order below [header].
+class ProfileOverviewList extends StatelessWidget {
+  const ProfileOverviewList({
+    required this.header,
+    this.topInset = 0,
+    super.key,
+  });
 
-  static const double _twoColumnMinWidth = 840;
-  static const double _identityWidth = 360;
-
-  final Widget identity;
-  final Widget? activity;
+  final Widget header;
+  final double topInset;
 
   @override
-  Widget build(BuildContext context) => LayoutBuilder(
-    builder: (context, constraints) {
-      final activity = this.activity;
-      if (activity == null) return identity;
-      if (constraints.maxWidth < _twoColumnMinWidth) {
-        return Column(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            identity,
-            const SizedBox(height: AppLayout.sectionGap),
-            activity,
-          ],
-        );
-      }
-      return Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          SizedBox(width: _identityWidth, child: identity),
-          const SizedBox(width: AppLayout.sectionGap),
-          Expanded(child: activity),
-        ],
-      );
-    },
+  Widget build(BuildContext context) => AppPageListView(
+    physics: const AlwaysScrollableScrollPhysics(),
+    topInset: topInset,
+    children: [
+      header,
+      const SizedBox(height: AppLayout.sectionGap - AppSpacing.sm),
+      const ProfileCard(children: [ProfileAccountSwitchRow()]),
+      const SizedBox(height: AppLayout.itemGap),
+      const ProfileLinkGroups(),
+      const SizedBox(height: AppLayout.sectionGap - AppSpacing.sm),
+      const ProfileDangerGroup(),
+    ],
   );
 }

@@ -2,12 +2,12 @@ import 'package:bloc_test/bloc_test.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:mobile/core/layout/layout.dart';
 import 'package:mobile/data/models/workspace.dart';
 import 'package:mobile/features/auth/cubit/auth_cubit.dart';
 import 'package:mobile/features/auth/cubit/auth_state.dart';
 import 'package:mobile/features/profile/profile_timeline_repository.dart';
-import 'package:mobile/features/profile/view/profile_timeline_days.dart';
+import 'package:mobile/features/profile/view/profile_timeline_grouping.dart';
+import 'package:mobile/features/profile/view/profile_timeline_row.dart';
 import 'package:mobile/features/profile/view/profile_timeline_section.dart';
 import 'package:mobile/features/workspace/cubit/workspace_cubit.dart';
 import 'package:mobile/features/workspace/cubit/workspace_state.dart';
@@ -90,33 +90,49 @@ void main() {
           builder: (context) => Localizations.override(
             context: context,
             locale: const Locale('vi'),
-            child: ProfileTimelineDays(
-              items: [
-                ProfileTimelineItem(
-                  id: 'calendar',
-                  type: 'calendar',
-                  createdAt: DateTime(2026, 9, 30, 8),
-                  scope: 'workspace',
-                  title: 'Team event',
+            child: Column(
+              children: [
+                ProfileTimelineRow(
+                  item: ProfileTimelineItem(
+                    id: 'calendar',
+                    type: 'calendar',
+                    createdAt: DateTime(2026, 9, 30, 8),
+                    scope: 'workspace',
+                    title: 'Team event',
+                  ),
+                  time: '08:00',
+                  timeWidth: 44,
+                  last: false,
+                  onOpen: (_) {},
                 ),
-                ProfileTimelineItem(
-                  id: 'unknown',
-                  type: 'future-source',
-                  createdAt: DateTime(2026, 9, 29, 8),
-                  scope: 'personal',
+                ProfileTimelineRow(
+                  key: const ValueKey('unknown'),
+                  item: ProfileTimelineItem(
+                    id: 'unknown',
+                    type: 'future-source',
+                    createdAt: DateTime(2026, 9, 29, 8),
+                    scope: 'personal',
+                  ),
+                  time: '08:00',
+                  timeWidth: 44,
+                  last: true,
+                  onOpen: (_) => fail('Unknown records must not navigate'),
                 ),
               ],
-              onOpen: (_) => fail('Unknown records must not navigate'),
             ),
           ),
         ),
       );
       await tester.pumpAndSettle();
       expect(find.textContaining('Sự kiện'), findsWidgets);
-      final rows = tester
-          .widgetList<AppGroupedRow>(find.byType(AppGroupedRow))
-          .toList();
-      expect(rows.last.onTap, isNull);
+      expect(
+        find.descendant(
+          of: find.byKey(const ValueKey('unknown')),
+          matching: find.byType(InkWell),
+        ),
+        findsNothing,
+      );
+      await tester.tap(find.byKey(const ValueKey('unknown')));
       expect(tester.takeException(), isNull);
     },
   );
@@ -155,12 +171,9 @@ void main() {
             BlocProvider<AuthCubit>.value(value: auth),
             BlocProvider<WorkspaceCubit>.value(value: workspace),
           ],
-          child: SingleChildScrollView(
-            child: ProfileTimelineSection(
-              cacheUserId: () => auth.state.user?.id,
-              replayToken: 0,
-              repository: _Repository(),
-            ),
+          child: ProfileTimelineSection(
+            cacheUserId: () => auth.state.user?.id,
+            repository: _Repository(),
           ),
         ),
       );

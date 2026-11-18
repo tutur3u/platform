@@ -24,6 +24,7 @@ abstract final class Routes {
   static const profileRoot = '/profile';
   static const profileEdit = '/profile/edit';
   static const profileAccounts = '/profile/accounts';
+  static const timeline = '/timeline';
   static const tasks = '/tasks';
   static const habits = '/habits';
   static const habitsActivity = '/habits/activity';

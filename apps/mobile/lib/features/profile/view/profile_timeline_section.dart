@@ -11,35 +11,41 @@ import 'package:mobile/features/auth/cubit/auth_cubit.dart';
 import 'package:mobile/features/profile/personal_profile_workspace.dart';
 import 'package:mobile/features/profile/profile_timeline_access.dart';
 import 'package:mobile/features/profile/profile_timeline_repository.dart';
-import 'package:mobile/features/profile/view/profile_timeline_browser.dart';
+import 'package:mobile/features/profile/view/profile_timeline_filter.dart';
+import 'package:mobile/features/profile/view/profile_timeline_view.dart';
 import 'package:mobile/features/workspace/cubit/workspace_cubit.dart';
 import 'package:mobile/l10n/l10n.dart';
 import 'package:mobile/widgets/nova_refresh_indicator.dart';
 
+/// Loads the signed-in user's personal activity and shows it in a
+/// [ProfileTimelineView]. Activity is read only from the verified personal
+/// workspace; a revoked session clears what was shown.
 class ProfileTimelineSection extends StatefulWidget {
   const ProfileTimelineSection({
-    required this.replayToken,
+    this.replayToken = 0,
     this.repository,
     this.cacheUserId,
     this.contentTopPadding = 0,
     this.horizontalPadding = EdgeInsets.zero,
-    this.fullSurface = false,
-    this.datesOpen,
-    this.onDatesChanged,
+    this.filter = const ProfileTimelineFilter(),
+    this.onFilterChanged,
+    this.now,
     super.key,
   });
 
   final int replayToken;
   final String? Function()? cacheUserId;
-  final bool fullSurface;
   final double contentTopPadding;
 
   /// Page gutters applied inside the timeline's own scroll view, so the
   /// scrollable stays full width.
   final EdgeInsets horizontalPadding;
-  final bool? datesOpen;
-  final ValueChanged<bool>? onDatesChanged;
+  final ProfileTimelineFilter filter;
+  final ValueChanged<ProfileTimelineFilter>? onFilterChanged;
   final ProfileTimelineRepository? repository;
+
+  /// The current time for day labels; tests pin it.
+  final DateTime? now;
 
   @override
   State<ProfileTimelineSection> createState() => _ProfileTimelineSectionState();
@@ -52,6 +58,9 @@ class _ProfileTimelineSectionState extends State<ProfileTimelineSection> {
   String? _scope;
   int _request = 0;
   bool _failed = false;
+
+  /// Access was refused, so retrying cannot help.
+  bool _denied = false;
   bool _partial = false;
   bool _limited = false;
   bool _refreshing = false;
@@ -76,6 +85,7 @@ class _ProfileTimelineSectionState extends State<ProfileTimelineSection> {
     _scope = scope;
     _items = null;
     _failed = false;
+    _denied = false;
     _partial = false;
     _limited = false;
     _refreshing = false;
@@ -149,6 +159,7 @@ class _ProfileTimelineSectionState extends State<ProfileTimelineSection> {
           _partial = fresh.partial;
           _limited = fresh.limited;
           _failed = false;
+          _denied = false;
         });
         if (fresh.partial) {
           _reportFailure(request);
@@ -161,6 +172,7 @@ class _ProfileTimelineSectionState extends State<ProfileTimelineSection> {
         setState(() {
           _failed = true;
           if (timelineAccessDenied(error)) {
+            _denied = true;
             _items = null;
             _partial = false;
             _limited = false;
@@ -207,6 +219,7 @@ class _ProfileTimelineSectionState extends State<ProfileTimelineSection> {
         setState(() {
           _pagingPaused = true;
           if (timelineAccessDenied(error)) {
+            _denied = true;
             _items = null;
             _failed = true;
             _partial = false;
@@ -290,9 +303,31 @@ class _ProfileTimelineSectionState extends State<ProfileTimelineSection> {
     unawaited(context.push<void>(path));
   }
 
+  Future<void> _reload() async {
+    final userId = context.read<AuthCubit>().state.user?.id;
+    final workspaceId = verifiedPersonalProfileWorkspace(
+      userId: userId,
+      cacheUserId: (widget.cacheUserId ?? currentPersonalProfileUserId)(),
+      workspaces: context.read<WorkspaceCubit>(),
+    )?.id;
+    if (userId != null && workspaceId != null) {
+      await _load(workspaceId, userId);
+    }
+  }
+
+  bool get _hasMore {
+    final scope = _scope;
+    if (scope == null || _pagingPaused || _partial) return false;
+    final separator = scope.indexOf(':');
+    return _repository.nextPage(
+          scope.substring(separator + 1),
+          scope.substring(0, separator),
+        ) !=
+        null;
+  }
+
   @override
   Widget build(BuildContext context) {
-    final l10n = context.l10n;
     if (_scope == null) {
       return Padding(
         padding: widget.horizontalPadding.copyWith(
@@ -301,52 +336,40 @@ class _ProfileTimelineSectionState extends State<ProfileTimelineSection> {
         ),
         child: AppStateMessage(
           icon: LucideIcons.lock,
-          title: l10n.profileTimelineUnavailable,
+          title: context.l10n.profileTimelineUnavailable,
         ),
       );
     }
     final items = _items;
-    final browser = NovaRefreshIndicator(
-      onRefresh: () async {
-        final userId = context.read<AuthCubit>().state.user?.id;
-        final workspaceId = verifiedPersonalProfileWorkspace(
-          userId: userId,
-          cacheUserId: (widget.cacheUserId ?? currentPersonalProfileUserId)(),
-          workspaces: context.read<WorkspaceCubit>(),
-        )?.id;
-        if (userId != null && workspaceId != null) {
-          await _load(workspaceId, userId);
-        }
-      },
-      child: _browser(items),
+    return NovaRefreshIndicator(
+      onRefresh: _reload,
+      child: ProfileTimelineView(
+        key: ValueKey(_scope),
+        items: items ?? const [],
+        filter: widget.filter,
+        onFilterChanged: widget.onFilterChanged,
+        contentTopPadding: widget.contentTopPadding,
+        horizontalPadding: widget.horizontalPadding,
+        now: widget.now,
+        loading:
+            (items == null && !_failed) ||
+            (_refreshing && (items?.isEmpty ?? false)),
+        loadingMore: _loadingMore,
+        hasMore: _hasMore,
+        onLoadMore: _pagingPaused || _partial
+            ? null
+            : () => unawaited(_loadMore()),
+        onRetry: _denied ? null : () => unawaited(_reload()),
+        availability:
+            _failed ||
+                items == null ||
+                (items.isEmpty && (_partial || _limited))
+            ? ProfileTimelineAvailability.unavailable
+            : _partial
+            ? ProfileTimelineAvailability.partial
+            : ProfileTimelineAvailability.complete,
+        onOpen: _open,
+      ),
     );
-    return widget.fullSurface ? SizedBox.expand(child: browser) : browser;
   }
-
-  Widget _browser(
-    List<ProfileTimelineItem>? items, {
-    Widget? status,
-  }) => ProfileTimelineBrowser(
-    key: ValueKey(_scope),
-    fullSurface: widget.fullSurface,
-    contentTopPadding: widget.contentTopPadding,
-    horizontalPadding: widget.horizontalPadding,
-    status: status,
-    datesOpen: widget.datesOpen,
-    onDatesChanged: widget.onDatesChanged,
-    items: items ?? const [],
-    loading: items == null && !_failed,
-    refreshing: _refreshing,
-    loadingMore: _loadingMore,
-    onLoadMore: _pagingPaused || _partial ? null : () => unawaited(_loadMore()),
-    statusReportedByParent:
-        (_items?.isNotEmpty ?? false) && (_failed || _partial || _limited),
-    availability:
-        _failed || items == null || (items.isEmpty && (_partial || _limited))
-        ? ProfileTimelineAvailability.unavailable
-        : _partial || _limited
-        ? ProfileTimelineAvailability.partial
-        : ProfileTimelineAvailability.complete,
-    onOpen: _open,
-  );
 }

@@ -7222,6 +7222,48 @@ class AppLocalizationsVi extends AppLocalizations {
   String get profileTitle => 'Hồ sơ';
 
   @override
+  String get profileAbout => 'Giới thiệu';
+
+  @override
+  String get profileAddAnotherAccount => 'Thêm tài khoản khác';
+
+  @override
+  String get profileHelpFeedback => 'Trợ giúp và góp ý';
+
+  @override
+  String get profileNotifications => 'Thông báo';
+
+  @override
+  String get profileSecurityDevices => 'Bảo mật và thiết bị';
+
+  @override
+  String get profileTimelineClearFilters => 'Xóa bộ lọc';
+
+  @override
+  String get profileTimelineFilteredEmpty => 'Không có hoạt động nào khớp với bộ lọc';
+
+  @override
+  String get profileTimelineFilters => 'Bộ lọc';
+
+  @override
+  String get profileTimelineSearch => 'Tìm hoạt động';
+
+  @override
+  String get profileTimelineSourceAll => 'Tất cả';
+
+  @override
+  String get profileTimelineSourceCalendar => 'Lịch';
+
+  @override
+  String get profileTimelineSourceFinance => 'Tài chính';
+
+  @override
+  String get profileTimelineSourceNotes => 'Ghi chú';
+
+  @override
+  String get profileTimelineSourceTasks => 'Công việc';
+
+  @override
   String profileTrackedMinutes(int minutes) {
     return 'Đã theo dõi $minutes phút';
   }

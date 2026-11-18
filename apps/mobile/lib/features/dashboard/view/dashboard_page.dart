@@ -328,6 +328,12 @@ class _DashboardViewState extends State<_DashboardView> {
           locations: widget.active ? const {Routes.home} : const {},
           actions: [
             ShellActionSpec(
+              id: 'home-timeline',
+              icon: LucideIcons.history,
+              tooltip: context.l10n.profileTimelineTitle,
+              onPressed: () => unawaited(context.push(Routes.timeline)),
+            ),
+            ShellActionSpec(
               id: 'home-customize',
               icon: Icons.tune_rounded,
               tooltip: context.l10n.homeCustomize,

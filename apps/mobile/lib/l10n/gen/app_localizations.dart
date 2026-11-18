@@ -13885,6 +13885,90 @@ abstract class AppLocalizations {
   /// **'Profile'**
   String get profileTitle;
 
+  /// No description provided for @profileAbout.
+  ///
+  /// In en, this message translates to:
+  /// **'About'**
+  String get profileAbout;
+
+  /// No description provided for @profileAddAnotherAccount.
+  ///
+  /// In en, this message translates to:
+  /// **'Add another account'**
+  String get profileAddAnotherAccount;
+
+  /// No description provided for @profileHelpFeedback.
+  ///
+  /// In en, this message translates to:
+  /// **'Help and feedback'**
+  String get profileHelpFeedback;
+
+  /// No description provided for @profileNotifications.
+  ///
+  /// In en, this message translates to:
+  /// **'Notifications'**
+  String get profileNotifications;
+
+  /// No description provided for @profileSecurityDevices.
+  ///
+  /// In en, this message translates to:
+  /// **'Security and devices'**
+  String get profileSecurityDevices;
+
+  /// No description provided for @profileTimelineClearFilters.
+  ///
+  /// In en, this message translates to:
+  /// **'Clear filters'**
+  String get profileTimelineClearFilters;
+
+  /// No description provided for @profileTimelineFilteredEmpty.
+  ///
+  /// In en, this message translates to:
+  /// **'No activity matches these filters'**
+  String get profileTimelineFilteredEmpty;
+
+  /// No description provided for @profileTimelineFilters.
+  ///
+  /// In en, this message translates to:
+  /// **'Filters'**
+  String get profileTimelineFilters;
+
+  /// No description provided for @profileTimelineSearch.
+  ///
+  /// In en, this message translates to:
+  /// **'Search activity'**
+  String get profileTimelineSearch;
+
+  /// No description provided for @profileTimelineSourceAll.
+  ///
+  /// In en, this message translates to:
+  /// **'All'**
+  String get profileTimelineSourceAll;
+
+  /// No description provided for @profileTimelineSourceCalendar.
+  ///
+  /// In en, this message translates to:
+  /// **'Calendar'**
+  String get profileTimelineSourceCalendar;
+
+  /// No description provided for @profileTimelineSourceFinance.
+  ///
+  /// In en, this message translates to:
+  /// **'Finance'**
+  String get profileTimelineSourceFinance;
+
+  /// No description provided for @profileTimelineSourceNotes.
+  ///
+  /// In en, this message translates to:
+  /// **'Notes'**
+  String get profileTimelineSourceNotes;
+
+  /// No description provided for @profileTimelineSourceTasks.
+  ///
+  /// In en, this message translates to:
+  /// **'Tasks'**
+  String get profileTimelineSourceTasks;
+
   /// No description provided for @profileTrackedMinutes.
   ///
   /// In en, this message translates to:

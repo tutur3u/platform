@@ -7315,6 +7315,48 @@ class AppLocalizationsEn extends AppLocalizations {
   String get profileTitle => 'Profile';
 
   @override
+  String get profileAbout => 'About';
+
+  @override
+  String get profileAddAnotherAccount => 'Add another account';
+
+  @override
+  String get profileHelpFeedback => 'Help and feedback';
+
+  @override
+  String get profileNotifications => 'Notifications';
+
+  @override
+  String get profileSecurityDevices => 'Security and devices';
+
+  @override
+  String get profileTimelineClearFilters => 'Clear filters';
+
+  @override
+  String get profileTimelineFilteredEmpty => 'No activity matches these filters';
+
+  @override
+  String get profileTimelineFilters => 'Filters';
+
+  @override
+  String get profileTimelineSearch => 'Search activity';
+
+  @override
+  String get profileTimelineSourceAll => 'All';
+
+  @override
+  String get profileTimelineSourceCalendar => 'Calendar';
+
+  @override
+  String get profileTimelineSourceFinance => 'Finance';
+
+  @override
+  String get profileTimelineSourceNotes => 'Notes';
+
+  @override
+  String get profileTimelineSourceTasks => 'Tasks';
+
+  @override
   String profileTrackedMinutes(int minutes) {
     return '$minutes min tracked';
   }

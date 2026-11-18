@@ -55,6 +55,12 @@ class _Repository extends ProfileTimelineRepository {
   }
 }
 
+Future<void> _pumpFrames(WidgetTester tester) async {
+  for (var i = 0; i < 5; i++) {
+    await tester.pump(const Duration(milliseconds: 100));
+  }
+}
+
 void main() {
   testWidgets('short viewport serializes paging and pauses errors', (
     tester,
@@ -90,8 +96,6 @@ void main() {
         child: ValueListenableBuilder<int>(
           valueListenable: replay,
           builder: (_, token, _) => ProfileTimelineSection(
-            fullSurface: true,
-            datesOpen: false,
             replayToken: token,
             cacheUserId: () => 'owner',
             repository: repository,
@@ -99,7 +103,9 @@ void main() {
         ),
       ),
     );
-    await tester.pumpAndSettle();
+    // The next-page spinner animates while a page is pending, so settle
+    // with bounded frames instead of pumpAndSettle.
+    await _pumpFrames(tester);
     expect(repository.pages, hasLength(1));
     await tester.pump();
     await tester.pump();
@@ -114,7 +120,7 @@ void main() {
     expect(find.text('Some activity is unavailable.'), findsNothing);
     expect(repository.pages, hasLength(1));
     replay.value++;
-    await tester.pumpAndSettle();
+    await _pumpFrames(tester);
     expect(repository.pages, hasLength(2));
     repository.continuation = null;
     repository.pages.last.complete(_snapshot('second'));

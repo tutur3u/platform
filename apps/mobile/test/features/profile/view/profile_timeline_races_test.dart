@@ -120,14 +120,12 @@ void main() {
           BlocProvider<AuthCubit>.value(value: auth),
           BlocProvider<WorkspaceCubit>.value(value: workspace),
         ],
-        child: SingleChildScrollView(
-          child: ValueListenableBuilder<int>(
-            valueListenable: replay,
-            builder: (_, value, _) => ProfileTimelineSection(
-              cacheUserId: () => auth.state.user?.id,
-              replayToken: value,
-              repository: repository,
-            ),
+        child: ValueListenableBuilder<int>(
+          valueListenable: replay,
+          builder: (_, value, _) => ProfileTimelineSection(
+            cacheUserId: () => auth.state.user?.id,
+            replayToken: value,
+            repository: repository,
           ),
         ),
       ),
@@ -197,7 +195,7 @@ void main() {
       await tester.drainShadToastTimers();
       await tester.pumpAndSettle();
       expect(find.text('Activity could not be refreshed.'), findsOneWidget);
-      expect(find.text('Retry'), findsNothing);
+      expect(find.text('Retry'), findsOneWidget);
       expect(tester.takeException(), isNull);
     },
   );
@@ -350,7 +348,7 @@ void main() {
     'cold partial refresh shows a bounded notice and refresh retains rows',
     (tester) async {
       await mount(tester);
-      expect(find.byKey(const ValueKey('timeline-browser')), findsOneWidget);
+      expect(find.byKey(const ValueKey('profile-timeline')), findsOneWidget);
       expect(find.byIcon(Icons.sync), findsNothing);
       repository.requests.single.complete(
         snapshot('Partial task', partial: true),
@@ -383,13 +381,7 @@ void main() {
       await tester.pumpAndSettle();
       expect(find.text('No recent activity in this workspace'), findsNothing);
       expect(find.text('Activity could not be refreshed.'), findsOneWidget);
-      expect(find.text('Retry'), findsNothing);
-      await tester.tap(find.byKey(const ValueKey('timeline-date-toggle')));
-      await tester.pumpAndSettle();
-      await tester.drainShadToastTimers();
-      await tester.pumpAndSettle();
-      expect(find.text('No activity was returned for this day.'), findsNothing);
-      expect(find.text('Activity could not be refreshed.'), findsOneWidget);
+      expect(find.text('Retry'), findsOneWidget);
       replay.value++;
       await tester.pump();
       repository.requests.last.complete((
@@ -400,68 +392,11 @@ void main() {
       await tester.pumpAndSettle();
       await tester.drainShadToastTimers();
       await tester.pumpAndSettle();
-      expect(
-        find.text('No activity was returned for this day.'),
-        findsOneWidget,
-      );
+      expect(find.text('No recent activity in this workspace'), findsOneWidget);
       expect(find.text('Activity could not be refreshed.'), findsNothing);
       expect(tester.takeException(), isNull);
     },
   );
-
-  for (final explicitDate in [false, true]) {
-    testWidgets(
-      'cold load follows first activity unless date picked: $explicitDate',
-      (tester) async {
-        final now = DateTime.now();
-        final today = DateTime(now.year, now.month, now.day);
-        final older = DateTime(today.year, today.month, today.day - 8);
-        await mount(tester);
-        await tester.tap(find.byKey(const ValueKey('timeline-date-toggle')));
-        await tester.pumpAndSettle();
-        await tester.drainShadToastTimers();
-        await tester.pumpAndSettle();
-        if (explicitDate) {
-          await tester.tap(
-            find.byKey(ValueKey('timeline-date-${today.toIso8601String()}')),
-          );
-          await tester.pumpAndSettle();
-          await tester.drainShadToastTimers();
-          await tester.pumpAndSettle();
-        }
-        repository.requests.single.complete((
-          items: [
-            ProfileTimelineItem(
-              id: 'cold-newest',
-              type: 'task',
-              title: 'First loaded activity',
-              createdAt: older.add(const Duration(hours: 12)),
-              scope: 'personal',
-            ),
-          ],
-          partial: false,
-          limited: false,
-        ));
-        await tester.pumpAndSettle();
-        await tester.drainShadToastTimers();
-        await tester.pumpAndSettle();
-        if (explicitDate) {
-          expect(find.text('First loaded activity'), findsOneWidget);
-          expect(
-            find.text('No activity was returned for this day.'),
-            findsOneWidget,
-          );
-        } else {
-          expect(find.text('First loaded activity'), findsOneWidget);
-          expect(
-            find.text('No activity was returned for this day.'),
-            findsNothing,
-          );
-        }
-        expect(tester.takeException(), isNull);
-      },
-    );
-  }
 
   for (final freshEmpty in [false, true]) {
     testWidgets(
@@ -479,15 +414,7 @@ void main() {
         expect(find.byKey(const ValueKey('timeline-refreshing')), findsNothing);
         expect(find.text('No recent activity in this workspace'), findsNothing);
         final before = tester.getRect(
-          find.byKey(const ValueKey('timeline-browser')),
-        );
-        await tester.tap(find.byKey(const ValueKey('timeline-date-toggle')));
-        await tester.pumpAndSettle();
-        await tester.drainShadToastTimers();
-        await tester.pumpAndSettle();
-        expect(
-          find.text('No activity was returned for this day.'),
-          findsNothing,
+          find.byKey(const ValueKey('profile-timeline')),
         );
         repository.requests.single.complete(
           freshEmpty
@@ -499,18 +426,18 @@ void main() {
         await tester.pumpAndSettle();
         expect(find.byKey(const ValueKey('timeline-refreshing')), findsNothing);
         expect(
-          tester.getRect(find.byKey(const ValueKey('timeline-browser'))),
+          tester.getRect(find.byKey(const ValueKey('profile-timeline'))),
           before,
         );
         if (freshEmpty) {
           expect(
-            find.text('No activity was returned for this day.'),
+            find.text('No recent activity in this workspace'),
             findsOneWidget,
           );
         } else {
           expect(find.text('Fresh response activity'), findsOneWidget);
           expect(
-            find.text('No activity was returned for this day.'),
+            find.text('No recent activity in this workspace'),
             findsNothing,
           );
         }
@@ -534,15 +461,7 @@ void main() {
         await tester.pumpAndSettle();
         expect(find.text('No recent activity in this workspace'), findsNothing);
         await tester.pump(const Duration(seconds: 6));
-        expect(find.text('Some activity is unavailable.'), findsNothing);
-        await tester.tap(find.byKey(const ValueKey('timeline-date-toggle')));
-        await tester.pumpAndSettle();
-        await tester.drainShadToastTimers();
-        await tester.pumpAndSettle();
-        expect(
-          find.text('No activity was returned for this day.'),
-          findsNothing,
-        );
+        expect(find.text('Activity could not be refreshed.'), findsOneWidget);
         await tester.pump(const Duration(seconds: 6));
         expect(find.text('Some activity is unavailable.'), findsNothing);
         expect(tester.takeException(), isNull);

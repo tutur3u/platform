@@ -322,11 +322,7 @@ void main() {
 
   for (final title in ['Settings', 'Profile', 'Mira Chat', 'Mira Live']) {
     final profileSection = title == 'Profile';
-    final renderedTitle = profileSection
-        ? 'Overview'
-        : title.startsWith('Mira')
-        ? 'Mira'
-        : title;
+    final renderedTitle = title.startsWith('Mira') ? 'Mira' : title;
     final assistantSection = title.startsWith('Mira');
     for (final viewport in [320.0, 393.0]) {
       for (final scale in [1.0, 2.0, 3.0]) {
@@ -395,7 +391,7 @@ void main() {
           if (!assistantSection) {
             content = tester.getRect(
               profileSection
-                  ? find.byKey(const ValueKey('profile-overview-content'))
+                  ? find.byKey(const ValueKey('profile-identity'))
                   : find.byKey(const ValueKey('navbar-content')),
             );
             // Profile uses the shared page top gap; other fixtures pad by 10.
@@ -415,10 +411,11 @@ void main() {
           );
           Rect? selectorRect;
           if (profileSection) {
-            final selector = find.byKey(const ValueKey('profile-views'));
+            final selector = find.byKey(
+              const ValueKey('shell-action-button-profile-workspace-picker'),
+            );
             expect(selector, findsOneWidget);
             selectorRect = tester.getRect(selector);
-            expect(selectorRect.size, const Size(104, 46));
             expect(bar.contains(selectorRect.topLeft), isTrue);
             expect(bar.contains(selectorRect.bottomRight), isTrue);
             expect(
@@ -472,18 +469,6 @@ void main() {
               );
               image.dispose();
             });
-          }
-          if (!baseline && profileSection && viewport == 393 && scale == 2) {
-            await tester.tap(find.byTooltip('Timeline'));
-            await _pump(tester);
-            expect(
-              tester
-                  .getSemantics(find.byTooltip('Timeline'))
-                  .getSemanticsData()
-                  .flagsCollection
-                  .isSelected,
-              ui.Tristate.isTrue,
-            );
           }
           semantics.dispose();
           expect(tester.takeException(), isNull);

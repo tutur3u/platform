@@ -73,7 +73,7 @@ void main() {
             BlocProvider<ShellProfileCubit>.value(value: profile),
             BlocProvider<WorkspaceCubit>.value(value: workspaces),
           ],
-          child: ProfileOverviewPage(cacheUserId: () => auth.state.user?.id),
+          child: const ProfileOverviewPage(),
         ),
       );
       await tester.pumpAndSettle();
