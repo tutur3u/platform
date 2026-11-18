@@ -12,6 +12,8 @@ export const GITHUB_CACHE_TTL_SECONDS = {
   mutable: 300,
   /** Content addressed by a full commit SHA never changes. */
   immutable: 86_400,
+  /** CI check runs, suites and statuses change while a commit is checked. */
+  checks: 60,
   /** A missing resource may appear soon after a push. */
   notFound: 60,
 } as const;
@@ -84,6 +86,21 @@ export function isImmutableGitHubUrl(url: URL) {
   return false;
 }
 
+const CHECK_RESOURCES = new Set(['check-runs', 'check-suites', 'statuses']);
+const COMMIT_CHECK_RESOURCES = new Set([
+  'check-runs',
+  'check-suites',
+  'status',
+  'statuses',
+]);
+
+/** Whether the URL reads CI check data, which changes after the push. */
+export function isCheckGitHubUrl(url: URL) {
+  const [resource, , second] = repositorySegments(url);
+  if (resource && CHECK_RESOURCES.has(resource)) return true;
+  return resource === 'commits' && COMMIT_CHECK_RESOURCES.has(second ?? '');
+}
+
 /**
  * Seconds a response may be reused. Zero means do not store: this covers every
  * 5xx, rate limit (403/429), redirect and other non-content status.
@@ -91,6 +108,7 @@ export function isImmutableGitHubUrl(url: URL) {
 export function githubCacheTtlSeconds(url: URL, status: number) {
   if (status === 404) return GITHUB_CACHE_TTL_SECONDS.notFound;
   if (status !== 200) return 0;
+  if (isCheckGitHubUrl(url)) return GITHUB_CACHE_TTL_SECONDS.checks;
   return isImmutableGitHubUrl(url)
     ? GITHUB_CACHE_TTL_SECONDS.immutable
     : GITHUB_CACHE_TTL_SECONDS.mutable;

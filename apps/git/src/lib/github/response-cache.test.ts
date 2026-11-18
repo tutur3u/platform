@@ -51,10 +51,25 @@ describe('githubCacheTtlSeconds', () => {
     expect(githubCacheTtlSeconds(repoUrl('/commits?page=1'), 200)).toBe(300);
   });
 
-  it('does not treat mutable check data on a SHA as immutable', () => {
-    expect(
-      githubCacheTtlSeconds(repoUrl(`/commits/${SHA}/check-runs`), 200)
-    ).toBe(300);
+  it.each([
+    `/commits/${SHA}/check-runs`,
+    `/commits/${SHA}/check-suites`,
+    `/commits/${SHA}/status`,
+    `/commits/main/statuses`,
+    `/statuses/${SHA}`,
+    '/check-runs/123',
+    '/check-suites/456',
+  ])('caches check data at %s for a minute', (path) => {
+    expect(githubCacheTtlSeconds(repoUrl(path), 200)).toBe(
+      GITHUB_CACHE_TTL_SECONDS.checks
+    );
+  });
+
+  it('keeps commit content on a SHA immutable next to its check data', () => {
+    expect(githubCacheTtlSeconds(repoUrl(`/commits/${SHA}`), 200)).toBe(
+      GITHUB_CACHE_TTL_SECONDS.immutable
+    );
+    expect(githubCacheTtlSeconds(repoUrl('/commits/main'), 200)).toBe(300);
   });
 
   it('caches not-found for a minute', () => {

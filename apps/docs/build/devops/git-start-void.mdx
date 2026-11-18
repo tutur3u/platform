@@ -50,7 +50,7 @@ The Worker keeps two Cache API layers (per colo, no extra charge); Vercel/Node u
 
 | Layer | Scope | TTL |
 | --- | --- | --- |
-| GitHub API responses (`lib/github/response-cache.ts`) | Key: method, normalized URL, `Accept` and credential scope (`app:<repositoryId>` or `anonymous`) | Commit-SHA-addressed content 1 day, branch and listing responses 300 s, `404` 60 s |
+| GitHub API responses (`lib/github/response-cache.ts`) | Key: method, normalized URL, `Accept` and credential scope (`app:<repositoryId>` or `anonymous`) | Commit-SHA-addressed content 1 day, branch and listing responses 300 s, CI check runs, suites and statuses 60 s, `404` 60 s |
 | Anonymous page HTML (`lib/edge-page-cache.ts`) | Repository, blob and tree pages for GET/HEAD without cookie or credential header, query string or reserved path; key adds the resolved locale | Branch 300 s, commit SHA 1 day, `404` 60 s |
 
 Neither layer stores `5xx`, rate-limit (`403`/`429`) or redirect responses. The page layer also skips
