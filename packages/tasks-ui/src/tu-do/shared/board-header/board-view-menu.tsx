@@ -4,6 +4,7 @@ import {
   KanbanSquare,
   List,
   Pencil,
+  Radar,
   Trash2,
   UserStar,
 } from '@tuturuuu/icons';
@@ -21,12 +22,14 @@ const VIEW_ICONS: Record<ViewType, typeof KanbanSquare> = {
   kanban: KanbanSquare,
   list: List,
   timeline: CalendarDays,
+  fleet: Radar,
   my_tasks: UserStar,
   drafts: Pencil,
   recycle_bin: Trash2,
 };
 
 const VIEW_ORDER: ViewType[] = [
+  'fleet',
   'kanban',
   'list',
   'timeline',
@@ -59,6 +62,10 @@ export function BoardViewMenu({
     timeline: {
       label: t('ws-task-boards.views.timeline'),
       description: t('ws-task-boards.views.timeline_description'),
+    },
+    fleet: {
+      label: t('ws-task-boards.views.fleet'),
+      description: t('ws-task-boards.views.fleet_description'),
     },
     my_tasks: {
       label: t('ws-task-boards.views.my_tasks'),

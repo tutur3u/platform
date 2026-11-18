@@ -59,7 +59,7 @@ class _TaskDetailFieldsCard extends StatelessWidget {
       children: children.toList(growable: false),
     );
 
-    return AppGroupedCard(
+    final fields = AppGroupedCard(
       children: [
         row(
           'list',
@@ -139,6 +139,18 @@ class _TaskDetailFieldsCard extends StatelessWidget {
               ),
             ),
           ),
+      ],
+    );
+
+    // Fleet tasks lead with their status, owner, ETA and freshness.
+    final fleet = fleetMetaOrNull(task);
+    if (fleet == null) return fields;
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        FleetTaskDetailCard(meta: fleet),
+        const SizedBox(height: 12),
+        fields,
       ],
     );
   }

@@ -29034,6 +29034,186 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'From'**
   String get mailFrom;
+
+  /// No description provided for @fleetStatusNeedsUser.
+  ///
+  /// In en, this message translates to:
+  /// **'Needs you'**
+  String get fleetStatusNeedsUser;
+
+  /// No description provided for @fleetStatusRunning.
+  ///
+  /// In en, this message translates to:
+  /// **'Running'**
+  String get fleetStatusRunning;
+
+  /// No description provided for @fleetStatusWaitingReview.
+  ///
+  /// In en, this message translates to:
+  /// **'In review'**
+  String get fleetStatusWaitingReview;
+
+  /// No description provided for @fleetStatusWaitingCi.
+  ///
+  /// In en, this message translates to:
+  /// **'CI'**
+  String get fleetStatusWaitingCi;
+
+  /// No description provided for @fleetStatusBlocked.
+  ///
+  /// In en, this message translates to:
+  /// **'Blocked'**
+  String get fleetStatusBlocked;
+
+  /// No description provided for @fleetStatusQueued.
+  ///
+  /// In en, this message translates to:
+  /// **'Queued'**
+  String get fleetStatusQueued;
+
+  /// No description provided for @fleetStatusDone.
+  ///
+  /// In en, this message translates to:
+  /// **'Done'**
+  String get fleetStatusDone;
+
+  /// No description provided for @fleetStatusUnknown.
+  ///
+  /// In en, this message translates to:
+  /// **'No status'**
+  String get fleetStatusUnknown;
+
+  /// No description provided for @fleetOwnerUnowned.
+  ///
+  /// In en, this message translates to:
+  /// **'Unowned'**
+  String get fleetOwnerUnowned;
+
+  /// No description provided for @fleetEtaNone.
+  ///
+  /// In en, this message translates to:
+  /// **'No ETA'**
+  String get fleetEtaNone;
+
+  /// No description provided for @fleetUpdateNone.
+  ///
+  /// In en, this message translates to:
+  /// **'No update'**
+  String get fleetUpdateNone;
+
+  /// No description provided for @fleetNeedsYouFallback.
+  ///
+  /// In en, this message translates to:
+  /// **'Waiting on your decision'**
+  String get fleetNeedsYouFallback;
+
+  /// No description provided for @fleetBlockedBy.
+  ///
+  /// In en, this message translates to:
+  /// **'Blocked by'**
+  String get fleetBlockedBy;
+
+  /// No description provided for @fleetFieldStatus.
+  ///
+  /// In en, this message translates to:
+  /// **'Status'**
+  String get fleetFieldStatus;
+
+  /// No description provided for @fleetFieldOwner.
+  ///
+  /// In en, this message translates to:
+  /// **'Owner'**
+  String get fleetFieldOwner;
+
+  /// No description provided for @fleetFieldEta.
+  ///
+  /// In en, this message translates to:
+  /// **'ETA'**
+  String get fleetFieldEta;
+
+  /// No description provided for @fleetFieldUpdated.
+  ///
+  /// In en, this message translates to:
+  /// **'Updated'**
+  String get fleetFieldUpdated;
+
+  /// No description provided for @fleetLinksTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Links'**
+  String get fleetLinksTitle;
+
+  /// No description provided for @fleetLinkPr.
+  ///
+  /// In en, this message translates to:
+  /// **'PR'**
+  String get fleetLinkPr;
+
+  /// No description provided for @fleetLinkCommit.
+  ///
+  /// In en, this message translates to:
+  /// **'Commit'**
+  String get fleetLinkCommit;
+
+  /// No description provided for @fleetLinkThread.
+  ///
+  /// In en, this message translates to:
+  /// **'Thread'**
+  String get fleetLinkThread;
+
+  /// No description provided for @fleetLinkCopied.
+  ///
+  /// In en, this message translates to:
+  /// **'Copied'**
+  String get fleetLinkCopied;
+
+  /// No description provided for @fleetStale.
+  ///
+  /// In en, this message translates to:
+  /// **'Stale'**
+  String get fleetStale;
+
+  /// No description provided for @fleetJustNow.
+  ///
+  /// In en, this message translates to:
+  /// **'Just now'**
+  String get fleetJustNow;
+
+  /// No description provided for @fleetSpanMinutes.
+  ///
+  /// In en, this message translates to:
+  /// **'{count}m'**
+  String fleetSpanMinutes(int count);
+
+  /// No description provided for @fleetSpanHours.
+  ///
+  /// In en, this message translates to:
+  /// **'{count}h'**
+  String fleetSpanHours(int count);
+
+  /// No description provided for @fleetSpanDays.
+  ///
+  /// In en, this message translates to:
+  /// **'{count}d'**
+  String fleetSpanDays(int count);
+
+  /// No description provided for @fleetUpdatedAgo.
+  ///
+  /// In en, this message translates to:
+  /// **'{span} ago'**
+  String fleetUpdatedAgo(String span);
+
+  /// No description provided for @fleetEtaIn.
+  ///
+  /// In en, this message translates to:
+  /// **'in {span}'**
+  String fleetEtaIn(String span);
+
+  /// No description provided for @fleetEtaOverdueBy.
+  ///
+  /// In en, this message translates to:
+  /// **'{span} overdue'**
+  String fleetEtaOverdueBy(String span);
 }
 
 class _AppLocalizationsDelegate extends LocalizationsDelegate<AppLocalizations> {

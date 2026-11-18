@@ -114,6 +114,7 @@
               "platform/features/safe-workspace-invitations",
               "platform/features/tasks-board-header",
               "platform/features/tasks-board-cards",
+              "platform/features/tasks-fleet-cockpit",
               "platform/features/task-board-sprints",
               "platform/features/tasks-side-panel",
               "platform/features/tasks-quick-create",

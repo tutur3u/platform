@@ -7401,5 +7401,77 @@
   "mailDateUnavailable": "Date unavailable",
   "mailMarkRead": "Mark as read",
   "mailRetryProfiles": "Retry profiles",
-  "mailFrom": "From"
+  "mailFrom": "From",
+  "fleetStatusNeedsUser": "Needs you",
+  "fleetStatusRunning": "Running",
+  "fleetStatusWaitingReview": "In review",
+  "fleetStatusWaitingCi": "CI",
+  "fleetStatusBlocked": "Blocked",
+  "fleetStatusQueued": "Queued",
+  "fleetStatusDone": "Done",
+  "fleetStatusUnknown": "No status",
+  "fleetOwnerUnowned": "Unowned",
+  "fleetEtaNone": "No ETA",
+  "fleetUpdateNone": "No update",
+  "fleetNeedsYouFallback": "Waiting on your decision",
+  "fleetBlockedBy": "Blocked by",
+  "fleetFieldStatus": "Status",
+  "fleetFieldOwner": "Owner",
+  "fleetFieldEta": "ETA",
+  "fleetFieldUpdated": "Updated",
+  "fleetLinksTitle": "Links",
+  "fleetLinkPr": "PR",
+  "fleetLinkCommit": "Commit",
+  "fleetLinkThread": "Thread",
+  "fleetLinkCopied": "Copied",
+  "fleetStale": "Stale",
+  "fleetJustNow": "Just now",
+  "fleetSpanMinutes": "{count}m",
+  "@fleetSpanMinutes": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "fleetSpanHours": "{count}h",
+  "@fleetSpanHours": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "fleetSpanDays": "{count}d",
+  "@fleetSpanDays": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "fleetUpdatedAgo": "{span} ago",
+  "@fleetUpdatedAgo": {
+    "placeholders": {
+      "span": {
+        "type": "String"
+      }
+    }
+  },
+  "fleetEtaIn": "in {span}",
+  "@fleetEtaIn": {
+    "placeholders": {
+      "span": {
+        "type": "String"
+      }
+    }
+  },
+  "fleetEtaOverdueBy": "{span} overdue",
+  "@fleetEtaOverdueBy": {
+    "placeholders": {
+      "span": {
+        "type": "String"
+      }
+    }
+  }
 }

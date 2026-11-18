@@ -1,0 +1,151 @@
+import { describe, expect, it } from 'vitest';
+import { type FleetTaskMeta, parseFleetTaskMeta } from './fleet-task-meta';
+import {
+  type FleetItem,
+  getFleetBucket,
+  groupFleetItems,
+  summarizeFleet,
+} from './fleet-triage';
+
+const NOW = Date.parse('2026-11-18T14:00:00+07:00');
+
+function item(
+  id: string,
+  meta: Partial<FleetTaskMeta>,
+  listStatus: string | null = 'active'
+): FleetItem<{ id: string }> {
+  return {
+    task: { id },
+    listStatus,
+    meta: { ...parseFleetTaskMeta({}), isFleetTask: true, ...meta },
+  };
+}
+
+const items = [
+  item(
+    'needs',
+    {
+      status: 'waiting_review',
+      needsUser: true,
+      product: 'meet',
+      priority: 'critical',
+      owner: 'rex',
+    },
+    'review'
+  ),
+  item('run', {
+    status: 'running',
+    product: 'tasks',
+    priority: 'high',
+    owner: 'claude',
+    lastUpdate: '2026-11-18T13:50:00+07:00',
+  }),
+  item('ci', {
+    status: 'waiting_ci',
+    product: 'meet',
+    priority: 'normal',
+    owner: 'iris',
+  }),
+  item('blocked', {
+    status: 'blocked',
+    product: 'upskii',
+    owner: 'cora',
+    lastUpdate: '2026-11-16T09:00:00+07:00',
+  }),
+  item('blocked-by', {
+    status: 'running',
+    blockedBy: 'Stripe export',
+    product: 'upskii',
+  }),
+  item('queued', { status: 'queued', product: 'mail' }, 'not_started'),
+  item('done', { status: 'done', product: 'tasks' }, 'done'),
+  item('archived', { status: 'running', product: 'tasks' }, 'closed'),
+];
+
+describe('getFleetBucket', () => {
+  it('puts needs-you first, then blocked, then live, and keeps queued and finished work out', () => {
+    expect(items.map((i) => getFleetBucket(i))).toEqual([
+      'needs_me',
+      'live',
+      'live',
+      'blocked',
+      'blocked',
+      null,
+      null,
+      null,
+    ]);
+  });
+
+  it('counts an untagged card in an active list as live', () => {
+    expect(getFleetBucket(item('x', { status: 'unknown' }, 'active'))).toBe(
+      'live'
+    );
+    expect(
+      getFleetBucket(item('y', { status: 'unknown' }, 'not_started'))
+    ).toBeNull();
+  });
+});
+
+describe('summarizeFleet', () => {
+  it('counts the triage buckets, stale open cards, queued and done (not archived)', () => {
+    expect(summarizeFleet(items, NOW)).toEqual({
+      needsMe: 1,
+      live: 2,
+      blocked: 2,
+      stale: 1,
+      queued: 1,
+      done: 1,
+      open: 6,
+    });
+  });
+});
+
+describe('groupFleetItems', () => {
+  it('always returns the three triage buckets in order', () => {
+    const groups = groupFleetItems(items, 'triage');
+    expect(groups.map((g) => [g.key, g.items.map((i) => i.task.id)])).toEqual([
+      ['needs_me', ['needs']],
+      ['live', ['run', 'ci']],
+      ['blocked', ['blocked', 'blocked-by']],
+    ]);
+  });
+
+  it('ranks product groups by attention: needs-you, then blocked, then size', () => {
+    expect(groupFleetItems(items, 'product').map((g) => g.key)).toEqual([
+      'meet',
+      'upskii',
+      'tasks',
+    ]);
+  });
+
+  it('orders priority groups P0 to P3 after attention, with untriaged last', () => {
+    expect(groupFleetItems(items, 'priority').map((g) => g.key)).toEqual([
+      'critical',
+      '',
+      'high',
+      'normal',
+    ]);
+  });
+
+  it('sorts cards within a group by needs-you, priority, then oldest update', () => {
+    const groups = groupFleetItems(
+      [
+        item('a', { status: 'running', owner: 'x', priority: 'low' }),
+        item('b', {
+          status: 'running',
+          owner: 'x',
+          priority: 'high',
+          lastUpdate: '2026-11-18T10:00:00+07:00',
+        }),
+        item('c', {
+          status: 'running',
+          owner: 'x',
+          priority: 'high',
+          lastUpdate: '2026-11-18T08:00:00+07:00',
+        }),
+      ],
+      'owner'
+    );
+    expect(groups[0]!.items.map((i) => i.task.id)).toEqual(['c', 'b', 'a']);
+  });
+});

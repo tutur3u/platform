@@ -174,6 +174,7 @@ export function useBoardTaskSource({
   const shouldEagerLoadTasks =
     currentView === 'list' ||
     currentView === 'timeline' ||
+    currentView === 'fleet' ||
     (hasServerTaskQuery && (filterOnServer || !boardLoaded));
   const fetchBoardTasks = useCallback(
     () =>
@@ -196,7 +197,7 @@ export function useBoardTaskSource({
   const primeFullTaskCache = useCallback(
     (nextView: ViewType) => {
       if (localTaskState) return;
-      if (nextView !== 'list' && nextView !== 'timeline') return;
+      if (!['list', 'timeline', 'fleet'].includes(nextView)) return;
 
       void queryClient.prefetchQuery({
         queryKey: ['tasks-full', board.id, fullTasksKey],

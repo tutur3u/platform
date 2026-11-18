@@ -7,6 +7,7 @@ export type StoredBoardView =
   | 'list'
   | 'my_tasks'
   | 'timeline'
+  | 'fleet'
   | 'drafts'
   | 'recycle_bin';
 export type StoredListStatusFilter = 'all' | 'active' | 'not_started' | 'open';

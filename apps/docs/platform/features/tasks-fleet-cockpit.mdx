@@ -1,0 +1,122 @@
+---
+title: Tasks fleet cockpit
+updatedAt: '2026-11-18'
+description: The Fleet view and fleet card face for boards that track agent work with the fleet:v1 card schema.
+audience: users
+---
+
+## What it is for
+
+The Fleet view answers one question first: what is going on, and what needs me?
+It is a read-only board view over a board's existing tasks. Slice 1 adds no
+database migration. Cards are fed by the fleet:v1 card schema that the board
+sync writes into each task.
+
+## Scope and default
+
+- **Where:** a board offers the Fleet view when any of its tasks carries a
+  fleet:v1 block or a fleet label (`needs-user`, `state:`, `owner:` or `product:`).
+  Such boards list Fleet first in the View menu, and it becomes the default view
+  until the viewer picks another. The last choice is remembered per viewer, as for
+  the other views. Boards without fleet tasks are unchanged.
+- **Default triage:** the view opens on three buckets, in this order: **Needs me**,
+  **Live today** and **Blocked**. A card that needs you is listed under Needs me
+  even if it is also blocked. Queued, done and archived (closed) cards stay out of
+  the view and are counted in the toolbar.
+- **Grouping:** Triage (default), Product, Priority or Owner. Groups with a
+  needs-you card come first, then groups with a blocked card, then the rest by
+  size. Priority groups run P0 to P3. Empty groups are hidden.
+- **Density:** comfortable by default; compact keeps one title line and one row
+  of fields, for dense boards only.
+
+## The card face
+
+Every fleet card shows the same parts in the same places:
+
+1. A scan row: product, priority as P0 to P3, and the task number.
+2. A bounded title: a subject of at most 72 characters, clamped to two lines
+   (one in compact). Longer titles are announced to screen readers as too long,
+   not cut silently. Status prose, commit hashes and notes belong in fields or
+   the description.
+3. A **Needs you** callout with the one-line ask when `needs_user` is true. It is
+   the only ink-filled element on a card. Otherwise a **Blocked by** line shows
+   `blocked_by` when set.
+4. Four fixed fields: status, owner, ETA and last update. A missing value is a
+   word (**Unowned**, **No ETA**, **No update**), so data gaps stay visible. Last
+   update never falls back to the created time.
+5. Up to two links (PR, commit, thread, run, doc), then +N.
+
+Status words always travel with an icon and a colour: needs you, running, in
+review, CI running, blocked, done. Queued and unknown stay quiet. Inside the
+fleet, blocked uses the red tone rather than the usual gray, because it is a stop
+someone must clear.
+
+Freshness comes from `last_update`: fresh under 2 hours, aging 2 to 24 hours,
+stale at 24 hours or more. An ETA is due soon within 2 hours and overdue once
+past, unless the card is done. Stale and overdue add their word, so colour is
+never the only signal.
+
+## The fleet:v1 contract
+
+The board sync owns the data contract. The view reads a block at the top of the
+task description, in markdown or a rich-text document:
+
+```text
+<!-- fleet:v1 -->
+status: running | needs_user | waiting_review | waiting_ci | blocked | queued | done
+owner: <slug>
+product: <slug>
+priority: critical | high | normal | low
+eta: <ISO-8601>
+last_update: <ISO-8601>
+needs_user: true | false
+needs_user_reason: <one line>
+blocked_by: <one line>
+links:
+- pr: <url>
+- commit: <sha>
+<!-- /fleet:v1 -->
+```
+
+When a key is missing, the view falls back to:
+
+- the labels `state:`, `owner:`, `product:` and `needs-user`;
+- the task's priority;
+- the task's end date for the ETA.
+
+An explicit `needs_user: false` wins over the label.
+
+## Surfaces
+
+- **Web (Tasks app and every app that embeds the Tasks board):** the Fleet board
+  view, with the summary strip (Needs me, Live today, Blocked, Stale 24h+). Clicking
+  a card title opens the existing task side panel.
+- **Mobile:** board tiles and list cards for fleet tasks use the same bounded
+  title and structured fields. The task sheet shows the field grid, the needs-you
+  callout and every link.
+- **Design source:** the Tuturuuu design system's Fleet cockpit section and its
+  FleetCard, FleetStatusChip, NeedsUserBadge, EtaIndicator, StalenessIndicator,
+  DecisionCard, Timeline and CapacityPanel components. The web components live in
+  `@tuturuuu/ui/custom/fleet`.
+
+## Intentional exceptions and later slices
+
+- Approve and steer decision cards, the activity timeline merged with fleet
+  events, and the machines and capacity panel are designed but not in Slice 1.
+  They arrive with the fleet event ingestion slice. Only `manage_mastermind`
+  holders will be able to approve or steer.
+- Done-card archiving after 24 hours is done by the board sync, not the view.
+- Fleet is a board view (`?view=fleet`), not a new route, so the navigation menu
+  is unchanged.
+
+## Regression coverage
+
+- `packages/tasks-ui/src/tu-do/fleet/fleet-task-meta.test.ts`: parsing,
+  fallbacks, unknown values, freshness and ETA rules.
+- `packages/tasks-ui/src/tu-do/fleet/fleet-triage.test.ts`: buckets, summary
+  counts, group order and in-group order.
+- `packages/tasks-ui/src/tu-do/fleet/fleet-board-view.test.tsx`: default triage,
+  hidden queued and done cards, opening a card, and view availability.
+- `packages/ui/src/components/ui/custom/fleet/fleet-card.test.tsx`: fixed
+  fields, words for missing values, callout precedence, link cap.
+- Mobile parser and tile tests under `apps/mobile/test/`.

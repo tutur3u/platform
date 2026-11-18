@@ -25350,6 +25350,71 @@
       },
       "status_label": "Status"
     },
+    "fleet": {
+      "blocked_by": "Blocked by",
+      "blocked_count": "{count} blocked",
+      "buckets": {
+        "blocked": "Blocked",
+        "live": "Live today",
+        "needs_me": "Needs me"
+      },
+      "density": {
+        "comfortable": "Comfortable",
+        "compact": "Compact",
+        "label": "Density"
+      },
+      "empty": {
+        "bucket": "Nothing here right now.",
+        "fleet": "No open fleet work. Queued and finished cards stay on the board.",
+        "no_eta": "No ETA",
+        "no_group": "Not set",
+        "no_update": "No update",
+        "unowned": "Unowned"
+      },
+      "fields": {
+        "eta": "ETA",
+        "owner": "Owner",
+        "status": "Status",
+        "updated": "Updated"
+      },
+      "group_by": {
+        "label": "Group by",
+        "owner": "Owner",
+        "priority": "Priority",
+        "product": "Product",
+        "triage": "Triage"
+      },
+      "hidden_counts": "Queued {queued} · Done {done} hidden",
+      "needs_count": "{count, plural, one {# needs you} other {# need you}}",
+      "needs_you": "Needs you",
+      "overdue": "Overdue",
+      "priority": {
+        "critical": "Critical",
+        "high": "High",
+        "low": "Low",
+        "normal": "Normal"
+      },
+      "stale": "Stale",
+      "status": {
+        "blocked": "Blocked",
+        "done": "Done",
+        "needs_user": "Needs you",
+        "queued": "Queued",
+        "running": "Running",
+        "unknown": "Unknown",
+        "waiting_ci": "CI running",
+        "waiting_review": "In review"
+      },
+      "summary": {
+        "blocked_detail": "Someone has to clear these",
+        "live_detail": "{running} running · {review} in review · {ci} CI",
+        "needs_detail": "Decisions and approvals waiting on you",
+        "stale": "Stale 24h+",
+        "stale_detail": "No update from the owner"
+      },
+      "summary_label": "Fleet summary",
+      "title_too_long": "This title is longer than 72 characters; move the notes into the description."
+    },
     "header": {
       "focus": "Focus",
       "focus_hint": "My open tasks, highest priority first",
@@ -25658,6 +25723,8 @@
     "unnamed_board": "Untitled Board",
     "views": {
       "cards": "Cards",
+      "fleet": "Fleet",
+      "fleet_description": "Needs me, live and blocked work",
       "kanban": "Kanban",
       "kanban_description": "Board columns",
       "list": "List",

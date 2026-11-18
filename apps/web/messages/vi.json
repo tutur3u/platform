@@ -25891,6 +25891,71 @@
       },
       "status_label": "Trạng thái"
     },
+    "fleet": {
+      "blocked_by": "Bị chặn bởi",
+      "blocked_count": "{count} bị chặn",
+      "buckets": {
+        "blocked": "Bị chặn",
+        "live": "Đang chạy hôm nay",
+        "needs_me": "Cần tôi"
+      },
+      "density": {
+        "comfortable": "Thoáng",
+        "compact": "Gọn",
+        "label": "Mật độ"
+      },
+      "empty": {
+        "bucket": "Hiện chưa có gì.",
+        "fleet": "Không có việc nào đang mở. Thẻ đang chờ và đã xong vẫn nằm trên bảng.",
+        "no_eta": "Chưa có hạn",
+        "no_group": "Chưa đặt",
+        "no_update": "Chưa cập nhật",
+        "unowned": "Chưa có người phụ trách"
+      },
+      "fields": {
+        "eta": "Dự kiến",
+        "owner": "Người phụ trách",
+        "status": "Trạng thái",
+        "updated": "Cập nhật"
+      },
+      "group_by": {
+        "label": "Nhóm theo",
+        "owner": "Người phụ trách",
+        "priority": "Mức ưu tiên",
+        "product": "Sản phẩm",
+        "triage": "Phân loại"
+      },
+      "hidden_counts": "Đang ẩn {queued} đang chờ · {done} đã xong",
+      "needs_count": "{count} cần bạn",
+      "needs_you": "Cần bạn",
+      "overdue": "Quá hạn",
+      "priority": {
+        "critical": "Khẩn cấp",
+        "high": "Cao",
+        "low": "Thấp",
+        "normal": "Bình thường"
+      },
+      "stale": "Cũ",
+      "status": {
+        "blocked": "Bị chặn",
+        "done": "Đã xong",
+        "needs_user": "Cần bạn",
+        "queued": "Đang chờ",
+        "running": "Đang chạy",
+        "unknown": "Chưa rõ",
+        "waiting_ci": "Đang chạy CI",
+        "waiting_review": "Đang duyệt"
+      },
+      "summary": {
+        "blocked_detail": "Cần có người gỡ",
+        "live_detail": "{running} đang chạy · {review} đang duyệt · {ci} CI",
+        "needs_detail": "Quyết định và phê duyệt đang chờ bạn",
+        "stale": "Cũ hơn 24 giờ",
+        "stale_detail": "Người phụ trách chưa cập nhật"
+      },
+      "summary_label": "Tổng quan đội máy",
+      "title_too_long": "Tiêu đề dài hơn 72 ký tự; hãy chuyển ghi chú vào phần mô tả."
+    },
     "header": {
       "focus": "Tập trung",
       "focus_hint": "Công việc đang mở của tôi, ưu tiên cao trước",
@@ -26199,6 +26264,8 @@
     "unnamed_board": "Bảng chưa đặt tên",
     "views": {
       "cards": "Thẻ",
+      "fleet": "Đội máy",
+      "fleet_description": "Việc cần tôi, đang chạy và bị chặn",
       "kanban": "Kanban",
       "kanban_description": "Cột công việc",
       "list": "Danh sách",

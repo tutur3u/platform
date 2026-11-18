@@ -15490,4 +15490,106 @@ class AppLocalizationsVi extends AppLocalizations {
 
   @override
   String get mailFrom => 'Từ';
+
+  @override
+  String get fleetStatusNeedsUser => 'Cần bạn';
+
+  @override
+  String get fleetStatusRunning => 'Đang chạy';
+
+  @override
+  String get fleetStatusWaitingReview => 'Chờ duyệt';
+
+  @override
+  String get fleetStatusWaitingCi => 'CI';
+
+  @override
+  String get fleetStatusBlocked => 'Bị chặn';
+
+  @override
+  String get fleetStatusQueued => 'Đang chờ';
+
+  @override
+  String get fleetStatusDone => 'Hoàn tất';
+
+  @override
+  String get fleetStatusUnknown => 'Chưa có trạng thái';
+
+  @override
+  String get fleetOwnerUnowned => 'Chưa có người phụ trách';
+
+  @override
+  String get fleetEtaNone => 'Chưa có ETA';
+
+  @override
+  String get fleetUpdateNone => 'Chưa có cập nhật';
+
+  @override
+  String get fleetNeedsYouFallback => 'Đang chờ quyết định của bạn';
+
+  @override
+  String get fleetBlockedBy => 'Bị chặn bởi';
+
+  @override
+  String get fleetFieldStatus => 'Trạng thái';
+
+  @override
+  String get fleetFieldOwner => 'Người phụ trách';
+
+  @override
+  String get fleetFieldEta => 'ETA';
+
+  @override
+  String get fleetFieldUpdated => 'Cập nhật';
+
+  @override
+  String get fleetLinksTitle => 'Liên kết';
+
+  @override
+  String get fleetLinkPr => 'PR';
+
+  @override
+  String get fleetLinkCommit => 'Commit';
+
+  @override
+  String get fleetLinkThread => 'Luồng';
+
+  @override
+  String get fleetLinkCopied => 'Đã sao chép';
+
+  @override
+  String get fleetStale => 'Cũ';
+
+  @override
+  String get fleetJustNow => 'Vừa xong';
+
+  @override
+  String fleetSpanMinutes(int count) {
+    return '${count}p';
+  }
+
+  @override
+  String fleetSpanHours(int count) {
+    return '${count}g';
+  }
+
+  @override
+  String fleetSpanDays(int count) {
+    return '${count}n';
+  }
+
+  @override
+  String fleetUpdatedAgo(String span) {
+    return '$span trước';
+  }
+
+  @override
+  String fleetEtaIn(String span) {
+    return 'sau $span';
+  }
+
+  @override
+  String fleetEtaOverdueBy(String span) {
+    return 'quá hạn $span';
+  }
 }

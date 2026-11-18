@@ -39,12 +39,13 @@ import { KanbanBoard } from '../boards/boardId/kanban';
 import type { TaskFilters } from '../boards/boardId/task-filter';
 import { TimelineBoard } from '../boards/boardId/timeline-board';
 import { DraftsPage } from '../drafts/drafts-page';
+import { FleetBoardView } from '../fleet/fleet-board-view';
 import { useTaskDialog } from '../hooks/useTaskDialog';
-import MyTasksContent from '../my-tasks/my-tasks-content';
 import { BoardHeader, type ListStatusFilter } from '../shared/board-header';
 import { ListView } from '../shared/list-view';
 import { RecycleBinContent } from '../shared/recycle-bin-panel';
 import { loadBoardConfig } from './board-config-storage';
+import { boardHasFleetTasks, resolveEnabledViews } from './board-enabled-views';
 import {
   DEFAULT_BOARD_FILTERS,
   listMatchesStatusFilter,
@@ -56,6 +57,7 @@ import { useBoardSprintSurface } from './board-sprints/use-board-sprint-surface'
 import { useBoardSprints } from './board-sprints/use-board-sprints';
 import { sortLocalTasks } from './board-task-filtering';
 import { BoardPanelFrame, KanbanPresentation } from './kanban-presentation';
+import { MyTasksBoardPanel } from './my-tasks-board-panel';
 import {
   parseSpecialTaskListPins,
   type SpecialTaskListPin,
@@ -77,6 +79,7 @@ export type ViewType =
   | 'list'
   | 'my_tasks'
   | 'timeline'
+  | 'fleet'
   | 'drafts'
   | 'recycle_bin';
 const HOTKEY_CREATE_TASK = 'C';
@@ -201,20 +204,16 @@ export function BoardViews({
     },
     [effectiveWorkspaceId, specialTaskListPins, updateUserWorkspaceConfig]
   );
+  const hasFleetTasks = useMemo(() => boardHasFleetTasks(tasks), [tasks]);
   const enabledViews = useMemo(
     () =>
-      availableViews ??
-      (publicView || readOnly
-        ? (['kanban', 'list', 'timeline'] as ViewType[])
-        : ([
-            'kanban',
-            'list',
-            'my_tasks',
-            'timeline',
-            'drafts',
-            'recycle_bin',
-          ] as ViewType[])),
-    [availableViews, publicView, readOnly]
+      resolveEnabledViews({
+        availableViews,
+        hasFleetTasks,
+        publicView,
+        readOnly,
+      }),
+    [availableViews, hasFleetTasks, publicView, readOnly]
   );
   const viewIsEnabled = useCallback(
     (view: ViewType) => !enabledViews || enabledViews.includes(view),
@@ -631,27 +630,25 @@ export function BoardViews({
             pagesCovered={pagesCovered}
           />
         );
+      case 'fleet':
+        return (
+          <FleetBoardView
+            boardId={board.id}
+            isPersonalWorkspace={workspace.personal}
+            lists={boardLists}
+            tasks={effectiveTasks}
+            workspaceId={effectiveWorkspaceId}
+          />
+        );
       case 'my_tasks':
         return (
-          <div className="h-full overflow-y-auto p-3 sm:p-4">
-            <div className="mx-auto max-w-5xl pb-20">
-              {currentUserId ? (
-                <MyTasksContent
-                  disableAutoCreateBoard
-                  embedded
-                  initialBoard={{
-                    id: board.id,
-                    name: board.name ?? null,
-                  }}
-                  initialLists={boardLists}
-                  initialListId={board.default_list_id ?? undefined}
-                  isPersonal={workspace.personal}
-                  userId={currentUserId}
-                  wsId={effectiveWorkspaceId}
-                />
-              ) : null}
-            </div>
-          </div>
+          <MyTasksBoardPanel
+            board={board}
+            boardLists={boardLists}
+            currentUserId={currentUserId}
+            isPersonal={workspace.personal}
+            workspaceId={effectiveWorkspaceId}
+          />
         );
       case 'list':
         return (

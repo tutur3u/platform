@@ -327,6 +327,10 @@
       "types": "./src/components/ui/custom/language-dropdown-wrapper.tsx",
       "import": "./src/components/ui/custom/language-dropdown-wrapper.tsx"
     },
+    "./custom/fleet": {
+      "types": "./src/components/ui/custom/fleet/index.ts",
+      "import": "./src/components/ui/custom/fleet/index.ts"
+    },
     "./custom/ops": {
       "types": "./src/components/ui/custom/ops/index.ts",
       "import": "./src/components/ui/custom/ops/index.ts"

@@ -44,6 +44,7 @@ class _BoardTaskTile extends StatelessWidget {
     final startLabel = _taskStartLabel(context, task);
     final isOverdue = _taskIsOverdueForList(task, list);
     final relationshipIndicators = _taskRelationshipIndicators(task);
+    final fleet = fleetMetaOrNull(task);
     final borderColor = isSelected
         ? theme.colorScheme.primary
         : listStyle.surfaceBorder;
@@ -127,6 +128,10 @@ class _BoardTaskTile extends StatelessWidget {
                                 const shad.Gap(4),
                                 Text(
                                   title,
+                                  maxLines: fleet == null ? null : 2,
+                                  overflow: fleet == null
+                                      ? null
+                                      : TextOverflow.ellipsis,
                                   style: theme.typography.small.copyWith(
                                     fontWeight: FontWeight.w600,
                                   ),
@@ -210,6 +215,10 @@ class _BoardTaskTile extends StatelessWidget {
                             ],
                           ],
                         ),
+                      ],
+                      if (fleet != null) ...[
+                        const shad.Gap(8),
+                        FleetTaskTileBlock(meta: fleet),
                       ],
                       if (relationshipIndicators.isNotEmpty) ...[
                         const shad.Gap(8),

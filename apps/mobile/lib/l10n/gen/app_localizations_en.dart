@@ -15678,4 +15678,106 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get mailFrom => 'From';
+
+  @override
+  String get fleetStatusNeedsUser => 'Needs you';
+
+  @override
+  String get fleetStatusRunning => 'Running';
+
+  @override
+  String get fleetStatusWaitingReview => 'In review';
+
+  @override
+  String get fleetStatusWaitingCi => 'CI';
+
+  @override
+  String get fleetStatusBlocked => 'Blocked';
+
+  @override
+  String get fleetStatusQueued => 'Queued';
+
+  @override
+  String get fleetStatusDone => 'Done';
+
+  @override
+  String get fleetStatusUnknown => 'No status';
+
+  @override
+  String get fleetOwnerUnowned => 'Unowned';
+
+  @override
+  String get fleetEtaNone => 'No ETA';
+
+  @override
+  String get fleetUpdateNone => 'No update';
+
+  @override
+  String get fleetNeedsYouFallback => 'Waiting on your decision';
+
+  @override
+  String get fleetBlockedBy => 'Blocked by';
+
+  @override
+  String get fleetFieldStatus => 'Status';
+
+  @override
+  String get fleetFieldOwner => 'Owner';
+
+  @override
+  String get fleetFieldEta => 'ETA';
+
+  @override
+  String get fleetFieldUpdated => 'Updated';
+
+  @override
+  String get fleetLinksTitle => 'Links';
+
+  @override
+  String get fleetLinkPr => 'PR';
+
+  @override
+  String get fleetLinkCommit => 'Commit';
+
+  @override
+  String get fleetLinkThread => 'Thread';
+
+  @override
+  String get fleetLinkCopied => 'Copied';
+
+  @override
+  String get fleetStale => 'Stale';
+
+  @override
+  String get fleetJustNow => 'Just now';
+
+  @override
+  String fleetSpanMinutes(int count) {
+    return '${count}m';
+  }
+
+  @override
+  String fleetSpanHours(int count) {
+    return '${count}h';
+  }
+
+  @override
+  String fleetSpanDays(int count) {
+    return '${count}d';
+  }
+
+  @override
+  String fleetUpdatedAgo(String span) {
+    return '$span ago';
+  }
+
+  @override
+  String fleetEtaIn(String span) {
+    return 'in $span';
+  }
+
+  @override
+  String fleetEtaOverdueBy(String span) {
+    return '$span overdue';
+  }
 }

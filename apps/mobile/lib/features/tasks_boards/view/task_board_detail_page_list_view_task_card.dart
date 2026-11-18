@@ -88,6 +88,7 @@ class _TaskCard extends StatelessWidget {
     required Color titleColor,
   }) {
     final theme = shad.Theme.of(context);
+    final fleet = fleetMetaOrNull(task);
     return Material(
       color: Colors.transparent,
       child: InkWell(
@@ -176,6 +177,11 @@ class _TaskCard extends StatelessWidget {
                     ],
                   ),
                 ),
+                if (fleet != null)
+                  Padding(
+                    padding: const EdgeInsets.only(left: 29, top: 6),
+                    child: FleetTaskTileBlock(meta: fleet),
+                  ),
               ],
             ),
           ),
