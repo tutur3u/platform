@@ -322,3 +322,119 @@ describe('gateway → Web robots on the canonical host', () => {
     expect(response.headers.get('x-robots-tag')).toBe(PRIVATE_ROBOTS_HEADER);
   });
 });
+
+describe('gateway → unmarked Marketing builds (GATEWAY_MARKETING_LEGACY_ROBOTS)', () => {
+  const legacy: Env = { ...env, GATEWAY_MARKETING_LEGACY_ROBOTS: '1' };
+  const release = (url: string, headers: Record<string, string>) =>
+    applyMarketingRobots(
+      new Response('body', { headers }),
+      new Request(url),
+      'marketing-page',
+      false,
+      true
+    ).headers.get('x-robots-tag');
+
+  it.each(['/', '/vi', '/pricing', '/about', '/products/ai', '/vi/legal/dpa'])(
+    'releases the unmarked private value on %s on MISS, HIT and STALE',
+    async (path) => {
+      const t = setup({ unmarked: true });
+      for (const state of ['MISS', 'HIT', 'STALE']) {
+        const response = await t.call(
+          `https://tuturuuu.com${path}`,
+          undefined,
+          legacy
+        );
+        expect(response.headers.get('x-gateway-cache')).toBe(state);
+        expect(response.headers.has('x-robots-tag')).toBe(false);
+        if (state === 'HIT') t.advance();
+      }
+    }
+  );
+  it('keeps the marked release path unchanged', async () => {
+    const t = setup();
+    const response = await t.call('https://tuturuuu.com/', undefined, legacy);
+    expect(response.headers.has('x-robots-tag')).toBe(false);
+    expect(response.headers.has('x-marketing-origin-robots')).toBe(false);
+  });
+  it.each([['true'], ['']])(
+    'keeps an ambiguous marker %j private',
+    (marker) => {
+      expect(
+        release('https://tuturuuu.com/', {
+          'x-marketing-origin-robots': marker,
+          'x-robots-tag': PRIVATE_ROBOTS_HEADER,
+        })
+      ).toBe(PRIVATE_ROBOTS_HEADER);
+    }
+  );
+  it.each([
+    'noindex',
+    'none',
+    'noindex, nofollow',
+    'googlebot: noindex, noarchive',
+  ])('keeps any other value %s', (robots) => {
+    expect(release('https://tuturuuu.com/', { 'x-robots-tag': robots })).toBe(
+      robots
+    );
+  });
+  it.each([
+    'https://staging.tuturuuu.com/',
+    'https://web-accept.staging.tutur3u.com/',
+    'https://marketing.tuturuuu.com/',
+    'http://tuturuuu.com/',
+    'https://tuturuuu.com:444/',
+  ])('keeps %s private', async (url) => {
+    expect(release(url, { 'x-robots-tag': PRIVATE_ROBOTS_HEADER })).toContain(
+      'noindex'
+    );
+    const t = setup({ unmarked: true });
+    expect(
+      (await t.call(url, undefined, legacy)).headers.get('x-robots-tag')
+    ).toContain('noindex');
+  });
+  it('keeps gateway NOINDEX private', async () => {
+    const t = setup({ unmarked: true });
+    const response = await t.call('https://tuturuuu.com/', undefined, {
+      ...legacy,
+      TUTURUUU_NOINDEX: '1',
+    });
+    expect(response.headers.get('x-robots-tag')).toContain('noindex');
+  });
+  it('keeps unmarked responses private when the flag is off', async () => {
+    const t = setup({ unmarked: true });
+    expect(
+      (await t.call('https://tuturuuu.com/')).headers.get('x-robots-tag')
+    ).toBe(PRIVATE_ROBOTS_HEADER);
+  });
+  it.each(['/changelog', '/download', '/models', '/products/meet'])(
+    'leaves Web-origin %s robots unchanged',
+    async (path) => {
+      const open = setup();
+      expect(
+        (
+          await open.call(`https://tuturuuu.com${path}`, undefined, legacy)
+        ).headers.has('x-robots-tag')
+      ).toBe(false);
+      const closed = setup({
+        headers: { 'x-robots-tag': PRIVATE_ROBOTS_HEADER },
+      });
+      expect(
+        (
+          await closed.call(`https://tuturuuu.com${path}`, undefined, legacy)
+        ).headers.get('x-robots-tag')
+      ).toBe(PRIVATE_ROBOTS_HEADER);
+    }
+  );
+  it('keeps non-page Marketing responses private', () => {
+    const response = applyMarketingRobots(
+      new Response('body', {
+        headers: { 'x-robots-tag': PRIVATE_ROBOTS_HEADER },
+      }),
+      new Request('https://tuturuuu.com/assets/app.css'),
+      'marketing',
+      false,
+      true
+    );
+    expect(response.headers.get('x-robots-tag')).toBe(PRIVATE_ROBOTS_HEADER);
+  });
+});

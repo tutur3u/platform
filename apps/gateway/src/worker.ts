@@ -43,6 +43,12 @@ export interface Env {
    * Clearing an app's entries is part of that app's one-step rollback.
    */
   GATEWAY_MOUNTED_PATHS?: string;
+  /**
+   * `1` releases the exact private robots value on eligible canonical
+   * Marketing pages that the Marketing Worker sent without its provenance
+   * marker (builds older than the marker). Removing it is the rollback.
+   */
+  GATEWAY_MARKETING_LEGACY_ROBOTS?: string;
   [name: string]: string | undefined;
 }
 
@@ -561,7 +567,8 @@ export function createHandler(deps: HandlerDeps) {
       await handle(request, env, ctx),
       request,
       marketingPage ? 'marketing-page' : fromMarketing ? 'marketing' : 'origin',
-      env.TUTURUUU_NOINDEX === '1'
+      env.TUTURUUU_NOINDEX === '1',
+      fromMarketing && env.GATEWAY_MARKETING_LEGACY_ROBOTS === '1'
     );
   };
 }

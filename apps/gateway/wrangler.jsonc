@@ -24,6 +24,10 @@
     // applies this value. Empty keeps every page on WEB_ORIGIN; removing a
     // group is the one-flag rollback for that group.
     "GATEWAY_MARKETING_GROUPS": "legal,company,products,solutions,blog,home",
+    // "1" releases the exact private robots value on canonical Marketing pages
+    // sent without the provenance marker by Marketing Worker builds that
+    // predate it. Remove once the live Marketing Worker sends the marker.
+    "GATEWAY_MARKETING_LEGACY_ROBOTS": "1",
     // Origin of the apps/marketing Worker (value set at deploy time).
     // "MARKETING_ORIGIN": "https://<marketing worker hostname>",
     "GATEWAY_RESPECT_ORIGIN_CACHE_CONTROL": "false",

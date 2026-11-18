@@ -26,17 +26,26 @@ function forcePrivate(headers: Headers) {
  * canonical URL: their published pages (changelog, download, models, cite)
  * stay indexable and their private routes keep their own noindex. Noncanonical
  * hosts and `TUTURUUU_NOINDEX=1` are private for every origin.
+ *
+ * `releaseUnmarked` covers Marketing Worker builds that predate the provenance
+ * marker: they answer the exact private value for every host other than the
+ * canonical one, which includes the gateway's origin fetch. When set, an
+ * unmarked exact private value on an eligible canonical Marketing page is
+ * released. Any other value, an ambiguous marker, a noncanonical host or
+ * `TUTURUUU_NOINDEX=1` stays private.
  */
 export function applyMarketingRobots(
   response: Response,
   request: Request,
   source: RobotsSource,
-  noindex: boolean
+  noindex: boolean,
+  releaseUnmarked = false
 ) {
   if (response.status === 101) return response;
   const result = new Response(response.body, response);
   const headers = result.headers;
-  const originOnly = headers.get(ORIGIN_POLICY_HEADER) === '1';
+  const marker = headers.get(ORIGIN_POLICY_HEADER);
+  const originOnly = marker === '1';
   headers.delete(ORIGIN_POLICY_HEADER);
   const url = new URL(request.url);
   if (source === 'origin') {
@@ -47,8 +56,9 @@ export function applyMarketingRobots(
   if (source !== 'marketing-page' || robots !== null) {
     forcePrivate(headers);
   } else if (
-    originOnly &&
-    headers.get('x-robots-tag') === PRIVATE_ROBOTS_HEADER
+    headers.get('x-robots-tag') === PRIVATE_ROBOTS_HEADER &&
+    (originOnly ||
+      (releaseUnmarked && marker === null && url.origin === CANONICAL_ORIGIN))
   ) {
     headers.delete('x-robots-tag');
   }
