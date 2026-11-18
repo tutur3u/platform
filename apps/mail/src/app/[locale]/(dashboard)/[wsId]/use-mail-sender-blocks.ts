@@ -52,6 +52,7 @@ export function useMailSenderBlockMutations(wsId: string, mailboxId: string) {
   const refresh = () =>
     Promise.all([
       queryClient.invalidateQueries({ queryKey: ['mail', wsId, mailboxId] }),
+      queryClient.invalidateQueries({ queryKey: ['notifications'] }),
       queryClient.invalidateQueries({
         queryKey: ['mail', wsId, 'bootstrap-counts'],
       }),
@@ -62,11 +63,11 @@ export function useMailSenderBlockMutations(wsId: string, mailboxId: string) {
       rule: SenderBlockRule
     ): Promise<{ block: MailSenderBlock; moved: number }> =>
       addMailSenderBlock(wsId, mailboxId, { ...rule, moveExisting: true }),
-    onSuccess: async ({ block }) => {
+    onSuccess: ({ block }) => {
       toast.success(t('blocked_toast', { target: senderBlockTarget(block) }));
-      await refresh();
     },
     onError: () => toast.error(t('save_failed')),
+    onSettled: refresh,
   });
 
   const remove = useMutation({
@@ -78,16 +79,16 @@ export function useMailSenderBlockMutations(wsId: string, mailboxId: string) {
       restoreToInbox: boolean;
     }): Promise<{ moved: number }> =>
       removeMailSenderBlock(wsId, mailboxId, block.id, { restoreToInbox }),
-    onSuccess: async ({ moved }, { block, restoreToInbox }) => {
+    onSuccess: ({ moved }, { block, restoreToInbox }) => {
       const target = senderBlockTarget(block);
       toast.success(
         restoreToInbox
           ? t('unblocked_moved_toast', { count: moved, target })
           : t('unblocked_toast', { target })
       );
-      await refresh();
     },
     onError: () => toast.error(t('save_failed')),
+    onSettled: refresh,
   });
 
   return { add, remove };

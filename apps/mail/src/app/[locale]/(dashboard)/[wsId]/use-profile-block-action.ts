@@ -29,6 +29,7 @@ export function useProfileBlockAction(
 
   function refresh() {
     return Promise.all([
+      queryClient.invalidateQueries({ queryKey: ['notifications'] }),
       queryClient.invalidateQueries({
         queryKey: ['mail', workspaceId, mailboxId],
       }),
