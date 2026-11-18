@@ -141,6 +141,11 @@ export function assertPreboundRollback({
   rollbackUrl,
   stagedUrl,
 }) {
+  for (const field of [rollbackId, stagedId, rollbackUrl, stagedUrl]) {
+    if (typeof field !== 'string' || /[\r\n]/u.test(field)) {
+      throw new Error('invalid deployment output field');
+    }
+  }
   if (!rollbackId || !stagedId || rollbackId === stagedId) {
     throw new Error('rollback is not prebound');
   }

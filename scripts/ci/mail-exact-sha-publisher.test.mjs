@@ -296,3 +296,18 @@ test('the new workflow is dispatch-only and the general Mail publisher stays hel
   assert.doesNotMatch(general, /--skip-domain/);
   assert.match(policy, /'vercel-production-mail\.yaml': false/);
 });
+
+test('rejects multiline deployment evidence before binding outputs', () => {
+  const fields = {
+    rollbackId: 'dpl_old',
+    stagedId: 'dpl_new',
+    rollbackUrl: 'https://old.example.com',
+    stagedUrl: 'https://new.example.com',
+  };
+  for (const key of Object.keys(fields)) {
+    assert.throws(
+      () => assertPreboundRollback({ ...fields, [key]: fields[key] + '\n' }),
+      /invalid deployment output field/u
+    );
+  }
+});
