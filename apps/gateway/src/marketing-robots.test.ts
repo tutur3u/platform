@@ -102,7 +102,6 @@ describe('gateway → Marketing response policy', () => {
     'https://tuturuuu.com:444/download',
     'https://tuturuuu.com/products/auth',
     'https://tuturuuu.com/products/%2Fai',
-    'https://tuturuuu.com/%61uth',
     'https://tuturuuu.com/products/%ZZ',
     'https://tuturuuu.com/products/%2561i',
   ])('keeps %s private despite forged forwarding hints', async (url) => {
@@ -117,6 +116,21 @@ describe('gateway → Marketing response policy', () => {
     });
     expect(response.headers.get('x-robots-tag')).toContain('noindex');
   });
+  it.each(['/auth', '/%61uth', '/login'])(
+    'keeps the Web origin private robots on %s despite forged forwarding hints',
+    async (path) => {
+      const t = setup({ headers: { 'x-robots-tag': PRIVATE_ROBOTS_HEADER } });
+      const response = await t.call(`https://tuturuuu.com${path}`, {
+        headers: {
+          'x-forwarded-host': 'marketing.tuturuuu.com',
+          forwarded: 'host=evil.test;proto=http',
+          'x-marketing-origin-robots': '1',
+        },
+      });
+      expect(t.sent.at(-1)?.url).toContain('web.example');
+      expect(response.headers.get('x-robots-tag')).toBe(PRIVATE_ROBOTS_HEADER);
+    }
+  );
   it.each([
     ['1', 'noindex'],
     ['1', 'googlebot: noindex'],
