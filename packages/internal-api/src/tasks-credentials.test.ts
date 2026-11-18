@@ -1,7 +1,44 @@
 import { describe, expect, it, vi } from 'vitest';
-import { updateWorkspaceTask } from './tasks';
+import {
+  getWorkspaceTaskDescription,
+  updateWorkspaceTask,
+  updateWorkspaceTaskDescription,
+} from './tasks';
 
 describe('workspace task credentials', () => {
+  it('includes credentials on cross-origin description reads and saves', async () => {
+    const fetchMock = vi
+      .fn<typeof fetch>()
+      .mockImplementation(async () =>
+        Response.json({ description: 'A task', description_yjs_state: null })
+      );
+    const options = {
+      baseUrl: 'https://tasks.tuturuuu.com',
+      fetch: fetchMock,
+    };
+    const descriptionUrl =
+      'https://tasks.tuturuuu.com/api/v1/workspaces/ws-1/tasks/task-1/description';
+
+    await getWorkspaceTaskDescription('ws-1', 'task-1', options);
+    await updateWorkspaceTaskDescription(
+      'ws-1',
+      'task-1',
+      { description: 'A task' },
+      options
+    );
+
+    expect(fetchMock).toHaveBeenNthCalledWith(
+      1,
+      descriptionUrl,
+      expect.objectContaining({ credentials: 'include', cache: 'no-store' })
+    );
+    expect(fetchMock).toHaveBeenNthCalledWith(
+      2,
+      descriptionUrl,
+      expect.objectContaining({ credentials: 'include', method: 'PATCH' })
+    );
+  });
+
   it('includes credentials when updating a task across app origins', async () => {
     const fetchMock = vi.fn().mockResolvedValue({
       json: async () => ({ task: { id: 'task-1' } }),

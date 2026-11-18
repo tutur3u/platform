@@ -40,6 +40,11 @@ import {
   withTaskApiBaseUrl,
 } from './client';
 
+const credentialedTaskRequest = {
+  cache: 'no-store',
+  credentials: 'include',
+} satisfies RequestInit;
+
 function getTaskApiClient(options?: InternalApiClientOptions) {
   return getInternalApiClient(withTaskApiBaseUrl(options));
 }
@@ -988,7 +993,7 @@ export async function listWorkspaceTaskProjects(
       query: {
         compact: true,
       },
-      cache: 'no-store',
+      ...credentialedTaskRequest,
     }
   );
 
@@ -1029,9 +1034,7 @@ export async function listWorkspaceLabels(
   const client = getTaskApiClient(options);
   const labels = await client.json<InternalApiWorkspaceLabel[]>(
     `/api/v1/workspaces/${encodePathSegment(workspaceId)}/labels`,
-    {
-      cache: 'no-store',
-    }
+    credentialedTaskRequest
   );
 
   return (labels ?? []).sort((a, b) =>
@@ -1163,7 +1166,7 @@ export async function listWorkspaceTaskBoards(
         pageSize: options?.pageSize,
         status: options?.status,
       },
-      cache: 'no-store',
+      ...credentialedTaskRequest,
     }
   );
 }
@@ -1219,9 +1222,7 @@ export async function listWorkspaceBoardsWithLists(
   const client = getTaskApiClient(options);
   return client.json<{ boards: WorkspaceTaskBoardWithLists[] }>(
     `/api/v1/workspaces/${encodePathSegment(workspaceId)}/boards-with-lists`,
-    {
-      cache: 'no-store',
-    }
+    credentialedTaskRequest
   );
 }
 
@@ -1340,9 +1341,7 @@ export async function listWorkspaceTaskBoardViewableMembers(
   const client = getTaskApiClient(options);
   return client.json<WorkspaceTaskBoardViewableMembersResponse>(
     `/api/v1/workspaces/${encodePathSegment(workspaceId)}/task-boards/${encodePathSegment(boardId)}/viewable-members`,
-    {
-      cache: 'no-store',
-    }
+    credentialedTaskRequest
   );
 }
 
@@ -1533,7 +1532,7 @@ export async function listWorkspaceTaskProjectsByIds(
         compact: true,
         ids: projectIds.join(','),
       },
-      cache: 'no-store',
+      ...credentialedTaskRequest,
     }
   );
 
@@ -1602,9 +1601,7 @@ export async function getWorkspaceTaskRelationships(
   const client = getTaskApiClient(options);
   return client.json<TaskRelationshipsResponse>(
     `/api/v1/workspaces/${encodePathSegment(workspaceId)}/tasks/${encodePathSegment(taskId)}/relationships`,
-    {
-      cache: 'no-store',
-    }
+    credentialedTaskRequest
   );
 }
 
@@ -1702,9 +1699,7 @@ export async function getWorkspaceTask(
   const client = getTaskApiClient(options);
   return client.json<WorkspaceTaskResponse>(
     `/api/v1/workspaces/${encodePathSegment(workspaceId)}/tasks/${encodePathSegment(taskId)}`,
-    {
-      cache: 'no-store',
-    }
+    credentialedTaskRequest
   );
 }
 
@@ -1720,9 +1715,7 @@ export async function getWorkspaceTaskDescription(
   const client = getTaskApiClient(options);
   return client.json<WorkspaceTaskDescriptionResponse>(
     workspaceTaskDescriptionPath(workspaceId, taskId),
-    {
-      cache: 'no-store',
-    }
+    credentialedTaskRequest
   );
 }
 
@@ -1741,7 +1734,7 @@ export async function updateWorkspaceTaskDescription(
         'Content-Type': 'application/json',
       },
       body: JSON.stringify(payload),
-      cache: 'no-store',
+      ...credentialedTaskRequest,
     }
   );
 }
@@ -1761,7 +1754,7 @@ export async function beginWorkspaceTaskDescriptionChunks(
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({ action: 'begin', fields }),
-      cache: 'no-store',
+      ...credentialedTaskRequest,
     }
   );
 }
@@ -1786,7 +1779,7 @@ export async function appendWorkspaceTaskDescriptionChunk(
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({ action: 'append', ...payload }),
-      cache: 'no-store',
+      ...credentialedTaskRequest,
     }
   );
 }
@@ -1806,7 +1799,7 @@ export async function commitWorkspaceTaskDescriptionChunks(
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({ action: 'commit', session_id: sessionId }),
-      cache: 'no-store',
+      ...credentialedTaskRequest,
     }
   );
 }
@@ -1826,7 +1819,7 @@ export async function abortWorkspaceTaskDescriptionChunks(
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({ action: 'abort', session_id: sessionId }),
-      cache: 'no-store',
+      ...credentialedTaskRequest,
     }
   );
 }
@@ -1891,7 +1884,7 @@ export async function upsertCurrentUserTaskPersonalPlacement(
         'Content-Type': 'application/json',
       },
       body: JSON.stringify(payload),
-      cache: 'no-store',
+      ...credentialedTaskRequest,
     }
   );
 }
@@ -1939,7 +1932,7 @@ export async function createWorkspaceTask(
         'Content-Type': 'application/json',
       },
       body: JSON.stringify(payload),
-      cache: 'no-store',
+      ...credentialedTaskRequest,
     }
   );
 }
@@ -2010,9 +2003,7 @@ export async function listWorkspaceTaskLists(
   const client = getTaskApiClient(options);
   return client.json<WorkspaceTaskListsResponse>(
     `/api/v1/workspaces/${encodePathSegment(workspaceId)}/task-boards/${encodePathSegment(boardId)}/lists`,
-    {
-      cache: 'no-store',
-    }
+    credentialedTaskRequest
   );
 }
 
@@ -2148,7 +2139,7 @@ export async function createWorkspaceTaskRelationship(
         'Content-Type': 'application/json',
       },
       body: JSON.stringify(payload),
-      cache: 'no-store',
+      ...credentialedTaskRequest,
     }
   );
 }
@@ -2172,7 +2163,7 @@ export async function deleteWorkspaceTaskRelationship(
         'Content-Type': 'application/json',
       },
       body: JSON.stringify(payload),
-      cache: 'no-store',
+      ...credentialedTaskRequest,
     }
   );
 }
@@ -2369,7 +2360,7 @@ export async function getWorkspaceTaskHistory(
         change_type: options?.changeType,
         field_name: options?.fieldName,
       },
-      cache: 'no-store',
+      ...credentialedTaskRequest,
     }
   );
 }
@@ -2412,7 +2403,7 @@ export async function resolveTaskProjectWorkspaceId(
         boardId: input.boardId ?? undefined,
         projectIds: input.projectIds ?? [],
       }),
-      cache: 'no-store',
+      ...credentialedTaskRequest,
     }
   );
 

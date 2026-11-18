@@ -25,6 +25,7 @@ export async function createWorkspaceTaskProject(
       },
       body: JSON.stringify(payload),
       cache: 'no-store',
+      credentials: 'include',
     }
   );
 }
