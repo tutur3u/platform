@@ -1,4 +1,6 @@
 import 'package:flutter/foundation.dart';
+import 'package:flutter/material.dart' show Theme;
+import 'package:flutter/rendering.dart';
 import 'package:flutter/widgets.dart';
 import 'package:mobile/core/theme/appearance/accessible_destructive_button.dart';
 import 'package:mobile/core/theme/appearance/ambient_background.dart';
@@ -141,25 +143,53 @@ class _AppearanceBackdropState extends State<AppearanceBackdrop>
   }
 }
 
-/// Paints the ambient layer under an imperatively pushed page route, so its
-/// transition never reveals the page beneath through transparent scaffolds.
+/// Paints the page backdrop under a pushed page route, so its transition
+/// never reveals the page beneath through a page without its own opaque
+/// surface.
+///
+/// Solid appearances paint the theme's page color. Ambient appearances
+/// paint their layer only while the route moves: at rest the app-wide layer
+/// already shows behind the page, and while moving the layer is laid out at
+/// screen size and painted fixed to the screen, so it meets the app-wide
+/// layer under the header, beside a rail and at the sliding edge without a
+/// seam.
 class AppearanceRouteBackground extends StatelessWidget {
-  const AppearanceRouteBackground({required this.child, super.key});
+  const AppearanceRouteBackground({
+    required this.animation,
+    required this.secondaryAnimation,
+    required this.child,
+    super.key,
+  });
 
+  /// The route's own animations; the route moves while either runs.
+  final Animation<double> animation;
+  final Animation<double> secondaryAnimation;
   final Widget child;
 
   @override
   Widget build(BuildContext context) {
     final scope = AppearanceScope.maybeOf(context);
     final ambient = scope != null && scope.settings.hasAmbientBackground;
+    final moving = animation.isAnimating || secondaryAnimation.isAnimating;
     return Stack(
       fit: StackFit.expand,
       children: [
-        if (ambient)
-          AmbientBackground(
-            settings: scope.settings,
-            brightness: scope.brightness,
-            motion: scope.motion,
+        if (!ambient)
+          ColoredBox(
+            key: const ValueKey('appearance-route-backdrop'),
+            color: Theme.of(context).scaffoldBackgroundColor,
+          )
+        else if (moving)
+          _ScreenAligned(
+            key: const ValueKey('appearance-route-ambient'),
+            screen: MediaQuery.sizeOf(context),
+            animation: animation,
+            secondaryAnimation: secondaryAnimation,
+            child: AmbientBackground(
+              settings: scope.settings,
+              brightness: scope.brightness,
+              motion: scope.motion,
+            ),
           ),
         KeyedSubtree(key: const ValueKey('appearance-route'), child: child),
       ],
@@ -184,3 +214,105 @@ shad.TabsTheme concentricTabsTheme(shad.ThemeData theme) {
 /// Gap between the `shad.Tabs` track and its selected tab on every side.
 double concentricTabsPadding(shad.ThemeData theme) =>
     theme.density.baseGap * theme.scaling * 0.5;
+
+/// Lays its child out at [screen] size and paints it at the screen origin,
+/// clipped to this box, repainting as the route's animations move the box.
+class _ScreenAligned extends SingleChildRenderObjectWidget {
+  const _ScreenAligned({
+    required this.screen,
+    required this.animation,
+    required this.secondaryAnimation,
+    super.child,
+    super.key,
+  });
+
+  final Size screen;
+  final Animation<double> animation;
+  final Animation<double> secondaryAnimation;
+
+  @override
+  RenderObject createRenderObject(BuildContext context) =>
+      _RenderScreenAligned(screen, [animation, secondaryAnimation]);
+
+  @override
+  void updateRenderObject(
+    BuildContext context,
+    _RenderScreenAligned renderObject,
+  ) => renderObject
+    ..screen = screen
+    ..repaint = [animation, secondaryAnimation];
+}
+
+class _RenderScreenAligned extends RenderProxyBox {
+  _RenderScreenAligned(this._screen, this._repaint);
+
+  Size _screen;
+  Size get screen => _screen;
+  set screen(Size value) {
+    if (value == _screen) return;
+    _screen = value;
+    markNeedsLayout();
+  }
+
+  /// The listenables whose ticks move this box; kept as given, so a rebuild
+  /// with the same route animations changes no subscription.
+  List<Listenable> _repaint;
+  List<Listenable> get repaint => _repaint;
+  set repaint(List<Listenable> value) {
+    if (listEquals(value, _repaint)) return;
+    if (attached) _listen(listen: false);
+    _repaint = value;
+    if (attached) _listen(listen: true);
+    markNeedsPaint();
+  }
+
+  void _listen({required bool listen}) {
+    for (final listenable in _repaint) {
+      listen
+          ? listenable.addListener(markNeedsPaint)
+          : listenable.removeListener(markNeedsPaint);
+    }
+  }
+
+  @override
+  void attach(PipelineOwner owner) {
+    super.attach(owner);
+    _listen(listen: true);
+  }
+
+  @override
+  void detach() {
+    _listen(listen: false);
+    super.detach();
+  }
+
+  @override
+  void performLayout() {
+    size = constraints.biggest;
+    child?.layout(BoxConstraints.tight(_screen));
+  }
+
+  @override
+  void paint(PaintingContext context, Offset offset) {
+    final child = this.child;
+    if (child == null) return;
+    final origin = localToGlobal(Offset.zero);
+    layer = context.pushClipRect(
+      needsCompositing,
+      offset,
+      Offset.zero & size,
+      (context, offset) => context.paintChild(child, offset - origin),
+      oldLayer: layer as ClipRectLayer?,
+    );
+  }
+
+  @override
+  void applyPaintTransform(RenderBox child, Matrix4 transform) {
+    final origin = localToGlobal(Offset.zero);
+    transform.translateByDouble(-origin.dx, -origin.dy, 0, 1);
+  }
+
+  @override
+  bool hitTestChildren(BoxHitTestResult result, {required Offset position}) =>
+      false;
+}

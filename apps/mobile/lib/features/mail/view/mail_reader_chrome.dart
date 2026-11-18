@@ -61,6 +61,11 @@ extension _MailReaderChrome on _MailReaderState {
         ownerId: 'mail-reader',
         locations: const {Routes.mail},
         actionGroup: _dockGroup(),
+        // The reader sits in Mail's own navigator at the Mail location, so
+        // the dock's Back closes it back to the list instead of leaving Mail.
+        // While the reader animates out, Back does nothing; the registration
+        // retires with the reader.
+        onBack: _closeFromBack,
       ),
     ],
   );

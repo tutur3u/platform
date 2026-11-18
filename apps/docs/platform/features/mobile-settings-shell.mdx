@@ -220,6 +220,17 @@ shell's chrome stays in place and changes on the same 220ms timeline.
   hide and reveal.
 - Reduced motion (the system setting or Appearance) slides nothing: body,
   title and dock contents cross-fade together in 100ms, linearly.
+- Every pushed page paints a backdrop beneath its content, so the page it
+  covers never shows through while it slides. Solid appearances paint the
+  page color. Ambient appearances paint their gradient or blobs only while the
+  page moves, fixed to the screen so they meet the app-wide layer under the
+  header and beside a rail without a seam; at rest the app-wide layer shows.
+- A page a mini app pushes inside its own navigator without changing the
+  location (the Mail reader, a Drive file preview) registers its own Back:
+  the dock, system Back and the iOS edge swipe close it to the list beneath,
+  which keeps its scroll position. Only the current page closes; a second
+  Back while it closes does nothing, and its Back retires with it
+  (`mail_shell_back_test.dart`).
 
 Shell routes are `ShellTransitionPage`s (`shellTransitionRoutes`). The route
 reports its animation to the shell's `ShellRouteTransitionController`, and

@@ -133,6 +133,10 @@ class _MailReaderState extends State<MailReader> {
   int _contentGeneration = 0;
   bool _attachmentsTab = false;
   bool _accessRevoked = false;
+
+  /// Set once the dock's Back closes the reader, which stays mounted while
+  /// its route animates out.
+  bool _closing = false;
   bool _busy = false;
   bool _readPending = false;
   bool _showImages = false;
@@ -224,6 +228,14 @@ class _MailReaderState extends State<MailReader> {
     } else {
       Navigator.of(context).pop();
     }
+  }
+
+  /// The dock's and system Back. Only the current reader closes; a press
+  /// while it closes or settles from a swipe must not pop the list beneath.
+  Future<void> _closeFromBack() async {
+    if (_closing || !(ModalRoute.isCurrentOf(context) ?? false)) return;
+    setState(() => _closing = true);
+    _close();
   }
 
   void _imagePreferenceChanged() {

@@ -1,6 +1,7 @@
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
+import 'package:mobile/core/theme/appearance/appearance_scope.dart';
 import 'package:mobile/features/shell/view/shell_route_motion.dart';
 
 /// Follows the shell route that is pushing, popping or being swiped back, so
@@ -340,13 +341,20 @@ class _ShellTransitionRoute<T> extends PageRoute<T> {
     }
     _report(context, reduced: reduced);
     final transitions = ShellRouteTransitionScope.peek(context)?.controller;
+    // The page carries its own backdrop, so the covered page never shows
+    // through it while it slides.
+    final page = AppearanceRouteBackground(
+      animation: animation,
+      secondaryAnimation: secondaryAnimation,
+      child: child,
+    );
     final body = reduced
-        ? FadeTransition(opacity: animation, child: child)
+        ? FadeTransition(opacity: animation, child: page)
         : _backFrom != null
-        ? _revealBehind(context, animation, child)
+        ? _revealBehind(context, animation, page)
         : (transitions?.backArrivalAbove(this) ?? false)
-        ? _leaveAsPopped(context, secondaryAnimation, child)
-        : _slide(context, animation, secondaryAnimation, child);
+        ? _leaveAsPopped(context, secondaryAnimation, page)
+        : _slide(context, animation, secondaryAnimation, page);
     return switch (Theme.of(context).platform) {
       // The edge swipe drives this route's animation with the finger; the
       // Cupertino visuals stay neutral so only [body] moves.

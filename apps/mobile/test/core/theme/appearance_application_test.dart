@@ -125,9 +125,8 @@ void main() {
     expect(find.byType(AmbientBackground), findsNothing);
   });
 
-  testWidgets('pushed pages carry the ambient layer beneath their content', (
-    tester,
-  ) async {
+  testWidgets('pushed pages carry the ambient layer beneath their content '
+      'while they move', (tester) async {
     final cubit = ThemeCubit(
       settingsRepository: SettingsRepository(),
       initialAppearance: const AppearanceSettings(
@@ -153,7 +152,8 @@ void main() {
     );
     expect(find.byType(AmbientBackground), findsOneWidget);
     await tester.tap(find.text('open'));
-    await tester.pumpAndSettle();
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 100));
     expect(
       find.ancestor(
         of: find.byType(_Probe),
@@ -162,6 +162,9 @@ void main() {
       findsOneWidget,
     );
     expect(find.byType(AmbientBackground), findsNWidgets(2));
+    // At rest the app-wide layer shows behind the page on its own.
+    await tester.pumpAndSettle();
+    expect(find.byType(AmbientBackground), findsOneWidget);
   });
 
   test('solid paints only the base; gradient and blobs tint it', () async {

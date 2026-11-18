@@ -272,7 +272,13 @@ class _AppearancePageTransitionsBuilder extends PageTransitionsBuilder {
     context,
     animation,
     secondaryAnimation,
-    route.opaque ? AppearanceRouteBackground(child: child) : child,
+    route.opaque
+        ? AppearanceRouteBackground(
+            animation: animation,
+            secondaryAnimation: secondaryAnimation,
+            child: child,
+          )
+        : child,
   );
 }
 

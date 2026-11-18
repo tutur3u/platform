@@ -224,9 +224,28 @@ class _DrivePreviewPage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    // The preview covers the Drive location without changing it.
+    final location = GoRouter.maybeOf(context)?.state.uri.path;
     return Scaffold(
       appBar: AppBar(title: Text(title)),
-      body: InAppWebView(initialUrlRequest: URLRequest(url: WebUri(signedUrl))),
+      body: Stack(
+        children: [
+          InAppWebView(initialUrlRequest: URLRequest(url: WebUri(signedUrl))),
+          // The dock's Back closes the preview back to the file list.
+          if (location != null)
+            ShellChromeActions(
+              ownerId: 'drive-preview',
+              locations: {location},
+              // Only the current preview closes; a Back while it closes must
+            // not pop the list beneath. The registration retires with it.
+            onBack: () async {
+              if (ModalRoute.of(context)?.isCurrent ?? false) {
+                Navigator.of(context).pop();
+              }
+            },
+            ),
+        ],
+      ),
     );
   }
 }
