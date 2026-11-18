@@ -127,7 +127,12 @@ function withProjectFixture(
   }
 }
 
-const compilerCase = it.runIf(process.env.CI === 'true');
+// Each case runs several real tsc builds, which take about five seconds on a
+// loaded CI runner, so they carry an explicit timeout instead of the default.
+const COMPILER_CASE_TIMEOUT_MS = 60_000;
+const compilerTest = it.runIf(process.env.CI === 'true');
+const compilerCase = (name: string, run: () => void) =>
+  compilerTest(name, run, COMPILER_CASE_TIMEOUT_MS);
 
 compilerCase(
   'preserves healthy warm metadata and native compiler bytes',
