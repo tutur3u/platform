@@ -18,7 +18,9 @@ export function GetStartedButton({
   const hidden = pathname === '/login';
 
   return (
-    <Link href={href}>
+    // Signed-out visitors rarely follow this link, so prefetching it on every
+    // page view only adds uncached sign-in requests.
+    <Link href={href} prefetch={false}>
       <Button
         disabled={disabled}
         className={cn(
