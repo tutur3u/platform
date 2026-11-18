@@ -241,3 +241,8 @@ b10217339a73ba4275d36908e31cd2630d7bdb57:apps/mobile/lib/firebase_options_develo
 99e3b92c4bebde248509c44f8c1b432c0ba89750:apps/mobile/lib/firebase_options_development.dart:gcp-api-key:46
 99e3b92c4bebde248509c44f8c1b432c0ba89750:apps/mobile/lib/firebase_options_development.dart:gcp-api-key:54
 99e3b92c4bebde248509c44f8c1b432c0ba89750:apps/mobile/lib/firebase_options_development.dart:gcp-api-key:63
+
+# Public jwt.io sample (header alg HS256, payload sub 1234567890) used as a negative
+# fixture in the release-recipe token-refusal test. Not a credential; the source now
+# assembles it at runtime. Security Desk ruling 18 Nov. Exact fingerprint only.
+e34bb0320437291226babacb4ec5170a5a9e3c4a:scripts/ci/release-vercel-queue.test.mjs:jwt:416
