@@ -75,8 +75,9 @@ async function call(
   actor: ReturnType<typeof token>,
   input: unknown
 ) {
-  const response = await roomRatingResponse(storage, snapshot, actor, input);
-  if (!response) return undefined;
+  const result = await roomRatingResponse(storage, snapshot, actor, input);
+  if (!result) return undefined;
+  const { response } = result;
   return { status: response.status, body: await response.json() };
 }
 
@@ -124,6 +125,21 @@ describe('room rating', () => {
     expect(
       await call(memory.storage, room, token(guest), { action: 'rating.read' })
     ).toEqual({ status: 200, body: { rating: 5 } });
+  });
+
+  it('returns the saved value without writing on a same-value retry', async () => {
+    const room = endedRoom();
+    const memory = memoryStorage();
+    const key = roomRatingKey(guest);
+    memory.values.set(key, { value: 4, updatedAt: now });
+    expect(
+      await call(memory.storage, room, token(guest), {
+        action: 'rating.set',
+        value: 4,
+      })
+    ).toEqual({ status: 200, body: { rating: 4 } });
+    expect(memory.writes()).toBe(0);
+    expect(memory.values.get(key)).toEqual({ value: 4, updatedAt: now });
   });
 
   it('applies concurrent updates one at a time, last write wins', async () => {

@@ -70,3 +70,62 @@ it('rejects invalid ratings before reaching the room', async () => {
   }
   expect(mocks.service.mock.calls).toHaveLength(0);
 });
+
+it('accepts a rating body at the 1024-byte limit', async () => {
+  const response = await PUT(
+    new Request('https://meet.test/rating', {
+      method: 'PUT',
+      body: JSON.stringify({ value: 4, padding: 'é'.repeat(500) }),
+    }),
+    params
+  );
+  expect(response.status).toBe(200);
+  expect(await response.json()).toEqual({ rating: 4 });
+});
+
+it('rejects an oversized declared length before reading the request', async () => {
+  const response = await PUT(
+    new Request('https://meet.test/rating', {
+      method: 'PUT',
+      headers: { 'content-length': '1025' },
+      body: '{"value":4}',
+    }),
+    params
+  );
+  expect(response.status).toBe(413);
+  expect(mocks.service).not.toHaveBeenCalled();
+});
+
+it.each([undefined, '20'])(
+  'cancels streamed excess with Content-Length %s',
+  async (length) => {
+    const encoder = new TextEncoder();
+    const chunks = [' '.repeat(700), ' '.repeat(325), '{"value":4}'];
+    const cancel = vi.fn();
+    const body = new ReadableStream<Uint8Array>(
+      {
+        pull(controller) {
+          const chunk = chunks.shift();
+          if (chunk === undefined) controller.close();
+          else controller.enqueue(encoder.encode(chunk));
+        },
+        cancel,
+      },
+      { highWaterMark: 0 }
+    );
+    const init: RequestInit & { duplex: 'half' } = {
+      method: 'PUT',
+      duplex: 'half',
+      headers: length === undefined ? {} : { 'content-length': length },
+      body,
+    };
+    const response = await PUT(
+      new Request('https://meet.test/rating', init),
+      params
+    );
+    expect(response.status).toBe(413);
+    expect(cancel).toHaveBeenCalledOnce();
+    expect(chunks).toEqual(['{"value":4}']);
+    expect(mocks.service).not.toHaveBeenCalled();
+  }
+);

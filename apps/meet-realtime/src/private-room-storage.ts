@@ -18,10 +18,7 @@ export async function privateRoomStorage(
   const rating = personal
     ? undefined
     : await roomRatingResponse(storage, snapshot, token, body);
-  const wrote = personal
-    ? personal.status !== 403
-    : !!rating?.ok &&
-      (body as { action?: string } | null)?.action === 'rating.set';
+  const wrote = personal ? personal.status !== 403 : rating?.wrote;
   if (wrote) {
     snapshot.usage!.httpCounterWrites =
       (snapshot.usage!.httpCounterWrites ?? 0) + 2;
@@ -30,5 +27,5 @@ export async function privateRoomStorage(
       writes: snapshot.usage!.httpCounterWrites,
     });
   }
-  return personal ?? rating;
+  return personal ?? rating?.response;
 }

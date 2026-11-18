@@ -1038,18 +1038,28 @@ Scope: the in-call view and the ended-meeting screen in Meet and Parley.
   meeting through the same create route as the meetings home. The route keeps
   checking hosting eligibility, so a refusal shows the create-failed toast.
 - The ended and left screens offer a private 1–5 call rating. The room Durable
-  Object stores one record per account under its own storage key, outside the
-  room snapshot, and replaces it inside a storage transaction, so repeat updates
-  only change the value. Only the signed host or an account the room admitted
+  Object stores one record per account under `room-rating:<accountId>`, outside
+  the room snapshot. A changed value replaces the record in a storage transaction.
+  Sending the same value returns the saved rating and preserves its timestamp
+  without writing the record. The rating PUT accepts up to 1,024 bytes, counted
+  as the body streams in. Only the signed host or an account the room admitted
   (its `approved` admission record) may read or set a rating. Workspace members
   who never attended, and participants the host removed, get 403 and the control
   stays hidden. Ratings are returned only to their own account; there is no
   aggregate or host view.
+- Rating keys remain in Durable Object storage when a call ends. The meeting
+  DELETE handler removes the database row, and transcript retention purges
+  database records. Neither clears the room's Durable Object storage. A full
+  purge of that storage would remove its rating keys, but the meeting delete
+  and room lifecycle paths do not perform one. Account deletion removes the
+  auth user and workspace memberships and marks the private profile deleted.
+  It has no step to locate rooms or erase that account's rating keys.
 
 Regression coverage: `pip-layout.test.ts`, `self-preview-pip.test.tsx`,
 `call-ended.test.tsx`, `ended-meeting-facts-row.test.tsx`,
 `ended-meeting-facts.test.ts`, `ended-meeting-rating.test.tsx`,
-`room-rating.test.ts`, and the Meet `rating/route.test.ts`.
+`room-rating.test.ts`, the Meet `rating/route.test.ts`, and
+`room-do-recovery.test.ts`.
 
 ## Room settings, recordings, and devices
 

@@ -139,8 +139,11 @@ test('an idle connected room schedules only its resource deadline without broadc
   assert.equal(broadcasts, 0);
 });
 
-test('the resource alarm persists a room end and final participant time', async () => {
+test('the resource alarm ends the room and preserves the private rating', async () => {
   const { room, values } = fixture();
+  const ratingKey = `room-rating:${token.userId}`;
+  const rating = { value: 4, updatedAt: '2026-11-18T10:00:00Z' };
+  values.set(ratingKey, rating);
   const snapshot = values.get('snapshot') as ReturnType<
     typeof createMeetRoomSnapshot
   >;
@@ -156,6 +159,7 @@ test('the resource alarm persists a room end and final participant time', async 
   assert.equal(saved.ended, true);
   assert.deepEqual(saved.presence, {});
   assert.equal(saved.budget!.participantMilliseconds, 60_000);
+  assert.deepEqual(values.get(ratingKey), rating);
   assert.ok(
     broadcasts.some(
       (message) => (message as { type: string }).type === 'room.ended'
@@ -444,6 +448,12 @@ test('room-service dispatches private ratings and receipts outside the snapshot'
   assert.deepEqual(await first.json(), { rating: 4 });
   // The request itself plus the private write and its counter write.
   assert.equal(writes(), beforeSet + 3);
+  const beforeRetry = writes();
+  const retry = await call(guest, { action: 'rating.set', value: 4 });
+  assert.equal(retry.status, 200);
+  assert.deepEqual(await retry.json(), { rating: 4 });
+  // A same-value retry only accounts for the HTTP request.
+  assert.equal(writes(), beforeRetry + 1);
   const second = await call(guest, { action: 'rating.set', value: 2 });
   assert.deepEqual(await second.json(), { rating: 2 });
   assert.deepEqual(

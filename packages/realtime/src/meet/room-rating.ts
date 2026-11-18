@@ -32,15 +32,15 @@ export function canRateRoom(
 }
 
 /**
- * Applies a rating command to the actor's own record. A set replaces the
- * whole record, so repeating it only changes the stored value.
+ * Applies a rating command to the actor's own record. Only a changed rating
+ * needs a new record or timestamp.
  */
 export function applyRoomRating(
   current: RoomRating | undefined,
   command: RoomRatingCommand,
   now = new Date().toISOString()
 ): { next: RoomRating | undefined; body: { rating: number | null } } {
-  if (command.action === 'rating.read')
+  if (command.action === 'rating.read' || current?.value === command.value)
     return { next: current, body: { rating: current?.value ?? null } };
   const next = { value: command.value, updatedAt: now };
   return { next, body: { rating: next.value } };
@@ -69,20 +69,23 @@ export async function roomRatingResponse(
   snapshot: Pick<MeetRoomSnapshot, 'approved'>,
   token: MeetRealtimeTokenPayload,
   input: unknown
-): Promise<Response | undefined> {
+): Promise<{ response: Response; wrote: boolean } | undefined> {
   const parsed = roomRatingCommand.safeParse(input);
   if (!parsed.success) return;
   if (!canRateRoom(snapshot, token))
-    return Response.json(
-      { error: 'Only meeting attendees can rate this meeting' },
-      { status: 403, headers }
-    );
+    return {
+      response: Response.json(
+        { error: 'Only meeting attendees can rate this meeting' },
+        { status: 403, headers }
+      ),
+      wrote: false,
+    };
   const key = roomRatingKey(token.accountId ?? token.userId);
   return storage.transaction(async (transaction) => {
     const current = await transaction.get<RoomRating>(key);
     const result = applyRoomRating(current, parsed.data);
-    if (result.next && result.next !== current)
-      await transaction.put(key, result.next);
-    return Response.json(result.body, { headers });
+    const wrote = result.next !== undefined && result.next !== current;
+    if (wrote) await transaction.put(key, result.next);
+    return { response: Response.json(result.body, { headers }), wrote };
   });
 }
