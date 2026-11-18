@@ -549,6 +549,9 @@ export function createHandler(deps: HandlerDeps) {
   return async (request: Request, env: Env, ctx?: WaitUntil) => {
     const match = matchRoute(new URL(request.url).pathname, deps.manifest);
     const chosen = chooseOrigin(env, deps.manifest, match, request);
+    const marketingOrigin = resolveOrigin(env, deps.manifest, 'marketing');
+    const fromMarketing =
+      marketingOrigin !== null && chosen.url?.origin === marketingOrigin.origin;
     const marketingPage =
       chosen.flagged &&
       match.flagOrigin === 'marketing' &&
@@ -557,7 +560,7 @@ export function createHandler(deps: HandlerDeps) {
     return applyMarketingRobots(
       await handle(request, env, ctx),
       request,
-      marketingPage,
+      marketingPage ? 'marketing-page' : fromMarketing ? 'marketing' : 'origin',
       env.TUTURUUU_NOINDEX === '1'
     );
   };

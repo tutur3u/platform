@@ -98,13 +98,8 @@ describe('gateway → Marketing response policy', () => {
     'https://tuturuuu.com./',
     'https://tuturuuu.com:444/',
     'https://evil.test/',
-    'https://tuturuuu.com/login',
-    'https://tuturuuu.com/dashboard',
-    'https://tuturuuu.com/api/v1/test',
-    'https://tuturuuu.com/tasks',
-    'https://tuturuuu.com/unknown',
-    'https://tuturuuu.com/pricing-extra',
-    'https://tuturuuu.com/vi/about/extra',
+    'https://staging.tuturuuu.com/changelog',
+    'https://tuturuuu.com:444/download',
     'https://tuturuuu.com/products/auth',
     'https://tuturuuu.com/products/%2Fai',
     'https://tuturuuu.com/%61uth',
@@ -138,7 +133,7 @@ describe('gateway → Marketing response policy', () => {
           },
         }),
         new Request('https://tuturuuu.com/'),
-        true,
+        'marketing-page',
         false
       );
       expect(response.headers.get('x-robots-tag')).toBe(robots);
@@ -167,14 +162,20 @@ describe('gateway → Marketing response policy', () => {
       if (state === 'HIT') t.advance();
     }
   });
-  it('keeps every crawler off private routes with bot-specific upstream directives', async () => {
-    const t = setup({
-      headers: { 'x-robots-tag': 'googlebot: noindex, noarchive' },
-    });
-    const response = await t.call('https://tuturuuu.com/dashboard');
-    expect(response.headers.get('x-robots-tag')).toBe(
-      'noindex, nofollow, nosnippet, googlebot: noindex, noarchive'
-    );
+  it('keeps every crawler off private Marketing responses with bot-specific directives', () => {
+    for (const source of ['marketing', 'marketing-page'] as const) {
+      const response = applyMarketingRobots(
+        new Response('body', {
+          headers: { 'x-robots-tag': 'googlebot: noindex, noarchive' },
+        }),
+        new Request('https://tuturuuu.com/products/auth'),
+        source,
+        false
+      );
+      expect(response.headers.get('x-robots-tag')).toBe(
+        'noindex, nofollow, nosnippet, googlebot: noindex, noarchive'
+      );
+    }
   });
   it('keeps explicit backend and gateway NOINDEX private, including a cache hit', async () => {
     const t = setup({ backendNoindex: '1' });
@@ -232,10 +233,92 @@ describe('gateway → Marketing response policy', () => {
     { headers: new Headers({ authorization: 'Bearer synthetic' }) },
     { headers: new Headers({ cookie: 'sb-test-auth-token=synthetic' }) },
     { headers: new Headers({ rsc: '1' }) },
-  ])('keeps requests requiring Web private', async (init) => {
-    const t = setup();
+  ])('leaves requests requiring Web to Web robots', async (init) => {
+    const t = setup({ headers: { 'x-robots-tag': 'noindex, nofollow' } });
     const response = await t.call('https://tuturuuu.com/', init);
     expect(t.sent[0]?.url).toBe('https://web.example/');
-    expect(response.headers.get('x-robots-tag')).toContain('noindex');
+    expect(response.headers.get('x-robots-tag')).toBe('noindex, nofollow');
+  });
+});
+
+describe('gateway → Web robots on the canonical host', () => {
+  const published = [
+    '/changelog',
+    '/changelog/introducing-platform-wide-changelogs',
+    '/download',
+    '/models',
+    '/portfolio',
+    '/cite',
+    '/vi/cite',
+    '/products/meet',
+    '/vi/products/meet',
+    '/visualizations/horse-racing',
+  ];
+  it.each(published)(
+    'keeps published Web page %s indexable on MISS and HIT',
+    async (path) => {
+      const t = setup();
+      for (const state of ['MISS', 'HIT']) {
+        const response = await t.call(`https://tuturuuu.com${path}`, {
+          headers: { 'x-marketing-origin-robots': '1' },
+        });
+        expect(t.sent[0]?.url).toBe(`https://web.example${path}`);
+        expect(response.headers.get('x-robots-tag')).toBeNull();
+        expect(response.headers.has('x-marketing-origin-robots')).toBe(false);
+        if (path.startsWith('/changelog') || path === '/download')
+          expect(response.headers.get('x-gateway-cache')).toBe(state);
+      }
+    }
+  );
+  it.each([
+    '/login',
+    '/dashboard',
+    '/api/v1/test',
+    '/tasks',
+    '/unknown',
+    '/pricing-extra',
+    '/vi/about/extra',
+    '/%61uth',
+  ])('keeps the private Web route %s on its own noindex', async (path) => {
+    const t = setup({
+      headers: {
+        'x-robots-tag': 'noindex, nofollow',
+        'x-marketing-origin-robots': '1',
+      },
+    });
+    const response = await t.call(`https://tuturuuu.com${path}`);
+    expect(t.sent[0]?.url).toBe(`https://web.example${path}`);
+    expect(response.headers.get('x-robots-tag')).toBe('noindex, nofollow');
+    expect(response.headers.has('x-marketing-origin-robots')).toBe(false);
+  });
+  it('preserves bot-specific Web directives unchanged', async () => {
+    const t = setup({
+      headers: { 'x-robots-tag': 'googlebot: noindex, noarchive' },
+    });
+    const response = await t.call('https://tuturuuu.com/dashboard');
+    expect(response.headers.get('x-robots-tag')).toBe(
+      'googlebot: noindex, noarchive'
+    );
+  });
+  it.each(published)(
+    'forces %s private under gateway TUTURUUU_NOINDEX=1, including a cache hit',
+    async (path) => {
+      const t = setup();
+      await t.call(`https://tuturuuu.com${path}`);
+      const response = await t.call(`https://tuturuuu.com${path}`, undefined, {
+        ...env,
+        TUTURUUU_NOINDEX: '1',
+      });
+      expect(response.headers.get('x-robots-tag')).toBe(PRIVATE_ROBOTS_HEADER);
+    }
+  );
+  it.each([
+    'https://staging.tuturuuu.com/changelog',
+    'http://tuturuuu.com/download',
+    'https://tuturuuu.com.evil.test/models',
+  ])('forces Web pages private on the noncanonical URL %s', async (url) => {
+    const t = setup();
+    const response = await t.call(url);
+    expect(response.headers.get('x-robots-tag')).toBe(PRIVATE_ROBOTS_HEADER);
   });
 });

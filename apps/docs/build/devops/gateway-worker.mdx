@@ -137,10 +137,17 @@ Smoke for each group before the next one: anonymous 200 on two paths of the grou
 
 Marketing groups use the shared `seo-policy.json` Marketing allowlist against
 `Request.url` at gateway ingress. Only canonical HTTPS `tuturuuu.com` URLs in
-an enabled Marketing page group can be public. Private, unknown, malformed,
-noncanonical and non-Marketing paths remain noindex. Forwarded host/protocol
+an enabled Marketing page group can be public. Private, unknown, malformed and
+noncanonical Marketing responses remain noindex. Forwarded host/protocol
 headers are not authority for this decision. Group ownership stays literal;
 decoding a path for SEO does not move it to another origin.
+
+Responses from Web and mounted apps keep their own robots policy on the
+canonical `https://tuturuuu.com` URL: Web publishes `/changelog`, `/download`,
+`/models`, `/portfolio`, `/cite` and `/products/meet` in its sitemap and marks
+its private routes `noindex` itself. The gateway forces those responses private
+only on a noncanonical URL or under gateway `TUTURUUU_NOINDEX=1`, and strips
+any `x-marketing-origin-robots` marker from them.
 
 Marketing's response wrapper emits `x-marketing-origin-robots: 1` only when it
 adds the standard private robots header for a noncanonical backend origin and
