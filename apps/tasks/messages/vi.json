@@ -4438,6 +4438,24 @@
     "setting_title": "Giao diện thử nghiệm",
     "setting_toggle_label": "Dùng giao diện thử nghiệm Sorbet"
   },
+  "external-projects": {
+    "settings": {
+      "access_levels_label": "cấp quyền",
+      "assign_role_placeholder": "Gán vai trò",
+      "bound_project_label": "Site đã kết nối",
+      "clear_filters_action": "Xóa bộ lọc",
+      "filter_by_access_level": "Lọc theo cấp quyền",
+      "filter_by_permission": "Lọc theo quyền chỉnh sửa",
+      "members_description": "Mời đồng đội, gỡ quyền truy cập và quản lý quyền chỉnh sửa mà không cần rời CMS.",
+      "members_title": "Quyền truy cập nhóm",
+      "no_additional_roles": "Không còn vai trò nào",
+      "no_roles_label": "Chưa có cấp quyền",
+      "protected_member_label": "Thành viên được bảo vệ",
+      "remove_access_action": "Gỡ quyền truy cập",
+      "roles_empty_description": "Tạo một cấp quyền khi đồng đội cần phạm vi chỉnh sửa hoặc xuất bản riêng.",
+      "roles_empty_title": "Chưa có cấp quyền nào"
+    }
+  },
   "finance": {
     "expense": "Chi tiêu",
     "failed_to_load_categories": "Không thể tải danh sách danh mục",
@@ -12892,6 +12910,8 @@
     "max-uses-description": "Để trống để không giới hạn",
     "max-uses-placeholder": "Để trống để không giới hạn",
     "members-joined": "Thành viên đã tham gia",
+    "membership-short-guest": "Khách",
+    "membership-short-member": "Thành viên",
     "never": "Không bao giờ",
     "no-links": "Chưa có liên kết mời",
     "no-links-description": "Tạo liên kết mời đầu tiên của bạn để bắt đầu mời thành viên vào không gian làm việc.",

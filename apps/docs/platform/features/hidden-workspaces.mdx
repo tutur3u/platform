@@ -395,3 +395,11 @@ blocks external images and connections; avatar delivery and authenticated API
 behavior are outside this component check. Environment-file loading is disabled.
 Failure retains last-known choices and Retry clears the fictional failure.
 Stop the fixture with Ctrl-C after verification; it uses no persistent storage.
+
+## Translation coverage
+
+The workspace picker and Settings **Workspace → General** share the Hidden
+workspaces copy. The i18n CI job traces shared settings and workspace imports from
+each app, then checks the English and Vietnamese client catalogs used on those
+surfaces. Run `bun scripts/i18n-rendered-settings.js mail` to check Mail or omit the
+app name to check all active apps.

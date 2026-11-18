@@ -701,6 +701,8 @@
     "logout": "Log out",
     "media-alt": "Media file {number}",
     "media-optional": "Media Files (Optional)",
+    "members": "Members",
+    "no_results_found": "No results found",
     "no_workspace_found": "No workspaces found",
     "personal_account": "Personal Account",
     "picker_internal_meta": "Platform administration",
@@ -741,6 +743,7 @@
     "upgrade": "Upgrade",
     "workspace_creation_failed": "Failed to create workspace. Please try again.",
     "workspace_limit_reached": "Workspace Limit Reached",
+    "workspace_name": "Workspace Name",
     "workspace_slug": "Workspace link",
     "workspace_slug_placeholder": "your-team",
     "workspaces": "Workspaces"
@@ -929,6 +932,9 @@
     "read_only_description": "You can review these settings, but a workspace manager is required to change them.",
     "title": "Workspace"
   },
+  "search": {
+    "search": "Search"
+  },
   "settings": {
     "back_to_app": "Back to app",
     "keyboard_shortcuts": {
@@ -954,6 +960,7 @@
       "settings_dialog": "Settings dialog",
       "toggle_sidebar": "Expand or collapse sidebar"
     },
+    "manage_settings": "Manage your {label} settings",
     "preferences": {
       "keyboard_shortcuts": "Keyboard Shortcuts",
       "keyboard_shortcuts_description": "Review keyboard shortcuts for app and sidebar actions",

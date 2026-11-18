@@ -70,11 +70,21 @@ function resolveImport(root, from, specifier) {
   }
   target ??= subpath === '.' ? (pkg.module ?? pkg.main) : null;
   if (!target) return null;
+  const bunTarget = exportTarget(pkg.exports?.[subpath]?.bun);
+  if (bunTarget) {
+    const source = sourceFile(path.join(dir, bunTarget));
+    if (source) return source;
+  }
   // Published entrypoints map back to the source used by workspace builds.
   return sourceFile(path.join(dir, target.replace(/^\.\/dist\//, './src/')));
 }
 
-function collectRenderedFiles(root, app, scanImports) {
+function collectRenderedFiles(
+  root,
+  app,
+  scanImports,
+  { entryDirs = ['src/app'], entryFiles = [], onUnresolvedImport } = {}
+) {
   const pending = [];
   function walk(dir) {
     if (!fs.existsSync(dir)) return;
@@ -90,7 +100,11 @@ function collectRenderedFiles(root, app, scanImports) {
         pending.push(file);
     }
   }
-  walk(path.join(root, app, 'src/app'));
+  for (const dir of entryDirs) walk(path.join(root, app, dir));
+  for (const entry of entryFiles) {
+    const file = sourceFile(path.join(root, app, entry));
+    if (file) pending.push(file);
+  }
   const files = new Set();
   while (pending.length) {
     const file = pending.pop();
@@ -103,9 +117,11 @@ function collectRenderedFiles(root, app, scanImports) {
         /^(?:\.|@\/|@tuturuuu\/)/.test(entry.path) &&
         !/\.(?:css|json|svg|png|woff2?)$/.test(entry.path)
       ) {
-        throw new Error(
-          `Cannot trace ${entry.path} from ${path.relative(root, file)}`
-        );
+        if (onUnresolvedImport) onUnresolvedImport(entry.path, file);
+        else
+          throw new Error(
+            `Cannot trace ${entry.path} from ${path.relative(root, file)}`
+          );
       }
     }
   }

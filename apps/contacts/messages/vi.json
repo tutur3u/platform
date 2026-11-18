@@ -568,6 +568,7 @@
       "your_categories": "Danh mục của bạn"
     },
     "choose_calendars_to_show": "Chọn những lịch sẽ hiển thị trong không gian làm việc này.",
+    "choose_default_calendar": "Chọn lịch mặc định",
     "choose_outbound_calendar": "Chọn lịch đồng bộ ra ngoài",
     "coming_soon": "Sắp ra mắt",
     "conflict_policy": "Chính sách xung đột",
@@ -710,7 +711,10 @@
     "please_reconnect": "Vui lòng kết nối lại Google Calendar",
     "primary": "Chính",
     "provider_color_label": "Màu sự kiện Google",
+    "provider_reconnect_description": "Phiên kết nối nhà cung cấp đã hết hạn. Các lịch đã lưu vẫn khả dụng; hãy kết nối lại để làm mới.",
+    "reconnect": "Kết nối lại",
     "reconnect_desc": "Kết nối hiện tại của bạn cần thêm quyền. Vui lòng ngắt kết nối và kết nối lại Google Calendar.",
+    "reconnect_required": "Cần kết nối lại",
     "recurrence": {
       "advancedPattern": "Chuỗi này sử dụng mẫu nâng cao và sẽ được giữ nguyên. Sửa thông tin sự kiện tại đây.",
       "all": "Toàn bộ chuỗi",
@@ -797,6 +801,9 @@
     },
     "schedule": "Lên lịch",
     "send": "Gửi",
+    "settings_tab_accounts": "Tài khoản",
+    "settings_tab_calendars": "Lịch",
+    "settings_tab_sync": "Đồng bộ",
     "settings_updated_error": "Không thể cập nhật cài đặt lịch không gian làm việc",
     "settings_updated_success": "Cập nhật cài đặt lịch không gian làm việc thành công",
     "sync_completed": "Đồng bộ hoàn tất",
@@ -2561,9 +2568,20 @@
   },
   "external-projects": {
     "settings": {
+      "access_levels_label": "cấp quyền",
+      "assign_role_placeholder": "Gán vai trò",
       "bound_project_label": "Site đã kết nối",
+      "clear_filters_action": "Xóa bộ lọc",
+      "filter_by_access_level": "Lọc theo cấp quyền",
+      "filter_by_permission": "Lọc theo quyền chỉnh sửa",
       "members_description": "Mời đồng đội, gỡ quyền truy cập và quản lý quyền chỉnh sửa mà không cần rời CMS.",
-      "members_title": "Quyền truy cập nhóm"
+      "members_title": "Quyền truy cập nhóm",
+      "no_additional_roles": "Không còn vai trò nào",
+      "no_roles_label": "Chưa có cấp quyền",
+      "protected_member_label": "Thành viên được bảo vệ",
+      "remove_access_action": "Gỡ quyền truy cập",
+      "roles_empty_description": "Tạo một cấp quyền khi đồng đội cần phạm vi chỉnh sửa hoặc xuất bản riêng.",
+      "roles_empty_title": "Chưa có cấp quyền nào"
     }
   },
   "facebook_mockup": {

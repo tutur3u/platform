@@ -701,6 +701,8 @@
     "logout": "Đăng xuất",
     "media-alt": "Tệp đa phương tiện {number}",
     "media-optional": "Tệp đa phương tiện (Tùy chọn)",
+    "members": "Thành viên",
+    "no_results_found": "Không tìm thấy kết quả",
     "no_workspace_found": "Không tìm thấy không gian làm việc",
     "personal_account": "Tài khoản cá nhân",
     "picker_internal_meta": "Quản trị nền tảng",
@@ -741,6 +743,7 @@
     "upgrade": "Nâng cấp",
     "workspace_creation_failed": "Không thể tạo không gian làm việc. Vui lòng thử lại.",
     "workspace_limit_reached": "Đã đạt giới hạn không gian làm việc",
+    "workspace_name": "Tên không gian làm việc",
     "workspace_slug": "Liên kết không gian làm việc",
     "workspace_slug_placeholder": "ten-nhom-cua-ban",
     "workspaces": "Không gian làm việc"
@@ -929,6 +932,9 @@
     "read_only_description": "Bạn có thể xem các cài đặt này, nhưng cần quản lý không gian làm việc để thay đổi.",
     "title": "Không gian làm việc"
   },
+  "search": {
+    "search": "Tìm kiếm"
+  },
   "settings": {
     "back_to_app": "Quay lại ứng dụng",
     "keyboard_shortcuts": {
@@ -954,6 +960,7 @@
       "settings_dialog": "Hộp thoại cài đặt",
       "toggle_sidebar": "Mở rộng hoặc thu gọn thanh bên"
     },
+    "manage_settings": "Quản lý cài đặt {label} của bạn",
     "preferences": {
       "keyboard_shortcuts": "Phím tắt bàn phím",
       "keyboard_shortcuts_description": "Xem các phím tắt cho ứng dụng và thanh bên",

@@ -447,11 +447,16 @@
     "completed": "Completed",
     "continue": "Continue",
     "create_workspace": "Create Workspace",
+    "create_workspace_action": "Create",
+    "create_workspace_description": "Add a new workspace to easily manage everything that matters to you, and collaborate with your team as you go.",
+    "create_workspace_upgrade_notice": "Workspaces are created with a free tier by default. You can upgrade your plan in the workspace billing page after creation.",
     "current_workspace": "Current workspace",
     "dark": "Dark",
     "dashboard": "Dashboard",
     "default_workspace": "Default workspace",
     "empty": "Nothing here yet.",
+    "error": "Error",
+    "error_creating_workspace": "Error Creating Workspace",
     "expand_on_hover": "Expand on Hover",
     "expanded": "Expanded",
     "feedback": "Feedback",
@@ -466,6 +471,9 @@
     "hide_workspace": "Hide workspace",
     "home": "Home",
     "join_workspace": "Join Workspace",
+    "join_workspace_action": "Join",
+    "join_workspace_by_slug_description": "Enter the workspace name or link to open its join page.",
+    "join_workspace_success": "Successfully joined workspace",
     "language": "Language",
     "learner": "Learner",
     "light": "Light",
@@ -473,8 +481,10 @@
     "logout": "Logout",
     "media-alt": "Media file {number}",
     "media-optional": "Media Files (Optional)",
+    "members": "Members",
     "navigation": "Learner navigation",
     "next": "Next",
+    "no_results_found": "No results found",
     "no_workspace_found": "No workspaces found",
     "picker_internal_meta": "Platform administration",
     "picker_more_actions": "More actions",
@@ -512,7 +522,13 @@
     "system": "System",
     "theme": "Theme",
     "unnamed": "No name",
-    "upgrade": "Upgrade"
+    "upgrade": "Upgrade",
+    "workspace_creation_failed": "Failed to create workspace. Please try again.",
+    "workspace_limit_reached": "Workspace Limit Reached",
+    "workspace_name": "Workspace Name",
+    "workspace_slug": "Workspace link",
+    "workspace_slug_placeholder": "your-team",
+    "workspaces": "Workspaces"
   },
   "courses": {
     "aiFeedback": "AI feedback",
@@ -1191,7 +1207,11 @@
     "read_only_description": "You can review these settings, but a workspace manager is required to change them.",
     "title": "Workspace"
   },
+  "search": {
+    "search": "Search"
+  },
   "settings": {
+    "back_to_app": "Back to app",
     "dark": "Dark",
     "description": "Personalize the learner profile, theme, and study rhythm for a calmer daily routine.",
     "displayName": "Display name",
@@ -1228,6 +1248,7 @@
     "language": "Language",
     "light": "Light",
     "linkedStudents": "Linked students",
+    "manage_settings": "Manage your {label} settings",
     "parentMode": "Parent mode",
     "preferences": {
       "keyboard_shortcuts": "Keyboard Shortcuts",
@@ -1235,6 +1256,7 @@
       "sidebar_hidden": "Hidden"
     },
     "profile": "Profile",
+    "search_settings_placeholder": "Search settings...",
     "system": "System",
     "theme": "Theme",
     "title": "Settings"

@@ -1816,6 +1816,7 @@
     "meet-together": "Tuturuuu Meet",
     "meet-together-description": "Schedule meetings effortlessly across time zones and teams.",
     "member-since": "Member since {date}",
+    "members": "Members",
     "minimize": "minimize",
     "month": "Month",
     "name_updated": "Name updated successfully",
@@ -1826,6 +1827,7 @@
     "no_changes_to_save": "No changes to save",
     "no_content_yet": "No content yet",
     "no_online_users": "No online users",
+    "no_results_found": "No results found",
     "no_workspace_found": "No workspaces found",
     "no-results": "No Results",
     "no-selection": "No users selected",
@@ -5806,6 +5808,7 @@
       "settings_dialog": "Settings dialog",
       "toggle_sidebar": "Expand or collapse sidebar"
     },
+    "manage_settings": "Manage your {label} settings",
     "preferences": {
       "keyboard_shortcuts": "Keyboard Shortcuts",
       "keyboard_shortcuts_description": "Review keyboard shortcuts for app and sidebar actions",

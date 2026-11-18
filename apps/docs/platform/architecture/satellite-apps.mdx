@@ -95,9 +95,13 @@ such as autosave labels are collected from their literal definitions. Translator
 props in framework-independent children have explicit namespace bindings in
 `scripts/i18n-rendered-keys.js`; update these when adding another wrapper/child
 pair. Unknown dynamic expressions and unresolved workspace imports fail the
-guard and need a source trace. This check is currently enabled for Mind; other
-satellites retain their existing namespace checks until their translator bindings
-are qualified. It does not prove runtime behavior or replace an app's CI build.
+guard and need a source trace. Mind uses this whole-app check. The same CI job
+also uses `bun scripts/i18n-rendered-settings.js` to check shared settings and
+workspace components across active apps. That scan traces dashboard and Worker
+runtime imports, checks both locales, and uses the filtered Web, Workspace and
+marketing message sets where those providers apply. Colab uses its flat shell
+catalog. The scan includes all branches of reached components. It cannot verify
+which branches run in a browser.
 
 `scripts/i18n-rendered-keys.test.js` covers missing keys in either locale, dynamic
 families, forwarded translators, unrelated-screen exclusion and the real Mind

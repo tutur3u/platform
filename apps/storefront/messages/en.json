@@ -1241,7 +1241,11 @@
     "read_only_description": "You can review these settings, but a workspace manager is required to change them.",
     "title": "Workspace"
   },
+  "search": {
+    "search": "Search"
+  },
   "settings": {
+    "back_to_app": "Back to app",
     "keyboard_shortcuts": {
       "calendar_agenda": "Agenda view",
       "calendar_day": "Day view",
@@ -1265,11 +1269,13 @@
       "settings_dialog": "Settings dialog",
       "toggle_sidebar": "Expand or collapse sidebar"
     },
+    "manage_settings": "Manage your {label} settings",
     "preferences": {
       "keyboard_shortcuts": "Keyboard Shortcuts",
       "keyboard_shortcuts_description": "Review keyboard shortcuts for app and sidebar actions",
       "sidebar_hidden": "Hidden"
-    }
+    },
+    "search_settings_placeholder": "Search settings..."
   },
   "settings-account": {
     "account-status": "Account Status",

@@ -1655,8 +1655,12 @@
     "signed_in_as": "Signed in as {email}",
     "title": "Account"
   },
+  "search": {
+    "search": "Search"
+  },
   "settings": {
     "back_to_app": "Back to app",
+    "manage_settings": "Manage your {label} settings",
     "search_settings_placeholder": "Search settings..."
   },
   "settings-account": {

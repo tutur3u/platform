@@ -228,7 +228,7 @@ jobs:
         id: namespace-check
         run: |
           set +e
-          namespace_output=$({ bun scripts/i18n-rendered-keys.js && node scripts/i18n-namespace-check.js; } 2>&1)
+          namespace_output=$({ bun scripts/i18n-rendered-keys.js && bun scripts/i18n-rendered-settings.js && node scripts/i18n-namespace-check.js; } 2>&1)
           namespace_exit_code=$?
           set -e
 

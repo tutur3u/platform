@@ -33,7 +33,12 @@ function flatten(value, prefix = '', output = new Map()) {
   return output;
 }
 
-function collectRequirements(root, files, canonical) {
+function collectRequirements(
+  root,
+  files,
+  canonical,
+  { forwardedTranslators = {}, requireTranslatorBindings = false } = {}
+) {
   const requirements = new Map();
   function add(key, file) {
     if (!requirements.has(key)) requirements.set(key, new Set());
@@ -65,8 +70,17 @@ function collectRequirements(root, files, canonical) {
         );
       translators.set(match[1], namespace);
     }
-    if (Object.hasOwn(FORWARDED_TRANSLATORS, file))
-      translators.set('t', FORWARDED_TRANSLATORS[file]);
+    const forwarded = forwardedTranslators[file] ?? FORWARDED_TRANSLATORS[file];
+    if (forwarded !== undefined) translators.set('t', forwarded);
+    if (
+      requireTranslatorBindings &&
+      !translators.has('t') &&
+      /\bt(?:\.(?:rich|raw|markup|has))?\(\s*['"`]/.test(content)
+    )
+      throw new Error(
+        `Unbound translation calls in ${file}; trace the translator namespace`
+      );
+
     for (const [variable, namespace] of translators) {
       const calls = new RegExp(
         `\\b${variable}(?:\\.(?:rich|raw|markup|has))?\\(\\s*`,
@@ -98,6 +112,24 @@ function collectRequirements(root, files, canonical) {
           ];
           if (values.length) {
             for (const value of values) add(qualify(value[1]), file);
+            return;
+          }
+        }
+        // Settings selectors keep finite key lists in local lookup tables.
+        const indexed = /^(\w+)\[\w+\]$/.exec(arg);
+        const alias = /^\w+$/.test(arg)
+          ? new RegExp(`\\bconst ${arg} = (\\w+)\\[\\w+\\]`).exec(content)
+          : null;
+        const table = indexed?.[1] ?? alias?.[1];
+        if (table) {
+          const entries = new RegExp(
+            `\\bconst ${table}(?::[^=]+)?\\s*=\\s*\\{([^}]+)\\}`
+          ).exec(content);
+          const values = entries
+            ? [...entries[1].matchAll(/:\s*['"]([^'"]+)['"]/g)]
+            : [];
+          if (values.length) {
+            for (const [, key] of values) add(qualify(key), file);
             return;
           }
         }

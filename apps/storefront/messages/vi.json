@@ -1241,7 +1241,11 @@
     "read_only_description": "Bạn có thể xem các cài đặt này, nhưng cần quản lý không gian làm việc để thay đổi.",
     "title": "Không gian làm việc"
   },
+  "search": {
+    "search": "Tìm kiếm"
+  },
   "settings": {
+    "back_to_app": "Quay lại ứng dụng",
     "keyboard_shortcuts": {
       "calendar_agenda": "Xem lịch trình",
       "calendar_day": "Xem ngày",
@@ -1265,11 +1269,13 @@
       "settings_dialog": "Hộp thoại cài đặt",
       "toggle_sidebar": "Mở rộng hoặc thu gọn thanh bên"
     },
+    "manage_settings": "Quản lý cài đặt {label} của bạn",
     "preferences": {
       "keyboard_shortcuts": "Phím tắt bàn phím",
       "keyboard_shortcuts_description": "Xem các phím tắt cho ứng dụng và thanh bên",
       "sidebar_hidden": "Ẩn"
-    }
+    },
+    "search_settings_placeholder": "Tìm cài đặt..."
   },
   "settings-account": {
     "account-status": "Trạng thái tài khoản",

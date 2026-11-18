@@ -1655,8 +1655,12 @@
     "signed_in_as": "Đang đăng nhập với {email}",
     "title": "Tài khoản"
   },
+  "search": {
+    "search": "Tìm kiếm"
+  },
   "settings": {
     "back_to_app": "Quay lại ứng dụng",
+    "manage_settings": "Quản lý cài đặt {label} của bạn",
     "search_settings_placeholder": "Tìm cài đặt..."
   },
   "settings-account": {

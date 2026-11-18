@@ -7915,6 +7915,22 @@
       "use_for_binding_action": "Use for binding",
       "workspace_id_label": "Workspace ID"
     },
+    "settings": {
+      "access_levels_label": "access levels",
+      "assign_role_placeholder": "Assign role",
+      "bound_project_label": "Connected site",
+      "clear_filters_action": "Clear filters",
+      "filter_by_access_level": "Filter by access level",
+      "filter_by_permission": "Filter by editing right",
+      "members_description": "Invite teammates, remove access, and manage editing rights without leaving CMS.",
+      "members_title": "Team access",
+      "no_additional_roles": "No additional roles",
+      "no_roles_label": "No access level",
+      "protected_member_label": "Protected member",
+      "remove_access_action": "Remove access",
+      "roles_empty_description": "Create an access level when a teammate needs a custom editing or publishing scope.",
+      "roles_empty_title": "No access levels yet"
+    },
     "studio": {
       "action_failed_toast": "The studio action failed.",
       "activity_description": "Imports and publish history stay available here without pulling you out of the editing flow.",

@@ -295,6 +295,9 @@
     "continue": "Continue",
     "correct": "Correct",
     "create_workspace": "Create Workspace",
+    "create_workspace_action": "Create",
+    "create_workspace_description": "Add a new workspace to easily manage everything that matters to you, and collaborate with your team as you go.",
+    "create_workspace_upgrade_notice": "Workspaces are created with a free tier by default. You can upgrade your plan in the workspace billing page after creation.",
     "current_workspace": "Current workspace",
     "dark": "Dark",
     "dashboard": "Dashboard",
@@ -306,6 +309,7 @@
     "edit": "Edit",
     "enter_context": "Enter context",
     "error": "Error",
+    "error_creating_workspace": "Error Creating Workspace",
     "error_saving_content": "There was an error saving your content",
     "expand_on_hover": "Expand on Hover",
     "expanded": "Expanded",
@@ -326,14 +330,19 @@
     "hide_workspace": "Hide workspace",
     "home": "Home",
     "join_workspace": "Join Workspace",
+    "join_workspace_action": "Join",
+    "join_workspace_by_slug_description": "Enter the workspace name or link to open its join page.",
+    "join_workspace_success": "Successfully joined workspace",
     "language": "Language",
     "light": "Light",
     "loading": "Loading…",
     "logout": "Logout",
     "media-alt": "Media file {number}",
     "media-optional": "Media Files (Optional)",
+    "members": "Members",
     "next": "Next",
     "no_content_yet": "No content yet",
+    "no_results_found": "No results found",
     "no_workspace_found": "No workspaces found",
     "open": "Open",
     "option": "Option",
@@ -395,6 +404,12 @@
     "upload": "Upload",
     "view": "View",
     "whats_the_title": "What's the title?",
+    "workspace_creation_failed": "Failed to create workspace. Please try again.",
+    "workspace_limit_reached": "Workspace Limit Reached",
+    "workspace_name": "Workspace Name",
+    "workspace_slug": "Workspace link",
+    "workspace_slug_placeholder": "your-team",
+    "workspaces": "Workspaces",
     "write_something": "Write something"
   },
   "course-data-table": {
@@ -714,7 +729,11 @@
     "read_only_description": "You can review these settings, but a workspace manager is required to change them.",
     "title": "Workspace"
   },
+  "search": {
+    "search": "Search"
+  },
   "settings": {
+    "back_to_app": "Back to app",
     "keyboard_shortcuts": {
       "calendar_agenda": "Agenda view",
       "calendar_day": "Day view",
@@ -738,11 +757,13 @@
       "settings_dialog": "Settings dialog",
       "toggle_sidebar": "Expand or collapse sidebar"
     },
+    "manage_settings": "Manage your {label} settings",
     "preferences": {
       "keyboard_shortcuts": "Keyboard Shortcuts",
       "keyboard_shortcuts_description": "Review keyboard shortcuts for app and sidebar actions",
       "sidebar_hidden": "Hidden"
-    }
+    },
+    "search_settings_placeholder": "Search settings..."
   },
   "settings-account": {
     "account-status": "Account Status",

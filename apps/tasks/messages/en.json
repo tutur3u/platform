@@ -4438,6 +4438,24 @@
     "setting_title": "Experimental design",
     "setting_toggle_label": "Use the experimental Sorbet design"
   },
+  "external-projects": {
+    "settings": {
+      "access_levels_label": "access levels",
+      "assign_role_placeholder": "Assign role",
+      "bound_project_label": "Connected site",
+      "clear_filters_action": "Clear filters",
+      "filter_by_access_level": "Filter by access level",
+      "filter_by_permission": "Filter by editing right",
+      "members_description": "Invite teammates, remove access, and manage editing rights without leaving CMS.",
+      "members_title": "Team access",
+      "no_additional_roles": "No additional roles",
+      "no_roles_label": "No access level",
+      "protected_member_label": "Protected member",
+      "remove_access_action": "Remove access",
+      "roles_empty_description": "Create an access level when a teammate needs a custom editing or publishing scope.",
+      "roles_empty_title": "No access levels yet"
+    }
+  },
   "finance": {
     "expense": "Expense",
     "failed_to_load_categories": "Failed to load categories",
@@ -12892,6 +12910,8 @@
     "max-uses-description": "Leave empty for unlimited uses",
     "max-uses-placeholder": "Leave empty for unlimited",
     "members-joined": "Members Joined",
+    "membership-short-guest": "Guest",
+    "membership-short-member": "Member",
     "never": "Never",
     "no-links": "No invite links yet",
     "no-links-description": "Create your first invite link to start inviting members to your workspace.",

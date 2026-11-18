@@ -447,11 +447,16 @@
     "completed": "Đã hoàn thành",
     "continue": "Tiếp tục",
     "create_workspace": "Tạo không gian làm việc",
+    "create_workspace_action": "Tạo",
+    "create_workspace_description": "Thêm một không gian làm việc mới để dễ dàng quản lý mọi thứ thiết yếu, và hợp tác với đội của bạn một cách hiệu quả.",
+    "create_workspace_upgrade_notice": "Các không gian làm việc được tạo với gói miễn phí theo mặc định. Bạn có thể nâng cấp gói của mình trong trang thanh toán của không gian làm việc sau khi tạo.",
     "current_workspace": "Không gian làm việc hiện tại",
     "dark": "Tối",
     "dashboard": "Bảng điều khiển",
     "default_workspace": "Không gian làm việc mặc định",
     "empty": "Chưa có nội dung.",
+    "error": "Lỗi",
+    "error_creating_workspace": "Lỗi khi tạo không gian làm việc",
     "expand_on_hover": "Mở rộng khi di chuột",
     "expanded": "Mở rộng",
     "feedback": "Phản hồi",
@@ -466,6 +471,9 @@
     "hide_workspace": "Ẩn không gian làm việc",
     "home": "Trang chủ",
     "join_workspace": "Tham gia không gian làm việc",
+    "join_workspace_action": "Tham gia",
+    "join_workspace_by_slug_description": "Nhập tên hoặc liên kết không gian làm việc để mở trang tham gia.",
+    "join_workspace_success": "Đã tham gia không gian làm việc thành công",
     "language": "Ngôn ngữ",
     "learner": "Học viên",
     "light": "Sáng",
@@ -473,8 +481,10 @@
     "logout": "Đăng xuất",
     "media-alt": "Tệp đa phương tiện {number}",
     "media-optional": "Tệp đa phương tiện (Tùy chọn)",
+    "members": "Thành viên",
     "navigation": "Điều hướng học tập",
     "next": "Tiếp",
+    "no_results_found": "Không tìm thấy kết quả",
     "no_workspace_found": "Không tìm thấy không gian làm việc",
     "picker_internal_meta": "Quản trị nền tảng",
     "picker_more_actions": "Thêm thao tác",
@@ -512,7 +522,13 @@
     "system": "Hệ thống",
     "theme": "Giao diện",
     "unnamed": "Chưa đặt tên",
-    "upgrade": "Nâng cấp"
+    "upgrade": "Nâng cấp",
+    "workspace_creation_failed": "Không thể tạo không gian làm việc. Vui lòng thử lại.",
+    "workspace_limit_reached": "Đã đạt giới hạn không gian làm việc",
+    "workspace_name": "Tên không gian làm việc",
+    "workspace_slug": "Liên kết không gian làm việc",
+    "workspace_slug_placeholder": "ten-nhom-cua-ban",
+    "workspaces": "Không gian làm việc"
   },
   "courses": {
     "aiFeedback": "Phản hồi AI",
@@ -1191,7 +1207,11 @@
     "read_only_description": "Bạn có thể xem các cài đặt này, nhưng cần quản lý không gian làm việc để thay đổi.",
     "title": "Không gian làm việc"
   },
+  "search": {
+    "search": "Tìm kiếm"
+  },
   "settings": {
+    "back_to_app": "Quay lại ứng dụng",
     "dark": "Tối",
     "description": "Cá nhân hóa hồ sơ, giao diện và nhịp học để việc học mỗi ngày nhẹ nhàng hơn.",
     "displayName": "Tên hiển thị",
@@ -1228,6 +1248,7 @@
     "language": "Ngôn ngữ",
     "light": "Sáng",
     "linkedStudents": "Học viên được liên kết",
+    "manage_settings": "Quản lý cài đặt {label} của bạn",
     "parentMode": "Chế độ phụ huynh",
     "preferences": {
       "keyboard_shortcuts": "Phím tắt bàn phím",
@@ -1235,6 +1256,7 @@
       "sidebar_hidden": "Ẩn"
     },
     "profile": "Hồ sơ",
+    "search_settings_placeholder": "Tìm cài đặt...",
     "system": "Hệ thống",
     "theme": "Giao diện",
     "title": "Cài đặt"

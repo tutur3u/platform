@@ -295,6 +295,9 @@
     "continue": "Tiếp tục",
     "correct": "Chính xác",
     "create_workspace": "Tạo không gian làm việc",
+    "create_workspace_action": "Tạo",
+    "create_workspace_description": "Thêm một không gian làm việc mới để dễ dàng quản lý mọi thứ thiết yếu, và hợp tác với đội của bạn một cách hiệu quả.",
+    "create_workspace_upgrade_notice": "Các không gian làm việc được tạo với gói miễn phí theo mặc định. Bạn có thể nâng cấp gói của mình trong trang thanh toán của không gian làm việc sau khi tạo.",
     "current_workspace": "Không gian làm việc hiện tại",
     "dark": "Tối",
     "dashboard": "Bảng điều khiển",
@@ -306,6 +309,7 @@
     "edit": "Chỉnh sửa",
     "enter_context": "Nhập ngữ cảnh",
     "error": "Lỗi",
+    "error_creating_workspace": "Lỗi khi tạo không gian làm việc",
     "error_saving_content": "Lỗi khi lưu nội dung của bạn",
     "expand_on_hover": "Mở rộng khi di chuột",
     "expanded": "Mở rộng",
@@ -326,14 +330,19 @@
     "hide_workspace": "Ẩn không gian làm việc",
     "home": "Trang chủ",
     "join_workspace": "Tham gia không gian làm việc",
+    "join_workspace_action": "Tham gia",
+    "join_workspace_by_slug_description": "Nhập tên hoặc liên kết không gian làm việc để mở trang tham gia.",
+    "join_workspace_success": "Đã tham gia không gian làm việc thành công",
     "language": "Ngôn ngữ",
     "light": "Sáng",
     "loading": "Đang tải…",
     "logout": "Đăng xuất",
     "media-alt": "Tệp đa phương tiện {number}",
     "media-optional": "Tệp đa phương tiện (Tùy chọn)",
+    "members": "Thành viên",
     "next": "Tiếp theo",
     "no_content_yet": "Chưa có nội dung",
+    "no_results_found": "Không tìm thấy kết quả",
     "no_workspace_found": "Không tìm thấy không gian làm việc",
     "open": "Mở",
     "option": "Lựa chọn",
@@ -395,6 +404,12 @@
     "upload": "Tải lên",
     "view": "Xem",
     "whats_the_title": "Tiêu đề là gì?",
+    "workspace_creation_failed": "Không thể tạo không gian làm việc. Vui lòng thử lại.",
+    "workspace_limit_reached": "Đã đạt giới hạn không gian làm việc",
+    "workspace_name": "Tên không gian làm việc",
+    "workspace_slug": "Liên kết không gian làm việc",
+    "workspace_slug_placeholder": "ten-nhom-cua-ban",
+    "workspaces": "Không gian làm việc",
     "write_something": "Hãy viết gì đó..."
   },
   "course-data-table": {
@@ -714,7 +729,11 @@
     "read_only_description": "Bạn có thể xem các cài đặt này, nhưng cần quản lý không gian làm việc để thay đổi.",
     "title": "Không gian làm việc"
   },
+  "search": {
+    "search": "Tìm kiếm"
+  },
   "settings": {
+    "back_to_app": "Quay lại ứng dụng",
     "keyboard_shortcuts": {
       "calendar_agenda": "Xem lịch trình",
       "calendar_day": "Xem ngày",
@@ -738,11 +757,13 @@
       "settings_dialog": "Hộp thoại cài đặt",
       "toggle_sidebar": "Mở rộng hoặc thu gọn thanh bên"
     },
+    "manage_settings": "Quản lý cài đặt {label} của bạn",
     "preferences": {
       "keyboard_shortcuts": "Phím tắt bàn phím",
       "keyboard_shortcuts_description": "Xem các phím tắt cho ứng dụng và thanh bên",
       "sidebar_hidden": "Ẩn"
-    }
+    },
+    "search_settings_placeholder": "Tìm cài đặt..."
   },
   "settings-account": {
     "account-status": "Trạng thái tài khoản",
