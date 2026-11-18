@@ -1,5 +1,9 @@
 import * as decoding from 'lib0/decoding';
 import * as encoding from 'lib0/encoding';
+import {
+  MIRA_AWARENESS_CLIENT_ID,
+  MIRA_RESERVED_AWARENESS_KEYS,
+} from './mira-presence';
 
 type Entry = {
   clientId: number;
@@ -14,7 +18,15 @@ function encode(entry: Entry) {
   encoding.writeVarString(encoder, JSON.stringify(entry.state));
   return encoding.toUint8Array(encoder);
 }
-/** Bind cursor identity and client ID to the authenticated socket, ignoring peer relays. */
+function withoutReserved(value: Record<string, unknown>) {
+  const next = { ...value };
+  for (const key of MIRA_RESERVED_AWARENESS_KEYS) delete next[key];
+  return next;
+}
+/**
+ * Bind cursor identity and client ID to the authenticated socket, ignoring
+ * peer relays. Mira's reserved client and identity keys are server-only.
+ */
 export function normalizeAwarenessUpdate(
   update: Uint8Array,
   userId: string,
@@ -41,12 +53,16 @@ export function normalizeAwarenessUpdate(
       own ??= { clientId, clock, state: candidate };
   }
   if (!own) return null;
+  if (own.clientId === MIRA_AWARENESS_CLIENT_ID)
+    throw new Error('Reserved awareness client');
   if (own.state)
     own.state = {
-      ...own.state,
+      ...withoutReserved(own.state),
       user: {
-        ...(own.state.user && typeof own.state.user === 'object'
-          ? own.state.user
+        ...(own.state.user &&
+        typeof own.state.user === 'object' &&
+        !Array.isArray(own.state.user)
+          ? withoutReserved(own.state.user as Record<string, unknown>)
           : {}),
         id: userId,
       },

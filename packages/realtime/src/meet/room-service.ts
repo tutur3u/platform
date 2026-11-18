@@ -19,6 +19,7 @@ import {
 } from './personal-chat-receipts';
 import { roomBudgetSummary } from './room-budget';
 import { retainRoomChat } from './room-chat';
+import { applyRoomDocuments, type RoomDocumentsState } from './room-documents';
 import { applyRoomRestore } from './room-lifecycle';
 import { applyRoomLive, type RoomLiveState } from './room-live';
 import { applyLiveSharing } from './room-live-sharing';
@@ -62,6 +63,7 @@ export type RoomChatMessage = Extract<
   { type: 'chat.message' }
 >;
 export type RoomServiceState = MeetRoomSnapshot & {
+  documents?: RoomDocumentsState;
   polls?: RoomPoll[];
   quizArena?: RoomQuizArenaState;
   miraPrivate?: MiraPrivateState;
@@ -155,6 +157,7 @@ export function roomService(
   if (restored) return restored;
   const live =
     applyRoomProgramming(snapshot, token, input) ??
+    applyRoomDocuments(snapshot, token, input) ??
     applyLiveUsage(snapshot, token, input) ??
     applyRoomLive(snapshot, token, input) ??
     applyLiveSharing(snapshot, token, input);

@@ -5,13 +5,13 @@ import { REALTIME_SERVICE_USER_AGENT } from '../../../packages/realtime/src/core
 import { ChannelRoomDurableObject } from './channel-room-do';
 
 /** One quiet room with unsaved edits; the alarm attempts exactly one checkpoint. */
-function fixture(status: number) {
+function fixture(status: number, topic = 'meeting-document-fixture') {
   const now = 1_900_000_000_000;
   const values = new Map<string, unknown>([
     [
       'metadata',
       {
-        topic: 'meeting-document-fixture',
+        topic,
         ownerId: 'owner',
         documentId: 'document',
         checkpointAt: 0,
@@ -120,5 +120,23 @@ test('a rejected checkpoint reports deferred and a 409 reports conflict', async 
     } finally {
       f.close();
     }
+  }
+});
+
+test('additional meeting tabs keep room storage and spend no workspace checkpoint', async () => {
+  const f = fixture(
+    200,
+    'meeting-document-5e5217de-9bb3-4e20-8d99-526ad3e7e34f-7f0c2e5a-4b1d-4c6e-8a9f-0d1e2f3a4b5c'
+  );
+  try {
+    await f.room().alarm();
+    assert.equal(f.requests.length, 0);
+    assert.equal(f.metadata().checkpointStatus, undefined);
+    assert.equal(
+      f.sent.filter((m: any) => m.event === 'document-checkpoint').length,
+      0
+    );
+  } finally {
+    f.close();
   }
 });

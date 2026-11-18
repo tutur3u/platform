@@ -188,6 +188,12 @@ export const meetEndpoints: Endpoint[] = [
             meetingId: routeParam(params, 'meetingId'),
           }),
         }),
+      POST: async (request, params) =>
+        (await api11()).POST(request, {
+          params: Promise.resolve({
+            meetingId: routeParam(params, 'meetingId'),
+          }),
+        }),
     },
   },
   {

@@ -98,6 +98,27 @@ export {
 } from './room-budget';
 export { mergePublicationCleanup } from './room-cleanup';
 export { canReadRoomNotes, enablesNoteSharing } from './room-controls';
+export {
+  type DocumentRoomCommand,
+  documentRoomCommandSchema,
+  MIRA_DOCUMENT_PRESENCE_TTL_MS,
+  type MiraDocumentAction,
+  type MiraDocumentEdit,
+  type MiraDocumentPresence,
+  type MiraDocumentSource,
+  meetingDocumentTopic,
+  miraDocumentActionSchema,
+  miraDocumentSourceSchema,
+  ROOM_DOCUMENT_MAX_TABS,
+  ROOM_DOCUMENT_PRIMARY_TAB_ID,
+  type RoomDocumentKind,
+  type RoomDocumentTab,
+  type RoomDocumentsState,
+  readRoomDocuments,
+  roomDocumentKindSchema,
+  roomDocumentTabIdSchema,
+  roomDocumentTitleSchema,
+} from './room-documents';
 export type {
   MeetApprovedParticipant,
   MeetReaction,

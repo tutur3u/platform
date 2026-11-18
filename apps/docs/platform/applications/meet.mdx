@@ -433,6 +433,39 @@ reuse and account anonymization; `required-account-mfa.sql` checks MFA policy.
 `meet-transcript-retention-purge.sql` checks custom deadlines,
 forever retention, edited-note deletion, ACLs and bounded restart behavior.
 
+## Shared documents and Mira presence
+
+A call has one primary shared document plus up to 11 more tabs (12 in total)
+of kind document, notes, rubric or summary. The primary tab keeps the
+`meeting-document-<meetingId>` channel and its workspace checkpoint, so
+existing rooms and the native collaboration view keep their content. Each
+additional tab uses `meeting-document-<meetingId>-<tabId>`; its content lives in
+that channel's Durable Object storage and makes no workspace checkpoint
+request. Tab metadata, Mira's presence and Mira edit records live in the room
+state and follow room admission: any admitted participant can open, create and
+rename a tab; only the host or the tab's creator can close one; the primary
+tab cannot close. The tab list refreshes on a short poll because room messages
+do not carry tab state.
+
+Mira appears in a document only through server-authorized paths. The channel
+rewrites every browser awareness frame to the socket's account, strips the
+reserved `isMira` and `mira` keys and refuses the reserved Mira awareness
+client, so a participant cannot show a Mira caret. The server publishes Mira's
+named caret (`Mira • Chat` or `Mira • Live`) and selection, sets her active tab
+and short status for 90 seconds, and records each edit with its source, action,
+requester and bounded before/after excerpts (eight per room). Ask Mira in the
+document toolbar uses Private Mira: it requires the requester's current
+Continue choice, deployment and account authority, and their credits, then
+returns text that the requester's editor inserts. The requester can accept an
+edit or undo it while the inserted text is unchanged.
+
+Regression coverage: `packages/realtime/src/meet/room-documents.test.ts`,
+`packages/realtime/src/documents/mira-presence.test.ts`,
+`packages/realtime/src/documents/awareness.test.ts`,
+`apps/meet-realtime/src/channel-checkpoint-request.test.ts`,
+`packages/meet-core/src/routes/api/meet-call/[meetingId]/document/route.test.ts`
+and `packages/meet-core/src/features/call/components/document-workspace.test.tsx`.
+
 ## Meet AI kill switch
 
 The shared realtime workspace gate disables Meet AI when `MEET_AI_DISABLED` is

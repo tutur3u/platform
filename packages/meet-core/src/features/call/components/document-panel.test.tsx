@@ -131,7 +131,13 @@ it('pads the writing surface itself, fills the panel and drops the focus ring', 
   );
   const editor = screen.getByTestId('editor');
   expect(editor.getAttribute('data-fill')).toBe('true');
-  expect(editor.getAttribute('data-surface')).toBe(DOCUMENT_SURFACE_CLASS_NAME);
+  expect(editor.getAttribute('data-surface')).toContain(
+    DOCUMENT_SURFACE_CLASS_NAME
+  );
+  // Mira's server-published caret and selection take the purple token.
+  expect(editor.getAttribute('data-surface')).toContain(
+    '[&_.collaboration-carets__selection[data-user-id=mira]]:bg-dynamic-purple/20!'
+  );
   // Horizontal and bottom padding live on the ProseMirror surface, not a frame.
   expect(DOCUMENT_SURFACE_CLASS_NAME).toMatch(/\bpx-6\b/);
   expect(DOCUMENT_SURFACE_CLASS_NAME).toMatch(/\bpb-\d+\b/);

@@ -365,6 +365,8 @@ export function getMeetPlaygroundRun(id: string, run: string) {
 
 export interface MeetingDocumentJoin {
   documentId: string;
+  /** Omitted by clients that only know the primary meeting document. */
+  tabId?: string;
   revision: number;
   state: number[];
   endpoint: string;
@@ -374,10 +376,13 @@ export interface MeetingDocumentJoin {
 }
 export function getMeetDocument(
   meetingId: string,
-  options?: InternalApiClientOptions
+  options?: InternalApiClientOptions,
+  tabId?: string
 ) {
+  const tab =
+    tabId && tabId !== 'primary' ? `?tab=${encodeURIComponent(tabId)}` : '';
   return getInternalApiClient(options).json<MeetingDocumentJoin>(
-    `/api/meet-call/${encodePathSegment(meetingId)}/document`
+    `/api/meet-call/${encodePathSegment(meetingId)}/document${tab}`
   );
 }
 
@@ -418,4 +423,104 @@ export function updateMeetProgrammingMira(
       headers: { 'Content-Type': 'application/json' },
     }
   );
+}
+
+export type MeetingDocumentKind = 'doc' | 'notes' | 'rubric' | 'summary';
+export type MeetingDocumentSource = 'chat' | 'live';
+export interface MeetingDocumentTab {
+  id: string;
+  kind: MeetingDocumentKind;
+  title?: string;
+  createdBy?: string;
+  createdAt: number;
+  updatedAt: number;
+}
+export interface MeetingDocumentMiraPresence {
+  activeTabId: string;
+  source: MeetingDocumentSource;
+  status: 'editing' | 'reviewing';
+  section?: string;
+  askedBy: string;
+  updatedAt: number;
+  expiresAt: number;
+}
+export interface MeetingDocumentMiraEdit {
+  id: string;
+  tabId: string;
+  source: MeetingDocumentSource;
+  action: 'draft' | 'refine' | 'summarize';
+  askedBy: string;
+  askedByName?: string;
+  before: string;
+  after: string;
+  createdAt: number;
+  review: 'pending' | 'accepted' | 'reverted';
+}
+export interface MeetingDocuments {
+  tabs: MeetingDocumentTab[];
+  mira: MeetingDocumentMiraPresence | null;
+  edits: MeetingDocumentMiraEdit[];
+}
+export type MeetingDocumentCommand =
+  | { action: 'create'; kind: MeetingDocumentKind; title?: string }
+  | { action: 'rename'; tabId: string; title: string | null }
+  | { action: 'close'; tabId: string }
+  | {
+      action: 'review';
+      editId: string;
+      decision: 'accepted' | 'reverted';
+    };
+export interface MeetingDocumentAssistInput {
+  requestId: string;
+  startedAt: number;
+  tabId: string;
+  mode: 'draft' | 'refine' | 'summarize';
+  instruction?: string;
+  text: string;
+  section?: string;
+  cursor?: { anchor: Record<string, unknown>; head: Record<string, unknown> };
+  timezone: string;
+}
+
+function documentPath(meetingId: string) {
+  return `/api/meet-call/${encodePathSegment(meetingId)}/document`;
+}
+export function listMeetDocuments(
+  meetingId: string,
+  options?: InternalApiClientOptions
+) {
+  return getInternalApiClient(options).json<MeetingDocuments>(
+    `${documentPath(meetingId)}?view=tabs`,
+    { cache: 'no-store' }
+  );
+}
+export function updateMeetDocuments(
+  meetingId: string,
+  command: MeetingDocumentCommand,
+  options?: InternalApiClientOptions
+) {
+  return getInternalApiClient(options).json<MeetingDocuments>(
+    documentPath(meetingId),
+    {
+      method: 'POST',
+      body: JSON.stringify(command),
+      headers: { 'Content-Type': 'application/json' },
+    }
+  );
+}
+
+export function assistMeetDocument(
+  meetingId: string,
+  input: MeetingDocumentAssistInput,
+  options?: InternalApiClientOptions
+) {
+  return getInternalApiClient(options).json<{
+    editId: string;
+    source: MeetingDocumentSource;
+    text: string;
+  }>(documentPath(meetingId), {
+    method: 'POST',
+    body: JSON.stringify({ action: 'assist', ...input }),
+    headers: { 'Content-Type': 'application/json' },
+  });
 }

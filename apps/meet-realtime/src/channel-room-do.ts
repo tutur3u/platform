@@ -20,6 +20,7 @@ import {
   type DocumentCheckpointStatus,
 } from '../../../packages/realtime/src/documents/checkpoint';
 
+const MEETING_DOCUMENT_TAB = /^meeting-document-[a-f0-9-]{36}-[a-f0-9-]{36}$/;
 export interface ChannelRoomEnv {
   CHANNEL_ROOM: DurableObjectNamespace;
   MEET_REALTIME_TOKEN_SECRET: string;
@@ -378,7 +379,10 @@ export class ChannelRoomDurableObject implements DurableObject {
   }
   private async checkpointDocument() {
     const metadata = this.metadata;
-    if (!metadata) return Infinity;
+    // Additional meeting tabs live in this room's storage only; the workspace
+    // checkpoint accepts the primary meeting document, so calling it for a tab
+    // would spend a refused request on every retry.
+    if (!metadata || MEETING_DOCUMENT_TAB.test(metadata.topic)) return Infinity;
     if (
       ((metadata.checkpointFailures ?? 0) >= 3 && !this.hasActiveEditor()) ||
       (metadata.checkpointRetry?.attempts ?? 0) >= 3 ||

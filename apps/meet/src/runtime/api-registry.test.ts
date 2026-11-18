@@ -1,7 +1,24 @@
 import { NextRequest } from 'next/server';
 import { beforeEach, expect, it, vi } from 'vitest';
 
-const loads = vi.hoisted(() => ({ buildInfo: 0, memory: 0, quizArena: 0 }));
+const loads = vi.hoisted(() => ({
+  buildInfo: 0,
+  memory: 0,
+  quizArena: 0,
+  document: 0,
+}));
+const documentPost = vi.hoisted(() =>
+  vi.fn(
+    async (
+      _request: Request,
+      { params }: { params: Promise<{ meetingId: string }> }
+    ) => Response.json({ meetingId: (await params).meetingId })
+  )
+);
+vi.mock('../app/api/meet-call/[meetingId]/document/route', () => {
+  loads.document += 1;
+  return { GET: () => Response.json({ tabs: [] }), POST: documentPost };
+});
 vi.mock('../app/api/build-info/route', () => {
   loads.buildInfo += 1;
   return { GET: () => Response.json({ ok: true }) };
@@ -29,10 +46,16 @@ const loadedAtImport = { ...loads };
 beforeEach(() => {
   loads.buildInfo = 0;
   loads.memory = 0;
+  loads.document = 0;
 });
 
 it('loads no endpoint module until a request matches it', async () => {
-  expect(loadedAtImport).toEqual({ buildInfo: 0, memory: 0, quizArena: 0 });
+  expect(loadedAtImport).toEqual({
+    buildInfo: 0,
+    memory: 0,
+    quizArena: 0,
+    document: 0,
+  });
   const response = await dispatchMeetEndpoint(
     new NextRequest('https://meet.test/api/build-info')
   );
@@ -102,4 +125,23 @@ it('dispatches /api/meet-call/[meetingId]/quiz-arena lazily', async () => {
   );
   expect(await response?.json()).toEqual({ meetingId: id });
   expect(loads.quizArena).toBe(1);
+});
+
+it('routes shared document tab commands to the document POST handler', async () => {
+  const meetingId = '5e5217de-9bb3-4e20-8d99-526ad3e7e34f';
+  const options = await dispatchMeetEndpoint(
+    new NextRequest(`https://meet.test/api/meet-call/${meetingId}/document`, {
+      method: 'OPTIONS',
+    })
+  );
+  expect(options?.headers.get('Allow')).toBe('GET, POST, HEAD, OPTIONS');
+  expect(loads.document).toBe(0);
+  const response = await dispatchMeetEndpoint(
+    new NextRequest(`https://meet.test/api/meet-call/${meetingId}/document`, {
+      method: 'POST',
+      body: JSON.stringify({ action: 'create', kind: 'notes' }),
+    })
+  );
+  expect(await response?.json()).toEqual({ meetingId });
+  expect(documentPost).toHaveBeenCalledTimes(1);
 });

@@ -4,6 +4,8 @@ import {
   Awareness,
   applyAwarenessUpdate,
   encodeAwarenessUpdate,
+  MIRA_AWARENESS_CLIENT_ID,
+  miraAwarenessUpdate,
   Y,
 } from '@tuturuuu/realtime/documents';
 import { NextIntlClientProvider } from 'next-intl';
@@ -114,4 +116,43 @@ it('bounds displayed avatars without losing total or accessible overflow names',
   expect(screen.getByText('+2').getAttribute('title')).toBe(
     'Person 4, Person 5'
   );
+});
+it('reads Mira only from the server-published client with her source and tab', () => {
+  const local = awareness();
+  const spoof = awareness();
+  user(local, 'local', 'Local');
+  spoof.setLocalState({
+    user: { id: 'mira', name: 'Mira • Live' },
+    mira: { source: 'live', activeTabId: 'primary' },
+  });
+  relay(spoof, local);
+  expect(readDocumentCollaborators(local)).toEqual([
+    { id: 'local', name: 'Local' },
+  ]);
+  applyAwarenessUpdate(
+    local,
+    miraAwarenessUpdate({
+      source: 'live',
+      activeTabId: 'primary',
+      statusText: 'Editing Lab Rubric · §2',
+    }),
+    'server'
+  );
+  expect(readDocumentCollaborators(local)).toContainEqual({
+    id: 'mira',
+    name: 'Mira',
+    mira: {
+      source: 'live',
+      activeTabId: 'primary',
+      statusText: 'Editing Lab Rubric · §2',
+    },
+  });
+  render(view(local));
+  expect(screen.getByTestId('mira-document-chip').textContent).toBe(
+    'Mira • Live'
+  );
+  expect(screen.getByRole('list').getAttribute('aria-label')).toBe(
+    '1 person in this document'
+  );
+  expect(local.getStates().has(MIRA_AWARENESS_CLIENT_ID)).toBe(true);
 });

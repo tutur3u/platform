@@ -6,6 +6,12 @@ import {
 } from 'y-protocols/awareness';
 import * as Y from 'yjs';
 import { awarenessRemoval, normalizeAwarenessUpdate } from './awareness';
+import {
+  MIRA_AWARENESS_CLIENT_ID,
+  MIRA_DOCUMENT_USER_ID,
+  miraAwarenessUpdate,
+  readMiraAwareness,
+} from './mira-presence';
 
 describe('authenticated cursor wire boundary', () => {
   it('binds a forged user identity to the signed actor and ignores other clients', () => {
@@ -59,5 +65,40 @@ describe('authenticated cursor wire boundary', () => {
     expect(() =>
       normalizeAwarenessUpdate(new Uint8Array([1]), 'actor')
     ).toThrow();
+  });
+  it('strips client-claimed Mira identity so only the trusted path can show Mira', () => {
+    const doc = new Y.Doc();
+    const receiveDoc = new Y.Doc();
+    const sender = new Awareness(doc);
+    const receive = new Awareness(receiveDoc);
+    try {
+      sender.setLocalState({
+        user: { id: MIRA_DOCUMENT_USER_ID, name: 'Mira • Chat', isMira: true },
+        mira: { source: 'chat', activeTabId: 'primary' },
+        isMira: true,
+      });
+      const normalized = normalizeAwarenessUpdate(
+        encodeAwarenessUpdate(sender, [doc.clientID]),
+        'actor'
+      )!;
+      applyAwarenessUpdate(receive, normalized.update, 'fixture');
+      const state = receive.getStates().get(doc.clientID)!;
+      expect(state).toEqual({ user: { id: 'actor', name: 'Mira • Chat' } });
+      expect(readMiraAwareness(doc.clientID, state)).toBeNull();
+    } finally {
+      sender.destroy();
+      receive.destroy();
+      doc.destroy();
+      receiveDoc.destroy();
+    }
+  });
+  it('refuses sockets that claim the reserved Mira awareness client', () => {
+    expect(() =>
+      normalizeAwarenessUpdate(
+        miraAwarenessUpdate({ source: 'live', activeTabId: 'primary' }),
+        'actor'
+      )
+    ).toThrow('Reserved awareness client');
+    expect(MIRA_AWARENESS_CLIENT_ID).toBeGreaterThan(0);
   });
 });
