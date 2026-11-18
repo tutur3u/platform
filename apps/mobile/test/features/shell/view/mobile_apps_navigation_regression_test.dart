@@ -10,7 +10,6 @@ import 'package:mobile/data/models/workspace.dart';
 import 'package:mobile/data/repositories/settings_repository.dart';
 import 'package:mobile/data/repositories/task_repository.dart';
 import 'package:mobile/features/apps/cubit/app_tab_cubit.dart';
-import 'package:mobile/features/apps/view/apps_hub_page.dart';
 import 'package:mobile/features/assistant/cubit/assistant_chrome_cubit.dart';
 import 'package:mobile/features/auth/cubit/auth_cubit.dart';
 import 'package:mobile/features/auth/cubit/auth_state.dart';
@@ -255,16 +254,14 @@ void main() {
     }
   }
   for (final tapIcon in [false, true]) {
-    testWidgets('selecting an app ${tapIcon ? 'icon' : 'label'} exits reorder '
-        'and navigates normally', (tester) async {
+    testWidgets('selecting an app ${tapIcon ? 'icon' : 'label'} opens it', (
+      tester,
+    ) async {
       await mount(tester);
-      await tester.longPress(_appTile('Tasks'));
-      await _pump(tester);
-      expect(find.byTooltip('Hide app'), findsWidgets);
       final target = tapIcon
           ? find
                 .descendant(
-                  of: find.byKey(const ValueKey('apps-grid-position-calendar')),
+                  of: find.byKey(const ValueKey('calendar')),
                   matching: find.byType(Icon),
                 )
                 .first
@@ -274,58 +271,40 @@ void main() {
       expect(router.routeInformationProvider.value.uri.path, Routes.calendar);
       router.go(Routes.apps);
       await _pump(tester);
-      expect(find.byTooltip('Hide app'), findsNothing);
+      final recent = find.byKey(const ValueKey('apps-section-recent'));
+      expect(
+        find.descendant(of: recent, matching: find.text('Calendar')),
+        findsOneWidget,
+      );
     });
   }
   for (final destination in [Routes.tasks, Routes.home]) {
-    testWidgets('navigating to $destination resets retained Apps reorder', (
+    testWidgets('returning from $destination retains the Apps scrollable', (
       tester,
     ) async {
       await mount(tester);
-      final state = tester.state(find.byType(AppsHubPage));
-      await tester.longPress(_appTile('Tasks'));
-      await _pump(tester);
-      expect(find.byTooltip('Hide app'), findsWidgets);
+      final scrollable = find.descendant(
+        of: find.byKey(const ValueKey('apps-screen')),
+        matching: find.byType(Scrollable),
+      );
+      final state = tester.state(scrollable.first);
       router.go(destination);
       await _pump(tester);
       router.go(Routes.apps);
       await _pump(tester);
-      expect(tester.state(find.byType(AppsHubPage)), same(state));
-      expect(find.byTooltip('Hide app'), findsNothing);
+      expect(tester.state(scrollable.first), same(state));
     });
   }
-  testWidgets('empty icon margins and grid gaps never select an app', (
+  testWidgets('tapping the gap between app tiles does not launch an app', (
     tester,
   ) async {
     await mount(tester);
-    final cell = tester.getRect(
-      find.byKey(const ValueKey('apps-grid-position-calendar')),
-    );
-    await tester.tapAt(cell.topLeft + const Offset(2, 70));
+    final left = tester.getRect(find.byKey(const ValueKey('tasks')));
+    final right = tester.getRect(find.byKey(const ValueKey('calendar')));
+    await tester.tapAt(Offset((left.right + right.left) / 2, left.center.dy));
     await _pump(tester);
     expect(router.routeInformationProvider.value.uri.path, Routes.apps);
-    await tester.tapAt(Offset(cell.left - 6, cell.top + 70));
-    await _pump(tester);
-    expect(router.routeInformationProvider.value.uri.path, Routes.apps);
-    await tester.tapAt(Offset(cell.center.dx, cell.top + 5));
-    await _pump(tester);
-    expect(router.routeInformationProvider.value.uri.path, Routes.apps);
-    await tester.longPress(_appTile('Tasks'));
-    await _pump(tester);
-    final semantics = tester.ensureSemantics();
-    expect(
-      tester
-          .getSemantics(find.byTooltip('Hide app').first)
-          .getSemanticsData()
-          .flagsCollection
-          .isButton,
-      isTrue,
-    );
-    await tester.tapAt(cell.topLeft + const Offset(2, 70));
-    await _pump(tester);
-    expect(router.routeInformationProvider.value.uri.path, Routes.apps);
-    expect(find.byTooltip('Hide app'), findsNothing);
-    semantics.dispose();
+    expect(tester.takeException(), isNull);
   });
 }
 

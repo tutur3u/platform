@@ -2,7 +2,7 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:mobile/core/layout/layout.dart';
+import 'package:mobile/core/ui/ui.dart';
 import 'package:mobile/features/apps/cubit/app_tab_cubit.dart';
 import 'package:mobile/features/apps/models/app_module.dart';
 import 'package:mobile/features/apps/registry/app_registry.dart';
@@ -13,14 +13,20 @@ import 'package:mobile/l10n/l10n.dart';
 List<AppModule> arrangeApps(List<AppModule> modules, AppTabCubit cubit) {
   const preferred = [
     'tasks',
-    'chat',
     'calendar',
-    'finance',
-    'timer',
     'drive',
-    'education',
-    'inventory',
+    'documents',
+    'timer',
+    'notes',
     'crm',
+    'cms',
+    'finance',
+    'inventory',
+    'mail',
+    'chat',
+    'meet',
+    'education',
+    'habits',
   ];
   final order = cubit.state.appOrder;
   final hidden = cubit.state.hiddenAppIds;
@@ -41,24 +47,13 @@ List<AppModule> arrangeApps(List<AppModule> modules, AppTabCubit cubit) {
   });
 }
 
-Future<void> changeAppVisibility(
-  BuildContext context,
-  AppTabCubit cubit,
-  AppModule module, {
-  required bool hidden,
-}) async {
-  if (!hidden && !await confirmHideApp(context)) return;
-  if (!context.mounted) return;
-  await cubit.setAppHidden(module.id, hidden: !hidden);
-}
-
 class AppsPickerEditor extends StatelessWidget {
   const AppsPickerEditor({super.key});
 
   @override
   Widget build(BuildContext context) {
     final cubit = context.watch<AppTabCubit>();
-    final experiments = context.watch<ExperimentalAppsCubit>();
+    final experiments = context.watch<ExperimentalAppsCubit?>();
     final available = AppRegistry.modules(context);
     final availableIds = available.map((module) => module.id).toSet();
     final all = arrangeApps([
@@ -118,7 +113,9 @@ class AppsPickerEditor extends StatelessWidget {
         final canShow =
             !hidden ||
             !AppRegistry.experimentalModuleIds.contains(module.id) ||
-            experimentAccess[module.id] == true;
+            (experiments != null && experimentAccess[module.id] == true);
+        final pinned = cubit.state.pinnedAppIds.contains(module.id);
+        final label = module.label(context.l10n);
         return Column(
           key: ValueKey(module.id),
           crossAxisAlignment: CrossAxisAlignment.start,
@@ -146,13 +143,25 @@ class AppsPickerEditor extends StatelessWidget {
             ],
             ListTile(
               leading: Icon(module.icon),
-              title: Text(module.label(context.l10n)),
+              title: Text(label),
               textColor: hidden
                   ? Theme.of(context).colorScheme.onSurfaceVariant
                   : null,
               trailing: Row(
                 mainAxisSize: MainAxisSize.min,
                 children: [
+                  if (!hidden)
+                    AppIconButton(
+                      icon: Icon(
+                        pinned ? Icons.push_pin : Icons.push_pin_outlined,
+                      ),
+                      tooltip: pinned
+                          ? context.l10n.appsUnpin(label)
+                          : context.l10n.appsPin(label),
+                      onPressed: () => unawaited(
+                        cubit.setAppPinned(module.id, pinned: !pinned),
+                      ),
+                    ),
                   AppVisibilityButton(
                     hidden: hidden,
                     onPressed: canShow
@@ -191,14 +200,14 @@ class AppsPickerEditor extends StatelessWidget {
 Future<void> _changeEditorVisibility({
   required BuildContext context,
   required AppTabCubit apps,
-  required ExperimentalAppsCubit experiments,
+  required ExperimentalAppsCubit? experiments,
   required AppModule module,
   required bool hidden,
 }) async {
   if (!hidden && !await confirmHideApp(context)) return;
   if (!context.mounted) return;
   if (hidden && AppRegistry.experimentalModuleIds.contains(module.id)) {
-    await experiments.setModuleEnabled(moduleId: module.id, enabled: true);
+    await experiments?.setModuleEnabled(moduleId: module.id, enabled: true);
   }
   await apps.setAppHidden(module.id, hidden: !hidden);
 }

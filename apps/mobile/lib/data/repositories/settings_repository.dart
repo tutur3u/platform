@@ -66,6 +66,28 @@ class SettingsRepository {
       (await SharedPreferences.getInstance()).getStringList('apps-hidden') ??
       [];
 
+  Future<List<String>> getPinnedApps() async =>
+      (await SharedPreferences.getInstance()).getStringList('apps-pinned') ??
+      [];
+
+  Future<List<String>> getRecentApps() async =>
+      (await SharedPreferences.getInstance()).getStringList('apps-recent') ??
+      [];
+
+  Future<void> setPinnedApps(List<String> ids) async {
+    final prefs = await SharedPreferences.getInstance();
+    if (!await prefs.setStringList('apps-pinned', ids)) {
+      throw StateError('Could not save pinned apps');
+    }
+  }
+
+  Future<void> setRecentApps(List<String> ids) async {
+    final prefs = await SharedPreferences.getInstance();
+    if (!await prefs.setStringList('apps-recent', ids)) {
+      throw StateError('Could not save recent apps');
+    }
+  }
+
   Future<List<String>> getHomeWidgetOrder() async =>
       (await SharedPreferences.getInstance()).getStringList(
         'home-widget-order',

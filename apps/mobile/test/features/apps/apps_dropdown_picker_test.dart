@@ -5,8 +5,8 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:mobile/core/router/routes.dart';
 import 'package:mobile/data/repositories/settings_repository.dart';
 import 'package:mobile/features/apps/cubit/app_tab_cubit.dart';
+import 'package:mobile/features/apps/widgets/app_launcher_tile.dart';
 import 'package:mobile/features/apps/widgets/apps_dropdown_picker.dart';
-import 'package:mobile/features/apps/widgets/apps_reorder_grid.dart';
 import 'package:mobile/features/shell/cubit/shell_chrome_actions_cubit.dart';
 import 'package:mobile/features/shell/view/shell_chrome_actions.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -70,61 +70,30 @@ void main() {
         ),
       );
       await tester.pumpAndSettle();
-      expect(find.byType(TextField), findsNothing);
+      final search = find.byType(TextField);
+      expect(search, findsOneWidget);
       expect(find.byType(Dialog), findsNothing);
       expect(find.byKey(const ValueKey('apps-screen')), findsOneWidget);
-      final searchAction = chrome.state
-          .resolveForLocation(Routes.apps)
-          .firstWhere((action) => action.id == 'apps-search');
-      expect(searchAction.inDock, isTrue);
-      final listAction = chrome.state
-          .resolveForLocation(Routes.apps)
-          .firstWhere((action) => action.id == 'apps-view-list');
-      final gridAction = chrome.state
-          .resolveForLocation(Routes.apps)
-          .firstWhere((action) => action.id == 'apps-view-grid');
-      expect(listAction.segmentGroup, 'apps-view');
-      expect(gridAction.segmentGroup, 'apps-view');
-      expect(gridAction.highlighted, isTrue);
-      expect(find.byType(AppsReorderGrid), findsOneWidget);
-      final listControl = find.byWidgetPredicate(
-        (widget) => widget is Semantics && widget.properties.label == 'List',
-      );
-      final gridControl = find.byWidgetPredicate(
-        (widget) => widget is Semantics && widget.properties.label == 'Grid',
-      );
-      expect(listControl, findsOneWidget);
-      expect(gridControl, findsOneWidget);
-      await tester.tap(listControl);
-      await tester.pumpAndSettle();
-      expect(find.byType(SliverList), findsOneWidget);
-      expect(
-        chrome.state
-            .resolveForLocation(Routes.apps)
-            .firstWhere((action) => action.id == 'apps-view-list')
-            .highlighted,
-        isTrue,
-      );
-      chrome.state.resetSectionForLocation(Routes.apps)!();
-      await tester.pumpAndSettle();
-      expect(find.byType(AppsReorderGrid), findsOneWidget);
-      expect(find.byType(SegmentedButton<bool>), findsNothing);
-      searchAction.onPressed!();
-      await tester.pumpAndSettle();
-      final activeSearch = chrome.state
-          .resolveForLocation(Routes.apps)
-          .firstWhere((action) => action.id == 'apps-search');
-      expect(activeSearch.searchController, isNotNull);
-      expect(find.byType(TextField), findsNothing);
-      activeSearch.searchController!.text = 'calendar';
-      activeSearch.onSearchChanged!('calendar');
+      final actions = chrome.state.resolveForLocation(Routes.apps);
+      expect(actions.map((action) => action.id), ['apps-arrange']);
+      expect(actions.single.inDock, isFalse);
+      expect(find.byType(AppLauncherTile), findsWidgets);
+      expect(find.text('Add pin'), findsOneWidget);
+
+      await tester.enterText(search, 'calendar');
       await tester.pumpAndSettle();
       expect(find.text('Calendar'), findsOneWidget);
       expect(find.text('Tasks'), findsNothing);
-      activeSearch.searchController!.text = 'no-such-app';
-      activeSearch.onSearchChanged!('no-such-app');
+      expect(find.text('Pinned'), findsNothing);
+      await tester.enterText(search, 'no-such-app');
       await tester.pumpAndSettle();
       expect(find.text('No matching apps'), findsOneWidget);
+      await tester.tap(find.byTooltip('Clear search'));
+      await tester.pumpAndSettle();
+      expect(find.text('Pinned'), findsOneWidget);
+      await tester.tap(find.text('Add pin'));
+      await tester.pumpAndSettle();
+      expect(find.byTooltip('Pin Tasks'), findsOneWidget);
       expect(tester.takeException(), isNull);
     });
   }

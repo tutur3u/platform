@@ -1342,6 +1342,26 @@
   "appUpdateRecommendedTitle": "Update available",
   "appUpdateRequiredMessage": "This app version is no longer supported. Update to continue using the app.",
   "appUpdateRequiredTitle": "Update required",
+  "appsAddPin": "Add pin",
+  "appsCategoryWork": "Work",
+  "appsCategoryMoney": "Money",
+  "appsCategoryCommunication": "Communication",
+  "appsCategoryLearning": "Learning",
+  "appsCategoryTools": "Tools",
+  "appsPinnedSection": "Pinned",
+  "appsRecentSection": "Recents",
+  "appsPin": "Pin {app}",
+  "@appsPin": {
+    "placeholders": {
+      "app": { "type": "String" }
+    }
+  },
+  "appsUnpin": "Unpin {app}",
+  "@appsUnpin": {
+    "placeholders": {
+      "app": { "type": "String" }
+    }
+  },
   "appsCustomize": "Customize apps",
   "appsHiddenExperimentsSection": "Hidden experiments",
   "appsHiddenSection": "Hidden apps",

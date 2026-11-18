@@ -6,7 +6,6 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:go_router/go_router.dart';
 import 'package:mobile/core/router/routes.dart';
-import 'package:mobile/core/ui/icons/app_icons.dart';
 import 'package:mobile/core/widgets/shadcn_material_bridge.dart';
 import 'package:mobile/data/models/workspace.dart';
 import 'package:mobile/data/repositories/settings_repository.dart';
@@ -94,7 +93,6 @@ void main() {
           routes: [
             GoRoute(path: Routes.apps, builder: (_, _) => const SizedBox()),
             GoRoute(path: Routes.home, builder: (_, _) => const SizedBox()),
-            GoRoute(path: Routes.timeline, builder: (_, _) => const SizedBox()),
             GoRoute(path: Routes.tasks, builder: (_, _) => const SizedBox()),
             GoRoute(
               path: Routes.calendar,
@@ -167,14 +165,12 @@ void main() {
     await _pump(tester);
   }
 
-  final searchField = find.byKey(const ValueKey('shell-search-query'));
+  final searchField = find.byKey(const ValueKey('apps-search-field'));
   final searchInput = find.descendant(
     of: searchField,
     matching: find.byType(TextField),
   );
   Future<void> search(WidgetTester tester, String query) async {
-    await tester.tap(find.byIcon(AppIcons.search).first);
-    await _pump(tester);
     expect(searchField, findsOneWidget);
     await tester.enterText(searchField, query);
     await _pump(tester);
@@ -191,70 +187,45 @@ void main() {
     await mount(tester);
     router.go(Routes.home);
     await _pump(tester);
-    expect(find.byIcon(AppIcons.search), findsNothing);
+    expect(searchField, findsNothing);
     expect(find.byTooltip('Search'), findsNothing);
 
     router.go(Routes.apps);
     await _pump(tester);
-    expect(find.byIcon(AppIcons.search), findsOneWidget);
+    expect(searchField, findsOneWidget);
   });
 
-  testWidgets('leaving Apps clears retained query and search chrome', (
+  testWidgets('leaving Apps clears the retained query and its focus', (
     tester,
   ) async {
     await mount(tester);
     await search(tester, 'calendar');
     router.go(Routes.home);
     await _pump(tester);
+    expect(searchField, findsNothing);
     router.go(Routes.apps);
     await _pump(tester);
-    expect(searchField, findsNothing);
-    await tester.tap(find.byIcon(AppIcons.search).first);
-    await _pump(tester);
-    expect(tester.widget<TextField>(searchInput).controller!.text, isEmpty);
+    final field = tester.widget<TextField>(searchInput);
+    expect(field.controller!.text, isEmpty);
+    expect(field.focusNode!.hasFocus, isFalse);
   });
 
-  testWidgets('Grid precedes List; Home actions are unsegmented', (
+  testWidgets('Apps uses the header for Customize and the body for search', (
     tester,
   ) async {
     await mount(tester);
     final chrome = tester
         .element(find.byType(ShellPage))
         .read<ShellChromeActionsCubit>();
-    final appsViews = chrome.state
-        .resolveForLocation(Routes.apps)
-        .where((action) => action.segmentGroup == 'apps-view')
-        .toList();
-    expect(appsViews.map((action) => action.id), [
-      'apps-view-grid',
-      'apps-view-list',
-    ]);
-    expect(appsViews.first.highlighted, isTrue);
+    final actions = chrome.state.resolveForLocation(Routes.apps);
+    expect(actions.map((action) => action.id), ['apps-arrange']);
+    expect(actions.single.inDock, isFalse);
+    expect(searchField, findsOneWidget);
     router.go(Routes.home);
     await _pump(tester);
     final homeActions = chrome.state.resolveForLocation(Routes.home);
     expect(homeActions.map((action) => action.id), contains('home-customize'));
     expect(homeActions.where((action) => action.segmentGroup != null), isEmpty);
-    expect(tester.takeException(), isNull);
-  });
-
-  testWidgets('Home timeline action opens the Timeline', (tester) async {
-    await mount(tester);
-    router.go(Routes.home);
-    await _pump(tester);
-    final chrome = tester
-        .element(find.byType(ShellPage))
-        .read<ShellChromeActionsCubit>();
-    expect(
-      chrome.state.resolveForLocation(Routes.home).map((action) => action.id),
-      contains('home-timeline'),
-    );
-    await tester.tap(
-      find.byKey(const ValueKey('shell-action-button-home-timeline')),
-    );
-    await _pump(tester);
-    // Timeline is pushed above Home, so Back returns there.
-    expect(router.state.uri.path, Routes.timeline);
     expect(tester.takeException(), isNull);
   });
 
@@ -274,8 +245,7 @@ void main() {
       await tester.binding.handlePopRoute();
       await _pump(tester);
       expect(router.routeInformationProvider.value.uri.path, Routes.apps);
-      expect(searchField, findsNothing);
-      await search(tester, '');
+      expect(searchField, findsOneWidget);
       expect(tester.widget<TextField>(searchInput).controller!.text, isEmpty);
       expect(tester.takeException(), isNull);
     },
@@ -288,8 +258,6 @@ void main() {
     await _pump(tester);
     router.go(Routes.apps);
     await _pump(tester);
-    await tester.tap(find.byIcon(Icons.view_agenda_rounded).first);
-    await _pump(tester);
     await search(tester, 'calendar');
     await submit(tester);
     expect(router.routeInformationProvider.value.uri.path, Routes.calendar);
@@ -301,7 +269,8 @@ void main() {
     expect(apps.state.appOrigin, Routes.apps);
     router.go(Routes.apps);
     await _pump(tester);
-    expect(searchField, findsNothing);
+    expect(searchField, findsOneWidget);
+    expect(tester.widget<TextField>(searchInput).controller!.text, isEmpty);
     expect(tester.takeException(), isNull);
   });
   for (final query in ['no-such-module', 'a', '   ']) {
@@ -313,10 +282,11 @@ void main() {
       await submit(tester);
       expect(router.routeInformationProvider.value.uri.path, Routes.apps);
       if (query.trim().isEmpty) {
-        expect(searchField, findsNothing);
+        expect(searchField, findsOneWidget);
+        expect(tester.widget<TextField>(searchInput).controller!.text, isEmpty);
         expect(
           FocusManager.instance.primaryFocus?.debugLabel,
-          isNot('shell-search'),
+          isNot('apps-search'),
         );
       } else {
         expect(searchField, findsOneWidget);
@@ -421,27 +391,21 @@ void main() {
     },
   );
 
-  testWidgets('IME exits reorder and returning does not restore it', (
+  testWidgets('IME launch restores the Apps categories on return', (
     tester,
   ) async {
     await mount(tester);
-    await tester.longPress(_appTile('Tasks'));
-    await _pump(tester);
-    expect(find.byTooltip('Hide app'), findsWidgets);
+    final work = find.byKey(const ValueKey('apps-section-work'));
+    expect(work, findsOneWidget);
     await search(tester, 'calendar');
-    expect(find.byTooltip('Hide app'), findsNothing);
+    expect(work, findsNothing);
     await submit(tester);
     expect(router.routeInformationProvider.value.uri.path, Routes.calendar);
     router.go(Routes.apps);
     await _pump(tester);
-    expect(find.byTooltip('Hide app'), findsNothing);
-    expect(searchField, findsNothing);
+    expect(work, findsOneWidget);
+    expect(searchField, findsOneWidget);
+    expect(tester.widget<TextField>(searchInput).controller!.text, isEmpty);
     expect(tester.takeException(), isNull);
   });
 }
-
-/// An app tile label; the dock carries the same destination labels.
-Finder _appTile(String label) => find.descendant(
-  of: find.byKey(const ValueKey('apps-screen')),
-  matching: find.text(label),
-);

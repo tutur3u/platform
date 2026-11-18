@@ -232,6 +232,40 @@ class AppLocalizationsVi extends AppLocalizations {
   String get appUpdateRequiredTitle => 'Bắt buộc cập nhật';
 
   @override
+  String get appsAddPin => 'Ghim thêm';
+
+  @override
+  String get appsCategoryWork => 'Công việc';
+
+  @override
+  String get appsCategoryMoney => 'Tài chính';
+
+  @override
+  String get appsCategoryCommunication => 'Liên lạc';
+
+  @override
+  String get appsCategoryLearning => 'Học tập';
+
+  @override
+  String get appsCategoryTools => 'Công cụ';
+
+  @override
+  String get appsPinnedSection => 'Đã ghim';
+
+  @override
+  String get appsRecentSection => 'Gần đây';
+
+  @override
+  String appsPin(String app) {
+    return 'Ghim $app';
+  }
+
+  @override
+  String appsUnpin(String app) {
+    return 'Bỏ ghim $app';
+  }
+
+  @override
   String get appsCustomize => 'Tùy chỉnh ứng dụng';
 
   @override

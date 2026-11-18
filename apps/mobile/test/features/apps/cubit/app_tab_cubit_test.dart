@@ -94,6 +94,66 @@ void main() {
     expect(restored.state.hiddenAppIds, isEmpty);
   });
 
+  test('pins and unpins persist across cubit recreation', () async {
+    final first = AppTabCubit(settingsRepository: SettingsRepository());
+    await Future.wait([
+      first.setAppPinned('tasks', pinned: true),
+      first.setAppPinned('calendar', pinned: true),
+      first.setAppPinned('tasks', pinned: false),
+    ]);
+    expect(first.state.pinnedAppIds, ['calendar']);
+    await first.close();
+
+    final restored = AppTabCubit(settingsRepository: SettingsRepository());
+    addTearDown(restored.close);
+    await restored.loadLastApp();
+    expect(restored.state.pinnedAppIds, ['calendar']);
+  });
+
+  test(
+    'recent apps deduplicate repeated launches and persist their order',
+    () async {
+      final first = AppTabCubit(settingsRepository: SettingsRepository());
+      await Future.wait([
+        for (final id in [
+          'calendar',
+          'finance',
+          'calendar',
+          'calendar',
+          'tasks',
+        ])
+          first.select(AppRegistry.moduleById(id)!),
+      ]);
+      expect(first.state.recentAppIds, ['tasks', 'calendar', 'finance']);
+      await first.close();
+
+      final restored = AppTabCubit(settingsRepository: SettingsRepository());
+      addTearDown(restored.close);
+      await restored.loadLastApp();
+      expect(restored.state.recentAppIds, ['tasks', 'calendar', 'finance']);
+    },
+  );
+
+  test(
+    'route entry records recent apps without replacing the current app on disk',
+    () async {
+      final settings = SettingsRepository();
+      final cubit = AppTabCubit(settingsRepository: settings);
+      addTearDown(cubit.close);
+      final recent = cubit.stream.firstWhere(
+        (state) => state.recentAppIds.join(',') == 'calendar,tasks',
+      );
+      cubit
+        ..syncFromLocation(Routes.tasks)
+        ..syncFromLocation(Routes.calendar)
+        ..syncFromLocation(Routes.calendar);
+      await recent;
+      expect(cubit.state.selectedId, 'calendar');
+      expect(await settings.getRecentApps(), ['calendar', 'tasks']);
+      expect(await settings.getLastAppRoute(), Routes.timer);
+    },
+  );
+
   test('picker and editor keep hidden apps below shown apps', () async {
     final cubit = AppTabCubit(settingsRepository: SettingsRepository());
     addTearDown(cubit.close);

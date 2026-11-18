@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:developer';
 
 import 'package:bloc/bloc.dart';
@@ -14,6 +15,8 @@ class AppTabCubit extends Cubit<AppTabState> {
 
   final SettingsRepository _settings;
   int _selectionRequestVersion = 0;
+  Future<void>? _launcherPreferences;
+  static const _recentLimit = 12;
 
   void _bumpSelectionVersion() {
     _selectionRequestVersion += 1;
@@ -82,8 +85,64 @@ class AppTabCubit extends Cubit<AppTabState> {
     await _settings.setHiddenApps(ids);
   }
 
+  Future<void> _loadLauncherPreferences() async {
+    try {
+      final pinned = await _settings.getPinnedApps();
+      final recent = await _settings.getRecentApps();
+      if (isClosed) return;
+      emit(
+        state.copyWith(
+          pinnedAppIds: List.unmodifiable(pinned.toSet()),
+          recentAppIds: List.unmodifiable(recent.toSet().take(_recentLimit)),
+        ),
+      );
+    } on Object catch (error, stack) {
+      log('Failed to load app shortcuts', error: error, stackTrace: stack);
+    }
+  }
+
+  // Queue writes behind the initial read and each other so a rapid pair of
+  // launches or pin changes preserves both the on-screen and stored order.
+  Future<void> _updateLauncherPreferences(Future<void> Function() update) {
+    final previous = _launcherPreferences ?? _loadLauncherPreferences();
+    return _launcherPreferences = previous.then((_) async {
+      if (isClosed) return;
+      try {
+        await update();
+      } on Object catch (error, stack) {
+        log('Failed to save app shortcuts', error: error, stackTrace: stack);
+      }
+    });
+  }
+
+  Future<void> setAppPinned(String id, {required bool pinned}) =>
+      _updateLauncherPreferences(() async {
+        if (state.pinnedAppIds.contains(id) == pinned) return;
+        final ids = List<String>.unmodifiable([
+          ...state.pinnedAppIds.where((existing) => existing != id),
+          if (pinned) id,
+        ]);
+        await _settings.setPinnedApps(ids);
+        if (!isClosed) emit(state.copyWith(pinnedAppIds: ids));
+      });
+
+  Future<void> _recordRecentApp(String id) =>
+      _updateLauncherPreferences(() async {
+        if (state.recentAppIds.firstOrNull == id) return;
+        final ids = List<String>.unmodifiable(
+          [
+            id,
+            ...state.recentAppIds.where((existing) => existing != id),
+          ].take(_recentLimit),
+        );
+        await _settings.setRecentApps(ids);
+        if (!isClosed) emit(state.copyWith(recentAppIds: ids));
+      });
+
   Future<void> loadLastApp() async {
     final requestVersion = ++_selectionRequestVersion;
+    await (_launcherPreferences ??= _loadLauncherPreferences());
+    if (isClosed) return;
     try {
       final visible = await _settings.getShowAppsTab();
       if (!isClosed) emit(state.copyWith(showAppsTab: visible));
@@ -139,7 +198,11 @@ class AppTabCubit extends Cubit<AppTabState> {
 
   Future<void> select(AppModule module) async {
     _bumpSelectionVersion();
-    if (state.selectedId == module.id && state.hasSelection) return;
+    final recent = _recordRecentApp(module.id);
+    if (state.selectedId == module.id) {
+      await recent;
+      return;
+    }
     emit(state.copyWith(selectedId: () => module.id));
     try {
       await _settings.setLastAppRoute(module.route);
@@ -147,6 +210,7 @@ class AppTabCubit extends Cubit<AppTabState> {
     } on Exception catch (e, st) {
       log('Failed to persist app selection', error: e, stackTrace: st);
     }
+    await recent;
   }
 
   Future<void> setLastTabRoute(String route) async {
@@ -163,7 +227,10 @@ class AppTabCubit extends Cubit<AppTabState> {
   void syncFromLocation(String location) {
     _bumpSelectionVersion();
     final module = AppRegistry.moduleFromLocation(location);
-    if (module == null || module.id == state.selectedId) return;
-    emit(state.copyWith(selectedId: () => module.id));
+    if (module == null) return;
+    if (module.id != state.selectedId) {
+      emit(state.copyWith(selectedId: () => module.id));
+    }
+    if (module.id != 'settings') unawaited(_recordRecentApp(module.id));
   }
 }

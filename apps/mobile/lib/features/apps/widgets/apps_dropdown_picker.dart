@@ -4,8 +4,10 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 import 'package:mobile/core/router/routes.dart';
+import 'package:mobile/core/ui/ui.dart';
 import 'package:mobile/features/apps/cubit/app_tab_cubit.dart';
 import 'package:mobile/features/apps/cubit/app_tab_state.dart';
+import 'package:mobile/features/apps/models/app_module.dart';
 import 'package:mobile/features/apps/view/apps_hub_page.dart';
 import 'package:mobile/features/apps/view/apps_hub_results.dart';
 import 'package:mobile/features/apps/widgets/apps_picker_editor.dart';
@@ -65,50 +67,57 @@ class AppsScreen extends StatefulWidget {
 
 class _AppsScreenState extends State<AppsScreen> {
   final _search = TextEditingController();
-  bool _searching = false;
-  bool _showGrid = true;
+  final _searchFocus = FocusNode(debugLabel: 'apps-search');
   String? _pendingSubmit;
   bool _launchQueued = false;
 
   @override
   void initState() {
     super.initState();
-    _searching = context.read<AppTabCubit>().state.shouldAutoFocus;
-    if (_searching) {
-      WidgetsBinding.instance.addPostFrameCallback((_) {
-        if (mounted) context.read<AppTabCubit>().consumeAutoFocus();
-      });
-    }
+    _focusFromRequest();
+  }
+
+  void _focusFromRequest() {
+    final tabs = context.read<AppTabCubit>();
+    if (!widget.isActive || !tabs.state.shouldAutoFocus) return;
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted || !widget.isActive || !tabs.state.shouldAutoFocus) return;
+      tabs.consumeAutoFocus();
+      _searchFocus.requestFocus();
+    });
   }
 
   @override
   void didUpdateWidget(covariant AppsScreen oldWidget) {
     super.didUpdateWidget(oldWidget);
     if (oldWidget.isActive && !widget.isActive) {
-      // Retained root pages must not reopen a previous query on return.
-      _searching = false;
       _pendingSubmit = null;
+      _searchFocus.unfocus();
       WidgetsBinding.instance.addPostFrameCallback((_) {
-        if (mounted && !_searching) _search.clear();
+        if (mounted && !widget.isActive) _search.clear();
       });
     }
+    if (!oldWidget.isActive && widget.isActive) _focusFromRequest();
   }
 
   @override
   void dispose() {
     _search.dispose();
+    _searchFocus.dispose();
     super.dispose();
   }
 
   void _submitSearch(String submitted) {
-    if (!widget.isActive ||
-        !_searching ||
-        _pendingSubmit != null ||
-        _launchQueued) {
+    if (!widget.isActive || _pendingSubmit != null || _launchQueued) {
       return;
     }
     final query = _search.text.trim().toLowerCase();
-    if (query.isEmpty || submitted.trim().toLowerCase() != query) return;
+    if (submitted.trim().toLowerCase() != query) return;
+    if (query.isEmpty) {
+      _search.clear();
+      _searchFocus.unfocus();
+      return;
+    }
     setState(() => _pendingSubmit = query);
   }
 
@@ -128,7 +137,6 @@ class _AppsScreenState extends State<AppsScreen> {
       _launchQueued = false;
       if (!mounted ||
           !widget.isActive ||
-          !_searching ||
           _search.text.trim().toLowerCase() != query ||
           GoRouter.of(context).routeInformationProvider.value.uri.path !=
               Routes.apps) {
@@ -141,16 +149,35 @@ class _AppsScreenState extends State<AppsScreen> {
         setState(() => _pendingSubmit = query);
         return;
       }
-      // Clear and close synchronously before launch: repeated IME actions
-      // cannot launch a second app or retain stale search when returning.
-      setState(() {
-        _searching = false;
-        _search.clear();
-      });
-      FocusManager.instance.primaryFocus?.unfocus();
-      unawaited(tabs.select(module));
-      context.go(module.route);
+      _open(module);
     });
+  }
+
+  void _open(AppModule module) {
+    setState(() => _pendingSubmit = null);
+    _search.clear();
+    _searchFocus.unfocus();
+    unawaited(context.read<AppTabCubit>().select(module));
+    context.go(module.route);
+  }
+
+  void _manage() {
+    final tabs = context.read<AppTabCubit>();
+    final experiments = context.read<ExperimentalAppsCubit?>();
+    _searchFocus.unfocus();
+    unawaited(
+      showOrderEditorSheet(
+        context,
+        title: context.l10n.appsCustomize,
+        builder: (_) => MultiBlocProvider(
+          providers: [
+            BlocProvider.value(value: tabs),
+            if (experiments != null) BlocProvider.value(value: experiments),
+          ],
+          child: const AppsPickerEditor(),
+        ),
+      ),
+    );
   }
 
   @override
@@ -159,92 +186,55 @@ class _AppsScreenState extends State<AppsScreen> {
     return BlocListener<AppTabCubit, AppTabState>(
       listenWhen: (previous, current) =>
           !previous.shouldAutoFocus && current.shouldAutoFocus,
-      listener: (context, state) {
-        setState(() => _searching = true);
-        context.read<AppTabCubit>().consumeAutoFocus();
-      },
+      listener: (_, _) => _focusFromRequest(),
       child: Column(
         key: const ValueKey('apps-screen'),
         children: [
           ShellChromeActions(
             ownerId: 'apps-screen',
             locations: const {Routes.apps},
-            onResetSection: () => setState(() => _showGrid = true),
             actions: [
-              ShellActionSpec.search(
-                id: 'apps-search',
-                active: _searching,
-                tooltip: context.l10n.appsHubSearchHint,
-                controller: _search,
-                searchHint: context.l10n.appsHubSearchHint,
-                onSearchChanged: (_) => setState(() {}),
-                onSearchSubmitted: _submitSearch,
-                onCloseSearch: () => setState(() {
-                  _searching = false;
-                  _search.clear();
-                }),
-                onPressed: () => setState(() {
-                  _searching = !_searching;
-                  if (!_searching) _search.clear();
-                }),
-              ),
               ShellActionSpec(
                 id: 'apps-arrange',
-                icon: Icons.tune_rounded,
+                icon: LucideIcons.pencil,
                 tooltip: context.l10n.appsCustomize,
-                onPressed: () {
-                  final tabs = context.read<AppTabCubit>();
-                  final experiments = context.read<ExperimentalAppsCubit>();
-                  unawaited(
-                    showOrderEditorSheet(
-                      context,
-                      title: context.l10n.appsCustomize,
-                      builder: (_) => MultiBlocProvider(
-                        providers: [
-                          BlocProvider.value(value: tabs),
-                          BlocProvider.value(value: experiments),
-                        ],
-                        child: const AppsPickerEditor(),
-                      ),
-                    ),
-                  );
-                },
-              ),
-              ShellActionSpec(
-                id: 'apps-view-grid',
-                segmentGroup: 'apps-view',
-                icon: Icons.grid_view_rounded,
-                tooltip: context.l10n.appsHubGridView,
-                highlighted: _showGrid,
-                callbackToken: _showGrid,
-                onPressed: () => setState(() => _showGrid = true),
-              ),
-              ShellActionSpec(
-                id: 'apps-view-list',
-                segmentGroup: 'apps-view',
-                icon: Icons.view_agenda_rounded,
-                tooltip: context.l10n.appsHubListView,
-                highlighted: !_showGrid,
-                callbackToken: _showGrid,
-                onPressed: () => setState(() => _showGrid = false),
+                onPressed: _manage,
               ),
             ],
           ),
           Expanded(
-            child: AppsHubPage(
-              isActive: widget.isActive,
-              query: _search.text,
-              showGrid: _showGrid,
-              replayToken: widget.replayToken,
-              onSelected: (module) {
-                setState(() {
-                  _searching = false;
-                  _pendingSubmit = null;
-                  _search.clear();
-                });
-                FocusManager.instance.primaryFocus?.unfocus();
-                unawaited(context.read<AppTabCubit>().select(module));
-                context.go(module.route);
+            child: ValueListenableBuilder<TextEditingValue>(
+              valueListenable: _search,
+              builder: (context, value, _) {
+                final tokens = AppTokens.of(context);
+                return AppsHubPage(
+                  query: value.text,
+                  onSelected: _open,
+                  onManage: _manage,
+                  search: DecoratedBox(
+                    decoration: BoxDecoration(
+                      color: tokens.colorScheme.card,
+                      borderRadius: BorderRadius.circular(tokens.shapes.field),
+                    ),
+                    child: AppTextField(
+                      key: const ValueKey('apps-search-field'),
+                      controller: _search,
+                      focusNode: _searchFocus,
+                      placeholder: context.l10n.appsHubSearchHint,
+                      leading: const Icon(LucideIcons.search, size: 20),
+                      trailing: value.text.isEmpty
+                          ? null
+                          : AppIconButton(
+                              icon: const Icon(LucideIcons.x),
+                              tooltip: context.l10n.commonClearSearch,
+                              onPressed: _search.clear,
+                            ),
+                      onSubmitted: _submitSearch,
+                      onTapOutside: (_) => _searchFocus.unfocus(),
+                      textInputAction: TextInputAction.search,
+                    ),
+                  ),
+                );
               },
             ),
           ),

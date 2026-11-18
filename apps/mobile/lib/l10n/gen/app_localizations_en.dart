@@ -232,6 +232,40 @@ class AppLocalizationsEn extends AppLocalizations {
   String get appUpdateRequiredTitle => 'Update required';
 
   @override
+  String get appsAddPin => 'Add pin';
+
+  @override
+  String get appsCategoryWork => 'Work';
+
+  @override
+  String get appsCategoryMoney => 'Money';
+
+  @override
+  String get appsCategoryCommunication => 'Communication';
+
+  @override
+  String get appsCategoryLearning => 'Learning';
+
+  @override
+  String get appsCategoryTools => 'Tools';
+
+  @override
+  String get appsPinnedSection => 'Pinned';
+
+  @override
+  String get appsRecentSection => 'Recents';
+
+  @override
+  String appsPin(String app) {
+    return 'Pin $app';
+  }
+
+  @override
+  String appsUnpin(String app) {
+    return 'Unpin $app';
+  }
+
+  @override
   String get appsCustomize => 'Customize apps';
 
   @override

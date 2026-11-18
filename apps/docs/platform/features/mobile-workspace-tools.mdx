@@ -15,26 +15,24 @@ The mobile app now ships first-party workspace surfaces for:
 
 These modules are registered in the Apps hub and available through the mini-app navigation system.
 
-The mobile Apps hub uses the v0.9.2 colored cards with consistent icons and clear descriptions. Keep module ordering explicit in the hub view rather than relying on registry insertion order. For workspace modules that need dense controls, prefer the same shell-owned chrome used by Calendar:
+The Apps screen groups available tools under Work, Money, Communication,
+Learning, and Tools. Phones use two tiles per row at standard text sizes.
+Wider layouts can show more columns. The search field matches app names and
+descriptions in place.
 
-- `ShellMiniNav` for mode or section switching
-- `ShellChromeActions` for quick actions such as filters, create, sort, and view toggles
-- A compact overview with a small number of relevant metrics
-- The v0.9.2 AppCardPalette gradient cards, consistent icon blocks, readable labels, and shared theme colors
+Customize apps lets you pin or unpin apps, reorder tools within their category,
+and hide or restore apps. Pinned appears above the categories with an Add pin
+shortcut. Recents shows up to four available apps, most recent first. Pin
+choices and recent launches are stored on the device. Hidden apps are omitted from browsing and shortcuts and can still be
+found under Hidden apps in search. Workspace permissions and experiment settings
+apply to categories, search, pins, and recents.
 
-The Apps screen defaults to the compact grid. A List/Grid switch in the top
-shell header sits beside Customize and changes the same visible, ordered modules
-between icon-and-name tiles and descriptive cards. Grid tiles have more space below
-the shell header and can be held and dragged to reorder without entering Customize.
-Holding an icon enters persistent ordering mode: icons shift during a drag and
-continue to wiggle after release until an empty area is tapped. Compact hide
-controls sit over icon corners only in grid ordering mode; list cards never show
-hide controls. The choice stays in the mounted Apps screen while navigating
-within the mobile shell; search and workspace access rules apply to both layouts. Descriptions remain
-searchable in grid mode even though they are hidden from the tiles.
-Holding a tile produces a pickup haptic, moving onto a new navigation target
-produces a selection tick, and completing a drop produces a light confirmation.
-The floating dock uses the same semantic feedback. Haptics are enabled by default
+[Launcher widget tests](https://github.com/tutur3u/platform/blob/main/apps/mobile/test/features/apps/apps_hub_page_test.dart)
+cover these sections, search, and access changes.
+[Apps preference tests](https://github.com/tutur3u/platform/blob/main/apps/mobile/test/features/apps/cubit/app_tab_cubit_test.dart)
+cover persisted pins and most-recent-first ordering.
+
+Haptics are enabled by default
 on iOS and Android, can be disabled in Preferences, follow system haptic policy,
 and throttle repeated feedback during a continuous gesture.
 Shell actions and standalone primary actions give a selection tick, and a
@@ -59,7 +57,7 @@ description.
 Phones and tablets share a compact floating icon dock. Leaving a mini-app returns
 to its Home or Apps launch screen. Root screens remain mounted with hidden
 animations paused, preserving search and scroll state. The brand control opens
-the Apps screen within the normal shell, with compact search and arrange actions.
+the Apps screen within the normal shell, with inline search and a Customize apps action.
 Tapping a dock item glides the inner highlight to the new position without a
 button splash. During a hold or drag, the highlight follows the finger freely;
 it snaps to the selected item only on release. Reduced-motion settings shorten

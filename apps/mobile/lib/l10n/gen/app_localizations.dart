@@ -517,6 +517,66 @@ abstract class AppLocalizations {
   /// **'Update required'**
   String get appUpdateRequiredTitle;
 
+  /// No description provided for @appsAddPin.
+  ///
+  /// In en, this message translates to:
+  /// **'Add pin'**
+  String get appsAddPin;
+
+  /// No description provided for @appsCategoryWork.
+  ///
+  /// In en, this message translates to:
+  /// **'Work'**
+  String get appsCategoryWork;
+
+  /// No description provided for @appsCategoryMoney.
+  ///
+  /// In en, this message translates to:
+  /// **'Money'**
+  String get appsCategoryMoney;
+
+  /// No description provided for @appsCategoryCommunication.
+  ///
+  /// In en, this message translates to:
+  /// **'Communication'**
+  String get appsCategoryCommunication;
+
+  /// No description provided for @appsCategoryLearning.
+  ///
+  /// In en, this message translates to:
+  /// **'Learning'**
+  String get appsCategoryLearning;
+
+  /// No description provided for @appsCategoryTools.
+  ///
+  /// In en, this message translates to:
+  /// **'Tools'**
+  String get appsCategoryTools;
+
+  /// No description provided for @appsPinnedSection.
+  ///
+  /// In en, this message translates to:
+  /// **'Pinned'**
+  String get appsPinnedSection;
+
+  /// No description provided for @appsRecentSection.
+  ///
+  /// In en, this message translates to:
+  /// **'Recents'**
+  String get appsRecentSection;
+
+  /// No description provided for @appsPin.
+  ///
+  /// In en, this message translates to:
+  /// **'Pin {app}'**
+  String appsPin(String app);
+
+  /// No description provided for @appsUnpin.
+  ///
+  /// In en, this message translates to:
+  /// **'Unpin {app}'**
+  String appsUnpin(String app);
+
   /// No description provided for @appsCustomize.
   ///
   /// In en, this message translates to:

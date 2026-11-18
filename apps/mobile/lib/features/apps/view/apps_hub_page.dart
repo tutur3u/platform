@@ -1,70 +1,52 @@
 import 'dart:async';
 
-import 'package:flutter/material.dart' hide AppBar, Scaffold;
+import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 import 'package:mobile/core/interaction/app_haptics.dart';
 import 'package:mobile/core/layout/layout.dart';
+import 'package:mobile/core/ui/kit/kit.dart';
 import 'package:mobile/features/apps/cubit/app_tab_cubit.dart';
-import 'package:mobile/features/apps/models/app_description.dart';
+import 'package:mobile/features/apps/models/app_category.dart';
 import 'package:mobile/features/apps/models/app_module.dart';
 import 'package:mobile/features/apps/view/apps_hub_results.dart';
-import 'package:mobile/features/apps/widgets/app_card_palette.dart';
-import 'package:mobile/features/apps/widgets/apps_picker_editor.dart';
-import 'package:mobile/features/apps/widgets/apps_reorder_grid.dart';
+import 'package:mobile/features/apps/widgets/app_launcher_shortcuts.dart';
+import 'package:mobile/features/apps/widgets/app_launcher_tile.dart';
 import 'package:mobile/features/mastermind/access/mastermind_access_cubit.dart';
 import 'package:mobile/features/shell/view/floating_shell_dock.dart';
 import 'package:mobile/features/workspace/cubit/workspace_cubit.dart';
 import 'package:mobile/l10n/l10n.dart';
 import 'package:mobile/widgets/nova_refresh_indicator.dart';
-import 'package:mobile/widgets/staggered_entrance.dart';
 
 class AppsHubPage extends StatefulWidget {
   const AppsHubPage({
-    this.replayToken = 0,
     this.query = '',
-    this.showGrid = true,
-    this.isActive = true,
     this.onSelected,
+    this.onManage,
+    this.search,
     super.key,
   });
 
   final String query;
-  final bool showGrid;
-  final bool isActive;
   final ValueChanged<AppModule>? onSelected;
-
-  final int replayToken;
+  final VoidCallback? onManage;
+  final Widget? search;
 
   @override
   State<AppsHubPage> createState() => _AppsHubPageState();
 }
 
 class _AppsHubPageState extends State<AppsHubPage> {
-  bool _ordering = false;
+  final _scroll = ScrollController();
 
   @override
-  void didUpdateWidget(covariant AppsHubPage oldWidget) {
-    super.didUpdateWidget(oldWidget);
-    if (!widget.isActive ||
-        !widget.showGrid ||
-        widget.query.trim().isNotEmpty) {
-      _ordering = false;
-    }
+  void dispose() {
+    _scroll.dispose();
+    super.dispose();
   }
 
-  void _reorder(List<String> shownIds, List<AppModule> hidden) {
-    unawaited(
-      context.read<AppTabCubit>().setAppOrder([
-        ...shownIds,
-        ...hidden.map((module) => module.id),
-      ]),
-    );
-  }
-
-  // Pull-to-refresh re-checks the access-gated entries, so an access check
-  // that failed once does not keep an app hidden until the workspace changes.
-  Future<void> _refresh() async {
+  // Pull to refresh also retries the workspace's app access check.
+  Future<void> _refresh(BuildContext context) async {
     final access = context.read<MastermindAccessCubit?>();
     if (access == null) return;
     await access.sync(
@@ -76,263 +58,168 @@ class _AppsHubPageState extends State<AppsHubPage> {
   @override
   Widget build(BuildContext context) {
     final cubit = context.watch<AppTabCubit>();
-    final modules = appsHubResults(context, cubit, widget.query);
-    final shown = modules
-        .where((module) => !cubit.state.hiddenAppIds.contains(module.id))
+    final state = cubit.state;
+    final matching = appsHubResults(context, cubit, widget.query);
+    final hidden = state.hiddenAppIds.toSet();
+    final visible = {
+      for (final app in matching)
+        if (!hidden.contains(app.id)) app.id: app,
+    };
+    final l10n = context.l10n;
+    final searching = widget.query.trim().isNotEmpty;
+    final pinned = state.pinnedAppIds
+        .map((id) => visible[id])
+        .nonNulls
         .toList();
-    final hidden = modules
-        .where((module) => cubit.state.hiddenAppIds.contains(module.id))
+    final recent = state.recentAppIds
+        .map((id) => visible[id])
+        .nonNulls
+        .take(4)
         .toList();
-
-    final topInset = floatingShellHeaderInset(context);
-    return GestureDetector(
-      behavior: HitTestBehavior.translucent,
-      onTap: _ordering ? () => setState(() => _ordering = false) : null,
-      child: NovaRefreshIndicator(
-        onRefresh: _refresh,
-        child: CustomScrollView(
-          physics: const BouncingScrollPhysics(
-            parent: AlwaysScrollableScrollPhysics(),
+    final sections = <(String, String, List<AppModule>)>[
+      if (searching) ...[
+        ('results', l10n.appsHubSearchResults, visible.values.toList()),
+        (
+          'hidden',
+          l10n.appsHiddenSection,
+          matching.where((app) => hidden.contains(app.id)).toList(),
+        ),
+      ] else ...[
+        for (final category in AppCategory.values)
+          (
+            category.name,
+            category.label(l10n),
+            visible.values
+                .where((app) => AppCategory.forModule(app.id) == category)
+                .toList(),
           ),
-          slivers: [
-            if (modules.isEmpty)
-              SliverAppPage(
-                kind: AppPageKind.root,
-                topInset: topInset,
-                sliver: SliverFillRemaining(
-                  hasScrollBody: false,
-                  child: Center(child: Text(context.l10n.appsNoMatches)),
-                ),
-              )
-            else
-              SliverAppPage(
-                kind: AppPageKind.root,
-                topInset: topInset,
-                sliver: SliverMainAxisGroup(
-                  slivers: [
-                    if (shown.isNotEmpty)
-                      _modulesSliver(
-                        shown,
-                        hidden: false,
-                        hiddenModules: hidden,
-                      ),
-                    if (hidden.isNotEmpty) ...[
-                      SliverToBoxAdapter(
-                        child: Padding(
-                          padding: EdgeInsets.only(
-                            top: shown.isEmpty ? 0 : AppLayout.sectionGap,
-                            bottom: AppLayout.itemGap,
-                          ),
-                          child: Row(
-                            children: [
-                              const Expanded(child: Divider()),
-                              Padding(
-                                padding: const EdgeInsets.symmetric(
-                                  horizontal: 14,
-                                ),
-                                child: Text(
-                                  context.l10n.appsHiddenSection,
-                                  style: Theme.of(context).textTheme.labelLarge,
-                                ),
-                              ),
-                              const Expanded(child: Divider()),
-                            ],
-                          ),
-                        ),
-                      ),
-                      _modulesSliver(
-                        hidden,
-                        hidden: true,
-                        hiddenModules: hidden,
-                      ),
-                    ],
-                  ],
+      ],
+    ].where((section) => section.$3.isNotEmpty);
+
+    void open(AppModule app) {
+      unawaited(AppHaptics.selection());
+      if (widget.onSelected case final select?) {
+        select(app);
+      } else {
+        unawaited(cubit.select(app));
+        context.go(app.route);
+      }
+    }
+
+    return NovaRefreshIndicator(
+      onRefresh: () => _refresh(context),
+      child: AppPageScrollView(
+        kind: AppPageKind.root,
+        controller: _scroll,
+        topInset: floatingShellHeaderInset(context),
+        physics: const BouncingScrollPhysics(
+          parent: AlwaysScrollableScrollPhysics(),
+        ),
+        slivers: [
+          if (widget.search case final field?)
+            SliverToBoxAdapter(
+              child: Padding(
+                padding: const EdgeInsets.only(bottom: AppLayout.sectionGap),
+                child: field,
+              ),
+            ),
+          if (!searching && (pinned.isNotEmpty || widget.onManage != null))
+            SliverToBoxAdapter(
+              key: const ValueKey('apps-section-pinned'),
+              child: _AppsSection(
+                title: l10n.appsPinnedSection,
+                child: AppLauncherPins(
+                  apps: pinned,
+                  onSelected: open,
+                  onManage: widget.onManage,
                 ),
               ),
-          ],
-        ),
+            ),
+          if (!searching && recent.isNotEmpty)
+            SliverToBoxAdapter(
+              key: const ValueKey('apps-section-recent'),
+              child: _AppsSection(
+                title: l10n.appsRecentSection,
+                child: AppLauncherRecents(apps: recent, onSelected: open),
+              ),
+            ),
+          if (sections.isEmpty)
+            SliverToBoxAdapter(
+              child: AppStateMessage(
+                icon: searching ? Icons.search : Icons.apps,
+                title: searching ? l10n.appsNoMatches : l10n.appsHubEmpty,
+              ),
+            ),
+          for (final (id, title, apps) in sections)
+            SliverToBoxAdapter(
+              key: ValueKey('apps-section-$id'),
+              child: _AppsSection(
+                title: title,
+                child: _AppsGrid(apps: apps, onSelected: open),
+              ),
+            ),
+        ],
       ),
     );
   }
-
-  Widget _modulesSliver(
-    List<AppModule> modules, {
-    required bool hidden,
-    required List<AppModule> hiddenModules,
-  }) {
-    final cubit = context.read<AppTabCubit>();
-    return widget.showGrid
-        ? SliverToBoxAdapter(
-            child: AppsReorderGrid(
-              modules: modules,
-              hidden: hidden,
-              canReorder: !hidden && widget.query.trim().isEmpty,
-              isOrdering: _ordering,
-              onOrderingStarted: () => setState(() => _ordering = true),
-              onOrderingFinished: () => setState(() => _ordering = false),
-              onSelected: widget.onSelected,
-              onOrderChanged: (ids) => _reorder(ids, hiddenModules),
-              onVisibilityPressed: (module) => unawaited(
-                changeAppVisibility(context, cubit, module, hidden: hidden),
-              ),
-            ),
-          )
-        : SliverLayoutBuilder(
-            builder: (context, constraints) {
-              final columns = (constraints.crossAxisExtent / 280).floor().clamp(
-                1,
-                3,
-              );
-              return SliverList(
-                delegate: SliverChildBuilderDelegate((context, index) {
-                  return Padding(
-                    padding: const EdgeInsets.only(bottom: 14),
-                    child: Row(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        for (var column = 0; column < columns; column++) ...[
-                          if (column > 0) const SizedBox(width: 14),
-                          Expanded(
-                            child: index * columns + column < modules.length
-                                ? _AppEditorialCard(
-                                    module: modules[index * columns + column],
-                                    index: index * columns + column,
-                                    replayToken: widget.replayToken,
-                                    onSelected: widget.onSelected,
-                                    hidden: hidden,
-                                  )
-                                : const SizedBox.shrink(),
-                          ),
-                        ],
-                      ],
-                    ),
-                  );
-                }, childCount: (modules.length / columns).ceil()),
-              );
-            },
-          );
-  }
 }
 
-class _AppEditorialCard extends StatelessWidget {
-  const _AppEditorialCard({
-    required this.module,
-    required this.index,
-    required this.replayToken,
-    required this.hidden,
-    this.onSelected,
-  });
+class _AppsSection extends StatelessWidget {
+  const _AppsSection({required this.title, required this.child});
 
-  final AppModule module;
-  final ValueChanged<AppModule>? onSelected;
-  final int index;
-  final int replayToken;
-  final bool hidden;
+  final String title;
+  final Widget child;
 
   @override
-  Widget build(BuildContext context) {
-    final palette = AppCardPalette.resolve(
-      context,
-      index: index,
-      moduleId: module.id,
-    );
-    final surfaceColor = Color.alphaBlend(
-      palette.shadow.withValues(alpha: 0.22),
-      palette.background,
-    );
-
-    return StaggeredEntrance(
-      replayKey: '$replayToken-$index',
-      delay: Duration(milliseconds: 40 + (index * 28)),
-      child: InkWell(
-        borderRadius: BorderRadius.circular(26),
-        onTap: () {
-          unawaited(AppHaptics.selection());
-          if (onSelected != null) {
-            onSelected!(module);
-          } else {
-            _openModule(context, module);
-          }
-        },
-        child: Material(
-          color: surfaceColor,
-          borderRadius: BorderRadius.circular(26),
-          clipBehavior: Clip.antiAlias,
-          child: Container(
-            constraints: const BoxConstraints(minHeight: 126),
-            padding: const EdgeInsets.all(18),
-            decoration: BoxDecoration(
-              borderRadius: BorderRadius.circular(26),
-              gradient: LinearGradient(
-                begin: Alignment.topLeft,
-                end: Alignment.bottomRight,
-                colors: [
-                  Color.alphaBlend(
-                    palette.iconBackground.withValues(alpha: 0.14),
-                    palette.background,
-                  ),
-                  surfaceColor,
-                ],
-              ),
-              border: Border.all(color: palette.border.withValues(alpha: 0.95)),
-              boxShadow: [
-                BoxShadow(
-                  color: palette.shadow,
-                  blurRadius: 18,
-                  offset: const Offset(0, 10),
-                ),
-              ],
-            ),
-            child: Row(
-              children: [
-                Container(
-                  width: 58,
-                  height: 58,
-                  decoration: BoxDecoration(
-                    color: palette.iconBackground,
-                    borderRadius: BorderRadius.circular(18),
-                  ),
-                  child: Icon(module.icon, color: palette.iconColor, size: 28),
-                ),
-                const SizedBox(width: 16),
-                Expanded(
-                  child: Column(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        module.label(context.l10n),
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                        style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                          color: palette.textColor,
-                          fontWeight: FontWeight.w900,
-                          height: 1.05,
-                        ),
-                      ),
-                      const SizedBox(height: 8),
-                      Text(
-                        appDescription(context, module.id),
-                        maxLines: 2,
-                        overflow: TextOverflow.ellipsis,
-                        style: Theme.of(context).textTheme.bodyLarge?.copyWith(
-                          color: palette.textColor.withValues(alpha: 0.8),
-                          height: 1.34,
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-              ],
-            ),
-          ),
-        ),
-      ),
-    );
-  }
+  Widget build(BuildContext context) => Padding(
+    padding: const EdgeInsets.only(bottom: AppLayout.sectionGap),
+    child: Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        AppSectionHeader(title: title),
+        child,
+      ],
+    ),
+  );
 }
 
-void _openModule(BuildContext context, AppModule module) {
-  unawaited(context.read<AppTabCubit>().select(module));
-  context.go(module.route);
+class _AppsGrid extends StatelessWidget {
+  const _AppsGrid({required this.apps, required this.onSelected});
+
+  final List<AppModule> apps;
+  final ValueChanged<AppModule> onSelected;
+
+  @override
+  Widget build(BuildContext context) => LayoutBuilder(
+    builder: (context, constraints) {
+      final width = constraints.maxWidth;
+      const gap = AppSpacing.sm;
+      final minWidth = 115 * MediaQuery.textScalerOf(context).scale(15) / 15;
+      final maxColumns = switch (width) {
+        >= 900 => 4,
+        >= 592 => 3,
+        _ => 2,
+      };
+      final columns = ((width + gap) / (minWidth + gap)).floor().clamp(
+        1,
+        maxColumns,
+      );
+      final tileWidth = (width - (columns - 1) * gap) / columns;
+      return Wrap(
+        spacing: gap,
+        runSpacing: gap,
+        children: [
+          for (final module in apps)
+            SizedBox(
+              key: ValueKey(module.id),
+              width: tileWidth,
+              child: AppLauncherTile(
+                module: module,
+                onPressed: () => onSelected(module),
+              ),
+            ),
+        ],
+      );
+    },
+  );
 }

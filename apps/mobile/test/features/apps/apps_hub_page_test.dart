@@ -5,449 +5,250 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:mobile/core/ui/ui.dart';
 import 'package:mobile/data/repositories/settings_repository.dart';
 import 'package:mobile/features/apps/cubit/app_tab_cubit.dart';
+import 'package:mobile/features/apps/registry/app_registry.dart';
 import 'package:mobile/features/apps/view/apps_hub_page.dart';
+import 'package:mobile/features/apps/widgets/app_launcher_tile.dart';
 import 'package:mobile/features/apps/widgets/apps_picker_editor.dart';
-import 'package:mobile/features/habits/cubit/habits_access_cubit.dart';
 import 'package:mobile/features/inventory/cubit/inventory_access_cubit.dart';
 import 'package:mobile/features/settings/cubit/experimental_apps_cubit.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import '../../helpers/helpers.dart';
 
-class _MockHabitsAccessCubit extends MockCubit<HabitsAccessState>
-    implements HabitsAccessCubit {}
-
-class _MockInventoryAccessCubit extends MockCubit<InventoryAccessState>
+class _Inventory extends MockCubit<InventoryAccessState>
     implements InventoryAccessCubit {}
 
+Finder section(String id) => find.byKey(ValueKey('apps-section-$id'));
+
+Finder tile(String sectionId, String appId) => find.descendant(
+  of: section(sectionId),
+  matching: find.byKey(ValueKey(appId)),
+);
+
 void main() {
-  TestWidgetsFlutterBinding.ensureInitialized();
+  late AppTabCubit tabs;
+  late ExperimentalAppsCubit experiments;
 
   setUp(() {
     SharedPreferences.setMockInitialValues({});
+    final settings = SettingsRepository();
+    tabs = AppTabCubit(settingsRepository: settings);
+    experiments = ExperimentalAppsCubit(settingsRepository: settings);
+  });
+  tearDown(() async {
+    await tabs.close();
+    await experiments.close();
   });
 
-  testWidgets('Apps hub shows core apps by default without search', (
-    tester,
-  ) async {
+  Future<void> mount(
+    WidgetTester tester,
+    Widget body, {
+    Size size = const Size(390, 844),
+    double clearance = 0,
+  }) async {
     tester.view
       ..devicePixelRatio = 1
-      ..physicalSize = const Size(430, 2400);
-    addTearDown(() {
-      tester.view.resetPhysicalSize();
-      tester.view.resetDevicePixelRatio();
-    });
-
-    final cubit = AppTabCubit(settingsRepository: SettingsRepository());
-    final experimentalAppsCubit = ExperimentalAppsCubit(
-      settingsRepository: SettingsRepository(),
-    );
-    await experimentalAppsCubit.load();
-    addTearDown(cubit.close);
-    addTearDown(experimentalAppsCubit.close);
-    final showGrid = ValueNotifier(false);
-    addTearDown(showGrid.dispose);
-
+      ..physicalSize = size
+      ..padding = FakeViewPadding(bottom: clearance);
+    addTearDown(tester.view.reset);
     await tester.pumpApp(
       MultiBlocProvider(
         providers: [
-          BlocProvider.value(value: cubit),
-          BlocProvider.value(value: experimentalAppsCubit),
+          BlocProvider.value(value: tabs),
+          BlocProvider.value(value: experiments),
         ],
-        child: ValueListenableBuilder<bool>(
-          valueListenable: showGrid,
-          builder: (context, value, _) => AppsHubPage(showGrid: value),
-        ),
+        child: Scaffold(body: body),
       ),
     );
-
-    for (var i = 0; i < 12; i++) {
-      await tester.pump(const Duration(milliseconds: 60));
-      if (find.text('Tasks').evaluate().isNotEmpty) {
-        break;
-      }
-    }
     await tester.pumpAndSettle();
+  }
 
-    final labels = <String>['Tasks', 'Calendar', 'Finance'];
-
-    for (final label in labels) {
-      expect(find.text(label), findsOneWidget);
-    }
-    for (final label in [
-      'Mail',
-      'Chat',
-      'Meet',
-      'Notes',
-      'Timer',
-      'Drive',
-      'Education',
-      'Inventory',
-      'CRM',
-    ]) {
-      expect(find.text(label), findsNothing);
-    }
-
-    for (var index = 1; index < labels.length; index += 1) {
-      final previousY = tester.getTopLeft(find.text(labels[index - 1])).dy;
-      final currentY = tester.getTopLeft(find.text(labels[index])).dy;
-      expect(previousY, lessThan(currentY));
-    }
-
-    expect(find.text('Workspace tools'), findsNothing);
-    expect(find.text('Choose a tool to open.'), findsNothing);
-    expect(find.text('Open'), findsNothing);
-    expect(find.byType(TextField), findsNothing);
+  testWidgets('shows core apps in categories and opens an accessible tile', (
+    tester,
+  ) async {
+    String? selected;
+    await mount(tester, AppsHubPage(onSelected: (app) => selected = app.id));
+    expect(find.text('Work'), findsOneWidget);
+    expect(find.text('Money'), findsOneWidget);
+    expect(find.text('Learning'), findsNothing);
+    expect(tile('work', 'tasks'), findsOneWidget);
+    expect(tile('work', 'calendar'), findsOneWidget);
+    expect(tile('money', 'finance'), findsOneWidget);
+    expect(find.byType(AppLauncherTile), findsNWidgets(3));
     expect(
-      find.text('Assignments, boards, estimates, and portfolio planning.'),
-      findsOneWidget,
+      tester.getTopLeft(tile('work', 'tasks')).dy,
+      tester.getTopLeft(tile('work', 'calendar')).dy,
     );
 
-    expect(find.byType(SegmentedButton<bool>), findsNothing);
-    showGrid.value = true;
-    await tester.pumpAndSettle();
     final semantics = tester.ensureSemantics();
-    final tasksSemantics = tester
-        .getSemantics(find.text('Tasks'))
-        .getSemanticsData();
-    expect(tasksSemantics.label, 'Tasks');
-    expect(tasksSemantics.flagsCollection.isButton, isTrue);
-    expect(find.text('Tasks'), findsOneWidget);
-    expect(find.text('Chat'), findsNothing);
     expect(
-      find.text('Assignments, boards, estimates, and portfolio planning.'),
-      findsNothing,
+      tester
+          .getSemantics(find.text('Tasks'))
+          .getSemanticsData()
+          .flagsCollection
+          .isButton,
+      isTrue,
     );
     expect(
-      tester.getTopLeft(find.text('Tasks')).dy,
-      tester.getTopLeft(find.text('Calendar')).dy,
+      tester.getSize(tile('work', 'tasks')).height,
+      greaterThanOrEqualTo(44),
     );
-
-    tester.view.physicalSize = const Size(200, 2400);
-    await tester.pumpAndSettle();
-    expect(tester.takeException(), isNull);
-    tester.view.physicalSize = const Size(430, 2400);
-    await tester.pumpAndSettle();
-
-    showGrid.value = false;
-    await tester.pumpAndSettle();
-    expect(find.byTooltip('Hide app'), findsNothing);
-    expect(
-      find.text('Assignments, boards, estimates, and portfolio planning.'),
-      findsOneWidget,
-    );
+    await tester.tap(find.text('Tasks'));
+    expect(selected, 'tasks');
     semantics.dispose();
   });
 
-  testWidgets('Apps hub shows enabled experimental apps after core apps', (
+  for (final (size, columns) in [
+    (const Size(390, 844), 2),
+    (const Size(834, 1194), 3),
+  ]) {
+    testWidgets('lays out $columns columns at $size', (tester) async {
+      await experiments.setModuleEnabled(moduleId: 'documents', enabled: true);
+      await mount(tester, const AppsHubPage(), size: size);
+      final work = find.descendant(
+        of: section('work'),
+        matching: find.byType(AppLauncherTile),
+      );
+      final firstRow = tester.getTopLeft(work.first).dy;
+      expect(tester.getTopLeft(work.at(columns - 1)).dy, firstRow);
+      if (columns == 2) {
+        expect(tester.getTopLeft(work.at(2)).dy, greaterThan(firstRow));
+      }
+    });
+  }
+
+  testWidgets('lists pins and recents in order and omits hidden apps', (
     tester,
   ) async {
-    tester.view
-      ..devicePixelRatio = 1
-      ..physicalSize = const Size(430, 2400);
-    addTearDown(() {
-      tester.view.resetPhysicalSize();
-      tester.view.resetDevicePixelRatio();
-    });
+    await tabs.setAppPinned('calendar', pinned: true);
+    await tabs.setAppPinned('tasks', pinned: true);
+    for (final id in ['tasks', 'finance', 'calendar']) {
+      await tabs.select(AppRegistry.moduleById(id)!);
+    }
+    await tabs.setAppHidden('tasks', hidden: true);
+    await mount(tester, const AppsHubPage());
+    expect(tile('pinned', 'calendar'), findsOneWidget);
+    expect(tile('pinned', 'tasks'), findsNothing);
+    expect(tile('work', 'tasks'), findsNothing);
+    expect(tile('recent', 'tasks'), findsNothing);
+    expect(
+      tester.getTopLeft(tile('recent', 'calendar')).dx,
+      lessThan(tester.getTopLeft(tile('recent', 'finance')).dx),
+    );
+  });
 
-    final cubit = AppTabCubit(settingsRepository: SettingsRepository());
-    final experimentalAppsCubit = ExperimentalAppsCubit(
-      settingsRepository: SettingsRepository(),
-    );
-    final habitsAccessCubit = _MockHabitsAccessCubit();
-    final inventoryAccessCubit = _MockInventoryAccessCubit();
+  testWidgets('disabled and access-denied shortcuts stay out of results', (
+    tester,
+  ) async {
+    final inventory = _Inventory();
+    addTearDown(inventory.close);
     whenListen(
-      habitsAccessCubit,
-      const Stream<HabitsAccessState>.empty(),
-      initialState: const HabitsAccessState(
-        status: HabitsAccessStatus.loaded,
-        enabled: true,
-        wsId: 'team-1',
-      ),
-    );
-    whenListen(
-      inventoryAccessCubit,
+      inventory,
       const Stream<InventoryAccessState>.empty(),
       initialState: const InventoryAccessState(
         status: InventoryAccessStatus.loaded,
-        enabled: true,
-        wsId: 'team-1',
       ),
     );
-    await experimentalAppsCubit.load();
-    for (final moduleId in ['chat', 'timer', 'drive', 'inventory', 'crm']) {
-      await experimentalAppsCubit.setModuleEnabled(
-        moduleId: moduleId,
-        enabled: true,
-      );
+    await experiments.setModuleEnabled(moduleId: 'inventory', enabled: true);
+    await experiments.setModuleEnabled(moduleId: 'chat', enabled: true);
+    for (final id in ['chat', 'inventory']) {
+      await tabs.setAppPinned(id, pinned: true);
+      await tabs.select(AppRegistry.moduleById(id)!);
     }
-    addTearDown(cubit.close);
-    addTearDown(experimentalAppsCubit.close);
-    addTearDown(habitsAccessCubit.close);
-    addTearDown(inventoryAccessCubit.close);
-
-    await tester.pumpApp(
-      MultiBlocProvider(
-        providers: [
-          BlocProvider.value(value: cubit),
-          BlocProvider.value(value: experimentalAppsCubit),
-          BlocProvider<HabitsAccessCubit>.value(value: habitsAccessCubit),
-          BlocProvider<InventoryAccessCubit>.value(value: inventoryAccessCubit),
-        ],
-        child: const AppsHubPage(),
+    await mount(
+      tester,
+      BlocProvider<InventoryAccessCubit>.value(
+        value: inventory,
+        child: const AppsHubPage(query: '  CHAT  '),
       ),
     );
-
+    expect(tile('results', 'chat'), findsOneWidget);
+    expect(section('pinned'), findsNothing);
+    expect(section('recent'), findsNothing);
+    await experiments.setModuleEnabled(moduleId: 'chat', enabled: false);
     await tester.pumpAndSettle();
+    expect(find.text('No matching apps'), findsOneWidget);
 
-    final labels = <String>[
-      'Tasks',
-      'Chat',
-      'Calendar',
-      'Finance',
-      'Timer',
-      'Drive',
-      'Inventory',
-      'CRM',
-    ];
-
-    for (final label in labels) {
-      expect(find.text(label), findsOneWidget);
-    }
-
-    expect(
-      tester.getTopLeft(find.text('Tasks')).dy,
-      tester.getTopLeft(find.text('Chat')).dy,
-    );
-    expect(
-      tester.getTopLeft(find.text('Tasks')).dy,
-      lessThan(tester.getTopLeft(find.text('Timer')).dy),
-    );
-
-    final chatStartX = tester.getTopLeft(find.text('Chat')).dx;
-    final drag = await tester.startGesture(
-      tester.getCenter(find.text('Tasks')),
-    );
-    await tester.pump(const Duration(milliseconds: 350));
-    await drag.moveTo(tester.getCenter(find.text('Finance')));
-    await tester.pump(const Duration(milliseconds: 350));
-    expect(cubit.state.appOrder, isEmpty);
-    final chatReflowX = tester.getTopLeft(find.text('Chat')).dx;
-    expect(
-      chatReflowX,
-      lessThan(chatStartX),
-      reason: 'Chat should fill the drag gap ($chatStartX -> $chatReflowX)',
-    );
-    await drag.up();
-    await tester.pump(const Duration(milliseconds: 300));
-    expect(cubit.state.appOrder.take(4), [
-      'chat',
-      'calendar',
-      'finance',
-      'tasks',
-    ]);
+    await mount(tester, const AppsHubPage());
+    expect(section('pinned'), findsNothing);
+    expect(section('recent'), findsNothing);
+    expect(section('communication'), findsNothing);
+    expect(tile('money', 'inventory'), findsNothing);
+    await mount(tester, const AppsHubPage(query: 'inventory'));
+    expect(find.text('No matching apps'), findsOneWidget);
   });
 
-  testWidgets('reorder cell margin exits ordering without launching an app', (
-    tester,
-  ) async {
-    tester.view
-      ..devicePixelRatio = 1
-      ..physicalSize = const Size(430, 2400);
-    addTearDown(() {
-      tester.view.resetPhysicalSize();
-      tester.view.resetDevicePixelRatio();
-    });
-    final cubit = AppTabCubit(settingsRepository: SettingsRepository());
-    final experimental = ExperimentalAppsCubit(
-      settingsRepository: SettingsRepository(),
-    );
-    await experimental.load();
-    addTearDown(cubit.close);
-    addTearDown(experimental.close);
-    var selected = 0;
-    await tester.pumpApp(
-      MultiBlocProvider(
-        providers: [
-          BlocProvider.value(value: cubit),
-          BlocProvider.value(value: experimental),
-        ],
-        child: AppsHubPage(onSelected: (_) => selected++),
-      ),
-    );
-    await tester.pumpAndSettle();
-    await tester.longPress(find.text('Tasks'));
-    await tester.pump(const Duration(milliseconds: 300));
-    expect(find.byTooltip('Hide app'), findsWidgets);
-    final cell = tester.getRect(
-      find.byKey(const ValueKey('apps-grid-position-calendar')),
-    );
-    await tester.tapAt(cell.topLeft + const Offset(2, 70));
-    await tester.pump(const Duration(milliseconds: 300));
-    expect(selected, 0);
-    expect(find.byTooltip('Hide app'), findsNothing);
-    await tester.tap(find.text('Calendar'));
-    await tester.pump();
-    expect(selected, 1);
-    await tester.longPress(find.text('Tasks'));
-    await tester.pump(const Duration(milliseconds: 300));
-    final taskCell = tester.getRect(
-      find.byKey(const ValueKey('apps-grid-position-tasks')),
-    );
-    await tester.tapAt(Offset(taskCell.right + 6, taskCell.top + 70));
-    await tester.pump(const Duration(milliseconds: 300));
-    expect(selected, 1);
-    expect(find.byTooltip('Hide app'), findsNothing);
-  });
-
-  testWidgets('short hold and ordinary scroll do not start app reorder', (
-    tester,
-  ) async {
-    tester.view
-      ..devicePixelRatio = 1
-      ..physicalSize = const Size(300, 400);
-    addTearDown(() {
-      tester.view.resetPhysicalSize();
-      tester.view.resetDevicePixelRatio();
-    });
-    final cubit = AppTabCubit(settingsRepository: SettingsRepository());
-    final experimental = ExperimentalAppsCubit(
-      settingsRepository: SettingsRepository(),
-    );
-    await experimental.load();
-    for (final id in ['chat', 'timer', 'drive', 'crm']) {
-      await experimental.setModuleEnabled(moduleId: id, enabled: true);
-    }
-    addTearDown(cubit.close);
-    addTearDown(experimental.close);
-    var selected = 0;
-    await tester.pumpApp(
-      MultiBlocProvider(
-        providers: [
-          BlocProvider.value(value: cubit),
-          BlocProvider.value(value: experimental),
-        ],
-        child: AppsHubPage(onSelected: (_) => selected++),
-      ),
-    );
-    await tester.pumpAndSettle();
-    final semantics = tester.ensureSemantics();
-    final taskSemantics = tester
-        .getSemantics(find.text('Tasks'))
-        .getSemanticsData();
-    expect(taskSemantics.flagsCollection.isButton, isTrue);
-    final shortHold = await tester.startGesture(
-      tester.getCenter(find.text('Tasks')),
-    );
-    await tester.pump(const Duration(milliseconds: 200));
-    expect(find.byTooltip('Hide app'), findsNothing);
-    await shortHold.up();
-    await tester.pump(const Duration(milliseconds: 100));
-    expect(selected, 1);
-    final scroll = await tester.startGesture(
-      tester.getCenter(find.text('Tasks')),
-    );
-    await scroll.moveBy(const Offset(0, -40));
-    await tester.pump(const Duration(milliseconds: 20));
-    await scroll.moveBy(const Offset(0, -100));
-    await tester.pump(const Duration(milliseconds: 350));
-    await scroll.up();
-    await tester.pumpAndSettle();
-    final position = tester
-        .state<ScrollableState>(find.byType(Scrollable).first)
-        .position;
-    expect(position.pixels, greaterThan(0));
-    expect(find.byTooltip('Hide app'), findsNothing);
-    expect(cubit.state.appOrder, isEmpty);
-    expect(selected, 1);
-    semantics.dispose();
-  });
-
-  testWidgets('hide asks for confirmation and moves app below divider', (
-    tester,
-  ) async {
-    tester.view
-      ..devicePixelRatio = 1
-      ..physicalSize = const Size(430, 2400);
-    addTearDown(() {
-      tester.view.resetPhysicalSize();
-      tester.view.resetDevicePixelRatio();
-    });
-    final cubit = AppTabCubit(settingsRepository: SettingsRepository());
-    final experimental = ExperimentalAppsCubit(
-      settingsRepository: SettingsRepository(),
-    );
-    await experimental.load();
-    addTearDown(cubit.close);
-    addTearDown(experimental.close);
-    await tester.pumpApp(
-      MultiBlocProvider(
-        providers: [
-          BlocProvider.value(value: cubit),
-          BlocProvider.value(value: experimental),
-        ],
-        child: const AppsHubPage(),
-      ),
-    );
-    await tester.pumpAndSettle();
-    expect(find.byTooltip('Hide app'), findsNothing);
-    final titleCenter = tester.getCenter(find.text('Tasks')).dx;
-    await tester.longPress(find.text('Tasks'));
-    await tester.pump(const Duration(milliseconds: 300));
-    expect(find.byTooltip('Hide app'), findsWidgets);
-    final taskTile = find.byKey(const ValueKey('apps-grid-position-tasks'));
-    final taskIcon = find
-        .descendant(of: taskTile, matching: find.byType(Icon))
-        .first;
-    expect(tester.getCenter(taskIcon).dx, closeTo(titleCenter, 1));
-    expect(tester.getCenter(find.text('Tasks')).dx, closeTo(titleCenter, 1));
-    await tester.tap(find.byTooltip('Hide app').first);
-    await tester.pump(const Duration(milliseconds: 400));
-    expect(find.text('Hide this app?'), findsOneWidget);
-    expect(cubit.state.hiddenAppIds, isEmpty);
-    await tester.tap(find.widgetWithText(AppButton, 'Hide app'));
-    await tester.pump(const Duration(milliseconds: 400));
-    expect(cubit.state.hiddenAppIds, ['tasks']);
+  testWidgets('hidden apps can still be found by description', (tester) async {
+    await tabs.setAppHidden('calendar', hidden: true);
+    await mount(tester, const AppsHubPage(query: 'Upcoming events'));
+    expect(tile('hidden', 'calendar'), findsOneWidget);
     expect(find.text('Hidden apps'), findsOneWidget);
+  });
+
+  testWidgets('the last tile scrolls above shell-published dock clearance', (
+    tester,
+  ) async {
+    const clearance = 122.0;
+    const size = Size(390, 430);
+    await mount(tester, const AppsHubPage(), size: size, clearance: clearance);
+    final scroll = tester.state<ScrollableState>(find.byType(Scrollable));
+    expect(scroll.position.maxScrollExtent, greaterThan(0));
+    scroll.position.jumpTo(scroll.position.maxScrollExtent);
+    await tester.pumpAndSettle();
     expect(
-      tester.getTopLeft(find.text('Tasks')).dy,
+      tester.getBottomLeft(tile('money', 'finance')).dy,
+      lessThanOrEqualTo(size.height - clearance - AppLayout.scrollEndGap),
+    );
+  });
+
+  testWidgets('Customize pins, reorders, hides and restores apps', (
+    tester,
+  ) async {
+    await mount(tester, const AppsPickerEditor());
+    await tester.tap(find.byTooltip('Pin Tasks'));
+    await tester.pumpAndSettle();
+    expect(tabs.state.pinnedAppIds, ['tasks']);
+    await tester.tap(find.byTooltip('Unpin Tasks'));
+    await tester.pumpAndSettle();
+    expect(tabs.state.pinnedAppIds, isEmpty);
+
+    final task = find.byKey(const ValueKey('tasks'));
+    final calendar = find.byKey(const ValueKey('calendar'));
+    final drag = await tester.startGesture(
+      tester.getCenter(
+        find.descendant(of: task, matching: find.byTooltip('Drag to reorder')),
+      ),
+    );
+    await drag.moveBy(const Offset(0, 24));
+    await tester.pump();
+    await drag.moveTo(tester.getCenter(calendar) + const Offset(60, 18));
+    await tester.pump(const Duration(milliseconds: 300));
+    await drag.up();
+    await tester.pumpAndSettle();
+    expect(tabs.state.appOrder.take(2), ['calendar', 'tasks']);
+
+    await tester.tap(
+      find.descendant(of: task, matching: find.byTooltip('Hide app')),
+    );
+    await tester.pumpAndSettle();
+    expect(find.text('Hide this app?'), findsOneWidget);
+    expect(tabs.state.hiddenAppIds, isEmpty);
+    await tester.tap(find.widgetWithText(AppButton, 'Hide app'));
+    await tester.pumpAndSettle();
+    expect(tabs.state.hiddenAppIds, ['tasks']);
+    expect(
+      tester.getTopLeft(find.text('Hidden apps')).dy,
       greaterThan(tester.getTopLeft(find.text('Finance')).dy),
     );
-    await tester.tap(find.byTooltip('Show app'));
-    await tester.pump(const Duration(milliseconds: 400));
-    expect(cubit.state.hiddenAppIds, isEmpty);
-    await tester.tapAt(const Offset(400, 1200));
-    await tester.pump(const Duration(milliseconds: 300));
-    expect(find.byTooltip('Hide app'), findsNothing);
-  });
-
-  testWidgets('disabled experiments can be shown from their own section', (
-    tester,
-  ) async {
-    tester.view
-      ..devicePixelRatio = 1
-      ..physicalSize = const Size(430, 2400);
-    addTearDown(() {
-      tester.view.resetPhysicalSize();
-      tester.view.resetDevicePixelRatio();
-    });
-    final apps = AppTabCubit(settingsRepository: SettingsRepository());
-    final experiments = ExperimentalAppsCubit(
-      settingsRepository: SettingsRepository(),
-    );
-    await experiments.load();
-    addTearDown(apps.close);
-    addTearDown(experiments.close);
-    await tester.pumpApp(
-      MultiBlocProvider(
-        providers: [
-          BlocProvider.value(value: apps),
-          BlocProvider.value(value: experiments),
-        ],
-        child: const AppsPickerEditor(),
-      ),
+    await tester.tap(
+      find.descendant(of: task, matching: find.byTooltip('Show app')),
     );
     await tester.pumpAndSettle();
+    expect(tabs.state.hiddenAppIds, isEmpty);
+  });
+
+  testWidgets('Customize enables only accessible experiments', (tester) async {
+    await mount(tester, const AppsPickerEditor(), size: const Size(430, 2400));
     expect(find.text('Hidden experiments'), findsOneWidget);
     final chat = find.byKey(const ValueKey('chat'));
     await tester.tap(
@@ -455,21 +256,11 @@ void main() {
     );
     await tester.pumpAndSettle();
     expect(experiments.state.isEnabled('chat'), isTrue);
-    expect(
-      tester.getTopLeft(find.text('Chat')).dy,
-      lessThan(tester.getTopLeft(find.text('Hidden experiments')).dy),
-    );
-    final inventory = find.byKey(const ValueKey('inventory'));
-    final unavailableShow = find.descendant(
-      of: inventory,
-      matching: find.byTooltip('Unavailable with current access'),
-    );
-    expect(unavailableShow, findsOneWidget);
-    final showButton = find.descendant(
-      of: inventory,
+    final inventory = find.descendant(
+      of: find.byKey(const ValueKey('inventory')),
       matching: find.byType(AppIconButton),
     );
-    expect(tester.widget<AppIconButton>(showButton).onPressed, isNull);
+    expect(tester.widget<AppIconButton>(inventory).onPressed, isNull);
     expect(experiments.state.isEnabled('inventory'), isFalse);
   });
 }
