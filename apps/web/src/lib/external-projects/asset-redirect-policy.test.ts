@@ -62,6 +62,8 @@ describe('CMS asset redirect policy', () => {
       `${allowed}/storage/v1/object/../../auth/v1/verify`,
       `${allowed}/storage/v1/object/%2e%2e/%2e%2e/auth/v1/verify`,
       `${allowed}/x/storage/v1/object/public/a.png`,
+      `${allowed}/storage/v1/object/public/a%2f..%2f..%2fauth/v1/verify`,
+      `${allowed}/storage/v1/object/public/a%5C..%5Cauth`,
     ]) {
       expect(resolveAllowedAssetRedirectUrl(value), value).toBeNull();
     }
@@ -72,6 +74,8 @@ describe('CMS asset redirect policy', () => {
       `${allowed}/storage/v1/object/sign/workspaces/ws-1/a.png?token=secret`,
       `${allowed}/storage/v1/render/image/sign/a.png?width=10&token=secret`,
       `${allowed}/storage/v1/object/public/a.png?%74oken=secret`,
+      `${allowed}/storage/v1/object/public/a.png?Token=secret`,
+      `${allowed}/storage/v1/object/public/a.png?TOKEN=secret`,
     ]) {
       expect(resolveAllowedAssetRedirectUrl(value), value).toBeNull();
     }

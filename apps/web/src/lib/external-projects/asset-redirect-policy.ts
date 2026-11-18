@@ -51,7 +51,13 @@ export function resolveAllowedAssetRedirectUrl(value: string) {
   if (!getPlatformAssetRedirectOrigins().includes(url.origin)) return null;
   // Parsing already resolved dot segments, so the prefix cannot be escaped.
   if (!STORAGE_OBJECT_PATH_PATTERN.test(url.pathname)) return null;
-  if (url.searchParams.has('token')) return null;
+  // Encoded separators could be decoded into another path further along.
+  if (/%2f|%5c/iu.test(url.pathname)) return null;
+  if (
+    [...url.searchParams.keys()].some((key) => key.toLowerCase() === 'token')
+  ) {
+    return null;
+  }
 
   return url;
 }
