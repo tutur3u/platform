@@ -446,4 +446,34 @@ module.exports = [
     reason:
       'SECURITY DEFINER trigger function private.post_new_usage_invoice() with search_path pg_catalog, pg_temp, attached only by the AFTER INSERT post_new_usage_invoice trigger on private.external_provider_invoices for the root workspace; the REVOKE ALL at :62 removes PUBLIC, anon, authenticated and service_role and no later statement grants it; a direct call fails because trigger functions run only as triggers; only the no-grant marker is missing; preserve staging-applied 20261118121500 bytes',
   },
+  {
+    path: 'apps/database/supabase/migrations/20261118191500_create_citation_library.sql',
+    line: 1,
+    rule: 'function-acl',
+    fileDigest:
+      '3fa8714ac7a354bc51b5b0466ccfb224b234075023e6c0cee2d53605910d0909',
+    digest: '1abf9ffc62eacd366fcba294fd3805e468ef8c0a54cb5a31931c646b20bf7bca',
+    reason:
+      'SECURITY INVOKER immutable helper private.citation_library_tags_valid(text[]) with search_path pg_catalog, pg_temp, used only by the table check constraint and the reviewed library RPCs in the same file; the multi-signature REVOKE ALL at :249-253 removes PUBLIC, anon, authenticated and service_role from it and no later statement grants it, so it ends with no client or service grant; only the no-grant marker is missing; preserve staging-applied 20261118191500 bytes',
+  },
+  {
+    path: 'apps/database/supabase/migrations/20261118191500_create_citation_library.sql',
+    line: 22,
+    rule: 'function-acl',
+    fileDigest:
+      '3fa8714ac7a354bc51b5b0466ccfb224b234075023e6c0cee2d53605910d0909',
+    digest: '6876bfdece14ae5c1610dca64b9dbdf0c87bab84a0bfe532e455aa82cb2ba63b',
+    reason:
+      'SECURITY INVOKER immutable helper private.citation_library_search_text(jsonb,text[]) with search_path pg_catalog, pg_temp, used only by the trigram search index and the reviewed list RPC in the same file; the multi-signature REVOKE ALL at :249-253 removes PUBLIC, anon, authenticated and service_role from it and no later statement grants it, so it ends with no client or service grant; only the no-grant marker is missing; preserve staging-applied 20261118191500 bytes',
+  },
+  {
+    path: 'apps/database/supabase/migrations/20261118191500_create_citation_library.sql',
+    line: 101,
+    rule: 'function-acl',
+    fileDigest:
+      '3fa8714ac7a354bc51b5b0466ccfb224b234075023e6c0cee2d53605910d0909',
+    digest: '9ddbd0556d3dd2fbccb9573013c38b9e9c8e01084993a05a3b01d338568dda77',
+    reason:
+      'SECURITY INVOKER internal helper private.require_citation_library_access(uuid,uuid) with search_path pg_catalog, pg_temp, called only from the reviewed service_role-only definer RPCs in the same file; the multi-signature REVOKE ALL at :249-253 removes PUBLIC, anon, authenticated and service_role from it and no later statement grants it, so it ends with no client or service grant; only the no-grant marker is missing; preserve staging-applied 20261118191500 bytes',
+  },
 ];

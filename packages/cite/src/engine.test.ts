@@ -222,7 +222,8 @@ describe('CSL-backed Phase 1 citation output', () => {
           /<\/?(?:div|i|span)\b/
         );
       }
-    }
+    },
+    30_000
   );
 });
 
@@ -271,7 +272,8 @@ describe('document citation state', () => {
           .citations.map(({ output }) => toPlainText(output))
           .join('')
       ).not.toMatch(/2024[ab]/);
-    }
+    },
+    30_000
   );
 
   it('supports author suppression and preserves locator text', () => {

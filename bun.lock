@@ -2835,6 +2835,9 @@
         "htmlparser2": "12.0.0",
         "zod": "4.6.7",
       },
+      "devDependencies": {
+        "typescript": "7.0.2",
+      },
     },
     "packages/cloudflare": {
       "name": "@tuturuuu/cloudflare",

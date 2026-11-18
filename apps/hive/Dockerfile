@@ -55,6 +55,7 @@ COPY packages/ai/package.json ./packages/ai/package.json
 COPY packages/meet-core/package.json ./packages/meet-core/package.json
 COPY packages/apis/package.json ./packages/apis/package.json
 COPY packages/auth/package.json ./packages/auth/package.json
+COPY packages/cite/package.json ./packages/cite/package.json
 COPY packages/devbox/package.json ./packages/devbox/package.json
 COPY packages/editor/package.json ./packages/editor/package.json
 COPY packages/education-core/package.json ./packages/education-core/package.json
