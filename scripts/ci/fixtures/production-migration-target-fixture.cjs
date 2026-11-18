@@ -138,6 +138,7 @@ if (request.endsWith('/git/ref/heads/production')) {
   } else {
     response.push({id: 96, sha, created_at: '2026-01-06', payload: {}});
   }
+  response.sort((a, b) => b.created_at.localeCompare(a.created_at));
 } else if (request.includes('/deployments/17/statuses')) {
   response = [{state: process.env.MARKER_STATE}];
   if (process.env.OLD_SUCCESS === 'true') response.push({state: 'success'});

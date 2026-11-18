@@ -407,8 +407,15 @@ export async function verifyMarker({
       effectiveStatus.log_url === p.runUrl,
     'marker-latest-status'
   );
-  const environmentRoute = `${base}/deployments?environment=${profile.environment}`;
-  const environmentDeployments = await inventory(environmentRoute);
+  // Newest-first first page: the marker must be on it, so every newer
+  // deployment is visible without paging the environment's whole history.
+  const environmentRoute = `${base}/deployments?environment=${profile.environment}&per_page=100&page=1`;
+  const environmentPage = async () => {
+    const { data } = await get(environmentRoute);
+    assert(Array.isArray(data) && data.length <= 100, 'environment-shape');
+    return data;
+  };
+  const environmentDeployments = await environmentPage();
   assert(
     !markerSuperseded({ marker, environmentDeployments }),
     'marker-superseded'
@@ -527,7 +534,7 @@ export async function verifyMarker({
     snapshot(effectiveMarkerStatus(rereadStatus)) === snapshot(effectiveStatus),
     'marker-status-changed'
   );
-  const rereadEnvironment = await inventory(environmentRoute);
+  const rereadEnvironment = await environmentPage();
   assert(
     !markerSuperseded({ marker, environmentDeployments: rereadEnvironment }),
     'marker-superseded'

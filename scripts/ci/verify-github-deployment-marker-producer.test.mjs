@@ -587,6 +587,44 @@ for (const [name, statusRows, deployments] of [
     undefined,
   ],
   [
+    'a marker that is absent from the newest deployment page is refused',
+    (w) => [w.inactive, w.status],
+    () => [
+      {
+        id: 130,
+        sha: source,
+        environment: profile.environment,
+        created_at: '2026-11-17T00:09:00Z',
+      },
+    ],
+  ],
+  [
+    'an unordered environment page is refused',
+    (w) => [w.inactive, w.status],
+    (w) => [
+      {
+        id: 140,
+        sha: source,
+        environment: profile.environment,
+        created_at: '2026-11-17T00:01:00Z',
+      },
+      w.marker,
+    ],
+  ],
+  [
+    'a different-SHA row above the marker on the page is refused',
+    (w) => [w.inactive, w.status],
+    (w) => [
+      {
+        id: 141,
+        sha: 'e'.repeat(40),
+        environment: profile.environment,
+        created_at: '2026-11-17T00:03:30Z',
+      },
+      w.marker,
+    ],
+  ],
+  [
     'a newer deployment of a different SHA supersedes the marker',
     (w) => [w.inactive, w.status],
     (w) => [
@@ -610,3 +648,25 @@ for (const [name, statusRows, deployments] of [
     assert.equal(result.phase, 'marker');
   });
 }
+
+test('a long environment history is read through its first page only', async (t) => {
+  const start = Date.parse('2026-11-16T00:00:00Z');
+  const { result, requests } = await fixture(t, (world) => {
+    world.replies.set(statusRoute, [world.inactive, world.status]);
+    world.replies.set(environmentRoute, [
+      world.marker,
+      ...Array.from({ length: 99 }, (_, index) => ({
+        id: 2000 + index,
+        sha: 'd'.repeat(40),
+        environment: profile.environment,
+        created_at: new Date(start - index * 1000).toISOString(),
+      })),
+    ]);
+  });
+  assert.equal(result.status, 'success');
+  assert.ok(!requests.some((route) => route.includes('page=2')));
+  assert.equal(
+    requests.filter((route) => route === environmentRoute).length,
+    2
+  );
+});

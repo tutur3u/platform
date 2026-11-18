@@ -25,16 +25,28 @@ export function effectiveMarkerStatus(statuses) {
     .sort(newestFirst)[0];
 }
 
-/** True when a different SHA was deployed to the environment after the marker. */
+/**
+ * True when a different SHA was deployed to the environment after the marker.
+ * `environmentDeployments` is the newest-first first page of the environment's
+ * deployments. Rows above the marker are the deployments newer than it, so the
+ * answer is only trustworthy when the page is ordered by non-increasing
+ * created_at and contains the marker; anything else is unproven.
+ */
 export function markerSuperseded({ marker, environmentDeployments }) {
   if (!marker || !Array.isArray(environmentDeployments)) return true;
-  return environmentDeployments.some(
-    (deployment) =>
-      deployment &&
-      deployment.id !== marker.id &&
-      deployment.sha !== marker.sha &&
-      time(deployment.created_at) > time(marker.created_at)
-  );
+  const rows = environmentDeployments;
+  if (rows.some((row) => !Number.isFinite(Date.parse(row?.created_at))))
+    return true;
+  if (
+    rows.some(
+      (row, index) =>
+        index > 0 && time(rows[index - 1].created_at) < time(row.created_at)
+    )
+  )
+    return true;
+  const position = rows.findIndex((row) => row.id === marker.id);
+  if (position < 0) return true;
+  return rows.slice(0, position).some((row) => row.sha !== marker.sha);
 }
 
 export function evaluateMarker({

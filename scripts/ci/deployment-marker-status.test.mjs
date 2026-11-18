@@ -116,10 +116,70 @@ test('an older deployment of a different SHA does not supersede the marker', () 
     markerSuperseded({
       marker,
       environmentDeployments: [
-        { id: 5, sha: other, created_at: '2026-11-17T20:00:00Z' },
         marker,
+        { id: 5, sha: other, created_at: '2026-11-17T20:00:00Z' },
       ],
     }),
+    false
+  );
+});
+
+test('a marker that is not on the newest-first page cannot be proven current', () => {
+  assert.equal(
+    markerSuperseded({
+      marker,
+      environmentDeployments: [
+        { id: 12, sha, created_at: '2026-11-17T22:10:00Z' },
+      ],
+    }),
+    true
+  );
+  assert.equal(
+    evaluateMarker({
+      statuses: [inactive, success],
+      marker,
+      environmentDeployments: [],
+      targetSha: sha,
+    }).reason,
+    'superseded'
+  );
+});
+
+test('a full 100-row page that contains the marker is accepted', () => {
+  const page = Array.from({ length: 99 }, (_, index) => ({
+    id: 1000 + index,
+    sha,
+    created_at: '2026-11-17T21:58:00Z',
+  }));
+  assert.equal(
+    markerSuperseded({ marker, environmentDeployments: [marker, ...page] }),
+    false
+  );
+});
+
+test('an unordered or undated page is refused', () => {
+  const older = { id: 4, sha, created_at: '2026-11-17T20:00:00Z' };
+  assert.equal(
+    markerSuperseded({ marker, environmentDeployments: [older, marker] }),
+    true
+  );
+  assert.equal(
+    markerSuperseded({
+      marker,
+      environmentDeployments: [marker, { id: 6, sha }],
+    }),
+    true
+  );
+});
+
+test('only rows above the marker count, whatever their timestamps', () => {
+  const tie = { id: 7, sha: other, created_at: marker.created_at };
+  assert.equal(
+    markerSuperseded({ marker, environmentDeployments: [tie, marker] }),
+    true
+  );
+  assert.equal(
+    markerSuperseded({ marker, environmentDeployments: [marker, tie] }),
     false
   );
 });
