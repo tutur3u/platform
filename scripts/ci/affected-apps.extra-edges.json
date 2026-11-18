@@ -24,7 +24,7 @@
     "packages/meet-core",
     "packages/realtime"
   ],
-  "apps/meet/": ["apps/meet-realtime", "packages/meet-core"],
+  "apps/meet/": ["apps/meet-realtime", "packages/meet-core", "packages/ui"],
   "apps/meet/messages/": ["packages/programming-ui"],
   "apps/meet/src/runtime/": ["packages/start-bridge"],
   "apps/mobile/lib/core/feature_flags/": ["packages/feature-flags"],
@@ -57,6 +57,7 @@
   "packages/inventory-core/src/lib/infrastructure/employee-sql/": [
     "apps/infrastructure"
   ],
+  "packages/meet-core/src/features/call/components/": ["packages/ui"],
   "packages/mind-ui/src/components/mind/": ["packages/ui"],
   "packages/realtime/src/": ["apps/chat-realtime"],
   "packages/satellite/src/": ["packages/users-core"],

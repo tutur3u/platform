@@ -112,7 +112,7 @@ import type {
 
 const NOW = '2026-03-10T12:00:00.000Z';
 
-function meeting(id: string, time: string): ScheduledMeeting {
+function meeting(id: string, time: string | null): ScheduledMeeting {
   return {
     calendar: null,
     createdAt: '2026-01-01T00:00:00.000Z',
