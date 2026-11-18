@@ -2,6 +2,7 @@ import type { Order } from '@tuturuuu/payment/polar';
 import type { TypedSupabaseClient } from '@tuturuuu/supabase/next/client';
 import type { Database } from '@tuturuuu/types';
 import { resolveWorkspaceOrderProduct } from './polar-product-helper';
+import { syncUsagePackOrder } from './usage-pack-order';
 
 const ORDER_STATUS_MAP = {
   pending: 'pending',
@@ -79,5 +80,6 @@ export async function syncOrderToDatabase(
     throw new Error(`Order upsert error: ${dbError.message}`);
   }
 
+  await syncUsagePackOrder(supabase, order, wsId);
   return orderData;
 }
