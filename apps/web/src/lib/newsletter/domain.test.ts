@@ -183,6 +183,16 @@ describe('dns plan', () => {
     expect(JSON.stringify(stored).includes(token)).toBe(false);
   });
 
+  it('requires the SES include mechanism in the SPF record', () => {
+    expect(() =>
+      buildDnsPlan(
+        'news.example.com',
+        createHighEntropyToken(),
+        ses({ spfValue: 'v=spf1 include:amazonses.com.example ~all' })
+      )
+    ).toThrow(expect.objectContaining({ code: 'ses_records' }));
+  });
+
   it('rejects a mail-from name that is not a direct child', () => {
     expect(() =>
       buildDnsPlan(

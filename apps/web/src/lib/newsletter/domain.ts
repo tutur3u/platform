@@ -355,7 +355,7 @@ function assertSesSnapshot(
     spfValue.length === 0 ||
     spfValue.length > 255 ||
     !/^v=spf1(?:\s|$)/i.test(spfValue) ||
-    !spfValue.toLowerCase().includes('amazonses.com') ||
+    !spfValue.toLowerCase().split(/\s+/u).includes('include:amazonses.com') ||
     /[\r\n"\u0000]/.test(spfValue)
   ) {
     fail('ses_records');
