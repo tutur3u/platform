@@ -24,9 +24,14 @@ import { ScrollArea } from '@tuturuuu/ui/scroll-area';
 import { toast } from '@tuturuuu/ui/sonner';
 import { Textarea } from '@tuturuuu/ui/textarea';
 import { useTranslations } from 'next-intl';
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useId, useRef, useState } from 'react';
 import { isMeetAssistant } from '../lib/assistant-identity';
 import type { CallChatMessage } from '../lib/call-state';
+import {
+  matchMiraSlashCommands,
+  type MiraSlashCommand,
+  miraSlashCommandDraft,
+} from '../lib/mira-slash-commands';
 import { AssistantPrivateReview } from './assistant-private-review';
 import {
   AssistantWorkspacePicker,
@@ -34,7 +39,36 @@ import {
   useAssistantWorkspaceSelection,
 } from './assistant-workspace-picker';
 import { ChatMessageBody } from './chat-message-body';
+import {
+  MiraPermissionsCard,
+  type MiraPermissionsProps,
+} from './mira-permissions-card';
+import { MiraLiveDot, MiraModeTag } from './mira-presence';
 import { MiraAvatar, MiraProfile } from './mira-profile';
+import {
+  type MiraToolAction,
+  type MiraToolCall,
+  MiraToolCard,
+} from './mira-tool-card';
+import {
+  type MiraSurface,
+  type MiraSurfaceActivity,
+  MiraWhereStrip,
+} from './mira-where-strip';
+
+type RoomMira = {
+  typing?: boolean;
+  activity?: Partial<Record<MiraSurface, MiraSurfaceActivity>>;
+  onFocusSurface?: (surface: MiraSurface) => void;
+  toolsByMessageId?: ReadonlyMap<
+    string,
+    readonly {
+      tool: MiraToolCall;
+      onAuthorizedAction?: (action: MiraToolAction) => Promise<void>;
+    }[]
+  >;
+  permissions?: MiraPermissionsProps;
+};
 
 type AssistantFailureNotice = 'room_unavailable' | 'failed';
 /** Room Mira is denied server-side with 403; anything else is a failed answer. */
@@ -116,6 +150,7 @@ export function ChatPanel({
   selfUserId,
   accountId,
   meetingId,
+  mira,
 }: {
   mentionRequest?: number;
   onMentionHandled?: () => void;
@@ -125,8 +160,11 @@ export function ChatPanel({
   selfUserId: string | null;
   accountId: string;
   meetingId: string;
+  mira?: RoomMira;
 }) {
   const t = useTranslations('meet.call');
+  const tm = useTranslations('meet.call.miraEverywhere');
+  const paletteId = useId();
   const queryClient = useQueryClient();
   const reviews = useQuery({
     queryKey: ['meet-assistant-reviews', meetingId, selfUserId],
@@ -150,6 +188,16 @@ export function ChatPanel({
   const currentAssistantScope = useRef(assistantScope);
   currentAssistantScope.current = assistantScope;
   const composer = useRef<HTMLTextAreaElement>(null);
+  const [dismissedDraft, setDismissedDraft] = useState<string>();
+  const [commandIndex, setCommandIndex] = useState(0);
+  const commands =
+    draft === dismissedDraft ? [] : matchMiraSlashCommands(draft);
+  const activeCommand = commands[commandIndex];
+  const chooseCommand = (command: MiraSlashCommand) => {
+    setDraft(miraSlashCommandDraft(tm(`commands.${command}.prompt`)));
+    setCommandIndex(0);
+    composer.current?.focus();
+  };
   useEffect(() => {
     if (!mentionRequest || busy) return;
     const value = composer.current?.value ?? '';
@@ -179,9 +227,14 @@ export function ChatPanel({
   }, [meetingId]);
   const bottom = useRef<HTMLDivElement>(null),
     input = useRef<HTMLInputElement>(null);
-  const newest = `${chat.at(-1)?.id ?? ''}:${reviews.data?.map((review) => review.id).join(',') ?? ''}`;
+  const miraTyping = thinking || !!mira?.typing;
+  const newest = `${miraTyping}:${chat.at(-1)?.id ?? ''}:${reviews.data?.map((review) => review.id).join(',') ?? ''}`;
   useEffect(() => {
-    if (newest) bottom.current?.scrollIntoView({ behavior: 'smooth' });
+    bottom.current?.scrollIntoView?.({
+      behavior: window.matchMedia?.('(prefers-reduced-motion: reduce)').matches
+        ? 'instant'
+        : 'smooth',
+    });
   }, [newest]);
   const submit = async () => {
     if (
@@ -272,13 +325,14 @@ export function ChatPanel({
               <div className="min-w-0 flex-1">
                 <div className="mb-1 flex items-center gap-2">
                   {isMeetAssistant(message) ? (
-                    <span className="text-xs">
+                    <span className="flex flex-wrap items-center gap-1 text-xs">
                       <MiraProfile />
-                      {message.displayName === 'Mira Live' && (
-                        <span className="ml-1 rounded bg-primary/10 px-1 py-0.5 text-primary">
-                          Live
-                        </span>
-                      )}
+                      <MiraModeTag
+                        compact
+                        mode={
+                          message.displayName === 'Mira Live' ? 'live' : 'chat'
+                        }
+                      />
                     </span>
                   ) : (
                     <span className="truncate font-medium text-xs">
@@ -300,6 +354,17 @@ export function ChatPanel({
                     assistant={isMeetAssistant(message)}
                   />
                 </div>
+                {isMeetAssistant(message) &&
+                  mira?.toolsByMessageId
+                    ?.get(message.id)
+                    ?.map(({ tool, onAuthorizedAction }) => (
+                      <MiraToolCard
+                        key={tool.id}
+                        tool={tool}
+                        onAction={selfUserId ? onAuthorizedAction : undefined}
+                        onFocusSurface={mira.onFocusSurface}
+                      />
+                    ))}
                 {reviews.data?.some((review) => review.id === message.id) && (
                   <AssistantPrivateReview
                     meetingId={meetingId}
@@ -353,14 +418,15 @@ export function ChatPanel({
             <p className="text-muted-foreground text-xs">{t('mira_hint')}</p>
           </div>
         )}
-        {thinking && (
-          <p
-            role="status"
-            className="mt-3 flex items-center gap-2 text-muted-foreground text-xs"
-          >
-            <Loader2 className="size-3 animate-spin" />
-            {t('mira_thinking')}
-          </p>
+        {miraTyping && (
+          <div role="status" className="mt-3 flex flex-wrap items-center gap-2">
+            <MiraAvatar size={24} />
+            <MiraModeTag mode="chat" />
+            <span className="inline-flex items-center gap-2 rounded-full border border-dynamic-purple/25 bg-calendar-bg-purple px-2.5 py-1 font-semibold text-dynamic-purple text-xs">
+              <MiraLiveDot />
+              {tm('typing')}
+            </span>
+          </div>
         )}
         {assistantNotice && !thinking && (
           <div
@@ -388,7 +454,18 @@ export function ChatPanel({
             )}
           </div>
         )}
+        {mira?.activity && (
+          <div className="mt-3">
+            <MiraWhereStrip
+              activity={mira.activity}
+              onFocusSurface={mira.onFocusSurface}
+            />
+          </div>
+        )}
         <div ref={bottom} />
+        <div className="mt-3">
+          <MiraPermissionsCard {...mira?.permissions} />
+        </div>
       </ScrollArea>
       <form
         className="space-y-2 border-t p-3"
@@ -444,10 +521,49 @@ export function ChatPanel({
             </Button>
           ))}
         </div>
+        {commands.length > 0 && (
+          <ul
+            id={paletteId}
+            role="listbox"
+            aria-label={tm('commands.title')}
+            className="space-y-1 rounded-xl border bg-popover p-1.5 text-popover-foreground shadow-sm"
+          >
+            {commands.map((command) => (
+              <li
+                key={command}
+                id={`${paletteId}-${command}`}
+                role="option"
+                aria-selected={command === activeCommand}
+                className="flex cursor-pointer flex-wrap items-baseline gap-x-2 rounded-md px-2 py-1.5 text-xs hover:bg-accent aria-selected:bg-accent"
+                onMouseDown={(event) => event.preventDefault()}
+                onClick={() => chooseCommand(command)}
+              >
+                <span className="font-mono font-semibold">/{command}</span>
+                <span className="text-muted-foreground">
+                  {tm(`commands.${command}.description`)}
+                </span>
+              </li>
+            ))}
+          </ul>
+        )}
         <Textarea
           ref={composer}
           value={draft}
-          onChange={(event) => setDraft(event.target.value)}
+          onChange={(event) => {
+            setDraft(event.target.value);
+            setDismissedDraft(undefined);
+            setCommandIndex(0);
+          }}
+          onFocus={() => {
+            setDismissedDraft(undefined);
+            setCommandIndex(0);
+          }}
+          onBlur={() => setDismissedDraft(draft)}
+          aria-autocomplete="list"
+          aria-controls={commands.length ? paletteId : undefined}
+          aria-activedescendant={
+            activeCommand ? `${paletteId}-${activeCommand}` : undefined
+          }
           maxLength={2000}
           rows={2}
           disabled={busy}
@@ -455,11 +571,29 @@ export function ChatPanel({
           placeholder={t('chat_placeholder')}
           className="max-h-32 min-h-16 resize-none"
           onKeyDown={(event) => {
-            if (
-              event.key === 'Enter' &&
-              !event.shiftKey &&
-              !event.nativeEvent.isComposing
-            ) {
+            if (event.nativeEvent.isComposing) return;
+            if (commands.length) {
+              if (event.key === 'ArrowDown' || event.key === 'ArrowUp') {
+                event.preventDefault();
+                const direction = event.key === 'ArrowDown' ? 1 : -1;
+                setCommandIndex(
+                  (commandIndex + direction + commands.length) % commands.length
+                );
+                return;
+              }
+              if (event.key === 'Escape') {
+                event.preventDefault();
+                event.stopPropagation();
+                setDismissedDraft(draft);
+                return;
+              }
+              if (event.key === 'Enter' && !event.shiftKey && activeCommand) {
+                event.preventDefault();
+                chooseCommand(activeCommand);
+                return;
+              }
+            }
+            if (event.key === 'Enter' && !event.shiftKey) {
               event.preventDefault();
               void submit();
             }
@@ -518,7 +652,7 @@ export function ChatPanel({
             aria-label={t('send')}
           >
             {busy ? (
-              <Loader2 className="size-4 animate-spin" />
+              <Loader2 className="size-4 motion-safe:animate-spin motion-reduce:animate-none" />
             ) : (
               <Send className="size-4" />
             )}

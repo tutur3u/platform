@@ -70,7 +70,7 @@ it('opens Everyone, preserves drafts, inserts one mention and focuses after open
   fireEvent.change(screen.getByRole('textbox', { name: 'Chat' }), {
     target: { value: 'Keep my question' },
   });
-  fireEvent.mouseDown(screen.getByRole('tab', { name: 'Private Mira' }), {
+  fireEvent.mouseDown(screen.getByRole('tab', { name: 'Private Mira Tutor' }), {
     button: 0,
     ctrlKey: false,
   });
@@ -88,7 +88,7 @@ it('opens Everyone, preserves drafts, inserts one mention and focuses after open
   expect(
     (screen.getByRole('textbox', { name: 'Chat' }) as HTMLTextAreaElement).value
   ).toBe('@mira Keep my question');
-  fireEvent.mouseDown(screen.getByRole('tab', { name: 'Private Mira' }), {
+  fireEvent.mouseDown(screen.getByRole('tab', { name: 'Private Mira Tutor' }), {
     button: 0,
     ctrlKey: false,
   });

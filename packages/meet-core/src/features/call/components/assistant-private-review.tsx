@@ -18,6 +18,7 @@ import { useTranslations } from 'next-intl';
 import { AssistantToolPreview } from './assistant-tool-preview';
 import { ChatMessageBody } from './chat-message-body';
 import { MiraAvatar } from './mira-profile';
+import { MiraToolCard } from './mira-tool-card';
 
 export function AssistantPrivateReview({
   meetingId,
@@ -86,8 +87,8 @@ export function AssistantPrivateReview({
         {detail.isPending ? (
           <div role="status" className="space-y-2">
             <span className="sr-only">{t('assistant_review_loading')}</span>
-            <div className="h-4 w-2/3 animate-pulse rounded bg-muted" />
-            <div className="h-16 animate-pulse rounded-lg bg-muted" />
+            <div className="h-4 w-2/3 motion-safe:animate-pulse motion-reduce:animate-none rounded bg-muted" />
+            <div className="h-16 motion-safe:animate-pulse motion-reduce:animate-none rounded-lg bg-muted" />
           </div>
         ) : detail.isError ? (
           <div role="alert" className="space-y-2 text-sm">
@@ -113,18 +114,25 @@ export function AssistantPrivateReview({
               </p>
               {review.text && <ChatMessageBody body={review.text} assistant />}
               {review.approvals.map((approval) => (
-                <section
+                <MiraToolCard
                   key={approval.id}
-                  className="min-w-0 space-y-2 rounded-lg border bg-background/80 p-3"
+                  tool={{
+                    id: approval.id,
+                    title: approval.toolName.replaceAll('_', ' '),
+                    status:
+                      review.status === 'executing'
+                        ? 'running'
+                        : review.status === 'interrupted'
+                          ? 'stopped'
+                          : 'proposed',
+                    scope: { kind: 'suggest' },
+                  }}
                 >
-                  <h4 className="font-medium text-sm capitalize">
-                    {approval.toolName.replaceAll('_', ' ')}
-                  </h4>
                   <AssistantToolPreview
                     input={approval.input}
                     timezone={review.timezone}
                   />
-                </section>
+                </MiraToolCard>
               ))}
               {['executing', 'interrupted'].includes(review.status) && (
                 <p role="status" className="text-muted-foreground text-xs">
@@ -141,7 +149,7 @@ export function AssistantPrivateReview({
                   role="status"
                   className="flex items-center gap-2 text-muted-foreground text-xs"
                 >
-                  <Loader2 className="size-3.5 animate-spin" />
+                  <Loader2 className="size-3.5 motion-safe:animate-spin motion-reduce:animate-none" />
                   {t('assistant_decision_saving')}
                 </p>
               )}

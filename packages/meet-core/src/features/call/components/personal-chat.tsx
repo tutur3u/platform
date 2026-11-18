@@ -1,11 +1,12 @@
 'use client';
 import { useMutation } from '@tanstack/react-query';
-import { LockKeyhole, RefreshCw, Send, Share2 } from '@tuturuuu/icons';
+import { BookOpen, LockKeyhole, RefreshCw, Send, Share2 } from '@tuturuuu/icons';
 import {
   askPersonalMeetAssistant,
   readPrivateMiraPolicy,
   setPrivateMiraChoice,
 } from '@tuturuuu/internal-api';
+import { Badge } from '@tuturuuu/ui/badge';
 import { Button } from '@tuturuuu/ui/button';
 import {
   Dialog,
@@ -21,7 +22,16 @@ import { useRef, useState } from 'react';
 import { MiraWorkspaceSettingsLink } from '../../live-assistant/mira-workspace-settings-link';
 import { confirmPrivateChoice } from '../../live-assistant/private-choice';
 import { ChatMessageBody } from './chat-message-body';
-import { MiraProfile } from './mira-profile';
+import {
+  MiraPermissionsCard,
+  type MiraPermissionsProps,
+} from './mira-permissions-card';
+import { MiraAvatar, MiraProfile } from './mira-profile';
+
+export type MiraTutorReference = {
+  title: string;
+  onOpenSlide: () => void;
+};
 
 const privateFailureKeys = {
   MIRA_ACCOUNT_UNAVAILABLE: 'personal_account_unavailable',
@@ -42,20 +52,31 @@ function personalFailureKey(error: unknown) {
     : 'assistant_failed';
 }
 
-type Turn = { id: string; body: string; assistant: boolean };
+type Turn = { id: string; body: string } & (
+  | { assistant: true; question: string }
+  | { assistant: false }
+);
 export function PersonalChat({
   meetingId,
   accountId,
   wsId,
   onShare,
+  referenceForAnswer,
+  permissions,
 }: {
   meetingId: string;
   accountId?: string;
   wsId?: string;
   onShare: (body: string) => Promise<unknown>;
+  referenceForAnswer?: (answer: {
+    question: string;
+    body: string;
+  }) => MiraTutorReference | undefined;
+  permissions?: MiraPermissionsProps;
 }) {
   const t = useTranslations('meet.call');
   const liveT = useTranslations('meet.live');
+  const tm = useTranslations('meet.call.miraEverywhere.tutor');
   const [history, setHistory] = useState<Turn[]>([]);
   const [draft, setDraft] = useState('');
   const [confirmEnable, setConfirmEnable] = useState(false);
@@ -91,7 +112,12 @@ export function PersonalChat({
         [
           ...current,
           { id: crypto.randomUUID(), body: question, assistant: false },
-          { id: crypto.randomUUID(), body: result.text, assistant: true },
+          {
+            id: crypto.randomUUID(),
+            body: result.text,
+            assistant: true,
+            question,
+          },
         ].slice(-40)
       );
       retry.current = null;
@@ -137,39 +163,110 @@ export function PersonalChat({
   });
   return (
     <>
-      <div className="flex gap-2 border-b bg-muted/30 px-4 py-3 text-muted-foreground text-xs">
-        <LockKeyhole className="mt-0.5 size-4 shrink-0" />
-        <p>{t('personal_chat_hint')}</p>
-      </div>
       <ScrollArea className="min-h-0 flex-1 px-4 py-3">
+        <div className="mb-4 flex gap-2 rounded-xl border bg-muted/35 p-3 text-muted-foreground text-xs">
+          <LockKeyhole
+            aria-hidden
+            className="size-4 shrink-0 text-dynamic-purple"
+          />
+          <p>
+            <strong className="text-foreground">{tm('privacy')}</strong>{' '}
+            {tm('privacyDetail')}
+          </p>
+        </div>
         <ol className="space-y-5" aria-live="polite">
-          {history.map((turn) => (
-            <li key={turn.id} className="space-y-2 text-sm">
-              <div className="font-medium text-xs">
-                {turn.assistant ? <MiraProfile /> : t('you')}
-              </div>
-              <ChatMessageBody body={turn.body} assistant={turn.assistant} />
-              {turn.assistant && (
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={() => {
-                    publish.reset();
-                    setShare(turn.body.slice(0, 2000));
-                  }}
-                >
-                  <Share2 className="size-3.5" />
-                  {t('personal_share')}
-                </Button>
-              )}
-            </li>
-          ))}
+          {history.map((turn) => {
+            const reference = turn.assistant
+              ? referenceForAnswer?.({
+                  question: turn.question,
+                  body: turn.body,
+                })
+              : undefined;
+            const shareButton = turn.assistant && (
+              <Button
+                type="button"
+                variant="ghost"
+                size="sm"
+                className="h-auto min-h-7 whitespace-normal motion-reduce:transition-none"
+                onClick={() => {
+                  publish.reset();
+                  setShare(turn.body.slice(0, 2000));
+                }}
+              >
+                <Share2 aria-hidden className="size-3.5" />
+                {tm('shareSnippet')}
+              </Button>
+            );
+            return (
+              <li key={turn.id} className="flex min-w-0 gap-2 text-sm">
+                {turn.assistant && (
+                  <div className="shrink-0">
+                    <MiraProfile>
+                      <MiraAvatar size={28} />
+                    </MiraProfile>
+                  </div>
+                )}
+                <div className="wrap-break-word min-w-0 flex-1 space-y-2">
+                  <div className="flex flex-wrap items-center gap-2 font-semibold text-xs">
+                    {turn.assistant ? (
+                      <>
+                        <span className="text-dynamic-purple">
+                          {tm('title')}
+                        </span>
+                        <Badge variant="outline" className="gap-1">
+                          <LockKeyhole aria-hidden className="size-3" />
+                          {tm('privateTag')}
+                        </Badge>
+                      </>
+                    ) : (
+                      t('you')
+                    )}
+                  </div>
+                  <ChatMessageBody
+                    body={turn.body}
+                    assistant={turn.assistant}
+                  />
+                  {reference ? (
+                    <section
+                      aria-label={reference.title}
+                      className="overflow-hidden rounded-xl border border-dynamic-purple/25 bg-card"
+                    >
+                      <h4 className="flex items-center gap-2 border-b bg-dynamic-purple/5 p-2.5 font-semibold text-xs">
+                        <BookOpen
+                          aria-hidden
+                          className="size-4 shrink-0 text-dynamic-purple"
+                        />
+                        {reference.title}
+                      </h4>
+                      <div className="flex flex-wrap gap-1.5 p-2">
+                        <Button
+                          type="button"
+                          variant="outline"
+                          size="sm"
+                          className="h-7 motion-reduce:transition-none"
+                          onClick={reference.onOpenSlide}
+                        >
+                          {tm('openSlide')}
+                        </Button>
+                        {shareButton}
+                      </div>
+                    </section>
+                  ) : (
+                    shareButton
+                  )}
+                </div>
+              </li>
+            );
+          })}
         </ol>
         {!history.length && (
           <p className="py-8 text-center text-muted-foreground text-sm">
             {t('personal_chat_empty')}
           </p>
         )}
+        <div className="mt-3">
+          <MiraPermissionsCard {...permissions} />
+        </div>
       </ScrollArea>
       <form
         className="space-y-2 border-t p-3"

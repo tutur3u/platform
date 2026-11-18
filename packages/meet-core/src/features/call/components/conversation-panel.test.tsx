@@ -15,7 +15,10 @@ import { ConversationPanel } from './conversation-panel';
 const ask = vi.hoisted(() => vi.fn(async () => ({ text: 'Private answer' })));
 vi.mock('@tuturuuu/internal-api', () => ({ askPersonalMeetAssistant: ask }));
 vi.mock('./chat-panel', () => ({ ChatPanel: () => <div>Room history</div> }));
-vi.mock('./mira-profile', () => ({ MiraProfile: () => <span>Mira</span> }));
+vi.mock('./mira-profile', () => ({
+  MiraProfile: () => <span>Mira</span>,
+  MiraAvatar: () => <span />,
+}));
 vi.mock('./chat-message-body', () => ({
   ChatMessageBody: ({ body }: { body: string }) => <p>{body}</p>,
 }));
@@ -45,16 +48,16 @@ it('defaults to room chat and keeps an explicitly chosen conversation private wh
   const { rerender } = render(content(true));
   expect(
     screen
-      .getByRole('tab', { name: messages.meet.call.room_chat })
+      .getByRole('tab', { name: messages.meet.call.miraEverywhere.roomTab })
       .getAttribute('aria-selected')
   ).toBe('true');
-  fireEvent.mouseDown(screen.getByRole('tab', { name: 'Private Mira' }), {
+  fireEvent.mouseDown(screen.getByRole('tab', { name: 'Private Mira Tutor' }), {
     button: 0,
     ctrlKey: false,
   });
   expect(
     screen
-      .getByRole('tab', { name: 'Private Mira' })
+      .getByRole('tab', { name: 'Private Mira Tutor' })
       .getAttribute('aria-selected')
   ).toBe('true');
   fireEvent.change(screen.getByRole('textbox', { name: 'Private Mira' }), {
@@ -66,11 +69,13 @@ it('defaults to room chat and keeps an explicitly chosen conversation private wh
   rerender(content(false));
   expect(
     screen
-      .getByRole('tab', { name: 'Private Mira' })
+      .getByRole('tab', { name: 'Private Mira Tutor' })
       .getAttribute('aria-selected')
   ).toBe('true');
   fireEvent.click(
-    screen.getByRole('button', { name: messages.meet.call.personal_share })
+    screen.getByRole('button', {
+      name: messages.meet.call.miraEverywhere.tutor.shareSnippet,
+    })
   );
   expect(onSendChat).not.toHaveBeenCalled();
   fireEvent.change(

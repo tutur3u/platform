@@ -33,7 +33,10 @@ vi.mock('next-intl', () => ({
   useLocale: () => 'en',
   useTranslations: () => (key: string) => key,
 }));
-vi.mock('./mira-profile', () => ({ MiraProfile: () => <span>Mira</span> }));
+vi.mock('./mira-profile', () => ({
+  MiraProfile: () => <span>Mira</span>,
+  MiraAvatar: () => <span />,
+}));
 vi.mock('./chat-message-body', () => ({
   ChatMessageBody: ({ body }: { body: string }) => <p>{body}</p>,
 }));
@@ -149,4 +152,56 @@ it('offers workspace settings without writing consent for an ineligible workspac
   );
   expect(screen.queryByRole('button', { name: 'personal_enable' })).toBeNull();
   expect(setChoice).not.toHaveBeenCalled();
+});
+
+it('opens a supplied slide and sends only the confirmed excerpt through the room callback', async () => {
+  ask.mockResolvedValueOnce({ text: 'Private answer with an example' });
+  const openSlide = vi.fn();
+  const onShare = vi.fn(async () => undefined);
+  const referenceForAnswer = vi.fn(() => ({
+    title: 'Lesson 04 · Slide 12 · Base cases',
+    onOpenSlide: openSlide,
+  }));
+  render(
+    <QueryClientProvider client={new QueryClient()}>
+      <PersonalChat
+        meetingId="room"
+        onShare={onShare}
+        referenceForAnswer={referenceForAnswer}
+      />
+    </QueryClientProvider>
+  );
+
+  expect(screen.getByText('privacy')).toBeTruthy();
+  expect(screen.queryByRole('button', { name: 'openSlide' })).toBeNull();
+  fireEvent.change(screen.getByRole('textbox', { name: 'personal_chat' }), {
+    target: { value: 'Explain recursion' },
+  });
+  fireEvent.click(screen.getByRole('button', { name: 'send' }));
+  await screen.findByText('Private answer with an example');
+  expect(screen.getByText('privateTag')).toBeTruthy();
+  expect(referenceForAnswer).toHaveBeenCalledWith(
+    expect.objectContaining({
+      question: 'Explain recursion',
+      body: 'Private answer with an example',
+    })
+  );
+  expect(ask).toHaveBeenCalledWith(
+    'room',
+    expect.objectContaining({
+      question: 'Explain recursion',
+      history: [],
+    })
+  );
+  fireEvent.click(screen.getByRole('button', { name: 'openSlide' }));
+  expect(openSlide).toHaveBeenCalledOnce();
+  fireEvent.click(screen.getByRole('button', { name: 'shareSnippet' }));
+  expect(onShare).not.toHaveBeenCalled();
+  fireEvent.change(screen.getByRole('textbox', { name: 'personal_share' }), {
+    target: { value: 'Reviewed excerpt' },
+  });
+  fireEvent.click(
+    screen.getByRole('button', { name: 'personal_share_confirm' })
+  );
+  await waitFor(() => expect(onShare).toHaveBeenCalledWith('Reviewed excerpt'));
 });

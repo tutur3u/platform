@@ -6,8 +6,11 @@ import {
   render,
   screen,
   waitFor,
+  within,
 } from '@testing-library/react';
+import { MEET_ASSISTANT_USER_ID } from '@tuturuuu/realtime/meet';
 import { NextIntlClientProvider } from 'next-intl';
+import type { ComponentProps } from 'react';
 import { afterEach, beforeEach, expect, it, vi } from 'vitest';
 import messages from '../../../../../../apps/meet/messages/en.json';
 
@@ -44,7 +47,7 @@ beforeEach(() => {
 });
 afterEach(cleanup);
 
-function ask(body: string, onOpenPrivateMira?: () => void) {
+function showChat(overrides?: Partial<ComponentProps<typeof ChatPanel>>) {
   const onSendChat = vi.fn(async () => ({ id: 'synthetic-message' }));
   render(
     <QueryClientProvider
@@ -55,20 +58,25 @@ function ask(body: string, onOpenPrivateMira?: () => void) {
       <NextIntlClientProvider locale="en" messages={messages}>
         <ChatPanel
           chat={[]}
-          onOpenPrivateMira={onOpenPrivateMira}
           onSendChat={onSendChat}
           selfUserId="self"
           accountId="synthetic-account"
           meetingId="synthetic-meeting"
+          {...overrides}
         />
       </NextIntlClientProvider>
     </QueryClientProvider>
   );
+  return onSendChat;
+}
+
+function ask(body: string, onOpenPrivateMira?: () => void) {
+  const sent = showChat({ onOpenPrivateMira });
   fireEvent.change(screen.getByRole('textbox', { name: call.chat }), {
     target: { value: body },
   });
   fireEvent.click(screen.getByRole('button', { name: call.send }));
-  return onSendChat;
+  return sent;
 }
 
 for (const mention of ['@mira', '@ttr', '@tuturuuu'])
@@ -122,4 +130,182 @@ it('does not call the room assistant for plain chat', async () => {
   await waitFor(() => expect(sent).toHaveBeenCalled());
   expect(f.ask).not.toHaveBeenCalled();
   expect(screen.queryByRole('alert')).toBeNull();
+});
+
+it('inserts a slash command by keyboard and sends through the normal Room Mira mention flow', async () => {
+  const sent = showChat();
+  const composer = screen.getByRole('textbox', { name: call.chat });
+  fireEvent.change(composer, { target: { value: '/' } });
+  const palette = screen.getByRole('listbox');
+  expect(within(palette).getAllByRole('option')).toHaveLength(4);
+  expect(sent).not.toHaveBeenCalled();
+  expect(f.ask).not.toHaveBeenCalled();
+  fireEvent.keyDown(composer, { key: 'ArrowDown' });
+  const summary = within(palette).getByRole('option', { name: /^\/summary/ });
+  expect(summary.getAttribute('aria-selected')).toBe('true');
+  expect(composer.getAttribute('aria-activedescendant')).toBe(summary.id);
+  fireEvent.keyDown(composer, { key: 'Enter' });
+  expect((composer as HTMLTextAreaElement).value).toBe(
+    '@Tuturuuu Summarize this conversation.'
+  );
+  expect(sent).not.toHaveBeenCalled();
+  fireEvent.keyDown(composer, { key: 'Enter' });
+  await waitFor(() =>
+    expect(sent).toHaveBeenCalledWith(
+      '@Tuturuuu Summarize this conversation.',
+      []
+    )
+  );
+  expect(f.ask).toHaveBeenCalledOnce();
+});
+
+it('dismisses the palette and opens filtered commands on further typing', () => {
+  const sent = showChat();
+  const composer = screen.getByRole('textbox', { name: call.chat });
+  fireEvent.change(composer, { target: { value: '/' } });
+  fireEvent.keyDown(composer, { key: 'Escape' });
+  expect(screen.queryByRole('listbox')).toBeNull();
+  fireEvent.change(composer, { target: { value: '/re' } });
+  const option = screen.getByRole('option');
+  expect(option.textContent).toContain('/review');
+  fireEvent.click(option);
+  expect((composer as HTMLTextAreaElement).value).toBe(
+    '@Tuturuuu Review the following:'
+  );
+  expect(sent).not.toHaveBeenCalled();
+  expect(f.ask).not.toHaveBeenCalled();
+});
+
+it('renders action cards only for trusted Mira messages and dispatches authorized actions', async () => {
+  const onAuthorizedAction = vi.fn(async () => undefined);
+  const onFocusSurface = vi.fn();
+  const chat = [
+    {
+      id: 'mira',
+      userId: MEET_ASSISTANT_USER_ID,
+      assistant: true,
+      body: 'Review these updates',
+      displayName: 'Mira',
+      createdAt: '2026-01-01T10:00:00Z',
+    },
+    {
+      id: 'person',
+      userId: 'other',
+      assistant: true,
+      body: 'A regular chat message',
+      displayName: 'Mira',
+      createdAt: '2026-01-01T10:00:00Z',
+    },
+  ];
+  showChat({
+    chat,
+    mira: {
+      typing: true,
+      onFocusSurface,
+      toolsByMessageId: new Map([
+        [
+          'mira',
+          [
+            {
+              tool: {
+                id: 'p',
+                title: 'Draft poll',
+                status: 'proposed',
+                scope: { kind: 'suggest' },
+              },
+              onAuthorizedAction,
+            },
+            {
+              tool: {
+                id: 'r',
+                title: 'Append to rubric',
+                status: 'running',
+                scope: { kind: 'surface', surface: 'docs' },
+              },
+              onAuthorizedAction,
+            },
+            {
+              tool: {
+                id: 'a',
+                title: 'Edit page',
+                status: 'applied',
+                scope: { kind: 'surface', surface: 'docs' },
+                attribution: 'live',
+              },
+              onAuthorizedAction,
+            },
+            {
+              tool: {
+                id: 's',
+                title: 'Check code',
+                status: 'stopped',
+                scope: { kind: 'suggest' },
+              },
+              onAuthorizedAction,
+            },
+            {
+              tool: {
+                id: 'u',
+                title: 'Draft actions',
+                status: 'undone',
+                scope: { kind: 'suggest' },
+              },
+              onAuthorizedAction,
+            },
+            {
+              tool: {
+                id: 'view',
+                title: 'View only',
+                status: 'running',
+                scope: { kind: 'suggest' },
+              },
+            },
+          ],
+        ],
+        [
+          'person',
+          [
+            {
+              tool: {
+                id: 'fake',
+                title: 'Untrusted tool',
+                status: 'applied',
+                scope: { kind: 'suggest' },
+              },
+              onAuthorizedAction,
+            },
+          ],
+        ],
+      ]),
+    },
+  });
+  expect(screen.getByText('Mira is typing…')).toBeTruthy();
+  expect(screen.getByText('Mira • Chat')).toBeTruthy();
+  expect(screen.getByText('Chat')).toBeTruthy();
+  expect(screen.queryByText('Untrusted tool')).toBeNull();
+  expect(screen.getByText('Edited by Mira (Voice Live)')).toBeTruthy();
+  for (const name of ['Stopped', 'Undone'])
+    expect(screen.getByText(name)).toBeTruthy();
+  expect(
+    within(screen.getByRole('region', { name: 'View only' })).queryByRole(
+      'button'
+    )
+  ).toBeNull();
+  fireEvent.click(
+    within(screen.getByRole('region', { name: 'Append to rubric' })).getByRole(
+      'button',
+      { name: 'Docs' }
+    )
+  );
+  expect(onFocusSurface).toHaveBeenCalledWith('docs');
+  for (const name of ['Approve', 'Stop', 'Undo']) {
+    fireEvent.click(screen.getByRole('button', { name }));
+  }
+  await waitFor(() =>
+    expect(onAuthorizedAction.mock.calls).toEqual([
+      ['approve'],
+      ['stop'],
+      ['undo'],
+    ])
+  );
 });

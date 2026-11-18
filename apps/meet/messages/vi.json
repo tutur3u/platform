@@ -4286,6 +4286,81 @@
       "mira_requests": "{count} yêu cầu Mira",
       "mira_thinking": "Mira đang suy nghĩ…",
       "mira_volume": "Âm lượng giọng Mira",
+      "miraEverywhere": {
+        "active": "Đang hoạt động",
+        "chatMode": "Trò chuyện",
+        "chatTag": "Mira • Trò chuyện",
+        "commands": {
+          "actions": {
+            "description": "Liệt kê các việc cần làm",
+            "prompt": "Liệt kê các việc cần làm từ cuộc trò chuyện này."
+          },
+          "poll": {
+            "description": "Soạn bản nháp bình chọn",
+            "prompt": "Soạn bản nháp bình chọn dựa trên cuộc trò chuyện này."
+          },
+          "review": {
+            "description": "Xem xét câu hỏi hoặc thay đổi được đề xuất",
+            "prompt": "Xem xét nội dung sau:"
+          },
+          "summary": {
+            "description": "Tóm tắt cuộc trò chuyện",
+            "prompt": "Tóm tắt cuộc trò chuyện này."
+          },
+          "title": "Lệnh dấu gạch chéo của Mira"
+        },
+        "idle": "Đang chờ",
+        "liveMode": "Trực tiếp",
+        "liveTag": "Mira • Trực tiếp",
+        "permissions": {
+          "blocked": "Bị chặn",
+          "disabled": "Đã tắt",
+          "draft": "Soạn bản nháp bình chọn và danh sách việc cần làm",
+          "editDocs": "Sửa tài liệu · ghi rõ người sửa ở mỗi lần chỉnh sửa",
+          "failed": "Không thể cập nhật quyền của Mira. Hãy thử lại.",
+          "host": "Do chủ phòng đặt",
+          "readPrivate": "Đọc ghi chú riêng tư hoặc cuộc trò chuyện với gia sư",
+          "suggestCode": "Đề xuất mã · cần người xác nhận",
+          "title": "Mira có thể",
+          "unavailable": "Không khả dụng"
+        },
+        "roomTab": "Phòng chat @Tuturuuu",
+        "surfaces": {
+          "docs": "Tài liệu",
+          "polls": "Bình chọn",
+          "programming": "Lập trình cùng nhau",
+          "whiteboard": "Bảng trắng"
+        },
+        "tools": {
+          "actions": {
+            "approve": "Phê duyệt",
+            "stop": "Dừng",
+            "undo": "Hoàn tác"
+          },
+          "attributedChat": "Mira chỉnh sửa (trò chuyện)",
+          "attributedLive": "Mira chỉnh sửa (thoại trực tiếp)",
+          "failed": "Mira không thể hoàn tất thao tác này. Hãy thử lại.",
+          "status": {
+            "applied": "Đã áp dụng",
+            "proposed": "Được đề xuất",
+            "running": "Đang chạy",
+            "stopped": "Đã dừng",
+            "undone": "Đã hoàn tác"
+          },
+          "suggest": "Chỉ đề xuất"
+        },
+        "tutor": {
+          "openSlide": "Mở trang chiếu",
+          "privacy": "Riêng tư · chỉ bạn thấy",
+          "privacyDetail": "Mira chỉ đăng vào phòng khi bạn chia sẻ.",
+          "privateTag": "Riêng tư",
+          "shareSnippet": "Chia sẻ đoạn trích vào phòng",
+          "tab": "Gia sư Mira riêng tư",
+          "title": "Gia sư Mira"
+        },
+        "typing": "Mira đang nhập…",
+        "where": "Mira đang làm việc ở đâu"
+      },
       "mute": "Tắt micro",
       "mute_notifications": "Tắt âm thanh thông báo",
       "mute_participant": "Tắt mic của {name}",
@@ -4871,6 +4946,15 @@
       "state_recovering": "Đang kết nối lại",
       "stop": "Dừng trợ lý",
       "stop_room": "Dừng trợ lý của phòng",
+      "tile_caption_speaker": "Mira:",
+      "tile_chat": "Mira • Trò chuyện",
+      "tile_chat_status": "Đang nhập trong phòng chat",
+      "tile_footer": "Tuturuuu Mira · Thành viên AI",
+      "tile_listening_hint": "Nói “Mira, …” hoặc nhập @Tuturuuu trong phòng chat",
+      "tile_listening_status": "Đang lắng nghe",
+      "tile_live": "Mira • Trực tiếp",
+      "tile_open_chat": "Trò chuyện",
+      "tile_speaking_status": "Đang nói",
       "title": "Mira trực tiếp",
       "unmute_to_mira": "Nói với Mira",
       "voice": "Giọng nói của Mira",

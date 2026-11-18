@@ -4286,6 +4286,81 @@
       "mira_requests": "{count} Mira requests",
       "mira_thinking": "Mira is thinking…",
       "mira_volume": "Mira voice volume",
+      "miraEverywhere": {
+        "active": "Active",
+        "chatMode": "Chat",
+        "chatTag": "Mira • Chat",
+        "commands": {
+          "actions": {
+            "description": "List action items",
+            "prompt": "List the action items from this conversation."
+          },
+          "poll": {
+            "description": "Draft a poll",
+            "prompt": "Draft a poll from this conversation."
+          },
+          "review": {
+            "description": "Review a question or proposed change",
+            "prompt": "Review the following:"
+          },
+          "summary": {
+            "description": "Summarize the conversation",
+            "prompt": "Summarize this conversation."
+          },
+          "title": "Mira slash commands"
+        },
+        "idle": "Idle",
+        "liveMode": "Live",
+        "liveTag": "Mira • Live",
+        "permissions": {
+          "blocked": "Blocked",
+          "disabled": "Off",
+          "draft": "Draft polls and action items",
+          "editDocs": "Edit docs · every edit attributed",
+          "failed": "Couldn’t update Mira’s permissions. Try again.",
+          "host": "Set by host",
+          "readPrivate": "Read private notes or tutor chats",
+          "suggestCode": "Suggest code · a person accepts",
+          "title": "Mira can",
+          "unavailable": "Unavailable"
+        },
+        "roomTab": "Room Chat @Tuturuuu",
+        "surfaces": {
+          "docs": "Docs",
+          "polls": "Polls",
+          "programming": "Co-programming",
+          "whiteboard": "Whiteboard"
+        },
+        "tools": {
+          "actions": {
+            "approve": "Approve",
+            "stop": "Stop",
+            "undo": "Undo"
+          },
+          "attributedChat": "Edited by Mira (Chat)",
+          "attributedLive": "Edited by Mira (Voice Live)",
+          "failed": "Mira couldn’t complete this action. Try again.",
+          "status": {
+            "applied": "Applied",
+            "proposed": "Proposed",
+            "running": "Running",
+            "stopped": "Stopped",
+            "undone": "Undone"
+          },
+          "suggest": "Suggest only"
+        },
+        "tutor": {
+          "openSlide": "Open slide",
+          "privacy": "Private · only you see this",
+          "privacyDetail": "Mira only posts to the room if you share.",
+          "privateTag": "Private",
+          "shareSnippet": "Share snippet to room",
+          "tab": "Private Mira Tutor",
+          "title": "Mira Tutor"
+        },
+        "typing": "Mira is typing…",
+        "where": "Where Mira is"
+      },
       "mute": "Mute microphone",
       "mute_notifications": "Mute notification sounds",
       "mute_participant": "Mute {name}",
@@ -4871,6 +4946,15 @@
       "state_recovering": "Reconnecting",
       "stop": "Stop assistant",
       "stop_room": "Stop room assistant",
+      "tile_caption_speaker": "Mira:",
+      "tile_chat": "Mira • Chat",
+      "tile_chat_status": "Typing in Room Chat",
+      "tile_footer": "Tuturuuu Mira · AI participant",
+      "tile_listening_hint": "Say “Mira, …” or type @Tuturuuu in chat",
+      "tile_listening_status": "Listening",
+      "tile_live": "Mira • Live",
+      "tile_open_chat": "Chat",
+      "tile_speaking_status": "Speaking",
       "title": "Mira Live",
       "unmute_to_mira": "Talk to Mira",
       "voice": "Mira’s voice",

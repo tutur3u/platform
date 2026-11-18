@@ -88,6 +88,14 @@ denied room chat mention shows an inline notice that Room Mira is unavailable an
 points to Private Mira. Private Mira startup reports blocked, missing or busy
 microphones and unavailable audio output with specific messages.
 
+Meet and Parley offer `/poll`, `/summary`, `/actions`, and `/review` in the room
+composer. Selecting a command fills an editable **@Tuturuuu** draft. Sending
+uses the same room request and availability checks as a typed mention. In
+**Private Mira Tutor**, **Share snippet to room** opens an editable confirmation
+before posting the selected text to the room. Room tool controls require an
+authorized operation from the owning surface. Access to private notes and
+tutor chats is blocked in the room permissions card.
+
 Deploy `tuturuuu-meet-realtime` with the choice protocol and command denials before
 `tuturuuu-meet`. Enabling the private path requires an explicit runtime override
 because the source configuration retains `MEET_AI_DISABLED: 'true'`. Both Workers

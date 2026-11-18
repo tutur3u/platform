@@ -10,9 +10,30 @@ export default getRequestConfig(
       routing.defaultLocale
     );
 
+    const [{ default: messages }, { default: meetMessages }] =
+      await Promise.all([
+        import(`../../messages/${locale}.json`),
+        import(`../../../meet/messages/${locale}.json`),
+      ]);
+    const liveTileMessages = Object.fromEntries(
+      Object.entries(meetMessages.meet.live).filter(([key]) =>
+        key.startsWith('tile_')
+      )
+    );
+
     return {
       locale,
-      messages: (await import(`../../messages/${locale}.json`)).default,
+      messages: {
+        ...messages,
+        meet: {
+          ...messages.meet,
+          call: {
+            ...messages.meet.call,
+            miraEverywhere: meetMessages.meet.call.miraEverywhere,
+          },
+          live: { ...messages.meet.live, ...liveTileMessages },
+        },
+      },
     };
   }
 );
