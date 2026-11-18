@@ -1,67 +1,85 @@
 ---
-title: Mobile Profile overview and timeline
-description: Layout, identity, private-activity and timeline presentation rules for the mobile Profile root tab
-updatedAt: "2026-10-25"
+title: Mobile Profile and Timeline
+description: What the mobile Profile root tab shows, where the activity Timeline lives, and their presentation rules
+updatedAt: "2026-11-19"
 audience: users
 ---
 
-The Profile root tab uses the shared mobile design language: theme tokens,
-Lucide line icons, the composition kit and the grouped row vocabulary. Data
-sources, privacy scope and navigation did not change with the redesign. The
-overview still shows only the signed-in user's own identity and personal,
-user-filtered activity. Opening the timeline never shares it.
+Profile is a mobile root dock destination. It shows only the signed-in
+user's own identity and personal, user-filtered activity. The activity
+Timeline is a separate screen opened from Home. Neither screen shares
+activity with anyone else.
 
-## Overview
+## Profile
 
-- **Identity card.** The cover (or a soft accent wash when no cover is set),
-  an 80dp avatar overlapping the cover, the display name, email and bio, and
-  an **Edit profile** button that opens the existing profile editor
-  (`/settings/profile`). The shell navbar keeps the page title, and identity
-  from a previous account is never shown while the current one loads.
-- **Private activity.** It is introduced by a section header with a lock
-  icon. Tracked time for Today, This week and This month appears as kit stat
-  tiles in compact units ("1h 30m", "45m"); the full "N min tracked" reading
-  is the tiles' semantics label. The 12-week heatmap sits in a panel and uses
-  the info tone, with intensity by tracked time and muted cells for empty
-  days.
-- **States.** First loads show static tile shapes. A failed load shows an
-  inline destructive message with **Retry**. A missing personal workspace
-  shows an inline "timeline unavailable" message.
-- **Responsive.** Page kind `root`. Below 840dp of body width, identity sits
-  above activity. From 840dp, a 360dp identity column sits beside the
-  activity column. The three stat tiles share one row when it fits; where
-  only two columns fit, Today leads at full width so no cell is left empty.
+Scope: the mobile app's Profile root tab (`/profile`). Profile is one of the
+two screens whose top bar carries the workspace picker; Home is the other.
+
+From top to bottom, Profile shows:
+
+- **Identity.** The avatar, the display name, the email and the bio, with an
+  **Edit profile** button that opens the profile editor
+  (`/settings/profile`). Identity from a previous account is never shown
+  while the current one loads. Signed or private avatar URLs are never
+  cached to disk.
+- **Focus Time.** Task-linked tracked time for Today, This week and This
+  month in compact units ("1h 5m", "45m"), with **See all** opening the
+  Timer statistics. It loads from the user's verified personal workspace
+  only and never requests a workspace-wide aggregate. A failed load shows an
+  inline message with **Retry**.
+- **Switch account.** The most recent other saved accounts and the newest
+  one's email. It opens the account switcher, which also adds and manages
+  accounts.
+- **Quick links.** Settings, Appearance, Notifications, Security and
+  devices, Help and feedback, and About.
+- **Sign out and Delete account.** Sign out asks for confirmation first.
+  Delete account opens the public account-deletion page in the in-app
+  browser, like the Settings row.
+
+The profile banner is edited in Edit profile and is not displayed on
+Profile. Pull to refresh and re-selecting the Profile dock item reload the
+profile and Focus Time.
 
 ## Timeline
 
-- **Day cards.** Each day has a caption (Today, Yesterday or the localized
-  date) with a per-type summary. Its rows stack into one rounded grouped card
-  with inset dividers. Rows keep the fixed row extent the browser uses for
-  anchoring and date jumps.
-- **Rows.** Each row has a tone tile per source: tasks primary, transactions
-  success, notes warning, calendar info. Openable sources show a chevron.
-- **Date strip.** It shows the month label, Today, and previous/next week as
-  48dp icon buttons, plus a week of rounded day chips. The selected day is
-  filled with the primary colour, days with activity are tinted and carry a
-  dot, and every chip keeps its semantics label and tap action.
-- **States.** First loads show skeleton rows. Empty, partial and unavailable
-  timelines show a centred state message. Load and partial failures still
-  raise a toast (now `showAppToast`).
-- **Responsive.** The browser keeps one full-width scroll view and pads its
-  content with the `detail` page insets (a readable column of up to 600dp on
-  tablets and 720dp on desktops).
+Scope: `/timeline`, opened from the Timeline action in Home's top bar. Its
+dock shows Back, All and Today; Back is not counted among the dock's items.
+
+- **Days.** Activity is grouped by calendar day in the device time zone,
+  newest day and newest item first, under a header that stays pinned while
+  its rows scroll.
+- **Rows.** Each row shows the time, a source tile on the day's rail, and a
+  card with the title and a source pill. Rows whose source has a destination
+  open it on tap, also from screen readers, and every row card is at least
+  48dp tall.
+- **Filters.** Source chips (Tasks, Calendar, Finance, Notes) narrow the
+  loaded activity to one source; tapping the selected chip shows every
+  source again. Today shows today only, All clears the day and source
+  filters, and Search narrows by title. Filters never change what is
+  fetched.
+- **Paging.** Without a filter, the next page loads as the end comes into
+  view. With a filter active, pages load only from **Load more**, so a
+  narrow filter never walks the whole history on its own. A spinner shows
+  while any page loads.
+- **States.** First loads show skeleton rows. Empty, filtered-out and
+  unavailable timelines show a state message; a failed load offers
+  **Retry** unless access was refused. Pull to refresh reloads the first
+  page.
 
 ## Regression coverage
 
-- `test/features/shell/view/appearance_root_tabs_render_test.dart` (part
-  `profile_render_cases.dart`) renders Overview and Timeline in the real
-  shell with fixture data at 390x844, 820x1180 and 1440x900 in Classic
-  light/dark, a gradient and a blob theme. It asserts:
-  - the phone gutter;
-  - the two-column desktop layout;
-  - the compact stat values;
-  - the 44dp edit target;
-  - the day captions and rows.
-- The existing `test/features/profile/view/*` suites cover activity scoping,
-  timeline anchoring, paging, races, navigation and account changes against
-  the restyled widgets.
+- `test/features/profile/view/profile_sections_test.dart`: quick links,
+  sign-out confirmation, the account-deletion row and the switch-account
+  preview.
+- `test/features/profile/view/profile_focus_time_test.dart`: Focus Time
+  figures, See all, reload on dock re-select, and the bio.
+- `test/features/profile/view/profile_timeline_view_test.dart` and
+  `profile_timeline_coverage_test.dart`: day grouping across UTC and DST
+  boundaries, pinned headers, incremental deduplicated paging, filtered
+  Load more, row semantics and 320px at 3x text.
+- `test/features/shell/view/apps_search_submit_test.dart`: the Home
+  Timeline action opens `/timeline`.
+- `test/features/shell/view/shared_navbar_large_text_test.dart`: the
+  Profile title and the 44dp workspace picker in the real shell navbar.
+- `test/features/profile/profile_goldens_test.dart`: Profile and Timeline
+  goldens in classic and Sorbet, light and dark, on phone and tablet.

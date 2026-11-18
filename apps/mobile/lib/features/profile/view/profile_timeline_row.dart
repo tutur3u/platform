@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:mobile/core/layout/grouped_rows.dart';
 import 'package:mobile/core/layout/layout_tokens.dart';
+import 'package:mobile/core/ui/components/app_tap_target.dart';
 import 'package:mobile/core/ui/tokens/app_tokens.dart';
 import 'package:mobile/features/profile/profile_timeline_repository.dart';
 import 'package:mobile/features/profile/view/profile_surface.dart';
@@ -15,6 +16,7 @@ class ProfileTimelineRow extends StatelessWidget {
     required this.time,
     required this.timeWidth,
     required this.last,
+    this.inlineTime = false,
     this.onOpen,
     super.key,
   });
@@ -33,6 +35,10 @@ class ProfileTimelineRow extends StatelessWidget {
 
   /// The rail continues below every row of a day except its last.
   final bool last;
+
+  /// Shows the time inside the card instead of in a gutter, for narrow
+  /// widths and large text.
+  final bool inlineTime;
   final ValueChanged<ProfileTimelineItem>? onOpen;
 
   @override
@@ -46,7 +52,10 @@ class ProfileTimelineRow extends StatelessWidget {
     final card = profileCardDecoration(
       context,
     ).copyWith(borderRadius: BorderRadius.circular(tokens.shapes.card * 2 / 3));
-    final body = Padding(
+    // Untitled rows still meet the minimum tap target.
+    final body = Container(
+      constraints: const BoxConstraints(minHeight: kAppMinTapTarget),
+      alignment: AlignmentDirectional.centerStart,
       padding: const EdgeInsets.symmetric(
         horizontal: AppSpacing.md,
         vertical: AppSpacing.sm + AppSpacing.xxs,
@@ -55,6 +64,18 @@ class ProfileTimelineRow extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.start,
         mainAxisSize: MainAxisSize.min,
         children: [
+          if (inlineTime) ...[
+            Text(
+              time,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              style: type.caption.copyWith(
+                color: c.mutedForeground,
+                fontWeight: FontWeight.w700,
+              ),
+            ),
+            const SizedBox(height: AppSpacing.xxs),
+          ],
           Text(
             title ?? kind,
             maxLines: 2,
@@ -73,6 +94,7 @@ class ProfileTimelineRow extends StatelessWidget {
     );
     return Semantics(
       button: open != null,
+      onTap: open == null ? null : () => open(item),
       label: [?title, kind, time].join(', '),
       excludeSemantics: true,
       child: CustomPaint(
@@ -80,7 +102,7 @@ class ProfileTimelineRow extends StatelessWidget {
             ? null
             : _RailPainter(
                 color: c.border,
-                x: timeWidth + gap + tileSize / 2,
+                x: (inlineTime ? 0 : timeWidth + gap) + tileSize / 2,
                 top: _rowPadding + tileSize + AppSpacing.xs,
               ),
         child: Padding(
@@ -88,23 +110,25 @@ class ProfileTimelineRow extends StatelessWidget {
           child: Row(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              SizedBox(
-                width: timeWidth,
-                child: Padding(
-                  padding: const EdgeInsets.only(top: AppSpacing.sm + 1),
-                  child: Text(
-                    time,
-                    textAlign: TextAlign.right,
-                    maxLines: 1,
-                    style: type.numeric.copyWith(
-                      color: c.mutedForeground,
-                      fontWeight: FontWeight.w700,
-                      fontFeatures: const [FontFeature.tabularFigures()],
+              if (!inlineTime) ...[
+                SizedBox(
+                  width: timeWidth,
+                  child: Padding(
+                    padding: const EdgeInsets.only(top: AppSpacing.sm + 1),
+                    child: Text(
+                      time,
+                      textAlign: TextAlign.right,
+                      maxLines: 1,
+                      style: type.numeric.copyWith(
+                        color: c.mutedForeground,
+                        fontWeight: FontWeight.w700,
+                        fontFeatures: const [FontFeature.tabularFigures()],
+                      ),
                     ),
                   ),
                 ),
-              ),
-              const SizedBox(width: gap),
+                const SizedBox(width: gap),
+              ],
               AppIconTile(
                 icon: item.kindIcon,
                 tone: item.kindTone,

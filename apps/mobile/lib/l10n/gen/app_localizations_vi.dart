@@ -7110,16 +7110,7 @@ class AppLocalizationsVi extends AppLocalizations {
   String get profileNoSharedActivity => 'Chưa có ai chia sẻ hoạt động tại đây.';
 
   @override
-  String get profileOverviewTab => 'Tổng quan';
-
-  @override
-  String get profilePrivateActivity => 'Hoạt động riêng tư của bạn';
-
-  @override
   String get profilePrivateByDefault => 'Chỉ bạn mới xem được hoạt động của mình.';
-
-  @override
-  String get profileRecentActivity => '12 tuần gần đây';
 
   @override
   String get profileRemoveAvatar => 'Xóa ảnh đại diện';
@@ -7159,22 +7150,10 @@ class AppLocalizationsVi extends AppLocalizations {
   String get profileStatusUnknown => 'Không rõ';
 
   @override
-  String get profileTimelineAgenda => 'Những ngày có hoạt động';
-
-  @override
-  String get profileTimelineDayEmpty => 'Không có hoạt động nào được trả về cho ngày này.';
-
-  @override
   String get profileTimelineDescription => 'Hoạt động tạo trong không gian làm việc này trong 30 ngày qua. Sự kiện lịch là hoạt động của không gian làm việc.';
 
   @override
   String get profileTimelineEmpty => 'Không có hoạt động gần đây trong không gian này';
-
-  @override
-  String get profileTimelineHasActivity => 'Có hoạt động trong dữ liệu đã tải';
-
-  @override
-  String get profileTimelineHideDates => 'Đóng thanh ngày và xem dòng hoạt động';
 
   @override
   String get profileTimelineKindNote => 'Ghi chú';
@@ -7195,13 +7174,7 @@ class AppLocalizationsVi extends AppLocalizations {
   String get profileTimelineLoadedEnd => 'Đã hiển thị toàn bộ hoạt động đã tải';
 
   @override
-  String get profileTimelineMoreDays => 'Hiện thêm ngày đã tải';
-
-  @override
   String get profileTimelinePartial => 'Một số hoạt động chưa hiển thị.';
-
-  @override
-  String get profileTimelineShowDates => 'Hiện thanh chọn ngày';
 
   @override
   String get profileTimelineTab => 'Dòng thời gian';
@@ -7241,9 +7214,6 @@ class AppLocalizationsVi extends AppLocalizations {
 
   @override
   String get profileTimelineFilteredEmpty => 'Không có hoạt động nào khớp với bộ lọc';
-
-  @override
-  String get profileTimelineFilters => 'Bộ lọc';
 
   @override
   String get profileTimelineSearch => 'Tìm hoạt động';

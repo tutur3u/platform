@@ -13669,29 +13669,11 @@ abstract class AppLocalizations {
   /// **'No one has shared activity here yet.'**
   String get profileNoSharedActivity;
 
-  /// No description provided for @profileOverviewTab.
-  ///
-  /// In en, this message translates to:
-  /// **'Overview'**
-  String get profileOverviewTab;
-
-  /// No description provided for @profilePrivateActivity.
-  ///
-  /// In en, this message translates to:
-  /// **'Your private activity'**
-  String get profilePrivateActivity;
-
   /// No description provided for @profilePrivateByDefault.
   ///
   /// In en, this message translates to:
   /// **'Only you can see your activity.'**
   String get profilePrivateByDefault;
-
-  /// No description provided for @profileRecentActivity.
-  ///
-  /// In en, this message translates to:
-  /// **'Last 12 weeks'**
-  String get profileRecentActivity;
 
   /// No description provided for @profileRemoveAvatar.
   ///
@@ -13759,18 +13741,6 @@ abstract class AppLocalizations {
   /// **'Unknown'**
   String get profileStatusUnknown;
 
-  /// No description provided for @profileTimelineAgenda.
-  ///
-  /// In en, this message translates to:
-  /// **'Days with activity'**
-  String get profileTimelineAgenda;
-
-  /// No description provided for @profileTimelineDayEmpty.
-  ///
-  /// In en, this message translates to:
-  /// **'No activity was returned for this day.'**
-  String get profileTimelineDayEmpty;
-
   /// No description provided for @profileTimelineDescription.
   ///
   /// In en, this message translates to:
@@ -13782,18 +13752,6 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'No recent activity in this workspace'**
   String get profileTimelineEmpty;
-
-  /// No description provided for @profileTimelineHasActivity.
-  ///
-  /// In en, this message translates to:
-  /// **'Activity in loaded snapshot'**
-  String get profileTimelineHasActivity;
-
-  /// No description provided for @profileTimelineHideDates.
-  ///
-  /// In en, this message translates to:
-  /// **'Close dates and browse agenda'**
-  String get profileTimelineHideDates;
 
   /// No description provided for @profileTimelineKindNote.
   ///
@@ -13831,23 +13789,11 @@ abstract class AppLocalizations {
   /// **'All loaded activity shown'**
   String get profileTimelineLoadedEnd;
 
-  /// No description provided for @profileTimelineMoreDays.
-  ///
-  /// In en, this message translates to:
-  /// **'Show more loaded days'**
-  String get profileTimelineMoreDays;
-
   /// No description provided for @profileTimelinePartial.
   ///
   /// In en, this message translates to:
   /// **'Some activity is unavailable.'**
   String get profileTimelinePartial;
-
-  /// No description provided for @profileTimelineShowDates.
-  ///
-  /// In en, this message translates to:
-  /// **'Show date selector'**
-  String get profileTimelineShowDates;
 
   /// No description provided for @profileTimelineTab.
   ///
@@ -13926,12 +13872,6 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'No activity matches these filters'**
   String get profileTimelineFilteredEmpty;
-
-  /// No description provided for @profileTimelineFilters.
-  ///
-  /// In en, this message translates to:
-  /// **'Filters'**
-  String get profileTimelineFilters;
 
   /// No description provided for @profileTimelineSearch.
   ///

@@ -16,7 +16,9 @@ export 'package:mobile/features/profile/view/profile_timeline_grouping.dart'
 
 /// Loaded activity as a vertical timeline: source chips, then one group per
 /// day, newest first, under a sticky day header. Reaching the end asks for
-/// the next page through [onLoadMore].
+/// the next page through [onLoadMore]. While a filter is active, pages load
+/// only when the user taps Load more, so a narrow filter never walks the
+/// whole history on its own.
 class ProfileTimelineView extends StatefulWidget {
   const ProfileTimelineView({
     required this.items,
@@ -103,10 +105,12 @@ class _ProfileTimelineViewState extends State<ProfileTimelineView> {
   }
 
   /// Requests the next page once the end of the loaded days is near, also
-  /// when the loaded days do not fill the viewport.
+  /// when the loaded days do not fill the viewport. Filtered views wait for
+  /// Load more instead.
   void _checkEnd() {
     if (!mounted || !_scroll.hasClients) return;
     if (widget.loading || widget.loadingMore || !widget.hasMore) return;
+    if (widget.filter.isActive) return;
     if (_scroll.position.extentAfter > 400) return;
     widget.onLoadMore?.call();
   }
@@ -151,13 +155,34 @@ class _ProfileTimelineViewState extends State<ProfileTimelineView> {
     );
     final today = _today;
     final timeWidth = _timeWidth(context);
+    // The card keeps a readable width; below it the time moves into the card.
+    final inlineTime =
+        MediaQuery.sizeOf(context).width -
+            gutters.horizontal -
+            timeWidth -
+            2 * ProfileTimelineRow.gap -
+            ProfileTimelineRow.tileSize <
+        160;
     final filter = widget.filter;
     final onFilterChanged = widget.onFilterChanged;
+    final manualPaging =
+        filter.isActive && (widget.hasMore || widget.loadingMore);
+    final footer = ProfileTimelineFooter(
+      loadingMore: widget.loadingMore,
+      onLoadMore: filter.isActive && widget.hasMore ? widget.onLoadMore : null,
+    );
     final status = profileTimelineStatus(
       loading: widget.loading,
       empty: _days.isEmpty,
       filtered: filter.isActive && widget.items.isNotEmpty,
       availability: widget.availability,
+    );
+    Widget stateBody(ProfileTimelineStatus status) => ProfileTimelineStateBody(
+      status: status,
+      onRetry: widget.onRetry,
+      onClearFilters: onFilterChanged == null
+          ? null
+          : () => onFilterChanged(const ProfileTimelineFilter()),
     );
     return CustomScrollView(
       key: const ValueKey('profile-timeline'),
@@ -179,19 +204,19 @@ class _ProfileTimelineViewState extends State<ProfileTimelineView> {
             ),
           ),
         if (status != null)
-          SliverFillRemaining(
-            hasScrollBody: false,
-            child: Padding(
-              padding: rowPadding,
-              child: ProfileTimelineStateBody(
-                status: status,
-                onRetry: widget.onRetry,
-                onClearFilters: onFilterChanged == null
-                    ? null
-                    : () => onFilterChanged(const ProfileTimelineFilter()),
+          if (manualPaging)
+            // Load more stays in view below a filtered-out state.
+            SliverToBoxAdapter(
+              child: Padding(
+                padding: rowPadding.copyWith(top: AppSpacing.xl),
+                child: stateBody(status),
               ),
-            ),
-          )
+            )
+          else
+            SliverFillRemaining(
+              hasScrollBody: false,
+              child: Padding(padding: rowPadding, child: stateBody(status)),
+            )
         else
           for (final MapEntry(key: day, value: items) in _days.entries)
             SliverMainAxisGroup(
@@ -225,16 +250,14 @@ class _ProfileTimelineViewState extends State<ProfileTimelineView> {
                       time: _clock(context, items[index].createdAt),
                       timeWidth: timeWidth,
                       last: index == items.length - 1,
+                      inlineTime: inlineTime,
                       onOpen: widget.onOpen,
                     ),
                   ),
                 ),
               ],
             ),
-        if (status == null)
-          SliverToBoxAdapter(
-            child: ProfileTimelineFooter(loadingMore: widget.loadingMore),
-          ),
+        if (status == null || manualPaging) SliverToBoxAdapter(child: footer),
         SliverToBoxAdapter(
           child: SizedBox(
             height:

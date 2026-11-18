@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:mobile/core/router/routes.dart';
 import 'package:mobile/core/ui/ui.dart';
+import 'package:mobile/core/widgets/profile_media_image.dart';
 import 'package:mobile/data/models/user_profile.dart';
 import 'package:mobile/features/profile/view/profile_surface.dart';
 import 'package:mobile/features/settings/view/settings_profile_parts.dart';
@@ -11,7 +12,8 @@ import 'package:mobile/l10n/l10n.dart';
 /// Key of the Edit profile button.
 const profileEditIdentityKey = ValueKey<String>('profile-edit-identity');
 
-/// Who is signed in: avatar, name and email, with Edit profile.
+/// Who is signed in: avatar, name, email and bio, with Edit profile. The
+/// banner is edited in Edit profile and not shown here.
 ///
 /// Identity from a previous account is never shown: the caller passes a null
 /// [profile] until the signed-in user's own loads, and [loading] while it is
@@ -22,7 +24,6 @@ class ProfileIdentityHeader extends StatelessWidget {
     required this.loading,
     this.fallbackEmail,
     this.avatarUrl,
-    this.avatarKey,
     super.key,
   });
 
@@ -34,7 +35,6 @@ class ProfileIdentityHeader extends StatelessWidget {
   /// The session's email while the profile is unavailable.
   final String? fallbackEmail;
   final String? avatarUrl;
-  final String? avatarKey;
 
   @override
   Widget build(BuildContext context) {
@@ -43,6 +43,10 @@ class ProfileIdentityHeader extends StatelessWidget {
     final type = tokens.typography;
     final l10n = context.l10n;
     final email = profile?.email ?? fallbackEmail;
+    final bio = switch (profile?.bio?.trim()) {
+      final text? when text.isNotEmpty => text,
+      _ => null,
+    };
     final name =
         [profile?.displayName, profile?.fullName, email?.split('@').first]
             .map((value) => value?.trim() ?? '')
@@ -80,11 +84,10 @@ class ProfileIdentityHeader extends StatelessWidget {
                 ),
               )
             else
-              SettingsProfileAvatar(
+              _Avatar(
                 url: normalizeAvatarUrl(avatarUrl),
-                cacheKey: avatarKey,
+                actorId: profile?.id ?? '',
                 name: name,
-                size: avatarSize,
               ),
             const SizedBox(width: AppSpacing.md),
             Expanded(
@@ -121,6 +124,16 @@ class ProfileIdentityHeader extends StatelessWidget {
                               color: c.mutedForeground,
                             ),
                           ),
+                        if (bio != null) ...[
+                          const SizedBox(height: AppSpacing.xs),
+                          Text(
+                            bio,
+                            key: const ValueKey('profile-identity-bio'),
+                            maxLines: 3,
+                            overflow: TextOverflow.ellipsis,
+                            style: type.bodySm.copyWith(color: c.foreground),
+                          ),
+                        ],
                       ],
                     ),
             ),
@@ -132,6 +145,35 @@ class ProfileIdentityHeader extends StatelessWidget {
             ),
           ],
         ),
+      ),
+    );
+  }
+}
+
+/// The signed-in avatar. Signed or private URLs are never disk-cached, so the
+/// image goes through [profileMediaImage]; initials stand in when it fails.
+class _Avatar extends StatelessWidget {
+  const _Avatar({required this.url, required this.actorId, required this.name});
+
+  final String? url;
+  final String actorId;
+  final String name;
+
+  @override
+  Widget build(BuildContext context) {
+    const size = ProfileIdentityHeader.avatarSize;
+    Widget fallback() =>
+        SettingsProfileAvatar(url: null, name: name, size: size);
+    final url = this.url;
+    if (url == null) return fallback();
+    return ClipOval(
+      key: const ValueKey('profile-identity-avatar'),
+      child: Image(
+        image: profileMediaImage(url, actorId),
+        width: size,
+        height: size,
+        fit: BoxFit.cover,
+        errorBuilder: (_, _, _) => fallback(),
       ),
     );
   }

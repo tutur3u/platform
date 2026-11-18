@@ -67,7 +67,7 @@ Future<void> confirmProfileSignOut(BuildContext context) async {
     context: context,
     title: l10n.authLogOutConfirmDialogTitle,
     message: l10n.authLogOutConfirmDialogBody,
-    confirmLabel: l10n.settingsSignOut,
+    confirmLabel: l10n.authLogOut,
     cancelLabel: l10n.commonCancel,
     destructive: true,
   );

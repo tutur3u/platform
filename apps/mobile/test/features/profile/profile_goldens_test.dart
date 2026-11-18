@@ -10,10 +10,12 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:mobile/core/layout/layout.dart';
 import 'package:mobile/core/theme/sorbet/sorbet_preferences.dart';
 import 'package:mobile/data/models/stored_auth_account.dart';
+import 'package:mobile/data/models/time_tracking/stats.dart';
 import 'package:mobile/data/models/user_profile.dart';
 import 'package:mobile/features/auth/cubit/auth_cubit.dart';
 import 'package:mobile/features/auth/cubit/auth_state.dart';
 import 'package:mobile/features/profile/profile_timeline_repository.dart';
+import 'package:mobile/features/profile/view/profile_focus_time_card.dart';
 import 'package:mobile/features/profile/view/profile_identity_header.dart';
 import 'package:mobile/features/profile/view/profile_overview_page.dart';
 import 'package:mobile/features/profile/view/profile_timeline_view.dart';
@@ -24,6 +26,8 @@ import '../../helpers/pump_app.dart';
 class _Auth extends MockCubit<AuthState> implements AuthCubit {}
 
 enum _Scene { profile, timeline }
+
+void _noop() {}
 
 final _now = DateTime(2026, 11, 18, 18);
 
@@ -56,8 +60,17 @@ Widget _scene(_Scene scene) => switch (scene) {
         id: 'user',
         email: 'linh@example.test',
         displayName: 'Linh Tran',
+        bio: 'Designs calm tools for busy teams.',
       ),
       loading: false,
+    ),
+    focusTime: ProfileFocusTimeCard(
+      stats: TimeTrackerStats(
+        todayTime: 45 * 60,
+        weekTime: 6 * 3600 + 20 * 60,
+        monthTime: 24 * 3600,
+      ),
+      onSeeAll: _noop,
     ),
   ),
   _Scene.timeline => LayoutBuilder(

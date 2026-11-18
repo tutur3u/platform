@@ -27,32 +27,39 @@ class ProfileAccountSwitchRow extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final l10n = context.l10n;
-    final others = context.select<AuthCubit, List<StoredAuthAccount>>(
-      (cubit) => sortStoredAccountsByRecent(
-        cubit.state.accounts.where(
-          (account) => account.id != cubit.state.activeAccountId,
-        ),
-      ),
-    );
+    // The two most recent other accounts: a stable
+    // value, so unrelated auth changes do not rebuild the row.
+    final (first, second) = context
+        .select<AuthCubit, (StoredAuthAccount?, StoredAuthAccount?)>((cubit) {
+          final others = sortStoredAccountsByRecent(
+            cubit.state.accounts.where(
+              (account) => account.id != cubit.state.activeAccountId,
+            ),
+          );
+          return (others.firstOrNull, others.elementAtOrNull(1));
+        });
     final surface = AppTokens.of(context).colorScheme.card;
+    // Two overlapping avatars fit the row's 40dp leading slot.
+    const avatarSize = 26.0;
+    const ring = 2.0;
     Widget avatar(StoredAuthAccount account) => DecoratedBox(
       decoration: BoxDecoration(
         shape: BoxShape.circle,
-        border: Border.all(color: surface, width: 2),
+        border: Border.all(color: surface, width: ring),
       ),
       child: SettingsProfileAvatar(
         url: account.avatarUrl,
         name: accountPrimaryLabel(account),
-        size: 36,
+        size: avatarSize,
       ),
     );
-    final shown = others.take(2).toList();
+    final shown = [?first, ?second];
     return ProfileLinkRow(
       key: const ValueKey('profile-switch-account'),
       title: l10n.authSwitchAccount,
-      subtitle: others.isEmpty
+      subtitle: first == null
           ? l10n.profileAddAnotherAccount
-          : others.first.email ?? accountPrimaryLabel(others.first),
+          : first.email ?? accountPrimaryLabel(first),
       icon: LucideIcons.users,
       tone: AppTone.primary,
       leading: shown.isEmpty
@@ -61,12 +68,16 @@ class ProfileAccountSwitchRow extends StatelessWidget {
               width: ProfileLinkRow.tileSize,
               height: ProfileLinkRow.tileSize,
               child: Stack(
-                clipBehavior: Clip.none,
+                alignment: AlignmentDirectional.centerStart,
                 children: [
                   for (final (index, account) in shown.indexed)
                     PositionedDirectional(
-                      start: index * 14.0 - 2,
-                      top: 0,
+                      start: shown.length == 1
+                          ? (ProfileLinkRow.tileSize - avatarSize) / 2 - ring
+                          : index *
+                                (ProfileLinkRow.tileSize -
+                                    avatarSize -
+                                    2 * ring),
                       child: avatar(account),
                     ),
                 ],

@@ -106,7 +106,7 @@ void main() {
     await pump(tester, const ProfileDangerGroup());
     await tester.tap(find.byKey(const ValueKey('profile-sign-out')));
     await tester.pumpAndSettle();
-    await tester.tap(find.text('Sign out').last);
+    await tester.tap(find.text('Log out'));
     await tester.pumpAndSettle();
     verify(() => auth.signOutCurrentAccount()).called(1);
   });

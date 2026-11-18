@@ -16,7 +16,7 @@ import 'package:mobile/features/shell/view/shell_title_override.dart';
 import 'package:mobile/l10n/l10n.dart';
 
 /// The personal activity timeline, opened from Home. Its own dock carries
-/// Back, All, Today and Filters; Search narrows the loaded activity by title.
+/// Back, All and Today; source chips and Search narrow the loaded activity.
 class ProfileTimelinePage extends StatefulWidget {
   const ProfileTimelinePage({
     this.cacheUserId,
@@ -73,40 +73,11 @@ class _ProfileTimelinePageState extends State<ProfileTimelinePage> {
     }
   }
 
-  Future<void> _pickSource() async {
-    final l10n = context.l10n;
-    final picked = await showAppChoiceSheet<String>(
-      context: context,
-      title: l10n.profileTimelineFilters,
-      selected: _filter.source?.name ?? 'all',
-      choices: [
-        AppSheetChoice(
-          value: 'all',
-          label: l10n.profileTimelineSourceAll,
-          icon: LucideIcons.history,
-        ),
-        for (final source in ProfileTimelineSource.values)
-          AppSheetChoice(
-            value: source.name,
-            label: source.label(context),
-            icon: source.icon,
-          ),
-      ],
-    );
-    if (!mounted || picked == null) return;
-    _setFilter(
-      _filter.copyWith(
-        source: () => ProfileTimelineSource.values
-            .where((source) => source.name == picked)
-            .firstOrNull,
-      ),
-    );
-  }
-
   @override
   Widget build(BuildContext context) {
     final l10n = context.l10n;
     final todayOnly = _filter.todayOnly;
+    final everything = !todayOnly && _filter.source == null;
     return Stack(
       fit: StackFit.expand,
       children: [
@@ -146,24 +117,19 @@ class _ProfileTimelinePageState extends State<ProfileTimelinePage> {
               id: 'all',
               icon: LucideIcons.history,
               label: l10n.profileTimelineSourceAll,
-              selected: !todayOnly,
-              callbackToken: todayOnly,
-              onPressed: () => _setFilter(_filter.copyWith(todayOnly: false)),
+              selected: everything,
+              callbackToken: _filter,
+              onPressed: () => _setFilter(
+                _filter.copyWith(todayOnly: false, source: () => null),
+              ),
             ),
             ShellMiniNavItemSpec(
               id: 'today',
               icon: LucideIcons.calendarCheck,
               label: l10n.profileTimelineToday,
               selected: todayOnly,
-              callbackToken: todayOnly,
+              callbackToken: _filter,
               onPressed: () => _setFilter(_filter.copyWith(todayOnly: true)),
-            ),
-            ShellMiniNavItemSpec(
-              id: 'filters',
-              icon: LucideIcons.listFilter,
-              label: l10n.profileTimelineFilters,
-              callbackToken: _filter.source,
-              onPressed: () => unawaited(_pickSource()),
             ),
           ],
         ),

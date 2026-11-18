@@ -81,6 +81,7 @@ class ShellChromeConfig {
       Routes.taskSettingsInitiatives => l10n.taskPortfolioInitiativesTab,
       Routes.taskSettingsLabels => l10n.taskLabelsTab,
       Routes.profileRoot => l10n.navYou,
+      Routes.timeline => l10n.profileTimelineTitle,
       Routes.profileEdit || Routes.settingsProfile => l10n.settingsProfileEdit,
       Routes.profileAccounts ||
       Routes.settingsAccounts => l10n.authManageAccounts,

@@ -78,12 +78,15 @@ class ProfileTimelineDayHeader extends StatelessWidget {
               ),
               if (date case final date?) ...[
                 const SizedBox(width: AppSpacing.sm),
-                Text(
-                  date,
-                  maxLines: 1,
-                  style: type.bodySm.copyWith(
-                    color: c.mutedForeground,
-                    fontWeight: FontWeight.w700,
+                Flexible(
+                  child: Text(
+                    date,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: type.bodySm.copyWith(
+                      color: c.mutedForeground,
+                      fontWeight: FontWeight.w700,
+                    ),
                   ),
                 ),
               ],

@@ -86,7 +86,6 @@ lib/features/onboarding/view/onboarding_page.dart
 lib/features/onboarding/widgets/onboarding_backdrop.dart
 lib/features/onboarding/widgets/onboarding_choice_slide.dart
 lib/features/onboarding/widgets/onboarding_slide.dart
-lib/features/profile/view/profile_account_actions.dart
 lib/features/profile/view/profile_avatar_picker.dart
 lib/features/profile/view/profile_avatar_removal.dart
 lib/features/profile/view/profile_banner.dart
@@ -248,8 +247,6 @@ test/features/onboarding/onboarding_page_test.dart
 test/features/profile/view/profile_avatar_removal_test.dart
 test/features/profile/view/profile_media_recovery_test.dart
 test/features/profile/view/profile_overview_shell_test.dart
-test/features/profile/view/profile_timeline_browser_test.dart
-test/features/profile/view/profile_timeline_navigation_edges_test.dart
 test/features/profile/view/profile_timeline_personal_navigation_test.dart
 test/features/profile/view/workspace_activity_section_test.dart
 test/features/security/view/app_lock_splash_visual_test.dart

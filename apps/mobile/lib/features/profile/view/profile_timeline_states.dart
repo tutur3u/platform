@@ -81,22 +81,39 @@ class ProfileTimelineStateBody extends StatelessWidget {
   }
 }
 
-/// The end of the loaded days: a spinner while the next page loads.
+/// The end of the loaded days: a spinner while the next page loads, or
+/// Load more when the next page waits for the user.
 class ProfileTimelineFooter extends StatelessWidget {
-  const ProfileTimelineFooter({required this.loadingMore, super.key});
+  const ProfileTimelineFooter({
+    required this.loadingMore,
+    this.onLoadMore,
+    super.key,
+  });
 
   final bool loadingMore;
 
+  /// Shown as Load more when set and nothing is loading.
+  final VoidCallback? onLoadMore;
+
   @override
   Widget build(BuildContext context) {
-    if (!loadingMore) return const SizedBox(height: AppSpacing.lg);
+    final onLoadMore = this.onLoadMore;
+    if (!loadingMore && onLoadMore == null) {
+      return const SizedBox(height: AppSpacing.lg);
+    }
     return Padding(
       padding: const EdgeInsets.all(AppSpacing.lg),
       child: Center(
-        child: AppLoadingIndicator(
-          key: const ValueKey('timeline-loading-more'),
-          semanticLabel: context.l10n.commonLoading,
-        ),
+        child: loadingMore
+            ? AppLoadingIndicator(
+                key: const ValueKey('timeline-loading-more'),
+                semanticLabel: context.l10n.commonLoading,
+              )
+            : AppButton.outline(
+                key: const ValueKey('timeline-load-more'),
+                onPressed: onLoadMore,
+                child: Text(context.l10n.commonLoadMore),
+              ),
       ),
     );
   }

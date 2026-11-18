@@ -94,6 +94,7 @@ void main() {
           routes: [
             GoRoute(path: Routes.apps, builder: (_, _) => const SizedBox()),
             GoRoute(path: Routes.home, builder: (_, _) => const SizedBox()),
+            GoRoute(path: Routes.timeline, builder: (_, _) => const SizedBox()),
             GoRoute(path: Routes.tasks, builder: (_, _) => const SizedBox()),
             GoRoute(
               path: Routes.calendar,
@@ -213,7 +214,9 @@ void main() {
     expect(tester.widget<TextField>(searchInput).controller!.text, isEmpty);
   });
 
-  testWidgets('Grid precedes List and Home has only Customise', (tester) async {
+  testWidgets('Grid precedes List; Home actions are unsegmented', (
+    tester,
+  ) async {
     await mount(tester);
     final chrome = tester
         .element(find.byType(ShellPage))
@@ -232,6 +235,26 @@ void main() {
     final homeActions = chrome.state.resolveForLocation(Routes.home);
     expect(homeActions.map((action) => action.id), contains('home-customize'));
     expect(homeActions.where((action) => action.segmentGroup != null), isEmpty);
+    expect(tester.takeException(), isNull);
+  });
+
+  testWidgets('Home timeline action opens the Timeline', (tester) async {
+    await mount(tester);
+    router.go(Routes.home);
+    await _pump(tester);
+    final chrome = tester
+        .element(find.byType(ShellPage))
+        .read<ShellChromeActionsCubit>();
+    expect(
+      chrome.state.resolveForLocation(Routes.home).map((action) => action.id),
+      contains('home-timeline'),
+    );
+    await tester.tap(
+      find.byKey(const ValueKey('shell-action-button-home-timeline')),
+    );
+    await _pump(tester);
+    // Timeline is pushed above Home, so Back returns there.
+    expect(router.state.uri.path, Routes.timeline);
     expect(tester.takeException(), isNull);
   });
 

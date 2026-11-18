@@ -416,6 +416,8 @@ void main() {
             );
             expect(selector, findsOneWidget);
             selectorRect = tester.getRect(selector);
+            expect(selectorRect.width, greaterThanOrEqualTo(44));
+            expect(selectorRect.height, greaterThanOrEqualTo(44));
             expect(bar.contains(selectorRect.topLeft), isTrue);
             expect(bar.contains(selectorRect.bottomRight), isTrue);
             expect(

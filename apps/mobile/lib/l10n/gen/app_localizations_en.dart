@@ -7203,16 +7203,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get profileNoSharedActivity => 'No one has shared activity here yet.';
 
   @override
-  String get profileOverviewTab => 'Overview';
-
-  @override
-  String get profilePrivateActivity => 'Your private activity';
-
-  @override
   String get profilePrivateByDefault => 'Only you can see your activity.';
-
-  @override
-  String get profileRecentActivity => 'Last 12 weeks';
 
   @override
   String get profileRemoveAvatar => 'Remove avatar';
@@ -7252,22 +7243,10 @@ class AppLocalizationsEn extends AppLocalizations {
   String get profileStatusUnknown => 'Unknown';
 
   @override
-  String get profileTimelineAgenda => 'Days with activity';
-
-  @override
-  String get profileTimelineDayEmpty => 'No activity was returned for this day.';
-
-  @override
   String get profileTimelineDescription => 'Creation activity in this workspace over the last 30 days. Calendar events are workspace activity.';
 
   @override
   String get profileTimelineEmpty => 'No recent activity in this workspace';
-
-  @override
-  String get profileTimelineHasActivity => 'Activity in loaded snapshot';
-
-  @override
-  String get profileTimelineHideDates => 'Close dates and browse agenda';
 
   @override
   String get profileTimelineKindNote => 'Note';
@@ -7288,13 +7267,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get profileTimelineLoadedEnd => 'All loaded activity shown';
 
   @override
-  String get profileTimelineMoreDays => 'Show more loaded days';
-
-  @override
   String get profileTimelinePartial => 'Some activity is unavailable.';
-
-  @override
-  String get profileTimelineShowDates => 'Show date selector';
 
   @override
   String get profileTimelineTab => 'Timeline';
@@ -7334,9 +7307,6 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get profileTimelineFilteredEmpty => 'No activity matches these filters';
-
-  @override
-  String get profileTimelineFilters => 'Filters';
 
   @override
   String get profileTimelineSearch => 'Search activity';
