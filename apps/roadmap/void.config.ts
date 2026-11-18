@@ -20,6 +20,14 @@ export default defineConfig({
       { pattern: 'tuturuuu.com/roadmap/*', zone_name: 'tuturuuu.com' },
     ],
     workers_dev: true,
+    vars: { ROADMAP_REFRESH_ENABLED: 'true' },
+    triggers: { crons: ['17 * * * *'] },
+    durable_objects: {
+      bindings: [{ name: 'ROADMAP_ACTIVITY', class_name: 'RoadmapActivity' }],
+    },
+    migrations: [
+      { tag: 'roadmap-activity-v1', new_sqlite_classes: ['RoadmapActivity'] },
+    ],
     assets: {
       directory: './dist/client',
       binding: 'ASSETS',

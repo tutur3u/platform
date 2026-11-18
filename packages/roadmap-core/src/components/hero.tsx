@@ -18,6 +18,7 @@ export function Hero({
   lang,
   insights,
   generatedAt,
+  commitCount,
   shown,
 }: {
   t: Messages;
@@ -25,6 +26,7 @@ export function Hero({
   lang: Lang;
   insights: Insights;
   generatedAt: string;
+  commitCount?: number;
   /** What the data on screen is (see live-label.ts). */
   shown: ShownState;
 }) {
@@ -41,7 +43,13 @@ export function Hero({
           <MarkedPhrase text={t.titleAccent} mark={t.titleMark} />
         </span>
       </h1>
-      <KpiTiles t={t} lang={lang} view={view} insights={insights} />
+      <KpiTiles
+        t={t}
+        lang={lang}
+        view={view}
+        insights={insights}
+        commitCount={commitCount}
+      />
       {/* The live state is a visible label in a slot as wide as its widest
           label (all three are stacked, one shown), so a refresh or a
           failed live check never changes the line: the tabs below stay. */}

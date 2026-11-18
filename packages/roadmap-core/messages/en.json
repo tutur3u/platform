@@ -15,12 +15,20 @@
   "skip": "Skip to the roadmap",
   "liveCheckFailed": "Live check unavailable.",
   "hero": {
-    "asOf": "From public pull requests and deploy checks · as of",
+    "asOf": "Last updated",
     "state": {
       "snapshot": "Snapshot",
       "live": "Live",
       "failed": "Snapshot only"
     }
+  },
+  "commitSummary": {
+    "title": "Commits on main",
+    "period": "Past seven calendar days · Vietnam time",
+    "day": "Day",
+    "count": "Commits",
+    "area": "Product area",
+    "method": "Includes commits reachable from main, grouped by conventional commit scope."
   },
   "tabs": {
     "label": "Roadmap sections",

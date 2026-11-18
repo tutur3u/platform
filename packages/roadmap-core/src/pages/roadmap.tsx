@@ -24,8 +24,9 @@ import type { Lang } from '../components/shared';
 import { TimelineSection } from '../components/timeline';
 import { TracksSection } from '../components/tracks';
 import { initialLiveData } from '../live/initial-data';
-import type { LiveData } from '../live/model';
-import { type LiveState, useLiveData } from '../live/use-live-data';
+import { mergeLiveData, type LiveData } from '../live/model';
+import type { CommitWindow } from '../insights/commits';
+import { CommitSummary } from '../components/insights/commit-summary';
 import { pagePath, ROUTE_PATHS } from '../seo';
 import { BUILD_HOSTING } from '../live/build-hosting';
 import { buildView } from '../view-model';
@@ -44,7 +45,13 @@ import { NotesEmpty, PatchNotes } from '../components/insights/patch-notes';
 import { shownState } from '../components/live-label';
 import { RoadmapTabs, skipToTabs } from '../components/tabs';
 
-export function RoadmapPage({ lang }: { lang: Lang }) {
+export function RoadmapPage({
+  lang,
+  observation,
+}: {
+  lang: Lang;
+  observation?: { live: LiveData; commits: CommitWindow } | null;
+}) {
   const navigate = useNavigate();
   const setLang = useCallback(
     (next: Lang) => {
@@ -59,7 +66,11 @@ export function RoadmapPage({ lang }: { lang: Lang }) {
   }, []);
   const t = lang === 'en' ? en : vi;
   const initialData = initialLiveData();
-  const live = useLiveData(initialData);
+  const scheduled =
+    observation && observation.live.generatedAt >= initialData.generatedAt;
+  const data = scheduled
+    ? mergeLiveData(initialData, observation.live)
+    : initialData;
   const shellT = useMemo(() => createTranslator(lang), [lang]);
 
   return (
@@ -89,9 +100,9 @@ export function RoadmapPage({ lang }: { lang: Lang }) {
         <RoadmapMain
           t={t}
           lang={lang}
-          data={live.data}
-          now={live.now}
-          liveState={live.state}
+          data={data}
+          now={Date.parse(data.generatedAt)}
+          commits={scheduled ? observation.commits : undefined}
           onDock={onDock}
         />
       </MarketingShell>
@@ -112,14 +123,14 @@ const RoadmapMain = memo(function RoadmapMain({
   lang,
   data,
   now,
-  liveState,
+  commits,
   onDock,
 }: {
   t: typeof en;
   lang: Lang;
   data: LiveData;
   now: number;
-  liveState: LiveState;
+  commits?: CommitWindow;
   onDock: (docked: boolean) => void;
 }) {
   const view = useMemo(
@@ -215,15 +226,24 @@ const RoadmapMain = memo(function RoadmapMain({
         lang={lang}
         insights={insights}
         generatedAt={data.generatedAt}
-        shown={shownState(liveState, data.source)}
+        commitCount={commits?.days.reduce((sum, day) => sum + day[1], 0)}
+        shown={shownState('snapshot', data.source)}
       />
+      {commits && (
+        <CommitSummary
+          t={t}
+          lang={lang}
+          commits={commits}
+          checkedAt={data.generatedAt}
+        />
+      )}
       <RoadmapTabs
         label={t.tabs.label}
         labels={t.tabs}
         panels={panels}
         path={ROUTE_PATHS.roadmap[lang]}
       />
-      <Footer t={t} liveCheckFailed={liveState === 'failed'} />
+      <Footer t={t} liveCheckFailed={false} />
     </main>
   );
 });

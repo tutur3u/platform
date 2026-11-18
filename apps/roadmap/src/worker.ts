@@ -1,3 +1,4 @@
+import type { RoadmapEnv } from './activity-object';
 import { deferHydration } from '@tuturuuu/roadmap-core/defer-hydration.ts';
 import handler from '@tanstack/react-start/server-entry';
 import {
@@ -47,7 +48,15 @@ async function hashedAssetResponse(
   return withRoadmapCachePolicy(request, upstream);
 }
 
+export { RoadmapActivity } from './activity-object';
+
 export default {
+  async scheduled(controller: ScheduledController, env: RoadmapEnv) {
+    if (env.ROADMAP_REFRESH_ENABLED === 'true')
+      await env.ROADMAP_ACTIVITY?.getByName('v1').refresh(
+        controller.scheduledTime
+      );
+  },
   ...handler,
   async fetch(...args: Parameters<typeof handler.fetch>) {
     const [incoming, ...options] = args;

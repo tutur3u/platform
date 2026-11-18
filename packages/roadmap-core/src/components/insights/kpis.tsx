@@ -27,41 +27,53 @@ export function KpiTiles({
   lang,
   view,
   insights,
+  commitCount,
 }: {
   t: Messages;
   lang: Lang;
   view: RoadmapView;
   insights: Insights;
+  commitCount?: number;
 }) {
   const { tiles, waitAge } = insights;
   const merged = tiles.merged;
   const n = (value: number) => formatNumber(value, lang);
   const list: Tile[] = [
-    {
-      id: 'merged',
-      label: t.stats.mergedWeek,
-      value: tiles.mergedThisWeek === null ? '—' : n(tiles.mergedThisWeek),
-      delta: merged ? (
-        <Delta value={merged} t={t} lang={lang} />
-      ) : (
-        <Delta
-          value={tiles.trackedMerged}
-          t={t}
-          lang={lang}
-          label={t.stats.trackedVsLastWeek}
-        />
-      ),
-      note:
-        tiles.mergedThisWeek === null
-          ? `${t.stats.allNotAvailable} · ${plural(
-              t.stats.trackedNote,
-              tiles.trackedMerged.current,
-              lang
-            )}`
-          : plural(t.stats.trackedNote, tiles.trackedMerged.current, lang),
-      tone: 'merged',
-      href: '#pulse',
-    },
+    commitCount !== undefined
+      ? {
+          id: 'commits',
+          label: t.commitSummary.title,
+          value: n(commitCount),
+          delta: null,
+          note: t.commitSummary.period,
+          tone: 'merged',
+          href: '#main-commits-title',
+        }
+      : {
+          id: 'merged',
+          label: t.stats.mergedWeek,
+          value: tiles.mergedThisWeek === null ? '—' : n(tiles.mergedThisWeek),
+          delta: merged ? (
+            <Delta value={merged} t={t} lang={lang} />
+          ) : (
+            <Delta
+              value={tiles.trackedMerged}
+              t={t}
+              lang={lang}
+              label={t.stats.trackedVsLastWeek}
+            />
+          ),
+          note:
+            tiles.mergedThisWeek === null
+              ? `${t.stats.allNotAvailable} · ${plural(
+                  t.stats.trackedNote,
+                  tiles.trackedMerged.current,
+                  lang
+                )}`
+              : plural(t.stats.trackedNote, tiles.trackedMerged.current, lang),
+          tone: 'merged',
+          href: '#pulse',
+        },
     {
       id: 'live',
       label: t.stats.live,

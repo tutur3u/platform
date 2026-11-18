@@ -15,12 +15,20 @@
   "skip": "Tới nội dung lộ trình",
   "liveCheckFailed": "Không thể kiểm tra trực tiếp.",
   "hero": {
-    "asOf": "Từ pull request công khai và kiểm tra triển khai · cập nhật lúc",
+    "asOf": "Cập nhật lần cuối",
     "state": {
       "snapshot": "Bản lưu",
       "live": "Trực tiếp",
       "failed": "Chỉ bản lưu"
     }
+  },
+  "commitSummary": {
+    "title": "Commit trên nhánh main",
+    "period": "Bảy ngày gần nhất · Giờ Việt Nam",
+    "day": "Ngày",
+    "count": "Số commit",
+    "area": "Nhóm sản phẩm",
+    "method": "Gồm các commit trong lịch sử nhánh main, phân nhóm theo phạm vi Conventional Commits."
   },
   "tabs": {
     "label": "Các mục của lộ trình",
