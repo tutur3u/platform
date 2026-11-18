@@ -254,6 +254,16 @@ page level; never stack a caption under a section header.
 - `AppSegmentedControl<T>` switches between two to four modes of the same
   content (Day / Week / Month, Self / Team). It is not a filter: use it for
   view modes and scopes, never for more than four choices.
+- Every segmented control is concentric: the selected segment sits the same
+  padding from the track on all four sides, and its radius is the track
+  radius minus that padding. Use `AppSegmentedControl` where it fits; the
+  compact Mastermind and Threads controls, `AppearanceSegmented`,
+  `FinanceSegmentedRow` and `shad.Tabs` (themed by `concentricTabsTheme` in
+  the appearance backdrop) apply the same geometry. Material
+  `SegmentedButton` has no inset thumb; do not wrap it in a padded panel.
+  Coverage: `app_segmented_control_test.dart`,
+  `compact_segmented_concentric_test.dart`,
+  `finance_segmented_row_test.dart`, `appearance_application_test.dart`.
 - Sorting and scopes (a collection, a wallet) use an `AppFilterButton` that
   names the current choice, opens an `AppOptionTile` sheet and shows `active`
   while it narrows the list.

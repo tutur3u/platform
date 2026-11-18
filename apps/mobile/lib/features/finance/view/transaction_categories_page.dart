@@ -904,7 +904,7 @@ class _CategoryDialogState extends State<_CategoryDialog> {
                 const shad.Gap(10),
                 _TaxonomyFieldLabel(label: context.l10n.financeType),
                 const shad.Gap(4),
-                _TaxonomySegmentedRow(
+                FinanceSegmentedRow(
                   leftLabel: context.l10n.financeExpense,
                   rightLabel: context.l10n.financeIncome,
                   leftSelected: _isExpense,
@@ -1381,108 +1381,6 @@ class _TaxonomyPreviewCard extends StatelessWidget {
             ),
           ),
         ],
-      ),
-    );
-  }
-}
-
-class _TaxonomySegmentedRow extends StatelessWidget {
-  const _TaxonomySegmentedRow({
-    required this.leftLabel,
-    required this.rightLabel,
-    required this.leftSelected,
-    required this.onLeftPressed,
-    required this.onRightPressed,
-  });
-
-  final String leftLabel;
-  final String rightLabel;
-  final bool leftSelected;
-  final VoidCallback onLeftPressed;
-  final VoidCallback onRightPressed;
-
-  @override
-  Widget build(BuildContext context) {
-    final theme = shad.Theme.of(context);
-    final accent = FinancePalette.of(context).accent;
-
-    return Container(
-      padding: const EdgeInsets.all(4),
-      decoration: BoxDecoration(
-        color: theme.colorScheme.card,
-        borderRadius: BorderRadius.circular(18),
-        border: Border.all(
-          color: theme.colorScheme.border.withValues(alpha: 0.72),
-        ),
-      ),
-      child: Row(
-        children: [
-          Expanded(
-            child: _TaxonomySegmentButton(
-              label: leftLabel,
-              selected: leftSelected,
-              accent: accent,
-              onPressed: onLeftPressed,
-            ),
-          ),
-          const shad.Gap(4),
-          Expanded(
-            child: _TaxonomySegmentButton(
-              label: rightLabel,
-              selected: !leftSelected,
-              accent: accent,
-              onPressed: onRightPressed,
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-class _TaxonomySegmentButton extends StatelessWidget {
-  const _TaxonomySegmentButton({
-    required this.label,
-    required this.selected,
-    required this.accent,
-    required this.onPressed,
-  });
-
-  final String label;
-  final bool selected;
-  final Color accent;
-  final VoidCallback onPressed;
-
-  @override
-  Widget build(BuildContext context) {
-    final theme = shad.Theme.of(context);
-
-    return Material(
-      color: Colors.transparent,
-      child: InkWell(
-        onTap: onPressed,
-        borderRadius: BorderRadius.circular(14),
-        child: Ink(
-          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 11),
-          decoration: BoxDecoration(
-            color: selected
-                ? accent.withValues(alpha: 0.14)
-                : Colors.transparent,
-            borderRadius: BorderRadius.circular(14),
-          ),
-          child: Center(
-            child: Text(
-              label,
-              textAlign: TextAlign.center,
-              maxLines: 1,
-              overflow: TextOverflow.ellipsis,
-              style: theme.typography.small.copyWith(
-                fontWeight: FontWeight.w700,
-                color: selected ? accent : theme.colorScheme.mutedForeground,
-              ),
-            ),
-          ),
-        ),
       ),
     );
   }

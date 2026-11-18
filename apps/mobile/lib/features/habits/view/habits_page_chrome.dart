@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
+import 'package:mobile/core/ui/kit/app_segmented_control.dart';
 import 'package:mobile/data/models/habit_tracker.dart';
 import 'package:mobile/features/finance/widgets/finance_ui.dart';
 import 'package:mobile/features/habits/habit_tracker_presentation.dart';
@@ -143,32 +144,25 @@ class HabitsScopeControls extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return FinancePanel(
-      padding: const EdgeInsets.all(10),
-      radius: 22,
-      child: SegmentedButton<HabitTrackerScope>(
-        segments: [
-          ButtonSegment(
-            value: HabitTrackerScope.self,
-            label: Text(context.l10n.habitsScopeSelf),
-          ),
-          ButtonSegment(
-            value: HabitTrackerScope.team,
-            label: Text(context.l10n.habitsScopeTeam),
-          ),
-          ButtonSegment(
-            value: HabitTrackerScope.member,
-            label: Text(context.l10n.habitsScopeMember),
-          ),
-        ],
-        selected: {selectedScope},
-        onSelectionChanged: (selection) {
-          final value = selection.firstOrNull;
-          if (value != null) {
-            unawaited(onScopeSelected(value));
-          }
-        },
-      ),
+    return AppSegmentedControl<HabitTrackerScope>(
+      segments: [
+        AppSegment(
+          value: HabitTrackerScope.self,
+          label: context.l10n.habitsScopeSelf,
+        ),
+        AppSegment(
+          value: HabitTrackerScope.team,
+          label: context.l10n.habitsScopeTeam,
+        ),
+        AppSegment(
+          value: HabitTrackerScope.member,
+          label: context.l10n.habitsScopeMember,
+        ),
+      ],
+      selected: selectedScope,
+      onChanged: (scope) {
+        if (scope != selectedScope) unawaited(onScopeSelected(scope));
+      },
     );
   }
 }

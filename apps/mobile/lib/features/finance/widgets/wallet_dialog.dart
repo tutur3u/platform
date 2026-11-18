@@ -140,7 +140,7 @@ class _WalletDialogState extends State<WalletDialog> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
-                _WalletSegmentedRow(
+                FinanceSegmentedRow(
                   leftLabel: l10n.financeWalletTypeStandard,
                   rightLabel: l10n.financeWalletTypeCredit,
                   leftSelected: _type == 'STANDARD',
@@ -567,108 +567,6 @@ class _WalletPreviewCard extends StatelessWidget {
           const shad.Gap(12),
           _WalletPill(label: typeLabel, color: accent),
         ],
-      ),
-    );
-  }
-}
-
-class _WalletSegmentedRow extends StatelessWidget {
-  const _WalletSegmentedRow({
-    required this.leftLabel,
-    required this.rightLabel,
-    required this.leftSelected,
-    required this.onLeftPressed,
-    required this.onRightPressed,
-  });
-
-  final String leftLabel;
-  final String rightLabel;
-  final bool leftSelected;
-  final VoidCallback onLeftPressed;
-  final VoidCallback onRightPressed;
-
-  @override
-  Widget build(BuildContext context) {
-    final theme = shad.Theme.of(context);
-    final accent = FinancePalette.of(context).accent;
-
-    return Container(
-      padding: const EdgeInsets.all(4),
-      decoration: BoxDecoration(
-        color: theme.colorScheme.card,
-        borderRadius: BorderRadius.circular(18),
-        border: Border.all(
-          color: theme.colorScheme.border.withValues(alpha: 0.72),
-        ),
-      ),
-      child: Row(
-        children: [
-          Expanded(
-            child: _WalletSegmentButton(
-              label: leftLabel,
-              selected: leftSelected,
-              accent: accent,
-              onPressed: onLeftPressed,
-            ),
-          ),
-          const shad.Gap(4),
-          Expanded(
-            child: _WalletSegmentButton(
-              label: rightLabel,
-              selected: !leftSelected,
-              accent: accent,
-              onPressed: onRightPressed,
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-class _WalletSegmentButton extends StatelessWidget {
-  const _WalletSegmentButton({
-    required this.label,
-    required this.selected,
-    required this.accent,
-    required this.onPressed,
-  });
-
-  final String label;
-  final bool selected;
-  final Color accent;
-  final VoidCallback onPressed;
-
-  @override
-  Widget build(BuildContext context) {
-    final theme = shad.Theme.of(context);
-
-    return Material(
-      color: Colors.transparent,
-      child: InkWell(
-        onTap: onPressed,
-        borderRadius: BorderRadius.circular(14),
-        child: Ink(
-          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 11),
-          decoration: BoxDecoration(
-            color: selected
-                ? accent.withValues(alpha: 0.14)
-                : Colors.transparent,
-            borderRadius: BorderRadius.circular(14),
-          ),
-          child: Center(
-            child: Text(
-              label,
-              textAlign: TextAlign.center,
-              maxLines: 1,
-              overflow: TextOverflow.ellipsis,
-              style: theme.typography.small.copyWith(
-                fontWeight: FontWeight.w700,
-                color: selected ? accent : theme.colorScheme.mutedForeground,
-              ),
-            ),
-          ),
-        ),
       ),
     );
   }

@@ -97,7 +97,8 @@ class _AppearanceBackdropState extends State<AppearanceBackdrop>
   @override
   Widget build(BuildContext context) {
     final settings = widget.settings;
-    final brightness = shad.Theme.of(context).brightness;
+    final theme = shad.Theme.of(context);
+    final brightness = theme.brightness;
     final animate =
         settings.animate &&
         settings.backgroundStyle == AppearanceBackgroundStyle.blobs &&
@@ -128,7 +129,10 @@ class _AppearanceBackdropState extends State<AppearanceBackdrop>
                 : const shad.ScaffoldTheme(),
             child: shad.ComponentTheme<shad.DestructiveButtonTheme>(
               data: accessibleDestructiveButtonTheme,
-              child: widget.child,
+              child: shad.ComponentTheme<shad.TabsTheme>(
+                data: concentricTabsTheme(theme),
+                child: widget.child,
+              ),
             ),
           ),
         ],
@@ -162,3 +166,21 @@ class AppearanceRouteBackground extends StatelessWidget {
     );
   }
 }
+
+/// `shad.Tabs` geometry whose selected tab is concentric with its track.
+///
+/// The package draws the track with `radiusLg` and the selected tab with
+/// `radiusMd` inside half a density gap of padding, which only line up at
+/// the default radius scale. The tab corners are fixed by the package, so
+/// the track takes them plus the same equal padding on every side.
+shad.TabsTheme concentricTabsTheme(shad.ThemeData theme) {
+  final padding = concentricTabsPadding(theme);
+  return shad.TabsTheme(
+    containerPadding: EdgeInsets.all(padding),
+    borderRadius: BorderRadius.circular(theme.radiusMd + padding),
+  );
+}
+
+/// Gap between the `shad.Tabs` track and its selected tab on every side.
+double concentricTabsPadding(shad.ThemeData theme) =>
+    theme.density.baseGap * theme.scaling * 0.5;

@@ -12,12 +12,15 @@ import 'package:mobile/core/theme/appearance/appearance_palettes.dart';
 import 'package:mobile/core/theme/appearance/appearance_scope.dart';
 import 'package:mobile/core/theme/appearance/appearance_settings.dart';
 import 'package:mobile/core/theme/appearance/appearance_theme.dart';
+import 'package:mobile/core/theme/sorbet/sorbet_preferences.dart';
 import 'package:mobile/core/widgets/shadcn_material_bridge.dart';
 import 'package:mobile/data/repositories/settings_repository.dart';
 import 'package:mobile/features/settings/cubit/theme_cubit.dart';
 import 'package:mobile/features/settings/cubit/theme_state.dart';
 import 'package:shadcn_flutter/shadcn_flutter.dart' as shad;
 import 'package:shared_preferences/shared_preferences.dart';
+
+import '../../helpers/pump_app.dart';
 
 /// Mirrors `App`: the theme cubit drives the shad themes and the backdrop.
 Widget _app(ThemeCubit cubit, Widget home) => BlocProvider.value(
@@ -75,6 +78,9 @@ Future<Color> _pixel(ui.Image image, int x, int y) async {
     bytes.getUint8(i + 2),
   );
 }
+
+double _tabsRadiusOf(Decoration? decoration) =>
+    ((decoration! as BoxDecoration).borderRadius! as BorderRadius).topLeft.x;
 
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
@@ -342,4 +348,73 @@ void main() {
       // shad paints it outside a probe-able RenderDecoratedBox.
     });
   }
+
+  group('concentric shad tabs', () {
+    for (final (design, sorbet) in [
+      ('classic', null),
+      ('sorbet soft', const SorbetTheme()),
+      ('sorbet sharp', const SorbetTheme(radius: SorbetRadius.sharp)),
+      ('sorbet round', const SorbetTheme(radius: SorbetRadius.round)),
+    ]) {
+      testWidgets('$design shad tabs draw the selected tab concentric with the '
+          'track', (tester) async {
+        await tester.pumpWidget(
+          sorbetTestApp(
+            sorbet: sorbet,
+            home: Center(
+              child: SizedBox(
+                width: 360,
+                child: shad.Tabs(
+                  key: const Key('tabs'),
+                  index: 0,
+                  onChanged: (_) {},
+                  children: const [
+                    shad.TabItem(child: Text('Details')),
+                    shad.TabItem(child: Text('Activity')),
+                  ],
+                ),
+              ),
+            ),
+          ),
+        );
+        await tester.pumpAndSettle();
+
+        final tabs = find.byKey(const Key('tabs'));
+        final theme = shad.Theme.of(tester.element(tabs));
+        final padding = concentricTabsPadding(theme);
+        final trackFinder = find
+            .descendant(
+              of: tabs,
+              matching: find.byWidgetPredicate(
+                (widget) => widget is Container && widget.decoration != null,
+              ),
+            )
+            .first;
+        final faceFinder = find.descendant(
+          of: tabs,
+          matching: find.byWidgetPredicate(
+            (widget) =>
+                widget is AnimatedContainer &&
+                (widget.decoration as BoxDecoration?)?.color != null,
+          ),
+        );
+        expect(faceFinder, findsOneWidget);
+
+        final track = tester.getRect(trackFinder);
+        final face = tester.getRect(faceFinder);
+        expect(face.top - track.top, closeTo(padding, 0.01));
+        expect(track.bottom - face.bottom, closeTo(padding, 0.01));
+        expect(face.left - track.left, closeTo(padding, 0.01));
+
+        final trackRadius = _tabsRadiusOf(
+          tester.widget<Container>(trackFinder).decoration,
+        );
+        final faceRadius = _tabsRadiusOf(
+          tester.widget<AnimatedContainer>(faceFinder).decoration,
+        );
+        expect(faceRadius, closeTo(trackRadius - padding, 0.01));
+        expect(tester.takeException(), isNull);
+      });
+    }
+  });
 }
