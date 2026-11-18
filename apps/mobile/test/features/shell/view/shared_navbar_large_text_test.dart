@@ -19,7 +19,6 @@ import 'package:mobile/data/repositories/settings_repository.dart';
 import 'package:mobile/features/apps/cubit/app_tab_cubit.dart';
 import 'package:mobile/features/assistant/cubit/assistant_chrome_cubit.dart';
 import 'package:mobile/features/assistant/view/assistant_page.dart';
-import 'package:mobile/features/assistant/widgets/assistant_composer_launcher.dart';
 import 'package:mobile/features/assistant/widgets/assistant_header_status_chip.dart';
 import 'package:mobile/features/assistant/widgets/assistant_live_call_controls.dart';
 import 'package:mobile/features/assistant/widgets/assistant_live_primary_action.dart';
@@ -244,24 +243,18 @@ void main() {
     textScale = 3;
     await mount(tester);
     router.go(Routes.assistant);
-    assistant.setComposerVisible(visible: true);
     await _pump(tester);
     final surface = find.byKey(
       const ValueKey('persistent-shell-dock-material'),
     );
     expect(surface, findsOneWidget);
     final materialElement = tester.element(surface);
-    final primarySlot = find.byKey(
-      const ValueKey('floating-dock-primary-slot'),
-    );
     Map<String, Offset>? liveCenters;
     // Exercise the actual cached AssistantPage publisher and its internal
     // composer state, rather than replacing the shell's registered page slot.
-    await tester.tap(find.byType(AssistantComposerFab));
+    await tester.tap(find.byKey(const ValueKey('assistant-composer-editor')));
     await _pump(tester);
     expect(find.byType(TextField), findsOneWidget);
-    final originalBounds = tester.getRect(surface);
-    final originalPrimaryBounds = tester.getRect(primarySlot);
     assistant.enterLiveMode();
     // Page slots publish after layout; retain identity during that frame too.
     await tester.pump();
@@ -272,25 +265,33 @@ void main() {
     expect(surface, findsOneWidget);
     expect(tester.element(surface), same(materialElement));
     expect(find.byType(ShellDockSurface), findsOneWidget);
+    double? liveBottom;
     for (final frame in [16, 80, 180, 320]) {
       await tester.pump(Duration(milliseconds: frame));
       expect(surface, findsOneWidget);
       expect(tester.element(surface), same(materialElement));
       expect(find.byType(ShellDockSurface), findsOneWidget);
-      expect(tester.getRect(surface), originalBounds);
-      expect(tester.getRect(primarySlot), originalPrimaryBounds);
+      final bounds = tester.getRect(surface);
+      liveBottom ??= bounds.bottom;
+      expect(bounds.bottom, liveBottom);
+      expect(bounds.left, greaterThanOrEqualTo(0));
+      expect(bounds.right, lessThanOrEqualTo(width));
       final centers = {
         for (final id in ['microphone', 'camera', 'keyboard', 'exit'])
           id: tester.getCenter(find.byKey(ValueKey('live-control-$id'))),
       };
-      liveCenters ??= centers;
-      expect(centers, liveCenters);
+      liveCenters = centers;
       expect(find.byType(AssistantLiveCallControls), findsOneWidget);
       expect(find.byType(MorphingNavigationBar), findsNothing);
       expect(find.byType(TextField), findsNothing);
       expect(tester.takeException(), isNull);
     }
-    // The navigation action keeps the same primary slot in Live.
+    await tester.pump(const Duration(milliseconds: 100));
+    expect({
+      for (final id in ['microphone', 'camera', 'keyboard', 'exit'])
+        id: tester.getCenter(find.byKey(ValueKey('live-control-$id'))),
+    }, liveCenters);
+    // The navigation action remains available in Live.
     expect(find.byType(AssistantLivePrimaryAction), findsOneWidget);
     expect(find.byTooltip('Open mic'), findsOneWidget);
     assistant.toggleComposerNavigation();

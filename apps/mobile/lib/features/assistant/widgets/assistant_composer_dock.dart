@@ -151,7 +151,7 @@ class AssistantComposerDock extends StatelessWidget {
           textInputAction: TextInputAction.newline,
           onTapOutside: (_) => focusNode.unfocus(),
           placeholder: inPage
-              ? context.l10n.assistantAskMira
+              ? context.l10n.assistantAskName(shellState.soul.name)
               : context.l10n.assistantAskPlaceholder,
           hintMaxLines: 1,
           borderless: true,

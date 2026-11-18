@@ -373,7 +373,10 @@ GoRouter createAppRouter(
           child: ShellPage(
             matchedLocation: state.uri.path,
             routePattern: state.fullPath,
-            assistantConversationsEnabled: true,
+            retainedRootLocation:
+                state.uri.path == Routes.assistantConversations
+                ? Routes.assistant
+                : null,
             child: child,
           ),
         ),

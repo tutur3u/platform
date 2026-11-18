@@ -17,7 +17,6 @@ import 'package:mobile/features/assistant/data/assistant_stream_parser.dart';
 import 'package:mobile/features/assistant/models/assistant_models.dart';
 import 'package:mobile/features/assistant/view/assistant_page.dart';
 import 'package:mobile/features/assistant/widgets/assistant_composer_dock.dart';
-import 'package:mobile/features/assistant/widgets/assistant_composer_launcher.dart';
 import 'package:mobile/features/auth/cubit/auth_cubit.dart';
 import 'package:mobile/features/auth/cubit/auth_state.dart';
 import 'package:mobile/features/chat/models/chat_initial_ai_settings.dart';
@@ -50,20 +49,23 @@ class ReplyAuth extends Cubit<AuthState> implements AuthCubit {
 }
 
 class ReplyWorkspace extends Cubit<WorkspaceState> implements WorkspaceCubit {
-  ReplyWorkspace()
+  ReplyWorkspace({this.tier = 'FREE'})
     : super(
-        const WorkspaceState(
+        WorkspaceState(
           status: WorkspaceStatus.loaded,
           currentWorkspace: Workspace(
             id: '22222222-2222-4222-8222-222222222222',
             name: 'Workspace',
+            tier: tier,
           ),
         ),
       );
+  final String tier;
+
   void change(String id) => emit(
     WorkspaceState(
       status: WorkspaceStatus.loaded,
-      currentWorkspace: Workspace(id: id, name: 'Workspace'),
+      currentWorkspace: Workspace(id: id, name: 'Workspace', tier: tier),
     ),
   );
   @override
@@ -314,11 +316,9 @@ class BackgroundReplyHarness {
     );
     onFirstFrame?.call();
     await tester.pumpAndSettle();
-    if (find.byType(AssistantComposerFab).evaluate().isNotEmpty) {
-      await tester.tap(find.byType(AssistantComposerFab));
-      await tester.pumpAndSettle();
-    }
-    pageContext = tester.element(find.byType(ShellDockPublisher));
+    pageContext = tester.element(
+      find.byKey(const ValueKey('assistant-workspace-content')),
+    );
     chat = pageContext.read<AssistantChatCubit>();
   }
 
@@ -328,7 +328,7 @@ class BackgroundReplyHarness {
     );
     composer.controller.text = 'Synthetic question';
     await tester.pump();
-    await tester.tap(find.byKey(const ValueKey('assistant-navigation-toggle')));
+    await tester.tap(find.byKey(const ValueKey('assistant-send')));
     for (var attempt = 0; attempt < 8 && repository.starts == 0; attempt++) {
       await tester.pump(const Duration(milliseconds: 100));
     }

@@ -174,17 +174,18 @@ void main() {
         old = h.chat.openChatById(repairWorkspace, repairChat);
         await api.restoreEntered.future;
       });
+      // The page keeps animating while the fixture holds the restore.
       if (departure == 'actor ABA') {
         final original = h.auth.state;
         h.auth.change(const AuthState.unauthenticated());
-        await tester.pumpAndSettle();
+        await tester.pump();
         h.auth.change(original);
-        await tester.pumpAndSettle();
+        await tester.pump();
       } else if (departure == 'workspace ABA') {
         h.workspace.change('99999999-9999-4999-8999-999999999999');
-        await tester.pumpAndSettle();
+        await tester.pump();
         h.workspace.change(repairWorkspace);
-        await tester.pumpAndSettle();
+        await tester.pump();
       } else {
         await tester.pumpWidget(const SizedBox.shrink());
         await tester.pump();

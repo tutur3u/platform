@@ -373,7 +373,17 @@ class AppLocalizationsEn extends AppLocalizations {
   String get assistantConversationNoPreview => 'No message preview';
 
   @override
-  String get assistantAskMira => 'Ask Mira';
+  String assistantAskName(String name) {
+    return 'Ask $name';
+  }
+
+  @override
+  String get assistantConversationsLoadFailed => 'Could not load conversations';
+
+  @override
+  String assistantReplying(String name) {
+    return '$name is replying';
+  }
 
   @override
   String get assistantArchiveConversationTitle => 'Archive conversation?';

@@ -14,9 +14,7 @@ import 'package:mobile/l10n/l10n.dart';
 
 /// The mode name stays stable while the shared shell switches views.
 class AssistantModeTitle extends StatelessWidget {
-  const AssistantModeTitle({this.showAssistantLabel = false, super.key});
-
-  final bool showAssistantLabel;
+  const AssistantModeTitle({super.key});
 
   @override
   Widget build(BuildContext context) {
@@ -48,11 +46,10 @@ class AssistantModeTitle extends StatelessWidget {
     final title = registration?.title.trim().isNotEmpty == true
         ? registration!.title
         : 'Mira';
-    final document = showAssistantLabel && !isLiveMode;
-    final label = document ? context.l10n.navAssistant : title;
+    final document = !isLiveMode;
     final status = !isLiveMode ? registration?.subtitle : null;
     Widget titleText({bool folded = false}) => ReadableShellTitle(
-      label,
+      title,
       style:
           (document
                   ? AppTokens.of(context).typography.title

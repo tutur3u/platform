@@ -5,7 +5,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 import 'package:http/http.dart' as http;
-import 'package:mobile/core/ui/ui.dart';
 import 'package:mobile/data/sources/api_client.dart';
 import 'package:mobile/features/assistant/data/assistant_chat_persistence_contract.dart';
 import 'package:mobile/features/assistant/data/assistant_first_message_creation.dart';
@@ -145,13 +144,9 @@ class RepairHarness extends BackgroundReplyHarness {
   Future<void> startNew(WidgetTester tester) async {
     actions.state
         .resolveForLocation('/assistant')
-        .firstWhere((action) => action.id == 'assistant-more')
+        .firstWhere((action) => action.id == 'assistant-new-conversation')
         .onPressed!
         .call();
-    await tester.pumpAndSettle();
-    await tester.tap(find.byIcon(LucideIcons.history));
-    await tester.pumpAndSettle();
-    await tester.tap(find.byKey(const ValueKey('assistant-history-new')));
     await tester.pumpAndSettle();
   }
 }

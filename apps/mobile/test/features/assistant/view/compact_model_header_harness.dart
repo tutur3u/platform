@@ -49,7 +49,7 @@ class CompactModelHeaderHarness {
   GoRouter? router;
 
   BuildContext pageContext(WidgetTester tester) =>
-      tester.element(find.byType(ShellDockPublisher));
+      tester.element(find.byKey(const ValueKey('assistant-workspace-content')));
 
   Future<void> mount(
     WidgetTester tester, {

@@ -507,6 +507,8 @@ class AssistantRepository
               model: record.model,
               isPublic: record.isPublic,
               createdAt: record.createdAt,
+              updatedAt: record.updatedAt,
+              preview: record.preview,
             );
           })
           .toList(growable: false);
@@ -521,21 +523,24 @@ class AssistantRepository
         wsId,
         'conversations',
         '/api/v1/workspaces/$wsId/chat/conversations?archived=active&limit=40&offset=0',
+        forceRefresh: forceRefresh,
       );
       final native = ChatConversationPage.fromJson(payload).conversations
           .where((c) => c.type == ChatConversationType.ai && !c.isReadOnlyAgent)
           .map(_assistantChatRecordFromConversation)
           .take(limit ?? 40)
           .toList();
-      if (native.isNotEmpty || !await _networkAvailable()) return native;
+      if (native.isNotEmpty) return native;
+      if (!await _networkAvailable()) throw const MiraLegacyOffline();
       return _decodeRecentChatsCache(await fetchLegacy());
     }
     if (wsId != null && wsId.isNotEmpty) {
       try {
-        final page = await _chatRepository.listConversations(
-          wsId,
-          limit: limit ?? 40,
-        );
+        Future<ChatConversationPage> read() =>
+            _chatRepository.listConversations(wsId, limit: limit ?? 40);
+        final page = await (forceRefresh
+            ? CacheStore.awaitRevalidation(read)
+            : read());
         final nativeChats = page.conversations
             .where(
               (conversation) =>
@@ -550,7 +555,8 @@ class AssistantRepository
               ? nativeChats
               : nativeChats.take(limit).toList(growable: false);
         }
-      } on ApiException {
+      } on ApiException catch (error) {
+        if (error.statusCode != 404 && error.statusCode != 405) rethrow;
         // Fall back to the legacy Assistant history endpoint while older chats
         // are still being migrated into native Chat conversations.
       }
@@ -569,7 +575,14 @@ class AssistantRepository
           tags: [_assistantHistoryCacheTag, 'module:assistant'],
           fetch: fetchLegacy,
         );
-    return result.data ?? const <AssistantChatRecord>[];
+    final history = result.data;
+    if (history == null) {
+      throw StateError('History invalidated during refresh');
+    }
+    if (history.isEmpty && !await _networkAvailable()) {
+      throw const MiraLegacyOffline();
+    }
+    return history;
   }
 
   Future<void> prewarmWorkspace({

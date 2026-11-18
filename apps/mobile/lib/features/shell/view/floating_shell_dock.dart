@@ -204,20 +204,6 @@ class _FloatingShellDockState extends State<FloatingShellDock> {
     BuildContext? scrollContext,
   ) {
     if (depth != 0 || metrics.axis != Axis.vertical) return;
-    if (SchedulerBinding.instance.schedulerPhase ==
-        SchedulerPhase.persistentCallbacks) {
-      // A viewport resize can start a ballistic scroll during layout.
-      // Measure the settled viewport after that frame.
-      final location = widget.location;
-      WidgetsBinding.instance.addPostFrameCallback((_) {
-        if (mounted &&
-            widget.location == location &&
-            (scrollContext?.mounted ?? true)) {
-          _trackScrolledUnder(metrics, depth, scrollContext);
-        }
-      });
-      return;
-    }
     double? edge;
     if (scrollContext != null) {
       // Offstage root tabs and covered routes keep reporting layout changes.
@@ -230,6 +216,20 @@ class _FloatingShellDockState extends State<FloatingShellDock> {
     }
     final scrolled = metrics.pixels > metrics.minScrollExtent;
     if (scrolled != _scrolledUnder || edge != _separatorEdge) {
+      // List content can shrink during layout when a refresh changes state.
+      // Defer the separator update until the scroll viewport has settled.
+      if (SchedulerBinding.instance.schedulerPhase ==
+          SchedulerPhase.persistentCallbacks) {
+        final location = widget.location;
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          if (mounted &&
+              widget.location == location &&
+              (scrollContext?.mounted ?? true)) {
+            _trackScrolledUnder(metrics, depth, scrollContext);
+          }
+        });
+        return;
+      }
       setState(() {
         _scrolledUnder = scrolled;
         _separatorEdge = edge;

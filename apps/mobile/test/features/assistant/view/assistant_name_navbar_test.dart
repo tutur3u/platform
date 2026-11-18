@@ -12,22 +12,21 @@ import 'compact_model_header_harness.dart';
 
 void main() {
   for (final departure in ['actor', 'workspace']) {
-    testWidgets('null-actor compose lease rejects retained $departure ABA', (
+    testWidgets('Conversations rejects a retained $departure action', (
       tester,
     ) async {
       final h = CompactModelHeaderHarness();
       final authenticated = h.auth.state;
-      h.auth.change(const AuthState.unauthenticated());
       addTearDown(() => h.dispose(tester));
       await h.mount(tester, actualNavbar: true);
       final retained = h.actions.state
           .resolveForLocation('/assistant')
-          .singleWhere((action) => action.id == 'assistant-compose')
+          .singleWhere((action) => action.id == 'assistant-conversations')
           .onPressed!;
       if (departure == 'actor') {
-        h.auth.change(authenticated);
-        await tester.pumpAndSettle();
         h.auth.change(const AuthState.unauthenticated());
+        await tester.pumpAndSettle();
+        h.auth.change(authenticated);
       } else {
         h.workspace.change('synthetic-other');
         await tester.pumpAndSettle();
@@ -36,15 +35,8 @@ void main() {
       await tester.pumpAndSettle();
       retained();
       await tester.pumpAndSettle();
-      expect(find.byType(TextField), findsNothing);
-      final current = h.actions.state
-          .resolveForLocation('/assistant')
-          .singleWhere((action) => action.id == 'assistant-compose')
-          .onPressed!;
-      current();
-      await tester.pumpAndSettle();
+      expect(h.router!.routeInformationProvider.value.uri.path, '/assistant');
       expect(find.byType(TextField), findsOneWidget);
-      expect(h.chrome.state.composerVisible, isTrue);
       expect(h.repository.starts, 0);
       expect(tester.takeException(), isNull);
     });
@@ -65,8 +57,8 @@ void main() {
       final more = before.singleWhere(
         (action) => action.id == 'assistant-more',
       );
-      final live = before.singleWhere(
-        (action) => action.id == 'assistant-mode-live',
+      final conversations = before.singleWhere(
+        (action) => action.id == 'assistant-conversations',
       );
       h.chrome.enterLiveMode();
       await tester.pumpAndSettle();
@@ -94,7 +86,7 @@ void main() {
       h.auth.change(actor);
       await tester.pumpAndSettle();
       more.onPressed!();
-      live.onPressed!();
+      conversations.onPressed!();
       await tester.pumpAndSettle();
       expect(h.chrome.state.isLiveMode, isFalse);
       expect(
@@ -174,7 +166,7 @@ void main() {
         );
         await tester.pumpAndSettle();
         expect(
-          find.text(AppLocalizations.of(page).assistantHistoryTitle),
+          find.byKey(const ValueKey('assistant-more-live')),
           findsOneWidget,
         );
         expect(

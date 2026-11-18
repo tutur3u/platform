@@ -18,7 +18,6 @@ import 'package:mobile/features/assistant/models/assistant_live_models.dart';
 import 'package:mobile/features/assistant/models/assistant_models.dart';
 import 'package:mobile/features/assistant/view/assistant_page.dart';
 import 'package:mobile/features/assistant/widgets/assistant_composer_dock.dart';
-import 'package:mobile/features/assistant/widgets/assistant_composer_launcher.dart';
 import 'package:mobile/features/assistant/widgets/assistant_live_mode_view.dart';
 import 'package:mobile/features/assistant/widgets/assistant_live_stage_card.dart';
 import 'package:mobile/features/assistant/widgets/assistant_message_actions.dart';
@@ -220,14 +219,12 @@ Future<BackgroundReplyHarness> _mount(
     themeMode: themeMode,
   );
   await tester.pumpAndSettle();
-  h.pageContext = tester.element(find.byType(ShellDockPublisher));
+  h.pageContext = tester.element(
+    find.byKey(const ValueKey('assistant-workspace-content')),
+  );
   h.chat = h.pageContext.read<AssistantChatCubit>();
   await h.chat.openChatById(_workspace, _chat);
   await tester.pumpAndSettle();
-  if (find.byType(AssistantComposerFab).evaluate().isNotEmpty) {
-    await tester.tap(find.byType(AssistantComposerFab));
-    await tester.pumpAndSettle();
-  }
   expect(_composer(tester).chatCubit, same(h.chat));
   expect(wire.admitted, isEmpty);
   if (openTransport) {

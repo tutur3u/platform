@@ -1389,7 +1389,19 @@
   "assistantConversationsThisWeek": "This week",
   "assistantConversationsEarlier": "Earlier",
   "assistantConversationNoPreview": "No message preview",
-  "assistantAskMira": "Ask Mira",
+  "assistantAskName": "Ask {name}",
+  "@assistantAskName": {
+    "placeholders": {
+      "name": { "type": "String" }
+    }
+  },
+  "assistantConversationsLoadFailed": "Could not load conversations",
+  "assistantReplying": "{name} is replying",
+  "@assistantReplying": {
+    "placeholders": {
+      "name": { "type": "String" }
+    }
+  },
   "assistantArchiveConversationTitle": "Archive conversation?",
   "assistantArchiveConversationFailed": "Could not archive this conversation.",
   "assistantArchiveConversationDescription": "This conversation will be removed from your active conversations.",

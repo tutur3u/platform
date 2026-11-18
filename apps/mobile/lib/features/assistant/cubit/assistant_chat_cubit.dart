@@ -7,6 +7,7 @@ import 'package:bloc/bloc.dart';
 import 'package:equatable/equatable.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/foundation.dart';
+import 'package:mobile/core/cache/offline_network.dart';
 import 'package:mobile/core/observability/mobile_observability.dart';
 import 'package:mobile/core/observability/operational_error_reporter.dart';
 import 'package:mobile/core/validation/uuid.dart';
@@ -24,6 +25,7 @@ import '../data/assistant_repository.dart';
 import '../data/assistant_reset_preferences.dart';
 import '../data/assistant_settings_selection.dart';
 import '../data/assistant_stream_parser.dart';
+import '../data/mira_offline_reads.dart';
 import '../models/assistant_models.dart';
 import 'assistant_tool_output.dart';
 
@@ -178,7 +180,15 @@ class AssistantChatCubit extends Cubit<AssistantChatState> {
   Future<void> openChatById(String wsId, String chatId) =>
       _openChatById(wsId, chatId, forceRefresh: true);
 
-  Future<void> refreshHistory() => _refreshHistory();
+  void removeArchivedChat(AssistantChatRecord chat) =>
+      _removeArchivedChat(chat);
+
+  Future<void> refreshHistory({bool forceRefresh = false}) =>
+      _refreshHistoryFor(
+        state.workspaceId,
+        _workspaceVersion,
+        forceRefresh: forceRefresh,
+      );
 
   List<AssistantAttachment> takeUploadedComposerAttachments({
     required List<AssistantAttachment> matching,

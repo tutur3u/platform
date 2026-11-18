@@ -74,6 +74,21 @@ class AssistantTranscriptBubble extends StatefulWidget {
 
 class _AssistantTranscriptBubbleState extends State<AssistantTranscriptBubble> {
   bool _selected = false;
+  String? _completedAnnouncement;
+
+  @override
+  void didUpdateWidget(covariant AssistantTranscriptBubble oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (widget.isDraft || widget.activityActive) {
+      _completedAnnouncement = null;
+    } else if (oldWidget.isDraft || oldWidget.activityActive) {
+      _completedAnnouncement = [
+        if (widget.text.trim().isNotEmpty) widget.text.trim(),
+        if (widget.transcript.trim().isNotEmpty) widget.transcript.trim(),
+      ].join('\n\n');
+    }
+  }
+
   String get label => widget.label;
   bool get alignEnd => widget.alignEnd;
   String get text => widget.text;
@@ -211,8 +226,6 @@ class _AssistantTranscriptBubbleState extends State<AssistantTranscriptBubble> {
         ),
         child: Semantics(
           label: label,
-          liveRegion:
-              widget.documentLayout && !alignEnd && (isDraft || activityActive),
           selected: _selected,
           onLongPress: !canOpenActions ? null : () => _openActions(copyPayload),
           child: GestureDetector(
@@ -237,6 +250,19 @@ class _AssistantTranscriptBubbleState extends State<AssistantTranscriptBubble> {
                         style: AppTokens.of(context).typography.ui,
                       ),
                     ),
+                  ),
+                if (widget.documentLayout &&
+                    !alignEnd &&
+                    (isDraft ||
+                        activityActive ||
+                        (_completedAnnouncement?.isNotEmpty ?? false)))
+                  Semantics(
+                    container: true,
+                    liveRegion: true,
+                    label: isDraft || activityActive
+                        ? context.l10n.assistantReplying(label)
+                        : _completedAnnouncement,
+                    child: const SizedBox.shrink(),
                   ),
                 if (widget.replyPreview != null) widget.replyPreview!,
                 if (!alignEnd && orderedParts.isNotEmpty)

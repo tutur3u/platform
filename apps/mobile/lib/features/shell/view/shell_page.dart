@@ -70,7 +70,7 @@ class ShellPage extends StatefulWidget {
     required this.matchedLocation,
     this.enableDebugLogs = kDebugMode,
     this.assistantPageBuilder,
-    this.assistantConversationsEnabled = false,
+    this.retainedRootLocation,
     this.homePageBuilder,
     this.notificationsPageBuilder,
     this.profilePageBuilder,
@@ -87,8 +87,8 @@ class ShellPage extends StatefulWidget {
   final String? routePattern;
   final bool enableDebugLogs;
 
-  /// Hosts both Assistant destinations in one retained root tab.
-  final bool assistantConversationsEnabled;
+  /// Keeps the selected root body mounted for a destination it owns.
+  final String? retainedRootLocation;
   @visibleForTesting
   final Widget Function(int replayToken)? assistantPageBuilder;
   @visibleForTesting
@@ -144,9 +144,7 @@ class _ShellPageState extends State<ShellPage> with WidgetsBindingObserver {
   String? _lastLayeredLocation;
   final List<String> _routeHistory = [];
   String get _bodyLocation =>
-      widget.matchedLocation == Routes.assistantConversations
-      ? Routes.assistant
-      : widget.matchedLocation;
+      widget.retainedRootLocation ?? widget.matchedLocation;
 
   String _lastRootLocation = Routes.home;
   bool _hasVisitedRoot = false;
@@ -260,7 +258,9 @@ class _ShellPageState extends State<ShellPage> with WidgetsBindingObserver {
     if (isRoot) {
       _lastRootLocation = _bodyLocation;
       _hasVisitedRoot = true;
-    } else if (_isRootTabLocation(oldWidget.matchedLocation)) {
+    } else if (_isRootTabLocation(
+      oldWidget.retainedRootLocation ?? oldWidget.matchedLocation,
+    )) {
       unawaited(
         context.read<AppTabCubit>().recordAppOrigin(oldWidget.matchedLocation),
       );
@@ -269,10 +269,16 @@ class _ShellPageState extends State<ShellPage> with WidgetsBindingObserver {
       oldLocation: oldWidget.matchedLocation,
       newLocation: widget.matchedLocation,
     );
-    _recordRouteVisit(
-      oldLocation: oldWidget.matchedLocation,
-      newLocation: widget.matchedLocation,
-    );
+    if (oldWidget.retainedRootLocation == widget.matchedLocation) {
+      if (_routeHistory.lastOrNull == widget.matchedLocation) {
+        _routeHistory.removeLast();
+      }
+    } else {
+      _recordRouteVisit(
+        oldLocation: oldWidget.matchedLocation,
+        newLocation: widget.matchedLocation,
+      );
+    }
     _syncCompactLayoutState(oldMatchedLocation: oldWidget.matchedLocation);
     _syncAndroidBackState();
     _persistCurrentRoute();
@@ -407,21 +413,6 @@ class _ShellPageState extends State<ShellPage> with WidgetsBindingObserver {
 
   Future<void> _handleBackNavigation(BuildContext context) async {
     final currentLocation = _normalizeRouteLocation(widget.matchedLocation);
-    if (currentLocation == Routes.assistantConversations) {
-      _isHandlingBackNavigation = true;
-      context.go(Routes.assistant);
-      return;
-    }
-    final assistantChrome = context.read<AssistantChromeCubit>();
-    if (currentLocation == Routes.assistant &&
-        assistantChrome.state.composerVisible) {
-      if (assistantChrome.state.navigationExpanded) {
-        assistantChrome.toggleComposerNavigation();
-      } else {
-        assistantChrome.setComposerVisible(visible: false);
-      }
-      return;
-    }
     final isMeetList =
         currentLocation == Routes.meet &&
         GoRouter.of(

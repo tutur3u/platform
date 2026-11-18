@@ -4,7 +4,6 @@ import 'package:camera/camera.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter/rendering.dart' show ScrollDirection;
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 import 'package:image_picker/image_picker.dart';
@@ -55,14 +54,12 @@ import 'package:mobile/features/assistant/widgets/assistant_attachment_sheet_bod
 import 'package:mobile/features/assistant/widgets/assistant_capture_sheet.dart';
 import 'package:mobile/features/assistant/widgets/assistant_composer_dock.dart';
 import 'package:mobile/features/assistant/widgets/assistant_composer_geometry.dart';
-import 'package:mobile/features/assistant/widgets/assistant_composer_launcher.dart';
 import 'package:mobile/features/assistant/widgets/assistant_composer_panel.dart';
 import 'package:mobile/features/assistant/widgets/assistant_composer_primary_action.dart';
 import 'package:mobile/features/assistant/widgets/assistant_conversations.dart';
 import 'package:mobile/features/assistant/widgets/assistant_creation_hold_banner.dart';
 import 'package:mobile/features/assistant/widgets/assistant_credit_source_sheet.dart';
 import 'package:mobile/features/assistant/widgets/assistant_header_geometry.dart';
-import 'package:mobile/features/assistant/widgets/assistant_history_sheet_body.dart';
 import 'package:mobile/features/assistant/widgets/assistant_live_call_controls.dart';
 import 'package:mobile/features/assistant/widgets/assistant_live_haptic_feedback.dart';
 import 'package:mobile/features/assistant/widgets/assistant_live_info_sheet_body.dart';
@@ -72,7 +69,6 @@ import 'package:mobile/features/assistant/widgets/assistant_live_stage_card.dart
 import 'package:mobile/features/assistant/widgets/assistant_local_status_sheet.dart';
 import 'package:mobile/features/assistant/widgets/assistant_new_chat_confirmation.dart';
 import 'package:mobile/features/assistant/widgets/assistant_scroll_to_bottom_overlay.dart';
-import 'package:mobile/features/assistant/widgets/assistant_starter_prompts.dart';
 import 'package:mobile/features/assistant/widgets/assistant_transcript_scroll_follower.dart';
 import 'package:mobile/features/assistant/widgets/assistant_transcript_section.dart';
 import 'package:mobile/features/auth/cubit/auth_cubit.dart';
@@ -156,7 +152,6 @@ class _AssistantPageState extends State<AssistantPage>
   );
   late final _chatTheme = AssistantThemeController(actor: _chatThemeActor);
   double? _composerHeight;
-  bool get _usesPageComposer => widget.shellLocation != null;
   bool get _showsConversations =>
       widget.shellLocation == Routes.assistantConversations;
   bool _settingsWritePending = false;
@@ -170,7 +165,8 @@ class _AssistantPageState extends State<AssistantPage>
   static const _assistantScrollPhysics = AlwaysScrollableScrollPhysics(
     parent: BouncingScrollPhysics(),
   );
-  static const _composerFabThreshold = 56.0;
+  late final Future<void> Function() _conversationsBack =
+      _returnFromConversations;
   late final _transcriptFollower = AssistantTranscriptScrollFollower(
     controller: _scrollController,
     onVisibilityChanged: _setScrollToBottomFabVisible,
@@ -282,7 +278,6 @@ class _AssistantPageState extends State<AssistantPage>
   String? _loadedWorkspaceId;
   String? _lastEmptyStateResetKey;
   bool _wasAssistantEmptyLayout = false;
-  bool _isComposerVisible = false;
   bool _showScrollToBottomFab = false;
   bool _keepLiveWhileBrowsing = false;
   Future<void> _workspaceDisconnect = Future<void>.value();
@@ -302,15 +297,11 @@ class _AssistantPageState extends State<AssistantPage>
     setState(() => _loadedWorkspaceId = null);
   }
 
-  bool _ignoreScrollVisibilityUpdates = false;
-  double? _composerVisibilityAnchorOffset;
-
   @override
   void initState() {
     super.initState();
     WidgetsBinding.instance.addObserver(this);
     _scrollController.addListener(_handleScroll);
-    _inputFocusNode.addListener(_handleInputFocusChange);
   }
 
   @override
@@ -363,7 +354,7 @@ class _AssistantPageState extends State<AssistantPage>
         }
         unawaited(_voiceCapture.cancel());
         unawaited(_localCubit.invalidate());
-        _collapseComposerToFab();
+        _dismissComposerInput();
         unawaited(_disconnectWhenHidden());
       });
     }
@@ -380,12 +371,30 @@ class _AssistantPageState extends State<AssistantPage>
   }
 
   @override
+  void didUpdateWidget(covariant AssistantPage oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (!_showsConversations ||
+        oldWidget.shellLocation == Routes.assistantConversations) {
+      return;
+    }
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      final wsId = _loadedWorkspaceId;
+      if (mounted &&
+          _showsConversations &&
+          wsId != null &&
+          _chatCubit.state.workspaceId == wsId &&
+          _remoteGuard(wsId).current) {
+        unawaited(_chatCubit.refreshHistory(forceRefresh: true));
+      }
+    });
+  }
+
+  @override
   void dispose() {
     _disposeChatTheme();
     WidgetsBinding.instance.removeObserver(this);
     _liveHaptics.dispose();
     _scrollController.removeListener(_handleScroll);
-    _inputFocusNode.removeListener(_handleInputFocusChange);
     _inputController.dispose();
     _inputFocusNode.dispose();
     _transcriptFollower.dispose();
@@ -399,24 +408,7 @@ class _AssistantPageState extends State<AssistantPage>
   }
 
   @override
-  Widget build(BuildContext context) => BackButtonListener(
-    onBackButtonPressed: () async {
-      if ((_usesPageComposer &&
-              !context.read<AssistantChromeCubit>().state.isLiveMode) ||
-          !TickerMode.valuesOf(context).enabled ||
-          !_isComposerVisible) {
-        return false;
-      }
-      final chrome = context.read<AssistantChromeCubit>();
-      if (chrome.state.navigationExpanded) {
-        chrome.toggleComposerNavigation();
-      } else {
-        _collapseComposerToFab();
-      }
-      return true;
-    },
-    child: _themedPage(context),
-  );
+  Widget build(BuildContext context) => _themedPage(context);
 
   Future<void> _loadLiveBrowsingPreference(String wsId) async {
     bool value;
@@ -444,7 +436,6 @@ class _AssistantPageState extends State<AssistantPage>
       }
 
       final position = _scrollController.position.maxScrollExtent;
-      _ignoreScrollVisibilityUpdates = true;
       unawaited(
         _scrollController
             .animateTo(
@@ -457,8 +448,6 @@ class _AssistantPageState extends State<AssistantPage>
               if (!mounted) {
                 return;
               }
-              _ignoreScrollVisibilityUpdates = false;
-              _resetComposerVisibilityAnchor();
               _transcriptFollower.followUpdate();
             }),
       );
@@ -477,14 +466,11 @@ class _AssistantPageState extends State<AssistantPage>
       if (_scrollController.offset <= 1) {
         return;
       }
-      _ignoreScrollVisibilityUpdates = true;
       _scrollController.jumpTo(0);
       WidgetsBinding.instance.addPostFrameCallback((_) {
         if (!mounted) {
           return;
         }
-        _ignoreScrollVisibilityUpdates = false;
-        _resetComposerVisibilityAnchor();
         _setScrollToBottomFabVisible(false);
       });
     });
@@ -492,88 +478,14 @@ class _AssistantPageState extends State<AssistantPage>
 
   void _toggleComposerNavigation() {
     _dismissKeyboard();
-    _collapseComposerToFab();
+    _dismissComposerInput();
   }
 
   void _dismissKeyboard() {
     FocusManager.instance.primaryFocus?.unfocus();
   }
 
-  void _handleInputFocusChange() {
-    if (_inputFocusNode.hasFocus) {
-      final chrome = context.read<AssistantChromeCubit>();
-      if (chrome.state.navigationExpanded) chrome.toggleComposerNavigation();
-      _setComposerVisible(true);
-      _resetComposerVisibilityAnchor();
-    }
-  }
-
-  void _handleScroll() {
-    _transcriptFollower.observeScroll();
-    if (!mounted ||
-        _usesPageComposer ||
-        _ignoreScrollVisibilityUpdates ||
-        !_scrollController.hasClients) {
-      return;
-    }
-
-    final position = _scrollController.position;
-    if (!position.hasContentDimensions) {
-      return;
-    }
-
-    final editing =
-        MediaQuery.viewInsetsOf(context).bottom > 0 || _inputFocusNode.hasFocus;
-    if (editing) {
-      _setComposerVisible(true);
-      _resetComposerVisibilityAnchor();
-    }
-
-    if (position.outOfRange) {
-      return;
-    }
-
-    final anchorOffset = _composerVisibilityAnchorOffset ?? position.pixels;
-    _composerVisibilityAnchorOffset = anchorOffset;
-    final distanceFromAnchor = (position.pixels - anchorOffset).abs();
-    if (_isComposerVisible &&
-        !editing &&
-        position.userScrollDirection != ScrollDirection.idle &&
-        distanceFromAnchor >= _composerFabThreshold) {
-      _setComposerVisible(false);
-      _composerVisibilityAnchorOffset = position.pixels;
-    }
-    // The follower owns "jump to latest" visibility from user intent.
-  }
-
-  void _syncComposerVisibilityForBuild({required bool keyboardVisible}) {
-    if (!keyboardVisible ||
-        !_inputFocusNode.hasFocus ||
-        !TickerMode.valuesOf(context).enabled ||
-        _isComposerVisible) {
-      return;
-    }
-
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (!mounted) {
-        return;
-      }
-      _setComposerVisible(true);
-      _resetComposerVisibilityAnchor();
-    });
-  }
-
-  void _setComposerVisible(bool value) {
-    if (_isComposerVisible == value || !mounted) {
-      return;
-    }
-
-    if (!value) _dismissKeyboard();
-    if (!_usesPageComposer) {
-      context.read<AssistantChromeCubit>().setComposerVisible(visible: value);
-    }
-    setState(() => _isComposerVisible = value);
-  }
+  void _handleScroll() => _transcriptFollower.observeScroll();
 
   void _setScrollToBottomFabVisible(bool value) {
     if (_showScrollToBottomFab == value || !mounted) {
@@ -585,16 +497,12 @@ class _AssistantPageState extends State<AssistantPage>
     });
   }
 
-  void _collapseComposerToFab() {
+  void _dismissComposerInput() {
     unawaited(_voiceCapture.cancel());
     _dismissKeyboard();
-    _setComposerVisible(false);
-    _composerVisibilityAnchorOffset = null;
   }
 
   void _restoreComposerAndFocus() {
-    _setComposerVisible(true);
-    _resetComposerVisibilityAnchor();
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (!mounted) {
         return;
@@ -607,28 +515,14 @@ class _AssistantPageState extends State<AssistantPage>
     showAppToast(
       context,
       message: message,
-      bottomClearance: _composerReservedSpace(
-        context,
-        isComposerVisible: _isComposerVisible,
-      ),
+      bottomClearance: _composerReservedSpace(context),
     );
   }
 
-  double _composerReservedSpace(
-    BuildContext context, {
-    required bool isComposerVisible,
-  }) {
-    if (_usesPageComposer) {
-      return assistantPageComposerClearance(context) +
-          (_composerHeight ?? assistantComposerHeight(context)) +
-          12;
-    }
-    return assistantTranscriptBottomClearance(
-      context,
-      composerVisible: isComposerVisible,
-      composerHeight: _composerHeight,
-    );
-  }
+  double _composerReservedSpace(BuildContext context) =>
+      assistantPageComposerClearance(context) +
+      (_composerHeight ?? assistantComposerHeight(context)) +
+      12;
 
   void _setComposerHeight(double height) {
     if (mounted && _composerHeight != height) {
@@ -661,20 +555,10 @@ class _AssistantPageState extends State<AssistantPage>
   }
 
   void _applyStarterPrompt(String prompt) {
-    _setComposerVisible(true);
-    _resetComposerVisibilityAnchor();
     _inputController
       ..text = prompt
       ..selection = TextSelection.collapsed(offset: prompt.length);
     _inputFocusNode.requestFocus();
-  }
-
-  void _resetComposerVisibilityAnchor() {
-    if (!_scrollController.hasClients) {
-      _composerVisibilityAnchorOffset = null;
-      return;
-    }
-    _composerVisibilityAnchorOffset = _scrollController.position.pixels;
   }
 
   String _activeConversationKey(AssistantChatState state) {

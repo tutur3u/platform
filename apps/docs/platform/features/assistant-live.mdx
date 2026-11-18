@@ -19,7 +19,7 @@ installation, compatibility, preparation recovery, and the separate inference ga
 ## Experience
 
 On mobile, Live keeps mic, camera, keyboard and exit in four fixed slots in the shell's floating navbar.
-Chat and Live retain its bounds, material and navigation action. Idle mic starts; setup and reconnect keep visible media controls with truthful disabled states and Cancel.
+The shared navbar keeps its material as Chat navigation hands off to Live controls. Idle mic starts; setup and reconnect keep visible media controls with truthful disabled states and Cancel.
 Active capture remains stoppable. Each start gets one microphone attempt; late permission, token or connection results cannot unmute or replace a newer attempt.
 Camera needs a connection. Keyboard returns to Chat and disconnects by default, with opt-in browsing retention; Exit cancels startup, hangs up or returns to Chat after ending.
 
@@ -28,23 +28,19 @@ Recovery detail and retry remain inline. `assistant_live_dock_lifecycle_test.dar
 
 ![Mira Live in the shared shell navbar](/images/mira-live-shell-light-390x844.png)
 
-Text chat grows to at most five lines in the dock, then scrolls inside the input.
-The Assistant has no fullscreen/expand draft action. Its single 52dp side action
-remains Send, recording control, or navigation as appropriate. Attachment previews,
-text selection, multiline input and keyboard/dock clearance remain inline.
-`assistant_composer_draft_test.dart`, `assistant_composer_multiline_test.dart` and `assistant_composer_geometry_test.dart` cover these mobile rules.
+The Chat composer sits above the floating navbar and follows the keyboard.
+It reserves the navbar's clearance while the navbar hides on scroll, keeping the
+composer and transcript viewport stable. The field grows to five lines before
+scrolling internally. Enter inserts a newline and Send appears in the composer
+when a draft or attachment is ready. The placeholder uses the configured
+assistant name, and starter suggestions appear on an empty transcript.
 
-Empty and single-line drafts share field, icon slots and side-action bounds.
-Typing hides the microphone but reserves its space, removing its interaction and accessibility target.
-The placeholder stays on one visual line at enlarged text sizes; accessibility retains the full prompt.
-Attachment and side-action controls stay bottom-aligned as the draft grows. Matching keyboard/safe-area
-geometry preserves empty/typed bounds. `assistant_composer_stability_test.dart` covers narrow phones,
-enlarged text, keyboard insets, multiline growth and retained dock material.
-<img className="block dark:hidden" src="/images/assistant-composer-light-typed.png" alt="Stable mobile Assistant composer while typing in light mode" />
-<img className="hidden dark:block" src="/images/assistant-composer-dark-typed.png" alt="Stable mobile Assistant composer while typing in dark mode" />
-
-Compare empty drafts in [light](/images/assistant-composer-light-empty.png) and [dark](/images/assistant-composer-dark-empty.png) mode,
-and multiline drafts in [light](/images/assistant-composer-light-multiline.png) and [dark](/images/assistant-composer-dark-multiline.png) mode.
+Open **Conversations** from the Assistant header. The list keeps the unsent
+draft available on Back and shows loading, offline, and retry states. Activity
+uses local time today, a weekday within the locale's current week, and a date
+for earlier conversations. Confirming an archive refreshes the scoped history.
+`assistant_conversation_shell_test.dart` covers dock and keyboard geometry,
+direct links, retry, draft retention, and archive handling.
 
 Live capture requests PCM16 mono, gain control, echo cancellation and noise suppression.
 Android uses the communication source/mode and speaker route; the pinned iOS recorder enables native voice processing, and playback preserves its category/options.
@@ -55,10 +51,8 @@ Device verification still covers speaker, headset and Bluetooth routes and echo 
 Regression coverage includes `assistant_live_dock_lifecycle_test.dart`, `assistant_live_calling_view_test.dart`, `assistant_live_recorder_test.dart`,
 `assistant_live_recorder_lifecycle_test.dart`, `assistant_live_disconnect_audio_test.dart` and `assistant_live_microphone_restart_test.dart`.
 
-Mobile chat uses the shell's existing dock for its composer and primary action.
-An empty draft keeps the navigation menu; a nonempty draft or attachment changes
-that action to Send. During inline recording it becomes Pause, then Send while
-paused. Cancel discards only the recording and returns to the retained text draft.
+The Chat composer replaces the text field with recording controls during
+voice capture. Cancel discards the recording and restores the text draft.
 An untouched actor/workspace scope with no envelope, legacy selection/context,
 creation marker or in-process hold receives one serialized, acknowledged fresh
 envelope. Its first Send creates the chat without a reset dialog and retains the
@@ -242,7 +236,7 @@ expiration ends media capture and keeps the saved conversation available.
 
 ## Mobile audio capture
 
-On mobile, Chat and Live use the same top header mode switch and page background.
+On mobile, open **Live** from the Assistant header's **More** menu. Chat and Live share the page background.
 Live keeps the floating bottom navigation visible. Its idle start action is the
 icon-only **Call Mira** button beside that navigation; the top header opens Live
 settings in a sheet with the Keep Live while browsing switch. The idle screen
@@ -259,7 +253,7 @@ or leaving the session discards unsent audio. Connection errors do not persist
 this buffer to disk.
 
 The normal mobile chat microphone replaces the text field with a real microphone
-waveform inside the same persistent floating dock. It opens no recording sheet.
+waveform inside the page composer. It opens no recording sheet.
 Pause reveals restart, attach, send, and resume; the two-minute limit pauses
 capture rather than discarding it. Restart erases only the current unsent local
 recording. Attach keeps the text draft and uploads through the existing attachment

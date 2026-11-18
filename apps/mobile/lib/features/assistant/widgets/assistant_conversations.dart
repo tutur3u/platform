@@ -6,6 +6,7 @@ import 'package:mobile/core/layout/layout.dart';
 import 'package:mobile/core/router/routes.dart';
 import 'package:mobile/core/ui/kit/kit.dart';
 import 'package:mobile/core/ui/ui.dart';
+import 'package:mobile/features/assistant/cubit/assistant_chat_cubit.dart';
 import 'package:mobile/features/assistant/models/assistant_models.dart';
 import 'package:mobile/features/assistant/widgets/assistant_conversation_row.dart';
 import 'package:mobile/features/shell/cubit/shell_chrome_actions_cubit.dart';
@@ -15,6 +16,7 @@ import 'package:mobile/l10n/l10n.dart';
 class AssistantConversations extends StatefulWidget {
   const AssistantConversations({
     required this.history,
+    required this.status,
     required this.activeChatId,
     required this.onRefresh,
     required this.onSelect,
@@ -26,6 +28,7 @@ class AssistantConversations extends StatefulWidget {
   });
 
   final List<AssistantChatRecord> history;
+  final AssistantHistoryStatus status;
   final String? activeChatId;
   final Future<void> Function() onRefresh;
   final ValueChanged<AssistantChatRecord> onSelect;
@@ -65,7 +68,6 @@ class _AssistantConversationsState extends State<AssistantConversations> {
   void _hideArchived(String id) {
     if (!mounted) return;
     setState(() => _archived.add(id));
-    unawaited(widget.onRefresh());
   }
 
   void _newConversation() {
@@ -77,27 +79,28 @@ class _AssistantConversationsState extends State<AssistantConversations> {
     final l10n = context.l10n;
     final tokens = AppTokens.of(context);
     final today = DateUtils.dateOnly((widget.now ?? DateTime.now()).toLocal());
-    final week = DateTime(
-      today.year,
-      today.month,
-      today.day - today.weekday + 1,
-    );
-    final groups = List.generate(3, (_) => <AssistantChatRecord>[]);
+    final firstDay = MaterialLocalizations.of(context).firstDayOfWeekIndex;
+    final daysSinceStart = (today.weekday % 7 - firstDay) % 7;
+    final week = DateTime(today.year, today.month, today.day - daysSinceStart);
+    final groups = {
+      for (final period in AssistantConversationPeriod.values)
+        period: <AssistantChatRecord>[],
+    };
     for (final chat in widget.history) {
       final date = chat.activityDate?.toLocal();
       if (_archived.contains(chat.id) || !_matches(chat)) continue;
       final group = DateUtils.isSameDay(date, today)
-          ? 0
+          ? AssistantConversationPeriod.today
           : date != null && !date.isBefore(week) && date.isBefore(today)
-          ? 1
-          : 2;
-      groups[group].add(chat);
+          ? AssistantConversationPeriod.thisWeek
+          : AssistantConversationPeriod.earlier;
+      groups[group]!.add(chat);
     }
-    final labels = [
-      l10n.calendarToday,
-      l10n.assistantConversationsThisWeek,
-      l10n.assistantConversationsEarlier,
-    ];
+    final labels = {
+      AssistantConversationPeriod.today: l10n.calendarToday,
+      AssistantConversationPeriod.thisWeek: l10n.assistantConversationsThisWeek,
+      AssistantConversationPeriod.earlier: l10n.assistantConversationsEarlier,
+    };
     final page = AppScaffold(
       backgroundColor: tokens.colorScheme.background,
       child: LayoutBuilder(
@@ -131,7 +134,13 @@ class _AssistantConversationsState extends State<AssistantConversations> {
                     ),
                   ),
                 ),
-                for (final (index, chats) in groups.indexed)
+                if (widget.status != AssistantHistoryStatus.ready)
+                  SliverPadding(
+                    padding: insets.copyWith(top: 0, bottom: 12),
+                    sliver: SliverToBoxAdapter(child: _historyStatus()),
+                  ),
+                for (final MapEntry(key: period, value: chats)
+                    in groups.entries)
                   if (chats.isNotEmpty)
                     SliverPadding(
                       padding: EdgeInsets.only(
@@ -147,7 +156,7 @@ class _AssistantConversationsState extends State<AssistantConversations> {
                               child: Semantics(
                                 header: true,
                                 child: Text(
-                                  labels[index],
+                                  labels[period]!,
                                   style: tokens.typography.heading,
                                 ),
                               ),
@@ -158,12 +167,14 @@ class _AssistantConversationsState extends State<AssistantConversations> {
                             itemBuilder: (context, i) => _buildRow(
                               chats[i],
                               AppSlicePosition.of(i, chats.length),
+                              period,
                             ),
                           ),
                         ],
                       ),
                     ),
-                if (groups.every((group) => group.isEmpty))
+                if (widget.status == AssistantHistoryStatus.ready &&
+                    groups.values.every((group) => group.isEmpty))
                   SliverToBoxAdapter(
                     child: AppStateMessage.inline(
                       icon: _query.isEmpty
@@ -194,7 +205,9 @@ class _AssistantConversationsState extends State<AssistantConversations> {
               icon: LucideIcons.messageSquarePlus,
               tooltip: l10n.assistantNewConversation,
               filled: true,
-              onPressed: _newConversation,
+              onPressed: widget.status == AssistantHistoryStatus.loading
+                  ? null
+                  : _newConversation,
             ),
           ],
         ),
@@ -202,19 +215,51 @@ class _AssistantConversationsState extends State<AssistantConversations> {
     );
   }
 
+  Widget _historyStatus() {
+    final l10n = context.l10n;
+    return switch (widget.status) {
+      AssistantHistoryStatus.ready => const SizedBox.shrink(),
+      AssistantHistoryStatus.loading when widget.history.isNotEmpty =>
+        const SizedBox.shrink(),
+      AssistantHistoryStatus.loading => Semantics(
+        label: l10n.commonLoading,
+        child: const AppSkeletonRows(count: 3),
+      ),
+      AssistantHistoryStatus.failed ||
+      AssistantHistoryStatus.offline => AppStateMessage.inline(
+        icon: widget.status == AssistantHistoryStatus.offline
+            ? LucideIcons.wifiOff
+            : LucideIcons.circleAlert,
+        title: widget.status == AssistantHistoryStatus.offline
+            ? l10n.assistantNotAvailableOffline
+            : l10n.assistantConversationsLoadFailed,
+        actionLabel: l10n.commonRetry,
+        onAction: widget.onRefresh,
+      ),
+    };
+  }
+
   bool _matches(AssistantChatRecord chat) =>
       _query.isEmpty ||
       (chat.title ?? '').toLowerCase().contains(_query) ||
       (chat.preview ?? '').toLowerCase().contains(_query);
 
-  Widget _buildRow(AssistantChatRecord chat, AppSlicePosition position) {
+  Widget _buildRow(
+    AssistantChatRecord chat,
+    AppSlicePosition position,
+    AssistantConversationPeriod period,
+  ) {
     final selected = chat.id == widget.activeChatId;
-    final canArchive = !selected && widget.canArchive(chat);
+    final canArchive =
+        widget.status != AssistantHistoryStatus.offline &&
+        !selected &&
+        widget.canArchive(chat);
     final label = context.l10n.assistantArchiveConversation;
     final colors = AppTokens.of(context).colorScheme;
     final row = AssistantConversationRow(
       chat: chat,
       selected: selected,
+      period: period,
       onTap: () => widget.onSelect(chat),
     );
     return AppGroupedSlice(

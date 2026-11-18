@@ -119,7 +119,7 @@ extension _ShellPageRootTabs on _ShellPageState {
   /// The root destination [location] shows, if it is one.
   ShellRootTab? _rootTabForLocation(String location) => switch (location) {
     Routes.home => ShellRootTab.home,
-    Routes.assistant || Routes.assistantConversations => ShellRootTab.assistant,
+    Routes.assistant => ShellRootTab.assistant,
     Routes.apps => ShellRootTab.apps,
     Routes.notifications ||
     Routes.notificationsArchive => ShellRootTab.notifications,

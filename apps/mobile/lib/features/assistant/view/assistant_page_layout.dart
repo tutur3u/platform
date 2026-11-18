@@ -10,6 +10,7 @@ extension _AssistantPageLayout on _AssistantPageState {
         BlocProvider.value(value: _liveCubit),
       ],
       child: BlocBuilder<WorkspaceCubit, WorkspaceState>(
+        key: const ValueKey('assistant-workspace-content'),
         builder: (context, workspaceState) {
           final currentWorkspace =
               workspaceState.currentWorkspace ??
@@ -60,11 +61,6 @@ extension _AssistantPageLayout on _AssistantPageState {
                   if (state.isLiveMode) unawaited(_voiceCapture.cancel());
                 },
               ),
-              BlocListener<AssistantChromeCubit, AssistantChromeState>(
-                listenWhen: (previous, current) =>
-                    previous.composerVisible && !current.composerVisible,
-                listener: (_, _) => _collapseComposerToFab(),
-              ),
               BlocListener<AssistantLocalChatCubit, AssistantLocalChatState>(
                 listenWhen: (previous, current) =>
                     previous.chat.messages != current.chat.messages,
@@ -88,7 +84,7 @@ extension _AssistantPageLayout on _AssistantPageState {
                     _activeConversationKey(current),
                 listener: (context, state) {
                   _transcriptFollower.resume();
-                  _collapseComposerToFab();
+                  _dismissComposerInput();
                 },
               ),
               BlocListener<AssistantLiveCubit, AssistantLiveState>(
@@ -189,12 +185,6 @@ extension _AssistantPageLayout on _AssistantPageState {
                             hasTranscript ||
                             chatState.isBusy ||
                             chatState.status == AssistantChatStatus.error;
-                        final starterPrompts = _usesPageComposer
-                            ? const SizedBox.shrink()
-                            : AssistantStarterPrompts(
-                                onPromptSelected: _applyStarterPrompt,
-                                replayToken: widget.replayToken,
-                              );
                         bool onTranscriptNotification(
                           Notification notification,
                         ) {
@@ -265,12 +255,6 @@ extension _AssistantPageLayout on _AssistantPageState {
                           hasTranscript: hasTranscript,
                           showLiveStrip: showLiveStrip || isLiveMode,
                         );
-                        if (!isLiveMode) {
-                          _syncComposerVisibilityForBuild(
-                            keyboardVisible: keyboardVisible,
-                          );
-                        }
-
                         return AppScaffold(
                           child: SafeArea(
                             top: false,
@@ -333,9 +317,7 @@ extension _AssistantPageLayout on _AssistantPageState {
                                                           chatState,
                                                           liveState,
                                                           shellState,
-                                                        )
-                                                      else
-                                                        starterPrompts,
+                                                        ),
                                                     ],
                                                   ),
                                                 ),
@@ -360,7 +342,7 @@ extension _AssistantPageLayout on _AssistantPageState {
                                             right: 16,
                                             child: AssistantCreationHoldBanner(
                                               onCheckHistory: () => unawaited(
-                                                _showHistorySheet(
+                                                _openConversations(
                                                   context,
                                                   currentWorkspace.id,
                                                 ),
@@ -396,13 +378,10 @@ extension _AssistantPageLayout on _AssistantPageState {
                                     ),
                                     if (hasTranscript)
                                       AssistantScrollToBottomOverlay(
-                                        bottomClearance: _usesPageComposer
-                                            ? _composerReservedSpace(
-                                                context,
-                                                isComposerVisible: true,
-                                              )
-                                            : null,
-                                        composerVisible: _isComposerVisible,
+                                        bottomClearance: _composerReservedSpace(
+                                          context,
+                                        ),
+                                        composerVisible: true,
                                         composerHeight: _composerHeight,
                                         isFullscreen: isFullscreen,
                                         navigationExpanded:
@@ -436,7 +415,8 @@ extension _AssistantPageLayout on _AssistantPageState {
                                           removeComposerAttachment,
                                       retryComposerAttachment:
                                           retryComposerAttachment,
-                                      showSuggestions: !keyboardVisible,
+                                      showSuggestions:
+                                          !keyboardVisible && !showTranscript,
                                     ),
                                   _localHeader(shellState, local),
                                   ShellChromeActions(
@@ -475,24 +455,18 @@ extension _AssistantPageLayout on _AssistantPageState {
     required Widget sliver,
   }) => SliverLayoutBuilder(
     builder: (context, constraints) => SliverPadding(
-      padding:
-          AppPageInsets.of(
-            context,
-            width: constraints.crossAxisExtent,
-            kind: AppPageKind.root,
-            topInset:
-                floatingShellHeaderInset(
-                  context,
-                  minimumContentHeight: headerHeight,
-                ) +
-                AppSpacing.xs,
-            consumeBottomClearance: false,
-          ).copyWith(
-            bottom: _composerReservedSpace(
+      padding: AppPageInsets.of(
+        context,
+        width: constraints.crossAxisExtent,
+        kind: AppPageKind.root,
+        topInset:
+            floatingShellHeaderInset(
               context,
-              isComposerVisible: _isComposerVisible,
-            ),
-          ),
+              minimumContentHeight: headerHeight,
+            ) +
+            AppSpacing.xs,
+        consumeBottomClearance: false,
+      ).copyWith(bottom: _composerReservedSpace(context)),
       sliver: sliver,
     ),
   );
@@ -508,7 +482,7 @@ extension _AssistantPageLayout on _AssistantPageState {
       chatState: chatState,
       liveState: liveState,
       assistantName: shellState.soul.name,
-      documentLayout: _usesPageComposer,
+      documentLayout: true,
       actorId: _currentActor(),
       canPersistMessage: remote ? _chatCubit.canPersistMessage : null,
       needsReactionRefresh: remote ? _chatCubit.needsReactionRefresh : null,

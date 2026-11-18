@@ -102,6 +102,7 @@ class AssistantComposerPrimaryAction extends StatelessWidget
 
           if (inPage) {
             return AppIconButton(
+              key: const ValueKey('assistant-send'),
               tooltip: label,
               onPressed: enabled ? invoke : null,
               icon: Icon(icon),

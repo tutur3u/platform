@@ -255,19 +255,63 @@ extension _AssistantChatRestore on AssistantChatCubit {
     }
   }
 
-  Future<void> _refreshHistory() =>
-      _refreshHistoryFor(state.workspaceId, _workspaceVersion);
-
-  Future<void> _refreshHistoryFor(String? wsId, int version) async {
+  Future<void> _refreshHistoryFor(
+    String? wsId,
+    int version, {
+    bool forceRefresh = false,
+  }) async {
+    if (wsId == null || isClosed || version != _workspaceVersion) return;
+    final actor = _repository.currentActorId;
     final historyVersion = ++_historyVersion;
-    try {
-      final history = await _repository.fetchRecentChats(wsId: wsId);
-      if (isClosed || version != _workspaceVersion) return;
-      if (historyVersion != _historyVersion) return;
-      _emitIfOpen(state.copyWith(history: history));
-    } on Exception {
-      // History is secondary; preserve the conversation and retry on next open.
+    bool current() =>
+        !isClosed &&
+        version == _workspaceVersion &&
+        historyVersion == _historyVersion &&
+        actor == _repository.currentActorId;
+
+    if (state.history.isEmpty) {
+      _emitIfOpen(
+        state.copyWith(historyStatus: AssistantHistoryStatus.loading),
+      );
     }
+    try {
+      final history = await _repository.fetchRecentChats(
+        wsId: wsId,
+        forceRefresh: forceRefresh,
+      );
+      if (!current()) return;
+      _emitIfOpen(
+        state.copyWith(
+          history: history,
+          historyStatus: AssistantHistoryStatus.ready,
+        ),
+      );
+    } on Object catch (error) {
+      if (!current()) return;
+      final offline =
+          error is MiraLegacyOffline || isOfflineTransportFailure(error);
+      if (!current()) return;
+      final accessDenied =
+          error is ApiException &&
+          (error.statusCode == 401 || error.statusCode == 403);
+      _emitIfOpen(
+        state.copyWith(
+          history: accessDenied ? const [] : null,
+          historyStatus: offline
+              ? AssistantHistoryStatus.offline
+              : AssistantHistoryStatus.failed,
+        ),
+      );
+    }
+  }
+
+  void _removeArchivedChat(AssistantChatRecord chat) {
+    ++_historyVersion;
+    _emitIfOpen(
+      state.copyWith(
+        history: state.history.where((item) => item.id != chat.id).toList(),
+      ),
+    );
   }
 
   AssistantChatCacheOrigin? _captureChatCacheOrigin(

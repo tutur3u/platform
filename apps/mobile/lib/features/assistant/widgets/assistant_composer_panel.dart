@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:mobile/core/layout/layout.dart';
-import 'package:mobile/core/theme/sorbet/sorbet_tokens.dart';
 import 'package:mobile/core/ui/ui.dart';
 import 'package:mobile/features/assistant/widgets/assistant_composer_size_reporter.dart';
 import 'package:mobile/l10n/l10n.dart';
@@ -28,7 +27,6 @@ class AssistantComposerPanel extends StatelessWidget {
   Widget build(BuildContext context) {
     final tokens = AppTokens.of(context);
     final colors = tokens.colorScheme;
-    final sorbet = SorbetTokens.maybeOf(context);
     final l10n = context.l10n;
     return Positioned(
       left: 0,
@@ -75,45 +73,14 @@ class AssistantComposerPanel extends StatelessWidget {
                   ],
                   DecoratedBox(
                     decoration: BoxDecoration(
-                      color: sorbet?.surface ?? colors.card,
+                      color: colors.card,
                       border: Border.all(color: colors.input),
                       borderRadius: BorderRadius.circular(tokens.shapes.panel),
                       boxShadow: tokens.depth.card,
                     ),
                     child: Padding(
                       padding: const EdgeInsets.fromLTRB(4, 8, 4, 2),
-                      child: Column(
-                        mainAxisSize: MainAxisSize.min,
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Padding(
-                            padding: const EdgeInsetsDirectional.only(start: 8),
-                            child: DecoratedBox(
-                              decoration: BoxDecoration(
-                                color:
-                                    sorbet?.hues.blue.fill ??
-                                    AppTone.info.fill(colors),
-                                borderRadius: BorderRadius.circular(
-                                  tokens.shapes.chip,
-                                ),
-                              ),
-                              child: Padding(
-                                padding: const EdgeInsets.symmetric(
-                                  horizontal: 10,
-                                  vertical: 3,
-                                ),
-                                child: Text(
-                                  l10n.calendarToday,
-                                  style: tokens.typography.uiCompact.copyWith(
-                                    color: sorbet?.hues.blue.ink ?? colors.info,
-                                  ),
-                                ),
-                              ),
-                            ),
-                          ),
-                          child,
-                        ],
-                      ),
+                      child: child,
                     ),
                   ),
                 ],

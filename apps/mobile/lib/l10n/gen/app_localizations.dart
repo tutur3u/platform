@@ -799,11 +799,23 @@ abstract class AppLocalizations {
   /// **'No message preview'**
   String get assistantConversationNoPreview;
 
-  /// No description provided for @assistantAskMira.
+  /// No description provided for @assistantAskName.
   ///
   /// In en, this message translates to:
-  /// **'Ask Mira'**
-  String get assistantAskMira;
+  /// **'Ask {name}'**
+  String assistantAskName(String name);
+
+  /// No description provided for @assistantConversationsLoadFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Could not load conversations'**
+  String get assistantConversationsLoadFailed;
+
+  /// No description provided for @assistantReplying.
+  ///
+  /// In en, this message translates to:
+  /// **'{name} is replying'**
+  String assistantReplying(String name);
 
   /// No description provided for @assistantArchiveConversationTitle.
   ///

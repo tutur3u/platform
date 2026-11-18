@@ -373,7 +373,17 @@ class AppLocalizationsVi extends AppLocalizations {
   String get assistantConversationNoPreview => 'Không có nội dung xem trước';
 
   @override
-  String get assistantAskMira => 'Hỏi Mira';
+  String assistantAskName(String name) {
+    return 'Hỏi $name';
+  }
+
+  @override
+  String get assistantConversationsLoadFailed => 'Không thể tải cuộc trò chuyện';
+
+  @override
+  String assistantReplying(String name) {
+    return '$name đang trả lời';
+  }
 
   @override
   String get assistantArchiveConversationTitle => 'Lưu trữ cuộc trò chuyện?';

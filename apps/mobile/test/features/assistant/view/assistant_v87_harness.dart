@@ -13,7 +13,6 @@ import 'package:mobile/features/assistant/data/assistant_repository.dart';
 import 'package:mobile/features/assistant/data/assistant_stream_parser.dart';
 import 'package:mobile/features/assistant/models/assistant_models.dart';
 import 'package:mobile/features/assistant/widgets/assistant_composer_dock.dart';
-import 'package:mobile/features/assistant/widgets/assistant_composer_launcher.dart';
 import 'package:mobile/features/chat/models/chat_models.dart';
 
 import 'assistant_settings_repair_harness.dart';
@@ -273,13 +272,9 @@ class V87Harness extends BackgroundReplyHarness {
   );
   Future<void> pageSend(WidgetTester tester, String text) async {
     await tester.pumpAndSettle();
-    if (find.byType(AssistantComposerFab).evaluate().isNotEmpty) {
-      await tester.tap(find.byType(AssistantComposerFab));
-      await tester.pumpAndSettle();
-    }
     draft(tester).text = text;
     await tester.pumpAndSettle();
-    await tester.tap(find.byKey(const ValueKey('assistant-navigation-toggle')));
+    await tester.tap(find.byKey(const ValueKey('assistant-send')));
     for (var i = 0; i < 12; i++) {
       await tester.pump(const Duration(milliseconds: 100));
       await tester.runAsync(

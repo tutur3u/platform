@@ -20,15 +20,9 @@ extension _AssistantPageWorkspace on _AssistantPageState {
     _liveBrowsingPreferenceLoad = _loadLiveBrowsingPreference(workspace.id);
     _lastEmptyStateResetKey = null;
     _wasAssistantEmptyLayout = false;
-    _isComposerVisible = false;
     _showScrollToBottomFab = false;
-    _composerVisibilityAnchorOffset = null;
     if (mounted) {
-      context.read<AssistantChromeCubit>()
-        ..setComposerVisible(visible: false)
-        ..exitLiveMode();
-      // The composer is a shell sibling, so changing its controller during
-      // this page's build would dirty an unrelated branch mid-layout.
+      context.read<AssistantChromeCubit>().exitLiveMode();
       WidgetsBinding.instance.addPostFrameCallback((_) {
         if (!mounted || _loadedWorkspaceId != workspace.id) return;
         _inputController.clear();

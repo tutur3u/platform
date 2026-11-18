@@ -8,7 +8,7 @@ extension _ShellPageNavigation on _ShellPageState {
     AppTabState state,
     AppLocalizations l10n,
   ) => [
-    if (_showsGlobalBack(widget.matchedLocation))
+    if (_showsGlobalBack(context, widget.matchedLocation))
       shad.NavigationItem(
         key: _ShellPageState._backToRootKey,
         child: _buildCompactNavIcon(
@@ -42,9 +42,17 @@ extension _ShellPageNavigation on _ShellPageState {
     );
   }
 
-  bool _showsGlobalBack(String location) =>
+  bool _showsGlobalBack(BuildContext context, String location) =>
       location == Routes.notificationsArchive ||
-      location == Routes.assistantConversations;
+      context.select<ShellChromeActionsCubit?, bool>(
+        (cubit) =>
+            cubit?.state.registrations.values.any(
+              (registration) =>
+                  registration.locations.contains(location) &&
+                  registration.onBack != null,
+            ) ??
+            false,
+      );
 
   Widget _buildCompactNavIcon({
     required IconData icon,

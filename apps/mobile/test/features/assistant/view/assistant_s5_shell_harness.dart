@@ -1,3 +1,6 @@
+import 'dart:async';
+import 'dart:io';
+
 import 'package:bloc_test/bloc_test.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -56,6 +59,19 @@ class _Profile extends MockCubit<ShellProfileState>
 
 class AssistantShellFixtureRepository extends ReplyRepository {
   final archived = <String>[];
+  final historyRequests = <bool>[];
+  Completer<void>? historyGate;
+  bool historyOffline = false;
+  bool historyFails = false;
+  bool archiveFails = false;
+  bool longTranscript = false;
+  bool showWeekBoundary = false;
+  String assistantName = 'Mira';
+
+  @override
+  Future<AssistantSoul> fetchSoul({bool forceRefresh = false}) async =>
+      AssistantSoul(name: assistantName);
+
   static DateTime now() => DateTime(2030, 4, 3, 14, 30);
 
   @override
@@ -63,27 +79,39 @@ class AssistantShellFixtureRepository extends ReplyRepository {
     String? wsId,
     int? limit,
     bool forceRefresh = false,
-  }) async => [
-    AssistantChatRecord(
-      id: _activeId,
-      title: 'Launch follow-up',
-      preview: 'I drafted the next steps for the launch.',
-      updatedAt: now(),
-    ),
-    if (!archived.contains(archiveId))
+  }) async {
+    historyRequests.add(forceRefresh);
+    await historyGate?.future;
+    if (historyOffline) throw const SocketException('Fixture offline');
+    if (historyFails) throw StateError('Fixture history load failed');
+    return [
       AssistantChatRecord(
-        id: archiveId,
-        title: 'Team check-in notes',
-        preview: 'Review the interview feedback with Lan.',
-        updatedAt: DateTime(2030, 4, 3, 9, 5),
+        id: _activeId,
+        title: 'Launch follow-up',
+        preview: 'I drafted the next steps for the launch.',
+        updatedAt: now(),
       ),
-    AssistantChatRecord(
-      id: 'bbbbbbbb-bbbb-4bbb-8bbb-000000000003',
-      title: 'Sprint planning for the April release',
-      preview: 'A summary of this week’s priorities.',
-      updatedAt: DateTime(2030, 4, 2, 11, 25),
-    ),
-  ];
+      if (!archived.contains(archiveId))
+        AssistantChatRecord(
+          id: archiveId,
+          title: 'Team check-in notes',
+          preview: 'Review the interview feedback with Lan.',
+          updatedAt: DateTime(2030, 4, 3, 9, 5),
+        ),
+      AssistantChatRecord(
+        id: 'bbbbbbbb-bbbb-4bbb-8bbb-000000000003',
+        title: 'Sprint planning for the April release',
+        preview: 'A summary of this week’s priorities.',
+        updatedAt: DateTime(2030, 4, 2, 11, 25),
+      ),
+      if (showWeekBoundary)
+        AssistantChatRecord(
+          id: 'sunday-fixture',
+          title: 'Sunday check-in',
+          updatedAt: DateTime(2030, 3, 31, 10),
+        ),
+    ];
+  }
 
   @override
   Future<AssistantRestoredChat?> restoreChat({
@@ -94,6 +122,15 @@ class AssistantShellFixtureRepository extends ReplyRepository {
   }) async => AssistantRestoredChat(
     chat: AssistantChatRecord(id: chatId, title: 'Launch follow-up'),
     messages: [
+      if (longTranscript)
+        for (var i = 0; i < 28; i++)
+          AssistantMessage(
+            id: 'scroll-fixture-$i',
+            role: 'user',
+            parts: [
+              AssistantMessagePart(type: 'text', text: 'Synthetic item $i'),
+            ],
+          ),
       AssistantMessage(
         id: 'user-fixture',
         role: 'user',
@@ -133,6 +170,7 @@ class AssistantShellFixtureRepository extends ReplyRepository {
   @override
   Future<void> archiveHistoryChat(String wsId, AssistantChatRecord chat) async {
     expect(wsId, _workspaceId);
+    if (archiveFails) throw Exception('Fixture archive rejected');
     archived.add(chat.id);
   }
 }
@@ -142,12 +180,14 @@ Future<GoRouter> pumpAssistantShell(
   required AssistantShellFixtureRepository repository,
   String initialLocation = Routes.assistant,
   Brightness brightness = Brightness.light,
+  Locale locale = const Locale('en'),
+  bool? alwaysUse24HourFormat,
   SorbetTheme? sorbet,
   String? storedId = _activeId,
 }) async {
   SharedPreferences.setMockInitialValues({});
   final auth = ReplyAuth();
-  final workspace = ReplyWorkspace();
+  final workspace = ReplyWorkspace(tier: 'PLUS');
   final profile = _Profile();
   final tabs = AppTabCubit(settingsRepository: SettingsRepository());
   whenListen(
@@ -162,25 +202,34 @@ Future<GoRouter> pumpAssistantShell(
   final messenger = tester.binding.defaultBinaryMessenger;
   const record = MethodChannel('com.llfbandit.record/messages');
   const shellBack = MethodChannel('mobile/shell_back');
-  messenger.setMockMethodCallHandler(record, (_) async => null);
-  messenger.setMockMethodCallHandler(shellBack, (_) async => null);
+  messenger
+    ..setMockMethodCallHandler(record, (_) async => null)
+    ..setMockMethodCallHandler(shellBack, (_) async => null);
   final router = GoRouter(
     initialLocation: initialLocation,
     routes: [
       ShellRoute(
-        builder: (context, state, child) => ShellPage(
-          matchedLocation: state.uri.path,
-          assistantConversationsEnabled: true,
-          enableDebugLogs: false,
-          assistantPageBuilder: (token) => AssistantPage(
-            replayToken: token,
-            shellLocation: state.uri.path,
-            conversationsClock: AssistantShellFixtureRepository.now,
-            repository: repository,
-            preferences: preferences,
-            currentActor: () => auth.state.user?.id,
+        builder: (context, state, child) => MediaQuery(
+          data: MediaQuery.of(
+            context,
+          ).copyWith(alwaysUse24HourFormat: alwaysUse24HourFormat),
+          child: ShellPage(
+            matchedLocation: state.uri.path,
+            retainedRootLocation:
+                state.uri.path == Routes.assistantConversations
+                ? Routes.assistant
+                : null,
+            enableDebugLogs: false,
+            assistantPageBuilder: (token) => AssistantPage(
+              replayToken: token,
+              shellLocation: state.uri.path,
+              conversationsClock: AssistantShellFixtureRepository.now,
+              repository: repository,
+              preferences: preferences,
+              currentActor: () => auth.state.user?.id,
+            ),
+            child: child,
           ),
-          child: child,
         ),
         routes: [
           for (final path in [Routes.assistant, Routes.assistantConversations])
@@ -195,8 +244,9 @@ Future<GoRouter> pumpAssistantShell(
   addTearDown(() async {
     await tester.pumpWidget(const SizedBox.shrink());
     router.dispose();
-    messenger.setMockMethodCallHandler(record, null);
-    messenger.setMockMethodCallHandler(shellBack, null);
+    messenger
+      ..setMockMethodCallHandler(record, null)
+      ..setMockMethodCallHandler(shellBack, null);
     await auth.close();
     await workspace.close();
     await profile.close();
@@ -216,7 +266,7 @@ Future<GoRouter> pumpAssistantShell(
       ],
       child: routedSorbetTestApp(
         router: router,
-        locale: const Locale('en'),
+        locale: locale,
         brightness: brightness,
         sorbet: sorbet,
         boundaryKey: assistantBoundary,

@@ -136,7 +136,7 @@ class _LiveDockProbe extends ShellDockSlotController {
 
 class _KeyboardHarness {
   final auth = ReplyAuth();
-  final workspace = ReplyWorkspace();
+  final workspace = ReplyWorkspace(tier: 'PLUS');
   final repository = _Repository();
   final tokens = _HeldTokens();
   final chrome = AssistantChromeCubit();
@@ -194,16 +194,20 @@ class _KeyboardHarness {
       ),
     );
     await tester.pumpAndSettle();
-    await tester.tap(find.byType(AssistantComposerFab));
-    await tester.pumpAndSettle();
     live = tester
-        .element(find.byType(ShellDockPublisher))
+        .element(find.byKey(const ValueKey('assistant-workspace-content')))
         .read<AssistantLiveCubit>();
     await reopen(tester);
   }
 
   Future<void> reopen(WidgetTester tester) async {
-    chrome.enterLiveMode();
+    actions.state
+        .resolveForLocation('/assistant')
+        .singleWhere((action) => action.id == 'assistant-more')
+        .onPressed!();
+    await tester.pumpAndSettle();
+    await tester.tap(find.byKey(const ValueKey('assistant-more-live')));
+    await tester.pumpAndSettle();
     await tester.pump();
     await tester.pump();
     await tester.pump(const Duration(milliseconds: 400));

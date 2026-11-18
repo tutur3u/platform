@@ -8,7 +8,6 @@ import 'package:mobile/features/assistant/local/assistant_local_chat_cubit.dart'
 import 'package:mobile/features/assistant/local/assistant_local_model.dart';
 import 'package:mobile/features/assistant/models/assistant_models.dart';
 import 'package:mobile/features/assistant/widgets/assistant_composer_dock.dart';
-import 'package:mobile/features/assistant/widgets/assistant_composer_launcher.dart';
 import 'package:mobile/features/auth/cubit/auth_state.dart';
 
 import 'background_reply_harness.dart';
@@ -103,26 +102,13 @@ Future<TextEditingController> _replace(WidgetTester tester) async {
   controller.text = 'Synthetic replacement';
   await tester.pump();
   await _readyComposer(tester);
-  await tester.tap(
-    find.byKey(const ValueKey('assistant-navigation-toggle')).hitTestable(),
-  );
+  await tester.tap(find.byKey(const ValueKey('assistant-send')).hitTestable());
   await tester.pump(const Duration(milliseconds: 100));
   return controller;
 }
 
 Future<TextEditingController> _readyComposer(WidgetTester tester) async {
-  // Slot publication and reversible action transitions need separate frames.
-  for (var i = 0; i < 20; i++) {
-    await tester.pump(const Duration(milliseconds: 100));
-    final primary = find
-        .byKey(const ValueKey('assistant-navigation-toggle'))
-        .hitTestable();
-    final composer = find.byType(AssistantComposerDock);
-    if (primary.evaluate().isNotEmpty && composer.evaluate().isNotEmpty) {
-      return tester.widget<AssistantComposerDock>(composer).controller;
-    }
-    final launcher = find.byType(AssistantComposerFab).hitTestable();
-    if (launcher.evaluate().isNotEmpty) await tester.tap(launcher);
-  }
-  fail('The actual composer primary action did not become interactive');
+  final composer = find.byType(AssistantComposerDock);
+  expect(composer.hitTestable(), findsOneWidget);
+  return tester.widget<AssistantComposerDock>(composer).controller;
 }

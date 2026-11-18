@@ -17,6 +17,7 @@ extension _ShellPageRouteHistory on _ShellPageState {
     bool fixedZones = false,
     Widget? dockLeading,
   }) {
+    final keyboardVisible = MediaQuery.viewInsetsOf(context).bottom > 0;
     return ShellDockScope(
       controller: _dockSlotController,
       child: _withRouteTransitions(
@@ -27,17 +28,16 @@ extension _ShellPageRouteHistory on _ShellPageState {
           hideIdleNavigation: hideIdleNavigation,
           fixedZones: fixedZones,
           leading: dockLeading,
-          keyboardVisible: MediaQuery.viewInsetsOf(context).bottom > 0,
+          keyboardVisible: keyboardVisible,
           bottomInset: bodyBottomInset,
           navigationBottomOffset: navigationBottomOffset,
-          reserveNavigationClearance: !composerVisible,
+          reserveNavigationClearance:
+              !composerVisible &&
+              !(keyboardVisible && widget.matchedLocation == Routes.assistant),
           reclaimNavigationClearanceWhenHidden:
               widget.matchedLocation == Routes.profileRoot ||
               widget.matchedLocation == Routes.home ||
-              widget.matchedLocation == Routes.calendar ||
-              (widget.assistantConversationsEnabled &&
-                  widget.matchedLocation == Routes.assistant) ||
-              widget.matchedLocation == Routes.assistantConversations,
+              widget.matchedLocation == Routes.calendar,
           keepNavigationVisible: composerVisible,
           composerVisible: composerVisible,
           navigation: navigationBar,
@@ -120,8 +120,7 @@ extension _ShellPageRouteHistory on _ShellPageState {
   bool _routeInterceptsBack() {
     if (!mounted) return true;
     final location = _normalizeRouteLocation(widget.matchedLocation);
-    return location == Routes.assistantConversations ||
-        _hasOpenModal() ||
+    return _hasOpenModal() ||
         context.read<ShellChromeActionsCubit?>()?.state.backForLocation(
               location,
             ) !=

@@ -6,7 +6,6 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:mobile/core/ui/ui.dart';
 import 'package:mobile/features/assistant/cubit/assistant_shell_cubit.dart';
 import 'package:mobile/features/assistant/models/assistant_models.dart';
-import 'package:mobile/features/assistant/widgets/assistant_composer_launcher.dart';
 import 'package:mobile/features/auth/cubit/auth_state.dart';
 
 import '../../../helpers/helpers.dart';
@@ -63,13 +62,9 @@ Future<RepairHarness> fresh(WidgetTester tester, InitialApi api) async {
 
 Future<void> send(WidgetTester tester, RepairHarness h, String text) async {
   await tester.pumpAndSettle();
-  if (find.byType(AssistantComposerFab).evaluate().isNotEmpty) {
-    await tester.tap(find.byType(AssistantComposerFab));
-    await tester.pumpAndSettle();
-  }
   h.composer(tester).text = text;
   await tester.pumpAndSettle();
-  await tester.tap(find.byKey(const ValueKey('assistant-navigation-toggle')));
+  await tester.tap(find.byKey(const ValueKey('assistant-send')));
   for (var i = 0; i < 12; i++) {
     await tester.pump(const Duration(milliseconds: 100));
     await tester.runAsync(
@@ -114,9 +109,7 @@ void main() {
       });
       final draft = h.composer(tester)..text = 'Authorized first turn';
       await tester.pumpAndSettle();
-      await tester.tap(
-        find.byKey(const ValueKey('assistant-navigation-toggle')),
-      );
+      await tester.tap(find.byKey(const ValueKey('assistant-send')));
       for (var i = 0; i < 12; i++) {
         await tester.pump(const Duration(milliseconds: 100));
         await tester.runAsync(

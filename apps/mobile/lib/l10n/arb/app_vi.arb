@@ -1362,7 +1362,19 @@
   "assistantConversationsThisWeek": "Tuần này",
   "assistantConversationsEarlier": "Trước đó",
   "assistantConversationNoPreview": "Không có nội dung xem trước",
-  "assistantAskMira": "Hỏi Mira",
+  "assistantAskName": "Hỏi {name}",
+  "@assistantAskName": {
+    "placeholders": {
+      "name": { "type": "String" }
+    }
+  },
+  "assistantConversationsLoadFailed": "Không thể tải cuộc trò chuyện",
+  "assistantReplying": "{name} đang trả lời",
+  "@assistantReplying": {
+    "placeholders": {
+      "name": { "type": "String" }
+    }
+  },
   "assistantArchiveConversationTitle": "Lưu trữ cuộc trò chuyện?",
   "assistantArchiveConversationFailed": "Không thể lưu trữ cuộc trò chuyện này.",
   "assistantArchiveConversationDescription": "Cuộc trò chuyện này sẽ được chuyển khỏi danh sách đang hoạt động.",

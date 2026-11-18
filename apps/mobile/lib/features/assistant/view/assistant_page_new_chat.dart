@@ -24,7 +24,7 @@ extension _AssistantPageNewChat on _AssistantPageState {
       if (historyContext?.mounted ?? false) {
         await _chatCubit.refreshHistory();
       } else {
-        await _showHistorySheet(context, wsId);
+        await _openConversations(context, wsId);
       }
     }
   }
@@ -119,7 +119,7 @@ extension _AssistantPageNewChat on _AssistantPageState {
           if (historyContext?.mounted ?? false) {
             await _chatCubit.refreshHistory();
           } else {
-            await _showHistorySheet(context, wsId);
+            await _openConversations(context, wsId);
           }
           return _AssistantNewChatResult.retained;
         }

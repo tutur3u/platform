@@ -41,7 +41,7 @@ void main() {
     expect(h.chat.state.creationOutcomeUnknown, isTrue);
     final draft = h.composer(tester)..text = "Today's focus";
     await tester.pump();
-    await tester.tap(find.byKey(const ValueKey('assistant-navigation-toggle')));
+    await tester.tap(find.byKey(const ValueKey('assistant-send')));
     await tester.pumpAndSettle();
     expect(find.widgetWithText(AppButton, 'Start a new chat'), findsOneWidget);
     expect(h.repository.api.creates, 0);
@@ -74,9 +74,7 @@ void main() {
       await h.mount(tester, initialPreferences: legacy);
       final draft = h.composer(tester)..text = "Today's focus";
       await tester.pump();
-      await tester.tap(
-        find.byKey(const ValueKey('assistant-navigation-toggle')),
-      );
+      await tester.tap(find.byKey(const ValueKey('assistant-send')));
       await tester.pumpAndSettle();
       expect(
         find.widgetWithText(AppButton, 'Start a new chat'),
@@ -113,7 +111,7 @@ void main() {
       expect(h.chat.state.creationOutcomeUnknown, isFalse);
       final draft = h.composer(tester)..text = "Today's focus";
       await tester.pump();
-      final send = find.byKey(const ValueKey('assistant-navigation-toggle'));
+      final send = find.byKey(const ValueKey('assistant-send'));
       await tester.tap(send);
       if (rapid) await tester.tap(send);
       for (var i = 0; i < 12; i++) {
@@ -164,7 +162,7 @@ void main() {
     expect(h.chat.state.creationOutcomeUnknown, isTrue);
     final draft = h.composer(tester)..text = 'Keep pending creation safe';
     await tester.pump();
-    await tester.tap(find.byKey(const ValueKey('assistant-navigation-toggle')));
+    await tester.tap(find.byKey(const ValueKey('assistant-send')));
     await tester.pumpAndSettle();
     expect(find.widgetWithText(AppButton, 'Start a new chat'), findsOneWidget);
     expect(h.repository.api.creates, 0);
@@ -251,9 +249,7 @@ void main() {
     addTearDown(() => h.dispose(tester));
     await h.mount(tester, initialPreferences: legacy);
     expect(h.chat.state.creationOutcomeUnknown, isTrue);
-    await tester.tap(find.byKey(const ValueKey('assistant-composer-options')));
-    await tester.pumpAndSettle();
-    await tester.tap(find.text('Add attachments'));
+    await tester.tap(find.byTooltip('Add attachments'));
     await tester.pumpAndSettle();
     await tester.tap(find.text('Files'));
     await tester.pumpAndSettle();

@@ -92,10 +92,6 @@ Future<_PreparationPage> _preparationPage(
   );
   await h.chat.openChatById(_workspace, selectedChat);
   await tester.pumpAndSettle();
-  if (find.byType(AssistantComposerFab).evaluate().isNotEmpty) {
-    await tester.tap(find.byType(AssistantComposerFab));
-    await tester.pumpAndSettle();
-  }
   _composer(tester).controller.value = const TextEditingValue(
     text: _draft,
     selection: TextSelection(baseOffset: 2, extentOffset: 9),

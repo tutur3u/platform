@@ -14,7 +14,6 @@ extension _AssistantPageTheme on _AssistantPageState {
     listenable: _chatTheme,
     builder: (context, _) {
       final customAppearance =
-          !_usesPageComposer ||
           _chatTheme.value != const AssistantThemePreferences();
       final chat = Builder(builder: _buildPage);
       return Stack(
@@ -42,7 +41,19 @@ extension _AssistantPageTheme on _AssistantPageState {
               ),
             ),
           ),
-          if (_showsConversations) _buildConversationsPage(),
+          if (_showsConversations) ...[
+            ShellTitleOverride(
+              ownerId: 'assistant-conversations',
+              locations: const {Routes.assistantConversations},
+              title: context.l10n.assistantConversationsTitle,
+            ),
+            ShellChromeActions(
+              ownerId: 'assistant-conversations-back',
+              locations: const {Routes.assistantConversations},
+              onBack: _conversationsBack,
+            ),
+            _buildConversationsPage(),
+          ],
         ],
       );
     },

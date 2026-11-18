@@ -11,7 +11,6 @@ import 'package:mobile/features/assistant/data/assistant_preferences.dart';
 import 'package:mobile/features/assistant/models/assistant_live_models.dart';
 import 'package:mobile/features/assistant/models/assistant_models.dart';
 import 'package:mobile/features/assistant/view/assistant_page.dart';
-import 'package:mobile/features/assistant/widgets/assistant_composer_launcher.dart';
 import 'package:mobile/features/assistant/widgets/assistant_live_call_controls.dart';
 import 'package:mobile/features/auth/cubit/auth_cubit.dart';
 import 'package:mobile/features/shell/cubit/shell_chrome_actions_cubit.dart';
@@ -162,7 +161,7 @@ class _CancelRetryHarness {
   _CancelRetryHarness({required bool holdFirstPermission})
     : recorder = _RecordingPlatform(holdFirstPermission: holdFirstPermission);
   final auth = ReplyAuth();
-  final workspace = ReplyWorkspace();
+  final workspace = ReplyWorkspace(tier: 'PLUS');
   final repository = _Repository();
   final tokens = _HeldTokens();
   final chrome = AssistantChromeCubit();
@@ -215,16 +214,20 @@ class _CancelRetryHarness {
       ),
     );
     await tester.pumpAndSettle();
-    await tester.tap(find.byType(AssistantComposerFab));
-    await tester.pumpAndSettle();
     live = tester
-        .element(find.byType(ShellDockPublisher))
+        .element(find.byKey(const ValueKey('assistant-workspace-content')))
         .read<AssistantLiveCubit>();
     await reopen(tester);
   }
 
   Future<void> reopen(WidgetTester tester) async {
-    chrome.enterLiveMode();
+    actions.state
+        .resolveForLocation('/assistant')
+        .singleWhere((action) => action.id == 'assistant-more')
+        .onPressed!();
+    await tester.pumpAndSettle();
+    await tester.tap(find.byKey(const ValueKey('assistant-more-live')));
+    await tester.pumpAndSettle();
     await tester.pump();
     await tester.pump();
     await tester.pump(const Duration(milliseconds: 400));

@@ -6,7 +6,6 @@ import 'package:mobile/features/assistant/data/assistant_chat_persistence_contra
 import 'package:mobile/features/assistant/data/assistant_stream_parser.dart';
 import 'package:mobile/features/assistant/models/assistant_models.dart';
 import 'package:mobile/features/assistant/widgets/assistant_composer_dock.dart';
-import 'package:mobile/features/assistant/widgets/assistant_composer_launcher.dart';
 
 import 'background_reply_harness.dart';
 
@@ -99,10 +98,6 @@ void main() {
       await h.mount(tester);
       await h.chat.openChatById(_workspace, _chat);
       await tester.pumpAndSettle();
-      if (find.byType(AssistantComposerFab).evaluate().isNotEmpty) {
-        await tester.tap(find.byType(AssistantComposerFab));
-        await tester.pumpAndSettle();
-      }
       expect(h.chat.setReplyTarget(_first), isTrue);
       final controller =
           tester
@@ -110,9 +105,7 @@ void main() {
               .controller
             ..text = 'Reply draft';
       await tester.pump();
-      await tester.tap(
-        find.byKey(const ValueKey('assistant-navigation-toggle')),
-      );
+      await tester.tap(find.byKey(const ValueKey('assistant-send')));
       for (var i = 0; i < 8 && repository.sent == null; i++) {
         await tester.pump(const Duration(milliseconds: 100));
       }

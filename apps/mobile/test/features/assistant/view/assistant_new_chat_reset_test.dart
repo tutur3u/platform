@@ -6,7 +6,9 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:go_router/go_router.dart';
 import 'package:image_picker/image_picker.dart' show XFile;
+import 'package:mobile/core/router/routes.dart';
 import 'package:mobile/core/ui/ui.dart';
 import 'package:mobile/core/utils/gallery_platform_file.dart';
 import 'package:mobile/data/sources/api_client.dart';
@@ -22,13 +24,13 @@ import 'package:mobile/features/assistant/models/assistant_live_models.dart';
 import 'package:mobile/features/assistant/models/assistant_models.dart';
 import 'package:mobile/features/assistant/view/assistant_page.dart';
 import 'package:mobile/features/assistant/widgets/assistant_composer_dock.dart';
-import 'package:mobile/features/assistant/widgets/assistant_composer_launcher.dart';
+import 'package:mobile/features/assistant/widgets/assistant_conversations.dart';
 import 'package:mobile/features/assistant/widgets/assistant_creation_hold_banner.dart';
-import 'package:mobile/features/assistant/widgets/assistant_history_sheet_body.dart';
 import 'package:mobile/features/auth/cubit/auth_cubit.dart';
 import 'package:mobile/features/auth/cubit/auth_state.dart';
 import 'package:mobile/features/shell/cubit/shell_chrome_actions_cubit.dart';
 import 'package:mobile/features/shell/view/floating_shell_dock.dart';
+import 'package:mobile/features/shell/view/shell_chrome_actions.dart';
 import 'package:mobile/features/shell/view/shell_dock_slot.dart';
 import 'package:mobile/features/workspace/cubit/workspace_cubit.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -100,7 +102,7 @@ void main() {
     final h = await _mount(tester);
     await tester.tap(find.byKey(_bannerHistory));
     await tester.pumpAndSettle();
-    expect(find.byType(AssistantHistorySheetBody), findsOneWidget);
+    expect(find.byType(AssistantConversations), findsOneWidget);
     expect(find.byType(AppDialog), findsNothing);
     expect(h.host.writes, 0);
     expect(h.chat.state.creationOutcomeUnknown, isTrue);
@@ -194,7 +196,7 @@ void main() {
       expect(h.chat.state.storedChatId, _saved);
       expect(await h.preferences.loadChatId(_workspace), _saved);
       expect(h.host.writes, 0);
-      expect(find.byType(AssistantHistorySheetBody), findsOneWidget);
+      expect(find.byType(AssistantConversations), findsOneWidget);
       expect(tester.takeException(), isNull);
     });
   }
@@ -211,7 +213,7 @@ void main() {
     expect(h.controller.value, draft);
     expect(h.chat.state.storedChatId, _saved);
     expect(h.host.writes, 0);
-    expect(find.byType(AssistantHistorySheetBody), findsOneWidget);
+    expect(find.byType(AssistantConversations), findsOneWidget);
   });
   testWidgets('Actor ABA refuses stale consent', (tester) async {
     final h = await _mount(tester);
@@ -233,9 +235,13 @@ void main() {
     final draft = h.controller.value;
     await h.openHistory(tester);
     final newConversation = tester
-        .widget<AppButton>(find.byKey(const ValueKey('assistant-history-new')))
+        .widget<AppButton>(
+          find.byKey(
+            const ValueKey('shell-action-button-assistant-history-new'),
+          ),
+        )
         .onPressed!;
-    // Invoke the actual drawer caller twice before presentation can mask it.
+    // Invoke the actual navbar caller twice before presentation can mask it.
     newConversation();
     newConversation();
     await tester.pumpAndSettle();
@@ -265,7 +271,7 @@ void main() {
       find.textContaining('reset was saved for the earlier context'),
       findsOneWidget,
     );
-    expect(find.byType(AssistantHistorySheetBody), findsOneWidget);
+    expect(find.byType(AssistantConversations), findsOneWidget);
   });
   testWidgets('Changed hold rejects prior consent', (tester) async {
     final h = await _mount(tester);
@@ -341,27 +347,30 @@ void main() {
     expect(h.chat.state.storedChatId, _saved);
     expect(find.textContaining('A new chat was not started'), findsOneWidget);
   });
-  testWidgets('Drawer cleanup failure is committed', (tester) async {
-    final h = await _mount(tester);
-    h.host.holdAt = 2;
-    await h.openHistory(tester);
-    await h.begin(tester);
-    await h.confirm(tester);
-    expect(h.host.entered.isCompleted, isTrue);
-    await tester.tap(find.byIcon(LucideIcons.x).hitTestable());
-    await tester.pumpAndSettle();
-    h.host.release.complete();
-    await tester.pumpAndSettle();
-    expect(h.chat.state.storedChatId, isNull);
-    expect(await h.preferences.loadChatId(_workspace), isNull);
-    expect(h.controller.text, isEmpty);
-    expect(h.host.writes, 2);
-    expect(
-      find.textContaining('reset was saved, but finishing this screen failed'),
-      findsOneWidget,
-    );
-    expect(tester.takeException(), isNull);
-  });
+  testWidgets(
+    'Leaving Conversations during reset preserves the committed receipt',
+    (tester) async {
+      final h = await _mount(tester);
+      h.host.holdAt = 2;
+      await h.openHistory(tester);
+      await h.begin(tester);
+      await h.confirm(tester);
+      expect(h.host.entered.isCompleted, isTrue);
+      h.router.go(Routes.assistant);
+      await tester.pumpAndSettle();
+      h.host.release.complete();
+      await tester.pumpAndSettle();
+      expect(h.chat.state.storedChatId, isNull);
+      expect(await h.preferences.loadChatId(_workspace), isNull);
+      expect(h.controller.text, isEmpty);
+      expect(h.host.writes, 2);
+      expect(
+        h.router.routeInformationProvider.value.uri.path,
+        Routes.assistant,
+      );
+      expect(tester.takeException(), isNull);
+    },
+  );
   for (final mode
       in 'failure| history| history ABA| context ABA| '
               'ACK committed| ACK false| ACK throw| '
@@ -390,7 +399,9 @@ void main() {
       addTearDown(() {
         if (!api.release.isCompleted) api.release.complete();
       });
-      final element = tester.element(find.byType(ShellDockPublisher));
+      final element = tester.element(
+        find.byKey(const ValueKey('assistant-workspace-content')),
+      );
       final live = element.read<AssistantLiveCubit>();
       final shell = element.read<AssistantShellCubit>();
       var networkAttempts = 0;
@@ -507,7 +518,7 @@ void main() {
         expect(h.chrome.state.isLiveMode, isTrue);
       }
       expect(
-        find.byType(AssistantHistorySheetBody),
+        find.byType(AssistantConversations),
         current || mode.startsWith('history') ? findsNothing : findsOneWidget,
       );
       if (!current) {

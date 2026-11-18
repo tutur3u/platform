@@ -19,7 +19,7 @@ extension _AssistantPageComposer on _AssistantPageState {
   }) {
     final primary = AssistantComposerPrimaryAction(
       key: const ValueKey('assistant-dock-primary'),
-      inPage: _usesPageComposer,
+      inPage: true,
       controller: _inputController,
       focusNode: _inputFocusNode,
       onToggleNavigation: _toggleComposerNavigation,
@@ -35,14 +35,13 @@ extension _AssistantPageComposer on _AssistantPageState {
     );
     final composer = AssistantComposerDock(
       embedded: true,
-      inPage: _usesPageComposer,
-      pagePrimaryAction: _usesPageComposer ? primary : null,
+      inPage: true,
+      pagePrimaryAction: primary,
       onCancelReply: () {
         if (messageActionsCurrent()) {
           _chatCubit.clearReplyTarget();
         }
       },
-      onHeightChanged: _usesPageComposer ? null : _setComposerHeight,
       localOnly: localLane,
       localBlocked:
           localLane && (!local.ready || local.phase != LocalChatPhase.idle),
@@ -72,34 +71,18 @@ extension _AssistantPageComposer on _AssistantPageState {
       controller: _inputController,
       focusNode: _inputFocusNode,
       onOpenAttachments: () => _showAttachmentSheet(context, wsId),
-      onCloseComposer: _collapseComposerToFab,
+      onCloseComposer: _dismissComposerInput,
       onToggleNavigation: _toggleComposerNavigation,
       onMicrophoneTap: () => _recordVoiceMessage(wsId),
       onSend: () => _handleSend(wsId),
       onRemoveAttachment: removeComposerAttachment,
       onRetryAttachment: retryComposerAttachment,
     );
-    if (_usesPageComposer) {
-      return AssistantComposerPanel(
-        showSuggestions: showSuggestions,
-        onPromptSelected: _applyStarterPrompt,
-        onHeightChanged: _setComposerHeight,
-        child: composer,
-      );
-    }
-    return ShellDockPublisher(
-      slot: ShellDockSlot(
-        location: Routes.assistant,
-        workspaceId: wsId,
-        composing: _isComposerVisible,
-        content: composer,
-        primary: _isComposerVisible
-            ? primary
-            : AssistantComposerFab(
-                label: context.l10n.assistantAskPlaceholder,
-                onPressed: _restoreComposerAndFocus,
-              ),
-      ),
+    return AssistantComposerPanel(
+      showSuggestions: showSuggestions,
+      onPromptSelected: _applyStarterPrompt,
+      onHeightChanged: _setComposerHeight,
+      child: composer,
     );
   }
 

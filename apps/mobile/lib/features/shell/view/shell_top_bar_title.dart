@@ -4,7 +4,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:mobile/core/responsive/adaptive_sheet.dart';
 import 'package:mobile/core/router/routes.dart';
-import 'package:mobile/core/ui/ui.dart';
 import 'package:mobile/features/apps/widgets/apps_dropdown_picker.dart';
 import 'package:mobile/features/assistant/widgets/assistant_mode_title.dart';
 import 'package:mobile/features/shell/cubit/shell_title_override_cubit.dart';
@@ -21,24 +20,16 @@ class ShellTopBarTitle extends StatelessWidget {
   const ShellTopBarTitle({
     required this.matchedLocation,
     this.fallbackTitle,
-    this.documentAssistant = false,
     super.key,
   });
 
   final String matchedLocation;
   final String? fallbackTitle;
-  final bool documentAssistant;
 
   @override
   Widget build(BuildContext context) {
-    if (matchedLocation == Routes.assistantConversations) {
-      return ReadableShellTitle(
-        context.l10n.assistantConversationsTitle,
-        style: AppTokens.of(context).typography.title,
-      );
-    }
     if (matchedLocation == Routes.assistant) {
-      return AssistantModeTitle(showAssistantLabel: documentAssistant);
+      return const AssistantModeTitle();
     }
     final config = ShellChromeConfig.forLocation(context, matchedLocation);
     final resolvedFallback = Routes.isSettingsHubLocation(matchedLocation)

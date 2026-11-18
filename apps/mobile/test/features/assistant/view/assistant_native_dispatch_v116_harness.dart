@@ -26,7 +26,6 @@ import 'package:mobile/features/assistant/data/assistant_stream_parser.dart';
 import 'package:mobile/features/assistant/models/assistant_models.dart';
 import 'package:mobile/features/assistant/widgets/assistant_chat_feedback.dart';
 import 'package:mobile/features/assistant/widgets/assistant_composer_dock.dart';
-import 'package:mobile/features/assistant/widgets/assistant_composer_launcher.dart';
 import 'package:mobile/features/chat/data/chat_repository.dart';
 import 'package:mobile/features/chat/models/chat_initial_ai_settings.dart';
 import 'package:mocktail/mocktail.dart';
@@ -470,15 +469,6 @@ class NativeDispatchHarness extends BackgroundReplyHarness {
   }
 
   Future<void> openComposer(WidgetTester tester) async {
-    final launcher = find.byType(AssistantComposerFab);
-    if (launcher.evaluate().isNotEmpty) {
-      expect(launcher.hitTestable(), findsOneWidget);
-      await tester.tap(launcher);
-      expect(chrome.state.composerVisible, isTrue);
-      await tester.pump();
-      expect(dock.slot?.composing, isTrue);
-      await tester.pump();
-    }
     expect(find.byType(AssistantComposerDock), findsOneWidget);
   }
 
@@ -515,12 +505,8 @@ class NativeDispatchHarness extends BackgroundReplyHarness {
     }
     actions.state
         .resolveForLocation('/assistant')
-        .singleWhere((action) => action.id == 'assistant-more')
+        .singleWhere((action) => action.id == 'assistant-new-conversation')
         .onPressed!();
-    await tester.pumpAndSettle();
-    await tester.tap(find.text('Recent chats'));
-    await tester.pumpAndSettle();
-    await tester.tap(find.byTooltip('New conversation'));
     await tester.pumpAndSettle();
     await tester.tap(find.widgetWithText(AppButton, 'Start a new chat'));
     await tester.pumpAndSettle();
@@ -530,13 +516,9 @@ class NativeDispatchHarness extends BackgroundReplyHarness {
   }
 
   Future<void> pageSend(WidgetTester tester, String text) async {
-    if (find.byType(AssistantComposerFab).evaluate().isNotEmpty) {
-      await tester.tap(find.byType(AssistantComposerFab));
-      await tester.pumpAndSettle();
-    }
     draft(tester).text = text;
     await tester.pump();
-    await tester.tap(find.byKey(const ValueKey('assistant-navigation-toggle')));
+    await tester.tap(find.byKey(const ValueKey('assistant-send')));
     await settle(tester);
   }
 

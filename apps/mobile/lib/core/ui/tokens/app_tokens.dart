@@ -60,6 +60,7 @@ class AppTokens {
     this.interface,
     this.shapes,
     this.depth,
+    this._sorbet,
   );
 
   factory AppTokens.of(BuildContext context) {
@@ -77,6 +78,7 @@ class AppTokens {
         interface,
         AppShapes.classic(interface, colors),
         AppDepth.classic(colors),
+        null,
       );
     }
     return AppTokens._(
@@ -85,6 +87,7 @@ class AppTokens {
       interface,
       AppShapes.sorbet(sorbet, colors),
       AppDepth.sorbet(sorbet),
+      sorbet,
     );
   }
 
@@ -98,6 +101,21 @@ class AppTokens {
 
   /// Shadows and outlines.
   final AppDepth depth;
+  final SorbetTokens? _sorbet;
+
+  ({Color fill, Color ink}) get infoTone {
+    final tone = _sorbet?.hues.blue;
+    return (
+      fill:
+          tone?.fill ?? colorScheme.info.withValues(alpha: isDark ? 0.2 : 0.12),
+      ink: tone?.ink ?? colorScheme.info,
+    );
+  }
+
+  ({Color fill, Color ink}) get selectionTone => (
+    fill: _sorbet?.navSelectedFill ?? colorScheme.accent,
+    ink: _sorbet?.navSelectedInk ?? colorScheme.accentForeground,
+  );
 
   /// Style, density and corner choices from Appearance.
   final AppInterfaceTokens interface;

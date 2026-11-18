@@ -154,9 +154,7 @@ void main() {
       api.rejection = failInitialization ? 403 : null;
       final controller = h.composer(tester)..text = 'First draft';
       await tester.pumpAndSettle();
-      await tester.tap(
-        find.byKey(const ValueKey('assistant-navigation-toggle')),
-      );
+      await tester.tap(find.byKey(const ValueKey('assistant-send')));
       for (var attempt = 0; attempt < 10; attempt++) {
         await tester.pump(const Duration(milliseconds: 100));
         await tester.runAsync(

@@ -6,6 +6,8 @@ part of 'assistant_chat_cubit.dart';
 
 const _assistantChatSentinel = Object();
 
+enum AssistantHistoryStatus { loading, ready, offline, failed }
+
 class AssistantChatState extends Equatable {
   const AssistantChatState({
     this.workspaceId,
@@ -19,6 +21,7 @@ class AssistantChatState extends Equatable {
     this.attachmentsByMessageId = const {},
     this.composerAttachments = const [],
     this.history = const [],
+    this.historyStatus = AssistantHistoryStatus.loading,
     this.queuedMessages = const [],
     this.isComposerCollapsed = false,
     this.error,
@@ -38,6 +41,7 @@ class AssistantChatState extends Equatable {
   final Map<String, List<AssistantAttachment>> attachmentsByMessageId;
   final List<AssistantAttachment> composerAttachments;
   final List<AssistantChatRecord> history;
+  final AssistantHistoryStatus historyStatus;
   final List<String> queuedMessages;
   final bool isComposerCollapsed;
   final String? error;
@@ -61,6 +65,7 @@ class AssistantChatState extends Equatable {
     Map<String, List<AssistantAttachment>>? attachmentsByMessageId,
     List<AssistantAttachment>? composerAttachments,
     List<AssistantChatRecord>? history,
+    AssistantHistoryStatus? historyStatus,
     List<String>? queuedMessages,
     bool? isComposerCollapsed,
     Object? error = _assistantChatSentinel,
@@ -89,6 +94,7 @@ class AssistantChatState extends Equatable {
           attachmentsByMessageId ?? this.attachmentsByMessageId,
       composerAttachments: composerAttachments ?? this.composerAttachments,
       history: history ?? this.history,
+      historyStatus: historyStatus ?? this.historyStatus,
       queuedMessages: queuedMessages ?? this.queuedMessages,
       isComposerCollapsed: isComposerCollapsed ?? this.isComposerCollapsed,
       replyTarget: replyTarget == _assistantChatSentinel
@@ -125,6 +131,7 @@ class AssistantChatState extends Equatable {
     attachmentsByMessageId,
     composerAttachments,
     history,
+    historyStatus,
     queuedMessages,
     isComposerCollapsed,
     error,

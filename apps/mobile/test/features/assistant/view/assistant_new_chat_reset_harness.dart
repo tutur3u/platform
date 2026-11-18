@@ -13,6 +13,15 @@ Future<_ResetHarness> _mount(
 
 class _ResetRepository extends ReplyRepository {
   _ResetRepository(this.preferences);
+  @override
+  Future<List<AssistantChatRecord>> fetchRecentChats({
+    String? wsId,
+    int? limit,
+    bool forceRefresh = false,
+  }) async => const [
+    AssistantChatRecord(id: _saved, title: 'Synthetic history'),
+    AssistantChatRecord(id: _other, title: 'Other fixture'),
+  ];
   final AssistantPreferences preferences;
   @override
   String? get currentActorId => _actor;
@@ -155,6 +164,7 @@ class _ResetHarness {
   late AssistantChatCubit chat;
   late TextEditingController controller;
   Completer<void>? lockRelease;
+  late GoRouter router;
   Future<void>? lockWork;
   bool lockCompleted = false;
   Future<void> mount(WidgetTester tester) async {
@@ -170,35 +180,52 @@ class _ResetHarness {
       const MethodChannel('com.llfbandit.record/messages'),
       (_) async => null,
     );
-    await tester.pumpApp(
-      MultiBlocProvider(
-        providers: [
-          BlocProvider<AuthCubit>.value(value: auth),
-          BlocProvider<WorkspaceCubit>.value(value: workspace),
-          BlocProvider.value(value: chrome),
-          BlocProvider.value(value: actions),
-        ],
-        child: ShellDockScope(
-          controller: dock,
-          child: FloatingShellDock(
-            location: '/assistant',
-            bottomInset: 68,
-            navigation: const SizedBox(height: 52),
-            child: AssistantPage(
-              repository: repository,
-              liveRepository: liveRepository,
-              preferences: preferences,
-              currentActor: () => auth.state.user?.id,
+    router = GoRouter(
+      initialLocation: Routes.assistant,
+      routes: [
+        ShellRoute(
+          builder: (context, state, _) => routedTestPage(
+            MultiBlocProvider(
+              providers: [
+                BlocProvider<AuthCubit>.value(value: auth),
+                BlocProvider<WorkspaceCubit>.value(value: workspace),
+                BlocProvider.value(value: chrome),
+                BlocProvider.value(value: actions),
+              ],
+              child: ShellDockScope(
+                controller: dock,
+                child: FloatingShellDock(
+                  location: state.uri.path,
+                  bottomInset: 68,
+                  header: ShellInjectedActionsHost(
+                    matchedLocation: state.uri.path,
+                  ),
+                  navigation: const SizedBox(height: 52),
+                  child: AssistantPage(
+                    shellLocation: state.uri.path,
+                    repository: repository,
+                    liveRepository: liveRepository,
+                    preferences: preferences,
+                    currentActor: () => auth.state.user?.id,
+                  ),
+                ),
+              ),
             ),
           ),
+          routes: [
+            for (final path in [
+              Routes.assistant,
+              Routes.assistantConversations,
+            ])
+              GoRoute(path: path, builder: (_, _) => const SizedBox.shrink()),
+          ],
         ),
-      ),
+      ],
     );
-    await tester.pumpAndSettle();
-    await tester.tap(find.byType(AssistantComposerFab));
+    await tester.pumpAppRouter(router);
     await tester.pumpAndSettle();
     chat = tester
-        .element(find.byType(ShellDockPublisher))
+        .element(find.byKey(const ValueKey('assistant-workspace-content')))
         .read<AssistantChatCubit>();
     controller = tester
         .widget<AssistantComposerDock>(find.byType(AssistantComposerDock))
@@ -227,16 +254,16 @@ class _ResetHarness {
   Future<void> openHistory(WidgetTester tester) async {
     actions.state
         .resolveForLocation('/assistant')
-        .singleWhere((a) => a.id == 'assistant-more')
+        .singleWhere((a) => a.id == 'assistant-conversations')
         .onPressed!();
     await tester.pumpAndSettle();
-    await tester.tap(find.text('Recent chats'));
-    await tester.pumpAndSettle();
-    expect(find.byType(AssistantHistorySheetBody), findsOneWidget);
+    expect(find.byType(AssistantConversations), findsOneWidget);
   }
 
   Future<void> begin(WidgetTester tester) async {
-    await tester.tap(find.byKey(const ValueKey('assistant-history-new')));
+    await tester.tap(
+      find.byKey(const ValueKey('shell-action-button-assistant-history-new')),
+    );
     await tester.pumpAndSettle();
   }
 
@@ -246,11 +273,10 @@ class _ResetHarness {
   }
 
   Future<void> selectHistory(WidgetTester tester, String id) async {
-    final finder = find.byType(AssistantHistorySheetBody);
-    final body = tester.widget<AssistantHistorySheetBody>(finder);
-    final selecting = body.onSelectChat(AssistantChatRecord(id: id));
+    final finder = find.byType(AssistantConversations);
+    final body = tester.widget<AssistantConversations>(finder);
+    body.onSelect(AssistantChatRecord(id: id));
     await tester.pumpAndSettle();
-    await selecting;
   }
 
   Future<void> dispose(WidgetTester tester) async {
@@ -265,6 +291,7 @@ class _ResetHarness {
       await tester.pumpAndSettle();
     }
     await tester.pumpWidget(const SizedBox.shrink());
+    router.dispose();
     await tester.pump();
     for (final channel in [
       'flutter_timezone',

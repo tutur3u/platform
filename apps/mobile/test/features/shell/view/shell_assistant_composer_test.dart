@@ -11,7 +11,7 @@ import 'package:mobile/data/models/workspace.dart';
 import 'package:mobile/data/repositories/settings_repository.dart';
 import 'package:mobile/features/apps/cubit/app_tab_cubit.dart';
 import 'package:mobile/features/assistant/cubit/assistant_chrome_cubit.dart';
-import 'package:mobile/features/assistant/widgets/assistant_composer_launcher.dart';
+import 'package:mobile/features/assistant/widgets/assistant_composer_size_reporter.dart';
 import 'package:mobile/features/auth/cubit/auth_cubit.dart';
 import 'package:mobile/features/auth/cubit/auth_state.dart';
 import 'package:mobile/features/shell/cubit/shell_chrome_actions_cubit.dart';
@@ -63,279 +63,225 @@ void main() {
   // desktop windows move destinations to the leading rail and keep the dock
   // only for the composer. Neither mode uses the disabled compact footer.
   for (final width in [320.0, 600.0, 1024.0]) {
-    testWidgets(
-      'Floating Assistant dock collapses and back closes it at width $width',
-      (tester) async {
-        final rail = width >= 840;
-        const railKey = ValueKey('shell-navigation-rail');
-        tester.view.physicalSize = Size(width, 900);
-        tester.view.devicePixelRatio = 1;
-        addTearDown(tester.view.resetPhysicalSize);
-        addTearDown(tester.view.resetDevicePixelRatio);
-        SharedPreferences.setMockInitialValues({});
-        final auth = _Auth();
-        final workspace = _Workspace();
-        final profile = _Profile();
-        whenListen(
-          auth,
-          const Stream<AuthState>.empty(),
-          initialState: const AuthState.unauthenticated(),
-        );
-        whenListen(
-          workspace,
-          const Stream<WorkspaceState>.empty(),
-          initialState: const WorkspaceState(
-            status: WorkspaceStatus.loaded,
-            currentWorkspace: Workspace(id: 'first', personal: true),
-          ),
-        );
-        whenListen(
-          profile,
-          const Stream<ShellProfileState>.empty(),
-          initialState: const ShellProfileState(),
-        );
-        final tabs = AppTabCubit(settingsRepository: SettingsRepository());
-        final chrome = AssistantChromeCubit();
-        final actions = ShellChromeActionsCubit();
-        addTearDown(auth.close);
-        addTearDown(workspace.close);
-        addTearDown(profile.close);
-        addTearDown(tabs.close);
-        addTearDown(chrome.close);
-        addTearDown(actions.close);
-        final router = GoRouter(
-          initialLocation: Routes.assistant,
-          routes: [
-            ShellRoute(
-              builder: (context, state, child) => ShellPage(
-                matchedLocation: state.uri.path,
-                enableDebugLogs: false,
-                child: child,
-              ),
-              routes: [
-                GoRoute(
-                  path: Routes.assistant,
-                  builder: (_, _) => const SizedBox(),
-                ),
-                GoRoute(path: Routes.apps, builder: (_, _) => const SizedBox()),
-                GoRoute(path: Routes.home, builder: (_, _) => const SizedBox()),
-                GoRoute(
-                  path: Routes.profileRoot,
-                  builder: (_, _) => const SizedBox(),
-                ),
-                GoRoute(
-                  path: Routes.notifications,
-                  builder: (_, _) => const SizedBox(),
-                ),
-              ],
+    testWidgets('Assistant composer follows the keyboard at width $width', (
+      tester,
+    ) async {
+      final rail = width >= 840;
+      const railKey = ValueKey('shell-navigation-rail');
+      tester.view.physicalSize = Size(width, 900);
+      tester.view.devicePixelRatio = 1;
+      addTearDown(tester.view.resetPhysicalSize);
+      addTearDown(tester.view.resetDevicePixelRatio);
+      SharedPreferences.setMockInitialValues({});
+      final auth = _Auth();
+      final workspace = _Workspace();
+      final profile = _Profile();
+      whenListen(
+        auth,
+        const Stream<AuthState>.empty(),
+        initialState: const AuthState.unauthenticated(),
+      );
+      whenListen(
+        workspace,
+        const Stream<WorkspaceState>.empty(),
+        initialState: const WorkspaceState(
+          status: WorkspaceStatus.loaded,
+          currentWorkspace: Workspace(id: 'first', personal: true),
+        ),
+      );
+      whenListen(
+        profile,
+        const Stream<ShellProfileState>.empty(),
+        initialState: const ShellProfileState(),
+      );
+      final tabs = AppTabCubit(settingsRepository: SettingsRepository());
+      final chrome = AssistantChromeCubit();
+      final actions = ShellChromeActionsCubit();
+      addTearDown(auth.close);
+      addTearDown(workspace.close);
+      addTearDown(profile.close);
+      addTearDown(tabs.close);
+      addTearDown(chrome.close);
+      addTearDown(actions.close);
+      final router = GoRouter(
+        initialLocation: Routes.assistant,
+        routes: [
+          ShellRoute(
+            builder: (context, state, child) => ShellPage(
+              matchedLocation: state.uri.path,
+              enableDebugLogs: false,
+              child: child,
             ),
-          ],
-        );
-        addTearDown(router.dispose);
-        await tester.pumpWidget(
-          MultiBlocProvider(
-            providers: [
-              BlocProvider<AuthCubit>.value(value: auth),
-              BlocProvider<WorkspaceCubit>.value(value: workspace),
-              BlocProvider<ShellProfileCubit>.value(value: profile),
-              BlocProvider.value(value: tabs),
-              BlocProvider.value(value: chrome),
-              BlocProvider.value(value: actions),
-              BlocProvider(create: (_) => ShellMiniNavCubit()),
-              BlocProvider(create: (_) => ShellTitleOverrideCubit()),
+            routes: [
+              GoRoute(
+                path: Routes.assistant,
+                builder: (_, _) => const SizedBox(),
+              ),
+              GoRoute(path: Routes.apps, builder: (_, _) => const SizedBox()),
+              GoRoute(path: Routes.home, builder: (_, _) => const SizedBox()),
+              GoRoute(
+                path: Routes.profileRoot,
+                builder: (_, _) => const SizedBox(),
+              ),
+              GoRoute(
+                path: Routes.notifications,
+                builder: (_, _) => const SizedBox(),
+              ),
             ],
-            child: shad.ShadcnApp.router(
-              theme: const shad.ThemeData(
-                colorScheme: shad.ColorSchemes.lightZinc,
-              ),
-              localizationsDelegates: const [
-                ...AppLocalizations.localizationsDelegates,
-                shad.ShadcnLocalizations.delegate,
-              ],
-              supportedLocales: AppLocalizations.supportedLocales,
-              builder: ShadcnMaterialBridge.appBuilder,
-              routerConfig: router,
-            ),
           ),
-        );
-        Future<void> settle() async {
-          for (var i = 0; i < 12; i++) {
-            await tester.pump(const Duration(milliseconds: 50));
-          }
+        ],
+      );
+      addTearDown(router.dispose);
+      await tester.pumpWidget(
+        MultiBlocProvider(
+          providers: [
+            BlocProvider<AuthCubit>.value(value: auth),
+            BlocProvider<WorkspaceCubit>.value(value: workspace),
+            BlocProvider<ShellProfileCubit>.value(value: profile),
+            BlocProvider.value(value: tabs),
+            BlocProvider.value(value: chrome),
+            BlocProvider.value(value: actions),
+            BlocProvider(create: (_) => ShellMiniNavCubit()),
+            BlocProvider(create: (_) => ShellTitleOverrideCubit()),
+          ],
+          child: shad.ShadcnApp.router(
+            theme: const shad.ThemeData(
+              colorScheme: shad.ColorSchemes.lightZinc,
+            ),
+            localizationsDelegates: const [
+              ...AppLocalizations.localizationsDelegates,
+              shad.ShadcnLocalizations.delegate,
+            ],
+            supportedLocales: AppLocalizations.supportedLocales,
+            builder: ShadcnMaterialBridge.appBuilder,
+            routerConfig: router,
+          ),
+        ),
+      );
+      Future<void> settle() async {
+        for (var i = 0; i < 12; i++) {
+          await tester.pump(const Duration(milliseconds: 50));
         }
+      }
 
-        await settle();
-        final dockBefore = tester.state(find.byType(FloatingShellDock));
-        final persistentBefore = tester.state(find.byType(PersistentShellDock));
-        // The rail owns navigation, so an idle rail-mode dock paints nothing.
-        final materialBefore = rail
-            ? null
-            : tester.element(
-                find.byKey(const ValueKey('persistent-shell-dock-material')),
-              );
-        expect(find.byKey(railKey), rail ? findsOneWidget : findsNothing);
-        if (rail) {
-          expect(
-            find.byKey(const ValueKey('persistent-shell-dock-material')),
-            findsNothing,
-          );
-        }
-        expect(
-          find.byKey(const ValueKey('compact-shell-footer')),
-          findsNothing,
-        );
-        expect(
-          find.byKey(const ValueKey('floating-shell-dock-opacity')),
-          findsOneWidget,
-        );
-        expect(find.byType(PersistentShellDock), findsOneWidget);
-        expect(
-          find.byKey(const ValueKey('shell-dock-bar')),
-          rail ? findsNothing : findsOneWidget,
-        );
-        final navigationDock = tester.widget<FloatingShellDock>(
-          find.byType(FloatingShellDock),
-        );
-        expect(navigationDock.bottomInset, greaterThan(0));
-        expect(navigationDock.navigationBottomOffset, 0);
-
-        await tester.tap(find.byType(AssistantComposerFab));
-        await settle();
-        expect(find.byType(PersistentShellDock), findsOneWidget);
+      await settle();
+      expect(find.byKey(railKey), rail ? findsOneWidget : findsNothing);
+      if (rail) {
         expect(
           find.byKey(const ValueKey('persistent-shell-dock-material')),
-          findsOneWidget,
-        );
-        expect(
-          find.byKey(const ValueKey('navigation-morph-bounds')),
           findsNothing,
         );
-        expect(
-          find.byKey(const ValueKey('floating-shell-dock-opacity')),
-          findsOneWidget,
-        );
-        expect(
-          identical(tester.state(find.byType(FloatingShellDock)), dockBefore),
-          isTrue,
-        );
-        final composerMaterial =
-            materialBefore ??
-            tester.element(
+      }
+      expect(find.byKey(const ValueKey('compact-shell-footer')), findsNothing);
+      expect(
+        find.byKey(const ValueKey('floating-shell-dock-opacity')),
+        findsOneWidget,
+      );
+      expect(find.byType(PersistentShellDock), findsOneWidget);
+      expect(
+        find.byKey(const ValueKey('shell-dock-bar')),
+        rail ? findsNothing : findsOneWidget,
+      );
+      final navigationDock = tester.widget<FloatingShellDock>(
+        find.byType(FloatingShellDock),
+      );
+      expect(navigationDock.bottomInset, greaterThan(0));
+      expect(navigationDock.navigationBottomOffset, 0);
+
+      final editor = find.byKey(const ValueKey('assistant-composer-editor'));
+      final composer = find.byType(AssistantComposerSizeReporter);
+      await tester.tap(editor);
+      await settle();
+      expect(find.byType(PersistentShellDock), findsOneWidget);
+      chrome.enterFullscreen();
+      await settle();
+      expect(editor, findsOneWidget);
+      expect(find.byType(PersistentShellDock), findsNothing);
+      chrome.exitFullscreen();
+      await settle();
+      tester.view.viewInsets = const FakeViewPadding(bottom: 260);
+      addTearDown(tester.view.resetViewInsets);
+      await settle();
+      expect(tester.getBottomLeft(composer).dy, closeTo(900 - 260, 1));
+      tester.view.resetViewInsets();
+      await settle();
+      expect(
+        find.byKey(const ValueKey('shell-dock-bar')),
+        rail ? findsNothing : findsOneWidget,
+      );
+      expect(find.byKey(railKey), rail ? findsOneWidget : findsNothing);
+      expect(router.routeInformationProvider.value.uri.path, Routes.assistant);
+      chrome.enterLiveMode();
+      await settle();
+      expect(find.byType(PersistentShellDock), findsOneWidget);
+      expect(
+        find.byKey(const ValueKey('floating-shell-dock-opacity')),
+        findsOneWidget,
+      );
+      chrome.exitLiveMode();
+      await settle();
+      expect(find.byType(PersistentShellDock), findsOneWidget);
+      expect(
+        find.byKey(const ValueKey('floating-shell-dock-opacity')),
+        findsOneWidget,
+      );
+      final persistentBefore = tester.state(find.byType(PersistentShellDock));
+      final materialBefore = rail
+          ? null
+          : tester.element(
               find.byKey(const ValueKey('persistent-shell-dock-material')),
             );
-        chrome.enterFullscreen();
-        await settle();
-        expect(find.byType(TextField), findsOneWidget);
-        expect(find.byType(PersistentShellDock), findsOneWidget);
-        expect(
-          identical(
-            tester.element(
-              find.byKey(const ValueKey('persistent-shell-dock-material')),
+      // Retained root pages must never paint two bodies/docks, even on
+      // the first frame after leaving or reentering Assistant.
+      for (final destination in [
+        Routes.home,
+        Routes.apps,
+        Routes.assistant,
+        Routes.profileRoot,
+        Routes.notifications,
+        Routes.assistant,
+      ]) {
+        router.go(destination);
+        for (final frame in [0, 16, 100, 280]) {
+          await tester.pump(Duration(milliseconds: frame));
+          expect(
+            tester.takeException(),
+            isNull,
+            reason: '$destination frame $frame',
+          );
+          expect(
+            identical(
+              tester.state(find.byType(PersistentShellDock)),
+              persistentBefore,
             ),
-            composerMaterial,
-          ),
-          isTrue,
-        );
-        chrome.exitFullscreen();
-        await settle();
-        tester.view.viewInsets = const FakeViewPadding(bottom: 260);
-        addTearDown(tester.view.resetViewInsets);
-        await settle();
-        expect(
-          tester
-              .getRect(
-                find.byKey(const ValueKey('persistent-shell-dock-material')),
-              )
-              .bottom,
-          lessThanOrEqualTo(900 - 260),
-        );
-        expect(
-          find.byKey(const ValueKey('floating-shell-dock-opacity')),
-          findsOneWidget,
-        );
-        tester.view.resetViewInsets();
-        await settle();
-        await tester.binding.handlePopRoute();
-        await settle();
-        expect(chrome.state.navigationExpanded, isFalse);
-        expect(chrome.state.composerVisible, isFalse);
-        expect(
-          find.byKey(const ValueKey('shell-dock-bar')),
-          rail ? findsNothing : findsOneWidget,
-        );
-        expect(find.byKey(railKey), rail ? findsOneWidget : findsNothing);
-        expect(
-          router.routeInformationProvider.value.uri.path,
-          Routes.assistant,
-        );
-        chrome.enterLiveMode();
-        await settle();
-        expect(find.byType(PersistentShellDock), findsOneWidget);
-        expect(
-          find.byKey(const ValueKey('floating-shell-dock-opacity')),
-          findsOneWidget,
-        );
-        chrome.exitLiveMode();
-        await settle();
-        expect(find.byType(PersistentShellDock), findsOneWidget);
-        expect(
-          find.byKey(const ValueKey('floating-shell-dock-opacity')),
-          findsOneWidget,
-        );
-        // Retained root pages must never paint two bodies/docks, even on
-        // the first frame after leaving or reentering Assistant.
-        for (final destination in [
-          Routes.home,
-          Routes.apps,
-          Routes.assistant,
-          Routes.profileRoot,
-          Routes.notifications,
-          Routes.assistant,
-        ]) {
-          router.go(destination);
-          for (final frame in [0, 16, 100, 280]) {
-            await tester.pump(Duration(milliseconds: frame));
+            isTrue,
+          );
+          if (materialBefore == null) {
+            expect(find.byKey(railKey), findsOneWidget);
             expect(
-              tester.takeException(),
-              isNull,
-              reason: '$destination frame $frame',
+              find.byKey(const ValueKey('persistent-shell-dock-material')),
+              findsNothing,
             );
+          } else {
             expect(
               identical(
-                tester.state(find.byType(PersistentShellDock)),
-                persistentBefore,
+                tester.element(
+                  find.byKey(const ValueKey('persistent-shell-dock-material')),
+                ),
+                materialBefore,
               ),
               isTrue,
             );
-            if (materialBefore == null) {
-              expect(find.byKey(railKey), findsOneWidget);
-              expect(
-                find.byKey(const ValueKey('persistent-shell-dock-material')),
-                findsNothing,
-              );
-            } else {
-              expect(
-                identical(
-                  tester.element(
-                    find.byKey(
-                      const ValueKey('persistent-shell-dock-material'),
-                    ),
-                  ),
-                  materialBefore,
-                ),
-                isTrue,
-              );
-            }
-            expect(find.byType(PersistentShellDock), findsOneWidget);
-            expect(
-              find.byKey(const ValueKey('floating-shell-dock-opacity')),
-              findsOneWidget,
-            );
           }
+          expect(find.byType(PersistentShellDock), findsOneWidget);
+          expect(
+            find.byKey(const ValueKey('floating-shell-dock-opacity')),
+            findsOneWidget,
+          );
         }
-        expect(tester.takeException(), isNull);
-      },
-    );
+      }
+      expect(tester.takeException(), isNull);
+    });
   }
 
   testWidgets(
@@ -438,15 +384,14 @@ void main() {
       await settle();
 
       await settle();
-      Future<void> openPrompt() async {
-        final compose = actions.state
-            .resolveForLocation(Routes.assistant)
-            .firstWhere((action) => action.id == 'assistant-compose');
-        compose.onPressed!();
+      Future<void> focusPrompt() async {
+        await tester.tap(
+          find.byKey(const ValueKey('assistant-composer-editor')),
+        );
         await settle();
       }
 
-      await openPrompt();
+      await focusPrompt();
       await tester.enterText(find.byType(TextField), 'Synthetic unsent draft');
       final input = tester
           .widget<TextField>(find.byType(TextField))
@@ -454,20 +399,19 @@ void main() {
       final inputFocus = tester
           .widget<TextField>(find.byType(TextField))
           .focusNode!;
-      expect(chrome.state.composerVisible, isTrue);
+      expect(inputFocus.hasFocus, isTrue);
       router.go(Routes.settings);
       await settle();
-      expect(chrome.state.composerVisible, isFalse);
       expect(input.text, 'Synthetic unsent draft');
       router.go(Routes.assistant);
       await settle();
-      await openPrompt();
+      await focusPrompt();
       expect(
         tester.widget<TextField>(find.byType(TextField)).controller,
         same(input),
       );
       expect(input.text, 'Synthetic unsent draft');
-      final primary = find.byKey(const ValueKey('assistant-navigation-toggle'));
+      final primary = find.byKey(const ValueKey('assistant-send'));
       expect(
         find.descendant(
           of: primary,
@@ -475,28 +419,7 @@ void main() {
         ),
         findsOneWidget,
       );
-      await tester.tap(
-        find.byKey(const ValueKey('assistant-composer-options')),
-      );
-      await settle();
-      await tester.tap(find.text('Close prompt'));
-      await settle();
-      expect(chrome.state.composerVisible, isFalse);
-      expect(chrome.state.navigationExpanded, isFalse);
-      expect(find.byType(TextField), findsNothing);
-      expect(inputFocus.hasFocus, isFalse);
-      expect(input.text, 'Synthetic unsent draft');
-      final dock = tester.widget<FloatingShellDock>(
-        find.byType(FloatingShellDock),
-      );
-      expect(dock.bottomInset, greaterThan(0));
-      expect(dock.navigationBottomOffset, 0);
-      expect(find.byType(PersistentShellDock), findsOneWidget);
-      chrome.setComposerVisible(visible: false);
-      await settle();
-      expect(input.text, 'Synthetic unsent draft');
-      expect(chrome.state.navigationExpanded, isFalse);
-      await openPrompt();
+      expect(inputFocus.hasFocus, isTrue);
       workspaces.add(
         const WorkspaceState(
           status: WorkspaceStatus.loaded,
@@ -505,7 +428,6 @@ void main() {
       );
       await settle();
       expect(input.text, isEmpty);
-      expect(chrome.state.composerVisible, isFalse);
       expect(chrome.state.navigationExpanded, isFalse);
       expect(tester.takeException(), isNull);
     },

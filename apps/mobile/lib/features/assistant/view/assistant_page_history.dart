@@ -1,76 +1,18 @@
 part of 'assistant_page.dart';
 
 extension _AssistantPageHistory on _AssistantPageState {
-  Future<void> _dismissHistory(BuildContext context) async {
-    if (!context.mounted || ModalRoute.of(context)?.isCurrent != true) {
-      throw StateError('Assistant history sheet is no longer active');
-    }
-    Navigator.of(context).pop();
+  Future<void> _returnFromConversations() async {
+    if (mounted && _showsConversations) context.go(Routes.assistant);
   }
 
-  Future<void> _showHistorySheet(BuildContext context, String wsId) async {
+  Future<void> _openConversations(BuildContext context, String wsId) async {
     if (_localCubit.state.local || _localCubit.state.blocked) {
       _showInlineNotice(context.l10n.assistantLocalHistoryNotice);
       return;
     }
-    final guard = AssistantRemoteScopeGuard(
-      scope: _localScope,
-      version: () => _localCubit.scopeVersion,
-      remote: () =>
-          mounted &&
-          context.mounted &&
-          _loadedWorkspaceId == wsId &&
-          !_localCubit.state.local &&
-          !_localCubit.state.blocked,
-    );
-    if (_usesPageComposer) {
-      if (!guard.current || widget.shellLocation != Routes.assistant) return;
-      _collapseComposerToFab();
-      context.go(Routes.assistantConversations);
-      unawaited(guard.run(_chatCubit.refreshHistory));
-      return;
-    }
-    if (!await guard.run(_chatCubit.refreshHistory) || !context.mounted) return;
-    await showAppSheet<void>(
-      size: AppSheetSize.large,
-      context: context,
-      builder: (drawerContext) => AssistantHistorySheetBody(
-        chatCubit: _chatCubit,
-        activeChatId: _chatCubit.state.chat?.id,
-        onClose: () => _dismissHistory(drawerContext),
-        onNewConversation: () async {
-          if (!guard.current) return;
-          final reset = await _startNewConversation(
-            wsId,
-            _chatCubit.state,
-            _liveCubit.state,
-            historyContext: drawerContext,
-          );
-          if (reset != _AssistantNewChatResult.committed ||
-              !guard.current ||
-              !mounted) {
-            return;
-          }
-          try {
-            await guard.run(() => _dismissHistory(drawerContext));
-          } on Object {
-            if (guard.current && mounted) {
-              await _showNewChatResetNotice(
-                this.context.l10n.assistantNewChatResetCleanupFailed,
-                historyContext: drawerContext.mounted ? drawerContext : null,
-              );
-            }
-          }
-        },
-        onSelectChat: (chat) async {
-          if (!await guard.run(() => _dismissHistory(drawerContext)) ||
-              !mounted) {
-            return;
-          }
-          await _openHistoryChat(guard, wsId, chat);
-        },
-      ),
-    );
+    if (!_remoteGuard(wsId).current || _showsConversations) return;
+    _dismissComposerInput();
+    context.go(Routes.assistantConversations);
   }
 
   Future<void> _openHistoryChat(
@@ -111,7 +53,7 @@ extension _AssistantPageHistory on _AssistantPageState {
                   child: Text(
                     local.local || local.blocked
                         ? context.l10n.assistantLocalHistoryNotice
-                        : context.l10n.assistantHistoryEmpty,
+                        : context.l10n.commonLoading,
                   ),
                 ),
               );
@@ -134,6 +76,7 @@ extension _AssistantPageHistory on _AssistantPageState {
             return AssistantConversations(
               key: ValueKey((auth.user?.id, wsId)),
               history: state.history,
+              status: state.historyStatus,
               now: widget.conversationsClock?.call(),
               activeChatId: state.history
                   .where(
@@ -144,7 +87,9 @@ extension _AssistantPageHistory on _AssistantPageState {
                   .firstOrNull
                   ?.id,
               onRefresh: () async {
-                if (current()) await _chatCubit.refreshHistory();
+                if (current()) {
+                  await _chatCubit.refreshHistory(forceRefresh: true);
+                }
               },
               onSelect: (chat) {
                 if (!current()) return;
@@ -155,9 +100,14 @@ extension _AssistantPageHistory on _AssistantPageState {
               onArchive: (chat) async {
                 if (!current() || !canArchive(chat)) return false;
                 try {
-                  return await guard.run(
+                  if (!await guard.run(
                     () => _repository.archiveHistoryChat(wsId, chat),
-                  );
+                  )) {
+                    return false;
+                  }
+                  _chatCubit.removeArchivedChat(chat);
+                  unawaited(_chatCubit.refreshHistory(forceRefresh: true));
+                  return true;
                 } on Exception {
                   if (context.mounted && current()) {
                     showAppToast(

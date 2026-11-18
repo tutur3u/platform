@@ -17,6 +17,9 @@ List<Widget> assistantOrderedPartWidgets(
   final children = <Widget>[];
   final reasoning = <AssistantMessagePart>[];
   final tools = <AssistantMessagePart>[];
+  final completed = documentLayout
+      ? assistantCompletedActionParts(parts).toSet()
+      : const <AssistantMessagePart>{};
   var firstTool = -1;
   var lastText = -1;
   for (var index = 0; index < parts.length; index++) {
@@ -25,7 +28,7 @@ List<Widget> assistantOrderedPartWidgets(
       reasoning.add(part);
     } else if (part.type == 'dynamic-tool' &&
         !isAssistantInlineImageToolPart(part) &&
-        (!documentLayout || part.state != 'output-available')) {
+        !completed.contains(part)) {
       if (firstTool < 0) firstTool = index;
       tools.add(part);
     } else if (part.type == 'text' && (part.text?.trim().isNotEmpty ?? false)) {
@@ -58,6 +61,13 @@ List<Widget> assistantOrderedPartWidgets(
             child: AssistantInlineToolImages(parts: [part]),
           ),
         );
+      } else if (completed.contains(part)) {
+        children.add(
+          AssistantCompletedActionCard(
+            key: ValueKey('assistant-tool-part-$index'),
+            part: part,
+          ),
+        );
       } else if (index == firstTool && showTools) {
         children.add(
           Padding(
@@ -81,16 +91,6 @@ List<Widget> assistantOrderedPartWidgets(
         ),
       );
     }
-  }
-  if (documentLayout) {
-    children.addAll(
-      assistantCompletedActionParts(parts).map(
-        (part) => AssistantCompletedActionCard(
-          key: part.toolCallId == null ? null : ValueKey(part.toolCallId),
-          part: part,
-        ),
-      ),
-    );
   }
   return children;
 }

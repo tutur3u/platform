@@ -107,9 +107,8 @@ extension _ShellPageLayout on _ShellPageState {
                             .removePadding(removeTop: true)
                             .copyWith(viewPadding: media.viewPadding),
                         child: _trackPageScrolling(
-                          widget.matchedLocation ==
-                                  Routes.assistantConversations
-                              ? Routes.assistantConversations
+                          rootVisible
+                              ? widget.matchedLocation
                               : _lastRootLocation,
                           LazyIndexedStack(
                             // Body transitions are separate from the persistent
@@ -132,10 +131,7 @@ extension _ShellPageLayout on _ShellPageState {
                                     _rootTabReplayTokens[Routes.assistant] ?? 0,
                                   ) ??
                                   AssistantPage(
-                                    shellLocation:
-                                        widget.assistantConversationsEnabled
-                                        ? widget.matchedLocation
-                                        : null,
+                                    shellLocation: widget.matchedLocation,
                                     replayToken:
                                         _rootTabReplayTokens[Routes
                                             .assistant] ??
@@ -284,7 +280,7 @@ extension _ShellPageLayout on _ShellPageState {
         ? _injectedMiniSelectedKey(injectedMiniNavRegistration)
         : isMiniAppRoute
         ? _miniSelectedKey(context, activeMiniNavItems)
-        : _selectedKeyForLocation(widget.matchedLocation);
+        : _selectedKeyForLocation(_bodyLocation);
     final globalItems = _buildNavItems(context, state, l10n);
     final miniItems = useInjectedMiniNav
         ? _buildInjectedMiniNavItems(
@@ -304,14 +300,12 @@ extension _ShellPageLayout on _ShellPageState {
     final workspace = context.watch<WorkspaceCubit>().state;
     final assistantDock =
         widget.matchedLocation == Routes.assistant &&
-        (!widget.assistantConversationsEnabled || assistantChrome.isLiveMode) &&
+        assistantChrome.isLiveMode &&
         (workspace.currentWorkspace ?? workspace.personalWorkspaceOrCurrent) !=
             null;
     final composerVisible =
         widget.matchedLocation == Routes.assistant &&
-        ((!widget.assistantConversationsEnabled &&
-                assistantChrome.isComposing) ||
-            assistantChrome.isLiveMode);
+        assistantChrome.isLiveMode;
     // Chat input and Live call controls share the only dock/exit surface,
     // including immersive mode. Other pages retain their existing policy.
     final showBottomNav =
@@ -417,7 +411,7 @@ extension _ShellPageLayout on _ShellPageState {
       activeMiniNavItems,
     );
     final miniSelectedKey = _miniSelectedKey(context, activeMiniNavItems);
-    final globalSelectedKey = _selectedKeyForLocation(widget.matchedLocation);
+    final globalSelectedKey = _selectedKeyForLocation(_bodyLocation);
     final isCompact = _usesCompactNavigation(context);
     final showBottomNav = MediaQuery.viewInsetsOf(context).bottom <= 0;
     final compactMiniItems = <Widget>[
@@ -614,7 +608,6 @@ extension _ShellPageLayout on _ShellPageState {
             child: ShellTopBarTitle(
               key: ValueKey(widget.matchedLocation),
               matchedLocation: widget.matchedLocation,
-              documentAssistant: widget.assistantConversationsEnabled,
               fallbackTitle: selectedTitle,
             ),
           ),
