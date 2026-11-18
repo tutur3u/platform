@@ -2042,13 +2042,13 @@
     },
     "apps/web/cloudflare/opennext/families.json": {
       "lines": 10,
-      "uses": 12,
+      "uses": 11,
       "gap": "opennext-web-families",
       "admitted": {
-        "decision": "https://github.com/tutur3u/platform/commit/98a7dc989af1daacb58632ef0adf6ec7322fae24",
-        "reason": "The family table names each route family Worker and its wrangler config path for the OpenNext build and the gateway bindings."
+        "decision": "https://github.com/tutur3u/platform/commit/ccbbd316e97a4ac87b1a6ee18fbd6f648ebd2b48",
+        "reason": "The family table holds api-identity without a build config, so its wrangler config path is no longer named there; Wrangler usage in the table falls by one use and the digest covers the changed line."
       },
-      "digest": "4949e2fc3330a7b1637a868756f5f19e878b7262b1a3e117437beb9645a59c1e"
+      "digest": "9e2982f073efc01970f41fb7e8d0f9413e1333224d991a3992bcb7e9916f1011"
     },
     "apps/web/cloudflare/opennext/families.test.ts": {
       "lines": 4,
