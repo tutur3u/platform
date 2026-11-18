@@ -90,7 +90,7 @@ test('split CSS keeps the UI scan exclusion at the repository components directo
   assert.ok(matches(css));
   assert.ok(!matches(css.replace('../../../packages/ui', '../../packages/ui')));
 });
-test('the page is a compact hero over four tabs, each section in its tab', () => {
+test('the four detail tabs retain their sections below either roadmap lead', () => {
   const page = source('./pages/roadmap.tsx');
   /** The source of one panel in the page's `panels` object. */
   const panel = (s: string, tab: string, next: string | null) =>
@@ -134,7 +134,18 @@ test('the page is a compact hero over four tabs, each section in its tab', () =>
   assert.ok(hero.includes('<KpiTiles') && hero.includes('t.hero.asOf'));
   assert.ok(!hero.includes('<OverallBar totals'));
   const kpis = source('./components/insights/kpis.tsx');
-  assert.equal(kpis.match(/^ {6}id: '/gm)?.length, 3);
+  assert.match(
+    page,
+    /renderLead\(view\)[\s\S]+<RoadmapTabs[\s\S]+panels=\{panels\}/
+  );
+  assert.match(
+    kpis,
+    /commitCount !== undefined\s*\?\s*\{\s*id: 'commits',[\s\S]+?\}\s*:\s*\{\s*id: 'merged'/
+  );
+  assert.deepEqual(
+    [...kpis.matchAll(/^ {6}id: '([^']+)'/gm)].map(([, id]) => id),
+    ['live', 'waiting']
+  );
 });
 test('a hidden tab panel never docks the navbar or loses the timeline scrubber position', () => {
   const tracks = source('./components/tracks.tsx');
@@ -188,7 +199,7 @@ test('the router location alone selects the tab; a click only navigates', () => 
   // The skip target takes focus before hydration too.
   assert.match(tabs, /id="sections"\s*tabIndex=\{-1\}/);
 });
-test('the live state is a visible label in a fixed slot (no layout shift)', () => {
+test('the compact lead labels the rendered source in a fixed slot', () => {
   const hero = source('./components/hero.tsx');
   const css = readStyles();
   const line = (s: string) =>
@@ -215,8 +226,18 @@ test('the live state is a visible label in a fixed slot (no layout shift)', () =
   );
   assert.match(
     source('./pages/roadmap.tsx'),
-    /shown=\{shownState\(liveState, data\.source\)\}/
+    /shown=\{shownState\('snapshot', data\.source\)\}/
   );
+  const pulse = source('../../../apps/roadmap/src/pulse/pulse-hero.tsx');
+  assert.match(
+    pulse,
+    /snapshot\?\.productionSha \? \([\s\S]+?\{copy\.production\}[\s\S]+?\{copy\.productionUnknown\}/
+  );
+  assert.match(
+    pulse,
+    /snapshot && !sampled && <span>\{copy\.snapshot\}<\/span>/
+  );
+  assert.match(pulse, /dateTime=\{snapshot\.generatedAt\}/);
   for (const t of [en, vi])
     assert.ok(
       t.hero.state.snapshot && t.hero.state.live && t.hero.state.failed

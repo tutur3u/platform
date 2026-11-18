@@ -5,6 +5,8 @@
 @import "@tuturuuu/ui/globals.css";
 @import "@tuturuuu/marketing-shell/fonts.css";
 @import "@tuturuuu/roadmap-core/styles.css";
+@import "./pulse/pulse.css";
+
 /* The shared globals scan every UI component (and streamdown) for classes,
    which made this page ship ~350 KB of utilities it never uses. Scan only
    the shared marketing layout and the primitives it renders. */

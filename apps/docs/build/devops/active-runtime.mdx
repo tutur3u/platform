@@ -221,11 +221,48 @@ VI pages read cached results and fall back to their build snapshot when the
 scheduled observation is missing or older than the build.
 
 The commit count covers commits reachable from the observed main SHA over
-seven Vietnam calendar days. It excludes bot and release noise and groups
+thirty Vietnam calendar days, including a separate seven-day total. It excludes
+bot and release noise and groups
 commits by conventional scope. The existing build-time deployment and PR
-history retain their respective sources. The scheduled read makes at most 27
-GitHub requests per hour, with an eight-second request timeout and no retries.
+history retain their respective sources. The scheduled read makes at most 49
+GitHub requests and one public Web build-info request per hour, with an
+eight-second request timeout and no retries.
 A response beyond the page cap leaves the prior snapshot intact.
+
+Each scheduled GitHub call emits one `roadmap.github.rate_limit` console
+event for Worker tail capture. The event records the expected and observed
+resource bucket, HTTP status, numeric limit, remaining count and reset epoch,
+and the Worker observation time. Missing or invalid fields are null. The
+event omits request URLs, bodies, credentials and unrelated headers.
+
+Prepare the switch-off recovery artifact from the hosted, sealed primary
+artifact on a qualified Linux host. Run
+`node apps/roadmap/scripts/prepare-recovery-artifact.mjs <primary-dir> <exact-sha> <output-parent>`.
+The script verifies the descriptor seal before copying its exact bytes to a
+fresh directory. It reseals the emitted files with empty cron triggers and
+`ROADMAP_REFRESH_ENABLED=false`; the Worker modules, assets, binding and
+SQLite migration remain identical. With the production switch set to
+`true`, the scheduled handler can reserve refresh work and route loaders may
+read the durable snapshot. With it set to `false`, the page serves build
+fallback data. Use the switch-off artifact after the class migration if the
+scheduled path needs to be disabled. Qualify the sealed artifact and its
+emitted configuration on an isolated Worker before production release.
+
+The roadmap observation carries a distinct count of commits reachable from
+main for the current and prior seven Vietnam calendar days. Product counts
+exclude bot and release noise. Each product row includes a 30-day series
+(oldest first), both seven-day totals, a thirty-day total, merged PRs in the
+current seven days, and up to five recent subjects that pass the public-title
+filter. The Mind product key is `mind`. Unmapped work rolls up to `other`.
+A recent commit is marked live only when the fetched parent links prove
+ancestry from the verified production SHA. Missing ancestry is null.
+
+The release train groups the build artifact's public app observations and the
+scheduled Web build observation by SHA. Each production marker uses the
+earliest observed build time and the distinct app count. Across refreshes it
+retains the highest observed app count for each SHA. This source currently
+observes production builds. When the Web endpoint cannot verify the active
+SHA, the response records a null production SHA and retains earlier markers.
 
 To stop the job, remove the cron trigger and set `ROADMAP_REFRESH_ENABLED` to
 `false` in the Worker configuration. This also stops snapshot reads and returns
@@ -236,21 +273,26 @@ the cause and deploys a new singleton identity for both readers and writers.
 The previous snapshot retains its observation time until the next successful
 publish or a newer build.
 
-On a qualified Linux host, prepare the switch-off artifact with
-`node apps/roadmap/scripts/prepare-recovery-artifact.mjs <primary-dir> <exact-sha> <output-parent>`.
-It verifies the primary seal, keeps the Worker modules and SQLite migration,
-and reseals the artifact with the cron and snapshot reads disabled.
-
-The Overview tab renders store listings and WebP screenshot galleries from
-`apps/mobile/store/metadata` and `apps/mobile/store/screenshots`. Submission
-and approval dates come from the public listing metadata. Changes to those
-files ship with a new sealed roadmap artifact. The cron refreshes GitHub
-activity independently of those release assets.
-
-Run `node --test apps/roadmap/src/activity-fence.test.ts` for the admission
-rules. In the Worker acceptance run, exercise duplicate scheduled delivery,
+Run `node --test apps/roadmap/src/activity-fence.test.ts
+apps/roadmap/src/roadmap-snapshot.test.ts` for the admission and snapshot rules. In the Worker acceptance run, exercise duplicate scheduled delivery,
 restart with an outstanding reservation, three failures, a disabled cron, and
 a successful observation. Verify the emitted configuration carries the cron,
 binding and SQLite migration, and both locales render the same cached
 timestamp. The build artifact workflow produces an artifact. Production
 deployment remains a separate release operation.
+
+
+The public EN and VI routes lead with the Pulse view. Its hero uses distinct
+main commits for both seven-day totals and the 30-day chart. The product
+cards use scoped counts and derive roadmap progress from the curated tracks.
+Commit subjects remain in English in both locales. The release train hides
+environments without observations, and narrow screens use a vertical rail and
+the last 14 days of the heatmap. Until a scheduled snapshot is available, the
+page labels its build-time activity and leaves the active production SHA
+unavailable. The detailed roadmap tabs remain available below Pulse.
+
+The Pulse layout renders store listings and WebP galleries from
+`apps/mobile/store/metadata` and `apps/mobile/store/screenshots`. Public
+submission and approval dates come from the listing metadata. Listing and
+screenshot updates ship with a new sealed artifact. The cron refreshes GitHub
+activity independently of those assets.

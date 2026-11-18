@@ -7,10 +7,17 @@ export interface RoadmapEnv {
   ROADMAP_REFRESH_ENABLED?: string;
 }
 
+export type StoredRoadmapObservation = Omit<RoadmapObservation, 'roadmap'> &
+  Partial<Pick<RoadmapObservation, 'roadmap'>>;
+
 export class RoadmapActivity extends DurableObject<RoadmapEnv> {
   async readSnapshot(): Promise<string | null> {
-    const snapshot = await this.ctx.storage.get<RoadmapObservation>('snapshot');
+    const snapshot = await this.read();
     return snapshot ? JSON.stringify(snapshot) : null;
+  }
+
+  private async read() {
+    return this.ctx.storage.get<StoredRoadmapObservation>('snapshot');
   }
 
   async refresh(scheduledTime: number) {
@@ -27,7 +34,8 @@ export class RoadmapActivity extends DurableObject<RoadmapEnv> {
     storage.put('attempt', attempt);
     const { slot } = attempt;
     await this.ctx.storage.sync();
-    const snapshot = await observeActivity(now);
+    const previous = await this.read();
+    const snapshot = await observeActivity(now, previous?.roadmap?.deploys);
     // A delayed attempt cannot replace a newer observation.
     if (storage.get<{ slot: number }>('attempt')?.slot !== slot) return;
     this.ctx.storage.transactionSync(() => {

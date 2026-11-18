@@ -6,6 +6,7 @@ import {
 } from '@tuturuuu/marketing-shell';
 import {
   type CSSProperties,
+  type ReactNode,
   memo,
   Suspense,
   useCallback,
@@ -21,7 +22,6 @@ import { HostingSection } from '../components/hosting';
 import { MigrationSection } from '../components/migration';
 import { TrackGlance } from '../components/pulse';
 import type { Lang } from '../components/shared';
-import { StoreReleases } from '../components/store-releases';
 import { TimelineSection } from '../components/timeline';
 import { TracksSection } from '../components/tracks';
 import { initialLiveData } from '../live/initial-data';
@@ -30,7 +30,7 @@ import type { CommitWindow } from '../insights/commits';
 import { CommitSummary } from '../components/insights/commit-summary';
 import { pagePath, ROUTE_PATHS } from '../seo';
 import { BUILD_HOSTING } from '../live/build-hosting';
-import { buildView } from '../view-model';
+import { buildView, type RoadmapView } from '../view-model';
 import { BUILD_ACTIVITY } from '../insights/build-activity';
 import { buildInsights } from '../insights/model';
 import { useLazyHistory } from '../insights/use-lazy-history';
@@ -49,9 +49,11 @@ import { RoadmapTabs, skipToTabs } from '../components/tabs';
 export function RoadmapPage({
   lang,
   observation,
+  renderLead,
 }: {
   lang: Lang;
   observation?: { live: LiveData; commits: CommitWindow } | null;
+  renderLead?: (view: RoadmapView) => ReactNode;
 }) {
   const navigate = useNavigate();
   const setLang = useCallback(
@@ -76,7 +78,7 @@ export function RoadmapPage({
 
   return (
     <div
-      className="roadmap"
+      className={renderLead ? 'roadmap roadmap-pulse' : 'roadmap'}
       lang={lang}
       data-source-sha={__ROADMAP_BUILD_SHA__}
       data-nav-compact={navCompact ? '' : undefined}
@@ -105,6 +107,7 @@ export function RoadmapPage({
           now={Date.parse(data.generatedAt)}
           commits={scheduled ? observation.commits : undefined}
           onDock={onDock}
+          renderLead={renderLead}
         />
       </MarketingShell>
     </div>
@@ -126,6 +129,7 @@ const RoadmapMain = memo(function RoadmapMain({
   now,
   commits,
   onDock,
+  renderLead,
 }: {
   t: typeof en;
   lang: Lang;
@@ -133,13 +137,13 @@ const RoadmapMain = memo(function RoadmapMain({
   now: number;
   commits?: CommitWindow;
   onDock: (docked: boolean) => void;
+  renderLead?: (view: RoadmapView) => ReactNode;
 }) {
   const view = useMemo(
     () => buildView(data, now, undefined, BUILD_HOSTING),
     [data, now]
   );
   const lazy = useLazyHistory();
-  const recentCommits = commits ?? BUILD_ACTIVITY.commits;
   const insights = useMemo(
     () => buildInsights(view, data, BUILD_ACTIVITY, now),
     [view, data, now]
@@ -152,7 +156,6 @@ const RoadmapMain = memo(function RoadmapMain({
       <>
         <TrackGlance t={t} view={view} />
         <ComingSoon t={t} lang={lang} />
-        <StoreReleases lang={lang} t={t.storeReleases} />
         <Suspense>
           <UpdatesTeaser t={t} lang={lang} updates={insights.updates} />
         </Suspense>
@@ -175,11 +178,11 @@ const RoadmapMain = memo(function RoadmapMain({
     ),
     activity: (
       <>
-        {recentCommits ? (
+        {BUILD_ACTIVITY.commits ? (
           <CommitTiles
             t={t}
             lang={lang}
-            commits={recentCommits}
+            commits={BUILD_ACTIVITY.commits}
             today={view.today}
             now={now}
           />
@@ -223,22 +226,28 @@ const RoadmapMain = memo(function RoadmapMain({
   };
   return (
     <main className="page rm-page">
-      <Hero
-        t={t}
-        view={view}
-        lang={lang}
-        insights={insights}
-        generatedAt={data.generatedAt}
-        commitCount={commits?.days.reduce((sum, day) => sum + day[1], 0)}
-        shown={shownState('snapshot', data.source)}
-      />
-      {commits && (
-        <CommitSummary
-          t={t}
-          lang={lang}
-          commits={commits}
-          checkedAt={data.generatedAt}
-        />
+      {renderLead ? (
+        renderLead(view)
+      ) : (
+        <>
+          <Hero
+            t={t}
+            view={view}
+            lang={lang}
+            insights={insights}
+            generatedAt={data.generatedAt}
+            commitCount={commits?.days.reduce((sum, day) => sum + day[1], 0)}
+            shown={shownState('snapshot', data.source)}
+          />
+          {commits && (
+            <CommitSummary
+              t={t}
+              lang={lang}
+              commits={commits}
+              checkedAt={data.generatedAt}
+            />
+          )}
+        </>
       )}
       <RoadmapTabs
         label={t.tabs.label}
