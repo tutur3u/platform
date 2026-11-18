@@ -954,10 +954,10 @@
       "uses": 1,
       "gap": "pending-migration",
       "admitted": {
-        "decision": "https://github.com/tutur3u/platform/commit/8208457d49b234080c2fc5b800247eee78dedb0c",
-        "reason": "The gateway config comments document exact and explicit-subtree mount entries for the mounted-path variable, and a config file's digest covers every line. Comment-only change: no Wrangler invocation and no value change (the committed mount list stays empty); the pending-migration gap and its removal condition remain."
+        "decision": "https://github.com/tutur3u/platform/commit/243bb113b788b385667ea34b4166674b77fa20c3",
+        "reason": "The gateway config records the live marketing groups (commit 0b2f718e21e41e859adf9398c373c60ab9b9eb85) and the GATEWAY_MARKETING_LEGACY_ROBOTS variable with its comment (commit 243bb113b788b385667ea34b4166674b77fa20c3), and a config file's digest covers every line. Variable values and comments only: no Wrangler invocation, binding, route or command changes; the single Wrangler line and use are unchanged, and the pending-migration gap and its removal condition remain."
       },
-      "digest": "2bb14ad87a8a8197f34214f289fec54ce5522463a4b4c96e207bf9a71ba70efa"
+      "digest": "d2013207f9a32551bfaf8f740912c66b42b8b4046c1231d37a1d22cd5fcfbc72"
     },
     "apps/git/.gitignore": {
       "lines": 1,
