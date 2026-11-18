@@ -30,6 +30,16 @@ export function inSubtree(pathname: string, entry: string) {
   return pathname === base || pathname.startsWith(`${base}/`);
 }
 
+/** Decode only unreserved bytes, so comparison cannot introduce separators. */
+function comparisonPath(pathname: string) {
+  return pathname
+    .replace(/%([0-9a-f]{2})/giu, (escape, hex: string) => {
+      const char = String.fromCharCode(Number.parseInt(hex, 16));
+      return /^[a-zA-Z0-9._~-]$/u.test(char) ? char : escape;
+    })
+    .toLowerCase();
+}
+
 /**
  * Percent-encoded, doubled or backslashed paths can resolve to a different
  * route inside the app than the gateway matched, so they stay on WEB_ORIGIN.
@@ -48,10 +58,13 @@ function flaggedFamilies(env: Env) {
 }
 
 function matchesFamilyPath(family: WebFamily, pathname: string) {
-  if (family.exclude.some((entry) => inSubtree(pathname, entry))) return false;
+  const folded = comparisonPath(pathname);
+  if (family.exclude.some((entry) => inSubtree(folded, entry.toLowerCase()))) {
+    return false;
+  }
   return (
     family.exact.includes(pathname) ||
-    family.prefix.some((prefix) => pathname.startsWith(prefix))
+    family.prefix.some((prefix) => folded.startsWith(prefix.toLowerCase()))
   );
 }
 
@@ -61,7 +74,10 @@ export function matchFamily(
   family: WebFamily,
   locales: string[]
 ): string | null {
-  if (family.assetPrefix && pathname.startsWith(`${family.assetPrefix}/`)) {
+  if (
+    family.assetPrefix &&
+    pathname.toLowerCase().startsWith(`${family.assetPrefix.toLowerCase()}/`)
+  ) {
     return pathname.slice(family.assetPrefix.length);
   }
   if (matchesFamilyPath(family, pathname)) return pathname;
@@ -89,10 +105,11 @@ export function webFamilyTarget(
   const url = new URL(request.url);
   if (!env.PUBLIC_HOST || url.host !== env.PUBLIC_HOST) return null;
   const { pathname } = url;
-  if (!isCanonicalPath(pathname)) return null;
-  const isDenied = (path: string) =>
-    config.deny.some((entry) => inSubtree(path, entry));
-  if (isDenied(pathname)) return null;
+  const isDenied = (path: string) => {
+    const folded = comparisonPath(path);
+    return config.deny.some((entry) => inSubtree(folded, entry.toLowerCase()));
+  };
+  if (isDenied(pathname) || !isCanonicalPath(pathname)) return null;
   const flagged = flaggedFamilies(env);
   if (flagged.size === 0) return null;
   for (const family of config.families) {

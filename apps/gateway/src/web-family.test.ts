@@ -346,17 +346,26 @@ describe('web family matching', () => {
       },
     };
     const t = setup({ flags: 'api-identity', source });
-    await t.call('/api/v1/auth/accounts');
-    await t.call('/api/v1/auth/accounts/switch');
+    for (const path of [
+      '/api/v1/auth/accounts',
+      '/api/v1/auth/accounts/switch',
+      '/API/v1/auth/accounts',
+      '/api/v1/auth/%61ccounts',
+    ]) {
+      expect(await (await t.call(path)).text()).toBe('web');
+    }
     expect(t.family).not.toHaveBeenCalled();
     expect(await (await t.call('/api/v1/auth/otp')).text()).toBe('family');
   });
 
   it('keeps denied public-docs asset paths on WEB_ORIGIN after prefix stripping', async () => {
     const t = setup({ flags: 'public-docs' });
-    expect(await (await t.call('/_f/public-docs/_next/image')).text()).toBe(
-      'web'
-    );
+    for (const path of [
+      '/_f/public-docs/_next/image',
+      '/_F/PUBLIC-DOCS/_NEXT/IMAGE',
+    ]) {
+      expect(await (await t.call(path)).text()).toBe('web');
+    }
     expect(t.family).not.toHaveBeenCalled();
 
     const asset = await t.call('/_f/public-docs/_next/static/fixture.js');
@@ -364,6 +373,23 @@ describe('web family matching', () => {
     expect(t.family.mock.calls[0]?.[0].url).toBe(
       'https://tuturuuu.com/_next/static/fixture.js'
     );
+  });
+
+  it('keeps exclusions ahead of case-insensitive prefixes and preserves the forwarded path', async () => {
+    const t = setup({ flags: 'api-identity' });
+    for (const path of [
+      '/API/V1/USERS/me/Password',
+      '/api/v1/users/me/%70assword',
+      '/api/v1/users/me/%2fpassword',
+      '/api/v1/users/me/%',
+    ]) {
+      expect(await (await t.call(path)).text()).toBe('web');
+    }
+    expect(t.family).not.toHaveBeenCalled();
+
+    const path = '/API/V1/USERS/me/Profile';
+    expect(await (await t.call(path)).text()).toBe('family');
+    expect(t.family.mock.calls[0]?.[0].url).toBe(`https://tuturuuu.com${path}`);
   });
 
   it('matches subtrees on segment boundaries', () => {
