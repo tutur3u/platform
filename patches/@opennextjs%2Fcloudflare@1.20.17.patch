@@ -39,16 +39,17 @@ index 0000000000000000000000000000000000000000..ebe9ecf29dbdc72c11007ada656d15dc
 +}
 diff --git a/dist/cli/build/w3-scheduler.mjs b/dist/cli/build/w3-scheduler.mjs
 new file mode 100644
-index 0000000000000000000000000000000000000000..3b3dcddf648348ca611d8ea72fcf5868771607b6
+index 0000000000000000000000000000000000000000..b5a06a92252b6bbfb5a38375a1988189a7c5bf7c
 --- /dev/null
 +++ b/dist/cli/build/w3-scheduler.mjs
-@@ -0,0 +1,85 @@
+@@ -0,0 +1,104 @@
 +import { setImmediate as setImmediatePromise } from "node:timers/promises";
 +import { promisify } from "node:util";
 +const nativeSetImmediate = globalThis.setImmediate;
 +const nativeSetImmediatePromise = setImmediatePromise;
 +const REQUEST_CONTEXT = Symbol.for("__cloudflare-context__");
 +const scopes = new WeakMap;
++const GLOBAL_QUEUE_TIMEOUT_MS = 30_000;
 +const scopeOutsideRequest = { scheduledImmediates: 0, lastRender: Promise.resolve() };
 +function currentScope() {
 +  const context = globalThis[REQUEST_CONTEXT];
@@ -81,17 +82,27 @@ index 0000000000000000000000000000000000000000..3b3dcddf648348ca611d8ea72fcf5868
 +  const scope = currentScope();
 +  const previousRender = scope.lastRender;
 +  let endRender;
-+  scope.lastRender = new Promise((resolve) => endRender = resolve);
++  const renderDone = new Promise((resolve) => endRender = resolve);
++  const isGlobalQueue = scope === scopeOutsideRequest;
++  // A timed-out waiter may release its own slot, but must not skip its predecessor.
++  scope.lastRender = isGlobalQueue ? previousRender.then(() => renderDone) : renderDone;
 +  return new Promise((resolve, reject) => {
 +    const stages = [first, ...rest];
 +    let result;
++    let expired = false;
++    const timeout = isGlobalQueue ? setTimeout(() => {
++      expired = true;
++      fail(new Error("OpenNext global scheduler task timed out"));
++    }, GLOBAL_QUEUE_TIMEOUT_MS) : undefined;
 +    const fail = (error) => {
++      clearTimeout(timeout);
 +      endRender();
 +      reject(error);
 +    };
 +    const afterImmediates = (next) => {
 +      const scheduled = scope.scheduledImmediates;
 +      nativeSetImmediate(() => {
++        if (expired) return;
 +        if (scope.scheduledImmediates === scheduled) {
 +          next();
 +        } else {
@@ -100,6 +111,7 @@ index 0000000000000000000000000000000000000000..3b3dcddf648348ca611d8ea72fcf5868
 +      });
 +    };
 +    const runStage = (index) => {
++      if (expired) return;
 +      try {
 +        const value = stages[index]();
 +        if (index === 0) {
@@ -117,7 +129,14 @@ index 0000000000000000000000000000000000000000..3b3dcddf648348ca611d8ea72fcf5868
 +          runStage(index + 1);
 +        } else {
 +          endRender();
-+          resolve(result);
++          if (!isGlobalQueue) {
++            resolve(result);
++            return;
++          }
++          Promise.resolve(result).then((value) => {
++            clearTimeout(timeout);
++            resolve(value);
++          }, fail);
 +        }
 +      });
 +    };
