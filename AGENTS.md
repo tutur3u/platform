@@ -120,6 +120,8 @@ for roles, independent review, publication, receipts and retirement.
 
 - Run `git status --short` before editing. If dirty or untracked paths exist,
   treat them as user-owned or other-agent-owned until proven otherwise.
+- Ship each verified increment as soon as its required checks pass. Treat ETAs, deadlines and train schedules as latest-by times, never as release times: do not hold finished work to bundle it, wait for a train, or match a stated ETA. Batch ready work into large, complete changes so each review, build and deploy cycle carries as much verified work as possible; code generation is fast, while review, build and deploy capacity is the constraint. Prefer fix-forward over rollback or halting; known non-blocking follow-ups go in the next deploy. An active exploit or a secret leak still stops the line.
+- Never lose a user request. Split every multi-part request into separately tracked items (or record which item absorbs each part), and search the full message history before reporting a request as missing or closing it.
 - Treat security as a default; Tuturuuu is open source. Follow the
   [security default](plugins/tuturuuu/skills/tuturuuu-agent-coordination/references/security-default.md).
   Open critical/high findings hold a release until verified fixed, evidenced
@@ -224,7 +226,9 @@ for roles, independent review, publication, receipts and retirement.
     stays held per app in `tuturuuu.ci.ts` until an explicit cutover PR; retain
     the immutable prior deployment and captured routing for rollback. Every
     cutover has an instant one-step rollback prepared before the flip and a
-    post-deploy watch with immediate rollback on regression, per the runbook.
+    post-deploy watch that fixes forward on regression, rolling back only when
+    a fix cannot ship quickly or an active exploit/secret leak is involved, per
+    the runbook.
     DNS, zone, canonical-route and staging provider changes need
     release-authority approval; database migrations need explicit user
     approval.

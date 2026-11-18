@@ -267,7 +267,9 @@ explicit publication holds, branch protection and review/release gates; use a
 review branch when direct main publication is not admitted. Follow
 [$tuturuuu-commit](../../tuturuuu-commit/SKILL.md) for exact staging and checks.
 Verify the remote SHA and report commit, push and remaining CI/release status
-separately. Children hand accepted changes to the sole integration writer in a
+separately. Publish each verified increment once its required checks pass; an
+ETA or train slot is a latest-by time, not a reason to hold finished work, and a
+regression is fixed forward unless an active exploit or secret leak stops the line. Children hand accepted changes to the sole integration writer in a
 shared checkout; that owner completes publication before closing the task.
 Hosted PR CI runs only with the `ready-for-ci` label: add it only when the PR is
 ready to merge (reviewed, exact-head local gates green), batch pushes, and treat

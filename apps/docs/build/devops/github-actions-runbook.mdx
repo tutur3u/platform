@@ -11,6 +11,8 @@ GitHub Actions selects relevant checks from the repository workflows. Detailed o
 
 Validate the exact source being proposed with the relevant focused checks. Record the commands and their outcomes, and distinguish local checks, CI, deployment identity and production behavior. A successful source check alone is not evidence of a deployment. Keep independent review and applicable release gates.
 
+Deliver each verified change as soon as its required checks pass, and treat release schedules as latest-by times. After a deployment, a regression is fixed forward in the next deploy; roll back only when a fix cannot ship quickly or an active exploit or secret leak is involved.
+
 Production migration prerequisites verify deployment-marker provenance separately
 from marker status. The verifier binds the exact planner run and attempt to its
 successful nested platform deployment job, marker-recording step and reviewed
