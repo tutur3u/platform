@@ -1,10 +1,12 @@
 import type { Session } from '@google/genai/web';
 import { applyLiveCheckpoint } from '../../features/live-assistant/context';
 import type { LiveAssistantEvent } from '../../features/live-assistant/contracts';
+import { requireCurrentPrivateGrant } from './private-grant';
 import type { LiveProposal } from './reviews';
-import { liveRoomCommand } from './room';
+import { livePollCommand, liveRoomCommand } from './room';
 import { checkpointSchema, type SavedSession } from './session-state';
 import type { LiveEnvironment, LiveTurnArchive } from './storage';
+import { liveWorkspaceAllowed } from './workspace-gate';
 
 export async function executeLiveTool(
   context: {
@@ -26,6 +28,31 @@ export async function executeLiveTool(
     provider?.sendToolResponse({
       functionResponses: [{ id: callId, name, response }],
     });
+  if (
+    name === 'draft_poll' ||
+    name === 'launch_poll' ||
+    name === 'summarize_poll'
+  ) {
+    try {
+      if (
+        !saved.identity.isHost ||
+        saved.claims.app === 'parley' ||
+        !liveWorkspaceAllowed(env, saved)
+      ) {
+        respond({
+          error: 'Only the meeting host can manage polls in Private Mira',
+        });
+        return;
+      }
+      await requireCurrentPrivateGrant(env, saved);
+      respond(
+        await livePollCommand(env, saved.claims, saved.identity, name, args)
+      );
+    } catch {
+      respond({ error: 'Poll action is unavailable' });
+    }
+    return;
+  }
   if (
     saved.claims.mode === 'personal' &&
     saved.workspace?.tools.some((tool) => tool.name === name)

@@ -481,6 +481,8 @@
     "./routes/api/meet-call/[meetingId]/state/route.ts": "./src/routes/api/meet-call/[meetingId]/state/route.ts",
     "./routes/api/meet-call/[meetingId]/public-info/route": "./src/routes/api/meet-call/[meetingId]/public-info/route.ts",
     "./routes/api/meet-call/[meetingId]/public-info/route.ts": "./src/routes/api/meet-call/[meetingId]/public-info/route.ts",
+    "./routes/api/meet-call/[meetingId]/polls/route": "./src/routes/api/meet-call/[meetingId]/polls/route.ts",
+    "./routes/api/meet-call/[meetingId]/polls/route.ts": "./src/routes/api/meet-call/[meetingId]/polls/route.ts",
     "./routes/api/meet-call/[meetingId]/files/route": "./src/routes/api/meet-call/[meetingId]/files/route.ts",
     "./routes/api/meet-call/[meetingId]/files/route.ts": "./src/routes/api/meet-call/[meetingId]/files/route.ts",
     "./routes/api/auth/verify-app-token/route": "./src/routes/api/auth/verify-app-token/route.ts",

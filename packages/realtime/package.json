@@ -22,6 +22,8 @@
     "./hive": "./src/hive/index.ts",
     "./hive/yjs": "./src/hive/yjs.ts",
     "./meet": "./src/meet/index.ts",
+    "./meet/room-polls": "./src/meet/room-polls.ts",
+    "./meet/room-polls.ts": "./src/meet/room-polls.ts",
     "./meet/token": "./src/meet/token.ts",
     "./core/token": "./src/core/token.ts",
     "./collaboration": "./src/collaboration/index.ts",

@@ -37,6 +37,7 @@ import {
   selectSelf,
 } from '../lib/call-state';
 import { getMediaErrorDiagnostic, getMediaErrorKey } from '../lib/media-error';
+import { useCallPolls } from '../lib/polls-client';
 import { encodeRoomCode } from '../lib/room-code';
 import { CallEnded } from './call-ended';
 import { CallExtras } from './call-extras';
@@ -58,6 +59,7 @@ import {
   PlaybackVolumeControl,
   PlaybackVolumeProvider,
 } from './playback-volume';
+import { PollsControl, PollsPanel } from './polls-panel';
 import { ProgrammingPanel } from './programming-panel';
 import { ReactionOverlay } from './reaction-overlay';
 import { ResizableCallPanel } from './resizable-call-panel';
@@ -112,18 +114,18 @@ function CallShellContent({
   );
   const [showDocument, setShowDocument] = useState(false);
   const collaborationT = useTranslations('meet.collaboration');
-  const [showAi, setShowAi] = useState(false);
-  const [showPersonalTools, setShowPersonalTools] = useState(false);
+  const [drawer, setDrawer] = useState<
+    CallPanel | 'notes' | 'personal' | 'polls'
+  >(null);
+  const panel = drawer === 'chat' || drawer === 'participants' ? drawer : null;
   const privateT = useTranslations('meet.call.private_tools');
   const [outputDeviceId, setOutputDeviceId] = useState('');
   const [mentionRequest, setMentionRequest] = useState(0);
   const onMentionHandled = useCallback(() => setMentionRequest(0), []);
   const askMira = () => {
     setMentionRequest((value) => value + 1);
-    setPanel('chat');
-    setShowAi(false);
+    setDrawer('chat');
   };
-  const [panel, setPanel] = useState<CallPanel>(null);
   const [layout, setLayout] = useState<CallLayout>('auto');
   const [focus, setFocus] = useState<string | null>(null);
   const focusFeed = useCallback((key: string | null) => {
@@ -140,17 +142,13 @@ function CallShellContent({
     room.leave();
     window.location.reload();
   };
-  const sharedAudio = useSharedRoomAudio(room, joined && !left);
-  const openNoticePanel = (next: 'chat' | 'participants') => {
-    setPanel(next);
-    setShowPersonalTools(false);
-    setShowAi(false);
-  };
+  const inCall = joined && !left;
+  const sharedAudio = useSharedRoomAudio(room, inCall);
   const notifications = useCallNotifications(
     state,
-    joined && !left,
+    inCall,
     room.connectionStatus === 'open',
-    openNoticePanel,
+    setDrawer,
     panel,
     sharedAudio.shared
   );
@@ -286,6 +284,14 @@ function CallShellContent({
   }, [state.ended, state.admission, leaveNow]);
 
   const lifecycle = selectCallLifecycle(state, joined);
+  const pollPanelOpen = drawer === 'polls';
+  const polls = useCallPolls(
+    meetingId,
+    accountId,
+    MEETING_APP === 'meet' && lifecycle === 'live' && inCall,
+    pollPanelOpen
+  );
+  const pollPanelProps = { accountId, meetingId, query: polls };
   if (lifecycle === 'error')
     return (
       <JoinOutcome
@@ -426,12 +432,10 @@ function CallShellContent({
             meetingId={meetingId}
             meetingName={room.state.title ?? meetingName}
             canReadNotes={canReadNotes}
-            transcriptOpen={showAi}
-            onToggleTranscript={() => {
-              setShowAi(!showAi);
-              setShowPersonalTools(false);
-              setPanel(null);
-            }}
+            transcriptOpen={drawer === 'notes'}
+            onToggleTranscript={() =>
+              setDrawer(drawer === 'notes' ? null : 'notes')
+            }
           />
         </div>
       </header>
@@ -447,10 +451,7 @@ function CallShellContent({
               size="sm"
               variant="outline"
               className="h-8 rounded-full"
-              onClick={() => {
-                setPanel('participants');
-                setShowAi(false);
-              }}
+              onClick={() => setDrawer('participants')}
             >
               <Users className="size-3.5" />
               {t('participants', { count: participants.length })}
@@ -513,13 +514,16 @@ function CallShellContent({
           )}
           <ReactionOverlay state={state} />
         </main>
-        {showPersonalTools && MEETING_APP === 'meet' && (
+        {pollPanelOpen && (
+          <PollsPanel {...pollPanelProps} onClose={() => setDrawer(null)} />
+        )}
+        {drawer === 'personal' && MEETING_APP === 'meet' && (
           <PersonalToolsPanel
             accountId={accountId}
-            onClose={() => setShowPersonalTools(false)}
+            onClose={() => setDrawer(null)}
           />
         )}
-        {showAi && canReadNotes && (
+        {drawer === 'notes' && canReadNotes && (
           <ResizableCallPanel label={aiT('title')}>
             <div className="min-h-0 overflow-y-auto p-3">
               <MeetingAiPanel ai={ai} inCall />
@@ -545,7 +549,7 @@ function CallShellContent({
             miraActive={!!state.liveAssistant}
             canManage={canManage}
             chat={state.chat}
-            onClose={() => setPanel(null)}
+            onClose={() => setDrawer(null)}
             onDecideAdmission={room.decideAdmission}
             onMute={(userId) => room.muteParticipant(userId, ['audio'])}
             onRemove={room.removeParticipant}
@@ -595,11 +599,7 @@ function CallShellContent({
             !(state.selfUserId && isHandRaised(state, state.selfUserId))
           )
         }
-        onTogglePanel={(next) => {
-          setPanel(next);
-          setShowPersonalTools(false);
-          setShowAi(false);
-        }}
+        onTogglePanel={setDrawer}
         onToggleRecording={
           canManage || state.settings.allowParticipantRecording
             ? () =>
@@ -611,42 +611,43 @@ function CallShellContent({
         extraControls={
           <>
             {MEETING_APP === 'meet' && (
-              <ControlButton
-                active={showPersonalTools}
-                icon={CalendarDays}
-                label={privateT('title')}
-                onClick={() => {
-                  setShowPersonalTools((value) => !value);
-                  setPanel(null);
-                  setShowAi(false);
-                }}
-              />
-            )}
-            {MEETING_APP === 'meet' && (
-              <ControlButton
-                active={showProgramming}
-                icon={Code2}
-                label={programmingT('coding')}
-                onClick={() => {
-                  setShowDocument(false);
-                  setShowProgramming((value) => !value);
-                  if (!showProgramming && canManage)
-                    void programming
-                      .prepare()
-                      .catch(() => toast.error(programmingT('accessError')));
-                }}
-              />
-            )}
-            {MEETING_APP === 'meet' && (
-              <ControlButton
-                active={showDocument}
-                icon={FileText}
-                label={collaborationT('document')}
-                onClick={() => {
-                  setShowProgramming(false);
-                  setShowDocument((value) => !value);
-                }}
-              />
+              <>
+                <PollsControl
+                  query={polls}
+                  open={pollPanelOpen}
+                  onClick={() => setDrawer(pollPanelOpen ? null : 'polls')}
+                />
+                <ControlButton
+                  active={drawer === 'personal'}
+                  icon={CalendarDays}
+                  label={privateT('title')}
+                  onClick={() =>
+                    setDrawer(drawer === 'personal' ? null : 'personal')
+                  }
+                />
+                <ControlButton
+                  active={showProgramming}
+                  icon={Code2}
+                  label={programmingT('coding')}
+                  onClick={() => {
+                    setShowDocument(false);
+                    setShowProgramming((value) => !value);
+                    if (!showProgramming && canManage)
+                      void programming
+                        .prepare()
+                        .catch(() => toast.error(programmingT('accessError')));
+                  }}
+                />
+                <ControlButton
+                  active={showDocument}
+                  icon={FileText}
+                  label={collaborationT('document')}
+                  onClick={() => {
+                    setShowProgramming(false);
+                    setShowDocument((value) => !value);
+                  }}
+                />
+              </>
             )}
             <CallExtras
               layout={layout}

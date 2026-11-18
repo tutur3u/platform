@@ -28,6 +28,11 @@ import {
   summarizeLiveUsage,
 } from './room-live-usage';
 import { applyRoomProgramming } from './room-programming';
+import {
+  applyRoomPolls,
+  pollRoomCommandSchema,
+  type RoomPoll,
+} from './room-polls';
 import type { RoomRecording } from './room-recording';
 import { summarizeRoomUsage } from './room-usage';
 import { transcriptionClientSnapshot } from './transcription';
@@ -51,6 +56,7 @@ export type RoomChatMessage = Extract<
   { type: 'chat.message' }
 >;
 export type RoomServiceState = MeetRoomSnapshot & {
+  polls?: RoomPoll[];
   miraPrivate?: MiraPrivateState;
   personalChatReceipts?: PersonalChatReceipts;
   chat?: RoomChatMessage[];
@@ -72,7 +78,7 @@ export type RoomServiceState = MeetRoomSnapshot & {
     }
   >;
 };
-const command = z.union([
+const roomCommand = z.union([
   assistantReviewCommand,
   personalChatReceiptCommand,
   z.discriminatedUnion('action', [
@@ -108,6 +114,13 @@ const command = z.union([
     }),
   ]),
 ]);
+const command = z.union([
+  pollRoomCommandSchema.transform((message) => ({
+    service: 'polls' as const,
+    message,
+  })),
+  roomCommand.transform((message) => ({ service: 'room' as const, message })),
+]);
 export function roomService(
   snapshot: RoomServiceState,
   token: MeetRealtimeTokenPayload,
@@ -136,6 +149,8 @@ export function roomService(
   if (live) return live;
   const parsed = command.safeParse(input);
   if (!parsed.success) return fail('Invalid request', 400);
+  if (parsed.data.service === 'polls')
+    return applyRoomPolls(snapshot, token, parsed.data.message);
   const accountId = token.accountId ?? token.userId;
   const admitted = Object.values(snapshot.presence).some(
     (person) => (person.accountId ?? person.userId) === accountId
@@ -145,7 +160,7 @@ export function roomService(
     !!snapshot.approved?.[accountId] ||
     token.scopes.includes('meet:workspace-member');
   const admin = token.role === 'host';
-  const message = parsed.data;
+  const { message } = parsed.data;
   if (message.action === 'transcription.speaker') {
     if (!admin) return fail('Only the host can attribute transcription');
     const known =

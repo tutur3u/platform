@@ -396,3 +396,272 @@ it('limits transcript identities to signed host requests and admitted accounts',
     ).body
   ).toEqual({ accountId: stranger });
 });
+
+describe('room poll actions', () => {
+  const manager = {
+    ...token,
+    scopes: [...token.scopes, 'participants:manage'],
+  };
+  const host = { ...token, role: 'host' as const };
+  const other = {
+    ...token,
+    userId: '433cf9e7-c217-4f33-b86b-c1893b5e78e1',
+    accountId: '433cf9e7-c217-4f33-b86b-c1893b5e78e1',
+  };
+  const create = {
+    action: 'poll.create',
+    anonymous: true,
+    definition: { type: 'open_text', question: 'What helped?' },
+  };
+  const start = (definition: unknown) => {
+    const drafted = roomService(initial(), manager, { ...create, definition });
+    const poll = drafted.state.polls?.[0];
+    if (!poll) throw new Error('Expected a valid poll draft');
+    const pollId = poll.id;
+    return {
+      pollId,
+      poll,
+      state: roomService(drafted.state, host, { action: 'poll.launch', pollId })
+        .state,
+    };
+  };
+
+  it('requires trusted scope, call admission and manager rights for administrative actions', () => {
+    expect(roomService(initial(), { ...host, scopes: [] }, create).status).toBe(
+      403
+    );
+    expect(roomService(initial(), token, create).status).toBe(403);
+    expect(roomService(initial(), other, { action: 'poll.list' }).status).toBe(
+      403
+    );
+    const { state, pollId } = start(create.definition);
+    for (const action of [
+      { action: 'poll.launch', pollId },
+      { action: 'poll.close', pollId },
+      { action: 'poll.visibility', pollId, resultsVisible: true },
+      { action: 'poll.delete', pollId },
+      { action: 'poll.export', pollId, format: 'csv' },
+      { action: 'poll.summary', pollId },
+      { action: 'poll.authorize' },
+    ])
+      expect(roomService(state, token, action).status).toBe(403);
+    expect(
+      roomService(state, other, {
+        action: 'poll.vote',
+        pollId,
+        response: { type: 'open_text', text: 'Hello' },
+      }).status
+    ).toBe(403);
+  });
+
+  it('enforces the lifecycle and records one account response across devices', () => {
+    const { state, pollId } = start(create.definition);
+    const vote = {
+      action: 'poll.vote',
+      pollId,
+      response: { type: 'open_text', text: ' First ' },
+    };
+    const first = roomService(state, token, vote);
+    expect(first.state.polls?.[0]?.responses[0]).toMatchObject({
+      submittedAt: expect.any(Number),
+    });
+    const device = { ...token, userId: other.userId };
+    expect(roomService(first.state, device, vote).state).toBe(first.state);
+    const second = roomService(first.state, device, {
+      ...vote,
+      response: { type: 'open_text', text: 'Updated' },
+    });
+    const hidden = roomService(second.state, token, { action: 'poll.list' });
+    expect(hidden.body).toMatchObject({
+      canManage: false,
+      polls: [{ myResponse: { text: 'Updated' }, results: null }],
+    });
+    expect(
+      roomService(second.state, manager, { action: 'poll.list' }).body
+    ).toMatchObject({
+      canManage: true,
+      polls: [{ results: { responseCount: 1, answers: ['Updated'] } }],
+    });
+    const visible = roomService(second.state, manager, {
+      action: 'poll.visibility',
+      pollId,
+      resultsVisible: true,
+    });
+    expect(
+      roomService(visible.state, token, { action: 'poll.list' }).body
+    ).toMatchObject({ polls: [{ results: { responseCount: 1 } }] });
+    const closed = roomService(second.state, manager, {
+      action: 'poll.close',
+      pollId,
+    });
+    expect(
+      roomService(closed.state, token, { action: 'poll.list' }).body
+    ).toMatchObject({
+      polls: [{ status: 'closed', results: { responseCount: 1 } }],
+    });
+    expect(roomService(closed.state, token, vote).status).toBe(409);
+    expect(
+      roomService(closed.state, host, { action: 'poll.launch', pollId }).status
+    ).toBe(409);
+    const deleted = roomService(closed.state, manager, {
+      action: 'poll.delete',
+      pollId,
+    });
+    expect(
+      roomService(deleted.state, manager, {
+        action: 'poll.export',
+        pollId,
+        format: 'json',
+      }).status
+    ).toBe(404);
+  });
+
+  it.each(['single_choice', 'multiple_choice'] as const)(
+    'validates and tallies %s selections',
+    (type) => {
+      const { state, pollId, poll } = start({
+        type,
+        question: 'Which?',
+        options: ['A', 'B', 'C'],
+        ...(type === 'multiple_choice' ? { maxChoices: 2 } : {}),
+      });
+      if (!('options' in poll)) throw new Error('Expected options');
+      const ids = poll.options.map(({ id }) => id);
+      const vote = (response: unknown) =>
+        roomService(state, token, { action: 'poll.vote', pollId, response });
+      expect(
+        vote({ type: 'single_choice', optionId: other.userId }).status
+      ).toBe(400);
+      if (type === 'multiple_choice') {
+        expect(vote({ type, optionIds: ids }).status).toBe(400);
+        expect(vote({ type, optionIds: [ids[0], ids[0]] }).status).toBe(400);
+      }
+      const accepted = vote(
+        type === 'multiple_choice'
+          ? { type, optionIds: ids.slice(0, 2) }
+          : { type, optionId: ids[0] }
+      );
+      expect(
+        roomService(accepted.state, host, { action: 'poll.summary', pollId })
+          .body
+      ).toMatchObject({
+        results: {
+          tally: [
+            { label: 'A', count: 1 },
+            { label: 'B', count: type === 'multiple_choice' ? 1 : 0 },
+            { label: 'C', count: 0 },
+          ],
+        },
+      });
+    }
+  );
+
+  it.each([5, 10])(
+    'calculates rating averages and %s-bin distributions',
+    (max) => {
+      const { state, pollId } = start({
+        type: 'rating',
+        question: 'How was it?',
+        min: 1,
+        max,
+      });
+      const admitted = admitOrHold(state, other, now).state;
+      const vote = (
+        current: RoomServiceState,
+        voter: typeof token,
+        rating: number
+      ) =>
+        roomService(current, voter, {
+          action: 'poll.vote',
+          pollId,
+          response: { type: 'rating', rating },
+        });
+      expect(vote(admitted, token, max + 1).status).toBe(400);
+      const first = vote(admitted, token, 1);
+      const second = vote(first.state, other, max);
+      expect(
+        roomService(second.state, host, { action: 'poll.summary', pollId }).body
+      ).toMatchObject({
+        results: {
+          average: (1 + max) / 2,
+          tally: Array.from({ length: max }, (_, index) => ({
+            label: String(index + 1),
+            count: index === 0 || index === max - 1 ? 1 : 0,
+          })),
+        },
+      });
+    }
+  );
+
+  it('groups normalized word-cloud entries and rejects blank or oversized text', () => {
+    const { state, pollId } = start({
+      type: 'word_cloud',
+      question: 'Describe the workshop',
+    });
+    const admitted = admitOrHold(state, other, now).state;
+    const vote = (
+      current: RoomServiceState,
+      voter: typeof token,
+      text: string
+    ) =>
+      roomService(current, voter, {
+        action: 'poll.vote',
+        pollId,
+        response: { type: 'word_cloud', text },
+      });
+    expect(vote(admitted, token, ' '.repeat(5)).status).toBe(400);
+    expect(vote(admitted, token, 'x'.repeat(61)).status).toBe(400);
+    const first = vote(admitted, token, '  Great   Team  ');
+    const second = vote(first.state, other, 'great team');
+    expect(
+      roomService(second.state, host, { action: 'poll.summary', pollId }).body
+    ).toMatchObject({
+      results: { responseCount: 2, tally: [{ label: 'Great Team', count: 2 }] },
+    });
+  });
+
+  it('bounds poll count, response count and total snapshot bytes', () => {
+    const { state, pollId, poll } = start(create.definition);
+    const full = { ...state, polls: Array.from({ length: 50 }, () => poll) };
+    expect(roomService(full, host, create).status).toBe(409);
+    const vote = {
+      action: 'poll.vote',
+      pollId,
+      response: { type: 'open_text', text: 'a' },
+    };
+    const responses = Array.from({ length: 500 }, (_, index) => ({
+      userId: String(index),
+      displayName: '',
+      response: { type: 'open_text' as const, text: 'a' },
+    }));
+    expect(
+      roomService(
+        { ...state, polls: [{ ...poll, status: 'active', responses }] },
+        token,
+        vote
+      ).status
+    ).toBe(409);
+    const large = responses.map((response) => ({
+      ...response,
+      response: { ...response.response, text: 'ế'.repeat(500) },
+    }));
+    expect(
+      roomService(
+        {
+          ...state,
+          polls: [
+            { ...poll, status: 'active', responses: large.slice(0, 200) },
+          ],
+        },
+        token,
+        vote
+      ).status
+    ).toBe(409);
+    expect(
+      roomService(state, token, {
+        ...vote,
+        response: { type: 'open_text', text: 'a'.repeat(501) },
+      }).status
+    ).toBe(400);
+  });
+});
