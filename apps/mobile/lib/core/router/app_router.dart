@@ -50,6 +50,7 @@ import 'package:mobile/features/notifications/view/notifications_page.dart';
 import 'package:mobile/features/profile/view/profile_overview_page.dart';
 import 'package:mobile/features/security/qr_login/view/qr_login_sign_in_page.dart';
 import 'package:mobile/features/shell/view/shell_page.dart';
+import 'package:mobile/features/shell/view/shell_route_transition.dart';
 import 'package:mobile/features/storefront/view/storefront_detail_page.dart';
 import 'package:mobile/features/storefront/view/storefronts_page.dart';
 import 'package:mobile/features/task_portfolio/view/task_project_detail_page.dart';
@@ -369,9 +370,13 @@ GoRouter createAppRouter(
       ShellRoute(
         builder: (context, state, child) => BlocProvider(
           create: (_) => AssistantChromeCubit(),
-          child: ShellPage(matchedLocation: state.uri.path, child: child),
+          child: ShellPage(
+            matchedLocation: state.uri.path,
+            routePattern: state.fullPath,
+            child: child,
+          ),
         ),
-        routes: [
+        routes: shellTransitionRoutes([
           GoRoute(
             path: Routes.home,
             builder: (context, state) => const DashboardPage(),
@@ -575,7 +580,7 @@ GoRouter createAppRouter(
             path: Routes.profileRoot,
             builder: (context, state) => const ProfileOverviewPage(),
           ),
-        ],
+        ]),
       ),
     ],
   );

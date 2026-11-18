@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:mobile/core/layout/page_insets.dart';
 import 'package:mobile/features/shell/view/floating_dock_rail.dart';
 import 'package:mobile/features/shell/view/shell_dock_surface.dart';
+import 'package:mobile/features/shell/view/shell_route_fade.dart';
 
 /// The shell retains this state, material and bounds across every destination.
 /// Only the current content is interactive: no outgoing composer/nav duplicates.
@@ -66,7 +67,8 @@ class _PersistentShellDockState extends State<PersistentShellDock> {
             layoutBuilder: (current, _) => current ?? const SizedBox(),
             child: KeyedSubtree(
               key: ValueKey(widget.composing),
-              child: widget.content,
+              // A push fades the contents through inside the same material.
+              child: ShellRouteFade(child: widget.content),
             ),
           );
           // One material for navigation and composers alike, so it keeps its

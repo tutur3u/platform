@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:mobile/core/layout/page_insets.dart';
 import 'package:mobile/core/router/routes.dart';
 import 'package:mobile/features/shell/view/dock_action_transition.dart';
+import 'package:mobile/features/shell/view/shell_dock_action_button.dart';
+import 'package:mobile/features/shell/view/shell_route_fade.dart';
 
 const double floatingDockHorizontalInset = ShellDockMetrics.inset;
 const double floatingDockBottomGap = ShellDockMetrics.inset;
@@ -47,12 +49,20 @@ class FloatingDockRail extends StatelessWidget {
   Widget build(BuildContext context) {
     final action = Padding(
       padding: EdgeInsets.only(bottom: actionLift),
-      child: DockActionTransition(
-        key: const ValueKey('floating-dock-primary-transition'),
-        slotKey: const ValueKey('floating-dock-primary-slot'),
-        identity: primary?.key ?? primary?.runtimeType,
-        reserveSpace: fixedZones,
-        child: primary,
+      // A push passes the circle straight to the next action: it keeps its
+      // material and only the icon fades through.
+      child: ShellRoutePrimaryFade(
+        primary: primary,
+        iconOf: (primary) =>
+            primary is ShellDockActionButton ? primary.action.icon : null,
+        builder: (context, primary, {required swap}) => DockActionTransition(
+          key: const ValueKey('floating-dock-primary-transition'),
+          slotKey: const ValueKey('floating-dock-primary-slot'),
+          identity: primary?.key ?? primary?.runtimeType,
+          reserveSpace: fixedZones,
+          immediate: swap,
+          child: primary,
+        ),
       ),
     );
     // One tree for both modes, so switching between navigation and a

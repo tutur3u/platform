@@ -38,6 +38,8 @@ import 'package:mobile/features/shell/view/shell_mini_nav.dart';
 import 'package:mobile/features/shell/view/shell_navigation_rail.dart';
 import 'package:mobile/features/shell/view/shell_root_more_sheet.dart';
 import 'package:mobile/features/shell/view/shell_root_tabs_editor.dart';
+import 'package:mobile/features/shell/view/shell_route_fade.dart';
+import 'package:mobile/features/shell/view/shell_route_transition.dart';
 import 'package:mobile/features/shell/view/shell_search_field.dart';
 import 'package:mobile/features/shell/view/shell_top_bar_title.dart';
 import 'package:mobile/features/workspace/cubit/workspace_cubit.dart';
@@ -53,6 +55,7 @@ part 'shell_page_interactions.dart';
 part 'shell_page_layout.dart';
 part 'shell_page_navigation.dart';
 part 'shell_page_root_tabs.dart';
+part 'shell_page_route_history.dart';
 part 'shell_page_scroll.dart';
 
 /// Shell layout with adaptive navigation.
@@ -71,11 +74,16 @@ class ShellPage extends StatefulWidget {
     this.notificationsPageBuilder,
     this.profilePageBuilder,
     this.rootTabsStore,
+    this.routePattern,
     super.key,
   });
 
   final Widget child;
   final String matchedLocation;
+
+  /// The matched route pattern (`GoRouterState.fullPath`). A location
+  /// change within one pattern updates its page in place.
+  final String? routePattern;
   final bool enableDebugLogs;
   @visibleForTesting
   final Widget Function(int replayToken)? assistantPageBuilder;
@@ -109,6 +117,13 @@ class _ShellPageState extends State<ShellPage> with WidgetsBindingObserver {
   bool _usesCompactNavigation(BuildContext context) => false;
 
   final _dockSlotController = ShellDockSlotController();
+  final _routeTransitions = ShellRouteTransitionController();
+  String? _previousLocation;
+  bool _arrivedBack = false;
+  bool _samePattern = false;
+
+  @visibleForTesting
+  List<String> get routeHistoryForTesting => List.unmodifiable(_routeHistory);
   late final _rootTabs = ShellRootTabsCubit(store: widget.rootTabsStore);
   StreamSubscription<List<ShellRootTab>?>? _rootTabsSubscription;
   Set<ShellRootTab> _availableRootTabs = ShellRootTab.values.toSet();
@@ -228,6 +243,7 @@ class _ShellPageState extends State<ShellPage> with WidgetsBindingObserver {
       FocusManager.instance.primaryFocus?.unfocus();
     }
     if (oldWidget.matchedLocation != widget.matchedLocation) {
+      _trackRouteChange(oldWidget);
       _lastScrolledDockRoute = null;
       _resetReusedPageScroll(oldWidget.matchedLocation);
     }
@@ -513,101 +529,6 @@ class _ShellPageState extends State<ShellPage> with WidgetsBindingObserver {
     );
   }
 
-  void _recordRouteVisit({
-    required String oldLocation,
-    required String newLocation,
-  }) {
-    final previous = _normalizeRouteLocation(oldLocation);
-    final current = _normalizeRouteLocation(newLocation);
-
-    if (previous == current) {
-      _debugBack(
-        'recordRouteVisit.skipSameRoute',
-        'old=$previous new=$current',
-      );
-      return;
-    }
-
-    _lastExitAttemptAt = null;
-    _dismissExitConfirmationToast();
-
-    if (_isHandlingBackNavigation) {
-      _debugBack(
-        'recordRouteVisit.skipBackHandled',
-        'old=$previous new=$current',
-      );
-      _isHandlingBackNavigation = false;
-      return;
-    }
-
-    if (!Routes.isSettingsHubLocation(current) &&
-        _isPrimaryMiniAppDestination(current) &&
-        _isSameMiniAppFamily(previous, current)) {
-      // A dock section replaces its sibling. Only detail routes form a
-      // drill-down history within a mini app.
-      _routeHistory.removeWhere(
-        (route) => _isSameMiniAppFamily(route, current),
-      );
-    } else {
-      _routeHistory.add(previous);
-    }
-    if (_routeHistory.length > 50) {
-      _routeHistory.removeAt(0);
-    }
-    _debugBack('recordRouteVisit.added', 'old=$previous new=$current');
-  }
-
-  String? _takePreviousRoute(String currentLocation) {
-    while (_routeHistory.isNotEmpty) {
-      final previous = _routeHistory.removeLast();
-      if (_normalizeRouteLocation(previous) == currentLocation) {
-        continue;
-      }
-      return previous;
-    }
-    return null;
-  }
-
-  bool _isSameMiniAppFamily(String locationA, String locationB) {
-    if (Routes.isSettingsHubLocation(locationA) &&
-        Routes.isSettingsHubLocation(locationB)) {
-      return true;
-    }
-    final rootA = Routes.miniAppRootForLocation(locationA);
-    final rootB = Routes.miniAppRootForLocation(locationB);
-    return rootA != null && rootA == rootB;
-  }
-
-  bool _isPrimaryMiniAppDestination(String location) {
-    final normalized = _normalizeRouteLocation(location);
-    return AppRegistry.allModules.any(
-      (module) => module.miniAppNavItems.any(
-        (item) => _normalizeRouteLocation(item.route) == normalized,
-      ),
-    );
-  }
-
-  String? _parentRouteFor(String location, String root) {
-    if (Routes.isSettingsHubLocation(location)) {
-      final slash = location.lastIndexOf('/');
-      if (slash > 0) {
-        final parent = location.substring(0, slash);
-        return parent;
-      }
-      return root;
-    }
-    final module = AppRegistry.moduleFromLocation(location);
-    final candidates =
-        module?.miniAppNavItems.map((item) => item.route) ??
-        const Iterable<String>.empty();
-    final parents = candidates.where(
-      (route) =>
-          route != root && route != location && location.startsWith('$route/'),
-    );
-    if (parents.isEmpty) return null;
-    return parents.reduce((a, b) => a.length >= b.length ? a : b);
-  }
-
   bool _isExitLocation(String location) {
     return location == Routes.home || location == Routes.apps;
   }
@@ -676,6 +597,7 @@ class _ShellPageState extends State<ShellPage> with WidgetsBindingObserver {
     _suppressPointerTimer?.cancel();
     _layerController.dispose();
     _dockSlotController.dispose();
+    _routeTransitions.dispose();
     unawaited(_rootTabsSubscription?.cancel());
     unawaited(_rootTabs.close());
     super.dispose();

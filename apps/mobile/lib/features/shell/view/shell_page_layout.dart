@@ -238,50 +238,6 @@ extension _ShellPageLayout on _ShellPageState {
     );
   }
 
-  Widget _buildBodyWithFloatingNav({
-    required Widget body,
-    required Widget navigationBar,
-    Widget? header,
-    double bodyBottomInset = 0,
-    double navigationBottomOffset = 0,
-    bool composerVisible = false,
-    double navigationWidth = 264,
-    bool allowDockSlot = true,
-    bool hideIdleNavigation = false,
-    bool fixedZones = false,
-    Widget? dockLeading,
-  }) {
-    return ShellDockScope(
-      controller: _dockSlotController,
-      child: FloatingShellDock(
-        location: widget.matchedLocation,
-        navigationWidth: navigationWidth,
-        allowDockSlot: allowDockSlot,
-        hideIdleNavigation: hideIdleNavigation,
-        fixedZones: fixedZones,
-        leading: dockLeading,
-        keyboardVisible: MediaQuery.viewInsetsOf(context).bottom > 0,
-        bottomInset: bodyBottomInset,
-        navigationBottomOffset: navigationBottomOffset,
-        reserveNavigationClearance: !composerVisible,
-        reclaimNavigationClearanceWhenHidden:
-            widget.matchedLocation == Routes.profileRoot ||
-            widget.matchedLocation == Routes.home ||
-            widget.matchedLocation == Routes.calendar,
-        keepNavigationVisible: composerVisible,
-        composerVisible: composerVisible,
-        navigation: navigationBar,
-        header: header,
-        minimumHeaderContentHeight: assistantHeaderContentHeight(
-          context,
-          location: widget.matchedLocation,
-        ),
-        scrollableHeader: _isRootTabLocation(widget.matchedLocation),
-        child: body,
-      ),
-    );
-  }
-
   // The dock pill plus the gap below and above it, above the system safe
   // area. The dock host adds the safe area once; including it here creates a
   // second gap.
@@ -641,9 +597,15 @@ extension _ShellPageLayout on _ShellPageState {
       child: SizedBox(
         width: double.infinity,
         child: RepaintBoundary(
-          child: ShellTopBarTitle(
-            matchedLocation: widget.matchedLocation,
-            fallbackTitle: selectedTitle,
+          child: ShellRouteFade(
+            kind: ShellRouteFadeKind.title,
+            alignment: AlignmentDirectional.centerStart,
+            // Each location's title is its own layer for the route fade.
+            child: ShellTopBarTitle(
+              key: ValueKey(widget.matchedLocation),
+              matchedLocation: widget.matchedLocation,
+              fallbackTitle: selectedTitle,
+            ),
           ),
         ),
       ),
