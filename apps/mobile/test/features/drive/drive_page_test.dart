@@ -60,6 +60,13 @@ class _Drive extends Fake implements DriveRepository {
     return await (load?.call(wsId, offset, search ?? '') ??
         Future.value(result(['Synthetic folder'], offset: offset)));
   }
+
+  @override
+  Future<String> createSignedUrl(
+    String wsId, {
+    required String path,
+    int expiresIn = 3600,
+  }) async => 'https://example.invalid/$path';
 }
 
 DriveListResult result(List<String> names, {int offset = 0, int? total}) =>
@@ -527,5 +534,42 @@ void main() {
     await pump(tester);
     expect(find.text('Synthetic folder'), findsNothing);
     expect(find.text('Synthetic denied'), findsOneWidget);
+  });
+
+  testWidgets('the list retires its dock actions and chip under a preview', (
+    tester,
+  ) async {
+    DrivePreviewPage.viewerForTesting = (_) => const Text('report viewer');
+    addTearDown(() => DrivePreviewPage.viewerForTesting = null);
+    repository.load = (ws, offset, query) async => const DriveListResult(
+      entries: [DriveEntry(name: 'report.pdf', isFolder: false)],
+      total: 1,
+      limit: 50,
+      offset: 0,
+    );
+    await mount(tester);
+    final miniNav = tester
+        .element(find.byType(DrivePage))
+        .read<ShellMiniNavCubit>();
+    List<String> listActions() => [
+      for (final action in actions.state.resolveForLocation(Routes.drive))
+        action.id,
+    ];
+    expect(listActions(), contains('drive-sort'));
+    expect(miniNav.state.resolveForLocation(Routes.drive), isNotNull);
+
+    await tester.tap(find.text('report.pdf'));
+    await pump(tester);
+    expect(find.text('report viewer'), findsOneWidget);
+    // Only the preview's chrome is live over the list.
+    expect(listActions(), isEmpty);
+    expect(miniNav.state.resolveForLocation(Routes.drive), isNull);
+
+    tester.state<NavigatorState>(find.byType(Navigator).first).pop();
+    await pump(tester);
+    expect(find.text('report viewer'), findsNothing);
+    expect(listActions(), contains('drive-sort'));
+    expect(miniNav.state.resolveForLocation(Routes.drive), isNotNull);
+    expect(tester.takeException(), isNull);
   });
 }

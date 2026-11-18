@@ -423,6 +423,12 @@ class _ShellPageState extends State<ShellPage> with WidgetsBindingObserver {
       await onBack();
       return;
     }
+    if (_notificationsOrigin(currentLocation) case final origin?) {
+      _routeHistory.removeLast();
+      _isHandlingBackNavigation = true;
+      context.go(origin);
+      return;
+    }
     if ((currentLocation.startsWith('${Routes.settings}/') ||
             Routes.isMastermindLaneLocation(currentLocation) ||
             Routes.isMastermindInboxItemLocation(currentLocation) ||

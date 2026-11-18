@@ -58,6 +58,9 @@ extension _ShellPageRouteHistory on _ShellPageState {
     arrivedBack: _arrivedBack,
     animates: _routeAnimates,
     interceptsBack: _routeInterceptsBack,
+    hasNotificationsOrigin: () =>
+        _notificationsOrigin(_normalizeRouteLocation(widget.matchedLocation)) !=
+        null,
     child: child,
   );
 
@@ -93,9 +96,24 @@ extension _ShellPageRouteHistory on _ShellPageState {
             _isSameMiniAppFamily(from, to));
   }
 
+  /// Notifications, when the current page was opened from it. Back returns
+  /// there ahead of the page's own list. A shell root (Home, Assistant, Apps,
+  /// Notifications, You) keeps its own Back; any other page, a mini app's
+  /// sections and an app pinned as a tab included, returns to Notifications.
+  /// A cold-start deep link has no such history and keeps its fallback.
+  String? _notificationsOrigin(String current) {
+    final last = _routeHistory.lastOrNull;
+    if (last == null || _isRootTabLocation(current)) return null;
+    final origin = _normalizeRouteLocation(last);
+    return origin == Routes.notifications ||
+            origin == Routes.notificationsArchive
+        ? origin
+        : null;
+  }
+
   /// Whether Back at the current location runs the shell's own handling (a
-  /// page's Back, an open modal, a deep link's Back route) that an edge
-  /// swipe would skip.
+  /// page's Back, an open modal, a deep link's Back route, a return to
+  /// Notifications) that an edge swipe would skip.
   bool _routeInterceptsBack() {
     if (!mounted) return true;
     final location = _normalizeRouteLocation(widget.matchedLocation);
@@ -107,7 +125,8 @@ extension _ShellPageRouteHistory on _ShellPageState {
         lookupShellMiniNavCubit(
               context,
             )?.state.deepLinkBackRouteForLocation(location) !=
-            null;
+            null ||
+        _notificationsOrigin(location) != null;
   }
 
   void _recordRouteVisit({

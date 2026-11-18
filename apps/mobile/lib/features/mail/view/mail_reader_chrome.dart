@@ -64,8 +64,16 @@ extension _MailReaderChrome on _MailReaderState {
         // The reader sits in Mail's own navigator at the Mail location, so
         // the dock's Back closes it back to the list instead of leaving Mail.
         // While the reader animates out, Back does nothing; the registration
-        // retires with the reader.
-        onBack: _closeFromBack,
+        // retires with the reader. A reader opened from Notifications leaves
+        // Back to the shell, which returns there in one step.
+        onBack:
+            widget.notificationEntry &&
+                (ShellRouteTransitionScope.maybeOf(
+                      context,
+                    )?.hasNotificationsOrigin() ??
+                    false)
+            ? null
+            : _closeFromBack,
       ),
     ],
   );

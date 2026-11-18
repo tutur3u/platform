@@ -34,6 +34,7 @@ import 'package:share_plus/share_plus.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 part 'drive_grid.dart';
+part 'drive_page_preview.dart';
 part 'drive_page_widgets.dart';
 
 class DrivePage extends StatefulWidget {
@@ -62,6 +63,9 @@ class _DrivePageState extends State<DrivePage> {
   bool _canManageDrive = false;
   bool _showGrid = false;
   bool _searching = false;
+  bool _previewOpen = false;
+
+  void _update(VoidCallback update) => setState(update);
   String _sortBy = 'name';
   String _sortOrder = 'asc';
   String _path = '';
@@ -497,38 +501,6 @@ class _DrivePageState extends State<DrivePage> {
     unawaited(_reload());
   }
 
-  Future<void> _openEntry(DriveEntry entry) async {
-    final wsId = _wsId;
-    final actorId = _actorId;
-    final token = _requestToken;
-    if (wsId == null) return;
-    if (entry.isFolder) {
-      setState(() {
-        _path = _path.isEmpty ? entry.name : '$_path/${entry.name}';
-        _selectedNames.clear();
-      });
-      await _reload();
-      return;
-    }
-
-    try {
-      final signedUrl = await _repository.createSignedUrl(
-        wsId,
-        path: _path.isEmpty ? entry.name : '$_path/${entry.name}',
-      );
-      if (!mounted || !_isCurrentRequest(token, wsId, actorId)) return;
-      await Navigator.of(context).push<void>(
-        MaterialPageRoute(
-          builder: (_) =>
-              _DrivePreviewPage(title: entry.name, signedUrl: signedUrl),
-        ),
-      );
-    } on ApiException catch (error) {
-      if (!mounted || !_isCurrentRequest(token, wsId, actorId)) return;
-      _toast(error.message, destructive: true);
-    }
-  }
-
   Future<void> _shareEntry(DriveEntry entry) async {
     final wsId = _wsId;
     final actorId = _actorId;
@@ -702,112 +674,121 @@ class _DrivePageState extends State<DrivePage> {
               title: currentFolderLabel ?? context.l10n.driveTitle,
               showLeadingBrand: _path.isEmpty && !_searching,
             ),
-            ShellMiniNav(
-              ownerId: 'drive-root-nav',
-              locations: const {Routes.drive},
-              deepLinkBackRoute: Routes.apps,
-              items: [
-                ShellMiniNavItemSpec(
-                  id: 'drive-back',
-                  icon: Icons.chevron_left,
-                  label: context.l10n.navBack,
-                  callbackToken: 'back',
-                  onPressed: () => context.go(Routes.apps),
-                ),
-                ShellMiniNavItemSpec(
-                  id: 'drive-home',
-                  icon: Icons.folder_copy_outlined,
-                  label: context.l10n.driveTitle,
-                  callbackToken: _path.isEmpty,
-                  selected: _path.isEmpty,
-                  enabled: hasWorkspace,
-                  onPressed: _goToRoot,
-                ),
-                if (currentFolderLabel != null)
+            // The preview covers the list; its chrome steps aside meanwhile.
+            if (_previewOpen)
+              const SizedBox.shrink()
+            else
+              ShellMiniNav(
+                ownerId: 'drive-root-nav',
+                locations: const {Routes.drive},
+                deepLinkBackRoute: Routes.apps,
+                items: [
                   ShellMiniNavItemSpec(
-                    id: 'drive-folder',
-                    icon: Icons.folder_open_outlined,
-                    label: currentFolderLabel,
-                    callbackToken: _path,
-                    selected: true,
+                    id: 'drive-back',
+                    icon: Icons.chevron_left,
+                    label: context.l10n.navBack,
+                    callbackToken: 'back',
+                    onPressed: () => context.go(Routes.apps),
+                  ),
+                  ShellMiniNavItemSpec(
+                    id: 'drive-home',
+                    icon: Icons.folder_copy_outlined,
+                    label: context.l10n.driveTitle,
+                    callbackToken: _path.isEmpty,
+                    selected: _path.isEmpty,
                     enabled: hasWorkspace,
-                    onPressed: _goUp,
+                    onPressed: _goToRoot,
                   ),
-              ],
-            ),
-            ShellChromeActions(
-              ownerId: 'drive-root-actions',
-              locations: const {Routes.drive},
-              // View precedes Search: phones under 400dp keep only the first
-              // dock action in the dock.
-              actions: [
-                ShellActionSpec(
-                  id: 'drive-view',
-                  inDock: true,
-                  icon: _showGrid ? Icons.view_list : Icons.grid_view_rounded,
-                  tooltip: _showGrid
-                      ? context.l10n.driveListView
-                      : context.l10n.driveGridView,
-                  callbackToken: _showGrid,
-                  enabled: hasWorkspace,
-                  highlighted: _showGrid,
-                  onPressed: () {
-                    setState(() => _showGrid = !_showGrid);
-                  },
-                ),
-                ShellActionSpec(
-                  id: 'drive-sort',
-                  inDock: true,
-                  icon: Icons.sort_rounded,
-                  tooltip: context.l10n.sortBy,
-                  callbackToken: '$_sortBy:$_sortOrder',
-                  enabled: hasWorkspace,
-                  onPressed: _showSortSheet,
-                ),
-                ShellActionSpec.search(
-                  id: 'drive-search',
-                  active: _searching,
-                  tooltip: context.l10n.driveSearchHint,
-                  enabled: hasWorkspace,
-                  controller: _searchController,
-                  searchHint: context.l10n.driveSearchHint,
-                  onSearchChanged: _onSearchChanged,
-                  onCloseSearch: _closeSearch,
-                  onPressed: () {
-                    if (_searching) {
-                      _closeSearch();
-                    } else {
-                      setState(() => _searching = true);
-                    }
-                  },
-                ),
-                if (_canManageDrive)
+                  if (currentFolderLabel != null)
+                    ShellMiniNavItemSpec(
+                      id: 'drive-folder',
+                      icon: Icons.folder_open_outlined,
+                      label: currentFolderLabel,
+                      callbackToken: _path,
+                      selected: true,
+                      enabled: hasWorkspace,
+                      onPressed: _goUp,
+                    ),
+                ],
+              ),
+            if (_previewOpen)
+              const SizedBox.shrink()
+            else
+              ShellChromeActions(
+                ownerId: 'drive-root-actions',
+                locations: const {Routes.drive},
+                // View precedes Search: phones under 400dp keep only the first
+                // dock action in the dock.
+                actions: [
                   ShellActionSpec(
-                    id: 'drive-create',
-                    icon: Icons.add_rounded,
-                    tooltip: context.l10n.commonCreate,
-                    callbackToken: hasWorkspace,
+                    id: 'drive-view',
+                    inDock: true,
+                    icon: _showGrid ? Icons.view_list : Icons.grid_view_rounded,
+                    tooltip: _showGrid
+                        ? context.l10n.driveListView
+                        : context.l10n.driveGridView,
+                    callbackToken: _showGrid,
                     enabled: hasWorkspace,
-                    onPressed: _showDriveActionsSheet,
+                    highlighted: _showGrid,
+                    onPressed: () {
+                      setState(() => _showGrid = !_showGrid);
+                    },
                   ),
-                if (_canManageDrive)
                   ShellActionSpec(
-                    id: 'drive-delete-selected',
-                    icon: Icons.delete_outline_rounded,
-                    tooltip: context.l10n.driveDeleteSelected(
-                      _selectedNames.length,
-                    ),
-                    callbackToken: _selectedNames.length,
-                    enabled: hasWorkspace && _selectedNames.isNotEmpty,
-                    highlighted: _selectedNames.isNotEmpty,
-                    onPressed: () => _deleteEntries(
-                      _entries
-                          .where((entry) => _selectedNames.contains(entry.name))
-                          .toList(growable: false),
-                    ),
+                    id: 'drive-sort',
+                    inDock: true,
+                    icon: Icons.sort_rounded,
+                    tooltip: context.l10n.sortBy,
+                    callbackToken: '$_sortBy:$_sortOrder',
+                    enabled: hasWorkspace,
+                    onPressed: _showSortSheet,
                   ),
-              ],
-            ),
+                  ShellActionSpec.search(
+                    id: 'drive-search',
+                    active: _searching,
+                    tooltip: context.l10n.driveSearchHint,
+                    enabled: hasWorkspace,
+                    controller: _searchController,
+                    searchHint: context.l10n.driveSearchHint,
+                    onSearchChanged: _onSearchChanged,
+                    onCloseSearch: _closeSearch,
+                    onPressed: () {
+                      if (_searching) {
+                        _closeSearch();
+                      } else {
+                        setState(() => _searching = true);
+                      }
+                    },
+                  ),
+                  if (_canManageDrive)
+                    ShellActionSpec(
+                      id: 'drive-create',
+                      icon: Icons.add_rounded,
+                      tooltip: context.l10n.commonCreate,
+                      callbackToken: hasWorkspace,
+                      enabled: hasWorkspace,
+                      onPressed: _showDriveActionsSheet,
+                    ),
+                  if (_canManageDrive)
+                    ShellActionSpec(
+                      id: 'drive-delete-selected',
+                      icon: Icons.delete_outline_rounded,
+                      tooltip: context.l10n.driveDeleteSelected(
+                        _selectedNames.length,
+                      ),
+                      callbackToken: _selectedNames.length,
+                      enabled: hasWorkspace && _selectedNames.isNotEmpty,
+                      highlighted: _selectedNames.isNotEmpty,
+                      onPressed: () => _deleteEntries(
+                        _entries
+                            .where(
+                              (entry) => _selectedNames.contains(entry.name),
+                            )
+                            .toList(growable: false),
+                      ),
+                    ),
+                ],
+              ),
             if (_isLoading && _entries.isEmpty)
               const AppPageBody(
                 kind: AppPageKind.root,

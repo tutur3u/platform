@@ -13,6 +13,7 @@ import 'package:mobile/features/apps/cubit/app_tab_cubit.dart';
 import 'package:mobile/features/assistant/cubit/assistant_chrome_cubit.dart';
 import 'package:mobile/features/auth/cubit/auth_cubit.dart';
 import 'package:mobile/features/auth/cubit/auth_state.dart';
+import 'package:mobile/features/mail/data/mail_push_destination.dart';
 import 'package:mobile/features/mail/view/mail_page.dart';
 import 'package:mobile/features/mail/view/mail_reader.dart';
 import 'package:mobile/features/shell/cubit/shell_chrome_actions_cubit.dart';
@@ -42,16 +43,29 @@ const _dockBack = ValueKey<String>('shell-dock-back');
 /// Mail as production mounts it: the inbox in Mail's own navigator, with
 /// the reader pushed over it at the Mail location.
 class _Mail extends StatelessWidget {
-  const _Mail(this.repository);
+  const _Mail(this.repository, {this.destination});
   final MailPreviewRepository repository;
+  final MailPushDestination? destination;
 
   @override
   Widget build(BuildContext context) => Navigator(
     onGenerateRoute: (_) => MaterialPageRoute<void>(
-      builder: (_) => MailWorkspace(workspaceId: 'ws', repository: repository),
+      builder: (_) => MailWorkspace(
+        workspaceId: 'ws',
+        repository: repository,
+        destination: destination,
+      ),
     ),
   );
 }
+
+/// A mail notification for the synthetic mailbox's fourth thread.
+const _pushed = MailPushDestination(
+  userId: 'user',
+  mailboxId: 'box',
+  threadId: 'thread-3',
+  notificationId: 'notification',
+);
 
 ScrollPosition _inbox(WidgetTester tester) => Scrollable.of(
   tester.element(find.text('Synthetic subject 0', skipOffstage: false)),
@@ -101,15 +115,20 @@ void main() {
 
   /// Opens Mail from Home, scrolls the inbox to [_offset] and opens the
   /// first conversation that is fully on screen.
+  ///
+  /// With [destination], Mail opens from [start] the way a notification
+  /// opens it: straight into that conversation's reader.
   Future<GoRouter> openReader(
     WidgetTester tester, {
     AppearanceSettings? appearance,
+    String start = Routes.home,
+    MailPushDestination? destination,
   }) async {
     setMailSurface(tester, const Size(390, 844));
     final repository = MailPreviewRepository();
     stubMailPreview(repository, threads: 40);
     final router = GoRouter(
-      initialLocation: Routes.home,
+      initialLocation: start,
       routes: [
         ShellRoute(
           // The shared app theme is created once per test isolate, so its
@@ -132,7 +151,14 @@ void main() {
               path: Routes.home,
               builder: (_, _) => const SizedBox.shrink(),
             ),
-            GoRoute(path: Routes.mail, builder: (_, _) => _Mail(repository)),
+            GoRoute(
+              path: Routes.notifications,
+              builder: (_, _) => const SizedBox.shrink(),
+            ),
+            GoRoute(
+              path: Routes.mail,
+              builder: (_, _) => _Mail(repository, destination: destination),
+            ),
           ]),
         ),
       ],
@@ -160,8 +186,9 @@ void main() {
       ),
     );
     await settleMail(tester);
-    router.go(Routes.mail);
+    if (start != Routes.mail) router.go(Routes.mail);
     await settleMail(tester);
+    if (destination != null) return router;
     _inbox(tester).jumpTo(_offset);
     await settleMail(tester);
     final row = find
@@ -325,6 +352,34 @@ void main() {
       ),
       findsNothing,
     );
+    await drain(tester);
+  });
+
+  testWidgets('one Back from a Mail message opened from Notifications '
+      'returns there', (tester) async {
+    await openReader(tester, start: Routes.notifications, destination: _pushed);
+    expect(find.byType(MailReader), findsOneWidget);
+    await tester.tap(find.byKey(_dockBack));
+    await settleMail(tester);
+    expect(_location(tester), Routes.notifications);
+    expect(tester.takeException(), isNull);
+    await drain(tester);
+  });
+
+  testWidgets('a cold-start Mail notification closes to the inbox', (
+    tester,
+  ) async {
+    await openReader(tester, start: Routes.mail, destination: _pushed);
+    expect(find.byType(MailReader), findsOneWidget);
+    await tester.tap(find.byKey(_dockBack));
+    await settleMail(tester);
+    expect(_location(tester), Routes.mail);
+    expect(find.byType(MailReader), findsNothing);
+    expect(
+      find.text('Synthetic subject 0', skipOffstage: false),
+      findsOneWidget,
+    );
+    expect(tester.takeException(), isNull);
     await drain(tester);
   });
 }

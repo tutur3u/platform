@@ -12,12 +12,13 @@ import 'package:mobile/features/apps/cubit/app_tab_cubit.dart';
 import 'package:mobile/features/assistant/cubit/assistant_chrome_cubit.dart';
 import 'package:mobile/features/auth/cubit/auth_cubit.dart';
 import 'package:mobile/features/auth/cubit/auth_state.dart';
+import 'package:mobile/features/drive/view/drive_page.dart';
 import 'package:mobile/features/shell/cubit/shell_chrome_actions_cubit.dart';
-import 'package:mobile/features/shell/cubit/shell_mini_nav_cubit.dart';
 import 'package:mobile/features/shell/cubit/shell_profile_cubit.dart';
 import 'package:mobile/features/shell/cubit/shell_profile_state.dart';
 import 'package:mobile/features/shell/cubit/shell_title_override_cubit.dart';
 import 'package:mobile/features/shell/view/shell_chrome_actions.dart';
+import 'package:mobile/features/shell/view/shell_mini_nav.dart';
 import 'package:mobile/features/shell/view/shell_page.dart';
 import 'package:mobile/features/shell/view/shell_route_fade.dart';
 import 'package:mobile/features/shell/view/shell_route_motion.dart';
@@ -44,9 +45,48 @@ final String _guarded = Routes.walletDetailPath('guarded');
 /// Back presses the guarded wallet page handles itself.
 var _guardedBacks = 0;
 
+final String _board = Routes.taskBoardDetailPath('7');
+
 Widget _page(GoRouterState state) {
   final location = state.uri.path;
   final body = Center(child: Text('body $location'));
+  if (location == Routes.drive) {
+    return Builder(
+      builder: (context) => Center(
+        child: TextButton(
+          onPressed: () => Navigator.of(context).push<void>(
+            MaterialPageRoute(
+              builder: (_) => const DrivePreviewPage(
+                title: 'report.pdf',
+                signedUrl: 'https://example.invalid/report.pdf',
+              ),
+            ),
+          ),
+          child: const Text('open report'),
+        ),
+      ),
+    );
+  }
+  if (location == _board) {
+    // A board names its list as the Back of a deep link, as production does.
+    return Stack(
+      children: [
+        body,
+        ShellMiniNav(
+          ownerId: 'board-7',
+          locations: {location},
+          deepLinkBackRoute: Routes.taskBoards,
+          items: const [
+            ShellMiniNavItemSpec(
+              id: 'back',
+              icon: Icons.chevron_left,
+              label: 'Back',
+            ),
+          ],
+        ),
+      ],
+    );
+  }
   if (location != _guarded) return body;
   return Stack(
     children: [
@@ -89,6 +129,9 @@ GoRouter _router(String initialLocation) => GoRouter(
           _timer,
           _products,
           Routes.walletDetail,
+          Routes.notifications,
+          Routes.taskBoardDetail,
+          Routes.drive,
         ])
           GoRoute(path: path, builder: (_, state) => _page(state)),
       ]),
@@ -111,6 +154,8 @@ List<String> _history(WidgetTester tester) =>
 String _location(WidgetTester tester) => tester
     .widget<ShellRouteTransitionScope>(find.byType(ShellRouteTransitionScope))
     .location;
+
+const _dockBack = ValueKey<String>('shell-dock-back');
 
 Finder _title(String location) => find.byKey(ValueKey(location));
 
@@ -148,6 +193,7 @@ void main() {
   setUp(() {
     SharedPreferences.setMockInitialValues(<String, Object>{});
     _guardedBacks = 0;
+    DrivePreviewPage.viewerForTesting = (_) => const Text('report viewer');
     appTabCubit = AppTabCubit(settingsRepository: SettingsRepository());
     authCubit = _MockAuthCubit();
     workspaceCubit = _MockWorkspaceCubit();
@@ -170,6 +216,7 @@ void main() {
   });
 
   tearDown(() async {
+    DrivePreviewPage.viewerForTesting = null;
     await appTabCubit.close();
     await authCubit.close();
     await workspaceCubit.close();
@@ -200,6 +247,23 @@ void main() {
     );
     await tester.pumpAndSettle();
     return router;
+  }
+
+  /// The preview closed to the list, its Back retired, and the next Back
+  /// leaves Drive.
+  Future<void> expectDriveListThenLeave(WidgetTester tester) async {
+    await tester.pumpAndSettle();
+    expect(find.text('report viewer'), findsNothing);
+    expect(find.text('open report'), findsOneWidget);
+    expect(_location(tester), Routes.drive);
+    final actions = tester
+        .element(find.byType(ShellPage))
+        .read<ShellChromeActionsCubit>();
+    expect(actions.state.backForLocation(Routes.drive), isNull);
+    await tester.tap(find.byKey(_dockBack));
+    await tester.pumpAndSettle();
+    expect(_location(tester), isNot(Routes.drive));
+    expect(tester.takeException(), isNull);
   }
 
   /// Pumps single frames until the location and its title have changed,
@@ -362,4 +426,83 @@ void main() {
     expect(find.text('body $_products'), findsOneWidget);
     expect(tester.takeException(), isNull);
   });
+  for (final (name, back) in <(String, Future<void> Function(WidgetTester))>[
+    ('the dock', (tester) => tester.tap(find.byKey(_dockBack))),
+    ('system', (tester) => tester.binding.handlePopRoute()),
+  ]) {
+    testWidgets('$name Back from an item opened from Notifications returns '
+        'there', (tester) async {
+      final router = await pumpShell(tester, Routes.notifications);
+      router.go(_board);
+      await tester.pumpAndSettle();
+      expect(_location(tester), _board);
+      await back(tester);
+      await tester.pumpAndSettle();
+      expect(_location(tester), Routes.notifications);
+      expect(tester.takeException(), isNull);
+    });
+  }
+
+  testWidgets('Back from a cold-start deep link returns to its list', (
+    tester,
+  ) async {
+    await pumpShell(tester, _board);
+    expect(_history(tester), isEmpty);
+    await tester.tap(find.byKey(_dockBack));
+    await tester.pumpAndSettle();
+    expect(_location(tester), Routes.taskBoards);
+    expect(tester.takeException(), isNull);
+  });
+
+  testWidgets('the Drive preview has one top bar and closes to the list', (
+    tester,
+  ) async {
+    await pumpShell(tester, Routes.drive);
+    await tester.tap(find.text('open report'));
+    await tester.pumpAndSettle();
+    expect(find.text('report viewer'), findsOneWidget);
+    expect(find.byType(AppBar), findsNothing);
+    // The shell's top bar names the file.
+    expect(find.text('report.pdf'), findsOneWidget);
+    await tester.tap(find.byKey(_dockBack));
+    await expectDriveListThenLeave(tester);
+  });
+
+  testWidgets('a second Back while the Drive preview closes keeps the list', (
+    tester,
+  ) async {
+    await pumpShell(tester, Routes.drive);
+    await tester.tap(find.text('open report'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.byKey(_dockBack));
+    await tester.pump(const Duration(milliseconds: 16));
+    await tester.tap(find.byKey(_dockBack), warnIfMissed: false);
+    await tester.binding.handlePopRoute();
+    await expectDriveListThenLeave(tester);
+  });
+
+  testWidgets('system Back closes the Drive preview to the list', (
+    tester,
+  ) async {
+    await pumpShell(tester, Routes.drive);
+    await tester.tap(find.text('open report'));
+    await tester.pumpAndSettle();
+    await tester.binding.handlePopRoute();
+    await expectDriveListThenLeave(tester);
+  });
+
+  testWidgets('the edge swipe closes the Drive preview to the list', (
+    tester,
+  ) async {
+    await pumpShell(tester, Routes.drive);
+    await tester.tap(find.text('open report'));
+    await tester.pumpAndSettle();
+    final gesture = await tester.startGesture(const Offset(4, 400));
+    await gesture.moveBy(const Offset(40, 0));
+    await tester.pump();
+    await gesture.moveBy(const Offset(260, 0));
+    await tester.pump();
+    await gesture.up();
+    await expectDriveListThenLeave(tester);
+  }, variant: TargetPlatformVariant.only(TargetPlatform.iOS));
 }

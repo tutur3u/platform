@@ -114,6 +114,7 @@ class ShellRouteTransitionScope extends InheritedWidget {
     this.arrivedBack = false,
     this.animates = _always,
     this.interceptsBack = _never,
+    this.hasNotificationsOrigin = _never,
     super.key,
   });
 
@@ -133,6 +134,10 @@ class ShellRouteTransitionScope extends InheritedWidget {
   /// Whether Back at [location] runs shell handling that a swipe would
   /// skip; the edge swipe is off while it does.
   final bool Function() interceptsBack;
+
+  /// Whether the current page was opened from Notifications, so the shell's
+  /// Back returns there in one step.
+  final bool Function() hasNotificationsOrigin;
 
   static bool _always(String from, String to) => true;
   static bool _never() => false;

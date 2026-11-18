@@ -230,7 +230,19 @@ shell's chrome stays in place and changes on the same 220ms timeline.
   the dock, system Back and the iOS edge swipe close it to the list beneath,
   which keeps its scroll position. Only the current page closes; a second
   Back while it closes does nothing, and its Back retires with it
-  (`mail_shell_back_test.dart`).
+  (`mail_shell_back_test.dart`). Such a page draws no bar of its own: the
+  shell's top bar shows its title, such as a Drive file's name, and the list
+  beneath retires its own dock actions and chips while it shows.
+- Back from a page opened from Notifications returns to Notifications, ahead
+  of the page's own list. A shell root (Home, Assistant, Apps, Notifications,
+  You) keeps its own Back; any other page does not, a mini app's sections
+  and an app pinned as a tab included. A Mail message opened from
+  Notifications returns there in one Back. A page's own layer still closes
+  first: a task opened from Notifications closes its sheet on the first Back,
+  and the next returns to Notifications. The edge swipe is off while Back
+  returns to Notifications. A cold-start deep link, which has no history,
+  returns to the item's list (Mail: the inbox)
+  (`shell_route_transition_shell_test.dart`, `mail_shell_back_test.dart`).
 
 Shell routes are `ShellTransitionPage`s (`shellTransitionRoutes`). The route
 reports its animation to the shell's `ShellRouteTransitionController`, and
