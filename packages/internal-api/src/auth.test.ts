@@ -4,7 +4,9 @@ import {
   listWebAccountsWithInternalApi,
   logoutAllWebAccountsWithInternalApi,
   logoutBrowserSessionWithInternalApi,
+  logoutCurrentWebAccountWithInternalApi,
   passwordLoginWithInternalApi,
+  removeWebAccountWithInternalApi,
   saveCurrentWebAccountWithInternalApi,
   switchWebAccountWithInternalApi,
 } from './auth';
@@ -203,29 +205,54 @@ describe('auth internal API helpers', () => {
     });
   });
 
-  it('logs out all web accounts through the server vault route', async () => {
-    const fetchMock = vi.fn().mockResolvedValue(
-      createJsonResponse({
-        accounts: [],
-        activeAccountId: null,
-        success: true,
-      })
-    );
+  it.each([
+    {
+      path: 'logout',
+      method: 'POST',
+      mutate: logoutCurrentWebAccountWithInternalApi,
+    },
+    {
+      path: 'logout-all',
+      method: 'POST',
+      mutate: logoutAllWebAccountsWithInternalApi,
+    },
+    {
+      path: 'user-2',
+      method: 'DELETE',
+      mutate: (
+        options: Parameters<typeof removeWebAccountWithInternalApi>[1]
+      ) => removeWebAccountWithInternalApi('user-2', options),
+    },
+  ])(
+    'uses JSON headers for the bodyless $method /$path',
+    async ({ path, method, mutate }) => {
+      const fetchMock = vi.fn().mockResolvedValue(
+        createJsonResponse({
+          accounts: [],
+          activeAccountId: null,
+          success: true,
+        })
+      );
 
-    await logoutAllWebAccountsWithInternalApi({
-      baseUrl: 'https://internal.example.com',
-      fetch: fetchMock as unknown as typeof fetch,
-    });
+      await mutate({
+        baseUrl: 'https://internal.example.com',
+        fetch: fetchMock as unknown as typeof fetch,
+      });
 
-    expect(fetchMock).toHaveBeenCalledWith(
-      'https://internal.example.com/api/v1/auth/accounts/logout-all',
-      expect.objectContaining({
-        cache: 'no-store',
-        credentials: 'include',
-        method: 'POST',
-      })
-    );
-  });
+      expect(fetchMock).toHaveBeenCalledWith(
+        `https://internal.example.com/api/v1/auth/accounts/${path}`,
+        expect.objectContaining({
+          cache: 'no-store',
+          credentials: 'include',
+          headers: expect.any(Headers),
+          method,
+        })
+      );
+      expect(
+        new Headers(fetchMock.mock.calls[0]?.[1]?.headers).get('content-type')
+      ).toBe('application/json');
+    }
+  );
 
   it('logs out the browser session through the legacy session route facade', async () => {
     const fetchMock = vi.fn().mockResolvedValue(

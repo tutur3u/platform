@@ -4,6 +4,8 @@ import {
   type InternalApiClientOptions,
 } from './client';
 
+const JSON_CONTENT_HEADERS = { 'Content-Type': 'application/json' };
+
 export type InternalOtpClient = 'mobile' | 'tulearn' | 'web';
 export type InternalOtpPlatform = 'android' | 'ios';
 
@@ -379,9 +381,7 @@ export async function sendOtpWithInternalApi(
   const response = await client.fetch('/api/v1/auth/otp/send', {
     body: JSON.stringify(payload),
     cache: 'no-store',
-    headers: {
-      'Content-Type': 'application/json',
-    },
+    headers: JSON_CONTENT_HEADERS,
     method: 'POST',
   });
   return parseAuthResponse<SendOtpResponse>(response);
@@ -395,9 +395,7 @@ export async function verifyOtpWithInternalApi(
   const response = await client.fetch('/api/v1/auth/otp/verify', {
     body: JSON.stringify(payload),
     cache: 'no-store',
-    headers: {
-      'Content-Type': 'application/json',
-    },
+    headers: JSON_CONTENT_HEADERS,
     method: 'POST',
   });
   return parseAuthResponse<VerifyOtpResponse>(response);
@@ -411,9 +409,7 @@ export async function passwordLoginWithInternalApi(
   const response = await client.fetch('/api/v1/auth/password-login', {
     body: JSON.stringify(payload),
     cache: 'no-store',
-    headers: {
-      'Content-Type': 'application/json',
-    },
+    headers: JSON_CONTENT_HEADERS,
     method: 'POST',
   });
   return parseAuthResponse<PasswordLoginResponse>(response);
@@ -427,9 +423,7 @@ export async function consumeAuthRecoveryWithInternalApi(
   const response = await client.fetch('/api/v1/auth/recovery/consume', {
     body: JSON.stringify(payload),
     cache: 'no-store',
-    headers: {
-      'Content-Type': 'application/json',
-    },
+    headers: JSON_CONTENT_HEADERS,
     method: 'POST',
   });
   return parseAuthResponse<ConsumeAuthRecoveryResponse>(response);
@@ -454,9 +448,7 @@ export async function saveCurrentWebAccountWithInternalApi(
     body: JSON.stringify(payload),
     cache: 'no-store',
     credentials: 'include',
-    headers: {
-      'Content-Type': 'application/json',
-    },
+    headers: JSON_CONTENT_HEADERS,
     method: 'POST',
   });
   return parseAuthResponse<WebAccountMutationResponse>(response);
@@ -471,9 +463,7 @@ export async function updateCurrentWebAccountWithInternalApi(
     body: JSON.stringify(payload),
     cache: 'no-store',
     credentials: 'include',
-    headers: {
-      'Content-Type': 'application/json',
-    },
+    headers: JSON_CONTENT_HEADERS,
     method: 'PATCH',
   });
 }
@@ -491,9 +481,7 @@ export async function switchWebAccountWithInternalApi(
     }),
     cache: 'no-store',
     credentials: 'include',
-    headers: {
-      'Content-Type': 'application/json',
-    },
+    headers: JSON_CONTENT_HEADERS,
     method: 'POST',
   });
   return parseAuthResponse<WebAccountMutationResponse>(response);
@@ -509,6 +497,7 @@ export async function removeWebAccountWithInternalApi(
     {
       cache: 'no-store',
       credentials: 'include',
+      headers: JSON_CONTENT_HEADERS,
       method: 'DELETE',
     }
   );
@@ -522,6 +511,7 @@ export async function logoutCurrentWebAccountWithInternalApi(
   const response = await client.fetch('/api/v1/auth/accounts/logout', {
     cache: 'no-store',
     credentials: 'include',
+    headers: JSON_CONTENT_HEADERS,
     method: 'POST',
   });
   return parseAuthResponse<WebAccountMutationResponse>(response);
@@ -534,6 +524,7 @@ export async function logoutAllWebAccountsWithInternalApi(
   const response = await client.fetch('/api/v1/auth/accounts/logout-all', {
     cache: 'no-store',
     credentials: 'include',
+    headers: JSON_CONTENT_HEADERS,
     method: 'POST',
   });
   return parseAuthResponse<WebAccountMutationResponse>(response);
@@ -552,9 +543,7 @@ export async function createQrLoginChallengeWithInternalApi(
   const response = await client.fetch('/api/v1/auth/qr-login/challenges', {
     body: JSON.stringify(payload),
     cache: 'no-store',
-    headers: {
-      'Content-Type': 'application/json',
-    },
+    headers: JSON_CONTENT_HEADERS,
     method: 'POST',
   });
   return parseAuthResponse<CreateQrLoginChallengeResponse>(response);
@@ -591,9 +580,7 @@ export async function approveQrLoginChallengeWithInternalApi(
     {
       body: JSON.stringify(payload),
       cache: 'no-store',
-      headers: {
-        'Content-Type': 'application/json',
-      },
+      headers: JSON_CONTENT_HEADERS,
       method: 'POST',
     }
   );
@@ -610,9 +597,7 @@ export async function createMfaMobileApprovalChallengeWithInternalApi(
   const response = await client.fetch('/api/v1/auth/mfa/mobile/challenges', {
     body: JSON.stringify(payload),
     cache: 'no-store',
-    headers: {
-      'Content-Type': 'application/json',
-    },
+    headers: JSON_CONTENT_HEADERS,
     method: 'POST',
   });
   return parseAuthResponse<CreateMfaMobileApprovalChallengeResponse>(response);
@@ -659,9 +644,7 @@ export async function approveMfaMobileApprovalWithInternalApi(
     {
       body: JSON.stringify(payload),
       cache: 'no-store',
-      headers: {
-        'Content-Type': 'application/json',
-      },
+      headers: JSON_CONTENT_HEADERS,
       method: 'POST',
     }
   );
@@ -676,9 +659,7 @@ export async function createCrossAppReturnUrlWithInternalApi(
   const response = await client.fetch('/api/v1/auth/cross-app-return', {
     body: JSON.stringify(payload),
     cache: 'no-store',
-    headers: {
-      'Content-Type': 'application/json',
-    },
+    headers: JSON_CONTENT_HEADERS,
     method: 'POST',
   });
   return parseAuthResponse<CreateCrossAppReturnUrlResponse>(response);
@@ -695,9 +676,7 @@ export async function resolveCrossAppReturnUrlWithInternalApi(
       generateToken: false,
     }),
     cache: 'no-store',
-    headers: {
-      'Content-Type': 'application/json',
-    },
+    headers: JSON_CONTENT_HEADERS,
     method: 'POST',
   });
   return parseAuthResponse<ResolveCrossAppReturnUrlResponse>(response);

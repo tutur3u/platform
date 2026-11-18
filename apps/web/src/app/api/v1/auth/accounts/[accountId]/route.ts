@@ -8,6 +8,7 @@ import { removeWebAccount } from '@/lib/auth/multi-account/vault';
 import {
   accountCorsJson,
   accountCorsPreflight,
+  guardAccountMutation,
 } from '@/legacy-api-routes/v1/auth/accounts/cors';
 
 export function OPTIONS(request: NextRequest) {
@@ -18,6 +19,9 @@ export async function DELETE(
   request: NextRequest,
   { params }: { params: Promise<{ accountId: string }> }
 ) {
+  const rejection = guardAccountMutation(request);
+  if (rejection) return rejection;
+
   const { accountId } = await params;
 
   try {

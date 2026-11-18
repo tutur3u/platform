@@ -44,6 +44,10 @@ describe('multi-account route diagnostics', () => {
     const response = await POST(
       new NextRequest('http://localhost/api/v1/auth/accounts/current', {
         body: JSON.stringify({ route: '/en/personal/tasks' }),
+        headers: {
+          origin: 'https://tuturuuu.com',
+          'content-type': 'application/json',
+        },
         method: 'POST',
       })
     );
@@ -77,6 +81,10 @@ describe('multi-account route diagnostics', () => {
     const response = await POST(
       new NextRequest('http://localhost/api/v1/auth/accounts/current', {
         body: JSON.stringify({ route: '/en/personal/tasks' }),
+        headers: {
+          origin: 'https://tuturuuu.com',
+          'content-type': 'application/json',
+        },
         method: 'POST',
       })
     );
@@ -107,6 +115,10 @@ describe('multi-account route diagnostics', () => {
           accountId: 'missing-account',
           currentRoute: '/en/personal/tasks',
         }),
+        headers: {
+          origin: 'https://tuturuuu.com',
+          'content-type': 'application/json',
+        },
         method: 'POST',
       })
     );

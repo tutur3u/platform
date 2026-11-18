@@ -197,14 +197,11 @@ async function postAccountMutation<T>(
   path: string,
   payload?: Record<string, unknown>
 ) {
-  const response = await page.context().request.post(
-    new URL(path, page.url()).toString(),
-    payload
-      ? {
-          data: payload,
-        }
-      : undefined
-  );
+  const url = new URL(path, page.url());
+  const response = await page.context().request.post(url.toString(), {
+    data: payload ?? {},
+    headers: { origin: url.origin },
+  });
 
   if (!response.ok()) {
     let diagnosticCode = 'unavailable';

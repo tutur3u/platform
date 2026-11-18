@@ -54,6 +54,22 @@ schemes or ports, userinfo, paths, and missing or opaque origins do not qualify
 for the same-site exception. Cross-site, `none`, and unknown Fetch Metadata
 remain rejected even with that trusted origin.
 
+Saved-account endpoints use exact registered first-party origins for
+credentialed CORS. Their mutation handlers require an allowed `Origin` and an
+`application/json` content type even when the global guard is off. Account JSON
+responses use `Cache-Control: private, no-store`. The account route tests cover
+allowed Web and satellite callers, rejected origins and media types, and cache
+headers.
+
+Before moving Web to `enforce`, have Release Operations read back the current
+production mode. Follow the [CSRF rollout runbook](/build/devops/workspace-start-void#csrf-mode-and-origins)
+and run `report` first. Review `CSRF check failed` logs for legitimate traffic
+while exercising sign-in, saved-account mutations, and logout through the apex
+mounts, Workspace forwarding, and supported satellite origins. Resolve any
+legitimate denials and rerun the affected checks before approving `enforce`.
+After the change, repeat those checks and restore `report` if legitimate
+requests begin failing.
+
 A bearer string cannot exempt a mutation carrying a session cookie. Cookie-less
 bearer clients retain their existing exemption; ordinary cookie-less mutations
 remain admitted. The three session-clearing logout endpoints still require

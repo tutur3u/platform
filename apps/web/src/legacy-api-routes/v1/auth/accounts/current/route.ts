@@ -10,7 +10,11 @@ import {
   saveCurrentWebAccount,
   updateCurrentWebAccount,
 } from '@/lib/auth/multi-account/vault';
-import { accountCorsJson, accountCorsPreflight } from '../cors';
+import {
+  accountCorsJson,
+  accountCorsPreflight,
+  guardAccountMutation,
+} from '../cors';
 
 const saveSchema = z.object({
   returnUrl: z.string().max(2048).nullable().optional(),
@@ -27,8 +31,11 @@ export function OPTIONS(request: NextRequest) {
 }
 
 export async function POST(request: NextRequest) {
+  const rejection = guardAccountMutation(request);
+  if (rejection) return rejection;
+
   try {
-    const parsed = saveSchema.safeParse(await request.json().catch(() => ({})));
+    const parsed = saveSchema.safeParse(await request.json().catch(() => null));
 
     if (!parsed.success) {
       return accountCorsJson(
@@ -98,9 +105,12 @@ export async function POST(request: NextRequest) {
 }
 
 export async function PATCH(request: NextRequest) {
+  const rejection = guardAccountMutation(request);
+  if (rejection) return rejection;
+
   try {
     const parsed = updateSchema.safeParse(
-      await request.json().catch(() => ({}))
+      await request.json().catch(() => null)
     );
 
     if (!parsed.success) {

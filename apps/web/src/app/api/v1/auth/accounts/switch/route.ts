@@ -9,6 +9,7 @@ import { switchWebAccount } from '@/lib/auth/multi-account/vault';
 import {
   accountCorsJson,
   accountCorsPreflight,
+  guardAccountMutation,
 } from '@/legacy-api-routes/v1/auth/accounts/cors';
 
 const switchSchema = z.object({
@@ -22,6 +23,9 @@ export function OPTIONS(request: NextRequest) {
 }
 
 export async function POST(request: NextRequest) {
+  const rejection = guardAccountMutation(request);
+  if (rejection) return rejection;
+
   try {
     const parsed = switchSchema.safeParse(
       await request.json().catch(() => null)

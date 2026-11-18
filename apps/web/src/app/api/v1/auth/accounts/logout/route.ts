@@ -8,6 +8,7 @@ import { logoutCurrentWebAccount } from '@/lib/auth/multi-account/vault';
 import {
   accountCorsJson,
   accountCorsPreflight,
+  guardAccountMutation,
 } from '@/legacy-api-routes/v1/auth/accounts/cors';
 
 export function OPTIONS(request: NextRequest) {
@@ -15,6 +16,9 @@ export function OPTIONS(request: NextRequest) {
 }
 
 export async function POST(request: NextRequest) {
+  const rejection = guardAccountMutation(request);
+  if (rejection) return rejection;
+
   try {
     const result = await logoutCurrentWebAccount(request);
     return accountCorsJson(request, result, {

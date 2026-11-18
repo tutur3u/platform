@@ -5,13 +5,20 @@ import {
   logAuthDiagnostic,
 } from '@/lib/auth/diagnostics';
 import { logoutAllWebAccounts } from '@/lib/auth/multi-account/vault';
-import { accountCorsJson, accountCorsPreflight } from '../cors';
+import {
+  accountCorsJson,
+  accountCorsPreflight,
+  guardAccountMutation,
+} from '../cors';
 
 export function OPTIONS(request: NextRequest) {
   return accountCorsPreflight(request);
 }
 
 export async function POST(request: NextRequest) {
+  const rejection = guardAccountMutation(request);
+  if (rejection) return rejection;
+
   try {
     return accountCorsJson(request, await logoutAllWebAccounts(request));
   } catch (error) {
