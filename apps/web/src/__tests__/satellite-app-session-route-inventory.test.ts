@@ -124,6 +124,10 @@ const allowedSatelliteLocalApiRoutes = new Set([
   'apps/meet/src/app/api/meet-call/[meetingId]/programming/route.ts',
   'apps/meet/src/app/api/meet-call/[meetingId]/programming/preview/[port]/[[...path]]/route.ts',
   'apps/meet/src/app/api/meet-call/[meetingId]/recording/route.ts',
+  // Post-call rating uses the signed Meet session; the room Durable Object
+  // admits only the host or accounts it recorded as admitted, including after
+  // the room ends, and reads or writes only the caller's own record.
+  'apps/meet/src/app/api/meet-call/[meetingId]/rating/route.ts',
   // In-call title edits preserve scheduling fields and require the creator.
   'apps/meet/src/app/api/meet-call/[meetingId]/title/route.ts',
   'apps/meet/src/app/api/meet-ai/[wsId]/[meetingId]/route.ts',

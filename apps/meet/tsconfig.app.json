@@ -65,6 +65,7 @@
     "src/app/api/meet-call/[meetingId]/public-info/route.ts",
     "src/app/api/meet-call/[meetingId]/quiz-arena/route.ts",
     "src/app/api/meet-call/[meetingId]/recording/route.ts",
+    "src/app/api/meet-call/[meetingId]/rating/route.ts",
     "src/app/api/meet-call/[meetingId]/state/route.ts",
     "src/app/api/meet-call/[meetingId]/title/route.ts",
     "src/app/api/meet-call/[meetingId]/token/route.ts",

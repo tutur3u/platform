@@ -385,3 +385,95 @@ test('restart preparation restores the same account and drops a transferred choi
     false
   );
 });
+
+test('room-service dispatches private ratings and receipts outside the snapshot', async () => {
+  const guestId = '1c7d6a52-6f2b-4f49-9e3f-0f0e2b6f8d11';
+  const memberId = '6a0f3d4e-2b7c-4f8a-9d1e-3c5b7a9e1f20';
+  const guest = meetRealtimeTokenPayloadSchema.parse({
+    ...token,
+    role: 'speaker',
+    scopes: ['meet:server'],
+    userId: guestId,
+    accountId: guestId,
+  });
+  const ended = {
+    ...admitOrHold(createMeetRoomSnapshot(), guest, new Date().toISOString())
+      .state,
+    ended: true,
+  };
+  const values = new Map<string, unknown>([['snapshot', ended]]);
+  const storage = {
+    get: async (key: string) => values.get(key),
+    put: async (key: string, value: unknown) => {
+      values.set(key, structuredClone(value));
+    },
+    transaction: async <T>(
+      run: (transaction: {
+        get: (key: string) => Promise<unknown>;
+        put: (key: string, value: unknown) => Promise<void>;
+      }) => Promise<T>
+    ) => run(storage),
+    getAlarm: async () => null,
+    setAlarm: async (_deadline: number) => {},
+  };
+  const room = new MeetRoomDurableObject(
+    {
+      storage,
+      setWebSocketAutoResponse: () => {},
+      getWebSockets: () => [],
+      waitUntil: () => {},
+      blockConcurrencyWhile: (run: () => Promise<void>) => run(),
+    } as unknown as DurableObjectState,
+    {} as MeetRoomEnv
+  );
+  const call = (actor: typeof guest, body: unknown) =>
+    room.fetch(
+      new Request('https://room.example/room-service', {
+        method: 'POST',
+        headers: { 'x-meet-token': JSON.stringify(actor) },
+        body: JSON.stringify(body),
+      })
+    );
+  const snapshotBefore = JSON.stringify(values.get('snapshot'));
+  const writes = () =>
+    (values.get('usage-http-requests') as { writes: number }).writes;
+
+  await call(guest, { action: 'rating.read' });
+  const beforeSet = writes();
+  const first = await call(guest, { action: 'rating.set', value: 4 });
+  assert.deepEqual(await first.json(), { rating: 4 });
+  // The request itself plus the private write and its counter write.
+  assert.equal(writes(), beforeSet + 3);
+  const second = await call(guest, { action: 'rating.set', value: 2 });
+  assert.deepEqual(await second.json(), { rating: 2 });
+  assert.deepEqual(
+    await (await call(guest, { action: 'rating.read' })).json(),
+    { rating: 2 }
+  );
+  assert.equal(
+    (values.get(`room-rating:${guestId}`) as { value: number }).value,
+    2
+  );
+
+  const absent = await call(
+    meetRealtimeTokenPayloadSchema.parse({
+      ...guest,
+      userId: memberId,
+      accountId: memberId,
+      scopes: ['meet:server', 'meet:workspace-member'],
+    }),
+    { action: 'rating.set', value: 5 }
+  );
+  assert.equal(absent.status, 403);
+  assert.equal(values.has(`room-rating:${memberId}`), false);
+
+  const receipt = await call(guest, {
+    action: 'personal.begin',
+    id: '7e1d2c3b-4a5f-4e6d-8c7b-9a0f1e2d3c4b',
+    startedAt: Date.now(),
+    fingerprint: 'a'.repeat(64),
+  });
+  assert.deepEqual(await receipt.json(), { started: true });
+  assert.ok(values.has(`personal-receipts:${guestId}`));
+  assert.equal(JSON.stringify(values.get('snapshot')), snapshotBefore);
+});
