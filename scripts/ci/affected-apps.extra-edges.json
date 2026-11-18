@@ -25,7 +25,7 @@
     "packages/realtime"
   ],
   "apps/meet/": ["apps/meet-realtime", "packages/meet-core", "packages/ui"],
-  "apps/meet/messages/": ["packages/programming-ui"],
+  "apps/meet/messages/": ["apps/parley", "packages/programming-ui"],
   "apps/meet/src/runtime/": ["packages/start-bridge"],
   "apps/mobile/lib/core/feature_flags/": ["packages/feature-flags"],
   "apps/nova/src/lib/": ["apps/web"],

@@ -3,11 +3,18 @@ import { afterEach, beforeEach, expect, it, vi } from 'vitest';
 
 const mocks = vi.hoisted(() => ({
   access: vi.fn(),
+  capacity: vi.fn(),
   locale: vi.fn(),
   duration: vi.fn(),
 }));
 vi.mock('@tuturuuu/meet-core/features/call/lib/meeting-duration', () => ({
   getHostMeetingDurationSeconds: mocks.duration,
+}));
+vi.mock('@tuturuuu/utils/meet-classroom-policy', async (importOriginal) => ({
+  ...(await importOriginal<
+    typeof import('@tuturuuu/utils/meet-classroom-policy')
+  >()),
+  getMeetRoomCapacityLimits: mocks.capacity,
 }));
 vi.mock('server-only', () => ({}));
 vi.mock('@tuturuuu/satellite/constants', () => ({
@@ -49,6 +56,7 @@ function request(origin = 'https://meet.tuturuuu.com') {
 beforeEach(() => {
   vi.resetAllMocks();
   mocks.duration.mockResolvedValue(36000);
+  mocks.capacity.mockResolvedValue({ maxPublishers: 50, maxViewers: 50 });
   vi.stubEnv('MEET_REALTIME_TOKEN_SECRET', secret);
   mocks.access.mockResolvedValue({
     user: { id, email: 'external@example.com' },
@@ -76,7 +84,11 @@ it('refreshes an external guest as a lobby speaker for this meeting only', async
   const { token } = await response.json();
   expect(verifyMeetRealtimeToken(token, secret)).toMatchObject({
     admission: 'lobby',
-    limits: expect.objectContaining({ maxRoomDurationSeconds: 36000 }),
+    limits: expect.objectContaining({
+      maxRoomDurationSeconds: 36000,
+      maxPublishers: 50,
+      maxViewers: 50,
+    }),
     role: 'speaker',
     displayName: 'Guest Display Name',
     meetingId: id,
@@ -84,6 +96,12 @@ it('refreshes an external guest as a lobby speaker for this meeting only', async
     userId: id,
   });
   expect(mocks.access).toHaveBeenCalledWith(id, 'Guest');
+  expect(mocks.capacity).toHaveBeenCalledExactlyOnceWith({
+    meetingId: id,
+    wsId: id,
+    mode: 'call',
+    parley: false,
+  });
   expect(mocks.duration).toHaveBeenCalledWith(
     '00000000-0000-4000-8000-000000000002'
   );
