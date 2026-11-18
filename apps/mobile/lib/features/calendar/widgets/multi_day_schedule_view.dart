@@ -5,11 +5,14 @@ import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart' show ScrollCacheExtent;
 import 'package:intl/intl.dart';
 import 'package:mobile/core/responsive/responsive_values.dart';
+import 'package:mobile/core/ui/kit/app_event_block.dart';
+import 'package:mobile/core/ui/tokens/app_tokens.dart';
 import 'package:mobile/data/models/calendar_event.dart';
 import 'package:mobile/features/calendar/utils/all_day_layout.dart';
 import 'package:mobile/features/calendar/utils/calendar_date_time.dart';
 import 'package:mobile/features/calendar/utils/event_colors.dart';
 import 'package:mobile/features/calendar/utils/event_layout.dart';
+import 'package:mobile/features/calendar/utils/event_tone.dart';
 import 'package:mobile/features/calendar/utils/timed_event_geometry.dart';
 import 'package:mobile/features/calendar/utils/working_location_icon.dart';
 import 'package:mobile/features/calendar/widgets/current_time_indicator.dart';
@@ -17,8 +20,9 @@ import 'package:mobile/features/calendar/widgets/date_snap_scroll_physics.dart';
 import 'package:mobile/features/calendar/widgets/timeline_zoom_viewport.dart';
 import 'package:mobile/l10n/l10n.dart';
 
-part 'multi_day_schedule_components.dart';
 part 'multi_day_all_day_bar.dart';
+part 'multi_day_event_surface.dart';
+part 'multi_day_schedule_components.dart';
 part 'multi_day_schedule_scroll.dart';
 
 class MultiDayScheduleView extends StatefulWidget {
@@ -83,11 +87,13 @@ class _MultiDayScheduleViewState extends State<MultiDayScheduleView> {
     _gridController,
   ];
 
-  double _baseHourHeight(BuildContext context) =>
-      responsiveValue(context, compact: 58, medium: 64, expanded: 70);
+  double _baseHourHeight(BuildContext context) => widget.visibleDayCount == 1
+      ? 48
+      : responsiveValue(context, compact: 58, medium: 64, expanded: 70);
 
-  double _timeGutterWidth(BuildContext context) =>
-      responsiveValue(context, compact: 52, medium: 58, expanded: 64);
+  double _timeGutterWidth(BuildContext context) => widget.visibleDayCount == 1
+      ? 44
+      : responsiveValue(context, compact: 52, medium: 58, expanded: 64);
 
   double _minDayColumnWidth(BuildContext context) =>
       responsiveValue(context, compact: 112, medium: 124, expanded: 136);
@@ -342,6 +348,20 @@ class _MultiDayScheduleViewState extends State<MultiDayScheduleView> {
                                 key: ValueKey((widget.zoomScope, date)),
                                 width: dayColumnWidth,
                                 child: _MultiDayHeaderCell(
+                                  eventCount: widget.visibleDayCount == 1
+                                      ? _timedEventsForDay(date).length +
+                                            allDayEvents
+                                                .where(
+                                                  (e) =>
+                                                      e.startAt != null &&
+                                                      !e.startAt!.isAfter(
+                                                        date,
+                                                      ) &&
+                                                      (e.endAt?.isAfter(date) ??
+                                                          false),
+                                                )
+                                                .length
+                                      : null,
                                   date: date,
                                   selectedDate: widget.selectedDate,
                                   isToday: _isToday(date),
@@ -424,6 +444,7 @@ class _MultiDayScheduleViewState extends State<MultiDayScheduleView> {
                                 child: _MultiDayTimelineColumn(
                                   date: date,
                                   selectedDate: widget.selectedDate,
+                                  redesigned: widget.visibleDayCount == 1,
                                   hourHeight: hourHeight,
                                   events: _timedEventsForDay(date),
                                   isToday: _isToday(date),
@@ -468,10 +489,13 @@ class _MultiDayScheduleViewState extends State<MultiDayScheduleView> {
                                 child: Text(
                                   _formatHour(hour),
                                   textAlign: TextAlign.right,
-                                  style: theme.textTheme.labelSmall?.copyWith(
-                                    color: colorScheme.onSurfaceVariant,
-                                    fontSize: 10,
-                                  ),
+                                  style: AppTokens.of(context)
+                                      .typography
+                                      .numeric
+                                      .copyWith(
+                                        color: colorScheme.onSurfaceVariant,
+                                        fontSize: 11.5,
+                                      ),
                                 ),
                               ),
                             ),

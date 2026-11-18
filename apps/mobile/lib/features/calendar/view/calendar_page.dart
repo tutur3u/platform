@@ -17,6 +17,8 @@ import 'package:mobile/features/calendar/utils/calendar_date_time.dart';
 import 'package:mobile/features/calendar/view/calendar_timezone_listener.dart';
 import 'package:mobile/features/calendar/widgets/agenda_view.dart';
 import 'package:mobile/features/calendar/widgets/calendar_connections_sheet.dart';
+import 'package:mobile/features/calendar/widgets/calendar_day_panel.dart';
+import 'package:mobile/features/calendar/widgets/calendar_mini_month.dart';
 import 'package:mobile/features/calendar/widgets/calendar_minute_clock.dart';
 import 'package:mobile/features/calendar/widgets/calendar_zoom_sheet.dart';
 import 'package:mobile/features/calendar/widgets/event_detail_sheet.dart';
@@ -38,8 +40,9 @@ import 'package:mobile/widgets/nova_loading_indicator.dart';
 import 'package:shadcn_flutter/shadcn_flutter.dart' as shad;
 
 part 'calendar_page_actions.dart';
-part 'calendar_zoom_page.dart';
 part 'calendar_page_reselect.dart';
+part 'calendar_page_views.dart';
+part 'calendar_zoom_page.dart';
 
 CalendarViewMode _defaultCalendarMode(BuildContext context) =>
     MediaQuery.sizeOf(context).width >= Breakpoints.mediumMin
@@ -368,18 +371,17 @@ class _CalendarViewState extends State<_CalendarView> {
                     );
                   }
 
-                  // Full-bleed canvas: timelines scroll beneath the dock and
-                  // read its clearance themselves.
                   return AppPageBody.fullBleed(
                     consumeBottomClearance: false,
                     child: NovaRefreshIndicator(
                       onRefresh: () => _reload(context, retainError: true),
                       child: Column(
                         children: [
-                          // Month strip for agenda and schedule-style views.
                           if (state.viewMode == CalendarViewMode.day ||
                               state.viewMode == CalendarViewMode.agenda)
-                            MonthStrip(
+                            (state.viewMode == CalendarViewMode.day
+                                ? CalendarMiniMonth.new
+                                : MonthStrip.new)(
                               selectedDate: state.effectiveSelectedDate,
                               focusedMonth: state.effectiveFocusedMonth,
                               events: state.displayEvents,
@@ -404,7 +406,6 @@ class _CalendarViewState extends State<_CalendarView> {
                                 );
                               },
                             ),
-                          // View body.
                           Expanded(
                             child: _buildViewBody(
                               context,
@@ -423,129 +424,6 @@ class _CalendarViewState extends State<_CalendarView> {
         ],
       ),
     );
-  }
-
-  Widget _buildViewBody(
-    BuildContext context,
-    CalendarState state,
-    int firstDayOfWeek,
-  ) {
-    switch (state.viewMode) {
-      case CalendarViewMode.day:
-        return MultiDayScheduleView(
-          resetGeneration: _resetGeneration,
-          timelineZoom: state.timelineZoom,
-          zoomScope: context.read<CalendarCubit>().timelineZoomScope,
-          onTimelineZoomEnd: _zoomHandler(context),
-          visibleDayCount: 1,
-          selectedDate: state.effectiveSelectedDate,
-          events: state.displayEvents,
-          onDaySelected: (date) =>
-              context.read<CalendarCubit>().selectDate(date),
-          onEventTap: (event) => _showEventDetail(context, event),
-          onCreateAtTime: (time) => _createEvent(context, startTime: time),
-          onSwipe: (delta) => _navigateDays(context, delta),
-        );
-      case CalendarViewMode.threeDays:
-        return ThreeDayView(
-          resetGeneration: _resetGeneration,
-          timelineZoom: state.timelineZoom,
-          zoomScope: context.read<CalendarCubit>().timelineZoomScope,
-          onTimelineZoomEnd: _zoomHandler(context),
-          selectedDate: state.effectiveSelectedDate,
-          events: state.displayEvents,
-          onEventTap: (event) => _showEventDetail(context, event),
-          onCreateAtTime: (time) => _createEvent(context, startTime: time),
-          onDaySelected: (date) {
-            final cubit = context.read<CalendarCubit>()..selectDate(date);
-            unawaited(cubit.setViewMode(CalendarViewMode.day));
-          },
-          onSwipe: (delta) => _navigateDays(context, delta),
-        );
-      case CalendarViewMode.week:
-        return WeekView(
-          resetGeneration: _resetGeneration,
-          timelineZoom: state.timelineZoom,
-          zoomScope: context.read<CalendarCubit>().timelineZoomScope,
-          onTimelineZoomEnd: _zoomHandler(context),
-          selectedDate: state.effectiveSelectedDate,
-          events: state.displayEvents,
-          firstDayOfWeek: firstDayOfWeek,
-          onEventTap: (event) => _showEventDetail(context, event),
-          onCreateAtTime: (time) => _createEvent(context, startTime: time),
-          onDaySelected: (date) {
-            final cubit = context.read<CalendarCubit>()..selectDate(date);
-            unawaited(cubit.setViewMode(CalendarViewMode.day));
-          },
-          onSwipe: (delta) => _navigateDays(context, delta),
-        );
-      case CalendarViewMode.month:
-        return RefreshCanvas(
-          child: MonthView(
-            selectedDate: state.effectiveSelectedDate,
-            focusedMonth: state.effectiveFocusedMonth,
-            events: state.displayEvents,
-            firstDayOfWeek: firstDayOfWeek,
-            onDaySelected: (date) {
-              final cubit = context.read<CalendarCubit>()..selectDate(date);
-              unawaited(cubit.setViewMode(CalendarViewMode.day));
-            },
-          ),
-        );
-      case CalendarViewMode.agenda:
-        return AgendaView(
-          resetGeneration: _resetGeneration,
-          selectedDate: state.effectiveSelectedDate,
-          events: state.displayEvents,
-          isLoadingMore: state.isLoadingMore,
-          onEventTap: (event) => _showEventDetail(context, event),
-          onDaySelected: (date) {
-            final cubit = context.read<CalendarCubit>()..selectDate(date);
-            unawaited(cubit.setViewMode(CalendarViewMode.day));
-          },
-          onLoadMore: () {
-            final wsId = context
-                .read<WorkspaceCubit>()
-                .state
-                .currentWorkspace
-                ?.id;
-            if (wsId != null) {
-              unawaited(context.read<CalendarCubit>().loadMoreForward(wsId));
-            }
-          },
-        );
-      case CalendarViewMode.year:
-        return YearView(
-          key: ValueKey(_resetGeneration),
-          selectedDate: state.effectiveSelectedDate,
-          focusedMonth: state.effectiveFocusedMonth,
-          events: state.displayEvents,
-          firstDayOfWeek: firstDayOfWeek,
-          onDaySelected: (date) {
-            final cubit = context.read<CalendarCubit>()..selectDate(date);
-            unawaited(cubit.setViewMode(CalendarViewMode.month));
-            final wsId = context
-                .read<WorkspaceCubit>()
-                .state
-                .currentWorkspace
-                ?.id;
-            if (wsId != null) {
-              unawaited(cubit.ensureRangeLoaded(wsId, date));
-            }
-          },
-          onYearChanged: (month) {
-            final cubit = context.read<CalendarCubit>()..setFocusedMonth(month);
-            final wsId = context
-                .read<WorkspaceCubit>()
-                .state
-                .currentWorkspace
-                ?.id;
-            if (wsId != null) {
-              unawaited(cubit.ensureRangeLoaded(wsId, month));
-            }
-          },
-        );
-    }
   }
 
   void _navigateDays(BuildContext context, int delta) {

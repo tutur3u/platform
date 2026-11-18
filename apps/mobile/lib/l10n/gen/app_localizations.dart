@@ -3175,6 +3175,18 @@ abstract class AppLocalizations {
   /// **'Agenda'**
   String get calendarAgendaView;
 
+  /// No description provided for @calendarS3EventCount.
+  ///
+  /// In en, this message translates to:
+  /// **'{count, plural, =1{1 event} other{{count} events}}'**
+  String calendarS3EventCount(int count);
+
+  /// No description provided for @calendarS3Now.
+  ///
+  /// In en, this message translates to:
+  /// **'Now'**
+  String get calendarS3Now;
+
   /// No description provided for @calendarAllDay.
   ///
   /// In en, this message translates to:

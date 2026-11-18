@@ -136,7 +136,7 @@ void main() {
           range.completeError(Exception('Synthetic range failure'));
           await tester.pump();
         }
-        await tester.tap(find.text('Edit event'));
+        await tester.tap(find.byTooltip('Edit event'));
         await tester.pump(const Duration(seconds: 1));
         await tester.enterText(
           find.byType(TextField).first,

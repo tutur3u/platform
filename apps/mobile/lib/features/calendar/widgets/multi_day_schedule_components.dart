@@ -6,8 +6,10 @@ class _MultiDayHeaderCell extends StatelessWidget {
     required this.selectedDate,
     required this.isToday,
     required this.onTap,
+    this.eventCount,
   });
 
+  final int? eventCount;
   final DateTime date;
   final DateTime selectedDate;
   final bool isToday;
@@ -20,6 +22,32 @@ class _MultiDayHeaderCell extends StatelessWidget {
     final weekdayLabel = DateFormat.E().format(date).toUpperCase();
     final monthLabel = DateFormat.MMM().format(date).toUpperCase();
 
+    if (eventCount != null) {
+      final tokens = AppTokens.of(context);
+      return InkWell(
+        onTap: onTap,
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
+          child: Row(
+            children: [
+              Expanded(
+                child: Text(
+                  DateFormat(
+                    'EEEE d',
+                    Localizations.localeOf(context).toLanguageTag(),
+                  ).format(date),
+                  style: tokens.typography.heading,
+                ),
+              ),
+              Text(
+                context.l10n.calendarS3EventCount(eventCount!),
+                style: tokens.typography.numeric,
+              ),
+            ],
+          ),
+        ),
+      );
+    }
     return Padding(
       padding: const EdgeInsets.fromLTRB(4, 10, 4, 10),
       child: Material(
@@ -103,7 +131,9 @@ class _MultiDayTimelineColumn extends StatelessWidget {
     required this.isToday,
     required this.onEventTap,
     required this.onCreateAtTime,
+    this.redesigned = false,
   });
+  final bool redesigned;
 
   final DateTime date;
   final DateTime selectedDate;
@@ -165,24 +195,29 @@ class _MultiDayTimelineColumn extends StatelessWidget {
 
             return Stack(
               children: [
-                // One painter draws all 24 hour lines, so an eagerly built
-                // date window does not pay for 24 widgets per day.
+                // Paint hour lines together to keep each column lightweight.
                 Positioned.fill(
                   child: CustomPaint(
                     painter: _HourLinesPainter(
                       hourHeight: hourHeight,
+                      lineWidth: redesigned ? 1 : 0.6,
                       color: colorScheme.outlineVariant.withValues(alpha: 0.8),
                     ),
                   ),
                 ),
                 for (final layout in layouts)
                   _MultiDayEventCard(
+                    redesigned: redesigned,
                     layoutInfo: layout,
                     hourHeight: hourHeight,
                     columnWidth: width,
                     onTap: () => onEventTap(layout.event),
                   ),
-                if (isToday) CurrentTimeIndicator(hourHeight: hourHeight),
+                if (isToday)
+                  CurrentTimeIndicator(
+                    hourHeight: hourHeight,
+                    showLabel: redesigned,
+                  ),
               ],
             );
           },
@@ -193,7 +228,13 @@ class _MultiDayTimelineColumn extends StatelessWidget {
 }
 
 class _HourLinesPainter extends CustomPainter {
-  const _HourLinesPainter({required this.hourHeight, required this.color});
+  const _HourLinesPainter({
+    required this.hourHeight,
+    required this.lineWidth,
+    required this.color,
+  });
+
+  final double lineWidth;
 
   final double hourHeight;
   final Color color;
@@ -203,7 +244,7 @@ class _HourLinesPainter extends CustomPainter {
     final paint = Paint()..color = color;
     for (var hour = 0; hour < 24; hour++) {
       canvas.drawRect(
-        Rect.fromLTWH(0, hour * hourHeight, size.width, 0.6),
+        Rect.fromLTWH(0, hour * hourHeight, size.width, lineWidth),
         paint,
       );
     }
@@ -211,7 +252,9 @@ class _HourLinesPainter extends CustomPainter {
 
   @override
   bool shouldRepaint(_HourLinesPainter oldDelegate) =>
-      oldDelegate.hourHeight != hourHeight || oldDelegate.color != color;
+      oldDelegate.hourHeight != hourHeight ||
+      oldDelegate.lineWidth != lineWidth ||
+      oldDelegate.color != color;
 }
 
 class _MultiDayEventCard extends StatelessWidget {
@@ -220,7 +263,9 @@ class _MultiDayEventCard extends StatelessWidget {
     required this.hourHeight,
     required this.columnWidth,
     required this.onTap,
+    this.redesigned = false,
   });
+  final bool redesigned;
 
   final EventLayoutInfo layoutInfo;
   final double hourHeight;
@@ -259,10 +304,11 @@ class _MultiDayEventCard extends StatelessWidget {
 
     return Positioned(
       top: top,
-      left: left,
-      width: subColumnWidth - 3,
+      left: left + (redesigned ? 12 : 0),
+      width: math.max(1, subColumnWidth - (redesigned ? 20 : 3)),
       height: height,
       child: _MultiDayEventCardSurface(
+        redesigned: redesigned,
         event: event,
         height: height,
         onTap: onTap,
@@ -276,7 +322,9 @@ class _MultiDayEventCardSurface extends StatelessWidget {
     required this.event,
     required this.height,
     required this.onTap,
+    this.redesigned = false,
   });
+  final bool redesigned;
 
   final CalendarEvent event;
   final double height;
@@ -284,103 +332,25 @@ class _MultiDayEventCardSurface extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final accentColor = EventColors.inContext(event, context).accent;
-    final foregroundColor = EventColors.inContext(event, context).foreground;
-    final backgroundColor = EventColors.inContext(event, context).background;
+    if (!redesigned) {
+      return _ClassicEventCardSurface(
+        event: event,
+        height: height,
+        onTap: onTap,
+      );
+    }
+    final locale = Localizations.localeOf(context).toLanguageTag();
     final start = event.startAt;
-    final end = event.endAt ?? start;
-    final lineHeight =
-        MediaQuery.textScalerOf(
-          context,
-        ).scale(Theme.of(context).textTheme.labelMedium?.fontSize ?? 14) *
-        1.1;
-    final showTime =
-        start != null && end != null && height >= lineHeight * 3 + 20;
-    final verticalPadding = height < 36 ? 2.0 : 6.0;
-
-    return Semantics(
-      button: true,
-      label: start == null || end == null
-          ? event.title ?? ''
-          : '${event.title ?? ''}, ${_formatTime(start)} – ${_formatTime(end)}',
+    final end = event.endAt;
+    return AppEventBlock(
+      title: event.title ?? '',
+      tone: eventTone(event),
       onTap: onTap,
-      excludeSemantics: true,
-      child: Material(
-        color: Colors.transparent,
-        child: InkWell(
-          onTap: onTap,
-          borderRadius: BorderRadius.circular(10),
-          child: Container(
-            margin: const EdgeInsets.only(right: 2, bottom: 2),
-            padding: EdgeInsets.fromLTRB(
-              8,
-              verticalPadding,
-              6,
-              verticalPadding,
-            ),
-            decoration: BoxDecoration(
-              color: backgroundColor,
-              borderRadius: BorderRadius.circular(10),
-              border: Border(left: BorderSide(color: accentColor, width: 3)),
-              boxShadow: [
-                BoxShadow(
-                  color: Colors.black.withValues(alpha: 0.03),
-                  blurRadius: 8,
-                  offset: const Offset(0, 2),
-                ),
-              ],
-            ),
-            child: ClipRect(
-              child: OverflowBox(
-                alignment: Alignment.topLeft,
-                minHeight: 0,
-                maxHeight: double.infinity,
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Text(
-                      event.title ?? '',
-                      maxLines: showTime ? 2 : 1,
-                      overflow: TextOverflow.ellipsis,
-                      style: Theme.of(context).textTheme.labelMedium?.copyWith(
-                        color: foregroundColor,
-                        fontWeight: FontWeight.w700,
-                        height: 1.1,
-                      ),
-                    ),
-                    if (showTime) ...[
-                      const SizedBox(height: 4),
-                      Text(
-                        '${_formatTime(start)} - ${_formatTime(end)}',
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                        style: Theme.of(context).textTheme.labelSmall?.copyWith(
-                          color: foregroundColor,
-                          fontWeight: FontWeight.w600,
-                        ),
-                      ),
-                    ],
-                  ],
-                ),
-              ),
-            ),
-          ),
-        ),
-      ),
+      timeLabel: start == null
+          ? ''
+          : '${DateFormat.Hm(locale).format(start)} – '
+                '${end == null ? '' : DateFormat.Hm(locale).format(end)}',
     );
-  }
-
-  String _formatTime(DateTime value) {
-    final hour = value.hour;
-    final minute = value.minute.toString().padLeft(2, '0');
-    final period = hour >= 12 ? 'PM' : 'AM';
-    final normalizedHour = hour == 0
-        ? 12
-        : hour > 12
-        ? hour - 12
-        : hour;
-    return '$normalizedHour:$minute $period';
   }
 }
 

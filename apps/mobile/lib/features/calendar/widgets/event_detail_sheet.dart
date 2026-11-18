@@ -1,219 +1,143 @@
-import 'dart:async';
-
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:mobile/core/responsive/adaptive_sheet.dart';
+import 'package:mobile/core/ui/kit/app_event_block.dart';
+import 'package:mobile/core/ui/overlays/app_dialog.dart';
+import 'package:mobile/core/ui/tokens/app_tokens.dart';
 import 'package:mobile/data/models/calendar_event.dart';
-import 'package:mobile/features/calendar/utils/event_colors.dart';
+import 'package:mobile/features/calendar/utils/event_tone.dart';
 import 'package:mobile/features/calendar/widgets/calendar_description_body.dart';
 import 'package:mobile/l10n/l10n.dart';
-import 'package:shadcn_flutter/shadcn_flutter.dart' as shad;
 
-/// Shows a bottom sheet (compact) or dialog (medium+) with event details plus
-/// edit/delete actions.
-///
-/// Returns `'edit'` if the user taps Edit, `'delete'` if they confirm Delete,
-/// or `null` if dismissed.
+/// Returns edit/delete only after the corresponding action is confirmed.
 Future<String?> showEventDetailSheet(
   BuildContext context, {
   required CalendarEvent event,
   bool readOnly = false,
-}) {
-  return showAdaptiveSheet<String>(
-    context: context,
-    useRootNavigator: true,
-    backgroundColor: Theme.of(context).colorScheme.surface,
-    isScrollControlled: false,
-    builder: (context) => _EventDetailContent(event: event, readOnly: readOnly),
-  );
-}
+}) => showAdaptiveSheet<String>(
+  context: context,
+  useRootNavigator: true,
+  backgroundColor: AppTokens.of(context).colorScheme.popover,
+  builder: (context) => EventDetailContent(event: event, readOnly: readOnly),
+);
 
-class _EventDetailContent extends StatelessWidget {
-  const _EventDetailContent({required this.event, this.readOnly = false});
-
+/// Displays the event properties supplied by the calendar API.
+class EventDetailContent extends StatelessWidget {
+  const EventDetailContent({
+    required this.event,
+    this.readOnly = false,
+    super.key,
+  });
   final CalendarEvent event;
   final bool readOnly;
-
   @override
   Widget build(BuildContext context) {
+    final tokens = AppTokens.of(context);
+    final c = tokens.colorScheme;
     final l10n = context.l10n;
-    final colorScheme = Theme.of(context).colorScheme;
-    final textTheme = Theme.of(context).textTheme;
-    final color = EventColors.forEvent(event);
-    final dateFormat = DateFormat.yMMMd();
-    final timeFormat = DateFormat.jm();
-
-    return Padding(
-      padding: const EdgeInsets.fromLTRB(0, 0, 0, 32),
-      child: SingleChildScrollView(
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            // Color header.
-            Container(
-              height: 6,
-              margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-              decoration: BoxDecoration(
-                color: color,
-                borderRadius: BorderRadius.circular(3),
-              ),
-            ),
-            // Title.
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 16),
-              child: Text(
-                event.title ?? '',
-                style: textTheme.titleLarge?.copyWith(
-                  fontWeight: FontWeight.w600,
+    final locale = Localizations.localeOf(context).toLanguageTag();
+    final start = event.startAt;
+    final end = event.endAt;
+    final date = start == null ? '' : DateFormat.MMMEd(locale).format(start);
+    final timeFormat = DateFormat.Hm(locale);
+    final times = [
+      if (start != null) timeFormat.format(start),
+      if (end != null) timeFormat.format(end),
+    ].join(' – ');
+    final endDate = end != null && event.isMultiDay
+        ? ' – ${DateFormat.MMMEd(locale).format(end)}'
+        : '';
+    return SingleChildScrollView(
+      padding: EdgeInsets.fromLTRB(
+        20,
+        12,
+        20,
+        24 + MediaQuery.viewPaddingOf(context).bottom,
+      ),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Container(
+                width: 6,
+                height: 64,
+                decoration: BoxDecoration(
+                  color: AppEventBlock.hueOf(context, eventTone(event)).ink,
+                  borderRadius: BorderRadius.circular(tokens.shapes.card),
                 ),
               ),
-            ),
-            const SizedBox(height: 12),
-
-            // Date and time.
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 16),
-              child: Row(
-                children: [
-                  Icon(
-                    Icons.schedule,
-                    size: 18,
-                    color: colorScheme.onSurfaceVariant,
-                  ),
-                  const SizedBox(width: 8),
-                  Expanded(
-                    child: Text(
-                      _formatDateRange(dateFormat, timeFormat),
-                      style: textTheme.bodyMedium?.copyWith(
-                        color: colorScheme.onSurfaceVariant,
-                      ),
-                      overflow: TextOverflow.ellipsis,
-                    ),
-                  ),
-                ],
-              ),
-            ),
-
-            // Description.
-            if (event.description?.isNotEmpty ?? false) ...[
-              const SizedBox(height: 12),
-              Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 16),
-                child: CalendarDescriptionBody(description: event.description!),
-              ),
-            ],
-
-            const SizedBox(height: 24),
-
-            // Action buttons.
-            if (!readOnly)
-              Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 16),
-                child: Row(
+              const SizedBox(width: 12),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Expanded(
-                      child: OutlinedButton.icon(
-                        onPressed: () => Navigator.of(context).pop('edit'),
-                        icon: const Icon(Icons.edit_outlined, size: 18),
-                        label: Text(l10n.calendarEditEvent),
+                    Text(
+                      event.title ?? '',
+                      style: tokens.typography.title.copyWith(
+                        fontSize: 22,
+                        fontWeight: FontWeight.w700,
                       ),
                     ),
-                    const SizedBox(width: 12),
-                    Expanded(
-                      child: OutlinedButton.icon(
-                        onPressed: () => _confirmDelete(context),
-                        icon: Icon(
-                          Icons.delete_outline,
-                          size: 18,
-                          color: colorScheme.error,
-                        ),
-                        label: Text(
-                          l10n.calendarDeleteEvent,
-                          style: TextStyle(color: colorScheme.error),
-                        ),
-                        style: OutlinedButton.styleFrom(
-                          side: BorderSide(color: colorScheme.error),
-                        ),
+                    const SizedBox(height: 6),
+                    Text(
+                      '$date$endDate',
+                      style: tokens.typography.bodySm.copyWith(
+                        color: c.mutedForeground,
+                      ),
+                    ),
+                    Text(
+                      event.isAllDay ? l10n.calendarAllDay : times,
+                      style: tokens.typography.numeric.copyWith(
+                        color: c.mutedForeground,
                       ),
                     ),
                   ],
                 ),
               ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  void _confirmDelete(BuildContext context) {
-    final l10n = context.l10n;
-
-    unawaited(
-      showDialog<void>(
-        context: context,
-        builder: (ctx) => Center(
-          child: ConstrainedBox(
-            constraints: const BoxConstraints(maxWidth: 400),
-            child: shad.AlertDialog(
-              barrierColor: Colors.transparent,
-              title: Text(
-                l10n.calendarDeleteEvent,
-                textAlign: TextAlign.center,
-              ),
-              content: Text(
-                l10n.calendarDeleteConfirm,
-                textAlign: TextAlign.center,
-              ),
-              actions: [
-                shad.OutlineButton(
-                  onPressed: () => Navigator.of(ctx).pop(),
-                  child: Text(l10n.calendarEventCancel),
+              if (!readOnly)
+                IconButton(
+                  tooltip: l10n.calendarEditEvent,
+                  onPressed: () => Navigator.of(context).pop('edit'),
+                  icon: const Icon(Icons.edit_outlined),
                 ),
-                shad.DestructiveButton(
-                  onPressed: () {
-                    Navigator.of(ctx).pop(); // Close dialog.
-                    Navigator.of(context).pop('delete'); // Close sheet.
-                  },
-                  child: Text(l10n.calendarEventDelete),
-                ),
-              ],
-            ),
+              IconButton(
+                tooltip: MaterialLocalizations.of(context).closeButtonTooltip,
+                onPressed: () => Navigator.of(context).pop(),
+                icon: const Icon(Icons.close),
+              ),
+            ],
           ),
-        ),
+          if (event.description?.isNotEmpty ?? false) ...[
+            const SizedBox(height: 24),
+            CalendarDescriptionBody(description: event.description!),
+          ],
+          if (!readOnly) ...[
+            const SizedBox(height: 24),
+            TextButton.icon(
+              onPressed: () => _delete(context),
+              icon: const Icon(Icons.delete_outline),
+              label: Text(l10n.calendarDeleteEvent),
+              style: TextButton.styleFrom(foregroundColor: c.destructive),
+            ),
+          ],
+        ],
       ),
     );
   }
 
-  String _formatDateRange(DateFormat dateFormat, DateFormat timeFormat) {
-    final start = event.startAt;
-    final end = event.endAt;
-
-    if (start == null) return '';
-
-    if (event.isAllDay) {
-      if (end == null || !event.isMultiDay) {
-        return dateFormat.format(start);
-      }
-      return '${dateFormat.format(start)} – ${dateFormat.format(end)}';
-    }
-
-    if (end == null) {
-      return '${dateFormat.format(start)} '
-          '${timeFormat.format(start)}';
-    }
-
-    if (start.year == end.year &&
-        start.month == end.month &&
-        start.day == end.day) {
-      return '${dateFormat.format(start)}  '
-          '${timeFormat.format(start)} – '
-          '${timeFormat.format(end)}';
-    }
-
-    return '${dateFormat.format(start)} '
-        '${timeFormat.format(start)} – '
-        '${dateFormat.format(end)} '
-        '${timeFormat.format(end)}';
+  Future<void> _delete(BuildContext context) async {
+    final l10n = context.l10n;
+    final confirmed = await showAppConfirmDialog(
+      context: context,
+      title: l10n.calendarDeleteEvent,
+      message: l10n.calendarDeleteConfirm,
+      confirmLabel: l10n.calendarEventDelete,
+      cancelLabel: l10n.calendarEventCancel,
+      destructive: true,
+    );
+    if (confirmed && context.mounted) Navigator.of(context).pop('delete');
   }
 }

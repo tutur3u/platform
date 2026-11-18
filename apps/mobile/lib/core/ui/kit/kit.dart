@@ -8,10 +8,12 @@
 library;
 
 export 'package:mobile/core/ui/kit/app_adaptive_grid.dart';
+export 'package:mobile/core/ui/kit/app_event_block.dart';
 export 'package:mobile/core/ui/kit/app_filter_bar.dart';
 export 'package:mobile/core/ui/kit/app_grouped_slice.dart';
 export 'package:mobile/core/ui/kit/app_key_value_row.dart';
 export 'package:mobile/core/ui/kit/app_meter.dart';
+export 'package:mobile/core/ui/kit/app_mini_calendar.dart';
 export 'package:mobile/core/ui/kit/app_panel.dart';
 export 'package:mobile/core/ui/kit/app_rich_row.dart';
 export 'package:mobile/core/ui/kit/app_section_header.dart';
