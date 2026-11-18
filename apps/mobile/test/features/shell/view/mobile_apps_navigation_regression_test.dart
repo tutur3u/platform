@@ -98,6 +98,11 @@ void main() {
             GoRoute(path: Routes.home, builder: (_, _) => const SizedBox()),
             GoRoute(path: Routes.tasks, builder: (_, _) => const SizedBox()),
             GoRoute(path: Routes.calendar, builder: (_, _) => const SizedBox()),
+            GoRoute(path: Routes.finance, builder: (_, _) => const SizedBox()),
+            GoRoute(
+              path: Routes.transactions,
+              builder: (_, _) => const SizedBox(),
+            ),
             GoRoute(
               path: Routes.taskPlanning,
               builder: (_, _) => const ShellMiniNav(
@@ -167,6 +172,29 @@ void main() {
     );
     await _pump(tester);
   }
+
+  testWidgets('Finance overview keeps its Finance destinations in the dock', (
+    tester,
+  ) async {
+    await mount(tester);
+    router.go(Routes.finance);
+    await _pump(tester);
+    final overview = find.byKey(
+      const ValueKey('mini-nav-finance-finance_home'),
+    );
+    final activity = find.byKey(
+      const ValueKey('mini-nav-finance-finance_history'),
+    );
+    expect(overview, findsOneWidget);
+    expect(activity, findsOneWidget);
+    expect(find.byKey(const ValueKey('apps')), findsNothing);
+
+    await tester.tap(activity);
+    await _pump(tester);
+    expect(router.routeInformationProvider.value.uri.path, Routes.transactions);
+    expect(overview, findsOneWidget);
+    expect(tester.takeException(), isNull);
+  });
 
   testWidgets('registered in-app parent remains inside Tasks', (tester) async {
     await mount(tester);

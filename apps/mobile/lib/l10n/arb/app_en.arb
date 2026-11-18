@@ -2343,22 +2343,8 @@
   "financeAttachReceipt": "Attach receipt",
   "financeCloseTransactionForm": "Close new transaction",
   "financeNewTransaction": "New transaction",
-  "financeRecentIn": "Recent in · {month}",
-  "@financeRecentIn": {
-    "placeholders": {
-      "month": {
-        "type": "String"
-      }
-    }
-  },
-  "financeRecentOut": "Recent out · {month}",
-  "@financeRecentOut": {
-    "placeholders": {
-      "month": {
-        "type": "String"
-      }
-    }
-  },
+  "financeRecentIncomeEntries": "Recent income entries",
+  "financeRecentExpenseEntries": "Recent expense entries",
   "financeTotalInCurrency": "Total in {currency}",
   "@financeTotalInCurrency": {
     "placeholders": {

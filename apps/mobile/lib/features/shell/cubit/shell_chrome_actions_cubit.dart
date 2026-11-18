@@ -31,21 +31,30 @@ class ShellActionSpec extends Equatable {
   /// dock with the shared search glyph, switches to the close glyph while the
   /// shell navbar shows the query field, and stays highlighted while a query
   /// is applied, so Search looks and hits the same everywhere.
+  /// An entry that opens search on another route stays inactive. The
+  /// destination registers its own query controller and close action.
   const ShellActionSpec.search({
     required this.id,
     required bool active,
     required String this.tooltip,
     required VoidCallback this.onPressed,
-    required TextEditingController controller,
-    required String this.searchHint,
-    required VoidCallback this.onCloseSearch,
+    TextEditingController? controller,
+    this.searchHint,
+    this.onCloseSearch,
     bool hasQuery = false,
     Object? callbackToken,
     this.enabled = true,
     this.onSearchChanged,
     this.onSearchSubmitted,
     bool keepVisibleWithKeyboard = true,
-  }) : icon = active ? AppIcons.close : AppIcons.search,
+  }) : assert(
+         !active ||
+             (controller != null &&
+                 searchHint != null &&
+                 onCloseSearch != null),
+         'Active shell search requires a controller, hint, and close action.',
+       ),
+       icon = active ? AppIcons.close : AppIcons.search,
        callbackToken = (active, hasQuery, callbackToken),
        isLoading = false,
        filled = false,

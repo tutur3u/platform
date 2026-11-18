@@ -6,19 +6,23 @@ import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
 import 'package:mobile/core/cache/cache_warmup_coordinator.dart';
 import 'package:mobile/core/layout/layout.dart';
+import 'package:mobile/core/responsive/breakpoints.dart';
 import 'package:mobile/core/router/routes.dart';
-import 'package:mobile/core/theme/sorbet/sorbet_scales.dart';
+import 'package:mobile/core/theme/appearance/appearance_contrast.dart';
 import 'package:mobile/core/ui/components/app_card.dart';
 import 'package:mobile/core/ui/components/app_toast.dart';
+import 'package:mobile/core/ui/icons/app_icons.dart';
 import 'package:mobile/core/ui/kit/kit.dart';
 import 'package:mobile/core/ui/tokens/app_tokens.dart';
 import 'package:mobile/core/utils/currency_conversion.dart';
 import 'package:mobile/core/utils/currency_formatter.dart';
+import 'package:mobile/data/models/finance/exchange_rate.dart';
 import 'package:mobile/data/models/finance/transaction.dart';
 import 'package:mobile/data/models/finance/wallet.dart';
 import 'package:mobile/data/repositories/finance_repository.dart';
 import 'package:mobile/features/finance/cubit/finance_cubit.dart';
 import 'package:mobile/features/finance/utils/transaction_icon.dart';
+import 'package:mobile/features/finance/utils/wallet_ordering.dart';
 import 'package:mobile/features/finance/view/transaction_detail_action.dart';
 import 'package:mobile/features/finance/widgets/finance_shell_actions.dart';
 import 'package:mobile/features/finance/widgets/finance_tone.dart';
@@ -114,62 +118,62 @@ class _FinanceView extends StatelessWidget {
           }
         },
         child: BlocBuilder<FinanceCubit, FinanceState>(
-          builder: (context, state) {
-            if (state.status == FinanceStatus.loading) {
-              return const FinanceOverviewSkeleton();
-            }
-
-            if (state.status == FinanceStatus.error) {
-              return NovaRefreshIndicator.state(
-                onRefresh: () => _reload(context, retainError: true),
-                child: _FinanceError(error: state.error),
-              );
-            }
-
-            if (!state.hasWorkspaceCurrency) {
-              return const FinanceOverviewSkeleton();
-            }
-
-            return Stack(
-              children: [
-                ShellChromeActions(
-                  ownerId: 'finance-overview',
-                  locations: const {Routes.finance},
-                  actions: [
-                    financeAmountVisibilityAction(
-                      context,
-                      showAmounts: showAmounts,
-                    ),
-                    ShellActionSpec(
-                      id: 'finance-search',
-                      icon: Icons.search,
-                      tooltip: context.l10n.commonSearch,
-                      onPressed: () =>
-                          context.push('${Routes.transactions}?search=1'),
-                    ),
-                    ShellActionSpec(
-                      id: 'finance-create',
-                      icon: Icons.add,
-                      tooltip: context.l10n.financeNewTransaction,
-                      filled: true,
-                      onPressed: () => unawaited(_create(context, state)),
-                    ),
-                  ],
-                ),
-                NovaRefreshIndicator(
-                  onRefresh: () => _reload(context, retainError: true),
-                  child: FinanceOverviewContent(
-                    state: state,
+          builder: (context, state) => Stack(
+            children: [
+              ShellChromeActions(
+                ownerId: 'finance-overview',
+                locations: const {Routes.finance},
+                actions: [
+                  financeAmountVisibilityAction(
+                    context,
                     showAmounts: showAmounts,
-                    onTransactionTap: (transaction) =>
-                        _openTransaction(context, state, transaction),
-                    onCreate: () => _create(context, state),
                   ),
-                ),
-              ],
-            );
-          },
+                  ShellActionSpec.search(
+                    id: 'finance-search',
+                    active: false,
+                    tooltip: context.l10n.financeSearchTransactions,
+                    onPressed: () =>
+                        context.push('${Routes.transactions}?search=1'),
+                  ),
+                  ShellActionSpec(
+                    id: 'finance-create',
+                    icon: AppIcons.add,
+                    tooltip: context.l10n.financeNewTransaction,
+                    filled: true,
+                    onPressed: () => unawaited(_create(context, state)),
+                  ),
+                ],
+              ),
+              _body(context, state, showAmounts: showAmounts),
+            ],
+          ),
         ),
+      ),
+    );
+  }
+
+  Widget _body(
+    BuildContext context,
+    FinanceState state, {
+    required bool showAmounts,
+  }) {
+    if (state.status == FinanceStatus.error) {
+      return NovaRefreshIndicator.state(
+        onRefresh: () => _reload(context, retainError: true),
+        child: _FinanceError(error: state.error),
+      );
+    }
+    if (state.status == FinanceStatus.loading || !state.hasWorkspaceCurrency) {
+      return const FinanceOverviewSkeleton();
+    }
+    return NovaRefreshIndicator(
+      onRefresh: () => _reload(context, retainError: true),
+      child: FinanceOverviewContent(
+        state: state,
+        showAmounts: showAmounts,
+        onTransactionTap: (transaction) =>
+            _openTransaction(context, state, transaction),
+        onCreate: () => _create(context, state),
       ),
     );
   }

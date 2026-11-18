@@ -3138,14 +3138,10 @@ class AppLocalizationsEn extends AppLocalizations {
   String get financeNewTransaction => 'New transaction';
 
   @override
-  String financeRecentIn(String month) {
-    return 'Recent in · $month';
-  }
+  String get financeRecentIncomeEntries => 'Recent income entries';
 
   @override
-  String financeRecentOut(String month) {
-    return 'Recent out · $month';
-  }
+  String get financeRecentExpenseEntries => 'Recent expense entries';
 
   @override
   String financeTotalInCurrency(String currency) {

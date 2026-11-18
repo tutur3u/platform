@@ -41,6 +41,7 @@ import 'package:mobile/widgets/async_delete_confirmation_dialog.dart';
 import 'package:mobile/widgets/image_source_picker_dialog.dart';
 import 'package:mobile/widgets/nova_loading_indicator.dart';
 
+part 'transaction_create_body.dart';
 part 'transaction_create_category.dart';
 part 'transaction_create_fields.dart';
 part 'transaction_create_footer.dart';

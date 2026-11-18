@@ -7,7 +7,6 @@ class FinanceOverviewContent extends StatelessWidget {
     required this.showAmounts,
     required this.onTransactionTap,
     required this.onCreate,
-    this.now,
     super.key,
   });
 
@@ -15,7 +14,6 @@ class FinanceOverviewContent extends StatelessWidget {
   final bool showAmounts;
   final ValueChanged<Transaction> onTransactionTap;
   final VoidCallback onCreate;
-  final DateTime? now;
 
   @override
   Widget build(BuildContext context) {
@@ -25,11 +23,7 @@ class FinanceOverviewContent extends StatelessWidget {
         final balanceAndWallets = Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            _OverviewHero(
-              state: state,
-              showAmounts: showAmounts,
-              now: now ?? DateTime.now(),
-            ),
+            _OverviewHero(state: state, showAmounts: showAmounts),
             const SizedBox(height: AppLayout.sectionGap),
             _OverviewWallets(state: state, showAmounts: showAmounts),
           ],
@@ -40,7 +34,8 @@ class FinanceOverviewContent extends StatelessWidget {
           onTransactionTap: onTransactionTap,
           onCreate: onCreate,
         );
-        final wide = constraints.maxWidth >= const SorbetMetrics().breakpoint;
+        final wide =
+            Breakpoints.fromWidth(constraints.maxWidth) != DeviceClass.compact;
         return AppPageListView(
           kind: AppPageKind.root,
           physics: const AlwaysScrollableScrollPhysics(),
@@ -63,22 +58,11 @@ class FinanceOverviewContent extends StatelessWidget {
             const SizedBox(height: AppLayout.sectionGap),
             AppCard(
               padding: EdgeInsets.zero,
-              child: Column(
-                children: [
-                  AppRichRow(
-                    title: l10n.financeCheckpointsTitle,
-                    leading: const AppIconTile(icon: Icons.fact_check_outlined),
-                    trailing: const Icon(Icons.chevron_right_rounded),
-                    onTap: () => context.push(Routes.financeCheckpoints),
-                  ),
-                  const _OverviewDivider(),
-                  AppRichRow(
-                    title: l10n.financeCategories,
-                    leading: const AppIconTile(icon: Icons.tune_rounded),
-                    trailing: const Icon(Icons.chevron_right_rounded),
-                    onTap: () => context.push(Routes.categories),
-                  ),
-                ],
+              child: AppRichRow(
+                title: l10n.financeCheckpointsTitle,
+                leading: const AppIconTile(icon: Icons.fact_check_outlined),
+                trailing: const Icon(Icons.chevron_right_rounded),
+                onTap: () => context.push(Routes.financeCheckpoints),
               ),
             ),
           ],
@@ -127,6 +111,7 @@ class _OverviewWallets extends StatelessWidget {
                     _OverviewWallet(
                       wallet: wallet,
                       workspaceCurrency: state.workspaceCurrency,
+                      exchangeRates: state.exchangeRates,
                       showAmounts: showAmounts,
                     ),
                 ],

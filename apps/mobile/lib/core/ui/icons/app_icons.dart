@@ -19,6 +19,7 @@ export 'package:mobile/core/ui/icons/generated/lucide_lab_icons.g.dart';
 /// fallbacks for brand marks Lucide no longer ships.
 abstract final class AppIcons {
   // Semantic actions.
+  static const IconData add = LucideIcons.plus;
   static const IconData search = LucideIcons.search;
   static const IconData close = LucideIcons.x;
   static const IconData check = LucideIcons.check;

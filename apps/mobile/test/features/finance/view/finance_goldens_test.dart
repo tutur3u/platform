@@ -96,6 +96,8 @@ void main() {
               await tester.tap(find.text('Open form'));
               await tester.pumpAndSettle();
               expect(find.text('New transaction'), findsOneWidget);
+              await tester.tap(find.byKey(const ValueKey('money-key-Done')));
+              await tester.pumpAndSettle();
               await tester.tap(find.text('Groceries'));
             }
             await tester.pumpAndSettle();

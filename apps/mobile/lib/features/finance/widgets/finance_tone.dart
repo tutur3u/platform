@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:mobile/core/layout/grouped_rows.dart';
-import 'package:mobile/core/theme/sorbet/sorbet_tokens.dart';
+import 'package:mobile/core/theme/appearance/appearance_contrast.dart';
 import 'package:mobile/core/ui/tokens/app_tokens.dart';
 
 enum FinanceTone {
@@ -9,16 +9,20 @@ enum FinanceTone {
   transfer;
 
   ({Color fill, Color ink}) colors(BuildContext context) {
-    final hues = SorbetTokens.maybeOf(context)?.hues;
-    final (hue, fallback) = switch (this) {
-      income => (hues?.green, AppTone.success),
-      expense => (hues?.orange, AppTone.warning),
-      transfer => (hues?.blue, AppTone.info),
+    final tone = switch (this) {
+      income => AppTone.success,
+      expense => AppTone.destructive,
+      transfer => AppTone.info,
     };
     final colors = context.tokens.colorScheme;
+    final fill = Color.alphaBlend(tone.fill(colors), colors.card);
     return (
-      fill: hue?.fill ?? Color.alphaBlend(fallback.fill(colors), colors.card),
-      ink: hue?.ink ?? colors.foreground,
+      fill: fill,
+      ink: AppearanceContrast.ensureContrast(
+        tone.foreground(colors),
+        against: fill,
+        target: AppearanceContrast.aaText,
+      ),
     );
   }
 }

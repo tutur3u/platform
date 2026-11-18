@@ -533,7 +533,7 @@ class _TransactionFormDialogState extends State<_TransactionFormDialog>
     _destinationAmountFocusNode.addListener(_handleMoneyFocusChanged);
 
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (!mounted || _isCreate) return;
+      if (!mounted) return;
       _setActiveMoneyField(_MoneyFieldTarget.source);
     });
     unawaited(_loadOptions());

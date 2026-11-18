@@ -6085,17 +6085,17 @@ abstract class AppLocalizations {
   /// **'New transaction'**
   String get financeNewTransaction;
 
-  /// No description provided for @financeRecentIn.
+  /// No description provided for @financeRecentIncomeEntries.
   ///
   /// In en, this message translates to:
-  /// **'Recent in · {month}'**
-  String financeRecentIn(String month);
+  /// **'Recent income entries'**
+  String get financeRecentIncomeEntries;
 
-  /// No description provided for @financeRecentOut.
+  /// No description provided for @financeRecentExpenseEntries.
   ///
   /// In en, this message translates to:
-  /// **'Recent out · {month}'**
-  String financeRecentOut(String month);
+  /// **'Recent expense entries'**
+  String get financeRecentExpenseEntries;
 
   /// No description provided for @financeTotalInCurrency.
   ///

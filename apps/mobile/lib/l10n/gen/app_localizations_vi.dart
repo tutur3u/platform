@@ -3124,14 +3124,10 @@ class AppLocalizationsVi extends AppLocalizations {
   String get financeNewTransaction => 'Giao dịch mới';
 
   @override
-  String financeRecentIn(String month) {
-    return 'Thu gần đây · $month';
-  }
+  String get financeRecentIncomeEntries => 'Khoản thu gần đây';
 
   @override
-  String financeRecentOut(String month) {
-    return 'Chi gần đây · $month';
-  }
+  String get financeRecentExpenseEntries => 'Khoản chi gần đây';
 
   @override
   String financeTotalInCurrency(String currency) {

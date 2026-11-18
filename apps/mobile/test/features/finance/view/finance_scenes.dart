@@ -7,11 +7,15 @@ import 'package:mobile/data/models/finance/tag.dart';
 import 'package:mobile/data/models/finance/transaction.dart';
 import 'package:mobile/data/models/finance/wallet.dart';
 import 'package:mobile/data/repositories/finance_repository.dart';
+import 'package:mobile/features/apps/registry/app_registry.dart';
 import 'package:mobile/features/finance/cubit/finance_cubit.dart';
 import 'package:mobile/features/finance/view/finance_page.dart';
+import 'package:mobile/features/shell/cubit/shell_chrome_actions_cubit.dart';
 import 'package:mobile/features/shell/view/shell_chrome_style.dart';
+import 'package:mobile/features/shell/view/shell_dock_action_button.dart';
 import 'package:mobile/features/shell/view/shell_dock_bar.dart';
 import 'package:mobile/features/shell/view/shell_top_bar_button.dart';
+import 'package:mobile/l10n/l10n.dart';
 
 final financeSceneDate = DateTime(2026, 11, 18, 9, 30);
 
@@ -126,7 +130,6 @@ class FinanceOverviewScene extends StatelessWidget {
               ),
               child: FinanceOverviewContent(
                 state: state,
-                now: financeSceneDate,
                 showAmounts: true,
                 onTransactionTap: (_) {},
                 onCreate: () {},
@@ -152,11 +155,7 @@ class FinanceOverviewScene extends StatelessWidget {
                   onPressed: () {},
                 ),
                 ShellTopBarButton(
-                  icon: const Icon(Icons.search),
-                  onPressed: () {},
-                ),
-                ShellTopBarButton(
-                  icon: const Icon(Icons.add),
+                  icon: const Icon(AppIcons.add),
                   filled: true,
                   onPressed: () {},
                 ),
@@ -170,41 +169,45 @@ class FinanceOverviewScene extends StatelessWidget {
             child: Center(
               child: SizedBox(
                 width: ShellDockMetrics.widthFor(media.size.width),
-                child: ShellDockBar(
-                  entries: const [
-                    ShellDockEntry(
-                      key: ValueKey('home'),
-                      label: 'Home',
-                      glyph: Icon(LucideIcons.house),
+                child: Row(
+                  crossAxisAlignment: CrossAxisAlignment.end,
+                  spacing: ShellDockMetrics.zoneGap,
+                  children: [
+                    Expanded(
+                      child: ShellDockBar(
+                        entries: [
+                          for (final item in AppRegistry.moduleById(
+                            'finance',
+                          )!.miniAppNavItems)
+                            ShellDockEntry(
+                              key: ValueKey(item.id),
+                              label: item.label(context.l10n),
+                              glyph: Icon(item.icon),
+                            ),
+                        ],
+                        selectedKey: const ValueKey('finance_home'),
+                        onSelected: (_) {},
+                        back: const ShellDockEntry(
+                          key: ValueKey('back'),
+                          label: 'Back',
+                          glyph: Icon(AppIcons.back),
+                        ),
+                      ),
                     ),
-                    ShellDockEntry(
-                      key: ValueKey('apps'),
-                      label: 'Apps',
-                      glyph: Icon(LucideIcons.layoutGrid),
-                    ),
-                    ShellDockEntry(
-                      key: ValueKey('mira'),
-                      label: 'Mira',
-                      glyph: Icon(LucideIcons.sparkles),
-                    ),
-                    ShellDockEntry(
-                      key: ValueKey('alerts'),
-                      label: 'Alerts',
-                      glyph: Icon(LucideIcons.bell),
-                    ),
-                    ShellDockEntry(
-                      key: ValueKey('more'),
-                      label: 'More',
-                      glyph: Icon(Icons.more_horiz),
+                    Padding(
+                      padding: const EdgeInsets.only(
+                        bottom: ShellDockMetrics.padding,
+                      ),
+                      child: ShellDockActionButton(
+                        action: ShellActionSpec.search(
+                          id: 'finance-search',
+                          active: false,
+                          tooltip: context.l10n.financeSearchTransactions,
+                          onPressed: () {},
+                        ),
+                      ),
                     ),
                   ],
-                  selectedKey: const ValueKey('apps'),
-                  onSelected: (_) {},
-                  back: const ShellDockEntry(
-                    key: ValueKey('back'),
-                    label: 'Back',
-                    glyph: Icon(LucideIcons.chevronLeft),
-                  ),
                 ),
               ),
             ),

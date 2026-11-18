@@ -1,45 +1,25 @@
 part of 'finance_page.dart';
 
 class _OverviewHero extends StatelessWidget {
-  const _OverviewHero({
-    required this.state,
-    required this.showAmounts,
-    required this.now,
-  });
+  const _OverviewHero({required this.state, required this.showAmounts});
 
   final FinanceState state;
   final bool showAmounts;
-  final DateTime now;
 
   @override
   Widget build(BuildContext context) {
     final type = context.tokens.typography;
     final currency = state.workspaceCurrency;
-    final month = DateFormat.MMM(
-      Localizations.localeOf(context).toString(),
-    ).format(now);
-    var income = 0.0;
-    var expense = 0.0;
+    var income = 0;
+    var expense = 0;
     for (final transaction in state.recentTransactions) {
-      final date = (transaction.takenAt ?? transaction.createdAt)?.toLocal();
+      if (transaction.isTransfer || transaction.reportOptIn == false) continue;
       final amount = transaction.amount;
-      if (transaction.isTransfer ||
-          amount == null ||
-          date?.month != now.month ||
-          date?.year != now.year) {
-        continue;
-      }
-      final converted = convertCurrency(
-        amount,
-        transaction.walletCurrency ?? currency,
-        currency,
-        state.exchangeRates,
-      );
-      if (converted == null) continue;
-      if (converted >= 0) {
-        income += converted;
-      } else {
-        expense += converted;
+      if (amount == null) continue;
+      if (amount > 0) {
+        income++;
+      } else if (amount < 0) {
+        expense++;
       }
     }
 
@@ -78,16 +58,22 @@ class _OverviewHero extends StatelessWidget {
               children: [
                 Expanded(
                   child: _FlowTile(
-                    label: context.l10n.financeRecentIn(month),
-                    value: _overviewAmount(income, currency, showAmounts),
+                    label: context.l10n.financeRecentIncomeEntries,
+                    value: maskFinanceValue(
+                      MaterialLocalizations.of(context).formatDecimal(income),
+                      showAmounts: showAmounts,
+                    ),
                     tone: FinanceTone.income,
                   ),
                 ),
                 const SizedBox(width: 8),
                 Expanded(
                   child: _FlowTile(
-                    label: context.l10n.financeRecentOut(month),
-                    value: _overviewAmount(expense, currency, showAmounts),
+                    label: context.l10n.financeRecentExpenseEntries,
+                    value: maskFinanceValue(
+                      MaterialLocalizations.of(context).formatDecimal(expense),
+                      showAmounts: showAmounts,
+                    ),
                     tone: FinanceTone.expense,
                   ),
                 ),
