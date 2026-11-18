@@ -21755,6 +21755,19 @@
       }
     }
   },
+  "workspace-usage-meters": {
+    "available": "Available",
+    "held": "Reserved",
+    "meter": "Meter",
+    "participant_seconds": "Large-room participant-minutes",
+    "reset": "Resets (UTC)",
+    "sandbox_seconds": "Sandbox minutes",
+    "spent": "Used",
+    "stored_bytes": "Stored GiB",
+    "title": "Usage credits",
+    "transfer_bytes": "Transfer GiB",
+    "unavailable": "Usage credits could not be loaded."
+  },
   "workspace-users-tabs": {
     "active": "Active Users",
     "approvals": "Approvals",

@@ -13,6 +13,7 @@ import {
 import { Badge } from '@tuturuuu/ui/badge';
 import FeatureSummary from '@tuturuuu/ui/custom/feature-summary';
 import { Separator } from '@tuturuuu/ui/separator';
+import { WorkspaceUsageMeters } from '@tuturuuu/ui/workspace-usage-meters';
 import { ROOT_WORKSPACE_ID } from '@tuturuuu/utils/constants';
 import { canViewWorkspaceUsage } from '@tuturuuu/utils/workspace-usage-access';
 import { getPermissions, getWorkspace } from '@tuturuuu/utils/workspace-helper';
@@ -79,6 +80,7 @@ export default async function UsageContent({ wsId }: UsageContentProps) {
       />
 
       <Separator />
+      <WorkspaceUsageMeters wsId={workspace.id} />
 
       <div className="flex flex-wrap items-center gap-2">
         <Badge variant="outline" className="gap-1.5 px-3 py-1.5">

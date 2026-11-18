@@ -22062,6 +22062,19 @@
       }
     }
   },
+  "workspace-usage-meters": {
+    "available": "Khả dụng",
+    "held": "Đã giữ chỗ",
+    "meter": "Hạng mục",
+    "participant_seconds": "Phút người tham gia phòng lớn",
+    "reset": "Đặt lại (UTC)",
+    "sandbox_seconds": "Phút sandbox",
+    "spent": "Đã dùng",
+    "stored_bytes": "GiB lưu trữ",
+    "title": "Hạn mức sử dụng",
+    "transfer_bytes": "GiB truyền tải",
+    "unavailable": "Không thể tải hạn mức sử dụng."
+  },
   "workspace-users-tabs": {
     "active": "Người dùng đang hoạt động",
     "approvals": "Phê duyệt",
