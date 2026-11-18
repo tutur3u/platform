@@ -89,6 +89,7 @@ export async function roomRoute(
       });
     return Response.json(
       {
+        code: error instanceof MeetCallAccessError ? error.code : undefined,
         error:
           error instanceof MeetCallAccessError
             ? error.message

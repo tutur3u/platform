@@ -17,7 +17,8 @@ export async function answerPersonalMeetChat(
     question: string;
     timezone: string;
     history: Array<{ body: string; assistant: boolean }>;
-  }
+  },
+  privateProvider?: { apiKey: string; checkConsent: () => Promise<void> }
 ) {
   const contextBytes = new TextEncoder().encode(
     JSON.stringify({
@@ -39,7 +40,11 @@ export async function answerPersonalMeetChat(
     estimatedInputTokens: inputBudget,
   });
   if (!allowance.allowed)
-    throw new MeetCallAccessError(403, 'AI quota is unavailable');
+    throw new MeetCallAccessError(
+      403,
+      'AI quota is unavailable',
+      'MIRA_CREDITS_UNAVAILABLE'
+    );
   const db = await createAdminClient({ noCookie: true });
   const cap = await capMaxOutputTokensByCredits(
     db,
@@ -47,7 +52,12 @@ export async function answerPersonalMeetChat(
     Math.min(allowance.maxOutputTokens ?? 2048, 2048),
     allowance.remainingCredits
   );
-  if (!cap) throw new MeetCallAccessError(403, 'AI quota is exhausted');
+  if (!cap)
+    throw new MeetCallAccessError(
+      403,
+      'AI quota is exhausted',
+      'MIRA_CREDITS_UNAVAILABLE'
+    );
   const answer = await billMeetChat(
     {
       userId,
@@ -57,10 +67,11 @@ export async function answerPersonalMeetChat(
       inputBudget,
       remainingCredits: allowance.remainingCredits,
       requestId: crypto.randomUUID(),
-      allowSearch: MEETING_APP !== 'parley',
+      allowSearch: !privateProvider && MEETING_APP !== 'parley',
     },
-    async (allowSearch) =>
-      answerMeetChat(
+    async (allowSearch) => {
+      await privateProvider?.checkConsent();
+      return answerMeetChat(
         input.history.map((message) => ({
           ...message,
           displayName: message.assistant ? 'Mira' : 'You',
@@ -78,10 +89,13 @@ export async function answerPersonalMeetChat(
         },
         {
           audience: 'private',
-          provider: await meetingProviderTransport(),
+          provider: privateProvider
+            ? { apiKey: privateProvider.apiKey }
+            : await meetingProviderTransport(),
           allowSearch,
         }
-      )
+      );
+    }
   );
   if (!answer.text.trim())
     throw new MeetCallAccessError(

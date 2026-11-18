@@ -9,7 +9,11 @@ type Input = Parameters<typeof answerPersonalMeetChat>[1] & {
   requestId: string;
   startedAt: number;
 };
-export async function requestPersonalMeetChat(access: Access, input: Input) {
+export async function requestPersonalMeetChat(
+  access: Access,
+  input: Input,
+  provider?: Parameters<typeof answerPersonalMeetChat>[2]
+) {
   const digest = await crypto.subtle.digest(
     'SHA-256',
     new TextEncoder().encode(JSON.stringify(input))
@@ -29,7 +33,22 @@ export async function requestPersonalMeetChat(access: Access, input: Input) {
   if (typeof receipt.text === 'string') return { text: receipt.text };
   if (!receipt.started)
     throw new MeetCallAccessError(409, 'Request already attempted');
-  const answer = await answerPersonalMeetChat(access.user.id, input);
+  let answer: Awaited<ReturnType<typeof answerPersonalMeetChat>>;
+  try {
+    answer = await answerPersonalMeetChat(access.user.id, input, provider);
+  } catch (error) {
+    if (
+      error instanceof MeetCallAccessError &&
+      error.code === 'MIRA_CREDITS_UNAVAILABLE'
+    ) {
+      await callRoomService(access, {
+        action: 'personal.release',
+        id: input.requestId,
+        fingerprint,
+      }).catch(() => undefined);
+    }
+    throw error;
+  }
   // Attempt recovery storage before responding, but do not hide a paid answer.
   // An uncertain receipt stays pending and cannot generate or bill again.
   const finish = {

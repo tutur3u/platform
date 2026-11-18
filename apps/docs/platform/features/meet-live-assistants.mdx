@@ -68,11 +68,15 @@ regression coverage: `invite-unavailable.test.tsx`, `live-errors.test.ts` and
 ## Room features deliberately unavailable
 
 Room Live input and output are denied on the server, independent of environment
-settings, pending an all-participant click fence for the mixed transport. Public
-AI chat, including **@mira**, **@ttr**, **@tuturuuu**, Everyone and the legacy
-Private Mira chat endpoint, is also denied. Private text inside an accepted Live
-session remains available. Meeting WAV transcription and notes are off. These
-restrictions prevent mixed input or room history from reaching a provider. A
+settings, pending an all-participant click fence for the mixed transport.
+Room chat generation through **@mira**, **@ttr**, or **@tuturuuu** is also
+denied. Private text inside an accepted Live
+session remains available. The Private Mira tab in room chat uses the same
+current account choice and eligibility as Private Mira Live. It sends the
+requester’s question and bounded private history, charges their personal
+workspace, and shows the reply only to that requester unless they share it.
+Meeting WAV transcription and notes are off. Room history and mixed audio stay
+outside provider requests. A
 denied room chat mention shows an inline notice that Room Mira is unavailable and
 points to Private Mira. Private Mira startup reports blocked, missing or busy
 microphones and unavailable audio output with specific messages.

@@ -39,7 +39,8 @@ export async function requirePrivateMiraChoice(access: Access) {
   )
     throw new MeetCallAccessError(
       403,
-      'Choose Continue with Mira before starting'
+      'Choose Continue with Mira before starting',
+      'MIRA_CONSENT_REQUIRED'
     );
   return current.choice;
 }

@@ -12,7 +12,8 @@ import { z } from 'zod';
 export class MeetCallAccessError extends Error {
   constructor(
     public status: number,
-    message: string
+    message: string,
+    public code?: string
   ) {
     super(message);
   }

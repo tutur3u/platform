@@ -20,6 +20,22 @@ import { useRef, useState } from 'react';
 import { ChatMessageBody } from './chat-message-body';
 import { MiraProfile } from './mira-profile';
 
+const privateFailureKeys = {
+  MIRA_ACCOUNT_UNAVAILABLE: 'personal_account_unavailable',
+  MIRA_CONSENT_REQUIRED: 'personal_consent_required',
+  MIRA_CREDITS_UNAVAILABLE: 'personal_credits_unavailable',
+  MIRA_DEPLOYMENT_DISABLED: 'personal_deployment_disabled',
+  MIRA_PROVIDER_UNAVAILABLE: 'personal_provider_unavailable',
+  MIRA_WORKSPACE_UNAVAILABLE: 'personal_workspace_unavailable',
+} as const;
+
+function personalFailureKey(error: unknown) {
+  const code = error instanceof InternalApiError ? error.code : undefined;
+  return code && Object.hasOwn(privateFailureKeys, code)
+    ? privateFailureKeys[code as keyof typeof privateFailureKeys]
+    : 'assistant_failed';
+}
+
 type Turn = { id: string; body: string; assistant: boolean };
 export function PersonalChat({
   meetingId,
@@ -120,7 +136,7 @@ export function PersonalChat({
       >
         {ask.isError && (
           <p role="alert" className="text-destructive text-sm">
-            {t('assistant_failed')}
+            {t(personalFailureKey(ask.error))}
           </p>
         )}
         <Textarea
