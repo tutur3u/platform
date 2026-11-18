@@ -188,6 +188,12 @@ function headerElement(overrides?: Partial<HeaderProps>) {
   );
 }
 
+function openFilters() {
+  const trigger = screen.getByRole('button', { name: 'common.filters' });
+  fireEvent.click(trigger);
+  return trigger;
+}
+
 function renderBoardHeader(
   overrides?: Partial<HeaderProps>,
   sidebarContext?: React.ContextType<typeof SidebarContext>
@@ -249,11 +255,25 @@ describe('BoardHeader', () => {
     });
   });
 
-  it('keeps search with the filters and Share, New task and More in the header', () => {
+  it('keeps navigation and primary actions in one row', () => {
     const onCreateTask = vi.fn();
     renderBoardHeader({ onCreateTask });
 
-    expect(screen.getByLabelText('common.search_tasks')).toBeInTheDocument();
+    const row = screen
+      .getByTestId('board-switcher')
+      .closest('[data-board-header-row]');
+    const filterTrigger = screen.getByRole('button', {
+      name: 'common.filters',
+    });
+    expect(row).toContainElement(filterTrigger);
+    expect(row).toContainElement(
+      screen.getByRole('button', { name: /^common\.view:/ })
+    );
+    for (const action of ['share', 'new_task', 'more']) {
+      expect(row).toContainElement(
+        screen.getByRole('button', { name: `ws-task-boards.header.${action}` })
+      );
+    }
     fireEvent.click(
       screen.getByRole('button', { name: 'ws-task-boards.header.share' })
     );
@@ -263,9 +283,32 @@ describe('BoardHeader', () => {
       screen.getByRole('button', { name: 'ws-task-boards.header.new_task' })
     );
     expect(onCreateTask).toHaveBeenCalledTimes(1);
+  });
+
+  it('commits a Timeline search after the Filters panel closes', async () => {
+    const onFiltersChange = vi.fn();
+    const onViewChange = vi.fn();
+    renderBoardHeader({
+      currentView: 'timeline',
+      onFiltersChange,
+      onViewChange,
+    });
+
+    const trigger = openFilters();
+    fireEvent.change(screen.getByLabelText('common.search_tasks'), {
+      target: { value: 'roadmap' },
+    });
+    fireEvent.click(trigger);
+
     expect(
-      screen.getByRole('button', { name: 'ws-task-boards.header.more' })
-    ).toBeInTheDocument();
+      screen.queryByLabelText('common.search_tasks')
+    ).not.toBeInTheDocument();
+    await waitFor(() => {
+      expect(onFiltersChange).toHaveBeenCalledWith(
+        expect.objectContaining({ searchQuery: 'roadmap' })
+      );
+      expect(onViewChange).toHaveBeenCalledWith('list');
+    });
   });
 
   it('opens Create board from More', () => {
@@ -383,6 +426,7 @@ describe('BoardHeader', () => {
 
   it('renders a natural public title and hides member-only controls in read-only mode', () => {
     renderBoardHeader({
+      onCreateTask: vi.fn(),
       people,
       projectTaskCounts: new Map(),
       publicView: true,
@@ -400,7 +444,15 @@ describe('BoardHeader', () => {
     expect(
       screen.queryByRole('button', { name: 'ws-task-boards.header.more' })
     ).not.toBeInTheDocument();
+    expect(
+      screen.queryByRole('button', { name: 'ws-task-boards.header.new_task' })
+    ).not.toBeInTheDocument();
+    openFilters();
+    expect(screen.getByLabelText('common.search_tasks')).toBeInTheDocument();
     expect(screen.queryByText('Linh')).not.toBeInTheDocument();
+    expect(
+      screen.queryByRole('button', { name: 'ws-task-boards.header.project' })
+    ).not.toBeInTheDocument();
     expect(
       screen.queryByRole('button', { name: /ws-task-boards\.header\.focus/ })
     ).not.toBeInTheDocument();
@@ -464,6 +516,7 @@ describe('BoardHeader', () => {
     const onFiltersChange = vi.fn();
     renderBoardHeader({ onFiltersChange, people, unassignedCount: 1 });
 
+    openFilters();
     fireEvent.click(screen.getByRole('button', { name: /Linh/ }));
     expect(onFiltersChange).toHaveBeenLastCalledWith(
       expect.objectContaining({
@@ -482,6 +535,7 @@ describe('BoardHeader', () => {
     const onFiltersChange = vi.fn();
     const onListStatusFilterChange = vi.fn();
     renderBoardHeader({ onFiltersChange, onListStatusFilterChange, people });
+    openFilters();
 
     fireEvent.click(
       screen.getByRole('button', { name: /ws-task-boards\.header\.focus/ })
@@ -503,6 +557,7 @@ describe('BoardHeader', () => {
       projectTaskCounts: new Map([['p-platform', 4]]),
     });
 
+    openFilters();
     const platform = await screen.findByRole('menuitemcheckbox', {
       name: /Platform/,
     });
@@ -534,6 +589,7 @@ describe('BoardHeader', () => {
       countsComplete: false,
     });
 
+    openFilters();
     expect(screen.getByRole('button', { name: /Linh/ })).toHaveAttribute(
       'title',
       'ws-task-boards.header.you:Linh'
@@ -572,6 +628,7 @@ describe('BoardHeader', () => {
       viewHotkeyLabels: { list: 'G L' },
     });
 
+    const filterTrigger = openFilters();
     fireEvent.click(
       screen.getByRole('menuitemradio', {
         name: /ws-task-boards\.filters\.sort_options\.high_to_low/,
@@ -582,6 +639,7 @@ describe('BoardHeader', () => {
     );
     expect(screen.queryByText(/due_date/)).not.toBeInTheDocument();
 
+    fireEvent.click(filterTrigger);
     const listItem = screen.getByText('G L').closest('button');
     if (!listItem) throw new Error('list view item missing');
     expect(listItem).toHaveTextContent('G L');
@@ -601,6 +659,7 @@ describe('BoardHeader', () => {
       onListStatusFilterChange,
     });
 
+    openFilters();
     fireEvent.click(screen.getByRole('button', { name: 'common.clear' }));
 
     expect(onFiltersChange).toHaveBeenCalledWith(DEFAULT_BOARD_FILTERS);
@@ -632,6 +691,7 @@ describe('BoardHeader', () => {
 
   it('shows no Clear button while nothing is filtered', () => {
     renderBoardHeader();
+    openFilters();
     expect(
       screen.queryByRole('button', { name: 'common.clear' })
     ).not.toBeInTheDocument();

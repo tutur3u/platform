@@ -112,25 +112,28 @@ export function SprintPill({
       <DropdownMenuTrigger asChild>
         <button
           aria-label={t('switcher_label', { name: currentSprint.name })}
-          className="inline-flex h-8 shrink-0 items-center gap-2 whitespace-nowrap rounded-md px-2 text-foreground text-sm transition-colors hover:bg-muted"
+          className="inline-flex h-8 max-w-full items-center gap-2 whitespace-nowrap rounded-md px-2 text-foreground text-sm transition-colors hover:bg-muted"
           type="button"
         >
-          <span className="text-dynamic-green">
+          <Flag className="size-3.5 shrink-0 @lg/board-header:hidden" />
+          <span className="hidden shrink-0 text-dynamic-green @lg/board-header:inline-flex">
             <SprintRing
               ratio={progress.total ? progress.done / progress.total : 0}
             />
           </span>
-          <span className="font-medium">{currentSprint.name}</span>
+          <span className="hidden truncate font-medium @lg/board-header:inline">
+            {currentSprint.name}
+          </span>
           <span className="@3xl/board-header:inline-flex hidden h-6 items-center gap-1 rounded-md bg-muted px-2 font-normal text-muted-foreground text-xs">
             <CalendarDays className="size-3" />
             {formatSprintDateRange(currentSprint, locale)}
           </span>
-          <span className="@md/board-header:inline hidden font-normal text-muted-foreground">
+          <span className="@3xl/board-header:inline hidden shrink-0 font-normal text-muted-foreground">
             {isActive
               ? t('done_count', { done: progress.done, total: progress.total })
               : t('task_count', { count: progress.total })}
           </span>
-          <ChevronDown className="size-3.5 opacity-50" />
+          <ChevronDown className="hidden size-3.5 shrink-0 opacity-50 @lg/board-header:block" />
         </button>
       </DropdownMenuTrigger>
       <DropdownMenuContent

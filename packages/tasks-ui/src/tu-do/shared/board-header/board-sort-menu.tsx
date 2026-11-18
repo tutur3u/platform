@@ -4,6 +4,7 @@ import {
   DropdownMenuContent,
   DropdownMenuTrigger,
 } from '@tuturuuu/ui/dropdown-menu';
+import { cn } from '@tuturuuu/utils/format';
 import { useTranslations } from 'next-intl';
 import type { TaskFilters } from '../task-filter.types';
 import { type BoardSortOption, isBoardSortOption } from './board-filter-state';
@@ -14,8 +15,10 @@ import { ToolbarMenuItem } from './toolbar-menu-item';
 export function BoardSortMenu({
   sortBy,
   onChange,
+  showLabel = false,
 }: {
   sortBy: TaskFilters['sortBy'];
+  showLabel?: boolean;
   onChange: (sortBy: BoardSortOption | undefined) => void;
 }) {
   const t = useTranslations();
@@ -34,10 +37,15 @@ export function BoardSortMenu({
           tone="neutral"
         >
           <ArrowUpDown />
-          <span className="@xl/board-header:inline hidden">
+          <span className={cn(!showLabel && 'hidden @xl/board-header:inline')}>
             {current ? labels[current] : t('common.sort')}
           </span>
-          <ChevronDown className="@sm/board-header:block hidden opacity-60" />
+          <ChevronDown
+            className={cn(
+              'opacity-60',
+              !showLabel && 'hidden @sm/board-header:block'
+            )}
+          />
         </ToneButton>
       </DropdownMenuTrigger>
       <DropdownMenuContent align="end" className="w-60">

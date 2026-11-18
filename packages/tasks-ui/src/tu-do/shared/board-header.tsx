@@ -1,12 +1,21 @@
-import { ArrowLeft, Plus, Share2, UserStar, X, Zap } from '@tuturuuu/icons';
+import {
+  ArrowLeft,
+  Plus,
+  Share2,
+  SlidersHorizontal,
+  UserStar,
+  X,
+  Zap,
+} from '@tuturuuu/icons';
 import type { WorkspaceTaskBoard } from '@tuturuuu/types';
 import type { TaskList } from '@tuturuuu/types/primitives/TaskList';
 import { Button } from '@tuturuuu/ui/button';
 import { useOptionalSidebar } from '@tuturuuu/ui/custom/sidebar-context';
+import { Popover, PopoverContent, PopoverTrigger } from '@tuturuuu/ui/popover';
 import { cn } from '@tuturuuu/utils/format';
 import Link from 'next/link';
 import { useTranslations } from 'next-intl';
-import { type ReactNode, useEffect, useMemo, useState } from 'react';
+import { type ReactNode, useEffect, useId, useMemo, useState } from 'react';
 import { BoardShareDialog } from '../boards/board-share-dialog';
 import { KanbanPlannerDialog } from '../boards/boardId/kanban/planner/kanban-planner-dialog';
 import type { TaskFilters } from '../boards/boardId/task-filter';
@@ -24,7 +33,10 @@ import {
 import { BoardMoreMenu } from './board-header/board-more-menu';
 import { BoardPeopleFilter } from './board-header/board-people-filter';
 import { BoardProjectFilter } from './board-header/board-project-filter';
-import { BoardSearchInput } from './board-header/board-search-input';
+import {
+  BoardSearchInput,
+  useBoardSearch,
+} from './board-header/board-search-input';
 import { BoardSortMenu } from './board-header/board-sort-menu';
 import { BoardViewMenu } from './board-header/board-view-menu';
 import { ToneButton } from './board-header/tone-button';
@@ -79,7 +91,7 @@ interface Props {
   onCreateTask?: () => void;
   /** Sprint pill shown after the board in the breadcrumb. */
   sprintSlot?: ReactNode;
-  /** Plan | Board tabs, shown first in the second row on sprint boards. */
+  /** Plan | Board tabs, shown in the navbar on sprint boards. */
   planTabs?: ReactNode;
   /** The Plan tab is open, so board-only controls hide. */
   planActive?: boolean;
@@ -124,6 +136,7 @@ export function BoardHeader({
   onFilterIntent,
 }: Props) {
   const t = useTranslations();
+  const activeFiltersId = useId();
   const [shareBoardOpen, setShareBoardOpen] = useState(false);
   const [plannerOpen, setPlannerOpen] = useState(false);
   const [createBoardOpen, setCreateBoardOpen] = useState(false);
@@ -159,7 +172,15 @@ export function BoardHeader({
     workspaceId,
   });
   const focusOn = isFocusActive(filters, listStatusFilter, currentUserId);
-  const filtersActive = hasActiveBoardFilters(filters, listStatusFilter);
+  const filtersActive =
+    hasActiveBoardFilters(filters, listStatusFilter) || Boolean(filters.sortBy);
+  const filterTriggerActive = planActive
+    ? Boolean(filters.searchQuery?.trim())
+    : filtersActive;
+  const search = useBoardSearch({
+    onSearchChange: handleSearchChange,
+    searchQuery: filters.searchQuery,
+  });
 
   // Save board configuration to localStorage when it changes (excluding search)
   useEffect(() => {
@@ -204,6 +225,7 @@ export function BoardHeader({
   }
 
   function handleClear() {
+    search.setLocalQuery('');
     onFiltersChange(clearBoardFilters(filters));
     onListStatusFilterChange('all');
   }
@@ -247,39 +269,140 @@ export function BoardHeader({
   );
 
   return (
-    // Three fixed lines that never wrap: as the header narrows, the least
-    // needed parts hide or drop to icons instead of moving to a new line.
     <div
-      className="@container/board-header -mt-2 flex flex-col gap-2 border-b p-2"
+      className="@container/board-header -mt-2 min-w-0 border-b p-2"
       data-board-header
     >
-      <div className="flex min-w-0 items-center gap-2">
-        <div className="flex min-w-0 flex-1 items-center gap-2 overflow-hidden">
-          {backUrl ? (
-            <Link
-              aria-label={t('common.back')}
-              className="text-muted-foreground transition-colors hover:text-foreground"
-              href={backUrl}
+      <div
+        className="-m-1 flex min-w-0 items-center gap-1 overflow-x-auto p-1 @lg/board-header:gap-2"
+        data-board-header-row
+      >
+        {backUrl ? (
+          <Link
+            aria-label={t('common.back')}
+            className="grid size-8 shrink-0 place-items-center rounded-md text-muted-foreground transition-colors hover:text-foreground"
+            href={backUrl}
+          >
+            <ArrowLeft className="size-5" />
+          </Link>
+        ) : null}
+        <div className="min-w-10">{title}</div>
+        {sprintSlot && !publicView && currentView !== 'my_tasks' ? (
+          <div className="flex min-w-8 max-w-72 items-center">
+            <span
+              aria-hidden="true"
+              className="hidden text-lg text-muted-foreground @lg/board-header:inline"
             >
-              <ArrowLeft className="size-5" />
-            </Link>
-          ) : null}
-          <div className="min-w-9 shrink overflow-hidden">{title}</div>
-          {sprintSlot && !publicView && currentView !== 'my_tasks' ? (
-            <>
-              <span
-                aria-hidden="true"
-                className="-mx-1 text-lg text-muted-foreground"
-              >
-                /
+              /
+            </span>
+            {sprintSlot}
+          </div>
+        ) : null}
+        {planTabs ? <div className="shrink-0">{planTabs}</div> : null}
+        {!planActive ? (
+          <BoardViewMenu
+            availableViews={enabledViews}
+            currentView={currentView}
+            hotkeyLabels={viewHotkeyLabels}
+            onViewChange={onViewChange}
+          />
+        ) : null}
+        <Popover
+          onOpenChange={(open) => {
+            if (open) onFilterIntent?.();
+          }}
+        >
+          <PopoverTrigger asChild>
+            <ToneButton
+              active={filterTriggerActive}
+              aria-describedby={
+                filterTriggerActive ? activeFiltersId : undefined
+              }
+              aria-label={t('common.filters')}
+              className="px-2 @lg/board-header:px-3"
+              onFocus={onFilterIntent}
+              onPointerEnter={onFilterIntent}
+              tone="neutral"
+            >
+              <SlidersHorizontal />
+              <span className="hidden @lg/board-header:inline">
+                {t('common.filters')}
               </span>
-              {sprintSlot}
-            </>
+            </ToneButton>
+          </PopoverTrigger>
+          {filterTriggerActive ? (
+            <span className="sr-only" id={activeFiltersId}>
+              {t('common.active')}
+            </span>
           ) : null}
-        </div>
-        <div className="flex shrink-0 items-center gap-2">
+          <PopoverContent
+            align="end"
+            aria-label={t('common.filters')}
+            className="max-h-(--radix-popover-content-available-height) w-96 max-w-[calc(100vw-1rem)] space-y-3 overflow-y-auto"
+            collisionPadding={8}
+          >
+            <BoardSearchInput {...search} isSearching={isSearching} />
+            {searchExtra}
+            {!planActive ? (
+              <>
+                {interactiveControlsVisible && people ? (
+                  <BoardPeopleFilter
+                    countsComplete={countsComplete}
+                    currentUserId={currentUserId}
+                    filters={filters}
+                    onFiltersChange={onFiltersChange}
+                    people={people}
+                    unassignedCount={unassignedCount}
+                  />
+                ) : null}
+                <div className="flex flex-wrap items-center gap-2">
+                  <BoardSortMenu
+                    onChange={(sortBy) =>
+                      onFiltersChange({ ...filters, sortBy })
+                    }
+                    showLabel
+                    sortBy={filters.sortBy}
+                  />
+                  {interactiveControlsVisible && projectTaskCounts ? (
+                    <BoardProjectFilter
+                      countsComplete={countsComplete}
+                      filters={filters}
+                      onFiltersChange={onFiltersChange}
+                      projectTaskCounts={projectTaskCounts}
+                      workspaceId={workspaceId}
+                    />
+                  ) : null}
+                  {interactiveControlsVisible && currentUserId ? (
+                    <ToneButton
+                      active={focusOn}
+                      aria-pressed={focusOn}
+                      onClick={handleFocus}
+                      title={t('ws-task-boards.header.focus_hint')}
+                      tone="neutral"
+                    >
+                      <Zap className={cn(focusOn && 'fill-current')} />
+                      {t('ws-task-boards.header.focus')}
+                    </ToneButton>
+                  ) : null}
+                  {interactiveControlsVisible && filtersActive ? (
+                    <Button
+                      className="h-8 text-muted-foreground"
+                      onClick={handleClear}
+                      size="sm"
+                      variant="ghost"
+                    >
+                      <X />
+                      {t('common.clear')}
+                    </Button>
+                  ) : null}
+                </div>
+              </>
+            ) : null}
+          </PopoverContent>
+        </Popover>
+        <div className="ml-auto flex shrink-0 items-center gap-1 @lg/board-header:gap-2">
           {presenceVisible ? (
-            <div className="@xl/board-header:block hidden">
+            <div className="hidden @xl/board-header:block">
               <BoardUserPresenceAvatarsComponent
                 boardId={board.id}
                 currentMetadata={presenceMetadata}
@@ -292,6 +415,7 @@ export function BoardHeader({
             <ToneButton
               aria-label={t('ws-task-boards.header.share')}
               onClick={() => setShareBoardOpen(true)}
+              className="px-2 @2xl/board-header:px-3"
               tone="neutral"
             >
               <Share2 />
@@ -303,7 +427,7 @@ export function BoardHeader({
           {interactiveControlsVisible && onCreateTask ? (
             <Button
               aria-label={t('ws-task-boards.header.new_task')}
-              className="h-8"
+              className="h-8 min-w-8 px-2 @lg/board-header:px-3"
               onClick={onCreateTask}
               size="sm"
             >
@@ -344,88 +468,6 @@ export function BoardHeader({
           />
         </div>
       </div>
-      <div
-        className="flex min-w-0 items-center gap-2"
-        onFocusCapture={onFilterIntent}
-        onPointerEnter={onFilterIntent}
-      >
-        {planTabs}
-        {/* One search for both tabs: Plan searches every open sprint. */}
-        <BoardSearchInput
-          isSearching={isSearching}
-          onSearchChange={handleSearchChange}
-          searchQuery={filters.searchQuery}
-        />
-        {searchExtra}
-        {planActive ? null : (
-          <div className="ml-auto flex shrink-0 items-center gap-2">
-            <BoardSortMenu
-              onChange={(sortBy) => onFiltersChange({ ...filters, sortBy })}
-              sortBy={filters.sortBy}
-            />
-            <BoardViewMenu
-              availableViews={enabledViews}
-              currentView={currentView}
-              hotkeyLabels={viewHotkeyLabels}
-              onViewChange={onViewChange}
-            />
-          </div>
-        )}
-      </div>
-      {/* Filters get their own row so people pills keep their names. */}
-      {planActive || !interactiveControlsVisible ? null : (
-        <div
-          className="flex min-w-0 items-center gap-2"
-          onFocusCapture={onFilterIntent}
-          onPointerEnter={onFilterIntent}
-        >
-          {people ? (
-            <BoardPeopleFilter
-              currentUserId={currentUserId}
-              filters={filters}
-              onFiltersChange={onFiltersChange}
-              people={people}
-              unassignedCount={unassignedCount}
-              countsComplete={countsComplete}
-            />
-          ) : null}
-          {projectTaskCounts ? (
-            <BoardProjectFilter
-              filters={filters}
-              onFiltersChange={onFiltersChange}
-              projectTaskCounts={projectTaskCounts}
-              countsComplete={countsComplete}
-              workspaceId={workspaceId}
-            />
-          ) : null}
-          {currentUserId ? (
-            <ToneButton
-              active={focusOn}
-              aria-label={t('ws-task-boards.header.focus')}
-              aria-pressed={focusOn}
-              onClick={handleFocus}
-              title={t('ws-task-boards.header.focus_hint')}
-              tone="neutral"
-            >
-              <Zap className={cn(focusOn && 'fill-current')} />
-              <span className="@2xl/board-header:inline hidden">
-                {t('ws-task-boards.header.focus')}
-              </span>
-            </ToneButton>
-          ) : null}
-          {filtersActive ? (
-            <Button
-              className="h-8 text-muted-foreground"
-              onClick={handleClear}
-              size="sm"
-              variant="ghost"
-            >
-              <X />
-              {t('common.clear')}
-            </Button>
-          ) : null}
-        </div>
-      )}
       <BoardShareDialog
         board={{ id: board.id, name: board.name }}
         open={shareBoardOpen}

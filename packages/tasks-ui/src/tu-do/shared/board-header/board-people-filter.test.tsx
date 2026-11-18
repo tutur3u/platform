@@ -1,6 +1,6 @@
 import { render, screen } from '@testing-library/react';
 import type React from 'react';
-import { afterEach, describe, expect, it, vi } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
 import { DEFAULT_BOARD_FILTERS } from './board-filter-state';
 import { BoardPeopleFilter } from './board-people-filter';
 
@@ -44,34 +44,15 @@ const people = ['An', 'Binh', 'Chi', 'Dung', 'Em', 'Giang'].map((name) => ({
 
 function header(list: typeof people) {
   return (
-    <div data-board-header>
-      <BoardPeopleFilter
-        filters={DEFAULT_BOARD_FILTERS}
-        onFiltersChange={vi.fn()}
-        people={list}
-        unassignedCount={0}
-      />
-    </div>
+    <BoardPeopleFilter
+      filters={DEFAULT_BOARD_FILTERS}
+      onFiltersChange={vi.fn()}
+      people={list}
+      unassignedCount={0}
+    />
   );
 }
 const renderInHeader = () => render(header(people));
-
-function stubNarrowHeader() {
-  vi.stubGlobal(
-    'ResizeObserver',
-    class {
-      constructor(
-        private readonly callback: (
-          entries: { contentRect: { width: number } }[]
-        ) => void
-      ) {}
-      observe() {
-        this.callback([{ contentRect: { width: 300 } }]);
-      }
-      disconnect() {}
-    }
-  );
-}
 
 const pills = () =>
   screen
@@ -83,8 +64,6 @@ const menuItems = () =>
     .map((item) => item.querySelector('.truncate')?.textContent);
 
 describe('BoardPeopleFilter', () => {
-  afterEach(() => vi.unstubAllGlobals());
-
   it('shows five people and lists only the rest under More', () => {
     renderInHeader();
     expect(pills()).toEqual(['An', 'Binh', 'Chi', 'Dung', 'Em']);
@@ -94,20 +73,11 @@ describe('BoardPeopleFilter', () => {
     ).toBeInTheDocument();
   });
 
-  it('shows two people in a narrow header and every other person under More', () => {
-    stubNarrowHeader();
-    renderInHeader();
-    expect(pills()).toEqual(['An', 'Binh']);
-    expect(menuItems()).toEqual(['Chi', 'Dung', 'Em', 'Giang']);
-    expect(screen.getByText('+4')).toBeInTheDocument();
-  });
-
-  it('measures the header once people arrive after an empty first render', () => {
-    stubNarrowHeader();
+  it('keeps every person reachable when people arrive after an empty render', () => {
     const { rerender } = render(header([]));
     expect(screen.queryAllByRole('button')).toHaveLength(0);
     rerender(header(people));
-    expect(pills()).toEqual(['An', 'Binh']);
-    expect(screen.getByText('+4')).toBeInTheDocument();
+    expect(pills()).toEqual(['An', 'Binh', 'Chi', 'Dung', 'Em']);
+    expect(menuItems()).toEqual(['Giang']);
   });
 });

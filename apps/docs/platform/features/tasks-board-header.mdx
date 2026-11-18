@@ -12,28 +12,21 @@ and no explicit sort. Saved board view, people, project and priority-sort choice
 can restore on return; search is not saved. Removed label, priority-value, date,
 estimate and source filters do not restore from saved settings or another viewer.
 
-## Three rows
+## Board toolbar
 
-The first row has the board breadcrumb/picker (and the sprint, when the board
-has sprints) on the left; presence avatars, Share, New task and More on the
-right.
+One row contains the board picker, sprint controls when available, View,
+Filters, Share, New task, and More. Sprint boards also show Plan and Board.
+View offers Kanban, List, Timeline, My Tasks, Drafts, and Recycle bin where
+available.
 
-The second row has Plan | Board (sprint boards only) and search on the left,
-then priority Sort and View on the right. Searching from Timeline switches to
-List so results can be shown. View offers the views available on that surface:
-Kanban, List, Timeline, My Tasks, Drafts and Recycle bin.
+Open Filters to search, sort by priority, select people or projects, toggle
+Focus, or clear active filters. Searching from Timeline switches to List so
+results can be shown. Filters indicates when any of these choices is active.
 
-The third row has the people pills, Project and Focus, then Clear when filters
-are active.
-
-The rows never wrap, so nothing moves up or down as the header narrows (for
-example when the side panel opens or is resized). Lower-priority parts hide or
-drop to icons instead, in this order: sprint dates, presence, the Share, Sort
-and View labels, the Project and Focus labels, people names (the avatar stays,
-with the name on hover), every person after the first two (moved into the
-"+N" menu), the Plan, Board and sprint-progress text, dropdown chevrons, and
-last the New task label. Every control keeps its accessible name when its label
-hides.
+On narrow screens, controls keep their accessible names when their visible
+labels collapse to icons. Scroll the toolbar horizontally when its controls
+exceed the available width. The Filters panel fits the viewport and scrolls
+vertically when needed.
 
 ## People and projects
 
@@ -77,8 +70,7 @@ one loads an unfiltered copy of the board once (all its pages, a few at a time),
 or uses the board cache when every list (and, on a personal board, the external
 tasks column) is already loaded; every later filter,
 search or sort change, and the per-list counts that hide empty lists, come from
-that copy with no request. Pointing at the search or filter row starts loading
-the copy early. While it loads, the loaded matches show and lists stop loading
+that copy with no request. Hovering over, focusing, or opening Filters starts loading the copy early. While it loads, the loaded matches show and lists stop loading
 more pages. Search here also matches labels, projects and assignee names.
 Tasks from other boards (another source scope) are still filtered on the
 server, and the previous result stays on screen until the next one arrives.
@@ -91,10 +83,9 @@ and the personal Planner, when each action is available. Board settings uses the
 existing contextual settings dialog. Hide sidebar appears only when the sidebar
 is available and visible. Planner appears only on personal Kanban boards.
 
-Share, Project, Focus, Sort and View are the neutral outline buttons the board
-header has always used. A control that is not on its default (a selected
-project, active Focus, an explicit priority sort or a view other than Kanban)
-gets the primary tint, as Smart Focus did before. People pills highlight
+Share, View, and Filters use neutral outline buttons. Active search, filtering,
+or sorting highlights Filters. The selected view and active options also show
+their state in their respective controls. People pills highlight
 selected people and dim unselected people while a selection is active.
 
 ## Exceptions

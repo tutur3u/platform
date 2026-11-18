@@ -61,10 +61,8 @@ export function BoardProjectFilter({
           tone="neutral"
         >
           <Box />
-          <span className="@2xl/board-header:inline hidden max-w-40 truncate">
-            {label}
-          </span>
-          <ChevronDown className="@sm/board-header:block hidden opacity-60" />
+          <span className="max-w-40 truncate">{label}</span>
+          <ChevronDown className="opacity-60" />
         </ToneButton>
       </DropdownMenuTrigger>
       <DropdownMenuContent align="start" className="w-56">

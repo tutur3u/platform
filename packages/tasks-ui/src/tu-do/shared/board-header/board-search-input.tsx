@@ -6,16 +6,13 @@ import { useEffect, useRef, useState } from 'react';
 const SEARCH_DEBOUNCE_MS = 300;
 
 /** Debounced board search; the committed query lives in the board filters. */
-export function BoardSearchInput({
-  isSearching,
+export function useBoardSearch({
   onSearchChange,
   searchQuery,
 }: {
-  isSearching: boolean;
   onSearchChange: (query: string | undefined) => void;
   searchQuery?: string;
 }) {
-  const t = useTranslations();
   const [localQuery, setLocalQuery] = useState(searchQuery || '');
   const [syncedQuery, setSyncedQuery] = useState(searchQuery || '');
   const onSearchChangeRef = useRef(onSearchChange);
@@ -39,8 +36,18 @@ export function BoardSearchInput({
     return () => clearTimeout(timeoutId);
   }, [committed, localQuery]);
 
+  return { localQuery, setLocalQuery };
+}
+
+export function BoardSearchInput({
+  isSearching,
+  localQuery,
+  setLocalQuery,
+}: ReturnType<typeof useBoardSearch> & { isSearching: boolean }) {
+  const t = useTranslations();
+
   return (
-    <div className="relative min-w-20 flex-1 basis-60 sm:max-w-60">
+    <div className="relative min-w-0">
       {isSearching ? (
         <Loader2 className="pointer-events-none absolute top-1/2 left-2 size-4 -translate-y-1/2 animate-spin text-muted-foreground" />
       ) : (
@@ -48,7 +55,7 @@ export function BoardSearchInput({
       )}
       <Input
         aria-label={t('common.search_tasks')}
-        className="h-8 bg-background pr-8 pl-8 text-sm"
+        className="h-8 bg-background px-8 text-base sm:text-sm"
         onChange={(event) => setLocalQuery(event.target.value)}
         placeholder={t('common.search_tasks')}
         type="text"
