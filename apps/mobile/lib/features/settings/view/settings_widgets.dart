@@ -107,7 +107,6 @@ class SettingsSection extends StatelessWidget {
 
 class SettingsWorkspaceSection extends StatelessWidget {
   const SettingsWorkspaceSection({
-    required this.onSelectCurrentWorkspace,
     required this.onSelectDefaultWorkspace,
     required this.canEditWorkspaceProperties,
     required this.isWorkspacePermissionLoading,
@@ -126,7 +125,6 @@ class SettingsWorkspaceSection extends StatelessWidget {
     super.key,
   });
 
-  final VoidCallback onSelectCurrentWorkspace;
   final VoidCallback onSelectDefaultWorkspace;
   final bool canEditWorkspaceProperties;
   final bool isWorkspacePermissionLoading;
@@ -165,11 +163,11 @@ class SettingsWorkspaceSection extends StatelessWidget {
                 feature: 'workspace',
                 child: SettingsTile(
                   icon: LucideIcons.building2,
+                  showChevron: false,
                   title: l10n.settingsCurrentWorkspace,
                   value:
                       currentWorkspace?.name ??
                       l10n.settingsNoWorkspaceSelected,
-                  onTap: onSelectCurrentWorkspace,
                 ),
               ),
               PendingSyncFrame(

@@ -31,18 +31,22 @@ class AppGroupedSlice extends StatelessWidget {
     required this.position,
     required this.child,
     this.dividerInset = AppLayout.rowDividerInset,
+    this.cornerRadius,
     super.key,
   });
 
   final AppSlicePosition position;
   final Widget child;
   final double dividerInset;
+  final double? cornerRadius;
 
   @override
   Widget build(BuildContext context) {
     final colors = Theme.of(context).colorScheme;
     final solid = MediaQuery.highContrastOf(context);
-    final cornerRadius = AppTokens.of(context).interface.radius(AppRadius.card);
+    final cornerRadius =
+        this.cornerRadius ??
+        AppTokens.of(context).interface.radius(AppRadius.card);
     final corner = Radius.circular(cornerRadius);
     final radius = BorderRadius.vertical(
       top: position.roundsTop ? corner : Radius.zero,

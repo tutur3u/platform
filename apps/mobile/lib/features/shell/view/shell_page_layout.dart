@@ -275,13 +275,12 @@ extension _ShellPageLayout on _ShellPageState {
         : const <MiniAppNavItem>[];
     final useInjectedMiniNav = injectedMiniNavRegistration != null;
     final isCompact = _usesCompactNavigation(context);
-    _syncRootTabs(context);
     final selectedKey = useInjectedMiniNav
         ? _injectedMiniSelectedKey(injectedMiniNavRegistration)
         : isMiniAppRoute
         ? _miniSelectedKey(context, activeMiniNavItems)
         : _selectedKeyForLocation(_bodyLocation);
-    final globalItems = _buildNavItems(context, state, l10n);
+    final globalItems = _buildNavItems(context, l10n);
     final miniItems = useInjectedMiniNav
         ? _buildInjectedMiniNavItems(
             context,
@@ -313,10 +312,20 @@ extension _ShellPageLayout on _ShellPageState {
         ((!widget.matchedLocation.startsWith(Routes.assistant) ||
                 !assistantChrome.isFullscreen) &&
             !immersive);
-    final backKey = useInjectedMiniNav
+    final injectedBack = useInjectedMiniNav
         ? _injectedMiniNavKey(injectedMiniNavRegistration.ownerId, 'back')
+        : null;
+    final hasInjectedBack =
+        injectedBack != null &&
+        miniItems.any((item) => item.key == injectedBack);
+    final backKey = hasInjectedBack
+        ? injectedBack
         : _ShellPageState._backToRootKey;
-    final navChildren = isMiniAppRoute ? miniItems : globalItems;
+    final navChildren = [
+      if (useInjectedMiniNav && !hasInjectedBack) _defaultBackItem(l10n),
+      ...(isMiniAppRoute ? miniItems : globalItems),
+    ];
+    final back = navChildren.where((item) => item.key == backKey).firstOrNull;
     final navContent = MorphingNavigationBar(
       selectedKey: selectedKey,
       paintSurface: false,
@@ -324,16 +333,22 @@ extension _ShellPageLayout on _ShellPageState {
       ownsDockZones: false,
       backKey: backKey,
       onBackLongPress: () => unawaited(_returnToDestinationRoot()),
-      onSelected: (key) => useInjectedMiniNav
+      onSelected: (key) => key == _ShellPageState._backToRootKey
+          ? _runBackNavigation(context)
+          : useInjectedMiniNav
           ? _onInjectedMiniNavItemTapped(key, injectedMiniNavRegistration)
           : isMiniAppRoute
           ? _onMiniAppItemTapped(key, context, activeModule, activeMiniNavItems)
-          : key == _ShellPageState._backToRootKey
-          ? _runBackNavigation(context)
-          : _onRootItemTapped(key, context),
+          : _onItemTapped(_routeForRootKey(key), context),
       children: navChildren,
     );
-    final dockBack = _buildDockBack(context, navContent, navChildren, backKey);
+    final dockBack = back == null
+        ? null
+        : ShellDockBackZone(
+            back: shellDockEntryFor(back),
+            onTap: () => navContent.onSelected(backKey),
+            onLongPress: navContent.onBackLongPress,
+          );
     final navigationBar = _buildNavigationBarContainer(
       context: context,
       isCompact: isCompact,
@@ -345,12 +360,11 @@ extension _ShellPageLayout on _ShellPageState {
     );
     final globalBody = _buildGlobalBody();
     final floatingNavInset = showBottomNav ? _floatingNavBodyInset() : 0.0;
-    // Wide windows move destinations (including mini-app Back) to a leading
-    // rail. The dock keeps only the composer and page actions there.
+    // Wide windows move destinations to the rail and keep Back in the dock.
     final railMode =
         shellNavigationModeFor(MediaQuery.sizeOf(context)) ==
         ShellNavigationMode.rail;
-    final dockItems = isMiniAppRoute ? miniItems : globalItems;
+    final railItems = navChildren.where((item) => item.key != backKey).toList();
 
     return shad.Scaffold(
       footers: showBottomNav && isCompact && !composerVisible
@@ -364,11 +378,13 @@ extension _ShellPageLayout on _ShellPageState {
       // Preserve Assistant state when keyboard/fullscreen hides navigation.
       child: AdaptiveShellFrame(
         rail: railMode && showBottomNav
-            ? ShellNavigationRail(
-                items: dockItems,
-                selectedKey: selectedKey,
-                onSelected: navContent.onSelected,
-              )
+            ? railItems.isEmpty
+                  ? const SizedBox.shrink()
+                  : ShellNavigationRail(
+                      items: railItems,
+                      selectedKey: selectedKey,
+                      onSelected: navContent.onSelected,
+                    )
             : null,
         body: _buildBodyWithFloatingNav(
           body: globalBody,
@@ -382,15 +398,19 @@ extension _ShellPageLayout on _ShellPageState {
           navigationBar:
               showBottomNav && !railMode && (!isCompact || composerVisible)
               ? navigationBar
-              : const SizedBox.shrink(),
+              : SizedBox(
+                  height: railMode && dockBack != null
+                      ? ShellDockMetrics.height - ShellDockSurface.edge * 2
+                      : 0,
+                ),
           bodyBottomInset: floatingNavInset,
           composerVisible: composerVisible,
           navigationWidth: ShellDockMetrics.widthFor(
             MediaQuery.sizeOf(context).width,
           ),
-          hideIdleNavigation: railMode,
+          hideIdleNavigation: railMode && dockBack == null,
           fixedZones: true,
-          dockLeading: dockBack,
+          dockLeading: showBottomNav ? dockBack : null,
         ),
       ),
     );
@@ -487,7 +507,6 @@ extension _ShellPageLayout on _ShellPageState {
                                   _onItemTapped(_routeForRootKey(key), context),
                               children: _buildNavItems(
                                 context,
-                                state,
                                 context.l10n,
                               ).map((item) => Expanded(child: item)).toList(),
                             )
@@ -499,11 +518,7 @@ extension _ShellPageLayout on _ShellPageState {
                               expandItems: false,
                               minItemWidth:
                                   _ShellPageState._floatingNavMinItemWidth,
-                              children: _buildNavItems(
-                                context,
-                                state,
-                                context.l10n,
-                              ),
+                              children: _buildNavItems(context, context.l10n),
                             ),
                     ),
                   ),

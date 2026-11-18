@@ -1,5 +1,10 @@
+import 'dart:math' as math;
+
 import 'package:flutter/material.dart';
+import 'package:mobile/core/layout/layout_tokens.dart';
 import 'package:mobile/core/layout/page_insets.dart';
+import 'package:mobile/core/theme/sorbet/sorbet_tokens.dart';
+import 'package:mobile/core/ui/tokens/app_tokens.dart';
 import 'package:mobile/features/shell/view/shell_chrome_style.dart';
 
 /// Shared material of the floating dock, the navigation rail and the dock's
@@ -12,7 +17,15 @@ class ShellDockSurface extends StatelessWidget {
 
   /// Fully rounded at the dock's height; taller content keeps the same
   /// corners rather than turning into a stadium.
-  static const double radius = ShellDockMetrics.height / 2;
+  static double radiusOf(BuildContext context) => math.min(
+    SorbetTokens.maybeOf(context)?.radii.full ?? AppRadius.pill,
+    ShellDockMetrics.height / 2,
+  );
+
+  static BorderRadius innerBorderRadiusOf(BuildContext context) =>
+      BorderRadius.circular(
+        AppShapes.inset(radiusOf(context), ShellDockMetrics.padding),
+      );
 
   /// Width of the edge, which insets the content on every side.
   static const double edge = 1;
@@ -20,7 +33,7 @@ class ShellDockSurface extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final style = ShellChromeStyle.of(context);
-    final shape = BorderRadius.circular(radius);
+    final shape = BorderRadius.circular(radiusOf(context));
     return DecoratedBox(
       decoration: BoxDecoration(
         borderRadius: shape,

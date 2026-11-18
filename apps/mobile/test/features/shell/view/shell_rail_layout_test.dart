@@ -127,7 +127,7 @@ void main() {
         },
       ),
     );
-    expect(bottoms.last, 0);
+    expect(bottoms.last, greaterThan(0));
 
     shell.actions.register(
       registrationId: 'sales-create',
@@ -148,9 +148,10 @@ void main() {
 
     shell.actions.unregister('sales-create');
     await settleShell(tester);
-    shell.router.go(Routes.inventory);
+    shell.router.go(Routes.assistant);
     await settleShell(tester);
-    expect(bottoms.last, 0);
+    final root = tester.element(find.text('assistant'));
+    expect(MediaQuery.paddingOf(root).bottom, 0);
   });
 
   testWidgets('phones keep dock clearance with or without dock actions', (
@@ -183,7 +184,6 @@ void main() {
     );
     shell.router.go(Routes.inventorySales);
     await settleShell(tester);
-    final l10n = shellL10n(tester);
     final rail = tester.getRect(
       find.byKey(const ValueKey('shell-navigation-rail')),
     );
@@ -191,7 +191,7 @@ void main() {
     final page = tester.getRect(find.text(Routes.inventorySales));
     expect(page.right, lessThan(rail.left));
 
-    await tester.tap(railItem(l10n.navBack));
+    await tester.tap(find.bySemanticsLabel('Back'));
     await settleShell(tester);
     expect(shell.path, Routes.apps);
     expect(tester.takeException(), isNull);
@@ -203,11 +203,12 @@ void main() {
     shell.router.go(Routes.inventorySales);
     await settleShell(tester);
     final l10n = shellL10n(tester);
-    final back = railItem(l10n.navBack);
+    final destination = railItem(l10n.inventoryProductsLabel);
     final tooltip = find.descendant(
       of: find.byType(ShellNavigationRail),
       matching: find.byWidgetPredicate(
-        (widget) => widget is Tooltip && widget.message == l10n.navBack,
+        (widget) =>
+            widget is Tooltip && widget.message == l10n.inventoryProductsLabel,
       ),
     );
     expect(tooltip, findsOneWidget);
@@ -216,18 +217,18 @@ void main() {
       TooltipTriggerMode.manual,
     );
 
-    final touch = await tester.startGesture(tester.getCenter(back));
+    final touch = await tester.startGesture(tester.getCenter(destination));
     await tester.pump(const Duration(seconds: 1));
     await touch.cancel();
     await tester.pump();
-    expect(find.text(l10n.navBack), findsNothing);
+    expect(find.text(l10n.inventoryProductsLabel), findsNothing);
 
     final mouse = await tester.createGesture(kind: PointerDeviceKind.mouse);
     addTearDown(mouse.removePointer);
     await mouse.addPointer(location: Offset.zero);
-    await mouse.moveTo(tester.getCenter(back));
+    await mouse.moveTo(tester.getCenter(destination));
     await tester.pump(const Duration(seconds: 1));
-    expect(find.text(l10n.navBack), findsOneWidget);
+    expect(find.text(l10n.inventoryProductsLabel), findsOneWidget);
     await mouse.moveTo(Offset.zero);
     await tester.pump(const Duration(seconds: 2));
     await settleShell(tester);

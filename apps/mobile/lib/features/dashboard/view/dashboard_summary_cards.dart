@@ -1,6 +1,6 @@
 part of 'dashboard_page.dart';
 
-/// Greeting, today's date and the workspace chip at the top of Home.
+/// Greeting and today's date at the top of Home.
 ///
 /// The shell navbar already carries the "Home" title, so this is a greeting
 /// rather than a second page title.
@@ -27,7 +27,7 @@ class _HomeHeader extends StatelessWidget {
       _ when name != null => l10n.homeGreetingEveningNamed(name),
       _ => l10n.homeGreetingEvening,
     };
-    final greetingBlock = Padding(
+    return Padding(
       padding: const EdgeInsets.symmetric(horizontal: AppSpacing.xs),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -57,15 +57,6 @@ class _HomeHeader extends StatelessWidget {
           ),
         ],
       ),
-    );
-
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.stretch,
-      children: [
-        greetingBlock,
-        const SizedBox(height: AppSpacing.md),
-        const HomeWorkspaceChip(),
-      ],
     );
   }
 }

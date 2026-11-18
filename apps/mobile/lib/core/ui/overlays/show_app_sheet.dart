@@ -1,3 +1,5 @@
+import 'dart:math' as math;
+
 import 'package:flutter/material.dart';
 import 'package:mobile/core/layout/layout_tokens.dart';
 import 'package:mobile/core/responsive/responsive_values.dart';
@@ -25,7 +27,8 @@ enum AppSheetSize {
 const _barrier = Color(0x7A000000);
 const _largeFraction = 0.94;
 
-/// Opens a bottom sheet on compact screens and a centred dialog elsewhere.
+/// Opens a bottom sheet on compact screens and a centred dialog elsewhere
+/// unless [forceBottomSheet] is set.
 ///
 /// The sheet opens on the nearest navigator, so inside the shell it sits
 /// below the shell's top navbar and floating dock, which stay usable for
@@ -39,9 +42,10 @@ Future<T?> showAppSheet<T>({
   bool isDismissible = true,
   bool enableDrag = true,
   bool useRootNavigator = false,
+  bool forceBottomSheet = false,
   double maxDialogWidth = 560,
 }) {
-  if (!context.isCompact) {
+  if (!forceBottomSheet && !context.isCompact) {
     return showAppDialog<T>(
       context: context,
       builder: builder,

@@ -4,33 +4,63 @@ import 'package:mobile/core/ui/ui.dart';
 import 'package:mobile/data/models/workspace.dart';
 import 'package:mobile/features/shell/cubit/shell_chrome_actions_cubit.dart';
 import 'package:mobile/features/shell/view/mobile_section_app_bar.dart';
+import 'package:mobile/features/shell/view/persistent_shell_dock.dart';
 import 'package:mobile/features/shell/view/shell_chrome_style.dart';
 import 'package:mobile/features/shell/view/shell_dock_action_button.dart';
 import 'package:mobile/features/shell/view/shell_dock_bar.dart';
 import 'package:mobile/features/shell/view/shell_dock_surface.dart';
 import 'package:mobile/features/shell/view/shell_top_bar_button.dart';
+import 'package:mobile/features/workspace/widgets/workspace_avatar.dart';
 
 import 'shell_chrome_scene_bodies.dart';
 
 /// Shell chrome compositions for goldens, built from the production widgets.
-enum ShellChromeScene { topBar, dockRest, dockBack, notifications, switcher }
+enum ShellChromeScene {
+  topBar,
+  dockRest,
+  dockBack,
+  overflow,
+  overflowSheet,
+  dockFocused,
+  dockPressed,
+  notifications,
+  switcher;
+
+  bool get coversNarrowDock => switch (this) {
+    dockRest ||
+    dockBack ||
+    overflow ||
+    overflowSheet ||
+    dockFocused ||
+    dockPressed => true,
+    _ => false,
+  };
+}
 
 const sceneWorkspace = Workspace(id: 'ws-1', name: 'Tuturuuu');
 
-/// The phone root dock: Home, Apps, Mira and Alerts, then More.
+/// Fixed root destination order.
 List<ShellDockEntry> _destinations() => [
   for (final (id, label, icon) in const [
     ('home', 'Home', LucideIcons.house),
     ('apps', 'Apps', LucideIcons.layoutGrid),
     ('assistant', 'Mira', LucideIcons.sparkles),
     ('notifications', 'Alerts', LucideIcons.bell),
+    ('profile', 'Profile', LucideIcons.circleUserRound),
   ])
     ShellDockEntry(key: ValueKey(id), label: label, glyph: Icon(icon)),
-  const ShellDockEntry(
-    key: ValueKey('more'),
-    label: 'More',
-    glyph: Icon(Icons.more_horiz),
-  ),
+];
+
+List<ShellDockEntry> _sections() => [
+  for (final (label, icon) in const [
+    ('Overview', LucideIcons.layoutGrid),
+    ('Transactions', LucideIcons.receipt),
+    ('Wallets', LucideIcons.wallet),
+    ('Budgets', LucideIcons.chartPie),
+    ('Categories', LucideIcons.tags),
+    ('Reports', LucideIcons.chartNoAxesColumn),
+  ])
+    ShellDockEntry(key: ValueKey(label), label: label, glyph: Icon(icon)),
 ];
 
 class ShellChromeSceneView extends StatelessWidget {
@@ -43,15 +73,22 @@ class ShellChromeSceneView extends StatelessWidget {
     final media = MediaQuery.of(context);
     final back =
         scene == ShellChromeScene.dockBack ||
+        scene == ShellChromeScene.overflow ||
+        scene == ShellChromeScene.overflowSheet ||
         scene == ShellChromeScene.switcher;
     final selected = switch (scene) {
       ShellChromeScene.notifications => const ValueKey('notifications'),
       ShellChromeScene.topBar ||
-      ShellChromeScene.dockRest => const ValueKey('home'),
+      ShellChromeScene.dockRest ||
+      ShellChromeScene.dockFocused ||
+      ShellChromeScene.dockPressed => const ValueKey('home'),
       _ => null,
     };
     final title = switch (scene) {
       ShellChromeScene.notifications => 'Alerts',
+      ShellChromeScene.dockBack ||
+      ShellChromeScene.overflow ||
+      ShellChromeScene.overflowSheet => 'Finance',
       _ => 'Home',
     };
     return ColoredBox(
@@ -92,47 +129,47 @@ class ShellChromeSceneView extends StatelessWidget {
               left: ShellDockMetrics.inset,
               right: ShellDockMetrics.inset,
               bottom: ShellDockMetrics.bottomOffset(media.padding.bottom),
-              child: Center(
-                child: SizedBox(
-                  width: ShellDockMetrics.widthFor(media.size.width),
-                  // The shell dock's fixed zones: Back and the pill, then the
-                  // page-action slot.
-                  child: Row(
-                    crossAxisAlignment: CrossAxisAlignment.end,
-                    children: [
-                      Expanded(
-                        child: ShellDockBar(
-                          entries: _destinations(),
-                          selectedKey: selected,
-                          onSelected: (_) {},
-                          back: back
-                              ? const ShellDockEntry(
-                                  key: ValueKey('back-to-root'),
-                                  label: 'Back',
-                                  glyph: Icon(LucideIcons.chevronLeft),
-                                )
-                              : null,
+              child: PersistentShellDock(
+                fixedZones: true,
+                navigationWidth: ShellDockMetrics.widthFor(media.size.width),
+                leading: back
+                    ? ShellDockBackZone(
+                        back: const ShellDockEntry(
+                          key: ValueKey('back-to-root'),
+                          label: 'Back',
+                          glyph: Icon(LucideIcons.chevronLeft),
                         ),
-                      ),
-                      const SizedBox(width: ShellDockMetrics.zoneGap),
-                      Padding(
-                        padding: const EdgeInsets.only(
-                          bottom: ShellDockMetrics.padding,
-                        ),
-                        child: ShellDockActionButton(
-                          key: const ValueKey('scene-dock-action'),
-                          action: ShellActionSpec(
-                            id: 'scene-create',
-                            icon: LucideIcons.plus,
-                            inDock: true,
-                            tooltip: 'Create',
-                            onPressed: () {},
-                          ),
-                        ),
-                      ),
-                    ],
-                  ),
+                        onTap: () {},
+                      )
+                    : null,
+                content: ShellDockBar(
+                  ownsZones: false,
+                  entries: switch (scene) {
+                    ShellChromeScene.dockBack => _sections().take(5).toList(),
+                    ShellChromeScene.overflow ||
+                    ShellChromeScene.overflowSheet => _sections(),
+                    _ => _destinations(),
+                  },
+                  selectedKey: switch (scene) {
+                    ShellChromeScene.dockBack => const ValueKey('Wallets'),
+                    ShellChromeScene.overflow ||
+                    ShellChromeScene.overflowSheet => const ValueKey('Reports'),
+                    _ => selected,
+                  },
+                  onSelected: (_) {},
                 ),
+                primary: scene == ShellChromeScene.notifications
+                    ? ShellDockActionButton(
+                        key: const ValueKey('scene-dock-action'),
+                        action: ShellActionSpec(
+                          id: 'scene-create',
+                          icon: LucideIcons.plus,
+                          inDock: true,
+                          tooltip: 'Create',
+                          onPressed: () {},
+                        ),
+                      )
+                    : null,
               ),
             ),
           if (scene == ShellChromeScene.switcher)
@@ -174,11 +211,17 @@ class _TopBar extends StatelessWidget {
                     ),
                   ),
                 ),
-                // Home keeps only Customise; the workspace lives on Home's
-                // chip and in More.
                 if (home) ...[
                   ShellTopBarButton(
                     icon: const Icon(Icons.tune_rounded),
+                    onPressed: () {},
+                  ),
+                  ShellTopBarButton(
+                    icon: const WorkspaceAvatar(
+                      workspace: sceneWorkspace,
+                      radius: 16,
+                      circular: true,
+                    ),
                     onPressed: () {},
                   ),
                 ] else ...[

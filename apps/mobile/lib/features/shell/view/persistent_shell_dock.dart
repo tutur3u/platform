@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:mobile/core/layout/page_insets.dart';
 import 'package:mobile/features/shell/view/floating_dock_rail.dart';
+import 'package:mobile/features/shell/view/shell_dock_content.dart';
 import 'package:mobile/features/shell/view/shell_dock_surface.dart';
 import 'package:mobile/features/shell/view/shell_route_fade.dart';
 
@@ -28,7 +29,7 @@ class PersistentShellDock extends StatefulWidget {
   final bool hideIdleNavigation;
 
   /// Lays idle navigation out in fixed zones: [leading], the navigation
-  /// material filling the row, and a reserved action slot. See
+  /// material filling the available width, and a page-action slot. See
   /// [FloatingDockRail.fixedZones].
   final bool fixedZones;
 
@@ -48,7 +49,11 @@ class _PersistentShellDockState extends State<PersistentShellDock> {
       // Animate the unconstrained navigation/composer width independently.
       // The rail's CURRENT occupied action slot supplies the actual available
       // width below, so removal cannot widen the composer before actions hide.
-      final target = (widget.composing && widget.expandContent) || fixedZones
+      final target = fixedZones
+          ? ShellDockMetrics.widthFor(
+              MediaQuery.sizeOf(context).width,
+            ).clamp(0.0, constraints.maxWidth)
+          : widget.composing && widget.expandContent
           ? constraints.maxWidth
           : widget.navigationWidth.clamp(0.0, constraints.maxWidth);
       return TweenAnimationBuilder<double>(
@@ -73,24 +78,33 @@ class _PersistentShellDockState extends State<PersistentShellDock> {
           );
           // One material for navigation and composers alike, so it keeps its
           // element (and never flashes) while their content swaps inside it.
-          return FloatingDockRail(
-            fixedZones: fixedZones,
-            leading: fixedZones ? widget.leading : null,
-            navigation: widget.hideIdleNavigation && !widget.composing
-                ? const SizedBox.shrink()
-                : LayoutBuilder(
-                    builder: (context, available) => ShellDockSurface(
-                      key: const ValueKey('persistent-shell-dock-material'),
-                      child: SizedBox(
-                        width: width.clamp(0.0, available.maxWidth),
-                        child: switcher,
+          return Center(
+            child: SizedBox(
+              width: fixedZones ? target : null,
+              child: FloatingDockRail(
+                fixedZones: fixedZones,
+                navigation: widget.hideIdleNavigation && !widget.composing
+                    ? const SizedBox.shrink()
+                    : LayoutBuilder(
+                        builder: (context, available) => ShellDockSurface(
+                          key: const ValueKey('persistent-shell-dock-material'),
+                          child: SizedBox(
+                            width: fixedZones
+                                ? available.maxWidth
+                                : width.clamp(0.0, available.maxWidth),
+                            child: ShellDockContent(
+                              leading: fixedZones ? widget.leading : null,
+                              child: switcher,
+                            ),
+                          ),
+                        ),
                       ),
-                    ),
-                  ),
-            primary: widget.primary,
-            actionLift: widget.composing || widget.hideIdleNavigation
-                ? 0
-                : ShellDockMetrics.padding,
+                primary: widget.primary,
+                actionLift: widget.composing || widget.hideIdleNavigation
+                    ? 0
+                    : ShellDockMetrics.padding,
+              ),
+            ),
           );
         },
       );

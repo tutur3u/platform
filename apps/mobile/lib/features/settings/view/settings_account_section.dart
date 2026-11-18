@@ -13,7 +13,6 @@ import 'package:mobile/features/shell/avatar_url_identity.dart';
 import 'package:mobile/features/shell/cubit/shell_profile_cubit.dart';
 import 'package:mobile/features/workspace/cubit/workspace_cubit.dart';
 import 'package:mobile/features/workspace/widgets/hidden_workspaces_settings_row.dart';
-import 'package:mobile/features/workspace/widgets/workspace_picker_sheet.dart';
 import 'package:mobile/l10n/l10n.dart';
 
 /// First Settings group: who is signed in and which workspace is active.
@@ -40,13 +39,6 @@ class SettingsAccountSection extends StatelessWidget {
           title: l10n.settingsNavWorkspace,
           value: workspaceName ?? l10n.settingsNoWorkspaceSelected,
           onTap: () => context.push(Routes.settingsWorkspace),
-        ),
-        SettingsTile(
-          key: const ValueKey('settings-switch-workspace-row'),
-          grouped: true,
-          icon: LucideIcons.arrowLeftRight,
-          title: l10n.settingsSwitchWorkspace,
-          onTap: () => showWorkspacePickerSheet(context),
         ),
         const HiddenWorkspacesSettingsRow(
           key: ValueKey('settings-hidden-workspaces-row'),

@@ -36,6 +36,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import '../../../helpers/helpers.dart';
 import 'shell_viewport_checks.dart';
 
+part 'shell_dock_overflow_check.dart';
 part 'shell_dock_reselection_checks.dart';
 part 'shell_mini_nav_update_checks.dart';
 part 'shell_navigation_harness.dart';
@@ -222,7 +223,7 @@ void main() {
         );
         await _pumpForTransitions(tester);
 
-        // Back sits in its own zone; the pill shows as many sections as keep
+        // Back leads inside the pill, which shows as many sections as keep
         // a 44dp target, then More for the rest.
         final back = tester.getRect(find.byKey(const ValueKey('back-to-root')));
         final more = tester.getRect(
@@ -234,7 +235,7 @@ void main() {
         for (final rect in [back, more, first]) {
           expect(rect.left >= 0 && rect.right <= 320, isTrue);
         }
-        expect(back.width, lessThanOrEqualTo(ShellDockMetrics.zone));
+        expect(back.width, lessThanOrEqualTo(ShellDockMetrics.slot));
         expect(
           first.width,
           greaterThanOrEqualTo(ShellDockMetrics.minSlotWidth),
@@ -323,51 +324,11 @@ void main() {
       await _verifyInjectedPickerExit(tester, router);
     });
 
-    testWidgets(
-      'mini-nav labels its slots, collapses extras and titles the selection',
-      (tester) async {
-        tester.view.devicePixelRatio = 1;
-        tester.view.physicalSize = const Size(390, 844);
-        addTearDown(() {
-          tester.view.resetPhysicalSize();
-          tester.view.resetDevicePixelRatio();
-        });
-
-        final router = _buildRouter(initialLocation: Routes.inventorySales);
-        addTearDown(router.dispose);
-
-        await tester.pumpWidget(
-          _buildTestApp(
-            router: router,
-            appTabCubit: appTabCubit,
-            authCubit: authCubit,
-            workspaceCubit: workspaceCubit,
-            shellProfileCubit: shellProfileCubit,
-          ),
-        );
-        await _pumpForTransitions(tester);
-
-        final shellContext = tester.element(find.byType(ShellPage));
-        final l10n = AppLocalizations.of(shellContext);
-
-        Finder inDock(String text) => find.descendant(
-          of: find.byType(MorphingNavigationBar),
-          matching: find.text(text),
-        );
-        // The top bar titles the selection; the dock labels it too.
-        expect(find.text(l10n.inventorySalesLabel), findsNWidgets(2));
-        expect(find.text(l10n.navBack), findsNothing);
-        expect(inDock(l10n.inventoryProductsLabel), findsOneWidget);
-        expect(inDock(l10n.inventoryManageLabel), findsOneWidget);
-        // Sections past the fourth sit behind More.
-        expect(inDock(l10n.storefrontTitle), findsNothing);
-        expect(find.byKey(const ValueKey('shell-dock-more')), findsOneWidget);
-        expect(find.bySemanticsLabel(l10n.navBack), findsOneWidget);
-        expect(
-          find.bySemanticsLabel(l10n.inventoryProductsLabel),
-          findsOneWidget,
-        );
-      },
+    _registerDockOverflowCheck(
+      () => appTabCubit,
+      () => authCubit,
+      () => workspaceCubit,
+      () => shellProfileCubit,
     );
 
     testWidgets('system back from mini-app root returns to its Apps origin', (
@@ -397,7 +358,7 @@ void main() {
       await _pumpForTransitions(tester);
       final appsState = tester.state(find.byType(AppsHubPage));
       // The dock frame never moves or resizes between destinations.
-      final dock = find.byKey(const ValueKey('shell-dock-bar'));
+      final dock = find.byKey(const ValueKey('persistent-shell-dock-material'));
       final initialRect = tester.getRect(dock);
       router.go(Routes.tasks);
       await tester.pump();

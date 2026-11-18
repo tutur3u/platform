@@ -6366,9 +6366,6 @@ class AppLocalizationsEn extends AppLocalizations {
   String get navCalendar => 'Calendar';
 
   @override
-  String get navEditTabs => 'Edit tabs';
-
-  @override
   String get navFinance => 'Finance';
 
   @override
@@ -6384,15 +6381,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get navMore => 'More';
 
   @override
-  String get navResetTabs => 'Reset to default';
-
-  @override
   String get navSettings => 'Settings';
-
-  @override
-  String navTabsLimitHint(int count) {
-    return 'Up to $count tabs';
-  }
 
   @override
   String get navTasks => 'Tasks';

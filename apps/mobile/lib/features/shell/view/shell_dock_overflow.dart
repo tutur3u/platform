@@ -1,14 +1,19 @@
 import 'package:flutter/material.dart';
 import 'package:mobile/core/layout/layout_tokens.dart';
-import 'package:mobile/core/ui/components/app_option_tile.dart';
+import 'package:mobile/core/layout/page_insets.dart';
 import 'package:mobile/core/ui/kit/app_grouped_slice.dart';
 import 'package:mobile/core/ui/overlays/app_sheet_scaffold.dart';
 import 'package:mobile/core/ui/overlays/show_app_sheet.dart';
 import 'package:mobile/features/shell/view/shell_dock_bar.dart';
+import 'package:mobile/features/shell/view/shell_dock_more_sheet.dart';
 import 'package:mobile/l10n/l10n.dart';
 
 /// Most destinations the dock pill shows; more collapse behind a More slot.
 const int shellDockMaxSlots = 5;
+
+/// Number of destinations that fit beside Back and the page action.
+int shellDockCapacity(double width) =>
+    (width / ShellDockMetrics.minSlotWidth).floor().clamp(1, shellDockMaxSlots);
 
 /// Key of the dock's More slot.
 const shellDockMoreKey = ValueKey<String>('shell-dock-more');
@@ -24,7 +29,7 @@ splitShellDockEntries(
   List<ShellDockEntry> entries, {
   int maxSlots = shellDockMaxSlots,
 }) {
-  final slots = maxSlots.clamp(2, shellDockMaxSlots);
+  final slots = maxSlots.clamp(1, shellDockMaxSlots);
   if (entries.length <= slots) {
     return (visible: entries, overflow: const []);
   }
@@ -40,6 +45,7 @@ Future<Key?> showShellDockOverflowSheet({
   required Key? selectedKey,
 }) => showAppSheet<Key>(
   context: context,
+  forceBottomSheet: true,
   builder: (sheetContext) => AppSheetScaffold(
     title: sheetContext.l10n.navMore,
     slivers: [
@@ -50,12 +56,13 @@ Future<Key?> showShellDockOverflowSheet({
           return AppGroupedSlice(
             position: AppSlicePosition.of(index, entries.length),
             dividerInset: AppSpacing.md,
-            child: AppOptionTile(
+            cornerRadius: ShellDockMoreRow.radiusOf(context),
+            child: ShellDockMoreRow(
               key: ValueKey(('shell-dock-overflow', entry.key)),
-              title: entry.label,
+              label: entry.label,
               leading: IconTheme.merge(
                 data: const IconThemeData(size: 22),
-                child: SizedBox.square(dimension: 22, child: entry.glyph),
+                child: SizedBox(width: 36, height: 22, child: entry.glyph),
               ),
               selected: entry.key == selectedKey,
               onTap: entry.enabled

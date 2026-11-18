@@ -16,27 +16,18 @@ bool usesRootDockSlots(String location) =>
     location == Routes.notifications ||
     location == Routes.profileRoot;
 
-/// The dock row: an optional leading zone, navigation, then one page-action
-/// slot.
-///
-/// With [fixedZones] (the shell's navigation dock) the [leading] zone and
-/// the action slot stay reserved while empty and the navigation fills the
-/// rest, so Back or actions appearing, changing or leaving never resize the
-/// navigation. Otherwise (composers) the row hugs its content and the action
-/// slot opens only while an action shows.
+/// Lays out navigation and its page action in the floating dock.
+/// Navigation fills the available width; composers can hug their content.
 class FloatingDockRail extends StatelessWidget {
   const FloatingDockRail({
     required this.navigation,
     this.primary,
     this.actionLift = 0,
     this.fixedZones = false,
-    this.leading,
     super.key,
   });
   final Widget navigation;
 
-  /// Shown before the navigation in [fixedZones] mode (the Back zone).
-  final Widget? leading;
   final Widget? primary;
   final bool fixedZones;
 
@@ -59,7 +50,6 @@ class FloatingDockRail extends StatelessWidget {
           key: const ValueKey('floating-dock-primary-transition'),
           slotKey: const ValueKey('floating-dock-primary-slot'),
           identity: primary?.key ?? primary?.runtimeType,
-          reserveSpace: fixedZones,
           immediate: swap,
           child: primary,
         ),
@@ -67,21 +57,12 @@ class FloatingDockRail extends StatelessWidget {
     );
     // One tree for both modes, so switching between navigation and a
     // composer never remounts the dock's material or the composer inside it.
-    final leadingZone = fixedZones ? leading : null;
     return Center(
       child: Row(
         key: const ValueKey('floating-dock-visible-group'),
         mainAxisSize: fixedZones ? MainAxisSize.max : MainAxisSize.min,
         crossAxisAlignment: CrossAxisAlignment.end,
         children: [
-          Padding(
-            key: const ValueKey('floating-dock-leading-slot'),
-            padding: EdgeInsetsDirectional.only(
-              bottom: actionLift,
-              end: leadingZone == null ? 0 : ShellDockMetrics.zoneGap,
-            ),
-            child: leadingZone ?? const SizedBox.shrink(),
-          ),
           Flexible(
             key: const ValueKey('floating-dock-navigation-slot'),
             fit: fixedZones ? FlexFit.tight : FlexFit.loose,

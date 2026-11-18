@@ -63,12 +63,13 @@ class ShellDockActionGroupBar extends StatelessWidget {
           builder: (context, constraints) {
             final (:visible, :more) = splitShellDockActionGroup(
               group,
-              maxSlots: (constraints.maxWidth / ShellDockMetrics.minSlotWidth)
-                  .floor(),
+              maxSlots: shellDockCapacity(constraints.maxWidth),
             );
             final count = visible.length + (more.isEmpty ? 0 : 1);
             final slotWidth = count == 0 ? 0.0 : constraints.maxWidth / count;
-            final showLabel = slotWidth >= ShellDockMetrics.minSlotWidth;
+            final showLabel =
+                count < shellDockMaxSlots &&
+                slotWidth >= ShellDockMetrics.minSlotWidth;
             return Row(
               children: [
                 for (final action in visible)

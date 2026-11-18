@@ -12127,12 +12127,6 @@ abstract class AppLocalizations {
   /// **'Calendar'**
   String get navCalendar;
 
-  /// No description provided for @navEditTabs.
-  ///
-  /// In en, this message translates to:
-  /// **'Edit tabs'**
-  String get navEditTabs;
-
   /// No description provided for @navFinance.
   ///
   /// In en, this message translates to:
@@ -12163,23 +12157,11 @@ abstract class AppLocalizations {
   /// **'More'**
   String get navMore;
 
-  /// No description provided for @navResetTabs.
-  ///
-  /// In en, this message translates to:
-  /// **'Reset to default'**
-  String get navResetTabs;
-
   /// No description provided for @navSettings.
   ///
   /// In en, this message translates to:
   /// **'Settings'**
   String get navSettings;
-
-  /// No description provided for @navTabsLimitHint.
-  ///
-  /// In en, this message translates to:
-  /// **'Up to {count} tabs'**
-  String navTabsLimitHint(int count);
 
   /// No description provided for @navTasks.
   ///

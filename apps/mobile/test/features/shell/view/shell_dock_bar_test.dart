@@ -1,10 +1,14 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:mobile/core/layout/layout_tokens.dart';
 import 'package:mobile/core/layout/page_insets.dart';
 import 'package:mobile/core/theme/sorbet/sorbet_preferences.dart';
 import 'package:mobile/core/theme/sorbet/sorbet_tokens.dart';
+import 'package:mobile/core/ui/tokens/app_tokens.dart';
 import 'package:mobile/features/shell/view/shell_chrome_style.dart';
 import 'package:mobile/features/shell/view/shell_dock_bar.dart';
+import 'package:mobile/features/shell/view/shell_dock_control.dart';
 import 'package:mobile/features/shell/view/shell_dock_surface.dart';
 import 'package:mobile/features/shell/view/shell_top_bar_button.dart';
 
@@ -65,13 +69,13 @@ Future<void> _pump(
 }
 
 void main() {
-  testWidgets('five labelled slots share a 64dp pill; one highlight marks '
+  testWidgets('five icon-only slots share a 64dp pill; one highlight marks '
       'the active slot', (tester) async {
     await _pump(tester);
     final pill = tester.getRect(find.byKey(_pill));
     expect(pill.height, ShellDockMetrics.height);
     for (final label in ['Home', 'Tasks', 'Calendar', 'Mira', 'Apps']) {
-      expect(find.text(label), findsOneWidget);
+      expect(find.text(label), findsNothing);
       final slot = tester.getSize(find.byKey(ValueKey(label)));
       expect(slot.width, greaterThanOrEqualTo(44));
       expect(slot.height, ShellDockMetrics.slot);
@@ -93,30 +97,29 @@ void main() {
     expect(find.byKey(const ValueKey('shell-dock-back')), findsNothing);
   });
 
-  testWidgets('Back shows in its reserved zone; the pill never moves', (
+  testWidgets('Back appears at the leading edge inside the same pill', (
     tester,
   ) async {
     Key? selected;
     var longPressed = false;
     await _pump(tester, onSelected: (key) => selected = key);
     final pillAtRest = tester.getRect(find.byKey(_pill));
-    final homeAtRest = tester.getRect(find.byKey(const ValueKey('Home')));
-    final zone = tester.getRect(
-      find.byKey(const ValueKey('shell-dock-back-zone')),
-    );
-    expect(zone.size, const Size.square(ShellDockMetrics.zone));
-    expect(pillAtRest.left - zone.right, ShellDockMetrics.zoneGap);
 
     await _pump(
       tester,
       back: _back,
+      entries: _entries(),
       onSelected: (key) => selected = key,
       onBackLongPress: () => longPressed = true,
     );
     expect(tester.getRect(find.byKey(_pill)), pillAtRest);
-    expect(tester.getRect(find.byKey(const ValueKey('Home'))), homeAtRest);
     final back = tester.getRect(find.byKey(const ValueKey('shell-dock-back')));
-    expect(zone.contains(back.center), isTrue);
+    expect(back.left, pillAtRest.left + ShellDockMetrics.padding);
+    expect(back.size, const Size.square(ShellDockMetrics.slot));
+    expect(back.center.dy, pillAtRest.center.dy);
+    expect(find.bySemanticsLabel('Tasks'), findsOneWidget);
+    expect(find.text('Tasks'), findsNothing);
+    expect(find.bySemanticsLabel('More'), findsNothing);
 
     await tester.tap(find.byKey(const ValueKey('shell-dock-back')));
     expect(selected, const ValueKey('back'));
@@ -127,7 +130,7 @@ void main() {
     expect(selected, const ValueKey('Tasks'));
   });
 
-  testWidgets('Back fades out in place and leaves no control behind', (
+  testWidgets('removing Back leaves no control and keeps the pill in place', (
     tester,
   ) async {
     await _pump(tester, back: _back);
@@ -169,6 +172,7 @@ void main() {
     await _pump(
       tester,
       entries: _entries(labels),
+      back: _back,
       selectedKey: const ValueKey('Boards'),
       onSelected: (key) => selected = key,
     );
@@ -182,6 +186,21 @@ void main() {
 
     await tester.tap(more);
     await tester.pumpAndSettle();
+    expect(find.byType(BottomSheet), findsOneWidget);
+    final overflowControl = find.ancestor(
+      of: find.text('Cycles'),
+      matching: find.byType(ShellDockControl),
+    );
+    final overflowContext = tester.element(overflowControl);
+    final sheetRadius = AppTokens.of(overflowContext).shapes.sheet;
+    expect(
+      tester.widget<ShellDockControl>(overflowControl).borderRadius,
+      BorderRadius.circular(sheetRadius - AppSpacing.lg),
+    );
+    expect(find.text('Labels'), findsOneWidget);
+    expect(find.text('Cycles'), findsOneWidget);
+    expect(find.text('Inbox'), findsNothing);
+    expect(find.text('Timeline'), findsNothing);
     await tester.tap(find.text('Cycles'));
     await tester.pumpAndSettle();
     expect(selected, const ValueKey('Cycles'));
@@ -190,6 +209,7 @@ void main() {
     await _pump(
       tester,
       entries: _entries(labels),
+      back: _back,
       selectedKey: const ValueKey('Cycles'),
     );
     expect(tester.getRect(find.byKey(_highlight)), tester.getRect(more));
@@ -403,12 +423,80 @@ void main() {
     expect(computed, 102);
   });
 
-  test('phone slots get a rounded-rectangle highlight, wide slots a pill', () {
-    // A ~47dp phone slot caps the radius below half its width.
-    expect(highlightRadius(47), closeTo(19.5, 0.001));
-    expect(highlightRadius(47), lessThan(47 / 2));
-    // Wide tablet slots keep the concentric inner radius (half of 52dp).
-    expect(highlightRadius(96), ShellDockMetrics.slot / 2);
-    expect(highlightRadius(4), 0);
-  });
+  for (final sorbet in [null, const SorbetTheme()]) {
+    testWidgets('dock clips selection, ink and focus to the inset radius '
+        '(${sorbet == null ? 'classic' : 'Sorbet'})', (tester) async {
+      var activations = 0;
+      await _pump(
+        tester,
+        back: _back,
+        sorbet: sorbet,
+        entries: _entries([
+          'Home',
+          'Tasks',
+          'Calendar',
+          'Mira',
+          'Apps',
+          'Alerts',
+        ]),
+        onSelected: (_) => activations++,
+      );
+      final material = find.byKey(_pill);
+      final outerClip = tester.widget<ClipRRect>(
+        find.descendant(of: material, matching: find.byType(ClipRRect)).first,
+      );
+      final outer = outerClip.borderRadius.resolve(TextDirection.ltr).topLeft.x;
+      expect(outer, tester.getSize(material).height / 2);
+      final radius = BorderRadius.circular(outer - ShellDockMetrics.padding);
+      final highlight = tester.widget<DecoratedBox>(
+        find.descendant(
+          of: find.byKey(_highlight),
+          matching: find.byType(DecoratedBox),
+        ),
+      );
+      expect(
+        ((highlight.decoration as ShapeDecoration).shape
+                as RoundedRectangleBorder)
+            .borderRadius,
+        radius,
+      );
+
+      final controls = find.descendant(
+        of: material,
+        matching: find.byType(ShellDockControl),
+      );
+      expect(controls, findsNWidgets(6));
+      for (final element in controls.evaluate()) {
+        final control = find.byWidget(element.widget);
+        final ink = find.descendant(
+          of: control,
+          matching: find.byType(InkWell),
+        );
+        final clip = tester.widget<Material>(
+          find.descendant(of: control, matching: find.byType(Material)),
+        );
+        expect(tester.widget<InkWell>(ink).borderRadius, radius);
+        expect(clip.borderRadius, radius);
+        expect(clip.clipBehavior, Clip.antiAlias);
+      }
+
+      await tester.sendKeyEvent(LogicalKeyboardKey.tab);
+      await tester.pumpAndSettle();
+      final ring = tester.widget<DecoratedBox>(
+        find.descendant(
+          of: material,
+          matching: find.byWidgetPredicate(
+            (widget) =>
+                widget is DecoratedBox &&
+                widget.position == DecorationPosition.foreground &&
+                widget.decoration is BoxDecoration &&
+                (widget.decoration as BoxDecoration).border != null,
+          ),
+        ),
+      );
+      expect((ring.decoration as BoxDecoration).borderRadius, radius);
+      await tester.sendKeyEvent(LogicalKeyboardKey.enter);
+      expect(activations, 1);
+    });
+  }
 }

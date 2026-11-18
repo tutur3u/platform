@@ -1,49 +1,27 @@
 part of 'shell_page.dart';
 
 extension _ShellPageNavigation on _ShellPageState {
-  /// Root destinations (see [_ShellPageRootTabs]). The archive below
-  /// Notifications leads with Back.
+  /// Root destinations and the Back control for detail routes.
   List<shad.NavigationItem> _buildNavItems(
     BuildContext context,
-    AppTabState state,
     AppLocalizations l10n,
   ) => [
     if (_showsGlobalBack(context, widget.matchedLocation))
+      _defaultBackItem(l10n),
+    ..._rootNavItems(l10n),
+  ];
+
+  shad.NavigationItem _defaultBackItem(AppLocalizations l10n) =>
       shad.NavigationItem(
         key: _ShellPageState._backToRootKey,
         child: _buildCompactNavIcon(
           icon: AppIcons.back,
           semanticLabel: l10n.navBack,
-          itemIndex: 0,
         ),
-      ),
-    ..._rootNavItems(l10n),
-  ];
-
-  /// The dock's Back zone, outside the pill. Narrow windows reserve it only
-  /// while [navChildren] has a Back item.
-  Widget? _buildDockBack(
-    BuildContext context,
-    MorphingNavigationBar navContent,
-    List<shad.NavigationItem> navChildren,
-    Key backKey,
-  ) {
-    final backItem = navChildren
-        .where((item) => item.key == backKey)
-        .firstOrNull;
-    final reserveEmptyBack =
-        MediaQuery.sizeOf(context).width >=
-        ShellDockMetrics.emptyBackZoneMinWidth;
-    if (backItem == null && !reserveEmptyBack) return null;
-    return ShellDockBackZone(
-      back: backItem == null ? null : shellDockEntryFor(backItem),
-      onTap: () => navContent.onSelected(backKey),
-      onLongPress: navContent.onBackLongPress,
-    );
-  }
+      );
 
   bool _showsGlobalBack(BuildContext context, String location) =>
-      location == Routes.notificationsArchive ||
+      !_isRootTabLocation(location) ||
       context.select<ShellChromeActionsCubit?, bool>(
         (cubit) =>
             cubit?.state.registrations.values.any(
@@ -57,7 +35,6 @@ extension _ShellPageNavigation on _ShellPageState {
   Widget _buildCompactNavIcon({
     required IconData icon,
     required String semanticLabel,
-    required int itemIndex,
     Widget? image,
     bool dropdown = false,
   }) => Semantics(
@@ -85,21 +62,13 @@ extension _ShellPageNavigation on _ShellPageState {
     AppModule module,
     List<MiniAppNavItem> miniNavItems,
   ) => [
-    shad.NavigationItem(
-      key: _ShellPageState._backToRootKey,
-      child: _buildCompactNavIcon(
-        icon: Icons.chevron_left,
-        semanticLabel: context.l10n.navBack,
-        itemIndex: 0,
-      ),
-    ),
-    ...miniNavItems.indexed.map(
+    _defaultBackItem(context.l10n),
+    ...miniNavItems.map(
       (entry) => shad.NavigationItem(
-        key: _miniNavKey(module.id, entry.$2.id),
+        key: _miniNavKey(module.id, entry.id),
         child: _buildCompactNavIcon(
-          icon: entry.$2.icon,
-          semanticLabel: entry.$2.label(context.l10n),
-          itemIndex: entry.$1 + 1,
+          icon: entry.icon,
+          semanticLabel: entry.label(context.l10n),
         ),
       ),
     ),
@@ -167,7 +136,6 @@ extension _ShellPageNavigation on _ShellPageState {
               icon: item.icon,
               dropdown: item.dropdown,
               semanticLabel: item.label,
-              itemIndex: entry.$1,
             ),
           );
         })
@@ -177,13 +145,8 @@ extension _ShellPageNavigation on _ShellPageState {
   int _miniSelectedIndex(String location, List<MiniAppNavItem> items) =>
       miniNavSelectedIndex(location, items);
 
-  Key? _selectedKeyForLocation(String location) {
-    if (!_usesRail) return _phoneRootSelectedKey(location);
-    if (AppRegistry.moduleFromLocation(location) != null) {
-      return ShellRootTab.apps.key;
-    }
-    return _rootTabForLocation(location)?.key;
-  }
+  Key? _selectedKeyForLocation(String location) =>
+      _rootTabForLocation(location)?.key;
 
   bool _isRootTabLocation(String location) {
     return location == Routes.home ||

@@ -140,22 +140,30 @@ text, system/dock back without a top Back button, and unknown module links;
 transitions, and `shell_profile_races_test.dart` covers delayed account/cache
 completion. These widget checks do not establish installed-device or production evidence.
 
-### Fixed dock zones
+### Floating dock layout
 
-The phone dock has three fixed zones: a 52px Back zone, the destination pill
-and a 52px page-action zone, 8px apart. Each zone keeps its width while it is
-empty, so Back or an action appearing, changing or leaving never resizes or
-moves the pill. Back fades and scales inside its zone; an action fades and
-scales inside its slot. Below a 360px window the Back zone is reserved only
-while Back shows; Back appears together with a section's own destinations, so
-nothing visibly shifts.
+Back is a 52dp button at the leading edge of the floating navbar, inside its
+shared material. The frame fills the phone width within safe-area margins and
+centres at up to 480dp on tablets. The trailing page-action slot stays beside
+navigation and keeps its existing registration contract. Expanded windows
+keep their section destinations in the leading rail, with Back in the dock.
+Root destinations have no Back unless the page registers an in-place Back
+handler. System Back and deep-link fallbacks use the same route handling.
 
-The pill shows at most five equal, labelled slots. A section with more
-destinations shows four and a More slot that lists the rest in the shared
-sheet; a cramped pill shows fewer slots rather than shrinking any below 44px.
-One highlight slides between slots instead of each slot growing its own, and
-an overflowed destination marks More as the active slot. The dock holds one
-page action at every width; the top navbar shows any further actions.
+Five destinations show icons only, with localized accessibility names and
+pointer tooltips. A sub-shell with more than five sections shows Back,
+four sections and More, which opens a bottom sheet with the remaining
+sections in order. Back and the trailing page action each have their own
+space outside the destination count. Narrow windows can
+fold extra destinations into More sooner to preserve 44dp targets. The More
+slot is selected when its sheet contains the active destination. Shorter
+docks show labels where space permits. The rule also applies to page action
+groups, such as the Mail reader.
+
+The selection pill, Back, and each slot's ink and focus outline share the
+dock's outer radius minus its inner padding. The More sheet uses its
+own inset radius for rows and clips its handle to fit its height. Both
+appearances use the same geometry.
 
 Navigation and the Assistant composer share one dock material that stays the
 same element as their content swaps, so the dock never flashes; the composer
@@ -180,7 +188,7 @@ the bar and the scrolling content, that hairline marks the bottom of the whole
 composite header, never the edge between the bar and the strip. Ambient
 appearances keep their clear or frosted header without it
 (`floating_shell_dock_separator_test.dart`).
-Coverage: `shell_dock_bar_test.dart` (fixed zones, overflow, sliding highlight
+Coverage: `shell_dock_bar_test.dart` (in-bar Back, overflow, sliding highlight
 timing), `dock_action_choreography_test.dart`, `persistent_shell_dock_test.dart`,
 `floating_dock_rail_test.dart`, `shell_dock_modal_visibility_test.dart`,
 `shared_navbar_large_text_test.dart`, `shell_back_navigation_test.dart` and
@@ -197,11 +205,11 @@ shell's chrome stays in place and changes on the same 220ms timeline.
 - The top bar title fades out over the first 90ms with a 12dp slide towards
   the start edge. The next title fades in from 70ms, arriving 16dp from the
   end edge.
-- The dock's material, its Back zone and the action circle never move or
-  resize. Only their contents (pill slots, labels, an action group, the
-  circle's icon) fade out over 0-90ms and the next contents fade in over
-  90-220ms. When both pages have a dock action, the circle keeps its
-  material and only the icon changes.
+- Destination and action-group contents fade out over 0-90ms, then the next
+  contents fade in over 90-220ms. Back keeps its position and touch target.
+  When both pages have a dock action, the circle keeps its material and only
+  the icon changes. A circle entering or leaving changes the width available
+  to the navigation slots.
 - A pop runs the same timeline in reverse. Back from the dock or the system
   button usually replaces the page rather than popping it; that arrival still
   plays as a pop, with the leaving page sliding off towards the end edge.
@@ -261,11 +269,11 @@ Back).
 A page whose own actions lead the screen, such as the Mail reader, registers a
 dock action group (`ShellDockActionGroup` through `ShellChromeActions
 .actionGroup`). While the page is shown, the group takes the dock's pill and
-its action circle; Back keeps its zone and the shell navigation returns as
+its action circle; Back keeps its position and the shell navigation returns as
 soon as the page leaves.
 
-- The pill holds the group's actions in order as momentary buttons, labelled
-  like destination slots but never highlighted. The shell appends More
+- The pill holds the group's actions in order as momentary buttons, with the
+  same label rules as destination slots. The shell appends More
   whenever the group has More sections.
 - At most five slots show, none narrower than 44px; actions that do not fit
   fold, in order, into the first More section.
@@ -283,48 +291,25 @@ soon as the page leaves.
 
 Coverage: `shell_dock_action_group_test.dart`.
 
-### Phone root tabs
+### Root destinations
 
-On phones the dock's root destinations are four tabs and More, which fills the
-pill's five slots. The default tabs are Home, Apps, Mira and Alerts
-(Notifications; "Thông báo" in Vietnamese). These four never depend on an
-experiment, so the default dock is always complete. A saved choice that names
-an unavailable tab is refilled from the defaults, then Tasks, Calendar, Mail
-and You. Tasks, Calendar and Mail open their module, whose own destinations
-and Back then fill the dock as when the module opens from Apps. Dock Back and
-system Back from that module return to the root destination that opened it,
-usually Home.
+The root dock and tablet rail use Home, Apps, Mira, Alerts and Profile in
+that order. The root dock has five icons. Device preferences for legacy
+pinned tabs are ignored. Apps contains Tasks, Calendar, Mail, Finance,
+Drive and Timer when those modules are available. Profile contains Settings
+and account switching and management. Opening a module retains the launching
+tab as its Back destination.
 
-More opens a sheet in this order: the current workspace (it opens the
-workspace picker), the root destinations that are not tabs (Tasks, Calendar,
-Mail and You when unpinned), Finance, Drive and Timer when visible, Settings,
-then Reset tabs. Edit tabs is a pencil button in the sheet header, between the
-More title and the close button and centred on the same line, labelled and
-tooltipped "Edit tabs" (`AppSheetScaffold.headerActions`). More is the active
-slot while an unpinned root destination is open. Edit tabs picks up to four tabs from the openable
-destinations, in the order they were picked; the last tab cannot be removed.
-Reset tabs (in More and in the editor) clears the saved choice and returns to
-the defaults; it is disabled while no choice is saved.
-
-The choice is stored on the device under `shell-dock-root-tabs-v1` as tab ids,
-and only an explicit choice is stored. A device without a saved value follows
-the current defaults, so changing the defaults moves untouched docks while a
-user's own set is kept as saved. Unknown or unavailable ids are ignored when
-read, and a choice left with no openable tab uses the defaults. The tablet rail
-keeps its fixed Home, Apps, Mira, Notifications and You destinations.
-
-Coverage: `shell_root_tabs_test.dart` (defaults for fresh preferences, a kept
-custom set, More order and destinations, the header Edit tabs button, the
-workspace row opening the picker, editing, persistence, Reset from More and the editor, Back from a module tab,
-no header workspace switcher, unchanged rail), `shell_viewport_checks.dart`
-(44px named slots at every phone size) and
-`shell_profile_navigation_checks.dart`.
+`shell_root_tabs_test.dart` covers the fixed order, accessible icon names,
+legacy preferences, workspace trigger placement and Back geometry at 390dp
+and 834dp. `shell_dock_bar_test.dart` covers choosing an overflow destination.
 
 ### Workspace picker
 
-The shell top bar carries no workspace switcher. The workspace opens from the
-Home chip under the greeting or the first row of the dock's More sheet, and
-both open the same compact picker sheet:
+Home and Profile provide the active-workspace picker in their top bars. The
+44dp control shows the current workspace avatar and announces its name. When
+no workspace is selected it shows a workspace icon and opens the same picker.
+Settings retains the separate default-workspace and hidden-workspace controls.
 
 - The selected workspace (the current one, or the default in the default
   workspace picker) is the checked first row. The rest follow in one list by
@@ -794,8 +779,7 @@ apply in English and Vietnamese, light and dark, and enlarged text. Coverage:
 
 The Settings overview opens with an Account group instead of a header. Its
 rows are the profile (avatar, display name and email; opens `/settings/profile`),
-the current Workspace (its name; opens `/settings/workspace`), Switch workspace
-(the workspace count as its value; opens the workspace picker) and Hidden
+the current Workspace (its name; opens `/settings/workspace`) and Hidden
 workspaces. There are no standalone Edit profile or Workspace buttons and no
 separate workspace counter: every account destination is an ordinary grouped
 row. The root shows no social counts or invented destinations. The shell keeps the single top-navbar title and the

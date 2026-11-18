@@ -6,7 +6,7 @@ model.AppNotification _item(
   String id,
   String type,
   String title,
-  Duration age, {
+  int daysAgo, {
   String? description,
   bool read = false,
   String? entityType,
@@ -23,7 +23,7 @@ model.AppNotification _item(
     entityType: entityType,
     entityId: entityType == null ? null : '$id-entity',
     readAt: read ? now : null,
-    createdAt: now.subtract(age),
+    createdAt: DateTime(now.year, now.month, now.day - daysAgo),
   );
 }
 
@@ -31,12 +31,12 @@ model.AppNotification _item(
 /// group, an open invite and read/unread rows. Captures are written only
 /// when `SETTINGS_RENDER_DIR` is set; layout assertions always run.
 void _notificationsRenderCases() {
-  final items = [
+  List<model.AppNotification> fixtureItems() => [
     _item(
       'n1',
       'task_mention',
       'Minh mentioned you in "Launch checklist"',
-      const Duration(minutes: 12),
+      0,
       description: 'Can you confirm the App Store screenshots by Friday?',
       entityType: 'task',
     ),
@@ -44,14 +44,14 @@ void _notificationsRenderCases() {
       'n2',
       'workspace_invite',
       'Join Riverside Labs',
-      const Duration(hours: 3),
+      0,
       description: 'An invite to collaborate on the Riverside workspace.',
     ),
     _item(
       'n3',
       'task_assigned',
       'You were assigned "Draft release notes"',
-      const Duration(days: 1, hours: 2),
+      1,
       read: true,
       entityType: 'task',
     ),
@@ -59,7 +59,7 @@ void _notificationsRenderCases() {
       'n4',
       'security_alert',
       'New sign-in on a Mac',
-      const Duration(days: 3),
+      3,
       description: 'If this was not you, review your active sessions.',
       read: true,
     ),
@@ -67,7 +67,7 @@ void _notificationsRenderCases() {
       'n5',
       'report_approved',
       'Your October report was approved',
-      const Duration(days: 12),
+      12,
       read: true,
     ),
   ];
@@ -77,6 +77,7 @@ void _notificationsRenderCases() {
       testWidgets('Notifications render on ${size.key} in ${look.key}', (
         tester,
       ) async {
+        final items = fixtureItems();
         final repository = _Repository();
         when(
           () => repository.fetchNotifications(

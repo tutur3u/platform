@@ -1,14 +1,19 @@
 part of 'shell_page.dart';
 
-/// Trailing top bar actions: the page's registered actions only. The
-/// workspace lives on Home's chip and the More sheet; Notifications and You
-/// live in the dock.
+/// Registered page actions and the workspace trigger on its two root tabs.
 class _ShellTrailingActions extends StatelessWidget {
   const _ShellTrailingActions({required this.matchedLocation});
 
   final String matchedLocation;
 
   @override
-  Widget build(BuildContext context) =>
-      ShellInjectedActionsHost(matchedLocation: matchedLocation);
+  Widget build(BuildContext context) => Row(
+    mainAxisSize: MainAxisSize.min,
+    children: [
+      ShellInjectedActionsHost(matchedLocation: matchedLocation),
+      if (matchedLocation == Routes.home ||
+          matchedLocation == Routes.profileRoot)
+        const ShellWorkspacePicker(),
+    ],
+  );
 }

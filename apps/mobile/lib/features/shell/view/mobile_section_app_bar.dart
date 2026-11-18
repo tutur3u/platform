@@ -1,7 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:mobile/features/auth/cubit/auth_cubit.dart';
-import 'package:mobile/features/shell/view/avatar_dropdown.dart';
 import 'package:mobile/features/shell/view/readable_shell_title.dart';
 import 'package:mobile/features/shell/view/shell_title_text_style.dart';
 import 'package:shadcn_flutter/shadcn_flutter.dart' as shad;
@@ -71,29 +68,15 @@ class MobileSectionAppBar extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    var hasAuthCubit = true;
     final theme = shad.Theme.of(context);
     final height = mobileSectionAppBarHeightFor(context);
-    try {
-      context.read<AuthCubit>();
-    } on Exception {
-      hasAuthCubit = false;
-    }
-
     return shad.AppBar(
       height: height,
       padding: mobileSectionAppBarPadding,
       leadingGap: 8,
       trailingGap: 6,
       leading: leading,
-      trailing: [
-        ...actions,
-        if (hasAuthCubit)
-          const KeyedSubtree(
-            key: ValueKey('section-avatar'),
-            child: RepaintBoundary(child: AvatarDropdown()),
-          ),
-      ],
+      trailing: actions,
       child: SizedBox(
         height: height,
         child: Row(

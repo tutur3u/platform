@@ -35,8 +35,7 @@ const double shellNavigationRailExtent =
 /// Size of one rail destination; matches the dock's 52dp slots.
 const double shellNavigationRailSlot = 52;
 
-/// Vertical glass island with the same destinations as the floating dock,
-/// including the mini-app Back item, so Back stays reachable on wide layouts.
+/// Vertical island for destinations in wide layouts. Back stays in the dock.
 class ShellNavigationRail extends StatelessWidget {
   const ShellNavigationRail({
     required this.items,

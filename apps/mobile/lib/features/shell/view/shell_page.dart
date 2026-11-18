@@ -25,7 +25,6 @@ import 'package:mobile/features/notifications/view/notifications_page.dart';
 import 'package:mobile/features/profile/view/profile_navigation_avatar.dart';
 import 'package:mobile/features/profile/view/profile_overview_page.dart';
 import 'package:mobile/features/shell/cubit/shell_chrome_actions_cubit.dart';
-import 'package:mobile/features/shell/cubit/shell_root_tabs_cubit.dart';
 import 'package:mobile/features/shell/view/android_modal_back_bridge.dart';
 import 'package:mobile/features/shell/view/custom_navigation_bar.dart';
 import 'package:mobile/features/shell/view/floating_shell_dock.dart';
@@ -33,18 +32,17 @@ import 'package:mobile/features/shell/view/mobile_section_app_bar.dart';
 import 'package:mobile/features/shell/view/shell_chrome_actions.dart';
 import 'package:mobile/features/shell/view/shell_dock_bar.dart';
 import 'package:mobile/features/shell/view/shell_dock_slot.dart';
+import 'package:mobile/features/shell/view/shell_dock_surface.dart';
 import 'package:mobile/features/shell/view/shell_keyboard_chrome.dart';
 import 'package:mobile/features/shell/view/shell_mini_nav.dart';
 import 'package:mobile/features/shell/view/shell_navigation_rail.dart';
-import 'package:mobile/features/shell/view/shell_root_more_sheet.dart';
-import 'package:mobile/features/shell/view/shell_root_tabs_editor.dart';
 import 'package:mobile/features/shell/view/shell_route_fade.dart';
 import 'package:mobile/features/shell/view/shell_route_transition.dart';
 import 'package:mobile/features/shell/view/shell_search_field.dart';
 import 'package:mobile/features/shell/view/shell_top_bar_title.dart';
+import 'package:mobile/features/shell/view/shell_workspace_picker.dart';
 import 'package:mobile/features/workspace/cubit/workspace_cubit.dart';
 import 'package:mobile/features/workspace/cubit/workspace_state.dart';
-import 'package:mobile/features/workspace/widgets/workspace_picker_sheet.dart';
 import 'package:mobile/l10n/l10n.dart';
 import 'package:mobile/widgets/lazy_indexed_stack.dart';
 import 'package:mobile/widgets/nova_loading_indicator.dart';
@@ -63,7 +61,7 @@ part 'shell_page_scroll.dart';
 /// Wraps all tab-level routes via GoRouter's [ShellRoute].
 /// - **compact / medium** → floating bottom dock ([MorphingNavigationBar])
 /// - **expanded tablets/desktops** → leading [ShellNavigationRail]; the dock
-///   keeps only the composer and page actions. See [shellNavigationModeFor].
+///   keeps Back, the composer and page actions. See [shellNavigationModeFor].
 class ShellPage extends StatefulWidget {
   const ShellPage({
     required this.child,
@@ -74,7 +72,6 @@ class ShellPage extends StatefulWidget {
     this.homePageBuilder,
     this.notificationsPageBuilder,
     this.profilePageBuilder,
-    this.rootTabsStore,
     this.routePattern,
     super.key,
   });
@@ -97,9 +94,6 @@ class ShellPage extends StatefulWidget {
   final WidgetBuilder? notificationsPageBuilder;
   @visibleForTesting
   final Widget Function(int replayToken)? profilePageBuilder;
-
-  /// Where the phone dock's chosen tabs persist; SharedPreferences if null.
-  final ShellRootTabsStore? rootTabsStore;
 
   @override
   State<ShellPage> createState() => _ShellPageState();
@@ -128,12 +122,6 @@ class _ShellPageState extends State<ShellPage> with WidgetsBindingObserver {
 
   @visibleForTesting
   List<String> get routeHistoryForTesting => List.unmodifiable(_routeHistory);
-  late final _rootTabs = ShellRootTabsCubit(store: widget.rootTabsStore);
-  StreamSubscription<List<ShellRootTab>?>? _rootTabsSubscription;
-  Set<ShellRootTab> _availableRootTabs = ShellRootTab.values.toSet();
-  List<ShellRootTab> _phoneRootTabs = shellDefaultRootTabs;
-  Set<String> _visibleMoreModules = const {};
-
   final Stopwatch _tapStopwatch = Stopwatch();
   Timer? _longPressTimer;
   late final PageController _layerController;
@@ -210,10 +198,6 @@ class _ShellPageState extends State<ShellPage> with WidgetsBindingObserver {
     unawaited(SystemNavigator.setFrameworkHandlesBack(true));
     AndroidModalBackBridge.install(_hasOpenModal);
     _layerController = PageController(initialPage: 1);
-    _rootTabsSubscription = _rootTabs.stream.listen(
-      (_) => _setShellState(() {}),
-    );
-    unawaited(_rootTabs.load());
     _hasVisitedRoot = _isRootTabLocation(_bodyLocation);
     if (_hasVisitedRoot) _lastRootLocation = _bodyLocation;
     _pageKey = _currentPageKey();
@@ -610,8 +594,6 @@ class _ShellPageState extends State<ShellPage> with WidgetsBindingObserver {
     _layerController.dispose();
     _dockSlotController.dispose();
     _routeTransitions.dispose();
-    unawaited(_rootTabsSubscription?.cancel());
-    unawaited(_rootTabs.close());
     super.dispose();
   }
 

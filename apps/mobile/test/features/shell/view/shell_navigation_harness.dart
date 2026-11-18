@@ -173,6 +173,11 @@ GoRouter _buildRouter({
                 const _RoutePage(label: 'inventory-manage'),
           ),
           GoRoute(
+            path: Routes.inventoryAuditLogs,
+            builder: (context, state) =>
+                const _RoutePage(label: 'inventory-audit'),
+          ),
+          GoRoute(
             path: Routes.storefronts,
             builder: (context, state) => const _RoutePage(label: 'storefronts'),
           ),

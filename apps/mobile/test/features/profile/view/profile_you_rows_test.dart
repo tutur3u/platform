@@ -1,42 +1,16 @@
-import 'package:bloc_test/bloc_test.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:go_router/go_router.dart';
-import 'package:mobile/core/layout/layout.dart';
 import 'package:mobile/core/router/routes.dart';
-import 'package:mobile/data/models/workspace.dart';
 import 'package:mobile/features/profile/view/profile_you_rows.dart';
-import 'package:mobile/features/workspace/cubit/workspace_cubit.dart';
-import 'package:mobile/features/workspace/cubit/workspace_state.dart';
 import 'package:mobile/l10n/l10n.dart';
 
-class _MockWorkspaceCubit extends MockCubit<WorkspaceState>
-    implements WorkspaceCubit {}
-
 void main() {
-  late _MockWorkspaceCubit workspaces;
   late GoRouter router;
   var timelineOpened = 0;
 
   setUp(() {
     timelineOpened = 0;
-    workspaces = _MockWorkspaceCubit();
-    const all = [
-      Workspace(id: 'ws-1', name: 'Kallo'),
-      Workspace(id: 'ws-2', name: 'Tuturuuu', deleted: true),
-      Workspace(id: 'ws-3', name: 'Personal', personal: true),
-    ];
-    whenListen(
-      workspaces,
-      const Stream<WorkspaceState>.empty(),
-      initialState: const WorkspaceState(
-        status: WorkspaceStatus.loaded,
-        workspaces: all,
-        hiddenWorkspaceIds: ['ws-3'],
-        currentWorkspace: Workspace(id: 'ws-1', name: 'Kallo'),
-      ),
-    );
     router = GoRouter(
       initialLocation: Routes.profileRoot,
       routes: [
@@ -64,35 +38,20 @@ void main() {
     tester.platformDispatcher.textScaleFactorTestValue = scale;
     addTearDown(tester.platformDispatcher.clearTextScaleFactorTestValue);
     await tester.pumpWidget(
-      BlocProvider<WorkspaceCubit>.value(
-        value: workspaces,
-        child: MaterialApp.router(
-          localizationsDelegates: AppLocalizations.localizationsDelegates,
-          supportedLocales: AppLocalizations.supportedLocales,
-          routerConfig: router,
-        ),
+      MaterialApp.router(
+        localizationsDelegates: AppLocalizations.localizationsDelegates,
+        supportedLocales: AppLocalizations.supportedLocales,
+        routerConfig: router,
       ),
     );
     await tester.pumpAndSettle();
   }
 
-  testWidgets('rows open their surfaces without a workspace count', (
-    tester,
-  ) async {
+  testWidgets('rows open Timeline and Settings', (tester) async {
     await pump(tester);
 
-    expect(find.text('Workspaces'), findsOneWidget);
-    // A bare count drives nothing, so the row does not show one.
-    expect(find.text('3'), findsNothing);
-    expect(
-      tester
-          .widget<AppGroupedRow>(
-            find.byKey(const ValueKey('you-row-workspaces')),
-          )
-          .trailing,
-      isNull,
-    );
-    for (final key in ['workspaces', 'timeline', 'settings']) {
+    expect(find.text('Workspaces'), findsNothing);
+    for (final key in ['timeline', 'settings']) {
       expect(
         tester.getSize(find.byKey(ValueKey('you-row-$key'))).height,
         greaterThanOrEqualTo(48),

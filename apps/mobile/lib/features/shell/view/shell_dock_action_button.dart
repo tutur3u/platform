@@ -26,6 +26,7 @@ class ShellDockActionButton extends StatelessWidget {
         maxWidth: (MediaQuery.sizeOf(context).width * .35).clamp(48, 240),
       ),
       child: FilledButton(
+        clipBehavior: Clip.antiAlias,
         style: FilledButton.styleFrom(
           backgroundColor: primary
               ? Theme.of(context).colorScheme.onSurface

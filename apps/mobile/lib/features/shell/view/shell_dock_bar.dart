@@ -1,11 +1,12 @@
 import 'dart:async';
-import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
 import 'package:mobile/core/interaction/app_haptics.dart';
 import 'package:mobile/core/layout/page_insets.dart';
 import 'package:mobile/features/shell/view/shell_chrome_style.dart';
 import 'package:mobile/features/shell/view/shell_dock_back.dart';
+import 'package:mobile/features/shell/view/shell_dock_content.dart';
+import 'package:mobile/features/shell/view/shell_dock_control.dart';
 import 'package:mobile/features/shell/view/shell_dock_overflow.dart';
 import 'package:mobile/features/shell/view/shell_dock_surface.dart';
 import 'package:mobile/l10n/l10n.dart';
@@ -28,17 +29,8 @@ class ShellDockEntry {
   final bool enabled;
 }
 
-/// The dock's destination pill, led by a fixed Back zone.
-///
-/// Neither zone changes size. Back fades and scales inside its reserved
-/// zone, the pill shows at most [shellDockMaxSlots] equal slots (extra
-/// destinations move behind More) and one highlight slides between them, so
-/// navigating never shifts or resizes anything in the dock.
-///
-/// Inside the shell dock ([ownsZones] false) the dock supplies the pill's
-/// material and renders Back in its own leading zone (see
-/// [ShellDockBackZone]), so the material stays one element while composers
-/// and navigation swap inside it.
+/// Destination slots with a shared selection highlight and overflow sheet.
+/// In the shell the surrounding dock supplies the material and Back.
 class ShellDockBar extends StatelessWidget {
   const ShellDockBar({
     required this.entries,
@@ -67,9 +59,6 @@ class ShellDockBar extends StatelessWidget {
   /// Returns to the destination root.
   final VoidCallback? onBackLongPress;
 
-  /// Narrower slots show glyphs only; the label stays in semantics.
-  static const _minLabelledSlot = 44.0;
-
   @override
   Widget build(BuildContext context) {
     final style = ShellChromeStyle.of(context);
@@ -79,11 +68,9 @@ class ShellDockBar extends StatelessWidget {
       ),
       child: LayoutBuilder(
         builder: (context, constraints) {
-          // As many slots as keep a 44dp target; the rest sit behind More.
           final (:visible, :overflow) = splitShellDockEntries(
             entries,
-            maxSlots: (constraints.maxWidth / ShellDockMetrics.minSlotWidth)
-                .floor(),
+            maxSlots: shellDockCapacity(constraints.maxWidth),
           );
           final overflowSelected = overflow.any((e) => e.key == selectedKey);
           final slots = [
@@ -118,7 +105,10 @@ class ShellDockBar extends StatelessWidget {
                         selected: entry.key == shellDockMoreKey
                             ? overflowSelected
                             : entry.key == selectedKey,
-                        showLabel: labelled && slotWidth >= _minLabelledSlot,
+                        showLabel:
+                            labelled &&
+                            slots.length < shellDockMaxSlots &&
+                            slotWidth >= ShellDockMetrics.minSlotWidth,
                         style: style,
                         onTap: () => entry.key == shellDockMoreKey
                             ? _openOverflow(context, overflow)
@@ -142,21 +132,18 @@ class ShellDockBar extends StatelessWidget {
     return SizedBox(
       key: const ValueKey('shell-dock-bar'),
       height: ShellDockMetrics.height,
-      child: Row(
-        children: [
-          ShellDockBackZone(
-            back: back,
-            onTap: back == null ? null : () => onSelected(back!.key),
-            onLongPress: onBackLongPress,
-          ),
-          const SizedBox(width: ShellDockMetrics.zoneGap),
-          Expanded(
-            child: ShellDockSurface(
-              key: const ValueKey('persistent-shell-dock-material'),
-              child: pill,
-            ),
-          ),
-        ],
+      child: ShellDockSurface(
+        key: const ValueKey('persistent-shell-dock-material'),
+        child: ShellDockContent(
+          leading: back == null
+              ? null
+              : ShellDockBackZone(
+                  back: back!,
+                  onTap: () => onSelected(back!.key),
+                  onLongPress: onBackLongPress,
+                ),
+          child: pill,
+        ),
       ),
     );
   }
@@ -176,13 +163,11 @@ class ShellDockBar extends StatelessWidget {
       entries: overflow,
       selectedKey: selectedKey,
     );
-    if (key != null) onSelected(key);
+    if (context.mounted && key != null) onSelected(key);
   }
 }
 
-/// Reserved 52dp zone for Back. Its width never changes: Back fades and
-/// scales in place, and the empty zone keeps the pill where it was.
-class ShellDockBackZone extends StatefulWidget {
+class ShellDockBackZone extends StatelessWidget {
   const ShellDockBackZone({
     required this.back,
     required this.onTap,
@@ -190,86 +175,28 @@ class ShellDockBackZone extends StatefulWidget {
     super.key,
   });
 
-  /// The Back entry; null at a destination root, which leaves the zone
-  /// empty.
-  final ShellDockEntry? back;
-  final VoidCallback? onTap;
+  final ShellDockEntry back;
+  final VoidCallback onTap;
   final VoidCallback? onLongPress;
 
   @override
-  State<ShellDockBackZone> createState() => _ShellDockBackZoneState();
+  Widget build(BuildContext context) => ShellDockBack(
+    entry: back,
+    style: ShellChromeStyle.of(context),
+    onTap: () {
+      unawaited(AppHaptics.selection());
+      onTap();
+    },
+    onLongPress: onLongPress == null
+        ? null
+        : () {
+            unawaited(AppHaptics.selection());
+            onLongPress!();
+          },
+  );
 }
 
-class _ShellDockBackZoneState extends State<ShellDockBackZone> {
-  /// Kept while Back fades out so the circle leaves with the motion.
-  ShellDockEntry? _last;
-
-  @override
-  Widget build(BuildContext context) {
-    final back = widget.back;
-    final style = ShellChromeStyle.of(context);
-    final duration = style.motion(context, style.base);
-    _last = back ?? (duration == Duration.zero ? null : _last);
-    final shown = _last;
-    final visible = back != null;
-    return SizedBox(
-      key: const ValueKey('shell-dock-back-zone'),
-      width: ShellDockMetrics.zone,
-      height: ShellDockMetrics.zone,
-      child: shown == null
-          ? null
-          : ExcludeSemantics(
-              excluding: !visible,
-              child: IgnorePointer(
-                ignoring: !visible,
-                child: AnimatedScale(
-                  scale: visible ? 1 : 0.6,
-                  duration: duration,
-                  curve: Curves.easeOutCubic,
-                  child: AnimatedOpacity(
-                    opacity: visible ? 1 : 0,
-                    duration: duration,
-                    curve: Curves.easeOutCubic,
-                    onEnd: () {
-                      if (mounted && widget.back == null && _last != null) {
-                        setState(() => _last = null);
-                      }
-                    },
-                    child: ShellDockSurface(
-                      child: ShellDockBack(
-                        entry: shown,
-                        style: style,
-                        diameter:
-                            ShellDockMetrics.zone - ShellDockSurface.edge * 2,
-                        filled: false,
-                        onTap: () {
-                          if (widget.back != null) {
-                            unawaited(AppHaptics.selection());
-                            widget.onTap?.call();
-                          }
-                        },
-                        onLongPress: widget.onLongPress,
-                      ),
-                    ),
-                  ),
-                ),
-              ),
-            ),
-    );
-  }
-}
-
-/// The one selection fill, which slides between slots instead of each slot
-/// growing its own.
-/// Corner radius of the selection highlight in a slot [slotWidth] wide.
-///
-/// The concentric inner radius (half the slot height) when the slot is wide
-/// enough to read as a pill; narrower phone slots cap it so the highlight is a
-/// rounded rectangle around icon and label instead of a circle through the
-/// label.
-double highlightRadius(double slotWidth) =>
-    math.min(ShellDockMetrics.slot / 2, math.max(0, slotWidth / 2 - 4));
-
+/// The shared selection fill slides between slots.
 class _SlidingHighlight extends StatelessWidget {
   const _SlidingHighlight({
     required this.index,
@@ -299,7 +226,7 @@ class _SlidingHighlight extends StatelessWidget {
           decoration: ShapeDecoration(
             color: style.navSelectedFill,
             shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(highlightRadius(slotWidth)),
+              borderRadius: ShellDockSurface.innerBorderRadiusOf(context),
             ),
           ),
         ),
@@ -337,48 +264,54 @@ class ShellDockSlotButton extends StatelessWidget {
       label: entry.label,
       excludeSemantics: true,
       onTap: entry.enabled ? onTap : null,
-      child: ShellPressShift(
-        onTap: entry.enabled ? onTap : null,
-        child: SizedBox(
-          height: ShellDockMetrics.slot,
-          child: Opacity(
-            opacity: entry.enabled ? 1 : 0.4,
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                IconTheme.merge(
-                  data: IconThemeData(color: color, size: 22),
-                  child: SizedBox(height: 22, child: entry.glyph),
-                ),
-                if (showLabel) ...[
-                  const SizedBox(height: 2),
-                  Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 2),
-                    child: MediaQuery.withClampedTextScaling(
-                      maxScaleFactor: 1.2,
-                      child: AnimatedDefaultTextStyle(
-                        duration: style.motion(context, style.fast),
-                        style: TextStyle(
-                          fontSize: 10,
-                          height: 13 / 10,
-                          letterSpacing: -0.1,
-                          fontWeight: selected
-                              ? FontWeight.w700
-                              : FontWeight.w600,
-                          color: color,
-                        ),
-                        child: Text(
-                          entry.label,
-                          maxLines: 1,
-                          softWrap: false,
-                          overflow: TextOverflow.ellipsis,
-                          textAlign: TextAlign.center,
+      child: Tooltip(
+        message: entry.label,
+        triggerMode: TooltipTriggerMode.manual,
+        excludeFromSemantics: true,
+        child: ShellDockControl(
+          borderRadius: ShellDockSurface.innerBorderRadiusOf(context),
+          onTap: entry.enabled ? onTap : null,
+          child: SizedBox(
+            height: ShellDockMetrics.slot,
+            child: Opacity(
+              opacity: entry.enabled ? 1 : 0.4,
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  IconTheme.merge(
+                    data: IconThemeData(color: color, size: 22),
+                    child: SizedBox(height: 22, child: entry.glyph),
+                  ),
+                  if (showLabel) ...[
+                    const SizedBox(height: 2),
+                    Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 2),
+                      child: MediaQuery.withClampedTextScaling(
+                        maxScaleFactor: 1.2,
+                        child: AnimatedDefaultTextStyle(
+                          duration: style.motion(context, style.fast),
+                          style: TextStyle(
+                            fontSize: 10,
+                            height: 13 / 10,
+                            letterSpacing: -0.1,
+                            fontWeight: selected
+                                ? FontWeight.w700
+                                : FontWeight.w600,
+                            color: color,
+                          ),
+                          child: Text(
+                            entry.label,
+                            maxLines: 1,
+                            softWrap: false,
+                            overflow: TextOverflow.ellipsis,
+                            textAlign: TextAlign.center,
+                          ),
                         ),
                       ),
                     ),
-                  ),
+                  ],
                 ],
-              ],
+              ),
             ),
           ),
         ),

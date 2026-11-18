@@ -121,7 +121,7 @@ void _homeRenderCases() {
           expect(lefts.length, greaterThan(1));
         }
         expect(
-          tester.getSize(find.byKey(homeWorkspaceChipKey)).height,
+          tester.getSize(find.byType(ShellWorkspacePicker)).height,
           greaterThanOrEqualTo(44),
         );
         await _capture(tester, 'home-${size.key}-${look.key}');
@@ -219,23 +219,26 @@ void _homeRenderCases() {
       ),
     );
 
-    // The Home chip is named for its workspace, so a screen reader never
-    // confuses it with the dock's More.
-    SemanticsNode homeNode(String label) => tester.getSemantics(
-      find.descendant(
-        of: find.byType(HomePage),
-        matching: find.bySemanticsLabel(label),
-      ),
+    // The workspace header and the Home section link both accept a screen
+    // reader's tap action.
+    final workspace = find.descendant(
+      of: find.byType(ShellWorkspacePicker),
+      matching: find.bySemanticsLabel(renderWorkspace.name!),
     );
-    for (final label in [renderWorkspace.name!, 'See all Today']) {
-      final data = homeNode(label).getSemanticsData();
-      expect(data.hasAction(SemanticsAction.tap), isTrue, reason: label);
-      expect(data.flagsCollection.isButton, isTrue, reason: label);
+    final section = find.descendant(
+      of: find.byType(HomePage),
+      matching: find.bySemanticsLabel('See all Today'),
+    );
+    for (final control in [workspace, section]) {
+      final data = tester.getSemantics(control).getSemanticsData();
+      expect(data.hasAction(SemanticsAction.tap), isTrue);
+      expect(data.flagsCollection.isButton, isTrue);
     }
 
-    // Screen-reader activation (not a pointer tap) opens the picker...
-    final chip = homeNode(renderWorkspace.name!).id;
-    tester.semantics.tap(find.semantics.byPredicate((node) => node.id == chip));
+    final workspaceNode = tester.getSemantics(workspace).id;
+    tester.semantics.tap(
+      find.semantics.byPredicate((node) => node.id == workspaceNode),
+    );
     await settleShell(tester);
     expect(find.byType(AppSheetScaffold), findsOneWidget);
     Navigator.of(tester.element(find.byType(AppSheetScaffold))).pop();

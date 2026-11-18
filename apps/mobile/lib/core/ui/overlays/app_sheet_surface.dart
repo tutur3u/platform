@@ -53,7 +53,7 @@ class AppSheetSurface extends StatelessWidget {
               if (showHandle)
                 const Padding(
                   padding: EdgeInsets.only(top: AppSpacing.sm),
-                  child: _HandleBar(),
+                  child: _HandleBar(inset: AppSpacing.sm),
                 )
               else
                 const SizedBox(height: AppSpacing.sm),
@@ -103,13 +103,15 @@ class AppSheetHandle extends StatelessWidget {
     }
     return const Padding(
       padding: EdgeInsets.only(bottom: AppSpacing.md),
-      child: _HandleBar(),
+      child: _HandleBar(inset: AppSpacing.md),
     );
   }
 }
 
 class _HandleBar extends StatelessWidget {
-  const _HandleBar();
+  const _HandleBar({required this.inset});
+
+  final double inset;
 
   @override
   Widget build(BuildContext context) {
@@ -121,7 +123,12 @@ class _HandleBar extends StatelessWidget {
         height: shapes.handleSize.height,
         decoration: BoxDecoration(
           color: shapes.handleColor,
-          borderRadius: BorderRadius.circular(AppRadius.pill),
+          borderRadius: BorderRadius.circular(
+            math.min(
+              shapes.handleSize.height / 2,
+              AppShapes.inset(shapes.sheet, inset),
+            ),
+          ),
         ),
       ),
     );

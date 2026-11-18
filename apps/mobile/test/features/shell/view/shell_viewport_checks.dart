@@ -51,9 +51,8 @@ void registerShellViewportChecks(
           await _expectRailViewport(tester, size);
           return;
         }
-        // Four pinned tabs plus More, each a 44dp target that keeps its name
-        // in semantics; slots wide enough for text also show it.
-        for (final label in ['Home', 'Apps', 'Mira', 'Alerts', 'More']) {
+        // Five icon-only tabs keep their names and 44dp targets.
+        for (final label in ['Home', 'Apps', 'Mira', 'Alerts', 'Profile']) {
           final node = tester.getSemantics(
             find
                 .descendant(
@@ -71,7 +70,7 @@ void registerShellViewportChecks(
             of: find.byType(MorphingNavigationBar),
             matching: find.byType(Tooltip),
           ),
-          findsNothing,
+          findsNWidgets(5),
         );
         expect(
           find.descendant(
@@ -132,8 +131,10 @@ void registerShellViewportChecks(
         final body = tester.getRect(find.byType(AppsHubPage));
         expect(body.bottom, closeTo(size.height, 1));
         expect(body.bottom, greaterThan(dock.bottom));
-        // Apps sits behind More, the active slot.
-        expect(find.bySemanticsLabel('More'), findsOneWidget);
+        expect(
+          tester.getSemantics(find.byKey(const ValueKey('apps'))),
+          isSemantics(isSelected: true),
+        );
         final bodyState = tester.state(find.byType(AppsHubPage));
         tester.view.viewInsets = const FakeViewPadding(bottom: 300);
         await tester.pump();

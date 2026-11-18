@@ -16,17 +16,10 @@ The default-off `offline_read_home` flag prepares task/calendar summaries and to
 
 ## Home
 
-- **Header.** Today's date, a time-of-day greeting with the profile display
-  name when one is set ("Good morning, Linh"), and one small workspace chip
-  under it. The shell navbar keeps only the logo, the "Home" title and
-  Customise, so the greeting is not a second page title and the navbar has no
-  workspace switcher or Home/Agenda toggle.
-- **Workspace chip.** The chip shows the current workspace, since Home's counts
-  and lists belong to it. Tapping it opens the workspace picker (see
-  [Workspace picker](/platform/features/mobile-settings-shell#workspace-picker));
-  screen readers hear the workspace name with a "Switch workspace" hint. The
-  chip is on Home only, not on the Tasks or Calendar roots. Long names
-  ellipsize, and the pill has a 48dp touch target.
+- **Header.** The shell navbar carries Home, Customise and the active workspace
+  avatar. The body starts with today's date and a time-of-day greeting that
+  includes the profile display name when available. The avatar opens the
+  shared [Workspace picker](/platform/features/mobile-settings-shell#workspace-picker).
 - **Widgets.** The existing widgets keep their order, visibility and
   **Customize Home** editor. The tasks widget shows two sections: **Today**
   (overdue first, then due today) and **Up next** (later due dates), up to
@@ -43,8 +36,7 @@ The default-off `offline_read_home` flag prepares task/calendar summaries and to
   widgets show an inline message with the widget's icon.
 - **Responsive.** Page kind `root`. Widgets flow in content-sized columns of
   at least 340dp: one column on phones, two on portrait tablets and up to
-  three on laptops and desktops. The workspace chip stays under the greeting
-  at every width.
+  three on laptops and desktops.
 
 ## Native pass navigation rules
 
@@ -56,8 +48,8 @@ new or reworked mobile screen on Android and iOS.
   and shell bodies add no second title bar. A screen's trailing actions (for
   example task detail's complete, share and overflow) are shell chrome actions.
   System Back and deep-link fallbacks keep working.
-- **Workspace on Home.** Home shows one workspace chip that opens the
-  picker; the dock's More sheet leads with the same entry.
+- **Workspace on Home and Profile.** The active workspace picker opens from
+  either tab's top navbar.
 - **Light mode and large text.** Every new screen ships in light and dark mode
   and supports large Dynamic Type: text scales without clipping (wrapping or
   scaling down inside its own control), and touch targets are at least 44pt.
@@ -119,4 +111,4 @@ occurrence projected into a different calendar day.
   chip's name, semantics hint, opening the picker and hiding without a
   current workspace. The render
   cases above assert the Today, Up next and Calendar sections and screen-reader
-  activation of the workspace chip and See all.
+  activation of the workspace picker and See all.

@@ -3,9 +3,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:go_router/go_router.dart';
+import 'package:mobile/core/layout/page_insets.dart';
 import 'package:mobile/core/router/routes.dart';
-import 'package:mobile/core/ui/components/app_option_tile.dart';
-import 'package:mobile/core/ui/icons/app_icons.dart';
 import 'package:mobile/core/ui/overlays/app_sheet_scaffold.dart';
 import 'package:mobile/data/models/workspace.dart';
 import 'package:mobile/data/repositories/settings_repository.dart';
@@ -14,21 +13,18 @@ import 'package:mobile/features/assistant/cubit/assistant_chrome_cubit.dart';
 import 'package:mobile/features/auth/cubit/auth_cubit.dart';
 import 'package:mobile/features/auth/cubit/auth_state.dart';
 import 'package:mobile/features/settings/cubit/experimental_apps_cubit.dart';
+import 'package:mobile/features/shell/cubit/shell_chrome_actions_cubit.dart';
 import 'package:mobile/features/shell/cubit/shell_profile_cubit.dart';
 import 'package:mobile/features/shell/cubit/shell_profile_state.dart';
-import 'package:mobile/features/shell/cubit/shell_root_tabs_cubit.dart';
 import 'package:mobile/features/shell/cubit/shell_title_override_cubit.dart';
 import 'package:mobile/features/shell/view/custom_navigation_bar.dart';
 import 'package:mobile/features/shell/view/shell_mini_nav.dart';
-import 'package:mobile/features/shell/view/shell_navigation_rail.dart';
 import 'package:mobile/features/shell/view/shell_page.dart';
-import 'package:mobile/features/shell/view/shell_root_more_sheet.dart';
-import 'package:mobile/features/shell/view/shell_root_tabs_editor.dart';
+import 'package:mobile/features/shell/view/shell_workspace_picker.dart';
 import 'package:mobile/features/workspace/cubit/workspace_cubit.dart';
 import 'package:mobile/features/workspace/cubit/workspace_state.dart';
 import 'package:mocktail/mocktail.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-import 'package:supabase_flutter/supabase_flutter.dart' as supa;
 
 import '../../../helpers/helpers.dart';
 
@@ -39,30 +35,15 @@ class _Workspace extends MockCubit<WorkspaceState> implements WorkspaceCubit {}
 class _Profile extends MockCubit<ShellProfileState>
     implements ShellProfileCubit {}
 
-const String _storageKey = SharedPreferencesShellRootTabsStore.storageKey;
+const _storageKey = 'shell-dock-root-tabs-v1';
 
-const _mailUser = supa.User(
-  id: 'user',
-  appMetadata: {},
-  userMetadata: {},
-  aud: 'authenticated',
-  email: 'dock-fixture@tuturuuu.com',
-  createdAt: '2026-01-01T00:00:00Z',
-);
-
-/// Pumps the real shell at [location]. Mail is openable only with
-/// [mailAvailable]: the experiment on and an eligible account.
 Future<GoRouter> _pumpShell(
   WidgetTester tester, {
   String location = Routes.home,
-  bool mailAvailable = false,
   Size size = const Size(390, 844),
   List<String>? savedTabs,
 }) async {
-  SharedPreferences.setMockInitialValues({
-    if (mailAvailable) 'enabled-experimental-apps': ['mail'],
-    _storageKey: ?savedTabs,
-  });
+  SharedPreferences.setMockInitialValues({_storageKey: ?savedTabs});
   tester.view
     ..devicePixelRatio = 1
     ..physicalSize = size;
@@ -77,9 +58,7 @@ Future<GoRouter> _pumpShell(
   whenListen(
     auth,
     const Stream<AuthState>.empty(),
-    initialState: mailAvailable
-        ? const AuthState.authenticated(_mailUser)
-        : const AuthState.unauthenticated(),
+    initialState: const AuthState.unauthenticated(),
   );
   when(workspace.refreshHiddenWorkspaces).thenAnswer((_) async {});
   when(() => workspace.hasAuthenticatedActor).thenReturn(false);
@@ -116,6 +95,7 @@ Future<GoRouter> _pumpShell(
             Routes.apps,
             Routes.assistant,
             Routes.notifications,
+            Routes.notificationsArchive,
             Routes.profileRoot,
             Routes.tasks,
             Routes.calendar,
@@ -146,6 +126,7 @@ Future<GoRouter> _pumpShell(
         BlocProvider<WorkspaceCubit>.value(value: workspace),
         BlocProvider<ShellProfileCubit>.value(value: profile),
         BlocProvider(create: (_) => AssistantChromeCubit()),
+        BlocProvider(create: (_) => ShellChromeActionsCubit()),
         BlocProvider(create: (_) => ShellMiniNavCubit()),
         BlocProvider(create: (_) => ShellTitleOverrideCubit()),
       ],
@@ -162,363 +143,127 @@ Future<void> _settle(WidgetTester tester) async {
   }
 }
 
-MorphingNavigationBar _dock(WidgetTester tester) =>
-    tester.widget<MorphingNavigationBar>(find.byType(MorphingNavigationBar));
-
-List<Key?> _dockKeys(WidgetTester tester) =>
-    _dock(tester).children.map((item) => item.key).toList();
-
-List<Key?> _keys(List<ShellRootTab> tabs) => [
-  for (final tab in tabs) tab.key,
-  shellRootMoreKey,
-];
-
-String _path(GoRouter router) => router.routeInformationProvider.value.uri.path;
-
-Finder _overflowRow(Key key) => find.byKey(shellRootMoreRowKey(key));
-
-Finder _moreRow(ShellRootTab tab) => _overflowRow(tab.key);
-
-Future<void> _openMore(WidgetTester tester) async {
-  await tester.tap(find.byKey(shellRootMoreKey));
-  await _settle(tester);
-}
-
-Future<void> _closeSheet(WidgetTester tester) async {
-  Navigator.of(tester.element(find.byType(AppSheetScaffold))).pop();
-  await _settle(tester);
-}
-
 void main() {
-  test('tabs read during startup seed the first state', () async {
-    SharedPreferences.setMockInitialValues({
-      SharedPreferencesShellRootTabsStore.storageKey: ['calendar', 'home'],
-    });
-    addTearDown(ShellRootTabsCubit.resetWarmForTesting);
-    await ShellRootTabsCubit.warm();
-    final cubit = ShellRootTabsCubit();
-    addTearDown(cubit.close);
-    // No async load needed: the first frame already has the saved tabs.
-    expect(cubit.state, [ShellRootTab.calendar, ShellRootTab.home]);
+  testWidgets('the fixed root dock ignores a legacy saved tab selection', (
+    tester,
+  ) async {
+    final router = await _pumpShell(tester, savedTabs: ['tasks', 'calendar']);
+    final dock = find.byType(MorphingNavigationBar);
+    final expected = ['Home', 'Apps', 'Mira', 'Alerts', 'Profile'];
+    final slots = tester.widget<MorphingNavigationBar>(dock).children;
+    expect(
+      slots.map((item) => item.key),
+      ShellRootTab.values.map((tab) => tab.key),
+    );
+    for (final label in expected) {
+      expect(
+        find.descendant(of: dock, matching: find.bySemanticsLabel(label)),
+        findsOneWidget,
+      );
+      expect(
+        find.descendant(of: dock, matching: find.text(label)),
+        findsNothing,
+      );
+    }
+    expect(
+      find.descendant(of: dock, matching: find.bySemanticsLabel('More')),
+      findsNothing,
+    );
+
+    await tester.tap(find.byKey(ShellRootTab.profile.key));
+    await _settle(tester);
+    expect(router.routeInformationProvider.value.uri.path, Routes.profileRoot);
   });
 
-  group('resolveShellRootTabs', () {
-    test('defaults are Home, Apps, Mira and Alerts', () {
-      expect(resolveShellRootTabs(null, isAvailable: (_) => true), [
-        ShellRootTab.home,
-        ShellRootTab.apps,
-        ShellRootTab.assistant,
-        ShellRootTab.notifications,
-      ]);
-    });
-
-    test('fills an unavailable default with Tasks, then Calendar', () {
+  testWidgets('active workspace opens from Home and Profile headers only', (
+    tester,
+  ) async {
+    final router = await _pumpShell(tester);
+    final picker = find.byType(ShellWorkspacePicker);
+    for (final tab in ShellRootTab.values) {
+      router.go(tab.route);
+      await _settle(tester);
+      final showsPicker =
+          tab == ShellRootTab.home || tab == ShellRootTab.profile;
       expect(
-        resolveShellRootTabs(
-          null,
-          isAvailable: (tab) => tab != ShellRootTab.apps,
-        ),
-        [
-          ShellRootTab.home,
-          ShellRootTab.assistant,
-          ShellRootTab.notifications,
-          ShellRootTab.tasks,
-        ],
+        picker,
+        showsPicker ? findsOneWidget : findsNothing,
+        reason: tab.name,
       );
-      expect(
-        resolveShellRootTabs(
-          null,
-          isAvailable: (tab) =>
-              tab != ShellRootTab.apps && tab != ShellRootTab.tasks,
-        ).last,
-        ShellRootTab.calendar,
-      );
-    });
+      if (showsPicker) {
+        expect(tester.getSize(picker), const Size.square(44));
+        expect(tester.getTopLeft(picker).dy, lessThan(56));
+        await tester.tap(picker);
+        await _settle(tester);
+        expect(find.byType(AppSheetScaffold), findsOneWidget);
+        expect(find.text('Studio'), findsOneWidget);
+        Navigator.of(tester.element(find.byType(AppSheetScaffold))).pop();
+        await _settle(tester);
+      }
+    }
+    for (final route in [Routes.settings, Routes.tasks, Routes.finance]) {
+      router.go(route);
+      await _settle(tester);
+      expect(picker, findsNothing, reason: route);
+    }
+  });
 
-    test(
-      'refills an unavailable custom tab and keeps a short choice short',
-      () {
-        bool noMail(ShellRootTab tab) => tab != ShellRootTab.mail;
-        expect(
-          resolveShellRootTabs([
-            ShellRootTab.tasks,
-            ShellRootTab.mail,
-            ShellRootTab.apps,
-            ShellRootTab.profile,
-          ], isAvailable: noMail),
-          [
-            ShellRootTab.tasks,
-            ShellRootTab.apps,
-            ShellRootTab.profile,
-            ShellRootTab.home,
-          ],
+  for (final size in [const Size(390, 844), const Size(834, 1194)]) {
+    testWidgets(
+      'Back stays inside the dock at the same position at ${size.width}dp',
+      (tester) async {
+        final router = await _pumpShell(tester, size: size);
+        final material = find.byKey(
+          const ValueKey('persistent-shell-dock-material'),
         );
-        expect(
-          resolveShellRootTabs([
-            ShellRootTab.mail,
-            ShellRootTab.apps,
-          ], isAvailable: noMail),
-          [ShellRootTab.apps, ShellRootTab.home],
-        );
-        expect(
-          resolveShellRootTabs([ShellRootTab.calendar], isAvailable: noMail),
-          [ShellRootTab.calendar],
-        );
+        final back = find.byKey(const ValueKey('shell-dock-back'));
+        final root = tester.getRect(material);
+        expect(root.width, ShellDockMetrics.widthFor(size.width));
+        expect(back, findsNothing);
+
+        Rect? firstBack;
+        for (final route in [
+          Routes.notificationsArchive,
+          Routes.finance,
+          Routes.tasks,
+          Routes.calendar,
+          Routes.settings,
+        ]) {
+          router.go(route);
+          await _settle(tester);
+          expect(find.descendant(of: material, matching: back), findsOneWidget);
+          expect(tester.getRect(material), root);
+          final rect = tester.getRect(back);
+          expect(rect.size, const Size.square(ShellDockMetrics.slot));
+          expect(rect.left, root.left + ShellDockMetrics.padding);
+          expect(rect.center.dy, root.center.dy);
+          firstBack ??= rect;
+          expect(rect, firstBack, reason: route);
+        }
+
+        var saves = 0;
+        tester
+            .element(find.byType(ShellPage))
+            .read<ShellChromeActionsCubit>()
+            .register(
+              registrationId: 'fixture-save',
+              ownerId: 'fixture-save',
+              locations: const {Routes.settings},
+              actions: [
+                ShellActionSpec(
+                  id: 'fixture-save',
+                  icon: Icons.save,
+                  tooltip: 'Save fixture',
+                  inDock: true,
+                  onPressed: () => saves++,
+                ),
+              ],
+            );
+        await _settle(tester);
+        expect(tester.getRect(back), firstBack);
+        await tester.tap(find.byTooltip('Save fixture'));
+        expect(saves, 1);
       },
     );
-  });
-
-  testWidgets('fresh prefs pin Home, Apps, Mira and Alerts', (tester) async {
-    await _pumpShell(tester, mailAvailable: true);
-    expect(_dockKeys(tester), _keys(shellDefaultRootTabs));
-    expect(_dock(tester).selectedKey, ShellRootTab.home.key);
-    for (final label in ['Home', 'Apps', 'Mira', 'Alerts', 'More']) {
-      final slot = find.descendant(
-        of: find.byType(MorphingNavigationBar),
-        matching: find.bySemanticsLabel(label),
-      );
-      expect(slot, findsOneWidget, reason: label);
-      expect(
-        tester.getSemantics(slot).rect.width,
-        greaterThanOrEqualTo(44),
-        reason: label,
-      );
-    }
-  });
-
-  testWidgets('a saved custom set is kept', (tester) async {
-    await _pumpShell(
-      tester,
-      mailAvailable: true,
-      savedTabs: ['home', 'tasks', 'calendar', 'mail'],
-    );
-    expect(
-      _dockKeys(tester),
-      _keys([
-        ShellRootTab.home,
-        ShellRootTab.tasks,
-        ShellRootTab.calendar,
-        ShellRootTab.mail,
-      ]),
-    );
-  });
-
-  testWidgets('More lists the workspace, the rest, then Reset tabs', (
-    tester,
-  ) async {
-    final router = await _pumpShell(tester, mailAvailable: true);
-    await _openMore(tester);
-    final order = [
-      shellRootWorkspaceKey,
-      ShellRootTab.tasks.key,
-      ShellRootTab.calendar.key,
-      ShellRootTab.mail.key,
-      ShellRootTab.profile.key,
-      shellRootSettingsKey,
-      shellRootResetTabsKey,
-    ];
-    double? previous;
-    for (final key in order) {
-      final row = _overflowRow(key);
-      await tester.ensureVisible(row);
-      final top = tester.getTopLeft(row).dy;
-      // Rows sit in one scroll view: compare against the first row's offset.
-      final offset = tester.getTopLeft(_overflowRow(shellRootWorkspaceKey)).dy;
-      final position = top - offset;
-      if (previous != null) {
-        expect(position, greaterThan(previous), reason: '$key');
-      }
-      previous = position;
-    }
-    for (final tab in shellDefaultRootTabs) {
-      expect(_moreRow(tab), findsNothing, reason: tab.name);
-    }
-    await tester.ensureVisible(_moreRow(ShellRootTab.profile));
-    await tester.tap(_moreRow(ShellRootTab.profile));
-    await _settle(tester);
-    expect(_path(router), Routes.profileRoot);
-    expect(_dock(tester).selectedKey, shellRootMoreKey);
-  });
-
-  testWidgets('Edit tabs is a pencil in the More header, not a row', (
-    tester,
-  ) async {
-    await _pumpShell(tester, mailAvailable: true);
-    await _openMore(tester);
-
-    expect(_overflowRow(shellRootEditTabsKey), findsNothing);
-    expect(find.widgetWithText(AppOptionTile, 'Edit tabs'), findsNothing);
-    final pencil = find.byKey(shellRootEditTabsButtonKey);
-    expect(pencil, findsOneWidget);
-    expect(
-      find.descendant(of: pencil, matching: find.byIcon(LucideIcons.pencil)),
-      findsOneWidget,
-    );
-    expect(find.bySemanticsLabel('Edit tabs'), findsOneWidget);
-    expect(
-      find.descendant(of: pencil, matching: find.byType(Tooltip)),
-      findsOneWidget,
-    );
-
-    // Title left; pencil, then close, on the right, all on one centre line.
-    final title = tester.getRect(
-      find.descendant(
-        of: find.byType(AppSheetScaffold),
-        matching: find.text('More'),
-      ),
-    );
-    final edit = tester.getRect(pencil);
-    final close = tester.getRect(find.byKey(const ValueKey('app-sheet-close')));
-    expect(title.right, lessThan(edit.left));
-    expect(edit.right, lessThanOrEqualTo(close.left));
-    expect(edit.center.dy, closeTo(close.center.dy, 0.5));
-    expect(edit.center.dy, closeTo(title.center.dy, 0.5));
-    expect(edit.size, close.size);
-
-    await tester.tap(pencil);
-    await _settle(tester);
-    expect(find.byKey(shellRootTabOptionKey(ShellRootTab.apps)), findsWidgets);
-  });
-
-  testWidgets('the workspace row opens the workspace picker', (tester) async {
-    await _pumpShell(tester);
-    await _openMore(tester);
-    expect(find.text('Studio'), findsOneWidget);
-    await tester.tap(_overflowRow(shellRootWorkspaceKey));
-    await _settle(tester);
-    expect(find.text('Workspaces'), findsOneWidget);
-  });
-
-  testWidgets('More opens Settings', (tester) async {
-    final router = await _pumpShell(tester);
-    await _openMore(tester);
-    await tester.ensureVisible(_overflowRow(shellRootSettingsKey));
-    await tester.tap(_overflowRow(shellRootSettingsKey));
-    await _settle(tester);
-    expect(_path(router), Routes.settings);
-  });
-
-  testWidgets('the Home header has no workspace switcher', (tester) async {
-    await _pumpShell(tester);
-    expect(find.byKey(const ValueKey('shell-workspace-avatar')), findsNothing);
-    expect(find.text('Studio'), findsNothing);
-    expect(find.bySemanticsLabel(RegExp('Workspaces')), findsNothing);
-  });
-
-  testWidgets('More is selected on a root destination without a tab', (
-    tester,
-  ) async {
-    await _pumpShell(tester, location: Routes.profileRoot);
-    expect(_dock(tester).selectedKey, shellRootMoreKey);
-    expect(_dockKeys(tester).first, ShellRootTab.home.key);
-  });
-
-  testWidgets('Edit tabs saves the chosen order and Reset restores defaults', (
-    tester,
-  ) async {
-    await _pumpShell(tester, mailAvailable: true);
-    await _openMore(tester);
-    await tester.tap(find.byKey(shellRootEditTabsButtonKey));
-    await _settle(tester);
-    await tester.tap(find.byKey(shellRootTabOptionKey(ShellRootTab.apps)));
-    await _settle(tester);
-    await tester.tap(find.byKey(shellRootTabOptionKey(ShellRootTab.tasks)));
-    await _settle(tester);
-    // Four tabs are pinned, so another candidate cannot be added.
-    await tester.tap(find.byKey(shellRootTabOptionKey(ShellRootTab.profile)));
-    await _settle(tester);
-    final prefs = await SharedPreferences.getInstance();
-    expect(prefs.getStringList(_storageKey), [
-      'home',
-      'assistant',
-      'notifications',
-      'tasks',
-    ]);
-    await _closeSheet(tester);
-    expect(
-      _dockKeys(tester),
-      _keys([
-        ShellRootTab.home,
-        ShellRootTab.assistant,
-        ShellRootTab.notifications,
-        ShellRootTab.tasks,
-      ]),
-    );
-
-    await _openMore(tester);
-    expect(_moreRow(ShellRootTab.apps), findsOneWidget);
-    await tester.tap(find.byKey(shellRootEditTabsButtonKey));
-    await _settle(tester);
-    await tester.tap(find.byKey(shellRootTabsResetKey));
-    await _settle(tester);
-    expect(prefs.getStringList(_storageKey), isNull);
-    await _closeSheet(tester);
-    expect(_dockKeys(tester), _keys(shellDefaultRootTabs));
-  });
-
-  testWidgets('Reset tabs in More restores the default tabs', (tester) async {
-    await _pumpShell(tester, savedTabs: ['tasks', 'calendar']);
-    expect(
-      _dockKeys(tester),
-      _keys([ShellRootTab.tasks, ShellRootTab.calendar]),
-    );
-    await _openMore(tester);
-    await tester.ensureVisible(_overflowRow(shellRootResetTabsKey));
-    await tester.tap(_overflowRow(shellRootResetTabsKey));
-    await _settle(tester);
-    final prefs = await SharedPreferences.getInstance();
-    expect(prefs.getStringList(_storageKey), isNull);
-    expect(_dockKeys(tester), _keys(shellDefaultRootTabs));
-  });
-
-  testWidgets('saved tabs skip unknown ids and refill unavailable ones', (
-    tester,
-  ) async {
-    await _pumpShell(
-      tester,
-      savedTabs: ['bogus', 'mail', 'notifications', 'home', 'home'],
-    );
-    // Mail is unavailable: its slot takes the first unused default.
-    expect(
-      _dockKeys(tester),
-      _keys([ShellRootTab.notifications, ShellRootTab.home, ShellRootTab.apps]),
-    );
-  });
-
-  testWidgets('Back from Tasks opened by its tab returns to Home', (
-    tester,
-  ) async {
-    final router = await _pumpShell(tester, savedTabs: ['home', 'tasks']);
-    await tester.tap(find.byKey(ShellRootTab.tasks.key));
-    await _settle(tester);
-    expect(_path(router), Routes.tasks);
-    await tester.tap(find.bySemanticsLabel('Back'));
-    await _settle(tester);
-    expect(_path(router), Routes.home);
-
-    await tester.tap(find.byKey(ShellRootTab.tasks.key));
-    await _settle(tester);
-    await tester.binding.handlePopRoute();
-    await _settle(tester);
-    expect(_path(router), Routes.home);
-  });
-
-  testWidgets('the tablet rail keeps its fixed destinations', (tester) async {
-    await _pumpShell(
-      tester,
-      mailAvailable: true,
-      size: const Size(1280, 800),
-      savedTabs: ['tasks'],
-    );
-    final rail = tester.widget<ShellNavigationRail>(
-      find.byType(ShellNavigationRail),
-    );
-    expect(rail.items.map((item) => item.key), [
-      ShellRootTab.home.key,
-      ShellRootTab.apps.key,
-      ShellRootTab.assistant.key,
-      ShellRootTab.notifications.key,
-      ShellRootTab.profile.key,
-    ]);
-  });
+  }
 }

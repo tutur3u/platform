@@ -35,14 +35,15 @@ abstract final class DesignRender {
     ),
   };
 
-  /// Loads real glyphs so renders show text and icons instead of boxes.
-  static Future<void> loadFonts() async {
-    if (outputDir == null) return;
+  /// Loads app fonts for exported renders or an explicit golden comparison.
+  static Future<void> loadFonts({bool forGoldens = false}) async {
+    if (outputDir == null && !forGoldens) return;
     await (FontLoader(
       'Roboto',
     )..addFont(rootBundle.load('assets/fonts/NotoSans.ttf'))).load();
     for (final font in {
       'NotoSans': 'assets/fonts/NotoSans.ttf',
+      'Nunito': 'assets/fonts/Nunito-Variable.ttf',
       // Tabular figures (timers, durations) ask for the platform monospace.
       'monospace': 'assets/fonts/NotoSans.ttf',
       'MaterialIcons': 'fonts/MaterialIcons-Regular.otf',

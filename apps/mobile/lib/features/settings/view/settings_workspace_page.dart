@@ -78,7 +78,6 @@ class _SettingsWorkspacePageState extends State<SettingsWorkspacePage> {
           ),
           children: [
             SettingsWorkspaceSection(
-              onSelectCurrentWorkspace: () => showWorkspacePickerSheet(context),
               onSelectDefaultWorkspace: () => showWorkspacePickerSheet(
                 context,
                 mode: WorkspacePickerMode.defaultWorkspace,

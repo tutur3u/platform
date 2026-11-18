@@ -62,64 +62,62 @@ void _registerProfileNavigationChecks(
     },
   );
 
-  testWidgets(
-    'root dock pins Alerts, keeps Profile behind More, without headers',
-    (tester) async {
-      tester.view.devicePixelRatio = 1;
-      tester.view.physicalSize = const Size(390, 844);
-      addTearDown(() {
-        tester.view.resetPhysicalSize();
-        tester.view.resetDevicePixelRatio();
-      });
+  testWidgets('root dock pins Alerts and Profile without a top-bar Back', (
+    tester,
+  ) async {
+    tester.view.devicePixelRatio = 1;
+    tester.view.physicalSize = const Size(390, 844);
+    addTearDown(() {
+      tester.view.resetPhysicalSize();
+      tester.view.resetDevicePixelRatio();
+    });
 
-      final router = _buildRouter(initialLocation: Routes.apps);
-      addTearDown(router.dispose);
+    final router = _buildRouter(initialLocation: Routes.apps);
+    addTearDown(router.dispose);
 
-      await tester.pumpWidget(
-        _buildTestApp(
-          router: router,
-          appTabCubit: appTabCubit(),
-          authCubit: authCubit(),
-          workspaceCubit: workspaceCubit(),
-          shellProfileCubit: shellProfileCubit(),
-        ),
-      );
+    await tester.pumpWidget(
+      _buildTestApp(
+        router: router,
+        appTabCubit: appTabCubit(),
+        authCubit: authCubit(),
+        workspaceCubit: workspaceCubit(),
+        shellProfileCubit: shellProfileCubit(),
+      ),
+    );
+    await _pumpForTransitions(tester);
+
+    final rootNav = tester.widget<MorphingNavigationBar>(
+      find.byType(MorphingNavigationBar),
+    );
+    expect(rootNav.children.map((item) => item.key), const [
+      ValueKey('home'),
+      ValueKey('apps'),
+      ValueKey('assistant'),
+      ValueKey('notifications'),
+      ValueKey<String>('profile'),
+    ]);
+    expect(find.byType(AvatarDropdown), findsNothing);
+    // Notifications is a dock destination, not a top bar bell.
+    expect(find.byType(NotificationsActionButton), findsNothing);
+
+    // Both tabs are root destinations without Back.
+    for (final (route, selected) in const [
+      (Routes.notifications, ValueKey<String>('notifications')),
+      (Routes.profileRoot, ValueKey<String>('profile')),
+    ]) {
+      router.go(route);
       await _pumpForTransitions(tester);
-
-      final rootNav = tester.widget<MorphingNavigationBar>(
+      final nav = tester.widget<MorphingNavigationBar>(
         find.byType(MorphingNavigationBar),
       );
-      expect(rootNav.children.map((item) => item.key), const [
-        ValueKey('home'),
-        ValueKey('apps'),
-        ValueKey('assistant'),
-        ValueKey('notifications'),
-        shellRootMoreKey,
-      ]);
-      expect(find.byType(AvatarDropdown), findsNothing);
-      // Notifications is a dock destination, not a top bar bell.
-      expect(find.byType(NotificationsActionButton), findsNothing);
+      expect(nav.children.first.key, const ValueKey<String>('home'));
+      expect(nav.selectedKey, selected);
+    }
 
-      // Notifications is a pinned tab; You is a root destination behind
-      // More, so More is active. No Back leads on either.
-      for (final (route, selected) in const [
-        (Routes.notifications, ValueKey<String>('notifications')),
-        (Routes.profileRoot, shellRootMoreKey),
-      ]) {
-        router.go(route);
-        await _pumpForTransitions(tester);
-        final nav = tester.widget<MorphingNavigationBar>(
-          find.byType(MorphingNavigationBar),
-        );
-        expect(nav.children.first.key, const ValueKey<String>('home'));
-        expect(nav.selectedKey, selected);
-      }
-
-      router.go(Routes.tasks);
-      await _pumpForTransitions(tester);
-      expect(find.byType(AvatarDropdown), findsNothing);
-    },
-  );
+    router.go(Routes.tasks);
+    await _pumpForTransitions(tester);
+    expect(find.byType(AvatarDropdown), findsNothing);
+  });
 
   testWidgets('Settings returns to the Profile that opened it', (tester) async {
     final router = _buildRouter(initialLocation: Routes.profileRoot);

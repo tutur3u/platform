@@ -35,7 +35,6 @@ import 'package:mobile/features/classes/view/classes_today_card.dart';
 import 'package:mobile/features/classes/view/classes_today_scope.dart';
 import 'package:mobile/features/dashboard/cubit/dashboard_layout_cubit.dart';
 import 'package:mobile/features/dashboard/view/home_offline_frame.dart';
-import 'package:mobile/features/dashboard/view/home_workspace_chip.dart';
 import 'package:mobile/features/mail/data/mail_access.dart';
 import 'package:mobile/features/mail/data/mail_repository.dart';
 import 'package:mobile/features/notes/note_repository.dart';
@@ -48,7 +47,6 @@ import 'package:mobile/features/tasks/cubit/task_list_cubit.dart';
 import 'package:mobile/features/tasks/utils/task_board_navigation.dart';
 import 'package:mobile/features/workspace/cubit/workspace_cubit.dart';
 import 'package:mobile/features/workspace/cubit/workspace_state.dart';
-import 'package:mobile/features/workspace/widgets/workspace_picker_sheet.dart';
 import 'package:mobile/l10n/l10n.dart';
 import 'package:mobile/widgets/nova_loading_indicator.dart';
 import 'package:mobile/widgets/order_editor_sheet.dart';
@@ -382,8 +380,6 @@ class _DashboardViewState extends State<_DashboardView> {
               ? context.l10n.commonSomethingWentWrong
               : context.l10n.workspaceSelectEmpty,
           message: isError ? context.l10n.homeSectionLoadFailed : null,
-          actionLabel: isError ? null : context.l10n.workspaceSelectTitle,
-          onAction: isError ? null : () => showWorkspacePickerSheet(context),
         ),
       ),
     );

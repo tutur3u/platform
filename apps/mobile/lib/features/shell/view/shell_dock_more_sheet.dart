@@ -7,6 +7,7 @@ import 'package:mobile/core/ui/overlays/app_sheet_scaffold.dart';
 import 'package:mobile/core/ui/overlays/show_app_sheet.dart';
 import 'package:mobile/core/ui/tokens/app_tokens.dart';
 import 'package:mobile/features/shell/cubit/shell_dock_action_group.dart';
+import 'package:mobile/features/shell/view/shell_dock_control.dart';
 import 'package:mobile/l10n/l10n.dart';
 
 /// Key of the More-sheet row for the item [id].
@@ -33,12 +34,15 @@ Future<void> showShellDockMoreSheet({
 }) async {
   final chosen = await showAppSheet<ShellDockGroupAction>(
     context: context,
+    forceBottomSheet: true,
     builder: (sheetContext) => AppSheetScaffold(
       title: sheetContext.l10n.navMore,
       child: ShellDockMoreSheetBody(sections: sections),
     ),
   );
-  if (chosen != null && chosen.enabled) chosen.onPressed?.call();
+  if (context.mounted && chosen != null && chosen.enabled) {
+    chosen.onPressed?.call();
+  }
 }
 
 /// The More sheet's sections, separated by hairlines.
@@ -83,14 +87,79 @@ class _ActionRow extends StatelessWidget {
   final ShellDockGroupAction action;
 
   @override
+  Widget build(BuildContext context) => ShellDockMoreRow(
+    leading: Icon(action.icon),
+    label: action.label,
+    destructive: action.destructive,
+    onTap: action.enabled && action.onPressed != null
+        ? () => Navigator.of(context).pop(action)
+        : null,
+  );
+}
+
+/// A More sheet row uses the inset of [AppSheetScaffold]'s body from the
+/// sheet edge to keep the corner and focus outline concentric.
+class ShellDockMoreRow extends StatelessWidget {
+  const ShellDockMoreRow({
+    required this.leading,
+    required this.label,
+    this.onTap,
+    this.selected,
+    this.destructive = false,
+    super.key,
+  });
+
+  final Widget leading;
+  final String label;
+  final VoidCallback? onTap;
+  final bool? selected;
+  final bool destructive;
+
+  static double radiusOf(BuildContext context) =>
+      AppShapes.inset(AppTokens.of(context).shapes.sheet, AppSpacing.lg);
+
+  @override
   Widget build(BuildContext context) {
     final c = AppTokens.of(context).colorScheme;
-    final color = action.destructive ? c.destructive : null;
-    return AppListTile(
-      leading: Icon(action.icon, color: color),
-      title: Text(action.label, style: TextStyle(color: color)),
-      enabled: action.enabled && action.onPressed != null,
-      onTap: () => Navigator.of(context).pop(action),
+    final color = destructive ? c.destructive : null;
+    final enabled = onTap != null;
+    return Semantics(
+      container: true,
+      excludeSemantics: true,
+      label: label,
+      onTap: onTap,
+      button: true,
+      enabled: enabled,
+      selected: selected,
+      inMutuallyExclusiveGroup: selected != null,
+      child: ShellDockControl(
+        borderRadius: BorderRadius.circular(radiusOf(context)),
+        onTap: onTap,
+        child: Opacity(
+          opacity: enabled ? 1 : 0.5,
+          child: ConstrainedBox(
+            constraints: const BoxConstraints(
+              minHeight: AppLayout.rowCompactMinHeight,
+            ),
+            child: AppListTile(
+              leading: IconTheme.merge(
+                data: IconThemeData(color: color),
+                child: leading,
+              ),
+              title: Text(
+                label,
+                style: TextStyle(
+                  color: color,
+                  fontWeight: selected == true ? FontWeight.w600 : null,
+                ),
+              ),
+              trailing: selected == true
+                  ? Icon(Icons.check, color: c.primary)
+                  : null,
+            ),
+          ),
+        ),
+      ),
     );
   }
 }
@@ -120,37 +189,40 @@ class _ChoiceRowState extends State<_ChoiceRow> {
   @override
   Widget build(BuildContext context) {
     final choice = widget.choice;
-    return Column(
-      mainAxisSize: MainAxisSize.min,
-      crossAxisAlignment: CrossAxisAlignment.stretch,
-      children: [
-        AppListTile(leading: Icon(choice.icon), title: Text(choice.label)),
-        Padding(
-          padding: const EdgeInsets.fromLTRB(
-            AppSpacing.md,
-            0,
-            AppSpacing.md,
-            AppSpacing.sm,
-          ),
-          child: Semantics(
-            label: choice.label,
-            container: true,
-            child: AppSegmentedControl<String>(
-              key: shellDockMoreChoiceKey(choice.id),
-              segments: [
-                for (final option in choice.options)
-                  AppSegment(value: option.id, label: option.label),
-              ],
-              selected: _selected,
-              onChanged: (id) {
-                if (id == _selected) return;
-                setState(() => _selected = id);
-                choice.onSelected(id);
-              },
+    return ClipRRect(
+      borderRadius: BorderRadius.circular(ShellDockMoreRow.radiusOf(context)),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          AppListTile(leading: Icon(choice.icon), title: Text(choice.label)),
+          Padding(
+            padding: const EdgeInsets.fromLTRB(
+              AppSpacing.md,
+              0,
+              AppSpacing.md,
+              AppSpacing.sm,
+            ),
+            child: Semantics(
+              label: choice.label,
+              container: true,
+              child: AppSegmentedControl<String>(
+                key: shellDockMoreChoiceKey(choice.id),
+                segments: [
+                  for (final option in choice.options)
+                    AppSegment(value: option.id, label: option.label),
+                ],
+                selected: _selected,
+                onChanged: (id) {
+                  if (id == _selected) return;
+                  setState(() => _selected = id);
+                  choice.onSelected(id);
+                },
+              ),
             ),
           ),
-        ),
-      ],
+        ],
+      ),
     );
   }
 }
