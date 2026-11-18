@@ -1,7 +1,7 @@
 ---
 title: "Marketing on Start + Void"
 description: "Native Marketing runtime, emitted-Worker qualification, route ownership, and the cutover and rollback runbook."
-updatedAt: "2026-11-09"
+updatedAt: "2026-11-18"
 audience: developers
 ---
 
@@ -24,8 +24,9 @@ The Worker targets the following staging and production identities:
 - **Mount Hosts:** `tuturuuu.com`
 - **Base Path:** `/marketing`
 
-On the apex domain (`tuturuuu.com`), pages are mounted under `/marketing/*` or
-routed via Cloudflare path routing rules. On the serving subdomain
+On the apex domain (`tuturuuu.com`) the [gateway Worker](/build/devops/gateway-worker)
+hands each enabled page group to this Worker through `MARKETING_ORIGIN`; paths
+outside those groups stay on the web origin. On the serving subdomain
 (`marketing.tuturuuu.com`), pages are served directly from `/`.
 
 ## Bindings and configuration
@@ -91,14 +92,16 @@ per-request client detection headers. `apps/web` does not provide dedicated publ
 APIs for these operations. Injecting service-role credentials into the public
 Cloudflare Worker is forbidden, and adding new backend endpoints would require
 modifying `apps/web` (which is kept strictly untouched during this migration).
-Routing rules on Cloudflare forward these paths directly to the Vercel deployment.
+The gateway keeps these paths on the web origin.
 
 Through the gateway the Worker sees its own host (`marketing.tuturuuu.com`),
 so it always answers `noindex`. When `TUTURUUU_NOINDEX` is not `"1"` it adds
 `x-marketing-origin-robots: 1` to mark that restriction as origin-only, and the
-gateway releases it for public marketing-group pages on `tuturuuu.com`. Both
-Workers are needed: a production marketing Worker built with `TUTURUUU_NOINDEX`
-`"1"` sends no marker, and a gateway without the release keeps the restriction.
+gateway releases it for public marketing-group pages on `tuturuuu.com`. A
+production marketing Worker built with `TUTURUUU_NOINDEX` `"1"` sends no marker.
+Marketing builds that predate the marker send the exact private value unmarked;
+the gateway variable `GATEWAY_MARKETING_LEGACY_ROBOTS="1"` releases that value
+on eligible canonical pages and is removed once the live Worker sends the marker.
 
 ### Production Worker build
 
@@ -164,17 +167,29 @@ bun run type-check:cloudflare
 
 1. **Vercel deployment ID:** The prior Vercel deployment ID is **not** recorded in
    the repository. Rex must capture and record the active immutable Vercel
-   deployment ID and domain configuration before applying routing rules.
+   deployment ID and domain configuration before the first group is enabled.
 2. **Untouched origin:** `apps/web` remains deployed and functional on Vercel; no
    destructive changes or deletions are performed on the Vercel origin.
 
 ### Traffic cutover
 
-1. Traffic cutover is performed progressively via Cloudflare route patterns
-   assigned to the Worker.
-2. Cloudflare routes are applied per page group (e.g. `/privacy`, `/terms`,
-   `/security/*`, etc.).
-3. Once routed, verify live smoke responses immediately.
+The gateway Worker (`apps/gateway`) owns the cutover. `GATEWAY_MARKETING_GROUPS`
+in `apps/gateway/wrangler.jsonc` lists the page groups served by this Worker,
+and `MARKETING_ORIGIN` names its origin:
+
+| Group | Paths |
+| --- | --- |
+| `legal` | Privacy, terms, acceptable use, community guidelines, security and `/legal/*` |
+| `company` | About, branding, careers, contact, contributors, partners, women in tech |
+| `products` | `/products` and its subpages except Meet |
+| `solutions` | `/solutions/*` |
+| `blog` | `/blog` and its articles |
+| `home` | `/` and `/pricing` |
+
+Without `MARKETING_ORIGIN` or a group name, that traffic stays on the web
+origin. The full group-to-path map, caching and robots handling are in the
+[gateway Worker](/build/devops/gateway-worker#marketing-page-groups) page.
+Roll out one group at a time and verify live smoke responses before the next.
 
 ### Smoke verification
 
@@ -198,11 +213,10 @@ All status codes must return `200`, and `x-tuturuuu-runtime` must equal `native`
 
 ### Rollback procedure
 
-There is **no in-repo gateway feature flag** per page group.
-
-- **Mechanism:** Per-group rollback is executed by removing that group's Cloudflare
-  route pattern (owned by Rex).
-- **Behavior:** Because `apps/web` on Vercel remains running and completely
-  untouched, deleting or disabling the Cloudflare Worker route pattern immediately
-  restores Vercel as the origin for that page group with zero downtime.
-- **RTO:** Under 5 minutes without requiring repository commits or code rebuilds.
+- **Mechanism:** remove the group's name from `GATEWAY_MARKETING_GROUPS` and
+  redeploy the gateway variables. Clearing the variable returns every group to
+  the web origin.
+- **Behavior:** `apps/web` on Vercel stays deployed and untouched, so the
+  removed group is served by it again without a code rebuild. Cached pages from
+  the marketing origin are keyed separately and expire within one stale period.
+- **Assets:** `/assets/*` follows `MARKETING_ORIGIN`, not a group name.

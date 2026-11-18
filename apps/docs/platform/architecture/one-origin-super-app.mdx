@@ -1,7 +1,7 @@
 ---
 title: 'One-origin super-app (design)'
 description: 'Proposed design for serving satellite apps at tuturuuu.com/<app> instead of <app>.tuturuuu.com, piloted with Meet and Mail.'
-updatedAt: "2026-11-01"
+updatedAt: "2026-11-18"
 audience: developers
 ---
 
@@ -36,16 +36,30 @@ questions below.
 Serve products at `https://tuturuuu.com/<app>/...` instead of
 `https://<app>.tuturuuu.com/...`. Opening another app should feel like moving
 around inside one app. The design adds no extra network hop for the mounted apps.
-Meet and Mail are the pilot. Web (`apps/web` on Vercel) keeps `/` and every path
-it does not hand over.
+Meet and Mail are the pilot. Web (`apps/web` on Vercel) keeps every path the
+gateway does not hand to the marketing Worker or a mounted app.
 
-## Current state (observed 2026-10-25)
+## Gateway routing
+
+The [gateway Worker](/build/devops/gateway-worker) is routed on `tuturuuu.com/*`
+and decides the origin per request:
+
+- Marketing page groups listed in `GATEWAY_MARKETING_GROUPS` go to the marketing
+  Worker (`MARKETING_ORIGIN`); see [marketing page groups](/build/devops/gateway-worker#marketing-page-groups).
+- Paths listed in `GATEWAY_MOUNTED_PATHS` go to the mounted app's Worker through
+  its `MOUNT_<SEGMENT>` service binding; see [mounted apps](/build/devops/gateway-worker#apps-mounted-at-tuturuuucomapp).
+- Everything else goes to the Vercel web origin (`WEB_ORIGIN`).
+
+Per-app zone routes that are more specific than `tuturuuu.com/*` reach the app
+Worker without passing through the gateway.
+
+## Current state
 
 ### Hosting
 
 | Host | Serving today | Evidence |
 | --- | --- | --- |
-| `tuturuuu.com` | Vercel (Web) | Public DNS A `216.150.x.x`, `server: Vercel`. **DNS-only, not proxied by Cloudflare.** |
+| `tuturuuu.com` | Gateway Worker (`apps/gateway`), routed on `tuturuuu.com/*` | `apps/gateway/wrangler.jsonc`. It serves enabled marketing groups from the marketing Worker, mounted apps from their Workers, and every other path from the Vercel web origin. |
 | `meet.tuturuuu.com` | Cloudflare Worker `tuturuuu-meet` (Custom Domain) | `server: cloudflare`; `apps/meet/void.config.ts` route `meet.tuturuuu.com`, `custom_domain: true`, placement `aws:ap-southeast-1` |
 | `mail.tuturuuu.com` | Vercel (legacy Next deployment) | CNAME `*.vercel-dns-016.com`, `server: Vercel` |
 | `meet-realtime.tuturuuu.com` | Cloudflare Worker (realtime DO) | `MEET_REALTIME_URL` in Meet vars |
@@ -123,15 +137,14 @@ be `tuturuuu.com/meet*`.
 ## Routing options and latency
 
 Path routing at Cloudflare needs the apex to be a **proxied** (orange-cloud)
-record. The apex is DNS-only to Vercel today. Options (a) and (b) therefore both
-start with one shared operational change: proxy `tuturuuu.com` through Cloudflare
-to the existing Vercel origin.
+record. The gateway Worker's `tuturuuu.com/*` route requires the apex to be proxied
+through Cloudflare, with Vercel as the web origin behind it.
 
 | | (a) Zone Worker routes per app | (b) Router Worker + service bindings | (c) Vercel rewrites to Workers |
 | --- | --- | --- | --- |
 | Meet/Mail request path | Client → CF edge → app Worker (same isolate pipeline) | Client → CF edge → router Worker → service binding → app Worker | Client → Vercel edge → internet → CF edge → app Worker |
 | Extra hop for apps | **None** | ~0 network; one extra invocation + CPU (sub-ms to low ms) | A full extra CDN hop. **No WebSocket upgrade**, which breaks Meet `/live-connect`. |
-| Web request path | Client → CF edge → Vercel (no Worker) | Client → CF edge → **router Worker** → `fetch` Vercel | Unchanged |
+| Web request path | Client → CF edge → gateway Worker → Vercel | Client → CF edge → **router Worker** → `fetch` Vercel | Unchanged |
 | Billable ops | App traffic only (as today) | **Every** web request, asset and bot hit becomes a Worker invocation | Vercel edge requests plus Worker |
 | Failure blast radius | Per app route | Router bug takes down all of `tuturuuu.com` | Per rewrite |
 | Rollout control | Route present or absent, plus an in-app flag | Central routing table | Per rewrite |
@@ -143,7 +156,7 @@ tuturuuu.com/meet     -> redirect to /meet/ (zone Single Redirect, query preserv
 tuturuuu.com/mail     -> redirect to /mail/ (zone Single Redirect, query preserved)
 tuturuuu.com/meet/*   -> tuturuuu-meet
 tuturuuu.com/mail/*   -> tuturuuu-mail
-everything else       -> no Worker; Cloudflare proxies to Vercel (Web)
+everything else       -> tuturuuu-gateway: marketing groups -> marketing Worker, the rest -> Vercel (Web)
 ```
 
 Cloudflare matches a route against the whole URL, **including the query string**.
