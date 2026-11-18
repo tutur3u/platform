@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:mobile/core/layout/layout_tokens.dart';
 import 'package:mobile/core/layout/page_insets.dart';
 import 'package:mobile/features/shell/view/shell_chrome_style.dart';
 import 'package:mobile/features/shell/view/shell_dock_surface.dart';
@@ -10,6 +11,10 @@ class ShellDockContent extends StatelessWidget {
 
   final Widget child;
   final Widget? leading;
+
+  /// Leading inset, Back slot and the divider beside it.
+  static const double backExtent =
+      ShellDockMetrics.padding + ShellDockMetrics.slot;
 
   @override
   Widget build(BuildContext context) => Row(
@@ -23,8 +28,8 @@ class ShellDockContent extends StatelessWidget {
         ),
       if (leading != null)
         SizedBox(
-          height: 28,
-          width: 1,
+          height: ShellDockMetrics.slot - AppSpacing.md * 2,
+          width: ShellDockSurface.edge,
           child: ColoredBox(color: ShellChromeStyle.of(context).border),
         ),
       Expanded(child: child),

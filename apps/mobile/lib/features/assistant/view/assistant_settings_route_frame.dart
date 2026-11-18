@@ -77,7 +77,7 @@ class _AssistantSettingsRouteFrameState
     if (chrome == null) {
       return SettingsRouteFrame(
         title: widget.title,
-        customNavigation: true,
+        onBack: () => unawaited(_back()),
         child: widget.child,
       );
     }

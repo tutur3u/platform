@@ -17,6 +17,7 @@ class PersistentShellDock extends StatefulWidget {
     this.fixedZones = false,
     this.leading,
     this.primary,
+    this.showPrimary = true,
     super.key,
   });
   final Widget content;
@@ -36,6 +37,7 @@ class PersistentShellDock extends StatefulWidget {
   /// The Back zone before idle navigation in [fixedZones] mode.
   final Widget? leading;
   final Widget? primary;
+  final bool showPrimary;
   @override
   State<PersistentShellDock> createState() => _PersistentShellDockState();
 }
@@ -100,6 +102,7 @@ class _PersistentShellDockState extends State<PersistentShellDock> {
                         ),
                       ),
                 primary: widget.primary,
+                showPrimary: widget.showPrimary,
                 actionLift: widget.composing || widget.hideIdleNavigation
                     ? 0
                     : ShellDockMetrics.padding,

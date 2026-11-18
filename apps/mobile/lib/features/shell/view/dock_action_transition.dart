@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:mobile/core/layout/page_insets.dart';
 
 /// One reversible timeline: reserve space, reveal; hide, then release space.
 /// Retained outgoing controls cannot receive gestures or accessibility focus.
@@ -148,23 +149,25 @@ class _DockActionTransitionState extends State<DockActionTransition>
       final displayed = _displayed;
       final height = displayed is PreferredSizeWidget
           ? displayed.preferredSize.height
-          : 52.0;
+          : ShellDockMetrics.slot;
       return SizedBox(
         key: extent > 0 && (!widget.reserveSpace || displayed != null)
             ? widget.slotKey
             : null,
-        width: 60 * extent,
+        width: ShellDockMetrics.actionSlot * extent,
         height: extent > 0 ? height : 0,
         // The control only paints after full space is reserved. No size clip
         // can cut its scale animation; reverse hides it before space shrinks.
         child: OverflowBox(
           alignment: AlignmentDirectional.bottomEnd,
-          minWidth: 60,
-          maxWidth: 60,
+          minWidth: ShellDockMetrics.actionSlot,
+          maxWidth: ShellDockMetrics.actionSlot,
           minHeight: height,
           maxHeight: height,
           child: Padding(
-            padding: const EdgeInsetsDirectional.only(start: 8),
+            padding: const EdgeInsetsDirectional.only(
+              start: ShellDockMetrics.zoneGap,
+            ),
             child: ExcludeSemantics(
               excluding: !interactive,
               child: ExcludeFocus(

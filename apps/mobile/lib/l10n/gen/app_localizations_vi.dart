@@ -11914,9 +11914,6 @@ class AppLocalizationsVi extends AppLocalizations {
   String get profileMediaSet => 'Đã đặt';
 
   @override
-  String get profileYouWorkspaces => 'Không gian làm việc';
-
-  @override
   String get assistantSubmitSuccess => 'Đã gửi thành công';
 
   @override

@@ -1,9 +1,5 @@
-import 'dart:math' as math;
-
 import 'package:flutter/material.dart';
-import 'package:mobile/core/layout/layout_tokens.dart';
 import 'package:mobile/core/layout/page_insets.dart';
-import 'package:mobile/core/theme/sorbet/sorbet_tokens.dart';
 import 'package:mobile/core/ui/tokens/app_tokens.dart';
 import 'package:mobile/features/shell/view/shell_chrome_style.dart';
 
@@ -17,23 +13,20 @@ class ShellDockSurface extends StatelessWidget {
 
   /// Fully rounded at the dock's height; taller content keeps the same
   /// corners rather than turning into a stadium.
-  static double radiusOf(BuildContext context) => math.min(
-    SorbetTokens.maybeOf(context)?.radii.full ?? AppRadius.pill,
-    ShellDockMetrics.height / 2,
-  );
+  static const double radius = ShellDockMetrics.height / 2;
 
-  static BorderRadius innerBorderRadiusOf(BuildContext context) =>
-      BorderRadius.circular(
-        AppShapes.inset(radiusOf(context), ShellDockMetrics.padding),
-      );
+  static final BorderRadius innerBorderRadius = BorderRadius.circular(
+    AppShapes.inset(radius, ShellDockMetrics.padding),
+  );
 
   /// Width of the edge, which insets the content on every side.
   static const double edge = 1;
+  static const double contentHeight = ShellDockMetrics.height - edge * 2;
 
   @override
   Widget build(BuildContext context) {
     final style = ShellChromeStyle.of(context);
-    final shape = BorderRadius.circular(radiusOf(context));
+    final shape = BorderRadius.circular(radius);
     return DecoratedBox(
       decoration: BoxDecoration(
         borderRadius: shape,

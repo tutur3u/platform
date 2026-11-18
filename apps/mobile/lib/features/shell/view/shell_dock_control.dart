@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:mobile/core/theme/sorbet/sorbet_tokens.dart';
+import 'package:mobile/core/ui/tokens/app_interface_tokens.dart';
 import 'package:mobile/core/ui/tokens/app_tokens.dart';
 
 /// Shared clip, ink and focus outline for the contents of a dock slot.
@@ -29,11 +29,8 @@ class _ShellDockControlState extends State<ShellDockControl> {
 
   @override
   Widget build(BuildContext context) {
-    final tokens = AppTokens.of(context);
-    final sorbet = SorbetTokens.maybeOf(context);
-    final focus = sorbet?.focus ?? const SorbetFocusRing();
-    final ring = sorbet?.ring ?? tokens.colorScheme.ring;
-    final color = tokens.colorScheme.foreground;
+    final theme = Theme.of(context);
+    final ring = AppTokens.of(context).colorScheme.ring;
     final radius = widget.borderRadius;
     return Material(
       type: widget.fill == null
@@ -48,8 +45,8 @@ class _ShellDockControlState extends State<ShellDockControl> {
         onLongPress: widget.onLongPress,
         onHighlightChanged: (pressed) => setState(() => _pressed = pressed),
         onFocusChange: (focused) => setState(() => _focused = focused),
-        hoverColor: color.withValues(alpha: 0.05),
-        highlightColor: color.withValues(alpha: 0.08),
+        hoverColor: theme.hoverColor,
+        highlightColor: theme.highlightColor,
         focusColor: Colors.transparent,
         child: DecoratedBox(
           position: DecorationPosition.foreground,
@@ -58,9 +55,9 @@ class _ShellDockControlState extends State<ShellDockControl> {
             border: _focused
                 ? Border.all(
                     color: ring,
-                    width: MediaQuery.highContrastOf(context)
-                        ? focus.highContrastWidth
-                        : focus.width,
+                    width: AppInterfaceTokens.focusRingWidth(
+                      highContrast: MediaQuery.highContrastOf(context),
+                    ),
                   )
                 : null,
           ),

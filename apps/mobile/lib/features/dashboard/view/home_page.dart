@@ -3,8 +3,7 @@ import 'package:mobile/features/calendar/cubit/calendar_cubit.dart';
 import 'package:mobile/features/dashboard/view/dashboard_page.dart';
 import 'package:mobile/features/tasks/cubit/task_list_cubit.dart';
 
-/// The Home root destination. Its header keeps only the shell title and
-/// Customise; Calendar opens from More or a pinned tab.
+/// Home's dashboard body. The outer shell owns the title and workspace picker.
 class HomePage extends StatelessWidget {
   const HomePage({
     this.replayToken = 0,

@@ -144,14 +144,14 @@ completion. These widget checks do not establish installed-device or production 
 
 Back is a 52dp button at the leading edge of the floating navbar, inside its
 shared material. The frame fills the phone width within safe-area margins and
-centres at up to 480dp on tablets. The trailing page-action slot stays beside
-navigation and keeps its existing registration contract. Expanded windows
-keep their section destinations in the leading rail, with Back in the dock.
+centres at up to 480dp on portrait tablets. The page action moves to the top
+bar when its dock slot would reduce the number of visible destinations.
+Expanded windows keep Back and section destinations in the leading rail.
 Root destinations have no Back unless the page registers an in-place Back
 handler. System Back and deep-link fallbacks use the same route handling.
 
 Five destinations show icons only, with localized accessibility names and
-pointer tooltips. A sub-shell with more than five sections shows Back,
+tooltips on touch and hover. A sub-shell with more than five sections shows Back,
 four sections and More, which opens a bottom sheet with the remaining
 sections in order. Back and the trailing page action each have their own
 space outside the destination count. Narrow windows can
@@ -294,8 +294,9 @@ Coverage: `shell_dock_action_group_test.dart`.
 ### Root destinations
 
 The root dock and tablet rail use Home, Apps, Mira, Alerts and Profile in
-that order. The root dock has five icons. Device preferences for legacy
-pinned tabs are ignored. Apps contains Tasks, Calendar, Mail, Finance,
+that order. The root dock has five icons. The legacy `shell-dock-root-tabs-v1`
+pin preference stays on the device so older app installs can restore the layout
+on downgrade. Apps contains Tasks, Calendar, Mail, Finance,
 Drive and Timer when those modules are available. Profile contains Settings
 and account switching and management. Opening a module retains the launching
 tab as its Back destination.

@@ -102,11 +102,13 @@ class ShellInjectedActionsHost extends StatefulWidget {
   const ShellInjectedActionsHost({
     required this.matchedLocation,
     this.includeNotifications = false,
+    this.dockPageAction = true,
     super.key,
   });
 
   final String matchedLocation;
   final bool includeNotifications;
+  final bool dockPageAction;
 
   @override
   State<ShellInjectedActionsHost> createState() =>
@@ -218,15 +220,12 @@ class _ShellInjectedActionsHostState extends State<ShellInjectedActionsHost> {
           (false, true) => _retainedActions,
           (false, false) => resolvedActions,
         };
-        final dockActions = resolvedPlacement
-            .where((action) => action.inDock)
-            .toList();
-        // The dock holds one page action at every width; the top bar shows
-        // the rest.
+        final dockAction =
+            widget.dockPageAction || state.topmostModalOwner != null
+            ? resolvedPlacement.where((action) => action.inDock).firstOrNull
+            : null;
         final actions = resolvedPlacement
-            .where(
-              (action) => !action.inDock || dockActions.indexOf(action) > 0,
-            )
+            .where((action) => !identical(action, dockAction))
             .toList();
         final showNotifications =
             widget.includeNotifications &&

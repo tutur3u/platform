@@ -22747,12 +22747,6 @@ abstract class AppLocalizations {
   /// **'Set'**
   String get profileMediaSet;
 
-  /// No description provided for @profileYouWorkspaces.
-  ///
-  /// In en, this message translates to:
-  /// **'Workspaces'**
-  String get profileYouWorkspaces;
-
   /// No description provided for @assistantSubmitSuccess.
   ///
   /// In en, this message translates to:

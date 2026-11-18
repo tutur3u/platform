@@ -70,28 +70,35 @@ void main() {
     });
   }
 
-  testWidgets(
-    'expanded mini apps keep destinations in the rail and Back in the dock',
-    (tester) async {
-      useShellWindow(tester, const Size(1280, 800));
-      final shell = await pumpRailShell(tester, Routes.apps);
-      shell.router.go(Routes.inventorySales);
-      await settleShell(tester);
-      final l10n = shellL10n(tester);
+  testWidgets('expanded mini apps keep Back ahead of rail destinations', (
+    tester,
+  ) async {
+    useShellWindow(tester, const Size(1280, 800));
+    final shell = await pumpRailShell(tester, Routes.apps);
+    shell.router.go(Routes.inventorySales);
+    await settleShell(tester);
+    final l10n = shellL10n(tester);
 
-      expect(find.byType(ShellNavigationRail), findsOneWidget);
-      expect(find.byType(MorphingNavigationBar), findsNothing);
-      expect(railItem(l10n.navBack), findsNothing);
-      expect(find.bySemanticsLabel(l10n.navBack), findsOneWidget);
-      expect(railItem(l10n.inventoryProductsLabel), findsOneWidget);
+    expect(find.byType(ShellNavigationRail), findsOneWidget);
+    expect(find.byType(MorphingNavigationBar), findsNothing);
+    expect(railItem(l10n.navBack), findsOneWidget);
+    expect(find.bySemanticsLabel(l10n.navBack), findsOneWidget);
+    expect(railItem(l10n.inventoryProductsLabel), findsOneWidget);
+    expect(
+      tester.getTopLeft(railItem(l10n.navBack)).dy,
+      lessThan(tester.getTopLeft(railItem(l10n.inventoryProductsLabel)).dy),
+    );
+    expect(
+      find.byKey(const ValueKey('persistent-shell-dock-material')),
+      findsNothing,
+    );
 
-      await tester.tap(find.bySemanticsLabel(l10n.navBack));
-      await settleShell(tester);
-      expect(shell.path, Routes.apps);
-      expect(railItem(l10n.navHome), findsOneWidget);
-      expect(tester.takeException(), isNull);
-    },
-  );
+    await tester.tap(find.bySemanticsLabel(l10n.navBack));
+    await settleShell(tester);
+    expect(shell.path, Routes.apps);
+    expect(railItem(l10n.navHome), findsOneWidget);
+    expect(tester.takeException(), isNull);
+  });
 
   testWidgets('system Back still works when the rail replaces the dock', (
     tester,
@@ -113,7 +120,7 @@ void main() {
     final l10n = shellL10n(tester);
 
     expect(find.text(Routes.inventorySales), findsOneWidget);
-    expect(railItem(l10n.navBack), findsNothing);
+    expect(railItem(l10n.navBack), findsOneWidget);
     expect(find.bySemanticsLabel(l10n.navBack), findsOneWidget);
     await tester.tap(find.bySemanticsLabel(l10n.navBack));
     await settleShell(tester);

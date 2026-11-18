@@ -58,6 +58,8 @@ const railShellRoutes = <String>[
   Routes.notifications,
   Routes.inventory,
   Routes.inventorySales,
+  Routes.inventoryProducts,
+  Routes.inventoryProductDetail,
 ];
 
 Widget railPlaceholderPage(String label) => Center(child: Text(label));
@@ -132,6 +134,7 @@ Future<RailShell> pumpRailShell(
           BlocProvider(create: (_) => ShellTitleOverrideCubit()),
         ],
         child: shad.ShadcnApp.router(
+          debugShowCheckedModeBanner: false,
           theme: MobileShadTheme.light,
           localizationsDelegates: const [
             ...AppLocalizations.localizationsDelegates,

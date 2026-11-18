@@ -14,6 +14,24 @@ TaskListInfo _list(String board, String list) => TaskListInfo(
 /// Classic light/dark, a gradient and a blob theme. Captures are written
 /// only when `SETTINGS_RENDER_DIR` is set; layout assertions always run.
 void _homeRenderCases() {
+  testWidgets('Home can select a workspace from its empty state', (
+    tester,
+  ) async {
+    await pumpShellRender(
+      tester,
+      location: Routes.home,
+      size: renderSizes['phone']!,
+      appearance: const AppearanceSettings(),
+      themeMode: shad.ThemeMode.light,
+      workspaceState: const WorkspaceState(status: WorkspaceStatus.loaded),
+    );
+    final l10n = tester.element(find.byType(HomePage)).l10n;
+    expect(find.text(l10n.workspaceSelectEmpty), findsOneWidget);
+    await tester.tap(find.text(l10n.workspaceSelectTitle));
+    await settleShell(tester);
+    expect(find.byType(AppSheetScaffold), findsOneWidget);
+  });
+
   for (final size in renderSizes.entries) {
     for (final look in renderAppearances.entries) {
       testWidgets('Home renders on ${size.key} in ${look.key}', (tester) async {

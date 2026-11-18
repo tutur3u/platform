@@ -31,8 +31,8 @@ import 'package:mobile/features/shell/view/floating_shell_dock.dart';
 import 'package:mobile/features/shell/view/mobile_section_app_bar.dart';
 import 'package:mobile/features/shell/view/shell_chrome_actions.dart';
 import 'package:mobile/features/shell/view/shell_dock_bar.dart';
+import 'package:mobile/features/shell/view/shell_dock_overflow.dart';
 import 'package:mobile/features/shell/view/shell_dock_slot.dart';
-import 'package:mobile/features/shell/view/shell_dock_surface.dart';
 import 'package:mobile/features/shell/view/shell_keyboard_chrome.dart';
 import 'package:mobile/features/shell/view/shell_mini_nav.dart';
 import 'package:mobile/features/shell/view/shell_navigation_rail.dart';
@@ -61,7 +61,7 @@ part 'shell_page_scroll.dart';
 /// Wraps all tab-level routes via GoRouter's [ShellRoute].
 /// - **compact / medium** → floating bottom dock ([MorphingNavigationBar])
 /// - **expanded tablets/desktops** → leading [ShellNavigationRail]; the dock
-///   keeps Back, the composer and page actions. See [shellNavigationModeFor].
+///   keeps the composer and page actions. See [shellNavigationModeFor].
 class ShellPage extends StatefulWidget {
   const ShellPage({
     required this.child,

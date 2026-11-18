@@ -6,6 +6,7 @@ import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:mobile/core/router/routes.dart';
 import 'package:mobile/core/theme/sorbet/sorbet_preferences.dart';
 import 'package:mobile/features/shell/view/shell_dock_overflow.dart';
 
@@ -13,6 +14,7 @@ import '../../helpers/design_render_harness.dart';
 import '../../helpers/golden_tolerance.dart';
 import '../../helpers/pump_app.dart';
 import 'shell_chrome_scenes.dart';
+import 'view/shell_rail_harness.dart';
 
 /// Shell chrome at phone and tablet sizes, light and dark, classic and
 /// Sorbet: the top bar, the dock at rest and with Back, notifications and the
@@ -26,6 +28,27 @@ void main() {
     );
   });
   tearDownAll(() => goldenFileComparator = original);
+
+  testWidgets('rail detail leads with Back and has no bottom navbar', (
+    tester,
+  ) async {
+    useShellWindow(tester, const Size(1180, 820));
+    mockShellBackChannel();
+    await pumpRailShell(
+      tester,
+      Routes.inventoryProductDetailPath('fixture-product'),
+      page: (_) => const Center(child: Text('Inventory product details')),
+    );
+    expect(railItem(shellL10n(tester).navBack), findsOneWidget);
+    expect(
+      find.byKey(const ValueKey('persistent-shell-dock-material')),
+      findsNothing,
+    );
+    await expectLater(
+      find.byKey(railRenderKey),
+      matchesGoldenFile('goldens/rail_detail_classic_light_tablet.png'),
+    );
+  });
 
   for (final scene in ShellChromeScene.values) {
     for (final (design, sorbet) in [

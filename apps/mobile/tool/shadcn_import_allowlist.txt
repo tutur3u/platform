@@ -110,7 +110,6 @@ lib/features/settings/cubit/theme_state.dart
 lib/features/settings/view/release_notes_page.dart
 lib/features/settings/view/settings_page.dart
 lib/features/settings/view/settings_profile_parts.dart
-lib/features/settings/view/settings_route_frame.dart
 lib/features/settings/view/settings_row_layout.dart
 lib/features/settings/view/settings_session_section.dart
 lib/features/settings/view/settings_workspace_members_page.dart
@@ -120,8 +119,6 @@ lib/features/settings/view/settings_workspace_secrets_page.dart
 lib/features/settings/view/workspace_properties_dialog.dart
 lib/features/shell/view/account_presentation.dart
 lib/features/shell/view/account_switcher_sheet.dart
-lib/features/shell/view/avatar_dropdown.dart
-lib/features/shell/view/avatar_dropdown_menu.dart
 lib/features/shell/view/custom_navigation_bar.dart
 lib/features/shell/view/manage_accounts_page.dart
 lib/features/shell/view/mobile_section_app_bar.dart
@@ -262,7 +259,6 @@ test/features/settings/view/cache_storage_review_test.dart
 test/features/settings/view/settings_compact_navigation_test.dart
 test/features/shell/view/appearance_root_tabs_render_test.dart
 test/features/shell/view/apps_search_submit_test.dart
-test/features/shell/view/avatar_dropdown_test.dart
 test/features/shell/view/mobile_apps_navigation_regression_test.dart
 test/features/shell/view/shared_navbar_large_text_test.dart
 test/features/shell/view/shell_assistant_composer_test.dart

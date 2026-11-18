@@ -16,6 +16,7 @@ extension _ShellPageRouteHistory on _ShellPageState {
     bool hideIdleNavigation = false,
     bool fixedZones = false,
     Widget? dockLeading,
+    bool dockPageAction = true,
   }) {
     final keyboardVisible = MediaQuery.viewInsetsOf(context).bottom > 0;
     return ShellDockScope(
@@ -28,6 +29,7 @@ extension _ShellPageRouteHistory on _ShellPageState {
           hideIdleNavigation: hideIdleNavigation,
           fixedZones: fixedZones,
           leading: dockLeading,
+          dockPageAction: dockPageAction,
           keyboardVisible: keyboardVisible,
           bottomInset: bodyBottomInset,
           navigationBottomOffset: navigationBottomOffset,

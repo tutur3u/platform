@@ -96,7 +96,7 @@ void _registerProfileNavigationChecks(
       ValueKey('notifications'),
       ValueKey<String>('profile'),
     ]);
-    expect(find.byType(AvatarDropdown), findsNothing);
+    expect(find.byType(ShellWorkspacePicker), findsNothing);
     // Notifications is a dock destination, not a top bar bell.
     expect(find.byType(NotificationsActionButton), findsNothing);
 
@@ -116,7 +116,7 @@ void _registerProfileNavigationChecks(
 
     router.go(Routes.tasks);
     await _pumpForTransitions(tester);
-    expect(find.byType(AvatarDropdown), findsNothing);
+    expect(find.byType(ShellWorkspacePicker), findsNothing);
   });
 
   testWidgets('Settings returns to the Profile that opened it', (tester) async {

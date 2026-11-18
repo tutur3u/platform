@@ -23,7 +23,7 @@ class ShellDockBack extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final radius = ShellDockSurface.innerBorderRadiusOf(context);
+    final radius = ShellDockSurface.innerBorderRadius;
     return Semantics(
       key: entry.key,
       container: true,
@@ -34,7 +34,9 @@ class ShellDockBack extends StatelessWidget {
       onLongPress: onLongPress,
       child: Tooltip(
         message: entry.label,
-        triggerMode: TooltipTriggerMode.manual,
+        triggerMode: onLongPress == null
+            ? TooltipTriggerMode.longPress
+            : TooltipTriggerMode.manual,
         excludeFromSemantics: true,
         child: ShellDockControl(
           borderRadius: radius,

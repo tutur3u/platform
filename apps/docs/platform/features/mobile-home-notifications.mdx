@@ -107,8 +107,7 @@ occurrence projected into a different calendar day.
   covers calendar-day bucketing and feed-order preservation.
 - `test/core/layout/grouped_rows_test.dart` covers tones, row targets and
   state actions.
-- `test/features/dashboard/view/home_workspace_chip_test.dart` covers the
-  chip's name, semantics hint, opening the picker and hiding without a
-  current workspace. The render
-  cases above assert the Today, Up next and Calendar sections and screen-reader
-  activation of the workspace picker and See all.
+- `test/features/shell/view/shell_root_tabs_test.dart` covers workspace picker
+  placement and opening it from Home and Profile. The Home render cases cover
+  recovery when no workspace is selected, the Today, Up next and Calendar
+  sections, and screen-reader activation of the picker and See all.

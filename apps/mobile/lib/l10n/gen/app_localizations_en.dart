@@ -12046,9 +12046,6 @@ class AppLocalizationsEn extends AppLocalizations {
   String get profileMediaSet => 'Set';
 
   @override
-  String get profileYouWorkspaces => 'Workspaces';
-
-  @override
   String get assistantSubmitSuccess => 'Submitted successfully';
 
   @override

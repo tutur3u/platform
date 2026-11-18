@@ -125,7 +125,7 @@ class ShellDockBar extends StatelessWidget {
     if (!ownsZones) {
       return SizedBox(
         key: const ValueKey('shell-dock-bar'),
-        height: ShellDockMetrics.height - ShellDockSurface.edge * 2,
+        height: ShellDockSurface.contentHeight,
         child: pill,
       );
     }
@@ -226,7 +226,7 @@ class _SlidingHighlight extends StatelessWidget {
           decoration: ShapeDecoration(
             color: style.navSelectedFill,
             shape: RoundedRectangleBorder(
-              borderRadius: ShellDockSurface.innerBorderRadiusOf(context),
+              borderRadius: ShellDockSurface.innerBorderRadius,
             ),
           ),
         ),
@@ -266,10 +266,10 @@ class ShellDockSlotButton extends StatelessWidget {
       onTap: entry.enabled ? onTap : null,
       child: Tooltip(
         message: entry.label,
-        triggerMode: TooltipTriggerMode.manual,
+        triggerMode: TooltipTriggerMode.longPress,
         excludeFromSemantics: true,
         child: ShellDockControl(
-          borderRadius: ShellDockSurface.innerBorderRadiusOf(context),
+          borderRadius: ShellDockSurface.innerBorderRadius,
           onTap: entry.enabled ? onTap : null,
           child: SizedBox(
             height: ShellDockMetrics.slot,
@@ -279,8 +279,14 @@ class ShellDockSlotButton extends StatelessWidget {
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
                   IconTheme.merge(
-                    data: IconThemeData(color: color, size: 22),
-                    child: SizedBox(height: 22, child: entry.glyph),
+                    data: IconThemeData(
+                      color: color,
+                      size: ShellDockMetrics.glyphSize,
+                    ),
+                    child: SizedBox(
+                      height: ShellDockMetrics.glyphSize,
+                      child: entry.glyph,
+                    ),
                   ),
                   if (showLabel) ...[
                     const SizedBox(height: 2),

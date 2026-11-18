@@ -360,11 +360,21 @@ extension _ShellPageLayout on _ShellPageState {
     );
     final globalBody = _buildGlobalBody();
     final floatingNavInset = showBottomNav ? _floatingNavBodyInset() : 0.0;
-    // Wide windows move destinations to the rail and keep Back in the dock.
+    final media = MediaQuery.of(context);
     final railMode =
-        shellNavigationModeFor(MediaQuery.sizeOf(context)) ==
-        ShellNavigationMode.rail;
+        shellNavigationModeFor(media.size) == ShellNavigationMode.rail;
     final railItems = navChildren.where((item) => item.key != backKey).toList();
+    final dockWidth = ShellDockMetrics.widthFor(
+      media.size.width,
+      horizontalSafeArea: media.padding.horizontal,
+    );
+    final dockPageAction =
+        railMode ||
+        shellDockFitsPageAction(
+          width: dockWidth,
+          destinations: navChildren.length - (back == null ? 0 : 1),
+          hasBack: back != null,
+        );
 
     return shad.Scaffold(
       footers: showBottomNav && isCompact && !composerVisible
@@ -378,9 +388,10 @@ extension _ShellPageLayout on _ShellPageState {
       // Preserve Assistant state when keyboard/fullscreen hides navigation.
       child: AdaptiveShellFrame(
         rail: railMode && showBottomNav
-            ? railItems.isEmpty
+            ? railItems.isEmpty && dockBack == null
                   ? const SizedBox.shrink()
                   : ShellNavigationRail(
+                      leading: dockBack,
                       items: railItems,
                       selectedKey: selectedKey,
                       onSelected: navContent.onSelected,
@@ -390,27 +401,25 @@ extension _ShellPageLayout on _ShellPageState {
           body: globalBody,
           header: immersive
               ? null
-              : _buildFloatingHeader(
+              : _buildAppBar(
                   context,
+                  dockPageAction: dockPageAction,
                   activeModule: activeModule,
                   injectedMiniNavRegistration: injectedMiniNavRegistration,
                 ),
           navigationBar:
               showBottomNav && !railMode && (!isCompact || composerVisible)
               ? navigationBar
-              : SizedBox(
-                  height: railMode && dockBack != null
-                      ? ShellDockMetrics.height - ShellDockSurface.edge * 2
-                      : 0,
-                ),
+              : const SizedBox.shrink(),
           bodyBottomInset: floatingNavInset,
           composerVisible: composerVisible,
           navigationWidth: ShellDockMetrics.widthFor(
             MediaQuery.sizeOf(context).width,
           ),
-          hideIdleNavigation: railMode && dockBack == null,
+          hideIdleNavigation: railMode,
           fixedZones: true,
-          dockLeading: showBottomNav ? dockBack : null,
+          dockLeading: showBottomNav && !railMode ? dockBack : null,
+          dockPageAction: dockPageAction,
         ),
       ),
     );
@@ -565,6 +574,7 @@ extension _ShellPageLayout on _ShellPageState {
 
   shad.AppBar _buildAppBar(
     BuildContext context, {
+    required bool dockPageAction,
     AppModule? activeModule,
     ShellMiniNavRegistration? injectedMiniNavRegistration,
   }) {
@@ -610,7 +620,10 @@ extension _ShellPageLayout on _ShellPageState {
       trailing: [
         SizedBox(
           height: mobileSectionAppBarHeight,
-          child: _ShellTrailingActions(matchedLocation: widget.matchedLocation),
+          child: _ShellTrailingActions(
+            matchedLocation: widget.matchedLocation,
+            dockPageAction: dockPageAction,
+          ),
         ),
       ],
       child: SizedBox(
@@ -628,18 +641,6 @@ extension _ShellPageLayout on _ShellPageState {
           ),
         ),
       ),
-    );
-  }
-
-  Widget _buildFloatingHeader(
-    BuildContext context, {
-    AppModule? activeModule,
-    ShellMiniNavRegistration? injectedMiniNavRegistration,
-  }) {
-    return _buildAppBar(
-      context,
-      activeModule: activeModule,
-      injectedMiniNavRegistration: injectedMiniNavRegistration,
     );
   }
 

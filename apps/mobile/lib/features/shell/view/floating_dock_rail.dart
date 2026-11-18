@@ -22,6 +22,7 @@ class FloatingDockRail extends StatelessWidget {
   const FloatingDockRail({
     required this.navigation,
     this.primary,
+    this.showPrimary = true,
     this.actionLift = 0,
     this.fixedZones = false,
     super.key,
@@ -29,6 +30,7 @@ class FloatingDockRail extends StatelessWidget {
   final Widget navigation;
 
   final Widget? primary;
+  final bool showPrimary;
   final bool fixedZones;
 
   /// Raises the action off the row's bottom edge. Beside the navigation
@@ -68,7 +70,7 @@ class FloatingDockRail extends StatelessWidget {
             fit: fixedZones ? FlexFit.tight : FlexFit.loose,
             child: Center(widthFactor: 1, child: navigation),
           ),
-          action,
+          Offstage(offstage: !showPrimary, child: action),
         ],
       ),
     );

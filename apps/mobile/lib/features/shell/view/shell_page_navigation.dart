@@ -42,17 +42,22 @@ extension _ShellPageNavigation on _ShellPageState {
     button: true,
     child: ExcludeSemantics(
       child: SizedBox(
-        width: dropdown ? 36 : 22,
-        height: 22,
+        width: dropdown
+            ? ShellDockMetrics.dropdownGlyphWidth
+            : ShellDockMetrics.glyphSize,
+        height: ShellDockMetrics.glyphSize,
         child: dropdown
             ? Row(
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  Icon(icon, size: 20),
-                  const Icon(Icons.expand_more, size: 14),
+                  Icon(icon, size: ShellDockMetrics.dropdownGlyphSize),
+                  const Icon(
+                    Icons.expand_more,
+                    size: ShellDockMetrics.dropdownChevronSize,
+                  ),
                 ],
               )
-            : image ?? Icon(icon, size: 22),
+            : image ?? Icon(icon, size: ShellDockMetrics.glyphSize),
       ),
     ),
   );

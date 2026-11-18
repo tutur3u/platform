@@ -5,6 +5,7 @@ import 'package:mobile/core/ui/kit/app_grouped_slice.dart';
 import 'package:mobile/core/ui/overlays/app_sheet_scaffold.dart';
 import 'package:mobile/core/ui/overlays/show_app_sheet.dart';
 import 'package:mobile/features/shell/view/shell_dock_bar.dart';
+import 'package:mobile/features/shell/view/shell_dock_content.dart';
 import 'package:mobile/features/shell/view/shell_dock_more_sheet.dart';
 import 'package:mobile/l10n/l10n.dart';
 
@@ -14,6 +15,23 @@ const int shellDockMaxSlots = 5;
 /// Number of destinations that fit beside Back and the page action.
 int shellDockCapacity(double width) =>
     (width / ShellDockMetrics.minSlotWidth).floor().clamp(1, shellDockMaxSlots);
+
+/// The dock keeps a page action only when its slot leaves the same number of
+/// destinations visible. Width and sections decide placement before actions
+/// appear so registration cannot change the overflow list.
+bool shellDockFitsPageAction({
+  required double width,
+  required int destinations,
+  required bool hasBack,
+}) {
+  final available =
+      width -
+      ShellDockMetrics.padding * 2 -
+      (hasBack ? ShellDockContent.backExtent : 0);
+  final capacity = shellDockCapacity(available).clamp(0, destinations);
+  return available >=
+      ShellDockMetrics.actionSlot + capacity * ShellDockMetrics.minSlotWidth;
+}
 
 /// Key of the dock's More slot.
 const shellDockMoreKey = ValueKey<String>('shell-dock-more');
@@ -61,8 +79,12 @@ Future<Key?> showShellDockOverflowSheet({
               key: ValueKey(('shell-dock-overflow', entry.key)),
               label: entry.label,
               leading: IconTheme.merge(
-                data: const IconThemeData(size: 22),
-                child: SizedBox(width: 36, height: 22, child: entry.glyph),
+                data: const IconThemeData(size: ShellDockMetrics.glyphSize),
+                child: SizedBox(
+                  width: ShellDockMetrics.dropdownGlyphWidth,
+                  height: ShellDockMetrics.glyphSize,
+                  child: entry.glyph,
+                ),
               ),
               selected: entry.key == selectedKey,
               onTap: entry.enabled

@@ -127,7 +127,7 @@ void main() {
         },
       ),
     );
-    expect(bottoms.last, greaterThan(0));
+    expect(bottoms.last, 0);
 
     shell.actions.register(
       registrationId: 'sales-create',
@@ -148,6 +148,10 @@ void main() {
 
     shell.actions.unregister('sales-create');
     await settleShell(tester);
+    expect(
+      find.byKey(const ValueKey('persistent-shell-dock-material')),
+      findsNothing,
+    );
     shell.router.go(Routes.assistant);
     await settleShell(tester);
     final root = tester.element(find.text('assistant'));
@@ -197,7 +201,9 @@ void main() {
     expect(tester.takeException(), isNull);
   });
 
-  testWidgets('rail labels appear on pointer hover only', (tester) async {
+  testWidgets('rail labels appear on long press and pointer hover', (
+    tester,
+  ) async {
     useShellWindow(tester, _landscape);
     final shell = await pumpRailShell(tester, Routes.apps);
     shell.router.go(Routes.inventorySales);
@@ -214,13 +220,14 @@ void main() {
     expect(tooltip, findsOneWidget);
     expect(
       tester.widget<Tooltip>(tooltip).triggerMode,
-      TooltipTriggerMode.manual,
+      TooltipTriggerMode.longPress,
     );
 
-    final touch = await tester.startGesture(tester.getCenter(destination));
-    await tester.pump(const Duration(seconds: 1));
-    await touch.cancel();
-    await tester.pump();
+    await tester.longPress(destination);
+    await settleShell(tester);
+    expect(find.text(l10n.inventoryProductsLabel), findsOneWidget);
+    Tooltip.dismissAllToolTips();
+    await settleShell(tester);
     expect(find.text(l10n.inventoryProductsLabel), findsNothing);
 
     final mouse = await tester.createGesture(kind: PointerDeviceKind.mouse);

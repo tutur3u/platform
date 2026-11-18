@@ -35,18 +35,20 @@ const double shellNavigationRailExtent =
 /// Size of one rail destination; matches the dock's 52dp slots.
 const double shellNavigationRailSlot = 52;
 
-/// Vertical island for destinations in wide layouts. Back stays in the dock.
+/// Vertical island for Back and destinations in wide layouts.
 class ShellNavigationRail extends StatelessWidget {
   const ShellNavigationRail({
     required this.items,
     required this.selectedKey,
     required this.onSelected,
+    this.leading,
     super.key,
   });
 
   final List<shad.NavigationItem> items;
   final Key? selectedKey;
   final ValueChanged<Key?> onSelected;
+  final Widget? leading;
 
   @override
   Widget build(BuildContext context) => SafeArea(
@@ -65,6 +67,7 @@ class ShellNavigationRail extends StatelessWidget {
             child: Column(
               mainAxisSize: MainAxisSize.min,
               children: [
+                ?leading,
                 for (final item in items)
                   _RailDestination(
                     key: item.key,
@@ -137,11 +140,10 @@ class _RailDestination extends StatelessWidget {
       ),
     );
     if (label == null) return destination;
-    // Hover-only label for pointer devices; touch keeps the bare icon and the
-    // item's own semantics label, so the tooltip adds no second announcement.
+    // The item already supplies the semantics label.
     return Tooltip(
       message: label,
-      triggerMode: TooltipTriggerMode.manual,
+      triggerMode: TooltipTriggerMode.longPress,
       excludeFromSemantics: true,
       preferBelow: false,
       child: destination,

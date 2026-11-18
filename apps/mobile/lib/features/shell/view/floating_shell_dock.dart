@@ -54,6 +54,7 @@ class FloatingShellDock extends StatefulWidget {
     this.hideIdleNavigation = false,
     this.fixedZones = false,
     this.leading,
+    this.dockPageAction = true,
     super.key,
   });
 
@@ -65,6 +66,7 @@ class FloatingShellDock extends StatefulWidget {
 
   /// The Back zone before idle navigation in [fixedZones] mode.
   final Widget? leading;
+  final bool dockPageAction;
 
   /// Set when a leading rail owns navigation; see [PersistentShellDock].
   final bool hideIdleNavigation;
@@ -500,6 +502,7 @@ class _FloatingShellDockState extends State<FloatingShellDock> {
                                   hideIdleNavigation: widget.hideIdleNavigation,
                                   fixedZones: widget.fixedZones,
                                   leading: widget.leading,
+                                  dockPageAction: widget.dockPageAction,
                                   navigation: widget.navigation,
                                 ),
                               ),
@@ -525,10 +528,12 @@ class _DockActions extends StatefulWidget {
     required this.hideIdleNavigation,
     required this.fixedZones,
     required this.leading,
+    required this.dockPageAction,
   });
   final bool hideIdleNavigation;
   final bool fixedZones;
   final Widget? leading;
+  final bool dockPageAction;
   final String location;
   final Widget navigation;
   final double navigationWidth;
@@ -573,6 +578,7 @@ class _DockActionsState extends State<_DockActions> {
     required String? workspaceId,
     Widget? primary,
     bool grouped = false,
+    bool showPrimary = true,
   }) {
     final controller = ShellDockScope.maybeOf(context);
     Widget dock() {
@@ -591,6 +597,7 @@ class _DockActionsState extends State<_DockActions> {
         leading: widget.leading,
         navigationWidth: widget.navigationWidth,
         primary: active ? slot!.primary : primary,
+        showPrimary: active || showPrimary,
       );
     }
 
@@ -647,11 +654,14 @@ class _DockActionsState extends State<_DockActions> {
                   .resolveForLocation(widget.location)
                   .where((a) => a.inDock)
                   .toList();
-        // The dock holds one page action; the top bar shows the rest.
+        // A sheet's action stays accessible above the covered page.
+        final showPrimary =
+            widget.dockPageAction || state.topmostModalOwner != null;
         return _registeredDock(
           widget.navigation,
           workspaceId: workspaceId,
-          primary: actions.isEmpty
+          showPrimary: showPrimary,
+          primary: !showPrimary || actions.isEmpty
               ? null
               : ShellDockActionButton(
                   key: ValueKey(('dock-primary', actions.first.id)),

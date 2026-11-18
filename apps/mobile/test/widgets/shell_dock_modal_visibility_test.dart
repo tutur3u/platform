@@ -16,8 +16,9 @@ const _dockInset = 68.0;
 /// a chrome registry and a bottom safe area.
 Future<ShellChromeActionsCubit> _pumpShell(
   WidgetTester tester,
-  void Function(BuildContext context) open,
-) async {
+  void Function(BuildContext context) open, {
+  bool dockPageAction = true,
+}) async {
   tester.view
     ..physicalSize = const Size(390, 844)
     ..devicePixelRatio = 1
@@ -35,6 +36,7 @@ Future<ShellChromeActionsCubit> _pumpShell(
           body: FloatingShellDock(
             location: _page,
             bottomInset: _dockInset,
+            dockPageAction: dockPageAction,
             navigation: const SizedBox(
               key: Key('navigation'),
               width: 160,
@@ -153,7 +155,7 @@ void main() {
     expect(_dockOpacity(tester), 1);
   });
 
-  testWidgets('a sheet that places its search in the dock keeps the dock', (
+  testWidgets('a sheet keeps its Search action in the dock on narrow pages', (
     tester,
   ) async {
     final query = TextEditingController();
@@ -174,13 +176,20 @@ void main() {
           ),
         ),
       );
-    });
+    }, dockPageAction: false);
     await tester.tap(find.text('Open'));
     await tester.pumpAndSettle();
     expect(chrome.state.modalHidesDock, isFalse);
     expect(chrome.state.registrations.keys, contains(endsWith('/search')));
     expect(_dockOpacity(tester), 1);
     expect(sheetBottom, greaterThan(_safeBottom));
+    expect(find.byTooltip('Search picks').hitTestable(), findsOneWidget);
+    await tester.tap(find.byTooltip('Search picks'));
+    await tester.pumpAndSettle();
+    expect(
+      chrome.state.resolveForLocation(_page).single.searchController,
+      same(query),
+    );
   });
 
   test('search keeps the dock above the keyboard unless told not to', () {

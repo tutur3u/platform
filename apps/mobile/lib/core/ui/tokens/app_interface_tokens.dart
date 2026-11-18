@@ -39,6 +39,10 @@ class AppInterfaceTokens extends ThemeExtension<AppInterfaceTokens> {
   /// The smallest touch target any density may produce.
   static const double minTouchTarget = 44;
 
+  /// Stroke width of a keyboard focus ring in the current contrast mode.
+  static double focusRingWidth({required bool highContrast}) =>
+      highContrast ? 3 : 2;
+
   final AppInterfaceStyle style;
   final AppDensity density;
   final AppCornerStyle corners;

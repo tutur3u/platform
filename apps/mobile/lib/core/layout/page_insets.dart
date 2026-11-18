@@ -28,6 +28,15 @@ abstract final class ShellDockMetrics {
   /// Gap between the navigation and its page action.
   static const double zoneGap = 8;
 
+  static const double glyphSize = 22;
+  static const double dropdownGlyphSize = 20;
+  static const double dropdownChevronSize = 14;
+  static const double dropdownGlyphWidth =
+      dropdownGlyphSize + dropdownChevronSize + AppSpacing.xxs;
+
+  /// Space for a primary action and the gap before it.
+  static const double actionSlot = slot + zoneGap;
+
   /// Narrowest destination slot; the pill shows fewer slots (more behind
   /// More) rather than shrink them below this target.
   static const double minSlotWidth = 44;
@@ -75,8 +84,10 @@ abstract final class ShellDockMetrics {
 
   /// Pill width for a window [width]: full width minus the side insets on
   /// phones, centred and capped from the tablet breakpoint.
-  static double widthFor(double width) {
-    final available = math.max(0, width - inset * 2).toDouble();
+  static double widthFor(double width, {double horizontalSafeArea = 0}) {
+    final available = math
+        .max(0, width - inset * 2 - horizontalSafeArea)
+        .toDouble();
     return width >= tabletBreakpoint
         ? math.min(available, dockMaxWidth)
         : available;
