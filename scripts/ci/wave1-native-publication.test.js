@@ -76,7 +76,7 @@ for (const outcome of [
     }
     await assert.rejects(p.run);
     const writes = p.state.writes;
-    fs.rmSync(path.join(p.dir, 'mail-staging-publication.json'), {
+    fs.rmSync(path.join(p.dir, 'apps-staging-publication.json'), {
       force: true,
     });
     p.state.loseMarkerReceipt = false;
@@ -369,7 +369,7 @@ test('staging startup rejection retains sanitized diagnostics and its pending fe
   });
   await assert.rejects(p.run(), /outcome is uncertain/u);
   const receipt = JSON.parse(
-    fs.readFileSync(path.join(p.dir, 'mail-staging-publication.json'))
+    fs.readFileSync(path.join(p.dir, 'apps-staging-publication.json'))
   );
   assert.equal(receipt.state, 'pending');
   assert.equal(receipt.uploadFailure.cfCode, 10021);

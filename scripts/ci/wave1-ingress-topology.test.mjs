@@ -38,16 +38,17 @@ test('ingress targets are exactly the Access-protected staging hosts', () => {
         'tuturuuu-calendar-wave1-staging',
         false,
       ],
+      ['mail', 'mail.tutur3u.com', 'tuturuuu-mail-wave1-staging', false],
       ['web', 'web.tutur3u.com', 'tuturuuu-web-wave1-staging', true],
     ]
   );
-  assert.equal(ingressTarget('mail'), null);
   assert.equal(ingressTarget('apps'), null);
 });
 
-test('a healthy topology passes for both the issuer and Calendar', () => {
+test('a healthy topology passes for the issuer, Calendar and Mail', () => {
   assert.deepEqual(check('web'), []);
   assert.deepEqual(check('calendar'), []);
+  assert.deepEqual(check('mail'), []);
 });
 
 const failures = [

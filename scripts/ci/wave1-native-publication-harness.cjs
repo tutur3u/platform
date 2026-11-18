@@ -13,7 +13,7 @@ const publicEnv = {
 };
 Object.assign(process.env, publicEnv);
 
-async function publisher(t, app = 'mail', { preFetch } = {}) {
+async function publisher(t, app = 'apps', { preFetch } = {}) {
   const { prepare, artifactDigest } =
     await import('./wave1-native-artifact.mjs');
   const { profiles } = await import('./wave1-native-profile.mjs');

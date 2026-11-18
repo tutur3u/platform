@@ -113,6 +113,14 @@
         "MAIL_CLOUDFLARE_API_TOKEN",
         "MAIL_CLOUDFLARE_INGEST_SECRET"
       ],
+      "stagingHost": "mail.tutur3u.com",
+      "ingress": "access-custom-domain",
+      "stagingSecrets": [
+        "CF_ACCESS_TEAM_DOMAIN",
+        "CF_ACCESS_AUD",
+        "CF_ACCESS_CLIENT_ID",
+        "CF_ACCESS_CLIENT_SECRET"
+      ],
       "ownerProvisionedResources": {
         "stagingR2Bucket": "tuturuuu-mail-wave1-staging",
         "retainedProductionR2Bucket": "tuturuuu-mail"

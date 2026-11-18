@@ -47,7 +47,8 @@ test('production and other apps keep their existing profile identities', () => {
     profileFor('calendar', 'production').host,
     'calendar.tuturuuu.com'
   );
-  for (const app of ['mail', 'apps']) {
+  assert.equal(profileFor('mail', 'production').host, 'mail.tuturuuu.com');
+  for (const app of ['apps']) {
     assert.match(
       profileFor(app, 'staging', 'owner-example').host,
       /\.owner-example\.workers\.dev$/u
