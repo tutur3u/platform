@@ -2,15 +2,12 @@
 import { useQuery } from '@tanstack/react-query';
 import type { MeetingDocumentJoin } from '@tuturuuu/internal-api/meet-call';
 import { DocumentEditor } from '@tuturuuu/meet-core/features/call/components/document-panel';
-import {
-  type meetingProgrammingApi,
-  ProgrammingPanel,
-} from '@tuturuuu/meet-core/features/call/components/programming-panel';
+import { ProgrammingPanel } from '@tuturuuu/meet-core/features/call/components/programming-panel';
 import type { MeetingProgramming } from '@tuturuuu/realtime/meet';
 import { Button } from '@tuturuuu/ui/button';
 import { useSearchParams } from 'next/navigation';
 import { useTranslations } from 'next-intl';
-import { useEffect, useState } from 'react';
+import { type ComponentProps, useEffect, useState } from 'react';
 
 let nonce: string | null = null;
 interface NativeBridge {
@@ -28,7 +25,7 @@ async function nativeRequest<T>(action: string, payload?: unknown): Promise<T> {
     payload
   ) as Promise<T>;
 }
-const api: typeof meetingProgrammingApi = {
+const api: NonNullable<ComponentProps<typeof ProgrammingPanel>['api']> = {
   read: () => nativeRequest('programming'),
   select: (_id, payload) => nativeRequest('select', payload),
   create: (_id, payload) => nativeRequest('create', payload),

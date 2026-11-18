@@ -22,7 +22,7 @@ async function readMiraFixCommand(
   if (Number(request.headers.get('content-length')) > MAX_MIRA_COMMAND_BYTES)
     return new Response(null, { status: 413 });
   const reader = request.body.getReader();
-  const decoder = new TextDecoder('utf-8', { fatal: true });
+  const decoder = new TextDecoder('utf-8', { fatal: true, ignoreBOM: false });
   let total = 0;
   let raw = '';
   try {
