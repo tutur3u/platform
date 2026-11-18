@@ -1,3 +1,11 @@
+import {
+  acceptanceUnavailable,
+  bypassSecret,
+  bypassSecretFor,
+  isAcceptanceHost,
+  scrubBypass,
+  withBypass,
+} from './acceptance-host';
 import { HOP_HEADER, isClientForwardingHeader } from './forwarding-headers';
 import { applyMarketingRobots } from './marketing-robots';
 import { dispatchWebFamily, webFamilyTarget } from './web-family';
@@ -58,6 +66,13 @@ export interface Env {
    * family's one-step rollback.
    */
   GATEWAY_WEB_FAMILIES?: string;
+  /**
+   * Hostname of the staging acceptance gateway. Only on that host, requests to
+   * WEB_ORIGIN carry the Vercel protection bypass. Unset on production.
+   */
+  GATEWAY_ACCEPTANCE_HOST?: string;
+  /** Worker secret: Vercel protection bypass for the staging WEB_ORIGIN. */
+  VERCEL_PROTECTION_BYPASS?: string;
   [name: string]: string | undefined;
 }
 
@@ -212,12 +227,15 @@ const FORWARDED_PROTO = 'x-forwarded-proto';
 function originRequest(
   request: Request,
   origin: URL,
-  publicHost: string | undefined
+  publicHost: string | undefined,
+  bypass?: string
 ) {
   const incoming = new URL(request.url);
   const target = new URL(`${incoming.pathname}${incoming.search}`, origin);
   const outgoing = new Request(target, request);
   outgoing.headers.set(HOP_HEADER, '1');
+  // Client-supplied bypass headers never pass; only the Worker secret does.
+  withBypass(outgoing.headers, bypass);
   outgoing.headers.delete(FORWARDED_HOST);
   outgoing.headers.delete(FORWARDED_PROTO);
   if (publicHost) {
@@ -365,7 +383,12 @@ async function proxy(
   let response: Response;
   try {
     response = await fetch(
-      originRequest(request, origin, env.PUBLIC_HOST),
+      originRequest(
+        request,
+        origin,
+        env.PUBLIC_HOST,
+        bypassSecretFor(request, env, origin)
+      ),
       NO_FOLLOW
     );
   } catch {
@@ -411,11 +434,15 @@ export function createHandler(deps: HandlerDeps) {
     key: string,
     options: { respectOriginCacheControl: boolean },
     publicHost: string | undefined,
-    isPage: boolean
+    isPage: boolean,
+    bypass: string | undefined
   ) {
     try {
       let response = withPublicLink(
-        await fetch(originRequest(request, origin, publicHost), NO_FOLLOW),
+        await fetch(
+          originRequest(request, origin, publicHost, bypass),
+          NO_FOLLOW
+        ),
         origin,
         publicHost
       );
@@ -442,6 +469,10 @@ export function createHandler(deps: HandlerDeps) {
   async function handle(request: Request, env: Env, ctx?: WaitUntil) {
     if (request.headers.has(HOP_HEADER)) {
       return plain(508, 'gateway loop detected');
+    }
+    // The acceptance host fails closed without its bypass secret.
+    if (isAcceptanceHost(request, env) && !bypassSecret(env)) {
+      return acceptanceUnavailable();
     }
     // Admitted mounts precede the Web manifest, cache and passthrough mode.
     const mounted = mountedAppBinding(request, env);
@@ -507,7 +538,8 @@ export function createHandler(deps: HandlerDeps) {
           key,
           options,
           env.PUBLIC_HOST,
-          isPage
+          isPage,
+          bypassSecretFor(request, env, origin)
         );
         if (ctx) ctx.waitUntil(revalidate);
         else await revalidate;
@@ -520,7 +552,15 @@ export function createHandler(deps: HandlerDeps) {
     let response: Response;
     try {
       response = withPublicLink(
-        await fetch(originRequest(request, origin, env.PUBLIC_HOST), NO_FOLLOW),
+        await fetch(
+          originRequest(
+            request,
+            origin,
+            env.PUBLIC_HOST,
+            bypassSecretFor(request, env, origin)
+          ),
+          NO_FOLLOW
+        ),
         origin,
         env.PUBLIC_HOST
       );
@@ -568,8 +608,11 @@ export function createHandler(deps: HandlerDeps) {
       match.flagOrigin === 'marketing' &&
       match.cache === 'page' &&
       (request.method === 'GET' || request.method === 'HEAD');
+    const secret = isAcceptanceHost(request, env)
+      ? bypassSecret(env)
+      : undefined;
     return applyMarketingRobots(
-      await handle(request, env, ctx),
+      scrubBypass(await handle(request, env, ctx), secret),
       request,
       marketingPage ? 'marketing-page' : fromMarketing ? 'marketing' : 'origin',
       env.TUTURUUU_NOINDEX === '1',
