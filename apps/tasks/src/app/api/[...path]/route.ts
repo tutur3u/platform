@@ -78,6 +78,10 @@ const FILTERED_RESPONSE_HEADERS = new Set([
   'set-cookie',
 ]);
 
+const CLIENT_IP_HEADERS = ['x-real-ip', 'x-forwarded-for', 'cf-connecting-ip'];
+// A catch-all param can still contain an encoded dot after routing decodes it.
+const DOT_SEGMENT = /^(?:\.|%(?:25)*2e){1,2}$/iu;
+
 function getCookieName(cookiePart: string) {
   return cookiePart.trim().split('=')[0]?.trim() ?? '';
 }
@@ -98,6 +102,9 @@ function createForwardedRequestHeaders(request: NextRequest) {
   const headers = new Headers(request.headers);
 
   for (const header of HOP_BY_HOP_HEADERS) {
+    headers.delete(header);
+  }
+  for (const header of CLIENT_IP_HEADERS) {
     headers.delete(header);
   }
 
@@ -213,6 +220,10 @@ function isTaskOwnedApiPath(path: string[]) {
  */
 async function proxyToOwningApp(request: NextRequest, context: RouteContext) {
   const { path = [] } = await context.params;
+  if (path.some((segment) => DOT_SEGMENT.test(segment))) {
+    return NextResponse.json({ error: 'Invalid API path' }, { status: 400 });
+  }
+
   if (isTaskOwnedApiPath(path)) {
     return NextResponse.json(
       { error: 'Task API route is not mounted in the tasks app' },
@@ -228,6 +239,9 @@ async function proxyToOwningApp(request: NextRequest, context: RouteContext) {
     `/api/${path.map((segment) => encodeURIComponent(segment)).join('/')}`,
     targetOrigin
   );
+  if (!targetUrl.pathname.startsWith('/api/')) {
+    return NextResponse.json({ error: 'Invalid API path' }, { status: 400 });
+  }
   targetUrl.search = request.nextUrl.search;
 
   const init: RequestInit & { duplex?: 'half' } = {

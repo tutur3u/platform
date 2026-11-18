@@ -15,7 +15,7 @@ describe('Tasks API proxy', () => {
     ).toBe('tuturuuu_app_session=ttr_app_123; theme=dark');
   });
 
-  it('forwards API requests to Web without Supabase auth cookies', async () => {
+  it('forwards API requests to Web without Supabase auth cookies or client IP headers', async () => {
     const fetchMock = vi.fn().mockResolvedValue(
       new Response(JSON.stringify({ ok: true }), {
         headers: {
@@ -32,6 +32,9 @@ describe('Tasks API proxy', () => {
         'https://tasks.tuturuuu.localhost/api/v1/workspaces?x=1',
         {
           headers: {
+            'CF-Connecting-IP': '192.0.2.3',
+            'X-Forwarded-For': '192.0.2.2',
+            'X-Real-IP': '192.0.2.1',
             cookie:
               'tuturuuu_app_session=ttr_app_123; sb-nzamlz-auth-token=stale; sidebar=hover',
           },
@@ -47,13 +50,33 @@ describe('Tasks API proxy', () => {
     const [targetUrl, init] = fetchMock.mock.calls[0] ?? [];
     expect(new URL(String(targetUrl)).pathname).toBe('/api/v1/workspaces');
     expect(new URL(String(targetUrl)).search).toBe('?x=1');
-    expect(new Headers(init?.headers).get('cookie')).toBe(
+    const forwardedHeaders = new Headers(init?.headers);
+    expect(forwardedHeaders.get('cookie')).toBe(
       'tuturuuu_app_session=ttr_app_123; sidebar=hover'
     );
+    expect(forwardedHeaders.get('x-real-ip')).toBeNull();
+    expect(forwardedHeaders.get('x-forwarded-for')).toBeNull();
+    expect(forwardedHeaders.get('cf-connecting-ip')).toBeNull();
     expect(response.headers.get('set-cookie')).toContain(
       'sb-nzamlz-auth-token=;'
     );
   });
+
+  it.each(['.', '..', '%2e', '%2E%2e', '.%2e', '%252e%252e'])(
+    'rejects the routed dot segment %s before forwarding',
+    async (segment) => {
+      const fetchMock = vi.fn();
+      vi.stubGlobal('fetch', fetchMock);
+
+      const response = await GET(
+        new NextRequest('https://tasks.tuturuuu.localhost/api/v1/workspaces'),
+        { params: Promise.resolve({ path: ['v1', segment, 'workspaces'] }) }
+      );
+
+      expect(response.status).toBe(400);
+      expect(fetchMock).not.toHaveBeenCalled();
+    }
+  );
 
   it('emits no Supabase cookie deletions on the tuturuuu.com/tasks mount', async () => {
     const fetchMock = vi.fn().mockResolvedValue(
