@@ -18,7 +18,9 @@ its own Worker entrypoint (`cloudflare/worker.ts`), route tree, and layout hiera
 
 The Worker targets the following staging and production identities:
 
-- **Worker Name:** `tuturuuu-marketing` (production and staging candidate)
+- **Worker Name:** `tuturuuu-marketing` (production) and
+  `tuturuuu-marketing-vite-staging` (staging candidate), selected by
+  `cloudflare/deployment-profile.mjs`
 - **Root Hosts:** `marketing.tuturuuu.com`
 - **Mount Hosts:** `tuturuuu.com`
 - **Base Path:** `/marketing`
@@ -91,6 +93,47 @@ APIs for these operations. Injecting service-role credentials into the public
 Cloudflare Worker is forbidden, and adding new backend endpoints would require
 modifying `apps/web` (which is kept strictly untouched during this migration).
 Routing rules on Cloudflare forward these paths directly to the Vercel deployment.
+
+Through the gateway the Worker sees its own host (`marketing.tuturuuu.com`),
+so it always answers `noindex`. When `TUTURUUU_NOINDEX` is not `"1"` it adds
+`x-marketing-origin-robots: 1` to mark that restriction as origin-only, and the
+gateway releases it for public marketing-group pages on `tuturuuu.com`. Both
+Workers are needed: a production marketing Worker built with `TUTURUUU_NOINDEX`
+`"1"` sends no marker, and a gateway without the release keeps the restriction.
+
+### Production Worker build
+
+`void.config.ts` reads `VITE_MARKETING_NATIVE_PROFILE`: unset or `staging`
+builds the `noindex` staging candidate CI qualifies; `production` builds
+`tuturuuu-marketing` with `TUTURUUU_NOINDEX="0"` and refuses a build environment
+that sets `TUTURUUU_NOINDEX=1`. `apps/marketing/production-indexing.test.ts`
+guards both profiles. Public values are inlined into the client bundle at build
+time, so build with production values only (names below; values come from the
+`PRODUCTION_SUPABASE_URL` and `PRODUCTION_SUPABASE_PUBLISHABLE_KEY` repository
+variables and the web app's production `NEXT_PUBLIC_COOKIE_CONSENT_BANNER`):
+
+```bash
+cd apps/marketing
+env -u TUTURUUU_NOINDEX \
+  VITE_MARKETING_NATIVE_PROFILE=production \
+  NEXT_PUBLIC_SUPABASE_URL="$PRODUCTION_SUPABASE_URL" \
+  NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY="$PRODUCTION_SUPABASE_PUBLISHABLE_KEY" \
+  NEXT_PUBLIC_APP_URL=https://marketing.tuturuuu.com \
+  NEXT_PUBLIC_WEB_APP_URL=https://tuturuuu.com \
+  NEXT_PUBLIC_MARKETING_APP_URL=https://tuturuuu.com \
+  NEXT_PUBLIC_COOKIE_CONSENT_BANNER="$WEB_COOKIE_CONSENT_BANNER" \
+  bun run build:cloudflare
+# The emitted config (named by .wrangler/deploy/config.json) must say
+# "name": "tuturuuu-marketing" and "TUTURUUU_NOINDEX": "0".
+bunx wrangler deployments list --name tuturuuu-marketing   # record PRIOR_VERSION_ID
+bunx wrangler versions upload --message "marketing: production profile"
+bunx wrangler versions deploy <NEW_VERSION_ID>@100 --name tuturuuu-marketing --yes
+```
+
+`versions upload` and `versions deploy` change neither routes nor custom
+domains. Roll back with
+`bunx wrangler rollback <PRIOR_VERSION_ID> --name tuturuuu-marketing`. Purge
+the public marketing paths afterwards, as described above.
 
 ## Build and local verification
 

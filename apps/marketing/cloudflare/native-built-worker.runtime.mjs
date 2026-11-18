@@ -26,10 +26,12 @@ import {
   runtimeOutcomeFailure,
 } from '../../../scripts/start-bridge-codemod/runtime-outcome.mjs';
 import { effectiveWorkerConfig } from '../../../scripts/start-bridge-codemod/worker-config.mjs';
+import { deploymentProfile, PROFILE_ENV } from './deployment-profile.mjs';
 
 const app = await realpath(fileURLToPath(new URL('../', import.meta.url)));
 const require = createRequire(join(app, 'package.json'));
-const WORKER = 'tuturuuu-marketing-vite-staging';
+const PROFILE = deploymentProfile(process.env[PROFILE_ENV]);
+const WORKER = PROFILE.name;
 const PUBLIC_FILES = [
   'android-chrome-192x192.png',
   'android-chrome-512x512.png',
@@ -195,14 +197,11 @@ test(
       config.compatibility_flags,
       WORKER_CONFIG.compatibilityFlags
     );
-    assert.equal(config.workers_dev, WORKER_CONFIG.workersDev);
+    assert.equal(config.workers_dev, PROFILE.workersDev);
     if (config.name.endsWith('-staging')) {
       assert.equal(config.vars?.TUTURUUU_NOINDEX, '1');
     } else {
-      assert.ok(
-        config.vars?.TUTURUUU_NOINDEX === '0' ||
-          config.vars?.TUTURUUU_NOINDEX === undefined
-      );
+      assert.equal(config.vars?.TUTURUUU_NOINDEX, '0');
     }
     for (const name of PUBLIC_FILES)
       assert.equal(
