@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:mobile/core/layout/layout_tokens.dart';
+import 'package:mobile/core/ui/components/app_icon_button.dart';
 import 'package:mobile/core/ui/components/app_option_tile.dart';
 import 'package:mobile/core/ui/icons/app_icons.dart';
 import 'package:mobile/core/ui/kit/app_grouped_slice.dart';
@@ -15,8 +16,13 @@ import 'package:mobile/l10n/l10n.dart';
 /// Key of the current-workspace row at the top of the root More sheet.
 const shellRootWorkspaceKey = ValueKey<String>('shell-root-workspace');
 
-/// Key of the Edit tabs row in the root More sheet.
+/// Result of the Edit tabs action in the root More sheet.
 const shellRootEditTabsKey = ValueKey<String>('shell-root-edit-tabs');
+
+/// Key of the Edit tabs button in the root More sheet's header.
+const shellRootEditTabsButtonKey = ValueKey<String>(
+  'shell-root-edit-tabs-button',
+);
 
 /// Key of the Reset tabs row in the root More sheet.
 const shellRootResetTabsKey = ValueKey<String>('shell-root-reset-tabs');
@@ -26,8 +32,9 @@ ValueKey<(String, Key)> shellRootMoreRowKey(Key key) =>
     ValueKey(('shell-root-more', key));
 
 /// The phone dock's More sheet: the current [workspace] (opens the picker),
-/// then [destinations] not pinned to the dock, then Edit tabs and Reset
-/// tabs. Resolves with the chosen row's key, or null when dismissed.
+/// then [destinations] not pinned to the dock, then Reset tabs. Edit tabs is
+/// a pencil button in the header beside the close button. Resolves with the
+/// chosen row's key, or null when dismissed.
 ///
 /// Reset is disabled while the dock already shows the default tabs
 /// ([canReset] false).
@@ -57,6 +64,14 @@ Future<Key?> showShellRootMoreSheet({
     const gap = SliverToBoxAdapter(child: SizedBox(height: AppSpacing.md));
     return AppSheetScaffold(
       title: l10n.navMore,
+      headerActions: [
+        AppIconButton(
+          key: shellRootEditTabsButtonKey,
+          tooltip: l10n.navEditTabs,
+          icon: const Icon(LucideIcons.pencil),
+          onPressed: () => pick(shellRootEditTabsKey),
+        ),
+      ],
       slivers: [
         if (workspace != null) ...[
           group([
@@ -81,12 +96,6 @@ Future<Key?> showShellRootMoreSheet({
           gap,
         ],
         group([
-          AppOptionTile(
-            key: shellRootMoreRowKey(shellRootEditTabsKey),
-            title: l10n.navEditTabs,
-            leading: glyph(const Icon(LucideIcons.pencil)),
-            onTap: () => pick(shellRootEditTabsKey),
-          ),
           AppOptionTile(
             key: shellRootMoreRowKey(shellRootResetTabsKey),
             title: l10n.navResetTabs,

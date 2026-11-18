@@ -14,8 +14,9 @@ const double _tightHeight = 280;
 
 /// Content layout for `showAppSheet` and `showAppDialog` bodies.
 ///
-/// Owns the title row, an optional dynamic [search], one lazy scroll body and
-/// a footer for [actions]. The body ends above the floating dock and the
+/// Owns the title row (with optional [headerActions] before the close
+/// button), an optional dynamic [search], one lazy scroll body and a footer
+/// for [actions]. The body ends above the floating dock and the
 /// keyboard, whichever is taller, so the last row is never covered.
 class AppSheetScaffold extends StatelessWidget {
   const AppSheetScaffold({
@@ -25,6 +26,7 @@ class AppSheetScaffold extends StatelessWidget {
     this.child,
     this.slivers,
     this.actions = const [],
+    this.headerActions = const [],
     this.search,
     this.onRefresh,
     this.showCloseButton = true,
@@ -44,6 +46,10 @@ class AppSheetScaffold extends StatelessWidget {
   final List<Widget>? slivers;
   final List<Widget> actions;
 
+  /// Compact icon buttons on the title row, before the close button, such
+  /// as an edit action for the sheet's own contents.
+  final List<Widget> headerActions;
+
   /// Registers a dynamic shell search action instead of an inline field.
   final AppSheetSearch? search;
   final RefreshCallback? onRefresh;
@@ -58,6 +64,9 @@ class AppSheetScaffold extends StatelessWidget {
     final media = MediaQuery.of(context);
     final bottomClearance =
         math.max(media.viewInsets.bottom, media.padding.bottom) + AppSpacing.lg;
+    // A title line with header actions centres on the buttons; other
+    // headers keep the title aligned to the top of the close button.
+    final centred = headerActions.isNotEmpty && description == null;
     final header = Padding(
       padding: const EdgeInsets.fromLTRB(
         AppSpacing.lg,
@@ -66,7 +75,9 @@ class AppSheetScaffold extends StatelessWidget {
         AppSpacing.md,
       ),
       child: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
+        crossAxisAlignment: centred
+            ? CrossAxisAlignment.center
+            : CrossAxisAlignment.start,
         children: [
           if (icon != null) ...[
             Container(
@@ -82,7 +93,7 @@ class AppSheetScaffold extends StatelessWidget {
           ],
           Expanded(
             child: Padding(
-              padding: const EdgeInsets.only(top: AppSpacing.sm),
+              padding: EdgeInsets.only(top: centred ? 0 : AppSpacing.sm),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
@@ -109,6 +120,7 @@ class AppSheetScaffold extends StatelessWidget {
               ),
             ),
           ),
+          ...headerActions,
           if (showCloseButton && scope != null)
             AppIconButton(
               key: const ValueKey('app-sheet-close'),

@@ -4,6 +4,8 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:go_router/go_router.dart';
 import 'package:mobile/core/router/routes.dart';
+import 'package:mobile/core/ui/components/app_option_tile.dart';
+import 'package:mobile/core/ui/icons/app_icons.dart';
 import 'package:mobile/core/ui/overlays/app_sheet_scaffold.dart';
 import 'package:mobile/data/models/workspace.dart';
 import 'package:mobile/data/repositories/settings_repository.dart';
@@ -301,7 +303,7 @@ void main() {
     );
   });
 
-  testWidgets('More lists the workspace, the rest, then the tab actions', (
+  testWidgets('More lists the workspace, the rest, then Reset tabs', (
     tester,
   ) async {
     final router = await _pumpShell(tester, mailAvailable: true);
@@ -313,7 +315,6 @@ void main() {
       ShellRootTab.mail.key,
       ShellRootTab.profile.key,
       shellRootSettingsKey,
-      shellRootEditTabsKey,
       shellRootResetTabsKey,
     ];
     double? previous;
@@ -337,6 +338,46 @@ void main() {
     await _settle(tester);
     expect(_path(router), Routes.profileRoot);
     expect(_dock(tester).selectedKey, shellRootMoreKey);
+  });
+
+  testWidgets('Edit tabs is a pencil in the More header, not a row', (
+    tester,
+  ) async {
+    await _pumpShell(tester, mailAvailable: true);
+    await _openMore(tester);
+
+    expect(_overflowRow(shellRootEditTabsKey), findsNothing);
+    expect(find.widgetWithText(AppOptionTile, 'Edit tabs'), findsNothing);
+    final pencil = find.byKey(shellRootEditTabsButtonKey);
+    expect(pencil, findsOneWidget);
+    expect(
+      find.descendant(of: pencil, matching: find.byIcon(LucideIcons.pencil)),
+      findsOneWidget,
+    );
+    expect(find.bySemanticsLabel('Edit tabs'), findsOneWidget);
+    expect(
+      find.descendant(of: pencil, matching: find.byType(Tooltip)),
+      findsOneWidget,
+    );
+
+    // Title left; pencil, then close, on the right, all on one centre line.
+    final title = tester.getRect(
+      find.descendant(
+        of: find.byType(AppSheetScaffold),
+        matching: find.text('More'),
+      ),
+    );
+    final edit = tester.getRect(pencil);
+    final close = tester.getRect(find.byKey(const ValueKey('app-sheet-close')));
+    expect(title.right, lessThan(edit.left));
+    expect(edit.right, lessThanOrEqualTo(close.left));
+    expect(edit.center.dy, closeTo(close.center.dy, 0.5));
+    expect(edit.center.dy, closeTo(title.center.dy, 0.5));
+    expect(edit.size, close.size);
+
+    await tester.tap(pencil);
+    await _settle(tester);
+    expect(find.byKey(shellRootTabOptionKey(ShellRootTab.apps)), findsWidgets);
   });
 
   testWidgets('the workspace row opens the workspace picker', (tester) async {
@@ -377,8 +418,7 @@ void main() {
   ) async {
     await _pumpShell(tester, mailAvailable: true);
     await _openMore(tester);
-    await tester.ensureVisible(_overflowRow(shellRootEditTabsKey));
-    await tester.tap(_overflowRow(shellRootEditTabsKey));
+    await tester.tap(find.byKey(shellRootEditTabsButtonKey));
     await _settle(tester);
     await tester.tap(find.byKey(shellRootTabOptionKey(ShellRootTab.apps)));
     await _settle(tester);
@@ -407,8 +447,7 @@ void main() {
 
     await _openMore(tester);
     expect(_moreRow(ShellRootTab.apps), findsOneWidget);
-    await tester.ensureVisible(_overflowRow(shellRootEditTabsKey));
-    await tester.tap(_overflowRow(shellRootEditTabsKey));
+    await tester.tap(find.byKey(shellRootEditTabsButtonKey));
     await _settle(tester);
     await tester.tap(find.byKey(shellRootTabsResetKey));
     await _settle(tester);

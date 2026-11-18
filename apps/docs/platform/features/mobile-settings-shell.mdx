@@ -227,8 +227,10 @@ usually Home.
 More opens a sheet in this order: the current workspace (it opens the
 workspace picker), the root destinations that are not tabs (Tasks, Calendar,
 Mail and You when unpinned), Finance, Drive and Timer when visible, Settings,
-then Edit tabs and Reset tabs. More is the active slot while an unpinned root
-destination is open. Edit tabs picks up to four tabs from the openable
+then Reset tabs. Edit tabs is a pencil button in the sheet header, between the
+More title and the close button and centred on the same line, labelled and
+tooltipped "Edit tabs" (`AppSheetScaffold.headerActions`). More is the active
+slot while an unpinned root destination is open. Edit tabs picks up to four tabs from the openable
 destinations, in the order they were picked; the last tab cannot be removed.
 Reset tabs (in More and in the editor) clears the saved choice and returns to
 the defaults; it is disabled while no choice is saved.
@@ -241,8 +243,8 @@ read, and a choice left with no openable tab uses the defaults. The tablet rail
 keeps its fixed Home, Apps, Mira, Notifications and You destinations.
 
 Coverage: `shell_root_tabs_test.dart` (defaults for fresh preferences, a kept
-custom set, More order and destinations, the workspace row opening the picker,
-editing, persistence, Reset from More and the editor, Back from a module tab,
+custom set, More order and destinations, the header Edit tabs button, the
+workspace row opening the picker, editing, persistence, Reset from More and the editor, Back from a module tab,
 no header workspace switcher, unchanged rail), `shell_viewport_checks.dart`
 (44px named slots at every phone size) and
 `shell_profile_navigation_checks.dart`.
