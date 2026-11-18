@@ -207,9 +207,15 @@
     "git": {
       "name": "git",
       "description": "Git repository hosting frontend",
-      "entryRoute": "/",
+      "entryRoute": "/tutur3u/platform",
       "loginRoute": "/login",
-      "paths": ["/", "/login", "/repositories", "/robots.txt", "/manifest.json"]
+      "paths": [
+        "/tutur3u/platform",
+        "/tutur3u/platform/tree/main/apps",
+        "/tutur3u/platform/blob/main/package.json",
+        "/login",
+        "/robots.txt"
+      ]
     },
     "chat": {
       "name": "chat",
