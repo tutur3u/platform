@@ -117,6 +117,10 @@ const allowedSatelliteLocalApiRoutes = new Set([
   'apps/meet/src/app/api/meet-call/[meetingId]/files/route.ts',
   // Collaboration requires Meet room admission; preview assets use scoped capabilities.
   'apps/meet/src/app/api/meet-call/[meetingId]/document/route.ts',
+  // Polls and Quiz Arena authorize the Meet satellite session and use signed
+  // room commands for participant admission and host-only actions.
+  'apps/meet/src/app/api/meet-call/[meetingId]/polls/route.ts',
+  'apps/meet/src/app/api/meet-call/[meetingId]/quiz-arena/route.ts',
   'apps/meet/src/app/api/meet-call/[meetingId]/programming/route.ts',
   'apps/meet/src/app/api/meet-call/[meetingId]/programming/preview/[port]/[[...path]]/route.ts',
   'apps/meet/src/app/api/meet-call/[meetingId]/recording/route.ts',

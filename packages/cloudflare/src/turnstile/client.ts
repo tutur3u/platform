@@ -37,4 +37,4 @@ export function resolveTurnstileClientState(
   };
 }
 
-export * from './safari';
+export * from './safari.ts';
