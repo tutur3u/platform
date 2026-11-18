@@ -154,16 +154,13 @@ const nextConfig = createTuturuuuNextConfig({
         source: '/.well-known/apple-app-site-association',
         headers: [{ key: 'Content-Type', value: 'application/json' }],
       },
-      ...[
-        '/login',
-        '/:locale/login',
-        '/add-account',
-        '/:locale/add-account',
-      ].map((source) => ({
+      // One optional-locale source per page keeps the Vercel route table
+      // small; `/:locale?/login` matches both `/login` and `/<locale>/login`.
+      ...['/:locale?/login', '/:locale?/add-account'].map((source) => ({
         source,
         headers: authShellHeaders,
       })),
-      ...['/sso/consent', '/:locale/sso/consent'].map((source) => ({
+      ...['/:locale?/sso/consent'].map((source) => ({
         source,
         headers: [
           { key: 'Cache-Control', value: 'no-store' },

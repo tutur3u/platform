@@ -69,6 +69,73 @@ describe('web next config headers', () => {
   });
 });
 
+describe('locale-optional auth shell header sources', () => {
+  it.each([
+    '/login',
+    '/en/login',
+    '/vi/login',
+    '/add-account',
+    '/vi/add-account',
+  ])('applies the auth shell headers to %s', async (pathname) => {
+    const { default: nextConfig } = await import('./next.config');
+    const rules = (await nextConfig.headers?.()) ?? [];
+    const matched = rules.filter((rule) =>
+      getPathMatch(rule.source, {
+        regexModifier: (regex) => modifyRouteRegex(regex),
+        removeUnnamedParams: true,
+        sensitive: false,
+        strict: true,
+      })(pathname)
+    );
+    expect(matched.length).toBeGreaterThan(0);
+  });
+
+  it.each(['/sso/consent', '/en/sso/consent'])(
+    'keeps %s uncacheable and unframeable',
+    async (pathname) => {
+      const headers = await finalConfigHeaders(pathname);
+      expect(headers.get('cache-control')).toBe('no-store');
+      expect(headers.get('x-frame-options')).toBe('DENY');
+    }
+  );
+
+  it.each(['/en/vi/login', '/login/extra', '/en/sso/consent/x'])(
+    'does not extend the auth shell sources to %s',
+    async (pathname) => {
+      const { default: nextConfig } = await import('./next.config');
+      const matched = ((await nextConfig.headers?.()) ?? [])
+        .filter((rule) =>
+          /\/(login|add-account|sso\/consent)$/.test(rule.source)
+        )
+        .filter((rule) =>
+          getPathMatch(rule.source, {
+            regexModifier: (regex) => modifyRouteRegex(regex),
+            removeUnnamedParams: true,
+            sensitive: false,
+            strict: true,
+          })(pathname)
+        );
+      expect(matched).toEqual([]);
+    }
+  );
+
+  it('declares one header source per auth shell page', async () => {
+    const { default: nextConfig } = await import('./next.config');
+    const sources = ((await nextConfig.headers?.()) ?? []).map(
+      (rule) => rule.source
+    );
+    expect(
+      sources.filter((source) =>
+        /\/(login|add-account|sso\/consent)$/.test(source)
+      )
+    ).toEqual([
+      '/:locale?/login',
+      '/:locale?/add-account',
+      '/:locale?/sso/consent',
+    ]);
+  });
+});
+
 describe('public gateway server action origin', () => {
   it('admits only the exact public host across the private origin hop', async () => {
     const { default: config } = await import('./next.config');
