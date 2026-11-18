@@ -2,7 +2,7 @@
 // are measured only when they exist, because the screenshot lane produces
 // them after the copy lands.
 
-import { existsSync, readFileSync, statSync } from 'node:fs';
+import { readFileSync } from 'node:fs';
 import path from 'node:path';
 import { LOCALES } from './content-checks.mjs';
 import { readImageSize } from './image-size.mjs';
@@ -145,13 +145,17 @@ export function checkAssetFiles(
 ) {
   for (const { file, spec, maxBytes } of referencedAssets(listing)) {
     const absolute = path.join(root, file);
-    if (!existsSync(absolute)) {
+    let contents;
+    try {
+      contents = readFileSync(absolute);
+    } catch (error) {
+      if (error.code !== 'ENOENT') throw error;
       if (requireAssets)
         errors.push({ path: file, message: 'asset is missing' });
       else pending.push(file);
       continue;
     }
-    const bytes = statSync(absolute).size;
+    const bytes = contents.length;
     if (maxBytes !== undefined && bytes > maxBytes) {
       errors.push({
         path: file,
@@ -159,7 +163,7 @@ export function checkAssetFiles(
       });
     }
     const format = FORMAT_BY_EXTENSION[path.extname(file)];
-    const size = readImageSize(readFileSync(absolute));
+    const size = readImageSize(contents);
     if (!size || size.format !== format) {
       errors.push({ path: file, message: `not a readable ${format} file` });
     } else if (sizeProblem(size, spec)) {
