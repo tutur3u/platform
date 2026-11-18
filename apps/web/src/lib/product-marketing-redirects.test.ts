@@ -56,3 +56,7 @@ it.each([
   });
   expect(getRedirectUrl(response)).toBeNull();
 });
+
+it('declares two redirects per locale prefix', () => {
+  expect(createProductMarketingRedirects()).toHaveLength(4);
+});
