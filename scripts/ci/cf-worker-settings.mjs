@@ -8,6 +8,7 @@ import { isDeepStrictEqual } from 'node:util';
 import { currentDeployment } from './cf-worker-current-deployment.mjs';
 import { verifyDashboardAdmission } from './cf-worker-settings-dashboard.mjs';
 import { settingsList } from './cf-worker-settings-pagination.mjs';
+import { retryMissingSecret } from './cf-worker-settings-retry.mjs';
 
 function canonical(value) {
   if (Array.isArray(value))
@@ -665,7 +666,7 @@ async function main(phase, baseline, beforePath, afterPath) {
   const snapshot =
     phase === 'before'
       ? await captureBefore({ plan, ...credentials })
-      : await captureAfter({ plan, ...credentials });
+      : await retryMissingSecret(() => captureAfter({ plan, ...credentials }));
   writeFileSync(
     phase === 'before' ? beforePath : afterPath,
     `${JSON.stringify(snapshot, null, 2)}\n`,
