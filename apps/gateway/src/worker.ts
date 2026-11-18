@@ -1,4 +1,5 @@
 import {
+  acceptanceRobots,
   acceptanceUnavailable,
   bypassSecret,
   bypassSecretFor,
@@ -470,6 +471,8 @@ export function createHandler(deps: HandlerDeps) {
     if (request.headers.has(HOP_HEADER)) {
       return plain(508, 'gateway loop detected');
     }
+    const robots = acceptanceRobots(request, env);
+    if (robots) return robots;
     // The acceptance host fails closed without its bypass secret.
     if (isAcceptanceHost(request, env) && !bypassSecret(env)) {
       return acceptanceUnavailable();
@@ -608,14 +611,16 @@ export function createHandler(deps: HandlerDeps) {
       match.flagOrigin === 'marketing' &&
       match.cache === 'page' &&
       (request.method === 'GET' || request.method === 'HEAD');
-    const secret = isAcceptanceHost(request, env)
-      ? bypassSecret(env)
-      : undefined;
+    const acceptance = isAcceptanceHost(request, env);
     return applyMarketingRobots(
-      scrubBypass(await handle(request, env, ctx), secret),
+      scrubBypass(
+        await handle(request, env, ctx),
+        acceptance ? bypassSecret(env) : undefined
+      ),
       request,
       marketingPage ? 'marketing-page' : fromMarketing ? 'marketing' : 'origin',
-      env.TUTURUUU_NOINDEX === '1',
+      // The acceptance host stays out of search engines regardless of config.
+      acceptance || env.TUTURUUU_NOINDEX === '1',
       fromMarketing && env.GATEWAY_MARKETING_LEGACY_ROBOTS === '1'
     );
   };

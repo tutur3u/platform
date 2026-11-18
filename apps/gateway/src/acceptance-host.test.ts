@@ -185,3 +185,121 @@ describe('acceptance host protection bypass', () => {
     expect(t.sent[0]?.headers.has(BYPASS)).toBe(false);
   });
 });
+
+const NOINDEX = 'noindex, nofollow, nosnippet';
+const MARKETING_ENV: Env = {
+  MARKETING_ORIGIN: 'https://marketing.staging.example',
+  GATEWAY_MARKETING_GROUPS: 'home,legal,company,products,solutions,blog',
+};
+
+describe('acceptance host search-engine exclusion', () => {
+  it('serves a disallow-all robots.txt without reaching an origin', async () => {
+    const t = setup();
+    const response = await t.call(`https://${ACCEPTANCE}/robots.txt`);
+    expect(response.status).toBe(200);
+    expect(response.headers.get('content-type')).toContain('text/plain');
+    expect(await response.text()).toBe('User-agent: *\nDisallow: /\n');
+    expect(response.headers.get('x-robots-tag')).toBe(NOINDEX);
+    expect(t.sent).toHaveLength(0);
+  });
+
+  it('answers HEAD /robots.txt with no body and leaves other methods alone', async () => {
+    const t = setup();
+    const head = await t.call(`https://${ACCEPTANCE}/robots.txt`, {
+      method: 'HEAD',
+    });
+    expect(head.status).toBe(200);
+    expect(await head.text()).toBe('');
+    expect(t.sent).toHaveLength(0);
+    await t.call(`https://${ACCEPTANCE}/robots.txt`, { method: 'POST' });
+    expect(t.sent).toHaveLength(1);
+  });
+
+  it('serves robots.txt even while the bypass secret is missing', async () => {
+    const t = setup();
+    const noSecret: Env = { ...ENV, VERCEL_PROTECTION_BYPASS: undefined };
+    const response = await t.call(
+      `https://${ACCEPTANCE}/robots.txt`,
+      undefined,
+      noSecret
+    );
+    expect(response.status).toBe(200);
+    expect(await response.text()).toBe('User-agent: *\nDisallow: /\n');
+  });
+
+  it.each([
+    '/about',
+    '/api/v1/test',
+    '/dashboard',
+    '/some/unknown/page',
+    '/robots.txt/extra',
+  ])('marks every response on %s noindex', async (path) => {
+    const t = setup();
+    const first = await t.call(`https://${ACCEPTANCE}${path}`);
+    expect(first.headers.get('x-robots-tag')).toBe(NOINDEX);
+    const second = await t.call(`https://${ACCEPTANCE}${path}`);
+    expect(second.headers.get('x-robots-tag')).toBe(NOINDEX);
+  });
+
+  it('marks cached marketing pages and the 503 noindex', async () => {
+    const t = setup();
+    const env: Env = { ...ENV, ...MARKETING_ENV };
+    const miss = await t.call(`https://${ACCEPTANCE}/about`, undefined, env);
+    const hit = await t.call(`https://${ACCEPTANCE}/about`, undefined, env);
+    expect(miss.headers.get('x-robots-tag')).toBe(NOINDEX);
+    expect(hit.headers.get('x-gateway-cache')).toBe('HIT');
+    expect(hit.headers.get('x-robots-tag')).toBe(NOINDEX);
+    const noSecret: Env = { ...env, VERCEL_PROTECTION_BYPASS: undefined };
+    const unavailable = await t.call(
+      `https://${ACCEPTANCE}/about`,
+      undefined,
+      noSecret
+    );
+    expect(unavailable.status).toBe(503);
+    expect(unavailable.headers.get('x-robots-tag')).toBe(NOINDEX);
+  });
+
+  it('leaves production tuturuuu.com robots.txt and marketing pages unaffected', async () => {
+    const t = setup((request) =>
+      new URL(request.url).pathname === '/robots.txt'
+        ? new Response('User-agent: *\nAllow: /\n')
+        : new Response('page')
+    );
+    const production: Env = {
+      ...ENV,
+      ...MARKETING_ENV,
+      PUBLIC_HOST: 'tuturuuu.com',
+    };
+    const robots = await t.call(
+      'https://tuturuuu.com/robots.txt',
+      undefined,
+      production
+    );
+    expect(await robots.text()).toBe('User-agent: *\nAllow: /\n');
+    expect(t.sent).toHaveLength(1);
+    const page = await t.call(
+      'https://tuturuuu.com/about',
+      undefined,
+      production
+    );
+    expect(page.headers.has('x-robots-tag')).toBe(false);
+    const acceptancePage = await t.call(
+      `https://${ACCEPTANCE}/about`,
+      undefined,
+      { ...production, PUBLIC_HOST: ACCEPTANCE }
+    );
+    expect(acceptancePage.headers.get('x-robots-tag')).toBe(NOINDEX);
+  });
+
+  it('applies nothing when no acceptance host is configured', async () => {
+    const t = setup();
+    const noHost: Env = { ...ENV, GATEWAY_ACCEPTANCE_HOST: undefined };
+    const response = await t.call(
+      `https://${ACCEPTANCE}/robots.txt`,
+      undefined,
+      noHost
+    );
+    expect(await response.text()).toBe('ok');
+    expect(t.sent).toHaveLength(1);
+  });
+});
