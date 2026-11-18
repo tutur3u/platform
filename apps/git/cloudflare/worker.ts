@@ -8,6 +8,11 @@ import {
   createBridgeHandler,
 } from '@tuturuuu/start-bridge/start/handler';
 import { createBridgeStartHandler } from '@tuturuuu/start-bridge/start/server-entry';
+import { defaultLocale, supportedLocales } from '../src/i18n/routing';
+import {
+  type EdgePageCacheStore,
+  serveWithEdgePageCache,
+} from '../src/lib/edge-page-cache';
 import { config as proxyConfig, proxy } from '../src/proxy';
 import appConfig from '../start-bridge.config';
 import { centralFirst } from '../src/start-bridge/central-first';
@@ -27,6 +32,8 @@ export interface GitEnvironment {
 interface WorkerContext {
   waitUntil(work: Promise<unknown>): void;
 }
+
+type WorkerCaches = { default?: EdgePageCacheStore };
 
 type ApiEntry = typeof import('../src/start-bridge/api-entry');
 
@@ -69,36 +76,56 @@ const handler = () =>
     })
   );
 
+async function render(
+  request: Request,
+  env: GitEnvironment,
+  ctx: WorkerContext
+) {
+  let response: Response;
+  try {
+    if (process.env.NODE_ENV !== 'production')
+      throw new Error('Production runtime required');
+    const required = [
+      'NEXT_PUBLIC_SUPABASE_URL',
+      'NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY',
+      'SUPABASE_SECRET_KEY',
+      'TUTURUUU_APP_COORDINATION_SECRET',
+      'ENCRYPTION_MASTER_KEY',
+    ] as const;
+    if (!env.ASSETS || required.some((name) => !env[name]?.trim())) {
+      throw new Error('Missing required Worker bindings');
+    }
+    response = await (await handler())(request, env, ctx);
+  } catch (error) {
+    console.error('[start-bridge] worker failed', error);
+    response = bridgeErrorResponse();
+  }
+  return appConfig.wrapResponse
+    ? appConfig.wrapResponse(response, {
+        request,
+        env,
+        mounts,
+        publicAssets,
+        framablePaths: appConfig.framablePaths,
+        seoPolicy,
+      })
+    : response;
+}
+
 export default {
   async fetch(request: Request, env: GitEnvironment, ctx: WorkerContext) {
-    let response: Response;
-    try {
-      if (process.env.NODE_ENV !== 'production')
-        throw new Error('Production runtime required');
-      const required = [
-        'NEXT_PUBLIC_SUPABASE_URL',
-        'NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY',
-        'SUPABASE_SECRET_KEY',
-        'TUTURUUU_APP_COORDINATION_SECRET',
-        'ENCRYPTION_MASTER_KEY',
-      ] as const;
-      if (!env.ASSETS || required.some((name) => !env[name]?.trim())) {
-        throw new Error('Missing required Worker bindings');
-      }
-      response = await (await handler())(request, env, ctx);
-    } catch (error) {
-      console.error('[start-bridge] worker failed', error);
-      response = bridgeErrorResponse();
-    }
-    return appConfig.wrapResponse
-      ? appConfig.wrapResponse(response, {
-          request,
-          env,
-          mounts,
-          publicAssets,
-          framablePaths: appConfig.framablePaths,
-          seoPolicy,
-        })
-      : response;
+    const store = (globalThis as { caches?: WorkerCaches }).caches?.default;
+    if (!store) return render(request, env, ctx);
+
+    return serveWithEdgePageCache({
+      options: {
+        defaultLocale,
+        locales: supportedLocales,
+        store,
+        waitUntil: (work) => ctx.waitUntil(work),
+      },
+      render: () => render(request, env, ctx),
+      request,
+    });
   },
 };
