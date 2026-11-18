@@ -33,7 +33,7 @@ export function quizArenaExportUrl(meetingId: string, format: 'csv' | 'json') {
 export function sendQuizArenaAction(
   meetingId: string,
   action: QuizArenaAction
-) {
+): Promise<QuizArenaActionResult> {
   return getInternalApiClient().json<QuizArenaActionResult>(
     arenaPath(meetingId),
     {

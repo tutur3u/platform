@@ -344,7 +344,7 @@ export function mergeQuizArenaView(
     seq: next.seq,
     canManage: next.canManage,
     meta: next.meta ?? previous.meta,
-    tiles: upsert(previous.tiles, next.tiles, ({ id }) => id).toSorted(
+    tiles: [...upsert(previous.tiles, next.tiles, ({ id }) => id)].sort(
       (a, b) => a.categoryIndex - b.categoryIndex || a.tierIndex - b.tierIndex
     ),
     finalTile: next.finalTile ?? previous.finalTile,

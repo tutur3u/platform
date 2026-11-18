@@ -170,7 +170,7 @@ export function boardFromGenerated(
   );
   // One bonus tile in the upper tiers keeps wagers rare and meaningful.
   const bonus = request.bonusTiles
-    ? tiles.findLast(({ tierIndex }) => tierIndex >= 2)
+    ? [...tiles].reverse().find(({ tierIndex }) => tierIndex >= 2)
     : undefined;
   if (bonus) bonus.isBonusWager = true;
   const finalQuestion = arenaQuestionInputSchema.safeParse(

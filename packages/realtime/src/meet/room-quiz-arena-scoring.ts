@@ -92,8 +92,8 @@ export function buildArenaState(
   roster: Array<{ userId: string; displayName: string }>
 ): RoomQuizArenaState {
   const limit = config.defaultTimeLimitSec;
-  const tiles = board.tiles
-    .toSorted(
+  const tiles = [...board.tiles]
+    .sort(
       (a, b) => a.categoryIndex - b.categoryIndex || a.tierIndex - b.tierIndex
     )
     .map((tile) => {
@@ -180,7 +180,7 @@ export function ensurePlayer(
     for (const player of Object.values(state.players))
       if (player.teamId)
         sizes.set(player.teamId, (sizes.get(player.teamId) ?? 0) + 1);
-    const team = state.teams.toSorted(
+    const team = [...state.teams].sort(
       (a, b) => (sizes.get(a.id) ?? 0) - (sizes.get(b.id) ?? 0)
     )[0];
     if (team) {
@@ -420,7 +420,7 @@ export function rankArenaEntries<T>(
   entries: readonly T[],
   key: (entry: T) => Rankable
 ): Array<T & { rank: number }> {
-  const sorted = entries.toSorted((a, b) => {
+  const sorted = [...entries].sort((a, b) => {
     const left = key(a);
     const right = key(b);
     return (

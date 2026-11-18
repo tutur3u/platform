@@ -18,6 +18,10 @@ import {
 
 type Access = Awaited<ReturnType<typeof getMeetCallAccess>>;
 type Db = Awaited<ReturnType<typeof createAdminClient>>;
+type CourseOption = { id: string; name: string };
+type CourseList = {
+  courses: Array<CourseOption & { modules: CourseOption[] }>;
+};
 
 /**
  * Distributing lesson questions and answer keys needs the same course-editing
@@ -41,7 +45,7 @@ async function courseAuthority(access: Access) {
   return createAdminClient({ noCookie: true });
 }
 
-export async function listUpskiiCourses(access: Access) {
+export async function listUpskiiCourses(access: Access): Promise<CourseList> {
   const db = await courseAuthority(access);
   const { data: courses, error } = await db
     .from('workspace_user_groups')
@@ -53,7 +57,8 @@ export async function listUpskiiCourses(access: Access) {
     .order('name')
     .limit(50);
   if (error) throw new MeetCallAccessError(503, 'Courses are unavailable');
-  const ids = (courses ?? []).map(({ id }) => id);
+  const publishedCourses: CourseOption[] = courses ?? [];
+  const ids = publishedCourses.map(({ id }) => id);
   const moduleResult = ids.length
     ? await db
         .from('workspace_course_modules')
@@ -65,9 +70,10 @@ export async function listUpskiiCourses(access: Access) {
     : null;
   if (moduleResult?.error)
     throw new MeetCallAccessError(503, 'Courses are unavailable');
-  const modules = moduleResult?.data ?? [];
+  const modules: Array<CourseOption & { group_id: string }> =
+    moduleResult?.data ?? [];
   return {
-    courses: (courses ?? [])
+    courses: publishedCourses
       .map((course) => ({
         id: course.id,
         name: course.name,
@@ -220,7 +226,9 @@ export function boardFromLessons(
     (sum, { questions }) => sum + questions.length,
     0
   );
-  const last = sections.findLast(({ questions }) => questions.length > 0);
+  const last = [...sections]
+    .reverse()
+    .find(({ questions }) => questions.length > 0);
   const finalQuestion =
     options.includeFinalRound && total >= 4 && last
       ? { category: last.name.slice(0, 60), question: last.questions.at(-1) }

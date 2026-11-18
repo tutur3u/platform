@@ -7,6 +7,7 @@ import {
   type RoomQuizArenaState,
 } from './room-quiz-arena';
 import { type RoomServiceState, roomService } from './room-service';
+import { createMeetPresence, createMeetRoomSnapshot } from './room';
 
 /** Shared Quiz Arena test fixtures: tokens, a present roster and a small board. */
 export const uuid = (n: number) =>
@@ -38,18 +39,14 @@ export const player = (n: number) => ({
 });
 
 export function room(count: number): RoomServiceState {
-  const presence: RoomServiceState['presence'] = {};
-  for (let n = 1; n <= count; n++)
-    presence[uuid(n)] = {
-      userId: uuid(n),
-      accountId: uuid(n),
-      displayName: `Player ${n}`,
-      joinedAt: '2026-11-18T00:00:00Z',
-      lastSeenAt: '2026-11-18T00:00:00Z',
-      media: { audio: false, video: false, screen: false },
-      role: 'speaker',
-    } as RoomServiceState['presence'][string];
-  return { presence, approved: {} } as unknown as RoomServiceState;
+  const snapshot = createMeetRoomSnapshot();
+  for (let n = 1; n <= count; n++) {
+    snapshot.presence[uuid(n)] = createMeetPresence(
+      player(n),
+      '2026-11-18T00:00:00Z'
+    );
+  }
+  return snapshot;
 }
 
 export const board = (
