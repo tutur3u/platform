@@ -5,10 +5,19 @@ import { XIcon } from '@tuturuuu/icons/lucide-static';
 import { cn } from '@tuturuuu/utils/format';
 import type * as React from 'react';
 
+import { useSidebarOverlayOpenChange } from './custom/sidebar-overlay-context';
+
 function Dialog({
   ...props
 }: React.ComponentProps<typeof DialogPrimitive.Root>) {
-  return <DialogPrimitive.Root data-slot="dialog" {...props} />;
+  const onOpenChange = useSidebarOverlayOpenChange(props);
+  return (
+    <DialogPrimitive.Root
+      data-slot="dialog"
+      {...props}
+      onOpenChange={onOpenChange}
+    />
+  );
 }
 
 function DialogTrigger({

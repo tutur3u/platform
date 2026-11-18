@@ -4,10 +4,19 @@ import * as PopoverPrimitive from '@radix-ui/react-popover';
 import { cn } from '@tuturuuu/utils/format';
 import type * as React from 'react';
 
+import { useSidebarOverlayOpenChange } from './custom/sidebar-overlay-context';
+
 function Popover({
   ...props
 }: React.ComponentProps<typeof PopoverPrimitive.Root>) {
-  return <PopoverPrimitive.Root data-slot="popover" {...props} />;
+  const onOpenChange = useSidebarOverlayOpenChange(props);
+  return (
+    <PopoverPrimitive.Root
+      data-slot="popover"
+      {...props}
+      onOpenChange={onOpenChange}
+    />
+  );
 }
 
 function PopoverTrigger({

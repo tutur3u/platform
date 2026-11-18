@@ -1,6 +1,7 @@
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import type { Notification } from '@tuturuuu/ui/hooks/use-notifications';
 import { render } from '@testing-library/react';
+import type { Notification } from '@tuturuuu/ui/hooks/use-notifications';
+import type { ReactNode } from 'react';
 import { vi } from 'vitest';
 import { NotificationRuntime } from '../notification-runtime';
 import SatelliteNotificationPopover from '../satellite-notification-popover';
@@ -130,7 +131,13 @@ export function renderPopover({
   realtime = true,
   pollIntervalMs,
   wsId = WS,
-}: { realtime?: boolean; pollIntervalMs?: number; wsId?: string } = {}) {
+  wrap = (popover) => popover,
+}: {
+  realtime?: boolean;
+  pollIntervalMs?: number;
+  wsId?: string;
+  wrap?: (popover: ReactNode) => ReactNode;
+} = {}) {
   const client = new QueryClient({
     defaultOptions: { queries: { retry: false }, mutations: { retry: false } },
   });
@@ -146,10 +153,12 @@ export function renderPopover({
           realtime,
         }}
       >
-        <SatelliteNotificationPopover
-          userId="user-1"
-          pollIntervalMs={pollIntervalMs}
-        />
+        {wrap(
+          <SatelliteNotificationPopover
+            userId="user-1"
+            pollIntervalMs={pollIntervalMs}
+          />
+        )}
       </NotificationRuntime>
     </QueryClientProvider>
   );

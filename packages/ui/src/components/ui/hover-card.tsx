@@ -4,10 +4,19 @@ import * as HoverCardPrimitive from '@radix-ui/react-hover-card';
 import { cn } from '@tuturuuu/utils/format';
 import type * as React from 'react';
 
+import { useSidebarOverlayOpenChange } from './custom/sidebar-overlay-context';
+
 function HoverCard({
   ...props
 }: React.ComponentProps<typeof HoverCardPrimitive.Root>) {
-  return <HoverCardPrimitive.Root data-slot="hover-card" {...props} />;
+  const onOpenChange = useSidebarOverlayOpenChange(props);
+  return (
+    <HoverCardPrimitive.Root
+      data-slot="hover-card"
+      {...props}
+      onOpenChange={onOpenChange}
+    />
+  );
 }
 
 function HoverCardTrigger({

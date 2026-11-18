@@ -265,7 +265,7 @@ describe('framework-independent satellite shell', () => {
     expect(result.current.navState.titleHistory).toEqual(['Workspace']);
   });
 
-  it('preserves hidden and hover behavior while respecting open dialogs', () => {
+  it('preserves hidden and hover behavior', () => {
     const handleBehaviorChange = vi.fn();
     const links: NavLink[] = [];
     const { result, rerender } = renderHook(
@@ -285,14 +285,6 @@ describe('framework-independent satellite shell', () => {
     rerender({ behavior: 'hover' });
     act(() => result.current.onMouseEnter?.());
     expect(result.current.isCollapsed).toBe(false);
-    const { unmount } = render(
-      <div role="dialog" data-state="open">
-        Settings
-      </div>
-    );
-    act(() => result.current.onMouseLeave?.());
-    expect(result.current.isCollapsed).toBe(false);
-    unmount();
     act(() => result.current.onMouseLeave?.());
     expect(result.current.isCollapsed).toBe(true);
   });

@@ -2,6 +2,8 @@ import '@testing-library/jest-dom';
 import { act, fireEvent, render, screen, within } from '@testing-library/react';
 import { useEffect } from 'react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { Dialog } from '../dialog';
+import { Popover } from '../popover';
 import { Structure } from './structure';
 
 beforeEach(() => {
@@ -239,6 +241,41 @@ describe('Structure', () => {
       } finally {
         vi.useRealTimers();
       }
+    });
+
+    it('waits for the last overlay and cancels a deferred close on re-entry', () => {
+      const onMouseLeave = vi.fn();
+      const renderOverlays = (popoverOpen: boolean, dialogOpen: boolean) => (
+        <Structure
+          isCollapsed={false}
+          onMouseLeave={onMouseLeave}
+          overlayOnExpand
+          setIsCollapsed={vi.fn()}
+          sidebarContent={
+            <>
+              <Popover open={popoverOpen} />
+              <Dialog open={dialogOpen} />
+            </>
+          }
+        >
+          <span>Page content</span>
+        </Structure>
+      );
+      const { rerender } = render(renderOverlays(true, true));
+      const sidebar = screen.getByRole('complementary');
+      fireEvent.mouseLeave(sidebar);
+      rerender(renderOverlays(false, true));
+      expect(sidebar).toHaveAttribute('data-overlay-state', 'open');
+
+      fireEvent.mouseEnter(sidebar);
+      rerender(renderOverlays(false, false));
+      expect(sidebar).toHaveAttribute('data-overlay-state', 'open');
+      expect(onMouseLeave).not.toHaveBeenCalled();
+
+      fireEvent.mouseLeave(sidebar);
+      expect(sidebar).toHaveAttribute('data-overlay-state', 'closing');
+      fireEvent.animationEnd(sidebar);
+      expect(onMouseLeave).toHaveBeenCalledTimes(1);
     });
 
     it('keeps the animated reflow and mounted body for non-overlay sidebars', () => {

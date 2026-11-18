@@ -5,8 +5,17 @@ import { XIcon } from '@tuturuuu/icons/lucide-static';
 import { cn } from '@tuturuuu/utils/format';
 import type * as React from 'react';
 
+import { useSidebarOverlayOpenChange } from './custom/sidebar-overlay-context';
+
 function Sheet({ ...props }: React.ComponentProps<typeof SheetPrimitive.Root>) {
-  return <SheetPrimitive.Root data-slot="sheet" {...props} />;
+  const onOpenChange = useSidebarOverlayOpenChange(props);
+  return (
+    <SheetPrimitive.Root
+      data-slot="sheet"
+      {...props}
+      onOpenChange={onOpenChange}
+    />
+  );
 }
 
 function SheetTrigger({

@@ -9,10 +9,19 @@ import {
 import { cn } from '@tuturuuu/utils/format';
 import type * as React from 'react';
 
+import { useSidebarOverlayOpenChange } from './custom/sidebar-overlay-context';
+
 function DropdownMenu({
   ...props
 }: React.ComponentProps<typeof DropdownMenuPrimitive.Root>) {
-  return <DropdownMenuPrimitive.Root data-slot="dropdown-menu" {...props} />;
+  const onOpenChange = useSidebarOverlayOpenChange(props);
+  return (
+    <DropdownMenuPrimitive.Root
+      data-slot="dropdown-menu"
+      {...props}
+      onOpenChange={onOpenChange}
+    />
+  );
 }
 
 function DropdownMenuPortal({

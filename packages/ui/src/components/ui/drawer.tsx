@@ -3,11 +3,19 @@
 import { cn } from '@tuturuuu/utils/format';
 import type * as React from 'react';
 import { Drawer as DrawerPrimitive } from 'vaul';
+import { useSidebarOverlayOpenChange } from './custom/sidebar-overlay-context';
 
 function Drawer({
   ...props
 }: React.ComponentProps<typeof DrawerPrimitive.Root>) {
-  return <DrawerPrimitive.Root data-slot="drawer" {...props} />;
+  const onOpenChange = useSidebarOverlayOpenChange(props);
+  return (
+    <DrawerPrimitive.Root
+      data-slot="drawer"
+      {...props}
+      onOpenChange={onOpenChange}
+    />
+  );
 }
 
 function DrawerTrigger({

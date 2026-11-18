@@ -153,11 +153,13 @@ resizes or moves the page. Rules for any change to it:
   box changes size in one frame; a paint-only `clip-path` wipe and an opacity fade
   (`sidebar-overlay-reveal`, `sidebar-overlay-content` in `globals.css`, 180 ms,
   disabled under `prefers-reduced-motion`) reveal it.
-- Closing mirrors the reveal. On mouse leave, `useSidebarOverlayClose` keeps the
-  expanded panel mounted while `sidebar-overlay-conceal` and
-  `sidebar-overlay-content-out` play (same 180 ms ease-out), then calls the app's
-  `onMouseLeave`. Re-entering cancels the close, reduced motion collapses at once,
-  and a timeout closes it if no `animationend` arrives.
+- Shared popovers, menus and dialogs inside the sidebar register while open,
+  including when their content renders in a portal. Shells pass the open state
+  of sidebar dialogs rendered alongside the sidebar. When the last overlay closes,
+  the panel starts its usual 180 ms conceal animation if the pointer is outside.
+  Re-entering cancels the close, reduced motion collapses at once, and a timeout
+  closes it if no `animationend` arrives. The sidebar and notification popover
+  tests cover overlay dismissal, portal movement and overlapping overlays.
 - The rail and the expanded panel are separate subtrees (keyed remount), because an
   element that exists in both states and changes position counts as a layout shift.
 - Async content inside the panel needs a fixed-size skeleton, not a pop-in.

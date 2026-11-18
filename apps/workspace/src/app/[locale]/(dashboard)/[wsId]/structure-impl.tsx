@@ -6,9 +6,9 @@ import {
   FixedAppBrand,
   WorkspaceSelectVisibilityToggle,
 } from '@tuturuuu/satellite/fixed-app-brand';
+import { SidebarOverlayLayout as BaseStructure } from '@tuturuuu/satellite/sidebar-structure';
 import type { NavLink } from '@tuturuuu/ui/custom/navigation';
 import { SidebarFooterActions } from '@tuturuuu/ui/custom/sidebar-footer-actions';
-import { Structure as BaseStructure } from '@tuturuuu/ui/custom/structure';
 import { TuturuuLogo } from '@tuturuuu/ui/custom/tuturuuu-logo';
 import { WorkspaceSelectRevealProvider } from '@tuturuuu/ui/custom/workspace-select-reveal';
 import { cn } from '@tuturuuu/utils/format';
@@ -784,31 +784,8 @@ export function StructureImpl({
 
   const isHoverMode = behavior === 'hover';
 
-  // Helper function to check if any dialogs are currently open
-  const hasOpenDialogs = useCallback(() => {
-    const hasDialogs =
-      document.querySelector('[data-state="open"][role="dialog"]') !== null;
-    const hasAlertDialogs =
-      document.querySelector('[data-state="open"][role="alertdialog"]') !==
-      null;
-    return hasDialogs || hasAlertDialogs;
-  }, []);
-
-  const onMouseEnter = isHoverMode
-    ? () => {
-        if (!hasOpenDialogs()) {
-          setIsCollapsed(false);
-        }
-      }
-    : undefined;
-
-  const onMouseLeave = isHoverMode
-    ? () => {
-        if (!hasOpenDialogs()) {
-          setIsCollapsed(true);
-        }
-      }
-    : undefined;
+  const onMouseEnter = isHoverMode ? () => setIsCollapsed(false) : undefined;
+  const onMouseLeave = isHoverMode ? () => setIsCollapsed(true) : undefined;
 
   const backButton: NavLink = {
     title: t('common.back'),
@@ -1041,6 +1018,7 @@ export function StructureImpl({
           onMouseEnter={onMouseEnter}
           onMouseLeave={onMouseLeave}
           hideSizeToggle={behavior === 'hover' || behavior === 'hidden'}
+          sidebarOverlayOpen={appsLauncherOpen}
           overlayOnExpand={behavior === 'hover'}
           sidebarHidden={behavior === 'hidden'}
         >

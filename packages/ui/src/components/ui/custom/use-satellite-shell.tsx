@@ -158,24 +158,9 @@ export function useSatelliteShell({
     }
   }, [behavior, handleBehaviorChange, persistCollapsed, isMobile]);
 
-  const hasOpenDialogs = useCallback(
-    () =>
-      document.querySelector('[data-state="open"][role="dialog"]') !== null ||
-      document.querySelector('[data-state="open"][role="alertdialog"]') !==
-        null,
-    []
-  );
   const isHoverMode = behavior === 'hover';
-  const onMouseEnter = isHoverMode
-    ? () => {
-        if (!hasOpenDialogs()) setIsCollapsed(false);
-      }
-    : undefined;
-  const onMouseLeave = isHoverMode
-    ? () => {
-        if (!hasOpenDialogs()) setIsCollapsed(true);
-      }
-    : undefined;
+  const onMouseEnter = isHoverMode ? () => setIsCollapsed(false) : undefined;
+  const onMouseLeave = isHoverMode ? () => setIsCollapsed(true) : undefined;
   const closeOnMobile = useCallback(() => {
     if (window.innerWidth < 768) setMobileCollapsed(true);
   }, []);

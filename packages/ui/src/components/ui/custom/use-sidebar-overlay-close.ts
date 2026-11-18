@@ -1,4 +1,10 @@
-import { useCallback, useEffect, useRef, useState } from 'react';
+import {
+  useCallback,
+  useEffectEvent,
+  useLayoutEffect,
+  useRef,
+  useState,
+} from 'react';
 
 /** Matches the reveal and conceal keyframe duration in globals.css. */
 export const SIDEBAR_OVERLAY_CLOSE_MS = 180;
@@ -13,26 +19,30 @@ function prefersReducedMotion() {
   );
 }
 
-/**
- * Animates the hover-expand overlay closed before the app collapses it. On
- * mouse leave the expanded panel plays the conceal animation, then the app's
- * own onMouseLeave runs; entering again cancels the close. Reduced motion and
- * non-overlay sidebars collapse immediately.
- */
 export function useSidebarOverlayClose({
   enabled,
   isCollapsed,
+  externalOverlayOpen,
   onMouseEnter,
   onMouseLeave,
 }: {
   enabled: boolean;
   isCollapsed: boolean;
+  externalOverlayOpen: boolean;
   onMouseEnter?: () => void;
   onMouseLeave?: () => void;
 }) {
   const [isClosing, setIsClosing] = useState(false);
   const [panel, setPanel] = useState<HTMLElement | null>(null);
+  const [openOverlays, setOpenOverlays] = useState(0);
+  const pendingLeave = useRef(false);
   const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const isPinned = enabled && (externalOverlayOpen || openOverlays > 0);
+
+  const registerOverlay = useCallback(() => {
+    setOpenOverlays((count) => count + 1);
+    return () => setOpenOverlays((count) => count - 1);
+  }, []);
 
   const clearTimer = useCallback(() => {
     if (timerRef.current !== null) {
@@ -41,49 +51,70 @@ export function useSidebarOverlayClose({
     }
   }, []);
 
-  const finishClose = useCallback(() => {
+  const finishClose = useEffectEvent(() => {
     clearTimer();
+    pendingLeave.current = false;
     setIsClosing(false);
     onMouseLeave?.();
-  }, [clearTimer, onMouseLeave]);
+  });
 
-  useEffect(() => clearTimer, [clearTimer]);
-
-  const handleMouseLeave = useCallback(() => {
+  const startClose = useEffectEvent(() => {
+    if (isPinned || timerRef.current !== null) return;
     if (!enabled || isCollapsed || prefersReducedMotion()) {
-      onMouseLeave?.();
+      finishClose();
       return;
     }
-    clearTimer();
     setIsClosing(true);
-    timerRef.current = setTimeout(finishClose, CLOSE_FALLBACK_MS);
-  }, [clearTimer, enabled, finishClose, isCollapsed, onMouseLeave]);
+    timerRef.current = setTimeout(() => finishClose(), CLOSE_FALLBACK_MS);
+  });
 
-  const handleMouseEnter = useCallback(() => {
-    if (isClosing) {
+  const handleMouseLeave = useEffectEvent(() => {
+    if (!onMouseLeave) return;
+    pendingLeave.current = true;
+    startClose();
+  });
+
+  const handleMouseEnter = useEffectEvent(() => {
+    pendingLeave.current = false;
+    clearTimer();
+    setIsClosing(false);
+    if (!isPinned) onMouseEnter?.();
+  });
+
+  useLayoutEffect(() => {
+    if (isPinned) {
       clearTimer();
       setIsClosing(false);
+    } else if (pendingLeave.current) {
+      startClose();
     }
-    onMouseEnter?.();
-  }, [clearTimer, isClosing, onMouseEnter]);
+  }, [clearTimer, isPinned]);
 
-  // While closing, the conceal animation is the only one on the panel, so
-  // its own animationend marks the end; children's animations are ignored.
-  // The native event is used because React maps onAnimationEnd to a
-  // vendor-prefixed name when the runtime lacks AnimationEvent.
-  useEffect(() => {
-    if (!isClosing || !panel) return;
-    const handleAnimationEnd = (event: Event) => {
-      if (event.target === panel) finishClose();
+  useLayoutEffect(() => {
+    if (!panel) return;
+
+    // Native boundary events track the actual panel even when a React portal
+    // is logically its child. The open overlay keeps the panel pinned there.
+    const enter = () => handleMouseEnter();
+    const leave = () => handleMouseLeave();
+    const animationEnd = (event: Event) => {
+      if (event.target === panel && timerRef.current !== null) finishClose();
     };
-    panel.addEventListener('animationend', handleAnimationEnd);
-    return () => panel.removeEventListener('animationend', handleAnimationEnd);
-  }, [finishClose, isClosing, panel]);
+    panel.addEventListener('mouseenter', enter);
+    panel.addEventListener('mouseleave', leave);
+    panel.addEventListener('animationend', animationEnd);
+    return () => {
+      panel.removeEventListener('mouseenter', enter);
+      panel.removeEventListener('mouseleave', leave);
+      panel.removeEventListener('animationend', animationEnd);
+      clearTimer();
+      pendingLeave.current = false;
+    };
+  }, [clearTimer, panel]);
 
   return {
-    isClosing: isClosing && !isCollapsed,
+    isClosing: isClosing && !isCollapsed && !isPinned,
     panelRef: setPanel,
-    onMouseEnter: onMouseEnter || onMouseLeave ? handleMouseEnter : undefined,
-    onMouseLeave: onMouseLeave ? handleMouseLeave : undefined,
+    registerOverlay: enabled ? registerOverlay : null,
   };
 }

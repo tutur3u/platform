@@ -9,10 +9,19 @@ import {
 import { cn } from '@tuturuuu/utils/format';
 import type * as React from 'react';
 
+import { useSidebarOverlayOpenChange } from './custom/sidebar-overlay-context';
+
 function Select({
   ...props
 }: React.ComponentProps<typeof SelectPrimitive.Root>) {
-  return <SelectPrimitive.Root data-slot="select" {...props} />;
+  const onOpenChange = useSidebarOverlayOpenChange(props);
+  return (
+    <SelectPrimitive.Root
+      data-slot="select"
+      {...props}
+      onOpenChange={onOpenChange}
+    />
+  );
 }
 
 function SelectGroup({

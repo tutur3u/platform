@@ -5,12 +5,13 @@ import { SatelliteShell } from '@tuturuuu/ui/custom/satellite-shell';
 import { SidebarFooterActions } from '@tuturuuu/ui/custom/sidebar-footer-actions';
 import { TuturuuLogo } from '@tuturuuu/ui/custom/tuturuuu-logo';
 import { useSatelliteShell } from '@tuturuuu/ui/custom/use-satellite-shell';
+import { useSettingsDialogUrlState } from '@tuturuuu/ui/hooks/use-settings-dialog-url-state';
 import type { LaunchableWorkspace } from '@tuturuuu/utils/launchable-apps';
 import { setCookie } from 'cookies-next';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { useTranslations } from 'next-intl';
-import { Suspense, type ReactNode } from 'react';
+import { type ReactNode, Suspense } from 'react';
 import { SIDEBAR_COLLAPSED_COOKIE_NAME } from '../constants/common';
 import {
   getSidebarCookieOptions,
@@ -29,6 +30,8 @@ import {
   type WorkspaceSelectRenderer,
 } from './sidebar-structure-utils';
 import { WorkspaceSelectorProvider } from './workspace-selector-context';
+
+export { SidebarOverlayLayout } from './sidebar-overlay-layout';
 
 const persistCollapsed = (collapsed: boolean) =>
   setCookie(
@@ -97,6 +100,7 @@ export function SidebarStructure({
 }: SidebarStructureProps) {
   const t = useTranslations();
   const pathname = usePathname();
+  const { open: settingsDialogOpen } = useSettingsDialogUrlState();
   const { behavior, handleBehaviorChange } = useSidebar();
   const {
     isCollapsed,
@@ -190,6 +194,7 @@ export function SidebarStructure({
           notificationPopover={notificationPopover}
           onMouseEnter={onMouseEnter}
           onMouseLeave={onMouseLeave}
+          sidebarOverlayOpen={appsLauncherOpen || settingsDialogOpen}
           overlayOnExpand={behavior === 'hover'}
           sidebarHidden={behavior === 'hidden'}
           sidebarCollapsedWidth={sidebarCollapsedWidth}

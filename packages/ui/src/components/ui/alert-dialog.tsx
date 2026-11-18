@@ -5,10 +5,19 @@ import { cn } from '@tuturuuu/utils/format';
 import type * as React from 'react';
 import { buttonVariants } from './button';
 
+import { useSidebarOverlayOpenChange } from './custom/sidebar-overlay-context';
+
 function AlertDialog({
   ...props
 }: React.ComponentProps<typeof AlertDialogPrimitive.Root>) {
-  return <AlertDialogPrimitive.Root data-slot="alert-dialog" {...props} />;
+  const onOpenChange = useSidebarOverlayOpenChange(props);
+  return (
+    <AlertDialogPrimitive.Root
+      data-slot="alert-dialog"
+      {...props}
+      onOpenChange={onOpenChange}
+    />
+  );
 }
 
 function AlertDialogTrigger({

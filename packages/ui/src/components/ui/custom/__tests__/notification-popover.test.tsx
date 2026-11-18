@@ -9,7 +9,9 @@ import {
   NOTIFICATION_MUTATION_KEY,
   notificationKeys,
 } from '@tuturuuu/ui/hooks/use-notifications';
+import { type ReactNode, useState } from 'react';
 import { afterEach, describe, expect, it, vi } from 'vitest';
+import { Structure } from '../structure';
 import {
   fakeApi,
   notification,
@@ -51,7 +53,71 @@ afterEach(() => {
   vi.clearAllMocks();
 });
 
+function HoverSidebar({ popover }: { popover: ReactNode }) {
+  const [collapsed, setCollapsed] = useState(true);
+  return (
+    <Structure
+      actions={popover}
+      isCollapsed={collapsed}
+      onMouseEnter={() => setCollapsed(false)}
+      onMouseLeave={() => setCollapsed(true)}
+      overlayOnExpand
+      setIsCollapsed={setCollapsed}
+    >
+      <button type="button">Outside sidebar</button>
+    </Structure>
+  );
+}
+
 describe('notification popover', () => {
+  it.each(['Escape', 'outside click'])(
+    'pins the hover sidebar while notifications is open and closes after %s',
+    async (dismissal) => {
+      stubBrowser(fakeApi([notification('n1', 1)]).fetch);
+      vi.stubGlobal('matchMedia', () => ({
+        matches: false,
+        addEventListener: vi.fn(),
+        removeEventListener: vi.fn(),
+      }));
+      renderPopover({ wrap: (popover) => <HoverSidebar popover={popover} /> });
+      const sidebar = screen.getByRole('complementary');
+      expect(sidebar).not.toHaveAttribute('data-overlay-state');
+      fireEvent.mouseEnter(sidebar);
+      await openPopover();
+      await screen.findByText('Title n1');
+
+      const popover = screen.getByRole('dialog');
+      const outside = screen.getByRole('button', { name: 'Outside sidebar' });
+      expect(sidebar).not.toContainElement(popover);
+
+      vi.useFakeTimers();
+      try {
+        fireEvent.mouseLeave(sidebar, { relatedTarget: popover });
+        fireEvent.mouseEnter(popover, { relatedTarget: sidebar });
+        fireEvent.mouseLeave(popover, { relatedTarget: outside });
+        act(() => vi.advanceTimersByTime(300));
+        expect(sidebar).toHaveAttribute('data-overlay-state', 'open');
+        expect(popover).toBeVisible();
+      } finally {
+        vi.useRealTimers();
+      }
+
+      if (dismissal === 'Escape') {
+        fireEvent.keyDown(popover, { key: 'Escape' });
+      } else {
+        fireEvent.pointerDown(outside, { button: 0, pointerType: 'mouse' });
+        fireEvent.mouseDown(outside, { button: 0 });
+        fireEvent.pointerUp(outside, { button: 0, pointerType: 'mouse' });
+        fireEvent.mouseUp(outside, { button: 0 });
+        fireEvent.click(outside, { button: 0 });
+      }
+      await waitFor(() => expect(popover).not.toBeInTheDocument());
+      expect(sidebar).toHaveAttribute('data-overlay-state', 'closing');
+      fireEvent.animationEnd(sidebar);
+      expect(sidebar).not.toHaveAttribute('data-overlay-state');
+    }
+  );
+
   it('requests only the unread count while closed, independent of list rows', async () => {
     const api = fakeApi([notification('n1', 1), notification('n2', 2)], 7);
     stubBrowser(api.fetch);

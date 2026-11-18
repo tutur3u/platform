@@ -287,6 +287,7 @@ export function Structure({
           </div>
         }
         userPopover={account(true)}
+        sidebarOverlayOpen={appsOpen || settingsOpen || feedbackOpen}
         overlayOnExpand={sidebar.behavior === 'hover'}
         onMouseEnter={onMouseEnter}
         onMouseLeave={onMouseLeave}
