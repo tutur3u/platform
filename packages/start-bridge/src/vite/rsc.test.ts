@@ -26,6 +26,15 @@ describe('RSC plugin', () => {
     );
   });
 
+  it('reads type imports and tab-separated aliases', () => {
+    const source =
+      "import { type Body, Inter\tas\tFont } from 'next/font/google';";
+    expect(importedNames(source, 'next/font/google')).toEqual([
+      'Body',
+      'Inter',
+    ]);
+  });
+
   it('resolves navigation and intl per environment', () => {
     const plugin = startBridgeRscPlugin();
     const resolve = (name: string, id: string) =>

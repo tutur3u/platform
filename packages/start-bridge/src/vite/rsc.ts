@@ -77,12 +77,15 @@ export function importedNames(source: string, specifier: string) {
   );
   for (const match of source.matchAll(pattern)) {
     const clause = match[1] ?? '';
-    const named = /\{([^}]*)\}/u.exec(clause)?.[1];
+    const open = clause.indexOf('{');
+    const close = clause.indexOf('}', open + 1);
+    const named =
+      open >= 0 && close > open ? clause.slice(open + 1, close) : undefined;
     for (const part of named?.split(',') ?? []) {
       const name = part
         .trim()
-        .split(/\s+as\s+/u)[0]
-        ?.replace(/^type\s+/u, '');
+        .replace(/^type\s+/u, '')
+        .split(/\s+/u, 1)[0];
       if (name && /^[A-Za-z_$][\w$]*$/u.test(name)) names.add(name);
     }
     if (/^[A-Za-z_$][\w$]*(?:\s*,|$)/u.test(clause.trim()))
