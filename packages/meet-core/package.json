@@ -475,6 +475,8 @@
     "./routes/api/meet-call/[meetingId]/costs/route.ts": "./src/routes/api/meet-call/[meetingId]/costs/route.ts",
     "./routes/api/meet-call/[meetingId]/title/route": "./src/routes/api/meet-call/[meetingId]/title/route.ts",
     "./routes/api/meet-call/[meetingId]/title/route.ts": "./src/routes/api/meet-call/[meetingId]/title/route.ts",
+    "./routes/api/meet-call/[meetingId]/rating/route": "./src/routes/api/meet-call/[meetingId]/rating/route.ts",
+    "./routes/api/meet-call/[meetingId]/rating/route.ts": "./src/routes/api/meet-call/[meetingId]/rating/route.ts",
     "./routes/api/meet-call/[meetingId]/recording/route": "./src/routes/api/meet-call/[meetingId]/recording/route.ts",
     "./routes/api/meet-call/[meetingId]/recording/route.ts": "./src/routes/api/meet-call/[meetingId]/recording/route.ts",
     "./routes/api/meet-call/[meetingId]/state/route": "./src/routes/api/meet-call/[meetingId]/state/route.ts",

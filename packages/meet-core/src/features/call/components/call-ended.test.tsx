@@ -44,6 +44,9 @@ vi.mock('./ended-meeting-facts-row', () => ({
   EndedMeetingFactsRow: ({ canSeeNotes }: { canSeeNotes: boolean }) =>
     canSeeNotes ? <div data-testid="facts-row" /> : null,
 }));
+vi.mock('./ended-meeting-rating', () => ({
+  EndedMeetingRating: () => <div data-testid="rating" />,
+}));
 vi.mock('./new-meeting-button', () => ({
   NewMeetingButton: () => <button type="button">New meeting</button>,
 }));
@@ -192,4 +195,12 @@ it('shows meeting facts only to viewers who may read notes', () => {
   cleanup();
   renderEnded({ canReadNotes: false });
   expect(screen.queryByTestId('facts-row')).toBeNull();
+});
+
+it('offers the private rating on both the ended and the left screen', () => {
+  renderEnded();
+  expect(screen.getByTestId('rating')).toBeTruthy();
+  cleanup();
+  renderEnded({ lifecycle: 'live', canReadNotes: false });
+  expect(screen.getByTestId('rating')).toBeTruthy();
 });

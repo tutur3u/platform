@@ -11,6 +11,7 @@ import { type ReactNode, useState } from 'react';
 import { useEndedRoom } from '../hooks/use-ended-room';
 import type { CallLifecycle } from '../lib/call-state';
 import { EndedMeetingFactsRow } from './ended-meeting-facts-row';
+import { EndedMeetingRating } from './ended-meeting-rating';
 import { EndedMeetingSettings } from './ended-meeting-settings';
 import { NewMeetingButton } from './new-meeting-button';
 import { RestoreRoomButton } from './restore-room-button';
@@ -169,6 +170,7 @@ export function CallEnded({
               {(rejoinable || canSeeNotes) && backLink(false)}
             </div>
           </div>
+          <EndedMeetingRating accountId={accountId} meetingId={meetingId} />
         </section>
         {canManage && (
           <div className="border-t pt-6">

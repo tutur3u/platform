@@ -265,6 +265,24 @@ export function updateMeetPublicInfoSettings(
   });
 }
 
+/** The caller's private post-call rating, 1–5, or null before rating. */
+export function readMeetCallRating(meetingId: string) {
+  return getInternalApiClient().json<{ rating: number | null }>(
+    `/api/meet-call/${encodePathSegment(meetingId)}/rating`,
+    { cache: 'no-store' }
+  );
+}
+export function updateMeetCallRating(meetingId: string, value: number) {
+  return getInternalApiClient().json<{ rating: number }>(
+    `/api/meet-call/${encodePathSegment(meetingId)}/rating`,
+    {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ value }),
+    }
+  );
+}
+
 export type MeetingProgrammingSelection = {
   kind: 'playground' | 'problem';
   id: string;

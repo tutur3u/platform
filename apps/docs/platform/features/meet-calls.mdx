@@ -1037,11 +1037,19 @@ Scope: the in-call view and the ended-meeting screen in Meet and Parley.
 - Workspace members outside Parley also get New meeting, which starts an instant
   meeting through the same create route as the meetings home. The route keeps
   checking hosting eligibility, so a refusal shows the create-failed toast.
-- Post-call feedback rating is not offered. No backend stores it yet.
+- The ended and left screens offer a private 1–5 call rating. The room Durable
+  Object stores one record per account under its own storage key, outside the
+  room snapshot, and replaces it inside a storage transaction, so repeat updates
+  only change the value. Only the signed host or an account the room admitted
+  (its `approved` admission record) may read or set a rating. Workspace members
+  who never attended, and participants the host removed, get 403 and the control
+  stays hidden. Ratings are returned only to their own account; there is no
+  aggregate or host view.
 
 Regression coverage: `pip-layout.test.ts`, `self-preview-pip.test.tsx`,
 `call-ended.test.tsx`, `ended-meeting-facts-row.test.tsx`,
-`ended-meeting-facts.test.ts`.
+`ended-meeting-facts.test.ts`, `ended-meeting-rating.test.tsx`,
+`room-rating.test.ts`, and the Meet `rating/route.test.ts`.
 
 ## Room settings, recordings, and devices
 
