@@ -1,7 +1,7 @@
 begin;
 create extension if not exists pgtap with schema extensions;
 set local search_path = public, extensions;
-select plan(7);
+select plan(8);
 insert into public.users(id,display_name)
 values ('31000000-0000-4000-8000-000000017401','Usage test owner');
 insert into public.workspaces(id,name,creator_id,personal)
@@ -11,6 +11,14 @@ values ('31000000-0000-4000-8000-000000017402','sandbox_seconds',now()-interval 
 insert into private.usage_grants(ws_id,meter,source_key,starts_at,expires_at,units)
 select '31000000-0000-4000-8000-000000017402','sandbox_seconds','fixture-' || n,now(),now()+n*interval '1 hour',10
 from generate_series(1,2) n;
+select throws_ok($$select public.reserve_workspace_usage('31000000-0000-4000-8000-000000017402','sandbox_seconds',
+ '31000000-0000-4000-8000-000000017403',15,now()+interval '30 seconds')$$,'P0001','Commercial admission fenced','unproven controls deny admission');
+insert into private.usage_admission_controls(scope_key,killed,stop_proof,security_ack,reconciled_until,net_revenue,variable_cost)
+select scope,false,'test provider receipt','test review',now()+interval '1 hour',10,4
+from unnest(array['global','meter/sandbox_seconds','workspace/31000000-0000-4000-8000-000000017402/sandbox_seconds']) scope
+on conflict (scope_key) do update set killed = false, stop_proof = excluded.stop_proof,
+ security_ack = excluded.security_ack, reconciled_until = excluded.reconciled_until,
+ net_revenue = excluded.net_revenue, variable_cost = excluded.variable_cost;
 create temporary table receipt as select public.reserve_workspace_usage(
  '31000000-0000-4000-8000-000000017402','sandbox_seconds','31000000-0000-4000-8000-000000017403',15,now()+interval '30 seconds') id;
 select is(public.reserve_workspace_usage('31000000-0000-4000-8000-000000017402','sandbox_seconds',
