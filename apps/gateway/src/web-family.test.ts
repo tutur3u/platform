@@ -13,6 +13,44 @@ class MemoryCache implements CacheLike {
   }
 }
 
+// Test-local family table: api-identity as an enabled API family next to the
+// committed families, so dispatch behaviour stays covered while the committed
+// table holds api-identity back.
+const API_IDENTITY_FAMILY = {
+  id: 'api-identity',
+  binding: 'WEB_FAMILY_API_IDENTITY',
+  localized: false,
+  assetPrefix: null,
+  exact: [
+    '/api/build-info',
+    '/api/health',
+    '/api/auth/me',
+    '/api/v1/workspaces',
+    '/api/v1/workspaces/limits',
+    '/api/v1/workspaces/personal',
+    '/api/workspaces/invitations',
+    '/api/v1/notifications',
+  ],
+  prefix: ['/api/v1/users/', '/api/v1/user/', '/api/v1/notifications/'],
+  exclude: [
+    '/api/v1/users/chatgpt',
+    '/api/v1/users/me/avatar/upload',
+    '/api/v1/users/me/banner/upload',
+    '/api/v1/users/me/playgrounds',
+    '/api/v1/users/me/password',
+    '/api/v1/users/me/delete',
+    '/api/v1/users/me/email',
+    '/api/v1/users/me/identities',
+  ],
+};
+const FIXTURE: Manifest = {
+  ...manifest,
+  webFamilies: {
+    deny: manifest.webFamilies?.deny ?? [],
+    families: [...(manifest.webFamilies?.families ?? []), API_IDENTITY_FAMILY],
+  },
+};
+
 const WEB_ORIGIN = 'https://web-origin.vercel.app';
 const BASE_ENV: Env = { WEB_ORIGIN, PUBLIC_HOST: 'tuturuuu.com' };
 
@@ -47,7 +85,7 @@ function setup(options: {
   const handle = createHandler({
     cache: () => cache,
     now: () => 0,
-    manifest: options.source ?? manifest,
+    manifest: options.source ?? FIXTURE,
   });
   return {
     cache,

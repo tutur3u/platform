@@ -1,4 +1,10 @@
-import { mkdirSync, mkdtempSync, readFileSync, writeFileSync } from 'node:fs';
+import {
+  mkdirSync,
+  mkdtempSync,
+  readFileSync,
+  symlinkSync,
+  writeFileSync,
+} from 'node:fs';
 import { tmpdir } from 'node:os';
 import path from 'node:path';
 import { describe, expect, it } from 'vitest';
@@ -6,6 +12,7 @@ import { openNextFamilyNextConfig } from './next-family-config';
 import {
   appRouteEntries,
   applyPrune,
+  DEFAULT_APP_DIR,
   DISPOSABLE_MARKER,
   DISPOSABLE_MARKER_CONTENT,
   enabledFamilies,
@@ -70,6 +77,32 @@ const API_IDENTITY_ROUTES = [
   'api/v1/workspaces/route.ts',
   'api/workspaces/invitations/route.ts',
 ];
+
+// Test-local copy of the family table with api-identity enabled, so its exact
+// route set stays covered while the committed table holds it back.
+const API_IDENTITY_ENABLED = {
+  ...config,
+  families: config.families.map((family) =>
+    family.id === 'api-identity'
+      ? {
+          ...family,
+          enabled: true,
+          held: null,
+        }
+      : family
+  ),
+};
+
+function fixtureAppDir(srcDir?: string) {
+  const appDir = mkdtempSync(path.join(tmpdir(), 'opennext-family-'));
+  mkdirSync(path.join(appDir, 'cloudflare/opennext'), { recursive: true });
+  writeFileSync(
+    path.join(appDir, 'cloudflare/opennext/families.json'),
+    JSON.stringify(API_IDENTITY_ENABLED)
+  );
+  if (srcDir) symlinkSync(srcDir, path.join(appDir, 'src'));
+  return appDir;
+}
 
 describe('OpenNext family manifest', () => {
   it('matches the gateway dispatch table for enabled families', () => {
@@ -182,7 +215,10 @@ describe('family route pruning', () => {
   });
 
   it('keeps exactly the api-identity routes', () => {
-    const plan = planPrune('api-identity');
+    const plan = planPrune(
+      'api-identity',
+      fixtureAppDir(path.join(DEFAULT_APP_DIR, 'src'))
+    );
     expect(plan.keep).toEqual(API_IDENTITY_ROUTES);
     expect(plan.remove.length).toBeGreaterThan(500);
     expect(plan.remove).toContain('api/v1/auth/accounts/[accountId]/route.ts');
@@ -202,14 +238,9 @@ describe('family route pruning', () => {
   });
 
   it('refuses to delete anything outside a disposable checkout', () => {
-    const appDir = mkdtempSync(path.join(tmpdir(), 'opennext-prune-'));
-    mkdirSync(path.join(appDir, 'cloudflare/opennext'), { recursive: true });
+    const appDir = fixtureAppDir();
     mkdirSync(path.join(appDir, 'src/app/api/health'), { recursive: true });
     mkdirSync(path.join(appDir, 'src/app/api/cron/x'), { recursive: true });
-    writeFileSync(
-      path.join(appDir, 'cloudflare/opennext/families.json'),
-      JSON.stringify(config)
-    );
     writeFileSync(path.join(appDir, 'src/app/api/health/route.ts'), '');
     writeFileSync(path.join(appDir, 'src/app/api/cron/x/route.ts'), '');
     const plan = planPrune('api-identity', appDir);
@@ -237,12 +268,12 @@ describe('family Next config', () => {
 
   it('pins the deployment and build id to the family and commit', async () => {
     const result = openNextFamilyNextConfig({
-      WEB_OPENNEXT_FAMILY: 'api-identity',
+      WEB_OPENNEXT_FAMILY: 'public-docs',
       GITHUB_SHA: sha,
     });
-    expect(result.deploymentId).toBe(`web-api-identity-${'a'.repeat(12)}`);
+    expect(result.deploymentId).toBe(`web-public-docs-${'a'.repeat(12)}`);
     expect(await result.generateBuildId?.()).toBe(sha);
-    expect(result.assetPrefix).toBeUndefined();
+    expect(result.assetPrefix).toBe('/_f/public-docs');
   });
 
   it('rejects unknown families and missing commits', () => {
@@ -250,7 +281,7 @@ describe('family Next config', () => {
       openNextFamilyNextConfig({ WEB_OPENNEXT_FAMILY: 'nope', GITHUB_SHA: sha })
     ).toThrow(/Unknown/u);
     expect(() =>
-      openNextFamilyNextConfig({ WEB_OPENNEXT_FAMILY: 'api-identity' })
+      openNextFamilyNextConfig({ WEB_OPENNEXT_FAMILY: 'public-docs' })
     ).toThrow(/SHA/u);
   });
 });
