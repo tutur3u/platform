@@ -2831,6 +2831,14 @@
       "weekly": "Weekly",
       "yearly": "Yearly"
     },
+    "providerInvoices": {
+      "amount": "Amount (USD)",
+      "date": "Invoice date",
+      "empty": "No reviewed invoices in the past 30 days.",
+      "failed": "Provider invoices could not be loaded.",
+      "provider": "Provider",
+      "title": "Reviewed provider invoices"
+    },
     "recovery_settings": {
       "badge": "Docker Recovery",
       "command_timeout": "Command timeout (ms)",

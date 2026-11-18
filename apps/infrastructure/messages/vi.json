@@ -2831,6 +2831,14 @@
       "weekly": "Tuần",
       "yearly": "Năm"
     },
+    "providerInvoices": {
+      "amount": "Số tiền (USD)",
+      "date": "Ngày hóa đơn",
+      "empty": "Chưa có hóa đơn đã đối soát trong 30 ngày qua.",
+      "failed": "Không thể tải hóa đơn nhà cung cấp.",
+      "provider": "Nhà cung cấp",
+      "title": "Hóa đơn nhà cung cấp đã đối soát"
+    },
     "recovery_settings": {
       "badge": "Phục hồi Docker",
       "command_timeout": "Timeout lệnh (ms)",
