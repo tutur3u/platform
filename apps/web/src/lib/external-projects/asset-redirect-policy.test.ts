@@ -37,7 +37,7 @@ describe('CMS asset redirect policy', () => {
       'https://evil.example/a.png',
       'https://storage.example.test.evil.example/a.png',
       'https://evilstorage.example.test/a.png',
-      `${allowed}:8443/a.png`,
+      `${allowed}:8443/storage/v1/object/public/a.png`,
       'http://storage.example.test/storage/v1/object/public/a.png',
       'javascript:alert(1)',
       'data:text/html;base64,PHNjcmlwdD4=',
@@ -51,6 +51,35 @@ describe('CMS asset redirect policy', () => {
     ]) {
       expect(resolveAllowedAssetRedirectUrl(value), value).toBeNull();
     }
+  });
+
+  it('refuses non-storage paths on an allowed origin', () => {
+    for (const value of [
+      `${allowed}/auth/v1/verify?type=magiclink&redirect_to=https://evil.example`,
+      `${allowed}/auth/v1/authorize?redirect_to=https://evil.example`,
+      `${allowed}/`,
+      `${allowed}/storage/v1/bucket/list`,
+      `${allowed}/storage/v1/object/../../auth/v1/verify`,
+      `${allowed}/storage/v1/object/%2e%2e/%2e%2e/auth/v1/verify`,
+      `${allowed}/x/storage/v1/object/public/a.png`,
+    ]) {
+      expect(resolveAllowedAssetRedirectUrl(value), value).toBeNull();
+    }
+  });
+
+  it('refuses signed URLs that carry a token', () => {
+    for (const value of [
+      `${allowed}/storage/v1/object/sign/workspaces/ws-1/a.png?token=secret`,
+      `${allowed}/storage/v1/render/image/sign/a.png?width=10&token=secret`,
+      `${allowed}/storage/v1/object/public/a.png?%74oken=secret`,
+    ]) {
+      expect(resolveAllowedAssetRedirectUrl(value), value).toBeNull();
+    }
+    expect(
+      resolveAllowedAssetRedirectUrl(
+        `${allowed}/storage/v1/render/image/public/a.png?width=10`
+      )
+    ).not.toBeNull();
   });
 
   it('refuses userinfo tricks in either direction', () => {

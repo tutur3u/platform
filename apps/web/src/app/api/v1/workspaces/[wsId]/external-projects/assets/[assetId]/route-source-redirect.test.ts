@@ -39,13 +39,20 @@ vi.mock('@tuturuuu/storage-core/workspace-storage-provider', () => ({
 
 import { GET } from './route';
 
-function mockAsset(sourceUrl: string, status = 'published') {
+const storedPath = 'external-projects/custom/a/b/file.png';
+const signedStoredUrl = 'https://r2.example.test/signed/file.png?sig=1';
+
+function mockAsset(
+  sourceUrl: string,
+  status = 'published',
+  storagePath: string | null = null
+) {
   const single = vi.fn(async () => ({
     data: {
       id: 'asset-1',
       metadata: {},
       source_url: sourceUrl,
-      storage_path: 'external-projects/custom/a/b/file.png',
+      storage_path: storagePath,
       workspace_external_project_entries: { status },
       ws_id: 'ws-1',
     },
@@ -103,15 +110,39 @@ describe('external project asset source redirects', () => {
       'https://storage.example.test@evil.example/',
     ],
     ['a backslash host', 'https:\\\\evil.example/a.png'],
-  ])('refuses %s without redirecting', async (_label, source) => {
+    [
+      'an auth redirect on the storage origin',
+      'https://storage.example.test/auth/v1/verify?redirect_to=https://evil.example',
+    ],
+    [
+      'a signed URL token',
+      'https://storage.example.test/storage/v1/object/sign/workspaces/ws-1/a.png?token=secret',
+    ],
+  ])('refuses %s without redirecting to it', async (_label, source) => {
     mockAsset(source);
 
     const response = await getAsset();
 
     expect(response.status).toBe(404);
     expect(response.headers.get('location')).toBeNull();
-    // A refused source is not swapped for the stored object either.
     expect(mocks.createWorkspaceStorageSignedReadUrl).not.toHaveBeenCalled();
+  });
+
+  it('serves the stored object when a refused source has one', async () => {
+    mocks.createWorkspaceStorageSignedReadUrl.mockResolvedValue(
+      signedStoredUrl
+    );
+    mockAsset('https://evil.example/a.png', 'published', storedPath);
+
+    const response = await getAsset();
+
+    expect(response.status).toBe(307);
+    expect(response.headers.get('location')).toBe(signedStoredUrl);
+    expect(mocks.createWorkspaceStorageSignedReadUrl).toHaveBeenCalledWith(
+      'ws-1',
+      storedPath,
+      expect.objectContaining({ requireExists: true })
+    );
   });
 
   it('applies the same allowlist to authorized reads of unpublished assets', async () => {

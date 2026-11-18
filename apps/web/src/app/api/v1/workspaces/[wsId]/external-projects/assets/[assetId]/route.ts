@@ -167,11 +167,11 @@ export async function GET(
       }
     }
 
-    if (asset.source_url) {
-      const sourceUrl = resolveAllowedAssetRedirectUrl(asset.source_url);
-      if (!sourceUrl) {
-        return privateJson({ error: 'Asset not available' }, 404);
-      }
+    // A refused source falls through to the stored object, if there is one.
+    const sourceUrl = asset.source_url
+      ? resolveAllowedAssetRedirectUrl(asset.source_url)
+      : null;
+    if (sourceUrl) {
       try {
         return redirect(
           guardExternalProjectAssetSourceUrl(sourceUrl.toString(), resolvedWsId)
