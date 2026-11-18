@@ -1094,7 +1094,7 @@
     "sideEffects": "unknown",
     "shadow": "never",
     "source": "apps/web/src/app/api/v1/cite/capture/route.ts",
-    "sourceSha256": "cec331d7c4b7944fddd4f6613d169ece19dd6709948ca5e009595219220da548",
+    "sourceSha256": "2c6a29ef7f34a0b92619c942b275ac0b2bca85a2f5624c2e68c127b69c5cbdcb",
     "runtime": "retained-next",
     "policy": "retained-next-proxy",
     "reason": "Unflipped; preserve existing Next handler and proxy guards"
