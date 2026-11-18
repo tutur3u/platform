@@ -13,7 +13,17 @@ export type LegalSectionDiff = {
 
 // Keep delimiters and whitespace so either side reconstructs the exact source.
 function sentences(text: string): string[] {
-  return (text.match(/[\s\S]*?(?:[.!?]+(?:\s+|$)|$)/gu) ?? []).filter(Boolean);
+  const parts: string[] = [];
+  let start = 0;
+  for (const match of text.matchAll(/\s+/gu)) {
+    if (match.index === 0) continue;
+    if (!'.!?'.includes(text[match.index - 1]!)) continue;
+    const end = match.index + match[0].length;
+    parts.push(text.slice(start, end));
+    start = end;
+  }
+  if (start < text.length) parts.push(text.slice(start));
+  return parts;
 }
 export function diffLegalText(before: string, after: string): LegalDiffPart[] {
   if (before === after) return [{ kind: 'unchanged', text: before }];

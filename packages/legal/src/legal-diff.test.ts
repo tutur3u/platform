@@ -7,6 +7,14 @@ import { legalNoticeCopy } from './notice-copy';
 import { getProposedLegalDocument } from './proposed';
 
 describe('legal redesign source integrity', () => {
+  it('preserves punctuation inside a sentence and delimiter whitespace', () => {
+    expect(diffLegalText('One!?  Two...more.', 'One!?  Three.')).toEqual([
+      { kind: 'unchanged', text: 'One!?  ' },
+      { kind: 'removed', text: 'Two...more.' },
+      { kind: 'added', text: 'Three.' },
+    ]);
+  });
+
   for (const locale of ['en', 'vi'] as const) {
     it(`${locale}: notice copy matches Lex's source verbatim`, () => {
       const fixture = readFileSync(
