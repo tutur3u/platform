@@ -307,6 +307,7 @@ function CallShellContent({
         canReadNotes={
           state.ended ? !!state.settings.shareNotesAfterMeeting : canReadNotes
         }
+        canStartMeeting={canReadWorkspace && MEETING_APP !== 'parley'}
         shareNotesAfterMeeting={state.settings.shareNotesAfterMeeting}
         wsId={wsId}
         meetingId={meetingId}

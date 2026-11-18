@@ -4473,7 +4473,17 @@
       "waiting_media": "Waiting for media — recovery runs automatically",
       "waiting_room": "Waiting to join ({count})",
       "you": "You",
-      "your_name": "Your name"
+      "your_name": "Your name",
+      "ended_minutes": "{minutes} min",
+      "ended_recording_processing": "Recording processing",
+      "ended_recording_saved": "Recording saved",
+      "ended_speakers": "{count, plural, one {# speaker} other {# speakers}}",
+      "ended_transcript_processing": "Transcript processing",
+      "ended_transcript_ready": "Transcript ready",
+      "new_meeting": "New meeting",
+      "rating_failed": "Could not save your rating. Try again.",
+      "rating_option": "{value} out of 5",
+      "rating_title": "How was the call?"
     },
     "collaboration": {
       "checkpoint_conflict": "The workspace document changed elsewhere. Live edits remain in this room; its workspace backup has a conflict.",

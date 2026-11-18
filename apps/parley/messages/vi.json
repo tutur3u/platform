@@ -4473,7 +4473,17 @@
       "waiting_media": "Đang chờ phương tiện — tự động khôi phục kết nối",
       "waiting_room": "Đang chờ vào ({count})",
       "you": "Bạn",
-      "your_name": "Tên của bạn"
+      "your_name": "Tên của bạn",
+      "ended_minutes": "{minutes} phút",
+      "ended_recording_processing": "Đang xử lý bản ghi",
+      "ended_recording_saved": "Đã lưu bản ghi",
+      "ended_speakers": "{count} người nói",
+      "ended_transcript_processing": "Đang xử lý bản chép lời",
+      "ended_transcript_ready": "Bản chép lời đã sẵn sàng",
+      "new_meeting": "Cuộc họp mới",
+      "rating_failed": "Không thể lưu đánh giá. Hãy thử lại.",
+      "rating_option": "{value} trên 5",
+      "rating_title": "Cuộc gọi thế nào?"
     },
     "collaboration": {
       "checkpoint_conflict": "Tài liệu không gian làm việc đã được sửa ở nơi khác. Nội dung cộng tác vẫn được giữ trong phòng; bản lưu tại không gian làm việc đang xung đột.",
