@@ -6,7 +6,7 @@ import { fileURLToPath } from 'node:url';
 // committed wrangler.jsonc and the live Worker settings, so a CI deploy keeps
 // what operators set on the live Worker:
 // - plain-text vars: live values win over committed defaults, except the
-//   names this deploy sets (WEB_ORIGIN, MARKETING_ORIGIN, GATEWAY_WEB_FAMILIES);
+//   family flag this deploy sets. Both origin overrides must match live.
 // - service bindings: live bindings are kept; every flagged web family gets
 //   WEB_FAMILY_<ID> -> tuturuuu-web-<id>;
 // - secrets: not written here; a version upload inherits them.
@@ -14,6 +14,7 @@ import { fileURLToPath } from 'node:url';
 
 const ROOT = fileURLToPath(new URL('../../', import.meta.url));
 const ORIGIN_NAMES = ['WEB_ORIGIN', 'MARKETING_ORIGIN'];
+const FORBIDDEN_NAMES = ['GATEWAY_ACCEPTANCE_HOST', 'VERCEL_PROTECTION_BYPASS'];
 const KEPT_TYPES = new Set(['plain_text', 'secret_text', 'service']);
 
 export function stripJsonComments(text) {
@@ -62,6 +63,26 @@ function httpsOrigin(name, value) {
   return url.origin;
 }
 
+function configContainsName(value, name) {
+  if (value === name) return true;
+  if (value === null || typeof value !== 'object') return false;
+  return Object.entries(value).some(
+    ([key, entry]) => key === name || configContainsName(entry, name)
+  );
+}
+
+function checkForbiddenNames(base, liveBindings, env) {
+  const forbidden = FORBIDDEN_NAMES.filter(
+    (name) =>
+      Object.hasOwn(env, name) ||
+      liveBindings.some((binding) => binding.name === name) ||
+      configContainsName(base, name)
+  );
+  if (forbidden.length > 0) {
+    throw new Error(forbidden.map((name) => `${name} is set`).join('\n'));
+  }
+}
+
 /**
  * @param {object} base committed apps/gateway/wrangler.jsonc
  * @param {Array<{type: string, name: string, text?: string, service?: string}>} liveBindings
@@ -69,6 +90,7 @@ function httpsOrigin(name, value) {
  * @param {Record<string, string | undefined>} env
  */
 export function deployConfig(base, liveBindings, families, env) {
+  checkForbiddenNames(base, liveBindings, env);
   const vars = { ...base.vars };
   const services = new Map();
   for (const binding of liveBindings) {
@@ -90,13 +112,24 @@ export function deployConfig(base, liveBindings, families, env) {
       );
     }
   }
-  for (const name of ORIGIN_NAMES) vars[name] = httpsOrigin(name, env[name]);
+  for (const name of ORIGIN_NAMES) {
+    const origin = httpsOrigin(name, env[name]);
+    const live = liveBindings.filter((binding) => binding.name === name);
+    if (
+      live.length !== 1 ||
+      live[0].type !== 'plain_text' ||
+      live[0].text !== origin
+    ) {
+      throw new Error(`${name} differs from live`);
+    }
+    vars[name] = origin;
+  }
   const flagged = parseFlagged(env.GATEWAY_WEB_FAMILIES);
   for (const id of flagged) {
     const family = families.families.find((candidate) => candidate.id === id);
     if (!family?.enabled) {
       throw new Error(
-        `GATEWAY_WEB_FAMILIES names ${id}, which is not an enabled family`
+        'GATEWAY_WEB_FAMILIES contains an id that is not an enabled family'
       );
     }
     services.set(familyBinding(id), family.worker);
@@ -124,7 +157,12 @@ function main([command, ...args]) {
   }
   if (command === 'write') {
     const [settingsPath, outPath] = args;
-    const settings = JSON.parse(readFileSync(settingsPath, 'utf8'));
+    let settings;
+    try {
+      settings = JSON.parse(readFileSync(settingsPath, 'utf8'));
+    } catch {
+      throw new Error('Cannot read live gateway settings JSON');
+    }
     if (!settings.success || !Array.isArray(settings.result?.bindings)) {
       throw new Error('Live gateway settings response has no bindings');
     }
@@ -139,12 +177,9 @@ function main([command, ...args]) {
       ),
       process.env
     );
+    console.log(`GATEWAY_WEB_FAMILIES=${config.vars.GATEWAY_WEB_FAMILIES}`);
+    for (const name of FORBIDDEN_NAMES) console.log(`${name}=unset`);
     writeFileSync(outPath, `${JSON.stringify(config, null, 2)}\n`);
-    console.log(
-      `vars: ${Object.keys(config.vars).sort().join(', ')}\nservices: ${config.services
-        .map((s) => `${s.binding}->${s.service}`)
-        .join(', ')}`
-    );
     return 0;
   }
   throw new Error(

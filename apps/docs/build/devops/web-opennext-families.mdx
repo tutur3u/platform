@@ -74,7 +74,11 @@ promotion is the human gate:
    wrangler config requires, writes the deploy config, then
    `wrangler versions upload` and `versions deploy` at 100%. `WEB_ORIGIN` comes
    from the `GATEWAY_WEB_ORIGIN` variable and `MARKETING_ORIGIN` is
-   `https://marketing.tuturuuu.com`.
+   `https://marketing.tuturuuu.com`. The deploy config requires both origins to
+   match their live plain-text bindings exactly. It refuses any acceptance
+   hostname or Vercel protection bypass setting in the committed config, live
+   bindings, or deploy environment. The pre-write log shows family IDs and the
+   presence of these settings without exposing origin or bypass values.
 
 Turning a family on: set its Worker secrets (names in `<family>.env.json`),
 add its id to `GATEWAY_WEB_FAMILIES`, rerun the gateway job.
