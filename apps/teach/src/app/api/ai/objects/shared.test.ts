@@ -218,7 +218,7 @@ describe('Teach object-generation handler', () => {
     }));
   });
 
-  it('reserves before generation and settles normalized usage exactly once', async () => {
+  it('reserves before generation and settles 32 output tokens as 25 visible and 7 reasoning', async () => {
     const POST = await createHandler();
     const response = await POST(createRequest());
 
@@ -292,7 +292,7 @@ describe('Teach object-generation handler', () => {
           source: 'test_generation',
           surface: 'test_generation',
         },
-        p_output_tokens: 32,
+        p_output_tokens: 25,
         p_reasoning_tokens: 7,
         p_reservation_id: 'reservation-1',
       }

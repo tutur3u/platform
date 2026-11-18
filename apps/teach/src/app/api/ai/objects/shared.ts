@@ -5,6 +5,7 @@ import {
   releaseFixedAiCreditReservation,
   reserveFixedAiCredits,
 } from '@tuturuuu/ai/credits/reservations';
+import { toLegacyTokenPricing } from '@tuturuuu/ai/credits/token-usage';
 import { withAiMemory } from '@tuturuuu/ai/memory';
 import { requireTeachWorkspaceAccess } from '@tuturuuu/education-core/teach/api';
 import type { TypedSupabaseClient } from '@tuturuuu/supabase/types';
@@ -418,10 +419,8 @@ export function createTeachObjectGenerationHandler<
             if (reservationState !== 'reserved') return;
             reservationState = 'settling';
             const settled = await settleReservation(sbAdmin, {
-              inputTokens: usage.inputTokens ?? 0,
+              ...toLegacyTokenPricing(usage),
               metadata: { source: config.source, surface: config.surface },
-              outputTokens: usage.outputTokens ?? 0,
-              reasoningTokens: usage.outputTokenDetails?.reasoningTokens ?? 0,
               reservationId,
               userId: context.user.id,
               wsId: normalizedWsId,
