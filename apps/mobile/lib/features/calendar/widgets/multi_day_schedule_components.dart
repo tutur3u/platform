@@ -31,17 +31,28 @@ class _MultiDayHeaderCell extends StatelessWidget {
           child: Row(
             children: [
               Expanded(
-                child: Text(
-                  DateFormat(
-                    'EEEE d',
-                    Localizations.localeOf(context).toLanguageTag(),
-                  ).format(date),
-                  style: tokens.typography.heading,
+                child: Semantics(
+                  container: true,
+                  header: true,
+                  child: Text(
+                    DateFormat(
+                      'EEEE d',
+                      Localizations.localeOf(context).toLanguageTag(),
+                    ).format(date),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: tokens.typography.heading,
+                  ),
                 ),
               ),
-              Text(
-                context.l10n.calendarS3EventCount(eventCount!),
-                style: tokens.typography.numeric,
+              const SizedBox(width: 8),
+              Flexible(
+                child: Text(
+                  context.l10n.calendarEventCount(eventCount!),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: tokens.typography.numeric,
+                ),
               ),
             ],
           ),
@@ -159,44 +170,47 @@ class _MultiDayTimelineColumn extends StatelessWidget {
       minimumDuration: timedEventMinimumDuration(hourHeight, minimumHeight),
     );
 
-    return GestureDetector(
-      onLongPressStart: (details) {
-        final localY = details.localPosition.dy;
-        final minutes = (localY / hourHeight * 60).round();
-        final roundedMinutes = (minutes ~/ 15) * 15;
-        final hour = roundedMinutes ~/ 60;
-        final minute = roundedMinutes % 60;
-        onCreateAtTime(
-          calendarDate(
-            date.year,
-            date.month,
-            date.day,
-            hour.clamp(0, 23),
-            minute,
-          ),
-        );
-      },
-      child: Container(
-        decoration: BoxDecoration(
-          color: isToday
-              ? colorScheme.primary.withValues(alpha: 0.035)
-              : Colors.transparent,
-          border: Border(
-            left: BorderSide(color: colorScheme.outlineVariant, width: 0.6),
-            right: BorderSide(
-              color: colorScheme.outlineVariant.withValues(alpha: 0.45),
-              width: 0.2,
-            ),
+    void createInSlot(LongPressStartDetails details) {
+      final localY = details.localPosition.dy;
+      final minutes = (localY / hourHeight * 60).round();
+      final roundedMinutes = (minutes ~/ 15) * 15;
+      final hour = roundedMinutes ~/ 60;
+      final minute = roundedMinutes % 60;
+      onCreateAtTime(
+        calendarDate(
+          date.year,
+          date.month,
+          date.day,
+          hour.clamp(0, 23),
+          minute,
+        ),
+      );
+    }
+
+    return Container(
+      decoration: BoxDecoration(
+        color: isToday
+            ? colorScheme.primary.withValues(alpha: 0.035)
+            : Colors.transparent,
+        border: Border(
+          left: BorderSide(color: colorScheme.outlineVariant, width: 0.6),
+          right: BorderSide(
+            color: colorScheme.outlineVariant.withValues(alpha: 0.45),
+            width: 0.2,
           ),
         ),
-        child: LayoutBuilder(
-          builder: (context, constraints) {
-            final width = constraints.maxWidth;
+      ),
+      child: LayoutBuilder(
+        builder: (context, constraints) {
+          final width = constraints.maxWidth;
 
-            return Stack(
-              children: [
-                // Paint hour lines together to keep each column lightweight.
-                Positioned.fill(
+          return Stack(
+            children: [
+              // Paint hour lines together to keep each column lightweight.
+              Positioned.fill(
+                child: GestureDetector(
+                  behavior: HitTestBehavior.opaque,
+                  onLongPressStart: createInSlot,
                   child: CustomPaint(
                     painter: _HourLinesPainter(
                       hourHeight: hourHeight,
@@ -205,23 +219,23 @@ class _MultiDayTimelineColumn extends StatelessWidget {
                     ),
                   ),
                 ),
-                for (final layout in layouts)
-                  _MultiDayEventCard(
-                    redesigned: redesigned,
-                    layoutInfo: layout,
-                    hourHeight: hourHeight,
-                    columnWidth: width,
-                    onTap: () => onEventTap(layout.event),
-                  ),
-                if (isToday)
-                  CurrentTimeIndicator(
-                    hourHeight: hourHeight,
-                    showLabel: redesigned,
-                  ),
-              ],
-            );
-          },
-        ),
+              ),
+              for (final layout in layouts)
+                _MultiDayEventCard(
+                  redesigned: redesigned,
+                  layoutInfo: layout,
+                  hourHeight: hourHeight,
+                  columnWidth: width,
+                  onTap: () => onEventTap(layout.event),
+                ),
+              if (isToday)
+                CurrentTimeIndicator(
+                  hourHeight: hourHeight,
+                  showLabel: redesigned,
+                ),
+            ],
+          );
+        },
       ),
     );
   }
@@ -339,17 +353,11 @@ class _MultiDayEventCardSurface extends StatelessWidget {
         onTap: onTap,
       );
     }
-    final locale = Localizations.localeOf(context).toLanguageTag();
-    final start = event.startAt;
-    final end = event.endAt;
     return AppEventBlock(
       title: event.title ?? '',
       tone: eventTone(event),
       onTap: onTap,
-      timeLabel: start == null
-          ? ''
-          : '${DateFormat.Hm(locale).format(start)} – '
-                '${end == null ? '' : DateFormat.Hm(locale).format(end)}',
+      timeLabel: formatCalendarTimeRange(context, event.startAt, event.endAt),
     );
   }
 }

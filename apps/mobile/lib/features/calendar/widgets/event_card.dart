@@ -2,6 +2,7 @@ import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
 import 'package:mobile/features/calendar/utils/calendar_date_time.dart';
+import 'package:mobile/features/calendar/utils/calendar_time_format.dart';
 import 'package:mobile/features/calendar/utils/event_colors.dart';
 import 'package:mobile/features/calendar/utils/event_layout.dart';
 import 'package:mobile/features/calendar/utils/timed_event_geometry.dart';
@@ -62,8 +63,7 @@ class EventCard extends StatelessWidget {
     final left = timelineLeft + (layoutInfo.column * columnWidth);
     final width = columnWidth - 2; // 2px gap between columns.
 
-    final startTime = _formatTime(start);
-    final endTime = _formatTime(end);
+    final time = formatCalendarTimeRange(context, event.startAt, event.endAt);
 
     return Positioned(
       top: top,
@@ -72,7 +72,7 @@ class EventCard extends StatelessWidget {
       height: height,
       child: Semantics(
         button: true,
-        label: '${event.title ?? ''}, $startTime – $endTime',
+        label: [event.title ?? '', if (time.isNotEmpty) time].join(', '),
         onTap: onTap,
         excludeSemantics: true,
         child: GestureDetector(
@@ -106,7 +106,7 @@ class EventCard extends StatelessWidget {
                     ),
                     if (showTime)
                       Text(
-                        '$startTime – $endTime',
+                        time,
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
                         style: Theme.of(context).textTheme.labelSmall?.copyWith(
@@ -123,17 +123,5 @@ class EventCard extends StatelessWidget {
         ),
       ),
     );
-  }
-
-  String _formatTime(DateTime dt) {
-    final hour = dt.hour;
-    final minute = dt.minute.toString().padLeft(2, '0');
-    final period = hour >= 12 ? 'PM' : 'AM';
-    final h = hour == 0
-        ? 12
-        : hour > 12
-        ? hour - 12
-        : hour;
-    return '$h:$minute $period';
   }
 }

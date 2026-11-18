@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:mobile/core/responsive/responsive_values.dart';
 import 'package:mobile/data/models/calendar_event.dart';
 import 'package:mobile/features/calendar/utils/calendar_date_time.dart';
+import 'package:mobile/features/calendar/utils/calendar_time_format.dart';
 import 'package:mobile/features/calendar/utils/event_layout.dart';
 import 'package:mobile/features/calendar/utils/timed_event_geometry.dart';
 import 'package:mobile/features/calendar/widgets/all_day_event_bar.dart';
@@ -156,6 +157,7 @@ class _DayScheduleViewState extends State<DayScheduleView> {
       ),
     );
     final gutterW = _timeGutterWidth(context);
+    final timeFormat = calendarTimeFormat(context);
 
     return GestureDetector(
       onHorizontalDragEnd: (details) {
@@ -227,7 +229,9 @@ class _DayScheduleViewState extends State<DayScheduleView> {
                                     child: Padding(
                                       padding: const EdgeInsets.only(right: 8),
                                       child: Text(
-                                        _formatHour(hour),
+                                        timeFormat.format(
+                                          calendarDate(2000, 1, 1, hour),
+                                        ),
                                         textAlign: TextAlign.right,
                                         style: textTheme.labelSmall?.copyWith(
                                           fontSize: 10,
@@ -273,12 +277,5 @@ class _DayScheduleViewState extends State<DayScheduleView> {
         ],
       ),
     );
-  }
-
-  String _formatHour(int hour) {
-    if (hour == 0) return '12 AM';
-    if (hour < 12) return '$hour AM';
-    if (hour == 12) return '12 PM';
-    return '${hour - 12} PM';
   }
 }

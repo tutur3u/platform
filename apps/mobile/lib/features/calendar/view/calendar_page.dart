@@ -375,45 +375,13 @@ class _CalendarViewState extends State<_CalendarView> {
                     consumeBottomClearance: false,
                     child: NovaRefreshIndicator(
                       onRefresh: () => _reload(context, retainError: true),
-                      child: Column(
-                        children: [
-                          if (state.viewMode == CalendarViewMode.day ||
-                              state.viewMode == CalendarViewMode.agenda)
-                            (state.viewMode == CalendarViewMode.day
-                                ? CalendarMiniMonth.new
-                                : MonthStrip.new)(
-                              selectedDate: state.effectiveSelectedDate,
-                              focusedMonth: state.effectiveFocusedMonth,
-                              events: state.displayEvents,
-                              firstDayOfWeek: firstDayOfWeek,
-                              onDateSelected: (date) {
-                                final cubit = context.read<CalendarCubit>()
-                                  ..selectDate(date);
-                                final wsId = context
-                                    .read<WorkspaceCubit>()
-                                    .state
-                                    .currentWorkspace
-                                    ?.id;
-                                if (wsId != null) {
-                                  unawaited(
-                                    cubit.ensureRangeLoaded(wsId, date),
-                                  );
-                                }
-                              },
-                              onMonthChanged: (month) {
-                                context.read<CalendarCubit>().setFocusedMonth(
-                                  month,
-                                );
-                              },
-                            ),
-                          Expanded(
-                            child: _buildViewBody(
-                              context,
-                              state,
-                              firstDayOfWeek,
-                            ),
-                          ),
-                        ],
+                      child: LayoutBuilder(
+                        builder: (context, constraints) => _buildCalendarBody(
+                          context,
+                          state,
+                          firstDayOfWeek,
+                          constraints.maxHeight,
+                        ),
                       ),
                     ),
                   );

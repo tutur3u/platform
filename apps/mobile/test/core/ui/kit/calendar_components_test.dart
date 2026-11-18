@@ -5,7 +5,7 @@ import 'package:mobile/core/ui/kit/app_mini_calendar.dart';
 import 'package:mobile/features/calendar/utils/event_tone.dart';
 import 'package:mobile/features/calendar/widgets/event_detail_sheet.dart';
 
-import '../../../features/calendar/s3/calendar_s3_scenes.dart';
+import '../../../features/calendar/day_agenda/calendar_day_scenes.dart';
 import '../../../helpers/pump_app.dart';
 
 void main() {
@@ -42,7 +42,7 @@ void main() {
             selected: day,
             today: day,
             onSelect: (value) => selected = value,
-            onMonthChanged: (value) => month = value,
+            onPageChanged: (value) => month = value,
           ),
         ),
       ),

@@ -43,6 +43,43 @@ DateTime calendarWallDate(DateTime instant, String? zone) {
   );
 }
 
+/// Bounds for an all-day event, with an exclusive end date.
+({DateTime start, DateTime end})? calendarAllDayBounds(CalendarEvent event) {
+  final start = event.startAt;
+  if (start == null) return null;
+  final day = calendarDate(start.year, start.month, start.day);
+  final end = event.endAt;
+  return (
+    start: day,
+    end: end == null
+        ? day.add(const Duration(days: 1))
+        : calendarDate(end.year, end.month, end.day),
+  );
+}
+
+bool calendarRangeOverlapsDay(DateTime start, DateTime end, DateTime day) =>
+    end.isAfter(start) &&
+    start.isBefore(day.add(const Duration(days: 1))) &&
+    end.isAfter(day);
+
+bool calendarEventOverlapsDay(CalendarEvent event, DateTime day) {
+  if (event.isAllDay) {
+    final bounds = calendarAllDayBounds(event);
+    return bounds != null &&
+        calendarRangeOverlapsDay(bounds.start, bounds.end, day);
+  }
+  return calendarTimedEventOverlapsDay(event, day);
+}
+
+bool calendarTimedEventOverlapsDay(CalendarEvent event, DateTime day) {
+  final start = event.startAt;
+  if (start == null) return false;
+  final end = event.endAt;
+  return end == null || end == start
+      ? !start.isBefore(day) && start.isBefore(day.add(const Duration(days: 1)))
+      : calendarRangeOverlapsDay(start, end, day);
+}
+
 DateTime calendarNow(String? zone) => calendarWallDate(DateTime.now(), zone);
 String? calendarZone(BuildContext context) {
   final state = context.read<TimezoneSettingsCubit?>()?.state;

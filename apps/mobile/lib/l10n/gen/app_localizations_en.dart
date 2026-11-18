@@ -1610,7 +1610,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get calendarAgendaView => 'Agenda';
 
   @override
-  String calendarS3EventCount(int count) {
+  String calendarEventCount(int count) {
     String _temp0 = intl.Intl.pluralLogic(
       count,
       locale: localeName,
@@ -1621,7 +1621,16 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
-  String get calendarS3Now => 'Now';
+  String get calendarExpandMonth => 'Expand month';
+
+  @override
+  String get calendarCollapseMonth => 'Collapse month';
+
+  @override
+  String get calendarHasEvents => 'Has events';
+
+  @override
+  String get calendarNowLabel => 'Now';
 
   @override
   String get calendarAllDay => 'All day';

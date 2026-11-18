@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:intl/intl.dart';
 import 'package:mobile/data/models/calendar_event.dart';
 import 'package:mobile/features/calendar/widgets/day_schedule_view.dart';
 import 'package:mobile/features/calendar/widgets/multi_day_schedule_view.dart';
@@ -327,12 +328,20 @@ void main() {
         await tester.tapAt(next.center);
         await tester.pump();
         expect(tapped, ['tiny-first', 'tiny-next']);
+        final time = DateFormat.jm('en');
+        final nine = time.format(_day.add(const Duration(hours: 9)));
+        final nineOhFive = time.format(
+          _day.add(const Duration(hours: 9, minutes: 5)),
+        );
+        final nineTen = time.format(
+          _day.add(const Duration(hours: 9, minutes: 10)),
+        );
         expect(
-          find.bySemanticsLabel('tiny-first, 9:00 AM – 9:05 AM'),
+          find.bySemanticsLabel('tiny-first, $nine – $nineOhFive'),
           findsOneWidget,
         );
         expect(
-          find.bySemanticsLabel('tiny-next, 9:05 AM – 9:10 AM'),
+          find.bySemanticsLabel('tiny-next, $nineOhFive – $nineTen'),
           findsOneWidget,
         );
         expect(tester.takeException(), isNull);

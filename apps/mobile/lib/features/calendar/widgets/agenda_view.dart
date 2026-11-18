@@ -8,6 +8,7 @@ import 'package:mobile/core/ui/components/app_loading_indicator.dart';
 import 'package:mobile/data/models/calendar_event.dart';
 import 'package:mobile/features/calendar/utils/calendar_date_time.dart';
 import 'package:mobile/features/calendar/utils/calendar_description_content.dart';
+import 'package:mobile/features/calendar/utils/calendar_time_format.dart';
 import 'package:mobile/features/calendar/utils/event_colors.dart';
 import 'package:mobile/features/calendar/utils/working_location_icon.dart';
 import 'package:mobile/l10n/l10n.dart';
@@ -483,12 +484,9 @@ class _NowIndicatorState extends State<_NowIndicator> {
   Widget build(BuildContext context) {
     final colorScheme = Theme.of(context).colorScheme;
     final textTheme = Theme.of(context).textTheme;
-    final locale = Localizations.localeOf(context).toLanguageTag();
-    final timeStr =
-        (MediaQuery.alwaysUse24HourFormatOf(context)
-                ? DateFormat.Hm(locale)
-                : DateFormat.jm(locale))
-            .format(calendarNowInContext(context));
+    final timeStr = calendarTimeFormat(
+      context,
+    ).format(calendarNowInContext(context));
 
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),

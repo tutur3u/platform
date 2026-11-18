@@ -168,13 +168,7 @@ class _AgendaEventCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final locale = Localizations.localeOf(context).toLanguageTag();
-    final use24Hours = MediaQuery.alwaysUse24HourFormatOf(context);
-    final format = use24Hours ? DateFormat.Hm(locale) : DateFormat.jm(locale);
-    // Events already carry the selected calendar wall-clock fields.
-    final start = event.startAt!;
-    final end = (event.endAt ?? event.startAt)!;
-    final time = '${format.format(start)} – ${format.format(end)}';
+    final time = formatCalendarTimeRange(context, event.startAt, event.endAt);
     final titleColor = EventColors.inContext(event, context).foreground;
     final wide =
         MediaQuery.sizeOf(context).width >= Breakpoints.mediumMin &&

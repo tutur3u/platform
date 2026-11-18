@@ -16,22 +16,18 @@ class _ClassicEventCardSurface extends StatelessWidget {
     final accentColor = EventColors.inContext(event, context).accent;
     final foregroundColor = EventColors.inContext(event, context).foreground;
     final backgroundColor = EventColors.inContext(event, context).background;
-    final start = event.startAt;
-    final end = event.endAt ?? start;
+    final time = formatCalendarTimeRange(context, event.startAt, event.endAt);
     final lineHeight =
         MediaQuery.textScalerOf(
           context,
         ).scale(Theme.of(context).textTheme.labelMedium?.fontSize ?? 14) *
         1.1;
-    final showTime =
-        start != null && end != null && height >= lineHeight * 3 + 20;
+    final showTime = time.isNotEmpty && height >= lineHeight * 3 + 20;
     final verticalPadding = height < 36 ? 2.0 : 6.0;
 
     return Semantics(
       button: true,
-      label: start == null || end == null
-          ? event.title ?? ''
-          : '${event.title ?? ''}, ${_formatTime(start)} – ${_formatTime(end)}',
+      label: [event.title ?? '', if (time.isNotEmpty) time].join(', '),
       onTap: onTap,
       excludeSemantics: true,
       child: Material(
@@ -81,7 +77,7 @@ class _ClassicEventCardSurface extends StatelessWidget {
                     if (showTime) ...[
                       const SizedBox(height: 4),
                       Text(
-                        '${_formatTime(start)} - ${_formatTime(end)}',
+                        time,
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
                         style: Theme.of(context).textTheme.labelSmall?.copyWith(
@@ -98,17 +94,5 @@ class _ClassicEventCardSurface extends StatelessWidget {
         ),
       ),
     );
-  }
-
-  String _formatTime(DateTime value) {
-    final hour = value.hour;
-    final minute = value.minute.toString().padLeft(2, '0');
-    final period = hour >= 12 ? 'PM' : 'AM';
-    final normalizedHour = hour == 0
-        ? 12
-        : hour > 12
-        ? hour - 12
-        : hour;
-    return '$normalizedHour:$minute $period';
   }
 }

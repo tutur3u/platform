@@ -3175,17 +3175,35 @@ abstract class AppLocalizations {
   /// **'Agenda'**
   String get calendarAgendaView;
 
-  /// No description provided for @calendarS3EventCount.
+  /// No description provided for @calendarEventCount.
   ///
   /// In en, this message translates to:
   /// **'{count, plural, =1{1 event} other{{count} events}}'**
-  String calendarS3EventCount(int count);
+  String calendarEventCount(int count);
 
-  /// No description provided for @calendarS3Now.
+  /// No description provided for @calendarExpandMonth.
+  ///
+  /// In en, this message translates to:
+  /// **'Expand month'**
+  String get calendarExpandMonth;
+
+  /// No description provided for @calendarCollapseMonth.
+  ///
+  /// In en, this message translates to:
+  /// **'Collapse month'**
+  String get calendarCollapseMonth;
+
+  /// No description provided for @calendarHasEvents.
+  ///
+  /// In en, this message translates to:
+  /// **'Has events'**
+  String get calendarHasEvents;
+
+  /// No description provided for @calendarNowLabel.
   ///
   /// In en, this message translates to:
   /// **'Now'**
-  String get calendarS3Now;
+  String get calendarNowLabel;
 
   /// No description provided for @calendarAllDay.
   ///

@@ -1603,12 +1603,21 @@ class AppLocalizationsVi extends AppLocalizations {
   String get calendarAgendaView => 'Lịch trình';
 
   @override
-  String calendarS3EventCount(int count) {
+  String calendarEventCount(int count) {
     return '$count sự kiện';
   }
 
   @override
-  String get calendarS3Now => 'Bây giờ';
+  String get calendarExpandMonth => 'Mở rộng lịch tháng';
+
+  @override
+  String get calendarCollapseMonth => 'Thu gọn lịch tháng';
+
+  @override
+  String get calendarHasEvents => 'Có sự kiện';
+
+  @override
+  String get calendarNowLabel => 'Bây giờ';
 
   @override
   String get calendarAllDay => 'Cả ngày';

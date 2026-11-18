@@ -67,30 +67,16 @@ AllDayLayoutResult calculateAllDayLayout({
 
   for (final event in events) {
     if (!event.isAllDay) continue;
-    final eventStart = event.startAt;
-    final eventEnd = event.endAt ?? eventStart;
-    if (eventStart == null) continue;
-
-    final eStart = calendarDate(
-      eventStart.year,
-      eventStart.month,
-      eventStart.day,
-    );
-    // endAt is exclusive (midnight after last day), so subtract 1 day
-    // to get the last inclusive calendar day.
-    final exclusiveEnd = calendarDate(
-      eventEnd!.year,
-      eventEnd.month,
-      eventEnd.day,
-    );
-    final eEnd = exclusiveEnd.subtract(const Duration(days: 1));
+    final bounds = calendarAllDayBounds(event);
+    if (bounds == null) continue;
+    final (:start, :end) = bounds;
 
     // Find column range overlap with visible dates.
     int? startIdx;
     int? endIdx;
     for (var i = 0; i < dates.length; i++) {
       final day = dates[i];
-      if (!day.isBefore(eStart) && !day.isAfter(eEnd)) {
+      if (calendarRangeOverlapsDay(start, end, day)) {
         startIdx ??= i;
         endIdx = i;
       }
@@ -102,7 +88,7 @@ AllDayLayoutResult calculateAllDayLayout({
         event: event,
         startIndex: startIdx,
         endIndex: endIdx!,
-        isMultiDay: eEnd.isAfter(eStart),
+        isMultiDay: end.difference(start).inDays > 1,
       ),
     );
   }

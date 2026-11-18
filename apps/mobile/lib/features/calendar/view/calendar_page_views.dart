@@ -1,6 +1,48 @@
 part of 'calendar_page.dart';
 
 extension _CalendarPageViews on _CalendarViewState {
+  Widget _buildCalendarBody(
+    BuildContext context,
+    CalendarState state,
+    int firstDayOfWeek,
+    double height,
+  ) {
+    final showDay = state.viewMode == CalendarViewMode.day;
+    final showPicker = showDay || state.viewMode == CalendarViewMode.agenda;
+    final picker = showPicker
+        ? (showDay ? CalendarMiniMonth.new : MonthStrip.new)(
+            selectedDate: state.effectiveSelectedDate,
+            focusedMonth: state.effectiveFocusedMonth,
+            events: state.displayEvents,
+            firstDayOfWeek: firstDayOfWeek,
+            onDateSelected: (date) {
+              final cubit = context.read<CalendarCubit>()..selectDate(date);
+              final wsId = context
+                  .read<WorkspaceCubit>()
+                  .state
+                  .currentWorkspace
+                  ?.id;
+              if (wsId != null) unawaited(cubit.ensureRangeLoaded(wsId, date));
+            },
+            onMonthChanged: context.read<CalendarCubit>().setFocusedMonth,
+          )
+        : null;
+
+    return Column(
+      children: [
+        if (picker != null)
+          if (showDay)
+            ConstrainedBox(
+              constraints: BoxConstraints(maxHeight: height * 0.52),
+              child: picker,
+            )
+          else
+            picker,
+        Expanded(child: _buildViewBody(context, state, firstDayOfWeek)),
+      ],
+    );
+  }
+
   Widget _buildViewBody(
     BuildContext context,
     CalendarState state,

@@ -5,6 +5,7 @@ import 'package:mobile/core/ui/kit/app_event_block.dart';
 import 'package:mobile/core/ui/overlays/app_dialog.dart';
 import 'package:mobile/core/ui/tokens/app_tokens.dart';
 import 'package:mobile/data/models/calendar_event.dart';
+import 'package:mobile/features/calendar/utils/calendar_time_format.dart';
 import 'package:mobile/features/calendar/utils/event_tone.dart';
 import 'package:mobile/features/calendar/widgets/calendar_description_body.dart';
 import 'package:mobile/l10n/l10n.dart';
@@ -39,11 +40,7 @@ class EventDetailContent extends StatelessWidget {
     final start = event.startAt;
     final end = event.endAt;
     final date = start == null ? '' : DateFormat.MMMEd(locale).format(start);
-    final timeFormat = DateFormat.Hm(locale);
-    final times = [
-      if (start != null) timeFormat.format(start),
-      if (end != null) timeFormat.format(end),
-    ].join(' – ');
+    final times = formatCalendarTimeRange(context, start, end);
     final endDate = end != null && event.isMultiDay
         ? ' – ${DateFormat.MMMEd(locale).format(end)}'
         : '';

@@ -19,6 +19,7 @@ class AppEventBlock extends StatelessWidget {
     this.hourHeight = 48,
     this.width,
     this.onTap,
+    this.onLongPress,
     super.key,
   });
   final String title;
@@ -28,6 +29,7 @@ class AppEventBlock extends StatelessWidget {
   final double hourHeight;
   final double? width;
   final VoidCallback? onTap;
+  final VoidCallback? onLongPress;
 
   static SorbetHue hueOf(BuildContext context, String tone) {
     final hues =
@@ -42,9 +44,10 @@ class AppEventBlock extends StatelessWidget {
     final tokens = AppTokens.of(context);
     final radius = BorderRadius.circular(tokens.shapes.card);
     return Semantics(
-      button: onTap != null,
+      button: onTap != null || onLongPress != null,
       onTap: onTap,
-      label: '$title, $timeLabel',
+      onLongPress: onLongPress,
+      label: [title, if (timeLabel.isNotEmpty) timeLabel].join(', '),
       excludeSemantics: true,
       child: SizedBox(
         width: width,
@@ -56,7 +59,7 @@ class AppEventBlock extends StatelessWidget {
           borderRadius: radius,
           child: InkWell(
             onTap: onTap,
-            onLongPress: onTap == null ? null : () {},
+            onLongPress: onLongPress,
             borderRadius: radius,
             child: LayoutBuilder(
               builder: (context, constraints) {
@@ -82,7 +85,7 @@ class AppEventBlock extends StatelessWidget {
                             ),
                           ),
                         ),
-                        if (!compact)
+                        if (!compact && timeLabel.isNotEmpty)
                           Text(
                             timeLabel,
                             maxLines: 1,

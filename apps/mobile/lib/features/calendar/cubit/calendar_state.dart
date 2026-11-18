@@ -70,36 +70,20 @@ class CalendarState extends Equatable {
   /// start time.
   List<CalendarEvent> get selectedDateEvents {
     final date = effectiveSelectedDate;
-    final dayStart = calendarDate(date.year, date.month, date.day);
-    final dayEnd = dayStart.add(const Duration(days: 1));
-
-    return displayEvents.where((e) {
-      if (e.isAllDay) {
-        // All-day events: endAt is exclusive (midnight after last day).
-        // E.g. Feb 3 → Feb 9 means event covers Feb 3-8 only.
-        final start = e.startAt;
-        final end = e.endAt ?? start;
-        if (start == null) return false;
-        final eventStart = calendarDate(start.year, start.month, start.day);
-        final eventEnd = calendarDate(end!.year, end.month, end.day);
-        return dayStart.isBefore(eventEnd) && dayEnd.isAfter(eventStart);
-      }
-      // Timed events: overlap with the day.
-      final start = e.startAt;
-      final end = e.endAt ?? start;
-      if (start == null) return false;
-      return start.isBefore(dayEnd) && (end!.isAfter(dayStart));
-    }).toList()..sort((a, b) {
-      // All-day events first.
-      final aAllDay = a.isAllDay;
-      final bAllDay = b.isAllDay;
-      if (aAllDay && !bAllDay) return -1;
-      if (!aAllDay && bAllDay) return 1;
-      // Then by start time.
-      final aStart = a.startAt ?? calendarDate(0);
-      final bStart = b.startAt ?? calendarDate(0);
-      return aStart.compareTo(bStart);
-    });
+    return displayEvents
+        .where((event) => calendarEventOverlapsDay(event, date))
+        .toList()
+      ..sort((a, b) {
+        // All-day events first.
+        final aAllDay = a.isAllDay;
+        final bAllDay = b.isAllDay;
+        if (aAllDay && !bAllDay) return -1;
+        if (!aAllDay && bAllDay) return 1;
+        // Then by start time.
+        final aStart = a.startAt ?? calendarDate(0);
+        final bStart = b.startAt ?? calendarDate(0);
+        return aStart.compareTo(bStart);
+      });
   }
 
   List<CalendarEvent> get allDayEvents =>

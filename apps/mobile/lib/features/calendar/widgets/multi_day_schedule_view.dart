@@ -10,6 +10,7 @@ import 'package:mobile/core/ui/tokens/app_tokens.dart';
 import 'package:mobile/data/models/calendar_event.dart';
 import 'package:mobile/features/calendar/utils/all_day_layout.dart';
 import 'package:mobile/features/calendar/utils/calendar_date_time.dart';
+import 'package:mobile/features/calendar/utils/calendar_time_format.dart';
 import 'package:mobile/features/calendar/utils/event_colors.dart';
 import 'package:mobile/features/calendar/utils/event_layout.dart';
 import 'package:mobile/features/calendar/utils/event_tone.dart';
@@ -253,13 +254,10 @@ class _MultiDayScheduleViewState extends State<MultiDayScheduleView> {
 
   List<CalendarEvent> _timedEventsForDay(DateTime date) {
     final dayStart = calendarDate(date.year, date.month, date.day);
-    final dayEnd = dayStart.add(const Duration(days: 1));
 
     return [
       for (final event in _timedEventsSource)
-        if (event.startAt!.isBefore(dayEnd) &&
-            (event.endAt ?? event.startAt)!.isAfter(dayStart))
-          event,
+        if (calendarTimedEventOverlapsDay(event, dayStart)) event,
     ];
   }
 
@@ -303,6 +301,7 @@ class _MultiDayScheduleViewState extends State<MultiDayScheduleView> {
     );
     final hourHeight = _baseHourHeight(context) * zoom;
     final gutterWidth = _timeGutterWidth(context);
+    final timeFormat = calendarTimeFormat(context);
 
     return LayoutBuilder(
       builder: (context, constraints) {
@@ -352,13 +351,11 @@ class _MultiDayScheduleViewState extends State<MultiDayScheduleView> {
                                       ? _timedEventsForDay(date).length +
                                             allDayEvents
                                                 .where(
-                                                  (e) =>
-                                                      e.startAt != null &&
-                                                      !e.startAt!.isAfter(
+                                                  (event) =>
+                                                      calendarEventOverlapsDay(
+                                                        event,
                                                         date,
-                                                      ) &&
-                                                      (e.endAt?.isAfter(date) ??
-                                                          false),
+                                                      ),
                                                 )
                                                 .length
                                       : null,
@@ -388,24 +385,34 @@ class _MultiDayScheduleViewState extends State<MultiDayScheduleView> {
                   ],
                 ),
               ),
-              _MultiDayAllDayBar(
-                layout: allDayLayout,
-                controller: _allDayController,
-                viewportKey: _allDayViewportKey,
-                scope: widget.zoomScope,
-                gutterWidth: gutterWidth,
-                dayColumnWidth: dayColumnWidth,
-                contentWidth: dayAreaWidth,
-                viewportWidth: viewportWidth,
-                fallbackOffset: _gridController.hasClients
-                    ? _gridController.offset
-                    : _bufferDays * dayColumnWidth,
-                expanded: _allDayExpanded,
-                onToggle: () =>
-                    setState(() => _allDayExpanded = !_allDayExpanded),
-                onEventTap: (event) {
-                  if (!_zoomBlocked()) widget.onEventTap(event);
-                },
+              ConstrainedBox(
+                constraints: BoxConstraints(
+                  maxHeight: widget.visibleDayCount == 1
+                      ? constraints.maxHeight * 0.4
+                      : double.infinity,
+                ),
+                child: SingleChildScrollView(
+                  primary: false,
+                  child: _MultiDayAllDayBar(
+                    layout: allDayLayout,
+                    controller: _allDayController,
+                    viewportKey: _allDayViewportKey,
+                    scope: widget.zoomScope,
+                    gutterWidth: gutterWidth,
+                    dayColumnWidth: dayColumnWidth,
+                    contentWidth: dayAreaWidth,
+                    viewportWidth: viewportWidth,
+                    fallbackOffset: _gridController.hasClients
+                        ? _gridController.offset
+                        : _bufferDays * dayColumnWidth,
+                    expanded: _allDayExpanded,
+                    onToggle: () =>
+                        setState(() => _allDayExpanded = !_allDayExpanded),
+                    onEventTap: (event) {
+                      if (!_zoomBlocked()) widget.onEventTap(event);
+                    },
+                  ),
+                ),
               ),
               Expanded(
                 child: SingleChildScrollView(
@@ -486,16 +493,21 @@ class _MultiDayScheduleViewState extends State<MultiDayScheduleView> {
                                 top: hour * hourHeight - 7,
                                 left: 0,
                                 right: 8,
-                                child: Text(
-                                  _formatHour(hour),
-                                  textAlign: TextAlign.right,
-                                  style: AppTokens.of(context)
-                                      .typography
-                                      .numeric
-                                      .copyWith(
-                                        color: colorScheme.onSurfaceVariant,
-                                        fontSize: 11.5,
-                                      ),
+                                child: FittedBox(
+                                  alignment: Alignment.centerRight,
+                                  fit: BoxFit.scaleDown,
+                                  child: Text(
+                                    timeFormat.format(
+                                      calendarDate(2000, 1, 1, hour),
+                                    ),
+                                    style: AppTokens.of(context)
+                                        .typography
+                                        .numeric
+                                        .copyWith(
+                                          color: colorScheme.onSurfaceVariant,
+                                          fontSize: 11.5,
+                                        ),
+                                  ),
                                 ),
                               ),
                             ),
@@ -517,18 +529,5 @@ class _MultiDayScheduleViewState extends State<MultiDayScheduleView> {
     setState(() {
       _windowStart = _windowStart.add(Duration(days: shift));
     });
-  }
-
-  String _formatHour(int hour) {
-    if (hour == 0) {
-      return '12 AM';
-    }
-    if (hour < 12) {
-      return '$hour AM';
-    }
-    if (hour == 12) {
-      return '12 PM';
-    }
-    return '${hour - 12} PM';
   }
 }
