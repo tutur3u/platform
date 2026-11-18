@@ -235,11 +235,7 @@ for (const [file, workflow] of Object.entries(workflows)) {
     // publication and pull-request-only workflows assert their own slots.
     if (!pushesMain) continue;
     test(`${file} policy ${index}: rerun and dispatch qualify immutable attempts`, () => {
-      assertQualification(
-        policy,
-        workflow.name,
-        mainRunCancels(file)
-      );
+      assertQualification(policy, workflow.name, mainRunCancels(file));
     });
   }
 }
