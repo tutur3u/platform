@@ -4,6 +4,8 @@ import { GITHUB_API_VERSION } from '../../constants/common';
 import { getInstallationToken } from './credentials';
 import { classifyGitHubResponseError, GitHubMirrorError } from './errors';
 import { buildGitHubUrl } from './github-url';
+import { cachedGitHubFetch } from './response-cache';
+import { resolveGitHubResponseCache } from './response-cache-runtime';
 import type { GitRepository } from './types';
 
 export async function githubRequest<T>({
@@ -38,12 +40,18 @@ export async function githubRequestWithMetadata<T>({
   repository: GitRepository;
 }): Promise<{ body: T; hasNextPage: boolean }> {
   const token = await getInstallationToken(repository.githubRepositoryId);
-  const response = await fetch(buildGitHubUrl(repository, path, query), {
+  const response = await cachedGitHubFetch({
+    accept,
+    // Installation tokens are minted per repository, so the repository id is
+    // the credential scope; the token itself never enters a cache key.
+    authScope: token ? `app:${repository.githubRepositoryId}` : 'anonymous',
+    cache: await resolveGitHubResponseCache(),
     headers: {
       Accept: accept,
       ...(token ? { Authorization: `Bearer ${token}` } : {}),
       'X-GitHub-Api-Version': GITHUB_API_VERSION,
     },
+    url: buildGitHubUrl(repository, path, query),
   });
 
   if (!response.ok) {
