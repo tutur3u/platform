@@ -6,7 +6,10 @@ import {
   getInternalApiClient,
   resolveOwnAppApiPath,
 } from '@tuturuuu/internal-api/client';
-import type { PollsView } from '@tuturuuu/realtime/meet/room-polls';
+import type {
+  PollsView,
+  ProjectedPoll,
+} from '@tuturuuu/realtime/meet/room-polls';
 import { useEffect } from 'react';
 import type { PollAction } from '../server/polls';
 
@@ -24,7 +27,7 @@ export function pollExportUrl(
   );
 }
 
-type PollActionResult = {
+export type PollActionResult = {
   pollId?: string;
   fallback?: boolean;
   summary?: string | null;
@@ -73,13 +76,16 @@ export function useCallPolls(
     return () => channel.close();
   }, [accountId, client, enabled, meetingId]);
 
-  return useQuery({
+  return useQuery<PollsView>({
     queryKey: pollsKey(meetingId, accountId),
     queryFn: ({ signal }) =>
       getInternalApiClient().json<PollsView>(pollsPath(meetingId), { signal }),
     enabled,
     refetchInterval: (query) =>
-      open || query.state.data?.polls.some(({ status }) => status === 'active')
+      open ||
+      query.state.data?.polls.some(
+        (poll: ProjectedPoll) => poll.status === 'active'
+      )
         ? 2000
         : 5000,
     retry: false,

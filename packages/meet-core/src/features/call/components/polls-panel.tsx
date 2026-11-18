@@ -16,6 +16,7 @@ import { useLocale, useTranslations } from 'next-intl';
 import { type FormEvent, useState } from 'react';
 import {
   notifyPollMutation,
+  type PollActionResult,
   pollExportUrl,
   pollsKey,
   sendPollAction,
@@ -45,8 +46,8 @@ export function PollsControl({
   onClick: () => void;
 }) {
   const t = useTranslations('meet.call.polls');
-  const count =
-    query.data?.polls.filter(({ status }) => status === 'active').length ?? 0;
+  const isActive = (poll: ProjectedPoll) => poll.status === 'active';
+  const count = query.data?.polls.filter(isActive).length ?? 0;
   return (
     <ControlButton
       active={open}
@@ -74,8 +75,8 @@ export function PollsPanel({
   const queryClient = useQueryClient();
   const [draftFallback, setDraftFallback] = useState(false);
   const [summary, setSummary] = useState<{ pollId: string; text: string }>();
-  const mutation = useMutation({
-    mutationFn: (action: PollAction) => sendPollAction(meetingId, action),
+  const mutation = useMutation<PollActionResult, Error, PollAction>({
+    mutationFn: (action) => sendPollAction(meetingId, action),
     onMutate: (action) => {
       setDraftFallback(false);
       if (action.action === 'mira_summarize') setSummary(undefined);

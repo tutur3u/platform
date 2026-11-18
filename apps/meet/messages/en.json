@@ -4325,10 +4325,6 @@
       "personal_workspace_unavailable": "This workspace is not eligible for Private Mira. Ask a workspace admin.",
       "playback_volume": "Playback volume",
       "playback_volume_hint": "Only changes what you hear. Master volume scales voices, shared audio, Mira, and notification sounds.",
-      "preferences": "Preferences",
-      "preparing_call": "Preparing your call",
-      "preview_private": "Your microphone and camera are not shared until you join.",
-      "pricing_date": "Rates checked {date}",
       "polls": {
         "action_error": "Poll action failed. Try again.",
         "active": "Active",
@@ -4381,6 +4377,10 @@
         "word_cloud": "Word cloud",
         "your_answer": "Your response"
       },
+      "preferences": "Preferences",
+      "preparing_call": "Preparing your call",
+      "preview_private": "Your microphone and camera are not shared until you join.",
+      "pricing_date": "Rates checked {date}",
       "private_tools": {
         "calendar": "Calendar",
         "close": "Close my day",

@@ -4325,10 +4325,6 @@
       "personal_workspace_unavailable": "Không gian làm việc này chưa đủ điều kiện sử dụng Mira riêng tư. Hãy hỏi quản trị viên.",
       "playback_volume": "Âm lượng phát",
       "playback_volume_hint": "Chỉ thay đổi âm thanh bạn nghe. Âm lượng tổng điều chỉnh giọng nói, âm thanh chia sẻ, Mira và âm báo.",
-      "preferences": "Tùy chọn",
-      "preparing_call": "Đang chuẩn bị cuộc gọi",
-      "preview_private": "Micrô và camera của bạn chưa được chia sẻ cho đến khi bạn tham gia.",
-      "pricing_date": "Giá được kiểm tra ngày {date}",
       "polls": {
         "action_error": "Không thực hiện được thao tác. Hãy thử lại.",
         "active": "Đang mở",
@@ -4381,6 +4377,10 @@
         "word_cloud": "Đám mây từ khóa",
         "your_answer": "Câu trả lời của bạn"
       },
+      "preferences": "Tùy chọn",
+      "preparing_call": "Đang chuẩn bị cuộc gọi",
+      "preview_private": "Micrô và camera của bạn chưa được chia sẻ cho đến khi bạn tham gia.",
+      "pricing_date": "Giá được kiểm tra ngày {date}",
       "private_tools": {
         "calendar": "Lịch",
         "close": "Đóng ngày của tôi",
