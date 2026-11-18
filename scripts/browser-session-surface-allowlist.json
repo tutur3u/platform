@@ -97,7 +97,6 @@
     "packages/mind-core/src/access.ts",
     "packages/payment-core/src/billing-helper.ts",
     "packages/payment-core/src/customer-helper.ts",
-    "packages/payment-core/src/polar-order-helper.ts",
     "packages/payment-core/src/polar-product-helper.ts",
     "packages/payment-core/src/polar-seat-helper.ts",
     "packages/payment-core/src/polar-subscription-helper.ts",

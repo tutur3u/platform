@@ -5,12 +5,21 @@ import { authorizeInfrastructureAdminRequest } from '@/lib/infrastructure-admin-
 
 type InvoiceSummaryRow = Pick<
   Database['private']['Tables']['external_provider_invoices']['Row'],
-  'app_id' | 'provider' | 'account_id' | 'reference' | 'issued_on' | 'amount_usd'
+  | 'app_id'
+  | 'provider'
+  | 'account_id'
+  | 'reference'
+  | 'issued_on'
+  | 'amount_usd'
 >;
 
 export async function ProviderInvoiceSummary() {
-  const access = await authorizeInfrastructureAdminRequest('view_finance_stats');
-  if (!access.ok || !access.permissions?.containsPermission('view_infrastructure'))
+  const access =
+    await authorizeInfrastructureAdminRequest('view_finance_stats');
+  if (
+    !access.ok ||
+    !access.permissions?.containsPermission('view_infrastructure')
+  )
     return null;
 
   const t = await getTranslations('blue-green-monitoring.providerInvoices');
@@ -48,10 +57,22 @@ export async function ProviderInvoiceSummary() {
           </thead>
           <tbody>
             {data.map((row: InvoiceSummaryRow) => (
-              <tr key={JSON.stringify([row.app_id, row.provider, row.account_id, row.reference])}>
+              <tr
+                key={JSON.stringify([
+                  row.app_id,
+                  row.provider,
+                  row.account_id,
+                  row.reference,
+                ])}
+              >
                 <td>{row.issued_on}</td>
                 <td>{row.provider}</td>
-                <td>{format.number(row.amount_usd, { style: 'currency', currency: 'USD' })}</td>
+                <td>
+                  {format.number(row.amount_usd, {
+                    style: 'currency',
+                    currency: 'USD',
+                  })}
+                </td>
               </tr>
             ))}
           </tbody>

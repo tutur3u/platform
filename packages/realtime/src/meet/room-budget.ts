@@ -117,8 +117,7 @@ export function accountRoomTime(
               (participants >= 50 ? participantTime : 0),
           }),
       accountedAt: Math.max(budget.accountedAt, until),
-      participantMilliseconds:
-        budget.participantMilliseconds + participantTime,
+      participantMilliseconds: budget.participantMilliseconds + participantTime,
     },
   };
 }
@@ -212,7 +211,9 @@ export function roomBudgetSummary(state: MeetRoomSnapshot, now = Date.now()) {
     maxViewers,
     ...(budget.largeRoomPresenceMilliseconds === undefined
       ? {}
-      : { largeRoomPresenceMilliseconds: budget.largeRoomPresenceMilliseconds }),
+      : {
+          largeRoomPresenceMilliseconds: budget.largeRoomPresenceMilliseconds,
+        }),
     historicalUsageUnknown: budget.historicalUsageUnknown ?? false,
   };
 }

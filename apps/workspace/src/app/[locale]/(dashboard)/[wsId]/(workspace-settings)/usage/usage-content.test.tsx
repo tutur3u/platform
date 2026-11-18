@@ -18,6 +18,9 @@ vi.mock('@tuturuuu/utils/workspace-helper', () => ({
   getPermissions: mocks.getPermissions,
   getWorkspace: mocks.getWorkspace,
 }));
+vi.mock('@tuturuuu/ui/workspace-usage-meters', () => ({
+  WorkspaceUsageMeters: () => null,
+}));
 vi.mock('./_components', () =>
   Object.fromEntries(
     [
