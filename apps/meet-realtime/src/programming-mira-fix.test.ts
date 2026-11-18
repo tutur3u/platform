@@ -5,7 +5,7 @@ import {
   Y,
 } from '@tuturuuu/realtime/collaboration/server';
 import assert from 'node:assert/strict';
-import { test } from 'bun:test';
+import { spyOn, test } from 'bun:test';
 import {
   buildMiraFixUpdate,
   handleProgrammingMiraFix,
@@ -116,10 +116,10 @@ test('cancels an oversized stream according to transmitted UTF-8 bytes', async (
   }
 });
 
-test('withholds code when the ticket expires while the command body is read', async (t) => {
+test('withholds code when the ticket expires while the command body is read', async () => {
   const exp = 2_000_000_000;
   let now = (exp - 1) * 1000;
-  t.mock.method(Date, 'now', () => now);
+  const clock = spyOn(Date, 'now').mockImplementation(() => now);
   const body = new ReadableStream<Uint8Array>(
     {
       pull(controller) {
@@ -136,6 +136,7 @@ test('withholds code when the ticket expires while the command body is read', as
   try {
     assert.equal((await response).status, 403);
   } finally {
+    clock.mockRestore();
     doc.destroy();
   }
 });
