@@ -19,6 +19,22 @@ const meterRow = z.object({
   ends_at: z.iso.datetime({ offset: true }),
 });
 
+// Finite lookup tables keep every rendered key visible to the i18n audit.
+const COLUMN_LABELS = {
+  meter: 'meter',
+  spent: 'spent',
+  held: 'held',
+  available: 'available',
+  reset: 'reset',
+} as const;
+
+const METER_LABELS = {
+  sandbox_seconds: 'sandbox_seconds',
+  participant_seconds: 'participant_seconds',
+  stored_bytes: 'stored_bytes',
+  transfer_bytes: 'transfer_bytes',
+} as const;
+
 /** Render only after the owning settings page has authorized workspace usage. */
 export async function WorkspaceUsageMeters({ wsId }: { wsId: string }) {
   if (!canViewWorkspaceUsage(await getPermissions({ wsId }))) return null;
@@ -42,20 +58,21 @@ export async function WorkspaceUsageMeters({ wsId }: { wsId: string }) {
             <thead>
               <tr>
                 {(
-                  ['meter', 'spent', 'held', 'available', 'reset'] as const
-                ).map((key) => (
-                  <th key={key} scope="col">
-                    {t(key)}
+                  Object.keys(COLUMN_LABELS) as (keyof typeof COLUMN_LABELS)[]
+                ).map((column) => (
+                  <th key={column} scope="col">
+                    {t(COLUMN_LABELS[column])}
                   </th>
                 ))}
               </tr>
             </thead>
             <tbody>
               {rows.data.map((row) => {
+                const meter = row.meter;
                 const divisor = row.meter.endsWith('_seconds') ? 60 : 2 ** 30;
                 return (
                   <tr key={row.meter}>
-                    <th scope="row">{t(row.meter)}</th>
+                    <th scope="row">{t(METER_LABELS[meter])}</th>
                     {(['spent', 'held', 'available'] as const).map((key) => (
                       <td key={key}>
                         {format.number(row[key] / divisor, {

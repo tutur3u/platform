@@ -406,4 +406,44 @@ module.exports = [
     reason:
       'SECURITY INVOKER trigger function public.guard_workspace_user_mail_blocked() with search_path empty, attached only by the BEFORE INSERT OR UPDATE OF mail_blocked trigger on public.workspace_users; the REVOKE ALL at :140 removes PUBLIC, anon and authenticated and no later statement grants it; a direct call fails because trigger functions run only as triggers; only the no-grant marker is missing; preserve merged 20261117063000 bytes',
   },
+  {
+    path: 'apps/database/supabase/migrations/20261118043000_bind_metered_settlement_to_reserved_balance.sql',
+    line: 2,
+    rule: 'function-acl',
+    fileDigest:
+      '4f23e346c57719e3dd8fe31a2bb47b0885f8ed07df5517e3c3eb10eb330d2469',
+    digest: '1930aff48a68010934edeea72845f15e699f3df6adc64a620147327b63229e70',
+    reason:
+      'SECURITY INVOKER internal helper private.deduct_ai_credits_from_balance(uuid,uuid,text,integer,integer,integer,text,uuid,uuid,jsonb,uuid,integer,integer) with search_path pg_catalog, pg_temp, called only from the reviewed definers public.deduct_ai_credits and public.settle_metered_ai_credit_reservation in the same file; the REVOKE ALL at :158 removes PUBLIC, anon, authenticated and service_role and no later statement grants it, so it ends with no client or service grant; only the no-grant marker is missing; preserve staging-applied 20261118043000 bytes',
+  },
+  {
+    path: 'apps/database/supabase/migrations/20261118043000_bind_metered_settlement_to_reserved_balance.sql',
+    line: 207,
+    rule: 'function-acl',
+    fileDigest:
+      '4f23e346c57719e3dd8fe31a2bb47b0885f8ed07df5517e3c3eb10eb330d2469',
+    digest: 'cfdc479ba1f638a3bc54361108aeb6d497daee44a6c2240e234eff9c0e994e11',
+    reason:
+      'SECURITY DEFINER public.settle_metered_ai_credit_reservation(uuid,integer,integer,integer,jsonb) with search_path pg_catalog, pg_temp; the REVOKE EXECUTE at :397 removes PUBLIC, anon and authenticated (EXECUTE is the only routine privilege, so it is equivalent to REVOKE ALL) and the GRANT at :401 gives execute only to service_role; only the REVOKE ALL spelling is missing; preserve staging-applied 20261118043000 bytes',
+  },
+  {
+    path: 'apps/database/supabase/migrations/20261118121100_usage_admission_controls.sql',
+    line: 18,
+    rule: 'function-acl',
+    fileDigest:
+      'c7db0bf10074b0bfb4c16673d1cb76731e8d54f158f67b3624021c31589d362e',
+    digest: 'a3e63b7fab060a6c6f8df6f2910303387d9fdc3b906dceb8f9f4dfca879ddb73',
+    reason:
+      'SECURITY INVOKER trigger function private.check_usage_admission() with search_path pg_catalog, pg_temp, attached only by the BEFORE INSERT usage_admission_fence trigger on private.usage_holds; the REVOKE ALL at :37 removes PUBLIC, anon, authenticated and service_role and no later statement grants it; a direct call fails because trigger functions run only as triggers; only the no-grant marker is missing; preserve staging-applied 20261118121100 bytes',
+  },
+  {
+    path: 'apps/database/supabase/migrations/20261118121500_usage_finance_postings.sql',
+    line: 56,
+    rule: 'function-acl',
+    fileDigest:
+      '1dcdce58a56f985cb45343cc02251cad4ce62d470c7770a8bdc25efd042b5c10',
+    digest: '3cea3696825d4f82c1df1a03c26fac96c44b1e80af6174fb03946aaae31f5844',
+    reason:
+      'SECURITY DEFINER trigger function private.post_new_usage_invoice() with search_path pg_catalog, pg_temp, attached only by the AFTER INSERT post_new_usage_invoice trigger on private.external_provider_invoices for the root workspace; the REVOKE ALL at :62 removes PUBLIC, anon, authenticated and service_role and no later statement grants it; a direct call fails because trigger functions run only as triggers; only the no-grant marker is missing; preserve staging-applied 20261118121500 bytes',
+  },
 ];
