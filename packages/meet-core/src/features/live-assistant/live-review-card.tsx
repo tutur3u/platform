@@ -20,12 +20,16 @@ export function LiveReviewCard({
 }) {
   const t = useTranslations('meet.live');
   const [text, setText] = useState(review.text);
+  // Quiz Arena reviews describe one exact action, so their text is not editable.
+  const editable = review.action === 'share' || review.action === 'remember';
   const label =
     review.action === 'workspace'
       ? 'review_workspace'
-      : review.action === 'remember'
-        ? 'review_memory'
-        : 'review_share';
+      : review.action === 'quiz_arena'
+        ? 'review_quiz_arena'
+        : review.action === 'remember'
+          ? 'review_memory'
+          : 'review_share';
   return (
     <section
       className="space-y-3 rounded-xl border-2 border-primary/40 bg-primary/5 p-4"
@@ -35,7 +39,7 @@ export function LiveReviewCard({
         <ShieldCheck className="size-5" />
         {t(label)}
       </div>
-      {review.status === 'pending' && review.action !== 'workspace' ? (
+      {review.status === 'pending' && editable ? (
         <Textarea
           aria-label={t('review_text')}
           value={text}

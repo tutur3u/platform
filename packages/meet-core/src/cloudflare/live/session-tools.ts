@@ -5,7 +5,7 @@ import { requireCurrentPrivateGrant } from './private-grant';
 import {
   LIVE_QUIZ_ARENA_TOOLS,
   type LiveQuizArenaTool,
-  liveQuizArenaCommand,
+  proposeQuizArenaAction,
 } from './quiz-arena';
 import type { LiveProposal } from './reviews';
 import { livePollCommand, liveRoomCommand } from './room';
@@ -71,15 +71,39 @@ export async function executeLiveTool(
         return;
       }
       await requireCurrentPrivateGrant(env, saved);
-      respond(
-        await liveQuizArenaCommand(
-          env,
-          saved.claims,
-          saved.identity,
-          name as LiveQuizArenaTool,
-          args
+      if (
+        saved.reviews.some((review) =>
+          ['pending', 'processing'].includes(review.status)
         )
+      ) {
+        respond({ error: 'Resolve the pending review first' });
+        return;
+      }
+      // The tool call only proposes; the host approves the exact action.
+      const proposal = await proposeQuizArenaAction(
+        env,
+        saved.claims,
+        saved.identity,
+        name as LiveQuizArenaTool,
+        args
       );
+      if ('error' in proposal) {
+        respond(proposal);
+        return;
+      }
+      const review: LiveProposal = {
+        id: crypto.randomUUID(),
+        callId,
+        name: 'quiz_arena',
+        toolName: name,
+        args: proposal.args,
+        text: proposal.text,
+        status: 'pending',
+        expiresAt: Date.now() + 5 * 60000,
+      };
+      saved.reviews = [...saved.reviews.slice(-19), review];
+      await persist();
+      emitReview(review);
     } catch {
       respond({ error: 'Quiz Arena action is unavailable' });
     }

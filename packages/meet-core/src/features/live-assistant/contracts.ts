@@ -85,7 +85,7 @@ export type LiveAssistantEvent =
   | {
       type: 'review';
       id: string;
-      action: 'share' | 'remember' | 'workspace';
+      action: 'share' | 'remember' | 'workspace' | 'quiz_arena';
       toolName?: string;
       timezone?: string;
       args?: Record<string, unknown>;

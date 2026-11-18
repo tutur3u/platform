@@ -1,5 +1,7 @@
 import type { Session } from '@google/genai/web';
+import { requireCurrentPrivateGrant } from './private-grant';
 import { speakApprovedText } from './public-speech';
+import { applyQuizArenaProposal } from './quiz-arena';
 import { approveLiveMemory, type LiveProposal } from './reviews';
 import type { SavedSession } from './session-state';
 import type { LiveEnvironment } from './storage';
@@ -37,8 +39,18 @@ export async function executeLiveDecision(
         },
         saved.voice
       );
+    let result: Record<string, unknown> = {};
+    if (approved && review.name === 'quiz_arena') {
+      await requireCurrentPrivateGrant(env, saved);
+      result = await applyQuizArenaProposal(
+        env,
+        saved.claims,
+        saved.identity,
+        review.args
+      );
+    }
     review.status = approved ? 'approved' : 'denied';
-    response = { approved, completed: approved };
+    response = { ...result, approved, completed: approved };
   } catch {
     review.status = 'failed';
     response = {

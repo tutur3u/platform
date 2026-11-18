@@ -147,6 +147,7 @@ export function applyRoomQuizArena(
 ): Result {
   const accountId = token.accountId ?? token.userId;
   const canManage = canMeetRealtimeManageParticipants(token);
+  const liveServer = token.scopes.includes('meet:live-server');
   const present = Object.values(snapshot.presence).some(
     (person) => (person.accountId ?? person.userId) === accountId
   );
@@ -200,6 +201,9 @@ export function applyRoomQuizArena(
   };
 
   if (command.action === 'setup') {
+    // Lesson imports run only on the verified Meet server path.
+    if (command.board.source === 'upskii' && liveServer)
+      return fail('Forbidden', 403);
     if (arena && arena.phase !== 'board' && arena.phase !== 'ended')
       return fail('End the current round before replacing the board', 409);
     const roster = Object.values(snapshot.presence)
@@ -225,9 +229,14 @@ export function applyRoomQuizArena(
     state.tiles.find((tile) => tile.id === id) ??
     (state.finalTile?.id === id ? state.finalTile : undefined);
   const player = () => ensurePlayer(state, accountId, token.displayName ?? '');
+  const needsWager = (tile: ArenaTile) =>
+    tile.isBonusWager && !(arenaWagerKey(state, accountId) in tile.wagers);
 
   switch (command.action) {
     case 'pickTile': {
+      // Only the host-confirmed Private Mira path may attribute a pick to Mira.
+      if (command.source === 'mira' && !liveServer)
+        return fail('Forbidden', 403);
       const tile = state.tiles.find(({ id }) => id === command.tileId);
       if (!tile) return fail('Tile not found', 404);
       if (state.phase !== 'board' || tile.status !== 'available')
@@ -258,6 +267,7 @@ export function applyRoomQuizArena(
       if (tile.buzzQueue.length >= MAX_ARENA_BUZZ_QUEUE)
         return fail('Buzz queue is full', 409);
       if (!player()) return fail('Player limit reached', 409);
+      if (needsWager(tile)) return fail('Place a wager first', 409);
       markParticipation(state, tile, accountId);
       const open = !tile.buzzQueue.some(
         ({ status }) => status === 'answering' || status === 'correct'
@@ -279,10 +289,8 @@ export function applyRoomQuizArena(
       if (canManage) return fail('Hosts run the game', 409);
       if (!player()) return fail('Player limit reached', 409);
       const key = arenaWagerKey(state, accountId);
-      const answered = tile.submissions.some(
-        ({ userId }) => arenaWagerKey(state, userId) === key
-      );
-      if (answered) return fail('Wagers lock after answering', 409);
+      // The first wager is final, so nobody re-stakes after seeing the question.
+      if (key in tile.wagers) return fail('Wager is already locked', 409);
       if (command.amount > maxArenaWager(state, tile, accountId))
         return fail('Wager is too high', 400);
       markParticipation(state, tile, accountId);
@@ -304,6 +312,7 @@ export function applyRoomQuizArena(
         (tile.openedAt ?? now) + tile.question.quizMeta.timeLimitSec * 1000;
       if (now > deadline + ANSWER_GRACE_MS) return fail('Time is up', 409);
       if (!player()) return fail('Player limit reached', 409);
+      if (needsWager(tile)) return fail('Place a wager first', 409);
       const buzz = state.config.answerMode === 'buzz_in' && !tile.isFinal;
       if (buzz) {
         const turn = tile.buzzQueue.find(

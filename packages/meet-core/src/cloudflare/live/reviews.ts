@@ -8,7 +8,12 @@ import { type LiveEnvironment, liveDatabase, readLiveMemory } from './storage';
 export const proposalSchema = z.object({
   id: z.uuid(),
   callId: z.string(),
-  name: z.enum(['remember', 'propose_room_reply', 'workspace_tool']),
+  name: z.enum([
+    'remember',
+    'propose_room_reply',
+    'workspace_tool',
+    'quiz_arena',
+  ]),
   toolName: z.string().optional(),
   timezone: z.string().optional(),
   processingAt: z.number().optional(),
@@ -45,9 +50,11 @@ export function liveReviewEvent(review: LiveProposal): LiveAssistantEvent {
     action:
       review.name === 'workspace_tool'
         ? 'workspace'
-        : review.name === 'remember'
-          ? 'remember'
-          : 'share',
+        : review.name === 'quiz_arena'
+          ? 'quiz_arena'
+          : review.name === 'remember'
+            ? 'remember'
+            : 'share',
     toolName: review.toolName,
     timezone: review.timezone ?? 'UTC',
     args: review.args,

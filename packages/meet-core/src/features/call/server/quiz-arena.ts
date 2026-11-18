@@ -19,7 +19,7 @@ import { callRoomService } from './room-service';
 
 type Access = Awaited<ReturnType<typeof getMeetCallAccess>>;
 
-export const quizArenaActionSchema = z.union([
+const quizArenaActions = z.union([
   quizArenaMutationSchema,
   z.strictObject({ action: z.literal('list_upskii') }),
   z.strictObject({
@@ -38,7 +38,22 @@ export const quizArenaActionSchema = z.union([
     useStarterFallback: z.boolean().default(false),
   }),
 ]);
-export type QuizArenaAction = z.input<typeof quizArenaActionSchema>;
+/** Provenance is server-assigned; a browser-supplied `source` is rejected. */
+function hasClientProvenance(input: unknown) {
+  if (!input || typeof input !== 'object') return false;
+  const { source, board } = input as { source?: unknown; board?: unknown };
+  return (
+    source !== undefined ||
+    (!!board && typeof board === 'object' && 'source' in board)
+  );
+}
+
+export const quizArenaActionSchema = z.preprocess(
+  (input) =>
+    hasClientProvenance(input) ? { action: 'invalid_provenance' } : input,
+  quizArenaActions
+);
+export type QuizArenaAction = z.input<typeof quizArenaActions>;
 export type QuizArenaActionResult = {
   ok?: boolean;
   seq?: number;
@@ -55,7 +70,7 @@ const setup = (access: Access, board: ArenaBoardInput, config: unknown) =>
 
 export async function runQuizArenaAction(
   access: Access,
-  action: z.output<typeof quizArenaActionSchema>
+  action: z.output<typeof quizArenaActions>
 ): Promise<QuizArenaActionResult | unknown> {
   switch (action.action) {
     case 'list_upskii':
@@ -85,15 +100,22 @@ export async function runQuizArenaAction(
       };
     }
     default: {
+      // Browser actions are always the host's own manual choices.
+      const stamped =
+        action.action === 'setup'
+          ? { ...action, board: { ...action.board, source: 'manual' as const } }
+          : action.action === 'pickTile'
+            ? { ...action, source: 'host' as const }
+            : action;
       const command = quizArenaRoomCommandSchema.safeParse({
-        ...action,
-        action: `arena.${action.action}`,
+        ...stamped,
+        action: `arena.${stamped.action}`,
       });
       if (!command.success)
         throw new MeetCallAccessError(400, 'Invalid Quiz Arena action');
       return callRoomService(access, {
-        ...action,
-        action: `arena.${action.action}`,
+        ...stamped,
+        action: `arena.${stamped.action}`,
       });
     }
   }

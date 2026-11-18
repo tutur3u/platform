@@ -11,12 +11,15 @@ const mocks = vi.hoisted(() => ({
   authority: vi.fn(),
   context: vi.fn(),
   tables: {} as Record<string, Array<Record<string, unknown>>>,
+  reads: [] as string[],
+  granted: new Set<string>(),
 }));
 
 /** Minimal chainable Supabase stand-in that applies eq/in filters to fixtures. */
 function fakeDb() {
   return {
     from(table: string) {
+      mocks.reads.push(table);
       const filters: Array<(row: Record<string, unknown>) => boolean> = [];
       let single = false;
       const builder = {
@@ -58,6 +61,11 @@ vi.mock('@tuturuuu/ai/credits/check-credits', () => ({
   checkAiCredits: mocks.credits,
 }));
 vi.mock('@tuturuuu/ai/meetings/chat', () => ({ answerMeetChat: mocks.answer }));
+vi.mock('@tuturuuu/utils/workspace-helper', () => ({
+  getPermissions: async () => ({
+    withoutPermission: (permission: string) => !mocks.granted.has(permission),
+  }),
+}));
 vi.mock('@tuturuuu/supabase/next/server', () => ({
   createAdminClient: async () => fakeDb(),
 }));
@@ -93,6 +101,17 @@ import { quizArenaActionSchema, runQuizArenaAction } from './quiz-arena';
 const ws = '11111111-1111-4111-8111-111111111111';
 const course = '22222222-2222-4222-8222-222222222222';
 const moduleId = '33333333-3333-4333-8333-333333333333';
+const foreign = '44444444-4444-4444-8444-444444444444';
+const draftCourse = '66666666-6666-4666-8666-666666666666';
+const archivedCourse = '77777777-7777-4777-8777-777777777777';
+const hiddenModule = '88888888-8888-4888-8888-888888888888';
+const draftModule = '99999999-9999-4999-8999-999999999999';
+const published = {
+  ws_id: '11111111-1111-4111-8111-111111111111',
+  is_course_published: true,
+  archived: false,
+  is_guest: false,
+};
 const access = {
   user: { id: 'host' },
   meeting: { id: 'meeting', ws_id: ws },
@@ -154,18 +173,34 @@ beforeEach(() => {
   mocks.room.mockImplementation(async (_access, command: { action: string }) =>
     command.action === 'arena.setup' ? { ok: true, seq: 1 } : { ok: true }
   );
+  mocks.reads = [];
+  mocks.granted = new Set(['update_user_groups']);
   mocks.tables = {
     workspace_user_groups: [
-      { id: course, name: 'CS101', ws_id: ws, archived: false },
+      { id: course, name: 'CS101', ...published },
+      { id: foreign, name: 'Other', ...published, ws_id: 'elsewhere' },
       {
-        id: '44444444-4444-4444-8444-444444444444',
-        name: 'Other',
-        ws_id: 'elsewhere',
-        archived: false,
+        id: draftCourse,
+        name: 'Draft',
+        ...published,
+        is_course_published: false,
       },
+      { id: archivedCourse, name: 'Old', ...published, archived: true },
     ],
     workspace_course_modules: [
-      { id: moduleId, name: 'Lesson 04', group_id: course },
+      { id: moduleId, name: 'Lesson 04', group_id: course, is_published: true },
+      {
+        id: hiddenModule,
+        name: 'Hidden',
+        group_id: course,
+        is_published: false,
+      },
+      {
+        id: draftModule,
+        name: 'Draft lesson',
+        group_id: draftCourse,
+        is_published: true,
+      },
     ],
     course_module_quizzes: [{ module_id: moduleId, quiz_id: 'q1' }],
     workspace_quizzes: [{ id: 'q1', question: 'What is O(1)?', ws_id: ws }],
@@ -289,12 +324,14 @@ it('imports workspace lesson quizzes and flashcards into a board', async () => {
 });
 
 it('rejects lesson imports outside the meeting workspace or without membership', async () => {
-  const foreign = quizArenaActionSchema.parse({
+  const crossWorkspace = quizArenaActionSchema.parse({
     action: 'import_upskii',
-    courseId: '44444444-4444-4444-8444-444444444444',
+    courseId: foreign,
     config,
   });
-  await expect(runQuizArenaAction(access, foreign)).rejects.toMatchObject({
+  await expect(
+    runQuizArenaAction(access, crossWorkspace)
+  ).rejects.toMatchObject({
     status: 404,
   });
   await expect(
@@ -340,5 +377,104 @@ it('lists courses with modules and forwards gameplay as prefixed room commands',
   expect(mocks.room.mock.calls.at(-1)?.[1]).toEqual({
     action: 'arena.buzz',
     tileId,
+  });
+});
+
+it('requires course-editing authority before reading any lesson content', async () => {
+  mocks.granted = new Set(['view_user_groups']);
+  const importAction = quizArenaActionSchema.parse({
+    action: 'import_upskii',
+    courseId: course,
+    config,
+  });
+  for (const action of [
+    quizArenaActionSchema.parse({ action: 'list_upskii' }),
+    importAction,
+  ])
+    await expect(runQuizArenaAction(access, action)).rejects.toMatchObject({
+      status: 403,
+      code: 'upskii_forbidden',
+    });
+  expect(mocks.reads).toEqual([]);
+  expect(mocks.room.mock.calls.map((call) => call[1].action)).not.toContain(
+    'arena.setup'
+  );
+});
+
+it('imports only published, active lessons and never unpublished answer keys', async () => {
+  for (const courseId of [draftCourse, archivedCourse, foreign])
+    await expect(
+      runQuizArenaAction(
+        access,
+        quizArenaActionSchema.parse({
+          action: 'import_upskii',
+          courseId,
+          config,
+        })
+      )
+    ).rejects.toMatchObject({ status: 404, code: 'upskii_not_found' });
+  await expect(
+    runQuizArenaAction(
+      access,
+      quizArenaActionSchema.parse({
+        action: 'import_upskii',
+        courseId: course,
+        moduleId: hiddenModule,
+        config,
+      })
+    )
+  ).rejects.toMatchObject({ status: 404 });
+  expect(mocks.reads).not.toContain('quiz_options');
+  expect(mocks.room.mock.calls.map((call) => call[1].action)).not.toContain(
+    'arena.setup'
+  );
+});
+
+it('rejects browser-chosen provenance and stamps host and manual on forwarded actions', async () => {
+  const tileId = '55555555-5555-4555-8555-555555555555';
+  expect(
+    quizArenaActionSchema.safeParse({
+      action: 'pickTile',
+      tileId,
+      source: 'mira',
+    }).success
+  ).toBe(false);
+  expect(
+    quizArenaActionSchema.safeParse({
+      action: 'setup',
+      board: { title: 'T', source: 'mira', categories: ['A'], tiles: [] },
+      config,
+    }).success
+  ).toBe(false);
+  await runQuizArenaAction(
+    access,
+    quizArenaActionSchema.parse({ action: 'pickTile', tileId })
+  );
+  expect(mocks.room.mock.calls.at(-1)?.[1]).toEqual({
+    action: 'arena.pickTile',
+    tileId,
+    source: 'host',
+  });
+  await runQuizArenaAction(
+    access,
+    quizArenaActionSchema.parse({
+      action: 'setup',
+      board: {
+        title: 'Manual',
+        categories: ['A'],
+        tiles: [
+          {
+            categoryIndex: 0,
+            tierIndex: 0,
+            question: { type: 'open_text', question: 'Q?' },
+          },
+        ],
+      },
+      config,
+    })
+  );
+  expect(mocks.room.mock.calls.at(-1)?.[1]).toMatchObject({
+    action: 'arena.setup',
+    board: { source: 'manual' },
   });
 });

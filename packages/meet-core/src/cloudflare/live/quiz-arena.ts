@@ -1,5 +1,6 @@
 import { type FunctionDeclaration, Type } from '@google/genai/web';
 import {
+  arenaBoardInputSchema,
   arenaConfigInputSchema,
   type QuizArenaView,
 } from '@tuturuuu/realtime/meet/room-quiz-arena';
@@ -108,22 +109,54 @@ const pickArgs = z.strictObject({
   tierIndex: z.number().int().min(0).max(4),
 });
 
-export async function liveQuizArenaCommand(
+const proposalSchema = z.discriminatedUnion('kind', [
+  z.strictObject({
+    kind: z.literal('setup'),
+    board: arenaBoardInputSchema,
+    config: arenaConfigInputSchema,
+    /** Board the proposal replaces, or null for an empty room. */
+    epoch: z.string().nullable(),
+  }),
+  z.strictObject({
+    kind: z.literal('pick'),
+    tileId: z.uuid(),
+    epoch: z.string(),
+  }),
+]);
+export type QuizArenaProposal = z.input<typeof proposalSchema>;
+
+function gateError(claims: LiveSessionClaims, identity: LiveRoomIdentity) {
+  return !identity.isHost ||
+    claims.mode !== 'personal' ||
+    claims.app === 'parley' ||
+    claims.expiresAt <= Date.now()
+    ? 'Only the meeting host can run Quiz Arena in Private Mira'
+    : null;
+}
+
+const readArena = (
+  env: LiveEnvironment,
+  claims: LiveSessionClaims,
+  identity: LiveRoomIdentity
+) =>
+  liveRoomCommand<QuizArenaView>(env, claims, identity, {
+    action: 'arena.state',
+  });
+
+/**
+ * Turns a Voice Live tool call into a proposal without changing the room.
+ * The host approves the exact board or tile in the live review card, and only
+ * then does `applyQuizArenaProposal` write it.
+ */
+export async function proposeQuizArenaAction(
   env: LiveEnvironment,
   claims: LiveSessionClaims,
   identity: LiveRoomIdentity,
   name: LiveQuizArenaTool,
   args: Record<string, unknown>
-): Promise<Record<string, unknown>> {
-  if (
-    !identity.isHost ||
-    claims.mode !== 'personal' ||
-    claims.app === 'parley' ||
-    claims.expiresAt <= Date.now()
-  )
-    return {
-      error: 'Only the meeting host can run Quiz Arena in Private Mira',
-    };
+): Promise<{ error: string } | { text: string; args: QuizArenaProposal }> {
+  const denied = gateError(claims, identity);
+  if (denied) return { error: denied };
 
   if (name === 'draft_quiz_arena') {
     const parsed = draftArgs.safeParse(args);
@@ -147,35 +180,33 @@ export async function liveQuizArenaCommand(
         )
       : null;
     const board = generated ?? starterArenaBoard({ ...request, ...counts });
-    const config = arenaConfigInputSchema.parse({
-      answerMode,
-      playMode,
-      ...(playMode === 'teams'
-        ? { teams: ['Team 1', 'Team 2', 'Team 3', 'Team 4'] }
-        : {}),
-    });
-    const result = await liveRoomCommand<Record<string, unknown>>(
-      env,
-      claims,
-      identity,
-      {
-        action: 'arena.setup',
-        board,
-        config,
-      }
-    );
+    const view = await readArena(env, claims, identity);
+    if (
+      view.kind === 'full' &&
+      view.meta.phase !== 'board' &&
+      view.meta.phase !== 'ended'
+    )
+      return { error: 'Finish the current round before replacing the board' };
     return {
-      ...result,
-      generated: generated !== null,
-      tiles: board.tiles.length,
+      text: `Set up the Quiz Arena board "${board.title}" with ${board.tiles.length} tiles (${answerMode === 'buzz_in' ? 'buzz-in' : 'everyone answers'}, ${playMode}).`,
+      args: {
+        kind: 'setup',
+        board,
+        config: {
+          answerMode,
+          playMode,
+          ...(playMode === 'teams'
+            ? { teams: ['Team 1', 'Team 2', 'Team 3', 'Team 4'] }
+            : {}),
+        },
+        epoch: view.kind === 'full' ? view.epoch : null,
+      },
     };
   }
 
   const parsed = pickArgs.safeParse(args);
   if (!parsed.success) return { error: 'Invalid tile position' };
-  const view = await liveRoomCommand<QuizArenaView>(env, claims, identity, {
-    action: 'arena.state',
-  });
+  const view = await readArena(env, claims, identity);
   if (view.kind !== 'full') return { error: 'No Quiz Arena board is set up' };
   const tile = view.tiles.find(
     ({ categoryIndex, tierIndex }) =>
@@ -184,14 +215,43 @@ export async function liveQuizArenaCommand(
   );
   if (!tile || tile.status !== 'available')
     return { error: 'That tile is not available' };
-  await liveRoomCommand(env, claims, identity, {
+  const category = view.meta.categories[tile.categoryIndex] ?? '';
+  return {
+    text: `Open the Quiz Arena tile ${category} · ${tile.points}.`,
+    args: { kind: 'pick', tileId: tile.id, epoch: view.epoch },
+  };
+}
+
+/**
+ * Applies a proposal the host approved. It is bound to the board the host
+ * saw: a reset, a replaced board or an already played tile fails instead.
+ */
+export async function applyQuizArenaProposal(
+  env: LiveEnvironment,
+  claims: LiveSessionClaims,
+  identity: LiveRoomIdentity,
+  raw: unknown
+): Promise<Record<string, unknown>> {
+  const denied = gateError(claims, identity);
+  if (denied) throw new Error(denied);
+  const proposal = proposalSchema.parse(raw);
+  const view = await readArena(env, claims, identity);
+  const epoch = view.kind === 'full' ? view.epoch : null;
+  if (epoch !== proposal.epoch) throw new Error('quiz_arena_board_changed');
+  if (proposal.kind === 'setup')
+    return liveRoomCommand(env, claims, identity, {
+      action: 'arena.setup',
+      board: proposal.board,
+      config: proposal.config,
+    });
+  const tile =
+    view.kind === 'full'
+      ? view.tiles.find(({ id }) => id === proposal.tileId)
+      : undefined;
+  if (tile?.status !== 'available') throw new Error('quiz_arena_tile_taken');
+  return liveRoomCommand(env, claims, identity, {
     action: 'arena.pickTile',
-    tileId: tile.id,
+    tileId: proposal.tileId,
     source: 'mira',
   });
-  return {
-    ok: true,
-    category: view.meta.categories[tile.categoryIndex] ?? '',
-    points: tile.points,
-  };
 }

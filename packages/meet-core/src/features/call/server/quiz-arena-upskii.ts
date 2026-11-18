@@ -10,6 +10,7 @@ import {
   MAX_ARENA_TIERS,
 } from '@tuturuuu/realtime/meet/room-quiz-arena';
 import { createAdminClient } from '@tuturuuu/supabase/next/server';
+import { getPermissions } from '@tuturuuu/utils/workspace-helper';
 import {
   type getMeetCallAccess,
   MeetCallAccessError,
@@ -18,24 +19,37 @@ import {
 type Access = Awaited<ReturnType<typeof getMeetCallAccess>>;
 type Db = Awaited<ReturnType<typeof createAdminClient>>;
 
-/** Workspace members only; the caller has already passed the host check. */
-async function workspaceDb(access: Access) {
-  if (!access.canReadWorkspace)
-    throw new MeetCallAccessError(
+/**
+ * Distributing lesson questions and answer keys needs the same course-editing
+ * authority as Teach (`update_user_groups`), checked before any course read.
+ * Only published, active, non-guest courses and published lessons are offered.
+ */
+async function courseAuthority(access: Access) {
+  const denied = () =>
+    new MeetCallAccessError(
       403,
-      'Workspace access is required',
+      'Course editing access is required',
       'upskii_forbidden'
     );
+  if (!access.canReadWorkspace) throw denied();
+  const permissions = await getPermissions({
+    wsId: access.meeting.ws_id,
+    user: access.user,
+  });
+  if (!permissions || permissions.withoutPermission('update_user_groups'))
+    throw denied();
   return createAdminClient({ noCookie: true });
 }
 
 export async function listUpskiiCourses(access: Access) {
-  const db = await workspaceDb(access);
+  const db = await courseAuthority(access);
   const { data: courses, error } = await db
     .from('workspace_user_groups')
     .select('id, name')
     .eq('ws_id', access.meeting.ws_id)
+    .eq('is_course_published', true)
     .eq('archived', false)
+    .eq('is_guest', false)
     .order('name')
     .limit(50);
   if (error) throw new MeetCallAccessError(503, 'Courses are unavailable');
@@ -45,6 +59,7 @@ export async function listUpskiiCourses(access: Access) {
         .from('workspace_course_modules')
         .select('id, name, group_id')
         .in('group_id', ids)
+        .eq('is_published', true)
         .order('sort_key')
         .limit(500)
     : null;
@@ -263,18 +278,25 @@ export async function buildUpskiiBoard(
     includeFinalRound: boolean;
   }
 ) {
-  const db = await workspaceDb(access);
+  const db = await courseAuthority(access);
   const { data: course } = await db
     .from('workspace_user_groups')
-    .select('id, name, ws_id')
+    .select('id, name, ws_id, is_course_published, archived, is_guest')
     .eq('id', input.courseId)
     .maybeSingle();
-  if (!course || course.ws_id !== access.meeting.ws_id)
+  if (
+    !course ||
+    course.ws_id !== access.meeting.ws_id ||
+    !course.is_course_published ||
+    course.archived ||
+    course.is_guest
+  )
     throw new MeetCallAccessError(404, 'Course not found', 'upskii_not_found');
   let query = db
     .from('workspace_course_modules')
     .select('id, name')
     .eq('group_id', course.id)
+    .eq('is_published', true)
     .order('sort_key')
     .limit(MAX_ARENA_CATEGORIES * 4);
   if (input.moduleId) query = query.eq('id', input.moduleId);

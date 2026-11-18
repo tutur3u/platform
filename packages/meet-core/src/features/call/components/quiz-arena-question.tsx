@@ -117,7 +117,11 @@ export function QuizArenaQuestion({
           <AnswerArea
             tile={tile}
             busy={busy}
-            disabled={canManage || (buzzMode && !myTurn)}
+            disabled={
+              canManage ||
+              (buzzMode && !myTurn) ||
+              (tile.isBonusWager && tile.myWager === null)
+            }
             onAction={onAction}
           />
         )}

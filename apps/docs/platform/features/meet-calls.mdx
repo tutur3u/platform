@@ -1602,6 +1602,9 @@ check, 64 KiB body bound, call access check and `private, no-store` responses.
   graded answers is right, and buzz-in awards go to the buzzer's team. Wagers
   belong to the team, capped at the larger of the team score and the tile value.
   Individual scores are kept alongside.
+- **Wagers.** The first wager per player (or team) is final. A bonus or final
+  question stays hidden until that wager exists, and nobody can answer or buzz
+  on a wager tile without one. Final-round wagers close when answers open.
 - **Wrong answers.** No penalty by default; hosts may choose half or full points.
   Wager tiles and the final round always win or lose the wager.
 - **Attendance credit.** Everyone present at setup is listed. A player earns
@@ -1611,11 +1614,20 @@ check, 64 KiB body bound, call access check and `private, no-store` responses.
 - **Board sources.** Mira generation runs under the host's personal credits with
   the same consent, demo-authority and billing guards as poll assistance. When
   Mira is unavailable nothing is billed or created; the host may then choose a
-  deterministic starter board of host-judged prompts. Upskii import requires a
-  workspace member host and reads only courses whose `ws_id` matches the meeting.
-- **Private Mira voice.** `draft_quiz_arena` prepares a board (never starts play)
-  and `pick_quiz_arena_tile` opens a tile only on the host's explicit request; the
-  picked tile shows Mira's live tag. Both are host-only and personal-mode only.
+  deterministic starter board of host-judged prompts. Upskii import distributes
+  questions and answer keys, so it requires the Teach course-editing right
+  (`update_user_groups`) before any course read, and offers only published,
+  active, non-guest courses in the meeting's workspace and their published
+  lessons. Unpublished or archived material is never importable from Meet.
+- **Provenance.** The browser API never chooses a board source or pick source:
+  it stamps `manual` and `host`. Mira and lesson provenance come only from the
+  server paths that produced them, and the room accepts a Mira pick only from
+  the Private Mira service scope.
+- **Private Mira voice.** `draft_quiz_arena` and `pick_quiz_arena_tile` only
+  propose. The host approves the exact board or tile in the Private Mira review
+  card before anything changes, and approval fails if the board was replaced,
+  reset or the tile was played meanwhile. Both are host-only and personal-mode
+  only; an approved pick shows Mira's live tag.
 - **Sync.** Clients poll every 1.2 s while a round is live or the drawer is open,
   otherwise every 5 s, and request only changes since their last sequence.
   A reset starts a new epoch so stale deltas fall back to a full read.
@@ -1624,6 +1636,8 @@ check, 64 KiB body bound, call access check and `private, no-store` responses.
 
 Coverage: `room-quiz-arena.test.ts` (modes, secrecy, host-only commands, teams,
 wagers, final round, exports, deltas and a 50-player scale run),
+`room-quiz-arena-integrity.test.ts` (immutable wagers, wager-before-answer and
+provenance),
 `server/quiz-arena.test.ts` (Mira guards, starter fallback, Upskii scoping),
 `quiz-arena/route.test.ts`, `cloudflare/live/quiz-arena.test.ts`,
 `quiz-arena-panel.test.tsx` and the Meet worker `api-registry.test.ts`.
