@@ -214,6 +214,7 @@
     "@babel/parser": "7.29.9",
     "@babel/types": "7.29.8",
     "@next/bundle-analyzer": "^16.4.2",
+    "@opennextjs/cloudflare": "1.20.17",
     "@playwright/test": "^1.64.1",
     "@supabase/ssr": "^0.12.7",
     "@supabase/supabase-js": "2.117.1",

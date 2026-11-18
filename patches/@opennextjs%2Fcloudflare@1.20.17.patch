@@ -1,0 +1,130 @@
+diff --git a/dist/cli/build/bundle-server.js b/dist/cli/build/bundle-server.js
+index 9d0375ab175ff83d0476fc52be6f69e9fd06e9a4..5981ef8a26883dd4e84e728183c9427541de831f 100644
+--- a/dist/cli/build/bundle-server.js
++++ b/dist/cli/build/bundle-server.js
+@@ -1,3 +1,4 @@
++import { patchWorkerScheduler } from "./w3-patch-scheduler.js";
+ import fs from "node:fs";
+ import { readFile, writeFile } from "node:fs/promises";
+ import path from "node:path";
+@@ -181,6 +182,7 @@ export async function bundleServer(buildOpts, projectOpts) {
+     });
+     fs.writeFileSync(openNextServerBundle + ".meta.json", JSON.stringify(result.metafile, null, 2));
+     await updateWorkerBundledCode(openNextServerBundle);
++    if (nextConfig.cacheComponents) patchWorkerScheduler(openNextServerBundle);
+     const isMonorepo = monorepoRoot !== appPath;
+     if (isMonorepo) {
+         fs.writeFileSync(path.join(outputPath, "handler.mjs"), `export { handler } from "./${normalizePath(packagePath)}/handler.mjs";`);
+diff --git a/dist/cli/build/w3-patch-scheduler.js b/dist/cli/build/w3-patch-scheduler.js
+new file mode 100644
+index 0000000000000000000000000000000000000000..ebe9ecf29dbdc72c11007ada656d15dc5cd5d188
+--- /dev/null
++++ b/dist/cli/build/w3-patch-scheduler.js
+@@ -0,0 +1,16 @@
++import fs from 'node:fs';
++import path from 'node:path';
++import { fileURLToPath } from 'node:url';
++import { parseCode, applyRule } from '@opennextjs/aws/build/patch/astCodePatcher.js';
++const rule = "\nrule:\n  pattern:\n    selector: function_declaration\n    context: \"function $FUNCTION($$$ARGS) { $$$BODY }\"\n  all:\n    - has:\n        regex: DANGEROUSLY_runPendingImmediatesAfterCurrentTask\n        stopBy: end\n    - has:\n        regex: expectNoPendingImmediates\n        stopBy: end\n    - not:\n        has:\n          kind: function_declaration\n          stopBy: end\n          has:\n            regex: DANGEROUSLY_runPendingImmediatesAfterCurrentTask\n            stopBy: end\nfix: |-\n  function $FUNCTION(first, ...rest) {\n    return globalThis.__w3Scheduler.runInSequentialTasks(first, ...rest);\n  }\n";
++export function patchWorkerScheduler(handler) {
++ const code = fs.readFileSync(handler, 'utf8');
++ if (code.includes('globalThis.__w3Scheduler')) throw Error('Scheduler already patched');
++ const root = parseCode(code);
++ const { edits } = applyRule(rule, root);
++ if (edits.length < 1) throw Error('No staged render runner matched');
++ fs.copyFileSync(handler, handler + '.w3-unpatched');
++ fs.copyFileSync(fileURLToPath(new URL('./w3-scheduler.mjs', import.meta.url)), path.join(path.dirname(handler), 'w3-scheduler.mjs'));
++ fs.writeFileSync(handler, "import * as __w3Scheduler from './w3-scheduler.mjs';\nglobalThis.__w3Scheduler=__w3Scheduler;\n" + root.commitEdits(edits));
++ console.log('Worker scheduler runner matches:', edits.length);
++}
+diff --git a/dist/cli/build/w3-scheduler.mjs b/dist/cli/build/w3-scheduler.mjs
+new file mode 100644
+index 0000000000000000000000000000000000000000..3b3dcddf648348ca611d8ea72fcf5868771607b6
+--- /dev/null
++++ b/dist/cli/build/w3-scheduler.mjs
+@@ -0,0 +1,85 @@
++import { setImmediate as setImmediatePromise } from "node:timers/promises";
++import { promisify } from "node:util";
++const nativeSetImmediate = globalThis.setImmediate;
++const nativeSetImmediatePromise = setImmediatePromise;
++const REQUEST_CONTEXT = Symbol.for("__cloudflare-context__");
++const scopes = new WeakMap;
++const scopeOutsideRequest = { scheduledImmediates: 0, lastRender: Promise.resolve() };
++function currentScope() {
++  const context = globalThis[REQUEST_CONTEXT];
++  if (typeof context !== "object" || context === null) {
++    return scopeOutsideRequest;
++  }
++  let scope = scopes.get(context);
++  if (!scope) {
++    scope = { scheduledImmediates: 0, lastRender: Promise.resolve() };
++    scopes.set(context, scope);
++  }
++  return scope;
++}
++function countedSetImmediate(callback, ...args) {
++  currentScope().scheduledImmediates++;
++  return nativeSetImmediate(callback, ...args);
++}
++const countedSetImmediatePromise = (value, options) => {
++  currentScope().scheduledImmediates++;
++  return nativeSetImmediatePromise(value, options);
++};
++Object.defineProperty(countedSetImmediate, promisify.custom, { value: countedSetImmediatePromise });
++globalThis.setImmediate = countedSetImmediate;
++const NEXT_ORIGINALS = Symbol.for("next.fast-set-immediate.originals");
++const nextOriginals = globalThis[NEXT_ORIGINALS];
++if (nextOriginals) {
++  nextOriginals.setImmediate = countedSetImmediate;
++}
++export function runInSequentialTasks(first, ...rest) {
++  const scope = currentScope();
++  const previousRender = scope.lastRender;
++  let endRender;
++  scope.lastRender = new Promise((resolve) => endRender = resolve);
++  return new Promise((resolve, reject) => {
++    const stages = [first, ...rest];
++    let result;
++    const fail = (error) => {
++      endRender();
++      reject(error);
++    };
++    const afterImmediates = (next) => {
++      const scheduled = scope.scheduledImmediates;
++      nativeSetImmediate(() => {
++        if (scope.scheduledImmediates === scheduled) {
++          next();
++        } else {
++          afterImmediates(next);
++        }
++      });
++    };
++    const runStage = (index) => {
++      try {
++        const value = stages[index]();
++        if (index === 0) {
++          result = value;
++          if (isThenable(result)) {
++            result.then(noop, noop);
++          }
++        }
++      } catch (error) {
++        fail(error);
++        return;
++      }
++      afterImmediates(() => {
++        if (index + 1 < stages.length) {
++          runStage(index + 1);
++        } else {
++          endRender();
++          resolve(result);
++        }
++      });
++    };
++    previousRender.then(() => nativeSetImmediate(() => runStage(0)));
++  });
++}
++function isThenable(value) {
++  return value !== null && typeof value === "object" && typeof value.then === "function";
++}
++function noop() {}
