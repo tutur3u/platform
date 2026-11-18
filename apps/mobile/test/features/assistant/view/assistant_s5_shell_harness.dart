@@ -161,7 +161,9 @@ Future<GoRouter> pumpAssistantShell(
   if (storedId != null) await preferences.saveChatId(_workspaceId, storedId);
   final messenger = tester.binding.defaultBinaryMessenger;
   const record = MethodChannel('com.llfbandit.record/messages');
+  const shellBack = MethodChannel('mobile/shell_back');
   messenger.setMockMethodCallHandler(record, (_) async => null);
+  messenger.setMockMethodCallHandler(shellBack, (_) async => null);
   final router = GoRouter(
     initialLocation: initialLocation,
     routes: [
@@ -194,6 +196,7 @@ Future<GoRouter> pumpAssistantShell(
     await tester.pumpWidget(const SizedBox.shrink());
     router.dispose();
     messenger.setMockMethodCallHandler(record, null);
+    messenger.setMockMethodCallHandler(shellBack, null);
     await auth.close();
     await workspace.close();
     await profile.close();
