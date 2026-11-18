@@ -56,3 +56,37 @@ it('cancels an empty draft with Escape', () => {
   expect(screen.queryByLabelText(t.newFile)).toBeNull();
   expect(onAdd).not.toHaveBeenCalled();
 });
+
+it('shows Mira and collaborator chips on their open file only', () => {
+  const props = {
+    files: ['solution.py', 'test_solution.py'],
+    active: 'solution.py',
+    onSelect: vi.fn(),
+    miraFile: 'test_solution.py',
+    collaborators: [
+      {
+        userId: 'participant',
+        connectionId: 'connection',
+        displayName: 'Test Editor',
+        file: 'test_solution.py',
+        cursor: null,
+        pointer: null,
+      },
+    ],
+  };
+  render(
+    <NextIntlClientProvider locale="en" messages={messages}>
+      <WorkbenchFiles {...props} />
+    </NextIntlClientProvider>
+  );
+  const file = screen.getByRole('tab', { name: /test_solution\.py/ });
+  expect(
+    file.querySelector('[aria-label="Mira has test_solution.py open"]')
+  ).toBeTruthy();
+  expect(file.querySelector('[title="Test Editor"]')?.textContent).toBe('TE');
+  expect(
+    screen
+      .getByRole('tab', { name: 'solution.py' })
+      .querySelector('[role="img"]')
+  ).toBeNull();
+});

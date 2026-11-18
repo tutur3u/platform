@@ -55,3 +55,138 @@ it('denies ended rooms and broadcasts authorized selections', () => {
     settings: { programming: selection },
   });
 });
+
+const host = {
+  ...token,
+  role: 'host',
+  meetingId: 'meeting',
+  displayName: 'Editor',
+} satisfies MeetRealtimeTokenPayload;
+const generation = '00000000-0000-4000-8000-000000000010';
+const id = '00000000-0000-4000-8000-000000000011';
+const sessionId = '00000000-0000-4000-8000-000000000012';
+const selection = {
+  kind: 'problem',
+  id: '00000000-0000-4000-8000-000000000013',
+  language: 'python',
+} as const;
+const attempt = { id, generation };
+function openRoom() {
+  return {
+    ...snapshot,
+    settings: { shareNotes: false, programming: selection },
+    presence: {
+      joined: { userId: host.userId },
+      observer: { userId: 'other' },
+    } as RoomServiceState['presence'],
+    programmingMira: { generation, presence: null },
+    miraPrivate: {
+      choices: {
+        guest: {
+          choice: 'continue' as const,
+          version: '2026-11-13-private-v1',
+          meetingId: 'meeting',
+          accountId: host.userId,
+          revision: 1,
+          recordedAt: 1,
+        },
+      },
+      sessions: { guest: [sessionId] },
+    },
+  };
+}
+const start = {
+  action: 'programming.miraPresence',
+  phase: 'start',
+  attempt,
+  revision: 1,
+  source: 'live',
+  sessionId,
+  context: {
+    filePath: 'app.py',
+    startLine: 1,
+    endLine: 2,
+    original: 'print(1)',
+    digest: 'a'.repeat(64),
+    intent: 'fix',
+  },
+};
+const viaLive = { ...host, scopes: ['meet:server', 'meet:live-server'] };
+const draft = {
+  action: 'programming.voiceContext',
+  sessionId,
+  id,
+  answer: { explanation: 'Use the expected value.', replacement: 'print(2)' },
+};
+
+it('rejects forged, stale and non-admitted Mira actions', () => {
+  const room = openRoom();
+  expect(applyRoomProgramming(room, token, start)?.status).toBe(403);
+  expect(
+    applyRoomProgramming(room, { ...host, scopes: [] }, start)?.status
+  ).toBe(403);
+  expect(
+    applyRoomProgramming({ ...room, presence: {} }, host, start)?.status
+  ).toBe(403);
+  expect(
+    applyRoomProgramming(room, host, {
+      ...start,
+      attempt: { id, generation: null },
+    })?.status
+  ).toBe(409);
+  expect(
+    applyRoomProgramming(room, host, { ...start, revision: 2 })?.status
+  ).toBe(403);
+});
+
+it('keeps live drafts private until the host publishes and serializes resolution', () => {
+  const staged = applyRoomProgramming(openRoom(), host, start)!.state;
+  expect(applyRoomProgramming(staged, host, draft)?.status).toBe(403);
+  const drafted = applyRoomProgramming(staged, viaLive, draft)!.state;
+  const other = {
+    ...token,
+    userId: 'other',
+    accountId: 'other',
+    scopes: ['meet:server', 'meet:workspace-member'],
+  };
+  const read = { action: 'programming.read', mira: true };
+  expect(applyRoomProgramming(drafted, other, read)?.body).toMatchObject({
+    voiceDraft: null,
+  });
+  expect(
+    JSON.stringify(applyRoomProgramming(drafted, other, read)?.body)
+  ).not.toContain('print(2)');
+  const published = applyRoomProgramming(drafted, host, {
+    action: 'programming.miraPresence',
+    phase: 'publish',
+    attempt,
+  })!.state;
+  expect(applyRoomProgramming(published, other, read)?.body).toMatchObject({
+    miraPresence: {
+      source: 'live',
+      proposedFix: { status: 'proposed', original: 'print(1)' },
+    },
+  });
+  const resolve = {
+    action: 'programming.resolveFix',
+    phase: 'begin',
+    attempt,
+    decision: 'accepted',
+  };
+  const locked = applyRoomProgramming(published, host, resolve)!.state;
+  expect(
+    applyRoomProgramming(locked, host, { ...resolve, decision: 'dismissed' })
+      ?.status
+  ).toBe(409);
+  expect(
+    applyRoomProgramming(locked, host, {
+      action: 'programming.set',
+      selection: null,
+    })?.status
+  ).toBe(409);
+  expect(
+    applyRoomProgramming(locked, host, { ...resolve, phase: 'finish' })?.body
+  ).toMatchObject({
+    miraPresence: { proposedFix: { status: 'accepted', acceptedBy: 'Editor' } },
+  });
+});

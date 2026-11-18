@@ -23,7 +23,9 @@ export async function collaborationRequest(
       ? 'seed'
       : url.pathname.endsWith('/runner-files')
         ? 'runner-files'
-        : 'checkpoint';
+        : url.pathname.endsWith('/mira-code')
+          ? 'mira-code'
+          : 'checkpoint';
   if (parsed.data.kind !== expected) return new Response(null, { status: 403 });
   const headers = new Headers(request.headers);
   headers.set('x-collaboration-ticket', JSON.stringify(parsed.data));

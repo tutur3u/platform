@@ -5,16 +5,21 @@ import {
   createMeetPlayground,
   getMeetPlaygroundRun,
   getMeetProgramming,
+  getMeetProgrammingMira,
   getMeetProgrammingTest,
+  InternalApiError,
   type MeetingProgrammingJoin,
+  type MeetProgrammingMiraAction,
   runMeetPlayground,
   selectMeetProgramming,
   testMeetProgramming,
+  updateMeetProgrammingMira,
 } from '@tuturuuu/internal-api';
 import type { MeetingProgramming } from '@tuturuuu/realtime/meet';
 import dynamic from 'next/dynamic';
 import { useLocale, useTranslations } from 'next-intl';
 import { useState } from 'react';
+import { MiraMark } from './mira-mark';
 import {
   type ProgrammingKind,
   type ProgrammingLanguage,
@@ -34,6 +39,8 @@ export const meetingProgrammingApi = {
   test: testMeetProgramming,
   readTest: getMeetProgrammingTest,
   checkpoint: checkpointMeetProgramming,
+  readMira: getMeetProgrammingMira,
+  changeMira: updateMeetProgrammingMira,
 };
 const ACTIVE_TEST = ['queued', 'running', 'cancel_requested'];
 
@@ -53,7 +60,8 @@ export function ProgrammingPanel({
   preparing?: boolean;
   canManage: boolean;
   selection: MeetingProgramming | null;
-  api?: typeof meetingProgrammingApi;
+  api?: Omit<typeof meetingProgrammingApi, 'readMira' | 'changeMira'> &
+    Partial<Pick<typeof meetingProgrammingApi, 'readMira' | 'changeMira'>>;
   previewUrl?: (port: number) => string;
 }) {
   const t = useTranslations('programmingPlayground');
@@ -101,6 +109,51 @@ export function ProgrammingPanel({
   const active = query.data?.selection
     ? (query.data as MeetingProgrammingJoin)
     : null;
+  const readMira = api.readMira;
+  const changeMira = api.changeMira;
+  const miraKey = [
+    ...key,
+    'mira',
+    active?.selection.id,
+    active?.selection.language,
+  ];
+  const mira = useQuery({
+    queryKey: miraKey,
+    queryFn: () => readMira!(meetingId),
+    enabled: !!active && !!readMira,
+    refetchInterval: (query) => (query.state.data?.voiceDraft ? 3000 : 12000),
+    refetchIntervalInBackground: false,
+    retry: false,
+  });
+  const miraAction = useMutation({
+    mutationFn: (action: MeetProgrammingMiraAction) =>
+      changeMira!(meetingId, active!.selection, action),
+    onSettled: () => cache.invalidateQueries({ queryKey: miraKey }),
+  });
+  const switchRuntime = useMutation({
+    mutationFn: (language: ProgrammingLanguage) =>
+      api.select(meetingId, { ...active!.selection, language }),
+    onSuccess: () => cache.invalidateQueries({ queryKey: key }),
+  });
+  const miraError = miraAction.error;
+  const miraErrorState =
+    miraError instanceof InternalApiError
+      ? miraError.code === 'MIRA_CONSENT_REQUIRED'
+        ? 'consent'
+        : miraError.code === 'MIRA_LIVE_REQUIRED'
+          ? 'live'
+          : miraError.status === 409 &&
+              miraAction.variables?.action === 'resolve'
+            ? 'conflict'
+            : 'unavailable'
+      : miraError
+        ? 'unavailable'
+        : undefined;
+  const miraSelection = mira.data?.selection;
+  const miraMatches =
+    miraSelection?.id === active?.selection.id &&
+    miraSelection?.kind === active?.selection.kind &&
+    miraSelection?.language === active?.selection.language;
   async function join() {
     const data = await api.read(meetingId);
     if (!data.selection) throw new Error('Programming unavailable');
@@ -112,7 +165,13 @@ export function ProgrammingPanel({
     while (Date.now() < deadline) {
       const result = await api.readTest(meetingId, queued.id);
       if (!ACTIVE_TEST.includes(result.status))
-        return result.output ?? result.status;
+        return {
+          submissionId: queued.id,
+          output:
+            result.output ??
+            (result.status === 'succeeded' ? '' : t('testRunFailed')),
+          cases: result.cases ?? [],
+        };
       await new Promise((resolve) => setTimeout(resolve, 500));
     }
     throw new Error('Programming test timed out');
@@ -144,7 +203,10 @@ export function ProgrammingPanel({
           onDismiss={active ? () => setSetupOpen(false) : undefined}
         />
       )}
-      {(query.isError || select.isError || create.isError) && (
+      {(query.isError ||
+        select.isError ||
+        create.isError ||
+        switchRuntime.isError) && (
         <p role="alert" className="px-3 text-destructive text-sm">
           {t('accessError')}
         </p>
@@ -174,7 +236,27 @@ export function ProgrammingPanel({
                   }
                 : undefined
             }
-            onTest={active.problem ? test : undefined}
+            meeting={{
+              mira: {
+                presence:
+                  miraMatches && !mira.isError
+                    ? (mira.data?.miraPresence ?? null)
+                    : null,
+                voiceDraft:
+                  miraMatches && !mira.isError ? mira.data?.voiceDraft : null,
+                manage: canManage && !!changeMira && active.role === 'owner',
+                pending: miraAction.isPending,
+                error: miraErrorState,
+                mark: <MiraMark size={16} />,
+                onAction: (action) => miraAction.mutate(action),
+              },
+              runTests: active.problem ? test : undefined,
+              onRuntime:
+                canManage && active.problem && active.role === 'owner'
+                  ? (value) => switchRuntime.mutate(value)
+                  : undefined,
+              runtimePending: switchRuntime.isPending,
+            }}
             actions={
               canManage
                 ? [

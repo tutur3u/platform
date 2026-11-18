@@ -1,6 +1,11 @@
 import { z } from 'zod';
 import type { MeetRealtimeTokenPayload } from './primitives';
 import { roomSettingsMessage } from './room-controls';
+import {
+  applyRoomProgrammingMira,
+  programmingMiraRead,
+  programmingMiraResolutionPending,
+} from './room-programming-mira';
 import type { RoomServiceState } from './room-service';
 
 export const meetingProgrammingSchema = z
@@ -31,24 +36,39 @@ export function applyRoomProgramming(
 ) {
   const parsed = z
     .discriminatedUnion('action', [
-      z.object({ action: z.literal('programming.read') }),
+      z.object({
+        action: z.literal('programming.read'),
+        mira: z.literal(true).optional(),
+      }),
       z.object({
         action: z.literal('programming.set'),
         selection: meetingProgrammingSchema.nullable(),
+        generation: z.uuid().optional(),
       }),
     ])
     .safeParse(input);
-  if (!parsed.success) return null;
+  if (!parsed.success)
+    return applyRoomProgrammingMira(
+      snapshot,
+      token,
+      snapshot.settings?.programming ?? null,
+      input
+    );
   const account = token.accountId ?? token.userId;
+  const present = Object.values(snapshot.presence).some(
+    (person) => (person.accountId ?? person.userId) === account
+  );
   const admitted =
+    present ||
     token.role === 'host' ||
     token.scopes.includes('meet:workspace-member') ||
-    !!snapshot.approved?.[account] ||
-    Object.values(snapshot.presence).some(
-      (p) => (p.accountId ?? p.userId) === account
-    );
+    !!snapshot.approved?.[account];
   if (
+    !token.scopes.includes('meet:server') ||
     !admitted ||
+    (parsed.data.action === 'programming.read' &&
+      parsed.data.mira &&
+      !present) ||
     snapshot.ended ||
     (parsed.data.action === 'programming.set' && token.role !== 'host')
   )
@@ -60,10 +80,22 @@ export function applyRoomProgramming(
   if (parsed.data.action === 'programming.read')
     return {
       state: snapshot,
-      body: { selection: snapshot.settings?.programming ?? null },
+      body: {
+        selection: snapshot.settings?.programming ?? null,
+        ...(parsed.data.mira ? programmingMiraRead(snapshot, token) : {}),
+      },
+    };
+  if (programmingMiraResolutionPending(snapshot))
+    return {
+      state: snapshot,
+      body: { error: 'A fix is being resolved' },
+      status: 409,
     };
   const state = {
     ...snapshot,
+    programmingMira: parsed.data.generation
+      ? { generation: parsed.data.generation, presence: null }
+      : undefined,
     settings: {
       ...snapshot.settings,
       shareNotes: snapshot.settings?.shareNotes ?? false,

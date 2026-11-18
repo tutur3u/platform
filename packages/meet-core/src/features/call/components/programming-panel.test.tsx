@@ -125,3 +125,45 @@ it('gives participants no host actions', async () => {
   await waitFor(() => expect(workbench.calls.length).toBeGreaterThan(0));
   expect(workbench.calls.at(-1)!.actions).toEqual([]);
 });
+
+it('wires matching room presence and host actions to the workbench', async () => {
+  const client = {
+    ...api(true),
+    readMira: vi.fn().mockResolvedValue({
+      selection,
+      voiceDraft: null,
+      miraPresence: {
+        active: true,
+        source: 'live',
+        filePath: 'solution.py',
+        updatedAt: 1,
+      },
+    }),
+    changeMira: vi.fn().mockResolvedValue({ ok: true }),
+  };
+  render(
+    <QueryClientProvider client={new QueryClient()}>
+      <NextIntlClientProvider locale="en" messages={messages}>
+        <ProgrammingPanel
+          meetingId="meeting"
+          canManage
+          selection={selection}
+          api={client}
+        />
+      </NextIntlClientProvider>
+    </QueryClientProvider>
+  );
+  await waitFor(() => {
+    expect(workbench.calls.at(-1)?.meeting).toMatchObject({
+      mira: { manage: true, presence: { filePath: 'solution.py' } },
+    });
+  });
+  const action = { action: 'resolve', id: 'fixture', decision: 'dismissed' };
+  const meeting = workbench.calls.at(-1)!.meeting as {
+    mira: { onAction: (data: unknown) => void };
+  };
+  meeting.mira.onAction(action);
+  await waitFor(() =>
+    expect(client.changeMira).toHaveBeenCalledWith('meeting', selection, action)
+  );
+});

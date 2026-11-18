@@ -5,6 +5,7 @@ import type {
   ProgrammingCollaborationClient,
 } from '@tuturuuu/realtime';
 import { replaceProgrammingText } from '@tuturuuu/realtime';
+import type { ProgrammingMiraPresence } from '@tuturuuu/realtime/meet';
 import type * as Y from 'yjs';
 import { ProgrammingEditor } from './programming-editor';
 import { useDarkSurface } from './use-dark-surface';
@@ -20,6 +21,9 @@ export function WorkbenchEditorStage({
   client,
   presence,
   actorId,
+  mira,
+  jump,
+  onSelection,
 }: {
   roomKey: string;
   file: { path: string; content: string } | undefined;
@@ -28,6 +32,11 @@ export function WorkbenchEditorStage({
   client: ProgrammingCollaborationClient;
   presence: CollaborationPresence[];
   actorId: string | undefined;
+  mira?: ProgrammingMiraPresence;
+  jump?: { line: number; request: number };
+  onSelection?: (
+    selection: NonNullable<CollaborationPresence['selection']>
+  ) => void;
 }) {
   const dark = useDarkSurface();
   const others = presence.filter((person) => person.userId !== actorId);
@@ -58,6 +67,8 @@ export function WorkbenchEditorStage({
           value={file.content}
           readOnly={!editable}
           dark={dark}
+          mira={mira}
+          jump={jump}
           onChange={(value) => {
             const text = client.doc.getMap<Y.Text>('files').get(file.path);
             if (text) replaceProgrammingText(text, value);
@@ -66,9 +77,10 @@ export function WorkbenchEditorStage({
             ...person,
             file: person.file ? `${roomKey}/${person.file}` : null,
           }))}
-          onSelection={(selection) =>
-            client.presence({ file: file.path, selection })
-          }
+          onSelection={(selection) => {
+            onSelection?.(selection);
+            client.presence({ file: file.path, selection });
+          }}
           onCursor={(line, column) =>
             client.presence({ file: file.path, cursor: { line, column } })
           }

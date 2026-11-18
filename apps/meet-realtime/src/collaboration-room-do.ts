@@ -23,6 +23,8 @@ import {
   PlaygroundRunnerExport,
 } from '../../../packages/utils/src/playground-schema';
 
+import { handleProgrammingMiraFix } from './programming-mira-fix';
+
 export interface CollaborationRoomEnv {
   COLLABORATION_ROOM: DurableObjectNamespace;
   MEET_REALTIME_TOKEN_SECRET: string;
@@ -140,6 +142,8 @@ export class CollaborationRoomDurableObject implements DurableObject {
       ticket.meetingId !== this.metadata.meetingId
     )
       return new Response(null, { status: 403 });
+    if (ticket.kind === 'mira-code')
+      return this.programmingMira(request, ticket);
     if (ticket.kind === 'runner-files') {
       const ingestion = this.runnerIngestion.then(() =>
         this.ingestRunnerFiles(request, ticket)
@@ -275,6 +279,21 @@ export class CollaborationRoomDurableObject implements DurableObject {
       socket.close(1008, 'Invalid document update');
     }
   }
+  private async programmingMira(request: Request, ticket: CollaborationTicket) {
+    return handleProgrammingMiraFix({
+      request,
+      ticket,
+      state: this.state,
+      doc: this.doc,
+      documentKey: KEY,
+      publish: async (update) => {
+        this.dirty = true;
+        this.broadcast({ type: 'update', update: encoded(update) });
+        await this.scheduleAlarm();
+      },
+    });
+  }
+
   private async ingestRunnerFiles(
     request: Request,
     ticket: CollaborationTicket

@@ -28,6 +28,7 @@ export function WorkbenchOutput({
   failed,
   run,
   preview,
+  embedded = false,
 }: {
   open: boolean;
   onToggle: () => void;
@@ -43,6 +44,7 @@ export function WorkbenchOutput({
     editable: boolean;
   };
   preview?: WorkbenchPreview;
+  embedded?: boolean;
 }) {
   const t = useTranslations('programmingPlayground');
   const [stdinOpen, setStdinOpen] = useState(false);
@@ -58,89 +60,100 @@ export function WorkbenchOutput({
     <section
       aria-label={t('console')}
       className={cn(
-        'flex shrink-0 flex-col border-t bg-muted/20',
-        open ? 'h-[36%] min-h-44' : 'h-9'
+        embedded
+          ? 'flex min-h-0 flex-1 flex-col'
+          : cn(
+              'flex shrink-0 flex-col border-t bg-muted/20',
+              open ? 'h-[36%] min-h-44' : 'h-9'
+            )
       )}
     >
-      <div className="flex h-9 shrink-0 items-center gap-2 px-2">
-        <button
-          type="button"
-          aria-expanded={open}
-          onClick={onToggle}
-          className="flex items-center gap-1 rounded px-1 font-medium text-xs hover:bg-muted"
-        >
-          <ChevronDown
-            className={cn(
-              'size-3.5 transition-transform',
-              !open && '-rotate-90'
-            )}
-            aria-hidden="true"
-          />
-          {t('console')}
-        </button>
-        {status && (
-          <output
-            className={cn(
-              'truncate text-xs',
-              save === 'failed' && !view.running
-                ? 'text-destructive'
-                : 'text-muted-foreground'
-            )}
-          >
-            {status}
-          </output>
-        )}
-        <div className="ml-auto flex items-center gap-1">
-          {run && (
-            <>
-              <div className="flex items-center gap-1 font-mono text-xs">
-                <span className="text-muted-foreground" aria-hidden="true">
-                  $
-                </span>
-                <Input
-                  aria-label={t('command')}
-                  value={run.command}
-                  disabled={!run.editable}
-                  onChange={(event) => run.onCommand(event.target.value)}
-                  className="h-7 w-48 font-mono text-xs sm:w-64"
-                />
-              </div>
-              <Button
-                size="icon"
-                variant={stdinOpen ? 'secondary' : 'ghost'}
-                className="size-7"
-                aria-label={t('stdin')}
-                aria-pressed={stdinOpen}
-                title={t('stdin')}
-                onClick={() => setStdinOpen((value) => !value)}
-              >
-                <TerminalSquare className="size-3.5" />
-              </Button>
-            </>
-          )}
-          {preview && (
-            <>
-              <Input
-                aria-label={t('previewPort')}
-                value={preview.port}
-                onChange={(event) => preview.onPort(event.target.value)}
-                className="h-7 w-20 font-mono text-xs"
-                inputMode="numeric"
+      {(!embedded || !!run || !!preview || status) && (
+        <div className="flex h-9 shrink-0 items-center gap-2 px-2">
+          {!embedded && (
+            <button
+              type="button"
+              aria-expanded={open}
+              onClick={onToggle}
+              className="flex items-center gap-1 rounded px-1 font-medium text-xs hover:bg-muted"
+            >
+              <ChevronDown
+                className={cn(
+                  'size-3.5 transition-transform motion-reduce:transition-none',
+                  !open && '-rotate-90'
+                )}
+                aria-hidden="true"
               />
-              <Button
-                size="icon"
-                variant="ghost"
-                className="size-7"
-                aria-label={t('previewClose')}
-                title={t('previewClose')}
-                onClick={preview.onClose}
-              >
-                <X className="size-3.5" />
-              </Button>
-            </>
+              {t('console')}
+            </button>
           )}
+          {status && (
+            <output
+              className={cn(
+                'truncate text-xs',
+                save === 'failed' && !view.running
+                  ? 'text-destructive'
+                  : 'text-muted-foreground'
+              )}
+            >
+              {status}
+            </output>
+          )}
+          <div className="ml-auto flex items-center gap-1">
+            {run && (
+              <>
+                <div className="flex items-center gap-1 font-mono text-xs">
+                  <span className="text-muted-foreground" aria-hidden="true">
+                    $
+                  </span>
+                  <Input
+                    aria-label={t('command')}
+                    value={run.command}
+                    disabled={!run.editable}
+                    onChange={(event) => run.onCommand(event.target.value)}
+                    className={cn(
+                      'h-7 font-mono text-xs',
+                      embedded ? 'w-36 @6xl:w-52' : 'w-48 sm:w-64'
+                    )}
+                  />
+                </div>
+                <Button
+                  size="icon"
+                  variant={stdinOpen ? 'secondary' : 'ghost'}
+                  className="size-7"
+                  aria-label={t('stdin')}
+                  aria-pressed={stdinOpen}
+                  title={t('stdin')}
+                  onClick={() => setStdinOpen((value) => !value)}
+                >
+                  <TerminalSquare className="size-3.5" />
+                </Button>
+              </>
+            )}
+            {preview && (
+              <>
+                <Input
+                  aria-label={t('previewPort')}
+                  value={preview.port}
+                  onChange={(event) => preview.onPort(event.target.value)}
+                  className="h-7 w-20 font-mono text-xs"
+                  inputMode="numeric"
+                />
+                <Button
+                  size="icon"
+                  variant="ghost"
+                  className="size-7"
+                  aria-label={t('previewClose')}
+                  title={t('previewClose')}
+                  onClick={preview.onClose}
+                >
+                  <X className="size-3.5" />
+                </Button>
+              </>
+            )}
+          </div>
         </div>
-      </div>
+      )}
       {open && (
         <div className="flex min-h-0 flex-1 flex-col">
           {run && stdinOpen && (
@@ -158,15 +171,20 @@ export function WorkbenchOutput({
               sandbox="allow-scripts allow-forms"
               referrerPolicy="no-referrer"
               src={preview.url(port)}
-              className="min-h-0 w-full flex-1 bg-background"
+              className={cn(
+                'w-full flex-1 bg-background',
+                embedded ? 'min-h-28' : 'min-h-0'
+              )}
             />
           ) : (
             <pre className="min-h-0 flex-1 overflow-auto whitespace-pre-wrap break-words px-3 pb-2 font-mono text-xs">
-              {view.text || (
-                <span className="text-muted-foreground">
-                  {t('outputEmpty')}
-                </span>
-              )}
+              {embedded && preview && !port
+                ? t('webPreviewPortHint')
+                : view.text || (
+                    <span className="text-muted-foreground">
+                      {t('outputEmpty')}
+                    </span>
+                  )}
             </pre>
           )}
           {view.exitCode !== null && (

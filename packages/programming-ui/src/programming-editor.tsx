@@ -1,8 +1,22 @@
 'use client';
 import Editor, { loader, type OnMount } from '@monaco-editor/react';
 import type { CollaborationPresence } from '@tuturuuu/realtime';
+import type { ProgrammingMiraPresence } from '@tuturuuu/realtime/meet';
 import * as monaco from 'monaco-editor';
-import { useEffect, useRef } from 'react';
+import { useEffect, useRef, useState } from 'react';
+
+import { useMiraCodeLabels } from './mira-code-presence';
+
+const miraEditorStyles = `
+.programming-mira-selection { background: color-mix(in srgb, var(--purple) 15%, transparent); box-shadow: inset 2px 0 var(--purple); }
+.programming-mira-caret { border-left: 2px solid var(--purple); }
+.programming-mira-label, .programming-mira-attribution {
+  border-radius: 999px; margin-inline-start: 3px; padding-inline: 6px;
+  color: var(--purple); background: var(--calendar-bg-purple);
+  font-weight: 700; font-size: 11px;
+}
+.programming-mira-label { border: 1px solid var(--purple); }
+`;
 
 loader.config({ monaco });
 if (typeof window !== 'undefined') {
@@ -33,6 +47,8 @@ export function ProgrammingEditor({
   readOnly,
   dark = false,
   presence,
+  mira,
+  jump,
   onCursor,
   onSelection,
 }: {
@@ -43,12 +59,16 @@ export function ProgrammingEditor({
   readOnly: boolean;
   dark?: boolean;
   presence: CollaborationPresence[];
+  mira?: ProgrammingMiraPresence;
+  jump?: { line: number; request: number };
   onCursor: (line: number, column: number) => void;
   onSelection: (
     selection: NonNullable<CollaborationPresence['selection']>
   ) => void;
 }) {
-  const editor = useRef<monaco.editor.IStandaloneCodeEditor | null>(null);
+  const [editor, setEditor] =
+    useState<monaco.editor.IStandaloneCodeEditor | null>(null);
+  const labels = useMiraCodeLabels(mira);
   const decorations = useRef<monaco.editor.IEditorDecorationsCollection | null>(
     null
   );
@@ -57,7 +77,7 @@ export function ProgrammingEditor({
   const selectionCallback = useRef(onSelection);
   selectionCallback.current = onSelection;
   const onMount: OnMount = (instance) => {
-    editor.current = instance;
+    setEditor(instance);
     decorations.current = instance.createDecorationsCollection();
     instance.onDidChangeCursorSelection(({ selection }) =>
       selectionCallback.current({
@@ -115,27 +135,86 @@ export function ProgrammingEditor({
             : []),
         ])
     );
-  }, [path, presence]);
+  }, [editor, path, presence]);
+
+  useEffect(() => {
+    if (!editor || !mira?.startLine || !mira.endLine) return;
+    const model = editor.getModel();
+    if (!model || mira.startLine > model.getLineCount()) return;
+    const start = mira.startLine;
+    const end = Math.min(mira.endLine, model.getLineCount());
+    const anchor = model.getLineMaxColumn(start);
+    const items: monaco.editor.IModelDeltaDecoration[] = [];
+    if (
+      mira.active ||
+      mira.proposedFix?.status === 'proposed' ||
+      labels.attribution
+    ) {
+      items.push({
+        range: new monaco.Range(start, 1, end, model.getLineMaxColumn(end)),
+        options: {
+          isWholeLine: true,
+          className: 'programming-mira-selection',
+          linesDecorationsClassName: 'programming-mira-caret',
+        },
+      });
+    }
+    if (mira.active || mira.proposedFix?.status === 'proposed') {
+      items.push({
+        range: new monaco.Range(start, anchor, start, anchor),
+        options: {
+          after: {
+            content: labels.caret,
+            inlineClassName: 'programming-mira-label',
+          },
+        },
+      });
+    }
+    if (labels.attribution) {
+      items.push({
+        range: new monaco.Range(start, anchor, start, anchor),
+        options: {
+          after: {
+            content: labels.attribution,
+            inlineClassName: 'programming-mira-attribution',
+          },
+        },
+      });
+    }
+    const collection = editor.createDecorationsCollection(items);
+    return () => collection.clear();
+  }, [editor, path, value, mira, labels.attribution, labels.caret]);
+
+  useEffect(() => {
+    if (!editor || !jump) return;
+    const line = Math.min(jump.line, editor.getModel()?.getLineCount() ?? 1);
+    editor.revealLineInCenter(line);
+    editor.setPosition({ lineNumber: line, column: 1 });
+    editor.focus();
+  }, [editor, path, jump]);
   return (
-    <Editor
-      height="100%"
-      language={language === 'shell' ? 'shell' : language}
-      path={path}
-      value={value}
-      onChange={(next) => onChange(next ?? '')}
-      onMount={onMount}
-      theme={dark ? 'vs-dark' : 'light'}
-      options={{
-        readOnly,
-        automaticLayout: true,
-        minimap: { enabled: false },
-        fontSize: 13,
-        fontFamily: 'ui-monospace, monospace',
-        lineNumbersMinChars: 3,
-        scrollBeyondLastLine: false,
-        padding: { top: 12, bottom: 12 },
-        wordWrap: 'on',
-      }}
-    />
+    <>
+      <style>{miraEditorStyles}</style>
+      <Editor
+        height="100%"
+        language={language === 'shell' ? 'shell' : language}
+        path={path}
+        value={value}
+        onChange={(next) => onChange(next ?? '')}
+        onMount={onMount}
+        theme={dark ? 'vs-dark' : 'light'}
+        options={{
+          readOnly,
+          automaticLayout: true,
+          minimap: { enabled: false },
+          fontSize: 13,
+          fontFamily: 'JetBrains Mono, ui-monospace, monospace',
+          lineNumbersMinChars: 3,
+          scrollBeyondLastLine: false,
+          padding: { top: 12, bottom: 12 },
+          wordWrap: 'on',
+        }}
+      />
+    </>
   );
 }

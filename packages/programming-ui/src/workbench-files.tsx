@@ -1,10 +1,12 @@
 'use client';
-import { Plus } from '@tuturuuu/icons';
+import { FileCode, Folder, Plus } from '@tuturuuu/icons';
+import type { CollaborationPresence } from '@tuturuuu/realtime';
 import { Button } from '@tuturuuu/ui/button';
 import { Input } from '@tuturuuu/ui/input';
 import { useTranslations } from 'next-intl';
-import { useState } from 'react';
+import { type ReactNode, useState } from 'react';
 import { classNames as cn } from './class-names';
+import { MiraFileBadge } from './mira-code-presence';
 import { type NewFileError, newFilePathError } from './workbench-layout';
 
 /** Compact file tab strip with inline file creation; no separate form or helper copy. */
@@ -13,10 +15,16 @@ export function WorkbenchFiles({
   active,
   onSelect,
   onAdd,
+  collaborators = [],
+  miraFile,
+  miraMark,
 }: {
   files: readonly string[];
   active: string | undefined;
   onSelect: (path: string) => void;
+  collaborators?: CollaborationPresence[];
+  miraFile?: string;
+  miraMark?: ReactNode;
   /** Absent when the participant may not add files (viewer, Learn problem, offline). */
   onAdd?: (path: string) => void;
 }) {
@@ -46,13 +54,20 @@ export function WorkbenchFiles({
             aria-selected={path === active}
             onClick={() => onSelect(path)}
             className={cn(
-              'h-7 shrink-0 rounded-md px-2 font-mono text-xs transition-colors',
+              'flex h-7 shrink-0 items-center gap-1.5 rounded-full px-2 font-mono text-xs transition-colors motion-reduce:transition-none',
               path === active
                 ? 'bg-muted text-foreground'
                 : 'text-muted-foreground hover:bg-muted/60 hover:text-foreground'
             )}
           >
             {path}
+            {miraFile === path && (
+              <MiraFileBadge
+                label={t('miraFileOpen', { path })}
+                mark={miraMark}
+              />
+            )}
+            <FileCollaborators path={path} collaborators={collaborators} />
           </button>
         ))}
       </div>
@@ -95,5 +110,152 @@ export function WorkbenchFiles({
         </span>
       )}
     </div>
+  );
+}
+
+function FileCollaborators({
+  path,
+  collaborators,
+}: {
+  path: string;
+  collaborators: CollaborationPresence[];
+}) {
+  const names = [
+    ...new Set(
+      collaborators
+        .filter((person) => person.file === path)
+        .map((person) => person.displayName)
+    ),
+  ];
+  return (
+    names.length > 0 && (
+      <span className="flex -space-x-0.5" aria-label={names.join(', ')}>
+        {names.slice(0, 3).map((name) => (
+          <CollaboratorAvatar key={name} name={name} />
+        ))}
+        {names.length > 3 && (
+          <span className="self-center bg-card px-1 text-muted-foreground">
+            +{names.length - 3}
+          </span>
+        )}
+      </span>
+    )
+  );
+}
+
+function CollaboratorAvatar({ name }: { name: string }) {
+  const initials = name
+    .trim()
+    .split(/\s+/)
+    .slice(0, 2)
+    .map((word) => Array.from(word)[0])
+    .join('')
+    .toLocaleUpperCase();
+  return (
+    <span
+      title={name}
+      aria-hidden="true"
+      className="grid size-5 shrink-0 place-items-center rounded-full border border-background bg-accent font-sans font-bold text-accent-foreground text-[9px]"
+    >
+      {initials}
+    </span>
+  );
+}
+
+export function WorkbenchFileTree({
+  files,
+  active,
+  onSelect,
+  collaborators,
+  miraFile,
+  miraMark,
+}: {
+  files: readonly string[];
+  active?: string;
+  onSelect: (path: string) => void;
+  collaborators: CollaborationPresence[];
+  miraFile?: string;
+  miraMark?: ReactNode;
+}) {
+  const t = useTranslations('programmingPlayground');
+  return (
+    <aside
+      aria-label={t('files')}
+      className="hidden min-h-0 w-44 shrink-0 flex-col overflow-auto rounded-[var(--radius-xl)] border bg-card @6xl:flex"
+    >
+      <h3 className="flex items-center gap-2 px-3 py-2 font-bold text-sm">
+        <Folder className="size-4" />
+        {t('files')}
+      </h3>
+      <ul className="px-1.5 pb-2">
+        {files.map((path) => (
+          <li key={path}>
+            <button
+              type="button"
+              aria-current={path === active || undefined}
+              onClick={() => onSelect(path)}
+              className="flex w-full min-w-0 items-center gap-1.5 rounded-[var(--radius)] px-2 py-1.5 text-left font-mono text-xs transition-colors hover:bg-muted aria-current:bg-accent motion-reduce:transition-none"
+            >
+              <FileCode className="size-3.5 shrink-0 text-muted-foreground" />
+              <span className="min-w-0 flex-1 truncate" title={path}>
+                {path}
+              </span>
+              {miraFile === path && (
+                <MiraFileBadge
+                  label={t('miraFileOpen', { path })}
+                  mark={miraMark}
+                />
+              )}
+              <FileCollaborators path={path} collaborators={collaborators} />
+            </button>
+          </li>
+        ))}
+      </ul>
+      {(miraFile || collaborators.length > 0) && (
+        <div className="border-t px-2 py-2">
+          <h3 className="px-1 font-semibold text-muted-foreground text-xs">
+            {t('inSession')}
+          </h3>
+          {miraFile && (
+            <div className="mt-1 flex items-center gap-2 rounded-[var(--radius)] bg-calendar-bg-purple px-2 py-1.5 text-dynamic-purple">
+              <MiraFileBadge
+                label={t('miraFileOpen', { path: miraFile })}
+                mark={miraMark}
+              />
+              <div className="min-w-0 text-xs">
+                <div className="font-bold">{t('miraName')}</div>
+                <div className="truncate font-mono" title={miraFile}>
+                  {miraFile}
+                </div>
+              </div>
+            </div>
+          )}
+          {collaborators.map((person) => (
+            <div
+              key={person.connectionId}
+              className="flex min-w-0 items-center gap-2 px-2 py-1"
+            >
+              <CollaboratorAvatar name={person.displayName} />
+              <div className="min-w-0 text-xs">
+                <div
+                  className="truncate font-semibold"
+                  title={person.displayName}
+                >
+                  {person.displayName}
+                </div>
+                {person.file && (
+                  <div
+                    className="truncate font-mono text-muted-foreground"
+                    title={person.file}
+                  >
+                    {person.file}
+                  </div>
+                )}
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
+    </aside>
   );
 }

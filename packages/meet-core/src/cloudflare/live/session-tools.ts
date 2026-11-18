@@ -110,6 +110,51 @@ export async function executeLiveTool(
     return;
   }
   if (
+    ['read_selected_code', 'explain_code_lines', 'propose_code_fix'].includes(
+      name
+    )
+  ) {
+    if (
+      saved.claims.app !== 'meet' ||
+      saved.claims.mode !== 'personal' ||
+      !saved.billing ||
+      saved.billingFinalized ||
+      saved.ended
+    ) {
+      respond({ error: 'Code collaboration is unavailable' });
+      return;
+    }
+    try {
+      await requireCurrentPrivateGrant(env, saved);
+      respond(
+        await liveRoomCommand<Record<string, unknown>>(
+          env,
+          saved.claims,
+          saved.identity,
+          {
+            action: 'programming.voiceContext',
+            sessionId: saved.claims.sessionId,
+            ...(name === 'read_selected_code'
+              ? {}
+              : {
+                  id: args.id,
+                  answer: {
+                    explanation: args.explanation,
+                    replacement:
+                      name === 'propose_code_fix' ? args.replacement : null,
+                  },
+                }),
+          }
+        )
+      );
+    } catch {
+      respond({
+        error: 'Ask the host to share a code selection for this session',
+      });
+    }
+    return;
+  }
+  if (
     saved.claims.mode === 'personal' &&
     saved.workspace?.tools.some((tool) => tool.name === name)
   ) {

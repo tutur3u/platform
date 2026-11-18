@@ -301,11 +301,22 @@ export function testMeetProgramming(id: string, source: string) {
     headers: { 'Content-Type': 'application/json' },
   });
 }
+export type MeetProgrammingTestCase = {
+  index: number;
+  passed: boolean;
+  reason: string;
+  output?: string;
+  stderr?: string;
+};
+
 export function getMeetProgrammingTest(id: string, test: string) {
-  return getInternalApiClient().json<{ status: string; output: string | null }>(
-    `${programmingCallPath(id)}?test=${encodePathSegment(test)}`,
-    { cache: 'no-store' }
-  );
+  return getInternalApiClient().json<{
+    status: string;
+    output: string | null;
+    cases?: MeetProgrammingTestCase[];
+  }>(`${programmingCallPath(id)}?test=${encodePathSegment(test)}`, {
+    cache: 'no-store',
+  });
 }
 
 export function checkpointMeetProgramming(id: string) {
@@ -367,5 +378,44 @@ export function getMeetDocument(
 ) {
   return getInternalApiClient(options).json<MeetingDocumentJoin>(
     `/api/meet-call/${encodePathSegment(meetingId)}/document`
+  );
+}
+
+export type MeetProgrammingMiraAction =
+  | {
+      action: 'analyze';
+      source: 'chat' | 'live';
+      intent: 'explain' | 'fix';
+      range: { filePath: string; startLine: number; endLine: number };
+      failure?: { submissionId: string; index: number };
+    }
+  | { action: 'publish' | 'cancel'; id: string }
+  | { action: 'resolve'; id: string; decision: 'accepted' | 'dismissed' };
+
+export function getMeetProgrammingMira(id: string) {
+  return getInternalApiClient().json<{
+    selection: MeetingProgrammingSelection | null;
+    miraPresence:
+      | import('@tuturuuu/realtime/meet').ProgrammingMiraPresence
+      | null;
+    voiceDraft: {
+      id: string;
+      answer: { explanation: string; replacement: string | null } | null;
+    } | null;
+  }>(`${programmingCallPath(id)}?mira`, { cache: 'no-store' });
+}
+
+export function updateMeetProgrammingMira(
+  id: string,
+  selection: MeetingProgrammingSelection,
+  action: MeetProgrammingMiraAction
+) {
+  return getInternalApiClient().json<{ ok: true }>(
+    `${programmingCallPath(id)}?mira`,
+    {
+      method: 'POST',
+      body: JSON.stringify({ ...action, selection }),
+      headers: { 'Content-Type': 'application/json' },
+    }
   );
 }

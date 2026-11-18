@@ -31,17 +31,65 @@ function endpoint() {
   url.search = '';
   return url;
 }
+type ProgrammingRoomScope = {
+  actorId: string;
+  ownerId: string;
+  resourceId: string;
+  resource: 'playground' | 'problem';
+  roomId: string;
+  role: 'owner' | 'editor' | 'viewer';
+  displayName: string;
+  meetingId?: string;
+};
+
+function programmingTicketPayload(
+  scope: ProgrammingRoomScope,
+  kind: 'join' | 'mira-code',
+  until = Date.now() + 60_000
+) {
+  return collaborationTicketSchema.parse({
+    aud: 'tuturuuu.collaboration',
+    kind,
+    roomId: scope.roomId,
+    resourceId: scope.resourceId,
+    resource: scope.resource,
+    meetingId: scope.meetingId,
+    ownerId: scope.ownerId,
+    userId: scope.actorId,
+    role: scope.role,
+    displayName: scope.displayName.slice(0, 100),
+    exp: Math.floor(until / 1000),
+  });
+}
+
+export async function requestProgrammingMiraCode(
+  scope: ProgrammingRoomScope,
+  command: unknown,
+  until?: number
+) {
+  const url = endpoint();
+  const secret = process.env.MEET_REALTIME_TOKEN_SECRET;
+  if (!secret) throw new AccountServiceError(503);
+  url.protocol = url.protocol === 'wss:' ? 'https:' : 'http:';
+  url.pathname = '/collaboration/mira-code';
+  const ticket = programmingTicketPayload(scope, 'mira-code', until);
+  const response = await fetch(url, {
+    method: 'POST',
+    redirect: 'manual',
+    headers: {
+      Authorization: `Bearer ${signRealtimePayload(ticket, secret)}`,
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify(command),
+    cache: 'no-store',
+    signal: AbortSignal.timeout(8000),
+  });
+  if (!response.ok) throw new AccountServiceError(response.status);
+  return response;
+}
+
 export async function programmingRoomTicket(
-  scope: {
-    actorId: string;
-    ownerId: string;
-    resourceId: string;
-    resource: 'playground' | 'problem';
-    roomId: string;
-    role: 'owner' | 'editor' | 'viewer';
-    displayName: string;
-    meetingId?: string;
-  },
+  scope: ProgrammingRoomScope,
   seed:
     | Pick<PlaygroundProject, 'files' | 'command' | 'revision'>
     | (() => Promise<
@@ -52,19 +100,7 @@ export async function programmingRoomTicket(
   const url = endpoint();
   const secret = process.env.MEET_REALTIME_TOKEN_SECRET;
   if (!secret) throw new AccountServiceError(503);
-  const payload = collaborationTicketSchema.parse({
-    aud: 'tuturuuu.collaboration',
-    kind: 'join',
-    roomId: scope.roomId,
-    resourceId: scope.resourceId,
-    resource: scope.resource,
-    meetingId: scope.meetingId,
-    ownerId: scope.ownerId,
-    userId: scope.actorId,
-    role: scope.role,
-    displayName: scope.displayName.slice(0, 100),
-    exp: Math.floor(Date.now() / 1000) + 60,
-  });
+  const payload = programmingTicketPayload(scope, 'join');
   const http = new URL(url);
   http.protocol = url.protocol === 'wss:' ? 'https:' : 'http:';
   http.pathname = checkpoint

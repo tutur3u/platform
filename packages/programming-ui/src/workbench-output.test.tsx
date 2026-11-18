@@ -3,6 +3,7 @@ import { cleanup, fireEvent, render, screen } from '@testing-library/react';
 import { NextIntlClientProvider } from 'next-intl';
 import { afterEach, expect, it, vi } from 'vitest';
 import messages from '../../../apps/meet/messages/en.json';
+import { WorkbenchMeetingOutput } from './workbench-meeting-output';
 import { WorkbenchOutput } from './workbench-output';
 
 afterEach(cleanup);
@@ -87,4 +88,46 @@ it('renders the preview frame only for a valid opted-in port', () => {
   expect(frame?.getAttribute('src')).toBe('/preview/3000/');
   expect(frame?.getAttribute('sandbox')).toBe('allow-scripts allow-forms');
   expect(screen.getByRole('button', { name: t.previewClose })).toBeTruthy();
+});
+
+it('renders real public test failures and jumps to the linked editor line', () => {
+  const jump = vi.fn();
+  const selectTab = vi.fn();
+  render(
+    <NextIntlClientProvider locale="en" messages={messages}>
+      <WorkbenchMeetingOutput
+        tab="tests"
+        onTab={selectTab}
+        test={{
+          submissionId: 'submission',
+          output: '',
+          cases: [
+            { index: 0, passed: true, reason: 'passed' },
+            {
+              index: 1,
+              passed: false,
+              reason: 'runtime_error',
+              stderr: 'AssertionError: expected 2',
+            },
+          ],
+        }}
+        view={{ text: '', running: false, exitCode: null }}
+        save="idle"
+        failed={false}
+        testing={false}
+        canTest
+        failureLink={{ index: 1, line: 19, jump }}
+      />
+    </NextIntlClientProvider>
+  );
+  expect(screen.getByText('1 failed')).toBeTruthy();
+  expect(screen.getByText('AssertionError: expected 2')).toBeTruthy();
+  fireEvent.click(
+    screen.getByRole('button', { name: 'Mira linked this failure to line 19' })
+  );
+  expect(jump).toHaveBeenCalledOnce();
+  fireEvent.keyDown(screen.getByRole('tab', { name: /Tests/ }), {
+    key: 'ArrowRight',
+  });
+  expect(selectTab).toHaveBeenCalledWith('console');
 });

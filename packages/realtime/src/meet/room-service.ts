@@ -38,6 +38,7 @@ import {
   quizArenaRoomCommandSchema,
   type RoomQuizArenaState,
 } from './room-quiz-arena';
+import type { RoomProgrammingMira } from './room-programming-mira';
 import type { RoomRecording } from './room-recording';
 import { summarizeRoomUsage } from './room-usage';
 import { transcriptionClientSnapshot } from './transcription';
@@ -64,6 +65,7 @@ export type RoomServiceState = MeetRoomSnapshot & {
   polls?: RoomPoll[];
   quizArena?: RoomQuizArenaState;
   miraPrivate?: MiraPrivateState;
+  programmingMira?: RoomProgrammingMira;
   personalChatReceipts?: PersonalChatReceipts;
   chat?: RoomChatMessage[];
   liveAssistant?: RoomLiveState;

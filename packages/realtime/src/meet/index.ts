@@ -108,6 +108,14 @@ export {
   type MeetingProgramming,
   meetingProgrammingSchema,
 } from './room-programming';
+export {
+  type ProgrammingCodeCommand,
+  programmingCodeCommandSchema,
+  type ProgrammingMiraContext,
+  type ProgrammingMiraPresence,
+  programmingMiraAnswerSchema,
+  programmingRangeSchema,
+} from './room-programming-mira';
 export type {
   AddTracksInput,
   CloseTracksInput,

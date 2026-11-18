@@ -98,7 +98,11 @@ export async function connectLiveProvider(input: {
         tools: [
           {
             functionDeclarations: [
-              ...liveTools(input.claims.mode, memory.enabled),
+              ...liveTools(
+                input.claims.mode,
+                memory.enabled,
+                input.claims.app === 'meet'
+              ),
             ],
           },
           ...(input.claims.app === 'parley' ? [] : [{ googleSearch: {} }]),

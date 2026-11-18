@@ -39,6 +39,7 @@ export default {
         '/collaboration/seed',
         '/collaboration/checkpoint',
         '/collaboration/runner-files',
+        '/collaboration/mira-code',
       ].includes(url.pathname)
     )
       return collaborationRequest(request, env);

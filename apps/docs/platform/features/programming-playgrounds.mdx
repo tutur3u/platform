@@ -29,24 +29,42 @@ Learn problem execution uses public tests; hidden test data is never shared.
 
 ## Workbench layout
 
-Learn and Meet share one compact workbench (`packages/programming-ui`). It is a
-single column: a slim toolbar (project or problem title, language, connection
-state, participant count, then Run, Stop, Save and an overflow menu), a file tab
-strip with inline file creation, the code editor filling the remaining height,
-and a collapsible output panel. The output panel owns the run command and an
-optional standard-input field, and shows real run output with its exit code or
-an explicit empty state; the private preview frame renders only after the user
-opens it from the menu with a valid port, and it can be closed from the panel
-header. Less common actions (private preview, collaborator invites, and in Meet
-the host's change-resource and close-room actions) live in the overflow menu
-rather than as standalone buttons, and no persistent helper copy explains
-background saves: the panel header shows "Saved to Drive" or a save failure when
-that state is known. The editor follows the app theme class, so it never renders
-a light sheet inside a dark room. In Meet, the host's resource chooser is one
-unlabeled control row framed as a card until a resource opens; afterwards it is
-hidden and reachable again from the menu. Participants see a single waiting
-line. Regression coverage: `workbench-layout.test.ts`, `workbench-files.test.tsx`,
-`workbench-output.test.tsx` and `programming-panel.test.tsx`.
+Learn and Meet share the editor, file tabs, and execution controls in
+`packages/programming-ui`. Learn keeps the collapsible output panel. Meet shows
+Tests, Console, and Web Preview in a separate pane. Public Learn problems
+show individual case results and failure details. Hosted playgrounds support
+console runs and a sandboxed web preview on a valid port. Hosts can switch a
+Learn problem's runtime without replacing that runtime's collaborative document.
+Hosted playgrounds use the runtime chosen when the project was created.
+
+The Meet file tabs show collaborators' current files. On wider stages, the file
+tree also shows the current session's editors. The Checkpoints control saves
+a playground to its owner's Drive or persists a Learn problem's shared room
+document. The preview and Drive checkpoint honor the room's existing access
+rules. The workbench follows the app's theme and reduces motion when requested.
+
+## Mira in a Meet coding room
+
+An admitted host with edit access can ask Mira to explain selected lines or
+suggest a fix. Chat requires the host's current Private Mira choice, workspace
+and account eligibility, and available credits. Voice Live uses the host's
+active private session. The host shares a bounded code selection with that
+session and then reviews the result before sharing it back to the meeting.
+Other participants can see shared explanations and proposals after their
+programming access is checked.
+
+Mira identifies the file and lines under review and shows proposed changes
+as a diff. The host can accept or dismiss a proposal. Acceptance compares the
+proposal to the current shared file and applies it only if the baseline still
+matches. A changed file requires a new proposal. Accepted changes identify
+Mira's source and the host who accepted them. If the host selected a failed
+public test when asking for a fix, the same test result can jump to the linked
+line. Run the tests again to check the outcome after accepting a fix.
+
+Regression coverage includes `room-programming.test.ts`,
+`programming-mira-fix.test.ts`, `programming.test.ts`,
+`workbench-output.test.tsx`, `workbench-files.test.tsx`, and
+`programming-panel.test.tsx`.
 
 ## Files and environments
 

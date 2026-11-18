@@ -2,7 +2,7 @@ import { z } from 'zod';
 export const collaborationTicketSchema = z
   .object({
     aud: z.literal('tuturuuu.collaboration'),
-    kind: z.enum(['join', 'seed', 'checkpoint', 'runner-files']),
+    kind: z.enum(['join', 'seed', 'checkpoint', 'runner-files', 'mira-code']),
     roomId: z.string().min(1).max(180),
     resourceId: z.guid(),
     ownerId: z.guid(),

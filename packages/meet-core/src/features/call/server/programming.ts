@@ -5,6 +5,8 @@ import { createProgrammingRepository } from '@tuturuuu/education-core/education/
 import { getProgrammingProblem } from '@tuturuuu/education-core/education/programming-service';
 import {
   type MeetingProgramming,
+  type ProgrammingMiraPresence,
+  programmingMiraAnswerSchema,
   meetingProgrammingSchema,
 } from '@tuturuuu/realtime/meet';
 import { playgroundPreviewResponse } from '@tuturuuu/storage-core/playground-preview';
@@ -31,6 +33,18 @@ async function elevated(access: Access) {
     p_owner_id: access.meeting.creator_id,
   });
 }
+export async function selectedProgrammingMira(access: Access) {
+  return callRoomService<{
+    selection: MeetingProgramming | null;
+    generation: string | null;
+    miraPresence: ProgrammingMiraPresence | null;
+    voiceDraft: {
+      id: string;
+      answer: z.infer<typeof programmingMiraAnswerSchema> | null;
+    } | null;
+  }>(access, { action: 'programming.read', mira: true });
+}
+
 async function selected(access: Access) {
   return (
     await callRoomService<{ selection: MeetingProgramming | null }>(access, {
@@ -77,10 +91,17 @@ export async function setMeetingProgramming(access: Access, payload: unknown) {
     if (project.language !== selection.language)
       throw new MeetCallAccessError(400, 'Invalid project language');
   } else if (selection) await problemAccess(access, selection.id);
-  return callRoomService(access, { action: 'programming.set', selection });
+  return callRoomService(access, {
+    action: 'programming.set',
+    selection,
+    generation: crypto.randomUUID(),
+  });
 }
-async function authorizePlayground(access: Access) {
-  const selection = await selected(access);
+async function authorizePlayground(
+  access: Access,
+  knownSelection?: MeetingProgramming
+) {
+  const selection = knownSelection ?? (await selected(access));
   if (selection?.kind !== 'playground')
     throw new MeetCallAccessError(409, 'Select a playground');
   const ownerId = access.meeting.creator_id!;
@@ -96,7 +117,9 @@ async function authorizePlayground(access: Access) {
     if (allowed.some((value) => !value))
       throw new MeetCallAccessError(403, 'Playground access required');
   }
-  await getPlaygroundMetadata(ownerId, selection.id);
+  const project = await getPlaygroundMetadata(ownerId, selection.id);
+  if (project.language !== selection.language)
+    throw new MeetCallAccessError(409, 'Playground language changed');
   return {
     ownerId,
     projectId: selection.id,
@@ -117,15 +140,14 @@ export async function previewMeetingPlayground(
     prefix,
   });
 }
-export async function joinMeetingProgramming(
+async function meetingProgrammingScope(
   access: Access,
-  checkpoint = false
+  selection: MeetingProgramming,
+  knownOverride?: boolean
 ) {
-  const selection = await selected(access);
-  if (!selection) return { selection: null };
   const ownerId = access.meeting.creator_id!;
-  const override = await elevated(access);
-  const scope = {
+  const override = knownOverride ?? (await elevated(access));
+  return {
     actorId: access.user.id,
     ownerId,
     resourceId: selection.id,
@@ -139,6 +161,44 @@ export async function joinMeetingProgramming(
         : `meeting:${access.meeting.id}:${selection.kind}:${selection.id}:${selection.language}`,
     displayName: access.displayName,
   };
+}
+
+export async function authorizeProgrammingMira(
+  access: Access,
+  selection: MeetingProgramming
+) {
+  if (selection.kind === 'playground') {
+    const project = await authorizePlayground(access, selection);
+    const scope = await meetingProgrammingScope(
+      access,
+      selection,
+      !!project.meetingId
+    );
+    return {
+      ...scope,
+      role: access.isHost ? ('owner' as const) : ('editor' as const),
+    };
+  }
+  const { subject } = await problemAccess(access, selection.id);
+  const scope = await meetingProgrammingScope(access, selection);
+  return {
+    ...scope,
+    role: subject.readOnly
+      ? ('viewer' as const)
+      : access.isHost
+        ? ('owner' as const)
+        : ('editor' as const),
+  };
+}
+
+export async function joinMeetingProgramming(
+  access: Access,
+  checkpoint = false
+) {
+  const selection = await selected(access);
+  if (!selection) return { selection: null };
+  const scope = await meetingProgrammingScope(access, selection);
+  const { ownerId, meetingId: elevatedMeetingId } = scope;
   if (selection.kind === 'playground') {
     const entitled = await Promise.all(
       [ownerId, access.user.id].map((id) =>
@@ -147,7 +207,7 @@ export async function joinMeetingProgramming(
         })
       )
     );
-    if (!override && entitled.some((value) => !value))
+    if (!elevatedMeetingId && entitled.some((value) => !value))
       throw new MeetCallAccessError(403, 'Playground access required');
     const project = {
       ...(await getPlaygroundMetadata(ownerId, selection.id)),
@@ -180,12 +240,16 @@ export async function joinMeetingProgramming(
     command: template.command,
     activeRun: null,
   };
+  const role = subject.readOnly ? 'viewer' : access.isHost ? 'owner' : 'editor';
+  if (checkpoint && role !== 'owner')
+    throw new MeetCallAccessError(
+      403,
+      'Only the host can checkpoint a problem'
+    );
   const ticket = await programmingRoomTicket(
-    {
-      ...scope,
-      role: subject.readOnly ? 'viewer' : access.isHost ? 'owner' : 'editor',
-    },
-    project
+    { ...scope, role },
+    project,
+    checkpoint
   );
   return { ...ticket, project, selection, problem };
 }
@@ -219,20 +283,46 @@ export async function testMeetingProgramming(access: Access, payload: unknown) {
       );
   return { id };
 }
+const publicJudgeResult = z.object({
+  results: z
+    .array(
+      z.object({
+        index: z.number().int().min(0).max(9),
+        passed: z.boolean(),
+        visible: z.boolean(),
+        output: z.string().optional(),
+        stderr: z.string().optional(),
+        reason: z.string(),
+      })
+    )
+    .max(10),
+});
+
 export async function readMeetingProgrammingTest(access: Access, id: string) {
   const selection = await selected(access);
   if (selection?.kind !== 'problem')
     throw new MeetCallAccessError(409, 'Select a programming problem');
   const { subject } = await problemAccess(access, selection.id);
-  return accountPrivateRpc<{ status: string; output: string | null }>(
-    'read_collaborative_programming_test',
-    {
-      p_actor_id: subject.studentPlatformUserId,
-      p_ws_id: subject.wsId,
-      p_problem_id: selection.id,
-      p_submission_id: z.uuid().parse(id),
-    }
-  );
+  const result = await accountPrivateRpc<{
+    status: string;
+    output: string | null;
+  }>('read_collaborative_programming_test', {
+    p_actor_id: subject.studentPlatformUserId,
+    p_ws_id: subject.wsId,
+    p_problem_id: selection.id,
+    p_submission_id: z.uuid().parse(id),
+  });
+  let cases: z.infer<typeof publicJudgeResult>['results'] = [];
+  try {
+    const judge = publicJudgeResult.safeParse(
+      JSON.parse(result.output ?? 'null')
+    );
+    if (judge.success)
+      cases = judge.data.results.filter((item) => item.visible);
+  } catch {
+    // A judge without a structured result still reports its run status.
+  }
+  return { ...result, cases };
 }
 
 export async function createMeetingPlayground(
