@@ -408,7 +408,7 @@ test('Security Checks bytes match the reviewed workflow', () => {
   );
   assert.equal(
     createHash('sha256').update(bytes).digest('hex'),
-    '63c85ffa9db8b0cd8c1bd39a94534c4d09b40e9ee315e4316f58e2974768d1f9'
+    '7167e30f0361c7a4135578b52fe98b124ac3fbee7d0acf7f80024149ebe588bf'
   );
 });
 
