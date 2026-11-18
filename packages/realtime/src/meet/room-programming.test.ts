@@ -1,12 +1,9 @@
 import { expect, it } from 'vitest';
 import type { MeetRealtimeTokenPayload } from './primitives';
-import { applyRoomProgramming } from './room-programming';
-import type { RoomServiceState } from './room-service';
+import { createMeetPresence, createMeetRoomSnapshot } from './room';
+import { type RoomServiceState, roomService } from './room-service';
 
-const snapshot = {
-  presence: {},
-  settings: { shareNotes: false },
-} as RoomServiceState;
+const snapshot = createMeetRoomSnapshot();
 const token = {
   accountId: 'guest',
   userId: 'guest',
@@ -15,8 +12,7 @@ const token = {
 } as MeetRealtimeTokenPayload;
 it('requires admission even for a signed server caller', () =>
   expect(
-    applyRoomProgramming(snapshot, token, { action: 'programming.read' })
-      ?.status
+    roomService(snapshot, token, { action: 'programming.read' })?.status
   ).toBe(403));
 it('allows admitted reading but restricts selection to the host', () => {
   const admitted = {
@@ -24,10 +20,10 @@ it('allows admitted reading but restricts selection to the host', () => {
     approved: { guest: { userId: 'guest', displayName: 'Guest' } },
   };
   expect(
-    applyRoomProgramming(admitted, token, { action: 'programming.read' })?.body
+    roomService(admitted, token, { action: 'programming.read' })?.body
   ).toEqual({ selection: null });
   expect(
-    applyRoomProgramming(admitted, token, {
+    roomService(admitted, token, {
       action: 'programming.set',
       selection: null,
     })?.status
@@ -36,7 +32,7 @@ it('allows admitted reading but restricts selection to the host', () => {
 it('denies ended rooms and broadcasts authorized selections', () => {
   const host = { ...token, role: 'host' } as MeetRealtimeTokenPayload;
   expect(
-    applyRoomProgramming({ ...snapshot, ended: true }, host, {
+    roomService({ ...snapshot, ended: true }, host, {
       action: 'programming.read',
     })?.status
   ).toBe(403);
@@ -46,7 +42,7 @@ it('denies ended rooms and broadcasts authorized selections', () => {
     language: 'python',
   };
   expect(
-    applyRoomProgramming(snapshot, host, {
+    roomService(snapshot, host, {
       action: 'programming.set',
       selection,
     })?.messages?.[0]
@@ -71,14 +67,17 @@ const selection = {
   language: 'python',
 } as const;
 const attempt = { id, generation };
-function openRoom() {
+function openRoom(): RoomServiceState {
   return {
     ...snapshot,
     settings: { shareNotes: false, programming: selection },
     presence: {
-      joined: { userId: host.userId },
-      observer: { userId: 'other' },
-    } as RoomServiceState['presence'],
+      joined: createMeetPresence(host, '2026-11-18T00:00:00Z'),
+      observer: createMeetPresence(
+        { ...token, userId: 'other', accountId: 'other' },
+        '2026-11-18T00:00:00Z'
+      ),
+    },
     programmingMira: { generation, presence: null },
     miraPrivate: {
       choices: {
@@ -121,28 +120,22 @@ const draft = {
 
 it('rejects forged, stale and non-admitted Mira actions', () => {
   const room = openRoom();
-  expect(applyRoomProgramming(room, token, start)?.status).toBe(403);
+  expect(roomService(room, token, start)?.status).toBe(403);
+  expect(roomService(room, { ...host, scopes: [] }, start)?.status).toBe(403);
+  expect(roomService({ ...room, presence: {} }, host, start)?.status).toBe(403);
   expect(
-    applyRoomProgramming(room, { ...host, scopes: [] }, start)?.status
-  ).toBe(403);
-  expect(
-    applyRoomProgramming({ ...room, presence: {} }, host, start)?.status
-  ).toBe(403);
-  expect(
-    applyRoomProgramming(room, host, {
+    roomService(room, host, {
       ...start,
       attempt: { id, generation: null },
     })?.status
   ).toBe(409);
-  expect(
-    applyRoomProgramming(room, host, { ...start, revision: 2 })?.status
-  ).toBe(403);
+  expect(roomService(room, host, { ...start, revision: 2 })?.status).toBe(403);
 });
 
 it('keeps live drafts private until the host publishes and serializes resolution', () => {
-  const staged = applyRoomProgramming(openRoom(), host, start)!.state;
-  expect(applyRoomProgramming(staged, host, draft)?.status).toBe(403);
-  const drafted = applyRoomProgramming(staged, viaLive, draft)!.state;
+  const staged = roomService(openRoom(), host, start)!.state;
+  expect(roomService(staged, host, draft)?.status).toBe(403);
+  const drafted = roomService(staged, viaLive, draft)!.state;
   const other = {
     ...token,
     userId: 'other',
@@ -150,18 +143,18 @@ it('keeps live drafts private until the host publishes and serializes resolution
     scopes: ['meet:server', 'meet:workspace-member'],
   };
   const read = { action: 'programming.read', mira: true };
-  expect(applyRoomProgramming(drafted, other, read)?.body).toMatchObject({
+  expect(roomService(drafted, other, read)?.body).toMatchObject({
     voiceDraft: null,
   });
-  expect(
-    JSON.stringify(applyRoomProgramming(drafted, other, read)?.body)
-  ).not.toContain('print(2)');
-  const published = applyRoomProgramming(drafted, host, {
+  expect(JSON.stringify(roomService(drafted, other, read)?.body)).not.toContain(
+    'print(2)'
+  );
+  const published = roomService(drafted, host, {
     action: 'programming.miraPresence',
     phase: 'publish',
     attempt,
   })!.state;
-  expect(applyRoomProgramming(published, other, read)?.body).toMatchObject({
+  expect(roomService(published, other, read)?.body).toMatchObject({
     miraPresence: {
       source: 'live',
       proposedFix: { status: 'proposed', original: 'print(1)' },
@@ -173,19 +166,18 @@ it('keeps live drafts private until the host publishes and serializes resolution
     attempt,
     decision: 'accepted',
   };
-  const locked = applyRoomProgramming(published, host, resolve)!.state;
+  const locked = roomService(published, host, resolve)!.state;
   expect(
-    applyRoomProgramming(locked, host, { ...resolve, decision: 'dismissed' })
-      ?.status
+    roomService(locked, host, { ...resolve, decision: 'dismissed' })?.status
   ).toBe(409);
   expect(
-    applyRoomProgramming(locked, host, {
+    roomService(locked, host, {
       action: 'programming.set',
       selection: null,
     })?.status
   ).toBe(409);
   expect(
-    applyRoomProgramming(locked, host, { ...resolve, phase: 'finish' })?.body
+    roomService(locked, host, { ...resolve, phase: 'finish' })?.body
   ).toMatchObject({
     miraPresence: { proposedFix: { status: 'accepted', acceptedBy: 'Editor' } },
   });

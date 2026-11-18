@@ -31,6 +31,9 @@ export type MiraAssistEditor = {
   };
   chain: () => {
     focus: () => {
+      deleteRange: (range: { from: number; to: number }) => {
+        run: () => boolean;
+      };
       insertContentAt: (
         range: number | { from: number; to: number },
         content: unknown
@@ -44,7 +47,11 @@ export type MiraInsertion = {
   before: string;
   after: string;
 };
-type Target = Pick<MeetingDocumentAssistInput, 'text' | 'section' | 'cursor'>;
+type Target = {
+  text: string;
+  section?: string;
+  cursor?: MeetingDocumentAssistInput['cursor'];
+};
 
 const failureKeys = {
   MIRA_CONSENT_REQUIRED: 'mira_consent_required',

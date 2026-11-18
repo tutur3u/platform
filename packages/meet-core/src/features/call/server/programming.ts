@@ -227,6 +227,7 @@ export async function joinMeetingProgramming(
   }
   const { subject, problem } = await problemAccess(access, selection.id);
   const template = playgroundTemplates[selection.language];
+  if (!template) throw new MeetCallAccessError(400, 'Invalid project language');
   const project = {
     id: problem.id,
     name: problem.title.en,

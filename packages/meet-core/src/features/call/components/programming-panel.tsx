@@ -136,13 +136,16 @@ export function ProgrammingPanel({
     onSuccess: () => cache.invalidateQueries({ queryKey: key }),
   });
   const miraError = miraAction.error;
+  const miraCode =
+    miraError && 'code' in miraError ? miraError.code : undefined;
   const miraErrorState =
-    miraError instanceof InternalApiError
-      ? miraError.code === 'MIRA_CONSENT_REQUIRED'
+    miraError && miraError instanceof InternalApiError
+      ? miraCode === 'MIRA_CONSENT_REQUIRED'
         ? 'consent'
-        : miraError.code === 'MIRA_LIVE_REQUIRED'
+        : miraCode === 'MIRA_LIVE_REQUIRED'
           ? 'live'
-          : miraError.status === 409 &&
+          : 'status' in miraError &&
+              miraError.status === 409 &&
               miraAction.variables?.action === 'resolve'
             ? 'conflict'
             : 'unavailable'

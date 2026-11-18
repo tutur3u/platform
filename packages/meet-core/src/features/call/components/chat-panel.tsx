@@ -522,14 +522,14 @@ export function ChatPanel({
           ))}
         </div>
         {commands.length > 0 && (
-          <ul
+          <div
             id={paletteId}
             role="listbox"
             aria-label={tm('commands.title')}
             className="space-y-1 rounded-xl border bg-popover p-1.5 text-popover-foreground shadow-sm"
           >
             {commands.map((command) => (
-              <li
+              <div
                 key={command}
                 id={`${paletteId}-${command}`}
                 role="option"
@@ -542,9 +542,9 @@ export function ChatPanel({
                 <span className="text-muted-foreground">
                   {tm(`commands.${command}.description`)}
                 </span>
-              </li>
+              </div>
             ))}
-          </ul>
+          </div>
         )}
         <Textarea
           ref={composer}

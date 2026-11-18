@@ -114,8 +114,8 @@ export function PersonalChat({
           assistant,
         })),
       });
-      setHistory((current) =>
-        [
+      setHistory((current) => {
+        const turns: Turn[] = [
           ...current,
           { id: crypto.randomUUID(), body: question, assistant: false },
           {
@@ -124,8 +124,9 @@ export function PersonalChat({
             assistant: true,
             question,
           },
-        ].slice(-40)
-      );
+        ];
+        return turns.slice(-40);
+      });
       retry.current = null;
       setDraft('');
     },

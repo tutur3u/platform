@@ -29,7 +29,10 @@ export function isRunActive(status: string | undefined) {
 }
 
 export type SaveState = 'failed' | 'saved' | 'idle';
-export function saveState(saveError: boolean, savedRevision: number | null) {
+export function saveState(
+  saveError: boolean,
+  savedRevision: number | null
+): SaveState {
   return saveError ? 'failed' : savedRevision !== null ? 'saved' : 'idle';
 }
 

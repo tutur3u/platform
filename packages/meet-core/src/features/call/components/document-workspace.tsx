@@ -23,16 +23,6 @@ import { DocumentTabs, useDocumentTabTitle } from './document-tabs';
 
 const PRIMARY = 'primary';
 const MAX_TABS = 12;
-type RevertEditor = MiraAssistEditor & {
-  chain: () => {
-    focus: () => {
-      deleteRange: (range: { from: number; to: number }) => {
-        run: () => boolean;
-      };
-    };
-  };
-};
-
 function untruncated(value: string) {
   return value.endsWith('…') ? null : value;
 }
@@ -102,7 +92,7 @@ export function DocumentWorkspace({
       const local = insertions.current.get(edit.id);
       const after = local?.after ?? untruncated(edit.after);
       const before = local?.before ?? untruncated(edit.before);
-      const editor = editorRef.current as unknown as RevertEditor | null;
+      const editor = editorRef.current as unknown as MiraAssistEditor | null;
       const range =
         editor && after ? findMiraText(editor.state.doc, after) : null;
       if (!editor || !range) {
