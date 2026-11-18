@@ -35,7 +35,7 @@ function read(path, remaining) {
     fs.closeSync(fd);
   }
 }
-function artifact(t) {
+function artifact(t, config = {}) {
   const root = fixture(t);
   fs.mkdirSync(join(root, 'dist/server'), { recursive: true });
   fs.mkdirSync(join(root, 'dist/client/roadmap'), { recursive: true });
@@ -55,6 +55,7 @@ function artifact(t) {
         run_worker_first: true,
         not_found_handling: 'none',
       },
+      ...config,
     })
   );
   return root;
@@ -163,11 +164,7 @@ test(
   'recovery verifies primary bytes and changes only the cron and refresh switch',
   linux,
   (t) => {
-    const root = artifact(t);
-    const configPath = 'dist/server/wrangler.json';
-    const configFile = join(root, configPath);
-    const live = {
-      ...JSON.parse(fs.readFileSync(configFile, 'utf8')),
+    const root = artifact(t, {
       vars: { ROADMAP_REFRESH_ENABLED: 'true', KEEP: 'value' },
       triggers: { crons: ['17 * * * *'] },
       durable_objects: {
@@ -176,9 +173,11 @@ test(
       migrations: [
         { tag: 'roadmap-activity-v1', new_sqlite_classes: ['RoadmapActivity'] },
       ],
-    };
-    fs.writeFileSync(configFile, JSON.stringify(live));
+    });
     const primary = sealArtifact(root, source);
+    const configPath = primary.emittedConfig;
+    const configFile = join(root, configPath);
+    const live = JSON.parse(fs.readFileSync(configFile, 'utf8'));
     const recovery = prepareRecoveryArtifact(root, source, fixture(t));
     const { manifest } = verifySealedArtifact(recovery, source);
     assert.deepEqual(

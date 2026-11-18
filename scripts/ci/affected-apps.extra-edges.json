@@ -29,6 +29,7 @@
   "apps/meet/messages/": ["apps/parley", "packages/programming-ui"],
   "apps/meet/src/runtime/": ["packages/start-bridge"],
   "apps/mobile/lib/core/feature_flags/": ["packages/feature-flags"],
+  "apps/mobile/store/": ["packages/roadmap-core"],
   "apps/nova/src/lib/": ["apps/web"],
   "apps/rewise/src/lib/": ["apps/web"],
   "apps/roadmap/": ["packages/roadmap-core"],
