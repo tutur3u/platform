@@ -82,4 +82,31 @@ describe('POST citation capture', () => {
     expect(result.status).toBe(502);
     expect(await result.json()).toEqual({ error: 'UPSTREAM_ERROR' });
   });
+
+  describe('while serving from the per-instance fallback budget', () => {
+    beforeEach(() => {
+      budget.mockResolvedValue({ kind: 'allowed', fallback: true });
+    });
+
+    it.each([
+      'https://en.wikipedia.org/wiki/Synthetic_topic',
+      'https://publisher.example/articles/synthetic',
+    ])('withholds page capture for %s', async (input) => {
+      const result = await POST(request(input));
+      expect(result.status).toBe(503);
+      expect(await result.json()).toEqual({ error: 'LOOKUP_UNAVAILABLE' });
+      expect(result.headers.get('retry-after')).toBe('60');
+      expect(capture).not.toHaveBeenCalled();
+    });
+
+    it.each(['10.5555/synthetic', 'title: Synthetic title', 'PMID:12345678'])(
+      'keeps identifier capture for %s',
+      async (input) => {
+        capture.mockResolvedValue({ kind: 'manual', fields: { title: '' } });
+        const result = await POST(request(input));
+        expect(result.status).toBe(200);
+        expect(capture).toHaveBeenCalledTimes(1);
+      }
+    );
+  });
 });

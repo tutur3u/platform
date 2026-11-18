@@ -1,6 +1,7 @@
 import { z } from 'zod';
 import { reserveCitationLookup } from '@/lib/cite/lookup-budget';
 import { captureCitation } from '@/lib/cite/capture';
+import { recognizeCaptureSource } from '@/lib/cite/source-resolver';
 import {
   CitationLookupError,
   readBoundedText,
@@ -63,6 +64,18 @@ export async function POST(request: Request) {
         { error: 'INVALID_INPUT' },
         { status: 400, headers }
       );
+    // Page capture is withheld while only the per-instance budget is available;
+    // identifier lookups (DOI, ISBN, arXiv, PubMed, title) keep working.
+    if (
+      'fallback' in budget &&
+      budget.fallback &&
+      recognizeCaptureSource(result.data.input).kind === 'url'
+    ) {
+      return Response.json(
+        { error: 'LOOKUP_UNAVAILABLE' },
+        { status: 503, headers: { ...headers, 'Retry-After': '60' } }
+      );
+    }
     return Response.json(
       await captureCitation(result.data.input, { signal: request.signal }),
       { headers }

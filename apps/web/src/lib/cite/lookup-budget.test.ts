@@ -37,7 +37,7 @@ function fixture(admitted = true) {
 
 beforeEach(() => {
   resetInstanceLookupBudget();
-  vi.spyOn(console, 'warn').mockImplementation(() => {});
+  vi.spyOn(console, 'error').mockImplementation(() => {});
 });
 afterEach(() => vi.restoreAllMocks());
 
@@ -182,18 +182,19 @@ describe('anonymous citation lookup budget', () => {
       },
     ],
   ])('with %s', (_name, store) => {
-    it('serves lookups from the per-instance budget and warns', async () => {
-      const warn = vi.mocked(console.warn);
+    it('serves lookups from the per-instance budget and raises an alert', async () => {
+      const alert = vi.mocked(console.error);
       const input = { proxyOptions, store, now: () => 120_000 };
       for (let used = 0; used < LOOKUP_FALLBACK_IP_LIMIT; used += 1)
         expect(await reserveCitationLookup(trustedHeaders(), input)).toEqual({
           kind: 'allowed',
+          fallback: true,
         });
       expect(
         await reserveCitationLookup(trustedHeaders(), input)
       ).toMatchObject({ kind: 'rejected', status: 429 });
-      expect(warn).toHaveBeenCalledWith('cite_lookup_budget_fallback');
-      expect(warn).toHaveBeenCalledTimes(1);
+      expect(alert).toHaveBeenCalledWith('cite_lookup_budget_fallback');
+      expect(alert).toHaveBeenCalledTimes(1);
     });
 
     it('caps the instance total across clients and recovers next minute', async () => {
@@ -204,7 +205,7 @@ describe('anonymous citation lookup budget', () => {
             trustedHeaders(`198.51.100.${(index % 250) + 1}`),
             { ...input, now: () => 120_000 }
           )
-        ).toEqual({ kind: 'allowed' });
+        ).toEqual({ kind: 'allowed', fallback: true });
       expect(
         await reserveCitationLookup(trustedHeaders('203.0.113.77'), input)
       ).toMatchObject({ kind: 'rejected', status: 429 });
@@ -213,7 +214,7 @@ describe('anonymous citation lookup budget', () => {
           ...input,
           now: () => 180_000,
         })
-      ).toEqual({ kind: 'allowed' });
+      ).toEqual({ kind: 'allowed', fallback: true });
     });
   });
 });

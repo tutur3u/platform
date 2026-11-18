@@ -19,7 +19,7 @@ const syntheticOriginSecret = 'synthetic-citation-origin-proof-fixture-only';
 beforeEach(() => {
   vi.clearAllMocks();
   resetInstanceLookupBudget();
-  vi.spyOn(console, 'warn').mockImplementation(() => {});
+  vi.spyOn(console, 'error').mockImplementation(() => {});
   vi.stubEnv('TRUSTED_PROXY', 'cloudflare-origin');
   vi.stubEnv('TRUSTED_PROXY_ORIGIN_SECRET', syntheticOriginSecret);
   spies.store.mockResolvedValue({ rpc: spies.rpc });

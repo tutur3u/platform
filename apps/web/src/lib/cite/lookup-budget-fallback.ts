@@ -12,14 +12,15 @@ let current: Window | null = null;
 let warnedMinute = -1;
 
 export type InstanceLookupResult =
-  | { kind: 'allowed' }
+  | { kind: 'allowed'; fallback: true }
   | { kind: 'rejected'; status: 429; retryAfter: number };
 
 /**
  * Conservative in-memory budget used only while the shared budget store is
  * unavailable, so public lookups stay usable instead of failing closed. Each
  * minute starts a fresh window, which bounds memory to one window of hashed
- * client keys.
+ * client keys. An allowed result carries `fallback` so callers can withhold
+ * work that needs the shared budget, and the error-level log raises an alert.
  */
 export function reserveInstanceLookup(
   ip: string,
@@ -29,7 +30,7 @@ export function reserveInstanceLookup(
   const retryAfter = Math.max(1, 60 - Math.floor((now % 60_000) / 1000));
   if (warnedMinute !== minute) {
     warnedMinute = minute;
-    console.warn('cite_lookup_budget_fallback');
+    console.error('cite_lookup_budget_fallback');
   }
   if (!current || current.minute !== minute)
     current = { minute, used: 0, clients: new Map() };
@@ -43,7 +44,7 @@ export function reserveInstanceLookup(
     return { kind: 'rejected', status: 429, retryAfter };
   current.clients.set(key, clientUsed + 1);
   current.used += 1;
-  return { kind: 'allowed' };
+  return { kind: 'allowed', fallback: true };
 }
 
 export function resetInstanceLookupBudget() {
