@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:mobile/core/layout/layout.dart';
 import 'package:mobile/core/ui/ui.dart';
 import 'package:mobile/data/models/workspace.dart';
-import 'package:mobile/features/apps/registry/app_registry.dart';
 import 'package:mobile/features/shell/cubit/shell_chrome_actions_cubit.dart';
 import 'package:mobile/features/shell/view/mobile_section_app_bar.dart';
 import 'package:mobile/features/shell/view/shell_chrome_style.dart';
@@ -19,23 +18,15 @@ enum ShellChromeScene { topBar, dockRest, dockBack, notifications, switcher }
 
 const sceneWorkspace = Workspace(id: 'ws-1', name: 'Tuturuuu');
 
-/// The phone root dock: Home, Tasks, Calendar and Mail, then More.
+/// The phone root dock: Home, Apps, Mira and Alerts, then More.
 List<ShellDockEntry> _destinations() => [
-  const ShellDockEntry(
-    key: ValueKey('home'),
-    label: 'Home',
-    glyph: Icon(LucideIcons.house),
-  ),
-  for (final (id, label) in const [
-    ('tasks', 'Tasks'),
-    ('calendar', 'Calendar'),
-    ('mail', 'Mail'),
+  for (final (id, label, icon) in const [
+    ('home', 'Home', LucideIcons.house),
+    ('apps', 'Apps', LucideIcons.layoutGrid),
+    ('assistant', 'Mira', LucideIcons.sparkles),
+    ('notifications', 'Alerts', LucideIcons.bell),
   ])
-    ShellDockEntry(
-      key: ValueKey(id),
-      label: label,
-      glyph: Icon(AppRegistry.moduleById(id)?.icon ?? LucideIcons.house),
-    ),
+    ShellDockEntry(key: ValueKey(id), label: label, glyph: Icon(icon)),
   const ShellDockEntry(
     key: ValueKey('more'),
     label: 'More',
@@ -55,14 +46,13 @@ class ShellChromeSceneView extends StatelessWidget {
         scene == ShellChromeScene.dockBack ||
         scene == ShellChromeScene.switcher;
     final selected = switch (scene) {
-      // Notifications lives behind More on the phone dock.
-      ShellChromeScene.notifications => const ValueKey('more'),
+      ShellChromeScene.notifications => const ValueKey('notifications'),
       ShellChromeScene.topBar ||
       ShellChromeScene.dockRest => const ValueKey('home'),
       _ => null,
     };
     final title = switch (scene) {
-      ShellChromeScene.notifications => 'Notifications',
+      ShellChromeScene.notifications => 'Alerts',
       _ => 'Home',
     };
     return ColoredBox(

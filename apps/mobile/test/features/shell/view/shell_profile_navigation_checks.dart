@@ -63,7 +63,7 @@ void _registerProfileNavigationChecks(
   );
 
   testWidgets(
-    'root dock keeps Profile and Notifications behind More without headers',
+    'root dock pins Alerts, keeps Profile behind More, without headers',
     (tester) async {
       tester.view.devicePixelRatio = 1;
       tester.view.physicalSize = const Size(390, 844);
@@ -91,25 +91,28 @@ void _registerProfileNavigationChecks(
       );
       expect(rootNav.children.map((item) => item.key), const [
         ValueKey('home'),
-        ValueKey('tasks'),
-        ValueKey('calendar'),
+        ValueKey('apps'),
         ValueKey('assistant'),
+        ValueKey('notifications'),
         shellRootMoreKey,
       ]);
       expect(find.byType(AvatarDropdown), findsNothing);
       // Notifications is a dock destination, not a top bar bell.
       expect(find.byType(NotificationsActionButton), findsNothing);
 
-      // Notifications and You are root destinations behind More: More is
-      // active and no Back leads.
-      for (final route in const [Routes.notifications, Routes.profileRoot]) {
+      // Notifications is a pinned tab; You is a root destination behind
+      // More, so More is active. No Back leads on either.
+      for (final (route, selected) in const [
+        (Routes.notifications, ValueKey<String>('notifications')),
+        (Routes.profileRoot, shellRootMoreKey),
+      ]) {
         router.go(route);
         await _pumpForTransitions(tester);
         final nav = tester.widget<MorphingNavigationBar>(
           find.byType(MorphingNavigationBar),
         );
         expect(nav.children.first.key, const ValueKey<String>('home'));
-        expect(nav.selectedKey, shellRootMoreKey);
+        expect(nav.selectedKey, selected);
       }
 
       router.go(Routes.tasks);

@@ -52,9 +52,8 @@ void registerShellViewportChecks(
           return;
         }
         // Four pinned tabs plus More, each a 44dp target that keeps its name
-        // in semantics; slots wide enough for text also show it. Without Mail
-        // access Mira takes the Mail tab.
-        for (final label in ['Home', 'Tasks', 'Calendar', 'Mira', 'More']) {
+        // in semantics; slots wide enough for text also show it.
+        for (final label in ['Home', 'Apps', 'Mira', 'Alerts', 'More']) {
           final node = tester.getSemantics(
             find
                 .descendant(

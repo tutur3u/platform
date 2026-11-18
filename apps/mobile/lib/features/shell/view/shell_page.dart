@@ -32,17 +32,18 @@ import 'package:mobile/features/shell/view/floating_shell_dock.dart';
 import 'package:mobile/features/shell/view/mobile_section_app_bar.dart';
 import 'package:mobile/features/shell/view/shell_chrome_actions.dart';
 import 'package:mobile/features/shell/view/shell_dock_bar.dart';
-import 'package:mobile/features/shell/view/shell_dock_overflow.dart';
 import 'package:mobile/features/shell/view/shell_dock_slot.dart';
 import 'package:mobile/features/shell/view/shell_home_actions.dart';
 import 'package:mobile/features/shell/view/shell_keyboard_chrome.dart';
 import 'package:mobile/features/shell/view/shell_mini_nav.dart';
 import 'package:mobile/features/shell/view/shell_navigation_rail.dart';
+import 'package:mobile/features/shell/view/shell_root_more_sheet.dart';
 import 'package:mobile/features/shell/view/shell_root_tabs_editor.dart';
 import 'package:mobile/features/shell/view/shell_search_field.dart';
 import 'package:mobile/features/shell/view/shell_top_bar_title.dart';
 import 'package:mobile/features/workspace/cubit/workspace_cubit.dart';
 import 'package:mobile/features/workspace/cubit/workspace_state.dart';
+import 'package:mobile/features/workspace/widgets/workspace_picker_sheet.dart';
 import 'package:mobile/l10n/l10n.dart';
 import 'package:mobile/widgets/lazy_indexed_stack.dart';
 import 'package:mobile/widgets/nova_loading_indicator.dart';
@@ -113,6 +114,7 @@ class _ShellPageState extends State<ShellPage> with WidgetsBindingObserver {
   StreamSubscription<List<ShellRootTab>?>? _rootTabsSubscription;
   Set<ShellRootTab> _availableRootTabs = ShellRootTab.values.toSet();
   List<ShellRootTab> _phoneRootTabs = shellDefaultRootTabs;
+  Set<String> _visibleMoreModules = const {};
 
   final Stopwatch _tapStopwatch = Stopwatch();
   Timer? _longPressTimer;

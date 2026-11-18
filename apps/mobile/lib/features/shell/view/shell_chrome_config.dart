@@ -49,7 +49,7 @@ class ShellChromeConfig {
       Routes.home => l10n.navHome,
       Routes.apps => l10n.navApps,
       Routes.assistant => l10n.navMira,
-      Routes.notifications => l10n.navInbox,
+      Routes.notifications => l10n.navAlerts,
       Routes.calendar => l10n.calendarTitle,
       Routes.finance => l10n.financeTitle,
       Routes.inventory => l10n.inventoryTitle,

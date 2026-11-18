@@ -20,9 +20,11 @@ import 'package:mobile/features/shell/view/custom_navigation_bar.dart';
 import 'package:mobile/features/shell/view/shell_mini_nav.dart';
 import 'package:mobile/features/shell/view/shell_navigation_rail.dart';
 import 'package:mobile/features/shell/view/shell_page.dart';
+import 'package:mobile/features/shell/view/shell_root_more_sheet.dart';
 import 'package:mobile/features/shell/view/shell_root_tabs_editor.dart';
 import 'package:mobile/features/workspace/cubit/workspace_cubit.dart';
 import 'package:mobile/features/workspace/cubit/workspace_state.dart';
+import 'package:mocktail/mocktail.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:supabase_flutter/supabase_flutter.dart' as supa;
 
@@ -77,12 +79,15 @@ Future<GoRouter> _pumpShell(
         ? const AuthState.authenticated(_mailUser)
         : const AuthState.unauthenticated(),
   );
+  when(workspace.refreshHiddenWorkspaces).thenAnswer((_) async {});
+  when(() => workspace.hasAuthenticatedActor).thenReturn(false);
   whenListen(
     workspace,
     const Stream<WorkspaceState>.empty(),
     initialState: const WorkspaceState(
       status: WorkspaceStatus.loaded,
-      currentWorkspace: Workspace(id: 'ws', personal: true),
+      workspaces: [Workspace(id: 'ws', name: 'Studio')],
+      currentWorkspace: Workspace(id: 'ws', name: 'Studio'),
     ),
   );
   whenListen(
@@ -113,6 +118,8 @@ Future<GoRouter> _pumpShell(
             Routes.tasks,
             Routes.calendar,
             Routes.mail,
+            Routes.finance,
+            Routes.settings,
           ])
             GoRoute(path: route, builder: (_, _) => Text(route)),
         ],
@@ -166,8 +173,7 @@ List<Key?> _keys(List<ShellRootTab> tabs) => [
 
 String _path(GoRouter router) => router.routeInformationProvider.value.uri.path;
 
-Finder _overflowRow(Key key) =>
-    find.byKey(ValueKey<(String, Key)>(('shell-dock-overflow', key)));
+Finder _overflowRow(Key key) => find.byKey(shellRootMoreRowKey(key));
 
 Finder _moreRow(ShellRootTab tab) => _overflowRow(tab.key);
 
@@ -195,26 +201,35 @@ void main() {
   });
 
   group('resolveShellRootTabs', () {
-    test('fills an unavailable default with Mira, then Apps', () {
+    test('defaults are Home, Apps, Mira and Alerts', () {
+      expect(resolveShellRootTabs(null, isAvailable: (_) => true), [
+        ShellRootTab.home,
+        ShellRootTab.apps,
+        ShellRootTab.assistant,
+        ShellRootTab.notifications,
+      ]);
+    });
+
+    test('fills an unavailable default with Tasks, then Calendar', () {
       expect(
         resolveShellRootTabs(
           null,
-          isAvailable: (tab) => tab != ShellRootTab.mail,
+          isAvailable: (tab) => tab != ShellRootTab.apps,
         ),
         [
           ShellRootTab.home,
-          ShellRootTab.tasks,
-          ShellRootTab.calendar,
           ShellRootTab.assistant,
+          ShellRootTab.notifications,
+          ShellRootTab.tasks,
         ],
       );
       expect(
         resolveShellRootTabs(
           null,
           isAvailable: (tab) =>
-              tab != ShellRootTab.mail && tab != ShellRootTab.assistant,
+              tab != ShellRootTab.apps && tab != ShellRootTab.tasks,
         ).last,
-        ShellRootTab.apps,
+        ShellRootTab.calendar,
       );
     });
 
@@ -251,13 +266,11 @@ void main() {
     );
   });
 
-  testWidgets('phone dock pins Home, Tasks, Calendar and Mail by default', (
-    tester,
-  ) async {
+  testWidgets('fresh prefs pin Home, Apps, Mira and Alerts', (tester) async {
     await _pumpShell(tester, mailAvailable: true);
     expect(_dockKeys(tester), _keys(shellDefaultRootTabs));
     expect(_dock(tester).selectedKey, ShellRootTab.home.key);
-    for (final label in ['Home', 'Tasks', 'Calendar', 'Mail', 'More']) {
+    for (final label in ['Home', 'Apps', 'Mira', 'Alerts', 'More']) {
       final slot = find.descendant(
         of: find.byType(MorphingNavigationBar),
         matching: find.bySemanticsLabel(label),
@@ -271,48 +284,83 @@ void main() {
     }
   });
 
-  testWidgets('Mira takes the Mail tab when Mail is unavailable', (
-    tester,
-  ) async {
-    await _pumpShell(tester);
+  testWidgets('a saved custom set is kept', (tester) async {
+    await _pumpShell(
+      tester,
+      mailAvailable: true,
+      savedTabs: ['home', 'tasks', 'calendar', 'mail'],
+    );
     expect(
       _dockKeys(tester),
       _keys([
         ShellRootTab.home,
         ShellRootTab.tasks,
         ShellRootTab.calendar,
-        ShellRootTab.assistant,
+        ShellRootTab.mail,
       ]),
     );
   });
 
-  testWidgets('More lists the other destinations and opens them', (
+  testWidgets('More lists the workspace, the rest, then the tab actions', (
     tester,
   ) async {
     final router = await _pumpShell(tester, mailAvailable: true);
     await _openMore(tester);
-    for (final tab in [
-      ShellRootTab.assistant,
-      ShellRootTab.apps,
-      ShellRootTab.notifications,
-      ShellRootTab.profile,
-    ]) {
-      expect(_moreRow(tab), findsOneWidget, reason: tab.name);
+    final order = [
+      shellRootWorkspaceKey,
+      ShellRootTab.tasks.key,
+      ShellRootTab.calendar.key,
+      ShellRootTab.mail.key,
+      ShellRootTab.profile.key,
+      shellRootSettingsKey,
+      shellRootEditTabsKey,
+      shellRootResetTabsKey,
+    ];
+    double? previous;
+    for (final key in order) {
+      final row = _overflowRow(key);
+      await tester.ensureVisible(row);
+      final top = tester.getTopLeft(row).dy;
+      // Rows sit in one scroll view: compare against the first row's offset.
+      final offset = tester.getTopLeft(_overflowRow(shellRootWorkspaceKey)).dy;
+      final position = top - offset;
+      if (previous != null) {
+        expect(position, greaterThan(previous), reason: '$key');
+      }
+      previous = position;
     }
     for (final tab in shellDefaultRootTabs) {
       expect(_moreRow(tab), findsNothing, reason: tab.name);
     }
-    expect(_overflowRow(shellRootEditTabsKey), findsOneWidget);
-    await tester.tap(_moreRow(ShellRootTab.notifications));
+    await tester.ensureVisible(_moreRow(ShellRootTab.profile));
+    await tester.tap(_moreRow(ShellRootTab.profile));
     await _settle(tester);
-    expect(_path(router), Routes.notifications);
+    expect(_path(router), Routes.profileRoot);
     expect(_dock(tester).selectedKey, shellRootMoreKey);
+  });
+
+  testWidgets('the workspace row opens the workspace picker', (tester) async {
+    await _pumpShell(tester);
+    await _openMore(tester);
+    expect(find.text('Studio'), findsOneWidget);
+    await tester.tap(_overflowRow(shellRootWorkspaceKey));
+    await _settle(tester);
+    expect(find.text('Workspaces'), findsOneWidget);
+  });
+
+  testWidgets('More opens Settings', (tester) async {
+    final router = await _pumpShell(tester);
+    await _openMore(tester);
+    await tester.ensureVisible(_overflowRow(shellRootSettingsKey));
+    await tester.tap(_overflowRow(shellRootSettingsKey));
+    await _settle(tester);
+    expect(_path(router), Routes.settings);
   });
 
   testWidgets('More is selected on a root destination without a tab', (
     tester,
   ) async {
-    await _pumpShell(tester, location: Routes.apps);
+    await _pumpShell(tester, location: Routes.profileRoot);
     expect(_dock(tester).selectedKey, shellRootMoreKey);
     expect(_dockKeys(tester).first, ShellRootTab.home.key);
   });
@@ -322,11 +370,12 @@ void main() {
   ) async {
     await _pumpShell(tester, mailAvailable: true);
     await _openMore(tester);
+    await tester.ensureVisible(_overflowRow(shellRootEditTabsKey));
     await tester.tap(_overflowRow(shellRootEditTabsKey));
     await _settle(tester);
-    await tester.tap(find.byKey(shellRootTabOptionKey(ShellRootTab.tasks)));
-    await _settle(tester);
     await tester.tap(find.byKey(shellRootTabOptionKey(ShellRootTab.apps)));
+    await _settle(tester);
+    await tester.tap(find.byKey(shellRootTabOptionKey(ShellRootTab.tasks)));
     await _settle(tester);
     // Four tabs are pinned, so another candidate cannot be added.
     await tester.tap(find.byKey(shellRootTabOptionKey(ShellRootTab.profile)));
@@ -334,29 +383,45 @@ void main() {
     final prefs = await SharedPreferences.getInstance();
     expect(prefs.getStringList(_storageKey), [
       'home',
-      'calendar',
-      'mail',
-      'apps',
+      'assistant',
+      'notifications',
+      'tasks',
     ]);
     await _closeSheet(tester);
     expect(
       _dockKeys(tester),
       _keys([
         ShellRootTab.home,
-        ShellRootTab.calendar,
-        ShellRootTab.mail,
-        ShellRootTab.apps,
+        ShellRootTab.assistant,
+        ShellRootTab.notifications,
+        ShellRootTab.tasks,
       ]),
     );
 
     await _openMore(tester);
-    expect(_moreRow(ShellRootTab.tasks), findsOneWidget);
+    expect(_moreRow(ShellRootTab.apps), findsOneWidget);
+    await tester.ensureVisible(_overflowRow(shellRootEditTabsKey));
     await tester.tap(_overflowRow(shellRootEditTabsKey));
     await _settle(tester);
     await tester.tap(find.byKey(shellRootTabsResetKey));
     await _settle(tester);
     expect(prefs.getStringList(_storageKey), isNull);
     await _closeSheet(tester);
+    expect(_dockKeys(tester), _keys(shellDefaultRootTabs));
+  });
+
+  testWidgets('Reset tabs in More restores the default tabs', (tester) async {
+    await _pumpShell(tester, savedTabs: ['tasks', 'calendar']);
+    expect(
+      _dockKeys(tester),
+      _keys([ShellRootTab.tasks, ShellRootTab.calendar]),
+    );
+    await _openMore(tester);
+    await tester.ensureVisible(_overflowRow(shellRootResetTabsKey));
+    await tester.tap(_overflowRow(shellRootResetTabsKey));
+    await _settle(tester);
+    final prefs = await SharedPreferences.getInstance();
+    expect(prefs.getStringList(_storageKey), isNull);
     expect(_dockKeys(tester), _keys(shellDefaultRootTabs));
   });
 
@@ -370,18 +435,14 @@ void main() {
     // Mail is unavailable: its slot takes the first unused default.
     expect(
       _dockKeys(tester),
-      _keys([
-        ShellRootTab.notifications,
-        ShellRootTab.home,
-        ShellRootTab.tasks,
-      ]),
+      _keys([ShellRootTab.notifications, ShellRootTab.home, ShellRootTab.apps]),
     );
   });
 
   testWidgets('Back from Tasks opened by its tab returns to Home', (
     tester,
   ) async {
-    final router = await _pumpShell(tester);
+    final router = await _pumpShell(tester, savedTabs: ['home', 'tasks']);
     await tester.tap(find.byKey(ShellRootTab.tasks.key));
     await _settle(tester);
     expect(_path(router), Routes.tasks);

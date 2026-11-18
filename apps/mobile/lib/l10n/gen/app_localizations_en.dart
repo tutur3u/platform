@@ -6268,6 +6268,9 @@ class AppLocalizationsEn extends AppLocalizations {
   String get miraLiveTitle => 'Mira Live';
 
   @override
+  String get navAlerts => 'Alerts';
+
+  @override
   String get navApps => 'Apps';
 
   @override
@@ -6290,9 +6293,6 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get navHome => 'Home';
-
-  @override
-  String get navInbox => 'Inbox';
 
   @override
   String get navMira => 'Mira';

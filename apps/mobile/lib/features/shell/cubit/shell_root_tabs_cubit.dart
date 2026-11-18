@@ -44,18 +44,21 @@ enum ShellRootTab {
 const int shellRootTabLimit = 4;
 
 /// Tabs pinned until the user picks their own.
+///
+/// Only an unsaved choice follows this list: tabs the user saved stay as
+/// saved, and Reset clears the saved choice so the dock returns here.
 const List<ShellRootTab> shellDefaultRootTabs = [
   ShellRootTab.home,
-  ShellRootTab.tasks,
-  ShellRootTab.calendar,
-  ShellRootTab.mail,
+  ShellRootTab.apps,
+  ShellRootTab.assistant,
+  ShellRootTab.notifications,
 ];
 
 /// Fill for a default tab that is unavailable, in order.
 const List<ShellRootTab> _defaultFallbacks = [
-  ShellRootTab.assistant,
-  ShellRootTab.apps,
-  ShellRootTab.notifications,
+  ShellRootTab.tasks,
+  ShellRootTab.calendar,
+  ShellRootTab.mail,
   ShellRootTab.profile,
 ];
 
@@ -63,7 +66,7 @@ const List<ShellRootTab> _defaultFallbacks = [
 /// that [isAvailable] rejects.
 ///
 /// An unavailable tab's slot is filled with the first available default, then
-/// Mira, Apps, Notifications and You, so the dock keeps as many tabs as were
+/// Tasks, Calendar, Mail and You, so the dock keeps as many tabs as were
 /// chosen (four for the defaults). A deliberately shorter choice stays short.
 List<ShellRootTab> resolveShellRootTabs(
   List<ShellRootTab>? chosen, {

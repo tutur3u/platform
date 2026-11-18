@@ -3,8 +3,16 @@ part of 'shell_page.dart';
 /// Key of the phone dock's More destination.
 const shellRootMoreKey = ValueKey<String>('shell-root-more');
 
-/// Key of the Edit tabs row in the More sheet.
-const shellRootEditTabsKey = ValueKey<String>('shell-root-edit-tabs');
+/// Modules the phone More sheet lists after the unpinned root tabs, when
+/// visible.
+const List<String> _moreModuleIds = ['finance', 'drive', 'timer'];
+
+/// Key of a module row in the phone More sheet.
+ValueKey<String> shellRootModuleKey(String moduleId) =>
+    ValueKey<String>('shell-root-module-$moduleId');
+
+/// Key of the Settings row in the phone More sheet.
+const shellRootSettingsKey = ValueKey<String>('shell-root-settings');
 
 /// Root destinations of the tablet rail, in order.
 const List<ShellRootTab> _railRootTabs = [
@@ -39,6 +47,10 @@ extension _ShellPageRootTabs on _ShellPageState {
           tab,
     };
     _phoneRootTabs = _resolveRootTabs(_rootTabs.state);
+    _visibleMoreModules = {
+      for (final id in _moreModuleIds)
+        if (AppRegistry.moduleById(id)?.visibleIn(context) ?? false) id,
+    };
   }
 
   List<ShellRootTab> _resolveRootTabs(List<ShellRootTab>? chosen) =>
@@ -97,7 +109,7 @@ extension _ShellPageRootTabs on _ShellPageState {
         ShellRootTab.mail => l10n.mailTitle,
         ShellRootTab.assistant => l10n.navMira,
         ShellRootTab.apps => l10n.navApps,
-        ShellRootTab.notifications => l10n.notificationsTitle,
+        ShellRootTab.notifications => l10n.navAlerts,
         ShellRootTab.profile => l10n.profileTitle,
       },
       itemIndex: index,
@@ -131,28 +143,43 @@ extension _ShellPageRootTabs on _ShellPageState {
     await _onItemTapped(_routeForRootKey(key), context);
   }
 
+  /// Unpinned root tabs, then the extra modules visible at the last build,
+  /// then Settings.
+  List<ShellDockEntry> _rootMoreDestinations(AppLocalizations l10n) {
+    ShellDockEntry entry(Key key, IconData icon, String label) =>
+        ShellDockEntry(key: key, label: label, glyph: Icon(icon));
+    return [
+      for (final (index, tab) in ShellRootTab.values.indexed)
+        if (_availableRootTabs.contains(tab) && !_phoneRootTabs.contains(tab))
+          shellDockEntryFor(_rootTabNavItem(tab, l10n, index)),
+      for (final id in _moreModuleIds)
+        if (AppRegistry.moduleById(id) case final module?
+            when _visibleMoreModules.contains(id))
+          entry(shellRootModuleKey(id), module.icon, module.label(l10n)),
+      entry(shellRootSettingsKey, LucideIcons.settings, l10n.navSettings),
+    ];
+  }
+
   Future<void> _openRootMore(BuildContext context) async {
     final l10n = context.l10n;
-    final remaining = ShellRootTab.values.where(
-      (tab) =>
-          _availableRootTabs.contains(tab) && !_phoneRootTabs.contains(tab),
-    );
-    final key = await showShellDockOverflowSheet(
+    final key = await showShellRootMoreSheet(
       context: context,
-      entries: [
-        for (final (index, tab) in remaining.indexed)
-          shellDockEntryFor(_rootTabNavItem(tab, l10n, index)),
-        ShellDockEntry(
-          key: shellRootEditTabsKey,
-          label: l10n.navEditTabs,
-          glyph: const Icon(LucideIcons.pencil),
-        ),
-      ],
+      workspace: context.read<WorkspaceCubit?>()?.state.currentWorkspace,
+      destinations: _rootMoreDestinations(l10n),
       selectedKey: _rootTabForLocation(
         _normalizeRouteLocation(widget.matchedLocation),
       )?.key,
+      canReset: _rootTabs.state != null,
     );
     if (!mounted || !context.mounted || key == null) return;
+    if (key == shellRootWorkspaceKey) {
+      await showWorkspacePicker(context);
+      return;
+    }
+    if (key == shellRootResetTabsKey) {
+      await _rootTabs.reset();
+      return;
+    }
     if (key == shellRootEditTabsKey) {
       await showShellRootTabsEditor(
         context: context,
@@ -166,7 +193,13 @@ extension _ShellPageRootTabs on _ShellPageState {
       );
       return;
     }
-    final tab = ShellRootTab.fromKey(key);
-    if (tab != null) await _onItemTapped(tab.route, context);
+    final route = key == shellRootSettingsKey
+        ? Routes.settings
+        : ShellRootTab.fromKey(key)?.route ??
+              _moreModuleIds
+                  .where((id) => key == shellRootModuleKey(id))
+                  .map((id) => AppRegistry.moduleById(id)?.route)
+                  .firstOrNull;
+    if (route != null) await _onItemTapped(route, context);
   }
 }

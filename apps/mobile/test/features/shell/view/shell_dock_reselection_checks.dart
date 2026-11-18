@@ -5,9 +5,7 @@ void _registerDockReselectionChecks(
   AuthCubit Function() authCubit,
   WorkspaceCubit Function() workspaceCubit,
 ) {
-  testWidgets('Apps opens from the dock More sheet on the first tap', (
-    tester,
-  ) async {
+  testWidgets('Apps opens from its dock tab on the first tap', (tester) async {
     tester.view.devicePixelRatio = 1;
     tester.view.physicalSize = const Size(390, 844);
     addTearDown(() {
@@ -40,16 +38,7 @@ void _registerDockReselectionChecks(
     );
     await _pumpForTransitions(tester);
 
-    await tester.tap(find.byKey(shellRootMoreKey));
-    await _pumpForTransitions(tester);
-    await tester.tap(
-      find.byKey(
-        const ValueKey<(String, Key)>((
-          'shell-dock-overflow',
-          ValueKey('apps'),
-        )),
-      ),
-    );
+    await tester.tap(find.byKey(const ValueKey<String>('apps')));
     await _pumpForTransitions(tester);
 
     _expectAppsScreen(tester, router);
