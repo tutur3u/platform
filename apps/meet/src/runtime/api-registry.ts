@@ -27,6 +27,8 @@ const api10 = () => import('../app/api/meet-call/[meetingId]/costs/route');
 const api11 = () => import('../app/api/meet-call/[meetingId]/document/route');
 const api12 = () => import('../app/api/meet-call/[meetingId]/files/route');
 const apiPolls = () => import('../app/api/meet-call/[meetingId]/polls/route');
+const apiQuizArena = () =>
+  import('../app/api/meet-call/[meetingId]/quiz-arena/route');
 const api13 = () =>
   import('../app/api/meet-call/[meetingId]/programming/preview/[port]/[[...path]]/route');
 const api14 = () =>
@@ -199,6 +201,23 @@ export const meetEndpoints: Endpoint[] = [
         }),
       POST: async (request, params) =>
         (await apiPolls()).POST(request, {
+          params: Promise.resolve({
+            meetingId: routeParam(params, 'meetingId'),
+          }),
+        }),
+    },
+  },
+  {
+    pattern: '/api/meet-call/[meetingId]/quiz-arena',
+    methods: {
+      GET: async (request, params) =>
+        (await apiQuizArena()).GET(request, {
+          params: Promise.resolve({
+            meetingId: routeParam(params, 'meetingId'),
+          }),
+        }),
+      POST: async (request, params) =>
+        (await apiQuizArena()).POST(request, {
           params: Promise.resolve({
             meetingId: routeParam(params, 'meetingId'),
           }),

@@ -2,6 +2,11 @@ import type { Session } from '@google/genai/web';
 import { applyLiveCheckpoint } from '../../features/live-assistant/context';
 import type { LiveAssistantEvent } from '../../features/live-assistant/contracts';
 import { requireCurrentPrivateGrant } from './private-grant';
+import {
+  LIVE_QUIZ_ARENA_TOOLS,
+  type LiveQuizArenaTool,
+  liveQuizArenaCommand,
+} from './quiz-arena';
 import type { LiveProposal } from './reviews';
 import { livePollCommand, liveRoomCommand } from './room';
 import { checkpointSchema, type SavedSession } from './session-state';
@@ -50,6 +55,33 @@ export async function executeLiveTool(
       );
     } catch {
       respond({ error: 'Poll action is unavailable' });
+    }
+    return;
+  }
+  if (LIVE_QUIZ_ARENA_TOOLS.includes(name)) {
+    try {
+      if (
+        !saved.identity.isHost ||
+        saved.claims.app === 'parley' ||
+        !liveWorkspaceAllowed(env, saved)
+      ) {
+        respond({
+          error: 'Only the meeting host can run Quiz Arena in Private Mira',
+        });
+        return;
+      }
+      await requireCurrentPrivateGrant(env, saved);
+      respond(
+        await liveQuizArenaCommand(
+          env,
+          saved.claims,
+          saved.identity,
+          name as LiveQuizArenaTool,
+          args
+        )
+      );
+    } catch {
+      respond({ error: 'Quiz Arena action is unavailable' });
     }
     return;
   }

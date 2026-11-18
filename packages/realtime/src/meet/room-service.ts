@@ -33,6 +33,11 @@ import {
   pollRoomCommandSchema,
   type RoomPoll,
 } from './room-polls';
+import {
+  applyRoomQuizArena,
+  quizArenaRoomCommandSchema,
+  type RoomQuizArenaState,
+} from './room-quiz-arena';
 import type { RoomRecording } from './room-recording';
 import { summarizeRoomUsage } from './room-usage';
 import { transcriptionClientSnapshot } from './transcription';
@@ -57,6 +62,7 @@ export type RoomChatMessage = Extract<
 >;
 export type RoomServiceState = MeetRoomSnapshot & {
   polls?: RoomPoll[];
+  quizArena?: RoomQuizArenaState;
   miraPrivate?: MiraPrivateState;
   personalChatReceipts?: PersonalChatReceipts;
   chat?: RoomChatMessage[];
@@ -119,6 +125,10 @@ const command = z.union([
     service: 'polls' as const,
     message,
   })),
+  quizArenaRoomCommandSchema.transform((message) => ({
+    service: 'quizArena' as const,
+    message,
+  })),
   roomCommand.transform((message) => ({ service: 'room' as const, message })),
 ]);
 export function roomService(
@@ -151,6 +161,8 @@ export function roomService(
   if (!parsed.success) return fail('Invalid request', 400);
   if (parsed.data.service === 'polls')
     return applyRoomPolls(snapshot, token, parsed.data.message);
+  if (parsed.data.service === 'quizArena')
+    return applyRoomQuizArena(snapshot, token, parsed.data.message);
   const accountId = token.accountId ?? token.userId;
   const admitted = Object.values(snapshot.presence).some(
     (person) => (person.accountId ?? person.userId) === accountId

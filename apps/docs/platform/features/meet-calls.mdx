@@ -1576,6 +1576,58 @@ uses signed sessions to cover personal scope, actor/audience/signature/expiry
 denials, membership and permission failures; Calendar events route tests keep
 the audience opt-in exclusive to GET.
 
+## Quiz Arena
+
+Quiz Arena (Đấu trường kiến thức) is an original classroom quiz show in the
+Meet call drawer beside live polls. Parley does not show it. The room service
+owns all state (`room-quiz-arena.ts`); the browser reaches it only through
+`/api/meet-call/[meetingId]/quiz-arena`, which keeps the polls route's origin
+check, 64 KiB body bound, call access check and `private, no-store` responses.
+
+- **Board.** Up to 6 categories × 5 difficulty tiers (100–500 by default) and an
+  optional final round. Each tile is a `kind: 'quiz'` question: single choice or
+  short answer. Room state is capped at 512 KiB, 150 players, 12 teams and 30
+  queued buzzes.
+- **Secrecy.** Participants never see a tile's question before it is picked,
+  a bonus question before their own (or their team's) wager, the final
+  question before the answer stage, or any answer key or explanation before the
+  tile is revealed or the game ends. Bonus tiles look like ordinary tiles until
+  picked. Hosts see everything.
+- **Answering.** Buzz-in queues players by arrival; only the player whose turn it
+  is answers, choices grade at once, and a miss passes the turn. When everyone
+  answers, grading happens on reveal; optional speed bonus adds up to 20%.
+  Short answers grade against normalized accepted answers, otherwise the host
+  judges. Re-judging replaces the earlier award exactly.
+- **Teams.** Teams score as units: a team is right when a strict majority of its
+  graded answers is right, and buzz-in awards go to the buzzer's team. Wagers
+  belong to the team, capped at the larger of the team score and the tile value.
+  Individual scores are kept alongside.
+- **Wrong answers.** No penalty by default; hosts may choose half or full points.
+  Wager tiles and the final round always win or lose the wager.
+- **Attendance credit.** Everyone present at setup is listed. A player earns
+  credit by taking part (answer, buzz or wager) in at least half of the played
+  rounds. CSV and JSON exports include results, individual and team scores,
+  participated rounds and credit; CSV cells are formula-safe like poll exports.
+- **Board sources.** Mira generation runs under the host's personal credits with
+  the same consent, demo-authority and billing guards as poll assistance. When
+  Mira is unavailable nothing is billed or created; the host may then choose a
+  deterministic starter board of host-judged prompts. Upskii import requires a
+  workspace member host and reads only courses whose `ws_id` matches the meeting.
+- **Private Mira voice.** `draft_quiz_arena` prepares a board (never starts play)
+  and `pick_quiz_arena_tile` opens a tile only on the host's explicit request; the
+  picked tile shows Mira's live tag. Both are host-only and personal-mode only.
+- **Sync.** Clients poll every 1.2 s while a round is live or the drawer is open,
+  otherwise every 5 s, and request only changes since their last sequence.
+  A reset starts a new epoch so stale deltas fall back to a full read.
+- **Sound.** Web Audio cues are off when the player mutes them or prefers
+  reduced motion; animations use `motion-safe` variants.
+
+Coverage: `room-quiz-arena.test.ts` (modes, secrecy, host-only commands, teams,
+wagers, final round, exports, deltas and a 50-player scale run),
+`server/quiz-arena.test.ts` (Mira guards, starter fallback, Upskii scoping),
+`quiz-arena/route.test.ts`, `cloudflare/live/quiz-arena.test.ts`,
+`quiz-arena-panel.test.tsx` and the Meet worker `api-registry.test.ts`.
+
 ## Meeting-list startup and hosting eligibility
 
 The signed-in Meet workspace heading renders after session and workspace membership

@@ -37,8 +37,8 @@ import {
   selectSelf,
 } from '../lib/call-state';
 import { getMediaErrorDiagnostic, getMediaErrorKey } from '../lib/media-error';
-import { useCallPolls } from '../lib/polls-client';
 import { encodeRoomCode } from '../lib/room-code';
+import { type ActivityDrawer, useCallActivities } from './call-activities';
 import { CallEnded } from './call-ended';
 import { CallExtras } from './call-extras';
 import { ConnectedLobby } from './call-lobby';
@@ -59,7 +59,6 @@ import {
   PlaybackVolumeControl,
   PlaybackVolumeProvider,
 } from './playback-volume';
-import { PollsControl, PollsPanel } from './polls-panel';
 import { ProgrammingPanel } from './programming-panel';
 import { ReactionOverlay } from './reaction-overlay';
 import { ResizableCallPanel } from './resizable-call-panel';
@@ -115,7 +114,7 @@ function CallShellContent({
   const [showDocument, setShowDocument] = useState(false);
   const collaborationT = useTranslations('meet.collaboration');
   const [drawer, setDrawer] = useState<
-    CallPanel | 'notes' | 'personal' | 'polls'
+    CallPanel | 'notes' | 'personal' | ActivityDrawer
   >(null);
   const panel = drawer === 'chat' || drawer === 'participants' ? drawer : null;
   const privateT = useTranslations('meet.call.private_tools');
@@ -284,14 +283,13 @@ function CallShellContent({
   }, [state.ended, state.admission, leaveNow]);
 
   const lifecycle = selectCallLifecycle(state, joined);
-  const pollPanelOpen = drawer === 'polls';
-  const polls = useCallPolls(
+  const activities = useCallActivities({
     meetingId,
     accountId,
-    MEETING_APP === 'meet' && lifecycle === 'live' && inCall,
-    pollPanelOpen
-  );
-  const pollPanelProps = { accountId, meetingId, query: polls };
+    enabled: MEETING_APP === 'meet' && lifecycle === 'live' && inCall,
+    drawer,
+    onDrawer: setDrawer,
+  });
   if (lifecycle === 'error')
     return (
       <JoinOutcome
@@ -514,9 +512,7 @@ function CallShellContent({
           )}
           <ReactionOverlay state={state} />
         </main>
-        {pollPanelOpen && (
-          <PollsPanel {...pollPanelProps} onClose={() => setDrawer(null)} />
-        )}
+        {activities.panel}
         {drawer === 'personal' && MEETING_APP === 'meet' && (
           <PersonalToolsPanel
             accountId={accountId}
@@ -612,11 +608,7 @@ function CallShellContent({
           <>
             {MEETING_APP === 'meet' && (
               <>
-                <PollsControl
-                  query={polls}
-                  open={pollPanelOpen}
-                  onClick={() => setDrawer(pollPanelOpen ? null : 'polls')}
-                />
+                {activities.controls}
                 <ControlButton
                   active={drawer === 'personal'}
                   icon={CalendarDays}

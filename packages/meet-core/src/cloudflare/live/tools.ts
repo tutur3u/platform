@@ -1,5 +1,6 @@
 import { type FunctionDeclaration, Type } from '@google/genai/web';
 import type { LiveAudience } from '../../features/live-assistant/contracts';
+import { quizArenaLiveTools } from './quiz-arena';
 
 export function liveTools(
   mode: LiveAudience,
@@ -100,6 +101,7 @@ export function liveTools(
         },
       }
     );
+  if (mode === 'personal') tools.push(...quizArenaLiveTools());
   if (mode === 'personal' && memoryEnabled)
     tools.push({
       name: 'remember',
