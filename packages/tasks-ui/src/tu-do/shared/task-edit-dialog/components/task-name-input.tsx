@@ -195,9 +195,9 @@ export function TaskNameInput({
         <Skeleton className="h-5 w-2/3" />
       </div>
     ) : (
-      // Same box as the title input below (text-2xl, leading-tight, pt-4 pb-2)
+      // Same box as the title input below (text-2xl, leading-tight, py-3)
       // so the real title lands exactly where the placeholder sat.
-      <div className="px-4 pt-4 pb-2 md:px-8">
+      <div className="px-4 py-3 md:px-8">
         <Skeleton className="h-[1.875rem] w-3/4" />
       </div>
     );
@@ -232,7 +232,7 @@ export function TaskNameInput({
   return (
     <div className="group flex items-baseline">
       {ticketLabel ? (
-        <span className="shrink-0 pt-4 pb-2 pl-4 font-bold text-2xl text-muted-foreground leading-tight tracking-tight md:pl-8">
+        <span className="shrink-0 py-3 pl-4 font-bold text-2xl text-muted-foreground leading-tight tracking-tight md:pl-8">
           {ticketLabel}
         </span>
       ) : null}
@@ -247,7 +247,7 @@ export function TaskNameInput({
         onKeyDown={handleKeyDown}
         placeholder={t('task_name_placeholder')}
         className={cn(
-          'h-auto border-0 bg-transparent px-4 pt-4 pb-2 font-bold text-2xl text-foreground leading-tight tracking-tight shadow-none transition-colors placeholder:text-muted-foreground/30 focus-visible:outline-0 focus-visible:ring-0 disabled:opacity-100 md:px-8 md:pt-4 md:pb-2 md:text-2xl',
+          'h-auto border-0 bg-transparent px-4 py-3 font-bold text-2xl text-foreground leading-tight tracking-tight shadow-none transition-colors placeholder:text-muted-foreground/30 focus-visible:outline-0 focus-visible:ring-0 disabled:opacity-100 md:px-8 md:py-3 md:text-2xl',
           ticketLabel && 'pl-2 md:pl-2'
         )}
         autoFocus

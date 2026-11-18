@@ -19,7 +19,7 @@ export function TaskDialogLoadingShell({
           className="absolute inset-0 z-10 bg-background"
           data-task-dialog-skeleton
         >
-          <div className="px-4 pt-4 pb-2 md:px-8">
+          <div className="px-4 py-3 md:px-8">
             <Skeleton className="h-[1.875rem] w-3/4" />
           </div>
           <div className="flex min-h-8 items-center gap-2 px-4 py-1 md:px-8">

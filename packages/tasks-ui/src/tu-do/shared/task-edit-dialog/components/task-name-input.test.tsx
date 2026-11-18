@@ -96,6 +96,16 @@ describe('TaskNameInput', () => {
     }
   );
 
+  it('centres the fullscreen title and its project key in one symmetric box', () => {
+    const { input } = renderTaskNameInput({ ticketLabel: 'PLAT-4' });
+    const label = screen.getByText('PLAT-4');
+
+    for (const element of [input, label]) {
+      expect(element.className).toContain('py-3');
+      expect(element.className).not.toMatch(/\b(md:)?p[tb]-/);
+    }
+  });
+
   it('defers focusing the description editor after Enter', () => {
     const { focusEditor, targetEditorCursorRef, input } = renderTaskNameInput();
 
