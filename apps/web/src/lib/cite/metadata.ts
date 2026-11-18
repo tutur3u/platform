@@ -15,6 +15,7 @@ import {
   validIsbn,
   yearFrom,
   normalizedYear,
+  doiFromUrl,
   safeUrl,
 } from './metadata-text';
 
@@ -59,6 +60,55 @@ export interface CitationLookupResult {
   needsReview: true;
 }
 
+const DOI_PATTERN = /^10\.\d{4,9}\/[-._;()/:a-z0-9]+$/i;
+
+async function lookupCrossref(
+  identifier: string,
+  network: MetadataNetwork | undefined,
+  signal: AbortSignal | undefined
+): Promise<CitationLookupResult> {
+  const response = await fetchMetadataText(
+    new URL(`https://api.crossref.org/works/${encodeURIComponent(identifier)}`),
+    'json',
+    network,
+    { signal }
+  );
+  let parsed: unknown;
+  try {
+    parsed = JSON.parse(response);
+  } catch {
+    throw new CitationLookupError('UPSTREAM_ERROR', 502);
+  }
+  const result = crossrefSchema.safeParse(parsed);
+  if (!result.success) throw new CitationLookupError('UPSTREAM_ERROR', 502);
+  const work = result.data.message;
+  return {
+    source: 'crossref',
+    needsReview: true,
+    fields: {
+      type:
+        work.type === 'book' || work.type === 'monograph'
+          ? 'book'
+          : 'article-journal',
+      title: clean(work.title?.[0]) ?? '',
+      authors: (work.author ?? [])
+        .map((author) => ({
+          family: clean(author.family ?? author.name, 200) ?? '',
+          given: clean(author.given, 200),
+        }))
+        .filter(({ family }) => family.length > 0),
+      year: normalizedYear(work.published?.['date-parts']?.[0]?.[0]),
+      publisher: clean(work.publisher),
+      containerTitle: clean(work['container-title']?.[0]),
+      volume: clean(work.volume),
+      issue: clean(work.issue),
+      pages: clean(work.page),
+      DOI: identifier,
+      URL: `https://doi.org/${identifier}`,
+    },
+  };
+}
+
 export async function lookupCitation(
   input: string,
   network?: MetadataNetwork,
@@ -78,55 +128,30 @@ export async function lookupCitation(
       } catch {
         throw new CitationLookupError('INVALID_INPUT', 400);
       }
-      if (!/^10\.\d{4,9}\/[-._;()/:a-z0-9]+$/i.test(identifier)) {
+      if (!DOI_PATTERN.test(identifier)) {
         throw new CitationLookupError('INVALID_INPUT', 400);
       }
     }
   }
-  if (/^10\.\d{4,9}\/[-._;()/:a-z0-9]+$/i.test(identifier)) {
-    const response = await fetchMetadataText(
-      new URL(
-        `https://api.crossref.org/works/${encodeURIComponent(identifier)}`
-      ),
-      'json',
-      network,
-      { signal }
-    );
-    let parsed: unknown;
+  const pathDoi =
+    url && url.hostname !== 'doi.org' && url.hostname !== 'dx.doi.org'
+      ? doiFromUrl(url)
+      : null;
+  if (pathDoi) {
+    // A publisher link resolves through the registry only; a miss or an
+    // upstream failure still leaves the URL as a manual entry.
     try {
-      parsed = JSON.parse(response);
-    } catch {
-      throw new CitationLookupError('UPSTREAM_ERROR', 502);
+      return await lookupCrossref(pathDoi, network, signal);
+    } catch (error) {
+      if (
+        !(error instanceof CitationLookupError) ||
+        (error.code !== 'NOT_FOUND' && error.code !== 'UPSTREAM_ERROR')
+      )
+        throw error;
     }
-    const result = crossrefSchema.safeParse(parsed);
-    if (!result.success) throw new CitationLookupError('UPSTREAM_ERROR', 502);
-    const work = result.data.message;
-    return {
-      source: 'crossref',
-      needsReview: true,
-      fields: {
-        type:
-          work.type === 'book' || work.type === 'monograph'
-            ? 'book'
-            : 'article-journal',
-        title: clean(work.title?.[0]) ?? '',
-        authors: (work.author ?? [])
-          .map((author) => ({
-            family: clean(author.family ?? author.name, 200) ?? '',
-            given: clean(author.given, 200),
-          }))
-          .filter(({ family }) => family.length > 0),
-        year: normalizedYear(work.published?.['date-parts']?.[0]?.[0]),
-        publisher: clean(work.publisher),
-        containerTitle: clean(work['container-title']?.[0]),
-        volume: clean(work.volume),
-        issue: clean(work.issue),
-        pages: clean(work.page),
-        DOI: identifier,
-        URL: `https://doi.org/${identifier}`,
-      },
-    };
   }
+  if (DOI_PATTERN.test(identifier))
+    return lookupCrossref(identifier, network, signal);
   const isbn = value
     .replace(/^ISBN(?:-1[03])?:?\s*/i, '')
     .replace(/[\s-]/g, '')

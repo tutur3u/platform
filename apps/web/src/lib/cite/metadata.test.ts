@@ -330,4 +330,63 @@ describe('citation source metadata', () => {
       lookupCitation('10.5555/malformed', network)
     ).rejects.toMatchObject({ code: 'UPSTREAM_ERROR' });
   });
+
+  it.each([
+    'https://dl.acm.org/doi/abs/10.1145/358923.358934',
+    'https://dl.acm.org/doi/pdf/10.1145/358923.358934',
+    'https://dl.acm.org/doi/10.1145/358923.358934?download=true',
+    'https://publisher.example/files/10.1145/358923.358934.pdf',
+  ])(
+    'resolves a DOI inside the publisher link %s through the registry only',
+    async (link) => {
+      const { network, fetch } = networkFor({
+        message: {
+          title: ['Synthetic indexing'],
+          author: [{ family: 'Vale', given: 'Mira' }],
+          published: { 'date-parts': [[1979]] },
+          type: 'journal-article',
+        },
+      });
+      const result = await lookupCitation(link, network);
+      expect(result).toMatchObject({
+        source: 'crossref',
+        fields: { DOI: '10.1145/358923.358934', title: 'Synthetic indexing' },
+      });
+      expect(fetch).toHaveBeenCalledTimes(1);
+      expect(String(fetch.mock.calls[0]?.[0])).toBe(
+        'https://api.crossref.org/works/10.1145%2F358923.358934'
+      );
+    }
+  );
+
+  it.each([404, 500])(
+    'keeps a publisher link as a manual entry when the registry answers %s',
+    async (status) => {
+      const { network } = networkFor({}, status);
+      const result = await lookupCitation(
+        'https://publisher.example/doi/abs/10.5555/synthetic',
+        network
+      );
+      expect(result).toMatchObject({
+        source: 'manual',
+        fields: {
+          type: 'webpage',
+          URL: 'https://publisher.example/doi/abs/10.5555/synthetic',
+        },
+      });
+    }
+  );
+
+  it('keeps a PDF link without an identifier as a manual entry without fetching', async () => {
+    const { network, fetch } = networkFor({});
+    const result = await lookupCitation(
+      'https://university.example/papers/outline.pdf',
+      network
+    );
+    expect(result).toMatchObject({
+      source: 'manual',
+      fields: { URL: 'https://university.example/papers/outline.pdf' },
+    });
+    expect(fetch).not.toHaveBeenCalled();
+  });
 });

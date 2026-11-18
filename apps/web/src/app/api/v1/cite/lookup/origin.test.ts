@@ -1,5 +1,6 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { POST as capture } from '../capture/route';
+import { resetInstanceLookupBudget } from '@/lib/cite/lookup-budget-fallback';
 import { POST as lookup } from './route';
 
 const spies = vi.hoisted(() => ({
@@ -17,6 +18,8 @@ vi.mock('@/lib/cite/capture', () => ({ captureCitation: spies.capture }));
 const syntheticOriginSecret = 'synthetic-citation-origin-proof-fixture-only';
 beforeEach(() => {
   vi.clearAllMocks();
+  resetInstanceLookupBudget();
+  vi.spyOn(console, 'warn').mockImplementation(() => {});
   vi.stubEnv('TRUSTED_PROXY', 'cloudflare-origin');
   vi.stubEnv('TRUSTED_PROXY_ORIGIN_SECRET', syntheticOriginSecret);
   spies.store.mockResolvedValue({ rpc: spies.rpc });
@@ -134,9 +137,17 @@ describe.each([
     expect(spies.capture).not.toHaveBeenCalled();
   });
 
-  it('returns 503 on missing storage even with a trusted proof', async () => {
+  it('serves a trusted-proof request from the instance budget when storage is missing', async () => {
     spies.store.mockResolvedValue(null);
-    expect((await handler(request(syntheticOriginSecret))).status).toBe(503);
+    expect((await handler(request(syntheticOriginSecret))).status).toBe(200);
+    expect(
+      spies.lookup.mock.calls.length + spies.capture.mock.calls.length
+    ).toBe(1);
+  });
+
+  it('keeps refusing a request without origin proof when storage is missing', async () => {
+    spies.store.mockResolvedValue(null);
+    expect((await handler(request())).status).toBe(429);
     expect(spies.lookup).not.toHaveBeenCalled();
     expect(spies.capture).not.toHaveBeenCalled();
   });

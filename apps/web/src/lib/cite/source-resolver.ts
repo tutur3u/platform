@@ -7,7 +7,7 @@ import {
   METADATA_TIMEOUT_MS,
   type MetadataNetwork,
 } from './metadata-network';
-import { safeUrl, validIsbn } from './metadata-text';
+import { doiFromUrl, safeUrl, validIsbn } from './metadata-text';
 
 export type CaptureSource =
   | { kind: 'doi'; value: string }
@@ -74,6 +74,8 @@ export function recognizeCaptureSource(input: string): CaptureSource {
         throw new CitationLookupError('INVALID_INPUT', 400);
       return { kind: 'pmid', value: id };
     }
+    const publisherDoi = doiFromUrl(url);
+    if (publisherDoi) return { kind: 'doi', value: publisherDoi.toLowerCase() };
     return { kind: 'url', url };
   }
   throw new CitationLookupError('INVALID_INPUT', 400);

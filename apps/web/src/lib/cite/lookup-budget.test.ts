@@ -1,8 +1,13 @@
 import { createHash } from 'node:crypto';
-import { describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { createOriginClientIpProof } from '@tuturuuu/utils/abuse-protection/origin-ip-proof';
 import type { CitationBudgetStore } from './budget-store';
 import { reserveCitationLookup } from './lookup-budget';
+import {
+  LOOKUP_FALLBACK_GLOBAL_LIMIT,
+  LOOKUP_FALLBACK_IP_LIMIT,
+  resetInstanceLookupBudget,
+} from './lookup-budget-fallback';
 
 vi.mock('server-only', () => ({}));
 const syntheticOriginSecret = 'synthetic-citation-origin-proof-fixture-only';
@@ -29,6 +34,12 @@ function fixture(admitted = true) {
     proxyOptions,
   };
 }
+
+beforeEach(() => {
+  resetInstanceLookupBudget();
+  vi.spyOn(console, 'warn').mockImplementation(() => {});
+});
+afterEach(() => vi.restoreAllMocks());
 
 describe('anonymous citation lookup budget', () => {
   it('accepts an explicitly injected trusted proxy config without reading deployment env', async () => {
@@ -156,24 +167,53 @@ describe('anonymous citation lookup budget', () => {
     });
   });
 
-  it('rejects a denied claim and fails closed on missing or failed storage', async () => {
-    const headers = trustedHeaders();
-    expect(await reserveCitationLookup(headers, fixture(false))).toMatchObject({
-      status: 429,
+  it('treats a denied shared claim as final', async () => {
+    expect(
+      await reserveCitationLookup(trustedHeaders(), fixture(false))
+    ).toMatchObject({ kind: 'rejected', status: 429 });
+  });
+
+  describe.each([
+    ['a missing store', async () => null],
+    [
+      'a failing store',
+      async () => {
+        throw new Error('unavailable');
+      },
+    ],
+  ])('with %s', (_name, store) => {
+    it('serves lookups from the per-instance budget and warns', async () => {
+      const warn = vi.mocked(console.warn);
+      const input = { proxyOptions, store, now: () => 120_000 };
+      for (let used = 0; used < LOOKUP_FALLBACK_IP_LIMIT; used += 1)
+        expect(await reserveCitationLookup(trustedHeaders(), input)).toEqual({
+          kind: 'allowed',
+        });
+      expect(
+        await reserveCitationLookup(trustedHeaders(), input)
+      ).toMatchObject({ kind: 'rejected', status: 429 });
+      expect(warn).toHaveBeenCalledWith('cite_lookup_budget_fallback');
+      expect(warn).toHaveBeenCalledTimes(1);
     });
-    expect(
-      await reserveCitationLookup(headers, {
-        proxyOptions,
-        store: async () => null,
-      })
-    ).toMatchObject({ status: 503 });
-    expect(
-      await reserveCitationLookup(headers, {
-        proxyOptions,
-        store: async () => {
-          throw new Error('unavailable');
-        },
-      })
-    ).toMatchObject({ status: 503 });
+
+    it('caps the instance total across clients and recovers next minute', async () => {
+      const input = { proxyOptions, store, now: () => 120_000 };
+      for (let index = 0; index < LOOKUP_FALLBACK_GLOBAL_LIMIT; index += 1)
+        expect(
+          await reserveCitationLookup(
+            trustedHeaders(`198.51.100.${(index % 250) + 1}`),
+            { ...input, now: () => 120_000 }
+          )
+        ).toEqual({ kind: 'allowed' });
+      expect(
+        await reserveCitationLookup(trustedHeaders('203.0.113.77'), input)
+      ).toMatchObject({ kind: 'rejected', status: 429 });
+      expect(
+        await reserveCitationLookup(trustedHeaders('203.0.113.77'), {
+          ...input,
+          now: () => 180_000,
+        })
+      ).toEqual({ kind: 'allowed' });
+    });
   });
 });

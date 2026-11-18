@@ -145,3 +145,25 @@ function decodeEntities(value: string) {
     }
   );
 }
+
+const DOI_IN_PATH = /(?:^|\/)(10\.\d{4,9}\/[-._;()/:a-z0-9]+)/i;
+
+/**
+ * A DOI embedded in a publisher URL path (for example /doi/abs/10.x/y or a
+ * .pdf link). Only the identifier is used, so the publisher host is never fetched.
+ */
+export function doiFromUrl(url: URL) {
+  let path: string;
+  try {
+    path = decodeURIComponent(url.pathname);
+  } catch {
+    return null;
+  }
+  const match = DOI_IN_PATH.exec(path);
+  if (!match?.[1]) return null;
+  const doi = match[1]
+    .replace(/\.pdf$/i, '')
+    .replace(/\/(?:abs|abstract|pdf|epdf|full|references|citations)$/i, '')
+    .replace(/\/+$/, '');
+  return /^10\.\d{4,9}\/[-._;()/:a-z0-9]+$/i.test(doi) ? doi : null;
+}

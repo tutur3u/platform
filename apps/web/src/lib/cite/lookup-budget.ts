@@ -12,11 +12,12 @@ import {
   type CitationBudgetDependencies,
   reserveCitationBudget,
 } from './budget-store';
+import { reserveInstanceLookup } from './lookup-budget-fallback';
 
 export const LOOKUP_IP_LIMIT = 10;
 export const LOOKUP_GLOBAL_LIMIT = 120;
 
-/** Anonymous lookups require authenticated Cloudflare origin proof before trusting any IP. */
+/** Anonymous lookups require authenticated Cloudflare origin proof before trusting any IP; storage outages use a conservative per-instance budget. */
 export async function reserveCitationLookup(
   headers: Headers,
   dependencies: CitationBudgetDependencies & {
@@ -32,7 +33,7 @@ export async function reserveCitationLookup(
   const ip = resolveClientIp(headers, config);
   if (ip === UNKNOWN_CLIENT_IP)
     return { kind: 'rejected', status: 429, retryAfter: 60 } as const;
-  return reserveCitationBudget(
+  const shared = await reserveCitationBudget(
     {
       scope: 'lookup',
       actor: ip,
@@ -41,4 +42,8 @@ export async function reserveCitationLookup(
     },
     dependencies
   );
+  // An unreachable shared store degrades to the per-instance budget; a denial is final.
+  return shared.kind === 'rejected' && shared.status === 503
+    ? reserveInstanceLookup(ip, (dependencies.now ?? Date.now)())
+    : shared;
 }

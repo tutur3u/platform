@@ -28,6 +28,14 @@ describe('source recognition and aggregate budgets', () => {
       { kind: 'pmid', value: '12345678' },
     ],
     ['title: Synthetic source', { kind: 'title', value: 'Synthetic source' }],
+    [
+      'https://dl.acm.org/doi/abs/10.1145/358923.358934',
+      { kind: 'doi', value: '10.1145/358923.358934' },
+    ],
+    [
+      'https://dl.acm.org/doi/pdf/10.1145/358923.358934',
+      { kind: 'doi', value: '10.1145/358923.358934' },
+    ],
   ])('recognizes %s without network access', (input, expected) => {
     expect(recognizeCaptureSource(String(input))).toEqual(expected);
   });
