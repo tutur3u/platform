@@ -81,7 +81,9 @@ promotion is the human gate:
    presence of these settings without exposing origin or bypass values.
 
 Turning a family on: set its Worker secrets (names in `<family>.env.json`),
-add its id to `GATEWAY_WEB_FAMILIES`, rerun the gateway job.
+mark it `"activated": true` in `families.json` in a reviewed commit, add its id
+to `GATEWAY_WEB_FAMILIES`, and rerun the gateway job. The gateway deploy refuses
+any flagged family that the committed table does not mark activated.
 
 ## public-docs
 

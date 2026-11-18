@@ -132,6 +132,13 @@ export function deployConfig(base, liveBindings, families, env) {
         'GATEWAY_WEB_FAMILIES contains an id that is not an enabled family'
       );
     }
+    // Routing traffic to a family needs a reviewed commit that marks it
+    // activated; the variable alone cannot switch a family on.
+    if (family.activated !== true) {
+      throw new Error(
+        'GATEWAY_WEB_FAMILIES contains a family that is not activated'
+      );
+    }
     services.set(familyBinding(id), family.worker);
   }
   vars.GATEWAY_WEB_FAMILIES = flagged.join(',');

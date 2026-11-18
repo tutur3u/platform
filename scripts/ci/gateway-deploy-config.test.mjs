@@ -31,6 +31,14 @@ const families = JSON.parse(
     'utf8'
   )
 );
+// Fixture: public-docs as an activated family; the committed table
+// activates none.
+const activatedFamilies = {
+  ...families,
+  families: families.families.map((family) =>
+    family.id === 'public-docs' ? { ...family, activated: true } : family
+  ),
+};
 const env = {
   WEB_ORIGIN: 'https://web.example.vercel.app',
   MARKETING_ORIGIN: 'https://marketing.example.workers.dev',
@@ -53,7 +61,7 @@ const live = [
 ];
 
 test('keeps live vars and services, sets origins and flagged family bindings', () => {
-  const config = deployConfig(base, live, families, env);
+  const config = deployConfig(base, live, activatedFamilies, env);
   assert.equal(config.routes, undefined);
   assert.equal(config.name, 'tuturuuu-gateway');
   assert.equal(config.vars.GATEWAY_MOUNTED_PATHS, '/learn,/learn/*');
@@ -69,6 +77,17 @@ test('keeps live vars and services, sets origins and flagged family bindings', (
     { binding: 'MOUNT_LEARN', service: 'tuturuuu-learn' },
     { binding: 'WEB_FAMILY_PUBLIC_DOCS', service: 'tuturuuu-web-public-docs' },
   ]);
+});
+
+test('the committed family table activates no family', () => {
+  assert.deepEqual(
+    families.families.filter((family) => family.activated === true),
+    []
+  );
+  assert.throws(
+    () => deployConfig(base, liveOrigins, families, env),
+    /not activated/u
+  );
 });
 
 test('an empty flag list binds no family and routes nothing to one', () => {
@@ -214,11 +233,16 @@ test('write returns a name-only readback and fails before creating forbidden out
   assert.equal(refused.stderr, 'VERCEL_PROTECTION_BYPASS is set\n');
   assert.equal(existsSync(out), false);
 
-  const accepted = run(env);
+  const notActivated = run(env);
+  assert.equal(notActivated.status, 1);
+  assert.equal(notActivated.stdout, '');
+  assert.equal(existsSync(out), false);
+
+  const accepted = run({ ...env, GATEWAY_WEB_FAMILIES: '' });
   assert.equal(accepted.status, 0, accepted.stderr);
   assert.equal(
     accepted.stdout,
-    'GATEWAY_WEB_FAMILIES=public-docs\nGATEWAY_ACCEPTANCE_HOST=unset\nVERCEL_PROTECTION_BYPASS=unset\n'
+    'GATEWAY_WEB_FAMILIES=\nGATEWAY_ACCEPTANCE_HOST=unset\nVERCEL_PROTECTION_BYPASS=unset\n'
   );
   assert.equal(
     JSON.parse(readFileSync(out, 'utf8')).vars.WEB_ORIGIN,
