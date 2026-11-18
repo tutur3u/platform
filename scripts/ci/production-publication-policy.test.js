@@ -393,10 +393,7 @@ test('Workspace admission opens only its route-free seal workflow and adds no pu
 
 test('Git admission opens its route-free upload and adds no Cloudflare publisher', (t) => {
   const root = fixture(t);
-  for (const workflow of [
-    'git-cloudflare.yaml',
-    'vercel-production-git.yaml',
-  ])
+  for (const workflow of ['git-cloudflare.yaml', 'vercel-production-git.yaml'])
     assert.equal(runPolicy(root, workflow).output, 'allowed=true\n');
   // The sealed artifact job never writes to a provider.
   const { jobs } = readWorkflow('git-cloudflare.yaml');

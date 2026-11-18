@@ -22,7 +22,11 @@ function memoryStore() {
   return { entries, store };
 }
 
-function jsonResponse(status: number, body: unknown = { ok: true }, headers = {}) {
+function jsonResponse(
+  status: number,
+  body: unknown = { ok: true },
+  headers = {}
+) {
   return new Response(JSON.stringify(body), {
     headers: { 'content-type': 'application/json', ...headers },
     status,
@@ -202,7 +206,9 @@ describe('cachedGitHubFetch', () => {
   it('replays a not-found for a minute', async () => {
     const { store } = memoryStore();
     let clock = 0;
-    const fetcher = vi.fn(async () => jsonResponse(404, { message: 'Not Found' }));
+    const fetcher = vi.fn(async () =>
+      jsonResponse(404, { message: 'Not Found' })
+    );
     const call = () =>
       cachedGitHubFetch({
         accept,
@@ -277,7 +283,11 @@ describe('cachedGitHubFetch', () => {
       authScope: 'app:1',
       cache: { store },
       fetcher: async () =>
-        jsonResponse(200, {}, { 'set-cookie': 'a=b', 'x-ratelimit-remaining': '9' }),
+        jsonResponse(
+          200,
+          {},
+          { 'set-cookie': 'a=b', 'x-ratelimit-remaining': '9' }
+        ),
       headers: { Authorization: 'Bearer secret-token' },
       url: repoUrl('/'),
     });

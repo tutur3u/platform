@@ -86,7 +86,8 @@ export function resolveRequestLocale(
   for (const { tag } of requested) {
     const match = locales.find(
       (locale) =>
-        tag === locale.toLowerCase() || tag.startsWith(`${locale.toLowerCase()}-`)
+        tag === locale.toLowerCase() ||
+        tag.startsWith(`${locale.toLowerCase()}-`)
     );
     if (match) return match;
   }
@@ -100,7 +101,10 @@ export function resolveRequestLocale(
  */
 export function anonymousPagePolicy(
   request: Request,
-  { defaultLocale, locales }: Pick<EdgePageCacheOptions, 'defaultLocale' | 'locales'>
+  {
+    defaultLocale,
+    locales,
+  }: Pick<EdgePageCacheOptions, 'defaultLocale' | 'locales'>
 ): AnonymousPagePolicy | null {
   const method = request.method.toUpperCase();
   if (method !== 'GET' && method !== 'HEAD') return null;
@@ -215,7 +219,10 @@ async function writeEntry({
     );
     headers.set('cdn-cache-control', `public, max-age=${ttl}`);
     headers.set('vary', 'Accept-Language, Cookie');
-    headers.set(EXPIRES_HEADER, String((options.now ?? Date.now)() + ttl * 1000));
+    headers.set(
+      EXPIRES_HEADER,
+      String((options.now ?? Date.now)() + ttl * 1000)
+    );
 
     await options.store.put(
       policy.key,

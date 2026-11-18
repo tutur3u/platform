@@ -12,9 +12,8 @@ export async function resolveGitHubResponseCache(): Promise<GitHubResponseCache 
   if (!store) return null;
 
   try {
-    const { getCloudflareContext } = await import(
-      '@tuturuuu/start-bridge/next/cloudflare-context'
-    );
+    const { getCloudflareContext } =
+      await import('@tuturuuu/start-bridge/next/cloudflare-context');
     const { ctx } = getCloudflareContext<
       unknown,
       { waitUntil?: (work: Promise<unknown>) => void }

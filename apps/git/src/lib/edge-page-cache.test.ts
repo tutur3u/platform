@@ -31,14 +31,15 @@ function options(
   return { defaultLocale: 'en', locales, store, ...extra };
 }
 
-function page(path: string, headers: Record<string, string> = {}, method = 'GET') {
+function page(
+  path: string,
+  headers: Record<string, string> = {},
+  method = 'GET'
+) {
   return new Request(`${origin}${path}`, { headers, method });
 }
 
-function html(
-  body = '<main>file</main>',
-  init: ResponseInit = {}
-): Response {
+function html(body = '<main>file</main>', init: ResponseInit = {}): Response {
   const headers = new Headers(init.headers);
   headers.set('content-type', 'text/html; charset=utf-8');
   if (!headers.has('cache-control')) {
@@ -49,7 +50,9 @@ function html(
 
 describe('resolveRequestLocale', () => {
   it('picks the highest weighted supported language', () => {
-    expect(resolveRequestLocale('fr;q=0.9, vi;q=0.8, en;q=0.1', locales, 'en')).toBe('vi');
+    expect(
+      resolveRequestLocale('fr;q=0.9, vi;q=0.8, en;q=0.1', locales, 'en')
+    ).toBe('vi');
     expect(resolveRequestLocale('vi-VN,en;q=0.5', locales, 'en')).toBe('vi');
   });
 
@@ -62,11 +65,14 @@ describe('resolveRequestLocale', () => {
 });
 
 describe('anonymousPagePolicy', () => {
-  const policy = (request: Request) => anonymousPagePolicy(request, options({} as never));
+  const policy = (request: Request) =>
+    anonymousPagePolicy(request, options({} as never));
 
   it('admits repository, blob and tree pages', () => {
     expect(policy(page('/tutur3u/platform'))).not.toBeNull();
-    expect(policy(page('/tutur3u/platform/blob/main/turbo.json'))).not.toBeNull();
+    expect(
+      policy(page('/tutur3u/platform/blob/main/turbo.json'))
+    ).not.toBeNull();
     expect(policy(page('/tutur3u/platform/tree/main/apps'))).not.toBeNull();
     expect(policy(page('/tutur3u/platform', {}, 'HEAD'))).not.toBeNull();
   });
@@ -109,7 +115,9 @@ describe('anonymousPagePolicy', () => {
     expect(new Set([en?.key.url, vi?.key.url, other?.key.url]).size).toBe(3);
     expect(vi?.locale).toBe('vi');
     expect(en?.immutable).toBe(false);
-    expect(policy(page(`/tutur3u/platform/blob/${SHA}/a`))?.immutable).toBe(true);
+    expect(policy(page(`/tutur3u/platform/blob/${SHA}/a`))?.immutable).toBe(
+      true
+    );
   });
 });
 
@@ -195,17 +203,20 @@ describe('serveWithEdgePageCache', () => {
     expect(renders[pinned]).toBe(2);
   });
 
-  it.each([500, 502, 503, 429, 302])('never stores a %i response', async (status) => {
-    const { entries, store } = memoryStore();
-    const response = await serveWithEdgePageCache({
-      options: options(store),
-      render: async () => html('<main>x</main>', { status }),
-      request: page('/tutur3u/platform'),
-    });
-    expect(response.status).toBe(status);
-    expect(response.headers.get(EDGE_CACHE_HEADER)).toBe('BYPASS');
-    expect(entries.size).toBe(0);
-  });
+  it.each([500, 502, 503, 429, 302])(
+    'never stores a %i response',
+    async (status) => {
+      const { entries, store } = memoryStore();
+      const response = await serveWithEdgePageCache({
+        options: options(store),
+        render: async () => html('<main>x</main>', { status }),
+        request: page('/tutur3u/platform'),
+      });
+      expect(response.status).toBe(status);
+      expect(response.headers.get(EDGE_CACHE_HEADER)).toBe('BYPASS');
+      expect(entries.size).toBe(0);
+    }
+  );
 
   it('never stores a degraded render, a non-HTML response or an auth cookie', async () => {
     const { entries, store } = memoryStore();
