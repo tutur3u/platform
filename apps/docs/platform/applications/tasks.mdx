@@ -496,6 +496,13 @@ descriptions use a bounded minimum editing area rather than a viewport-sized
 blank region. Compact creation and readonly shared views retain their existing
 presentation.
 
+If collaboration hydration fails or the initial connection takes more than 2.5
+seconds, the web task dialog uses the saved description from the task’s HTTP
+response for that opening. The dialog saves local edits through the task
+description endpoint on close and checks the response before dismissing the
+editor. Opening and closing without editing does not save the description.
+`task-board-realtime.spec.ts` exercises this flow with a failed hydration request.
+
 Tracked description recovery reconciles equivalent content through the active
 editor schema, including editor-filled defaults and JSON key ordering. It also
 recognizes a tracked version that matches both the saved current description and

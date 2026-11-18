@@ -8,6 +8,10 @@ import {
 } from '@playwright/test';
 import { DEFAULT_LOCALE, TEST_USER } from './helpers/constants';
 import {
+  assertSafeTasksLifecycleEnvironment,
+  launchTasksFromAppsPicker,
+} from './helpers/tasks-workspace-lifecycle';
+import {
   e2eClientHeaders,
   e2eClientIpForTest,
   resetAppRateLimitStateForTests,
@@ -122,7 +126,8 @@ async function createPersonalTask(
 
 async function waitForTaskDescriptionEditor(
   targetPage: Page,
-  taskName: string
+  taskName: string,
+  timeout = 30_000
 ) {
   await expect(targetPage.locator('[data-task-name-input]')).toHaveValue(
     taskName,
@@ -164,9 +169,9 @@ async function waitForTaskDescriptionEditor(
     }
   }
 
-  await expect(editor).toBeVisible({ timeout: 30_000 });
+  await expect(editor).toBeVisible({ timeout });
   await expect(editor).toHaveAttribute('contenteditable', 'true', {
-    timeout: 30_000,
+    timeout,
   });
   await expect(
     targetPage.getByText('Syncing collaboration state...')
@@ -603,4 +608,91 @@ test.describe.skip('Task board realtime and task mutations', () => {
       }
     }
   });
+});
+
+test('opens and saves the task description after hydration fails', async ({
+  context,
+  page,
+  playwright,
+  request,
+}, testInfo) => {
+  assertSafeTasksLifecycleEnvironment();
+  const headers = e2eClientHeaders(e2eClientIpForTest(testInfo, 215));
+  await resetDbRateLimits();
+  await resetAppRateLimitStateForTests(request, {
+    completeOnboarding: true,
+    email: TEST_USER.email,
+    headers,
+    locale: DEFAULT_LOCALE,
+  });
+  await context.setExtraHTTPHeaders(headers);
+  await page.goto(`/${DEFAULT_LOCALE}/personal`);
+  const tasksOrigin = await launchTasksFromAppsPicker(page);
+  await page.waitForURL((url) => url.origin === tasksOrigin);
+  const tasksRequest = await playwright.request.newContext({
+    baseURL: tasksOrigin,
+    ignoreHTTPSErrors: true,
+    storageState: await context.storageState(),
+  });
+  const board = await getPersonalBoard(tasksRequest);
+  const { created, list } = await getOrCreatePersonalBoardList(
+    tasksRequest,
+    board.id,
+    headers
+  );
+  const taskName = 'E2E description fallback';
+  const taskId = await createPersonalTask(
+    tasksRequest,
+    list.id,
+    taskName,
+    headers
+  );
+  const descriptionPath = `/api/v1/workspaces/personal/tasks/${taskId}/description`;
+  const marker = 'Persisted task description';
+  const updatedMarker = 'Description edited while realtime was unavailable';
+  const taskPath = `${tasksOrigin}/personal/boards/${board.id}?task=${taskId}`;
+  let writes = 0;
+  try {
+    const seed = await tasksRequest.patch(descriptionPath, {
+      data: { description: marker },
+      headers,
+    });
+    expect(seed.ok()).toBeTruthy();
+    let failHydration = true;
+    await page.route(`**/tasks/${taskId}/description`, async (route) => {
+      if (route.request().method() === 'GET' && failHydration) {
+        await route.fulfill({ status: 503, json: { error: 'Unavailable' } });
+        return;
+      }
+      if (route.request().method() === 'PATCH') writes++;
+      await route.continue();
+    });
+    await page.goto(taskPath);
+    const editor = await waitForTaskDescriptionEditor(page, taskName, 5_000);
+    await expect(editor).toContainText(marker, { timeout: 5_000 });
+    await page.getByTitle('Close', { exact: true }).click();
+    await expect(page.locator('[data-task-name-input]')).toBeHidden();
+    expect(writes).toBe(0);
+    await page.goto(taskPath);
+    const reopenedEditor = await waitForTaskDescriptionEditor(page, taskName);
+    failHydration = false;
+    await reopenedEditor.fill(updatedMarker);
+    await page.getByTitle('Close', { exact: true }).click();
+    await expect(page.locator('[data-task-name-input]')).toBeHidden();
+    const saved = await tasksRequest.get(descriptionPath);
+    expect(saved.ok()).toBeTruthy();
+    expect((await saved.json()).description).toContain(updatedMarker);
+  } finally {
+    await tasksRequest.delete(`/api/v1/workspaces/personal/tasks/${taskId}`, {
+      failOnStatusCode: false,
+      headers,
+    });
+    if (created) {
+      await tasksRequest.patch(
+        `/api/v1/workspaces/personal/task-boards/${board.id}/lists/${list.id}`,
+        { data: { deleted: true }, failOnStatusCode: false, headers }
+      );
+    }
+    await tasksRequest.dispose();
+  }
 });

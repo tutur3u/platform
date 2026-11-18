@@ -95,6 +95,8 @@ import {
 } from './task-edit-dialog/hooks/use-task-data';
 import { useTaskDependencies } from './task-edit-dialog/hooks/use-task-dependencies';
 import { useTaskDescriptionBaseline } from './task-edit-dialog/hooks/use-task-description-baseline';
+import { useTaskDescriptionClose } from './task-edit-dialog/hooks/use-task-description-close';
+import { useTaskDescriptionFallback } from './task-edit-dialog/hooks/use-task-description-fallback';
 import { useTaskDescriptionReceipt } from './task-edit-dialog/hooks/use-task-description-receipt';
 import { useTaskDialogClose } from './task-edit-dialog/hooks/use-task-dialog-close';
 import { useTaskDialogKeyboardShortcuts } from './task-edit-dialog/hooks/use-task-dialog-keyboard-shortcuts';
@@ -147,7 +149,6 @@ import {
   getTaskDescriptionStorageLength,
   normalizeTaskDescriptionSnapshot,
   recordTaskDescriptionEditorSnapshot,
-  saveAndVerifyYjsDescriptionToDatabase,
   saveYjsDescriptionToDatabase,
   serializeTaskDescriptionPersistenceSnapshot,
   shouldPreserveNativeContextMenu,
@@ -332,6 +333,7 @@ export function TaskEditDialog({
   const updateEstimationRef = useRef<(points: number | null) => void>(() => {});
   const handleConvertToTaskRef = useRef<(() => Promise<void>) | null>(null);
   const descriptionRef = useRef<JSONContent | null>(formState.description);
+  const descriptionEditedRef = useRef(false);
   const persistedDescriptionRef = useRef<string | null>(null);
   const descriptionPersistenceGuardRef =
     useRef<TaskDescriptionPersistenceGuardState>(
@@ -429,6 +431,11 @@ export function TaskEditDialog({
     refetchOnReconnect: false,
   });
 
+  const [descriptionFallbackTaskId, setDescriptionFallbackTaskId] =
+    useState<string>();
+  const descriptionRealtimeEnabled =
+    effectiveRealtimeEnabled && descriptionFallbackTaskId !== task?.id;
+
   const persistedTaskDescriptionSnapshot = useMemo(
     () =>
       serializeTaskDescriptionPersistenceSnapshot(
@@ -451,20 +458,21 @@ export function TaskEditDialog({
     descriptionPersistenceGuardRef.current =
       createTaskDescriptionPersistenceGuardState({
         persistedDescription: persistedTaskDescriptionSnapshot,
-        trustPersistedDescription: !effectiveRealtimeEnabled,
+        trustPersistedDescription: !descriptionRealtimeEnabled,
       });
   }, [
-    effectiveRealtimeEnabled,
+    descriptionRealtimeEnabled,
     isOpen,
     isCreateMode,
     persistedTaskDescriptionSnapshot,
   ]);
 
   const canConfirmEmptyDescriptionSnapshot =
-    !effectiveRealtimeEnabled || hasHydratedYjsState;
+    !descriptionRealtimeEnabled || hasHydratedYjsState;
 
   const recordDescriptionSnapshot = useCallback(
     (nextDescription: JSONContent | null) => {
+      if (!descriptionRealtimeEnabled) descriptionEditedRef.current = true;
       descriptionPersistenceGuardRef.current =
         recordTaskDescriptionEditorSnapshot(
           descriptionPersistenceGuardRef.current,
@@ -474,7 +482,7 @@ export function TaskEditDialog({
           }
         );
     },
-    [canConfirmEmptyDescriptionSnapshot]
+    [canConfirmEmptyDescriptionSnapshot, descriptionRealtimeEnabled]
   );
 
   const loadTaskDescriptionState = useCallback(async () => {
@@ -566,7 +574,7 @@ export function TaskEditDialog({
       id: task?.id || '',
       user: yjsUser,
       enabled:
-        isOpen && !isCreateMode && effectiveRealtimeEnabled && !!task?.id,
+        isOpen && !isCreateMode && descriptionRealtimeEnabled && !!task?.id,
       broadcastDebounceMs: workspaceTier && workspaceTier !== 'FREE' ? 0 : 200,
       saveDebounceMs: 5000,
       loadDocumentState: loadTaskDescriptionState,
@@ -574,23 +582,67 @@ export function TaskEditDialog({
     });
 
   useEffect(() => {
-    if (!isOpen || isCreateMode || !effectiveRealtimeEnabled || !task?.id) {
+    descriptionEditedRef.current = false;
+    if (!isOpen) setDescriptionFallbackTaskId(undefined);
+  }, [isOpen, task?.id]);
+
+  useEffect(() => {
+    if (
+      !doc ||
+      !provider ||
+      !descriptionRealtimeEnabled ||
+      !hydrated ||
+      !connected
+    )
+      return;
+    const recordLocalUpdate = (_update: Uint8Array, origin: unknown) => {
+      if (origin !== provider && origin !== SUPABASE_PROVIDER_SYNC_ORIGIN) {
+        descriptionEditedRef.current = true;
+      }
+    };
+    doc.on('update', recordLocalUpdate);
+    return () => {
+      doc.off('update', recordLocalUpdate);
+    };
+  }, [doc, provider, descriptionRealtimeEnabled, hydrated, connected]);
+
+  const activateDescriptionFallback = useCallback(
+    (taskId: string) => {
+      formState.setDescription(getDescriptionContent(task?.description));
+      descriptionEditedRef.current = false;
+      setDescriptionFallbackTaskId(taskId);
+    },
+    [formState.setDescription, task?.description]
+  );
+
+  useTaskDescriptionFallback({
+    taskId:
+      isOpen && !isCreateMode && descriptionRealtimeEnabled
+        ? task?.id
+        : undefined,
+    ready: hydrated && connected,
+    hydrationFailed,
+    setFallbackTaskId: activateDescriptionFallback,
+  });
+
+  useEffect(() => {
+    if (!isOpen || isCreateMode || !descriptionRealtimeEnabled || !task?.id) {
       setHasHydratedYjsState(false);
       return;
     }
 
     setHasHydratedYjsState(hydrated);
-  }, [isOpen, isCreateMode, effectiveRealtimeEnabled, task?.id, hydrated]);
+  }, [isOpen, isCreateMode, descriptionRealtimeEnabled, task?.id, hydrated]);
 
   const isYjsSyncing = useMemo(() => {
     return (
       isOpen &&
       !isCreateMode &&
-      effectiveRealtimeEnabled &&
+      descriptionRealtimeEnabled &&
       !!task?.id &&
       !hydrated
     );
-  }, [hydrated, isOpen, isCreateMode, effectiveRealtimeEnabled, task?.id]);
+  }, [hydrated, isOpen, isCreateMode, descriptionRealtimeEnabled, task?.id]);
 
   const isDialogSettling = useTaskDialogSettling({
     isOpen,
@@ -1215,7 +1267,7 @@ export function TaskEditDialog({
     boardId,
     isOpen,
     isCreateMode,
-    realtimeEnabled: effectiveRealtimeEnabled,
+    realtimeEnabled: descriptionRealtimeEnabled,
     editorInstance,
     doc,
     yjsProvider: provider,
@@ -1971,110 +2023,31 @@ export function TaskEditDialog({
     />
   ) : null;
 
-  const persistTaskDescriptionOnClose = useCallback(async () => {
-    if (isCreateMode || !task?.id || !flushEditorPendingRef.current) {
-      return true;
-    }
-
-    closeBlockedByOverflowRef.current = false;
-
-    const currentContent = normalizeTaskDescriptionSnapshot(
-      flushEditorPendingRef.current()
-    );
-    const currentSerializedDescription =
-      serializeTaskDescriptionPersistenceSnapshot(currentContent) ?? null;
-
-    if (
-      currentSerializedDescription &&
-      currentSerializedDescription.length > MAX_TASK_DESCRIPTION_LENGTH
-    ) {
-      closeBlockedByOverflowRef.current = true;
-      setShowDescriptionOverflowWarning(true);
-      return false;
-    }
-
-    const initialSerializedDescription = persistedDescriptionRef.current;
-
-    if (currentSerializedDescription === initialSerializedDescription) {
-      return true;
-    }
-
-    if (
-      !canPersistTaskDescriptionSnapshot({
-        currentSerializedDescription,
-        guardState: descriptionPersistenceGuardRef.current,
-      })
-    ) {
-      return false;
-    }
-
-    const yjsState =
-      currentContent && editorInstance?.schema
-        ? Array.from(
-            convertJsonContentToYjsState(currentContent, editorInstance.schema)
-          )
-        : null;
-
-    const didPersist = await saveAndVerifyYjsDescriptionToDatabase({
-      wsId: effectiveTaskWsId,
-      taskId: task.id,
-      getContent: () => currentContent,
-      getYjsState: () => yjsState,
-      boardId,
-      queryClient,
-      context: 'close',
-    });
-
-    if (didPersist) {
-      persistedDescriptionRef.current = currentSerializedDescription;
-      confirmSavedDescription(currentContent);
-      descriptionPersistenceGuardRef.current =
-        createTaskDescriptionPersistenceGuardState({
-          persistedDescription: currentSerializedDescription,
-          trustPersistedDescription: true,
-        });
-    }
-
-    return didPersist;
-  }, [
+  const {
+    persistTaskDescriptionOnClose,
+    hasPendingRealtimeDescriptionChanges,
+  } = useTaskDescriptionClose({
     isCreateMode,
-    task?.id,
+    descriptionEditedRef,
+    taskId: task?.id,
     effectiveTaskWsId,
     editorInstance,
     boardId,
     queryClient,
     confirmSavedDescription,
-  ]);
-
-  const hasPendingRealtimeDescriptionChanges = useCallback(() => {
-    if (isCreateMode || !task?.id || !flushEditorPendingRef.current) {
-      return false;
-    }
-
-    const currentContent = normalizeTaskDescriptionSnapshot(
-      flushEditorPendingRef.current()
-    );
-    const currentSerializedDescription =
-      serializeTaskDescriptionPersistenceSnapshot(currentContent) ?? null;
-
-    if (
-      currentSerializedDescription &&
-      currentSerializedDescription.length > MAX_TASK_DESCRIPTION_LENGTH
-    ) {
-      return false;
-    }
-
-    const initialSerializedDescription = persistedDescriptionRef.current;
-
-    return currentSerializedDescription !== initialSerializedDescription;
-  }, [isCreateMode, task?.id]);
+    closeBlockedByOverflowRef,
+    descriptionPersistenceGuardRef,
+    flushEditorPendingRef,
+    persistedDescriptionRef,
+    setShowDescriptionOverflowWarning,
+  });
 
   // Close handlers
   const { handleClose, handleForceClose, handleNavigateBack, handleCloseRef } =
     useTaskDialogClose({
       taskId: task?.id,
       isCreateMode,
-      collaborationMode: effectiveCollaborationMode,
+      collaborationMode: effectiveCollaborationMode && connected,
       synced,
       connected,
       draftStorageKey,
@@ -2947,8 +2920,11 @@ export function TaskEditDialog({
                           setDescription={formState.setDescription}
                           isOpen={isOpen}
                           isCreateMode={isCreateMode}
-                          collaborationMode={effectiveCollaborationMode}
-                          realtimeEnabled={effectiveRealtimeEnabled}
+                          collaborationMode={
+                            effectiveCollaborationMode &&
+                            descriptionRealtimeEnabled
+                          }
+                          realtimeEnabled={descriptionRealtimeEnabled}
                           isYjsSyncing={isYjsSyncing}
                           isYjsConnected={connected}
                           isYjsHydrationFailed={hydrationFailed}
