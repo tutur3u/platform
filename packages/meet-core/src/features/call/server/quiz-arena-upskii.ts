@@ -17,7 +17,7 @@ import {
 } from '../lib/call-access';
 
 type Access = Awaited<ReturnType<typeof getMeetCallAccess>>;
-type Db = Awaited<ReturnType<typeof createAdminClient>>;
+type Db = Awaited<ReturnType<typeof courseAuthority>>;
 type CourseOption = { id: string; name: string };
 type CourseList = {
   courses: Array<CourseOption & { modules: CourseOption[] }>;
