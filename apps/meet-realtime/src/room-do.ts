@@ -38,7 +38,7 @@ import {
 } from '../../../packages/realtime/src/meet/room-settings-gate';
 import { createRoomUsage } from '../../../packages/realtime/src/meet/room-usage';
 import { normalizeTranscriptionConsent } from '../../../packages/realtime/src/meet/transcription';
-import { personalReceiptStorage } from './personal-receipt-storage';
+import { privateRoomStorage } from './private-room-storage';
 import { type RoomServiceState, roomService } from './room-service';
 import { runRoomSfuIntent } from './room-sfu-intent';
 import type { TurnEnv } from './turn-credentials';
@@ -216,23 +216,13 @@ export class MeetRoomDurableObject implements DurableObject {
 
     if (url.pathname === '/room-service') {
       const body = await request.json().catch(() => null);
-      const personal = await personalReceiptStorage(
+      const owned = await privateRoomStorage(
         this.state.storage,
+        this.snapshot,
         token,
         body
       );
-      if (personal) {
-        if (personal.status !== 403) {
-          // Account for the private write and its small durable usage-counter write.
-          this.snapshot.usage!.httpCounterWrites =
-            (this.snapshot.usage!.httpCounterWrites ?? 0) + 2;
-          await this.state.storage.put('usage-http-requests', {
-            requests: this.snapshot.usage!.httpRequests,
-            writes: this.snapshot.usage!.httpCounterWrites,
-          });
-        }
-        return personal;
-      }
+      if (owned) return owned;
       const result = roomService(this.snapshot, token, body);
       const changed = this.snapshot !== result.state;
       this.snapshot = result.state;

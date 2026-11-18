@@ -35,6 +35,7 @@ const api14 = () =>
   import('../app/api/meet-call/[meetingId]/programming/route');
 const api15 = () =>
   import('../app/api/meet-call/[meetingId]/public-info/route');
+const apiRating = () => import('../app/api/meet-call/[meetingId]/rating/route');
 const api16 = () => import('../app/api/meet-call/[meetingId]/recording/route');
 const api17 = () => import('../app/api/meet-call/[meetingId]/state/route');
 const api18 = () => import('../app/api/meet-call/[meetingId]/title/route');
@@ -341,6 +342,23 @@ export const meetEndpoints: Endpoint[] = [
         }),
       POST: async (request, params) =>
         (await api17()).POST(request, {
+          params: Promise.resolve({
+            meetingId: routeParam(params, 'meetingId'),
+          }),
+        }),
+    },
+  },
+  {
+    pattern: '/api/meet-call/[meetingId]/rating',
+    methods: {
+      GET: async (request, params) =>
+        (await apiRating()).GET(request, {
+          params: Promise.resolve({
+            meetingId: routeParam(params, 'meetingId'),
+          }),
+        }),
+      PUT: async (request, params) =>
+        (await apiRating()).PUT(request, {
           params: Promise.resolve({
             meetingId: routeParam(params, 'meetingId'),
           }),
