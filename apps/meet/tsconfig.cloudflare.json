@@ -84,6 +84,7 @@
     "../../packages/realtime/src/meet/room-options.ts",
     "../../packages/realtime/src/meet/room-outcome.ts",
     "../../packages/realtime/src/meet/room-polls.ts",
+    "../../packages/realtime/src/meet/room-presence-diff.ts",
     "../../packages/realtime/src/meet/room-programming-mira.ts",
     "../../packages/realtime/src/meet/room-programming.ts",
     "../../packages/realtime/src/meet/room-provider-cleanup.ts",
