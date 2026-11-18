@@ -15,6 +15,8 @@ export interface RoomBudget {
   expiresAt: number;
   accountedAt: number;
   participantMilliseconds: number;
+  /** Room presence is a shadow estimate until SFU connection and bitrate evidence is available. */
+  largeRoomPresenceMilliseconds?: number;
   maxParticipants?: number;
   maxPublishers: number;
   maxViewers: number;
@@ -63,6 +65,7 @@ export function startRoomBudget(
           1000,
       accountedAt: now,
       participantMilliseconds: 0,
+      largeRoomPresenceMilliseconds: 0,
       maxParticipants: token.limits.maxParticipants,
       maxPublishers: Math.min(
         token.limits.maxParticipants ?? 32,
@@ -100,14 +103,22 @@ export function accountRoomTime(
   if (!budget || now <= budget.accountedAt) return state;
   const until = Math.min(now, budget.expiresAt);
   const elapsed = Math.max(0, until - budget.accountedAt);
+  const participants = Object.keys(state.presence).length;
+  const participantTime = elapsed * participants;
   return {
     ...state,
     budget: {
       ...budget,
+      ...(budget.largeRoomPresenceMilliseconds === undefined
+        ? {}
+        : {
+            largeRoomPresenceMilliseconds:
+              budget.largeRoomPresenceMilliseconds +
+              (participants >= 50 ? participantTime : 0),
+          }),
       accountedAt: Math.max(budget.accountedAt, until),
       participantMilliseconds:
-        budget.participantMilliseconds +
-        elapsed * Object.keys(state.presence).length,
+        budget.participantMilliseconds + participantTime,
     },
   };
 }
@@ -199,6 +210,9 @@ export function roomBudgetSummary(state: MeetRoomSnapshot, now = Date.now()) {
     participantMilliseconds,
     maxPublishers,
     maxViewers,
+    ...(budget.largeRoomPresenceMilliseconds === undefined
+      ? {}
+      : { largeRoomPresenceMilliseconds: budget.largeRoomPresenceMilliseconds }),
     historicalUsageUnknown: budget.historicalUsageUnknown ?? false,
   };
 }

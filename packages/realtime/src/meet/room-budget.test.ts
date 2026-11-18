@@ -101,6 +101,22 @@ describe('meeting resource budget', () => {
         .budget?.expiresAt
     ).toBe(now + MEET_MAX_ROOM_DURATION_MS);
   });
+  it('counts only intervals at or above 50 admitted presences for the shadow meter', () => {
+    let state = initial();
+    const host = Object.values(state.presence)[0]!;
+    for (let i = 1; i < 49; i++) {
+      state.presence[String(i)] = { ...host, userId: String(i) };
+    }
+    state = accountRoomTime(state, now + 1000);
+    expect(state.budget?.largeRoomPresenceMilliseconds).toBe(0);
+    state.presence.last = { ...host, userId: 'last' };
+    state = accountRoomTime(state, now + 2500);
+    expect(state.budget?.largeRoomPresenceMilliseconds).toBe(75_000);
+    delete state.presence.last;
+    state = accountRoomTime(state, now + 3500);
+    expect(state.budget?.largeRoomPresenceMilliseconds).toBe(75_000);
+  });
+
   it('accounts participant time with server time, without counting beyond the deadline', () => {
     expect(
       accountRoomTime(initial(), now + 60_000).budget?.participantMilliseconds
