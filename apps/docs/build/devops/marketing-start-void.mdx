@@ -18,9 +18,8 @@ its own Worker entrypoint (`cloudflare/worker.ts`), route tree, and layout hiera
 
 The Worker targets the following staging and production identities:
 
-- **Worker Name:** `tuturuuu-marketing` (production) and
-  `tuturuuu-marketing-vite-staging` (staging candidate), selected by
-  `cloudflare/deployment-profile.mjs`
+- **Worker Name:** `tuturuuu-marketing` (production); the staging candidate
+  has its own name. `cloudflare/deployment-profile.mjs` selects the identity.
 - **Root Hosts:** `marketing.tuturuuu.com`
 - **Mount Hosts:** `tuturuuu.com`
 - **Base Path:** `/marketing`
