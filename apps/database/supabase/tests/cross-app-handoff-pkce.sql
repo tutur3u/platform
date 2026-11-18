@@ -1,7 +1,7 @@
 begin;
 create extension if not exists pgtap with schema extensions;
 set local search_path = public, extensions;
-select plan(20);
+select plan(22);
 -- RFC 7636 appendix B: verifier and its S256 challenge.
 \set verifier 'dBjftJeZ4CVP-mB92K27uhbUJU1p1r_wW1gFWFOEjXk'
 \set challenge 'E9Melhoa2OwvFrEMTJguCHaoeK1t8URWbuGJSstw-cM'
@@ -60,5 +60,17 @@ select is((select used_at from private.cross_app_tokens where token = :'unbound'
 set local role anon;
 select is((select user_id from public.validate_cross_app_token_with_session(:'unbound', 'tasks')), '00000000-0000-4000-8000-00000000e201'::uuid, 'legacy handoff still redeems without a verifier');
 reset role;
+
+-- Defense in depth: even with the CHECK bypassed, a method without a
+-- challenge never redeems as an unbound handoff.
+set local role authenticated;
+select public.generate_cross_app_token_pkce('00000000-0000-4000-8000-00000000e201','cli','tasks',60,'{}'::jsonb,null,null) as malformed \gset
+reset role;
+alter table private.cross_app_tokens drop constraint cross_app_tokens_code_challenge_check;
+update private.cross_app_tokens set code_challenge_method = 'S256' where token = :'malformed';
+set local role anon;
+select is((select user_id from public.validate_cross_app_token_with_session(:'malformed', 'tasks')), null::uuid, 'a method without a challenge is refused at redemption');
+reset role;
+select is((select used_at from private.cross_app_tokens where token = :'malformed'), null::timestamptz, 'refusing a malformed binding consumes nothing');
 select * from finish();
 rollback;
