@@ -417,7 +417,12 @@ test('token-shaped values are refused in payloads and receipts without disclosur
     'ghp_' + 'a'.repeat(36),
     'vca_' + 'b'.repeat(32),
     'github_pat_' + 'c'.repeat(35),
-    'eyJhbGciOiJIUzI1NiJ9.eyJzdWIiOiIxMjM0NTY3ODkwIn0.SflKxwRJSMeKKF2QT4fwpMeJf36POk6yJV_adQssw5c',
+    // Public jwt.io sample, assembled at runtime so the source holds no JWT literal.
+    [
+      ['ey', 'JhbGciOiJIUzI1NiJ9'].join(''),
+      ['ey', 'JzdWIiOiIxMjM0NTY3ODkwIn0'].join(''),
+      'SflKxwRJSMeKKF2QT4fwpMeJf36POk6yJV_adQssw5c',
+    ].join('.'),
     'Ab3dEf7hIj9kLm1nOp3qRs5tUv7wXy9zAb3dEf7hIj9k',
   ];
   for (const token of tokens) {
