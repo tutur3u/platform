@@ -523,7 +523,13 @@ ttr tasks description get <task-id>
 ttr tasks description set <task-id> --file notes.md --format markdown
 ttr tasks description append <task-id> --text "Follow-up note"
 ttr tasks description edit <task-id>
+ttr tasks description history <task-id> --limit 50 --offset 0 --json
+ttr tasks description snapshot <task-id> <history-id> --json
 ```
+
+History includes the old and new description values. Use `--offset` to see
+older changes. The snapshot shows the task immediately after the selected
+change.
 
 For local conversion or debugging, use the login-free codec commands:
 

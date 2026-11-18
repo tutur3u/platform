@@ -800,7 +800,7 @@ const actionHelpTopics: Record<string, Record<string, HelpTopic>> = {
     },
     description: {
       description:
-        'Reads or mutates a task description through the dedicated TipTap/Yjs description API.',
+        'Read and edit descriptions, list changes with history [--limit n] [--offset n], or use snapshot <task-id> <history-id>.',
       examples: [
         'ttr tasks description get VHP-12',
         'ttr tasks description get VHP-12 --format yjs-base64',

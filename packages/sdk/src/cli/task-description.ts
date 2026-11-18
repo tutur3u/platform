@@ -2,7 +2,11 @@ import { spawn } from 'node:child_process';
 import { mkdtemp, readFile, rm, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
-import type { WorkspaceTaskDescriptionUpdatePayload } from '@tuturuuu/internal-api/tasks';
+import { getWorkspaceTaskSnapshot } from '@tuturuuu/internal-api/task-history';
+import {
+  getWorkspaceTaskHistory,
+  type WorkspaceTaskDescriptionUpdatePayload,
+} from '@tuturuuu/internal-api/tasks';
 import {
   createTaskDescriptionPayload,
   normalizeTaskDescriptionContent,
@@ -28,10 +32,13 @@ const DESCRIPTION_ACTIONS = new Set([
   'clear',
   'edit',
   'get',
+  'history',
   'prepend',
   'read',
+  'restore',
   'set',
   'show',
+  'snapshot',
   'write',
 ]);
 
@@ -297,6 +304,28 @@ function resolveDescriptionAction(positionals: string[]) {
   };
 }
 
+function readHistoryPageFlag(
+  flags: Record<string, FlagValue>,
+  flag: 'limit' | 'offset',
+  minimum: number
+) {
+  if (flags[flag] === undefined) return undefined;
+  const value = getFlag(flags, flag);
+  const number = Number(value);
+  if (
+    !value ||
+    !/^\d+$/.test(value) ||
+    !Number.isSafeInteger(number) ||
+    number < minimum ||
+    number > 2_147_483_647
+  ) {
+    throw new Error(
+      `--${flag} must be an integer from ${minimum} to 2147483647`
+    );
+  }
+  return number;
+}
+
 export async function runTaskDescriptionCommand({
   client,
   config,
@@ -310,6 +339,25 @@ export async function runTaskDescriptionCommand({
     taskId: explicitTaskId,
     trailingText,
   } = resolveDescriptionAction(positionals);
+  if (action === 'restore') {
+    throw new Error(
+      'Description restore is coming soon. Use history or snapshot to inspect versions.'
+    );
+  }
+  const historyId = positionals[4];
+  if (action === 'snapshot' && (!historyId || positionals.length !== 5)) {
+    throw new Error(
+      'Usage: ttr tasks description snapshot <task-id> <history-id>'
+    );
+  }
+  const page =
+    action === 'history'
+      ? {
+          limit: readHistoryPageFlag(flags, 'limit', 1),
+          offset: readHistoryPageFlag(flags, 'offset', 0),
+        }
+      : undefined;
+
   const selection = await selectTaskId(
     client,
     config,
@@ -319,6 +367,28 @@ export async function runTaskDescriptionCommand({
     explicitTaskId || getFlag(flags, 'task')
   );
   const nextConfig = selection.config;
+
+  if (action === 'history') {
+    const response = await getWorkspaceTaskHistory(
+      workspaceId,
+      selection.taskId,
+      { ...page, fieldName: 'description' },
+      client.getTaskClientOptions()
+    );
+    render(response, { json });
+    return nextConfig;
+  }
+
+  if (historyId && action === 'snapshot') {
+    const response = await getWorkspaceTaskSnapshot(
+      workspaceId,
+      selection.taskId,
+      historyId,
+      client.getTaskClientOptions()
+    );
+    render(response, { json });
+    return nextConfig;
+  }
 
   if (action === 'get') {
     const current = await client.tasks.getDescription(
