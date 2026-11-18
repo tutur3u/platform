@@ -106,6 +106,14 @@ vi.mock('@tuturuuu/utils/ai-temp-auth', () => ({
     mockValidateAiTempAuthRequest(request),
 }));
 
+// External-app registry check (external-app-bearer.test.ts); admits here.
+const mockRejectStaleExternalAppBearer = vi.fn();
+
+vi.mock('../lib/app-coordination/external-app-bearer', () => ({
+  rejectStaleExternalAppBearer: (admin: unknown, claims: unknown) =>
+    mockRejectStaleExternalAppBearer(admin, claims),
+}));
+
 import { CURRENT_USER_APP_SESSION_AUTH } from '../legacy-api-routes/v1/users/me/session-auth';
 // ---------------------------------------------------------------------------
 // Import after mocks are set up
@@ -160,6 +168,7 @@ describe('withSessionAuth', () => {
     mockCascadeBackendRateLimit.mockResolvedValue(null);
     mockIsBackendRateLimitError.mockReturnValue(false);
     mockValidateAiTempAuthRequest.mockResolvedValue({ status: 'missing' });
+    mockRejectStaleExternalAppBearer.mockResolvedValue(null);
     mockBuildAbuseRiskSubjects.mockImplementation((input: unknown) => {
       const { headers, userId } = input as {
         headers?: Headers;
@@ -1186,30 +1195,32 @@ describe('withSessionAuth', () => {
     expect(mockCreateAdminClient).not.toHaveBeenCalled();
   });
 
-  it('should accept scoped external app bearer auth when any configured app-token policy matches', async () => {
+  function externalAppProfileRequest(scope: string) {
     const { token } = createAppCoordinationToken({
       email: 'operator@example.com',
       originApp: 'web',
-      scopes: ['users:profile:write'],
+      scopes: [scope],
       targetApp: 'external-app',
       userId: 'external-user-1',
     });
-    const request = new Request(
-      'http://localhost:3000/api/v1/users/me/profile',
-      {
-        headers: {
-          authorization: `Bearer ${token}`,
-        },
-        method: 'PATCH',
-      }
-    ) as unknown as NextRequest;
+    return new Request('http://localhost:3000/api/v1/users/me/profile', {
+      headers: { authorization: `Bearer ${token}` },
+      method: 'PATCH',
+    }) as unknown as NextRequest;
+  }
 
-    const result = await resolveSessionAuthContext(request, {
-      allowAppSessionAuth: [
-        CURRENT_USER_APP_SESSION_AUTH,
-        { requiredScope: 'users:profile:write' },
-      ],
-    });
+  const profileWriteAppSessionAuth = {
+    allowAppSessionAuth: [
+      CURRENT_USER_APP_SESSION_AUTH,
+      { requiredScope: 'users:profile:write' },
+    ],
+  };
+
+  it('should accept scoped external app bearer auth when any configured app-token policy matches', async () => {
+    const result = await resolveSessionAuthContext(
+      externalAppProfileRequest('users:profile:write'),
+      profileWriteAppSessionAuth
+    );
 
     expect(result.ok).toBe(true);
     if (result.ok) {
@@ -1220,32 +1231,17 @@ describe('withSessionAuth', () => {
     expect(mockGetUser).not.toHaveBeenCalled();
     expect(mockCreateClient).not.toHaveBeenCalled();
     expect(mockCreateAdminClient).toHaveBeenCalledWith({ noCookie: true });
+    expect(mockRejectStaleExternalAppBearer).toHaveBeenCalledWith(
+      mockAdminClient,
+      expect.objectContaining({ target_app: 'external-app' })
+    );
   });
 
   it('should reject external app bearer auth when none of the configured app-token policies match', async () => {
-    const { token } = createAppCoordinationToken({
-      email: 'operator@example.com',
-      originApp: 'web',
-      scopes: ['users:profile:read'],
-      targetApp: 'external-app',
-      userId: 'external-user-1',
-    });
-    const request = new Request(
-      'http://localhost:3000/api/v1/users/me/profile',
-      {
-        headers: {
-          authorization: `Bearer ${token}`,
-        },
-        method: 'PATCH',
-      }
-    ) as unknown as NextRequest;
-
-    const result = await resolveSessionAuthContext(request, {
-      allowAppSessionAuth: [
-        CURRENT_USER_APP_SESSION_AUTH,
-        { requiredScope: 'users:profile:write' },
-      ],
-    });
+    const result = await resolveSessionAuthContext(
+      externalAppProfileRequest('users:profile:read'),
+      profileWriteAppSessionAuth
+    );
 
     expect(result.ok).toBe(false);
     if (!result.ok) {
