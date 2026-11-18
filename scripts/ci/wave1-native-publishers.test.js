@@ -202,7 +202,7 @@ test('production policy CLI reports admission without loading artifact or provid
     [
       'scripts/ci/wave1-native-publish.mjs',
       'policy',
-      'mail',
+      'finance',
       'production',
       sha,
     ],

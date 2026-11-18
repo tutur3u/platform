@@ -7,7 +7,10 @@ import {
 } from 'node:fs';
 import { createRequire } from 'node:module';
 import { join } from 'node:path';
-import { productionPublicationPolicy } from '../../tuturuuu.ci.ts';
+import {
+  productionAppExclusions,
+  productionPublicationPolicy,
+} from '../../tuturuuu.ci.ts';
 import { artifactDigest, prepare } from './wave1-native-artifact.mjs';
 import { assertRouteFree, main } from './wave1-native-production.mjs';
 
@@ -25,6 +28,8 @@ const publicInputs = {
 
 export function setup(t, { admitted = true } = {}) {
   const previous = productionPublicationPolicy.calendar;
+  const previousExclusion = productionAppExclusions.calendar;
+  delete productionAppExclusions.calendar;
   if (admitted)
     productionPublicationPolicy.calendar = {
       state: 'admitted',
@@ -38,6 +43,8 @@ export function setup(t, { admitted = true } = {}) {
     };
   t.after(() => {
     productionPublicationPolicy.calendar = previous;
+    if (previousExclusion !== undefined)
+      productionAppExclusions.calendar = previousExclusion;
   });
   for (const [key, value] of Object.entries(publicInputs)) {
     const prior = process.env[key];
