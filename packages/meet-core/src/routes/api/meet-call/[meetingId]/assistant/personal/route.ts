@@ -27,6 +27,20 @@ export async function POST(
 ) {
   const { meetingId } = await params;
   return roomRoute(request, meetingId, async (access) => {
+    const body = await readPersonalChatBody(request);
+    if (
+      body &&
+      typeof body === 'object' &&
+      ('audience' in body || 'body' in body)
+    )
+      throw new MeetCallAccessError(
+        403,
+        'Room AI chat is unavailable. Use Private Mira after choosing Continue.'
+      );
+    const payload = input.safeParse(body);
+    if (!payload.success)
+      throw new MeetCallAccessError(400, 'Invalid private Mira message');
+
     const cloudflare = await getCloudflareContext({ async: true }).catch(
       () => null
     );
@@ -66,7 +80,6 @@ export async function POST(
         'MIRA_PROVIDER_UNAVAILABLE'
       );
 
-    const payload = input.parse(await readPersonalChatBody(request));
     async function checkConsent() {
       const current = await requirePrivateMiraChoice(access);
       if (current.revision !== consent.revision)
@@ -78,7 +91,7 @@ export async function POST(
     }
     const { requestPersonalMeetChat } =
       await import('../../../../../../features/call/server/personal-chat-request');
-    const answer = await requestPersonalMeetChat(access, payload, {
+    const answer = await requestPersonalMeetChat(access, payload.data, {
       apiKey: env.GOOGLE_GENERATIVE_AI_API_KEY,
       checkConsent,
     });

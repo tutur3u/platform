@@ -1,10 +1,7 @@
 'use client';
 import { useMutation } from '@tanstack/react-query';
 import { LockKeyhole, Send, Share2 } from '@tuturuuu/icons';
-import {
-  askPersonalMeetAssistant,
-  InternalApiError,
-} from '@tuturuuu/internal-api';
+import { askPersonalMeetAssistant } from '@tuturuuu/internal-api';
 import { Button } from '@tuturuuu/ui/button';
 import {
   Dialog,
@@ -30,8 +27,11 @@ const privateFailureKeys = {
 } as const;
 
 function personalFailureKey(error: unknown) {
-  const code = error instanceof InternalApiError ? error.code : undefined;
-  return code && Object.hasOwn(privateFailureKeys, code)
+  const code =
+    error && typeof error === 'object' && 'code' in error
+      ? error.code
+      : undefined;
+  return typeof code === 'string' && Object.hasOwn(privateFailureKeys, code)
     ? privateFailureKeys[code as keyof typeof privateFailureKeys]
     : 'assistant_failed';
 }
@@ -56,8 +56,7 @@ export function PersonalChat({
   const ask = useMutation({
     onError: (error) => {
       // Only a confirmed terminal receipt can safely use a new request ID.
-      if (error instanceof InternalApiError && error.status === 422)
-        retry.current = null;
+      if ('status' in error && error.status === 422) retry.current = null;
     },
     mutationFn: async (question: string) => {
       if (retry.current?.question !== question)
