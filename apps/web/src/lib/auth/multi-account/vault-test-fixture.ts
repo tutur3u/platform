@@ -46,10 +46,12 @@ export const store: {
   devices: DeviceRow[];
   profiles: ProfileRow[];
   sessions: SessionRow[];
+  vaultConfigured: boolean;
 } = {
   devices: [],
   profiles: [],
   sessions: [],
+  vaultConfigured: true,
 };
 
 const TABLES: Record<string, () => Row[]> = {
@@ -249,10 +251,18 @@ vi.mock('./crypto', () => ({
   createDeviceCookieValue: (deviceId: string, secret: string) =>
     `${deviceId}.${secret}`,
   createDeviceSecret: () => 'secret-new',
-  decryptSession: (ciphertext: string) => JSON.parse(ciphertext),
+  decryptSession: (ciphertext: string, userId: string) => {
+    if (!ciphertext.startsWith('v2.')) return null;
+    try {
+      const session = JSON.parse(ciphertext.slice(3));
+      return session.user.id === userId ? session : null;
+    } catch {
+      return null;
+    }
+  },
   encryptSession: (session: unknown) => {
     encryptCalls.n += 1;
-    return JSON.stringify(session);
+    return `v2.${JSON.stringify(session)}`;
   },
   getAllDeviceCookieClearTargets: () => [],
   getDeviceCookieName: () => 'device-cookie',
@@ -265,6 +275,7 @@ vi.mock('./crypto', () => ({
     const [deviceId, secret] = value.split('.');
     return deviceId && secret ? { deviceId, secret } : null;
   },
+  resolveMultiAccountSecret: () => (store.vaultConfigured ? 'fixture' : null),
 }));
 
 export function session(userId: string, refreshToken: string) {
@@ -286,7 +297,7 @@ export function sessionRow(userId: string, refreshToken: string): SessionRow {
     last_active_at: NOW,
     last_route: `/${userId}-workspace`,
     last_workspace_id: `${userId}-workspace`,
-    session_ciphertext: JSON.stringify(session(userId, refreshToken)),
+    session_ciphertext: `v2.${JSON.stringify(session(userId, refreshToken))}`,
     updated_at: NOW,
     user_id: userId,
   };
@@ -294,7 +305,7 @@ export function sessionRow(userId: string, refreshToken: string): SessionRow {
 
 export function storedRefreshToken(userId: string) {
   const row = store.sessions.find((entry) => entry.user_id === userId);
-  return row ? JSON.parse(row.session_ciphertext).refresh_token : null;
+  return row ? JSON.parse(row.session_ciphertext.slice(3)).refresh_token : null;
 }
 
 export function request(origin: string | null = new URL(BASE_URL).origin) {

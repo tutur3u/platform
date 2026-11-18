@@ -51,6 +51,7 @@ export async function POST(request: NextRequest) {
         return accountCorsJson(request, result, { status: 409 });
       }
 
+      const status = result.errorCode === 'device_unavailable' ? 503 : 401;
       const diagnosticCode = createAuthDiagnosticCode('account_save');
       logAuthDiagnostic({
         authMethod: 'multi-account',
@@ -65,19 +66,17 @@ export async function POST(request: NextRequest) {
         ),
         route: '/api/v1/auth/accounts/current',
         stage: 'account_save',
-        status: 401,
+        status,
       });
 
       return accountCorsJson(
         request,
         { ...result, diagnosticCode },
-        { status: 401 }
+        { status }
       );
     }
 
-    return accountCorsJson(request, result, {
-      status: result.success ? 200 : 401,
-    });
+    return accountCorsJson(request, result);
   } catch (error) {
     unstable_rethrow(error);
 

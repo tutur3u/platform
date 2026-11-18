@@ -99,13 +99,13 @@ export async function switchStoredAccount({
     const parsedTarget = targetSchema.safeParse(observedTarget.data);
     if (observedDevice.error || observedTarget.error || !parsedDevice.success)
       return conflict();
-    if (observedTarget.data === null)
-      return {
-        ...(await listAccounts(device)),
-        success: false,
-        requiresReauth: true,
-        error: 'Account not found',
-      };
+    const accountNotFound = async (): Promise<WebAccountMutationResponse> => ({
+      ...(await listAccounts(device)),
+      success: false,
+      requiresReauth: true,
+      error: 'Account not found',
+    });
+    if (observedTarget.data === null) return await accountNotFound();
     if (!parsedTarget.success) return conflict();
     const d = parsedDevice.data,
       row = parsedTarget.data;
@@ -116,6 +116,9 @@ export async function switchStoredAccount({
       row.user_id !== accountId
     )
       return conflict();
+    const targetSession = decryptSession(row.session_ciphertext, row.user_id);
+    if (!targetSession) return await accountNotFound();
+
     const auth = await createAccountSwitchAuth(request);
     const outgoing = await auth.readOutgoing();
     if (
@@ -133,8 +136,10 @@ export async function switchStoredAccount({
         .object({ session_ciphertext: z.string(), updated_at: z.string() })
         .safeParse(prior.data);
       if (prior.error) return conflict();
-      if (parsed.success) {
-        const stored = decryptSession(parsed.data.session_ciphertext);
+      const stored = parsed.success
+        ? decryptSession(parsed.data.session_ciphertext, outgoing.user.id)
+        : null;
+      if (parsed.success && stored) {
         const route =
           payload.currentRoute && isWebOriginRequest(request, BASE_URL)
             ? normalizePersistableMultiAccountRoute(
@@ -170,10 +175,7 @@ export async function switchStoredAccount({
         if (saved.error || saved.data?.length !== 1) return conflict();
       }
     }
-    const stored =
-      outgoing?.user.id === accountId
-        ? outgoing
-        : decryptSession(row.session_ciphertext);
+    const stored = outgoing?.user.id === accountId ? outgoing : targetSession;
     const { data, error } = await auth.refreshTarget({
       access_token: stored.access_token,
       refresh_token: stored.refresh_token,

@@ -17,6 +17,7 @@ import {
 } from './crypto';
 
 const ORIGINAL_ENV = { ...process.env };
+const DEDICATED_SECRET = 'test-vault-secret-'.repeat(2);
 
 const session = {
   access_token: 'access-token',
@@ -41,7 +42,7 @@ describe('web multi-account storage size', () => {
     process.env = {
       ...ORIGINAL_ENV,
       SUPABASE_SECRET_KEY: 'supabase-secret',
-      WEB_MULTI_ACCOUNT_SESSION_SECRET: 'synthetic-web-secret',
+      WEB_MULTI_ACCOUNT_SESSION_SECRET: DEDICATED_SECRET,
     };
   });
 
@@ -72,7 +73,7 @@ describe('web multi-account storage size', () => {
     expect(ciphertexts.join('').length).toBeGreaterThan(4096);
     for (const ciphertext of ciphertexts) {
       expect(ciphertext).not.toContain('synthetic-access');
-      expect(ciphertext.startsWith('v1.')).toBe(true);
+      expect(ciphertext.startsWith('v2.')).toBe(true);
     }
   });
 });
@@ -83,7 +84,7 @@ describe('web multi-account crypto', () => {
     process.env = {
       ...ORIGINAL_ENV,
       SUPABASE_SECRET_KEY: 'supabase-secret',
-      WEB_MULTI_ACCOUNT_SESSION_SECRET: 'web-secret',
+      WEB_MULTI_ACCOUNT_SESSION_SECRET: DEDICATED_SECRET,
     };
   });
 
@@ -91,43 +92,68 @@ describe('web multi-account crypto', () => {
     process.env = ORIGINAL_ENV;
   });
 
-  it('uses the dedicated web multi-account secret before Supabase service keys', () => {
+  it('uses the dedicated web multi-account secret when Supabase service keys are present', () => {
     expect(
       resolveMultiAccountSecret({
         SUPABASE_SECRET_KEY: 'supabase-secret',
         SUPABASE_SERVICE_KEY: 'service-key',
         SUPABASE_SERVICE_ROLE_KEY: 'service-role-key',
-        WEB_MULTI_ACCOUNT_SESSION_SECRET: 'web-secret',
+        WEB_MULTI_ACCOUNT_SESSION_SECRET: DEDICATED_SECRET,
       })
-    ).toBe('web-secret');
+    ).toBe(DEDICATED_SECRET);
   });
 
-  it('falls back through Supabase service secrets when the dedicated secret is missing', () => {
+  it.each([undefined, '', 'a'.repeat(31)])(
+    'rejects a missing or short dedicated secret (%s) even if service keys exist',
+    (value) => {
+      if (value === undefined)
+        delete process.env.WEB_MULTI_ACCOUNT_SESSION_SECRET;
+      else process.env.WEB_MULTI_ACCOUNT_SESSION_SECRET = value;
+      process.env.SUPABASE_SECRET_KEY = 'service-fixture-'.repeat(3);
+
+      expect(resolveMultiAccountSecret()).toBeNull();
+      expect(() => encryptSession(session)).toThrow(
+        'WEB_MULTI_ACCOUNT_SESSION_SECRET is required and must be at least 32 bytes'
+      );
+    }
+  );
+
+  it('enforces the minimum using UTF-8 bytes', () => {
+    const secret = 'é'.repeat(16);
+    expect(
+      resolveMultiAccountSecret({ WEB_MULTI_ACCOUNT_SESSION_SECRET: secret })
+    ).toBe(secret);
     expect(
       resolveMultiAccountSecret({
-        SUPABASE_SECRET_KEY: 'supabase-secret',
-        SUPABASE_SERVICE_KEY: 'service-key',
-        SUPABASE_SERVICE_ROLE_KEY: 'service-role-key',
+        WEB_MULTI_ACCOUNT_SESSION_SECRET: 'é'.repeat(15),
       })
-    ).toBe('supabase-secret');
+    ).toBeNull();
+  });
+
+  it('treats legacy versions, corrupt ciphertext and a different account as absent', () => {
+    const ciphertext = encryptSession(session);
+    const [version, iv, , encrypted] = ciphertext.split('.');
     expect(
-      resolveMultiAccountSecret({
-        SUPABASE_SERVICE_KEY: 'service-key',
-        SUPABASE_SERVICE_ROLE_KEY: 'service-role-key',
-      })
-    ).toBe('service-role-key');
+      decryptSession(ciphertext.replace(/^v2\./u, 'v1.'), session.user.id)
+    ).toBeNull();
     expect(
-      resolveMultiAccountSecret({
-        SUPABASE_SERVICE_KEY: 'service-key',
-      })
-    ).toBe('service-key');
+      decryptSession(
+        `${version}.${iv}.aW52YWxpZA.${encrypted}`,
+        session.user.id
+      )
+    ).toBeNull();
+    expect(decryptSession(ciphertext, 'different-user')).toBeNull();
+    process.env.WEB_MULTI_ACCOUNT_SESSION_SECRET = 'different-test-key-'.repeat(
+      2
+    );
+    expect(decryptSession(ciphertext, session.user.id)).toBeNull();
   });
 
   it('round-trips sessions without storing raw refresh tokens in the ciphertext', () => {
     const encrypted = encryptSession(session);
 
     expect(encrypted).not.toContain(session.refresh_token);
-    expect(decryptSession(encrypted)).toMatchObject({
+    expect(decryptSession(encrypted, session.user.id)).toMatchObject({
       refresh_token: session.refresh_token,
       user: {
         email: 'local@tuturuuu.com',

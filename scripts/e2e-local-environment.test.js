@@ -193,6 +193,7 @@ test('createLocalE2EEnvFileContent is pinned to local Docker E2E values', () => 
   assert.match(content, new RegExp(`PORTLESS_URL=${LOCAL_E2E_BASE_URL}`));
   assert.match(content, new RegExp(`PORTLESS_PORT=${LOCAL_E2E_PORTLESS_PORT}`));
   assert.match(content, new RegExp(`WEB_APP_URL=${LOCAL_E2E_BASE_URL}`));
+  assert.match(content, /^WEB_MULTI_ACCOUNT_SESSION_SECRET=.{32,}$/m);
   assert.match(
     content,
     new RegExp(`NEXT_PUBLIC_SUPABASE_URL=${LOCAL_E2E_SUPABASE_URL}`)

@@ -100,6 +100,35 @@ describe('multi-account route diagnostics', () => {
     expect(mocks.logAuthDiagnostic).not.toHaveBeenCalled();
   });
 
+  it('returns 503 when the saved-account vault is disabled', async () => {
+    mocks.saveCurrentWebAccount.mockResolvedValue({
+      accounts: [],
+      activeAccountId: null,
+      error: 'device_unavailable',
+      errorCode: 'device_unavailable',
+      success: false,
+    });
+
+    const { POST } = await import('@/app/api/v1/auth/accounts/current/route');
+    const response = await POST(
+      new NextRequest('https://tuturuuu.com/api/v1/auth/accounts/current', {
+        body: '{}',
+        headers: {
+          origin: 'https://tuturuuu.com',
+          'content-type': 'application/json',
+        },
+        method: 'POST',
+      })
+    );
+
+    expect(response.status).toBe(503);
+    expect(response.headers.get('cache-control')).toBe('private, no-store');
+    await expect(response.json()).resolves.toMatchObject({
+      errorCode: 'device_unavailable',
+      success: false,
+    });
+  });
+
   it('logs and returns a visible diagnostic code for account-switch misses', async () => {
     mocks.switchWebAccount.mockResolvedValue({
       accounts: [],

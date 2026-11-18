@@ -84,6 +84,24 @@ decoded filesystem hit is not a handler dispatch: route metadata and the render
 match must also select the endpoint. This probe does not replace a built Web
 artifact or hosting-provider routing acceptance check.
 
+## Saved-account vault key rollout
+
+The vault requires a dedicated `WEB_MULTI_ACCOUNT_SESSION_SECRET` of at least
+32 bytes. If the setting is missing or too short, saved-account operations are
+disabled and ordinary sign-out remains available. The Web vault writes v2
+entries. Legacy entries and entries that cannot be decrypted are treated as
+absent. Users sign in again once to save those accounts. The vault never tries
+the service key for decryption.
+
+Before deploying this change, provision the dedicated secret in production
+under the approved secret-custody process. The predecessor uses the dedicated
+secret as soon as it receives it, so coordinate its activation with the
+approved re-link window. After deployment, verify an existing device can sign
+in again, save an account and switch successfully. Verify a new device can
+also save an account. Keep the rollout open for seven days of monitoring.
+Source regression coverage lives in the multi-account `crypto.test.ts` and
+`vault-switch.test.ts` suites.
+
 ## Further reading
 
 Read the [security overview](/platform/architecture/system-design/security-architecture) and [one-origin session design](/platform/architecture/one-origin-security#session-cookies). Authentication does not replace feature-specific consent or the [data protection standard](/platform/data-protection-standard).

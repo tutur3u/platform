@@ -85,7 +85,10 @@ beforeEach(() => {
     vi.stubEnv(key, undefined);
   vi.stubEnv('NEXT_PUBLIC_SUPABASE_URL', 'https://test.supabase.co');
   vi.stubEnv('NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY', 'test-key');
-  vi.stubEnv('WEB_MULTI_ACCOUNT_SESSION_SECRET', 'synthetic-test-secret');
+  vi.stubEnv(
+    'WEB_MULTI_ACCOUNT_SESSION_SECRET',
+    'test-vault-secret-'.repeat(2)
+  );
   state.headers = new Headers();
   state.cookies = [
     {

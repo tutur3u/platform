@@ -8,6 +8,7 @@ import {
   sessionRow,
   request,
   cookieWrites,
+  storedRefreshToken,
 } from './vault-test-fixture';
 import { switchWebAccount, logoutCurrentWebAccount } from './vault';
 
@@ -80,9 +81,7 @@ it('revocation during refresh retains updated target but emits no cookies', asyn
     errorCode: 'switch_conflict',
   });
   expect(cookieWrites).toEqual([]);
-  expect(JSON.parse(store.sessions[1]!.session_ciphertext).refresh_token).toBe(
-    'fresh-b'
-  );
+  expect(storedRefreshToken('user-b')).toBe('fresh-b');
 });
 it('removed target cannot be resurrected during refresh', async () => {
   auth.setSession.mockImplementation(async () => {

@@ -1,5 +1,3 @@
-import type { SupabaseSession } from '@tuturuuu/supabase/next/user';
-
 export const WEB_ACCOUNT_DEVICE_COOKIE_NAME =
   '__Host-tuturuuu_web_account_device';
 export const LEGACY_WEB_ACCOUNT_DEVICE_COOKIE_NAME =
@@ -61,13 +59,6 @@ export interface SwitchAccountPayload {
 export interface UpdateCurrentAccountPayload {
   route?: string | null;
   workspaceId?: string | null;
-}
-
-export interface StoredWebAccountSession {
-  email: string | null;
-  metadata: WebAccountMetadata;
-  session: SupabaseSession;
-  userId: string;
 }
 
 export interface WebAccountDeviceCredential {

@@ -17,7 +17,7 @@ import {
 } from './types';
 
 const COOKIE_VERSION = 'v1';
-const SESSION_CIPHER_VERSION = 'v1';
+const SESSION_CIPHER_VERSION = 'v2';
 const COOKIE_MAX_AGE_SECONDS = 60 * 60 * 24 * 400;
 
 type DeviceCookieOptions = {
@@ -32,13 +32,8 @@ type DeviceCookieOptions = {
 export function resolveMultiAccountSecret(
   env: Partial<NodeJS.ProcessEnv> = process.env
 ) {
-  return (
-    env.WEB_MULTI_ACCOUNT_SESSION_SECRET?.trim() ||
-    env.SUPABASE_SECRET_KEY?.trim() ||
-    env.SUPABASE_SERVICE_ROLE_KEY?.trim() ||
-    env.SUPABASE_SERVICE_KEY?.trim() ||
-    null
-  );
+  const secret = env.WEB_MULTI_ACCOUNT_SESSION_SECRET?.trim();
+  return secret && Buffer.byteLength(secret, 'utf8') >= 32 ? secret : null;
 }
 
 function requireMultiAccountSecret() {
@@ -46,16 +41,16 @@ function requireMultiAccountSecret() {
 
   if (!secret) {
     throw new Error(
-      'Missing WEB_MULTI_ACCOUNT_SESSION_SECRET or Supabase service secret'
+      'WEB_MULTI_ACCOUNT_SESSION_SECRET is required and must be at least 32 bytes'
     );
   }
 
   return secret;
 }
 
-function deriveKey(purpose: string) {
+function deriveKey(purpose: string, version = 'v1') {
   return createHmac('sha256', requireMultiAccountSecret())
-    .update(`tuturuuu:web-multi-account:${purpose}:v1`)
+    .update(`tuturuuu:web-multi-account:${purpose}:${version}`)
     .digest();
 }
 
@@ -132,7 +127,7 @@ export function encryptSession(session: SupabaseSession) {
   const iv = randomBytes(12);
   const cipher = createCipheriv(
     'aes-256-gcm',
-    deriveKey('session-encryption'),
+    deriveKey('session-encryption', SESSION_CIPHER_VERSION),
     iv
   );
   const ciphertext = Buffer.concat([
@@ -149,7 +144,7 @@ export function encryptSession(session: SupabaseSession) {
   ].join('.');
 }
 
-export function decryptSession(ciphertext: string) {
+export function decryptSession(ciphertext: string, userId: string) {
   const [version, iv, tag, encrypted, ...extra] = ciphertext.split('.');
 
   if (
@@ -159,22 +154,24 @@ export function decryptSession(ciphertext: string) {
     !tag ||
     !encrypted
   ) {
-    throw new Error('Invalid multi-account session payload');
+    return null;
   }
 
-  const decipher = createDecipheriv(
-    'aes-256-gcm',
-    deriveKey('session-encryption'),
-    fromBase64Url(iv)
-  );
-  decipher.setAuthTag(fromBase64Url(tag));
-
-  const plaintext = Buffer.concat([
-    decipher.update(fromBase64Url(encrypted)),
-    decipher.final(),
-  ]).toString('utf8');
-
-  return JSON.parse(plaintext) as SupabaseSession;
+  const key = deriveKey('session-encryption', SESSION_CIPHER_VERSION);
+  try {
+    const decipher = createDecipheriv('aes-256-gcm', key, fromBase64Url(iv), {
+      authTagLength: 16,
+    });
+    decipher.setAuthTag(fromBase64Url(tag));
+    const plaintext = Buffer.concat([
+      decipher.update(fromBase64Url(encrypted)),
+      decipher.final(),
+    ]);
+    const session = JSON.parse(plaintext.toString('utf8')) as SupabaseSession;
+    return session?.user?.id === userId ? session : null;
+  } catch {
+    return null;
+  }
 }
 
 function extractForwardedValue(value: string | null) {

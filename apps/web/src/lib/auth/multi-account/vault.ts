@@ -13,6 +13,7 @@ import {
   decryptSession,
   encryptSession,
   hashDeviceSecret,
+  resolveMultiAccountSecret,
 } from './crypto';
 import {
   clearDeviceCookie,
@@ -27,7 +28,6 @@ import {
 import {
   MAX_WEB_ACCOUNT_SESSIONS,
   type SaveCurrentAccountPayload,
-  type StoredWebAccountSession,
   type SwitchAccountPayload,
   type UpdateCurrentAccountPayload,
   type WebAccountDevice,
@@ -213,7 +213,10 @@ async function resolveDevice(
   request: Pick<Request, 'headers' | 'url'>,
   options: { create: boolean }
 ): Promise<WebAccountDevice | null> {
+  if (!resolveMultiAccountSecret()) return null;
+
   const credentials = await getDeviceCredentialCandidates(request);
+  if (credentials.length === 0 && !options.create) return null;
   const db = await getPrivateDb();
 
   for (const credential of credentials) {
@@ -274,7 +277,10 @@ async function getAccountRows(deviceId: string) {
     throw new Error(error.message);
   }
 
-  return (data ?? []) as AccountRow[];
+  const rows: AccountRow[] = data ?? [];
+  return rows.filter((row) =>
+    decryptSession(row.session_ciphertext, row.user_id)
+  );
 }
 
 async function listAccountsForDevice(
@@ -306,35 +312,6 @@ export async function listWebAccounts(
   return listAccountsForDevice(device);
 }
 
-async function getStoredSession(deviceId: string, accountId: string) {
-  const db = await getPrivateDb();
-  const { data, error } = await db
-    .from('web_account_sessions')
-    .select(
-      'user_id, email, display_name, avatar_url, session_ciphertext, last_workspace_id, last_route, created_at, last_active_at'
-    )
-    .eq('device_id', deviceId)
-    .eq('user_id', accountId)
-    .maybeSingle();
-
-  if (error) {
-    throw new Error(error.message);
-  }
-
-  const row = data as AccountRow | null;
-
-  if (!row) {
-    return null;
-  }
-
-  return {
-    email: row.email,
-    metadata: rowToAccountSummary(row).metadata,
-    session: decryptSession(row.session_ciphertext),
-    userId: row.user_id,
-  } satisfies StoredWebAccountSession;
-}
-
 async function updateDeviceActiveUser(
   deviceId: string,
   activeUserId: string | null
@@ -357,27 +334,17 @@ async function upsertStoredSession(
 ): Promise<{ accountId: string } | { limit: true }> {
   const db = await getPrivateDb();
   const userId = session.user.id;
-  const existing = await getStoredSession(deviceId, userId);
+  const accounts = await getAccountRows(deviceId);
+  const existing = accounts.find((row) => row.user_id === userId);
   const route =
     normalizePersistableMultiAccountRoute(payload.route, request, null) ??
     normalizePersistableMultiAccountRoute(payload.returnUrl, request, null) ??
-    existing?.metadata.lastRoute ??
+    existing?.last_route ??
     '/';
   const workspaceId = getWorkspaceIdFromRoute(route);
 
-  if (!existing) {
-    const { count, error: countError } = await db
-      .from('web_account_sessions')
-      .select('user_id', { count: 'exact', head: true })
-      .eq('device_id', deviceId);
-
-    if (countError) {
-      throw new Error(countError.message);
-    }
-
-    if ((count ?? 0) >= MAX_WEB_ACCOUNT_SESSIONS) {
-      return { limit: true };
-    }
+  if (!existing && accounts.length >= MAX_WEB_ACCOUNT_SESSIONS) {
+    return { limit: true };
   }
 
   const now = new Date().toISOString();
@@ -412,6 +379,8 @@ export async function saveCurrentWebAccount(
   request: Request,
   payload: SaveCurrentAccountPayload = {}
 ): Promise<WebAccountMutationResponse> {
+  if (!resolveMultiAccountSecret()) return unavailableDevice();
+
   const supabase = await createClient(request);
   const {
     data: { session },
@@ -429,14 +398,7 @@ export async function saveCurrentWebAccount(
 
   const device = await resolveDevice(request, { create: true });
 
-  if (!device) {
-    return {
-      ...(await listAccountsForDevice(null)),
-      error: 'device_unavailable',
-      errorCode: 'device_unavailable',
-      success: false,
-    };
-  }
+  if (!device) return unavailableDevice();
 
   const saved = await upsertStoredSession(
     request,
@@ -465,6 +427,16 @@ export async function saveCurrentWebAccount(
     accountId,
     redirectTo: resolveMultiAccountAddRedirect(payload.returnUrl, request),
     success: true,
+  };
+}
+
+function unavailableDevice(): WebAccountMutationResponse {
+  return {
+    accounts: [],
+    activeAccountId: null,
+    error: 'device_unavailable',
+    errorCode: 'device_unavailable',
+    success: false,
   };
 }
 
@@ -500,6 +472,7 @@ export async function switchWebAccount(
     return {
       ...(await listAccountsForDevice(null)),
       error: 'No account device found',
+      requiresReauth: true,
       success: false,
     } as WebAccountMutationResponse & { error: string };
   }
@@ -527,6 +500,9 @@ export async function updateCurrentWebAccount(
   if (!route && !workspaceId) {
     return listAccountsForDevice(device);
   }
+
+  const accounts = await listAccountsForDevice(device);
+  if (!accounts.activeAccountId) return accounts;
 
   const db = await getPrivateDb();
   const updates: {
@@ -567,6 +543,19 @@ export async function removeWebAccount(
     };
   }
 
+  const accounts = await listAccountsForDevice(device);
+  if (!accounts.accounts.some((account) => account.id === accountId)) {
+    return { ...accounts, success: true };
+  }
+
+  return removeAccountForDevice(request, device, accountId);
+}
+
+async function removeAccountForDevice(
+  request: Request,
+  device: WebAccountDevice,
+  accountId: string
+): Promise<WebAccountMutationResponse> {
   const db = await getPrivateDb();
   const removed = await db
     .from('web_account_sessions')
@@ -629,19 +618,21 @@ export async function logoutCurrentWebAccount(
   request: Request
 ): Promise<WebAccountMutationResponse> {
   const device = await resolveDevice(request, { create: false });
-
-  if (!device?.activeUserId) {
-    const supabase = await createClient(request);
-    await revokeCurrentUserSignOutCredentials(supabase);
-    await supabase.auth.signOut({ scope: 'local' });
-    return {
-      ...(await listAccountsForDevice(device)),
-      redirectTo: '/login',
-      success: true,
-    };
+  if (device?.activeUserId) {
+    const rows = await getAccountRows(device.deviceId).catch(() => []);
+    if (rows.some((row) => row.user_id === device.activeUserId)) {
+      return removeAccountForDevice(request, device, device.activeUserId);
+    }
   }
 
-  return removeWebAccount(request, device.activeUserId);
+  const supabase = await createClient(request);
+  await revokeCurrentUserSignOutCredentials(supabase);
+  await supabase.auth.signOut({ scope: 'local' });
+  return {
+    ...(await listAccountsForDevice(device)),
+    redirectTo: '/login',
+    success: true,
+  };
 }
 
 export async function logoutAllWebAccounts(
@@ -656,8 +647,8 @@ export async function logoutAllWebAccounts(
   if (device) {
     const db = await getPrivateDb();
     await db.from('web_account_devices').delete().eq('id', device.deviceId);
-    await clearDeviceCookie(request);
   }
+  await clearDeviceCookie(request);
 
   return {
     accounts: [],

@@ -1,4 +1,4 @@
-import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import {
   NOW,
   rpc,
@@ -192,6 +192,53 @@ describe('switchWebAccount', () => {
     });
     expect(auth.setSession).not.toHaveBeenCalled();
   });
+
+  it.each(['v1.legacy-entry', 'v2.corrupt-entry'])(
+    'lists and switches as if %s were absent, including for the active user',
+    async (ciphertext) => {
+      const active = sessionRow('user-a', 'refresh-a-stored');
+      active.session_ciphertext = ciphertext;
+      store.sessions = [active, sessionRow('user-b', 'refresh-b-stored')];
+      auth.getSession.mockResolvedValue({
+        data: { session: session('user-a', 'refresh-a-rotated') },
+      });
+
+      const { listWebAccounts, switchWebAccount } = await import('./vault');
+      const listed = await listWebAccounts(request());
+      expect(listed.accounts.map((account) => account.id)).toEqual(['user-b']);
+      expect(listed.activeAccountId).toBeNull();
+
+      const result = await switchWebAccount(request(), 'user-a');
+      expect(result).toMatchObject({
+        accounts: listed.accounts,
+        activeAccountId: null,
+        requiresReauth: true,
+        success: false,
+      });
+      expect(auth.getSession).not.toHaveBeenCalled();
+      expect(auth.setSession).not.toHaveBeenCalled();
+    }
+  );
+
+  it('can switch to a valid account when the outgoing entry is unreadable', async () => {
+    const outgoing = sessionRow('user-a', 'refresh-a-stored');
+    outgoing.session_ciphertext = 'v1.legacy-entry';
+    store.sessions = [outgoing, sessionRow('user-b', 'refresh-b-stored')];
+    auth.getSession.mockResolvedValue({
+      data: { session: session('user-a', 'refresh-a-rotated') },
+    });
+    auth.setSession.mockResolvedValue({
+      data: { session: session('user-b', 'refresh-b-fresh') },
+      error: null,
+    });
+
+    const { switchWebAccount } = await import('./vault');
+    expect(await switchWebAccount(request(), 'user-b')).toMatchObject({
+      accountId: 'user-b',
+      success: true,
+    });
+    expect(outgoing.session_ciphertext).toBe('v1.legacy-entry');
+  });
 });
 
 describe('saveCurrentWebAccount account cap', () => {
@@ -243,6 +290,23 @@ describe('saveCurrentWebAccount account cap', () => {
     expect(store.sessions.map((row) => row.user_id)).not.toContain('user-11');
     expect(encryptCalls.n).toBe(encryptCallsAfterTen);
     expect(cookieWrites.join('')).not.toContain('refresh-11');
+  });
+
+  it('re-links an account without counting legacy entries against the quota', async () => {
+    store.sessions = Array.from({ length: 10 }, (_, index) => ({
+      ...sessionRow(`legacy-${index}`, 'legacy-refresh'),
+      session_ciphertext: 'v1.legacy-entry',
+    }));
+    auth.getSession.mockResolvedValue({
+      data: { session: session('legacy-0', 'fresh-refresh') },
+    });
+
+    const { saveCurrentWebAccount } = await import('./vault');
+    const result = await saveCurrentWebAccount(request());
+
+    expect(result).toMatchObject({ accountId: 'legacy-0', success: true });
+    expect(result.accounts.map((account) => account.id)).toEqual(['legacy-0']);
+    expect(storedRefreshToken('legacy-0')).toBe('fresh-refresh');
   });
 });
 
@@ -346,6 +410,10 @@ describe('web account logout revokes derived credentials before sign-out', () =>
     rpc.mockResolvedValue({ error: null });
   });
 
+  afterEach(() => {
+    store.vaultConfigured = true;
+  });
+
   async function expectRevokedThenSignedOut() {
     const { revokeUserAiTempAuthTokens } =
       await import('@tuturuuu/utils/ai-temp-auth');
@@ -384,6 +452,34 @@ describe('web account logout revokes derived credentials before sign-out', () =>
     await logoutAllWebAccounts(request());
 
     await expectRevokedThenSignedOut();
+  });
+
+  it('disables saved-account operations but still signs out the current session', async () => {
+    store.vaultConfigured = false;
+    const {
+      listWebAccounts,
+      logoutCurrentWebAccount,
+      saveCurrentWebAccount,
+      switchWebAccount,
+    } = await import('./vault');
+
+    expect(await listWebAccounts(request())).toEqual({
+      accounts: [],
+      activeAccountId: null,
+    });
+    expect(await saveCurrentWebAccount(request())).toMatchObject({
+      errorCode: 'device_unavailable',
+      success: false,
+    });
+    expect(await switchWebAccount(request(), 'user-a')).toMatchObject({
+      requiresReauth: true,
+      success: false,
+    });
+    expect(auth.getSession).not.toHaveBeenCalled();
+    expect(auth.setSession).not.toHaveBeenCalled();
+    await logoutCurrentWebAccount(request());
+    await expectRevokedThenSignedOut();
+    expect(store.sessions).toHaveLength(1);
   });
 
   it('still signs out when the cross-app revocation fails', async () => {
