@@ -117,6 +117,8 @@ variables; do not hardcode a second radius.
 - A Tabs list with a different track sets `[--radius-segment:…]` and
   `[--segment-padding:…]` instead of `rounded-*` and `p-*` classes, so its
   triggers stay concentric. Outline a track with a ring, not a border.
+  Triggers stretch to the track's height, so a taller list (`h-10`, `h-12`)
+  keeps the same padding above and below a trigger as at its sides.
 - The Flutter dock and segmented control follow the same rule (Mobile).
 
 Regression coverage: `packages/ui/src/components/ui/floating-bar.test.tsx`

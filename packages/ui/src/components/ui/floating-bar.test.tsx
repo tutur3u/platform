@@ -133,8 +133,11 @@ describe('FloatingBar', () => {
     const list = screen.getByRole('tablist');
     expect(list.className).toContain('rounded-(--radius-segment)');
     expect(list.className).toContain('p-(--segment-padding)');
-    expect(screen.getByRole('tab').className).toContain(
-      'rounded-(--radius-segment-inner)'
-    );
+    const trigger = screen.getByRole('tab');
+    expect(trigger.className).toContain('rounded-(--radius-segment-inner)');
+    // The trigger fills the track's height, so a list with a taller height
+    // still keeps the same padding above and below it as at the sides.
+    expect(trigger.className).toContain('self-stretch');
+    expect(trigger.className).not.toMatch(/(^|\s)h-/);
   });
 });
